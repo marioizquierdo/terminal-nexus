@@ -46,46 +46,6 @@ Question IDs are permanent. Never renumber, never reuse.
 
 ## 4. Open
 
-### Q1 — How many terminal columns does one battlefield tile occupy?
-
-**Status:** OPEN — blocks the Gate 1A fixture composition and every later art decision.
-
-Canon locks a 48x18 battlefield inside an 80x24 composition. That arithmetic only closes at **one
-column per tile**: 48 interior + 2 border = 50, leaving 30 columns of sidebar. The concept art in
-[`../concept/README.md`](../concept/README.md) is drawn at **two columns per tile**, which needs a
-roughly 128x24 composition and is where its readability comes from.
-
-This is not cosmetic. It sets the horizontal budget of every effect, whether a unit motif can be
-wider than one glyph (see Q3), and how dense a late-Pulse battle looks.
-
-| Option | Cost |
-| --- | --- |
-| A. One column per tile, 80x24 | Honest minimum; runs anywhere; dense battles risk becoming a wall of letters |
-| B. Two columns per tile, ~128x24 minimum | Matches the concept art and reads far better; abandons the 80x24 promise |
-| C. Tile width is a presentation capability: 1 at 80 columns, 2 at 128+ | Keeps the 80x24 floor and the wide-terminal look; costs one compositor parameter |
-
-**Recommendation: C.** Tile width changes no semantics, reveals no extra tiles, and is exactly the
-kind of thing [`engine.md`](engine.md) Section 10.2 already permits — a larger terminal frames the
-same map without revealing extra tactical information. Gate 1A renders its fixture at both widths so
-the decision is made by looking rather than by argument.
-
-### Q2 — How many resource types does a match use?
-
-**Status:** OPEN — does not block Gate 1A; blocks Milestone 3 UI and Milestone 4 balance.
-
-[`engine.md`](engine.md) allows arbitrary resources (`Record<ContentId, number>`) and never commits.
-The concept art disagrees with itself: one piece shows `SALVAGE` and `ENERGY` as separate readouts
-alongside faction population, another shows a single `RES` counter.
-
-| Option | Cost |
-| --- | --- |
-| A. One resource; salvage is the same resource recovered from wreckage | Simplest Build Phase; fits a 5-12 minute match; less economic texture |
-| B. Two resources (one harvested, one from salvage/energy) | Real build-order tension; doubles worker AI, UI, and balance surface |
-
-**Recommendation: A for Milestone 4.** A second resource is an addition the microgame can earn
-later; removing one after content exists is expensive. Nexus energy should be a *Nexus state*, not a
-spendable resource, until something needs it to be one.
-
 ### Q3 — Is a unit one glyph, or a motif wider than one glyph?
 
 **Status:** OPEN — blocks Gate 1B authoring; depends on Q1.
@@ -108,6 +68,11 @@ grants it the columns — which is Q1.
 **Recommendation: C, with B available at two-column tile width.** Lore Section 9 already says motion
 completes the drawing; leaning on formation and trail is cheaper than widening every actor, and it
 degrades gracefully at one column per tile.
+
+**Narrowed by Q1 (answered 2026-08-20).** Tile width is adaptive, so both halves of the answer are
+now reachable: C must work, because the 80-column composition gives an actor exactly one column; B
+may additionally be authored for the wide composition, where a tile has two. Gate 1B decides how far
+to push B, and must show that anything authored at two columns still reads at one.
 
 ### Q4 — How does Glitch corrupt the terminal without breaking the legibility law?
 
@@ -136,19 +101,6 @@ of the two is stale. The distance metric is separately unlocked and belongs to M
 **Recommendation:** keep two as the default in canon and treat `+4` as an outpost value, which is
 what the art is actually showing — it is drawn on an Outpost.
 
-### Q6 — Does packaging and remote delivery belong inside Gate 1A?
-
-**Status:** OBSERVABLE — resolved in this revision; kept for the record.
-
-Gate 1A previously required standalone executables, a PTY/SSH smoke test, and a browser terminal
-demonstration before Gate 1B could start, while [`engine.md`](engine.md) Section 11.2 calls remote
-and browser surfaces "architectural possibilities, not Milestone 1 product commitments." Those two
-statements could not both be honoured.
-
-**Resolved:** Gate 1A answers cell frame, lifecycle, and backend selection. Packaging and remote
-delivery move to Gate 1D, which is authorized independently and does not block Gate 1B. See
-[`milestone-1-spike-battle.md`](milestone-1-spike-battle.md).
-
 ### Q7 — Do workers carry, or produce in place?
 
 **Status:** OPEN — blocks nothing before Milestone 4.
@@ -165,7 +117,25 @@ contradiction. Decide with the Milestone 4 microgame.
 
 ## 5. Answered
 
-_None yet. Rows move here with the date, the decision, and the document that now owns it._
+Rows move here with the date, the decision, and the document that now owns it.
 
 | ID | Answered | Decision | Now owned by |
 | --- | --- | --- | --- |
+| Q1 | 2026-08-20 | **Tile width is adaptive presentation capability**: one column per tile in the 80x24 composition, two columns per tile at 128 columns or wider. Same tiles, same actors, same revealed information — only the composition changes. The 80x24 floor is preserved and the concept art's look is reachable on a wide terminal | [`engine.md`](engine.md) Section 10.2 |
+| Q2 | 2026-08-20 | **One resource.** Salvage recovers the same resource rather than a second one. Nexus energy is a state readout, not a currency. A second resource is an addition a later microgame may earn; it is not assumed | [`engine.md`](engine.md) Section 6 |
+| Q6 | 2026-08-20 | **Gate 1A is cell frame and lifecycle only.** Packaging, PTY, and browser delivery moved to an independent Gate 1C that does not block the authored battle reel | [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) |
+
+### Q1 — answered
+
+Recorded in full in the Git history of this file at canon 2.1. The decision above is the durable
+part; [`engine.md`](engine.md) Section 10.2 now carries the rule.
+
+### Q2 — answered
+
+Recorded in full in the Git history of this file at canon 2.1. [`engine.md`](engine.md) Section 6
+now carries the rule.
+
+### Q6 — answered
+
+Recorded in full in the Git history of this file at canon 2.1.
+[`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) now carries the gate structure.

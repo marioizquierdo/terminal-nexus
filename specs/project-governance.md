@@ -84,7 +84,7 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 | Workstream | State | Basis | Next action |
 | --- | --- | --- | --- |
 | Product discovery and canon split | COMPLETE | Canon 2.0 separated concept, lore, engine, content, campaigns, and milestones | Preserve boundaries while testing risky assumptions |
-| Canon audit and autonomy pass | COMPLETE | Canon 2.1 split Milestone 1's scope, added the open-questions register and gate-report template, and replaced hardcoded validator literals with derived invariants | Answer Q1 so the Gate 1A fixture composition is settled |
+| Canon audit and autonomy pass | COMPLETE | Canon 2.1 split Milestone 1's scope, added the open-questions register and gate-report template, and replaced hardcoded validator literals with derived invariants. Mario answered Q1, Q2, and Q6 on 2026-08-20 | Keep the register current as gates raise new questions |
 | Milestone 1A — cell frame and lifecycle | CURRENT | Backend measurements favor the OpenTUI imperative core; direct ANSI is the control | Run Gate 1A in `milestone-1-spike-battle.md` and stop for owner acceptance |
 | Milestone 1B — authored ASCII battle reel | GATED | Requires a selected backend | Authorize only after Gate 1A passes |
 | Milestone 1C — delivery probe | GATED | Independent of 1B; packaging, PTY, and browser terminal | Authorize when Terminal Nexus needs to run somewhere it was not built |
@@ -103,6 +103,7 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 | 2026-08-19 | 1.4 | Completed repository quality pass and dual-license scope | Repository bootstrap |
 | 2026-08-19 | 2.0 | Split the monolithic canon; updated Prime Nexus replication, Nexus Symbols, resurrection, and Build Phase/Nexus Pulse terminology | Milestone 1A |
 | 2026-08-20 | 2.1 | Audited canon against itself and the concept art; narrowed Gate 1A to cell frame and lifecycle and moved delivery to Gate 1C; added the open-questions register, gate-report template, ASCII references, and concept index; corrected runtime direction against measured evidence; replaced hardcoded validator literals with derived invariants | Milestone 1A |
+| 2026-08-20 | 2.1 | Owner answered Q1 (adaptive tile width), Q2 (one resource), and Q6 (accept the Gate 1A/1C split), and authorized opening Gate 1A | Milestone 1A |
 
 ## 7. Locked product decisions
 
@@ -115,6 +116,8 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 - Renderer boundary: simulation emits visibility-filtered semantic views and events; the terminal compositor emits an engine-owned cell frame; platform backends are adapters.
 - Presentation baseline: monochrome seven-bit ASCII, enhanced by explicit ANSI color and optional Unicode modes.
 - First visual target: a 48×18 battlefield inside one 80×24 composition.
+- Tile width is adaptive presentation: one terminal column per tile at 80 columns, two at 128 or wider. Same tiles, same information; 80×24 is the acceptance target.
+- One resource per match. Deposits and salvage both yield it; supply is a separate population cap; Nexus energy is a state readout, not a currency.
 - Commander: a prominent persistent frontline `@`, fictionally a Nexus Symbol; death causes one full Build Phase/Pulse cycle of absence before restoration.
 - Prime Nexus: remains at its home location and replicates a smaller battlefield Nexus; Nexuses do not teleport.
 - Production: fixed recipes from buildings, not direct unit purchases.

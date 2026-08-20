@@ -52,11 +52,11 @@ carrying Nexus state, Commander state, and both force compositions, and a contro
 
 | Delta | Canon says | Question |
 | --- | --- | --- |
-| Tiles are drawn **two columns wide**, putting the full frame near 130-180 columns | 48x18 battlefield inside **80x24** | **Q1** — the most consequential open question in the project |
+| Tiles are drawn **two columns wide**, putting the full frame near 130-180 columns | 48x18 battlefield inside **80x24** | **Q1 — answered.** Tile width is adaptive: one column at 80, two at 128+. This art is the wide composition, and it is now reachable |
 | `>x<` appears as a battlefield unit across three columns | MVP actors occupy one tile | **Q3** |
 | Header reads `DAYTIME PULSE (AUTOMATIC)` | Phases are **Build Phase** and **Nexus Pulse** | Terminology only; "daytime" has no canon meaning. Drop it |
-| Sidebar shows `SALVAGE` and `ENERGY` as separate readouts | Resource count is uncommitted | **Q2** |
-| `ENERGY 18%` sits beside `INTEGRITY 06%` as Nexus state | Nexus energy is not a defined mechanic | Folded into **Q2**. Recommended as Nexus *state*, not a spendable resource |
+| Sidebar shows `SALVAGE` and `ENERGY` as separate readouts | One resource per match | **Q2 — answered.** Salvage yields the same resource; redraw as one counter |
+| `ENERGY 18%` sits beside `INTEGRITY 06%` as Nexus state | Nexus energy is a state readout | **Q2 — answered.** The art was right: energy is state, not currency |
 | Faction populations shown as `CITIZENS 128 / RAVELS 243` | Supply is a shared population cap | Consistent if these are supply totals; the label should say so |
 
 ## 4. `02-build-phase.png` — Build Phase
@@ -83,7 +83,7 @@ range.*
 | --- | --- | --- |
 | `RADIUS +4` on the selected Outpost | Default build radius is **two tiles**; outposts project farther | **Q5** — probably not a conflict at all, since this is an Outpost |
 | Header reads `PHASE: VEIL` and `TURN 04` <!-- stale-ok --> | Phases are **Build Phase** and **Nexus Pulse** | Stale: predates the canon 2.0 rename. The repository validator now rejects this word in specs |
-| Single `RES 160` counter | Resource count is uncommitted | **Q2** — this piece argues for one resource; piece 01 argues for two |
+| Single `RES 160` counter | One resource per match | **Q2 — answered** in this piece's favour |
 | Construct menu: Outpost 60, Barracks 80, Wall 20, Farm 40, Supply 50 | No costs are locked | Not a conflict. It is a useful **first cost hypothesis** for Milestone 4 — a five-item menu at a 20-80 spread, which is the right order of magnitude for a 5-12 minute match |
 | No warehouse in the construct menu | Warehouses provide global storage | Consistent with **Q7**'s recommendation that storage pressure stalls workers in place. Worth noting the art independently reached the simpler economy |
 
@@ -118,9 +118,10 @@ dialogue box below carrying speaker badges and two lines:
 
 ## 6. Standing observations
 
-**The art is the strongest argument in the project for Q1.** These pieces read well largely because
-they have room to breathe. If a session ever produces an 80-column single-width composition that
-reads *this* clearly, that is a real finding and it should be recorded loudly.
+**The art won Q1, halfway.** These pieces read well largely because they have room to breathe, and
+that argument carried: tile width is now adaptive, and this is what the wide composition is for. The
+80-column composition remains the acceptance target, so the open work is proving a single-width frame
+can read nearly this clearly. If a session gets there, record it loudly.
 
 **The concept set has no reduced-motion, monochrome, or resize-gate frame.** Every piece is the
 happy path at full capability. Before Gate 1B, it is worth drawing the same battlefield in

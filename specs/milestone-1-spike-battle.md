@@ -153,11 +153,13 @@ Every backend renders the same authored scene, from the same code, through the s
 **Composition.** A bordered 48x18 battlefield inside an 80x24 frame, plus a right sidebar, a header,
 and a control footer — the layout the concept art shows, at the scale canon locks.
 
-**Tile width is a fixture parameter with values 1 and 2.** At width 1 the frame is 80x24. At width 2
-the same battlefield needs roughly 128x24 and the fixture must say so and render it. This is how
-Q1 in [`open-questions.md`](open-questions.md) gets answered: Mario looks at both and picks, instead
-of the two of us arguing about column budgets. Both widths must produce the same *semantic* content
-— identical actors on identical tiles — differing only in composition.
+**Tile width is a fixture parameter with values 1 and 2** — the adaptive rule Q1 settled. At width 1
+the frame is 80x24; at width 2 the same battlefield needs roughly 128x24. Both must produce the same
+*semantic* content — identical actors on identical tiles — differing only in composition.
+
+**80x24 is the acceptance target.** Width 2 exists so the wide composition is proven reachable from
+the same code, not so it can quietly become the real one. If a frame reads at width 2 and not at
+width 1, that is a failure of the frame, not of the width.
 
 **Content**, at either width:
 
@@ -253,7 +255,7 @@ The report answers:
 4. Which platforms were actually tested, and which are unknown?
 5. Which future adapter stays viable without changing current code?
 6. Is a conditional comparator required, and against which criterion?
-7. Which tile width does the fixture argue for, and what did Mario see?
+7. Does the same fixture code produce both widths cleanly, and does the narrow one still read?
 
 ### 3.10 Suggested layout
 
@@ -410,5 +412,5 @@ mandatory before anyone else is invited to run the game. Durable outputs:
 - an authored battle reel and its treatment comparison;
 - initial ASCII and effect rules earned from human observation, promoted into
   [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 9;
-- an answer to Q1 and Q3 in [`open-questions.md`](open-questions.md);
+- an answer to Q3 in [`open-questions.md`](open-questions.md);
 - explicit authorization — or refusal — to begin the deterministic Nexus Pulse.

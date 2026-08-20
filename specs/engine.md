@@ -190,6 +190,10 @@ Ranged attacks resolve at an authoritative tick. A visible projectile is normall
 
 ## 6. Economy, labor, supply, and territory
 
+**A match uses one resource** (Q2, answered 2026-08-20). Natural deposits and salvage both yield it. Warehouses store it, production spends it, and supply is a separate population cap rather than a second currency. Nexus energy is a *state* readout, not something a player spends.
+
+`ResourceCost` remains a keyed record in Section 8 so that a later microgame can earn a second resource without a schema change — but nothing in Milestones 1 through 4 may assume one exists.
+
 ### 6.1 Workers
 
 Workers choose the closest available job by deterministic path distance. Jobs include building slots, natural deposits, salvage, returning to the Nexus when storage is full, and future faction-specific labor.
@@ -410,9 +414,15 @@ Renderers never reverse-engineer glyphs or ANSI into mechanics.
 
 The canonical terminal composition is initially 80×24 with a 48×18 battlefield. Larger terminals center or frame the same map and may expand inspection space without revealing extra tactical information. Below minimum size, playback pauses behind a resize gate and resumes from the same presentation time. Early milestones do not scroll or crop the battlefield.
 
-**How many columns one tile occupies is open.** The arithmetic above closes only at one column per tile: 48 interior columns plus a border leaves 30 for the sidebar. The concept art is drawn at two columns per tile, which needs roughly 128×24 and is where much of its readability comes from. This is Q1 in [`open-questions.md`](open-questions.md), and the Gate 1A fixture renders both so the question is answered by looking.
+**Tile width is adaptive** (Q1, answered 2026-08-20). One battlefield tile occupies **one terminal column** in the 80×24 composition and **two** at 128 columns or wider. The 48×18 battlefield is unchanged in either: 48 interior columns plus a border leaves 30 for the sidebar at the narrow width; the wide composition needs roughly 128×24 and is where the concept art's readability comes from.
 
-Tile width is a **composition** parameter, not a semantic one. Whatever it is set to, the same tiles carry the same actors and reveal the same information — which is what keeps it inside the rule above rather than becoming a gameplay setting.
+Tile width is a **composition** parameter, not a semantic one. At either width the same tiles carry the same actors and reveal the same information, which is what keeps it inside the rule above rather than making it a gameplay setting. A player on a wide terminal sees the same match more comfortably; they do not see more of it.
+
+Consequences that bind other systems:
+
+- 80×24 remains the floor. Anything authored for the wide composition must degrade to the narrow one, and the narrow one is the acceptance target.
+- An actor is drawn within its own tile's columns. See Q3 for how far a unit motif may use them.
+- Effects are authored against tile coordinates, not column counts, so an effect written once works at both widths.
 
 ```ts
 type CellStyle = Readonly<{
