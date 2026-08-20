@@ -8,9 +8,11 @@ It combines modern drafting and autobattler structure with old-school RTS ideas:
 
 Terminal Nexus is in pre-production. No playable game exists yet.
 
-The current work is **Milestone 1A**, the headless half of the first spike: a Grid, a scenario file,
-and a deterministic Pulse that resolves a mirror Citizen skirmish into the same event log every time,
-with no terminal involved. Rendering it follows, then the effects that make it worth watching.
+The current work is **Milestone 1A, the Pulse Playground**: a Grid, a scenario file, and a
+deterministic Pulse that resolves a mirror Citizen skirmish the same way every time — with a levelled
+report for agents to test against and an ASCII view for humans to watch. Render tiers and the effect
+vocabulary follow. The Playground is the foundation the engine grows from, and the bench every future
+unit gets tested on.
 
 ## Canon and current work
 

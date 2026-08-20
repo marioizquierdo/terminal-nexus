@@ -2,7 +2,7 @@
 
 **Document role:** Canon authority, evidence process, execution ledger, and durable decisions
 **Status:** Canonical
-**Canon version:** 2.2
+**Canon version:** 2.3
 **Updated:** 2026-08-20
 **License:** Apache-2.0
 
@@ -85,10 +85,10 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 | --- | --- | --- | --- |
 | Product discovery and canon split | COMPLETE | Canon 2.0 separated concept, lore, engine, content, campaigns, and milestones | Preserve boundaries while testing risky assumptions |
 | Canon audit and autonomy pass | COMPLETE | Canon 2.1 added the open-questions register and gate-report template and made the validator derive its invariants | Keep the register current as gates raise new questions |
-| Design-authority pass | COMPLETE | Canon 2.2 renamed the Grid, added the layer model, marked every engine section LAW/GUIDANCE/UNPROVEN, and refocused Milestone 1 on the Pulse | Open Gate 1A |
-| Milestone 1A — headless Pulse | CURRENT | The Grid, its layers, and a deterministic tick loop resolving a mirror Citizen skirmish from a scenario file | Run Gate 1A in `milestone-1-spike-battle.md` and stop for owner acceptance |
-| Milestone 1B — watch the Pulse | GATED | Requires a kernel already known to be correct | Authorize after Gate 1A passes |
-| Milestone 1C — make it hit | GATED | Requires a legible render to add effects to | Authorize after Gate 1B passes |
+| Design-authority pass | COMPLETE | Canon 2.2 renamed the Grid, added the layer model, marked engine sections by authority, and refocused Milestone 1 on the Pulse | Superseded by the 2.3 corrections |
+| Viewport and playground pass | COMPLETE | Canon 2.3 formalised viewport limits and cursor-driven scrolling, made layers render-order-only with collision as a composed mask, settled multi-tile units, reduced the markers to RULE and GUIDANCE, and reshaped Milestone 1 into the Pulse Playground | Open Gate 1A |
+| Milestone 1A — the Pulse Playground | CURRENT | Grid, scenario files, deterministic Pulse, a levelled report, and a minimal ASCII view, built together | Run Gate 1A in `milestone-1-spike-battle.md` and stop for owner acceptance |
+| Milestone 1B — quality and effects | GATED | Requires a legible Pulse to add tiers and effects to | Authorize after Gate 1A passes |
 | Milestone 2 — completing the Pulse | GATED | Routing, economy, production, visibility, replay, and hardening the spike deferred | Lock the contracts listed in its document first |
 | Milestone 3 — Build Phase and editor | GATED | Requires a complete kernel | Lock placement rules before implementation |
 | Milestone 4 — Citizens versus Ravels | GATED | Requires presentation, kernel, and builder proofs | Select the deliberately tiny integrated ruleset |
@@ -106,6 +106,7 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 | 2026-08-19 | 2.0 | Split the monolithic canon; updated Prime Nexus replication, Nexus Symbols, resurrection, and Build Phase/Nexus Pulse terminology | Milestone 1A |
 | 2026-08-20 | 2.1 | Audited canon against itself and the concept art; narrowed Gate 1A to cell frame and lifecycle and moved delivery to Gate 1C; added the open-questions register, gate-report template, ASCII references, and concept index; corrected runtime direction against measured evidence; replaced hardcoded validator literals with derived invariants | Milestone 1A |
 | 2026-08-20 | 2.1 | Owner answered Q1 (adaptive tile width), Q2 (one resource), and Q6 (accept the Gate 1A/1C split), and authorized opening Gate 1A | Milestone 1A |
+| 2026-08-20 | 2.3 | Formalised viewport minimum and maximum, cursor-driven scrolling with no minimap, and terminal size bands; corrected layers to define render order only, with collision as a mask composed from chosen layers; settled that units may span multiple tiles (Q3); reduced authority markers to RULE and GUIDANCE; reshaped Milestone 1 into the **Pulse Playground**, with the headless report and the ASCII view built together and a levelled log as the agent feedback loop | Milestone 1A |
 | 2026-08-20 | 2.2 | Renamed the battle surface to the **Grid** and the replica to the **Grid Nexus**; added Grid size and shape presets, the five-layer occupancy model, and footprint/anchor/facing placement; marked every engine section LAW, GUIDANCE, or UNPROVEN; refocused Milestone 1 onto the Pulse itself with three gates ending in an effects gate; added `ascii-effects.md`; deferred packaging and remote delivery out of the milestone | Milestone 1A |
 
 ## 7. Locked product decisions
@@ -121,9 +122,10 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 - The play surface is the **Grid**. The replica on it is a **Grid Nexus**; the one that stays home is a **Prime Nexus**.
 - Grid presets: sizes `small`/`medium`/`large`/`extra-large` against shapes `squared`/`wide`/`extra-wide`; `medium-extra-wide` (48 × 16) is the default.
 - Grid orientation is a rendering choice. Portrait and landscape change nothing about state, rules, or coordinates.
-- The Grid has five layers — terrain, obstacles, workers, units, air. **Collisions resolve within a layer, never across layers.**
-- Every entity has an anchor, a footprint, and a facing. Multi-tile entities are a first-class case, not a later extension. Facing is presentation-only until a milestone earns otherwise.
-- Every engine statement declares its authority: LAW, GUIDANCE, or UNPROVEN. Descriptive completeness is not authorization.
+- The Grid has five layers — terrain, obstacles, workers, units, air. **Layers define render order only.** Collision is a mask composed from a chosen set of layers, so cross-layer collision is normal and same-tile coexistence is a property of the masks involved.
+- Every entity has an anchor, a footprint, and a facing. **Units as well as structures may span multiple tiles**; a mover tests its whole footprint. Facing is presentation-only until a milestone earns otherwise.
+- The viewport is clamped to between 48 × 16 and 72 × 24 tiles, so no display shows meaningfully more Grid than another. The cursor drives scrolling at a 3-tile margin. There is no minimap.
+- Every engine statement declares its authority: **RULE** or **GUIDANCE**. Descriptive completeness is not authorization.
 - Tile width is adaptive presentation: one terminal column per tile at 80 columns, two at 128 or wider. Same tiles, same information; 80×24 is the acceptance target.
 - One resource per match. Deposits and salvage both yield it; supply is a separate population cap; Nexus energy is a state readout, not a currency.
 - Commander: a prominent persistent frontline `@`, fictionally a Nexus Symbol; death causes one full Build Phase/Pulse cycle of absence before restoration.

@@ -2,7 +2,7 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.2
+**Canon version:** 2.3
 **Updated:** 2026-08-20
 **License:** Apache-2.0
 
@@ -16,9 +16,11 @@ Every section carries an authority marker. Respect it literally:
 
 | Marker | Means | What you may do |
 | --- | --- | --- |
-| **LAW** | Committed. It is load-bearing, and something else already depends on it | Follow it. Changing it needs owner acceptance and a canon version bump |
-| **GUIDANCE** | The current best recommendation, not yet earned by working code | Follow it by default. Depart when the work shows better — and record why in the gate report |
-| **UNPROVEN** | An idea kept so it is not lost | Do not implement it. Do not let a current design assume it exists |
+| **RULE** | Committed. It is load-bearing, and something else already depends on it | Follow it. Changing it needs owner acceptance and a canon version bump |
+| **GUIDANCE** | A recommendation, not yet earned by working code | Follow it by default. Depart when the work shows better — and record why in the gate report |
+
+Most of this document is GUIDANCE. Where a section describes something that is not designed yet, it
+says so in its own words; that is still GUIDANCE, and it still means *do not build this today*.
 
 Two rules apply everywhere and outrank convenience:
 
@@ -34,7 +36,7 @@ If you find yourself building something in this document because it is in this d
 
 ## 1. The three worlds
 
-**Authority: LAW.** This is the separation the whole engine exists to protect. Everything else is
+**Authority: RULE.** This is the separation the whole engine exists to protect. Everything else is
 detail.
 
 Terminal Nexus keeps three things apart that most games blend together:
@@ -119,7 +121,7 @@ by the kernel.
 
 ## 3. The Grid
 
-**Authority: LAW** for the layer model and occupancy; **GUIDANCE** for sizes, metric, and movement.
+**Authority: RULE** for the layer model and occupancy; **GUIDANCE** for sizes, metric, and movement.
 
 The **Grid** is the rectangular integer playfield a match is fought on. It replaces the older word
 "Grid" everywhere, including in the name of the Nexus replica that sits on it: a **Grid
@@ -163,7 +165,7 @@ arithmetic is not a coincidence: at one column per tile it needs 48 + 2 border +
 
 A preset is a convenience, not a constraint. A scenario may declare explicit dimensions.
 
-### 3.2 Orientation is a rendering choice — LAW
+### 3.2 Orientation is a rendering choice — RULE
 
 A Grid has no orientation. **Portrait and landscape are presentation transforms**, chosen by the
 renderer to fit the display, and they change nothing about the Grid, the Pulse, or any coordinate in
@@ -171,74 +173,110 @@ an event log. A tall narrow display may transpose a `wide` Grid and lose nothing
 
 Map authors never think about orientation. They design a Grid; the renderer decides how to show it.
 
-### 3.3 Fitting the Grid to the terminal — GUIDANCE
+### 3.3 Viewport, screen size, and scrolling — RULE
 
-Until scrolling exists, **the whole Grid is shown at once**, and Grid size is therefore bounded by
-terminal size. Minimum terminal for a preset, in the Pulse composition (thin chrome, no sidebar):
+A Grid may be larger than the screen. The **viewport** is the window onto it, measured in **tiles**,
+and it is clamped at both ends:
 
-- columns = `tileWidth × gridWidth + 2`
-- rows = `gridHeight + 4`
+| | Tiles | Why |
+| --- | --- | --- |
+| **Minimum viewport** | 48 × 16 | The default preset. Below this the game is not playable, and the renderer shows a resize gate |
+| **Maximum viewport** | 72 × 24 | The largest Grid preset. Nobody sees more of the Grid than this, however large their monitor |
 
-Minimum terminal per preset, at one column per tile. **Pulse** is the thin-chrome composition;
-**Build** adds a 30-column sidebar plus its border:
+The maximum exists for **fairness and for bounded arithmetic**. A player on a huge display must not
+be able to see meaningfully more of the Grid than a player on a laptop, and every layout, cursor,
+and scroll calculation gets a fixed upper bound to reason about. Terminal space beyond the maximum is
+spent on centring and on a larger inspection panel — **never on more Grid**.
 
-| Preset | Tiles | Pulse | Build |
-| --- | --- | --- | --- |
-| `small-squared` | 12 × 12 | 14 × 16 | 44 × 16 |
-| `small-wide` | 24 × 12 | 26 × 16 | 56 × 16 |
-| `small-extra-wide` | 36 × 12 | 38 × 16 | 68 × 16 |
-| `medium-squared` | 16 × 16 | 18 × 20 | 48 × 20 |
-| `medium-wide` | 32 × 16 | 34 × 20 | 64 × 20 |
-| **`medium-extra-wide`** | **48 × 16** | **50 × 20** | **80 × 20** |
-| `large-squared` | 20 × 20 | 22 × 24 | 52 × 24 |
-| `large-wide` | 40 × 20 | 42 × 24 | 72 × 24 |
-| `large-extra-wide` | 60 × 20 | 62 × 24 | 92 × 24 |
-| `extra-large-squared` | 24 × 24 | 26 × 28 | 56 × 28 |
-| `extra-large-wide` | 48 × 24 | 50 × 28 | 80 × 28 |
-| `extra-large-extra-wide` | 72 × 24 | 74 × 28 | 104 × 28 |
+**Fitting, in order:**
 
-Everything through `large-wide` fits an 80 × 24 terminal in the Pulse composition — `large` presets
-land on exactly 24 rows, with nothing to spare. `extra-large` presets need 28 rows and do not fit.
-Only `medium-extra-wide` and smaller fit the Build composition at 80 columns.
+1. Subtract chrome from the terminal: a border, a header, a footer, and a 30-column side panel.
+2. Choose tile width — 2 columns per tile if the terminal can show the viewport that way, otherwise 1
+   (Section 9.3).
+3. `viewport = clamp(availableTiles, minimum, maximum)`, then clamp again to the Grid's own size.
+4. If the result is smaller than the minimum at one column per tile, show the resize gate and freeze
+   presentation time.
 
-That is a real constraint and it is fine. Early content lives in `small` and `medium`, and the
-default preset is the largest Grid that fits both compositions on the smallest supported terminal.
+Which gives these terminal sizes:
 
-Scrolling, minimap, and cropping are **UNPROVEN**. Do not design around them. When a Grid does not
-fit, the renderer shows a resize gate (Section 9.4), it does not silently crop.
+| | Tile width 1 | Tile width 2 |
+| --- | --- | --- |
+| Minimum viewport (48 × 16) | **80 × 24** | 128 × 24 |
+| Maximum viewport (72 × 24) | 104 × 28 | 176 × 28 |
 
-### 3.4 Layers — LAW
+**80 × 24 remains the floor and the acceptance target.** Everything must work there.
+
+**Scrolling — RULE.** When the Grid is larger than the viewport, the camera scrolls. There is **no
+minimap.**
+
+- The camera position is in tiles and is clamped so the viewport never leaves the Grid.
+- **The cursor drives it.** Move the cursor within a **scroll margin of 3 tiles** of a viewport edge
+  and the camera follows. That is the whole interaction — no separate pan mode, no modifier keys, no
+  second cursor. It works identically in the Build Phase and during a Pulse.
+- **The UI must show that there is more Grid.** Without a minimap the burden falls on two cheap
+  signals, and both are required: **edge markers on the frame border** for each side with more Grid
+  beyond it, and a **position readout** in the footer naming the visible tile range and the Grid size.
+- Small Grids that fit entirely inside the viewport never scroll and show no edge markers. Tutorials
+  and opening missions should use them deliberately: `small` and `medium` presets fit the minimum
+  viewport, so a new player meets the game without ever learning to scroll.
+
+Cropping the Grid to fit without scrolling is not allowed. Below the minimum the renderer gates; it
+never silently hides part of the Grid.
+
+### 3.4 Layers — RULE
 
 The Grid is not one plane of tiles. It is five, stacked:
 
-| # | Layer | Holds | Per tile |
-| --- | --- | --- | --- |
-| 1 | `terrain` | ground type, movement cost, buildability, resource deposits | exactly one |
-| 2 | `obstacles` | structures, walls, rubble, destructible and immutable blockers | at most one |
-| 3 | `workers` | workers and other non-combat labour | at most one |
-| 4 | `units` | ground combat units, the Commander | at most one |
-| 5 | `air` | air units | at most one |
+| # | Layer | Holds |
+| --- | --- | --- |
+| 1 | `terrain` | ground type, movement cost, buildability, resource deposits |
+| 2 | `obstacles` | structures, walls, rubble, destructible and immutable blockers |
+| 3 | `workers` | workers and other non-combat labour |
+| 4 | `units` | ground combat units, the Commander |
+| 5 | `air` | air units |
 
-**The occupancy law: collisions are resolved within a layer, never across layers.**
+**What a layer is for — and this is the only hard rule: layers define render order.** Lower numbers
+draw first, higher numbers draw over them (Section 9.4). Beyond that, layers are how the game
+*organises its assets* — a way to say what kind of thing something is.
 
-That single rule buys most of what the game needs:
+**Layers do not define collision.** That is a separate question, and it is a query.
 
-- Two soldiers cannot stand on the same tile. A soldier and a worker **can** — they are on different
-  layers. This is the transient stacking that happens when a unit walks over a working labourer, and
-  it is legal rather than an edge case to arbitrate.
-- Air moves over `obstacles` and over ground units freely, and contests only other air.
-- Terrain is never "occupied"; it is a property of the tile. Only `obstacles` block ground movement.
-- A structure and the rubble it becomes are the same layer, so destruction is a replacement rather
-  than a special case.
+### 3.4.1 Collision masks — RULE
 
-Stacking is permitted but is expected to be **brief**. Sustained stacking is a design smell — if
-workers routinely park under soldiers, the worker job logic is wrong, not the occupancy rule.
+Occupancy and blocking are computed by composing layers into a **collision mask** — a per-tile
+boolean grid built from a chosen set of layers and a predicate:
 
-Presentation consequence, and it is a real obligation: when two layers occupy one tile only one
-glyph can be drawn. **The highest occupied layer supplies the glyph, and the cell is marked as
-stacked** — an attribute, a dim underline, something. Never let a tile silently hide an entity.
+```ts
+type CollisionMask = { blocked(tile: Coord): boolean }
 
-### 3.5 Placement, footprint, anchor, and facing — LAW
+function maskFrom(
+  grid: Grid,
+  layers: readonly GridLayer[],
+  predicate?: (entity: Entity) => boolean,
+): CollisionMask
+```
+
+Different questions compose different masks, and that is the point:
+
+| Question | Mask |
+| --- | --- |
+| Where may a ground unit step? | `terrain` (impassable) + `obstacles` + `units` |
+| Where may a worker step? | `terrain` (impassable) + `obstacles` + `workers` |
+| Where may an air unit fly? | `air` only |
+| Where may a structure be placed? | `terrain` (unbuildable) + `obstacles` + `workers` + `units` |
+| What can this unit see or shoot? | every layer holding a hostile entity |
+
+So a worker and a soldier may share a tile, because neither one's movement mask includes the other's
+layer — not because of a rule about layers, but because of how their masks are composed. And a unit
+still collides with a building on a different layer, because its mask includes `obstacles`. Both
+follow from the same mechanism.
+
+**Make masks cheap and make them explicit.** A unit definition declares which layers it collides with;
+the kernel builds the mask once per tick per distinct layer set and reuses it. Nothing should be
+computing occupancy by scanning entity lists in an inner loop, and nothing should be assuming a
+layer's collision behaviour from its position in the render order.
+
+### 3.5 Placement, footprint, anchor, and facing — RULE
 
 Every entity on the Grid has a placement:
 
@@ -255,9 +293,14 @@ interface Placement {
 }
 ```
 
-- **Most units occupy one tile.** Some do not, and **structures usually do not** — a Grid Nexus or a
-  barracks covers several. Multi-tile is a first-class case, not a later extension. Write the
-  footprint loop once, at the start, and every entity is the same code path.
+- **Entities occupy one tile or many, and both are normal.** Many units are one tile. Structures
+  usually are not — a Grid Nexus or a barracks covers several. **Large units exist and matter
+  strategically**: a Ravel raider drawn `>x<` is one unit spanning three tiles, and the collision
+  system has to handle it as such. Multi-tile is a first-class case, never a later extension. Write
+  the footprint loop once, at the start, and every entity is the same code path.
+- **A multi-tile mover tests its whole footprint.** A step is legal only if every destination tile is
+  clear in that entity's collision mask. Damage, targeting, and destruction apply to the entity, not
+  to a tile — a three-tile raider hit anywhere is one raider taking one hit.
 - **The anchor is the entity's coordinate** and its centre of authority. Events report it, targeting
   ties break on it, presentation hangs badges and portraits off it, and it is what "where is that
   thing" means.
@@ -287,7 +330,7 @@ invents for smoothness and the kernel never hears about.
 
 ## 4. The Pulse
 
-**Authority: LAW** for determinism and the separation of time; **GUIDANCE** for the exact tick order
+**Authority: RULE** for determinism and the separation of time; **GUIDANCE** for the exact tick order
 and credit rules until Milestone 1 tests them.
 
 ### 4.1 Logical time — GUIDANCE, close to earned
@@ -357,9 +400,9 @@ step 8, the winning claimant may occupy the tile on the following tick.
 
 Ranged attacks resolve at an authoritative tick. **A projectile is normally a presentation cue drawn
 between the attack event and the impact event** — it is not a simulated moving body, and it cannot
-be intercepted, unless some specific mechanic later earns that complexity. That is **UNPROVEN**.
+be intercepted, unless some specific mechanic later earns that complexity, which nothing has.
 
-### 4.4 Determinism and replay — LAW
+### 4.4 Determinism and replay — RULE
 
 ```text
 resolvePulse(
@@ -389,7 +432,7 @@ verification.
 
 ## 5. Match structure
 
-**Authority: LAW** for the loop and the victory condition; **GUIDANCE** for everything inside it.
+**Authority: RULE** for the loop and the victory condition; **GUIDANCE** for everything inside it.
 
 A match alternates:
 
@@ -437,7 +480,7 @@ one is chosen, paid, and spawned; feasibility is recomputed; repeat until nothin
 
 Players shape composition by building, protecting, upgrading, pausing, or losing producers.
 
-### 5.4 Research and Nexus powers — UNPROVEN
+### 5.4 Research and Nexus powers — GUIDANCE
 
 The Grid Nexus offers a small draft of upgrades; research facilities modify that draft's tier,
 breadth, redraws, weighting, or visibility. Structures may reach levels 1–3. Nexus powers are
@@ -482,7 +525,7 @@ other system may guess those answers.
 
 ## 7. Events
 
-**Authority: LAW.** Events are how presentation learns anything.
+**Authority: RULE.** Events are how presentation learns anything.
 
 The Pulse emits an ordered list of `DomainEvent`s describing **meaning**, not appearance: an actor
 moved from here to there, this attacked that with this result, this took damage, this died, this was
@@ -573,10 +616,10 @@ local code.
 
 ## 9. Presentation
 
-**Authority: LAW** for the cell boundary, bands, and the accessibility rules; **GUIDANCE** for
+**Authority: RULE** for the cell boundary, bands, and the accessibility rules; **GUIDANCE** for
 composition details.
 
-### 9.1 The cell frame — LAW
+### 9.1 The cell frame — RULE
 
 ```ts
 type CellStyle = Readonly<{
@@ -614,18 +657,23 @@ API; a future graphical renderer consumes events and `PlayerView`, not cells.
 
 The two phases need different amounts of screen, and pretending otherwise wastes the Grid:
 
-**Build Phase** needs chrome. The player is selecting, previewing, and validating: a construct menu,
-the selected item's cost and effect, a placement-legality panel that says *why*, a radius preview,
-and a legend. Budget a sidebar of about 30 columns.
+**Both phases share the same frame**: a Grid pane, a 30-column side panel, a header, and a footer.
+Both support the cursor, selection, inspection, and scrolling — a player watching a Pulse can hover a
+unit to read its state in real time, and can scroll the Grid, exactly as they can while building.
+Keeping one composition means one cursor, one scroll rule, and one set of muscle memory.
 
-**Nexus Pulse** needs almost none. Nothing is being selected. The player is watching movement,
-attacks, projectiles, damage, and destruction. A thin status strip — Pulse number, both Nexus states,
-force totals, playback controls — is enough, and everything else belongs to the Grid.
+What differs is what the side panel holds:
 
-So the Grid gets more room during the Pulse than during the Build Phase, from the same frame size.
-That is a feature. Design the Pulse composition first; it is the one that has to carry the game.
+| | Side panel carries |
+| --- | --- |
+| **Build Phase** | Construct menu, selected item's cost and effect, the placement-legality panel that says *why*, radius preview, legend |
+| **Nexus Pulse** | Pulse number, both Nexus states, force totals, playback controls, and — when something is selected — that entity's live state |
 
-### 9.3 Tile width — LAW
+**The Pulse view shows everything by default.** Selection is an addition the player reaches for, never
+a prerequisite for following the fight. If a Pulse can only be understood by clicking things, the
+presentation has failed and no panel will rescue it.
+
+### 9.3 Tile width — RULE
 
 One Grid tile occupies **one terminal column** at 80 columns and **two** at 128 or wider. Same tiles,
 same actors, same revealed information; only the composition changes. **80 × 24 is the acceptance
@@ -639,7 +687,7 @@ both widths.
 Effects are authored against **tile coordinates**, never column counts, so one effect written once
 works at both widths.
 
-### 9.4 Bands — LAW
+### 9.4 Bands — RULE
 
 Fixed bands, not free z-indexes. The layers of Section 3.4 map onto them directly, which is the point:
 
@@ -659,7 +707,7 @@ Fixed bands, not free z-indexes. The layers of Section 3.4 map onto them directl
 Each band returns sparse cells; the topmost defined cell replaces the lower complete cell style.
 Grid bands clip to the Grid. **Presentation overlap never changes occupancy.**
 
-**The corruption law — LAW.** Effects that deliberately degrade the display — Glitch identity, Nexus
+**The corruption law — RULE.** Effects that deliberately degrade the display — Glitch identity, Nexus
 authority, Commander restoration, catastrophic destruction — live in `effects` or above, never in
 `units` or `structures`. They may add, overdraw, and unsettle. They may never remove or replace the
 only cell carrying a required semantic cue. The screen may look wrong; the player must still be able
@@ -675,7 +723,7 @@ stream.
 The particle system, its contract, its starter vocabulary, and the craft rules that make ASCII motion
 read as weight are specified in **[`ascii-effects.md`](ascii-effects.md)**.
 
-### 9.6 Accessibility and input — LAW
+### 9.6 Accessibility and input — RULE
 
 - Keyboard-complete; mouse is optional direct manipulation.
 - Every gameplay glyph occupies exactly one cell. No emoji, combining mark, or ambiguous-width glyph
@@ -711,13 +759,13 @@ on cell-frame behaviour and the runtime on packaging and availability, separatel
   discovery, robust input parsing, or mouse decoding, that is a measured result, not a to-do list.
 - **Terminal Kit** — contingency if direct ANSI starts recreating a library.
 - **Ratatui + Crossterm** — native contingency; adopting it creates a Rust boundary and a content
-  cost. **UNPROVEN.**
-- **Bubble Tea + Wish** — Go hosted-SSH contingency. **UNPROVEN.**
+  cost. Not designed; do not assume it.
+- **Bubble Tea + Wish** — Go hosted-SSH contingency. Not designed; do not assume it.
 
 Bun and Node are both present in the project's environments; Deno is not, and nothing measured needs
 it. Versions are re-checked and pinned during the active gate, and the pins live in the gate report.
 
-### 10.1 Terminal lifecycle — LAW
+### 10.1 Terminal lifecycle — RULE
 
 One alternate screen, **one idempotent disposer**. It restores cursor, input mode, handlers, and
 screen after normal exit, `q`, `SIGINT`, `SIGTERM`, setup failure, and caught render failure. It
@@ -729,7 +777,7 @@ Non-TTY launch prints one readable line and no escape sequences. Diagnostics are
 A renderer that drops frames is a tuning problem. A renderer that leaves the terminal in raw mode is
 a reason to reject it.
 
-### 10.2 Delivery ladder — UNPROVEN
+### 10.2 Delivery ladder — GUIDANCE
 
 Local executable and ordinary PTY; restricted public SSH; browser terminal streaming ANSI to
 xterm.js; browser-native renderer consuming events; mobile shell; optional pixel or 3D presentation
@@ -747,10 +795,17 @@ plus metadata; armies, units, structures, upgrades, themes, and glyphs as valida
 effects as typed functions; cutscenes as tableaux and timelines; missions as map, army, objective,
 trigger, and scene definitions.
 
-A scenario runner that can define a Grid, place entities, pick a seed and tick count, run or step a
-Pulse, inspect routes and targets, and export a deterministic event log is worth building **early** —
-it is the fastest feedback loop the project will have, for humans and agents alike. Its first form is
-a scenario file and a CLI, not an editor.
+The **Pulse Playground** — a scenario file plus a CLI that defines a Grid, places entities, takes a
+seed and a tick count, runs or steps a Pulse, and reports what happened — is worth building **first**,
+not eventually. It is the fastest feedback loop the project will have, for humans and agents alike,
+and it is permanent infrastructure rather than spike residue: every future unit gets tested on it.
+
+Two outputs, and the split matters. A **levelled log on stderr** (default `INFO`) carries the story of
+the run in fixed, greppable columns, so an agent can assert on behaviour without parsing prose and a
+designer can read what happened. A **summary on stdout** carries the outcome, the losses, and the
+hashes. `playground run x.ts > report.txt 2> run.log` separates them; by default they interleave in
+the terminal, which is what a person wants. See
+[`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) Section 3.3.
 
 This is **modding-first architecture, not mod-loader-first development.** No public SDK, remote
 loader, marketplace, permission system, or compatibility promise belongs in early milestones. Themes

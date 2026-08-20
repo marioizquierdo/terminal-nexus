@@ -99,6 +99,73 @@ specification.
 Human-readable history of the development setup. Product and canon history lives in
 `specs/project-governance.md` Section 6.
 
+### 2026-08-20 — viewport and playground pass (canon 2.3)
+
+Corrections from Mario after the 2.2 pass, plus the shape of the first spike.
+
+**Viewport, screen sizes, and scrolling — now formalised**
+
+- The viewport is measured in tiles and clamped to **48 x 16 minimum, 72 x 24 maximum**. The minimum
+  is the floor below which the renderer gates; the maximum exists so a huge display cannot show
+  meaningfully more Grid than a laptop, and so every layout calculation has a bound. Space beyond the
+  maximum goes to centring and a larger inspection panel, never to more Grid.
+- Terminal sizes fall out: **80 x 24** for the minimum viewport at one column per tile, 104 x 28 for
+  the maximum; 128 x 24 and 176 x 28 at two columns. 80 x 24 stays the acceptance target.
+- **Scrolling is cursor-driven.** Move the cursor within 3 tiles of a viewport edge and the camera
+  follows. No pan mode, no modifiers, no second cursor, and no minimap. The UI must show there is more
+  Grid, so edge markers on the frame and a footer position readout are both required.
+- Small and medium presets fit the minimum viewport entirely, so tutorials and opening missions can
+  introduce the game without a player ever learning to scroll.
+
+**Layers were wrong, and are now right**
+
+The 2.2 pass made "collisions resolve within a layer, never across" a hard rule. That is not what
+layers are for. Corrected:
+
+- **Layers define render order. That is the only hard rule.** Beyond that they organise assets.
+- **Collision is a query**, not a layer property: a `CollisionMask` is composed from a chosen set of
+  layers plus a predicate. A ground unit's movement mask includes `obstacles` and `units` but not
+  `workers`, which is *why* a worker and a soldier can share a tile — and why a unit is still blocked
+  by a building on a different layer. Both fall out of one mechanism instead of two rules.
+- Different questions compose different masks: movement, placement, and targeting each want their own.
+
+**Units can be large**
+
+Settled directly (Q3): units as well as structures may span multiple tiles, and it matters
+strategically. A Ravel raider drawn `>x<` is one unit occupying three tiles. A mover tests its **whole
+footprint** against its mask; damage and destruction apply to the entity, not the tile. The Gate 1A
+fixture now includes a 3 x 1 hauler specifically to break a collision system written for one-tile
+actors while that is still cheap to find out.
+
+**Authority markers reduced to two**
+
+**RULE** and **GUIDANCE**. `UNPROVEN` folded into GUIDANCE — sections that describe something not yet
+designed say so in their own words, which was doing the work anyway.
+
+**Milestone 1 is the Pulse Playground**
+
+Reshaped again, and better. The headless run and the ASCII view are built **together**, not as
+separate gates: the headless run is how an agent iterates, the view is how Mario tells whether any of
+it is good, and each catches what the other hides. Gate 1A uses a small Grid that fits the viewport,
+so selection and scrolling are out of scope entirely. Gate 1B adds render tiers and effects.
+
+The Playground is **foundation, not spike residue** — it is the bench every future unit gets tested
+on, so the code quality bar is higher than "spike."
+
+**The report is the feedback loop**
+
+The Playground's most important feature for autonomous work: a **levelled log on stderr** (default
+`INFO`) in fixed, greppable columns, and a **summary on stdout** with the outcome and hashes.
+`playground run x.ts > report.txt 2> run.log` splits them. `INFO` carries the story — spawns,
+engagements, attacks that landed, deaths, destruction, victory — so an agent can assert on behaviour
+without parsing prose, and a designer can read what happened. `DEBUG` carries per-tick decisions,
+`TRACE` carries everything.
+
+**Concept folder simplified**
+
+The delta tables added in 2.2 were over-engineering an early sketch. Reduced to what is worth keeping
+from each piece, plus a note that the real visual concept comes from the Playground.
+
 ### 2026-08-20 — design-authority pass (canon 2.2)
 
 A second pass after Mario clarified the shape of the engine and refocused the first spike.

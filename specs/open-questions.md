@@ -2,7 +2,7 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.2
+**Canon version:** 2.3
 **Updated:** 2026-08-20
 **License:** Apache-2.0
 
@@ -45,31 +45,6 @@ Question IDs are permanent. Never renumber, never reuse.
 | `DROPPED` | No longer relevant; keep the row and say why |
 
 ## 4. Open
-
-### Q3 — How does a faction's shape vocabulary survive one-tile actors?
-
-**Status:** OPEN — blocks Gate 1C effect authoring, not the kernel.
-
-The occupancy answer is now settled by [`engine.md`](engine.md) Section 3.5: **most units occupy one
-tile; structures usually occupy several.** So `[=H=]` is a legitimate five-tile Citizen structure and
-always was. What remains open is the *unit* case.
-
-[`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 8.2 offers `>x<` as a Ravel raider, and the
-concept art draws it on the Grid. Three columns will not fit in a one-tile actor at either tile width
-— one column or two. So `>x<` is not a unit glyph. It is something else, and the question is what.
-
-| Option | Cost |
-| --- | --- |
-| A. It is a **formation**: three adjacent raiders read together as `>x<` | Free, emergent, and the faction shape appears exactly when raiders group — which is when it should. Cannot be relied on; a lone raider is just `x` |
-| B. It is a **multi-tile unit** — a three-tile vehicle on the `units` layer | The engine already supports it. Costs pathing, arbitration, and death handling for wide movers, none of which the spike does |
-| C. It is an **emplacement** — a Ravel structure, not a unit | Trivially supported today. Abandons the "fast raider" reading the art clearly intends |
-| D. Drop it; carry faction shape in **motion and effects** instead | Lore Section 9 already says motion completes the drawing. Costs the most recognisable image in the faction bible |
-
-**Recommendation: A, with D as the general rule.** Let the shape emerge from formation rather than be
-stamped on one actor — it makes a raiding pack visibly *become* the faction icon when it commits,
-which is better than every raider carrying the logo. Carry the rest in trail, timing, and impact
-language. Keep B available for a genuine vehicle later; it costs nothing to leave the door open,
-because the footprint model is built on day one either way.
 
 ### Q4 — How does Glitch corrupt the terminal without breaking the legibility law?
 
@@ -154,7 +129,14 @@ Rows move here with the date, the decision, and the document that now owns it.
 | --- | --- | --- | --- |
 | Q1 | 2026-08-20 | **Tile width is adaptive presentation capability**: one column per tile in the 80x24 composition, two columns per tile at 128 columns or wider. Same tiles, same actors, same revealed information — only the composition changes. The 80x24 floor is preserved and the concept art's look is reachable on a wide terminal | [`engine.md`](engine.md) Section 10.2 |
 | Q2 | 2026-08-20 | **One resource.** Salvage recovers the same resource rather than a second one. Nexus energy is a state readout, not a currency. A second resource is an addition a later microgame may earn; it is not assumed | [`engine.md`](engine.md) Section 6 |
+| Q3 | 2026-08-20 | **Units may span multiple tiles.** Large units are a normal, strategically important case, not a later extension — a Ravel raider drawn `>x<` is one unit occupying three tiles. The collision system tests a mover's whole footprint against its mask; damage and destruction apply to the entity, not the tile | [`engine.md`](engine.md) Section 3.5 |
 | Q6 | 2026-08-20 | **Packaging and remote delivery leave Milestone 1.** First split into an independent gate, then deferred out of the milestone entirely when it was refocused onto the Pulse — they answer no question the game currently has | [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) |
+
+### Q3 — answered
+
+Recorded in full in the Git history of this file at canon 2.2. Mario settled it directly: large units
+exist and matter. [`engine.md`](engine.md) Section 3.5 carries the placement rule and Section 3.4.1
+carries the collision consequence.
 
 ### Q1 — answered
 

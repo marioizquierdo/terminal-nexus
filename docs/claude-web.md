@@ -32,8 +32,10 @@ Copy specs/templates/gate-report.md into the spike and fill in its first section
 writing code: question, smallest artifact, automated evidence, owner observation,
 exclusions, stop conditions.
 
-Implement only the active gate. Gate 1A has no renderer in it at all - if you want
-to see the fight, that impulse is correct and it is Gate 1B. Run every available verification command and finish with a PASS, REVISE, STOP, or
+Implement only the active gate. Gate 1A builds the headless run and a minimal ASCII
+view together - the headless report is how you iterate, the view is how Mario judges
+it. Selection, inspection, and scrolling are out of scope; use a small Grid that fits
+the viewport. Run every available verification command and finish with a PASS, REVISE, STOP, or
 BLOCKED evidence report for Mario. Register anything you could not decide in
 specs/open-questions.md with a recommendation.
 ```

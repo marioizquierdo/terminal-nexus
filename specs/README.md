@@ -2,7 +2,7 @@
 
 **Document role:** Canon index and reading order
 **Status:** Canonical
-**Canon version:** 2.2
+**Canon version:** 2.3
 **Updated:** 2026-08-20
 **License:** Apache-2.0
 
@@ -37,9 +37,8 @@ matters, of the other documents — declares one of:
 
 | Marker | Means | What you may do |
 | --- | --- | --- |
-| **LAW** | Committed. Something already depends on it | Follow it. Changing it needs owner acceptance and a canon bump |
-| **GUIDANCE** | The current best recommendation, not yet earned by working code | Follow it by default. Depart when the work shows better, and record why |
-| **UNPROVEN** | An idea kept so it is not lost | Do not implement it. Do not let a current design assume it exists |
+| **RULE** | Committed. Something already depends on it | Follow it. Changing it needs owner acceptance and a canon bump |
+| **GUIDANCE** | A recommendation, not yet earned by working code | Follow it by default. Depart when the work shows better, and record why |
 
 Most of the design canon is **GUIDANCE**. It exists so that a session facing a fork has something
 better than a coin flip — not so that a session builds an interface nobody has needed yet.
@@ -87,7 +86,7 @@ today; the milestone marked CURRENT decides that.
 
 | Milestone | Question | Status |
 | --- | --- | --- |
-| [1 — the Pulse spike](milestone-1-spike-battle.md) | Put units on a Grid and let them fight: is it deterministic, is it legible, and is it good? | **CURRENT** |
+| [1 — the Pulse Playground](milestone-1-spike-battle.md) | Put units on a Grid and let them fight: deterministic from a seed, legible on screen, worth watching? | **CURRENT** |
 | [2 — completing the Pulse](milestone-2-deterministic-pulse.md) | Can it carry routing, economy, and hidden information and stay deterministic? | GATED |
 | [3 — Build Phase and battle editor](milestone-3-builder-editor.md) | Is arranging a compact base pleasant enough to carry player agency? | GATED |
 

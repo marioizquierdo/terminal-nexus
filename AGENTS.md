@@ -45,12 +45,15 @@ so before building something to fill the gap.
 
 ## 2. Current authorization
 
-The current gate is **Milestone 1A — headless Pulse** in
+The current gate is **Milestone 1A — the Pulse Playground** in
 [`specs/milestone-1-spike-battle.md`](specs/milestone-1-spike-battle.md).
 
-Build the Grid, the scenario file format, and a deterministic tick loop that resolves a mirror Citizen
-skirmish into an identical event log every run. **There is no renderer in this gate.** Do not begin
-Gate 1B (watching it) or Gate 1C (effects), and do not build routing, economy, production, supply,
+Build the Grid, the scenario file format, a deterministic tick loop that resolves a mirror Citizen
+skirmish identically from a seed, a **levelled report** on stderr with a summary on stdout, and a
+**minimal ASCII view** — the headless run and the view together, because each catches what the other
+hides. Use a small Grid that fits the viewport: **no selection, no inspection, no scrolling.**
+
+Do not begin Gate 1B (render tiers and effects), and do not build economy, production, supply,
 visibility, the Build Phase, campaigns, packaging, remote delivery, a mod loader, multiplayer, sound,
 or a Rust/Go migration unless an accepted gate result authorizes it.
 
@@ -63,10 +66,11 @@ outcome, not a shortfall.
 Most of the design canon is a recommendation written before the thing existed. Every section of
 [`specs/engine.md`](specs/engine.md) declares which kind it is:
 
-- **LAW** — committed; something already depends on it. Changing it needs Mario and a canon bump.
-- **GUIDANCE** — the current best recommendation. Follow it by default; depart when the work shows
-  better and say why in the gate report.
-- **UNPROVEN** — recorded so it is not lost. Do not implement it, and do not let a design assume it.
+- **RULE** — committed; something already depends on it. Changing it needs Mario and a canon bump.
+- **GUIDANCE** — a recommendation, not yet earned by working code. Follow it by default; depart when
+  the work shows better and say why in the gate report.
+
+Most of it is GUIDANCE.
 
 **Descriptive completeness is not authorization.** If you find yourself building something because it
 is described in a document, stop and check the marker and the active gate.
@@ -85,11 +89,14 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - Player projection removes hidden information before presentation.
 - The play surface is the **Grid**; the replica on it is a **Grid Nexus**. The retired word for it
   is rejected by the validator. <!-- stale-ok -->
-- The Grid has five layers — terrain, obstacles, workers, units, air — and **collisions resolve
-  within a layer, never across layers**. A worker and a soldier may share a tile; two soldiers may
-  not.
-- Every entity has an anchor, a footprint, and a facing. Multi-tile entities are first-class; write
-  the footprint loop on day one. Range measures to the nearest occupied tile.
+- The Grid has five layers — terrain, obstacles, workers, units, air. **Layers define render order.
+  They do not define collision**: collision is a mask composed from a chosen set of layers, so a unit
+  can be blocked by a building on another layer while sharing a tile with a worker.
+- Every entity has an anchor, a footprint, and a facing. **Units as well as structures may span
+  several tiles**, and that matters strategically. A mover tests its whole footprint against its
+  mask. Range measures to the nearest occupied tile.
+- The viewport is clamped to between 48 × 16 and 72 × 24 tiles; the cursor drives scrolling at a
+  3-tile margin; there is no minimap. 80 × 24 is the floor and the acceptance target.
 - Grid orientation is a rendering choice. Portrait and landscape change no coordinate.
 - Terminal composition produces an engine-owned structured cell frame. Cells carry style **roles**,
   never literal colors.
@@ -160,7 +167,7 @@ and promote the accepted ones into `DEVELOPMENT.md`.
 - the kernel calls no clock and no `Math.random`, and imports nothing from a renderer — assert it,
   do not assume it;
 - changing only the cosmetic seed changes nothing about state or events;
-- no two entities share a tile **on the same layer**, ever;
+- no two entities overlap in a collision mask that includes both their layers, ever;
 - arbitration terminates under a bounded pass count with a decreasing progress measure;
 - every rule has a named scenario file that exercises it, checked in and runnable.
 

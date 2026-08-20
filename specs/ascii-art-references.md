@@ -2,7 +2,7 @@
 
 **Document role:** Non-authoritative research: where to learn terminal art, and what to take from each
 **Status:** Reference. [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 9 remains the authority
-**Canon version:** 2.2
+**Canon version:** 2.3
 **Updated:** 2026-08-20
 **License:** Apache-2.0 for the analysis; linked works belong to their authors
 
@@ -107,7 +107,7 @@ For prior art on how far a TUI can be pushed without leaving text:
 - [awesome-ratatui](https://github.com/ratatui/awesome-ratatui) — the widest catalogue of
   currently-good-looking terminal applications, whatever language you end up in;
 - [Charm](https://charm.sh/) — Bubble Tea, Lip Gloss, and the Wish SSH server; the state of the art
-  in *feel*, and the reference point for the Gate 1C hosted-SSH contingency;
+  in *feel*, and the reference point if hosted SSH ever becomes decision-critical;
 - [OpenTUI](https://github.com/anomalyco/opentui) — the current Gate 1A candidate.
 
 The general observation from the 2026 TUI resurgence is that every ecosystem has converged on one

@@ -2,7 +2,7 @@
 
 **Document role:** Single-player structure, mission definitions, progression, cutscenes, and initial narrative direction
 **Status:** Canonical direction; implementation deferred to Milestone 5
-**Canon version:** 2.2
+**Canon version:** 2.3
 **Updated:** 2026-08-20
 **License:** Narrative material is CC BY-SA 4.0; technical schemas are Apache-2.0
 

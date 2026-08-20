@@ -1,8 +1,8 @@
 # Terminal Nexus — ASCII effects and particles
 
 **Document role:** The effect system: contract, starter vocabulary, and the craft rules behind it
-**Status:** Canonical direction; the vocabulary is proven or discarded by Milestone 1 Gate 1C
-**Canon version:** 2.2
+**Status:** Canonical direction; the vocabulary is proven or discarded by Milestone 1 Gate 1B
+**Canon version:** 2.3
 **Updated:** 2026-08-20
 **License:** Apache-2.0 for the contract and schemas; CC BY-SA 4.0 for the authored vocabulary
 
@@ -17,12 +17,13 @@ the part most likely to be added late, cheaply, as "some flashes." Cogmind's rou
 procedural particle effects are the standing proof that this is a system, authored deliberately, with
 its own vocabulary and its own consistency problems.
 
-So it gets a document, and it gets tested **early** — Gate 1C of Milestone 1 exists for exactly this.
+So it gets a document, and it gets tested **early** — Gate 1B of Milestone 1 exists for exactly this,
+and the Pulse Playground is where it gets played with.
 
-**Authority markers** are as defined in [`engine.md`](engine.md) Section 0: **LAW**, **GUIDANCE**,
-**UNPROVEN**.
+**Authority markers** are as defined in [`engine.md`](engine.md) Section 0: **RULE** and
+**GUIDANCE**.
 
-## 1. What an effect is, and is not — LAW
+## 1. What an effect is, and is not — RULE
 
 An effect is a **pure function from absolute presentation time to sparse cells.**
 
@@ -71,7 +72,7 @@ Five rules, all load-bearing:
    two-frame flash, then a player who blinked, a player with reduced motion, or a player on a slow
    link did not see it. The settled state must always say it too.
 
-### 1.1 Bands — LAW
+### 1.1 Bands — RULE
 
 Effects may only paint in `ground-items`, `projectiles`, `effects`, or `highlights`. They may never
 paint in `terrain`, `structures`, `units`, or `air` — those belong to the simulation, and the
@@ -130,7 +131,7 @@ to discover. See [`ascii-art-references.md`](ascii-art-references.md) for source
 8. **Fresh eyes are the only real test.** The author of an effect cannot see it any more after twenty
    minutes.
 
-## 4. Every effect owes three forms — LAW
+## 4. Every effect owes three forms — RULE
 
 Author all three **at the same time**, never in a later accessibility pass. An effect is not finished
 until it has all three, and the compositor must be able to select between them.
@@ -146,7 +147,7 @@ The monochrome form usually needs a different glyph, not a different brightness.
 
 ## 5. Starter vocabulary — GUIDANCE
 
-Ten effects, enough to render a complete Nexus Pulse. This is the set Gate 1C authors, tests, and
+Ten effects, enough to render a complete Nexus Pulse. This is the set Gate 1B authors, tests, and
 either keeps or rewrites. **Glyphs below are illustrative** — the recipe emits roles and shapes, and
 the theme maps them.
 
@@ -172,7 +173,7 @@ Three notes the implementing session will want:
 - `fx.damage.flash` is deliberately in `highlights` rather than `effects`, so that the corruption law
   cannot let a Glitch effect swallow it.
 
-## 6. Determinism and testing — LAW
+## 6. Determinism and testing — RULE
 
 An effect is a pure function, so it is **directly testable without a terminal**:
 
@@ -188,7 +189,7 @@ An effect is a pure function, so it is **directly testable without a terminal**:
 Snapshot the composed frame at fixed timestamps and diff it. **Do not test effects by watching them**
 — watch them to judge them, test them to keep them.
 
-## 7. What this system is not — UNPROVEN
+## 7. What this system is not
 
 Not authorized, not designed, not to be built:
 

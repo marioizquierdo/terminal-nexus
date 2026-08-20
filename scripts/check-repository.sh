@@ -160,13 +160,26 @@ while IFS= read -r question; do
 done <<< "$defined_questions"
 
 # ---------------------------------------------------------------------------
-# 6. Agent entry point
+# 6. Authority markers
+# ---------------------------------------------------------------------------
+#
+# Only RULE and GUIDANCE exist. Retired markers linger in prose after a simplification, so catch them.
+
+retired_markers="$(grep -RIn --include='*.md' -E '\*\*(LAW|UNPROVEN)\*\*|— (LAW|UNPROVEN)\b|Authority: (LAW|UNPROVEN)' \
+  specs concept 2>/dev/null | grep -v 'stale-ok' || true)"
+if [[ -n "$retired_markers" ]]; then
+  fail "retired authority markers (only RULE and GUIDANCE exist):"
+  printf '%s\n' "$retired_markers" >&2
+fi
+
+# ---------------------------------------------------------------------------
+# 7. Agent entry point
 # ---------------------------------------------------------------------------
 
 grep -Fq '@AGENTS.md' CLAUDE.md || fail "CLAUDE.md must import AGENTS.md"
 
 # ---------------------------------------------------------------------------
-# 7. Retired terminology and stale links
+# 8. Retired terminology and stale links
 # ---------------------------------------------------------------------------
 #
 # A line may quote retired terminology deliberately — the concept-art index has to name what the art
@@ -192,7 +205,7 @@ for term in "${retired_terms[@]}"; do
 done
 
 # ---------------------------------------------------------------------------
-# 8. Structural checks
+# 9. Structural checks
 # ---------------------------------------------------------------------------
 
 node -e "JSON.parse(require('node:fs').readFileSync('.devcontainer/devcontainer.json', 'utf8'))" \

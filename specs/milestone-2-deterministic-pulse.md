@@ -2,7 +2,7 @@
 
 **Document role:** Future milestone contract; expand before implementation
 **Status:** GATED
-**Canon version:** 2.2
+**Canon version:** 2.3
 **Updated:** 2026-08-20
 **License:** Apache-2.0
 
@@ -44,7 +44,7 @@ the spike confirmed them, say so and cite its evidence.
 - the exact normative tick and event order;
 - the recalculation progress measure and its bound;
 - **12 Hz and the movement-credit rules** — promoted from
-  [`engine.md`](engine.md) Section 4.2 to LAW if Milestone 1 confirmed them, corrected if it did not;
+  [`engine.md`](engine.md) Section 4.2 to RULE if Milestone 1 confirmed them, corrected if it did not;
 - replay input, authority, and verification;
 - mutual-destruction and victory ordering.
 

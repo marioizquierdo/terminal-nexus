@@ -2,7 +2,7 @@
 
 **Document role:** Fill-in template for closing a milestone gate
 **Status:** Template — copy it, do not edit it in place
-**Canon version:** 2.2
+**Canon version:** 2.3
 **Updated:** 2026-08-20
 **License:** Apache-2.0
 
