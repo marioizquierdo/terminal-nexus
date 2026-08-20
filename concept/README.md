@@ -2,16 +2,28 @@
 
 **Document role:** Index of visual concept pieces and the canon questions each one raises
 **Status:** Reference. Concept art is a proposal, not canon
-**Canon version:** 2.1
+**Canon version:** 2.2
 **Updated:** 2026-08-20
 **License:** CC BY-SA 4.0
 
 ## 1. What this folder is for
 
-Concept art shows what the game should feel like before the game can show it. It is deliberately
-ahead of the specification, which means it will disagree with canon — and those disagreements are
-the useful part. Each piece below is indexed with the deltas it implies, so a later session can tell
-"the art is ahead of us here" apart from "the art is stale here."
+Concept art shows what the game should feel like before the game can show it. **It is exploration,
+not decision.** Nothing in this folder is a commitment, and no session should treat a detail here as
+a requirement.
+
+But it is not decoration either. The art and the specifications were developed **separately**, which
+means every place they disagree is a **genuine blind spot** — a thing one of them settled without the
+other noticing. Those disagreements are the most valuable content in this folder, and they are why
+each piece below is indexed with a delta table rather than just admired.
+
+Three ways a delta resolves, and telling them apart is the whole job:
+
+| The art is… | What to do |
+| --- | --- |
+| **ahead** — it explored something canon has not reached | Register it as a question with a recommendation |
+| **stale** — it predates a canon decision | Note it, and do not propagate it |
+| **right** — canon was under-specified and the art already solved it | Promote it, and say the art won |
 
 **Concept art never overrides canon.** When a piece and a specification disagree, the disagreement
 becomes a row in [`../specs/open-questions.md`](../specs/open-questions.md) and Mario decides.
@@ -23,7 +35,7 @@ below; this index refers to them by those names.
 
 | File | Subject |
 | --- | --- |
-| `01-nexus-pulse.png` | Nexus Pulse in progress — full battlefield with sidebar readouts |
+| `01-nexus-pulse.png` | Nexus Pulse in progress — full Grid with sidebar readouts |
 | `02-build-phase.png` | Build Phase — structure placement with ghost, radius, and validation |
 | `03-intercept-cutscene.png` | Cutscene — Commander intercept dialogue over an ASCII tableau |
 
@@ -32,7 +44,8 @@ below; this index refers to them by those names.
 
 ## 3. `01-nexus-pulse.png` — Nexus Pulse
 
-A resolving Pulse. A 48x18 battlefield with a numbered column ruler and row labels, a right sidebar
+A resolving Pulse. A Grid drawn 48 wide by 18 tall — close to, but not exactly, the
+`medium-extra-wide` preset (48 x 16) the taxonomy later settled on — with a numbered column ruler and row labels, a right sidebar
 carrying Nexus state, Commander state, and both force compositions, and a control footer reading
 `[SPACE] PAUSE  [.] STEP  [Q] QUIT`.
 
@@ -52,9 +65,10 @@ carrying Nexus state, Commander state, and both force compositions, and a contro
 
 | Delta | Canon says | Question |
 | --- | --- | --- |
-| Tiles are drawn **two columns wide**, putting the full frame near 130-180 columns | 48x18 battlefield inside **80x24** | **Q1 — answered.** Tile width is adaptive: one column at 80, two at 128+. This art is the wide composition, and it is now reachable |
-| `>x<` appears as a battlefield unit across three columns | MVP actors occupy one tile | **Q3** |
-| Header reads `DAYTIME PULSE (AUTOMATIC)` | Phases are **Build Phase** and **Nexus Pulse** | Terminology only; "daytime" has no canon meaning. Drop it |
+| Tiles are drawn **two columns wide**, putting the full frame near 130-180 columns | 48 x 16 Grid inside **80x24** | **Q1 — answered.** Tile width is adaptive: one column at 80, two at 128+. This art is the wide composition, and it is now reachable |
+| `>x<` appears as a Grid unit across three columns | A unit occupies one tile on its layer; structures occupy several | **Q3 — narrowed.** Three columns cannot be one unit at either tile width. The recommendation is that it is a **formation** of three raiders, which makes the faction icon appear exactly when a pack commits |
+| Header reads `DAYTIME PULSE (AUTOMATIC)` | Phases are **Build Phase** and **Nexus Pulse** | **Stale.** "Daytime" has no canon meaning. Drop it |
+| The Pulse view still carries a full Build-Phase sidebar | Composition depends on the phase: the Pulse needs almost no chrome | **The art is stale here, and it is the most useful stale thing in the folder.** Nothing is being selected during a Pulse, so force rosters and menus can shrink to a thin status strip and the Grid can take the screen. Redraw this piece with Pulse chrome and it gets noticeably more room |
 | Sidebar shows `SALVAGE` and `ENERGY` as separate readouts | One resource per match | **Q2 — answered.** Salvage yields the same resource; redraw as one counter |
 | `ENERGY 18%` sits beside `INTEGRITY 06%` as Nexus state | Nexus energy is a state readout | **Q2 — answered.** The art was right: energy is state, not currency |
 | Faction populations shown as `CITIZENS 128 / RAVELS 243` | Supply is a shared population cap | Consistent if these are supply totals; the label should say so |
@@ -98,7 +112,7 @@ dialogue box below carrying speaker badges and two lines:
 **What it gets right:**
 
 - This is lore Section 1's "rhyme at four resolutions" rule demonstrated rather than described. The
-  speaker badge is the battlefield glyph, boxed in the faction's own geometry: `@` in Citizen orange
+  speaker badge is the Grid glyph, boxed in the faction's own geometry: `@` in Citizen orange
   in a hard-angled frame, `g` in Ravel pink and acid green in a jagged one. The one-cell glyph, the
   badge, and the portrait are visibly the same character.
 - The dialogue is two lines and does the work of a paragraph. That is the campaign voice target from
@@ -113,7 +127,7 @@ dialogue box below carrying speaker badges and two lines:
 
 | Delta | Canon says | Question |
 | --- | --- | --- |
-| Portrait linework needs box-drawing and extended glyphs | Baseline is seven-bit ASCII, with Unicode as an explicit optional mode | Not a conflict — cutscenes are not the battlefield. But **the ASCII-safe fallback for portraits must be authored, not generated**, and this piece is the argument for why that matters |
+| Portrait linework needs box-drawing and extended glyphs | Baseline is seven-bit ASCII, with Unicode as an explicit optional mode | Not a conflict — cutscenes are not the Grid. But **the ASCII-safe fallback for portraits must be authored, not generated**, and this piece is the argument for why that matters |
 | The `g` badge suggests a named Ravel Commander | No rosters exist before Milestone 4 | Not a conflict. Keep it as art direction, do not let it become a stat block |
 
 ## 6. Standing observations
@@ -124,7 +138,7 @@ that argument carried: tile width is now adaptive, and this is what the wide com
 can read nearly this clearly. If a session gets there, record it loudly.
 
 **The concept set has no reduced-motion, monochrome, or resize-gate frame.** Every piece is the
-happy path at full capability. Before Gate 1B, it is worth drawing the same battlefield in
+happy path at full capability. Before Gate 1B, it is worth drawing the same Grid in
 monochrome — that frame is the one the legibility law is actually about, and drawing it is cheaper
 than discovering the problem in code.
 

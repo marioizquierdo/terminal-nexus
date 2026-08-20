@@ -2,7 +2,7 @@
 
 **Document role:** Canon authority, evidence process, execution ledger, and durable decisions
 **Status:** Canonical
-**Canon version:** 2.1
+**Canon version:** 2.2
 **Updated:** 2026-08-20
 **License:** Apache-2.0
 
@@ -84,14 +84,16 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 | Workstream | State | Basis | Next action |
 | --- | --- | --- | --- |
 | Product discovery and canon split | COMPLETE | Canon 2.0 separated concept, lore, engine, content, campaigns, and milestones | Preserve boundaries while testing risky assumptions |
-| Canon audit and autonomy pass | COMPLETE | Canon 2.1 split Milestone 1's scope, added the open-questions register and gate-report template, and replaced hardcoded validator literals with derived invariants. Mario answered Q1, Q2, and Q6 on 2026-08-20 | Keep the register current as gates raise new questions |
-| Milestone 1A — cell frame and lifecycle | CURRENT | Backend measurements favor the OpenTUI imperative core; direct ANSI is the control | Run Gate 1A in `milestone-1-spike-battle.md` and stop for owner acceptance |
-| Milestone 1B — authored ASCII battle reel | GATED | Requires a selected backend | Authorize only after Gate 1A passes |
-| Milestone 1C — delivery probe | GATED | Independent of 1B; packaging, PTY, and browser terminal | Authorize when Terminal Nexus needs to run somewhere it was not built |
-| Milestone 2 — deterministic Nexus Pulse | GATED | Requires visual-spike lessons | Lock deterministic contracts before implementation |
-| Milestone 3 — builder and battle editor | GATED | Requires cell-frame and kernel direction | Lock placement rules before implementation |
+| Canon audit and autonomy pass | COMPLETE | Canon 2.1 added the open-questions register and gate-report template and made the validator derive its invariants | Keep the register current as gates raise new questions |
+| Design-authority pass | COMPLETE | Canon 2.2 renamed the Grid, added the layer model, marked every engine section LAW/GUIDANCE/UNPROVEN, and refocused Milestone 1 on the Pulse | Open Gate 1A |
+| Milestone 1A — headless Pulse | CURRENT | The Grid, its layers, and a deterministic tick loop resolving a mirror Citizen skirmish from a scenario file | Run Gate 1A in `milestone-1-spike-battle.md` and stop for owner acceptance |
+| Milestone 1B — watch the Pulse | GATED | Requires a kernel already known to be correct | Authorize after Gate 1A passes |
+| Milestone 1C — make it hit | GATED | Requires a legible render to add effects to | Authorize after Gate 1B passes |
+| Milestone 2 — completing the Pulse | GATED | Routing, economy, production, visibility, replay, and hardening the spike deferred | Lock the contracts listed in its document first |
+| Milestone 3 — Build Phase and editor | GATED | Requires a complete kernel | Lock placement rules before implementation |
 | Milestone 4 — Citizens versus Ravels | GATED | Requires presentation, kernel, and builder proofs | Select the deliberately tiny integrated ruleset |
 | Milestone 5 — human campaign fragment | GATED | Requires a replayable microgame worth teaching | Test narrative, unlocks, and pacing |
+| Delivery — packaging, PTY, browser | GATED | Deferred out of Milestone 1; answers no question the game currently has | Authorize when Terminal Nexus needs to run where it was not built |
 
 ## 6. Progress history
 
@@ -104,6 +106,7 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 | 2026-08-19 | 2.0 | Split the monolithic canon; updated Prime Nexus replication, Nexus Symbols, resurrection, and Build Phase/Nexus Pulse terminology | Milestone 1A |
 | 2026-08-20 | 2.1 | Audited canon against itself and the concept art; narrowed Gate 1A to cell frame and lifecycle and moved delivery to Gate 1C; added the open-questions register, gate-report template, ASCII references, and concept index; corrected runtime direction against measured evidence; replaced hardcoded validator literals with derived invariants | Milestone 1A |
 | 2026-08-20 | 2.1 | Owner answered Q1 (adaptive tile width), Q2 (one resource), and Q6 (accept the Gate 1A/1C split), and authorized opening Gate 1A | Milestone 1A |
+| 2026-08-20 | 2.2 | Renamed the battle surface to the **Grid** and the replica to the **Grid Nexus**; added Grid size and shape presets, the five-layer occupancy model, and footprint/anchor/facing placement; marked every engine section LAW, GUIDANCE, or UNPROVEN; refocused Milestone 1 onto the Pulse itself with three gates ending in an effects gate; added `ascii-effects.md`; deferred packaging and remote delivery out of the milestone | Milestone 1A |
 
 ## 7. Locked product decisions
 
@@ -115,13 +118,18 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 - Early engine/content stack: TypeScript-first; runtime and first terminal backend are evidence-selected.
 - Renderer boundary: simulation emits visibility-filtered semantic views and events; the terminal compositor emits an engine-owned cell frame; platform backends are adapters.
 - Presentation baseline: monochrome seven-bit ASCII, enhanced by explicit ANSI color and optional Unicode modes.
-- First visual target: a 48×18 battlefield inside one 80×24 composition.
+- The play surface is the **Grid**. The replica on it is a **Grid Nexus**; the one that stays home is a **Prime Nexus**.
+- Grid presets: sizes `small`/`medium`/`large`/`extra-large` against shapes `squared`/`wide`/`extra-wide`; `medium-extra-wide` (48 × 16) is the default.
+- Grid orientation is a rendering choice. Portrait and landscape change nothing about state, rules, or coordinates.
+- The Grid has five layers — terrain, obstacles, workers, units, air. **Collisions resolve within a layer, never across layers.**
+- Every entity has an anchor, a footprint, and a facing. Multi-tile entities are a first-class case, not a later extension. Facing is presentation-only until a milestone earns otherwise.
+- Every engine statement declares its authority: LAW, GUIDANCE, or UNPROVEN. Descriptive completeness is not authorization.
 - Tile width is adaptive presentation: one terminal column per tile at 80 columns, two at 128 or wider. Same tiles, same information; 80×24 is the acceptance target.
 - One resource per match. Deposits and salvage both yield it; supply is a separate population cap; Nexus energy is a state readout, not a currency.
 - Commander: a prominent persistent frontline `@`, fictionally a Nexus Symbol; death causes one full Build Phase/Pulse cycle of absence before restoration.
-- Prime Nexus: remains at its home location and replicates a smaller battlefield Nexus; Nexuses do not teleport.
+- Prime Nexus: remains at its home location and replicates a smaller Grid Nexus; Nexuses do not teleport.
 - Production: fixed recipes from buildings, not direct unit purchases.
-- Victory: destroy the enemy battlefield Nexus.
+- Victory: destroy the enemy Grid Nexus.
 - First integrated factions: Citizens and Ravels.
 - First complete single-player direction: Citizen origin campaign.
 - Architecture: deterministic kernel, content, scenario, projection, presentation, adapters, and shell remain separate.

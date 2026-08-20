@@ -2,7 +2,7 @@
 
 **Document role:** Canon index and reading order
 **Status:** Canonical
-**Canon version:** 2.1
+**Canon version:** 2.2
 **Updated:** 2026-08-20
 **License:** Apache-2.0
 
@@ -29,6 +29,24 @@ For a new coding session, read:
 For game design or fiction, open the relevant document below rather than feeding an agent the whole
 repository.
 
+## How much authority does a statement have?
+
+Not every sentence in this canon carries the same weight, and treating them as if they did is how a
+sketch becomes an accidental requirement. Every section of [`engine.md`](engine.md) — and, where it
+matters, of the other documents — declares one of:
+
+| Marker | Means | What you may do |
+| --- | --- | --- |
+| **LAW** | Committed. Something already depends on it | Follow it. Changing it needs owner acceptance and a canon bump |
+| **GUIDANCE** | The current best recommendation, not yet earned by working code | Follow it by default. Depart when the work shows better, and record why |
+| **UNPROVEN** | An idea kept so it is not lost | Do not implement it. Do not let a current design assume it exists |
+
+Most of the design canon is **GUIDANCE**. It exists so that a session facing a fork has something
+better than a coin flip — not so that a session builds an interface nobody has needed yet.
+
+**Descriptive completeness is not authorization.** A shape described here is not a shape you may build
+today; the milestone marked CURRENT decides that.
+
 ## Canon map
 
 **Product and world**
@@ -40,8 +58,11 @@ repository.
 
 **Systems**
 
-- [`engine.md`](engine.md) — gameplay contracts, deterministic architecture, grid, combat, economy,
-  content interfaces, rendering, runtime direction, replay, tools, modding seams.
+- [`engine.md`](engine.md) — the three worlds (state, Pulse, presentation), the Grid and its layers,
+  logical time, determinism, events, content sketches, rendering, and runtime direction. Start at its
+  Section 0.
+- [`ascii-effects.md`](ascii-effects.md) — the particle and effect system: the pure-function contract,
+  the starter vocabulary, and the craft rules behind it.
 - [`commander-armies.md`](commander-armies.md) — playable packages of Commander, units, structures,
   upgrades, and Nexus powers. Rosters intentionally undefined.
 - [`campaigns.md`](campaigns.md) — mission and campaign structure, teaching, Citizen opening,
@@ -66,9 +87,13 @@ repository.
 
 | Milestone | Question | Status |
 | --- | --- | --- |
-| [1 — prove the ASCII battle](milestone-1-spike-battle.md) | Can we own a terminal surface, and is watching symbols fight any good? | **CURRENT** |
-| [2 — deterministic Nexus Pulse](milestone-2-deterministic-pulse.md) | Can combat look simultaneous while staying deterministic and replayable? | GATED |
+| [1 — the Pulse spike](milestone-1-spike-battle.md) | Put units on a Grid and let them fight: is it deterministic, is it legible, and is it good? | **CURRENT** |
+| [2 — completing the Pulse](milestone-2-deterministic-pulse.md) | Can it carry routing, economy, and hidden information and stay deterministic? | GATED |
 | [3 — Build Phase and battle editor](milestone-3-builder-editor.md) | Is arranging a compact base pleasant enough to carry player agency? | GATED |
+
+Packaging, standalone binaries, SSH, and browser delivery are **deferred out of Milestone 1
+entirely**. They answer no question the game currently has, and they were previously blocking the
+questions it does have.
 | [4 — Citizens versus Ravels](milestone-4-citizens-ravels.md) | Do the parts together make a match worth replaying? | GATED |
 | [5 — Citizen campaign fragment](milestone-5-campaign-fragment.md) | Does brief ASCII fiction turn matches into a campaign? | GATED |
 

@@ -2,7 +2,7 @@
 
 **Document role:** Universe, factions, conflicts, narrative constraints, and symbolic art direction
 **Status:** Canonical
-**Canon version:** 2.1
+**Canon version:** 2.2
 **Updated:** 2026-08-20
 **License:** CC BY-SA 4.0
 
@@ -27,7 +27,7 @@ This is **symbology all the way down**: the process by which terminal mechanics 
 
 An important entity should rhyme at four resolutions:
 
-1. one-cell battlefield glyph;
+1. one-cell Grid glyph;
 2. compact selection badge, aura, or status treatment;
 3. larger inspection portrait;
 4. campaign tableau or cutscene composition.
@@ -54,7 +54,7 @@ Before and during the Activation, people across unrelated civilizations dreamed 
 
 No one knows whether the visions came from the Ancients, the Prime Nexuses, an approaching Original, or minds reacting to the network. Most playable Commanders are entangled with these events, but the visions do not select every Commander and do not belong only to them.
 
-## 3. Prime Nexuses and battlefield Nexuses
+## 3. Prime Nexuses and Grid Nexuses
 
 Prime Nexuses exist across the galaxy. They are always recognizably pyramidal, but their scale, material, surface architecture, inner space, and surrounding artifacts vary dramatically.
 
@@ -67,11 +67,11 @@ A **Prime Nexus never teleports**. It remains rooted to the world or structure w
 - a political throne that legitimizes control of its territory;
 - a mirror that responds differently to each claimant civilization.
 
-When the ancient protocol demands a challenge, a Prime Nexus **replicates**. It projects or fabricates a smaller copy of itself on a remote battlefield grid, along with bounded matter, stored patterns, and its chosen Commander. The settlement in a match grows around this replica; mature cities do not travel with it.
+When the ancient protocol demands a challenge, a Prime Nexus **replicates**. It projects or fabricates a smaller copy of itself on a remote Grid, along with bounded matter, stored patterns, and its chosen Commander. The settlement in a match grows around this replica; mature cities do not travel with it.
 
-The battlefield Nexus is a real extension of the Prime, not a hologram. Destroying it ends the local claim, collapses dependent infrastructure, and releases a fragment of authority that the victor may absorb. It does not automatically exterminate the faction or destroy the distant Prime Nexus.
+The Grid Nexus is a real extension of the Prime, not a hologram. Destroying it ends the local claim, collapses dependent infrastructure, and releases a fragment of authority that the victor may absorb. It does not automatically exterminate the faction or destroy the distant Prime Nexus.
 
-Battlefield replicas operate rhythmically. During the **Build Phase**, the local Nexus gathers patterns and accepts a hidden plan. During the **Nexus Pulse**, both opposing replicas release their committed changes and drive the grid through a fixed interval of activity. Workers, production, movement, attacks, and restoration effects all appear to ride the same ancient heartbeat. The terms are both interface language and observable physics.
+Grid replicas operate rhythmically. During the **Build Phase**, the local Nexus gathers patterns and accepts a hidden plan. During the **Nexus Pulse**, both opposing replicas release their committed changes and drive the Grid through a fixed interval of activity. Workers, production, movement, attacks, and restoration effects all appear to ride the same ancient heartbeat. The terms are both interface language and observable physics.
 
 Captured authority may unlock a protocol tier, artifact permission, pattern, vision, or route. It does not copy an enemy's entire roster. Across many conflicts, each Prime Nexus changes through what its replicas survive, destroy, and recover.
 
@@ -93,7 +93,7 @@ The faction shapes the Nexus, and the Nexus reinforces the faction. It does not 
 - Glitch becomes inseparable from its silent Nexus Queen.
 - Alder treats refusal of Nexus power as proof of moral and biological superiority, even while using or containing the replication protocol to deny it to others.
 
-Not every civilization controls ancient technology. Many peoples live between claimants, serve as clients, resist the protocol, worship it from afar, salvage its debris, or become battlefields when replicas appear. The playable factions are exceptional because each has seized, bound, contained, or become symbiotic with a Prime Nexus.
+Not every civilization controls ancient technology. Many peoples live between claimants, serve as clients, resist the protocol, worship it from afar, salvage its debris, or become Grids when replicas appear. The playable factions are exceptional because each has seized, bound, contained, or become symbiotic with a Prime Nexus.
 
 The Activation exposed active claims to one another and made accumulated authority strategically decisive. Abstention is unstable:
 
@@ -112,7 +112,7 @@ Some individuals experience a psychic or symbolic connection with a Prime Nexus.
 
 These experiences are unreliable. Some people claim a connection and never receive an answer. Some are visionaries or frauds. Some die expecting restoration and remain dead.
 
-A rare connected individual can be sent with a battlefield replica and restored by the Prime Nexus after death. Among strategists they are called **Commanders**. Across the wider culture they are also called **Nexus Symbols**, because a Nexus appears to choose them as the living sign of its claim.
+A rare connected individual can be sent with a Grid replica and restored by the Prime Nexus after death. Among strategists they are called **Commanders**. Across the wider culture they are also called **Nexus Symbols**, because a Nexus appears to choose them as the living sign of its claim.
 
 Symbols are often geniuses, leaders, dangerous mystics, or people whose presence changes a civilization's doctrine. Not every great leader is a Symbol, and not every Symbol is wise or worthy. Most playable Commanders are deeply involved in the Activation, but a faction may rally around a skeptical, unwilling, or politically inconvenient Symbol.
 
@@ -143,7 +143,7 @@ Do not answer these merely because a story or implementation prefers completenes
 - Who built the first Prime Nexus?
 - Did one civilization build the network, or did many eras alter it?
 - What exactly did the Activation announce?
-- Why do Prime Nexuses replicate into battlefields?
+- Why do Prime Nexuses replicate into Grids?
 - Are Nexus Symbols selected, created, recognized, or merely copied?
 - Is a restored Commander continuous with the person who died?
 - Are Originals authentic beings, reconstructions, prisoners, or interfaces?
@@ -192,9 +192,9 @@ These are long-term identities, not a promise to implement five complete rosters
 
 ### 8.3 Glitch
 
-- **Concept:** Mechanical void machinos born from a colossal scrapyard built over a dormant ancient ruin. Once moving as slow mechanical ghouls through the rusted wastes, they synergized with the activated machine core. The event converted their chassis into chaotic energy, binding them entirely to their silent Nexus Queen. They now strip away the organic messiness of the cosmos, viewing the battlefield as a corrupted data stream waiting to be parsed, recompiled, and assimilated into their flawless collective array.
+- **Concept:** Mechanical void machinos born from a colossal scrapyard built over a dormant ancient ruin. Once moving as slow mechanical ghouls through the rusted wastes, they synergized with the activated machine core. The event converted their chassis into chaotic energy, binding them entirely to their silent Nexus Queen. They now strip away the organic messiness of the cosmos, viewing the Grid as a corrupted data stream waiting to be parsed, recompiled, and assimilated into their flawless collective array.
 - **Philosophy:** Transhumanism and nihilism. Algorithmic resurrection, chaotic conversion, and devotion to the collective. Individual consciousness is an error; the Queen is truth.
-- **Strengths:** Mechanical necromancy, attrition, grid corruption, and recycling battlefield scrap into reinforcements.
+- **Strengths:** Mechanical necromancy, attrition, grid corruption, and recycling Grid scrap into reinforcements.
 - **Energy:** Inverted crown chakra—void, violet, and deep black; disconnection from the divine cosmos through cold mechanical will.
 - **Visual semiotics:** Static, broken characters, and terminal corruption. They appear as literal software errors and glitching geometric shapes, completely rejecting traditional vehicle or humanoid forms.
   - *ASCII examples:* `%`, `&`, `?`, `$`, `~`, `#`. An advancing swarm might look like `&%#`, reading less like an army and more like a creeping segmentation fault.
@@ -222,7 +222,7 @@ These are long-term identities, not a promise to implement five complete rosters
 
 ### 8.5 Alder
 
-- **Concept:** An ancient species of lean, hyper-advanced beings who distill simplicity down to its absolute essence. Their machines are tall, sleek, and practically magical. Seeing the Nexuses as crude and dangerous artifacts, they stubbornly refuse to draw power from the cores, relying entirely on their intrinsic superiority and ancient mastery. They bend the rules of the battlefield through pure elegance, striking with precision before fading back into the void.
+- **Concept:** An ancient species of lean, hyper-advanced beings who distill simplicity down to its absolute essence. Their machines are tall, sleek, and practically magical. Seeing the Nexuses as crude and dangerous artifacts, they stubbornly refuse to draw power from the cores, relying entirely on their intrinsic superiority and ancient mastery. They bend the rules of the Grid through pure elegance, striking with precision before fading back into the void.
 - **Philosophy:** Transcendentalism and deep ecology. Organic perfection, self-reliance, and preservation of an elegant universe. Their refusal of Nexus power is also a claim of moral superiority.
 - **Strengths:** Elite durability, intrinsic displacement, control, and powerful area healing.
 - **Energy:** Third eye chakra—intuition, indigo, foresight, and ethereal light. Viridian, bioluminescent cyan, and pearl.
@@ -254,7 +254,7 @@ Every faction needs more than a skin. It requires:
 | Feudals | Obey | Every caste disputes who embodies divine order |
 | Alder | Transcend | Refusing dangerous power can become arrogant inaction |
 
-The glyph examples define shape vocabulary, not exclusive global assignments. Exact battlefield mappings must preserve stable semantic roles, one-cell width, accessibility, and rapid recognition.
+The glyph examples define shape vocabulary, not exclusive global assignments. Exact Grid mappings must preserve stable semantic roles, one-cell width, accessibility, and rapid recognition.
 
 ## 9. ASCII and visual language
 

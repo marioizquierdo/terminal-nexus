@@ -2,7 +2,7 @@
 
 **Document role:** Playable faction packages: Commanders, units, structures, upgrades, and Nexus powers
 **Status:** Canonical placeholder; rosters intentionally undefined
-**Canon version:** 2.1
+**Canon version:** 2.2
 **Updated:** 2026-08-20
 **License:** Creative identity is CC BY-SA 4.0; mechanical definitions and schemas are Apache-2.0
 
@@ -102,7 +102,7 @@ Upgrade pool:
 - intended combinations and counterplay
 
 Visual language:
-- battlefield glyphs
+- Grid glyphs
 - portrait motif
 - movement, projectile, impact, restoration
 

@@ -1,27 +1,89 @@
-# Terminal Nexus — engine and gameplay framework
+# Terminal Nexus — engine design
 
-**Document role:** Technical architecture, rules contracts, runtime direction, rendering, determinism, and content interfaces
+**Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.1
+**Canon version:** 2.2
 **Updated:** 2026-08-20
 **License:** Apache-2.0
 
-This document defines the system Terminal Nexus intends to grow into. It is not permission to build every interface now. The active milestone identifies the smallest contracts currently justified.
+## 0. How to read this document
 
-The engine is not a monolith or one `BattleManager`. It is a collection of official functions, serializable data structures, narrow services, and adapters. First-party content uses those seams before they become a public modding surface.
+This is a **design document, not a rulebook.** Most of it is a recommendation written before the
+thing existed. It is here so that a session facing a fork has something better than a coin flip —
+not so that a session builds an interface nobody has needed yet.
 
-## 1. Architectural laws
+Every section carries an authority marker. Respect it literally:
 
-1. **Only the deterministic rules kernel mutates canonical match state.**
-2. **Presentation never owns gameplay truth.** Animation may interpolate, skip, pause, accelerate, recolor, or reduce motion without changing an outcome.
-3. **Hidden plans stay hidden.** Renderers receive a player-safe projection, never raw opponent state.
-4. **Semantics precede cells.** The terminal renderer consumes structured meaning and composes cells; future pixel, mobile, web, accessible, or 3D renderers consume meaning directly.
-5. **Gameplay and cosmetic randomness are separate labeled streams.**
-6. **Content is TypeScript-first and mostly declarative.** Exceptional behavior uses constrained hooks rather than deep inheritance.
-7. **Build direct code for the current proof. Extract a general contract only after a second real use reveals it.**
-8. **Every authoritative state transition must be replayable, explainable, and testable without a terminal.**
+| Marker | Means | What you may do |
+| --- | --- | --- |
+| **LAW** | Committed. It is load-bearing, and something else already depends on it | Follow it. Changing it needs owner acceptance and a canon version bump |
+| **GUIDANCE** | The current best recommendation, not yet earned by working code | Follow it by default. Depart when the work shows better — and record why in the gate report |
+| **UNPROVEN** | An idea kept so it is not lost | Do not implement it. Do not let a current design assume it exists |
+
+Two rules apply everywhere and outrank convenience:
+
+1. **Descriptive completeness is not authorization.** A shape described here is not a shape you may
+   build today. The milestone marked CURRENT decides what gets built.
+2. **Direct code beats a framework.** Write the specific thing the current proof needs. Extract a
+   general contract only after a *second* real use shows you where the seam actually is. Most of the
+   interfaces below are sketches of seams we have not found yet.
+
+If you find yourself building something in this document because it is in this document, stop.
+
+---
+
+## 1. The three worlds
+
+**Authority: LAW.** This is the separation the whole engine exists to protect. Everything else is
+detail.
+
+Terminal Nexus keeps three things apart that most games blend together:
+
+```text
+┌─ STATE ────────────────────────────────────────────────────────────┐
+│  What is true. The Grid, its layers, every entity's placement,      │
+│  health, resources, and ownership. Plain serializable data.         │
+│  Knows nothing about time passing, and nothing about drawing.       │
+└────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─ PULSE ────────────────────────────────────────────────────────────┐
+│  How state changes. A pure function stepping state forward in       │
+│  fixed logical ticks. All randomness comes from one seeded stream.  │
+│  Same inputs → same outputs, forever, on any machine.               │
+│  Emits ordered events describing what happened and why.             │
+│  Has no clock, no terminal, no frames, no colour.                   │
+└────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─ PRESENTATION ─────────────────────────────────────────────────────┐
+│  What it looks like. Consumes state and events, samples them at     │
+│  an arbitrary wall-clock time, and composes cells. Interpolates,    │
+│  animates, throws particles, shakes, recolours, and lies about      │
+│  timing freely — because none of it can change an outcome.          │
+│  Has its own separate cosmetic random stream.                       │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+The three laws that follow from this:
+
+1. **Only the Pulse mutates state.** Nothing else writes to it. Not presentation, not input, not a
+   scenario script, not a content hook.
+2. **Presentation cannot influence the Pulse.** Frame rate, dropped frames, playback speed, pause,
+   window size, colour depth, and reduced motion are all invisible to it. A Pulse resolved on a
+   machine with no screen at all resolves identically.
+3. **The two random streams never touch.** Gameplay randomness is seeded, serialized, and replayed.
+   Cosmetic randomness is whatever it wants to be. A particle must never consume a draw from the
+   gameplay stream, and the gameplay stream must never be asked for something a particle needs.
+
+The practical test: **you must be able to resolve an entire match with the renderer deleted**, and
+you must be able to rewrite the entire renderer without a single simulation test changing.
+
+---
 
 ## 2. Responsibility layers
+
+**Authority: GUIDANCE.** The boundaries are right; the exact module names will move as code arrives.
 
 | Layer | Owns | Must not own |
 | --- | --- | --- |
@@ -30,275 +92,436 @@ The engine is not a monolith or one `BattleManager`. It is a collection of offic
 | Scenario runtime | starting state, objectives, triggers, mission progress, win/loss requests, unlocks | direct mutation bypassing the kernel |
 | Player projection | visibility-filtered state, legal public actions, visible ordered events | hidden-plan leakage, invented facts |
 | Presentation | semantic cues, animation state, portraits, cell frames or graphical scenes, accessibility | damage, targeting, legal placement, victory |
-| Platform adapters | terminal/browser/native input, output, resize, streams, device lifecycle | interpreting ANSI or pixels as game state |
+| Platform adapters | terminal, browser, native input, output, resize, streams, device lifecycle | interpreting ANSI or pixels as game state |
 | Application shell | CLI, configuration, content selection, saves, replays, diagnostics, composition | secret rule changes |
 
-Import direction should keep shared contracts as leaves. Runtime flow is:
+Runtime flow:
 
 ```text
 content + scenario + committed plans
                  ↓
-       deterministic kernel
+       deterministic kernel  ── seeded gameplay RNG
                  ↓
  canonical state + ordered DomainEvent[]
                  ↓
  visibility projection → PlayerView + visible events
+                 ↓
+      presentation model  ── separate cosmetic RNG
                  ├─ terminal compositor → ReadonlyCellFrame → backend
-                 ├─ browser/native graphical renderer
-                 └─ accessibility/spectator renderer
+                 ├─ browser or native graphical renderer
+                 └─ accessibility or spectator renderer
 ```
 
-## 3. Player-facing rules contract
+Shared contracts stay leaves of the import graph. Nothing downstream of the kernel may be imported
+by the kernel.
 
-### 3.1 Match loop
+---
 
-A match alternates between:
+## 3. The Grid
 
-- **Build Phase:** hidden, simultaneous, turn-based, and untimed planning from the same public resolved state;
-- **Nexus Pulse:** simultaneous reveal followed by a fixed number of deterministic logical ticks.
+**Authority: LAW** for the layer model and occupancy; **GUIDANCE** for sizes, metric, and movement.
 
-During the Build Phase a player may spend resources, place legal structures, alter allowed production state, and select a Nexus upgrade from a small draft. New plans remain hidden until both sides commit.
+The **Grid** is the rectangular integer playfield a match is fought on. It replaces the older word
+"Grid" everywhere, including in the name of the Nexus replica that sits on it: a **Grid
+Nexus** is the replica, a **Prime Nexus** is the one that stays home.
 
-Both players see the complete resolved battlefield: terrain, deposits, neutral zones, known actors, health, structures, and public construction coverage. Every newly committed construction and upgrade choice remains hidden until simultaneous reveal.
+### 3.1 Size and shape — GUIDANCE
 
-At Pulse start, plans reveal together and valid construction becomes operational. Workers select jobs; production buildings attempt recipes; actors move and fight automatically. Playback controls cannot change the resolved result.
+A Grid may be any integer size. Content and tools standardise on a small matrix of presets so that
+maps, scenarios, and compositions can be reasoned about without measuring each one.
 
-At Pulse end, survivors regroup around home producers. Orphaned units are adopted by the nearest compatible producer or regroup near the battlefield Nexus. The Commander remains Nexus-anchored. Production cooldowns reset to a full interval for the next Pulse.
+**Shape** is the ratio of width to height in tiles, treating a tile as square:
 
-Destroying the enemy battlefield Nexus wins the match. Any attacker reaching a legal attack position may damage it. Player-built defenses and terrain create practical outer layers; there is no hidden Nexus exposure meter.
+| Shape | Width : height |
+| --- | --- |
+| `squared` | 1 : 1 |
+| `wide` | 2 : 1 |
+| `extra-wide` | 3 : 1 |
 
-### 3.2 Commander behavior
+**Size** sets the short side:
 
-The Commander is a persistent frontline unit, normally `@`. It may receive Nexus-specific upgrades and compete with army, economy, research, and fortification build paths.
+| Size | Short side, in tiles |
+| --- | --- |
+| `small` | 12 |
+| `medium` | 16 |
+| `large` | 20 |
+| `extra-large` | 24 |
 
-When killed, it is absent for the remainder of that Pulse and the entire next Build Phase/Pulse cycle. The Prime Nexus may then replicate it again. Exact timing and upgrades may refine this rule, but Commander death is not the match victory condition.
+Which gives twelve presets:
 
-### 3.3 Buildings
+| | `squared` | `wide` | `extra-wide` |
+| --- | --- | --- | --- |
+| `small` | 12 × 12 | 24 × 12 | 36 × 12 |
+| `medium` | 16 × 16 | 32 × 16 | **48 × 16** |
+| `large` | 20 × 20 | 40 × 20 | 60 × 20 |
+| `extra-large` | 24 × 24 | 48 × 24 | 72 × 24 |
 
-Common roles are:
+**`medium-extra-wide` (48 × 16) is the default preset** and the one every early fixture uses. The
+arithmetic is not a coincidence: at one column per tile it needs 48 + 2 border + 30 sidebar = **exactly
+80 columns**, and 16 + 2 border + header + footer = **20 rows**. At two columns per tile it needs
+**exactly 128**. The two compositions in Section 9.2 fall out of one number.
 
-- **Battlefield Nexus:** victory target, root of connected construction coverage, central upgrade draft, and Commander anchor.
-- **Economic structures:** worker slots converting labor into resources.
-- **Warehouses:** global storage capacity; no resource reservation behavior.
-- **Supply structures:** population cap shared by workers and military.
-- **Worker producers:** automatic labor replacement.
-- **Military producers:** automatic fixed unit recipe at recurring intervals.
-- **Defenses:** attack, block, redirect, protect, reveal, or strengthen positions.
-- **Research facilities:** improve the Nexus draft rather than expose a conventional linear menu.
-- **Outposts:** project larger construction coverage.
-- **Capture structures:** claim a neutral-zone bonus while connected.
+A preset is a convenience, not a constraint. A scenario may declare explicit dimensions.
 
-Structures become operational immediately after simultaneous reveal. They cannot move or be voluntarily sold. A disconnected building functions but no longer projects construction coverage.
+### 3.2 Orientation is a rendering choice — LAW
 
-Each match starts from a Commander Army package containing a battlefield Nexus, resources, Commander, workers, and a small starting force. The exact package varies by Commander.
+A Grid has no orientation. **Portrait and landscape are presentation transforms**, chosen by the
+renderer to fit the display, and they change nothing about the Grid, the Pulse, or any coordinate in
+an event log. A tall narrow display may transpose a `wide` Grid and lose nothing.
 
-### 3.4 Automatic production
+Map authors never think about orientation. They design a Grid; the renderer decides how to show it.
 
-There is no unit shop or queue. A producer attempts its fixed recipe at a recurring Pulse interval. Its cooldown begins when the structure activates and resets to a full cooldown when the Pulse ends.
+### 3.3 Fitting the Grid to the terminal — GUIDANCE
 
-If simultaneous worker and military attempts cannot all be paid or supplied, every feasible attempt joins one seeded contention process. One is selected, paid, and spawned; feasibility is recalculated; the process continues until nothing legal remains.
+Until scrolling exists, **the whole Grid is shown at once**, and Grid size is therefore bounded by
+terminal size. Minimum terminal for a preset, in the Pulse composition (thin chrome, no sidebar):
+
+- columns = `tileWidth × gridWidth + 2`
+- rows = `gridHeight + 4`
+
+Minimum terminal per preset, at one column per tile. **Pulse** is the thin-chrome composition;
+**Build** adds a 30-column sidebar plus its border:
+
+| Preset | Tiles | Pulse | Build |
+| --- | --- | --- | --- |
+| `small-squared` | 12 × 12 | 14 × 16 | 44 × 16 |
+| `small-wide` | 24 × 12 | 26 × 16 | 56 × 16 |
+| `small-extra-wide` | 36 × 12 | 38 × 16 | 68 × 16 |
+| `medium-squared` | 16 × 16 | 18 × 20 | 48 × 20 |
+| `medium-wide` | 32 × 16 | 34 × 20 | 64 × 20 |
+| **`medium-extra-wide`** | **48 × 16** | **50 × 20** | **80 × 20** |
+| `large-squared` | 20 × 20 | 22 × 24 | 52 × 24 |
+| `large-wide` | 40 × 20 | 42 × 24 | 72 × 24 |
+| `large-extra-wide` | 60 × 20 | 62 × 24 | 92 × 24 |
+| `extra-large-squared` | 24 × 24 | 26 × 28 | 56 × 28 |
+| `extra-large-wide` | 48 × 24 | 50 × 28 | 80 × 28 |
+| `extra-large-extra-wide` | 72 × 24 | 74 × 28 | 104 × 28 |
+
+Everything through `large-wide` fits an 80 × 24 terminal in the Pulse composition — `large` presets
+land on exactly 24 rows, with nothing to spare. `extra-large` presets need 28 rows and do not fit.
+Only `medium-extra-wide` and smaller fit the Build composition at 80 columns.
+
+That is a real constraint and it is fine. Early content lives in `small` and `medium`, and the
+default preset is the largest Grid that fits both compositions on the smallest supported terminal.
+
+Scrolling, minimap, and cropping are **UNPROVEN**. Do not design around them. When a Grid does not
+fit, the renderer shows a resize gate (Section 9.4), it does not silently crop.
+
+### 3.4 Layers — LAW
+
+The Grid is not one plane of tiles. It is five, stacked:
+
+| # | Layer | Holds | Per tile |
+| --- | --- | --- | --- |
+| 1 | `terrain` | ground type, movement cost, buildability, resource deposits | exactly one |
+| 2 | `obstacles` | structures, walls, rubble, destructible and immutable blockers | at most one |
+| 3 | `workers` | workers and other non-combat labour | at most one |
+| 4 | `units` | ground combat units, the Commander | at most one |
+| 5 | `air` | air units | at most one |
+
+**The occupancy law: collisions are resolved within a layer, never across layers.**
+
+That single rule buys most of what the game needs:
+
+- Two soldiers cannot stand on the same tile. A soldier and a worker **can** — they are on different
+  layers. This is the transient stacking that happens when a unit walks over a working labourer, and
+  it is legal rather than an edge case to arbitrate.
+- Air moves over `obstacles` and over ground units freely, and contests only other air.
+- Terrain is never "occupied"; it is a property of the tile. Only `obstacles` block ground movement.
+- A structure and the rubble it becomes are the same layer, so destruction is a replacement rather
+  than a special case.
+
+Stacking is permitted but is expected to be **brief**. Sustained stacking is a design smell — if
+workers routinely park under soldiers, the worker job logic is wrong, not the occupancy rule.
+
+Presentation consequence, and it is a real obligation: when two layers occupy one tile only one
+glyph can be drawn. **The highest occupied layer supplies the glyph, and the cell is marked as
+stacked** — an attribute, a dim underline, something. Never let a tile silently hide an entity.
+
+### 3.5 Placement, footprint, anchor, and facing — LAW
+
+Every entity on the Grid has a placement:
+
+```ts
+type Coord = Readonly<{ x: number; y: number }>
+type Footprint = readonly Coord[]          // offsets relative to the anchor
+type Direction = "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw"
+
+interface Placement {
+  readonly layer: GridLayer
+  readonly anchor: Coord                   // the entity's coordinate
+  readonly footprint: Footprint            // [{x:0,y:0}] for a one-tile actor
+  readonly facing: Direction
+}
+```
+
+- **Most units occupy one tile.** Some do not, and **structures usually do not** — a Grid Nexus or a
+  barracks covers several. Multi-tile is a first-class case, not a later extension. Write the
+  footprint loop once, at the start, and every entity is the same code path.
+- **The anchor is the entity's coordinate** and its centre of authority. Events report it, targeting
+  ties break on it, presentation hangs badges and portraits off it, and it is what "where is that
+  thing" means.
+- **Range is measured to the nearest occupied tile** of the target's footprint, not to its anchor.
+  A large structure is easier to reach because it is large, which is the intuitive answer.
+- **Facing is presentation-only for now** (Q9). It is derived from the last movement step, or from
+  the current target when stationary. Nothing in the rules reads it yet. It exists in state because
+  a renderer that has to guess facing produces jitter, and because arcs may want it later.
+
+### 3.6 Distance and movement — GUIDANCE
+
+Eight-way movement, uniform cost per step, **Chebyshev distance** (`max(|dx|, |dy|)`) for range and
+routing. This is the standard grid-game answer, it keeps range rings compact and readable, and it
+avoids fractional diagonal costs fighting the integer movement credit in Section 4.2.
+
+The known artifact: a diagonal step covers more ground than an orthogonal one, so diagonal travel is
+about 1.41× faster in real terms. That is an accepted simplification, and it is listed here rather
+than hidden so a later milestone can revisit it deliberately.
+
+Terrain may modify movement cost. Immutable terrain cannot be attacked; only blockers explicitly
+marked destructible enter targeting and damage.
+
+There is **no fractional authoritative position**. Between-tile positions are something the renderer
+invents for smoothness and the kernel never hears about.
+
+---
+
+## 4. The Pulse
+
+**Authority: LAW** for determinism and the separation of time; **GUIDANCE** for the exact tick order
+and credit rules until Milestone 1 tests them.
+
+### 4.1 Logical time — GUIDANCE, close to earned
+
+A Pulse runs a fixed number of **logical ticks** at **12 ticks per simulation second**. A tick is one
+rules update. Twelve is chosen because it produces exact integer cadences at every speed the game
+wants:
+
+| Display speed | Exact rate | One-tile step every |
+| ---: | ---: | ---: |
+| 0.5 tiles/s | `1/2` | 24 ticks |
+| 0.67 tiles/s | `2/3` | 18 ticks |
+| 0.75 tiles/s | `3/4` | 16 ticks |
+| 1 tile/s | `1/1` | 12 ticks |
+| 1.2 tiles/s | `6/5` | 10 ticks |
+| 1.33 tiles/s | `4/3` | 9 ticks |
+| 1.5 tiles/s | `3/2` | 8 ticks |
+| 2 tiles/s | `2/1` | 6 ticks |
+
+Rates are rational, never floating point. Presentation targets **30 frames per second**, which is
+2.5 frames per tick — deliberately not an integer, because effects sample absolute time and must not
+quietly start depending on a frame:tick alignment.
+
+**The kernel has no real-time loop.** It may resolve 12 ticks in a microsecond or over an hour. The
+renderer maps logical time onto wall-clock time by itself.
+
+### 4.2 Movement credit — GUIDANCE
+
+An integer accumulator, no floating point:
+
+- each tick, `credit += rate.numerator`
+- a step costs `rate.denominator × 12`
+- when `credit >= cost`, the actor attempts one step and `credit -= cost`
+
+Check it against the table: `1/1` accrues 1 per tick against a cost of 12 — one step every 12 ticks.
+`3/2` accrues 3 against a cost of 24 — every 8 ticks. It reproduces the table exactly.
+
+Two rules that a previous draft left open, and that the spike should confirm:
+
+- **Credit is capped at one step's cost.** An actor that could not move cannot bank a sprint.
+- **A blocked step keeps its credit.** An actor jostled out of a claim steps the moment the tile
+  frees, rather than restarting its timer. This stops traffic jams from silently halving an army's
+  speed.
+
+### 4.3 Tick order — GUIDANCE, normative for the spike
+
+Every phase reads the state **settled at the end of the previous phase**, so that iteration order
+over entities can never decide an outcome:
+
+1. **Tick open.** Advance the tick counter. Nothing else.
+2. **Economy and production.** Scheduled resource yield; producers attempt recipes.
+3. **Perception.** Each actor scores and selects a target. Deterministic scoring, ties broken by
+   entity id.
+4. **Intents.** Each actor with movement credit declares one destination tile.
+5. **Arbitration.** Group intents by destination *within a layer*. Resolve by speed tier, then the
+   seeded stream, then entity id. Losers hold or recalculate, under a bounded number of passes with
+   a strictly decreasing progress measure.
+6. **Settle.** Apply winning moves. Occupancy is now fixed for this tick.
+7. **Attacks.** Descending speed tier. Within one tier, every valid attack is computed against the
+   state at tier start and applied **simultaneously**, so no entity survives merely by being iterated
+   first.
+8. **Resolution.** Apply damage, deaths, destruction, salvage. Emit ordered events.
+9. **Objectives and victory.**
+
+Melee is an attempt to enter an enemy-occupied tile on the same layer. When the defender dies in
+step 8, the winning claimant may occupy the tile on the following tick.
+
+Ranged attacks resolve at an authoritative tick. **A projectile is normally a presentation cue drawn
+between the attack event and the impact event** — it is not a simulated moving body, and it cannot
+be intercepted, unless some specific mechanic later earns that complexity. That is **UNPROVEN**.
+
+### 4.4 Determinism and replay — LAW
+
+```text
+resolvePulse(
+  schemaVersion, engineVersion, contentLock,
+  ticksPerSecond, initialState, committedPlans,
+  pulseTickCount, gameplaySeed
+) -> { finalState, orderedEvents }
+```
+
+The kernel:
+
+- uses one named PRNG with serialized state and published test vectors;
+- never calls `Math.random`, reads a clock, or depends on locale-sensitive ordering;
+- makes entity order and every tie-break explicit;
+- hashes state and events through one canonical serialization;
+- treats the tick rate as replay metadata that cannot change inside a ruleset version.
+
+Verification re-runs the inputs and compares hashes. Palette, glyph pack, resize, dropped frames,
+playback speed, and the cosmetic seed sit outside that boundary entirely.
+
+A game log records schema, engine, and ruleset versions; content ids and hashes; map id and hash;
+tick rate; PRNG name and seed; armies; initial state; committed plans per Build Phase; ordered events
+per Pulse; final hashes; outcome; and any presentation markers, explicitly excluded from
+verification.
+
+---
+
+## 5. Match structure
+
+**Authority: LAW** for the loop and the victory condition; **GUIDANCE** for everything inside it.
+
+A match alternates:
+
+- **Build Phase** — hidden, simultaneous, turn-based, untimed planning from the same public resolved
+  state;
+- **Nexus Pulse** — simultaneous reveal, then a fixed number of deterministic ticks.
+
+Both players see the resolved Grid: terrain, deposits, neutral zones, known actors, health,
+structures, public construction coverage. Newly committed construction and upgrade choices stay
+hidden until reveal.
+
+At Pulse start plans reveal together and valid construction becomes operational. Workers pick jobs,
+producers attempt recipes, actors move and fight automatically. Playback controls cannot change the
+result.
+
+At Pulse end survivors regroup near home producers. Orphans are adopted by the nearest compatible
+producer or regroup near the Grid Nexus. Production cooldowns reset to a full interval.
+
+**Destroying the enemy Grid Nexus wins.** Any attacker in a legal attack position may damage it.
+Defences and terrain make practical outer layers; there is no hidden exposure meter.
+
+### 5.1 Commander — GUIDANCE
+
+A persistent frontline unit, normally `@`, on the `units` layer. It may take Nexus-specific upgrades
+and competes for investment with army, economy, research, and fortification. On death it is absent
+for the rest of that Pulse and one full Build Phase and Pulse, after which the Prime Nexus may
+replicate it again. **Commander death is not the victory condition.**
+
+### 5.2 Structures — GUIDANCE
+
+Common roles: Grid Nexus (victory target, construction root, upgrade draft, Commander anchor);
+economic structures with worker slots; warehouses for global storage; supply structures for the
+shared population cap; worker producers; military producers; defences; research facilities that
+improve the Nexus draft rather than exposing a linear tech menu; outposts that project construction
+coverage; capture structures that claim a neutral-zone bonus while connected.
+
+Structures live on the `obstacles` layer, are operational immediately after reveal, cannot move or
+be sold, and keep working while disconnected but stop projecting coverage.
+
+### 5.3 Automatic production — GUIDANCE
+
+No shop, no queue. A producer attempts a fixed recipe on a recurring interval. When simultaneous
+attempts cannot all be paid or supplied, every feasible attempt enters one seeded contention process:
+one is chosen, paid, and spawned; feasibility is recomputed; repeat until nothing legal remains.
 
 Players shape composition by building, protecting, upgrading, pausing, or losing producers.
 
-### 3.5 Research and Nexus powers
+### 5.4 Research and Nexus powers — UNPROVEN
 
-The battlefield Nexus initially offers three low-tier upgrades. Research facilities modify the draft by raising tier, adding options, granting redraws, weighting a family, revealing future options, or transforming choices.
+The Grid Nexus offers a small draft of upgrades; research facilities modify that draft's tier,
+breadth, redraws, weighting, or visibility. Structures may reach levels 1–3. Nexus powers are
+content-defined legal actions or passive rules that execute through validated kernel commands.
 
-When a research facility is first built, it should eventually offer two choices from a small pool of facility improvements. Upgrading it offers two more choices from the remaining pool. The initial design target is four or five possible improvements per facility type; exact stacking and timing remain open until the integrated microgame.
+None of this is designed. It is recorded so the shape of the draft is not accidentally foreclosed.
 
-Major structures may reach levels 1–3. Expensive Nexus upgrades unlock higher levels for other bases. This creates a tension between technology ceiling and immediate battlefield presence.
+---
 
-Nexus powers are content-defined legal actions or passive rules associated with the Commander Army. They may affect construction, drafts, the Commander, replication, or the next Pulse, but execute through validated kernel commands and events.
+## 6. Economy — GUIDANCE
 
-## 4. Logical time
+**A match uses one resource.** Deposits and salvage both yield it. Supply is a separate shared
+population cap, not a second currency. Nexus energy is a state readout, not something a player spends.
 
-The working hypothesis is **12 deterministic logical ticks per simulation second** at normal speed. A tick is a rules update. A simulation second is a design unit. A Nexus Pulse contains a fixed number of ticks.
+`ResourceCost` stays a keyed record in Section 8 so a later microgame can earn a second resource
+without a schema change — but nothing through Milestone 4 may assume one exists.
 
-Twelve supports exact integer cadences for useful readable speeds:
+**Workers** pick the closest available job by deterministic path distance: building slots, deposits,
+salvage, and later faction-specific labour. They produce in place rather than carrying bundles home,
+they do not attack, they consume normal supply, and they are produced by a dedicated automatic
+building. What a full store does to a working labourer is Q7 — the recommendation is that it stalls
+in place.
 
-| Display | Exact rate | One-tile attempt |
-| ---: | ---: | ---: |
-| 0.5 tiles/s | `1/2` | every 24 ticks |
-| 0.67 tiles/s | `2/3` | every 18 ticks |
-| 0.75 tiles/s | `3/4` | every 16 ticks |
-| 1 tile/s | `1/1` | every 12 ticks |
-| 1.2 tiles/s | `6/5` | every 10 ticks |
-| 1.33 tiles/s | `4/3` | every 9 ticks |
-| 1.5 tiles/s | `3/2` | every 8 ticks |
-| 2 tiles/s | `2/1` | every 6 ticks |
+**Deposits** are finite and permanently deplete. A worker harvests from the deposit tile or one of
+its four orthogonal neighbours, so five may work one deposit. A depleted tile becomes ordinary
+buildable terrain.
 
-Canonical rates use rational or integer cadence data, never floating-point approximations. An integer movement-credit accumulator should support modifiers without floating-point authority.
+**Destruction** returns half a structure's value to its owner automatically and drops the other half
+as salvage on the Grid. Workers from either side drain salvage. Building over remaining salvage
+destroys it.
 
-The kernel has no real-time loop. It may process 12 ticks over one wall-clock second, one at a time, or as fast as possible. Presentation maps logical time independently. Milestone 2 must test 12 Hz and define unused movement credit after blocking, stun, failed melee entry, or speed changes before the hypothesis becomes locked.
+**Construction territory:** the Grid Nexus roots a connected network; structures project a
+construction radius (default two tiles, outposts farther — Q5); a disconnected structure keeps
+operating but stops projecting; a player cannot build inside enemy coverage that was public at Build
+Phase start.
 
-## 5. Grid and occupancy
+Milestone 3 must lock the radius metric, footprint-to-radius measurement, same-plan chaining,
+simultaneous same-cell conflicts, path-sealing legality, and refunds for invalid revealed plans. No
+other system may guess those answers.
 
-The battlefield is an open rectangular integer grid containing obstacles, chokepoints, finite deposits, neutral zones, and simple terrain modifiers.
+---
 
-- MVP actors occupy one tile.
-- Structures have integer footprints.
-- Multi-cell mobile units wait for an explicit later extension.
-- Immutable terrain cannot be attacked.
-- Only blockers designated destructible enter targeting and damage systems.
-- There is no fractional authoritative position.
+## 7. Events
 
-Units may route through friendly workers but cannot settle on them. A friendly actor whose endpoint contains a worker recalculates. Enemy units target workers normally.
+**Authority: LAW.** Events are how presentation learns anything.
 
-### 5.1 Conceptual tick order
+The Pulse emits an ordered list of `DomainEvent`s describing **meaning**, not appearance: an actor
+moved from here to there, this attacked that with this result, this took damage, this died, this was
+built, this was destroyed, this was produced, this objective changed. Events carry enough context —
+the score or reason behind a target choice, the claim that was contested, the amount and kind of
+damage — that a renderer never has to read mutable state to explain what it is drawing.
 
-1. scheduled economy and production;
-2. worker job/flee decisions;
-3. military targeting and movement intents;
-4. destination claims;
-5. bounded conflict arbitration and recalculation;
-6. settled occupancy;
-7. attacks from faster to slower speed tiers;
-8. simultaneous damage among non-conflicting attacks in one tier;
-9. deaths, hostile-cell entry, destruction, salvage, and events;
-10. objectives and victory.
+**Renderers never reverse-engineer glyphs, cells, or ANSI back into mechanics.** If presentation
+needs to know something, the event carries it or the projection exposes it.
 
-Milestone 2 makes the exact sequence normative.
+`PlayerView` contains only visible, legal information for one player and never exposes an unrevealed
+plan.
 
-### 5.2 Routing service
+---
 
-The route service eventually supports:
+## 8. Content interfaces — GUIDANCE
 
-- shortest traversable route;
-- weighted terrain;
-- route to a legal attack position rather than a target's occupied tile;
-- temporary danger cost for workers;
-- deterministic tie-breaking;
-- bounded recalculation after a contested destination changes.
-
-Worker flight prefers a route toward the friendly Nexus outside known enemy attack ranges. When no safe route exists, it minimizes cumulative threat exposure. A worker outside danger may take the closest available job before Pulse end.
-
-### 5.3 Movement conflicts and melee
-
-All movement intents are calculated from the same settled state. Claims resolve without duplicate occupancy.
-
-Melee is an attempt to enter an enemy-occupied tile. Faster claims resolve first. Equal-speed conflicts use seeded deterministic arbitration. When a target dies, the winning claimant may occupy that cell in the same tick. Losing claimants recalculate or remain according to bounded rules.
-
-No arbitration loop may be unbounded. Milestone 2 must define a progress measure and maximum number of recalculations.
-
-### 5.4 Attacks and targeting
-
-After movement settles, actors with valid targets may attack. Faster speed tiers resolve first. Non-conflicting attacks within one tier land simultaneously so entity iteration cannot decide survival.
-
-Target selection is automatic and scored by unit behavior. Workers are normal candidates, neither globally protected nor always preferred. Domain events expose target score/reason, claims, attacks, damage, and death without requiring presentation to read mutable state.
-
-Ranged attacks resolve at an authoritative tick. A visible projectile is normally a presentation cue between attack and impact events; it does not become a simulated moving body unless a specific mechanic explicitly earns that complexity.
-
-## 6. Economy, labor, supply, and territory
-
-**A match uses one resource** (Q2, answered 2026-08-20). Natural deposits and salvage both yield it. Warehouses store it, production spends it, and supply is a separate population cap rather than a second currency. Nexus energy is a *state* readout, not something a player spends.
-
-`ResourceCost` remains a keyed record in Section 8 so that a later microgame can earn a second resource without a schema change — but nothing in Milestones 1 through 4 may assume one exists.
-
-### 6.1 Workers
-
-Workers choose the closest available job by deterministic path distance. Jobs include building slots, natural deposits, salvage, returning to the Nexus when storage is full, and future faction-specific labor.
-
-They do not carry individual bundles home. They remain at a job and produce continuously during the Pulse.
-
-What a worker does when storage fills is **not yet decided**. Returning toward the Nexus is carry-shaped behavior inside a no-carry model, and "resume immediately" ignores travel time. See Q7 in [`open-questions.md`](open-questions.md); the recommendation there is that a full store simply stalls the worker at its job. Milestone 4 decides.
-
-Workers do not attack. They consume normal army supply and are produced by a dedicated automatic building.
-
-### 6.2 Deposits and salvage
-
-Natural deposits are finite and permanently deplete. A worker may harvest on the resource tile or one of four orthogonal neighbors, allowing five workers when all cells are free. A depleted tile becomes ordinary buildable terrain.
-
-When a building is destroyed:
-
-- half its value returns automatically to its owner;
-- half becomes salvage on the map;
-- workers from either side drain it continuously;
-- building over remaining salvage destroys it.
-
-### 6.3 Storage and supply
-
-Warehouses only increase global storage. All stored resources are available to eligible production.
-
-Workers and military share population supply. Destroying supply never deletes existing actors; spawning stops while population exceeds cap.
-
-### 6.4 Construction territory
-
-The battlefield Nexus roots a connected network. Buildings project a default construction radius of two tiles; outposts may project farther. The builder concept art shows a larger value on an Outpost, which is consistent — see Q5 in [`open-questions.md`](open-questions.md).
-
-A disconnected building keeps operating but loses its projected radius until reconnected. A player cannot build inside enemy coverage that was public at Build Phase start. Individually legal hidden plans may reveal into overlapping coverage. A capture structure produces a neutral-zone bonus only while connected.
-
-If simultaneous plans extend into the same neutral zone without occupying the same physical cell, both sides receive the temporary bonus while each maintains a connected claim. If one side loses the capture structure or a chain breach disconnects its coverage, that side loses the bonus. Same-cell structure conflicts remain for Milestone 3 to define.
-
-Milestone 3 must lock:
-
-- radius distance metric;
-- footprint-to-radius measurement;
-- same-plan chaining;
-- simultaneous same-cell conflicts;
-- path-sealing legality;
-- refund behavior for invalid revealed plans.
-
-Other systems must not guess these answers.
-
-## 7. Determinism and replay authority
-
-The eventual invariant is:
-
-```text
-simulatePulse(
-  schemaVersion,
-  engineVersion,
-  contentLock,
-  logicalTicksPerSecond,
-  initialState,
-  bothCommittedPlans,
-  pulseTickCount,
-  simulationSeed
-) -> { finalState, orderedDomainEvents }
-```
-
-The kernel uses one named pseudorandom algorithm with serialized state and test vectors. It never calls `Math.random`, reads the wall clock, depends on locale-sensitive ordering, or imports presentation. Entity order and tie-breaks are explicit. State/event hashing uses canonical serialization. Tick rate is replay metadata and cannot silently change inside a ruleset version.
-
-Playback consumes already-resolved events. Verification may re-simulate the inputs and compare state and event hashes. Palette, glyph pack, resize, frame skipping, playback speed, and cosmetic seed are outside authority.
-
-A structured game log eventually records:
-
-- schema, engine, and ruleset versions;
-- content IDs, versions, and hashes;
-- map ID/hash and logical tick rate;
-- named PRNG and simulation seed;
-- factions and Commander Armies;
-- initial state and committed plans per Build Phase;
-- ordered events per Nexus Pulse;
-- final state/event hashes;
-- outcome and termination reason;
-- optional presentation markers explicitly excluded from verification.
-
-## 8. Core content interfaces
-
-These shapes describe intended boundaries, not code that Milestone 1 must generate. Exact naming changes when real content exercises them.
+These are sketches. Names and shapes will change the first time real content touches them, and that
+is expected. **Do not build these interfaces before content needs them.**
 
 ```ts
 type ContentId = string
 type EntityId = string
 type Tick = number
-
-type Coord = Readonly<{ x: number; y: number }>
-type Footprint = readonly Coord[]
 type Rational = Readonly<{ numerator: number; denominator: number }>
-
 type ResourceCost = Readonly<Record<ContentId, number>>
 
 interface UnitDefinition {
   readonly id: ContentId
+  readonly layer: "workers" | "units" | "air"
   readonly roleTags: readonly string[]
+  readonly footprint: Footprint
   readonly maxHealth: number
   readonly supply: number
   readonly movementRate: Rational
+  readonly speedTier: number
   readonly attack?: ContentId
   readonly capabilities: readonly ContentId[]
   readonly presentation: ContentId
-  readonly hooks?: readonly ContentId[]
 }
 
 interface AttackDefinition {
@@ -325,7 +548,6 @@ interface StructureDefinition {
   readonly production?: ProductionRecipe
   readonly attack?: ContentId
   readonly presentation: ContentId
-  readonly hooks?: readonly ContentId[]
 }
 
 interface ProductionRecipe {
@@ -335,98 +557,30 @@ interface ProductionRecipe {
   readonly intervalTicks: number
   readonly spawnRule: ContentId
 }
-
-interface UpgradeDefinition {
-  readonly id: ContentId
-  readonly family: string
-  readonly tier: number
-  readonly prerequisites: readonly ContentId[]
-  readonly modifiers: readonly ContentId[]
-  readonly presentation: ContentId
-}
-
-interface NexusPowerDefinition {
-  readonly id: ContentId
-  readonly timing: "build" | "reveal" | "pulse" | "passive"
-  readonly cost?: ResourceCost
-  readonly command?: ContentId
-  readonly modifiers?: readonly ContentId[]
-  readonly presentationCue: ContentId
-}
-
-interface CommanderDefinition {
-  readonly id: ContentId
-  readonly faction: ContentId
-  readonly unit: ContentId
-  readonly startingPackage: ContentId
-  readonly armyRules: readonly ContentId[]
-  readonly nexusPowers: readonly ContentId[]
-  readonly upgradePool: readonly ContentId[]
-  readonly presentation: ContentId
-}
-
-interface CommanderArmyDefinition {
-  readonly id: ContentId
-  readonly faction: ContentId
-  readonly commander: ContentId
-  readonly units: readonly ContentId[]
-  readonly structures: readonly ContentId[]
-  readonly upgrades: readonly ContentId[]
-  readonly nexusPowers: readonly ContentId[]
-  readonly startingPackage: ContentId
-}
 ```
 
-A Commander Army is the actual playable content boundary: the complete set of choices legally available to one player in a battle. See [`commander-armies.md`](commander-armies.md).
+Upgrades, Nexus powers, Commanders, and Commander Armies follow the same pattern and are described in
+[`commander-armies.md`](commander-armies.md). A **Commander Army** is the playable content boundary:
+the complete set of choices legally available to one player in one match.
 
-Prefer composable capabilities—health, movement, attack, production, storage, supply, worker slots, radius, restoration, and regroup anchors—over inheritance. Exceptional behavior may register narrow hooks for target scoring, damage modification, spawning, death, or alternate victory. Hooks receive constrained read-only context and return intents/modifiers/events for kernel validation.
+Prefer composable capabilities — health, movement, attack, production, storage, supply, worker slots,
+radius, restoration, regroup anchor — over inheritance. Exceptional behaviour may register narrow
+hooks that receive read-only context and return intents for the kernel to validate. A hook API
+protects engine integrity; it is **not** a security sandbox, and installed TypeScript is arbitrary
+local code.
 
-A narrow hook API protects engine integrity; it is not a security sandbox. Installed TypeScript packages are arbitrary local code unless isolated by a real host boundary.
+---
 
-## 9. Battle Framework services
+## 9. Presentation
 
-The future **Battle Framework** connects rules and content through small services and serializable contracts:
+**Authority: LAW** for the cell boundary, bands, and the accessibility rules; **GUIDANCE** for
+composition details.
 
-- coordinate, bounds, footprint, range, and neighborhood primitives;
-- terrain, occupancy, and connectivity queries;
-- deterministic routing and threat maps;
-- target scoring and legal-target queries;
-- movement intents and destination arbitration;
-- tick scheduling and speed-tier attack batches;
-- damage, death, destruction, salvage, and objectives;
-- resource, supply, worker-slot, and production rules;
-- placement, radius, path-access, and connectivity validation;
-- canonical serialization, content locks, replay headers, and hashes;
-- player-safe read models and ordered domain events;
-- presentation-cue derivation, effects, render bands, and cell composition.
-
-Milestone 1 needs an authored scene and cell boundary, not combat. Milestone 2 earns kernel contracts. Milestone 3 earns placement/map contracts. Milestone 4 reveals which content definitions deserve extraction. Only then should this list become a production package structure.
-
-## 10. Presentation architecture
-
-### 10.1 Player view and semantic events
-
-`PlayerView` contains only visible, legal information. It never exposes an unrevealed plan. `DomainEvent` describes meaning: actor movement, attack, damage, destruction, construction, production, restoration, draft, or objective change.
-
-Renderers never reverse-engineer glyphs or ANSI into mechanics.
-
-### 10.2 Cell frames
-
-The canonical terminal composition is initially 80×24 with a 48×18 battlefield. Larger terminals center or frame the same map and may expand inspection space without revealing extra tactical information. Below minimum size, playback pauses behind a resize gate and resumes from the same presentation time. Early milestones do not scroll or crop the battlefield.
-
-**Tile width is adaptive** (Q1, answered 2026-08-20). One battlefield tile occupies **one terminal column** in the 80×24 composition and **two** at 128 columns or wider. The 48×18 battlefield is unchanged in either: 48 interior columns plus a border leaves 30 for the sidebar at the narrow width; the wide composition needs roughly 128×24 and is where the concept art's readability comes from.
-
-Tile width is a **composition** parameter, not a semantic one. At either width the same tiles carry the same actors and reveal the same information, which is what keeps it inside the rule above rather than making it a gameplay setting. A player on a wide terminal sees the same match more comfortably; they do not see more of it.
-
-Consequences that bind other systems:
-
-- 80×24 remains the floor. Anything authored for the wide composition must degrade to the narrow one, and the narrow one is the acceptance target.
-- An actor is drawn within its own tile's columns. See Q3 for how far a unit motif may use them.
-- Effects are authored against tile coordinates, not column counts, so an effect written once works at both widths.
+### 9.1 The cell frame — LAW
 
 ```ts
 type CellStyle = Readonly<{
-  fgRole?: string
+  fgRole?: string          // a role, never a colour
   bgRole?: string
   bold?: boolean
   dim?: boolean
@@ -449,95 +603,156 @@ interface TerminalBackend {
 }
 ```
 
-The frame has no backend objects. It is an excellent snapshot boundary for terminal output but is not the universal renderer API.
+No backend object ever appears inside a frame. Style carries **roles** —
+`fgRole: "faction.citizen"`, never `"#ff8800"` — and the capability mode resolves roles to colour,
+which is what makes monochrome a setting rather than a rewrite.
 
-### 10.3 Accessibility and input
+This is the terminal boundary and an excellent snapshot surface. It is **not** the universal renderer
+API; a future graphical renderer consumes events and `PlayerView`, not cells.
 
-The game is keyboard-complete; mouse is optional direct manipulation. Core interaction eventually includes grid cursor, inspection, palette selection, placement preview, undo, commit, upgrade drafting, playback controls, and contextual help.
+### 9.2 Composition depends on the phase — GUIDANCE
 
-- ASCII-safe and Unicode packs map semantic roles separately.
-- Every gameplay glyph occupies one cell; no emoji, combining mark, or ambiguous-width glyph is required.
-- Monochrome, 16-color, 256-color, and truecolor are explicit modes.
-- Color never carries ownership, target, danger, or health alone.
-- Reduced motion keeps anticipation, impact, and settled state while removing decorative movement.
-- Structured snapshots include glyph, foreground/background roles, and attributes.
+The two phases need different amounts of screen, and pretending otherwise wastes the Grid:
 
-Inspection may show larger ASCII portraits without obscuring required battlefield information.
+**Build Phase** needs chrome. The player is selecting, previewing, and validating: a construct menu,
+the selected item's cost and effect, a placement-legality panel that says *why*, a radius preview,
+and a legend. Budget a sidebar of about 30 columns.
 
-### 10.4 Effects and presentation projectiles
+**Nexus Pulse** needs almost none. Nothing is being selected. The player is watching movement,
+attacks, projectiles, damage, and destruction. A thin status strip — Pulse number, both Nexus states,
+force totals, playback controls — is enough, and everything else belongs to the Grid.
 
-Effects subscribe to semantic cues such as movement, ranged attack, damage, destruction, restoration, or Nexus critical state. They cannot apply damage, move actors, spend resources, or decide victory.
+So the Grid gets more room during the Pulse than during the Build Phase, from the same frame size.
+That is a feature. Design the Pulse composition first; it is the one that has to carry the game.
 
-An effect recipe is initially a typed TypeScript function defining glyph/style output from origin, target/path/region, absolute presentation time, parameters, a cosmetic seed, render band, clipping, and reduced-motion alternative.
+### 9.3 Tile width — LAW
 
-Effects are sampled from absolute time. The frame at `t` is the same whether every earlier frame rendered or many were skipped. Cosmetic randomness never consumes the simulation RNG.
+One Grid tile occupies **one terminal column** at 80 columns and **two** at 128 or wider. Same tiles,
+same actors, same revealed information; only the composition changes. **80 × 24 is the acceptance
+target** — anything authored for the wide composition must degrade to the narrow one.
 
-Prefer fixed bands over unrestricted z-index:
+One honest consequence: at one column per tile the Grid is squashed 2:1 horizontally, because a
+terminal cell is about twice as tall as it is wide. A radius that is square in tiles looks like a
+wide rectangle. Range previews and area effects must be authored in tiles and must be checked at
+both widths.
 
-1. `terrain`
-2. `territory`
-3. `ground-items`
-4. `structures`
-5. `units`
-6. `projectiles`
-7. `effects`
-8. `highlights`
-9. `chrome`
+Effects are authored against **tile coordinates**, never column counts, so one effect written once
+works at both widths.
 
-Each band returns sparse cells; the top defined cell replaces the lower complete cell style. Battlefield bands clip to the map. Presentation overlap never changes gameplay occupancy.
+### 9.4 Bands — LAW
 
-**Corruption law.** An effect that deliberately degrades the display — Glitch identity, Nexus authority, Commander restoration, catastrophic destruction — is applied in the `effects` band or above, never in `units` or `structures`. It may add, overdraw, and unsettle. It may never remove or replace the only cell carrying a required semantic cue. This is what lets a faction whose identity is illegibility coexist with a contract that requires legibility; see Q4 in [`open-questions.md`](open-questions.md).
+Fixed bands, not free z-indexes. The layers of Section 3.4 map onto them directly, which is the point:
 
-## 11. Runtime and terminal direction
+| Band | Fed by |
+| --- | --- |
+| 1 `terrain` | `terrain` layer |
+| 2 `territory` | construction coverage |
+| 3 `ground-items` | salvage, rubble, deposits |
+| 4 `structures` | `obstacles` layer |
+| 5 `units` | `workers` and `units` layers |
+| 6 `air` | `air` layer |
+| 7 `projectiles` | presentation only |
+| 8 `effects` | presentation only |
+| 9 `highlights` | selection, cursor, preview, range |
+| 10 `chrome` | frame, sidebar, status strip |
 
-Terminal Nexus stays TypeScript-first through early proofs. That does not require Node.js, Bun, or any one TUI library to own the architecture.
+Each band returns sparse cells; the topmost defined cell replaces the lower complete cell style.
+Grid bands clip to the Grid. **Presentation overlap never changes occupancy.**
 
-**Library and runtime are independent choices.** An earlier draft of this document treated "OpenTUI on Bun" and "direct ANSI on Deno or Node" as two package deals. Measurement on 2026-08-20 falsified that: `@opentui/core@0.5.4` publishes an explicit `node` export and imports cleanly on Node 22, and its native core ships as prebuilt per-platform packages rather than requiring a Zig toolchain. Choose the library on cell-frame behavior and the runtime on packaging and availability, separately.
+**The corruption law — LAW.** Effects that deliberately degrade the display — Glitch identity, Nexus
+authority, Commander restoration, catastrophic destruction — live in `effects` or above, never in
+`units` or `structures`. They may add, overdraw, and unsettle. They may never remove or replace the
+only cell carrying a required semantic cue. The screen may look wrong; the player must still be able
+to see what is attacking them.
 
-The bounded candidates are:
+### 9.5 Effects and particles
 
-- **OpenTUI imperative core:** leading terminal path. It exposes `OptimizedBuffer.setCell`, mouse, resize, arbitrary input/output streams, and a testing harness with a manual clock and a frame recorder — which is most of what the cell boundary and its snapshot tests need. Risks are pre-1.0 churn (318 published versions in its first year) and weight (a 21 MB native library; a 140 MB standalone binary), not capability.
-- **Direct ANSI TypeScript:** the portability and control baseline. It measures how much terminal responsibility the project would own by doing this itself. It must stay small; if it starts needing capability discovery, robust input parsing, or mouse decoding, that is a measured result, not a to-do list.
-- **Terminal Kit:** mature TypeScript contingency if direct ANSI begins recreating a library.
-- **Ratatui + Crossterm:** strongest native architecture contingency if TypeScript fails a measured requirement; adopting it creates a Rust boundary and a content and modding cost.
-- **Bubble Tea + Wish:** strongest Go hosted-SSH contingency, likewise not an early default.
+Effects subscribe to semantic cues and cannot apply damage, move actors, spend resources, or decide
+victory. They sample **absolute presentation time**, so the frame at time *t* is identical whether
+every earlier frame rendered or most were skipped. Cosmetic randomness never touches the gameplay
+stream.
 
-Bun and Node are both present in the project's working environments; **Deno is not**, and no measured requirement currently needs it, so it is out of Milestone 1. It stays a viable pure-TypeScript packaging option if one is ever needed.
+The particle system, its contract, its starter vocabulary, and the craft rules that make ASCII motion
+read as weight are specified in **[`ascii-effects.md`](ascii-effects.md)**.
 
-Exact runtime and library versions must be re-checked against official sources and pinned during the active gate. Pinned evidence goes in the gate report, not here.
+### 9.6 Accessibility and input — LAW
 
-### 11.1 Terminal lifecycle
+- Keyboard-complete; mouse is optional direct manipulation.
+- Every gameplay glyph occupies exactly one cell. No emoji, combining mark, or ambiguous-width glyph
+  is ever required.
+- ASCII-safe is the baseline; Unicode packs map the same semantic roles separately.
+- Monochrome, 16-colour, 256-colour, and truecolor are explicit modes.
+- **Colour never carries ownership, target, danger, or health alone.**
+- Reduced motion keeps anticipation, impact, and settled state; it removes decorative movement only.
+- Structured snapshots include glyph, foreground and background roles, and attributes.
+- Below minimum size, playback pauses behind a resize gate and resumes from the same presentation
+  time. Early milestones do not scroll or crop.
 
-The application uses the alternate screen and one idempotent disposer. It restores cursor, input mode, handlers, and screen after normal exit, `q`, `SIGINT`, `SIGTERM`, setup failure, and caught render failure. It cannot promise cleanup after `SIGKILL` or host failure.
+The simulation knows semantic ids such as `unit.worker` and `structure.nexus`. **It never knows a
+glyph.**
 
-Non-TTY launch emits one readable message instead of animation escapes. Diagnostics are captured and emitted after terminal cleanup. Backends report capability mode explicitly.
+---
 
-### 11.2 Delivery ladder
+## 10. Runtime and terminal direction — GUIDANCE
 
-1. Local executable and ordinary remote shell/PTY.
-2. Restricted public SSH command, later possibly through a session gateway.
-3. Browser terminal by streaming ANSI through authenticated WebSocket to xterm.js.
-4. Browser-native renderer using semantic views in Canvas/WebGL.
-5. iOS/native shell beginning with web/PWA or a web wrapper; later a native renderer.
-6. Optional future pixel or 3D presentation consuming the same semantic contract.
+Terminal Nexus stays TypeScript-first through early proofs. That does not require any one runtime or
+TUI library to own the architecture.
 
-Remote, browser, mobile, pixel, and 3D surfaces are architectural possibilities, not Milestone 1 product commitments.
+**Library and runtime are independent choices.** Measurement on 2026-08-20 established that
+`@opentui/core@0.5.4` publishes an explicit `node` export, imports cleanly on Node 22, and ships its
+native core as prebuilt per-platform packages rather than needing a Zig toolchain. Choose the library
+on cell-frame behaviour and the runtime on packaging and availability, separately.
 
-## 12. Tools and future modding
+- **OpenTUI imperative core** — the leading path. `OptimizedBuffer.setCell`, mouse, resize, arbitrary
+  streams, and a testing harness with a manual clock and frame recorder. Risks are pre-1.0 churn (318
+  published versions in its first year) and weight (21 MB native library, 140 MB standalone binary),
+  not capability.
+- **Direct ANSI** — the control and the fallback. Must stay small. If it starts needing capability
+  discovery, robust input parsing, or mouse decoding, that is a measured result, not a to-do list.
+- **Terminal Kit** — contingency if direct ANSI starts recreating a library.
+- **Ratatui + Crossterm** — native contingency; adopting it creates a Rust boundary and a content
+  cost. **UNPROVEN.**
+- **Bubble Tea + Wish** — Go hosted-SSH contingency. **UNPROVEN.**
 
-First-party development should use explicit definitions and fast tools:
+Bun and Node are both present in the project's environments; Deno is not, and nothing measured needs
+it. Versions are re-checked and pinned during the active gate, and the pins live in the gate report.
 
-- maps as inspectable ASCII/cell arrays plus metadata;
-- armies, units, structures, upgrades, themes, and glyphs as validated TypeScript/data;
-- effects as typed functions and parameter sets;
-- cutscenes as tableaux, poses, timelines, and dialogue;
-- missions as map, army, unlock, objective, trigger, and scene definitions;
-- campaigns as mission graphs and progression state.
+### 10.1 Terminal lifecycle — LAW
 
-A battle/map editor should soon let humans and agents place actors and terrain, select a seed and Pulse length, run/step/restart a simulation, inspect routes/targets/events, and export scenarios/logs from files or CLI. The first version may be a TUI sandbox rather than a polished visual editor.
+One alternate screen, **one idempotent disposer**. It restores cursor, input mode, handlers, and
+screen after normal exit, `q`, `SIGINT`, `SIGTERM`, setup failure, and caught render failure. It
+cannot promise anything after `SIGKILL`. Calling it twice is harmless.
 
-This is **modding-first architecture, not mod-loader-first development**. No public SDK, remote loader, marketplace, permission system, or compatibility promise belongs in early milestones.
+Non-TTY launch prints one readable line and no escape sequences. Diagnostics are buffered and emitted
+**after** cleanup. Backends report their capability mode explicitly.
 
-If package installation exists later, it resolves immutable versions/commits, installs locally, records IDs/hashes, and requests trust for executable TypeScript. Saves and replays record exact engine, ruleset, and content locks. Portable mobile content begins as declarative data; arbitrary downloaded code is not promised.
+A renderer that drops frames is a tuning problem. A renderer that leaves the terminal in raw mode is
+a reason to reject it.
 
-Themes may recommend fonts, but a terminal app cannot reliably change the host font. Every package retains an ASCII-safe fallback.
+### 10.2 Delivery ladder — UNPROVEN
+
+Local executable and ordinary PTY; restricted public SSH; browser terminal streaming ANSI to
+xterm.js; browser-native renderer consuming events; mobile shell; optional pixel or 3D presentation
+on the same semantic contract.
+
+Every rung above the first is an architectural possibility, not a commitment. None of it is
+authorized by this document.
+
+---
+
+## 11. Tools and modding — GUIDANCE
+
+First-party development uses explicit definitions and fast tools: maps as inspectable ASCII arrays
+plus metadata; armies, units, structures, upgrades, themes, and glyphs as validated TypeScript;
+effects as typed functions; cutscenes as tableaux and timelines; missions as map, army, objective,
+trigger, and scene definitions.
+
+A scenario runner that can define a Grid, place entities, pick a seed and tick count, run or step a
+Pulse, inspect routes and targets, and export a deterministic event log is worth building **early** —
+it is the fastest feedback loop the project will have, for humans and agents alike. Its first form is
+a scenario file and a CLI, not an editor.
+
+This is **modding-first architecture, not mod-loader-first development.** No public SDK, remote
+loader, marketplace, permission system, or compatibility promise belongs in early milestones. Themes
+may recommend fonts, but a terminal application cannot reliably change the host font, so every pack
+keeps an ASCII-safe fallback.

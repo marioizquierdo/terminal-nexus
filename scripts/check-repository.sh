@@ -49,6 +49,7 @@ required_files=(
   "specs/project-governance.md"
   "specs/open-questions.md"
   "specs/ascii-art-references.md"
+  "specs/ascii-effects.md"
   "specs/templates/gate-report.md"
   "specs/milestone-1-spike-battle.md"
   "specs/milestone-2-deterministic-pulse.md"
@@ -174,6 +175,7 @@ grep -Fq '@AGENTS.md' CLAUDE.md || fail "CLAUDE.md must import AGENTS.md"
 retired_terms=(
   '\bveils?\b'
   '\bplanning phase\b'
+  '\bbattlefields?\b'
   'terminal-nexus-spec\.md'
   'terminal-nexus-spike1\.md'
 )

@@ -2,7 +2,7 @@
 
 **Document role:** Future milestone contract; expand before implementation
 **Status:** GATED
-**Canon version:** 2.1
+**Canon version:** 2.2
 **Updated:** 2026-08-20
 **License:** Mechanical material is Apache-2.0; faction creative material is CC BY-SA 4.0
 

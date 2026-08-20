@@ -2,7 +2,7 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.1
+**Canon version:** 2.2
 **Updated:** 2026-08-20
 **License:** Apache-2.0
 
@@ -46,33 +46,30 @@ Question IDs are permanent. Never renumber, never reuse.
 
 ## 4. Open
 
-### Q3 — Is a unit one glyph, or a motif wider than one glyph?
+### Q3 — How does a faction's shape vocabulary survive one-tile actors?
 
-**Status:** OPEN — blocks Gate 1B authoring; depends on Q1.
+**Status:** OPEN — blocks Gate 1C effect authoring, not the kernel.
 
-[`engine.md`](engine.md) Section 5 says MVP actors occupy one tile.
-[`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 8.2 offers `>x<` as a Ravel raider, and
-the concept art draws it on the battlefield. Structures are unaffected — they legitimately have
-integer footprints, so `[=H=]` is a five-cell Citizen structure and is already legal.
+The occupancy answer is now settled by [`engine.md`](engine.md) Section 3.5: **most units occupy one
+tile; structures usually occupy several.** So `[=H=]` is a legitimate five-tile Citizen structure and
+always was. What remains open is the *unit* case.
 
-The occupancy answer is not in doubt: **a unit occupies exactly one tile.** The open part is
-presentation. A one-tile actor may still be *drawn* across more than one column if the composition
-grants it the columns — which is Q1.
+[`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 8.2 offers `>x<` as a Ravel raider, and the
+concept art draws it on the Grid. Three columns will not fit in a one-tile actor at either tile width
+— one column or two. So `>x<` is not a unit glyph. It is something else, and the question is what.
 
 | Option | Cost |
 | --- | --- |
-| A. One tile, one glyph, always | Never ambiguous; loses the faction-shape vocabulary the lore is built on |
-| B. One tile, motif may fill the tile's full column width | `>x<` needs three columns and so needs Q1 = B or a three-column tile |
-| C. One tile, one glyph, with faction shape carried by *neighbours* — formation, trail, and effect cells | Keeps 80x24 and keeps faction geometry; the shape lives in motion rather than in the actor |
+| A. It is a **formation**: three adjacent raiders read together as `>x<` | Free, emergent, and the faction shape appears exactly when raiders group — which is when it should. Cannot be relied on; a lone raider is just `x` |
+| B. It is a **multi-tile unit** — a three-tile vehicle on the `units` layer | The engine already supports it. Costs pathing, arbitration, and death handling for wide movers, none of which the spike does |
+| C. It is an **emplacement** — a Ravel structure, not a unit | Trivially supported today. Abandons the "fast raider" reading the art clearly intends |
+| D. Drop it; carry faction shape in **motion and effects** instead | Lore Section 9 already says motion completes the drawing. Costs the most recognisable image in the faction bible |
 
-**Recommendation: C, with B available at two-column tile width.** Lore Section 9 already says motion
-completes the drawing; leaning on formation and trail is cheaper than widening every actor, and it
-degrades gracefully at one column per tile.
-
-**Narrowed by Q1 (answered 2026-08-20).** Tile width is adaptive, so both halves of the answer are
-now reachable: C must work, because the 80-column composition gives an actor exactly one column; B
-may additionally be authored for the wide composition, where a tile has two. Gate 1B decides how far
-to push B, and must show that anything authored at two columns still reads at one.
+**Recommendation: A, with D as the general rule.** Let the shape emerge from formation rather than be
+stamped on one actor — it makes a raiding pack visibly *become* the faction icon when it commits,
+which is better than every raider carrying the logo. Carry the rest in trail, timing, and impact
+language. Keep B available for a genuine vehicle later; it costs nothing to leave the door open,
+because the footprint model is built on day one either way.
 
 ### Q4 — How does Glitch corrupt the terminal without breaking the legibility law?
 
@@ -115,6 +112,40 @@ job rather than send it home. Stalled workers are readable (they stop moving), t
 under-built storage without a walk-home animation nobody asked for, and they remove the travel-time
 contradiction. Decide with the Milestone 4 microgame.
 
+### Q8 — When does an air unit first exist?
+
+**Status:** OPEN — blocks nothing; answer before content authoring starts.
+
+[`engine.md`](engine.md) Section 3.4 gives the Grid an `air` layer, because a five-layer occupancy
+model costs nothing more than a four-layer one and retrofitting a layer later is expensive. No air
+unit is authored, and none of the five factions currently has one in its identity.
+
+| Option | Cost |
+| --- | --- |
+| A. Layer exists from day one; **no air unit before Milestone 3** | Free. The model is honest about what it supports, and content stays at the size the milestone can balance |
+| B. Author an air unit in the Milestone 1 fixture | Proves the layer really works. Adds a unit nobody asked for to a mirror fight whose whole value is being boring |
+| C. Remove the layer until something needs it | Smallest model. Guarantees a painful retrofit the first time a faction wants a flyer |
+
+**Recommendation: A.** Build the layer, leave it empty, and add one test that asserts an air entity
+can share a tile with a ground entity — so the rule is proven without the content existing.
+
+### Q9 — Does facing affect rules, or only presentation?
+
+**Status:** OPEN — Milestone 1 proceeds under the recommendation; confirm before Milestone 3.
+
+[`engine.md`](engine.md) Section 3.5 puts `facing` in every placement. It is currently read by nothing
+in the rules — it exists so the renderer does not have to guess a direction and produce jitter.
+
+| Option | Cost |
+| --- | --- |
+| A. **Presentation only.** Derived from the last step, or from the current target when stationary | Free. Facing stays a rendering hint and can never surprise a player with a rule they cannot see |
+| B. Facing gates attacks: firing arcs, rear damage bonuses, turn cost | Real tactical depth, and a good fit for Feudal caste formations. Costs a turn-cost rule inside the movement credit, and makes every attack outcome depend on something one cell cannot display well |
+
+**Recommendation: A for now.** B is a genuinely interesting mechanic, but it is a Milestone 3 or 4
+conversation, and adopting it early would mean every unit's readable state includes an orientation
+that a single character struggles to show. Keep facing in state, keep it out of the rules, and
+revisit when there is a faction that wants it.
+
 ## 5. Answered
 
 Rows move here with the date, the decision, and the document that now owns it.
@@ -123,7 +154,7 @@ Rows move here with the date, the decision, and the document that now owns it.
 | --- | --- | --- | --- |
 | Q1 | 2026-08-20 | **Tile width is adaptive presentation capability**: one column per tile in the 80x24 composition, two columns per tile at 128 columns or wider. Same tiles, same actors, same revealed information — only the composition changes. The 80x24 floor is preserved and the concept art's look is reachable on a wide terminal | [`engine.md`](engine.md) Section 10.2 |
 | Q2 | 2026-08-20 | **One resource.** Salvage recovers the same resource rather than a second one. Nexus energy is a state readout, not a currency. A second resource is an addition a later microgame may earn; it is not assumed | [`engine.md`](engine.md) Section 6 |
-| Q6 | 2026-08-20 | **Gate 1A is cell frame and lifecycle only.** Packaging, PTY, and browser delivery moved to an independent Gate 1C that does not block the authored battle reel | [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) |
+| Q6 | 2026-08-20 | **Packaging and remote delivery leave Milestone 1.** First split into an independent gate, then deferred out of the milestone entirely when it was refocused onto the Pulse — they answer no question the game currently has | [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) |
 
 ### Q1 — answered
 
@@ -137,5 +168,8 @@ now carries the rule.
 
 ### Q6 — answered
 
-Recorded in full in the Git history of this file at canon 2.1.
-[`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) now carries the gate structure.
+Recorded in full in the Git history of this file at canon 2.1. Superseded in scope at canon 2.2 when
+Milestone 1 was refocused onto the Pulse and delivery left the milestone altogether.
+[`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) carries the gate structure;
+[`project-governance.md`](project-governance.md) Section 5 carries delivery as its own gated
+workstream.

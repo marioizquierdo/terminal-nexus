@@ -2,7 +2,7 @@
 
 **Document role:** Non-authoritative research: where to learn terminal art, and what to take from each
 **Status:** Reference. [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 9 remains the authority
-**Canon version:** 2.1
+**Canon version:** 2.2
 **Updated:** 2026-08-20
 **License:** Apache-2.0 for the analysis; linked works belong to their authors
 
@@ -136,16 +136,17 @@ Lore Section 9 names four precedents. Concretely:
 Distilled into things a session can actually do:
 
 1. **Author the worst frame first.** Late Pulse, both armies engaged, three effects overlapping. If
-   that reads, the calm frames will.
+   that reads, the calm frames will. [`ascii-effects.md`](ascii-effects.md) carries this and the rest
+   of the craft rules as the effect system's own contract.
 2. **Test in monochrome before colour.** Not after. Colour added to a legible monochrome frame is an
    enhancement; colour holding an illegible frame together is a defect that ships.
 3. **Fresh eyes are the only real test.** Lore Section 9 already mandates this. It is the acceptance
-   criterion of Gate 1B for a reason — the author of a glyph cannot see it any more.
+   criterion of Gates 1B and 1C for a reason — the author of a glyph cannot see it any more.
 4. **Motion is a drawing tool, not decoration.** Anticipation, trail, recoil, debris, settle. A
    one-cell actor gets its weight almost entirely from the four frames around it. This is also the
    cheapest answer to Q3 in [`open-questions.md`](open-questions.md).
 5. **Negative space is material.** The most common failure in game ASCII is filling the grid.
-   Terminal Nexus has a 48x18 battlefield and needs some of it to be empty for the rest to read.
+   Terminal Nexus has a 48 x 16 Grid and needs some of it to be empty for the rest to read.
 6. **Every effect needs a reduced-motion form that keeps the causality.** Decide it when authoring
    the effect, not in a later accessibility pass.
 

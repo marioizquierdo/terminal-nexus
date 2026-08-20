@@ -96,8 +96,69 @@ specification.
 
 ## Change log
 
-Human-readable history of the development setup itself. Product and canon history lives in
+Human-readable history of the development setup. Product and canon history lives in
 `specs/project-governance.md` Section 6.
+
+### 2026-08-20 — design-authority pass (canon 2.2)
+
+A second pass after Mario clarified the shape of the engine and refocused the first spike.
+
+**Terminology**
+
+- The play surface is now **the Grid**, everywhere. The replica standing on it is a **Grid Nexus**;
+  the one that stays home is a **Prime Nexus**. The retired word is rejected by the validator.
+
+**The Grid became a real model rather than a number**
+
+- Size and shape presets: `small`/`medium`/`large`/`extra-large` against
+  `squared`/`wide`/`extra-wide`, twelve in all. `medium-extra-wide` (48 x 16) is the default, and the
+  arithmetic is not a coincidence — at one column per tile it is exactly 80 columns with a sidebar,
+  and at two columns exactly 128.
+- **Orientation is a rendering choice.** Portrait and landscape change no coordinate and no rule.
+- **Five layers** — terrain, obstacles, workers, units, air — with one occupancy law: collisions
+  resolve *within* a layer, never across. That single rule is what makes a worker and a soldier
+  sharing a tile a legal transient state rather than an edge case to arbitrate, and it maps straight
+  onto the render bands.
+- **Anchor, footprint, and facing** on every entity. Multi-tile is first-class from day one, because
+  a footprint loop written now costs nothing and retrofitted later costs a week. Range measures to
+  the nearest occupied tile. Facing is presentation-only for now (Q9).
+
+**Authority markers**
+
+Every section of `engine.md` now declares **LAW**, **GUIDANCE**, or **UNPROVEN**, with a legend in
+`specs/README.md`. Most of the design canon is GUIDANCE — a recommendation written before the thing
+existed, so a session facing a fork has better than a coin flip. The rule that makes it work:
+*descriptive completeness is not authorization.*
+
+**Milestone 1 refocused onto the Pulse**
+
+The old plan proved a renderer first and simulated later. That is backwards for this game: an
+authored reel can tell you whether a hand-tuned sequence looks good, but not whether *emergent
+simulated combat* is legible — which is the actual product risk. The milestone is now three gates,
+each producing something runnable:
+
+- **1A — headless Pulse.** Grid, layers, scenario files, deterministic tick loop, a mirror Citizen
+  skirmish. No terminal at all. `pulse run` prints a hash.
+- **1B — watch the Pulse.** Cell frame, bands, composition, playback, lifecycle. Renders a kernel
+  already known to be correct. The backend is *chosen* (OpenTUI, on the measurements) rather than
+  competed for in a gate of its own.
+- **1C — make it hit.** The effect vocabulary, evaluated by fresh viewers with effects on and off.
+
+**Packaging, standalone binaries, SSH, PTY, and browser delivery are deferred out of the milestone
+entirely.** They answer no question the game currently has.
+
+**New: `specs/ascii-effects.md`**
+
+The particle system, formalised: the pure `EffectRecipe` contract (absolute time in, sparse cells
+out, `f(t)` never depending on `f(t-1)`), the beat structure, the craft rules, and a ten-effect
+starter vocabulary. Every effect owes three forms — full, reduced-motion, monochrome — authored
+together, never in a later accessibility pass. Gate 1C is the spike that proves or discards it.
+
+**Tooling**
+
+- The retired-terminology guard now covers the Grid rename.
+- `specs/ascii-effects.md` is a required file.
+
 
 ### 2026-08-20 — canon audit and autonomy pass (canon 2.1)
 

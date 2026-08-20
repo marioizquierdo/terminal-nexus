@@ -2,7 +2,7 @@
 
 **Document role:** Future milestone contract; expand before implementation
 **Status:** GATED
-**Canon version:** 2.1
+**Canon version:** 2.2
 **Updated:** 2026-08-20
 **License:** Apache-2.0; creative test content is CC BY-SA 4.0
 
@@ -12,7 +12,7 @@ Is arranging a compact base pleasant and understandable enough to carry most pla
 
 ## Smallest intended artifact
 
-A keyboard-first Build Phase with optional mouse support plus a text/CLI-accessible battle editor. It should include one fixed map, battlefield Nexus, existing structures, build-radius preview, connectivity, outpost, defense, producer, cost, undo, validation, hidden opponent plan, and simultaneous reveal. Combat may use recorded or minimal kernel playback.
+A keyboard-first Build Phase with optional mouse support plus a text/CLI-accessible battle editor. It should include one fixed map, Grid Nexus, existing structures, build-radius preview, connectivity, outpost, defense, producer, cost, undo, validation, hidden opponent plan, and simultaneous reveal. Combat uses the Milestone 2 kernel; this milestone adds no rules.
 
 Before implementation, expand this document to lock:
 
@@ -22,7 +22,7 @@ Before implementation, expand this document to lock:
 - path-sealing legality;
 - invalid-reveal refunds;
 - exact hidden/public projection;
-- editor scenario and export format.
+- editor scenario and export format, as an extension of the Milestone 1 scenario file rather than a second format.
 
 ## Intended pass evidence
 

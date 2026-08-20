@@ -22,17 +22,18 @@ Run ./scripts/check-repository.sh first — it prints the canon version and the 
 
 Then read:
 1. specs/terminal-nexus-concept.md
-2. specs/milestone-1-spike-battle.md, through the active gate's exclusions
-3. specs/open-questions.md Section 4
-4. specs/engine.md Sections 1, 2, 10, and 11
+2. specs/engine.md Section 0 first, and take the authority markers literally.
+   Then Sections 1, 3, and 4 - the three worlds, the Grid and its layers, the Pulse.
+3. specs/milestone-1-spike-battle.md, through the active gate
+4. specs/open-questions.md Section 4
 5. specs/project-governance.md Sections 2-4
 
 Copy specs/templates/gate-report.md into the spike and fill in its first section before
 writing code: question, smallest artifact, automated evidence, owner observation,
 exclusions, stop conditions.
 
-Implement only the active gate. Do not begin the authored battle reel or the delivery
-probe. Run every available verification command and finish with a PASS, REVISE, STOP, or
+Implement only the active gate. Gate 1A has no renderer in it at all - if you want
+to see the fight, that impulse is correct and it is Gate 1B. Run every available verification command and finish with a PASS, REVISE, STOP, or
 BLOCKED evidence report for Mario. Register anything you could not decide in
 specs/open-questions.md with a recommendation.
 ```

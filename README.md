@@ -8,10 +8,9 @@ It combines modern drafting and autobattler structure with old-school RTS ideas:
 
 Terminal Nexus is in pre-production. No playable game exists yet.
 
-The current work is **Milestone 1A**, a bounded preflight that selects the first reliable TypeScript
-terminal backend by proving it can own an exact cell frame and always give the terminal back. The
-authored ASCII battle reel follows it; combat simulation begins only after that visual milestone
-succeeds.
+The current work is **Milestone 1A**, the headless half of the first spike: a Grid, a scenario file,
+and a deterministic Pulse that resolves a mirror Citizen skirmish into the same event log every time,
+with no terminal involved. Rendering it follows, then the effects that make it worth watching.
 
 ## Canon and current work
 
@@ -22,6 +21,7 @@ The project is specification-driven and uses a focused canon rather than one lar
 - [Current battle-spike milestone](specs/milestone-1-spike-battle.md)
 - [Engine and gameplay framework](specs/engine.md)
 - [Lore and aesthetics](specs/terminal-nexus-lore.md)
+- [ASCII effects and particles](specs/ascii-effects.md)
 - [Open questions awaiting a decision](specs/open-questions.md)
 - [Concept art](concept/README.md)
 
