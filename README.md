@@ -1,28 +1,12 @@
 # Terminal Nexus
 
-Terminal Nexus is a fast, terminal-native strategy game about building a compact base during hidden simultaneous planning, then watching persistent armies resolve those decisions through vivid deterministic ASCII battles called Nexus Pulses.
+Terminal Nexus is the next-gen ASCII autobattler strategy game that runs in your command-line shell. Choose your faction, build your base and send your units to the battle.
 
-It combines modern drafting and autobattler structure with old-school RTS ideas: workers, supply, automatic production, terrain, faction asymmetry, Commanders, and bases whose geometry matters. A complete match should eventually fit inside a 5–12-minute build break.
+## Project Status
 
-## Status
+Pre-production. No playable game exists yet.
 
-Terminal Nexus is in pre-production. No playable game exists yet.
-
-The current work is **Milestone 1A**, a bounded renderer/toolchain preflight. It selects the first reliable TypeScript terminal path before the authored ASCII battle reel. Combat simulation begins only after that visual milestone succeeds.
-
-## Canon and current work
-
-The project is specification-driven and uses a focused canon rather than one large design file:
-
-- [Game concept](specs/terminal-nexus-concept.md)
-- [Specification index and reading order](specs/README.md)
-- [Current battle-spike milestone](specs/milestone-1-spike-battle.md)
-- [Engine and gameplay framework](specs/engine.md)
-- [Lore and aesthetics](specs/terminal-nexus-lore.md)
-
-The current milestone controls implementation scope. Future-facing documents do not authorize their systems.
-
-## Development
+## Local Development
 
 ### Build
 
