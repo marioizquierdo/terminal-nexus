@@ -8,7 +8,10 @@ It combines modern drafting and autobattler structure with old-school RTS ideas:
 
 Terminal Nexus is in pre-production. No playable game exists yet.
 
-The current work is **Milestone 1A**, a bounded renderer/toolchain preflight. It selects the first reliable TypeScript terminal path before the authored ASCII battle reel. Combat simulation begins only after that visual milestone succeeds.
+The current work is **Milestone 1A**, a bounded preflight that selects the first reliable TypeScript
+terminal backend by proving it can own an exact cell frame and always give the terminal back. The
+authored ASCII battle reel follows it; combat simulation begins only after that visual milestone
+succeeds.
 
 ## Canon and current work
 
@@ -19,6 +22,8 @@ The project is specification-driven and uses a focused canon rather than one lar
 - [Current battle-spike milestone](specs/milestone-1-spike-battle.md)
 - [Engine and gameplay framework](specs/engine.md)
 - [Lore and aesthetics](specs/terminal-nexus-lore.md)
+- [Open questions awaiting a decision](specs/open-questions.md)
+- [Concept art](concept/README.md)
 
 The current milestone controls implementation scope. Future-facing documents do not authorize their systems.
 
@@ -42,6 +47,8 @@ Repository-level validation is available now:
 ./scripts/check-repository.sh
 ```
 
+It reports the canon version and the active gate, and enforces the canon's structural invariants.
+
 See [DEVELOPMENT.md](DEVELOPMENT.md) for the workflow and evidence requirements.
 
 ## Development environments
@@ -56,6 +63,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the workflow and evidence requirements.
 ```text
 .
 ├── specs/                 Focused canon and milestone contracts
+├── concept/               Concept art and the canon deltas it implies
 ├── docs/                  Human setup and workflow notes
 ├── scripts/               Repository and future development commands
 ├── .devcontainer/         Codespaces configuration

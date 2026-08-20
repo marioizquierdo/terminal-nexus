@@ -2,8 +2,8 @@
 
 **Document role:** Technical architecture, rules contracts, runtime direction, rendering, determinism, and content interfaces
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.0
-**Updated:** 2026-08-19
+**Canon version:** 2.1
+**Updated:** 2026-08-20
 **License:** Apache-2.0
 
 This document defines the system Terminal Nexus intends to grow into. It is not permission to build every interface now. The active milestone identifies the smallest contracts currently justified.
@@ -194,7 +194,9 @@ Ranged attacks resolve at an authoritative tick. A visible projectile is normall
 
 Workers choose the closest available job by deterministic path distance. Jobs include building slots, natural deposits, salvage, returning to the Nexus when storage is full, and future faction-specific labor.
 
-They do not carry individual bundles home. They remain at a job and produce continuously during the Pulse. When storage fills, they return toward the Nexus. When production spends resources and opens capacity, idle workers resume immediately.
+They do not carry individual bundles home. They remain at a job and produce continuously during the Pulse.
+
+What a worker does when storage fills is **not yet decided**. Returning toward the Nexus is carry-shaped behavior inside a no-carry model, and "resume immediately" ignores travel time. See Q7 in [`open-questions.md`](open-questions.md); the recommendation there is that a full store simply stalls the worker at its job. Milestone 4 decides.
 
 Workers do not attack. They consume normal army supply and are produced by a dedicated automatic building.
 
@@ -217,7 +219,7 @@ Workers and military share population supply. Destroying supply never deletes ex
 
 ### 6.4 Construction territory
 
-The battlefield Nexus roots a connected network. Buildings project a default construction radius of two tiles; outposts may project farther.
+The battlefield Nexus roots a connected network. Buildings project a default construction radius of two tiles; outposts may project farther. The builder concept art shows a larger value on an Outpost, which is consistent — see Q5 in [`open-questions.md`](open-questions.md).
 
 A disconnected building keeps operating but loses its projected radius until reconnected. A player cannot build inside enemy coverage that was public at Build Phase start. Individually legal hidden plans may reveal into overlapping coverage. A capture structure produces a neutral-zone bonus only while connected.
 
@@ -408,6 +410,10 @@ Renderers never reverse-engineer glyphs or ANSI into mechanics.
 
 The canonical terminal composition is initially 80×24 with a 48×18 battlefield. Larger terminals center or frame the same map and may expand inspection space without revealing extra tactical information. Below minimum size, playback pauses behind a resize gate and resumes from the same presentation time. Early milestones do not scroll or crop the battlefield.
 
+**How many columns one tile occupies is open.** The arithmetic above closes only at one column per tile: 48 interior columns plus a border leaves 30 for the sidebar. The concept art is drawn at two columns per tile, which needs roughly 128×24 and is where much of its readability comes from. This is Q1 in [`open-questions.md`](open-questions.md), and the Gate 1A fixture renders both so the question is answered by looking.
+
+Tile width is a **composition** parameter, not a semantic one. Whatever it is set to, the same tiles carry the same actors and reveal the same information — which is what keeps it inside the rule above rather than becoming a gameplay setting.
+
 ```ts
 type CellStyle = Readonly<{
   fgRole?: string
@@ -470,19 +476,25 @@ Prefer fixed bands over unrestricted z-index:
 
 Each band returns sparse cells; the top defined cell replaces the lower complete cell style. Battlefield bands clip to the map. Presentation overlap never changes gameplay occupancy.
 
+**Corruption law.** An effect that deliberately degrades the display — Glitch identity, Nexus authority, Commander restoration, catastrophic destruction — is applied in the `effects` band or above, never in `units` or `structures`. It may add, overdraw, and unsettle. It may never remove or replace the only cell carrying a required semantic cue. This is what lets a faction whose identity is illegibility coexist with a contract that requires legibility; see Q4 in [`open-questions.md`](open-questions.md).
+
 ## 11. Runtime and terminal direction
 
-Terminal Nexus stays TypeScript-first through early proofs. That does not require Node.js or any one TUI library to own the architecture.
+Terminal Nexus stays TypeScript-first through early proofs. That does not require Node.js, Bun, or any one TUI library to own the architecture.
+
+**Library and runtime are independent choices.** An earlier draft of this document treated "OpenTUI on Bun" and "direct ANSI on Deno or Node" as two package deals. Measurement on 2026-08-20 falsified that: `@opentui/core@0.5.4` publishes an explicit `node` export and imports cleanly on Node 22, and its native core ships as prebuilt per-platform packages rather than requiring a Zig toolchain. Choose the library on cell-frame behavior and the runtime on packaging and availability, separately.
 
 The bounded candidates are:
 
-- **Imperative OpenTUI on Bun:** leading terminal path because of cell buffers, input/mouse/resize support, native rendering, custom streams, SSH examples, and Bun executable packaging. Risks: pre-1.0 churn and native artifacts.
-- **Direct ANSI TypeScript:** portability/control baseline under Bun plus Deno or Node. It must remain small and may not grow into an accidental widget framework.
+- **OpenTUI imperative core:** leading terminal path. It exposes `OptimizedBuffer.setCell`, mouse, resize, arbitrary input/output streams, and a testing harness with a manual clock and a frame recorder — which is most of what the cell boundary and its snapshot tests need. Risks are pre-1.0 churn (318 published versions in its first year) and weight (a 21 MB native library; a 140 MB standalone binary), not capability.
+- **Direct ANSI TypeScript:** the portability and control baseline. It measures how much terminal responsibility the project would own by doing this itself. It must stay small; if it starts needing capability discovery, robust input parsing, or mouse decoding, that is a measured result, not a to-do list.
 - **Terminal Kit:** mature TypeScript contingency if direct ANSI begins recreating a library.
-- **Ratatui + Crossterm:** strongest native architecture contingency if TypeScript fails measured requirements; adopting it would create a Rust boundary and content/modding cost.
+- **Ratatui + Crossterm:** strongest native architecture contingency if TypeScript fails a measured requirement; adopting it creates a Rust boundary and a content and modding cost.
 - **Bubble Tea + Wish:** strongest Go hosted-SSH contingency, likewise not an early default.
 
-Deno is valuable for a pure-TypeScript ANSI/package probe, not an assumed OpenTUI host. Node remains viable but is no longer inherited automatically from Model Chess Club. Exact runtime/library versions must be checked and pinned during the active gate.
+Bun and Node are both present in the project's working environments; **Deno is not**, and no measured requirement currently needs it, so it is out of Milestone 1. It stays a viable pure-TypeScript packaging option if one is ever needed.
+
+Exact runtime and library versions must be re-checked against official sources and pinned during the active gate. Pinned evidence goes in the gate report, not here.
 
 ### 11.1 Terminal lifecycle
 

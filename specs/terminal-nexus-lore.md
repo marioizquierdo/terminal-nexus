@@ -2,8 +2,8 @@
 
 **Document role:** Universe, factions, conflicts, narrative constraints, and symbolic art direction
 **Status:** Canonical
-**Canon version:** 2.0
-**Updated:** 2026-08-19
+**Canon version:** 2.1
+**Updated:** 2026-08-20
 **License:** CC BY-SA 4.0
 
 This is the context document for writing Terminal Nexus fiction, developing campaigns, naming content, and designing ASCII art. New stories may invent local people, places, artifacts, and conflicts, but should preserve the universe rules and deliberate mysteries below.
@@ -284,7 +284,11 @@ Faction aesthetics apply to shapes, movement, placement, attacks, interface acce
 
 Strong full-screen glitches are reserved for Nexus authority, Glitch identity, Originals, Commander restoration, and catastrophic destruction. Ordinary weapons need distinct physical languages so every event does not become the same computer effect.
 
+A faction whose identity is illegibility lives under one rule, so that identity and readability can both survive: **corruption is drawn in the `effects` band and above, never in `units` or `structures`. It may add, overdraw, and unsettle; it may never remove or replace the only cell carrying a required semantic cue.** The screen may look wrong. The player must still be able to see what is attacking them. See [`engine.md`](engine.md) Section 10.4 and Q4 in [`open-questions.md`](open-questions.md).
+
 Useful artistic precedents include NetHack's semantic glyphs and inspection, Brogue's restrained lighting and terrain, Dwarf Fortress's accumulation of simulated meaning, and Cogmind's modern science-fiction ASCII interface and procedural effects. These are references, not templates.
+
+[`ascii-art-references.md`](ascii-art-references.md) collects those sources with what each one is actually good for, alongside drawing tools and the readability lessons the roguelike community has already paid for. It is research, not authority — when it disagrees with this section, this section wins.
 
 ## 10. Voice and lore economy
 

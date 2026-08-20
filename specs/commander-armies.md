@@ -2,8 +2,8 @@
 
 **Document role:** Playable faction packages: Commanders, units, structures, upgrades, and Nexus powers
 **Status:** Canonical placeholder; rosters intentionally undefined
-**Canon version:** 2.0
-**Updated:** 2026-08-19
+**Canon version:** 2.1
+**Updated:** 2026-08-20
 **License:** Creative identity is CC BY-SA 4.0; mechanical definitions and schemas are Apache-2.0
 
 ## 1. Purpose

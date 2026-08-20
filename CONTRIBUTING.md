@@ -6,9 +6,10 @@ Terminal Nexus is in pre-production and uses bounded experiments to earn archite
 
 1. Read `AGENTS.md`.
 2. Read `specs/terminal-nexus-concept.md` and `specs/README.md`.
-3. Read the milestone and gate marked **CURRENT**.
+3. Read the milestone marked **CURRENT**, through its **Active gate**.
 4. Read only the focused canon referenced by that gate.
-5. Confirm that the change belongs to the current authorization.
+5. Skim `specs/open-questions.md` so you do not silently decide something that is waiting on Mario.
+6. Confirm that the change belongs to the current authorization.
 
 Open an issue or discussion before work that changes a locked decision, widens the active gate, adds a service or secret, introduces a compatibility promise, or modifies licensing.
 

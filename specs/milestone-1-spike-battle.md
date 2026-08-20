@@ -1,74 +1,108 @@
 # Milestone 1 — prove the ASCII battle
 
 **Document role:** Start-here implementation contract
-**Status:** CURRENT — Gate 1A only
-**Canon version:** 2.0
-**Updated:** 2026-08-19
+**Status:** CURRENT
+**Active gate:** 1A — cell frame and lifecycle
+**Canon version:** 2.1
+**Updated:** 2026-08-20
 **License:** Apache-2.0; authored creative treatments are CC BY-SA 4.0
 
 ## 1. Milestone decision
 
 Milestone 1 asks:
 
-> **Can Terminal Nexus own a reliable terminal surface and use moving symbols to create a battle that is legible, weighty, and intrinsically enjoyable to watch?**
+> **Can Terminal Nexus own a reliable terminal surface and use moving symbols to create a battle that
+> is legible, weighty, and intrinsically enjoyable to watch?**
 
-The milestone has two sequential gates:
+Three gates answer it. Only one is CURRENT at a time.
 
-- **Gate 1A — renderer preflight (CURRENT):** select the first TypeScript runtime/backend using one bounded deterministic fixture.
-- **Gate 1B — authored battle reel (GATED):** use the selected path to compare ASCII battle and Commander treatments.
+| Gate | Question | Status |
+| --- | --- | --- |
+| **1A — cell frame and lifecycle** | Can a TypeScript backend own an exact 80x24 cell frame, animate it smoothly, and always give the terminal back? | **CURRENT** |
+| **1B — authored battle reel** | Do moving symbols make a battle worth watching before combat rules exist? | GATED on 1A acceptance |
+| **1C — delivery probe** | Can the chosen path ship as one artifact and survive a remote PTY and a browser terminal? | GATED, independent |
 
-Implement **Gate 1A only**. Stop with a decision report. Gate 1B requires owner acceptance and an explicit status update here.
+Gate 1C does **not** block Gate 1B. It may run before it, after it, or never, depending on what
+Mario wants to show people first. Bundling delivery into the renderer decision was the previous
+version's largest scope error; see Q6 in [`open-questions.md`](open-questions.md).
 
-The first milestone intentionally does not implement combat rules. Gate 1A uses a synthetic cell animation. Gate 1B uses authored scene facts. The deterministic Nexus Pulse kernel begins in Milestone 2.
+Milestone 1 implements no combat rules. Gate 1A animates a synthetic fixture. Gate 1B animates
+authored scene facts. The deterministic Nexus Pulse kernel begins in Milestone 2.
 
 ## 2. Read before coding
 
-Read in this order:
-
 1. [`terminal-nexus-concept.md`](terminal-nexus-concept.md)
-2. this document through Gate 1A exclusions and evidence requirements
-3. [`engine.md`](engine.md), Sections 1, 2, 10, and 11
-4. [`terminal-nexus-lore.md`](terminal-nexus-lore.md), Sections 1 and 9 for symbolic intent
-5. [`project-governance.md`](project-governance.md), Sections 2–4
-6. repository instructions and existing evidence
+2. this document, through the active gate's exclusions
+3. [`open-questions.md`](open-questions.md) Section 4 — what is undecided and why
+4. [`engine.md`](engine.md) Sections 1, 2, 10, and 11
+5. [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Sections 1 and 9, for symbolic intent
+6. [`project-governance.md`](project-governance.md) Sections 2-4
+7. `AGENTS.md`, then existing source, tests, and evidence
 
-Before editing, restate in the evidence report draft:
+Before editing, open the gate report from
+[`templates/gate-report.md`](templates/gate-report.md) and fill in its first section: question,
+smallest artifact, automated evidence, owner-observed evidence, exclusions, stop conditions. The
+report is written **during** the gate, not after it.
 
-- the current question;
-- the smallest artifact;
-- automated evidence;
-- owner-observed evidence;
-- exclusions and stop conditions.
+---
 
-## 3. Gate 1A — renderer preflight
+## 3. Gate 1A — cell frame and lifecycle (CURRENT)
 
 ### 3.1 Decision to earn
 
-> **Which first TypeScript renderer/runtime path can launch fast, own an exact cell frame, animate smoothly, restore the terminal reliably, and distribute credibly without coupling the future simulation to one platform?**
+> **Which TypeScript terminal backend can own an exact cell frame, animate it at 60 fps without
+> tearing or drift, and restore the terminal from every exit path — without coupling the future
+> simulation to one library?**
 
-This chooses the first terminal adapter for Gate 1B. It does not choose every future platform or permanently lock the engine language.
+That is the whole question. Not packaging, not SSH, not the browser, not which runtime is
+philosophically nicer. Gate 1A chooses the backend that Gate 1B will author against.
 
 Allowed outcomes:
 
-- **PASS — imperative OpenTUI on Bun**
-- **PASS — direct ANSI on a named TypeScript runtime**
-- **REVISE — exactly one targeted comparator is needed**
-- **STOP/BLOCKED — no bounded TypeScript route passes**
+- **PASS — OpenTUI imperative core**, on a named and pinned runtime
+- **PASS — direct ANSI**, on a named and pinned runtime
+- **REVISE — exactly one named comparator is needed**, with the criterion it must satisfy
+- **STOP / BLOCKED — no bounded TypeScript route owns a reliable cell frame**
 
-Do not begin Gate 1B in the same implementation pass.
+Do not begin Gate 1B or Gate 1C in the same pass.
 
-### 3.2 Research hypotheses to verify
+### 3.2 Prior findings — verify, do not trust
 
-- **Imperative OpenTUI on Bun leads.** Direct cell buffers, input/mouse/resize, native rendering, custom streams, SSH examples, and Bun executable packaging fit the product.
-- **Direct ANSI is the control and portability baseline.** It exposes how much terminal responsibility the project would own.
-- **Deno is a credible pure-TypeScript runtime and packager.** Probe it with the ANSI baseline, not an assumed unofficial OpenTUI host.
-- **Node is viable but not inherited automatically** from Model Chess Club.
-- **Terminal Kit is the TypeScript contingency** if direct ANSI starts recreating a terminal library or OpenTUI fails a library-specific criterion.
-- **Ratatui/Crossterm is the native architecture contingency.** Bubble Tea/Wish is the hosted-SSH/distribution contingency. Neither is implemented without a named failure requiring it.
+These were measured on 2026-08-20 inside a Linux x64 Claude Code container. They are **indicative,
+not gate evidence**: single cold samples on shared hardware, no TTY attached. Re-measure everything
+you intend to cite, and treat any disagreement with these numbers as the interesting result.
 
-Re-check official documentation before pinning. Never copy a floating or remembered version into the repository.
+| Finding | Measured | Why it matters |
+| --- | --- | --- |
+| `@opentui/core@0.5.4`, MIT, published 2026-08-18 | registry metadata | Current pin candidate |
+| **318 published versions, 141 semver releases since 2025-08-13** | registry metadata | ~12 releases/month. Pre-1.0 churn is real and large. Pin exactly; expect to re-pin |
+| Repository is `anomalyco/opentui`; older references point at `sst/opentui` | search results | The project has moved once already. Verify the canonical repo before citing it |
+| **OpenTUI exposes a `node` export and imports cleanly on Node 22.22.2** | `node --experimental-strip-types` | The old "OpenTUI means Bun" premise is false. Library and runtime are **independent axes** |
+| Native core ships as 8 prebuilt platform packages in `optionalDependencies` | registry metadata | No Zig toolchain needed to consume. The "must have Zig installed" note applies to building the monorepo |
+| `bun add @opentui/core` resolved in 1.53 s; `node_modules` 84 MB; `libopentui.so` 21 MB | local install | Heavy for a game that draws characters. Worth knowing, not disqualifying |
+| `bun build --compile` produced a 140 MB binary that ran from a clean working directory | local build | The FFI-plus-standalone-binary risk is **largely retired**. Size is the open cost |
+| Startup: compiled binary ~390-580 ms; `bun run` ~290 ms | 5 samples each | Under the "launches almost instantly" bar, but not by much. Measure properly on real hardware |
+| `@opentui/core/testing` exports `ManualClock`, `TestRecorder`, `RecordedFrame`, mock keys and mouse | type definitions | A deterministic, TTY-free snapshot harness already exists. Most of Section 3.7 may be assembled rather than written |
+| `OptimizedBuffer.setCell(x, y, char, fg, bg, attributes)` | type definitions | `ReadonlyCellFrame` maps to a direct `setCell` loop. The boundary in Section 3.4 is achievable as written |
+| `CliRenderer(stdin, stdout, width, height, config)` accepts arbitrary streams | type definitions | The custom-stream hypothesis holds, which is what makes Gate 1C possible later |
+| Bun 1.3.11 and Node 22.22.2 are present in the Claude Code web container; **Deno is not** | `command -v` | A Deno probe costs an install in every session |
 
-### 3.3 Shared contract
+### 3.3 Hypotheses to test
+
+- **OpenTUI's imperative core leads**, because `setCell`, mouse, resize, arbitrary streams, and a
+  testing harness are already there. Its risks are churn and weight, not capability.
+- **Direct ANSI is the control.** It measures how much terminal responsibility the project would own
+  if it took OpenTUI's job back. It is a real candidate, not a formality.
+- **Runtime is a separate choice.** Probe Bun first because it is present, fast, and packages
+  directly. Node is the portability check. **Deno is dropped from this gate** — it is not installed
+  in the working environment and no measured requirement currently needs it.
+- **Terminal Kit is the contingency** if direct ANSI starts becoming a terminal library.
+- **Ratatui/Crossterm and Bubble Tea/Wish stay unimplemented** unless a named TypeScript failure
+  requires one.
+
+Re-check official documentation before pinning. Never copy a remembered or floating version.
+
+### 3.4 The boundary
 
 The fixture owns its data and presentation contracts:
 
@@ -88,8 +122,8 @@ type Cell = Readonly<{
 }>
 
 type ReadonlyCellFrame = Readonly<{
-  width: 80
-  height: 24
+  width: number
+  height: number
   cells: readonly Cell[]
 }>
 
@@ -100,148 +134,140 @@ interface TerminalBackend {
 }
 ```
 
-Names may change; the boundary may not. No OpenTUI, Bun, Deno, Node, ANSI, Rust, or Go object appears in the frame or fixture.
+Names may change; the boundary may not. **No OpenTUI, Bun, Node, ANSI, Rust, or Go value may appear
+in a frame, a cell, or the fixture.** If a backend needs something the boundary does not carry, that
+is a finding — write it down rather than widening `Cell`.
 
-This cell frame is the terminal boundary, not the future universal renderer API. The production engine will emit player-safe semantic views/events; graphical renderers consume those semantics without parsing glyphs.
+Style carries **roles**, not colours. `fgRole: "faction.citizen"` is legal; `fgRole: "#ff8800"` is
+not. Role-to-colour resolution belongs to the capability mode, which is what makes monochrome a
+setting rather than a rewrite.
 
-### 3.4 Shared deterministic fixture
+This cell frame is the terminal boundary, not the future universal renderer API. The production
+engine will emit player-safe semantic views and events; graphical renderers consume those semantics
+without parsing glyphs.
 
-Every attempted backend uses the same authored 80×24 scene:
+### 3.5 The shared fixture
 
-- bordered 48×18 battlefield inside the future composition;
-- at least 25 changing cells in the busiest sample;
-- symbols moving between recorded integer tile states;
-- one projectile/beam, impact, and color/attribute transition;
-- visible presentation clock, frame counter, and synthetic logical-tick counter;
-- capability label plus changed-cell and bytes-written diagnostics;
-- keyboard commands for pause/resume, step, capability mode, and exit;
-- receipt/reporting of mouse input without making mouse necessary.
+Every backend renders the same authored scene, from the same code, through the same boundary.
 
-Recorded logical states use the 12 Hz working hypothesis. Presentation samples at 30 or 60 fps and may interpolate only cosmetic motion/effects. There is no simulation. A timestamp and capability mode produce the same structured frame regardless of backend or physical frame rate.
+**Composition.** A bordered 48x18 battlefield inside an 80x24 frame, plus a right sidebar, a header,
+and a control footer — the layout the concept art shows, at the scale canon locks.
 
-Effects use absolute presentation time. A slow backend may skip frames without altering a later sampled frame.
+**Tile width is a fixture parameter with values 1 and 2.** At width 1 the frame is 80x24. At width 2
+the same battlefield needs roughly 128x24 and the fixture must say so and render it. This is how
+Q1 in [`open-questions.md`](open-questions.md) gets answered: Mario looks at both and picks, instead
+of the two of us arguing about column budgets. Both widths must produce the same *semantic* content
+— identical actors on identical tiles — differing only in composition.
 
-### 3.5 Probe A — OpenTUI/Bun
+**Content**, at either width:
 
-1. Pin exact Bun and `@opentui/core` versions.
-2. Use imperative core, not React or Solid.
-3. Map `ReadonlyCellFrame` into one full-frame buffer/renderable.
-4. Verify alternate screen, cursor, keyboard, mouse receipt, resize, pause/resume, and custom streams where supported.
-5. Run 30 fps and 60 fps trials for at least 30 seconds each.
-6. Produce a standalone executable for the current target; try only documented cross-target paths and record failures honestly.
-7. Exercise normal exit, `q`, `SIGINT`, `SIGTERM`, setup failure, and an injected caught render failure through one idempotent disposer.
+- symbols moving between recorded integer tile positions;
+- at least 25 changed cells in the busiest sample;
+- one ranged attack: telegraph, travel, impact;
+- one colour or attribute transition tied to a state change, not to a timer;
+- a visible presentation clock, frame counter, and synthetic logical-tick counter;
+- a capability label plus changed-cell and bytes-written diagnostics;
+- keys for pause, resume, step, tile width, capability mode, and quit;
+- receipt and display of one mouse event, without making the mouse necessary.
 
-Do not adopt OpenTUI layout/widgets simply to showcase them. Terminal Nexus owns the fixed composition; this probe is about backend behavior.
+**Time.** Recorded logical states use the 12 Hz working hypothesis. Presentation samples at 30 or
+60 fps and may interpolate cosmetic motion only. There is no simulation. A given timestamp,
+capability mode, and tile width produce the same structured frame on every backend, at every
+physical frame rate. Effects sample absolute presentation time, so a backend that drops frames still
+produces the correct later frame.
 
-### 3.6 Probe B — direct ANSI baseline
+### 3.6 The two probes
 
-Map the same frame through a deliberately narrow backend supporting:
+**Probe A — OpenTUI imperative core.** Pin exact versions. Use the imperative core; not React, not
+Solid, not the layout system. Terminal Nexus owns its composition — this probe is about backend
+behaviour, not widgets. Map `ReadonlyCellFrame` into one buffer via `setCell`. Run on Bun; then
+confirm the same fixture imports and renders on Node, or record exactly how it fails.
 
-- alternate screen, cursor, and raw input;
-- explicit seven-bit monochrome, 16-color, 256-color, truecolor, and optional Unicode modes;
-- previous-frame comparison and changed runs;
-- resize and the same disposer cases;
-- byte counting around real writes;
-- identical structured snapshots before escape encoding.
+**Probe B — direct ANSI.** Map the same frame through a deliberately narrow backend: alternate
+screen, cursor control, raw input, previous-frame diffing with changed runs, byte counting around
+real writes, and explicit monochrome / 16-colour / 256-colour / truecolor modes. Same runtimes, same
+fixture, same snapshots before escape encoding.
 
-Run it under Bun and one secondary runtime: prefer Deno; use Node if Deno blocks ordinary terminal input/output or packaging. Produce one self-contained artifact through the selected runtime's documented tooling.
+**Stop condition for Probe B:** if it starts needing robust input parsing, terminal capability
+discovery, or mouse decoding, **stop and record it**. That is the measurement — it means the project
+would be writing a terminal library — and it is the trigger for the Terminal Kit comparator.
 
-If robust input parsing, mouse, terminal discovery, or output diffing begins becoming a library project, stop and use Terminal Kit as the comparator. Record why.
+### 3.7 Automated acceptance
 
-### 3.7 Remote and browser smoke
+Every item is a test that fails loudly, not a thing you looked at once.
 
-For the leading candidate:
+**Frame and time**
 
-1. run the fixture through an ordinary PTY or SSH session;
-2. confirm initial dimensions and resize propagation;
-3. terminate/disconnect and verify cleanup;
-4. record bytes written during idle and busy intervals;
-5. connect the ANSI/custom stream to a local xterm.js/WebSocket client, or reproduce the current official adapter example closely enough to identify a precise remaining integration task.
+- every frame is exactly the composition's declared size, at both tile widths;
+- every gameplay glyph has terminal width one;
+- a fixed `(timestamp, capability, tileWidth)` produces byte-identical structured frames;
+- **backend choice does not change frame content** — Probe A and Probe B snapshots are equal;
+- pause freezes presentation time; step advances exactly one 1/60 s sample;
+- synthetic logical states occur every 1/12 simulation second;
+- dropping render samples does not change any later frame.
 
-This does not authorize accounts, public endpoints, durable sessions, authentication, matchmaking, TLS deployment, or save recovery.
+**Terminal behaviour**
 
-### 3.8 Conditional comparators
+- one backend sustains 60 fps with ample margin over a 30 s run; 30 fps is the floor;
+- resize below the minimum shows a gate and freezes presentation time; resizing back resumes from
+  the same presentation time;
+- at least one keyboard event and one mouse event are observed and reported;
+- `q`, `SIGINT`, `SIGTERM`, setup failure, and an injected caught render failure all run the **same**
+  disposer;
+- calling the disposer twice is harmless;
+- non-TTY launch prints one readable line and emits no escape sequences;
+- monochrome ASCII remains legible with colour fully disabled.
 
-| Comparator | Authorize only when |
-| --- | --- |
-| Terminal Kit | OpenTUI fails a TypeScript-library criterion or direct ANSI accumulates general TUI responsibilities |
-| Ratatui + Crossterm | both TypeScript paths fail cells, lifecycle, packaging, performance, or platform reliability in a way native code plausibly fixes |
-| Bubble Tea + Wish | hosted SSH becomes decision-critical and the ordinary PTY/TypeScript path cannot satisfy it |
+The lifecycle cases are the ones that matter most. A renderer that drops two frames per minute is a
+tuning problem; a renderer that leaves Mario's terminal in raw mode with a hidden cursor is a reason
+to reject it.
 
-Any comparator uses the same serialized fixture and evidence. Do not port simulation or content.
+### 3.8 Evidence to record
 
-### 3.9 Automated acceptance
+Per candidate, and no more than this:
 
-#### Frame and time
-
-- Every frame is exactly 80×24.
-- Every required gameplay glyph has terminal width one.
-- Fixed timestamp/mode produces byte-identical structured frames.
-- Backend choice does not change frame content.
-- Pause freezes presentation time; step advances one 1/60-second sample.
-- Synthetic logical states occur every 1/12 simulation second.
-- Dropping a render sample does not change later output.
-
-#### Terminal behavior
-
-- One backend sustains 60 fps with ample margin; 30 fps remains a target.
-- Resize below 80×24 shows a gate and freezes time; resizing back resumes safely.
-- Keyboard and at least one mouse event are observed.
-- `q`, `SIGINT`, `SIGTERM`, setup failure, and caught render failure use the same safe disposer.
-- Calling the disposer twice is harmless.
-- Non-TTY launch prints one readable message and no animation escapes.
-- Monochrome ASCII remains legible without color.
-
-#### Packaging and delivery
-
-- At least one frictionless artifact launches on the current desktop target without a project toolchain.
-- A tested remote PTY receives input, resize, and output.
-- Browser-terminal delivery is demonstrated or reduced to a reproducible official boundary and precise task.
-
-### 3.10 Evidence matrix
-
-Record for each candidate:
-
-- exact runtime, dependency, compiler, OS, and architecture;
-- install, development, test, package, and launch commands;
+- exact runtime, dependency, OS, and architecture versions;
+- install, dev, test, and launch commands, copy-pasteable;
 - startup latency and clean-install time;
-- median, p95, and worst composition/presentation time;
-- requested versus published frames;
-- changed cells and bytes for idle, movement, and impact samples;
-- idle CPU when measurable honestly;
-- package size and target artifacts actually produced;
-- keyboard, mouse, resize, non-TTY, and capability results;
-- lifecycle result for every exit/failure path;
-- adapter size/complexity and workarounds;
-- PTY/SSH and browser smoke result;
-- unsupported targets labeled measured, documented, or unknown.
+- median, p95, and worst composition and presentation times;
+- requested versus published frames over the 30 s run;
+- changed cells and bytes written for idle, movement, and impact samples;
+- adapter size in lines, and every workaround it needed;
+- result of each lifecycle and capability case;
+- anything that surprised you.
 
-Do not call an untested platform supported. Separate measured facts from judgment.
+Separate measured facts from judgement. Do not call an untested platform supported.
 
-### 3.11 Decision rule and handoff
+### 3.9 Decision rule
 
-Prefer the simplest candidate passing product-critical requirements. Speed far beyond ample 60 fps margin is not a reason to rewrite the engine. A larger binary is acceptable if startup is fast and installation is easier. Widget polish is irrelevant unless it removes work Terminal Nexus needs.
+Prefer the **simplest** candidate that owns the frame and always restores the terminal. Speed beyond
+comfortable 60 fps is not a reason to choose anything. Widget polish is irrelevant unless it removes
+work Terminal Nexus would otherwise do. Dependency weight matters only where it costs startup or
+reliability.
 
 The report answers:
 
-1. Which runtime/backend should Gate 1B use?
-2. Which measured reason defeated the runner-up?
-3. What remains in the game-owned adapter?
-4. Which platforms were actually tested?
-5. Which future adapter remains viable without affecting current code?
-6. Is one conditional comparator required?
+1. Which backend and runtime should Gate 1B author against?
+2. Which measured fact defeated the runner-up?
+3. What is left in the game-owned adapter, in lines and in responsibilities?
+4. Which platforms were actually tested, and which are unknown?
+5. Which future adapter stays viable without changing current code?
+6. Is a conditional comparator required, and against which criterion?
+7. Which tile width does the fixture argue for, and what did Mario see?
 
-Suggested evidence location:
+### 3.10 Suggested layout
 
 ```text
 spikes/battle-renderer/
   README.md
   src/
-    fixture/
-    contract/
+    contract/      cell frame, backend interface, capability modes
+    fixture/       the authored scene, parameterised by tile width
     backends/
+      opentui/
+      ansi/
     input/
-    lifecycle/
+    lifecycle/     the one disposer
   tests/
   evidence/
     report.md
@@ -249,77 +275,140 @@ spikes/battle-renderer/
     snapshots/
 ```
 
-Exact shape is flexible; fixture/contracts are shared and backend setup remains separate.
+Shape is flexible. Contract and fixture are shared; backends stay separate and know nothing about
+each other.
 
-### 3.12 Gate 1A exclusions
+### 3.11 Exclusions
 
 - no combat, targeting, pathfinding, economy, workers, production, or resources;
-- no authoritative Nexus Pulse loop or movement-credit rule;
+- no authoritative Pulse loop or movement-credit rule;
 - no Gate 1B storyboard or Commander comparison;
+- no packaging, standalone binary, SSH, PTY, or browser work — that is Gate 1C;
 - no campaign, save, progression, balance, AI, multiplayer, or LLM;
-- no public mod API, plugin loader, effect DSL, ECS, dependency-injection framework, or universal renderer SDK;
-- no production SSH host, browser game, iOS package, pixel renderer, or 3D renderer;
-- no Rust/Go migration without a decision outcome authorizing one bounded comparator.
+- no mod API, plugin loader, effect DSL, ECS, DI framework, or universal renderer SDK;
+- no Rust or Go migration.
 
-Gate 1A ends after source, tests, pinned commands, snapshots, measurements, smoke notes, known failures, and a **PASS/REVISE/STOP/BLOCKED** report. Update canon only after owner acceptance.
+### 3.12 Definition of done
+
+Gate 1A is complete when **all** of these are true, and not before:
+
+- [ ] both probes render the shared fixture through the same boundary;
+- [ ] every check in Section 3.7 exists as an automated test and passes;
+- [ ] Probe A and Probe B produce identical structured snapshots;
+- [ ] the fixture runs at both tile widths and both are captured for Mario;
+- [ ] `./scripts/check-repository.sh` passes;
+- [ ] `evidence/report.md` is filled in from
+      [`templates/gate-report.md`](templates/gate-report.md) and ends with one of
+      **PASS / REVISE / STOP / BLOCKED**;
+- [ ] every command in the report has been run verbatim from a clean checkout;
+- [ ] new questions raised are rows in [`open-questions.md`](open-questions.md), each with a
+      recommendation.
+
+Then **stop.** Do not update canon; that happens after Mario accepts. Do not start Gate 1B because
+time remains — Gate 1B's whole value is that it is authored against a backend that is already known
+to work.
+
+---
 
 ## 4. Gate 1B — authored ASCII battle reel (GATED)
 
-Do not implement this section while Gate 1A is CURRENT.
+Do not implement while Gate 1A is the active gate.
 
 ### 4.1 Question
 
-> **Can moving symbols produce enough anticipation, impact, clarity, and personality that watching a battle is satisfying before real combat exists?**
+> **Can moving symbols produce enough anticipation, impact, clarity, and personality that watching a
+> battle is satisfying before real combat exists?**
 
 ### 4.2 Deliverable
 
-A 30–45-second non-branching reel driven by hand-authored scene facts, containing:
+A 30-45 second non-branching reel driven by hand-authored scene facts, containing:
 
 - simultaneous-looking movement;
-- melee hostile-cell claim;
-- ranged volley;
-- fleeing worker;
+- a melee hostile-cell claim;
+- a ranged volley;
+- a fleeing worker;
 - structure assembly;
 - building destruction and salvage;
-- battlefield Nexus entering critical condition;
+- a battlefield Nexus entering critical condition;
 - Commander presence, influence, fall, or survival;
-- pause, restart, speed, step, glyph/color/treatment, help, and clean exit controls.
+- pause, restart, speed, step, glyph and colour treatment, help, and clean exit.
 
-The same positions, structures, damage, construction, destruction, outcome, and beat timing appear in four Commander treatments:
+The same positions, structures, damage, construction, destruction, outcome, and beat timing appear
+in four Commander treatments:
 
 1. frontline `@`;
 2. support general;
 3. Nexus-bound presence;
 4. no Commander.
 
-Treatments change presentation only. Frontline `@` is the leading hypothesis, not a required conclusion.
+Treatments change presentation only. Frontline `@` is the leading hypothesis, not a conclusion.
 
 ### 4.3 Constraints
 
-- fixed 80×24 frame and 48×18 battlefield;
+- the composition and tile width Gate 1A selected;
 - one framebuffer composition;
-- pure `snapshotAt(timeMs, treatment, capability, reducedMotion)`;
-- step advances one 1/30-second quantum while paused;
+- a pure `snapshotAt(timeMs, treatment, capability, tileWidth, reducedMotion)`;
+- step advances one 1/30 s quantum while paused;
 - resize freezes presentation time;
-- authored `ReelEvent`, not a replay schema;
+- authored `ReelEvent` values, not a replay schema;
 - direct TypeScript effect functions, not a DSL;
 - no economy, routing, combat simulation, AI, saves, campaign, or content loader.
 
 ### 4.4 Acceptance
 
-Automated evidence covers deterministic structured snapshots, capability modes, resize, controls, cleanup, changed-cell/frame diagnostics, and glyph width.
+Automated evidence covers deterministic snapshots, capability modes, resize, controls, cleanup,
+changed-cell diagnostics, and glyph width.
 
-Owner and fresh-viewer evidence asks whether viewers can identify sides, targets, movement, construction, destruction, the major reversal, and Commander presence without an event log. The sequence must remain understandable in monochrome at 80×24.
+Human evidence is the point of this gate and cannot be automated. Show the reel to **at least one
+person who has never seen it** and ask them to narrate what happened. They should identify sides,
+targets, movement, construction, destruction, the major reversal, and Commander presence **without
+an event log and without a legend**. The reel must survive monochrome.
 
-Revise or stop if the reel reads as telemetry, color is required for causality, effects obscure targets, Commander treatment monopolizes attention, or terminal fragility defeats quick launch.
+Revise or stop if the reel reads as telemetry, if colour is required for causality, if effects
+obscure their own targets, if the Commander treatment monopolises attention, or if terminal
+fragility defeats a quick launch.
 
-## 5. Milestone completion
+---
 
-Milestone 1 passes only after both gates are accepted. Its durable outputs are:
+## 5. Gate 1C — delivery probe (GATED, independent)
 
-- selected and pinned TypeScript runtime/backend;
-- engine-owned structured cell boundary;
-- lifecycle and packaging evidence;
-- authored battle reel and treatment comparison;
-- initial ASCII/effect rules earned from human observation;
-- explicit authorization—or refusal—to begin the deterministic Nexus Pulse.
+Does not block Gate 1B. Authorize when Mario wants Terminal Nexus running somewhere other than the
+machine that built it.
+
+### 5.1 Question
+
+> **Can the selected path ship as one frictionless artifact, and survive an ordinary remote PTY and a
+> browser terminal, without changing the fixture?**
+
+### 5.2 Deliverable
+
+1. One artifact that launches on the current desktop target with no project toolchain installed.
+   Record size, startup latency, and the exact build command. Try only documented cross-target paths
+   and record failures honestly.
+2. The fixture through an ordinary PTY or SSH session: initial dimensions, resize propagation,
+   disconnect cleanup, and bytes written during idle and busy intervals.
+3. The fixture's output stream connected to a local xterm.js client over a WebSocket — or, if that
+   blocks, a reproduction of the current official adapter example reduced to **one precisely named
+   remaining integration task**.
+
+### 5.3 Exclusions
+
+No accounts, public endpoints, durable sessions, authentication, matchmaking, TLS deployment, save
+recovery, or anything that would make this a service. This gate proves the pipe exists. It does not
+open it.
+
+---
+
+## 6. Milestone completion
+
+Milestone 1 passes when Gates 1A and 1B are both accepted. Gate 1C is optional to the milestone and
+mandatory before anyone else is invited to run the game. Durable outputs:
+
+- a selected and pinned TypeScript backend and runtime;
+- the engine-owned structured cell boundary;
+- lifecycle evidence covering every exit path;
+- an authored battle reel and its treatment comparison;
+- initial ASCII and effect rules earned from human observation, promoted into
+  [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 9;
+- an answer to Q1 and Q3 in [`open-questions.md`](open-questions.md);
+- explicit authorization — or refusal — to begin the deterministic Nexus Pulse.

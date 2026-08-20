@@ -2,8 +2,8 @@
 
 **Document role:** Canon authority, evidence process, execution ledger, and durable decisions
 **Status:** Canonical
-**Canon version:** 2.0
-**Updated:** 2026-08-19
+**Canon version:** 2.1
+**Updated:** 2026-08-20
 **License:** Apache-2.0
 
 ## 1. Canon is a document set
@@ -41,6 +41,8 @@ An agent must not independently:
 
 When the design is underdetermined, prefer a fixture, parameter, toggle, or brief comparison that makes the decision observable. Ask the owner only when alternatives materially change the product promise, experiment, or irreversible architecture.
 
+When you do have to ask, ask in [`open-questions.md`](open-questions.md) rather than in a pull-request comment, and follow its protocol: state the options, state their costs, **give a recommendation**, then keep working on everything the answer does not touch. A session that stops entirely because one fork is unresolved has usually stopped too early.
+
 ## 3. The evidence loop
 
 Every milestone gate follows:
@@ -77,13 +79,15 @@ Keep procedural logs out of the canon. Lore and product intent must not be rewri
 
 ## 5. Execution ledger
 
-Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**, and **STOPPED**. Only one implementation gate may be **CURRENT**.
+Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**, and **STOPPED**. Only one implementation gate may be **CURRENT**, and the repository validator enforces it against the milestone documents.
 
 | Workstream | State | Basis | Next action |
 | --- | --- | --- | --- |
-| Product discovery and canon split | COMPLETE | Canon 2.0 separates concept, lore, engine, content, campaigns, and milestones | Preserve boundaries while testing risky assumptions |
-| Milestone 1A — renderer preflight | CURRENT | Official-source survey favors imperative OpenTUI/Bun; direct ANSI is the baseline | Run Gate 1A in `milestone-1-spike-battle.md` and stop for owner acceptance |
-| Milestone 1B — authored ASCII battle reel | GATED | Requires a selected terminal path | Authorize only after Gate 1A passes |
+| Product discovery and canon split | COMPLETE | Canon 2.0 separated concept, lore, engine, content, campaigns, and milestones | Preserve boundaries while testing risky assumptions |
+| Canon audit and autonomy pass | COMPLETE | Canon 2.1 split Milestone 1's scope, added the open-questions register and gate-report template, and replaced hardcoded validator literals with derived invariants | Answer Q1 so the Gate 1A fixture composition is settled |
+| Milestone 1A — cell frame and lifecycle | CURRENT | Backend measurements favor the OpenTUI imperative core; direct ANSI is the control | Run Gate 1A in `milestone-1-spike-battle.md` and stop for owner acceptance |
+| Milestone 1B — authored ASCII battle reel | GATED | Requires a selected backend | Authorize only after Gate 1A passes |
+| Milestone 1C — delivery probe | GATED | Independent of 1B; packaging, PTY, and browser terminal | Authorize when Terminal Nexus needs to run somewhere it was not built |
 | Milestone 2 — deterministic Nexus Pulse | GATED | Requires visual-spike lessons | Lock deterministic contracts before implementation |
 | Milestone 3 — builder and battle editor | GATED | Requires cell-frame and kernel direction | Lock placement rules before implementation |
 | Milestone 4 — Citizens versus Ravels | GATED | Requires presentation, kernel, and builder proofs | Select the deliberately tiny integrated ruleset |
@@ -98,6 +102,7 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 | 2026-08-19 | 1.3 | Added renderer-neutral architecture, runtime research, 12 Hz hypothesis, and preflight contract | Renderer selection |
 | 2026-08-19 | 1.4 | Completed repository quality pass and dual-license scope | Repository bootstrap |
 | 2026-08-19 | 2.0 | Split the monolithic canon; updated Prime Nexus replication, Nexus Symbols, resurrection, and Build Phase/Nexus Pulse terminology | Milestone 1A |
+| 2026-08-20 | 2.1 | Audited canon against itself and the concept art; narrowed Gate 1A to cell frame and lifecycle and moved delivery to Gate 1C; added the open-questions register, gate-report template, ASCII references, and concept index; corrected runtime direction against measured evidence; replaced hardcoded validator literals with derived invariants | Milestone 1A |
 
 ## 7. Locked product decisions
 
@@ -117,9 +122,16 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 - First integrated factions: Citizens and Ravels.
 - First complete single-player direction: Citizen origin campaign.
 - Architecture: deterministic kernel, content, scenario, projection, presentation, adapters, and shell remain separate.
+- Terminal library and JavaScript runtime are chosen independently; neither implies the other.
+- Corruption effects never occupy the `units` or `structures` bands and never remove the only carrier of a required semantic cue.
+- An undecided question lives in the open-questions register with a recommendation, not as a hedge inside a specification.
 - Modding: preserve future seams but do not build a loader or stable SDK in early milestones.
 
 ## 8. Open when relevant
+
+Decisions that **block or shape current work** live in [`open-questions.md`](open-questions.md), with
+options, costs, and a recommendation each. The list below is the longer horizon: things that are
+genuinely fine to leave unanswered until the project reaches them.
 
 - exact Citizen and Ravel commanders and Commander Armies;
 - radius metric, same-plan chaining, and hidden reveal conflicts;

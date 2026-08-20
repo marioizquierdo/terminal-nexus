@@ -2,8 +2,8 @@
 
 **Document role:** One-page product definition
 **Status:** Canonical
-**Canon version:** 2.0
-**Updated:** 2026-08-19
+**Canon version:** 2.1
+**Updated:** 2026-08-20
 **License:** CC BY-SA 4.0 for creative direction; Apache-2.0 for technical product requirements
 
 ## The game in one sentence
@@ -73,7 +73,7 @@ No playable game exists yet. The first milestone must prove two things in order:
 
 Combat rules, economy, base construction, campaigns, public mod loading, multiplayer, sound, and model-driven opponents remain gated behind those proofs.
 
-Start implementation with [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md).
+Start implementation with [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md). Before deciding anything the canon leaves open, check [`open-questions.md`](open-questions.md). For the visual target these proofs are chasing, see [`../concept/README.md`](../concept/README.md).
 
 ## Design statement
 
