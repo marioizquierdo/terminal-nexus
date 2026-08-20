@@ -1,0 +1,23 @@
+Terminal Nexus
+Copyright 2026 Mario Izquierdo
+
+License allocation
+==================
+
+Code, protocols, schemas, data formats, scripts, tests, build configuration,
+and technical documentation are licensed under the Apache License, Version 2.0.
+See LICENSE.
+
+Lore, fiction, characters, factions, narrative prose, dialogue, ASCII art,
+visual designs, concept art, and other creative material are licensed under
+the Creative Commons Attribution-ShareAlike 4.0 International Public License.
+See LICENSE-CREATIVE.
+
+Some specification files contain both technical and creative sections. Each
+section follows the license appropriate to its subject. Inseparable mixed use
+must satisfy both applicable licenses.
+
+Neither license grants permission to imply endorsement by Terminal Nexus,
+Mario Izquierdo, or other contributors. Third-party notices and attributions
+must be preserved with the material to which they apply.
+
