@@ -78,9 +78,9 @@ const shots = [
   },
   {
     name: "nexus-falls",
-    caption: "Tick 404 - a 3x2 Grid Nexus goes down and ends the Pulse",
+    caption: "Tick 361 - a 3x2 Grid Nexus goes down and ends the Pulse",
     scenario: "structure-destruction",
-    tick: 404,
+    tick: 361,
     cols: 80,
     rows: 24,
   },
