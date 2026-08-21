@@ -19,7 +19,7 @@ import { buildLog, formatSummary, parseLevel, summarize, summaryJson } from "../
 import type { ReportInput } from "../report/index.ts"
 import { loadScenario } from "../scenario/index.ts"
 import type { ScenarioDefinition } from "../scenario/index.ts"
-import { DEFAULT_PRESENTATION, parseCapability } from "../view/index.ts"
+import { DEFAULT_PRESENTATION, parseCapability, parseGlyphPack } from "../view/index.ts"
 import type { PresentationOptions, TileWidth } from "../view/index.ts"
 import { parseArgs, parseInteger } from "./args.ts"
 import type { ParsedArgs } from "./args.ts"
@@ -32,7 +32,8 @@ const USAGE = `playground — the Terminal Nexus Pulse Playground
                                   [--events events.jsonl] [--json]
   playground watch  <scenario.ts> [--seed] [--ticks] [--speed 1] [--tile-width 1|2]
                                   [--capability monochrome|color16|color256|truecolor]
-                                  [--no-effects] [--reduced-motion] [--cosmetic-seed 0x1234]
+                                  [--glyphs ascii|unicode] [--no-effects] [--reduced-motion]
+                                  [--cosmetic-seed 0x1234]
                                   [--backend auto|ansi|opentui]
   playground verify <scenario.ts> [--runs 20] [--seed] [--ticks]
 
@@ -201,6 +202,7 @@ async function commandWatch(args: ParsedArgs): Promise<number> {
       cosmeticSeed === undefined
         ? DEFAULT_PRESENTATION.cosmeticSeed
         : parseInteger(cosmeticSeed, "--cosmetic-seed"),
+    glyphPack: parseGlyphPack(args.options.get("glyphs") ?? "ascii"),
   }
   return watchPulse({
     timeline,

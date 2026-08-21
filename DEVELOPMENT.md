@@ -63,8 +63,10 @@ npm run typecheck   # tsc --noEmit
 ./bin/playground.ts run    scenarios/citizen-mirror-skirmish.ts
 ./bin/playground.ts run    scenarios/citizen-mirror-skirmish.ts --log-level debug --ticks 120
 ./bin/playground.ts run    scenarios/citizen-mirror-skirmish.ts --events events.jsonl --json
-./bin/playground.ts watch  scenarios/citizen-mirror-skirmish.ts
-./bin/playground.ts watch  scenarios/citizen-mirror-skirmish.ts --capability monochrome
+./bin/playground.ts watch  scenarios/citizens-versus-ravels.ts
+./bin/playground.ts watch  scenarios/citizens-versus-ravels.ts --glyphs unicode --capability truecolor
+./bin/playground.ts watch  scenarios/ravel-cascade.ts --capability monochrome --reduced-motion
+./bin/playground.ts watch  scenarios/citizens-versus-ravels.ts --no-effects
 ./bin/playground.ts verify scenarios/citizen-mirror-skirmish.ts --runs 20
 
 # the same commands under Bun
@@ -80,6 +82,11 @@ Pinned by Gate 1A, measured 2026-08-21:
 | `typescript` | 7.0.2 | Type checking only |
 | `@types/node` | 22.20.1 | Type checking only |
 | `@opentui/core` | 0.5.6 | Terminal backend. **Native core loads under Bun, not under Node** |
+
+`watch` options: `--capability monochrome|color16|color256|truecolor`, `--glyphs ascii|unicode`,
+`--tile-width 1|2`, `--no-effects`, `--reduced-motion`, `--cosmetic-seed`, `--speed`, `--backend`.
+ASCII and monochrome are the defaults and the acceptance floor; everything above them is fidelity,
+never information.
 
 `bun test` drives one file at a time (`./scripts/run-tests.sh bun`): its `node:test` shim rejects a
 test registered while another file's tests are still running, and it does not implement `t.skip()`.

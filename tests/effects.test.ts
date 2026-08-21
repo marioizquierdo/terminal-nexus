@@ -380,3 +380,38 @@ test("every scenario derives effects without inventing a recipe", async () => {
     }
   }
 })
+
+test("the glyph pack changes the field and the frame, never the actors", async () => {
+  const scenario = await loadScenarioFile("citizens-versus-ravels.ts")
+  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  const timeline = buildTimeline(
+    scenario,
+    loaded.state,
+    loaded.registry,
+    scenario.pulseTicks,
+    scenario.seed,
+  )
+  const ascii = createView(timeline, { ...DEFAULT_PRESENTATION, glyphPack: "ascii" })
+  const unicode = createView(timeline, { ...DEFAULT_PRESENTATION, glyphPack: "unicode" })
+  const timeMs = 178 * (1000 / 12)
+
+  const asciiFrame = ascii.snapshotAt(timeMs, "truecolor", 1)
+  const unicodeFrame = unicode.snapshotAt(timeMs, "truecolor", 1)
+  assert.notEqual(frameToText(asciiFrame), frameToText(unicodeFrame))
+  assert.equal(offendingGlyph(asciiFrame), null)
+  assert.equal(offendingGlyph(unicodeFrame), null, "the pack put a glyph on screen it may not use")
+
+  // ASCII is the baseline: the default pack emits nothing outside printable ASCII, ever.
+  for (const cell of asciiFrame.cells) {
+    const code = cell.glyph.codePointAt(0) ?? 0
+    assert.ok(code >= 0x20 && code <= 0x7e, `the ASCII pack emitted ${JSON.stringify(cell.glyph)}`)
+  }
+
+  // The actors are letters in both packs, because case carries ownership and shape carries faction.
+  const letters = (frame: typeof asciiFrame): string =>
+    frame.cells
+      .map((cell) => cell.glyph)
+      .filter((glyph) => /[A-Za-z]/.test(glyph))
+      .join("")
+  assert.equal(letters(unicodeFrame), letters(asciiFrame))
+})

@@ -8,8 +8,9 @@
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
-import type { MatchState } from "../state/types.ts"
+import type { MatchState, PlayerId } from "../state/types.ts"
 import { EffectTimeline, deriveEffects } from "./effects/index.ts"
+import type { GlyphPack } from "./theme.ts"
 import type { ReadonlyCellFrame } from "./frame.ts"
 import type { CapabilityMode } from "./roles.ts"
 import type { TileWidth } from "./compose.ts"
@@ -40,12 +41,14 @@ export type PresentationOptions = Readonly<{
   effects: boolean
   reducedMotion: boolean
   cosmeticSeed: number
+  glyphPack: GlyphPack
 }>
 
 export const DEFAULT_PRESENTATION: PresentationOptions = {
   effects: true,
   reducedMotion: false,
   cosmeticSeed: 0x0c05e7,
+  glyphPack: "ascii",
 }
 
 /**
@@ -101,6 +104,12 @@ export function createView(
   )
 
   const clampTick = (tick: number): number => Math.max(0, Math.min(lastTick, tick))
+  const roster = (timeline.states[0]?.entities ?? []).map((entity) => entity.contentId)
+  const openingHealth = new Map<PlayerId, number>()
+  for (const entity of timeline.states[0]?.entities ?? []) {
+    if (timeline.registry.get(entity.contentId).layer === "obstacles") continue
+    openingHealth.set(entity.player, (openingHealth.get(entity.player) ?? 0) + entity.hp)
+  }
 
   const composeAt = (
     timeMs: number,
@@ -133,12 +142,15 @@ export function createView(
         grid: timeline.grid,
         registry: timeline.registry,
         state,
+        roster,
+        openingHealth,
         positions,
         tick,
         recent: feed.filter((event) => event.tick <= tick),
         paused: controls.paused,
         speed: controls.speed,
         status: statusOf(state, tick, lastTick),
+        glyphPack: presentation.glyphPack,
         effects: effects.cellsAt({
           timeMs: Math.max(0, timeMs),
           cosmeticSeed: presentation.cosmeticSeed,

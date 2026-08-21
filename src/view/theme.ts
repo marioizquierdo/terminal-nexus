@@ -8,10 +8,69 @@ import type { Coord, Footprint, TerrainId } from "../grid/types.ts"
 import type { PlayerId } from "../state/types.ts"
 import type { StyleRole } from "./roles.ts"
 
-const TERRAIN_GLYPHS: Readonly<Record<TerrainId, { glyph: string; role: StyleRole }>> = {
-  "terrain.plain": { glyph: ".", role: "terrain.plain" },
-  "terrain.rock": { glyph: "#", role: "terrain.rock" },
-  "terrain.deposit": { glyph: "*", role: "terrain.deposit" },
+/**
+ * Glyph packs — milestone-1-spike-battle.md 4.2 allows an optional Unicode pack alongside the ASCII
+ * baseline. The pack changes the **field and the frame**, never the actors: units are letters
+ * because case carries ownership and the shape families carry faction (engine.md 9.6,
+ * terminal-nexus-lore.md 8), and that system is not improved by prettier symbols.
+ *
+ * ASCII stays the default and the acceptance target. Everything here is one cell wide.
+ */
+export type GlyphPack = "ascii" | "unicode"
+
+export const GLYPH_PACKS: readonly GlyphPack[] = ["ascii", "unicode"]
+
+export function parseGlyphPack(value: string): GlyphPack {
+  const found = GLYPH_PACKS.find((pack) => pack === value)
+  if (found === undefined) {
+    throw new Error(`unknown glyph pack "${value}"; expected one of ${GLYPH_PACKS.join(", ")}`)
+  }
+  return found
+}
+
+const TERRAIN_GLYPHS: Readonly<
+  Record<GlyphPack, Readonly<Record<TerrainId, { glyph: string; role: StyleRole }>>>
+> = {
+  ascii: {
+    "terrain.plain": { glyph: ".", role: "terrain.plain" },
+    "terrain.rock": { glyph: "#", role: "terrain.rock" },
+    "terrain.deposit": { glyph: "*", role: "terrain.deposit" },
+  },
+  unicode: {
+    "terrain.plain": { glyph: "·", role: "terrain.plain" },
+    "terrain.rock": { glyph: "▓", role: "terrain.rock" },
+    "terrain.deposit": { glyph: "◆", role: "terrain.deposit" },
+  },
+}
+
+/** Frame furniture, the other half of what a pack changes. */
+export const CHROME_GLYPHS: Readonly<Record<GlyphPack, Readonly<Record<string, string>>>> = {
+  ascii: {
+    horizontal: "-",
+    vertical: "|",
+    topLeft: "+",
+    topRight: "+",
+    bottomLeft: "+",
+    bottomRight: "+",
+    edgeHorizontal: "-",
+    edgeVertical: "|",
+    edgeCorner: "+",
+  },
+  unicode: {
+    horizontal: "─",
+    vertical: "│",
+    topLeft: "┌",
+    topRight: "┐",
+    bottomLeft: "└",
+    bottomRight: "┘",
+    edgeHorizontal: "┄",
+    edgeVertical: "┆",
+    edgeCorner: "·",
+  },
+}
+
+export function chromeGlyph(pack: GlyphPack, part: string): string {
+  return CHROME_GLYPHS[pack][part] ?? "?"
 }
 
 /**
@@ -39,8 +98,11 @@ const CONTENT_GLYPHS: Readonly<Record<string, string | readonly string[]>> = {
   "structure.ravel.den": "d",
 }
 
-export function terrainGlyph(id: TerrainId): { glyph: string; role: StyleRole } {
-  return TERRAIN_GLYPHS[id]
+export function terrainGlyph(
+  id: TerrainId,
+  pack: GlyphPack = "ascii",
+): { glyph: string; role: StyleRole } {
+  return TERRAIN_GLYPHS[pack][id]
 }
 
 export function playerRole(player: PlayerId): StyleRole {
@@ -72,4 +134,8 @@ export function entityGlyph(
   return player === "B" ? base.toUpperCase() : base.toLowerCase()
 }
 
-export const SALVAGE_GLYPH = "%"
+const SALVAGE_GLYPHS: Readonly<Record<GlyphPack, string>> = { ascii: "%", unicode: "▪" }
+
+export function salvageGlyph(pack: GlyphPack = "ascii"): string {
+  return SALVAGE_GLYPHS[pack]
+}

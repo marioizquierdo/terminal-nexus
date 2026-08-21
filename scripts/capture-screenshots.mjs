@@ -109,7 +109,80 @@ const shots = [
     rows: 18,
     expectGate: true,
   },
+  {
+    name: "ravels-clash",
+    caption: "Citizens meet Ravels in the ruined middle - truecolor, Unicode pack, effects on",
+    scenario: "citizens-versus-ravels",
+    tick: 178,
+    cols: 80,
+    rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
+  },
+  {
+    name: "ravels-clash-no-effects",
+    caption: "The same instant with effects off - the comparison the gate is judged on",
+    scenario: "citizens-versus-ravels",
+    tick: 178,
+    cols: 80,
+    rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
+    effects: false,
+  },
+  {
+    name: "ravels-clash-wide",
+    caption: "The same fight at two columns per tile - 128 columns, tiles read square",
+    scenario: "citizens-versus-ravels",
+    tick: 178,
+    cols: 128,
+    rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
+    tileWidth: 2,
+  },
+  {
+    name: "cascade-blast",
+    caption: "The worst frame first - nine fuel wagons and five troopers, one tick",
+    scenario: "ravel-cascade",
+    tick: 48,
+    cols: 80,
+    rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
+  },
+  {
+    name: "cascade-monochrome",
+    caption: "The same cascade at the acceptance floor - monochrome ASCII, reduced motion",
+    scenario: "ravel-cascade",
+    tick: 48,
+    cols: 80,
+    rows: 24,
+    capability: "monochrome",
+    reducedMotion: true,
+  },
 ]
+
+/** The xterm 256-colour palette: sixteen system colours, a 6x6x6 cube, then twenty-four greys. */
+function xterm256(index) {
+  if (index < 16) {
+    const base = [
+      "#000000", "#cd0000", "#00cd00", "#cdcd00", "#0000ee", "#cd00cd", "#00cdcd", "#e5e5e5",
+      "#7f7f7f", "#ff0000", "#00ff00", "#ffff00", "#5c5cff", "#ff00ff", "#00ffff", "#ffffff",
+    ]
+    return base[index] ?? "#d0d0d0"
+  }
+  if (index < 232) {
+    const step = [0, 95, 135, 175, 215, 255]
+    const offset = index - 16
+    const r = step[Math.floor(offset / 36)] ?? 0
+    const g = step[Math.floor((offset % 36) / 6)] ?? 0
+    const b = step[offset % 6] ?? 0
+    return `rgb(${r},${g},${b})`
+  }
+  const grey = 8 + (index - 232) * 10
+  return `rgb(${grey},${grey},${grey})`
+}
 
 function tmux(args) {
   return execFileSync("tmux", args, { encoding: "utf8", cwd: repoRoot })
@@ -161,6 +234,10 @@ function capture(shot) {
     shot.capability ?? "color16",
     "--tile-width",
     String(shot.tileWidth ?? 1),
+    "--glyphs",
+    shot.glyphs ?? "ascii",
+    ...(shot.effects === false ? ["--no-effects"] : []),
+    ...(shot.reducedMotion === true ? ["--reduced-motion"] : []),
   ].join(" ")
 
   tmux([
@@ -241,7 +318,8 @@ function ansiToHtml(text, cols, rows) {
       emit(line.slice(cursor, match.index))
       closeSpan()
       const codes = (match[1] === "" ? "0" : match[1]).split(";").map(Number)
-      for (const code of codes) {
+      for (let index = 0; index < codes.length; index += 1) {
+        const code = codes[index]
         if (code === 0) {
           style = { fg: null, bg: null, bold: false, dim: false, underline: false, inverse: false }
         } else if (code === 1) style.bold = true
@@ -253,7 +331,22 @@ function ansiToHtml(text, cols, rows) {
         else if (code === 27) style.inverse = false
         else if (code === 39) style.fg = null
         else if (code === 49) style.bg = null
-        else if (PALETTE[code] !== undefined) style.fg = PALETTE[code]
+        else if (code === 38 || code === 48) {
+          // Extended colour: `38;5;n` picks from the 256 palette, `38;2;r;g;b` is exact. Parsing
+          // these as a run of independent codes is how a truecolor frame turns into magenta soup.
+          const mode = codes[index + 1]
+          if (mode === 5) {
+            const colour = xterm256(codes[index + 2] ?? 0)
+            if (code === 38) style.fg = colour
+            else style.bg = colour
+            index += 2
+          } else if (mode === 2) {
+            const colour = `rgb(${codes[index + 2] ?? 0},${codes[index + 3] ?? 0},${codes[index + 4] ?? 0})`
+            if (code === 38) style.fg = colour
+            else style.bg = colour
+            index += 4
+          }
+        } else if (PALETTE[code] !== undefined) style.fg = PALETTE[code]
         else if (PALETTE[code - 10] !== undefined) style.bg = PALETTE[code - 10]
       }
       cursor = match.index + match[0].length

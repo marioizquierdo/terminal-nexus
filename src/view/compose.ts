@@ -18,7 +18,8 @@ import type { ActiveEffect, EffectBand } from "./effects/index.ts"
 import type { BandCell, Cell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import type { CapabilityMode, StyleRole } from "./roles.ts"
-import { SALVAGE_GLYPH, entityGlyph, playerRole, terrainGlyph } from "./theme.ts"
+import { chromeGlyph, entityGlyph, playerRole, salvageGlyph, terrainGlyph } from "./theme.ts"
+import type { GlyphPack } from "./theme.ts"
 
 export type TileWidth = 1 | 2
 
@@ -44,6 +45,10 @@ export type CompositionInput = Readonly<{
   registry: ContentRegistry
   /** Authoritative state for the tick being shown. */
   state: MatchState
+  /** The opening cast, so the legend describes the fight rather than only its survivors. */
+  roster: readonly string[]
+  /** Each side's health at tick zero, which is what the force bars are measured against. */
+  openingHealth: ReadonlyMap<PlayerId, number>
   /** Where each entity is drawn — interpolated, and never known to the simulation. */
   positions: ReadonlyMap<number, { x: number; y: number }>
   tick: number
@@ -53,6 +58,8 @@ export type CompositionInput = Readonly<{
   status: string
   /** What the effect system is painting at this instant. Empty is a legal, complete frame. */
   effects?: readonly ActiveEffect[]
+  /** ASCII is the baseline and the acceptance target; the pack dresses the field and the frame. */
+  glyphPack?: GlyphPack
 }>
 
 function put(
@@ -78,6 +85,9 @@ function put(
  * rather than trusted, and anything left over becomes a question mark. The alternative is a frame
  * that fails its own width-one invariant because someone typed an em dash.
  */
+/** Glyphs the Unicode pack may put on screen; everything else outside ASCII becomes a question mark. */
+const PACK_SAFE = new Set(["\u00b7", "\u2593", "\u25c6", "\u25aa", "\u2500", "\u2502", "\u250c", "\u2510", "\u2514", "\u2518", "\u2504", "\u2506"])
+
 const TRANSLITERATE: Readonly<Record<string, string>> = {
   "\u2014": "-",
   "\u2013": "-",
@@ -97,7 +107,7 @@ export function toAscii(value: string): string {
       continue
     }
     const code = character.codePointAt(0) ?? 0
-    out += code >= 0x20 && code <= 0x7e ? character : "?"
+    out += (code >= 0x20 && code <= 0x7e) || PACK_SAFE.has(character) ? character : "?"
   }
   return out
 }
@@ -121,6 +131,7 @@ function drawGridEdge(
   grid: GridTerrain,
   origin: { column: number; row: number },
   tileWidth: TileWidth,
+  pack: GlyphPack,
 ): void {
   const left = origin.column - 1
   const right = origin.column + grid.width * tileWidth
@@ -128,13 +139,15 @@ function drawGridEdge(
   const bottom = origin.row + grid.height
   if (left < 1 || top < 1 + HEADER_ROWS) return
 
+  const horizontal = chromeGlyph(pack, "edgeHorizontal")
+  const vertical = chromeGlyph(pack, "edgeVertical")
   for (let x = left + 1; x < right; x += 1) {
-    put(cells, BANDS.terrain, x, top, "-", "chrome.muted", { dim: true })
-    put(cells, BANDS.terrain, x, bottom, "-", "chrome.muted", { dim: true })
+    put(cells, BANDS.terrain, x, top, horizontal, "chrome.muted", { dim: true })
+    put(cells, BANDS.terrain, x, bottom, horizontal, "chrome.muted", { dim: true })
   }
   for (let y = top + 1; y < bottom; y += 1) {
-    put(cells, BANDS.terrain, left, y, "|", "chrome.muted", { dim: true })
-    put(cells, BANDS.terrain, right, y, "|", "chrome.muted", { dim: true })
+    put(cells, BANDS.terrain, left, y, vertical, "chrome.muted", { dim: true })
+    put(cells, BANDS.terrain, right, y, vertical, "chrome.muted", { dim: true })
   }
   for (const [x, y] of [
     [left, top],
@@ -142,7 +155,7 @@ function drawGridEdge(
     [left, bottom],
     [right, bottom],
   ] as const) {
-    put(cells, BANDS.terrain, x, y, "+", "chrome.muted", { dim: true })
+    put(cells, BANDS.terrain, x, y, chromeGlyph(pack, "edgeCorner"), "chrome.muted", { dim: true })
   }
 }
 
@@ -171,6 +184,7 @@ export function composeFrame(
 ): ReadonlyCellFrame {
   void capability
   const size = compositionSize(tileWidth)
+  const pack: GlyphPack = input.glyphPack ?? "ascii"
   const cells: BandCell[] = []
   const origin = gridOrigin(input.grid, tileWidth)
   const gridColumns = VIEWPORT_TILES.width * tileWidth
@@ -180,7 +194,7 @@ export function composeFrame(
     for (let x = 0; x < input.grid.width; x += 1) {
       const terrainId = input.grid.tiles[y * input.grid.width + x]
       if (terrainId === undefined) continue
-      const { glyph, role } = terrainGlyph(terrainId)
+      const { glyph, role } = terrainGlyph(terrainId, pack)
       const column = origin.column + x * tileWidth
       // Featureless ground is drawn as a coarse lattice rather than a dot per tile: negative space
       // is material, and 288 identical marks compete with every unit and every effect on top of
@@ -209,7 +223,7 @@ export function composeFrame(
       BANDS.groundItems,
       origin.column + item.at.x * tileWidth,
       origin.row + item.at.y,
-      SALVAGE_GLYPH,
+      salvageGlyph(pack),
       "item.salvage",
     )
   }
@@ -248,7 +262,7 @@ export function composeFrame(
   // lattice-drawn field has no visible edge, and a player cannot tell empty ground from off-Grid.
   // When the Grid fills the pane — the default 48 x 16 preset does — the frame's own border is
   // already that edge, so this draws nothing.
-  drawGridEdge(cells, input.grid, origin, tileWidth)
+  drawGridEdge(cells, input.grid, origin, tileWidth, pack)
 
   // Bands 3, 7, 8 and 9 — effects. They may paint here and nowhere else (ascii-effects.md 1.1),
   // they are clipped to the Grid, and they can never move a glyph the simulation put down.
@@ -286,7 +300,7 @@ export function composeFrame(
   }
 
   // Band 10 — chrome: frame, header, footer, side panel.
-  drawChrome(cells, input, size, tileWidth, gridColumns)
+  drawChrome(cells, input, size, tileWidth, gridColumns, pack)
 
   return composeBands(size.width, size.height, cells)
 }
@@ -297,6 +311,7 @@ function drawChrome(
   size: { width: number; height: number },
   tileWidth: TileWidth,
   gridColumns: number,
+  pack: GlyphPack,
 ): void {
   const band = BANDS.chrome
   const right = 1 + gridColumns
@@ -304,19 +319,21 @@ function drawChrome(
   const panelX = right + 2
   const panelLimit = size.width - 1 - panelX
 
+  const horizontal = chromeGlyph(pack, "horizontal")
+  const vertical = chromeGlyph(pack, "vertical")
   for (let x = 0; x < size.width; x += 1) {
-    put(cells, band, x, 0, "-", "chrome.frame")
-    put(cells, band, x, size.height - 1, "-", "chrome.frame")
+    put(cells, band, x, 0, horizontal, "chrome.frame")
+    put(cells, band, x, size.height - 1, horizontal, "chrome.frame")
   }
   for (let y = 1; y < size.height - 1; y += 1) {
-    put(cells, band, 0, y, "|", "chrome.frame")
-    put(cells, band, right, y, "|", "chrome.frame")
-    put(cells, band, size.width - 1, y, "|", "chrome.frame")
+    put(cells, band, 0, y, vertical, "chrome.frame")
+    put(cells, band, right, y, vertical, "chrome.frame")
+    put(cells, band, size.width - 1, y, vertical, "chrome.frame")
   }
-  for (const corner of [0, size.width - 1]) {
-    put(cells, band, corner, 0, "+", "chrome.frame")
-    put(cells, band, corner, size.height - 1, "+", "chrome.frame")
-  }
+  put(cells, band, 0, 0, chromeGlyph(pack, "topLeft"), "chrome.frame")
+  put(cells, band, size.width - 1, 0, chromeGlyph(pack, "topRight"), "chrome.frame")
+  put(cells, band, 0, size.height - 1, chromeGlyph(pack, "bottomLeft"), "chrome.frame")
+  put(cells, band, size.width - 1, size.height - 1, chromeGlyph(pack, "bottomRight"), "chrome.frame")
 
   // Header — three rows, of the eight-row chrome budget (Q12: 2 border, 3 header, 3 footer).
   text(cells, band, 2, 1, "TERMINAL NEXUS", "chrome.title", { bold: true, limit: paneLimit })
@@ -372,46 +389,96 @@ function drawChrome(
     text(cells, band, panelX, 9 + index, feedLine(event), "chrome.value", { limit: panelLimit })
   })
 
-  LEGEND.forEach((line, index) => {
-    text(cells, band, panelX, size.height - 2 - LEGEND.length + index, line, "chrome.muted", {
+  const legend = legendFor(input, pack)
+  legend.forEach((line, index) => {
+    text(cells, band, panelX, size.height - 2 - legend.length + index, line, "chrome.muted", {
       dim: true,
       limit: panelLimit,
     })
   })
 }
 
+/**
+ * The legend is built from what is actually on this Grid, in this glyph pack. A fixed list was fine
+ * while one faction existed and one pack; with two of each it starts lying, and a legend that lies
+ * is worse than no legend — ownership and faction are exactly what a new viewer is decoding.
+ */
+function legendFor(input: CompositionInput, pack: GlyphPack): string[] {
+  // Deduplicated by what a reader actually sees — two factions both call their Grid Nexus a nexus
+  // and both draw it `n`, so it earns one line, not two.
+  const entries = new Map<string, number>()
+  for (const contentId of input.roster) {
+    const definition = input.registry.get(contentId)
+    // One row of the footprint is the whole identity: `>x<` and `(h)` are bodies, `nnn` is a wall.
+    const glyph = definition.footprint
+      .filter((offset) => offset.y === 0)
+      .slice(0, 3)
+      .map((offset) => entityGlyph(definition.id, "A", definition.footprint, offset))
+      .join("")
+    const key = `${glyph} ${definition.short}`
+    entries.set(key, (entries.get(key) ?? 0) + 1)
+  }
+
+  // Six at most, the commonest first, so a crowded Grid does not push the feed off the panel.
+  const listed = [...entries.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 6)
+    .map(([label]) => label)
+    .sort()
+
+  const lines: string[] = ["lower case = A   UPPER = B"]
+  for (let index = 0; index < listed.length; index += 2) {
+    const left = (listed[index] ?? "").padEnd(14, " ")
+    lines.push(`${left}${listed[index + 1] ?? ""}`.trimEnd())
+  }
+  lines.push(
+    `${salvageGlyph(pack)} salvage  ${terrainGlyph("terrain.rock", pack).glyph} rock  ` +
+      `${terrainGlyph("terrain.deposit", pack).glyph} ore`,
+  )
+  return lines
+}
+
 /** Playback controls, sized to the Grid pane at 80 columns. */
 const CONTROLS = "space pause  .,step  [] speed  r reset  q quit"
-
-/**
- * The legend is not decoration: ownership is carried by letter case and every role is legible
- * without colour, so the reader needs to be told the code once (engine.md 9.6).
- */
-const LEGEND: readonly string[] = [
-  "A side lower   B side UPPER",
-  "t trooper  m marksman",
-  "w worker   ( h ) hauler",
-  "n nexus    b barracks",
-  "% salvage  # rock  * ore",
-]
 
 function hexSeed(seed: number): string {
   return `0x${(seed >>> 0).toString(16).toUpperCase().padStart(8, "0")}`
 }
 
+/**
+ * Force totals with a bar, because "hp 661" answers *how much* and not *how much is left* — and on
+ * the Grid itself a wounded unit looks exactly like a fresh one. The bar is drawn from characters
+ * rather than colour, so it survives monochrome, which is where it matters most.
+ */
 function forceTotals(input: CompositionInput): Record<PlayerId, string> {
-  const counts: Record<PlayerId, { units: number; hp: number }> = {
-    A: { units: 0, hp: 0 },
-    B: { units: 0, hp: 0 },
+  const counts: Record<PlayerId, { units: number; hp: number; max: number }> = {
+    A: { units: 0, hp: 0, max: 0 },
+    B: { units: 0, hp: 0, max: 0 },
   }
   for (const entity of input.state.entities) {
+    const definition = input.registry.get(entity.contentId)
+    // Structures are excluded: a 400-point Grid Nexus swamps the bar, so a side could lose its
+    // whole army and still look nine tenths healthy. The Nexus has its own tell — it goes critical.
+    if (definition.layer === "obstacles") continue
     const side = counts[entity.player]
     side.units += 1
     side.hp += entity.hp
   }
+  // The denominator is what the side started with, so the bar shrinks as the fight goes on.
+  const opening: Record<PlayerId, number> = { A: 0, B: 0 }
+  input.openingHealth.forEach((health, player) => {
+    opening[player] = health
+  })
+
+  const bar = (current: number, max: number): string => {
+    const width = 10
+    const filled = max <= 0 ? 0 : Math.max(current > 0 ? 1 : 0, Math.round((current / max) * width))
+    return `${"#".repeat(Math.min(width, filled))}${"-".repeat(Math.max(0, width - filled))}`
+  }
+
   return {
-    A: `A  alive ${String(counts.A.units).padStart(2)}   hp ${String(counts.A.hp).padStart(4)}`,
-    B: `B  alive ${String(counts.B.units).padStart(2)}   hp ${String(counts.B.hp).padStart(4)}`,
+    A: `A ${String(counts.A.units).padStart(2)} [${bar(counts.A.hp, opening.A)}] ${String(counts.A.hp).padStart(4)}`,
+    B: `B ${String(counts.B.units).padStart(2)} [${bar(counts.B.hp, opening.B)}] ${String(counts.B.hp).padStart(4)}`,
   }
 }
 

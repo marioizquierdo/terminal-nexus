@@ -130,13 +130,34 @@ export function frameToAnsi(frame: ReadonlyCellFrame, capability: CapabilityMode
   return rows.join("\r\n")
 }
 
+/**
+ * Glyphs the optional Unicode pack is allowed to use. ASCII-safe is the baseline and no glyph
+ * outside it is ever *required* (engine.md 9.6); the pack may map the same semantic roles to these,
+ * and to nothing else, so a stray wide or combining character cannot reach a frame unnoticed.
+ */
+const PACK_GLYPHS = new Set([
+  "\u00b7", // middle dot, featureless ground
+  "\u2593", // dark shade, rock
+  "\u25c6", // black diamond, deposit
+  "\u25aa", // small black square, salvage
+  "\u2500",
+  "\u2502",
+  "\u250c",
+  "\u2510",
+  "\u2514",
+  "\u2518",
+  "\u2504",
+  "\u2506",
+])
+
 /** Every gameplay glyph occupies exactly one cell — engine.md 9.6. Asserted, not assumed. */
 export function offendingGlyph(frame: ReadonlyCellFrame): string | null {
   for (const cell of frame.cells) {
     if ([...cell.glyph].length !== 1) return cell.glyph
     const code = cell.glyph.codePointAt(0) ?? 0
-    // ASCII-safe is the baseline for Gate 1A: printable ASCII plus the space.
-    if (code < 0x20 || code > 0x7e) return cell.glyph
+    if (code >= 0x20 && code <= 0x7e) continue
+    if (PACK_GLYPHS.has(cell.glyph)) continue
+    return cell.glyph
   }
   return null
 }
