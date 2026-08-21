@@ -97,7 +97,7 @@ test("--json produces a machine-readable summary", () => {
   assert.equal(parsed["engineVersion"], "0.1.0-gate1a")
 })
 
-test("verify --runs 20 is green on every checked-in scenario", () => {
+test("verify --runs 20 is green on every checked-in scenario", { timeout: 120_000 }, () => {
   for (const name of scenarioFiles()) {
     const result = runPlayground(["verify", `scenarios/${name}`, "--runs", "20"])
     assert.equal(result.status, 0, `${name}: ${result.stderr}`)

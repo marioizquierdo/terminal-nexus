@@ -175,8 +175,12 @@ const meleeClash: EffectRecipe = (instance, context) => {
   ]
   if (context.reducedMotion) return cells
 
-  if (progress >= 0.35) {
-    // Thinning outward: one mark either side of the contact, perpendicular to the blow.
+  // Thinning outward: one mark either side of the contact, perpendicular to the blow — but only
+  // for a brief middle band of the swing, not most of it (owner playtest: with several units in
+  // contact at once, a mark that lingers for most of every clash's life is what turns a fight into
+  // scattered noise. One shot's worth of leaning on timing rather than size is trimming *how long*
+  // the decoration shows, not just how big it is).
+  if (progress >= 0.35 && progress < 0.6) {
     const perpendicular = { x: -toward.y, y: toward.x }
     const sign = cosmeticUnit(hash) < 0.5 ? 1 : -1
     cells.push({
@@ -212,6 +216,13 @@ const rangedTelegraph: EffectRecipe = (instance, context) => {
 /**
  * A travelling glyph along the tile line, oriented to the vector. Presentation only: the simulation
  * resolved this at a tick, and the window is the flight window the event already carries.
+ *
+ * One cell, not a head-and-tail streak: the flight window is already short (a tile or two, most
+ * ranged fixtures), so a two-cell tail bought little legibility on its own and cost a second glyph
+ * per shot everywhere the shot was drawn. With several units firing on the same tick — the owner's
+ * "once units start shooting I can no longer tell what is happening" finding — that second glyph
+ * multiplies. Favouring the muzzle-flash beat (`rangedTelegraph`) and the impact over a travelling
+ * mark is closer to how a Starcraft marine's gunfire reads: a timing beat, not a drawn bullet.
  */
 const rangedTracer: EffectRecipe = (instance, context) => {
   const target = instance.target ?? instance.origin
@@ -229,12 +240,7 @@ const rangedTracer: EffectRecipe = (instance, context) => {
   const index = Math.min(line.length - 1, Math.max(1, Math.round(progress * (line.length - 1))))
   const head = line[index]
   if (head === undefined) return []
-  const cells: PositionedCell[] = [{ tile: head, glyph, role, bold: true }]
-  const behind = line[index - 1]
-  if (behind !== undefined && index > 1) {
-    cells.push({ tile: behind, glyph, role, dim: true })
-  }
-  return cells
+  return [{ tile: head, glyph, role, bold: true }]
 }
 
 // ---------------------------------------------------------------------------
@@ -259,7 +265,11 @@ const impactBurst: EffectRecipe = (instance, context) => {
   ]
   if (context.reducedMotion) return cells
 
-  const shards = progress < 0.5 ? 2 : 1
+  // One shard, and only while the impact is still fresh — not two tapering to one. The hit glyph
+  // above plus the glyphless damage flash on the struck entity already carry the cue; a second and
+  // third scattering mark added little on their own and multiplied badly wherever several impacts
+  // landed on the same tick (owner playtest, a multi-unit engagement).
+  const shards = progress < 0.5 ? 1 : 0
   for (let index = 0; index < shards; index += 1) {
     const spin = draw(hash, index + 1)
     const offset = {
