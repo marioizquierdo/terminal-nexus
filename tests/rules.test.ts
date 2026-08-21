@@ -291,3 +291,26 @@ test("an actor that settled a move this tick does not also attack on it", async 
   }
   assert.ok(checked > 0, "no fixture ever launched an attack, so the rule was never exercised")
 })
+
+test("a multi-tile mover blocked inside its own footprint reports the real blocker, not the edge", async () => {
+  // A three-tile raider crowded by an ally's tail, mid-parade, surfaced this: the report only
+  // checked the mover's single anchor tile, which can be perfectly clear while a different tile in
+  // its footprint is what is actually occupied - and a clear single tile fell through
+  // blockReasonFor's cases to its "edge" fallback, misreporting a crowded ally as the Grid's border.
+  const resolved = await resolveScenario("speed-parade.ts")
+  const blocked = resolved.run.events.filter(
+    (event) => event.kind === "move.blocked" && event.entity.includes("raider"),
+  )
+  assert.ok(blocked.length > 0, "the raider was never reported blocked, so the fix was never exercised")
+  for (const event of blocked) {
+    if (event.kind !== "move.blocked") continue
+    assert.notEqual(
+      event.reason,
+      "edge",
+      `${event.entity} reported blocked by the Grid's edge at ${event.desired.x},${event.desired.y}, ` +
+        "which a 48-wide Grid never puts a raider anywhere near",
+    )
+  }
+  const byEntity = blocked.filter((event) => event.kind === "move.blocked" && event.reason === "entity")
+  assert.ok(byEntity.length > 0, "the raider's real footprint collision was never reported")
+})

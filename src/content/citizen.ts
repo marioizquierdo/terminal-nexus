@@ -34,7 +34,9 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(1, 1),
     maxHp: 40,
-    movementRate: { numerator: 3, denominator: 4 },
+    // 1/1 rather than 3/4 - owner playtest: the opening approach read as sluggish, and a trooper is
+    // the unit most players spend the most time watching. Disposable bench content, tuned freely.
+    movementRate: { numerator: 1, denominator: 1 },
     speedTier: 2,
     attack: { kind: "melee", range: 1, damage: 7, cooldownTicks: 12 },
     collidesWith: GROUND_UNIT_COLLISIONS,
@@ -47,7 +49,8 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(1, 1),
     maxHp: 24,
-    movementRate: { numerator: 3, denominator: 4 },
+    // 1/1 rather than 3/4 - same owner finding as the trooper above.
+    movementRate: { numerator: 1, denominator: 1 },
     speedTier: 1,
     attack: { kind: "ranged", range: 5, damage: 6, cooldownTicks: 24, projectileTilesPerTick: 3 },
     collidesWith: GROUND_UNIT_COLLISIONS,

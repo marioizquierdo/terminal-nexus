@@ -252,7 +252,12 @@ function intents(context: TickContext): Intent[] {
     const choices = rankedSteps(actor.anchor, actor.definition, mask, { goal, intent })
     if (choices.length === 0) {
       const desired = desiredTile(actor, target, intent)
-      const blocker = mask.blockerAt(desired)
+      // The full footprint, not just the anchor tile: a multi-tile mover's naive "straight at the
+      // goal" tile can itself be perfectly clear while a *different* tile in its footprint is what's
+      // actually occupied - checking only the anchor then reports "edge" (blockReasonFor's fallback
+      // for "nothing was wrong with the one tile I looked at"), which is simply false. A three-tile
+      // raider crowded by an ally's tail in a populous scenario is what surfaced this.
+      const blocker = mask.footprintBlockerAt(desired, actor.definition.footprint)
       context.events.push({
         kind: "move.blocked",
         tick: context.tick,
@@ -400,7 +405,11 @@ function rerank(context: TickContext, intent: Intent, overlay: ClaimOverlay): St
 function reportBlocked(context: TickContext, intent: Intent, overlay: ClaimOverlay): void {
   const actor = intent.actor
   const desired = intent.choices[intent.chosen]?.to ?? actor.anchor
-  const blocker = maskForActor(context, actor, overlay).blockerAt(desired)
+  // Full footprint, same reasoning as the other move.blocked report above.
+  const blocker = maskForActor(context, actor, overlay).footprintBlockerAt(
+    desired,
+    actor.definition.footprint,
+  )
   context.events.push({
     kind: "move.blocked",
     tick: context.tick,
