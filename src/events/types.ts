@@ -150,6 +150,19 @@ export type DomainEvent =
       }>)
   | (Base &
       Readonly<{
+        kind: "entity.detonated"
+        entity: string
+        ordinal: number
+        player: PlayerId
+        contentId: string
+        at: Coord
+        radius: number
+        damage: number
+        /** Everything inside the radius, friend and foe alike, in ordinal order. */
+        caught: readonly string[]
+      }>)
+  | (Base &
+      Readonly<{
         kind: "salvage.dropped"
         at: Coord
         amount: number
@@ -184,6 +197,7 @@ export const DOMAIN_EVENT_KINDS: readonly DomainEventKind[] = [
   "damage.applied",
   "entity.died",
   "structure.destroyed",
+  "entity.detonated",
   "salvage.dropped",
   "arbitration.bounded",
   "pulse.ended",

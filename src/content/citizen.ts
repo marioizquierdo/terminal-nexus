@@ -72,6 +72,7 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
   {
     id: "structure.citizen.nexus",
     short: "nexus",
+    nexus: true,
     layer: "obstacles",
     footprint: rectFootprint(3, 2),
     maxHp: 400,

@@ -217,6 +217,34 @@ content to hold — a construct menu and a placement-legality panel will want th
 a Pulse feed does. C should be refused: the floor is a RULE and a moving frame size is worse than a
 quiet margin.
 
+### Q17 — Should a Chebyshev tie in target selection break on distance, or on entity id?
+
+**Status:** OPEN — Gate 1B proceeds under the recommendation; the answer moves every hash, so the
+timing matters more than usual.
+
+Target selection is "nearest enemy by Chebyshev distance, ties broken by entity id"
+([`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) 3.7), and Gate 1A was explicit that
+resisting the urge to improve it was part of that gate. Gate 1B's first asymmetric fixture showed
+what it costs. On a 48 × 16 Grid with each army deployed in a rank — which is exactly how Citizens
+are described as deploying — **every enemy is the same Chebyshev distance away**, because the
+horizontal gap dominates. The tie therefore decides, it always decides the same way, and both
+armies converge on one enemy each and stampede into a corner together.
+
+Staggering both sides across columns fixes the fixture, and that is what
+`citizens-versus-ravels.ts` does. It does not fix the rule.
+
+| Option | Cost |
+| --- | --- |
+| A. **Keep "nearest, ties by entity id"** and stagger fixtures | Free, and it is the contract Gate 1A's evidence was measured against. Any scenario that deploys in ranks produces a stampede, and ranks are a faction identity |
+| B. **Break the tie on squared Euclidean distance, then entity id** | One line, still integer arithmetic, still deterministic and replay-exact. Units pick the enemy actually in front of them, which is what "nearest" already meant. **Changes every state and event hash in the repository**, including the ones `evidence/report.md` quotes |
+| C. Spread targets deliberately — prefer an enemy nobody else has claimed | The best-looking fights, and a real target-assignment pass inside perception. That is Milestone 2 work, and it is a rule a player would have to learn |
+
+**Recommendation: B, but not until Gate 1A is accepted.** It is the honest reading of "nearest
+enemy" and it costs one line — but Gate 1A's report quotes exact hashes and exact fixture
+arithmetic, and moving those while the owner is about to watch the run they describe would make the
+evidence stale in the worst possible week. Take A until then, which is what Gate 1B ships. C is a
+better game answer and belongs to whichever milestone owns perception.
+
 ## 5. Answered
 
 Rows move here with the date, the decision, and the document that now owns it.

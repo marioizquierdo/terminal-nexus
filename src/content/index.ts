@@ -1,8 +1,10 @@
 export * from "./types.ts"
 export { CITIZEN_CONTENT } from "./citizen.ts"
+export { RAVEL_CONTENT } from "./ravel.ts"
 
 import type { ContentDef } from "./types.ts"
 import { CITIZEN_CONTENT } from "./citizen.ts"
+import { RAVEL_CONTENT } from "./ravel.ts"
 
 export type ContentRegistry = Readonly<{
   get(id: string): ContentDef
@@ -27,5 +29,12 @@ export function createRegistry(definitions: readonly ContentDef[]): ContentRegis
   }
 }
 
-/** The Gate 1A fixture registry: Citizens only, so nothing can be blamed on balance. */
-export const FIXTURE_REGISTRY: ContentRegistry = createRegistry(CITIZEN_CONTENT)
+/**
+ * The fixture registry. Gate 1A held Citizens alone, so that nothing which happened could be blamed
+ * on balance; Gate 1B adds Ravels, so that something which happens can be blamed on *contrast*.
+ * Both are disposable bench content, not Commander Armies.
+ */
+export const FIXTURE_REGISTRY: ContentRegistry = createRegistry([
+  ...CITIZEN_CONTENT,
+  ...RAVEL_CONTENT,
+])

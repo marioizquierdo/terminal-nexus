@@ -261,6 +261,18 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
           })
           break
 
+        case "entity.detonated":
+          emit({
+            tick,
+            level: "INFO",
+            kind: "blast",
+            subject: event.entity,
+            detail:
+              `at ${formatCoordinate(event.at)}  radius ${event.radius}  dmg ${event.damage}  ` +
+              `caught ${event.caught.length === 0 ? "nothing" : event.caught.join(" ")}`,
+          })
+          break
+
         case "salvage.dropped":
           emit({
             tick,

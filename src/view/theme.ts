@@ -20,12 +20,23 @@ const TERRAIN_GLYPHS: Readonly<Record<TerrainId, { glyph: string; role: StyleRol
  * character wide.
  */
 const CONTENT_GLYPHS: Readonly<Record<string, string | readonly string[]>> = {
+  // Citizens: rounded, contained, engineered. Their multi-tile body is bracketed — `(h)` — which
+  // reads as a chassis holding something.
   "unit.citizen.worker": "w",
   "unit.citizen.trooper": "t",
   "unit.citizen.marksman": "m",
   "unit.citizen.hauler": ["(", "h", ")"],
   "structure.citizen.nexus": "n",
   "structure.citizen.barracks": "b",
+  // Ravels: angular, forward-leaning, improvised. Their multi-tile body is the raider the lore
+  // draws as `>x<`, where the arrowheads say which way the energy is going and the letter carries
+  // the side. Same glyph vocabulary as `terminal-nexus-lore.md` Section 8.2.
+  "unit.ravel.scav": "s",
+  "unit.ravel.runner": "x",
+  "unit.ravel.slinger": "z",
+  "unit.ravel.fuelwagon": "v",
+  "unit.ravel.raider": [">", "x", "<"],
+  "structure.ravel.den": "d",
 }
 
 export function terrainGlyph(id: TerrainId): { glyph: string; role: StyleRole } {

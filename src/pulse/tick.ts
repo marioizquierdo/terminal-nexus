@@ -16,7 +16,6 @@ import { Pcg32 } from "../rng/pcg32.ts"
 import type { EntityState, GroundItem, MatchState, Outcome, PlayerId } from "../state/types.ts"
 import { PLAYERS } from "../state/types.ts"
 import type { PulseContext } from "./context.ts"
-import { NEXUS_CONTENT_ID } from "./context.ts"
 import type { StepChoice } from "./movement.ts"
 import { accrueCredit, canStep, rankedSteps, stepCost } from "./movement.ts"
 
@@ -593,8 +592,84 @@ function attacks(context: TickContext): void {
   }
 }
 
+/**
+ * Deaths, destruction, salvage — and detonations, which can cause more of all three.
+ *
+ * Volatile munitions make death contagious, so resolution is a queue rather than a pass: an entity
+ * that dies detonates, the blast damages everything inside its radius including its own side, and
+ * anything that reaches zero joins the queue. **The chain is bounded because an entity can only die
+ * once**, so the queue drains after at most one round per entity, and the order is ordinal order
+ * throughout — the same fight resolves the same way whichever entity happens to be checked first.
+ */
 function resolution(context: TickContext): void {
-  const dying = context.actors.filter((actor) => actor.pendingDead)
+  const settled = new Set<number>()
+  for (;;) {
+    const dying = context.actors
+      .filter((actor) => actor.pendingDead && !settled.has(actor.ordinal))
+      .sort((a, b) => a.ordinal - b.ordinal)
+    if (dying.length === 0) break
+    for (const actor of dying) settled.add(actor.ordinal)
+    resolveDeaths(context, dying)
+  }
+  const dead = context.actors.filter((actor) => actor.pendingDead)
+  if (dead.length > 0) {
+    context.actors = context.actors.filter((actor) => !actor.pendingDead)
+  }
+}
+
+function detonate(context: TickContext, actor: Actor): void {
+  const blast = actor.definition.detonation
+  if (blast === undefined) return
+
+  const caught = context.actors
+    .filter((other) => other.ordinal !== actor.ordinal && !other.pendingDead)
+    .filter(
+      (other) =>
+        footprintDistance(
+          actor.anchor,
+          actor.definition.footprint,
+          other.anchor,
+          other.definition.footprint,
+        ) <= blast.radius,
+    )
+    .sort((a, b) => a.ordinal - b.ordinal)
+
+  context.events.push({
+    kind: "entity.detonated",
+    tick: context.tick,
+    entity: actor.id,
+    ordinal: actor.ordinal,
+    player: actor.player,
+    contentId: actor.contentId,
+    at: actor.anchor,
+    radius: blast.radius,
+    damage: blast.damage,
+    caught: caught.map((other) => other.id),
+  })
+
+  for (const other of caught) {
+    const hpBefore = other.hp
+    const hpAfter = Math.max(0, hpBefore - blast.damage)
+    other.hp = hpAfter
+    context.events.push({
+      kind: "damage.applied",
+      tick: context.tick,
+      entity: other.id,
+      ordinal: other.ordinal,
+      source: actor.id,
+      sourceOrdinal: actor.ordinal,
+      amount: hpBefore - hpAfter,
+      hpBefore,
+      hpAfter,
+    })
+    if (hpAfter <= 0 && !other.pendingDead) {
+      other.pendingDead = true
+      other.killer = actor.id
+    }
+  }
+}
+
+function resolveDeaths(context: TickContext, dying: readonly Actor[]): void {
   for (const actor of dying) {
     const structure = actor.definition.layer === "obstacles"
     context.events.push(
@@ -658,9 +733,9 @@ function resolution(context: TickContext): void {
       actor.definition.footprint,
     )
     context.byOrdinal.delete(actor.ordinal)
-  }
-  if (dying.length > 0) {
-    context.actors = context.actors.filter((actor) => !actor.pendingDead)
+    // The blast comes after the death is announced, so a reader of the event stream sees the entity
+    // die and then take its neighbours with it, in that order.
+    detonate(context, actor)
   }
 }
 
@@ -672,7 +747,7 @@ function victory(context: TickContext): Outcome | null {
   const nexusAlive: Record<PlayerId, boolean> = { A: false, B: false }
   const mobileAlive: Record<PlayerId, boolean> = { A: false, B: false }
   for (const actor of context.actors) {
-    if (actor.contentId === NEXUS_CONTENT_ID) nexusAlive[actor.player] = true
+    if (actor.definition.nexus === true) nexusAlive[actor.player] = true
     if (isMobile(actor)) mobileAlive[actor.player] = true
   }
 

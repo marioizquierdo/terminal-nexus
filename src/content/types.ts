@@ -20,6 +20,21 @@ export type AttackDef = Readonly<{
 
 export type Behavior = "advance" | "flee" | "static"
 
+/**
+ * Volatile munitions — the Ravel rule shape from `commander-armies.md` Section 4.1: many Ravel
+ * things detonate when they die, theirs and what they kill, and chains are legal and bounded.
+ *
+ * It is a **fixture rule on the Playground bench**, not authored Commander Army content: it exists
+ * because a Ravel army without it fails the alignment test in `terminal-nexus-lore.md` Section 8.6,
+ * where a themed reskin of a generic ability fails and a rule that *is* the characterisation passes.
+ * Milestone 4 confirms or discards it when it selects the real microgame.
+ */
+export type Detonation = Readonly<{
+  /** Chebyshev tiles, measured to the nearest occupied tile, exactly as attack range is. */
+  radius: number
+  damage: number
+}>
+
 export type ContentDef = Readonly<{
   id: string
   /** The short name used in report lines: `A:trooper#1`. */
@@ -37,8 +52,16 @@ export type ContentDef = Readonly<{
   /** The layers this entity collides with — engine.md 3.4.1. Terrain impassability is separate. */
   collidesWith: readonly EntityLayer[]
   behavior: Behavior
-  /** Dropped as a ground item on death. Nothing consumes it in Gate 1A; there is no economy. */
+  /** Dropped as a ground item on death. Nothing consumes it yet; there is no economy. */
   salvage: number
+  /** If present, this entity detonates when it dies, damaging friend and foe alike. */
+  detonation?: Detonation
+  /**
+   * This entity is the player's Grid Nexus, and losing it loses the Pulse. A flag rather than a
+   * content id: Gate 1A hardcoded `structure.citizen.nexus`, which stopped being true the moment a
+   * second faction existed.
+   */
+  nexus?: boolean
 }>
 
 export function rectFootprint(width: number, height: number): Footprint {

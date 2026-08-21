@@ -15,8 +15,6 @@ export type PulseContext = Readonly<{
   roster: Readonly<Record<PlayerId, Roster>>
 }>
 
-export const NEXUS_CONTENT_ID = "structure.citizen.nexus"
-
 /**
  * Victory needs to know what each side started with, so that a scenario placing no Nexus is not
  * instantly won and a side that never had a worker is not instantly annihilated (Q13).
@@ -33,7 +31,7 @@ export function createContext(
   for (const entity of initialState.entities) {
     const definition = registry.get(entity.contentId)
     const side = roster[entity.player]
-    if (entity.contentId === NEXUS_CONTENT_ID) side.hasNexus = true
+    if (definition.nexus === true) side.hasNexus = true
     if (definition.layer !== "obstacles") side.hasMobile = true
   }
   for (const player of PLAYERS) {
