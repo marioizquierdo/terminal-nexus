@@ -1,3 +1,25 @@
+```text
+                                 : "
+_____._._______.______  ._____.___ .___ .______  .______  .___
+\__ _:|: .____/: __   \ :         |: __|:      \ :      \ |   |
+  |  :|| : _/\ |  \____||   \  /  || : ||       ||   .   ||   |
+  |   ||   /  \|   :  \ |   |\/   ||   ||   |   ||   :   ||   |/\
+  |   ||_.: __/|   |___\|___| |   ||   ||___|   ||___|   ||   /  \
+  |___|   :/   |___|          |___||___|    |___|    |___||______/
+
+               .______  ._______ ____   ____.____     .________
+               :      \ : .____/ \   \_/   /|    |___ |    ___/
+               |       || : _/\   \___ ___/ |    |   ||___    \
+               |   |   ||   /  \  /   _   \ |    :   ||       /
+               |___|   ||_.: __/ /___/ \___\|        ||__:___/
+                   |___|   :/               |. _____/    :
+                                             :/
+                                             :
+                               "
+
+            Boot up, Commander. The Ancients are here.
+```
+
 # Terminal Nexus
 
 Terminal Nexus is the next-gen ASCII autobattler strategy game that runs in your command-line shell. Choose your faction, build your base and send your units to the battle.
