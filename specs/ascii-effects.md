@@ -2,7 +2,7 @@
 
 **Document role:** The effect system: contract, starter vocabulary, and the craft rules behind it
 **Status:** Canonical direction; the vocabulary is proven or discarded by Milestone 1 Gate 1B
-**Canon version:** 2.3
+**Canon version:** 2.4
 **Updated:** 2026-08-20
 **License:** Apache-2.0 for the contract and schemas; CC BY-SA 4.0 for the authored vocabulary
 

@@ -3,7 +3,7 @@
 **Document role:** Start-here implementation contract
 **Status:** CURRENT
 **Active gate:** 1A — the Pulse Playground
-**Canon version:** 2.3
+**Canon version:** 2.4
 **Updated:** 2026-08-20
 **License:** Apache-2.0; authored creative treatments are CC BY-SA 4.0
 

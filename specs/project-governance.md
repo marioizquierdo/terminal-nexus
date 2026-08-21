@@ -2,8 +2,8 @@
 
 **Document role:** Canon authority, evidence process, execution ledger, and durable decisions
 **Status:** Canonical
-**Canon version:** 2.3
-**Updated:** 2026-08-20
+**Canon version:** 2.4
+**Updated:** 2026-08-21
 **License:** Apache-2.0
 
 ## 1. Canon is a document set
@@ -87,6 +87,7 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 | Canon audit and autonomy pass | COMPLETE | Canon 2.1 added the open-questions register and gate-report template and made the validator derive its invariants | Keep the register current as gates raise new questions |
 | Design-authority pass | COMPLETE | Canon 2.2 renamed the Grid, added the layer model, marked engine sections by authority, and refocused Milestone 1 on the Pulse | Superseded by the 2.3 corrections |
 | Viewport and playground pass | COMPLETE | Canon 2.3 formalised viewport limits and cursor-driven scrolling, made layers render-order-only with collision as a composed mask, settled multi-tile units, reduced the markers to RULE and GUIDANCE, and reshaped Milestone 1 into the Pulse Playground | Open Gate 1A |
+| Faction design and fiction pass | COMPLETE | Canon 2.4 aligned all five faction identities across philosophy, verb, mechanics direction, psychographics, and voice; added faction mechanical identities and engine capability asks; added the Operator belief ramp, a worked mission, and voice exemplars; registered Q10 and Q11 | Owner review; Milestone 4 selects the first mechanical proofs |
 | Milestone 1A — the Pulse Playground | CURRENT | Grid, scenario files, deterministic Pulse, a levelled report, and a minimal ASCII view, built together | Run Gate 1A in `milestone-1-spike-battle.md` and stop for owner acceptance |
 | Milestone 1B — quality and effects | GATED | Requires a legible Pulse to add tiers and effects to | Authorize after Gate 1A passes |
 | Milestone 2 — completing the Pulse | GATED | Routing, economy, production, visibility, replay, and hardening the spike deferred | Lock the contracts listed in its document first |
@@ -108,6 +109,7 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 | 2026-08-20 | 2.1 | Owner answered Q1 (adaptive tile width), Q2 (one resource), and Q6 (accept the Gate 1A/1C split), and authorized opening Gate 1A | Milestone 1A |
 | 2026-08-20 | 2.3 | Formalised viewport minimum and maximum, cursor-driven scrolling with no minimap, and terminal size bands; corrected layers to define render order only, with collision as a mask composed from chosen layers; settled that units may span multiple tiles (Q3); reduced authority markers to RULE and GUIDANCE; reshaped Milestone 1 into the **Pulse Playground**, with the headless report and the ASCII view built together and a levelled log as the agent feedback loop | Milestone 1A |
 | 2026-08-20 | 2.2 | Renamed the battle surface to the **Grid** and the replica to the **Grid Nexus**; added Grid size and shape presets, the five-layer occupancy model, and footprint/anchor/facing placement; marked every engine section LAW, GUIDANCE, or UNPROVEN; refocused Milestone 1 onto the Pulse itself with three gates ending in an effects gate; added `ascii-effects.md`; deferred packaging and remote delivery out of the milestone | Milestone 1A |
+| 2026-08-21 | 2.4 | Faction design and fiction pass: rewrote the five faction identities so philosophy, strategic verb, geometry, motion, chance, and voice make one statement each (Glitch converges instead of "chaotic", Alder grows instead of machining, verb *Transcend* → *Outgrow*); added psychographic promises, signature moments, and an anti-redundancy law; added mechanics-as-characterisation, variance-as-doctrine, capability asks, and Commander identity proposals to `commander-armies.md`; added the six-mission Operator belief ramp and a fully written Mission 1 to `campaigns.md`; added voice shades, system-text and bark exemplars, and ten pairing exchanges to the lore; protected the interface's voice as a twelfth deliberate mystery; registered Q10 (diegetic interface deception) and Q11 (Alder draft refusal) | Milestone 1A |
 
 ## 7. Locked product decisions
 

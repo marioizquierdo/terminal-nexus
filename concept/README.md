@@ -2,7 +2,7 @@
 
 **Document role:** Early visual exploration. Not canon, not decisions
 **Status:** Reference
-**Canon version:** 2.3
+**Canon version:** 2.4
 **Updated:** 2026-08-20
 **License:** CC BY-SA 4.0
 

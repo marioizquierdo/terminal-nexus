@@ -1,9 +1,9 @@
 # Terminal Nexus — Commander Armies
 
 **Document role:** Playable faction packages: Commanders, units, structures, upgrades, and Nexus powers
-**Status:** Canonical placeholder; rosters intentionally undefined
-**Canon version:** 2.3
-**Updated:** 2026-08-20
+**Status:** Canonical identity direction; rosters intentionally undefined
+**Canon version:** 2.4
+**Updated:** 2026-08-21
 **License:** Creative identity is CC BY-SA 4.0; mechanical definitions and schemas are Apache-2.0
 
 ## 1. Purpose
@@ -66,7 +66,160 @@ Faction asymmetry reduces the number of options each player must understand whil
 - recovery paths that do not erase consequences;
 - a mechanical identity visible without reading lore.
 
-## 4. Authoring template
+## 4. Faction mechanical identities — direction
+
+This section records each faction's **mechanical identity**: the rule-shapes that make its philosophy
+playable, the signature moment those shapes exist to produce, and the smallest engine capability each
+one needs. It contains no stats, no rosters, and no authorization — Milestone 4 still selects the
+deliberately tiny Citizens-versus-Ravels microgame, and everything here competes for a place in it or
+in later milestones.
+
+The standard every entry must meet is the alignment test from
+[`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 8.6: **a player who has never read a word
+of lore should be able to state the faction's philosophy from play alone.** A themed reskin of a
+generic ability fails that test. A rule that *is* the characterisation passes it.
+
+### 4.1 The rule is the character
+
+**Citizens — Build.**
+
+| Rule shape | What it does | What it teaches without words |
+| --- | --- | --- |
+| Standards propagate | An upgrade applies to every unit of its class, including units already fielded | A good idea belongs to everyone; the many move as one |
+| Alignment bonus | Structures in unbroken orthogonal runs gain integrity or arcs | The player draws Citizen geometry because it is strong, not because it is themed |
+| Shared cadence | Every Citizen ground unit steps on the same beat | The army is one machine, and the player is its engineer |
+| Scheduled everything | Citizen recipes and drafts carry the game's lowest variance | A standard is a promise; the schedule is kept |
+
+**Ravels — Break free.**
+
+| Rule shape | What it does | What it teaches without words |
+| --- | --- | --- |
+| Volatile munitions | Many Ravel things detonate on death — theirs, and what they kill; chains are legal and bounded | Everything is fuel, and endings are loud |
+| Jackpot drafts | The widest, wildest Nexus draft: cheap redraws, real duds, real jackpots | Improvisation is a rules verb, not a mood |
+| Scrap doctrine | Faster salvage extraction, and detonations shed extra salvage | Even losses pay forward; freedom eats what empire wastes |
+| Off the beat | Movement rates deliberately off the common cadence — `6/5` against `1/1` | Nothing marches; everything scrambles |
+
+**Glitch — Recompile.**
+
+| Rule shape | What it does | What it teaches without words |
+| --- | --- | --- |
+| Recompilation | Producers consume nearby salvage to discount or accelerate recipes | The dead — anyone's dead — are a deposit |
+| Attrition inversion | Sustained trades bend toward Glitch by arithmetic | You cannot win a war of losses against the thing that eats losses |
+| Corruption | Area unsettlement that taxes enemy movement, drawn under the corruption law (Q4) | Where the swarm has been, the Grid itself runs wrong |
+| Convergence | Glitch variance decreases as the match runs — early rolls mutate, late rolls lock | Iteration: every error narrows the next build |
+
+**Feudals — Obey.**
+
+| Rule shape | What it does | What it teaches without words |
+| --- | --- | --- |
+| Fealty adjacency | Doctrine effects flow from a liege to adjacent vassals; the org chart is drawn on the Grid | Power is a chain, and the chain is literal |
+| Living shields | Submitters intercept damage for adjacent higher castes | The caste system is a damage-routing rule |
+| Consecrated artillery | The longest range in the game, usable only under a Cleric's standing rite | Every power routes through hierarchy; nothing fires alone |
+| Conditional certainty | In sanctioned formation, the game's most reliable outcomes; with the hierarchy broken, its least | Obedience converts chance into certainty |
+
+**Alder — Outgrow.**
+
+| Rule shape | What it does | What it teaches without words |
+| --- | --- | --- |
+| Displacement | Signature attacks move enemies instead of damaging them — into water, thorns, or each other's paths | Position is the resource, and the Grid is the weapon |
+| Growth | Alder works are planted cheap and mature over Pulses — sapling, grove, bastion | Time is currency, and patience compounds |
+| Cycles | Grid-wide scheduled events — flood, bloom, frost — that both players can read and only Alder can seed | Announced physics, not traps: inevitability you can watch coming |
+| Phase variance | Alder outcomes are certain but scheduled; the uncertainty an opponent feels is *when*, never *whether* | Nature does not gamble; it takes turns |
+
+Whether Alder's refusal of Nexus power is itself mechanical — whether they draft at all, and from
+what — is Q11 in [`open-questions.md`](open-questions.md).
+
+### 4.2 Variance is doctrine
+
+Every faction declares a relationship to chance, because a probability distribution is a philosophy a
+player can feel without reading a word:
+
+| Faction | Relationship to chance | The philosophy it expresses |
+| --- | --- | --- |
+| Citizens | Minimal variance — a delta function | A standard is a promise; the schedule is kept |
+| Ravels | Maximal variance — fat tails, real jackpots, real duds | Luck is the universe still open at the top |
+| Glitch | Variance converging toward zero as the match runs | Iteration: every error narrows the next build |
+| Feudals | Variance conditional on formation | Obedience converts chance into certainty; disorder is punished |
+| Alder | Variance in phase, never in outcome | Inevitability: the *when* breathes, the *whether* does not |
+
+All of it draws from the seeded gameplay stream ([`engine.md`](engine.md) Section 4.4). A "lucky"
+faction is still deterministic per seed, replay-exact, and testable — volatility is a shape of the
+distribution, not an exemption from determinism. The player-facing consequence differs anyway: a
+Citizens replay teaches the plan; a Ravels replay retells the story.
+
+### 4.3 Signature moments and the capabilities they need
+
+Each faction's signature moment (defined in [`terminal-nexus-lore.md`](terminal-nexus-lore.md)
+Section 8) implies a smallest engine capability. Where the current engine cannot express the moment,
+that is recorded here as roadmap input, not worked around in fiction:
+
+| Signature moment | Faction | Smallest capability that unlocks it |
+| --- | --- | --- |
+| The line holds | Citizens | Derived per-tick modifiers: bonuses computed as a pure function of the state at tick start (adjacency, alignment, overlapping arcs). Fits the narrow-hook sketch in [`engine.md`](engine.md) Section 8 |
+| The cascade | Ravels | Event-triggered effects: on-death area damage resolving inside the tick's Resolution step, with cascades bounded by a decreasing progress measure — the same discipline arbitration already has |
+| The second wave is larger | Glitch | Production recipes with Grid-state inputs: a producer consuming salvage tiles within a radius. A small extension of `ProductionRecipe` |
+| The shield dies standing | Feudals | Damage interception: a Resolution-step rule redirecting damage between adjacent units, deterministic under the existing tick order |
+| The Grid turns | Alder | Two capabilities: forced displacement — moves imposed on enemies, resolved through the same collision masks and tie-breaks as voluntary intents — and scheduled terrain mutation — tiles changing cost or passability at a declared tick, emitted as first-class events |
+
+Scheduled terrain mutation also serves Glitch corruption as a temporary movement-cost overlay — one
+capability, two factions, opposite meanings. That kind of leverage is what makes a capability worth
+its complexity. Every capability above must execute inside the deterministic kernel and emit events;
+none may live in presentation, and none is authorized until a milestone needs it.
+
+### 4.4 Proposed Commanders
+
+Identity proposals only — names, stances, and the disagreement each embodies. Rosters, stats, and
+starting packages remain undefined until a milestone authorizes them. Each trio or pair deliberately
+stages the faction's internal argument, per the design law's requirement that Commanders disagree.
+
+**Citizens**
+
+- **Commander Edda Vasse** — the provisional Symbol of the origin campaign: a perimeter officer who
+  never asked for the connection. Doctrine: fortify, verify, then advance. Her disagreement: the
+  Nexus should answer to civilian audit the day the emergency ends.
+- **Director Oru Denz**, "the Paver" — doctrine: expansion as defense; roads, outposts, and coverage
+  as weapons. His disagreement: he believes the manifest destiny without the stoicism.
+- **Marshal Avern Teag** — doctrine: the wall, everywhere. Her disagreement: security is not a phase
+  of the emergency; it is the permanent condition. The faction's contradiction, wearing a uniform.
+
+**Ravels**
+
+- **Speaker Corvane** — the Symbol the Ravel Prime chose at the Activation. Doctrine: hit the supply,
+  free the workers, vanish. Their disagreement: the Nexus picked a conspiracy, not a government, and
+  Corvane intends to keep it that way.
+- **Pella Vey** — the scavenger of *Nothing to Declare*, flying with the freed process `?`. Doctrine:
+  salvage first, jackpot drafts, nothing wasted. Her disagreement: freedom includes freeing Glitch
+  processes, which unnerves everyone else at the fire.
+- **Old Marrow** — a demolitionist elder. Doctrine: everything detonates, on a timer if possible. His
+  disagreement: the network itself should come down — every Nexus, theirs included.
+
+**Glitch**
+
+- **Custodian Vessel** — the Queen's oldest signed process. Doctrine: convert, archive, preserve the
+  patterns of the fallen. Its disagreement: assimilation is rescue.
+- **The Deprecator** — a newer signature. Doctrine: pure attrition; delete without archiving. Its
+  disagreement: archiving is sentiment, and sentiment is an error. The quiet horror is that the Queen
+  signs both.
+
+**Feudals**
+
+- **Duo Sere-and-Vail** — a paired sovereign, one office in two bodies. Doctrine: formation supremacy
+  and artillery liturgy. Their disagreement: the castes are eternal because they are true.
+- **Cleric-Militant Ottavan** — doctrine: the rites, weaponized. His disagreement: the Duos reign,
+  but the Clerics rule.
+- **Anthem** — a Submitter the Nexus chose as a Symbol, to the church's horror. Doctrine: the wall
+  fights for itself. Their disagreement: obedience should flow sideways — the castes holding each
+  other up, not the throne. The *Open Hand* seed, become a Commander.
+
+**Alder**
+
+- **Warden Oleth** — patience absolute. Doctrine: cycles, floods, and sieges measured in seasons.
+  Their disagreement: the war is weather; outlast it.
+- **Thorn-Regent Cail** — the interventionist. Doctrine: prune early — displace, divide, and remove
+  claimants before they mature. Her disagreement: refusal without action is complicity. The faction's
+  contradiction, wearing armor.
+
+## 5. Authoring template
 
 Use this template only when a milestone authorizes an army definition:
 
@@ -115,7 +268,7 @@ Balance hypotheses:
 
 Every literal glyph is theme data mapped from a semantic role. Every exceptional mechanic executes through a validated engine capability or narrow hook. Flavor text never becomes an implicit rule.
 
-## 5. Initial authoring order
+## 6. Initial authoring order
 
 1. Define the smallest Citizen Commander Army needed by Milestone 4.
 2. Define the smallest Ravel Commander Army that creates a meaningful asymmetric match.

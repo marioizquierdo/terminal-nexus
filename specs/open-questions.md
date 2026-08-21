@@ -2,8 +2,8 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.3
-**Updated:** 2026-08-20
+**Canon version:** 2.4
+**Updated:** 2026-08-21
 **License:** Apache-2.0
 
 ## 1. Why this file exists
@@ -52,7 +52,7 @@ Question IDs are permanent. Never renumber, never reuse.
 is cheap.
 
 [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 9 says Glitch "violates stable terminal
-conventions" and appears as literal software errors. [`engine.md`](engine.md) Section 10.3 requires
+conventions" and appears as literal software errors. [`engine.md`](engine.md) Section 9.6 requires
 that every gameplay glyph occupy one cell, that colour never carry meaning alone, and that reduced
 motion preserve anticipation, impact, and settled state. A faction whose identity is illegibility
 collides with a law that requires legibility.
@@ -67,7 +67,7 @@ can still see what is attacking you), and gives reduced-motion an obvious fallba
 
 **Status:** OPEN — trivial to answer; blocks nothing before Milestone 3.
 
-[`engine.md`](engine.md) Section 6.4 says two tiles. The builder concept art shows `RADIUS +4`. One
+[`engine.md`](engine.md) Section 6 says two tiles. The builder concept art shows `RADIUS +4`. One
 of the two is stale. The distance metric is separately unlocked and belongs to Milestone 3.
 
 **Recommendation:** keep two as the default in canon and treat `+4` as an outpost value, which is
@@ -77,7 +77,7 @@ what the art is actually showing — it is drawn on an Outpost.
 
 **Status:** OPEN — blocks nothing before Milestone 4.
 
-[`engine.md`](engine.md) Section 6.1 says workers do not carry bundles home and produce continuously
+[`engine.md`](engine.md) Section 6 says workers do not carry bundles home and produce continuously
 at a job, then says they return toward the Nexus when storage fills and resume "immediately" when
 capacity opens. Returning-when-full is carry-shaped behaviour inside a no-carry model, and
 "immediately" ignores travel time.
@@ -120,6 +120,46 @@ in the rules — it exists so the renderer does not have to guess a direction an
 conversation, and adopting it early would mean every unit's readable state includes an orientation
 that a single character struggles to show. Keep facing in state, keep it out of the rules, and
 revisit when there is a faction that wants it.
+
+### Q10 — May campaign presentation misreport authoritative state?
+
+**Status:** OPEN — blocks nothing before Milestone 5; record the rule now while it is cheap.
+
+The campaign belief ramp ([`campaigns.md`](campaigns.md) Section 4.1) wants one mission in which the
+interface lies: on-screen totals disagree with what the player watched, and discovering the seam is
+the story. The three-worlds law ([`engine.md`](engine.md) Section 1) is not violated — presentation
+cannot influence the Pulse, and a lying screen does not — but legibility is the product's spine, so
+deception needs a fence, not a shrug.
+
+| Option | Cost |
+| --- | --- |
+| A. Never — the interface is always truthful | Loses the strongest storytelling instrument available to a game whose medium *is* the interface; the ramp's fifth mission collapses into narrated text |
+| B. Campaigns may misreport freely | Erodes trust in the only surface the player has; a defect and a fiction become indistinguishable ("is my readout lying or broken?") |
+| C. Mission-scoped diegetic deception under three constraints: only where the mission definition declares it; the deterministic report, event log, and replay stay truthful — the screen lies, the log never does; and the mission surfaces the seam in play, so the player can always catch the lie | A small presentation capability and authoring discipline; skirmish and every non-campaign surface never lie |
+
+**Recommendation: C.** It converts the engine's own honesty — the levelled report, the event log,
+the replay — into a narrative instrument: the log becomes the in-fiction incorruptible witness. It
+also keeps faith with the deliberate-mysteries rule that the interface may misbehave but never
+testify ([`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 7).
+
+### Q11 — Is Alder's refusal of Nexus power mechanical, and how?
+
+**Status:** OPEN — blocks nothing before a milestone selects Alder; shapes their identity now.
+
+Refusing Nexus power is Alder's central identity and moral claim
+([`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 8.5). The Nexus upgrade draft
+([`engine.md`](engine.md) Section 5.4) is a core cross-faction system. If Alder drafts Nexus
+upgrades like everyone else, the faction's philosophy is contradicted by its own interface verb every
+match — the exact failure the alignment test exists to catch.
+
+| Option | Cost |
+| --- | --- |
+| A. Alder has no draft; a parallel "cultivation" progression replaces it | Strongest characterisation; a second progression system to design, balance, and teach, and one faction bypasses shared machinery |
+| B. Alder drafts normally, flavored as reluctant containment | Cheapest; fiction and mechanics disagree at the precise point the faction's identity lives — fails the no-lore-player test |
+| C. Same draft machinery, different source: Alder drafts from a faction-owned cultivation pool (their own biology and cycles); Nexus-derived options simply never appear for them | Keeps one teaching surface and one implementation while making refusal visible in every single draft; costs a per-faction draft-pool capability the draft likely wants anyway |
+
+**Recommendation: C.** A is the fallback if C proves too thin to carry the fantasy; B should be
+rejected on sight.
 
 ## 5. Answered
 
