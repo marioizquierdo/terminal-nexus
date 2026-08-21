@@ -13,6 +13,7 @@ import {
   controlForKey,
   createView,
   gateFrame,
+  keysFromChunk,
 } from "../view/index.ts"
 import type { CapabilityMode, PulseTimeline, TileWidth } from "../view/index.ts"
 import { AnsiBackend } from "../view/backends/ansi.ts"
@@ -102,12 +103,14 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
   }
 
   function onKey(data: Buffer): void {
-    const control = controlForKey(data.toString("utf8"))
-    if (control === "quit") {
-      leave()
-      return
+    for (const key of keysFromChunk(data.toString("utf8"))) {
+      const control = controlForKey(key)
+      if (control === "quit") {
+        leave()
+        return
+      }
+      if (control !== null) playback.apply(control)
     }
-    if (control !== null) playback.apply(control)
   }
 
   try {

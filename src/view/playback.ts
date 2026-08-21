@@ -103,6 +103,21 @@ export class Playback {
   }
 }
 
+/**
+ * Split one chunk of terminal input into keys.
+ *
+ * A terminal does not promise one key per read: a fast typist, a paste, or a script driving the
+ * session through a pseudo-terminal all deliver several bytes at once, and treating the chunk as a
+ * single key silently drops every one of them. An escape sequence — an arrow key, a mouse report —
+ * is the opposite case and must stay whole, so a chunk that begins with ESC is returned as one key
+ * and, since Gate 1A binds none of them, ignored.
+ */
+export function keysFromChunk(chunk: string): string[] {
+  if (chunk.length === 0) return []
+  if (chunk.startsWith(String.fromCharCode(27))) return [chunk]
+  return [...chunk]
+}
+
 /** The key map, so `watch` and a test agree on what a key means. */
 export function controlForKey(key: string): PlaybackControl | "quit" | null {
   switch (key) {

@@ -196,6 +196,27 @@ two dozen ticks revisit the same two tiles — but the kernel keeps moving it.
 is a dozen lines and does not need pathfinding. C is the honest long answer, and Milestone 2's
 routing work should settle it either way.
 
+### Q16 — When the Grid is smaller than the viewport, where does the leftover space go?
+
+**Status:** OPEN — Gate 1A proceeds under the recommendation; the answer changes only presentation.
+
+[`engine.md`](engine.md) Section 3.3 says terminal space beyond the *maximum* viewport is spent on
+centring and on a larger inspection panel, never on more Grid. It does not say what happens below
+the *minimum*: a `small-wide` Grid is 24 × 12 inside a 48 × 16 pane, so Gate 1A centres it and
+leaves twelve blank columns on each side. Screenshots of the real terminal are in
+`evidence/screenshots/`; at 80 columns roughly a third of the frame is empty.
+
+| Option | Cost |
+| --- | --- |
+| A. **Centre the Grid in the full 48 × 16 pane.** What Gate 1A ships | Free, and the frame is identical whatever scenario is loaded, which keeps snapshots and muscle memory stable. Looks empty on a tutorial-sized Grid |
+| B. Shrink the pane to the Grid and give the recovered columns to the side panel | Uses the whole frame. The panel changes width with the map, so every panel layout has to work at two or three widths, and the composition stops falling out of one number |
+| C. Shrink the whole frame to the Grid and centre the frame in the terminal | Tightest picture. The frame is no longer 80 × 24, which is the acceptance target repeated as RULE in four documents |
+
+**Recommendation: A for Gate 1A**, and decide it when the Build Phase gives the side panel real
+content to hold — a construct menu and a placement-legality panel will want the width far more than
+a Pulse feed does. C should be refused: the floor is a RULE and a moving frame size is worse than a
+quiet margin.
+
 ## 5. Answered
 
 Rows move here with the date, the decision, and the document that now owns it.

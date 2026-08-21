@@ -90,6 +90,7 @@ npm run test:bun           # the same suite under Bun, one file at a time
 
 # evidence artifacts in this directory
 node scripts/capture-frames.mjs citizen-mirror-skirmish 0 112 160 240
+node scripts/capture-screenshots.mjs           # drives a real PTY and writes evidence/screenshots
 ./bin/playground.ts run scenarios/citizen-mirror-skirmish.ts \
   > evidence/citizen-mirror-skirmish-summary.txt 2> evidence/citizen-mirror-skirmish-info.txt
 ```
@@ -153,7 +154,7 @@ deliberately, and Q15 records it.
 
 ## 4. Automated results
 
-`npm test` — **96 tests, 96 passing, 0 failing** on Node 22.22.2. `npm run test:bun` — the same
+`npm test` — **98 tests, 98 passing, 0 failing** on Node 22.22.2. `npm run test:bun` — the same
 files, all passing, under Bun 1.3.11. `npx tsc --noEmit` — clean. `./scripts/check-repository.sh` —
 passes.
 
@@ -194,6 +195,8 @@ passes.
 | **Resize freezes presentation time and resumes from the same instant** | PASS | `tests/playback.test.ts`, driving a whole session with no TTY |
 | Controls: pause, resume, step one frame, step one tick, speed, restart, quit | PASS | `tests/playback.test.ts`, including the key map |
 | One idempotent disposer on every lifecycle path | PASS | `tests/lifecycle.test.ts` drives `q`, the raw-mode interrupt byte, SIGINT, SIGTERM and a thrown render through `watchPulse` itself; each restores the alternate screen, the cursor and raw mode, and a second stop writes nothing |
+| **The ANSI backend runs on a real terminal** | PASS | `scripts/capture-screenshots.mjs` drives the binary inside a tmux PTY: the alternate screen, raw-mode input, pause, step-a-tick, `q`, and the restore on exit all behave, on eight captures across three scenarios |
+| **The resize gate appears on a real terminal below the composition** | PASS | `evidence/screenshots/resize-gate.png`, captured at 64x18 |
 | `run`, `watch` and `verify` work from a clean checkout | PASS | All three run with `node_modules` deleted: the kernel, the report and the view have no runtime dependency, and the OpenTUI backend is imported lazily behind a fallback |
 | Non-TTY prints one line and no escapes | PASS | `tests/cli.test.ts`, `tests/lifecycle.test.ts` |
 | Structured-cell snapshots identical across backends | PASS | `tests/backend-opentui.test.ts` under Bun: OpenTUI's captured characters equal the compositor's |
@@ -242,17 +245,47 @@ contentLock sha256:5384b38dbf7e5f021ef94cddbfd213b0a094360d2335d7b303fb76d8f1946
 
 ## 5. Human observations
 
-**Nobody has watched it yet.** `playground watch` needs a TTY and this session has none, so the
-experiential half of the gate is not yet answered. What exists instead:
+**Nobody has watched it in motion.** That claim is unchanged, and it is still the gate's remaining
+work. What now exists is one step short of it: **eight screenshots of the real thing running in a
+real terminal**, in `evidence/screenshots/`, captured by driving the binary inside a tmux
+pseudo-terminal, pausing it, and stepping to an exact tick so each frame lands where it was meant
+to rather than wherever the wall clock reached.
 
-- four still frames at 80x24 in monochrome, in `evidence/frames/`, at ticks 0, 112 (first shots),
-  160 (first deaths) and 240 (the end);
-- the full `INFO` log of the same run in `evidence/citizen-mirror-skirmish-info.txt`.
+| Screenshot | What it shows |
+| --- | --- |
+| `mirror-open.png` | Tick 0, both squads placed |
+| `mirror-first-shots.png` | Tick 112, the marksmen opening fire at range five |
+| `mirror-melee.png` | Tick 160, troopers in contact, salvage on the ground |
+| `mirror-monochrome.png` | The same tick at the acceptance floor |
+| `mirror-wide.png` | 128 columns at two columns per tile |
+| `nexus-falls.png` | Tick 404, the Grid Nexus destroyed and the Pulse over |
+| `hauler-gap.png` | The 3x1 hauler one row past its three-tile opening |
+| `resize-gate.png` | A 64x18 terminal, gated |
 
-The two checks still owed, both explicitly human in Section 3.10, are: **Mario has watched a mirror
-skirmish run**, and **Mario has watched one in monochrome and could follow it** — who moved, who
-shot whom, who died. Governance Section 2 forbids treating an automated test as proof of either, and
-this report does not.
+Also in this directory: four plain-text frames in `evidence/frames/`, and the full `INFO` log of the
+mirror run in `evidence/citizen-mirror-skirmish-info.txt`.
+
+What the stills show, offered as observations rather than as the experiential claim they cannot make:
+
+- **The composition holds at both widths.** Nothing overflows, nothing wraps, the frame closes on
+  all four sides, and every readout fits its pane at 80 and at 128 columns.
+- **Ownership survives monochrome.** Lower case against upper case is doing the work that colour
+  does in the 16-colour frame; the two captures carry identical glyphs. Units and terrain are close
+  in weight, though — making units bold in monochrome is a Gate 1B render-tier lever worth pulling.
+- **Two columns per tile fixes the aspect ratio.** Tiles read as roughly square instead of squashed
+  2:1, which is what Q1's answer was for. It also spaces a multi-tile body out: the hauler becomes
+  `(  h  )`, and whether its second column should extend the body is a Gate 1B question.
+- **The Grid floats.** A 24 x 12 Grid inside the 48 x 16 pane leaves twelve blank columns on each
+  side — about a third of an 80-column frame. Registered as **Q16**.
+- **Structures read as buildings.** A 3x2 barracks as a solid `BBB / BBB` block, and the Nexus the
+  same, are legible as objects rather than as letters.
+- **The feed carries causality.** Without effects, `160 Am5>Bt2 shot 6` in the side panel is the
+  only thing saying who shot whom; on the stills it reads well, and Gate 1B's tracer should make it
+  a redundancy rather than the sole carrier.
+
+The two checks still owed, both explicitly human in Section 3.10: **Mario has watched a mirror
+skirmish run**, and **Mario has watched one in monochrome and could follow it**. Governance
+Section 2 forbids treating an automated test — or a screenshot — as proof of either.
 
 ## 6. Interpretation
 
@@ -373,6 +406,18 @@ into `src/view/playback.ts` — where advancing is a pure function of the elapse
 made a whole session drivable from a test in a few lines, including the part that matters: after a
 gate goes up and five seconds pass twice, playback resumes at exactly the instant it froze.
 
+**A real terminal found an input bug that no test would have.** The key handler compared the whole
+chunk read from stdin against a single key, so ten step-a-tick presses arriving in one ten-byte
+chunk — which is what a script driving a pseudo-terminal produces, and what a fast typist or a paste
+produces too — were silently dropped in their entirety. Input is now split into keys, with an escape
+sequence kept whole so an arrow key stays one key rather than three. Found in the first minute of
+driving the thing for screenshots; it would have survived the whole gate otherwise.
+
+**The panel and the footer contradicted each other.** With playback paused the side panel showed
+`[hold]` while the footer still read `pulse running`. Both were true — one describes playback, the
+other the match — but read together they look like a bug. The footer now says `paused at tick 0160`
+while held. It took a screenshot to notice; in text form the two lines are forty rows apart.
+
 **Speculative helpers were written and then deleted.** A pass over the exports found a dozen
 functions nothing called — `opponentOf`, `sameCoord`, `vectorOf`, `entityByOrdinal`, `isStructure`,
 a `renderStill`, a `survivorsOf`. They were all written in the first hour, when it felt obvious that
@@ -432,6 +477,7 @@ with a recommendation:
 | --- | --- | --- |
 | Q14 | Should the movement tie-break be mirror-fair, or is a fixed compass order enough? | Keep the compass order for Gate 1A; decide in Milestone 2, which owns routing |
 | Q15 | What should a mover with no route do: circle, or stop? | Leave it and report it now; park the actor as a stopgap if watching shows circling reads as broken |
+| Q16 | When the Grid is smaller than the viewport, where does the leftover space go? | Keep centring it for Gate 1A; decide when the Build Phase gives the side panel real content |
 
 Evidence bearing on a question already open: **Q13**. Workers move at `1/1` and every fixture
 attacker at `3/4` or slower, so a fleeing worker on open ground is never caught and the mirror never

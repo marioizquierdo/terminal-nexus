@@ -2,7 +2,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { Playback, compositionSize, controlForKey } from "../src/view/index.ts"
+import { Playback, compositionSize, controlForKey, keysFromChunk } from "../src/view/index.ts"
 
 const TICK_MS = 1000 / 12
 const FRAME_MS = 1000 / 30
@@ -119,4 +119,27 @@ test("the key map covers every control the milestone lists", () => {
   assert.equal(controlForKey("["), "slower")
   assert.equal(controlForKey("r"), "restart")
   assert.equal(controlForKey("z"), null)
+})
+
+test("a chunk of input is several keys, and an escape sequence is one", () => {
+  // A terminal delivers what it has, not one key per read. Driving the view through a pseudo-
+  // terminal showed this the hard way: ten step-a-tick presses arrived as one ten-byte chunk and
+  // every one of them was dropped.
+  assert.deepEqual(keysFromChunk(",,,"), [",", ",", ","])
+  assert.deepEqual(keysFromChunk(" q"), [" ", "q"])
+  assert.deepEqual(keysFromChunk(""), [])
+
+  const escape = String.fromCharCode(27)
+  assert.deepEqual(keysFromChunk(`${escape}[A`), [`${escape}[A`], "an arrow key was split apart")
+  assert.equal(controlForKey(`${escape}[A`), null)
+})
+
+test("stepping a chunk of ticks advances by exactly that many ticks", () => {
+  const clock = playback()
+  clock.apply("pause")
+  for (const key of keysFromChunk(",,,,,")) {
+    const control = controlForKey(key)
+    if (control !== null && control !== "quit") clock.apply(control)
+  }
+  assert.equal(clock.presentationTimeMs, TICK_MS * 5)
 })

@@ -85,6 +85,22 @@ Pinned by Gate 1A, measured 2026-08-21:
 test registered while another file's tests are still running, and it does not implement `t.skip()`.
 Node's runner isolates each file and takes the whole glob at once.
 
+### Screenshots of the real terminal
+
+```bash
+node scripts/capture-screenshots.mjs              # all of them
+node scripts/capture-screenshots.mjs --only mirror-melee
+```
+
+It drives `playground watch` inside a tmux pseudo-terminal — a real PTY, so the ANSI backend takes
+the same path a person gets — pauses it, steps to an exact tick, captures the pane with its escape
+sequences, and renders it to a PNG in `evidence/screenshots/` through the Chromium already present
+for Playwright. Use it when a change touches the composition: a frame's *text* is what the tests
+assert on, and it says nothing about spacing, density, or where the eye goes.
+
+Requires `tmux` and the browser at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`. Editing the
+`shots` array at the top of the script is how you add a frame worth looking at.
+
 ### The log is the feedback loop
 
 `playground run` writes fixed-column lines to stderr, which is what lets an agent assert on

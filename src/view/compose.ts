@@ -242,7 +242,12 @@ function drawChrome(
     { limit: paneLimit },
   )
   text(cells, band, 2, footerTop + 1, CONTROLS, "chrome.muted", { dim: true, limit: paneLimit })
-  text(cells, band, 2, footerTop + 2, input.status, "chrome.value", { limit: paneLimit })
+  // While playback is held the status line says so: the panel's [hold] and a footer reading
+  // "pulse running" are true of different things, and side by side they read as a contradiction.
+  const status = input.paused
+    ? `paused at tick ${String(input.tick).padStart(4, "0")}`
+    : input.status
+  text(cells, band, 2, footerTop + 2, status, "chrome.value", { limit: paneLimit })
 
   // Side panel — 30 columns. During a Pulse it carries the pulse state, both sides' force totals,
   // and the feed that makes "who shot whom" readable before Gate 1B's effects exist.
