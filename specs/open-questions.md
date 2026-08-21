@@ -2,8 +2,8 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.3
-**Updated:** 2026-08-20
+**Canon version:** 2.4
+**Updated:** 2026-08-21
 **License:** Apache-2.0
 
 ## 1. Why this file exists
@@ -52,7 +52,7 @@ Question IDs are permanent. Never renumber, never reuse.
 is cheap.
 
 [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 9 says Glitch "violates stable terminal
-conventions" and appears as literal software errors. [`engine.md`](engine.md) Section 10.3 requires
+conventions" and appears as literal software errors. [`engine.md`](engine.md) Section 9.6 requires
 that every gameplay glyph occupy one cell, that colour never carry meaning alone, and that reduced
 motion preserve anticipation, impact, and settled state. A faction whose identity is illegibility
 collides with a law that requires legibility.
@@ -67,7 +67,7 @@ can still see what is attacking you), and gives reduced-motion an obvious fallba
 
 **Status:** OPEN — trivial to answer; blocks nothing before Milestone 3.
 
-[`engine.md`](engine.md) Section 6.4 says two tiles. The builder concept art shows `RADIUS +4`. One
+[`engine.md`](engine.md) Section 6 says two tiles. The builder concept art shows `RADIUS +4`. One
 of the two is stale. The distance metric is separately unlocked and belongs to Milestone 3.
 
 **Recommendation:** keep two as the default in canon and treat `+4` as an outpost value, which is
@@ -77,7 +77,7 @@ what the art is actually showing — it is drawn on an Outpost.
 
 **Status:** OPEN — blocks nothing before Milestone 4.
 
-[`engine.md`](engine.md) Section 6.1 says workers do not carry bundles home and produce continuously
+[`engine.md`](engine.md) Section 6 says workers do not carry bundles home and produce continuously
 at a job, then says they return toward the Nexus when storage fills and resume "immediately" when
 capacity opens. Returning-when-full is carry-shaped behaviour inside a no-carry model, and
 "immediately" ignores travel time.
@@ -131,6 +131,33 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q2 | 2026-08-20 | **One resource.** Salvage recovers the same resource rather than a second one. Nexus energy is a state readout, not a currency. A second resource is an addition a later microgame may earn; it is not assumed | [`engine.md`](engine.md) Section 6 |
 | Q3 | 2026-08-20 | **Units may span multiple tiles.** Large units are a normal, strategically important case, not a later extension — a Ravel raider drawn `>x<` is one unit occupying three tiles. The collision system tests a mover's whole footprint against its mask; damage and destruction apply to the entity, not the tile | [`engine.md`](engine.md) Section 3.5 |
 | Q6 | 2026-08-20 | **Packaging and remote delivery leave Milestone 1.** First split into an independent gate, then deferred out of the milestone entirely when it was refocused onto the Pulse — they answer no question the game currently has | [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) |
+| Q10 | 2026-08-21 | **DROPPED as mis-scoped.** Engine determinism was never in question: the kernel, its event log, and replay stay exact, and the features that depend on them are untouched. Whether a mission's *interface* misreports a total for narrative effect is campaign writing, decided when campaigns are designed | [`campaigns.md`](campaigns.md), at Milestone 5 |
+| Q11 | 2026-08-21 | **Alder refuse artificial Nexus power — conceptual.** Simplicity and growth instead: little or no Nexus draft, and more complexity in the structures they can build. Direction, not a locked mechanic | [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 8.5 and [`commander-armies.md`](commander-armies.md) Section 4 |
+
+### Q11 — answered
+
+Mario, 2026-08-21, at concept level: **Alder refuse artificial power from the Nexus.** They want
+simplicity and growth instead. Mechanically that reads as *less* where the Nexus is involved and
+*more* where their own biology is: little or no Nexus draft, and a wider, more varied catalogue of
+structures they can grow.
+
+This is lore direction rather than a locked mechanic. Whether the draft is absent entirely or a small
+grown pool, and how far the structure catalogue widens to compensate, stays undefined until a
+milestone authorizes Alder content. The three options the register offered are superseded — the
+answer keeps A's honesty about refusal while moving the depth into structures rather than into a
+second progression system.
+
+### Q10 — dropped
+
+Mario, 2026-08-21: the question conflated two separate things. The deterministic kernel is one — and
+replay and fast-forward depend on it, so nothing narrative may touch it. Campaign story writing is
+the other, and campaigns are designed later.
+
+Nothing in the belief ramp asks the kernel, the event log, or a replay to be anything but exact; the
+device only concerned what a mission's *interface* displays. That is a writing decision belonging to
+the mission that wants it, so it needs no canon fork. [`campaigns.md`](campaigns.md) Section 4.1
+keeps one line of guidance — the engine's record is never part of a narrative device — and the rest
+waits for Milestone 5.
 
 ### Q3 — answered
 
