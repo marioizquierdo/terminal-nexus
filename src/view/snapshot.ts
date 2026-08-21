@@ -9,6 +9,7 @@ import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import type { MatchState } from "../state/types.ts"
+import { EffectTimeline, deriveEffects } from "./effects/index.ts"
 import type { ReadonlyCellFrame } from "./frame.ts"
 import type { CapabilityMode } from "./roles.ts"
 import type { TileWidth } from "./compose.ts"
@@ -32,6 +33,22 @@ export type PulseTimeline = Readonly<{
 export type ViewControls = Readonly<{ paused: boolean; speed: number }>
 
 /**
+ * How the view is dressed. None of it can reach the kernel: the cosmetic seed feeds effects only,
+ * and a test asserts that changing it moves no state or event hash.
+ */
+export type PresentationOptions = Readonly<{
+  effects: boolean
+  reducedMotion: boolean
+  cosmeticSeed: number
+}>
+
+export const DEFAULT_PRESENTATION: PresentationOptions = {
+  effects: true,
+  reducedMotion: false,
+  cosmeticSeed: 0x0c05e7,
+}
+
+/**
  * A step lands halfway through the tick interval that precedes it. At a frame sampled exactly on a
  * tick boundary every entity therefore stands on its authoritative tile — which is the check that
  * catches a compositor drawing a deterministic, correctly-sized picture of the wrong fight.
@@ -40,6 +57,9 @@ const STEP_LANDS_AT = 0.5
 
 export type PulseView = Readonly<{
   timeline: PulseTimeline
+  presentation: PresentationOptions
+  /** How many effect instances the whole Pulse produced. Evidence, and a smoke test. */
+  effectCount: number
   lastTick: number
   durationMs: number
   tickDurationMs: number
@@ -53,7 +73,10 @@ export type PulseView = Readonly<{
   ): ReadonlyCellFrame
 }>
 
-export function createView(timeline: PulseTimeline): PulseView {
+export function createView(
+  timeline: PulseTimeline,
+  presentation: PresentationOptions = DEFAULT_PRESENTATION,
+): PulseView {
   const lastTick = timeline.states.length - 1
   const tickDurationMs = 1000 / timeline.ticksPerSecond
   const movesByTick = new Map<number, DomainEvent[]>()
@@ -65,6 +88,16 @@ export function createView(timeline: PulseTimeline): PulseView {
   }
   const feed = timeline.events.filter((event) =>
     (FEED_KINDS as readonly string[]).includes(event.kind),
+  )
+  const effects = new EffectTimeline(
+    presentation.effects
+      ? deriveEffects({
+          states: timeline.states,
+          events: timeline.events,
+          registry: timeline.registry,
+          ticksPerSecond: timeline.ticksPerSecond,
+        })
+      : [],
   )
 
   const clampTick = (tick: number): number => Math.max(0, Math.min(lastTick, tick))
@@ -106,6 +139,13 @@ export function createView(timeline: PulseTimeline): PulseView {
         paused: controls.paused,
         speed: controls.speed,
         status: statusOf(state, tick, lastTick),
+        effects: effects.cellsAt({
+          timeMs: Math.max(0, timeMs),
+          cosmeticSeed: presentation.cosmeticSeed,
+          tileWidth,
+          reducedMotion: presentation.reducedMotion,
+          capability,
+        }),
       },
       capability,
       tileWidth,
@@ -114,6 +154,8 @@ export function createView(timeline: PulseTimeline): PulseView {
 
   return {
     timeline,
+    presentation,
+    effectCount: effects.size,
     lastTick,
     durationMs: (lastTick + 1) * tickDurationMs,
     tickDurationMs,

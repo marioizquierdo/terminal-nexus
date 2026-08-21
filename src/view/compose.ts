@@ -14,6 +14,7 @@ import { tilesOf } from "../grid/coords.ts"
 import type { GridTerrain } from "../grid/types.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
 import { PLAYERS } from "../state/types.ts"
+import type { ActiveEffect, EffectBand } from "./effects/index.ts"
 import type { BandCell, Cell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import type { CapabilityMode, StyleRole } from "./roles.ts"
@@ -50,6 +51,8 @@ export type CompositionInput = Readonly<{
   paused: boolean
   speed: number
   status: string
+  /** What the effect system is painting at this instant. Empty is a legal, complete frame. */
+  effects?: readonly ActiveEffect[]
 }>
 
 function put(
@@ -113,6 +116,43 @@ function text(
   glyphs.forEach((glyph, index) => put(cells, band, x + index, y, glyph, role, extra))
 }
 
+function drawGridEdge(
+  cells: BandCell[],
+  grid: GridTerrain,
+  origin: { column: number; row: number },
+  tileWidth: TileWidth,
+): void {
+  const left = origin.column - 1
+  const right = origin.column + grid.width * tileWidth
+  const top = origin.row - 1
+  const bottom = origin.row + grid.height
+  if (left < 1 || top < 1 + HEADER_ROWS) return
+
+  for (let x = left + 1; x < right; x += 1) {
+    put(cells, BANDS.terrain, x, top, "-", "chrome.muted", { dim: true })
+    put(cells, BANDS.terrain, x, bottom, "-", "chrome.muted", { dim: true })
+  }
+  for (let y = top + 1; y < bottom; y += 1) {
+    put(cells, BANDS.terrain, left, y, "|", "chrome.muted", { dim: true })
+    put(cells, BANDS.terrain, right, y, "|", "chrome.muted", { dim: true })
+  }
+  for (const [x, y] of [
+    [left, top],
+    [right, top],
+    [left, bottom],
+    [right, bottom],
+  ] as const) {
+    put(cells, BANDS.terrain, x, y, "+", "chrome.muted", { dim: true })
+  }
+}
+
+const EFFECT_BAND_NUMBERS: Readonly<Record<EffectBand, number>> = {
+  "ground-items": BANDS.groundItems,
+  projectiles: BANDS.projectiles,
+  effects: BANDS.effects,
+  highlights: BANDS.highlights,
+}
+
 export function gridOrigin(
   grid: GridTerrain,
   tileWidth: TileWidth,
@@ -142,7 +182,20 @@ export function composeFrame(
       if (terrainId === undefined) continue
       const { glyph, role } = terrainGlyph(terrainId)
       const column = origin.column + x * tileWidth
-      put(cells, BANDS.terrain, column, origin.row + y, glyph, role, { dim: true })
+      // Featureless ground is drawn as a coarse lattice rather than a dot per tile: negative space
+      // is material, and 288 identical marks compete with every unit and every effect on top of
+      // them. Rock and deposits are features and are always drawn.
+      const featureless = terrainId === "terrain.plain"
+      const onLattice = x % 4 === 0 && y % 2 === 0
+      put(
+        cells,
+        BANDS.terrain,
+        column,
+        origin.row + y,
+        featureless && !onLattice ? " " : glyph,
+        role,
+        { dim: true },
+      )
       for (let extra = 1; extra < tileWidth; extra += 1) {
         put(cells, BANDS.terrain, column + extra, origin.row + y, " ", role)
       }
@@ -162,6 +215,9 @@ export function composeFrame(
   }
 
   // Bands 4, 5 and 6 — structures, workers and units, air. The Grid layers map onto them directly.
+  // Tiles an entity occupies are remembered, because the corruption law says an effect may never
+  // replace the only cell carrying a required semantic cue, and a unit's glyph is exactly that.
+  const occupied = new Set<string>()
   for (const entity of input.state.entities) {
     const definition = input.registry.get(entity.contentId)
     const drawn = input.positions.get(entity.ordinal) ?? entity.anchor
@@ -177,6 +233,7 @@ export function composeFrame(
         continue
       }
       const glyph = entityGlyph(entity.contentId, entity.player, definition.footprint, offset)
+      occupied.add(`${tile.x},${tile.y}`)
       const column = origin.column + tile.x * tileWidth
       put(cells, band, column, origin.row + tile.y, glyph, playerRole(entity.player), {
         bold: definition.layer === "obstacles",
@@ -184,6 +241,47 @@ export function composeFrame(
       for (let extra = 1; extra < tileWidth; extra += 1) {
         put(cells, band, column + extra, origin.row + tile.y, " ", playerRole(entity.player))
       }
+    }
+  }
+
+  // A quiet rule around the play area, where the Grid is smaller than the pane. Without it a
+  // lattice-drawn field has no visible edge, and a player cannot tell empty ground from off-Grid.
+  // When the Grid fills the pane — the default 48 x 16 preset does — the frame's own border is
+  // already that edge, so this draws nothing.
+  drawGridEdge(cells, input.grid, origin, tileWidth)
+
+  // Bands 3, 7, 8 and 9 — effects. They may paint here and nowhere else (ascii-effects.md 1.1),
+  // they are clipped to the Grid, and they can never move a glyph the simulation put down.
+  for (const painted of input.effects ?? []) {
+    const band = EFFECT_BAND_NUMBERS[painted.instance.band]
+    for (const cell of painted.cells) {
+      if (
+        cell.tile.x < 0 ||
+        cell.tile.y < 0 ||
+        cell.tile.x >= input.grid.width ||
+        cell.tile.y >= input.grid.height
+      ) {
+        continue
+      }
+      const column = origin.column + cell.tile.x * tileWidth
+      const row = origin.row + cell.tile.y
+      const style = {
+        ...(cell.role === undefined ? {} : { fgRole: cell.role }),
+        ...(cell.bold === true ? { bold: true } : {}),
+        ...(cell.dim === true ? { dim: true } : {}),
+        ...(cell.inverse === true ? { inverse: true } : {}),
+      }
+      if (cell.glyph === "") {
+        // An attribute change on whatever is already there — the damage flash, and only it. This is
+        // the one way an effect may touch a cell an entity is standing on.
+        cells.push({ band, x: column, y: row, style })
+        continue
+      }
+      // The corruption law, enforced by the compositor rather than by recipe discipline: an effect
+      // that would replace a unit, a structure or a wreck's glyph is dropped on that tile. The
+      // screen may look wrong; the player must still be able to see what is attacking them.
+      if (occupied.has(`${cell.tile.x},${cell.tile.y}`)) continue
+      cells.push({ band, x: column, y: row, cell: { glyph: cell.glyph, style } })
     }
   }
 

@@ -8,7 +8,7 @@ import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { AnsiBackend } from "../src/view/backends/ansi.ts"
 import { selectBackend } from "../src/view/backends/index.ts"
-import { compositionSize, composeBands } from "../src/view/index.ts"
+import { DEFAULT_PRESENTATION, compositionSize, composeBands } from "../src/view/index.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { buildTimeline } from "../src/cli/timeline.ts"
 import { watchPulse } from "../src/cli/watch.ts"
@@ -161,6 +161,7 @@ async function watchSession(
     tileWidth: 1,
     speed: 1,
     backend: "ansi",
+    presentation: DEFAULT_PRESENTATION,
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
     exit: (code) => {
@@ -233,6 +234,7 @@ test("a render failure is caught, and still restores the terminal", async () => 
     tileWidth: 1,
     speed: 1,
     backend: "ansi",
+    presentation: DEFAULT_PRESENTATION,
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
     exit: () => {},

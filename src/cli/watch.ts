@@ -15,7 +15,12 @@ import {
   gateFrame,
   keysFromChunk,
 } from "../view/index.ts"
-import type { CapabilityMode, PulseTimeline, TileWidth } from "../view/index.ts"
+import type {
+  CapabilityMode,
+  PresentationOptions,
+  PulseTimeline,
+  TileWidth,
+} from "../view/index.ts"
 import { AnsiBackend } from "../view/backends/ansi.ts"
 import { selectBackend } from "../view/backends/index.ts"
 
@@ -27,6 +32,7 @@ export type WatchOptions = Readonly<{
   tileWidth: TileWidth
   speed: number
   backend: string
+  presentation: PresentationOptions
   stdout: NodeJS.WriteStream
   stdin: NodeJS.ReadStream
   /**
@@ -47,7 +53,7 @@ function hashLine(timeline: PulseTimeline): string {
 
 export async function watchPulse(options: WatchOptions): Promise<number> {
   const { timeline, stdout, stdin } = options
-  const view = createView(timeline)
+  const view = createView(timeline, options.presentation)
   const required = compositionSize(options.tileWidth)
 
   // Non-TTY prints one line and no escapes. It still reports the hashes, so a scripted watch and a

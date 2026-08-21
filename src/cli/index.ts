@@ -19,8 +19,8 @@ import { buildLog, formatSummary, parseLevel, summarize, summaryJson } from "../
 import type { ReportInput } from "../report/index.ts"
 import { loadScenario } from "../scenario/index.ts"
 import type { ScenarioDefinition } from "../scenario/index.ts"
-import { parseCapability } from "../view/index.ts"
-import type { TileWidth } from "../view/index.ts"
+import { DEFAULT_PRESENTATION, parseCapability } from "../view/index.ts"
+import type { PresentationOptions, TileWidth } from "../view/index.ts"
 import { parseArgs, parseInteger } from "./args.ts"
 import type { ParsedArgs } from "./args.ts"
 import { buildTimeline } from "./timeline.ts"
@@ -30,8 +30,10 @@ const USAGE = `playground — the Terminal Nexus Pulse Playground
 
   playground run    <scenario.ts> [--seed 0xABCD] [--ticks 120] [--log-level info]
                                   [--events events.jsonl] [--json]
-  playground watch  <scenario.ts> [--seed] [--ticks] [--speed 1] [--capability monochrome]
-                                  [--tile-width 1] [--backend auto|ansi|opentui]
+  playground watch  <scenario.ts> [--seed] [--ticks] [--speed 1] [--tile-width 1|2]
+                                  [--capability monochrome|color16|color256|truecolor]
+                                  [--no-effects] [--reduced-motion] [--cosmetic-seed 0x1234]
+                                  [--backend auto|ansi|opentui]
   playground verify <scenario.ts> [--runs 20] [--seed] [--ticks]
 
 Log levels: ERROR, WARN, INFO (default), DEBUG, TRACE. The log goes to stderr, the summary to
@@ -191,12 +193,22 @@ async function commandWatch(args: ParsedArgs): Promise<number> {
 
   const tileWidthOption = args.options.get("tile-width")
   const tileWidth: TileWidth = tileWidthOption === "2" ? 2 : 1
+  const cosmeticSeed = args.options.get("cosmetic-seed")
+  const presentation: PresentationOptions = {
+    effects: !args.flags.has("no-effects"),
+    reducedMotion: args.flags.has("reduced-motion"),
+    cosmeticSeed:
+      cosmeticSeed === undefined
+        ? DEFAULT_PRESENTATION.cosmeticSeed
+        : parseInteger(cosmeticSeed, "--cosmetic-seed"),
+  }
   return watchPulse({
     timeline,
     capability: parseCapability(args.options.get("capability") ?? "color16"),
     tileWidth,
     speed: Number(args.options.get("speed") ?? "1"),
     backend: args.options.get("backend") ?? "auto",
+    presentation,
     stdout: process.stdout,
     stdin: process.stdin,
   })

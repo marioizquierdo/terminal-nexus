@@ -17,6 +17,7 @@ const VALUE_OPTIONS = new Set([
   "backend",
   "frames",
   "at",
+  "cosmetic-seed",
 ])
 
 export function parseArgs(argv: readonly string[]): ParsedArgs {

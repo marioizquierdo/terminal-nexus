@@ -2,7 +2,7 @@
 // snapshot surface. No backend object ever appears inside a frame.
 
 import type { CapabilityMode, StyleRole } from "./roles.ts"
-import { sgrFor } from "./roles.ts"
+import { sgrBackgroundFor, sgrFor } from "./roles.ts"
 
 const ESC = "\u001b"
 
@@ -31,6 +31,13 @@ export interface TerminalBackend {
 
 export const BLANK: Cell = { glyph: " ", style: {} }
 
+/**
+ * A band write with no glyph: keep whatever glyph is already there and apply this style over it.
+ * `fx.damage.flash` is the reason it exists — ascii-effects.md 5 allows exactly one effect to touch
+ * a unit's own cell, and only as an attribute, never as a glyph replacement.
+ */
+export type BandCellStyleOnly = Readonly<{ band: number; x: number; y: number; style: CellStyle }>
+
 /** Bands, not free z-indexes — engine.md 9.4. The Grid layers map onto them directly. */
 export const BANDS = {
   terrain: 1,
@@ -47,7 +54,9 @@ export const BANDS = {
 
 export type BandName = keyof typeof BANDS
 
-export type BandCell = Readonly<{ band: number; x: number; y: number; cell: Cell }>
+export type BandCell =
+  | Readonly<{ band: number; x: number; y: number; cell: Cell }>
+  | BandCellStyleOnly
 
 /**
  * Compose sparse band cells into one frame. The topmost defined cell replaces the lower complete
@@ -62,7 +71,13 @@ export function composeBands(
   const ordered = [...bandCells].sort((a, b) => a.band - b.band)
   for (const entry of ordered) {
     if (entry.x < 0 || entry.y < 0 || entry.x >= width || entry.y >= height) continue
-    cells[entry.y * width + entry.x] = entry.cell
+    const index = entry.y * width + entry.x
+    if ("cell" in entry) {
+      cells[index] = entry.cell
+      continue
+    }
+    const beneath = cells[index] ?? BLANK
+    cells[index] = { glyph: beneath.glyph, style: { ...beneath.style, ...entry.style } }
   }
   return { width, height, cells }
 }
@@ -84,9 +99,7 @@ export function frameToText(frame: ReadonlyCellFrame): string {
 
 function sgrOf(style: CellStyle, capability: CapabilityMode): string {
   const parts: number[] = [...sgrFor(style.fgRole, capability)]
-  if (style.bgRole !== undefined && capability !== "monochrome") {
-    for (const code of sgrFor(style.bgRole, capability)) parts.push(code + 10)
-  }
+  for (const code of sgrBackgroundFor(style.bgRole, capability)) parts.push(code)
   if (style.bold === true) parts.push(1)
   if (style.dim === true) parts.push(2)
   if (style.underline === true) parts.push(4)
