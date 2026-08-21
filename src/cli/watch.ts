@@ -12,7 +12,6 @@ import {
   compositionSize,
   controlForKey,
   createView,
-  frameToText,
   gateFrame,
 } from "../view/index.ts"
 import type { CapabilityMode, PulseTimeline, TileWidth } from "../view/index.ts"
@@ -160,16 +159,6 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
   }
   stdout.write(`${hashLine(timeline)}\n`)
   return 0
-}
-
-/** Render one frame as plain text, for evidence capture and for eyeballing without a terminal. */
-export function renderStill(
-  timeline: PulseTimeline,
-  timeMs: number,
-  capability: CapabilityMode,
-  tileWidth: TileWidth,
-): string {
-  return frameToText(createView(timeline).snapshotAt(timeMs, capability, tileWidth))
 }
 
 export { AnsiBackend }

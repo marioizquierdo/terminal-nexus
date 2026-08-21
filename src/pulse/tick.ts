@@ -7,7 +7,7 @@
 // outcome — it only ever decides the order events are emitted in.
 
 import type { ContentDef } from "../content/types.ts"
-import { footprintDistance, directionOf } from "../grid/coords.ts"
+import { directionOf, footprintDistance, step } from "../grid/coords.ts"
 import type { CollisionMask } from "../grid/occupancy.ts"
 import { ClaimOverlay, OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
 import type { Coord, Direction } from "../grid/types.ts"
@@ -267,23 +267,13 @@ function intents(context: TickContext): Intent[] {
   return declared
 }
 
+/** The tile the actor wanted, for the report: one step along the direction it was heading. */
 function desiredTile(actor: Actor, target: Actor, intent: "toward" | "away"): Coord {
   const direction =
     intent === "toward"
       ? directionOf(actor.anchor, target.anchor, actor.facing)
       : directionOf(target.anchor, actor.anchor, actor.facing)
-  const offsets: Record<Direction, Coord> = {
-    n: { x: 0, y: -1 },
-    ne: { x: 1, y: -1 },
-    e: { x: 1, y: 0 },
-    se: { x: 1, y: 1 },
-    s: { x: 0, y: 1 },
-    sw: { x: -1, y: 1 },
-    w: { x: -1, y: 0 },
-    nw: { x: -1, y: -1 },
-  }
-  const offset = offsets[direction]
-  return { x: actor.anchor.x + offset.x, y: actor.anchor.y + offset.y }
+  return step(actor.anchor, direction)
 }
 
 // ---------------------------------------------------------------------------

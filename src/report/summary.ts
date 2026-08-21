@@ -1,6 +1,7 @@
 // The run summary — milestone-1-spike-battle.md 3.3. Log to stderr, summary to stdout, so that
 // `playground run x.ts > report.txt 2> run.log` splits them and a bare run interleaves both.
 
+import { shortHash } from "../state/canonical.ts"
 import type { PlayerId, VictoryReason } from "../state/types.ts"
 import { PLAYERS } from "../state/types.ts"
 import type { ReportInput } from "./log.ts"
@@ -79,8 +80,8 @@ export function formatSummary(summary: RunSummary): string {
     `${label("ticks")}${ticksText}`,
     `${label("outcome")}${outcomeText}`,
     `${label("losses")}${lossesText}`,
-    `${label("state")}sha256:${summary.stateHash.slice(0, SUMMARY_HASH_DIGITS)}    ` +
-      `events  sha256:${summary.eventsHash.slice(0, SUMMARY_HASH_DIGITS)}`,
+    `${label("state")}${shortHash(summary.stateHash, SUMMARY_HASH_DIGITS)}    ` +
+      `events  ${shortHash(summary.eventsHash, SUMMARY_HASH_DIGITS)}`,
   ].join("\n")
 }
 

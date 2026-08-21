@@ -153,7 +153,7 @@ deliberately, and Q15 records it.
 
 ## 4. Automated results
 
-`npm test` — **94 tests, 94 passing, 0 failing** on Node 22.22.2. `npm run test:bun` — the same
+`npm test` — **96 tests, 96 passing, 0 failing** on Node 22.22.2. `npm run test:bun` — the same
 files, all passing, under Bun 1.3.11. `npx tsc --noEmit` — clean. `./scripts/check-repository.sh` —
 passes.
 
@@ -167,6 +167,7 @@ passes.
 | PRNG matches published test vectors | PASS | `tests/rng.test.ts` against `imneme/pcg-c` `check-pcg32.out` |
 | Cosmetic seed changes nothing about state, events or log | PASS | `tests/determinism.test.ts` |
 | `parse(serialize(state))` hashes identically, all 15 scenarios | PASS | `tests/determinism.test.ts` |
+| The JSONL event stream round-trips to the same hash and the same bytes | PASS | `tests/determinism.test.ts`; every kind emitted is a declared kind, and the only declared kind no scenario emits is `arbitration.bounded`, the warning that fires when arbitration hits its pass bound |
 | **Identical hashes under Bun and under Node**, all 15 scenarios | PASS | `tests/cli.test.ts` spawns both runtimes and compares `--json` |
 | No two entities overlap in a mask including both layers, at any tick | PASS | `tests/grid.test.ts`, every tick of every scenario |
 | A worker and a ground unit may share a tile | PASS | `tests/grid.test.ts`; `share-tile-worker-unit` at tick 64, tile (6,5) |
@@ -371,6 +372,14 @@ engine.md 9.6 states as RULE had no evidence behind it. Pulling the clock, the c
 into `src/view/playback.ts` — where advancing is a pure function of the elapsed time handed in —
 made a whole session drivable from a test in a few lines, including the part that matters: after a
 gate goes up and five seconds pass twice, playback resumes at exactly the instant it froze.
+
+**Speculative helpers were written and then deleted.** A pass over the exports found a dozen
+functions nothing called — `opponentOf`, `sameCoord`, `vectorOf`, `entityByOrdinal`, `isStructure`,
+a `renderStill`, a `survivorsOf`. They were all written in the first hour, when it felt obvious that
+something would want them. Nothing did. They are gone, and the three constants worth keeping earned
+their place by being asserted in a test instead: the default preset is the 48x16 the composition is
+derived from, the event union declares exactly the kinds the kernel emits, and the JSONL machine
+surface round-trips to the same bytes.
 
 **Discarded: putting movement credit only in the kernel.** The milestone wants credit state at
 `DEBUG`, and the report may not read kernel internals. Rather than weaken that rule, credit and step

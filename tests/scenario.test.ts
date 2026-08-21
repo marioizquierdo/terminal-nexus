@@ -6,7 +6,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { ScenarioError, loadScenario, presetDimensions } from "../src/scenario/index.ts"
+import { DEFAULT_PRESET, ScenarioError, loadScenario, presetDimensions } from "../src/scenario/index.ts"
 import type { ScenarioDefinition } from "../src/scenario/index.ts"
 import { loadScenarioFile, resolveScenario, scenarioFiles } from "./helpers.ts"
 
@@ -26,6 +26,12 @@ function baseScenario(): ScenarioDefinition {
     },
   }
 }
+
+test("the default preset is 48 x 16, which the 80-column composition is derived from", () => {
+  // RULE: change this and the 80- and 128-column layouts stop falling out of one number.
+  assert.equal(DEFAULT_PRESET, "medium-extra-wide")
+  assert.deepEqual(presetDimensions(DEFAULT_PRESET), { width: 48, height: 16 })
+})
 
 test("the preset matrix matches engine.md 3.1", () => {
   assert.deepEqual(presetDimensions("small-wide"), { width: 24, height: 12 })

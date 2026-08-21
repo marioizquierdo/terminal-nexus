@@ -43,7 +43,6 @@ export type PulseView = Readonly<{
   lastTick: number
   durationMs: number
   tickDurationMs: number
-  tickAt(timeMs: number): number
   snapshotAt(timeMs: number, capability: CapabilityMode, tileWidth: TileWidth): ReadonlyCellFrame
   /** The same composition with live playback controls filled in — what `watch` presents. */
   composeAt(
@@ -69,8 +68,6 @@ export function createView(timeline: PulseTimeline): PulseView {
   )
 
   const clampTick = (tick: number): number => Math.max(0, Math.min(lastTick, tick))
-  const tickAt = (timeMs: number): number =>
-    clampTick(Math.floor((Math.max(0, timeMs) * timeline.ticksPerSecond) / 1000))
 
   const composeAt = (
     timeMs: number,
@@ -120,7 +117,6 @@ export function createView(timeline: PulseTimeline): PulseView {
     lastTick,
     durationMs: (lastTick + 1) * tickDurationMs,
     tickDurationMs,
-    tickAt,
     // `snapshotAt` deliberately takes no controls, so a snapshot test never depends on what the
     // player happened to be doing when it was taken.
     snapshotAt: (timeMs, capability, tileWidth) =>

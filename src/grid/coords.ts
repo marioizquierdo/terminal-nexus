@@ -14,10 +14,6 @@ const DIRECTION_VECTORS: Readonly<Record<Direction, Coord>> = {
   nw: { x: -1, y: -1 },
 }
 
-export function vectorOf(direction: Direction): Coord {
-  return DIRECTION_VECTORS[direction]
-}
-
 export function step(from: Coord, direction: Direction): Coord {
   const vector = DIRECTION_VECTORS[direction]
   return { x: from.x + vector.x, y: from.y + vector.y }
@@ -33,10 +29,6 @@ export function directionOf(from: Coord, to: Coord, fallback: Direction = "s"): 
     if (vector.x === dx && vector.y === dy) return direction
   }
   return fallback
-}
-
-export function sameCoord(a: Coord, b: Coord): boolean {
-  return a.x === b.x && a.y === b.y
 }
 
 /** Chebyshev distance — engine.md 3.6. Eight-way movement, uniform cost per step. */
@@ -81,8 +73,4 @@ export function inBounds(grid: GridTerrain, tile: Coord): boolean {
 
 export function tileIndex(grid: GridTerrain, tile: Coord): number {
   return tile.y * grid.width + tile.x
-}
-
-export function formatCoord(tile: Coord): string {
-  return `(${tile.x},${tile.y})`
 }

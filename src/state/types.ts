@@ -8,10 +8,6 @@ export type PlayerId = "A" | "B"
 
 export const PLAYERS: readonly PlayerId[] = ["A", "B"]
 
-export function opponentOf(player: PlayerId): PlayerId {
-  return player === "A" ? "B" : "A"
-}
-
 export type EntityState = Readonly<{
   /** Identity and the one iteration order. Assigned at spawn, never reused. */
   ordinal: number
@@ -68,25 +64,3 @@ export type MatchState = Readonly<{
 }>
 
 export const SCHEMA_VERSION = 1
-
-export function entityByOrdinal(state: MatchState, ordinal: number): EntityState | null {
-  for (const entity of state.entities) {
-    if (entity.ordinal === ordinal) return entity
-  }
-  return null
-}
-
-/**
- * The kernel keeps `entities` sorted by ordinal, so a plain structural hash is stable. This is the
- * only ordering the rules ever rely on.
- */
-export function assertOrdered(state: MatchState): void {
-  for (let index = 1; index < state.entities.length; index += 1) {
-    const previous = state.entities[index - 1]
-    const current = state.entities[index]
-    if (previous === undefined || current === undefined) continue
-    if (previous.ordinal >= current.ordinal) {
-      throw new Error(`entities are not ordered by ordinal at index ${index}`)
-    }
-  }
-}

@@ -90,7 +90,3 @@ export function rgbFor(
   const code = COLOR16[role]?.[0]
   return (code === undefined ? undefined : RGB16[code]) ?? [229, 229, 229]
 }
-
-export function isStyleRole(value: string): value is StyleRole {
-  return (STYLE_ROLES as readonly string[]).includes(value)
-}

@@ -87,10 +87,3 @@ export function replayEvents(events: readonly DomainEvent[]): ReplayState {
   }
   return { tick, entities }
 }
-
-/** The living cast at the end of the stream, ordered by ordinal — comparable with `MatchState`. */
-export function survivorsOf(state: ReplayState): ReplayEntity[] {
-  return [...state.entities.values()]
-    .filter((entity) => entity.alive)
-    .sort((a, b) => a.ordinal - b.ordinal)
-}

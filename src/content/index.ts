@@ -29,8 +29,3 @@ export function createRegistry(definitions: readonly ContentDef[]): ContentRegis
 
 /** The Gate 1A fixture registry: Citizens only, so nothing can be blamed on balance. */
 export const FIXTURE_REGISTRY: ContentRegistry = createRegistry(CITIZEN_CONTENT)
-
-/** A structure is destroyed rather than killed; the report and the events say so separately. */
-export function isStructure(definition: ContentDef): boolean {
-  return definition.layer === "obstacles"
-}

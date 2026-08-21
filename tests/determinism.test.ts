@@ -3,7 +3,8 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { hashEvents } from "../src/events/serialize.ts"
+import { hashEvents, parseEvents, serializeEvents } from "../src/events/serialize.ts"
+import { DOMAIN_EVENT_KINDS } from "../src/events/types.ts"
 import { contextFor, resolvePulse, spawnEvents, stepTick } from "../src/pulse/index.ts"
 import { buildLog } from "../src/report/index.ts"
 import { cosmeticRng } from "../src/rng/pcg32.ts"
@@ -114,4 +115,35 @@ test("a different gameplay seed can change the fight, and the same one never doe
   const other = await resolveScenario("citizen-mirror-skirmish.ts", { seed: 2 })
   assert.equal(same.run.eventsHash, first.run.eventsHash)
   assert.notEqual(other.run.eventsHash, first.run.eventsHash)
+})
+
+test("the JSONL event stream round-trips, and every kind it emits is a declared kind", async () => {
+  const seen = new Set<string>()
+  for (const name of scenarioFiles()) {
+    const resolved = await resolveScenario(name)
+    const text = serializeEvents(resolved.run.events)
+    const parsed = parseEvents(text)
+    assert.equal(
+      hashEvents(parsed),
+      resolved.run.eventsHash,
+      `${name}: the machine surface does not survive a round trip`,
+    )
+    assert.equal(serializeEvents(parsed), text, `${name}: the round trip changed the bytes`)
+    for (const event of resolved.run.events) seen.add(event.kind)
+  }
+
+  for (const kind of seen) {
+    assert.ok(
+      (DOMAIN_EVENT_KINDS as readonly string[]).includes(kind),
+      `the kernel emitted "${kind}", which the DomainEvent union does not declare`,
+    )
+  }
+  // The fixtures between them should exercise most of the union; anything never emitted is either
+  // an unexercised rule or a kind nothing produces.
+  const never = DOMAIN_EVENT_KINDS.filter((kind) => !seen.has(kind))
+  assert.deepEqual(
+    never,
+    ["arbitration.bounded"],
+    `these kinds are declared but never emitted by any scenario: ${never.join(", ")}`,
+  )
 })
