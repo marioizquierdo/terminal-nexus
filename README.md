@@ -43,6 +43,9 @@ no build step.
 npm install
 ```
 
+Only type checking and the OpenTUI terminal backend need it. The kernel, the report and the view
+have no runtime dependency, so `run`, `watch` and `verify` work from a clean checkout.
+
 ### Run locally
 
 ```bash

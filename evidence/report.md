@@ -67,7 +67,8 @@
 Commands, copy-pasteable, in the order a stranger would run them:
 
 ```bash
-# install
+# install — needed only for type checking and the OpenTUI backend.
+# run, watch and verify work from a clean checkout with no dependencies at all.
 npm install
 
 # build
@@ -152,7 +153,7 @@ deliberately, and Q15 records it.
 
 ## 4. Automated results
 
-`npm test` — **90 tests, 90 passing, 0 failing** on Node 22.22.2. `npm run test:bun` — the same
+`npm test` — **94 tests, 94 passing, 0 failing** on Node 22.22.2. `npm run test:bun` — the same
 files, all passing, under Bun 1.3.11. `npx tsc --noEmit` — clean. `./scripts/check-repository.sh` —
 passes.
 
@@ -191,7 +192,8 @@ passes.
 | Resize gate below the composition size | PASS | `tests/view.test.ts` |
 | **Resize freezes presentation time and resumes from the same instant** | PASS | `tests/playback.test.ts`, driving a whole session with no TTY |
 | Controls: pause, resume, step one frame, step one tick, speed, restart, quit | PASS | `tests/playback.test.ts`, including the key map |
-| One idempotent disposer on every lifecycle path | PASS | `tests/lifecycle.test.ts`: alternate screen, cursor, raw mode restored; a second stop writes nothing |
+| One idempotent disposer on every lifecycle path | PASS | `tests/lifecycle.test.ts` drives `q`, the raw-mode interrupt byte, SIGINT, SIGTERM and a thrown render through `watchPulse` itself; each restores the alternate screen, the cursor and raw mode, and a second stop writes nothing |
+| `run`, `watch` and `verify` work from a clean checkout | PASS | All three run with `node_modules` deleted: the kernel, the report and the view have no runtime dependency, and the OpenTUI backend is imported lazily behind a fallback |
 | Non-TTY prints one line and no escapes | PASS | `tests/cli.test.ts`, `tests/lifecycle.test.ts` |
 | Structured-cell snapshots identical across backends | PASS | `tests/backend-opentui.test.ts` under Bun: OpenTUI's captured characters equal the compositor's |
 | OpenTUI exact cell control | PASS | Same test |

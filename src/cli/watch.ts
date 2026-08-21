@@ -29,6 +29,12 @@ export type WatchOptions = Readonly<{
   backend: string
   stdout: NodeJS.WriteStream
   stdin: NodeJS.ReadStream
+  /**
+   * How the session ends. Injectable so that a test can drive `q`, SIGINT and SIGTERM through the
+   * real code path — "every lifecycle path runs the same disposer" is only worth asserting if the
+   * assertion goes through the same function the terminal does.
+   */
+  exit?: (code: number) => void
 }>
 
 function hashLine(timeline: PulseTimeline): string {
@@ -80,10 +86,11 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
     await backend.stop()
   }
 
+  const exit = options.exit ?? ((code: number): void => process.exit(code))
   const leave = (): void => {
     void dispose().then(() => {
       stdout.write(`${hashLine(timeline)}\n`)
-      process.exit(0)
+      exit(0)
     })
   }
 

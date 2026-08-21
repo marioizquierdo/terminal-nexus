@@ -9,7 +9,11 @@ import { EventEmitter } from "node:events"
 import { AnsiBackend } from "../src/view/backends/ansi.ts"
 import { selectBackend } from "../src/view/backends/index.ts"
 import { compositionSize, composeBands } from "../src/view/index.ts"
-import { RUNTIME_IS_BUN } from "./helpers.ts"
+import { FIXTURE_REGISTRY } from "../src/content/index.ts"
+import { buildTimeline } from "../src/cli/timeline.ts"
+import { watchPulse } from "../src/cli/watch.ts"
+import { loadScenario } from "../src/scenario/index.ts"
+import { RUNTIME_IS_BUN, loadScenarioFile } from "./helpers.ts"
 
 const ESC = String.fromCharCode(27)
 
@@ -135,3 +139,106 @@ if (!RUNTIME_IS_BUN) {
     await auto.stop()
   })
 }
+
+async function watchSession(
+  end: (stdin: FakeStdin) => void,
+): Promise<{ stdout: FakeStdout; stdin: FakeStdin; exits: number[] }> {
+  const scenario = await loadScenarioFile("melee-kill.ts")
+  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  const timeline = buildTimeline(
+    scenario,
+    loaded.state,
+    loaded.registry,
+    scenario.pulseTicks,
+    scenario.seed,
+  )
+  const { stdout, stdin } = fakes()
+  const exits: number[] = []
+
+  const session = watchPulse({
+    timeline,
+    capability: "monochrome",
+    tileWidth: 1,
+    speed: 1,
+    backend: "ansi",
+    stdout: stdout as unknown as NodeJS.WriteStream,
+    stdin: stdin as unknown as NodeJS.ReadStream,
+    exit: (code) => {
+      exits.push(code)
+    },
+  })
+
+  // Let the loop start, end it the way this case is about, then let the disposer settle.
+  await new Promise((resolve) => setTimeout(resolve, 60))
+  end(stdin)
+  await new Promise((resolve) => setTimeout(resolve, 60))
+  void session
+  return { stdout, stdin, exits }
+}
+
+test("quitting with q runs the disposer and restores the terminal", async () => {
+  const { stdout, stdin, exits } = await watchSession((input) => {
+    input.emit("data", Buffer.from("q"))
+  })
+  assert.deepEqual(exits, [0])
+  assert.equal(stdin.raw, false, "q left the terminal in raw mode")
+  assert.ok(stdout.written.includes(`${ESC}[?1049l`), "q did not leave the alternate screen")
+  assert.ok(stdout.written.includes(`${ESC}[?25h`), "q did not restore the cursor")
+  assert.match(stdout.written, /melee-kill  ticks \d+  state sha256:/)
+})
+
+test("an interrupt byte in raw mode ends the session the same way", async () => {
+  const { stdout, stdin, exits } = await watchSession((input) => {
+    input.emit("data", Buffer.from([3]))
+  })
+  assert.deepEqual(exits, [0])
+  assert.equal(stdin.raw, false)
+  assert.ok(stdout.written.includes(`${ESC}[?1049l`))
+})
+
+test("SIGINT and SIGTERM reach the same disposer", async () => {
+  for (const signal of ["SIGINT", "SIGTERM"] as const) {
+    const { stdout, stdin, exits } = await watchSession(() => {
+      process.emit(signal)
+    })
+    assert.deepEqual(exits, [0], `${signal} did not end the session`)
+    assert.equal(stdin.raw, false, `${signal} left the terminal in raw mode`)
+    assert.ok(stdout.written.includes(`${ESC}[?1049l`), `${signal} did not restore the screen`)
+  }
+})
+
+test("a render failure is caught, and still restores the terminal", async () => {
+  const scenario = await loadScenarioFile("melee-kill.ts")
+  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  const timeline = buildTimeline(
+    scenario,
+    loaded.state,
+    loaded.registry,
+    scenario.pulseTicks,
+    scenario.seed,
+  )
+  const { stdout, stdin } = fakes()
+  // A stdout that throws on the first frame stands in for any failure inside present().
+  let frames = 0
+  stdout.write = (text: string): boolean => {
+    stdout.written += text
+    frames += 1
+    if (frames === 2) throw new Error("render exploded")
+    return true
+  }
+
+  const status = await watchPulse({
+    timeline,
+    capability: "monochrome",
+    tileWidth: 1,
+    speed: 1,
+    backend: "ansi",
+    stdout: stdout as unknown as NodeJS.WriteStream,
+    stdin: stdin as unknown as NodeJS.ReadStream,
+    exit: () => {},
+  })
+
+  assert.equal(status, 1, "a caught render failure should report a failure")
+  assert.equal(stdin.raw, false, "a render failure left the terminal in raw mode")
+  assert.ok(stdout.written.includes(`${ESC}[?1049l`), "a render failure left the alternate screen")
+})
