@@ -8,7 +8,8 @@
 
 import type { ReadonlyCellFrame, TerminalBackend } from "../frame.ts"
 import { frameToAnsi } from "../frame.ts"
-import type { CapabilityMode } from "../roles.ts"
+import type { CapabilityMode, Theme } from "../roles.ts"
+import { DEFAULT_THEME } from "../roles.ts"
 
 const ESC = "\u001b"
 const ALT_SCREEN_ON = `${ESC}[?1049h`
@@ -23,6 +24,7 @@ export type AnsiBackendOptions = Readonly<{
   stdout: NodeJS.WriteStream
   stdin: NodeJS.ReadStream
   capability: CapabilityMode
+  theme?: Theme
 }>
 
 export class AnsiBackend implements TerminalBackend {
@@ -47,7 +49,8 @@ export class AnsiBackend implements TerminalBackend {
   }
 
   present(frame: ReadonlyCellFrame): void {
-    this.options.stdout.write(CURSOR_HOME + frameToAnsi(frame, this.options.capability) + RESET)
+    const theme = this.options.theme ?? DEFAULT_THEME
+    this.options.stdout.write(CURSOR_HOME + frameToAnsi(frame, this.options.capability, theme) + RESET)
   }
 
   /** Idempotent: safe from a signal handler, an error path, and the normal exit, in any order. */

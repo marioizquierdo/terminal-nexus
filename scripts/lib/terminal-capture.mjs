@@ -211,16 +211,19 @@ export function ansiToHtml(text, cols, rows) {
   return rendered.join("\n")
 }
 
-function pageFor(html, caption, cols, rows) {
+function pageFor(html, caption, cols, rows, background) {
+  const page = background === "light" ? "#e8e6e0" : "#17181c"
+  const pre = background === "light" ? "#f2f0ea" : BACKGROUND
+  const captionColor = background === "light" ? "#6b6660" : "#8a8f98"
   return `<!doctype html>
 <meta charset="utf-8">
 <style>
-  html, body { margin: 0; background: #17181c; }
+  html, body { margin: 0; background: ${page}; }
   .frame { padding: 20px; display: inline-block; }
   pre {
     margin: 0;
     padding: 14px 16px;
-    background: ${BACKGROUND};
+    background: ${pre};
     color: ${FOREGROUND};
     font-family: "DejaVu Sans Mono", monospace;
     font-size: 16px;
@@ -230,7 +233,7 @@ function pageFor(html, caption, cols, rows) {
   }
   .caption {
     margin: 10px 2px 0;
-    color: #8a8f98;
+    color: ${captionColor};
     font-family: "DejaVu Sans Mono", monospace;
     font-size: 12px;
   }
@@ -239,11 +242,17 @@ function pageFor(html, caption, cols, rows) {
 `
 }
 
-/** Render a captured-and-converted frame to a PNG at `targetPath`, via headless Chromium. */
-export function renderPng({ html, caption, cols, rows, scratchDir, targetPath }) {
+/**
+ * Render a captured-and-converted frame to a PNG at `targetPath`, via headless Chromium.
+ * `background` is the page/pane backdrop the capture sits on - "dark" (default) or "light", to
+ * match whichever `--theme` the session being captured was actually running. The ANSI capture
+ * itself carries the theme's real colours already; this only affects the page around it, which a
+ * light-theme capture would otherwise sit on the tool's own dark backdrop and read as broken.
+ */
+export function renderPng({ html, caption, cols, rows, scratchDir, targetPath, background = "dark" }) {
   mkdirSync(scratchDir, { recursive: true })
   const pagePath = join(scratchDir, `${Math.random().toString(36).slice(2)}.html`)
-  writeFileSync(pagePath, pageFor(html, caption, cols, rows), "utf8")
+  writeFileSync(pagePath, pageFor(html, caption, cols, rows, background), "utf8")
 
   // DejaVu Sans Mono advances 0.602em, so the window is sized from the cell grid, not guessed.
   const width = Math.ceil(cols * 16 * 0.602) + 108

@@ -153,12 +153,24 @@ const shots = [
     capability: "monochrome",
     reducedMotion: true,
   },
+  {
+    name: "mirror-light-theme",
+    caption: "Tick 160 on a light terminal background - --theme light",
+    scenario: "citizen-mirror-skirmish",
+    tick: 160,
+    cols: 80,
+    rows: 24,
+    capability: "truecolor",
+    theme: "light",
+  },
 ]
 
 function extraArgsFor(shot) {
   return [
     "--capability",
     shot.capability ?? "color16",
+    "--theme",
+    shot.theme ?? "dark",
     "--tile-width",
     String(shot.tileWidth ?? 1),
     "--glyphs",
@@ -214,6 +226,7 @@ try {
       rows: shot.rows,
       scratchDir: scratch,
       targetPath: join(outputDirectory, `${shot.name}.png`),
+      background: shot.theme ?? "dark",
     })
     console.log(`${file}  (${shot.cols}x${shot.rows}, tick ${shot.tick})`)
   }

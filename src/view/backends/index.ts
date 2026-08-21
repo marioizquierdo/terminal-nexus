@@ -1,11 +1,13 @@
 import type { TerminalBackend } from "../frame.ts"
-import type { CapabilityMode } from "../roles.ts"
+import type { CapabilityMode, Theme } from "../roles.ts"
 import { AnsiBackend } from "./ansi.ts"
 
 export type BackendOptions = Readonly<{
   stdout: NodeJS.WriteStream
   stdin: NodeJS.ReadStream
   capability: CapabilityMode
+  /** Defaults to `DEFAULT_THEME` ("dark") wherever a caller has not been taught about themes yet. */
+  theme?: Theme
   width: number
   height: number
 }>

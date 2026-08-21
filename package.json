@@ -18,6 +18,9 @@
     "play:mono": "./bin/playground.ts watch scenarios/citizens-versus-ravels.ts --capability monochrome",
     "play:cascade": "./bin/playground.ts watch scenarios/ravel-cascade.ts --glyphs unicode --capability truecolor --speed 0.5",
     "play:plain": "./bin/playground.ts watch scenarios/citizens-versus-ravels.ts --no-effects --glyphs unicode --capability truecolor",
+    "play:light": "./bin/playground.ts watch scenarios/citizens-versus-ravels.ts --glyphs unicode --capability truecolor --theme light",
+    "play:parade": "./bin/playground.ts watch scenarios/speed-parade.ts --glyphs unicode --capability truecolor",
+    "play:grand": "./bin/playground.ts watch scenarios/grand-battle.ts --glyphs unicode --capability truecolor",
     "scenarios": "ls scenarios/*.ts"
   },
   "devDependencies": {

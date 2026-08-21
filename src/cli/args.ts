@@ -19,6 +19,7 @@ const VALUE_OPTIONS = new Set([
   "at",
   "cosmetic-seed",
   "glyphs",
+  "theme",
 ])
 
 export function parseArgs(argv: readonly string[]): ParsedArgs {

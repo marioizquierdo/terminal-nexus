@@ -21,6 +21,7 @@ import type {
   CapabilityMode,
   PresentationOptions,
   PulseTimeline,
+  Theme,
   TileWidth,
 } from "../view/index.ts"
 import { AnsiBackend } from "../view/backends/ansi.ts"
@@ -31,6 +32,8 @@ const FRAMES_PER_SECOND = 30
 export type WatchOptions = Readonly<{
   timeline: PulseTimeline
   capability: CapabilityMode
+  /** Which background the palette assumes. Defaults to `DEFAULT_THEME` ("dark") when omitted. */
+  theme?: Theme
   tileWidth: TileWidth
   speed: number
   backend: string
@@ -69,6 +72,7 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
     stdout,
     stdin,
     capability: options.capability,
+    ...(options.theme === undefined ? {} : { theme: options.theme }),
     width: required.width,
     height: required.height,
   })

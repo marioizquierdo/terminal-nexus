@@ -83,10 +83,14 @@ Pinned by Gate 1A, measured 2026-08-21:
 | `@types/node` | 22.20.1 | Type checking only |
 | `@opentui/core` | 0.5.6 | Terminal backend. **Native core loads under Bun, not under Node** |
 
-`watch` options: `--capability monochrome|color16|color256|truecolor`, `--glyphs ascii|unicode`,
-`--tile-width 1|2`, `--no-effects`, `--reduced-motion`, `--cosmetic-seed`, `--speed`, `--backend`.
-ASCII and monochrome are the defaults and the acceptance floor; everything above them is fidelity,
-never information.
+`watch` options: `--capability monochrome|color16|color256|truecolor`, `--theme dark|light`,
+`--glyphs ascii|unicode`, `--tile-width 1|2`, `--no-effects`, `--reduced-motion`,
+`--cosmetic-seed`, `--speed`, `--backend`. ASCII and monochrome are the defaults and the
+acceptance floor; everything above them is fidelity, never information. `--capability` defaults
+to the best tier `COLORTERM`/`TERM` advertise rather than always `color16` (owner playtest: a
+terminal that can do more was still getting the tier most exposed to a terminal theme's own,
+inconsistently defined colours). `--theme` defaults to `dark` — the palette the lore and every
+screenshot are designed against — and `light` is one flag away for a light terminal background.
 
 `bun test` drives one file at a time (`./scripts/run-tests.sh bun`): its `node:test` shim rejects a
 test registered while another file's tests are still running, and it does not implement `t.skip()`.
