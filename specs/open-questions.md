@@ -121,46 +121,6 @@ conversation, and adopting it early would mean every unit's readable state inclu
 that a single character struggles to show. Keep facing in state, keep it out of the rules, and
 revisit when there is a faction that wants it.
 
-### Q10 — May campaign presentation misreport authoritative state?
-
-**Status:** OPEN — blocks nothing before Milestone 5; record the rule now while it is cheap.
-
-The campaign belief ramp ([`campaigns.md`](campaigns.md) Section 4.1) wants one mission in which the
-interface lies: on-screen totals disagree with what the player watched, and discovering the seam is
-the story. The three-worlds law ([`engine.md`](engine.md) Section 1) is not violated — presentation
-cannot influence the Pulse, and a lying screen does not — but legibility is the product's spine, so
-deception needs a fence, not a shrug.
-
-| Option | Cost |
-| --- | --- |
-| A. Never — the interface is always truthful | Loses the strongest storytelling instrument available to a game whose medium *is* the interface; the ramp's fifth mission collapses into narrated text |
-| B. Campaigns may misreport freely | Erodes trust in the only surface the player has; a defect and a fiction become indistinguishable ("is my readout lying or broken?") |
-| C. Mission-scoped diegetic deception under three constraints: only where the mission definition declares it; the deterministic report, event log, and replay stay truthful — the screen lies, the log never does; and the mission surfaces the seam in play, so the player can always catch the lie | A small presentation capability and authoring discipline; skirmish and every non-campaign surface never lie |
-
-**Recommendation: C.** It converts the engine's own honesty — the levelled report, the event log,
-the replay — into a narrative instrument: the log becomes the in-fiction incorruptible witness. It
-also keeps faith with the deliberate-mysteries rule that the interface may misbehave but never
-testify ([`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 7).
-
-### Q11 — Is Alder's refusal of Nexus power mechanical, and how?
-
-**Status:** OPEN — blocks nothing before a milestone selects Alder; shapes their identity now.
-
-Refusing Nexus power is Alder's central identity and moral claim
-([`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 8.5). The Nexus upgrade draft
-([`engine.md`](engine.md) Section 5.4) is a core cross-faction system. If Alder drafts Nexus
-upgrades like everyone else, the faction's philosophy is contradicted by its own interface verb every
-match — the exact failure the alignment test exists to catch.
-
-| Option | Cost |
-| --- | --- |
-| A. Alder has no draft; a parallel "cultivation" progression replaces it | Strongest characterisation; a second progression system to design, balance, and teach, and one faction bypasses shared machinery |
-| B. Alder drafts normally, flavored as reluctant containment | Cheapest; fiction and mechanics disagree at the precise point the faction's identity lives — fails the no-lore-player test |
-| C. Same draft machinery, different source: Alder drafts from a faction-owned cultivation pool (their own biology and cycles); Nexus-derived options simply never appear for them | Keeps one teaching surface and one implementation while making refusal visible in every single draft; costs a per-faction draft-pool capability the draft likely wants anyway |
-
-**Recommendation: C.** A is the fallback if C proves too thin to carry the fantasy; B should be
-rejected on sight.
-
 ## 5. Answered
 
 Rows move here with the date, the decision, and the document that now owns it.
@@ -171,6 +131,33 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q2 | 2026-08-20 | **One resource.** Salvage recovers the same resource rather than a second one. Nexus energy is a state readout, not a currency. A second resource is an addition a later microgame may earn; it is not assumed | [`engine.md`](engine.md) Section 6 |
 | Q3 | 2026-08-20 | **Units may span multiple tiles.** Large units are a normal, strategically important case, not a later extension — a Ravel raider drawn `>x<` is one unit occupying three tiles. The collision system tests a mover's whole footprint against its mask; damage and destruction apply to the entity, not the tile | [`engine.md`](engine.md) Section 3.5 |
 | Q6 | 2026-08-20 | **Packaging and remote delivery leave Milestone 1.** First split into an independent gate, then deferred out of the milestone entirely when it was refocused onto the Pulse — they answer no question the game currently has | [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) |
+| Q10 | 2026-08-21 | **DROPPED as mis-scoped.** Engine determinism was never in question: the kernel, its event log, and replay stay exact, and the features that depend on them are untouched. Whether a mission's *interface* misreports a total for narrative effect is campaign writing, decided when campaigns are designed | [`campaigns.md`](campaigns.md), at Milestone 5 |
+| Q11 | 2026-08-21 | **Alder refuse artificial Nexus power — conceptual.** Simplicity and growth instead: little or no Nexus draft, and more complexity in the structures they can build. Direction, not a locked mechanic | [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 8.5 and [`commander-armies.md`](commander-armies.md) Section 4 |
+
+### Q11 — answered
+
+Mario, 2026-08-21, at concept level: **Alder refuse artificial power from the Nexus.** They want
+simplicity and growth instead. Mechanically that reads as *less* where the Nexus is involved and
+*more* where their own biology is: little or no Nexus draft, and a wider, more varied catalogue of
+structures they can grow.
+
+This is lore direction rather than a locked mechanic. Whether the draft is absent entirely or a small
+grown pool, and how far the structure catalogue widens to compensate, stays undefined until a
+milestone authorizes Alder content. The three options the register offered are superseded — the
+answer keeps A's honesty about refusal while moving the depth into structures rather than into a
+second progression system.
+
+### Q10 — dropped
+
+Mario, 2026-08-21: the question conflated two separate things. The deterministic kernel is one — and
+replay and fast-forward depend on it, so nothing narrative may touch it. Campaign story writing is
+the other, and campaigns are designed later.
+
+Nothing in the belief ramp asks the kernel, the event log, or a replay to be anything but exact; the
+device only concerned what a mission's *interface* displays. That is a writing decision belonging to
+the mission that wants it, so it needs no canon fork. [`campaigns.md`](campaigns.md) Section 4.1
+keeps one line of guidance — the engine's record is never part of a narrative device — and the rest
+waits for Milestone 5.
 
 ### Q3 — answered
 

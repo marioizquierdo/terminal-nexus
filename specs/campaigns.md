@@ -98,7 +98,7 @@ Three rules govern the ramp:
 
 - **Revelations arrive as mechanics wherever possible.** The player should learn the theology by playing it — a fact experienced through the rules outweighs a paragraph asserting it.
 - **The interface may misbehave; it never testifies** (lore Section 7). It can know too much, precommit a plan, and miscount. It cannot explain itself.
-- **The screen may lie; the log never does.** Where a mission has the interface misreport, the deterministic report and replay stay truthful, and finding the seam is play, not trivia. Whether campaign presentation may misreport at all is Q10 in [`open-questions.md`](open-questions.md).
+- **A narrative device never touches the engine's record.** The kernel, its event log, and replay stay exact, because determinism is what makes replay and fast-forward possible — a story device may only ever concern what a mission's interface *displays*. Whether any mission uses such a device is a writing decision for the mission that wants it, taken when campaigns are designed (Q10).
 
 The six-mission arc, as direction for Milestone 5 to test:
 

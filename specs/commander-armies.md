@@ -125,9 +125,13 @@ generic ability fails that test. A rule that *is* the characterisation passes it
 | Growth | Alder works are planted cheap and mature over Pulses — sapling, grove, bastion | Time is currency, and patience compounds |
 | Cycles | Grid-wide scheduled events — flood, bloom, frost — that both players can read and only Alder can seed | Announced physics, not traps: inevitability you can watch coming |
 | Phase variance | Alder outcomes are certain but scheduled; the uncertainty an opponent feels is *when*, never *whether* | Nature does not gamble; it takes turns |
+| Refusal | Little or no Nexus draft; progression lives in a wider catalogue of grown structures instead | They take nothing from the core — what they have, they grew |
 
-Whether Alder's refusal of Nexus power is itself mechanical — whether they draft at all, and from
-what — is Q11 in [`open-questions.md`](open-questions.md).
+Alder's refusal is mechanical, settled at concept level (Q11): **little or no Nexus draft, and more
+complexity in the structures they can grow.** Where every other faction deepens through drafted
+upgrades, Alder deepens through its catalogue of works — the faction with the least to choose from at
+the Nexus and the most to choose from on the Grid. The exact split waits for a milestone that
+authorizes Alder content.
 
 ### 4.2 Variance is doctrine
 
