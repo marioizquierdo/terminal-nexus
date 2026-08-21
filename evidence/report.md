@@ -91,7 +91,7 @@ npm run test:bun           # the same suite under Bun, one file at a time
 # evidence artifacts in this directory
 node scripts/capture-frames.mjs citizen-mirror-skirmish 0 112 160 240
 ./bin/playground.ts run scenarios/citizen-mirror-skirmish.ts \
-  > evidence/citizen-mirror-skirmish-summary.txt 2> evidence/citizen-mirror-skirmish-info.log
+  > evidence/citizen-mirror-skirmish-summary.txt 2> evidence/citizen-mirror-skirmish-info.txt
 ```
 
 ## 3. What was built
@@ -209,7 +209,7 @@ Measurements:
 | Frames over the 33.33 ms budget | **0** | same | 1800 per runtime |
 | Output bytes per frame | 3,433 | same, 16-colour, 80x24 | 1800 |
 | Resolve 240 ticks, 14 entities | 15.9–37.7 ms (Node), 51 ms (Bun, cold) | `tests/performance.test.ts` | repeated |
-| Mirror skirmish event count | 397 events, 82 `INFO` lines | `--json`, `evidence/citizen-mirror-skirmish-info.log` | 1 |
+| Mirror skirmish event count | 397 events, 82 `INFO` lines | `--json`, `evidence/citizen-mirror-skirmish-info.txt` | 1 |
 | `node_modules` after `npm install` | 103 MB (OpenTUI's prebuilt native core dominates) | `du -sh` | 1 |
 
 Scenario outcomes, all reproducible from the seed in each file:
@@ -247,7 +247,7 @@ experiential half of the gate is not yet answered. What exists instead:
 
 - four still frames at 80x24 in monochrome, in `evidence/frames/`, at ticks 0, 112 (first shots),
   160 (first deaths) and 240 (the end);
-- the full `INFO` log of the same run in `evidence/citizen-mirror-skirmish-info.log`.
+- the full `INFO` log of the same run in `evidence/citizen-mirror-skirmish-info.txt`.
 
 The two checks still owed, both explicitly human in Section 3.10, are: **Mario has watched a mirror
 skirmish run**, and **Mario has watched one in monochrome and could follow it** — who moved, who
