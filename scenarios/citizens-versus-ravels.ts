@@ -1,0 +1,68 @@
+import { defineScenario } from "../src/scenario/index.ts"
+
+export default defineScenario({
+  id: "citizens-versus-ravels",
+  name: "Citizens versus Ravels - the ruined middle",
+  notes:
+    "The first asymmetric fixture, on the default 48x16 preset - the one the whole composition is derived from, so the Grid fills the viewport exactly. Ten Citizens against eleven Ravels, each in front of a Grid Nexus: fewer and tougher on one cadence against more, faster, off the beat, and mostly explosive. Neither roster is a Commander Army; both are disposable bench content, and the point is contrast rather than balance. Both sides are staggered across columns on purpose - with every unit on one rank an entire army targets one enemy, because at long range every enemy is equidistant in Chebyshev and the tie breaks on entity id (Q17).",
+
+  grid: { preset: "medium-extra-wide" },
+  seed: 0x0000B001,
+  pulseTicks: 720,
+
+  terrain: [
+    "................................................",
+    "................................................",
+    "....................##..........................",
+    "....................##..........##..............",
+    "....................##..........##..............",
+    "................................................",
+    ".........................*###...................",
+    ".......................*..###...................",
+    "...............##.......*.......................",
+    "...............##......*........................",
+    "................................................",
+    ".....................##.........................",
+    ".....................##........##...............",
+    ".....................##........##...............",
+    "................................................",
+    "................................................",
+  ],
+  terrainLegend: {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit",
+  },
+
+  placements: [
+    "                                                ",
+    "                                                ",
+    "  w                                 x           ",
+    "                                                ",
+    "         t                                 z    ",
+    "       m                              x       S ",
+    "           t                                    ",
+    " N   h                                   >  R   ",
+    "                                                ",
+    "           t                       x            ",
+    "       m                                        ",
+    "         t                                z     ",
+    "                                       x        ",
+    "  w                                          v  ",
+    "                                     x          ",
+    "                                                ",
+  ],
+  placementLegend: {
+    t: { player: "A", content: "unit.citizen.trooper" },
+    m: { player: "A", content: "unit.citizen.marksman" },
+    w: { player: "A", content: "unit.citizen.worker" },
+    h: { player: "A", content: "unit.citizen.hauler" },
+    N: { player: "A", content: "structure.citizen.nexus" },
+    x: { player: "B", content: "unit.ravel.runner" },
+    z: { player: "B", content: "unit.ravel.slinger" },
+    v: { player: "B", content: "unit.ravel.fuelwagon" },
+    ">": { player: "B", content: "unit.ravel.raider" },
+    S: { player: "B", content: "unit.ravel.scav" },
+    R: { player: "B", content: "structure.ravel.nexus" },
+  },
+})

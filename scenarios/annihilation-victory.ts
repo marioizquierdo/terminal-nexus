@@ -1,0 +1,52 @@
+import { defineScenario } from "../src/scenario/index.ts"
+
+export default defineScenario({
+  id: "annihilation-victory",
+  name: "Annihilation - workers count",
+  notes: "A side is annihilated when every entity on workers, units and air is dead - workers included (Q13). The defending worker flees into a rock pocket it cannot leave, and the Pulse ends only once it dies too.",
+
+  grid: { preset: "small-wide" },
+  seed: 0x0000A00A,
+  pulseTicks: 480,
+
+  terrain: [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "...................####.",
+    "......................#.",
+    "...................####.",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+  ],
+  terrainLegend: {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit",
+  },
+
+  placements: [
+    "                        ",
+    "                        ",
+    "                        ",
+    "                        ",
+    "                        ",
+    "  t            R    W   ",
+    "  r                     ",
+    "                        ",
+    "                        ",
+    "                        ",
+    "                        ",
+    "                        ",
+  ],
+  placementLegend: {
+    t: { player: "A", content: "unit.citizen.trooper" },
+    r: { player: "A", content: "unit.citizen.marksman" },
+    R: { player: "B", content: "unit.citizen.marksman" },
+    W: { player: "B", content: "unit.citizen.worker" },
+  },
+})

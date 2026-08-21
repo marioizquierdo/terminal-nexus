@@ -28,23 +28,45 @@ Terminal Nexus is a next-gen ASCII auto-battler linux shell strategy game. Choos
 
 ## Project Status
 
-Pre-production. No playable game exists yet.
+Pre-production. The first playable artifact is the **Pulse Playground** of Milestone 1, Gate 1A:
+units on a small Grid resolving a deterministic battle from a seed, with a levelled report and a
+minimal ASCII view. There is no Build Phase, no economy, and no campaign yet.
 
 ## Local Development
 
-### Build
+Node.js 22.18 or newer, or Bun 1.3 or newer. Both run the TypeScript sources directly, so there is
+no build step.
 
-Coming Soon.
+### Install
+
+```bash
+npm install
+```
+
+Only type checking and the OpenTUI terminal backend need it. The kernel, the report and the view
+have no runtime dependency, so `run`, `watch` and `verify` work from a clean checkout.
 
 ### Run locally
 
-Coming Soon.
+```bash
+./bin/playground.ts run   scenarios/citizen-mirror-skirmish.ts
+./bin/playground.ts watch scenarios/citizen-mirror-skirmish.ts
+./bin/playground.ts verify scenarios/citizen-mirror-skirmish.ts --runs 20
+```
+
+`run` prints a levelled log on stderr and a summary on stdout, so
+`playground run x.ts > report.txt 2> run.log` splits them. `watch` plays the same Pulse back in an
+80x24 terminal. `verify` re-resolves a scenario and compares hashes.
 
 ### Run tests
 
-Coming Soon.
+```bash
+npm test          # Node
+npm run test:bun  # Bun
+npm run typecheck
+```
 
-Repository-level validation is available now:
+Repository-level validation:
 
 ```bash
 ./scripts/check-repository.sh

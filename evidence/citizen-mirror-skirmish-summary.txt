@@ -1,0 +1,6 @@
+scenario   citizen-mirror-skirmish
+seed       0x5EED0001
+ticks      240 of 240 (full pulse)
+outcome    draw (tick-limit)
+losses     A: 5 of 7    B: 1 of 7
+state      sha256:4dc11d15a082a2bb    events  sha256:823d088a02e091e9

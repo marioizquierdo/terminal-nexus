@@ -1,0 +1,82 @@
+[0000] INFO  spawn    A:trooper#1   at (2,1)
+[0000] INFO  spawn    B:trooper#2   at (21,1)
+[0000] INFO  spawn    A:trooper#3   at (2,2)
+[0000] INFO  spawn    B:trooper#4   at (21,2)
+[0000] INFO  spawn    A:marksman#5  at (2,3)
+[0000] INFO  spawn    B:marksman#6  at (21,3)
+[0000] INFO  spawn    A:worker#7    at (2,4)
+[0000] INFO  spawn    B:worker#8    at (21,4)
+[0000] INFO  spawn    A:worker#9    at (2,8)
+[0000] INFO  spawn    B:worker#10   at (21,8)
+[0000] INFO  spawn    A:marksman#11 at (2,9)
+[0000] INFO  spawn    B:marksman#12 at (21,9)
+[0000] INFO  spawn    A:trooper#13  at (2,10)
+[0000] INFO  spawn    B:trooper#14  at (21,10)
+[0001] INFO  engage   A:trooper#1   -> B:trooper#2    dist 19  score 19.0
+[0001] INFO  engage   B:trooper#2   -> A:trooper#1    dist 19  score 19.0
+[0001] INFO  engage   A:trooper#3   -> B:trooper#2    dist 19  score 19.0
+[0001] INFO  engage   B:trooper#4   -> A:trooper#1    dist 19  score 19.0
+[0001] INFO  engage   A:marksman#5  -> B:trooper#2    dist 19  score 19.0
+[0001] INFO  engage   B:marksman#6  -> A:trooper#1    dist 19  score 19.0
+[0001] INFO  engage   A:worker#7    -> B:trooper#2    dist 19  score 19.0
+[0001] INFO  engage   B:worker#8    -> A:trooper#1    dist 19  score 19.0
+[0001] INFO  engage   A:worker#9    -> B:trooper#2    dist 19  score 19.0
+[0001] INFO  engage   B:worker#10   -> A:trooper#1    dist 19  score 19.0
+[0001] INFO  engage   A:marksman#11 -> B:trooper#2    dist 19  score 19.0
+[0001] INFO  engage   B:marksman#12 -> A:trooper#1    dist 19  score 19.0
+[0001] INFO  engage   A:trooper#13  -> B:trooper#2    dist 19  score 19.0
+[0001] INFO  engage   B:trooper#14  -> A:trooper#1    dist 19  score 19.0
+[0112] INFO  attack   A:marksman#5  -> B:trooper#2    ranged dmg 6  hp 40->28  flight 2
+[0112] INFO  attack   B:marksman#6  -> A:trooper#1    ranged dmg 6  hp 40->28  flight 2
+[0112] INFO  attack   A:marksman#11 -> B:trooper#2    ranged dmg 6  hp 40->28  flight 2
+[0112] INFO  attack   B:marksman#12 -> A:trooper#1    ranged dmg 6  hp 40->28  flight 2
+[0136] INFO  attack   A:marksman#5  -> B:trooper#2    ranged dmg 6  hp 28->16  flight 2
+[0136] INFO  attack   B:marksman#6  -> A:trooper#1    ranged dmg 6  hp 28->16  flight 2
+[0136] INFO  attack   A:marksman#11 -> B:trooper#2    ranged dmg 6  hp 28->16  flight 2
+[0136] INFO  attack   B:marksman#12 -> A:trooper#1    ranged dmg 6  hp 28->16  flight 2
+[0144] INFO  attack   A:trooper#1   -> B:trooper#2    melee  dmg 7  hp 16->9
+[0144] INFO  attack   B:trooper#2   -> A:trooper#1    melee  dmg 7  hp 16->2
+[0144] INFO  attack   B:trooper#4   -> A:trooper#1    melee  dmg 7  hp 16->2
+[0145] INFO  attack   A:trooper#13  -> B:trooper#14   melee  dmg 7  hp 40->33
+[0145] INFO  attack   B:trooper#14  -> A:trooper#13   melee  dmg 7  hp 40->33
+[0156] INFO  attack   A:trooper#1   -> B:trooper#2    melee  dmg 7  hp 9->2
+[0156] INFO  attack   B:trooper#2   -> A:trooper#1    melee  dmg 7  hp 2->0
+[0156] INFO  attack   B:trooper#4   -> A:trooper#1    melee  dmg 7  hp 2->0
+[0156] INFO  death    A:trooper#1   at (11,1)  by B:trooper#2
+[0157] INFO  attack   A:trooper#13  -> B:trooper#14   melee  dmg 7  hp 33->26
+[0157] INFO  attack   B:trooper#14  -> A:trooper#13   melee  dmg 7  hp 33->26
+[0160] INFO  attack   A:marksman#5  -> B:trooper#2    ranged dmg 6  hp 2->0  flight 1
+[0160] INFO  attack   B:marksman#6  -> A:trooper#13   ranged dmg 6  hp 26->14  flight 1
+[0160] INFO  attack   A:marksman#11 -> B:trooper#2    ranged dmg 6  hp 2->0  flight 1
+[0160] INFO  attack   B:marksman#12 -> A:trooper#13   ranged dmg 6  hp 26->14  flight 1
+[0160] INFO  death    B:trooper#2   at (11,2)  by A:marksman#5
+[0161] INFO  attack   A:trooper#3   -> B:trooper#4    melee  dmg 7  hp 40->33
+[0168] INFO  attack   B:trooper#4   -> A:trooper#3    melee  dmg 7  hp 40->33
+[0169] INFO  attack   A:trooper#13  -> B:trooper#14   melee  dmg 7  hp 26->19
+[0169] INFO  attack   B:trooper#14  -> A:trooper#13   melee  dmg 7  hp 14->7
+[0173] INFO  attack   A:trooper#3   -> B:trooper#4    melee  dmg 7  hp 33->26
+[0180] INFO  attack   B:trooper#4   -> A:trooper#3    melee  dmg 7  hp 33->26
+[0181] INFO  attack   A:trooper#13  -> B:trooper#14   melee  dmg 7  hp 19->12
+[0181] INFO  attack   B:trooper#14  -> A:trooper#13   melee  dmg 7  hp 7->0
+[0181] INFO  death    A:trooper#13  at (11,4)  by B:trooper#14
+[0184] INFO  attack   A:marksman#5  -> B:trooper#4    ranged dmg 6  hp 26->14  flight 1
+[0184] INFO  attack   B:marksman#6  -> A:trooper#3    ranged dmg 6  hp 26->14  flight 2
+[0184] INFO  attack   A:marksman#11 -> B:trooper#4    ranged dmg 6  hp 26->14  flight 1
+[0184] INFO  attack   B:marksman#12 -> A:trooper#3    ranged dmg 6  hp 26->14  flight 2
+[0185] INFO  attack   A:trooper#3   -> B:trooper#4    melee  dmg 7  hp 14->7
+[0192] INFO  attack   B:trooper#4   -> A:trooper#3    melee  dmg 7  hp 14->7
+[0193] INFO  attack   B:trooper#14  -> A:trooper#3    melee  dmg 7  hp 7->0
+[0193] INFO  death    A:trooper#3   at (10,1)  by B:trooper#14
+[0204] INFO  attack   B:trooper#4   -> A:marksman#5   melee  dmg 7  hp 24->17
+[0205] INFO  attack   B:trooper#14  -> A:marksman#5   melee  dmg 7  hp 17->10
+[0208] INFO  attack   A:marksman#5  -> B:trooper#4    ranged dmg 6  hp 7->1  flight 1
+[0208] INFO  attack   B:marksman#6  -> A:marksman#5   ranged dmg 6  hp 10->0  flight 2
+[0208] INFO  attack   A:marksman#11 -> B:trooper#14   ranged dmg 6  hp 12->6  flight 1
+[0208] INFO  attack   B:marksman#12 -> A:marksman#5   ranged dmg 6  hp 10->0  flight 2
+[0208] INFO  death    A:marksman#5  at (9,0)  by B:marksman#6
+[0216] INFO  attack   B:trooper#4   -> A:marksman#11  melee  dmg 7  hp 24->17
+[0217] INFO  attack   B:trooper#14  -> A:marksman#11  melee  dmg 7  hp 17->10
+[0228] INFO  attack   B:trooper#4   -> A:marksman#11  melee  dmg 7  hp 10->3
+[0229] INFO  attack   B:trooper#14  -> A:marksman#11  melee  dmg 7  hp 3->0
+[0229] INFO  death    A:marksman#11 at (9,2)  by B:trooper#14
+[0240] INFO  victory  draw          reason: tick-limit

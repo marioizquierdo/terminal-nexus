@@ -148,6 +148,103 @@ is the better *game* answer and is a cheap change later; take it if Gate 1B view
 endings visibly dragging, with someone having actually watched one. C trades a real cost for a
 problem A already solves.
 
+### Q14 — Should the movement tie-break be mirror-fair, or is a fixed compass order enough?
+
+**Status:** OPEN — Gate 1A proceeds under the recommendation; nothing before Milestone 2 depends on
+the answer.
+
+Gate 1A routes with a greedy step plus a deterministic sidestep. When two steps close the same
+distance, the tie breaks on turn cost and then on a fixed compass order (`n, ne, e, se, s, sw, w,
+nw`). That makes both sides prefer *their own left*, so in the mirror skirmish player A's formation
+drifts north while player B's drifts south, and the two squads meet at an angle rather than head on.
+
+Measured: swapping which player owns which side flips the result exactly, so there is no bias tied
+to a player's identity. Across seeds the mirror lands 3-3, 4-4, 4-4, 5-1 and 4-4 — the lopsided runs
+are seed variance, not a systematic advantage. The artifact is real but small, and it is visible on
+screen as two formations sliding past each other.
+
+| Option | Cost |
+| --- | --- |
+| A. **Keep the fixed compass order.** Document the drift | Free, and the cheapest thing to reason about. Leaves a geometric artifact a sharp player could eventually learn to exploit |
+| B. Break equal-distance ties with a draw from the seeded gameplay stream | Removes the directional artifact and stays deterministic. Spends draws every tick on something no player will ever perceive as a choice, and makes movement replay depend on stream position far more heavily |
+| C. Derive the preference from the target vector, so the tie leans toward the target's secondary axis | Keeps determinism and removes the mirror artifact without spending draws. Costs a rule that is harder to explain than "the compass order", and it is still arbitrary when the target is exactly on an axis |
+
+**Recommendation: A for Gate 1A, and decide it in Milestone 2**, which owns routing. The drift is
+documented, it is symmetric between the two sides, and replacing greedy routing wholesale is likely
+to make this question moot. If Gate 1B viewing shows the formations sliding past each other reads as
+broken rather than as manoeuvre, take C.
+
+### Q15 — What should a mover with no route do: circle, or stop?
+
+**Status:** OPEN — Gate 1A proceeds under the recommendation; blocks nothing before Milestone 2.
+
+Greedy routing with a sidestep has no memory, so an actor whose goal is unreachable does not stop —
+it steps back and forth between two equally good tiles forever. The `hauler-two-tile-gap` fixture
+shows it exactly: a 3x1 hauler that cannot fit a two-tile opening paces between `(10,5)` and
+`(11,5)` for the whole Pulse.
+
+The report catches it — the log watches net progress and raises `WARN stuck` when an actor's last
+two dozen ticks revisit the same two tiles — but the kernel keeps moving it.
+
+| Option | Cost |
+| --- | --- |
+| A. **Leave it and report it.** The log names the actor and the tiles it is circling | Free, and honest. On screen a unit twitching in front of a wall reads as broken rather than as stuck |
+| B. Kernel-side no-progress detection that parks the actor until its goal or the obstacle changes | Cheap, and it makes the failure legible: a stopped unit reads as stuck. Adds per-actor memory to a kernel that currently has none, and "until something changes" needs defining |
+| C. Do nothing now; real pathfinding in Milestone 2 makes it moot | Free. Bets that Milestone 2 arrives before anyone watches a unit twitch |
+
+**Recommendation: A for Gate 1A, then B as a stopgap if watching shows it reads as broken**, since B
+is a dozen lines and does not need pathfinding. C is the honest long answer, and Milestone 2's
+routing work should settle it either way.
+
+### Q16 — When the Grid is smaller than the viewport, where does the leftover space go?
+
+**Status:** OPEN — Gate 1A proceeds under the recommendation; the answer changes only presentation.
+
+[`engine.md`](engine.md) Section 3.3 says terminal space beyond the *maximum* viewport is spent on
+centring and on a larger inspection panel, never on more Grid. It does not say what happens below
+the *minimum*: a `small-wide` Grid is 24 × 12 inside a 48 × 16 pane, so Gate 1A centres it and
+leaves twelve blank columns on each side. Screenshots of the real terminal are in
+`evidence/screenshots/`; at 80 columns roughly a third of the frame is empty.
+
+| Option | Cost |
+| --- | --- |
+| A. **Centre the Grid in the full 48 × 16 pane.** What Gate 1A ships | Free, and the frame is identical whatever scenario is loaded, which keeps snapshots and muscle memory stable. Looks empty on a tutorial-sized Grid |
+| B. Shrink the pane to the Grid and give the recovered columns to the side panel | Uses the whole frame. The panel changes width with the map, so every panel layout has to work at two or three widths, and the composition stops falling out of one number |
+| C. Shrink the whole frame to the Grid and centre the frame in the terminal | Tightest picture. The frame is no longer 80 × 24, which is the acceptance target repeated as RULE in four documents |
+
+**Recommendation: A for Gate 1A**, and decide it when the Build Phase gives the side panel real
+content to hold — a construct menu and a placement-legality panel will want the width far more than
+a Pulse feed does. C should be refused: the floor is a RULE and a moving frame size is worse than a
+quiet margin.
+
+### Q17 — Should a Chebyshev tie in target selection break on distance, or on entity id?
+
+**Status:** OPEN — Gate 1B proceeds under the recommendation; the answer moves every hash, so the
+timing matters more than usual.
+
+Target selection is "nearest enemy by Chebyshev distance, ties broken by entity id"
+([`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) 3.7), and Gate 1A was explicit that
+resisting the urge to improve it was part of that gate. Gate 1B's first asymmetric fixture showed
+what it costs. On a 48 × 16 Grid with each army deployed in a rank — which is exactly how Citizens
+are described as deploying — **every enemy is the same Chebyshev distance away**, because the
+horizontal gap dominates. The tie therefore decides, it always decides the same way, and both
+armies converge on one enemy each and stampede into a corner together.
+
+Staggering both sides across columns fixes the fixture, and that is what
+`citizens-versus-ravels.ts` does. It does not fix the rule.
+
+| Option | Cost |
+| --- | --- |
+| A. **Keep "nearest, ties by entity id"** and stagger fixtures | Free, and it is the contract Gate 1A's evidence was measured against. Any scenario that deploys in ranks produces a stampede, and ranks are a faction identity |
+| B. **Break the tie on squared Euclidean distance, then entity id** | One line, still integer arithmetic, still deterministic and replay-exact. Units pick the enemy actually in front of them, which is what "nearest" already meant. **Changes every state and event hash in the repository**, including the ones `evidence/report.md` quotes |
+| C. Spread targets deliberately — prefer an enemy nobody else has claimed | The best-looking fights, and a real target-assignment pass inside perception. That is Milestone 2 work, and it is a rule a player would have to learn |
+
+**Recommendation: B, but not until Gate 1A is accepted.** It is the honest reading of "nearest
+enemy" and it costs one line — but Gate 1A's report quotes exact hashes and exact fixture
+arithmetic, and moving those while the owner is about to watch the run they describe would make the
+evidence stale in the worst possible week. Take A until then, which is what Gate 1B ships. C is a
+better game answer and belongs to whichever milestone owns perception.
+
 ## 5. Answered
 
 Rows move here with the date, the decision, and the document that now owns it.

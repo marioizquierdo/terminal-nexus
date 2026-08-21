@@ -2,9 +2,12 @@
   "name": "Terminal Nexus",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:26-bookworm",
   "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {}
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    }
   },
-  "postCreateCommand": "./scripts/check-repository.sh",
+  "postCreateCommand": "./scripts/check-repository.sh && npm install",
   "remoteUser": "node",
   "hostRequirements": {
     "cpus": 4,
@@ -26,4 +29,3 @@
     }
   }
 }
-
