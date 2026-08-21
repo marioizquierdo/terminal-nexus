@@ -3,7 +3,7 @@
 **Document role:** Future milestone contract; expand before implementation
 **Status:** GATED
 **Canon version:** 2.6
-**Updated:** 2026-08-20
+**Updated:** 2026-08-21
 **License:** Apache-2.0
 
 ## Question
@@ -22,7 +22,28 @@ This milestone finishes what the spike deferred, and hardens it.
 - **Routing.** Real pathfinding around obstacles: weighted terrain, routes to a legal attack position
   rather than to an occupied tile, temporary danger cost for fleeing workers, deterministic
   tie-breaking, and bounded recalculation when a contested destination changes. The spike's greedy
-  step will strand units on rock; this is where that stops being acceptable.
+  step will strand units on rock; this is where that stops being acceptable. **Sharper since the
+  owner's Gate 1B viewing** (this session, four-way movement): under Manhattan distance every legal
+  step changes distance by exactly ±1, so an actor whose approach is exactly on-axis with its goal
+  and meets an obstacle has no fallback direction at all — not a stall to route around, a hard dead
+  end. `specs/open-questions.md` Q15 has the measurement; this is where it gets an actual fix.
+- **Behaviour states.** The owner's viewing: "units should have a default movement direction
+  (towards the enemy Nexus, closest resources, etc) and then activate a different pathfinding mode
+  when there are enemies in range... defining multiple states will allow more complex and engaging
+  behaviours later." The spike has exactly one behaviour per unit (`advance`, `flee`, or `static`)
+  and no notion of "moving toward an objective" versus "engaged and repositioning for a shot" — the
+  same state the whole session. A state machine is also the natural home for "declare a target, then
+  find a free attack position, and rescan often" (the owner's routing note two lines up) and for the
+  adjacent-unit spacing item below: a unit *advancing* wants to keep a respectful distance from its
+  own side, a unit *engaged* in melee contact does not, and only a named state distinguishes the two
+  cases cleanly.
+- **Adjacent-unit spacing.** The owner's viewing, watching two troopers converge: "two troopers with
+  a space apart 'T T' look good, but together 'TT' look like they combined into a larger unit... it
+  is good to keep one space when moving, with a few exceptions — when melee units attack each other,
+  it is fine that they touch." Not a routing bug — the spike's collision rules already forbid two
+  units sharing a tile — but a *formation* preference layered on top of legal movement, and one that
+  needs to know "am I advancing or already in a fight" to apply only half the time. Depends on the
+  behaviour-states item above rather than standing alone.
 - **Economy and production.** The empty tick phases get their content: worker jobs, deposits, storage,
   salvage, supply cap, and the seeded production-contention process from
   [`engine.md`](engine.md) Section 5.3.

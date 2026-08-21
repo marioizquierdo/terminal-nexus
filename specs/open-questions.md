@@ -322,6 +322,59 @@ already forces every `playerRole()` call site to be found). C is not a "fix" at 
 as the owner's long-term direction and let a themes-focused milestone pick it up deliberately, not
 as a rider on a mirror-colour question.
 
+### Q19 — Where does sandbox placement, rewind/fast-forward, and a feedback replay engine live?
+
+**Status:** OPEN — not needed for Gate 1B or Milestone 2; the owner asked for it to be kept in mind
+and registered, explicitly not built now.
+
+The owner's own words, after playing the Pulse Playground: "I will want to start improving the
+Pulse Playground to have 'sandbox mode' starting with an empty map, maybe some pre-seeded units, and
+have the cursor that can choose units and place them wherever, then run the simulation. I will love
+to implement rewind and fast forward (1, 5, 10, 20 turns)... If we also add the ability to define new
+buildings and upgrades in between pulses, then we will have a full replay engine that will also be
+used to replay existing games, which will be really good for us to get feedback from users." He was
+explicit this is forward-looking, not a request for this session: "Just keep this in mind (perhaps
+use to edit the spec), but not needed for now."
+
+Three things are bundled in that paragraph, and they are not all the same size or the same
+milestone:
+
+- **A full replay format** — content locks, hashes, versions, a `verify` path that re-simulates
+  *recorded input* rather than a scenario file — is already Milestone 2's, explicitly: "the one
+  contract Milestone 1 did **not** lock" (`milestone-2-deterministic-pulse.md`). Nothing new to
+  register here; the owner's ask is confirmation this direction is wanted, not a new requirement.
+- **Rewind/fast-forward at named granularities (1/5/10/20 ticks)** is presentation on top of that
+  format: once a Pulse's states are addressable by tick, jumping to `tick - 20` is arithmetic, not a
+  new capability. The only design consequence *now* is a constraint on Milestone 2's replay format:
+  it should keep every tick's state cheaply addressable (or cheaply re-derivable) rather than only
+  the final one, so scrubbing is cheap later rather than needing a second format change.
+  `src/view/playback.ts`'s `Playback` class already addresses presentation time arbitrarily
+  (`step-frame`/`step-tick`/pause/resume) for exactly this reason — the mechanism the owner is asking
+  for already exists one layer down; scrubbing *backward* and by *named tick counts* is the new part.
+- **Sandbox placement — an empty or pre-seeded Grid, a cursor, choosing and placing units, then
+  running** — reads as an early, reduced form of Milestone 3's battle editor
+  (`milestone-3-builder-editor.md`: "a text/CLI-accessible battle editor... build-radius preview,
+  connectivity, outpost, defense, producer, cost, undo, validation"), but the owner's framing is
+  lighter and different in purpose: a fast unit-matchup sandbox for *exploring the kernel*, not the
+  competitive Build Phase with cost, validation, and a hidden simultaneous-reveal plan. Placing a
+  trooper and a runner nose to nose to see who wins does not need a supply cap or an outpost radius.
+
+| Option | Cost |
+| --- | --- |
+| A. **Fold all three into Milestone 3's battle editor**, since it already owns placement and validation | One editor, one thing to build. The owner's sandbox use case (quick, no economy, no validation, built to explore the kernel — closer in spirit to this Playground than to a competitive Build Phase) waits for the full editor's much larger scope, including parts a kernel-exploration tool does not need |
+| B. **A lightweight placement mode added to the Pulse Playground itself**, ahead of Milestone 3 — no cost, no validation, no hidden plan, just a cursor, the existing fixture rosters, and `run` — with the real Build Phase editor arriving in Milestone 3 as the validated, competitive version | Keeps the owner's actual ask (a fast kernel-exploration tool) small and close to what exists today; two placement UIs to eventually reconcile, one lightweight and one full, unless B is later folded into or replaced by Milestone 3's |
+| C. **Do nothing until Milestone 3 is scheduled** | Free. The owner explicitly said this is fine ("not needed for now") |
+
+**Recommendation: C until Milestone 2 is accepted, then B before Milestone 3 if the owner wants to
+play with matchups sooner than the full editor arrives** — it is a small, self-contained addition
+(cursor, placement, run; no cost or validation) that reuses this Playground's own rendering and
+kernel rather than waiting on Milestone 3's much larger contract. Milestone 2's replay-format design
+should keep per-tick state cheaply addressable regardless of which option is picked, since rewind
+depends on it either way and it is nearly free to keep in mind while that format is still being
+designed rather than retrofitted after.
+
+## 5. Answered
+
 Rows move here with the date, the decision, and the document that now owns it.
 
 | ID | Answered | Decision | Now owned by |
