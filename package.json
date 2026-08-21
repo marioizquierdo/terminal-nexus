@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Terminal Nexus — the Pulse Playground (Milestone 1, Gate 1A)",
+  "description": "Terminal Nexus \u2014 the Pulse Playground (Milestone 1, Gate 1A)",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=22.18.0"
@@ -11,8 +11,8 @@
   "scripts": {
     "check": "./scripts/check-repository.sh",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/",
-    "test:bun": "bun test tests/",
+    "test": "./scripts/run-tests.sh node",
+    "test:bun": "./scripts/run-tests.sh bun",
     "playground": "node bin/playground.ts"
   },
   "devDependencies": {

@@ -1,0 +1,24 @@
++------------------------------------------------------------------------------+
+| TERMINAL NEXUS  the pulse playground           | NEXUS PULSE                 |
+| Citizen mirror - open field                    | citizen-mirror-skirmish     |
+| seed 0x5EED0001                                | tick 0240/240  1.00x [run]  |
+|                                                |                             |
+|                                                | A  alive  2   hp   40       |
+|            .........%..............            | B  alive  6   hp   95       |
+|            ..........%%............            |                             |
+|            ....##..TT.%........##..            | recent                      |
+|            ....##.......M......##..            | 208 Bm12>Am5 shot 6         |
+|            ..w........%.M.......W..            | 208 Am5 dies                |
+|            ..........*..*..........            | 216 Bt4>Am11 hit 7          |
+|            ..........*..*..........            | 217 Bt14>Am11 hit 7         |
+|            ........................            | 228 Bt4>Am11 hit 7          |
+|            ..w.##..............#W..            | 229 Bt14>Am11 hit 7         |
+|            ....##..............##..            | 229 Am11 dies               |
+|            ........................            | 240 draw tick-limit         |
+|            ........................            | A side lower   B side UPPER |
+|                                                | t trooper  m marksman       |
+|                                                | w worker   ( h ) hauler     |
+| view (0,0)-(23,11) of 24x12  1 col/tile        | n nexus    b barracks       |
+| space pause  .,step  [] speed  r reset  q quit | % salvage  # rock  * ore    |
+| pulse over - draw by tick-limit                |                             |
++------------------------------------------------------------------------------+

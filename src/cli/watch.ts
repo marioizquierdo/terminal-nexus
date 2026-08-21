@@ -7,14 +7,19 @@
 // Every path out — `q`, SIGINT, SIGTERM, a setup failure, a caught render failure, the end of the
 // Pulse — goes through one idempotent disposer.
 
-import { compositionSize, createView, frameToText, gateFrame } from "../view/index.ts"
+import {
+  Playback,
+  compositionSize,
+  controlForKey,
+  createView,
+  frameToText,
+  gateFrame,
+} from "../view/index.ts"
 import type { CapabilityMode, PulseTimeline, TileWidth } from "../view/index.ts"
 import { AnsiBackend } from "../view/backends/ansi.ts"
 import { selectBackend } from "../view/backends/index.ts"
 
 const FRAMES_PER_SECOND = 30
-/** Raw mode delivers an interrupt as a byte rather than a signal, so `watch` handles both. */
-const CTRL_C = String.fromCharCode(3)
 
 export type WatchOptions = Readonly<{
   timeline: PulseTimeline
@@ -54,10 +59,11 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
     height: required.height,
   })
 
-  let presentationTimeMs = 0
-  let paused = false
-  let speed = options.speed
-  let gated = false
+  const playback = new Playback({
+    tickDurationMs: view.tickDurationMs,
+    frameDurationMs: 1000 / FRAMES_PER_SECOND,
+    speed: options.speed,
+  })
   let timer: NodeJS.Timeout | null = null
   let disposed = false
   let lastRealMs = Date.now()
@@ -86,21 +92,16 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
   }
 
   function onResize(): void {
-    gated = (stdout.columns ?? 0) < required.width || (stdout.rows ?? 0) < required.height
+    playback.fit(stdout.columns ?? 0, stdout.rows ?? 0, required)
   }
 
   function onKey(data: Buffer): void {
-    const key = data.toString("utf8")
-    if (key === "q" || key === CTRL_C) {
+    const control = controlForKey(data.toString("utf8"))
+    if (control === "quit") {
       leave()
       return
     }
-    if (key === " ") paused = !paused
-    else if (key === ".") presentationTimeMs += 1000 / FRAMES_PER_SECOND
-    else if (key === ",") presentationTimeMs += view.tickDurationMs
-    else if (key === "[") speed = Math.max(0.25, speed / 2)
-    else if (key === "]") speed = Math.min(8, speed * 2)
-    else if (key === "r") presentationTimeMs = 0
+    if (control !== null) playback.apply(control)
   }
 
   try {
@@ -117,21 +118,23 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
         const elapsed = now - lastRealMs
         lastRealMs = now
         try {
-          if (gated) {
+          playback.advance(elapsed)
+          if (playback.gated) {
             // Presentation time is frozen while gated, so resuming continues from the same instant.
             backend.present(
               gateFrame(stdout.columns ?? required.width, stdout.rows ?? required.height, required),
             )
             return
           }
-          if (!paused) presentationTimeMs += elapsed * speed
           backend.present(
-            view.composeAt(presentationTimeMs, options.capability, options.tileWidth, {
-              paused,
-              speed,
-            }),
+            view.composeAt(
+              playback.presentationTimeMs,
+              options.capability,
+              options.tileWidth,
+              { paused: playback.paused, speed: playback.speed },
+            ),
           )
-          if (presentationTimeMs > view.durationMs + 2000) settle()
+          if (playback.presentationTimeMs > view.durationMs + 2000) settle()
         } catch (error) {
           failure = error
           settle()

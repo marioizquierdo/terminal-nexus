@@ -148,6 +148,54 @@ is the better *game* answer and is a cheap change later; take it if Gate 1B view
 endings visibly dragging, with someone having actually watched one. C trades a real cost for a
 problem A already solves.
 
+### Q14 — Should the movement tie-break be mirror-fair, or is a fixed compass order enough?
+
+**Status:** OPEN — Gate 1A proceeds under the recommendation; nothing before Milestone 2 depends on
+the answer.
+
+Gate 1A routes with a greedy step plus a deterministic sidestep. When two steps close the same
+distance, the tie breaks on turn cost and then on a fixed compass order (`n, ne, e, se, s, sw, w,
+nw`). That makes both sides prefer *their own left*, so in the mirror skirmish player A's formation
+drifts north while player B's drifts south, and the two squads meet at an angle rather than head on.
+
+Measured: swapping which player owns which side flips the result exactly, so there is no bias tied
+to a player's identity. Across seeds the mirror lands 3-3, 4-4, 4-4, 5-1 and 4-4 — the lopsided runs
+are seed variance, not a systematic advantage. The artifact is real but small, and it is visible on
+screen as two formations sliding past each other.
+
+| Option | Cost |
+| --- | --- |
+| A. **Keep the fixed compass order.** Document the drift | Free, and the cheapest thing to reason about. Leaves a geometric artifact a sharp player could eventually learn to exploit |
+| B. Break equal-distance ties with a draw from the seeded gameplay stream | Removes the directional artifact and stays deterministic. Spends draws every tick on something no player will ever perceive as a choice, and makes movement replay depend on stream position far more heavily |
+| C. Derive the preference from the target vector, so the tie leans toward the target's secondary axis | Keeps determinism and removes the mirror artifact without spending draws. Costs a rule that is harder to explain than "the compass order", and it is still arbitrary when the target is exactly on an axis |
+
+**Recommendation: A for Gate 1A, and decide it in Milestone 2**, which owns routing. The drift is
+documented, it is symmetric between the two sides, and replacing greedy routing wholesale is likely
+to make this question moot. If Gate 1B viewing shows the formations sliding past each other reads as
+broken rather than as manoeuvre, take C.
+
+### Q15 — What should a mover with no route do: circle, or stop?
+
+**Status:** OPEN — Gate 1A proceeds under the recommendation; blocks nothing before Milestone 2.
+
+Greedy routing with a sidestep has no memory, so an actor whose goal is unreachable does not stop —
+it steps back and forth between two equally good tiles forever. The `hauler-two-tile-gap` fixture
+shows it exactly: a 3x1 hauler that cannot fit a two-tile opening paces between `(10,5)` and
+`(11,5)` for the whole Pulse.
+
+The report catches it — the log watches net progress and raises `WARN stuck` when an actor's last
+two dozen ticks revisit the same two tiles — but the kernel keeps moving it.
+
+| Option | Cost |
+| --- | --- |
+| A. **Leave it and report it.** The log names the actor and the tiles it is circling | Free, and honest. On screen a unit twitching in front of a wall reads as broken rather than as stuck |
+| B. Kernel-side no-progress detection that parks the actor until its goal or the obstacle changes | Cheap, and it makes the failure legible: a stopped unit reads as stuck. Adds per-actor memory to a kernel that currently has none, and "until something changes" needs defining |
+| C. Do nothing now; real pathfinding in Milestone 2 makes it moot | Free. Bets that Milestone 2 arrives before anyone watches a unit twitch |
+
+**Recommendation: A for Gate 1A, then B as a stopgap if watching shows it reads as broken**, since B
+is a dozen lines and does not need pathfinding. C is the honest long answer, and Milestone 2's
+routing work should settle it either way.
+
 ## 5. Answered
 
 Rows move here with the date, the decision, and the document that now owns it.

@@ -1,0 +1,50 @@
+import { defineScenario } from "../src/scenario/index.ts"
+
+export default defineScenario({
+  id: "trooper-versus-marksman",
+  name: "One trooper, one marksman",
+  notes: "The relationship milestone 3.6 says the fixture numbers should make visible without a spreadsheet: one trooper beats one marksman and finishes at about a quarter health. If this fixture stops agreeing with that sentence, one of the two is wrong.",
+
+  grid: { preset: "small-wide" },
+  seed: 0x0000A00E,
+  pulseTicks: 240,
+
+  terrain: [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+  ],
+  terrainLegend: {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit",
+  },
+
+  placements: [
+    "                        ",
+    "                        ",
+    "                        ",
+    "                        ",
+    "                        ",
+    "    t       R           ",
+    "                        ",
+    "                        ",
+    "                        ",
+    "                        ",
+    "                        ",
+    "                        ",
+  ],
+  placementLegend: {
+    t: { player: "A", content: "unit.citizen.trooper" },
+    R: { player: "B", content: "unit.citizen.marksman" },
+  },
+})
