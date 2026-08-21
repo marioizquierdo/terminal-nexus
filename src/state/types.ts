@@ -1,7 +1,7 @@
 // STATE — what is true. Plain serializable data that knows nothing about time passing and nothing
 // about drawing (engine.md 1). Only the Pulse mutates it.
 
-import type { Coord, Direction, GridTerrain } from "../grid/types.ts"
+import type { Coord, Direction, GridTerrain, VacatedEntry } from "../grid/types.ts"
 import type { RngState } from "../rng/pcg32.ts"
 
 export type PlayerId = "A" | "B"
@@ -58,9 +58,16 @@ export type MatchState = Readonly<{
   /** Ordered by `ordinal`. Dead entities are removed; the event stream carries their story. */
   entities: readonly EntityState[]
   groundItems: readonly GroundItem[]
+  /**
+   * Tiles a death vacated recently enough to still be blocked — the settle rule the owner's first
+   * playtest asked for. Pruned every tick; empty almost always, present only while a corpse's tile
+   * is still cooling.
+   */
+  vacatedTiles: readonly VacatedEntry[]
   outcome: Outcome | null
   rng: RngState
   nextOrdinal: number
 }>
 
-export const SCHEMA_VERSION = 1
+/** Bumped to 2: `MatchState` gained `vacatedTiles` for the post-death settle rule. */
+export const SCHEMA_VERSION = 2

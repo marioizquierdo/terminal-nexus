@@ -2,10 +2,16 @@
 
 **Document role:** Start-here implementation contract
 **Status:** CURRENT
-**Active gate:** 1A — the Pulse Playground
-**Canon version:** 2.5
+**Active gate:** 1B — quality and effects (built; awaiting the owner's viewing)
+**Canon version:** 2.6
 **Updated:** 2026-08-21
 **License:** Apache-2.0; authored creative treatments are CC BY-SA 4.0
+
+> **Where this stands, canon 2.6.** Both gates are **built and merged**, and both evidence reports
+> conclude PASS on every check a test can answer. What is outstanding is the half no test can: Mario
+> watching a mirror skirmish, watching one in monochrome, and comparing the same scenario with
+> effects on and off. A new session's authorised work is whatever that viewing asks for — **not** new
+> scope. Milestone 2's contracts are locked and waiting; it opens when this milestone is accepted.
 
 ## 1. What this milestone builds
 
@@ -29,8 +35,15 @@ Building them together is deliberate. Each one catches what the other hides.
 
 | Gate | Question | Status |
 | --- | --- | --- |
-| **1A — the Pulse Playground** | Do units move around obstacles, fight, and die — identically from a seed, legibly on screen? | **CURRENT** |
-| **1B — quality and effects** | Do render tiers and an effect vocabulary turn a legible Pulse into one worth watching? | GATED on 1A |
+| **1A — the Pulse Playground** | Do units move around obstacles, fight, and die — identically from a seed, legibly on screen? | **BUILT** — [`evidence/report.md`](../evidence/report.md) concludes PASS; owner viewing outstanding |
+| **1B — quality and effects** | Do render tiers and an effect vocabulary turn a legible Pulse into one worth watching? | **BUILT** — [`evidence/gate-1b-report.md`](../evidence/gate-1b-report.md) concludes PASS on everything a test can answer; owner viewing outstanding |
+
+**What "outstanding" means here.** Both gates pass every automated check they set themselves, and
+both reports refuse to claim the experiential half. Section 3.10 asks that Mario watch a mirror
+skirmish, and watch one in monochrome and be able to follow it; Section 4.3 asks that a viewer be
+shown the same scenario with effects on and off and say which they would watch again. Until someone
+has, those questions are open, and `project-governance.md` Section 2 forbids treating a test — or a
+screenshot — as an answer to them.
 
 **Not in this milestone:** the Build Phase, base construction, the upgrade draft, campaigns, AI beyond
 "advance and engage," multiplayer, packaging, SSH, browser delivery, and every faction except
@@ -117,6 +130,10 @@ interleaved, which is what a human wants.
 
 **Lines are fixed-column and greppable.** That is not cosmetic — it is what lets an agent assert on
 behaviour without parsing prose:
+
+The victory line below is the one sample that is **not** fixed-column — its subject is not padded
+like every other line's. The columns won, since this same section calls them the point; the
+Playground prints `victory  A             reason: annihilation`.
 
 ```text
 [0000] INFO  spawn    A:trooper#1   at (2,1)
@@ -259,9 +276,11 @@ Lower speed tier resolves first, so the marksman fires before the trooper swings
 The numbers make the relationship **visible without a spreadsheet**:
 
 - A trooper crossing a marksman's five tiles takes about 6.7 seconds and eats three shots, arriving at
-  22 of 40 health. It then kills the marksman in four seconds while taking two more. **One trooper
-  beats one marksman and finishes at a quarter health.**
+  22 of 40 health. It then kills the marksman while taking **one** more. **One trooper beats one
+  marksman and finishes at 16 of 40** — measured, in `scenarios/trooper-versus-marksman.ts`. The
+  first half of that sentence is exact; the ending was a shot out, and this is the corrected number.
 - Two marksmen land six shots during that same approach. **The trooper arrives at 4 health and dies.**
+  Exact, and asserted in `tests/scenario.test.ts`.
 
 Melee wins the charge; ranged wins when massed. A viewer can learn that by watching twice.
 
@@ -464,6 +483,7 @@ single cold samples, no TTY. Re-measure anything you cite.
 | `CliRenderer(stdin, stdout, width, height, config)` takes arbitrary streams | Keeps a deferred remote path open at no cost |
 | `@opentui/core/testing` exports `ManualClock`, `TestRecorder`, mock keys and mouse | A deterministic TTY-free snapshot harness already exists — much of 3.9's view testing can be assembled rather than written |
 | Bun 1.3.11 and Node 22.22.2 present in the web container; **Deno is not** | Deno is out of this milestone |
+| **Measured 2026-08-21 at 0.5.6: the native core loads under Bun and refuses under Node 22.22.2** | Corrects the row above it. The package's `node` export imports cleanly — which is all the original measurement showed — and then throws `"OpenTUI native FFI is not available for this runtime yet"` when a renderer is constructed. OpenTUI is a Bun-only backend today; direct ANSI carries Node, and the adapter boundary is what keeps "library and runtime are independent choices" true |
 
 ## 6. Milestone completion
 

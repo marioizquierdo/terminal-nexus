@@ -83,10 +83,14 @@ Pinned by Gate 1A, measured 2026-08-21:
 | `@types/node` | 22.20.1 | Type checking only |
 | `@opentui/core` | 0.5.6 | Terminal backend. **Native core loads under Bun, not under Node** |
 
-`watch` options: `--capability monochrome|color16|color256|truecolor`, `--glyphs ascii|unicode`,
-`--tile-width 1|2`, `--no-effects`, `--reduced-motion`, `--cosmetic-seed`, `--speed`, `--backend`.
-ASCII and monochrome are the defaults and the acceptance floor; everything above them is fidelity,
-never information.
+`watch` options: `--capability monochrome|color16|color256|truecolor`, `--theme dark|light`,
+`--glyphs ascii|unicode`, `--tile-width 1|2`, `--no-effects`, `--reduced-motion`,
+`--cosmetic-seed`, `--speed`, `--backend`. ASCII and monochrome are the defaults and the
+acceptance floor; everything above them is fidelity, never information. `--capability` defaults
+to the best tier `COLORTERM`/`TERM` advertise rather than always `color16` (owner playtest: a
+terminal that can do more was still getting the tier most exposed to a terminal theme's own,
+inconsistently defined colours). `--theme` defaults to `dark` — the palette the lore and every
+screenshot are designed against — and `light` is one flag away for a light terminal background.
 
 `bun test` drives one file at a time (`./scripts/run-tests.sh bun`): its `node:test` shim rejects a
 test registered while another file's tests are still running, and it does not implement `t.skip()`.
@@ -172,6 +176,44 @@ specification.
 
 Human-readable history of the development setup. Product and canon history lives in
 `specs/project-governance.md` Section 6.
+
+### 2026-08-21 — Milestone 1 built: the Pulse Playground (canon 2.6)
+
+The repository has code. Node 22.18+ and Bun 1.3+ run the TypeScript sources with **no build step**,
+so relative imports carry explicit `.ts` extensions and the code stays inside erasable-syntax
+TypeScript — no enums, no parameter properties. `tsconfig.json` is for type checking and editors.
+
+New commands:
+
+```bash
+npm run play           # watch Citizens versus Ravels, colour, Unicode, effects on
+npm run play:cascade   # the Ravel fuel-dump chain, at half speed
+npm run play:plain     # the same fight with effects off
+npm run play:mono      # monochrome, the acceptance floor
+npm run scenarios      # list all seventeen
+
+npm test               # 122 tests under Node's runner
+npm run test:bun       # the same files under Bun, one at a time
+npm run typecheck      # tsc --noEmit
+
+./bin/playground.ts run|watch|verify <scenario>
+node scripts/capture-screenshots.mjs      # drives a real PTY and renders PNGs
+node scripts/capture-frames.mjs <id> ...  # plain-text frames
+```
+
+Things worth knowing before touching this:
+
+- **`bun test` is driven one file at a time** by `scripts/run-tests.sh`. Its `node:test` shim rejects
+  a test registered while another file's tests are still running, and it does not implement
+  `t.skip()`, so runtime-specific tests are registered conditionally instead.
+- **`src/pulse` may not import `src/view`, and `src/report` may not import `src/pulse`.**
+  `tests/architecture.test.ts` walks the transitive import graph and fails the build on either.
+- **The kernel touches no clock and no `Math.random`** — asserted both statically and by trapping
+  them during a resolve.
+- **Screenshots need tmux and Chromium**, both present in the web container. See the
+  `playground-screenshots` skill.
+- `@opentui/core` is pinned at 0.5.6 and its **native core only loads under Bun**; the direct-ANSI
+  backend carries Node and passes the whole lifecycle suite.
 
 ### 2026-08-21 — execution-readiness audit (canon 2.5)
 

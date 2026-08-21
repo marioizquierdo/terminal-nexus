@@ -2,7 +2,7 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.5
+**Canon version:** 2.6
 **Updated:** 2026-08-21
 **License:** Apache-2.0
 
@@ -87,6 +87,10 @@ unit is authored, and none of the five factions currently has one in its identit
 **Recommendation: A.** Build the layer, leave it empty, and add one test that asserts an air entity
 can share a tile with a ground entity — so the rule is proven without the content existing.
 
+**Evidence from Milestone 1:** done exactly that. `tests/grid.test.ts` builds an air definition
+inside the test file, asserts it shares a tile with a ground unit in both directions, and no air
+content was authored. The layer costs nothing and works.
+
 ### Q9 — Does facing affect rules, or only presentation?
 
 **Status:** OPEN — Milestone 1 proceeds under the recommendation; confirm before Milestone 3.
@@ -103,6 +107,16 @@ in the rules — it exists so the renderer does not have to guess a direction an
 conversation, and adopting it early would mean every unit's readable state includes an orientation
 that a single character struggles to show. Keep facing in state, keep it out of the rules, and
 revisit when there is a faction that wants it.
+
+**Evidence from Milestone 1, and it sharpens the question:** facing was maintained all the way
+through both gates — derived from the last step, or from the current target when stationary — and
+**nothing read it.** Not the rules, which was the point; but not the renderer either. The compositor
+draws letters, which have no orientation, and the effect system takes its direction from the move
+and attack events rather than from state. So facing is currently a field that is hashed into every
+state comparison and consulted by nobody. That does not make option A wrong, but it removes the
+justification the question was resting on: it is in state so a renderer need not guess, and no
+renderer has needed it yet. A third option now exists — **drop it until something asks** — and it
+would make every state hash slightly smaller and one field less load-bearing.
 
 ### Q12 — What is the vertical chrome budget, and is 80 × 24 a literal floor?
 
@@ -126,6 +140,11 @@ repeats, a 24-row terminal is the historic standard the product targets anyway, 
 real work to do. If Gate 1A finds three header rows wasteful, moving rows between header and footer
 inside the 8 is free and needs no canon change — only the total is fixed here.
 
+**Evidence from Milestone 1:** the 8-row budget was built and all eight rows are in use. The header
+carries the title strip, the scenario name and the seed; the footer carries the position readout the
+canon requires, the controls, and a status line. Nothing was wasted and nothing had to be squeezed,
+at 80 columns and at 128.
+
 ### Q13 — Where do workers flee, and what counts as annihilation, on a Grid with no Nexus?
 
 **Status:** OPEN — Gate 1A proceeds under the recommendation, which is already written into
@@ -147,6 +166,14 @@ fixture. Neither half was stated.
 is the better *game* answer and is a cheap change later; take it if Gate 1B viewing shows mirror
 endings visibly dragging, with someone having actually watched one. C trades a real cost for a
 problem A already solves.
+
+**Evidence from Milestone 1, and it is stronger than the row predicted.** A Citizen worker moves at
+`1/1` and every attacker in either fixture moves at `3/4` or slower, so a fleeing worker on open
+ground is **never caught at all** — not "a worker-hunt anticlimax", an unreachable one. The mirror
+skirmish therefore never reaches annihilation and always runs its full 240 ticks, with the last
+eighty of them empty. `worker-flight.ts` only ends because the Grid has an east wall to corner the
+worker against. Option B would end those fixtures at the interesting moment. Whether the dragging is
+*visible* still wants someone to watch it, which is the one thing this evidence cannot supply.
 
 ### Q14 — Should the movement tie-break be mirror-fair, or is a fixed compass order enough?
 
@@ -186,15 +213,30 @@ shows it exactly: a 3x1 hauler that cannot fit a two-tile opening paces between 
 The report catches it — the log watches net progress and raises `WARN stuck` when an actor's last
 two dozen ticks revisit the same two tiles — but the kernel keeps moving it.
 
+**Sharper since diagonal movement left** (owner playtest, Milestone 1 acceptance pass): under
+Manhattan distance and four-way movement, every legal step changes distance by exactly ±1, so the
+"sidestep that holds distance level" the old eight-way router relied on to skirt an obstacle no
+longer exists (`src/pulse/movement.ts`, `rankedSteps`). An actor approaching an obstacle **off-axis**
+still has two improving directions and can slide along the obstacle's face, one tile at a time, until
+it clears — that is what `obstacle-routing.ts` now exercises. An actor approaching **on-axis** (same
+row or column as its goal) has exactly one improving direction, and if a wall takes it there is no
+fallback at all: not a circle, a hard stop, reported correctly by the existing `move.blocked` streak
+warning but never recovering on its own. This is a strictly worse failure mode than circling — a
+circling actor is at least visibly doing something — and it is not a corner case: any unit walking a
+straight line at an enemy structure now hits it whenever the obstacle happens to sit exactly on that
+line.
+
 | Option | Cost |
 | --- | --- |
-| A. **Leave it and report it.** The log names the actor and the tiles it is circling | Free, and honest. On screen a unit twitching in front of a wall reads as broken rather than as stuck |
-| B. Kernel-side no-progress detection that parks the actor until its goal or the obstacle changes | Cheap, and it makes the failure legible: a stopped unit reads as stuck. Adds per-actor memory to a kernel that currently has none, and "until something changes" needs defining |
-| C. Do nothing now; real pathfinding in Milestone 2 makes it moot | Free. Bets that Milestone 2 arrives before anyone watches a unit twitch |
+| A. **Leave it and report it.** The log names the actor and the tile it wants | Free, and honest. On screen a unit standing still in front of a wall forever reads as broken, more so than circling did |
+| B. Kernel-side no-progress detection that parks the actor until its goal or the obstacle changes | Cheap, and it makes the failure legible: a stopped unit reads as stuck rather than as idle. Still doesn't get the unit where it was going — it only stops pretending to try |
+| C. Do nothing now; real pathfinding in Milestone 2 makes it moot | Free. Bets that Milestone 2 arrives before anyone watches a unit stall on-axis, which — given this session's own scenario needed redesigning to avoid it — is not a safe bet |
 
-**Recommendation: A for Gate 1A, then B as a stopgap if watching shows it reads as broken**, since B
-is a dozen lines and does not need pathfinding. C is the honest long answer, and Milestone 2's
-routing work should settle it either way.
+**Recommendation: A for Gate 1A, then treat this as Milestone 2's opening case**, not a stopgap
+detail. Milestone 2's routing work should be scoped to actually solve the on-axis dead end (a real
+search, or at minimum a goal offset that avoids exact axis alignment), not just report it more
+politely — B alone would ship a unit that visibly gives up, which is not better than one that visibly
+paces.
 
 ### Q16 — When the Grid is smaller than the viewport, where does the leftover space go?
 
@@ -244,6 +286,92 @@ enemy" and it costs one line — but Gate 1A's report quotes exact hashes and ex
 arithmetic, and moving those while the owner is about to watch the run they describe would make the
 evidence stale in the worst possible week. Take A until then, which is what Gate 1B ships. C is a
 better game answer and belongs to whichever milestone owns perception.
+
+### Q18 — In a same-faction mirror match, should colour follow ownership or the faction?
+
+**Status:** OPEN — Gate 1B proceeds under the recommendation; the answer only touches presentation.
+
+`engine.md`'s stated RULE is "faction identity lives in the glyph family and the effect language;
+ownership keeps the colour, so a mirror match stays legible and monochrome stays whole"
+(`playerRole()` in `src/view/theme.ts`: player A is always `player.a`, player B is always
+`player.b`, regardless of which roster either side is playing). The owner's playtest asked the
+question behind that RULE directly: "How can we color mirror-matches? make sure you include citizen
+vs citizen and ravel vs ravel" — and floated "their secondary colour" and, further out, a full
+skins system with a player-chosen third colour.
+
+Made observable this session: `ravel-mirror-skirmish.ts` is the Ravel counterpart to the existing
+`citizen-mirror-skirmish.ts`, and a truecolor capture of it is what the RULE actually produces —
+player A's Ravels in Citizen rust orange, player B's Ravels in Ravel green, because ownership colour
+is hardcoded per player slot, not derived from the roster each side happens to be playing. The two
+armies **are** clearly distinguishable — that half of the ask already works, and is what the RULE
+was written to guarantee — but a Ravel force rendered in the other faction's signature colour reads
+as slightly wrong to look at, which is the itch behind "their secondary colour."
+
+| Option | Cost |
+| --- | --- |
+| A. **Keep ownership-primary colour as the RULE states.** Glyph family already carries faction identity, so a mirror match still reads as "same faction" from the letters alone | Free — no code changes. One side of a same-faction mirror wears a colour that belongs to the other faction, which this session's screenshot shows plainly once you go looking for it |
+| B. **Faction-primary colour, ownership as a secondary shade** — each faction keeps one signature hue; player A gets it at full saturation, player B gets a darkened/lightened variant of the *same* hue. Citizen-vs-Ravel keeps today's high-contrast look (the shades of two different hues are already far apart); a mirror match now reads as "same faction, two shades" rather than "two unrelated factions" | Every role that currently reads `player.a`/`player.b` needs to become a function of (faction, player) instead of player alone — `playerRole()`'s signature, every call site, and the `StyleRole` vocabulary itself (`player.a`/`player.b` become something like `player.citizen.a`/`player.citizen.b`/`player.ravel.a`/`player.ravel.b`, or a role plus a shade multiplier). Changes the RULE in `engine.md`, needs a canon bump, and needs re-proving that monochrome (which currently separates the sides on colour alone dropping to nothing, relying on case) still stays legible without any hue at all |
+| C. **Skins**: let a player choose a faction's colour identity per match, banked as a third axis alongside the theme (dark/light) this session added. The owner's own long-term want, and the natural home for "players will love to choose their faction skin" | A real feature, not a palette tweak — persistence, a selection UI (even a CLI flag needs a place to keep the choice across a Pulse), and a data model for what a skin actually overrides. Squarely Milestone 2+ scope; nothing here needs it to work today |
+
+**Recommendation: A for now, B when a mirror match is common enough on the schedule to be worth the
+refactor, C only inside a real themes/skins system.** The RULE's actual job — tell two players apart
+— already holds, proven by both mirror fixtures existing and rendering distinctly; what's missing is
+faction fidelity in the rarer same-faction case, which is a real but purely cosmetic gap, not a
+legibility bug. B is a mechanical, well-scoped change whenever it's prioritized (the type system
+already forces every `playerRole()` call site to be found). C is not a "fix" at all — register it
+as the owner's long-term direction and let a themes-focused milestone pick it up deliberately, not
+as a rider on a mirror-colour question.
+
+### Q19 — Where does sandbox placement, rewind/fast-forward, and a feedback replay engine live?
+
+**Status:** OPEN — not needed for Gate 1B or Milestone 2; the owner asked for it to be kept in mind
+and registered, explicitly not built now.
+
+The owner's own words, after playing the Pulse Playground: "I will want to start improving the
+Pulse Playground to have 'sandbox mode' starting with an empty map, maybe some pre-seeded units, and
+have the cursor that can choose units and place them wherever, then run the simulation. I will love
+to implement rewind and fast forward (1, 5, 10, 20 turns)... If we also add the ability to define new
+buildings and upgrades in between pulses, then we will have a full replay engine that will also be
+used to replay existing games, which will be really good for us to get feedback from users." He was
+explicit this is forward-looking, not a request for this session: "Just keep this in mind (perhaps
+use to edit the spec), but not needed for now."
+
+Three things are bundled in that paragraph, and they are not all the same size or the same
+milestone:
+
+- **A full replay format** — content locks, hashes, versions, a `verify` path that re-simulates
+  *recorded input* rather than a scenario file — is already Milestone 2's, explicitly: "the one
+  contract Milestone 1 did **not** lock" (`milestone-2-deterministic-pulse.md`). Nothing new to
+  register here; the owner's ask is confirmation this direction is wanted, not a new requirement.
+- **Rewind/fast-forward at named granularities (1/5/10/20 ticks)** is presentation on top of that
+  format: once a Pulse's states are addressable by tick, jumping to `tick - 20` is arithmetic, not a
+  new capability. The only design consequence *now* is a constraint on Milestone 2's replay format:
+  it should keep every tick's state cheaply addressable (or cheaply re-derivable) rather than only
+  the final one, so scrubbing is cheap later rather than needing a second format change.
+  `src/view/playback.ts`'s `Playback` class already addresses presentation time arbitrarily
+  (`step-frame`/`step-tick`/pause/resume) for exactly this reason — the mechanism the owner is asking
+  for already exists one layer down; scrubbing *backward* and by *named tick counts* is the new part.
+- **Sandbox placement — an empty or pre-seeded Grid, a cursor, choosing and placing units, then
+  running** — reads as an early, reduced form of Milestone 3's battle editor
+  (`milestone-3-builder-editor.md`: "a text/CLI-accessible battle editor... build-radius preview,
+  connectivity, outpost, defense, producer, cost, undo, validation"), but the owner's framing is
+  lighter and different in purpose: a fast unit-matchup sandbox for *exploring the kernel*, not the
+  competitive Build Phase with cost, validation, and a hidden simultaneous-reveal plan. Placing a
+  trooper and a runner nose to nose to see who wins does not need a supply cap or an outpost radius.
+
+| Option | Cost |
+| --- | --- |
+| A. **Fold all three into Milestone 3's battle editor**, since it already owns placement and validation | One editor, one thing to build. The owner's sandbox use case (quick, no economy, no validation, built to explore the kernel — closer in spirit to this Playground than to a competitive Build Phase) waits for the full editor's much larger scope, including parts a kernel-exploration tool does not need |
+| B. **A lightweight placement mode added to the Pulse Playground itself**, ahead of Milestone 3 — no cost, no validation, no hidden plan, just a cursor, the existing fixture rosters, and `run` — with the real Build Phase editor arriving in Milestone 3 as the validated, competitive version | Keeps the owner's actual ask (a fast kernel-exploration tool) small and close to what exists today; two placement UIs to eventually reconcile, one lightweight and one full, unless B is later folded into or replaced by Milestone 3's |
+| C. **Do nothing until Milestone 3 is scheduled** | Free. The owner explicitly said this is fine ("not needed for now") |
+
+**Recommendation: C until Milestone 2 is accepted, then B before Milestone 3 if the owner wants to
+play with matchups sooner than the full editor arrives** — it is a small, self-contained addition
+(cursor, placement, run; no cost or validation) that reuses this Playground's own rendering and
+kernel rather than waiting on Milestone 3's much larger contract. Milestone 2's replay-format design
+should keep per-tick state cheaply addressable regardless of which option is picked, since rewind
+depends on it either way and it is nearly free to keep in mind while that format is still being
+designed rather than retrofitted after.
 
 ## 5. Answered
 

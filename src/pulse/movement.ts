@@ -1,7 +1,7 @@
 // Movement credit and step choice — engine.md 4.2 and 4.3.
 
 import type { ContentDef, MovementRate } from "../content/types.ts"
-import { DIRECTIONS, chebyshev, directionOf, step } from "../grid/coords.ts"
+import { DIRECTIONS, directionOf, gridDistance, step } from "../grid/coords.ts"
 import type { CollisionMask } from "../grid/occupancy.ts"
 import type { Coord, Direction } from "../grid/types.ts"
 
@@ -22,12 +22,12 @@ export function canStep(credit: number, rate: MovementRate): boolean {
   return credit >= stepCost(rate)
 }
 
-/** Turn cost in 45-degree increments, 0..4. Used only to rank equally good steps. */
+/** Turn cost in 90-degree increments, 0..2. Used only to rank equally good steps. */
 function turnCost(from: Direction, to: Direction): number {
-  const a = DIRECTIONS.indexOf(from)
-  const b = DIRECTIONS.indexOf(to)
-  const raw = Math.abs(a - b)
-  return Math.min(raw, DIRECTIONS.length - raw)
+  if (from === to) return 0
+  const reversed = (from === "n" && to === "s") || (from === "s" && to === "n")
+  const flipped = (from === "e" && to === "w") || (from === "w" && to === "e")
+  return reversed || flipped ? 2 : 1
 }
 
 export type StepChoice = Readonly<{
@@ -49,9 +49,15 @@ export type StepOptions = Readonly<{
  * how far they turn from the direction the actor wanted, then by a fixed compass order — so two
  * equally good steps always resolve the same way on every machine.
  *
- * A sidestep that holds distance level is allowed, which is what carries an actor along the face of
- * an obstacle. A step that loses ground is never taken; an actor with no non-losing step holds and
- * the tick reports it blocked.
+ * Under Manhattan distance and four-way movement, every legal step changes distance by exactly ±1 —
+ * there is no step that merely holds distance level, the way a diagonal sidestep once could. That
+ * means an actor whose approach is off-axis (both a row and a column separate it from the goal) has
+ * two improving directions to fall back on, and can slide along an obstacle's face one of them at a
+ * time until it clears. An actor whose approach is exactly on-axis (same row or column as the goal)
+ * has exactly one improving direction, and if that is blocked there is no fallback at all: it holds
+ * and the tick reports it blocked, for as long as the obstacle stands. This is a known, accepted gap
+ * in the Gate 1A routing floor — specs/open-questions.md Q15 — and real pathfinding is Milestone 2's
+ * job to close, not this greedy step's.
  */
 export function rankedSteps(
   anchor: Coord,
@@ -59,7 +65,7 @@ export function rankedSteps(
   mask: CollisionMask,
   options: StepOptions,
 ): StepChoice[] {
-  const current = chebyshev(anchor, options.goal)
+  const current = gridDistance(anchor, options.goal)
   const desired =
     options.intent === "toward"
       ? directionOf(anchor, options.goal)
@@ -69,7 +75,7 @@ export function rankedSteps(
   DIRECTIONS.forEach((direction, index) => {
     const to = step(anchor, direction)
     if (!mask.footprintFits(to, definition.footprint)) return
-    const distanceAfter = chebyshev(to, options.goal)
+    const distanceAfter = gridDistance(to, options.goal)
     const improves =
       options.intent === "toward" ? distanceAfter <= current : distanceAfter >= current
     if (!improves) return

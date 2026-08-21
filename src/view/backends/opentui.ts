@@ -16,8 +16,8 @@
 // neither the compositor nor the kernel knows which one presented a frame.
 
 import type { ReadonlyCellFrame } from "../frame.ts"
-import type { CapabilityMode } from "../roles.ts"
-import { rgbFor } from "../roles.ts"
+import type { CapabilityMode, Theme } from "../roles.ts"
+import { BACKGROUND_RGB, DEFAULT_THEME, rgbFor } from "../roles.ts"
 import type { BackendOptions, NamedBackend } from "./index.ts"
 
 type OpenTuiCore = Awaited<typeof import("@opentui/core")>
@@ -44,13 +44,18 @@ export function drawFrameInto(
   buffer: CellSink,
   frame: ReadonlyCellFrame,
   capability: CapabilityMode,
+  theme: Theme = DEFAULT_THEME,
 ): void {
-  const background = core.RGBA.fromValues(0, 0, 0, 1)
+  // OpenTUI paints its own background rather than leaving the terminal's ambient colour to show
+  // through (unlike the direct-ANSI backend), so the theme has to reach this fill too or a light
+  // theme would still render on a forced-black background.
+  const [bgRed, bgGreen, bgBlue] = BACKGROUND_RGB[theme]
+  const background = core.RGBA.fromValues(bgRed / 255, bgGreen / 255, bgBlue / 255, 1)
   for (let y = 0; y < frame.height; y += 1) {
     for (let x = 0; x < frame.width; x += 1) {
       const cell = frame.cells[y * frame.width + x]
       if (cell === undefined) continue
-      const [red, green, blue] = rgbFor(cell.style.fgRole, capability)
+      const [red, green, blue] = rgbFor(cell.style.fgRole, capability, theme)
       const attributes = core.createTextAttributes({
         bold: cell.style.bold === true,
         dim: cell.style.dim === true,
@@ -87,7 +92,13 @@ export async function createOpenTuiBackend(options: BackendOptions): Promise<Nam
     present(frame: ReadonlyCellFrame): void {
       const buffer = renderer.nextRenderBuffer
       if (buffer === undefined) throw new Error("opentui renderer exposed no buffer")
-      drawFrameInto(core, buffer as unknown as CellSink, frame, options.capability)
+      drawFrameInto(
+        core,
+        buffer as unknown as CellSink,
+        frame,
+        options.capability,
+        options.theme ?? DEFAULT_THEME,
+      )
       renderer.requestRender()
     },
     /** Idempotent, like every other exit path. */

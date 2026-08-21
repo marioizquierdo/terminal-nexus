@@ -2,7 +2,7 @@
 
 **Document role:** Canon index and reading order
 **Status:** Canonical
-**Canon version:** 2.5
+**Canon version:** 2.6
 **Updated:** 2026-08-21
 **License:** Apache-2.0
 
@@ -13,6 +13,11 @@ Run `./scripts/check-repository.sh` first — it prints the canon version and th
 enforces the invariants below rather than trusting anyone to remember them.
 
 ## Start here
+
+**There is code now.** Milestone 1 built the Pulse Playground: a deterministic kernel, a scenario
+format, a levelled report, and an ASCII view you can watch. `DEVELOPMENT.md` has the commands, and
+`evidence/report.md` and `evidence/gate-1b-report.md` are what the two gates found — including the
+places where the canon turned out to be wrong.
 
 For a new coding session, read:
 
@@ -86,8 +91,8 @@ today; the milestone marked CURRENT decides that.
 
 | Milestone | Question | Status |
 | --- | --- | --- |
-| [1 — the Pulse Playground](milestone-1-spike-battle.md) | Put units on a Grid and let them fight: deterministic from a seed, legible on screen, worth watching? | **CURRENT** |
-| [2 — completing the Pulse](milestone-2-deterministic-pulse.md) | Can it carry routing, economy, and hidden information and stay deterministic? | GATED |
+| [1 — the Pulse Playground](milestone-1-spike-battle.md) | Put units on a Grid and let them fight: deterministic from a seed, legible on screen, worth watching? | **CURRENT** — both gates built and merged; the owner's viewing is what remains |
+| [2 — completing the Pulse](milestone-2-deterministic-pulse.md) | Can it carry routing, economy, and hidden information and stay deterministic? | GATED — **contracts locked**, ready to start cold |
 | [3 — Build Phase and battle editor](milestone-3-builder-editor.md) | Is arranging a compact base pleasant enough to carry player agency? | GATED |
 
 Packaging, standalone binaries, SSH, and browser delivery are **deferred out of Milestone 1

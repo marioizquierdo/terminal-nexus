@@ -7,9 +7,10 @@
 // outcome — it only ever decides the order events are emitted in.
 
 import type { ContentDef } from "../content/types.ts"
-import { directionOf, footprintDistance, step } from "../grid/coords.ts"
+import { directionOf, footprintDistance, nearestFootprintTile, step } from "../grid/coords.ts"
 import type { CollisionMask } from "../grid/occupancy.ts"
-import { ClaimOverlay, OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
+import { ClaimOverlay, OccupancyIndex, VacatedOverlay, maskFrom } from "../grid/occupancy.ts"
+import type { BlockReason } from "../events/types.ts"
 import type { Coord, Direction } from "../grid/types.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { Pcg32 } from "../rng/pcg32.ts"
@@ -47,12 +48,30 @@ type TickContext = {
   actors: Actor[]
   byOrdinal: Map<number, Actor>
   index: OccupancyIndex
+  vacated: VacatedOverlay
+  /** Ordinals that settled a move this tick — checked by attacks(). See the note there. */
+  movedThisTick: Set<number>
   rng: Pcg32
   events: DomainEvent[]
   groundItems: GroundItem[]
 }
 
 export type TickResult = Readonly<{ state: MatchState; events: readonly DomainEvent[] }>
+
+/**
+ * Ticks a vacated tile stays blocked after a death — the owner's playtest finding that another
+ * unit stepping into a corpse's tile the instant it opens reads as a glitch. Two ticks is about
+ * 160ms at 12Hz: long enough to register as a pause, short enough that it never reads as a second
+ * rule players have to learn.
+ */
+export const DEATH_SETTLE_TICKS = 2
+
+/** Maps a mask's blocker to the reason a `move.blocked` event reports. */
+function blockReasonFor(blocker: "edge" | "terrain" | "settling" | number | null): BlockReason {
+  if (typeof blocker === "number") return "entity"
+  if (blocker === "terrain" || blocker === "settling") return blocker
+  return "edge"
+}
 
 /** Attacks and movement claims both read this. Lower acts first — engine.md 4.3. */
 function speedTier(actor: Actor): number {
@@ -74,6 +93,7 @@ function maskForActor(
     // chosen layers, never inferred from a layer's position in the render order.
     terrain: actor.definition.layer === "air" ? "ignore" : "impassable",
     ignore: [actor.ordinal],
+    vacated: context.vacated,
     ...(overlay === undefined ? {} : { overlay }),
   })
 }
@@ -228,20 +248,23 @@ function intents(context: TickContext): Intent[] {
     if (!canStep(actor.moveCredit, rate)) continue
 
     const mask = maskForActor(context, actor)
-    const choices = rankedSteps(actor.anchor, actor.definition, mask, {
-      goal: target.anchor,
-      intent,
-    })
+    const goal = movementGoal(actor.anchor, target)
+    const choices = rankedSteps(actor.anchor, actor.definition, mask, { goal, intent })
     if (choices.length === 0) {
       const desired = desiredTile(actor, target, intent)
-      const blocker = mask.blockerAt(desired)
+      // The full footprint, not just the anchor tile: a multi-tile mover's naive "straight at the
+      // goal" tile can itself be perfectly clear while a *different* tile in its footprint is what's
+      // actually occupied - checking only the anchor then reports "edge" (blockReasonFor's fallback
+      // for "nothing was wrong with the one tile I looked at"), which is simply false. A three-tile
+      // raider crowded by an ally's tail in a populous scenario is what surfaced this.
+      const blocker = mask.footprintBlockerAt(desired, actor.definition.footprint)
       context.events.push({
         kind: "move.blocked",
         tick: context.tick,
         entity: actor.id,
         ordinal: actor.ordinal,
         desired,
-        reason: typeof blocker === "number" ? "entity" : blocker === "terrain" ? "terrain" : "edge",
+        reason: blockReasonFor(blocker),
         blocker: typeof blocker === "number" ? (context.byOrdinal.get(blocker)?.id ?? null) : null,
         credit: actor.moveCredit,
         cost: stepCost(rate),
@@ -266,12 +289,20 @@ function intents(context: TickContext): Intent[] {
   return declared
 }
 
+/**
+ * The tile a mover is actually walking toward: the nearest tile of the target's footprint, not its
+ * anchor. Routing and range-checking must agree on this point, or a mover can rank every step that
+ * would put it in range as "further from the goal" and never take it (see `nearestFootprintTile`).
+ */
+function movementGoal(from: Coord, target: Actor): Coord {
+  return nearestFootprintTile(from, target.anchor, target.definition.footprint)
+}
+
 /** The tile the actor wanted, for the report: one step along the direction it was heading. */
 function desiredTile(actor: Actor, target: Actor, intent: "toward" | "away"): Coord {
+  const goal = movementGoal(actor.anchor, target)
   const direction =
-    intent === "toward"
-      ? directionOf(actor.anchor, target.anchor, actor.facing)
-      : directionOf(target.anchor, actor.anchor, actor.facing)
+    intent === "toward" ? directionOf(actor.anchor, goal, actor.facing) : directionOf(goal, actor.anchor, actor.facing)
   return step(actor.anchor, direction)
 }
 
@@ -365,7 +396,7 @@ function rerank(context: TickContext, intent: Intent, overlay: ClaimOverlay): St
   if (target === null) return null
   const mask = maskForActor(context, actor, overlay)
   const choices = rankedSteps(actor.anchor, actor.definition, mask, {
-    goal: target.anchor,
+    goal: movementGoal(actor.anchor, target),
     intent: actor.definition.behavior === "flee" ? "away" : "toward",
   })
   return choices.length === 0 ? null : choices
@@ -374,14 +405,18 @@ function rerank(context: TickContext, intent: Intent, overlay: ClaimOverlay): St
 function reportBlocked(context: TickContext, intent: Intent, overlay: ClaimOverlay): void {
   const actor = intent.actor
   const desired = intent.choices[intent.chosen]?.to ?? actor.anchor
-  const blocker = maskForActor(context, actor, overlay).blockerAt(desired)
+  // Full footprint, same reasoning as the other move.blocked report above.
+  const blocker = maskForActor(context, actor, overlay).footprintBlockerAt(
+    desired,
+    actor.definition.footprint,
+  )
   context.events.push({
     kind: "move.blocked",
     tick: context.tick,
     entity: actor.id,
     ordinal: actor.ordinal,
     desired,
-    reason: typeof blocker === "number" ? "entity" : blocker === "terrain" ? "terrain" : "edge",
+    reason: blockReasonFor(blocker),
     blocker: typeof blocker === "number" ? (context.byOrdinal.get(blocker)?.id ?? null) : null,
     credit: actor.moveCredit,
     cost: actor.definition.movementRate === undefined ? 0 : stepCost(actor.definition.movementRate),
@@ -486,6 +521,11 @@ function settle(context: TickContext, grants: readonly Grant[]): void {
     actor.anchor = grant.to
     actor.facing = grant.direction
     actor.moveCredit -= stepCost(rate)
+    // A unit that just arrived does not also fire this tick — attacks() skips it. Stop first,
+    // then attack, is the owner's second finding: without this a unit can step into range and
+    // land a hit in the same instant, which reads as the shot causing the step rather than the
+    // other way around.
+    context.movedThisTick.add(actor.ordinal)
     context.events.push({
       kind: "entity.moved",
       tick: context.tick,
@@ -531,6 +571,8 @@ function attacks(context: TickContext): void {
       const attack = actor.definition.attack
       if (attack === undefined || speedTier(actor) !== tier) continue
       if (actor.pendingDead || actor.cooldown > 0) continue
+      // Stop, then attack: an actor that settled a move this tick waits for the next one.
+      if (context.movedThisTick.has(actor.ordinal)) continue
       const target = actor.targetOrdinal === null ? null : context.byOrdinal.get(actor.targetOrdinal)
       if (target === undefined || target === null || target.pendingDead) continue
       const distance = footprintDistance(
@@ -733,6 +775,14 @@ function resolveDeaths(context: TickContext, dying: readonly Actor[]): void {
       actor.definition.footprint,
     )
     context.byOrdinal.delete(actor.ordinal)
+    // The tile stays blocked for a couple of ticks — the settle rule the owner's playtest asked
+    // for. Another unit stepping into a corpse's footprint the instant it clears reads as a glitch.
+    context.vacated.add(
+      actor.definition.layer,
+      actor.anchor,
+      actor.definition.footprint,
+      context.tick + DEATH_SETTLE_TICKS,
+    )
     // The blast comes after the death is announced, so a reader of the event stream sees the entity
     // die and then take its neighbours with it, in that order.
     detonate(context, actor)
@@ -808,13 +858,19 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
     index.add(actor.definition.layer, actor.ordinal, actor.anchor, actor.definition.footprint)
   }
 
+  const tick = state.tick + 1
+
   const context: TickContext = {
     // 1. Tick open. Advance the tick counter. Nothing else.
-    tick: state.tick + 1,
+    tick,
     pulse,
     actors,
     byOrdinal: new Map(actors.map((actor) => [actor.ordinal, actor])),
     index,
+    // Entries expired as of this tick are dropped rather than carried forward: every entry left in
+    // the overlay is active for the whole tick, so a query never has to ask "as of when?".
+    vacated: new VacatedOverlay(state.vacatedTiles.filter((entry) => entry.until >= tick)),
+    movedThisTick: new Set(),
     rng: Pcg32.restore(state.rng),
     events: [],
     groundItems: [...state.groundItems],
@@ -858,6 +914,7 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
     tick: context.tick,
     entities,
     groundItems: context.groundItems,
+    vacatedTiles: context.vacated.activeAt(context.tick),
     outcome,
     rng: context.rng.snapshot(),
   }

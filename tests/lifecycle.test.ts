@@ -208,6 +208,50 @@ test("SIGINT and SIGTERM reach the same disposer", async () => {
   }
 })
 
+test("watch holds on the final frame after the Pulse ends, and only quits on q", async () => {
+  // The owner's finding: watch used to end the session on its own a couple of seconds after the
+  // Pulse finished, which could vanish a fight out from under someone still looking at it. Speed is
+  // cranked so the Pulse (180 ticks, 15s of presentation time) finishes in well under a second of
+  // real test time, rather than waiting it out at 1x.
+  const scenario = await loadScenarioFile("melee-kill.ts")
+  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  const timeline = buildTimeline(
+    scenario,
+    loaded.state,
+    loaded.registry,
+    scenario.pulseTicks,
+    scenario.seed,
+  )
+  const { stdout, stdin } = fakes()
+  const exits: number[] = []
+
+  const session = watchPulse({
+    timeline,
+    capability: "monochrome",
+    tileWidth: 1,
+    speed: 200,
+    backend: "ansi",
+    presentation: DEFAULT_PRESENTATION,
+    stdout: stdout as unknown as NodeJS.WriteStream,
+    stdin: stdin as unknown as NodeJS.ReadStream,
+    exit: (code) => {
+      exits.push(code)
+    },
+  })
+
+  // Long enough for presentation time to run well past the Pulse's own end (15s at 1x, so under
+  // 100ms at 200x) and past the old two-second grace window besides.
+  await new Promise((resolve) => setTimeout(resolve, 400))
+  assert.deepEqual(exits, [], "watch exited on its own once the Pulse ended")
+  assert.ok(stdout.written.includes("pulse over -"), "the footer never reported the outcome")
+
+  stdin.emit("data", Buffer.from("q"))
+  await new Promise((resolve) => setTimeout(resolve, 60))
+  assert.deepEqual(exits, [0], "q did not end a session held past the Pulse's end")
+  assert.equal(stdin.raw, false, "q left the terminal in raw mode")
+  void session
+})
+
 test("a render failure is caught, and still restores the terminal", async () => {
   const scenario = await loadScenarioFile("melee-kill.ts")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })

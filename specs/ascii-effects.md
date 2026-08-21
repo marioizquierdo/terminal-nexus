@@ -2,7 +2,7 @@
 
 **Document role:** The effect system: contract, starter vocabulary, and the craft rules behind it
 **Status:** Canonical direction; the vocabulary is proven or discarded by Milestone 1 Gate 1B
-**Canon version:** 2.5
+**Canon version:** 2.6
 **Updated:** 2026-08-20
 **License:** Apache-2.0 for the contract and schemas; CC BY-SA 4.0 for the authored vocabulary
 
@@ -63,9 +63,14 @@ Five rules, all load-bearing:
    terminal all free.
 2. **Effects cannot touch state.** No damage, no movement, no resources, no victory. An effect that
    needs to know something must be given it in `params` when the instance is created.
-3. **Cosmetic randomness only.** Derive every random value from `cosmeticSeed` and the instance, never
-   from the gameplay stream. A particle that consumes a gameplay draw desynchronises the replay, and
-   it will take a day to find.
+3. **Cosmetic randomness only, and it is a hash rather than a stream.** Derive every random value
+   from `cosmeticSeed` and the instance's own identity, never from the gameplay stream. Milestone 1B
+   found that this cannot be a generator at all: a stream's answers depend on how many times it has
+   been asked, so the same effect would scatter differently depending on which frames rendered —
+   exactly what rule 1 forbids. Hashing `(cosmeticSeed, recipe, startMs, origin, salt)` gives stable
+   randomness at any time, in any order, on any machine, and it makes this rule **structural**:
+   there is no stream here to accidentally share with gameplay. A particle that consumes a gameplay
+   draw desynchronises the replay, and it will take a day to find.
 4. **Tile coordinates, never columns.** The compositor maps tiles to columns at the current tile
    width. An effect that computes in columns breaks at the other width.
 5. **Effects never carry a required cue alone.** If the only way to know something was hit is a
@@ -77,6 +82,14 @@ Five rules, all load-bearing:
 Effects may only paint in `ground-items`, `projectiles`, `effects`, or `highlights`. They may never
 paint in `terrain`, `structures`, `units`, or `air` — those belong to the simulation, and the
 corruption law in [`engine.md`](engine.md) Section 9.4 depends on that separation holding absolutely.
+
+**Band separation is not enough on its own, and the compositor closes the gap** (Milestone 1B). A
+legal band still draws *over* the Grid, so an effect cell landing on an occupied tile replaces the
+only cell carrying that entity's semantic cue. The compositor therefore **drops any effect cell that
+would replace an entity glyph**, and permits exactly one kind of write onto an occupied tile: a
+**glyphless** cell that keeps the glyph beneath it and applies only its attributes. That is the
+mechanism `fx.damage.flash` uses, and it is why that effect is allowed to touch a unit's own cell at
+all. Recipes are not asked to remember this; they cannot break it.
 
 ## 2. The shape of a good effect — GUIDANCE
 
@@ -163,11 +176,19 @@ the theme maps them.
 | `fx.death.collapse` | actor died | `effects` | impact, decay, settle | Expanding then thinning debris over the actor's footprint. Must be visibly heavier than `fx.impact.burst` — dying and being hit are the two events players confuse most |
 | `fx.structure.collapse` | structure destroyed | `effects` | slow, ~600 ms | Footprint-sized, slower, settling downward. Scale with footprint area, not a constant. Settles into salvage, which is state |
 | `fx.nexus.critical` | Nexus below threshold | `effects` | sustained, looping | A slow pulse across the Nexus footprint, phase-locked to absolute time so it is identical on every client. The one sustained effect, and the one allowed real visual weight |
+| `fx.blast.detonation` | an entity detonated | `effects` | impact, expansion, thinning | **Added at Milestone 1B**, because the vocabulary predates volatile munitions and a death that damages a radius is not a death. A ring that reaches its radius and thins, sparser than it is dense from the first frame. The second effect allowed real weight, because it is the one event that can end an army in a single tick |
+
+**Simultaneous instances of the same effect are staggered in presentation** (Milestone 1B). A
+detonation chain resolves inside one tick, and drawn that way it is one frame of noise rather than a
+chain — so each blast in a tick is held back a little longer than the last, and the eye can follow
+it. Presentation may lie about timing; it may not lie about what happened.
 
 Three notes the implementing session will want:
 
 - `fx.move.trail` matters more than anything else in the list. If only one effect gets authored well,
-  make it this one.
+  make it this one. **Confirmed at Milestone 1B**, with one correction: draw it in dust, not in
+  `-` `|` `/` `\`. Those are the language of shots and blows, and a trail that borrows them reads as
+  a projectile flying the wrong way (craft rule 2).
 - `fx.ranged.telegraph` and `fx.ranged.tracer` share a window: the tracer's `durationMs` is the gap
   between the attack event and the impact event, which the simulation already provides.
 - `fx.damage.flash` is deliberately in `highlights` rather than `effects`, so that the corruption law

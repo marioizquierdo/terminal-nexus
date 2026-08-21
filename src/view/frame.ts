@@ -1,8 +1,8 @@
 // The terminal boundary — engine.md 9.1. An engine-owned structured cell frame, and an excellent
 // snapshot surface. No backend object ever appears inside a frame.
 
-import type { CapabilityMode, StyleRole } from "./roles.ts"
-import { sgrBackgroundFor, sgrFor } from "./roles.ts"
+import type { CapabilityMode, StyleRole, Theme } from "./roles.ts"
+import { DEFAULT_THEME, sgrBackgroundFor, sgrFor } from "./roles.ts"
 
 const ESC = "\u001b"
 
@@ -97,9 +97,9 @@ export function frameToText(frame: ReadonlyCellFrame): string {
   return rows.join("\n")
 }
 
-function sgrOf(style: CellStyle, capability: CapabilityMode): string {
-  const parts: number[] = [...sgrFor(style.fgRole, capability)]
-  for (const code of sgrBackgroundFor(style.bgRole, capability)) parts.push(code)
+function sgrOf(style: CellStyle, capability: CapabilityMode, theme: Theme): string {
+  const parts: number[] = [...sgrFor(style.fgRole, capability, theme)]
+  for (const code of sgrBackgroundFor(style.bgRole, capability, theme)) parts.push(code)
   if (style.bold === true) parts.push(1)
   if (style.dim === true) parts.push(2)
   if (style.underline === true) parts.push(4)
@@ -108,7 +108,11 @@ function sgrOf(style: CellStyle, capability: CapabilityMode): string {
 }
 
 /** ANSI text for a whole frame. One reset per styled run, and never a stray escape on a blank. */
-export function frameToAnsi(frame: ReadonlyCellFrame, capability: CapabilityMode): string {
+export function frameToAnsi(
+  frame: ReadonlyCellFrame,
+  capability: CapabilityMode,
+  theme: Theme = DEFAULT_THEME,
+): string {
   const reset = `${ESC}[0m`
   const rows: string[] = []
   for (let y = 0; y < frame.height; y += 1) {
@@ -116,7 +120,7 @@ export function frameToAnsi(frame: ReadonlyCellFrame, capability: CapabilityMode
     let openStyle = ""
     for (let x = 0; x < frame.width; x += 1) {
       const cell = cellAt(frame, x, y)
-      const sgr = sgrOf(cell.style, capability)
+      const sgr = sgrOf(cell.style, capability, theme)
       if (sgr !== openStyle) {
         if (openStyle !== "") row += reset
         row += sgr

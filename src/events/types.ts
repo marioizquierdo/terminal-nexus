@@ -9,7 +9,7 @@ import type { Coord, Direction } from "../grid/types.ts"
 import type { AttackKind } from "../content/types.ts"
 import type { PlayerId, VictoryReason } from "../state/types.ts"
 
-export type BlockReason = "edge" | "terrain" | "entity"
+export type BlockReason = "edge" | "terrain" | "entity" | "settling"
 
 export type ContestResolution = "speed-tier" | "random"
 

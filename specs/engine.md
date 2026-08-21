@@ -2,7 +2,7 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.5
+**Canon version:** 2.6
 **Updated:** 2026-08-21
 **License:** Apache-2.0
 
@@ -298,10 +298,21 @@ follow from the same mechanism.
 Nothing may compute occupancy by scanning entity lists in an inner loop, and nothing may assume a
 layer's collision behaviour from its position in the render order.
 
-*How* masks are cached is deliberately not specified here: arbitration (Section 4.3, step 5) mutates
-claimed tiles part-way through a tick, so a naive once-per-tick cache is stale exactly when it
-matters. Caching granularity, and how arbitration sees tiles claimed earlier in the same tick, are
-the spike's to design and the gate report's to record.
+*How* masks are cached was deliberately left to the spike, because arbitration (Section 4.3, step 5)
+mutates claimed tiles part-way through a tick and a naive once-per-tick cache is stale exactly when
+it matters. **Gate 1A answered it by never materialising one**, and that answer is now the rule:
+
+- one occupancy index holds, per entity layer, one integer per tile, built when a tick begins and
+  mutated in place when a move settles;
+- a `CollisionMask` is a **lazy view** over that index — a layer list, a terrain rule, an ignore set.
+  Constructing one is `O(1)` and allocates no grid, so composing a fresh mask per query is cheap
+  enough that nothing is tempted to keep one;
+- arbitration writes granted claims into an **overlay** on the same index, so a query made later in
+  the same phase sees tiles claimed earlier in it.
+
+There is no window in which a mask can answer from stale data, because there is no copy to go stale.
+The cost is one indexed lookup per layer per query, which did not appear in any Milestone 1
+measurement.
 
 ### 3.5 Placement, footprint, anchor, and facing — RULE
 
@@ -365,7 +376,7 @@ invents for smoothness and the kernel never hears about.
 **Authority: RULE** for determinism and the separation of time; **GUIDANCE** for the exact tick order
 and credit rules until Milestone 1 tests them.
 
-### 4.1 Logical time — GUIDANCE, close to earned
+### 4.1 Logical time — RULE, earned by Milestone 1
 
 A Pulse runs a fixed number of **logical ticks** at **12 ticks per simulation second**. A tick is one
 rules update. Twelve is chosen because it produces exact integer cadences at every speed the game
@@ -389,6 +400,12 @@ quietly start depending on a frame:tick alignment.
 **The kernel has no real-time loop.** It may resolve 12 ticks in a microsecond or over an hour. The
 renderer maps logical time onto wall-clock time by itself.
 
+**Confirmed by Milestone 1 (canon 2.6).** Gate 1A reproduced the cadence table above exactly at all
+eight rates, and `tests/rules.test.ts` asserts it on every run, so 12 ticks per second is now RULE
+rather than a hypothesis. The hypothesis this section was written to test — that a fixture six rows
+long makes the rate cheap to change — was never exercised, because nothing asked for a different
+rate. It stops being cheap at Milestone 4; that warning stands.
+
 **What changing the rate would cost, stated honestly.** Content durations are authored in raw ticks
 (`cooldownTicks`, `intervalTicks`, and every cooldown in a fixture), so the number 12 is baked into
 every one of them. If evidence moves the tick rate, that is a migration of every duration in every
@@ -398,7 +415,7 @@ rejected as the worse trade while the rate is still cheap to change. Milestone 1
 place this hypothesis gets tested, because the fixture is six rows long and the migration is an
 afternoon. It will not be an afternoon in Milestone 4.
 
-### 4.2 Movement credit — GUIDANCE
+### 4.2 Movement credit — RULE, earned by Milestone 1
 
 An integer accumulator, no floating point:
 
@@ -409,14 +426,18 @@ An integer accumulator, no floating point:
 Check it against the table: `1/1` accrues 1 per tick against a cost of 12 — one step every 12 ticks.
 `3/2` accrues 3 against a cost of 24 — every 8 ticks. It reproduces the table exactly.
 
-Two rules that a previous draft left open, and that the spike should confirm:
+Two rules that a previous draft left open, and **that Gate 1A confirmed**:
 
 - **Credit is capped at one step's cost.** An actor that could not move cannot bank a sprint.
 - **A blocked step keeps its credit.** An actor jostled out of a claim steps the moment the tile
   frees, rather than restarting its timer. This stops traffic jams from silently halving an army's
   speed.
 
-### 4.3 Tick order — GUIDANCE, normative for the spike
+Both are asserted in `tests/rules.test.ts`: the cadence holds across a second step, credit never
+exceeds one step's cost over five hundred ticks, and in the jammed-corridor fixture a mover blocked
+on one tick steps on the next — which is only possible if a refused step spends nothing.
+
+### 4.3 Tick order — RULE, earned by Milestone 1
 
 Every phase reads the state **settled at the end of the previous phase**, so that iteration order
 over entities can never decide an outcome:
@@ -445,13 +466,27 @@ still strike first.
 Melee is an attempt to enter an enemy-occupied tile on the same layer. When the defender dies in
 step 8, the winning claimant may occupy the tile on the following tick.
 
+**A mover's origin tile does not free within the same tick** (Gate 1A). Every phase reads the state
+settled at the end of the previous phase, so a follower steps one tick behind the actor in front of
+it rather than in lockstep. This keeps "no two entities ever overlap" true by construction and keeps
+arbitration's progress measure simple.
+
+**Death can be contagious, and step 8 is a queue rather than a pass.** Where content detonates on
+death — Ravel volatile munitions are the first such rule, and they live on the Playground bench, not
+in canon — the blast damages everything inside its radius, friend and foe, and anything reduced to
+zero joins the queue. **The chain is bounded because an entity can only die once**, so the queue
+drains after at most one round per entity and the whole cascade settles inside the tick that started
+it. Order is entity order throughout.
+
 Ranged attacks resolve at an authoritative tick. **A projectile is normally a presentation cue drawn
 between the attack event and the impact event** — it is not a simulated moving body, and it cannot
 be intercepted, unless some specific mechanic later earns that complexity, which nothing has.
 
 **Damage from a ranged attack is authoritative at the tick it resolves** — steps 7 and 8 of that same
 tick, always. The attack event additionally carries a **flight window**, measured in ticks and
-derived deterministically from the distance to the target. It is part of the event and its hash, and
+derived deterministically from the distance to the target as
+`max(1, ceil(distance / projectileTilesPerTick))`, where the tiles-per-tick figure is a property of
+the attack (Gate 1A). It is part of the event and its hash, and
 it is read by **no rule**: it exists so that presentation knows how long the shot should appear to
 take. A renderer drawing a tracer holds the impact, the damage flash, and the visible health change
 until the end of that window, so what the player sees lands when the tracer does; a renderer that
@@ -466,6 +501,13 @@ resolvePulse(
   pulseTickCount, gameplaySeed
 ) -> { finalState, orderedEvents }
 ```
+
+**The named PRNG is PCG32** — the `pcg_setseq_64_xsh_rr_32` variant, 64-bit LCG state with a 32-bit
+XSH-RR output (Gate 1A). It was chosen because its state is two 64-bit words, so it serialises into
+hashed state and restores from it exactly, and because it ships **published** test vectors rather
+than vectors a session generated for itself: `tests/rng.test.ts` checks it against the expected
+output of the `imneme/pcg-c` repository's own check program, seeded 42/54. Streams are separated by
+the `initseq` parameter, which is what PCG provides it for.
 
 The kernel:
 
@@ -488,6 +530,11 @@ verification.
 ## 5. Match structure
 
 **Authority: RULE** for the loop and the victory condition; **GUIDANCE** for everything inside it.
+
+**A Grid Nexus is a flag on a content definition, never a content id the kernel recognises**
+(canon 2.6). Gate 1A keyed its victory condition on the id `structure.citizen.nexus`, and the second
+faction broke it within an hour of existing. Anything a faction calls its Grid Nexus declares itself
+one, and the rules read the flag.
 
 A match alternates:
 
@@ -708,6 +755,21 @@ which is what makes monochrome a setting rather than a rewrite.
 This is the terminal boundary and an excellent snapshot surface. It is **not** the universal renderer
 API; a future graphical renderer consumes events and `PlayerView`, not cells.
 
+**Capability modes are four, and they buy fidelity rather than facts** (Milestone 1): monochrome,
+16-colour, 256-colour, and truecolor, resolving one role table. Every tier puts identical glyphs on
+screen — a test asserts it — so nothing a player needs is available only to a colour terminal.
+Monochrome is the floor, not the degraded mode.
+
+**A glyph pack is optional, and it changes the field and the frame, never the actors.** Units stay
+letters in every pack, because letter case carries ownership and the glyph family carries faction;
+prettier symbols do not improve that, and they would break the one system that survives monochrome.
+ASCII is the baseline and the acceptance target, and a pack may only draw from a curated
+single-width set.
+
+**One band write carries no glyph at all.** A style-only write keeps the glyph beneath it and applies
+its attributes — the mechanism `fx.damage.flash` needs, and the only way an effect may touch a cell
+an entity is standing on.
+
 ### 9.2 Composition depends on the phase — GUIDANCE
 
 The two phases need different amounts of screen, and pretending otherwise wastes the Grid:
@@ -767,6 +829,13 @@ authority, Commander restoration, catastrophic destruction — live in `effects`
 `units` or `structures`. They may add, overdraw, and unsettle. They may never remove or replace the
 only cell carrying a required semantic cue. The screen may look wrong; the player must still be able
 to see what is attacking them.
+
+**The compositor enforces it; recipes are not asked to remember** (Milestone 1B). An effect cell that
+would replace an entity's own glyph is dropped on that tile, and the only write allowed onto an
+occupied cell is a glyphless attribute change. The first frame ever composed with effects on put a
+clash mark on the defender's own cell — removing the only thing saying the defender was there — and
+a test written for Gate 1A caught it immediately. A structural guarantee is worth more here than
+eleven recipes each remembering a rule.
 
 ### 9.5 Effects and particles
 

@@ -1,8 +1,8 @@
 # Gate report — Milestone 1A, the Pulse Playground
 
 **Document role:** Gate evidence report for Gate 1A
-**Status:** Complete, awaiting owner acceptance
-**Canon version:** 2.5
+**Status:** Complete, revised after the owner's first viewing, awaiting acceptance
+**Canon version:** 2.6
 **Updated:** 2026-08-21
 **License:** Apache-2.0
 
@@ -484,8 +484,55 @@ attacker at `3/4` or slower, so a fleeing worker on open ground is never caught 
 reaches annihilation. That is the anticlimax Q13's option A accepts, now measured rather than
 predicted.
 
-## 10. Next authorized action
+## 10. The owner's viewing — kernel changes
 
-Watch `./bin/playground.ts watch scenarios/citizen-mirror-skirmish.ts` in colour and then with
-`--capability monochrome`, answer whether the fight is followable, and accept or revise this gate —
-**not** begin Gate 1B, which the milestone gates on that answer.
+Both gates were watched together, and the feedback landed on both. `evidence/gate-1b-report.md`
+Section 10 has the full account; this section is the kernel-level subset — the part that is this
+report's to own, since it changes what Gate 1A's own claims mean.
+
+**Movement is four-way, not eight-way, and distance is Manhattan, not Chebyshev**
+(`src/grid/coords.ts`, `src/pulse/movement.ts`). The owner's finding, and by his own account the
+single biggest legibility problem: a unit that can cut a corner is a unit whose next tile a viewer
+cannot predict. Two consequences worth stating plainly against this report's own Section 4 and 6:
+
+- The routing floor's failure mode changed shape. Section 7 of `gate-1b-report.md` and
+  `specs/open-questions.md` Q15 have the detail: an eight-way mover with no route paces between two
+  tiles forever; a four-way mover on an exactly on-axis approach has no fallback direction at all and
+  simply stops. Both are still greedy-step limitations Milestone 2's real pathfinding owns, not
+  determinism failures — the kernel still reports the stall (`WARN stuck`, unchanged) rather than
+  hiding it.
+- A real, general bug surfaced and was fixed, not scenario-patched: `rankedSteps`' routing goal was a
+  target's raw anchor, while range-checking correctly used the nearest occupied footprint tile.
+  Eight-way movement usually papered over the mismatch; four-way turned it into real dead ends.
+  `nearestFootprintTile`/`movementGoal` fix it at the source.
+
+**Two new kernel rules**, both from the owner's viewing, both with their own scenario and test rather
+than only a presentation trick: a vacated tile stays blocked for `DEATH_SETTLE_TICKS` after the
+entity on it dies (`VacatedOverlay`, `MatchState.vacatedTiles`, schema version 2), and an actor that
+settled a move this tick cannot also attack on it. Neither changes what a Pulse's *outcome* can be —
+both are ordering/timing rules inside the existing nine-phase tick, not new inputs to it.
+
+**A real reporting bug, not a behaviour bug:** a multi-tile mover blocked by an occupied tile
+*elsewhere in its own footprint* was reported `move.blocked` with reason `"edge"` — the report only
+ever checked the mover's single anchor tile. Movement and collision were always correct; only what
+the event log said happened was wrong. Fixed at both report sites (`footprintBlockerAt` instead of
+`blockerAt`), pinned with a test using the three-tile raider.
+
+**What Section 4's automated claims still hold, re-verified rather than assumed:** the same run
+resolved in one call and tick by tick agree; changing only the cosmetic seed changes nothing about
+state or events; no two entities ever overlap in a collision mask that includes both their layers;
+arbitration still terminates under the bounded pass count with a strictly decreasing progress measure
+(the redesigned `jammed-corridor.ts` still exercises real multi-way contention under the new movement
+rules — see its own notes for why the original geometry stopped producing one); every rule this
+report names still has a named, checked-in, runnable scenario. 122 tests grew to 134 across this
+session, not fewer, and every one of them — Node and Bun — is green at the commit this section
+describes.
+
+## 11. Next authorized action, revised
+
+Watch it again with the movement and rules changes in place —
+`./bin/playground.ts watch scenarios/citizen-mirror-skirmish.ts`, then `grand-battle.ts` for the
+harder case of many movers at once, in colour and then `--capability monochrome` — and accept or
+revise this gate alongside Gate 1B, per its own Section 11. Milestone 2 is next, gated on that
+acceptance; its planning document now also carries the behaviour-states and adjacent-spacing items
+the owner's viewing raised (`specs/milestone-2-deterministic-pulse.md`).

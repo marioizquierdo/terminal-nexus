@@ -2,7 +2,7 @@
 
 **Document role:** Playable faction packages: Commanders, units, structures, upgrades, and Nexus powers
 **Status:** Canonical identity direction; rosters intentionally undefined
-**Canon version:** 2.5
+**Canon version:** 2.6
 **Updated:** 2026-08-21
 **License:** Creative identity is CC BY-SA 4.0; mechanical definitions and schemas are Apache-2.0
 
@@ -25,6 +25,13 @@ This document will eventually define:
 - intended strengths, weaknesses, counters, and build archetypes.
 
 No complete roster has been earned yet. Do not invent production-ready stats before Milestone 4 selects the minimum Citizens-versus-Ravels microgame.
+
+**Two fixture armies exist on the Playground bench** (Milestone 1) and neither is a Commander Army: a Citizen set from `milestone-1-spike-battle.md` 3.6, and a Ravel set added at Gate 1B so the Playground could show two styles of fight rather than one fight twice. They are disposable, tuned for contrast rather than balance, and Milestone 4 is still what selects the real microgame. What they proved is worth carrying forward:
+
+- three of the four Ravel rule shapes in Section 4.1 needed nothing new from the kernel — rates off the Citizen cadence, lower speed tiers, richer salvage;
+- the fourth, **volatile munitions**, needed a rule, and it is the one that made the faction legible without a word of lore. A stats-only Ravel army failed the alignment test in `terminal-nexus-lore.md` Section 8.6; the rule passed it. Chains are bounded because an entity can only die once, so a cascade resolves inside the tick that started it;
+- **jackpot drafts** and **scrap doctrine** were not built, because both need an economy and a draft. They remain the two Ravel shapes with no evidence behind them;
+- building the second army was also an audit: it found a Citizens-only assumption inside the kernel within an hour. That is an argument for authoring the second of anything early.
 
 For faction philosophy, conflicts, colors, and glyph vocabulary, read [`terminal-nexus-lore.md`](terminal-nexus-lore.md). For mechanical interfaces, read [`engine.md`](engine.md).
 

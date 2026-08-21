@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.5
+**Canon version:** 2.6
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -51,17 +51,27 @@ so before building something to fill the gap.
 
 ## 2. Current authorization
 
-The current gate is **Milestone 1A — the Pulse Playground** in
-[`specs/milestone-1-spike-battle.md`](specs/milestone-1-spike-battle.md).
+**Milestone 1 is built.** Both gates — 1A, the Pulse Playground, and 1B, quality and effects — are
+implemented, evidenced and merged. The current gate is **1B**, and what is outstanding is the half no
+test can answer: Mario watching the thing move.
 
-Build the Grid, the scenario file format, a deterministic tick loop that resolves a mirror Citizen
-skirmish identically from a seed, a **levelled report** on stderr with a summary on stdout, and a
-**minimal ASCII view** — the headless run and the view together, because each catches what the other
-hides. Use a small Grid that fits the viewport: **no selection, no inspection, no scrolling.**
+So the authorised work for a new session is, in order:
 
-Do not begin Gate 1B (render tiers and effects), and do not build economy, production, supply,
-visibility, the Build Phase, campaigns, packaging, remote delivery, a mod loader, multiplayer, sound,
-or a Rust/Go migration unless an accepted gate result authorizes it.
+1. **whatever the owner's viewing asks for.** Read
+   [`evidence/report.md`](evidence/report.md) and
+   [`evidence/gate-1b-report.md`](evidence/gate-1b-report.md) first — they name what each gate
+   claims, what it refuses to claim, and what it got wrong;
+2. **nothing else, unless the owner accepts Milestone 1.** Milestone 2's contracts are locked and it
+   is ready to start cold — but it starts on acceptance, not on a session having time left.
+
+Do not build economy, production, supply, visibility, the Build Phase, campaigns, packaging, remote
+delivery, a mod loader, multiplayer, sound, or a Rust/Go migration unless an accepted gate result
+authorizes it. Do not author a Commander Army: the two fixture armies on the bench are disposable
+bench content, and `commander-armies.md` still reserves rosters for Milestone 4.
+
+**How to run what exists:** `DEVELOPMENT.md`. `./bin/playground.ts run <scenario>` for the headless
+report, `watch` for the view, `verify` for hashes. `npm test` is 122 tests on Node and the same files
+under Bun.
 
 End with a `PASS`, `REVISE`, `STOP`, or `BLOCKED` evidence report. **Do not continue to the next gate
 merely because time remains.** Finishing early with a clean, well-evidenced answer is the intended
@@ -117,7 +127,14 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - Corruption effects live in the `effects` band or above; they never remove the only carrier of a
   required semantic cue.
 - Effects are pure functions of absolute presentation time. `f(t)` never depends on `f(t-1)`.
-- Gameplay and presentation randomness are separate and explicitly seeded.
+- Gameplay randomness is one seeded PRNG — **PCG32**, with published vectors. Cosmetic randomness is
+  a **hash of an effect instance's identity, never a stream**: a stream's answers depend on how many
+  times it has been asked, which is exactly what effect purity forbids.
+- The **compositor** enforces the corruption law. An effect cell that would replace an entity's glyph
+  is dropped; the only write allowed onto an occupied cell is a glyphless attribute change.
+- A **Grid Nexus is a flag on a content definition**, never a content id the kernel recognises.
+- Faction identity lives in the glyph family and the effect language; ownership keeps the colour, so
+  a mirror match stays legible and monochrome stays whole.
 - Content is TypeScript-first and mostly declarative.
 - The playable content boundary is a Commander Army: Commander, units, structures, upgrades, Nexus
   powers, and starting package.

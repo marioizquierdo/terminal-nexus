@@ -19,8 +19,8 @@ import { buildLog, formatSummary, parseLevel, summarize, summaryJson } from "../
 import type { ReportInput } from "../report/index.ts"
 import { loadScenario } from "../scenario/index.ts"
 import type { ScenarioDefinition } from "../scenario/index.ts"
-import { DEFAULT_PRESENTATION, parseCapability, parseGlyphPack } from "../view/index.ts"
-import type { PresentationOptions, TileWidth } from "../view/index.ts"
+import { DEFAULT_PRESENTATION, parseCapability, parseGlyphPack, parseTheme } from "../view/index.ts"
+import type { CapabilityMode, PresentationOptions, TileWidth } from "../view/index.ts"
 import { parseArgs, parseInteger } from "./args.ts"
 import type { ParsedArgs } from "./args.ts"
 import { buildTimeline } from "./timeline.ts"
@@ -32,13 +32,34 @@ const USAGE = `playground — the Terminal Nexus Pulse Playground
                                   [--events events.jsonl] [--json]
   playground watch  <scenario.ts> [--seed] [--ticks] [--speed 1] [--tile-width 1|2]
                                   [--capability monochrome|color16|color256|truecolor]
-                                  [--glyphs ascii|unicode] [--no-effects] [--reduced-motion]
-                                  [--cosmetic-seed 0x1234]
+                                  [--theme dark|light] [--glyphs ascii|unicode]
+                                  [--no-effects] [--reduced-motion] [--cosmetic-seed 0x1234]
                                   [--backend auto|ansi|opentui]
   playground verify <scenario.ts> [--runs 20] [--seed] [--ticks]
 
 Log levels: ERROR, WARN, INFO (default), DEBUG, TRACE. The log goes to stderr, the summary to
-stdout, and --events writes the ordered event stream as JSONL.`
+stdout, and --events writes the ordered event stream as JSONL.
+
+--capability defaults to the best tier COLORTERM/TERM advertise, color16 if neither says more.
+--theme defaults to dark; pass --theme light on a light terminal background.`
+
+/**
+ * A default `--capability`, when none is given, that is not simply the least common denominator.
+ * The owner's low-contrast finding traced back partly to `color16` — the ANSI-16 tier where each
+ * terminal theme defines its own version of every code, "bright black" least consistently of all —
+ * being the hardcoded default regardless of what the terminal could actually do. `COLORTERM` and
+ * `TERM` are the same two environment variables most terminal-aware CLI tools check for this; it is
+ * not perfect (a terminal that supports more and advertises neither still gets `color16`), but it
+ * is the simple, standard method, and `--capability` is still one flag away for anyone it guesses
+ * wrong for.
+ */
+export function detectCapability(env: NodeJS.ProcessEnv = process.env): CapabilityMode {
+  const colorterm = env["COLORTERM"]
+  if (colorterm === "truecolor" || colorterm === "24bit") return "truecolor"
+  const term = env["TERM"] ?? ""
+  if (term.includes("256color")) return "color256"
+  return "color16"
+}
 
 export async function importScenario(path: string): Promise<ScenarioDefinition> {
   const url = pathToFileURL(resolve(path)).href
@@ -206,7 +227,8 @@ async function commandWatch(args: ParsedArgs): Promise<number> {
   }
   return watchPulse({
     timeline,
-    capability: parseCapability(args.options.get("capability") ?? "color16"),
+    capability: parseCapability(args.options.get("capability") ?? detectCapability()),
+    theme: parseTheme(args.options.get("theme") ?? "dark"),
     tileWidth,
     speed: Number(args.options.get("speed") ?? "1"),
     backend: args.options.get("backend") ?? "auto",

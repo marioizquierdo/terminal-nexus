@@ -1,8 +1,8 @@
 # Gate report — Milestone 1B, quality and effects
 
 **Document role:** Gate evidence report for Gate 1B
-**Status:** In progress
-**Canon version:** 2.5
+**Status:** In progress — revised after the owner's first viewing, awaiting the next one
+**Canon version:** 2.6
 **Updated:** 2026-08-21
 **License:** Apache-2.0
 
@@ -272,8 +272,92 @@ recommendation:
 | --- | --- | --- |
 | Q17 | Should a Chebyshev tie in target selection break on distance, or on entity id? | Break it on squared Euclidean distance — but not until Gate 1A is accepted, since it moves every hash that report quotes |
 
-## 10. Next authorized action
+## 10. The owner's viewing — findings and this session's response
 
-Watch `ravels-clash` against `ravels-clash-no-effects`, then watch the mirror skirmish in motion for
-Gate 1A, and accept or revise both gates. Milestone 2 — routing, economy, visibility — is the next
-milestone, and it is gated on Milestone 1 being accepted, not merely finished.
+The original Section 10 asked for exactly this — watch it and accept or revise — and Mario did:
+he watched the Pulse Playground in motion and reported back at length, on both legibility and looks.
+This section is the response, on branch
+`claude/pulse-playground-legibility-pass` (commits `e7d632f`..`7d4e80f`), and the honest reading of
+Section 8's decision changes with it — see the revised decision below.
+
+### What was said
+
+Paraphrased from the owner's own message, kept close to his wording:
+
+- **Legibility.** Diagonal movement was "the main" problem — once units start shooting, it stops
+  being possible to follow what's happening. Shooting should lean on a small timing delay rather
+  than a large ASCII glyph, "similar to how terran marines shoot in Starcraft." Pathfinding needs to
+  get smarter — declare a target, find a free attack position, rescan often — and units want a
+  default-movement state distinct from an engaged/combat state, "multiple states... will allow more
+  complex and engaging behaviours later." A settle delay after death, and after a step, would read
+  more clearly. Adjacent same-type units read as one merged unit ("TT" vs "T T"). `watch` shouldn't
+  exit on its own when the Pulse ends. Initial movement felt a little slow, and he wanted to see
+  different unit speeds side by side.
+- **Looks.** The screenshot tooling works well and he wants a sub-tick, multi-frame capture around a
+  real multi-unit engagement, on request only (expensive). A strong, deliberate 256-colour palette
+  should be the main design reference. On his black-background terminal the help text was nearly
+  invisible — "how are other ASCII games dealing with this?" — and a themes system might be worth
+  it. "Draw a Nexus!" — the current single tiled letter is not the visual identity the game needs,
+  and it is worth iterating toward "perfection." Mirror matches (citizen-vs-citizen, ravel-vs-ravel)
+  need a real answer for colour, and he floated a future skins system with a player-chosen colour.
+- **Explicitly deferred, registered rather than built:** sandbox placement, rewind/fast-forward, and
+  a full replay engine for collecting player feedback later — "not needed for now."
+- He also asked for one large, populous scenario, purely to enjoy watching it.
+
+### What this session did about it
+
+| Owner's finding | Response | Evidence |
+| --- | --- | --- |
+| Diagonal movement is the main legibility problem | Movement and targeting are four-way (N/E/S/W), Manhattan distance, everywhere | `e7d632f`; `src/grid/coords.ts`, `src/pulse/movement.ts` |
+| ...which exposed a real routing bug (goal was a target's anchor, not its nearest tile) | Fixed generally (`nearestFootprintTile`/`movementGoal`), not worked around per scenario | `e7d632f` |
+| ...and a harder on-axis dead end under Manhattan distance that diagonal movement used to paper over | Diagnosed, reproduced, documented as a real kernel limitation rather than patched blind; **Q15** sharpened with the finding and a recommendation | `e7d632f`; `specs/open-questions.md` Q15 |
+| Shooting should lean on timing, not a large glyph | Ranged tracer cut from a two-cell streak to one; impact-burst shards and melee-clash debris cut and time-boxed, guided by a real multi-unit capture rather than guessed at | `a8b49b5`; before/after count in the same commit: 10.10 → 9.22 effect cells/frame on `grand-battle`'s opening exchange |
+| A settle delay after death, and a beat after a step before attacking, would read more clearly | Both implemented as real kernel rules — `DEATH_SETTLE_TICKS`, a `VacatedOverlay`; an actor that moved this tick cannot also attack on it — each with a dedicated scenario and test, not just a presentation trick | `e7d632f`; `scenarios/settle-delay.ts`, `tests/rules.test.ts` |
+| Pathfinding needs to get smarter; default-movement vs. engaged states | Registered, not built — real pathfinding and a state machine are Milestone 2 scope, and building ahead of that gate is exactly what the canon says not to do | `7d4e80f`; `specs/milestone-2-deterministic-pulse.md`, new bullets |
+| Adjacent-unit spacing ("TT" vs "T T") | Registered alongside behaviour states, since a spacing preference needs to know "advancing or engaged" to apply only half the time, per the owner's own melee exception | `7d4e80f`; `specs/milestone-2-deterministic-pulse.md` |
+| `watch` shouldn't exit on its own | Fixed: the auto-settle after the Pulse's duration is gone; the session now holds the final frame until `q`, SIGINT, or SIGTERM, same as any other point | `483a197`; new `tests/lifecycle.test.ts` case drives a Pulse to completion and checks it does not exit |
+| What does frame-stepping actually show? | Answered directly: 30 fps presentation against 12 Hz simulation, so `.` (frame) moves presentation time by one third of what `,` (tick) does — real sub-tick interpolation, not a no-op |  |
+| Initial movement felt slow; wants to see different speeds side by side | Citizen trooper/marksman moved 3/4 → 1/1; new `speed-parade.ts` lines up one of every mobile unit type at a common start, racing the same distance, fastest to slowest | `f808ebd` |
+| ...which surfaced a real reporting bug: a crowded multi-tile mover was reported "blocked by edge" | The report checked only the mover's anchor tile, not its full footprint; fixed at both `move.blocked` report sites, pinned with a test | `f808ebd`; `tests/rules.test.ts` |
+| A large, populous scenario to watch | `grand-battle.ts`: 56 entities on the 48x16 default preset (density, not Grid area — see the note below) | `ecc808e`, `a8b49b5` |
+| Sub-tick, multi-frame capture around a real engagement, on request | `scripts/capture-engagement.mjs`: finds the engagement from the headless log, steps frame by frame (not tick by tick), captures the run. Shared its tmux/ANSI/PNG pipeline with the existing screenshot script (`scripts/lib/terminal-capture.mjs`) rather than duplicating it | `a8b49b5` |
+| A strong 256-colour palette as the design reference | `scripts/render-palette.mjs` renders every `StyleRole`, both themes, straight from the live `PALETTE` table — swatch, ANSI code, 256 index, RGB — so the reference can never drift from what the game draws | `43d5102`; `evidence/screenshots/palette-reference.png` |
+| Nearly invisible help text on a dark terminal; "how do other tools handle this?" | Traced to three compounding causes and fixed: `--capability` defaulted to `color16` unconditionally (now detects `COLORTERM`/`TERM`, the standard simple method); `chrome.muted`/`chrome.label` sat on ANSI 90 while every use of `chrome.muted` *also* applies the `dim` attribute on top, and ANSI 90 is the least consistently themed of the sixteen codes across real terminals; `player.a`/`player.b`'s ANSI-16 codes did not match the hue the rest of the table already committed to (96/93, bright cyan and bright yellow, for rust orange and Ravel green) | `9ea57fe` |
+| A themes system, started simple | `--theme dark|light`: a second full `PALETTE` table, threaded only as far as it has to go (the three functions that finally turn a role into a colour), no background probe (unreliable across terminals, real complexity for a gate asked to start simple) | `9ea57fe`; `evidence/screenshots/mirror-light-theme.png` |
+| "Draw a Nexus!" | Both factions now render real 3x2 multi-cell art instead of a tiled single letter — Citizen a domed core over a bracketed base (`.n.`/`[=]`), Ravel a jagged canopy over arrows radiating from a spark (`/n\`/`<*>`) — a first pass, explicitly meant for iteration | `427cef3` |
+| Mirror-match colour (citizen-vs-citizen, ravel-vs-ravel) | Made observable (`ravel-mirror-skirmish.ts`, the Ravel counterpart to the existing citizen fixture) rather than changed: the RULE already in `engine.md` ("ownership keeps the colour") does keep the two sides apart, at the cost of one side of a same-faction mirror wearing the other faction's signature hue. Registered as **Q18** with options and a recommendation rather than overridden, since it is a stated RULE and changing it needs the owner and a canon bump | `51e0d9c` |
+| A future skins system, a 3rd player-chosen colour | Folded into Q18 as one of its options, not built | `51e0d9c` |
+| Sandbox placement, rewind/fast-forward, a replay engine for feedback | Registered as **Q19**, exactly as asked ("keep this in mind... not needed for now"): a full replay format is already Milestone 2's; rewind/fast-forward is presentation on top of it, with one real design consequence now (keep per-tick state cheaply addressable); sandbox placement reads as an early, lighter form of Milestone 3's battle editor. Recommendation: nothing until Milestone 2 is accepted | `7d4e80f`; `specs/open-questions.md` Q19 |
+
+A note on `grand-battle.ts`'s size: the first draft used the 72x24 preset — the ceiling `engine.md`
+3.3 allows — and it resolved fine headless but overlapped its own side panel once actually watched.
+The composition (`compositionSize`/`gridOrigin` in `src/view/compose.ts`) currently draws every
+scenario in a fixed 48x16 viewport with no scrolling; the cursor-driven scrolling 3.3 describes for
+larger Grids is not built yet. Rebuilt at 48x16 with 56 entities instead — density carries
+"populous," not Grid area, until scrolling exists.
+
+Every item above that touched behaviour (four-way movement, settle delay, stop-then-attack, the
+blocked-reason fix, the theme system) shipped with new or updated tests, not just a scenario to look
+at. 134 Node tests pass (122 before this round), green under Bun, `tsc` clean,
+`check-repository.sh` clean, at every commit in the range above.
+
+### Revised decision
+
+> **REVISE, acted on — PASS still pending the owner's next look.**
+
+Section 8's PASS was correct about what it claimed: the automated evidence held, and it was explicit
+that the gate's real question — would you watch it again — was not answerable by a test and was not
+being claimed. The owner watched it, and the answer was "mostly, but here is what got in the way."
+That is a REVISE, and the table above is the response to it. It is not a fresh PASS: only Mario
+watching it again settles that, same as before. What changed is that the specific, concrete things
+his first watch found are now fixed, tested, or — where fixing them meant building ahead of a gate
+that is not yet authorized — registered with a recommendation instead of guessed at.
+
+## 11. Next authorized action, revised
+
+Watch it again — `grand-battle` for the populous fight the owner asked to just enjoy,
+`speed-parade` for the speed spread, `ravels-clash` and `ravel-mirror-skirmish` for the effects and
+colour work, `--theme light` if the terminal is light. Accept or revise Gate 1B (and, since it was
+never separately closed, Gate 1A alongside it). Milestone 2 — routing, economy, visibility, and now
+the behaviour-states and spacing items Section 11 registers — is next, gated on that acceptance, not
+merely on this session running out of things to fix.

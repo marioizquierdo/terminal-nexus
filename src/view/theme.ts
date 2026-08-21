@@ -85,7 +85,12 @@ const CONTENT_GLYPHS: Readonly<Record<string, string | readonly string[]>> = {
   "unit.citizen.trooper": "t",
   "unit.citizen.marksman": "m",
   "unit.citizen.hauler": ["(", "h", ")"],
-  "structure.citizen.nexus": "n",
+  // The Nexus is the visual identity the owner asked to see first, and the one worth the most
+  // iteration — this is a first pass, not a final answer. Same 3x2 footprint order as
+  // rectFootprint(3, 2): left-to-right on the top row, then left-to-right on the bottom
+  // ([0,0] [1,0] [2,0] [0,1] [1,1] [2,1]). Citizen reuses the hauler's bracket language at a larger
+  // scale — a domed core over a sealed, bracketed base — rather than inventing a second vocabulary.
+  "structure.citizen.nexus": [".", "n", ".", "[", "=", "]"],
   "structure.citizen.barracks": "b",
   // Ravels: angular, forward-leaning, improvised. Their multi-tile body is the raider the lore
   // draws as `>x<`, where the arrowheads say which way the energy is going and the letter carries
@@ -95,6 +100,9 @@ const CONTENT_GLYPHS: Readonly<Record<string, string | readonly string[]>> = {
   "unit.ravel.slinger": "z",
   "unit.ravel.fuelwagon": "v",
   "unit.ravel.raider": [">", "x", "<"],
+  // The Ravel Nexus: a jagged canopy over exposed arrowheads radiating from a spark, instead of the
+  // Citizen Nexus's dome and sealed base - welded, not engineered, and it shows even standing still.
+  "structure.ravel.nexus": ["/", "n", "\\", "<", "*", ">"],
   "structure.ravel.den": "d",
 }
 
