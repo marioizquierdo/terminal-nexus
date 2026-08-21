@@ -14,7 +14,8 @@ bounded terminal renderer experiment, not a vertical slice of the whole game.
 7. Copy `specs/templates/gate-report.md` and fill in its first section: question, artifact, evidence,
    exclusions, stop conditions.
 
-The current implementation contract is `specs/milestone-1-spike-battle.md`, Gate 1A.
+The current implementation contract is `specs/milestone-1-spike-battle.md`, Gate 1B — both of
+Milestone 1's gates are built and merged; `specs/README.md`'s reading order says what is outstanding.
 
 ## Current commands
 
@@ -60,17 +61,17 @@ npm run test:bun    # the same suite under Bun, one file at a time
 npm run typecheck   # tsc --noEmit
 
 # run
-./bin/playground.ts run    scenarios/citizen-mirror-skirmish.ts
-./bin/playground.ts run    scenarios/citizen-mirror-skirmish.ts --log-level debug --ticks 120
-./bin/playground.ts run    scenarios/citizen-mirror-skirmish.ts --events events.jsonl --json
-./bin/playground.ts watch  scenarios/citizens-versus-ravels.ts
-./bin/playground.ts watch  scenarios/citizens-versus-ravels.ts --glyphs unicode --capability truecolor
-./bin/playground.ts watch  scenarios/ravel-cascade.ts --capability monochrome --reduced-motion
-./bin/playground.ts watch  scenarios/citizens-versus-ravels.ts --no-effects
-./bin/playground.ts verify scenarios/citizen-mirror-skirmish.ts --runs 20
+./bin/grid.ts run    scenarios/citizen-mirror-skirmish.ts
+./bin/grid.ts run    scenarios/citizen-mirror-skirmish.ts --log-level debug --ticks 120
+./bin/grid.ts run    scenarios/citizen-mirror-skirmish.ts --events events.jsonl --json
+./bin/grid.ts watch  scenarios/citizens-versus-ravels.ts
+./bin/grid.ts watch  scenarios/citizens-versus-ravels.ts --glyphs unicode --capability truecolor
+./bin/grid.ts watch  scenarios/ravel-cascade.ts --capability monochrome --reduced-motion
+./bin/grid.ts watch  scenarios/citizens-versus-ravels.ts --no-effects
+./bin/grid.ts verify scenarios/citizen-mirror-skirmish.ts --runs 20
 
 # the same commands under Bun
-bun bin/playground.ts run scenarios/citizen-mirror-skirmish.ts
+bun bin/grid.ts run scenarios/citizen-mirror-skirmish.ts
 ```
 
 Pinned by Gate 1A, measured 2026-08-21:
@@ -96,6 +97,15 @@ screenshot are designed against — and `light` is one flag away for a light ter
 test registered while another file's tests are still running, and it does not implement `t.skip()`.
 Node's runner isolates each file and takes the whole glob at once.
 
+**Bun enforces a 5000ms default per-test timeout that Node's runner does not.** Any test whose cost
+scales with the fixture count — `for (const name of scenarioFiles())`, N runs each — silently
+approaches that ceiling as scenarios are added and eventually times out under Bun with no equivalent
+warning under Node. This has happened twice already (`tests/cli.test.ts`'s `verify --runs 20`,
+`tests/determinism.test.ts`'s twenty-runs-of-every-scenario check). The fix each time was the same:
+give the test an explicit `{ timeout: 120_000 }` (`test(name, { timeout }, fn)`, third-argument form,
+works identically under Node). **Before adding a new scenario file, run `./scripts/run-tests.sh bun`
+once** — not just `npm test` — since this class of failure is Bun-only and easy to miss.
+
 ### Screenshots of the real terminal
 
 ```bash
@@ -103,7 +113,7 @@ node scripts/capture-screenshots.mjs              # all of them
 node scripts/capture-screenshots.mjs --only mirror-melee
 ```
 
-It drives `playground watch` inside a tmux pseudo-terminal — a real PTY, so the ANSI backend takes
+It drives `grid watch` inside a tmux pseudo-terminal — a real PTY, so the ANSI backend takes
 the same path a person gets — pauses it, steps to an exact tick, captures the pane with its escape
 sequences, and renders it to a PNG in `evidence/screenshots/` through the Chromium already present
 for Playwright. Use it when a change touches the composition: a frame's *text* is what the tests
@@ -114,7 +124,7 @@ Requires `tmux` and the browser at `/opt/pw-browsers/chromium-1194/chrome-linux/
 
 ### The log is the feedback loop
 
-`playground run` writes fixed-column lines to stderr, which is what lets an agent assert on
+`grid run` writes fixed-column lines to stderr, which is what lets an agent assert on
 behaviour without parsing prose:
 
 ```text
@@ -211,7 +221,7 @@ Things worth knowing before touching this:
 - **The kernel touches no clock and no `Math.random`** — asserted both statically and by trapping
   them during a resolve.
 - **Screenshots need tmux and Chromium**, both present in the web container. See the
-  `playground-screenshots` skill.
+  `grid-screenshots` skill (renamed from `playground-screenshots` since this entry was written).
 - `@opentui/core` is pinned at 0.5.6 and its **native core only loads under Bun**; the direct-ANSI
   backend carries Node and passes the whole lifecycle suite.
 

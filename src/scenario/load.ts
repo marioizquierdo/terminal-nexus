@@ -16,17 +16,37 @@ export const TICKS_PER_SECOND = 12
 
 export class ScenarioError extends Error {}
 
+/**
+ * A scenario declares its own grid size — there is no autoscroll, streaming, or chunked geography
+ * yet, so an unbounded custom grid isn't a slow map, it's an unbounded per-tick allocation:
+ * `OccupancyIndex` sizes four `Int32Array`s to `width * height` and rebuilds them every tick
+ * (grid/occupancy.ts). This cap is a declared-mode convention, not a canon promise about what the
+ * engine can render or path across — it exists so a mistyped or exploratory scenario fails loudly
+ * at load time instead of degrading silently, tick after tick. The largest current preset
+ * (extra-large-extra-wide, 72x24 = 1728 tiles) has roughly 5x headroom under it; raise it
+ * deliberately, with evidence, when a scenario actually needs to be bigger — see
+ * specs/engine.md 11 ("Scaling toward hundreds or thousands of units").
+ */
+export const MAX_DECLARED_GRID_TILES = 10_000
+
 function fail(scenario: ScenarioDefinition, message: string): never {
   throw new ScenarioError(`${scenario.id}: ${message}`)
 }
 
 function dimensionsOf(scenario: ScenarioDefinition): { width: number; height: number } {
   const grid = scenario.grid
-  if ("preset" in grid) return presetDimensions(grid.preset)
-  if (!Number.isInteger(grid.width) || !Number.isInteger(grid.height)) {
+  const { width, height } = "preset" in grid ? presetDimensions(grid.preset) : grid
+  if (!("preset" in grid) && (!Number.isInteger(width) || !Number.isInteger(height))) {
     fail(scenario, "grid width and height must be integers")
   }
-  return { width: grid.width, height: grid.height }
+  if (width * height > MAX_DECLARED_GRID_TILES) {
+    fail(
+      scenario,
+      `grid is ${width}x${height} (${width * height} tiles), over the ` +
+        `${MAX_DECLARED_GRID_TILES}-tile declared-mode cap — see src/scenario/load.ts`,
+    )
+  }
+  return { width, height }
 }
 
 function checkOverlay(

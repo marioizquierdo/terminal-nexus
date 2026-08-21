@@ -28,9 +28,11 @@ Terminal Nexus is a next-gen ASCII auto-battler linux shell strategy game. Choos
 
 ## Project Status
 
-Pre-production. The first playable artifact is the **Pulse Playground** of Milestone 1, Gate 1A:
-units on a small Grid resolving a deterministic battle from a seed, with a levelled report and a
-minimal ASCII view. There is no Build Phase, no economy, and no campaign yet.
+Pre-production. The first playable artifact is **`grid`**, the engine, editor, and replay tool
+Milestone 1's Pulse Playground grew into: units on a small Grid resolving a deterministic battle
+from a seed, with a levelled report and a minimal ASCII view. There is no Build Phase, no economy,
+and no campaign yet — those, and the game's own executable, come later. `grid` is not that game;
+it is the tool that builds and replays it.
 
 ## Local Development
 
@@ -71,13 +73,13 @@ Four more worth watching, in this order:
 npm run play:cascade   # a Ravel fuel dump goes up in one tick, at half speed
 npm run play:plain     # the same fight with effects off - the comparison Gate 1B is judged on
 npm run play:mono      # monochrome, the acceptance floor: can you still follow it?
-./bin/playground.ts watch scenarios/citizen-mirror-skirmish.ts   # the Gate 1A baseline
+./bin/grid.ts watch scenarios/citizen-mirror-skirmish.ts   # the Gate 1A baseline
 ```
 
-`npm run scenarios` lists all seventeen. Any of them takes the same options:
+`npm run scenarios` lists them all. Any of them takes the same options:
 
 ```bash
-./bin/playground.ts watch <scenario> \
+./bin/grid.ts watch <scenario> \
   --capability monochrome|color16|color256|truecolor \
   --glyphs ascii|unicode \
   --tile-width 1|2          # 2 needs a 128-column terminal
@@ -92,22 +94,22 @@ it resumes from the same instant. That is the resize gate, not a crash.
 The view is one of two outputs. The other is a report you can grep:
 
 ```bash
-./bin/playground.ts run scenarios/citizens-versus-ravels.ts              # story on stderr, summary on stdout
-./bin/playground.ts run scenarios/ravel-cascade.ts 2>&1 | grep blast     # just the detonations
-./bin/playground.ts run scenarios/citizens-versus-ravels.ts --log-level debug
-./bin/playground.ts verify scenarios/citizens-versus-ravels.ts --runs 20 # same hashes every time?
+./bin/grid.ts run scenarios/citizens-versus-ravels.ts              # story on stderr, summary on stdout
+./bin/grid.ts run scenarios/ravel-cascade.ts 2>&1 | grep blast     # just the detonations
+./bin/grid.ts run scenarios/citizens-versus-ravels.ts --log-level debug
+./bin/grid.ts verify scenarios/citizens-versus-ravels.ts --runs 20 # same hashes every time?
 ```
 
 ### Run locally
 
 ```bash
-./bin/playground.ts run   scenarios/citizen-mirror-skirmish.ts
-./bin/playground.ts watch scenarios/citizen-mirror-skirmish.ts
-./bin/playground.ts verify scenarios/citizen-mirror-skirmish.ts --runs 20
+./bin/grid.ts run   scenarios/citizen-mirror-skirmish.ts
+./bin/grid.ts watch scenarios/citizen-mirror-skirmish.ts
+./bin/grid.ts verify scenarios/citizen-mirror-skirmish.ts --runs 20
 ```
 
 `run` prints a levelled log on stderr and a summary on stdout, so
-`playground run x.ts > report.txt 2> run.log` splits them. `watch` plays the same Pulse back. `verify`
+`grid run x.ts > report.txt 2> run.log` splits them. `watch` plays the same Pulse back. `verify`
 re-resolves a scenario and compares hashes.
 
 ### Run tests
@@ -139,10 +141,17 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the workflow and evidence requirements.
 
 ```text
 .
+├── src/                   The kernel and tools: pulse (deterministic engine), content, scenario,
+│                          state, events, grid, report, view, cli, rng
+├── scenarios/             Checked-in scenario fixtures — one file per rule under test
+├── bin/                   grid.ts, the CLI entry point (`./bin/grid.ts run|watch|verify`)
+├── tests/                 The test suite; Node's runner and Bun both run it
 ├── specs/                 Focused canon and milestone contracts
+├── evidence/              Gate reports and screenshots — what was measured, not just claimed
 ├── concept/               Concept art and the canon deltas it implies
 ├── docs/                  Human setup and workflow notes
-├── scripts/               Repository and future development commands
+├── scripts/               Repository validation and development tooling
+├── .claude/               Skills for coding agents working in this repository
 ├── .devcontainer/         Codespaces configuration
 ├── .github/               CI and contribution configuration
 ├── AGENTS.md              Shared coding-agent contract

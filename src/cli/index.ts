@@ -1,12 +1,13 @@
-// The Pulse Playground CLI — milestone-1-spike-battle.md 3.4.
+// The Grid tool's CLI — milestone-1-spike-battle.md 3.4. `grid` is the engine, editor, and replay
+// tool; it is not the game itself, which a future `terminal-nexus` executable launches.
 //
-//   playground run    scenarios/citizen-mirror-skirmish.ts
-//   playground run    <scenario> --seed 0xABCD --ticks 120 --log-level debug
-//   playground run    <scenario> --events events.jsonl
-//   playground watch  <scenario>
-//   playground verify <scenario> --runs 20
+//   grid run    scenarios/citizen-mirror-skirmish.ts
+//   grid run    <scenario> --seed 0xABCD --ticks 120 --log-level debug
+//   grid run    <scenario> --events events.jsonl
+//   grid watch  <scenario>
+//   grid verify <scenario> --runs 20
 //
-// The log goes to stderr and the summary to stdout, so `playground run x.ts > report.txt 2> run.log`
+// The log goes to stderr and the summary to stdout, so `grid run x.ts > report.txt 2> run.log`
 // splits them and a bare run interleaves both, which is what a human wants.
 
 import { writeFile } from "node:fs/promises"
@@ -26,16 +27,16 @@ import type { ParsedArgs } from "./args.ts"
 import { buildTimeline } from "./timeline.ts"
 import { watchPulse } from "./watch.ts"
 
-const USAGE = `playground — the Terminal Nexus Pulse Playground
+const USAGE = `grid — the Terminal Nexus Grid tool (engine, editor, and replay)
 
-  playground run    <scenario.ts> [--seed 0xABCD] [--ticks 120] [--log-level info]
-                                  [--events events.jsonl] [--json]
-  playground watch  <scenario.ts> [--seed] [--ticks] [--speed 1] [--tile-width 1|2]
-                                  [--capability monochrome|color16|color256|truecolor]
-                                  [--theme dark|light] [--glyphs ascii|unicode]
-                                  [--no-effects] [--reduced-motion] [--cosmetic-seed 0x1234]
-                                  [--backend auto|ansi|opentui]
-  playground verify <scenario.ts> [--runs 20] [--seed] [--ticks]
+  grid run    <scenario.ts> [--seed 0xABCD] [--ticks 120] [--log-level info]
+                            [--events events.jsonl] [--json]
+  grid watch  <scenario.ts> [--seed] [--ticks] [--speed 1] [--tile-width 1|2]
+                            [--capability monochrome|color16|color256|truecolor]
+                            [--theme dark|light] [--glyphs ascii|unicode]
+                            [--no-effects] [--reduced-motion] [--cosmetic-seed 0x1234]
+                            [--backend auto|ansi|opentui]
+  grid verify <scenario.ts> [--runs 20] [--seed] [--ticks]
 
 Log levels: ERROR, WARN, INFO (default), DEBUG, TRACE. The log goes to stderr, the summary to
 stdout, and --events writes the ordered event stream as JSONL.

@@ -102,6 +102,11 @@ test("the loader fails loudly, naming the offending line and column", () => {
     ],
     ["a Grid with nobody on it", { placements: ["    ", "    ", "    "] }, /places no entities/],
     ["a non-positive tick count", { pulseTicks: 0 }, /pulseTicks must be a positive integer/],
+    [
+      "a custom grid over the declared-mode tile cap",
+      { grid: { width: 200, height: 200 } },
+      /grid is 200x200 \(40000 tiles\), over the 10000-tile declared-mode cap/,
+    ],
   ]
 
   for (const [label, override, pattern] of cases) {

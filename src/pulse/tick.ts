@@ -117,9 +117,10 @@ function hostilesOf(context: TickContext, actor: Actor): Actor[] {
 }
 
 /**
- * The whole scoring function is "nearest enemy by Chebyshev distance across every hostile layer,
- * ties broken by entity id" (milestone-1-spike-battle.md 3.7). Resisting the urge to improve it is
- * part of the gate.
+ * The whole scoring function is "nearest enemy by Manhattan distance across every hostile layer,
+ * ties broken by entity id" (milestone-1-spike-battle.md 3.7; the metric was Chebyshev/eight-way at
+ * gate authoring time and moved to Manhattan/four-way after Milestone 1 playtesting — grid/coords.ts,
+ * `gridDistance`). Resisting the urge to improve the scoring function itself is part of the gate.
  */
 function selectTarget(
   context: TickContext,
@@ -552,13 +553,18 @@ function attacks(context: TickContext): void {
     if (actor.cooldown > 0) actor.cooldown -= 1
   }
 
-  const tiers = [
-    ...new Set(
-      context.actors
-        .filter((actor) => actor.definition.attack !== undefined)
-        .map((actor) => speedTier(actor)),
-    ),
-  ].sort((a, b) => a - b)
+  // Bucketed once, in `context.actors` order, so each tier below iterates only its own attackers
+  // instead of re-scanning every actor — the same actors in the same relative order either way, so
+  // this changes nothing about which attack is computed first within a tier.
+  const byTier = new Map<number, Actor[]>()
+  for (const actor of context.actors) {
+    if (actor.definition.attack === undefined) continue
+    const tier = speedTier(actor)
+    const bucket = byTier.get(tier)
+    if (bucket === undefined) byTier.set(tier, [actor])
+    else bucket.push(actor)
+  }
+  const tiers = [...byTier.keys()].sort((a, b) => a - b)
 
   for (const tier of tiers) {
     // Every attack in a tier is computed against the state at tier start and applied
@@ -567,9 +573,9 @@ function attacks(context: TickContext): void {
     for (const actor of context.actors) hpAtTierStart.set(actor.ordinal, actor.hp)
 
     const damage = new Map<number, { total: number; source: Actor }>()
-    for (const actor of context.actors) {
+    for (const actor of byTier.get(tier) ?? []) {
       const attack = actor.definition.attack
-      if (attack === undefined || speedTier(actor) !== tier) continue
+      if (attack === undefined) continue
       if (actor.pendingDead || actor.cooldown > 0) continue
       // Stop, then attack: an actor that settled a move this tick waits for the next one.
       if (context.movedThisTick.has(actor.ordinal)) continue

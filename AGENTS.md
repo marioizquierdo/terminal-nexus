@@ -8,9 +8,10 @@ Section 4 below summarises invariants that are stated authoritatively in `specs/
 and when it disagrees with the canon the canon wins — the validator checks that the version above
 matches `specs/README.md`, so a canon bump that forgot this file fails the build.
 
-Terminal Nexus is a specification-driven pre-production project. The specifications are not
-decoration around the code — right now they *are* the project, and the code does not exist yet.
-Treat them as the operating contract.
+Terminal Nexus is a specification-driven project. The specifications are not decoration around the
+code — they remain the project's authority even now that Milestone 1's code exists: the canon
+controls product truth, the code implements only what the active gate authorizes. Treat the
+specifications as the operating contract.
 
 ## 0. Orient in one command
 
@@ -19,8 +20,11 @@ Treat them as the operating contract.
 ```
 
 It prints the canon version and the active gate, and it enforces the canon's structural invariants.
-Run it first, and run it again before you hand back work. It is the only feedback loop that exists
-until Gate 1A selects a runtime, so keep it honest and keep it green.
+Run it first, and run it again before you hand back work — it is the fastest sanity check on the
+canon, though it is not the only feedback loop any more: `grid` (`./bin/grid.ts`, `DEVELOPMENT.md`
+has the commands) resolves and reports on an actual battle, and `npm test` runs the test suite across
+two runtimes. A `.claude/skills/grid` skill has `grid`'s CLI, report grammar, and scenario-authoring
+workflow in more detail than this file does — read it before re-deriving any of that from source.
 
 ## 1. Start with authority, not code
 
@@ -52,26 +56,35 @@ so before building something to fill the gap.
 ## 2. Current authorization
 
 **Milestone 1 is built.** Both gates — 1A, the Pulse Playground, and 1B, quality and effects — are
-implemented, evidenced and merged. The current gate is **1B**, and what is outstanding is the half no
-test can answer: Mario watching the thing move.
+implemented, evidenced and merged. The current gate is **1B**.
+
+**The viewing has now happened, at least once.** Mario watched a legibility pass and responded well —
+encouraging, not a formal acceptance — and followed it immediately with a large, explicit list of
+follow-up work rather than an instruction to start Milestone 2. That list (a code-quality and
+scalability review, canon updates, a replay-format design, the `grid` rename, a `.claude` skill, a
+README pass) is exactly clause 1 below, not a signal that Milestone 1 is accepted. Check
+`specs/project-governance.md`'s execution ledger before assuming either that nothing is outstanding or
+that everything still is — a session's own work belongs there once it lands, and reading the ledger
+costs less than re-deriving this history from the git log.
 
 So the authorised work for a new session is, in order:
 
-1. **whatever the owner's viewing asks for.** Read
+1. **whatever the owner's viewing or explicit feedback asks for.** Read
    [`evidence/report.md`](evidence/report.md) and
    [`evidence/gate-1b-report.md`](evidence/gate-1b-report.md) first — they name what each gate
-   claims, what it refuses to claim, and what it got wrong;
+   claims, what it refuses to claim, and what it got wrong. If there is no new feedback since the
+   ledger's last entry, there is nothing outstanding here;
 2. **nothing else, unless the owner accepts Milestone 1.** Milestone 2's contracts are locked and it
-   is ready to start cold — but it starts on acceptance, not on a session having time left.
+   is ready to start cold — but it starts on acceptance, which has not happened yet, not on a session
+   having time left.
 
 Do not build economy, production, supply, visibility, the Build Phase, campaigns, packaging, remote
 delivery, a mod loader, multiplayer, sound, or a Rust/Go migration unless an accepted gate result
 authorizes it. Do not author a Commander Army: the two fixture armies on the bench are disposable
 bench content, and `commander-armies.md` still reserves rosters for Milestone 4.
 
-**How to run what exists:** `DEVELOPMENT.md`. `./bin/playground.ts run <scenario>` for the headless
-report, `watch` for the view, `verify` for hashes. `npm test` is 122 tests on Node and the same files
-under Bun.
+**How to run what exists:** the `.claude/skills/grid` skill and `DEVELOPMENT.md` — read one of them
+rather than re-deriving `grid`'s CLI or the test commands here.
 
 End with a `PASS`, `REVISE`, `STOP`, or `BLOCKED` evidence report. **Do not continue to the next gate
 merely because time remains.** Finishing early with a clean, well-evidenced answer is the intended

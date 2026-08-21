@@ -1,5 +1,5 @@
 // The run summary — milestone-1-spike-battle.md 3.3. Log to stderr, summary to stdout, so that
-// `playground run x.ts > report.txt 2> run.log` splits them and a bare run interleaves both.
+// `grid run x.ts > report.txt 2> run.log` splits them and a bare run interleaves both.
 
 import { shortHash } from "../state/canonical.ts"
 import type { PlayerId, VictoryReason } from "../state/types.ts"

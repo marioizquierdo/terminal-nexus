@@ -1,4 +1,4 @@
-// Shared plumbing for driving `./bin/playground.ts watch` inside a real pseudo-terminal and turning
+// Shared plumbing for driving `./bin/grid.ts watch` inside a real pseudo-terminal and turning
 // what it drew into a PNG. Used by capture-screenshots.mjs (one chosen frame per shot) and
 // capture-engagement.mjs (a run of consecutive frames around one engagement) — extracted here once a
 // second script needed the identical pipeline, rather than kept as two copies to drift apart.
@@ -101,7 +101,7 @@ export function tickOf(text) {
 /** Start `watch` on a scenario, in its own session, at the given terminal size. */
 export function startWatch(repoRoot, session, scenarioFile, cols, rows, extraArgs = []) {
   killSession(repoRoot, session)
-  const command = ["./bin/playground.ts", "watch", scenarioFile, ...extraArgs].join(" ")
+  const command = ["./bin/grid.ts", "watch", scenarioFile, ...extraArgs].join(" ")
   tmux(repoRoot, ["new-session", "-d", "-s", session, "-x", String(cols), "-y", String(rows), command])
   waitFor(repoRoot, session, (text) => text.includes("TERMINAL NEXUS"), "the first frame")
   sendKeys(repoRoot, session, " ")
