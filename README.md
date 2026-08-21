@@ -46,6 +46,58 @@ npm install
 Only type checking and the OpenTUI terminal backend need it. The kernel, the report and the view
 have no runtime dependency, so `run`, `watch` and `verify` work from a clean checkout.
 
+### Play it
+
+Make your terminal **at least 80 x 24** — bigger is fine, 128 columns wide unlocks the two-column
+composition — then:
+
+```bash
+npm install     # only needed once, and only for typechecking and the OpenTUI backend
+npm run play    # Citizens versus Ravels, colour, Unicode, effects on
+```
+
+| While it runs | |
+| --- | --- |
+| `space` | pause and resume |
+| `.` | step one frame |
+| `,` | step one tick — the way to study a moment |
+| `[` `]` | slower, faster |
+| `r` | restart from the beginning |
+| `q` | quit, restoring your terminal |
+
+Four more worth watching, in this order:
+
+```bash
+npm run play:cascade   # a Ravel fuel dump goes up in one tick, at half speed
+npm run play:plain     # the same fight with effects off - the comparison Gate 1B is judged on
+npm run play:mono      # monochrome, the acceptance floor: can you still follow it?
+./bin/playground.ts watch scenarios/citizen-mirror-skirmish.ts   # the Gate 1A baseline
+```
+
+`npm run scenarios` lists all seventeen. Any of them takes the same options:
+
+```bash
+./bin/playground.ts watch <scenario> \
+  --capability monochrome|color16|color256|truecolor \
+  --glyphs ascii|unicode \
+  --tile-width 1|2          # 2 needs a 128-column terminal
+  --speed 2 --no-effects --reduced-motion --seed 0x1234
+```
+
+**If the screen says `TERMINAL TOO SMALL`,** it needs 80 x 24 and your window is smaller — resize and
+it resumes from the same instant. That is the resize gate, not a crash.
+
+### Read what happened
+
+The view is one of two outputs. The other is a report you can grep:
+
+```bash
+./bin/playground.ts run scenarios/citizens-versus-ravels.ts              # story on stderr, summary on stdout
+./bin/playground.ts run scenarios/ravel-cascade.ts 2>&1 | grep blast     # just the detonations
+./bin/playground.ts run scenarios/citizens-versus-ravels.ts --log-level debug
+./bin/playground.ts verify scenarios/citizens-versus-ravels.ts --runs 20 # same hashes every time?
+```
+
 ### Run locally
 
 ```bash
@@ -55,8 +107,8 @@ have no runtime dependency, so `run`, `watch` and `verify` work from a clean che
 ```
 
 `run` prints a levelled log on stderr and a summary on stdout, so
-`playground run x.ts > report.txt 2> run.log` splits them. `watch` plays the same Pulse back in an
-80x24 terminal. `verify` re-resolves a scenario and compares hashes.
+`playground run x.ts > report.txt 2> run.log` splits them. `watch` plays the same Pulse back. `verify`
+re-resolves a scenario and compares hashes.
 
 ### Run tests
 

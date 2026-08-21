@@ -2,7 +2,7 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.5
+**Canon version:** 2.6
 **Updated:** 2026-08-21
 **License:** Apache-2.0
 
@@ -87,6 +87,10 @@ unit is authored, and none of the five factions currently has one in its identit
 **Recommendation: A.** Build the layer, leave it empty, and add one test that asserts an air entity
 can share a tile with a ground entity — so the rule is proven without the content existing.
 
+**Evidence from Milestone 1:** done exactly that. `tests/grid.test.ts` builds an air definition
+inside the test file, asserts it shares a tile with a ground unit in both directions, and no air
+content was authored. The layer costs nothing and works.
+
 ### Q9 — Does facing affect rules, or only presentation?
 
 **Status:** OPEN — Milestone 1 proceeds under the recommendation; confirm before Milestone 3.
@@ -103,6 +107,16 @@ in the rules — it exists so the renderer does not have to guess a direction an
 conversation, and adopting it early would mean every unit's readable state includes an orientation
 that a single character struggles to show. Keep facing in state, keep it out of the rules, and
 revisit when there is a faction that wants it.
+
+**Evidence from Milestone 1, and it sharpens the question:** facing was maintained all the way
+through both gates — derived from the last step, or from the current target when stationary — and
+**nothing read it.** Not the rules, which was the point; but not the renderer either. The compositor
+draws letters, which have no orientation, and the effect system takes its direction from the move
+and attack events rather than from state. So facing is currently a field that is hashed into every
+state comparison and consulted by nobody. That does not make option A wrong, but it removes the
+justification the question was resting on: it is in state so a renderer need not guess, and no
+renderer has needed it yet. A third option now exists — **drop it until something asks** — and it
+would make every state hash slightly smaller and one field less load-bearing.
 
 ### Q12 — What is the vertical chrome budget, and is 80 × 24 a literal floor?
 
@@ -126,6 +140,11 @@ repeats, a 24-row terminal is the historic standard the product targets anyway, 
 real work to do. If Gate 1A finds three header rows wasteful, moving rows between header and footer
 inside the 8 is free and needs no canon change — only the total is fixed here.
 
+**Evidence from Milestone 1:** the 8-row budget was built and all eight rows are in use. The header
+carries the title strip, the scenario name and the seed; the footer carries the position readout the
+canon requires, the controls, and a status line. Nothing was wasted and nothing had to be squeezed,
+at 80 columns and at 128.
+
 ### Q13 — Where do workers flee, and what counts as annihilation, on a Grid with no Nexus?
 
 **Status:** OPEN — Gate 1A proceeds under the recommendation, which is already written into
@@ -147,6 +166,14 @@ fixture. Neither half was stated.
 is the better *game* answer and is a cheap change later; take it if Gate 1B viewing shows mirror
 endings visibly dragging, with someone having actually watched one. C trades a real cost for a
 problem A already solves.
+
+**Evidence from Milestone 1, and it is stronger than the row predicted.** A Citizen worker moves at
+`1/1` and every attacker in either fixture moves at `3/4` or slower, so a fleeing worker on open
+ground is **never caught at all** — not "a worker-hunt anticlimax", an unreachable one. The mirror
+skirmish therefore never reaches annihilation and always runs its full 240 ticks, with the last
+eighty of them empty. `worker-flight.ts` only ends because the Grid has an east wall to corner the
+worker against. Option B would end those fixtures at the interesting moment. Whether the dragging is
+*visible* still wants someone to watch it, which is the one thing this evidence cannot supply.
 
 ### Q14 — Should the movement tie-break be mirror-fair, or is a fixed compass order enough?
 
