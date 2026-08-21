@@ -60,6 +60,40 @@ test("thirty frames a second for sixty seconds stays inside the budget", async (
   )
 })
 
+test("the worst case stays inside the budget too: two armies, 48x16, every effect on", async () => {
+  // ascii-effects.md craft rule 1 applies to the frame budget as much as to the art: measure the
+  // busiest frame, not the calm one.
+  const scenario = await loadScenarioFile("citizens-versus-ravels.ts")
+  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  const timeline = buildTimeline(
+    scenario,
+    loaded.state,
+    loaded.registry,
+    scenario.pulseTicks,
+    scenario.seed,
+  )
+  const view = createView(timeline)
+  const samples: number[] = []
+  let bytes = 0
+  for (let frame = 0; frame < FRAMES_PER_SECOND * SECONDS; frame += 1) {
+    const timeMs = (frame * 1000) / FRAMES_PER_SECOND
+    const started = performance.now()
+    const composed = view.composeAt(timeMs, "truecolor", 1, { paused: false, speed: 1 })
+    bytes += frameToAnsi(composed, "truecolor").length
+    samples.push(performance.now() - started)
+  }
+  samples.sort((a, b) => a - b)
+  const p95 = samples[Math.floor(samples.length * 0.95)] ?? 0
+  const worst = samples[samples.length - 1] ?? 0
+  const over = samples.filter((sample) => sample > BUDGET_MS).length
+  console.log(
+    `worst case: ${view.effectCount} effect instances  p95 ${p95.toFixed(2)} ms  ` +
+      `max ${worst.toFixed(2)} ms  over budget ${over}  bytes/frame ${Math.round(bytes / samples.length)}`,
+  )
+  assert.ok(p95 < BUDGET_MS, `p95 of ${p95.toFixed(2)} ms exceeds the budget`)
+  assert.equal(over, 0, `${over} frames blew the budget`)
+})
+
 test("resolving a whole Pulse costs less than a single frame's budget", async () => {
   const scenario = await loadScenarioFile("citizen-mirror-skirmish.ts")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
