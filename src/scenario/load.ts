@@ -166,6 +166,7 @@ export function loadScenario(
     grid,
     entities,
     groundItems: [],
+    vacatedTiles: [],
     outcome: null,
     rng: gameplayRng(seed).snapshot(),
     nextOrdinal: ordinal,

@@ -19,7 +19,7 @@
 // (24 x 12 tiles, ~14 actors) that is not measurable, and it removes a whole class of bug.
 
 import { inBounds, tileIndex, tilesOf } from "./coords.ts"
-import type { Coord, EntityLayer, Footprint, GridTerrain } from "./types.ts"
+import type { Coord, EntityLayer, Footprint, GridTerrain, VacatedEntry } from "./types.ts"
 import { ENTITY_LAYERS, TERRAIN } from "./types.ts"
 
 const EMPTY = 0
@@ -121,6 +121,43 @@ export class ClaimOverlay {
   }
 }
 
+/**
+ * A tile a dying entity just vacated, held blocked for a few ticks after — the owner's second
+ * playtest finding: another unit stepping into a corpse's tile the instant it opens reads as a
+ * glitch, not a tactical move. The overlay is deliberately the same shape as `ClaimOverlay`: a
+ * lookup layered over the index rather than written into it, so a settling tile is never confused
+ * with an occupied one and never needs its own entry in the occupancy arrays.
+ */
+export class VacatedOverlay {
+  private readonly entries: Map<string, VacatedEntry>
+
+  constructor(initial: readonly VacatedEntry[] = []) {
+    this.entries = new Map(initial.map((entry) => [VacatedOverlay.key(entry.layer, entry), entry]))
+  }
+
+  private static key(layer: EntityLayer, tile: Coord): string {
+    return `${layer}:${tile.x},${tile.y}`
+  }
+
+  /** Record every tile of a footprint as settling until (and including) `until`. */
+  add(layer: EntityLayer, anchor: Coord, footprint: Footprint, until: number): void {
+    for (const tile of tilesOf(anchor, footprint)) {
+      this.entries.set(VacatedOverlay.key(layer, tile), { layer, x: tile.x, y: tile.y, until })
+    }
+  }
+
+  blockedAt(layer: EntityLayer, tile: Coord): boolean {
+    return this.entries.has(VacatedOverlay.key(layer, tile))
+  }
+
+  /** Entries still active at or after `tick` — what carries into the next tick's state. */
+  activeAt(tick: number): VacatedEntry[] {
+    return [...this.entries.values()]
+      .filter((entry) => entry.until >= tick)
+      .sort((a, b) => a.layer.localeCompare(b.layer) || a.y - b.y || a.x - b.x)
+  }
+}
+
 export type MaskSpec = Readonly<{
   /** Layers whose occupants block. A unit definition declares these — engine.md 3.4.1. */
   layers: readonly EntityLayer[]
@@ -132,6 +169,8 @@ export type MaskSpec = Readonly<{
   predicate?: OccupantLookup
   /** Claims granted earlier in this arbitration phase. */
   overlay?: ClaimOverlay
+  /** Tiles still settling after a death — treated as blocked, like terrain. */
+  vacated?: VacatedOverlay
 }>
 
 /** A lazy view over an occupancy index. Never a materialised boolean grid — see the note above. */
@@ -152,10 +191,10 @@ export class CollisionMask {
   }
 
   /**
-   * What blocks `tile`: `"edge"`, `"terrain"`, an occupying ordinal, or `null` for clear.
-   * Returning the reason is what lets melee recognise "an enemy is in the tile I wanted".
+   * What blocks `tile`: `"edge"`, `"terrain"`, `"settling"`, an occupying ordinal, or `null` for
+   * clear. Returning the reason is what lets melee recognise "an enemy is in the tile I wanted".
    */
-  blockerAt(tile: Coord): "edge" | "terrain" | number | null {
+  blockerAt(tile: Coord): "edge" | "terrain" | "settling" | number | null {
     const grid = this.index.grid
     if (!inBounds(grid, tile)) return "edge"
     if (this.spec.terrain === "impassable") {
@@ -163,6 +202,7 @@ export class CollisionMask {
       if (terrainId !== undefined && TERRAIN[terrainId].impassable) return "terrain"
     }
     for (const layer of this.spec.layers) {
+      if (this.spec.vacated?.blockedAt(layer, tile) === true) return "settling"
       const claimed = this.spec.overlay?.claimantAt(layer, tile) ?? null
       const occupant = claimed ?? this.index.occupantAt(layer, tile)
       if (occupant === null) continue
@@ -177,7 +217,7 @@ export class CollisionMask {
   footprintBlockerAt(
     anchor: Coord,
     footprint: Footprint,
-  ): "edge" | "terrain" | number | null {
+  ): "edge" | "terrain" | "settling" | number | null {
     for (const tile of tilesOf(anchor, footprint)) {
       const blocker = this.blockerAt(tile)
       if (blocker !== null) return blocker

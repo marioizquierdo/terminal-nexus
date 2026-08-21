@@ -1,7 +1,13 @@
 import type { Coord, Direction, Footprint, GridTerrain } from "./types.ts"
 
-/** The eight directions in a fixed order. Used for deterministic step ranking. */
-export const DIRECTIONS: readonly Direction[] = ["n", "ne", "e", "se", "s", "sw", "w", "nw"]
+/**
+ * The four directions a mover may step in, in a fixed order — engine.md 3.6, revised after
+ * Milestone 1 playtesting. Diagonal movement was the single biggest legibility problem the owner's
+ * first watch found: a unit that can cut corners is a unit whose next tile a viewer cannot predict.
+ * Restricting movement to the compass points makes every step readable as "up", "down", "left", or
+ * "right" — nothing else changes about the kernel's shape.
+ */
+export const DIRECTIONS: readonly Direction[] = ["n", "e", "s", "w"]
 
 const DIRECTION_VECTORS: Readonly<Record<Direction, Coord>> = {
   n: { x: 0, y: -1 },
@@ -19,21 +25,29 @@ export function step(from: Coord, direction: Direction): Coord {
   return { x: from.x + vector.x, y: from.y + vector.y }
 }
 
-/** The direction a step from `from` to `to` faces. Falls back to `s` for a zero-length step. */
+/**
+ * The compass direction from `from` toward `to`, collapsed to the four points movement actually
+ * uses. A target that sits on a true diagonal has no single cardinal answer, so the axis with the
+ * larger delta wins; an exact tie prefers east/west, which is an arbitrary but deterministic and
+ * documented choice. Falls back to `s` for a zero-length vector.
+ */
 export function directionOf(from: Coord, to: Coord, fallback: Direction = "s"): Direction {
-  const dx = Math.sign(to.x - from.x)
-  const dy = Math.sign(to.y - from.y)
+  const dx = to.x - from.x
+  const dy = to.y - from.y
   if (dx === 0 && dy === 0) return fallback
-  for (const direction of DIRECTIONS) {
-    const vector = DIRECTION_VECTORS[direction]
-    if (vector.x === dx && vector.y === dy) return direction
-  }
-  return fallback
+  if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? "e" : "w"
+  return dy > 0 ? "s" : "n"
 }
 
-/** Chebyshev distance — engine.md 3.6. Eight-way movement, uniform cost per step. */
-export function chebyshev(a: Coord, b: Coord): number {
-  return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y))
+/**
+ * The grid distance movement and targeting both use — engine.md 3.6, revised after Milestone 1
+ * playtesting. Manhattan distance (`|dx| + |dy|`) is the natural partner of four-way movement: it
+ * is exactly the number of cardinal steps between two tiles, so "in range" and "reachable in that
+ * many steps" mean the same thing again. Presentation is exempt — a tracer or a trail may still draw
+ * a diagonal line, because that is a cosmetic choice about a path, not a claim about one.
+ */
+export function gridDistance(a: Coord, b: Coord): number {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 }
 
 /** Absolute tiles an entity anchored at `anchor` occupies. */
@@ -60,8 +74,31 @@ export function footprintDistance(
     const a = { x: anchorA.x + offsetA.x, y: anchorA.y + offsetA.y }
     for (const offsetB of footprintB) {
       const b = { x: anchorB.x + offsetB.x, y: anchorB.y + offsetB.y }
-      const distance = chebyshev(a, b)
+      const distance = gridDistance(a, b)
       if (distance < best) best = distance
+    }
+  }
+  return best
+}
+
+/**
+ * The tile of a footprint nearest `from` — the point a mover should actually walk toward, not the
+ * anchor. A pre-existing gap between "how range is measured" (nearest tile, engine.md 3.5) and "how
+ * a step is ranked" (the raw anchor) surfaced once movement stopped having diagonals to paper over
+ * it: a mover parked beside a multi-tile target's near face could rank every sidestep toward the
+ * target's *other* rows as "further from the anchor" and refuse to take it, even though that
+ * sidestep is a tile closer to the target by the very metric that decides whether it is in range.
+ * Routing now aims at the same tile targeting already measures to.
+ */
+export function nearestFootprintTile(from: Coord, anchor: Coord, footprint: Footprint): Coord {
+  let best: Coord = anchor
+  let bestDistance = Number.POSITIVE_INFINITY
+  for (const offset of footprint) {
+    const tile = { x: anchor.x + offset.x, y: anchor.y + offset.y }
+    const distance = gridDistance(from, tile)
+    if (distance < bestDistance) {
+      bestDistance = distance
+      best = tile
     }
   }
   return best

@@ -213,15 +213,30 @@ shows it exactly: a 3x1 hauler that cannot fit a two-tile opening paces between 
 The report catches it — the log watches net progress and raises `WARN stuck` when an actor's last
 two dozen ticks revisit the same two tiles — but the kernel keeps moving it.
 
+**Sharper since diagonal movement left** (owner playtest, Milestone 1 acceptance pass): under
+Manhattan distance and four-way movement, every legal step changes distance by exactly ±1, so the
+"sidestep that holds distance level" the old eight-way router relied on to skirt an obstacle no
+longer exists (`src/pulse/movement.ts`, `rankedSteps`). An actor approaching an obstacle **off-axis**
+still has two improving directions and can slide along the obstacle's face, one tile at a time, until
+it clears — that is what `obstacle-routing.ts` now exercises. An actor approaching **on-axis** (same
+row or column as its goal) has exactly one improving direction, and if a wall takes it there is no
+fallback at all: not a circle, a hard stop, reported correctly by the existing `move.blocked` streak
+warning but never recovering on its own. This is a strictly worse failure mode than circling — a
+circling actor is at least visibly doing something — and it is not a corner case: any unit walking a
+straight line at an enemy structure now hits it whenever the obstacle happens to sit exactly on that
+line.
+
 | Option | Cost |
 | --- | --- |
-| A. **Leave it and report it.** The log names the actor and the tiles it is circling | Free, and honest. On screen a unit twitching in front of a wall reads as broken rather than as stuck |
-| B. Kernel-side no-progress detection that parks the actor until its goal or the obstacle changes | Cheap, and it makes the failure legible: a stopped unit reads as stuck. Adds per-actor memory to a kernel that currently has none, and "until something changes" needs defining |
-| C. Do nothing now; real pathfinding in Milestone 2 makes it moot | Free. Bets that Milestone 2 arrives before anyone watches a unit twitch |
+| A. **Leave it and report it.** The log names the actor and the tile it wants | Free, and honest. On screen a unit standing still in front of a wall forever reads as broken, more so than circling did |
+| B. Kernel-side no-progress detection that parks the actor until its goal or the obstacle changes | Cheap, and it makes the failure legible: a stopped unit reads as stuck rather than as idle. Still doesn't get the unit where it was going — it only stops pretending to try |
+| C. Do nothing now; real pathfinding in Milestone 2 makes it moot | Free. Bets that Milestone 2 arrives before anyone watches a unit stall on-axis, which — given this session's own scenario needed redesigning to avoid it — is not a safe bet |
 
-**Recommendation: A for Gate 1A, then B as a stopgap if watching shows it reads as broken**, since B
-is a dozen lines and does not need pathfinding. C is the honest long answer, and Milestone 2's
-routing work should settle it either way.
+**Recommendation: A for Gate 1A, then treat this as Milestone 2's opening case**, not a stopgap
+detail. Milestone 2's routing work should be scoped to actually solve the on-axis dead end (a real
+search, or at minimum a goal offset that avoids exact axis alignment), not just report it more
+politely — B alone would ship a unit that visibly gives up, which is not better than one that visibly
+paces.
 
 ### Q16 — When the Grid is smaller than the viewport, where does the leftover space go?
 

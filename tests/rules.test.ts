@@ -4,9 +4,16 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { MovementRate } from "../src/content/index.ts"
-import { accrueCredit, canStep, contextFor, stepCost, stepTick } from "../src/pulse/index.ts"
+import {
+  accrueCredit,
+  canStep,
+  contextFor,
+  DEATH_SETTLE_TICKS,
+  stepCost,
+  stepTick,
+} from "../src/pulse/index.ts"
 import { loadScenario } from "../src/scenario/index.ts"
-import { loadScenarioFile, resolveScenario } from "./helpers.ts"
+import { loadScenarioFile, resolveAllScenarios, resolveScenario } from "./helpers.ts"
 
 /** The cadence table of engine.md 4.1, reproduced exactly at every rate it lists. */
 const CADENCE: ReadonlyArray<readonly [MovementRate, number]> = [
@@ -59,17 +66,21 @@ test("credit never exceeds one step's cost", () => {
 })
 
 test("a blocked actor keeps its credit and steps the tick the tile frees", async () => {
-  // The hauler in the two-tile gap is blocked for its whole run: every intent it declares is at
-  // full credit, which is only true if a refused step never spends any.
+  // The hauler in the two-tile gap is blocked for its whole run. Under four-way movement it finds
+  // no candidate step at all once it meets the wall — no oscillation, just a clean, permanent
+  // "blocked" — so this fixture demonstrates credit-holding through move.blocked events rather than
+  // through move.intended ones; every one of them still reports full credit, which is only true if
+  // a refused step never spends any.
   const resolved = await resolveScenario("hauler-two-tile-gap.ts")
   const intents = resolved.run.events.filter((event) => event.kind === "move.intended")
-  assert.ok(intents.length > 4)
+  assert.ok(intents.length > 0, "the hauler never even declared its approach")
   for (const intent of intents) {
     if (intent.kind !== "move.intended") continue
     assert.equal(intent.credit, intent.cost, "a mover declared an intent without full credit")
   }
 
   const blocked = resolved.run.events.filter((event) => event.kind === "move.blocked")
+  assert.ok(blocked.length > 4, "the hauler was never reported blocked for long enough to prove it")
   for (const event of blocked) {
     if (event.kind !== "move.blocked") continue
     assert.equal(event.credit, event.cost, "a blocked actor lost its credit")
@@ -208,4 +219,75 @@ test("contested claims resolve by speed tier before the seeded stream is consult
     assert.ok(event.losers.length > 0, "a contest was reported with no losers")
     assert.ok(!event.losers.includes(event.winner), "the winner was also reported as a loser")
   }
+})
+
+test("a vacated tile stays blocked for DEATH_SETTLE_TICKS after the entity on it dies", async () => {
+  // The corridor is one tile wide, so the trooper's only route to the worker beyond is straight
+  // through the tile its melee kill just vacated - the fixture's whole point is that it wants that
+  // exact tile on the very next tick.
+  const resolved = await resolveScenario("settle-delay.ts")
+  const death = resolved.run.events.find((event) => event.kind === "entity.died")
+  assert.ok(death !== undefined && death.kind === "entity.died", "the blocker never died")
+  if (death === undefined || death.kind !== "entity.died") return
+  const tile = death.at
+
+  const settlingBlocks = resolved.run.events.filter(
+    (event) =>
+      event.kind === "move.blocked" &&
+      event.reason === "settling" &&
+      event.desired.x === tile.x &&
+      event.desired.y === tile.y,
+  )
+  assert.ok(settlingBlocks.length > 0, "no mover was ever reported blocked by the settling tile")
+  for (const event of settlingBlocks) {
+    if (event.kind !== "move.blocked") continue
+    assert.ok(
+      event.tick > death.tick && event.tick <= death.tick + DEATH_SETTLE_TICKS,
+      `a settling block landed at tick ${event.tick}, outside the window (${death.tick}, ` +
+        `${death.tick + DEATH_SETTLE_TICKS}] after the death at ${death.tick}`,
+    )
+  }
+
+  // Only an arrival *after* the death counts: the victim's own approach to this tile, before it
+  // died standing on it, is not the settle rule's business.
+  const arrival = resolved.run.events.find(
+    (event) =>
+      event.kind === "entity.moved" &&
+      event.tick > death.tick &&
+      event.to.x === tile.x &&
+      event.to.y === tile.y,
+  )
+  assert.ok(arrival !== undefined, "no one ever moved into the vacated tile")
+  if (arrival !== undefined && arrival.kind === "entity.moved") {
+    assert.ok(
+      arrival.tick > death.tick + DEATH_SETTLE_TICKS,
+      `an entity reached the vacated tile at tick ${arrival.tick}, before the settle window ` +
+        `(${death.tick} + ${DEATH_SETTLE_TICKS}) closed`,
+    )
+  }
+})
+
+test("an actor that settled a move this tick does not also attack on it", async () => {
+  // Every entity.moved event in the fixture library should be free of a same-tick attack.launched
+  // from the same actor - "stop, then attack" applies everywhere a unit both closes distance and
+  // fires, not just in one hand-built fixture, so check it across every scenario the report already
+  // resolves rather than adding a single narrow case.
+  const resolvedAll = await resolveAllScenarios()
+  let checked = 0
+  for (const resolved of resolvedAll) {
+    const movedThisTick = new Set<string>()
+    for (const event of resolved.run.events) {
+      if (event.kind === "entity.moved") movedThisTick.add(`${event.ordinal}:${event.tick}`)
+      if (event.kind === "attack.launched") {
+        const key = `${event.attackerOrdinal}:${event.tick}`
+        assert.ok(
+          !movedThisTick.has(key),
+          `${resolved.scenario.id}: ${event.attacker} attacked on tick ${event.tick}, the same ` +
+            `tick it moved`,
+        )
+        checked += 1
+      }
+    }
+  }
+  assert.ok(checked > 0, "no fixture ever launched an attack, so the rule was never exercised")
 })

@@ -1,7 +1,7 @@
 // The Grid: coordinates, layers, footprints, and placement.
 //
 // Canon: engine.md 3.4 (layers are render order), 3.4.1 (collision is a composed mask),
-// 3.5 (coordinates, anchor, footprint, facing), 3.6 (Chebyshev distance, eight-way movement).
+// 3.5 (coordinates, anchor, footprint, facing), 3.6 (Manhattan distance, four-way movement).
 //
 // Coordinate convention, used by every module without exception:
 //   (0,0) is the north-west tile, x grows east, y grows south, "n" points toward y - 1.
@@ -55,3 +55,10 @@ export type Placement = Readonly<{
   footprint: Footprint
   facing: Direction
 }>
+
+/**
+ * A tile still cooling after a death — engine.md 4.3's settle rule, earned by Milestone 1
+ * playtesting. Lives here rather than in `occupancy.ts` because it is data the state hashes, not
+ * mechanism.
+ */
+export type VacatedEntry = Readonly<{ layer: EntityLayer; x: number; y: number; until: number }>
