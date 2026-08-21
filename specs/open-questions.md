@@ -287,7 +287,40 @@ arithmetic, and moving those while the owner is about to watch the run they desc
 evidence stale in the worst possible week. Take A until then, which is what Gate 1B ships. C is a
 better game answer and belongs to whichever milestone owns perception.
 
-## 5. Answered
+### Q18 — In a same-faction mirror match, should colour follow ownership or the faction?
+
+**Status:** OPEN — Gate 1B proceeds under the recommendation; the answer only touches presentation.
+
+`engine.md`'s stated RULE is "faction identity lives in the glyph family and the effect language;
+ownership keeps the colour, so a mirror match stays legible and monochrome stays whole"
+(`playerRole()` in `src/view/theme.ts`: player A is always `player.a`, player B is always
+`player.b`, regardless of which roster either side is playing). The owner's playtest asked the
+question behind that RULE directly: "How can we color mirror-matches? make sure you include citizen
+vs citizen and ravel vs ravel" — and floated "their secondary colour" and, further out, a full
+skins system with a player-chosen third colour.
+
+Made observable this session: `ravel-mirror-skirmish.ts` is the Ravel counterpart to the existing
+`citizen-mirror-skirmish.ts`, and a truecolor capture of it is what the RULE actually produces —
+player A's Ravels in Citizen rust orange, player B's Ravels in Ravel green, because ownership colour
+is hardcoded per player slot, not derived from the roster each side happens to be playing. The two
+armies **are** clearly distinguishable — that half of the ask already works, and is what the RULE
+was written to guarantee — but a Ravel force rendered in the other faction's signature colour reads
+as slightly wrong to look at, which is the itch behind "their secondary colour."
+
+| Option | Cost |
+| --- | --- |
+| A. **Keep ownership-primary colour as the RULE states.** Glyph family already carries faction identity, so a mirror match still reads as "same faction" from the letters alone | Free — no code changes. One side of a same-faction mirror wears a colour that belongs to the other faction, which this session's screenshot shows plainly once you go looking for it |
+| B. **Faction-primary colour, ownership as a secondary shade** — each faction keeps one signature hue; player A gets it at full saturation, player B gets a darkened/lightened variant of the *same* hue. Citizen-vs-Ravel keeps today's high-contrast look (the shades of two different hues are already far apart); a mirror match now reads as "same faction, two shades" rather than "two unrelated factions" | Every role that currently reads `player.a`/`player.b` needs to become a function of (faction, player) instead of player alone — `playerRole()`'s signature, every call site, and the `StyleRole` vocabulary itself (`player.a`/`player.b` become something like `player.citizen.a`/`player.citizen.b`/`player.ravel.a`/`player.ravel.b`, or a role plus a shade multiplier). Changes the RULE in `engine.md`, needs a canon bump, and needs re-proving that monochrome (which currently separates the sides on colour alone dropping to nothing, relying on case) still stays legible without any hue at all |
+| C. **Skins**: let a player choose a faction's colour identity per match, banked as a third axis alongside the theme (dark/light) this session added. The owner's own long-term want, and the natural home for "players will love to choose their faction skin" | A real feature, not a palette tweak — persistence, a selection UI (even a CLI flag needs a place to keep the choice across a Pulse), and a data model for what a skin actually overrides. Squarely Milestone 2+ scope; nothing here needs it to work today |
+
+**Recommendation: A for now, B when a mirror match is common enough on the schedule to be worth the
+refactor, C only inside a real themes/skins system.** The RULE's actual job — tell two players apart
+— already holds, proven by both mirror fixtures existing and rendering distinctly; what's missing is
+faction fidelity in the rarer same-faction case, which is a real but purely cosmetic gap, not a
+legibility bug. B is a mechanical, well-scoped change whenever it's prioritized (the type system
+already forces every `playerRole()` call site to be found). C is not a "fix" at all — register it
+as the owner's long-term direction and let a themes-focused milestone pick it up deliberately, not
+as a rider on a mirror-colour question.
 
 Rows move here with the date, the decision, and the document that now owns it.
 
