@@ -4,8 +4,10 @@
 // dropping frames changes nothing about what a given moment looks like. The resize gate freezes
 // that clock and resuming continues from the same instant (engine.md 9.6).
 //
-// Every path out — `q`, SIGINT, SIGTERM, a setup failure, a caught render failure, the end of the
-// Pulse — goes through one idempotent disposer.
+// Every path out — `q`, SIGINT, SIGTERM, a setup failure, a caught render failure — goes through
+// one idempotent disposer. The end of the Pulse is deliberately not one of those paths (owner
+// playtest): playback holds on the final frame, forever if need be, until the viewer presses `q`
+// themselves rather than the session vanishing out from under them.
 
 import {
   Playback,
@@ -149,7 +151,9 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
               { paused: playback.paused, speed: playback.speed },
             ),
           )
-          if (playback.presentationTimeMs > view.durationMs + 2000) settle()
+          // No auto-exit here: the viewer asked to hold on the final frame until they choose to
+          // leave. `composeAt` already clamps past the Pulse's end, so this just keeps redrawing an
+          // unchanging last frame — cheap, and nothing here depends on presentationTimeMs advancing.
         } catch (error) {
           failure = error
           settle()
