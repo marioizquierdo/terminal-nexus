@@ -2,8 +2,8 @@
 
 **Document role:** Non-authoritative research: where to learn terminal art, and what to take from each
 **Status:** Reference. [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 9 remains the authority
-**Canon version:** 2.4
-**Updated:** 2026-08-20
+**Canon version:** 2.5
+**Updated:** 2026-08-21
 **License:** Apache-2.0 for the analysis; linked works belong to their authors
 
 Terminal Nexus is betting that a `@` can carry a commander and a row of `#` can feel engineered.
@@ -82,7 +82,7 @@ composition that exists, and it is worth an afternoon before committing to a vis
 
 Two caveats before mining it. Most of it is CP437 with a 16-colour CGA palette, built for an
 80-column canvas and no motion — beautiful, but a still-image tradition. And Terminal Nexus has
-committed to seven-bit ASCII as its baseline (lore Section 9, engine Section 10.3), which rules out
+committed to seven-bit ASCII as its baseline (lore Section 9, engine Section 9.6), which rules out
 the block-drawing characters that carry most scene art. Take the **composition** — silhouette,
 negative space, how a few marks imply mass — and leave the charset.
 

@@ -81,6 +81,15 @@ else
       fail "$doc declares canon version '$declared'; specs/README.md declares '$canon_version'"
     fi
   done < <(find specs concept -type f -name '*.md' -print | sort)
+
+  # AGENTS.md restates canon invariants as a summary, so it drifts silently unless it is versioned
+  # alongside them.
+  agents_version="$(sed -n 's/^\*\*Canon version:\*\* \(.*\)$/\1/p' AGENTS.md | head -1)"
+  if [[ -z "$agents_version" ]]; then
+    fail "AGENTS.md does not declare a canon version"
+  elif [[ "$agents_version" != "$canon_version" ]]; then
+    fail "AGENTS.md declares canon version '$agents_version'; specs/README.md declares '$canon_version'"
+  fi
 fi
 
 # ---------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.4
+**Canon version:** 2.5
 **Updated:** 2026-08-21
 **License:** Apache-2.0
 
@@ -45,23 +45,6 @@ Question IDs are permanent. Never renumber, never reuse.
 | `DROPPED` | No longer relevant; keep the row and say why |
 
 ## 4. Open
-
-### Q4 — How does Glitch corrupt the terminal without breaking the legibility law?
-
-**Status:** OPEN — no implementation depends on it until Glitch exists; record the rule now while it
-is cheap.
-
-[`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 9 says Glitch "violates stable terminal
-conventions" and appears as literal software errors. [`engine.md`](engine.md) Section 9.6 requires
-that every gameplay glyph occupy one cell, that colour never carry meaning alone, and that reduced
-motion preserve anticipation, impact, and settled state. A faction whose identity is illegibility
-collides with a law that requires legibility.
-
-**Recommendation:** adopt this as a rule rather than leaving it to taste — *Glitch corruption is
-applied in the `effects` band and above, never in the `units` or `structures` bands. Corruption may
-add, overdraw, and unsettle; it may never remove or replace a cell that is the only carrier of a
-required semantic cue.* That preserves the identity (the screen looks wrong) and the contract (you
-can still see what is attacking you), and gives reduced-motion an obvious fallback.
 
 ### Q5 — What is the default construction radius?
 
@@ -121,15 +104,60 @@ conversation, and adopting it early would mean every unit's readable state inclu
 that a single character struggles to show. Keep facing in state, keep it out of the rules, and
 revisit when there is a faction that wants it.
 
+### Q12 — What is the vertical chrome budget, and is 80 × 24 a literal floor?
+
+**Status:** OPEN — Gate 1A proceeds under the recommendation, which is already written into
+[`engine.md`](engine.md) Sections 3.1 and 3.3.
+
+The canon stated two incompatible arithmetics. Section 3.1 derived the composition as
+16 + 2 border + header + footer = **20 rows**, implying a 4-row chrome budget; Section 3.3's table
+gave the maximum viewport as 104 × **28**, which also implies 4 rows — while the same table's minimum
+row, **80 × 24**, implies 8. The two rows of one table disagreed with each other, so no reading made
+the canon consistent. Meanwhile "80 × 24 is the floor and the acceptance target" is repeated as RULE
+in Section 3.3, Section 9.3, `project-governance.md` Section 7, and `AGENTS.md`.
+
+| Option | Cost |
+| --- | --- |
+| A. **8-row chrome budget** — 2 border, 3 header, 3 footer; minimum composition 80 × 24, maximum 104 × 32 | Keeps every "80 × 24" statement literally true, and gives the footer room for the position readout and edge-marker legend that Section 3.3 already requires. Costs 4 rows of the maximum composition |
+| B. **4-row budget** — 2 border, 1 header, 1 footer; minimum composition 80 × 20, maximum 104 × 28 | Most Grid per terminal. Requires rewording the floor in four places, and squeezes the required footer content into one row |
+
+**Recommendation: A**, and it is applied. The floor is the number every other document already
+repeats, a 24-row terminal is the historic standard the product targets anyway, and the footer has
+real work to do. If Gate 1A finds three header rows wasteful, moving rows between header and footer
+inside the 8 is free and needs no canon change — only the total is fixed here.
+
+### Q13 — Where do workers flee, and what counts as annihilation, on a Grid with no Nexus?
+
+**Status:** OPEN — Gate 1A proceeds under the recommendation, which is already written into
+[`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) Section 3.7.
+
+The Gate 1A flee rule sends a threatened worker "away from it toward the friendly Nexus", but the
+mirror skirmish — the scenario the whole gate is named after — places no structures at all. The same
+section's victory list includes "one side annihilated", and with a flee rule in play workers can
+outlive every fighter, so whether they count decides the outcome and the ending of every Nexus-less
+fixture. Neither half was stated.
+
+| Option | Cost |
+| --- | --- |
+| A. No friendly Nexus → flee directly away from the nearest threat. Annihilation = every entity on `workers`, `units`, and `air` is dead | Literal, simple, and matches the summary example. Risks a worker-hunt anticlimax after the fighting is decided — bounded in the mirror by the marksman's range of 5 |
+| B. Annihilation = no entity that can attack remains; a side reduced to workers loses | Ends the run at the interesting moment. Makes "annihilation" slightly a lie, and changes the outcome of every fixture containing workers |
+| C. Require every scenario to place a Grid Nexus | Removes the ambiguity entirely. Taxes the ten single-rule fixtures that Section 3.9 wants to stay cheap and obvious |
+
+**Recommendation: A** for Gate 1A — simplest, honest, and consistent with the documented summary. B
+is the better *game* answer and is a cheap change later; take it if Gate 1B viewing shows mirror
+endings visibly dragging, with someone having actually watched one. C trades a real cost for a
+problem A already solves.
+
 ## 5. Answered
 
 Rows move here with the date, the decision, and the document that now owns it.
 
 | ID | Answered | Decision | Now owned by |
 | --- | --- | --- | --- |
-| Q1 | 2026-08-20 | **Tile width is adaptive presentation capability**: one column per tile in the 80x24 composition, two columns per tile at 128 columns or wider. Same tiles, same actors, same revealed information — only the composition changes. The 80x24 floor is preserved and the concept art's look is reachable on a wide terminal | [`engine.md`](engine.md) Section 10.2 |
+| Q1 | 2026-08-20 | **Tile width is adaptive presentation capability**: one column per tile in the 80x24 composition, two columns per tile at 128 columns or wider. Same tiles, same actors, same revealed information — only the composition changes. The 80x24 floor is preserved and the concept art's look is reachable on a wide terminal | [`engine.md`](engine.md) Section 9.3 |
 | Q2 | 2026-08-20 | **One resource.** Salvage recovers the same resource rather than a second one. Nexus energy is a state readout, not a currency. A second resource is an addition a later microgame may earn; it is not assumed | [`engine.md`](engine.md) Section 6 |
 | Q3 | 2026-08-20 | **Units may span multiple tiles.** Large units are a normal, strategically important case, not a later extension — a Ravel raider drawn `>x<` is one unit occupying three tiles. The collision system tests a mover's whole footprint against its mask; damage and destruction apply to the entity, not the tile | [`engine.md`](engine.md) Section 3.5 |
+| Q4 | 2026-08-21 | **The corruption law.** Corruption is drawn in the `effects` band and above, never in `units` or `structures`; it may add, overdraw, and unsettle, but never remove or replace the only cell carrying a required semantic cue. Recorded as decided because the rule was already RULE in the engine, restated in the lore, and listed among the locked product decisions — the register was the only document still calling it open | [`engine.md`](engine.md) Section 9.4 |
 | Q6 | 2026-08-20 | **Packaging and remote delivery leave Milestone 1.** First split into an independent gate, then deferred out of the milestone entirely when it was refocused onto the Pulse — they answer no question the game currently has | [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) |
 | Q10 | 2026-08-21 | **DROPPED as mis-scoped.** Engine determinism was never in question: the kernel, its event log, and replay stay exact, and the features that depend on them are untouched. Whether a mission's *interface* misreports a total for narrative effect is campaign writing, decided when campaigns are designed | [`campaigns.md`](campaigns.md), at Milestone 5 |
 | Q11 | 2026-08-21 | **Alder refuse artificial Nexus power — conceptual.** Simplicity and growth instead: little or no Nexus draft, and more complexity in the structures they can build. Direction, not a locked mechanic | [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 8.5 and [`commander-armies.md`](commander-armies.md) Section 4 |
@@ -146,6 +174,18 @@ grown pool, and how far the structure catalogue widens to compensate, stays unde
 milestone authorizes Alder content. The three options the register offered are superseded — the
 answer keeps A's honesty about refusal while moving the depth into structures rather than into a
 second progression system.
+
+### Q4 — answered
+
+Closed as bookkeeping on 2026-08-21, during the canon-consistency audit, rather than by a fresh
+decision. The recommendation the row carried had already been promoted everywhere it mattered:
+[`engine.md`](engine.md) Section 9.4 carries it as **RULE**, `terminal-nexus-lore.md` Section 9
+restates it, `project-governance.md` Section 7 lists it among the locked product decisions, and
+`AGENTS.md` repeats it as an architectural invariant. The register was the last document still
+describing it as waiting on Mario, and a register that contradicts the canon is worse than no
+register — the whole value of this file is that it can be trusted about what is settled.
+
+If the locked-decisions entry was not intended as acceptance, reopen this row; nothing else changes.
 
 ### Q10 — dropped
 
@@ -168,7 +208,7 @@ carries the collision consequence.
 ### Q1 — answered
 
 Recorded in full in the Git history of this file at canon 2.1. The decision above is the durable
-part; [`engine.md`](engine.md) Section 10.2 now carries the rule.
+part; [`engine.md`](engine.md) Section 9.3 now carries the rule.
 
 ### Q2 — answered
 

@@ -2,8 +2,8 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.4
-**Updated:** 2026-08-20
+**Canon version:** 2.5
+**Updated:** 2026-08-21
 **License:** Apache-2.0
 
 ## 0. How to read this document
@@ -81,6 +81,12 @@ The three laws that follow from this:
 The practical test: **you must be able to resolve an entire match with the renderer deleted**, and
 you must be able to rewrite the entire renderer without a single simulation test changing.
 
+One corollary, because it is the seam most likely to erode quietly: **canonical state carries nothing
+that only presentation reads.** Facing (Section 3.5) is the single deliberate exception, pending Q9 —
+it is in state so that a renderer does not have to guess a direction and produce jitter. Do not add a
+second one. Interpolation hints, animation state, and camera position are presentation's, and they
+belong in the presentation model of Section 2, not in the state the Pulse hashes.
+
 ---
 
 ## 2. Responsibility layers
@@ -127,10 +133,15 @@ The **Grid** is the rectangular integer playfield a match is fought on. It repla
 "Grid" everywhere, including in the name of the Nexus replica that sits on it: a **Grid
 Nexus** is the replica, a **Prime Nexus** is the one that stays home.
 
-### 3.1 Size and shape — GUIDANCE
+### 3.1 Size and shape — GUIDANCE, except the default preset, which is RULE
 
 A Grid may be any integer size. Content and tools standardise on a small matrix of presets so that
 maps, scenarios, and compositions can be reasoned about without measuring each one.
+
+The **matrix below is GUIDANCE** — add, drop, or rename a preset when content shows a better set. The
+**default preset `medium-extra-wide` (48 × 16) is RULE**, because the compositions in Sections 9.2
+and 9.3 are derived from it: change 48 × 16 and the 80- and 128-column layouts stop falling out of
+one number.
 
 **Shape** is the ratio of width to height in tiles, treating a tile as square:
 
@@ -159,9 +170,15 @@ Which gives twelve presets:
 | `extra-large` | 24 × 24 | 48 × 24 | 72 × 24 |
 
 **`medium-extra-wide` (48 × 16) is the default preset** and the one every early fixture uses. The
-arithmetic is not a coincidence: at one column per tile it needs 48 + 2 border + 30 sidebar = **exactly
-80 columns**, and 16 + 2 border + header + footer = **20 rows**. At two columns per tile it needs
-**exactly 128**. The two compositions in Section 9.2 fall out of one number.
+arithmetic is not a coincidence: at one column per tile it needs 48 + 2 border + 30 sidebar =
+**exactly 80 columns**, and at two columns per tile **exactly 128**. The two compositions in
+Section 9.2 fall out of one number.
+
+**The vertical chrome budget is 8 rows** — 2 border, 3 header, 3 footer (the footer carries the
+position readout and edge-marker legend that Section 3.3 requires). So 16 + 8 = **24 rows**, and
+80 × 24 is a literal floor rather than an approximate one. Pending Q12: an earlier draft implied a
+4-row budget and a 20-row composition, which would have made "80 × 24 is the floor" false by the
+spec's own arithmetic.
 
 A preset is a convenience, not a constraint. A scenario may declare explicit dimensions.
 
@@ -193,8 +210,10 @@ spent on centring and on a larger inspection panel — **never on more Grid**.
 1. Subtract chrome from the terminal: a border, a header, a footer, and a 30-column side panel.
 2. Choose tile width — 2 columns per tile if the terminal can show the viewport that way, otherwise 1
    (Section 9.3).
-3. `viewport = clamp(availableTiles, minimum, maximum)`, then clamp again to the Grid's own size.
-4. If the result is smaller than the minimum at one column per tile, show the resize gate and freeze
+3. `viewport = min(availableTiles, maximumViewport, gridSize)`.
+4. Gate when `availableTiles < min(minimumViewport, gridSize)` at one column per tile — **a Grid
+   smaller than the minimum viewport needs only its own size**, so a small tutorial Grid is never
+   gated on a terminal that can show all of it. Below that, show the resize gate and freeze
    presentation time.
 
 Which gives these terminal sizes:
@@ -202,7 +221,11 @@ Which gives these terminal sizes:
 | | Tile width 1 | Tile width 2 |
 | --- | --- | --- |
 | Minimum viewport (48 × 16) | **80 × 24** | 128 × 24 |
-| Maximum viewport (72 × 24) | 104 × 28 | 176 × 28 |
+| Maximum viewport (72 × 24) | 104 × 32 | 176 × 32 |
+
+Both rows use the same 8-row vertical chrome budget from Section 3.1 (Q12). An earlier draft printed
+28 for the maximum, which assumed a 4-row budget the minimum row did not — the two rows disagreed
+with each other, whichever floor was intended.
 
 **80 × 24 remains the floor and the acceptance target.** Everything must work there.
 
@@ -271,12 +294,21 @@ layer — not because of a rule about layers, but because of how their masks are
 still collides with a building on a different layer, because its mask includes `obstacles`. Both
 follow from the same mechanism.
 
-**Make masks cheap and make them explicit.** A unit definition declares which layers it collides with;
-the kernel builds the mask once per tick per distinct layer set and reuses it. Nothing should be
-computing occupancy by scanning entity lists in an inner loop, and nothing should be assuming a
+**Make masks cheap and make them explicit.** A unit definition declares which layers it collides with.
+Nothing may compute occupancy by scanning entity lists in an inner loop, and nothing may assume a
 layer's collision behaviour from its position in the render order.
 
+*How* masks are cached is deliberately not specified here: arbitration (Section 4.3, step 5) mutates
+claimed tiles part-way through a tick, so a naive once-per-tick cache is stale exactly when it
+matters. Caching granularity, and how arbitration sees tiles claimed earlier in the same tick, are
+the spike's to design and the gate report's to record.
+
 ### 3.5 Placement, footprint, anchor, and facing — RULE
+
+**Coordinates.** `(0,0)` is the Grid's north-west tile; `x` grows **east**, `y` grows **south**. The
+direction `n` points toward `y - 1`. A scenario file's terrain and placement rows are listed north to
+south, so the file reads the way the Grid draws. Every session — kernel, loader, compositor — uses
+this one convention; it is the cheapest possible source of mirror-image bugs.
 
 Every entity on the Grid has a placement:
 
@@ -357,6 +389,15 @@ quietly start depending on a frame:tick alignment.
 **The kernel has no real-time loop.** It may resolve 12 ticks in a microsecond or over an hour. The
 renderer maps logical time onto wall-clock time by itself.
 
+**What changing the rate would cost, stated honestly.** Content durations are authored in raw ticks
+(`cooldownTicks`, `intervalTicks`, and every cooldown in a fixture), so the number 12 is baked into
+every one of them. If evidence moves the tick rate, that is a migration of every duration in every
+definition and scenario — not a constant to edit. The alternative, authoring durations as rational
+seconds, buys rate-independence at the cost of arithmetic at every use site; it was considered and
+rejected as the worse trade while the rate is still cheap to change. Milestone 1 is deliberately the
+place this hypothesis gets tested, because the fixture is six rows long and the migration is an
+afternoon. It will not be an afternoon in Milestone 4.
+
 ### 4.2 Movement credit — GUIDANCE
 
 An integer accumulator, no floating point:
@@ -385,15 +426,21 @@ over entities can never decide an outcome:
 3. **Perception.** Each actor scores and selects a target. Deterministic scoring, ties broken by
    entity id.
 4. **Intents.** Each actor with movement credit declares one destination tile.
-5. **Arbitration.** Group intents by destination *within a layer*. Resolve by speed tier, then the
-   seeded stream, then entity id. Losers hold or recalculate, under a bounded number of passes with
-   a strictly decreasing progress measure.
+5. **Arbitration.** Group intents by destination *within a layer*. Contested claims resolve by speed
+   tier — **tier 1 outranks tier 2** — with any remaining tie broken by one draw from the seeded
+   stream. Entity id orders iteration and event emission, never outcomes. Losers hold or recalculate,
+   under a bounded number of passes with a strictly decreasing progress measure.
 6. **Settle.** Apply winning moves. Occupancy is now fixed for this tick.
-7. **Attacks.** Descending speed tier. Within one tier, every valid attack is computed against the
-   state at tier start and applied **simultaneously**, so no entity survives merely by being iterated
-   first.
+7. **Attacks.** By speed tier, **tier 1 first**. Within one tier, every valid attack is computed
+   against the state at tier start and applied **simultaneously**, so no entity survives merely by
+   being iterated first.
 8. **Resolution.** Apply damage, deaths, destruction, salvage. Emit ordered events.
 9. **Objectives and victory.**
+
+**Speed tier is one number meaning initiative**, used identically in both places: a lower number acts
+earlier, for movement claims in step 5 and for attacks in step 7. It is not a movement rate — that is
+`movementRate` (Section 4.2) — and the two are deliberately independent, so a slow, heavy unit may
+still strike first.
 
 Melee is an attempt to enter an enemy-occupied tile on the same layer. When the defender dies in
 step 8, the winning claimant may occupy the tile on the following tick.
@@ -401,6 +448,14 @@ step 8, the winning claimant may occupy the tile on the following tick.
 Ranged attacks resolve at an authoritative tick. **A projectile is normally a presentation cue drawn
 between the attack event and the impact event** — it is not a simulated moving body, and it cannot
 be intercepted, unless some specific mechanic later earns that complexity, which nothing has.
+
+**Damage from a ranged attack is authoritative at the tick it resolves** — steps 7 and 8 of that same
+tick, always. The attack event additionally carries a **flight window**, measured in ticks and
+derived deterministically from the distance to the target. It is part of the event and its hash, and
+it is read by **no rule**: it exists so that presentation knows how long the shot should appear to
+take. A renderer drawing a tracer holds the impact, the damage flash, and the visible health change
+until the end of that window, so what the player sees lands when the tracer does; a renderer that
+draws no tracer (reduced motion, monochrome) still presents damage at the impact beat.
 
 ### 4.4 Determinism and replay — RULE
 

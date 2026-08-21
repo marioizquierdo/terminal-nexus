@@ -1,6 +1,12 @@
 # Terminal Nexus agent instructions
 
+**Canon version:** 2.5
+
 These instructions apply to every coding agent and human-assisted coding session in this repository.
+
+Section 4 below summarises invariants that are stated authoritatively in `specs/`. It is a summary,
+and when it disagrees with the canon the canon wins — the validator checks that the version above
+matches `specs/README.md`, so a canon bump that forgot this file fails the build.
 
 Terminal Nexus is a specification-driven pre-production project. The specifications are not
 decoration around the code — right now they *are* the project, and the code does not exist yet.
@@ -92,6 +98,10 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - The Grid has five layers — terrain, obstacles, workers, units, air. **Layers define render order.
   They do not define collision**: collision is a mask composed from a chosen set of layers, so a unit
   can be blocked by a building on another layer while sharing a tile with a worker.
+- **Coordinates:** `(0,0)` is the north-west tile, `x` grows east, `y` grows south, `n` is `y - 1`.
+  Scenario rows read north to south. One convention, every module.
+- **Speed tier is initiative, and lower acts first** — for movement claims and attacks alike. It is
+  not a movement rate; that is `movementRate`.
 - Every entity has an anchor, a footprint, and a facing. **Units as well as structures may span
   several tiles**, and that matters strategically. A mover tests its whole footprint against its
   mask. Range measures to the nearest occupied tile.

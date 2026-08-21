@@ -2,8 +2,8 @@
 
 **Document role:** Canon index and reading order
 **Status:** Canonical
-**Canon version:** 2.4
-**Updated:** 2026-08-20
+**Canon version:** 2.5
+**Updated:** 2026-08-21
 **License:** Apache-2.0
 
 The project canon is this document set, not one monolithic file. Each document has one job, and the
@@ -103,7 +103,8 @@ and must be expanded with exact fixtures before work begins.
 
 The repository validator checks these mechanically, so they are worth knowing:
 
-- every document under `specs/` and `concept/` declares the same canon version as this file;
+- every document under `specs/` and `concept/` declares the same canon version as this file, and so
+  does `AGENTS.md`, which restates canon invariants as a summary and would otherwise drift silently;
 - every document carries **Document role**, **Status**, **Canon version**, **Updated**, and
   **License**;
 - exactly one milestone is `CURRENT`, it declares an **Active gate**, and the governance ledger

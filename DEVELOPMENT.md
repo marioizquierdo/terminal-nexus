@@ -29,7 +29,8 @@ invariants, not literals — canon version and current gate are derived from the
 correct canon work never breaks it. What it enforces:
 
 - required files exist;
-- every document under `specs/` and `concept/` declares the same canon version as `specs/README.md`;
+- every document under `specs/` and `concept/` declares the same canon version as `specs/README.md`,
+  and so does `AGENTS.md`;
 - every such document carries `Document role`, `Status`, `Canon version`, `Updated`, `License`;
 - exactly one milestone is `CURRENT`, declares an `Active gate`, and matches the governance ledger;
 - every `Q<n>` referenced anywhere is defined in `specs/open-questions.md`, and every `OPEN` question
@@ -98,6 +99,22 @@ specification.
 
 Human-readable history of the development setup. Product and canon history lives in
 `specs/project-governance.md` Section 6.
+
+### 2026-08-21 — execution-readiness audit (canon 2.5)
+
+The canon read as a contract an isolated session has to execute, rather than as a design document.
+Full findings, including the ones deliberately *not* acted on, are in
+`docs/spec-audit-2026-08-21.md`.
+
+**Tooling**
+
+- The validator now checks `AGENTS.md`'s canon version against `specs/README.md`. `AGENTS.md`
+  Section 4 restates ~20 canon invariants as a summary; it carried no version, so a canon bump could
+  leave it stale with nothing to notice. It now has one, and forgetting it fails the build.
+- The fix that suggested itself and was **not** taken: teaching the validator to verify `engine.md`
+  section *numbers* in cross-references. Numbers move on every restructure. The cheaper convention is
+  to cite a section by name as well — `engine.md §9.4 "Bands"` — so that a grep survives renumbering.
+  Worth doing when the next renumbering happens, not before.
 
 ### 2026-08-20 — viewport and playground pass (canon 2.3)
 

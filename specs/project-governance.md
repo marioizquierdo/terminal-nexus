@@ -2,7 +2,7 @@
 
 **Document role:** Canon authority, evidence process, execution ledger, and durable decisions
 **Status:** Canonical
-**Canon version:** 2.4
+**Canon version:** 2.5
 **Updated:** 2026-08-21
 **License:** Apache-2.0
 
@@ -88,6 +88,7 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 | Design-authority pass | COMPLETE | Canon 2.2 renamed the Grid, added the layer model, marked engine sections by authority, and refocused Milestone 1 on the Pulse | Superseded by the 2.3 corrections |
 | Viewport and playground pass | COMPLETE | Canon 2.3 formalised viewport limits and cursor-driven scrolling, made layers render-order-only with collision as a composed mask, settled multi-tile units, reduced the markers to RULE and GUIDANCE, and reshaped Milestone 1 into the Pulse Playground | Open Gate 1A |
 | Faction design and fiction pass | COMPLETE | Canon 2.4 aligned all five faction identities across philosophy, verb, mechanics direction, psychographics, and voice; added faction mechanical identities and engine capability asks; added the Operator belief ramp, a worked mission, and voice exemplars; registered Q10 and Q11, both since resolved by the owner | Owner review; Milestone 4 selects the first mechanical proofs |
+| Execution-readiness audit | COMPLETE | Canon 2.5 audited the set as an *executable* contract: resolved the speed-tier, viewport-gating, chrome-arithmetic, and flight-window contradictions; added the coordinate convention; closed the gaps where no Gate 1A check would have caught a wrong view or a lying report; and split preferences from load-bearing RULEs | Gate 1A is unblocked; open it |
 | Milestone 1A — the Pulse Playground | CURRENT | Grid, scenario files, deterministic Pulse, a levelled report, and a minimal ASCII view, built together | Run Gate 1A in `milestone-1-spike-battle.md` and stop for owner acceptance |
 | Milestone 1B — quality and effects | GATED | Requires a legible Pulse to add tiers and effects to | Authorize after Gate 1A passes |
 | Milestone 2 — completing the Pulse | GATED | Routing, economy, production, visibility, replay, and hardening the spike deferred | Lock the contracts listed in its document first |
@@ -110,6 +111,7 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 | 2026-08-20 | 2.3 | Formalised viewport minimum and maximum, cursor-driven scrolling with no minimap, and terminal size bands; corrected layers to define render order only, with collision as a mask composed from chosen layers; settled that units may span multiple tiles (Q3); reduced authority markers to RULE and GUIDANCE; reshaped Milestone 1 into the **Pulse Playground**, with the headless report and the ASCII view built together and a levelled log as the agent feedback loop | Milestone 1A |
 | 2026-08-20 | 2.2 | Renamed the battle surface to the **Grid** and the replica to the **Grid Nexus**; added Grid size and shape presets, the five-layer occupancy model, and footprint/anchor/facing placement; marked every engine section LAW, GUIDANCE, or UNPROVEN; refocused Milestone 1 onto the Pulse itself with three gates ending in an effects gate; added `ascii-effects.md`; deferred packaging and remote delivery out of the milestone | Milestone 1A |
 | 2026-08-21 | 2.4 | Faction design and fiction pass: rewrote the five faction identities so philosophy, strategic verb, geometry, motion, chance, and voice make one statement each (Glitch converges instead of "chaotic", Alder grows instead of machining, verb *Transcend* → *Outgrow*); added psychographic promises, signature moments, and an anti-redundancy law; added mechanics-as-characterisation, variance-as-doctrine, capability asks, and Commander identity proposals to `commander-armies.md`; added the six-mission Operator belief ramp and a fully written Mission 1 to `campaigns.md`; added voice shades, system-text and bark exemplars, and ten pairing exchanges to the lore; protected the interface's voice as a twelfth deliberate mystery; registered Q10 (diegetic interface deception) and Q11 (Alder draft refusal). Mario resolved both the same day: Q10 **dropped** as mis-scoped — engine determinism was never in question and campaign writing is designed later — and Q11 answered at concept level — **Alder refuse artificial Nexus power: little or no draft, more complexity in the structures they grow** | Milestone 1A |
+| 2026-08-21 | 2.5 | Execution-readiness audit — the canon read as a contract an isolated session must execute, not as a design document. Resolved four contradictions that sat directly on Gate 1A's path: the speed-tier order (`engine.md` 4.3 said descending, the fixture said ascending, and only ascending matched the fixture's own arithmetic), the viewport fitting algorithm (which gated *every* Grid smaller than the minimum viewport, including Gate 1A's own), the vertical chrome budget (Section 3.1 implied 20 rows while the floor said 24, and the two rows of one table disagreed with each other — Q12), and the ranged flight window that two documents assumed and none defined. Added the coordinate convention, defined speed tier as initiative, fenced facing as the one presentation-only field allowed in hashed state, and replaced the collision-mask caching prescription with the intent behind it. Closed the Gate 1A checks that no listed check would have caught: the view is now asserted against the event stream, `watch` and `run` must agree on hashes, the report must derive from events rather than kernel internals, and determinism is checked across Bun *and* Node. Split preferences from load-bearing RULEs (preset matrix, scroll margin), moved the monochrome-legibility claim to the human list where governance already required it, closed Q4 as bookkeeping, dropped Milestone 1's promise to answer Q7, and made AGENTS.md version-checked so the summary cannot drift. Registered Q12 and Q13, both applied under their recommendations | Milestone 1A |
 
 ## 7. Locked product decisions
 
@@ -122,11 +124,11 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 - Renderer boundary: simulation emits visibility-filtered semantic views and events; the terminal compositor emits an engine-owned cell frame; platform backends are adapters.
 - Presentation baseline: monochrome seven-bit ASCII, enhanced by explicit ANSI color and optional Unicode modes.
 - The play surface is the **Grid**. The replica on it is a **Grid Nexus**; the one that stays home is a **Prime Nexus**.
-- Grid presets: sizes `small`/`medium`/`large`/`extra-large` against shapes `squared`/`wide`/`extra-wide`; `medium-extra-wide` (48 × 16) is the default.
+- Grid presets: the **default `medium-extra-wide` (48 × 16) is locked**, because both compositions are derived from it. The rest of the preset matrix — sizes `small`/`medium`/`large`/`extra-large` against shapes `squared`/`wide`/`extra-wide` — is GUIDANCE in [`engine.md`](engine.md) Section 3.1 and may change when content shows a better set.
 - Grid orientation is a rendering choice. Portrait and landscape change nothing about state, rules, or coordinates.
 - The Grid has five layers — terrain, obstacles, workers, units, air. **Layers define render order only.** Collision is a mask composed from a chosen set of layers, so cross-layer collision is normal and same-tile coexistence is a property of the masks involved.
 - Every entity has an anchor, a footprint, and a facing. **Units as well as structures may span multiple tiles**; a mover tests its whole footprint. Facing is presentation-only until a milestone earns otherwise.
-- The viewport is clamped to between 48 × 16 and 72 × 24 tiles, so no display shows meaningfully more Grid than another. The cursor drives scrolling at a 3-tile margin. There is no minimap.
+- The viewport is clamped to between 48 × 16 and 72 × 24 tiles, so no display shows meaningfully more Grid than another. The cursor drives scrolling at a 3-tile margin. There is no minimap. The clamp and the cursor-driven rule are locked; **the tuning numbers inside them — the 3-tile margin above all — are locked direction, and Milestone 3 may retune them on evidence** from the first person who actually scrolls a Grid.
 - Every engine statement declares its authority: **RULE** or **GUIDANCE**. Descriptive completeness is not authorization.
 - Tile width is adaptive presentation: one terminal column per tile at 80 columns, two at 128 or wider. Same tiles, same information; 80×24 is the acceptance target.
 - One resource per match. Deposits and salvage both yield it; supply is a separate population cap; Nexus energy is a state readout, not a currency.
@@ -177,6 +179,15 @@ The mature project should combine:
 - human playtests for recognition, emotional impact, comprehension, strategy, and replay desire.
 
 Agents may act as invariant hunters, legal-policy players, and replay critics. Every engine defect must reduce to a state, plan, seed, or event fixture; every balance claim should identify a reproducible cohort.
+
+**Every RULE table in [`engine.md`](engine.md) gets a test named for its section.** The cadence table
+of Section 4.1 becomes `engine-4.1-cadence`; the band list of Section 9.4 becomes
+`engine-9.4-bands`; the layer names, the preset default, and the collision-mask examples likewise.
+The reason is drift: `scripts/check-repository.sh` compares documents against documents, and the
+moment code exists there are two copies of every table with nothing comparing them. Named this way,
+canon drift stops being something a reader has to notice and becomes a failing test with the
+specification section in its name — the same trick as the validator, applied to the half of the
+project it cannot see.
 
 Initial balance metrics eventually include win rate, match length, resource flow, worker uptime, production contention, supply stalls, unit survival, building lifetime, salvage recovery, territory coverage, upgrade selection, commander uptime, Nexus damage timing, and comeback frequency.
 

@@ -3,8 +3,8 @@
 **Document role:** Start-here implementation contract
 **Status:** CURRENT
 **Active gate:** 1A — the Pulse Playground
-**Canon version:** 2.4
-**Updated:** 2026-08-20
+**Canon version:** 2.5
+**Updated:** 2026-08-21
 **License:** Apache-2.0; authored creative treatments are CC BY-SA 4.0
 
 ## 1. What this milestone builds
@@ -87,6 +87,18 @@ tests/
 
 `src/pulse` must not import `src/view`. Assert it in a test rather than trusting it.
 
+`src/report` derives everything it prints from the **event stream and the final state** — never from
+kernel internals. Assert that import direction too. A report that reads the kernel's private state
+can narrate a story the events do not contain, and because the log is only ever compared with itself,
+every other check in Section 3.9 would still pass. The same rule makes the log and the view
+guaranteed to be describing the same fight.
+
+**Agree these five things before splitting work across sessions**, because they are what the modules
+meet through: the coordinate convention ([`engine.md`](engine.md) 3.5), the `DomainEvent` union and
+its serialization, the scenario module API, the log line grammar of 3.3, and the `CellStyle` role
+vocabulary. The first four are written down; the role list is not, and whoever opens the gate should
+commit it — even if it is eight strings — before a second session starts.
+
 ### 3.3 The report — build this early, it is the feedback loop
 
 The Playground's output is a **log on stderr** and a **summary on stdout**. Splitting them is what
@@ -123,12 +135,18 @@ scenario   citizen-mirror-skirmish
 seed       0x5EED0001
 ticks      180 of 240 (ended early: annihilation)
 outcome    A wins
-losses     A: 2 of 8    B: 8 of 8
+losses     A: 2 of 7    B: 7 of 7
 state      sha256:4f2a...    events  sha256:9b17...
 ```
 
 Options: `--log-level`, `--seed`, `--ticks`, `--json` for a machine-readable summary, and
 `--events <file>` for the ordered event log as JSONL.
+
+**The line grammar is `[tick] LEVEL kind subject [-> object] detail…`**, and it is part of the report
+module's tested surface. It grows by **adding kinds, never by reshaping columns** — every `grep` an
+agent writes today has to keep working when salvage, production, and capture arrive. When a test
+needs structure rather than a story, it asserts on `--events` JSONL, which is the real machine
+surface; the log is for humans and for story-level assertions.
 
 Write the report before the rules get complicated. Every rule added after it is one you can watch
 arrive in the log, and every bug is one you can grep for.
@@ -274,9 +292,12 @@ costs a week.
   with the flight window recorded on the event;
 - simultaneous damage within a speed tier, computed against the state at tier start;
 - worker flight: when a hostile attacker is within `range + 2`, move away from it toward the friendly
-  Nexus; otherwise hold;
+  Grid Nexus; **when the scenario places no friendly Nexus — as the mirror skirmish does not — flee
+  directly away from the nearest threat** (Q13);
 - death, structure destruction, salvage dropped as ground items;
 - victory: enemy Grid Nexus destroyed, one side annihilated, or the tick count runs out.
+  **"Annihilated" means every entity on `workers`, `units`, and `air` is dead** (Q13) — workers
+  count, which is why the summary in 3.3 reports 7 of 7.
 
 **Not in scope:** economy, production, supply enforcement, upgrades, the Commander, visibility
 filtering, the Build Phase, selection, inspection, scrolling.
@@ -295,6 +316,10 @@ away.
 - 12 logical ticks per second, 30 frames per second;
 - `snapshotAt(timeMs, capability, tileWidth)` is pure — same arguments, same frame;
 - controls: pause, resume, step one frame, step one tick, speed, restart, quit;
+- **the resize gate**, because [`engine.md`](engine.md) 9.6 makes it a RULE and a terminal is a thing
+  people drag: below the composition size, show the gate and freeze presentation time; resizing back
+  resumes **from the same presentation time**. Scrolling stays out of scope — the Grid fits — so this
+  is the gate and nothing more;
 - **one idempotent disposer** for `q`, `SIGINT`, `SIGTERM`, setup failure, and caught render failure.
   Calling it twice is harmless. Non-TTY prints one line and no escapes. A renderer that leaves the
   terminal in raw mode is a reason to reject it.
@@ -313,7 +338,11 @@ still for the gate — that is a REVISE with the criterion named, not a re-plan.
 - the kernel calls no clock and no `Math.random`, and imports nothing from `src/view` — assert it;
 - the named PRNG matches its published test vectors;
 - changing only the cosmetic seed changes nothing about state, events, or the log;
-- `parse(serialize(state))` hashes identically.
+- `parse(serialize(state))` hashes identically;
+- **`playground verify` produces identical hashes under Bun and under Node** for every checked-in
+  scenario. Both runtimes are already present (Section 5), and cross-runtime agreement is the only
+  cheap test of the serialization and iteration assumptions that twenty runs on one machine can never
+  catch — it is also what makes "library and runtime are independent choices" true rather than hoped.
 
 **Grid and collision**
 
@@ -341,7 +370,18 @@ still for the gate — that is a REVISE with the criterion named, not a re-plan.
 - identical arguments produce identical frames, and skipping frames changes no later frame;
 - 30 fps sustained over 60 seconds, p95 recorded;
 - every lifecycle path runs the same disposer;
-- the Pulse is legible in monochrome.
+- resizing below the composition size shows the gate and freezes presentation time; resizing back
+  resumes from the same presentation time;
+- **the view shows the fight the kernel actually resolved**: at a frame sampled exactly on a tick
+  boundary, every entity's glyph stands on its authoritative tile, asserted against the event stream
+  for at least one scenario. Every other check in this list is about the view agreeing with *itself*
+  — a compositor with a transposed axis or an off-by-one band passes all of them and draws a
+  deterministic, pure, correctly-sized picture of the wrong fight;
+- **`playground watch` and `playground run` agree**: for the same scenario, seed, and tick count the
+  view computes the same state and event hashes as the headless run, prints them on exit, and a test
+  asserts they match. Otherwise Mario can approve a fight the test suite never ran;
+- monochrome mode renders every scenario without error, and no cell depends on colour to exist.
+  Whether monochrome is *legible* is a human check, in 3.10 — an automated test cannot answer it.
 
 **Every rule is a scenario file** — checked in, named, runnable. That is the regression suite and the
 documentation at the same time.
@@ -358,6 +398,9 @@ documentation at the same time.
       `DEVELOPMENT.md`;
 - [ ] `evidence/report.md` ends with **PASS / REVISE / STOP / BLOCKED**;
 - [ ] Mario has watched a mirror skirmish run;
+- [ ] **Mario has watched one in monochrome and could follow it** — who moved, who shot whom, who
+      died. This is a human check on purpose: legibility is an experiential claim, and governance
+      Section 2 forbids treating an automated test as proof of one;
 - [ ] new questions are rows in [`open-questions.md`](open-questions.md), each with a recommendation.
 
 Then stop. Gate 1B is where it gets to look good.
@@ -432,7 +475,9 @@ Milestone 1 passes when both gates are accepted. Durable outputs — and note th
 - a pinned backend behind the `TerminalBackend` interface;
 - a composition that works at 80 × 24 in monochrome;
 - an effect vocabulary earned from watching people watch it;
-- answers to Q7 and Q9 in [`open-questions.md`](open-questions.md);
+- an answer to Q9 in [`open-questions.md`](open-questions.md), plus any new questions the gates
+  raised, each registered with a recommendation. **Not Q7** — workers-carry-versus-produce-in-place
+  needs an economy, and this milestone deliberately has none;
 - the confirmed or corrected 12 Hz hypothesis and movement-credit rules, promoted into
   [`engine.md`](engine.md) Section 4 as RULE;
 - explicit authorization — or refusal — to begin the Build Phase.
