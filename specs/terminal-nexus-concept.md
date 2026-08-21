@@ -2,8 +2,8 @@
 
 **Document role:** One-page product definition
 **Status:** Canonical
-**Canon version:** 2.0
-**Updated:** 2026-08-19
+**Canon version:** 2.3
+**Updated:** 2026-08-20
 **License:** CC BY-SA 4.0 for creative direction; Apache-2.0 for technical product requirements
 
 ## The game in one sentence
@@ -22,10 +22,10 @@ The terminal is not a novelty wrapper. Fixed cells, symbols, ANSI color, keyboar
 
 A match alternates between two phases:
 
-1. **Build Phase.** Both players study the same resolved battlefield and secretly commit construction, production state, and one Nexus upgrade choice. Planning is turn-based and untimed.
+1. **Build Phase.** Both players study the same resolved Grid and secretly commit construction, production state, and one Nexus upgrade choice. Planning is turn-based and untimed.
 2. **Nexus Pulse.** Plans reveal simultaneously. New buildings activate, workers choose jobs, producers spawn fixed recipes when resources and supply allow, and armies move and fight automatically for a fixed number of deterministic logical ticks.
 
-After a Pulse, surviving units regroup near their home producers. Casualties and destroyed buildings remain consequential. The next Build Phase begins from the new public state. The match ends when one battlefield Nexus is destroyed.
+After a Pulse, surviving units regroup near their home producers. Casualties and destroyed buildings remain consequential. The next Build Phase begins from the new public state. The match ends when one Grid Nexus is destroyed.
 
 The player does not micromanage units during a Pulse. Their agency comes from base geometry, expansion, resource capacity, supply, production mix, defenses, research drafts, commander development, and prediction of the opponent's hidden plan.
 
@@ -45,7 +45,7 @@ The emotional loop is:
 
 ## The fantasy
 
-Across the galaxy, ancient pyramidal world machines called Prime Nexuses have awakened. Each remains rooted to its home territory, yet can replicate a smaller Nexus onto a distant battlefield and send one psychically connected leader with it. These rare leaders—Commanders, or **Nexus Symbols**—receive incomplete visions and may be restored by their Prime Nexus after death.
+Across the galaxy, ancient pyramidal world machines called Prime Nexuses have awakened. Each remains rooted to its home territory, yet can replicate a smaller Nexus onto a distant Grid and send one psychically connected leader with it. These rare leaders—Commanders, or **Nexus Symbols**—receive incomplete visions and may be restored by their Prime Nexus after death.
 
 The civilizations controlling these machines cannot agree whether the network is a weapon, a trial, a god, an ecological disaster, or an opportunity. Some believe its wars are selecting the one structure that will become the **Terminal Nexus**.
 
@@ -66,14 +66,17 @@ The player should be able to:
 
 ## Current scope
 
-No playable game exists yet. The first milestone must prove two things in order:
+No playable game exists yet. The first milestone puts a few units on a Grid, lets them fight without anyone steering them, and asks three questions in this order:
 
-1. a TypeScript terminal path can own a precise cell frame, animate smoothly, package credibly, and restore the terminal safely;
-2. authored moving symbols can communicate weight, causality, danger, and personality at 80×24.
+1. **Is it deterministic?** The same scenario, seed, and tick count resolve into the same events and the same final state, every run, with no terminal involved.
+2. **Is it legible?** A viewer who did not simulate it can follow who moved, who shot whom, and who died — at 80×24, with colour switched off.
+3. **Is it good?** Anticipation, impact, and debris turn a readable battle into one worth watching again.
 
-Combat rules, economy, base construction, campaigns, public mod loading, multiplayer, sound, and model-driven opponents remain gated behind those proofs.
+Each question is worthless without the one before it. A battle that looks great and does not replay identically is a demo; a battle that replays identically and cannot be read is a log file.
 
-Start implementation with [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md).
+The Build Phase, base construction, economy, campaigns, packaging and remote delivery, public mod loading, multiplayer, sound, and model-driven opponents all remain gated behind those proofs.
+
+Start implementation with [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md). Before deciding anything the canon leaves open, check [`open-questions.md`](open-questions.md). For the visual direction these proofs are chasing, see [`../concept/README.md`](../concept/README.md).
 
 ## Design statement
 

@@ -26,6 +26,8 @@ Repository-level validation is available now:
 ./scripts/check-repository.sh
 ```
 
+It reports the canon version and the active gate, and enforces the canon's structural invariants.
+
 See [DEVELOPMENT.md](DEVELOPMENT.md) for the workflow and evidence requirements.
 
 ## Development environments
@@ -40,6 +42,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the workflow and evidence requirements.
 ```text
 .
 ├── specs/                 Focused canon and milestone contracts
+├── concept/               Concept art and the canon deltas it implies
 ├── docs/                  Human setup and workflow notes
 ├── scripts/               Repository and future development commands
 ├── .devcontainer/         Codespaces configuration
