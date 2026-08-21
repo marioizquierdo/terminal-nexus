@@ -1,0 +1,50 @@
+import { defineScenario } from "../src/scenario/index.ts"
+
+export default defineScenario({
+  id: "hauler-two-tile-gap",
+  name: "Hauler - two-tile gap refuses it",
+  notes: "The same wall with one tile less opening. The hauler never fits, slides along the face looking for a step that does, and the report raises the stuck warning. Its counterpart scenario is hauler-three-tile-gap.",
+
+  grid: { preset: "small-wide" },
+  seed: 0x0000A006,
+  pulseTicks: 240,
+
+  terrain: [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "###########..###########",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+  ],
+  terrainLegend: {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit",
+  },
+
+  placements: [
+    "                        ",
+    "                        ",
+    "          h             ",
+    "                        ",
+    "                        ",
+    "                        ",
+    "                        ",
+    "                        ",
+    "                        ",
+    "          B             ",
+    "                        ",
+    "                        ",
+  ],
+  placementLegend: {
+    h: { player: "A", content: "unit.citizen.hauler" },
+    B: { player: "B", content: "structure.citizen.barracks" },
+  },
+})

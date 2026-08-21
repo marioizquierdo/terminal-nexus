@@ -1,0 +1,50 @@
+import { defineScenario } from "../src/scenario/index.ts"
+
+export default defineScenario({
+  id: "salvage-drop",
+  name: "Salvage drop - debris where a marksman fell",
+  notes: "Death leaves salvage as a ground item on the tile the entity died on, drawn in the ground-items band. Nothing consumes it in Gate 1A: there is no economy, and the point is that the event and the item exist.",
+
+  grid: { preset: "small-wide" },
+  seed: 0x0000A009,
+  pulseTicks: 240,
+
+  terrain: [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+  ],
+  terrainLegend: {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit",
+  },
+
+  placements: [
+    "                        ",
+    "                        ",
+    "                        ",
+    "                        ",
+    "                        ",
+    "          t  R          ",
+    "          t             ",
+    "                        ",
+    "                        ",
+    "                        ",
+    "                        ",
+    "                        ",
+  ],
+  placementLegend: {
+    t: { player: "A", content: "unit.citizen.trooper" },
+    R: { player: "B", content: "unit.citizen.marksman" },
+  },
+})
