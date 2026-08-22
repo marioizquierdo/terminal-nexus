@@ -25,7 +25,7 @@ jobs:
       - name: Validate repository
         run: ./scripts/check-repository.sh
 
-  playground:
+  grid:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -60,5 +60,5 @@ jobs:
       - name: Verify every scenario resolves identically
         run: |
           for scenario in scenarios/*.ts; do
-            ./bin/playground.ts verify "$scenario" --runs 20
+            ./bin/grid.ts verify "$scenario" --runs 20
           done
