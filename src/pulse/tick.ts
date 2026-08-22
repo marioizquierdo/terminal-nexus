@@ -81,6 +81,10 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
     rng: Pcg32.restore(state.rng),
     events: [],
     groundItems: [...state.groundItems],
+    // Rebuilt from scratch every tick: perception() unconditionally reassigns every actor's
+    // targetOrdinal through setTarget(), so by the time anything reads this it already reflects
+    // this tick's state in full — nothing needs to be seeded from the previous tick.
+    targetObservers: new Map(),
   }
 
   economyAndProduction(context) // 2

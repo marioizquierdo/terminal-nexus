@@ -40,6 +40,38 @@ export type TickContext = {
   rng: Pcg32
   events: DomainEvent[]
   groundItems: GroundItem[]
+  /**
+   * Reverse index from a target's ordinal to the actors currently aiming at it — engine.md 11.1.
+   * Maintained by `setTarget` at every targetOrdinal write site (all in perception.ts) so death
+   * resolution can find who was watching a dying entity without scanning every actor. Values are
+   * Actor references rather than ordinals: an actor that already died earlier in the same
+   * multi-round detonation chain is gone from `byOrdinal` but can still be a legitimate observer
+   * here (its own targetOrdinal is never cleared by its own death), and this index has to keep
+   * finding it exactly the way the old full scan of `context.actors` did.
+   */
+  targetObservers: Map<number, Set<Actor>>
+}
+
+/**
+ * Sets an actor's target and keeps `targetObservers` in sync — the one place perception's five
+ * `targetOrdinal = ...` writes and death resolution's reverse-index read have to agree. Reassigning
+ * the same value is a harmless no-op remove-then-add, not a special case: correctness never depends
+ * on insertion order, because a target's observer set is sorted by ordinal wherever it is read
+ * (engine.md 11.1) — the same order the old scan of `context.actors` always produced.
+ */
+export function setTarget(context: TickContext, actor: Actor, targetOrdinal: number | null): void {
+  if (actor.targetOrdinal !== null) {
+    context.targetObservers.get(actor.targetOrdinal)?.delete(actor)
+  }
+  actor.targetOrdinal = targetOrdinal
+  if (targetOrdinal !== null) {
+    let observers = context.targetObservers.get(targetOrdinal)
+    if (observers === undefined) {
+      observers = new Set()
+      context.targetObservers.set(targetOrdinal, observers)
+    }
+    observers.add(actor)
+  }
 }
 
 /** Maps a mask's blocker to the reason a `move.blocked` event reports. */

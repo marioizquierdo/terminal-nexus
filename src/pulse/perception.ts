@@ -2,7 +2,7 @@
 
 import { directionOf, footprintDistance } from "../grid/coords.ts"
 import type { Actor, TickContext } from "./shared.ts"
-import { isMobile } from "./shared.ts"
+import { isMobile, setTarget } from "./shared.ts"
 
 export function hostilesOf(context: TickContext, actor: Actor): Actor[] {
   return context.actors.filter((other) => other.player !== actor.player && !other.pendingDead)
@@ -40,7 +40,7 @@ export function selectTarget(
 export function perception(context: TickContext): void {
   for (const actor of context.actors) {
     if (!isMobile(actor) && actor.definition.attack === undefined) {
-      actor.targetOrdinal = null
+      setTarget(context, actor, null)
       continue
     }
     const previous = actor.targetOrdinal
@@ -56,7 +56,7 @@ export function perception(context: TickContext): void {
         target: `#${previous}`,
         targetOrdinal: previous,
       })
-      actor.targetOrdinal = null
+      setTarget(context, actor, null)
     }
 
     const hostiles = hostilesOf(context, actor)
@@ -66,12 +66,12 @@ export function perception(context: TickContext): void {
         : hostiles
     const selection = selectTarget(context, actor, candidates)
     if (selection === null) {
-      actor.targetOrdinal = null
+      setTarget(context, actor, null)
       continue
     }
 
     const changed = actor.targetOrdinal !== selection.target.ordinal
-    actor.targetOrdinal = selection.target.ordinal
+    setTarget(context, actor, selection.target.ordinal)
     // Facing is derived from the current target when stationary, and from the last step when
     // moving. Nothing in the rules reads it (Q9).
     actor.facing = directionOf(actor.anchor, selection.target.anchor, actor.facing)

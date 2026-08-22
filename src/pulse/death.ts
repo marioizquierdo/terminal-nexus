@@ -134,7 +134,18 @@ function resolveDeaths(context: TickContext, dying: readonly Actor[]): void {
     // Everything that was aiming at this entity loses its target now, while the dying actor's id
     // is still in hand — so the event names the entity rather than a bare ordinal, and the loss is
     // reported on the tick it actually happened.
-    for (const observer of context.actors) {
+    //
+    // Observers come from the reverse index (engine.md 11.1) rather than a scan of every actor:
+    // perception maintains `targetObservers` at every targetOrdinal write, so this is O(observers
+    // of this one entity) instead of O(N) — the saving a chain detonation with several simultaneous
+    // deaths actually collects. Sorted by ordinal because that is the order the old scan of
+    // `context.actors` always produced, and the index's insertion order can drift from it as
+    // targets change hands over a match; the sort is what keeps this loop's order — and so its
+    // events — identical to before regardless of that history.
+    const observers = [...(context.targetObservers.get(actor.ordinal) ?? [])].sort(
+      (a, b) => a.ordinal - b.ordinal,
+    )
+    for (const observer of observers) {
       if (observer.targetOrdinal !== actor.ordinal) continue
       observer.targetOrdinal = null
       context.events.push({
@@ -146,6 +157,7 @@ function resolveDeaths(context: TickContext, dying: readonly Actor[]): void {
         targetOrdinal: actor.ordinal,
       })
     }
+    context.targetObservers.delete(actor.ordinal)
     context.index.remove(
       actor.definition.layer,
       actor.ordinal,
