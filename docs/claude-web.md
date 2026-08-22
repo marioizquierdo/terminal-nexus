@@ -8,46 +8,37 @@ Claude Code on the web works in an isolated remote environment, creates a task b
 2. Connect GitHub and install the Claude GitHub App when prompted.
 3. Grant the app access to `marioizquierdo/terminal-nexus`.
 4. Create or select an environment with **Trusted** network access.
-5. Add no secrets for Milestone 1A. Claude Web itself does not require an Anthropic API key for this repository workflow.
-6. Leave the environment setup script empty for the first session. Runtime selection belongs to the current gate; do not install an unreviewed floating Bun version.
+5. No secrets are required. Claude Web does not need an Anthropic API key for this repository's own workflow.
+6. Leave the environment setup script empty. The toolchain is pinned already (Node 22.18+ or Bun
+   1.3+, no build step — see `README.md`'s Local Development section), so there is nothing to
+   install ahead of a session; `npm install` inside the session is enough, and only type checking
+   and the OpenTUI backend need it.
 
-After Gate 1A pins the toolchain, update the environment setup, `DEVELOPMENT.md`, dev container, and CI together. Keep setup under five minutes and never put credentials in a script or repository.
+Keep the environment setup, `DEVELOPMENT.md`, the dev container, and CI updated together whenever a
+canonical development command changes (`AGENTS.md` Section 5).
 
-## First session prompt
+## Starting a session
+
+There is no fixed kickoff prompt to paste anymore — that was a Gate 1A bootstrap for a repository
+with no code yet, and the repository now has code, tests, and a working tool. `CLAUDE.md` imports
+`AGENTS.md`, which gives a fresh session its own orientation instructions (run
+`./scripts/check-repository.sh`, read the specs in order, find the current gate and what it
+authorizes) automatically. Just say what you want done; the agent orients itself.
+
+If you want a session to do exactly what an unattended session should do by default — pick up
+outstanding owner feedback and nothing else — a short prompt like this is enough:
 
 ```text
-Read CLAUDE.md and follow AGENTS.md.
-
-Run ./scripts/check-repository.sh first — it prints the canon version and the active gate.
-
-Then read:
-1. specs/terminal-nexus-concept.md
-2. specs/engine.md Section 0 first, and take the authority markers literally.
-   Then Sections 1, 3, and 4 - the three worlds, the Grid and its layers, the Pulse.
-3. specs/milestone-1-spike-battle.md, through the active gate
-4. specs/open-questions.md Section 4
-5. specs/project-governance.md Sections 2-4
-
-Copy specs/templates/gate-report.md into the spike and fill in its first section before
-writing code: question, smallest artifact, automated evidence, owner observation,
-exclusions, stop conditions.
-
-Implement only the active gate. Gate 1A builds the headless run and a minimal ASCII
-view together - the headless report is how you iterate, the view is how Mario judges
-it. Selection, inspection, and scrolling are out of scope; use a small Grid that fits
-the viewport. Run every available verification command and finish with a PASS, REVISE, STOP, or
-BLOCKED evidence report for Mario. Register anything you could not decide in
-specs/open-questions.md with a recommendation.
+Read CLAUDE.md and follow AGENTS.md. Orient yourself, tell me what's outstanding, and work on it.
 ```
 
 ## Environment notes
 
 Measured on 2026-08-20: the task container provides **Bun 1.3.11** and **Node 22.22.2**; Deno is not
 installed. Milestone 1 dropped its Deno probe partly for this reason — see
-`specs/milestone-1-spike-battle.md` Section 3.2.
-
-Gate 1A will pin the runtime it selects. Until then, leave the environment setup script empty rather
-than installing a floating version to save a session thirty seconds.
+`specs/milestone-1-spike-battle.md` Section 3.2. The pinned toolchain versions a session actually
+runs against are recorded fresh in each gate's evidence report, not here — re-check rather than
+assume this measurement still holds.
 
 ## Optional GitHub `@claude` automation
 

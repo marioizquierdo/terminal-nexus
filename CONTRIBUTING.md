@@ -28,7 +28,9 @@ Run before requesting review:
 ./scripts/check-repository.sh
 ```
 
-Product install, build, test, and run commands are Coming Soon. Milestone 1A will pin the first product toolchain; accepted commands will be documented in `DEVELOPMENT.md`.
+Install, build, test, and run commands are in `README.md`'s Local Development section and
+`DEVELOPMENT.md`. There is no build step — Node 22.18+ and Bun 1.3+ both run the TypeScript sources
+directly.
 
 ## Contribution licenses
 
