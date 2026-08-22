@@ -26,7 +26,7 @@ This document will eventually define:
 
 No complete roster has been earned yet. Do not invent production-ready stats before Milestone 4 selects the minimum Citizens-versus-Ravels microgame.
 
-**Two fixture armies exist on the Playground bench** (Milestone 1) and neither is a Commander Army: a Citizen set from `milestone-1-spike-battle.md` 3.6, and a Ravel set added at Gate 1B so the Playground could show two styles of fight rather than one fight twice. They are disposable, tuned for contrast rather than balance, and Milestone 4 is still what selects the real microgame. What they proved is worth carrying forward:
+**Two fixture armies exist on the bench** (Milestone 1) and neither is a Commander Army: a Citizen set from `milestone-1-spike-battle.md` 3.6, and a Ravel set added at Gate 1B so `grid` could show two styles of fight rather than one fight twice. They are disposable, tuned for contrast rather than balance, and Milestone 4 is still what selects the real microgame. What they proved is worth carrying forward:
 
 - three of the four Ravel rule shapes in Section 4.1 needed nothing new from the kernel — rates off the Citizen cadence, lower speed tiers, richer salvage;
 - the fourth, **volatile munitions**, needed a rule, and it is the one that made the faction legible without a word of lore. A stats-only Ravel army failed the alignment test in `terminal-nexus-lore.md` Section 8.6; the rule passed it. Chains are bounded because an entity can only die once, so a cascade resolves inside the tick that started it;
@@ -288,3 +288,46 @@ Every literal glyph is theme data mapped from a semantic role. Every exceptional
 5. Treat Glitch, Feudals, and Alder as lore and art direction until Citizens/Ravels prove the complete loop.
 
 Full skirmish mode should eventually expose each legal Commander Army without requiring campaign completion. Campaigns introduce and unlock their contents gradually.
+
+## 7. Working notes — personal, not canon, not authorization
+
+The owner asked, in passing, whether there might already be commander-army ideas worth writing down.
+Section 4 already answers that more thoroughly than a passing question expected — the doctrine
+tables, the signature-moment capability mapping, and the named Commander proposals are not a sketch,
+they read like design work already mostly done. So rather than add more names or more doctrine, these
+are a handful of small ideas that occurred to me *this session*, specifically because of what I was
+staring at in the kernel while reviewing and writing — offered the same way Section 4 already frames
+its own content: "competes for a place... none is authorized until a milestone needs it." Nothing
+here should be read as more settled than that.
+
+- **A Citizen unit that is a wall segment, not a wall builder.** Section 4.1's alignment bonus already
+  rewards unbroken orthogonal runs of structures; multi-tile footprints are already RULE
+  (`engine.md` 3.5). A slow, high-integrity Citizen unit whose footprint is a straight 1×3 or 1×4
+  line — marched into place and left standing — turns "the player draws Citizen geometry because it
+  is strong" from a structure-placement idea into a Grid one: formation *is* the unit, not just
+  the base layout around it. Nothing about this needs a new engine capability, only content shaped to
+  use two rules that already exist.
+- **A Ravel death that denies ground, not just deals damage.** This session shipped the settle-delay
+  rule — a death's tile stays blocked for a short window after the entity is gone
+  (`vacatedTiles`, `engine.md`). A Ravel unit whose detonation *extends* that window inside its blast
+  radius — not just damaging what's caught, but making the ground itself slower to reclaim — combines
+  two things the kernel already has into a new expressive beat for "everything is fuel, and endings
+  are loud," at what looks like a small kernel cost (a radius-scoped write to an already-existing
+  table) rather than a new system.
+- **A large, slow unit is already interesting for a reason nobody had to design.** "Range is measured
+  to the nearest occupied tile of the target's footprint, not its anchor" (`engine.md` 3.5) means a
+  big, dangerous, multi-tile siege unit is *easier* to hit than a small one just by existing at that
+  size — real tension, falling straight out of two RULEs already locked, not a mechanic anyone needs
+  to invent. Worth remembering when a "big scary unit" gets designed later: the footprint rule is
+  already doing half the balancing work.
+- **One idea I'd warn against, not recommend.** While designing this session's replay format
+  (`replay-format.md` 3.1), I needed a precise definition of "an engagement" — attacks clustered in
+  space and time. It is tempting to let a Commander power react to that same idea — "bonus effect if
+  cast into an active fight." I would not reuse the *replay's* engagement detector for it: that
+  algorithm is deliberately a post-hoc report-layer read over an already-resolved event log (Section
+  3.1 explains why), and letting gameplay rules depend on it would either mean the kernel re-deriving
+  report logic inside the Pulse, or presentation-adjacent code influencing simulation — the exact
+  boundary `engine.md` Section 1 exists to hold. If a "reacts to a fight in progress" power is ever
+  wanted, it needs its own simple, kernel-native notion of local density (nearby hostile count within
+  a radius, computed live, the way perception already scans), not a borrowed copy of a tool built for
+  a different job.

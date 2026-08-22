@@ -11,9 +11,9 @@
 Three images made early, to see what the game might feel like. **Do not take them too seriously.**
 Nothing here is a commitment, and no session should treat a detail in them as a requirement.
 
-The real visual concept will come from the **Pulse Playground** — from watching actual units move,
-shoot, and die on a real Grid, at the real frame rate, in a real terminal. Concept art cannot answer
-whether motion reads. The Playground can.
+The real visual concept will come from **`grid`**, watching actual units move, shoot, and die on a
+real Grid, at the real frame rate, in a real terminal. Concept art cannot answer whether motion
+reads. `grid` can.
 
 When a piece and a specification disagree, the specification wins. If the disagreement looks like a
 real decision, it becomes a row in [`../specs/open-questions.md`](../specs/open-questions.md).
@@ -56,7 +56,7 @@ Section 1, demonstrated rather than described. Two lines of dialogue doing the w
 
 The art predates several decisions and says so in places — a retired phase name, a `TURN` counter,
 a `DAYTIME PULSE` header, and separate salvage and energy counters where the game now has one
-resource. None of it matters. Redraw when the Playground gives us something real to draw from.
+resource. None of it matters. Redraw when `grid` gives us something real to draw from.
 
 ## Adding a piece
 

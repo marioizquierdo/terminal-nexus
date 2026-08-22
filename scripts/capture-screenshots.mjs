@@ -1,4 +1,4 @@
-// Screenshot the Pulse Playground running on a real terminal.
+// Screenshot `grid` (the Pulse Playground's tool) running on a real terminal.
 //
 //   node scripts/capture-screenshots.mjs
 //   node scripts/capture-screenshots.mjs --only mirror-open
@@ -184,7 +184,7 @@ function extraArgsFor(shot) {
 function captureGate(shot) {
   killSession(repoRoot, SESSION)
   const command = [
-    "./bin/playground.ts",
+    "./bin/grid.ts",
     "watch",
     `scenarios/${shot.scenario}.ts`,
     ...extraArgsFor(shot),

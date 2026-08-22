@@ -6,6 +6,6 @@ main(process.argv.slice(2))
     process.exitCode = code
   })
   .catch((error: unknown) => {
-    process.stderr.write(`[----] ERROR playground ${String(error)}\n`)
+    process.stderr.write(`[----] ERROR grid ${String(error)}\n`)
     process.exitCode = 1
   })

@@ -1,9 +1,9 @@
 ---
-name: playground-screenshots
-description: Run the Terminal Nexus Pulse Playground on a real terminal and capture PNG screenshots of the ASCII view. Use when judging how the composition looks, comparing render tiers, glyph packs, effects on and off, or reduced motion, or when a change touches src/view and someone should see it rather than read a frame as text.
+name: grid-screenshots
+description: Run `grid` (the Terminal Nexus engine/editor/replay tool) on a real terminal and capture PNG screenshots of the ASCII view. Use when judging how the composition looks, comparing render tiers, glyph packs, effects on and off, or reduced motion, or when a change touches src/view and someone should see it rather than read a frame as text.
 ---
 
-# Screenshotting the Pulse Playground
+# Screenshotting `grid`
 
 The tests assert what a frame *contains*. They say nothing about how it **looks** — spacing,
 density, where the eye goes, whether colour helps or clutters. This is how you look at it.
@@ -49,13 +49,13 @@ screenshot lands where you meant rather than wherever the wall clock reached. Fi
 shooting from the log first:
 
 ```bash
-./bin/playground.ts run scenarios/ravel-cascade.ts 2>&1 >/dev/null | grep -E "blast|death"
+./bin/grid.ts run scenarios/ravel-cascade.ts 2>&1 >/dev/null | grep -E "blast|death"
 ```
 
 ## Driving it by hand
 
 ```bash
-tmux new-session -d -s nexus -x 80 -y 24 './bin/playground.ts watch scenarios/ravel-cascade.ts'
+tmux new-session -d -s nexus -x 80 -y 24 './bin/grid.ts watch scenarios/ravel-cascade.ts'
 timeout 10 bash -c 'until tmux capture-pane -t nexus -p | grep -q "TERMINAL NEXUS"; do sleep 0.2; done'
 tmux send-keys -t nexus -l ' '          # pause
 tmux send-keys -t nexus -l ',,,,,,,,,,' # ten ticks forward
@@ -91,7 +91,7 @@ Use `-l` on `send-keys`: without it tmux reads `,` and `[` as key names.
 ## Watching it yourself
 
 ```bash
-./bin/playground.ts watch scenarios/citizens-versus-ravels.ts --glyphs unicode --capability truecolor
-./bin/playground.ts watch scenarios/ravel-cascade.ts --capability monochrome --speed 0.5
-./bin/playground.ts watch scenarios/citizens-versus-ravels.ts --tile-width 2   # needs 128 columns
+./bin/grid.ts watch scenarios/citizens-versus-ravels.ts --glyphs unicode --capability truecolor
+./bin/grid.ts watch scenarios/ravel-cascade.ts --capability monochrome --speed 0.5
+./bin/grid.ts watch scenarios/citizens-versus-ravels.ts --tile-width 2   # needs 128 columns
 ```

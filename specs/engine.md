@@ -312,7 +312,10 @@ it matters. **Gate 1A answered it by never materialising one**, and that answer 
 
 There is no window in which a mask can answer from stale data, because there is no copy to go stale.
 The cost is one indexed lookup per layer per query, which did not appear in any Milestone 1
-measurement.
+measurement. **The index itself is not free of scale, even though the mask is**: it is sized to
+`width * height` per layer and rebuilt every tick, so it is the one place cost is coupled to map
+area rather than actor count. Section 11.1 has the fuller cost assessment at "hundreds or thousands
+of units" scale, which this section's own numbers were not measured against.
 
 ### 3.5 Placement, footprint, anchor, and facing — RULE
 
@@ -353,15 +356,34 @@ interface Placement {
   the current target when stationary. Nothing in the rules reads it yet. It exists in state because
   a renderer that has to guess facing produces jitter, and because arcs may want it later.
 
-### 3.6 Distance and movement — GUIDANCE
+### 3.6 Distance and movement — GUIDANCE, revised after Milestone 1 playtesting
 
-Eight-way movement, uniform cost per step, **Chebyshev distance** (`max(|dx|, |dy|)`) for range and
-routing. This is the standard grid-game answer, it keeps range rings compact and readable, and it
-avoids fractional diagonal costs fighting the integer movement credit in Section 4.2.
+**Four-way movement** (the compass points, never a diagonal), uniform cost per step, **Manhattan
+distance** (`|dx| + |dy|`) for range and routing — `src/grid/coords.ts`, `DIRECTIONS` and
+`gridDistance`. This superseded the gate's original choice — eight-way movement and Chebyshev
+distance (`max(|dx|, |dy|)`), the standard grid-game answer, kept here as a footnote rather than
+deleted so the reasoning stays visible:
 
-The known artifact: a diagonal step covers more ground than an orthogonal one, so diagonal travel is
-about 1.41× faster in real terms. That is an accepted simplification, and it is listed here rather
-than hidden so a later milestone can revisit it deliberately.
+> Eight-way movement and Chebyshev distance keep range rings compact and readable, and avoid
+> fractional diagonal costs fighting the integer movement credit in Section 4.2. The known artifact:
+> a diagonal step covers more ground than an orthogonal one, so diagonal travel is about 1.41× faster
+> in real terms — an accepted simplification, listed rather than hidden.
+
+The owner's first watch of the Pulse Playground found diagonal movement to be the single biggest
+legibility problem: a unit that can cut a corner is a unit whose next tile a viewer cannot predict.
+Restricting movement to the compass points makes every step read as "up," "down," "left," or "right"
+— nothing else about the kernel's shape changes. Manhattan is the natural distance partner: it is
+exactly the count of cardinal steps between two tiles, so "in range" and "reachable in that many
+steps" mean the same thing again, which Chebyshev and eight-way together already promised but
+Chebyshev and *four-way* would not have.
+
+This traded one artifact for a sharper version of a limitation the routing floor already had. Under
+Manhattan, every legal step changes distance by exactly ±1 — there is no step that merely holds
+distance level, the way a diagonal sidestep once could. An actor approaching an obstacle off-axis
+still has two improving directions and can slide along the obstacle's face; an actor approaching
+exactly on-axis with its goal has exactly one, and if a wall takes it there is no fallback at all.
+[`open-questions.md`](open-questions.md) Q15 has the measurement and the recommendation — real
+pathfinding, Milestone 2's, is what actually closes this; the greedy floor was never meant to.
 
 Terrain may modify movement cost. Immutable terrain cannot be attacked; only blockers explicitly
 marked destructible enter targeting and damage.
@@ -472,7 +494,7 @@ it rather than in lockstep. This keeps "no two entities ever overlap" true by co
 arbitration's progress measure simple.
 
 **Death can be contagious, and step 8 is a queue rather than a pass.** Where content detonates on
-death — Ravel volatile munitions are the first such rule, and they live on the Playground bench, not
+death — Ravel volatile munitions are the first such rule, and they live on the bench, not
 in canon — the blast damages everything inside its radius, friend and foe, and anything reduced to
 zero joins the queue. **The chain is bounded because an entity can only die once**, so the queue
 drains after at most one round per entity and the whole cascade settles inside the tick that started
@@ -523,7 +545,8 @@ playback speed, and the cosmetic seed sit outside that boundary entirely.
 A game log records schema, engine, and ruleset versions; content ids and hashes; map id and hash;
 tick rate; PRNG name and seed; armies; initial state; committed plans per Build Phase; ordered events
 per Pulse; final hashes; outcome; and any presentation markers, explicitly excluded from
-verification.
+verification. [`replay-format.md`](replay-format.md) is a first concrete schema for exactly this list
+— GUIDANCE, not built, written so Milestone 2 starts from a design rather than this one sentence.
 
 ---
 
@@ -919,15 +942,20 @@ plus metadata; armies, units, structures, upgrades, themes, and glyphs as valida
 effects as typed functions; cutscenes as tableaux and timelines; missions as map, army, objective,
 trigger, and scene definitions.
 
-The **Pulse Playground** — a scenario file plus a CLI that defines a Grid, places entities, takes a
-seed and a tick count, runs or steps a Pulse, and reports what happened — is worth building **first**,
-not eventually. It is the fastest feedback loop the project will have, for humans and agents alike,
-and it is permanent infrastructure rather than spike residue: every future unit gets tested on it.
+**`grid`** — a scenario file plus a CLI that defines a Grid, places entities, takes a seed and a tick
+count, runs or steps a Pulse, and reports what happened — is worth building **first**, not
+eventually. It is the fastest feedback loop the project will have, for humans and agents alike, and
+it is permanent infrastructure rather than spike residue: every future unit gets tested on it. It
+grew out of Milestone 1's Pulse Playground and stayed the engine's own name — `grid` is the editor
+and replay tool, not the game; a future `terminal-nexus` executable is what launches a campaign
+built on it. What "replay tool" means concretely — reading and writing a persisted, levelled game
+log rather than only resolving a scenario file fresh each time — is designed, not built, in
+[`replay-format.md`](replay-format.md).
 
 Two outputs, and the split matters. A **levelled log on stderr** (default `INFO`) carries the story of
 the run in fixed, greppable columns, so an agent can assert on behaviour without parsing prose and a
 designer can read what happened. A **summary on stdout** carries the outcome, the losses, and the
-hashes. `playground run x.ts > report.txt 2> run.log` separates them; by default they interleave in
+hashes. `grid run x.ts > report.txt 2> run.log` separates them; by default they interleave in
 the terminal, which is what a person wants. See
 [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) Section 3.3.
 
@@ -935,3 +963,67 @@ This is **modding-first architecture, not mod-loader-first development.** No pub
 loader, marketplace, permission system, or compatibility promise belongs in early milestones. Themes
 may recommend fonts, but a terminal application cannot reliably change the host font, so every pack
 keeps an ASCII-safe fallback.
+
+### 11.1 Scaling toward hundreds or thousands of units — GUIDANCE
+
+Milestone 1's fixtures top out at a few dozen actors on a preset Grid. The owner has asked, ahead of
+any evidence forcing the question, whether the kernel's current shape holds at "hundreds or
+thousands of units, and possible future epic-large maps." It has not been measured at that scale and
+nothing here claims it has been — this section writes down what a code review found about *where*
+cost would appear first, and which design moves are cheap to take now versus expensive to retrofit
+later, so the answer is prepared rather than improvised when it stops being hypothetical.
+
+**Where cost actually lives, as of Gate 1B.** Grid size (`A`, tile count) and actor count (`N`) are
+different axes and the kernel does not couple them uniformly:
+
+| Phase | Cost | Coupled to |
+| --- | --- | --- |
+| Occupancy rebuild (`OccupancyIndex`, `src/grid/occupancy.ts`) | O(A) | map area — four `Int32Array`s sized to `width * height`, rebuilt every tick (`src/pulse/tick.ts:856`) |
+| Collision queries (`CollisionMask`, Section 3.4.1) | O(1) per query | neither — a lazy view, allocates nothing |
+| Movement and routing (`rankedSteps`, intents) | O(N) | actor count, cheap |
+| Arbitration (contested tiles) | O(N) typical, O(C²) at one chokepoint | contestants at a single tile, bounded and self-reporting (`arbitration.bounded`) |
+| **Perception and targeting** (`hostilesOf` + `selectTarget`) | **O(N²), every tick, unconditionally** | actor count — the confirmed primary risk |
+| Attacks | O(N × T), T = distinct speed tiers | small today, not architecturally bounded |
+| Death resolution | O(N) per death → O(N·D) for D simultaneous deaths | actor count × deaths in one tick — a volley or a detonation chain is exactly this |
+
+Perception is the one place cost is quadratic in actor count with no cap at all, so it is the first
+thing to bound before "hundreds or thousands" is a real target. The other rows scale acceptably at
+that range or are already bounded; they are listed so a later session does not have to re-derive
+this table from scratch.
+
+**Four design rules, adoptable now without building real spatial pathfinding:**
+
+1. **Treat grid size as a declared mode with a sane upper bound, not an unbounded input.** There is
+   no autoscroll or streamed geography yet, so an unbounded custom grid is an unbounded per-tick
+   allocation, not just a slow one. **Done this session**: `src/scenario/load.ts` rejects a custom
+   grid over `MAX_DECLARED_GRID_TILES` (10,000 tiles, roughly 5x the largest preset) at load time,
+   loudly, rather than letting a mistyped or exploratory scenario degrade silently every tick.
+2. **Reserve a spatial-query shape on perception's signature now, even before anything uses it.**
+   Zero cost, zero behavior change — pure API-surface insurance. Q17 is the cautionary tale: any
+   change to how a target is chosen moves every hash pinned to the current behavior, so the earlier
+   the eventual shape is visible in the types, the fewer call sites have to change later.
+3. **`OccupancyIndex` is the right place to build a coarse spatial index from, not a new structure
+   next to it.** It already owns every placement mutation — `add`/`remove`/`move` at settle
+   (`tick.ts:514`), death (`:771`), and the tick-start rebuild (`:856`) — which are exactly the
+   events a sibling sector index would need to stay current. Bucketing perception's search through
+   it (rather than scanning `context.actors` directly) bounds the O(N²) toward O(N·k) with no
+   fidelity cost, provided iteration inside a bucket stays ordinal-sorted the way every other pass
+   already is.
+4. **A radius cap on target selection, with an explicit and deterministic fallback, is the real
+   fix — and it is a design decision, not an engineering one.** Capping "nearest enemy anywhere" to
+   "nearest enemy within R" is cheap once Rule 3 exists; deciding what a unit with nothing in R does
+   instead changes emergent behavior and, like Q17, is expensive to reconsider once a fixture is
+   pinned to a specific contract. [`open-questions.md`](open-questions.md) Q20 has the options and a
+   recommendation. Land it inert and off by default until a scenario actually needs it.
+
+**What this section is not.** It is not a commitment to build real pathfinding, a spatial index, or
+a radius cap in the current gate — the owner was explicit that design rules now are enough. It is
+not a claim that Milestone 1's fixtures are slow; nothing here is a measurement, only an assessment
+of where a future measurement would first go red. Two further findings from the same review were
+adopted immediately because they are free and change nothing observable: `attacks()` (`tick.ts`) now
+buckets actors by speed tier once per tick instead of re-scanning every actor per tier, which removed
+an O(N × T) re-filter with no behavior change (verified hash-identical across every fixture). A
+matching fix for death resolution's O(N·D) observer scan — a reverse `target → observers` index,
+maintained at the same handful of `targetOrdinal` write sites perception already touches — was
+scoped but not built this session; it is a well-specified, low-risk next step, not a design
+question, whenever someone next has a reason to touch that code path.

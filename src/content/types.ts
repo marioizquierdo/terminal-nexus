@@ -7,7 +7,7 @@ export type AttackKind = "melee" | "ranged"
 
 export type AttackDef = Readonly<{
   kind: AttackKind
-  /** Chebyshev tiles, measured to the nearest occupied tile of the target. */
+  /** Manhattan tiles, measured to the nearest occupied tile of the target — grid/coords.ts. */
   range: number
   damage: number
   cooldownTicks: number
@@ -24,13 +24,13 @@ export type Behavior = "advance" | "flee" | "static"
  * Volatile munitions — the Ravel rule shape from `commander-armies.md` Section 4.1: many Ravel
  * things detonate when they die, theirs and what they kill, and chains are legal and bounded.
  *
- * It is a **fixture rule on the Playground bench**, not authored Commander Army content: it exists
+ * It is a **fixture rule on the bench**, not authored Commander Army content: it exists
  * because a Ravel army without it fails the alignment test in `terminal-nexus-lore.md` Section 8.6,
  * where a themed reskin of a generic ability fails and a rule that *is* the characterisation passes.
  * Milestone 4 confirms or discards it when it selects the real microgame.
  */
 export type Detonation = Readonly<{
-  /** Chebyshev tiles, measured to the nearest occupied tile, exactly as attack range is. */
+  /** Manhattan tiles, measured to the nearest occupied tile, exactly as attack range is. */
   radius: number
   damage: number
 }>

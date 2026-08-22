@@ -15,7 +15,9 @@ enforces the invariants below rather than trusting anyone to remember them.
 ## Start here
 
 **There is code now.** Milestone 1 built the Pulse Playground: a deterministic kernel, a scenario
-format, a levelled report, and an ASCII view you can watch. `DEVELOPMENT.md` has the commands, and
+format, a levelled report, and an ASCII view you can watch. It runs as `grid` (`./bin/grid.ts`) —
+the engine, editor, and replay tool; a separate `terminal-nexus` executable, not built yet, is what
+will launch the actual game. `DEVELOPMENT.md` has the commands, and
 `evidence/report.md` and `evidence/gate-1b-report.md` are what the two gates found — including the
 places where the canon turned out to be wrong.
 
@@ -67,6 +69,8 @@ today; the milestone marked CURRENT decides that.
   Section 0.
 - [`ascii-effects.md`](ascii-effects.md) — the particle and effect system: the pure-function contract,
   the starter vocabulary, and the craft rules behind it.
+- [`replay-format.md`](replay-format.md) — the `.replay.json` design: schema, log levels, and
+  soundness. Nothing here is built; it is a starting design for Milestone 2's locked replay contract.
 - [`commander-armies.md`](commander-armies.md) — playable packages of Commander, units, structures,
   upgrades, and Nexus powers. Rosters intentionally undefined.
 - [`campaigns.md`](campaigns.md) — mission and campaign structure, teaching, Citizen opening,
@@ -91,7 +95,7 @@ today; the milestone marked CURRENT decides that.
 
 | Milestone | Question | Status |
 | --- | --- | --- |
-| [1 — the Pulse Playground](milestone-1-spike-battle.md) | Put units on a Grid and let them fight: deterministic from a seed, legible on screen, worth watching? | **CURRENT** — both gates built and merged; the owner's viewing is what remains |
+| [1 — the Pulse Playground](milestone-1-spike-battle.md) | Put units on a Grid and let them fight: deterministic from a seed, legible on screen, worth watching? | **CURRENT** — both gates built and merged; viewed, encouraging response, not yet formally accepted |
 | [2 — completing the Pulse](milestone-2-deterministic-pulse.md) | Can it carry routing, economy, and hidden information and stay deterministic? | GATED — **contracts locked**, ready to start cold |
 | [3 — Build Phase and battle editor](milestone-3-builder-editor.md) | Is arranging a compact base pleasant enough to carry player agency? | GATED |
 

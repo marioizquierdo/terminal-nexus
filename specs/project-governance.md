@@ -150,7 +150,7 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 - A **Grid Nexus is a flag on a content definition**, never a content id the kernel recognises.
 - The **compositor enforces the corruption law**: an effect cell that would replace an entity's glyph is dropped, and the only write permitted onto an occupied cell is a glyphless attribute change.
 - Faction visual identity lives in the **glyph family and the effect language**. Ownership keeps the colour, so a mirror match stays legible and monochrome stays whole.
-- Fixture armies on the Playground bench are **not Commander Armies** and carry no balance claim. Milestone 4 still selects the real Citizens-versus-Ravels microgame.
+- Fixture armies on the bench are **not Commander Armies** and carry no balance claim. Milestone 4 still selects the real Citizens-versus-Ravels microgame.
 
 ## 8. Open when relevant
 

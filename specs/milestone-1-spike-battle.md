@@ -2,16 +2,19 @@
 
 **Document role:** Start-here implementation contract
 **Status:** CURRENT
-**Active gate:** 1B — quality and effects (built; awaiting the owner's viewing)
+**Active gate:** 1B — quality and effects (built; viewed, encouraging response, not yet formally accepted)
 **Canon version:** 2.6
 **Updated:** 2026-08-21
 **License:** Apache-2.0; authored creative treatments are CC BY-SA 4.0
 
 > **Where this stands, canon 2.6.** Both gates are **built and merged**, and both evidence reports
-> conclude PASS on every check a test can answer. What is outstanding is the half no test can: Mario
-> watching a mirror skirmish, watching one in monochrome, and comparing the same scenario with
-> effects on and off. A new session's authorised work is whatever that viewing asks for — **not** new
-> scope. Milestone 2's contracts are locked and waiting; it opens when this milestone is accepted.
+> conclude PASS on every check a test can answer. The human half has now happened at least once: Mario
+> watched a legibility pass and responded well — "This looks really amazing. Great job" — then gave a
+> large, explicit list of follow-up work rather than accepting the milestone outright. Encouraging is
+> not the same as accepted; treat that list as the current authorisation (`AGENTS.md` Section 2), not
+> as permission to call this milestone done. A new session's authorised work is whatever the owner's
+> most recent feedback asks for — **not** new scope. Milestone 2's contracts are locked and waiting; it
+> opens when this milestone is accepted, which has not happened yet.
 
 ## 1. What this milestone builds
 
@@ -114,8 +117,8 @@ commit it — even if it is eight strings — before a second session starts.
 
 ### 3.3 The report — build this early, it is the feedback loop
 
-The Playground's output is a **log on stderr** and a **summary on stdout**. Splitting them is what
-makes `playground run x.ts > report.txt 2> run.log` work, and by default both land in the terminal
+`grid`'s output is a **log on stderr** and a **summary on stdout**. Splitting them is what
+makes `grid run x.ts > report.txt 2> run.log` work, and by default both land in the terminal
 interleaved, which is what a human wants.
 
 **Log levels**, default `INFO`:
@@ -132,8 +135,8 @@ interleaved, which is what a human wants.
 behaviour without parsing prose:
 
 The victory line below is the one sample that is **not** fixed-column — its subject is not padded
-like every other line's. The columns won, since this same section calls them the point; the
-Playground prints `victory  A             reason: annihilation`.
+like every other line's. The columns won, since this same section calls them the point; `grid`
+prints `victory  A             reason: annihilation`.
 
 ```text
 [0000] INFO  spawn    A:trooper#1   at (2,1)
@@ -171,11 +174,11 @@ arrive in the log, and every bug is one you can grep for.
 ### 3.4 The CLI
 
 ```bash
-playground run    scenarios/citizen-mirror-skirmish.ts
-playground run    <scenario> --seed 0xABCD --ticks 120 --log-level debug
-playground run    <scenario> --events events.jsonl
-playground watch  <scenario>                    # the ASCII view
-playground verify <scenario> --runs 20          # same hashes every time?
+grid run    scenarios/citizen-mirror-skirmish.ts
+grid run    <scenario> --seed 0xABCD --ticks 120 --log-level debug
+grid run    <scenario> --events events.jsonl
+grid watch  <scenario>                    # the ASCII view
+grid verify <scenario> --runs 20          # same hashes every time?
 ```
 
 ### 3.5 The scenario file
@@ -260,7 +263,7 @@ Rules for the format:
 
 Not a Commander Army, not canon. [`commander-armies.md`](commander-armies.md) forbids production
 rosters before Milestone 4; saying these are throwaway is what keeps them throwaway. Change them
-freely if the fight is boring — that is what the Playground is for.
+freely if the fight is boring — that is what `grid` is for.
 
 | Id | Layer | Footprint | HP | Move | Speed tier | Attack | Range | Damage | Cooldown |
 | --- | --- | --- | ---: | ---: | ---: | --- | ---: | ---: | ---: |
@@ -358,7 +361,7 @@ still for the gate — that is a REVISE with the criterion named, not a re-plan.
 - the named PRNG matches its published test vectors;
 - changing only the cosmetic seed changes nothing about state, events, or the log;
 - `parse(serialize(state))` hashes identically;
-- **`playground verify` produces identical hashes under Bun and under Node** for every checked-in
+- **`grid verify` produces identical hashes under Bun and under Node** for every checked-in
   scenario. Both runtimes are already present (Section 5), and cross-runtime agreement is the only
   cheap test of the serialization and iteration assumptions that twenty runs on one machine can never
   catch — it is also what makes "library and runtime are independent choices" true rather than hoped.
@@ -396,7 +399,7 @@ still for the gate — that is a REVISE with the criterion named, not a re-plan.
   for at least one scenario. Every other check in this list is about the view agreeing with *itself*
   — a compositor with a transposed axis or an off-by-one band passes all of them and draws a
   deterministic, pure, correctly-sized picture of the wrong fight;
-- **`playground watch` and `playground run` agree**: for the same scenario, seed, and tick count the
+- **`grid watch` and `grid run` agree**: for the same scenario, seed, and tick count the
   view computes the same state and event hashes as the headless run, prints them on exit, and a test
   asserts they match. Otherwise Mario can approve a fight the test suite never ran;
 - monochrome mode renders every scenario without error, and no cell depends on colour to exist.
@@ -408,9 +411,9 @@ documentation at the same time.
 ### 3.10 Definition of done
 
 - [ ] every check in 3.9 passes;
-- [ ] `playground run`, `watch`, and `verify` work from a clean checkout;
+- [ ] `grid run`, `watch`, and `verify` work from a clean checkout;
 - [ ] at least ten scenario files exist, one per rule fixture, plus the mirror skirmish;
-- [ ] `playground verify --runs 20` is green on all of them;
+- [ ] `grid verify --runs 20` is green on all of them;
 - [ ] the log at `INFO` reads as a story a designer can follow, and an agent asserts on it in tests;
 - [ ] `./scripts/check-repository.sh` passes;
 - [ ] install, test, and run commands recorded verbatim in the gate report and promoted into
@@ -501,3 +504,47 @@ Milestone 1 passes when both gates are accepted. Durable outputs — and note th
 - the confirmed or corrected 12 Hz hypothesis and movement-credit rules, promoted into
   [`engine.md`](engine.md) Section 4 as RULE;
 - explicit authorization — or refusal — to begin the Build Phase.
+
+## 7. Working notes from this session — personal, not canon
+
+Not RULE, not GUIDANCE, not Section 5's evidence. The owner asked for personal notes on this file
+directly, so this is that: a few things worth remembering that don't fit the document's own voice.
+
+**`grid` stopped being a spike tool for me somewhere in this session, not just on paper.** The
+document already claims "foundation, not spike residue" (Section 3.6, and the governance ledger), but
+I felt it rather than just read it: I used `grid run ... | grep engage` to settle whether Q17's tie
+problem still existed, empirically, faster than reasoning about it would have been. A tool that
+answers a canon question quicker than the person maintaining the canon can argue about it is doing
+exactly the job the owner described this session — "the backbone of all development" — and I don't
+think that was hyperbole from where I was sitting.
+
+**I had a wrong performance model in my own head, and a review caught it.** I'd described
+`OccupancyIndex` in an earlier session's commit messages as sparse, never materializing a full grid.
+It isn't — it allocates four dense arrays sized to the map's area, every tick. Nothing was broken by
+this; the mistake lived in my prose, not the code. But it is a caution worth keeping: a confident
+performance claim written into a commit message under time pressure is exactly the kind of thing that
+quietly becomes someone else's assumption later, unless something forces a second look. This session,
+a scalability review was that second look. It should not have to be a special occasion.
+
+**The canon can drift from code it was written to describe, and the closest doc comments are not
+enough to catch it.** `engine.md` Section 3.6 kept describing eight-way movement and Chebyshev
+distance for a full session after the kernel actually moved to four-way and Manhattan — the doc
+comments nearest the change got updated at the time, the canonical section three steps further out
+did not, and nothing caught it until this session went looking specifically because the owner asked
+for a spec-accuracy pass. The habit worth forming: when a kernel behavior changes, grep the canon for
+the old name, not just the file the change happened to touch.
+
+**Most of what this session produced is words, not capability, and that is the correct shape of it —
+but it is worth saying plainly.** Section 11.1's scaling assessment, Q20, and
+[`replay-format.md`](replay-format.md) are design, not code; the only behavior changes this session
+made were two hash-neutral optimizations and one new load-time validation. That is exactly what "we
+don't have to implement everything now" asked for, but a reader skimming the diff stats later should
+not mistake a lot of careful prose for a lot of shipped simulation.
+
+**Writing the engagement-detection algorithm down precisely was harder than describing it loosely
+would have been, on purpose.** "First attack in an area after a cooldown" sounds simple until you ask
+when an engagement *ends* — which needs lookahead past the cooldown window, meaning it can only be
+computed after a Pulse has fully resolved, never live. That single constraint decided where the
+feature has to live (a post-hoc pass over the canonical event log, never inside the kernel). It is a
+small thing, and it is exactly why "make sure the format is sound" was the right ask instead of "just
+sketch it" — the soundness problems were not in the parts that looked hard.

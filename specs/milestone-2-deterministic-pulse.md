@@ -74,25 +74,34 @@ citation is where the evidence lives.
 
 ### The one contract Milestone 1 did **not** lock
 
-**Replay input, authority, and verification.** The Playground hashes final state and the ordered
-event stream, and `playground verify` re-resolves a scenario and compares — which proves the kernel
+**Replay input, authority, and verification.** The Playground (now `grid`) hashes final state and the
+ordered event stream, and `grid verify` re-resolves a scenario and compares — which proves the kernel
 is deterministic, not that a *recording* can be replayed. The full game log of
 [`engine.md`](engine.md) 4.4 — content locks, versions, committed plans per Build Phase, and a
 `verify` path that re-simulates recorded inputs rather than re-running a scenario file — is this
 milestone's to design and lock. It is the first thing to do, because everything else here is easier
-to trust once a run can be replayed from its record.
+to trust once a run can be replayed from its record. [`replay-format.md`](replay-format.md) is a
+first concrete schema for it, written up ahead of this milestone starting rather than from nothing —
+GUIDANCE, not a locked contract, meant to be a starting point this milestone accepts, amends, or
+replaces.
 
 ## What Milestone 1 hands this milestone, unresolved
 
-Four registered questions land squarely inside this milestone's scope. None blocks starting; all four
-want an answer before its contracts are called locked.
+Three registered questions land squarely inside this milestone's scope. None blocks starting; all
+three want an answer before its contracts are called locked.
 
 | Question | What Milestone 1 measured | Where it bites here |
 | --- | --- | --- |
 | **Q14** — should the movement tie-break be mirror-fair? | A fixed compass order makes both sides prefer *their own left*, so formations meet at an angle. Symmetric between sides, and seed variance dominates it | Real routing replaces the greedy step this question is about; answer it as part of that |
 | **Q15** — what should a mover with no route do? | Greedy routing with a sidestep leaves an actor pacing between two tiles forever. The report detects it from net progress; the kernel does not | Pathfinding makes it moot, or makes it a deliberate choice. Decide which |
-| **Q17** — should a Chebyshev tie break on distance, or on entity id? | With each army in a rank, every enemy is equidistant and both armies target one unit each. Staggering fixtures hides it; it is still the rule | Target scoring is on this milestone's list. **Q17 is the first thing that scoring should fix**, and it is now safe to move the hashes |
 | **Q13** — where do workers flee, and what counts as annihilation? | Workers move at `1/1` and every fixture attacker at `3/4` or slower, so a fleeing worker on open ground is **never caught**. The mirror never reaches annihilation and always runs its full tick count | Real routing gives fleeing a danger cost, and an economy gives workers somewhere to be. Both change the shape of this question |
+
+**Q17 dropped off this table, resolved, since it was written**: the Gate 1B session that shipped
+four-way movement and Manhattan distance (Q15's own fix) removed Q17's degenerate tie as a side
+effect — a rank-deployed army no longer puts every enemy at the same distance under Manhattan the way
+it did under Chebyshev. Verified against `citizen-mirror-skirmish.ts`, not assumed. See
+[`open-questions.md`](open-questions.md) Q17 for the mechanism. Target scoring inherits the fix
+rather than owing this milestone the work.
 
 One further thing Milestone 1 learned that is not a question: **a fixture for a movement rule should
 have exactly one thing moving.** Three fixtures appeared to fail before anyone noticed that two
@@ -101,7 +110,9 @@ orbit rather than a route.
 
 ## Intended pass evidence
 
-Replaying a complete recorded input produces identical final-state and ordered-event hashes.
+Replaying a complete recorded input produces identical final-state and ordered-event hashes —
+[`replay-format.md`](replay-format.md) Section 4 is where the soundness of that claim is worked
+through for a persisted, levelled recording rather than an in-memory `PulseRun`.
 
 Property tests over generated Grids and seeds find no duplicate occupancy within a layer, no illegal
 settled cell, no unresolved claim, no unbounded recalculation, no presentation dependency, and no

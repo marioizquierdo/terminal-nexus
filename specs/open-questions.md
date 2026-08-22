@@ -259,34 +259,6 @@ content to hold — a construct menu and a placement-legality panel will want th
 a Pulse feed does. C should be refused: the floor is a RULE and a moving frame size is worse than a
 quiet margin.
 
-### Q17 — Should a Chebyshev tie in target selection break on distance, or on entity id?
-
-**Status:** OPEN — Gate 1B proceeds under the recommendation; the answer moves every hash, so the
-timing matters more than usual.
-
-Target selection is "nearest enemy by Chebyshev distance, ties broken by entity id"
-([`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) 3.7), and Gate 1A was explicit that
-resisting the urge to improve it was part of that gate. Gate 1B's first asymmetric fixture showed
-what it costs. On a 48 × 16 Grid with each army deployed in a rank — which is exactly how Citizens
-are described as deploying — **every enemy is the same Chebyshev distance away**, because the
-horizontal gap dominates. The tie therefore decides, it always decides the same way, and both
-armies converge on one enemy each and stampede into a corner together.
-
-Staggering both sides across columns fixes the fixture, and that is what
-`citizens-versus-ravels.ts` does. It does not fix the rule.
-
-| Option | Cost |
-| --- | --- |
-| A. **Keep "nearest, ties by entity id"** and stagger fixtures | Free, and it is the contract Gate 1A's evidence was measured against. Any scenario that deploys in ranks produces a stampede, and ranks are a faction identity |
-| B. **Break the tie on squared Euclidean distance, then entity id** | One line, still integer arithmetic, still deterministic and replay-exact. Units pick the enemy actually in front of them, which is what "nearest" already meant. **Changes every state and event hash in the repository**, including the ones `evidence/report.md` quotes |
-| C. Spread targets deliberately — prefer an enemy nobody else has claimed | The best-looking fights, and a real target-assignment pass inside perception. That is Milestone 2 work, and it is a rule a player would have to learn |
-
-**Recommendation: B, but not until Gate 1A is accepted.** It is the honest reading of "nearest
-enemy" and it costs one line — but Gate 1A's report quotes exact hashes and exact fixture
-arithmetic, and moving those while the owner is about to watch the run they describe would make the
-evidence stale in the worst possible week. Take A until then, which is what Gate 1B ships. C is a
-better game answer and belongs to whichever milestone owns perception.
-
 ### Q18 — In a same-faction mirror match, should colour follow ownership or the faction?
 
 **Status:** OPEN — Gate 1B proceeds under the recommendation; the answer only touches presentation.
@@ -327,8 +299,8 @@ as a rider on a mirror-colour question.
 **Status:** OPEN — not needed for Gate 1B or Milestone 2; the owner asked for it to be kept in mind
 and registered, explicitly not built now.
 
-The owner's own words, after playing the Pulse Playground: "I will want to start improving the
-Pulse Playground to have 'sandbox mode' starting with an empty map, maybe some pre-seeded units, and
+The owner's own words, after playing the Pulse Playground (now `grid`): "I will want to start
+improving the Pulse Playground to have 'sandbox mode' starting with an empty map, maybe some pre-seeded units, and
 have the cursor that can choose units and place them wherever, then run the simulation. I will love
 to implement rewind and fast forward (1, 5, 10, 20 turns)... If we also add the ability to define new
 buildings and upgrades in between pulses, then we will have a full replay engine that will also be
@@ -343,6 +315,9 @@ milestone:
   *recorded input* rather than a scenario file — is already Milestone 2's, explicitly: "the one
   contract Milestone 1 did **not** lock" (`milestone-2-deterministic-pulse.md`). Nothing new to
   register here; the owner's ask is confirmation this direction is wanted, not a new requirement.
+  [`replay-format.md`](replay-format.md), written this session at the owner's direct request, is a
+  first concrete schema and log-level design for it — still GUIDANCE, still unbuilt, but no longer a
+  blank page for whoever starts Milestone 2.
 - **Rewind/fast-forward at named granularities (1/5/10/20 ticks)** is presentation on top of that
   format: once a Pulse's states are addressable by tick, jumping to `tick - 20` is arithmetic, not a
   new capability. The only design consequence *now* is a constraint on Milestone 2's replay format:
@@ -361,17 +336,52 @@ milestone:
 
 | Option | Cost |
 | --- | --- |
-| A. **Fold all three into Milestone 3's battle editor**, since it already owns placement and validation | One editor, one thing to build. The owner's sandbox use case (quick, no economy, no validation, built to explore the kernel — closer in spirit to this Playground than to a competitive Build Phase) waits for the full editor's much larger scope, including parts a kernel-exploration tool does not need |
-| B. **A lightweight placement mode added to the Pulse Playground itself**, ahead of Milestone 3 — no cost, no validation, no hidden plan, just a cursor, the existing fixture rosters, and `run` — with the real Build Phase editor arriving in Milestone 3 as the validated, competitive version | Keeps the owner's actual ask (a fast kernel-exploration tool) small and close to what exists today; two placement UIs to eventually reconcile, one lightweight and one full, unless B is later folded into or replaced by Milestone 3's |
+| A. **Fold all three into Milestone 3's battle editor**, since it already owns placement and validation | One editor, one thing to build. The owner's sandbox use case (quick, no economy, no validation, built to explore the kernel — closer in spirit to `grid` than to a competitive Build Phase) waits for the full editor's much larger scope, including parts a kernel-exploration tool does not need |
+| B. **A lightweight placement mode added to `grid` itself**, ahead of Milestone 3 — no cost, no validation, no hidden plan, just a cursor, the existing fixture rosters, and `run` — with the real Build Phase editor arriving in Milestone 3 as the validated, competitive version | Keeps the owner's actual ask (a fast kernel-exploration tool) small and close to what exists today; two placement UIs to eventually reconcile, one lightweight and one full, unless B is later folded into or replaced by Milestone 3's |
 | C. **Do nothing until Milestone 3 is scheduled** | Free. The owner explicitly said this is fine ("not needed for now") |
 
 **Recommendation: C until Milestone 2 is accepted, then B before Milestone 3 if the owner wants to
 play with matchups sooner than the full editor arrives** — it is a small, self-contained addition
-(cursor, placement, run; no cost or validation) that reuses this Playground's own rendering and
-kernel rather than waiting on Milestone 3's much larger contract. Milestone 2's replay-format design
+(cursor, placement, run; no cost or validation) that reuses `grid`'s own rendering and kernel rather
+than waiting on Milestone 3's much larger contract. Milestone 2's replay-format design
 should keep per-tick state cheaply addressable regardless of which option is picked, since rewind
 depends on it either way and it is nearly free to keep in mind while that format is still being
 designed rather than retrofitted after.
+
+### Q20 — When target selection is capped by radius for scale, what should a unit with nothing in range do?
+
+**Status:** OPEN — not needed until perception's cost is a measured problem, not a projected one;
+registered now because the tradeoffs are cheap to write down before any fixture or hash depends on
+the answer, exactly the situation Q17 was found in after the fact.
+
+A code-quality and scalability review this session (`engine.md` Section 11.1 has the assessment)
+found perception — `hostilesOf` + `selectTarget`, `src/pulse/tick.ts` — is the one hot path that is
+O(N²) every tick, unconditionally: every attack-capable actor scans every hostile actor, every tick,
+with no cap. At Milestone 1's scale (dozens of actors) this is invisible; at "hundreds or thousands
+of units" (the owner's own framing, this session) it is the dominant cost, and there is no scenario
+or measurement yet proving how far it can be pushed before that matters.
+
+The fix nobody disputes is bounding the scan: cap target selection to a radius R around the
+searching actor, using a coarse spatial index built from `OccupancyIndex`'s own placement mutations
+(`add`/`remove`/`move`, already touched at every placement change, `src/pulse/tick.ts:514`, `:771`,
+`:856`) rather than a wholly separate structure. What's genuinely undetermined is what a unit finds
+when nothing is within R.
+
+| Option | Cost |
+| --- | --- |
+| A. **Full-scan fallback** — if nothing is within R, fall back to today's unbounded scan | Correct in the sense that behavior never changes, but defeats the point on a sparse map: the expensive case is exactly the one this rule exists to bound |
+| B. **Hold idle / keep the last target** — a unit with nothing in R does not search further; it holds its current order (or idles) until something enters R | Cheap and bounded, but a visible, emergent behavior change: a unit that would have crossed the map to engage a lone straggler now ignores it. Changes fixture hashes for any scenario sparse enough to hit the cap |
+| C. **A new non-targeting `Behavior`** — something like advancing toward a fixed point (the enemy Nexus) rather than toward a discovered target, so a unit with nothing in R still has purposeful movement, just not target-seeking | Bounded and intentional rather than an accidental idle, but it is new surface: `Behavior` is currently `"advance" \| "flee" \| "static"` (`src/content/types.ts`), and per AGENTS.md's own convention ("every rule has a named scenario file") it needs its own fixture and test coverage before it is a rule rather than a guess |
+
+**Recommendation: none of these until R is actually needed.** Landing the radius cap itself
+inert/off by default — as GUIDANCE, not as shipped behavior — is the right amount of design-now,
+build-later; picking a fallback is a real, hash-affecting decision (like Q17's tie-break) that is
+expensive to reconsider once a fixture is pinned to it, so it should wait for a scenario that
+actually forces the question rather than being guessed at now. When it is needed, B is the cheapest
+and most honest first cut — a unit going idle at the edge of its own perception is at least legible
+on screen, where a full-scan fallback (A) quietly reintroduces the exact cost the cap exists to
+remove, and C is worth doing only once "advance on the enemy Nexus" is a rule the game wants anyway,
+not manufactured to serve this cap.
 
 ## 5. Answered
 
@@ -386,6 +396,31 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q6 | 2026-08-20 | **Packaging and remote delivery leave Milestone 1.** First split into an independent gate, then deferred out of the milestone entirely when it was refocused onto the Pulse — they answer no question the game currently has | [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) |
 | Q10 | 2026-08-21 | **DROPPED as mis-scoped.** Engine determinism was never in question: the kernel, its event log, and replay stay exact, and the features that depend on them are untouched. Whether a mission's *interface* misreports a total for narrative effect is campaign writing, decided when campaigns are designed | [`campaigns.md`](campaigns.md), at Milestone 5 |
 | Q11 | 2026-08-21 | **Alder refuse artificial Nexus power — conceptual.** Simplicity and growth instead: little or no Nexus draft, and more complexity in the structures they can build. Direction, not a locked mechanic | [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 8.5 and [`commander-armies.md`](commander-armies.md) Section 4 |
+| Q17 | 2026-08-21 | **Resolved by an unrelated fix, not decided among its options.** Four-way movement and Manhattan distance (Q15's fix, shipped for legibility) removed the degenerate tie itself: under Chebyshev a rank-deployed army had every enemy at the same distance; under Manhattan the same layout does not, because the axis the old metric ignored (`min(|dx|,|dy|)`) is exactly the one Manhattan keeps. Verified, not assumed: `citizen-mirror-skirmish.ts` (rank-deployed) now pairs each attacker with a distinct nearest opponent from tick 1, no stampede | [`grid/coords.ts`](../src/grid/coords.ts) `gridDistance`; `specs/open-questions.md` Q15 |
+
+### Q17 — answered
+
+Closed as bookkeeping on 2026-08-21, by empirical re-check rather than by choosing among its own
+options: nobody decided to break Chebyshev ties differently. Q15's four-way-movement fix (a
+legibility change, unrelated to targeting) changed the distance metric from Chebyshev
+(`max(|dx|,|dy|)`) to Manhattan (`|dx|+|dy|`), and that alone dissolves the specific problem this
+question was about.
+
+The mechanism: under Chebyshev, two armies facing each other across a wide horizontal gap with `dy`
+small have `max(|dx|,|dy|) = |dx|` for every pair — `dy` is *discarded* by the metric whenever the
+horizontal gap dominates, which is exactly "deployed in a rank" — so every enemy really was the same
+distance away, and the tie-break decided everything. Manhattan never discards either axis: distance
+is `|dx| + |dy|`, so two defenders at the same `dx` but different `dy` are no longer tied. Checked
+directly rather than assumed: running `citizen-mirror-skirmish.ts` — a rank-deployed fixture, the
+same shape Q17's finding was measured against — now produces `engage` events pairing each attacker
+with a distinct, natural opposite number (`A:trooper#1 -> B:trooper#2`, `A:trooper#3 -> B:trooper#4`,
+...) from the first tick, not a stampede onto one target.
+
+None of Q17's three options were chosen. Option A ("keep nearest, ties by entity id") turned out to
+already be the right answer once the metric changed — no rule was rewritten. `citizens-versus-ravels.ts`'s
+column-staggered deployment is no longer load-bearing for this specific reason, but it is still kept:
+it is also good asymmetric-army design, not only a stampede workaround, and re-arranging a working,
+evidenced fixture on a "no longer strictly necessary" technicality is not worth the churn.
 
 ### Q11 — answered
 

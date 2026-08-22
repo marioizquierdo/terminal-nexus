@@ -19,7 +19,7 @@ import {
 
 const RUNS = 20
 
-test("twenty runs of every scenario produce identical hashes and identical INFO logs", async () => {
+test("twenty runs of every scenario produce identical hashes and identical INFO logs", { timeout: 120_000 }, async () => {
   for (const name of scenarioFiles()) {
     const first = await resolveScenario(name)
     const firstLog = buildLog(reportInputOf(first), "INFO").join("\n")

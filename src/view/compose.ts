@@ -337,7 +337,7 @@ function drawChrome(
 
   // Header — three rows, of the eight-row chrome budget (Q12: 2 border, 3 header, 3 footer).
   text(cells, band, 2, 1, "TERMINAL NEXUS", "chrome.title", { bold: true, limit: paneLimit })
-  text(cells, band, 18, 1, "the pulse playground", "chrome.muted", {
+  text(cells, band, 18, 1, "the grid tool", "chrome.muted", {
     dim: true,
     limit: right - 19,
   })

@@ -18,7 +18,7 @@ procedural particle effects are the standing proof that this is a system, author
 its own vocabulary and its own consistency problems.
 
 So it gets a document, and it gets tested **early** — Gate 1B of Milestone 1 exists for exactly this,
-and the Pulse Playground is where it gets played with.
+and `grid` (the Pulse Playground's tool, engine.md 11) is where it gets played with.
 
 **Authority markers** are as defined in [`engine.md`](engine.md) Section 0: **RULE** and
 **GUIDANCE**.

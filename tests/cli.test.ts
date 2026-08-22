@@ -8,13 +8,13 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { REPO_ROOT, scenarioFiles } from "./helpers.ts"
 
-const PLAYGROUND = join(REPO_ROOT, "bin", "playground.ts")
+const GRID_BIN = join(REPO_ROOT, "bin", "grid.ts")
 
-function runPlayground(
+function runGrid(
   args: readonly string[],
   runtime = process.execPath,
 ): { status: number; stdout: string; stderr: string } {
-  const result = spawnSync(runtime, [PLAYGROUND, ...args], {
+  const result = spawnSync(runtime, [GRID_BIN, ...args], {
     cwd: REPO_ROOT,
     encoding: "utf8",
     env: { ...process.env, NO_COLOR: "1" },
@@ -32,7 +32,7 @@ function bunAvailable(): boolean {
 }
 
 test("run prints the summary on stdout and the log on stderr", () => {
-  const result = runPlayground(["run", "scenarios/melee-kill.ts"])
+  const result = runGrid(["run", "scenarios/melee-kill.ts"])
   assert.equal(result.status, 0)
   assert.match(result.stdout, /^scenario   melee-kill$/m)
   assert.match(result.stdout, /^outcome    A wins$/m)
@@ -42,10 +42,10 @@ test("run prints the summary on stdout and the log on stderr", () => {
 })
 
 test("--seed, --ticks and --log-level are honoured", () => {
-  const shallow = runPlayground(["run", "scenarios/citizen-mirror-skirmish.ts", "--ticks", "24"])
+  const shallow = runGrid(["run", "scenarios/citizen-mirror-skirmish.ts", "--ticks", "24"])
   assert.match(shallow.stdout, /^ticks      24 of 24 \(full pulse\)$/m)
 
-  const seeded = runPlayground([
+  const seeded = runGrid([
     "run",
     "scenarios/citizen-mirror-skirmish.ts",
     "--seed",
@@ -55,7 +55,7 @@ test("--seed, --ticks and --log-level are honoured", () => {
   ])
   assert.match(seeded.stdout, /^seed       0x0000ABCD$/m)
 
-  const debug = runPlayground([
+  const debug = runGrid([
     "run",
     "scenarios/melee-kill.ts",
     "--log-level",
@@ -66,10 +66,10 @@ test("--seed, --ticks and --log-level are honoured", () => {
 })
 
 test("--events writes the ordered event stream as JSONL", () => {
-  const directory = mkdtempSync(join(tmpdir(), "playground-events-"))
+  const directory = mkdtempSync(join(tmpdir(), "grid-events-"))
   try {
     const file = join(directory, "events.jsonl")
-    const result = runPlayground(["run", "scenarios/melee-kill.ts", "--events", file])
+    const result = runGrid(["run", "scenarios/melee-kill.ts", "--events", file])
     assert.equal(result.status, 0)
     const lines = readFileSync(file, "utf8").trim().split("\n")
     assert.ok(lines.length > 10)
@@ -88,7 +88,7 @@ test("--events writes the ordered event stream as JSONL", () => {
 })
 
 test("--json produces a machine-readable summary", () => {
-  const result = runPlayground(["run", "scenarios/melee-kill.ts", "--json"])
+  const result = runGrid(["run", "scenarios/melee-kill.ts", "--json"])
   const parsed = JSON.parse(result.stdout) as Record<string, unknown>
   assert.equal(parsed["scenario"], "melee-kill")
   assert.equal(typeof parsed["stateHash"], "string")
@@ -99,14 +99,14 @@ test("--json produces a machine-readable summary", () => {
 
 test("verify --runs 20 is green on every checked-in scenario", { timeout: 120_000 }, () => {
   for (const name of scenarioFiles()) {
-    const result = runPlayground(["verify", `scenarios/${name}`, "--runs", "20"])
+    const result = runGrid(["verify", `scenarios/${name}`, "--runs", "20"])
     assert.equal(result.status, 0, `${name}: ${result.stderr}`)
     assert.match(result.stdout, /^runs       20 identical$/m, name)
   }
 })
 
 test("watch without a TTY prints one line and no escapes", () => {
-  const result = runPlayground(["watch", "scenarios/melee-kill.ts"])
+  const result = runGrid(["watch", "scenarios/melee-kill.ts"])
   assert.equal(result.status, 0)
   const lines = result.stdout.trim().split("\n")
   assert.equal(lines.length, 1, `watch printed ${lines.length} lines`)
@@ -116,15 +116,15 @@ test("watch without a TTY prints one line and no escapes", () => {
 
 test("watch and run agree on the hashes they print", () => {
   const run = JSON.parse(
-    runPlayground(["run", "scenarios/citizen-mirror-skirmish.ts", "--json"]).stdout,
+    runGrid(["run", "scenarios/citizen-mirror-skirmish.ts", "--json"]).stdout,
   ) as { stateHash: string; eventsHash: string }
-  const watched = runPlayground(["watch", "scenarios/citizen-mirror-skirmish.ts"]).stdout
+  const watched = runGrid(["watch", "scenarios/citizen-mirror-skirmish.ts"]).stdout
   assert.ok(watched.includes(`state sha256:${run.stateHash.slice(0, 16)}`), watched)
   assert.ok(watched.includes(`events sha256:${run.eventsHash.slice(0, 16)}`), watched)
 })
 
 test("a scenario that fails to load reports an ERROR and a non-zero status", () => {
-  const result = runPlayground(["run", "scenarios/does-not-exist.ts"])
+  const result = runGrid(["run", "scenarios/does-not-exist.ts"])
   assert.notEqual(result.status, 0)
   assert.match(result.stderr, /ERROR/)
 })
@@ -134,8 +134,8 @@ test("a scenario that fails to load reports an ERROR and a non-zero status", () 
 if (bunAvailable()) {
   test("verify produces identical hashes under Bun and under Node", () => {
     for (const name of scenarioFiles()) {
-      const node = runPlayground(["run", `scenarios/${name}`, "--json"])
-      const bun = runPlayground(["run", `scenarios/${name}`, "--json"], "bun")
+      const node = runGrid(["run", `scenarios/${name}`, "--json"])
+      const bun = runGrid(["run", `scenarios/${name}`, "--json"], "bun")
       assert.equal(bun.status, 0, `${name} failed under bun: ${bun.stderr}`)
       const left = JSON.parse(node.stdout) as Record<string, unknown>
       const right = JSON.parse(bun.stdout) as Record<string, unknown>

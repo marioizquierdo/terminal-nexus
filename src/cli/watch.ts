@@ -1,4 +1,4 @@
-// `playground watch` — the ASCII view, played back at 12 logical ticks and 30 frames per second.
+// `grid watch` — the ASCII view, played back at 12 logical ticks and 30 frames per second.
 //
 // Presentation samples **absolute presentation time**, so pausing, stepping, changing speed, or
 // dropping frames changes nothing about what a given moment looks like. The resize gate freezes
