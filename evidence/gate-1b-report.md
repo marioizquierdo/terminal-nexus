@@ -507,3 +507,194 @@ one. Four questions now wait specifically on the owner — **Q21** (contrast), *
 jitter), **Q23** (outposts), **Q24** (cell aspect ratio, explicitly deferred by the owner's own
 request) — alongside the six still open from the first round. Milestone 2 remains gated on
 acceptance, not on this session running out of things to fix.
+
+## 16. A fourth round — multi-tile units, the placement format, and a quality pass
+
+Section 15 asked how the branch reaches `main`. The answer arrived first: PR #15 was opened from the
+Claude Code UI and, later this same day, merged by the owner — encouraging, and explicitly not a
+substitute for the acceptance Section 8 and Section 12 both still wait on (this round adds nothing
+that changes that read). What arrived after the PR was a large, explicit follow-up request rather than
+an instruction to start Milestone 2, paraphrased close to the owner's own wording:
+
+- **Large units, and a review of placement and unit representation.** "The next thing I want to
+  explore is large units that spam over multiple tiles" — units whose content definition (`unit.
+  citizen.trooper`, for instance) decides the symbol *matrix*, not just a letter, and where a
+  placement's single symbol marks the unit's centre rather than a corner.
+- **Placements split per player.** Instead of one shared grid plus one legend distinguishing sides by
+  case, two separate placement blocks — "it is possible to put units from different players on the
+  same tile, but this should be validated and fail with an error" — each with its own optional origin
+  coordinate, so a block need not cover the whole Grid.
+- **A legend entry that can carry partial starting health**, "important when implementing more
+  pulses, for example starting on pulse 3, the placements will have some units with damage already
+  taken," extensible to future modifiers without saying what those will be yet.
+- **A visual ask**: "Define a few large units, and run the scenarios... I am interested on seeing
+  larger ascii representations of some units and see them going down in battle."
+- **A quality pass afterward**: a refactor review now that the code has been reshaped several times in
+  the same direction, plus a design exercise — "Can you think of other types of units? That would be
+  a good exercise to check if the code is simple and flexible enough to accommodate those changes
+  later."
+
+Mid-session, `main` moved out from under the branch a second time: an independent session had already
+renamed every scenario from a TypeScript module (`.ts`) to a checked-in `.map.json` file and redesigned
+`grid`'s CLI around it (PR #16, canon 2.6 → 2.7), merged while this branch's placement-format rewrite
+was already in flight against the old shape. And, mid-session again, the owner added two more asks
+before this round closed: audit the greedy router specifically for large-footprint bugs (not build
+real pathfinding — still Milestone 2's job), and run one more refactor pass with fresh eyes, subagents
+invited for both.
+
+### What this session did
+
+**Placement format v2.** `ScenarioDefinition.placements` is now `Partial<Record<PlayerId,
+PlacementBlock>>` — one block per player, each an optional `at` origin plus `rows` plus a `legend` of
+`{ content, hp? }` objects, replacing one Grid-sized overlay and one shared legend keyed by letter case
+(`src/scenario/types.ts`). A placement symbol marks a unit's **centre tile**; the loader derives the
+anchor via a new `footprintCentre` (`src/grid/coords.ts`, built on a new `footprintExtent` that also
+replaced two private, silently-agreeing-only-by-luck copies of the same arithmetic in
+`view/effects/derive.ts` and `view/compose.ts`). Ordinals — the kernel's own iteration order, never
+authoring order — are assigned after gathering every player's placements and sorting by Grid reading
+order (row, then column, then player, then content id), proven by a test that swaps which player's
+block is written first and checks the assignment does not move. Validation grew a real new case rather
+than only moving the old ones: two players claiming the same tile, even across layers, now fails
+loudly by construction where a single shared alphabet used to make it impossible to write at all; `hp`
+outside `1..maxHp` fails the same way. All 23 then-checked-in scenarios were converted by codemod
+(`/tmp/convert-scenarios.mjs`, later `/tmp/convert-maps.mjs` once PR #16's rename landed) and proven
+unchanged — not just re-verified, compared: loaded entity state byte-identical to a pre-conversion
+baseline, and `stateHash`/`eventsHash` identical across every scenario in a git-worktree comparison
+against both `HEAD` and, after the merge, `origin/main`.
+
+**Two genuinely large units, watched.** `unit.citizen.colossus` (3×3, 160 hp, cadence 24 — the slowest
+thing on the bench) and `unit.ravel.leviathan` (5×2, 130 hp, a radius-2 detonation reaching most of a
+formation) are real fixture roster entries, not test-only fixtures, each escorted by the small units
+that used to be the whole roster in a new showcase, `scenarios/heavies-clash.map.json`. A rules test
+pins that the two actually fight at footprint distance rather than anchor distance and that at least
+one dies, so the large-footprint death-collapse path is exercised by the suite and not only by
+watching. It was watched: `evidence/screenshots/heavies-open.png` (tick 0, both bodies at scale next
+to their escorts) and `evidence/screenshots/heavies-death.png` (tick 400, the leviathan's collapse
+filling its full 5×2 footprint while the colossus stands intact nearby) are the visual confirmation the
+owner asked for directly, captured through the same tmux-to-PNG pipeline every other screenshot in this
+repository uses, not a hand-picked frame.
+
+**Unit art relocated and enforced.** Glyphs moved out of `src/view/theme.ts` into `src/content/art.ts`,
+co-located with the definitions whose size they must agree with — `engine.md` 9.6's RULE that the
+simulation never knows a glyph is now also asserted by a dependency-graph test that walks from every
+kernel entry point and confirms none of them can reach the art file, with a sanity check that `src/
+view` still can (so the test cannot be vacuously true). Co-locating paid for itself immediately: a new
+test asserting art size against `footprintExtent` failed on the *existing* roster before anything new
+was added — `structure.citizen.barracks` and `structure.ravel.den` were both declared 3×2 in their
+footprint and drawn as a single flat letter, silently wrong since whenever they were authored. Both are
+now drawn correctly at their real size.
+
+**Quality pass, part one — three refactors, zero behaviour change.** `distanceBetween(a, b)` (`src/
+pulse/shared.ts`) replaces four identical `footprintDistance(anchor, footprint, anchor, footprint)`
+calls across perception, intents, attacks, and detonation. `applyDamage(context, target, source,
+amount)` replaces the duplicated clamp-hp/emit-event/mark-pendingDead block in `attacks()` and
+`detonate()`, and removes `attacks()`'s `hpAtTierStart` snapshot map as provably redundant (nothing
+mutates hp between accumulating a tier's damage and applying it, so `target.hp` already equals the
+tier-start value — the snapshot was defensive documentation that had quietly become dead code). `Actor`
+is now `Mutable<EntityState> & {definition, pendingDead, killer}` instead of an eight-field hand copy
+of `EntityState`'s shape, so a future state field appears on `Actor` the moment it lands in `state/
+types.ts`; the reverse conversion, back into hashed and replayed `MatchState`, stays fully enumerated
+on purpose, with a comment explaining why the asymmetry is deliberate rather than an oversight. All
+three are pure refactors — verified, not assumed, by comparing `stateHash`/`eventsHash` across all 24
+scenarios before and after, byte for byte identical.
+
+**Quality pass, part two — the unit-type exercise.** The owner's question was whether `ContentDef` and
+the kernel would accommodate other plausible unit types, or force a redesign. Answered by building the
+cheapest one for real rather than only arguing about it, and by analysing the rest honestly rather than
+building everything the exercise raised:
+
+- **Air is not just plausible, it was already real.** `maskForActor` already special-cased
+  `layer === "air"` to ignore terrain; `scenario/load.ts` already exempted air from the
+  on-rock-at-spawn check; `view/compose.ts` already had a render band for it. Nothing on the roster
+  had ever used any of it. `unit.ravel.buzzard` (1×1, `collidesWith: ["air"]`) is that first real
+  content, and `scenarios/air-crossing.map.json` walls it into a 1×1 rock room every neighbouring tile
+  of which is impassable — a room a ground unit placed there could never leave — then lets it fly
+  straight out to fight a trooper on the other side. The new test watches this happen in a resolved
+  Pulse: the buzzard's own `entity.moved` events land on rock, `attack.launched` fires between the two
+  despite no layer check anywhere in perception or attacks needing to exist for it to, and
+  `isMobile()`'s "not obstacles" rule correctly seats an air-only side in the annihilation count. Zero
+  kernel changes were needed — the flexibility claim was already true and simply unexercised.
+- **Healer** (heals allies instead of damaging enemies) is moderate, not cheap: `hostilesOf()`/
+  `selectTarget()` in `perception.ts` have exactly one notion of "who to look at" — an enemy — so a
+  healer needs either a new `Behavior` variant alongside `"advance" | "flee" | "static"` or a parallel
+  targeting path, plus a heal-shaped sibling to `applyDamage` (clamped at `maxHp`, never setting
+  `pendingDead`) and a new `heal.applied` event rather than overloading `damage.applied` with a
+  negative amount. Bounded, no schema change, but real surface area across three files.
+- **Artillery / splash-on-hit** (an attack that damages an area on every hit, not only on the
+  attacker's own death) is now cheaper than it would have been before this session's refactor:
+  `detonate()` is already a working "damage everyone within radius R" reference, and it already calls
+  the same `applyDamage`/`distanceBetween` an on-hit splash would need. What it changes is `attacks()`'s
+  own simultaneity guarantee — splash from several attackers landing on overlapping tiles in the same
+  speed tier needs the same accumulate-then-apply-once discipline direct hits already get, or
+  simultaneous artillery becomes iteration-order-dependent, which is a determinism risk, not a
+  refactor. Flagged as a good next-session candidate, not built this pass.
+- **Shielded** (a second hp pool absorbed first) splits in two: a flat, non-regenerating shield is
+  genuinely close to cheap (one `EntityState` field, one local edit to the now-shared `applyDamage`),
+  but any version needs a schema bump (`SCHEMA_VERSION`, `state/serialize.ts`/`canonical.ts`, every
+  existing scenario still loading with a sensible default) and a new event so an absorbed hit is
+  legible rather than silently eaten — regeneration on top of that needs a timed-condition primitive
+  the kernel does not have at all (see burrower, below). Not built.
+- **Burrower** (temporarily untargetable, ignores terrain while burrowed) surfaces the one real gap
+  worth naming on its own: the kernel has no concept of a *timed* per-entity condition — `cooldown` is
+  the only thing that counts down today, and it means exactly one thing. A burrower, a healer's "just
+  healed, locked out for N ticks," and a shield's regen delay would all want the same primitive,
+  which is a reason to design it once, when something authorized actually needs it, not once per unit
+  type ad hoc. Also worth noting in passing: "ignores terrain" is currently spelled `layer === "air"`
+  specifically in `maskForActor` (`shared.ts`), not as an independent fact a ground-layer unit could
+  also carry — a burrower would need that split into two separate `ContentDef` facts, a small, honest
+  refactor of its own if it's ever built.
+- **Transport** (carries other units, invisible on the Grid while boarded) is the one genuinely
+  expensive idea: it needs an entity that is alive but off-Grid entirely, a new intent (board/
+  disembark), and a real design decision about whether a killed transport's cargo dies with it or
+  escapes — a state-shape change, not an extension. Not built, not sketched further than that.
+- **Spawner** (a structure that periodically produces units) is not a flexibility question at all —
+  `tick.ts`'s `economyAndProduction()` phase is deliberately empty and named as reserved for
+  Milestone 2 in its own comment, and AGENTS.md forbids building production before then regardless of
+  how cheap it might be. The one finding worth keeping: the phase slot already exists and is already
+  proven correctly ordered relative to perception, so Milestone 2 inherits that for free.
+- **One structural question the exercise raised and answered without needing the owner**: should
+  `ContentDef` grow a generic extensible bag instead of one bespoke typed field per mechanic (`attack?`,
+  `detonation?`, `nexus?`, and now, hypothetically, `heal?`, `splash?`, `shieldHp?`)? AGENTS.md Section
+  4 already answers this — "prefer direct code for the current proof, extract a framework only after
+  two real uses reveal the boundary" — and three bespoke fields have scaled cleanly with no framework
+  yet justified. Not registered as a question; there wasn't one.
+- Also worth recording: `Behavior`'s three values are checked by ad hoc `=== "flee"` / `=== "static"`
+  comparisons in `perception.ts` and `intents.ts`, not an exhaustive switch the way `DomainEvent`'s
+  `kind` is checked everywhere it is consumed. A fourth value (a healer's `"support"`, say) would
+  compile silently into the wrong branch rather than fail loudly. Worth converting to an exhaustive
+  switch **when** a fourth value is actually added, not preemptively.
+
+Two more things were asked for before this round closed and were still running when the rest of this
+section was written: an audit of the greedy router specifically for large-footprint bugs, and a second,
+fresh-eyes refactor pass. Their findings, and whatever they lead to fixing, are appended to this
+section once they land, in a follow-up commit — not held back to make this commit's history look more
+finished than it is.
+
+### Verification
+
+158 Node tests (140 before this round), 157 under Bun, `tsc --noEmit` clean, `check-repository.sh`
+clean, `grid --verify --runs 20` on the new `air-crossing` scenario and `--runs 10` swept across all 25
+checked-in scenarios. Two independent hash-comparison proofs, not one: the placement-format conversion
+against the pre-conversion `.ts` baseline, and the post-merge conversion against `origin/main`'s
+independently-renamed `.map.json` files — both byte-identical across every scenario, both ways.
+
+### Revised decision
+
+> **REVISE, acted on a fourth time — PASS still pending the owner's next look.**
+
+The gate's real question has not changed shape across four rounds: not answerable by a test, not
+claimed as answered here either. What this round adds is a genuine second axis for that question —
+Section 8 asked "is Gate 1A's determinism claim true," Section 12 and 13 asked "does the presentation
+read," and this round asks "does the shape of the code accommodate what comes next without a redesign"
+— answered as honestly for the parts that don't (transport, a timed-condition primitive) as for the
+part that already did (air).
+
+## 17. Next authorized action, a fourth time
+
+PR #15 merged mid-session; this round's work is unmerged follow-up sitting on the same branch, not an
+update to a closed PR — a new pull request, when the owner wants one, is a new PR, not a reopening of
+#15. Watch `heavies-clash` for the large-unit fight and `air-crossing` for the flying unit (both are
+built to be watched; the rest of this round's new fixtures are two-and-three-line regressions, headless
+is enough). Milestone 2 remains gated on acceptance, not on this session running out of things to fix
+— now with an actual account, rather than a guess, of what the next unit type will cost when Milestone
+2 or the Commander Army work that follows it wants one.
