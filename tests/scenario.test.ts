@@ -161,18 +161,18 @@ test("melee-kill: a defender dies to melee and the attackers survive", async () 
   assert.equal(resolved.run.finalState.outcome?.winner, "A")
 })
 
-test("ranged-kill: the fixture's own arithmetic, after the 2026-08-22 speed pass", async () => {
-  // Before the speed pass this fixture was a clean demonstration: two marksmen land six shots
-  // during the trooper's approach and it dies at range, never landing a hit. A 1.5x movement rate
-  // (owner playtest, 2026-08-22 - "units still move too slow") breaks that cleanly: the trooper now
-  // covers the marksmen's cooldown-24 firing window (range 5 down to melee range 1) in fewer ticks
-  // relative to their fire rate, so it reaches marksman#1 and kills it in melee before marksman#3
-  // finishes the trooper off. Verified this is not a matter of starting too close: the same shape
-  // holds from x=16 out to x=22, since the closing stretch that decides it is only ever the last
-  // four tiles (range 5 to range 1), not the total approach - widening the gap only delays when it
-  // happens, it does not change what happens. Left as a disclosed side effect of the speed change
-  // rather than re-tuned back to the old shape, which would mean touching combat numbers the owner
-  // never asked to change; see the session's evidence report.
+test("ranged-kill: the fixture's own arithmetic, after two 2026-08-22 speed passes", async () => {
+  // Before any speed pass this fixture was a clean demonstration: two marksmen land six shots
+  // during the trooper's approach and it dies at range, never landing a hit. The first speed pass
+  // (1.5x, "units still move too slow... it takes a while to reach initial engagement") already
+  // broke that cleanly - the trooper started reaching marksman#1 and killing it in melee. This is
+  // the second pass (2x the ORIGINAL rate, not another factor on the first - "still too slow... 2
+  // or 2.5 times faster"), and it goes further still: the trooper now also reaches marksman#3 after
+  // killing marksman#1, wounding it in melee before finally dying to its ranged fire. A still wins,
+  // now having lost one marksman and wounded the other, rather than losing nobody. Left as a
+  // disclosed side effect of the speed changes rather than re-tuned back, same reasoning as the
+  // first pass: fixing it would mean touching combat numbers nobody asked to change, and this is
+  // exactly the kind of retune milestone 3.6 says fixture content is for.
   const resolved = await resolveScenario("ranged-kill.ts")
   const shots = resolved.run.events.filter(
     (event) => event.kind === "attack.launched" && event.attackKind === "ranged",
@@ -182,7 +182,7 @@ test("ranged-kill: the fixture's own arithmetic, after the 2026-08-22 speed pass
   )
   const deaths = resolved.run.events.filter((event) => event.kind === "entity.died")
   assert.equal(shots.length, 7, "seven ranged shots in total")
-  assert.equal(melee.length, 4, "four melee swings from the trooper before it dies")
+  assert.equal(melee.length, 5, "five melee swings from the trooper before it dies")
   assert.equal(deaths.length, 2, "one marksman and the trooper both die now, not the trooper alone")
   assert.equal(deaths[0]?.entity, "A:marksman#1", "the trooper no longer dies before landing a hit")
   assert.equal(deaths[0]?.player, "A")
@@ -196,7 +196,7 @@ test("ranged-kill: the fixture's own arithmetic, after the 2026-08-22 speed pass
 
   const survivor = resolved.run.finalState.entities.find((entity) => entity.id === "A:marksman#3")
   assert.ok(survivor !== undefined, "the second marksman should still be standing")
-  assert.equal(survivor.hp, 24, "the trooper never reached the second marksman, so it took no damage")
+  assert.equal(survivor.hp, 17, "the trooper should reach and wound the second marksman before dying")
   assert.equal(resolved.run.finalState.outcome?.winner, "A")
 })
 

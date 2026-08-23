@@ -22,12 +22,14 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     layer: "workers",
     footprint: rectFootprint(1, 1),
     maxHp: 20,
-    // 3/2 rather than 1/1 - owner playtest, 2026-08-22: even after the earlier 3/4 -> 1/1 bump,
-    // "units still move too slow... it takes a while to reach initial engagement." Every fixture
-    // rate below is the same rate x 1.5, so every ratio this content was tuned against - trooper vs
-    // marksman, Citizen vs Ravel, hauler as the slow one - holds exactly; the whole army just gets
-    // there faster. Cadence 8 ticks/step (engine.md 4.1's own table), 2/3 of a second at 12 Hz.
-    movementRate: { numerator: 3, denominator: 2 },
+    // 2/1 rather than 1/1 - a second owner playtest, 2026-08-22, on top of a first that already
+    // asked for this and got a 1.5x pass on this same branch (3/2) the owner had not yet seen when
+    // this note landed: "The movement speed is still too slow, they should move 2 or 2.5 times
+    // faster." Read against the baseline both playtests actually watched (1/1, since neither had
+    // this branch's intermediate value on screen), so every fixture rate below is the ORIGINAL rate
+    // x2, not the 1.5x pass x another factor - every ratio this content was tuned against still
+    // holds exactly. Cadence 6 ticks/step (engine.md 4.1's own table), a tile every half second.
+    movementRate: { numerator: 2, denominator: 1 },
     speedTier: 2,
     collidesWith: WORKER_COLLISIONS,
     behavior: "flee",
@@ -39,10 +41,10 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(1, 1),
     maxHp: 40,
-    // 3/2 rather than 1/1 - see unit.citizen.worker above: a second speed pass, same 1.5x scaling,
-    // same 2026-08-22 owner playtest. A trooper is the unit most players spend the most time
-    // watching. Disposable bench content, tuned freely.
-    movementRate: { numerator: 3, denominator: 2 },
+    // 2/1 rather than 1/1 - see unit.citizen.worker above: a third speed pass overall, 2x the
+    // original rate. A trooper is the unit most players spend the most time watching. Disposable
+    // bench content, tuned freely.
+    movementRate: { numerator: 2, denominator: 1 },
     speedTier: 2,
     attack: { kind: "melee", range: 1, damage: 7, cooldownTicks: 12 },
     collidesWith: GROUND_UNIT_COLLISIONS,
@@ -55,8 +57,8 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(1, 1),
     maxHp: 24,
-    // 3/2 rather than 1/1 - same 1.5x speed pass as the trooper above.
-    movementRate: { numerator: 3, denominator: 2 },
+    // 2/1 rather than 1/1 - same speed pass as the trooper above.
+    movementRate: { numerator: 2, denominator: 1 },
     speedTier: 1,
     attack: { kind: "ranged", range: 5, damage: 6, cooldownTicks: 24, projectileTilesPerTick: 3 },
     collidesWith: GROUND_UNIT_COLLISIONS,
@@ -71,10 +73,11 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(3, 1),
     maxHp: 90,
-    // 3/4 rather than 1/2 - the same 1.5x speed pass as the rest of the roster (2026-08-22 owner
-    // playtest); the hauler stays the slowest thing on either side, exactly half the new trooper
-    // rate, same as it was half the old one. Cadence 16 ticks/step (engine.md 4.1's table).
-    movementRate: { numerator: 3, denominator: 4 },
+    // 1/1 rather than 1/2 - the same speed pass as the rest of the roster (2026-08-22 owner
+    // playtest, second round); the hauler stays the slowest thing on either side, exactly half the
+    // new trooper rate, same as it was half the original. Cadence 12 ticks/step (engine.md 4.1's
+    // table), one tile a second.
+    movementRate: { numerator: 1, denominator: 1 },
     speedTier: 3,
     attack: { kind: "melee", range: 1, damage: 10, cooldownTicks: 18 },
     collidesWith: GROUND_UNIT_COLLISIONS,
