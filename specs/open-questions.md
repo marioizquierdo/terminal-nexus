@@ -510,6 +510,44 @@ structures, production, and multiple Pulses in a single match, none of which exi
 place to design it is alongside Milestone 2's routing work and Milestone 3's Build Phase, not as a
 speculative addition to a milestone still officially unauthorized.
 
+### Q24 — Does the terminal cell's own aspect ratio distort movement and fire enough to fix?
+
+**Status:** OPEN — the owner asked this be noted and set aside, not explored now; blocks nothing.
+
+Owner playtest, 2026-08-22, raised while watching movement and diagonal fire, then explicitly
+deferred in his own words: "I wonder if we should do something about that, because it makes movement
+and diagonal shooting look a bit distorted; too fast when moving up and down, too slow when moving
+sideways... If the tiles were landscape that would be better... however the vertical lines being
+taller does not make sense for perspective. Let's explore the vertical-rectangle issue later, for now
+just take note." Recorded verbatim rather than acted on, per that instruction.
+
+This is not a new observation about the underlying cause — `engine.md` Section 9.3 already names it
+as a RULE-level fact and a RULE-level mitigation: "a terminal cell is about twice as tall as it is
+wide... a radius that is square in tiles looks like a wide rectangle," and the fix already shipped is
+adaptive tile width — one terminal column per Grid tile at 80 columns (the acceptance target, and
+where the distortion is at its worst), two columns per tile at 128 or wider (`--tile-width 2`, closer
+to square). What is new is the owner watching the *default*, one-column acceptance target in motion
+and feeling the distortion in movement pacing specifically — a moving actor covers vertical distance
+in fewer visual terminal-rows than it takes to cover the same number of tiles horizontally, so a
+vertical approach reads as sped up and a horizontal one as dragging, even though the *simulation*
+timing is identical in both directions (movement cost is uniform per tile, not per screen pixel). The
+same physical distortion the RULE already accepted for radius previews turns out to also read as a
+*timing* problem once things are actually moving, not just a *shape* problem for a static circle.
+
+The owner's own three ideas, each with a real cost:
+
+| Option | Cost |
+| --- | --- |
+| A. **Leave it — the two-column mode is the existing answer.** `--tile-width 2` already exists and already reads closer to square; the fix is "use the wide mode," which the acceptance-target default cannot do without abandoning 80 columns | Free. Does not help anyone watching at the 80-column acceptance target, which `engine.md` 9.3 fixes as *the* target, not a fallback — so the actual complaint (default mode reads distorted) stays exactly as it was |
+| B. **Landscape tiles** (the owner's own suggestion) — draw each Grid tile as two or more terminal columns even at the "narrow" composition, trading Grid width shown for squareness | Owner's own stated objection applies here too: fixes the shape/timing distortion, but is presentation choosing to show less Grid rather than more, at exactly the acceptance-target size `engine.md` treats as fixed |
+| C. **Compensate movement's presentation timing directionally** — since the distortion here is specifically about *pacing* (vertical reads fast, horizontal reads slow) rather than shape, interpolate a vertical step over more presentation-time than a horizontal one of the same tile-distance, so both *look* like they take the same real time even though the kernel's tick cost is identical either way | Presentation-only in principle (no state or hash impact — same shape as Q22's interpolation-only option), but it is compensating for a display artifact by lying more, in a specific and asymmetric direction, which needs someone actually watching it to judge whether it reads as "fixed" or as "the diagonal ones now look weird instead" |
+| D. **Change the acceptance target itself** — the owner's own "vertical lines taller does not make sense for perspective" caveat already argues against the literal landscape-tile idea; a more square terminal composition (more rows, fewer columns, or a different floor than 80×24) is the harder version of the same question | The owner flagged this as the one he does *not* currently want pursued ("does not make sense for perspective") — named for completeness, not recommended |
+
+**Recommendation: none, per the owner's own instruction to set this aside.** If this returns, C is
+the narrowest starting point — it treats the newly-noticed problem (motion *pacing* reads uneven) as
+distinct from the older, already-answered one (a static shape looks stretched), rather than reopening
+`engine.md` 9.3's tile-width RULE to solve a timing complaint a wider tile does not by itself fix.
+
 ## 5. Answered
 
 Rows move here with the date, the decision, and the document that now owns it.
