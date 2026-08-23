@@ -50,6 +50,37 @@ function familyFor(contentId: string): EffectFamily {
   return "neutral"
 }
 
+/**
+ * Which tick's shots are still "in flight" toward a given target, and for how many more ticks -
+ * shared by every consumer that has to hold something until a ranged hit visibly lands, not just
+ * the effect system. The kernel resolves a ranged kill in the same tick it launches the shot -
+ * `attack.launched`, `damage.applied`, `entity.died` and any `entity.detonated` it triggers all
+ * carry the identical `tick` (engine.md 4.3's flight window is presentation metadata; no rule reads
+ * it) - so without this, a unit's death collapse (and the unit's own glyph disappearing) fired the
+ * instant the shot left the barrel, ticks before its own tracer visibly arrived. The owner
+ * playtest's own words for the fix that already exists on `damage.applied` apply everywhere else
+ * the same gap can hide: "look for more opportunities to do that, specially when the effect is
+ * resolved within the same turn so it doesn't really affect the gameplay." Nothing about outcome
+ * moves; only when an ending is allowed to play catches up to when the blow that caused it lands.
+ */
+export function buildFlightHoldTicks(events: readonly DomainEvent[]): ReadonlyMap<string, number> {
+  const holds = new Map<string, number>()
+  for (const event of events) {
+    if (event.kind !== "attack.launched" || event.attackKind !== "ranged") continue
+    const key = `${event.tick}:${event.targetOrdinal}`
+    holds.set(key, Math.max(holds.get(key) ?? 0, event.flightWindowTicks))
+  }
+  return holds
+}
+
+export function flightHoldTicks(
+  holds: ReadonlyMap<string, number>,
+  tick: number,
+  ordinal: number,
+): number {
+  return holds.get(`${tick}:${ordinal}`) ?? 0
+}
+
 export function deriveEffects(source: EffectSource): EffectInstance[] {
   const tickMs = 1000 / source.ticksPerSecond
   const at = (tick: number): number => tick * tickMs
@@ -76,12 +107,9 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
 
   // A ranged hit lands when its tracer does: the renderer holds the impact, the flash and the
   // visible health change until the end of the flight window (engine.md 4.3).
-  const flightByTarget = new Map<string, number>()
-  for (const event of source.events) {
-    if (event.kind !== "attack.launched" || event.attackKind !== "ranged") continue
-    const key = `${event.tick}:${event.targetOrdinal}`
-    flightByTarget.set(key, Math.max(flightByTarget.get(key) ?? 0, event.flightWindowTicks))
-  }
+  const flightByTarget = buildFlightHoldTicks(source.events)
+  const heldMsFor = (tick: number, ordinal: number): number =>
+    flightHoldTicks(flightByTarget, tick, ordinal) * tickMs
 
   const criticalSince = new Map<number, number>()
   const blastsThisTick = new Map<number, number>()
@@ -198,7 +226,7 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
         instances.push({
           recipe: "fx.death.collapse",
           band: "effects",
-          startMs: at(event.tick),
+          startMs: at(event.tick) + heldMsFor(event.tick, event.ordinal),
           durationMs: DEATH_MS,
           origin: event.at,
           family: familyFor(event.contentId),
@@ -215,7 +243,7 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
         instances.push({
           recipe: "fx.structure.collapse",
           band: "effects",
-          startMs: at(event.tick),
+          startMs: at(event.tick) + heldMsFor(event.tick, event.ordinal),
           durationMs: STRUCTURE_MS,
           origin: event.at,
           family: familyFor(event.contentId),
@@ -233,7 +261,7 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
         instances.push({
           recipe: "fx.blast.detonation",
           band: "effects",
-          startMs: at(event.tick) + order * CASCADE_STAGGER_MS,
+          startMs: at(event.tick) + heldMsFor(event.tick, event.ordinal) + order * CASCADE_STAGGER_MS,
           durationMs: BLAST_MS,
           origin: event.at,
           family: familyFor(event.contentId),

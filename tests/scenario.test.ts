@@ -41,16 +41,19 @@ test("the preset matrix matches engine.md 3.1", () => {
 })
 
 test("scenario rows read north to south and (0,0) is the north-west tile", () => {
+  // The rock sits at (0,0) purely to pin down which corner "index 0" is; the trooper that used to
+  // share that tile moved one column over so the two checks stop colliding now that the loader
+  // refuses a ground entity placed on impassable terrain.
   const scenario: ScenarioDefinition = {
     ...baseScenario(),
     terrain: ["#...", "....", "...."],
-    placements: ["t   ", "    ", "   T"],
+    placements: [" t  ", "    ", "   T"],
   }
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY })
   assert.equal(loaded.state.grid.tiles[0], "terrain.rock", "the first row is not the north row")
   const [first, second] = loaded.state.entities
   assert.ok(first !== undefined && second !== undefined)
-  assert.deepEqual(first.anchor, { x: 0, y: 0 })
+  assert.deepEqual(first.anchor, { x: 1, y: 0 })
   assert.deepEqual(second.anchor, { x: 3, y: 2 })
 })
 
@@ -158,40 +161,51 @@ test("melee-kill: a defender dies to melee and the attackers survive", async () 
   assert.equal(resolved.run.finalState.outcome?.winner, "A")
 })
 
-test("ranged-kill: the fixture reproduces the arithmetic milestone 3.6 claims for it", async () => {
-  // "Two marksmen land six shots during that same approach. The trooper arrives at 4 health and
-  // dies." That sentence is the fixture's design, so the fixture is where it gets checked.
+test("ranged-kill: the fixture's own arithmetic, after two 2026-08-22 speed passes", async () => {
+  // Before any speed pass this fixture was a clean demonstration: two marksmen land six shots
+  // during the trooper's approach and it dies at range, never landing a hit. The first speed pass
+  // (1.5x, "units still move too slow... it takes a while to reach initial engagement") already
+  // broke that cleanly - the trooper started reaching marksman#1 and killing it in melee. This is
+  // the second pass (2x the ORIGINAL rate, not another factor on the first - "still too slow... 2
+  // or 2.5 times faster"), and it goes further still: the trooper now also reaches marksman#3 after
+  // killing marksman#1, wounding it in melee before finally dying to its ranged fire. A still wins,
+  // now having lost one marksman and wounded the other, rather than losing nobody. Left as a
+  // disclosed side effect of the speed changes rather than re-tuned back, same reasoning as the
+  // first pass: fixing it would mean touching combat numbers nobody asked to change, and this is
+  // exactly the kind of retune milestone 3.6 says fixture content is for.
   const resolved = await resolveScenario("ranged-kill.ts")
   const shots = resolved.run.events.filter(
     (event) => event.kind === "attack.launched" && event.attackKind === "ranged",
   )
-  const death = resolved.run.events.find((event) => event.kind === "entity.died")
-  assert.ok(death !== undefined && death.kind === "entity.died")
-  assert.equal(death.player, "B")
-  assert.equal(shots.length, 8, "eight shots in total: six during the approach and two that killed")
-
-  const approach = shots.filter((event) => event.tick < death.tick)
-  assert.equal(approach.length, 6, "the approach did not cost the trooper six shots")
-
-  const arrived = resolved.run.events.filter(
-    (event) => event.kind === "damage.applied" && event.ordinal === death.ordinal,
+  const melee = resolved.run.events.filter(
+    (event) => event.kind === "attack.launched" && event.attackKind === "melee",
   )
-  const beforeTheLast = arrived[arrived.length - 2]
-  assert.ok(beforeTheLast !== undefined && beforeTheLast.kind === "damage.applied")
-  assert.equal(beforeTheLast.hpAfter, 4, "the trooper did not arrive at 4 health")
+  const deaths = resolved.run.events.filter((event) => event.kind === "entity.died")
+  assert.equal(shots.length, 7, "seven ranged shots in total")
+  assert.equal(melee.length, 5, "five melee swings from the trooper before it dies")
+  assert.equal(deaths.length, 2, "one marksman and the trooper both die now, not the trooper alone")
+  assert.equal(deaths[0]?.entity, "A:marksman#1", "the trooper no longer dies before landing a hit")
+  assert.equal(deaths[0]?.player, "A")
+  assert.equal(deaths[1]?.entity, "B:trooper#2")
+  assert.equal(deaths[1]?.player, "B")
 
   for (const shot of shots) {
     if (shot.kind !== "attack.launched") continue
     assert.ok(shot.flightWindowTicks >= 1, "a ranged attack carried no flight window")
   }
+
+  const survivor = resolved.run.finalState.entities.find((entity) => entity.id === "A:marksman#3")
+  assert.ok(survivor !== undefined, "the second marksman should still be standing")
+  assert.equal(survivor.hp, 17, "the trooper should reach and wound the second marksman before dying")
   assert.equal(resolved.run.finalState.outcome?.winner, "A")
 })
 
 test("trooper-versus-marksman: melee wins the charge, at a measured cost", async () => {
-  // milestone 3.6 predicts the trooper "eats three shots, arriving at 22 of 40 health", then kills
-  // the marksman "while taking two more" and finishes "at a quarter health". The first half is
-  // exact. The second is one shot out: the marksman lands one more, not two, so the trooper
-  // finishes at 16 of 40 rather than 10. Recorded in evidence/report.md Section 7.
+  // milestone 3.6 predicts the trooper "eats three shots, arriving at 22 of 40 health, then kills
+  // the marksman" - still exact after the 2026-08-22 speed pass (owner playtest: "units still move
+  // too slow"), because the faster trooper closes the marksman's cooldown-24 firing window in fewer
+  // ticks: the marksman gets zero more shots in after the trooper arrives, not one, so the trooper
+  // finishes the fight at its arrival health, 22 of 40, rather than 16.
   const resolved = await resolveScenario("trooper-versus-marksman.ts")
   const trooper = resolved.run.finalState.entities.find((entity) => entity.player === "A")
   assert.ok(trooper !== undefined, "the trooper did not survive, so melee no longer wins the charge")
@@ -203,7 +217,8 @@ test("trooper-versus-marksman: melee wins the charge, at a measured cost", async
   const arrival = hits[2]
   assert.ok(arrival !== undefined && arrival.kind === "damage.applied")
   assert.equal(arrival.hpAfter, 22, "the approach no longer costs exactly three shots")
-  assert.equal(trooper.hp, 16, "the measured finishing health changed")
+  assert.equal(hits.length, 3, "the marksman should get no shots in after the trooper arrives")
+  assert.equal(trooper.hp, 22, "the measured finishing health changed")
 })
 
 test("worker-flight: the worker runs, and workers count for annihilation", async () => {

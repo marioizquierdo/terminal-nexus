@@ -4,7 +4,7 @@
 **Status:** CURRENT
 **Active gate:** 1B — quality and effects (built; viewed, encouraging response, not yet formally accepted)
 **Canon version:** 2.6
-**Updated:** 2026-08-21
+**Updated:** 2026-08-23
 **License:** Apache-2.0; authored creative treatments are CC BY-SA 4.0
 
 > **Where this stands, canon 2.6.** Both gates are **built and merged**, and both evidence reports
@@ -144,7 +144,7 @@ prints `victory  A             reason: annihilation`.
 [0021] INFO  attack   B:marksman#9  -> A:trooper#1    ranged dmg 6  hp 40->34
 [0044] INFO  attack   A:trooper#1   -> B:marksman#9   melee  dmg 7  hp 24->17
 [0056] INFO  death    B:marksman#9  at (13,7)  by A:trooper#1
-[0071] WARN  stuck    A:worker#4    at (3,9)  no legal step for 24 ticks
+[0071] WARN  stuck    A:worker#4    at (3,9)  no legal step for 24 ticks  wants (4,9)
 [0180] INFO  victory  A  reason: annihilation
 ```
 
@@ -267,25 +267,45 @@ freely if the fight is boring — that is what `grid` is for.
 
 | Id | Layer | Footprint | HP | Move | Speed tier | Attack | Range | Damage | Cooldown |
 | --- | --- | --- | ---: | ---: | ---: | --- | ---: | ---: | ---: |
-| `unit.citizen.worker` | `workers` | 1 × 1 | 20 | `1/1` | 2 | — | — | — | — |
-| `unit.citizen.trooper` | `units` | 1 × 1 | 40 | `3/4` | 2 | melee | 1 | 7 | 12 |
-| `unit.citizen.marksman` | `units` | 1 × 1 | 24 | `3/4` | 1 | ranged | 5 | 6 | 24 |
-| `unit.citizen.hauler` | `units` | 3 × 1 | 90 | `1/2` | 3 | melee | 1 | 10 | 18 |
+| `unit.citizen.worker` | `workers` | 1 × 1 | 20 | `2/1` | 2 | — | — | — | — |
+| `unit.citizen.trooper` | `units` | 1 × 1 | 40 | `2/1` | 2 | melee | 1 | 7 | 12 |
+| `unit.citizen.marksman` | `units` | 1 × 1 | 24 | `2/1` | 1 | ranged | 5 | 6 | 24 |
+| `unit.citizen.hauler` | `units` | 3 × 1 | 90 | `1/1` | 3 | melee | 1 | 10 | 18 |
 | `structure.citizen.nexus` | `obstacles` | 3 × 2 | 400 | — | — | — | — | — | — |
 | `structure.citizen.barracks` | `obstacles` | 3 × 2 | 120 | — | — | — | — | — | — |
 
-Lower speed tier resolves first, so the marksman fires before the trooper swings.
+Lower speed tier resolves first, so the marksman fires before the trooper swings. Move is `1/1` for
+the whole roster (`3/4` for the hauler) at Gate 1A; two owner playtests on 2026-08-22, both against the
+finished Gate 1B fixture, asked for faster movement in succession — the first ("units still move too
+slow... it takes a while to reach initial engagement") landed a 1.5x pass this same table once
+carried, the second ("still too slow... they should move 2 or 2.5 times faster") arrived before that
+pass had even been seen and asked for more, so the rates below are 2x the *original* Gate 1A rate,
+not a further multiple on top of the first pass. This table carries the rate the fixture actually
+ships, not the rate it launched with — `src/content/citizen.ts` and `src/content/ravel.ts` are the
+source of truth if the two ever drift again.
 
 The numbers make the relationship **visible without a spreadsheet**:
 
-- A trooper crossing a marksman's five tiles takes about 6.7 seconds and eats three shots, arriving at
-  22 of 40 health. It then kills the marksman while taking **one** more. **One trooper beats one
-  marksman and finishes at 16 of 40** — measured, in `scenarios/trooper-versus-marksman.ts`. The
-  first half of that sentence is exact; the ending was a shot out, and this is the corrected number.
-- Two marksmen land six shots during that same approach. **The trooper arrives at 4 health and dies.**
-  Exact, and asserted in `tests/scenario.test.ts`.
+- A trooper crossing a marksman's five tiles eats three shots, arriving at 22 of 40 health, then kills
+  the marksman without taking another hit — the faster close leaves the marksman's 24-tick cooldown no
+  time for a fourth shot. **One trooper beats one marksman and finishes at 22 of 40** — measured, in
+  `scenarios/trooper-versus-marksman.ts`, and unchanged by the second speed pass: the approach was
+  already fast enough after the first that a fourth shot was never in reach.
+- Two marksmen against one trooper no longer demonstrates a clean ranged kill, and the second speed
+  pass pushes it further than the first did: the trooper now reaches melee before dying, kills the
+  marksman it reaches, and then reaches the *second* marksman too, wounding it before that marksman's
+  own ranged fire finally kills the trooper. **Two marksmen still beat one trooper, but now lose one
+  of their own and end the fight scarred, not unscathed** — measured, in `scenarios/ranged-kill.ts`.
+  Confirmed on the first pass that this is not a matter of starting distance (the same shape held from
+  x=16 out to x=22, since it is the last four tiles — marksman range down to melee range — that
+  decide it, not the ground closed to get there). Left as a disclosed side effect of the speed passes
+  rather than re-tuned back: fixing it would mean touching attack or cooldown numbers nobody asked to
+  change, and the content is disposable exactly so this kind of retune can happen without ceremony.
 
-Melee wins the charge; ranged wins when massed. A viewer can learn that by watching twice.
+Melee wins the charge, both fights agree on that; the second no longer teaches "ranged wins when
+massed" as cleanly as it did before either speed pass. Worth a follow-up look if that specific lesson
+matters to keep intact — it is a content-balance question, not a rule question, so it stays with the
+fixture rather than blocking anything.
 
 **`unit.citizen.hauler` is the multi-tile mover**, and it is in the fixture on purpose. A three-tile
 unit squeezing between rock formations is the case that breaks a collision system written for

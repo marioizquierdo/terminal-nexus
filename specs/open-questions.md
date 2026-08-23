@@ -238,6 +238,17 @@ search, or at minimum a goal offset that avoids exact axis alignment), not just 
 politely — B alone would ship a unit that visibly gives up, which is not better than one that visibly
 paces.
 
+**Confirmed on the real fixture** (owner playtest, 2026-08-22): "Two units on the top of the screen
+around tick 200 got stuck: `t▓▓X`. The pathfinding algorithm is failing here." That is this exact
+failure — a trooper and a runner squared off on the same row across a two-tile rock, each one's only
+distance-closing direction pointed straight into it, and neither ever tried the one-tile detour that
+would have cleared it. `scenarios/on-axis-deadlock.ts` isolates it to two entities and one line of
+log (`tests/report.test.ts` asserts it fires the `WARN stuck` recommendation A already calls for);
+`tests/report.test.ts` also asserts, across every checked-in scenario, that no `stuck` warning ever
+reports an impassable tile as an actor's own position — a second, smaller bug this same investigation
+found in the log line itself, now fixed, unrelated to the routing gap below. Nothing else about the
+gap moves: still a real fork, still Milestone 2's job, recommendation unchanged.
+
 ### Q16 — When the Grid is smaller than the viewport, where does the leftover space go?
 
 **Status:** OPEN — Gate 1A proceeds under the recommendation; the answer changes only presentation.
@@ -382,6 +393,160 @@ and most honest first cut — a unit going idle at the edge of its own perceptio
 on screen, where a full-scan fallback (A) quietly reintroduces the exact cost the cap exists to
 remove, and C is worth doing only once "advance on the enemy Nexus" is a rule the game wants anyway,
 not manufactured to serve this cap.
+
+### Q21 — Does the palette need more contrast, and specifically where?
+
+**Status:** OPEN — presentation only; blocks nothing.
+
+Owner playtest, 2026-08-22, after otherwise positive feedback: "Perhaps we have to work on the
+colors to ensure more contrast." Both gate reports (`evidence/report.md`, `evidence/gate-1b-report.md`)
+say the same thing about colour: the human half of the gate — someone actually watching — never
+happened before now, so this is new information, not confirmation of something already checked. Two
+earlier contrast bugs did already get fixed from an owner playtest this same session cycle
+(`chrome.muted` compounding with the `dim` SGR attribute, and `player.a`/`player.b`'s ANSI-16 codes
+not matching the hue their 256-colour and truecolor entries already committed to — both recorded in
+`src/view/roles.ts`'s own comment), so "check contrast" is not a new category of ask, but this is the
+first time it has been raised as still not enough.
+
+Measured rather than guessed at, using WCAG's relative-luminance contrast ratio against the truecolor
+values in `src/view/roles.ts`:
+
+| Pair | Dark theme | Light theme |
+| --- | ---: | ---: |
+| `player.a` vs background | 5.80:1 | 4.45:1 |
+| `player.b` vs background | 12.06:1 | 4.11:1 |
+| **`player.a` vs `player.b`** | **2.08:1** | **1.08:1** |
+| `terrain.rock` vs background | 5.26:1 | 8.75:1 |
+
+Each side against the background clears WCAG AA's 3:1 floor for a UI component in both themes. The
+two sides **against each other** do not, and the light theme is close to a real failure: 1.08:1 means
+Citizen rust and Ravel green sit at almost identical brightness in light mode, separated only by hue
+— fine for most vision, a real problem for the red-green colour-blindness the palette's own hue
+choice (orange vs green) is already close to. This reads as the specific thing behind "more
+contrast": each side is individually legible against the field, but the two sides are not maximally
+distinct from each other, especially in light mode.
+
+| Option | Cost |
+| --- | --- |
+| A. **Leave it.** Each side already clears the accepted floor against the background, and the RULE this palette serves — ownership keeps the colour, faction keeps the glyph family (Q18) — never promised the two sides would be *maximally* far apart, only distinguishable | Free. Doesn't answer what the owner actually saw; a note this specific after an otherwise glowing pass is unlikely to be nothing |
+| B. **Retune `player.a`/`player.b`'s lightness (not hue)** in each theme so their mutual contrast ratio clears a real floor (WCAG's 3:1, say), keeping today's hues — rust stays rust, green stays green — since case (upper/lower) and glyph family already carry the primary distinction and colour is reinforcement, not the only signal | Small, mechanical, two swatches in one table per theme; the light-theme fix (1.08:1) is the one that actually matters, dark's 2.08:1 is a smaller gap. Directly answers the measured problem without opening the mirror-match hue redesign Q18 already scoped separately |
+| C. **A fuller palette pass** — reconsider every role pair's contrast, not just player-vs-player, informed by real screenshots at real fight moments rather than isolated swatch math | Most thorough, but bigger than what the note asks for, and swatch math in isolation already found the one pair worth fixing; a full pass is better justified once there's a second concrete complaint to anchor it |
+
+**Recommendation: B**, scoped to the light theme's `player.a`/`player.b` pair specifically (the
+measured 1.08:1), since it is the one number here that reads as an actual accessibility gap rather
+than a stylistic preference, and it does not touch the hue identity Q18 already owns. Left unbuilt
+rather than shipped speculatively: retuning a lightness value without a screenshot in front of
+someone is exactly the kind of presentation choice with a tradeoff (today's hues were chosen
+deliberately against `terminal-nexus-lore.md`'s faction palettes) that this session's own protocol
+says is the owner's call, not a guess to ship quietly.
+
+### Q22 — Should movement carry deterministic, terrain-based jitter?
+
+**Status:** OPEN — presentation, but touches the state/presentation boundary closely enough to need
+a real answer rather than an assumption; blocks nothing before it is built.
+
+Owner playtest, 2026-08-22: "moving units at slight different speeds also helps a lot to see nicer
+movement. I wonder if we should build in some movement jitter based on terrain (pseudo-random but
+deterministic so we can rep[l]ay). I think that will cause the whole animation of having an army
+engage another army work much better." This session's own 1.5x speed pass already varies rate
+*across unit types* (trooper, marksman, hauler, and all five Ravel units now step at different
+cadences — see the speed-pass commit) — real, and already shipped — but that is not what "jitter"
+asks for: identical units of the *same* type still step in perfect lockstep with each other, tile for
+tile, tick for tick, which is what makes a formation of ten troopers currently read as one shape
+moving rather than ten individuals.
+
+The engine already draws a hard line the jitter idea sits right on top of: **the two random streams —
+seeded gameplay, free cosmetic — never touch** (`AGENTS.md` Section 4; `engine.md`'s PCG32/hash-of-
+identity split; `ascii-effects.md` Section 1's whole reason cosmetic randomness is a *hash*, never a
+*stream*). "Pseudo-random but deterministic so we can replay" is exactly the cosmetic-hash shape
+`fx.*` recipes already use (`instanceHash`, `src/view/effects/recipes.ts`) — a hash of the actor's own
+identity plus its tile, salted, sampled at presentation time. The open question is not *whether* it
+can be deterministic (it can, the same way every effect already is), but **which side of the state/
+presentation line the jitter itself lives on**:
+
+| Option | Cost |
+| --- | --- |
+| A. **Pure presentation: interpolation only.** The simulation still moves an actor from tile to tile on its exact tick; a hash of `(ordinal, from, to)` perturbs only *how* `Playback`'s interpolation draws the in-between frames (a slightly bowed path, a few ms of lead/lag on the arrival beat) without moving the tick the kernel resolved. Never touches `stateHash` or `eventsHash` | The cheap, safe answer — same shape as `fx.move.trail` already interpolating between tiles today. Ceiling on how much variety it can show: two troopers still arrive at their tile on the *same tick*, only the path between looks less uniform |
+| B. **Presentation offset with a state-side hook: a per-actor cosmetic "phase"** — assigned once at spawn from a hash of the actor's identity, shifting *when in its own cadence window* it visibly commits to a step, without changing the tick arithmetic `movement.ts` uses for arbitration. More convincing desync than A, since two troopers now visibly step at different moments, not just travel differently between fixed steps | Real new surface: a per-entity value that has to be threaded from spawn through to the view without ever being read by a rule (the same discipline `facing` already gets — presentation-only, fenced out of the hash). Needs its own small test proving it never perturbs `stateHash`/`eventsHash`, the same proof `ascii-effects.md` Section 6 already requires of every recipe |
+| C. **Terrain-keyed rather than actor-keyed**, so the jitter is a property of the tile a mover is crossing (a rocky tile jitters more than plain ground) rather than of the mover itself — closer to the owner's literal phrase "based on terrain" | Most literal reading of the ask, but conflates two different visual causes (an individual's gait varying, versus ground that is hard to cross) into one mechanism; A or B already deliver "an army looks like individuals, not one shape" without needing terrain to carry a new presentation property it does not have today |
+
+**Recommendation: A first**, as a small, self-contained addition to `Playback`'s existing
+interpolation, built and shown side by side with jitter off — the cheapest way to test the owner's
+own claim ("I think that will cause the whole animation... work much better") before committing to
+B's larger surface. If A does not deliver enough visible variety once someone is actually watching
+it, B is the next step, keeping the phase strictly presentation-side and proving it with the same
+kind of test every effect already carries. C is not recommended on its own; if terrain should
+influence the *feel* of crossing it, that reads more like a `movementRate` terrain modifier — a real
+rule, not a presentation jitter — and is a different, bigger question than this one.
+
+### Q23 — How does an army reach its first engagement faster, beyond raw movement speed?
+
+**Status:** OPEN — Milestone 2/3 scope (Build Phase, outposts); nothing here is authorized to build
+now, registered so the ask is not lost between now and whenever those milestones open.
+
+Owner playtest, 2026-08-22, immediately after asking for faster movement (already shipped, this
+session's speed pass): "we should probably think about how to reach the initial conflict faster. Maybe
+outposts regroup units next to them so next pulses resolve faster." AGENTS.md Section 2 is explicit
+that economy, production, the Build Phase, and outposts are not authorized before Mario accepts
+Milestone 1, so nothing in this note is built here regardless of how reasonable it sounds — this row
+exists so the idea is on record rather than re-derived from a chat transcript whenever Milestone 2 or
+3 opens.
+
+The idea itself: an **outpost** (a forward structure, presumably built during a future Build Phase)
+that reassembles retreating or newly-produced units near itself between Pulses, so the *next* Pulse's
+armies start closer together than the map's raw geometry would otherwise put them — shortening the
+"how long until anyone is doing anything interesting" gap this session's speed pass only partially
+closes (raw movement speed helps every Pulse; regrouping would specifically help the *second and
+later* Pulses of a match, where geography has already been fought over once).
+
+| Option | Cost |
+| --- | --- |
+| A. **Fold into Milestone 2's routing/production work directly** — an outpost becomes a structure type with a "units spawn or return near me" behavior, designed alongside production once Milestone 2 actually has production | Keeps it with the systems it depends on (there is no Build Phase, no production, and no multi-Pulse match yet to regroup *between*) |
+| B. **A named placeholder in `commander-armies.md` or `milestone-2-deterministic-pulse.md`** now, so the shape is captured even before Milestone 2 opens | Cheap, but there is little to say yet beyond the one sentence above — Milestone 2's contracts are already locked per the execution ledger, and reopening them for one line is more ceremony than the idea currently earns |
+| C. **Do nothing until Milestone 2 opens**, and rely on this row | Free, and consistent with how Q19's sandbox/replay ask was handled — registered, explicitly deferred, picked up when its milestone actually starts |
+
+**Recommendation: C**, same shape as Q19. This is a real idea worth keeping, but it presupposes
+structures, production, and multiple Pulses in a single match, none of which exist yet; the right
+place to design it is alongside Milestone 2's routing work and Milestone 3's Build Phase, not as a
+speculative addition to a milestone still officially unauthorized.
+
+### Q24 — Does the terminal cell's own aspect ratio distort movement and fire enough to fix?
+
+**Status:** OPEN — the owner asked this be noted and set aside, not explored now; blocks nothing.
+
+Owner playtest, 2026-08-22, raised while watching movement and diagonal fire, then explicitly
+deferred in his own words: "I wonder if we should do something about that, because it makes movement
+and diagonal shooting look a bit distorted; too fast when moving up and down, too slow when moving
+sideways... If the tiles were landscape that would be better... however the vertical lines being
+taller does not make sense for perspective. Let's explore the vertical-rectangle issue later, for now
+just take note." Recorded verbatim rather than acted on, per that instruction.
+
+This is not a new observation about the underlying cause — `engine.md` Section 9.3 already names it
+as a RULE-level fact and a RULE-level mitigation: "a terminal cell is about twice as tall as it is
+wide... a radius that is square in tiles looks like a wide rectangle," and the fix already shipped is
+adaptive tile width — one terminal column per Grid tile at 80 columns (the acceptance target, and
+where the distortion is at its worst), two columns per tile at 128 or wider (`--tile-width 2`, closer
+to square). What is new is the owner watching the *default*, one-column acceptance target in motion
+and feeling the distortion in movement pacing specifically — a moving actor covers vertical distance
+in fewer visual terminal-rows than it takes to cover the same number of tiles horizontally, so a
+vertical approach reads as sped up and a horizontal one as dragging, even though the *simulation*
+timing is identical in both directions (movement cost is uniform per tile, not per screen pixel). The
+same physical distortion the RULE already accepted for radius previews turns out to also read as a
+*timing* problem once things are actually moving, not just a *shape* problem for a static circle.
+
+The owner's own three ideas, each with a real cost:
+
+| Option | Cost |
+| --- | --- |
+| A. **Leave it — the two-column mode is the existing answer.** `--tile-width 2` already exists and already reads closer to square; the fix is "use the wide mode," which the acceptance-target default cannot do without abandoning 80 columns | Free. Does not help anyone watching at the 80-column acceptance target, which `engine.md` 9.3 fixes as *the* target, not a fallback — so the actual complaint (default mode reads distorted) stays exactly as it was |
+| B. **Landscape tiles** (the owner's own suggestion) — draw each Grid tile as two or more terminal columns even at the "narrow" composition, trading Grid width shown for squareness | Owner's own stated objection applies here too: fixes the shape/timing distortion, but is presentation choosing to show less Grid rather than more, at exactly the acceptance-target size `engine.md` treats as fixed |
+| C. **Compensate movement's presentation timing directionally** — since the distortion here is specifically about *pacing* (vertical reads fast, horizontal reads slow) rather than shape, interpolate a vertical step over more presentation-time than a horizontal one of the same tile-distance, so both *look* like they take the same real time even though the kernel's tick cost is identical either way | Presentation-only in principle (no state or hash impact — same shape as Q22's interpolation-only option), but it is compensating for a display artifact by lying more, in a specific and asymmetric direction, which needs someone actually watching it to judge whether it reads as "fixed" or as "the diagonal ones now look weird instead" |
+| D. **Change the acceptance target itself** — the owner's own "vertical lines taller does not make sense for perspective" caveat already argues against the literal landscape-tile idea; a more square terminal composition (more rows, fewer columns, or a different floor than 80×24) is the harder version of the same question | The owner flagged this as the one he does *not* currently want pursued ("does not make sense for perspective") — named for completeness, not recommended |
+
+**Recommendation: none, per the owner's own instruction to set this aside.** If this returns, C is
+the narrowest starting point — it treats the newly-noticed problem (motion *pacing* reads uneven) as
+distinct from the older, already-answered one (a static shape looks stretched), rather than reopening
+`engine.md` 9.3's tile-width RULE to solve a timing complaint a wider tile does not by itself fix.
 
 ## 5. Answered
 

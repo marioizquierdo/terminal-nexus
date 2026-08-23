@@ -19,12 +19,25 @@ collect(root);
 const missing = [];
 const linkPattern = /(?<!!)\[[^\]]*\]\(([^)]+)\)/g;
 
+/** A malformed escape is not a path; report the link as written rather than throwing on it. */
+function decodePath(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 for (const markdownFile of markdownFiles) {
   const contents = readFileSync(markdownFile, "utf8");
 
   for (const match of contents.matchAll(linkPattern)) {
     const rawTarget = match[1].trim();
-    const target = rawTarget.split("#", 1)[0];
+    // `<...>` and percent-encoding are how Markdown links carry a path with a space in it, which
+    // the concept folder's dated filenames all have. Both are correct links and neither is a path.
+    const bracketed = rawTarget.startsWith("<") && rawTarget.endsWith(">");
+    const unwrapped = bracketed ? rawTarget.slice(1, -1) : rawTarget;
+    const target = decodePath(unwrapped.split("#", 1)[0]);
 
     if (
       target.length === 0 ||

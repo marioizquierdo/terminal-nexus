@@ -294,7 +294,9 @@ test("effects are derived from the event stream, and turning them off changes on
   assert.equal(without.effectCount, 0)
   assert.equal(withEffects.timeline.stateHash, without.timeline.stateHash)
 
-  const timeMs = 48 * (1000 / 12) + 40
+  // Tick 37, not 48: the 2026-08-22 speed pass (owner playtest, "units still move too slow") moved
+  // the cascade's first blast earlier, since every mover in the fixture reaches contact sooner.
+  const timeMs = 37 * (1000 / 12) + 40
   assert.notEqual(
     frameToText(withEffects.snapshotAt(timeMs, "monochrome", 1)),
     frameToText(without.snapshotAt(timeMs, "monochrome", 1)),
@@ -414,4 +416,122 @@ test("the glyph pack changes the field and the frame, never the actors", async (
       .filter((glyph) => /[A-Za-z]/.test(glyph))
       .join("")
   assert.equal(letters(unicodeFrame), letters(asciiFrame))
+})
+
+
+test("a same-tick ranged kill holds its death and blast until the tracer lands, not before", async () => {
+  // Owner playtest, 2026-08-22: "the timings for shooting and taking damage are much better now...
+  // look for more opportunities to do that, specially when the effect is resolved within the same
+  // turn so it doesn't really affect the gameplay." The kernel resolves a ranged kill in the tick
+  // the shot is launched - attack.launched, damage.applied, entity.died and any entity.detonated it
+  // triggers all carry the same tick - but the impact burst already waits for the flight window
+  // (engine.md 4.3) to end before it plays. The death collapse and any resulting blast did not, so a
+  // unit could visibly explode before its own tracer arrived. citizens-versus-ravels reproduces this
+  // exactly: tick 169, A:marksman#5's shot (flightWindowTicks 2) kills B:runner#6, whose volatile
+  // munitions then catch A:trooper#8.
+  const resolved = await resolveScenario("citizens-versus-ravels.ts")
+  const derived = deriveEffects({
+    states: [],
+    events: resolved.run.events,
+    registry: resolved.registry,
+    ticksPerSecond: 12,
+  })
+  const tickMs = 1000 / 12
+
+  for (const event of resolved.run.events) {
+    if (event.kind !== "attack.launched" || event.attackKind !== "ranged") continue
+    const impactMs = event.tick * tickMs + event.flightWindowTicks * tickMs
+
+    const death = resolved.run.events.find(
+      (candidate): candidate is typeof candidate & { at: { x: number; y: number } } =>
+        (candidate.kind === "entity.died" || candidate.kind === "structure.destroyed") &&
+        candidate.tick === event.tick &&
+        candidate.ordinal === event.targetOrdinal,
+    )
+    if (death === undefined) continue
+
+    const collapse = derived.find(
+      (instance) =>
+        (instance.recipe === "fx.death.collapse" || instance.recipe === "fx.structure.collapse") &&
+        instance.startMs >= impactMs - 1 &&
+        instance.origin.x === death.at.x &&
+        instance.origin.y === death.at.y,
+    )
+    assert.ok(
+      collapse !== undefined,
+      `no death/structure collapse held to the tick-${event.tick} impact beat for ordinal ${event.targetOrdinal}`,
+    )
+    assert.ok(
+      collapse.startMs >= impactMs,
+      `${collapse.recipe} started at ${collapse.startMs}, before its own tracer landed at ${impactMs}`,
+    )
+
+    const blast = derived.find(
+      (instance) => instance.recipe === "fx.blast.detonation" && instance.startMs >= impactMs - 1,
+    )
+    if (blast !== undefined) {
+      assert.ok(
+        blast.startMs >= impactMs,
+        `fx.blast.detonation started at ${blast.startMs}, before its own tracer landed at ${impactMs}`,
+      )
+    }
+  }
+})
+
+
+test("a death reads visibly heavier than a hit, ascii-effects.md 5's own requirement for this pair", () => {
+  // "fx.death.collapse... Must be visibly heavier than fx.impact.burst - dying and being hit are the
+  // two events players confuse most" (ascii-effects.md Section 5). Owner playtest, 2026-08-22: "show
+  // bigger explosions when the units die vs when they take damage" - the same requirement, seen on a
+  // real fight rather than read off a table, and not previously asserted by anything automated.
+  const origin = { x: 10, y: 6 }
+  const target = { x: 14, y: 6 }
+  const burst: EffectInstance = {
+    recipe: "fx.impact.burst",
+    band: "effects",
+    startMs: 0,
+    durationMs: 180,
+    origin,
+    target,
+    family: "citizen",
+    params: {},
+  }
+  const death: EffectInstance = {
+    recipe: "fx.death.collapse",
+    band: "effects",
+    startMs: 0,
+    durationMs: 320,
+    origin,
+    family: "citizen",
+    // The most common footprint in the fixture content: every unit but the hauler and the raider.
+    params: { width: 1, height: 1 },
+  }
+
+  const burstRecipe = EFFECT_RECIPES["fx.impact.burst"]
+  const deathRecipe = EFFECT_RECIPES["fx.death.collapse"]
+  assert.ok(burstRecipe !== undefined && deathRecipe !== undefined)
+
+  const peakCells = (instance: EffectInstance, recipe: (typeof EFFECT_RECIPES)["fx.impact.burst"]): number => {
+    let peak = 0
+    for (let timeMs = instance.startMs; timeMs < instance.startMs + instance.durationMs; timeMs += 5) {
+      peak = Math.max(peak, recipe(instance, context({ timeMs, reducedMotion: false })).length)
+    }
+    return peak
+  }
+
+  const burstPeak = peakCells(burst, burstRecipe)
+  const deathPeak = peakCells(death, deathRecipe)
+  assert.ok(
+    deathPeak > burstPeak,
+    `fx.death.collapse peaked at ${deathPeak} cells, fx.impact.burst at ${burstPeak} - not visibly heavier`,
+  )
+  // "Visibly" is doing real work in the sentence, not just "one more cell": the loudest death frame
+  // should put down meaningfully more than the loudest hit frame, not edge past it by a single cell.
+  assert.ok(
+    deathPeak >= burstPeak * 3,
+    `fx.death.collapse (${deathPeak} cells) is not comfortably heavier than fx.impact.burst (${burstPeak})`,
+  )
+  // Duration is the other half of "heavier": a death that lingers reads as more consequential than
+  // one that flickers and is gone.
+  assert.ok(death.durationMs > burst.durationMs)
 })
