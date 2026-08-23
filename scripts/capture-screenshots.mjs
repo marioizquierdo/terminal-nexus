@@ -35,6 +35,22 @@ const SESSION = "nexus-capture"
 
 const shots = [
   {
+    name: "heavies-open",
+    caption: "Heavies clash, tick 0 - a 3x3 colossus and a 5x2 leviathan among their 1-tile escorts",
+    scenario: "heavies-clash",
+    tick: 0,
+    cols: 80,
+    rows: 24,
+  },
+  {
+    name: "heavies-death",
+    caption: "Heavies clash, tick 400 - the leviathan's death collapse fills its full 5x2 footprint",
+    scenario: "heavies-clash",
+    tick: 400,
+    cols: 80,
+    rows: 24,
+  },
+  {
     name: "mirror-open",
     caption: "Tick 0 - both squads placed, nothing has moved",
     scenario: "citizen-mirror-skirmish",

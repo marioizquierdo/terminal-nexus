@@ -4,6 +4,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { MovementRate } from "../src/content/index.ts"
+import { footprintExtent } from "../src/grid/index.ts"
 import {
   accrueCredit,
   canStep,
@@ -361,4 +362,42 @@ test("a multi-tile mover blocked inside its own footprint reports the real block
   }
   const byEntity = blocked.filter((event) => event.kind === "move.blocked" && event.reason === "entity")
   assert.ok(byEntity.length > 0, "the raider's real footprint collision was never reported")
+})
+
+test("a 3x3 and a 5x2 unit fight, range-gated by footprint distance, not anchor distance", async () => {
+  // heavies-clash.map.json is the multi-tile showcase - a colossus (3x3) and a leviathan (5x2)
+  // walking at each other across open ground. The thing worth pinning down automatically, since
+  // nobody watches every run: footprintDistance (grid/coords.ts) measures to the *nearest occupied
+  // tile* of each footprint, not anchor to anchor, so two bodies this size should start trading
+  // blows well before their anchors are within melee range of one another.
+  const resolved = await resolveScenario("heavies-clash.map.json")
+  const colossus = resolved.registry.get("unit.citizen.colossus")
+  const leviathan = resolved.registry.get("unit.ravel.leviathan")
+  assert.deepEqual(footprintExtent(colossus.footprint), { width: 3, height: 3 })
+  assert.deepEqual(footprintExtent(leviathan.footprint), { width: 5, height: 2 })
+
+  const launches = resolved.run.events.filter(
+    (event) =>
+      event.kind === "attack.launched" &&
+      (event.attacker.includes("colossus") || event.attacker.includes("leviathan")) &&
+      (event.target.includes("colossus") || event.target.includes("leviathan")),
+  )
+  assert.ok(launches.length > 0, "the two heavies never actually fought each other")
+  for (const launch of launches) {
+    if (launch.kind !== "attack.launched") continue
+    assert.ok(
+      launch.distance <= 1,
+      `${launch.attacker} attacked ${launch.target} at footprint distance ${launch.distance}, ` +
+        "outside melee range",
+    )
+  }
+
+  // At least one of the two should actually go down - a showcase where nothing this size ever
+  // dies never exercises fx.death.collapse at a footprint bigger than 3x1.
+  const heavyDeaths = resolved.run.events.filter(
+    (event) =>
+      event.kind === "entity.died" &&
+      (event.contentId === "unit.citizen.colossus" || event.contentId === "unit.ravel.leviathan"),
+  )
+  assert.ok(heavyDeaths.length > 0, "neither heavy died, so the large-footprint death path is untested")
 })
