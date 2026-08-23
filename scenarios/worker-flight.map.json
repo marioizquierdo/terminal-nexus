@@ -26,28 +26,34 @@
     "#": "terrain.rock",
     "*": "terrain.deposit"
   },
-  "placements": [
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "  r   W                 ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        "
-  ],
-  "placementLegend": {
-    "r": {
-      "player": "A",
-      "content": "unit.citizen.marksman"
+  "placements": {
+    "A": {
+      "at": {
+        "x": 2,
+        "y": 5
+      },
+      "rows": [
+        "r"
+      ],
+      "legend": {
+        "r": {
+          "content": "unit.citizen.marksman"
+        }
+      }
     },
-    "W": {
-      "player": "B",
-      "content": "unit.citizen.worker"
+    "B": {
+      "at": {
+        "x": 6,
+        "y": 5
+      },
+      "rows": [
+        "w"
+      ],
+      "legend": {
+        "w": {
+          "content": "unit.citizen.worker"
+        }
+      }
     }
   }
 }

@@ -2,16 +2,16 @@
 // unknown legend key, overlapping footprint, and unknown content id all fail loudly, naming the
 // offending line and column (milestone-1-spike-battle.md 3.5).
 
-import type { ContentRegistry } from "../content/index.ts"
+import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
-import { tilesOf } from "../grid/coords.ts"
-import type { GridTerrain, TerrainId } from "../grid/types.ts"
+import { footprintCentre, tilesOf } from "../grid/coords.ts"
+import type { Coord, GridTerrain, TerrainId } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
 import { gameplayRng } from "../rng/pcg32.ts"
-import type { EntityState, MatchState } from "../state/types.ts"
-import { SCHEMA_VERSION } from "../state/types.ts"
+import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
+import { PLAYERS, SCHEMA_VERSION } from "../state/types.ts"
 import { presetDimensions } from "./presets.ts"
-import type { ScenarioDefinition } from "./types.ts"
+import type { PlacementEntry, ScenarioDefinition } from "./types.ts"
 
 export const TICKS_PER_SECOND = 12
 
@@ -84,7 +84,6 @@ export function loadScenario(
   const { width, height } = dimensionsOf(scenario)
 
   checkOverlay(scenario, scenario.terrain, "terrain", width, height)
-  checkOverlay(scenario, scenario.placements, "placements", width, height)
 
   // Terrain, row-major from the north-west.
   const tiles: TerrainId[] = []
@@ -103,91 +102,158 @@ export function loadScenario(
   })
   const grid: GridTerrain = { width, height, tiles }
 
-  // Placements. A multi-tile entity is placed by its anchor character, once; its footprint comes
-  // from its definition, and the loader is where an overlap or an off-Grid footprint is caught.
-  const entities: EntityState[] = []
-  const claimed = new Map<string, string>()
-  let ordinal = 0
+  // Placements — one block per player, gathered first and only then turned into entities, because
+  // **ordinals are assigned in Grid reading order, not in the order the file happens to list the
+  // players**. Ordinal is identity and the kernel's one iteration order (state/types.ts), so letting
+  // it depend on whether the A block or the B block was typed first would let a purely editorial
+  // change move every id, every event, and the state hash with them.
+  const placed: Array<{
+    player: PlayerId
+    entry: PlacementEntry
+    definition: ContentDef
+    centre: Coord
+    anchor: Coord
+    where: string
+  }> = []
 
-  scenario.placements.forEach((row, y) => {
-    [...row].forEach((character, x) => {
-      if (character === " ") return
-      const entry = scenario.placementLegend[character]
-      if (entry === undefined) {
-        fail(
-          scenario,
-          `placements row ${y + 1}, column ${x + 1} (x=${x},y=${y}) uses "${character}", ` +
-            `which the placement legend does not define`,
-        )
-      }
-      if (!registry.has(entry.content)) {
-        fail(
-          scenario,
-          `placements row ${y + 1}, column ${x + 1} (x=${x},y=${y}) names the unknown content id ` +
-            `"${entry.content}"`,
-        )
-      }
-      const definition = registry.get(entry.content)
-      const anchor = { x, y }
-      const id = `${entry.player}:${definition.short}#${ordinal + 1}`
+  for (const player of PLAYERS) {
+    const block = scenario.placements[player]
+    if (block === undefined) continue
+    const origin = block.at ?? { x: 0, y: 0 }
+    if (!Number.isInteger(origin.x) || !Number.isInteger(origin.y)) {
+      fail(scenario, `placements for player ${player} declare a non-integer origin`)
+    }
 
-      for (const tile of tilesOf(anchor, definition.footprint)) {
-        if (tile.x < 0 || tile.y < 0 || tile.x >= width || tile.y >= height) {
-          fail(
-            scenario,
-            `placements row ${y + 1}, column ${x + 1} (x=${x},y=${y}): the footprint of ` +
-              `"${entry.content}" reaches (${tile.x},${tile.y}), which is outside the ` +
-              `${width}x${height} Grid`,
-          )
-        }
-        // A ground entity may not start inside terrain it could never walk into. The kernel builds
-        // that entity's mask with `terrain: "impassable"` (src/pulse/shared.ts), so a unit placed on
-        // rock is entombed from tick zero: it cannot leave the tile, and every tick after that it
-        // reports itself blocked. Nothing downstream errors, which is why four units in
-        // `citizen-mirror-skirmish` sat inside the eastern rock for the whole of Gate 1A without
-        // anyone noticing. Air ignores terrain, exactly as its mask does.
-        if (definition.layer !== "air") {
-          const terrainId = tiles[tile.y * width + tile.x]
-          if (terrainId !== undefined && TERRAIN[terrainId].impassable) {
-            fail(
-              scenario,
-              `placements row ${y + 1}, column ${x + 1} (x=${x},y=${y}): the footprint of ` +
-                `"${entry.content}" covers (${tile.x},${tile.y}), which is impassable ` +
-                `${terrainId}. A ground entity cannot start inside terrain it cannot walk into`,
-            )
-          }
-        }
-        // Two entities may legally share a tile across layers (a worker and a soldier do), so the
-        // placement mask is per layer.
-        const key = `${definition.layer}:${tile.x},${tile.y}`
-        const occupant = claimed.get(key)
-        if (occupant !== undefined) {
-          fail(
-            scenario,
-            `placements row ${y + 1}, column ${x + 1} (x=${x},y=${y}): the footprint of ` +
-              `"${entry.content}" overlaps ${occupant} at (${tile.x},${tile.y}) on the ` +
-              `${definition.layer} layer`,
-          )
-        }
-        claimed.set(key, id)
-      }
+    block.rows.forEach((row, rowIndex) => {
+      [...row].forEach((character, columnIndex) => {
+        if (character === " ") return
+        const centre = { x: origin.x + columnIndex, y: origin.y + rowIndex }
+        // Reported in absolute Grid coordinates as well as the block-relative row and column: the
+        // block may be offset, so "row 2, column 3" alone would send a reader to the wrong tile.
+        const where =
+          `placements for player ${player}, row ${rowIndex + 1}, column ${columnIndex + 1} ` +
+          `(x=${centre.x},y=${centre.y})`
 
-      entities.push({
-        ordinal,
-        id,
-        player: entry.player,
-        contentId: definition.id,
-        hp: definition.maxHp,
-        anchor,
-        // Sides face each other by default: it is a rendering hint, and no rule reads it.
-        facing: entry.player === "A" ? "e" : "w",
-        moveCredit: 0,
-        cooldown: 0,
-        targetOrdinal: null,
+        const entry = block.legend[character]
+        if (entry === undefined) {
+          fail(scenario, `${where} uses "${character}", which that player's legend does not define`)
+        }
+        if (!registry.has(entry.content)) {
+          fail(scenario, `${where} names the unknown content id "${entry.content}"`)
+        }
+        const definition = registry.get(entry.content)
+
+        // The symbol marks the entity's **centre tile**, whatever its size; the anchor it is stored
+        // under is derived. Authoring a 3x3 walker by its middle is what makes a placement grid
+        // still read as one character per unit once units stop being one tile.
+        const offset = footprintCentre(definition.footprint)
+        const anchor = { x: centre.x - offset.x, y: centre.y - offset.y }
+
+        placed.push({ player, entry, definition, centre, anchor, where })
       })
-      ordinal += 1
+    })
+  }
+
+  // Grid reading order: north to south, then west to east. Two entities may legally share a tile
+  // across layers, so the last two keys only exist to make that tie deterministic as well.
+  placed.sort(
+    (a, b) =>
+      a.centre.y - b.centre.y ||
+      a.centre.x - b.centre.x ||
+      a.player.localeCompare(b.player) ||
+      a.definition.id.localeCompare(b.definition.id),
+  )
+
+  const entities: EntityState[] = []
+  /** Per layer, per tile: who is standing there. Cross-layer sharing is legal, so the layer is a key. */
+  const claimed = new Map<string, string>()
+  /** Per tile, ignoring layer: which *player* holds it. Two players may never share a tile at all. */
+  const heldBy = new Map<string, { player: PlayerId; id: string }>()
+
+  placed.forEach((placement, ordinal) => {
+    const { player, entry, definition, anchor, where } = placement
+    const id = `${player}:${definition.short}#${ordinal + 1}`
+
+    const hp = entry.hp ?? definition.maxHp
+    if (!Number.isInteger(hp) || hp <= 0 || hp > definition.maxHp) {
+      fail(
+        scenario,
+        `${where} starts "${entry.content}" at ${hp} health, outside 1..${definition.maxHp}`,
+      )
+    }
+
+    for (const tile of tilesOf(anchor, definition.footprint)) {
+      if (tile.x < 0 || tile.y < 0 || tile.x >= width || tile.y >= height) {
+        fail(
+          scenario,
+          `${where}: the footprint of "${entry.content}" reaches (${tile.x},${tile.y}), which is ` +
+            `outside the ${width}x${height} Grid`,
+        )
+      }
+      // A ground entity may not start inside terrain it could never walk into. The kernel builds
+      // that entity's mask with `terrain: "impassable"` (src/pulse/shared.ts), so a unit placed on
+      // rock is entombed from tick zero: it cannot leave the tile, and every tick after that it
+      // reports itself blocked. Nothing downstream errors, which is why four units in
+      // `citizen-mirror-skirmish` sat inside the eastern rock for the whole of Gate 1A without
+      // anyone noticing. Air ignores terrain, exactly as its mask does.
+      if (definition.layer !== "air") {
+        const terrainId = tiles[tile.y * width + tile.x]
+        if (terrainId !== undefined && TERRAIN[terrainId].impassable) {
+          fail(
+            scenario,
+            `${where}: the footprint of "${entry.content}" covers (${tile.x},${tile.y}), which is ` +
+              `impassable ${terrainId}. A ground entity cannot start inside terrain it cannot ` +
+              `walk into`,
+          )
+        }
+      }
+
+      // Two entities may legally share a tile across layers (a worker and a soldier do), so the
+      // placement mask is per layer.
+      const key = `${definition.layer}:${tile.x},${tile.y}`
+      const occupant = claimed.get(key)
+      if (occupant !== undefined) {
+        fail(
+          scenario,
+          `${where}: the footprint of "${entry.content}" overlaps ${occupant} at ` +
+            `(${tile.x},${tile.y}) on the ${definition.layer} layer`,
+        )
+      }
+      claimed.set(key, id)
+
+      // Cross-layer sharing is a same-side convenience, never a way for two players to start on top
+      // of each other. Separate placement blocks make that easy to write by accident — each player's
+      // grid is legible on its own, and nothing in one block hints at what the other put there — so
+      // it is checked rather than left to the author noticing.
+      const tileKey = `${tile.x},${tile.y}`
+      const holder = heldBy.get(tileKey)
+      if (holder !== undefined && holder.player !== player) {
+        fail(
+          scenario,
+          `${where}: the footprint of "${entry.content}" covers (${tile.x},${tile.y}), which ` +
+            `player ${holder.player}'s ${holder.id} already holds. Two players may not start on ` +
+            `the same tile, even on different layers`,
+        )
+      }
+      heldBy.set(tileKey, { player, id })
+    }
+
+    entities.push({
+      ordinal,
+      id,
+      player,
+      contentId: definition.id,
+      hp,
+      anchor,
+      // Sides face each other by default: it is a rendering hint, and no rule reads it.
+      facing: player === "A" ? "e" : "w",
+      moveCredit: 0,
+      cooldown: 0,
+      targetOrdinal: null,
     })
   })
+
+  const ordinal = entities.length
 
   if (entities.length === 0) fail(scenario, "places no entities")
   if (!Number.isInteger(scenario.pulseTicks) || scenario.pulseTicks <= 0) {

@@ -187,7 +187,7 @@ level, and a map-editor-authored map will all eventually share (`specs/replay-fo
 `ReplaySetup.map` is the same idea one layer up, for a whole replay).
 
 ```json
-// scenarios/citizen-mirror-skirmish.map.json
+// scenarios/citizen-mirror-skirmish.map.json (trimmed)
 {
   "id": "citizen-mirror-skirmish",
   "name": "Citizen mirror — open field",
@@ -200,55 +200,75 @@ level, and a map-editor-authored map will all eventually share (`specs/replay-fo
   "terrain": [
     "........................",
     "........................",
-    "....##..............##..",
-    "....##..............##..",
+    "....##........##........",
+    "....##........##........",
     "........................",
     "..........*..*..........",
     "..........*..*..........",
     "........................",
-    "....##..............##..",
-    "....##..............##..",
+    "....##........##........",
+    "....##........##........",
     "........................",
     "........................"
   ],
   "terrainLegend": { ".": "terrain.plain", "#": "terrain.rock", "*": "terrain.deposit" },
 
-  "placements": [
-    "                        ",
-    "  m                  M  ",
-    "  m                  M  ",
-    "  r                  R  ",
-    "  w                  W  ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "  w                  W  ",
-    "  r                  R  ",
-    "  m                  M  ",
-    "                        "
-  ],
-  "placementLegend": {
-    "m": { "player": "A", "content": "unit.citizen.trooper" },
-    "r": { "player": "A", "content": "unit.citizen.marksman" },
-    "w": { "player": "A", "content": "unit.citizen.worker" },
-    "M": { "player": "B", "content": "unit.citizen.trooper" },
-    "R": { "player": "B", "content": "unit.citizen.marksman" },
-    "W": { "player": "B", "content": "unit.citizen.worker" }
+  "placements": {
+    "A": {
+      "at": { "x": 2, "y": 1 },
+      "rows": ["m", "m", "r", "w"],
+      "legend": {
+        "m": { "content": "unit.citizen.trooper" },
+        "r": { "content": "unit.citizen.marksman" },
+        "w": { "content": "unit.citizen.worker" }
+      }
+    },
+    "B": {
+      "at": { "x": 21, "y": 1 },
+      "rows": ["M", "M", "R", "W"],
+      "legend": {
+        "M": { "content": "unit.citizen.trooper", "hp": 25 },
+        "R": { "content": "unit.citizen.marksman" },
+        "W": { "content": "unit.citizen.worker" }
+      }
+    }
   }
 }
 ```
 
+`M`'s `hp: 25` above starts that one trooper already hurt — a Pulse that opens mid-fight, the way a
+later Pulse in a multi-Pulse match would, without spending ticks getting there first. The full file
+has ten placements a side, not four; this is trimmed for the page.
+
 Rules for the format:
 
-- **Two ASCII overlays plus two legends.** Diffable, reviewable in a pull request, writable by a
-  human or an agent with no tool.
+- **One placement block per player**, each its own overlay-plus-legend pair — `placements.A`,
+  `placements.B`, and a future player its own key rather than a shared alphabet. A scenario testing
+  one side alone simply omits the other's key.
+- **A block's `rows` need not cover the whole Grid.** `at` is the coordinate `rows[0]`'s first
+  character sits on; the block is only as large as the placements it actually needs. That is a
+  conciseness win today and, in principle, the same mechanism that would keep placements small on a
+  much larger Grid than any current preset — nothing here depends on the Grid's own size.
+- **A placement symbol marks a unit's centre tile, not its northwest corner.** For a 1×1 unit the
+  centre is its only tile, so nothing changes there; for a multi-tile unit (`scenarios/heavies-clash.
+  map.json`'s 3×3 colossus and 5×2 leviathan are the checked-in example) the symbol sits on the
+  footprint's middle tile and the loader derives the anchor from it (`footprintCentre`,
+  `src/grid/coords.ts`). The loader **fails loudly** if the resulting footprint overlaps anything in
+  its placement mask or leaves the Grid.
+- **A legend entry is an object, not a bare content id**: `{ "content": "..." }`, or
+  `{ "content": "...", "hp": 12 }` for a unit that starts already damaged. `hp` must fall within
+  `1..maxHp` for that content's definition, checked at load time. This is the extension point later
+  modifiers (anything else a Pulse might need to say about a unit's starting state) will grow from —
+  nothing here promises what those will look like.
+- **Two players may never claim the same tile, even across layers.** A single shared alphabet used to
+  make that true by construction; separate per-player blocks make it possible to write two placements
+  onto the same tile by mistake, so the loader checks for it explicitly and fails loudly, naming both
+  placements and the tile.
 - **Legend characters are authoring conveniences and have nothing to do with render glyphs.** Using
   case to separate sides is for the author's eyes only; the simulation never sees these characters.
-- **A multi-tile entity is placed by its anchor character**, once. Its footprint comes from its
-  definition. The loader **fails loudly** if the footprint overlaps anything in its placement mask or
-  leaves the Grid.
 - **Validation lives in the loader, not a later linter.** Dimension mismatch, unknown legend key,
-  overlapping footprint, and unknown content id all fail with the offending line and column.
+  overlapping footprint (within a block and across players), out-of-range `hp`, and unknown content id
+  all fail with the offending block, symbol, and tile.
 - JSON has no comments, which is the one thing the old TypeScript-module format could carry that this
   one cannot — put anything worth explaining in `notes` instead.
 - `src/scenario/types.ts`'s `defineScenario` still exists for TypeScript-authored content that
@@ -269,11 +289,12 @@ freely if the fight is boring — that is what `grid` is for.
 | `structure.citizen.nexus` | `obstacles` | 3 × 2 | 400 | — | — | — | — | — | — |
 | `structure.citizen.barracks` | `obstacles` | 3 × 2 | 120 | — | — | — | — | — | — |
 
-Lower speed tier resolves first, so the marksman fires before the trooper swings. Move is `1/1` for
-the whole roster (`3/4` for the hauler) at Gate 1A; two owner playtests on 2026-08-22, both against the
-finished Gate 1B fixture, asked for faster movement in succession — the first ("units still move too
-slow... it takes a while to reach initial engagement") landed a 1.5x pass this same table once
-carried, the second ("still too slow... they should move 2 or 2.5 times faster") arrived before that
+Lower speed tier resolves first, so the marksman fires before the trooper swings. Move is `2/1` for
+the roster (`1/1` for the hauler — the table above carries the current numbers) at Gate 1A; two owner
+playtests on 2026-08-22, both against the finished Gate 1B fixture, asked for faster movement in
+succession — the first ("units still move too slow... it takes a while to reach initial engagement")
+landed a 1.5x pass this same table once carried, the second ("still too slow... they should move 2 or
+2.5 times faster") arrived before that
 pass had even been seen and asked for more, so the rates below are 2x the *original* Gate 1A rate,
 not a further multiple on top of the first pass. This table carries the rate the fixture actually
 ships, not the rate it launched with — `src/content/citizen.ts` and `src/content/ravel.ts` are the

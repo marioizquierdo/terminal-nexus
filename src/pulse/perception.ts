@@ -1,8 +1,8 @@
 // 3. Perception — engine.md 4.3. Who each actor sees, and who it decides to fight or flee.
 
-import { directionOf, footprintDistance } from "../grid/coords.ts"
+import { directionOf } from "../grid/coords.ts"
 import type { Actor, TickContext } from "./shared.ts"
-import { isMobile, setTarget } from "./shared.ts"
+import { distanceBetween, isMobile, setTarget } from "./shared.ts"
 
 export function hostilesOf(context: TickContext, actor: Actor): Actor[] {
   return context.actors.filter((other) => other.player !== actor.player && !other.pendingDead)
@@ -21,12 +21,7 @@ export function selectTarget(
 ): { target: Actor; distance: number } | null {
   let best: { target: Actor; distance: number } | null = null
   for (const candidate of candidates) {
-    const distance = footprintDistance(
-      actor.anchor,
-      actor.definition.footprint,
-      candidate.anchor,
-      candidate.definition.footprint,
-    )
+    const distance = distanceBetween(actor, candidate)
     if (best === null || distance < best.distance) {
       best = { target: candidate, distance }
     }

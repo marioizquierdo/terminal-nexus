@@ -6,8 +6,9 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
+import { tilesOf } from "../src/grid/index.ts"
 import { DEFAULT_PRESET, ScenarioError, loadScenario, presetDimensions } from "../src/scenario/index.ts"
-import type { ScenarioDefinition } from "../src/scenario/index.ts"
+import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
 import { loadScenarioFile, resolveScenario, scenarioFiles } from "./helpers.ts"
 
 function baseScenario(): ScenarioDefinition {
@@ -19,12 +20,20 @@ function baseScenario(): ScenarioDefinition {
     pulseTicks: 12,
     terrain: ["....", "....", "...."],
     terrainLegend: { ".": "terrain.plain", "#": "terrain.rock" },
-    placements: ["t   ", "    ", "   T"],
-    placementLegend: {
-      t: { player: "A", content: "unit.citizen.trooper" },
-      T: { player: "B", content: "unit.citizen.trooper" },
+    placements: {
+      A: { rows: ["t"], legend: { t: { content: "unit.citizen.trooper" } } },
+      B: { at: { x: 3, y: 2 }, rows: ["t"], legend: { t: { content: "unit.citizen.trooper" } } },
     },
   }
+}
+
+/** One player's block, spelled out, for a case that only varies one side. */
+function block(
+  at: { x: number; y: number },
+  rows: readonly string[],
+  legend: Record<string, { content: string; hp?: number }>,
+): PlacementBlock {
+  return { at, rows, legend }
 }
 
 test("the default preset is 48 x 16, which the 80-column composition is derived from", () => {
@@ -47,7 +56,10 @@ test("scenario rows read north to south and (0,0) is the north-west tile", () =>
   const scenario: ScenarioDefinition = {
     ...baseScenario(),
     terrain: ["#...", "....", "...."],
-    placements: [" t  ", "    ", "   T"],
+    placements: {
+      A: block({ x: 1, y: 0 }, ["t"], { t: { content: "unit.citizen.trooper" } }),
+      B: block({ x: 3, y: 2 }, ["t"], { t: { content: "unit.citizen.trooper" } }),
+    },
   }
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY })
   assert.equal(loaded.state.grid.tiles[0], "terrain.rock", "the first row is not the north row")
@@ -55,6 +67,83 @@ test("scenario rows read north to south and (0,0) is the north-west tile", () =>
   assert.ok(first !== undefined && second !== undefined)
   assert.deepEqual(first.anchor, { x: 1, y: 0 })
   assert.deepEqual(second.anchor, { x: 3, y: 2 })
+})
+
+test("a placement symbol marks the centre tile, whatever size the unit is", () => {
+  // The whole point of centring: a placement grid stays one character per unit even when units stop
+  // being one tile. A 3x1 hauler written at (2,1) covers (1,1)..(3,1) and is *stored* at (1,1).
+  const loaded = loadScenario(
+    {
+      ...baseScenario(),
+      grid: { width: 6, height: 3 },
+      terrain: ["......", "......", "......"],
+      placements: {
+        A: block({ x: 2, y: 1 }, ["h"], { h: { content: "unit.citizen.hauler" } }),
+      },
+    },
+    { registry: FIXTURE_REGISTRY },
+  )
+  const hauler = loaded.state.entities[0]
+  assert.ok(hauler !== undefined)
+  assert.deepEqual(hauler.anchor, { x: 1, y: 1 }, "the symbol should be the middle tile, not the anchor")
+  assert.deepEqual(
+    tilesOf(hauler.anchor, FIXTURE_REGISTRY.get(hauler.contentId).footprint),
+    [
+      { x: 1, y: 1 },
+      { x: 2, y: 1 },
+      { x: 3, y: 1 },
+    ],
+  )
+})
+
+test("a block's `at` origin offsets its rows, so the grid need not cover the Grid", () => {
+  const loaded = loadScenario(
+    {
+      ...baseScenario(),
+      placements: {
+        A: block({ x: 2, y: 1 }, ["t"], { t: { content: "unit.citizen.trooper" } }),
+      },
+    },
+    { registry: FIXTURE_REGISTRY },
+  )
+  assert.deepEqual(loaded.state.entities[0]?.anchor, { x: 2, y: 1 })
+})
+
+test("ordinals follow Grid reading order, not the order the blocks are written in", () => {
+  // Ordinal is identity and the kernel's one iteration order, so it must not depend on which player
+  // block the author happened to type first. Same two entities, blocks in both orders, same result.
+  const north = block({ x: 0, y: 0 }, ["t"], { t: { content: "unit.citizen.trooper" } })
+  const south = block({ x: 3, y: 2 }, ["t"], { t: { content: "unit.citizen.trooper" } })
+
+  const idsFor = (placements: ScenarioDefinition["placements"]): string[] =>
+    loadScenario({ ...baseScenario(), placements }, { registry: FIXTURE_REGISTRY }).state.entities.map(
+      (entity) => entity.id,
+    )
+
+  assert.deepEqual(idsFor({ A: north, B: south }), ["A:trooper#1", "B:trooper#2"])
+  // B's block listed first, but B is still the southern one, so it is still second.
+  assert.deepEqual(idsFor({ B: south, A: north }), ["A:trooper#1", "B:trooper#2"])
+})
+
+test("a placement may start damaged, and defaults to the definition's full health", () => {
+  // The reason the legend is an object rather than a bare content id: a scenario that opens
+  // mid-match needs some units already hurt, without spending ticks damaging them first.
+  const loaded = loadScenario(
+    {
+      ...baseScenario(),
+      placements: {
+        A: block({ x: 0, y: 0 }, ["ht"], {
+          h: { content: "unit.citizen.trooper", hp: 11 },
+          t: { content: "unit.citizen.trooper" },
+        }),
+      },
+    },
+    { registry: FIXTURE_REGISTRY },
+  )
+  const [hurt, whole] = loaded.state.entities
+  assert.ok(hurt !== undefined && whole !== undefined)
+  assert.equal(hurt.hp, 11, "the damaged symbol did not carry its health")
+  assert.equal(whole.hp, FIXTURE_REGISTRY.get(whole.contentId).maxHp)
 })
 
 test("the loader fails loudly, naming the offending line and column", () => {
@@ -68,42 +157,82 @@ test("the loader fails loudly, naming the offending line and column", () => {
     ],
     [
       "unknown placement key",
-      { placements: ["z   ", "    ", "   T"] },
-      /placements row 1, column 1 \(x=0,y=0\).*placement legend does not define/s,
+      {
+        placements: {
+          A: block({ x: 0, y: 0 }, ["z"], { t: { content: "unit.citizen.trooper" } }),
+        },
+      },
+      /placements for player A, row 1, column 1 \(x=0,y=0\).*legend does not define/s,
     ],
     [
       "unknown content id",
       {
-        placementLegend: {
-          t: { player: "A", content: "unit.citizen.nonesuch" },
-          T: { player: "B", content: "unit.citizen.trooper" },
+        placements: {
+          A: block({ x: 0, y: 0 }, ["t"], { t: { content: "unit.citizen.nonesuch" } }),
         },
       },
       /unknown content id "unit.citizen.nonesuch"/,
     ],
     [
-      "footprint off the Grid",
+      "footprint off the Grid, east edge",
       {
-        placementLegend: {
-          t: { player: "A", content: "unit.citizen.hauler" },
-          T: { player: "B", content: "unit.citizen.trooper" },
+        placements: {
+          // A 3x1 hauler centred on the last column reaches one tile past the east edge.
+          A: block({ x: 3, y: 0 }, ["h"], { h: { content: "unit.citizen.hauler" } }),
         },
-        placements: ["  t ", "    ", "   T"],
       },
       /reaches \(4,0\), which is outside the 4x3 Grid/,
     ],
     [
+      "footprint off the Grid, west edge via a negative anchor",
+      {
+        placements: {
+          // Centre-anchoring (footprintCentre, grid/coords.ts) is what can push an anchor negative
+          // in the first place - a symbol written right at a block's own (0,0) is exactly where a
+          // multi-tile unit's *anchor* lands one or more tiles west of it. A 3x1 hauler's centre
+          // offset is (1,0), so a symbol at x=0 anchors at x=-1: untested before, since the only
+          // covering case exercised the east edge, and the two branches of the same `||` check are
+          // otherwise easy to leave one of them silently unreachable.
+          A: block({ x: 0, y: 0 }, ["h"], { h: { content: "unit.citizen.hauler" } }),
+        },
+      },
+      /reaches \(-1,0\), which is outside the 4x3 Grid/,
+    ],
+    [
       "overlapping footprint",
       {
-        placementLegend: {
-          t: { player: "A", content: "unit.citizen.hauler" },
-          T: { player: "B", content: "unit.citizen.trooper" },
+        placements: {
+          // The hauler is 3x1 centred on (1,0), so it covers (0,0)..(2,0) — and the trooper's own
+          // tile is the last of them.
+          A: block({ x: 1, y: 0 }, ["ht"], {
+            h: { content: "unit.citizen.hauler" },
+            t: { content: "unit.citizen.trooper" },
+          }),
         },
-        placements: ["t T ", "    ", "    "],
       },
       /overlaps A:hauler#1 at \(2,0\) on the units layer/,
     ],
-    ["a Grid with nobody on it", { placements: ["    ", "    ", "    "] }, /places no entities/],
+    [
+      "two players on one tile",
+      {
+        placements: {
+          // Legal on its own terms — different layers — but never across players.
+          A: block({ x: 1, y: 1 }, ["t"], { t: { content: "unit.citizen.trooper" } }),
+          B: block({ x: 1, y: 1 }, ["w"], { w: { content: "unit.citizen.worker" } }),
+        },
+      },
+      /player A's A:trooper#1 already holds.*may not start on the same tile/s,
+    ],
+    [
+      "starting health outside the definition's range",
+      {
+        placements: {
+          A: block({ x: 0, y: 0 }, ["t"], { t: { content: "unit.citizen.trooper", hp: 99 } }),
+        },
+      },
+      /starts "unit\.citizen\.trooper" at 99 health, outside 1\.\.40/,
+    ],
+    ["a Grid with nobody on it", { placements: {} }, /places no entities/],
     ["a non-positive tick count", { pulseTicks: 0 }, /pulseTicks must be a positive integer/],
     [
       "a custom grid over the declared-mode tile cap",

@@ -1,0 +1,59 @@
+{
+  "id": "air-crossing",
+  "name": "Air crossing - a sealed rock room no ground unit could ever leave",
+  "notes": "A flying unit (unit.ravel.buzzard, layer \"air\") starts walled into a 1x1 rock room a ground unit placed on the same tile would be entombed in for the rest of the Pulse (scenario/load.ts still refuses to place a ground entity on impassable terrain, but a sealed room reachable only through rock is a case the loader cannot catch - it is a movement claim, not a placement one). The buzzard flies straight out on its very first move and crosses more rock reaching the trooper waiting to the east - proving maskForActor's terrain: \"ignore\" for air (src/pulse/shared.ts) end to end, in a real Pulse, rather than only in the unit test that exercises the mask directly (tests/grid.test.ts).",
+  "grid": {
+    "preset": "small-wide"
+  },
+  "seed": 8814,
+  "pulseTicks": 200,
+  "terrain": [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "....###.................",
+    "....#.#.................",
+    "....###.................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 5,
+        "y": 5
+      },
+      "rows": [
+        "b"
+      ],
+      "legend": {
+        "b": {
+          "content": "unit.ravel.buzzard"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 16,
+        "y": 5
+      },
+      "rows": [
+        "t"
+      ],
+      "legend": {
+        "t": {
+          "content": "unit.citizen.trooper"
+        }
+      }
+    }
+  }
+}

@@ -30,76 +30,97 @@
     "#": "terrain.rock",
     "*": "terrain.deposit"
   },
-  "placements": [
-    "          t                        x            ",
-    "        m   t                    x    z         ",
-    "  B                                        D    ",
-    "        m     t                x      z         ",
-    "        m t                        x  z         ",
-    "            t               >    x              ",
-    "w       m     t                x      z       S ",
-    "  N   h                         v          R    ",
-    "      h                         v               ",
-    "w       m t                        x  z       S ",
-    "            t               >    x              ",
-    "        m     t                x      z         ",
-    "  B     m t                        x  z    D    ",
-    "                                                ",
-    "        m   t                    x    z         ",
-    "              t                x                "
-  ],
-  "placementLegend": {
-    "t": {
-      "player": "A",
-      "content": "unit.citizen.trooper"
-    },
-    "m": {
-      "player": "A",
-      "content": "unit.citizen.marksman"
-    },
-    "w": {
-      "player": "A",
-      "content": "unit.citizen.worker"
-    },
-    "h": {
-      "player": "A",
-      "content": "unit.citizen.hauler"
-    },
-    "N": {
-      "player": "A",
-      "content": "structure.citizen.nexus"
+  "placements": {
+    "A": {
+      "at": {
+        "x": 0,
+        "y": 0
+      },
+      "rows": [
+        "          t",
+        "        m   t",
+        "   b",
+        "        m     t",
+        "        m t",
+        "            t",
+        "w       m     t",
+        "   n   h",
+        "       h",
+        "w       m t",
+        "            t",
+        "        m     t",
+        "   b    m t",
+        "",
+        "        m   t",
+        "              t"
+      ],
+      "legend": {
+        "t": {
+          "content": "unit.citizen.trooper"
+        },
+        "m": {
+          "content": "unit.citizen.marksman"
+        },
+        "b": {
+          "content": "structure.citizen.barracks"
+        },
+        "w": {
+          "content": "unit.citizen.worker"
+        },
+        "n": {
+          "content": "structure.citizen.nexus"
+        },
+        "h": {
+          "content": "unit.citizen.hauler"
+        }
+      }
     },
     "B": {
-      "player": "A",
-      "content": "structure.citizen.barracks"
-    },
-    "x": {
-      "player": "B",
-      "content": "unit.ravel.runner"
-    },
-    "z": {
-      "player": "B",
-      "content": "unit.ravel.slinger"
-    },
-    "v": {
-      "player": "B",
-      "content": "unit.ravel.fuelwagon"
-    },
-    ">": {
-      "player": "B",
-      "content": "unit.ravel.raider"
-    },
-    "S": {
-      "player": "B",
-      "content": "unit.ravel.scav"
-    },
-    "R": {
-      "player": "B",
-      "content": "structure.ravel.nexus"
-    },
-    "D": {
-      "player": "B",
-      "content": "structure.ravel.den"
+      "at": {
+        "x": 29,
+        "y": 0
+      },
+      "rows": [
+        "      x",
+        "    x    z",
+        "               d",
+        "  x      z",
+        "      x  z",
+        ">   x",
+        "  x      z       s",
+        "   v           r",
+        "   v",
+        "      x  z       s",
+        ">   x",
+        "  x      z",
+        "      x  z     d",
+        "",
+        "    x    z",
+        "  x"
+      ],
+      "legend": {
+        "x": {
+          "content": "unit.ravel.runner"
+        },
+        "z": {
+          "content": "unit.ravel.slinger"
+        },
+        "d": {
+          "content": "structure.ravel.den"
+        },
+        ">": {
+          "content": "unit.ravel.raider"
+        },
+        "s": {
+          "content": "unit.ravel.scav"
+        },
+        "v": {
+          "content": "unit.ravel.fuelwagon"
+        },
+        "r": {
+          "content": "structure.ravel.nexus"
+        }
+      }
     }
   }
 }

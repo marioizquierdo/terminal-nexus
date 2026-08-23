@@ -174,6 +174,20 @@ test("the stuck warning fires for an actor that cannot make progress", async () 
   )
 })
 
+test("the same gap that stalls a 3x1 hauler hard-stops a 3x3 colossus, not just circles it", async () => {
+  // specs/open-questions.md Q15's failure shape confirmed at a genuinely large footprint, not only
+  // the narrowest multi-tile case: a mover three tiles wide reaches the same conclusion a mover one
+  // tile wide does (a two-tile gap fits neither), but a body this size has nowhere left to slide once
+  // it is flush against the gap, so it hard-stops rather than pacing between two tiles the way the
+  // hauler fixture's own name implies "gap" fixtures generally do.
+  const resolved = await resolveScenario("colossus-two-tile-gap.map.json")
+  const lines = buildLog(reportInputOf(resolved), "WARN")
+  assert.ok(
+    lines.some((line) => /WARN  stuck    A:colossus#1/.test(line)),
+    "the colossus parked in front of a gap it cannot fit through was never reported",
+  )
+})
+
 test("the stuck warning names the actor's own tile, not the one it cannot enter", async () => {
   // Owner playtest, 2026-08-22: two units at the top of the Grid stopped facing each other across a
   // two-tile rock, and the log said `stuck A:trooper#3 at (20,2)` — which is the rock. The blocked

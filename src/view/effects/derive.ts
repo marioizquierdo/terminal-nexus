@@ -10,6 +10,7 @@
 
 import type { ContentRegistry } from "../../content/index.ts"
 import type { DomainEvent } from "../../events/types.ts"
+import { footprintExtent } from "../../grid/coords.ts"
 import type { Coord } from "../../grid/types.ts"
 import type { MatchState } from "../../state/types.ts"
 import type { EffectFamily, EffectInstance } from "./types.ts"
@@ -231,8 +232,7 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
           origin: event.at,
           family: familyFor(event.contentId),
           params: {
-            width: footprintWidth(definition.footprint),
-            height: footprintHeight(definition.footprint),
+            ...footprintExtent(definition.footprint),
           },
         })
         break
@@ -248,8 +248,7 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
           origin: event.at,
           family: familyFor(event.contentId),
           params: {
-            width: footprintWidth(definition.footprint),
-            height: footprintHeight(definition.footprint),
+            ...footprintExtent(definition.footprint),
           },
         })
         break
@@ -297,8 +296,7 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
       origin: anchor,
       family: familyFor(contentId),
       params: {
-        width: footprintWidth(definition.footprint),
-        height: footprintHeight(definition.footprint),
+        ...footprintExtent(definition.footprint),
         periodMs: NEXUS_PERIOD_MS,
       },
     })
@@ -307,10 +305,3 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
   return instances.sort((a, b) => a.startMs - b.startMs || a.recipe.localeCompare(b.recipe))
 }
 
-function footprintWidth(footprint: readonly Coord[]): number {
-  return Math.max(...footprint.map((tile) => tile.x)) + 1
-}
-
-function footprintHeight(footprint: readonly Coord[]): number {
-  return Math.max(...footprint.map((tile) => tile.y)) + 1
-}

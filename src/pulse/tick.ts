@@ -45,17 +45,8 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
   if (state.outcome !== null) return { state, events: [] }
 
   const actors: Actor[] = state.entities.map((entity) => ({
-    ordinal: entity.ordinal,
-    id: entity.id,
-    player: entity.player,
-    contentId: entity.contentId,
+    ...entity,
     definition: pulse.registry.get(entity.contentId),
-    hp: entity.hp,
-    anchor: entity.anchor,
-    facing: entity.facing,
-    moveCredit: entity.moveCredit,
-    cooldown: entity.cooldown,
-    targetOrdinal: entity.targetOrdinal,
     pendingDead: false,
     killer: null,
   }))
@@ -96,6 +87,14 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
   resolution(context) // 8
   const outcome = victory(context) // 9
 
+  // Named field by field on purpose, unlike the actor.ts -> Actor conversion above: this is the
+  // boundary back into MatchState, which is hashed, serialized, and replayed (state/serialize.ts).
+  // `Actor` carries `definition` and the two per-tick flags `pendingDead`/`killer` that must never
+  // reach that boundary; spreading and destructuring them away would work today, but it would also
+  // mean a *new* actor-only field some future phase adds (a target lock timer, anything else that
+  // is bookkeeping rather than truth) leaks into state the instant someone forgets to name it here.
+  // The exhaustive list is what makes "does this belong in state" a decision at every field, not a
+  // default.
   const entities: EntityState[] = context.actors
     .map((actor) => ({
       ordinal: actor.ordinal,

@@ -1,10 +1,8 @@
 // 7. Attacks — engine.md 4.3. Damage is computed per speed tier and applied simultaneously within
 // it, so no entity survives merely by being iterated first.
 
-import { footprintDistance } from "../grid/coords.ts"
-import { flightWindowTicks } from "./arbitration.ts"
 import type { Actor, TickContext } from "./shared.ts"
-import { speedTier } from "./shared.ts"
+import { applyDamage, distanceBetween, resolveTarget, speedTier } from "./shared.ts"
 
 export function attacks(context: TickContext): void {
   for (const actor of context.actors) {
@@ -26,10 +24,9 @@ export function attacks(context: TickContext): void {
 
   for (const tier of tiers) {
     // Every attack in a tier is computed against the state at tier start and applied
-    // simultaneously, so no entity survives merely by being iterated first.
-    const hpAtTierStart = new Map<number, number>()
-    for (const actor of context.actors) hpAtTierStart.set(actor.ordinal, actor.hp)
-
+    // simultaneously, so no entity survives merely by being iterated first: this loop only ever
+    // reads hp (via `damage`, below) and never writes it — every write happens together, in the
+    // second loop, after every attacker in the tier has already been considered.
     const damage = new Map<number, { total: number; source: Actor }>()
     for (const actor of byTier.get(tier) ?? []) {
       const attack = actor.definition.attack
@@ -37,14 +34,9 @@ export function attacks(context: TickContext): void {
       if (actor.pendingDead || actor.cooldown > 0) continue
       // Stop, then attack: an actor that settled a move this tick waits for the next one.
       if (context.movedThisTick.has(actor.ordinal)) continue
-      const target = actor.targetOrdinal === null ? null : context.byOrdinal.get(actor.targetOrdinal)
-      if (target === undefined || target === null || target.pendingDead) continue
-      const distance = footprintDistance(
-        actor.anchor,
-        actor.definition.footprint,
-        target.anchor,
-        target.definition.footprint,
-      )
+      const target = resolveTarget(context, actor)
+      if (target === null || target.pendingDead) continue
+      const distance = distanceBetween(actor, target)
       if (distance > attack.range) continue
 
       actor.cooldown = attack.cooldownTicks
@@ -76,23 +68,8 @@ export function attacks(context: TickContext): void {
       const entry = damage.get(ordinal)
       const target = context.byOrdinal.get(ordinal)
       if (entry === undefined || target === undefined) continue
-      const hpBefore = hpAtTierStart.get(ordinal) ?? target.hp
-      const hpAfter = Math.max(0, hpBefore - entry.total)
-      target.hp = hpAfter
-      context.events.push({
-        kind: "damage.applied",
-        tick: context.tick,
-        entity: target.id,
-        ordinal: target.ordinal,
-        source: entry.source.id,
-        sourceOrdinal: entry.source.ordinal,
-        amount: hpBefore - hpAfter,
-        hpBefore,
-        hpAfter,
-      })
-      if (hpAfter <= 0 && !target.pendingDead) {
-        target.pendingDead = true
-        target.killer = entry.source.id
+      const killed = applyDamage(context, target, entry.source, entry.total)
+      if (killed) {
         // A killer holds for one full movement cadence before it may step again - owner playtest,
         // 2026-08-22: "when a unit kills an enemy, it should wait a full movement cooldown before
         // starting to move again. Otherwise... it is hard to see who won that fight." Zeroing credit
@@ -105,4 +82,15 @@ export function attacks(context: TickContext): void {
       }
     }
   }
+}
+
+/**
+ * `ceil(distance / tilesPerTick)`, minimum 1 for any real speed, 0 for an attack with no travel
+ * speed at all (melee, or a ranged attack that never declared one). Presentation metadata on the
+ * `attack.launched` event — engine.md 4.3 — read by no rule; `tests/rules.test.ts` proves changing
+ * it moves no state.
+ */
+export function flightWindowTicks(distance: number, tilesPerTick: number | undefined): number {
+  if (tilesPerTick === undefined || tilesPerTick <= 0) return 0
+  return Math.max(1, Math.ceil(distance / tilesPerTick))
 }

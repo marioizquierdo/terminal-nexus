@@ -1,0 +1,59 @@
+{
+  "id": "colossus-two-tile-gap",
+  "name": "Colossus - the two-tile gap refuses a body three times as wide",
+  "notes": "hauler-two-tile-gap's wall and gap, unchanged - but the mover is a 3x3 colossus, not a 3x1 hauler. Same failure, confirmed at a genuinely large footprint rather than only the narrowest multi-tile case: the colossus takes one approach step, then hard-stops flush against the gap it cannot fit through, reporting move.blocked reason:terrain every tick from then on (not move.contested, not move.blocked reason:entity - the wall itself is what refuses it) until the report's stuck-streak detector raises WARN stuck. It does not pace between two tiles the way a narrower mover with more headroom can; a body this size has nowhere else to go once it is flush against the gap. specs/open-questions.md Q15 already covers this failure shape in the abstract - this fixture is the checked-in confirmation that it reproduces unchanged at three times the footprint width, not a new failure mode.",
+  "grid": {
+    "preset": "small-wide"
+  },
+  "seed": 40969,
+  "pulseTicks": 240,
+  "terrain": [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "###########..###########",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 11,
+        "y": 3
+      },
+      "rows": [
+        "c"
+      ],
+      "legend": {
+        "c": {
+          "content": "unit.citizen.colossus"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 11,
+        "y": 9
+      },
+      "rows": [
+        "b"
+      ],
+      "legend": {
+        "b": {
+          "content": "structure.citizen.barracks"
+        }
+      }
+    }
+  }
+}

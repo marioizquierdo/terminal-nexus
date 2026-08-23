@@ -129,15 +129,40 @@ shape a campaign level and a map-editor-authored map will eventually share:
   "pulseTicks": 180,
   "terrain": [ "one character per tile, one string per row, north to south" ],
   "terrainLegend": { ".": "terrain.plain", "#": "terrain.rock", "*": "terrain.deposit" },
-  "placements": [ "same dimensions as terrain; a space means nothing here" ],
-  "placementLegend": { "t": { "player": "A", "content": "unit.citizen.trooper" } }
+  "placements": {
+    "A": {
+      "at": { "x": 5, "y": 5 },
+      "rows": [ "t" ],
+      "legend": { "t": { "content": "unit.citizen.trooper" } }
+    },
+    "B": {
+      "at": { "x": 6, "y": 5 },
+      "rows": [ "t d" ],
+      "legend": {
+        "t": { "content": "unit.citizen.trooper" },
+        "d": { "content": "unit.citizen.trooper", "hp": 25 }
+      }
+    }
+  }
 }
 ```
 
+One placement block per player — `placements.A`, `placements.B`, a future player its own key. A
+block's `at` is where its `rows[0][0]` sits, so `rows` only needs to cover the tiles that block
+actually places, not the whole Grid — write a tight box around one player's squad, not a
+Grid-sized overlay with everyone else blank. A placement symbol marks a unit's **centre tile**: for
+a 1×1 unit that's the only tile it has, but for a multi-tile unit (`scenarios/heavies-clash.map.json`
+is the checked-in example, a 3×3 colossus and a 5×2 leviathan) the symbol sits on the footprint's
+middle tile and the loader derives the anchor from it (`footprintCentre`, `src/grid/coords.ts`). A
+legend entry is `{ "content": "..." }`, or `{ "content": "...", "hp": 12 }` to start that placement
+already damaged — `hp` must fall inside `1..maxHp` for the content or the loader rejects it.
+
 `(0,0)` is the north-west tile; rows read north to south, exactly how they draw. The loader fails
-loudly — wrong dimensions, an undefined legend key, an overlapping footprint, an off-Grid placement —
-naming the row and column, so a broken fixture is obvious immediately rather than a mysterious
-kernel failure later. A **custom grid is capped at 10,000 tiles** (`src/scenario/load.ts`,
+loudly — wrong dimensions, an undefined legend key, an overlapping footprint (within a block or
+**across** the two players — a tile two players both claim, even on different layers, is always an
+error now that each has its own block), an off-Grid placement, an out-of-range `hp` — naming the
+block, symbol, and tile, so a broken fixture is obvious immediately rather than a mysterious kernel
+failure later. A **custom grid is capped at 10,000 tiles** (`src/scenario/load.ts`,
 `MAX_DECLARED_GRID_TILES`) — a declared-mode sanity bound, not a real map-size limit; raise it
 deliberately if a map genuinely needs to be bigger.
 

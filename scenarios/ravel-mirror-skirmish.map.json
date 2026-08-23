@@ -26,44 +26,64 @@
     "#": "terrain.rock",
     "*": "terrain.deposit"
   },
-  "placements": [
-    "                        ",
-    "  x                  X  ",
-    "  x                  X  ",
-    "  z                  Z  ",
-    "  S                  s  ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "  S                  s  ",
-    "  z                  Z  ",
-    "  x                  X  ",
-    "                        "
-  ],
-  "placementLegend": {
-    "x": {
-      "player": "A",
-      "content": "unit.ravel.runner"
+  "placements": {
+    "A": {
+      "at": {
+        "x": 2,
+        "y": 1
+      },
+      "rows": [
+        "x",
+        "x",
+        "z",
+        "s",
+        "",
+        "",
+        "",
+        "s",
+        "z",
+        "x"
+      ],
+      "legend": {
+        "x": {
+          "content": "unit.ravel.runner"
+        },
+        "z": {
+          "content": "unit.ravel.slinger"
+        },
+        "s": {
+          "content": "unit.ravel.scav"
+        }
+      }
     },
-    "z": {
-      "player": "A",
-      "content": "unit.ravel.slinger"
-    },
-    "S": {
-      "player": "A",
-      "content": "unit.ravel.scav"
-    },
-    "X": {
-      "player": "B",
-      "content": "unit.ravel.runner"
-    },
-    "Z": {
-      "player": "B",
-      "content": "unit.ravel.slinger"
-    },
-    "s": {
-      "player": "B",
-      "content": "unit.ravel.scav"
+    "B": {
+      "at": {
+        "x": 21,
+        "y": 1
+      },
+      "rows": [
+        "x",
+        "x",
+        "z",
+        "s",
+        "",
+        "",
+        "",
+        "s",
+        "z",
+        "x"
+      ],
+      "legend": {
+        "x": {
+          "content": "unit.ravel.runner"
+        },
+        "z": {
+          "content": "unit.ravel.slinger"
+        },
+        "s": {
+          "content": "unit.ravel.scav"
+        }
+      }
     }
   }
 }

@@ -10,7 +10,7 @@
 
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
-import { tilesOf } from "../grid/coords.ts"
+import { footprintExtent, tilesOf } from "../grid/coords.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
 import { PLAYERS } from "../state/types.ts"
@@ -273,7 +273,7 @@ export function composeFrame(
       if (tile.x < 0 || tile.y < 0 || tile.x >= input.grid.width || tile.y >= input.grid.height) {
         continue
       }
-      const glyph = entityGlyph(entity.contentId, entity.player, definition.footprint, offset)
+      const glyph = entityGlyph(entity.contentId, entity.player, offset)
       occupied.add(`${tile.x},${tile.y}`)
       const column = origin.column + tile.x * tileWidth
       put(cells, band, column, origin.row + tile.y, glyph, playerRole(entity.player), {
@@ -436,12 +436,12 @@ function legendFor(input: CompositionInput, pack: GlyphPack): string[] {
   const entries = new Map<string, number>()
   for (const contentId of input.roster) {
     const definition = input.registry.get(contentId)
-    // One row of the footprint is the whole identity: `>x<` and `(h)` are bodies, `nnn` is a wall.
-    const glyph = definition.footprint
-      .filter((offset) => offset.y === 0)
-      .slice(0, 3)
-      .map((offset) => entityGlyph(definition.id, "A", definition.footprint, offset))
-      .join("")
+    // One row of the body is the whole identity: `>x<` and `(h)` are bodies, `.n.` is a roof. Capped
+    // at three columns so a five-wide leviathan cannot widen the panel on its own.
+    const { width } = footprintExtent(definition.footprint)
+    const glyph = Array.from({ length: Math.min(3, width) }, (_unused, x) =>
+      entityGlyph(definition.id, "A", { x, y: 0 }),
+    ).join("")
     const key = `${glyph} ${definition.short}`
     entries.set(key, (entries.get(key) ?? 0) + 1)
   }

@@ -7,7 +7,7 @@ import { movementGoal } from "./intents.ts"
 import type { Intent } from "./intents.ts"
 import { rankedSteps, stepCost } from "./movement.ts"
 import type { StepChoice } from "./movement.ts"
-import { blockReasonFor, maskForActor, speedTier } from "./shared.ts"
+import { blockReasonFor, maskForActor, resolveTarget, speedTier } from "./shared.ts"
 import type { Actor, TickContext } from "./shared.ts"
 
 type Grant = { actor: Actor; to: Coord; direction: Direction }
@@ -92,7 +92,7 @@ export function arbitrate(context: TickContext, declared: Intent[]): Grant[] {
 /** A fresh ranking for a mover, against occupancy plus every claim granted so far this tick. */
 function rerank(context: TickContext, intent: Intent, overlay: ClaimOverlay): StepChoice[] | null {
   const actor = intent.actor
-  const target = actor.targetOrdinal === null ? null : (context.byOrdinal.get(actor.targetOrdinal) ?? null)
+  const target = resolveTarget(context, actor)
   if (target === null) return null
   const mask = maskForActor(context, actor, overlay)
   const choices = rankedSteps(actor.anchor, actor.definition, mask, {
@@ -232,9 +232,4 @@ export function settle(context: TickContext, grants: readonly Grant[]): void {
       facing: grant.direction,
     })
   }
-}
-
-export function flightWindowTicks(distance: number, tilesPerTick: number | undefined): number {
-  if (tilesPerTick === undefined || tilesPerTick <= 0) return 0
-  return Math.max(1, Math.ceil(distance / tilesPerTick))
 }

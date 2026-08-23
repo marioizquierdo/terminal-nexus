@@ -18,6 +18,7 @@ import {
   offendingGlyph,
 } from "../src/view/index.ts"
 import type { CapabilityMode, PulseTimeline, TileWidth } from "../src/view/index.ts"
+import type { PlayerId } from "../src/state/types.ts"
 import { loadScenarioFile, scenarioFiles } from "./helpers.ts"
 
 async function timelineFor(name: string): Promise<PulseTimeline> {
@@ -75,12 +76,12 @@ test("at a tick boundary every entity stands on the tile the kernel put it on", 
     const timeline = await timelineFor(name)
     const view = createView(timeline)
     const positions = new Map<number, { x: number; y: number }>()
-    const alive = new Map<number, string>()
+    const alive = new Map<number, { contentId: string; player: PlayerId }>()
 
     for (const event of timeline.events) {
       if (event.kind === "entity.spawned") {
         positions.set(event.ordinal, event.at)
-        alive.set(event.ordinal, event.contentId)
+        alive.set(event.ordinal, { contentId: event.contentId, player: event.player })
       }
     }
 
@@ -97,19 +98,25 @@ test("at a tick boundary every entity stands on the tile the kernel put it on", 
       if (tick % 7 !== 0 && tick !== view.lastTick) continue
 
       const frame = view.snapshotAt(tick * view.tickDurationMs, "monochrome", 1)
-      for (const [ordinal, contentId] of alive) {
+      for (const [ordinal, { contentId, player }] of alive) {
         const anchor = positions.get(ordinal)
         if (anchor === undefined) continue
         const definition = FIXTURE_REGISTRY.get(contentId)
-        for (const tile of tilesOf(anchor, definition.footprint)) {
-          const cell = frame.cells[
-            (origin.row + tile.y) * frame.width + (origin.column + tile.x)
-          ]
-          assert.ok(cell !== undefined, `${name}: no cell at ${tile.x},${tile.y}`)
-          assert.ok(
-            /[A-Za-z()]/.test(cell.glyph),
-            `${name}: tick ${tick}: entity #${ordinal} is not drawn at (${tile.x},${tile.y}); ` +
-              `that cell holds "${cell.glyph}"`,
+        for (const offset of definition.footprint) {
+          const tileX: number = anchor.x + offset.x
+          const tileY: number = anchor.y + offset.y
+          const cell = frame.cells[(origin.row + tileY) * frame.width + (origin.column + tileX)]
+          assert.ok(cell !== undefined, `${name}: no cell at ${tileX},${tileY}`)
+          // The exact glyph the art table says belongs on this tile of this body, not merely
+          // "something letter-shaped": the old character class had to be widened by hand every time
+          // a unit was drawn with a new symbol, and a class wide enough to cover `[b]`, `/_\` and
+          // `<*=*>` stops excluding much of anything. The corruption law guarantees no effect can
+          // overwrite it (engine.md 9.4), so this is exact.
+          assert.equal(
+            cell.glyph,
+            entityGlyph(contentId, player, offset),
+            `${name}: tick ${tick}: entity #${ordinal} (${contentId}) is drawn wrong at ` +
+              `(${tileX},${tileY})`,
           )
         }
       }
@@ -252,10 +259,7 @@ test("a ranged kill's target stays on screen until its own tracer lands", async 
     if (death.tick !== launch.tick || launch.flightWindowTicks <= 0) continue
 
     const definition = resolved.registry.get(death.contentId)
-    const expectedGlyph = entityGlyph(death.contentId, death.player, definition.footprint, {
-      x: 0,
-      y: 0,
-    })
+    const expectedGlyph = entityGlyph(death.contentId, death.player, { x: 0, y: 0 })
     const cellAt = (timeMs: number): string => {
       const frame = view.snapshotAt(timeMs, "monochrome", 1)
       const row = origin.row + death.at.y

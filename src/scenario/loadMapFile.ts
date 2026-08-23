@@ -25,7 +25,6 @@ const REQUIRED_KEYS: readonly (keyof ScenarioDefinition)[] = [
   "terrain",
   "terrainLegend",
   "placements",
-  "placementLegend",
 ]
 
 export const MAP_FILE_SUFFIX = ".map.json"

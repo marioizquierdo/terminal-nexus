@@ -50,6 +50,38 @@ export function gridDistance(a: Coord, b: Coord): number {
   return Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 }
 
+/**
+ * A footprint's bounding box, in tiles. Offsets are authored from `(0,0)` (see `rectFootprint`), so
+ * the extent is one past the largest offset on each axis.
+ *
+ * Shared rather than re-derived: the loader needs it to turn a centre tile into an anchor, and the
+ * effect system needs it to size a collapse to the thing that died. Two private copies of
+ * `Math.max(...) + 1` is how those two quietly disagree about what a 3x2 unit is.
+ */
+export function footprintExtent(footprint: Footprint): { width: number; height: number } {
+  let width = 0
+  let height = 0
+  for (const offset of footprint) {
+    if (offset.x + 1 > width) width = offset.x + 1
+    if (offset.y + 1 > height) height = offset.y + 1
+  }
+  return { width, height }
+}
+
+/**
+ * The offset from a footprint's anchor to the tile a scenario calls its **centre** — the one tile a
+ * placement symbol occupies, however many tiles the entity actually covers.
+ *
+ * `floor((extent - 1) / 2)` on each axis, so an odd extent has a true middle (a 3-wide unit centres
+ * on its second column) and an even one leans north-west (a 2-wide unit centres on its first). Even
+ * extents have no exact centre and something has to break the tie; leaning consistently one way
+ * keeps the answer predictable, which matters more than which way it leans.
+ */
+export function footprintCentre(footprint: Footprint): Coord {
+  const { width, height } = footprintExtent(footprint)
+  return { x: Math.floor((width - 1) / 2), y: Math.floor((height - 1) / 2) }
+}
+
 /** Absolute tiles an entity anchored at `anchor` occupies. */
 export function tilesOf(anchor: Coord, footprint: Footprint): Coord[] {
   const tiles: Coord[] = []

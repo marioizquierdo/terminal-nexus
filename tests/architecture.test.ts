@@ -36,9 +36,12 @@ function importsOf(file: string): string[] {
   return specifiers
 }
 
-function transitiveDependencies(entryDirectory: string): Set<string> {
+function transitiveDependencies(
+  entry: string,
+  options: Readonly<{ asFile?: boolean }> = {},
+): Set<string> {
   const seen = new Set<string>()
-  const queue = sourceFiles(entryDirectory)
+  const queue = options.asFile === true ? [entry] : sourceFiles(entry)
   while (queue.length > 0) {
     const file = queue.pop()
     if (file === undefined || seen.has(file)) continue
@@ -56,17 +59,46 @@ function assertNoDependencyOn(from: string, forbidden: readonly string[]): void 
   const reached = transitiveDependencies(join(SRC, from))
   for (const file of reached) {
     const path = relative(SRC, file)
-    for (const directory of forbidden) {
-      assert.ok(
-        !path.startsWith(`${directory}/`),
-        `src/${from} reaches src/${path}, which it must never import`,
-      )
+    for (const target of forbidden) {
+      // A directory (`view`) or one exact file (`content/art.ts`) — the second is what lets a single
+      // presentation-only table live inside an otherwise kernel-visible folder.
+      const reaches = target.endsWith(".ts") ? path === target : path.startsWith(`${target}/`)
+      assert.ok(!reaches, `src/${from} reaches src/${path}, which it must never import`)
     }
   }
 }
 
 test("src/pulse never reaches the view, the report, or the shell", () => {
   assertNoDependencyOn("pulse", ["view", "report", "cli"])
+})
+
+test("the simulation never reaches a glyph", () => {
+  // engine.md 9.6, RULE: "The simulation knows semantic ids such as `unit.worker` and
+  // `structure.nexus`. **It never knows a glyph.**" src/content/art.ts sits *inside* a folder the
+  // kernel reads all the time, so the rule holds only as long as nothing on the kernel's side of
+  // that folder imports it — which is exactly the kind of thing that lasts until someone wants a
+  // glyph "just for one log line". Checked from every door the kernel actually comes through,
+  // rather than only from src/pulse.
+  const art = resolve(SRC, "content/art.ts")
+  for (const entry of [
+    "content/index.ts",
+    "scenario/index.ts",
+    "pulse/index.ts",
+    "state/types.ts",
+    "events/types.ts",
+    "report/index.ts",
+  ]) {
+    const reached = transitiveDependencies(resolve(SRC, entry), { asFile: true })
+    assert.ok(
+      !reached.has(art),
+      `src/${entry} reaches src/content/art.ts — the simulation must never know a glyph`,
+    )
+  }
+
+  // And the view, which is the one place that *should* reach it, still does — otherwise this test
+  // would keep passing after someone deleted the import and broke every unit's body.
+  const view = transitiveDependencies(join(SRC, "view"))
+  assert.ok(view.has(art), "src/view no longer reaches the art table; nothing would be drawn")
 })
 
 test("src/report never reaches the kernel or the view", () => {
