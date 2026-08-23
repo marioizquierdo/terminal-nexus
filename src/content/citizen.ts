@@ -110,6 +110,24 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     salvage: 45,
   },
   {
+    // Owner playtest, 2026-08-23: "try smaller multi-cell units: 2x1, and 2x2." Between the trooper
+    // and the hauler in every stat that matters - not a scaled-down colossus, a distinct weight
+    // class of its own: a sealed turret over two struts, small enough to still read as infantry
+    // scale rather than a vehicle.
+    id: "unit.citizen.sentinel",
+    short: "sentinel",
+    layer: "units",
+    footprint: rectFootprint(2, 2),
+    maxHp: 60,
+    // 4/3 - cadence 9 ticks/step, its own beat, off every other rate on the bench.
+    movementRate: { numerator: 4, denominator: 3 },
+    speedTier: 3,
+    attack: { kind: "melee", range: 1, damage: 12, cooldownTicks: 16 },
+    collidesWith: GROUND_UNIT_COLLISIONS,
+    behavior: "advance",
+    salvage: 26,
+  },
+  {
     id: "structure.citizen.nexus",
     short: "nexus",
     nexus: true,

@@ -47,6 +47,12 @@ export const CONTENT_ART: Readonly<Record<string, UnitArt>> = {
    * agreement test in tests/content.test.ts caught it the first time it ran.
    */
   "structure.citizen.barracks": ["[b]", "|_|"],
+  /**
+   * Two by two, between the trooper and the hauler in scale as well as in the roster. A sealed
+   * turret over two struts - the bracket vocabulary at its smallest multi-tile size, still reading
+   * as "contained" rather than "vehicle" the way the hauler's open `(h)` does.
+   */
+  "unit.citizen.sentinel": ["[]", "||"],
 
   // --- Ravels --------------------------------------------------------------------------------
   "unit.ravel.scav": ["s"],
@@ -63,6 +69,12 @@ export const CONTENT_ART: Readonly<Record<string, UnitArt>> = {
   "unit.ravel.leviathan": ["/^l^\\", "<*=*>"],
   /** A single chevron - the Ravel arrowhead vocabulary reduced to one flying tile, wings up. */
   "unit.ravel.buzzard": ["^"],
+  /**
+   * Two tiles of raiding hull: a cockpit meeting an engine flare, arrowheads pointed at each other
+   * the way the leviathan's are pointed apart - small enough that this is the whole ship, not a
+   * fragment of a bigger one.
+   */
+  "unit.ravel.corsair": ["<>"],
   /** A jagged canopy over arrowheads radiating from a spark: welded, not engineered. */
   "structure.ravel.nexus": ["/n\\", "<*>"],
   /** The Ravel Nexus's language one size down and a lot cheaper: same jaw, no spark. */
@@ -115,6 +127,17 @@ export const DEATH_ART: Readonly<Record<string, readonly UnitArt[]>> = {
     [" \\*/ ", "<***>"],
     [" ,*, ", ",,*,,"],
   ],
+  /** The sealed turret cracks, the struts buckle, and what is left is rubble - the same three-beat
+   *  shape as the colossus's, one size down. */
+  "unit.citizen.sentinel": [
+    ["[x", "||"],
+    [" =", "-|"],
+    [" .", ".."],
+  ],
+  /** The hull the corsair's own arrowheads met in life comes apart into the spark and scatter that
+   *  end every Ravel death - the first character falls through to the generic fill on the final
+   *  frame, so the ring debris (fx.death.collapse's own scaling) finishes what the ship started. */
+  "unit.ravel.corsair": [["<*"], [" ,"]],
 }
 
 /** The death-frame sequence for a content id, or `undefined` for content that has none authored. */

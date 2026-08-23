@@ -170,6 +170,26 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     detonation: { radius: 1, damage: 6 },
   },
   {
+    // Owner playtest, 2026-08-23: "try smaller multi-cell units: 2x1, and 2x2... try to make a nice
+    // Ravel skirmish flying spaceship." The buzzard proved the air layer; this is the first air
+    // content with an actual footprint - two tiles of hull, a weapon, and enough hit points that it
+    // is a target rather than a nuisance. Doctrine unchanged: it loses a straight fight and wins the
+    // one it picked, in numbers, from the one direction nobody was watching.
+    id: "unit.ravel.corsair",
+    short: "corsair",
+    layer: "air",
+    footprint: rectFootprint(2, 1),
+    maxHp: 22,
+    // 5/2 - cadence 5 ticks/step, off the Citizen beat like the rest of the roster.
+    movementRate: { numerator: 5, denominator: 2 },
+    speedTier: 1,
+    attack: { kind: "ranged", range: 4, damage: 6, cooldownTicks: 18, projectileTilesPerTick: 3 },
+    collidesWith: AIR_UNIT_COLLISIONS,
+    behavior: "advance",
+    salvage: 14,
+    detonation: { radius: 1, damage: 8 },
+  },
+  {
     // A Grid Nexus welded out of the same scrap as everything else, and true to the doctrine: when
     // it goes, it goes loudly, and it takes the block with it.
     id: "structure.ravel.nexus",
