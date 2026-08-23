@@ -11,6 +11,41 @@ registering a question, closing a gate, updating canon afterward. It is a compan
 [`../../../AGENTS.md`](../../../AGENTS.md), not a replacement for reading it; this fills in the real
 examples and the exact commands.
 
+## Terms, in plain language
+
+This vocabulary is project-specific, not industry standard — read this before the sections below
+start using it as familiar.
+
+- **Canon** — the entire versioned `specs/` document set: the current single source of truth for
+  this project, engineering rules and lore alike. **Canon is not "the decided stuff."** A settled
+  RULE and an unsettled GUIDANCE recommendation both live inside canon, version-stamped together;
+  even `open-questions.md`, the queue of things genuinely still open, is itself a canonical document.
+  What's decided is a property of an individual passage (its RULE/GUIDANCE marker, or its row in
+  `project-governance.md`'s locked-vs-open decisions), not of being in canon at all.
+- **Canon version** — one number stamped across every document under `specs/` and `concept/`, plus
+  `AGENTS.md`. It exists because canon is ~10 independently-edited files, not one — the shared
+  version is a cheap mechanical tripwire (`check-repository.sh` fails the build the moment any one
+  document's declared version disagrees with the rest), not a claim that everything changed.
+- **RULE vs. GUIDANCE** — the actual decided/not-decided axis, applied per passage. RULE means
+  something already depends on it; changing it needs Mario and a version bump. GUIDANCE means a
+  recommendation written before the thing existed, followed by default but departed from when the
+  work shows better — the one authority level a session may act against on its own judgment, as long
+  as it says why.
+- **Milestone** — a large chunk of scope ("Milestone 1: prove the deterministic battle spike").
+- **Gate** — the real unit of work inside a milestone: build something small, evidence it, then
+  decide, rather than building the whole milestone at once. Milestone 1 was cut into Gate 1A and
+  Gate 1B. Borrowed from "stage-gate"/"phase-gate," a real (if not universal) engineering term.
+- **Gate report** — the document that closes a gate: a filled-in copy of
+  [`../../../specs/templates/gate-report.md`](../../../specs/templates/gate-report.md) recording the
+  question, exact commands, automated results, human observations kept separate from those, and one
+  of four terminal decisions (PASS/REVISE/STOP/BLOCKED — see below).
+- **Governance** (in this context) — not open-source contribution governance, but specifically what
+  [`../../../specs/project-governance.md`](../../../specs/project-governance.md) is: a decision-rights
+  framework for a project that runs on semi-autonomous sessions between owner check-ins. It answers
+  "what can a session just decide" and "what has to wait for Mario" in writing, so work doesn't
+  either grind to a halt asking permission for everything or silently lock in a decision that was
+  never a session's to make.
+
 ## Deciding alone versus asking
 
 [`project-governance.md`](../../../specs/project-governance.md) Section 2 draws the line. Within the
