@@ -30,22 +30,24 @@ export default defineScenario({
     "*": "terrain.deposit",
   },
 
-  placements: [
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "     tx           x     ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-  ],
-  placementLegend: {
-    t: { player: "A", content: "unit.citizen.trooper" },
-    x: { player: "B", content: "unit.ravel.runner" },
+  placements: {
+    A: {
+      at: { x: 5, y: 5 },
+      rows: [
+        "t",
+      ],
+      legend: {
+        t: { content: "unit.citizen.trooper" },
+      },
+    },
+    B: {
+      at: { x: 6, y: 5 },
+      rows: [
+        "x           x",
+      ],
+      legend: {
+        x: { content: "unit.ravel.runner" },
+      },
+    },
   },
 })

@@ -32,26 +32,46 @@ export default defineScenario({
   },
 
   // Second overlay, same dimensions. Space means nothing here.
-  placements: [
-    "                        ",
-    "  m                  M  ",
-    "  m                  M  ",
-    "  r                  R  ",
-    "  w                  W  ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "  w                  W  ",
-    "  r                  R  ",
-    "  m                  M  ",
-    "                        ",
-  ],
-  placementLegend: {
-    m: { player: "A", content: "unit.citizen.trooper" },
-    r: { player: "A", content: "unit.citizen.marksman" },
-    w: { player: "A", content: "unit.citizen.worker" },
-    M: { player: "B", content: "unit.citizen.trooper" },
-    R: { player: "B", content: "unit.citizen.marksman" },
-    W: { player: "B", content: "unit.citizen.worker" },
+  placements: {
+    A: {
+      at: { x: 2, y: 1 },
+      rows: [
+        "m",
+        "m",
+        "r",
+        "w",
+        "",
+        "",
+        "",
+        "w",
+        "r",
+        "m",
+      ],
+      legend: {
+        m: { content: "unit.citizen.trooper" },
+        r: { content: "unit.citizen.marksman" },
+        w: { content: "unit.citizen.worker" },
+      },
+    },
+    B: {
+      at: { x: 21, y: 1 },
+      rows: [
+        "m",
+        "m",
+        "r",
+        "w",
+        "",
+        "",
+        "",
+        "w",
+        "r",
+        "m",
+      ],
+      legend: {
+        m: { content: "unit.citizen.trooper" },
+        r: { content: "unit.citizen.marksman" },
+        w: { content: "unit.citizen.worker" },
+      },
+    },
   },
 })
