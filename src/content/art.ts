@@ -61,6 +61,8 @@ export const CONTENT_ART: Readonly<Record<string, UnitArt>> = {
    * enough munitions strapped on to take a city block with it.
    */
   "unit.ravel.leviathan": ["/^l^\\", "<*=*>"],
+  /** A single chevron - the Ravel arrowhead vocabulary reduced to one flying tile, wings up. */
+  "unit.ravel.buzzard": ["^"],
   /** A jagged canopy over arrowheads radiating from a spark: welded, not engineered. */
   "structure.ravel.nexus": ["/n\\", "<*>"],
   /** The Ravel Nexus's language one size down and a lot cheaper: same jaw, no spark. */

@@ -32,6 +32,10 @@ import { rectFootprint } from "./types.ts"
 const GROUND_UNIT_COLLISIONS = ["obstacles", "units"] as const
 const SCAVENGER_COLLISIONS = ["obstacles", "workers"] as const
 const STRUCTURE_COLLISIONS = ["obstacles", "workers", "units"] as const
+// An air unit collides only with other air - never obstacles, workers, or units - and its mask
+// ignores terrain entirely (src/pulse/shared.ts, maskForActor). "Arrives from a direction nobody
+// planned for" is the runner's doctrine already; the buzzard below is that doctrine taken literally.
+const AIR_UNIT_COLLISIONS = ["air"] as const
 
 export const RAVEL_CONTENT: readonly ContentDef[] = [
   {
@@ -142,6 +146,29 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     // The largest detonation in the game, and the point of the unit: a radius-2 blast from a
     // five-tile body reaches most of a formation, friendly or not.
     detonation: { radius: 2, damage: 24 },
+  },
+  {
+    // The `air` layer's first real content, not just its test fixture: `layer: "air"` and
+    // `collidesWith: ["air"]` are the whole difference from a one-tile ground unit - the kernel
+    // already ignores terrain for anything on this layer (maskForActor, shared.ts) and the loader
+    // already exempts it from the on-rock-at-spawn check (scenario/load.ts), so a walled rock room
+    // no ground unit could ever leave is just a tile to this thing - see
+    // `scenarios/air-crossing.map.json`. Small, fragile, and it still detonates on death: the
+    // doctrine does not change because the wreckage falls from higher up.
+    id: "unit.ravel.buzzard",
+    short: "buzzard",
+    layer: "air",
+    footprint: rectFootprint(1, 1),
+    maxHp: 14,
+    // 4/1 - cadence 3 ticks/step, off every cadence already on the bench (citizen: 6, 6, 6, 12, 24;
+    // the rest of this roster: 5, 7.5, 4.5, 9, 4, 18). The fastest thing either side fields.
+    movementRate: { numerator: 4, denominator: 1 },
+    speedTier: 1,
+    attack: { kind: "melee", range: 1, damage: 6, cooldownTicks: 10 },
+    collidesWith: AIR_UNIT_COLLISIONS,
+    behavior: "advance",
+    salvage: 7,
+    detonation: { radius: 1, damage: 6 },
   },
   {
     // A Grid Nexus welded out of the same scrap as everything else, and true to the doctrine: when

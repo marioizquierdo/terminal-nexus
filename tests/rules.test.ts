@@ -4,7 +4,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { MovementRate } from "../src/content/index.ts"
-import { footprintExtent } from "../src/grid/index.ts"
+import { footprintExtent, TERRAIN } from "../src/grid/index.ts"
 import {
   accrueCredit,
   canStep,
@@ -400,4 +400,53 @@ test("a 3x3 and a 5x2 unit fight, range-gated by footprint distance, not anchor 
       (event.contentId === "unit.citizen.colossus" || event.contentId === "unit.ravel.leviathan"),
   )
   assert.ok(heavyDeaths.length > 0, "neither heavy died, so the large-footprint death path is untested")
+})
+
+test("an air unit crosses terrain a ground unit could never enter, end to end in a real Pulse", async () => {
+  // air-crossing.map.json walls a buzzard (unit.ravel.buzzard, layer "air") into a 1x1 rock room -
+  // every neighbouring tile is rock, so a ground unit placed there could never take a single step
+  // (maskForActor gives it terrain: "impassable"). The buzzard's mask ignores terrain entirely
+  // (shared.ts), which tests/grid.test.ts already proves for one call to maskFrom directly; this
+  // proves the same claim the way it actually matters, by watching a full Pulse resolve.
+  const resolved = await resolveScenario("air-crossing.map.json")
+  const { width, tiles } = resolved.run.initialState.grid
+  const impassableAt = (x: number, y: number): boolean => {
+    const terrainId = tiles[y * width + x]
+    return terrainId !== undefined && TERRAIN[terrainId].impassable
+  }
+
+  const moves = resolved.run.events.filter(
+    (event) => event.kind === "entity.moved" && event.entity.includes("buzzard"),
+  )
+  assert.ok(moves.length > 0, "the buzzard never moved at all")
+  const crossedRock = moves.some(
+    (event) => event.kind === "entity.moved" && impassableAt(event.to.x, event.to.y),
+  )
+  assert.ok(
+    crossedRock,
+    "the buzzard never stepped onto impassable terrain - its rock room walls were not actually rock",
+  )
+
+  // The room's own walls are rock, confirming the fixture tests what it says it does rather than
+  // an empty room that happens to be labelled one.
+  assert.ok(impassableAt(6, 5), "the room's east wall (6,5) is not impassable terrain")
+
+  // Cross-layer combat needs no special-casing anywhere (perception, attacks, and detonate all
+  // measure distance the same way regardless of layer) - confirmed by watching it actually happen
+  // rather than only by reading the code that has no layer check to remove.
+  const crossLayerHit = resolved.run.events.some(
+    (event) =>
+      event.kind === "attack.launched" &&
+      ((event.attacker.includes("buzzard") && event.target.includes("trooper")) ||
+        (event.attacker.includes("trooper") && event.target.includes("buzzard"))),
+  )
+  assert.ok(crossLayerHit, "the buzzard and the trooper never fought, so cross-layer targeting was never exercised")
+
+  // isMobile() (pulse/shared.ts) counts anything not on the "obstacles" layer, air included, so a
+  // one-unit air-only side is neither an instant win nor an instant loss for its opponent.
+  const ended = resolved.run.events.find((event) => event.kind === "pulse.ended")
+  assert.ok(ended !== undefined, "the Pulse never ended")
+  if (ended !== undefined && ended.kind === "pulse.ended") {
+    assert.equal(ended.reason, "annihilation", `ended by ${ended.reason}, not a real fight to the death`)
+  }
 })
