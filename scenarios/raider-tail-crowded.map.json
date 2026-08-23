@@ -1,0 +1,67 @@
+{
+  "id": "raider-tail-crowded",
+  "name": "Raider tail crowded - a multi-tile mover blocked by a tile that is not its own anchor",
+  "notes": "A minimal, deterministic-by-construction replacement for the emergent 'raider crowded by an ally's tail' case speed-parade.map.json used to produce incidentally: that scenario's own job is a speed demonstration, not a regression fixture, and the exact tick its movers happened to crowd each other drifted (twice now) every time a movement-speed pass changed the fixture roster's rates. This fixture instead builds the case directly. The raider (3x1) approaches a hostile due east, purely on-axis (Q15) so east is its only improving direction. A friendly den sits one tile further east than the raider's own next step - its own nearest tile (the raider's own anchor after stepping) is clear ground, but the tile at the *far* end of the raider's post-step footprint is not. The bug this pins: the report used to check only the mover's own anchor tile and, finding it clear, called the block 'edge' - the fallback for 'nothing was wrong with the one tile I looked at' - misreporting a crowded ally as the Grid's own border. footprintBlockerAt (src/grid/occupancy.ts) checks the whole footprint instead.",
+  "grid": {
+    "preset": "medium-extra-wide"
+  },
+  "seed": 40970,
+  "pulseTicks": 180,
+  "terrain": [
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 6,
+        "y": 4
+      },
+      "rows": [
+        "   d",
+        "r"
+      ],
+      "legend": {
+        "r": {
+          "content": "unit.ravel.raider"
+        },
+        "d": {
+          "content": "structure.ravel.den"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 35,
+        "y": 5
+      },
+      "rows": [
+        "b"
+      ],
+      "legend": {
+        "b": {
+          "content": "structure.citizen.barracks"
+        }
+      }
+    }
+  }
+}

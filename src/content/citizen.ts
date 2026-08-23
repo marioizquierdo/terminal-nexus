@@ -22,14 +22,14 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     layer: "workers",
     footprint: rectFootprint(1, 1),
     maxHp: 20,
-    // 2/1 rather than 1/1 - a second owner playtest, 2026-08-22, on top of a first that already
-    // asked for this and got a 1.5x pass on this same branch (3/2) the owner had not yet seen when
-    // this note landed: "The movement speed is still too slow, they should move 2 or 2.5 times
-    // faster." Read against the baseline both playtests actually watched (1/1, since neither had
-    // this branch's intermediate value on screen), so every fixture rate below is the ORIGINAL rate
-    // x2, not the 1.5x pass x another factor - every ratio this content was tuned against still
-    // holds exactly. Cadence 6 ticks/step (engine.md 4.1's own table), a tile every half second.
-    movementRate: { numerator: 2, denominator: 1 },
+    // 10/3 rather than 2/1 - a third speed pass, owner playtest 2026-08-23: "units still move too
+    // slow... it takes a while for the battle to start... raise movement speed by another 50-70%
+    // on all units." 5/3x (~1.67x) uniformly across both rosters, not per-unit: the same constant
+    // applied to every rate preserves every ratio this content was ever tuned against (2026-08-22's
+    // two rounds got the roster here at 2x the original 1/1), and a single shared multiplier is also
+    // what keeps `tests/ravel.test.ts`'s "no Ravel moves on a Citizen cadence" true automatically -
+    // two cadences that disagreed before disagree by the same factor after. Cadence 4 ticks/step.
+    movementRate: { numerator: 10, denominator: 3 },
     speedTier: 2,
     collidesWith: WORKER_COLLISIONS,
     behavior: "flee",
@@ -41,10 +41,10 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(1, 1),
     maxHp: 40,
-    // 2/1 rather than 1/1 - see unit.citizen.worker above: a third speed pass overall, 2x the
-    // original rate. A trooper is the unit most players spend the most time watching. Disposable
-    // bench content, tuned freely.
-    movementRate: { numerator: 2, denominator: 1 },
+    // 10/3 rather than 2/1 - see unit.citizen.worker above: a third speed pass overall, ~1.67x the
+    // rate two prior playtests already doubled. A trooper is the unit most players spend the most
+    // time watching. Disposable bench content, tuned freely.
+    movementRate: { numerator: 10, denominator: 3 },
     speedTier: 2,
     attack: { kind: "melee", range: 1, damage: 7, cooldownTicks: 12 },
     collidesWith: GROUND_UNIT_COLLISIONS,
@@ -57,8 +57,8 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(1, 1),
     maxHp: 24,
-    // 2/1 rather than 1/1 - same speed pass as the trooper above.
-    movementRate: { numerator: 2, denominator: 1 },
+    // 10/3 rather than 2/1 - same speed pass as the trooper above.
+    movementRate: { numerator: 10, denominator: 3 },
     speedTier: 1,
     attack: { kind: "ranged", range: 5, damage: 6, cooldownTicks: 24, projectileTilesPerTick: 3 },
     collidesWith: GROUND_UNIT_COLLISIONS,
@@ -73,11 +73,9 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(3, 1),
     maxHp: 90,
-    // 1/1 rather than 1/2 - the same speed pass as the rest of the roster (2026-08-22 owner
-    // playtest, second round); the hauler stays the slowest thing on either side, exactly half the
-    // new trooper rate, same as it was half the original. Cadence 12 ticks/step (engine.md 4.1's
-    // table), one tile a second.
-    movementRate: { numerator: 1, denominator: 1 },
+    // 5/3 rather than 1/1 - the same speed pass as the rest of the roster; the hauler stays exactly
+    // half the trooper rate, same relationship it has held through every pass. Cadence 8 ticks/step.
+    movementRate: { numerator: 5, denominator: 3 },
     speedTier: 3,
     attack: { kind: "melee", range: 1, damage: 10, cooldownTicks: 18 },
     collidesWith: GROUND_UNIT_COLLISIONS,
@@ -98,9 +96,11 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(3, 3),
     maxHp: 160,
-    // Cadence 24 ticks — two seconds a tile, half the hauler's pace and the slowest thing on the
-    // bench. Nothing in the Ravel roster steps on 24 (tests/ravel.test.ts keeps it that way).
-    movementRate: { numerator: 1, denominator: 2 },
+    // 5/6 rather than 1/2 - the same third speed pass as the rest of the roster. Still exactly half
+    // the hauler's rate (5/6 is half of 5/3, same relationship every pass has kept), and still the
+    // slowest thing on the bench: cadence 15 ticks/step. tests/ravel.test.ts checks nothing in the
+    // Ravel roster shares a cadence with anything here, dynamically - not pinned to a literal number.
+    movementRate: { numerator: 5, denominator: 6 },
     // Tier 4: it claims tiles and swings after everything else. A siege engine does not win the
     // initiative roll, it wins by still being there.
     speedTier: 4,

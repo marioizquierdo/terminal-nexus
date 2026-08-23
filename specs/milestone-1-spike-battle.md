@@ -282,23 +282,29 @@ freely if the fight is boring — that is what `grid` is for.
 
 | Id | Layer | Footprint | HP | Move | Speed tier | Attack | Range | Damage | Cooldown |
 | --- | --- | --- | ---: | ---: | ---: | --- | ---: | ---: | ---: |
-| `unit.citizen.worker` | `workers` | 1 × 1 | 20 | `2/1` | 2 | — | — | — | — |
-| `unit.citizen.trooper` | `units` | 1 × 1 | 40 | `2/1` | 2 | melee | 1 | 7 | 12 |
-| `unit.citizen.marksman` | `units` | 1 × 1 | 24 | `2/1` | 1 | ranged | 5 | 6 | 24 |
-| `unit.citizen.hauler` | `units` | 3 × 1 | 90 | `1/1` | 3 | melee | 1 | 10 | 18 |
+| `unit.citizen.worker` | `workers` | 1 × 1 | 20 | `10/3` | 2 | — | — | — | — |
+| `unit.citizen.trooper` | `units` | 1 × 1 | 40 | `10/3` | 2 | melee | 1 | 7 | 12 |
+| `unit.citizen.marksman` | `units` | 1 × 1 | 24 | `10/3` | 1 | ranged | 5 | 6 | 24 |
+| `unit.citizen.hauler` | `units` | 3 × 1 | 90 | `5/3` | 3 | melee | 1 | 10 | 18 |
+| `unit.citizen.colossus` | `units` | 3 × 3 | 160 | `5/6` | 4 | melee | 1 | 18 | 20 |
 | `structure.citizen.nexus` | `obstacles` | 3 × 2 | 400 | — | — | — | — | — | — |
 | `structure.citizen.barracks` | `obstacles` | 3 × 2 | 120 | — | — | — | — | — | — |
 
-Lower speed tier resolves first, so the marksman fires before the trooper swings. Move is `2/1` for
-the roster (`1/1` for the hauler — the table above carries the current numbers) at Gate 1A; two owner
-playtests on 2026-08-22, both against the finished Gate 1B fixture, asked for faster movement in
-succession — the first ("units still move too slow... it takes a while to reach initial engagement")
-landed a 1.5x pass this same table once carried, the second ("still too slow... they should move 2 or
-2.5 times faster") arrived before that
-pass had even been seen and asked for more, so the rates below are 2x the *original* Gate 1A rate,
-not a further multiple on top of the first pass. This table carries the rate the fixture actually
-ships, not the rate it launched with — `src/content/citizen.ts` and `src/content/ravel.ts` are the
-source of truth if the two ever drift again.
+Lower speed tier resolves first, so the marksman fires before the trooper swings. Move is `10/3` for
+the roster (`5/3` for the hauler, `5/6` for the colossus — the table above carries the current
+numbers) at Gate 1A; three owner playtests now, 2026-08-22 twice and 2026-08-23 once, each against
+the finished fixture at whatever rate the previous playtest had already landed, asked for faster
+movement in succession — "units still move too slow... it takes a while to reach initial
+engagement" (a 1.5x pass), "still too slow... they should move 2 or 2.5 times faster" (2x the
+*original* rate, not a further multiple on the first pass, since the owner was judging the original
+baseline both of the first two playtests actually watched), then "units still move too slow... raise
+movement speed by another 50-70% on all units" (~1.67x on top of the now-doubled rate — the first
+pass to genuinely compound rather than restate a multiple of the original). Every pass applies one
+constant to every rate in both rosters at once, so the ratios between units — trooper to marksman,
+hauler to trooper, Ravel to Citizen — are exactly what they always were; only the absolute pace
+changes. This table carries the rate the fixture actually ships, not the rate it launched with —
+`src/content/citizen.ts` and `src/content/ravel.ts` are the source of truth if the two ever drift
+again.
 
 The numbers make the relationship **visible without a spreadsheet**:
 

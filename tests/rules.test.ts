@@ -346,7 +346,11 @@ test("a multi-tile mover blocked inside its own footprint reports the real block
   // checked the mover's single anchor tile, which can be perfectly clear while a different tile in
   // its footprint is what is actually occupied - and a clear single tile fell through
   // blockReasonFor's cases to its "edge" fallback, misreporting a crowded ally as the Grid's border.
-  const resolved = await resolveScenario("speed-parade.map.json")
+  // raider-tail-crowded.map.json builds the same case by construction rather than relying on
+  // speed-parade.map.json's emergent timing, which drifted out from under this test twice - once
+  // per movement-speed pass - since a demo scenario's job is showing every rate side by side, not
+  // holding a specific tick's worth of incidental crowding stable.
+  const resolved = await resolveScenario("raider-tail-crowded.map.json")
   const blocked = resolved.run.events.filter(
     (event) => event.kind === "move.blocked" && event.entity.includes("raider"),
   )
