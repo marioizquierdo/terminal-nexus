@@ -78,3 +78,46 @@ export function artFor(contentId: string): UnitArt | undefined {
 export function artExtent(art: UnitArt): { width: number; height: number } {
   return { width: art[0]?.length ?? 0, height: art.length }
 }
+
+/**
+ * A short, ordered sequence a content id may define for its own death — owner playtest, 2026-08-23:
+ * "Consider a dead animation, the unit itself can define a few frames for that. A combination of
+ * effects and a dead animation could really make it snap, specially for those large units." Optional
+ * and purely additive: content with no entry here keeps the plain per-tile debris `fx.death.collapse`
+ * has always drawn, unanimated. Each frame is a `UnitArt` the same size as the content's footprint —
+ * `tests/content.test.ts` enforces that the same way it does for `CONTENT_ART` — and a space in a
+ * frame means "nothing here in this frame", not a literal blank glyph: `src/view/effects/recipes.ts`
+ * falls back to the generic debris fill for that one tile rather than painting a hole.
+ *
+ * Read only by `fx.death.collapse` (`src/view/effects/recipes.ts`), never by the kernel: the same
+ * boundary `CONTENT_ART` already draws, for the same reason (engine.md 9.6 — the simulation never
+ * knows a glyph, and a death frame is exactly that, played over time).
+ */
+export const DEATH_ART: Readonly<Record<string, readonly UnitArt[]>> = {
+  /**
+   * Crack, then topple, then rubble - the sealed head fails first (an `x` where the `=` core sat),
+   * the frame sags without it, and what is left settles into the same debris vocabulary a 1x1
+   * death already uses (`=`), just arranged like something that used to stand.
+   */
+  "unit.citizen.colossus": [
+    ["[x]", "|=|", "/_\\"],
+    [" x ", "\\=/", "/-\\"],
+    [" . ", ".=.", "..."],
+  ],
+  /**
+   * The crowned hull's own arrowhead becomes the wound (`^X^`), the hull buckles inward, and the
+   * wreck that is left is the Ravel debris vocabulary (`*`, `,`) with nothing left standing tall
+   * enough to still read as a vehicle - true to the doctrine even in death: it does not fall over,
+   * it comes apart.
+   */
+  "unit.ravel.leviathan": [
+    ["/^X^\\", "<*=*>"],
+    [" \\*/ ", "<***>"],
+    [" ,*, ", ",,*,,"],
+  ],
+}
+
+/** The death-frame sequence for a content id, or `undefined` for content that has none authored. */
+export function deathFramesFor(contentId: string): readonly UnitArt[] | undefined {
+  return DEATH_ART[contentId]
+}

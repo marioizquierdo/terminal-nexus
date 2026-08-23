@@ -233,6 +233,9 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
           family: familyFor(event.contentId),
           params: {
             ...footprintExtent(definition.footprint),
+            // The recipe's own hook into DEATH_ART (src/content/art.ts) - content with no entry
+            // there just gets the plain per-tile fill this param has always driven on its own.
+            contentId: event.contentId,
           },
         })
         break
