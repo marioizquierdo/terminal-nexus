@@ -71,7 +71,7 @@ test("a blocked actor keeps its credit and steps the tick the tile frees", async
   // "blocked" — so this fixture demonstrates credit-holding through move.blocked events rather than
   // through move.intended ones; every one of them still reports full credit, which is only true if
   // a refused step never spends any.
-  const resolved = await resolveScenario("hauler-two-tile-gap.ts")
+  const resolved = await resolveScenario("hauler-two-tile-gap.map.json")
   const intents = resolved.run.events.filter((event) => event.kind === "move.intended")
   assert.ok(intents.length > 0, "the hauler never even declared its approach")
   for (const intent of intents) {
@@ -89,7 +89,7 @@ test("a blocked actor keeps its credit and steps the tick the tile frees", async
   // And the point of keeping it: an actor jostled out of a claim steps the moment the tile frees,
   // rather than restarting its timer. In the jammed corridor that shows up as a block on one tick
   // and a move by the same entity on the next.
-  const jam = await resolveScenario("jammed-corridor.ts")
+  const jam = await resolveScenario("jammed-corridor.map.json")
   const blocks = new Set<string>()
   const moves = new Set<string>()
   for (const event of jam.run.events) {
@@ -107,7 +107,7 @@ test("a blocked actor keeps its credit and steps the tick the tile frees", async
 })
 
 test("two equal-speed actors that kill each other on the same tick both die", async () => {
-  const resolved = await resolveScenario("mutual-kill.ts")
+  const resolved = await resolveScenario("mutual-kill.map.json")
   const deaths = resolved.run.events.filter((event) => event.kind === "entity.died")
   assert.equal(deaths.length, 2, "a mutual kill left a survivor")
   const [first, second] = deaths
@@ -121,7 +121,7 @@ test("two equal-speed actors that kill each other on the same tick both die", as
 test("speed tier is initiative and lower acts first", async () => {
   // The marksman is tier 1 and the trooper tier 2, so on a tick where both attack, the marksman's
   // attack is emitted — and resolved — first.
-  const resolved = await resolveScenario("citizen-mirror-skirmish.ts")
+  const resolved = await resolveScenario("citizen-mirror-skirmish.map.json")
   const byTick = new Map<number, string[]>()
   for (const event of resolved.run.events) {
     if (event.kind !== "attack.launched") continue
@@ -148,7 +148,7 @@ test("speed tier is initiative and lower acts first", async () => {
 test("the flight window is presentation metadata that no rule reads", async () => {
   // Changing only the projectile speed changes the flight window on the event and nothing else:
   // not the damage, not the state, not the tick anything resolved on.
-  const scenario = await loadScenarioFile("ranged-kill.ts")
+  const scenario = await loadScenarioFile("ranged-kill.map.json")
   const definitions = FIXTURE_REGISTRY.ids().map((id) => FIXTURE_REGISTRY.get(id))
   const slowed = definitions.map((definition) =>
     definition.attack?.kind === "ranged"
@@ -188,7 +188,7 @@ test("the flight window is presentation metadata that no rule reads", async () =
 })
 
 test("arbitration terminates under a bounded pass count with a decreasing progress measure", async () => {
-  const scenario = await loadScenarioFile("jammed-corridor.ts")
+  const scenario = await loadScenarioFile("jammed-corridor.map.json")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
   const context = contextFor(loaded.state, loaded.registry, scenario.pulseTicks)
 
@@ -210,7 +210,7 @@ test("arbitration terminates under a bounded pass count with a decreasing progre
 })
 
 test("contested claims resolve by speed tier before the seeded stream is consulted", async () => {
-  const resolved = await resolveScenario("jammed-corridor.ts")
+  const resolved = await resolveScenario("jammed-corridor.map.json")
   const contests = resolved.run.events.filter((event) => event.kind === "move.contested")
   assert.ok(contests.length > 0)
   for (const event of contests) {
@@ -225,7 +225,7 @@ test("a vacated tile stays blocked for DEATH_SETTLE_TICKS after the entity on it
   // The corridor is one tile wide, so the trooper's only route to the worker beyond is straight
   // through the tile its melee kill just vacated - the fixture's whole point is that it wants that
   // exact tile on the very next tick.
-  const resolved = await resolveScenario("settle-delay.ts")
+  const resolved = await resolveScenario("settle-delay.map.json")
   const death = resolved.run.events.find((event) => event.kind === "entity.died")
   assert.ok(death !== undefined && death.kind === "entity.died", "the blocker never died")
   if (death === undefined || death.kind !== "entity.died") return
@@ -297,7 +297,7 @@ test("a multi-tile mover blocked inside its own footprint reports the real block
   // checked the mover's single anchor tile, which can be perfectly clear while a different tile in
   // its footprint is what is actually occupied - and a clear single tile fell through
   // blockReasonFor's cases to its "edge" fallback, misreporting a crowded ally as the Grid's border.
-  const resolved = await resolveScenario("speed-parade.ts")
+  const resolved = await resolveScenario("speed-parade.map.json")
   const blocked = resolved.run.events.filter(
     (event) => event.kind === "move.blocked" && event.entity.includes("raider"),
   )

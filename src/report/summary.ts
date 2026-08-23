@@ -1,5 +1,7 @@
-// The run summary — milestone-1-spike-battle.md 3.3. Log to stderr, summary to stdout, so that
-// `grid run x.ts > report.txt 2> run.log` splits them and a bare run interleaves both.
+// The run summary — milestone-1-spike-battle.md 3.3. `formatSummary`/`summaryJson` are the
+// machine-facing shapes (`--json`); `reportLineDetail` packs the same facts into one line's worth of
+// text for `buildLog`'s trailing WARN `report` line, so a headless run's single output stream still
+// closes with the outcome, the losses, and the hashes without needing a second stream to carry them.
 
 import { shortHash } from "../state/canonical.ts"
 import type { PlayerId, VictoryReason } from "../state/types.ts"
@@ -87,4 +89,28 @@ export function formatSummary(summary: RunSummary): string {
 
 export function summaryJson(summary: RunSummary, extra: Readonly<Record<string, unknown>>): string {
   return JSON.stringify({ ...summary, ...extra }, null, 2)
+}
+
+/** The `detail` column of `buildLog`'s trailing `report` line — `formatSummary`'s facts, one line. */
+export function reportLineDetail(summary: RunSummary): string {
+  const outcomeText =
+    summary.outcome === null
+      ? "unresolved"
+      : summary.outcome.winner === null
+        ? `draw (${summary.outcome.reason})`
+        : `${summary.outcome.winner} wins`
+
+  const ticksText = summary.endedEarly
+    ? `${summary.ticks} of ${summary.pulseTicks} (ended early: ${summary.outcome?.reason ?? "unknown"})`
+    : `${summary.ticks} of ${summary.pulseTicks} (full pulse)`
+
+  const lossesText = PLAYERS.map(
+    (player) => `${player}: ${summary.losses[player].lost} of ${summary.losses[player].started}`,
+  ).join("  ")
+
+  return (
+    `seed ${hexSeed(summary.seed)}  ticks ${ticksText}  outcome ${outcomeText}  ` +
+    `losses ${lossesText}  state ${shortHash(summary.stateHash, SUMMARY_HASH_DIGITS)}  ` +
+    `events ${shortHash(summary.eventsHash, SUMMARY_HASH_DIGITS)}`
+  )
 }

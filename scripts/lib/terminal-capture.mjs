@@ -98,10 +98,10 @@ export function tickOf(text) {
   return match === null ? null : Number(match[1])
 }
 
-/** Start `watch` on a scenario, in its own session, at the given terminal size. */
-export function startWatch(repoRoot, session, scenarioFile, cols, rows, extraArgs = []) {
+/** Start `watch` (grid's default action) on a map, in its own session, at the given terminal size. */
+export function startWatch(repoRoot, session, mapFile, cols, rows, extraArgs = []) {
   killSession(repoRoot, session)
-  const command = ["./bin/grid.ts", "watch", scenarioFile, ...extraArgs].join(" ")
+  const command = ["./bin/grid.ts", mapFile, ...extraArgs].join(" ")
   tmux(repoRoot, ["new-session", "-d", "-s", session, "-x", String(cols), "-y", String(rows), command])
   waitFor(repoRoot, session, (text) => text.includes("TERMINAL NEXUS"), "the first frame")
   sendKeys(repoRoot, session, " ")

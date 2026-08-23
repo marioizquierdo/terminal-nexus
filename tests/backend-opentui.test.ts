@@ -13,7 +13,7 @@ import { createView, frameToText } from "../src/view/index.ts"
 import { RUNTIME_IS_BUN, loadScenarioFile } from "./helpers.ts"
 
 async function mirrorFrame() {
-  const scenario = await loadScenarioFile("citizen-mirror-skirmish.ts")
+  const scenario = await loadScenarioFile("citizen-mirror-skirmish.map.json")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
   const timeline = buildTimeline(
     scenario,

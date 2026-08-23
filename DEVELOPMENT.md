@@ -60,18 +60,19 @@ npm test            # Node's runner over tests/*.test.ts
 npm run test:bun    # the same suite under Bun, one file at a time
 npm run typecheck   # tsc --noEmit
 
-# run
-./bin/grid.ts run    scenarios/citizen-mirror-skirmish.ts
-./bin/grid.ts run    scenarios/citizen-mirror-skirmish.ts --log-level debug --ticks 120
-./bin/grid.ts run    scenarios/citizen-mirror-skirmish.ts --events events.jsonl --json
-./bin/grid.ts watch  scenarios/citizens-versus-ravels.ts
-./bin/grid.ts watch  scenarios/citizens-versus-ravels.ts --glyphs unicode --capability truecolor
-./bin/grid.ts watch  scenarios/ravel-cascade.ts --capability monochrome --reduced-motion
-./bin/grid.ts watch  scenarios/citizens-versus-ravels.ts --no-effects
-./bin/grid.ts verify scenarios/citizen-mirror-skirmish.ts --runs 20
+# run — <map> is a .map.json path, suffix optional; no subcommand, watch is the default action
+./bin/grid.ts scenarios/citizen-mirror-skirmish                              # watch (the default)
+./bin/grid.ts scenarios/citizens-versus-ravels --glyphs unicode --capability truecolor
+./bin/grid.ts scenarios/ravel-cascade --capability monochrome --reduced-motion
+./bin/grid.ts scenarios/citizens-versus-ravels --no-effects
+./bin/grid.ts scenarios/citizen-mirror-skirmish --headless --log-level debug --ticks 120
+./bin/grid.ts scenarios/citizen-mirror-skirmish --headless --events events.jsonl --json
+./bin/grid.ts scenarios/citizen-mirror-skirmish --verify                    # 10 runs by default
+./bin/grid.ts scenarios/citizen-mirror-skirmish --verify --runs 20
+./bin/grid.ts scenarios/citizen-mirror-skirmish --headless --turn 90        # jump straight to tick 90
 
 # the same commands under Bun
-bun bin/grid.ts run scenarios/citizen-mirror-skirmish.ts
+bun bin/grid.ts scenarios/citizen-mirror-skirmish --headless
 ```
 
 Pinned by Gate 1A, measured 2026-08-21:
@@ -113,7 +114,7 @@ node scripts/capture-screenshots.mjs              # all of them
 node scripts/capture-screenshots.mjs --only mirror-melee
 ```
 
-It drives `grid watch` inside a tmux pseudo-terminal — a real PTY, so the ANSI backend takes
+It drives `grid` (watch, the default action) inside a tmux pseudo-terminal — a real PTY, so the ANSI backend takes
 the same path a person gets — pauses it, steps to an exact tick, captures the pane with its escape
 sequences, and renders it to a PNG in `evidence/screenshots/` through the Chromium already present
 for Playwright. Use it when a change touches the composition: a frame's *text* is what the tests
@@ -124,17 +125,19 @@ Requires `tmux` and the browser at `/opt/pw-browsers/chromium-1194/chrome-linux/
 
 ### The log is the feedback loop
 
-`grid run` writes fixed-column lines to stderr, which is what lets an agent assert on
-behaviour without parsing prose:
+`grid --headless` writes fixed-column lines to one stream (stdout), which is what lets an agent
+assert on behaviour without parsing prose:
 
 ```text
 [tick] LEVEL kind subject [-> object] detail...
 ```
 
-Levels are `ERROR`, `WARN`, `INFO` (default), `DEBUG`, `TRACE`. `INFO` is the story — spawns, first
-engagements, every attack that landed, deaths, structures destroyed, victory. It grows by adding
-kinds, never by reshaping columns. When a test needs structure rather than a story, assert on
-`--events` JSONL instead.
+Levels are `ERROR`, `WARN` (default), `INFO`, `DEBUG`, `TRACE`. `INFO` is the story — spawns, first
+engagements, every attack that landed, deaths, structures destroyed, victory; `WARN` is anomalies
+plus a closing `report` line carrying the outcome, losses, and hashes, so a bare `--headless` run
+still ends with the answer even at the default level. It grows by adding kinds, never by reshaping
+columns. `--save-log <file>` writes the same lines to a file, in any action (`watch` included). When
+a test needs structure rather than a story, assert on `--events` JSONL instead.
 
 ## Environment options
 

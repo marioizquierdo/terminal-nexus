@@ -53,7 +53,7 @@ test("no two entities overlap in a mask that includes both their layers, at any 
 test("a worker and a ground unit may share a tile", async () => {
   // Collision is a mask composed from chosen layers, so at some tick a unit and a worker stand on
   // the same tile — asserted rather than forbidden.
-  const scenario = await loadScenarioFile("share-tile-worker-unit.ts")
+  const scenario = await loadScenarioFile("share-tile-worker-unit.map.json")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
   const context = contextFor(loaded.state, loaded.registry, scenario.pulseTicks)
   let state = loaded.state
@@ -155,12 +155,12 @@ test("the hauler scenarios agree with the mask: three crosses the wall, two neve
     const resolved = await resolveScenario(name)
     return resolved.run.events.some((event) => event.kind === "entity.moved" && event.to.y > 6)
   }
-  assert.equal(await crossed("hauler-three-tile-gap.ts"), true)
-  assert.equal(await crossed("hauler-two-tile-gap.ts"), false)
+  assert.equal(await crossed("hauler-three-tile-gap.map.json"), true)
+  assert.equal(await crossed("hauler-two-tile-gap.map.json"), false)
 })
 
 test("a multi-tile entity is damaged and destroyed as one entity", async () => {
-  const resolved = await resolveScenario("structure-destruction.ts")
+  const resolved = await resolveScenario("structure-destruction.map.json")
   const destroyed = resolved.run.events.filter((event) => event.kind === "structure.destroyed")
   assert.equal(destroyed.length, 1, "a 3x2 Grid Nexus died more than once")
   const nexus = destroyed[0]

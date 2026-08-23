@@ -4,8 +4,8 @@
 `grid` reads and writes it
 **Status:** GUIDANCE throughout. Nothing here is built. Written to give Milestone 2 a concrete
 starting design rather than a blank page, and because the owner asked for it directly this session
-**Canon version:** 2.6
-**Updated:** 2026-08-21
+**Canon version:** 2.7
+**Updated:** 2026-08-23
 **License:** Apache-2.0
 
 ## 0. What this is, and what it is not
@@ -138,7 +138,7 @@ replay is the general case: `build`, `pulse`, `build`, `pulse`, … until the la
 
 ## 3. Log levels — a second axis, not a re-skin of Section 3.3's
 
-`milestone-1-spike-battle.md` 3.3 already defines five log levels for `grid`'s **live stderr
+`milestone-1-spike-battle.md` 3.3 already defines five log levels for `grid`'s **live headless
 report** — a human or an agent watching one run scroll by right now. The owner's ask this session was
 for a *different* thing wearing the same five names: how much of a pulse's story is worth **paying to
 store**, permanently, in a file that might hold a whole match. These are not the same question, and
@@ -262,7 +262,7 @@ reading this format may assume the last entry in `phases` is a finished game.
 
 ### 4.5 One canonical event encoding, two containers
 
-`grid run x.ts --events file.jsonl` already exists and already emits one `DomainEvent` per line,
+`grid x.map.json --headless --events file.jsonl` already exists and already emits one `DomainEvent` per line,
 canonically serialized (`src/events/serialize.ts`). A pulse phase's `events` array should serialize
 each entry through that exact same per-event encoding, so `hashEvents` agrees whether the events came
 from a `.replay.json` phase or a standalone JSONL export of the identical run. The wrapper around
@@ -280,18 +280,20 @@ look like a file-format break, or the reverse.
 
 Not built. Description of the shape the tool should grow into, so Milestone 2 has a target:
 
-- **`grid replay new <scenario> [--log-level LEVEL] [--type grid-playground]`** — today's `grid run`
-  plus persistence: one implicit `build` phase (the scenario's own placements), one `pulse` phase
-  resolved and filtered to `LEVEL`, written to a new `.replay.json`. This is packaging, not new
-  machinery — `resolvePulse` and the existing JSONL event encoding already do the work; this only adds
-  the setup/provenance wrapper described in Section 2.
-- **`grid replay run <file> [--pulse N] [--log-level LEVEL]`** — re-resolves pulse `N` (default: the
-  last one) per Section 4.2 and writes the richer result back in place, after the version-skew check
-  in Section 4.3.
-- **`grid watch <file>`** — a replay's `setup.map` is already a full scenario (embedded or by id), so
-  watching a saved replay should need no new rendering: the same viewer that plays a `.ts` scenario
-  today plays a `.replay.json`'s setup the same way, then steps through its recorded pulse the same
-  way `grid watch` already steps through a live resolution.
+- **`grid <map> --headless --save-replay <file> [--log-level LEVEL] [--type grid-playground]`** —
+  today's `grid <map> --headless` plus persistence: one implicit `build` phase (the map's own
+  placements), one `pulse` phase resolved and filtered to `LEVEL`, written to a new `.replay.json`.
+  This is packaging, not new machinery — `resolvePulse` and the existing JSONL event encoding already
+  do the work; this only adds the setup/provenance wrapper described in Section 2. (Naming a new flag
+  here rather than a subcommand follows this session's redesign: `grid`'s first argument is always the
+  map or replay to load, never a verb.)
+- **`grid <file> --headless --replay-pulse N [--log-level LEVEL]`** — re-resolves pulse `N` (default:
+  the last one) per Section 4.2 and writes the richer result back in place, after the version-skew
+  check in Section 4.3.
+- **`grid <file>`** (the default action, watch) — a replay's `setup.map` is already a full map
+  (embedded or by id), so watching a saved replay should need no new rendering: the same viewer that
+  plays a `.map.json` map today plays a `.replay.json`'s setup the same way, then steps through its
+  recorded pulse the same way `grid` already steps through a live resolution.
 
 ## 6. Naming: "grid-playground" replays, and why the engine version gets recorded now
 

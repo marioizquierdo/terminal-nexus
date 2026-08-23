@@ -1,0 +1,105 @@
+{
+  "id": "grand-battle",
+  "name": "Grand battle - the whole roster, at scale",
+  "notes": "The owner asked for one large, populous scenario to watch, separate from the small proof fixtures - this is that fixture, and it makes no rule claim the smaller ones do not already make. medium-extra-wide (48x16) - the default preset, not the 72x24 ceiling engine.md 3.3 allows: the composition currently draws every scenario at the fixed 48x16 viewport with no scrolling (`gridOrigin`/`compositionSize` in src/view/compose.ts) - the cursor-driven scrolling that RULE describes for larger Grids is not built yet, so a first draft of this fixture at 72x24 rendered fine headless but overlapped its own side panel on screen. 'Populous' comes from density instead: 56 entities in the same footprint citizens-versus-ravels uses 21 in - three Citizen files (troopers front, marksmen held back) either side of a Nexus and two barracks, against a Ravel swarm (runners and slingers in depth, two three-tile raiders, two fuelwagons) either side of a Nexus and two dens. The no-man's-land between the fronts is open ground on purpose: an early draft at the larger size scattered small rock clusters there for texture, and with dozens of units retargeting constantly as the fight develops, several ended up walking straight at a rock on their own row or column and stalling for good - Q15's on-axis dead end, at scale. This fixture is for watching, not for proving a routing claim, so the terrain stayed out.",
+  "grid": {
+    "preset": "medium-extra-wide"
+  },
+  "seed": 49153,
+  "pulseTicks": 960,
+  "terrain": [
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": [
+    "          t                        x            ",
+    "        m   t                    x    z         ",
+    "  B                                        D    ",
+    "        m     t                x      z         ",
+    "        m t                        x  z         ",
+    "            t               >    x              ",
+    "w       m     t                x      z       S ",
+    "  N   h                         v          R    ",
+    "      h                         v               ",
+    "w       m t                        x  z       S ",
+    "            t               >    x              ",
+    "        m     t                x      z         ",
+    "  B     m t                        x  z    D    ",
+    "                                                ",
+    "        m   t                    x    z         ",
+    "              t                x                "
+  ],
+  "placementLegend": {
+    "t": {
+      "player": "A",
+      "content": "unit.citizen.trooper"
+    },
+    "m": {
+      "player": "A",
+      "content": "unit.citizen.marksman"
+    },
+    "w": {
+      "player": "A",
+      "content": "unit.citizen.worker"
+    },
+    "h": {
+      "player": "A",
+      "content": "unit.citizen.hauler"
+    },
+    "N": {
+      "player": "A",
+      "content": "structure.citizen.nexus"
+    },
+    "B": {
+      "player": "A",
+      "content": "structure.citizen.barracks"
+    },
+    "x": {
+      "player": "B",
+      "content": "unit.ravel.runner"
+    },
+    "z": {
+      "player": "B",
+      "content": "unit.ravel.slinger"
+    },
+    "v": {
+      "player": "B",
+      "content": "unit.ravel.fuelwagon"
+    },
+    ">": {
+      "player": "B",
+      "content": "unit.ravel.raider"
+    },
+    "S": {
+      "player": "B",
+      "content": "unit.ravel.scav"
+    },
+    "R": {
+      "player": "B",
+      "content": "structure.ravel.nexus"
+    },
+    "D": {
+      "player": "B",
+      "content": "structure.ravel.den"
+    }
+  }
+}

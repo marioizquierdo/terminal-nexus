@@ -74,7 +74,7 @@ test("the line grammar reproduces the milestone's own sample lines", () => {
 })
 
 test("the columns are fixed, so a grep written today keeps working", async () => {
-  const resolved = await resolveScenario("citizen-mirror-skirmish.ts")
+  const resolved = await resolveScenario("citizen-mirror-skirmish.map.json")
   const lines = buildLog(reportInputOf(resolved), "DEBUG")
   assert.ok(lines.length > 50)
   for (const line of lines) {
@@ -97,7 +97,7 @@ test("the columns are fixed, so a grep written today keeps working", async () =>
 })
 
 test("levels filter as documented, and INFO is the default story", async () => {
-  const resolved = await resolveScenario("melee-kill.ts")
+  const resolved = await resolveScenario("melee-kill.map.json")
   const input = reportInputOf(resolved)
   const counts = new Map<string, number>()
   for (const level of ["ERROR", "WARN", "INFO", "DEBUG", "TRACE"] as const) {
@@ -112,11 +112,11 @@ test("levels filter as documented, and INFO is the default story", async () => {
   assert.equal(error, 0, "a clean run produced ERROR lines")
 
   const infoKinds = new Set(buildLog(input, "INFO").map((line) => line.slice(13, 21).trim()))
-  assert.deepEqual([...infoKinds].sort(), ["attack", "death", "engage", "spawn", "victory"])
+  assert.deepEqual([...infoKinds].sort(), ["attack", "death", "engage", "report", "spawn", "victory"])
 })
 
 test("the INFO log tells the story an agent can assert on", async () => {
-  const resolved = await resolveScenario("melee-kill.ts")
+  const resolved = await resolveScenario("melee-kill.map.json")
   const lines = buildLog(reportInputOf(resolved), "INFO")
   assert.equal(lines.filter((line) => line.includes(" spawn ")).length, 3)
   assert.ok(lines.some((line) => /INFO  engage +A:trooper#1 +-> B:trooper#2/.test(line)))
@@ -148,7 +148,7 @@ test("the report can rebuild the whole cast from the events alone", async () => 
 })
 
 test("the summary reports what the milestone's example reports", async () => {
-  const resolved = await resolveScenario("melee-kill.ts")
+  const resolved = await resolveScenario("melee-kill.map.json")
   const summary = summarize(reportInputOf(resolved))
   const text = formatSummary(summary)
   assert.match(text, /^scenario   melee-kill$/m)
@@ -165,7 +165,7 @@ test("an unknown log level is refused rather than guessed at", () => {
 })
 
 test("the stuck warning fires for an actor that cannot make progress", async () => {
-  const resolved = await resolveScenario("hauler-two-tile-gap.ts")
+  const resolved = await resolveScenario("hauler-two-tile-gap.map.json")
   const lines = buildLog(reportInputOf(resolved), "WARN")
   assert.ok(
     lines.some((line) => /WARN  stuck    A:hauler#1/.test(line)),

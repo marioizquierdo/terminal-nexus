@@ -26,7 +26,7 @@ async function timelineFor(name: string): Promise<PulseTimeline> {
 }
 
 test("frames are exactly the composition size, at both tile widths", async () => {
-  const timeline = await timelineFor("citizen-mirror-skirmish.ts")
+  const timeline = await timelineFor("citizen-mirror-skirmish.map.json")
   const view = createView(timeline)
   for (const tileWidth of [1, 2] as const) {
     const size = compositionSize(tileWidth)
@@ -52,7 +52,7 @@ test("every glyph in every scenario is one printable ASCII cell", async () => {
 })
 
 test("identical arguments produce identical frames, and skipping frames changes nothing", async () => {
-  const view = createView(await timelineFor("citizen-mirror-skirmish.ts"))
+  const view = createView(await timelineFor("citizen-mirror-skirmish.map.json"))
   const times = [0, 137.5, 1000, 4321.9, 9999]
   const once = times.map((time) => frameToText(view.snapshotAt(time, "color16", 1)))
 
@@ -70,7 +70,7 @@ test("at a tick boundary every entity stands on the tile the kernel put it on", 
   // The check that catches a compositor with a transposed axis or an off-by-one band: it would pass
   // every other test in this file while drawing a deterministic, correctly sized picture of the
   // wrong fight. Asserted against the event stream, not against the compositor's own inputs.
-  for (const name of ["citizen-mirror-skirmish.ts", "hauler-three-tile-gap.ts"]) {
+  for (const name of ["citizen-mirror-skirmish.map.json", "hauler-three-tile-gap.map.json"]) {
     const timeline = await timelineFor(name)
     const view = createView(timeline)
     const positions = new Map<number, { x: number; y: number }>()
@@ -159,7 +159,7 @@ test("the resize gate is drawn below the composition size", () => {
 })
 
 test("the compositor only ever emits roles from the committed vocabulary", async () => {
-  const view = createView(await timelineFor("structure-destruction.ts"))
+  const view = createView(await timelineFor("structure-destruction.map.json"))
   const frame = view.snapshotAt(view.durationMs * 0.9, "color16", 1)
   const roles = new Set<string>()
   for (const cell of frame.cells) {
@@ -186,7 +186,7 @@ test("the view and the headless run agree on the fight they describe", async () 
 })
 
 test("interpolation is presentation only: a mid-tick frame never changes the timeline", async () => {
-  const timeline = await timelineFor("citizen-mirror-skirmish.ts")
+  const timeline = await timelineFor("citizen-mirror-skirmish.map.json")
   const view = createView(timeline)
   const before = timeline.states.map((state) => state.tick).join(",")
   const tick = 100
@@ -202,7 +202,7 @@ test("interpolation is presentation only: a mid-tick frame never changes the tim
 })
 
 test("tile width two draws the same tiles, twice as wide", async () => {
-  const view = createView(await timelineFor("melee-kill.ts"))
+  const view = createView(await timelineFor("melee-kill.map.json"))
   const capability: CapabilityMode = "monochrome"
   const narrow = view.snapshotAt(2000, capability, 1 as TileWidth)
   const wide = view.snapshotAt(2000, capability, 2 as TileWidth)

@@ -185,8 +185,7 @@ function captureGate(shot) {
   killSession(repoRoot, SESSION)
   const command = [
     "./bin/grid.ts",
-    "watch",
-    `scenarios/${shot.scenario}.ts`,
+    `scenarios/${shot.scenario}.map.json`,
     ...extraArgsFor(shot),
   ].join(" ")
   tmux(repoRoot, [
@@ -203,7 +202,14 @@ function captureGate(shot) {
 
 function capture(shot) {
   if (shot.expectGate === true) return captureGate(shot)
-  startWatch(repoRoot, SESSION, `scenarios/${shot.scenario}.ts`, shot.cols, shot.rows, extraArgsFor(shot))
+  startWatch(
+    repoRoot,
+    SESSION,
+    `scenarios/${shot.scenario}.map.json`,
+    shot.cols,
+    shot.rows,
+    extraArgsFor(shot),
+  )
   stepToTick(repoRoot, SESSION, shot.tick)
   const captured = pane(repoRoot, SESSION, { colour: true })
   sendKeys(repoRoot, SESSION, "q")
