@@ -82,6 +82,19 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
     const key = `${event.tick}:${event.targetOrdinal}`
     flightByTarget.set(key, Math.max(flightByTarget.get(key) ?? 0, event.flightWindowTicks))
   }
+  /**
+   * The kernel resolves a ranged kill in the same tick it launches the shot - `attack.launched`,
+   * `damage.applied`, `entity.died` and any `entity.detonated` it triggers all carry the identical
+   * `tick` (engine.md 4.3's flight window is presentation metadata; no rule reads it). Without this,
+   * a unit's death collapse fired the instant the shot left the barrel, two ticks before its own
+   * tracer visibly arrived - the owner playtest's own words for the fix that already exists on
+   * `damage.applied` apply here just as directly: "look for more opportunities to do that, specially
+   * when the effect is resolved within the same turn so it doesn't really affect the gameplay."
+   * Nothing about outcome moves; only when the ending is allowed to play catches up to when the
+   * blow that caused it is seen to land.
+   */
+  const heldMsFor = (tick: number, ordinal: number): number =>
+    (flightByTarget.get(`${tick}:${ordinal}`) ?? 0) * tickMs
 
   const criticalSince = new Map<number, number>()
   const blastsThisTick = new Map<number, number>()
@@ -198,7 +211,7 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
         instances.push({
           recipe: "fx.death.collapse",
           band: "effects",
-          startMs: at(event.tick),
+          startMs: at(event.tick) + heldMsFor(event.tick, event.ordinal),
           durationMs: DEATH_MS,
           origin: event.at,
           family: familyFor(event.contentId),
@@ -215,7 +228,7 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
         instances.push({
           recipe: "fx.structure.collapse",
           band: "effects",
-          startMs: at(event.tick),
+          startMs: at(event.tick) + heldMsFor(event.tick, event.ordinal),
           durationMs: STRUCTURE_MS,
           origin: event.at,
           family: familyFor(event.contentId),
@@ -233,7 +246,7 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
         instances.push({
           recipe: "fx.blast.detonation",
           band: "effects",
-          startMs: at(event.tick) + order * CASCADE_STAGGER_MS,
+          startMs: at(event.tick) + heldMsFor(event.tick, event.ordinal) + order * CASCADE_STAGGER_MS,
           durationMs: BLAST_MS,
           origin: event.at,
           family: familyFor(event.contentId),

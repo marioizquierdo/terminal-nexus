@@ -415,3 +415,63 @@ test("the glyph pack changes the field and the frame, never the actors", async (
       .join("")
   assert.equal(letters(unicodeFrame), letters(asciiFrame))
 })
+
+
+test("a same-tick ranged kill holds its death and blast until the tracer lands, not before", async () => {
+  // Owner playtest, 2026-08-22: "the timings for shooting and taking damage are much better now...
+  // look for more opportunities to do that, specially when the effect is resolved within the same
+  // turn so it doesn't really affect the gameplay." The kernel resolves a ranged kill in the tick
+  // the shot is launched - attack.launched, damage.applied, entity.died and any entity.detonated it
+  // triggers all carry the same tick - but the impact burst already waits for the flight window
+  // (engine.md 4.3) to end before it plays. The death collapse and any resulting blast did not, so a
+  // unit could visibly explode before its own tracer arrived. citizens-versus-ravels reproduces this
+  // exactly: tick 169, A:marksman#5's shot (flightWindowTicks 2) kills B:runner#6, whose volatile
+  // munitions then catch A:trooper#8.
+  const resolved = await resolveScenario("citizens-versus-ravels.ts")
+  const derived = deriveEffects({
+    states: [],
+    events: resolved.run.events,
+    registry: resolved.registry,
+    ticksPerSecond: 12,
+  })
+  const tickMs = 1000 / 12
+
+  for (const event of resolved.run.events) {
+    if (event.kind !== "attack.launched" || event.attackKind !== "ranged") continue
+    const impactMs = event.tick * tickMs + event.flightWindowTicks * tickMs
+
+    const death = resolved.run.events.find(
+      (candidate): candidate is typeof candidate & { at: { x: number; y: number } } =>
+        (candidate.kind === "entity.died" || candidate.kind === "structure.destroyed") &&
+        candidate.tick === event.tick &&
+        candidate.ordinal === event.targetOrdinal,
+    )
+    if (death === undefined) continue
+
+    const collapse = derived.find(
+      (instance) =>
+        (instance.recipe === "fx.death.collapse" || instance.recipe === "fx.structure.collapse") &&
+        instance.startMs >= impactMs - 1 &&
+        instance.origin.x === death.at.x &&
+        instance.origin.y === death.at.y,
+    )
+    assert.ok(
+      collapse !== undefined,
+      `no death/structure collapse held to the tick-${event.tick} impact beat for ordinal ${event.targetOrdinal}`,
+    )
+    assert.ok(
+      collapse.startMs >= impactMs,
+      `${collapse.recipe} started at ${collapse.startMs}, before its own tracer landed at ${impactMs}`,
+    )
+
+    const blast = derived.find(
+      (instance) => instance.recipe === "fx.blast.detonation" && instance.startMs >= impactMs - 1,
+    )
+    if (blast !== undefined) {
+      assert.ok(
+        blast.startMs >= impactMs,
+        `fx.blast.detonation started at ${blast.startMs}, before its own tracer landed at ${impactMs}`,
+      )
+    }
+  }
+})
