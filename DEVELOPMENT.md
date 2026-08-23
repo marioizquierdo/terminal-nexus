@@ -33,6 +33,10 @@ correct canon work never breaks it. What it enforces:
 - every document under `specs/` and `concept/` declares the same canon version as `specs/README.md`,
   and so does `AGENTS.md`;
 - every such document carries `Document role`, `Status`, `Canon version`, `Updated`, `License`;
+- **except a document that declares `**Status:** Historical`** — a frozen archive nothing may depend
+  on. It still owes the rest of its header and its links are still checked, but it is exempt from the
+  canon version and from the terminology scan below, because an archive edited to use today's words
+  stops being a record of what was actually said;
 - exactly one milestone is `CURRENT`, declares an `Active gate`, and matches the governance ledger;
 - every `Q<n>` referenced anywhere is defined in `specs/open-questions.md`, and every `OPEN` question
   carries a recommendation;
@@ -386,8 +390,8 @@ An audit of the canon against itself, against the concept art, and against curre
 - **`specs/templates/gate-report.md` added** — the fill-in template that closes a gate.
 - **`specs/ascii-art-references.md` added** — researched sources for producing terminal art, with what
   each one is actually good for.
-- **`concept/README.md` added** — concept art index recording, per piece, what it gets right and which
-  canon deltas it implies.
+- **`concept/README.md` added** — index of the concept folder: the early art, the real screenshots
+  that replaced it, and the archived original specification.
 - **`engine.md` Section 11 corrected against measurement** (see below). Sections 6.1, 6.4, 10.2, and
   10.4 now point at the questions they leave open instead of reading as settled.
 - **Corruption law added** to `engine.md` Section 10.4 and `terminal-nexus-lore.md` Section 9,

@@ -148,7 +148,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the workflow and evidence requirements.
 ├── tests/                 The test suite; Node's runner and Bun both run it
 ├── specs/                 Focused canon and milestone contracts
 ├── evidence/              Gate reports and screenshots — what was measured, not just claimed
-├── concept/               Concept art and the canon deltas it implies
+├── concept/               Concept art, real screenshots, and the archived original spec
 ├── docs/                  Human setup and workflow notes
 ├── scripts/               Repository validation and development tooling
 ├── .claude/               Skills for coding agents working in this repository

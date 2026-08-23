@@ -26,6 +26,20 @@ markdown_files() {
     -print | sort
 }
 
+# Canon documents, in the two directories that hold them.
+canon_documents() {
+  find specs concept -type f -name '*.md' -print | sort
+}
+
+# A document that declares itself Historical is a frozen record, not canon. It is kept for
+# provenance, nothing may depend on it, and it is allowed to say what it said at the time: it is
+# exempt from the canon-version agreement and from the retired-terminology scan. It still owes the
+# rest of its metadata header, and its links are still checked, because a dead link in an archive is
+# just as broken.
+is_historical() {
+  sed -n 's/^\*\*Status:\*\* \(.*\)$/\1/p' "$1" | head -1 | grep -Fq 'Historical'
+}
+
 # ---------------------------------------------------------------------------
 # 1. Required files
 # ---------------------------------------------------------------------------
@@ -74,13 +88,14 @@ if [[ -z "$canon_version" ]]; then
   fail "specs/README.md does not declare a canon version"
 else
   while IFS= read -r doc; do
+    is_historical "$doc" && continue
     declared="$(sed -n 's/^\*\*Canon version:\*\* \(.*\)$/\1/p' "$doc" | head -1)"
     if [[ -z "$declared" ]]; then
       fail "$doc does not declare a canon version"
     elif [[ "$declared" != "$canon_version" ]]; then
       fail "$doc declares canon version '$declared'; specs/README.md declares '$canon_version'"
     fi
-  done < <(find specs concept -type f -name '*.md' -print | sort)
+  done < <(canon_documents)
 
   # AGENTS.md restates canon invariants as a summary, so it drifts silently unless it is versioned
   # alongside them.
@@ -98,10 +113,12 @@ fi
 
 while IFS= read -r doc; do
   [[ "$doc" == "specs/README.md" ]] && continue
-  for field in "Document role" "Status" "Canon version" "Updated" "License"; do
+  fields=("Document role" "Status" "Updated" "License")
+  is_historical "$doc" || fields+=("Canon version")
+  for field in "${fields[@]}"; do
     grep -Fq "**${field}:**" "$doc" || fail "$doc is missing the '${field}' metadata field"
   done
-done < <(find specs concept -type f -name '*.md' -print | sort)
+done < <(canon_documents)
 
 # ---------------------------------------------------------------------------
 # 4. Exactly one CURRENT milestone, agreeing with the governance ledger
@@ -192,7 +209,9 @@ grep -Fq '@AGENTS.md' CLAUDE.md || fail "CLAUDE.md must import AGENTS.md"
 # ---------------------------------------------------------------------------
 #
 # A line may quote retired terminology deliberately — the concept-art index has to name what the art
-# says. Mark such a line with the comment <!-- stale-ok --> and it is exempt.
+# says. Mark such a line with the comment <!-- stale-ok --> and it is exempt. A whole document may
+# be exempt too, by declaring itself Historical: an archive that is edited to use today's words
+# stops being a record of what was actually said.
 
 retired_terms=(
   '\bveils?\b'
@@ -202,11 +221,19 @@ retired_terms=(
   'terminal-nexus-spike1\.md'
 )
 
+# `grep -v -f` needs a file of patterns; build one holding a `./path:` prefix per frozen document.
+historical_prefixes="$(mktemp)"
+trap 'rm -f "$historical_prefixes"' EXIT
+while IFS= read -r doc; do
+  is_historical "$doc" && printf './%s:\n' "$doc"
+done < <(canon_documents) > "$historical_prefixes"
+
 for term in "${retired_terms[@]}"; do
   hits="$(grep -RInEi "$term" --include='*.md' --include='*.sh' \
     --exclude-dir='.git' --exclude-dir='node_modules' . 2>/dev/null \
     | grep -v 'stale-ok' \
-    | grep -v '^\./scripts/check-repository\.sh:' || true)"
+    | grep -v '^\./scripts/check-repository\.sh:' \
+    | grep -vFf "$historical_prefixes" -- || true)"
   if [[ -n "$hits" ]]; then
     fail "retired terminology matching '$term':"
     printf '%s\n' "$hits" >&2
