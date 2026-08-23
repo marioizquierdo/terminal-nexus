@@ -32,10 +32,10 @@ correct canon work never breaks it. What it enforces:
 - required files exist;
 - every document under `specs/` and `concept/` declares the same canon version as `specs/README.md`,
   and so does `AGENTS.md`;
-- every such document carries `Document role`, `Status`, `Canon version`, `Updated`, `License`;
-- **except a document that declares `**Status:** Historical`** — a frozen archive nothing may depend
-  on. It still owes the rest of its header and its links are still checked, but it is exempt from the
-  canon version and from the terminology scan below, because an archive edited to use today's words
+- every such document carries `Document role`, `Status`, `Canon version`, `Updated`, `License` —
+  **except a document named in `check-repository.sh`'s `historical_archives` list**, a frozen record
+  nothing may depend on. It still owes its links, but not the metadata header or the canon version,
+  and it is exempt from the terminology scan below, because an archive edited to use today's words
   stops being a record of what was actually said;
 - exactly one milestone is `CURRENT`, declares an `Active gate`, and matches the governance ledger;
 - every `Q<n>` referenced anywhere is defined in `specs/open-questions.md`, and every `OPEN` question
