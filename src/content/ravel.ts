@@ -122,6 +122,28 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     salvage: 9,
   },
   {
+    // Ten tiles of welded scrap — five by two, the widest thing on the bench, and the Ravel answer
+    // to the Citizen colossus: not tougher, just bigger, louder, and carrying enough munitions to
+    // take the block with it. Losing every fair fight is still the doctrine; this one just makes
+    // the unfair one much more expensive.
+    id: "unit.ravel.leviathan",
+    short: "leviathan",
+    layer: "units",
+    footprint: rectFootprint(5, 2),
+    maxHp: 130,
+    // Cadence 18 ticks, off both Citizen cadences (6 and 12, plus the colossus's 24) as the whole
+    // roster is by design.
+    movementRate: { numerator: 2, denominator: 3 },
+    speedTier: 4,
+    attack: { kind: "melee", range: 1, damage: 14, cooldownTicks: 16 },
+    collidesWith: GROUND_UNIT_COLLISIONS,
+    behavior: "advance",
+    salvage: 60,
+    // The largest detonation in the game, and the point of the unit: a radius-2 blast from a
+    // five-tile body reaches most of a formation, friendly or not.
+    detonation: { radius: 2, damage: 24 },
+  },
+  {
     // A Grid Nexus welded out of the same scrap as everything else, and true to the doctrine: when
     // it goes, it goes loudly, and it takes the block with it.
     id: "structure.ravel.nexus",

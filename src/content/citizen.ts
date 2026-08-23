@@ -85,6 +85,31 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     salvage: 22,
   },
   {
+    // The first piece of bench content big enough that its **silhouette** is the identity, not its
+    // letter — three by three, drawn as a sealed head over a braced body over legs
+    // (`src/content/art.ts`). Slow enough that you watch it arrive, and tough enough that arriving
+    // is the whole event.
+    //
+    // It exists to put weight on the parts of the kernel a one-tile actor never touches: a nine-tile
+    // mask against terrain and neighbours, a centre-tile placement two tiles from its own anchor,
+    // and a death collapse that has an area to fill.
+    id: "unit.citizen.colossus",
+    short: "colossus",
+    layer: "units",
+    footprint: rectFootprint(3, 3),
+    maxHp: 160,
+    // Cadence 24 ticks — two seconds a tile, half the hauler's pace and the slowest thing on the
+    // bench. Nothing in the Ravel roster steps on 24 (tests/ravel.test.ts keeps it that way).
+    movementRate: { numerator: 1, denominator: 2 },
+    // Tier 4: it claims tiles and swings after everything else. A siege engine does not win the
+    // initiative roll, it wins by still being there.
+    speedTier: 4,
+    attack: { kind: "melee", range: 1, damage: 18, cooldownTicks: 20 },
+    collidesWith: GROUND_UNIT_COLLISIONS,
+    behavior: "advance",
+    salvage: 45,
+  },
+  {
     id: "structure.citizen.nexus",
     short: "nexus",
     nexus: true,

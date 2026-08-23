@@ -252,10 +252,7 @@ test("a ranged kill's target stays on screen until its own tracer lands", async 
     if (death.tick !== launch.tick || launch.flightWindowTicks <= 0) continue
 
     const definition = resolved.registry.get(death.contentId)
-    const expectedGlyph = entityGlyph(death.contentId, death.player, definition.footprint, {
-      x: 0,
-      y: 0,
-    })
+    const expectedGlyph = entityGlyph(death.contentId, death.player, { x: 0, y: 0 })
     const cellAt = (timeMs: number): string => {
       const frame = view.snapshotAt(timeMs, "monochrome", 1)
       const row = origin.row + death.at.y
