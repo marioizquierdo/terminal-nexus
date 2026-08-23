@@ -4,7 +4,7 @@
 **Status:** CURRENT
 **Active gate:** 1B — quality and effects (built; viewed, encouraging response, not yet formally accepted)
 **Canon version:** 2.6
-**Updated:** 2026-08-21
+**Updated:** 2026-08-23
 **License:** Apache-2.0; authored creative treatments are CC BY-SA 4.0
 
 > **Where this stands, canon 2.6.** Both gates are **built and merged**, and both evidence reports
@@ -267,25 +267,40 @@ freely if the fight is boring — that is what `grid` is for.
 
 | Id | Layer | Footprint | HP | Move | Speed tier | Attack | Range | Damage | Cooldown |
 | --- | --- | --- | ---: | ---: | ---: | --- | ---: | ---: | ---: |
-| `unit.citizen.worker` | `workers` | 1 × 1 | 20 | `1/1` | 2 | — | — | — | — |
-| `unit.citizen.trooper` | `units` | 1 × 1 | 40 | `3/4` | 2 | melee | 1 | 7 | 12 |
-| `unit.citizen.marksman` | `units` | 1 × 1 | 24 | `3/4` | 1 | ranged | 5 | 6 | 24 |
-| `unit.citizen.hauler` | `units` | 3 × 1 | 90 | `1/2` | 3 | melee | 1 | 10 | 18 |
+| `unit.citizen.worker` | `workers` | 1 × 1 | 20 | `3/2` | 2 | — | — | — | — |
+| `unit.citizen.trooper` | `units` | 1 × 1 | 40 | `3/2` | 2 | melee | 1 | 7 | 12 |
+| `unit.citizen.marksman` | `units` | 1 × 1 | 24 | `3/2` | 1 | ranged | 5 | 6 | 24 |
+| `unit.citizen.hauler` | `units` | 3 × 1 | 90 | `3/4` | 3 | melee | 1 | 10 | 18 |
 | `structure.citizen.nexus` | `obstacles` | 3 × 2 | 400 | — | — | — | — | — | — |
 | `structure.citizen.barracks` | `obstacles` | 3 × 2 | 120 | — | — | — | — | — | — |
 
-Lower speed tier resolves first, so the marksman fires before the trooper swings.
+Lower speed tier resolves first, so the marksman fires before the trooper swings. Move is `1/1` for
+the whole roster (`3/4` for the hauler) at Gate 1A; the owner's 2026-08-22 playtest of the finished
+Gate 1B fixture ("units still move too slow... it takes a while to reach initial engagement") is the
+second speed pass on top of Gate 1A's own first one, and this table now carries the rate the fixture
+actually ships, not the rate it launched with — `src/content/citizen.ts` and `src/content/ravel.ts`
+are the source of truth if the two ever drift again.
 
 The numbers make the relationship **visible without a spreadsheet**:
 
-- A trooper crossing a marksman's five tiles takes about 6.7 seconds and eats three shots, arriving at
-  22 of 40 health. It then kills the marksman while taking **one** more. **One trooper beats one
-  marksman and finishes at 16 of 40** — measured, in `scenarios/trooper-versus-marksman.ts`. The
-  first half of that sentence is exact; the ending was a shot out, and this is the corrected number.
-- Two marksmen land six shots during that same approach. **The trooper arrives at 4 health and dies.**
-  Exact, and asserted in `tests/scenario.test.ts`.
+- A trooper crossing a marksman's five tiles eats three shots, arriving at 22 of 40 health, then kills
+  the marksman without taking another hit — the faster close leaves the marksman's 24-tick cooldown no
+  time for a fourth shot. **One trooper beats one marksman and finishes at 22 of 40** — measured, in
+  `scenarios/trooper-versus-marksman.ts`.
+- Two marksmen against one trooper no longer demonstrates a clean ranged kill: the same faster close
+  that helps the 1v1 case above also lets the trooper reach melee before dying, kill the marksman it
+  reaches, and only then lose to the second marksman's ranged fire. **Two marksmen still beat one
+  trooper, but now lose one of their own to do it** — measured, in `scenarios/ranged-kill.ts`, and
+  true at every approach distance tried, since it is the last four tiles (marksman range down to
+  melee range), not the distance closed to get there, that decides it. This is a real, disclosed side
+  effect of the speed pass rather than a re-tuned outcome: fixing it would mean touching attack or
+  cooldown numbers the playtest never asked to change, and the content is disposable exactly so this
+  kind of retune can happen without ceremony.
 
-Melee wins the charge; ranged wins when massed. A viewer can learn that by watching twice.
+Melee wins the charge, both fights agree on that; the second no longer teaches "ranged wins when
+massed" as cleanly as it did before the speed pass. Worth a follow-up look if that specific lesson
+matters to keep intact — it is a content-balance question, not a rule question, so it stays with the
+fixture rather than blocking anything.
 
 **`unit.citizen.hauler` is the multi-tile mover**, and it is in the fixture on purpose. A three-tile
 unit squeezing between rock formations is the case that breaks a collision system written for

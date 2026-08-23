@@ -294,7 +294,9 @@ test("effects are derived from the event stream, and turning them off changes on
   assert.equal(without.effectCount, 0)
   assert.equal(withEffects.timeline.stateHash, without.timeline.stateHash)
 
-  const timeMs = 48 * (1000 / 12) + 40
+  // Tick 37, not 48: the 2026-08-22 speed pass (owner playtest, "units still move too slow") moved
+  // the cascade's first blast earlier, since every mover in the fixture reaches contact sooner.
+  const timeMs = 37 * (1000 / 12) + 40
   assert.notEqual(
     frameToText(withEffects.snapshotAt(timeMs, "monochrome", 1)),
     frameToText(without.snapshotAt(timeMs, "monochrome", 1)),

@@ -22,7 +22,12 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     layer: "workers",
     footprint: rectFootprint(1, 1),
     maxHp: 20,
-    movementRate: { numerator: 1, denominator: 1 },
+    // 3/2 rather than 1/1 - owner playtest, 2026-08-22: even after the earlier 3/4 -> 1/1 bump,
+    // "units still move too slow... it takes a while to reach initial engagement." Every fixture
+    // rate below is the same rate x 1.5, so every ratio this content was tuned against - trooper vs
+    // marksman, Citizen vs Ravel, hauler as the slow one - holds exactly; the whole army just gets
+    // there faster. Cadence 8 ticks/step (engine.md 4.1's own table), 2/3 of a second at 12 Hz.
+    movementRate: { numerator: 3, denominator: 2 },
     speedTier: 2,
     collidesWith: WORKER_COLLISIONS,
     behavior: "flee",
@@ -34,9 +39,10 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(1, 1),
     maxHp: 40,
-    // 1/1 rather than 3/4 - owner playtest: the opening approach read as sluggish, and a trooper is
-    // the unit most players spend the most time watching. Disposable bench content, tuned freely.
-    movementRate: { numerator: 1, denominator: 1 },
+    // 3/2 rather than 1/1 - see unit.citizen.worker above: a second speed pass, same 1.5x scaling,
+    // same 2026-08-22 owner playtest. A trooper is the unit most players spend the most time
+    // watching. Disposable bench content, tuned freely.
+    movementRate: { numerator: 3, denominator: 2 },
     speedTier: 2,
     attack: { kind: "melee", range: 1, damage: 7, cooldownTicks: 12 },
     collidesWith: GROUND_UNIT_COLLISIONS,
@@ -49,8 +55,8 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(1, 1),
     maxHp: 24,
-    // 1/1 rather than 3/4 - same owner finding as the trooper above.
-    movementRate: { numerator: 1, denominator: 1 },
+    // 3/2 rather than 1/1 - same 1.5x speed pass as the trooper above.
+    movementRate: { numerator: 3, denominator: 2 },
     speedTier: 1,
     attack: { kind: "ranged", range: 5, damage: 6, cooldownTicks: 24, projectileTilesPerTick: 3 },
     collidesWith: GROUND_UNIT_COLLISIONS,
@@ -65,7 +71,10 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(3, 1),
     maxHp: 90,
-    movementRate: { numerator: 1, denominator: 2 },
+    // 3/4 rather than 1/2 - the same 1.5x speed pass as the rest of the roster (2026-08-22 owner
+    // playtest); the hauler stays the slowest thing on either side, exactly half the new trooper
+    // rate, same as it was half the old one. Cadence 16 ticks/step (engine.md 4.1's table).
+    movementRate: { numerator: 3, denominator: 4 },
     speedTier: 3,
     attack: { kind: "melee", range: 1, damage: 10, cooldownTicks: 18 },
     collidesWith: GROUND_UNIT_COLLISIONS,
