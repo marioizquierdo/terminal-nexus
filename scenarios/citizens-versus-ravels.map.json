@@ -1,0 +1,113 @@
+{
+  "id": "citizens-versus-ravels",
+  "name": "Citizens versus Ravels - the ruined middle",
+  "notes": "The first asymmetric fixture, on the default 48x16 preset - the one the whole composition is derived from, so the Grid fills the viewport exactly. Ten Citizens against eleven Ravels, each in front of a Grid Nexus: fewer and tougher on one cadence against more, faster, off the beat, and mostly explosive. Neither roster is a Commander Army; both are disposable bench content, and the point is contrast rather than balance. Both sides are staggered across columns on purpose - with every unit on one rank an entire army targets one enemy, because at long range every enemy is equidistant in Chebyshev and the tie breaks on entity id (Q17).",
+  "grid": {
+    "preset": "medium-extra-wide"
+  },
+  "seed": 45057,
+  "pulseTicks": 720,
+  "terrain": [
+    "................................................",
+    "................................................",
+    "....................##..........................",
+    "....................##..........##..............",
+    "....................##..........##..............",
+    "................................................",
+    ".........................*###...................",
+    ".......................*..###...................",
+    "...............##.......*.......................",
+    "...............##......*........................",
+    "................................................",
+    ".....................##.........................",
+    ".....................##........##...............",
+    ".....................##........##...............",
+    "................................................",
+    "................................................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 2,
+        "y": 2
+      },
+      "rows": [
+        "w",
+        "",
+        "       t",
+        "     m",
+        "         t",
+        "n   h",
+        "",
+        "         t",
+        "     m",
+        "       t",
+        "",
+        "w"
+      ],
+      "legend": {
+        "w": {
+          "content": "unit.citizen.worker"
+        },
+        "t": {
+          "content": "unit.citizen.trooper"
+        },
+        "m": {
+          "content": "unit.citizen.marksman"
+        },
+        "n": {
+          "content": "structure.citizen.nexus"
+        },
+        "h": {
+          "content": "unit.citizen.hauler"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 35,
+        "y": 2
+      },
+      "rows": [
+        " x",
+        "",
+        "        z",
+        "   x       s",
+        "",
+        "       >  r",
+        "",
+        "x",
+        "",
+        "       z",
+        "    x",
+        "          v",
+        "  x"
+      ],
+      "legend": {
+        "x": {
+          "content": "unit.ravel.runner"
+        },
+        "z": {
+          "content": "unit.ravel.slinger"
+        },
+        "s": {
+          "content": "unit.ravel.scav"
+        },
+        ">": {
+          "content": "unit.ravel.raider"
+        },
+        "r": {
+          "content": "structure.ravel.nexus"
+        },
+        "v": {
+          "content": "unit.ravel.fuelwagon"
+        }
+      }
+    }
+  }
+}

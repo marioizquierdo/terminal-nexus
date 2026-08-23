@@ -1,5 +1,5 @@
 export type ParsedArgs = Readonly<{
-  command: string
+  /** `positional[0]` is the map file path when one was given; there is no subcommand any more. */
   positional: readonly string[]
   options: ReadonlyMap<string, string>
   flags: ReadonlySet<string>
@@ -8,15 +8,15 @@ export type ParsedArgs = Readonly<{
 const VALUE_OPTIONS = new Set([
   "seed",
   "ticks",
+  "turn",
   "log-level",
+  "save-log",
   "events",
   "runs",
   "capability",
   "tile-width",
   "speed",
   "backend",
-  "frames",
-  "at",
   "cosmetic-seed",
   "glyphs",
   "theme",
@@ -46,8 +46,7 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
     }
   }
 
-  const [command = "help", ...rest] = positional
-  return { command, positional: rest, options, flags }
+  return { positional, options, flags }
 }
 
 function splitOnce(value: string, separator: string): [string, string] {

@@ -144,7 +144,7 @@ test("every effect paints in a legal band, and never in one the simulation owns"
       `${instance.recipe} paints in ${instance.band}`,
     )
   }
-  const resolved = await resolveScenario("citizens-versus-ravels.ts")
+  const resolved = await resolveScenario("citizens-versus-ravels.map.json")
   const derived = deriveEffects({
     states: [],
     events: resolved.run.events,
@@ -249,7 +249,7 @@ test("cosmetic randomness is a hash, not a stream: the same instance always scat
 
 test("the cosmetic seed cannot reach the kernel", async () => {
   // The load-bearing separation: presentation randomness must not perturb a single hash.
-  const scenario = await loadScenarioFile("citizens-versus-ravels.ts")
+  const scenario = await loadScenarioFile("citizens-versus-ravels.map.json")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
   const timeline = buildTimeline(
     scenario,
@@ -279,7 +279,7 @@ test("the cosmetic seed cannot reach the kernel", async () => {
 })
 
 test("effects are derived from the event stream, and turning them off changes only the picture", async () => {
-  const scenario = await loadScenarioFile("ravel-cascade.ts")
+  const scenario = await loadScenarioFile("ravel-cascade.map.json")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
   const timeline = buildTimeline(
     scenario,
@@ -304,7 +304,7 @@ test("effects are derived from the event stream, and turning them off changes on
 })
 
 test("composed frames stay inside the Grid, one ASCII cell each, at every render tier", async () => {
-  for (const name of ["citizens-versus-ravels.ts", "ravel-cascade.ts", "citizen-mirror-skirmish.ts"]) {
+  for (const name of ["citizens-versus-ravels.map.json", "ravel-cascade.map.json", "citizen-mirror-skirmish.map.json"]) {
     const scenario = await loadScenarioFile(name)
     const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
     const timeline = buildTimeline(
@@ -330,9 +330,9 @@ test("composed frames stay inside the Grid, one ASCII cell each, at every render
 })
 
 test("every render tier shows the same Pulse, and only monochrome shows no colour", async () => {
-  const resolved = await resolveScenario("citizens-versus-ravels.ts")
+  const resolved = await resolveScenario("citizens-versus-ravels.map.json")
   void resolved
-  const scenario = await loadScenarioFile("citizens-versus-ravels.ts")
+  const scenario = await loadScenarioFile("citizens-versus-ravels.map.json")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
   const timeline = buildTimeline(
     scenario,
@@ -384,7 +384,7 @@ test("every scenario derives effects without inventing a recipe", async () => {
 })
 
 test("the glyph pack changes the field and the frame, never the actors", async () => {
-  const scenario = await loadScenarioFile("citizens-versus-ravels.ts")
+  const scenario = await loadScenarioFile("citizens-versus-ravels.map.json")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
   const timeline = buildTimeline(
     scenario,
@@ -429,7 +429,7 @@ test("a same-tick ranged kill holds its death and blast until the tracer lands, 
   // unit could visibly explode before its own tracer arrived. citizens-versus-ravels reproduces this
   // exactly: tick 169, A:marksman#5's shot (flightWindowTicks 2) kills B:runner#6, whose volatile
   // munitions then catch A:trooper#8.
-  const resolved = await resolveScenario("citizens-versus-ravels.ts")
+  const resolved = await resolveScenario("citizens-versus-ravels.map.json")
   const derived = deriveEffects({
     states: [],
     events: resolved.run.events,

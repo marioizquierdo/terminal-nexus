@@ -40,7 +40,7 @@ test("Ravels claim and swing before Citizens of the same role", () => {
 })
 
 test("volatile munitions damage friend and foe alike", async () => {
-  const resolved = await resolveScenario("citizens-versus-ravels.ts")
+  const resolved = await resolveScenario("citizens-versus-ravels.map.json")
   const blasts = resolved.run.events.filter((event) => event.kind === "entity.detonated")
   assert.ok(blasts.length > 3, "nothing detonated in the asymmetric fixture")
 
@@ -60,7 +60,7 @@ test("volatile munitions damage friend and foe alike", async () => {
 test("a detonation is announced after the death that caused it", async () => {
   // A reader of the event stream should see the entity die and then take its neighbours with it,
   // in that order, within the tick.
-  const resolved = await resolveScenario("ravel-cascade.ts")
+  const resolved = await resolveScenario("ravel-cascade.map.json")
   const events = resolved.run.events
   for (const [index, event] of events.entries()) {
     if (event.kind !== "entity.detonated") continue
@@ -77,7 +77,7 @@ test("a detonation is announced after the death that caused it", async () => {
 })
 
 test("chains are bounded: nothing detonates twice, and the cascade resolves inside one tick", async () => {
-  const resolved = await resolveScenario("ravel-cascade.ts")
+  const resolved = await resolveScenario("ravel-cascade.map.json")
   const blasts = resolved.run.events.filter((event) => event.kind === "entity.detonated")
   const seen = new Set<number>()
   for (const blast of blasts) {
@@ -108,7 +108,7 @@ test("a Grid Nexus is a flag on the definition, not a content id the kernel know
   assert.equal(FIXTURE_REGISTRY.get("structure.ravel.den").nexus, undefined)
 
   // Destroying either one ends a Pulse; Gate 1A only ever proved it for the Citizen id.
-  const resolved = await resolveScenario("structure-destruction.ts")
+  const resolved = await resolveScenario("structure-destruction.map.json")
   assert.equal(resolved.run.finalState.outcome?.reason, "nexus-destroyed")
 })
 

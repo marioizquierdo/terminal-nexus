@@ -1,0 +1,60 @@
+{
+  "id": "melee-kill",
+  "name": "Melee kill - two troopers close on one",
+  "notes": "Two Citizen troopers walk into contact and kill a single defender. The rule: melee is an attempt to enter a tile an enemy holds, and damage inside one speed tier applies simultaneously.",
+  "grid": {
+    "preset": "small-wide"
+  },
+  "seed": 40961,
+  "pulseTicks": 180,
+  "terrain": [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 10,
+        "y": 5
+      },
+      "rows": [
+        "t",
+        "t"
+      ],
+      "legend": {
+        "t": {
+          "content": "unit.citizen.trooper"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 13,
+        "y": 5
+      },
+      "rows": [
+        "t"
+      ],
+      "legend": {
+        "t": {
+          "content": "unit.citizen.trooper"
+        }
+      }
+    }
+  }
+}

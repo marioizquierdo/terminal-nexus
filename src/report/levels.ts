@@ -1,4 +1,4 @@
-// Log levels — milestone-1-spike-battle.md 3.3. Default INFO.
+// Log levels — milestone-1-spike-battle.md 3.3. `grid`'s CLI defaults to WARN.
 
 export type LogLevel = "ERROR" | "WARN" | "INFO" | "DEBUG" | "TRACE"
 

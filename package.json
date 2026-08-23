@@ -14,14 +14,7 @@
     "test": "./scripts/run-tests.sh node",
     "test:bun": "./scripts/run-tests.sh bun",
     "grid": "node bin/grid.ts",
-    "play": "./bin/grid.ts watch scenarios/citizens-versus-ravels.ts --glyphs unicode --capability truecolor",
-    "play:mono": "./bin/grid.ts watch scenarios/citizens-versus-ravels.ts --capability monochrome",
-    "play:cascade": "./bin/grid.ts watch scenarios/ravel-cascade.ts --glyphs unicode --capability truecolor --speed 0.5",
-    "play:plain": "./bin/grid.ts watch scenarios/citizens-versus-ravels.ts --no-effects --glyphs unicode --capability truecolor",
-    "play:light": "./bin/grid.ts watch scenarios/citizens-versus-ravels.ts --glyphs unicode --capability truecolor --theme light",
-    "play:parade": "./bin/grid.ts watch scenarios/speed-parade.ts --glyphs unicode --capability truecolor",
-    "play:grand": "./bin/grid.ts watch scenarios/grand-battle.ts --glyphs unicode --capability truecolor",
-    "scenarios": "ls scenarios/*.ts"
+    "maps": "ls scenarios/*.map.json"
   },
   "devDependencies": {
     "@types/node": "22.20.1",

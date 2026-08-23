@@ -2,12 +2,12 @@
 
 import { readdirSync } from "node:fs"
 import { dirname, join, resolve as resolvePath } from "node:path"
-import { fileURLToPath, pathToFileURL } from "node:url"
+import { fileURLToPath } from "node:url"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { ContentRegistry } from "../src/content/index.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
 import type { PulseRun } from "../src/pulse/index.ts"
-import { loadScenario } from "../src/scenario/index.ts"
+import { loadMapFile, loadScenario } from "../src/scenario/index.ts"
 import type { ScenarioDefinition } from "../src/scenario/index.ts"
 import type { ReportInput } from "../src/report/index.ts"
 
@@ -22,13 +22,12 @@ export const SCENARIO_DIR = join(REPO_ROOT, "scenarios")
 
 export function scenarioFiles(): string[] {
   return readdirSync(SCENARIO_DIR)
-    .filter((name) => name.endsWith(".ts"))
+    .filter((name) => name.endsWith(".map.json"))
     .sort()
 }
 
 export async function loadScenarioFile(name: string): Promise<ScenarioDefinition> {
-  const module: unknown = await import(pathToFileURL(join(SCENARIO_DIR, name)).href)
-  return (module as { default: ScenarioDefinition }).default
+  return loadMapFile(join(SCENARIO_DIR, name))
 }
 
 export type Resolved = Readonly<{

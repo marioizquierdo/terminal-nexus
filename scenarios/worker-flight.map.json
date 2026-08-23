@@ -1,0 +1,59 @@
+{
+  "id": "worker-flight",
+  "name": "Worker flight - a worker runs from a marksman",
+  "notes": "A hostile attacker inside range + 2 sends the worker away from it. With no friendly Grid Nexus on the Grid it flees directly away from the nearest threat (Q13), outruns a slower marksman, and is finally cornered against the east edge.",
+  "grid": {
+    "preset": "small-wide"
+  },
+  "seed": 40964,
+  "pulseTicks": 480,
+  "terrain": [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 2,
+        "y": 5
+      },
+      "rows": [
+        "r"
+      ],
+      "legend": {
+        "r": {
+          "content": "unit.citizen.marksman"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 6,
+        "y": 5
+      },
+      "rows": [
+        "w"
+      ],
+      "legend": {
+        "w": {
+          "content": "unit.citizen.worker"
+        }
+      }
+    }
+  }
+}

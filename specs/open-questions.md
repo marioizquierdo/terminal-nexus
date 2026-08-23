@@ -2,7 +2,7 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.6
+**Canon version:** 2.7
 **Updated:** 2026-08-21
 **License:** Apache-2.0
 
@@ -242,7 +242,7 @@ paces.
 around tick 200 got stuck: `t▓▓X`. The pathfinding algorithm is failing here." That is this exact
 failure — a trooper and a runner squared off on the same row across a two-tile rock, each one's only
 distance-closing direction pointed straight into it, and neither ever tried the one-tile detour that
-would have cleared it. `scenarios/on-axis-deadlock.ts` isolates it to two entities and one line of
+would have cleared it. `scenarios/on-axis-deadlock.map.json` isolates it to two entities and one line of
 log (`tests/report.test.ts` asserts it fires the `WARN stuck` recommendation A already calls for);
 `tests/report.test.ts` also asserts, across every checked-in scenario, that no `stuck` warning ever
 reports an impassable tile as an actor's own position — a second, smaller bug this same investigation
@@ -282,8 +282,8 @@ question behind that RULE directly: "How can we color mirror-matches? make sure 
 vs citizen and ravel vs ravel" — and floated "their secondary colour" and, further out, a full
 skins system with a player-chosen third colour.
 
-Made observable this session: `ravel-mirror-skirmish.ts` is the Ravel counterpart to the existing
-`citizen-mirror-skirmish.ts`, and a truecolor capture of it is what the RULE actually produces —
+Made observable this session: `ravel-mirror-skirmish.map.json` is the Ravel counterpart to the existing
+`citizen-mirror-skirmish.map.json`, and a truecolor capture of it is what the RULE actually produces —
 player A's Ravels in Citizen rust orange, player B's Ravels in Ravel green, because ownership colour
 is hardcoded per player slot, not derived from the roster each side happens to be playing. The two
 armies **are** clearly distinguishable — that half of the ask already works, and is what the RULE

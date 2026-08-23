@@ -58,8 +58,8 @@ jobs:
       - name: Test on Bun
         run: npm run test:bun
 
-      - name: Verify every scenario resolves identically
+      - name: Verify every map resolves identically
         run: |
-          for scenario in scenarios/*.ts; do
-            ./bin/grid.ts verify "$scenario" --runs 20
+          for map in scenarios/*.map.json; do
+            ./bin/grid.ts "$map" --verify --runs 20
           done

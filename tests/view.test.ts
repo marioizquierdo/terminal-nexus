@@ -18,6 +18,7 @@ import {
   offendingGlyph,
 } from "../src/view/index.ts"
 import type { CapabilityMode, PulseTimeline, TileWidth } from "../src/view/index.ts"
+import type { PlayerId } from "../src/state/types.ts"
 import { loadScenarioFile, scenarioFiles } from "./helpers.ts"
 
 async function timelineFor(name: string): Promise<PulseTimeline> {
@@ -27,7 +28,7 @@ async function timelineFor(name: string): Promise<PulseTimeline> {
 }
 
 test("frames are exactly the composition size, at both tile widths", async () => {
-  const timeline = await timelineFor("citizen-mirror-skirmish.ts")
+  const timeline = await timelineFor("citizen-mirror-skirmish.map.json")
   const view = createView(timeline)
   for (const tileWidth of [1, 2] as const) {
     const size = compositionSize(tileWidth)
@@ -53,7 +54,7 @@ test("every glyph in every scenario is one printable ASCII cell", async () => {
 })
 
 test("identical arguments produce identical frames, and skipping frames changes nothing", async () => {
-  const view = createView(await timelineFor("citizen-mirror-skirmish.ts"))
+  const view = createView(await timelineFor("citizen-mirror-skirmish.map.json"))
   const times = [0, 137.5, 1000, 4321.9, 9999]
   const once = times.map((time) => frameToText(view.snapshotAt(time, "color16", 1)))
 
@@ -71,16 +72,16 @@ test("at a tick boundary every entity stands on the tile the kernel put it on", 
   // The check that catches a compositor with a transposed axis or an off-by-one band: it would pass
   // every other test in this file while drawing a deterministic, correctly sized picture of the
   // wrong fight. Asserted against the event stream, not against the compositor's own inputs.
-  for (const name of ["citizen-mirror-skirmish.ts", "hauler-three-tile-gap.ts"]) {
+  for (const name of ["citizen-mirror-skirmish.map.json", "hauler-three-tile-gap.map.json"]) {
     const timeline = await timelineFor(name)
     const view = createView(timeline)
     const positions = new Map<number, { x: number; y: number }>()
-    const alive = new Map<number, string>()
+    const alive = new Map<number, { contentId: string; player: PlayerId }>()
 
     for (const event of timeline.events) {
       if (event.kind === "entity.spawned") {
         positions.set(event.ordinal, event.at)
-        alive.set(event.ordinal, event.contentId)
+        alive.set(event.ordinal, { contentId: event.contentId, player: event.player })
       }
     }
 
@@ -97,19 +98,25 @@ test("at a tick boundary every entity stands on the tile the kernel put it on", 
       if (tick % 7 !== 0 && tick !== view.lastTick) continue
 
       const frame = view.snapshotAt(tick * view.tickDurationMs, "monochrome", 1)
-      for (const [ordinal, contentId] of alive) {
+      for (const [ordinal, { contentId, player }] of alive) {
         const anchor = positions.get(ordinal)
         if (anchor === undefined) continue
         const definition = FIXTURE_REGISTRY.get(contentId)
-        for (const tile of tilesOf(anchor, definition.footprint)) {
-          const cell = frame.cells[
-            (origin.row + tile.y) * frame.width + (origin.column + tile.x)
-          ]
-          assert.ok(cell !== undefined, `${name}: no cell at ${tile.x},${tile.y}`)
-          assert.ok(
-            /[A-Za-z()]/.test(cell.glyph),
-            `${name}: tick ${tick}: entity #${ordinal} is not drawn at (${tile.x},${tile.y}); ` +
-              `that cell holds "${cell.glyph}"`,
+        for (const offset of definition.footprint) {
+          const tileX: number = anchor.x + offset.x
+          const tileY: number = anchor.y + offset.y
+          const cell = frame.cells[(origin.row + tileY) * frame.width + (origin.column + tileX)]
+          assert.ok(cell !== undefined, `${name}: no cell at ${tileX},${tileY}`)
+          // The exact glyph the art table says belongs on this tile of this body, not merely
+          // "something letter-shaped": the old character class had to be widened by hand every time
+          // a unit was drawn with a new symbol, and a class wide enough to cover `[b]`, `/_\` and
+          // `<*=*>` stops excluding much of anything. The corruption law guarantees no effect can
+          // overwrite it (engine.md 9.4), so this is exact.
+          assert.equal(
+            cell.glyph,
+            entityGlyph(contentId, player, offset),
+            `${name}: tick ${tick}: entity #${ordinal} (${contentId}) is drawn wrong at ` +
+              `(${tileX},${tileY})`,
           )
         }
       }
@@ -160,7 +167,7 @@ test("the resize gate is drawn below the composition size", () => {
 })
 
 test("the compositor only ever emits roles from the committed vocabulary", async () => {
-  const view = createView(await timelineFor("structure-destruction.ts"))
+  const view = createView(await timelineFor("structure-destruction.map.json"))
   const frame = view.snapshotAt(view.durationMs * 0.9, "color16", 1)
   const roles = new Set<string>()
   for (const cell of frame.cells) {
@@ -187,7 +194,7 @@ test("the view and the headless run agree on the fight they describe", async () 
 })
 
 test("interpolation is presentation only: a mid-tick frame never changes the timeline", async () => {
-  const timeline = await timelineFor("citizen-mirror-skirmish.ts")
+  const timeline = await timelineFor("citizen-mirror-skirmish.map.json")
   const view = createView(timeline)
   const before = timeline.states.map((state) => state.tick).join(",")
   const tick = 100
@@ -203,7 +210,7 @@ test("interpolation is presentation only: a mid-tick frame never changes the tim
 })
 
 test("tile width two draws the same tiles, twice as wide", async () => {
-  const view = createView(await timelineFor("melee-kill.ts"))
+  const view = createView(await timelineFor("melee-kill.map.json"))
   const capability: CapabilityMode = "monochrome"
   const narrow = view.snapshotAt(2000, capability, 1 as TileWidth)
   const wide = view.snapshotAt(2000, capability, 2 as TileWidth)
@@ -227,8 +234,8 @@ test("a ranged kill's target stays on screen until its own tracer lands", async 
   // the target's own glyph is still drawn through the hold, then gone the instant the impact beat
   // that fx.death.collapse/fx.impact.burst already wait for arrives.
   const { resolveScenario } = await import("./helpers.ts")
-  const resolved = await resolveScenario("citizens-versus-ravels.ts")
-  const timeline = await timelineFor("citizens-versus-ravels.ts")
+  const resolved = await resolveScenario("citizens-versus-ravels.map.json")
+  const timeline = await timelineFor("citizens-versus-ravels.map.json")
   const view = createView(timeline)
   const tickMs = view.tickDurationMs
   const origin = gridOrigin(timeline.grid, 1)

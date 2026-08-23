@@ -2,8 +2,8 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.6
-**Updated:** 2026-08-21
+**Canon version:** 2.7
+**Updated:** 2026-08-23
 **License:** Apache-2.0
 
 ## 0. How to read this document
@@ -942,21 +942,24 @@ plus metadata; armies, units, structures, upgrades, themes, and glyphs as valida
 effects as typed functions; cutscenes as tableaux and timelines; missions as map, army, objective,
 trigger, and scene definitions.
 
-**`grid`** — a scenario file plus a CLI that defines a Grid, places entities, takes a seed and a tick
-count, runs or steps a Pulse, and reports what happened — is worth building **first**, not
+**`grid`** — a `.map.json` map file plus a CLI that defines a Grid, places entities, takes a seed and a
+tick count, runs or steps a Pulse, and reports what happened — is worth building **first**, not
 eventually. It is the fastest feedback loop the project will have, for humans and agents alike, and
 it is permanent infrastructure rather than spike residue: every future unit gets tested on it. It
 grew out of Milestone 1's Pulse Playground and stayed the engine's own name — `grid` is the editor
 and replay tool, not the game; a future `terminal-nexus` executable is what launches a campaign
 built on it. What "replay tool" means concretely — reading and writing a persisted, levelled game
-log rather than only resolving a scenario file fresh each time — is designed, not built, in
+log rather than only resolving a map fresh each time — is designed, not built, in
 [`replay-format.md`](replay-format.md).
 
-Two outputs, and the split matters. A **levelled log on stderr** (default `INFO`) carries the story of
-the run in fixed, greppable columns, so an agent can assert on behaviour without parsing prose and a
-designer can read what happened. A **summary on stdout** carries the outcome, the losses, and the
-hashes. `grid run x.ts > report.txt 2> run.log` separates them; by default they interleave in
-the terminal, which is what a person wants. See
+There is no subcommand: `grid <map>` takes a path to a `.map.json` file (the suffix is optional) and
+defaults to `watch`, the ASCII view; `--headless` resolves without a terminal and `--verify`
+re-resolves 10 times and fails on any hash disagreement. One output stream, not two — a headless
+run's **levelled log** (default `WARN`) carries the story in fixed, greppable columns, closed by a
+`report` line carrying the outcome, the losses, and the hashes, so an agent can assert on behaviour
+without parsing prose and a designer can read what happened without a second stream to catch.
+`--save-log <file>` writes the same lines to a file in any action, and `--turn <tick>` seeks straight
+to a tick instead of playing from the start, in `watch`, `--headless`, and `--verify` alike. See
 [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) Section 3.3.
 
 This is **modding-first architecture, not mod-loader-first development.** No public SDK, remote

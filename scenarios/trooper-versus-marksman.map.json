@@ -1,0 +1,59 @@
+{
+  "id": "trooper-versus-marksman",
+  "name": "One trooper, one marksman",
+  "notes": "The relationship milestone 3.6 says the fixture numbers should make visible without a spreadsheet: one trooper beats one marksman and finishes at about a quarter health. If this fixture stops agreeing with that sentence, one of the two is wrong.",
+  "grid": {
+    "preset": "small-wide"
+  },
+  "seed": 40974,
+  "pulseTicks": 240,
+  "terrain": [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 4,
+        "y": 5
+      },
+      "rows": [
+        "t"
+      ],
+      "legend": {
+        "t": {
+          "content": "unit.citizen.trooper"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 12,
+        "y": 5
+      },
+      "rows": [
+        "r"
+      ],
+      "legend": {
+        "r": {
+          "content": "unit.citizen.marksman"
+        }
+      }
+    }
+  }
+}

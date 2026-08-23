@@ -14,6 +14,7 @@ import type { LogLine } from "./format.ts"
 import { includesLevel } from "./levels.ts"
 import type { LogLevel } from "./levels.ts"
 import { replayEvents } from "./replay.ts"
+import { reportLineDetail, summarize } from "./summary.ts"
 
 /** An actor with no legal step for this many consecutive ticks is worth a WARN. */
 export const STUCK_TICKS = 24
@@ -323,6 +324,16 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
       for (const line of traceLines(input, tick)) lines.push(line)
     }
   }
+
+  // One WARN line, always last: the same outcome/losses/hashes `formatSummary` prints, folded into
+  // the levelled log so a single stream carries the whole story (milestone-1-spike-battle.md 3.3).
+  emit({
+    tick: input.finalState.tick,
+    level: "WARN",
+    kind: "report",
+    subject: input.scenarioId,
+    detail: reportLineDetail(summarize(input)),
+  })
 
   return lines
 }

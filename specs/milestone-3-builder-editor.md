@@ -2,7 +2,7 @@
 
 **Document role:** Future milestone contract; expand before implementation
 **Status:** GATED
-**Canon version:** 2.6
+**Canon version:** 2.7
 **Updated:** 2026-08-20
 **License:** Apache-2.0; creative test content is CC BY-SA 4.0
 

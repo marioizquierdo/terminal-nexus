@@ -239,8 +239,8 @@ test("the loader fails loudly, naming the offending line and column", () => {
   }
 })
 
-test("defineScenario does no work, so a scenario file is safe to import from a test", async () => {
-  const scenario = await loadScenarioFile("citizen-mirror-skirmish.ts")
+test("a .map.json file loads as plain data, safely, from a test", async () => {
+  const scenario = await loadScenarioFile("citizen-mirror-skirmish.map.json")
   assert.equal(scenario.id, "citizen-mirror-skirmish")
   assert.equal(scenario.terrain.length, 12)
   assert.equal(scenario.terrain[0]?.length, 24)
@@ -248,7 +248,7 @@ test("defineScenario does no work, so a scenario file is safe to import from a t
 
 test("at least ten named scenario files exist, plus the mirror skirmish", () => {
   const files = scenarioFiles()
-  assert.ok(files.includes("citizen-mirror-skirmish.ts"))
+  assert.ok(files.includes("citizen-mirror-skirmish.map.json"))
   assert.ok(
     files.length >= 11,
     `only ${files.length} scenarios exist; the gate asks for ten plus the mirror`,
@@ -258,13 +258,13 @@ test("at least ten named scenario files exist, plus the mirror skirmish", () => 
 test("every scenario file loads, and its id matches its file name", async () => {
   for (const name of scenarioFiles()) {
     const scenario = await loadScenarioFile(name)
-    assert.equal(`${scenario.id}.ts`, name, `${name} declares the id "${scenario.id}"`)
+    assert.equal(`${scenario.id}.map.json`, name, `${name} declares the id "${scenario.id}"`)
     assert.doesNotThrow(() => loadScenario(scenario, { registry: FIXTURE_REGISTRY }), name)
   }
 })
 
 test("melee-kill: a defender dies to melee and the attackers survive", async () => {
-  const resolved = await resolveScenario("melee-kill.ts")
+  const resolved = await resolveScenario("melee-kill.map.json")
   const deaths = resolved.run.events.filter((event) => event.kind === "entity.died")
   assert.equal(deaths.length, 1)
   assert.equal(deaths[0]?.player, "B")
@@ -287,7 +287,7 @@ test("ranged-kill: the fixture's own arithmetic, after two 2026-08-22 speed pass
   // disclosed side effect of the speed changes rather than re-tuned back, same reasoning as the
   // first pass: fixing it would mean touching combat numbers nobody asked to change, and this is
   // exactly the kind of retune milestone 3.6 says fixture content is for.
-  const resolved = await resolveScenario("ranged-kill.ts")
+  const resolved = await resolveScenario("ranged-kill.map.json")
   const shots = resolved.run.events.filter(
     (event) => event.kind === "attack.launched" && event.attackKind === "ranged",
   )
@@ -320,7 +320,7 @@ test("trooper-versus-marksman: melee wins the charge, at a measured cost", async
   // too slow"), because the faster trooper closes the marksman's cooldown-24 firing window in fewer
   // ticks: the marksman gets zero more shots in after the trooper arrives, not one, so the trooper
   // finishes the fight at its arrival health, 22 of 40, rather than 16.
-  const resolved = await resolveScenario("trooper-versus-marksman.ts")
+  const resolved = await resolveScenario("trooper-versus-marksman.map.json")
   const trooper = resolved.run.finalState.entities.find((entity) => entity.player === "A")
   assert.ok(trooper !== undefined, "the trooper did not survive, so melee no longer wins the charge")
   assert.equal(resolved.run.finalState.outcome?.winner, "A")
@@ -336,7 +336,7 @@ test("trooper-versus-marksman: melee wins the charge, at a measured cost", async
 })
 
 test("worker-flight: the worker runs, and workers count for annihilation", async () => {
-  const resolved = await resolveScenario("worker-flight.ts")
+  const resolved = await resolveScenario("worker-flight.map.json")
   const fleeing = resolved.run.events.filter((event) => event.kind === "behavior.flee")
   assert.ok(fleeing.length > 0, "the worker never fled")
 
@@ -353,7 +353,7 @@ test("worker-flight: the worker runs, and workers count for annihilation", async
 })
 
 test("obstacle-routing: the trooper rounds the spine instead of stalling", async () => {
-  const resolved = await resolveScenario("obstacle-routing.ts")
+  const resolved = await resolveScenario("obstacle-routing.map.json")
   const passed = resolved.run.events.some(
     (event) => event.kind === "entity.moved" && event.to.x > 12,
   )
@@ -361,13 +361,13 @@ test("obstacle-routing: the trooper rounds the spine instead of stalling", async
 })
 
 test("structure-destruction: destroying a Grid Nexus ends the Pulse", async () => {
-  const resolved = await resolveScenario("structure-destruction.ts")
+  const resolved = await resolveScenario("structure-destruction.map.json")
   assert.equal(resolved.run.finalState.outcome?.reason, "nexus-destroyed")
   assert.equal(resolved.run.finalState.outcome?.winner, "A")
 })
 
 test("salvage-drop: death leaves a ground item on the tile it died on", async () => {
-  const resolved = await resolveScenario("salvage-drop.ts")
+  const resolved = await resolveScenario("salvage-drop.map.json")
   const death = resolved.run.events.find((event) => event.kind === "entity.died")
   const salvage = resolved.run.events.find((event) => event.kind === "salvage.dropped")
   assert.ok(death !== undefined && death.kind === "entity.died")
@@ -380,7 +380,7 @@ test("salvage-drop: death leaves a ground item on the tile it died on", async ()
 })
 
 test("annihilation-victory: the Pulse ends only once every mobile entity is dead", async () => {
-  const resolved = await resolveScenario("annihilation-victory.ts")
+  const resolved = await resolveScenario("annihilation-victory.map.json")
   assert.equal(resolved.run.finalState.outcome?.reason, "annihilation")
   const dead = resolved.run.events.filter((event) => event.kind === "entity.died")
   assert.equal(dead.filter((event) => event.player === "B").length, 2)
@@ -389,7 +389,7 @@ test("annihilation-victory: the Pulse ends only once every mobile entity is dead
 })
 
 test("tick-limit-draw: neither side can reach the other, and the Pulse ends on its count", async () => {
-  const resolved = await resolveScenario("tick-limit-draw.ts")
+  const resolved = await resolveScenario("tick-limit-draw.map.json")
   assert.equal(resolved.run.finalState.outcome?.reason, "tick-limit")
   assert.equal(resolved.run.finalState.outcome?.winner, null)
   assert.equal(resolved.run.finalState.tick, resolved.run.pulseTicks)

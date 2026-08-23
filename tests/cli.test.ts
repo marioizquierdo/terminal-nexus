@@ -31,45 +31,82 @@ function bunAvailable(): boolean {
   }
 }
 
-test("run prints the summary on stdout and the log on stderr", () => {
-  const result = runGrid(["run", "scenarios/melee-kill.ts"])
+test("--headless defaults to WARN and closes with the report line, on one stream", () => {
+  const result = runGrid(["scenarios/melee-kill", "--headless"])
   assert.equal(result.status, 0)
-  assert.match(result.stdout, /^scenario   melee-kill$/m)
-  assert.match(result.stdout, /^outcome    A wins$/m)
-  assert.doesNotMatch(result.stdout, /INFO/, "the log leaked into stdout")
-  assert.match(result.stderr, /\[0000\] INFO  spawn/)
-  assert.doesNotMatch(result.stderr, /^scenario/m, "the summary leaked into stderr")
+  assert.equal(result.stderr, "")
+  assert.doesNotMatch(result.stdout, / INFO /, "INFO lines leaked past the default WARN level")
+  assert.match(result.stdout, /^\[\d+\] WARN {2}report {3}melee-kill\s+seed 0x/m)
+  assert.match(result.stdout, /outcome A wins/)
+
+  const info = runGrid(["scenarios/melee-kill", "--headless", "--log-level", "info"])
+  assert.match(info.stdout, /\[0000\] INFO {2}spawn/)
+})
+
+test("the .map.json suffix is optional", () => {
+  const bare = runGrid(["scenarios/melee-kill", "--headless", "--json"])
+  const suffixed = runGrid(["scenarios/melee-kill.map.json", "--headless", "--json"])
+  assert.equal(bare.status, 0)
+  assert.equal(JSON.parse(bare.stdout).stateHash, JSON.parse(suffixed.stdout).stateHash)
 })
 
 test("--seed, --ticks and --log-level are honoured", () => {
-  const shallow = runGrid(["run", "scenarios/citizen-mirror-skirmish.ts", "--ticks", "24"])
-  assert.match(shallow.stdout, /^ticks      24 of 24 \(full pulse\)$/m)
+  const shallow = runGrid(["scenarios/citizen-mirror-skirmish", "--headless", "--ticks", "24"])
+  assert.match(shallow.stdout, /^\[\d+\] WARN  report   citizen-mirror-skirmish\s+seed 0x\S+\s+ticks 24 of 24 \(full pulse\)/m)
 
   const seeded = runGrid([
-    "run",
-    "scenarios/citizen-mirror-skirmish.ts",
+    "scenarios/citizen-mirror-skirmish",
+    "--headless",
     "--seed",
     "0xABCD",
     "--ticks",
     "60",
   ])
-  assert.match(seeded.stdout, /^seed       0x0000ABCD$/m)
+  assert.match(seeded.stdout, /seed 0x0000ABCD/)
 
-  const debug = runGrid([
-    "run",
-    "scenarios/melee-kill.ts",
+  const debug = runGrid(["scenarios/melee-kill", "--headless", "--log-level", "debug"])
+  assert.match(debug.stdout, /DEBUG intent/)
+  assert.match(debug.stdout, /DEBUG claim|DEBUG move /)
+})
+
+test("--turn filters the log to that tick onward, keeping ERRORs and the report", () => {
+  const full = runGrid(["scenarios/citizen-mirror-skirmish", "--headless", "--log-level", "debug"])
+  const fromTurn = runGrid([
+    "scenarios/citizen-mirror-skirmish",
+    "--headless",
     "--log-level",
     "debug",
+    "--turn",
+    "50",
   ])
-  assert.match(debug.stderr, /DEBUG intent/)
-  assert.match(debug.stderr, /DEBUG claim|DEBUG move /)
+  assert.equal(fromTurn.status, 0)
+  assert.ok(fromTurn.stdout.length < full.stdout.length, "the filtered log should be shorter")
+  for (const line of fromTurn.stdout.trim().split("\n")) {
+    const match = /^\[(\d+)\]/.exec(line)
+    if (match?.[1] !== undefined) assert.ok(Number(match[1]) >= 50, line)
+  }
+  assert.match(fromTurn.stdout, /WARN {2}report/, "the report line survives the --turn filter")
+})
+
+test("--save-log writes the log to a file independent of --json", () => {
+  const directory = mkdtempSync(join(tmpdir(), "grid-save-log-"))
+  try {
+    const file = join(directory, "run.log")
+    const result = runGrid(["scenarios/melee-kill", "--headless", "--json", "--save-log", file])
+    assert.equal(result.status, 0)
+    JSON.parse(result.stdout) // --json still produced structured output on stdout
+    const saved = readFileSync(file, "utf8")
+    assert.match(saved, /WARN {2}report/)
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
 })
 
 test("--events writes the ordered event stream as JSONL", () => {
   const directory = mkdtempSync(join(tmpdir(), "grid-events-"))
   try {
     const file = join(directory, "events.jsonl")
-    const result = runGrid(["run", "scenarios/melee-kill.ts", "--events", file])
+    const result = runGrid(["scenarios/melee-kill", "--headless", "--events", file])
     assert.equal(result.status, 0)
     const lines = readFileSync(file, "utf8").trim().split("\n")
     assert.ok(lines.length > 10)
@@ -87,8 +124,8 @@ test("--events writes the ordered event stream as JSONL", () => {
   }
 })
 
-test("--json produces a machine-readable summary", () => {
-  const result = runGrid(["run", "scenarios/melee-kill.ts", "--json"])
+test("--json produces a machine-readable summary instead of the log", () => {
+  const result = runGrid(["scenarios/melee-kill", "--headless", "--json"])
   const parsed = JSON.parse(result.stdout) as Record<string, unknown>
   assert.equal(parsed["scenario"], "melee-kill")
   assert.equal(typeof parsed["stateHash"], "string")
@@ -97,16 +134,23 @@ test("--json produces a machine-readable summary", () => {
   assert.equal(parsed["engineVersion"], "0.1.0-gate1a")
 })
 
-test("verify --runs 20 is green on every checked-in scenario", { timeout: 120_000 }, () => {
+test("--verify defaults to 10 runs and is green on every checked-in map", { timeout: 120_000 }, () => {
   for (const name of scenarioFiles()) {
-    const result = runGrid(["verify", `scenarios/${name}`, "--runs", "20"])
+    const result = runGrid([`scenarios/${name}`, "--verify"])
     assert.equal(result.status, 0, `${name}: ${result.stderr}`)
-    assert.match(result.stdout, /^runs       20 identical$/m, name)
+    assert.match(result.stdout, /^runs {7}10 identical$/m, name)
   }
 })
 
-test("watch without a TTY prints one line and no escapes", () => {
-  const result = runGrid(["watch", "scenarios/melee-kill.ts"])
+test("--verify --runs overrides the default, and --turn compares an intermediate tick", () => {
+  const result = runGrid(["scenarios/citizen-mirror-skirmish", "--verify", "--runs", "3", "--turn", "10"])
+  assert.equal(result.status, 0, result.stderr)
+  assert.match(result.stdout, /^runs {7}3 identical$/m)
+  assert.match(result.stdout, /^tick 10 {3}sha256:[0-9a-f]{16}$/m)
+})
+
+test("watch (no flags) without a TTY prints one line and no escapes", () => {
+  const result = runGrid(["scenarios/melee-kill"])
   assert.equal(result.status, 0)
   const lines = result.stdout.trim().split("\n")
   assert.equal(lines.length, 1, `watch printed ${lines.length} lines`)
@@ -114,28 +158,34 @@ test("watch without a TTY prints one line and no escapes", () => {
   assert.match(lines[0] ?? "", /^melee-kill  ticks \d+  state sha256:[0-9a-f]{16}  events sha256:[0-9a-f]{16}$/)
 })
 
-test("watch and run agree on the hashes they print", () => {
-  const run = JSON.parse(
-    runGrid(["run", "scenarios/citizen-mirror-skirmish.ts", "--json"]).stdout,
+test("watch and --headless --json agree on the hashes they report", () => {
+  const headless = JSON.parse(
+    runGrid(["scenarios/citizen-mirror-skirmish", "--headless", "--json"]).stdout,
   ) as { stateHash: string; eventsHash: string }
-  const watched = runGrid(["watch", "scenarios/citizen-mirror-skirmish.ts"]).stdout
-  assert.ok(watched.includes(`state sha256:${run.stateHash.slice(0, 16)}`), watched)
-  assert.ok(watched.includes(`events sha256:${run.eventsHash.slice(0, 16)}`), watched)
+  const watched = runGrid(["scenarios/citizen-mirror-skirmish"]).stdout
+  assert.ok(watched.includes(`state sha256:${headless.stateHash.slice(0, 16)}`), watched)
+  assert.ok(watched.includes(`events sha256:${headless.eventsHash.slice(0, 16)}`), watched)
 })
 
-test("a scenario that fails to load reports an ERROR and a non-zero status", () => {
-  const result = runGrid(["run", "scenarios/does-not-exist.ts"])
+test("a map that fails to load reports an ERROR and a non-zero status", () => {
+  const result = runGrid(["scenarios/does-not-exist", "--headless"])
   assert.notEqual(result.status, 0)
   assert.match(result.stderr, /ERROR/)
+})
+
+test("no map given is a usage error, not a crash", () => {
+  const result = runGrid([])
+  assert.equal(result.status, 2)
+  assert.match(result.stderr, /needs a map file/)
 })
 
 // Cross-runtime agreement is the only cheap test of the serialization and iteration assumptions
 // that twenty runs on one machine can never catch, so it is registered whenever Bun exists.
 if (bunAvailable()) {
-  test("verify produces identical hashes under Bun and under Node", () => {
+  test("--headless --json produces identical hashes under Bun and under Node", () => {
     for (const name of scenarioFiles()) {
-      const node = runGrid(["run", `scenarios/${name}`, "--json"])
-      const bun = runGrid(["run", `scenarios/${name}`, "--json"], "bun")
+      const node = runGrid([`scenarios/${name}`, "--headless", "--json"])
+      const bun = runGrid([`scenarios/${name}`, "--headless", "--json"], "bun")
       assert.equal(bun.status, 0, `${name} failed under bun: ${bun.stderr}`)
       const left = JSON.parse(node.stdout) as Record<string, unknown>
       const right = JSON.parse(bun.stdout) as Record<string, unknown>
