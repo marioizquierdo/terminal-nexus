@@ -1,7 +1,7 @@
 # Gate report — Milestone 1B, quality and effects
 
 **Document role:** Gate evidence report for Gate 1B
-**Status:** In progress — revised after the owner's second viewing, awaiting the next one
+**Status:** In progress — revised after a third round of owner feedback, awaiting the next viewing (the branch itself has still never been watched — see Section 14)
 **Canon version:** 2.6
 **Updated:** 2026-08-23
 **License:** Apache-2.0
@@ -447,3 +447,63 @@ Gate 1A alongside it, still never separately closed). Three more questions are o
 the owner specifically — **Q21** (contrast), **Q22** (movement jitter), **Q23** (outposts) — alongside
 the six still open from the first round. Milestone 2 remains gated on acceptance, not on this session
 running out of things to fix, same as last time.
+
+## 14. A third round, mid-session — the branch was never watched at all
+
+Before Section 13 was even acted on, the owner replied again — but from `main`, which had none of
+Sections 1–13's work on it (no PR had been opened; nothing was asked to open one). So this round's
+first finding was procedural, not a bug: **"is the work committed?"** Yes, and pushed, to
+`claude/grid-playtest-feedback-an01m2` — confirmed by fetching `origin/main` directly and diffing
+against it before answering, rather than assuming. The playtest notes that followed were therefore
+against the *original* Gate 1B fixture, not anything this branch had already changed — worth knowing
+when reading the responses below, several of which read as "still too slow" on a baseline that had, on
+this branch, already moved once.
+
+### What was said
+
+- **"Two units stuck" (again).** The owner asked to confirm this: "is the work committed? I... still
+  see... the citizens vs ravels scenario still shows 't' moving up and getting stuck up there." Not a
+  new finding — the branch fix from round two (Section 12) was never on `main` to see.
+- **A ranged kill's own target.** New: "I still see projectiles set from 'm' (marksman) but the enemy
+  dies instantly while the projectile arrives later... if there's a delay on the attack arriving, the
+  delay should match the effect, and the effect should match the delay... if there are other units
+  with the same attack type, they need the same delay."
+- **Movement, a third time.** "The movement speed is still too slow, they should move 2 or 2.5 times
+  faster" — against the un-sped-up baseline on `main`, not this branch's already-shipped 1.5x pass,
+  which the owner had not yet seen.
+- **A new rule.** "when a unit kills an enemy, it should wait a full movement cooldown before
+  starting to move again. Otherwise... it is hard to see who won that fight — specially if they
+  decide to move vertically."
+- **Set aside, verbatim, for later.** The terminal cell's own aspect ratio — "too fast when moving up
+  and down, too slow when moving sideways... Let's explore the vertical-rectangle issue later, for
+  now just take note."
+
+### What this session did about it
+
+| Owner's finding | Response | Evidence |
+| --- | --- | --- |
+| "is the work committed?" — nothing visible on `main` | Confirmed by fetching `origin/main` and diffing rather than assuming; explained plainly that nothing had been merged, no PR had been asked for, and this reply names that before anything else | this section |
+| "Two units stuck" | Already fixed in round two (Section 12); not on `main`, so not re-diagnosed — pointed back at the existing fix rather than duplicated | Section 12 |
+| "the enemy dies instantly while the projectile arrives later" | A real, different bug from round two's effect-timing fix: `state.entities` drops a dead entity from the composed frame the instant it dies, but its own `fx.ranged.tracer` keeps animating for the rest of the flight window — so the target's *glyph* vanished before its own tracer arrived, a gap the effect-timing fix never touched. Fixed by holding a "corpse" — last known position, drawn exactly like a live entity, never in `state.entities` so it never reaches the force bar — for exactly as long as the death effect it precedes is already held. Verified against a real same-tick kill before writing code (the target's glyph was gone two ticks before its tracer visibly landed) | `435fcd0`; `src/view/snapshot.ts`, `src/view/compose.ts`, `tests/view.test.ts` |
+| "if there are other units with the same attack type, they need the same delay" | Verified rather than assumed: `flightWindowTicks()` (`arbitration.ts`) is one shared, pure function of `(distance, projectileTilesPerTick)`, used identically for every ranged attacker with no per-unit special-casing anywhere in the flight-window or corpse-hold code — the slinger gets the same fix as the marksman automatically |  |
+| "still too slow... 2 or 2.5 times faster" | A second, larger speed pass — 2x the *original* rate, not a further multiple on the branch's already-shipped 1.5x, since the owner was judging the original baseline both playtests actually watched. First attack in `citizens-versus-ravels` now lands at tick 72 (6s), down from 144 (12s) before either pass — exactly 2x | `13d5832`; `src/content/citizen.ts`, `src/content/ravel.ts` |
+| "wait a full movement cooldown before starting to move again" | Built as a kernel rule, same shape as the existing `DEATH_SETTLE_TICKS`: a killer's `moveCredit` is zeroed the instant its kill lands, the same mechanism `accrueCredit` already applies to a step actually taken, so it needs a full cadence's worth of credit again before its next move. New fixture (`kill-then-hold.ts`) isolates it; broke `settle-delay.ts`'s own test in a real way (that fixture used to let the killer be both the killer *and* the tile-tester, which stopped proving anything once a kill could hold a mover longer than the settle window) — redesigned with an independent tester rather than patched around | `051d57a`; `src/pulse/attacks.ts`, `scenarios/kill-then-hold.ts`, `scenarios/settle-delay.ts` |
+| The terminal cell's own aspect ratio | Registered as **Q24**, exactly as asked ("take note... explore later") — connected to `engine.md` 9.3's existing RULE and mitigation (adaptive tile width) rather than treated as unrelated, with the owner's own three ideas laid out as options and none recommended, since he asked for this to wait | `af02fda`; `specs/open-questions.md` Q24 |
+
+Every behavioural change shipped with a new or updated test proving the specific claim, including two
+written to fail against the pre-fix code first (the corpse hold, the movement hold) before confirming
+they pass. 140 Node tests (139 before this round), green under Bun, `tsc` clean,
+`check-repository.sh` clean. `grid verify --runs 10` swept all 23 checked-in scenarios after the
+kernel rule change (the movement hold touches `stateHash`): every one deterministic.
+
+## 15. Next authorized action, once more
+
+Same as Section 13, on the branch that now actually carries all of it: `citizens-versus-ravels` for
+the corrected timing and the now-doubled speed; `kill-then-hold` and `settle-delay` (headless — both
+are two-and-three-line regressions, not scenarios built to be watched) if the two kernel-rule changes
+are worth confirming directly. **The one thing this round adds ahead of watching anything: decide how
+this branch reaches `main`.** Nothing has been merged and no PR exists; the owner has not asked for
+one. Four questions now wait specifically on the owner — **Q21** (contrast), **Q22** (movement
+jitter), **Q23** (outposts), **Q24** (cell aspect ratio, explicitly deferred by the owner's own
+request) — alongside the six still open from the first round. Milestone 2 remains gated on
+acceptance, not on this session running out of things to fix.
