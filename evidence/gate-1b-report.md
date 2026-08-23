@@ -1,9 +1,9 @@
 # Gate report — Milestone 1B, quality and effects
 
 **Document role:** Gate evidence report for Gate 1B
-**Status:** In progress — revised after the owner's first viewing, awaiting the next one
+**Status:** In progress — revised after the owner's second viewing, awaiting the next one
 **Canon version:** 2.6
-**Updated:** 2026-08-21
+**Updated:** 2026-08-23
 **License:** Apache-2.0
 
 ---
@@ -361,3 +361,89 @@ colour work, `--theme light` if the terminal is light. Accept or revise Gate 1B 
 never separately closed, Gate 1A alongside it). Milestone 2 — routing, economy, visibility, and now
 the behaviour-states and spacing items Section 11 registers — is next, gated on that acceptance, not
 merely on this session running out of things to fix.
+
+## 12. The owner's second viewing — findings and this session's response
+
+Section 11 asked for exactly this: watch it again, accept or revise. Mario did — `npm run play`,
+Citizens versus Ravels — and sent a second round of notes, on branch
+`claude/grid-playtest-feedback-an01m2` (commits `2cddd33`..`4302e2e`). Same shape as Section 10:
+paraphrased findings, then this session's response, then a revised decision.
+
+### What was said
+
+Paraphrased from the owner's own message, kept close to his wording:
+
+- **It landed.** "Wow, generally speaking this is a LOT cooler. It really works, and the initial
+  engagement feels good. I can follow who is shooting at who much better." Read as encouraging, not
+  as acceptance — see the note at the end of this section on that specific point.
+- **Movement is still too slow.** Units take a while to reach initial engagement; once it is over,
+  slow movement makes it too slow to reach the next interesting part. "We should probably think
+  about how to reach the initial conflict faster. Maybe outposts regroup units next to them so next
+  pulses resolve faster."
+- **A pathfinding failure**, described exactly: "Two units on the top of the screen around tick 200
+  got stuck: `t▓▓X`. The pathfinding algorithm is failing here. Try and notice."
+- **Colour contrast**, hedged: "Perhaps we have to work on the colors to ensure more contrast."
+- **Bigger explosions on death than on a hit.** "Show bigger explosions when the units die vs when
+  they take damage."
+- **The small timing delays are working.** "The timings for shooting and taking damage are much
+  better now. Those small frame delays really help building movement. Look for more opportunities to
+  do that, specially when the effect is resolved within the same turn so it doesn't really affect the
+  gameplay."
+- **Movement jitter.** "Also moving units at slight different speeds also helps a lot to see nicer
+  movement. I wonder if we should build in some movement jitter based on terrain (pseudo-random but
+  deterministic so we can replay)."
+
+### What this session did about it
+
+| Owner's finding | Response | Evidence |
+| --- | --- | --- |
+| "Two units... got stuck: `t▓▓X`. The pathfinding algorithm is failing" | Reproduced exactly (`citizens-versus-ravels`, tick 179: `A:trooper#3` and `B:runner#2` deadlocked nose to nose across a two-tile rock, each one's only distance-closing direction pointed straight into it) — this is Q15's on-axis dead end, already diagnosed and registered last round, now confirmed on the real fixture rather than only the abstract case. Isolated to `on-axis-deadlock.ts`, a two-entity regression the previous fix could not have caught | `e1e677f`, `4355dcc`; `scenarios/on-axis-deadlock.ts`; `specs/open-questions.md` Q15 |
+| ...while chasing that down, the `WARN stuck` line itself was found to name the wrong tile — the one the actor could not enter, reported as though it were the actor's own position, which is exactly why "notice" needed a stare rather than a glance at the log | Fixed at the source (`src/report/log.ts` tracks each actor's own tile from `entity.spawned`/`entity.moved` and reports it separately from the tile it wants); found the same misdirection was masking a second, worse bug | `e1e677f` |
+| ...the second bug: any scenario with a placement on impassable terrain silently entombs that entity, unable to ever move | Both baseline mirror fixtures (`citizen-mirror-skirmish.ts`, `ravel-mirror-skirmish.ts`) had it — their "mirrored" rock pairs were not actually mirrored, so four of `citizen-mirror-skirmish`'s seven B units (three of the Ravel fixture's) have stood in rock since Gate 1A, not fighting. The loader now refuses the placement outright, naming the row/column/terrain id; both fixtures corrected | `e1e677f` |
+| Units still move too slow, a second time (trooper/marksman already went `3/4` → `1/1` last round) | Every `movementRate` in both rosters × 1.5, preserving every ratio the content was tuned against. First attack in `citizens-versus-ravels` now lands at tick 91 (7.6s), down from tick 144 (12s) | `ddaa5f7`; `src/content/citizen.ts`, `src/content/ravel.ts` |
+| ...which shifted two fixtures' pinned combat arithmetic in `milestone-1-spike-battle.md` 3.6 | Both re-measured and corrected rather than left to silently drift, with the trooper-vs-two-marksmen fixture's changed *story* (no longer a clean ranged kill) disclosed explicitly rather than papered over or re-balanced without being asked | `ddaa5f7`; `specs/milestone-1-spike-battle.md` 3.6, `tests/scenario.test.ts` |
+| "Maybe outposts regroup units... so next pulses resolve faster" | Registered as **Q23**, not built: outposts, production, and multi-Pulse regrouping are Milestone 2/3 scope, unauthorized regardless of how reasonable the idea is | `4302e2e`; `specs/open-questions.md` Q23 |
+| "Perhaps we have to work on the colors to ensure more contrast" | Measured rather than guessed at: WCAG contrast ratios computed against the real truecolor swatches. Each side already clears 3:1 against the background in both themes; `player.a` vs `player.b` directly does not — 2.08:1 dark, **1.08:1 light** (almost identical brightness, separated only by hue). Registered as **Q21** with the measurement and a recommendation (retune lightness, not hue, in the light theme specifically) rather than repainted on a hunch | `4302e2e`; `specs/open-questions.md` Q21 |
+| "Show bigger explosions when the units die vs when they take damage" | `ascii-effects.md` Section 5 already states this as a requirement for `fx.death.collapse` and nothing had ever tested it. For the common 1x1 footprint the death ring only touched four cardinal neighbours (5 cells at peak against the hit's 2); widened to a full eight-cell ring (9 cells at peak, ~4.5x rather than ~2.5x). New test pins "visibly heavier" as a number and was checked to fail against the pre-fix ring before it was checked to pass | `77c8895`; `tests/effects.test.ts` |
+| "The timings for shooting and taking damage are much better now... look for more opportunities to do that, specially when the effect is resolved within the same turn" | Found exactly that gap: a same-tick ranged kill (`attack.launched`, `damage.applied`, `entity.died`, and any `entity.detonated` it triggers all resolve within one tick) already held the impact burst for its flight window, but the death collapse, structure collapse, and blast did not — a unit could visibly explode before its own tracer arrived. All three now wait for the same impact beat the burst already waits for. Reproduced and pinned: `citizens-versus-ravels` tick 169, a marksman's shot kills a runner whose volatile munitions catch a trooper, all fixed to land in the right order | `51c1467`; `tests/effects.test.ts` |
+| "moving units at slight different speeds also helps... movement jitter based on terrain" | Distinguished what the speed pass above already delivers (rate varies *across* unit types) from what was actually asked (identical units of the *same* type still step in lockstep with each other). Registered as **Q22**, framed against the engine's existing seeded-gameplay/free-cosmetic split — the same deterministic-hash shape every `fx.*` recipe already uses — with a recommended first cut (pure interpolation jitter, no kernel change) rather than built directly, since it touches the state/presentation boundary closely enough to be worth a real answer | `4302e2e`; `specs/open-questions.md` Q22 |
+
+Everything that touched behaviour or presentation timing shipped with a new or updated test proving
+the specific claim, not just a scenario to look at — including two tests written to fail against the
+old code first, so "this actually was the bug" is checked rather than assumed. 138 Node tests pass
+(134 before this round), green under Bun, `tsc` clean, `check-repository.sh` clean, at every commit
+in the range above. `grid verify --runs 20` on every touched scenario: hashes identical.
+
+A separate, unrelated repair also landed this round: `main` itself had gone red between the two
+viewings (a direct commit cleaning up the concept-art folder deleted a required file and archived a
+pre-canon document full of retired terms), and a second session fixed it independently while this one
+was already in flight. Both fixes were merged and this branch adopted the version already on `main`
+rather than carry a second, competing implementation — `2ff17e9`.
+
+**On "this is a LOT cooler... I can follow who is shooting at who much better":** read as encouraging
+feedback with a concrete, itemized follow-up list immediately behind it — the same shape
+`milestone-1-spike-battle.md`'s own framing already anticipates ("Encouraging is not the same as
+accepted... A new session's authorised work is whatever the owner's most recent feedback asks for —
+not new scope"). Not inferred as acceptance here; if this reads differently to the owner, that is his
+call to make explicitly, not this session's to assume.
+
+### Revised decision
+
+> **REVISE, acted on a second time — PASS still pending the owner's next look.**
+
+Same shape as Section 10's close: the gate's real question is not answerable by a test, was not
+claimed as answered, and the owner's second watch found real things a first pass could not have —
+one of them (the entombed-unit bug) predating this gate entirely, sitting undetected since Gate 1A.
+What changed between viewings is fixed, tested, or registered with a recommendation; nothing here
+claims the gate is now accepted.
+
+## 13. Next authorized action, revised again
+
+Watch it again. `citizens-versus-ravels` for the faster approach and the corrected death/blast
+timing; `on-axis-deadlock` (headless is enough — it is a two-line regression, not a scenario built to
+be watched) if the pathfinding fix is worth confirming directly; `--theme light` if the light-theme
+contrast measurement in Q21 is worth a look before it is acted on. Accept or revise Gate 1B (and
+Gate 1A alongside it, still never separately closed). Three more questions are open and waiting on
+the owner specifically — **Q21** (contrast), **Q22** (movement jitter), **Q23** (outposts) — alongside
+the six still open from the first round. Milestone 2 remains gated on acceptance, not on this session
+running out of things to fix, same as last time.
