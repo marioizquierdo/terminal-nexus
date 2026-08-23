@@ -25,3 +25,6 @@ tmp/
 evidence/local/
 captures/local/
 
+# Claude Code background-agent worktrees - ephemeral isolated checkouts, never committed
+.claude/worktrees/
+
