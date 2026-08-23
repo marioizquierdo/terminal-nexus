@@ -1,3 +1,15 @@
+> **Historical archive — added editorial note, not part of the original document.** This is the
+> original, pre-canon-split Terminal Nexus specification exactly as it stood on 2026-08-19, before
+> the canon was split into the focused documents under `specs/` and before several terms were
+> renamed (this document still says "Veil" for what is now the **Nexus Pulse**'s counterpart phase,
+> "planning phase" for the **Build Phase**, and "battlefield" for the **Grid**). It is kept verbatim
+> for reference and is not rewritten to match current terminology, current decisions, or the current
+> metadata-header schema below — doing so would falsify the record rather than fix a bug. See
+> `.claude/skills/canon`'s historical-record convention, and `scripts/check-repository.sh`'s
+> `historical_archives` list, which exempts this file from the canon-version, metadata-header, and
+> retired-terminology checks that apply to every other document under `specs/` and `concept/`.
+> **Not canon, not current, not a source of decisions** — `specs/README.md` is the current index.
+
 # Terminal Nexus
 
 **Document role:** Canonical product, game-design, architecture, and development specification  

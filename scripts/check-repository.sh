@@ -18,6 +18,23 @@ fail() {
   failures=$((failures + 1))
 }
 
+# A handful of documents under concept/ are frozen historical artifacts, not living canon - e.g. the
+# actual pre-canon-split spec, kept verbatim for reference. They predate current terminology by
+# definition, so requiring a canon-version/metadata header on them, or rewriting retired words out of
+# them, would falsify the record rather than fix a bug. List them explicitly; every check below that
+# cares about canon versioning, the metadata header, or retired terminology skips a listed path.
+historical_archives=(
+  "concept/2026-08-19 - original spec.md"
+)
+
+is_historical_archive() {
+  local candidate="$1"
+  for archive in "${historical_archives[@]}"; do
+    [[ "$candidate" == "$archive" ]] && return 0
+  done
+  return 1
+}
+
 # Markdown files, excluding VCS and dependency directories.
 markdown_files() {
   find . -type f -name '*.md' \
@@ -74,6 +91,7 @@ if [[ -z "$canon_version" ]]; then
   fail "specs/README.md does not declare a canon version"
 else
   while IFS= read -r doc; do
+    is_historical_archive "$doc" && continue
     declared="$(sed -n 's/^\*\*Canon version:\*\* \(.*\)$/\1/p' "$doc" | head -1)"
     if [[ -z "$declared" ]]; then
       fail "$doc does not declare a canon version"
@@ -98,6 +116,7 @@ fi
 
 while IFS= read -r doc; do
   [[ "$doc" == "specs/README.md" ]] && continue
+  is_historical_archive "$doc" && continue
   for field in "Document role" "Status" "Canon version" "Updated" "License"; do
     grep -Fq "**${field}:**" "$doc" || fail "$doc is missing the '${field}' metadata field"
   done
@@ -207,6 +226,21 @@ for term in "${retired_terms[@]}"; do
     --exclude-dir='.git' --exclude-dir='node_modules' . 2>/dev/null \
     | grep -v 'stale-ok' \
     | grep -v '^\./scripts/check-repository\.sh:' || true)"
+
+  # Drop hits inside a listed historical archive - it is expected to use retired terminology
+  # verbatim, since it predates the rename.
+  if [[ -n "$hits" ]]; then
+    filtered=""
+    while IFS= read -r hit; do
+      [[ -z "$hit" ]] && continue
+      hit_path="${hit%%:*}"
+      hit_path="${hit_path#./}"
+      is_historical_archive "$hit_path" && continue
+      filtered+="$hit"$'\n'
+    done <<< "$hits"
+    hits="${filtered%$'\n'}"
+  fi
+
   if [[ -n "$hits" ]]; then
     fail "retired terminology matching '$term':"
     printf '%s\n' "$hits" >&2
