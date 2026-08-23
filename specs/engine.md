@@ -1024,6 +1024,7 @@ adopted immediately because they are free and change nothing observable: `attack
 buckets actors by speed tier once per tick instead of re-scanning every actor per tier, which removed
 an O(N × T) re-filter with no behavior change (verified hash-identical across every fixture). A
 matching fix for death resolution's O(N·D) observer scan — a reverse `target → observers` index,
-maintained at the same handful of `targetOrdinal` write sites perception already touches — was
-scoped but not built this session; it is a well-specified, low-risk next step, not a design
-question, whenever someone next has a reason to touch that code path.
+maintained at the same handful of `targetOrdinal` write sites perception already touches — has
+since been built and verified hash-identical across every fixture too, `ravel-cascade.ts`'s
+multi-death chain included. The same pass also split the kernel's single `tick.ts` into one file
+per tick phase under `src/pulse/`, pure code motion with no behavior change.
