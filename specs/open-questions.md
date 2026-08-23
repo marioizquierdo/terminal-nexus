@@ -238,6 +238,17 @@ search, or at minimum a goal offset that avoids exact axis alignment), not just 
 politely — B alone would ship a unit that visibly gives up, which is not better than one that visibly
 paces.
 
+**Confirmed on the real fixture** (owner playtest, 2026-08-22): "Two units on the top of the screen
+around tick 200 got stuck: `t▓▓X`. The pathfinding algorithm is failing here." That is this exact
+failure — a trooper and a runner squared off on the same row across a two-tile rock, each one's only
+distance-closing direction pointed straight into it, and neither ever tried the one-tile detour that
+would have cleared it. `scenarios/on-axis-deadlock.ts` isolates it to two entities and one line of
+log (`tests/report.test.ts` asserts it fires the `WARN stuck` recommendation A already calls for);
+`tests/report.test.ts` also asserts, across every checked-in scenario, that no `stuck` warning ever
+reports an impassable tile as an actor's own position — a second, smaller bug this same investigation
+found in the log line itself, now fixed, unrelated to the routing gap below. Nothing else about the
+gap moves: still a real fork, still Milestone 2's job, recommendation unchanged.
+
 ### Q16 — When the Grid is smaller than the viewport, where does the leftover space go?
 
 **Status:** OPEN — Gate 1A proceeds under the recommendation; the answer changes only presentation.
