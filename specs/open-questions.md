@@ -249,6 +249,42 @@ reports an impassable tile as an actor's own position — a second, smaller bug 
 found in the log line itself, now fixed, unrelated to the routing gap below. Nothing else about the
 gap moves: still a real fork, still Milestone 2's job, recommendation unchanged.
 
+**Confirmed again at a genuinely large footprint, and sharpened with a second manifestation of the
+same code path** (a subagent audit, requested alongside the large-unit work that added the colossus and
+leviathan, scoped explicitly to finding bugs in the existing greedy router rather than to designing
+real pathfinding). Two findings, neither a new failure mode — both the on-axis case above, reached by a
+wider body:
+
+- **The hard-stop variant, not the pacing one.** `hauler-two-tile-gap.map.json`'s 3x1 hauler paces
+  between two tiles in front of a gap it cannot fit through, because there is still room on either side
+  of it to try. A 3x3 colossus given the identical wall and gap does not pace — it takes one approach
+  step, then hard-stops flush against the gap and reports `move.blocked reason:terrain` every tick from
+  then on, correctly caught by the same stuck-streak detector. There is no room left to try a second
+  tile once a body this wide is flush against an opening it cannot pass. `scenarios/colossus-two-tile-
+  gap.map.json` is the checked-in confirmation (`tests/report.test.ts`); the same audit reproduced the
+  identical hard stop on the widest thing on the bench, a 5x2 leviathan against a four-tile gap, and
+  confirmed the off-axis slide (`obstacle-routing.map.json`'s case) still works correctly at this size —
+  the mechanism is not broken for large footprints, it degrades exactly the way this entry already
+  describes.
+- **A related but distinct manifestation, not yet given its own fixture: a single occupied tile
+  anywhere in a large mover's needed footprint vetoes the entire step, not just that one tile.**
+  `arbitration.ts`'s conflict grouping unions every mover whose destination footprint touches a
+  contested tile and grants only one winner per group per pass — for a one-tile mover that is exactly
+  right, but for a nine- or ten-tile body it means one unrelated small unit occupying any single one of
+  those tiles can block the whole move, even when the other movers in the same bridged group were never
+  actually contesting each other. Reproduced deterministically (every mover's movement credit
+  pre-charged to remove natural cadence stagger as a confound) rather than assumed; not observed in any
+  checked-in scenario's natural cadence, so it is real but currently rare in practice, and mechanically
+  it is the identical on-axis dead-end code path as the terrain case above, just triggered by a
+  transient occupant instead of a wall — one that becomes just as permanent if that occupant holds
+  position, which a unit stopping to fight naturally does. No code change: fixing this without real
+  pathfinding would mean picking arbitration winners per contested tile rather than per bridged group,
+  which is the same routing-priority redesign this entry already defers to Milestone 2, not a bug fix
+  available under this gate.
+
+Nothing here moves the recommendation: still A for Gate 1A, still Milestone 2's opening case, now with
+the large-unit case confirmed rather than only inferred from the 3x1 evidence above.
+
 ### Q16 — When the Grid is smaller than the viewport, where does the leftover space go?
 
 **Status:** OPEN — Gate 1A proceeds under the recommendation; the answer changes only presentation.

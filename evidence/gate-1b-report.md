@@ -688,11 +688,31 @@ Recorded as a known, accepted limit on `PlacementBlock.rows` rather than left si
 screenshot or a watched run is still the check for it. All five verified the same way as the earlier
 pass: `stateHash`/`eventsHash` identical across all 25 scenarios before and after.
 
+**The large-unit pathfinding audit** found no kernel bug — the invariants (no overlap, bounded
+arbitration, correct blocker attribution) all held at every footprint size tested, including the
+widest thing on the bench — but it found real, useful evidence and one genuinely new (if narrow)
+observation, both folded into `specs/open-questions.md` Q15 rather than left in an agent transcript:
+Q15's on-axis dead end reproduces exactly on a genuinely large body for the first time, but in its
+**hard-stop** form rather than the pacing form the existing 3x1 hauler fixture shows — a body three
+tiles wide has nowhere left to slide once it is flush against a gap it cannot fit through, where a
+narrower mover still has room to try a second tile. `scenarios/colossus-two-tile-gap.map.json` is the
+checked-in confirmation, mirroring `hauler-two-tile-gap.map.json`'s own geometry so the only variable
+is the mover's size (`tests/report.test.ts`). Separately, the audit found and reproduced (deterministically,
+by pre-charging every mover's movement credit to remove cadence timing as a confound, not by
+observation) a related but distinct manifestation of the same code path: a single small unit occupying
+any one tile of a large body's many-tile destination can veto the entire step, not just that tile,
+because arbitration's conflict grouping unions the whole bridged claim and grants one winner per group
+rather than per tile. Not observed in any checked-in scenario's natural cadence, so real but currently
+rare; not given its own fixture, since reproducing it needs the same artificial credit pre-charge the
+audit used rather than anything a normal Pulse produces. Both findings are on-axis-dead-end variants
+Milestone 2's real routing already has to solve — recorded as evidence, not built around, per Q15's own
+recommendation.
+
 ### Verification
 
-158 Node tests (140 before this round), 157 under Bun, `tsc --noEmit` clean, `check-repository.sh`
-clean, `grid --verify --runs 20` on the new `air-crossing` scenario and `--runs 10` swept across all 25
-checked-in scenarios. Two independent hash-comparison proofs, not one: the placement-format conversion
+159 Node tests (140 before this round), 158 under Bun, `tsc --noEmit` clean, `check-repository.sh`
+clean, `grid --verify --runs 20` on `air-crossing` and `colossus-two-tile-gap`, `--runs 10` swept
+across all 26 checked-in scenarios. Two independent hash-comparison proofs, not one: the placement-format conversion
 against the pre-conversion `.ts` baseline, and the post-merge conversion against `origin/main`'s
 independently-renamed `.map.json` files — both byte-identical across every scenario, both ways.
 
