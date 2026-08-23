@@ -23,6 +23,7 @@ import {
   renderPng,
   sendKeys,
   startWatch,
+  stepPastEnd,
   stepToTick,
   tmux,
   waitFor,
@@ -63,12 +64,82 @@ const shots = [
     rows: 24,
   },
   {
-    name: "heavies-death",
-    caption: "Heavies clash, tick 400 - the leviathan's death collapse fills its full 5x2 footprint",
+    // The 2026-08-23 big-death choreography, tick by tick: heavies-clash's own leviathan dies at
+    // tick 321 (5x2, deathRingOutset 3, so deathExtraTicks lands its collapse at ~12 ticks total -
+    // the owner's own number). Five shots span that window rather than one: "an explosion that goes
+    // from the middle towards the radius, then smaller explosions, and pieces being broken around,
+    // ending up in multiple debris" is a sequence, and a sequence needs more than one frame to judge.
+    name: "heavies-death-impact",
+    caption: "Tick 321 - the leviathan dies: the interior ignites, the shockwave already a tile out",
     scenario: "heavies-clash",
-    tick: 400,
+    tick: 321,
     cols: 80,
     rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
+  },
+  {
+    // heavies-clash's own Pulse ends at tick 321 - the same tick the leviathan dies, since that
+    // blow is also the annihilation that ends the fight - so the footer's own tick readout freezes
+    // there for good (clampTick, snapshot.ts) and afterTick drives the extra ticks directly rather
+    // than through the readout (stepPastEnd's own comment). That freeze is correct, not a bug: the
+    // effect's own presentation clock keeps advancing regardless, which is the entire point of a
+    // death choreography long enough to outlast the blow that caused it.
+    name: "heavies-death-shockwave",
+    caption: "2 presentation ticks past the frozen 0321 footer - the shockwave reaches its full radius",
+    scenario: "heavies-clash",
+    tick: 323,
+    afterTick: 321,
+    cols: 80,
+    rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
+  },
+  {
+    name: "heavies-death-flight",
+    caption: "6 ticks past the frozen 0321 footer - pieces mid-arc, scattered irregularly, not a tidy ring",
+    scenario: "heavies-clash",
+    tick: 327,
+    afterTick: 321,
+    cols: 80,
+    rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
+  },
+  {
+    name: "heavies-death-settle",
+    caption: "12 ticks past the frozen 0321 footer - every piece landed, scattered around and beyond the 5x2 footprint",
+    scenario: "heavies-clash",
+    tick: 333,
+    afterTick: 321,
+    cols: 80,
+    rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
+  },
+  {
+    name: "heavies-death-monochrome",
+    caption: "The same mid-flight instant at the acceptance floor - monochrome ASCII, no colour to lean on",
+    scenario: "heavies-clash",
+    tick: 327,
+    afterTick: 321,
+    cols: 80,
+    rows: 24,
+    capability: "monochrome",
+  },
+  {
+    // Reduced motion needs neither afterTick nor a late tick to make its point: it holds every
+    // piece already landed from the first instant (progressOf 0), which is exactly the comparison -
+    // travel and the launch delay gone, causality (something this size died and left wreckage) kept.
+    name: "heavies-death-reduced-motion",
+    caption: "The death's very first instant with reduced motion - no travel, every piece already at rest",
+    scenario: "heavies-clash",
+    tick: 321,
+    cols: 80,
+    rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
+    reducedMotion: true,
   },
   {
     name: "mirror-open",
@@ -246,7 +317,14 @@ function capture(shot) {
     shot.rows,
     extraArgsFor(shot),
   )
-  stepToTick(repoRoot, SESSION, shot.tick)
+  if (shot.afterTick === undefined) {
+    stepToTick(repoRoot, SESSION, shot.tick)
+  } else {
+    // Past the Pulse's own last resolved tick: the footer readout freezes there for good (state and
+    // positions have nothing further to show), but a long effect's own presentation clock does not -
+    // see stepPastEnd's own comment.
+    stepPastEnd(repoRoot, SESSION, shot.afterTick, shot.tick)
+  }
   const captured = pane(repoRoot, SESSION, { colour: true })
   sendKeys(repoRoot, SESSION, "q")
   killSession(repoRoot, SESSION)

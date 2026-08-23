@@ -124,6 +124,28 @@ export function stepToTick(repoRoot, session, tick) {
   }
 }
 
+/**
+ * Step to a presentation instant *past* a Pulse's own last resolved tick - deliberately reachable,
+ * not a bug: `snapshot.ts` hands every recipe an unclamped `context.timeMs` even once `tick` and
+ * every entity's own position have frozen on the final resolved state (`clampTick`), so an effect
+ * long enough to outlast the deciding blow - this round's whole point - keeps animating on a frame
+ * whose footer no longer changes. `stepToTick` cannot confirm arrival there, because the one signal
+ * it reads (the footer's tick readout) is exactly the thing that stops moving; this steps to
+ * `lastResolvedTick` with it (still verified), then sends the remaining ticks directly. That is safe
+ * without a read-back because `Playback.apply`'s "step-tick" case (src/view/playback.ts) advances
+ * presentation time by exactly one tick's worth per keypress, unconditionally, gate aside - counting
+ * presses is exact, not a guess.
+ */
+export function stepPastEnd(repoRoot, session, lastResolvedTick, tick) {
+  stepToTick(repoRoot, session, lastResolvedTick)
+  const extra = tick - lastResolvedTick
+  for (let sent = 0; sent < extra; sent += 120) {
+    sendKeys(repoRoot, session, ",".repeat(Math.min(extra - sent, 120)))
+    pause(0.05)
+  }
+  pause(0.2)
+}
+
 /** Turn one captured pane into HTML: a span per styled run, nothing else. */
 export function ansiToHtml(text, cols, rows) {
   const escapeHtml = (value) =>

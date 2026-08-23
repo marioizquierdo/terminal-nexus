@@ -14,7 +14,8 @@ import { footprintExtent, tilesOf } from "../grid/coords.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
 import { PLAYERS } from "../state/types.ts"
-import type { ActiveEffect, EffectBand } from "./effects/index.ts"
+import type { ActiveEffect, EffectBand, EffectCellSource } from "./effects/index.ts"
+import { mergeEffectCells } from "./effects/index.ts"
 import type { BandCell, Cell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import type { CapabilityMode, StyleRole } from "./roles.ts"
@@ -293,8 +294,15 @@ export function composeFrame(
 
   // Bands 3, 7, 8 and 9 — effects. They may paint here and nowhere else (ascii-effects.md 1.1),
   // they are clipped to the Grid, and they can never move a glyph the simulation put down.
+  //
+  // Collected first, rather than pushed straight into `cells`, so that two effect cells landing on
+  // the same tile and band this frame go through mergeEffectCells (src/view/effects/composite.ts)
+  // before either one reaches the general "topmost wins" rule composeBands applies to everything
+  // else. That merge is effects-only, on purpose: a live entity's own glyph must never be a blend of
+  // two things, only two *effects* competing for the same tile are allowed to combine.
+  const effectSources: EffectCellSource[] = []
   for (const painted of input.effects ?? []) {
-    const band = EFFECT_BAND_NUMBERS[painted.instance.band]
+    const band = painted.instance.band
     for (const cell of painted.cells) {
       if (
         cell.tile.x < 0 ||
@@ -304,26 +312,31 @@ export function composeFrame(
       ) {
         continue
       }
-      const column = origin.column + cell.tile.x * tileWidth
-      const row = origin.row + cell.tile.y
-      const style = {
-        ...(cell.role === undefined ? {} : { fgRole: cell.role }),
-        ...(cell.bold === true ? { bold: true } : {}),
-        ...(cell.dim === true ? { dim: true } : {}),
-        ...(cell.inverse === true ? { inverse: true } : {}),
-      }
-      if (cell.glyph === "") {
-        // An attribute change on whatever is already there — the damage flash, and only it. This is
-        // the one way an effect may touch a cell an entity is standing on.
-        cells.push({ band, x: column, y: row, style })
-        continue
-      }
-      // The corruption law, enforced by the compositor rather than by recipe discipline: an effect
-      // that would replace a unit, a structure or a wreck's glyph is dropped on that tile. The
-      // screen may look wrong; the player must still be able to see what is attacking them.
-      if (occupied.has(`${cell.tile.x},${cell.tile.y}`)) continue
-      cells.push({ band, x: column, y: row, cell: { glyph: cell.glyph, style } })
+      effectSources.push({ band, cell })
     }
+  }
+  for (const source of mergeEffectCells(effectSources)) {
+    const cell = source.cell
+    const band = EFFECT_BAND_NUMBERS[source.band]
+    const column = origin.column + cell.tile.x * tileWidth
+    const row = origin.row + cell.tile.y
+    const style = {
+      ...(cell.role === undefined ? {} : { fgRole: cell.role }),
+      ...(cell.bold === true ? { bold: true } : {}),
+      ...(cell.dim === true ? { dim: true } : {}),
+      ...(cell.inverse === true ? { inverse: true } : {}),
+    }
+    if (cell.glyph === "") {
+      // An attribute change on whatever is already there — the damage flash, and only it. This is
+      // the one way an effect may touch a cell an entity is standing on.
+      cells.push({ band, x: column, y: row, style })
+      continue
+    }
+    // The corruption law, enforced by the compositor rather than by recipe discipline: an effect
+    // that would replace a unit, a structure or a wreck's glyph is dropped on that tile. The
+    // screen may look wrong; the player must still be able to see what is attacking them.
+    if (occupied.has(`${cell.tile.x},${cell.tile.y}`)) continue
+    cells.push({ band, x: column, y: row, cell: { glyph: cell.glyph, style } })
   }
 
   // Band 10 — chrome: frame, header, footer, side panel.
