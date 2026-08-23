@@ -41,16 +41,19 @@ test("the preset matrix matches engine.md 3.1", () => {
 })
 
 test("scenario rows read north to south and (0,0) is the north-west tile", () => {
+  // The rock sits at (0,0) purely to pin down which corner "index 0" is; the trooper that used to
+  // share that tile moved one column over so the two checks stop colliding now that the loader
+  // refuses a ground entity placed on impassable terrain.
   const scenario: ScenarioDefinition = {
     ...baseScenario(),
     terrain: ["#...", "....", "...."],
-    placements: ["t   ", "    ", "   T"],
+    placements: [" t  ", "    ", "   T"],
   }
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY })
   assert.equal(loaded.state.grid.tiles[0], "terrain.rock", "the first row is not the north row")
   const [first, second] = loaded.state.entities
   assert.ok(first !== undefined && second !== undefined)
-  assert.deepEqual(first.anchor, { x: 0, y: 0 })
+  assert.deepEqual(first.anchor, { x: 1, y: 0 })
   assert.deepEqual(second.anchor, { x: 3, y: 2 })
 })
 

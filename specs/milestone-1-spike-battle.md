@@ -144,7 +144,7 @@ prints `victory  A             reason: annihilation`.
 [0021] INFO  attack   B:marksman#9  -> A:trooper#1    ranged dmg 6  hp 40->34
 [0044] INFO  attack   A:trooper#1   -> B:marksman#9   melee  dmg 7  hp 24->17
 [0056] INFO  death    B:marksman#9  at (13,7)  by A:trooper#1
-[0071] WARN  stuck    A:worker#4    at (3,9)  no legal step for 24 ticks
+[0071] WARN  stuck    A:worker#4    at (3,9)  no legal step for 24 ticks  wants (4,9)
 [0180] INFO  victory  A  reason: annihilation
 ```
 

@@ -6,6 +6,7 @@ import type { ContentRegistry } from "../content/index.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
 import { tilesOf } from "../grid/coords.ts"
 import type { GridTerrain, TerrainId } from "../grid/types.ts"
+import { TERRAIN } from "../grid/types.ts"
 import { gameplayRng } from "../rng/pcg32.ts"
 import type { EntityState, MatchState } from "../state/types.ts"
 import { SCHEMA_VERSION } from "../state/types.ts"
@@ -138,6 +139,23 @@ export function loadScenario(
               `"${entry.content}" reaches (${tile.x},${tile.y}), which is outside the ` +
               `${width}x${height} Grid`,
           )
+        }
+        // A ground entity may not start inside terrain it could never walk into. The kernel builds
+        // that entity's mask with `terrain: "impassable"` (src/pulse/shared.ts), so a unit placed on
+        // rock is entombed from tick zero: it cannot leave the tile, and every tick after that it
+        // reports itself blocked. Nothing downstream errors, which is why four units in
+        // `citizen-mirror-skirmish` sat inside the eastern rock for the whole of Gate 1A without
+        // anyone noticing. Air ignores terrain, exactly as its mask does.
+        if (definition.layer !== "air") {
+          const terrainId = tiles[tile.y * width + tile.x]
+          if (terrainId !== undefined && TERRAIN[terrainId].impassable) {
+            fail(
+              scenario,
+              `placements row ${y + 1}, column ${x + 1} (x=${x},y=${y}): the footprint of ` +
+                `"${entry.content}" covers (${tile.x},${tile.y}), which is impassable ` +
+                `${terrainId}. A ground entity cannot start inside terrain it cannot walk into`,
+            )
+          }
         }
         // Two entities may legally share a tile across layers (a worker and a soldier do), so the
         // placement mask is per layer.
