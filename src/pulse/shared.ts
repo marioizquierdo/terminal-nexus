@@ -93,6 +93,19 @@ export function speedTier(actor: Actor): number {
 }
 
 /**
+ * The `Actor` an actor is currently targeting, or `null` if it has none — or if the ordinal it last
+ * targeted is no longer live (already resolved out of `byOrdinal` this tick; every phase that reads
+ * a target has to treat "gone" the same as "never had one"). Intents, arbitration's `rerank`, and
+ * attacks all resolved this the same way independently before this was one function; wrapping it here
+ * is the same reasoning as `distanceBetween` and `applyDamage` — a healer resolving an ally, or
+ * anything else that reads `targetOrdinal`, gets the one answer this already agrees on rather than a
+ * fourth copy that could quietly drift from the other three.
+ */
+export function resolveTarget(context: TickContext, actor: Actor): Actor | null {
+  return actor.targetOrdinal === null ? null : (context.byOrdinal.get(actor.targetOrdinal) ?? null)
+}
+
+/**
  * The distance between two actors, to the nearest occupied tile of each footprint — engine.md 3.5.
  * Perception, intents, attacks, and detonation all measure this same way; wrapping the two anchors
  * and two footprints here (rather than every call site reaching into both actors' `definition`

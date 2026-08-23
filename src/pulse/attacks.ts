@@ -1,9 +1,8 @@
 // 7. Attacks — engine.md 4.3. Damage is computed per speed tier and applied simultaneously within
 // it, so no entity survives merely by being iterated first.
 
-import { flightWindowTicks } from "./arbitration.ts"
 import type { Actor, TickContext } from "./shared.ts"
-import { applyDamage, distanceBetween, speedTier } from "./shared.ts"
+import { applyDamage, distanceBetween, resolveTarget, speedTier } from "./shared.ts"
 
 export function attacks(context: TickContext): void {
   for (const actor of context.actors) {
@@ -35,8 +34,8 @@ export function attacks(context: TickContext): void {
       if (actor.pendingDead || actor.cooldown > 0) continue
       // Stop, then attack: an actor that settled a move this tick waits for the next one.
       if (context.movedThisTick.has(actor.ordinal)) continue
-      const target = actor.targetOrdinal === null ? null : context.byOrdinal.get(actor.targetOrdinal)
-      if (target === undefined || target === null || target.pendingDead) continue
+      const target = resolveTarget(context, actor)
+      if (target === null || target.pendingDead) continue
       const distance = distanceBetween(actor, target)
       if (distance > attack.range) continue
 
@@ -83,4 +82,15 @@ export function attacks(context: TickContext): void {
       }
     }
   }
+}
+
+/**
+ * `ceil(distance / tilesPerTick)`, minimum 1 for any real speed, 0 for an attack with no travel
+ * speed at all (melee, or a ranged attack that never declared one). Presentation metadata on the
+ * `attack.launched` event — engine.md 4.3 — read by no rule; `tests/rules.test.ts` proves changing
+ * it moves no state.
+ */
+export function flightWindowTicks(distance: number, tilesPerTick: number | undefined): number {
+  if (tilesPerTick === undefined || tilesPerTick <= 0) return 0
+  return Math.max(1, Math.ceil(distance / tilesPerTick))
 }

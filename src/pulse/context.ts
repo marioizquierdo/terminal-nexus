@@ -1,6 +1,5 @@
 import type { ContentRegistry } from "../content/index.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
-import { PLAYERS } from "../state/types.ts"
 
 export type Roster = Readonly<{
   /** Whether the player started the Pulse with a Grid Nexus that can be destroyed. */
@@ -33,10 +32,6 @@ export function createContext(
     const side = roster[entity.player]
     if (definition.nexus === true) side.hasNexus = true
     if (definition.layer !== "obstacles") side.hasMobile = true
-  }
-  for (const player of PLAYERS) {
-    const side = roster[player]
-    roster[player] = { hasNexus: side.hasNexus, hasMobile: side.hasMobile }
   }
   return { registry, pulseTicks, roster }
 }

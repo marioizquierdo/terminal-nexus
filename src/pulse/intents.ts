@@ -7,7 +7,7 @@ import type { StepChoice } from "./movement.ts"
 import { accrueCredit, canStep, rankedSteps, stepCost } from "./movement.ts"
 import { fleeTrigger } from "./perception.ts"
 import type { Actor, TickContext } from "./shared.ts"
-import { blockReasonFor, distanceBetween, maskForActor } from "./shared.ts"
+import { blockReasonFor, distanceBetween, maskForActor, resolveTarget } from "./shared.ts"
 
 export type Intent = {
   actor: Actor
@@ -23,8 +23,8 @@ export function intents(context: TickContext): Intent[] {
 
     actor.moveCredit = accrueCredit(actor.moveCredit, rate)
 
-    const target = actor.targetOrdinal === null ? null : context.byOrdinal.get(actor.targetOrdinal)
-    if (target === undefined || target === null) continue
+    const target = resolveTarget(context, actor)
+    if (target === null) continue
 
     const distance = distanceBetween(actor, target)
 

@@ -43,7 +43,18 @@ export type PlacementBlock = Readonly<{
    * offset to keep the door open.
    */
   at?: Coord
-  /** One character per tile, rows **north to south**. A space means nothing here. */
+  /**
+   * One character per tile, rows **north to south**. A space means nothing here — including a
+   * missing one: a row may be shorter than the block's widest row, and everything past its last
+   * character is exactly as blank as if it had been written out in full. That is deliberate, not a
+   * gap in validation to eventually close: most blocks are irregular (an uneven squad, a scattered
+   * escort), and requiring every row to be padded to the same length would fight the format's own
+   * readability for no real safety, since `terrain`'s stricter "every row is the Grid's width"
+   * check was never really about catching a truncated row either — it happened to, as a side effect
+   * of terrain covering the whole Grid, which a block does not. A truncated or column-shifted edit
+   * inside a block is consequently **not** caught by the loader the way an out-of-bounds or
+   * overlapping footprint is; a screenshot or a watched run is still the check for that.
+   */
   rows: readonly string[]
   legend: Readonly<Record<string, PlacementEntry>>
 }>

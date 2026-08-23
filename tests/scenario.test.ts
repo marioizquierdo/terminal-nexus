@@ -174,7 +174,7 @@ test("the loader fails loudly, naming the offending line and column", () => {
       /unknown content id "unit.citizen.nonesuch"/,
     ],
     [
-      "footprint off the Grid",
+      "footprint off the Grid, east edge",
       {
         placements: {
           // A 3x1 hauler centred on the last column reaches one tile past the east edge.
@@ -182,6 +182,21 @@ test("the loader fails loudly, naming the offending line and column", () => {
         },
       },
       /reaches \(4,0\), which is outside the 4x3 Grid/,
+    ],
+    [
+      "footprint off the Grid, west edge via a negative anchor",
+      {
+        placements: {
+          // Centre-anchoring (footprintCentre, grid/coords.ts) is what can push an anchor negative
+          // in the first place - a symbol written right at a block's own (0,0) is exactly where a
+          // multi-tile unit's *anchor* lands one or more tiles west of it. A 3x1 hauler's centre
+          // offset is (1,0), so a symbol at x=0 anchors at x=-1: untested before, since the only
+          // covering case exercised the east edge, and the two branches of the same `||` check are
+          // otherwise easy to leave one of them silently unreachable.
+          A: block({ x: 0, y: 0 }, ["h"], { h: { content: "unit.citizen.hauler" } }),
+        },
+      },
+      /reaches \(-1,0\), which is outside the 4x3 Grid/,
     ],
     [
       "overlapping footprint",
