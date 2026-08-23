@@ -664,11 +664,29 @@ building everything the exercise raised:
   compile silently into the wrong branch rather than fail loudly. Worth converting to an exhaustive
   switch **when** a fourth value is actually added, not preemptively.
 
-Two more things were asked for before this round closed and were still running when the rest of this
-section was written: an audit of the greedy router specifically for large-footprint bugs, and a second,
-fresh-eyes refactor pass. Their findings, and whatever they lead to fixing, are appended to this
-section once they land, in a follow-up commit — not held back to make this commit's history look more
-finished than it is.
+Two more things were asked for before this round closed: an audit of the greedy router specifically for
+large-footprint bugs (not new pathfinding — still Milestone 2's job), and a second, fresh-eyes refactor
+pass, subagents invited for both.
+
+**The refactor pass** found five real things, all applied. `resolveTarget(context, actor)` (`pulse/
+shared.ts`) replaces the same "resolve `targetOrdinal` to an `Actor` or `null`" one-liner duplicated
+across `intents.ts`, `arbitration.ts`'s `rerank()`, and `attacks.ts` — exactly the class of duplication
+`distanceBetween`/`applyDamage` were extracted for earlier this round, and the seam a future phase
+reading `targetOrdinal` would otherwise re-derive a fourth way. A dead no-op loop in `pulse/context.ts`
+that rebuilt each player's roster entry field-by-field into an object with identical values is gone —
+pre-existing since Gate 1A, confusing rather than costly, since it reads as finalizing something and
+does nothing. `flightWindowTicks` moved from `arbitration.ts` (whose own header scopes it to
+"arbitration and settle") to `attacks.ts`, its only caller and the only place it has anything to do
+with. A missing test case was added: the loader's off-Grid check had coverage for the east edge only,
+and centre-anchoring — this round's own addition — is exactly what can push a multi-tile unit's anchor
+*negative*, an untested branch of the same bounds check. And one real gap was found and documented
+rather than mechanically patched: the placement-format rewrite dropped the old single-grid dimension
+check, and `PlacementBlock.rows` now has no structural validation at all — every checked-in scenario
+already relies on intentionally ragged rows (a short row trailing off as blank), so the one check that
+would catch a truncated row would also break the format's own established, reasonable convention.
+Recorded as a known, accepted limit on `PlacementBlock.rows` rather than left silently unmentioned; a
+screenshot or a watched run is still the check for it. All five verified the same way as the earlier
+pass: `stateHash`/`eventsHash` identical across all 25 scenarios before and after.
 
 ### Verification
 
