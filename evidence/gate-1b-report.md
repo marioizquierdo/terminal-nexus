@@ -736,3 +736,95 @@ built to be watched; the rest of this round's new fixtures are two-and-three-lin
 is enough). Milestone 2 remains gated on acceptance, not on this session running out of things to fix
 — now with an actual account, rather than a guess, of what the next unit type will cost when Milestone
 2 or the Commander Army work that follows it wants one.
+
+## 18. A fifth round — bigger deaths, a dead animation, a third speed pass, two new units
+
+Section 17's PR followed: #17, opened from round four's work, merged by the owner the same day — read
+alongside Section 16's own note about #15, the same pattern repeating: encouraging, and explicitly not
+the acceptance Section 8 and Section 12 still wait on. What arrived after the merge, watching
+`heavies-clash`, was five concrete pieces of feedback rather than an instruction to start Milestone 2:
+
+- **"When a large unit is destroyed, it should leave more derby [debris] in the ground. We should
+  design effects that can be used for larger explosions."**
+- **"Consider a dead animation, the unit itself can define a few frames for that. A combination of
+  effects and a dead animation could really make it snap, specially for those large units."**
+- **"Imagine a small army fighting an awoken ancient?"** — framing, not a separate ask: the direction
+  the size and weight of the last two items is aimed at.
+- **"Units still move too slow... raise movement speed by another 50-70% on all units."**
+- **"Try smaller multi-cell units: 2x1, and 2x2... a nice Ravel skirmish flying spaceship."**
+
+### What this session did
+
+**Bigger debris for large deaths.** `fx.death.collapse`'s expanding ring used to be eight fixed
+offsets regardless of footprint size — proportionally weaker the bigger the unit, backwards from what
+a large death should read as. A new `footprintRing` generalises it to a real rectangle perimeter around
+the footprint at an outset that grows with the footprint's own longest side (`deathRingOutset`); at
+outset 1 (anything up to two tiles) it reproduces the exact original eight-cell halo, so every existing
+1×1 death is unchanged, and past that it scales for real — a 3×3 colossus's ring nearly triples the
+1×1 baseline, a 5×2 leviathan's more than quadruples it — thinned at higher outsets (craft rule 5,
+negative space is material) so a large ring reads as scattered debris rather than a solid block.
+
+**A dead animation, unit-defined.** `DEATH_ART` (`src/content/art.ts`) is an optional short sequence
+of frames a content id can author, played across `fx.death.collapse`'s own window by the `progress`
+value the recipe already computes — no kernel change, no new plumbing, the simulation still never
+knows a glyph (engine.md 9.6). A space in a frame falls through to the generic per-tile fill rather
+than punching a blank hole. Reduced motion holds the final frame instead of animating through them
+(ascii-effects.md 4: reduced motion keeps settle, drops drift — the sequence is the drift here).
+Authored for the colossus, the leviathan, and the two new units below.
+
+**A third speed pass.** One constant, 5/3 (~1.67×, the middle of the requested range), applied to
+every `movementRate` in both rosters at once — the same reasoning as the two 2026-08-22 passes,
+verified this time by actually checking the multiplier against `tests/ravel.test.ts`'s ceiling-based
+cadence math rather than trusting a continuous-ratio argument that turned out not to survive rounding
+for several other candidates in the requested range. The trooper/marksman fixture arithmetic held
+unchanged (they have always shared one `movementRate`, so a uniform multiplier preserves their
+relative closing dynamics exactly) — verified, not assumed, by the existing pinned-arithmetic tests
+passing without modification. `speed-parade.map.json`'s own regression coverage did not survive
+unchanged a second time: the "real blocker, not the edge" fixture depended on emergent crowding timing
+between two of its movers, which drifted again. Replaced with `raider-tail-crowded.map.json`, built to
+reproduce the exact case by construction rather than by incidental timing, immune to any future speed
+pass. `speed-parade.map.json`'s own notes text picked up a real, pre-existing (not this pass's fault)
+inaccuracy along the way: its scav and worker, both flee-behaviour, have never actually moved in that
+fixture, since their only "hostile" is an unarmed Nexus — corrected while already in the file.
+
+**Two small multi-cell units.** `unit.ravel.corsair` (2×1, air, `<>`) is the requested spaceship — a
+ranged attacker with its own detonation, the first air content with an actual footprint rather than
+one tile. `unit.citizen.sentinel` (2×2, `[]`/`||`) is a distinct weight class between the trooper and
+the hauler, not a scaled-down colossus. `scenarios/small-multicell-skirmish.map.json` puts both in a
+real fight, each with a two-unit escort (`heavies-clash`'s own pattern, one size down): the sentinel
+melees the corsair down, the corsair's own detonation catches it back, and its slinger escort dies the
+same tick — cross-layer combat, a footprint-scaled death ring, and a unit-specific dead animation all
+exercised together in one run. `evidence/screenshots/multicell-open.png` and `multicell-death.png` are
+the visual confirmation, sent to the owner directly; the second is deliberately the worst frame (two
+simultaneous deaths, per ascii-effects.md craft rule 1) rather than a cleaner, cherry-picked one.
+
+**Left unresolved rather than guessed at:** the owner's movement note ended "...They should slow down
+before the batter[?]" — read as a likely truncation or autocorrect artifact rather than a second,
+distinct request, since the clear half of the sentence (raise speed 50–70%) was acted on and nothing
+in the rest of the session's feedback suggests a deceleration mechanic was actually being asked for.
+Flagged back to the owner rather than implemented on a guess.
+
+### Verification
+
+165 Node tests (159 before this round), 164 Bun, `tsc --noEmit` clean, `check-repository.sh` clean,
+`grid --verify --runs 10` swept across all 27 checked-in scenarios (up from 25), `--runs 20` on the two
+new fixtures specifically.
+
+### Revised decision
+
+> **REVISE, acted on a fifth time — PASS still pending the owner's next look.**
+
+Same shape as every round before it: the gate's real question is not answerable by a test and is not
+claimed as answered here. This round's own additions — debris scaling, the dead-animation mechanism,
+the third speed pass, two new units — are each verified the way this report has verified every round's
+work: hash comparison for anything touching the kernel or a scenario's outcome, a new or updated test
+for every specific claim, and a real screenshot rather than a description for anything the owner asked
+to see.
+
+## 19. Next authorized action, a fifth time
+
+PR #17 merged; this round's commits are unmerged follow-up on the same branch, same situation as
+Section 17 described for the round before it — a new PR when the owner wants one. Watch
+`small-multicell-skirmish` for the two new units and the dead-animation frames together; `heavies-clash`
+again if the debris-scaling change is worth confirming on the units it was written for. Milestone 2
+remains gated on acceptance, not on this session running out of things to fix.
