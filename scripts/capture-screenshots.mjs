@@ -35,6 +35,26 @@ const SESSION = "nexus-capture"
 
 const shots = [
   {
+    name: "multicell-open",
+    caption: "Small multicell skirmish, tick 0 - a 2x2 sentinel and a 2x1 flying corsair, escorted",
+    scenario: "small-multicell-skirmish",
+    tick: 0,
+    cols: 80,
+    rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
+  },
+  {
+    name: "multicell-death",
+    caption: "Small multicell skirmish, tick 133 - the corsair and its slinger escort both down, mid-collapse",
+    scenario: "small-multicell-skirmish",
+    tick: 133,
+    cols: 80,
+    rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
+  },
+  {
     name: "heavies-open",
     caption: "Heavies clash, tick 0 - a 3x3 colossus and a 5x2 leviathan among their 1-tile escorts",
     scenario: "heavies-clash",

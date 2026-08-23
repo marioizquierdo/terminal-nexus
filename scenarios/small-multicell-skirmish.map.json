@@ -1,0 +1,86 @@
+{
+  "id": "small-multicell-skirmish",
+  "name": "Small multicell skirmish - a sentinel and a corsair, escorted",
+  "notes": "Owner playtest, 2026-08-23: 'try smaller multi-cell units: 2x1, and 2x2... try to make a nice Ravel skirmish flying spaceship.' unit.citizen.sentinel (2x2) and unit.ravel.corsair (2x1, air) meet across open ground, each with a two-unit escort for scale contrast the way heavies-clash used escorts for its own much larger pair. The corsair flies straight at the sentinel while its own escort runners cross the ground beneath it - the same air/ground mix air-crossing already proved works, now in a real multi-unit fight rather than an isolated fixture.",
+  "grid": {
+    "preset": "medium-extra-wide"
+  },
+  "seed": 57346,
+  "pulseTicks": 360,
+  "terrain": [
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 3,
+        "y": 3
+      },
+      "rows": [
+        "t",
+        "",
+        "m  s",
+        "",
+        "",
+        "t"
+      ],
+      "legend": {
+        "s": {
+          "content": "unit.citizen.sentinel"
+        },
+        "t": {
+          "content": "unit.citizen.trooper"
+        },
+        "m": {
+          "content": "unit.citizen.marksman"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 42,
+        "y": 3
+      },
+      "rows": [
+        "   x",
+        "",
+        "",
+        "c  z",
+        "",
+        "",
+        "   x"
+      ],
+      "legend": {
+        "c": {
+          "content": "unit.ravel.corsair"
+        },
+        "x": {
+          "content": "unit.ravel.runner"
+        },
+        "z": {
+          "content": "unit.ravel.slinger"
+        }
+      }
+    }
+  }
+}

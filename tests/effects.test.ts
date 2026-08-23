@@ -294,9 +294,10 @@ test("effects are derived from the event stream, and turning them off changes on
   assert.equal(without.effectCount, 0)
   assert.equal(withEffects.timeline.stateHash, without.timeline.stateHash)
 
-  // Tick 37, not 48: the 2026-08-22 speed pass (owner playtest, "units still move too slow") moved
-  // the cascade's first blast earlier, since every mover in the fixture reaches contact sooner.
-  const timeMs = 37 * (1000 / 12) + 40
+  // Tick 25, not 37: the 2026-08-23 speed pass (owner playtest, "raise movement speed by another
+  // 50-70%") moved the cascade's first blast earlier again, for the same reason the 2026-08-22 pass
+  // already moved it once (every mover in the fixture reaches contact sooner).
+  const timeMs = 25 * (1000 / 12) + 40
   assert.notEqual(
     frameToText(withEffects.snapshotAt(timeMs, "monochrome", 1)),
     frameToText(without.snapshotAt(timeMs, "monochrome", 1)),
@@ -534,4 +535,100 @@ test("a death reads visibly heavier than a hit, ascii-effects.md 5's own require
   // Duration is the other half of "heavier": a death that lingers reads as more consequential than
   // one that flickers and is gone.
   assert.ok(death.durationMs > burst.durationMs)
+})
+
+test("a large footprint's death ring reads heavier than a 1x1's, not the same fixed halo", () => {
+  // Owner playtest, 2026-08-23: "when a large unit is destroyed, it should leave more derby in the
+  // ground." Before this, fx.death.collapse's expanding ring was eight fixed offsets regardless of
+  // footprint size - proportionally weaker the bigger the unit, exactly backwards from what a large
+  // death should read as.
+  const deathRecipe = EFFECT_RECIPES["fx.death.collapse"]
+  assert.ok(deathRecipe !== undefined)
+  const peakCells = (width: number, height: number): number => {
+    const instance: EffectInstance = {
+      recipe: "fx.death.collapse",
+      band: "effects",
+      startMs: 0,
+      durationMs: 320,
+      origin: { x: 10, y: 6 },
+      family: "citizen",
+      params: { width, height },
+    }
+    let peak = 0
+    for (let timeMs = 0; timeMs < 320; timeMs += 5) {
+      peak = Math.max(peak, deathRecipe(instance, context({ timeMs, reducedMotion: false })).length)
+    }
+    return peak
+  }
+
+  const small = peakCells(1, 1)
+  const colossus = peakCells(3, 3)
+  const leviathan = peakCells(5, 2)
+  assert.ok(
+    colossus > small * 2,
+    `a 3x3 death (${colossus} cells) is not comfortably heavier than a 1x1's (${small})`,
+  )
+  assert.ok(
+    leviathan > colossus,
+    `a 5x2 death (${leviathan} cells) is not heavier than a 3x3's (${colossus}) - the widest thing ` +
+      "on the bench should leave the most",
+  )
+})
+
+test("content with DEATH_ART plays its own frames across the collapse, not the generic fill", () => {
+  const deathRecipe = EFFECT_RECIPES["fx.death.collapse"]
+  assert.ok(deathRecipe !== undefined)
+  const instance: EffectInstance = {
+    recipe: "fx.death.collapse",
+    band: "effects",
+    startMs: 0,
+    durationMs: 320,
+    origin: { x: 10, y: 6 },
+    family: "citizen",
+    params: { width: 3, height: 3, contentId: "unit.citizen.colossus" },
+  }
+  const glyphsAt = (timeMs: number): Set<string> =>
+    new Set(deathRecipe(instance, context({ timeMs, reducedMotion: false })).map((cell) => cell.glyph))
+
+  // The frame drawn early (an "x" crack in the sealed head) should not still be there once the
+  // sequence has moved on to its later frames (settled rubble, "." and "=").
+  const early = glyphsAt(10)
+  const late = glyphsAt(300)
+  assert.ok(early.has("x"), `the first death frame's crack glyph never appeared: ${[...early]}`)
+  assert.ok(!late.has("["), `the intact bracket is still drawn at ${[...late]} long after the frame should have moved on`)
+
+  // Content with no DEATH_ART entry is completely unaffected - the plain per-tile fill this recipe
+  // has always drawn for everything else on the bench.
+  const plain: EffectInstance = { ...instance, params: { width: 1, height: 1, contentId: "unit.citizen.trooper" } }
+  const plainCells = deathRecipe(plain, context({ timeMs: 10, reducedMotion: false }))
+  assert.ok(plainCells.length > 0, "a trooper's death produced no cells at all")
+  assert.ok(
+    plainCells.every((cell) => cell.glyph !== "x" && cell.glyph !== "["),
+    "a trooper's death drew a colossus death-frame glyph - contentId leaked across content",
+  )
+})
+
+test("reduced motion holds a death frame's final pose, not a mid-collapse one", () => {
+  // ascii-effects.md 4: reduced motion keeps impact and settle, drops drift - the frame sequence is
+  // exactly the drift here, so it should hold on the last frame rather than animate through them.
+  const deathRecipe = EFFECT_RECIPES["fx.death.collapse"]
+  assert.ok(deathRecipe !== undefined)
+  const instance: EffectInstance = {
+    recipe: "fx.death.collapse",
+    band: "effects",
+    startMs: 0,
+    durationMs: 320,
+    origin: { x: 10, y: 6 },
+    family: "citizen",
+    params: { width: 3, height: 3, contentId: "unit.citizen.colossus" },
+  }
+  const early = deathRecipe(instance, context({ timeMs: 10, reducedMotion: true }))
+  const late = deathRecipe(instance, context({ timeMs: 300, reducedMotion: true }))
+  const glyphsOf = (cells: readonly { glyph: string }[]): string =>
+    cells.map((cell) => cell.glyph).sort().join("")
+  assert.equal(
+    glyphsOf(early),
+    glyphsOf(late),
+    "reduced motion still animates through the death frames instead of holding the last one",
+  )
 })

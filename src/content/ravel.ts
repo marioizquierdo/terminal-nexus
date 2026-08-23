@@ -10,11 +10,12 @@
 // Three of the four Ravel rule shapes in `commander-armies.md` 4.1 are expressible with what the
 // kernel already has, and the fourth is one new rule:
 //
-//   Off the beat        every rate is deliberately off the Citizen cadence — 12/5, 8/5, 8/3, 4/3,
-//                       3/1 against 2/1 and 1/1, so nothing in the two armies steps together. Both
-//                       rosters got a 2x-the-original speed pass on 2026-08-22 (a second owner
-//                       playtest that day: "still too slow... 2 or 2.5 times faster"), so the
-//                       offsets are exactly what they always were;
+//   Off the beat        every rate is deliberately off the Citizen cadence, so nothing in the two
+//                       armies steps together. Three speed passes now (2026-08-22 twice, then
+//                       2026-08-23: "raise movement speed by another 50-70%"), each one a single
+//                       constant applied to every rate in both rosters at once - the offsets are
+//                       exactly what they always were, because a shared multiplier cannot close a
+//                       gap between two rates that were already unequal;
 //   Break free          lower speed tiers: Ravels claim tiles and swing before Citizens do;
 //   Everything is fuel  volatile munitions, below — the rule that makes them Ravel;
 //   Scrap doctrine      higher salvage, since even their losses pay forward.
@@ -45,12 +46,10 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(1, 1),
     maxHp: 16,
-    // 12/5 rather than 6/5 - the same speed pass as the Citizen roster, second round (2026-08-22
-    // owner playtest: "still too slow... 2 or 2.5 times faster"), 2x the ORIGINAL rate rather than
-    // another factor on top of the branch's own unseen 1.5x pass - see citizen.ts's worker entry for
-    // the full reasoning. The runner stays exactly as far off the Citizen cadence, proportionally,
-    // as it always was.
-    movementRate: { numerator: 12, denominator: 5 },
+    // 4/1 rather than 12/5 - the third speed pass, ~1.67x on top of the roster's already-doubled
+    // rate (citizen.ts's worker entry has the full multiplier reasoning). The runner stays exactly
+    // as far off the Citizen cadence, proportionally, as it always was.
+    movementRate: { numerator: 4, denominator: 1 },
     speedTier: 1,
     attack: { kind: "melee", range: 1, damage: 5, cooldownTicks: 8 },
     collidesWith: GROUND_UNIT_COLLISIONS,
@@ -66,10 +65,9 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(3, 1),
     maxHp: 44,
-    // 8/5 rather than 4/5 - 2x the original rate, same speed pass as the rest of the roster; still
-    // slower than the runner, and still on nobody else's beat (a step every eight ticks now, not
-    // fifteen).
-    movementRate: { numerator: 8, denominator: 5 },
+    // 8/3 rather than 8/5 - the third speed pass, same multiplier as the rest of the roster; still
+    // slower than the runner, and still on nobody else's beat.
+    movementRate: { numerator: 8, denominator: 3 },
     speedTier: 2,
     attack: { kind: "melee", range: 1, damage: 11, cooldownTicks: 14 },
     collidesWith: GROUND_UNIT_COLLISIONS,
@@ -84,8 +82,8 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(1, 1),
     maxHp: 18,
-    // 8/3 rather than 4/3 - 2x the original rate, same speed pass as the rest of the roster.
-    movementRate: { numerator: 8, denominator: 3 },
+    // 40/9 rather than 8/3 - the third speed pass, same multiplier as the rest of the roster.
+    movementRate: { numerator: 40, denominator: 9 },
     speedTier: 1,
     attack: { kind: "ranged", range: 4, damage: 5, cooldownTicks: 20, projectileTilesPerTick: 2 },
     collidesWith: GROUND_UNIT_COLLISIONS,
@@ -103,8 +101,8 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     // Twenty health against a twenty-damage blast, on purpose: one wagon's detonation is exactly
     // enough to set off the next one, which is what makes a chain a chain rather than a bang.
     maxHp: 20,
-    // 4/3 rather than 2/3 - 2x the original rate, same speed pass as the rest of the roster.
-    movementRate: { numerator: 4, denominator: 3 },
+    // 20/9 rather than 4/3 - the third speed pass, same multiplier as the rest of the roster.
+    movementRate: { numerator: 20, denominator: 9 },
     speedTier: 3,
     collidesWith: GROUND_UNIT_COLLISIONS,
     behavior: "advance",
@@ -118,8 +116,8 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     layer: "workers",
     footprint: rectFootprint(1, 1),
     maxHp: 16,
-    // 3/1 rather than 3/2 - 2x the original rate, same speed pass as the rest of the roster.
-    movementRate: { numerator: 3, denominator: 1 },
+    // 5/1 rather than 3/1 - the third speed pass, same multiplier as the rest of the roster.
+    movementRate: { numerator: 5, denominator: 1 },
     speedTier: 2,
     collidesWith: SCAVENGER_COLLISIONS,
     behavior: "flee",
@@ -135,9 +133,10 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(5, 2),
     maxHp: 130,
-    // Cadence 18 ticks, off both Citizen cadences (6 and 12, plus the colossus's 24) as the whole
-    // roster is by design.
-    movementRate: { numerator: 2, denominator: 3 },
+    // 10/9 rather than 2/3 - the third speed pass, same multiplier as the rest of the roster.
+    // Cadence 11 ticks/step, off every Citizen cadence as the whole roster is by design
+    // (tests/ravel.test.ts checks this dynamically, not against a pinned number).
+    movementRate: { numerator: 10, denominator: 9 },
     speedTier: 4,
     attack: { kind: "melee", range: 1, damage: 14, cooldownTicks: 16 },
     collidesWith: GROUND_UNIT_COLLISIONS,
@@ -160,15 +159,35 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     layer: "air",
     footprint: rectFootprint(1, 1),
     maxHp: 14,
-    // 4/1 - cadence 3 ticks/step, off every cadence already on the bench (citizen: 6, 6, 6, 12, 24;
-    // the rest of this roster: 5, 7.5, 4.5, 9, 4, 18). The fastest thing either side fields.
-    movementRate: { numerator: 4, denominator: 1 },
+    // 20/3 rather than 4/1 - the third speed pass, same multiplier as the rest of the roster.
+    // Cadence 2 ticks/step - still the fastest thing either side fields.
+    movementRate: { numerator: 20, denominator: 3 },
     speedTier: 1,
     attack: { kind: "melee", range: 1, damage: 6, cooldownTicks: 10 },
     collidesWith: AIR_UNIT_COLLISIONS,
     behavior: "advance",
     salvage: 7,
     detonation: { radius: 1, damage: 6 },
+  },
+  {
+    // Owner playtest, 2026-08-23: "try smaller multi-cell units: 2x1, and 2x2... try to make a nice
+    // Ravel skirmish flying spaceship." The buzzard proved the air layer; this is the first air
+    // content with an actual footprint - two tiles of hull, a weapon, and enough hit points that it
+    // is a target rather than a nuisance. Doctrine unchanged: it loses a straight fight and wins the
+    // one it picked, in numbers, from the one direction nobody was watching.
+    id: "unit.ravel.corsair",
+    short: "corsair",
+    layer: "air",
+    footprint: rectFootprint(2, 1),
+    maxHp: 22,
+    // 5/2 - cadence 5 ticks/step, off the Citizen beat like the rest of the roster.
+    movementRate: { numerator: 5, denominator: 2 },
+    speedTier: 1,
+    attack: { kind: "ranged", range: 4, damage: 6, cooldownTicks: 18, projectileTilesPerTick: 3 },
+    collidesWith: AIR_UNIT_COLLISIONS,
+    behavior: "advance",
+    salvage: 14,
+    detonation: { radius: 1, damage: 8 },
   },
   {
     // A Grid Nexus welded out of the same scrap as everything else, and true to the doctrine: when

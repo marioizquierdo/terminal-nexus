@@ -346,7 +346,11 @@ test("a multi-tile mover blocked inside its own footprint reports the real block
   // checked the mover's single anchor tile, which can be perfectly clear while a different tile in
   // its footprint is what is actually occupied - and a clear single tile fell through
   // blockReasonFor's cases to its "edge" fallback, misreporting a crowded ally as the Grid's border.
-  const resolved = await resolveScenario("speed-parade.map.json")
+  // raider-tail-crowded.map.json builds the same case by construction rather than relying on
+  // speed-parade.map.json's emergent timing, which drifted out from under this test twice - once
+  // per movement-speed pass - since a demo scenario's job is showing every rate side by side, not
+  // holding a specific tick's worth of incidental crowding stable.
+  const resolved = await resolveScenario("raider-tail-crowded.map.json")
   const blocked = resolved.run.events.filter(
     (event) => event.kind === "move.blocked" && event.entity.includes("raider"),
   )
@@ -449,4 +453,35 @@ test("an air unit crosses terrain a ground unit could never enter, end to end in
   if (ended !== undefined && ended.kind === "pulse.ended") {
     assert.equal(ended.reason, "annihilation", `ended by ${ended.reason}, not a real fight to the death`)
   }
+})
+
+test("a 2x2 ground unit and a 2x1 air unit fight, each within its own escort", async () => {
+  // small-multicell-skirmish.map.json - owner playtest, 2026-08-23: "try smaller multi-cell units:
+  // 2x1, and 2x2... a nice Ravel skirmish flying spaceship." unit.citizen.sentinel (2x2) and
+  // unit.ravel.corsair (2x1, air) are the two new pieces of content; this pins that they are
+  // genuinely the sizes their footprints claim and that they actually fight each other, not just
+  // their escorts.
+  const resolved = await resolveScenario("small-multicell-skirmish.map.json")
+  const sentinel = resolved.registry.get("unit.citizen.sentinel")
+  const corsair = resolved.registry.get("unit.ravel.corsair")
+  assert.deepEqual(footprintExtent(sentinel.footprint), { width: 2, height: 2 })
+  assert.deepEqual(footprintExtent(corsair.footprint), { width: 2, height: 1 })
+  assert.equal(corsair.layer, "air")
+
+  const directHits = resolved.run.events.filter(
+    (event) =>
+      event.kind === "attack.launched" &&
+      ((event.attacker.includes("sentinel") && event.target.includes("corsair")) ||
+        (event.attacker.includes("corsair") && event.target.includes("sentinel"))),
+  )
+  assert.ok(directHits.length > 0, "the sentinel and the corsair never fought each other directly")
+
+  // At least one of the two new units should actually die, so DEATH_ART's frames for them
+  // (src/content/art.ts) are exercised by a real fight, not only by the recipe unit tests.
+  const newUnitDeaths = resolved.run.events.filter(
+    (event) =>
+      event.kind === "entity.died" &&
+      (event.contentId === "unit.citizen.sentinel" || event.contentId === "unit.ravel.corsair"),
+  )
+  assert.ok(newUnitDeaths.length > 0, "neither new unit died, so its death frames were never exercised")
 })

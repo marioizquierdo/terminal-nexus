@@ -11,6 +11,8 @@
 // screen. Craft rule 2 — different weapons need different physical languages — with one code path.
 
 import type { Coord } from "../../grid/types.ts"
+import { deathFramesFor } from "../../content/art.ts"
+import type { UnitArt } from "../../content/art.ts"
 import type {
   EffectContext,
   EffectFamily,
@@ -18,7 +20,7 @@ import type {
   EffectRecipe,
   PositionedCell,
 } from "./types.ts"
-import { paramNumber, progressOf } from "./types.ts"
+import { paramNumber, paramString, progressOf } from "./types.ts"
 import { cosmeticHash, cosmeticPick, cosmeticUnit } from "./random.ts"
 
 type Family = Readonly<{
@@ -301,18 +303,85 @@ const damageFlash: EffectRecipe = (instance, context) => {
 // Endings
 // ---------------------------------------------------------------------------
 
-/** Expanding then thinning debris over the footprint. Visibly heavier than an impact burst. */
+/**
+ * How far out, in tiles, the death-collapse ring sits from the footprint's own box. `1` for
+ * anything up to a 2-tile body - the original, unchanged 8-cell halo a 1x1 unit has always had -
+ * growing with the footprint's longest side after that, so a body three or five tiles across earns
+ * a ring that actually reads as scaled to it rather than the same halo every size gets. Owner
+ * playtest, 2026-08-23: "when a large unit is destroyed, it should leave more derby in the ground."
+ */
+function deathRingOutset(width: number, height: number): number {
+  return Math.max(1, Math.ceil(Math.max(width, height) / 2))
+}
+
+/**
+ * Every tile at exactly `outset` tiles from a `width` x `height` box - a rectangle's perimeter
+ * generalised the way `ringTiles` (below) generalises a point's. At `outset = 1` and a 1x1 box this
+ * reproduces the eight fixed offsets `fx.death.collapse` always drew; for anything bigger, the
+ * perimeter itself is bigger, which is the whole mechanism - no separate size tiers to keep in sync.
+ */
+function footprintRing(width: number, height: number, outset: number): Coord[] {
+  const tiles: Coord[] = []
+  for (let y = -outset; y <= height - 1 + outset; y += 1) {
+    for (let x = -outset; x <= width - 1 + outset; x += 1) {
+      const dx = x < 0 ? -x : x >= width ? x - width + 1 : 0
+      const dy = y < 0 ? -y : y >= height ? y - height + 1 : 0
+      if (Math.max(dx, dy) === outset) tiles.push({ x, y })
+    }
+  }
+  return tiles
+}
+
+/**
+ * A death frame's glyph at one offset, or `undefined` to fall through to the generic debris fill -
+ * either because this content has no death frames, or because this tile is blank (a space) in the
+ * frame selected. `progress` alone decides which frame plays: pure function of time, same as every
+ * other recipe. Reduced motion holds the final frame - the wreck, not the collapse - matching
+ * ascii-effects.md 4's "keeps... settle, drops... drift": the sequence is the drift here.
+ */
+function deathFrameGlyphAt(
+  frames: readonly UnitArt[],
+  progress: number,
+  reducedMotion: boolean,
+  x: number,
+  y: number,
+): string | undefined {
+  const index = reducedMotion
+    ? frames.length - 1
+    : Math.min(frames.length - 1, Math.floor(progress * frames.length))
+  const glyph = frames[index]?.[y]?.[x]
+  return glyph === undefined || glyph === " " ? undefined : glyph
+}
+
+/**
+ * Expanding then thinning debris over the footprint. Visibly heavier than an impact burst - and,
+ * for content that defines `DEATH_ART` (`src/content/art.ts`), its own crumbling silhouette plays
+ * across the footprint instead of the plain per-tile fill, the ring still scattering around it: a
+ * combination of effects and a dead animation, owner playtest 2026-08-23, "could really make it snap".
+ */
 const deathCollapse: EffectRecipe = (instance, context) => {
   const family = familyOf(instance)
   const width = paramNumber(instance, "width", 1)
   const height = paramNumber(instance, "height", 1)
   const progress = progressOf(instance, context)
   const hash = instanceHash(instance, context, 5)
+  const frames = deathFramesFor(paramString(instance, "contentId"))
   const cells: PositionedCell[] = []
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const tile = { x: instance.origin.x + x, y: instance.origin.y + y }
+      const framed =
+        frames === undefined
+          ? undefined
+          : deathFrameGlyphAt(frames, progress, context.reducedMotion, x, y)
+      if (framed !== undefined) {
+        cells.push({ tile, glyph: framed, role: "fx.debris", bold: progress < 0.3 })
+        continue
+      }
+      // A defined sequence controls its own silhouette tile by tile - a blank in every relevant
+      // frame stays blank rather than falling back to filler that would fight the shape it drew.
+      if (frames !== undefined) continue
       if (progress < 0.45) {
         cells.push({ tile, glyph: family.impact[0] ?? "*", role: "fx.debris", bold: true })
       } else if (progress < 0.8) {
@@ -324,25 +393,21 @@ const deathCollapse: EffectRecipe = (instance, context) => {
   }
   if (context.reducedMotion || progress >= 0.45) return cells
 
-  // The expansion: a full ring one tile out, only while the collapse is loudest. Corners as well as
-  // edges - ascii-effects.md 5's own words for this recipe are "must be visibly heavier than
+  // The expansion: a ring around the footprint, only while the collapse is loudest.
+  // ascii-effects.md 5's own words for this recipe are "must be visibly heavier than
   // fx.impact.burst, the two events players confuse most" (owner playtest, 2026-08-22: "show bigger
-  // explosions when the units die vs when they take damage"), and an edges-only ring on a 1x1 footprint
-  // put only four cells on screen against the impact burst's two - not a strong enough contrast.
-  const ring: Coord[] = [
-    { x: -1, y: 0 },
-    { x: width, y: 0 },
-    { x: 0, y: -1 },
-    { x: 0, y: height },
-    { x: -1, y: -1 },
-    { x: width, y: -1 },
-    { x: -1, y: height },
-    { x: width, y: height },
-  ]
-  ring.forEach((offset, index) => {
+  // explosions when the units die vs when they take damage"); scaled further by footprint size
+  // (owner playtest, 2026-08-23, above). A ring past its 1x1 minimum is thinned - craft rule 5,
+  // negative space is material - or a five-tile body's ring reads as a solid, static block rather
+  // than scattered debris.
+  const outset = deathRingOutset(width, height)
+  const density = outset <= 1 ? 1 : 0.7
+  footprintRing(width, height, outset).forEach((offset, index) => {
+    const spin = draw(hash, index + 20)
+    if (density < 1 && cosmeticUnit(spin) > density) return
     cells.push({
       tile: { x: instance.origin.x + offset.x, y: instance.origin.y + offset.y },
-      glyph: cosmeticPick(draw(hash, index + 20), family.debris),
+      glyph: cosmeticPick(spin, family.debris),
       role: "fx.debris",
       dim: true,
     })

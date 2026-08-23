@@ -3,7 +3,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { CONTENT_ART, artExtent, artFor } from "../src/content/art.ts"
+import { CONTENT_ART, DEATH_ART, artExtent, artFor, deathFramesFor } from "../src/content/art.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { footprintCentre, footprintExtent } from "../src/grid/index.ts"
 import { entityGlyph } from "../src/view/index.ts"
@@ -33,6 +33,55 @@ test("every drawn piece of content is exactly as big as its footprint", () => {
         drawn.width,
         `${contentId} row ${index + 1} is ${row.length} characters, not ${drawn.width}`,
       )
+    }
+  }
+})
+
+test("every death frame is exactly as big as its content's footprint, in every frame", () => {
+  // The same agreement CONTENT_ART's own test enforces, one level deeper: DEATH_ART is optional, but
+  // an entry that exists has to agree with the footprint in every frame, not just the first.
+  for (const contentId of Object.keys(DEATH_ART)) {
+    assert.ok(
+      FIXTURE_REGISTRY.has(contentId),
+      `DEATH_ART draws "${contentId}", which no content definition declares`,
+    )
+    const frames = deathFramesFor(contentId)
+    assert.ok(frames !== undefined && frames.length > 0, `${contentId}'s DEATH_ART entry is empty`)
+    if (frames === undefined) continue
+    const shape = footprintExtent(FIXTURE_REGISTRY.get(contentId).footprint)
+    frames.forEach((frame, frameIndex) => {
+      const drawn = artExtent(frame)
+      assert.deepEqual(
+        drawn,
+        shape,
+        `${contentId} death frame ${frameIndex + 1} is ${drawn.width}x${drawn.height} but its ` +
+          `footprint is ${shape.width}x${shape.height}`,
+      )
+      for (const [rowIndex, row] of frame.entries()) {
+        assert.equal(
+          row.length,
+          drawn.width,
+          `${contentId} death frame ${frameIndex + 1}, row ${rowIndex + 1} is ${row.length} ` +
+            `characters, not ${drawn.width}`,
+        )
+      }
+    })
+  }
+})
+
+test("a death frame glyph is a space (meaning: fall through) or one printable ASCII cell", () => {
+  for (const [contentId, frames] of Object.entries(DEATH_ART)) {
+    for (const [frameIndex, frame] of frames.entries()) {
+      for (const row of frame) {
+        for (const glyph of row) {
+          const code = glyph.codePointAt(0) ?? 0
+          assert.ok(
+            glyph === " " || (code >= 0x21 && code <= 0x7e),
+            `${contentId} death frame ${frameIndex + 1} draws ${JSON.stringify(glyph)}, which is ` +
+              "neither a space nor a printable ASCII glyph",
+          )
+        }
+      }
     }
   }
 })
