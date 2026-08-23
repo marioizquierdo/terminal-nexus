@@ -38,6 +38,8 @@ export type WatchOptions = Readonly<{
   speed: number
   backend: string
   presentation: PresentationOptions
+  /** `grid --turn` — start playback seeked to this tick instead of tick 0. */
+  startTick?: number
   stdout: NodeJS.WriteStream
   stdin: NodeJS.ReadStream
   /**
@@ -81,6 +83,7 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
     tickDurationMs: view.tickDurationMs,
     frameDurationMs: 1000 / FRAMES_PER_SECOND,
     speed: options.speed,
+    ...(options.startTick === undefined ? {} : { startTimeMs: options.startTick * view.tickDurationMs }),
   })
   let timer: NodeJS.Timeout | null = null
   let disposed = false

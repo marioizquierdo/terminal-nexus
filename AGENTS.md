@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.6
+**Canon version:** 2.7
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 

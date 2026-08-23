@@ -143,7 +143,7 @@ if (!RUNTIME_IS_BUN) {
 async function watchSession(
   end: (stdin: FakeStdin) => void,
 ): Promise<{ stdout: FakeStdout; stdin: FakeStdin; exits: number[] }> {
-  const scenario = await loadScenarioFile("melee-kill.ts")
+  const scenario = await loadScenarioFile("melee-kill.map.json")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
   const timeline = buildTimeline(
     scenario,
@@ -213,7 +213,7 @@ test("watch holds on the final frame after the Pulse ends, and only quits on q",
   // Pulse finished, which could vanish a fight out from under someone still looking at it. Speed is
   // cranked so the Pulse (180 ticks, 15s of presentation time) finishes in well under a second of
   // real test time, rather than waiting it out at 1x.
-  const scenario = await loadScenarioFile("melee-kill.ts")
+  const scenario = await loadScenarioFile("melee-kill.map.json")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
   const timeline = buildTimeline(
     scenario,
@@ -253,7 +253,7 @@ test("watch holds on the final frame after the Pulse ends, and only quits on q",
 })
 
 test("a render failure is caught, and still restores the terminal", async () => {
-  const scenario = await loadScenarioFile("melee-kill.ts")
+  const scenario = await loadScenarioFile("melee-kill.map.json")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
   const timeline = buildTimeline(
     scenario,

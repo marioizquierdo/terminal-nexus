@@ -14,11 +14,10 @@ Iterate in text, confirm in pixels. A text frame costs nothing and answers most 
 
 ```bash
 node -e '
-const cli = await import("./src/cli/index.ts")
 const tl = await import("./src/cli/timeline.ts")
 const sc = await import("./src/scenario/index.ts")
 const v  = await import("./src/view/index.ts")
-const scenario = await cli.importScenario("scenarios/citizens-versus-ravels.ts")
+const scenario = await sc.loadMapFile("scenarios/citizens-versus-ravels.map.json")
 const loaded = sc.loadScenario(scenario)
 const timeline = tl.buildTimeline(scenario, loaded.state, loaded.registry, scenario.pulseTicks, scenario.seed)
 const view = v.createView(timeline, { ...v.DEFAULT_PRESENTATION, glyphPack: "unicode" })
@@ -49,13 +48,13 @@ screenshot lands where you meant rather than wherever the wall clock reached. Fi
 shooting from the log first:
 
 ```bash
-./bin/grid.ts run scenarios/ravel-cascade.ts 2>&1 >/dev/null | grep -E "blast|death"
+./bin/grid.ts scenarios/ravel-cascade --headless | grep -E "blast|death"
 ```
 
 ## Driving it by hand
 
 ```bash
-tmux new-session -d -s nexus -x 80 -y 24 './bin/grid.ts watch scenarios/ravel-cascade.ts'
+tmux new-session -d -s nexus -x 80 -y 24 './bin/grid.ts scenarios/ravel-cascade'
 timeout 10 bash -c 'until tmux capture-pane -t nexus -p | grep -q "TERMINAL NEXUS"; do sleep 0.2; done'
 tmux send-keys -t nexus -l ' '          # pause
 tmux send-keys -t nexus -l ',,,,,,,,,,' # ten ticks forward
@@ -91,7 +90,7 @@ Use `-l` on `send-keys`: without it tmux reads `,` and `[` as key names.
 ## Watching it yourself
 
 ```bash
-./bin/grid.ts watch scenarios/citizens-versus-ravels.ts --glyphs unicode --capability truecolor
-./bin/grid.ts watch scenarios/ravel-cascade.ts --capability monochrome --speed 0.5
-./bin/grid.ts watch scenarios/citizens-versus-ravels.ts --tile-width 2   # needs 128 columns
+./bin/grid.ts scenarios/citizens-versus-ravels --glyphs unicode --capability truecolor
+./bin/grid.ts scenarios/ravel-cascade --capability monochrome --speed 0.5
+./bin/grid.ts scenarios/citizens-versus-ravels --tile-width 2   # needs 128 columns
 ```

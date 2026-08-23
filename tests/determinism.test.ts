@@ -57,7 +57,7 @@ test("resolving in one call equals resolving tick by tick", async () => {
 })
 
 test("the kernel calls no clock and no Math.random", async () => {
-  const scenario = await loadScenarioFile("citizen-mirror-skirmish.ts")
+  const scenario = await loadScenarioFile("citizen-mirror-skirmish.map.json")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
 
   const realRandom = Math.random
@@ -85,7 +85,7 @@ test("the kernel calls no clock and no Math.random", async () => {
 })
 
 test("changing only the cosmetic seed changes nothing about state, events, or the log", async () => {
-  const baseline = await resolveScenario("citizen-mirror-skirmish.ts")
+  const baseline = await resolveScenario("citizen-mirror-skirmish.map.json")
   const baselineLog = buildLog(reportInputOf(baseline), "DEBUG").join("\n")
 
   // The cosmetic stream is a separate object with its own seed. Drawing from it heavily must not
@@ -93,7 +93,7 @@ test("changing only the cosmetic seed changes nothing about state, events, or th
   const cosmetic = cosmeticRng(0xdecaf)
   for (let draw = 0; draw < 10_000; draw += 1) cosmetic.nextUint32()
 
-  const again = await resolveScenario("citizen-mirror-skirmish.ts")
+  const again = await resolveScenario("citizen-mirror-skirmish.map.json")
   assert.equal(again.run.stateHash, baseline.run.stateHash)
   assert.equal(again.run.eventsHash, baseline.run.eventsHash)
   assert.equal(buildLog(reportInputOf(again), "DEBUG").join("\n"), baselineLog)
@@ -116,9 +116,9 @@ test("a different gameplay seed can change the fight, and the same one never doe
   // clean mirror simply never produces, so it stopped being a fixture that could show a seed
   // mattering. jammed-corridor is built to force exactly that contest (rules.test.ts asserts it
   // happens), which is what this test actually needs to exercise.
-  const first = await resolveScenario("jammed-corridor.ts", { seed: 1 })
-  const same = await resolveScenario("jammed-corridor.ts", { seed: 1 })
-  const other = await resolveScenario("jammed-corridor.ts", { seed: 2 })
+  const first = await resolveScenario("jammed-corridor.map.json", { seed: 1 })
+  const same = await resolveScenario("jammed-corridor.map.json", { seed: 1 })
+  const other = await resolveScenario("jammed-corridor.map.json", { seed: 2 })
   assert.equal(same.run.eventsHash, first.run.eventsHash)
   assert.notEqual(other.run.eventsHash, first.run.eventsHash)
 })

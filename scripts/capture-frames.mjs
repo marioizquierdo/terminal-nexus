@@ -19,12 +19,11 @@ if (scenarioName === undefined) {
   process.exit(2)
 }
 
-const { importScenario } = await import(join(repoRoot, "src/cli/index.ts"))
 const { buildTimeline } = await import(join(repoRoot, "src/cli/timeline.ts"))
-const { loadScenario } = await import(join(repoRoot, "src/scenario/index.ts"))
+const { loadMapFile, loadScenario } = await import(join(repoRoot, "src/scenario/index.ts"))
 const { createView, frameToText } = await import(join(repoRoot, "src/view/index.ts"))
 
-const scenario = await importScenario(join(repoRoot, "scenarios", `${scenarioName}.ts`))
+const scenario = await loadMapFile(join(repoRoot, "scenarios", scenarioName))
 const loaded = loadScenario(scenario)
 const timeline = buildTimeline(
   scenario,

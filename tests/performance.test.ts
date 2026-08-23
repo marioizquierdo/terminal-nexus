@@ -16,7 +16,7 @@ const SECONDS = 60
 const BUDGET_MS = 1000 / FRAMES_PER_SECOND
 
 test("thirty frames a second for sixty seconds stays inside the budget", async () => {
-  const scenario = await loadScenarioFile("citizen-mirror-skirmish.ts")
+  const scenario = await loadScenarioFile("citizen-mirror-skirmish.map.json")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
   const timeline = buildTimeline(
     scenario,
@@ -63,7 +63,7 @@ test("thirty frames a second for sixty seconds stays inside the budget", async (
 test("the worst case stays inside the budget too: two armies, 48x16, every effect on", async () => {
   // ascii-effects.md craft rule 1 applies to the frame budget as much as to the art: measure the
   // busiest frame, not the calm one.
-  const scenario = await loadScenarioFile("citizens-versus-ravels.ts")
+  const scenario = await loadScenarioFile("citizens-versus-ravels.map.json")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
   const timeline = buildTimeline(
     scenario,
@@ -95,7 +95,7 @@ test("the worst case stays inside the budget too: two armies, 48x16, every effec
 })
 
 test("resolving a whole Pulse costs less than a single frame's budget", async () => {
-  const scenario = await loadScenarioFile("citizen-mirror-skirmish.ts")
+  const scenario = await loadScenarioFile("citizen-mirror-skirmish.map.json")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
   const started = performance.now()
   const timeline = buildTimeline(

@@ -2,7 +2,7 @@
 
 **Document role:** Non-authoritative research: where to learn terminal art, and what to take from each
 **Status:** Reference. [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 9 remains the authority
-**Canon version:** 2.6
+**Canon version:** 2.7
 **Updated:** 2026-08-21
 **License:** Apache-2.0 for the analysis; linked works belong to their authors
 

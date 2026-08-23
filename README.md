@@ -46,7 +46,7 @@ npm install
 ```
 
 Only type checking and the OpenTUI terminal backend need it. The kernel, the report and the view
-have no runtime dependency, so `run`, `watch` and `verify` work from a clean checkout.
+have no runtime dependency, so every `grid` command works from a clean checkout.
 
 ### Play it
 
@@ -55,62 +55,66 @@ composition — then:
 
 ```bash
 npm install     # only needed once, and only for typechecking and the OpenTUI backend
-npm run play    # Citizens versus Ravels, colour, Unicode, effects on
+npm run grid -- scenarios/citizens-versus-ravels --glyphs unicode --capability truecolor
 ```
 
-| While it runs |                                           |
-| ------------- | ----------------------------------------- |
-| `space`       | pause and resume                          |
-| `.`           | step one frame                            |
-| `,`           | step one tick — the way to study a moment |
-| `[` `]`       | slower, faster                            |
-| `r`           | restart from the beginning                |
-| `q`           | quit, restoring your terminal             |
+`<map>` is a path to a `.map.json` file — the `.map.json` suffix is optional, and there is no
+subcommand: the first argument is always the map, and the default action is `watch`, the ASCII view.
 
-Four more worth watching, in this order:
+| While it runs |                                            |
+| -------------- | ----------------------------------------- |
+| `space`        | pause and resume                          |
+| `.`            | step one frame                            |
+| `,`            | step one tick — the way to study a moment |
+| `[` `]`        | slower, faster                            |
+| `r`            | restart from the beginning                |
+| `q`            | quit, restoring your terminal             |
+
+A few more worth watching, in this order:
 
 ```bash
-npm run play:cascade   # a Ravel fuel dump goes up in one tick, at half speed
-npm run play:plain     # the same fight with effects off - the comparison Gate 1B is judged on
-npm run play:mono      # monochrome, the acceptance floor: can you still follow it?
-./bin/grid.ts watch scenarios/citizen-mirror-skirmish.ts   # the Gate 1A baseline
+npm run grid -- scenarios/ravel-cascade --glyphs unicode --capability truecolor --speed 0.5
+npm run grid -- scenarios/citizens-versus-ravels --no-effects --glyphs unicode --capability truecolor
+npm run grid -- scenarios/citizens-versus-ravels --capability monochrome   # can you still follow it?
+npm run grid -- scenarios/citizen-mirror-skirmish                          # the Gate 1A baseline
 ```
 
-`npm run scenarios` lists them all. Any of them takes the same options:
+`npm run maps` lists every checked-in map. `watch` takes the same options on any of them:
 
 ```bash
-./bin/grid.ts watch <scenario> \
+npm run grid -- <map> \
   --capability monochrome|color16|color256|truecolor \
   --glyphs ascii|unicode \
   --tile-width 1|2          # 2 needs a 128-column terminal
-  --speed 2 --no-effects --reduced-motion --seed 0x1234
+  --speed 2 --no-effects --reduced-motion --seed 0x1234 --turn 90
 ```
 
 **If the screen says `TERMINAL TOO SMALL`,** it needs 80 x 24 and your window is smaller — resize and
-it resumes from the same instant. That is the resize gate, not a crash.
+it resumes from the same instant. That is the resize gate, not a crash. `--turn 90` seeks straight to
+tick 90 instead of playing from the start, in watch, headless and verify alike.
 
 ### Read what happened
 
-The view is one of two outputs. The other is a report you can grep:
+`watch` is one of three actions. `--headless` resolves without a terminal and prints the levelled
+log — one stream, closed by a `report` line carrying the outcome, losses, and hashes:
 
 ```bash
-./bin/grid.ts run scenarios/citizens-versus-ravels.ts              # story on stderr, summary on stdout
-./bin/grid.ts run scenarios/ravel-cascade.ts 2>&1 | grep blast     # just the detonations
-./bin/grid.ts run scenarios/citizens-versus-ravels.ts --log-level debug
-./bin/grid.ts verify scenarios/citizens-versus-ravels.ts --runs 20 # same hashes every time?
+./bin/grid.ts scenarios/citizens-versus-ravels --headless                  # WARN by default
+./bin/grid.ts scenarios/ravel-cascade --headless | grep blast              # just the detonations
+./bin/grid.ts scenarios/citizens-versus-ravels --headless --log-level info # the story, not just anomalies
+./bin/grid.ts scenarios/citizens-versus-ravels --headless --turn 90        # jump straight to tick 90
 ```
 
-### Run locally
+`--verify` is the same resolution, re-run 10 times by default, and fails if any run's hashes
+disagree — also headless:
 
 ```bash
-./bin/grid.ts run   scenarios/citizen-mirror-skirmish.ts
-./bin/grid.ts watch scenarios/citizen-mirror-skirmish.ts
-./bin/grid.ts verify scenarios/citizen-mirror-skirmish.ts --runs 20
+./bin/grid.ts scenarios/citizen-mirror-skirmish --verify              # same hashes every time?
+./bin/grid.ts scenarios/citizen-mirror-skirmish --verify --runs 20
 ```
 
-`run` prints a levelled log on stderr and a summary on stdout, so
-`grid run x.ts > report.txt 2> run.log` splits them. `watch` plays the same Pulse back. `verify`
-re-resolves a scenario and compares hashes.
+`--save-log <file>` writes the levelled log to a file in any of the three actions, so you can watch
+or verify and keep a full record without a second terminal or a redirect.
 
 ### Run tests
 
@@ -143,8 +147,8 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the workflow and evidence requirements.
 .
 ├── src/                   The kernel and tools: pulse (deterministic engine), content, scenario,
 │                          state, events, grid, report, view, cli, rng
-├── scenarios/             Checked-in scenario fixtures — one file per rule under test
-├── bin/                   grid.ts, the CLI entry point (`./bin/grid.ts run|watch|verify`)
+├── scenarios/             Checked-in .map.json fixtures — one file per rule under test
+├── bin/                   grid.ts, the CLI entry point (`./bin/grid.ts <map> [--headless|--verify]`)
 ├── tests/                 The test suite; Node's runner and Bun both run it
 ├── specs/                 Focused canon and milestone contracts
 ├── evidence/              Gate reports and screenshots — what was measured, not just claimed

@@ -3,11 +3,11 @@
 **Document role:** Start-here implementation contract
 **Status:** CURRENT
 **Active gate:** 1B — quality and effects (built; viewed, encouraging response, not yet formally accepted)
-**Canon version:** 2.6
+**Canon version:** 2.7
 **Updated:** 2026-08-23
 **License:** Apache-2.0; authored creative treatments are CC BY-SA 4.0
 
-> **Where this stands, canon 2.6.** Both gates are **built and merged**, and both evidence reports
+> **Where this stands, canon 2.7.** Both gates are **built and merged**, and both evidence reports
 > conclude PASS on every check a test can answer. The human half has now happened at least once: Mario
 > watched a legibility pass and responded well — "This looks really amazing. Great job" — then gave a
 > large, explicit list of follow-up work rather than accepting the milestone outright. Encouraging is
@@ -117,26 +117,26 @@ commit it — even if it is eight strings — before a second session starts.
 
 ### 3.3 The report — build this early, it is the feedback loop
 
-`grid`'s output is a **log on stderr** and a **summary on stdout**. Splitting them is what
-makes `grid run x.ts > report.txt 2> run.log` work, and by default both land in the terminal
-interleaved, which is what a human wants.
+`grid`'s headless output (`--headless`) is **one levelled log**, closed by a `report` line rather than
+a separate summary stream — a second stream turned out not to earn its keep once the whole story fits
+in one place. By default it prints to the terminal; `--save-log <file>` writes the same lines to a
+file in any action, including `watch`.
 
-**Log levels**, default `INFO`:
+**Log levels**, default `WARN`:
 
 | Level | Carries |
 | --- | --- |
-| `ERROR` | Invariant violations, scenario load failures. Any `ERROR` fails the run |
-| `WARN` | Suspicious but survivable: an actor stuck for many ticks, arbitration hitting its pass bound, a target that vanished |
-| `INFO` | **The story.** Spawns, first engagement, every attack that landed, every death, every structure destroyed, victory. This is the default because it is what a designer and an agent both want |
+| `ERROR` | Invariant violations, map load failures. Any `ERROR` fails the run |
+| `WARN` | Suspicious but survivable: an actor stuck for many ticks, arbitration hitting its pass bound, a target that vanished — **plus the closing `report` line**, so a bare `--headless` run still ends with the outcome even at the default level |
+| `INFO` | **The story.** Spawns, first engagement, every attack that landed, every death, every structure destroyed, victory |
 | `DEBUG` | Per-tick decisions: target selection with its score, movement intents, arbitration winners and losers, credit state |
 | `TRACE` | Per-entity, per-tick full state. Expect it to be enormous |
 
 **Lines are fixed-column and greppable.** That is not cosmetic — it is what lets an agent assert on
 behaviour without parsing prose:
 
-The victory line below is the one sample that is **not** fixed-column — its subject is not padded
-like every other line's. The columns won, since this same section calls them the point; `grid`
-prints `victory  A             reason: annihilation`.
+The victory and report lines below are samples that are **not** fixed-column — their subject is not
+padded like every other line's. The columns won, since this same section calls them the point.
 
 ```text
 [0000] INFO  spawn    A:trooper#1   at (2,1)
@@ -146,21 +146,13 @@ prints `victory  A             reason: annihilation`.
 [0056] INFO  death    B:marksman#9  at (13,7)  by A:trooper#1
 [0071] WARN  stuck    A:worker#4    at (3,9)  no legal step for 24 ticks  wants (4,9)
 [0180] INFO  victory  A  reason: annihilation
+[0180] WARN  report   citizen-mirror-skirmish  seed 0x5EED0001  ticks 180 of 240 (ended early:
+       annihilation)  outcome A wins  losses A: 2 of 7  B: 7 of 7  state sha256:4f2a...  events sha256:9b17...
 ```
 
-The **summary** on stdout closes the run:
-
-```text
-scenario   citizen-mirror-skirmish
-seed       0x5EED0001
-ticks      180 of 240 (ended early: annihilation)
-outcome    A wins
-losses     A: 2 of 7    B: 7 of 7
-state      sha256:4f2a...    events  sha256:9b17...
-```
-
-Options: `--log-level`, `--seed`, `--ticks`, `--json` for a machine-readable summary, and
-`--events <file>` for the ordered event log as JSONL.
+Options: `--log-level`, `--seed`, `--ticks`, `--turn <tick>` (seek straight to that tick, dropping
+earlier lines other than `ERROR`s and the report), `--json` for a machine-readable summary instead of
+the log, `--save-log <file>`, and `--events <file>` for the ordered event log as JSONL.
 
 **The line grammar is `[tick] LEVEL kind subject [-> object] detail…`**, and it is part of the report
 module's tested surface. It grows by **adding kinds, never by reshaping columns** — every `grep` an
@@ -173,34 +165,39 @@ arrive in the log, and every bug is one you can grep for.
 
 ### 3.4 The CLI
 
+No subcommand: the first positional argument is always the map, and the default action is `watch`.
+
 ```bash
-grid run    scenarios/citizen-mirror-skirmish.ts
-grid run    <scenario> --seed 0xABCD --ticks 120 --log-level debug
-grid run    <scenario> --events events.jsonl
-grid watch  <scenario>                    # the ASCII view
-grid verify <scenario> --runs 20          # same hashes every time?
+grid <map.map.json>                                 # watch — the ASCII view (the default)
+grid <map.map.json> --seed 0xABCD --ticks 120 --turn 90 --speed 2
+grid <map.map.json> --headless                       # resolve headlessly, print the levelled log
+grid <map.map.json> --headless --log-level debug
+grid <map.map.json> --headless --events events.jsonl
+grid <map.map.json> --verify                         # 10 runs by default — same hashes every time?
+grid <map.map.json> --verify --runs 20
 ```
 
-### 3.5 The scenario file
+`<map>` names a `.map.json` file; the suffix is optional. `--verify` is also headless.
 
-A TypeScript module, and the project's most important tool — it is how humans *and* agents pose
-questions to the simulation from here on.
+### 3.5 The map file
 
-```ts
-// scenarios/citizen-mirror-skirmish.ts
-import { defineScenario } from "../src/scenario"
+A `.map.json` file — plain JSON, and the project's most important tool — is how humans *and* agents
+pose questions to the simulation from here on. Same shape a checked-in test fixture, a campaign
+level, and a map-editor-authored map will all eventually share (`specs/replay-format.md`'s
+`ReplaySetup.map` is the same idea one layer up, for a whole replay).
 
-export default defineScenario({
-  id: "citizen-mirror-skirmish",
-  name: "Citizen mirror — open field",
-  notes: "Two matched squads across open ground. The baseline everything else compares to.",
+```json
+// scenarios/citizen-mirror-skirmish.map.json
+{
+  "id": "citizen-mirror-skirmish",
+  "name": "Citizen mirror — open field",
+  "notes": "Two matched squads across open ground. The baseline everything else compares to.",
 
-  grid: { preset: "small-wide" },        // 24 x 12, fits the viewport with no scrolling
-  seed: 0x5EED0001,
-  pulseTicks: 240,                        // 20 simulation seconds at 12 ticks/s
+  "grid": { "preset": "small-wide" },
+  "seed": 1592590337,
+  "pulseTicks": 240,
 
-  // One character per tile. Dimensions must match the grid.
-  terrain: [
+  "terrain": [
     "........................",
     "........................",
     "....##..............##..",
@@ -212,16 +209,11 @@ export default defineScenario({
     "....##..............##..",
     "....##..............##..",
     "........................",
-    "........................",
+    "........................"
   ],
-  terrainLegend: {
-    ".": "terrain.plain",
-    "#": "terrain.rock",                  // impassable, not attackable
-    "*": "terrain.deposit",
-  },
+  "terrainLegend": { ".": "terrain.plain", "#": "terrain.rock", "*": "terrain.deposit" },
 
-  // Second overlay, same dimensions. Space means nothing here.
-  placements: [
+  "placements": [
     "                        ",
     "  m                  M  ",
     "  m                  M  ",
@@ -233,17 +225,17 @@ export default defineScenario({
     "  w                  W  ",
     "  r                  R  ",
     "  m                  M  ",
-    "                        ",
+    "                        "
   ],
-  placementLegend: {
-    m: { player: "A", content: "unit.citizen.trooper" },
-    r: { player: "A", content: "unit.citizen.marksman" },
-    w: { player: "A", content: "unit.citizen.worker" },
-    M: { player: "B", content: "unit.citizen.trooper" },
-    R: { player: "B", content: "unit.citizen.marksman" },
-    W: { player: "B", content: "unit.citizen.worker" },
-  },
-})
+  "placementLegend": {
+    "m": { "player": "A", "content": "unit.citizen.trooper" },
+    "r": { "player": "A", "content": "unit.citizen.marksman" },
+    "w": { "player": "A", "content": "unit.citizen.worker" },
+    "M": { "player": "B", "content": "unit.citizen.trooper" },
+    "R": { "player": "B", "content": "unit.citizen.marksman" },
+    "W": { "player": "B", "content": "unit.citizen.worker" }
+  }
+}
 ```
 
 Rules for the format:
@@ -257,7 +249,10 @@ Rules for the format:
   leaves the Grid.
 - **Validation lives in the loader, not a later linter.** Dimension mismatch, unknown legend key,
   overlapping footprint, and unknown content id all fail with the offending line and column.
-- `defineScenario` is typed and does no work, so a scenario file is safe to import from a test.
+- JSON has no comments, which is the one thing the old TypeScript-module format could carry that this
+  one cannot — put anything worth explaining in `notes` instead.
+- `src/scenario/types.ts`'s `defineScenario` still exists for TypeScript-authored content that
+  compiles down to a `.map.json` file; nothing in the checked-in fixtures uses it that way today.
 
 ### 3.6 Fixture content — disposable, tuned for legibility not balance
 
@@ -289,18 +284,19 @@ The numbers make the relationship **visible without a spreadsheet**:
 - A trooper crossing a marksman's five tiles eats three shots, arriving at 22 of 40 health, then kills
   the marksman without taking another hit — the faster close leaves the marksman's 24-tick cooldown no
   time for a fourth shot. **One trooper beats one marksman and finishes at 22 of 40** — measured, in
-  `scenarios/trooper-versus-marksman.ts`, and unchanged by the second speed pass: the approach was
-  already fast enough after the first that a fourth shot was never in reach.
+  `scenarios/trooper-versus-marksman.map.json`, and unchanged by the second speed pass: the approach
+  was already fast enough after the first that a fourth shot was never in reach.
 - Two marksmen against one trooper no longer demonstrates a clean ranged kill, and the second speed
   pass pushes it further than the first did: the trooper now reaches melee before dying, kills the
   marksman it reaches, and then reaches the *second* marksman too, wounding it before that marksman's
   own ranged fire finally kills the trooper. **Two marksmen still beat one trooper, but now lose one
-  of their own and end the fight scarred, not unscathed** — measured, in `scenarios/ranged-kill.ts`.
-  Confirmed on the first pass that this is not a matter of starting distance (the same shape held from
-  x=16 out to x=22, since it is the last four tiles — marksman range down to melee range — that
-  decide it, not the ground closed to get there). Left as a disclosed side effect of the speed passes
-  rather than re-tuned back: fixing it would mean touching attack or cooldown numbers nobody asked to
-  change, and the content is disposable exactly so this kind of retune can happen without ceremony.
+  of their own and end the fight scarred, not unscathed** — measured, in
+  `scenarios/ranged-kill.map.json`. Confirmed on the first pass that this is not a matter of starting
+  distance (the same shape held from x=16 out to x=22, since it is the last four tiles — marksman
+  range down to melee range — that decide it, not the ground closed to get there). Left as a disclosed
+  side effect of the speed passes rather than re-tuned back: fixing it would mean touching attack or
+  cooldown numbers nobody asked to change, and the content is disposable exactly so this kind of
+  retune can happen without ceremony.
 
 Melee wins the charge, both fights agree on that; the second no longer teaches "ranged wins when
 massed" as cleanly as it did before either speed pass. Worth a follow-up look if that specific lesson
@@ -381,8 +377,8 @@ still for the gate — that is a REVISE with the criterion named, not a re-plan.
 - the named PRNG matches its published test vectors;
 - changing only the cosmetic seed changes nothing about state, events, or the log;
 - `parse(serialize(state))` hashes identically;
-- **`grid verify` produces identical hashes under Bun and under Node** for every checked-in
-  scenario. Both runtimes are already present (Section 5), and cross-runtime agreement is the only
+- **`grid --verify` produces identical hashes under Bun and under Node** for every checked-in
+  map. Both runtimes are already present (Section 5), and cross-runtime agreement is the only
   cheap test of the serialization and iteration assumptions that twenty runs on one machine can never
   catch — it is also what makes "library and runtime are independent choices" true rather than hoped.
 
@@ -419,7 +415,7 @@ still for the gate — that is a REVISE with the criterion named, not a re-plan.
   for at least one scenario. Every other check in this list is about the view agreeing with *itself*
   — a compositor with a transposed axis or an off-by-one band passes all of them and draws a
   deterministic, pure, correctly-sized picture of the wrong fight;
-- **`grid watch` and `grid run` agree**: for the same scenario, seed, and tick count the
+- **`grid` (watch) and `grid --headless` agree**: for the same map, seed, and tick count the
   view computes the same state and event hashes as the headless run, prints them on exit, and a test
   asserts they match. Otherwise Mario can approve a fight the test suite never ran;
 - monochrome mode renders every scenario without error, and no cell depends on colour to exist.
@@ -431,9 +427,9 @@ documentation at the same time.
 ### 3.10 Definition of done
 
 - [ ] every check in 3.9 passes;
-- [ ] `grid run`, `watch`, and `verify` work from a clean checkout;
+- [ ] `grid`'s default action (`watch`), `--headless`, and `--verify` all work from a clean checkout;
 - [ ] at least ten scenario files exist, one per rule fixture, plus the mirror skirmish;
-- [ ] `grid verify --runs 20` is green on all of them;
+- [ ] `grid --verify --runs 20` is green on all of them;
 - [ ] the log at `INFO` reads as a story a designer can follow, and an agent asserts on it in tests;
 - [ ] `./scripts/check-repository.sh` passes;
 - [ ] install, test, and run commands recorded verbatim in the gate report and promoted into

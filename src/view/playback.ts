@@ -21,13 +21,15 @@ export type PlaybackOptions = Readonly<{
   /** Milliseconds between frames — one step of `step-frame`. */
   frameDurationMs: number
   speed?: number
+  /** Presentation time to start at — `grid --turn`, seeking straight to a tick. Defaults to 0. */
+  startTimeMs?: number
 }>
 
 const MIN_SPEED = 0.25
 const MAX_SPEED = 8
 
 export class Playback {
-  private timeMs = 0
+  private timeMs: number
   private pausedFlag = false
   private gatedFlag = false
   private speedValue: number
@@ -36,6 +38,7 @@ export class Playback {
   constructor(options: PlaybackOptions) {
     this.options = options
     this.speedValue = options.speed ?? 1
+    this.timeMs = Math.max(0, options.startTimeMs ?? 0)
   }
 
   get presentationTimeMs(): number {

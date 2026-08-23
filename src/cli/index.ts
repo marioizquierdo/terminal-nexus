@@ -1,25 +1,28 @@
 // The Grid tool's CLI — milestone-1-spike-battle.md 3.4. `grid` is the engine, editor, and replay
 // tool; it is not the game itself, which a future `terminal-nexus` executable launches.
 //
-//   grid run    scenarios/citizen-mirror-skirmish.ts
-//   grid run    <scenario> --seed 0xABCD --ticks 120 --log-level debug
-//   grid run    <scenario> --events events.jsonl
-//   grid watch  <scenario>
-//   grid verify <scenario> --runs 20
+//   grid <map>                                    # watch — the ASCII view (the default)
+//   grid <map> --headless [--log-level info]      # resolve headlessly, print the levelled log
+//   grid <map> --verify [--runs 10]               # same hashes every run? (headless)
+//   grid <map> --turn 90                          # jump straight to a tick, in any of the above
 //
-// The log goes to stderr and the summary to stdout, so `grid run x.ts > report.txt 2> run.log`
-// splits them and a bare run interleaves both, which is what a human wants.
+// `<map>` is a path to a `.map.json` file; the suffix is optional (`grid scenarios/melee-kill` and
+// `grid scenarios/melee-kill.map.json` are the same file). There is no subcommand: the first
+// positional argument is always the map, and the default action is `watch`. A bare `grid` with no
+// map is reserved for the map editor — not built yet, so it is a usage error today.
+//
+// One output stream, not two: a headless run's levelled log and its closing report (outcome,
+// losses, hashes) both print together, and `--log-level` (default WARN) picks how much of the story
+// comes with it. `--save-log <file>` writes the same lines to a file in any mode, including `watch`.
 
 import { writeFile } from "node:fs/promises"
-import { resolve } from "node:path"
-import { pathToFileURL } from "node:url"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
 import { serializeEvents } from "../events/serialize.ts"
-import { resolvePulse } from "../pulse/index.ts"
+import { resolvePulse, resolvePulseAt } from "../pulse/index.ts"
 import { buildLog, formatSummary, parseLevel, summarize, summaryJson } from "../report/index.ts"
 import type { ReportInput } from "../report/index.ts"
-import { loadScenario } from "../scenario/index.ts"
-import type { ScenarioDefinition } from "../scenario/index.ts"
+import { hashState } from "../state/serialize.ts"
+import { loadMapFile, loadScenario } from "../scenario/index.ts"
 import { DEFAULT_PRESENTATION, parseCapability, parseGlyphPack, parseTheme } from "../view/index.ts"
 import type { CapabilityMode, PresentationOptions, TileWidth } from "../view/index.ts"
 import { parseArgs, parseInteger } from "./args.ts"
@@ -29,17 +32,25 @@ import { watchPulse } from "./watch.ts"
 
 const USAGE = `grid — the Terminal Nexus Grid tool (engine, editor, and replay)
 
-  grid run    <scenario.ts> [--seed 0xABCD] [--ticks 120] [--log-level info]
-                            [--events events.jsonl] [--json]
-  grid watch  <scenario.ts> [--seed] [--ticks] [--speed 1] [--tile-width 1|2]
-                            [--capability monochrome|color16|color256|truecolor]
-                            [--theme dark|light] [--glyphs ascii|unicode]
-                            [--no-effects] [--reduced-motion] [--cosmetic-seed 0x1234]
-                            [--backend auto|ansi|opentui]
-  grid verify <scenario.ts> [--runs 20] [--seed] [--ticks]
+  grid <map.map.json>          [--seed 0xABCD] [--ticks 120] [--turn 90]
+                                [--speed 1] [--tile-width 1|2]
+                                [--capability monochrome|color16|color256|truecolor]
+                                [--theme dark|light] [--glyphs ascii|unicode]
+                                [--no-effects] [--reduced-motion] [--cosmetic-seed 0x1234]
+                                [--backend auto|ansi|opentui] [--save-log <file>] [--log-level info]
+      the ASCII view (the default action) — watches the map resolve live
 
-Log levels: ERROR, WARN, INFO (default), DEBUG, TRACE. The log goes to stderr, the summary to
-stdout, and --events writes the ordered event stream as JSONL.
+  grid <map.map.json> --headless [--seed] [--ticks] [--turn 90] [--log-level info]
+                                  [--events events.jsonl] [--json] [--save-log <file>]
+      resolves without a terminal and prints the levelled log
+
+  grid <map.map.json> --verify [--runs 10] [--seed] [--ticks] [--turn 90]
+      re-resolves 10 times (default) and fails if any run's hashes disagree — also headless
+
+<map> is a path to a .map.json file; the .map.json suffix is optional. There is no subcommand.
+
+Log levels: ERROR, WARN (default), INFO, DEBUG, TRACE — one stream, closed by a WARN "report" line
+carrying the outcome, losses, and hashes. --save-log writes the same lines to a file in any mode.
 
 --capability defaults to the best tier COLORTERM/TERM advertise, color16 if neither says more.
 --theme defaults to dark; pass --theme light on a light terminal background.`
@@ -62,16 +73,6 @@ export function detectCapability(env: NodeJS.ProcessEnv = process.env): Capabili
   return "color16"
 }
 
-export async function importScenario(path: string): Promise<ScenarioDefinition> {
-  const url = pathToFileURL(resolve(path)).href
-  const module: unknown = await import(url)
-  const candidate = (module as { default?: unknown }).default
-  if (candidate === undefined || typeof candidate !== "object") {
-    throw new Error(`${path} has no default-exported scenario`)
-  }
-  return candidate as ScenarioDefinition
-}
-
 type RunOptions = Readonly<{ seed?: number; ticks?: number }>
 
 function optionsFrom(args: ParsedArgs): RunOptions {
@@ -83,10 +84,26 @@ function optionsFrom(args: ParsedArgs): RunOptions {
   }
 }
 
-async function commandRun(args: ParsedArgs): Promise<number> {
-  const path = args.positional[0]
-  if (path === undefined) throw new Error("run needs a scenario file")
-  const scenario = await importScenario(path)
+function turnFrom(args: ParsedArgs): number | undefined {
+  const value = args.options.get("turn")
+  return value === undefined ? undefined : parseInteger(value, "--turn")
+}
+
+/**
+ * `--turn N`: drop every line before tick N so a headless report can be read starting from the
+ * moment in question, without scrolling past everything that came before it. Never drops an ERROR
+ * (an invariant violation is never hidden) or the trailing `report` line (always worth seeing).
+ */
+function fromTurn(lines: readonly string[], turn: number): string[] {
+  return lines.filter((line) => {
+    if (line.includes(" ERROR ") || line.includes(" WARN  report ")) return true
+    const match = /^\[(\d+)\]/.exec(line)
+    return match !== null && Number(match[1]) >= turn
+  })
+}
+
+async function commandHeadless(path: string, args: ParsedArgs): Promise<number> {
+  const scenario = await loadMapFile(path)
   const overrides = optionsFrom(args)
   const seed = overrides.seed ?? scenario.seed
   const pulseTicks = overrides.ticks ?? scenario.pulseTicks
@@ -109,17 +126,20 @@ async function commandRun(args: ParsedArgs): Promise<number> {
     eventsHash: run.eventsHash,
   }
 
-  const level = parseLevel(args.options.get("log-level") ?? "info")
-  const lines = buildLog(input, level)
-  for (const line of lines) process.stderr.write(`${line}\n`)
+  const level = parseLevel(args.options.get("log-level") ?? "warn")
+  const turn = turnFrom(args)
+  const lines = turn === undefined ? buildLog(input, level) : fromTurn(buildLog(input, level), turn)
+
+  const savePath = args.options.get("save-log")
+  if (savePath !== undefined) await writeFile(savePath, `${lines.join("\n")}\n`, "utf8")
 
   const eventsPath = args.options.get("events")
   if (eventsPath !== undefined) {
     await writeFile(eventsPath, `${serializeEvents(run.events)}\n`, "utf8")
   }
 
-  const summary = summarize(input)
   if (args.flags.has("json")) {
+    const summary = summarize(input)
     process.stdout.write(
       `${summaryJson(summary, {
         engineVersion: run.engineVersion,
@@ -130,34 +150,41 @@ async function commandRun(args: ParsedArgs): Promise<number> {
       })}\n`,
     )
   } else {
-    process.stdout.write(`${formatSummary(summary)}\n`)
+    for (const line of lines) process.stdout.write(`${line}\n`)
   }
 
-  // Any ERROR fails the run (milestone-1-spike-battle.md 3.3).
+  // Any ERROR fails the run (milestone-1-spike-battle.md 3.3). Checked against the full log, not
+  // the --turn-filtered view, but ERROR lines survive that filter unconditionally anyway.
   return lines.some((line) => line.includes(" ERROR ")) ? 1 : 0
 }
 
-async function commandVerify(args: ParsedArgs): Promise<number> {
-  const path = args.positional[0]
-  if (path === undefined) throw new Error("verify needs a scenario file")
-  const scenario = await importScenario(path)
+const DEFAULT_VERIFY_RUNS = 10
+
+async function commandVerify(path: string, args: ParsedArgs): Promise<number> {
+  const scenario = await loadMapFile(path)
   const overrides = optionsFrom(args)
   const seed = overrides.seed ?? scenario.seed
   const pulseTicks = overrides.ticks ?? scenario.pulseTicks
-  const runs = parseInteger(args.options.get("runs") ?? "20", "--runs")
+  const runs = parseInteger(args.options.get("runs") ?? String(DEFAULT_VERIFY_RUNS), "--runs")
+  const turn = turnFrom(args)
 
   let stateHash: string | null = null
   let eventsHash: string | null = null
   let logDigest: string | null = null
+  let snapshotHash: string | null = null
+
+  // Always call resolvePulseAt, even without --turn: a snapshot tick that can never occur (-1) is
+  // simpler than carrying two different return shapes through the loop below.
+  const snapshotTick = turn ?? -1
 
   for (let index = 0; index < runs; index += 1) {
     const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed })
-    const run = resolvePulse({
-      initialState: loaded.state,
-      registry: loaded.registry,
-      pulseTicks,
-      seed,
-    })
+    const run = resolvePulseAt(
+      { initialState: loaded.state, registry: loaded.registry, pulseTicks, seed },
+      snapshotTick,
+    )
+    const snapshotAt = run.snapshot === null ? null : hashState(run.snapshot)
+
     const log = buildLog(
       {
         scenarioId: scenario.id,
@@ -176,6 +203,7 @@ async function commandVerify(args: ParsedArgs): Promise<number> {
       stateHash = run.stateHash
       eventsHash = run.eventsHash
       logDigest = log
+      snapshotHash = snapshotAt
       continue
     }
     if (run.stateHash !== stateHash) {
@@ -190,29 +218,53 @@ async function commandVerify(args: ParsedArgs): Promise<number> {
       process.stderr.write(`run ${index + 1}: INFO log differs from run 1\n`)
       return 1
     }
+    if (turn !== undefined && snapshotAt !== snapshotHash) {
+      process.stderr.write(`run ${index + 1}: state at tick ${turn} differs from run 1\n`)
+      return 1
+    }
   }
 
-  process.stdout.write(
-    [
-      `scenario   ${scenario.id}`,
-      `runs       ${runs} identical`,
-      `state      sha256:${(stateHash ?? "").slice(0, 16)}`,
-      `events     sha256:${(eventsHash ?? "").slice(0, 16)}`,
-      "",
-    ].join("\n"),
-  )
+  const lines = [
+    `scenario   ${scenario.id}`,
+    `runs       ${runs} identical`,
+    `state      sha256:${(stateHash ?? "").slice(0, 16)}`,
+    `events     sha256:${(eventsHash ?? "").slice(0, 16)}`,
+  ]
+  if (turn !== undefined) {
+    lines.push(
+      snapshotHash === null
+        ? `tick ${turn}   every run ended before reaching this tick`
+        : `tick ${turn}   sha256:${snapshotHash.slice(0, 16)}`,
+    )
+  }
+  lines.push("")
+  process.stdout.write(lines.join("\n"))
   return 0
 }
 
-async function commandWatch(args: ParsedArgs): Promise<number> {
-  const path = args.positional[0]
-  if (path === undefined) throw new Error("watch needs a scenario file")
-  const scenario = await importScenario(path)
+async function commandWatch(path: string, args: ParsedArgs): Promise<number> {
+  const scenario = await loadMapFile(path)
   const overrides = optionsFrom(args)
   const seed = overrides.seed ?? scenario.seed
   const pulseTicks = overrides.ticks ?? scenario.pulseTicks
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed })
   const timeline = buildTimeline(scenario, loaded.state, loaded.registry, pulseTicks, seed)
+
+  const savePath = args.options.get("save-log")
+  if (savePath !== undefined) {
+    const level = parseLevel(args.options.get("log-level") ?? "warn")
+    const input: ReportInput = {
+      scenarioId: timeline.scenarioId,
+      seed,
+      pulseTicks,
+      registry: timeline.registry,
+      events: timeline.events,
+      finalState: timeline.states[timeline.states.length - 1] ?? loaded.state,
+      stateHash: timeline.stateHash,
+      eventsHash: timeline.eventsHash,
+    }
+    await writeFile(savePath, `${buildLog(input, level).join("\n")}\n`, "utf8")
+  }
 
   const tileWidthOption = args.options.get("tile-width")
   const tileWidth: TileWidth = tileWidthOption === "2" ? 2 : 1
@@ -226,6 +278,7 @@ async function commandWatch(args: ParsedArgs): Promise<number> {
         : parseInteger(cosmeticSeed, "--cosmetic-seed"),
     glyphPack: parseGlyphPack(args.options.get("glyphs") ?? "ascii"),
   }
+  const turn = turnFrom(args)
   return watchPulse({
     timeline,
     capability: parseCapability(args.options.get("capability") ?? detectCapability()),
@@ -234,6 +287,7 @@ async function commandWatch(args: ParsedArgs): Promise<number> {
     speed: Number(args.options.get("speed") ?? "1"),
     backend: args.options.get("backend") ?? "auto",
     presentation,
+    ...(turn === undefined ? {} : { startTick: turn }),
     stdout: process.stdout,
     stdin: process.stdin,
   })
@@ -241,19 +295,20 @@ async function commandWatch(args: ParsedArgs): Promise<number> {
 
 export async function main(argv: readonly string[]): Promise<number> {
   const args = parseArgs(argv)
-  switch (args.command) {
-    case "run":
-      return commandRun(args)
-    case "watch":
-      return commandWatch(args)
-    case "verify":
-      return commandVerify(args)
-    case "help":
-    case "--help":
-      process.stdout.write(`${USAGE}\n`)
-      return 0
-    default:
-      process.stderr.write(`unknown command "${args.command}"\n\n${USAGE}\n`)
-      return 2
+  if (args.flags.has("help") || args.positional[0] === "help") {
+    process.stdout.write(`${USAGE}\n`)
+    return 0
   }
+
+  const path = args.positional[0]
+  if (path === undefined) {
+    process.stderr.write(
+      `grid needs a map file to load — the map editor isn't built yet, so this is required.\n\n${USAGE}\n`,
+    )
+    return 2
+  }
+
+  if (args.flags.has("verify")) return commandVerify(path, args)
+  if (args.flags.has("headless")) return commandHeadless(path, args)
+  return commandWatch(path, args)
 }
