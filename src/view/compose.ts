@@ -11,7 +11,7 @@
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { tilesOf } from "../grid/coords.ts"
-import type { GridTerrain } from "../grid/types.ts"
+import type { Coord, GridTerrain } from "../grid/types.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
 import { PLAYERS } from "../state/types.ts"
 import type { ActiveEffect, EffectBand } from "./effects/index.ts"
@@ -35,6 +35,22 @@ export function compositionSize(tileWidth: TileWidth): { width: number; height: 
     height: 1 + HEADER_ROWS + VIEWPORT_TILES.height + FOOTER_ROWS + 1,
   }
 }
+
+/**
+ * A dead entity, still drawn — never in `state`, which stays strictly true. `snapshot.ts` builds
+ * these for a ranged kill: the target is gone from `state.entities` the instant it dies, but its
+ * own tracer is still visibly travelling for the rest of its flight window, so without this a unit
+ * would vanish before the shot that killed it arrives. Held for exactly as long as
+ * `fx.death.collapse`/`fx.structure.collapse` are already held (`buildFlightHoldTicks`), so the
+ * glyph disappears at the same instant the death effect takes over the tile, not before and not
+ * after.
+ */
+export type HeldCorpse = Readonly<{
+  ordinal: number
+  contentId: string
+  player: PlayerId
+  anchor: Coord
+}>
 
 export type CompositionInput = Readonly<{
   scenarioId: string
@@ -60,6 +76,8 @@ export type CompositionInput = Readonly<{
   effects?: readonly ActiveEffect[]
   /** ASCII is the baseline and the acceptance target; the pack dresses the field and the frame. */
   glyphPack?: GlyphPack
+  /** Ranged kills still waiting for their own tracer to land — drawn, but never counted anywhere. */
+  heldCorpses?: readonly HeldCorpse[]
 }>
 
 function put(
@@ -232,7 +250,16 @@ export function composeFrame(
   // Tiles an entity occupies are remembered, because the corruption law says an effect may never
   // replace the only cell carrying a required semantic cue, and a unit's glyph is exactly that.
   const occupied = new Set<string>()
-  for (const entity of input.state.entities) {
+  // A held corpse is drawn exactly like a live entity — same band, same role, same bold rule — for
+  // as long as its own ranged tracer is still travelling. It is never in `input.state.entities`, so
+  // it never reaches `forceTotals` or anything else that counts the living.
+  const drawnEntities: readonly {
+    ordinal: number
+    contentId: string
+    player: PlayerId
+    anchor: Coord
+  }[] = [...input.state.entities, ...(input.heldCorpses ?? [])]
+  for (const entity of drawnEntities) {
     const definition = input.registry.get(entity.contentId)
     const drawn = input.positions.get(entity.ordinal) ?? entity.anchor
     const band =

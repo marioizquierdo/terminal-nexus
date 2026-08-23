@@ -10,6 +10,7 @@ import {
   STYLE_ROLES,
   compositionSize,
   createView,
+  entityGlyph,
   frameToAnsi,
   frameToText,
   gateFrame,
@@ -213,4 +214,73 @@ test("tile width two draws the same tiles, twice as wide", async () => {
     const wideCell = wide.cells[wideOrigin.row * wide.width + wideOrigin.column + x * 2]
     assert.equal(narrowCell?.glyph, wideCell?.glyph, `column ${x} differs between tile widths`)
   }
+})
+
+
+test("a ranged kill's target stays on screen until its own tracer lands", async () => {
+  // Owner playtest, 2026-08-22: "I still see projectiles set from 'm' (marksman) but the enemy dies
+  // instantly while the projectile arrives later." `state.entities` drops a dead entity the instant
+  // it dies, but `fx.ranged.tracer` keeps travelling for the rest of the flight window the kernel
+  // recorded on the attack - so without a held corpse, the target's glyph vanished before the shot
+  // that killed it visibly arrived. Walks every same-tick ranged kill in citizens-versus-ravels
+  // (there is always at least one - the fixture is built to be a real, populated fight) and checks
+  // the target's own glyph is still drawn through the hold, then gone the instant the impact beat
+  // that fx.death.collapse/fx.impact.burst already wait for arrives.
+  const { resolveScenario } = await import("./helpers.ts")
+  const resolved = await resolveScenario("citizens-versus-ravels.ts")
+  const timeline = await timelineFor("citizens-versus-ravels.ts")
+  const view = createView(timeline)
+  const tickMs = view.tickDurationMs
+  const origin = gridOrigin(timeline.grid, 1)
+
+  const launches = resolved.run.events.filter(
+    (event) => event.kind === "attack.launched" && event.attackKind === "ranged",
+  )
+  const deaths = new Map(
+    resolved.run.events
+      .filter((event) => event.kind === "entity.died" || event.kind === "structure.destroyed")
+      .map((event) => [event.ordinal, event]),
+  )
+
+  let checked = 0
+  for (const launch of launches) {
+    if (launch.kind !== "attack.launched") continue
+    const death = deaths.get(launch.targetOrdinal)
+    if (death === undefined || (death.kind !== "entity.died" && death.kind !== "structure.destroyed")) {
+      continue
+    }
+    if (death.tick !== launch.tick || launch.flightWindowTicks <= 0) continue
+
+    const definition = resolved.registry.get(death.contentId)
+    const expectedGlyph = entityGlyph(death.contentId, death.player, definition.footprint, {
+      x: 0,
+      y: 0,
+    })
+    const cellAt = (timeMs: number): string => {
+      const frame = view.snapshotAt(timeMs, "monochrome", 1)
+      const row = origin.row + death.at.y
+      const column = origin.column + death.at.x
+      return frame.cells[row * frame.width + column]?.glyph ?? ""
+    }
+
+    const deathAtMs = death.tick * tickMs
+    const impactAtMs = (death.tick + launch.flightWindowTicks) * tickMs
+    assert.equal(
+      cellAt(deathAtMs + 1),
+      expectedGlyph,
+      `${death.entity} was not drawn just after dying, still in flight`,
+    )
+    assert.equal(
+      cellAt(impactAtMs - 1),
+      expectedGlyph,
+      `${death.entity} disappeared before its own tracer landed`,
+    )
+    assert.notEqual(
+      cellAt(impactAtMs + 1),
+      expectedGlyph,
+      `${death.entity} was still drawn after the impact beat it should have vanished at`,
+    )
+    checked += 1
+  }
+  assert.ok(checked > 0, "the fixture produced no same-tick ranged kill to check")
 })
