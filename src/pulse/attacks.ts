@@ -93,6 +93,15 @@ export function attacks(context: TickContext): void {
       if (hpAfter <= 0 && !target.pendingDead) {
         target.pendingDead = true
         target.killer = entry.source.id
+        // A killer holds for one full movement cadence before it may step again - owner playtest,
+        // 2026-08-22: "when a unit kills an enemy, it should wait a full movement cooldown before
+        // starting to move again. Otherwise... it is hard to see who won that fight." Zeroing credit
+        // is the same mechanism `accrueCredit` already uses for a step actually taken (movement.ts):
+        // the killer needs `stepCost` ticks worth of credit again before its next move, exactly as
+        // if it had spent this tick moving rather than attacking. `intents()` (phase 4) has already
+        // run for this tick by the time `attacks()` (phase 7) gets here, so the earliest this can
+        // affect is next tick's movement - this tick's own step, if the killer took one, is untouched.
+        entry.source.moveCredit = 0
       }
     }
   }

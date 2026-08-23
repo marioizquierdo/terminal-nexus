@@ -292,6 +292,54 @@ test("an actor that settled a move this tick does not also attack on it", async 
   assert.ok(checked > 0, "no fixture ever launched an attack, so the rule was never exercised")
 })
 
+/** Ticks between steps at a given rate - the same formula ravel.test.ts's own `cadence` uses. */
+function cadence(rate: MovementRate): number {
+  return Math.ceil(stepCost(rate) / rate.numerator)
+}
+
+test("a killer holds for one full movement cadence before its next step", async () => {
+  // Owner playtest, 2026-08-22: "when a unit kills an enemy, it should wait a full movement
+  // cooldown before starting to move again. Otherwise... it is hard to see who won that fight."
+  // kill-then-hold.ts puts the trooper in melee range from tick 0, so every tick until its target
+  // dies is a stand-and-swing with nothing to measure; the point is what happens *after* - a second
+  // runner further down the row gives the trooper somewhere new to walk to once the first is dead.
+  // Checked for every killer the fixture produces, not just the trooper: the second runner also
+  // lands the killing blow eventually, and the rule is not specific to one side or attack kind.
+  const resolved = await resolveScenario("kill-then-hold.ts")
+  const contentOf = new Map<string, string>()
+  for (const event of resolved.run.events) {
+    if (event.kind === "entity.spawned") contentOf.set(event.entity, event.contentId)
+  }
+
+  const deaths = resolved.run.events.filter((event) => event.kind === "entity.died")
+  assert.ok(deaths.length > 0, "nothing died, so the hold was never exercised")
+
+  let checked = 0
+  for (const death of deaths) {
+    if (death.kind !== "entity.died" || death.killer === null) continue
+    const killerContentId = contentOf.get(death.killer)
+    assert.ok(killerContentId !== undefined, `${death.killer} never spawned`)
+    if (killerContentId === undefined) continue
+    const rate = resolved.registry.get(killerContentId).movementRate
+    if (rate === undefined) continue // a static killer has nothing to hold
+    const holdTicks = cadence(rate)
+
+    const nextMove = resolved.run.events.find(
+      (event) =>
+        event.kind === "entity.moved" && event.entity === death.killer && event.tick > death.tick,
+    )
+    if (nextMove === undefined) continue // the killer never moved again in this Pulse - nothing to check
+    if (nextMove.kind !== "entity.moved") continue
+    assert.ok(
+      nextMove.tick - death.tick >= holdTicks,
+      `${death.killer}'s next step landed ${nextMove.tick - death.tick} ticks after its kill at ` +
+        `${death.tick}, short of the full ${holdTicks}-tick cadence its own rate requires`,
+    )
+    checked += 1
+  }
+  assert.ok(checked > 0, "no killer in the fixture ever moved again, so the hold was never checked")
+})
+
 test("a multi-tile mover blocked inside its own footprint reports the real blocker, not the edge", async () => {
   // A three-tile raider crowded by an ally's tail, mid-parade, surfaced this: the report only
   // checked the mover's single anchor tile, which can be perfectly clear while a different tile in
