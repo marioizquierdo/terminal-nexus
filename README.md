@@ -1,25 +1,25 @@
 ```text
-                                 : "                                                    
-_____._._______.______  ._____.___ .___ .______  .______  .___                          
-\__ _:|: .____/: __   \ :         |: __|:      \ :      \ |   |                         
-  |  :|| : _/\ |  \____||   \  /  || : ||       ||   .   ||   |       ,                 
-  |   ||   /  \|   :  \ |   |\/   ||   ||   |   ||   :   ||   |/\                       
-  |   ||_.: __/|   |___\|___| |   ||   ||___|   ||___|   ||   /  \                      
-  |___|   :/   |___|          |___||___|    |___|    |___||______/             '        
-               \                                                                        
-               .\_____  ._______ ____   ____.____     .________   `.   ..─────\\>       
-  `            :      \ : .____/ \   \_/   /|    |___ |    ___/   |           '' .  `   
-       '       |       || : _/\   \___ ___/ |    |   ||___    \   |._'  :    '          
-               |   |   ||   /  \  /   _   \ |    :   ||       / -══-           .....    
-               |___|   ||_.: __/ /___/ \___\|        ||__:___/ /  _ \.                  
-                   |___|   :/               |. _____/    :    /,/'`.        ,.          
-                                             :/    │       /-/.-,...'' \\    '     │    
-                                             :   ─────    /   '     ══   \\  |    ────  
-                               "             :    ││    //   ' /----\----  \-\   │─│    
-    Boot up, Commander. You crossed half a galaxy for this  /-/|,''' \══ \  -\\──│ └┌─  
-                                                   //  /       |,.||  \══-\---\\-\  └───
+                                 : "
+_____._._______.______  ._____.___ .___ .______  .______  .___
+\__ _:|: .____/: __   \ :         |: __|:      \ :      \ |   |
+  |  :|| : _/\ |  \____||   \  /  || : ||       ||   .   ||   |       ,
+  |   ||   /  \|   :  \ |   |\/   ||   ||   |   ||   :   ||   |/\
+  |   ||_.: __/|   |___\|___| |   ||   ||___|   ||___|   ||   /  \
+  |___|   :/   |___|          |___||___|    |___|    |___||______/             '
+               \                                                       --=\>
+               .\_____  ._______ ____   ____.____     .________   `.       ---=\\>
+  `            :      \ : .____/ \   \_/   /|    |___ |    ___/   |           '' .  `
+       '       |       || : _/\   \___ ___/ |    |   ||___    \   |._'  .    '
+               |   |   ||   /  \  /   _   \ |    :   ||       / -══-           .....
+               |___|   ||_.: __/ /___/ \___\|        ||__:___/ / __ \.
+                   |___|   :/               |. _____/    :    /,/''\        ,.
+                                             :/    │       /-/,-,...'' \\    '    │
+                                             :   ─────    /   ,     ══   \\  |   ────
+                               "             :    ││    //   , /----\----  \-\   │─│
+    Boot up, Commander. You crossed half a galaxy for this  /-/|,''' \══ \  -\\──│ └┌─
+                                                   //  /       |, ||  \══-\---\\-\  └───
                                          /  :   --//  / -/     | |||   \══-----\- \\ ───
-                                                                                \   \   
+                                                                                \   \
 ```
 
 # Terminal Nexus
@@ -61,14 +61,14 @@ npm run grid -- scenarios/citizens-versus-ravels --glyphs unicode --capability t
 `<map>` is a path to a `.map.json` file — the `.map.json` suffix is optional, and there is no
 subcommand: the first argument is always the map, and the default action is `watch`, the ASCII view.
 
-| While it runs | |
-| --- | --- |
-| `space` | pause and resume |
-| `.` | step one frame |
-| `,` | step one tick — the way to study a moment |
-| `[` `]` | slower, faster |
-| `r` | restart from the beginning |
-| `q` | quit, restoring your terminal |
+| While it runs |                                            |
+| -------------- | ----------------------------------------- |
+| `space`        | pause and resume                          |
+| `.`            | step one frame                            |
+| `,`            | step one tick — the way to study a moment |
+| `[` `]`        | slower, faster                            |
+| `r`            | restart from the beginning                |
+| `q`            | quit, restoring your terminal             |
 
 A few more worth watching, in this order:
 
@@ -152,7 +152,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the workflow and evidence requirements.
 ├── tests/                 The test suite; Node's runner and Bun both run it
 ├── specs/                 Focused canon and milestone contracts
 ├── evidence/              Gate reports and screenshots — what was measured, not just claimed
-├── concept/               Concept art and the canon deltas it implies
+├── concept/               Concept art, real screenshots, and the archived original spec
 ├── docs/                  Human setup and workflow notes
 ├── scripts/               Repository validation and development tooling
 ├── .claude/               Skills for coding agents working in this repository

@@ -12,14 +12,24 @@
 
 # Terminal Nexus
 
-**Document role:** Canonical product, game-design, architecture, and development specification  
-**Status:** Pre-production; Spike 0 toolchain preflight is the current gate  
-**Version:** 1.2  
-**Date:** 2026-08-19  
-**Implementation:** TypeScript, Node.js, terminal-native TUI  
-**Current gate:** Spike 0 — toolchain preflight  
-**Authorized implementation:** Prove or reject the terminal toolchain described in Section 19.2; do not begin Spike A until the gate decision is recorded  
-**Next owner decision:** Accept the pinned OpenTUI path, revise the runtime/backend choice, or stop before building the impact reel  
+**Document role:** The original single-file specification, superseded by `specs/`. Archive, not canon
+**Status:** Historical — frozen at version 1.2, 2026-08-19; nothing may depend on it
+**Updated:** 2026-08-22 — archived unchanged; only this header was added
+**License:** Apache-2.0 for technical content; CC BY-SA 4.0 for lore, fiction, and ASCII art
+**Version:** 1.2
+**Date:** 2026-08-19
+**Implementation:** TypeScript, Node.js, terminal-native TUI
+**Current gate:** Spike 0 — toolchain preflight
+**Authorized implementation:** Prove or reject the terminal toolchain described in Section 19.2; do not begin Spike A until the gate decision is recorded
+**Next owner decision:** Accept the pinned OpenTUI path, revise the runtime/backend choice, or stop before building the impact reel
+
+> **Read this as history.** Everything below is the state of the project on 2026-08-19, before the
+> canon was split into [`../specs/`](../specs/README.md). It is kept for provenance — to show where a
+> decision came from — and it is deliberately **not** edited to match today's vocabulary or today's
+> decisions. It still says *Veil*, *planning phase*, and *battlefield*; the current names are **Build
+> Phase**, **Nexus Pulse**, and the **Grid**. Where it disagrees with `specs/`, `specs/` is right and
+> this is simply what was thought at the time. The repository validator exempts a document that
+> declares itself Historical from the terminology and canon-version checks for exactly this reason.
 
 This document is the current source of truth for Terminal Nexus. It supersedes `llm-native-terminal-games-spec.md`, which remains a historical discovery archive. The active spike handoff may contain narrower implementation instructions; when it explicitly identifies the version of this specification it accompanies, the handoff controls that spike and this document controls the broader product.
 

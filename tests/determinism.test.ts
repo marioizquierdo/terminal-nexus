@@ -110,9 +110,15 @@ test("parse(serialize(state)) hashes identically", async () => {
 })
 
 test("a different gameplay seed can change the fight, and the same one never does", async () => {
-  const first = await resolveScenario("citizen-mirror-skirmish.map.json", { seed: 1 })
-  const same = await resolveScenario("citizen-mirror-skirmish.map.json", { seed: 1 })
-  const other = await resolveScenario("citizen-mirror-skirmish.map.json", { seed: 2 })
+  // citizen-mirror-skirmish is a genuine mirror since the 2026-08-22 terrain fix (both sides now
+  // approach from truly symmetric ground), and the only place gameplay RNG is ever consulted is a
+  // tile contest between two same-speed-tier actors (`arbitration.ts` `contestWinner`) - which a
+  // clean mirror simply never produces, so it stopped being a fixture that could show a seed
+  // mattering. jammed-corridor is built to force exactly that contest (rules.test.ts asserts it
+  // happens), which is what this test actually needs to exercise.
+  const first = await resolveScenario("jammed-corridor.map.json", { seed: 1 })
+  const same = await resolveScenario("jammed-corridor.map.json", { seed: 1 })
+  const other = await resolveScenario("jammed-corridor.map.json", { seed: 2 })
   assert.equal(same.run.eventsHash, first.run.eventsHash)
   assert.notEqual(other.run.eventsHash, first.run.eventsHash)
 })

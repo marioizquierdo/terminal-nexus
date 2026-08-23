@@ -7,6 +7,7 @@
 
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
+import type { Coord } from "../grid/types.ts"
 import type { MatchState } from "../state/types.ts"
 import { formatCoordinate, formatLine, formatScore } from "./format.ts"
 import type { LogLine } from "./format.ts"
@@ -48,6 +49,10 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
   const engaged = new Set<number>()
   const blocked = new Map<number, Streak>()
   const tracks = new Map<number, Track>()
+  // Where each actor is standing right now. `move.blocked` carries only the tile the actor *wanted*,
+  // so without this the stuck warning had nothing but the tile it could not enter to report — and a
+  // tile an actor cannot enter is, very often, a rock.
+  const where = new Map<number, Coord>()
 
   const byTick = groupByTick(input.events)
   for (const [tick, events] of byTick) {
@@ -61,6 +66,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
     events.forEach((event, index) => {
       switch (event.kind) {
         case "entity.spawned":
+          where.set(event.ordinal, event.at)
           emit({
             tick,
             level: "INFO",
@@ -142,14 +148,16 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
             streak.last = tick
             if (!streak.warned && tick - streak.start + 1 >= STUCK_TICKS) {
               streak.warned = true
+              const standing = where.get(event.ordinal)
               emit({
                 tick,
                 level: "WARN",
                 kind: "stuck",
                 subject: event.entity,
                 detail:
-                  `at ${formatCoordinate(event.desired)}  no legal step for ` +
-                  `${tick - streak.start + 1} ticks`,
+                  `${standing === undefined ? "" : `at ${formatCoordinate(standing)}  `}` +
+                  `no legal step for ${tick - streak.start + 1} ticks  ` +
+                  `wants ${formatCoordinate(event.desired)}`,
               })
             }
           }
@@ -167,6 +175,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
         }
 
         case "entity.moved": {
+          where.set(event.ordinal, event.to)
           blocked.delete(event.ordinal)
           const track = tracks.get(event.ordinal)
           const tile = formatCoordinate(event.to)

@@ -9,11 +9,11 @@ import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
-import { EffectTimeline, deriveEffects } from "./effects/index.ts"
+import { EffectTimeline, buildFlightHoldTicks, deriveEffects, flightHoldTicks } from "./effects/index.ts"
 import type { GlyphPack } from "./theme.ts"
 import type { ReadonlyCellFrame } from "./frame.ts"
 import type { CapabilityMode } from "./roles.ts"
-import type { TileWidth } from "./compose.ts"
+import type { HeldCorpse, TileWidth } from "./compose.ts"
 import { FEED_KINDS, composeFrame } from "./compose.ts"
 
 export type PulseTimeline = Readonly<{
@@ -104,6 +104,34 @@ export function createView(
   )
 
   const clampTick = (tick: number): number => Math.max(0, Math.min(lastTick, tick))
+
+  /**
+   * A ranged kill's target vanishes from `state.entities` the instant it dies, but its own tracer
+   * keeps travelling for the rest of its flight window (`fx.ranged.tracer`, held to the same beat
+   * `fx.death.collapse` already waits for) — so without this, the unit disappeared before the shot
+   * that killed it arrived (owner playtest, 2026-08-22: "the enemy dies instantly while the
+   * projectile arrives later"). One record per `entity.died`/`structure.destroyed`, built once
+   * rather than re-scanned every frame; `holdTicks` is 0 for anything not killed by a ranged attack
+   * this same tick (melee, or a chain death from a blast), so this is a no-op for those.
+   */
+  const flightHolds = buildFlightHoldTicks(timeline.events)
+  const deathRecords = timeline.events
+    .filter((event) => event.kind === "entity.died" || event.kind === "structure.destroyed")
+    .map((event) => {
+      if (event.kind !== "entity.died" && event.kind !== "structure.destroyed") {
+        throw new Error("unreachable")
+      }
+      return {
+        ordinal: event.ordinal,
+        contentId: event.contentId,
+        player: event.player,
+        anchor: event.at,
+        deathTick: event.tick,
+        holdTicks: flightHoldTicks(flightHolds, event.tick, event.ordinal),
+      }
+    })
+    .filter((record) => record.holdTicks > 0)
+
   const roster = (timeline.states[0]?.entities ?? []).map((entity) => entity.contentId)
   const openingHealth = new Map<PlayerId, number>()
   for (const entity of timeline.states[0]?.entities ?? []) {
@@ -133,6 +161,22 @@ export function createView(
       }
     }
 
+    // Still travelling toward this one: at or past the tick it died (otherwise it is drawn for real,
+    // out of `state.entities`, and adding it again here would double it), but its tracer's flight
+    // window has not run out yet.
+    const heldCorpses: HeldCorpse[] = []
+    for (const record of deathRecords) {
+      if (record.deathTick > tick) continue
+      const impactAtMs = (record.deathTick + record.holdTicks) * tickDurationMs
+      if (timeMs >= impactAtMs) continue
+      heldCorpses.push({
+        ordinal: record.ordinal,
+        contentId: record.contentId,
+        player: record.player,
+        anchor: record.anchor,
+      })
+    }
+
     return composeFrame(
       {
         scenarioId: timeline.scenarioId,
@@ -145,6 +189,7 @@ export function createView(
         roster,
         openingHealth,
         positions,
+        heldCorpses,
         tick,
         recent: feed.filter((event) => event.tick <= tick),
         paused: controls.paused,

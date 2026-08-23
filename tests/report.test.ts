@@ -15,6 +15,7 @@ import {
   replayEvents,
   summarize,
 } from "../src/report/index.ts"
+import { TERRAIN } from "../src/grid/types.ts"
 import { reportInputOf, resolveScenario, scenarioFiles } from "./helpers.ts"
 
 /** The exact lines printed in milestone-1-spike-battle.md 3.3. */
@@ -61,9 +62,9 @@ const SPEC_LINES: ReadonlyArray<readonly [Parameters<typeof formatLine>[0], stri
       level: "WARN",
       kind: "stuck",
       subject: "A:worker#4",
-      detail: "at (3,9)  no legal step for 24 ticks",
+      detail: "at (3,9)  no legal step for 24 ticks  wants (4,9)",
     },
-    "[0071] WARN  stuck    A:worker#4    at (3,9)  no legal step for 24 ticks",
+    "[0071] WARN  stuck    A:worker#4    at (3,9)  no legal step for 24 ticks  wants (4,9)",
   ],
 ]
 
@@ -171,4 +172,42 @@ test("the stuck warning fires for an actor that cannot make progress", async () 
     lines.some((line) => /WARN  stuck    A:hauler#1/.test(line)),
     "the hauler circling in front of a wall it cannot pass was never reported",
   )
+})
+
+test("the stuck warning names the actor's own tile, not the one it cannot enter", async () => {
+  // Owner playtest, 2026-08-22: two units at the top of the Grid stopped facing each other across a
+  // two-tile rock, and the log said `stuck A:trooper#3 at (20,2)` — which is the rock. The blocked
+  // tile is exactly the one tile the actor is guaranteed *not* to be standing on, so reporting it as
+  // a position sent a reader to look at the wrong cell.
+  const resolved = await resolveScenario("on-axis-deadlock.map.json")
+  const lines = buildLog(reportInputOf(resolved), "WARN").filter((line) => /no legal step/.test(line))
+
+  const trooper = lines.find((line) => /A:trooper#1/.test(line))
+  assert.ok(trooper !== undefined, "the trooper no longer stalls in front of the rock")
+  assert.match(trooper, /at \(9,5\)  no legal step for \d+ ticks  wants \(10,5\)/)
+
+  const runner = lines.find((line) => /B:runner#2/.test(line))
+  assert.ok(runner !== undefined, "the runner no longer stalls on the far side of the same rock")
+  assert.match(runner, /at \(12,5\)  no legal step for \d+ ticks  wants \(11,5\)/)
+})
+
+test("no stuck warning in any scenario reports an impassable tile as a position", async () => {
+  // The general form of the bug above, so it cannot come back through a different code path: a tile
+  // an actor is standing on is by definition a tile it could enter.
+  for (const name of scenarioFiles()) {
+    const resolved = await resolveScenario(name)
+    const rows = resolved.scenario.terrain
+    for (const line of buildLog(reportInputOf(resolved), "WARN")) {
+      const position = /  stuck +\S+ +at \((\d+),(\d+)\)/.exec(line)
+      if (position === null) continue
+      const x = Number(position[1])
+      const y = Number(position[2])
+      const symbol = rows[y]?.[x]
+      const terrainId = symbol === undefined ? undefined : resolved.scenario.terrainLegend[symbol]
+      assert.ok(
+        terrainId === undefined || !TERRAIN[terrainId].impassable,
+        `${name} reported impassable ${terrainId} at (${x},${y}) as a position: ${line}`,
+      )
+    }
+  }
 })

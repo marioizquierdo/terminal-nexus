@@ -1,12 +1,12 @@
 {
   "id": "settle-delay",
   "name": "Settle delay - a vacated tile holds for a couple of ticks",
-  "notes": "A one-tile-wide corridor forces a trooper through a blocker it kills in melee, then on to a worker further down the same corridor. The blocker's tile is the only route to the worker, so the moment it dies the trooper wants exactly that tile - which is the point: the fixture proves the tile stays blocked for DEATH_SETTLE_TICKS after death (reported as move.blocked, reason settling) rather than opening the instant the corpse is removed.",
+  "notes": "A one-tile-wide corridor forces single file. A trooper approaches a marksman blocker from the west and kills it in melee - the mismatch is deliberate, so the trooper wins outright rather than trading a mutual kill the way two identical troopers would (kill-then-hold.ts's post-kill movement hold made that ambiguity matter here in a way it never used to). A second trooper sits immediately east of the blocker from tick zero, pressed right up against the doorway: its own range is melee-only, so unlike a ranged unit it cannot snipe the approaching trooper from beyond the blocker's body, and it never becomes anyone's target for the whole fight - the blocker is its ally, and the approaching trooper stays out of its one-tile reach until the corridor actually opens. It exists purely to test that the blocker's tile stays blocked for DEATH_SETTLE_TICKS after death (reported as move.blocked, reason settling), independent of whatever the killer does next. Before the post-kill hold existed, the killer itself could be both the tester and the killer in one entity; once a kill could hold a mover for longer than DEATH_SETTLE_TICKS, that coupling stopped proving the settle rule at all - the killer simply was not trying to move again until well after the tile had already reopened.",
   "grid": {
     "preset": "small-wide"
   },
   "seed": 40976,
-  "pulseTicks": 240,
+  "pulseTicks": 80,
   "terrain": [
     "........................",
     "........................",
@@ -32,7 +32,7 @@
     "                        ",
     "                        ",
     "                        ",
-    "      t   T       W     ",
+    "      t    Mr           ",
     "                        ",
     "                        ",
     "                        ",
@@ -45,13 +45,13 @@
       "player": "A",
       "content": "unit.citizen.trooper"
     },
-    "T": {
+    "M": {
+      "player": "B",
+      "content": "unit.citizen.marksman"
+    },
+    "r": {
       "player": "B",
       "content": "unit.citizen.trooper"
-    },
-    "W": {
-      "player": "B",
-      "content": "unit.citizen.worker"
     }
   }
 }

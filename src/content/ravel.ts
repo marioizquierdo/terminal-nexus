@@ -10,8 +10,11 @@
 // Three of the four Ravel rule shapes in `commander-armies.md` 4.1 are expressible with what the
 // kernel already has, and the fourth is one new rule:
 //
-//   Off the beat        every rate is deliberately off the Citizen cadence — 6/5, 4/3, 3/2, 2/3
-//                       against 1/1 and 3/4, so nothing in the two armies steps together;
+//   Off the beat        every rate is deliberately off the Citizen cadence — 12/5, 8/5, 8/3, 4/3,
+//                       3/1 against 2/1 and 1/1, so nothing in the two armies steps together. Both
+//                       rosters got a 2x-the-original speed pass on 2026-08-22 (a second owner
+//                       playtest that day: "still too slow... 2 or 2.5 times faster"), so the
+//                       offsets are exactly what they always were;
 //   Break free          lower speed tiers: Ravels claim tiles and swing before Citizens do;
 //   Everything is fuel  volatile munitions, below — the rule that makes them Ravel;
 //   Scrap doctrine      higher salvage, since even their losses pay forward.
@@ -38,7 +41,12 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(1, 1),
     maxHp: 16,
-    movementRate: { numerator: 6, denominator: 5 },
+    // 12/5 rather than 6/5 - the same speed pass as the Citizen roster, second round (2026-08-22
+    // owner playtest: "still too slow... 2 or 2.5 times faster"), 2x the ORIGINAL rate rather than
+    // another factor on top of the branch's own unseen 1.5x pass - see citizen.ts's worker entry for
+    // the full reasoning. The runner stays exactly as far off the Citizen cadence, proportionally,
+    // as it always was.
+    movementRate: { numerator: 12, denominator: 5 },
     speedTier: 1,
     attack: { kind: "melee", range: 1, damage: 5, cooldownTicks: 8 },
     collidesWith: GROUND_UNIT_COLLISIONS,
@@ -54,8 +62,10 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(3, 1),
     maxHp: 44,
-    // 4/5 is a step every fifteen ticks: slower than a runner, and on nobody else's beat.
-    movementRate: { numerator: 4, denominator: 5 },
+    // 8/5 rather than 4/5 - 2x the original rate, same speed pass as the rest of the roster; still
+    // slower than the runner, and still on nobody else's beat (a step every eight ticks now, not
+    // fifteen).
+    movementRate: { numerator: 8, denominator: 5 },
     speedTier: 2,
     attack: { kind: "melee", range: 1, damage: 11, cooldownTicks: 14 },
     collidesWith: GROUND_UNIT_COLLISIONS,
@@ -70,7 +80,8 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     layer: "units",
     footprint: rectFootprint(1, 1),
     maxHp: 18,
-    movementRate: { numerator: 4, denominator: 3 },
+    // 8/3 rather than 4/3 - 2x the original rate, same speed pass as the rest of the roster.
+    movementRate: { numerator: 8, denominator: 3 },
     speedTier: 1,
     attack: { kind: "ranged", range: 4, damage: 5, cooldownTicks: 20, projectileTilesPerTick: 2 },
     collidesWith: GROUND_UNIT_COLLISIONS,
@@ -88,7 +99,8 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     // Twenty health against a twenty-damage blast, on purpose: one wagon's detonation is exactly
     // enough to set off the next one, which is what makes a chain a chain rather than a bang.
     maxHp: 20,
-    movementRate: { numerator: 2, denominator: 3 },
+    // 4/3 rather than 2/3 - 2x the original rate, same speed pass as the rest of the roster.
+    movementRate: { numerator: 4, denominator: 3 },
     speedTier: 3,
     collidesWith: GROUND_UNIT_COLLISIONS,
     behavior: "advance",
@@ -102,7 +114,8 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     layer: "workers",
     footprint: rectFootprint(1, 1),
     maxHp: 16,
-    movementRate: { numerator: 3, denominator: 2 },
+    // 3/1 rather than 3/2 - 2x the original rate, same speed pass as the rest of the roster.
+    movementRate: { numerator: 3, denominator: 1 },
     speedTier: 2,
     collidesWith: SCAVENGER_COLLISIONS,
     behavior: "flee",
