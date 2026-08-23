@@ -1,8 +1,8 @@
 // 8. Death resolution — engine.md 4.3. Deaths, destruction, salvage — and detonations, which can
 // cause more of all three.
 
-import { footprintDistance } from "../grid/coords.ts"
 import type { Actor, TickContext } from "./shared.ts"
+import { applyDamage, distanceBetween } from "./shared.ts"
 
 /**
  * Ticks a vacated tile stays blocked after a death — the owner's playtest finding that another
@@ -43,15 +43,7 @@ function detonate(context: TickContext, actor: Actor): void {
 
   const caught = context.actors
     .filter((other) => other.ordinal !== actor.ordinal && !other.pendingDead)
-    .filter(
-      (other) =>
-        footprintDistance(
-          actor.anchor,
-          actor.definition.footprint,
-          other.anchor,
-          other.definition.footprint,
-        ) <= blast.radius,
-    )
+    .filter((other) => distanceBetween(actor, other) <= blast.radius)
     .sort((a, b) => a.ordinal - b.ordinal)
 
   context.events.push({
@@ -68,24 +60,7 @@ function detonate(context: TickContext, actor: Actor): void {
   })
 
   for (const other of caught) {
-    const hpBefore = other.hp
-    const hpAfter = Math.max(0, hpBefore - blast.damage)
-    other.hp = hpAfter
-    context.events.push({
-      kind: "damage.applied",
-      tick: context.tick,
-      entity: other.id,
-      ordinal: other.ordinal,
-      source: actor.id,
-      sourceOrdinal: actor.ordinal,
-      amount: hpBefore - hpAfter,
-      hpBefore,
-      hpAfter,
-    })
-    if (hpAfter <= 0 && !other.pendingDead) {
-      other.pendingDead = true
-      other.killer = actor.id
-    }
+    applyDamage(context, other, actor, blast.damage)
   }
 }
 

@@ -5,25 +5,31 @@
 import type { ContentDef } from "../content/types.ts"
 import type { CollisionMask } from "../grid/occupancy.ts"
 import { ClaimOverlay, OccupancyIndex, VacatedOverlay, maskFrom } from "../grid/occupancy.ts"
+import { footprintDistance } from "../grid/coords.ts"
 import type { BlockReason } from "../events/types.ts"
 import type { Coord, Direction } from "../grid/types.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { Pcg32 } from "../rng/pcg32.ts"
-import type { GroundItem, PlayerId } from "../state/types.ts"
+import type { EntityState, GroundItem, PlayerId } from "../state/types.ts"
 import type { PulseContext } from "./context.ts"
 
-export type Actor = {
-  ordinal: number
-  id: string
-  player: PlayerId
-  contentId: string
+type Mutable<T> = { -readonly [K in keyof T]: T[K] }
+
+/**
+ * An entity, mid-tick. Every field `EntityState` carries, writable, plus the resolved content
+ * definition and the two pieces of bookkeeping that only make sense while a tick is in flight
+ * (`pendingDead`, `killer` — settled back out of state by `resolution()`, `death.ts`, once a Pulse
+ * decides who actually died).
+ *
+ * Deriving this from `EntityState` rather than re-listing its ten fields is deliberate: a stat a
+ * future unit type needs (a shield pool, cargo, anything else `state/types.ts` gains) becomes
+ * visible here — and everywhere `Actor` is used — the moment it lands there, with no second list to
+ * remember to update. `tick.ts`'s entity-to-actor conversion leans on that (`{ ...entity, ... }`);
+ * its actor-to-entity conversion, the boundary back into hashed, serialized, replayed state, is kept
+ * fully explicit on purpose — see the comment there.
+ */
+export type Actor = Mutable<EntityState> & {
   definition: ContentDef
-  hp: number
-  anchor: Coord
-  facing: Direction
-  moveCredit: number
-  cooldown: number
-  targetOrdinal: number | null
   pendingDead: boolean
   killer: string | null
 }
@@ -84,6 +90,56 @@ export function blockReasonFor(blocker: "edge" | "terrain" | "settling" | number
 /** Attacks and movement claims both read this. Lower acts first — engine.md 4.3. */
 export function speedTier(actor: Actor): number {
   return actor.definition.speedTier
+}
+
+/**
+ * The distance between two actors, to the nearest occupied tile of each footprint — engine.md 3.5.
+ * Perception, intents, attacks, and detonation all measure this same way; wrapping the two anchors
+ * and two footprints here (rather than every call site reaching into both actors' `definition`
+ * itself) is what keeps a future actor-to-actor measurement — a healer's range to an ally, a splash
+ * radius from an impact point — from having a second, slightly different way to ask the same
+ * question.
+ */
+export function distanceBetween(a: Actor, b: Actor): number {
+  return footprintDistance(a.anchor, a.definition.footprint, b.anchor, b.definition.footprint)
+}
+
+/**
+ * Applies damage to a target, clamped at zero, and marks it `pendingDead` the first time it reaches
+ * zero — the one place `attacks()` (a tier's accumulated damage) and `detonate()` (blast damage,
+ * `death.ts`) both turn "this much damage, from this source" into a `damage.applied` event and,
+ * maybe, a death. Reads `target.hp` rather than a caller-supplied "before" value: nothing in either
+ * caller mutates a target's hp between deciding how much damage it takes and calling this, so the
+ * two are always the same value — attacks() used to snapshot hp at tier start for exactly this
+ * reason before this was one function both callers shared.
+ *
+ * Returns whether *this* call is what killed the target, so a caller that reacts to its own kill —
+ * attacks()'s post-kill movement hold — does not have to re-derive it from hp afterward.
+ */
+export function applyDamage(
+  context: TickContext,
+  target: Actor,
+  source: Actor,
+  amount: number,
+): boolean {
+  const hpBefore = target.hp
+  const hpAfter = Math.max(0, hpBefore - amount)
+  target.hp = hpAfter
+  context.events.push({
+    kind: "damage.applied",
+    tick: context.tick,
+    entity: target.id,
+    ordinal: target.ordinal,
+    source: source.id,
+    sourceOrdinal: source.ordinal,
+    amount: hpBefore - hpAfter,
+    hpBefore,
+    hpAfter,
+  })
+  if (hpAfter > 0 || target.pendingDead) return false
+  target.pendingDead = true
+  target.killer = source.id
+  return true
 }
 
 export function isMobile(actor: Actor): boolean {

@@ -1,13 +1,13 @@
 // 4. Intents — engine.md 4.3. What each actor wants to do this tick, before arbitration decides who
 // actually gets it.
 
-import { directionOf, footprintDistance, nearestFootprintTile, step } from "../grid/coords.ts"
+import { directionOf, nearestFootprintTile, step } from "../grid/coords.ts"
 import type { Coord } from "../grid/types.ts"
 import type { StepChoice } from "./movement.ts"
 import { accrueCredit, canStep, rankedSteps, stepCost } from "./movement.ts"
 import { fleeTrigger } from "./perception.ts"
 import type { Actor, TickContext } from "./shared.ts"
-import { blockReasonFor, maskForActor } from "./shared.ts"
+import { blockReasonFor, distanceBetween, maskForActor } from "./shared.ts"
 
 export type Intent = {
   actor: Actor
@@ -26,12 +26,7 @@ export function intents(context: TickContext): Intent[] {
     const target = actor.targetOrdinal === null ? null : context.byOrdinal.get(actor.targetOrdinal)
     if (target === undefined || target === null) continue
 
-    const distance = footprintDistance(
-      actor.anchor,
-      actor.definition.footprint,
-      target.anchor,
-      target.definition.footprint,
-    )
+    const distance = distanceBetween(actor, target)
 
     let intent: "toward" | "away"
     if (actor.definition.behavior === "flee") {
