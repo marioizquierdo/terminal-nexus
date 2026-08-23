@@ -324,12 +324,20 @@ const deathCollapse: EffectRecipe = (instance, context) => {
   }
   if (context.reducedMotion || progress >= 0.45) return cells
 
-  // The expansion: a ring one tile out, only while the collapse is loudest.
+  // The expansion: a full ring one tile out, only while the collapse is loudest. Corners as well as
+  // edges - ascii-effects.md 5's own words for this recipe are "must be visibly heavier than
+  // fx.impact.burst, the two events players confuse most" (owner playtest, 2026-08-22: "show bigger
+  // explosions when the units die vs when they take damage"), and an edges-only ring on a 1x1 footprint
+  // put only four cells on screen against the impact burst's two - not a strong enough contrast.
   const ring: Coord[] = [
     { x: -1, y: 0 },
     { x: width, y: 0 },
     { x: 0, y: -1 },
     { x: 0, y: height },
+    { x: -1, y: -1 },
+    { x: width, y: -1 },
+    { x: -1, y: height },
+    { x: width, y: height },
   ]
   ring.forEach((offset, index) => {
     cells.push({

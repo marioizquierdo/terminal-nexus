@@ -475,3 +475,61 @@ test("a same-tick ranged kill holds its death and blast until the tracer lands, 
     }
   }
 })
+
+
+test("a death reads visibly heavier than a hit, ascii-effects.md 5's own requirement for this pair", () => {
+  // "fx.death.collapse... Must be visibly heavier than fx.impact.burst - dying and being hit are the
+  // two events players confuse most" (ascii-effects.md Section 5). Owner playtest, 2026-08-22: "show
+  // bigger explosions when the units die vs when they take damage" - the same requirement, seen on a
+  // real fight rather than read off a table, and not previously asserted by anything automated.
+  const origin = { x: 10, y: 6 }
+  const target = { x: 14, y: 6 }
+  const burst: EffectInstance = {
+    recipe: "fx.impact.burst",
+    band: "effects",
+    startMs: 0,
+    durationMs: 180,
+    origin,
+    target,
+    family: "citizen",
+    params: {},
+  }
+  const death: EffectInstance = {
+    recipe: "fx.death.collapse",
+    band: "effects",
+    startMs: 0,
+    durationMs: 320,
+    origin,
+    family: "citizen",
+    // The most common footprint in the fixture content: every unit but the hauler and the raider.
+    params: { width: 1, height: 1 },
+  }
+
+  const burstRecipe = EFFECT_RECIPES["fx.impact.burst"]
+  const deathRecipe = EFFECT_RECIPES["fx.death.collapse"]
+  assert.ok(burstRecipe !== undefined && deathRecipe !== undefined)
+
+  const peakCells = (instance: EffectInstance, recipe: (typeof EFFECT_RECIPES)["fx.impact.burst"]): number => {
+    let peak = 0
+    for (let timeMs = instance.startMs; timeMs < instance.startMs + instance.durationMs; timeMs += 5) {
+      peak = Math.max(peak, recipe(instance, context({ timeMs, reducedMotion: false })).length)
+    }
+    return peak
+  }
+
+  const burstPeak = peakCells(burst, burstRecipe)
+  const deathPeak = peakCells(death, deathRecipe)
+  assert.ok(
+    deathPeak > burstPeak,
+    `fx.death.collapse peaked at ${deathPeak} cells, fx.impact.burst at ${burstPeak} - not visibly heavier`,
+  )
+  // "Visibly" is doing real work in the sentence, not just "one more cell": the loudest death frame
+  // should put down meaningfully more than the loudest hit frame, not edge past it by a single cell.
+  assert.ok(
+    deathPeak >= burstPeak * 3,
+    `fx.death.collapse (${deathPeak} cells) is not comfortably heavier than fx.impact.burst (${burstPeak})`,
+  )
+  // Duration is the other half of "heavier": a death that lingers reads as more consequential than
+  // one that flickers and is gone.
+  assert.ok(death.durationMs > burst.durationMs)
+})
