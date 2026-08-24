@@ -3,7 +3,7 @@
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
 **Canon version:** 2.7
-**Updated:** 2026-08-21
+**Updated:** 2026-08-24
 **License:** Apache-2.0
 
 ## 1. Why this file exists
@@ -583,6 +583,78 @@ The owner's own three ideas, each with a real cost:
 the narrowest starting point — it treats the newly-noticed problem (motion *pacing* reads uneven) as
 distinct from the older, already-answered one (a static shape looks stretched), rather than reopening
 `engine.md` 9.3's tile-width RULE to solve a timing complaint a wider tile does not by itself fix.
+
+### Q25 — Should the palette derive its lower tiers from one truecolor source, and should a cell be able to be transparent?
+
+**Status:** OPEN — the transparency half amends a RULE-marked type and cannot be decided by a
+session; the derivation half is measurable and mostly answered below.
+
+Owner, 2026-08-24, after watching the sixth round's effects: "I think the color scheme needs to
+define *transparency* that would adapt the color to the backend color. The code would process the
+final true color, and then the final pass would turn that into monochrome or 16 colors by closest
+approximation. If we are not doing this already, make sure this architecture is part of the grid tech
+and the effects."
+
+**Half of this is already the architecture.** A cell carries `fgRole`, never a colour
+([`engine.md`](engine.md) Section 9.1, RULE), and roles are resolved to colour at the very last pass —
+`frameToAnsi` → `sgrOf` → `sgrFor` (`src/view/frame.ts`, `src/view/roles.ts`). Nothing composes in
+colour and nothing stores one. So "process the colour, then a final pass turns it into the tier" is
+the shape that already runs. What is *not* derived is the table: `PALETTE[theme][role]` hand-authors
+three independent values per role — `ansi`, `indexed`, `rgb` — and `sgrFor` picks one. The question is
+whether `rgb` should become the single source and the other two a computation.
+
+**Measured, not assumed** (nearest-match by squared RGB distance, against the xterm renderings the
+project's own capture tooling already uses, dark theme):
+
+| Tier | Roles whose derived value differs from the hand-authored one |
+| --- | ---: |
+| 256-colour | 10 of 18 differ, but 11 of 18 land within 12 RGB units — mostly the same colour |
+| **16-colour** | **9 of 18 differ, and three of the differences are damaging** |
+
+The 16-colour failures are specific and they are not tuning noise:
+
+- **`chrome.muted` derives to ANSI 90** — the exact "bright black" value an owner playtest already
+  had removed, because it compounds with the `dim` attribute every `chrome.muted` cell also carries.
+  `src/view/roles.ts`'s own comment records that fix. A naive derivation reinstates a fixed bug.
+- **`player.a` and `player.b` both derive to ANSI 90** — the two sides collapse to the *same grey*.
+  That is the Q21 contrast complaint made maximally worse, at the one tier with the least room.
+
+A perceptual metric does not rescue it: OKLab, with and without chroma weighting, reproduces the
+hand-authored choice on 0–1 of the 9 disputed roles and still sends `player.a` to grey. The cause is
+structural rather than a bad formula — **the 16-colour palette contains no desaturated entries**, only
+eight hues, eight brights, and greys. Any nearest-match of a deliberately muted design colour lands on
+grey, because grey genuinely *is* the nearest colour. The hand-authored 16-colour row is not
+approximating the RGB badly; it is answering a different question — *which of eight hues keeps these
+things apart* — which is exactly what the file's own comment claims it is for.
+
+The transparency half is a separate decision with a separate gate. `CellStyle`'s shape is printed
+inside a **RULE** block in [`engine.md`](engine.md) Section 9.1; adding a field to it needs owner
+acceptance and a canon bump ([`AGENTS.md`](../AGENTS.md) Section 3). It also brushes craft rule 7 in
+[`ascii-effects.md`](ascii-effects.md) Section 3 — "Terminals have no alpha. Decay is not fade-out" —
+which is GUIDANCE, and would need an explicit, recorded departure rather than a quiet one. What it
+buys is real and already wanted: the compositor's lighting stack
+(`src/view/effects/composite.ts`, built for the owner's "the white color can stack... then dim
+slowly") currently has only the four steps `dim`/plain/`bold`/`inverse` to express intensity, because
+there is no continuum to express it on.
+
+| Option | Cost |
+| --- | --- |
+| A. **Derive 256 only; keep 16 hand-authored; monochrome unchanged.** One truecolor source of truth, one computed tier, one tier that stays a deliberate distinguishability table with a comment saying why | Small and measured. Keeps every fix the 16-colour row already encodes, removes the hand-authoring burden where it buys nothing (11 of 18 already agree within 12 RGB units), and leaves the pipeline honest: the owner's "final pass" exists, it is just a lookup on one leg. Does not by itself deliver transparency |
+| B. **Derive every tier, with a per-role override table for where derivation is wrong** | Superficially the owner's ask in full. In practice the 16-colour leg needs overrides on roughly half its roles, at which point it is a hand-authored table wearing a computation's clothes — more machinery, same values, and a new way to silently regress when someone adds a role and forgets the override |
+| C. **A + transparency: add one scalar to `CellStyle`** (`fade` / `alpha`, 0–1), applied *by the resolver* — blend the role's RGB toward the theme's `BACKGROUND_RGB`, then quantize. The cell still carries a role and a number, so 9.1's "never a colour" stays literally true | Delivers what the owner actually described, and upgrades the flash-stacking continuum already asked for. Costs a canon amendment to a RULE-marked type, a recorded departure from craft rule 7, and an honest limit: direct ANSI does not paint a background, so this blends toward an *assumed* theme background, not the terminal's real one (OSC 11 probing was already rejected as unreliable, `roles.ts`) |
+| D. **True alpha over whatever is beneath in the band stack**, rather than over the background | The version that sounds most like "transparency" and costs the most: `composeBands` is deliberately colour- and capability-agnostic, so this moves colour resolution earlier, into composition, and gives up the property that one composed frame serves every tier — which a test currently asserts by comparing tiers. Not worth it for the effect being chased |
+
+**Recommendation: C, in two steps, and only after looking at it.** Do A first and put it in front of
+the owner as a side-by-side at both tiers — it is cheap, it is measurable, and if the derived
+256-colour tier reads worse than the hand-authored one on a real fight frame, that is worth knowing
+before anything larger is built on it. Then bring C's one-scalar amendment to the owner as an explicit
+canon change with a screenshot of what it buys, rather than shipping a new `CellStyle` field and
+asking afterwards. **Do not do B or D**: B is measured above as machinery that reproduces a hand table,
+and D pays for an architecture change with a property the test suite currently relies on.
+
+Q21 (palette contrast) overlaps this directly and should be answered in the same pass — its
+recommendation is a lightness retune of `player.a`/`player.b`, and the truecolor values are the thing
+a derived pipeline would make the single source of truth.
 
 ## 5. Answered
 
