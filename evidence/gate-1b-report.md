@@ -1,9 +1,9 @@
 # Gate report — Milestone 1B, quality and effects
 
 **Document role:** Gate evidence report for Gate 1B
-**Status:** In progress — revised after a sixth round of owner feedback (Section 20), awaiting the next viewing; still not the acceptance Section 8 and Section 12 wait on
+**Status:** In progress — revised after a seventh round of owner feedback (Section 22), awaiting the next viewing; still not the acceptance Section 8 and Section 12 wait on
 **Canon version:** 2.7
-**Updated:** 2026-08-23
+**Updated:** 2026-08-24
 **License:** Apache-2.0
 
 ---
@@ -986,3 +986,203 @@ the full leviathan death end to end, and `small-multicell-skirmish` or `citizens
 ordinary damage-flash stacking in a real multi-unit exchange rather than the synthetic fixtures the
 new compositor tests use. Milestone 2 remains gated on acceptance, not on this session running out of
 things to fix.
+
+## 22. A seventh round — easing, a colour pipeline decision, and sub-explosions
+
+Section 21's PR presumably followed the same pattern as every round before it (merged, then
+unmerged follow-up on a restarted branch); this round picks up from `origin/main`, which already
+carried round six's compositor and choreography work. The request arriving this round was three work
+items rather than a single playtest transcript: explosion easing, the colour-pipeline decision Q25
+was registered to answer, and the owner's sub-effects ask — the first small and mechanical, the other
+two each gated on a decision made and written down before any code, per the instructions this round
+carried.
+
+### 1. Explosion easing
+
+Owner: "The explosion can be improved, by expanding faster at first, and then slowing down towards
+the end." Both genuine expansion-from-a-centre sites were linear in `progress`: `blastDetonation`'s
+ring reach and `bigDeathScatter`'s shockwave reach (`src/view/effects/recipes.ts`). One shared helper,
+`easeOut(t) = 1 - (1-t)^2` — the cheapest curve that is strictly ahead of a linear ramp everywhere
+strictly between its endpoints and decelerates throughout — applied at both sites, plus a third: the
+flying-debris `local` interpolation in `bigDeathScatter`, on the judgement that a thrown piece
+decelerating under drag is a real physical read, not an invented one, and the task explicitly left the
+call open ("your call, but justify it either way"). One curve turned out to be enough; no second shape
+was needed, matching AGENTS.md Section 4's "extract only after a second real use."
+
+**Deliberately not eased**, per the instruction and for the reasons given there: `rangedTracer`
+(constant-speed projectile; easing it would read as a bullet slowing in flight) and
+`structureCollapse`'s `collapsedRows` (a progressive top-down reveal, not an expansion from a centre —
+left unchanged since nothing about watching it suggested easing would clearly read better).
+
+New tests, not just a description: `easeOut` itself (endpoints, strictly-ahead-of-linear at six sample
+points, monotonically decreasing growth rate, clamped outside `[0,1]`); `blastDetonation`'s ring reach
+measured against the *old* linear formula at the same progress (ahead of it, decelerating, still
+reaching the full radius by the end); `bigDeathScatter`'s shockwave reaching its full outset by the
+midpoint of its own short window, which the old linear formula could not do for any outset above 1.
+All of round six's existing shockwave/flying-debris/reduced-motion tests still pass unmodified.
+
+**Screenshot, before and after, at the identical tick**: `evidence/screenshots/
+easing-blast-ring-before.png` and `-after.png` — `citizens-versus-ravels`, tick 206, two ticks into
+`B:wagon#20`'s radius-2 detonation (a clean, isolated blast — no cascade, no ranged-flight hold to
+reason about). At progress 0.44 into the blast's own window the old linear formula gives reach 1; the
+eased formula gives reach 2 (full radius for this blast) — a real, visible difference in the same
+frame, not a claim without a picture. The "before" half was produced by `git stash push -- src/view/
+effects/recipes.ts`, capturing, then popping — the identical mechanism used for every other before/
+after pair this round.
+
+### 2. Colour pipeline — Q25 and Q21
+
+Read before writing any code, per the instructions: `specs/open-questions.md` Q25 (already registered,
+with the measurement) and Q21 (contrast). Q25's own text already narrowed this to option A plus a
+separate, owner-gated transparency decision — nothing here was decided fresh; it was executed and
+evidenced.
+
+**Q25 option A, built**: `src/view/roles.ts`'s `PALETTE` no longer hand-authors a 256-colour `indexed`
+value at all. `Swatch` carries only `ansi` (16-colour, still hand-authored) and `rgb` (truecolor, the
+single source of truth); a new `DERIVED_256` table, computed once at module load by nearest-match
+against the real xterm 256-colour cube and greyscale ramp, backs `sgrFor`'s `color256` case. The
+16-colour tier is untouched, with the "why not derive it" reasoning (measured in
+`scripts/measure-palette-derivation.mjs`, which now says so in its own header rather than only in the
+open-questions row) written directly into `roles.ts`'s PALETTE comment. Monochrome unchanged.
+
+**Q21, answered by recommendation and built in the same pass**, since it touches the same two swatches
+option A was already touching: `player.a`/`player.b`'s **light-theme** `rgb` retuned by lightness only
+(hue and saturation held). Mutual WCAG contrast 1.08:1 → 3.23:1; each side against the light background
+4.45:1 → 3.55:1 and 4.11:1 → 11.47:1. The two roles could not move symmetrically — lightening a role
+immediately costs it contrast against a light background, while darkening one buys contrast against
+*both* the background and the other role at once — which is recorded in `roles.ts`'s own comment so the
+asymmetry reads as a reasoned choice, not an oversight. Dark theme's pair is untouched, exactly as the
+recommendation scoped it.
+
+**Made observable rather than only asserted**, per AGENTS.md Section 6 and the instructions' own
+emphasis: `evidence/screenshots/palette-derivation-256-hand-authored.png` and `-derived.png` are the
+identical real fight frame (`citizens-versus-ravels`, tick 178) at the 256-colour tier, once per
+formula — close to indistinguishable at a glance, the result the measurement predicted rather than a
+surprise. `evidence/screenshots/mirror-light-theme-before-q21.png` and `-after-q21.png` are the same
+real mirror-skirmish frame at `--theme light`, and the difference there is not subtle: Ravel green goes
+from a washed pale tone that reads close to Citizen rust in brightness, to a clearly darker, distinct
+forest green. `evidence/screenshots/palette-reference.png` was regenerated from the live table (the
+script that builds it already reads through `sgrFor`/`rgbFor`, so it could not go stale even if it
+tried).
+
+New tests: `tests/roles.test.ts` pins concrete derived 256 indices for two roles that actually moved
+under derivation (proof the switch took effect, not just that *a* number came back) plus one that
+happened not to move; a structural check that every role's derived index really is the nearest xterm
+candidate to its own `rgb`, not merely *some* value; a regression pin that the 16-colour tier still
+resists derivation for `chrome.muted` specifically (the exact bug nearest-match would reintroduce); and
+an independent WCAG contrast calculation (not shared code with the recipe) proving the new mutual-
+contrast floor and confirming dark stayed untouched.
+
+**Transparency (Q25's second half) — prototyped, not shipped.** `CellStyle` in `src/view/frame.ts` is
+byte-for-byte unchanged; a `fade` field is a RULE amendment (engine.md 9.1) plus a recorded departure
+from `ascii-effects.md` craft rule 7, and both need Mario and a canon bump, which this session cannot
+grant itself. `scripts/prototype-fade-resolver.mjs` drives the real `fx.damage.flash` recipe and the
+real `mergeEffectCells` for "today," and a small resolver that lives only in the script — one scalar
+`fade` (0–1) blended toward `BACKGROUND_RGB[theme]`, quantized only for the swatch, exactly Q25's
+recommended shape — for "prototype." `evidence/screenshots/prototype-fade-resolver.png`, sent directly
+to the owner, shows two concrete things rather than arguing for them in prose: stacking (today's real
+compositor reaches exactly two distinguishable states for a stack of simultaneous flashes — bold, then
+inverse, saturating immediately — where a fade continuum keeps six sampled stack sizes visibly
+distinct) and decay (a solo flash's own window is a flat on/off pulse today; nothing in the vocabulary
+varies within one flash's short life; a fade scalar makes "then dim slowly" a real gradient). This is
+evidence for a canon-amendment proposal, not a preview of shipped behaviour — the screenshot says so on
+its own face, in case it is forwarded without this paragraph.
+
+**A verified, unplanned fix, found while making the "today" half honest.** `fx.damage.flash`
+(`src/view/effects/recipes.ts`) set both `bold` and `inverse` unconditionally. `composite.ts`'s own
+`lightWeight` (1 base + 1 bold + 1 inverse = 3) already meets `resolveLighting`'s `inverse >= 3`
+threshold from a *single* flash, so round six's whole stacking mechanism — built for exactly this
+recipe, from the owner's own "the white color can stack... then dim slowly" — had no visible effect at
+all: one hit and ten simultaneous hits on the same tile rendered pixel-identical. `composite.ts`'s own
+doc comment already described the intended shape ("`fx.damage.flash` alone is weight 2
+(plain-bold)"); the recipe simply never matched it, since the two were authored two days apart and
+nothing exercised them together — the existing `mergeEffectCells` stacking test uses a hand-built
+weight-2 cell, never this recipe's actual output. Fixed to `bold` only (git blame confirms the mismatch
+predates the compositor itself, so this is a fix, not a deliberate departure from it). A new test now
+drives the real recipe through the real compositor together, closing the gap that let this go
+unnoticed; the existing tests were all still green throughout, because none of them happened to look at
+this specific interaction.
+
+### 3. Sub-effects
+
+Owner: "The explosions should also spawn smaller sub-explosions, or in other words, the effects module
+should support sub-effects." `ascii-effects.md` Section 7 forbids "an ECS, particle pool, or physics
+integrator" and "procedural generation of effects from parameters," GUIDANCE with a stated departure
+bar (a *second* real use, argued in a gate report). The cheap path was tried first, per the
+instructions, and it worked: `subBurstsAt` (`src/view/effects/recipes.ts`) computes one to four
+secondary bursts entirely inside `blastDetonation`'s own closed-form, hash-seeded function — no new
+effect id, no runtime-registered child instance, no structured params — the identical shape
+`bigDeathScatter`'s landing "pop" already established at round six. **Section 7 is untouched**; nothing
+here needed the departure it gates.
+
+Each sub-burst is hash-seeded from the instance's own identity (never the gameplay stream), placed in
+an evenly-spaced, jittered sector around the main blast so several bursts cannot collide with each
+other or with the origin tile, gated to its own short timing window within the parent blast's
+progress, and expands through the identical `easeOut` ring formula the main blast uses — same glyph
+language, same role (`fx.blast`), so it reads as *part of* the explosion rather than an unrelated
+second one (craft rule 3: a tier-3 effect is a tier-1 effect that grew up). Count scales with radius
+the same way `bigDeathPieceCount` already scales debris count with a death's own outset: one sub-burst
+at radius 1 (a runner, a raider, a slinger), two at radius 2 (a fuel wagon, the leviathan) — the two
+values every detonating unit on the bench actually has today. Dropped entirely under reduced motion,
+matching `ascii-effects.md` Section 4 (decorative movement is exactly what reduced motion drops; the
+held full-radius ring already carries this beat's causality) — a dedicated test sweeps the whole window
+and asserts nothing is drawn beyond the held radius.
+
+New tests: existence and radius-scaling (a real recipe's own bold, glyph-bearing impact-mark tiles,
+sampled across the whole window, counted as distinct sub-burst clusters — one for radius 1, at least
+two for radius 2 — and bounded to stay near the parent blast rather than scattering arbitrarily far);
+reduced-motion suppression; and the existing `blastDetonation` ring-reach test was relaxed from "the
+only distance drawn" to "the main ring's own expected distance is present among the cells drawn" —
+sub-bursts now legitimately contribute cells at other distances, so exclusivity was never the right
+invariant once this shipped, and the test now says what it actually means. All the other generic,
+recipe-agnostic tests (purity, band legality, glyph width, three-forms) already iterate every recipe in
+`sampleInstances()`, which includes `fx.blast.detonation`, so they now exercise sub-bursts automatically
+without needing their own copies.
+
+**Two screenshots, since the real content's own radius (2) makes the effect subtle by design** (craft
+rule 4, reserve visual weight — a small blast should look small): `evidence/screenshots/
+blast-sub-explosions-before.png` / `-after.png` is the real, unmodified `citizens-versus-ravels` tick
+207, sub-bursts off and on (the "before" half produced by temporarily commenting out one call site,
+capturing, then restoring — real code, not a mock); the difference is present but modest, honestly
+shown rather than cropped to flatter it. `evidence/screenshots/sub-explosions-illustration.png` drives
+the same, unmodified recipe at radius 5 — a size nothing on the bench actually detonates at — purely so
+the mechanism's shape is unambiguous, coloured (illustration-only; the real cells carry no such tag) to
+separate the main ring from the sub-burst clusters visually. Both screenshots say plainly, in their own
+caption or on-page text, which is real content and which is illustration.
+
+### Verification
+
+Diff confined to `src/view/**`, `tests/**`, `scripts/**`, and `evidence/screenshots/**` — nothing under
+`src/pulse`, `src/state`, `src/events`, or `src/scenario`, checked by `git diff --stat` against this
+round's start, not assumed. `npx tsc --noEmit` clean. `npm test`: **185 tests, 185 passing** (176
+before this round); `npm run test:bun`: every file passing. `./scripts/check-repository.sh` clean.
+`grid --verify --runs 5` on `citizens-versus-ravels`, `heavies-clash`, `ravel-cascade`, and
+`citizen-mirror-skirmish`: every run identical. State and event hashes additionally compared directly
+against a fresh `origin/main` worktree for all four scenarios — byte-identical on both, which is the
+same proof by hash comparison every prior round's kernel-adjacent work has used, applied here to
+confirm a round that touches only presentation actually only touched presentation.
+
+### Revised decision
+
+> **REVISE, acted on a seventh time — PASS still pending the owner's next look.**
+
+Same shape as every round since Section 8. Two of three work items (easing, the colour pipeline) are
+built, tested, and evidenced with real screenshots; the third (sub-effects) is built the cheap way the
+instructions asked to be tried first, and it worked, so `ascii-effects.md` Section 7 needed no
+departure. The transparency half of Q25 is deliberately not built — prototyped, evidenced, and left for
+an explicit owner decision, exactly as a RULE amendment requires. Nothing here claims Gate 1B accepted;
+that is still the owner watching and saying so.
+
+## 23. Next authorized action, a seventh time
+
+Look at the screenshots directly — they carry more of this round's actual claim than the prose above
+does: `easing-blast-ring-before/after.png` for the explosion curve;
+`palette-derivation-256-hand-authored/derived.png` and `mirror-light-theme-before/after-q21.png` for
+the colour pipeline; `prototype-fade-resolver.png` for what a transparency amendment would buy;
+`blast-sub-explosions-before/after.png` and `sub-explosions-illustration.png` for the sub-explosions.
+Decide the two things that are genuinely this session's authority to ask about rather than to decide:
+whether the derived 256-colour tier reads worse than the hand-authored one on a real frame (Q25), and
+whether the transparency prototype's argument is worth the RULE amendment and canon bump it would cost
+(Q25's second half). Q21 is applied under its own recommendation and only needs a look, not a decision.
+Accept or revise Gate 1B (and Gate 1A alongside it, still never separately closed). Milestone 2 remains
+gated on acceptance, not on this session running out of things to fix.

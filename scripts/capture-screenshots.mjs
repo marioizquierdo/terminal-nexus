@@ -219,6 +219,21 @@ const shots = [
     glyphs: "unicode",
   },
   {
+    // Q25 (specs/open-questions.md), option A: the 256-colour tier is now derived from rgb rather
+    // than a fourth hand-authored column. Same real fight frame as "ravels-clash" above, at the
+    // 256-colour tier specifically, captured once per formula (see the gate report for how the
+    // "hand-authored" half was produced) so the owner can judge whether derived reads worse before
+    // anything else is built on it.
+    name: "palette-derivation-256",
+    caption: "Tick 178, 256-colour tier - derived from rgb vs. the former hand-authored table",
+    scenario: "citizens-versus-ravels",
+    tick: 178,
+    cols: 80,
+    rows: 24,
+    capability: "color256",
+    glyphs: "unicode",
+  },
+  {
     name: "ravels-clash-no-effects",
     caption: "The same instant with effects off - the comparison the gate is judged on",
     scenario: "citizens-versus-ravels",
@@ -269,6 +284,38 @@ const shots = [
     rows: 24,
     capability: "truecolor",
     theme: "light",
+  },
+  {
+    // Owner playtest, 2026-08-24: "the explosion can be improved, by expanding faster at first, and
+    // then slowing down towards the end." B:wagon#20 (radius 2, the largest detonation in the game)
+    // dies to a clean, isolated melee blow at tick 204 - no other blast the same tick, no ranged
+    // flight hold, so its fx.blast.detonation instance starts exactly on tick 204's own boundary.
+    // Two ticks later (166.7ms into its 380ms window, progress 0.4386) the eased and un-eased curves
+    // disagree about the ring: round(0.4386*2*1.35)=1 under the old linear formula,
+    // round(easeOut(0.4386)*2*1.35)=2 under the new one - one tick before the two curves converge
+    // again at reach 2. Captured twice at the identical tick, once per formula (see the gate report
+    // for how the "before" half was produced) rather than only described.
+    name: "easing-blast-ring",
+    caption: "Tick 206 - two ticks into B:wagon#20's radius-2 blast, ease-out vs. the old linear ramp",
+    scenario: "citizens-versus-ravels",
+    tick: 206,
+    cols: 80,
+    rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
+  },
+  {
+    // Owner, 2026-08-24: "the explosions should also spawn smaller sub-explosions." Same B:wagon#20
+    // blast as "easing-blast-ring" above, three ticks in rather than two - close enough to the main
+    // ring to still read as one explosion, far enough that the hash-seeded sub-burst(s) have started.
+    name: "blast-sub-explosions",
+    caption: "Tick 207 - B:wagon#20's radius-2 blast, main ring plus its own hash-seeded sub-bursts",
+    scenario: "citizens-versus-ravels",
+    tick: 207,
+    cols: 80,
+    rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
   },
 ]
 

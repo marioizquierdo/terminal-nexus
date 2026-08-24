@@ -293,10 +293,23 @@ const impactBurst: EffectRecipe = (instance, context) => {
  * The one effect allowed to touch a unit's own cell, and only as an attribute — so it emits no
  * glyph at all and the compositor keeps whatever was underneath. In `highlights` rather than
  * `effects` so the corruption law cannot let a Glitch effect swallow it.
+ *
+ * `bold` only, deliberately not `inverse` too. Found during this round's colour-pipeline pass
+ * (Q25/transparency prototype, specs/open-questions.md): this recipe originally set both, which
+ * `composite.ts`'s own `lightWeight` (1 base + 1 bold + 1 inverse) puts at weight 3 - already at
+ * `resolveLighting`'s `inverse >= 3` ceiling from a *single* flash, before any stacking. That made
+ * the compositor's whole stacking mechanism dead code for the one recipe it exists for: a solo hit
+ * and ten simultaneous hits on the same tile rendered pixel-identical, silently, because nothing had
+ * exercised the real recipe's output through `mergeEffectCells` together (the existing test for that
+ * used a hand-built weight-2 cell, not this recipe's actual one - see effects.test.ts). `bold` alone
+ * is weight 2, matching composite.ts's own doc comment and the owner's own words for what stacking
+ * should do ("the white color can stack... then dim slowly" - an escalation, not already maxed): a
+ * solo flash now reads as `bold`, and two or more simultaneous flashes on one tile escalate to
+ * `inverse`, for real.
  */
 const damageFlash: EffectRecipe = (instance, context) => {
   void context
-  return [{ tile: instance.origin, glyph: "", role: "fx.flash", bold: true, inverse: true }]
+  return [{ tile: instance.origin, glyph: "", role: "fx.flash", bold: true }]
 }
 
 // ---------------------------------------------------------------------------
@@ -368,6 +381,24 @@ function deathFrameGlyphAt(
   return glyph === undefined || glyph === " " ? undefined : glyph
 }
 
+/**
+ * Ease-out: fast at first, slowing toward the end. Owner playtest, 2026-08-24: "the explosion can be
+ * improved, by expanding faster at first, and then slowing down towards the end." A quadratic curve
+ * is the cheapest shape that reads as deceleration, and it is shared by every expansion-from-a-centre
+ * site below — the blast ring, the big-death shockwave, and the flying debris (drag decelerates real
+ * debris too) — rather than reinvented per recipe. A second curve shape earns its own helper the same
+ * way this one did, once something actually needs a different rate of decay, not before (AGENTS.md
+ * Section 4: prefer direct code, extract only after a second real use reveals the boundary).
+ *
+ * Deliberately NOT applied to `rangedTracer`: a projectile travels at constant speed, and easing it
+ * would read as a bullet slowing down in flight. Deliberately NOT applied to `structureCollapse`'s
+ * `collapsedRows`: that is a progressive top-down reveal, not an expansion from a centre.
+ */
+export function easeOut(t: number): number {
+  const clamped = Math.max(0, Math.min(1, t))
+  return 1 - (1 - clamped) ** 2
+}
+
 /** Beats a big-body death choreography moves through, as fractions of the instance's own window. */
 const SHOCKWAVE_END = 0.15
 const DEBRIS_LAUNCH_START = 0.15
@@ -416,7 +447,7 @@ function bigDeathScatter(
   // alone every frame, same as everything else here. Travel, so reduced motion drops it; the impact
   // it is racing away from is already carried by the interior fill above.
   if (!context.reducedMotion && progress <= SHOCKWAVE_END) {
-    const reach = Math.max(1, Math.round((progress / SHOCKWAVE_END) * outset))
+    const reach = Math.max(1, Math.round(easeOut(progress / SHOCKWAVE_END) * outset))
     const glyph = family.impact[0] ?? "*"
     for (const offset of footprintRing(width, height, reach)) {
       cells.push({
@@ -461,7 +492,10 @@ function bigDeathScatter(
     }
     if (progress < start) continue // not yet launched
 
-    const local = Math.min(1, (progress - start) / flight)
+    // Eased the same way the shockwave is: a thrown piece decelerates under drag, so it covers most
+    // of its distance early and drifts the last stretch into its own landing "pop" rather than
+    // arriving at a constant clip.
+    const local = easeOut(Math.min(1, (progress - start) / flight))
     if (local < 1) {
       cells.push({
         tile: {
@@ -598,6 +632,81 @@ const structureCollapse: EffectRecipe = (instance, context) => {
  * real visual weight besides a Nexus going critical, because it is the one event that can end an
  * army in a single tick.
  */
+/**
+ * How many secondary bursts a detonation earns, scaled by radius the same way `bigDeathPieceCount`
+ * scales debris - capped so a hypothetical huge radius cannot fill the screen with sub-explosions.
+ * `1` at radius 1 (a runner, a raider, a slinger) and `2` at radius 2 (a fuel wagon, the leviathan) -
+ * the two values every detonating unit on the bench actually has today.
+ */
+function subBurstCount(radius: number): number {
+  return Math.min(4, 1 + Math.floor(radius / 2))
+}
+
+/** Timing window (as fractions of the instance's own progress) a sub-burst is drawn from. */
+const SUB_BURST_START_MIN = 0.3
+const SUB_BURST_START_SPAN = 0.35
+const SUB_BURST_SPAN_MIN = 0.15
+const SUB_BURST_SPAN_RANGE = 0.15
+/** A sub-explosion is small on purpose - a tier-1 blast that grew up small, not a second full one
+ * (craft rule 3: similar things must look similar). */
+const SUB_BURST_RADIUS = 1
+
+/**
+ * The owner's own words, 2026-08-24: "the explosions should also spawn smaller sub-explosions, or in
+ * other words, the effects module should support sub-effects." The cheap path first, per the gate
+ * instructions and ascii-effects.md Section 7's own departure bar: a secondary burst drawn inside this
+ * recipe's own closed-form, hash-seeded function - the same shape `bigDeathScatter`'s landing "pop"
+ * already uses, not a new effect id, not a runtime-registered child instance. Each sub-burst is a
+ * smaller, offset, delayed copy of the main ring's own eased expansion - same formula, same glyph
+ * language, at a hash-seeded point inside the main blast's own radius, so it always reads as *part of*
+ * this explosion rather than an unrelated second one landing nearby.
+ */
+function subBurstsAt(
+  instance: EffectInstance,
+  family: Family,
+  radius: number,
+  progress: number,
+  hash: number,
+): PositionedCell[] {
+  const cells: PositionedCell[] = []
+  const bursts = subBurstCount(radius)
+  for (let index = 0; index < bursts; index += 1) {
+    const salt = 40 + index * 10
+    const start = SUB_BURST_START_MIN + cosmeticUnit(draw(hash, salt)) * SUB_BURST_START_SPAN
+    const span = SUB_BURST_SPAN_MIN + cosmeticUnit(draw(hash, salt + 1)) * SUB_BURST_SPAN_RANGE
+    if (progress < start || progress >= start + span) continue
+    const local = (progress - start) / span
+
+    // Evenly spaced sectors, jittered within each - keeps several sub-bursts from landing on the
+    // origin itself or on top of one another, without giving up hash-seeded variety. At least one
+    // tile out, and scaled with the main radius, so a sub-explosion reads as something the main blast
+    // set off nearby, not a second point of origin sitting on the same tile.
+    const sector = (Math.PI * 2) / bursts
+    const angle = index * sector + cosmeticUnit(draw(hash, salt + 2)) * sector
+    const distance = 1 + cosmeticUnit(draw(hash, salt + 3)) * Math.max(1, radius)
+    const centre = {
+      x: instance.origin.x + Math.round(Math.cos(angle) * distance),
+      y: instance.origin.y + Math.round(Math.sin(angle) * distance),
+    }
+
+    if (local < 0.5) {
+      cells.push({
+        tile: centre,
+        glyph: family.impact[0] ?? "*",
+        role: "fx.blast",
+        bold: true,
+      })
+    }
+    const reach = Math.max(1, Math.round(easeOut(local) * SUB_BURST_RADIUS * 1.35))
+    for (const tile of ringTiles(centre, Math.min(SUB_BURST_RADIUS, reach))) {
+      const spin = draw(hash, salt + 5 + tile.x * 17 + tile.y * 23)
+      if (cosmeticUnit(spin) > 0.6) continue
+      cells.push({ tile, glyph: cosmeticPick(spin, family.debris), role: "fx.blast", dim: local > 0.5 })
+    }
+  }
+  return cells
+}
+
 const blastDetonation: EffectRecipe = (instance, context) => {
   const radius = Math.max(1, paramNumber(instance, "radius", 1))
   const progress = progressOf(instance, context)
@@ -613,14 +722,16 @@ const blastDetonation: EffectRecipe = (instance, context) => {
   })
 
   if (context.reducedMotion) {
-    // No expansion: the full radius, drawn once and held, so the reach is still legible.
+    // No expansion: the full radius, drawn once and held, so the reach is still legible. Sub-bursts
+    // are travel and decorative movement - exactly what reduced motion drops (ascii-effects.md 4) -
+    // and the held full ring already carries the causality this beat owes.
     for (const tile of ringTiles(instance.origin, radius)) {
       cells.push({ tile, glyph: "*", role: "fx.blast", dim: true })
     }
     return cells
   }
 
-  const reach = Math.max(1, Math.round(progress * radius * 1.35))
+  const reach = Math.max(1, Math.round(easeOut(progress) * radius * 1.35))
   for (const tile of ringTiles(instance.origin, Math.min(radius, reach))) {
     const spin = draw(hash, tile.x * 31 + tile.y)
     // Negative space is material (craft rule 5). A ring that paints every tile it reaches is what
@@ -635,6 +746,7 @@ const blastDetonation: EffectRecipe = (instance, context) => {
       dim: progress > 0.55,
     })
   }
+  cells.push(...subBurstsAt(instance, family, radius, progress, hash))
   return cells
 }
 
