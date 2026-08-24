@@ -3,7 +3,7 @@
 **Document role:** The effect system: contract, starter vocabulary, and the craft rules behind it
 **Status:** Canonical direction; the vocabulary is proven or discarded by Milestone 1 Gate 1B
 **Canon version:** 2.7
-**Updated:** 2026-08-20
+**Updated:** 2026-08-24
 **License:** Apache-2.0 for the contract and schemas; CC BY-SA 4.0 for the authored vocabulary
 
 ## 0. Why this document exists
@@ -194,6 +194,25 @@ Three notes the implementing session will want:
 - `fx.damage.flash` is deliberately in `highlights` rather than `effects`, so that the corruption law
   cannot let a Glitch effect swallow it.
 
+### 5.1 Adding an effect to the vocabulary — GUIDANCE
+
+The vocabulary is meant to grow: a recipe is an ordinary typed function in one record
+(`EFFECT_RECIPES`, `src/view/effects/recipes.ts`), and nothing about adding one is architectural. It
+is, deliberately, not *silent* — two guards make a new id a decision rather than an accident, and a
+session that trips them should update them rather than route around them:
+
+1. **This table.** It is the canonical list. A new effect that is not in it is undocumented, and a
+   listed effect that is not authored is a lie — `tests/effects.test.ts` asserts both directions,
+   including the exact size of the set, so the count moves only on purpose.
+2. **`params` is flat.** `EffectParams` is `Record<string, number | string>` — scalars, no nested
+   structures. That is a real constraint the first time one effect wants to hand another anything
+   richer than a number, and it is the constraint to reconsider deliberately rather than widen in
+   passing.
+
+An effect that is a *variation* of an existing one — a bigger version, a faction's dialect of it —
+should usually be the same recipe reading `instance.family` or a param, not a new id. Craft rule 3:
+a tier-3 effect is a tier-1 effect that grew up, not a different effect.
+
 ## 6. Determinism and testing — RULE
 
 An effect is a pure function, so it is **directly testable without a terminal**:
@@ -210,7 +229,15 @@ An effect is a pure function, so it is **directly testable without a terminal**:
 Snapshot the composed frame at fixed timestamps and diff it. **Do not test effects by watching them**
 — watch them to judge them, test them to keep them.
 
-## 7. What this system is not
+## 7. What this system is not — GUIDANCE
+
+[`engine.md`](engine.md) Section 0 requires every section to carry an authority marker, and this one
+went without one until 2026-08-24. It is **GUIDANCE**, by that same section's own default for a
+section describing something not designed yet: "that is still GUIDANCE, and it still means *do not
+build this today*." So the list below is not a lock only Mario may open — but departing from it is
+not a preference either. A session that builds one of these owes the gate report the case that the
+work showed better, and owes it in the terms Section 0 sets: a *second* real use that shows where the
+seam actually is, not the first one that would find it convenient.
 
 Not authorized, not designed, not to be built:
 
