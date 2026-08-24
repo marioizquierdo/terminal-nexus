@@ -310,8 +310,23 @@ const damageFlash: EffectRecipe = (instance, context) => {
  * a ring that actually reads as scaled to it rather than the same halo every size gets. Owner
  * playtest, 2026-08-23: "when a large unit is destroyed, it should leave more derby in the ground."
  */
-function deathRingOutset(width: number, height: number): number {
+export function deathRingOutset(width: number, height: number): number {
   return Math.max(1, Math.ceil(Math.max(width, height) / 2))
+}
+
+/**
+ * Extra ticks `fx.death.collapse` plays beyond its own ~4-tick baseline, for a body big enough to
+ * earn the full shockwave/flying-debris choreography (`bigDeathScatter`, below) rather than the
+ * original flat halo. Owner playtest, 2026-08-23: "for the giant colossus, it needs to take multiple
+ * turns, perhaps even 6 or 12 turns to complete... it's an effect, so it should be fine to do it over
+ * multiple turns." Zero for anything up to a 2-tile body, so a 1x1 death is unchanged; four ticks per
+ * outset step beyond that lands a 3x3 body (the colossus) at roughly eight ticks total and the 5x2
+ * leviathan at roughly twelve — the owner's own two numbers, not tuned to hit them after the fact.
+ */
+const BIG_DEATH_EXTRA_TICKS = 4
+
+export function deathExtraTicks(width: number, height: number): number {
+  return Math.max(0, deathRingOutset(width, height) - 1) * BIG_DEATH_EXTRA_TICKS
 }
 
 /**
@@ -353,11 +368,133 @@ function deathFrameGlyphAt(
   return glyph === undefined || glyph === " " ? undefined : glyph
 }
 
+/** Beats a big-body death choreography moves through, as fractions of the instance's own window. */
+const SHOCKWAVE_END = 0.15
+const DEBRIS_LAUNCH_START = 0.15
+const DEBRIS_LAUNCH_SPAN = 0.35
+const DEBRIS_FLIGHT_MIN = 0.15
+const DEBRIS_FLIGHT_SPAN = 0.2
+const DEBRIS_POP_WINDOW = 0.06
+
+/**
+ * How many pieces a body earns, scaled by how far its own ring sits from the footprint - more for a
+ * wider blast radius, capped so a hypothetical body bigger than anything on the bench today cannot
+ * fill the screen with debris. `3 + outset * 2` puts the 3x3 colossus (`outset = 2`) at seven pieces
+ * and the 5x2 leviathan (`outset = 3`) at nine.
+ */
+function bigDeathPieceCount(outset: number): number {
+  return Math.min(10, 3 + outset * 2)
+}
+
+/**
+ * The choreography a body big enough to need `deathExtraTicks` (above) earns instead of the flat
+ * ring `deathCollapse` draws for everything smaller: a shockwave racing out to the ring's own
+ * radius, then a handful of hand-placed pieces, each launched on its own delay and flown along a
+ * straight, hand-computed line - the same closed-form interpolation `tileLine`/`rangedTracer`
+ * already use, not a physics integrator (ascii-effects.md 7) - to a landing tile *beyond* `outset`,
+ * a bright "pop" where it lands, then a dim settle. Owner playtest, 2026-08-23: "an explosion that
+ * goes from the middle towards the radius, then smaller explosions, and pieces being broken around,
+ * ending up in multiple debris." Every draw is seeded from `hash` (the instance's own identity plus
+ * a salt), so which pieces go where and when is fixed the instant the unit dies, not re-rolled frame
+ * to frame - the purity `mergeEffectCells` (composite.ts) leans on one level up applies here first.
+ */
+function bigDeathScatter(
+  instance: EffectInstance,
+  context: EffectContext,
+  family: Family,
+  width: number,
+  height: number,
+  outset: number,
+  progress: number,
+  hash: number,
+): PositionedCell[] {
+  const cells: PositionedCell[] = []
+  const centreX = (width - 1) / 2
+  const centreY = (height - 1) / 2
+
+  // The shockwave: a single expanding ring, not an accumulating disk - drawn fresh from `progress`
+  // alone every frame, same as everything else here. Travel, so reduced motion drops it; the impact
+  // it is racing away from is already carried by the interior fill above.
+  if (!context.reducedMotion && progress <= SHOCKWAVE_END) {
+    const reach = Math.max(1, Math.round((progress / SHOCKWAVE_END) * outset))
+    const glyph = family.impact[0] ?? "*"
+    for (const offset of footprintRing(width, height, reach)) {
+      cells.push({
+        tile: { x: instance.origin.x + offset.x, y: instance.origin.y + offset.y },
+        glyph,
+        role: "fx.debris",
+        bold: true,
+      })
+    }
+  }
+
+  const pieces = bigDeathPieceCount(outset)
+  for (let index = 0; index < pieces; index += 1) {
+    const salt = index * 10
+    const start = DEBRIS_LAUNCH_START + cosmeticUnit(draw(hash, salt)) * DEBRIS_LAUNCH_SPAN
+    const flight = DEBRIS_FLIGHT_MIN + cosmeticUnit(draw(hash, salt + 1)) * DEBRIS_FLIGHT_SPAN
+    const angle = cosmeticUnit(draw(hash, salt + 2)) * Math.PI * 2
+    // Beyond outset, not up to it: a piece landing exactly on the old fixed ring would just redraw
+    // it. Owner playtest: "some debris may even spam on tiles next to the original unit." `reach` is
+    // a Chebyshev distance - footprintRing's own units, not a Euclidean one - so a direction vector
+    // is normalised by its own Chebyshev length before being scaled: a diagonal throw and an
+    // axis-aligned one both land exactly `reach` tiles out, the same way footprintRing's ring is
+    // measured, rather than a diagonal throw quietly landing closer for the same draw.
+    const reach = outset + cosmeticUnit(draw(hash, salt + 3)) * 2
+    const dirX = Math.cos(angle)
+    const dirY = Math.sin(angle)
+    const chebyshevLength = Math.max(Math.abs(dirX), Math.abs(dirY)) || 1
+    const offsetX = (dirX / chebyshevLength) * reach
+    const offsetY = (dirY / chebyshevLength) * reach
+    const glyph = cosmeticPick(draw(hash, salt + 4), family.debris)
+    const landing = {
+      x: instance.origin.x + Math.round(centreX + offsetX),
+      y: instance.origin.y + Math.round(centreY + offsetY),
+    }
+
+    if (context.reducedMotion) {
+      // Travel and the launch delay are exactly what reduced motion drops (ascii-effects.md 4): the
+      // piece shows already landed, dim, for the window's whole length. Causality survives - a body
+      // this size is gone and its debris is on the ground - which is the only thing this beat owes.
+      cells.push({ tile: landing, glyph, role: "fx.debris", dim: true })
+      continue
+    }
+    if (progress < start) continue // not yet launched
+
+    const local = Math.min(1, (progress - start) / flight)
+    if (local < 1) {
+      cells.push({
+        tile: {
+          x: instance.origin.x + Math.round(centreX + offsetX * local),
+          y: instance.origin.y + Math.round(centreY + offsetY * local),
+        },
+        glyph,
+        role: "fx.debris",
+        bold: true,
+      })
+      continue
+    }
+    if (progress < start + flight + DEBRIS_POP_WINDOW) {
+      // The "smaller explosions" beat: a brief bright pop where a piece lands, not a mark that just
+      // silently appears.
+      cells.push({ tile: landing, glyph: family.impact[0] ?? glyph, role: "fx.debris", bold: true })
+      continue
+    }
+    cells.push({ tile: landing, glyph, role: "fx.debris", dim: true })
+  }
+
+  return cells
+}
+
 /**
  * Expanding then thinning debris over the footprint. Visibly heavier than an impact burst - and,
  * for content that defines `DEATH_ART` (`src/content/art.ts`), its own crumbling silhouette plays
  * across the footprint instead of the plain per-tile fill, the ring still scattering around it: a
  * combination of effects and a dead animation, owner playtest 2026-08-23, "could really make it snap".
+ * A body whose ring sits more than one tile out (`deathRingOutset`, above) trades that flat ring for
+ * `bigDeathScatter`'s full shockwave/flying-debris/settle choreography instead - same owner playtest:
+ * "an explosion that goes from the middle towards the radius, then smaller explosions, and pieces
+ * being broken around, ending up in multiple debris."
  */
 const deathCollapse: EffectRecipe = (instance, context) => {
   const family = familyOf(instance)
@@ -391,6 +528,16 @@ const deathCollapse: EffectRecipe = (instance, context) => {
       }
     }
   }
+  // A body big enough to earn deathExtraTicks (above) earns the full shockwave/flying-debris
+  // choreography instead of the flat ring below - across the instance's whole, now much longer,
+  // window (reduced motion included: bigDeathScatter drops travel itself, same as the interior fill
+  // above already does), not just the loudest first 45% a small death's ring is confined to.
+  const outset = deathRingOutset(width, height)
+  if (outset > 1) {
+    cells.push(...bigDeathScatter(instance, context, family, width, height, outset, progress, hash))
+    return cells
+  }
+
   if (context.reducedMotion || progress >= 0.45) return cells
 
   // The expansion: a ring around the footprint, only while the collapse is loudest.
@@ -400,7 +547,6 @@ const deathCollapse: EffectRecipe = (instance, context) => {
   // (owner playtest, 2026-08-23, above). A ring past its 1x1 minimum is thinned - craft rule 5,
   // negative space is material - or a five-tile body's ring reads as a solid, static block rather
   // than scattered debris.
-  const outset = deathRingOutset(width, height)
   const density = outset <= 1 ? 1 : 0.7
   footprintRing(width, height, outset).forEach((offset, index) => {
     const spin = draw(hash, index + 20)

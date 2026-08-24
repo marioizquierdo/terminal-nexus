@@ -13,6 +13,7 @@ import type { DomainEvent } from "../../events/types.ts"
 import { footprintExtent } from "../../grid/coords.ts"
 import type { Coord } from "../../grid/types.ts"
 import type { MatchState } from "../../state/types.ts"
+import { deathExtraTicks } from "./recipes.ts"
 import type { EffectFamily, EffectInstance } from "./types.ts"
 
 /** Beat timings from ascii-effects.md Section 2. Anything under about 60 ms did not happen. */
@@ -224,15 +225,19 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
 
       case "entity.died": {
         const definition = source.registry.get(event.contentId)
+        const { width: deathWidth, height: deathHeight } = footprintExtent(definition.footprint)
         instances.push({
           recipe: "fx.death.collapse",
           band: "effects",
           startMs: at(event.tick) + heldMsFor(event.tick, event.ordinal),
-          durationMs: DEATH_MS,
+          // Longer for a big body - deathExtraTicks (recipes.ts) is 0 up to a 2-tile footprint, so
+          // this is DEATH_MS exactly for everything that has always used it.
+          durationMs: DEATH_MS + deathExtraTicks(deathWidth, deathHeight) * tickMs,
           origin: event.at,
           family: familyFor(event.contentId),
           params: {
-            ...footprintExtent(definition.footprint),
+            width: deathWidth,
+            height: deathHeight,
             // The recipe's own hook into DEATH_ART (src/content/art.ts) - content with no entry
             // there just gets the plain per-tile fill this param has always driven on its own.
             contentId: event.contentId,

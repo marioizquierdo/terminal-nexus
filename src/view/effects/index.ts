@@ -2,6 +2,7 @@ export * from "./types.ts"
 export * from "./random.ts"
 export * from "./recipes.ts"
 export * from "./derive.ts"
+export * from "./composite.ts"
 
 import type { EffectContext, EffectInstance, PositionedCell } from "./types.ts"
 import { isActive } from "./types.ts"

@@ -1,8 +1,8 @@
 # Gate report — Milestone 1B, quality and effects
 
 **Document role:** Gate evidence report for Gate 1B
-**Status:** In progress — revised after a third round of owner feedback, awaiting the next viewing (the branch itself has still never been watched — see Section 14)
-**Canon version:** 2.6
+**Status:** In progress — revised after a sixth round of owner feedback (Section 20), awaiting the next viewing; still not the acceptance Section 8 and Section 12 wait on
+**Canon version:** 2.7
 **Updated:** 2026-08-23
 **License:** Apache-2.0
 
@@ -828,3 +828,161 @@ Section 17 described for the round before it — a new PR when the owner wants o
 `small-multicell-skirmish` for the two new units and the dead-animation frames together; `heavies-clash`
 again if the debris-scaling change is worth confirming on the units it was written for. Milestone 2
 remains gated on acceptance, not on this session running out of things to fix.
+
+## 20. A sixth round — a real compositor, and a multi-phase choreography for the biggest deaths
+
+Section 19's PR followed: #18, merged the same day. What arrived after the merge was not an
+instruction to start Milestone 2 either, but the largest single piece of direction the effects system
+has been given since ascii-effects.md was written:
+
+### What was said
+
+> "The explosion effects need to also have delay, showing light, and pieces in a way that spams over
+> multiple frames, and in some cases, like the giant colossus, it needs to take multiple turns,
+> perhaps even 6 or 12 turns to complete. It's an effect, so it should be fine to do it over multiple
+> turns. We need to resolve how to render multiple effects; ideally we would define intensity and can
+> add some sort of addition, perhaps the white color can stack and take longer to resolve, then dim
+> slowly. We are basically building an ascii rendering pipeline here... Perhaps we can differentiate
+> between pure lighting effects (they can stack with intensity and duration) and particle effects
+> (maybe can stack, depending of the symbol, we could merge a dot and a colon into a semicolon, etc,
+> even if this is a long hand-made table)... when they don't stack, then the latest one renders on
+> top."
+>
+> "Specifically for the large units dead, I want the dead animation to go slower, and when the debris
+> are left on the ground, there should [scatter] over multiple tiles. No need to cover exactly the
+> same surface, there should be some randomness and some debris may even [land] on tiles next to the
+> original unit occupy tiles. The effect being a explosion that goes from the middle towards the
+> radius, then smaller explosions, and pieces being broken around, ending up in multiple debris."
+>
+> "Please, pay attention to this, it is the main graphics engine of the game. Feel free to take
+> inspiration from StarCraft BW and Red Alert 2."
+
+### What this session did
+
+**A real compositor.** `composeBands` (`frame.ts`) has always resolved a tile the same way every
+other band does — topmost defined cell wins — which is correct for the Grid's own layers (a unit's
+glyph must never be a blend of two things) but was exactly wrong for two *effects* landing on the
+same tile the same frame, common in a busy fight. `src/view/effects/composite.ts` adds one function,
+`mergeEffectCells`, that runs strictly between deriving effect cells and the general band compositor —
+only effect-versus-effect collisions go through it; a live entity's glyph is untouched. It groups by
+`(band, tile)` and resolves a group of more than one by which kind it is, decided once by the group's
+first cell rather than re-checked per member (`highlights` carries only glyphless cells today, so the
+two kinds never actually mix in practice):
+
+- **Glyphless (lighting) cells** — every recipe that touches a unit's own tile uses `highlights` for
+  exactly this reason (Section 1.1) — stack by an ordinal brightness the terminal's own attributes
+  already express (dim → plain → bold → inverse), since `CellStyle` has no numeric intensity field
+  and ascii-effects.md 7 already rules out inventing one. Two simultaneous damage flashes read
+  brighter (bold) than one; three read at the ceiling (inverse) without ever exceeding it — "the white
+  color... take[s] longer to resolve, then dim[s] slowly" falls out of nothing more than several
+  independently-decaying signals happening to overlap, not any new state.
+- **Glyph-bearing (particle) cells** — fold left to right (oldest first, since cells arrive in
+  instance start-time order) through a short, hand-authored table: `.`+`:` → `;` (the owner's own
+  example), `,`+`'` → `"`, `*`+`*` → `&`, `/`+`\` → `X`, `-`+`|` → `+`. A pair the table has no entry
+  for keeps today's exact behaviour — the later cell simply wins, which is "when they don't stack,
+  then the latest one renders on top," word for word.
+
+Both rules are pure functions of the cells submitted *this frame*, with no history and no counter
+that survives between frames — not a stylistic choice, but ascii-effects.md rule 1 (`f(t)` must not
+depend on `f(t-1)`) applied one level up, to the compositor rather than to a single recipe. Seven new
+tests in `tests/effects.test.ts` cover both stacking rules, the fallback, cross-tile/cross-band
+independence, and that every glyph the merge table can produce is one printable ASCII character —
+the same obligation every other glyph in the system already carries.
+
+**Duration scales with the body.** `deathExtraTicks(width, height)` (`recipes.ts`) is zero for
+anything up to a two-tile body — every existing 1×1, 2×1 and 2×2 death is untouched — and four ticks
+per `deathRingOutset` step past that. A 3×3 colossus lands at roughly eight ticks total, a 5×2
+leviathan at roughly twelve — the owner's own "6 or 12" numbers, arrived at from the formula rather
+than tuned afterward to hit them. Wired into `derive.ts`'s `entity.died` handler as
+`DEATH_MS + deathExtraTicks(...) * tickMs`, so nothing about which recipe plays or when it starts
+changes — only how long the biggest bodies are given to finish.
+
+**The choreography itself.** `bigDeathScatter` replaces the flat expanding ring for any body whose
+`deathRingOutset` exceeds one tile (colossus and leviathan today; every smaller body keeps the exact
+pre-existing ring code, byte-identical, gated on the same `outset <= 1` branch it always ran under).
+Three beats, all hand-authored closed-form arithmetic — ascii-effects.md 7 rules out an ECS, a
+particle pool, a physics integrator, or generating an effect from parameters, so this is the same
+kind of linear interpolation `tileLine`/`rangedTracer` already do, not a new kind of system:
+
+1. **Shockwave.** A single ring, not an accumulating disk, racing from one tile out to the body's own
+   `deathRingOutset` over the first 15% of the window — "an explosion that goes from the middle
+   towards the radius."
+2. **Flying debris.** Three to ten pieces (scaled by `deathRingOutset`, capped), each launched on its
+   own delay and flown along a straight line from the footprint's centre to a landing tile *beyond*
+   the old ring radius — "some debris may even spam on tiles next to the original unit." The landing
+   direction is drawn from a uniform angle, but the distance is measured the way `footprintRing`
+   itself measures a ring (Chebyshev, not Euclidean) and the direction vector is normalised to that
+   metric before scaling — an early version measured a Euclidean radius and let a diagonal throw land
+   closer than an axis-aligned one for the identical draw, so pieces clustered inside the old ring
+   instead of past it; caught by a test asserting real scatter, not eyeballing it. A brief bright
+   "pop" plays on arrival — "then smaller explosions" — before the piece settles dim.
+3. **Settle.** Every piece dim, at rest, for the remainder of the window — "ending up in multiple
+   debris."
+
+Every draw is seeded from the instance's own hash plus a per-piece salt, so which pieces go where and
+when is fixed the instant the unit dies, not re-rolled frame to frame; reduced motion drops the
+shockwave and the flight entirely and shows every piece already landed, from the very first instant —
+travel and the launch delay are exactly what Section 4 says to drop, causality (something this size
+died, and left wreckage) is exactly what it says to keep. Four new tests cover the three beats in
+order, the small-body ring's exact invariants (still silent past progress 0.45, regression-guarded
+now that the branch point sits just above that line), and reduced motion's stillness.
+
+**A finding, not a bug: an effect can outlive the Pulse that caused it.** `snapshot.ts` hands every
+recipe an unclamped `context.timeMs` even once the footer's own tick readout and every entity's
+position have frozen on the Pulse's last resolved state (`clampTick`) — a deliberate separation, not
+an oversight: state has nothing further to interpolate, but a cosmetic effect is a pure function of
+absolute time and needs none. `heavies-clash`'s own leviathan dies on the exact tick that also ends
+the Pulse by annihilation, so its full ~12-tick choreography plays entirely *after* the last tick the
+simulation ever resolved — and does, correctly, confirmed by six screenshots spanning the sequence
+(`evidence/screenshots/heavies-death-*.png`). The capture tooling did not already know how to reach a
+presentation instant the footer can never display again; `stepPastEnd`
+(`scripts/lib/terminal-capture.mjs`) steps to the last resolved tick the verified way, then sends the
+remaining ticks directly, which is exact rather than a guess because `Playback.apply`'s `step-tick`
+case advances presentation time by exactly one tick per keypress, unconditionally, gate aside. Worth
+naming for the next session: a body's own scattered debris can also be dropped, tile by tile, when it
+would land on a still-living adjacent unit — the corruption law working exactly as designed
+(Section 1.1: an effect may never replace a live entity's glyph), visible in `heavies-death-settle.png`
+where the colossus's own adjacency quietly thins the leviathan's field. Not a defect; a consequence of
+two big bodies dying in contact worth knowing about before it is mistaken for one.
+
+### Verification
+
+176 Node tests (165 before this round, +11: 7 for `mergeEffectCells`, 4 for the big-death
+choreography), 32 for `tests/effects.test.ts` alone confirmed again under Bun, `tsc --noEmit` clean,
+`check-repository.sh` clean. `grid --verify` swept `heavies-clash` (5 runs) and four more scenarios (3
+runs each, including `colossus-two-tile-gap` and `small-multicell-skirmish`) — every one deterministic,
+as architecturally guaranteed by a diff confined entirely to `src/view/**` and its own tests (`git diff
+--stat` against this round's start: five files under `src/view`, one new, nothing under `src/pulse`,
+`src/state`, `src/events`, or `src/scenario`). One pre-existing, unrelated flake surfaced while running
+the full suite under Bun — `tests/cli.test.ts`'s cross-runtime hash comparison spawns node and bun
+subprocesses for every scenario file in one 5-second budget and timed out narrowly (~5.4–5.6s) — proven
+pre-existing rather than caused by this round by stashing every change (including the new, untracked
+`composite.ts`) and reproducing the identical timeout on the clean, already-merged tree before restoring
+the stash. Not fixed here: it touches `src/cli`, outside this round's scope, and the fix (a longer
+per-test timeout, or batching scenarios) belongs with whoever next touches that file.
+
+`heavies-clash`'s own leviathan death is captured start to finish: the impact instant, the shockwave at
+full radius, pieces mid-flight, the settled field, the same mid-flight instant in monochrome, and the
+very first instant under reduced motion — sent to the owner directly rather than only described here,
+per the standing rule that anything visual gets a real screenshot.
+
+### Revised decision
+
+> **REVISE, acted on a sixth time — PASS still pending the owner's next look.**
+
+The same shape as every round since Section 8: a compositor and a choreography are not a formal
+acceptance of Gate 1B, and are not claimed as one. What changed this round is confined to
+presentation — no kernel file touched, no scenario outcome able to move, verified by hash rather than
+assumed — and is evidenced the way every prior round's work has been: a test for every specific claim,
+a hash comparison for anything that could conceivably have touched determinism, and a screenshot for
+anything the owner asked to be able to see.
+
+## 21. Next authorized action, a sixth time
+
+PR #18 merged; this round's commits are unmerged follow-up on the same branch, restarted from the
+current `main` per the standing branch-restart rule (round 5's tip and the merge commit are
+content-identical, confirmed by an empty diff, so nothing was discarded). Watch `heavies-clash` for
+the full leviathan death end to end, and `small-multicell-skirmish` or `citizens-versus-ravels` for
+ordinary damage-flash stacking in a real multi-unit exchange rather than the synthetic fixtures the
+new compositor tests use. Milestone 2 remains gated on acceptance, not on this session running out of
+things to fix.

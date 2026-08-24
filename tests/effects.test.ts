@@ -16,12 +16,21 @@ import {
   EffectTimeline,
   STYLE_ROLES,
   createView,
+  deathExtraTicks,
+  deathRingOutset,
   deriveEffects,
   frameToText,
   isActive,
+  mergeEffectCells,
   offendingGlyph,
 } from "../src/view/index.ts"
-import type { CapabilityMode, EffectContext, EffectInstance } from "../src/view/index.ts"
+import type {
+  CapabilityMode,
+  EffectCellSource,
+  EffectContext,
+  EffectInstance,
+  PositionedCell,
+} from "../src/view/index.ts"
 import { loadScenarioFile, resolveScenario, scenarioFiles } from "./helpers.ts"
 
 const GRID = { width: 24, height: 12 }
@@ -37,7 +46,13 @@ function context(overrides: Partial<EffectContext> = {}): EffectContext {
   }
 }
 
-/** One instance per recipe, positioned in the middle of a Grid so nothing clips by accident. */
+/**
+ * One instance per recipe, positioned in the middle of a Grid so nothing clips by accident - two
+ * for `fx.death.collapse`, since `deathRingOutset` branches its tail on footprint size and the
+ * shared invariant tests below (purity, band legality, one-cell ASCII glyphs, all three forms)
+ * should exercise `bigDeathScatter` exactly as they exercise everything else, not just the
+ * hand-authored tests written specifically for it.
+ */
 function sampleInstances(): EffectInstance[] {
   const origin = { x: 10, y: 6 }
   const target = { x: 14, y: 6 }
@@ -55,6 +70,15 @@ function sampleInstances(): EffectInstance[] {
       band: "effects",
       durationMs: 320,
       params: { width: 3, height: 1 },
+      ...common,
+    },
+    {
+      // outset 2 (deathRingOutset(3, 3)) - the colossus-scale bigDeathScatter path, held to the
+      // same scaled duration deriveEffects itself would compute (320 + deathExtraTicks * tickMs).
+      recipe: "fx.death.collapse",
+      band: "effects",
+      durationMs: 320 + deathExtraTicks(3, 3) * (1000 / 12),
+      params: { width: 3, height: 3 },
       ...common,
     },
     {
@@ -631,4 +655,271 @@ test("reduced motion holds a death frame's final pose, not a mid-collapse one", 
     glyphsOf(late),
     "reduced motion still animates through the death frames instead of holding the last one",
   )
+})
+
+test("deathExtraTicks is zero up to a 2-tile body, and scales with the ring past it", () => {
+  // Owner playtest, 2026-08-23: "for the giant colossus, it needs to take multiple turns, perhaps
+  // even 6 or 12 turns to complete." 1x1/2x1/2x2 keep fx.death.collapse's original duration exactly;
+  // the 3x3 colossus and 5x2 leviathan land on the owner's own two numbers, not tuned to hit them
+  // after the fact - deathExtraTicks' own doc comment derives both from deathRingOutset.
+  assert.equal(deathExtraTicks(1, 1), 0)
+  assert.equal(deathExtraTicks(2, 1), 0)
+  assert.equal(deathExtraTicks(2, 2), 0)
+  assert.equal(deathExtraTicks(3, 3), 4)
+  assert.equal(deathExtraTicks(5, 2), 8)
+})
+
+test("a small footprint's death ring is unaffected: still silent past the loudest 45%", () => {
+  // Regression guard for the outset<=1 branch bigDeathScatter must never touch - fx.death.collapse's
+  // ring has always stopped at progress 0.45 for everything up to a 2-tile body, and this is the
+  // one invariant a big-body branch point placed just above that line could quietly break.
+  const deathRecipe = EFFECT_RECIPES["fx.death.collapse"]
+  assert.ok(deathRecipe !== undefined)
+  for (const [width, height] of [
+    [1, 1],
+    [2, 1],
+    [2, 2],
+  ] as const) {
+    const instance: EffectInstance = {
+      recipe: "fx.death.collapse",
+      band: "effects",
+      startMs: 0,
+      durationMs: 320,
+      origin: { x: 10, y: 6 },
+      family: "citizen",
+      params: { width, height },
+    }
+    const settled: number = deathRecipe(instance, context({ timeMs: 200, reducedMotion: false })).length
+    assert.equal(
+      settled,
+      width * height,
+      `a ${width}x${height} death painted ${settled} cells past progress 0.45, expected exactly ` +
+        `${width * height} (the interior fill alone, no ring)`,
+    )
+  }
+})
+
+test("a big body's death moves through a shockwave, then flying debris, before it settles", () => {
+  // Owner playtest, 2026-08-23: "an explosion that goes from the middle towards the radius, then
+  // smaller explosions, and pieces being broken around, ending up in multiple debris." Three beats,
+  // asserted in order, on the 3x3 colossus footprint - the smallest body that earns bigDeathScatter.
+  const deathRecipe = EFFECT_RECIPES["fx.death.collapse"]
+  assert.ok(deathRecipe !== undefined)
+  const width = 3
+  const height = 3
+  const origin = { x: 10, y: 6 }
+  const tickMs = 1000 / 12
+  const durationMs = 320 + deathExtraTicks(width, height) * tickMs
+  const instance: EffectInstance = {
+    recipe: "fx.death.collapse",
+    band: "effects",
+    startMs: 0,
+    durationMs,
+    origin,
+    family: "citizen",
+    params: { width, height },
+  }
+
+  const outsideFootprint = (tile: { x: number; y: number }): boolean =>
+    tile.x < origin.x || tile.x >= origin.x + width || tile.y < origin.y || tile.y >= origin.y + height
+
+  // The same dx/dy footprintRing itself uses, so "beyond the old ring" means exactly what the ring
+  // it is being compared against means.
+  const outsetOf = (tile: { x: number; y: number }): number => {
+    const dx =
+      tile.x < origin.x
+        ? origin.x - tile.x
+        : tile.x >= origin.x + width
+          ? tile.x - (origin.x + width - 1)
+          : 0
+    const dy =
+      tile.y < origin.y
+        ? origin.y - tile.y
+        : tile.y >= origin.y + height
+          ? tile.y - (origin.y + height - 1)
+          : 0
+    return Math.max(dx, dy)
+  }
+
+  const cellsAt = (timeMs: number): readonly PositionedCell[] =>
+    deathRecipe(instance, context({ timeMs, reducedMotion: false }))
+  const outsideTilesAt = (timeMs: number): Set<string> =>
+    new Set(
+      cellsAt(timeMs)
+        .filter((cell) => outsideFootprint(cell.tile))
+        .map((cell) => `${cell.tile.x},${cell.tile.y}`),
+    )
+
+  // Beat 1 - the shockwave: debris outside the footprint appears almost immediately, well before
+  // the loudest-hit window (progress 0.45) a small body's flat ring is confined to.
+  const shockwave = outsideTilesAt(durationMs * 0.05)
+  assert.ok(shockwave.size > 0, "no shockwave cell appeared in the first 5% of a big body's death")
+
+  // Beat 2 - flying pieces: the set of off-footprint tiles keeps changing shape as progress moves
+  // through the launch/flight window, which a static ring never does.
+  const samples = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7].map((fraction) => outsideTilesAt(durationMs * fraction))
+  const distinctFrames = new Set(samples.map((tiles) => [...tiles].sort().join("|"))).size
+  assert.ok(
+    distinctFrames > 1,
+    "the off-footprint debris never changes shape - it reads as a static ring, not flying pieces",
+  )
+
+  // Beat 3 - settled: once every piece has long finished travelling, some debris has come to rest
+  // beyond the old fixed ring radius, not swept into the same tidy circle every death used to draw.
+  // Owner playtest: "some debris may even spam on tiles next to the original unit occupy tiles."
+  const outset = deathRingOutset(width, height)
+  const settled = cellsAt(durationMs * 0.99)
+  assert.ok(
+    settled.some((cell) => outsetOf(cell.tile) > outset),
+    `no settled debris landed beyond the old ring radius (outset ${outset})`,
+  )
+})
+
+test("reduced motion drops a big body's shockwave and flight, but keeps its debris landed", () => {
+  // ascii-effects.md 4: reduced motion keeps impact and settle, drops travel and drift - the
+  // shockwave and the flying-debris beats are exactly that, so both should vanish, and every piece
+  // should already read as landed, unmoving, for the whole window.
+  const deathRecipe = EFFECT_RECIPES["fx.death.collapse"]
+  assert.ok(deathRecipe !== undefined)
+  const width = 5
+  const height = 2
+  const origin = { x: 10, y: 6 }
+  const tickMs = 1000 / 12
+  const durationMs = 320 + deathExtraTicks(width, height) * tickMs
+  const instance: EffectInstance = {
+    recipe: "fx.death.collapse",
+    band: "effects",
+    startMs: 0,
+    durationMs,
+    origin,
+    family: "ravel",
+    params: { width, height },
+  }
+  const outsideFootprint = (tile: { x: number; y: number }): boolean =>
+    tile.x < origin.x || tile.x >= origin.x + width || tile.y < origin.y || tile.y >= origin.y + height
+
+  const debrisTilesAt = (timeMs: number): string[] =>
+    deathRecipe(instance, context({ timeMs, reducedMotion: true }))
+      .filter((cell) => outsideFootprint(cell.tile))
+      .map((cell) => `${cell.tile.x},${cell.tile.y}`)
+      .sort()
+
+  const early = debrisTilesAt(durationMs * 0.01)
+  const late = debrisTilesAt(durationMs * 0.99)
+  assert.ok(early.length > 0, "reduced motion shows no scattered debris at all for a big body's death")
+  assert.deepEqual(early, late, "reduced motion still animates the scatter instead of holding it settled")
+})
+
+test("mergeEffectCells passes a lone cell through untouched", () => {
+  // By far the common case, most tiles most ticks: nothing to resolve, nothing should change.
+  const lone: EffectCellSource = {
+    band: "effects",
+    cell: { tile: { x: 3, y: 4 }, glyph: "*", role: "fx.blast", bold: true },
+  }
+  assert.deepEqual(mergeEffectCells([lone]), [lone])
+})
+
+test("mergeEffectCells: two lighting cells on one tile stack brighter than either alone", () => {
+  // Owner playtest, 2026-08-23: "pure lighting effects... can stack with intensity and duration...
+  // the white color can stack and take longer to resolve, then dim slowly."
+  const tile = { x: 5, y: 5 }
+  const single = mergeEffectCells([
+    { band: "highlights", cell: { tile, glyph: "", role: "fx.flash", bold: true } },
+  ])
+  const stacked = mergeEffectCells([
+    { band: "highlights", cell: { tile, glyph: "", role: "fx.flash", bold: true } },
+    { band: "highlights", cell: { tile, glyph: "", role: "fx.flash", bold: true } },
+  ])
+  assert.equal(single.length, 1)
+  assert.equal(stacked.length, 1)
+  const singleCell = single[0]?.cell
+  const stackedCell = stacked[0]?.cell
+  assert.ok(singleCell !== undefined && stackedCell !== undefined)
+  assert.equal(singleCell.inverse ?? false, false, "one flash alone should not already be at max weight")
+  assert.equal(stackedCell.inverse, true, "two simultaneous flashes should read at the top of the scale")
+  assert.equal(stackedCell.glyph, "", "a stacked lighting cell is still glyphless - an attribute, never a glyph")
+
+  // Three stacked, all dim, never exceed the same ceiling - "stacking" saturates, it does not run away.
+  const dim = { tile, glyph: "", role: "fx.flash" as const, dim: true }
+  const manyDim = mergeEffectCells([1, 2, 3].map(() => ({ band: "highlights" as const, cell: dim })))
+  assert.equal(manyDim.length, 1)
+  assert.equal(manyDim[0]?.cell.dim, false, "three simultaneous dim flashes should already be brighter than one dim flash")
+})
+
+test("mergeEffectCells: a single lighting cell keeps its own weight, not an inflated one", () => {
+  const dim: EffectCellSource = {
+    band: "highlights",
+    cell: { tile: { x: 1, y: 1 }, glyph: "", role: "fx.flash", dim: true },
+  }
+  const resolved = mergeEffectCells([dim])[0]?.cell
+  assert.ok(resolved !== undefined)
+  assert.equal(resolved.dim, true)
+  assert.equal(resolved.bold ?? false, false)
+  assert.equal(resolved.inverse ?? false, false)
+})
+
+test("mergeEffectCells: two particles merge through the table when a pair is defined", () => {
+  const tile = { x: 8, y: 2 }
+  const merged = mergeEffectCells([
+    { band: "effects", cell: { tile, glyph: ".", role: "fx.debris", dim: true } },
+    { band: "effects", cell: { tile, glyph: ":", role: "fx.debris" } },
+  ])
+  assert.equal(merged.length, 1)
+  assert.equal(merged[0]?.cell.glyph, ";", "the owner's own example pair - '.' and ':' - did not merge")
+
+  // Sorted-pair lookup: order of submission should not change which merge fires.
+  const reversed = mergeEffectCells([
+    { band: "effects", cell: { tile, glyph: ":", role: "fx.debris" } },
+    { band: "effects", cell: { tile, glyph: ".", role: "fx.debris", dim: true } },
+  ])
+  assert.equal(reversed[0]?.cell.glyph, ";")
+})
+
+test("mergeEffectCells: an undefined particle pair falls back to the later cell winning", () => {
+  // "when they don't stack, then the latest one renders on top" - the owner's own fallback rule,
+  // and exactly composeBands' pre-existing behaviour for anything this table has no entry for.
+  const tile = { x: 9, y: 9 }
+  const older: EffectCellSource = {
+    band: "effects",
+    cell: { tile, glyph: "=", role: "fx.debris", dim: true },
+  }
+  const newer: EffectCellSource = {
+    band: "effects",
+    cell: { tile, glyph: "z", role: "fx.debris", bold: true },
+  }
+  const merged = mergeEffectCells([older, newer])
+  assert.deepEqual(merged, [newer], "an unmapped pair should be indistinguishable from today's last-write-wins")
+})
+
+test("mergeEffectCells: different tiles and different bands never interact", () => {
+  const a: EffectCellSource = { band: "effects", cell: { tile: { x: 0, y: 0 }, glyph: "*", role: "fx.blast" } }
+  const b: EffectCellSource = { band: "effects", cell: { tile: { x: 1, y: 0 }, glyph: "*", role: "fx.blast" } }
+  const c: EffectCellSource = {
+    band: "projectiles",
+    cell: { tile: { x: 0, y: 0 }, glyph: "-", role: "fx.kinetic" },
+  }
+  const merged = mergeEffectCells([a, b, c])
+  assert.equal(merged.length, 3, "cells on different tiles or bands should never be folded together")
+})
+
+test("every glyph PARTICLE_MERGE_TABLE can produce is one printable ASCII character", () => {
+  // Same obligation every other glyph this system emits already carries (offendingGlyph, frame.ts).
+  const tile = { x: 0, y: 0 }
+  const pairs: ReadonlyArray<readonly [string, string]> = [
+    [".", ":"],
+    [",", "'"],
+    ["*", "*"],
+    ["/", "\\"],
+    ["-", "|"],
+  ]
+  for (const [a, b] of pairs) {
+    const merged = mergeEffectCells([
+      { band: "effects", cell: { tile, glyph: a } },
+      { band: "effects", cell: { tile, glyph: b } },
+    ])
+    const glyph = merged[0]?.cell.glyph ?? ""
+    assert.equal([...glyph].length, 1, `"${a}"+"${b}" merged to "${glyph}", not one character`)
+    const code = glyph.codePointAt(0) ?? 0
+    assert.ok(code >= 0x21 && code <= 0x7e, `"${a}"+"${b}" merged to "${glyph}", not printable ASCII`)
+  }
 })
