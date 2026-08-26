@@ -1,0 +1,44 @@
+{
+  "id": "bench-sniper-crossfire",
+  "name": "Proving Grounds - a glass cannon, absorbed as plain content",
+  "notes": "Mario's fifth requested design, and the cleanest 'absorbed with nothing new' case on this bench: unit.bench.sniper is an ordinary AttackDef (range 9, damage 22, cooldown 40) tuned to one extreme, nothing else. Two troopers close from across the field; the sniper gets at most one or two shots off, at most, before melee arrives and its own 14 hp gives out in a single hit - a long reach that has to earn its keep.",
+  "grid": {
+    "width": 30,
+    "height": 10
+  },
+  "seed": 700011,
+  "pulseTicks": 200,
+  "terrain": [
+    "..............................",
+    "..............................",
+    "..............................",
+    "..............................",
+    "..............................",
+    "..............................",
+    "..............................",
+    "..............................",
+    "..............................",
+    ".............................."
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": { "x": 26, "y": 4 },
+      "rows": ["i"],
+      "legend": {
+        "i": { "content": "unit.bench.sniper" }
+      }
+    },
+    "B": {
+      "at": { "x": 4, "y": 3 },
+      "rows": ["t", "", "t"],
+      "legend": {
+        "t": { "content": "unit.citizen.trooper" }
+      }
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "id": "bench-ram-preference",
+  "name": "Proving Grounds - a giant that prefers buildings, even to its own cost",
+  "notes": "Mario's seventh requested design. targetPreference is a soft bias, not targetLayers's hard restriction: a trooper stands directly between the ram and the barracks, closer than the barracks by a wide margin, and the ram should walk past it toward the building anyway - eating free hits from a target it never even selects - rather than trading with the trooper first the way plain nearest-enemy scoring would. Once no obstacles-layer target remains it falls back to fighting normally, per targetPreference's own fallback.",
+  "grid": {
+    "width": 28,
+    "height": 12
+  },
+  "seed": 700006,
+  "pulseTicks": 260,
+  "terrain": [
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": { "x": 3, "y": 5 },
+      "rows": ["r"],
+      "legend": {
+        "r": { "content": "unit.bench.ram" }
+      }
+    },
+    "B": {
+      "at": { "x": 11, "y": 3 },
+      "rows": ["t", "", "", "              b"],
+      "legend": {
+        "t": { "content": "unit.citizen.trooper" },
+        "b": { "content": "structure.citizen.barracks" }
+      }
+    }
+  }
+}

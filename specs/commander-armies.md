@@ -300,6 +300,11 @@ staring at in the kernel while reviewing and writing — offered the same way Se
 its own content: "competes for a place... none is authorized until a milestone needs it." Nothing
 here should be read as more settled than that.
 
+- **Tried since this was written**: the unit-design-architecture spike (`evidence/
+  unit-architecture-spike.md`) built the wall-segment idea below as a deliberate control case — a
+  known-clean baseline to test the exercise's own harness against — and it needed nothing new, exactly
+  as predicted. It lives in the spike's own bench roster (`src/content/proving-grounds.ts`), not here:
+  still not a Commander Army, and this note is a pointer, not a promotion.
 - **A Citizen unit that is a wall segment, not a wall builder.** Section 4.1's alignment bonus already
   rewards unbroken orthogonal runs of structures; multi-tile footprints are already RULE
   (`engine.md` 3.5). A slow, high-integrity Citizen unit whose footprint is a straight 1×3 or 1×4

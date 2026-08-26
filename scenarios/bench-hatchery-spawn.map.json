@@ -1,0 +1,46 @@
+{
+  "id": "bench-hatchery-spawn",
+  "name": "Proving Grounds - a spawner, and the smallest capability that unlocked it",
+  "notes": "Mario's fourth requested design, and the biggest kernel gap this spike found: nothing could create an entity after tick 0 before this session. structure.bench.hatchery's spawn field plus pulse/spawn.ts's spawning() phase is scoped as a combat ability, not production - no cost, no resource - specifically so it stays out of Milestone 2's still-unauthorised economy (specs/open-questions.md Q26). Two troopers besiege the hatchery; watch entity.spawned events appear mid-Pulse in the headless log (not just at tick 0) as spawnlings emerge to defend it, capped at maxAlive: 3 at a time.",
+  "grid": {
+    "width": 24,
+    "height": 12
+  },
+  "seed": 700008,
+  "pulseTicks": 300,
+  "terrain": [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": { "x": 4, "y": 5 },
+      "rows": ["h"],
+      "legend": {
+        "h": { "content": "structure.bench.hatchery" }
+      }
+    },
+    "B": {
+      "at": { "x": 17, "y": 5 },
+      "rows": ["t", "t"],
+      "legend": {
+        "t": { "content": "unit.citizen.trooper" }
+      }
+    }
+  }
+}

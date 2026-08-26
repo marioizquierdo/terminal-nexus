@@ -1,0 +1,46 @@
+{
+  "id": "bench-spitter-contact",
+  "name": "Proving Grounds - contact detonation (the baneling rule shape)",
+  "notes": "Mario's second requested design: a ground unit that explodes for radius damage on contact, not on death. Spitters carry no attack at all - detonation.triggerRange is the whole mechanic - so a squad of them closing on a formation should visibly pop as they arrive rather than fight normally first. Distinct from the existing Ravel detonation (unit.ravel.runner etc.), which only ever fires once something else kills the carrier.",
+  "grid": {
+    "width": 24,
+    "height": 12
+  },
+  "seed": 700002,
+  "pulseTicks": 200,
+  "terrain": [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": { "x": 3, "y": 4 },
+      "rows": ["o", "o", "o"],
+      "legend": {
+        "o": { "content": "unit.bench.spitter" }
+      }
+    },
+    "B": {
+      "at": { "x": 18, "y": 4 },
+      "rows": ["t", "t", "t"],
+      "legend": {
+        "t": { "content": "unit.citizen.trooper" }
+      }
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "id": "bench-hog-saboteur-bomber",
+  "name": "Proving Grounds - structure-only rushers, composed for free",
+  "notes": "Three designs (Hog Rider, Wall-Breaker, Bomber) that needed zero new kernel code: each is targetLayers (built for the ground-air asymmetry) restricted to obstacles, composed with a normal attack, a contact detonation, or the air layer respectively - already-proven capabilities meeting with no glue code between them. The hogrider and saboteur ignore the two citizen troopers entirely and beeline the barracks; the bomber, being on the air layer, never even has to route around them. Watch whether the troopers can intercept anyway just by standing in the way - targeting and collision are separate questions (engine.md 3.4.1), so a rusher that will not fight a trooper can still be physically blocked by one.",
+  "grid": {
+    "width": 32,
+    "height": 12
+  },
+  "seed": 700003,
+  "pulseTicks": 240,
+  "terrain": [
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": { "x": 2, "y": 4 },
+      "rows": ["h", "d", "b"],
+      "legend": {
+        "h": { "content": "unit.bench.hogrider" },
+        "d": { "content": "unit.bench.saboteur" },
+        "b": { "content": "unit.bench.bomber" }
+      }
+    },
+    "B": {
+      "at": { "x": 22, "y": 3 },
+      "rows": [
+        " t  ",
+        " b  ",
+        "    ",
+        " t  "
+      ],
+      "legend": {
+        "t": { "content": "unit.citizen.trooper" },
+        "b": { "content": "structure.citizen.barracks" }
+      }
+    }
+  }
+}

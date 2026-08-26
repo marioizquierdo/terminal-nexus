@@ -137,6 +137,10 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
         const attacker = anchorAt(event.tick, event.attackerOrdinal)
         const target = anchorAt(event.tick, event.targetOrdinal)
         if (attacker === undefined || target === undefined) break
+        // No travel cue authored for a heal yet (unit-design-architecture spike) - most designs need
+        // content only, not new effects, and the healed ally still gets a cue below, from its own
+        // `heal.applied`. A beam recipe is a fine later addition once a second healer wants one.
+        if (event.attackKind === "heal") break
         const family = familyFor(contentOf.get(event.attackerOrdinal) ?? "")
         if (event.attackKind === "melee") {
           instances.push({
@@ -220,6 +224,24 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
             criticalSince.set(event.ordinal, event.tick)
           }
         }
+        break
+      }
+
+      case "heal.applied": {
+        // Reuses the existing `fx.impact.burst` recipe rather than authoring a new one (most designs
+        // need content only, not new effects) - the same small spark damage already gets, so a heal
+        // reads as an event happening rather than a silent number change.
+        const hit = anchorAt(event.tick, event.ordinal)
+        if (hit === undefined) break
+        instances.push({
+          recipe: "fx.impact.burst",
+          band: "effects",
+          startMs: at(event.tick),
+          durationMs: BURST_MS,
+          origin: hit,
+          family: familyFor(contentOf.get(event.sourceOrdinal) ?? ""),
+          params: { amount: event.amount },
+        })
         break
       }
 

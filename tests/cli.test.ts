@@ -182,24 +182,33 @@ test("no map given is a usage error, not a crash", () => {
 // Cross-runtime agreement is the only cheap test of the serialization and iteration assumptions
 // that twenty runs on one machine can never catch, so it is registered whenever Bun exists.
 if (bunAvailable()) {
-  test("--headless --json produces identical hashes under Bun and under Node", () => {
-    for (const name of scenarioFiles()) {
-      const node = runGrid([`scenarios/${name}`, "--headless", "--json"])
-      const bun = runGrid([`scenarios/${name}`, "--headless", "--json"], "bun")
-      assert.equal(bun.status, 0, `${name} failed under bun: ${bun.stderr}`)
-      const left = JSON.parse(node.stdout) as Record<string, unknown>
-      const right = JSON.parse(bun.stdout) as Record<string, unknown>
-      assert.equal(
-        right["stateHash"],
-        left["stateHash"],
-        `${name}: state hash differs across runtimes`,
-      )
-      assert.equal(
-        right["eventsHash"],
-        left["eventsHash"],
-        `${name}: event hash differs across runtimes`,
-      )
-      assert.equal(right["contentLock"], left["contentLock"], `${name}: content lock differs`)
-    }
-  })
+  // Two subprocess spawns per scenario (Node and Bun each), so this is the single most expensive
+  // test in the suite and the one whose cost scales most directly with scenario count - the exact
+  // class of test DEVELOPMENT.md warns about. It first crossed Bun's 5000ms default per-test timeout
+  // when the unit-design-architecture spike's eleven new scenarios landed; the fix is the same one
+  // documented there, an explicit timeout third argument, not a smaller scenario count.
+  test(
+    "--headless --json produces identical hashes under Bun and under Node",
+    { timeout: 120_000 },
+    () => {
+      for (const name of scenarioFiles()) {
+        const node = runGrid([`scenarios/${name}`, "--headless", "--json"])
+        const bun = runGrid([`scenarios/${name}`, "--headless", "--json"], "bun")
+        assert.equal(bun.status, 0, `${name} failed under bun: ${bun.stderr}`)
+        const left = JSON.parse(node.stdout) as Record<string, unknown>
+        const right = JSON.parse(bun.stdout) as Record<string, unknown>
+        assert.equal(
+          right["stateHash"],
+          left["stateHash"],
+          `${name}: state hash differs across runtimes`,
+        )
+        assert.equal(
+          right["eventsHash"],
+          left["eventsHash"],
+          `${name}: event hash differs across runtimes`,
+        )
+        assert.equal(right["contentLock"], left["contentLock"], `${name}: content lock differs`)
+      }
+    },
+  )
 }

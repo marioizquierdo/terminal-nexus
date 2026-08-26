@@ -317,6 +317,68 @@ const shots = [
     capability: "truecolor",
     glyphs: "unicode",
   },
+
+  // --- Proving Grounds: the unit-design-architecture spike --------------------------------------
+  {
+    // targetLayers, the ground-air asymmetry rule shape: the grunt (bottom-left) never acquires a
+    // target at all - it cannot reach the skyraider - while the flak trooper (top-left) trades fire
+    // with it normally, no restriction of its own.
+    name: "bench-sky-ground-asymmetry",
+    caption: "Tick 50 - a flak trooper trades fire with the skyraider; the grunt beside it never even tries",
+    scenario: "bench-sky-ground-asymmetry",
+    tick: 50,
+    cols: 80,
+    rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
+  },
+  {
+    // windup + splash: the crawler's first shot, landing on both clustered troopers at once.
+    name: "bench-siegecrawler-windup",
+    caption: "Tick 58 - the siege crawler's first shot after its windup, splash catching both troopers",
+    scenario: "bench-siegecrawler-windup",
+    tick: 58,
+    cols: 80,
+    rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
+  },
+  {
+    // support/heal, mid-fight: the medic (rear) restores the front-line trooper while the grunt and
+    // flak trooper (right) press the attack - the heal and the melee/ranged exchange in one frame.
+    name: "bench-medic-support",
+    caption: "Tick 48 - the medic heals its trooper mid-melee, the grunt and flak trooper still pressing",
+    scenario: "bench-medic-support",
+    tick: 48,
+    cols: 80,
+    rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
+  },
+  {
+    // splitOnDeath: the instant the shard-giant falls, two spawnlings appear beside the wreck.
+    name: "bench-shardgiant-split",
+    caption: "Tick 33 - the shard-giant dies to focused fire and splits into two spawnlings on the spot",
+    scenario: "bench-shardgiant-split",
+    tick: 33,
+    cols: 80,
+    rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
+  },
+  {
+    // Pure composition: hog rider brawling the barracks while a trooper chases it, saboteur under
+    // fire nearby, bomber inbound overhead - three designs built from targetLayers/air/detonation
+    // with no new kernel code, all visible at once.
+    name: "bench-hog-saboteur-bomber",
+    caption: "Tick 49 - hog rider and saboteur ignore the troopers chasing them to keep working the barracks",
+    scenario: "bench-hog-saboteur-bomber",
+    tick: 49,
+    cols: 80,
+    rows: 24,
+    capability: "truecolor",
+    glyphs: "unicode",
+  },
 ]
 
 function extraArgsFor(shot) {

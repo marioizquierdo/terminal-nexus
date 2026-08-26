@@ -55,7 +55,8 @@ export function replayEvents(events: readonly DomainEvent[]): ReplayState {
         if (entity !== undefined) entity.anchor = event.to
         break
       }
-      case "damage.applied": {
+      case "damage.applied":
+      case "heal.applied": {
         const entity = entities.get(event.ordinal)
         if (entity !== undefined) entity.hp = event.hpAfter
         break

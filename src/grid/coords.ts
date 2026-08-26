@@ -136,6 +136,29 @@ export function nearestFootprintTile(from: Coord, anchor: Coord, footprint: Foot
   return best
 }
 
+/**
+ * Every tile at exactly `outset` tiles from a `width` x `height` box anchored at `(0,0)` — a
+ * rectangle's perimeter, generalised the way a point's ring generalises to a footprint's. At
+ * `outset = 1` and a 1x1 box this is the eight tiles immediately around one tile.
+ *
+ * Shared rather than re-derived: `view/effects/recipes.ts`'s death choreography needs a body's own
+ * perimeter to draw a shockwave from, and `pulse/spawn.ts` needs the same shape to search for a free
+ * tile next to a spawner — two real uses, in two different worlds either side of the state/Pulse
+ * boundary, of the same geometry (unit-design-architecture spike; engine.md 0's own rule: extract a
+ * shared contract once a second real use reveals the seam, not before).
+ */
+export function footprintRing(width: number, height: number, outset: number): Coord[] {
+  const tiles: Coord[] = []
+  for (let y = -outset; y <= height - 1 + outset; y += 1) {
+    for (let x = -outset; x <= width - 1 + outset; x += 1) {
+      const dx = x < 0 ? -x : x >= width ? x - width + 1 : 0
+      const dy = y < 0 ? -y : y >= height ? y - height + 1 : 0
+      if (Math.max(dx, dy) === outset) tiles.push({ x, y })
+    }
+  }
+  return tiles
+}
+
 export function inBounds(grid: GridTerrain, tile: Coord): boolean {
   return tile.x >= 0 && tile.y >= 0 && tile.x < grid.width && tile.y < grid.height
 }

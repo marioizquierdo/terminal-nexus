@@ -212,19 +212,23 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
         }
 
         case "attack.launched": {
-          // Pair the attack with the damage it caused: the next damage event for that target in
-          // this tick, which is the one its speed tier applied.
-          const damage = events
+          // Pair the attack with the hp change it caused: the next damage-or-heal event for that
+          // target in this tick, which is the one its speed tier applied. A heal-kind attack
+          // resolves to `heal.applied`, never `damage.applied` (events carry meaning, not just a
+          // number's sign) — both are "the hp change this attack caused" for the log's purposes.
+          const result = events
             .slice(index + 1)
             .find(
               (later) =>
-                later.kind === "damage.applied" && later.ordinal === event.targetOrdinal,
+                (later.kind === "damage.applied" || later.kind === "heal.applied") &&
+                later.ordinal === event.targetOrdinal,
             )
           const health =
-            damage !== undefined && damage.kind === "damage.applied"
-              ? `hp ${damage.hpBefore}->${damage.hpAfter}`
+            result !== undefined && (result.kind === "damage.applied" || result.kind === "heal.applied")
+              ? `hp ${result.hpBefore}->${result.hpAfter}`
               : "hp unchanged"
           const flight = event.attackKind === "ranged" ? `  flight ${event.flightWindowTicks}` : ""
+          const amountLabel = event.attackKind === "heal" ? "heal" : "dmg"
           emit({
             tick,
             level: "INFO",
@@ -232,7 +236,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
             subject: event.attacker,
             object: event.target,
             detail:
-              `${event.attackKind.padEnd(6, " ")} dmg ${event.damage}  ${health}` +
+              `${event.attackKind.padEnd(6, " ")} ${amountLabel} ${event.damage}  ${health}` +
               `${flight}`,
           })
           break
@@ -243,6 +247,17 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
             tick,
             level: "DEBUG",
             kind: "damage",
+            subject: event.entity,
+            object: event.source,
+            detail: `amount ${event.amount}  hp ${event.hpBefore}->${event.hpAfter}`,
+          })
+          break
+
+        case "heal.applied":
+          emit({
+            tick,
+            level: "DEBUG",
+            kind: "heal",
             subject: event.entity,
             object: event.source,
             detail: `amount ${event.amount}  hp ${event.hpBefore}->${event.hpAfter}`,

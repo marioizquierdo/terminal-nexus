@@ -130,6 +130,17 @@ export type DomainEvent =
       }>)
   | (Base &
       Readonly<{
+        kind: "heal.applied"
+        entity: string
+        ordinal: number
+        source: string
+        sourceOrdinal: number
+        amount: number
+        hpBefore: number
+        hpAfter: number
+      }>)
+  | (Base &
+      Readonly<{
         kind: "entity.died"
         entity: string
         ordinal: number
@@ -195,6 +206,7 @@ export const DOMAIN_EVENT_KINDS: readonly DomainEventKind[] = [
   "entity.moved",
   "attack.launched",
   "damage.applied",
+  "heal.applied",
   "entity.died",
   "structure.destroyed",
   "entity.detonated",
