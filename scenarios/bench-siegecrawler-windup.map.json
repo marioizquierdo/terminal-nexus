@@ -1,0 +1,48 @@
+{
+  "id": "bench-siegecrawler-windup",
+  "name": "Proving Grounds - moves, anchors, then fires with AOE",
+  "notes": "Mario's sixth requested design. The crawler marches until three troopers are within its range 6, then attack.windupTicks holds its first shot for 30 ticks - spent only while it is genuinely in firing position, never while marching - before attack.splash (the detonation {radius,damage} shape, reused as an attack) lands on the whole cluster at once instead of one trooper at a time. Watch the gap in the headless log between the last move.intended and the first attack.launched: that gap is the windup, not the travel time.",
+  "grid": {
+    "width": 28,
+    "height": 14
+  },
+  "seed": 700005,
+  "pulseTicks": 260,
+  "terrain": [
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................",
+    "............................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": { "x": 3, "y": 6 },
+      "rows": ["c"],
+      "legend": {
+        "c": { "content": "unit.bench.siegecrawler" }
+      }
+    },
+    "B": {
+      "at": { "x": 20, "y": 6 },
+      "rows": ["t", "t"],
+      "legend": {
+        "t": { "content": "unit.citizen.trooper" }
+      }
+    }
+  }
+}

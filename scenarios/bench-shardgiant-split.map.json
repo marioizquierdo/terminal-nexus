@@ -1,0 +1,46 @@
+{
+  "id": "bench-shardgiant-split",
+  "name": "Proving Grounds - dying multiplies instead of only damaging",
+  "notes": "The golem rule shape: splitOnDeath reuses pulse/spawn.ts's own spawnOneNear primitive from a second trigger (death, via death.ts's resolveDeaths) rather than spawn's periodic timer - proof the spawn primitive generalised past the one design it was built for. Three marksmen focus the shard-giant down; when it dies, watch two entity.spawned spawnlings appear adjacent to where it fell, in the same tick as its own entity.died event. The giant starts at 18 of its 90 hp (the placement entry's own hp override, not a stat change) purely so the fixture resolves in a few volleys rather than only after the giant's own melee has already thinned the marksmen - the split is the thing under test here, not a fair fight.",
+  "grid": {
+    "width": 24,
+    "height": 12
+  },
+  "seed": 700009,
+  "pulseTicks": 220,
+  "terrain": [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": { "x": 4, "y": 5 },
+      "rows": ["g"],
+      "legend": {
+        "g": { "content": "unit.bench.shardgiant", "hp": 18 }
+      }
+    },
+    "B": {
+      "at": { "x": 18, "y": 3 },
+      "rows": ["m", "m", "m"],
+      "legend": {
+        "m": { "content": "unit.citizen.marksman" }
+      }
+    }
+  }
+}

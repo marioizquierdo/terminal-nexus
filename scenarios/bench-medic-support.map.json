@@ -1,0 +1,48 @@
+{
+  "id": "bench-medic-support",
+  "name": "Proving Grounds - a healer, and an integration check for the air asymmetry",
+  "notes": "Mario's third requested design, plus a composition check for the first: behavior: support seeks the nearest wounded ally instead of the nearest hostile (perception.ts's woundedAlliesOf), and AttackKind 'heal' clamps at maxHp instead of zero (applyHeal, a heal.applied event of its own). Flying, as Clash of Clans' own Healer is, so this field also answers whether ally-seeking composes with the ground-air asymmetry built for the skyraider: the grunt should never be able to touch the medic (targetLayers excludes air), the flaktrooper should (no such restriction) - the same pairing as bench-sky-ground-asymmetry, now escorting a fight instead of standing alone.",
+  "grid": {
+    "width": 26,
+    "height": 12
+  },
+  "seed": 700007,
+  "pulseTicks": 280,
+  "terrain": [
+    "..........................",
+    "..........................",
+    "..........................",
+    "..........................",
+    "..........................",
+    "..........................",
+    "..........................",
+    "..........................",
+    "..........................",
+    "..........................",
+    "..........................",
+    ".........................."
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": { "x": 3, "y": 5 },
+      "rows": ["m", " t", " t"],
+      "legend": {
+        "m": { "content": "unit.bench.medic" },
+        "t": { "content": "unit.citizen.trooper" }
+      }
+    },
+    "B": {
+      "at": { "x": 20, "y": 5 },
+      "rows": ["g", "f"],
+      "legend": {
+        "g": { "content": "unit.bench.grunt" },
+        "f": { "content": "unit.bench.flaktrooper" }
+      }
+    }
+  }
+}

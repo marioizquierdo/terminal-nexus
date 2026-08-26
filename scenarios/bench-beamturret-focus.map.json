@@ -1,0 +1,44 @@
+{
+  "id": "bench-beamturret-focus",
+  "name": "Proving Grounds - damage that ramps the longer a lock holds",
+  "notes": "The Inferno-Tower rule shape: EntityState.focusStreak is per-actor combat memory beyond a cooldown, incremented on every landed hit against the same resolved target and reset the instant perception reassigns one. A lone, slow colossus closes on a static turret with nothing else to shoot at, so every hit lands on the same target for as long as both are alive - watch attack.launched's own damage field climb tick over tick in the headless log rather than staying flat the way every other attack on the bench does.",
+  "grid": {
+    "width": 26,
+    "height": 10
+  },
+  "seed": 700010,
+  "pulseTicks": 420,
+  "terrain": [
+    "..........................",
+    "..........................",
+    "..........................",
+    "..........................",
+    "..........................",
+    "..........................",
+    "..........................",
+    "..........................",
+    "..........................",
+    ".........................."
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": { "x": 3, "y": 3 },
+      "rows": ["c"],
+      "legend": {
+        "c": { "content": "unit.citizen.colossus" }
+      }
+    },
+    "B": {
+      "at": { "x": 21, "y": 4 },
+      "rows": ["u"],
+      "legend": {
+        "u": { "content": "structure.bench.beamturret" }
+      }
+    }
+  }
+}
