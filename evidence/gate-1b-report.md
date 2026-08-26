@@ -1232,7 +1232,8 @@ between an automated PASS and the owner's own separate sign-off, is exactly what
 > expected against this report; a new finding against shipped Milestone 1 content is a fresh issue
 > against whichever gate now owns that code, not a reopening of this one.
 
-Next authorized action: [`../specs/milestone-2-deterministic-pulse.md`](../specs/milestone-2-deterministic-pulse.md)
-— Level 1: Perimeter, Gate 2A. Not the horizontal "completing the Pulse" contract this report's own
-Section 23 pointed to; the roadmap went campaign-first in the same round that accepted this gate. See
-that document's own opening note for why.
+Next authorized action: [`../milestones/README.md`](../milestones/README.md) — the campaign's first
+level, built as ten focused milestones rather than one. Not the horizontal "completing the Pulse"
+contract this report's own Section 23 pointed to; the roadmap went campaign-first in the same round
+that accepted this gate, and the milestones were formalized into their own folder shortly after. See
+that index's own opening note for why.

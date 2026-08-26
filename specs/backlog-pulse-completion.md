@@ -4,7 +4,7 @@
 used to be, before the roadmap went campaign-first
 **Status:** Backlog — not a queued milestone; pulled in level by level, as an actual level's own
 content demands it
-**Canon version:** 2.8
+**Canon version:** 2.9
 **Updated:** 2026-08-26
 **License:** Apache-2.0
 
@@ -18,9 +18,11 @@ top of it.
 Mario redirected the roadmap instead: **campaign-first, one level at a time.** Each level is a small
 vertical slice — a Build Phase, a Pulse, a story wrapper, one map — and a level pulls in only the
 piece of this backlog it actually needs, when it needs it, rather than waiting for all of it to land
-first. `specs/milestone-2-deterministic-pulse.md` now describes **Level 1: Perimeter**, the first such
-slice; this document is where the horizontal contract it replaced still lives, verbatim, so none of
-that design work is lost and a future level can still cite it directly.
+first. That single-milestone "Level 1: Perimeter" contract was itself formalized at canon 2.9 into
+[`../milestones/`](../milestones/)'s ten-milestone sequence, at Mario's own request, once it became
+clear the first level needed most of the game's unbuilt systems at once; this document is where the
+original horizontal contract still lives, verbatim, so none of that design work is lost and a future
+level can still cite it directly.
 
 **Nothing here is deleted, and nothing here is more authorized than it was.** This is still GUIDANCE
 and locked-contract material exactly as it was under the old Milestone 2 — the only thing that changed
@@ -58,8 +60,8 @@ level's own contract cites it, and not before.
 - **Economy and production.** The empty tick phases get their content: worker jobs, deposits, storage,
   salvage, supply cap, and the seeded production-contention process from
   [`engine.md`](engine.md) Section 5.3. **Level 1 pulls in a slice of this directly** — see
-  [`milestone-2-deterministic-pulse.md`](milestone-2-deterministic-pulse.md) — so this item is already
-  partially in motion; what stays here is the parts a one-map, one-fabricator level does not need:
+  [`../milestones/milestone-07-worker-economy.md`](../milestones/milestone-07-worker-economy.md) — so
+  this item is already partially in motion; what stays here is the parts that milestone does not need:
   multiple resource-yielding structures, storage/warehouse capacity, and a full deposit/salvage economy.
 - **Target scoring.** Something better than nearest-enemy, with the score and reason carried on the
   event so presentation and players can both explain a choice.
@@ -111,7 +113,7 @@ starting; each wants an answer before a level's contract that touches it is call
 | Question | What Milestone 1 measured | Where it bites |
 | --- | --- | --- |
 | **Q14** — should the movement tie-break be mirror-fair? | A fixed compass order makes both sides prefer *their own left*, so formations meet at an angle. Symmetric between sides, and seed variance dominates it | Real routing replaces the greedy step this question is about; answer it as part of that |
-| **Q15** — what should a mover with no route do? | Greedy routing with a sidestep leaves an actor pacing between two tiles forever. The report detects it from net progress; the kernel does not | Pathfinding makes it moot, or makes it a deliberate choice. A level authored to avoid the on-axis dead end (map layout, not a kernel fix) may ship without either — see `milestone-2-deterministic-pulse.md`'s own note on this for Level 1 specifically |
+| **Q15** — what should a mover with no route do? | Greedy routing with a sidestep leaves an actor pacing between two tiles forever. The report detects it from net progress; the kernel does not | Pathfinding makes it moot, or makes it a deliberate choice. A level authored to avoid the on-axis dead end (map layout, not a kernel fix) may ship without either — see `../milestones/milestone-02-campaign-design.md` Section 4.3's own note on this for PERIMETER specifically |
 | **Q13** — where do workers flee, and what counts as annihilation? | Workers move at `1/1` and every fixture attacker at `3/4` or slower, so a fleeing worker on open ground is **never caught**. The mirror never reaches annihilation and always runs its full tick count | Real routing gives fleeing a danger cost, and an economy gives workers somewhere to be. Both change the shape of this question |
 
 **Q17 dropped off this table, resolved, since it was written**: the Gate 1B session that shipped

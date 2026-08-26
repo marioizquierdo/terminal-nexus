@@ -2,7 +2,7 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.8
+**Canon version:** 2.9
 **Updated:** 2026-08-26
 **License:** Apache-2.0
 
@@ -969,7 +969,7 @@ run's **levelled log** (default `WARN`) carries the story in fixed, greppable co
 without parsing prose and a designer can read what happened without a second stream to catch.
 `--save-log <file>` writes the same lines to a file in any action, and `--turn <tick>` seeks straight
 to a tick instead of playing from the start, in `watch`, `--headless`, and `--verify` alike. See
-[`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) Section 3.3.
+[`../milestones/milestone-01-grid-battles.md`](../milestones/milestone-01-grid-battles.md) Section 3.3.
 
 This is **modding-first architecture, not mod-loader-first development.** No public SDK, remote
 loader, marketplace, permission system, or compatibility promise belongs in early milestones. Themes

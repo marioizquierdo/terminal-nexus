@@ -2,7 +2,7 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.8
+**Canon version:** 2.9
 **Updated:** 2026-08-26
 **License:** Apache-2.0
 
@@ -148,7 +148,7 @@ at 80 columns and at 128.
 ### Q13 — Where do workers flee, and what counts as annihilation, on a Grid with no Nexus?
 
 **Status:** OPEN — Gate 1A proceeds under the recommendation, which is already written into
-[`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) Section 3.7.
+[`../milestones/milestone-01-grid-battles.md`](../milestones/milestone-01-grid-battles.md) Section 3.7.
 
 The Gate 1A flee rule sends a threatened worker "away from it toward the friendly Nexus", but the
 mirror skirmish — the scenario the whole gate is named after — places no structures at all. The same
@@ -343,8 +343,9 @@ as a rider on a mirror-colour question.
 
 ### Q19 — Where does sandbox placement, rewind/fast-forward, and a feedback replay engine live?
 
-**Status:** OPEN — not needed for Gate 1B or Milestone 2; the owner asked for it to be kept in mind
-and registered, explicitly not built now.
+**Status:** OPEN — not needed for Gate 1B or any milestone in the current campaign-first sequence
+(`../milestones/README.md`); the owner asked for it to be kept in mind and registered, explicitly not
+built now.
 
 The owner's own words, after playing the Pulse Playground (now `grid`): "I will want to start
 improving the Pulse Playground to have 'sandbox mode' starting with an empty map, maybe some pre-seeded units, and
@@ -359,41 +360,46 @@ Three things are bundled in that paragraph, and they are not all the same size o
 milestone:
 
 - **A full replay format** — content locks, hashes, versions, a `verify` path that re-simulates
-  *recorded input* rather than a scenario file — is already Milestone 2's, explicitly: "the one
-  contract Milestone 1 did **not** lock" (`milestone-2-deterministic-pulse.md`). Nothing new to
-  register here; the owner's ask is confirmation this direction is wanted, not a new requirement.
-  [`replay-format.md`](replay-format.md), written this session at the owner's direct request, is a
+  *recorded input* rather than a scenario file — is already backlog territory, explicitly: "the one
+  contract Milestone 1 did **not** lock" ([`backlog-pulse-completion.md`](backlog-pulse-completion.md)).
+  Nothing new to register here; the owner's ask is confirmation this direction is wanted, not a new
+  requirement. [`replay-format.md`](replay-format.md), written at the owner's direct request, is a
   first concrete schema and log-level design for it — still GUIDANCE, still unbuilt, but no longer a
-  blank page for whoever starts Milestone 2.
+  blank page for whichever milestone first needs a real save/replay format
+  (`../milestones/milestone-04-campaign-menu.md`'s own unlock record, Q31, is deliberately *not* this
+  — a flat list, not a replay format — until a milestone actually needs the fuller thing).
 - **Rewind/fast-forward at named granularities (1/5/10/20 ticks)** is presentation on top of that
   format: once a Pulse's states are addressable by tick, jumping to `tick - 20` is arithmetic, not a
-  new capability. The only design consequence *now* is a constraint on Milestone 2's replay format:
+  new capability. The only design consequence *now* is a constraint on that eventual replay format:
   it should keep every tick's state cheaply addressable (or cheaply re-derivable) rather than only
   the final one, so scrubbing is cheap later rather than needing a second format change.
   `src/view/playback.ts`'s `Playback` class already addresses presentation time arbitrarily
   (`step-frame`/`step-tick`/pause/resume) for exactly this reason — the mechanism the owner is asking
   for already exists one layer down; scrubbing *backward* and by *named tick counts* is the new part.
 - **Sandbox placement — an empty or pre-seeded Grid, a cursor, choosing and placing units, then
-  running** — reads as an early, reduced form of Milestone 3's battle editor
-  (`milestone-3-builder-editor.md`: "a text/CLI-accessible battle editor... build-radius preview,
-  connectivity, outpost, defense, producer, cost, undo, validation"), but the owner's framing is
-  lighter and different in purpose: a fast unit-matchup sandbox for *exploring the kernel*, not the
-  competitive Build Phase with cost, validation, and a hidden simultaneous-reveal plan. Placing a
-  trooper and a runner nose to nose to see who wins does not need a supply cap or an outpost radius.
+  running** — reads as an early, reduced form of a future battle editor (backlog territory: the old
+  Milestone 3's "a text/CLI-accessible battle editor... build-radius preview, connectivity, outpost,
+  defense, producer, cost, undo, validation" is folded into
+  [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md) only to the
+  narrow extent PERIMETER's own Build Phase needs it — a full standalone editor is still unbuilt), but
+  the owner's framing is lighter and different in purpose: a fast unit-matchup sandbox for *exploring
+  the kernel*, not the competitive Build Phase with cost, validation, and a hidden simultaneous-reveal
+  plan. Placing a trooper and a runner nose to nose to see who wins does not need a supply cap or an
+  outpost radius.
 
 | Option | Cost |
 | --- | --- |
-| A. **Fold all three into Milestone 3's battle editor**, since it already owns placement and validation | One editor, one thing to build. The owner's sandbox use case (quick, no economy, no validation, built to explore the kernel — closer in spirit to `grid` than to a competitive Build Phase) waits for the full editor's much larger scope, including parts a kernel-exploration tool does not need |
-| B. **A lightweight placement mode added to `grid` itself**, ahead of Milestone 3 — no cost, no validation, no hidden plan, just a cursor, the existing fixture rosters, and `run` — with the real Build Phase editor arriving in Milestone 3 as the validated, competitive version | Keeps the owner's actual ask (a fast kernel-exploration tool) small and close to what exists today; two placement UIs to eventually reconcile, one lightweight and one full, unless B is later folded into or replaced by Milestone 3's |
-| C. **Do nothing until Milestone 3 is scheduled** | Free. The owner explicitly said this is fine ("not needed for now") |
+| A. **Fold all three into a future battle editor**, since that is where placement and validation will eventually live | One editor, one thing to build. The owner's sandbox use case (quick, no economy, no validation, built to explore the kernel — closer in spirit to `grid` than to a competitive Build Phase) waits for the full editor's much larger scope, including parts a kernel-exploration tool does not need |
+| B. **A lightweight placement mode added to `grid` itself**, ahead of any full editor — no cost, no validation, no hidden plan, just a cursor, the existing fixture rosters, and `run` — with a real Build Phase editor arriving later as the validated, competitive version | Keeps the owner's actual ask (a fast kernel-exploration tool) small and close to what exists today; two placement UIs to eventually reconcile, one lightweight and one full |
+| C. **Do nothing until a battle editor is scheduled** | Free. The owner explicitly said this is fine ("not needed for now") |
 
-**Recommendation: C until Milestone 2 is accepted, then B before Milestone 3 if the owner wants to
-play with matchups sooner than the full editor arrives** — it is a small, self-contained addition
-(cursor, placement, run; no cost or validation) that reuses `grid`'s own rendering and kernel rather
-than waiting on Milestone 3's much larger contract. Milestone 2's replay-format design
-should keep per-tick state cheaply addressable regardless of which option is picked, since rewind
-depends on it either way and it is nearly free to keep in mind while that format is still being
-designed rather than retrofitted after.
+**Recommendation: C for now, then B if the owner wants to play with matchups sooner than a full
+editor arrives** — it is a small, self-contained addition (cursor, placement, run; no cost or
+validation) that reuses `grid`'s own rendering and kernel rather than waiting on a much larger future
+contract. Whichever milestone first designs a real replay format should keep per-tick state cheaply
+addressable regardless of which option is picked here, since rewind depends on it either way and it
+is nearly free to keep in mind while that format is still being designed rather than retrofitted
+after.
 
 ### Q20 — When target selection is capped by radius for scale, what should a unit with nothing in range do?
 
@@ -536,16 +542,17 @@ rule, not a presentation jitter — and is a different, bigger question than thi
 
 ### Q23 — How does an army reach its first engagement faster, beyond raw movement speed?
 
-**Status:** OPEN — Milestone 2/3 scope (Build Phase, outposts); nothing here is authorized to build
-now, registered so the ask is not lost between now and whenever those milestones open.
+**Status:** OPEN — backlog scope (multi-Pulse regrouping via outposts); nothing here is authorized to
+build now, registered so the ask is not lost until a level's own mission structure needs it.
 
 Owner playtest, 2026-08-22, immediately after asking for faster movement (already shipped, this
 session's speed pass): "we should probably think about how to reach the initial conflict faster. Maybe
-outposts regroup units next to them so next pulses resolve faster." AGENTS.md Section 2 is explicit
-that economy, production, the Build Phase, and outposts are not authorized before Mario accepts
-Milestone 1, so nothing in this note is built here regardless of how reasonable it sounds — this row
-exists so the idea is on record rather than re-derived from a chat transcript whenever Milestone 2 or
-3 opens.
+outposts regroup units next to them so next pulses resolve faster." This describes a **multi-Pulse
+match** (units regrouping *between* Pulses) — none of the current campaign-first sequence's ten
+milestones (`../milestones/README.md`) builds a mission with more than one Pulse, so nothing in this
+note is built there regardless of how reasonable it sounds. This row exists so the idea is on record
+rather than re-derived from a chat transcript whenever a mission's own design needs more than one
+Pulse.
 
 The idea itself: an **outpost** (a forward structure, presumably built during a future Build Phase)
 that reassembles retreating or newly-produced units near itself between Pulses, so the *next* Pulse's
@@ -556,9 +563,9 @@ later* Pulses of a match, where geography has already been fought over once).
 
 | Option | Cost |
 | --- | --- |
-| A. **Fold into Milestone 2's routing/production work directly** — an outpost becomes a structure type with a "units spawn or return near me" behavior, designed alongside production once Milestone 2 actually has production | Keeps it with the systems it depends on (there is no Build Phase, no production, and no multi-Pulse match yet to regroup *between*) |
-| B. **A named placeholder in `commander-armies.md` or `milestone-2-deterministic-pulse.md`** now, so the shape is captured even before Milestone 2 opens | Cheap, but there is little to say yet beyond the one sentence above — Milestone 2's contracts are already locked per the execution ledger, and reopening them for one line is more ceremony than the idea currently earns |
-| C. **Do nothing until Milestone 2 opens**, and rely on this row | Free, and consistent with how Q19's sandbox/replay ask was handled — registered, explicitly deferred, picked up when its milestone actually starts |
+| A. **Fold into whichever future backlog work adds real routing/production**, per `../backlog-pulse-completion.md` — an outpost becomes a structure type with a "units spawn or return near me" behavior, designed alongside production once that work actually lands | Keeps it with the systems it depends on (there is no multi-Pulse match yet to regroup *between*) |
+| B. **A named placeholder in `commander-armies.md` or `../backlog-pulse-completion.md`** now, so the shape is captured before it is needed | Cheap, but there is little to say yet beyond the one sentence above, and reopening either document for one line is more ceremony than the idea currently earns |
+| C. **Do nothing until a mission's own design needs a multi-Pulse match**, and rely on this row | Free, and consistent with how Q19's sandbox/replay ask was handled — registered, explicitly deferred, picked up when something actually needs it |
 
 **Recommendation: C**, same shape as Q19. This is a real idea worth keeping, but it presupposes
 structures, production, and multiple Pulses in a single match, none of which exist yet; the right
@@ -684,56 +691,32 @@ reasoning for deferring a harder call until the fixture that needs it exists rat
 merely revealed it. Revisit the moment Milestone 4 (or any earlier session) authors a Commander Army
 whose opening force is entirely non-mobile.
 
-### Q29 — Does "Recall" name a new mechanic, or the existing end-of-Pulse regroup rule?
+### Q30 — How much Build-Phase side panel does Milestone 5 actually need?
 
-**Status:** OPEN — blocks nothing before Gate 2B names the beat on screen; the recommendation is
-already assumed by `milestone-2-deterministic-pulse.md` Section 5.
-
-Mario, 2026-08-26, listing what the campaign-first pivot needs to think about: "the nexus pulse and
-recall." "Recall" appears nowhere else in canon — not in `engine.md`, not in `commander-armies.md`,
-not in the lore. The nearest existing rule is `engine.md` Section 5: "At Pulse end survivors regroup
-near home producers. Orphans are adopted by the nearest compatible producer or regroup near the Grid
-Nexus." That is an automatic, unconditional rule with no player action in it at all — not obviously
-what a word like "Recall" usually means in the genre (a Nexus power or Commander ability that
-withdraws units *during* a Pulse, on the player's own timing).
-
-| Option | Cost |
-| --- | --- |
-| A. **Recall is the existing regroup rule, given a name and one presentation beat.** No new mechanic, no new kernel content — Gate 2B (or whichever gate first shows a Pulse ending) labels the existing behaviour on screen | Free, and consistent with "prefer direct code... extract a framework only after two real uses reveal the boundary": nothing about PERIMETER's own design asks for a player-triggered withdrawal, so building one now would be building ahead of a use |
-| B. **Recall is a new Nexus power**: a player-triggered, resourced or cooldown-gated action that pulls some or all units back mid-Pulse | Matches the more common genre meaning, but is real new kernel surface — a validated command, a new event kind, presentation for it — with no mission in the belief ramp that currently teaches it. `engine.md` Section 5.4 already flags the whole Nexus-power draft as "recorded so the shape is not accidentally foreclosed," not designed; this would be designing a specific power ahead of any evidence it is needed |
-| C. **Ask Mario directly what he meant** | Cheap to ask, but the six-mission belief ramp already exists and does not currently teach a mid-Pulse withdrawal ability anywhere in it — asking without first checking whether the existing rule already covers the word risks spending an owner interaction on something A already answers |
-
-**Recommendation: A.** Adopt the existing end-of-Pulse regroup rule as the thing "Recall" names, present
-it as one clear beat when it fires, and build nothing new for it. If a later mission's design
-genuinely needs a player-triggered withdrawal, that is B, decided then, on that mission's own evidence
-— not guessed at here from one word in a planning sentence.
-
-### Q30 — How much Build-Phase side panel does Gate 2B actually need?
-
-**Status:** OPEN — blocks nothing before Gate 2B starts; the recommendation is already assumed by
-`milestone-2-deterministic-pulse.md` Section 4.2.
+**Status:** OPEN — blocks nothing before Milestone 5 starts; the recommendation is already assumed by
+[`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md).
 
 `engine.md` Section 9.2 already specifies the Build Phase side panel's shape — construct menu,
 selected item's cost and effect, a placement-legality panel, radius preview, legend — as GUIDANCE
-written before any of it existed. PERIMETER's own Gate 2A mechanism is deliberately tiny (a short,
+written before any of it existed. PERIMETER's own Build Phase (Milestone 5) is deliberately tiny (a short,
 fixed construct menu, one producer structure, one legal placement zone), so building the *full*
 panel Section 9.2 describes risks building UI for options that do not exist yet on this level.
 
 | Option | Cost |
 | --- | --- |
-| A. **Build exactly what Gate 2A's own content needs, and skip the rest.** Construct menu (short), cost/effect, and a legality panel that explains a rejected placement are load-bearing the moment there is a menu at all. Radius preview is skipped unless the producer structure has a radius worth previewing | Smallest artifact that satisfies "a Build Phase a player can actually use." Risks needing a second pass the moment Level 2 adds a structure with a real radius |
-| B. **Build the full Section 9.2 panel now**, radius preview and all, so every later level reuses it without changes | More up-front work for a feature (radius preview) nothing in Gate 2A exercises, which is exactly what governance Section 2 warns against — a framework before two real uses reveal its contract |
+| A. **Build exactly what PERIMETER's own content needs, and skip the rest.** Construct menu (short), cost/effect, and a legality panel that explains a rejected placement are load-bearing the moment there is a menu at all. Radius preview is skipped unless the producer structure has a radius worth previewing | Smallest artifact that satisfies "a Build Phase a player can actually use." Risks needing a second pass the moment Level 2 adds a structure with a real radius |
+| B. **Build the full Section 9.2 panel now**, radius preview and all, so every later level reuses it without changes | More up-front work for a feature (radius preview) nothing in PERIMETER exercises, which is exactly what governance Section 2 warns against — a framework before two real uses reveal its contract |
 
 **Recommendation: A.** Build the legality panel and the construct menu — both load-bearing for even
 the smallest Build Phase — and defer radius preview until a level actually ships something with a
-radius. This is a narrow, reversible UI-scope decision that Gate 2B's own session may equally well
+radius. This is a narrow, reversible UI-scope decision that Milestone 5's own session may equally well
 just decide alone under governance Section 2; it is registered mainly so the *reason* for the smaller
 scope is written down rather than looking like an oversight later.
 
 ### Q31 — What shape does an "unlock record" take, with no save system yet?
 
-**Status:** OPEN — blocks nothing before Gate 2B needs to write one; the recommendation is already
-assumed by `milestone-2-deterministic-pulse.md` Section 4.2.
+**Status:** OPEN — blocks nothing before Milestone 4 needs to write one; the recommendation is already
+assumed by [`../milestones/milestone-04-campaign-menu.md`](../milestones/milestone-04-campaign-menu.md).
 
 Mario: "after each level, we unlock new units and powers." `campaigns.md` Section 2's own
 `MissionDefinition` sketch has an `unlocks: readonly string[]` field already — architectural
@@ -743,7 +726,7 @@ does not exist yet.
 
 | Option | Cost |
 | --- | --- |
-| A. **A flat, checked-in list — JSON or a small TypeScript module — naming what completing PERIMETER makes available.** No persistence, no player-facing menu, no progression UI: a fact the next level's own contract reads and cites, the same way `milestone-2-deterministic-pulse.md` Section 6 already does for "Level 2, per the belief ramp" | Cheapest possible answer, and it is genuinely enough for "the next level's contract may assume these exist" — which is the only consumer that exists today |
+| A. **A flat, checked-in list — JSON or a small TypeScript module — naming what completing PERIMETER makes available.** No persistence, no player-facing menu, no progression UI: a fact the next level's own contract reads and cites, the same way `../milestones/milestone-10-first-and-second-missions.md` already does for RIGHT OF SALVAGE | Cheapest possible answer, and it is genuinely enough for "the next level's contract may assume these exist" — which is the only consumer that exists today |
 | B. **Build a minimal save/progression system now**, so a player's own unlock state persists across sessions | Real infrastructure (a file format, a load path, a schema) for a feature with exactly one campaign and one mission today. `replay-format.md`'s own design is the more natural foundation for this once it is built, and building progression storage ahead of the replay format it should probably share a schema with risks a second incompatible persistence format later |
 
 **Recommendation: A.** A checked-in list is enough for one level unlocking content the next level's
@@ -752,8 +735,8 @@ whichever level first needs a unlock state that outlives one authoring session, 
 
 ### Q32 — How is a scripted (not adaptive) mission opponent actually authored as content?
 
-**Status:** OPEN — blocks nothing before Gate 2A needs to author the Ravel raid; the recommendation is
-already assumed by `milestone-2-deterministic-pulse.md` Section 3.2.
+**Status:** OPEN — blocks nothing before Milestone 2 finalizes the Ravel raid; the recommendation is
+already assumed by [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md) Section 4.4.
 
 `campaigns.md` Section 6 names "scripted tutorials" as the simplest opponent-policy tier but does not
 specify its shape. PERIMETER's raid needs to arrive from the northwest on a fixed, deterministic
@@ -772,7 +755,7 @@ PERIMETER does.
 ### Q33 — Does PERIMETER's map need a real fix for Q15's on-axis routing dead end, or is authoring around it enough?
 
 **Status:** OPEN — blocks nothing before the PERIMETER map is authored; the recommendation is already
-assumed by `milestone-2-deterministic-pulse.md` Section 3.3.
+assumed by [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md) Section 4.3.
 
 Q15 (still open, `backlog-pulse-completion.md`) is a real, measured kernel gap: a mover whose approach
 is exactly on-axis with its goal and meets an obstacle has no fallback direction under Manhattan
@@ -783,12 +766,84 @@ slightly off-axis.
 | Option | Cost |
 | --- | --- |
 | A. **Author the map to avoid the dead end** — an approach lane not perfectly axis-aligned with the Nexus, the same way an earlier fixture in the unit-architecture spike was repositioned off-axis for the identical reason | Free, and ships Level 1 without depending on a kernel fix this milestone does not own. Does not advance Q15 itself |
-| B. **Fix Q15 as part of Gate 2A**, since a scripted, predictable raid is a comparatively low-risk place to exercise real routing for the first time | Real kernel work — pathfinding, not a map layout choice — inside a milestone whose own Section 1 explicitly excludes "real routing/pathfinding fixes". Widens Gate 2A's scope for a fix nothing about PERIMETER specifically requires |
+| B. **Fix Q15 as part of Milestone 5 or 6**, since a scripted, predictable raid is a comparatively low-risk place to exercise real routing for the first time | Real kernel work — pathfinding, not a map layout choice — inside a milestone whose own Section 1 explicitly excludes "real routing/pathfinding fixes". Widens that milestone's scope for a fix nothing about PERIMETER specifically requires |
 
 **Recommendation: A.** Author around it, exactly as already stated in
-`milestone-2-deterministic-pulse.md` Section 3.3. Q15 stays open and unowned by any single level until
+`../milestones/milestone-02-campaign-design.md` Section 4.3. Q15 stays open and unowned by any single level until
 a mission's own design genuinely cannot be authored around it — at which point that mission's gate is
 where it gets fixed, not retrofitted here on spec.
+
+### Q34 — Does building Commander Vasse in Level 1 mean authoring the Citizens Commander Army early?
+
+**Status:** OPEN — blocks nothing before Milestone 8 starts; the recommendation is already assumed by
+[`../milestones/milestone-08-commander.md`](../milestones/milestone-08-commander.md).
+
+Mario's own milestone list puts a real Commander in Level 1: "focus on the first Citizen commander.
+Develop the initial draft of Nexus upgrades." Every earlier framing in this repository deferred both —
+`commander-armies.md` Section 1 ("Do not invent production-ready stats before Milestone 4 selects the
+minimum Citizens-versus-Ravels microgame"), `AGENTS.md` Section 2's standing ban, and `campaigns.md`
+Section 4.1's own belief ramp, which spends the Commander death/absence/restoration beat narratively
+at **Mission 3** (RESTORATION), not Mission 1. This is a real scope question, not a formality: getting
+it wrong in either direction is expensive. Building the full roster early locks balance nobody has
+evidence for; refusing to build any Commander mechanic leaves Milestone 8 with nothing to do.
+
+| Option | Cost |
+| --- | --- |
+| A. **Build the Commander *mechanic* and one named Commander (Vasse) scoped to PERIMETER; keep the upgrade draft to one or two real options; do not treat this as roster selection** | Gives Milestone 8 real, testable work — the death/absence/restoration cadence `engine.md` 5.1 specifies and nothing has ever built — without locking any of the things `commander-armies.md` reserves (full unit list, costs, supply, the complete upgrade pool, balance hypotheses). The risk is a later reader mistaking "Vasse exists" for "the Citizens Commander Army is decided," which is why Milestone 8's own definition of done requires its gate report to say otherwise explicitly |
+| B. **Defer the Commander entirely to Mission 3**, per the belief ramp's own placement, and let Milestone 8 build only the Nexus upgrade draft | Faithful to the existing narrative plan, and genuinely cheaper. But it leaves PERIMETER without the character its own already-written briefing centres on ("Commander Vasse holds the ground with what walked out of the annex"), and Mario asked for the Commander in Level 1 directly |
+| C. **Author the full Citizens Commander Army now**, since a Commander needs an army around it anyway | Directly contradicts `commander-armies.md` Section 1 and `AGENTS.md` Section 2, and locks balance on a roster nobody has played. Named for completeness only |
+
+**Recommendation: A.** The line that makes it safe is the one `commander-armies.md` Section 1 already
+draws: a Commander Army is "the complete set of choices legally available to one player in one match"
+— starting package, every legal unit and structure, the full upgrade pool, faction rules, balance
+hypotheses. One named Commander's mechanic plus a two-option draft, with every other choice in
+PERIMETER still coming from the disposable fixture roster, is not that. **Separately: PERIMETER's own
+design should not force Vasse's death**, so the mechanism exists and is testable without spending
+RESTORATION's narrative beat two missions early — that costs nothing and keeps the belief ramp intact.
+
+### Q35 — What counts as "discovered" enemy intel, and when is it recorded?
+
+**Status:** OPEN — blocks nothing before Milestone 4 builds the enemy-intel panel; the recommendation
+is already assumed by [`../milestones/milestone-04-campaign-menu.md`](../milestones/milestone-04-campaign-menu.md).
+
+Mario's campaign-menu description asks for "enemy intel (discovered enemy units, buildings, nexus
+powers, enemy generals, and mission reports)." Nothing in canon currently specifies a persistent,
+cross-mission record of what the player has seen. `PlayerView` ([`engine.md`](engine.md) Section 7) is
+a **live, per-Pulse visibility filter** — it decides what a player may be shown *this instant*, and
+remembers nothing between missions. So "discovered" needs a definition before the panel can be built.
+
+| Option | Cost |
+| --- | --- |
+| A. **Anything the player's own `PlayerView` has ever rendered, logged the instant it is first seen** | Simplest rule, needs no per-mission authoring, derives entirely from machinery that already exists — the same "derive it from the event stream and state, never from kernel internals" discipline the report module already follows |
+| B. **Only entities that survive to a Pulse's end**, so a glimpse of something instantly destroyed does not count | Slightly more conservative, but harder to explain to a player ("I saw it and it isn't in my intel?") and needs an extra pass over the final state that A does not |
+| C. **Explicit, mission-authored reveals only** — each mission declares what the player "learns," independent of what actually rendered | Gives writers precise control over the belief ramp's own information pacing, which matters later (Mission 2's whole itch is the Nexus knowing something nobody entered). Costs per-mission authoring for every enemy type, on every mission, forever |
+
+**Recommendation: A**, with C available later as an *addition* rather than a replacement: a mission
+that wants to reveal something the player never saw can add an explicit entry on top of the automatic
+log, which is exactly what Mission 2's "names Speaker Corvane before any contact" beat would need. Do
+not build C's authoring surface before a mission actually uses it.
+
+### Q36 — Does a defensive mission need a victory condition the kernel does not have?
+
+**Status:** OPEN — blocks nothing before Milestone 6, but it is a **RULE-level** question
+([`engine.md`](engine.md) Section 5's victory condition is RULE), so it needs deciding before that
+milestone's gate closes rather than during it.
+
+PERIMETER's objective, in its own briefing: "Hold the perimeter. Keep the workers alive." The kernel's
+current victory check (`engine.md` Section 4.3) is: enemy Grid Nexus destroyed, one side annihilated,
+or the tick count runs out — and **the tick-limit branch is a neutral draw**, not a win for either
+side. A mission whose whole objective is surviving a raid plausibly wants "still standing when the
+scripted schedule ends" to read as a *win*.
+
+| Option | Cost |
+| --- | --- |
+| A. **Check first whether it already reads correctly.** Play PERIMETER's own fixture to its tick limit and see whether "the Pulse ended, you were not destroyed" reads as success without a rule change — the mission's own debrief text ("The perimeter held") may carry it entirely | Free, and might make the whole question moot. Costs one playtest before any code |
+| B. **Extend the tick-limit branch to accept a mission-supplied objective override** — a small explicit flag ("defender wins on time-out") the scenario or mission definition sets, rather than a bespoke condition per mission | The real fix if A shows one is needed. It is a RULE change, so it needs owner sign-off, a canon bump, a named scenario, and the same kernel-change discipline every prior rule change here has followed |
+| C. **Author around it**: give the raid a Nexus or a finite force so the existing annihilation/Nexus-destroyed conditions decide the mission | Needs no rule change at all, but bends the mission's fiction — the raid withdrawing "in good order and worse temper" (PERIMETER's own debrief) is not the same story as wiping it out |
+
+**Recommendation: A first, then B if A shows a real problem.** Do not build B on speculation — the
+cheapest possible evidence (playing the fixture once) decides whether it is needed, and B's cost is
+mostly the canon ceremony a RULE change requires, not the code.
 
 ## 5. Answered
 
@@ -800,11 +855,33 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q2 | 2026-08-20 | **One resource.** Salvage recovers the same resource rather than a second one. Nexus energy is a state readout, not a currency. A second resource is an addition a later microgame may earn; it is not assumed | [`engine.md`](engine.md) Section 6 |
 | Q3 | 2026-08-20 | **Units may span multiple tiles.** Large units are a normal, strategically important case, not a later extension — a Ravel raider drawn `>x<` is one unit occupying three tiles. The collision system tests a mover's whole footprint against its mask; damage and destruction apply to the entity, not the tile | [`engine.md`](engine.md) Section 3.5 |
 | Q4 | 2026-08-21 | **The corruption law.** Corruption is drawn in the `effects` band and above, never in `units` or `structures`; it may add, overdraw, and unsettle, but never remove or replace the only cell carrying a required semantic cue. Recorded as decided because the rule was already RULE in the engine, restated in the lore, and listed among the locked product decisions — the register was the only document still calling it open | [`engine.md`](engine.md) Section 9.4 |
-| Q6 | 2026-08-20 | **Packaging and remote delivery leave Milestone 1.** First split into an independent gate, then deferred out of the milestone entirely when it was refocused onto the Pulse — they answer no question the game currently has | [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) |
+| Q6 | 2026-08-20 | **Packaging and remote delivery leave Milestone 1.** First split into an independent gate, then deferred out of the milestone entirely when it was refocused onto the Pulse — they answer no question the game currently has | [`../milestones/milestone-01-grid-battles.md`](../milestones/milestone-01-grid-battles.md) |
 | Q10 | 2026-08-21 | **DROPPED as mis-scoped.** Engine determinism was never in question: the kernel, its event log, and replay stay exact, and the features that depend on them are untouched. Whether a mission's *interface* misreports a total for narrative effect is campaign writing, decided when campaigns are designed | [`campaigns.md`](campaigns.md), at Milestone 5 |
 | Q11 | 2026-08-21 | **Alder refuse artificial Nexus power — conceptual.** Simplicity and growth instead: little or no Nexus draft, and more complexity in the structures they can build. Direction, not a locked mechanic | [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 8.5 and [`commander-armies.md`](commander-armies.md) Section 4 |
 | Q17 | 2026-08-21 | **Resolved by an unrelated fix, not decided among its options.** Four-way movement and Manhattan distance (Q15's fix, shipped for legibility) removed the degenerate tie itself: under Chebyshev a rank-deployed army had every enemy at the same distance; under Manhattan the same layout does not, because the axis the old metric ignored (`min(|dx|,|dy|)`) is exactly the one Manhattan keeps. Verified, not assumed: `citizen-mirror-skirmish.ts` (rank-deployed) now pairs each attacker with a distinct nearest opponent from tick 1, no stampede | [`grid/coords.ts`](../src/grid/coords.ts) `gridDistance`; `specs/open-questions.md` Q15 |
 | Q25 | 2026-08-26 | **A confirmed (256-colour tier stays derived from `rgb`; 16-colour stays hand-authored) and C shipped**: `CellStyle.fade`, a `fgRole`-only 0–1 scalar resolved only at `color256`/`truecolor`, narrowly scoped to `fx.damage.flash` per a recorded departure from craft rule 7. B and D not done, per the recommendation | [`engine.md`](engine.md) Section 9.1; [`ascii-effects.md`](ascii-effects.md) craft rule 7; `src/view/roles.ts`, `src/view/frame.ts`, `src/view/effects/composite.ts`, `src/view/effects/recipes.ts` |
+| Q29 | 2026-08-26 | **Recall is the existing end-of-Pulse regroup rule, named, not a new mechanic.** Confirmed directly by Mario's own description of the Pulse phase: "instantly recall all units back to their proper location next to their home buildings" — exactly `engine.md` Section 5's existing rule, Option A | [`../milestones/milestone-06-pulse-phase.md`](../milestones/milestone-06-pulse-phase.md) |
+
+### Q29 — answered
+
+Registered 2026-08-26 and answered the same day, by the owner's own next message rather than by a
+separate decision. The question was whether "Recall" — a word Mario used alongside "the nexus pulse"
+that appears nowhere in canon — named a new mid-Pulse withdrawal mechanic (the more common genre
+meaning) or the existing, automatic end-of-Pulse regroup rule in
+[`engine.md`](engine.md) Section 5: "At Pulse end survivors regroup near home producers. Orphans are
+adopted by the nearest compatible producer or regroup near the Grid Nexus."
+
+Mario's own description of what the Pulse-phase milestone should do settles it in his own words:
+"Decide when the pulse is over, make stopping battle animation, start heading back, and **instantly
+recall all units back to their proper location next to their home buildings**." That is the existing
+rule exactly — automatic, at Pulse end, no player action, units returning to their home producers —
+which is Option A, adopted without needing anything new built.
+
+The consequence is small and entirely presentational: the rule already runs, so what
+[`../milestones/milestone-06-pulse-phase.md`](../milestones/milestone-06-pulse-phase.md) owes is one
+clear beat on screen when it fires, not a kernel change. Option B (a player-triggered Nexus power that
+withdraws units mid-Pulse) stays available for a later mission whose design actually needs it — it
+would be real new kernel surface, decided on that mission's own evidence, not inherited from this row.
 
 ### Q25 — answered
 
@@ -1034,6 +1111,6 @@ now carries the rule.
 
 Recorded in full in the Git history of this file at canon 2.1. Superseded in scope at canon 2.2 when
 Milestone 1 was refocused onto the Pulse and delivery left the milestone altogether.
-[`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) carries the gate structure;
+[`../milestones/milestone-01-grid-battles.md`](../milestones/milestone-01-grid-battles.md) carries the gate structure;
 [`project-governance.md`](project-governance.md) Section 5 carries delivery as its own gated
 workstream.

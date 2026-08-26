@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.8
+**Canon version:** 2.9
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -58,36 +58,39 @@ so before building something to fill the gap.
 **Milestone 1 is accepted.** Both gates — 1A, the Pulse Playground, and 1B, quality and effects — are
 implemented, evidenced, merged, and formally accepted by the owner (2026-08-26,
 `specs/project-governance.md` Section 5). Nothing about Milestone 1 itself is open work for a new
-session; `specs/milestone-1-spike-battle.md` says so at its own top.
+session; [`milestones/milestone-01-grid-battles.md`](milestones/milestone-01-grid-battles.md) says so
+at its own top.
 
-**The roadmap went campaign-first, per the owner's own direction, at the same time.** Rather than
-complete the Pulse kernel horizontally — routing, economy, production, visibility, replay, all at
-once — the project now builds its campaign one level at a time, each level a vertical slice pulling in
-only what it needs. The current milestone is **Level 1: Perimeter**
-([`specs/milestone-2-deterministic-pulse.md`](specs/milestone-2-deterministic-pulse.md)), and the
-current gate is **2A — the Build Phase loop**. Read that document's own opening note before anything
-else: it explains why the file that used to describe "completing the Pulse" now describes a campaign
-mission, and names [`specs/backlog-pulse-completion.md`](specs/backlog-pulse-completion.md) as where
-that older, still-valid content actually lives now.
+**The roadmap went campaign-first, per the owner's own direction, at the same time** — and building
+the campaign's first level turned out to need most of the game's still-unbuilt systems at once, so it
+is a sequence of ten focused milestones, not one. They are tracked in
+**[`milestones/`](milestones/)**, their own folder, separate from versioned `specs/` since a milestone
+is a tracker checked off during work, not a document that only changes at a named canon version — read
+[`milestones/README.md`](milestones/README.md) first for the full sequence and why it looks this way.
+
+The current milestone is **[`milestones/milestone-02-campaign-design.md`](milestones/milestone-02-campaign-design.md)
+— Campaign Design**: deciding exactly what PERIMETER needs (units, map, Build Phase budget, the
+scripted opponent's schedule) before milestones 3 through 10 write any code against it. It is a design
+pass, not a code gate.
 
 So the authorised work for a new session is, in order:
 
 1. **whatever the owner's most recent feedback asks for**, if any exists since
    `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
    outstanding or that everything still is;
-2. **Gate 2A of Level 1: Perimeter**, per `specs/milestone-2-deterministic-pulse.md` Section 3 — a
-   minimal Build Phase, one new production-spawn kernel capability kept distinct from the
-   unit-architecture spike's combat-only `spawn`, a scripted (not adaptive) opponent, and the
-   PERIMETER map, with no story text and no GUI polish yet. Gate 2B (the level wrapper) is GATED on
-   2A and is not authorized until 2A reports PASS.
+2. **Milestone 2 — Campaign Design**, per its own file. Its own Definition of Done is the checklist;
+   nothing beyond it is authorized until Mario has looked at the decisions it makes.
 
-Do not build a second resource, storage or warehouses, the upgrade draft, Nexus powers, the full
-Commander lifecycle (death, absence, restoration), real routing/pathfinding fixes, visibility
-filtering, the replay format, multiplayer, any level beyond PERIMETER, any campaign but the Citizen
-opening, a real save/progression system, sound, packaging, remote delivery, a mod loader, or a Rust/Go
-migration unless an accepted gate result authorizes it. Do not author a Commander Army: Level 1 reuses
-the existing disposable Citizen and Ravel fixture content, and `commander-armies.md` still reserves
-real rosters for Milestone 4.
+Do not start milestones 3 through 10's own code ahead of Milestone 2's decisions being confirmed —
+each of those milestones names exactly what it needs from Milestone 2 in its own "Depends on" line.
+Do not build a second resource, storage or warehouses beyond what Milestone 7 specifically needs, real
+routing/pathfinding fixes, visibility filtering, the replay format, multiplayer, any level beyond
+PERIMETER and RIGHT OF SALVAGE, any campaign but the Citizen opening, a real save/progression system
+beyond the flat unlock record Milestone 4 reads, sound, packaging, remote delivery, a mod loader, or a
+Rust/Go migration unless an accepted gate result authorizes it. **Do not author the full Citizens
+Commander Army**: Milestone 8 builds the Commander mechanic and one named Commander (Vasse) for
+PERIMETER specifically — see that milestone's own Q34 for the exact line between that and Milestone
+4's still-reserved real roster selection.
 
 **How to run what exists:** the `.claude/skills/grid` skill and `DEVELOPMENT.md` — read one of them
 rather than re-deriving `grid`'s CLI or the test commands here.

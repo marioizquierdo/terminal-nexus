@@ -68,11 +68,18 @@ required_files=(
   "specs/ascii-art-references.md"
   "specs/ascii-effects.md"
   "specs/templates/gate-report.md"
-  "specs/milestone-1-spike-battle.md"
-  "specs/milestone-2-deterministic-pulse.md"
-  "specs/milestone-3-builder-editor.md"
-  "specs/milestone-4-citizens-ravels.md"
-  "specs/milestone-5-campaign-fragment.md"
+  "specs/backlog-pulse-completion.md"
+  "milestones/README.md"
+  "milestones/milestone-01-grid-battles.md"
+  "milestones/milestone-02-campaign-design.md"
+  "milestones/milestone-03-game-menu.md"
+  "milestones/milestone-04-campaign-menu.md"
+  "milestones/milestone-05-build-phase.md"
+  "milestones/milestone-06-pulse-phase.md"
+  "milestones/milestone-07-worker-economy.md"
+  "milestones/milestone-08-commander.md"
+  "milestones/milestone-09-mission-cutscenes.md"
+  "milestones/milestone-10-first-and-second-missions.md"
   ".devcontainer/devcontainer.json"
   ".github/workflows/ci.yml"
 )
@@ -122,8 +129,17 @@ while IFS= read -r doc; do
   done
 done < <(find specs concept -type f -name '*.md' -print | sort)
 
+# Milestones are trackers, not versioned canon (AGENTS.md Section 1): they carry their own
+# lighter header and are not required to agree with specs/README.md's canon version, since a
+# session checks tasks off mid-milestone independently of any canon-version bump.
+while IFS= read -r doc; do
+  for field in "Document role" "Status" "Updated" "License"; do
+    grep -Fq "**${field}:**" "$doc" || fail "$doc is missing the '${field}' metadata field"
+  done
+done < <(find milestones -maxdepth 1 -type f -name 'milestone-*.md' -print | sort)
+
 # ---------------------------------------------------------------------------
-# 4. Exactly one CURRENT milestone, agreeing with the governance ledger
+# 4. Exactly one CURRENT milestone, agreeing with milestones/README.md
 # ---------------------------------------------------------------------------
 
 current_milestones=()
@@ -134,14 +150,14 @@ while IFS= read -r doc; do
     GATED | COMPLETE | REVISE | BLOCKED | STOPPED) ;;
     *) fail "$doc declares status '$status'; expected one of CURRENT, GATED, COMPLETE, REVISE, BLOCKED, STOPPED" ;;
   esac
-done < <(find specs -maxdepth 1 -type f -name 'milestone-*.md' -print | sort)
+done < <(find milestones -maxdepth 1 -type f -name 'milestone-*.md' -print | sort)
 
 current_gate=""
 if (( ${#current_milestones[@]} != 1 )); then
   fail "expected exactly one milestone marked CURRENT; found ${#current_milestones[@]}: ${current_milestones[*]:-none}"
 else
   current_milestone="${current_milestones[0]}"
-  milestone_number="$(basename "$current_milestone" | sed -n 's/^milestone-\([0-9]\+\)-.*$/\1/p')"
+  current_basename="$(basename "$current_milestone")"
 
   if ! grep -Eq "^\*\*Active gate:\*\* " "$current_milestone"; then
     fail "$current_milestone is CURRENT but does not declare an active gate"
@@ -149,13 +165,13 @@ else
 
   current_gate="$(sed -n 's/^\*\*Active gate:\*\* \(.*\)$/\1/p' "$current_milestone" | head -1)"
 
-  if ! grep -Eq "^\| Milestone ${milestone_number}[^|]*\| CURRENT \|" specs/project-governance.md; then
-    fail "the governance ledger does not mark Milestone ${milestone_number} as CURRENT"
+  if ! grep -Eq "^\|[^|]*${current_basename}[^|]*\| CURRENT \|" milestones/README.md; then
+    fail "milestones/README.md does not mark $current_basename as CURRENT"
   fi
 
-  ledger_current_rows="$(grep -cE '^\|[^|]*\| CURRENT \|' specs/project-governance.md || true)"
-  if [[ "$ledger_current_rows" != "1" ]]; then
-    fail "the governance ledger has ${ledger_current_rows} CURRENT rows; exactly one is allowed"
+  readme_current_rows="$(grep -cE '^\|[^|]*\| CURRENT \|' milestones/README.md || true)"
+  if [[ "$readme_current_rows" != "1" ]]; then
+    fail "milestones/README.md has ${readme_current_rows} CURRENT rows; exactly one is allowed"
   fi
 fi
 
@@ -165,7 +181,7 @@ fi
 
 defined_questions="$(sed -n 's/^### \(Q[0-9]\+\) .*$/\1/p' specs/open-questions.md | sort -u)"
 
-referenced_questions="$(grep -rhoE '\bQ[0-9]+\b' specs concept --include='*.md' 2>/dev/null | sort -u || true)"
+referenced_questions="$(grep -rhoE '\bQ[0-9]+\b' specs concept milestones --include='*.md' 2>/dev/null | sort -u || true)"
 
 while IFS= read -r question; do
   [[ -z "$question" ]] && continue

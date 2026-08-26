@@ -2,7 +2,7 @@
 
 **Document role:** Canon index and reading order
 **Status:** Canonical
-**Canon version:** 2.8
+**Canon version:** 2.9
 **Updated:** 2026-08-26
 **License:** Apache-2.0
 
@@ -21,17 +21,22 @@ executable, not built yet, is what will launch the actual game. `DEVELOPMENT.md`
 and `evidence/report.md` and `evidence/gate-1b-report.md` are what the two gates found — including
 the places where the canon turned out to be wrong.
 
-**The roadmap went campaign-first at canon 2.8.** Rather than complete the Pulse kernel horizontally
-(routing, economy, production, visibility, replay format, all at once), the project now builds its
-campaign one level at a time, each a small vertical slice pulling in only what that level needs.
-Milestone 2 is now **Level 1: Perimeter**, not the horizontal contract it used to be — that contract
-is preserved, unbuilt, in [`backlog-pulse-completion.md`](backlog-pulse-completion.md).
+**The roadmap went campaign-first at canon 2.8, and the milestones moved out at 2.9.** Rather than
+complete the Pulse kernel horizontally (routing, economy, production, visibility, replay format, all
+at once), the project now builds its campaign one level at a time. Building the first level turned
+out to need most of the game's still-unbuilt systems at once — a menu, a campaign screen, a real
+Build Phase, the Pulse's own player-facing moment, an economy, a Commander, cutscenes — so it is not
+one milestone, it is a sequence of ten, tracked in their own **[`../milestones/`](../milestones/)**
+folder rather than versioned here: they are notes for upcoming work, task trackers during work, and
+historical reference after, which is a different job than a document that only changes at a named
+canon version. The horizontal contract this replaced is preserved, unbuilt, in
+[`backlog-pulse-completion.md`](backlog-pulse-completion.md).
 
 For a new coding session, read:
 
 1. [`terminal-nexus-concept.md`](terminal-nexus-concept.md) — the one-page game definition.
-2. [`milestone-2-deterministic-pulse.md`](milestone-2-deterministic-pulse.md) — the active
-   implementation contract (Level 1: Perimeter). Only its **Active gate** is authorized.
+2. [`../milestones/README.md`](../milestones/README.md) — the milestone sequence and its **CURRENT**
+   entry. Only that entry's own **Active gate** is authorized.
 3. [`open-questions.md`](open-questions.md) Section 4 — what is undecided, and what you may decide
    alone.
 4. [`project-governance.md`](project-governance.md) — authority, evidence loop, execution ledger, and
@@ -80,10 +85,10 @@ today; the milestone marked CURRENT decides that.
 - [`commander-armies.md`](commander-armies.md) — playable packages of Commander, units, structures,
   upgrades, and Nexus powers. Rosters intentionally undefined.
 - [`campaigns.md`](campaigns.md) — mission and campaign structure, teaching, Citizen opening,
-  cutscenes, opponent policies, authoring tools. PERIMETER (Mission 1) is Milestone 2, in active
-  implementation.
+  cutscenes, opponent policies, authoring tools. PERIMETER (Mission 1) is in active implementation
+  across [`../milestones/`](../milestones/)'s ten-milestone sequence.
 - [`backlog-pulse-completion.md`](backlog-pulse-completion.md) — the horizontal "finish the kernel"
-  contract Milestone 2 used to be: routing, economy, production, visibility, replay hardening.
+  contract this roadmap replaced: routing, economy, production, visibility, replay hardening.
   Preserved verbatim, pulled in level by level rather than built as one pass.
 
 **Process**
@@ -103,20 +108,20 @@ today; the milestone marked CURRENT decides that.
 
 ## Milestones
 
-| Milestone | Question | Status |
-| --- | --- | --- |
-| [1 — the Pulse Playground](milestone-1-spike-battle.md) | Put units on a Grid and let them fight: deterministic from a seed, legible on screen, worth watching? | **COMPLETE** — both gates built, merged, and formally accepted 2026-08-26 |
-| [2 — Level 1: Perimeter](milestone-2-deterministic-pulse.md) | Build the campaign's first mission as a real vertical slice — Build Phase, the Pulse, a scripted opponent, the mission's own story — end to end? | **CURRENT** — Gate 2A open |
-| [3 — Build Phase and battle editor](milestone-3-builder-editor.md) | Is arranging a compact base pleasant enough to carry player agency? | GATED — backlog, pulled in per level |
-| [4 — Citizens versus Ravels](milestone-4-citizens-ravels.md) | Do the parts together make a match worth replaying? | GATED — backlog, pulled in per level |
-| [5 — Citizen campaign fragment](milestone-5-campaign-fragment.md) | Does brief ASCII fiction turn matches into a campaign? | GATED — superseded in shape; the fragment is now being built one level at a time starting with Milestone 2 |
-| [Backlog — completing the Pulse](backlog-pulse-completion.md) | What "Milestone 2" used to mean: routing, economy, production, visibility, replay hardening | GATED — preserved verbatim, pulled in the day a level needs a specific piece of it |
+Milestones are tracked in **[`../milestones/`](../milestones/)**, not here — see that folder's own
+`README.md` for the full ten-milestone sequence, its current entry, and why milestones get a lighter,
+unversioned header instead of this document's own canon-version lockstep. The only thing repeated
+here is the shape: Milestone 1 (Grid Battles) is **COMPLETE** and accepted; the campaign's first level
+is being built as milestones 2 through 10, one focused, checkable slice at a time, rather than as a
+single "Level 1" contract or a horizontal "finish the kernel" pass (preserved, unbuilt, in
+[`backlog-pulse-completion.md`](backlog-pulse-completion.md)).
 
 Packaging, standalone binaries, SSH, and browser delivery are **deferred entirely**. They answer no
 question the game currently has, and they were previously blocking the questions it does have.
 
-Only the gate marked **CURRENT** is implementation authority. Future documents are planning context
-and must be expanded with exact fixtures before work begins.
+Only the milestone marked **CURRENT** in [`../milestones/README.md`](../milestones/README.md) is
+implementation authority, and only through its own **Active gate**. Future milestones are planning
+context and must be looked at and promoted, not built merely because time remains.
 
 ## Rules this index enforces
 
@@ -125,11 +130,12 @@ The repository validator checks these mechanically, so they are worth knowing:
 - every document under `specs/` and `concept/` declares the same canon version as this file, and so
   does `AGENTS.md`, which restates canon invariants as a summary and would otherwise drift silently;
 - every document carries **Document role**, **Status**, **Canon version**, **Updated**, and
-  **License**;
-- exactly one milestone is `CURRENT`, it declares an **Active gate**, and the governance ledger
-  agrees with it;
-- every `Q<n>` referenced anywhere is defined in [`open-questions.md`](open-questions.md), and every
-  `OPEN` question carries a recommendation;
+  **License** — `../milestones/*.md` files carry the same four fields minus **Canon version**, since
+  they are trackers, not versioned canon (`../milestones/README.md` explains why);
+- exactly one file in `../milestones/` is `CURRENT`, it declares an **Active gate**, and
+  `../milestones/README.md`'s own table agrees with it;
+- every `Q<n>` referenced anywhere under `specs/`, `concept/`, or `milestones/` is defined in
+  [`open-questions.md`](open-questions.md), and every `OPEN` question carries a recommendation;
 - retired terminology stays retired. A line that must quote it — the concept-art index does — is
   marked exempt.
 

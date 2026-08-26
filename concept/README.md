@@ -2,7 +2,7 @@
 
 **Document role:** Early visual exploration and historical reference. Not canon, not decisions
 **Status:** Reference
-**Canon version:** 2.8
+**Canon version:** 2.9
 **Updated:** 2026-08-26
 **License:** Mixed — see "Licensing" below
 

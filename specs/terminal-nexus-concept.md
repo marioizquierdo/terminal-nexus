@@ -2,7 +2,7 @@
 
 **Document role:** One-page product definition
 **Status:** Canonical
-**Canon version:** 2.8
+**Canon version:** 2.9
 **Updated:** 2026-08-26
 **License:** CC BY-SA 4.0 for creative direction; Apache-2.0 for technical product requirements
 
@@ -76,7 +76,7 @@ Each question is worthless without the one before it. A battle that looks great 
 
 The Build Phase, base construction, economy, campaigns, packaging and remote delivery, public mod loading, multiplayer, sound, and model-driven opponents all remain gated behind those proofs.
 
-Start implementation with [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md). Before deciding anything the canon leaves open, check [`open-questions.md`](open-questions.md). For the visual direction these proofs are chasing, see [`../concept/README.md`](../concept/README.md).
+Start with the milestone marked CURRENT in [`../milestones/README.md`](../milestones/README.md) — Milestone 1, [Grid Battles](../milestones/milestone-01-grid-battles.md), is complete and accepted, and the campaign's first level is being built across the milestones after it. Before deciding anything the canon leaves open, check [`open-questions.md`](open-questions.md). For the visual direction these proofs are chasing, see [`../concept/README.md`](../concept/README.md).
 
 ## Design statement
 

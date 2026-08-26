@@ -2,7 +2,7 @@
 
 **Document role:** Universe, factions, conflicts, narrative constraints, and symbolic art direction
 **Status:** Canonical
-**Canon version:** 2.8
+**Canon version:** 2.9
 **Updated:** 2026-08-26
 **License:** CC BY-SA 4.0
 
