@@ -725,6 +725,87 @@ only; a new test now exercises the real recipe through the real compositor toget
 Unrelated to the fade prototype's own conclusion, but found *while* building it, and worth recording
 here rather than only in the gate report since it changes what "today" actually shows.
 
+### Q26 — Is a combat-only spawn primitive actually outside "production," or does it need sign-off before real content uses it?
+
+**Status:** OPEN — blocks nothing today (the spawn primitive lives only in disposable bench content,
+`src/content/proving-grounds.ts`); matters the day any real roster wants a unit that creates other
+units.
+
+AGENTS.md Section 2 is explicit: "Do not build economy, production, supply, visibility, the Build
+Phase... unless an accepted gate result authorizes it." The unit-design-architecture spike
+(`evidence/unit-architecture-spike.md`) built `ContentDef.spawn` and `pulse/spawn.ts` anyway, at
+Mario's own direct request for "spawner, large unit that creates smaller units" as one of seven named
+designs — reasoning that a unit periodically creating a small combat minion (a Clash Royale Graveyard,
+a StarCraft Broodmother) is a *combat ability* a living unit performs, not the economy Milestone 2
+owns: no cost, no resource, nothing the empty `economyAndProduction` phase (`tick.ts`) would recognise
+as its own. That reasoning was never put to Mario directly; it was the assumption the session proceeded
+under, per Section 6's own procedure.
+
+| Option | Cost |
+| --- | --- |
+| A. **Confirm the framing**: a spawn ability with no cost and no resource is combat, not production, and stays legal content for any future roster, Milestone 2 or not | Keeps the capability available immediately. Risks being wrong about where Mario actually draws the line — "creates more units" might read as production-adjacent regardless of cost, especially once a real roster's spawn interacts with supply (a population cap Milestone 2 will introduce) |
+| B. **Treat it as Milestone-2-gated**: the capability stays in the kernel (it is additive and already tested), but no Commander Army may use `spawn`/`splitOnDeath` until Milestone 2 is accepted | Conservative, and cheap to enforce (a review-time check, not a technical one) — but means the finding "this composes with a real roster" has to wait even after Milestone 2 lands, for no clearer reason than caution |
+| C. **Drop the capability from anything but the bench**: keep the finding recorded, delete `spawn.ts` before any real content exists | Loses working, tested code for a hypothetical concern; nothing about the spike suggested the capability itself was wrong, only that its scope was never explicitly confirmed |
+
+**Recommendation: A**, with the framing stated explicitly rather than assumed: a spawn ability with
+no cost or resource is a combat rule shape, evaluated the same way volatile munitions was — by whether
+it makes a faction's philosophy legible without a word of lore (`terminal-nexus-lore.md` 8.6), not by
+whether it creates entities. Revisit if a real Commander Army's spawn design turns out to need a cost,
+at which point it stops being this capability and starts being Milestone 2's.
+
+### Q27 — Should "ground cannot target air" be the schema's default, not an opt-in field?
+
+**Status:** OPEN — blocks nothing before air becomes real roster content (Q8's own status still
+applies: no air unit before Milestone 3, and none of Citizens or Ravels has authored one).
+
+`ContentDef.targetLayers` (unit-design-architecture spike) is opt-in: undefined means every layer is a
+legal target, which is what let every existing Citizen and Ravel definition stay untouched and every
+existing hash stay unaffected. The grunt (`src/content/proving-grounds.ts`) sets it explicitly to prove
+the asymmetry Mario asked to see. But this means the *typical* ground melee unit — one whose author
+never thinks about air at all — can, by default, already hit a flyer standing on its tile, which is a
+real, live possibility per Q8's own design (ground and air deliberately share tiles). Nothing enforces
+"remember to restrict this" except author discipline.
+
+| Option | Cost |
+| --- | --- |
+| A. **Keep the opt-in default.** Undefined means "every layer," exactly as it is today | Free, zero risk to existing content. Every future ground-melee unit author has to remember to add the restriction, or it is silently missing — an easy content bug to introduce and a hard one to notice, since nothing fails loudly |
+| B. **Flip the default for ground-layer content**: a `units`/`workers` entity with no `targetLayers` declared cannot target `air` unless it opts in | Closer to what most real designs probably want (a melee grunt hitting a flyer standing on its tile is the surprising case, not the normal one). Requires auditing every future ground-melee unit's intent at authoring time, and is a breaking semantic change to a field this spike just built — real churn for zero current content, since no accepted roster has air units yet |
+| C. **A loader-time or test-time lint**: flag (not reject) a ground-layer `attack` with no `targetLayers` declared, as a nudge rather than a rule change | Cheap and catches the authoring-discipline risk without changing runtime behaviour or requiring a breaking default flip |
+
+**Recommendation: A for now, reconsider at C's cost the day Milestone 4 authors the first real air
+unit** — there is no content yet for a wrong default to actually harm, and the field is new enough
+that changing its default later costs nothing extra compared to changing it now. C is the cheap middle
+ground if a lint turns out easy to add whenever someone is next in `scenario/load.ts` or
+`content.test.ts`.
+
+### Q28 — Can a spawner-only side become permanently un-annihilatable?
+
+**Status:** OPEN — confirmed only in bench content (`bench-hatchery-spawn.map.json`); blocks nothing
+before a real roster fields a structure whose starting force is entirely non-mobile.
+
+Q13 already settled how "annihilation" works for a side with no Nexus: every entity on `workers`,
+`units`, and `air` must be dead, and `PulseContext.roster[player].hasMobile` is computed **once**, from
+`initialState.entities`, specifically so a side that starts with only workers isn't declared
+annihilated for having no soldiers yet. The unit-design-architecture spike's spawner
+(`structure.bench.hatchery`) is a structure with no initial mobile entities at all — its whole combat
+presence arrives later, via `ContentDef.spawn`. `roster.hasMobile` for that side is therefore `false`
+at tick 0 and never re-evaluated, so `victory()`'s annihilation check can never fire for it: watched
+directly in `bench-hatchery-spawn.map.json`, where the hatchery and both of its spawned children are
+dead by tick 167, and the match still runs to a tick-limit draw at tick 300 rather than declaring the
+opponent the winner.
+
+| Option | Cost |
+| --- | --- |
+| A. **Leave it.** No accepted roster is spawner-only today (Milestone 4 hasn't selected one), and the fixture that surfaces this is bench content built to surface exactly this kind of interaction | Free. The bug, if it is one, only reaches a real match the day a real Commander Army's opening force is entirely non-mobile — a design choice Milestone 4 has not made and may never make |
+| B. **Extend `hasMobile`'s computation**: a side counts as `hasMobile` if its initial roster contains *either* a mobile entity *or* an entity with `spawn` defined — "this side promises future mobile forces" | Closes the specific gap the spawner exposes, cheaply (one extra condition in `createContext`, `pulse/context.ts`). Introduces a subtler problem: a spawner that is *itself* still alive but between spawn cycles (all its children currently dead, more due next interval) would read as `mobileAlive === false` at that instant, risking a **false** annihilation mid-match rather than a missing one |
+| C. **Redefine annihilation for a spawn-having side**: require the spawning structure itself, not just its current children, to also be dead | Solves B's false-positive risk by tying annihilation to the *producer*, not the momentary output — but this starts to resemble a second victory condition ("destroy the production"), adjacent to but distinct from nexus-destroyed, and is a real product-model decision, not a bug fix |
+
+**Recommendation: A for now.** Both real fixes (B, C) trade one edge case for a different, subtler
+one, and neither should be picked without a real roster to test it against — exactly Q20's own
+reasoning for deferring a harder call until the fixture that needs it exists rather than the one that
+merely revealed it. Revisit the moment Milestone 4 (or any earlier session) authors a Commander Army
+whose opening force is entirely non-mobile.
+
 ## 5. Answered
 
 Rows move here with the date, the decision, and the document that now owns it.
