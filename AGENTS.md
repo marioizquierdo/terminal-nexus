@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.7
+**Canon version:** 2.8
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -55,33 +55,39 @@ so before building something to fill the gap.
 
 ## 2. Current authorization
 
-**Milestone 1 is built.** Both gates — 1A, the Pulse Playground, and 1B, quality and effects — are
-implemented, evidenced and merged. The current gate is **1B**.
+**Milestone 1 is accepted.** Both gates — 1A, the Pulse Playground, and 1B, quality and effects — are
+implemented, evidenced, merged, and formally accepted by the owner (2026-08-26,
+`specs/project-governance.md` Section 5). Nothing about Milestone 1 itself is open work for a new
+session; `specs/milestone-1-spike-battle.md` says so at its own top.
 
-**The viewing has now happened, at least once.** Mario watched a legibility pass and responded well —
-encouraging, not a formal acceptance — and followed it immediately with a large, explicit list of
-follow-up work rather than an instruction to start Milestone 2. That list (a code-quality and
-scalability review, canon updates, a replay-format design, the `grid` rename, a `.claude` skill, a
-README pass) is exactly clause 1 below, not a signal that Milestone 1 is accepted. Check
-`specs/project-governance.md`'s execution ledger before assuming either that nothing is outstanding or
-that everything still is — a session's own work belongs there once it lands, and reading the ledger
-costs less than re-deriving this history from the git log.
+**The roadmap went campaign-first, per the owner's own direction, at the same time.** Rather than
+complete the Pulse kernel horizontally — routing, economy, production, visibility, replay, all at
+once — the project now builds its campaign one level at a time, each level a vertical slice pulling in
+only what it needs. The current milestone is **Level 1: Perimeter**
+([`specs/milestone-2-deterministic-pulse.md`](specs/milestone-2-deterministic-pulse.md)), and the
+current gate is **2A — the Build Phase loop**. Read that document's own opening note before anything
+else: it explains why the file that used to describe "completing the Pulse" now describes a campaign
+mission, and names [`specs/backlog-pulse-completion.md`](specs/backlog-pulse-completion.md) as where
+that older, still-valid content actually lives now.
 
 So the authorised work for a new session is, in order:
 
-1. **whatever the owner's viewing or explicit feedback asks for.** Read
-   [`evidence/report.md`](evidence/report.md) and
-   [`evidence/gate-1b-report.md`](evidence/gate-1b-report.md) first — they name what each gate
-   claims, what it refuses to claim, and what it got wrong. If there is no new feedback since the
-   ledger's last entry, there is nothing outstanding here;
-2. **nothing else, unless the owner accepts Milestone 1.** Milestone 2's contracts are locked and it
-   is ready to start cold — but it starts on acceptance, which has not happened yet, not on a session
-   having time left.
+1. **whatever the owner's most recent feedback asks for**, if any exists since
+   `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
+   outstanding or that everything still is;
+2. **Gate 2A of Level 1: Perimeter**, per `specs/milestone-2-deterministic-pulse.md` Section 3 — a
+   minimal Build Phase, one new production-spawn kernel capability kept distinct from the
+   unit-architecture spike's combat-only `spawn`, a scripted (not adaptive) opponent, and the
+   PERIMETER map, with no story text and no GUI polish yet. Gate 2B (the level wrapper) is GATED on
+   2A and is not authorized until 2A reports PASS.
 
-Do not build economy, production, supply, visibility, the Build Phase, campaigns, packaging, remote
-delivery, a mod loader, multiplayer, sound, or a Rust/Go migration unless an accepted gate result
-authorizes it. Do not author a Commander Army: the two fixture armies on the bench are disposable
-bench content, and `commander-armies.md` still reserves rosters for Milestone 4.
+Do not build a second resource, storage or warehouses, the upgrade draft, Nexus powers, the full
+Commander lifecycle (death, absence, restoration), real routing/pathfinding fixes, visibility
+filtering, the replay format, multiplayer, any level beyond PERIMETER, any campaign but the Citizen
+opening, a real save/progression system, sound, packaging, remote delivery, a mod loader, or a Rust/Go
+migration unless an accepted gate result authorizes it. Do not author a Commander Army: Level 1 reuses
+the existing disposable Citizen and Ravel fixture content, and `commander-armies.md` still reserves
+real rosters for Milestone 4.
 
 **How to run what exists:** the `.claude/skills/grid` skill and `DEVELOPMENT.md` — read one of them
 rather than re-deriving `grid`'s CLI or the test commands here.

@@ -2,9 +2,17 @@
 
 **Document role:** Future milestone contract; expand before implementation
 **Status:** GATED
-**Canon version:** 2.7
-**Updated:** 2026-08-20
+**Canon version:** 2.8
+**Updated:** 2026-08-26
 **License:** Apache-2.0; creative test content is CC BY-SA 4.0
+
+> **Backlog note, canon 2.8.** The roadmap went campaign-first
+> ([`milestone-2-deterministic-pulse.md`](milestone-2-deterministic-pulse.md)): this milestone's
+> content is no longer queued as a whole horizontal pass on its own schedule. It is pulled in
+> level by level, the day some campaign level's own contract genuinely needs a fuller Build Phase or
+> a real battle editor — read it as backlog, the same way
+> [`backlog-pulse-completion.md`](backlog-pulse-completion.md) now holds the old Milestone 2. Nothing
+> below is wrong or withdrawn; it is simply not any single gate's job to build all of it at once.
 
 ## Question
 

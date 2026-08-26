@@ -2,9 +2,17 @@
 
 **Document role:** Future milestone contract; expand before implementation
 **Status:** GATED
-**Canon version:** 2.7
-**Updated:** 2026-08-20
+**Canon version:** 2.8
+**Updated:** 2026-08-26
 **License:** Mechanical material is Apache-2.0; faction creative material is CC BY-SA 4.0
+
+> **Backlog note, canon 2.8.** The roadmap went campaign-first
+> ([`milestone-2-deterministic-pulse.md`](milestone-2-deterministic-pulse.md)): the real
+> Citizens-versus-Ravels roster and Commander Army authoring this milestone owns are still reserved
+> — `AGENTS.md` Section 2 and `commander-armies.md` are unchanged — but they are no longer queued as
+> one horizontal pass on their own schedule. The campaign levels build toward this milestone rather
+> than waiting for it: each level uses disposable fixture content until enough of them together
+> justify committing to a real roster. Nothing below is wrong or withdrawn.
 
 ## Question
 

@@ -2,8 +2,8 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.7
-**Updated:** 2026-08-24
+**Canon version:** 2.8
+**Updated:** 2026-08-26
 **License:** Apache-2.0
 
 ## 1. Why this file exists
@@ -603,10 +603,210 @@ the narrowest starting point — it treats the newly-noticed problem (motion *pa
 distinct from the older, already-answered one (a static shape looks stretched), rather than reopening
 `engine.md` 9.3's tile-width RULE to solve a timing complaint a wider tile does not by itself fix.
 
-### Q25 — Should the palette derive its lower tiers from one truecolor source, and should a cell be able to be transparent?
+### Q26 — Is a combat-only spawn primitive actually outside "production," or does it need sign-off before real content uses it?
 
-**Status:** OPEN — the transparency half amends a RULE-marked type and cannot be decided by a
-session; the derivation half is measurable and mostly answered below.
+**Status:** OPEN — blocks nothing today (the spawn primitive lives only in disposable bench content,
+`src/content/proving-grounds.ts`); matters the day any real roster wants a unit that creates other
+units.
+
+AGENTS.md Section 2 is explicit: "Do not build economy, production, supply, visibility, the Build
+Phase... unless an accepted gate result authorizes it." The unit-design-architecture spike
+(`evidence/unit-architecture-spike.md`) built `ContentDef.spawn` and `pulse/spawn.ts` anyway, at
+Mario's own direct request for "spawner, large unit that creates smaller units" as one of seven named
+designs — reasoning that a unit periodically creating a small combat minion (a Clash Royale Graveyard,
+a StarCraft Broodmother) is a *combat ability* a living unit performs, not the economy Milestone 2
+owns: no cost, no resource, nothing the empty `economyAndProduction` phase (`tick.ts`) would recognise
+as its own. That reasoning was never put to Mario directly; it was the assumption the session proceeded
+under, per Section 6's own procedure.
+
+| Option | Cost |
+| --- | --- |
+| A. **Confirm the framing**: a spawn ability with no cost and no resource is combat, not production, and stays legal content for any future roster, Milestone 2 or not | Keeps the capability available immediately. Risks being wrong about where Mario actually draws the line — "creates more units" might read as production-adjacent regardless of cost, especially once a real roster's spawn interacts with supply (a population cap Milestone 2 will introduce) |
+| B. **Treat it as Milestone-2-gated**: the capability stays in the kernel (it is additive and already tested), but no Commander Army may use `spawn`/`splitOnDeath` until Milestone 2 is accepted | Conservative, and cheap to enforce (a review-time check, not a technical one) — but means the finding "this composes with a real roster" has to wait even after Milestone 2 lands, for no clearer reason than caution |
+| C. **Drop the capability from anything but the bench**: keep the finding recorded, delete `spawn.ts` before any real content exists | Loses working, tested code for a hypothetical concern; nothing about the spike suggested the capability itself was wrong, only that its scope was never explicitly confirmed |
+
+**Recommendation: A**, with the framing stated explicitly rather than assumed: a spawn ability with
+no cost or resource is a combat rule shape, evaluated the same way volatile munitions was — by whether
+it makes a faction's philosophy legible without a word of lore (`terminal-nexus-lore.md` 8.6), not by
+whether it creates entities. Revisit if a real Commander Army's spawn design turns out to need a cost,
+at which point it stops being this capability and starts being Milestone 2's.
+
+### Q27 — Should "ground cannot target air" be the schema's default, not an opt-in field?
+
+**Status:** OPEN — blocks nothing before air becomes real roster content (Q8's own status still
+applies: no air unit before Milestone 3, and none of Citizens or Ravels has authored one).
+
+`ContentDef.targetLayers` (unit-design-architecture spike) is opt-in: undefined means every layer is a
+legal target, which is what let every existing Citizen and Ravel definition stay untouched and every
+existing hash stay unaffected. The grunt (`src/content/proving-grounds.ts`) sets it explicitly to prove
+the asymmetry Mario asked to see. But this means the *typical* ground melee unit — one whose author
+never thinks about air at all — can, by default, already hit a flyer standing on its tile, which is a
+real, live possibility per Q8's own design (ground and air deliberately share tiles). Nothing enforces
+"remember to restrict this" except author discipline.
+
+| Option | Cost |
+| --- | --- |
+| A. **Keep the opt-in default.** Undefined means "every layer," exactly as it is today | Free, zero risk to existing content. Every future ground-melee unit author has to remember to add the restriction, or it is silently missing — an easy content bug to introduce and a hard one to notice, since nothing fails loudly |
+| B. **Flip the default for ground-layer content**: a `units`/`workers` entity with no `targetLayers` declared cannot target `air` unless it opts in | Closer to what most real designs probably want (a melee grunt hitting a flyer standing on its tile is the surprising case, not the normal one). Requires auditing every future ground-melee unit's intent at authoring time, and is a breaking semantic change to a field this spike just built — real churn for zero current content, since no accepted roster has air units yet |
+| C. **A loader-time or test-time lint**: flag (not reject) a ground-layer `attack` with no `targetLayers` declared, as a nudge rather than a rule change | Cheap and catches the authoring-discipline risk without changing runtime behaviour or requiring a breaking default flip |
+
+**Recommendation: A for now, reconsider at C's cost the day Milestone 4 authors the first real air
+unit** — there is no content yet for a wrong default to actually harm, and the field is new enough
+that changing its default later costs nothing extra compared to changing it now. C is the cheap middle
+ground if a lint turns out easy to add whenever someone is next in `scenario/load.ts` or
+`content.test.ts`.
+
+### Q28 — Can a spawner-only side become permanently un-annihilatable?
+
+**Status:** OPEN — confirmed only in bench content (`bench-hatchery-spawn.map.json`); blocks nothing
+before a real roster fields a structure whose starting force is entirely non-mobile.
+
+Q13 already settled how "annihilation" works for a side with no Nexus: every entity on `workers`,
+`units`, and `air` must be dead, and `PulseContext.roster[player].hasMobile` is computed **once**, from
+`initialState.entities`, specifically so a side that starts with only workers isn't declared
+annihilated for having no soldiers yet. The unit-design-architecture spike's spawner
+(`structure.bench.hatchery`) is a structure with no initial mobile entities at all — its whole combat
+presence arrives later, via `ContentDef.spawn`. `roster.hasMobile` for that side is therefore `false`
+at tick 0 and never re-evaluated, so `victory()`'s annihilation check can never fire for it: watched
+directly in `bench-hatchery-spawn.map.json`, where the hatchery and both of its spawned children are
+dead by tick 167, and the match still runs to a tick-limit draw at tick 300 rather than declaring the
+opponent the winner.
+
+| Option | Cost |
+| --- | --- |
+| A. **Leave it.** No accepted roster is spawner-only today (Milestone 4 hasn't selected one), and the fixture that surfaces this is bench content built to surface exactly this kind of interaction | Free. The bug, if it is one, only reaches a real match the day a real Commander Army's opening force is entirely non-mobile — a design choice Milestone 4 has not made and may never make |
+| B. **Extend `hasMobile`'s computation**: a side counts as `hasMobile` if its initial roster contains *either* a mobile entity *or* an entity with `spawn` defined — "this side promises future mobile forces" | Closes the specific gap the spawner exposes, cheaply (one extra condition in `createContext`, `pulse/context.ts`). Introduces a subtler problem: a spawner that is *itself* still alive but between spawn cycles (all its children currently dead, more due next interval) would read as `mobileAlive === false` at that instant, risking a **false** annihilation mid-match rather than a missing one |
+| C. **Redefine annihilation for a spawn-having side**: require the spawning structure itself, not just its current children, to also be dead | Solves B's false-positive risk by tying annihilation to the *producer*, not the momentary output — but this starts to resemble a second victory condition ("destroy the production"), adjacent to but distinct from nexus-destroyed, and is a real product-model decision, not a bug fix |
+
+**Recommendation: A for now.** Both real fixes (B, C) trade one edge case for a different, subtler
+one, and neither should be picked without a real roster to test it against — exactly Q20's own
+reasoning for deferring a harder call until the fixture that needs it exists rather than the one that
+merely revealed it. Revisit the moment Milestone 4 (or any earlier session) authors a Commander Army
+whose opening force is entirely non-mobile.
+
+### Q29 — Does "Recall" name a new mechanic, or the existing end-of-Pulse regroup rule?
+
+**Status:** OPEN — blocks nothing before Gate 2B names the beat on screen; the recommendation is
+already assumed by `milestone-2-deterministic-pulse.md` Section 5.
+
+Mario, 2026-08-26, listing what the campaign-first pivot needs to think about: "the nexus pulse and
+recall." "Recall" appears nowhere else in canon — not in `engine.md`, not in `commander-armies.md`,
+not in the lore. The nearest existing rule is `engine.md` Section 5: "At Pulse end survivors regroup
+near home producers. Orphans are adopted by the nearest compatible producer or regroup near the Grid
+Nexus." That is an automatic, unconditional rule with no player action in it at all — not obviously
+what a word like "Recall" usually means in the genre (a Nexus power or Commander ability that
+withdraws units *during* a Pulse, on the player's own timing).
+
+| Option | Cost |
+| --- | --- |
+| A. **Recall is the existing regroup rule, given a name and one presentation beat.** No new mechanic, no new kernel content — Gate 2B (or whichever gate first shows a Pulse ending) labels the existing behaviour on screen | Free, and consistent with "prefer direct code... extract a framework only after two real uses reveal the boundary": nothing about PERIMETER's own design asks for a player-triggered withdrawal, so building one now would be building ahead of a use |
+| B. **Recall is a new Nexus power**: a player-triggered, resourced or cooldown-gated action that pulls some or all units back mid-Pulse | Matches the more common genre meaning, but is real new kernel surface — a validated command, a new event kind, presentation for it — with no mission in the belief ramp that currently teaches it. `engine.md` Section 5.4 already flags the whole Nexus-power draft as "recorded so the shape is not accidentally foreclosed," not designed; this would be designing a specific power ahead of any evidence it is needed |
+| C. **Ask Mario directly what he meant** | Cheap to ask, but the six-mission belief ramp already exists and does not currently teach a mid-Pulse withdrawal ability anywhere in it — asking without first checking whether the existing rule already covers the word risks spending an owner interaction on something A already answers |
+
+**Recommendation: A.** Adopt the existing end-of-Pulse regroup rule as the thing "Recall" names, present
+it as one clear beat when it fires, and build nothing new for it. If a later mission's design
+genuinely needs a player-triggered withdrawal, that is B, decided then, on that mission's own evidence
+— not guessed at here from one word in a planning sentence.
+
+### Q30 — How much Build-Phase side panel does Gate 2B actually need?
+
+**Status:** OPEN — blocks nothing before Gate 2B starts; the recommendation is already assumed by
+`milestone-2-deterministic-pulse.md` Section 4.2.
+
+`engine.md` Section 9.2 already specifies the Build Phase side panel's shape — construct menu,
+selected item's cost and effect, a placement-legality panel, radius preview, legend — as GUIDANCE
+written before any of it existed. PERIMETER's own Gate 2A mechanism is deliberately tiny (a short,
+fixed construct menu, one producer structure, one legal placement zone), so building the *full*
+panel Section 9.2 describes risks building UI for options that do not exist yet on this level.
+
+| Option | Cost |
+| --- | --- |
+| A. **Build exactly what Gate 2A's own content needs, and skip the rest.** Construct menu (short), cost/effect, and a legality panel that explains a rejected placement are load-bearing the moment there is a menu at all. Radius preview is skipped unless the producer structure has a radius worth previewing | Smallest artifact that satisfies "a Build Phase a player can actually use." Risks needing a second pass the moment Level 2 adds a structure with a real radius |
+| B. **Build the full Section 9.2 panel now**, radius preview and all, so every later level reuses it without changes | More up-front work for a feature (radius preview) nothing in Gate 2A exercises, which is exactly what governance Section 2 warns against — a framework before two real uses reveal its contract |
+
+**Recommendation: A.** Build the legality panel and the construct menu — both load-bearing for even
+the smallest Build Phase — and defer radius preview until a level actually ships something with a
+radius. This is a narrow, reversible UI-scope decision that Gate 2B's own session may equally well
+just decide alone under governance Section 2; it is registered mainly so the *reason* for the smaller
+scope is written down rather than looking like an oversight later.
+
+### Q31 — What shape does an "unlock record" take, with no save system yet?
+
+**Status:** OPEN — blocks nothing before Gate 2B needs to write one; the recommendation is already
+assumed by `milestone-2-deterministic-pulse.md` Section 4.2.
+
+Mario: "after each level, we unlock new units and powers." `campaigns.md` Section 2's own
+`MissionDefinition` sketch has an `unlocks: readonly string[]` field already — architectural
+direction, not a frozen API — but nothing says what a session actually writes down when Level 1 grants
+one, and Milestone 2/3's real save/replay format (`replay-format.md`, `backlog-pulse-completion.md`)
+does not exist yet.
+
+| Option | Cost |
+| --- | --- |
+| A. **A flat, checked-in list — JSON or a small TypeScript module — naming what completing PERIMETER makes available.** No persistence, no player-facing menu, no progression UI: a fact the next level's own contract reads and cites, the same way `milestone-2-deterministic-pulse.md` Section 6 already does for "Level 2, per the belief ramp" | Cheapest possible answer, and it is genuinely enough for "the next level's contract may assume these exist" — which is the only consumer that exists today |
+| B. **Build a minimal save/progression system now**, so a player's own unlock state persists across sessions | Real infrastructure (a file format, a load path, a schema) for a feature with exactly one campaign and one mission today. `replay-format.md`'s own design is the more natural foundation for this once it is built, and building progression storage ahead of the replay format it should probably share a schema with risks a second incompatible persistence format later |
+
+**Recommendation: A.** A checked-in list is enough for one level unlocking content the next level's
+contract can read at authoring time; a real save system is a `replay-format.md`-adjacent problem for
+whichever level first needs a unlock state that outlives one authoring session, not this one.
+
+### Q32 — How is a scripted (not adaptive) mission opponent actually authored as content?
+
+**Status:** OPEN — blocks nothing before Gate 2A needs to author the Ravel raid; the recommendation is
+already assumed by `milestone-2-deterministic-pulse.md` Section 3.2.
+
+`campaigns.md` Section 6 names "scripted tutorials" as the simplest opponent-policy tier but does not
+specify its shape. PERIMETER's raid needs to arrive from the northwest on a fixed, deterministic
+schedule — closer to a timed placement/trigger list than to anything that decides.
+
+| Option | Cost |
+| --- | --- |
+| A. **A second, one-sided placement block with tick-gated triggers** — the enemy's units and structures exist in the map file from tick 0 exactly like today's fixtures, but a small ordered list of triggers (`{ atTick, action }`) governs when reinforcements arrive or a group starts advancing, authored and validated the same way a `.map.json` file already is | Reuses the existing map-authoring and validation machinery almost entirely; the only new surface is the trigger list itself, which is data, not a policy engine |
+| B. **A tiny scripted "policy" module** — a function that reads the bounded planning view every tick and returns intents, hard-coded rather than adaptive | Closer to what `project-governance.md` Section 10's local-policy framework eventually wants, but is a runtime interface (inputs, outputs, a call site inside the tick loop) for a script that will only ever return one fixed sequence — real machinery for something a data list already expresses |
+
+**Recommendation: A.** A tick-gated trigger list is data, validated at load time exactly like every
+other scenario field, and needs no new runtime interface. Build B's policy-module shape only once a
+mission genuinely needs to react to what the player does, which no belief-ramp mission through
+PERIMETER does.
+
+### Q33 — Does PERIMETER's map need a real fix for Q15's on-axis routing dead end, or is authoring around it enough?
+
+**Status:** OPEN — blocks nothing before the PERIMETER map is authored; the recommendation is already
+assumed by `milestone-2-deterministic-pulse.md` Section 3.3.
+
+Q15 (still open, `backlog-pulse-completion.md`) is a real, measured kernel gap: a mover whose approach
+is exactly on-axis with its goal and meets an obstacle has no fallback direction under Manhattan
+distance. PERIMETER's raid approaches from a named direction, which makes it easy to author straight
+into this exact dead end by accident — or easy to avoid entirely by authoring the approach lane
+slightly off-axis.
+
+| Option | Cost |
+| --- | --- |
+| A. **Author the map to avoid the dead end** — an approach lane not perfectly axis-aligned with the Nexus, the same way an earlier fixture in the unit-architecture spike was repositioned off-axis for the identical reason | Free, and ships Level 1 without depending on a kernel fix this milestone does not own. Does not advance Q15 itself |
+| B. **Fix Q15 as part of Gate 2A**, since a scripted, predictable raid is a comparatively low-risk place to exercise real routing for the first time | Real kernel work — pathfinding, not a map layout choice — inside a milestone whose own Section 1 explicitly excludes "real routing/pathfinding fixes". Widens Gate 2A's scope for a fix nothing about PERIMETER specifically requires |
+
+**Recommendation: A.** Author around it, exactly as already stated in
+`milestone-2-deterministic-pulse.md` Section 3.3. Q15 stays open and unowned by any single level until
+a mission's own design genuinely cannot be authored around it — at which point that mission's gate is
+where it gets fixed, not retrofitted here on spec.
+
+## 5. Answered
+
+Rows move here with the date, the decision, and the document that now owns it.
+
+| ID | Answered | Decision | Now owned by |
+| --- | --- | --- | --- |
+| Q1 | 2026-08-20 | **Tile width is adaptive presentation capability**: one column per tile in the 80x24 composition, two columns per tile at 128 columns or wider. Same tiles, same actors, same revealed information — only the composition changes. The 80x24 floor is preserved and the concept art's look is reachable on a wide terminal | [`engine.md`](engine.md) Section 9.3 |
+| Q2 | 2026-08-20 | **One resource.** Salvage recovers the same resource rather than a second one. Nexus energy is a state readout, not a currency. A second resource is an addition a later microgame may earn; it is not assumed | [`engine.md`](engine.md) Section 6 |
+| Q3 | 2026-08-20 | **Units may span multiple tiles.** Large units are a normal, strategically important case, not a later extension — a Ravel raider drawn `>x<` is one unit occupying three tiles. The collision system tests a mover's whole footprint against its mask; damage and destruction apply to the entity, not the tile | [`engine.md`](engine.md) Section 3.5 |
+| Q4 | 2026-08-21 | **The corruption law.** Corruption is drawn in the `effects` band and above, never in `units` or `structures`; it may add, overdraw, and unsettle, but never remove or replace the only cell carrying a required semantic cue. Recorded as decided because the rule was already RULE in the engine, restated in the lore, and listed among the locked product decisions — the register was the only document still calling it open | [`engine.md`](engine.md) Section 9.4 |
+| Q6 | 2026-08-20 | **Packaging and remote delivery leave Milestone 1.** First split into an independent gate, then deferred out of the milestone entirely when it was refocused onto the Pulse — they answer no question the game currently has | [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) |
+| Q10 | 2026-08-21 | **DROPPED as mis-scoped.** Engine determinism was never in question: the kernel, its event log, and replay stay exact, and the features that depend on them are untouched. Whether a mission's *interface* misreports a total for narrative effect is campaign writing, decided when campaigns are designed | [`campaigns.md`](campaigns.md), at Milestone 5 |
+| Q11 | 2026-08-21 | **Alder refuse artificial Nexus power — conceptual.** Simplicity and growth instead: little or no Nexus draft, and more complexity in the structures they can build. Direction, not a locked mechanic | [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 8.5 and [`commander-armies.md`](commander-armies.md) Section 4 |
+| Q17 | 2026-08-21 | **Resolved by an unrelated fix, not decided among its options.** Four-way movement and Manhattan distance (Q15's fix, shipped for legibility) removed the degenerate tie itself: under Chebyshev a rank-deployed army had every enemy at the same distance; under Manhattan the same layout does not, because the axis the old metric ignored (`min(|dx|,|dy|)`) is exactly the one Manhattan keeps. Verified, not assumed: `citizen-mirror-skirmish.ts` (rank-deployed) now pairs each attacker with a distinct nearest opponent from tick 1, no stampede | [`grid/coords.ts`](../src/grid/coords.ts) `gridDistance`; `specs/open-questions.md` Q15 |
+| Q25 | 2026-08-26 | **A confirmed (256-colour tier stays derived from `rgb`; 16-colour stays hand-authored) and C shipped**: `CellStyle.fade`, a `fgRole`-only 0–1 scalar resolved only at `color256`/`truecolor`, narrowly scoped to `fx.damage.flash` per a recorded departure from craft rule 7. B and D not done, per the recommendation | [`engine.md`](engine.md) Section 9.1; [`ascii-effects.md`](ascii-effects.md) craft rule 7; `src/view/roles.ts`, `src/view/frame.ts`, `src/view/effects/composite.ts`, `src/view/effects/recipes.ts` |
+
+### Q25 — answered
 
 Owner, 2026-08-24, after watching the sixth round's effects: "I think the color scheme needs to
 define *transparency* that would adapt the color to the backend color. The code would process the
@@ -725,101 +925,33 @@ only; a new test now exercises the real recipe through the real compositor toget
 Unrelated to the fade prototype's own conclusion, but found *while* building it, and worth recording
 here rather than only in the gate report since it changes what "today" actually shows.
 
-### Q26 — Is a combat-only spawn primitive actually outside "production," or does it need sign-off before real content uses it?
+**Decided, 2026-08-26.** Mario confirmed both forks in the same round of feedback that formally
+accepted Milestone 1 ([`project-governance.md`](project-governance.md) Section 5): "Keep it derived
+(recommended)" for A, and "Yes, build it for real" for C — decided from the standing evidence already
+in front of him (the hand-authored/derived 256-colour screenshots and the transparency prototype's own
+screenshot, both sent in round seven), not from a fresh artifact shown in this pass.
 
-**Status:** OPEN — blocks nothing today (the spawn primitive lives only in disposable bench content,
-`src/content/proving-grounds.ts`); matters the day any real roster wants a unit that creates other
-units.
+A stands exactly as built above: the 256-colour tier derives from `rgb`, the 16-colour tier stays
+hand-authored, and nothing about that changes.
 
-AGENTS.md Section 2 is explicit: "Do not build economy, production, supply, visibility, the Build
-Phase... unless an accepted gate result authorizes it." The unit-design-architecture spike
-(`evidence/unit-architecture-spike.md`) built `ContentDef.spawn` and `pulse/spawn.ts` anyway, at
-Mario's own direct request for "spawner, large unit that creates smaller units" as one of seven named
-designs — reasoning that a unit periodically creating a small combat minion (a Clash Royale Graveyard,
-a StarCraft Broodmother) is a *combat ability* a living unit performs, not the economy Milestone 2
-owns: no cost, no resource, nothing the empty `economyAndProduction` phase (`tick.ts`) would recognise
-as its own. That reasoning was never put to Mario directly; it was the assumption the session proceeded
-under, per Section 6's own procedure.
-
-| Option | Cost |
-| --- | --- |
-| A. **Confirm the framing**: a spawn ability with no cost and no resource is combat, not production, and stays legal content for any future roster, Milestone 2 or not | Keeps the capability available immediately. Risks being wrong about where Mario actually draws the line — "creates more units" might read as production-adjacent regardless of cost, especially once a real roster's spawn interacts with supply (a population cap Milestone 2 will introduce) |
-| B. **Treat it as Milestone-2-gated**: the capability stays in the kernel (it is additive and already tested), but no Commander Army may use `spawn`/`splitOnDeath` until Milestone 2 is accepted | Conservative, and cheap to enforce (a review-time check, not a technical one) — but means the finding "this composes with a real roster" has to wait even after Milestone 2 lands, for no clearer reason than caution |
-| C. **Drop the capability from anything but the bench**: keep the finding recorded, delete `spawn.ts` before any real content exists | Loses working, tested code for a hypothetical concern; nothing about the spike suggested the capability itself was wrong, only that its scope was never explicitly confirmed |
-
-**Recommendation: A**, with the framing stated explicitly rather than assumed: a spawn ability with
-no cost or resource is a combat rule shape, evaluated the same way volatile munitions was — by whether
-it makes a faction's philosophy legible without a word of lore (`terminal-nexus-lore.md` 8.6), not by
-whether it creates entities. Revisit if a real Commander Army's spawn design turns out to need a cost,
-at which point it stops being this capability and starts being Milestone 2's.
-
-### Q27 — Should "ground cannot target air" be the schema's default, not an opt-in field?
-
-**Status:** OPEN — blocks nothing before air becomes real roster content (Q8's own status still
-applies: no air unit before Milestone 3, and none of Citizens or Ravels has authored one).
-
-`ContentDef.targetLayers` (unit-design-architecture spike) is opt-in: undefined means every layer is a
-legal target, which is what let every existing Citizen and Ravel definition stay untouched and every
-existing hash stay unaffected. The grunt (`src/content/proving-grounds.ts`) sets it explicitly to prove
-the asymmetry Mario asked to see. But this means the *typical* ground melee unit — one whose author
-never thinks about air at all — can, by default, already hit a flyer standing on its tile, which is a
-real, live possibility per Q8's own design (ground and air deliberately share tiles). Nothing enforces
-"remember to restrict this" except author discipline.
-
-| Option | Cost |
-| --- | --- |
-| A. **Keep the opt-in default.** Undefined means "every layer," exactly as it is today | Free, zero risk to existing content. Every future ground-melee unit author has to remember to add the restriction, or it is silently missing — an easy content bug to introduce and a hard one to notice, since nothing fails loudly |
-| B. **Flip the default for ground-layer content**: a `units`/`workers` entity with no `targetLayers` declared cannot target `air` unless it opts in | Closer to what most real designs probably want (a melee grunt hitting a flyer standing on its tile is the surprising case, not the normal one). Requires auditing every future ground-melee unit's intent at authoring time, and is a breaking semantic change to a field this spike just built — real churn for zero current content, since no accepted roster has air units yet |
-| C. **A loader-time or test-time lint**: flag (not reject) a ground-layer `attack` with no `targetLayers` declared, as a nudge rather than a rule change | Cheap and catches the authoring-discipline risk without changing runtime behaviour or requiring a breaking default flip |
-
-**Recommendation: A for now, reconsider at C's cost the day Milestone 4 authors the first real air
-unit** — there is no content yet for a wrong default to actually harm, and the field is new enough
-that changing its default later costs nothing extra compared to changing it now. C is the cheap middle
-ground if a lint turns out easy to add whenever someone is next in `scenario/load.ts` or
-`content.test.ts`.
-
-### Q28 — Can a spawner-only side become permanently un-annihilatable?
-
-**Status:** OPEN — confirmed only in bench content (`bench-hatchery-spawn.map.json`); blocks nothing
-before a real roster fields a structure whose starting force is entirely non-mobile.
-
-Q13 already settled how "annihilation" works for a side with no Nexus: every entity on `workers`,
-`units`, and `air` must be dead, and `PulseContext.roster[player].hasMobile` is computed **once**, from
-`initialState.entities`, specifically so a side that starts with only workers isn't declared
-annihilated for having no soldiers yet. The unit-design-architecture spike's spawner
-(`structure.bench.hatchery`) is a structure with no initial mobile entities at all — its whole combat
-presence arrives later, via `ContentDef.spawn`. `roster.hasMobile` for that side is therefore `false`
-at tick 0 and never re-evaluated, so `victory()`'s annihilation check can never fire for it: watched
-directly in `bench-hatchery-spawn.map.json`, where the hatchery and both of its spawned children are
-dead by tick 167, and the match still runs to a tick-limit draw at tick 300 rather than declaring the
-opponent the winner.
-
-| Option | Cost |
-| --- | --- |
-| A. **Leave it.** No accepted roster is spawner-only today (Milestone 4 hasn't selected one), and the fixture that surfaces this is bench content built to surface exactly this kind of interaction | Free. The bug, if it is one, only reaches a real match the day a real Commander Army's opening force is entirely non-mobile — a design choice Milestone 4 has not made and may never make |
-| B. **Extend `hasMobile`'s computation**: a side counts as `hasMobile` if its initial roster contains *either* a mobile entity *or* an entity with `spawn` defined — "this side promises future mobile forces" | Closes the specific gap the spawner exposes, cheaply (one extra condition in `createContext`, `pulse/context.ts`). Introduces a subtler problem: a spawner that is *itself* still alive but between spawn cycles (all its children currently dead, more due next interval) would read as `mobileAlive === false` at that instant, risking a **false** annihilation mid-match rather than a missing one |
-| C. **Redefine annihilation for a spawn-having side**: require the spawning structure itself, not just its current children, to also be dead | Solves B's false-positive risk by tying annihilation to the *producer*, not the momentary output — but this starts to resemble a second victory condition ("destroy the production"), adjacent to but distinct from nexus-destroyed, and is a real product-model decision, not a bug fix |
-
-**Recommendation: A for now.** Both real fixes (B, C) trade one edge case for a different, subtler
-one, and neither should be picked without a real roster to test it against — exactly Q20's own
-reasoning for deferring a harder call until the fixture that needs it exists rather than the one that
-merely revealed it. Revisit the moment Milestone 4 (or any earlier session) authors a Commander Army
-whose opening force is entirely non-mobile.
-
-## 5. Answered
-
-Rows move here with the date, the decision, and the document that now owns it.
-
-| ID | Answered | Decision | Now owned by |
-| --- | --- | --- | --- |
-| Q1 | 2026-08-20 | **Tile width is adaptive presentation capability**: one column per tile in the 80x24 composition, two columns per tile at 128 columns or wider. Same tiles, same actors, same revealed information — only the composition changes. The 80x24 floor is preserved and the concept art's look is reachable on a wide terminal | [`engine.md`](engine.md) Section 9.3 |
-| Q2 | 2026-08-20 | **One resource.** Salvage recovers the same resource rather than a second one. Nexus energy is a state readout, not a currency. A second resource is an addition a later microgame may earn; it is not assumed | [`engine.md`](engine.md) Section 6 |
-| Q3 | 2026-08-20 | **Units may span multiple tiles.** Large units are a normal, strategically important case, not a later extension — a Ravel raider drawn `>x<` is one unit occupying three tiles. The collision system tests a mover's whole footprint against its mask; damage and destruction apply to the entity, not the tile | [`engine.md`](engine.md) Section 3.5 |
-| Q4 | 2026-08-21 | **The corruption law.** Corruption is drawn in the `effects` band and above, never in `units` or `structures`; it may add, overdraw, and unsettle, but never remove or replace the only cell carrying a required semantic cue. Recorded as decided because the rule was already RULE in the engine, restated in the lore, and listed among the locked product decisions — the register was the only document still calling it open | [`engine.md`](engine.md) Section 9.4 |
-| Q6 | 2026-08-20 | **Packaging and remote delivery leave Milestone 1.** First split into an independent gate, then deferred out of the milestone entirely when it was refocused onto the Pulse — they answer no question the game currently has | [`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) |
-| Q10 | 2026-08-21 | **DROPPED as mis-scoped.** Engine determinism was never in question: the kernel, its event log, and replay stay exact, and the features that depend on them are untouched. Whether a mission's *interface* misreports a total for narrative effect is campaign writing, decided when campaigns are designed | [`campaigns.md`](campaigns.md), at Milestone 5 |
-| Q11 | 2026-08-21 | **Alder refuse artificial Nexus power — conceptual.** Simplicity and growth instead: little or no Nexus draft, and more complexity in the structures they can build. Direction, not a locked mechanic | [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 8.5 and [`commander-armies.md`](commander-armies.md) Section 4 |
-| Q17 | 2026-08-21 | **Resolved by an unrelated fix, not decided among its options.** Four-way movement and Manhattan distance (Q15's fix, shipped for legibility) removed the degenerate tie itself: under Chebyshev a rank-deployed army had every enemy at the same distance; under Manhattan the same layout does not, because the axis the old metric ignored (`min(|dx|,|dy|)`) is exactly the one Manhattan keeps. Verified, not assumed: `citizen-mirror-skirmish.ts` (rank-deployed) now pairs each attacker with a distinct nearest opponent from tick 1, no stampede | [`grid/coords.ts`](../src/grid/coords.ts) `gridDistance`; `specs/open-questions.md` Q15 |
+C shipped for real. `CellStyle.fade` ([`engine.md`](engine.md) Section 9.1, now RULE) is a
+`fgRole`-only scalar, `0` (the role's own colour) to `1` (the theme's background), resolved only at
+`color256`/`truecolor` — `color16` and `monochrome` ignore it entirely, unchanged from before it
+existed. `fx.damage.flash` (`src/view/effects/recipes.ts`) now decays across its own window instead of
+a flat pulse (`fade: progressOf(instance, context)`, held off under reduced motion, provably
+byte-identical there to the recipe's whole pre-amendment behaviour); `resolveLighting`
+(`src/view/effects/composite.ts`) sums a continuous version of the same scalar across a stack
+(brightness `1 − fade` summed and clamped, converted back to a fade) alongside the existing four-step
+`dim`/plain/`bold`/`inverse` ladder, not replacing it. [`ascii-effects.md`](ascii-effects.md) craft
+rule 7 now records the departure by name, narrowly scoped to this one recipe — every other effect in
+the vocabulary still decays by thinning, exactly as the rule describes. `scripts/
+prototype-fade-resolver.mjs` is deleted; its evidence screenshot
+(`evidence/screenshots/prototype-fade-resolver.png`) is kept, since it is now part of the historical
+record of how this question was decided, not a preview of shipped behaviour. `scripts/
+capture-damage-flash-fade.mjs` supersedes it, driving the real, shipped recipe, compositor, and
+`sgrFor` end to end — no resolver of its own — producing `evidence/screenshots/damage-flash-fade.png`.
+Canon bumped 2.7 → 2.8 for the RULE amendment and the recorded GUIDANCE departure, across every
+document under `specs/` and `concept/` plus `AGENTS.md`.
 
 ### Q17 — answered
 

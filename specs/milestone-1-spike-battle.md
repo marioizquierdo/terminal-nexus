@@ -1,20 +1,24 @@
 # Milestone 1 — the Pulse Playground
 
 **Document role:** Start-here implementation contract
-**Status:** CURRENT
-**Active gate:** 1B — quality and effects (built; viewed, encouraging response, not yet formally accepted)
-**Canon version:** 2.7
-**Updated:** 2026-08-23
+**Status:** COMPLETE
+**Active gate:** none — both gates accepted; see below
+**Canon version:** 2.8
+**Updated:** 2026-08-26
 **License:** Apache-2.0; authored creative treatments are CC BY-SA 4.0
 
-> **Where this stands, canon 2.7.** Both gates are **built and merged**, and both evidence reports
-> conclude PASS on every check a test can answer. The human half has now happened at least once: Mario
-> watched a legibility pass and responded well — "This looks really amazing. Great job" — then gave a
-> large, explicit list of follow-up work rather than accepting the milestone outright. Encouraging is
-> not the same as accepted; treat that list as the current authorisation (`AGENTS.md` Section 2), not
-> as permission to call this milestone done. A new session's authorised work is whatever the owner's
-> most recent feedback asks for — **not** new scope. Milestone 2's contracts are locked and waiting; it
-> opens when this milestone is accepted, which has not happened yet.
+> **Formally accepted, 2026-08-26 (canon 2.8).** Both gates are built, merged, and now **owner
+> accepted** — `project-governance.md` Section 5 has the acceptance entry, and this is no longer the
+> milestone a new session opens. Mario watched a legibility pass and responded well — "This looks
+> really amazing. Great job" — gave a large, explicit list of follow-up work (the unit-architecture
+> spike, the transparency amendment, this acceptance itself, and the campaign-first roadmap pivot),
+> and once that list was worked through, said so directly: "I am quite happy with the milestone,"
+> answered "Yes, formally accept it" when asked. The record below is preserved exactly as it read
+> while this milestone was still open, since it describes what was true then; only the header above
+> and this paragraph mark the change. **The current work is
+> [`milestone-2-deterministic-pulse.md`](milestone-2-deterministic-pulse.md) — Level 1: Perimeter,**
+> not the horizontal "completing the Pulse" contract this document used to point to next; see that
+> document for why.
 
 ## 1. What this milestone builds
 

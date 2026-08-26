@@ -2,9 +2,16 @@
 
 **Document role:** Future milestone contract; expand before implementation
 **Status:** GATED
-**Canon version:** 2.7
-**Updated:** 2026-08-20
+**Canon version:** 2.8
+**Updated:** 2026-08-26
 **License:** Technical material is Apache-2.0; narrative material is CC BY-SA 4.0
+
+> **Superseded in shape, not in destination, canon 2.8.** The roadmap went campaign-first
+> ([`milestone-2-deterministic-pulse.md`](milestone-2-deterministic-pulse.md)): the campaign fragment
+> this document describes as one future milestone is now being built one level at a time, starting
+> with PERIMETER as Milestone 2. This document still names the destination — the full belief ramp,
+> its later missions, its teaching goals — and stays the reference for what a later level's own
+> contract should look like when it gets there.
 
 ## Question
 

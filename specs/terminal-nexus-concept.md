@@ -2,8 +2,8 @@
 
 **Document role:** One-page product definition
 **Status:** Canonical
-**Canon version:** 2.7
-**Updated:** 2026-08-20
+**Canon version:** 2.8
+**Updated:** 2026-08-26
 **License:** CC BY-SA 4.0 for creative direction; Apache-2.0 for technical product requirements
 
 ## The game in one sentence

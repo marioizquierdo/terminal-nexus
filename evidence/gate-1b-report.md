@@ -1,9 +1,9 @@
 # Gate report — Milestone 1B, quality and effects
 
 **Document role:** Gate evidence report for Gate 1B
-**Status:** In progress — revised after a seventh round of owner feedback (Section 22), awaiting the next viewing; still not the acceptance Section 8 and Section 12 wait on
-**Canon version:** 2.7
-**Updated:** 2026-08-24
+**Status:** CLOSED — accepted 2026-08-26 (Section 24). Sections 1-23 are preserved exactly as written while the gate was still open
+**Canon version:** 2.8
+**Updated:** 2026-08-26
 **License:** Apache-2.0
 
 ---
@@ -1186,3 +1186,53 @@ whether the transparency prototype's argument is worth the RULE amendment and ca
 (Q25's second half). Q21 is applied under its own recommendation and only needs a look, not a decision.
 Accept or revise Gate 1B (and Gate 1A alongside it, still never separately closed). Milestone 2 remains
 gated on acceptance, not on this session running out of things to fix.
+
+## 24. Round eight — Q25 closed, both gates accepted
+
+Both of Section 23's open decisions, answered directly by Mario, 2026-08-26, rather than inferred:
+256-colour derivation, "Keep it derived (recommended)"; the transparency prototype, "Yes, build it for
+real." Full mechanism in [`../specs/open-questions.md`](../specs/open-questions.md) Q25's closing
+paragraph, not repeated here — summary only:
+
+- `CellStyle.fade` shipped (`src/view/frame.ts`), a `fgRole`-only 0-1 scalar resolved at
+  `color256`/`truecolor` (`sgrFor`/`rgbFor`, `src/view/roles.ts`), ignored at `color16`/`monochrome` on
+  both the direct-ANSI and OpenTUI backends;
+- `fx.damage.flash` (`src/view/effects/recipes.ts`) decays across its own 66 ms window instead of a
+  flat pulse, held off under reduced motion (provably byte-identical to the pre-amendment recipe
+  there);
+- `resolveLighting` (`src/view/effects/composite.ts`) sums a continuous fade across a stack
+  (brightness `1 - fade` summed and clamped) alongside the existing `dim`/plain/`bold`/`inverse`
+  ladder, not replacing it;
+- `engine.md` 9.1 (RULE) and `ascii-effects.md` craft rule 7 (the recorded departure) both amended;
+  canon bumped 2.7 -> 2.8;
+- `scripts/prototype-fade-resolver.mjs` deleted; its evidence PNG kept for the historical record.
+  `scripts/capture-damage-flash-fade.mjs` supersedes it, driving the real, shipped pipeline end to end
+  (no resolver of its own) — `evidence/screenshots/damage-flash-fade.png`.
+
+New tests (`tests/effects.test.ts`, `tests/roles.test.ts`, `tests/view.test.ts`): the real recipe's
+own decay curve; stacking through the real compositor reading less faded than any one flash alone; a
+regression guard that `fade` never appears outside `fx.damage.flash`; a real-fight integration check
+that a composed frame actually carries a fade; `sgrFor`/`rgbFor` tier-gating and exact background
+landing at `fade=1`; `frameToAnsi`'s own plumbing tier-gated the same way.
+
+**Verification:** `npm run typecheck` clean; `npm test` 203/203 passing (198 before this round);
+`./scripts/run-tests.sh bun` all files passing; `grid --verify` on `citizen-mirror-skirmish`, 10/10
+identical (presentation-only change, no gameplay hash moved, as expected); `./scripts/check-repository.sh`
+clean at canon 2.8.
+
+Mario then, asked directly, formally accepted Milestone 1 in full: "Yes, formally accept it." Both
+gates' automated PASS (this report; [`../evidence/report.md`](../evidence/report.md)) now carry owner
+acceptance alongside them — the distinction this report drew at Section 8 and every round since,
+between an automated PASS and the owner's own separate sign-off, is exactly what this closes.
+
+### Final decision
+
+> **ACCEPTED.** Gate 1B, and Gate 1A alongside it, are both closed. Milestone 1 is complete
+> ([`../specs/project-governance.md`](../specs/project-governance.md) Section 5). No further round is
+> expected against this report; a new finding against shipped Milestone 1 content is a fresh issue
+> against whichever gate now owns that code, not a reopening of this one.
+
+Next authorized action: [`../specs/milestone-2-deterministic-pulse.md`](../specs/milestone-2-deterministic-pulse.md)
+— Level 1: Perimeter, Gate 2A. Not the horizontal "completing the Pulse" contract this report's own
+Section 23 pointed to; the roadmap went campaign-first in the same round that accepted this gate. See
+that document's own opening note for why.
