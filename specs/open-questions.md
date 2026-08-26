@@ -845,6 +845,64 @@ scripted schedule ends" to read as a *win*.
 cheapest possible evidence (playing the fixture once) decides whether it is needed, and B's cost is
 mostly the canon ceremony a RULE change requires, not the code.
 
+### Q37 — Does Milestone 5's Build Phase GUI need a design spike before the real build?
+
+**Status:** OPEN — blocks nothing before Milestone 5 starts; the recommendation is already assumed by
+[`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md).
+
+Mario, in the ten-milestone review: "I think defining the in-game GUI will require some pause and
+maybe a spike." Milestones 3 and 4 (a list menu, a handful of info panels) are well-trodden shapes
+this project already knows how to build well — `grid`'s own watch view already proves cell frames,
+capability tiers, and monochrome all compose cleanly. Milestone 5 is different in kind, not degree: it
+asks for cursor-driven scrolling (never built), a GUI that adapts across the whole 48×16-72×24
+viewport range (never built), and a dense side panel (construct menu, cost/effect, legality panel) —
+all three interacting at once, in a terminal, which is a genuinely harder and less precedented problem
+than anything Milestone 1 solved. Building the real interactive version first and discovering the
+layout does not work is expensive; a scenario like Q25's transparency amendment (prototype it, show
+what it buys, then ask) is exactly this project's own established way of de-risking a UI decision
+before committing code to it.
+
+| Option | Cost |
+| --- | --- |
+| A. **A static ASCII mockup pass before Milestone 5's real build**: a handful of hand-drawn or scripted frames showing the Build Phase screen at the viewport's minimum, default, and maximum sizes, with the construct menu, legality panel, and a scrolled Grid all present at once — reviewed by Mario before any interactive code exists | Cheap (no interaction, no kernel, just composed frames — the same technique `scripts/capture-screenshots.mjs` already uses for real gameplay) and it is the direct de-risking move for exactly the concern raised. Costs a short detour before Milestone 5 can start its own real work |
+| B. **Skip the mockup and build the real thing directly**, treating Milestone 5's own acceptance criteria (human check: "scrolling feels like looking around, not like fighting the cursor") as the first real feedback | Faster to a working build, but the failure mode is expensive: discovering the layout is wrong only after cursor logic, scrolling math, and panel rendering are all real code, which then all need revisiting together rather than one flat mockup |
+| C. **Treat this as Milestone 2's own job**, expanding its design-decision scope to include a GUI sketch alongside PERIMETER's map and unit list | Keeps all of Level 1's upfront design in one milestone, but Milestone 2 is scoped to *what PERIMETER contains*, not *how the engine presents it* — engine.md 9.2's panel shape is a cross-mission concern, not specific to this one map, so folding it into Milestone 2 mixes two different kinds of decision |
+
+**Recommendation: A, run as a short, explicit step at the start of Milestone 5 itself** (not folded
+into Milestone 2, which stays about PERIMETER's own content) — a few static mockups at the range's
+extremes, shown to Mario, before writing the real cursor/scrolling/panel code. This is cheap relative
+to the cost of a wrong layout discovered after the fact, and it matches how this project already
+de-risks presentation decisions (Q25) rather than introducing a new process.
+
+### Q38 — Does PERIMETER's own map need real scrolling, or does Milestone 5 prove scrolling on different content?
+
+**Status:** OPEN — blocks nothing before Milestone 2 locks the map's final dimensions; the
+recommendation is already assumed by
+[`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md)
+Section 4.3.
+
+A real tension, found on review rather than during Milestone 2 or 5's own drafting:
+[`../campaigns.md`](campaigns.md) Section 4.1's belief ramp describes PERIMETER's own teaching goal as
+"Build Phase / Nexus Pulse loop on **a small Grid that never scrolls**" — written as GUIDANCE before
+the campaign-first pivot, and never revisited since. Milestone 5's own charter says real map scrolling
+"is built here, for real, against a Grid sized to actually need it," with Milestone 2 only softening
+it to "PERIMETER's own map does not need to be the first thing that exercises it, though it may." If
+PERIMETER's map stays small and non-scrolling by design, Milestone 5 has nothing of its own to prove
+scrolling against, and the acceptance bar ("scrolling keeps the cursor's margin correctly at every
+viewport size in the clamped range") would need a separate, purpose-built test fixture instead.
+
+| Option | Cost |
+| --- | --- |
+| A. **Let PERIMETER's map grow just large enough to want a little scrolling.** The belief-ramp row's "never scrolls" was a reasonable assumption before this milestone sequence existed to build scrolling at all, not a locked narrative requirement — nothing about "hold the perimeter, keep the workers alive" depends on the Grid staying small | Free, keeps Milestone 5's acceptance evidence real rather than synthetic, and is a small, low-stakes amendment to one row of GUIDANCE that has not been built against yet |
+| B. **Build and test scrolling against a dedicated fixture, separate from PERIMETER**, and keep PERIMETER's own map exactly as small as the belief ramp describes | Preserves the belief ramp's original intent literally, but means Milestone 5 ships a capability PERIMETER itself never uses — a real risk that the *first* real use (Q25's own standard for justifying a capability at all) is a synthetic fixture, not the mission that was supposed to need it |
+| C. **Defer real scrolling to whichever later mission's map is actually large** (RIGHT OF SALVAGE, Milestone 10, or later), and let Milestone 5 ship only the adaptive-panel and placement work for a Grid that still fits whole | Keeps PERIMETER's belief-ramp framing exactly as written, but leaves Milestone 5's own charter overstated — its intro currently states scrolling as this milestone's own deliverable, which would need rewriting, and defers real evidence for a RULE-adjacent viewport contract that has waited since Gate 1A already |
+
+**Recommendation: A.** Milestone 2 should size PERIMETER's map to genuinely need a little scrolling
+rather than treat "never scrolls" as fixed — it costs nothing the mission's own fiction depends on,
+and it means Milestone 5's acceptance evidence is about the mission that motivated building the
+capability, not a fixture invented to exercise it. Milestone 2's own Section 4.3 should record the
+final map's size specifically with this in mind.
+
 ## 5. Answered
 
 Rows move here with the date, the decision, and the document that now owns it.

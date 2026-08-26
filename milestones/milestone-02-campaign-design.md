@@ -35,6 +35,15 @@ gets there first. This is exactly the "smallest artifact that answers the questi
 ([`../AGENTS.md`](../AGENTS.md) Section 1) applied one level up: the artifact here is a specification,
 not a build.
 
+A pre-merge review of the whole milestone sequence (2026-08-26) already settled two process-level
+questions this milestone would otherwise have had to raise itself — Mario's own framing was that
+campaign design "will define roughly how to organize this, not only for the game itself, but also for
+the development process," and these are exactly that: **Q37**, that milestone 5 opens with a short
+static-mockup pass before building the real Build Phase GUI, rather than this milestone trying to
+design that GUI ahead of time; and **Q38**, whether PERIMETER's own map needs to actually scroll
+(4.3 below). Both are still `OPEN` in [`../specs/open-questions.md`](../specs/open-questions.md) —
+this document proceeds under their recommendations rather than treating them as answered.
+
 ## 3. Read before deciding
 
 1. [`../specs/campaigns.md`](../specs/campaigns.md) Section 4.1 (the belief ramp) and 4.2 — PERIMETER's
@@ -52,6 +61,9 @@ not a build.
    for Milestone 1, disposable, but already close to what PERIMETER's own fiction describes.
 5. [`../specs/open-questions.md`](../specs/open-questions.md) Q15 (routing dead end), Q29 (Recall),
    Q32, Q33 — this milestone finalizes the last two.
+6. [`../specs/open-questions.md`](../specs/open-questions.md) Q37 (the Build Phase GUI spike — why
+   it belongs to milestone 5's own opening, not a design step here) and Q38 (whether PERIMETER's map
+   needs real scrolling — 4.3 below proceeds under its recommendation).
 
 ## 4. Decisions
 
@@ -90,9 +102,17 @@ menus are a later mission's decision, not this one's.
 
 ### 4.3 The map
 
-A small Grid, Nexus and barracks near one edge, open ground toward the approach the raid comes from,
-sized to fit within the viewport at the outset (milestone 5 is where scrolling actually gets built and
-tested — PERIMETER's own map does not need to be the first thing that exercises it, though it may).
+A Grid with Nexus and barracks near one edge, open ground toward the approach the raid comes from.
+
+**Q38 is OPEN; this section proceeds under its recommended answer.**
+[`../specs/campaigns.md`](../specs/campaigns.md) Section 4.1's belief-ramp text describes PERIMETER as
+"a small Grid that never scrolls" — written before milestone 5's own charter (build and test real
+scrolling) existed. A map sized to strictly fit the viewport would leave milestone 5's scrolling work
+either untested against the actual campaign or tested against a second, throwaway fixture instead of
+the mission meant to prove it. This document assumes the map grows just large enough to need a little
+scrolling while still reading as small and contained — the belief-ramp's *feel*, not its literal
+geometry, is the invariant. If Mario answers Q38 differently, only this section and `campaigns.md`
+Section 4.1's own wording need to change; nothing else here depends on it.
 
 **Q33, decided:** author the approach lane off-axis from the Nexus, not fixed by a routing patch. Q15
 (`../specs/backlog-pulse-completion.md`) is real and still unowned by any single milestone; PERIMETER
@@ -111,7 +131,9 @@ player does — that is a later mission's opponent, once one genuinely needs to 
 
 Per the belief ramp (`../specs/campaigns.md` Section 4.1, row 1): **the Build Phase / Nexus Pulse loop
 on a small Grid that never scrolls.** The belief the player holds going in ("Operator is my job
-title") is allowed to feel true — nothing in Level 1 needs to unsettle it yet.
+title") is allowed to feel true — nothing in Level 1 needs to unsettle it yet. (Q38, still open,
+questions whether "never scrolls" survives contact with milestone 5's own charter to build and test
+real scrolling; see 4.3.)
 
 Deliberately not this mission's job, even though the milestones that follow build the mechanism:
 
@@ -140,5 +162,7 @@ Moved to Answered in [`../specs/open-questions.md`](../specs/open-questions.md).
       can implement it without a second design pass;
 - [ ] Q29 is moved to Answered;
 - [ ] Q32 and Q33 are moved to Answered, citing this document;
+- [ ] Q38 is either answered by Mario or explicitly proceeded-under-recommendation, and the map
+      sketch above reflects that answer before milestone 5 builds against it;
 - [ ] Mario has looked at the decisions above and either confirmed them or asked for a specific change
       — this is cheap to redirect now and expensive after milestones 3-10 have built against it.

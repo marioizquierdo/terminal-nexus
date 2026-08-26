@@ -63,6 +63,33 @@ gains authority when its own dependencies (named in its own file) are met and it
 promoted, not merely because time remains (`../AGENTS.md` Section 2's own "do not continue to the next
 gate merely because time remains" applies here at the milestone level too).
 
+## After Milestone 10
+
+Milestone 10 proves the campaign's first two missions together. What comes after is not detailed
+here on purpose — Milestone 2 itself is deciding "how to organize this, not only for the game itself,
+but also for the development process" (Mario's own framing for why campaign design is the current
+milestone), and naming further milestones in detail ahead of that would be guessing at the thing
+Milestone 2 is supposed to settle.
+
+Two shapes look likely enough to name lightly, so a later session doesn't have to reconstruct them
+from nothing — without pretending either is decided:
+
+- **one milestone per remaining belief-ramp mission.** [`../specs/campaigns.md`](../specs/campaigns.md)
+  Section 4.1 names four missions after RIGHT OF SALVAGE — RESTORATION, PRECOMMITTED, TWELVE OF TWELVE,
+  ANNEX ZERO — each teaching something the prior ones didn't. If the pattern that got the systems built
+  (milestones 3-9, one per system) followed by proving them on a mission (milestone 10) holds up in
+  practice, it likely repeats: a Milestone 11 authoring RESTORATION the way Milestone 10 authored RIGHT
+  OF SALVAGE, and so on through ANNEX ZERO.
+- **a distinct release-readiness pass**, once all six missions exist, that no per-mission milestone
+  covers on its own: packaging, a title/credits sequence, whatever playtesting the finished belief ramp
+  surfaces as missing, and anything [`../specs/project-governance.md`](../specs/project-governance.md)'s
+  deferred-systems list still owes before the campaign is called a first release.
+
+Neither is a milestone file yet, and no number is reserved for either — this section is a note about
+shape, not a claim about the sequence's own length. Each earns its own file the way Milestone 2 earned
+PERIMETER's: once the milestone immediately before it is close enough to done that guessing its
+contents stops being guessing.
+
 ## What this sequence replaced
 
 The single "Milestone 2 — Level 1: Perimeter" contract, built at canon 2.8 in one pass (Gate 2A/2B),
