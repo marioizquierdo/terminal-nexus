@@ -3,7 +3,7 @@
 // offending line and column (milestone-1-spike-battle.md 3.5).
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
-import { FIXTURE_REGISTRY } from "../content/index.ts"
+import { FIXTURE_REGISTRY, freshEntityFields } from "../content/index.ts"
 import { footprintCentre, tilesOf } from "../grid/coords.ts"
 import type { Coord, GridTerrain, TerrainId } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
@@ -247,9 +247,7 @@ export function loadScenario(
       anchor,
       // Sides face each other by default: it is a rendering hint, and no rule reads it.
       facing: player === "A" ? "e" : "w",
-      moveCredit: 0,
-      cooldown: 0,
-      targetOrdinal: null,
+      ...freshEntityFields(definition),
     })
   })
 

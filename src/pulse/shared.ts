@@ -47,6 +47,13 @@ export type TickContext = {
   events: DomainEvent[]
   groundItems: GroundItem[]
   /**
+   * The next ordinal `spawn.ts` will hand to a newly-created entity — seeded from `state.nextOrdinal`
+   * at tick start, incremented on every spawn, written back at tick end. Ordinals are never reused
+   * (state/types.ts), so a counter rather than `context.actors.length` is what keeps that true once
+   * entities can be created and destroyed inside the same Pulse.
+   */
+  nextOrdinal: number
+  /**
    * Reverse index from a target's ordinal to the actors currently aiming at it — engine.md 11.1.
    * Maintained by `setTarget` at every targetOrdinal write site (all in perception.ts) so death
    * resolution can find who was watching a dying entity without scanning every actor. Values are
@@ -153,6 +160,95 @@ export function applyDamage(
   target.pendingDead = true
   target.killer = source.id
   return true
+}
+
+/**
+ * The distance from an *area* — an anchor plus a footprint, which is exactly what `distanceBetween`
+ * already measures one side of — to the nearest occupied tile of `b`'s footprint. Generalises
+ * `distanceBetween` rather than sitting beside it: passing `b.definition.footprint` as `originFootprint`
+ * reproduces `distanceBetween` exactly, and a bare impact point is just a one-tile footprint,
+ * `[{x:0,y:0}]`, at the point in question. One primitive under both call shapes, not two.
+ *
+ * Caught by actually running a scenario, not by inspection: the first cut of this measured every
+ * blast from a bare point at the dying entity's *anchor*, which is correct for a 1x1 body and silently
+ * shrinks the effective radius for anything bigger — a multi-tile detonator (`unit.ravel.leviathan`,
+ * 5x2) caught fewer neighbours than `detonate()`'s original, footprint-aware `distanceBetween` call
+ * did, changing existing fixtures' event counts and death tolls with no content change behind it.
+ * `citizens-versus-ravels.map.json` and `grand-battle.map.json` are what caught it, hash-compared
+ * against `main` before this fix landed.
+ */
+export function distanceFromArea(
+  originAnchor: Coord,
+  originFootprint: readonly Coord[],
+  b: Actor,
+): number {
+  return footprintDistance(originAnchor, originFootprint, b.anchor, b.definition.footprint)
+}
+
+/**
+ * Everyone within `radius` of an area, friend and foe alike, in ordinal order — the read-only half of
+ * an area effect. Split from `areaDamage` (below) so a caller that has to announce *what* it caught
+ * before applying damage to it — `death.ts`'s `detonate()`, whose `entity.detonated` event has always
+ * carried the caught list ahead of the `damage.applied` events it causes — can keep that order exactly
+ * while still sharing the one geometry query with a caller that does not care about ordering.
+ */
+export function actorsWithin(
+  context: TickContext,
+  anchor: Coord,
+  footprint: readonly Coord[],
+  radius: number,
+  exclude?: Actor,
+): readonly Actor[] {
+  return context.actors
+    .filter((other) => other !== exclude && !other.pendingDead)
+    .filter((other) => distanceFromArea(anchor, footprint, other) <= radius)
+    .sort((a, b) => a.ordinal - b.ordinal)
+}
+
+/**
+ * Damage everyone within `radius` of an area, friend and foe alike — the one mechanism behind both
+ * `detonation` (death.ts, centred on the dying entity's own anchor and footprint) and `attack.splash`
+ * (attacks.ts, centred on the resolved target's anchor and footprint, the same "nearest occupied tile"
+ * courtesy engine.md 3.5 already extends to range checks): an area-damage rule shape triggered at two
+ * different moments is still one rule shape, not two (unit-design-architecture spike). Returns who was
+ * caught. `attack.splash` has no pre-existing event order to preserve, so it can use this all-in-one
+ * form; `detonate()` cannot, and uses `actorsWithin` directly instead — see the comment there.
+ */
+export function areaDamage(
+  context: TickContext,
+  anchor: Coord,
+  footprint: readonly Coord[],
+  radius: number,
+  damage: number,
+  source: Actor,
+  exclude?: Actor,
+): readonly Actor[] {
+  const caught = actorsWithin(context, anchor, footprint, radius, exclude)
+  for (const other of caught) applyDamage(context, other, source, damage)
+  return caught
+}
+
+/**
+ * The heal-side mirror of `applyDamage`: clamped at `maxHp` rather than zero, and a heal never kills,
+ * so there is no "pendingDead" branch to mirror. A separate event kind (`heal.applied`, not a negative
+ * `damage.applied`) because events carry meaning, not just a number's sign (engine.md 7) - a healer's
+ * pulse and an incoming hit are not the same fact just because both move `hp`.
+ */
+export function applyHeal(context: TickContext, target: Actor, source: Actor, amount: number): void {
+  const hpBefore = target.hp
+  const hpAfter = Math.min(target.definition.maxHp, hpBefore + amount)
+  target.hp = hpAfter
+  context.events.push({
+    kind: "heal.applied",
+    tick: context.tick,
+    entity: target.id,
+    ordinal: target.ordinal,
+    source: source.id,
+    sourceOrdinal: source.ordinal,
+    amount: hpAfter - hpBefore,
+    hpBefore,
+    hpAfter,
+  })
 }
 
 export function isMobile(actor: Actor): boolean {

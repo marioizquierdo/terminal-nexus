@@ -11,6 +11,7 @@
 // screen. Craft rule 2 — different weapons need different physical languages — with one code path.
 
 import type { Coord } from "../../grid/types.ts"
+import { footprintRing } from "../../grid/coords.ts"
 import { deathFramesFor } from "../../content/art.ts"
 import type { UnitArt } from "../../content/art.ts"
 import type {
@@ -340,24 +341,6 @@ const BIG_DEATH_EXTRA_TICKS = 4
 
 export function deathExtraTicks(width: number, height: number): number {
   return Math.max(0, deathRingOutset(width, height) - 1) * BIG_DEATH_EXTRA_TICKS
-}
-
-/**
- * Every tile at exactly `outset` tiles from a `width` x `height` box - a rectangle's perimeter
- * generalised the way `ringTiles` (below) generalises a point's. At `outset = 1` and a 1x1 box this
- * reproduces the eight fixed offsets `fx.death.collapse` always drew; for anything bigger, the
- * perimeter itself is bigger, which is the whole mechanism - no separate size tiers to keep in sync.
- */
-function footprintRing(width: number, height: number, outset: number): Coord[] {
-  const tiles: Coord[] = []
-  for (let y = -outset; y <= height - 1 + outset; y += 1) {
-    for (let x = -outset; x <= width - 1 + outset; x += 1) {
-      const dx = x < 0 ? -x : x >= width ? x - width + 1 : 0
-      const dy = y < 0 ? -y : y >= height ? y - height + 1 : 0
-      if (Math.max(dx, dy) === outset) tiles.push({ x, y })
-    }
-  }
-  return tiles
 }
 
 /**

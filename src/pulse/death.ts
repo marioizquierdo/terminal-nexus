@@ -2,7 +2,8 @@
 // cause more of all three.
 
 import type { Actor, TickContext } from "./shared.ts"
-import { applyDamage, distanceBetween } from "./shared.ts"
+import { actorsWithin, applyDamage } from "./shared.ts"
+import { spawnOnDeath } from "./spawn.ts"
 
 /**
  * Ticks a vacated tile stays blocked after a death — the owner's playtest finding that another
@@ -41,10 +42,14 @@ function detonate(context: TickContext, actor: Actor): void {
   const blast = actor.definition.detonation
   if (blast === undefined) return
 
-  const caught = context.actors
-    .filter((other) => other.ordinal !== actor.ordinal && !other.pendingDead)
-    .filter((other) => distanceBetween(actor, other) <= blast.radius)
-    .sort((a, b) => a.ordinal - b.ordinal)
+  // `actorsWithin`, not the all-in-one `areaDamage`: this event has always announced the caught list
+  // *before* the `damage.applied` events it causes, and reusing the geometry query without reusing
+  // the apply-then-report order it comes bundled with is what keeps every existing detonation fixture's
+  // event stream byte-identical to before this helper existed (shared.ts's own comment explains why).
+  // `actor.definition.footprint`, not a bare point: a multi-tile detonator's blast reaches from its
+  // nearest occupied tile, exactly as `distanceBetween` always measured it (shared.ts's own comment
+  // has the regression this caught).
+  const caught = actorsWithin(context, actor.anchor, actor.definition.footprint, blast.radius, actor)
 
   context.events.push({
     kind: "entity.detonated",
@@ -148,6 +153,11 @@ function resolveDeaths(context: TickContext, dying: readonly Actor[]): void {
       actor.definition.footprint,
       context.tick + DEATH_SETTLE_TICKS,
     )
+    // The golem rule shape: dying can multiply instead of only damaging. Before the blast, so a
+    // reader of the event stream sees the entity die, then split, then (if it also detonates) take
+    // its neighbours with it — birth before blast, the gentler of the two orders when both apply to
+    // the same death.
+    spawnOnDeath(context, actor)
     // The blast comes after the death is announced, so a reader of the event stream sees the entity
     // die and then take its neighbours with it, in that order.
     detonate(context, actor)

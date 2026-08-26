@@ -21,6 +21,7 @@ import { resolution } from "./death.ts"
 import { intents } from "./intents.ts"
 import { perception } from "./perception.ts"
 import type { Actor, TickContext } from "./shared.ts"
+import { spawning } from "./spawn.ts"
 import { victory } from "./victory.ts"
 
 export type TickResult = Readonly<{ state: MatchState; events: readonly DomainEvent[] }>
@@ -76,8 +77,13 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
     // targetOrdinal through setTarget(), so by the time anything reads this it already reflects
     // this tick's state in full — nothing needs to be seeded from the previous tick.
     targetObservers: new Map(),
+    nextOrdinal: state.nextOrdinal,
   }
 
+  // 1.5. Spawning — unit-design-architecture spike, no engine.md phase number of its own yet.
+  // Ahead of perception so anything created this tick is a full participant in every phase after it:
+  // perceived, able to move or fire, and counted for victory, exactly as if it had stood since tick 0.
+  spawning(context)
   economyAndProduction(context) // 2
   perception(context) // 3
   const declared = intents(context) // 4
@@ -107,6 +113,9 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
       moveCredit: actor.moveCredit,
       cooldown: actor.cooldown,
       targetOrdinal: actor.targetOrdinal,
+      windup: actor.windup,
+      spawnCooldown: actor.spawnCooldown,
+      focusStreak: actor.focusStreak,
     }))
     .sort((a, b) => a.ordinal - b.ordinal)
 
@@ -127,6 +136,7 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
     vacatedTiles: context.vacated.activeAt(context.tick),
     outcome,
     rng: context.rng.snapshot(),
+    nextOrdinal: context.nextOrdinal,
   }
   return { state: next, events: context.events }
 }

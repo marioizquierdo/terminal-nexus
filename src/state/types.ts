@@ -30,6 +30,17 @@ export type EntityState = Readonly<{
   cooldown: number
   /** Ordinal of the entity this one selected in the perception phase, if any. */
   targetOrdinal: number | null
+  /**
+   * Ticks remaining before `attack.windupTicks` lets this entity's first shot at a newly-held target
+   * fire. Zero for content with no `windupTicks` and, permanently, once spent — content/types.ts's
+   * `freshEntityFields` is the one place that decides the starting value.
+   */
+  windup: number
+  /** Ticks remaining until `spawn` next attempts to create an entity. Zero for content with no `spawn`. */
+  spawnCooldown: number
+  /** Consecutive successful hits against the *current* target only — `attack.focusRamp`'s memory,
+   * reset the instant perception reassigns a new target (including losing one). */
+  focusStreak: number
 }>
 
 export type GroundItem = Readonly<{
@@ -69,5 +80,9 @@ export type MatchState = Readonly<{
   nextOrdinal: number
 }>
 
-/** Bumped to 2: `MatchState` gained `vacatedTiles` for the post-death settle rule. */
-export const SCHEMA_VERSION = 2
+/**
+ * Bumped to 2: `MatchState` gained `vacatedTiles` for the post-death settle rule. Bumped to 3:
+ * `EntityState` gained `windup`, `spawnCooldown`, and `focusStreak` for the unit-design-architecture
+ * spike's siege-crawler, spawner, and focus-turret rule shapes.
+ */
+export const SCHEMA_VERSION = 3
