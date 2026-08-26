@@ -79,6 +79,61 @@ export const CONTENT_ART: Readonly<Record<string, UnitArt>> = {
   "structure.ravel.nexus": ["/n\\", "<*>"],
   /** The Ravel Nexus's language one size down and a lot cheaper: same jaw, no spark. */
   "structure.ravel.den": ["/d\\", "<_>"],
+
+  // --- Proving Grounds -------------------------------------------------------------------------
+  // A third, neutral vocabulary — no faction owns this roster (content/proving-grounds.ts), so its
+  // art borrows neither the Citizen bracket nor the Ravel arrowhead: plain, mnemonic single glyphs
+  // that lean on what each design *does* rather than on any lore, per the owner's own ask this
+  // session ("the visual should match the units mechanic").
+  /** Thin as a barrel: the whole design is reach, not presence. */
+  "unit.bench.sniper": ["i"],
+  /** A plain foot soldier - deliberately unremarkable, since its whole point is what it *cannot*
+   * target rather than how it looks. */
+  "unit.bench.grunt": ["g"],
+  /** Flak: the ordinary ranged trooper that, unlike the grunt beside it, was never told to ignore
+   * the sky. */
+  "unit.bench.flaktrooper": ["f"],
+  /** A wing, wings-up, over open air - the same vocabulary `unit.ravel.buzzard` uses for the same
+   * reason: a single chevron is what a flying thing reduces to at one cell. */
+  "unit.bench.skyraider": ["^"],
+  /** Round and bloated - something about to pop, not a soldier with a weapon. */
+  "unit.bench.spitter": ["o"],
+  /** Fast and blunt at once - low to the ground, built to close distance, not to fight. */
+  "unit.bench.hogrider": ["h"],
+  /** Demolition, not a soldier: the letter is the charge it carries. */
+  "unit.bench.saboteur": ["d"],
+  /** A bomb in silhouette, airborne. */
+  "unit.bench.bomber": ["b"],
+  /**
+   * Four tiles of unbroken barrier - solid the same way a Citizen alignment run would be, drawn with
+   * plain rule rather than a bracket vocabulary, since nothing here claims Citizen identity. The
+   * commander-armies.md Section 7 wall-segment idea, given a body: a slow, high-integrity unit whose
+   * *footprint* is the wall.
+   */
+  "unit.bench.wallsegment": ["===="],
+  /** A turret riding treads: the anchor half of "moves, then anchors, then fires" drawn as a shape
+   * rather than a state. */
+  "unit.bench.siegecrawler": ["o="],
+  /**
+   * A blunt block over a tread bank - two by two, the widest single silhouette on this bench short
+   * of the crawler's cousin. Nothing about it reads as a soldier; it reads as the thing a wall is
+   * built to stop.
+   */
+  "unit.bench.ram": ["[]", "=="],
+  /** The one universal healer glyph: a cross, and it is the same right side up or upside down, which
+   * is exactly what a symmetric non-letter glyph gets away with (`unit.ravel.buzzard`'s own note). */
+  "unit.bench.medic": ["+"],
+  /** An egg sac, split down the middle - a diamond hull built to open, not to fight. */
+  "structure.bench.hatchery": ["/\\", "\\/"],
+  /** The smallest possible mark - a comma-sized thing, spawned by the hatch or spilled by the
+   * shard-giant's death alike. */
+  "unit.bench.spawnling": [";"],
+  /** A crystal core in brackets, three tiles of growth in a row - the bench's third distinct
+   * multi-tile silhouette (a 2x1 crawler, a 2x2 giant, this 3x1). */
+  "unit.bench.shardgiant": ["[*]"],
+  /** An alarm mark: the glyph gets no less urgent the longer it stays locked on, even though the
+   * damage behind it does. */
+  "structure.bench.beamturret": ["!"],
 }
 
 /** The art for a content id, or `undefined` for content nobody has drawn yet. */
@@ -138,6 +193,16 @@ export const DEATH_ART: Readonly<Record<string, readonly UnitArt[]>> = {
    *  end every Ravel death - the first character falls through to the generic fill on the final
    *  frame, so the ring debris (fx.death.collapse's own scaling) finishes what the ship started. */
   "unit.ravel.corsair": [["<*"], [" ,"]],
+  /**
+   * DEATH_ART is presentation-only content (engine.md 9.6) and does not care which roster authored
+   * the footprint it is animating - the same three-beat crack/sag/settle shape the Citizen and Ravel
+   * giants use, proven here against a unit neither roster owns.
+   */
+  "unit.bench.ram": [
+    ["[x", "=="],
+    [" =", "-,"],
+    [" .", ".."],
+  ],
 }
 
 /** The death-frame sequence for a content id, or `undefined` for content that has none authored. */
