@@ -295,6 +295,114 @@ test("a real damage flash, through the real compositor: solo is bold, stacked es
   assert.equal(stacked.inverse, true, "two real simultaneous flashes on one tile should escalate to inverse")
 })
 
+test("the damage flash actually fades across its own window now - Q25's amendment, not a flat pulse", () => {
+  const recipe = EFFECT_RECIPES["fx.damage.flash"]
+  assert.ok(recipe !== undefined)
+  const tile = { x: 4, y: 9 }
+  const instance: EffectInstance = {
+    recipe: "fx.damage.flash",
+    band: "highlights",
+    startMs: 0,
+    durationMs: 66,
+    origin: tile,
+    family: "citizen",
+    params: {},
+  }
+
+  const early = recipe(instance, context({ timeMs: 1 }))[0]
+  const late = recipe(instance, context({ timeMs: 65 }))[0]
+  assert.ok(early !== undefined && late !== undefined)
+  assert.ok((early.fade ?? 0) < (late.fade ?? 0), "fade did not increase across the flash's own window")
+  assert.ok((late.fade ?? 0) > 0.5, `the flash should be mostly faded by the end of its window, got ${late.fade}`)
+  assert.equal(early.bold, true, "bold must stay unconditional for 16-colour/monochrome")
+
+  // Reduced motion is unaffected: no time axis for a two-frame blip to fade across, so the cell is
+  // exactly the fixed shape this recipe has always returned there, before fade existed.
+  const reduced = recipe(instance, context({ timeMs: 40, reducedMotion: true }))[0]
+  assert.ok(reduced !== undefined)
+  assert.deepEqual(reduced, { tile, glyph: "", role: "fx.flash", bold: true })
+})
+
+test("mergeEffectCells: two real flashes at the same instant read less faded than either alone", () => {
+  const recipe = EFFECT_RECIPES["fx.damage.flash"]
+  assert.ok(recipe !== undefined)
+  const instance: EffectInstance = {
+    recipe: "fx.damage.flash",
+    band: "highlights",
+    startMs: 0,
+    durationMs: 66,
+    origin: { x: 7, y: 3 },
+    family: "citizen",
+    params: {},
+  }
+  const ctx = context({ timeMs: 40 }) // partway through the window - its own fade is neither 0 nor 1
+  const cellFromRecipe = (): PositionedCell => {
+    const cell = recipe(instance, ctx)[0]
+    assert.ok(cell !== undefined)
+    return cell
+  }
+
+  const solo = mergeEffectCells([{ band: "highlights", cell: cellFromRecipe() }])[0]?.cell
+  const stacked = mergeEffectCells([
+    { band: "highlights", cell: cellFromRecipe() },
+    { band: "highlights", cell: cellFromRecipe() },
+  ])[0]?.cell
+  assert.ok(solo !== undefined && stacked !== undefined)
+  assert.ok((solo.fade ?? 0) > 0, "the solo flash should carry a real, partway fade at this instant")
+  assert.ok(
+    (stacked.fade ?? 0) < (solo.fade ?? 0),
+    `two simultaneous flashes (fade ${stacked.fade}) should read less faded than one alone (fade ${solo.fade})`,
+  )
+})
+
+test("fade is never set outside fx.damage.flash - the departure stays narrow", () => {
+  for (const instance of sampleInstances()) {
+    if (instance.recipe === "fx.damage.flash") continue
+    const recipe = EFFECT_RECIPES[instance.recipe]
+    assert.ok(recipe !== undefined)
+    for (const capability of CAPABILITY_MODES) {
+      for (const reducedMotion of [false, true]) {
+        for (let timeMs = instance.startMs; timeMs < instance.startMs + instance.durationMs; timeMs += 17) {
+          for (const cell of recipe(instance, context({ timeMs, capability, reducedMotion }))) {
+            assert.equal(
+              cell.fade,
+              undefined,
+              `${instance.recipe} set fade, which craft rule 7's departure reserves for fx.damage.flash alone`,
+            )
+          }
+        }
+      }
+    }
+  }
+})
+
+test("a real fight's damage flash carries fade all the way to the composed frame", async () => {
+  // The engine-owned frame (frame.ts) is capability-agnostic by design - compose.ts's own `void
+  // capability` says so - so `snapshotAt`'s capability argument cannot change which cells carry a
+  // `fade`; only the later ANSI/RGB resolution (roles.ts's sgrFor/rgbFor, tested directly in
+  // roles.test.ts and end-to-end in view.test.ts) gates it by tier. This test's job is narrower and
+  // upstream of that: proving the real recipe -> real compositor -> compose.ts wiring actually
+  // produces a `fade` on a real cell during a real fight, not a hand-built one.
+  const scenario = await loadScenarioFile("citizens-versus-ravels.map.json")
+  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  const timeline = buildTimeline(
+    scenario,
+    loaded.state,
+    loaded.registry,
+    scenario.pulseTicks,
+    scenario.seed,
+  )
+  const view = createView(timeline)
+  const tickMs = 1000 / 12
+
+  let foundAt: number | undefined
+  for (let timeMs = 0; timeMs < view.durationMs && foundAt === undefined; timeMs += tickMs) {
+    const frame = view.snapshotAt(timeMs, "truecolor", 1)
+    if (frame.cells.some((cell) => cell.style.fade !== undefined)) foundAt = timeMs
+  }
+  assert.ok(foundAt !== undefined, "no frame across the whole fight ever carried a fade")
+})
+
 test("cosmetic randomness is a hash, not a stream: the same instance always scatters the same way", () => {
   const blast = sampleInstances().find((each) => each.recipe === "fx.blast.detonation")
   assert.ok(blast !== undefined)

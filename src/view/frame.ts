@@ -13,6 +13,15 @@ export type CellStyle = Readonly<{
   dim?: boolean
   underline?: boolean
   inverse?: boolean
+  /**
+   * A continuous decay/stacking scalar for `fgRole`, `0` (the role's own colour) to `1` (the theme's
+   * background) — Q25's transparency half, engine.md 9.1's RULE amendment, canon 2.8. Resolved only
+   * at `color256` and `truecolor` (`roles.ts`'s `sgrFor`); has no representable effect at `color16` or
+   * `monochrome`, which stay exactly as bold/dim/inverse already describe them. Never set outside
+   * `fx.damage.flash` — ascii-effects.md craft rule 7's departure is narrow and deliberate, not a
+   * general fade-out license for glyph-bearing effects.
+   */
+  fade?: number
 }>
 
 export type Cell = Readonly<{ glyph: string; style: CellStyle }>
@@ -98,7 +107,7 @@ export function frameToText(frame: ReadonlyCellFrame): string {
 }
 
 function sgrOf(style: CellStyle, capability: CapabilityMode, theme: Theme): string {
-  const parts: number[] = [...sgrFor(style.fgRole, capability, theme)]
+  const parts: number[] = [...sgrFor(style.fgRole, capability, theme, style.fade ?? 0)]
   for (const code of sgrBackgroundFor(style.bgRole, capability, theme)) parts.push(code)
   if (style.bold === true) parts.push(1)
   if (style.dim === true) parts.push(2)

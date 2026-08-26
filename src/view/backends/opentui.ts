@@ -55,7 +55,7 @@ export function drawFrameInto(
     for (let x = 0; x < frame.width; x += 1) {
       const cell = frame.cells[y * frame.width + x]
       if (cell === undefined) continue
-      const [red, green, blue] = rgbFor(cell.style.fgRole, capability, theme)
+      const [red, green, blue] = rgbFor(cell.style.fgRole, capability, theme, cell.style.fade ?? 0)
       const attributes = core.createTextAttributes({
         bold: cell.style.bold === true,
         dim: cell.style.dim === true,

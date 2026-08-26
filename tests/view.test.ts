@@ -154,6 +154,29 @@ test("monochrome renders every scenario, and no cell depends on colour to exist"
   }
 })
 
+test("frameToAnsi resolves CellStyle.fade only at color256/truecolor, never at color16/monochrome", () => {
+  // Q25's transparency amendment (engine.md 9.1, canon 2.8), tested at the actual ANSI-conversion
+  // boundary rather than only at sgrFor directly (roles.test.ts) - a hand-built one-cell frame, the
+  // same way this file's other frame-shaped tests do, so this exercises frame.ts's own sgrOf reading
+  // `style.fade` and forwarding it, not just roles.ts's function in isolation.
+  const cellWithFade = (fade: number) => ({
+    width: 1,
+    height: 1,
+    cells: [{ glyph: "@", style: { fgRole: "fx.flash" as const, fade } }],
+  })
+  const unfaded = frameToAnsi(cellWithFade(0), "truecolor")
+  const faded = frameToAnsi(cellWithFade(1), "truecolor")
+  assert.notEqual(unfaded, faded, "truecolor did not change output between fade 0 and fade 1")
+
+  for (const capability of ["color16", "monochrome"] as const) {
+    assert.equal(
+      frameToAnsi(cellWithFade(0), capability),
+      frameToAnsi(cellWithFade(1), capability),
+      `${capability} should render identically at fade 0 and fade 1 - it has no representable effect there`,
+    )
+  }
+})
+
 test("the resize gate is drawn below the composition size", () => {
   const required = compositionSize(1)
   const frame = gateFrame(40, 12, required)

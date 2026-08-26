@@ -42,6 +42,23 @@ function lightWeight(cell: PositionedCell): number {
 }
 
 /**
+ * The continuous half of the same stacking idea, alongside `lightWeight` rather than replacing it —
+ * Q25's transparency amendment (engine.md 9.1, canon 2.8). Sums *brightness* (`1 - fade`, so an
+ * unfaded cell contributes its full share and a cell already faded to the background contributes
+ * none) and converts the clamped sum back to a fade, rather than averaging: a group of one reduces
+ * to exactly that cell's own fade — no discontinuity at `resolveLighting`'s passthrough branch above
+ * — and a group of several is never dimmer (more faded) than its dimmest member, only ever brighter,
+ * the same direction `lightWeight`'s own sum already escalates in. A cell that never set `fade` (every
+ * lighting cell but `fx.damage.flash`, today) contributes as if `fade` were `0` — unfaded, full
+ * brightness — which is the same thing an absent `fade` already means once it reaches `CellStyle`.
+ */
+function combinedFade(group: readonly EffectCellSource[]): number {
+  let brightness = 0
+  for (const entry of group) brightness += 1 - (entry.cell.fade ?? 0)
+  return Math.max(0, Math.min(1, 1 - brightness))
+}
+
+/**
  * Combines every glyphless (lighting) cell landing on one tile this frame into one. The strongest
  * single contributor decides which semantic role is showing — a stacked flash still reads as
  * *whichever* hit landed hardest, not an average of two unrelated cues — while the *summed* weight
@@ -66,6 +83,7 @@ function resolveLighting(group: readonly EffectCellSource[]): EffectCellSource {
       bold: totalWeight >= 2,
       inverse: totalWeight >= 3,
       dim: totalWeight < 1,
+      fade: combinedFade(group),
     },
   }
 }
