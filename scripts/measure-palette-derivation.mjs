@@ -3,11 +3,11 @@
 //
 //   node scripts/measure-palette-derivation.mjs [--theme dark|light]
 //
-// Q25 (specs/open-questions.md) asks whether `rgb` should become the single source of truth and the
-// other two tiers a nearest-match computation. This is the measurement behind that question's answer,
-// checked in rather than quoted, so the next session can re-run it instead of trusting a number in a
-// document. It reads the real palette through `rgbFor` and `sgrFor`, so it cannot drift from the
-// table it is measuring.
+// Q25 (specs/open-questions.md) asked whether `rgb` should become the single source of truth and the
+// other two tiers a nearest-match computation. This is the measurement that answered it, checked in
+// rather than quoted, so the next session can re-run it instead of trusting a number in a document.
+// It reads the real palette through `rgbFor` and `sgrFor`, so it cannot drift from the table it is
+// measuring.
 //
 // The finding, as of 2026-08-24: the 256-colour tier derives cleanly (most roles land on the same or
 // a near-identical entry), and the 16-colour tier does not — it sends `chrome.muted` back to the
@@ -15,6 +15,17 @@
 // onto the *same* grey. That is not a bad formula: the 16-colour palette has no desaturated entries,
 // so nearest-match of any muted design colour is genuinely grey. OKLab does not rescue it, which
 // `--oklab` will show.
+//
+// **Applied the same day, option A** (`roles.ts`): the 256-colour tier is now genuinely derived in
+// production — `PALETTE` no longer hand-authors an `indexed` field at all, and `sgrFor`'s `color256`
+// case reads a `DERIVED_256` table computed from `rgb` at module load. One consequence for reading
+// this script's own output *now*: the "hand" value the `authored()` helper below reads back out of
+// `sgrFor(role, "color256", theme)` is the derived value too, since there is no longer a separate
+// hand-authored 256 column to compare it against — so the 256 column of this script's output is
+// correctly, trivially "0/18 would change" post-application, not a sign the measurement stopped
+// mattering. The **16-colour column stays live and worth re-running**: that tier is still hand-
+// authored (see `roles.ts`'s own comment for why), and this script is still the reproducible check
+// that deriving it would be wrong.
 
 import { STYLE_ROLES, rgbFor, sgrFor } from "../src/view/roles.ts"
 

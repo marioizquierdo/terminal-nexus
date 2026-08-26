@@ -19,6 +19,7 @@ import {
   deathExtraTicks,
   deathRingOutset,
   deriveEffects,
+  easeOut,
   frameToText,
   isActive,
   mergeEffectCells,
@@ -253,6 +254,45 @@ test("the damage flash is an attribute, never a glyph replacement", () => {
     assert.equal(cell.glyph, "", "the flash replaced the cell it was highlighting")
   }
   assert.equal(instance.band, "highlights", "the flash must sit above the corruption band")
+})
+
+test("a real damage flash, through the real compositor: solo is bold, stacked escalates to inverse", () => {
+  // Closes a real gap found this round: mergeEffectCells' own stacking tests below exercise the
+  // compositor's arithmetic with hand-built cells, never this recipe's actual output - which is
+  // exactly how damageFlash setting both bold and inverse unconditionally (already weight 3, already
+  // at resolveLighting's own ceiling from one flash alone) went undetected. See recipes.ts's own
+  // comment on damageFlash for the fix. This test exercises the real recipe and the real compositor
+  // together, so the gap cannot reopen silently.
+  const recipe = EFFECT_RECIPES["fx.damage.flash"]
+  assert.ok(recipe !== undefined)
+  const tile = { x: 7, y: 3 }
+  const instance: EffectInstance = {
+    recipe: "fx.damage.flash",
+    band: "highlights",
+    startMs: 0,
+    durationMs: 66,
+    origin: tile,
+    family: "citizen",
+    params: {},
+  }
+  const ctx = context({ timeMs: 10 })
+  const cellFromRecipe = (): PositionedCell => {
+    const cell = recipe(instance, ctx)[0]
+    assert.ok(cell !== undefined)
+    return cell
+  }
+
+  const solo = mergeEffectCells([{ band: "highlights", cell: cellFromRecipe() }])[0]?.cell
+  assert.ok(solo !== undefined)
+  assert.equal(solo.bold, true, "a real solo flash should read as bold")
+  assert.equal(solo.inverse ?? false, false, "a real solo flash should not already be at the top of the scale")
+
+  const stacked = mergeEffectCells([
+    { band: "highlights", cell: cellFromRecipe() },
+    { band: "highlights", cell: cellFromRecipe() },
+  ])[0]?.cell
+  assert.ok(stacked !== undefined)
+  assert.equal(stacked.inverse, true, "two real simultaneous flashes on one tile should escalate to inverse")
 })
 
 test("cosmetic randomness is a hash, not a stream: the same instance always scatters the same way", () => {
@@ -808,6 +848,232 @@ test("reduced motion drops a big body's shockwave and flight, but keeps its debr
   const late = debrisTilesAt(durationMs * 0.99)
   assert.ok(early.length > 0, "reduced motion shows no scattered debris at all for a big body's death")
   assert.deepEqual(early, late, "reduced motion still animates the scatter instead of holding it settled")
+})
+
+test("easeOut is a front-loaded curve: ahead of linear pace throughout, flat only at the endpoints", () => {
+  // Owner playtest, 2026-08-24: "the explosion can be improved, by expanding faster at first, and
+  // then slowing down towards the end." Tested directly as a pure function, the same way
+  // deathRingOutset/deathExtraTicks are tested above, rather than only inferred from a recipe's cells.
+  assert.equal(easeOut(0), 0)
+  assert.equal(easeOut(1), 1)
+  assert.equal(easeOut(0.5), 0.75)
+
+  // Strictly ahead of a linear ramp everywhere strictly between the endpoints - the defining property
+  // of "faster at first."
+  for (const t of [0.1, 0.25, 0.4, 0.6, 0.75, 0.9]) {
+    assert.ok(easeOut(t) > t, `easeOut(${t}) = ${easeOut(t)} is not ahead of a linear pace`)
+  }
+
+  // Decelerating throughout: equal steps of t produce shrinking (or equal, never growing) steps of
+  // easeOut(t) - "slowing down towards the end," not just "faster somewhere in the middle."
+  let previousDelta = Infinity
+  const step = 0.1
+  for (let t = 0; t < 1 - step / 2; t += step) {
+    const delta = easeOut(Math.min(1, t + step)) - easeOut(t)
+    assert.ok(delta <= previousDelta + 1e-9, `growth rate increased between t=${t.toFixed(2)} and t=${(t + step).toFixed(2)}`)
+    previousDelta = delta
+  }
+
+  // Out-of-range progress is clamped rather than left to extrapolate past the curve's own ends.
+  assert.equal(easeOut(-0.5), 0)
+  assert.equal(easeOut(1.5), 1)
+})
+
+test("blastDetonation's ring reach follows the ease-out curve: fast early growth, then it saturates", () => {
+  const blast = EFFECT_RECIPES["fx.blast.detonation"]
+  assert.ok(blast !== undefined)
+  const origin = { x: 10, y: 6 }
+  const radius = 10 // large enough that integer rounding does not wash out the curve's shape
+  const instance: EffectInstance = {
+    recipe: "fx.blast.detonation",
+    band: "effects",
+    startMs: 0,
+    durationMs: 1000,
+    origin,
+    family: "ravel",
+    params: { radius },
+  }
+
+  // The main ring draws at Chebyshev distance `reach` from the origin - not an accumulating disk.
+  // Sub-bursts (below) can now contribute cells of their own at other distances, hash-seeded and
+  // timing-gated independently, so this checks the main ring's own expected distance is *present*
+  // among the drawn cells, rather than requiring it to be the only distance drawn.
+  const distancesAt = (progress: number): number[] =>
+    blast(instance, context({ timeMs: progress * 1000, reducedMotion: false }))
+      .filter((cell) => cell.role === "fx.blast" && (cell.tile.x !== origin.x || cell.tile.y !== origin.y))
+      .map((cell) => Math.max(Math.abs(cell.tile.x - origin.x), Math.abs(cell.tile.y - origin.y)))
+
+  const expectedMainReach = (progress: number): number =>
+    Math.min(radius, Math.max(1, Math.round(easeOut(progress) * radius * 1.35)))
+
+  const reachAt = (progress: number): number => {
+    const expected = expectedMainReach(progress)
+    const distances = distancesAt(progress)
+    assert.ok(
+      distances.includes(expected),
+      `no ring cell at the expected main reach ${expected} at progress ${progress}; got ${[...new Set(distances)].join(",")}`,
+    )
+    return expected
+  }
+
+  const early = reachAt(0.05)
+  const mid = reachAt(0.25)
+  const late = reachAt(0.45)
+
+  // Ahead of the old linear formula (reach = round(progress * radius * 1.35)) at the same progress -
+  // the whole point of the owner's ask, not just a curve that happens to look different.
+  const oldLinearAtMid = Math.round(0.25 * radius * 1.35)
+  assert.ok(
+    mid > oldLinearAtMid,
+    `reach ${mid} at progress 0.25 is no faster than the old linear curve would have given (${oldLinearAtMid})`,
+  )
+
+  // Decelerating: the same 0.2 span of progress buys less reach later than it does earlier.
+  assert.ok(late - mid < mid - early, `growth did not slow down (+${mid - early} early vs. +${late - mid} late)`)
+
+  // The endpoint is unchanged by the easing: the ring still reaches the entity's full declared radius.
+  assert.ok(distancesAt(1.0).includes(radius), `the main ring should still reach the full radius ${radius} by the end`)
+})
+
+test("blastDetonation spawns radius-scaled sub-explosions inside its own reach (sub-effects, cheap path)", () => {
+  // Owner, 2026-08-24: "the explosions should also spawn smaller sub-explosions... the effects module
+  // should support sub-effects." Built the cheap way ascii-effects.md Section 7 asks for first: no new
+  // effect id, no child instance, a secondary burst computed inside this recipe's own closed-form hash
+  // - the same shape bigDeathScatter's landing "pop" already uses.
+  const blast = EFFECT_RECIPES["fx.blast.detonation"]
+  assert.ok(blast !== undefined)
+  const origin = { x: 20, y: 20 }
+
+  // Each sub-burst's own impact mark is the only bold, glyph-bearing cell away from the origin (the
+  // main ring never sets bold) - sampling across the whole window and collecting distinct tiles where
+  // one appeared counts how many separate sub-bursts actually fired.
+  const subBurstImpactTiles = (radius: number): Set<string> => {
+    const instance: EffectInstance = {
+      recipe: "fx.blast.detonation",
+      band: "effects",
+      startMs: 0,
+      durationMs: 1000,
+      origin,
+      family: "ravel",
+      params: { radius },
+    }
+    const tiles = new Set<string>()
+    for (let step = 0; step <= 200; step += 1) {
+      const progress = step / 200
+      for (const cell of blast(instance, context({ timeMs: progress * 1000, reducedMotion: false }))) {
+        if (cell.tile.x === origin.x && cell.tile.y === origin.y) continue
+        if (cell.bold === true && cell.glyph !== "") tiles.add(`${cell.tile.x},${cell.tile.y}`)
+      }
+    }
+    return tiles
+  }
+
+  // radius 1 (a runner, a raider, a slinger) earns one sub-burst; radius 2 (a fuel wagon, the
+  // leviathan) earns two - subBurstCount's own scale, the two values every detonating unit on the
+  // bench actually has today.
+  const radius1Tiles = subBurstImpactTiles(1)
+  const radius2Tiles = subBurstImpactTiles(2)
+  assert.ok(radius1Tiles.size >= 1, `radius-1 blast produced no distinct sub-burst impact tile: ${[...radius1Tiles]}`)
+  assert.ok(
+    radius2Tiles.size >= 2,
+    `radius-2 blast produced fewer sub-burst impact tiles than its own scale expects: ${[...radius2Tiles]}`,
+  )
+
+  // Every sub-burst lands near the main blast, not scattered arbitrarily far - it must read as part
+  // of this explosion, not an unrelated second one landing nearby.
+  for (const key of radius2Tiles) {
+    const [x, y] = key.split(",").map(Number)
+    const distance = Math.max(Math.abs((x ?? 0) - origin.x), Math.abs((y ?? 0) - origin.y))
+    assert.ok(distance <= 4, `a sub-burst landed at distance ${distance} from a radius-2 blast's own origin - too far to read as part of it`)
+  }
+})
+
+test("blastDetonation drops sub-explosions under reduced motion, same as the main ring's own expansion", () => {
+  // Sub-bursts are travel and decorative movement - exactly what reduced motion drops
+  // (ascii-effects.md 4) - and the held full-radius ring already carries this beat's causality.
+  const blast = EFFECT_RECIPES["fx.blast.detonation"]
+  assert.ok(blast !== undefined)
+  const origin = { x: 20, y: 20 }
+  const radius = 2
+  const instance: EffectInstance = {
+    recipe: "fx.blast.detonation",
+    band: "effects",
+    startMs: 0,
+    durationMs: 1000,
+    origin,
+    family: "ravel",
+    params: { radius },
+  }
+  for (let step = 0; step <= 20; step += 1) {
+    const progress = step / 20
+    for (const cell of blast(instance, context({ timeMs: progress * 1000, reducedMotion: true }))) {
+      const distance = Math.max(Math.abs(cell.tile.x - origin.x), Math.abs(cell.tile.y - origin.y))
+      assert.ok(
+        distance <= radius,
+        `reduced motion drew a cell at distance ${distance}, beyond the held radius ${radius} - a sub-burst leaked through`,
+      )
+    }
+  }
+})
+
+test("bigDeathScatter's shockwave eases too: it reaches its full radius before its own window ends", () => {
+  // Same curve as blastDetonation, applied to the shockwave's own short SHOCKWAVE_END sub-window
+  // (recipes.ts) rather than the whole death. The colossus footprint (outset 2) is the smallest body
+  // that earns this path at all.
+  const deathRecipe = EFFECT_RECIPES["fx.death.collapse"]
+  assert.ok(deathRecipe !== undefined)
+  const width = 3
+  const height = 3
+  const origin = { x: 10, y: 6 }
+  const outset = deathRingOutset(width, height)
+  const tickMs = 1000 / 12
+  const durationMs = 320 + deathExtraTicks(width, height) * tickMs
+  const instance: EffectInstance = {
+    recipe: "fx.death.collapse",
+    band: "effects",
+    startMs: 0,
+    durationMs,
+    origin,
+    family: "citizen",
+    params: { width, height },
+  }
+  const shockwaveEnd = 0.15 // recipes.ts's own SHOCKWAVE_END - private to the recipe, so duplicated
+  // here rather than imported, the same way the existing shockwave test above measures by effect.
+
+  const outsideFootprint = (tile: { x: number; y: number }): boolean =>
+    tile.x < origin.x || tile.x >= origin.x + width || tile.y < origin.y || tile.y >= origin.y + height
+  const outsetOf = (tile: { x: number; y: number }): number => {
+    const dx =
+      tile.x < origin.x
+        ? origin.x - tile.x
+        : tile.x >= origin.x + width
+          ? tile.x - (origin.x + width - 1)
+          : 0
+    const dy =
+      tile.y < origin.y
+        ? origin.y - tile.y
+        : tile.y >= origin.y + height
+          ? tile.y - (origin.y + height - 1)
+          : 0
+    return Math.max(dx, dy)
+  }
+  const shockwaveDistancesAt = (fractionOfWindow: number): Set<number> =>
+    new Set(
+      deathRecipe(instance, context({ timeMs: fractionOfWindow * shockwaveEnd * durationMs, reducedMotion: false }))
+        .filter((cell) => outsideFootprint(cell.tile))
+        .map((cell) => outsetOf(cell.tile)),
+    )
+
+  // A big enough body to tell eased apart from linear at the midpoint: under the old linear formula,
+  // reach at the midpoint would be round(0.5 * outset), short of outset for any outset above 1.
+  assert.ok(outset > Math.round(0.5 * outset), `outset ${outset} is too small to distinguish eased from linear here`)
+
+  // Halfway through the shockwave's own window it has already reached full radius - the old linear
+  // formula would not get there until the window's own end.
+  assert.ok(
+    shockwaveDistancesAt(0.5).has(outset),
+    `the shockwave has not reached its full outset (${outset}) by the midpoint of its own window`,
+  )
 })
 
 test("mergeEffectCells passes a lone cell through untouched", () => {

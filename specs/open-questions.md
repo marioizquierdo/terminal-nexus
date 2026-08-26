@@ -476,6 +476,25 @@ someone is exactly the kind of presentation choice with a tradeoff (today's hues
 deliberately against `terminal-nexus-lore.md`'s faction palettes) that this session's own protocol
 says is the owner's call, not a guess to ship quietly.
 
+**Built under the recommendation, 2026-08-24, alongside Q25's derivation pass** (`src/view/roles.ts`):
+`player.a`/`player.b`'s light-theme `rgb` retuned by lightness only, hue and saturation held fixed
+(`player.a` [176,84,36] → [201,96,41]; `player.b` [36,132,76] → [15,56,32]). Measured before shipping,
+same WCAG method as the row above: mutual contrast 1.08:1 → **3.23:1**, each leg against the light
+background 4.45:1 → 3.55:1 and 4.11:1 → **11.47:1**. The two roles could not move symmetrically — a
+light background structurally rewards darkening a foreground role (gains contrast against *both* the
+background and the other role at once) far more than lightening one (which immediately spends contrast
+against the background to gain it against the other role), which is why `player.b` moved much further
+than `player.a`; recorded in `roles.ts`'s own PALETTE comment so the asymmetry doesn't read as an
+oversight later. Dark theme's pair is untouched, exactly as recommended. Evidence, sent directly to the
+owner rather than only described: `evidence/screenshots/mirror-light-theme-before-q21.png` and
+`-after-q21.png`, the same real mirror-skirmish frame at `--theme light`, and
+`evidence/screenshots/palette-reference.png` (regenerated) showing every role at every tier side by
+side. `tests/roles.test.ts` pins the new mutual-contrast floor (`>= 3.0`) and that dark stayed
+untouched, computing WCAG contrast independently rather than importing a shared helper, so the test
+would actually fail if the retune regressed. **Still OPEN**: this is the recommendation applied and
+evidenced, not the owner's acceptance of it — move to Answered once he has actually looked at the
+screenshots.
+
 ### Q22 — Should movement carry deterministic, terrain-based jitter?
 
 **Status:** OPEN — presentation, but touches the state/presentation boundary closely enough to need
@@ -655,6 +674,56 @@ and D pays for an architecture change with a property the test suite currently r
 Q21 (palette contrast) overlaps this directly and should be answered in the same pass — its
 recommendation is a lightness retune of `player.a`/`player.b`, and the truecolor values are the thing
 a derived pipeline would make the single source of truth.
+
+**Option A built, evidenced, and observable, 2026-08-24** (`src/view/roles.ts`). `PALETTE` no longer
+hand-authors an `indexed` field at all — `Swatch` carries only `ansi` (hand-authored 16-tier) and `rgb`
+(the single truecolor source); `sgrFor`'s `color256` case reads a `DERIVED_256` lookup computed once at
+module load by nearest-match (squared RGB distance, the xterm 6x6x6 cube plus its 24-step greyscale
+ramp) against each role's own `rgb`. The 16-colour tier is untouched and stays hand-authored, exactly as
+recommended, with the "why" now written directly into `roles.ts`'s own PALETTE comment rather than only
+in this row — re-running `scripts/measure-palette-derivation.mjs` today correctly shows "0/18 would
+change" for 256 (there is no longer a separate hand column to disagree with) and unchanged 9/18 (dark) /
+6/18 (light) for 16, confirming the 16-tier finding that justified *not* deriving it is still live; the
+script's own header now says so. Monochrome unchanged (still emits nothing, still asserted by a test).
+
+Made observable per the gate instructions, not just built: `evidence/screenshots/
+palette-derivation-256-hand-authored.png` and `-derived.png` are the identical real fight frame
+(`citizens-versus-ravels`, tick 178) at the 256-colour tier, once per formula, sent directly to the
+owner — the two read as close to indistinguishable at a glance, which is the expected result the
+measurement predicted (11/18 roles already landed within 12 RGB units) rather than a surprise.
+`evidence/screenshots/palette-reference.png` (regenerated from the live table) is the full role-by-role
+reference. **Still OPEN**: A is applied, not yet accepted — if the owner judges derived reads worse on
+a frame he looks at himself, that is exactly the finding this staged approach exists to surface before
+anything else is built on it.
+
+**The transparency half (C) — prototyped, explicitly NOT built.** `CellStyle` in `src/view/frame.ts` is
+unchanged; adding a `fade` field is a RULE amendment (engine.md 9.1) and a recorded departure from craft
+rule 7 (`ascii-effects.md` Section 3), both of which need Mario and a canon bump, not a session's
+judgement — so nothing here ships one. What exists instead: `scripts/prototype-fade-resolver.mjs`, a
+throwaway script that drives the *real* `fx.damage.flash` recipe and the *real* `mergeEffectCells`
+for "today," and a small local (script-only) resolver — one scalar `fade` (0–1) blended toward
+`BACKGROUND_RGB[theme]`, exactly C's recommended shape — for "prototype," rendered side by side as
+`evidence/screenshots/prototype-fade-resolver.png` and sent directly to the owner. It shows two things
+concretely rather than arguing for them: (1) stacking — today's real compositor reaches only 2
+distinguishable states for a stack of simultaneous flashes (bold, then inverse, saturating
+immediately), where a continuous fade keeps six sampled stack sizes visibly distinct; (2) decay — a
+solo flash's own presentation window is a flat on/off pulse today (nothing in the vocabulary varies
+*within* one flash's short life), where a fade scalar can express "then dim slowly" as an actual
+gradient. Bring this to the owner as an explicit canon-amendment proposal with the screenshot, per the
+recommendation — not decided here.
+
+**A verified bug found and fixed while building the "today" half honestly** (presentation-only,
+`src/view/effects/recipes.ts`): `fx.damage.flash` set both `bold` and `inverse` unconditionally, which
+`composite.ts`'s own `lightWeight` (1 base + 1 bold + 1 inverse = 3) already meets from a *single*
+flash — `resolveLighting`'s `inverse` threshold is `>= 3`, so the round-six stacking mechanism the
+owner asked for had no visible effect at all for the one recipe it was built for: one hit and ten
+simultaneous hits on the same tile rendered pixel-identical. The compositor's own doc comment already
+described the intended shape ("`fx.damage.flash` alone is weight 2 (plain-bold)") — the recipe just
+never matched it, undetected because the existing `mergeEffectCells` stacking test exercises the
+compositor's arithmetic with a hand-built cell, never this recipe's actual output. Fixed to `bold`
+only; a new test now exercises the real recipe through the real compositor together, closing that gap.
+Unrelated to the fade prototype's own conclusion, but found *while* building it, and worth recording
+here rather than only in the gate report since it changes what "today" actually shows.
 
 ## 5. Answered
 
