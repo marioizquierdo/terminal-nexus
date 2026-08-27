@@ -4,7 +4,7 @@
 **Status:** CURRENT
 **Active gate:** 2 — Campaign Design (one design pass; this milestone is not sub-gated)
 **Depends on:** Milestone 1 (accepted)
-**Updated:** 2026-08-26
+**Updated:** 2026-08-27
 **License:** Apache-2.0; the mission decisions below touch CC BY-SA 4.0 narrative material already written in `campaigns.md`
 
 > **Design work, not code.** This milestone's own artifact is a decision, written down precisely
@@ -16,6 +16,16 @@
 > decision below turns out wrong once milestone 5 or 6 actually plays it, that milestone's own report
 > is where it gets revised — this document is a starting position, not something later milestones
 > must contort themselves to preserve.
+
+> **Brainstorm pass complete, 2026-08-27 — Section 4 below is now a *first draft under review*.**
+> Mario asked for genuine exploration before commitment: research, real alternatives, and formalized
+> systems rather than a locked plan. That pass lives in
+> [`../evidence/milestone-02-campaign-design/`](../evidence/milestone-02-campaign-design/) and is
+> summarised in Section 7 below. It did not overturn Section 4, but it did register four decisions as
+> genuinely the owner's — **Q39** (which campaign concept the first arc builds), **Q40** (fixed unlock
+> versus a choice), **Q41** (where the lose-everything set-piece sits), and **Q42** (the second
+> Commander) — and Section 4 should be read as proceeding under Q39's recommendation rather than as
+> settled.
 
 ## 1. Question
 
@@ -153,16 +163,42 @@ Moved to Answered in [`../specs/open-questions.md`](../specs/open-questions.md).
 
 ## 6. Definition of done
 
-- [ ] the unit list above is confirmed against the actual fixture content (ids may drift; check
-      `src/content/citizen.ts` and `src/content/ravel.ts` before citing them elsewhere);
-- [ ] a real `.map.json` sketch or written layout exists for PERIMETER's Grid, terrain, and starting
-      placements — does not need to be the final file milestone 5/6 ship, but should be concrete
-      enough that "small Grid, Nexus and barracks near one edge" has actual coordinates;
-- [ ] the trigger-list shape for the scripted raid is written down precisely enough that milestone 6
-      can implement it without a second design pass;
-- [ ] Q29 is moved to Answered;
-- [ ] Q32 and Q33 are moved to Answered, citing this document;
-- [ ] Q38 is either answered by Mario or explicitly proceeded-under-recommendation, and the map
-      sketch above reflects that answer before milestone 5 builds against it;
-- [ ] Mario has looked at the decisions above and either confirmed them or asked for a specific change
-      — this is cheap to redirect now and expensive after milestones 3-10 have built against it.
+- [x] the unit list above is confirmed against the actual fixture content — done in
+      [`../evidence/milestone-02-campaign-design/perimeter-sketch.md`](../evidence/milestone-02-campaign-design/perimeter-sketch.md)
+      Section 1, which also records two findings: there is no distinct worker producer on the bench,
+      and the raid deliberately gets no Grid Nexus;
+- [x] a real `.map.json` sketch or written layout exists for PERIMETER's Grid, terrain, and starting
+      placements — `perimeter-sketch.md` Section 2: a 60 × 20 Grid (`large-extra-wide`) with terrain
+      rows, occupied tile ranges for every starting entity, and the Q33 off-axis constraint written
+      down as a constraint future edits must preserve;
+- [x] the trigger-list shape for the scripted raid is written down precisely enough that milestone 6
+      can implement it without a second design pass — `perimeter-sketch.md` Section 3, including the
+      simplification to **one verb** (`spawn`, not `spawn` plus `activate`) and the six determinism
+      rules that shape needs;
+- [x] Q29 is moved to Answered (done before this session);
+- [ ] Q32 and Q33 are moved to Answered, citing this document — **held on purpose.** Both are
+      PERIMETER-specific, and Q39 could change whether PERIMETER opens the campaign at all; closing
+      them now would mean closing them twice. Recommended for closure in the same pass that answers
+      Q39;
+- [x] Q38 is explicitly proceeded-under-recommendation, and the map sketch reflects that answer —
+      the 60 × 20 size is chosen specifically so the Grid scrolls at the 80 × 24 terminal floor and
+      fits whole at the viewport maximum;
+- [ ] Mario has looked at the decisions above and either confirmed them or asked for a specific change.
+
+## 7. The brainstorm pass, 2026-08-27
+
+Six documents in
+[`../evidence/milestone-02-campaign-design/`](../evidence/milestone-02-campaign-design/). Read them in
+this order:
+
+| Document | What it settles |
+| --- | --- |
+| [`research-notes.md`](../evidence/milestone-02-campaign-design/research-notes.md) | Nine games read for one mechanism each — Into the Breach, Advance Wars, Fire Emblem, StarCraft II, Slay the Spire, FTL, Teamfight Tactics, Cogmind, Dwarf Fortress — and what each is worth here. The four claims they agree on are what everything downstream leans on |
+| [`progression-system.md`](../evidence/milestone-02-campaign-design/progression-system.md) | The unlock system (**the Manifest**: one content id, granted on mission completion, at most one per mission, and it must change the construct menu or the draft), the eight things deliberately refused, the **One Lesson Rule**, and explicit teaching curricula for the two decisions an autobattler actually has |
+| [`campaign-concepts.md`](../evidence/milestone-02-campaign-design/campaign-concepts.md) | Section 4's plan compared against three genuinely different openings on six axes → **Q39** |
+| [`story-and-cast.md`](../evidence/milestone-02-campaign-design/story-and-cast.md) | The story at conceptual scale, three ways to open through Nexus events, the six-rung escalation ladder (ground → material → person → authorship → instruments → indifference), how Vasse gets introduced, the second-Commander mission → **Q42**, and the lose-everything set-piece → **Q41** |
+| [`perimeter-sketch.md`](../evidence/milestone-02-campaign-design/perimeter-sketch.md) | This milestone's concrete Definition-of-Done items, per Section 6 above |
+| [`two-audiences-audit.md`](../evidence/milestone-02-campaign-design/two-audiences-audit.md) | Every recommendation checked against the player's experience and the developer's, with the five rows where one wins at the other's expense named rather than smoothed |
+
+The gate report closing this pass is
+[`../evidence/milestone-02-campaign-design/report.md`](../evidence/milestone-02-campaign-design/report.md).

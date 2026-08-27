@@ -3,7 +3,7 @@
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
 **Canon version:** 2.9
-**Updated:** 2026-08-26
+**Updated:** 2026-08-27
 **License:** Apache-2.0
 
 ## 1. Why this file exists
@@ -902,6 +902,119 @@ rather than treat "never scrolls" as fixed — it costs nothing the mission's ow
 and it means Milestone 5's acceptance evidence is about the mission that motivated building the
 capability, not a fixture invented to exercise it. Milestone 2's own Section 4.3 should record the
 final map's size specifically with this in mind.
+
+### Q39 — Which campaign concept does the first arc actually build?
+
+**Status:** OPEN — **blocks Milestone 2's own closure.** Milestones 3 through 9 build systems that any
+of the options below would need, so they are not blocked; Milestone 10 (which authors two missions) and
+[`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md)
+Section 4's own content decisions are.
+
+Milestone 2's Section 4 decisions were drafted directly against the existing plan — Citizens defending
+against a Ravel raid, PERIMETER first — without that plan ever having been compared to an alternative.
+A brainstorm pass (2026-08-27,
+[`../evidence/milestone-02-campaign-design/campaign-concepts.md`](../evidence/milestone-02-campaign-design/campaign-concepts.md))
+put it side by side with three genuinely different openings on six axes: teaching fit, content cost,
+writing already banked, engine surface required, distinctiveness, and milestone disruption. The
+comparison did not overturn the plan, but it did find one concrete improvement to it and one
+well-placed home for a rejected option, which is why the question is worth Mario's five minutes rather
+than being closed silently.
+
+| Option | Cost |
+| --- | --- |
+| 0. **THE PERIMETER OPENING** (incumbent): Citizens defending against a Ravel raid | Cheapest by every measure — every unit it names exists on the bench, ~400 words of finished writing already pass the lore budgets, and eight milestones already point at it. Its briefing even promises the arrival telegraph an un-steerable Pulse needs. Weakest on distinctiveness: hour one is a competent genre opening, and the game's actual subject sits behind the fight |
+| A. **SALVAGE FIRST**: open on the Ravels, attacking | Real inversion, and lore Section 8 explicitly supports each faction replaying the belief ramp against its own reading. But it makes the faction with the widest declared variance and the two rule shapes with *no* evidence behind them (jackpot drafts, scrap doctrine) carry the tutorial — and a lesson a player cannot reproduce is not a lesson. Discards PERIMETER's writing and contradicts `commander-armies.md` Section 6's authoring order |
+| B. **THE QUIET SITE**: no enemy in mission 1 — an indifferent ancient golem instead | The most distinctive opening available, and the only one whose first mission *is* the game's premise ("you cannot steer the Pulse; you can only prepare"). Costs the most: a neutral unowned actor is new kernel surface, a mission with no opponent has no victory condition the kernel has (Q36 gets harder), and it spends ANNEX ZERO's own lesson five missions early |
+| C. **MIRROR**: Citizens against Citizens, before alien contact | Teaches best and costs literally nothing — the mirror fixture exists, Q18 already settled mirror legibility. But it makes hour one tonally grey: the Activation becomes background to an administrative dispute, and the player meets the faction's internal argument before they understand the faction |
+
+**Recommendation: 0, with B's cold open grafted on, and C reserved as the arc-2 opening.** The genuine
+improvement the comparison found is not a different campaign — it is a different first *minute*. B's
+real asset is that the player meets the machine before they meet a war, and that can be bought for one
+cutscene on top of the incumbent (see
+[`../evidence/milestone-02-campaign-design/story-and-cast.md`](../evidence/milestone-02-campaign-design/story-and-cast.md)
+Section 2, which prices three versions of it, the cheapest being free and already written). C is not
+rejected but *scheduled*: Citizens-versus-Citizens is the natural second-arc opening, once the
+faction's internal argument means something, and it is also where the different-Commander mission
+wants to sit (Q42). If the priority is distinctiveness over cost, B is the honest answer and the
+recommendation would change — its problem is the engine surface and the spent card, not the idea.
+
+**Proceeding under:** Concept 0.
+[`../evidence/milestone-02-campaign-design/perimeter-sketch.md`](../evidence/milestone-02-campaign-design/perimeter-sketch.md)
+is the only artifact that assumes it; the progression system, the teaching rule, and both teaching
+curricula hold for all four concepts and are written as decided.
+
+### Q40 — Is a mission's unlock fixed, or does the player choose one of two?
+
+**Status:** OPEN — blocks nothing before Milestone 4 writes an unlock record; the recommendation is
+assumed by
+[`../evidence/milestone-02-campaign-design/progression-system.md`](../evidence/milestone-02-campaign-design/progression-system.md).
+
+Mario: "after each level, we unlock new units and powers." Q31 settled *where* an unlock is written
+down (a flat, checked-in list). This is the different question of whether the grant is authored or
+chosen. It is genuinely the owner's because it changes what the campaign menu is: a record, or a
+decision point.
+
+| Option | Cost |
+| --- | --- |
+| A. **Fixed.** Completing a mission grants exactly the one thing that mission declares | The next mission can *assume* what the player has, which is what lets the campaign be authored as a teaching sequence at all — every mission's lesson can lean on the previous mission's unlock (`campaigns.md` Section 3's "combine it with prior tools"). One line of debrief text, no new screen, no branching |
+| B. **A choice of one from two.** Each mission offers two permissions and the player keeps one | Genuinely more interesting per mission, and it makes the campaign menu a place where something happens. But it doubles the authoring (two options per mission, each needing to be worth taking), forces every later mission to be winnable under 2^n possible Manifests, and needs a new screen. For a six-mission campaign it buys replay value the campaign does not otherwise have and cannot yet afford to balance |
+| C. **Fixed now, with B available later** — author the grant as a one-element list, so widening it to a choice later is a data change and not a redesign | Free. `MissionDefinition.unlocks` is already `readonly string[]` |
+
+**Recommendation: A, implemented as C.** Grant one thing, keep the field a list, and revisit only if a
+later arc has enough missions for a branching Manifest to be worth balancing. The strongest argument
+for A is not simplicity — it is that a teaching campaign needs to know what the player knows, and B
+makes that a probability distribution.
+
+### Q41 — Where does the "epic opening, then lose everything, then rebuild" set-piece sit?
+
+**Status:** OPEN — blocks nothing; this is deliberately a design decision recorded far ahead of any
+build. Explored in
+[`../evidence/milestone-02-campaign-design/story-and-cast.md`](../evidence/milestone-02-campaign-design/story-and-cast.md)
+Section 5.
+
+Mario asked for the trope to be explored: a bigger battle with real upgrade choices, ending in defeat,
+then starting over. The canon already contains its aftermath — the Prime Nexus "rises as a pyramid...
+destroying the research annex" (`campaigns.md` Section 4), and PERIMETER's briefing opens "Fourteen
+hours ago the survey annex stopped existing." So the scene is written; only its placement is open. The
+trope's engine is **contrast**, and contrast requires the player to have *used* the power, not merely
+been shown it.
+
+| Option | Cost |
+| --- | --- |
+| A. **A prologue before PERIMETER.** Full-strength annex security; the pyramid rises through your own base mid-mission and takes the map; PERIMETER is then literally "what walked out of the annex" | Fits the fiction exactly, and it is the natural home for the pre-Nexus interface idea (the game's vocabulary arriving with the machine). But it needs scripted terrain destruction, a defeat that is an outcome rather than a failure state, and — the real cost — **a full-power roster authored for one mission and never seen again**, which is exactly the early roster authoring `commander-armies.md` Section 1 forbids |
+| B. **Recontextualize PERIMETER itself as the rebuild** — the annex's wreckage and salvage already on the Grid at Build Phase, and the briefing carries the rest | Near-free, and the briefing already does most of it. But the player never held the big army, and telling is not contrast |
+| C. **After the belief ramp, as the arc-2 turn.** Six missions of accumulated Manifest, then a mission that takes it all away | Strongest on the trope's own terms — the big army is the one the player actually built, so the contrast is earned rather than granted — and it needs **no progression-system change**: the Manifest never subtracts, but a mission may restrict through `MissionDefinition.availableContent`. Costs one mission's authoring, at a point where the tooling is mature |
+
+**Recommendation: C as the design, A as the ambition, B as the free consolation — and build none of it
+now.** C is better than A on the trope's own terms and costs a fraction as much. A stays worth wanting
+for the interface-swap reason more than the spectacle; if it is ever built it should be built **last**,
+because it is the mission most dependent on mature tooling and the one where being wrong damages the
+game's first ten minutes rather than its middle. B costs a sentence of Build Phase set-dressing and can
+land whenever PERIMETER is authored.
+
+### Q42 — Which Commander other than Vasse appears, as what, and where in the arc?
+
+**Status:** OPEN — blocks nothing before an arc-2 milestone exists; registered so the decision is not
+made by accident inside a mission's own authoring session.
+
+`commander-armies.md` Section 4.4 already proposes the cast, and each proposed Commander already
+carries a stated disagreement, so nothing needs inventing — only placing. The constraint that decides
+it is the One Lesson Rule
+([`../evidence/milestone-02-campaign-design/progression-system.md`](../evidence/milestone-02-campaign-design/progression-system.md)
+Section 4): a mission in which the player has a *different Commander* teaches two things at once — its
+own lesson and "your Commander changed" — and all six belief-ramp lessons are already spoken for.
+
+| Option | Cost |
+| --- | --- |
+| A. **Marshal Avern Teag as a constraining voice at Mission 4 (PRECOMMITTED), and as the playable Commander opening arc 2.** At mission 4 she is a human authority who approves your build — a second entity making your decisions, one explicable and one not, which rhymes with the Nexus precommitting a draft option. In arc 2 you *are* her: build anything, advance nothing, win by ending with a larger perimeter than you started | Mission 4 costs a voice and one Build Phase constraint — no units, no package, no roster. The arc-2 mission is the cheapest real Commander swap available (a starting package and one different draft on otherwise identical faction content), and it pairs with Q39's Concept C, which was too grey for hour one and is right for hour six |
+| B. **Speaker Corvane, playable for one mission** — the perspective flip | Enormous teaching value (you learn the enemy's rules by using them) and enormous cost: a real Ravel package, against `commander-armies.md` Section 6's authoring order, inside an arc that has not finished proving one faction |
+| C. **Old Marrow as a second, differently-motivated antagonist** — a Ravel who wants every Nexus down, his own included | Cheapest of the three: a second scripted schedule and no new player content. Teaches that an opponent can have an objective other than killing you, which nothing else in the ramp does |
+| D. **Do not place a second Commander at all until the belief ramp ships** | Free, and defensible. Costs the campaign its only chance to make the faction's internal argument playable rather than described |
+
+**Recommendation: A**, with **C** as a cheap addition inside the ramp if a mission wants a differently
+motivated opponent. A gives the player the character six missions before they play her, at almost no
+content cost, and puts the actual Commander swap where it does not have to compete with a teaching
+lesson. B stays available and should not be attempted before the Citizens' own microgame is settled.
 
 ## 5. Answered
 
