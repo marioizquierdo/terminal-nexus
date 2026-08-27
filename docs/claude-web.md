@@ -36,7 +36,7 @@ Read CLAUDE.md and follow AGENTS.md. Orient yourself, tell me what's outstanding
 
 Measured on 2026-08-20: the task container provides **Bun 1.3.11** and **Node 22.22.2**; Deno is not
 installed. Milestone 1 dropped its Deno probe partly for this reason — see
-`specs/milestone-1-spike-battle.md` Section 3.2. The pinned toolchain versions a session actually
+`milestones/milestone-01-grid-battles.md` Section 3.2. The pinned toolchain versions a session actually
 runs against are recorded fresh in each gate's evidence report, not here — re-check rather than
 assume this measurement still holds.
 

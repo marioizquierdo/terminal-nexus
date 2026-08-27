@@ -3,6 +3,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import {
+  BACKGROUND_RGB,
   DEFAULT_THEME,
   parseCapability,
   parseTheme,
@@ -170,4 +171,42 @@ test("player.a and player.b clear a real mutual-contrast floor in the light them
   // Scoped to light only, per the recommendation - dark theme's pair is untouched.
   assert.deepEqual(rgbFor("player.a", "truecolor", "dark"), [201, 118, 68])
   assert.deepEqual(rgbFor("player.b", "truecolor", "dark"), [104, 226, 132])
+})
+
+test("sgrFor's fade resolves only at color256 and truecolor - Q25's transparency scalar", () => {
+  const role = "fx.flash"
+  const theme = "dark"
+  // color16 and monochrome: identical whether fade is 0, partway, or fully faded - no representable
+  // effect at either tier (CellStyle.fade's own doc comment, frame.ts).
+  assert.deepEqual(sgrFor(role, "color16", theme, 0), sgrFor(role, "color16", theme, 1))
+  assert.deepEqual(sgrFor(role, "monochrome", theme, 1), [])
+
+  // color256 and truecolor: a full fade actually changes the resolved colour.
+  assert.notDeepEqual(sgrFor(role, "color256", theme, 0), sgrFor(role, "color256", theme, 1))
+  assert.notDeepEqual(sgrFor(role, "truecolor", theme, 0), sgrFor(role, "truecolor", theme, 1))
+
+  // fade 0 (the default, and what every pre-existing 3-argument call site still passes implicitly)
+  // is unchanged from before fade existed.
+  assert.deepEqual(sgrFor(role, "color256", theme), sgrFor(role, "color256", theme, 0))
+  assert.deepEqual(sgrFor(role, "truecolor", theme), sgrFor(role, "truecolor", theme, 0))
+})
+
+test("sgrFor's fade of 1 lands truecolor exactly on the theme's own background", () => {
+  for (const theme of THEMES) {
+    const [, , r, g, b] = sgrFor("fx.flash", "truecolor", theme, 1)
+    assert.deepEqual(
+      [r, g, b],
+      [...BACKGROUND_RGB[theme]],
+      `${theme}: fade 1 did not land on the background exactly`,
+    )
+  }
+})
+
+test("rgbFor's fade mirrors sgrFor's tier gating: color16 ignores it, truecolor blends, monochrome is untouched", () => {
+  const role = "fx.flash"
+  const theme = "dark"
+  assert.deepEqual(rgbFor(role, "color16", theme, 1), rgbFor(role, "color16", theme, 0))
+  assert.deepEqual(rgbFor(role, "monochrome", theme, 1), rgbFor(role, "monochrome", theme, 0))
+  assert.notDeepEqual(rgbFor(role, "truecolor", theme, 1), rgbFor(role, "truecolor", theme, 0))
+  assert.deepEqual(rgbFor(role, "truecolor", theme, 1), [...BACKGROUND_RGB[theme]])
 })

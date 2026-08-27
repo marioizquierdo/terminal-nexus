@@ -1,16 +1,32 @@
 # Terminal Nexus — campaigns
 
 **Document role:** Single-player structure, mission definitions, progression, cutscenes, and initial narrative direction
-**Status:** Canonical direction; implementation deferred to Milestone 5
-**Canon version:** 2.7
-**Updated:** 2026-08-21
+**Status:** Canonical direction; PERIMETER (Mission 1) is in active implementation across `milestones/`
+**Canon version:** 2.9
+**Updated:** 2026-08-26
 **License:** Narrative material is CC BY-SA 4.0; technical schemas are Apache-2.0
 
 ## 1. Development boundary
 
-Campaigns will become the first complete single-player experience, but they must wait until battle presentation, deterministic Nexus Pulses, base construction, and a two-faction microgame are fun.
+**Amended, canon 2.8, formalized at 2.9.** This section used to say campaigns must wait until battle
+presentation, deterministic Nexus Pulses, base construction, and a two-faction microgame are all fun
+first — written when the roadmap was horizontal, one whole system at a time. Mario redirected the
+roadmap directly: build the campaign one level at a time, and let each level pull in exactly the
+systems it needs rather than waiting for all of them.
+[`../milestones/README.md`](../milestones/README.md)'s ten-milestone sequence is PERIMETER (Mission 1,
+Section 4.2 below), in implementation now, using the existing disposable Citizen and Ravel fixture
+content rather than a real Commander Army roster — `AGENTS.md` Section 2's ban on authoring the full
+Commander Army before Milestone 4 is unchanged by this (Milestone 8 of that sequence draws the exact
+line: one named Commander mechanic, not a locked roster). This document still gives the *destination*
+— the full belief ramp, the later missions' teaching goals, the cast — and none of
+that beyond Mission 1 (and, per Milestone 10, Mission 2) is authorized to build yet; only what a
+milestone's own accepted gate report claims
+is real.
 
-This document gives the game a destination and provides requirements for reusable tools. It does not authorize campaign implementation during Milestones 1–4.
+Campaigns remain the first *complete* single-player experience only once the whole belief ramp exists;
+what changed is that reaching it no longer waits for battle presentation, base construction, and the
+two-faction microgame to each finish in full first. It waits for each *level* to finish, one at a
+time, pulling in only the piece of each of those systems that level's own mission needs.
 
 ## 2. What defines a campaign
 

@@ -2,8 +2,8 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.7
-**Updated:** 2026-08-23
+**Canon version:** 2.9
+**Updated:** 2026-08-26
 **License:** Apache-2.0
 
 ## 0. How to read this document
@@ -754,6 +754,7 @@ type CellStyle = Readonly<{
   dim?: boolean
   underline?: boolean
   inverse?: boolean
+  fade?: number            // 0-1, fgRole only: 0 the role's own colour, 1 the theme's background
 }>
 
 type Cell = Readonly<{ glyph: string; style: CellStyle }>
@@ -774,6 +775,14 @@ interface TerminalBackend {
 No backend object ever appears inside a frame. Style carries **roles** —
 `fgRole: "faction.citizen"`, never `"#ff8800"` — and the capability mode resolves roles to colour,
 which is what makes monochrome a setting rather than a rewrite.
+
+**`fade` — added at canon 2.8 (Q25, `open-questions.md`).** A continuous scalar the resolver blends
+toward the active theme's background before quantizing to the capability tier; the cell still carries
+only a role and a number, so "never a colour" stays literally true. It resolves at `color256` and
+`truecolor` only — `color16` and `monochrome` have no continuum to express it on and ignore it
+entirely, unchanged from before this field existed. It is `fgRole`-only: a background is never faded.
+Scope is deliberately narrow, not a general fade-out licence for effects — `ascii-effects.md` craft
+rule 7 still holds everywhere except the one recorded departure it names.
 
 This is the terminal boundary and an excellent snapshot surface. It is **not** the universal renderer
 API; a future graphical renderer consumes events and `PlayerView`, not cells.
@@ -960,7 +969,7 @@ run's **levelled log** (default `WARN`) carries the story in fixed, greppable co
 without parsing prose and a designer can read what happened without a second stream to catch.
 `--save-log <file>` writes the same lines to a file in any action, and `--turn <tick>` seeks straight
 to a tick instead of playing from the start, in `watch`, `--headless`, and `--verify` alike. See
-[`milestone-1-spike-battle.md`](milestone-1-spike-battle.md) Section 3.3.
+[`../milestones/milestone-01-grid-battles.md`](../milestones/milestone-01-grid-battles.md) Section 3.3.
 
 This is **modding-first architecture, not mod-loader-first development.** No public SDK, remote
 loader, marketplace, permission system, or compatibility promise belongs in early milestones. Themes

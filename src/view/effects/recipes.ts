@@ -309,8 +309,28 @@ const impactBurst: EffectRecipe = (instance, context) => {
  * `inverse`, for real.
  */
 const damageFlash: EffectRecipe = (instance, context) => {
-  void context
-  return [{ tile: instance.origin, glyph: "", role: "fx.flash", bold: true }]
+  // Q25's transparency amendment (engine.md 9.1, canon 2.8), applied narrowly and only here: the
+  // flash now actually decays across its own short window instead of being a flat pulse for the
+  // whole of FLASH_MS - "then dim slowly," the owner's own words for what stacking should do,
+  // finally also true of a single flash's own lifetime. `bold` stays unconditional and unchanged
+  // above this comment's own fix, for 16-colour/monochrome, which have no fade tier to fall back to.
+  //
+  // Reduced motion holds the pre-fade shape exactly: a two-frame blip has no anticipation/travel/
+  // settle sub-phases for ascii-effects.md 4 to keep or drop, so the fade axis simply does not
+  // engage, and this branch is provably identical to the recipe's whole behaviour before fade
+  // existed.
+  if (context.reducedMotion) {
+    return [{ tile: instance.origin, glyph: "", role: "fx.flash", bold: true }]
+  }
+  return [
+    {
+      tile: instance.origin,
+      glyph: "",
+      role: "fx.flash",
+      bold: true,
+      fade: progressOf(instance, context),
+    },
+  ]
 }
 
 // ---------------------------------------------------------------------------

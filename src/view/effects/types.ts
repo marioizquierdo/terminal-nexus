@@ -26,6 +26,13 @@ export type PositionedCell = Readonly<{
   bold?: boolean
   dim?: boolean
   inverse?: boolean
+  /**
+   * Q25's transparency scalar, threaded from here through to `CellStyle.fade` (`frame.ts`, which
+   * carries the full doc comment): `0` is the role's own colour, `1` is the theme's background.
+   * Never set outside `fx.damage.flash` — ascii-effects.md craft rule 7's departure is narrow, not
+   * a general licence for glyph-bearing recipes to fade out.
+   */
+  fade?: number
 }>
 
 export type EffectContext = Readonly<{

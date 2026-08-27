@@ -325,6 +325,10 @@ export function composeFrame(
       ...(cell.bold === true ? { bold: true } : {}),
       ...(cell.dim === true ? { dim: true } : {}),
       ...(cell.inverse === true ? { inverse: true } : {}),
+      // Only when it means something: fade 0 (or absent) is the role's own colour either way, and
+      // omitting the key here keeps a frame with no faded cells identical to one from before Q25's
+      // amendment existed, byte for byte.
+      ...(cell.fade !== undefined && cell.fade > 0 ? { fade: cell.fade } : {}),
     }
     if (cell.glyph === "") {
       // An attribute change on whatever is already there — the damage flash, and only it. This is

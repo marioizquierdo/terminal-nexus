@@ -257,14 +257,43 @@ const DERIVED_256: Readonly<Record<Theme, Record<StyleRole, number>>> = (() => {
 })()
 
 /**
+ * Blends a role's own rgb toward this theme's background by `fade` — Q25's recommended shape
+ * (specs/open-questions.md), the one place a fade scalar actually touches an RGB triple; `roles.ts`
+ * stays "never a colour" everywhere else, a role plus a number. Clamped again here even though every
+ * producer (`CellStyle.fade`'s own doc comment, frame.ts) is already supposed to hand this in as
+ * `[0,1]`, so a caller that skips that contract still lands on a legal colour rather than one that
+ * overshoots the background.
+ */
+function fadeRgb(
+  rgb: readonly [number, number, number],
+  theme: Theme,
+  fade: number,
+): readonly [number, number, number] {
+  const bg = BACKGROUND_RGB[theme]
+  const t = Math.max(0, Math.min(1, fade))
+  return [
+    Math.round(rgb[0] + (bg[0] - rgb[0]) * t),
+    Math.round(rgb[1] + (bg[1] - rgb[1]) * t),
+    Math.round(rgb[2] + (bg[2] - rgb[2]) * t),
+  ]
+}
+
+/**
  * SGR parameters for a role at a tier. Monochrome returns nothing at all — not a grey, *nothing* —
  * so that a monochrome frame provably contains no colour code. `theme` defaults to `DEFAULT_THEME`
  * so every existing caller that has not been taught about themes yet keeps today's look exactly.
+ *
+ * `fade` (default `0`, meaning none) is Q25's transparency scalar — see `CellStyle.fade`'s doc
+ * comment in `frame.ts` for the full contract. It resolves only at `color256` (a fresh nearest-index
+ * search against the faded rgb, rather than the precomputed `DERIVED_256` table) and `truecolor` (a
+ * direct blend); `color16` and `monochrome` ignore it entirely; those two tiers have nothing between
+ * a role's own eight hues and off; they stay exactly as `bold`/`dim`/`inverse` already describe them.
  */
 export function sgrFor(
   role: StyleRole | undefined,
   capability: CapabilityMode,
   theme: Theme = DEFAULT_THEME,
+  fade = 0,
 ): readonly number[] {
   if (role === undefined || capability === "monochrome") return []
   const swatch = PALETTE[theme][role]
@@ -273,15 +302,20 @@ export function sgrFor(
     case "color16":
       return [swatch.ansi]
     case "color256":
-      return [38, 5, DERIVED_256[theme][role]]
-    case "truecolor":
-      return [38, 2, swatch.rgb[0], swatch.rgb[1], swatch.rgb[2]]
+      return fade > 0
+        ? [38, 5, nearestIndexed(fadeRgb(swatch.rgb, theme, fade))]
+        : [38, 5, DERIVED_256[theme][role]]
+    case "truecolor": {
+      const [r, g, b] = fade > 0 ? fadeRgb(swatch.rgb, theme, fade) : swatch.rgb
+      return [38, 2, r, g, b]
+    }
     default:
       return []
   }
 }
 
-/** Background variants of the same swatch, for the rare cell that needs one. */
+/** Background variants of the same swatch, for the rare cell that needs one. `fade` is a `fgRole`
+ *  scalar only (`CellStyle.fade`'s own doc comment) — this never resolves one. */
 export function sgrBackgroundFor(
   role: StyleRole | undefined,
   capability: CapabilityMode,
@@ -293,13 +327,21 @@ export function sgrBackgroundFor(
   return [foreground[0] === 38 ? 48 : 48, ...foreground.slice(1)]
 }
 
-/** The same roles as RGB, for a backend that takes colours rather than SGR parameters. */
+/**
+ * The same roles as RGB, for a backend that takes colours rather than SGR parameters (OpenTUI).
+ * `fade` mirrors `sgrFor`'s tier gating even though OpenTUI is truecolor-capable regardless of the
+ * requested `capability`: ignoring it at `color16` keeps that tier's simulated look identical to the
+ * direct-ANSI backend's, the cross-backend snapshot invariant `tests/backend-opentui.test.ts` checks.
+ * `monochrome` was already a fixed neutral grey regardless of role, so fade has nothing to add there.
+ */
 export function rgbFor(
   role: StyleRole | undefined,
   capability: CapabilityMode,
   theme: Theme = DEFAULT_THEME,
+  fade = 0,
 ): readonly [number, number, number] {
   if (capability === "monochrome" || role === undefined) return [214, 218, 224]
   const swatch = PALETTE[theme][role]
-  return swatch === undefined ? [214, 218, 224] : swatch.rgb
+  if (swatch === undefined) return [214, 218, 224]
+  return fade > 0 && capability !== "color16" ? fadeRgb(swatch.rgb, theme, fade) : swatch.rgb
 }

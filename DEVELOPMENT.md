@@ -14,8 +14,10 @@ bounded terminal renderer experiment, not a vertical slice of the whole game.
 7. Copy `specs/templates/gate-report.md` and fill in its first section: question, artifact, evidence,
    exclusions, stop conditions.
 
-The current implementation contract is `specs/milestone-1-spike-battle.md`, Gate 1B — both of
-Milestone 1's gates are built and merged; `specs/README.md`'s reading order says what is outstanding.
+The current implementation contract is whichever file `milestones/README.md` marks **CURRENT**, through
+its own **Active gate**. Milestone 1 (Grid Battles) is complete and accepted; the campaign's first
+level is being built across the milestones after it. `./scripts/check-repository.sh` prints the
+current gate, so it is faster than reading for it.
 
 ## Current commands
 

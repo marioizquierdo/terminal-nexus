@@ -2,8 +2,8 @@
 
 **Document role:** Fill-in template for closing a milestone gate
 **Status:** Template — copy it, do not edit it in place
-**Canon version:** 2.7
-**Updated:** 2026-08-20
+**Canon version:** 2.9
+**Updated:** 2026-08-26
 **License:** Apache-2.0
 
 Copy this file to the spike's `evidence/report.md` and fill it in **as you work**, not afterwards.

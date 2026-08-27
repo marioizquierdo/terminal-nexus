@@ -2,8 +2,8 @@
 
 **Document role:** The effect system: contract, starter vocabulary, and the craft rules behind it
 **Status:** Canonical direction; the vocabulary is proven or discarded by Milestone 1 Gate 1B
-**Canon version:** 2.7
-**Updated:** 2026-08-24
+**Canon version:** 2.9
+**Updated:** 2026-08-26
 **License:** Apache-2.0 for the contract and schemas; CC BY-SA 4.0 for the authored vocabulary
 
 ## 0. Why this document exists
@@ -141,6 +141,16 @@ to discover. See [`ascii-art-references.md`](ascii-art-references.md) for source
    that points the way the energy went; a symmetric burst reads as weightless.
 7. **Decay is not fade-out.** Terminals have no alpha. Decay is fewer cells, sparser, dimmer, and
    drifting — a thinning, not a dissolve.
+
+   **One recorded departure, canon 2.8 (Q25, `open-questions.md`):** `CellStyle.fade`
+   (`engine.md` 9.1, RULE) gives `fx.damage.flash` alone a real, continuous alpha-toward-background
+   blend across its own short window, plus a summed version of the same scalar when several flashes
+   land on one tile the same frame (`resolveLighting`, `src/view/effects/composite.ts`). This is not
+   a reversal of the rule above: it is a narrow, explicit exception for the one effect that is
+   already an attribute-only write on a cell that is never its own glyph — every other effect in the
+   vocabulary still decays the way this rule describes, by thinning, not by fading. Do not reach for
+   `fade` to make a glyph-bearing effect (debris, a blast ring, a death collapse) dissolve instead of
+   thin; that is exactly the shortcut this rule exists to close off.
 8. **Fresh eyes are the only real test.** The author of an effect cannot see it any more after twenty
    minutes.
 
