@@ -181,6 +181,27 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - Update `README.md`, `DEVELOPMENT.md`, the dev container, CI, and agent instructions together when
   canonical development commands change.
 
+### Write for a person, not for the filing system
+
+Everything a human reads — pull request descriptions, chat replies, commit messages, and any document
+written for Mario rather than for the next agent — says **what the thing is**, not where it is filed.
+
+- Bad: "per `engine.md` Section 5.4, and proceeding under Q38's recommendation."
+- Good: "the Nexus offers the player a small choice of upgrades each round — nobody has designed what
+  those are yet."
+
+Mario does not have the section numbers memorised and should not have to. A sentence he has to look up
+before he can judge it is a sentence that has failed. Name the actual rule, decision, or idea in plain
+English; if the source genuinely matters, put it in parentheses after the idea, never instead of it.
+
+Internal shorthand is still fine **where the audience is the next agent** — a note inside a design
+document's "notes for the next session" section, a comment in the open-questions register, a code
+comment. The test is simply who is reading. When in doubt, write the sentence out.
+
+The same goes for the project's own vocabulary. Words like *gate*, *canon*, *belief ramp* and
+*Manifest* are shorthand this repository invented; define one the first time it appears in anything
+Mario reads, or use ordinary words instead.
+
 ## 6. When the canon does not answer you
 
 This will happen. It is expected, and there is a procedure — see
