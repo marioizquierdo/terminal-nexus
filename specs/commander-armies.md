@@ -2,8 +2,8 @@
 
 **Document role:** Playable faction packages: Commanders, units, structures, upgrades, and Nexus powers
 **Status:** Canonical identity direction; rosters intentionally undefined
-**Canon version:** 2.9
-**Updated:** 2026-08-26
+**Canon version:** 2.10
+**Updated:** 2026-09-01
 **License:** Creative identity is CC BY-SA 4.0; mechanical definitions and schemas are Apache-2.0
 
 ## 1. Purpose
@@ -50,6 +50,79 @@ Each faction should eventually support two or three Commanders. Commanders share
 The differences should be smaller than the differences between factions but large enough to produce a distinct opening and one recognizable build path.
 
 The Commander is a prominent frontline `@`, not only a portrait or menu choice. It returns after a one-cycle absence when killed. Commander-focused builds should be viable but should compete with army, economy, science, and fortification strategies.
+
+### 2.1 The faction is the pool; the army is the deck — RULE for the boundary and the three tiers; GUIDANCE for the numbers
+
+**Owner direction, canon 2.10.** Mario: "the faction is like the whole pool of 'cards' and the army
+is like the actual deck used during a single fight." A faction defines *everything its civilization
+can field* — every unit, structure, upgrade, and Nexus power. A Commander Army fields **a few of
+them**. Nothing a match, a Pulse, or a renderer touches ever sees a faction; it sees an army. That
+boundary is what the rest of this section protects.
+
+What a player can do during one match splits three ways, and the split *is* the gameplay:
+
+| Tier | What it holds | Who decides it | When it is available |
+| --- | --- | --- | --- |
+| **Common structures** | the structures every Commander of the faction can always build, and the units those structures produce | the faction | always; never drafted, never unlocked |
+| **Army structures** | the special structures this Commander Army brought — a subset of the faction's structure pool — and their units | the Commander Army: authored, grown through a campaign's unlocks, or drafted in a future drafting mode | fixed for the whole match |
+| **Nexus powers** | the powers the Grid Nexus can deal — a subset of the faction's power pool | the army defines the pool; **the Nexus deals a small hand from it at the start of every Build Phase, and the player keeps one** | dealt each Build Phase |
+
+Around those three sit the things that frame the deck rather than fill it: the Commander, the
+starting package, the faction's rules (Section 4.1) and the Commander's exceptions to them.
+
+**Consequences worth designing for now, before a roster exists:**
+
+- **Keep the common tier small.** Economy, supply, one basic producer, one basic defence. If the
+  shared core is most of what a player builds, two Commanders of the same faction play the same and
+  the deck stops mattering — the oldest lesson of every deck-building game. Anything with a signature
+  belongs in the army tiers.
+- **Deck size is a number, and a fixed one.** An army carries at most *N* army structures and *M*
+  Nexus powers. The numbers are Milestone 4's to decide on evidence — three to five structures and
+  six to ten powers are the working guesses — but a cap is not optional: a cap is what makes a choice
+  a choice, and what makes drafting a game rather than a menu.
+- **Legality is data validation.** An army may reference only content from its own faction's pools,
+  within the caps, checked at load time the way every scenario field already is. This is the
+  deck-legality check of every card game, and it is what makes accepting a player-defined Commander
+  safe later: the loader, not a reviewer, says whether a deck is legal.
+- **Three producers, one shape.** A first-party authored army, a campaign's progression (the unlock
+  record of Q31 is literally cards added to the player's deck between missions, and Milestone 4's
+  army panel is the deck laid out), and a future drafting mode where players build an army from the
+  pool at match start all produce the same `CommanderArmyDefinition`. The match never knows which
+  one did. That is the whole reason the drafting idea stays open without being designed now: nothing
+  about it needs a second content shape.
+- **Alder fits without an exception.** Their refusal (Q11) is a near-empty Nexus power pool and a
+  larger structure pool — expressed by the numbers, not by a special case in the model.
+
+The sketch, in the same spirit as [`engine.md`](engine.md) Section 8 — names will move the first
+time real content touches them:
+
+```ts
+interface FactionDefinition {
+  readonly id: ContentId
+  readonly commonStructures: readonly ContentId[]  // tier 1: always buildable by any Commander
+  readonly structurePool: readonly ContentId[]     // tier 2 candidates
+  readonly nexusPowerPool: readonly ContentId[]    // tier 3 candidates
+  readonly upgradePool: readonly ContentId[]
+  readonly rules: readonly ContentId[]             // the faction's rule shapes (Section 4.1)
+  readonly commanders: readonly ContentId[]
+}
+
+interface CommanderArmyDefinition {
+  readonly id: ContentId
+  readonly faction: ContentId
+  readonly commander: ContentId
+  readonly startingPackage: ContentId
+  readonly structures: readonly ContentId[]        // ⊆ faction.structurePool, at most N
+  readonly nexusPowers: readonly ContentId[]       // ⊆ faction.nexusPowerPool, at most M
+  readonly upgrades: readonly ContentId[]          // ⊆ faction.upgradePool
+  readonly ruleExceptions: readonly ContentId[]
+}
+```
+
+Where this shows on screen: the Build Phase construct menu lists the common tier and the army tier
+as two groups under one digit sequence, and the Nexus draft is its own panel — three tiers, three
+places, so a player learns the split by looking at it
+([`engine.md`](engine.md) Section 9.2, [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md)).
 
 ## 3. Strategy-design requirements
 
@@ -256,9 +329,11 @@ Units:
 - role, producer, supply, cadence, counters, glyph role
 
 Structures:
+- common (the faction's, always available) versus army (this deck's, within the cap — Section 2.1)
 - role, footprint, radius, worker/production behavior, glyph role
 
 Nexus powers:
+- the army's pool, within the cap, from which each Build Phase's hand is dealt
 - timing, cost, target, authoritative effect, presentation cue
 
 Upgrade pool:
@@ -287,7 +362,7 @@ Every literal glyph is theme data mapped from a semantic role. Every exceptional
 4. Add second Commanders only after the common faction package is stable enough that a variation is cheaper than a new faction.
 5. Treat Glitch, Feudals, and Alder as lore and art direction until Citizens/Ravels prove the complete loop.
 
-Full skirmish mode should eventually expose each legal Commander Army without requiring campaign completion. Campaigns introduce and unlock their contents gradually.
+Full skirmish mode should eventually expose each legal Commander Army without requiring campaign completion. Campaigns introduce and unlock their contents gradually. A drafting mode — players assembling an army from the faction pool at match start, or defining their own Commanders — is a third producer of the same army shape (Section 2.1), kept possible by that shape and deliberately undesigned until a milestone wants it.
 
 ## 7. Working notes — personal, not canon, not authorization
 

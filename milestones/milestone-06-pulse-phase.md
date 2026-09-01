@@ -3,7 +3,7 @@
 **Document role:** Milestone tracker — the explicit Build→Pulse handoff, victory/defeat, and Recall
 **Status:** GATED
 **Depends on:** Milestone 5 (Build Phase produces what this Pulse resolves)
-**Updated:** 2026-08-26
+**Updated:** 2026-09-01
 **License:** Apache-2.0
 
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
@@ -15,7 +15,10 @@
 
 Can a player explicitly start the Nexus Pulse from a completed Build Phase, watch the unmodified
 kernel resolve it, and see a clear, legible ending — battle stopping, survivors heading back, Recall
-completing — regardless of whether they won, lost, or reached the mission's own tick limit?
+completing — regardless of whether they won, lost, or reached the mission's own tick limit — **and
+then land in the next Build Phase**, since a mission is several of these cycles
+([`../specs/campaigns.md`](../specs/campaigns.md) Section 2.1, canon 2.10; PERIMETER is proposed as
+three, [`milestone-02-campaign-design.md`](milestone-02-campaign-design.md) Section 4.4)?
 
 ## 2. What gets built
 
@@ -36,6 +39,17 @@ completing — regardless of whether they won, lost, or reached the mission's ow
   even mid-tick, effects already in flight finish their own authored windows (nothing about that
   changes), then Recall plays. This is choreography on top of an ending the kernel already computed,
   not a new kernel phase.
+- **The loop, and the trigger list that drives it.** After Recall the mission's triggers decide what
+  comes next: the next Build Phase (`startBuild`), or `win`/`lose` when the mission's objective says
+  so. This milestone builds the trigger runner's simulation band at the size PERIMETER needs —
+  `spawn` and `order` for the waves, `commitPlan` for the raid's own later Pulses, `win` on the final
+  `pulse.end` — as data validated at load time, under Q39's recommendation. Conditions are evaluated
+  on state and events only. Milestone 9 adds the presentation band on top.
+- **Automatic production, minimally, if Milestone 2's finding 4.6.2 stands**: the fixture barracks
+  producing its recipe on an interval during the Pulse, pulled from
+  [`../specs/backlog-pulse-completion.md`](../specs/backlog-pulse-completion.md) — otherwise a
+  three-Pulse mission has nothing new to show in its second and third. Mario decides in Milestone 2;
+  named here so the dependency is visible.
 
 ## 3. New question this raises
 
@@ -70,7 +84,11 @@ that units visibly came home — not just that the screen stopped moving.
 
 ## 6. Definition of done
 
-- [ ] "Start Nexus Pulse" is a real, explicit action from the Build Phase screen;
+- [ ] "Start Nexus Pulse" is a real, explicit action from the Build Phase screen, and a completed
+      Pulse hands back into the next Build Phase until the mission's triggers end it;
+- [ ] PERIMETER's trigger list (`campaigns.md` Section 2.1's sketch) runs its simulation band —
+      waves spawn and advance at their tick, `win` fires on the final `pulse.end` — hash-stable
+      across runs and runtimes like any other kernel input;
 - [ ] Q36 is resolved (built, or explicitly deferred with a reason) before this gate closes;
 - [ ] the Pulse-end sequence — stop, finish in-flight effects, Recall — is legible at every capability
       tier and in monochrome;

@@ -2,8 +2,8 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.9
-**Updated:** 2026-08-26
+**Canon version:** 2.10
+**Updated:** 2026-09-01
 **License:** Apache-2.0
 
 ## 0. How to read this document
@@ -100,8 +100,8 @@ belong in the presentation model of Section 2, not in the state the Pulse hashes
 | Scenario runtime | starting state, objectives, triggers, mission progress, win/loss requests, unlocks | direct mutation bypassing the kernel |
 | Player projection | visibility-filtered state, legal public actions, visible ordered events | hidden-plan leakage, invented facts |
 | Presentation | semantic cues, animation state, portraits, cell frames or graphical scenes, accessibility | damage, targeting, legal placement, victory |
-| Platform adapters | terminal, browser, native input, output, resize, streams, device lifecycle | interpreting ANSI or pixels as game state |
-| Application shell | CLI, configuration, content selection, saves, replays, diagnostics, composition | secret rule changes |
+| Platform adapters | terminal, browser, native input, output, resize, streams, device lifecycle; the keyboard, mouse, and driver input adapters that turn events into shell commands (Section 9.7) | interpreting ANSI or pixels as game state; giving one adapter a command another cannot issue |
+| Application shell | CLI, configuration, content selection, saves, replays, diagnostics, composition, the command vocabulary every input adapter feeds | secret rule changes |
 
 Runtime flow:
 
@@ -565,6 +565,11 @@ A match alternates:
   state;
 - **Nexus Pulse** — simultaneous reveal, then a fixed number of deterministic ticks.
 
+It alternates **as many times as the match needs** — a campaign mission is a sequence of these
+cycles, not one Pulse, and a mission's triggers decide how many and what happens between them
+([`campaigns.md`](campaigns.md) Section 2.1). A Pulse may be scripted (no player plan; the player
+watches) and it is still a Pulse: seeded, deterministic, replayed the same way.
+
 Both players see the resolved Grid: terrain, deposits, neutral zones, known actors, health,
 structures, public construction coverage. Newly committed construction and upgrade choices stay
 hidden until reveal.
@@ -611,7 +616,11 @@ The Grid Nexus offers a small draft of upgrades; research facilities modify that
 breadth, redraws, weighting, or visibility. Structures may reach levels 1–3. Nexus powers are
 content-defined legal actions or passive rules that execute through validated kernel commands.
 
-None of this is designed. It is recorded so the shape of the draft is not accidentally foreclosed.
+**What the draft is dealt from is settled at canon 2.10, even though the draft itself is not
+designed:** the Commander Army's own Nexus power pool — a subset of the faction's — dealt as a small
+hand at the start of every Build Phase, from which the player keeps one
+([`commander-armies.md`](commander-armies.md) Section 2.1). The draft's tier, size, and redraw rules
+are still undesigned; recorded so the shape of the draft is not accidentally foreclosed.
 
 ---
 
@@ -729,7 +738,9 @@ interface ProductionRecipe {
 
 Upgrades, Nexus powers, Commanders, and Commander Armies follow the same pattern and are described in
 [`commander-armies.md`](commander-armies.md). A **Commander Army** is the playable content boundary:
-the complete set of choices legally available to one player in one match.
+the complete set of choices legally available to one player in one match — a deck drawn from its
+faction's pool, in three tiers ([`commander-armies.md`](commander-armies.md) Section 2.1). The
+match, the Pulse, and every renderer see an army; none of them ever sees a faction.
 
 Prefer composable capabilities — health, movement, attack, production, storage, supply, worker slots,
 radius, restoration, regroup anchor — over inheritance. Exceptional behaviour may register narrow
@@ -895,6 +906,106 @@ read as weight are specified in **[`ascii-effects.md`](ascii-effects.md)**.
 The simulation knows semantic ids such as `unit.worker` and `structure.nexus`. **It never knows a
 glyph.**
 
+### 9.7 Input model — RULE for the command vocabulary, the three adapters, and displayed hotkeys; GUIDANCE for the bindings
+
+**Owner direction, canon 2.10**, written before any interactive screen exists so that Milestones 3
+and 5 build against one model instead of two. Mario: "When a player is proficient in the game, they
+should be able to move fast by just typing in the keyboard... The menu should also work with the
+mouse... We have to support keyboard, mouse, and agent interfaces."
+
+**One command vocabulary — RULE.** Everything a player can do on an interactive screen — pick a
+menu item, move the cursor, arm a structure for placement, place it, remove it, pick a Nexus power,
+commit the Build Phase, start the Pulse, advance a cutscene, quit — is a **named command**. Commands
+are the only way input reaches the application shell, and a command's effect never depends on which
+adapter produced it. Three adapters exist, and all three are first-class:
+
+| Adapter | Produces commands from | Exists for |
+| --- | --- | --- |
+| **Keyboard** | key events, through one displayed keymap | the primary way to play; keyboard-complete stays the accessibility floor (9.6) |
+| **Mouse** | click, wheel, and, where the terminal reports it, motion — converted from terminal cells to tiles and menu rows by the adapter alone | direct manipulation: every menu item is clickable, and clicking it does exactly what its hotkey does |
+| **Driver** | a scripted list of commands, or of raw key and mouse events, from a file or a test | agents and tests: Claude playtesting the game without a terminal, and every input assertion the project makes |
+
+The driver is not a test-only afterthought. It is Section 1's practical test — "resolve an entire
+match with the renderer deleted" — applied to the shell: the whole game, menus and Build Phase
+included, must be playable from a command stream, and its output read back as the engine-owned cell
+frame (9.1) and structured snapshots rather than as pixels or ANSI. Two things follow:
+
+- **the driver injects raw key and mouse events into the real adapters, not only commands.** A test
+  that only sends commands proves the command works; it does not prove that `[2]` on screen means
+  what pressing `2` does, or that a click on that row means the same. The mapping is the thing most
+  likely to drift, so it is the thing under test. `controlForKey` and `keysFromChunk` in
+  `src/view/playback.ts`, and the fake stdin `tests/lifecycle.test.ts` drives `watch` with, are the
+  seed of this — one key map both the view and a test agree on. The driver generalises it to mouse
+  events and to every screen;
+- **mouse geometry lives only in the mouse adapter.** A click arrives as a terminal cell; the adapter
+  converts it to a tile using the tile width (9.3) and the composition's layout, and emits a command
+  that names a tile or a menu item. Nothing downstream ever learns a cell coordinate, so a change of
+  tile width or panel layout changes one adapter and no command.
+
+**Menus — RULE.** Every menu item displays its hotkey before its label — `[1] Barracks`,
+`[p] Start Nexus Pulse` — and pressing that key activates the item. **A hotkey that is not displayed
+does not exist.** Arrow keys and Enter also work on every list, and Esc backs out of it: the hotkey is
+the fast path, never the only one. Hotkeys are stable — the same item keeps the same key across
+screens, sessions, and terminal sizes — so muscle memory transfers. The bracketed key is the carrier
+that survives monochrome; a style role (`chrome.hotkey`) colours it where colour exists, and colour
+never carries it alone (9.6).
+
+**The Grid cursor — RULE for what it is, GUIDANCE for the numbers.** One cursor, on the Grid, moved
+by the arrow keys one tile at a time, with a modifier for a longer jump; it drives scrolling exactly
+as 3.3 already states. Clicking a Grid tile moves the cursor to it. In the Build Phase, a structure is
+*armed* from the construct menu by its hotkey (or a click), placed at the cursor with Enter (or a
+click on the tile), and **stays armed after placing**, so a run of the same structure is one digit
+followed by arrows and Enter — the fast path a proficient player types without looking.
+
+**Bindings — GUIDANCE**, the starting keymap. Milestones 3 and 5 retune on evidence and record why:
+
+| Key | Command | Note |
+| --- | --- | --- |
+| `1`–`9`, `0` | select item *n* of the panel's current list — construct menu, Nexus draft, or a menu screen's options | digits always address the list; they never mean anything else |
+| Arrows | move the cursor one tile | the cursor drives the camera at the 3-tile margin (3.3) |
+| Shift+Arrow | move the cursor five tiles | fast pan across a scrolling Grid — see the caveat below |
+| Enter | confirm: place the armed structure at the cursor, or activate the highlighted item | |
+| Esc | disarm the current selection, close an overlay, back out of a menu | never quits the game by itself |
+| Tab / Shift+Tab | jump the cursor to the player's next / previous own structure | the placement anchor jump: "go to my barracks, build next to it" — works on every terminal |
+| Backspace, Delete | remove the planned, uncommitted placement under the cursor | plans are revisable until commit (Milestone 5) |
+| `u` | undo the last planned placement | |
+| `p` | Start Nexus Pulse — the commit | asks once, `[y]es / [n]o`; the one action that must not fire by accident |
+| `?` | help overlay listing every binding live on this screen | the footer already shows the most important ones (3.1's controls row) |
+| `q`, Space, `.`, `,`, `[`, `]`, `r` | unchanged from `grid` during a Pulse: quit, pause, step, speed, restart | one keymap across `grid` and `terminal-nexus` |
+| Mouse: click a menu row | the row's hotkey | identical effect, by construction |
+| Mouse: click a Grid tile | move the cursor there; if a structure is armed, place it — the same as arrows then Enter | single-click placement is safe because a plan is revisable until commit |
+| Mouse: wheel | scroll the camera | the mouse's Shift+Arrow |
+| Mouse: right click | Esc | the RTS convention for "cancel" |
+
+Three conventions behind that table, so a retune keeps them:
+
+1. **No modes.** A key means one thing on a screen. Digits always address the list, arrows always
+   move the Grid cursor, letters always name commands. That is why `h`/`j`/`k`/`l` are *not* cursor
+   aliases even though a terminal audience expects them: letters belong to the hotkey vocabulary, and
+   a modal cursor is the classic source of "why is my key not working." If a panel genuinely needs
+   arrow keys of its own (a long list), Tab moves focus and the footer says where focus is.
+2. **The screen documents itself.** The footer carries the live bindings, `?` carries all of them,
+   and every menu row carries its own. Nothing is discoverable only from a manual.
+3. **Standards over cleverness.** Enter confirms, Esc cancels, `?` helps, digits pick, wheel scrolls,
+   right-click cancels. A player who has used a terminal editor, a roguelike, or an RTS should guess
+   the first key right.
+
+**Terminal caveats the Milestone 5 spike must verify, not assume** (Q37):
+
+- **Modified arrows are not universal.** Shift+Arrow arrives as an xterm-style modified sequence
+  (`CSI 1;2A` and its siblings) on most emulators and is swallowed or remapped on some terminal and
+  multiplexer configurations. The spike checks the terminals the project actually targets and
+  chooses a modifier-free fallback for the five-tile jump — PageUp/PageDown and Home/End, or a
+  second key pair — so a player whose terminal eats Shift still has the fast pan. The fallback is
+  displayed like any other binding.
+- **Mouse reporting is opt-in and must be undone.** A terminal reports the mouse only after the
+  program asks (SGR extended mode, `1006`, over `1000`/`1002`); the disposer of 10.1 switches it off
+  on every exit path. A game that leaves mouse reporting on is rejected for the same reason as one
+  that leaves raw mode on. Where no mouse arrives — a plain SSH session, the driver, a non-TTY —
+  nothing is lost, because the keyboard is complete.
+- **Click-to-place versus click-to-move-then-confirm** is a feel decision the spike makes
+  observable as a toggle rather than argues about; the table above recommends click-to-place.
+
 ---
 
 ## 10. Runtime and terminal direction — GUIDANCE
@@ -924,7 +1035,8 @@ it. Versions are re-checked and pinned during the active gate, and the pins live
 ### 10.1 Terminal lifecycle — RULE
 
 One alternate screen, **one idempotent disposer**. It restores cursor, input mode, handlers, and
-screen after normal exit, `q`, `SIGINT`, `SIGTERM`, setup failure, and caught render failure. It
+screen after normal exit, `q`, `SIGINT`, `SIGTERM`, setup failure, and caught render failure — and,
+once the mouse adapter exists (9.7), it switches terminal mouse reporting off on the same paths. It
 cannot promise anything after `SIGKILL`. Calling it twice is harmless.
 
 Non-TTY launch prints one readable line and no escape sequences. Diagnostics are buffered and emitted

@@ -2,8 +2,8 @@
 
 **Document role:** Canon index and reading order
 **Status:** Canonical
-**Canon version:** 2.9
-**Updated:** 2026-08-26
+**Canon version:** 2.10
+**Updated:** 2026-09-01
 **License:** Apache-2.0
 
 The project canon is this document set, not one monolithic file. Each document has one job, and the
@@ -31,6 +31,13 @@ folder rather than versioned here: they are notes for upcoming work, task tracke
 historical reference after, which is a different job than a document that only changes at a named
 canon version. The horizontal contract this replaced is preserved, unbuilt, in
 [`backlog-pulse-completion.md`](backlog-pulse-completion.md).
+
+**Canon 2.10 recorded the owner's design notes on three things the campaign milestones build
+against**: the input model ([`engine.md`](engine.md) Section 9.7 — one command vocabulary behind
+keyboard, mouse, and an agent driver, with displayed hotkeys), the Commander Army as a deck drawn
+from its faction's pool ([`commander-armies.md`](commander-armies.md) Section 2.1), and missions as
+multi-Pulse trigger lists ([`campaigns.md`](campaigns.md) Section 2.1). Milestones 3, 5, 6, 8, and 9
+cite them; Q39 (declarative triggers versus a scripting API) is the one fork left for Mario.
 
 For a new coding session, read:
 
