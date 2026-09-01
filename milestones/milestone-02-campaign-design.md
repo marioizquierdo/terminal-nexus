@@ -4,7 +4,7 @@
 **Status:** CURRENT
 **Active gate:** 2 — Campaign Design (one design pass; this milestone is not sub-gated)
 **Depends on:** Milestone 1 (accepted)
-**Updated:** 2026-08-26
+**Updated:** 2026-09-01
 **License:** Apache-2.0; the mission decisions below touch CC BY-SA 4.0 narrative material already written in `campaigns.md`
 
 > **Design work, not code.** This milestone's own artifact is a decision, written down precisely
@@ -92,10 +92,18 @@ The player starts with the Nexus, the barracks/fabricator, and the starting crew
 (matching "a perimeter that exists chiefly in this briefing" — not much is built yet when the mission
 opens). During Build Phase, the player may spend a small starting resource amount on:
 
-- a short, fixed construct menu: one or two additional troopers/marksmen, and nothing else purchasable
-  for PERIMETER specifically. Milestone 7's worker economy determines how that resource is actually
-  earned during the Pulse itself (harvesting from a deposit), but Build Phase's own opening allotment
-  should be small enough that the interesting decisions are placement and composition, not a spreadsheet.
+- a short, fixed construct menu of **structures, not units** — a second barracks, and one common-tier
+  defence if the bench content grows one — and nothing else purchasable for PERIMETER specifically.
+  (An earlier draft of this line sold "one or two additional troopers"; that contradicts the locked
+  decision that production is fixed recipes from buildings, never direct unit purchases —
+  `../specs/project-governance.md` Section 7 — and is corrected here. See 4.6.) Milestone 7's worker
+  economy determines how that resource is actually earned during the Pulse itself (harvesting from a
+  deposit), but Build Phase's own opening allotment should be small enough that the interesting
+  decisions are placement and composition, not a spreadsheet.
+
+The menu draws entirely from the Citizen **common tier** in the sense of
+[`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1: nothing PERIMETER offers
+is army-specific, and the Nexus draft (milestone 8) is where the one army-specific choice lives.
 
 This is intentionally the smallest version of Build Phase that milestone 5 can build against — richer
 menus are a later mission's decision, not this one's.
@@ -127,13 +135,40 @@ authored and validated the same way a `.map.json` file already is (`../specs/cam
 arriving on a fixed schedule from the northwest, advancing toward the Nexus. No reaction to what the
 player does — that is a later mission's opponent, once one genuinely needs to teach it.
 
+**Widened at canon 2.10, and the trigger shape now has a home.** Mario's design notes make every
+mission a sequence of Pulses driven by triggers, and
+[`../specs/campaigns.md`](../specs/campaigns.md) Section 2.1 records the model: a trigger is a
+condition and a list of actions, conditions are addressed as `{ pulse, tick }` or by mission event,
+and actions split into a simulation band (run inside the kernel) and a presentation band (never
+touch state). `{ atTick, action }` is that model with one condition kind. This document therefore
+proposes — for Mario to confirm, per the definition of done — that **PERIMETER is three Pulses, the
+raid arriving in three waves:**
+
+| Pulse | The raid | What the player is doing |
+| --- | --- | --- |
+| 1 | a probe: the initial group, small, testing the line | the first Build Phase places one structure; the first Pulse is watched more than fought |
+| 2 | a larger wave, same direction | the second Build Phase is the first real *adaptation*: the player saw where the line bent |
+| 3 | the push: the largest wave, then the raid's schedule ends | hold; the debrief's "sixty percent of it was real by the end" is now literally true |
+
+Three, not one, because the loop the mission exists to teach — **Build. Commit. Pulse. Understand.
+Adapt.** — has no "Adapt" in a single Pulse; and three, not five, because each Build Phase before
+income exists (milestone 7) spends the same small allotment and the third is where it runs out.
+Recall (Q29) becomes a real beat rather than an ending, exactly as milestone 6 already frames it.
+The waves' sizes are milestone 6's to tune on the fixture; the count is the design decision here.
+
+The sketch in `campaigns.md` Section 2.1 is PERIMETER's list in this shape — an intro, three waves,
+and `win` on `pulse.end` of the third — and is what milestone 6 implements without a second design
+pass. Whether the authored surface stays declarative or becomes a scripting API is Q39; this
+milestone proceeds under its recommendation (declarative).
+
 ### 4.5 What PERIMETER teaches, and what it deliberately does not yet
 
 Per the belief ramp (`../specs/campaigns.md` Section 4.1, row 1): **the Build Phase / Nexus Pulse loop
 on a small Grid that never scrolls.** The belief the player holds going in ("Operator is my job
 title") is allowed to feel true — nothing in Level 1 needs to unsettle it yet. (Q38, still open,
 questions whether "never scrolls" survives contact with milestone 5's own charter to build and test
-real scrolling; see 4.3.)
+real scrolling; see 4.3.) *The loop*, across three Pulses (4.4): a player who has only ever committed
+one plan has not been taught to adapt, and adaptation is the whole mechanic.
 
 Deliberately not this mission's job, even though the milestones that follow build the mechanism:
 
@@ -142,6 +177,29 @@ Deliberately not this mission's job, even though the milestones that follow buil
 - a real upgrade draft depth beyond "one or two options exist" (Nexus powers stay a later mission);
 - worker-flight danger, salvage economy, or contested wrecks (Mission 2, RIGHT OF SALVAGE's own job —
   milestone 10 authors that mission using its own new content, once it exists).
+
+### 4.6 Findings from the canon 2.10 design notes — for Mario
+
+Recording Mario's design notes (2026-09-01) against this document surfaced three things a session
+cannot settle alone. Each is stated with what this document proceeds under.
+
+1. **The construct menu sold units.** 4.2 said "one or two additional troopers/marksmen." Production
+   is fixed recipes from buildings and there is no shop (`../specs/project-governance.md` Section 7;
+   `../specs/engine.md` 5.3). Corrected in 4.2 to structures. Proceeding under: the menu sells a
+   second barracks and, if the bench grows one, a common-tier defence.
+2. **Automatic production has no owning milestone.** With three Pulses (4.4), a barracks that
+   produces nothing across them is a wall with a name. `engine.md` 5.3's recipes are GUIDANCE and
+   unbuilt; milestone 5 places structures, milestone 7 earns the resource, and no milestone says a
+   producer spawns its recipe during the Pulse. The unit-design spike's `spawn` primitive
+   (`src/pulse/spawn.ts`, an interval, a content id, a cap — Q26) is most of the mechanism already.
+   **Recommendation:** milestone 6 pulls `ProductionRecipe` in from
+   [`../specs/backlog-pulse-completion.md`](../specs/backlog-pulse-completion.md), minimally — the
+   fixture barracks producing troopers on an interval while resources last — since that is the
+   milestone whose Pulses would otherwise show nothing new happening. Not built here; named so it is
+   not discovered in milestone 6's third week.
+3. **PERIMETER's Pulse count.** One Pulse was never written down as a decision; it was the shape every
+   milestone assumed. Three is proposed in 4.4 with the reasoning there. This one is cheap to change
+   now and expensive after milestone 6 tunes three waves.
 
 ## 5. Q29 — answered by this pivot
 
@@ -158,8 +216,11 @@ Moved to Answered in [`../specs/open-questions.md`](../specs/open-questions.md).
 - [ ] a real `.map.json` sketch or written layout exists for PERIMETER's Grid, terrain, and starting
       placements — does not need to be the final file milestone 5/6 ship, but should be concrete
       enough that "small Grid, Nexus and barracks near one edge" has actual coordinates;
-- [ ] the trigger-list shape for the scripted raid is written down precisely enough that milestone 6
-      can implement it without a second design pass;
+- [x] the trigger-list shape for the scripted raid is written down precisely enough that milestone 6
+      can implement it without a second design pass — [`../specs/campaigns.md`](../specs/campaigns.md)
+      Section 2.1, canon 2.10, with PERIMETER's own list sketched there (4.4 above);
+- [ ] Mario has confirmed or changed the three findings in 4.6 (structures not units; who builds
+      automatic production; three Pulses);
 - [ ] Q29 is moved to Answered;
 - [ ] Q32 and Q33 are moved to Answered, citing this document;
 - [ ] Q38 is either answered by Mario or explicitly proceeded-under-recommendation, and the map

@@ -4,8 +4,8 @@
 used to be, before the roadmap went campaign-first
 **Status:** Backlog — not a queued milestone; pulled in level by level, as an actual level's own
 content demands it
-**Canon version:** 2.9
-**Updated:** 2026-08-26
+**Canon version:** 2.10
+**Updated:** 2026-09-01
 **License:** Apache-2.0
 
 ## Why this document exists

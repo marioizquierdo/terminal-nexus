@@ -2,8 +2,8 @@
 
 **Document role:** One-page product definition
 **Status:** Canonical
-**Canon version:** 2.9
-**Updated:** 2026-08-26
+**Canon version:** 2.10
+**Updated:** 2026-09-01
 **License:** CC BY-SA 4.0 for creative direction; Apache-2.0 for technical product requirements
 
 ## The game in one sentence
@@ -39,6 +39,8 @@ The emotional loop is:
 - **Automatic battle preserves strategic authorship.** The spectacle is hands-off, but its causes should be readable in the player's previous decisions.
 - **Persistence creates short stories.** Survivors matter, workers flee, factories can be lost, salvage can be contested, and a commander can fall and later return.
 - **Modern drafting disrupts solved build orders.** The Nexus offers a small randomized upgrade draft; research changes its quality, breadth, and flexibility.
+- **A Commander Army is a deck.** The faction is the pool of everything it can field; an army brings a few structures and a small pool of Nexus powers to one fight. A campaign grows the deck mission by mission, and the same shape leaves room for drafting modes later.
+- **It plays at typing speed.** Every menu item shows its hotkey, every hotkey is also a click, and the whole game can be driven from a command stream — by a proficient player, by a mouse, or by an agent playtesting it.
 - **Faction identity is mechanical and symbolic.** Strategy, geometry, glyphs, motion, color, prose, portraits, and effects all express the same civilization.
 - **The simulation is deterministic.** A seed and complete committed plans reproduce the same outcome. Playback speed, animation frames, palette, and renderer never alter play.
 - **The architecture invites creation.** First-party maps, armies, campaigns, effects, and themes use inspectable definitions that may become a future modding surface.

@@ -2,8 +2,8 @@
 
 **Document role:** Single-player structure, mission definitions, progression, cutscenes, and initial narrative direction
 **Status:** Canonical direction; PERIMETER (Mission 1) is in active implementation across `milestones/`
-**Canon version:** 2.9
-**Updated:** 2026-08-26
+**Canon version:** 2.10
+**Updated:** 2026-09-01
 **License:** Narrative material is CC BY-SA 4.0; technical schemas are Apache-2.0
 
 ## 1. Development boundary
@@ -50,15 +50,13 @@ A high-level definition may resemble:
 interface MissionDefinition {
   id: string
   map: string
-  playerArmy: string
+  playerArmy: string                       // a CommanderArmyDefinition id (commander-armies.md 2.1)
   opponentArmies: readonly string[]
   availableContent: readonly string[]
   startingState: string
   objectives: readonly string[]
-  triggers: readonly string[]
+  triggers: readonly TriggerDefinition[]   // Section 2.1 — the mission's Pulses, script, and scenes
   opponentPolicy: string
-  introScene?: string
-  outroScene?: string
   unlocks: readonly string[]
 }
 
@@ -66,11 +64,85 @@ interface CampaignDefinition {
   id: string
   entryMission: string
   missions: readonly MissionDefinition[]
+  armies: readonly string[]                // the Commander Armies this campaign ships or references
   progressionRules: readonly string[]
 }
 ```
 
-This is architectural direction, not a frozen API.
+This is architectural direction, not a frozen API. `introScene` and `outroScene` from an earlier
+draft are gone on purpose: a scene is a trigger like any other (Section 2.1), not a special slot.
+
+### 2.1 Mission time, Pulses, and triggers — GUIDANCE on the shape; the authored surface is Q39
+
+**Owner direction, canon 2.10.** Mario: "The campaign levels should work with multiple pulses, not
+just one pulse, and have a way to declare 'triggers' and 'actions' same as the original StarCraft
+editor." A mission is **a sequence of Build Phase / Nexus Pulse cycles** — as many as its design
+wants — and **triggers** decide what happens during and between them. The engine's own loop already
+alternates without limit ([`engine.md`](engine.md) Section 5); this section is how a mission drives
+it.
+
+**Mission time.** A simulation moment is addressed as `{ pulse, tick }`. Phase boundaries are
+mission events: `mission.start`, `build.start`, `pulse.start`, `pulse.end`, `mission.end`, each
+carrying the pulse number. A Pulse may be **scripted** — no player plan; the player watches — which
+is what an intro is when "enemies arrive and take position" should be *seen moving* rather than
+described. A scripted Pulse is still a Pulse: seeded, deterministic, in the replay, hash-checked.
+
+**A trigger** is `{ id, when, once?, do }`: a condition, and the actions taken when it holds.
+
+Conditions, evaluated on canonical state and events — **never on what rendered**, so a trigger can
+never fire because of a frame: a mission event (optionally for one pulse); a tick within a pulse; an
+entity or group dying; an entity entering a named region of the map; an objective changing state; a
+count of some kind of entity crossing a threshold.
+
+Actions come in **two bands, and the band is the most important thing on this page**:
+
+| Band | Actions | Where they run | Determinism |
+| --- | --- | --- | --- |
+| **Simulation** | `spawn` (units at a region, with an initial order), `order` (a group advances, holds, or withdraws toward a region), `commitPlan` (the scripted opponent's Build Phase plan for a given pulse), `objective` (set or change one), `win`, `lose`, `endPulse`, `startBuild`, `reveal` | inside the kernel, as scripted intents at the tick the condition holds, validated like any player command, emitted as ordinary events | part of the hashed inputs — a replay re-derives them from mission, seed, and plans |
+| **Presentation** | `focus` (camera to an entity or a tile, through the ordinary scroll), `card` (a character's portrait card), `say` (speaker and line, advanced by the player or a timeout), `bark`, `effect`, `pause` / `resume` | in presentation; they never write state | re-derived from the event stream and the trigger list; skipping or replaying them changes nothing |
+
+The two bands keep the three-worlds law ([`engine.md`](engine.md) Section 1) intact under scripting:
+only the Pulse mutates state, and the presentation half of a trigger rides on the events the
+simulation half emits. A `spawn` at `{ pulse: 1, tick: 0 }` shows up in the log as a spawn event like
+any other; the `card` and `say` that introduce the spawned raid are drawn off that event, and a viewer
+with reduced motion, a skipped intro, or a monochrome terminal ends the intro on **exactly the same
+Grid**, because the state half ran whether or not the presentation half was watched.
+
+**The vocabulary grows in code, not in missions.** When a mission needs a condition or action the
+vocabulary lacks, it is added as a typed kind with a named scenario, exactly the way a kernel rule
+is. A mission never contains a function. The narrow-hook door ([`engine.md`](engine.md) Section 8 —
+read-only context in, intents out, validated by the kernel) is the escape hatch for a shape too odd
+for the vocabulary, and a hook used by two missions becomes a vocabulary entry. Whether this
+declarative model or a scripting API is the right *authored* surface is **Q39**; this section
+proceeds under its recommendation, which is this model.
+
+**Custom campaigns.** A mission references armies by id, and an army is a deck validated against
+its faction's pool ([`commander-armies.md`](commander-armies.md) Section 2.1). A custom campaign is
+therefore a folder of missions plus the Commander Armies it ships, loaded and validated by the same
+code as the first-party one. Nothing about that is built or promised now — it is *why* the trigger
+surface is data and the army is a deck rather than a feature in itself.
+
+A sketch of PERIMETER's own trigger list in this shape — an intro, a raid in waves across three
+Pulses, and the hold — so the model is concrete rather than described:
+
+```ts
+triggers: [
+  { id: "intro", when: { event: "mission.start" }, do: [
+      { card: "vasse" }, { say: { speaker: "vasse", text: "..." } },
+      { focus: { region: "nw-ridge" } },
+  ]},
+  { id: "wave-1", when: { pulse: 1, tick: 0 }, do: [
+      { spawn: { unit: "unit.ravel.raider", count: 3, at: "nw-ridge", order: { advance: "nexus" } } },
+      { card: "corvane" }, { say: { speaker: "corvane", text: "Nice fence, roadmakers. We brought wire cutters." } },
+  ]},
+  { id: "wave-2", when: { pulse: 2, tick: 0 }, do: [ { spawn: { /* larger */ } } ] },
+  { id: "wave-3", when: { pulse: 3, tick: 0 }, do: [ { spawn: { /* the push */ } } ] },
+  { id: "hold",   when: { event: "pulse.end", pulse: 3 }, do: [ { objective: { id: "hold", state: "complete" } }, { win: true } ] },
+]
+```
+
+The `{ atTick, action }` list Milestone 2 decided for the raid (Q32) is this model with one
+condition kind and one pulse — a special case, not a different design.
 
 ## 3. Teaching and progression
 
@@ -198,6 +270,29 @@ Cutscenes reuse the presentation framework rather than becoming video. A scene c
 
 The same content definition should be usable by the game, a preview tool, and agents generating or validating scenes. Cutscenes can introduce a Commander portrait, an army, an artifact, an Original, or a change in the Grid.
 
+**Scripting an intro — GUIDANCE, owner direction at canon 2.10.** Mario: "Special attention to
+scripting intros, focusing on a character, showing their face/card and displaying some text while
+they talk. Then spawn enemies, get them to move, and start a new pulse." An intro is a trigger list
+(Section 2.1), and it needs exactly four primitives, three of them presentation and one of them the
+simulation:
+
+- **`focus`** — the camera moves to an entity or a tile, through the same cursor-driven scroll the
+  player uses ([`engine.md`](engine.md) Section 3.3). No second camera, no cinematic mode: the
+  viewer's eye is taken where the player's cursor could go.
+- **`card`** — a character's portrait card: a hand-authored ASCII tableau of the face, the name, the
+  faction's glyph role, drawn in the side panel or as an overlay in the `chrome` band. The same card
+  is what inspection shows for that character during play, so a face learned in the intro is the face
+  met on the Grid.
+- **`say`** — a line under the card, attributed, advanced by Enter, a click, or the driver — or by a
+  timeout where the mission prefers pace to control. Skip is always available.
+- **a scripted Pulse** — `spawn` and `order` run inside the kernel while the player watches enemies
+  arrive and take position; then `startBuild` hands over the first Build Phase.
+
+**Skip is a presentation action.** Skipping an intro jumps past its `card`, `say`, and `focus`
+actions; the scripted Pulse still resolves, so the skipped intro leaves the Grid exactly where the
+watched one would. That is the property that keeps intros out of the engine's record
+(Section 4.1's third rule) while still letting them move things on the Grid.
+
 The opening image should make the Prime Nexus physically impossible before the player controls it:
 
 > **The buried ruin had not grown. It had remembered its size.**
@@ -217,6 +312,9 @@ Campaign tools should allow humans and agents to:
 - define missions as diffable text;
 - preview maps, starting states, unlocks, and cutscenes;
 - jump directly to a trigger or Nexus Pulse;
+- play a mission end to end through the driver ([`engine.md`](engine.md) Section 9.7) — the same
+  command stream an agent uses to playtest, so a mission's script is checked by running it, not by
+  reading it;
 - run opponent policies across seeds;
 - export a deterministic replay and event log;
 - validate references, objectives, reachable states, and progression graphs;

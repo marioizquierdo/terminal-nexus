@@ -3,7 +3,7 @@
 **Document role:** Milestone tracker — declare and play cutscenes for mission intros and events
 **Status:** GATED
 **Depends on:** Milestone 6 (events fire during the Pulse), Milestone 4 (the campaign menu is a plausible home for artifact entries)
-**Updated:** 2026-08-26
+**Updated:** 2026-09-01
 **License:** Technical mechanism is Apache-2.0; the cutscene content itself is CC BY-SA 4.0
 
 > **This is the real thing, not the placeholder an earlier draft of this roadmap proposed.** The
@@ -31,9 +31,20 @@ PERIMETER's own already-written material (Section 4.2 there — nothing new to w
   and agents generating or validating scenes" (`campaigns.md` Section 5) — build the definition and
   in-game playback first; a dedicated preview/validation tool is worth adding only once it is cheap,
   not a blocker for this gate.
-- **Playback controls**: keyboard advance, skip, replay, and the same accessibility modes (reduced
-  motion, monochrome) every other piece of presentation already supports — not a second accessibility
-  story.
+- **The presentation band of the trigger model** ([`../specs/campaigns.md`](../specs/campaigns.md)
+  Sections 2.1 and 5, canon 2.10): a cutscene is a trigger's `focus`, `card`, and `say` actions
+  riding on the events milestone 6's simulation band emits. `focus` moves the camera through the
+  ordinary cursor-driven scroll; `card` is the character's portrait card — face tableau, name,
+  faction glyph role — drawn in the side panel or the `chrome` band, and it is the same card
+  inspection shows for that character on the Grid; `say` is the attributed line beneath it. Mario's
+  own brief: "focusing on a character, showing their face/card and displaying some text while they
+  talk." PERIMETER's intro is the first use: cards and lines, then a scripted Pulse in which the raid
+  arrives and takes position (the simulation band, already built by milestone 6), then `startBuild`.
+- **Playback controls**: advance by Enter, click, or the driver; skip; replay; and the same
+  accessibility modes (reduced motion, monochrome) every other piece of presentation already supports
+  — not a second accessibility story. **Skip leaves the same Grid**: it jumps past the presentation
+  actions, and the scripted Pulse still resolves, so a skipped intro and a watched one hand the
+  player an identical first Build Phase — assert it.
 - **PERIMETER's own six pieces, played at the right moments**: the briefing before Build Phase; the
   pre-battle exchange at Pulse start; at least one bark during the fight, triggered off a real event
   (an engagement, a death) rather than a scripted timer; the mid-mission interruption at the Pulse's
@@ -60,7 +71,8 @@ fiction wrapped around the mechanism — not a mechanism with captions bolted on
 ## 5. Definition of done
 
 - [ ] all six pieces of PERIMETER's own written material play at the correct moment;
-- [ ] playback controls (advance, skip, replay) work correctly;
+- [ ] playback controls (advance, skip, replay) work correctly, through keyboard, mouse, and the
+      driver, and a skipped intro provably leaves the Grid identical to a watched one;
 - [ ] every cutscene passes the same three-forms bar (`../specs/ascii-effects.md` Section 4) as any
       other piece of presentation in this project;
 - [ ] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED**;

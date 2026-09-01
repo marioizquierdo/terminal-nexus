@@ -2,8 +2,8 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.9
-**Updated:** 2026-08-26
+**Canon version:** 2.10
+**Updated:** 2026-09-01
 **License:** Apache-2.0
 
 ## 1. Why this file exists
@@ -572,6 +572,11 @@ structures, production, and multiple Pulses in a single match, none of which exi
 place to design it is alongside Milestone 2's routing work and Milestone 3's Build Phase, not as a
 speculative addition to a milestone still officially unauthorized.
 
+**Closer than it was, canon 2.10:** missions are now multi-Pulse by owner direction
+([`campaigns.md`](campaigns.md) Section 2.1), and Milestone 2 proposes PERIMETER itself as three
+Pulses — so "regroup between Pulses" stops being hypothetical the moment that mission plays. The
+outpost idea itself is still unowned; the precondition this row was waiting on is no longer missing.
+
 ### Q24 — Does the terminal cell's own aspect ratio distort movement and fire enough to fix?
 
 **Status:** OPEN — the owner asked this be noted and set aside, not explored now; blocks nothing.
@@ -752,6 +757,12 @@ other scenario field, and needs no new runtime interface. Build B's policy-modul
 mission genuinely needs to react to what the player does, which no belief-ramp mission through
 PERIMETER does.
 
+**Generalised at canon 2.10, not changed:** Mario's design notes made every mission a sequence of
+Pulses with StarCraft-editor-style triggers, so `{ atTick, action }` is now one condition kind of the
+model in [`campaigns.md`](campaigns.md) Section 2.1, addressed as `{ pulse, tick }` — and the scripted
+opponent's Build Phase plan for each later Pulse is a `commitPlan` action in the same list. Option A
+stands; the surface it lives on got wider. Whether that surface is data or code is Q39.
+
 ### Q33 — Does PERIMETER's map need a real fix for Q15's on-axis routing dead end, or is authoring around it enough?
 
 **Status:** OPEN — blocks nothing before the PERIMETER map is authored; the recommendation is already
@@ -845,34 +856,13 @@ scripted schedule ends" to read as a *win*.
 cheapest possible evidence (playing the fixture once) decides whether it is needed, and B's cost is
 mostly the canon ceremony a RULE change requires, not the code.
 
-### Q37 — Does Milestone 5's Build Phase GUI need a design spike before the real build?
-
-**Status:** OPEN — blocks nothing before Milestone 5 starts; the recommendation is already assumed by
-[`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md).
-
-Mario, in the ten-milestone review: "I think defining the in-game GUI will require some pause and
-maybe a spike." Milestones 3 and 4 (a list menu, a handful of info panels) are well-trodden shapes
-this project already knows how to build well — `grid`'s own watch view already proves cell frames,
-capability tiers, and monochrome all compose cleanly. Milestone 5 is different in kind, not degree: it
-asks for cursor-driven scrolling (never built), a GUI that adapts across the whole 48×16-72×24
-viewport range (never built), and a dense side panel (construct menu, cost/effect, legality panel) —
-all three interacting at once, in a terminal, which is a genuinely harder and less precedented problem
-than anything Milestone 1 solved. Building the real interactive version first and discovering the
-layout does not work is expensive; a scenario like Q25's transparency amendment (prototype it, show
-what it buys, then ask) is exactly this project's own established way of de-risking a UI decision
-before committing code to it.
-
-| Option | Cost |
-| --- | --- |
-| A. **A static ASCII mockup pass before Milestone 5's real build**: a handful of hand-drawn or scripted frames showing the Build Phase screen at the viewport's minimum, default, and maximum sizes, with the construct menu, legality panel, and a scrolled Grid all present at once — reviewed by Mario before any interactive code exists | Cheap (no interaction, no kernel, just composed frames — the same technique `scripts/capture-screenshots.mjs` already uses for real gameplay) and it is the direct de-risking move for exactly the concern raised. Costs a short detour before Milestone 5 can start its own real work |
-| B. **Skip the mockup and build the real thing directly**, treating Milestone 5's own acceptance criteria (human check: "scrolling feels like looking around, not like fighting the cursor") as the first real feedback | Faster to a working build, but the failure mode is expensive: discovering the layout is wrong only after cursor logic, scrolling math, and panel rendering are all real code, which then all need revisiting together rather than one flat mockup |
-| C. **Treat this as Milestone 2's own job**, expanding its design-decision scope to include a GUI sketch alongside PERIMETER's map and unit list | Keeps all of Level 1's upfront design in one milestone, but Milestone 2 is scoped to *what PERIMETER contains*, not *how the engine presents it* — engine.md 9.2's panel shape is a cross-mission concern, not specific to this one map, so folding it into Milestone 2 mixes two different kinds of decision |
-
-**Recommendation: A, run as a short, explicit step at the start of Milestone 5 itself** (not folded
-into Milestone 2, which stays about PERIMETER's own content) — a few static mockups at the range's
-extremes, shown to Mario, before writing the real cursor/scrolling/panel code. This is cheap relative
-to the cost of a wrong layout discovered after the fact, and it matches how this project already
-de-risks presentation decisions (Q25) rather than introducing a new process.
+**B has a natural home since canon 2.10.** The trigger model in [`campaigns.md`](campaigns.md)
+Section 2.1 carries `win` and `lose` as simulation actions — "the Nexus still stands when Pulse 3
+ends" is a trigger (`when: { event: "pulse.end", pulse: 3 }`, `do: [{ win: true }]`), not a bespoke
+flag on the kernel's own victory check. If A shows the plain tick-limit draw does not read as
+success, B is that trigger action rather than a new victory branch, and the kernel's RULE-level
+condition (Nexus destroyed, annihilation, tick limit) stays exactly as it is, with a mission's
+objective layered above it. Still a RULE-adjacent change the day it lands; still Mario's call.
 
 ### Q38 — Does PERIMETER's own map need real scrolling, or does Milestone 5 prove scrolling on different content?
 
@@ -903,6 +893,40 @@ and it means Milestone 5's acceptance evidence is about the mission that motivat
 capability, not a fixture invented to exercise it. Milestone 2's own Section 4.3 should record the
 final map's size specifically with this in mind.
 
+**Sharpened by canon 2.10:** Mario's own input notes name scrolling as "the part that needs more
+attention" and give it a spike (Q37, now answered), so a PERIMETER map that never scrolls would leave
+that spike proving the game's most-scrutinised interaction on a fixture the campaign never plays.
+Option A is now the stronger recommendation, not merely the cheaper one.
+
+### Q39 — Is the mission-scripting surface declarative triggers, or a scripting API?
+
+**Status:** OPEN — blocks nothing before Milestone 6 builds PERIMETER's raid and Milestone 9 its
+intro; both proceed under the recommendation. Mario raised it directly with the design notes that
+became canon 2.10: "we should decide if this is better than providing a scripting API/DSL to just
+write some JS code on top of it, which may be easier."
+
+[`campaigns.md`](campaigns.md) Section 2.1 records the *shape* Mario asked for — StarCraft-editor
+style triggers, a condition and a list of actions, over a mission of many Pulses — and the split that
+makes it safe: simulation actions run inside the kernel as validated intents, presentation actions
+never touch state. What it does not settle is the **authored surface**: whether a mission author
+writes typed data, or code.
+
+| Option | Cost |
+| --- | --- |
+| A. **Declarative triggers** — a mission is TypeScript object literals of typed conditions and actions; the vocabulary grows in engine code, each new kind with a named scenario, and a mission never contains a function | Every shape a mission wants that the vocabulary lacks is an engine change, not a mission edit — slower on the first mission, and authors learn a vocabulary rather than a language. TypeScript literals already give autocomplete and type errors, so most of what a "DSL" promises ergonomically is there for free |
+| B. **A scripting API** — a mission is a TypeScript module exporting functions called at mission events, handed an API object (`spawn`, `order`, `say`, …) | Easiest first mission, and the ceiling is the language. But arbitrary code can read a clock, call `Math.random`, close over mutable state, and run in an order nothing pins down — determinism becomes author discipline instead of structure, the exact thing [`engine.md`](engine.md) Section 1 exists to make structural. Nothing can be validated statically (dangling references, unreachable objectives, a `win` nobody can trigger); a preview tool cannot "jump to a trigger" it cannot see; a replay must ship the script; and a user-authored campaign is arbitrary local code with no sandbox (`engine.md` Section 8 says so of hooks in as many words) |
+| C. **A with the narrow-hook door** — declarative by default; where a mission's shape is genuinely too odd for the vocabulary, it registers a typed hook that receives read-only context and returns intents the kernel validates, exactly the mechanism `engine.md` Section 8 already sketches for exceptional content; a hook used by two missions becomes a vocabulary entry | Everything A costs, plus one more thing to review carefully — a hook is code, and the review-time rule "intents out, never mutation" is what keeps it honest |
+
+**Recommendation: C, which is A in practice.** The reasons are the project's own invariants, not
+taste: only the Pulse mutates state, and data cannot mutate anything; a trigger list can be validated,
+previewed, jumped to, diffed, and replayed, and code can only be run; and "custom campaigns for custom
+Commander Armies" — Mario's stated reason for wanting this at all — is only safe to accept from
+strangers if a mission is data. "Easier" is true for the first mission and false by the third, when
+three missions' worth of ad-hoc script have to agree about what a wave is. **What would reopen this:**
+if by Milestone 10 RIGHT OF SALVAGE needs more than a handful of new vocabulary kinds, or a hook that
+cannot be expressed as intents, the vocabulary is failing at its job and B deserves a real look with
+that evidence in hand.
+
 ## 5. Answered
 
 Rows move here with the date, the decision, and the document that now owns it.
@@ -919,6 +943,24 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q17 | 2026-08-21 | **Resolved by an unrelated fix, not decided among its options.** Four-way movement and Manhattan distance (Q15's fix, shipped for legibility) removed the degenerate tie itself: under Chebyshev a rank-deployed army had every enemy at the same distance; under Manhattan the same layout does not, because the axis the old metric ignored (`min(|dx|,|dy|)`) is exactly the one Manhattan keeps. Verified, not assumed: `citizen-mirror-skirmish.ts` (rank-deployed) now pairs each attacker with a distinct nearest opponent from tick 1, no stampede | [`grid/coords.ts`](../src/grid/coords.ts) `gridDistance`; `specs/open-questions.md` Q15 |
 | Q25 | 2026-08-26 | **A confirmed (256-colour tier stays derived from `rgb`; 16-colour stays hand-authored) and C shipped**: `CellStyle.fade`, a `fgRole`-only 0–1 scalar resolved only at `color256`/`truecolor`, narrowly scoped to `fx.damage.flash` per a recorded departure from craft rule 7. B and D not done, per the recommendation | [`engine.md`](engine.md) Section 9.1; [`ascii-effects.md`](ascii-effects.md) craft rule 7; `src/view/roles.ts`, `src/view/frame.ts`, `src/view/effects/composite.ts`, `src/view/effects/recipes.ts` |
 | Q29 | 2026-08-26 | **Recall is the existing end-of-Pulse regroup rule, named, not a new mechanic.** Confirmed directly by Mario's own description of the Pulse phase: "instantly recall all units back to their proper location next to their home buildings" — exactly `engine.md` Section 5's existing rule, Option A | [`../milestones/milestone-06-pulse-phase.md`](../milestones/milestone-06-pulse-phase.md) |
+| Q37 | 2026-09-01 | **Yes — a spike, and wider than the row's Option A.** Mario: "Scrolling in the map and placing selected bases is the part that needs more attention and will need a spike to verify assumptions." Not only static mockups: an interactive spike of cursor scrolling and placement, driven through keyboard, mouse, and the driver alike, that also verifies which target terminals deliver Shift+Arrow | [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md); [`engine.md`](engine.md) Section 9.7 |
+
+### Q37 — answered
+
+Registered 2026-08-26 as "does Milestone 5 need a design spike," recommending a static ASCII mockup
+pass (Option A) at the start of that milestone. Answered by Mario's design notes of 2026-09-01, which
+became canon 2.10: the spike is wanted, and its subject is narrower and more demanding than a layout
+mockup — **scrolling the map and placing selected structures**, "the part that needs more attention,"
+with assumptions to *verify* rather than frames to look at. The same notes fix what the spike must
+exercise: every menu item by hotkey and by click with identical effect, cursor movement by arrow and
+by Shift+Arrow five tiles at a time, and all of it drivable by an agent for playtesting.
+
+So the answer is Option A's *timing* (a short, explicit step opening Milestone 5, before the real
+build) with a different *artifact*: an interactive spike, not a static one, scoped to scrolling and
+placement, run through all three input adapters of [`engine.md`](engine.md) Section 9.7, and
+recording which of the project's target terminals actually deliver modified arrow keys — the one
+assumption in the keymap that a terminal can silently break. The static mockups at the viewport
+range's extremes remain a cheap thing to produce along the way; they are no longer the deliverable.
 
 ### Q29 — answered
 

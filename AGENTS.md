@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.9
+**Canon version:** 2.10
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -159,7 +159,15 @@ deleted, and the renderer must be replaceable without one simulation test changi
   a mirror match stays legible and monochrome stays whole.
 - Content is TypeScript-first and mostly declarative.
 - The playable content boundary is a Commander Army: Commander, units, structures, upgrades, Nexus
-  powers, and starting package.
+  powers, and starting package. **The faction is the pool; the army is the deck** — common
+  structures, army structures, and a Nexus power pool dealt as a hand each Build Phase. The match
+  only ever sees an army.
+- **Every interactive action is a named command.** Keyboard, mouse, and a driver (for agents and
+  tests) are three adapters onto one vocabulary; every menu item displays its hotkey and is clickable
+  with identical effect; the driver can inject raw key and mouse events and read the cell frame back.
+- **A mission is a sequence of Build Phase / Nexus Pulse cycles driven by triggers.** Simulation
+  actions run inside the kernel as validated intents; presentation actions never touch state. A
+  scripted Pulse is still a Pulse.
 - Prime Nexuses remain at home and replicate Grid Nexuses; avoid stale teleportation language.
 - Player-facing phases are **Build Phase** and **Nexus Pulse**; use those names consistently.
 - Prefer direct code for the current proof. Extract a framework only after two real uses reveal the

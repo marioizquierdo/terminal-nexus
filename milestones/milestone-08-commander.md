@@ -3,7 +3,7 @@
 **Document role:** Milestone tracker — the first real Commander (Edda Vasse) and a small Nexus upgrade draft
 **Status:** GATED
 **Depends on:** Milestone 5 (Build Phase is where the upgrade pick lives), Milestone 6 (Pulse is where the Commander acts)
-**Updated:** 2026-08-26
+**Updated:** 2026-09-01
 **License:** Creative identity is CC BY-SA 4.0 (already true of `commander-armies.md`); mechanism is Apache-2.0
 
 > **This widens Level 1's scope on purpose, and it needs saying plainly.** Every earlier framing of
@@ -34,7 +34,12 @@ Phase, without this becoming "author the Citizens Commander Army" ahead of Miles
 - **A small, real Nexus upgrade draft**: [`../specs/engine.md`](../specs/engine.md) Section 5.4 says
   "the Grid Nexus offers a small draft of upgrades" and admits "none of this is designed." This
   milestone designs and builds the smallest real version — one or two options, mission-scoped, filling
-  the upgrade-pick slot Milestone 5 already built the mechanism for.
+  the upgrade-pick slot Milestone 5 already built the mechanism for. Since canon 2.10 the draft has a
+  defined source: **the Commander Army's own Nexus power pool, dealt as a hand at the start of each
+  Build Phase, one kept** ([`../specs/commander-armies.md`](../specs/commander-armies.md) Section
+  2.1). Vasse's PERIMETER army is that shape at its smallest — a pool of two, a hand of two, one
+  kept per Build Phase across the mission's three Pulses — which is enough to build the dealing
+  mechanism once and never as a placeholder.
 
 ## 3. Q34 — does this mean authoring a Commander Army?
 
