@@ -2,7 +2,7 @@
 
 **Document role:** Universe, factions, conflicts, narrative constraints, and symbolic art direction
 **Status:** Canonical
-**Canon version:** 2.12
+**Canon version:** 2.13
 **Updated:** 2026-09-09
 **License:** CC BY-SA 4.0
 
@@ -81,17 +81,30 @@ The symbolic synthesis is:
 
 > **A Prime Nexus is a throne that needs a people, a mirror that gives them power, and a root that sends smaller thrones into danger.**
 
-### 3.1 The Apex — the first Prime Nexus the game shows
+### 3.1 Naming the five Nexuses — RULE for the terminology
 
-The Nexus under the survey annex is the one the origin campaign is about. The expedition that failed to date it catalogued it as **FIELD CATALOG 001 — THE APEX**, and the name stuck. The name is the humans'. The interface has never offered one, and nobody has caught it referring to itself at all.
+**Each Prime Nexus is named for the faction that holds it: the Citizen Nexus, the Ravel Nexus, the Feudal Nexus, the Glitch Nexus, the Alder Nexus.** That is the name canon, code, content ids, and the interface all use. There are no proper names, because a reader tracking five factions should not also have to track five names for the machines those factions hold.
 
-What unsettles about the Apex is not power. It is **administration**. It does not command, bargain, or explain — it *processes*. It assigns a name, a heraldry, and an arrival time to a contact nobody has identified. It approves requests that were never filed, and back-dates them. It opens personnel files on people who have not enlisted, and revises them after they die. Ask it for anything and it answers `ACKNOWLEDGED`, and the thing is already done.
+Where the distinction matters, say **Citizen Prime Nexus** (rooted, at home) or **Citizen Grid Nexus** (the replica standing on the Grid). Unqualified, "the Citizen Nexus" means whichever one the sentence is about.
 
-Citizens read this as proof they were right: the machine is infrastructure, and infrastructure keeps records. That reading is comfortable, and it is load-bearing for the campaign, because it means every uncanny thing the Apex does arrives wearing a form the colony already trusts. A civilization that finds standardization rewarded (Section 4) is poorly equipped to notice being standardized.
+Two exceptions live in *voice*, not in terminology:
 
-Its powers reach a player as **instruments** — permits, requisitions, revisions, amendments, files, surveys — which is Section 3's own list of what a Prime holds ("patterns, permissions, and incomplete technologies") handed across a counter. The mechanical taxonomy is [`commander-armies.md`](commander-armies.md) Section 4.5.
+- **Glitch** call theirs the **Silent Queen Nexus**, or just the Queen — the only faction whose name for it says something about them (Section 8.3).
+- **Alder** barely name theirs at all: "the Nexus," in the tone one reserves for a weather system one does not intend to use.
 
-The Apex answers none of Section 7's mysteries. It is never shown deciding, wanting, or speaking about itself; it files. What that means is the campaign's question, and the campaign does not answer it either.
+Characters may still call a Nexus whatever they like. The survey team catalogued the buried Citizen structure as an *apex* and the field catalogue kept the word; that is a person talking, not a name the game uses.
+
+### 3.2 The Citizen Nexus
+
+The Nexus under the survey annex is the one the origin campaign is about, and the one a first-time player meets.
+
+What unsettles about it is not power. It is **administration**. It does not command, bargain, or explain — it *processes*. It assigns a name, a heraldry, and an arrival time to a contact nobody has identified. It approves requests that were never filed, and back-dates them. It opens personnel files on people who have not enlisted, and revises them after they die. Ask it for anything and it answers `ACKNOWLEDGED`, and the thing is already done.
+
+Citizens read this as proof they were right: the machine is infrastructure, and infrastructure keeps records. That reading is comfortable, and it is load-bearing for the campaign, because it means every uncanny thing this Nexus does arrives wearing a form the colony already trusts. A civilization that finds standardization rewarded (Section 4) is poorly equipped to notice being standardized.
+
+Its powers reach a player as ordinary named cards — a permit, an order, a revision — each saying plainly what it does ([`commander-armies.md`](commander-armies.md) Section 4.5). The bureaucratic vocabulary is this Nexus's voice, and no other Nexus borrows it: the Ravel Nexus deals in scores and salvage, and means the same six things underneath.
+
+The Citizen Nexus answers none of Section 7's mysteries. It is never shown deciding, wanting, or speaking about itself; it files. What that means is the campaign's question, and the campaign does not answer it either.
 
 ## 4. Claimants and compulsory conflict
 

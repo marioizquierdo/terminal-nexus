@@ -2,7 +2,7 @@
 
 **Document role:** Vocabulary and structure for the single-player modes — Campaign and Challenge — and the seam every later mode shares
 **Status:** Canonical direction; structure is GUIDANCE until a milestone earns it
-**Canon version:** 2.12
+**Canon version:** 2.13
 **Updated:** 2026-09-09
 **License:** Apache-2.0 for structure and schemas; mode names and any fiction they carry are CC BY-SA 4.0
 
@@ -74,10 +74,17 @@ small, guided run in all but name — which is what makes the handoff to Challen
 
 Missions are trigger lists (`campaigns.md` Section 2.1). Everything about their authored content —
 text, cast, cutscenes, the scripted opponent — stays in `campaigns.md`; this document only says
-what the mode *is for*. `campaigns.md` Section 4.3 scripts the first three missions; the Campaign may
-open with a **choice of starter Commander** across the same three-mission script
-([`commander-armies.md`](commander-armies.md) Section 4.6, Q43), which is what makes a second intro
-campaign content rather than a second campaign.
+what the mode *is for*. Three things about its shape belong here, because Challenge depends on them
+(`campaigns.md` Section 4.3, [`commander-armies.md`](commander-armies.md) Section 4.6, Q43):
+
+- **The Campaign opens with a choice of Commander** — two Citizens who play almost alike and one
+  Ravel who does not. All three run the same maps, which is what makes a second opening content
+  rather than a second campaign.
+- **Progress is per save slot**, each slot naming its Commander, and a player may start another
+  campaign at any time without losing one in progress.
+- **Every mission has a main goal and usually a bonus goal**, and the bonus goal is what **unlocks
+  content for Challenge** — a Commander, a card, a starting variant. That is the coupling between the
+  two modes: the Campaign is where a run's options are earned, and neither mode owns the other.
 
 ### 3.2 Challenge — runs — GUIDANCE, the numbers explicitly so
 
@@ -182,12 +189,11 @@ network and rest on search extracts rather than a full read.
 
 - The exact numbers in Section 3.2's table — battles, acts, offer size, tier schedule — are starting
   values for Milestone 11 to retune on runs actually played.
-- Five decisions that shape the screens rather than the numbers are registered rather than assumed:
-  **Q42** (what kinds of effect a Nexus power may have — the six instruments), **Q43** (whether the
-  Campaign offers a starter-Commander choice, and which of the five candidates ship), **Q44** (is a
-  mission's Pulse count authored and shown), **Q45** (is the draft pick mandatory, skippable, or
-  bankable), **Q46** (where a run's starting army comes from). Each carries a recommendation; each is
-  cheap now and expensive after Milestone 5.
+- Three decisions that shape the screens rather than the numbers are still registered rather than
+  assumed: **Q43** (which starting Commanders ship, and how the choice is presented), **Q45** (is the
+  draft pick mandatory, skippable, or bankable), **Q46** (where a run's starting army comes from).
+  Each carries a recommendation, and each is cheap now and expensive after Milestone 5. Q42 (what a
+  Nexus power may do) and Q44 (mission length) were answered at canon 2.13.
 - What persists between battles within a run beyond the deck and the Commander (Q40), and whether
   anything but unlocks persists between runs (Q41).
 - Difficulty ladders (ascension-style), daily seeds, leaderboards, and any online feature: real

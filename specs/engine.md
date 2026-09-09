@@ -2,7 +2,7 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.12
+**Canon version:** 2.13
 **Updated:** 2026-09-09
 **License:** Apache-2.0
 
@@ -622,10 +622,11 @@ hand at the start of every Build Phase, from which the player keeps one
 ([`commander-armies.md`](commander-armies.md) Section 2.1). The draft's tier, size, and redraw rules
 are still undesigned; recorded so the shape of the draft is not accidentally foreclosed.
 
-**What a power may *do* is proposed at canon 2.12** as six bounded instruments — Permit, Requisition,
-Revision, Amendment, File, Survey ([`commander-armies.md`](commander-armies.md) Section 4.5, Q42).
-That taxonomy is what a Build Phase panel actually renders, so it is worth reading before building
-one; it is GUIDANCE and unbuilt, like the rest of this section.
+**What a power may *do* is settled at canon 2.13** (Q42): to a player, a power is a name and a plain
+description of what it does — no classification to learn — and in code the effect is one of a small
+bounded union: `unlockStructure`, `spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`,
+`reveal` ([`commander-armies.md`](commander-armies.md) Section 4.5). That union is what a Build Phase
+panel actually renders, so it is worth reading before building one.
 
 ---
 

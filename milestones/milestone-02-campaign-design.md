@@ -2,7 +2,7 @@
 
 **Document role:** Milestone tracker — name the single-player modes and fix the few PERIMETER decisions the UX build needs, before milestones 3-6 build the game's experience
 **Status:** CURRENT
-**Active gate:** 2D — Owner confirmation of the mode vocabulary (`game-modes.md`), the build order, and the canon 2.12 design (the Apex, the six instruments, five Commander candidates, the Levels 1–3 script); gates 2A, 2B and 2C are drafted
+**Active gate:** 2D — Owner confirmation of the mode vocabulary (`game-modes.md`), the build order, and the canon 2.12–2.13 design (the Citizen Nexus, the three starting Commanders, the two openings, mission and bonus goals) plus Q43, Q45, Q46; gates 2A, 2B and 2C are drafted
 **Depends on:** Milestone 1 (accepted)
 **Updated:** 2026-09-09
 **License:** Apache-2.0; the mission decisions below touch CC BY-SA 4.0 narrative material already written in `campaigns.md`
@@ -42,16 +42,19 @@ definition of the campaign. Its answers (Section 4) stand.
   construct menu, a map that scrolls a little, a three-Pulse raid as a trigger list. These are the
   decisions the Build Phase and Pulse milestones need a concrete mission for — nothing more is
   decided about the campaign here.
-- **2C — The first Nexus, the first Commanders, and the level script. Drafted (canon 2.12).**
-  [`../specs/terminal-nexus-lore.md`](../specs/terminal-nexus-lore.md) Section 3.1 gives the Apex a
-  character (an administrator, not a weapon); [`../specs/commander-armies.md`](../specs/commander-armies.md)
-  Section 2.2 the affinity model (Native, Estranged, Unsanctioned, Foreign, Dual-bound, Proxy — all
-  data, no new machinery), Section 4.5 the six Nexus-power instruments, and Section 4.6 five starter
-  Commander candidates; [`../specs/campaigns.md`](../specs/campaigns.md) Section 4.3 scripts Levels
-  1–3 at 3/4/5 Pulses. Q42–Q46 registered with recommendations.
+- **2C — The first Nexus, the first Commanders, and the opening campaigns. Drafted (canon 2.12,
+  revised 2.13 on owner feedback).** [`../specs/terminal-nexus-lore.md`](../specs/terminal-nexus-lore.md)
+  Section 3.1 fixes the naming (each Nexus is named for its faction — Citizen Nexus, Ravel Nexus, …)
+  and 3.2 gives the Citizen Nexus its character: an administrator, not a weapon.
+  [`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.2 carries the affinity
+  model, 4.5 what a power does (a name and a plain line; effect kinds live in code), and 4.6 the
+  three starting Commanders — Vasse, Averno, Dob Hunter — with four later candidates kept.
+  [`../specs/campaigns.md`](../specs/campaigns.md) Section 4.3 gives the two openings, mission goals,
+  and bonus goals. Q42 and Q44 answered; Q43, Q45, Q46 open with recommendations.
 - **2D — Owner confirmation. Open.** Mario reads `game-modes.md`, the build order in
   [`README.md`](README.md), Sections 4 and 4.6 here, and the canon 2.12 design above, then confirms
-  or redirects — in particular Q42 (the six instruments), Q43 (which Commanders ship), and Q44–Q46.
+  or redirects — in particular Q43 (which Commanders ship, and the Averno/Teag naming collision),
+  Q45 and Q46.
   Then Milestone 3 opens. This is cheap to change now and expensive after milestones 3-6 have built
   against it.
 
@@ -252,10 +255,11 @@ Moved to Answered in [`../specs/open-questions.md`](../specs/open-questions.md).
 
 - [x] gate 2A: `game-modes.md` exists with the vocabulary, both modes, the run's starting shape, and
       its sources; Q40 and Q41 are registered with recommendations;
-- [x] gate 2C: the Apex, the affinity model, the six instruments, five Commander candidates, and the
-      Levels 1–3 script are written; Q42–Q46 registered with recommendations;
+- [x] gate 2C: the Nexus naming convention, the Citizen Nexus's character, the affinity model, what a
+      power does, the three starting Commanders, and the two openings with mission and bonus goals are
+      written; Q42 and Q44 answered, Q43/Q45/Q46 open with recommendations;
 - [ ] gate 2D: Mario has confirmed or redirected the mode vocabulary, the build order in
-      [`README.md`](README.md), and Q42–Q46;
+      [`README.md`](README.md), and Q43, Q45, Q46 — plus the Averno/Teag naming collision;
 - [ ] the unit list above is confirmed against the actual fixture content (ids may drift; check
       `src/content/citizen.ts` and `src/content/ravel.ts` before citing them elsewhere);
 - [ ] a real `.map.json` sketch or written layout exists for PERIMETER's Grid, terrain, and starting

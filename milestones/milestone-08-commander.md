@@ -50,8 +50,9 @@ Phase, without this becoming "author the Citizens Commander Army" ahead of Miles
 - **8B — The Nexus draft, dealt from a pool.** A hand dealt at each Build Phase from the army's Nexus
   power pool, one kept, filling Milestone 5's slot; two real, mechanically distinct powers for
   PERIMETER. The dealer built here is the one Milestone 11's run draft reuses at the next scale.
-  Which *kinds* of power exist is [`../specs/commander-armies.md`](../specs/commander-armies.md)
-  Section 4.5's six instruments (Q42) — build two or three of them, not all six. Vasse's own card
+  A power is a name and one plain line of description; the effect kinds behind it
+  ([`../specs/commander-armies.md`](../specs/commander-armies.md) Section 4.5, Q42 answered) are code
+  names the player never sees — build two or three of the six, not all of them. Vasse's own card
   (Section 4.6 there) names candidate powers; Q45 decides whether the pick may be declined.
 
 Both modes need both gates, which is why this milestone sits before either mode shell in the build

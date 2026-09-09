@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.12
+**Canon version:** 2.13
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -71,9 +71,10 @@ is a tracker checked off during work, not a document that only changes at a name
 The current milestone is **[`milestones/milestone-02-campaign-design.md`](milestones/milestone-02-campaign-design.md)
 — Design and Orientation** (re-scoped at canon 2.11): the vocabulary of the single-player modes
 ([`specs/game-modes.md`](specs/game-modes.md) — Campaign and Challenge), the build order, the few
-PERIMETER decisions the UX build needs, and — at canon 2.12 — the first Nexus, five starter Commander
-candidates, the six Nexus-power instruments, and a script for Levels 1–3. It is a design pass, not a
-code gate, and its one open gate is **2D — Mario's confirmation, including Q42–Q46**.
+PERIMETER decisions the UX build needs, and — at canon 2.12–2.13 — the Citizen Nexus's character, the
+three starting Commanders (Vasse, Averno, Dob Hunter), what a Nexus power does, and the two openings
+with their mission and bonus goals. It is a design pass, not a code gate, and its one open gate is
+**2D — Mario's confirmation, including Q43, Q45 and Q46**.
 
 So the authorised work for a new session is, in order:
 
@@ -175,6 +176,12 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - **A mode is data over one match loop and one army shape.** Campaign (first-time experience,
   canon) and Challenge (seeded runs with a draft between battles) are the two single-player modes;
   nothing below a mode knows which one it serves. Every card carries `rarity`, `tier`, and `role`.
+- **Each Nexus is named for its faction** — Citizen Nexus, Ravel Nexus, Feudal Nexus, Glitch Nexus,
+  Alder Nexus, with Prime/Grid appended where it matters. No proper names in canon, code, or
+  interface.
+- **A Nexus power is a name and one plain line of description.** No player-facing classification; the
+  effect kinds (`unlockStructure`, `spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`,
+  `reveal`) are code names. **A mission has goals, not a fixed length.**
 - Prime Nexuses remain at home and replicate Grid Nexuses; avoid stale teleportation language.
 - Player-facing phases are **Build Phase** and **Nexus Pulse**; use those names consistently.
 - Prefer direct code for the current proof. Extract a framework only after two real uses reveal the

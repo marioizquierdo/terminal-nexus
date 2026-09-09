@@ -2,7 +2,7 @@
 
 **Document role:** Canon index and reading order
 **Status:** Canonical
-**Canon version:** 2.12
+**Canon version:** 2.13
 **Updated:** 2026-09-09
 **License:** Apache-2.0
 
@@ -46,13 +46,16 @@ runs with a draft between battles — and [`../milestones/README.md`](../milesto
 carries a build order (UX core first, then the two mode shells, then depth, then content) with small
 gates in every milestone, plus Milestones 11 (runs) and 12 (content iteration).
 
-**Canon 2.12 gave the first Nexus and the first Commanders a face.** The Apex — the Citizens' Prime
-Nexus, an administrator rather than a weapon ([`terminal-nexus-lore.md`](terminal-nexus-lore.md)
-Section 3.1); the affinity model and six Nexus-power instruments
-([`commander-armies.md`](commander-armies.md) Sections 2.2 and 4.5); five starter Commander
-candidates (Section 4.6 there); and a 3/4/5-Pulse script for Levels 1–3
-([`campaigns.md`](campaigns.md) Section 4.3). Q42–Q46 are the forks Mario decides before Milestone 3
-opens.
+**Canon 2.12–2.13 gave the first Nexus and the first Commanders a face.** Each Nexus is named for the
+faction that holds it, and the **Citizen Nexus** is an administrator rather than a weapon
+([`terminal-nexus-lore.md`](terminal-nexus-lore.md) Sections 3.1–3.2). A Commander is that Nexus's
+signature, bound by one of six affinities, and a Nexus power is a name plus a plain line of
+description over a small union of effect kinds in code
+([`commander-armies.md`](commander-armies.md) Sections 2.2 and 4.5). The game opens with **three
+Commanders** — two Citizens who play almost alike and one Ravel who does not (Section 4.6) — across
+**two openings on one set of maps**, with missions carrying a main goal and a bonus goal that unlocks
+Challenge content ([`campaigns.md`](campaigns.md) Section 4.3). Q43, Q45 and Q46 are the forks left
+for Mario before Milestone 3 opens.
 
 For a new coding session, read:
 
