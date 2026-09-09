@@ -2,8 +2,8 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.10
-**Updated:** 2026-09-01
+**Canon version:** 2.11
+**Updated:** 2026-09-09
 **License:** Apache-2.0
 
 ## 1. Why this file exists
@@ -926,6 +926,48 @@ three missions' worth of ad-hoc script have to agree about what a wave is. **Wha
 if by Milestone 10 RIGHT OF SALVAGE needs more than a handful of new vocabulary kinds, or a hook that
 cannot be expressed as intents, the vocabulary is failing at its job and B deserves a real look with
 that evidence in hand.
+
+### Q40 — Within a run, what persists from one battle to the next?
+
+**Status:** OPEN — blocks nothing before Milestone 11's gate 11A; it proceeds under the
+recommendation. Registered at canon 2.11 with the Challenge mode itself
+([`game-modes.md`](game-modes.md) Section 3.2).
+
+A run is a series of battles with the army changing between them. The deck — the army's structures
+and Nexus power pool — obviously persists; that is what the run draft edits. What is not obvious is
+whether anything *on the Grid* does. `terminal-nexus-concept.md`'s promise that "persistence creates
+short stories — survivors matter" is stated for the Pulses of one match; carrying it across battles
+would be a new claim.
+
+| Option | Cost |
+| --- | --- |
+| A. **Deck and Commander only.** Every battle starts from a fresh Grid with the army's starting package; nothing built or fielded carries over | The smallest run, the cheapest to build (a battle is a match, unchanged), and the one every reference deckbuilder uses. Loses the "veterans" fantasy an RTS audience may expect |
+| B. **Deck, Commander, and surviving units** — the roster that walked out of the last battle walks into the next, capped by supply | Into the Breach's pilot and XCOM's soldiers, at army scale: real attachment, real dread. Costs a between-battle roster state the match does not have, a supply rule for what a fresh Grid can field at tick 0, and a balance problem — a good early battle snowballs, which the rarity/tier dealing cannot see |
+| C. **Deck, Commander, and a carried resource** — unspent resource banks into the next battle's allotment | Cheap, and it rewards efficient play without roster snowballing. Interacts with Milestone 7's economy, which does not exist when 11A is built |
+
+**Recommendation: A for 11A, with B made observable as a toggle in 11B if it is cheap, and judged
+by playing both.** A is the run every proven structure has; B is the one Terminal Nexus's own fiction
+argues for, and it should be tried rather than assumed either way. C waits for an economy to carry.
+
+### Q41 — Between runs, what persists?
+
+**Status:** OPEN — blocks nothing before Milestone 11 closes; registered at canon 2.11 so the answer
+is not improvised the day a run summary exists.
+
+Roguelike runs live or die on what a lost run leaves behind. The reference games split two ways
+(`game-modes.md` Section 5): persist **options** (Into the Breach's squads and one pilot; Hades'
+unlocked weapons and keepsakes) or persist **power** (Hades' Mirror of Night talents, which make the
+next run mechanically easier).
+
+| Option | Cost |
+| --- | --- |
+| A. **Unlocks into the pool only.** A run can reveal or unlock cards the Campaign has not yet; nothing makes the next run's battles easier | Keeps "understand why the battle unfolded" honest — a player who won got better, not stronger. Cheapest: the unlock record of Q31 already exists. Offers no progression to a player who keeps losing at the same act |
+| B. **A power ladder** — permanent buffs bought with a run's earnings | Retention machinery every free-to-play autobattler ships. Directly undermines the concept's "recover from losses and discover a different build," and makes balance a moving target per player |
+| C. **A difficulty ladder instead** — an ascension-style series of harder run modifiers unlocked by winning | Persists challenge upward rather than power downward; the proven answer for skilled retention. Costs nothing until someone wins a run, which is when it should be designed |
+
+**Recommendation: A now, C when a run has been won, never B.** Difficulty should climb for the player
+who beat it and options should widen for the player who did not; neither needs the run to get easier
+by itself.
 
 ## 5. Answered
 

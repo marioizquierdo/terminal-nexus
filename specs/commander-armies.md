@@ -2,8 +2,8 @@
 
 **Document role:** Playable faction packages: Commanders, units, structures, upgrades, and Nexus powers
 **Status:** Canonical identity direction; rosters intentionally undefined
-**Canon version:** 2.10
-**Updated:** 2026-09-01
+**Canon version:** 2.11
+**Updated:** 2026-09-09
 **License:** Creative identity is CC BY-SA 4.0; mechanical definitions and schemas are Apache-2.0
 
 ## 1. Purpose
@@ -86,10 +86,15 @@ starting package, the faction's rules (Section 4.1) and the Commander's exceptio
   safe later: the loader, not a reviewer, says whether a deck is legal.
 - **Three producers, one shape.** A first-party authored army, a campaign's progression (the unlock
   record of Q31 is literally cards added to the player's deck between missions, and Milestone 4's
-  army panel is the deck laid out), and a future drafting mode where players build an army from the
-  pool at match start all produce the same `CommanderArmyDefinition`. The match never knows which
-  one did. That is the whole reason the drafting idea stays open without being designed now: nothing
-  about it needs a second content shape.
+  army panel is the deck laid out), and **the run draft** of Challenge mode — add, remove, or
+  upgrade a card between battles ([`game-modes.md`](game-modes.md) Section 3.2) — all produce the
+  same `CommanderArmyDefinition`. The match never knows which one did. A player-built army at match
+  start is a fourth producer of the same shape, still undesigned.
+- **Every card carries `rarity`, `tier`, and `role` from the day it is authored**
+  ([`game-modes.md`](game-modes.md) Section 4). Rarity is how often a draft offers it, tier is the
+  earliest depth it may appear at, role is what it is for — and both modes read all three: the
+  Campaign unlocks by tier, a run deals by rarity and varies by role. A card without tags cannot be
+  dealt, which is the cheapest possible way to make sure nobody forgets them.
 - **Alder fits without an exception.** Their refusal (Q11) is a near-empty Nexus power pool and a
   larger structure pool — expressed by the numbers, not by a special case in the model.
 
@@ -330,10 +335,12 @@ Units:
 
 Structures:
 - common (the faction's, always available) versus army (this deck's, within the cap — Section 2.1)
+- rarity, tier, role tags (game-modes.md Section 4)
 - role, footprint, radius, worker/production behavior, glyph role
 
 Nexus powers:
 - the army's pool, within the cap, from which each Build Phase's hand is dealt
+- rarity, tier, role tags (game-modes.md Section 4)
 - timing, cost, target, authoritative effect, presentation cue
 
 Upgrade pool:

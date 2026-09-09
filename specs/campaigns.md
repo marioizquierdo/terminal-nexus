@@ -2,8 +2,8 @@
 
 **Document role:** Single-player structure, mission definitions, progression, cutscenes, and initial narrative direction
 **Status:** Canonical direction; PERIMETER (Mission 1) is in active implementation across `milestones/`
-**Canon version:** 2.10
-**Updated:** 2026-09-01
+**Canon version:** 2.11
+**Updated:** 2026-09-09
 **License:** Narrative material is CC BY-SA 4.0; technical schemas are Apache-2.0
 
 ## 1. Development boundary
@@ -27,6 +27,15 @@ Campaigns remain the first *complete* single-player experience only once the who
 what changed is that reaching it no longer waits for battle presentation, base construction, and the
 two-faction microgame to each finish in full first. It waits for each *level* to finish, one at a
 time, pulling in only the piece of each of those systems that level's own mission needs.
+
+**Re-scoped again at canon 2.11, and lighter.** The Campaign is now one of two single-player modes
+([`game-modes.md`](game-modes.md)): **the first-time player experience and the world's canon**,
+judged on whether a new player comes out able to play a run and whether the world feels real.
+Replay value, breadth, and duration are Challenge mode's job (runs, `game-modes.md` Section 3.2).
+Nothing in this document is a length or breadth requirement; the belief ramp is direction for what
+the missions teach and tell, not a count of missions the game owes. Mechanically the Campaign is the
+mode that grows the player's pool — each mission unlocks the cards it introduces — which is what
+makes its last mission a guided run in all but name.
 
 ## 2. What defines a campaign
 

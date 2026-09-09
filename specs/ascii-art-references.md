@@ -2,8 +2,8 @@
 
 **Document role:** Non-authoritative research: where to learn terminal art, and what to take from each
 **Status:** Reference. [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 9 remains the authority
-**Canon version:** 2.10
-**Updated:** 2026-09-01
+**Canon version:** 2.11
+**Updated:** 2026-09-09
 **License:** Apache-2.0 for the analysis; linked works belong to their authors
 
 Terminal Nexus is betting that a `@` can carry a commander and a row of `#` can feel engineered.

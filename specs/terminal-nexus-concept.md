@@ -2,8 +2,8 @@
 
 **Document role:** One-page product definition
 **Status:** Canonical
-**Canon version:** 2.10
-**Updated:** 2026-09-01
+**Canon version:** 2.11
+**Updated:** 2026-09-09
 **License:** CC BY-SA 4.0 for creative direction; Apache-2.0 for technical product requirements
 
 ## The game in one sentence
@@ -32,6 +32,23 @@ The player does not micromanage units during a Pulse. Their agency comes from ba
 The emotional loop is:
 
 > **Build. Commit. Pulse. Understand. Adapt.**
+
+## How the game is played
+
+Two single-player modes share that match, and both are designed for from the start
+([`game-modes.md`](game-modes.md)):
+
+- **Campaign** — the first-time player experience and the world's canon: a short, authored sequence
+  of missions that teaches one mechanic at a time, unlocks the cards it introduces, and tells the
+  story. Judged on whether a new player comes out able to play a run, and whether the world feels
+  real — never on length.
+- **Challenge** — seeded runs: a series of battles against escalating Commander Armies, with a draft
+  between every two — add a card, remove one, or upgrade one — so the build is polished battle by
+  battle. The same seed gives the same run. This is where replay value lives.
+
+Skirmish (one battle, any legal army) falls out of the same pieces; multiplayer comes later, on the
+same deterministic match. A mode is data over one match loop and one army shape — nothing below the
+mode knows which one it is serving.
 
 ## What makes it special
 

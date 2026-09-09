@@ -3,7 +3,7 @@
 **Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
 **Status:** GATED
 **Depends on:** Milestone 4 (launches the mission), Milestone 2 (the mission's own budget/units decided)
-**Updated:** 2026-09-01
+**Updated:** 2026-09-09
 **License:** Apache-2.0
 
 > **This is where scrolling was always going to land.** Gate 1A deliberately used a Grid that fit the
@@ -59,6 +59,20 @@ real cursor-driven map scrolling — before handing off into Milestone 6's Pulse
   for the five-tile jump. Static mockups at the range's extremes are a cheap by-product, not the
   deliverable. Its findings go in this milestone's gate report and retune the GUIDANCE bindings in
   `engine.md` 9.7.
+
+### 2.1 Gates
+
+- **5A — The scrolling-and-placement spike** (Q37, answered): interactive, all three adapters,
+  viewport extremes, the click-to-place toggle, the Shift+Arrow terminal findings. Report first, then
+  build.
+- **5B — Construct menu and legality.** The two-group menu (common tier, army tier), cost and effect
+  per item, the legality panel that says why, placement validation that rejects with a reason.
+- **5C — Scrolling and the adaptive layout.** Cursor-driven scrolling at the 3-tile margin across the
+  full 48×16–72×24 range; the side panel's layout at both ends; edge markers and the position
+  readout.
+- **5D — The Nexus draft slot and commit.** The upgrade-pick mechanism against a placeholder option
+  (Milestone 8 fills it), `p` with its one confirmation, undo and removal of planned placements, the
+  hotkey-versus-click identical-plan test.
 
 ## 3. Grounded in already-locked contracts
 

@@ -3,7 +3,7 @@
 **Document role:** Milestone tracker — the explicit Build→Pulse handoff, victory/defeat, and Recall
 **Status:** GATED
 **Depends on:** Milestone 5 (Build Phase produces what this Pulse resolves)
-**Updated:** 2026-09-01
+**Updated:** 2026-09-09
 **License:** Apache-2.0
 
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
@@ -50,6 +50,17 @@ three, [`milestone-02-campaign-design.md`](milestone-02-campaign-design.md) Sect
   [`../specs/backlog-pulse-completion.md`](../specs/backlog-pulse-completion.md) — otherwise a
   three-Pulse mission has nothing new to show in its second and third. Mario decides in Milestone 2;
   named here so the dependency is visible.
+
+### 2.1 Gates
+
+- **6A — Start, end, Recall.** "Start Nexus Pulse" as an explicit action; the end condition; the
+  stop / finish-in-flight / Recall sequence; a result the viewer can read unprompted.
+- **6B — The loop and the trigger runner's simulation band.** Back into the next Build Phase after
+  Recall; `spawn`, `order`, `commitPlan`, `win`, `lose` as validated, load-time-checked data; PERIMETER's
+  three waves as the fixture; Q36 resolved or explicitly deferred.
+- **6C — Minimal automatic production**, if Milestone 2's finding 4.6.2 stands: the fixture barracks
+  producing its recipe on an interval, pulled from backlog at the smallest size that makes a second
+  Pulse show something new.
 
 ## 3. New question this raises
 

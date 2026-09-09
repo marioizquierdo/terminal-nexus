@@ -3,7 +3,7 @@
 **Document role:** Milestone tracker — the game's own entry point, as distinct from `grid`'s
 **Status:** GATED
 **Depends on:** Milestone 2 (campaign design decided)
-**Updated:** 2026-09-01
+**Updated:** 2026-09-09
 **License:** Apache-2.0
 
 > **Start simple, with the minimum.** Mario's own words. This is the first time anything under the
@@ -14,9 +14,23 @@
 
 ## 1. Question
 
-Can a player launch `terminal-nexus` and navigate a keyboard-driven top-level menu — **Start New
-Game, Load Game, Settings, Exit** — built on the same terminal stack `grid` already proved, rather
-than a second rendering system invented for menus?
+Can a player launch `terminal-nexus` and navigate a top-level menu — **Campaign, Challenge,
+Settings, Exit** — built on the same terminal stack `grid` already proved, rather than a second
+rendering system invented for menus? (Canon 2.11 renamed the options: the two single-player modes of
+[`../specs/game-modes.md`](../specs/game-modes.md) are the menu, and "Load Game" lives inside
+Campaign once there is anything to load.)
+
+### 1.1 Gates
+
+- **3A — The menu and the three adapters.** `bin/terminal-nexus.ts`, the list shape with displayed
+  hotkeys, the keyboard and mouse adapters, the driver, and the shared disposer — with the
+  hotkey/arrow/click equivalence test. The smallest possible screen that exercises the whole input
+  model of [`../specs/engine.md`](../specs/engine.md) 9.7.
+- **3B — Settings.** Capability tier, theme, glyph pack, reduced motion as a menu, persisted to a
+  small settings file.
+- **3C — Mode select and honest handoffs.** Campaign hands off to Milestone 4 or an explicit
+  placeholder; Challenge hands off to Milestone 11 or is disabled with the reason shown; nothing is
+  silently broken.
 
 ## 2. What gets built
 
@@ -36,14 +50,16 @@ than a second rendering system invented for menus?
   to get that shape right; the Build Phase (milestone 5) inherits it rather than inventing it. The
   seed already exists: `controlForKey`/`keysFromChunk` in `src/view/playback.ts` and the fake stdin
   in `tests/lifecycle.test.ts`.
-- **Start New Game** hands off to Milestone 4's campaign menu. If Milestone 4 is not yet built when
-  this lands, hand off to an explicit placeholder screen rather than leaving the option silently
-  broken.
-- **Load Game** depends on there being a save to load. There is no real save/progression system yet
-  (`../specs/open-questions.md` Q31 recommends a flat, checked-in unlock list for Level 1, not a save
-  format) — until one exists, this option should say so plainly rather than pretend, or be disabled
-  outright with a reason shown. Do not build a save system to make this option feel complete; that is
-  its own future decision, not this milestone's.
+- **Campaign** hands off to Milestone 4's campaign menu. If Milestone 4 is not yet built when this
+  lands, hand off to an explicit placeholder screen rather than leaving the option silently broken.
+  Loading a campaign in progress lives behind this option, and depends on there being a save to load.
+  There is no real save/progression system yet (`../specs/open-questions.md` Q31 recommends a flat,
+  checked-in unlock list for Level 1, not a save format) — until one exists, say so plainly rather
+  than pretend. Do not build a save system to make this feel complete; that is its own future
+  decision, not this milestone's.
+- **Challenge** hands off to Milestone 11's run screen, or is disabled with the reason shown until
+  that milestone lands. In the build order it lands before Milestone 4, so this may be the first
+  option that actually works.
 - **Settings** exposes what `grid` already takes as CLI flags — capability tier, theme, glyph pack,
   reduced motion — as an interactive menu instead of flags-only. Persisted to a small local settings
   file, separate from any future save/campaign-progress format, so "I set monochrome" survives the
@@ -71,9 +87,9 @@ gameplay, a real save/progression format (Q31 stays open), sound.
 ## 5. Definition of done
 
 - [ ] `bin/terminal-nexus.ts` exists and launches to the top-level menu from a clean checkout;
-- [ ] all four options are reachable and do something honest (Start New Game hands off or shows a
-      clear placeholder; Load Game is disabled-with-reason or hands off once Milestone 4 exists;
-      Settings persists; Exit cleans up);
+- [ ] all four options are reachable and do something honest (Campaign hands off or shows a clear
+      placeholder; Challenge is disabled-with-reason or hands off once Milestone 11 exists; Settings
+      persists; Exit cleans up);
 - [ ] every option shows its hotkey, and hotkey, arrows-and-Enter, and click are proven equivalent
       through the driver;
 - [ ] the disposer leaves mouse reporting off on every exit path, alongside raw mode;

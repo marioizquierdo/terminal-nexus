@@ -3,7 +3,7 @@
 **Document role:** Milestone tracker — declare and play cutscenes for mission intros and events
 **Status:** GATED
 **Depends on:** Milestone 6 (events fire during the Pulse), Milestone 4 (the campaign menu is a plausible home for artifact entries)
-**Updated:** 2026-09-01
+**Updated:** 2026-09-09
 **License:** Technical mechanism is Apache-2.0; the cutscene content itself is CC BY-SA 4.0
 
 > **This is the real thing, not the placeholder an earlier draft of this roadmap proposed.** The
@@ -51,6 +51,16 @@ PERIMETER's own already-written material (Section 4.2 there — nothing new to w
   first tick ("whatever that rhythm is, we build between its beats now"); the debrief once the Pulse
   resolves; the artifact entry, surfaced wherever Milestone 4's campaign menu can reasonably hold a
   collectible (a small addition to that screen, not a new one).
+
+### 2.1 Gates
+
+- **9A — The presentation band.** `focus`, `card`, `say` as trigger actions riding on Milestone 6's
+  events; the character card drawn once and reused by inspection; advance, skip, replay through all
+  three adapters; skip provably leaves the same Grid.
+- **9B — PERIMETER's six pieces at their moments.** Briefing, exchange, barks off real events,
+  interruption, debrief, artifact entry — the already-written material, displayed.
+- **9C — The three-forms bar.** Every scene at all four capability tiers, monochrome, and reduced
+  motion.
 
 ## 3. Explicitly not this milestone
 

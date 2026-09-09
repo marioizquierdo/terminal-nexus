@@ -1,10 +1,10 @@
-# Milestone 2 — Campaign Design
+# Milestone 2 — Design and Orientation
 
-**Document role:** Milestone tracker — decide the shape of Level 1 before any of milestones 3-10 build against it
+**Document role:** Milestone tracker — name the single-player modes and fix the few PERIMETER decisions the UX build needs, before milestones 3-6 build the game's experience
 **Status:** CURRENT
-**Active gate:** 2 — Campaign Design (one design pass; this milestone is not sub-gated)
+**Active gate:** 2C — Owner confirmation of the mode vocabulary (`game-modes.md`) and the PERIMETER fixture decisions below; gates 2A and 2B are drafted
 **Depends on:** Milestone 1 (accepted)
-**Updated:** 2026-09-01
+**Updated:** 2026-09-09
 **License:** Apache-2.0; the mission decisions below touch CC BY-SA 4.0 narrative material already written in `campaigns.md`
 
 > **Design work, not code.** This milestone's own artifact is a decision, written down precisely
@@ -19,10 +19,39 @@
 
 ## 1. Question
 
-**What does PERIMETER — the campaign's first mission — actually need to contain, before any of
-milestones 3 through 10 write a line of code against it?** Concretely: which units, which map, what
-Build Phase budget, what the scripted opponent does and when, and what the mission is teaching versus
-what it is deliberately still simple about.
+**Re-scoped at canon 2.11.** Mario: "we should keep this milestone as strictly design and
+orientation, but not strictly trying to define how campaigns work." The question is now:
+
+**What vocabulary and structure do the single-player modes need — Campaign as the first-time player
+experience and the world's canon, Challenge as seeded runs with a draft between battles — and what
+few PERIMETER decisions does the UX build need, so that milestones 3 through 6 can build the game's
+experience without first deciding how campaigns work?**
+
+The earlier question — which units, which map, what Build Phase budget, what the scripted opponent
+does and when — survives as gate 2B below, at the size of a *fixture the UX is built on*, not a
+definition of the campaign. Its answers (Section 4) stand.
+
+### 1.1 Gates
+
+- **2A — Mode vocabulary. Drafted.** [`../specs/game-modes.md`](../specs/game-modes.md): the names
+  (match, battle, mission, run, act, card, draft, rarity, tier, unlock, seed), what each mode is for,
+  the run's starting shape, the rules of thumb for authoring content that serves both modes, and the
+  reference games and writing each claim rests on. Q40 (what persists within a run) and Q41 (what
+  persists between runs) registered with recommendations.
+- **2B — PERIMETER fixture decisions. Drafted.** Section 4 below: units reused, a structures-only
+  construct menu, a map that scrolls a little, a three-Pulse raid as a trigger list. These are the
+  decisions the Build Phase and Pulse milestones need a concrete mission for — nothing more is
+  decided about the campaign here.
+- **2C — Owner confirmation. Open.** Mario reads `game-modes.md`, the build order in
+  [`README.md`](README.md), and Sections 4 and 4.6 here, and confirms or redirects. Then Milestone 3
+  opens. This is cheap to change now and expensive after milestones 3-6 have built against it.
+
+### 1.2 What this milestone no longer does
+
+Define the campaign's length or every mission's mechanics (the belief ramp in
+[`../specs/campaigns.md`](../specs/campaigns.md) Section 4.1 stays direction, not a contract); select
+a roster (Milestone 12); fix the run's numbers (Milestone 11 retunes `game-modes.md` Section 3.2 on
+play); design multiplayer.
 
 ## 2. Why this is its own milestone
 
@@ -38,11 +67,12 @@ not a build.
 A pre-merge review of the whole milestone sequence (2026-08-26) already settled two process-level
 questions this milestone would otherwise have had to raise itself — Mario's own framing was that
 campaign design "will define roughly how to organize this, not only for the game itself, but also for
-the development process," and these are exactly that: **Q37**, that milestone 5 opens with a short
-static-mockup pass before building the real Build Phase GUI, rather than this milestone trying to
-design that GUI ahead of time; and **Q38**, whether PERIMETER's own map needs to actually scroll
-(4.3 below). Both are still `OPEN` in [`../specs/open-questions.md`](../specs/open-questions.md) —
-this document proceeds under their recommendations rather than treating them as answered.
+the development process," and these are exactly that: **Q37**, that milestone 5 opens with a spike
+before building the real Build Phase GUI, rather than this milestone trying to design that GUI ahead
+of time (answered at canon 2.10 — an interactive scrolling-and-placement spike, gate 5A); and
+**Q38**, whether PERIMETER's own map needs to actually scroll (4.3 below), still `OPEN` in
+[`../specs/open-questions.md`](../specs/open-questions.md) — this document proceeds under its
+recommendation rather than treating it as answered.
 
 ## 3. Read before deciding
 
@@ -211,6 +241,10 @@ Moved to Answered in [`../specs/open-questions.md`](../specs/open-questions.md).
 
 ## 6. Definition of done
 
+- [x] gate 2A: `game-modes.md` exists with the vocabulary, both modes, the run's starting shape, and
+      its sources; Q40 and Q41 are registered with recommendations;
+- [ ] gate 2C: Mario has confirmed or redirected the mode vocabulary and the build order in
+      [`README.md`](README.md);
 - [ ] the unit list above is confirmed against the actual fixture content (ids may drift; check
       `src/content/citizen.ts` and `src/content/ravel.ts` before citing them elsewhere);
 - [ ] a real `.map.json` sketch or written layout exists for PERIMETER's Grid, terrain, and starting

@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.10
+**Canon version:** 2.11
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -69,20 +69,23 @@ is a tracker checked off during work, not a document that only changes at a name
 [`milestones/README.md`](milestones/README.md) first for the full sequence and why it looks this way.
 
 The current milestone is **[`milestones/milestone-02-campaign-design.md`](milestones/milestone-02-campaign-design.md)
-— Campaign Design**: deciding exactly what PERIMETER needs (units, map, Build Phase budget, the
-scripted opponent's schedule) before milestones 3 through 10 write any code against it. It is a design
-pass, not a code gate.
+— Design and Orientation** (re-scoped at canon 2.11): the vocabulary of the single-player modes
+([`specs/game-modes.md`](specs/game-modes.md) — Campaign and Challenge), the build order, and the few
+PERIMETER decisions the UX build needs. It is a design pass, not a code gate, and its one open gate is
+2C — Mario's confirmation.
 
 So the authorised work for a new session is, in order:
 
 1. **whatever the owner's most recent feedback asks for**, if any exists since
    `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
    outstanding or that everything still is;
-2. **Milestone 2 — Campaign Design**, per its own file. Its own Definition of Done is the checklist;
-   nothing beyond it is authorized until Mario has looked at the decisions it makes.
+2. **Milestone 2's open gate**, per its own file; once Mario confirms, **Milestone 3 gate 3A** is
+   next in the build order [`milestones/README.md`](milestones/README.md) carries. Milestone numbers
+   are identities, not an order — read that table's build-order column, and take one gate per
+   session.
 
-Do not start milestones 3 through 10's own code ahead of Milestone 2's decisions being confirmed —
-each of those milestones names exactly what it needs from Milestone 2 in its own "Depends on" line.
+Do not start any milestone's code ahead of Milestone 2's confirmation — each milestone names exactly
+what it needs in its own "Depends on" line, and its gates are the unit of work.
 Do not build a second resource, storage or warehouses beyond what Milestone 7 specifically needs, real
 routing/pathfinding fixes, visibility filtering, the replay format, multiplayer, any level beyond
 PERIMETER and RIGHT OF SALVAGE, any campaign but the Citizen opening, a real save/progression system
@@ -168,6 +171,9 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - **A mission is a sequence of Build Phase / Nexus Pulse cycles driven by triggers.** Simulation
   actions run inside the kernel as validated intents; presentation actions never touch state. A
   scripted Pulse is still a Pulse.
+- **A mode is data over one match loop and one army shape.** Campaign (first-time experience,
+  canon) and Challenge (seeded runs with a draft between battles) are the two single-player modes;
+  nothing below a mode knows which one it serves. Every card carries `rarity`, `tier`, and `role`.
 - Prime Nexuses remain at home and replicate Grid Nexuses; avoid stale teleportation language.
 - Player-facing phases are **Build Phase** and **Nexus Pulse**; use those names consistently.
 - Prefer direct code for the current proof. Extract a framework only after two real uses reveal the

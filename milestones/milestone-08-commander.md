@@ -3,7 +3,7 @@
 **Document role:** Milestone tracker — the first real Commander (Edda Vasse) and a small Nexus upgrade draft
 **Status:** GATED
 **Depends on:** Milestone 5 (Build Phase is where the upgrade pick lives), Milestone 6 (Pulse is where the Commander acts)
-**Updated:** 2026-09-01
+**Updated:** 2026-09-09
 **License:** Creative identity is CC BY-SA 4.0 (already true of `commander-armies.md`); mechanism is Apache-2.0
 
 > **This widens Level 1's scope on purpose, and it needs saying plainly.** Every earlier framing of
@@ -40,6 +40,17 @@ Phase, without this becoming "author the Citizens Commander Army" ahead of Miles
   2.1). Vasse's PERIMETER army is that shape at its smallest — a pool of two, a hand of two, one
   kept per Build Phase across the mission's three Pulses — which is enough to build the dealing
   mechanism once and never as a placeholder.
+
+### 2.1 Gates
+
+- **8A — The Commander mechanic.** Vasse as a persistent `@` on the `units` layer; death, absence
+  for the rest of that Pulse and one full cycle, restoration — on a named scenario, hash-stable.
+- **8B — The Nexus draft, dealt from a pool.** A hand dealt at each Build Phase from the army's Nexus
+  power pool, one kept, filling Milestone 5's slot; two real, mechanically distinct powers for
+  PERIMETER. The dealer built here is the one Milestone 11's run draft reuses at the next scale.
+
+Both modes need both gates, which is why this milestone sits before either mode shell in the build
+order ([`README.md`](README.md)).
 
 ## 3. Q34 — does this mean authoring a Commander Army?
 

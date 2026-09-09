@@ -3,7 +3,7 @@
 **Document role:** Milestone tracker — start or load a campaign; show progress, army, and enemy intel
 **Status:** GATED
 **Depends on:** Milestone 3 (game menu hands off here)
-**Updated:** 2026-08-26
+**Updated:** 2026-09-09
 **License:** Apache-2.0; narrative labels shown on screen inherit `campaigns.md`'s CC BY-SA 4.0
 
 > **Mostly infrastructure for now, and that is expected.** Level 1 is the *first* mission — there is
@@ -44,10 +44,23 @@ mission reports) — and launch the current mission from it?
 - **Launch**: selecting the current mission hands off into Milestone 5's Build Phase for that
   mission's map.
 
+### 2.1 Gates
+
+- **4A — Campaign state and launch.** The flat unlock record (Q31), the current mission, and
+  launching it into Milestone 5's Build Phase with that mission's map and trigger list.
+- **4B — Army and intel panels.** The army panel as the deck laid out
+  ([`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1 — common tier, army
+  tier, Nexus power pool); the enemy intel panel under Q35's recommendation; both correct when empty.
+- **4C — Mission reports.** The existing report module's output persisted and shown per completed
+  mission; artifact entries surfaced here once Milestone 9 produces them.
+
+This is the Campaign's shell; Milestone 11 is the Challenge's. They share the deck panel of 4B, and
+whichever is built second reuses it rather than drawing a second one.
+
 ## 3. Explicitly not this milestone
 
 A real save/progression system (Q31 stays open — this milestone reads and writes the same flat record
-Milestone 3's "Load Game" reads, nothing richer); a full mission-select map or branching campaign
+Milestone 3's Campaign option reads, nothing richer); a full mission-select map or branching campaign
 graph (`campaigns.md`'s belief ramp is linear through the missions this roadmap has actually built);
 enemy intel content beyond the mechanism — Level 1 has nothing to discover yet.
 
