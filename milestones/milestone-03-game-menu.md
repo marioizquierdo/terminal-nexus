@@ -52,6 +52,8 @@ Campaign once there is anything to load.)
   in `tests/lifecycle.test.ts`.
 - **Campaign** hands off to Milestone 4's campaign menu. If Milestone 4 is not yet built when this
   lands, hand off to an explicit placeholder screen rather than leaving the option silently broken.
+  Under Q43's recommendation the campaign flow opens with a **starter-Commander selection** whose
+  shape supports three rows and ships with one filled (Vasse) — build the shape, not the content.
   Loading a campaign in progress lives behind this option, and depends on there being a save to load.
   There is no real save/progression system yet (`../specs/open-questions.md` Q31 recommends a flat,
   checked-in unlock list for Level 1, not a save format) — until one exists, say so plainly rather

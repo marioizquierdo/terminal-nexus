@@ -2,7 +2,7 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.11
+**Canon version:** 2.12
 **Updated:** 2026-09-09
 **License:** Apache-2.0
 
@@ -968,6 +968,105 @@ next run mechanically easier).
 **Recommendation: A now, C when a run has been won, never B.** Difficulty should climb for the player
 who beat it and options should widen for the player who did not; neither needs the run to get easier
 by itself.
+
+### Q42 — What kinds of effect may a Nexus power have?
+
+**Status:** OPEN — **the most load-bearing of the canon 2.12 batch.** Milestones 5, 8, and 11 all
+render Nexus powers; none of them can size a card, a panel, or a schema until the *kinds* of effect
+are bounded.
+
+`engine.md` Section 5.4 has said "none of this is designed" since canon 2.0.
+[`commander-armies.md`](commander-armies.md) Section 4.5 now proposes a taxonomy of **six
+instruments** — Permit (adds a structure), Requisition (puts units on the Grid), Revision (changes a
+content definition), Amendment (changes a rule), File (changes the Commander), Survey (grants
+information) — derived from the lore's own list of what a Prime holds and grants.
+
+| Option | Cost |
+| --- | --- |
+| A. **Adopt the six instruments** as the bounded union, with faction-specific naming over one mechanism | Every downstream milestone gets a finite thing to render, and a seventh kind has to argue for itself. Risks being wrong in a way that is annoying to widen later — though widening a union is cheap, and narrowing it is what is expensive |
+| B. **Start with three** (Permit, Requisition, Revision) and add the rest when a mission needs them | Smallest first build. But Amendment and File are the two that carry *Commander identity* (Section 4.6's candidates lean on both), so deferring them defers what makes Commanders feel different |
+| C. **Leave it open; let each power be a bespoke effect** | Maximum freedom, no schema. The panel then cannot be designed at all, which is precisely the blocker this question exists to remove |
+
+**Recommendation: A**, with the honest caveat that `Survey` is the one to watch — it is the only kind
+that gives information rather than materiel, and if it turns out that a mission's HUD wants to show
+the next wave for free, `Survey` loses its reason to exist and the union drops to five. Decide that
+by playing Level 1, not now.
+
+### Q43 — Does the Campaign offer a starter-Commander choice, and which candidates ship?
+
+**Status:** OPEN — shapes the game menu (Milestone 3) and the campaign screen (Milestone 4), which is
+why it wants an answer before either is built.
+
+[`commander-armies.md`](commander-armies.md) Section 4.6 proposes five candidates: Vasse (hold and
+repair), Denz (coverage and tempo), Teag (area denial), Kadresh (dual-bound, risky), Aldiss (proxy /
+death-fed, risky). Mario's own framing: "There's a chance that we can offer 2-3 different intro
+campaigns of similar easy-level so the user can pick among multiple initial commanders."
+
+| Option | Cost |
+| --- | --- |
+| A. **Ship one (Vasse); design the menu for three.** The screen has a selection shape and one filled row | Cheapest build, and it puts the expensive part (menu shape, per-Commander campaign state) in early where it is free. A player sees one option at first, which is honest but unexciting |
+| B. **Ship three intro campaigns at once** (Vasse, Denz, Teag) | The strongest first impression, and it exercises the deck model three ways immediately. Triples the content bill before any of it has been playtested once — and two of the three would be authored against a loop nobody has played yet |
+| C. **One Commander, no choice, ever, in the Campaign**; variety lives only in Challenge | Simplest product. Gives up the thing that makes a second playthrough of the tutorial interesting, and wastes Section 4.6's cheapest asset — three doctrines over one mission script |
+
+**Recommendation: A.** Build the choice *shape* now and fill it later: `campaigns.md` Section 4.3's
+three missions are deliberately one script that three doctrines can play, so a second intro campaign
+is content against an existing shape rather than a second campaign to build. **Keep Kadresh and
+Aldiss out of the first-time experience** either way — both teach the wrong lesson first.
+
+### Q44 — Is a mission's Pulse count authored, fixed, and shown to the player?
+
+**Status:** OPEN — blocks the Pulse-phase HUD (Milestone 6) and the mission schema; cheap now,
+annoying after the header is built.
+
+Missions are multi-Pulse since canon 2.10, and `campaigns.md` Section 4.3 proposes 3 / 4 / 5 Pulses
+for Levels 1–3. What is undecided is whether that count is **known to the player**.
+
+| Option | Cost |
+| --- | --- |
+| A. **Authored and shown** — the header reads `PULSE 2 OF 3` | A defensive mission's whole tension is "how many more," and showing it converts dread into a plan, which is what a strategy game wants. It also matches the interface's own voice: this Nexus files schedules. Costs the surprise of an unannounced last wave |
+| B. **Authored and hidden** — the mission knows, the player does not | Preserves surprise and makes each Pulse feel like it could be the last. Turns resource spending into guesswork, and an untimed Build Phase spent guessing is not a good decision, it is a coin flip |
+| C. **Open-ended** — play until a condition is met, no count at all | Most flexible for later mission designs (survival, escalation). Nothing in Levels 1–3 wants it, and it removes the strongest pacing tool the campaign has |
+
+**Recommendation: A**, and let a *later* mission earn B or C when its own design needs the dread —
+"the schedule has an end and you can read it" is very Citizens, very Apex, and it is the shape that
+teaches best. Note the seam: a `Survey` instrument (Q42) that reveals *what* is in the next wave is
+still interesting even when *how many waves remain* is public.
+
+### Q45 — Is the Nexus draft's pick mandatory, and may it be skipped or banked?
+
+**Status:** OPEN — blocks the Build Phase draft panel (Milestone 5) and the dealer (Milestone 8).
+
+Each Build Phase the Nexus deals a hand and the player keeps one
+([`commander-armies.md`](commander-armies.md) Section 2.1). Whether a player may decline, or save a
+pick for later, is undecided — and it is exactly the decision that separates "a menu" from "a game."
+
+| Option | Cost |
+| --- | --- |
+| A. **Mandatory in the Campaign, skippable in Challenge.** The tutorial always advances; a run may decline an offer that would dilute the build | Each mode gets the behaviour that serves it: the Campaign never stalls on an empty choice, and Challenge keeps the deck-thinning tension every roguelike deckbuilder converges on. Two behaviours to explain, though they land in different modes so no screen shows both |
+| B. **Always mandatory** | One rule, one panel. Removes a real decision from Challenge, where "take nothing" is often correct |
+| C. **Always skippable, with banking** — decline now, spend two next Pulse | The most expressive, and the most machinery: banked picks need their own state, their own UI, and a rule for what happens at mission end |
+
+**Recommendation: A**, and **no banking** until something asks for it. Banking is a second currency
+wearing a draft's clothes, and the run draft (`game-modes.md` Section 3.2) already carries the
+"decline to stay sharp" decision at the scale where it matters.
+
+### Q46 — Where does a Challenge run's starting army come from?
+
+**Status:** OPEN — blocks Milestone 11's gate 11A and the mode-select screen (Milestone 3).
+
+A run is a series of battles with a deck that changes between them. What the deck *starts* as is
+undecided, and it decides how tightly Challenge is coupled to Campaign progress.
+
+| Option | Cost |
+| --- | --- |
+| A. **Pick an unlocked Commander at run start; the deck begins as that Commander's starting package** — common tier plus a small fixed army tier | Clean, legible, and it makes Campaign unlocks matter to Challenge without making Challenge wait for them. A new player who has not finished the Campaign starts with the one Commander they have |
+| B. **A fixed starter deck, identical every run**, Commander included | Most controlled for balance and the easiest to test against. Throws away the replay value of "which Commander do I run today," which is most of what a run mode is for |
+| C. **Draft the army itself at run start** — build a deck from the faction pool before battle one | The drafting mode `commander-armies.md` Section 6 keeps possible, and the deepest version. Far more than Milestone 11 should attempt first, and it needs a pool wide enough to draft from, which Milestone 12 has not built yet |
+
+**Recommendation: A**, with **C named as the destination**: A is exactly C with the pre-battle draft
+skipped, so building A first costs nothing that C later needs. Keep run seeds independent of unlock
+state so a shared seed reproduces a run for another player only when both have the same Commander
+unlocked — worth checking on the first run that plays.
 
 ## 5. Answered
 

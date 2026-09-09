@@ -2,7 +2,7 @@
 
 **Document role:** Canon index and reading order
 **Status:** Canonical
-**Canon version:** 2.11
+**Canon version:** 2.12
 **Updated:** 2026-09-09
 **License:** Apache-2.0
 
@@ -45,6 +45,14 @@ re-scoped Milestone 2 to design and orientation: [`game-modes.md`](game-modes.md
 runs with a draft between battles — and [`../milestones/README.md`](../milestones/README.md) now
 carries a build order (UX core first, then the two mode shells, then depth, then content) with small
 gates in every milestone, plus Milestones 11 (runs) and 12 (content iteration).
+
+**Canon 2.12 gave the first Nexus and the first Commanders a face.** The Apex — the Citizens' Prime
+Nexus, an administrator rather than a weapon ([`terminal-nexus-lore.md`](terminal-nexus-lore.md)
+Section 3.1); the affinity model and six Nexus-power instruments
+([`commander-armies.md`](commander-armies.md) Sections 2.2 and 4.5); five starter Commander
+candidates (Section 4.6 there); and a 3/4/5-Pulse script for Levels 1–3
+([`campaigns.md`](campaigns.md) Section 4.3). Q42–Q46 are the forks Mario decides before Milestone 3
+opens.
 
 For a new coding session, read:
 

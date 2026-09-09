@@ -30,7 +30,9 @@ Phase, without this becoming "author the Citizens Commander Army" ahead of Miles
   (Milestone 6, Q36) never depends on Vasse specifically.
 - **Vasse, named**: [`../specs/commander-armies.md`](../specs/commander-armies.md) Section 4.4's
   doctrine — "fortify, verify, then advance" — becomes her actual behaviour profile and stat shape,
-  scoped to what PERIMETER needs, not a full roster entry.
+  scoped to what PERIMETER needs, not a full roster entry. Her full card, including candidate
+  instruments and what she deliberately cannot do, is Section 4.6 there (Q43 confirms she is the one
+  that ships first).
 - **A small, real Nexus upgrade draft**: [`../specs/engine.md`](../specs/engine.md) Section 5.4 says
   "the Grid Nexus offers a small draft of upgrades" and admits "none of this is designed." This
   milestone designs and builds the smallest real version — one or two options, mission-scoped, filling
@@ -48,6 +50,9 @@ Phase, without this becoming "author the Citizens Commander Army" ahead of Miles
 - **8B — The Nexus draft, dealt from a pool.** A hand dealt at each Build Phase from the army's Nexus
   power pool, one kept, filling Milestone 5's slot; two real, mechanically distinct powers for
   PERIMETER. The dealer built here is the one Milestone 11's run draft reuses at the next scale.
+  Which *kinds* of power exist is [`../specs/commander-armies.md`](../specs/commander-armies.md)
+  Section 4.5's six instruments (Q42) — build two or three of them, not all six. Vasse's own card
+  (Section 4.6 there) names candidate powers; Q45 decides whether the pick may be declined.
 
 Both modes need both gates, which is why this milestone sits before either mode shell in the build
 order ([`README.md`](README.md)).

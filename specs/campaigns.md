@@ -2,7 +2,7 @@
 
 **Document role:** Single-player structure, mission definitions, progression, cutscenes, and initial narrative direction
 **Status:** Canonical direction; PERIMETER (Mission 1) is in active implementation across `milestones/`
-**Canon version:** 2.11
+**Canon version:** 2.12
 **Updated:** 2026-09-09
 **License:** Narrative material is CC BY-SA 4.0; technical schemas are Apache-2.0
 
@@ -266,6 +266,68 @@ CORVANE: ...Why is your pyramid looking at me?
 > Recovered nothing. Catalogued nothing. The apex predates the survey, the colony, and — by every measurement that ends without an error — the concept of before. Attached: fourteen years of instrument logs, one page of findings. The page is blank except for a header. The header is correct.
 
 The mission teaches one mechanic (the Build/Pulse loop), changes one relationship (Vasse accepts the connection), answers one local question (can the perimeter hold?), and opens one larger mystery (what recognized her?) — the lore Section 10.5 contract, demonstrated at full size.
+
+### 4.3 Levels 1–3, in outline — GUIDANCE
+
+The belief ramp (4.1) says what each mission *means*. This says what each of the first three **costs
+the player in decisions and minutes**, which is what milestones 5, 6, and 9 build against. Numbers
+are starting values, retuned by whichever milestone first plays them.
+
+**The ramp is a decision-count ramp.** A Pulse is preceded by a Build Phase, so *Pulses are decision
+points*, and the honest difficulty curve here is 3 → 4 → 5 of them, with the draft going from no
+choice to a real one — not enemies gaining statistics.
+
+| # | Mission | Pulses | Target | New system | Nexus draft | Lore hint it plants |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | PERIMETER | **3** | 8–10 min | Build Phase / Pulse loop; placement; commit | one offer, no choice — the *mechanism*, taught | the Apex is **ahead of you**: it names the raid, files an ETA, and the fabricator prints to a standard no engineer wrote |
+| 2 | RIGHT OF SALVAGE | **4** | 10–12 min | workers, deposits, salvage, contested wrecks | one of two | it knows a name nobody entered — *"Who filed that?"* |
+| 3 | RESTORATION | **5** | 12–15 min | the Commander: her `File` powers, death, absence, restoration | one of three, one of them a `File` | it keeps **personnel files**, and treats a death as a scheduling matter |
+
+**Level 1 — PERIMETER.** Nothing is spent, nothing is earned; a fixed allotment, two structures in the
+menu, one lane. The mission's job is that the player commits a plan, watches it resolve without being
+able to touch it, and *wants the next Build Phase*.
+
+| Cycle | The raid | The player's decision |
+| --- | --- | --- |
+| 1 | a probe — a handful of raiders down the north-west lane | place one structure; learn that commit is final |
+| 2 | a real wave on the same lane | reinforce where the line bent, which they have now seen |
+| 3 | the push, and then the schedule ends | spend the last of the allotment; hold |
+
+**Level 2 — RIGHT OF SALVAGE.** The first mission with an economy, so the first with a wrong answer:
+a player who builds only army starves, and one who builds only workers is overrun. Wrecks from Pulse 2
+onward are the contested prize, which teaches that the map changes because of what died on it.
+
+| Cycle | The raid | The player's decision |
+| --- | --- | --- |
+| 1 | quiet; a Ravel scavenger crew works a wreck field at the edge | workers or defence — the first real trade |
+| 2 | first contact over the wrecks | contest the salvage, or concede it and build |
+| 3 | a raid that targets *workers*, not the line | protect the economy you just chose to have |
+| 4 | the withdrawal, contested | convert or deny the last of the field |
+
+**Level 3 — RESTORATION.** Vasse is a unit for the first time, with powers of her own — and she dies
+on a scripted beat, and the mission does not end. Pulse 4 is played through the absence the rules
+already impose; Pulse 5 restores her. The belief ramp's whole point lands mechanically before anyone
+says a word about it.
+
+| Cycle | The raid | The player's decision |
+| --- | --- | --- |
+| 1 | probing, cautious | where does the Commander stand — she is worth an army and she can die |
+| 2 | pressure on the flank she is not on | commit her forward, or hold her back |
+| 3 | **Vasse falls** (scripted; the mission is authored so it happens regardless of play) | react without her |
+| 4 | the hardest wave, fought absent the Symbol | play the hole: `SYMBOL ABSENT — CYCLE 1 OF 1 — HOLD` |
+| 5 | the last push | restoration lands; finish it |
+
+**What each level deliberately withholds**, so a milestone does not build it early: Level 1 has no
+economy, no Commander, and no real draft choice; Level 2 has no Commander; Level 3 is the first with
+everything on. Removal, run drafts, and deck editing appear in **Challenge** mode
+([`game-modes.md`](game-modes.md) Section 3.2), never in the first three missions — the Campaign
+grows the pool, it does not prune it.
+
+**Three intro campaigns, one shape.** If the first-time experience offers a Commander choice
+([`commander-armies.md`](commander-armies.md) Section 4.6, Q43), these three missions are the shape
+each choice plays through — same map, same raid schedule, same beats, different doctrine and
+different instruments. That is what makes a second intro campaign content rather than a second
+campaign to build.
 
 ## 5. Cutscenes
 

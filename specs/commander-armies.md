@@ -2,7 +2,7 @@
 
 **Document role:** Playable faction packages: Commanders, units, structures, upgrades, and Nexus powers
 **Status:** Canonical identity direction; rosters intentionally undefined
-**Canon version:** 2.11
+**Canon version:** 2.12
 **Updated:** 2026-09-09
 **License:** Creative identity is CC BY-SA 4.0; mechanical definitions and schemas are Apache-2.0
 
@@ -128,6 +128,39 @@ Where this shows on screen: the Build Phase construct menu lists the common tier
 as two groups under one digit sequence, and the Nexus draft is its own panel — three tiers, three
 places, so a player learns the split by looking at it
 ([`engine.md`](engine.md) Section 9.2, [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md)).
+
+### 2.2 Nexus, faction, and Commander — the affinity model — GUIDANCE
+
+There are **five Prime Nexuses, one per faction** ([`terminal-nexus-lore.md`](terminal-nexus-lore.md)
+Sections 3–5). A Prime is rooted and never travels; it replicates a Grid Nexus and sends one
+psychically connected Commander with it. Many people claim a connection. Few receive an answer.
+
+**A Commander is not the faction's employee. They are the Nexus's signature.** The gap between those
+two things is design space, and it is wider than "which faction am I playing":
+
+| Affinity | The story | What it means mechanically |
+| --- | --- | --- |
+| **Native** | of the faction, loyal to it | the default: one faction's pools |
+| **Estranged** | of the faction, at odds with what it has become | same pools; the doctrine argues with the faction's own rule shapes |
+| **Unsanctioned** | the Nexus chose someone the faction would never have (Anthem, Section 4.4) | same pools, an unusual starting package, one rule exception |
+| **Foreign** | not of the faction — a client people, a contractor, a prisoner, something with no faction at all | the army is the faction's; the Commander's own powers are not |
+| **Dual-bound** | two Primes answer the same person | the army's legality names two factions and draws from both pools |
+| **Proxy** | the connection runs through a record, a relic, or a process rather than a living person | powers key on death, absence, and restoration rather than presence |
+
+**None of these needs a special case in the model**, which is the reason to write them down before a
+roster exists: an army is already a deck validated against named pools (Section 2.1), so *dual-bound*
+is an army whose legality check names two factions, and *proxy* is an army whose powers lean on the
+death/absence/restoration cadence [`engine.md`](engine.md) Section 5.1 already specifies. Affinity is
+fiction plus data. It is not new machinery.
+
+Two constraints keep it from turning to mush:
+
+- **The faction still owns the roster.** A Foreign or Dual-bound Commander does not get a private
+  army — they get an unusual *hand* of pools they are legal for. A player must still learn one
+  faction to play them.
+- **Affinity must be legible in play, not only in the codex.** The alignment test
+  (`terminal-nexus-lore.md` 8.6) applies to Commanders too: if a Dual-bound Commander does not
+  visibly behave like someone two machines are arguing over, the affinity is decoration.
 
 ## 3. Strategy-design requirements
 
@@ -307,6 +340,212 @@ stages the faction's internal argument, per the design law's requirement that Co
 - **Thorn-Regent Cail** — the interventionist. Doctrine: prune early — displace, divide, and remove
   claimants before they mature. Her disagreement: refusal without action is complicity. The faction's
   contradiction, wearing armor.
+
+### 4.5 What a Nexus power may do — the six instruments — GUIDANCE (Q42)
+
+[`engine.md`](engine.md) Section 5.4 says the Grid Nexus "offers a small draft of upgrades" and
+admits none of it is designed. This is that design, at the only level that has to be settled before a
+panel renders one: **six kinds of effect**, derived from what the lore already says a Prime holds and
+grants — "patterns, permissions, and incomplete technologies," unlocked as "a protocol tier, artifact
+permission, pattern, vision, or route" ([`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 3).
+
+| Instrument | Effect | Example | What the UI has to show |
+| --- | --- | --- | --- |
+| **Permit** | adds a structure to the construct menu for the rest of the match | a wall segment; an artillery battery; a forward outpost | a new row in the menu, marked new |
+| **Requisition** | puts materiel on the Grid now — units, at a place, at a moment | a squad arrives beside the Nexus at Pulse start | where it lands and when |
+| **Revision** | changes a content definition for the rest of the match | every trooper gains integrity — for Citizens, *including the ones already fielded* | which definitions moved, and that fielded units are included |
+| **Amendment** | changes a rule for the rest of the match | movement costs less inside your own coverage; adjacent defences pool integrity | the rule in one line, and where it applies |
+| **File** | changes the Commander | an aura, a death trigger, a restoration behaviour | the Commander's own panel |
+| **Survey** | grants information | next Pulse's arrival lane and composition | the information, marked as sourced from the Nexus |
+
+Three things this taxonomy is for:
+
+1. **It bounds the card schema before three milestones render it.** Six shapes is a small union that
+   Milestones 5, 8, and 11 can all draw; a seventh should have to argue for itself.
+2. **It makes information a card rather than a default.** `Survey` exists so that knowing what is
+   coming is something a player *spends a pick on* — which is what keeps a hidden simultaneous plan
+   worth hiding. A HUD that always shows the next wave has quietly deleted the game's central tension.
+3. **The names are faction vocabulary over one mechanism.** Citizens issue permits and revisions;
+   Ravels would call the same six a score, a haul, a rig, a bodge. One taxonomy, five vocabularies —
+   the same trick the glyph-family/ownership-colour split already uses.
+
+Nothing here is authorized to build. Milestone 8 builds two or three instruments for one mission;
+Milestone 12 is where the pool earns breadth.
+
+### 4.6 Starter Commander candidates — five cards, for selection — GUIDANCE (Q43)
+
+Five candidates for the Citizens' first playable Commander, written as direction rather than
+definition: **the first three are conservative**, built on archetypes that are known to work and on
+the three proposals Section 4.4 already names; **the last two are deliberately risky**, and exist to
+find out how much of Terminal Nexus's own strangeness a Commander can carry. Instrument names below
+are illustrative (Section 4.5's six kinds), not a locked pool.
+
+All five are bound to **the Apex** (`terminal-nexus-lore.md` Section 3.1). The differences between
+them are doctrine and *affinity* (Section 2.2) — which is the point of showing five.
+
+#### 1 · Commander Edda Vasse — "the Perimeter" — Native, unwilling — **conservative, the default**
+
+**Personality.** Dry, procedural, tired. Answers awe with paperwork and grief with a form. Her
+composure is not calm; it is a decision she makes every morning. *"By the book. The new book."*
+
+**Backstory.** A perimeter officer who happened to be the nearest living witness when the Apex woke,
+and has been receiving countersignatures for orders she never filed ever since.
+
+**Play-style — hold and repair.** The forgiving one. Slow, tough, recoverable: defences are cheap,
+damage is reversible between Pulses, and a line drawn well is worth more than a line drawn wide. A
+player who misplays a Pulse with Vasse loses ground, not the mission.
+
+**Signature synergy — repair × adjacency.** Citizens' alignment bonus already rewards unbroken
+orthogonal runs; her instruments make those runs *heal each other*, so geometry compounds instead of
+merely adding. The lesson she teaches is the faction's whole thesis: a good plan holds under load.
+
+**Instruments.**
+
+- `PERMIT: BULWARK` — a cheap 1×3 wall segment (Section 7's own wall-as-unit note, as a structure).
+- `PERMIT: AID STATION` — repairs adjacent structures and units each Pulse.
+- `AMENDMENT: MUTUAL SUPPORT` — structures in an unbroken run share integrity; breaking the run ends it.
+- `REVISION: PLATE` — every trooper gains integrity, fielded ones included.
+- `FILE: STANDING ORDER` — units adjacent to Vasse take reduced damage while holding ground.
+- `SURVEY: EARLY WARNING` — next Pulse's arrival lane and composition, during Build Phase. *Verify, then advance.*
+
+**Why her.** She is the tutorial's own argument, she is already written into PERIMETER's briefing and
+barks (`campaigns.md` Section 4.2), and her mistakes are survivable — which is the entire job of a
+first Commander. **What she costs:** she cannot take ground. A Vasse player who never learns to
+attack will stall in Level 4.
+
+#### 2 · Director Oru Denz — "the Paver" — Native, instrumental — conservative
+
+**Personality.** Relentlessly cheerful, speaks fluent infrastructure, believes the manifest destiny
+without the stoicism that is supposed to come with it. Treats a war as a scheduling problem with
+better funding.
+
+**Backstory.** A works director who filed a road permit with the Apex as a joke, and received it
+approved, countersigned, and back-dated to a year before the colony existed.
+
+**Play-style — coverage and tempo.** The macro archetype: outposts, roads, more workers, more ground.
+Fragile early and frightening late; the player learns why territory *is* the resource.
+
+**Signature synergy — coverage × movement.** His own ground is faster to cross, so his reinforcements
+arrive earlier than the map says they should — a defence that works by being everywhere slightly
+sooner rather than by being thick anywhere.
+
+**Instruments.**
+
+- `PERMIT: OUTPOST` — projects construction coverage forward and anchors regroup (the outpost idea Q23 parked).
+- `AMENDMENT: ROADWORKS` — tiles inside your coverage cost less to cross. (Scheduled terrain mutation — one capability, three factions; Section 4.3.)
+- `PERMIT: DEPOT` — forward storage and production.
+- `REQUISITION: SECOND SHIFT` — an extra worker at each producer, this Pulse only.
+- `REVISION: PREFAB` — structures placed adjacent to existing ones cost less.
+- `SURVEY: CORE SAMPLE` — reveals a deposit the survey missed.
+
+**Why him.** He teaches the economy without a lecture, and he is the natural second campaign: the
+player who held the line with Vasse now learns to spread. **What he costs:** a bad opening is
+genuinely punishing, which is why he is not first.
+
+#### 3 · Marshal Avern Teag — "the Wall" — Native, and the Apex agrees with her — conservative
+
+**Personality.** Cold, exact, and entirely reasonable, which is the problem. Security is not a phase
+of the emergency; it is the permanent condition, and she can show you the projections.
+
+**Backstory.** She signed the colony's emergency powers into permanence, and the Apex countersigned a
+revision she had not written yet.
+
+**Play-style — area denial and artillery.** Static power: range, splash, and slowing. Approaching her
+is expensive; so is leaving her position. The clearest "power fantasy" of the three, and the most
+punishing to play greedily.
+
+**Signature synergy — slow × splash.** Enemies crossing her coverage move at a crawl, and the
+batteries behind the wall have all the time in the world.
+
+**Instruments.**
+
+- `PERMIT: BATTERY` — long-range splash artillery with a wind-up (the kernel has `attack.splash` and `windupTicks`).
+- `AMENDMENT: CURFEW` — enemy movement costs more inside your construction coverage.
+- `AMENDMENT: INTERLOCK` — adjacent defensive structures pool integrity into one pool.
+- `REVISION: ENTRENCH` — units that did not move gain armour and range.
+- `FILE: MARTIAL AUTHORITY` — Teag commandeers a structure: it fires this Pulse on her initiative.
+- `PERMIT: CHECKPOINT` — a gate that is passable to your units and not to theirs.
+
+**Why her.** She is the third distinct verb (Vasse holds, Denz spreads, Teag denies) and she teaches
+range, splash, and chokepoints. **What she costs:** she is the one who can lose a mission by being
+unable to leave, and she is the closest thing the Citizens have to a villain — which the campaign
+should use rather than sand off.
+
+#### 4 · Ory Kadresh — "Countersign" — **Dual-bound** (the Apex and the Ravel Prime) — risky
+
+**Personality.** Transactional warmth. Allergic to ceremony, fluent in both bureaucracies, keeps
+everyone's secrets and bills for the storage. Neither faction is sure she is theirs; both are certain
+she is not the other's.
+
+**Backstory.** A frontier freight broker with standing arrangements on both sides of the line, who
+woke after the Activation to find that two Primes had countersigned the same person.
+
+**Play-style — mixed manifest, unstable supply.** Her deck is legal against two faction pools, so she
+fields Citizen structure with Ravel volatility. The hook: **which Nexus answers is decided by how you
+played the last Pulse.** Build and hold, and the Apex answers — permits, revisions, schedule. Lose
+things and break things, and the Ravel Prime answers — requisitions, detonations, salvage. The header
+says which patron is currently on the line, and the player steers it by how they fight.
+
+**Signature synergy — patron-flipping.** A deliberate loss can be an opening. Nothing else in the game
+rewards *choosing* which half of your deck to make live; done well it reads as a person playing two
+machines against each other, which is exactly who she is.
+
+**Instruments.**
+
+- `PERMIT: CUSTOMS HOUSE` — salvage converts faster, and yields to whoever holds the house.
+- `HAUL: JACKPOT` (Requisition, Ravel side) — something arrives. The manifest was optimistic.
+- `AMENDMENT: CROSS-STANDARD` — Ravel units adopt the Citizen cadence for one Pulse and march in step, which horrifies everyone present.
+- `FILE: NO FIXED ADDRESS` — she restores at any friendly structure, not only at the Nexus.
+- `SURVEY: MANIFEST` — the enemy's next wave, and one of your own future offers, early.
+
+**Why her, and the risk.** She is the clearest demonstration that the deck model already supports
+cross-faction play with no new machinery (Section 2.2), and she is superb in Challenge runs, where
+volatility is the product. **She is a bad first Commander**: two vocabularies and real variance is the
+opposite of a forgiving tutorial. Ship her third or later, or as a Challenge-only unlock. The design
+risk to watch: if the patron flip is not *readable in one glance*, she is just noise.
+
+#### 5 · Wren Aldiss, Revision Seven — "Ledger" — **Proxy** — risky
+
+**Personality.** Punctual, courteous, and entirely calm about things that should not be calming.
+Refers to herself the way the file does — *"Revision Seven is in position"* — and once, quietly,
+recalled a death that is not in her own record.
+
+**Backstory.** An officer who has died in the line often enough that the Apex's file on her is more
+detailed than she is, and it is the file the connection now runs through.
+
+**Play-style — spend the Commander.** Aggressive and sacrificial: her death is a *resource*. Dying
+pays out immediately and improves the file permanently; the cost is the absence cadence the rules
+already impose — one full Build Phase and Pulse without her, which is a real hole in a five-Pulse
+mission. The highest skill ceiling of the five and the only one whose build asks the player to lose
+something on purpose.
+
+**Signature synergy — death × schedule.** Her instruments make her absence *productive*, so the
+question stops being "can I keep her alive" and becomes "when do I spend her" — the most Citizens
+question imaginable, asked about a person.
+
+**Instruments.**
+
+- `FILE: REVISION` — each restoration improves her, permanently and slightly.
+- `FILE: POSTHUMOUS ORDERS` — on her death a requisition fires at the tile she fell on. The paperwork was ready.
+- `AMENDMENT: CONTINUITY OF OPERATIONS` — while the Symbol is absent, producers run to a tighter schedule. The machine keeps time without her.
+- `PERMIT: RECORDS ANNEX` — banks one revision, so a lost Pulse does not cost the file.
+- `SURVEY: PRIOR ATTEMPT` — she has notes on this engagement. She should not have notes on this engagement.
+
+**Why her, and the risk.** She turns a rule that already exists (`engine.md` 5.1's death/absence/
+restoration cadence, built by Milestone 8) into an identity, and she is the natural bridge into
+RESTORATION's own story beat. **The discipline she needs:** she flirts with deliberate mystery #6 —
+*is a restored Commander continuous with the person who died?* — and she must **pose** it, never
+settle it. Every line she gets should be legible as either "she is fine" or "she is a very good copy,"
+and no line, ever, should decide. If a draft of her explains what restoration does to a person, that
+draft is wrong (`terminal-nexus-lore.md` Section 7).
+
+#### Choosing among them
+
+**Recommendation, registered as Q43:** build **Vasse** first and design the campaign screen for a
+*choice* of three, because the menu shape is what is expensive to retrofit — the other two
+conservative Commanders are content against a shape that already exists. Keep Kadresh and Aldiss out
+of the first-time experience: they are what Challenge mode and the later campaign are for, and both
+teach the wrong lesson first.
 
 ## 5. Authoring template
 

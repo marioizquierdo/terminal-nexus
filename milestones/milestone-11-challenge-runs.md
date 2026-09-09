@@ -24,7 +24,8 @@ remove one, or upgrade one — and finish, win or lose, with a summary they can 
 
 ## 2. Gates — small, in order, each closable on its own
 
-- **11A — Run skeleton.** A `RunDefinition` (`seed`, acts, the battle list generated from the seed);
+- **11A — Run skeleton.** A `RunDefinition` (`seed`, the Commander chosen at run start per Q46, acts,
+  the battle list generated from the seed);
   three battles on existing fixture maps against the Ravel fixture army under a static or simple
   heuristic policy; a plain "next battle" screen between them; a run summary at the end. The driver
   ([`../specs/engine.md`](../specs/engine.md) 9.7) plays it end to end. Seed determinism asserted:

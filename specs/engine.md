@@ -2,7 +2,7 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.11
+**Canon version:** 2.12
 **Updated:** 2026-09-09
 **License:** Apache-2.0
 
@@ -621,6 +621,11 @@ designed:** the Commander Army's own Nexus power pool — a subset of the factio
 hand at the start of every Build Phase, from which the player keeps one
 ([`commander-armies.md`](commander-armies.md) Section 2.1). The draft's tier, size, and redraw rules
 are still undesigned; recorded so the shape of the draft is not accidentally foreclosed.
+
+**What a power may *do* is proposed at canon 2.12** as six bounded instruments — Permit, Requisition,
+Revision, Amendment, File, Survey ([`commander-armies.md`](commander-armies.md) Section 4.5, Q42).
+That taxonomy is what a Build Phase panel actually renders, so it is worth reading before building
+one; it is GUIDANCE and unbuilt, like the rest of this section.
 
 ---
 

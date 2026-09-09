@@ -2,7 +2,7 @@
 
 **Document role:** Vocabulary and structure for the single-player modes — Campaign and Challenge — and the seam every later mode shares
 **Status:** Canonical direction; structure is GUIDANCE until a milestone earns it
-**Canon version:** 2.11
+**Canon version:** 2.12
 **Updated:** 2026-09-09
 **License:** Apache-2.0 for structure and schemas; mode names and any fiction they carry are CC BY-SA 4.0
 
@@ -74,7 +74,10 @@ small, guided run in all but name — which is what makes the handoff to Challen
 
 Missions are trigger lists (`campaigns.md` Section 2.1). Everything about their authored content —
 text, cast, cutscenes, the scripted opponent — stays in `campaigns.md`; this document only says
-what the mode *is for*.
+what the mode *is for*. `campaigns.md` Section 4.3 scripts the first three missions; the Campaign may
+open with a **choice of starter Commander** across the same three-mission script
+([`commander-armies.md`](commander-armies.md) Section 4.6, Q43), which is what makes a second intro
+campaign content rather than a second campaign.
 
 ### 3.2 Challenge — runs — GUIDANCE, the numbers explicitly so
 
@@ -89,6 +92,7 @@ autobattlers (Section 5), taken at the size Terminal Nexus's 5–12-minute match
 | Element | Starting value | Why this and not another |
 | --- | --- | --- |
 | Battles per run | **6–9**, in **2–3 acts** | A match is 5–12 minutes; a run under an hour is one sitting, and a run over two is a different product. Three acts of three is the roguelike-deckbuilder default; two acts of three is the fallback if battles run long |
+| Starting army | **pick an unlocked Commander at run start**; the deck begins as that Commander's starting package (Q46) | Campaign unlocks matter to Challenge without Challenge waiting on them, and "which Commander do I run today" is most of a run mode's replay value. Drafting the army itself before battle one is the same shape with one more step, kept possible and not built |
 | Between battles | **one run draft**: add one of three offered cards, **or** remove one card, **or** upgrade one card (structures already carry levels 1–3, `engine.md` 5.2) | Add/remove/upgrade is the minimum set every reference game converged on. Removal matters as much as adding: a deck that only grows dilutes its own plan |
 | Offer dealing | three cards, weighted by **rarity**, gated by **tier** against the battle index; a **pity offset** raises the rare chance each time no rare is offered and resets when one is | Slay the Spire's mechanism, verbatim in spirit: fair variance without a dead run |
 | Tier schedule | tier *t* becomes available at battle **2t − 1**: tier 1 from battle 1, tier 2 from battle 3, tier 3 from battle 5 | Super Auto Pets' schedule, which makes the run's early third about fundamentals and its last third about combinations |
@@ -178,6 +182,12 @@ network and rest on search extracts rather than a full read.
 
 - The exact numbers in Section 3.2's table — battles, acts, offer size, tier schedule — are starting
   values for Milestone 11 to retune on runs actually played.
+- Five decisions that shape the screens rather than the numbers are registered rather than assumed:
+  **Q42** (what kinds of effect a Nexus power may have — the six instruments), **Q43** (whether the
+  Campaign offers a starter-Commander choice, and which of the five candidates ship), **Q44** (is a
+  mission's Pulse count authored and shown), **Q45** (is the draft pick mandatory, skippable, or
+  bankable), **Q46** (where a run's starting army comes from). Each carries a recommendation; each is
+  cheap now and expensive after Milestone 5.
 - What persists between battles within a run beyond the deck and the Commander (Q40), and whether
   anything but unlocks persists between runs (Q41).
 - Difficulty ladders (ascension-style), daily seeds, leaderboards, and any online feature: real

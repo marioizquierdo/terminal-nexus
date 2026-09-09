@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.11
+**Canon version:** 2.12
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -70,9 +70,10 @@ is a tracker checked off during work, not a document that only changes at a name
 
 The current milestone is **[`milestones/milestone-02-campaign-design.md`](milestones/milestone-02-campaign-design.md)
 — Design and Orientation** (re-scoped at canon 2.11): the vocabulary of the single-player modes
-([`specs/game-modes.md`](specs/game-modes.md) — Campaign and Challenge), the build order, and the few
-PERIMETER decisions the UX build needs. It is a design pass, not a code gate, and its one open gate is
-2C — Mario's confirmation.
+([`specs/game-modes.md`](specs/game-modes.md) — Campaign and Challenge), the build order, the few
+PERIMETER decisions the UX build needs, and — at canon 2.12 — the first Nexus, five starter Commander
+candidates, the six Nexus-power instruments, and a script for Levels 1–3. It is a design pass, not a
+code gate, and its one open gate is **2D — Mario's confirmation, including Q42–Q46**.
 
 So the authorised work for a new session is, in order:
 

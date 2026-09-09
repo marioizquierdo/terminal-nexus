@@ -2,7 +2,7 @@
 
 **Document role:** Universe, factions, conflicts, narrative constraints, and symbolic art direction
 **Status:** Canonical
-**Canon version:** 2.11
+**Canon version:** 2.12
 **Updated:** 2026-09-09
 **License:** CC BY-SA 4.0
 
@@ -80,6 +80,18 @@ No faction knows why the network makes replicas fight. Some believe the Ancients
 The symbolic synthesis is:
 
 > **A Prime Nexus is a throne that needs a people, a mirror that gives them power, and a root that sends smaller thrones into danger.**
+
+### 3.1 The Apex — the first Prime Nexus the game shows
+
+The Nexus under the survey annex is the one the origin campaign is about. The expedition that failed to date it catalogued it as **FIELD CATALOG 001 — THE APEX**, and the name stuck. The name is the humans'. The interface has never offered one, and nobody has caught it referring to itself at all.
+
+What unsettles about the Apex is not power. It is **administration**. It does not command, bargain, or explain — it *processes*. It assigns a name, a heraldry, and an arrival time to a contact nobody has identified. It approves requests that were never filed, and back-dates them. It opens personnel files on people who have not enlisted, and revises them after they die. Ask it for anything and it answers `ACKNOWLEDGED`, and the thing is already done.
+
+Citizens read this as proof they were right: the machine is infrastructure, and infrastructure keeps records. That reading is comfortable, and it is load-bearing for the campaign, because it means every uncanny thing the Apex does arrives wearing a form the colony already trusts. A civilization that finds standardization rewarded (Section 4) is poorly equipped to notice being standardized.
+
+Its powers reach a player as **instruments** — permits, requisitions, revisions, amendments, files, surveys — which is Section 3's own list of what a Prime holds ("patterns, permissions, and incomplete technologies") handed across a counter. The mechanical taxonomy is [`commander-armies.md`](commander-armies.md) Section 4.5.
+
+The Apex answers none of Section 7's mysteries. It is never shown deciding, wanting, or speaking about itself; it files. What that means is the campaign's question, and the campaign does not answer it either.
 
 ## 4. Claimants and compulsory conflict
 
