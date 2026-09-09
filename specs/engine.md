@@ -426,7 +426,7 @@ renderer maps logical time onto wall-clock time by itself.
 eight rates, and `tests/rules.test.ts` asserts it on every run, so 12 ticks per second is now RULE
 rather than a hypothesis. The hypothesis this section was written to test — that a fixture six rows
 long makes the rate cheap to change — was never exercised, because nothing asked for a different
-rate. It stops being cheap at Milestone 4; that warning stands.
+rate. It stops being cheap at Milestone 12; that warning stands.
 
 **What changing the rate would cost, stated honestly.** Content durations are authored in raw ticks
 (`cooldownTicks`, `intervalTicks`, and every cooldown in a fixture), so the number 12 is baked into
@@ -435,7 +435,7 @@ definition and scenario — not a constant to edit. The alternative, authoring d
 seconds, buys rate-independence at the cost of arithmetic at every use site; it was considered and
 rejected as the worse trade while the rate is still cheap to change. Milestone 1 is deliberately the
 place this hypothesis gets tested, because the fixture is six rows long and the migration is an
-afternoon. It will not be an afternoon in Milestone 4.
+afternoon. It will not be an afternoon in Milestone 12.
 
 ### 4.2 Movement credit — RULE, earned by Milestone 1
 
@@ -630,7 +630,7 @@ are still undesigned; recorded so the shape of the draft is not accidentally for
 population cap, not a second currency. Nexus energy is a state readout, not something a player spends.
 
 `ResourceCost` stays a keyed record in Section 8 so a later microgame can earn a second resource
-without a schema change — but nothing through Milestone 4 may assume one exists.
+without a schema change — but nothing through Milestone 12 may assume one exists.
 
 **Workers** pick the closest available job by deterministic path distance: building slots, deposits,
 salvage, and later faction-specific labour. They produce in place rather than carrying bundles home,

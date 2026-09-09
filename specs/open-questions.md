@@ -58,7 +58,7 @@ what the art is actually showing — it is drawn on an Outpost.
 
 ### Q7 — Do workers carry, or produce in place?
 
-**Status:** OPEN — blocks nothing before Milestone 4.
+**Status:** OPEN — blocks nothing before Milestone 12.
 
 [`engine.md`](engine.md) Section 6 says workers do not carry bundles home and produce continuously
 at a job, then says they return toward the Nexus when storage fills and resume "immediately" when
@@ -68,7 +68,7 @@ capacity opens. Returning-when-full is carry-shaped behaviour inside a no-carry 
 **Recommendation:** keep produce-in-place, and make a full store simply **stall** the worker at its
 job rather than send it home. Stalled workers are readable (they stop moving), they punish
 under-built storage without a walk-home animation nobody asked for, and they remove the travel-time
-contradiction. Decide with the Milestone 4 microgame.
+contradiction. Decide with the Milestone 12 microgame.
 
 ### Q8 — When does an air unit first exist?
 
@@ -662,7 +662,7 @@ real, live possibility per Q8's own design (ground and air deliberately share ti
 | B. **Flip the default for ground-layer content**: a `units`/`workers` entity with no `targetLayers` declared cannot target `air` unless it opts in | Closer to what most real designs probably want (a melee grunt hitting a flyer standing on its tile is the surprising case, not the normal one). Requires auditing every future ground-melee unit's intent at authoring time, and is a breaking semantic change to a field this spike just built — real churn for zero current content, since no accepted roster has air units yet |
 | C. **A loader-time or test-time lint**: flag (not reject) a ground-layer `attack` with no `targetLayers` declared, as a nudge rather than a rule change | Cheap and catches the authoring-discipline risk without changing runtime behaviour or requiring a breaking default flip |
 
-**Recommendation: A for now, reconsider at C's cost the day Milestone 4 authors the first real air
+**Recommendation: A for now, reconsider at C's cost the day Milestone 12 authors the first real air
 unit** — there is no content yet for a wrong default to actually harm, and the field is new enough
 that changing its default later costs nothing extra compared to changing it now. C is the cheap middle
 ground if a lint turns out easy to add whenever someone is next in `scenario/load.ts` or
@@ -686,14 +686,14 @@ opponent the winner.
 
 | Option | Cost |
 | --- | --- |
-| A. **Leave it.** No accepted roster is spawner-only today (Milestone 4 hasn't selected one), and the fixture that surfaces this is bench content built to surface exactly this kind of interaction | Free. The bug, if it is one, only reaches a real match the day a real Commander Army's opening force is entirely non-mobile — a design choice Milestone 4 has not made and may never make |
+| A. **Leave it.** No accepted roster is spawner-only today (Milestone 12 hasn't selected one), and the fixture that surfaces this is bench content built to surface exactly this kind of interaction | Free. The bug, if it is one, only reaches a real match the day a real Commander Army's opening force is entirely non-mobile — a design choice Milestone 12 has not made and may never make |
 | B. **Extend `hasMobile`'s computation**: a side counts as `hasMobile` if its initial roster contains *either* a mobile entity *or* an entity with `spawn` defined — "this side promises future mobile forces" | Closes the specific gap the spawner exposes, cheaply (one extra condition in `createContext`, `pulse/context.ts`). Introduces a subtler problem: a spawner that is *itself* still alive but between spawn cycles (all its children currently dead, more due next interval) would read as `mobileAlive === false` at that instant, risking a **false** annihilation mid-match rather than a missing one |
 | C. **Redefine annihilation for a spawn-having side**: require the spawning structure itself, not just its current children, to also be dead | Solves B's false-positive risk by tying annihilation to the *producer*, not the momentary output — but this starts to resemble a second victory condition ("destroy the production"), adjacent to but distinct from nexus-destroyed, and is a real product-model decision, not a bug fix |
 
 **Recommendation: A for now.** Both real fixes (B, C) trade one edge case for a different, subtler
 one, and neither should be picked without a real roster to test it against — exactly Q20's own
 reasoning for deferring a harder call until the fixture that needs it exists rather than the one that
-merely revealed it. Revisit the moment Milestone 4 (or any earlier session) authors a Commander Army
+merely revealed it. Revisit the moment Milestone 12 (or any earlier session) authors a Commander Army
 whose opening force is entirely non-mobile.
 
 ### Q30 — How much Build-Phase side panel does Milestone 5 actually need?
@@ -791,7 +791,7 @@ where it gets fixed, not retrofitted here on spec.
 
 Mario's own milestone list puts a real Commander in Level 1: "focus on the first Citizen commander.
 Develop the initial draft of Nexus upgrades." Every earlier framing in this repository deferred both —
-`commander-armies.md` Section 1 ("Do not invent production-ready stats before Milestone 4 selects the
+`commander-armies.md` Section 1 ("Do not invent production-ready stats before Milestone 12 selects the
 minimum Citizens-versus-Ravels microgame"), `AGENTS.md` Section 2's standing ban, and `campaigns.md`
 Section 4.1's own belief ramp, which spends the Commander death/absence/restoration beat narratively
 at **Mission 3** (RESTORATION), not Mission 1. This is a real scope question, not a formality: getting

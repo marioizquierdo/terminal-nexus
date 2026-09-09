@@ -111,7 +111,7 @@ existing disposable content:
   a pure off-map trigger (Section 4.4 below).
 
 **No new unit content for PERIMETER itself.** This is deliberate, not a shortcut: `AGENTS.md` Section
-2 still reserves Commander Army authoring for Milestone 4, and everything above is already-disposable
+2 still reserves Commander Army authoring for Milestone 12, and everything above is already-disposable
 bench content with no balance claim, exactly as Milestone 1 shipped it. If milestone 8's Commander
 work or milestone 10's second-mission polish finds a real gap, that is a new, explicit decision made
 there — not assumed here.

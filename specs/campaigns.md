@@ -16,7 +16,7 @@ systems it needs rather than waiting for all of them.
 [`../milestones/README.md`](../milestones/README.md)'s ten-milestone sequence is PERIMETER (Mission 1,
 Section 4.2 below), in implementation now, using the existing disposable Citizen and Ravel fixture
 content rather than a real Commander Army roster — `AGENTS.md` Section 2's ban on authoring the full
-Commander Army before Milestone 4 is unchanged by this (Milestone 8 of that sequence draws the exact
+Commander Army before Milestone 12 is unchanged by this (Milestone 8 of that sequence draws the exact
 line: one named Commander mechanic, not a locked roster). This document still gives the *destination*
 — the full belief ramp, the later missions' teaching goals, the cast — and none of
 that beyond Mission 1 (and, per Milestone 10, Mission 2) is authorized to build yet; only what a

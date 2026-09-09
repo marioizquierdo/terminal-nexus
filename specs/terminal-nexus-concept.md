@@ -42,9 +42,9 @@ Two single-player modes share that match, and both are designed for from the sta
   of missions that teaches one mechanic at a time, unlocks the cards it introduces, and tells the
   story. Judged on whether a new player comes out able to play a run, and whether the world feels
   real — never on length.
-- **Challenge** — seeded runs: a series of battles against escalating Commander Armies, with a draft
-  between every two — add a card, remove one, or upgrade one — so the build is polished battle by
-  battle. The same seed gives the same run. This is where replay value lives.
+- **Challenge** — seeded runs: a series of battles against escalating Commander Armies, with a run
+  draft between battles — add a card, remove one, or upgrade one — so the build is polished battle
+  by battle. The same seed gives the same run. This is where replay value lives.
 
 Skirmish (one battle, any legal army) falls out of the same pieces; multiplayer comes later, on the
 same deterministic match. A mode is data over one match loop and one army shape — nothing below the

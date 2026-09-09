@@ -24,9 +24,9 @@ This document will eventually define:
 - semantic glyph roles, inspection portraits, barks, and effect motifs;
 - intended strengths, weaknesses, counters, and build archetypes.
 
-No complete roster has been earned yet. Do not invent production-ready stats before Milestone 4 selects the minimum Citizens-versus-Ravels microgame.
+No complete roster has been earned yet. Do not invent production-ready stats before Milestone 12 selects the minimum Citizens-versus-Ravels microgame.
 
-**Two fixture armies exist on the bench** (Milestone 1) and neither is a Commander Army: a Citizen set from `milestone-1-spike-battle.md` 3.6, and a Ravel set added at Gate 1B so `grid` could show two styles of fight rather than one fight twice. They are disposable, tuned for contrast rather than balance, and Milestone 4 is still what selects the real microgame. What they proved is worth carrying forward:
+**Two fixture armies exist on the bench** (Milestone 1) and neither is a Commander Army: a Citizen set from `milestone-1-spike-battle.md` 3.6, and a Ravel set added at Gate 1B so `grid` could show two styles of fight rather than one fight twice. They are disposable, tuned for contrast rather than balance, and Milestone 12 is still what selects the real microgame. What they proved is worth carrying forward:
 
 - three of the four Ravel rule shapes in Section 4.1 needed nothing new from the kernel — rates off the Citizen cadence, lower speed tiers, richer salvage;
 - the fourth, **volatile munitions**, needed a rule, and it is the one that made the faction legible without a word of lore. A stats-only Ravel army failed the alignment test in `terminal-nexus-lore.md` Section 8.6; the rule passed it. Chains are bounded because an entity can only die once, so a cascade resolves inside the tick that started it;
@@ -77,7 +77,7 @@ starting package, the faction's rules (Section 4.1) and the Commander's exceptio
   the deck stops mattering — the oldest lesson of every deck-building game. Anything with a signature
   belongs in the army tiers.
 - **Deck size is a number, and a fixed one.** An army carries at most *N* army structures and *M*
-  Nexus powers. The numbers are Milestone 4's to decide on evidence — three to five structures and
+  Nexus powers. The numbers are Milestone 12's to decide on evidence — three to five structures and
   six to ten powers are the working guesses — but a cap is not optional: a cap is what makes a choice
   a choice, and what makes drafting a game rather than a menu.
 - **Legality is data validation.** An army may reference only content from its own faction's pools,
@@ -155,7 +155,7 @@ Faction asymmetry reduces the number of options each player must understand whil
 
 This section records each faction's **mechanical identity**: the rule-shapes that make its philosophy
 playable, the signature moment those shapes exist to produce, and the smallest engine capability each
-one needs. It contains no stats, no rosters, and no authorization — Milestone 4 still selects the
+one needs. It contains no stats, no rosters, and no authorization — Milestone 12 still selects the
 deliberately tiny Citizens-versus-Ravels microgame, and everything here competes for a place in it or
 in later milestones.
 
@@ -363,7 +363,7 @@ Every literal glyph is theme data mapped from a semantic role. Every exceptional
 
 ## 6. Initial authoring order
 
-1. Define the smallest Citizen Commander Army needed by Milestone 4.
+1. Define the smallest Citizen Commander Army needed by Milestone 12.
 2. Define the smallest Ravel Commander Army that creates a meaningful asymmetric match.
 3. Run deterministic simulations and human matches before adding breadth.
 4. Add second Commanders only after the common faction package is stable enough that a variation is cheaper than a new faction.

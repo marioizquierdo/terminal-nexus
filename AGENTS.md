@@ -93,7 +93,7 @@ beyond the flat unlock record Milestone 4 reads, sound, packaging, remote delive
 Rust/Go migration unless an accepted gate result authorizes it. **Do not author the full Citizens
 Commander Army**: Milestone 8 builds the Commander mechanic and one named Commander (Vasse) for
 PERIMETER specifically — see that milestone's own Q34 for the exact line between that and Milestone
-4's still-reserved real roster selection.
+12's still-reserved real roster selection.
 
 **How to run what exists:** the `.claude/skills/grid` skill and `DEVELOPMENT.md` — read one of them
 rather than re-deriving `grid`'s CLI or the test commands here.
