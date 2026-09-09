@@ -4,8 +4,8 @@
 `grid` reads and writes it
 **Status:** GUIDANCE throughout. Nothing here is built. Written to give Milestone 2 a concrete
 starting design rather than a blank page, and because the owner asked for it directly this session
-**Canon version:** 2.9
-**Updated:** 2026-08-26
+**Canon version:** 2.11
+**Updated:** 2026-09-09
 **License:** Apache-2.0
 
 ## 0. What this is, and what it is not
@@ -42,8 +42,8 @@ designed before Gate 1A needed them.
   "reserve the API surface at zero cost" rule, applied to a file format instead of a function
   signature.
 - **No Commander Army exists to reference.** `commander-armies.md` says rosters are "intentionally
-  undefined," and `AGENTS.md` explicitly forbids authoring one before Milestone 4. `armyId` and
-  `faction` are reserved fields for the same reason Build Phase fields are: so Milestone 4 does not
+  undefined," and `AGENTS.md` explicitly forbids authoring one before Milestone 12. `armyId` and
+  `faction` are reserved fields for the same reason Build Phase fields are: so Milestone 12 does not
   have to reopen this file's shape to add them.
 - **No sandbox, rewind, or fast-forward UI.** That is Q19, still open, still deliberately deferred.
   This document is a dependency of Q19's recommendation (per-tick state needs to be cheap to address
@@ -94,7 +94,7 @@ type ReplaySetup = Readonly<{
 }>
 
 type ReplayPlayerSetup = Readonly<{
-  /** Reserved. Milestone 4 is what gives this real values (Section 1). */
+  /** Reserved. Milestone 12 is what gives this real values (Section 1). */
   armyId?: string
   /** Reserved, same reason. Today a player's faction is implicit in which content ids their
    *  scenario placements use — there is nothing to record here yet, only a slot to record it into
@@ -327,7 +327,7 @@ them yet:
   to define, not this document's; the field is reserved so that work does not also have to reopen this
   file's top-level shape.
 - Whether `armyId`/`faction` (Section 2.1) end up as bare strings or references into a Commander Army
-  registry — Milestone 4's call, deliberately not pre-decided here.
+  registry — Milestone 12's call, deliberately not pre-decided here.
 
 None of these are registered as `Q<n>` entries in `open-questions.md`: none of them currently blocks
 anything, which is the register's own bar for a row. If one of them starts blocking real Milestone 2

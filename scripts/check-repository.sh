@@ -63,6 +63,7 @@ required_files=(
   "specs/engine.md"
   "specs/commander-armies.md"
   "specs/campaigns.md"
+  "specs/game-modes.md"
   "specs/project-governance.md"
   "specs/open-questions.md"
   "specs/ascii-art-references.md"
@@ -80,6 +81,8 @@ required_files=(
   "milestones/milestone-08-commander.md"
   "milestones/milestone-09-mission-cutscenes.md"
   "milestones/milestone-10-first-and-second-missions.md"
+  "milestones/milestone-11-challenge-runs.md"
+  "milestones/milestone-12-content-iteration.md"
   ".devcontainer/devcontainer.json"
   ".github/workflows/ci.yml"
 )

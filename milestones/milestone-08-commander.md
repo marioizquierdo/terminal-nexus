@@ -3,13 +3,13 @@
 **Document role:** Milestone tracker — the first real Commander (Edda Vasse) and a small Nexus upgrade draft
 **Status:** GATED
 **Depends on:** Milestone 5 (Build Phase is where the upgrade pick lives), Milestone 6 (Pulse is where the Commander acts)
-**Updated:** 2026-08-26
+**Updated:** 2026-09-09
 **License:** Creative identity is CC BY-SA 4.0 (already true of `commander-armies.md`); mechanism is Apache-2.0
 
 > **This widens Level 1's scope on purpose, and it needs saying plainly.** Every earlier framing of
 > Level 1 in this repository (`../milestones/milestone-01-grid-battles.md`'s own acceptance note,
 > `../specs/campaigns.md` Section 1) explicitly deferred the Commander mechanic to Mission 3
-> (RESTORATION) and told sessions not to author a Commander Army before Milestone 4. Mario's own
+> (RESTORATION) and told sessions not to author a Commander Army before Milestone 12. Mario's own
 > milestone list puts a real Commander in Level 1. See Section 3 below for exactly what does and does
 > not change because of that — this is not a quiet reversal, it is a decision that needs the same
 > scrutiny any scope change gets.
@@ -19,7 +19,7 @@
 Can Commander Edda Vasse exist as a real, persistent frontline unit — with the death/absence/
 restoration mechanic [`../specs/engine.md`](../specs/engine.md) Section 5.1 already describes and
 nothing has built yet — and can the player pick from a small, real Nexus upgrade draft during Build
-Phase, without this becoming "author the Citizens Commander Army" ahead of Milestone 4?
+Phase, without this becoming "author the Citizens Commander Army" ahead of Milestone 12?
 
 ## 2. What gets built
 
@@ -34,7 +34,23 @@ Phase, without this becoming "author the Citizens Commander Army" ahead of Miles
 - **A small, real Nexus upgrade draft**: [`../specs/engine.md`](../specs/engine.md) Section 5.4 says
   "the Grid Nexus offers a small draft of upgrades" and admits "none of this is designed." This
   milestone designs and builds the smallest real version — one or two options, mission-scoped, filling
-  the upgrade-pick slot Milestone 5 already built the mechanism for.
+  the upgrade-pick slot Milestone 5 already built the mechanism for. Since canon 2.10 the draft has a
+  defined source: **the Commander Army's own Nexus power pool, dealt as a hand at the start of each
+  Build Phase, one kept** ([`../specs/commander-armies.md`](../specs/commander-armies.md) Section
+  2.1). Vasse's PERIMETER army is that shape at its smallest — a pool of two, a hand of two, one
+  kept per Build Phase across the mission's three Pulses — which is enough to build the dealing
+  mechanism once and never as a placeholder.
+
+### 2.1 Gates
+
+- **8A — The Commander mechanic.** Vasse as a persistent `@` on the `units` layer; death, absence
+  for the rest of that Pulse and one full cycle, restoration — on a named scenario, hash-stable.
+- **8B — The Nexus draft, dealt from a pool.** A hand dealt at each Build Phase from the army's Nexus
+  power pool, one kept, filling Milestone 5's slot; two real, mechanically distinct powers for
+  PERIMETER. The dealer built here is the one Milestone 11's run draft reuses at the next scale.
+
+Both modes need both gates, which is why this milestone sits before either mode shell in the build
+order ([`README.md`](README.md)).
 
 ## 3. Q34 — does this mean authoring a Commander Army?
 
@@ -51,7 +67,7 @@ Citizens roster.
 
 **Recommendation, registered as Q34 in [`../specs/open-questions.md`](../specs/open-questions.md):**
 build the mechanism and Vasse specifically; keep the upgrade draft to the one or two options this
-mission needs; do not treat this milestone as Milestone 4's roster selection, and say so explicitly in
+mission needs; do not treat this milestone as Milestone 12's roster selection, and say so explicitly in
 this milestone's own gate report so a later reader does not mistake "Vasse exists" for "the Citizens
 Commander Army is locked."
 
@@ -63,7 +79,7 @@ using it before Mission 3 is ready to.
 
 ## 4. Explicitly not this milestone
 
-The full Citizens Commander Army (Milestone 4); a second or third proposed Commander
+The full Citizens Commander Army (Milestone 12); a second or third proposed Commander
 (`commander-armies.md` Section 4.4 lists two more — Director Denz, Marshal Teag — untouched); Nexus
 powers beyond the small upgrade draft; any Ravel-side Commander (Speaker Corvane appears in
 PERIMETER's own dialogue but is not a playable or mechanically-modeled unit here).

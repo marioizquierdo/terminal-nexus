@@ -3,7 +3,7 @@
 **Document role:** Milestone tracker — build workers, gather resources during the Pulse
 **Status:** GATED
 **Depends on:** Milestone 6 (the Pulse loop workers actually act inside)
-**Updated:** 2026-08-26
+**Updated:** 2026-09-09
 **License:** Apache-2.0
 
 > **Pulled forward from backlog, on purpose.** `../specs/backlog-pulse-completion.md` deferred a full
@@ -34,6 +34,22 @@ content, for the first time?
   recommendation only matters once a storage cap exists, and Level 1 deliberately has none (no
   warehouses — `../specs/milestone-02-campaign-design.md` Section 4.2, `AGENTS.md` Section 2). Workers
   simply keep producing; Q7 stays open for whichever later level actually adds a storage cap.
+
+### 2.1 Gates
+
+- **7A — Worker production.** `unit.citizen.worker` on the construct menu, produced by its recipe
+  during the Pulse (Milestone 6's gate 6C is the mechanism; this gate is the first real use).
+- **7B — Job assignment and harvesting.** Closest available job by deterministic path distance;
+  produce in place; a finite deposit five workers can share; the resource total visibly moving
+  because of a worker.
+- **7C — Income across battles.** Until this milestone, both modes run on a per-battle allotment
+  (Mechabellum's rounds do, and it is enough for a run to play —
+  [`../specs/game-modes.md`](../specs/game-modes.md) Section 5). This gate decides how gathered
+  resource and the allotment combine within a match, and records whether anything about it should
+  persist between a run's battles (Q40's option C).
+
+In the build order this comes after the Challenge mode's first run (Milestone 11), on purpose:
+the economy is what makes a battle feel like Terminal Nexus, not what makes it playable.
 
 ## 3. Explicitly not this milestone
 
