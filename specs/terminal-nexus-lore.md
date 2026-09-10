@@ -2,8 +2,8 @@
 
 **Document role:** Universe, factions, conflicts, narrative constraints, and symbolic art direction
 **Status:** Canonical
-**Canon version:** 2.13
-**Updated:** 2026-09-09
+**Canon version:** 2.14
+**Updated:** 2026-09-10
 **License:** CC BY-SA 4.0
 
 This is the context document for writing Terminal Nexus fiction, developing campaigns, naming content, and designing ASCII art. New stories may invent local people, places, artifacts, and conflicts, but should preserve the universe rules and deliberate mysteries below.

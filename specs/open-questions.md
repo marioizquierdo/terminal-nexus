@@ -2,8 +2,8 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.13
-**Updated:** 2026-09-09
+**Canon version:** 2.14
+**Updated:** 2026-09-10
 **License:** Apache-2.0
 
 ## 1. Why this file exists
@@ -983,31 +983,6 @@ next run mechanically easier).
 who beat it and options should widen for the player who did not; neither needs the run to get easier
 by itself.
 
-### Q43 — Which starting Commanders ship, and how is the choice presented?
-
-**Status:** OPEN — the owner's own trio is on the table and being designed, not settled ("let's keep
-designing a little bit before settling on a specific commander"). Shapes the game menu (Milestone 3)
-and the campaign screen (Milestone 4).
-
-[`commander-armies.md`](commander-armies.md) Section 4.6 now carries that trio: **Edda Vasse**
-(Citizen, protective, the default), **Marshal Averno** (Citizen, near-identical build, a handful of
-adversarial powers and a light Ravel leak), and **Dob Hunter** (Ravel, gambler, variance as a build).
-Denz, Teag, Kadresh and Aldiss are kept as later candidates.
-
-| Option | Cost |
-| --- | --- |
-| A. **Ship the trio** — two near-identical Citizens plus one Ravel | Practising the fundamentals twice under different stories is a real teaching win, and a Ravel starter makes the opening a genuine choice while showing the war from both sides of the same map. Costs a second faction's starter content before either has been played — mitigated by the two Citizens sharing nearly everything, and all three sharing maps |
-| B. **Ship the two Citizens first**, add Dob once the Citizen opening has actually been played | Smallest honest first build, and it front-loads the cheapest content (a near-twin) while deferring the only genuinely new roster work. A player's first impression is "two humans," which is a weaker menu than the design intends |
-| C. **Ship one (Vasse)**, everything else later | Cheapest, and it was canon 2.12's recommendation before the trio existed. Gives up the choice that makes the opening interesting, and leaves the near-twin's teaching argument untested |
-
-**Recommendation: A as the design target, built in B's order.** Build the selection screen for three
-and fill it as the content lands — Vasse first because she is already written into PERIMETER, Averno
-second because he is nearly free once she exists, Dob third because he is the one that needs new
-content and a mirrored trigger list. **One thing to settle before any of them ships:** *Marshal
-Averno* and Section 4.4's existing *Marshal Avern Teag* are two Citizen Marshals whose names differ
-by three letters, which is a real legibility problem at eighty columns — rename Teag, fold her into
-Averno's later upgrades, or drop her.
-
 ### Q45 — Is the Nexus draft's pick mandatory, and may it be skipped or banked?
 
 **Status:** OPEN — blocks the Build Phase draft panel (Milestone 5) and the dealer (Milestone 8).
@@ -1061,7 +1036,10 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q25 | 2026-08-26 | **A confirmed (256-colour tier stays derived from `rgb`; 16-colour stays hand-authored) and C shipped**: `CellStyle.fade`, a `fgRole`-only 0–1 scalar resolved only at `color256`/`truecolor`, narrowly scoped to `fx.damage.flash` per a recorded departure from craft rule 7. B and D not done, per the recommendation | [`engine.md`](engine.md) Section 9.1; [`ascii-effects.md`](ascii-effects.md) craft rule 7; `src/view/roles.ts`, `src/view/frame.ts`, `src/view/effects/composite.ts`, `src/view/effects/recipes.ts` |
 | Q29 | 2026-08-26 | **Recall is the existing end-of-Pulse regroup rule, named, not a new mechanic.** Confirmed directly by Mario's own description of the Pulse phase: "instantly recall all units back to their proper location next to their home buildings" — exactly `engine.md` Section 5's existing rule, Option A | [`../milestones/milestone-06-pulse-phase.md`](../milestones/milestone-06-pulse-phase.md) |
 | Q42 | 2026-09-09 | **No player-facing taxonomy; a bounded union in code.** A power is a name and one plain line saying what it does (*"Factory Permit — Unlocks building: Factory"*). The effect kinds — `unlockStructure`, `spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`, `reveal` — are engineering names the player never sees | [`commander-armies.md`](commander-armies.md) Section 4.5; [`engine.md`](engine.md) Section 5.4 |
+| Q43 | 2026-09-10 | **No upfront Commander choice.** A new player starts Vasse's mission 1 directly; completing it unlocks Averno and Dob Hunter as two new campaign-menu rows, each their own opening on the same maps. Save slots are per Commander (`campaigns.md` Section 4.3) | [`campaigns.md`](campaigns.md) Section 4.3; [`../milestones/milestone-03-game-menu.md`](../milestones/milestone-03-game-menu.md) |
 | Q44 | 2026-09-09 | **Missions have goals, not fixed lengths.** A main goal (usually "destroy the enemy Grid Nexus"; also survive/capture/accumulate shapes) plus an optional bonus goal that unlocks Challenge content. A Pulse counter shows only when the goal is about Pulses. Canon 2.12's fixed 3/4/5-Pulse contract survives as a pacing estimate only | [`campaigns.md`](campaigns.md) Section 4.3 |
+| Q47 | 2026-09-10 | **One map file, roles swapped — no second map authored.** The Ravel opening's mission 1 reuses PERIMETER's literal Grid: the raid's staging area becomes Dob's starting camp, the Citizen base becomes the scripted defender, and his objective is `destroyNexus` targeting the fabricator. Only `playerArmy`, `opponentArmies`, `objective`, and the trigger list's perspective change | [`campaigns.md`](campaigns.md) Section 4.3 |
+| Q48 | 2026-09-10 | **Bonus goals are shown in the briefing, not revealed as a surprise.** A player decides whether to play toward one from the start, the same way the main goal is already stated (Q44) | [`campaigns.md`](campaigns.md) Section 4.3 |
 | Q37 | 2026-09-01 | **Yes — a spike, and wider than the row's Option A.** Mario: "Scrolling in the map and placing selected bases is the part that needs more attention and will need a spike to verify assumptions." Not only static mockups: an interactive spike of cursor scrolling and placement, driven through keyboard, mouse, and the driver alike, that also verifies which target terminals deliver Shift+Arrow | [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md); [`engine.md`](engine.md) Section 9.7 |
 
 ### Q42 — answered
@@ -1105,6 +1083,30 @@ between the two modes.
 shape the kernel lacks; a mission-goal system is exactly the general form its Option B guessed at, so
 what remains of Q36 is the narrower kernel question — does the victory check accept a mission-supplied
 objective, and at what cost to a RULE. Still Milestone 6's, still on evidence.
+
+### Q48 — answered
+
+Mario, 2026-09-10: "Campaign levels could have a main mission, and a bonus goal (basically an
+achievement)... I want to see what you are able to imagine" — asked as part of a wider design pass,
+not as a fork with named options. Resolved here as GUIDANCE rather than put to Mario as a question:
+bonus goals are stated in the briefing alongside the main goal (Q44), never revealed only at debrief.
+See [`campaigns.md`](campaigns.md) Section 4.3.
+
+### Q47 — answered
+
+Resolved as GUIDANCE while writing up the two openings Q43 settled: does the Ravel opening need its
+own map, or does it reuse PERIMETER's? One map, roles swapped — the raid's staging area becomes Dob
+Hunter's camp, the Citizen base becomes the scripted defender. See
+[`campaigns.md`](campaigns.md) Section 4.3.
+
+### Q43 — answered
+
+Mario, 2026-09-10: "Perhaps we can just start with Vasse, so we have a more controlled start, and
+after that first level is completed, the Averno and Dob Hunter campaigns become unlocked." No
+Commander-choice screen at the top level — a new player starts Vasse's mission 1 directly, and
+completing it unlocks the other two openings as campaign-menu rows. See
+[`campaigns.md`](campaigns.md) Section 4.3; withdraws the "selection screen for three" instruction an
+earlier draft gave Milestone 3.
 
 ### Q37 — answered
 

@@ -2,8 +2,8 @@
 
 **Document role:** Single-player structure, mission definitions, progression, cutscenes, and initial narrative direction
 **Status:** Canonical direction; PERIMETER (Mission 1) is in active implementation across `milestones/`
-**Canon version:** 2.13
-**Updated:** 2026-09-09
+**Canon version:** 2.14
+**Updated:** 2026-09-10
 **License:** Narrative material is CC BY-SA 4.0; technical schemas are Apache-2.0
 
 ## 1. Development boundary
@@ -63,7 +63,8 @@ interface MissionDefinition {
   opponentArmies: readonly string[]
   availableContent: readonly string[]
   startingState: string
-  objectives: readonly string[]
+  objective: ObjectiveDefinition            // Section 2.2 — the main goal
+  bonusObjective?: ObjectiveDefinition       // Section 2.2 — optional, unlocks Challenge content
   triggers: readonly TriggerDefinition[]   // Section 2.1 — the mission's Pulses, script, and scenes
   opponentPolicy: string
   unlocks: readonly string[]
@@ -80,6 +81,43 @@ interface CampaignDefinition {
 
 This is architectural direction, not a frozen API. `introScene` and `outroScene` from an earlier
 draft are gone on purpose: a scene is a trigger like any other (Section 2.1), not a special slot.
+`objectives: readonly string[]` from an earlier draft is gone too — Section 2.2 replaces it with a
+typed shape, for the same reason Nexus powers stopped being an open-ended list (`commander-armies.md`
+Section 4.5): a mission's goal is something a trigger, a HUD, and a validator all need to read, and
+a string is something only a human can.
+
+### 2.2 Objectives — GUIDANCE, and how they meet the kernel's own victory check
+
+**Owner direction, canon 2.13** (Section 4.3) replaced fixed Pulse counts with **goals** — most often
+"destroy the enemy Grid Nexus," but equally "survive N Pulses," "capture and hold X by Pulse N,"
+"accumulate X of Y," "keep Z alive." A small bounded union is enough to say all of them, in the same
+spirit as the six Nexus-power effect kinds:
+
+```ts
+type ObjectiveDefinition =
+  | { kind: "destroyNexus" }                                         // the kernel's own default
+  | { kind: "surviveUntil"; pulse: number }
+  | { kind: "captureAndHold"; target: EntityId | RegionId; byPulse: number }
+  | { kind: "accumulate"; resource: ContentId; amount: number }
+  | { kind: "keepAlive"; target: EntityId | RegionId }
+```
+
+**How this meets `engine.md` Section 4.3's own victory check, and this is the part Q36 was actually
+asking about.** The kernel's RULE-level check — Grid Nexus destroyed, one side annihilated, tick
+limit reached — **does not change, and does not need to know about goals.** A mission's objective is
+resolved one level up, by the scenario/trigger layer (Section 2.1), which watches the condition and
+fires an ordinary `win` or `lose` action when it holds — "the Nexus still stands when Pulse 3 ends" is
+`{ when: { event: "pulse.end", pulse: 3 }, do: [{ objective: { id: "hold", state: "complete" } },
+{ win: true }] }`, a trigger like any other. The kernel's own check stays exactly what it always was:
+the *fallback* result a battle without a scripted objective gets — Skirmish, and every Challenge
+battle, land on it directly. A mission with a declared objective is never left to that fallback,
+because its own `win`/`lose` trigger fires first and the mission ends there.
+
+This is a **local data shape** in the sense of `project-governance.md` Section 2 — reversible,
+narrow, no RULE change — so it is written here as GUIDANCE and not registered as a question. What
+stays genuinely open is only implementation detail: whether `captureAndHold`'s region needs a new
+kernel primitive (a capture structure is already GUIDANCE, `engine.md` Section 5.2) or composes from
+existing ones. Milestone 6 decides that on the fixture it actually builds.
 
 ### 2.1 Mission time, Pulses, and triggers — GUIDANCE on the shape; the authored surface is Q39
 
@@ -277,6 +315,18 @@ is what makes a second opening affordable, and the fiction lands from both direc
 Citizen player is unsettled that the machine named the raid before it arrived, and the Ravel player is
 unsettled that somebody's fence already knew his name.
 
+**Only one map file — this is Q47, and the recommendation below is what Section 4.4 there proceeds
+under.** "Reusing the map" could mean a second, mirrored `.map.json`, or the literal same file with
+roles swapped. **Recommendation: the same file, roles swapped, no second map authored.** PERIMETER
+already has everything both openings need: a Citizen base (Nexus, fabricator, starting crew) and a
+raid staging area to its northwest. For the Citizen opening that staging area is the scripted enemy's
+entry point; for the Ravel opening it becomes Dob's own starting camp, the Citizen base becomes the
+scripted defender, and his main goal is what the table below already says — *destroy the fabricator*.
+Nothing about the Grid, the coordinates, or the terrain changes; only `playerArmy`, `opponentArmies`,
+`objective`, and the trigger list's own perspective swap. This is cheap precisely because a mission is
+data (Q39): swapping who a trigger list treats as "the player" is a content edit, not new code — and
+it means Milestone 10's Ravel-side work is authoring one mirrored `MissionDefinition`, not a map.
+
 The Ravel opening tracks the Citizen one closely through missions 1 and 2, then diverges — RESTORATION's
 beat is Citizen-specific (their Symbol falls and the Nexus files it), so the Ravel third mission
 teaches the same *mechanic* through its own event. What that event is has not been written and does
@@ -293,6 +343,11 @@ strict. Instead, we will have a few different goals for each mission." A mission
   mode**: a Commander, a card, a starting variant. *Win without losing a unit. Reach supply 100. Win
   by Pulse 4. Never lose a structure.* This is what gives a finished mission a reason to be replayed
   before the campaign is over, and what ties the two modes together without either owning the other.
+  **Bonus goals are shown, not revealed as a surprise — this is Q48.** The briefing states both goals
+  plainly, the same way it already states the main one (Q44); a player decides whether to play toward
+  it from the start, rather than discovering after the fact what they were being scored on. This is
+  also the faction's own voice: the Citizen Nexus files the standard before the shift begins, it does
+  not grade on a curve afterwards.
 
 Pulse counts below are **design estimates for pacing, not contracts**. A Pulse counter appears in the
 header only when the goal is itself about Pulses: "survive five Pulses" obviously shows one, "destroy
@@ -320,6 +375,15 @@ the pool, it does not prune it.
 so campaign progress is **per slot**, each slot naming its Commander. That is more than Q31's flat
 checked-in unlock list assumes, and Milestone 4 is where the difference gets designed rather than
 discovered.
+
+**Q43, decided.** Mario: "Perhaps we can just start with Vasse, so we have a more controlled start,
+and after that first level is completed, the Averno and Dob Hunter campaigns become unlocked." A new
+player is never shown a Commander-choice screen — **there is no upfront selection.** Vasse's mission 1
+is the whole first-time experience; completing it (its main goal, not the bonus goal) unlocks Averno
+and Dob Hunter as two new rows on the campaign menu, each starting *their own* mission 1 on the same
+map. This removes the "selection screen for three" work an earlier draft of this section asked
+Milestone 3 to build — the choice belongs to Milestone 4's campaign menu, as an unlock like any other,
+not to the top-level menu.
 
 ## 5. Cutscenes
 

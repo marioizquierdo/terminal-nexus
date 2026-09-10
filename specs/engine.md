@@ -2,8 +2,8 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.13
-**Updated:** 2026-09-09
+**Canon version:** 2.14
+**Updated:** 2026-09-10
 **License:** Apache-2.0
 
 ## 0. How to read this document
@@ -569,6 +569,12 @@ It alternates **as many times as the match needs** — a campaign mission is a s
 cycles, not one Pulse, and a mission's triggers decide how many and what happens between them
 ([`campaigns.md`](campaigns.md) Section 2.1). A Pulse may be scripted (no player plan; the player
 watches) and it is still a Pulse: seeded, deterministic, replayed the same way.
+
+**This section's own victory condition never learns about a mission's goal.** A mission's objective
+([`campaigns.md`](campaigns.md) Section 2.2) is resolved one level up, by the scenario/trigger layer,
+which fires an ordinary `win`/`lose` action when its own condition holds. What follows — Grid Nexus
+destroyed, one side annihilated, tick limit reached — stays the unchanged fallback a battle with no
+declared objective lands on: every Skirmish match, and every Challenge battle.
 
 Both players see the resolved Grid: terrain, deposits, neutral zones, known actors, health,
 structures, public construction coverage. Newly committed construction and upgrade choices stay

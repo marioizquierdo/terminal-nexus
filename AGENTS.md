@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.13
+**Canon version:** 2.14
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -71,10 +71,11 @@ is a tracker checked off during work, not a document that only changes at a name
 The current milestone is **[`milestones/milestone-02-campaign-design.md`](milestones/milestone-02-campaign-design.md)
 — Design and Orientation** (re-scoped at canon 2.11): the vocabulary of the single-player modes
 ([`specs/game-modes.md`](specs/game-modes.md) — Campaign and Challenge), the build order, the few
-PERIMETER decisions the UX build needs, and — at canon 2.12–2.13 — the Citizen Nexus's character, the
-three starting Commanders (Vasse, Averno, Dob Hunter), what a Nexus power does, and the two openings
-with their mission and bonus goals. It is a design pass, not a code gate, and its one open gate is
-**2D — Mario's confirmation, including Q43, Q45 and Q46**.
+PERIMETER decisions the UX build needs, and — at canon 2.12–2.14 — the Citizen Nexus's character, the
+three starting Commanders (Vasse, Averno, Dob Hunter, with no upfront choice screen), what a Nexus
+power does, the two openings sharing one map, and a bounded objective taxonomy replacing fixed Pulse
+counts. It is a design pass, not a code gate, and its one open gate is **2D — Mario's confirmation,
+including Q45, Q46, and the still-open Averno/Teag naming collision**.
 
 So the authorised work for a new session is, in order:
 
@@ -181,7 +182,9 @@ deleted, and the renderer must be replaceable without one simulation test changi
   interface.
 - **A Nexus power is a name and one plain line of description.** No player-facing classification; the
   effect kinds (`unlockStructure`, `spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`,
-  `reveal`) are code names. **A mission has goals, not a fixed length.**
+  `reveal`) are code names. **A mission has goals, not a fixed length** — a bounded
+  `ObjectiveDefinition`, resolved by the scenario/trigger layer one level above the kernel's own
+  unchanged victory check, which stays the fallback for Skirmish and Challenge battles.
 - Prime Nexuses remain at home and replicate Grid Nexuses; avoid stale teleportation language.
 - Player-facing phases are **Build Phase** and **Nexus Pulse**; use those names consistently.
 - Prefer direct code for the current proof. Extract a framework only after two real uses reveal the
