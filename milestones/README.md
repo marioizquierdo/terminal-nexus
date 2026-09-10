@@ -2,7 +2,7 @@
 
 **Document role:** Milestone index — the sequence, current status, and how this folder differs from `specs/`
 **Status:** Canonical index (not a versioned canon document — see below)
-**Updated:** 2026-09-09
+**Updated:** 2026-09-10
 **License:** Apache-2.0
 
 ## Why milestones live here, not in `specs/`

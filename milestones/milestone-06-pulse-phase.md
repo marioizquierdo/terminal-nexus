@@ -3,7 +3,7 @@
 **Document role:** Milestone tracker — the explicit Build→Pulse handoff, victory/defeat, and Recall
 **Status:** GATED
 **Depends on:** Milestone 5 (Build Phase produces what this Pulse resolves)
-**Updated:** 2026-09-09
+**Updated:** 2026-09-10
 **License:** Apache-2.0
 
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
@@ -45,6 +45,11 @@ three, [`milestone-02-campaign-design.md`](milestone-02-campaign-design.md) Sect
   `spawn` and `order` for the waves, `commitPlan` for the raid's own later Pulses, `win` on the final
   `pulse.end` — as data validated at load time, under Q39's recommendation. Conditions are evaluated
   on state and events only. Milestone 9 adds the presentation band on top.
+  [`../specs/campaigns.md`](../specs/campaigns.md) Section 2.2 has the `ObjectiveDefinition` shape
+  and the architecture this milestone builds to: the kernel's own victory check (`engine.md` Section
+  4.3) is unchanged and stays the fallback for Skirmish and Challenge battles with no scripted
+  objective; a mission's own goal is resolved entirely here, one level up, by its own `win`/`lose`
+  trigger.
 - **Automatic production, minimally, if Milestone 2's finding 4.6.2 stands**: the fixture barracks
   producing its recipe on an interval during the Pulse, pulled from
   [`../specs/backlog-pulse-completion.md`](../specs/backlog-pulse-completion.md) — otherwise a

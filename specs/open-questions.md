@@ -2,8 +2,8 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.11
-**Updated:** 2026-09-09
+**Canon version:** 2.15
+**Updated:** 2026-09-10
 **License:** Apache-2.0
 
 ## 1. Why this file exists
@@ -738,6 +738,13 @@ does not exist yet.
 contract can read at authoring time; a real save system is a `replay-format.md`-adjacent problem for
 whichever level first needs a unlock state that outlives one authoring session, not this one.
 
+**Widened at canon 2.13, and A is now the floor rather than the answer.** The Campaign opens with a
+choice of Commander and a player may keep several campaigns in progress
+([`campaigns.md`](campaigns.md) Section 4.3), so progress is **per save slot, each slot naming its
+Commander** — and bonus goals unlock content for Challenge mode, which means the record outlives a
+single campaign. A flat checked-in list still serves the first playable mission; it does not serve
+that shape, and Milestone 4 is where the difference gets designed rather than discovered.
+
 ### Q32 — How is a scripted (not adaptive) mission opponent actually authored as content?
 
 **Status:** OPEN — blocks nothing before Milestone 2 finalizes the Ravel raid; the recommendation is
@@ -856,6 +863,13 @@ scripted schedule ends" to read as a *win*.
 cheapest possible evidence (playing the fixture once) decides whether it is needed, and B's cost is
 mostly the canon ceremony a RULE change requires, not the code.
 
+**Narrowed at canon 2.13 by Q44's answer.** Missions now declare goals — "survive N Pulses,"
+"capture X by Pulse N," "destroy the enemy Grid Nexus" — which is the general form this row's Option B
+was reaching for ([`campaigns.md`](campaigns.md) Section 4.3). What is left of Q36 is only the kernel
+half: does `engine.md` Section 4.3's victory check accept a mission-supplied objective, or does the
+scenario layer resolve goals above it and hand the kernel an ordinary outcome? The second costs no
+RULE change and is worth trying first.
+
 **B has a natural home since canon 2.10.** The trigger model in [`campaigns.md`](campaigns.md)
 Section 2.1 carries `win` and `lose` as simulation actions — "the Nexus still stands when Pulse 3
 ends" is a trigger (`when: { event: "pulse.end", pulse: 3 }`, `do: [{ win: true }]`), not a bespoke
@@ -969,6 +983,42 @@ next run mechanically easier).
 who beat it and options should widen for the player who did not; neither needs the run to get easier
 by itself.
 
+### Q45 — Is the Nexus draft's pick mandatory, and may it be skipped or banked?
+
+**Status:** OPEN — blocks the Build Phase draft panel (Milestone 5) and the dealer (Milestone 8).
+
+Each Build Phase the Nexus deals a hand and the player keeps one
+([`commander-armies.md`](commander-armies.md) Section 2.1). Whether a player may decline, or save a
+pick for later, is undecided — and it is exactly the decision that separates "a menu" from "a game."
+
+| Option | Cost |
+| --- | --- |
+| A. **Mandatory in the Campaign, skippable in Challenge.** The tutorial always advances; a run may decline an offer that would dilute the build | Each mode gets the behaviour that serves it: the Campaign never stalls on an empty choice, and Challenge keeps the deck-thinning tension every roguelike deckbuilder converges on. Two behaviours to explain, though they land in different modes so no screen shows both |
+| B. **Always mandatory** | One rule, one panel. Removes a real decision from Challenge, where "take nothing" is often correct |
+| C. **Always skippable, with banking** — decline now, spend two next Pulse | The most expressive, and the most machinery: banked picks need their own state, their own UI, and a rule for what happens at mission end |
+
+**Recommendation: A**, and **no banking** until something asks for it. Banking is a second currency
+wearing a draft's clothes, and the run draft (`game-modes.md` Section 3.2) already carries the
+"decline to stay sharp" decision at the scale where it matters.
+
+### Q46 — Where does a Challenge run's starting army come from?
+
+**Status:** OPEN — blocks Milestone 11's gate 11A and the mode-select screen (Milestone 3).
+
+A run is a series of battles with a deck that changes between them. What the deck *starts* as is
+undecided, and it decides how tightly Challenge is coupled to Campaign progress.
+
+| Option | Cost |
+| --- | --- |
+| A. **Pick an unlocked Commander at run start; the deck begins as that Commander's starting package** — common tier plus a small fixed army tier | Clean, legible, and it makes Campaign unlocks matter to Challenge without making Challenge wait for them. A new player who has not finished the Campaign starts with the one Commander they have |
+| B. **A fixed starter deck, identical every run**, Commander included | Most controlled for balance and the easiest to test against. Throws away the replay value of "which Commander do I run today," which is most of what a run mode is for |
+| C. **Draft the army itself at run start** — build a deck from the faction pool before battle one | The drafting mode `commander-armies.md` Section 6 keeps possible, and the deepest version. Far more than Milestone 11 should attempt first, and it needs a pool wide enough to draft from, which Milestone 12 has not built yet |
+
+**Recommendation: A**, with **C named as the destination**: A is exactly C with the pre-battle draft
+skipped, so building A first costs nothing that C later needs. Keep run seeds independent of unlock
+state so a shared seed reproduces a run for another player only when both have the same Commander
+unlocked — worth checking on the first run that plays.
+
 ## 5. Answered
 
 Rows move here with the date, the decision, and the document that now owns it.
@@ -985,7 +1035,78 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q17 | 2026-08-21 | **Resolved by an unrelated fix, not decided among its options.** Four-way movement and Manhattan distance (Q15's fix, shipped for legibility) removed the degenerate tie itself: under Chebyshev a rank-deployed army had every enemy at the same distance; under Manhattan the same layout does not, because the axis the old metric ignored (`min(|dx|,|dy|)`) is exactly the one Manhattan keeps. Verified, not assumed: `citizen-mirror-skirmish.ts` (rank-deployed) now pairs each attacker with a distinct nearest opponent from tick 1, no stampede | [`grid/coords.ts`](../src/grid/coords.ts) `gridDistance`; `specs/open-questions.md` Q15 |
 | Q25 | 2026-08-26 | **A confirmed (256-colour tier stays derived from `rgb`; 16-colour stays hand-authored) and C shipped**: `CellStyle.fade`, a `fgRole`-only 0–1 scalar resolved only at `color256`/`truecolor`, narrowly scoped to `fx.damage.flash` per a recorded departure from craft rule 7. B and D not done, per the recommendation | [`engine.md`](engine.md) Section 9.1; [`ascii-effects.md`](ascii-effects.md) craft rule 7; `src/view/roles.ts`, `src/view/frame.ts`, `src/view/effects/composite.ts`, `src/view/effects/recipes.ts` |
 | Q29 | 2026-08-26 | **Recall is the existing end-of-Pulse regroup rule, named, not a new mechanic.** Confirmed directly by Mario's own description of the Pulse phase: "instantly recall all units back to their proper location next to their home buildings" — exactly `engine.md` Section 5's existing rule, Option A | [`../milestones/milestone-06-pulse-phase.md`](../milestones/milestone-06-pulse-phase.md) |
+| Q42 | 2026-09-09 | **No player-facing taxonomy; a bounded union in code.** A power is a name and one plain line saying what it does (*"Factory Permit — Unlocks building: Factory"*). The effect kinds — `unlockStructure`, `spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`, `reveal` — are engineering names the player never sees | [`commander-armies.md`](commander-armies.md) Section 4.5; [`engine.md`](engine.md) Section 5.4 |
+| Q43 | 2026-09-10 | **No upfront Commander choice.** A new player starts Vasse's mission 1 directly; completing it unlocks Averno and Dob Hunter as two new campaign-menu rows, each their own opening on the same maps. Save slots are per Commander (`campaigns.md` Section 4.3) | [`campaigns.md`](campaigns.md) Section 4.3; [`../milestones/milestone-03-game-menu.md`](../milestones/milestone-03-game-menu.md) |
+| Q44 | 2026-09-09 | **Missions have goals, not fixed lengths.** A main goal (usually "destroy the enemy Grid Nexus"; also survive/capture/accumulate shapes) plus an optional bonus goal that unlocks Challenge content. A Pulse counter shows only when the goal is about Pulses. Canon 2.12's fixed 3/4/5-Pulse contract survives as a pacing estimate only | [`campaigns.md`](campaigns.md) Section 4.3 |
+| Q47 | 2026-09-10 | **One map file, roles swapped — no second map authored.** The Ravel opening's mission 1 reuses PERIMETER's literal Grid: the raid's staging area becomes Dob's starting camp, the Citizen base becomes the scripted defender, and his objective is `destroyNexus` targeting the fabricator. Only `playerArmy`, `opponentArmies`, `objective`, and the trigger list's perspective change | [`campaigns.md`](campaigns.md) Section 4.3 |
+| Q48 | 2026-09-10 | **Bonus goals are shown in the briefing, not revealed as a surprise.** A player decides whether to play toward one from the start, the same way the main goal is already stated (Q44) | [`campaigns.md`](campaigns.md) Section 4.3 |
 | Q37 | 2026-09-01 | **Yes — a spike, and wider than the row's Option A.** Mario: "Scrolling in the map and placing selected bases is the part that needs more attention and will need a spike to verify assumptions." Not only static mockups: an interactive spike of cursor scrolling and placement, driven through keyboard, mouse, and the driver alike, that also verifies which target terminals deliver Shift+Arrow | [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md); [`engine.md`](engine.md) Section 9.7 |
+
+### Q42 — answered
+
+Mario, canon 2.13: "Nexus powers don't have to be classified as 'permit' or 'revision'. There's no
+need to classify them so strictly, and this will add too many new terms (note they would need to be
+different per faction to match their styles). The power name can have the naming: 'Factory Permit',
+but the description should just say what it does: 'Unlocks building: Factory'. We will keep track of
+all power types in code, using names that make sense for the code, not for the faction."
+
+The half of the canon 2.12 proposal that survives is the half that was load-bearing: **a small
+bounded union of effect kinds**, which is what lets a card, a panel, and a schema be sized before
+Milestones 5, 8, and 11 render them. The half dropped is the player-facing taxonomy — six capitalised
+instrument names, renamed per faction, would have been five vocabularies for a player to learn in
+exchange for nothing they could act on.
+
+So: to a player, a power is a **name and one plain line**. In code the kinds are `unlockStructure`,
+`spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`, and `reveal`
+([`commander-armies.md`](commander-armies.md) Section 4.5). One design point is kept from the
+original proposal: `reveal` exists so that information is a card a player spends a pick on rather
+than something the HUD gives away.
+
+### Q44 — answered
+
+Mario, canon 2.13: "About number of pulses, we don't need to make it strict. Instead, we will have a
+few different goals for each mission."
+
+**Neither of the row's options was chosen, because the question was mis-framed.** It asked whether a
+mission's *fixed length* is shown to the player; the answer is that a mission does not have a fixed
+length. It has a **goal**, and the length falls out of it. Most goals are "destroy the enemy Grid
+Nexus"; others are "survive N Pulses," "capture and hold X by Pulse N," "accumulate X of Y," "keep Z
+alive." A Pulse counter appears in the header when the goal is about Pulses and not otherwise — which
+resolves the original tension without a rule, since the mission that wants the dread of a countdown
+gets one and the rest do not.
+
+Missions also gain **bonus goals**: harder, optional, achievement-shaped, and the thing that unlocks
+content for Challenge mode ([`campaigns.md`](campaigns.md) Section 4.3). That is now the coupling
+between the two modes.
+
+**This narrows Q36 rather than answering it.** Q36 asks whether a defensive mission needs a victory
+shape the kernel lacks; a mission-goal system is exactly the general form its Option B guessed at, so
+what remains of Q36 is the narrower kernel question — does the victory check accept a mission-supplied
+objective, and at what cost to a RULE. Still Milestone 6's, still on evidence.
+
+### Q48 — answered
+
+Mario, 2026-09-10: "Campaign levels could have a main mission, and a bonus goal (basically an
+achievement)... I want to see what you are able to imagine" — asked as part of a wider design pass,
+not as a fork with named options. Resolved here as GUIDANCE rather than put to Mario as a question:
+bonus goals are stated in the briefing alongside the main goal (Q44), never revealed only at debrief.
+See [`campaigns.md`](campaigns.md) Section 4.3.
+
+### Q47 — answered
+
+Resolved as GUIDANCE while writing up the two openings Q43 settled: does the Ravel opening need its
+own map, or does it reuse PERIMETER's? One map, roles swapped — the raid's staging area becomes Dob
+Hunter's camp, the Citizen base becomes the scripted defender. See
+[`campaigns.md`](campaigns.md) Section 4.3.
+
+### Q43 — answered
+
+Mario, 2026-09-10: "Perhaps we can just start with Vasse, so we have a more controlled start, and
+after that first level is completed, the Averno and Dob Hunter campaigns become unlocked." No
+Commander-choice screen at the top level — a new player starts Vasse's mission 1 directly, and
+completing it unlocks the other two openings as campaign-menu rows. See
+[`campaigns.md`](campaigns.md) Section 4.3; withdraws the "selection screen for three" instruction an
+earlier draft gave Milestone 3.
 
 ### Q37 — answered
 

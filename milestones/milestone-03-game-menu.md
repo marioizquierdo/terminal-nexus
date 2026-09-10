@@ -3,7 +3,7 @@
 **Document role:** Milestone tracker — the game's own entry point, as distinct from `grid`'s
 **Status:** GATED
 **Depends on:** Milestone 2 (campaign design decided)
-**Updated:** 2026-09-09
+**Updated:** 2026-09-10
 **License:** Apache-2.0
 
 > **Start simple, with the minimum.** Mario's own words. This is the first time anything under the
@@ -52,6 +52,10 @@ Campaign once there is anything to load.)
   in `tests/lifecycle.test.ts`.
 - **Campaign** hands off to Milestone 4's campaign menu. If Milestone 4 is not yet built when this
   lands, hand off to an explicit placeholder screen rather than leaving the option silently broken.
+  Per Q43 (answered), there is **no Commander-choice screen at this level**: a new player goes
+  straight into Vasse's mission 1. Averno and Dob Hunter are unlocks that appear as new rows on
+  Milestone 4's campaign menu once Vasse's mission 1 is complete — nothing for this milestone to
+  build.
   Loading a campaign in progress lives behind this option, and depends on there being a save to load.
   There is no real save/progression system yet (`../specs/open-questions.md` Q31 recommends a flat,
   checked-in unlock list for Level 1, not a save format) — until one exists, say so plainly rather

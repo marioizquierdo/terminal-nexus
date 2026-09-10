@@ -2,8 +2,8 @@
 
 **Document role:** Playable faction packages: Commanders, units, structures, upgrades, and Nexus powers
 **Status:** Canonical identity direction; rosters intentionally undefined
-**Canon version:** 2.11
-**Updated:** 2026-09-09
+**Canon version:** 2.15
+**Updated:** 2026-09-10
 **License:** Creative identity is CC BY-SA 4.0; mechanical definitions and schemas are Apache-2.0
 
 ## 1. Purpose
@@ -128,6 +128,39 @@ Where this shows on screen: the Build Phase construct menu lists the common tier
 as two groups under one digit sequence, and the Nexus draft is its own panel — three tiers, three
 places, so a player learns the split by looking at it
 ([`engine.md`](engine.md) Section 9.2, [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md)).
+
+### 2.2 Nexus, faction, and Commander — the affinity model — GUIDANCE
+
+There are **five Prime Nexuses, one per faction** ([`terminal-nexus-lore.md`](terminal-nexus-lore.md)
+Sections 3–5). A Prime is rooted and never travels; it replicates a Grid Nexus and sends one
+psychically connected Commander with it. Many people claim a connection. Few receive an answer.
+
+**A Commander is not the faction's employee. They are the Nexus's signature.** The gap between those
+two things is design space, and it is wider than "which faction am I playing":
+
+| Affinity | The story | What it means mechanically |
+| --- | --- | --- |
+| **Native** | of the faction, loyal to it | the default: one faction's pools |
+| **Estranged** | of the faction, at odds with what it has become | same pools; the doctrine argues with the faction's own rule shapes |
+| **Unsanctioned** | the Nexus chose someone the faction would never have (Anthem, Section 4.4) | same pools, an unusual starting package, one rule exception |
+| **Foreign** | not of the faction — a client people, a contractor, a prisoner, something with no faction at all | the army is the faction's; the Commander's own powers are not |
+| **Dual-bound** | two Primes answer the same person | the army's legality names two factions and draws from both pools |
+| **Proxy** | the connection runs through a record, a relic, or a process rather than a living person | powers key on death, absence, and restoration rather than presence |
+
+**None of these needs a special case in the model**, which is the reason to write them down before a
+roster exists: an army is already a deck validated against named pools (Section 2.1), so *dual-bound*
+is an army whose legality check names two factions, and *proxy* is an army whose powers lean on the
+death/absence/restoration cadence [`engine.md`](engine.md) Section 5.1 already specifies. Affinity is
+fiction plus data. It is not new machinery.
+
+Two constraints keep it from turning to mush:
+
+- **The faction still owns the roster.** A Foreign or Dual-bound Commander does not get a private
+  army — they get an unusual *hand* of pools they are legal for. A player must still learn one
+  faction to play them.
+- **Affinity must be legible in play, not only in the codex.** The alignment test
+  (`terminal-nexus-lore.md` 8.6) applies to Commanders too: if a Dual-bound Commander does not
+  visibly behave like someone two machines are arguing over, the affinity is decoration.
 
 ## 3. Strategy-design requirements
 
@@ -268,8 +301,9 @@ stages the faction's internal argument, per the design law's requirement that Co
   Nexus should answer to civilian audit the day the emergency ends.
 - **Director Oru Denz**, "the Paver" — doctrine: expansion as defense; roads, outposts, and coverage
   as weapons. His disagreement: he believes the manifest destiny without the stoicism.
-- **Marshal Avern Teag** — doctrine: the wall, everywhere. Her disagreement: security is not a phase
-  of the emergency; it is the permanent condition. The faction's contradiction, wearing a uniform.
+- **Marshal Averno** — a starting Commander (Section 4.6): Vasse's doctrine pressed forward, with
+  adversarial powers and a Ravel Nexus leak he has not reported. His disagreement: the emergency
+  licenses whatever works, and the paperwork can follow.
 
 **Ravels**
 
@@ -281,6 +315,9 @@ stages the faction's internal argument, per the design law's requirement that Co
   processes, which unnerves everyone else at the fire.
 - **Old Marrow** — a demolitionist elder. Doctrine: everything detonates, on a timer if possible. His
   disagreement: the network itself should come down — every Nexus, theirs included.
+- **Dob Hunter** — a starting Commander (Section 4.6): bounty hunter, gambler, alien. Doctrine: post
+  a price and let the odds work. His disagreement: freedom is a job you can be paid for, and the
+  Speaker's conspiracy is one more employer.
 
 **Glitch**
 
@@ -307,6 +344,159 @@ stages the faction's internal argument, per the design law's requirement that Co
 - **Thorn-Regent Cail** — the interventionist. Doctrine: prune early — displace, divide, and remove
   claimants before they mature. Her disagreement: refusal without action is complicity. The faction's
   contradiction, wearing armor.
+
+### 4.5 What a Nexus power does — GUIDANCE (Q42, answered)
+
+**A power is a name and a plain description of what it does.** That is the whole player-facing
+contract:
+
+```text
+Factory Permit
+Unlocks building: Factory
+```
+
+The name carries the faction's voice — the Citizen Nexus issues permits, orders, and revisions; the
+Ravel Nexus deals scores, hauls, and rigs — and the description says what happens, in one line, in
+ordinary words. **There is no player-facing classification to learn.** Owner direction, canon 2.13:
+"the description should just say what it does... We will keep track of all power types in code, using
+names that make sense for the code, not for the faction."
+
+In code the effect is one of a small bounded union, named for engineers rather than for anyone's
+fiction:
+
+| Kind | Does | Example card |
+| --- | --- | --- |
+| `unlockStructure` | adds a structure to the construct menu | *Factory Permit* — "Unlocks building: Factory" |
+| `spawnUnits` | places units on the Grid | *Second Shift* — "Two workers arrive at your Nexus" |
+| `modifyContent` | changes a content definition for the rest of the match | *Plate Revision* — "All troopers gain +2 integrity, including ones already fielded" |
+| `modifyRule` | changes a match rule for the rest of the match | *Roadworks* — "Your units move faster inside your own territory" |
+| `modifyCommander` | changes the Commander | *Standing Order* — "Units beside Vasse take less damage while holding position" |
+| `reveal` | grants information | *Early Warning* — "Shows where the next wave arrives, and what is in it" |
+
+Why bound the union at all, when a player never sees it: **Milestones 5, 8, and 11 each render
+these**, and a bounded set is what lets a card, a panel, and a schema be sized before any of them is
+built. A seventh kind should have to argue for itself.
+
+One design note worth keeping: `reveal` exists so that knowing what is coming is something a player
+*spends a pick on* rather than something the HUD gives away — which is what keeps a hidden
+simultaneous plan worth hiding.
+
+Nothing here is authorized to build. Milestone 8 builds two or three kinds for one mission;
+Milestone 12 is where the pool earns breadth.
+
+### 4.6 The three starting Commanders — GUIDANCE (Q43)
+
+Three Commanders open the game, and a player may keep more than one campaign in progress. The shape
+is the owner's, canon 2.13: **two Citizens who are almost the same, plus one Ravel who is not.**
+
+#### Edda Vasse — Citizen Nexus — Native — *the protector*
+
+**Who.** Human, she/her. Protective and rightful: the officer who reads the regulation aloud because
+the regulation is the only thing keeping everyone calm. Dry, tired, decent. *"By the book. The new
+book."*
+
+**Bond.** She was the nearest living witness when the Citizen Nexus woke, and it has been
+countersigning orders she never filed ever since. She has agreed to nothing. It has not asked.
+
+**Play — hold and repair.** The forgiving default: cheap defences, reversible damage, and a line
+drawn well worth more than a line drawn wide. Misplaying a Pulse costs ground, not the mission.
+Her synergy is *repair × adjacency* — Citizens' alignment bonus already rewards unbroken orthogonal
+runs, and her powers make those runs **heal each other**, so geometry compounds instead of adding.
+
+**Her few, over the shared Citizen pool.**
+
+- *Mutual Support Standard* — "Structures in an unbroken line repair each other each Pulse."
+- *Aid Station Permit* — "Unlocks building: Aid Station. Repairs adjacent units each Pulse."
+- *Standing Order* — "Units beside Vasse take less damage while holding position."
+- *Early Warning* — "Shows where the next wave arrives, and what is in it."
+
+**What she costs.** She cannot take ground. A player who only ever holds will stall the first time a
+mission asks them to attack — which is the lesson the second campaign exists to teach.
+
+#### Marshal Averno — Citizen Nexus — Native, with a leak — *the mirror*
+
+**Who.** Human, he/him. Same doctrine, opposite temperament: where Vasse protects, Averno *presses*.
+Correct, clipped, and a shade too comfortable with what the machine keeps offering him.
+
+**Bond.** The Citizen Nexus signed him. Something else has been countersigning. The Ravel Nexus
+reaches him through no channel anyone has filed a form for, and he has not reported it — a **light
+proxy**, one card at a time (Section 2.2's Dual-bound affinity, at its smallest legible size).
+
+**Play — the same army, pressed forward.** He shares the Citizen common tier, the same army
+structures, the same economy; the basics transfer wholly from a Vasse campaign. He differs in two
+ways only, and both are on purpose: a handful of **adversarial** powers that act on the enemy rather
+than on himself, and one structural quirk — **some Build Phases, one card in his hand comes from the
+Ravel Nexus**, marked as unfiled.
+
+**His few.**
+
+- *Interdiction Order* — "Enemy units move slower inside your territory."
+- *Salvage Rights* — "Destroying an enemy building returns half its value to you."
+- *Unfiled Ordnance* — "Your troopers explode when they die." (Nobody authorized this.)
+- *Countersigned Elsewhere* — "Each Build Phase, one offered card may come from the Ravel Nexus."
+
+**Why a near-twin is worth a whole Commander.** It is the Warcraft II trade, and it is a good one: a
+player who finishes Vasse's campaign already knows how to play Averno, so his campaign spends its
+whole budget on **story and two or three new toys** rather than on re-teaching a game. It halves the
+content bill for the second opening, it gives a genuine reason to replay the same missions, and it
+gives the campaign somewhere to put its first real moral question — the same army, in hands that use
+it differently, taking help from something it should probably report.
+
+#### Dob Hunter — Ravel Nexus — Native — *the gambler*
+
+**Who.** Alien, he/him. Warm, funny, constitutionally allergic to being told. Runs bounties for a
+living and believes, sincerely and without evidence, that the next throw is the good one.
+
+**Bond.** He was mid-heist inside Ravel Nexus territory when it signed him. He treats the connection
+as the best score of his life and the worst boss he has ever had, and says so, often, to the machine.
+
+**Play — variance as a build.** The other half of the game from the first mission: cheap redraws,
+real duds, real jackpots, and chains that get away from everybody. Where a Citizen plans, Dob
+*posts a price* — his powers pay him for aggression and for wreckage, so his economy runs on the
+fight rather than beside it.
+
+**His few.**
+
+- *Bounty* — "Mark an enemy. Destroying it pays salvage."
+- *Double or Nothing* — "Discard the offered cards and draw new ones."
+- *Rigged Charges* — "Your units explode when they die."
+- *Lucky Scrap* — "Wrecks yield more salvage. Sometimes much more."
+- *Loose Cadence* — "Your units move off the common beat, and faster."
+
+**Why he is a starter and not an unlock.** He gives the opening a real choice rather than a cosmetic
+one, and he lets the campaign show the war from the other side of the fence — which is where the
+Ravel reading of the Operator ("a conspirator being trusted," `terminal-nexus-lore.md` Section 8.2)
+becomes playable rather than described. **What he costs:** he is the one who can lose to his own
+dice, and the campaign should let that happen and then hand him the redraw.
+
+#### Why this trio
+
+- **Two near-identical Citizens** let a player practise the fundamentals twice under different
+  stories — the second time with attention spare for the fiction rather than the rules.
+- **One Ravel from the start** makes the opening a choice, teaches the game's other temperament
+  early, and proves the deck model across factions before Milestone 12 authors any breadth.
+- **All three run on one set of maps** (`campaigns.md` Section 4.3), which is what keeps three
+  openings affordable.
+
+#### Later candidates, kept but not scheduled
+
+Not starters; recorded so the work is not lost, and so a later unlock has somewhere to begin.
+**The bar for promoting one, or adding a new one, is a mechanic that needs a face** — not a gap in
+the story ([`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 10.6). A Commander who plays
+the same as an existing one is a name to maintain forever; three starters plus a short bench is
+already more cast than the first release needs.
+
+- **Director Oru Denz, "the Paver"** (Section 4.4) — coverage and tempo: outposts, roads, economy
+  snowball. The macro archetype, and the natural fourth.
+- **Ory Kadresh, "Countersign"** — full **Dual-bound**: both Nexuses answer, and *which* one answers
+  is decided by how the last Pulse was played — build and hold, and the Citizen Nexus answers; break
+  things, and the Ravel Nexus does. Averno is this idea at one card per hand; Kadresh is it as a
+  whole build.
+- **Wren Aldiss, "Revision Seven"** — **Proxy**: an officer restored so often that the Nexus's file
+  on her is more detailed than she is, and it is the file the connection now runs through. Her death
+  is a resource and her absence is productive. She must **pose** deliberate mystery #6 — *is a
+  restored Commander continuous with the person who died?* — and never settle it
+  (`terminal-nexus-lore.md` Section 7).
 
 ## 5. Authoring template
 

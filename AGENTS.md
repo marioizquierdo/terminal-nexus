@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.11
+**Canon version:** 2.15
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -70,9 +70,12 @@ is a tracker checked off during work, not a document that only changes at a name
 
 The current milestone is **[`milestones/milestone-02-campaign-design.md`](milestones/milestone-02-campaign-design.md)
 — Design and Orientation** (re-scoped at canon 2.11): the vocabulary of the single-player modes
-([`specs/game-modes.md`](specs/game-modes.md) — Campaign and Challenge), the build order, and the few
-PERIMETER decisions the UX build needs. It is a design pass, not a code gate, and its one open gate is
-2C — Mario's confirmation.
+([`specs/game-modes.md`](specs/game-modes.md) — Campaign and Challenge), the build order, the few
+PERIMETER decisions the UX build needs, and — at canon 2.12–2.14 — the Citizen Nexus's character, the
+three starting Commanders (Vasse, Averno, Dob Hunter, with no upfront choice screen), what a Nexus
+power does, the two openings sharing one map, and a bounded objective taxonomy replacing fixed Pulse
+counts. It is a design pass, not a code gate, and its one open gate is **2D — Mario's confirmation,
+including Q45 and Q46**.
 
 So the authorised work for a new session is, in order:
 
@@ -174,8 +177,23 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - **A mode is data over one match loop and one army shape.** Campaign (first-time experience,
   canon) and Challenge (seeded runs with a draft between battles) are the two single-player modes;
   nothing below a mode knows which one it serves. Every card carries `rarity`, `tier`, and `role`.
+- **Each Nexus is named for its faction** — Citizen Nexus, Ravel Nexus, Feudal Nexus, Glitch Nexus,
+  Alder Nexus, with Prime/Grid appended where it matters. No proper names in canon, code, or
+  interface.
+- **A Nexus power is a name and one plain line of description.** No player-facing classification; the
+  effect kinds (`unlockStructure`, `spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`,
+  `reveal`) are code names. **A mission has goals, not a fixed length** — a bounded
+  `ObjectiveDefinition`, resolved by the scenario/trigger layer one level above the kernel's own
+  unchanged victory check, which stays the fallback for Skirmish and Challenge battles.
 - Prime Nexuses remain at home and replicate Grid Nexuses; avoid stale teleportation language.
 - Player-facing phases are **Build Phase** and **Nexus Pulse**; use those names consistently.
+- **Lore is a platform, not a plot** (`specs/terminal-nexus-lore.md` Section 10.6). This is a terminal
+  game with icons: complexity grows through units and powers, never through story; every named
+  character must earn its place by teaching a mechanic; budgets are ceilings (a briefing is a
+  paragraph, a bark is 3–8 words); there is **one timeline**; and the setting deliberately
+  under-specifies so players and their agents can extend it. What the project has to prove is that
+  ANSI characters are exciting and legible — when a session must choose between enriching the story
+  and making the Grid clearer, **the Grid wins**.
 - Prefer direct code for the current proof. Extract a framework only after two real uses reveal the
   boundary.
 

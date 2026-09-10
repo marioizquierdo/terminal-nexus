@@ -2,8 +2,8 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.11
-**Updated:** 2026-09-09
+**Canon version:** 2.15
+**Updated:** 2026-09-10
 **License:** Apache-2.0
 
 ## 0. How to read this document
@@ -570,6 +570,12 @@ cycles, not one Pulse, and a mission's triggers decide how many and what happens
 ([`campaigns.md`](campaigns.md) Section 2.1). A Pulse may be scripted (no player plan; the player
 watches) and it is still a Pulse: seeded, deterministic, replayed the same way.
 
+**This section's own victory condition never learns about a mission's goal.** A mission's objective
+([`campaigns.md`](campaigns.md) Section 2.2) is resolved one level up, by the scenario/trigger layer,
+which fires an ordinary `win`/`lose` action when its own condition holds. What follows — Grid Nexus
+destroyed, one side annihilated, tick limit reached — stays the unchanged fallback a battle with no
+declared objective lands on: every Skirmish match, and every Challenge battle.
+
 Both players see the resolved Grid: terrain, deposits, neutral zones, known actors, health,
 structures, public construction coverage. Newly committed construction and upgrade choices stay
 hidden until reveal.
@@ -621,6 +627,12 @@ designed:** the Commander Army's own Nexus power pool — a subset of the factio
 hand at the start of every Build Phase, from which the player keeps one
 ([`commander-armies.md`](commander-armies.md) Section 2.1). The draft's tier, size, and redraw rules
 are still undesigned; recorded so the shape of the draft is not accidentally foreclosed.
+
+**What a power may *do* is settled at canon 2.13** (Q42): to a player, a power is a name and a plain
+description of what it does — no classification to learn — and in code the effect is one of a small
+bounded union: `unlockStructure`, `spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`,
+`reveal` ([`commander-armies.md`](commander-armies.md) Section 4.5). That union is what a Build Phase
+panel actually renders, so it is worth reading before building one.
 
 ---
 

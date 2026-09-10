@@ -2,8 +2,8 @@
 
 **Document role:** Universe, factions, conflicts, narrative constraints, and symbolic art direction
 **Status:** Canonical
-**Canon version:** 2.11
-**Updated:** 2026-09-09
+**Canon version:** 2.15
+**Updated:** 2026-09-10
 **License:** CC BY-SA 4.0
 
 This is the context document for writing Terminal Nexus fiction, developing campaigns, naming content, and designing ASCII art. New stories may invent local people, places, artifacts, and conflicts, but should preserve the universe rules and deliberate mysteries below.
@@ -80,6 +80,31 @@ No faction knows why the network makes replicas fight. Some believe the Ancients
 The symbolic synthesis is:
 
 > **A Prime Nexus is a throne that needs a people, a mirror that gives them power, and a root that sends smaller thrones into danger.**
+
+### 3.1 Naming the five Nexuses — RULE for the terminology
+
+**Each Prime Nexus is named for the faction that holds it: the Citizen Nexus, the Ravel Nexus, the Feudal Nexus, the Glitch Nexus, the Alder Nexus.** That is the name canon, code, content ids, and the interface all use. There are no proper names, because a reader tracking five factions should not also have to track five names for the machines those factions hold.
+
+Where the distinction matters, say **Citizen Prime Nexus** (rooted, at home) or **Citizen Grid Nexus** (the replica standing on the Grid). Unqualified, "the Citizen Nexus" means whichever one the sentence is about.
+
+Two exceptions live in *voice*, not in terminology:
+
+- **Glitch** call theirs the **Silent Queen Nexus**, or just the Queen — the only faction whose name for it says something about them (Section 8.3).
+- **Alder** barely name theirs at all: "the Nexus," in the tone one reserves for a weather system one does not intend to use.
+
+Characters may still call a Nexus whatever they like. The survey team catalogued the buried Citizen structure as an *apex* and the field catalogue kept the word; that is a person talking, not a name the game uses.
+
+### 3.2 The Citizen Nexus
+
+The Nexus under the survey annex is the one the origin campaign is about, and the one a first-time player meets.
+
+What unsettles about it is not power. It is **administration**. It does not command, bargain, or explain — it *processes*. It assigns a name, a heraldry, and an arrival time to a contact nobody has identified. It approves requests that were never filed, and back-dates them. It opens personnel files on people who have not enlisted, and revises them after they die. Ask it for anything and it answers `ACKNOWLEDGED`, and the thing is already done.
+
+Citizens read this as proof they were right: the machine is infrastructure, and infrastructure keeps records. That reading is comfortable, and it is load-bearing for the campaign, because it means every uncanny thing this Nexus does arrives wearing a form the colony already trusts. A civilization that finds standardization rewarded (Section 4) is poorly equipped to notice being standardized.
+
+Its powers reach a player as ordinary named cards — a permit, an order, a revision — each saying plainly what it does ([`commander-armies.md`](commander-armies.md) Section 4.5). The bureaucratic vocabulary is this Nexus's voice, and no other Nexus borrows it: the Ravel Nexus deals in scores and salvage, and means the same six things underneath.
+
+The Citizen Nexus answers none of Section 7's mysteries. It is never shown deciding, wanting, or speaking about itself; it files. What that means is the campaign's question, and the campaign does not answer it either.
 
 ## 4. Claimants and compulsory conflict
 
@@ -505,6 +530,46 @@ Ordinary campaign targets:
 - optional artifact entry: 30–80 words.
 
 A mission should teach one major mechanic, change one relationship, answer one local question, and open one larger mystery.
+
+### 10.6 Restraint — the lore is a platform, not a plot
+
+**Owner direction, canon 2.15, and the strongest constraint in this document.** Mario: "THIS IS A
+TERMINAL GAME WITH ICONS, we cannot complicate it too much... Every character and story needs to
+reinforce the game mechanics, the lore should help understanding the game, not add extra layers of
+unrelated conflict... the game should play fast, one new mechanic at a time, and build complexity with
+new units and powers, not through elaborate characters and plots."
+
+Section 1 says lore must survive compression. This section says what that costs, because a canon this
+large will otherwise keep growing by its own momentum — every named character invites a relationship,
+every relationship invites a scene, and none of it reaches the player, who is looking at an `@` and
+three rows of `#`.
+
+**Five rules, and they bind future sessions as hard as any RULE in the engine.**
+
+1. **Complexity grows through units and powers, never through plot.** A player who wants more game
+   should get a new structure, a new power, a new opponent doctrine — not a new faction quarrel to
+   follow. If a design proposal's interesting part is a story development, it is in the wrong document.
+2. **Every named character must earn its place mechanically.** The alignment test of Section 8.6
+   applies to the cast: a Commander exists because they *play* differently, and their fiction explains
+   the way they play. A character who teaches nothing is a name to maintain forever. The bar for
+   adding one is a mechanic that needs a face, not a gap in the story.
+3. **Budgets are ceilings, not targets** (Section 10.5). A briefing is a paragraph. An intro is a card,
+   a line, and the enemy arriving. Barks are three to eight words. Where a scene could be cut to a
+   status line and lose nothing, cut it — the interface's own voice does more per byte than dialogue.
+4. **One coherent timeline.** No parallel or alternate histories; two campaigns may show the same
+   battle from opposite sides, and must then agree on what happened ([`campaigns.md`](campaigns.md)
+   Section 4.3). Continuity is cheap to keep and expensive to repair.
+5. **Under-specify on purpose.** The deliberate mysteries of Section 7 are the model for everything
+   else: the lore is a **platform for imagination**, and its job includes leaving room. Terminal Nexus
+   is built for a world where players extend games with their own agents — mods, missions, Commander
+   Armies, short stories — and a setting explained to its last corner is one nobody can add to.
+   Fewer locked facts, more usable shape.
+
+**What the project actually has to prove** is not that the fiction is deep. It is that **a terminal
+full of ANSI characters is exciting to watch and legible to read** — that a player can tell what is
+happening, tell one thing from another, and want another match. Lore serves that proof or it is
+overhead. When a session must choose between enriching the story and making the Grid clearer, the
+Grid wins every time.
 
 ## 11. Existing story seeds
 
