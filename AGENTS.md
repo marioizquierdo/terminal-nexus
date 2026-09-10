@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.14
+**Canon version:** 2.15
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -75,7 +75,7 @@ PERIMETER decisions the UX build needs, and — at canon 2.12–2.14 — the Cit
 three starting Commanders (Vasse, Averno, Dob Hunter, with no upfront choice screen), what a Nexus
 power does, the two openings sharing one map, and a bounded objective taxonomy replacing fixed Pulse
 counts. It is a design pass, not a code gate, and its one open gate is **2D — Mario's confirmation,
-including Q45, Q46, and the still-open Averno/Teag naming collision**.
+including Q45 and Q46**.
 
 So the authorised work for a new session is, in order:
 
@@ -187,6 +187,13 @@ deleted, and the renderer must be replaceable without one simulation test changi
   unchanged victory check, which stays the fallback for Skirmish and Challenge battles.
 - Prime Nexuses remain at home and replicate Grid Nexuses; avoid stale teleportation language.
 - Player-facing phases are **Build Phase** and **Nexus Pulse**; use those names consistently.
+- **Lore is a platform, not a plot** (`specs/terminal-nexus-lore.md` Section 10.6). This is a terminal
+  game with icons: complexity grows through units and powers, never through story; every named
+  character must earn its place by teaching a mechanic; budgets are ceilings (a briefing is a
+  paragraph, a bark is 3–8 words); there is **one timeline**; and the setting deliberately
+  under-specifies so players and their agents can extend it. What the project has to prove is that
+  ANSI characters are exciting and legible — when a session must choose between enriching the story
+  and making the Grid clearer, **the Grid wins**.
 - Prefer direct code for the current proof. Extract a framework only after two real uses reveal the
   boundary.
 

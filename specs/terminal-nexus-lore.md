@@ -2,7 +2,7 @@
 
 **Document role:** Universe, factions, conflicts, narrative constraints, and symbolic art direction
 **Status:** Canonical
-**Canon version:** 2.14
+**Canon version:** 2.15
 **Updated:** 2026-09-10
 **License:** CC BY-SA 4.0
 
@@ -530,6 +530,46 @@ Ordinary campaign targets:
 - optional artifact entry: 30–80 words.
 
 A mission should teach one major mechanic, change one relationship, answer one local question, and open one larger mystery.
+
+### 10.6 Restraint — the lore is a platform, not a plot
+
+**Owner direction, canon 2.15, and the strongest constraint in this document.** Mario: "THIS IS A
+TERMINAL GAME WITH ICONS, we cannot complicate it too much... Every character and story needs to
+reinforce the game mechanics, the lore should help understanding the game, not add extra layers of
+unrelated conflict... the game should play fast, one new mechanic at a time, and build complexity with
+new units and powers, not through elaborate characters and plots."
+
+Section 1 says lore must survive compression. This section says what that costs, because a canon this
+large will otherwise keep growing by its own momentum — every named character invites a relationship,
+every relationship invites a scene, and none of it reaches the player, who is looking at an `@` and
+three rows of `#`.
+
+**Five rules, and they bind future sessions as hard as any RULE in the engine.**
+
+1. **Complexity grows through units and powers, never through plot.** A player who wants more game
+   should get a new structure, a new power, a new opponent doctrine — not a new faction quarrel to
+   follow. If a design proposal's interesting part is a story development, it is in the wrong document.
+2. **Every named character must earn its place mechanically.** The alignment test of Section 8.6
+   applies to the cast: a Commander exists because they *play* differently, and their fiction explains
+   the way they play. A character who teaches nothing is a name to maintain forever. The bar for
+   adding one is a mechanic that needs a face, not a gap in the story.
+3. **Budgets are ceilings, not targets** (Section 10.5). A briefing is a paragraph. An intro is a card,
+   a line, and the enemy arriving. Barks are three to eight words. Where a scene could be cut to a
+   status line and lose nothing, cut it — the interface's own voice does more per byte than dialogue.
+4. **One coherent timeline.** No parallel or alternate histories; two campaigns may show the same
+   battle from opposite sides, and must then agree on what happened ([`campaigns.md`](campaigns.md)
+   Section 4.3). Continuity is cheap to keep and expensive to repair.
+5. **Under-specify on purpose.** The deliberate mysteries of Section 7 are the model for everything
+   else: the lore is a **platform for imagination**, and its job includes leaving room. Terminal Nexus
+   is built for a world where players extend games with their own agents — mods, missions, Commander
+   Armies, short stories — and a setting explained to its last corner is one nobody can add to.
+   Fewer locked facts, more usable shape.
+
+**What the project actually has to prove** is not that the fiction is deep. It is that **a terminal
+full of ANSI characters is exciting to watch and legible to read** — that a player can tell what is
+happening, tell one thing from another, and want another match. Lore serves that proof or it is
+overhead. When a session must choose between enriching the story and making the Grid clearer, the
+Grid wins every time.
 
 ## 11. Existing story seeds
 

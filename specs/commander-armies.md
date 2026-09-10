@@ -2,7 +2,7 @@
 
 **Document role:** Playable faction packages: Commanders, units, structures, upgrades, and Nexus powers
 **Status:** Canonical identity direction; rosters intentionally undefined
-**Canon version:** 2.14
+**Canon version:** 2.15
 **Updated:** 2026-09-10
 **License:** Creative identity is CC BY-SA 4.0; mechanical definitions and schemas are Apache-2.0
 
@@ -301,9 +301,6 @@ stages the faction's internal argument, per the design law's requirement that Co
   Nexus should answer to civilian audit the day the emergency ends.
 - **Director Oru Denz**, "the Paver" — doctrine: expansion as defense; roads, outposts, and coverage
   as weapons. His disagreement: he believes the manifest destiny without the stoicism.
-- **Marshal Avern Teag** — doctrine: the wall, everywhere. Her disagreement: security is not a phase
-  of the emergency; it is the permanent condition. The faction's contradiction, wearing a uniform.
-  (Name collides with Marshal Averno below — see Section 4.6.)
 - **Marshal Averno** — a starting Commander (Section 4.6): Vasse's doctrine pressed forward, with
   adversarial powers and a Ravel Nexus leak he has not reported. His disagreement: the emergency
   licenses whatever works, and the paperwork can follow.
@@ -445,11 +442,6 @@ content bill for the second opening, it gives a genuine reason to replay the sam
 gives the campaign somewhere to put its first real moral question — the same army, in hands that use
 it differently, taking help from something it should probably report.
 
-> **Naming collision to resolve.** Section 4.4 already proposes *Marshal Avern Teag* for the Citizens.
-> Two Citizen Marshals whose names differ by three letters is a legibility problem in a game where
-> most text is eighty columns wide. Either rename Teag, fold her doctrine into Averno's later
-> upgrades, or drop her; this document should not ship both.
-
 #### Dob Hunter — Ravel Nexus — Native — *the gambler*
 
 **Who.** Alien, he/him. Warm, funny, constitutionally allergic to being told. Runs bounties for a
@@ -489,11 +481,13 @@ dice, and the campaign should let that happen and then hand him the redraw.
 #### Later candidates, kept but not scheduled
 
 Not starters; recorded so the work is not lost, and so a later unlock has somewhere to begin.
+**The bar for promoting one, or adding a new one, is a mechanic that needs a face** — not a gap in
+the story ([`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 10.6). A Commander who plays
+the same as an existing one is a name to maintain forever; three starters plus a short bench is
+already more cast than the first release needs.
 
 - **Director Oru Denz, "the Paver"** (Section 4.4) — coverage and tempo: outposts, roads, economy
   snowball. The macro archetype, and the natural fourth.
-- **Marshal Avern Teag, "the Wall"** (Section 4.4) — area denial, artillery, curfew. See the naming
-  collision above before shipping her alongside Averno.
 - **Ory Kadresh, "Countersign"** — full **Dual-bound**: both Nexuses answer, and *which* one answers
   is decided by how the last Pulse was played — build and hold, and the Citizen Nexus answers; break
   things, and the Ravel Nexus does. Averno is this idea at one card per hand; Kadresh is it as a

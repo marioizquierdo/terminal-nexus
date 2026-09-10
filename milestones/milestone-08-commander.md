@@ -86,7 +86,7 @@ using it before Mission 3 is ready to.
 ## 4. Explicitly not this milestone
 
 The full Citizens Commander Army (Milestone 12); a second or third proposed Commander
-(`commander-armies.md` Section 4.4 lists two more — Director Denz, Marshal Teag — untouched); Nexus
+(`commander-armies.md` Section 4.4 lists Director Denz, untouched); Nexus
 powers beyond the small upgrade draft; any Ravel-side Commander (Speaker Corvane appears in
 PERIMETER's own dialogue but is not a playable or mechanically-modeled unit here).
 

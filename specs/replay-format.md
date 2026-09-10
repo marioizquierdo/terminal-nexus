@@ -4,7 +4,7 @@
 `grid` reads and writes it
 **Status:** GUIDANCE throughout. Nothing here is built. Written to give Milestone 2 a concrete
 starting design rather than a blank page, and because the owner asked for it directly this session
-**Canon version:** 2.14
+**Canon version:** 2.15
 **Updated:** 2026-09-10
 **License:** Apache-2.0
 

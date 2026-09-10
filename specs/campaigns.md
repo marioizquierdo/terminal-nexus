@@ -2,7 +2,7 @@
 
 **Document role:** Single-player structure, mission definitions, progression, cutscenes, and initial narrative direction
 **Status:** Canonical direction; PERIMETER (Mission 1) is in active implementation across `milestones/`
-**Canon version:** 2.14
+**Canon version:** 2.15
 **Updated:** 2026-09-10
 **License:** Narrative material is CC BY-SA 4.0; technical schemas are Apache-2.0
 
@@ -86,39 +86,6 @@ typed shape, for the same reason Nexus powers stopped being an open-ended list (
 Section 4.5): a mission's goal is something a trigger, a HUD, and a validator all need to read, and
 a string is something only a human can.
 
-### 2.2 Objectives — GUIDANCE, and how they meet the kernel's own victory check
-
-**Owner direction, canon 2.13** (Section 4.3) replaced fixed Pulse counts with **goals** — most often
-"destroy the enemy Grid Nexus," but equally "survive N Pulses," "capture and hold X by Pulse N,"
-"accumulate X of Y," "keep Z alive." A small bounded union is enough to say all of them, in the same
-spirit as the six Nexus-power effect kinds:
-
-```ts
-type ObjectiveDefinition =
-  | { kind: "destroyNexus" }                                         // the kernel's own default
-  | { kind: "surviveUntil"; pulse: number }
-  | { kind: "captureAndHold"; target: EntityId | RegionId; byPulse: number }
-  | { kind: "accumulate"; resource: ContentId; amount: number }
-  | { kind: "keepAlive"; target: EntityId | RegionId }
-```
-
-**How this meets `engine.md` Section 4.3's own victory check, and this is the part Q36 was actually
-asking about.** The kernel's RULE-level check — Grid Nexus destroyed, one side annihilated, tick
-limit reached — **does not change, and does not need to know about goals.** A mission's objective is
-resolved one level up, by the scenario/trigger layer (Section 2.1), which watches the condition and
-fires an ordinary `win` or `lose` action when it holds — "the Nexus still stands when Pulse 3 ends" is
-`{ when: { event: "pulse.end", pulse: 3 }, do: [{ objective: { id: "hold", state: "complete" } },
-{ win: true }] }`, a trigger like any other. The kernel's own check stays exactly what it always was:
-the *fallback* result a battle without a scripted objective gets — Skirmish, and every Challenge
-battle, land on it directly. A mission with a declared objective is never left to that fallback,
-because its own `win`/`lose` trigger fires first and the mission ends there.
-
-This is a **local data shape** in the sense of `project-governance.md` Section 2 — reversible,
-narrow, no RULE change — so it is written here as GUIDANCE and not registered as a question. What
-stays genuinely open is only implementation detail: whether `captureAndHold`'s region needs a new
-kernel primitive (a capture structure is already GUIDANCE, `engine.md` Section 5.2) or composes from
-existing ones. Milestone 6 decides that on the fixture it actually builds.
-
 ### 2.1 Mission time, Pulses, and triggers — GUIDANCE on the shape; the authored surface is Q39
 
 **Owner direction, canon 2.10.** Mario: "The campaign levels should work with multiple pulses, not
@@ -191,7 +158,47 @@ triggers: [
 The `{ atTick, action }` list Milestone 2 decided for the raid (Q32) is this model with one
 condition kind and one pulse — a special case, not a different design.
 
+### 2.2 Objectives — GUIDANCE, and how they meet the kernel's own victory check
+
+**Owner direction, canon 2.13** (Section 4.3) replaced fixed Pulse counts with **goals** — most often
+"destroy the enemy Grid Nexus," but equally "survive N Pulses," "capture and hold X by Pulse N,"
+"accumulate X of Y," "keep Z alive." A small bounded union is enough to say all of them, in the same
+spirit as the six Nexus-power effect kinds:
+
+```ts
+type ObjectiveDefinition =
+  | { kind: "destroyNexus" }                                         // the kernel's own default
+  | { kind: "surviveUntil"; pulse: number }
+  | { kind: "captureAndHold"; target: EntityId | RegionId; byPulse: number }
+  | { kind: "accumulate"; resource: ContentId; amount: number }
+  | { kind: "keepAlive"; target: EntityId | RegionId }
+```
+
+**How this meets `engine.md` Section 4.3's own victory check, and this is the part Q36 was actually
+asking about.** The kernel's RULE-level check — Grid Nexus destroyed, one side annihilated, tick
+limit reached — **does not change, and does not need to know about goals.** A mission's objective is
+resolved one level up, by the scenario/trigger layer (Section 2.1), which watches the condition and
+fires an ordinary `win` or `lose` action when it holds — "the Nexus still stands when Pulse 3 ends" is
+`{ when: { event: "pulse.end", pulse: 3 }, do: [{ objective: { id: "hold", state: "complete" } },
+{ win: true }] }`, a trigger like any other. The kernel's own check stays exactly what it always was:
+the *fallback* result a battle without a scripted objective gets — Skirmish, and every Challenge
+battle, land on it directly. A mission with a declared objective is never left to that fallback,
+because its own `win`/`lose` trigger fires first and the mission ends there.
+
+This is a **local data shape** in the sense of `project-governance.md` Section 2 — reversible,
+narrow, no RULE change — so it is written here as GUIDANCE and not registered as a question. What
+stays genuinely open is only implementation detail: whether `captureAndHold`'s region needs a new
+kernel primitive (a capture structure is already GUIDANCE, `engine.md` Section 5.2) or composes from
+existing ones. Milestone 6 decides that on the fixture it actually builds.
+
 ## 3. Teaching and progression
+
+**Before authoring anything in this document, read
+[`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 10.6.** Missions are where a canon grows
+fastest and where over-authoring costs most: a new character here becomes a name to maintain forever,
+and a plot thread becomes something every later mission must carry. Complexity in Terminal Nexus grows
+through units and powers, not through story. A mission's fiction exists to make its *mechanic*
+memorable — briefing, a few lines, a debrief — and one timeline covers all of it.
 
 Campaign structure should take inspiration from the best StarCraft and Warcraft campaigns and map editors: introduce one important tool in a constrained situation, let the player use it enough to understand its strategic purpose, and then combine it with prior tools.
 
@@ -331,6 +338,27 @@ The Ravel opening tracks the Citizen one closely through missions 1 and 2, then 
 beat is Citizen-specific (their Symbol falls and the Nexus files it), so the Ravel third mission
 teaches the same *mechanic* through its own event. What that event is has not been written and does
 not need to be before Milestone 10.
+
+**One timeline, two witnesses — not parallel stories.** Mario asked directly whether the mirrored map
+implies multiple story timelines. It does not, and it must not: **there is one history, and both
+openings describe the same battle from opposite sides of it.** PERIMETER's canonical outcome is
+already written and stays fixed — the perimeter holds, the fabricator survives and keeps printing,
+the raid withdraws "in good order and worse temper" (Section 4.2's debrief). The Ravel opening's own
+briefing and debrief must agree with those facts; what changes is whose voice reports them and what
+they were trying to do. Dob's mission goal is *reach the fabricator*, and his authored debrief is a
+raid that got in, took what it could carry, and did not stop the machine.
+
+The distinction that makes this work is one the project already relies on: **authored text is canon;
+a player's tactical result is not.** PERIMETER has one debrief regardless of how close the fight was,
+and that stays true when two Commanders play the same battle. A player who wins spectacularly as Dob
+has not rewritten history; they have played that engagement well. Objectives decide mission
+pass/fail and unlocks (Section 2.2); the fixed narrative beats do not move. This is the ordinary
+strategy-campaign convention, and it is the only one that keeps a single coherent timeline while
+letting both sides be playable.
+
+The rule that follows, for anyone authoring the second side of any battle: **check the other side's
+debrief before writing yours.** Two accounts of one engagement may differ in emphasis, blame, and
+what each side noticed — that is the interesting part — but not in what happened.
 
 **Missions have goals, not fixed lengths.** Owner direction, canon 2.13: "we don't need to make it
 strict. Instead, we will have a few different goals for each mission." A mission declares:

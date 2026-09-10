@@ -2,7 +2,7 @@
 
 **Document role:** One-page product definition
 **Status:** Canonical
-**Canon version:** 2.14
+**Canon version:** 2.15
 **Updated:** 2026-09-10
 **License:** CC BY-SA 4.0 for creative direction; Apache-2.0 for technical product requirements
 
@@ -60,7 +60,7 @@ mode knows which one it is serving.
 - **It plays at typing speed.** Every menu item shows its hotkey, every hotkey is also a click, and the whole game can be driven from a command stream — by a proficient player, by a mouse, or by an agent playtesting it.
 - **Faction identity is mechanical and symbolic.** Strategy, geometry, glyphs, motion, color, prose, portraits, and effects all express the same civilization.
 - **The simulation is deterministic.** A seed and complete committed plans reproduce the same outcome. Playback speed, animation frames, palette, and renderer never alter play.
-- **The architecture invites creation.** First-party maps, armies, campaigns, effects, and themes use inspectable definitions that may become a future modding surface.
+- **The architecture invites creation.** First-party maps, armies, campaigns, effects, and themes use inspectable definitions that may become a future modding surface. This is deliberate and it is why the foundation is being built so carefully: the game is designed for a world where players extend games **with their own agents** — missions, Commander Armies, cards, short stories — which is also how this project builds itself. Content is data with small named vocabularies, and the setting under-specifies on purpose, so there is room to add ([`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 10.6).
 
 ## The fantasy
 
