@@ -205,7 +205,7 @@ draft is its own panel, and the Special is a single slot the player arms and fir
 four tiers, four places, so a player learns the split by looking at it
 ([`engine.md`](engine.md) Section 9.2, [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md)).
 
-### 2.1a Terminology glossary — analysis, alternatives, and open ambiguities — GUIDANCE
+### 2.1a Terminology glossary — analysis and alternatives — GUIDANCE, except the loose-word/exact-name principle below, which is RULE
 
 **Owner direction, canon 2.16 (second pass):** Mario, on naming: "the name I'm looking for 'Spells'
 is not only for Citizen, is for the game. They are nexus active abilities, that can be strategically
@@ -232,31 +232,44 @@ different documents.
 | **Unit** / **Structure** | A mobile entity / an immobile one | The two most standard RTS nouns that exist; no genre reinvents these | — | **None** |
 | **Blueprint** | One unlockable, buildable structure design | Common in survival/crafting and some RTS (Supreme Commander literally calls them blueprints). Reads clearly as "the thing you unlock," distinct from "Structure" (the built, physical thing) | *Design*, *Schematic*, *Plan* (all fine, more generic); *Unlock* (too broad — Nexus powers and upgrades are also "unlocks") | **Medium.** The Blueprint/Structure split needs one crisp sentence somewhere prominent ("a Blueprint is what you may build; a Structure is what you did build") or players and future sessions will use the words interchangeably |
 | **Tech tree** | The blueprint prerequisite graph | The single most standard term available — nearly every strategy game uses this exact phrase. Correct choice, low risk | *Build order tree*, *Construction tree* | **Low** |
-| **Upgrade** | A persistent improvement to a unit or structure (levels 1–3), unlocked through the tech tree | Standard term, but **this document uses "upgrade" for two different systems**: (1) the tech-tree upgrade path itself, and (2) `modifyContent`, one of the six Nexus power effect *kinds*, which also permanently improves a unit or structure stat. A player dealt a Nexus power that reads "all troopers gain +2 integrity" has just received something that is, in every meaningful sense, an upgrade — but it did not come from the tech tree | *Tech Upgrade* vs *Power Upgrade* as qualifiers, if the collision proves confusing in play; or reserve "Upgrade" for the tech-tree kind only and give `modifyContent`'s player-facing copy a different verb ("boosts," "improves") so the noun "Upgrade" is never ambiguous | **High.** This is the one most worth an owner decision before Milestone 8 writes the first real Nexus power text — see the note below the table |
+| **Upgrade** | A persistent improvement to a unit or structure (levels 1–3), unlocked through the tech tree | Standard term, but **this document uses "upgrade" for two different systems**: (1) the tech-tree upgrade path itself, and (2) `modifyContent`, one of the six Nexus power effect *kinds*, which also permanently improves a unit or structure stat. A player dealt a Nexus power that reads "all troopers gain +2 integrity" has just received something that is, in every meaningful sense, an upgrade — but it did not come from the tech tree | *Tech Upgrade* vs *Power Upgrade* as qualifiers, if the collision proves confusing in play; or reserve "Upgrade" for the tech-tree kind only and give `modifyContent`'s player-facing copy a different verb ("boosts," "improves") so the noun "Upgrade" is never ambiguous | **Answered.** "There can be many types of upgrades, anything in theory can be upgraded" — the word stays broad; what must stay exact is *which mechanism* granted it. See the principle below |
 | **Nexus Power** | The item dealt from a small hand at each Build Phase, one kept (Section 4.5) | Mario's own confirmation this turn: "Nexus Powers make sense for the 'cards'." This is the game's card-equivalent noun and should be treated as the primary vocabulary word a player learns, the way "Boon" is Hades' or "Relic" is Slay the Spire's | *Boon*, *Relic*, *Perk*, *Ability* (all genre-standard elsewhere, but "Nexus Power" is already thematically anchored — it comes from the Nexus specifically, which "Perk" or "Relic" would lose) | **Low**, now that it is explicitly confirmed as the card-equivalent term |
 | **Special** | The once-per-match, Build-Phase-cast active ability (Section 2.1, item 8) | Mario: "the one-time abilities could be called 'Specials' (special one time ability)... We'll see if the UI and gameplay favors this or not, but we can at least define the concept." Standard, intuitive, low-friction word (fighting games' "special move," Mario Kart's "special item," C&C Generals' closest real precedent — a cooldown-gated, cast-anytime commander power). Deliberately plain rather than thematic, per Mario's explicit "no esoteric names" direction | *Special Ability* (more explicit, marginally more words); *Commander Power* (rejected — reads as a synonym for "Nexus Power" and would collide); *Directive*, *Override*, *Protocol* (this document's own earlier, too-Citizen-flavored guesses, now retired) | **Medium.** "Special" as a bare noun can read as an adjective missing its noun in some UI copy ("Cast your Special" reads fine; "Special: ready" is a little terse) — worth a UI mockup before locking it, exactly as Mario proposed |
-| **Card** | Working shorthand (`game-modes.md` Section 2) for *any* offerable content item — a structure, a Nexus power, an upgrade, a Commander variant | **This is the term most worth flagging.** Mario's own phrasing this turn — "Nexus Powers make sense for the 'cards'" — reads naturally as mapping "card" onto Nexus power *specifically*, not the broader umbrella `game-modes.md` currently defines it as. If that is the intent, "Card" should either narrow to mean "Nexus Power" alone in player-facing text (keeping the broader sense only as an internal/engineering shorthand, the way `game-modes.md` already hedges with "not a claim that an army behaves like a trading-card deck"), or the two meanings need to be kept visibly separate so a future session does not silently conflate them | Keep "Card" as pure engineering shorthand, never shown to a player; or drop it in favor of always naming the specific tier ("a structure," "a Nexus power," "an upgrade") | **High.** This is the one this glossary cannot resolve alone — it is a direct question back to Mario, below |
+| **Card** | Working shorthand (`game-modes.md` Section 2) for *any* offerable content item — a structure, a Nexus power, an upgrade, a Commander variant | **This is the term most worth flagging.** Mario's own phrasing this turn — "Nexus Powers make sense for the 'cards'" — reads naturally as mapping "card" onto Nexus power *specifically*, not the broader umbrella `game-modes.md` currently defines it as. If that is the intent, "Card" should either narrow to mean "Nexus Power" alone in player-facing text (keeping the broader sense only as an internal/engineering shorthand, the way `game-modes.md` already hedges with "not a claim that an army behaves like a trading-card deck"), or the two meanings need to be kept visibly separate so a future session does not silently conflate them | Keep "Card" as pure engineering shorthand, never shown to a player; or drop it in favor of always naming the specific tier ("a structure," "a Nexus power," "an upgrade") | **Answered.** "Card is more from the UI point of view, we can use it as long as the inner term is clear" — it stays broad, as interface vocabulary. See the principle below |
 | **Pool** | A faction's or army's catalogue of a given tier (structure pool, upgrade pool, Nexus power pool, special pool) | Standard collection noun, but always used bare ("the pool") in several places across this canon where it is ambiguous which pool is meant — the faction's whole catalogue, or one army's own narrower slice of it | Always qualify it ("Nexus power pool," never bare "pool") | **Medium.** Mechanical fix, not a naming fix: audit bare uses of "pool" and add the qualifier |
 | **Draft** | Choosing from an offered hand — the *Nexus draft* (every Build Phase, from the Nexus power pool) and the *run draft* (between Challenge battles, from the faction pool) | Both already qualified by an adjective, which is exactly the right pattern. A Special is deliberately **not** drafted — it is prepared once, from a small pool, and triggered on the player's own timing — so "draft" should never be used as a verb for a Special, to keep the distinction sharp in UI copy | — | **Low**, provided the "no drafting a Special" distinction is kept in mind when writing UI text |
 | **Rarity / Tier / Role** | The three tags every offerable item carries (`game-modes.md` Section 4) | Standard deckbuilder/gacha vocabulary (Slay the Spire, Teamfight Tactics). No better candidates found | — | **Low** |
 
 **Two open items this table surfaces, not yet decided:**
 
-1. **Does "Card" mean "Nexus Power" specifically, or does it stay the broader engineering shorthand
-   `game-modes.md` currently defines?** Recommended: keep "Card" as an internal/engineering word only
-   (never shown to a player, exactly as `game-modes.md` Section 2 already hedges), and let "Nexus
-   Power" be the one player-facing card-equivalent noun. This needs Mario's confirmation before
-   Milestone 5/8 writes player-facing copy, since it changes what several screens are allowed to
-   print.
-2. **Does "Upgrade" stay one word for two different systems** (the tech tree's own upgrade path, and
-   a Nexus power's `modifyContent` effect), **or does one of the two need a different player-facing
-   verb?** Recommended: keep "Upgrade" as the tech-tree noun only; a `modifyContent` Nexus power's
-   card text describes its effect in a verb ("gains," "improves") rather than the noun "upgrade," so
-   the word "Upgrade" only ever means one thing on screen. Cheap to apply once, and it is a copy
-   convention, not a schema change.
+**Both were answered by Mario the same day, and the answer is one principle rather than two
+rulings.** Mario: "Card is more from the UI point of view, we can use it as long as the inner term is
+clear. The same for Upgrade, there can be many types of upgrades, anything in theory can be upgraded.
+The important terms are not those, but the game concepts without ambiguity (eg Nexus Powers provide
+upgrades, tech tree research, building blueprints, special abilities, one time bonuses, and more)."
 
-Neither blocks Milestone 3 — both are Build Phase / Nexus draft UI questions, and the recommendations
-above are what this document proceeds under until Mario says otherwise.
+**The principle — RULE, because it decides how every later screen and schema is named:**
+
+> **A generic word may be loose in the interface; a mechanism name must be exact in the model.**
+> "Card" and "Upgrade" are *presentation* vocabulary — a card is the shape a thing takes on screen,
+> an upgrade is anything that makes something better — and both may stay broad, as long as the
+> underlying concept the player is looking at is unambiguous. The mechanism names — **Nexus Power**,
+> **tech tree**, **blueprint**, **Special**, **research** — are *model* vocabulary, and each one names
+> exactly one thing, always.
+
+This is the same split the engine already enforces one layer down, where cells carry style **roles**
+and never literal colors ([`engine.md`](engine.md) Section 9.1): the interface is allowed a loose,
+human word; the thing underneath it is not. So `game-modes.md` Section 2 keeps "Card" as it stands,
+`modifyContent` may say "upgrade" in card text without apology, and neither needs a rename — what
+needs care is only that the player can always tell *which mechanism* a given card belongs to.
+
+One thing Mario's own example sentence implies, worth naming before Milestone 8 builds the draft:
+**Nexus Powers are the delivery mechanism for most of the other parts**, not a peer sitting beside
+them. "Nexus Powers provide upgrades, tech tree research, building blueprints, special abilities, one
+time bonuses, and more" describes a system that reaches into the tech tree, the upgrade path, and
+possibly the Special pool. The six effect kinds (Section 4.5) already cover most of that; whether a
+Nexus Power may also grant a **Special** is the one case not yet written down either way, and is
+cheap to decide when Milestone 8 needs it.
 
 ### 2.2 Nexus, faction, and Commander — the affinity model — GUIDANCE
 
