@@ -113,15 +113,12 @@ is:
    separately. See the terminology glossary (Section 2.1a) for the alternatives considered and where
    the vocabulary still needs attention.
 
-   **Least-justified part of the composition, pending gameplay evidence:** Specials are the newest part
-   of this list and the one with the weakest evidence behind it. The design includes them because Mario
-   named them as a real element, but whether a Build Phase actually needs a third decision channel
-   (structures, Nexus powers, Specials) is not yet tested. Milestones 3–6 will build the UI and the
-   game loop itself; that building is the first chance to validate whether Specials feel essential or
-   like an extra slot that gameplay does not need. If evidence shows a third channel would not be
-   missed, Specials can be retired or redesigned. **This is not hesitation — it is deliberate; the
-   composition list is held steady enough to build against, and gameplay will either confirm it or
-   show where it is wrong.**
+   **The least-evidenced part of this list, and provisional on purpose.** A Special is a *third*
+   decision channel inside one Build Phase, beside placement and the Nexus draft, and nothing yet
+   shows that a Build Phase wants one. Milestone 5 builds the slot and Milestone 6 plays the first
+   whole loop; if the channel is not missed there, retiring Specials or folding them back into the
+   Nexus power pool costs nothing that has been built by then. A slot with a question attached, not
+   settled content.
 
 Two things this list deliberately does not restate: the starting resource amount, already covered by
 "starting package" (Section 1's own list), and the visual/narrative dressing — portraits, barks,
@@ -155,14 +152,11 @@ starting package, the faction's rules (Section 4.1) and the Commander's exceptio
   to decide on evidence — three to five structures and six to ten powers are the working guesses —
   but a cap is not optional: a cap is what makes a choice a choice, and what makes drafting a game
   rather than a menu.
-- **Rule shapes matter more than stat balance.** The fixture armies on the bench (Citizen and Ravel)
-  proved one landmark: a stats-only Ravel army failed the alignment test in `terminal-nexus-lore.md`
-  Section 8.6, but the **volatile munitions** rule — a single rule shape — made the faction legible
-  without a word of lore. When Milestone 12 authors the real Citizens-versus-Ravels rosters, rule
-  shapes are the place to invest first: they are the thing that makes a faction *feel* different,
-  more than any amount of tuning unit stats. Stats alone say "that unit is strong"; a rule says
-  "*this faction does things this other faction does not*." Building more rule shapes (if evidence
-  supports it) may prove more important than authoring a larger roster of units.
+- **Rule shapes before roster breadth.** Section 1's bench finding is an argument about where
+  Milestone 12 spends its passes, not only a fact about the fixtures: one rule made the Ravels
+  legible where stats alone did not. A pass that adds a rule shape is usually worth more than one
+  that adds three more units, and an army's cap is better spent on what the faction *does
+  differently* than on how many rows fill its menu.
 - **Legality is data validation.** An army may reference only content from its own faction's pools,
   within the caps, checked at load time the way every scenario field already is. The loader, not a
   reviewer, says whether an army is legal — which is what makes accepting a player-defined Commander
@@ -181,15 +175,6 @@ starting package, the faction's rules (Section 4.1) and the Commander's exceptio
   nobody forgets them.
 - **Alder fits without an exception.** Their refusal (Q11) is a near-empty Nexus power pool and a
   larger structure pool — expressed by the numbers, not by a special case in the model.
-- **Scope accretion risk during Milestones 3–6.** Building the campaign's first level revealed that
-  a single level needs most of the game's unbuilt systems at once — a menu, a campaign screen, a
-  Build Phase, the player-facing Pulse moment, an economy, a Commander, cutscenes. Milestones 3–6
-  will build those systems in pieces, and the temptation to polish and balance each one before
-  moving forward is substantial. **Resist that temptation.** The goal is to reach an end-to-end,
-  ugly-but-playable loop: Vasse's mission 1, from menu to victory or loss. Once that loop exists —
-  itself a milestone or two away — then start quality passes. Building and playing the loop will
-  reveal what actually needs tuning, and what was "obviously needed" in theory turns out not to
-  matter in practice. Quality passes come after you know what you are optimizing.
 
 The sketch, in the same spirit as [`engine.md`](engine.md) Section 8 — names will move the first
 time real content touches them:

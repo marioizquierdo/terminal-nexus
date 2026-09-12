@@ -221,6 +221,9 @@ deleted, and the renderer must be replaceable without one simulation test changi
 ## 5. Working method
 
 - Keep changes small, reviewable, and within the current gate.
+- **Prefer the missing connection over the missing polish.** A gate that is honest, connected, and
+  ugly is worth more than one that is beautiful and dead-ends — playing the whole thing is what says
+  which part deserved the polish, and it usually is not the part you expected.
 - Preserve unrelated work; never use destructive Git commands to clear an incidental problem.
 - Pin runtime and dependency versions used as evidence. Re-check official sources; never copy a
   remembered version.
@@ -233,15 +236,6 @@ deleted, and the renderer must be replaceable without one simulation test changi
   artifacts, or pushing directly to `main`.
 - Update `README.md`, `DEVELOPMENT.md`, the dev container, CI, and agent instructions together when
   canonical development commands change.
-- **Scope accretion during Milestones 3–6 — resist the polish impulse.** Building a campaign level
-  from menu to mission victory requires most of the game's systems at once. Milestones 3–6 build
-  those systems. The temptation to polish each one (beautiful menus, balanced economy, perfect Build
-  Phase UX) before moving to the next is substantial and should be resisted. **The goal is an
-  end-to-end ugly-but-playable loop first: menu → Build Phase → Pulse → win or lose.** Once that
-  loop exists and has been played, then start quality passes. Building and playing reveals what
-  actually needs tuning; design-time "obviously needed" features often do not matter in practice.
-  Keep that loop in mind when deciding whether a missing feature blocks the milestone or whether it
-  can wait (almost always it can wait).
 
 ## 6. When the canon does not answer you
 

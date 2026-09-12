@@ -50,6 +50,16 @@ economy, a Commander, cutscenes. Canon 2.11 kept that decomposition and reordere
 core first** (3, 5, 6), then **the two mode shells** (8 gives both modes their draft and Commander;
 11 is the run, 4 the campaign), then **depth** (7, 9), then **proof and content** (10, 12).
 
+**What that order is for: a played loop, as early as possible.** Milestones 3, 5 and 6 together are
+the first time anyone can go menu → Build Phase → Pulse → result. Reaching that is worth more than
+any one of the three being good, so prefer the honest, connected, ugly gate over the beautiful one
+that dead-ends, and let a missing feature wait unless the loop cannot close without it. The project
+already has its own evidence for this: Milestone 1's seven rounds of owner feedback — the movement
+speed passes, the death choreography, the colour retune, every one of the changes that actually made
+the Grid good — landed *after* the Pulse ran end to end, not before. Nobody could have specified them
+from the design. Quality passes come after the loop, because playing it is what says which part
+needed the quality.
+
 | Milestone | Status | Build order | Question |
 | --- | --- | --- | --- |
 | [1 — Grid Battles](milestone-01-grid-battles.md) | COMPLETE | done | Do units move, fight, and die deterministically from a seed, legibly on screen? |
