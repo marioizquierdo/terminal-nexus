@@ -1,10 +1,10 @@
 # Milestone 2 — Design and Orientation
 
-**Document role:** Milestone tracker — name the single-player modes and fix the few PERIMETER decisions the UX build needs, before milestones 3-6 build the game's experience
-**Status:** CURRENT
-**Active gate:** 2D — Owner confirmation of the mode vocabulary (`game-modes.md`), the build order, and the canon 2.12–2.14 design (the Citizen Nexus, the three starting Commanders, the two openings, mission and bonus goals, the objective taxonomy) plus Q45 and Q46; gates 2A, 2B and 2C are drafted
+**Document role:** Milestone tracker — accepted, kept as historical reference for the single-player-mode vocabulary and PERIMETER decisions it fixed
+**Status:** COMPLETE
+**Active gate:** none — gate 2D closed 2026-09-12; see below
 **Depends on:** Milestone 1 (accepted)
-**Updated:** 2026-09-10
+**Updated:** 2026-09-12
 **License:** Apache-2.0; the mission decisions below touch CC BY-SA 4.0 narrative material already written in `campaigns.md`
 
 > **Design work, not code.** This milestone's own artifact is a decision, written down precisely
@@ -42,21 +42,24 @@ definition of the campaign. Its answers (Section 4) stand.
   construct menu, a map that scrolls a little, a three-Pulse raid as a trigger list. These are the
   decisions the Build Phase and Pulse milestones need a concrete mission for — nothing more is
   decided about the campaign here.
-- **2C — The first Nexus, the first Commanders, and the opening campaigns. Drafted (canon 2.12,
-  revised 2.13 on owner feedback).** [`../specs/terminal-nexus-lore.md`](../specs/terminal-nexus-lore.md)
+- **2C — The first Nexus, the first Commanders, and the opening campaigns. Closed (canon 2.12,
+  revised 2.13 on owner feedback, Q45/Q46 answered and the Commander Army composition list added at
+  2.16).** [`../specs/terminal-nexus-lore.md`](../specs/terminal-nexus-lore.md)
   Section 3.1 fixes the naming (each Nexus is named for its faction — Citizen Nexus, Ravel Nexus, …)
   and 3.2 gives the Citizen Nexus its character: an administrator, not a weapon.
-  [`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.2 carries the affinity
-  model, 4.5 what a power does (a name and a plain line; effect kinds live in code), and 4.6 the
-  three starting Commanders — Vasse, Averno, Dob Hunter — with four later candidates kept.
-  [`../specs/campaigns.md`](../specs/campaigns.md) Section 4.3 gives the two openings, mission goals,
-  and bonus goals. Q42, Q43, Q44, Q47 and Q48 answered; Q45 and Q46 open with recommendations.
-  Marshal Avern Teag was removed from canon at 2.15 — Averno supersedes her.
-- **2D — Owner confirmation. Open.** Mario reads `game-modes.md`, the build order in
-  [`README.md`](README.md), Sections 4 and 4.6 here, and the canon 2.12–2.14 design above, then
-  confirms or redirects — in particular Q45 and Q46.
-  Then Milestone 3 opens. This is cheap to change now and expensive after milestones 3-6 have built
-  against it.
+  [`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1 carries the full
+  composition list (Nexus and faction, Commander, starting units and structures, blueprints and the
+  tech tree, upgrades, Nexus powers, Directives), 2.2 the affinity model, 4.5 what a power does (a
+  name and a plain line; effect kinds live in code), and 4.6 the three starting Commanders — Vasse,
+  Averno, Dob Hunter — with four later candidates kept. [`../specs/campaigns.md`](../specs/campaigns.md)
+  Section 4.3 gives the two openings, mission goals, and bonus goals. Q42, Q43, Q44, Q45, Q46, Q47 and
+  Q48 all answered. Marshal Avern Teag was removed from canon at 2.15 — Averno supersedes her.
+- **2D — Owner confirmation. Closed 2026-09-12.** Mario read `game-modes.md`, the build order in
+  [`README.md`](README.md), Sections 4 and 4.6 here, and the canon 2.12–2.15 design, and confirmed it
+  directly: "All the canon revisions look good." He answered Q45 and Q46 outright, and asked for one
+  correction — the "army is a deck" framing retracted, not merely demoted (`../specs/commander-armies.md`
+  Section 2.1) — then supplied the Commander Army's own composition list himself, folded into the same
+  section at canon 2.16. **Milestone 3 opens.**
 
 ### 1.2 What this milestone no longer does
 
@@ -168,6 +171,16 @@ Section 4.1's own wording need to change; nothing else here depends on it.
 (`../specs/backlog-pulse-completion.md`) is real and still unowned by any single milestone; PERIMETER
 does not need to be the mission that fixes it.
 
+**Written layout, concrete enough for milestone 5/6 to author a real `.map.json` against —
+not the final file, a starting sketch:** a Grid roughly 32×20 tiles (comfortably inside the 48×16 to
+72×24 viewport range, with just enough beyond the smaller viewport presets to need a little scrolling,
+per the recommendation above). `structure.citizen.nexus` sits near the south-east corner (around
+`(26,15)`), `structure.citizen.barracks` immediately beside it. The starting crew and both squads
+begin adjacent to the Nexus. Open ground runs north-west from there toward the opposite corner, where
+`structure.ravel.den` (or a pre-placed raiding party, per 4.4) sits around `(4,3)`. The approach lane
+runs diagonally across that open ground — off-axis from the Nexus by construction (Q33) — rather than
+along a single row or column that would walk straight into Q15's dead end.
+
 ### 4.4 The scripted opponent
 
 **Q32, decided:** a tick-gated trigger list, not a policy module — `{ atTick, action }` entries
@@ -257,24 +270,26 @@ Moved to Answered in [`../specs/open-questions.md`](../specs/open-questions.md).
       its sources; Q40 and Q41 are registered with recommendations;
 - [x] gate 2C: the Nexus naming convention, the Citizen Nexus's character, the affinity model, what a
       power does, the three starting Commanders, and the two openings with mission and bonus goals are
-      written; Q42, Q43, Q44, Q47 and Q48 answered, Q45/Q46 open with recommendations, and the
-      objective taxonomy (`../specs/campaigns.md` Section 2.2) is in place for Milestone 6 to build
-      against;
-- [ ] gate 2D: Mario has confirmed or redirected the mode vocabulary, the build order in
-      [`README.md`](README.md), Q45 and Q46;
-- [ ] the unit list above is confirmed against the actual fixture content (ids may drift; check
-      `src/content/citizen.ts` and `src/content/ravel.ts` before citing them elsewhere);
-- [ ] a real `.map.json` sketch or written layout exists for PERIMETER's Grid, terrain, and starting
-      placements — does not need to be the final file milestone 5/6 ship, but should be concrete
-      enough that "small Grid, Nexus and barracks near one edge" has actual coordinates;
+      written; Q42, Q43, Q44, Q45, Q46, Q47 and Q48 all answered, and the objective taxonomy
+      (`../specs/campaigns.md` Section 2.2) is in place for Milestone 6 to build against;
+- [x] gate 2D: Mario has confirmed the mode vocabulary, the build order in [`README.md`](README.md),
+      Q45 and Q46, and has himself supplied the Commander Army's composition list (canon 2.16);
+- [x] the unit list above is confirmed against the actual fixture content — `unit.citizen.worker`,
+      `.trooper`, `.marksman`, `structure.citizen.nexus`, `.barracks`, `unit.ravel.raider`, `.runner`,
+      `structure.ravel.den` all match `src/content/citizen.ts` and `src/content/ravel.ts` exactly, no
+      drift;
+- [x] a written layout exists for PERIMETER's Grid, terrain, and starting placements — 4.3 above, with
+      approximate coordinates; not the final `.map.json`, but concrete enough for milestone 5/6 to
+      author against;
 - [x] the trigger-list shape for the scripted raid is written down precisely enough that milestone 6
       can implement it without a second design pass — [`../specs/campaigns.md`](../specs/campaigns.md)
       Section 2.1, canon 2.10, with PERIMETER's own list sketched there (4.4 above);
-- [ ] Mario has confirmed or changed the three findings in 4.6 (structures not units; who builds
-      automatic production; three Pulses);
-- [ ] Q29 is moved to Answered;
-- [ ] Q32 and Q33 are moved to Answered, citing this document;
-- [ ] Q38 is either answered by Mario or explicitly proceeded-under-recommendation, and the map
-      sketch above reflects that answer before milestone 5 builds against it;
-- [ ] Mario has looked at the decisions above and either confirmed them or asked for a specific change
-      — this is cheap to redirect now and expensive after milestones 3-10 have built against it.
+- [x] Mario has confirmed the three findings in 4.6, alongside the rest of Sections 4 and 4.6, as part
+      of closing gate 2D above;
+- [x] Q29 is moved to Answered;
+- [x] Q32 and Q33 are moved to Answered, citing this document;
+- [x] Q38 stays explicitly proceeded-under-recommendation (4.3 above); Mario did not redirect it when
+      confirming the rest of this milestone, and it remains decoupled from everything else here by
+      design;
+- [x] Mario has looked at the decisions above and confirmed them, with one correction (the "deck"
+      retraction) folded in — gate 2D is closed.

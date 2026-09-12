@@ -8,12 +8,14 @@
 
 > **The replayable mode, and the one that needs no writing.** Mario, canon 2.11: "implementing
 > 'runs', where each battle ends on a new draft upgrade or removals that further polish the build
-> for the next battle. This could have huge replayability value." A run exercises the army-as-deck
-> model ([`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1) harder than any
-> mission, needs no authored text, and is where the game's long-term value lives. It is built as
-> soon as the match UX can carry it, before the Campaign's own second mission, for exactly those
-> reasons. [`../specs/game-modes.md`](../specs/game-modes.md) Section 3.2 is the design this builds
-> against; its numbers are starting values this milestone retunes.
+> for the next battle. This could have huge replayability value." A run exercises the Commander Army
+> composition model ([`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1 —
+> the "deck" framing itself is retracted at canon 2.16, but the army's structures, upgrades, Nexus
+> powers, and Directives are all still real pools a run draft can touch) harder than any mission,
+> needs no authored text, and is where the game's long-term value lives. It is built as soon as the
+> match UX can carry it, before the Campaign's own second mission, for exactly those reasons.
+> [`../specs/game-modes.md`](../specs/game-modes.md) Section 3.2 is the design this builds against;
+> its numbers are starting values this milestone retunes.
 
 ## 1. Question
 
@@ -24,8 +26,9 @@ remove one, or upgrade one — and finish, win or lose, with a summary they can 
 
 ## 2. Gates — small, in order, each closable on its own
 
-- **11A — Run skeleton.** A `RunDefinition` (`seed`, the Commander chosen at run start per Q46, acts,
-  the battle list generated from the seed);
+- **11A — Run skeleton.** A `RunDefinition` (`seed`, the Commander chosen at run start from Challenge's
+  own unlocked roster per Q46 — basic packages available from the outset, more unlocked by playing
+  Challenge itself — acts, the battle list generated from the seed);
   three battles on existing fixture maps against the Ravel fixture army under a static or simple
   heuristic policy; a plain "next battle" screen between them; a run summary at the end. The driver
   ([`../specs/engine.md`](../specs/engine.md) 9.7) plays it end to end. Seed determinism asserted:
@@ -39,7 +42,7 @@ remove one, or upgrade one — and finish, win or lose, with a summary they can 
   army (Milestone 8's Commander mechanic, a second time). The "commons can win at base difficulty"
   rule of `game-modes.md` Section 4 is checked by a driver-played run that only ever picks commons —
   pass, or the finding is recorded and the tuning changed.
-- **11D — Run shell UX.** The run map (acts and battles ahead), the summary (deck, seed, every draft
+- **11D — Run shell UX.** The run map (acts and battles ahead), the summary (army, seed, every draft
   taken, the losing battle's report), seed entry when starting a run; every item by hotkey, click,
   and driver; adaptive across the viewport range like every other screen.
 

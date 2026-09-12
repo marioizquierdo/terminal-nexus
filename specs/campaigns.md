@@ -2,8 +2,8 @@
 
 **Document role:** Single-player structure, mission definitions, progression, cutscenes, and initial narrative direction
 **Status:** Canonical direction; PERIMETER (Mission 1) is in active implementation across `milestones/`
-**Canon version:** 2.15
-**Updated:** 2026-09-10
+**Canon version:** 2.16
+**Updated:** 2026-09-12
 **License:** Narrative material is CC BY-SA 4.0; technical schemas are Apache-2.0
 
 ## 1. Development boundary
@@ -130,11 +130,12 @@ for the vocabulary, and a hook used by two missions becomes a vocabulary entry. 
 declarative model or a scripting API is the right *authored* surface is **Q39**; this section
 proceeds under its recommendation, which is this model.
 
-**Custom campaigns.** A mission references armies by id, and an army is a deck validated against
-its faction's pool ([`commander-armies.md`](commander-armies.md) Section 2.1). A custom campaign is
-therefore a folder of missions plus the Commander Armies it ships, loaded and validated by the same
-code as the first-party one. Nothing about that is built or promised now — it is *why* the trigger
-surface is data and the army is a deck rather than a feature in itself.
+**Custom campaigns.** A mission references armies by id, and an army is a bounded composition
+validated against its faction's pools ([`commander-armies.md`](commander-armies.md) Section 2.1). A
+custom campaign is therefore a folder of missions plus the Commander Armies it ships, loaded and
+validated by the same code as the first-party one. Nothing about that is built or promised now — it
+is *why* the trigger surface is data and army legality is a load-time check rather than a feature in
+itself.
 
 A sketch of PERIMETER's own trigger list in this shape — an intro, a raid in waves across three
 Pulses, and the hold — so the model is concrete rather than described:
@@ -367,10 +368,14 @@ strict. Instead, we will have a few different goals for each mission." A mission
   *capture and hold X by Pulse N*, *accumulate X of Y*, or *keep Z alive*. Standard
   strategy-campaign shapes, every one of them expressible as a trigger condition with an `objective`,
   `win`, or `lose` action (Section 2.1);
-- **a bonus goal** — harder, optional, achievement-shaped, and it **unlocks something for Challenge
+- **a bonus goal** — harder, optional, achievement-shaped, and it **may unlock something for Challenge
   mode**: a Commander, a card, a starting variant. *Win without losing a unit. Reach supply 100. Win
   by Pulse 4. Never lose a structure.* This is what gives a finished mission a reason to be replayed
-  before the campaign is over, and what ties the two modes together without either owning the other.
+  before the campaign is over. **The unlock is additive, never primary — Q46.** Challenge keeps its
+  own progression, independent of the Campaign; a bonus goal's unlock only lands if Challenge hasn't
+  already granted the same thing through play. The two modes stay uncorrelated by design — nobody's
+  Challenge content is gated behind finishing the Campaign — and this is the one deliberate exception
+  where playing both pays a small, non-essential dividend.
   **Bonus goals are shown, not revealed as a surprise — this is Q48.** The briefing states both goals
   plainly, the same way it already states the main one (Q44); a player decides whether to play toward
   it from the start, rather than discovering after the fact what they were being scored on. This is

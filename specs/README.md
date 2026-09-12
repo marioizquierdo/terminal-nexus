@@ -2,8 +2,8 @@
 
 **Document role:** Canon index and reading order
 **Status:** Canonical
-**Canon version:** 2.15
-**Updated:** 2026-09-10
+**Canon version:** 2.16
+**Updated:** 2026-09-12
 **License:** Apache-2.0
 
 The project canon is this document set, not one monolithic file. Each document has one job, and the
@@ -34,10 +34,11 @@ canon version. The horizontal contract this replaced is preserved, unbuilt, in
 
 **Canon 2.10 recorded the owner's design notes on three things the campaign milestones build
 against**: the input model ([`engine.md`](engine.md) Section 9.7 — one command vocabulary behind
-keyboard, mouse, and an agent driver, with displayed hotkeys), the Commander Army as a deck drawn
-from its faction's pool ([`commander-armies.md`](commander-armies.md) Section 2.1), and missions as
-multi-Pulse trigger lists ([`campaigns.md`](campaigns.md) Section 2.1). Milestones 3, 5, 6, 8, and 9
-cite them; Q39 (declarative triggers versus a scripting API) is the one fork left for Mario.
+keyboard, mouse, and an agent driver, with displayed hotkeys), a Commander Army as a bounded subset
+of its faction's pools ([`commander-armies.md`](commander-armies.md) Section 2.1 — the "deck" framing
+itself is retracted at canon 2.16, kept only as an idea), and missions as multi-Pulse trigger lists
+([`campaigns.md`](campaigns.md) Section 2.1). Milestones 3, 5, 6, 8, and 9 cite them; Q39 (declarative
+triggers versus a scripting API) is the one fork left for Mario.
 
 **Canon 2.11 named the single-player modes and put the experience before the content.** Mario
 re-scoped Milestone 2 to design and orientation: [`game-modes.md`](game-modes.md) is the vocabulary
@@ -57,8 +58,10 @@ shows a new player none of them upfront: Vasse's mission 1 is the whole first-ti
 completing it unlocks the other two as campaign rows, each its own opening reusing PERIMETER's
 literal map with roles swapped ([`campaigns.md`](campaigns.md) Section 4.3, Q43 and Q47). Missions
 carry a bounded `ObjectiveDefinition` (Section 2.2) rather than a fixed length, resolved above the
-kernel's own unchanged victory check. Q45 and Q46 are the forks left for Mario before Milestone 3
-opens.
+kernel's own unchanged victory check. Q45 and Q46 are answered, Milestone 2 is accepted, and a
+Commander Army's full composition — Nexus and faction, Commander, starting units and structures,
+blueprints and the tech tree, upgrades, Nexus powers, and Directives — is written down at canon 2.16
+([`commander-armies.md`](commander-armies.md) Section 2.1). Milestone 3 (Game Menu) is now open.
 
 For a new coding session, read:
 

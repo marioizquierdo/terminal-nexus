@@ -48,13 +48,14 @@ mission reports) — and launch the current mission from it?
 
 - **4A — Campaign state and launch.** The flat unlock record (Q31), the current mission, and
   launching it into Milestone 5's Build Phase with that mission's map and trigger list.
-- **4B — Army and intel panels.** The army panel as the deck laid out
+- **4B — Army and intel panels.** The army panel showing the composition laid out
   ([`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1 — common tier, army
-  tier, Nexus power pool); the enemy intel panel under Q35's recommendation; both correct when empty.
+  tier/tech tree, Nexus power pool, Directive); the enemy intel panel under Q35's recommendation;
+  both correct when empty.
 - **4C — Mission reports.** The existing report module's output persisted and shown per completed
   mission; artifact entries surfaced here once Milestone 9 produces them.
 
-This is the Campaign's shell; Milestone 11 is the Challenge's. They share the deck panel of 4B, and
+This is the Campaign's shell; Milestone 11 is the Challenge's. They share the army panel of 4B, and
 whichever is built second reuses it rather than drawing a second one.
 
 ## 3. Explicitly not this milestone

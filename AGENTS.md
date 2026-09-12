@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.15
+**Canon version:** 2.16
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -68,27 +68,33 @@ is a sequence of ten focused milestones, not one. They are tracked in
 is a tracker checked off during work, not a document that only changes at a named canon version — read
 [`milestones/README.md`](milestones/README.md) first for the full sequence and why it looks this way.
 
-The current milestone is **[`milestones/milestone-02-campaign-design.md`](milestones/milestone-02-campaign-design.md)
-— Design and Orientation** (re-scoped at canon 2.11): the vocabulary of the single-player modes
+**Milestone 2 is accepted.** [`milestones/milestone-02-campaign-design.md`](milestones/milestone-02-campaign-design.md)
+— Design and Orientation (re-scoped at canon 2.11) fixed the vocabulary of the single-player modes
 ([`specs/game-modes.md`](specs/game-modes.md) — Campaign and Challenge), the build order, the few
-PERIMETER decisions the UX build needs, and — at canon 2.12–2.14 — the Citizen Nexus's character, the
+PERIMETER decisions the UX build needs, and — at canon 2.12–2.16 — the Citizen Nexus's character, the
 three starting Commanders (Vasse, Averno, Dob Hunter, with no upfront choice screen), what a Nexus
-power does, the two openings sharing one map, and a bounded objective taxonomy replacing fixed Pulse
-counts. It is a design pass, not a code gate, and its one open gate is **2D — Mario's confirmation,
-including Q45 and Q46**.
+power does, the two openings sharing one map, a bounded objective taxonomy replacing fixed Pulse
+counts, and the Commander Army's own composition list. Gate 2D closed 2026-09-12 when Mario confirmed
+the design, answered Q45 and Q46, and gave the composition list himself. Nothing about Milestone 2
+itself is open work for a new session.
+
+The current milestone is **[`milestones/milestone-03-game-menu.md`](milestones/milestone-03-game-menu.md)
+— Game Menu**: can a player launch `terminal-nexus` and navigate a top-level menu — Campaign,
+Challenge, Settings, Exit — built on the same terminal stack `grid` already proved? Its active gate is
+**3A — the menu and the three adapters**: `bin/terminal-nexus.ts`, the list shape with displayed
+hotkeys, the keyboard and mouse adapters, the driver, and the shared disposer.
 
 So the authorised work for a new session is, in order:
 
 1. **whatever the owner's most recent feedback asks for**, if any exists since
    `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
    outstanding or that everything still is;
-2. **Milestone 2's open gate**, per its own file; once Mario confirms, **Milestone 3 gate 3A** is
-   next in the build order [`milestones/README.md`](milestones/README.md) carries. Milestone numbers
-   are identities, not an order — read that table's build-order column, and take one gate per
-   session.
+2. **Milestone 3 gate 3A**, per its own file — the next gate in the build order
+   [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
+   order — read that table's build-order column, and take one gate per session.
 
-Do not start any milestone's code ahead of Milestone 2's confirmation — each milestone names exactly
-what it needs in its own "Depends on" line, and its gates are the unit of work.
+Each milestone names exactly what it needs in its own "Depends on" line, and its gates are the unit
+of work.
 Do not build a second resource, storage or warehouses beyond what Milestone 7 specifically needs, real
 routing/pathfinding fixes, visibility filtering, the replay format, multiplayer, any level beyond
 PERIMETER and RIGHT OF SALVAGE, any campaign but the Citizen opening, a real save/progression system
@@ -164,10 +170,17 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - Faction identity lives in the glyph family and the effect language; ownership keeps the colour, so
   a mirror match stays legible and monochrome stays whole.
 - Content is TypeScript-first and mostly declarative.
-- The playable content boundary is a Commander Army: Commander, units, structures, upgrades, Nexus
-  powers, and starting package. **The faction is the pool; the army is the deck** — common
-  structures, army structures, and a Nexus power pool dealt as a hand each Build Phase. The match
-  only ever sees an army.
+- The playable content boundary is a Commander Army: a faction and Grid Nexus, a Commander, starting
+  units and structures, blueprints and the tech tree that unlocks them, upgrades, Nexus powers, and
+  Directives — canon 2.16's parts list (`specs/commander-armies.md` Section 2.1). **A faction is a
+  wide pool; a Commander Army fields a few of them.** The match only ever sees an army. **Whether an
+  army is well modeled as a "deck of cards" is explicitly retracted, not even GUIDANCE** — a Commander
+  Army is several different systems, and which shape actually fits is for building and playing to
+  show. **A Commander Army's structures form a real, inspectable tech tree**, mostly shared across a
+  faction's Commanders; completing one can unlock its dependents through the same `unlockStructure`
+  effect a Nexus power already produces, gated by construction, never by a second resource. A
+  **Directive** is cast once per match, during a Build Phase the player chooses, for a short-lived
+  bonus — modeled like a small Nexus-power pool but match-scoped rather than dealt each Build Phase.
 - **Every interactive action is a named command.** Keyboard, mouse, and a driver (for agents and
   tests) are three adapters onto one vocabulary; every menu item displays its hotkey and is clickable
   with identical effect; the driver can inject raw key and mouse events and read the cell frame back.
@@ -182,9 +195,17 @@ deleted, and the renderer must be replaceable without one simulation test changi
   interface.
 - **A Nexus power is a name and one plain line of description.** No player-facing classification; the
   effect kinds (`unlockStructure`, `spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`,
-  `reveal`) are code names. **A mission has goals, not a fixed length** — a bounded
-  `ObjectiveDefinition`, resolved by the scenario/trigger layer one level above the kernel's own
-  unchanged victory check, which stays the fallback for Skirmish and Challenge battles.
+  `reveal`) are code names. **A dealt Nexus power may not be skipped** — it is almost always strictly
+  advantageous, so there is nothing to protect against by declining one; Alder alone converts a power
+  into their own "honor" currency, and even that may be locked out at tutorial difficulty. **A
+  mission has goals, not a fixed length** — a bounded `ObjectiveDefinition`, resolved by the
+  scenario/trigger layer one level above the kernel's own unchanged victory check, which stays the
+  fallback for Skirmish and Challenge battles.
+- **Campaign and Challenge are uncorrelated.** Challenge keeps its own progression — basic Commander
+  packages from the start, more unlocked by playing Challenge itself — so nobody is locked out of
+  Challenge content by disliking the Campaign. The Campaign's bonus goals add a few more unlocks,
+  only for things Challenge hasn't already unlocked; a soft, dismissible message recommends the
+  Campaign first, but never blocks Challenge.
 - Prime Nexuses remain at home and replicate Grid Nexuses; avoid stale teleportation language.
 - Player-facing phases are **Build Phase** and **Nexus Pulse**; use those names consistently.
 - **Lore is a platform, not a plot** (`specs/terminal-nexus-lore.md` Section 10.6). This is a terminal
