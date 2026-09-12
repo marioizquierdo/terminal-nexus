@@ -2,7 +2,7 @@
 
 **Document role:** Milestone index — the sequence, current status, and how this folder differs from `specs/`
 **Status:** Canonical index (not a versioned canon document — see below)
-**Updated:** 2026-09-10
+**Updated:** 2026-09-12
 **License:** Apache-2.0
 
 ## Why milestones live here, not in `specs/`
@@ -53,8 +53,8 @@ core first** (3, 5, 6), then **the two mode shells** (8 gives both modes their d
 | Milestone | Status | Build order | Question |
 | --- | --- | --- | --- |
 | [1 — Grid Battles](milestone-01-grid-battles.md) | COMPLETE | done | Do units move, fight, and die deterministically from a seed, legibly on screen? |
-| [2 — Design and Orientation](milestone-02-campaign-design.md) | CURRENT | 1 | What vocabulary and structure do the single-player modes need, and what few PERIMETER decisions does the UX build need, before milestones 3-6 build the game's experience? |
-| [3 — Game Menu](milestone-03-game-menu.md) | GATED | 2 | Can a player launch `terminal-nexus` into a menu with displayed hotkeys, mouse parity, and a driver, and pick a mode? |
+| [2 — Design and Orientation](milestone-02-campaign-design.md) | COMPLETE | done | What vocabulary and structure do the single-player modes need, and what few PERIMETER decisions does the UX build need, before milestones 3-6 build the game's experience? |
+| [3 — Game Menu](milestone-03-game-menu.md) | CURRENT | 2 | Can a player launch `terminal-nexus` into a menu with displayed hotkeys, mouse parity, and a driver, and pick a mode? |
 | [5 — Build Phase](milestone-05-build-phase.md) | GATED | 3 | Can a player place buildings, pick a Nexus upgrade, and scroll a real map during Build Phase — by keyboard, mouse, and driver? |
 | [6 — Nexus Pulse Phase](milestone-06-pulse-phase.md) | GATED | 4 | Can a player start the Pulse, watch it resolve, see a legible ending with Recall, and land in the next Build Phase? |
 | [8 — Commander](milestone-08-commander.md) | GATED | 5 | Can Commander Vasse and a Nexus draft dealt from an army's pool exist without becoming a full Commander Army? |
@@ -76,7 +76,8 @@ closes when its gates do. This is Milestone 1's own 1A/1B shape applied everywhe
 request that the next agent get "smaller and focused tasks."
 
 Two orderings inside the table are choices, not consequences, and Mario may swap them: **11 before
-4** because a run exercises the deck model harder than a campaign shell and needs no writing; **7
+4** because a run exercises the Commander Army composition model harder than a campaign shell and
+needs no writing; **7
 after 11** because a run can start on a per-battle allotment the way Mechabellum's rounds do
 (`game-modes.md` Section 5), and the worker economy is what makes it feel like Terminal Nexus rather
 than what makes it playable.

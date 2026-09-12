@@ -2,8 +2,8 @@
 
 **Document role:** Vocabulary and structure for the single-player modes — Campaign and Challenge — and the seam every later mode shares
 **Status:** Canonical direction; structure is GUIDANCE until a milestone earns it
-**Canon version:** 2.15
-**Updated:** 2026-09-10
+**Canon version:** 2.16
+**Updated:** 2026-09-12
 **License:** Apache-2.0 for structure and schemas; mode names and any fiction they carry are CC BY-SA 4.0
 
 ## 1. Why this document exists
@@ -39,8 +39,8 @@ Pulse, the Build Phase screen, the renderer — knows which mode it is serving.
 | **Mission** | A battle with authored triggers, text, and a teaching goal — the Campaign's unit ([`campaigns.md`](campaigns.md) Section 2.1) |
 | **Run** | An ordered series of battles in which the army changes between them — the Challenge mode's unit. One attempt, start to finish, win or lose |
 | **Act** | A segment of a run ending in a harder, named battle. A run is a small number of acts |
-| **Card** | Any content item an army can hold or be offered: a structure, a Nexus power, an upgrade, a Commander variant. The deck metaphor of `commander-armies.md` 2.1, generalised. A unit is not a card — units come from the structures that produce them |
-| **Pool / Deck** | The faction's whole catalogue / the army's chosen subset (`commander-armies.md` 2.1) |
+| **Card** | Working shorthand for any content item an army can hold or be offered: a structure, a Nexus power, an upgrade, a Commander variant. A unit is not a card — units come from the structures that produce them. **Not a claim that an army behaves like a trading-card deck** — see the note below |
+| **Pool / Army** | The faction's whole catalogue / the army's chosen subset (`commander-armies.md` 2.1). Whether the subset is well described as a "deck" is unresolved — see below |
 | **Draft** | Choosing from an offered hand. **The Nexus draft** happens inside a match, at each Build Phase, from the army's Nexus power pool. **The run draft** happens between battles, from the faction pool, and changes the army |
 | **Rarity** | How often a card is offered when a draft is dealt: `common`, `uncommon`, `rare` |
 | **Tier** | The earliest depth at which a card may be offered: `1`, `2`, `3`. Tier gates *when*; rarity weights *how often* |
@@ -52,6 +52,16 @@ Rarity and tier are **two axes on purpose**: a tier-1 rare is a strong early car
 offered; a tier-3 common is an ordinary late card. Collapsing them into one "quality" number is the
 mistake this vocabulary exists to prevent, because both modes need both axes — a Campaign mission
 unlocks by tier, a run deals by rarity.
+
+**"The army is a deck" is parked, not decided — canon 2.16.** Mario asked to lose this claim
+entirely, "not even as guidance, but just as an idea": "I have the feeling that the army is more than
+just a deck. The Commander army is composed of a bunch of different things." `commander-armies.md`
+Section 2.1 has the full retraction. "Card," "rarity," "tier," and "draft" stay in this vocabulary as
+working words for a real mechanism — an offer, weighted and gated, that a player accepts or declines
+— not as an assertion that the whole army composition is a deck of cards. One concrete consequence:
+**Nexus powers specifically are almost always strictly advantageous, not diluting** (Section 3.2), so
+the deckbuilder intuition "adding things can make my draws worse" does not hold for them the way it
+does in Slay the Spire.
 
 ## 3. The modes
 
@@ -101,15 +111,15 @@ autobattlers (Section 5), taken at the size Terminal Nexus's 5–12-minute match
 | Element | Starting value | Why this and not another |
 | --- | --- | --- |
 | Battles per run | **6–9**, in **2–3 acts** | A match is 5–12 minutes; a run under an hour is one sitting, and a run over two is a different product. Three acts of three is the roguelike-deckbuilder default; two acts of three is the fallback if battles run long |
-| Starting army | **pick an unlocked Commander at run start**; the deck begins as that Commander's starting package (Q46) | Campaign unlocks matter to Challenge without Challenge waiting on them, and "which Commander do I run today" is most of a run mode's replay value. Drafting the army itself before battle one is the same shape with one more step, kept possible and not built |
-| Between battles | **one run draft**: add one of three offered cards, **or** remove one card, **or** upgrade one card (structures already carry levels 1–3, `engine.md` 5.2) | Add/remove/upgrade is the minimum set every reference game converged on. Removal matters as much as adding: a deck that only grows dilutes its own plan |
+| Starting army | **Challenge keeps its own progression, uncorrelated with the Campaign (Q46, answered).** A run starts from one of the faction's basic Commander packages, unlocked from the beginning; playing Challenge itself unlocks more — more Commanders, more army structures, more Nexus powers — the same way Slay the Spire's own meta-progression works. The Campaign's bonus goals may unlock a few of the same things, but only ones Challenge has not already unlocked; neither mode gates or waits on the other | A player who dislikes the Campaign is never locked out of content, and a player who plays both is never made to unlock the same thing twice. The one soft nudge: opening Challenge before ever finishing the Campaign shows a dismissible "we recommend the Campaign first" message, never a block |
+| Between battles | **one run draft**: add one of three offered cards, **or** remove one card, **or** upgrade one card (structures already carry levels 1–3, `engine.md` 5.2) | Add/remove/upgrade is the minimum set every reference game converged on. Removal's *reason* differs by what's offered: an army structure costs supply and board space, so trimming one is a real trade-off; a Nexus power is close to strictly good (Section 4 below), so removing one is about deck focus and role variety, not chasing better odds the way a Slay the Spire deck-thin does |
 | Offer dealing | three cards, weighted by **rarity**, gated by **tier** against the battle index; a **pity offset** raises the rare chance each time no rare is offered and resets when one is | Slay the Spire's mechanism, verbatim in spirit: fair variance without a dead run |
 | Tier schedule | tier *t* becomes available at battle **2t − 1**: tier 1 from battle 1, tier 2 from battle 3, tier 3 from battle 5 | Super Auto Pets' schedule, which makes the run's early third about fundamentals and its last third about combinations |
-| Opponents | **another Commander Army with a heuristic policy**, escalating by act; each act ends in a **named Commander** as its boss | Reuses the army shape and the opponent tiers `campaigns.md` Section 6 already names. A boss is a deck with a signature, not a stat multiplier |
-| Between runs | **unlocks into the pool** only; no permanent stat buffs (Q41) | Into the Breach and Hades both persist *options* across runs; persisting *power* would break "understand why the battle unfolded" (`terminal-nexus-concept.md`) |
-| Within a run | **the deck and the Commander persist; the Grid, structures, and units do not** (Q40) | Each battle starts from a fresh Grid with the army's starting package. The alternative — veterans carrying over — is registered as the observable experiment it is, not assumed |
+| Opponents | **another Commander Army with a heuristic policy**, escalating by act; each act ends in a **named Commander** as its boss | Reuses the army shape and the opponent tiers `campaigns.md` Section 6 already names. A boss is an army with a signature, not a stat multiplier |
+| Between runs | **unlocks into Challenge's own pool** only, primarily through Challenge play itself, with the Campaign's bonus goals adding a few more; no permanent stat buffs (Q41, answered) | Into the Breach and Hades both persist *options* across runs; persisting *power* would break "understand why the battle unfolded" (`terminal-nexus-concept.md`) |
+| Within a run | **the army and the Commander persist; the Grid, structures, and units do not** (Q40) | Each battle starts from a fresh Grid with the army's starting package. The alternative — veterans carrying over — is registered as the observable experiment it is, not assumed |
 | Seed | shown, shareable, replayable | A run is a match's determinism at the next scale up: same seed, same run — the daily-run and "try my seed" modes fall out for free |
-| Failure | a lost battle ends the run; the summary shows the deck, the seed, and every draft taken | Reading a lost run is how the mode teaches; the summary is the mode's report |
+| Failure | a lost battle ends the run; the summary shows the army, the seed, and every draft taken | Reading a lost run is how the mode teaches; the summary is the mode's report |
 
 **Design consequences a session should hold onto:**
 
@@ -121,7 +131,7 @@ autobattlers (Section 5), taken at the size Terminal Nexus's 5–12-minute match
   become a build.
 - **Bosses are named armies.** The Commander proposals in `commander-armies.md` Section 4.4 are the
   boss roster in waiting: a Ravel act ends in Speaker Corvane or Old Marrow, and a player learns to
-  read a Commander's doctrine from what the deck does — the alignment test of
+  read a Commander's doctrine from what their army does — the alignment test of
   `terminal-nexus-lore.md` 8.6, applied to opponents.
 - **Runs need no writing.** That is the whole reason this mode can be built early. Text in a run is
   the interface's own voice (`terminal-nexus-lore.md` Section 10.2) and Commander barks — nothing
@@ -191,14 +201,13 @@ network and rest on search extracts rather than a full read.
 
 - The exact numbers in Section 3.2's table — battles, acts, offer size, tier schedule — are starting
   values for Milestone 11 to retune on runs actually played.
-- Two decisions that shape the screens rather than the numbers are still registered rather than
-  assumed: **Q45** (is the draft pick mandatory, skippable, or bankable) and **Q46** (where a run's
-  starting army comes from). Each carries a recommendation, and each is cheap now and expensive after
-  Milestone 5. Q42 (what a Nexus power may do), Q43 (which starting Commanders ship), Q44 (mission
-  length), Q47 (the mirrored-map mechanic), and Q48 (bonus-goal visibility) were answered at canon
-  2.13–2.14.
-- What persists between battles within a run beyond the deck and the Commander (Q40), and whether
-  anything but unlocks persists between runs (Q41).
+- **Every question this document originally deferred is now answered.** Q42 (what a Nexus power may
+  do), Q43 (which starting Commanders ship), Q44 (mission length), Q47 (the mirrored-map mechanic),
+  and Q48 (bonus-goal visibility) at canon 2.13–2.14; **Q45** (the Nexus draft pick is mandatory, with
+  no skip except Alder's own mechanic) and **Q46** (Challenge keeps its own progression, uncorrelated
+  with the Campaign) at canon 2.16 — closing gate 2D and opening Milestone 3.
+- What persists between battles within a run beyond the army and the Commander (Q40, still open —
+  Milestone 11 makes it observable rather than assuming an answer).
 - Difficulty ladders (ascension-style), daily seeds, leaderboards, and any online feature: real
   ideas, none designed, all downstream of a run that plays end to end.
 - Mod-defined modes. The claim that a mode is data over one loop and one army shape is what keeps

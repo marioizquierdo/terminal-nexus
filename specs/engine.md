@@ -2,8 +2,8 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.15
-**Updated:** 2026-09-10
+**Canon version:** 2.16
+**Updated:** 2026-09-12
 **License:** Apache-2.0
 
 ## 0. How to read this document
@@ -601,9 +601,9 @@ replicate it again. **Commander death is not the victory condition.**
 
 Common roles: Grid Nexus (victory target, construction root, upgrade draft, Commander anchor);
 economic structures with worker slots; warehouses for global storage; supply structures for the
-shared population cap; worker producers; military producers; defences; research facilities that
-improve the Nexus draft rather than exposing a linear tech menu; outposts that project construction
-coverage; capture structures that claim a neutral-zone bonus while connected.
+shared population cap; worker producers; military producers; defences; research facilities that are
+themselves tech tree nodes (below); outposts that project construction coverage; capture structures
+that claim a neutral-zone bonus while connected.
 
 Structures live on the `obstacles` layer, are operational immediately after reveal, cannot move or
 be sold, and keep working while disconnected but stop projecting coverage.
@@ -616,9 +616,17 @@ one is chosen, paid, and spawned; feasibility is recomputed; repeat until nothin
 
 Players shape composition by building, protecting, upgrading, pausing, or losing producers.
 
-### 5.4 Research and Nexus powers — GUIDANCE
+### 5.4 Research, the tech tree, and Nexus powers — GUIDANCE
 
-The Grid Nexus offers a small draft of upgrades; research facilities modify that draft's tier,
+**A Commander Army's buildable structures form a real, inspectable tech tree — canon 2.16**
+([`commander-armies.md`](commander-armies.md) Section 2.1), mostly shared across a faction's
+Commanders with a few Commander-specific branches. This corrects this section's own earlier framing:
+research facilities are not an alternative to a "linear tech menu," they are tree nodes like any
+other structure, and completing one can unlock its dependents the same way a Nexus power's
+`unlockStructure` effect does (Section 5.4 below) — one mechanism, two triggers. Gated entirely by
+which structures exist, never by a second resource (Section 6's one-resource rule is untouched).
+
+The Grid Nexus also offers a small draft of upgrades; research facilities modify that draft's tier,
 breadth, redraws, weighting, or visibility. Structures may reach levels 1–3. Nexus powers are
 content-defined legal actions or passive rules that execute through validated kernel commands.
 
@@ -750,9 +758,11 @@ interface ProductionRecipe {
 
 Upgrades, Nexus powers, Commanders, and Commander Armies follow the same pattern and are described in
 [`commander-armies.md`](commander-armies.md). A **Commander Army** is the playable content boundary:
-the complete set of choices legally available to one player in one match — a deck drawn from its
-faction's pool, in three tiers ([`commander-armies.md`](commander-armies.md) Section 2.1). The
-match, the Pulse, and every renderer see an army; none of them ever sees a faction.
+the complete set of choices legally available to one player in one match — a Nexus and faction, a
+Commander, starting units and structures, blueprints and a tech tree, upgrades, Nexus powers, and
+Directives, bounded against its faction's pools
+([`commander-armies.md`](commander-armies.md) Section 2.1). The match, the Pulse, and every renderer
+see an army; none of them ever sees a faction.
 
 Prefer composable capabilities — health, movement, attack, production, storage, supply, worker slots,
 radius, restoration, regroup anchor — over inheritance. Exceptional behaviour may register narrow
