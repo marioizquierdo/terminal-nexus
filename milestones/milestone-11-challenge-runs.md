@@ -11,7 +11,7 @@
 > for the next battle. This could have huge replayability value." A run exercises the Commander Army
 > composition model ([`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1 —
 > the "deck" framing itself is retracted at canon 2.16, but the army's structures, upgrades, Nexus
-> powers, and Directives are all still real pools a run draft can touch) harder than any mission,
+> powers, and Specials are all still real pools a run draft can touch) harder than any mission,
 > needs no authored text, and is where the game's long-term value lives. It is built as soon as the
 > match UX can carry it, before the Campaign's own second mission, for exactly those reasons.
 > [`../specs/game-modes.md`](../specs/game-modes.md) Section 3.2 is the design this builds against;

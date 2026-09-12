@@ -60,7 +60,7 @@ literal map with roles swapped ([`campaigns.md`](campaigns.md) Section 4.3, Q43 
 carry a bounded `ObjectiveDefinition` (Section 2.2) rather than a fixed length, resolved above the
 kernel's own unchanged victory check. Q45 and Q46 are answered, Milestone 2 is accepted, and a
 Commander Army's full composition — Nexus and faction, Commander, starting units and structures,
-blueprints and the tech tree, upgrades, Nexus powers, and Directives — is written down at canon 2.16
+blueprints and the tech tree, upgrades, Nexus powers, and Specials — is written down at canon 2.16
 ([`commander-armies.md`](commander-armies.md) Section 2.1). Milestone 3 (Game Menu) is now open.
 
 For a new coding session, read:

@@ -49,7 +49,7 @@ definition of the campaign. Its answers (Section 4) stand.
   and 3.2 gives the Citizen Nexus its character: an administrator, not a weapon.
   [`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1 carries the full
   composition list (Nexus and faction, Commander, starting units and structures, blueprints and the
-  tech tree, upgrades, Nexus powers, Directives), 2.2 the affinity model, 4.5 what a power does (a
+  tech tree, upgrades, Nexus powers, Specials), 2.2 the affinity model, 4.5 what a power does (a
   name and a plain line; effect kinds live in code), and 4.6 the three starting Commanders — Vasse,
   Averno, Dob Hunter — with four later candidates kept. [`../specs/campaigns.md`](../specs/campaigns.md)
   Section 4.3 gives the two openings, mission goals, and bonus goals. Q42, Q43, Q44, Q45, Q46, Q47 and

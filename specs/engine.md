@@ -760,7 +760,7 @@ Upgrades, Nexus powers, Commanders, and Commander Armies follow the same pattern
 [`commander-armies.md`](commander-armies.md). A **Commander Army** is the playable content boundary:
 the complete set of choices legally available to one player in one match — a Nexus and faction, a
 Commander, starting units and structures, blueprints and a tech tree, upgrades, Nexus powers, and
-Directives, bounded against its faction's pools
+Specials, bounded against its faction's pools
 ([`commander-armies.md`](commander-armies.md) Section 2.1). The match, the Pulse, and every renderer
 see an army; none of them ever sees a faction.
 

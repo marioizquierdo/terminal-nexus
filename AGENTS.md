@@ -172,14 +172,14 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - Content is TypeScript-first and mostly declarative.
 - The playable content boundary is a Commander Army: a faction and Grid Nexus, a Commander, starting
   units and structures, blueprints and the tech tree that unlocks them, upgrades, Nexus powers, and
-  Directives — canon 2.16's parts list (`specs/commander-armies.md` Section 2.1). **A faction is a
+  Specials — canon 2.16's parts list (`specs/commander-armies.md` Section 2.1). **A faction is a
   wide pool; a Commander Army fields a few of them.** The match only ever sees an army. **Whether an
   army is well modeled as a "deck of cards" is explicitly retracted, not even GUIDANCE** — a Commander
   Army is several different systems, and which shape actually fits is for building and playing to
   show. **A Commander Army's structures form a real, inspectable tech tree**, mostly shared across a
   faction's Commanders; completing one can unlock its dependents through the same `unlockStructure`
   effect a Nexus power already produces, gated by construction, never by a second resource. A
-  **Directive** is cast once per match, during a Build Phase the player chooses, for a short-lived
+  **Special** is cast once per match, during a Build Phase the player chooses, for a short-lived
   bonus — modeled like a small Nexus-power pool but match-scoped rather than dealt each Build Phase.
 - **Every interactive action is a named command.** Keyboard, mouse, and a driver (for agents and
   tests) are three adapters onto one vocabulary; every menu item displays its hotkey and is clickable

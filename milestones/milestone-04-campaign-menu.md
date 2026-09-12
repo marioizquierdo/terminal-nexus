@@ -50,7 +50,7 @@ mission reports) — and launch the current mission from it?
   launching it into Milestone 5's Build Phase with that mission's map and trigger list.
 - **4B — Army and intel panels.** The army panel showing the composition laid out
   ([`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1 — common tier, army
-  tier/tech tree, Nexus power pool, Directive); the enemy intel panel under Q35's recommendation;
+  tier/tech tree, Nexus power pool, Special); the enemy intel panel under Q35's recommendation;
   both correct when empty.
 - **4C — Mission reports.** The existing report module's output persisted and shown per completed
   mission; artifact entries surfaced here once Milestone 9 produces them.
