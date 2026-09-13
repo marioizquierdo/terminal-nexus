@@ -107,18 +107,57 @@ export class Playback {
 }
 
 /**
+ * The index just past one complete escape sequence starting at `chunk[start]` (which must be ESC).
+ * A CSI sequence (`ESC [ ... final`, arrow keys and mouse reports alike — mouse's leading `<` is a
+ * legal CSI parameter byte) runs through parameter bytes `0x30`-`0x3F` and intermediate bytes
+ * `0x20`-`0x2F` to one final byte `0x40`-`0x7E`; an SS3 sequence (`ESC O` plus one character, the
+ * form some terminals use for arrows in application cursor-key mode) is fixed at three characters.
+ * Anything else — including a sequence truncated at the end of this chunk, which a byte-level split
+ * across two reads can still produce — is a bare ESC, one character long, so an unrecognised prefix
+ * terminates rather than swallowing whatever follows it in the same chunk.
+ */
+function endOfEscapeSequence(chunk: string, start: number): number {
+  const next = chunk.charCodeAt(start + 1)
+  if (next === 0x5b /* [ */) {
+    for (let index = start + 2; index < chunk.length; index += 1) {
+      const code = chunk.charCodeAt(index)
+      if (code >= 0x40 && code <= 0x7e) return index + 1
+    }
+    return chunk.length
+  }
+  if (next === 0x4f /* O */) return Math.min(start + 3, chunk.length)
+  return Math.min(start + 1, chunk.length)
+}
+
+/**
  * Split one chunk of terminal input into keys.
  *
  * A terminal does not promise one key per read: a fast typist, a paste, or a script driving the
  * session through a pseudo-terminal all deliver several bytes at once, and treating the chunk as a
  * single key silently drops every one of them. An escape sequence — an arrow key, a mouse report —
- * is the opposite case and must stay whole, so a chunk that begins with ESC is returned as one key
- * and, since Gate 1A binds none of them, ignored.
+ * is the opposite case and must stay whole rather than be split mid-sequence, but **more than one
+ * complete sequence can still arrive in the same chunk** (two quick arrow presses, a mouse move and
+ * a click) and each must come back as its own key. A menu screen's own real-terminal evidence is
+ * what found this: two arrow-down presses sent close enough together arrived as one six-byte chunk,
+ * and the original version of this function — which treated any ESC-prefixed chunk as one key in
+ * full, correct only because Gate 1A bound no escape sequence to anything — silently dropped the
+ * second press's worth of movement, undetected by any fake-stdin unit test because nothing before
+ * Milestone 3 ever fed this function two real sequences in one call.
  */
 export function keysFromChunk(chunk: string): string[] {
-  if (chunk.length === 0) return []
-  if (chunk.startsWith(String.fromCharCode(27))) return [chunk]
-  return [...chunk]
+  const keys: string[] = []
+  let index = 0
+  while (index < chunk.length) {
+    if (chunk.charCodeAt(index) === 27) {
+      const end = endOfEscapeSequence(chunk, index)
+      keys.push(chunk.slice(index, end))
+      index = end
+      continue
+    }
+    keys.push(chunk[index] as string)
+    index += 1
+  }
+  return keys
 }
 
 /** The key map, so `watch` and a test agree on what a key means. */

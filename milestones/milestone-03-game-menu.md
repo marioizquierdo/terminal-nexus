@@ -4,7 +4,7 @@
 **Status:** CURRENT
 **Active gate:** 3A — The menu and the three adapters; gates 3B and 3C follow once 3A closes
 **Depends on:** Milestone 2 (campaign design decided — accepted 2026-09-12)
-**Updated:** 2026-09-12
+**Updated:** 2026-09-13
 **License:** Apache-2.0
 
 > **Start simple, with the minimum.** Mario's own words. This is the first time anything under the
@@ -12,6 +12,20 @@
 > already names the split: "`grid` is the editor and replay tool, not the game; a future
 > `terminal-nexus` executable is what launches a campaign built on it." This milestone is that
 > executable's first real screen, and nothing more than that.
+
+> **Gate 3A: BUILT, 2026-09-13** — [`../evidence/gate-3a-report.md`](../evidence/gate-3a-report.md)
+> concludes PASS on every automated check it set for itself; owner viewing is outstanding (the same
+> "built, not yet accepted" state Milestone 1's own gates passed through). `bin/terminal-nexus.ts`
+> launches a real top-level menu on the existing terminal stack; the menu-list shape, the keyboard and
+> mouse adapters, and the driver all live in `src/menu/`; the shared disposer is now
+> `src/cli/lifecycle.ts`, used by `grid watch` and this menu alike, not reinvented. Real-terminal
+> evidence (`evidence/screenshots/menu-*.png`, `scripts/capture-menu-screenshot.mjs`) caught and fixed
+> a genuine bug no fake-stdin test had ever exercised: `keysFromChunk` (`src/view/playback.ts`) treated
+> *any* number of escape sequences arriving in one stdin chunk as a single key, which silently dropped
+> the second of two quick arrow presses. Fixed to split every complete sequence on its own, with
+> regression tests; `grid watch`'s own behaviour is unchanged since it still binds no escape sequence
+> to anything. **3B and 3C are next**, in the build order this file's own Section 1.1 already gives —
+> not authorized by this note, only unblocked by it.
 
 ## 1. Question
 
@@ -23,10 +37,11 @@ Campaign once there is anything to load.)
 
 ### 1.1 Gates
 
-- **3A — The menu and the three adapters.** `bin/terminal-nexus.ts`, the list shape with displayed
-  hotkeys, the keyboard and mouse adapters, the driver, and the shared disposer — with the
-  hotkey/arrow/click equivalence test. The smallest possible screen that exercises the whole input
-  model of [`../specs/engine.md`](../specs/engine.md) 9.7.
+- **3A — The menu and the three adapters. BUILT**, see the note above and
+  [`../evidence/gate-3a-report.md`](../evidence/gate-3a-report.md). `bin/terminal-nexus.ts`, the list
+  shape with displayed hotkeys, the keyboard and mouse adapters, the driver, and the shared disposer —
+  with the hotkey/arrow/click equivalence test. The smallest possible screen that exercises the whole
+  input model of [`../specs/engine.md`](../specs/engine.md) 9.7.
 - **3B — Settings.** Capability tier, theme, glyph pack, reduced motion as a menu, persisted to a
   small settings file.
 - **3C — Mode select and honest handoffs.** Campaign hands off to Milestone 4 or an explicit
@@ -91,13 +106,19 @@ gameplay, a real save/progression format (Q31 stays open), sound.
 
 ## 5. Definition of done
 
-- [ ] `bin/terminal-nexus.ts` exists and launches to the top-level menu from a clean checkout;
-- [ ] all four options are reachable and do something honest (Campaign hands off or shows a clear
-      placeholder; Challenge is disabled-with-reason or hands off once Milestone 11 exists; Settings
-      persists; Exit cleans up);
-- [ ] every option shows its hotkey, and hotkey, arrows-and-Enter, and click are proven equivalent
+Checked items below are what **Gate 3A** (this file's own Section 1.1) closes; the milestone as a
+whole is not done until 3B and 3C also check theirs.
+
+- [x] `bin/terminal-nexus.ts` exists and launches to the top-level menu from a clean checkout;
+- [ ] all four options are reachable and do something honest — **3A**: Campaign, Challenge, and
+      Settings each show a plain, honest stub notice naming the milestone/gate that builds them for
+      real, and Exit actually cleans up and quits; **still open for 3B/3C**: Settings persisting a
+      choice, and Campaign/Challenge's real handoffs or a disabled-with-reason state;
+- [x] every option shows its hotkey, and hotkey, arrows-and-Enter, and click are proven equivalent
       through the driver;
-- [ ] the disposer leaves mouse reporting off on every exit path, alongside raw mode;
-- [ ] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED**;
-- [ ] `./scripts/check-repository.sh` passes;
-- [ ] new questions this raises are rows in [`../specs/open-questions.md`](../specs/open-questions.md).
+- [x] the disposer leaves mouse reporting off on every exit path, alongside raw mode;
+- [x] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED** —
+      [`../evidence/gate-3a-report.md`](../evidence/gate-3a-report.md);
+- [x] `./scripts/check-repository.sh` passes;
+- [x] new questions this raises are rows in [`../specs/open-questions.md`](../specs/open-questions.md)
+      — none needed registering; see the gate report Section 6 for why.
