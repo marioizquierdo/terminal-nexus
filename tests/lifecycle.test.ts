@@ -8,6 +8,7 @@ import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { AnsiBackend } from "../src/view/backends/ansi.ts"
 import { selectBackend } from "../src/view/backends/index.ts"
+import { createTerminalSession } from "../src/cli/lifecycle.ts"
 import { DEFAULT_PRESENTATION, compositionSize, composeBands } from "../src/view/index.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { buildTimeline } from "../src/cli/timeline.ts"
@@ -51,6 +52,53 @@ class FakeStdin extends EventEmitter {
 function fakes(): { stdout: FakeStdout; stdin: FakeStdin } {
   return { stdout: new FakeStdout(), stdin: new FakeStdin() }
 }
+
+// The shared disposer itself (src/cli/lifecycle.ts) — extracted out of `watch.ts` for Milestone 3
+// gate 3A so `grid watch` and `terminal-nexus`'s menu build on one implementation, not two.
+
+test("createTerminalSession runs every dispose step exactly once, in order, no matter how many times dispose() is called", async () => {
+  const order: string[] = []
+  const session = createTerminalSession()
+  session.onDispose(() => {
+    order.push("a")
+  })
+  session.onDispose(async () => {
+    order.push("b")
+  })
+  session.onDispose(() => {
+    order.push("c")
+  })
+
+  await Promise.all([session.dispose(), session.dispose()])
+  await session.dispose()
+
+  assert.deepEqual(order, ["a", "b", "c"])
+})
+
+test("createTerminalSession's onSignal hooks SIGINT and SIGTERM, and dispose unhooks them", async () => {
+  const session = createTerminalSession()
+  const before = { int: process.listenerCount("SIGINT"), term: process.listenerCount("SIGTERM") }
+
+  let left = 0
+  session.onSignal(() => {
+    left += 1
+  })
+  assert.equal(process.listenerCount("SIGINT"), before.int + 1, "onSignal did not hook SIGINT")
+  assert.equal(process.listenerCount("SIGTERM"), before.term + 1, "onSignal did not hook SIGTERM")
+
+  process.emit("SIGINT")
+  assert.equal(left, 1)
+  process.emit("SIGTERM")
+  assert.equal(left, 2)
+
+  await session.dispose()
+  assert.equal(process.listenerCount("SIGINT"), before.int, "dispose left a SIGINT listener behind")
+  assert.equal(process.listenerCount("SIGTERM"), before.term, "dispose left a SIGTERM listener behind")
+
+  // Idempotent like every other path through this class: a signal after dispose calls nothing.
+  process.emit("SIGINT")
+  assert.equal(left, 2)
+})
 
 function blankFrame() {
   return composeBands(4, 2, [])

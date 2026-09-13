@@ -13,6 +13,10 @@ export const STYLE_ROLES = [
   "chrome.label",
   "chrome.value",
   "chrome.muted",
+  // The bracketed hotkey on a menu row — engine.md 9.7: "the bracketed key is the carrier that
+  // survives monochrome; a style role (chrome.hotkey) colours it where colour exists, and colour
+  // never carries it alone." Named by canon before this gate, not invented here.
+  "chrome.hotkey",
   "terrain.plain",
   "terrain.rock",
   "terrain.deposit",
@@ -148,6 +152,10 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Swatch>>> = {
     "chrome.label": { ansi: 37, rgb: [148, 156, 166] },
     "chrome.value": { ansi: 37, rgb: [206, 213, 221] },
     "chrome.muted": { ansi: 37, rgb: [150, 158, 168] },
+    // A cyan distinct from every other role's hue — not the rust/green the two players already own,
+    // not terrain.deposit's gold — so a bracketed hotkey reads as "interactive chrome," never as a
+    // gameplay colour.
+    "chrome.hotkey": { ansi: 96, rgb: [86, 204, 214] },
     "terrain.plain": { ansi: 90, rgb: [72, 78, 86] },
     "terrain.rock": { ansi: 37, rgb: [128, 132, 138] },
     "terrain.deposit": { ansi: 33, rgb: [198, 160, 40] },
@@ -174,6 +182,8 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Swatch>>> = {
     "chrome.label": { ansi: 30, rgb: [90, 86, 80] },
     "chrome.value": { ansi: 30, rgb: [48, 44, 40] },
     "chrome.muted": { ansi: 30, rgb: [110, 104, 96] },
+    // Same hue as dark's, moved dark enough to stay legible on a light background instead of bright.
+    "chrome.hotkey": { ansi: 36, rgb: [8, 110, 120] },
     "terrain.plain": { ansi: 90, rgb: [196, 192, 184] },
     "terrain.rock": { ansi: 30, rgb: [70, 66, 60] },
     "terrain.deposit": { ansi: 33, rgb: [168, 124, 24] },

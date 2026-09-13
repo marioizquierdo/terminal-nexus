@@ -134,6 +134,43 @@ test("a chunk of input is several keys, and an escape sequence is one", () => {
   assert.equal(controlForKey(`${escape}[A`), null)
 })
 
+test("more than one escape sequence in a single chunk still splits into separate keys", () => {
+  // Real-terminal evidence from Milestone 3 gate 3A (a menu screen, the first consumer to bind an
+  // escape sequence to anything): two quick arrow-down presses arrive as one six-byte chunk. The
+  // original version of this function treated any ESC-prefixed chunk as one key in full — correct
+  // only because nothing before this gate bound an escape sequence to a command — which silently
+  // dropped the second press.
+  const escape = String.fromCharCode(27)
+  assert.deepEqual(keysFromChunk(`${escape}[B${escape}[B`), [`${escape}[B`, `${escape}[B`])
+  assert.deepEqual(
+    keysFromChunk(`${escape}[A${escape}[B${escape}[A`),
+    [`${escape}[A`, `${escape}[B`, `${escape}[A`],
+    "three consecutive arrow presses in one chunk did not come back as three keys",
+  )
+  // A plain key pressed right after an escape sequence, in the same chunk, is not swallowed either.
+  assert.deepEqual(keysFromChunk(`${escape}[Bq`), [`${escape}[B`, "q"])
+})
+
+test("a modified arrow (CSI with parameters) and an SGR mouse report both split as one whole key each", () => {
+  const escape = String.fromCharCode(27)
+  // Shift+Up, xterm-style: CSI 1 ; 2 A.
+  assert.deepEqual(keysFromChunk(`${escape}[1;2A`), [`${escape}[1;2A`])
+  // An SGR mouse click report — its leading "<" is a legal CSI parameter byte, so the same CSI scan
+  // that finds an arrow key's final byte finds this one's "M" too.
+  assert.deepEqual(keysFromChunk(`${escape}[<0;5;10M`), [`${escape}[<0;5;10M`])
+  // Both back to back in one chunk, exactly the shape a click right after a keypress would arrive as.
+  assert.deepEqual(keysFromChunk(`${escape}[1;2A${escape}[<0;5;10M`), [
+    `${escape}[1;2A`,
+    `${escape}[<0;5;10M`,
+  ])
+})
+
+test("an SS3 arrow (application cursor-key mode) is exactly three characters, even mid-chunk", () => {
+  const escape = String.fromCharCode(27)
+  assert.deepEqual(keysFromChunk(`${escape}OA`), [`${escape}OA`])
+  assert.deepEqual(keysFromChunk(`${escape}OAq${escape}OB`), [`${escape}OA`, "q", `${escape}OB`])
+})
+
 test("stepping a chunk of ticks advances by exactly that many ticks", () => {
   const clock = playback()
   clock.apply("pause")

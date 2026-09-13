@@ -79,6 +79,10 @@ npm run typecheck   # tsc --noEmit
 
 # the same commands under Bun
 bun bin/grid.ts scenarios/citizen-mirror-skirmish --headless
+
+# run terminal-nexus — the game's own entry point, distinct from grid: no map, straight to the menu
+./bin/terminal-nexus.ts                                                     # top-level menu
+./bin/terminal-nexus.ts --capability truecolor --theme dark --backend auto
 ```
 
 Pinned by Gate 1A, measured 2026-08-21:
@@ -99,6 +103,17 @@ to the best tier `COLORTERM`/`TERM` advertise rather than always `color16` (owne
 terminal that can do more was still getting the tier most exposed to a terminal theme's own,
 inconsistently defined colours). `--theme` defaults to `dark` — the palette the lore and every
 screenshot are designed against — and `light` is one flag away for a light terminal background.
+
+**`terminal-nexus`** (Milestone 3, Gate 3A) launches straight to a top-level menu — Campaign,
+Challenge, Settings, Exit — on the same `TerminalBackend`/cell-frame stack `grid` uses, not a second
+presentation system. `src/menu/` holds the reusable menu-list shape, the keyboard and mouse adapters,
+and the driver; `src/view/menu.ts` composes the frame; `src/cli/lifecycle.ts` is the one idempotent
+disposer both `grid watch` and this menu build their lifecycle on. Every menu item shows its hotkey
+(`[1] Campaign`) and is reachable three equivalent ways — the hotkey, arrows and Enter, or a mouse
+click on its row (opt-in SGR mouse reporting, switched off by the disposer on every exit path).
+Campaign, Challenge, and Settings are honest stubs at this gate (3B and 3C build their real
+destinations); Exit is real. `terminal-nexus` flags: `--capability`, `--theme`, `--glyphs`,
+`--backend` — the same bootstrapping subset `grid` takes, not yet an interactive Settings screen.
 
 `bun test` drives one file at a time (`./scripts/run-tests.sh bun`): its `node:test` shim rejects a
 test registered while another file's tests are still running, and it does not implement `t.skip()`.
@@ -125,6 +140,11 @@ the same path a person gets — pauses it, steps to an exact tick, captures the 
 sequences, and renders it to a PNG in `evidence/screenshots/` through the Chromium already present
 for Playwright. Use it when a change touches the composition: a frame's *text* is what the tests
 assert on, and it says nothing about spacing, density, or where the eye goes.
+
+`node scripts/capture-menu-screenshot.mjs` does the same for `terminal-nexus`'s menu, sharing the
+same `scripts/lib/terminal-capture.mjs` pipeline: launch, arrow keys by real tmux key name, a hotkey
+digit, and — driving the mouse adapter with the literal bytes a terminal actually sends, not a
+description of one — a raw SGR mouse click at the row's own rendered cell.
 
 Requires `tmux` and the browser at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`. Editing the
 `shots` array at the top of the script is how you add a frame worth looking at.
