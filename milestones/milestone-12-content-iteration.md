@@ -3,7 +3,7 @@
 **Document role:** Milestone tracker — the repeating pass that adds cards with rarity and tier, authors the real rosters, and tunes both modes on playtests
 **Status:** GATED
 **Depends on:** Milestone 11 (a run to play new content in) and Milestone 10 (missions to teach it in); this milestone repeats rather than closes once
-**Updated:** 2026-09-09
+**Updated:** 2026-09-12
 **License:** Mechanical definitions Apache-2.0; creative identity of any roster CC BY-SA 4.0
 
 > **Content comes after the experience, on purpose.** Mario, canon 2.11: "Once we create some
@@ -27,7 +27,10 @@ a mission teach it — measured, not asserted, by runs the driver plays and runs
   army tier, Nexus power pool, one Commander each (Vasse and Corvane), every card tagged with
   `rarity`/`tier`/`role`, and the faction rule shapes of Section 4.1 that Milestone 1 already proved
   cheap (volatile munitions, shared cadence). Bench content retires or is promoted card by card;
-  nothing carries over by default.
+  nothing carries over by default. **Rule shapes come before roster breadth** in every pass
+  (`commander-armies.md` Section 2.1): the bench showed one rule made the Ravels legible where stats
+  alone did not, so a pass that adds a rule shape is usually worth more than one that adds three more
+  units.
 - **12B — Measure.** Pick rate and win rate per card, per tier, per act, from driver-played runs
   under a few simple policies and from human sessions, into a small report the way `grid`'s report
   already derives everything from events. The Slay the Spire discipline

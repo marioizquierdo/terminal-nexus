@@ -53,7 +53,7 @@ Phase, without this becoming "author the Citizens Commander Army" ahead of Miles
   A power is a name and one plain line of description; the effect kinds behind it
   ([`../specs/commander-armies.md`](../specs/commander-armies.md) Section 4.5, Q42 answered) are code
   names the player never sees — build two or three of the six, not all of them. Vasse's own card
-  (Section 4.6 there) names candidate powers; Q45 decides whether the pick may be declined.
+  (Section 4.6 there) names candidate powers; per Q45 (answered) the pick may never be declined.
 
 Both modes need both gates, which is why this milestone sits before either mode shell in the build
 order ([`README.md`](README.md)).

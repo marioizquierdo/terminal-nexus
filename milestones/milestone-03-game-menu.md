@@ -1,9 +1,10 @@
 # Milestone 3 — Game Menu
 
 **Document role:** Milestone tracker — the game's own entry point, as distinct from `grid`'s
-**Status:** GATED
-**Depends on:** Milestone 2 (campaign design decided)
-**Updated:** 2026-09-10
+**Status:** CURRENT
+**Active gate:** 3A — The menu and the three adapters; gates 3B and 3C follow once 3A closes
+**Depends on:** Milestone 2 (campaign design decided — accepted 2026-09-12)
+**Updated:** 2026-09-12
 **License:** Apache-2.0
 
 > **Start simple, with the minimum.** Mario's own words. This is the first time anything under the

@@ -3,7 +3,7 @@
 **Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
 **Status:** GATED
 **Depends on:** Milestone 4 (launches the mission), Milestone 2 (the mission's own budget/units decided)
-**Updated:** 2026-09-09
+**Updated:** 2026-09-12
 **License:** Apache-2.0
 
 > **This is where scrolling was always going to land.** Gate 1A deliberately used a Grid that fit the
@@ -30,6 +30,16 @@ real cursor-driven map scrolling — before handing off into Milestone 6's Pulse
   real, small draft tied to Commander Vasse — this milestone builds the *mechanism* (offer a choice,
   accept a pick, apply its effect) against a placeholder option if Milestone 8 has not landed yet, so
   neither milestone blocks on the other's exact sequencing.
+- **The Special slot — keep the space, and report whether the channel earns it.**
+  [`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1 names *four* places in a
+  Build Phase, not three: the construct menu's two groups, the Nexus draft panel, and a Special the
+  player arms and fires once per match. It is also flagged provisional there — a third decision
+  channel beside placement and the draft, with nothing yet showing that a Build Phase wants one.
+  PERIMETER has no Special to arm, so this milestone authors no content for it; it keeps the layout
+  honest about a fourth place (the same way the army group is empty but not assumed away, below) and
+  says in its report whether the Build Phase felt short of a channel. Milestone 6 plays the first
+  whole loop and is where the answer lands — retiring Specials, or folding them back into the Nexus
+  power pool, is a legitimate outcome of that report.
 - **Real map scrolling, at last**: the viewport clamp (48×16 to 72×24 tiles) and cursor-driven
   scrolling at a 3-tile margin are already RULE (`engine.md` Section 3), unbuilt since Gate 1A's Grid
   always fit the viewport whole. Built here, for real, against a Grid sized to actually need it.
@@ -72,7 +82,8 @@ real cursor-driven map scrolling — before handing off into Milestone 6's Pulse
   readout.
 - **5D — The Nexus draft slot and commit.** The upgrade-pick mechanism against a placeholder option
   (Milestone 8 fills it), `p` with its one confirmation, undo and removal of planned placements, the
-  hotkey-versus-click identical-plan test.
+  hotkey-versus-click identical-plan test, and the Special slot's own space in the layout with the
+  report's line on whether a third decision channel was missed.
 
 ## 3. Grounded in already-locked contracts
 
@@ -114,6 +125,8 @@ looking around, not like fighting the cursor.
 - [ ] cursor-driven scrolling works correctly across the full 48×16-72×24 viewport range;
 - [ ] the GUI's own layout adapts across that range without becoming illegible at either end;
 - [ ] the Nexus-upgrade pick mechanism works against at least a placeholder option;
+- [ ] the report says whether the Build Phase felt short of a third decision channel, so the
+      provisional Special slot (`../specs/commander-armies.md` Section 2.1) gains evidence either way;
 - [ ] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED**;
 - [ ] `./scripts/check-repository.sh` passes;
 - [ ] new questions this raises are rows in [`../specs/open-questions.md`](../specs/open-questions.md).

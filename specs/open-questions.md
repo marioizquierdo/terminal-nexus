@@ -2,8 +2,8 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.15
-**Updated:** 2026-09-10
+**Canon version:** 2.16
+**Updated:** 2026-09-12
 **License:** Apache-2.0
 
 ## 1. Why this file exists
@@ -745,52 +745,6 @@ Commander** — and bonus goals unlock content for Challenge mode, which means t
 single campaign. A flat checked-in list still serves the first playable mission; it does not serve
 that shape, and Milestone 4 is where the difference gets designed rather than discovered.
 
-### Q32 — How is a scripted (not adaptive) mission opponent actually authored as content?
-
-**Status:** OPEN — blocks nothing before Milestone 2 finalizes the Ravel raid; the recommendation is
-already assumed by [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md) Section 4.4.
-
-`campaigns.md` Section 6 names "scripted tutorials" as the simplest opponent-policy tier but does not
-specify its shape. PERIMETER's raid needs to arrive from the northwest on a fixed, deterministic
-schedule — closer to a timed placement/trigger list than to anything that decides.
-
-| Option | Cost |
-| --- | --- |
-| A. **A second, one-sided placement block with tick-gated triggers** — the enemy's units and structures exist in the map file from tick 0 exactly like today's fixtures, but a small ordered list of triggers (`{ atTick, action }`) governs when reinforcements arrive or a group starts advancing, authored and validated the same way a `.map.json` file already is | Reuses the existing map-authoring and validation machinery almost entirely; the only new surface is the trigger list itself, which is data, not a policy engine |
-| B. **A tiny scripted "policy" module** — a function that reads the bounded planning view every tick and returns intents, hard-coded rather than adaptive | Closer to what `project-governance.md` Section 10's local-policy framework eventually wants, but is a runtime interface (inputs, outputs, a call site inside the tick loop) for a script that will only ever return one fixed sequence — real machinery for something a data list already expresses |
-
-**Recommendation: A.** A tick-gated trigger list is data, validated at load time exactly like every
-other scenario field, and needs no new runtime interface. Build B's policy-module shape only once a
-mission genuinely needs to react to what the player does, which no belief-ramp mission through
-PERIMETER does.
-
-**Generalised at canon 2.10, not changed:** Mario's design notes made every mission a sequence of
-Pulses with StarCraft-editor-style triggers, so `{ atTick, action }` is now one condition kind of the
-model in [`campaigns.md`](campaigns.md) Section 2.1, addressed as `{ pulse, tick }` — and the scripted
-opponent's Build Phase plan for each later Pulse is a `commitPlan` action in the same list. Option A
-stands; the surface it lives on got wider. Whether that surface is data or code is Q39.
-
-### Q33 — Does PERIMETER's map need a real fix for Q15's on-axis routing dead end, or is authoring around it enough?
-
-**Status:** OPEN — blocks nothing before the PERIMETER map is authored; the recommendation is already
-assumed by [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md) Section 4.3.
-
-Q15 (still open, `backlog-pulse-completion.md`) is a real, measured kernel gap: a mover whose approach
-is exactly on-axis with its goal and meets an obstacle has no fallback direction under Manhattan
-distance. PERIMETER's raid approaches from a named direction, which makes it easy to author straight
-into this exact dead end by accident — or easy to avoid entirely by authoring the approach lane
-slightly off-axis.
-
-| Option | Cost |
-| --- | --- |
-| A. **Author the map to avoid the dead end** — an approach lane not perfectly axis-aligned with the Nexus, the same way an earlier fixture in the unit-architecture spike was repositioned off-axis for the identical reason | Free, and ships Level 1 without depending on a kernel fix this milestone does not own. Does not advance Q15 itself |
-| B. **Fix Q15 as part of Milestone 5 or 6**, since a scripted, predictable raid is a comparatively low-risk place to exercise real routing for the first time | Real kernel work — pathfinding, not a map layout choice — inside a milestone whose own Section 1 explicitly excludes "real routing/pathfinding fixes". Widens that milestone's scope for a fix nothing about PERIMETER specifically requires |
-
-**Recommendation: A.** Author around it, exactly as already stated in
-`../milestones/milestone-02-campaign-design.md` Section 4.3. Q15 stays open and unowned by any single level until
-a mission's own design genuinely cannot be authored around it — at which point that mission's gate is
-where it gets fixed, not retrofitted here on spec.
-
 ### Q34 — Does building Commander Vasse in Level 1 mean authoring the Citizens Commander Army early?
 
 **Status:** OPEN — blocks nothing before Milestone 8 starts; the recommendation is already assumed by
@@ -947,8 +901,8 @@ that evidence in hand.
 recommendation. Registered at canon 2.11 with the Challenge mode itself
 ([`game-modes.md`](game-modes.md) Section 3.2).
 
-A run is a series of battles with the army changing between them. The deck — the army's structures
-and Nexus power pool — obviously persists; that is what the run draft edits. What is not obvious is
+A run is a series of battles with the army changing between them. The army composition — its
+structures and Nexus power pool — obviously persists; that is what the run draft edits. What is not obvious is
 whether anything *on the Grid* does. `terminal-nexus-concept.md`'s promise that "persistence creates
 short stories — survivors matter" is stated for the Pulses of one match; carrying it across battles
 would be a new claim.
@@ -962,62 +916,6 @@ would be a new claim.
 **Recommendation: A for 11A, with B made observable as a toggle in 11B if it is cheap, and judged
 by playing both.** A is the run every proven structure has; B is the one Terminal Nexus's own fiction
 argues for, and it should be tried rather than assumed either way. C waits for an economy to carry.
-
-### Q41 — Between runs, what persists?
-
-**Status:** OPEN — blocks nothing before Milestone 11 closes; registered at canon 2.11 so the answer
-is not improvised the day a run summary exists.
-
-Roguelike runs live or die on what a lost run leaves behind. The reference games split two ways
-(`game-modes.md` Section 5): persist **options** (Into the Breach's squads and one pilot; Hades'
-unlocked weapons and keepsakes) or persist **power** (Hades' Mirror of Night talents, which make the
-next run mechanically easier).
-
-| Option | Cost |
-| --- | --- |
-| A. **Unlocks into the pool only.** A run can reveal or unlock cards the Campaign has not yet; nothing makes the next run's battles easier | Keeps "understand why the battle unfolded" honest — a player who won got better, not stronger. Cheapest: the unlock record of Q31 already exists. Offers no progression to a player who keeps losing at the same act |
-| B. **A power ladder** — permanent buffs bought with a run's earnings | Retention machinery every free-to-play autobattler ships. Directly undermines the concept's "recover from losses and discover a different build," and makes balance a moving target per player |
-| C. **A difficulty ladder instead** — an ascension-style series of harder run modifiers unlocked by winning | Persists challenge upward rather than power downward; the proven answer for skilled retention. Costs nothing until someone wins a run, which is when it should be designed |
-
-**Recommendation: A now, C when a run has been won, never B.** Difficulty should climb for the player
-who beat it and options should widen for the player who did not; neither needs the run to get easier
-by itself.
-
-### Q45 — Is the Nexus draft's pick mandatory, and may it be skipped or banked?
-
-**Status:** OPEN — blocks the Build Phase draft panel (Milestone 5) and the dealer (Milestone 8).
-
-Each Build Phase the Nexus deals a hand and the player keeps one
-([`commander-armies.md`](commander-armies.md) Section 2.1). Whether a player may decline, or save a
-pick for later, is undecided — and it is exactly the decision that separates "a menu" from "a game."
-
-| Option | Cost |
-| --- | --- |
-| A. **Mandatory in the Campaign, skippable in Challenge.** The tutorial always advances; a run may decline an offer that would dilute the build | Each mode gets the behaviour that serves it: the Campaign never stalls on an empty choice, and Challenge keeps the deck-thinning tension every roguelike deckbuilder converges on. Two behaviours to explain, though they land in different modes so no screen shows both |
-| B. **Always mandatory** | One rule, one panel. Removes a real decision from Challenge, where "take nothing" is often correct |
-| C. **Always skippable, with banking** — decline now, spend two next Pulse | The most expressive, and the most machinery: banked picks need their own state, their own UI, and a rule for what happens at mission end |
-
-**Recommendation: A**, and **no banking** until something asks for it. Banking is a second currency
-wearing a draft's clothes, and the run draft (`game-modes.md` Section 3.2) already carries the
-"decline to stay sharp" decision at the scale where it matters.
-
-### Q46 — Where does a Challenge run's starting army come from?
-
-**Status:** OPEN — blocks Milestone 11's gate 11A and the mode-select screen (Milestone 3).
-
-A run is a series of battles with a deck that changes between them. What the deck *starts* as is
-undecided, and it decides how tightly Challenge is coupled to Campaign progress.
-
-| Option | Cost |
-| --- | --- |
-| A. **Pick an unlocked Commander at run start; the deck begins as that Commander's starting package** — common tier plus a small fixed army tier | Clean, legible, and it makes Campaign unlocks matter to Challenge without making Challenge wait for them. A new player who has not finished the Campaign starts with the one Commander they have |
-| B. **A fixed starter deck, identical every run**, Commander included | Most controlled for balance and the easiest to test against. Throws away the replay value of "which Commander do I run today," which is most of what a run mode is for |
-| C. **Draft the army itself at run start** — build a deck from the faction pool before battle one | The drafting mode `commander-armies.md` Section 6 keeps possible, and the deepest version. Far more than Milestone 11 should attempt first, and it needs a pool wide enough to draft from, which Milestone 12 has not built yet |
-
-**Recommendation: A**, with **C named as the destination**: A is exactly C with the pre-battle draft
-skipped, so building A first costs nothing that C later needs. Keep run seeds independent of unlock
-state so a shared seed reproduces a run for another player only when both have the same Commander
-unlocked — worth checking on the first run that plays.
 
 ## 5. Answered
 
@@ -1040,7 +938,58 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q44 | 2026-09-09 | **Missions have goals, not fixed lengths.** A main goal (usually "destroy the enemy Grid Nexus"; also survive/capture/accumulate shapes) plus an optional bonus goal that unlocks Challenge content. A Pulse counter shows only when the goal is about Pulses. Canon 2.12's fixed 3/4/5-Pulse contract survives as a pacing estimate only | [`campaigns.md`](campaigns.md) Section 4.3 |
 | Q47 | 2026-09-10 | **One map file, roles swapped — no second map authored.** The Ravel opening's mission 1 reuses PERIMETER's literal Grid: the raid's staging area becomes Dob's starting camp, the Citizen base becomes the scripted defender, and his objective is `destroyNexus` targeting the fabricator. Only `playerArmy`, `opponentArmies`, `objective`, and the trigger list's perspective change | [`campaigns.md`](campaigns.md) Section 4.3 |
 | Q48 | 2026-09-10 | **Bonus goals are shown in the briefing, not revealed as a surprise.** A player decides whether to play toward one from the start, the same way the main goal is already stated (Q44) | [`campaigns.md`](campaigns.md) Section 4.3 |
+| Q41 | 2026-09-12 | **Unlocks only, confirmed — and Challenge's own progression is the primary source.** Playing Challenge unlocks more of the faction's pool directly; the Campaign's bonus goals add a few more, only if Challenge has not already unlocked them. No permanent stat buffs, ever | [`game-modes.md`](game-modes.md) Section 3.2 |
+| Q45 | 2026-09-12 | **No skip, in general.** A dealt Nexus power is close to strictly advantageous, unlike a typical deckbuilder's rares, so there is no dilution to protect against and no reason to decline one. Alder alone may convert a power into "honor," their own faction mechanic — and even that may be locked out at tutorial difficulty | [`commander-armies.md`](commander-armies.md) Section 4.5 |
+| Q46 | 2026-09-12 | **Challenge keeps its own progression, uncorrelated with the Campaign.** A run starts from a basic Commander package unlocked from the beginning; playing Challenge itself unlocks more. The Campaign's bonus goals add a few more, only for things not already unlocked. Playing Challenge without ever touching the Campaign is always allowed — a dismissible "we recommend the Campaign first" message is the only nudge | [`game-modes.md`](game-modes.md) Section 3.2 |
 | Q37 | 2026-09-01 | **Yes — a spike, and wider than the row's Option A.** Mario: "Scrolling in the map and placing selected bases is the part that needs more attention and will need a spike to verify assumptions." Not only static mockups: an interactive spike of cursor scrolling and placement, driven through keyboard, mouse, and the driver alike, that also verifies which target terminals deliver Shift+Arrow | [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md); [`engine.md`](engine.md) Section 9.7 |
+| Q32 | 2026-09-12 | **A tick-gated trigger list (Option A).** PERIMETER's raid is a second, one-sided placement block with tick-gated triggers (`{ atTick, action }`), authored and validated the same way a `.map.json` file already is — not a policy module. Generalised at canon 2.10 into the trigger model every mission now uses | [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md) Section 4.4; [`campaigns.md`](campaigns.md) Section 2.1 |
+| Q33 | 2026-09-12 | **Author around Q15's dead end (Option A).** PERIMETER's approach lane is off-axis from the Nexus by design, not a kernel routing fix. Q15 stays open and unowned until a mission's own design genuinely cannot be authored around it | [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md) Section 4.3 |
+
+### Q46 — answered
+
+Mario, 2026-09-12: "Generally speaking, we should keep Campaign and Challenges uncorrelated. Some
+players may not like the campaign mode, and that should not stop them from unlocking all the
+content. But we can have a small trick here. The Challenge mode has a progression similar to Slay
+the Spire; it starts with the basic commander decks, and as you play you unlock more and more
+content... The Campaign can also unlock content on the Challenge mode, but only a few things and
+only if they are not already unlocked. If a player wants to play the Challenge mode without playing
+the campaign, we will show a message that says 'We recommend you play the Campaign first' but still
+allow them to proceed if they insist."
+
+None of Q46's original three options was quite right, because all three assumed Challenge draws its
+starting roster from Campaign progress. The actual answer inverts that: **Challenge is
+self-sufficient.** It ships with basic Commander packages available from the start, and playing
+Challenge itself is what unlocks the rest of the faction pools — directly, the same way Slay the
+Spire's own meta-progression works, with no dependency on the Campaign at all. The Campaign is a
+**secondary, additive** source of the same unlocks: a bonus goal may grant one, but only if Challenge
+hasn't already granted it first — the two tracks write to one shared unlock set, never overwrite or
+duplicate each other, and neither gates the other. The one place they touch the player directly is a
+soft, dismissible nudge the first time Challenge opens before the Campaign has been touched.
+
+### Q45 — answered
+
+Mario, 2026-09-12: "Most upgrades on this game are strictly better. This is not exactly like in Slay
+the Spire, where adding cards to the deck automatically dilute the good cards. Here, they are nexus
+powers, almost always advantageous. The only faction that can skip powers is Alder, that grants them
+'honor' that they can cash into other things, it's their specific mechanic. If we do Alder campaigns
+later, we can just 'lock' options at the 'tutorial' level... So in general no, there's no way to skip
+the Nexus Powers."
+
+This closes the row outright rather than choosing among its three options: the premise behind
+"skippable in Challenge" (Option A) and "skippable with banking" (Option C) was that declining a
+power protects a build from dilution, the way skipping a card does in a deckbuilder. That premise is
+false here — a Nexus power is close to strictly good, so there is nothing to protect against by
+declining one. Option B, always mandatory, is the answer, with exactly one named exception: **Alder**,
+whose faction mechanic converts a would-be power into "honor" spent elsewhere. Even that exception is
+optional to expose — a tutorial-level Alder campaign may lock the conversion out entirely, the same
+way many strategy games gate an advanced mechanic behind a difficulty or content tier.
+
+### Q41 — answered
+
+Folded into Q46's answer, 2026-09-12: unlocks are the only thing that persists between runs, and the
+mechanism is now concrete rather than assumed — Challenge's own progression is the primary writer to
+that unlock set, with the Campaign's bonus goals as a secondary, non-duplicating source. Nothing about
+the row's own reasoning (never a power ladder; a difficulty ladder once someone has won a run) changed.
 
 ### Q42 — answered
 
@@ -1124,6 +1073,25 @@ placement, run through all three input adapters of [`engine.md`](engine.md) Sect
 recording which of the project's target terminals actually deliver modified arrow keys — the one
 assumption in the keymap that a terminal can silently break. The static mockups at the viewport
 range's extremes remain a cheap thing to produce along the way; they are no longer the deliverable.
+
+### Q33 — answered
+
+Registered 2026-08-26 as whether PERIMETER's map needs a real fix for Q15's on-axis routing dead end.
+**Decided: author around it (Option A).** The approach lane is off-axis from the Nexus by
+construction — free, and it ships Level 1 without depending on a kernel fix this milestone does not
+own. Q15 itself stays open and unowned by any single milestone until a mission's own design genuinely
+cannot be authored around it. [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md)
+Section 4.3.
+
+### Q32 — answered
+
+Registered 2026-08-26 as how a scripted, non-adaptive mission opponent is authored as content.
+**Decided: a tick-gated trigger list (Option A), not a policy module.** PERIMETER's raid is a second,
+one-sided placement block with `{ atTick, action }` triggers, authored and validated the same way a
+`.map.json` file already is. Generalised at canon 2.10 into the full trigger model every mission now
+uses — a condition and a list of simulation/presentation-band actions
+([`campaigns.md`](campaigns.md) Section 2.1). [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md)
+Section 4.4.
 
 ### Q29 — answered
 

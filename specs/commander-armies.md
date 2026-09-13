@@ -2,8 +2,8 @@
 
 **Document role:** Playable faction packages: Commanders, units, structures, upgrades, and Nexus powers
 **Status:** Canonical identity direction; rosters intentionally undefined
-**Canon version:** 2.15
-**Updated:** 2026-09-10
+**Canon version:** 2.16
+**Updated:** 2026-09-12
 **License:** Creative identity is CC BY-SA 4.0; mechanical definitions and schemas are Apache-2.0
 
 ## 1. Purpose
@@ -16,10 +16,10 @@ This document will eventually define:
 
 - each Commander/Nexus Symbol;
 - starting Nexus, resources, workers, Commander, and starting army;
-- legal units and the structures that produce them;
+- legal units and the structures that produce them, and the tech tree that unlocks them (Section 2.1);
 - economic, supply, research, outpost, capture, and defensive structures;
 - upgrades and draft families;
-- Commander abilities and Nexus powers;
+- Commander abilities, Nexus powers, and Specials (Section 2.1);
 - faction rules and Commander-specific exceptions;
 - semantic glyph roles, inspection portraits, barks, and effect motifs;
 - intended strengths, weaknesses, counters, and build archetypes.
@@ -51,50 +51,128 @@ The differences should be smaller than the differences between factions but larg
 
 The Commander is a prominent frontline `@`, not only a portrait or menu choice. It returns after a one-cycle absence when killed. Commander-focused builds should be viable but should compete with army, economy, science, and fortification strategies.
 
-### 2.1 The faction is the pool; the army is the deck — RULE for the boundary and the three tiers; GUIDANCE for the numbers
+### 2.1 Commander Army composition — RULE for the parts list; GUIDANCE for sizes, exact schema fields, and the tech tree's depth
 
-**Owner direction, canon 2.10.** Mario: "the faction is like the whole pool of 'cards' and the army
+**Owner direction, canon 2.10:** Mario: "the faction is like the whole pool of 'cards' and the army
 is like the actual deck used during a single fight." A faction defines *everything its civilization
 can field* — every unit, structure, upgrade, and Nexus power. A Commander Army fields **a few of
 them**. Nothing a match, a Pulse, or a renderer touches ever sees a faction; it sees an army. That
 boundary is what the rest of this section protects.
 
-What a player can do during one match splits three ways, and the split *is* the gameplay:
+**The "army is a deck" claim itself is retracted at canon 2.16 — not demoted to GUIDANCE, dropped
+entirely, kept only as an idea that may or may not turn out true.** Mario: "We should lose this
+claim, not even as guidance, but just as an idea. We will see as we start building and playing, but
+I have the feeling that the army is more than just a deck. The Commander army is composed of a bunch
+of different things." What is withdrawn is the leap from "an army is a bounded subset of a faction's
+pools" to "therefore the whole thing behaves like a deck of cards": uniform draw odds, dilution from
+adding options, a single homogeneous collection. The faction/army boundary itself survives — it is
+the very next thing Mario specified, below.
+
+**Owner direction, canon 2.16, replaces the three-tier sketch with a real parts list.** Mario:
+"the Commander army is composed of a bunch of different things" — and named them. A Commander Army
+is:
+
+1. **A Nexus and a faction.** The army belongs to one faction (two, for a Dual-bound Commander,
+   Section 2.2 below), anchored on the Grid by a **Grid Nexus** — not "Nexus Proxy": the validator
+   already rejects the retired synonym for this concept ([`engine.md`](engine.md) Section 3, and
+   AGENTS.md Section 4), so this document keeps the one name rather than adding a second.
+2. **A Commander** — the persistent `@`, Section 2 above.
+3. **Starting units**, including workers, placed when the match begins.
+4. **Starting structures**, placed when the match begins.
+5. **Blueprints and the tech tree.** The buildable-structure set is a prerequisite graph — a real,
+   inspectable tech tree, mostly shared across a faction's Commanders with a few Commander-specific
+   branches or substitutions (Section 4.1's faction identity, sharpened per Commander). "Starting
+   blueprints" are the nodes already unlocked at match start; completing a structure can unlock its
+   dependents. **This needs no new effect kind**: it is the same `unlockStructure` effect a Nexus
+   power already produces (Section 4.5), now triggered by construction finishing as well as by a
+   power pick — one mechanism, two triggers. Gated by which structures exist, never by a second
+   resource ([`engine.md`](engine.md) Section 6's one-resource rule is untouched).
+
+   **This corrects [`engine.md`](engine.md) Section 5.2**, which currently says research facilities
+   "improve the Nexus draft rather than exposing a linear tech menu." That line predates this
+   decision and is superseded by it: the tree is real, and a player should be able to inspect it
+   during play, exactly as a traditional strategy game's tech tree is inspectable. Research
+   facilities still exist and still matter — they are tree nodes like any other structure, not a
+   parallel mechanism the tree bypasses.
+6. **Upgrades.** Units and structures both carry an upgrade path (levels 1–3,
+   [`engine.md`](engine.md) Section 5.2); a Commander may start with some already unlocked, the same
+   way a few blueprints can.
+7. **Nexus powers** — a small hand dealt from the army's own pool at each Build Phase, one kept,
+   never skipped (Section 4.5, Q45 answered). A power's `unlockStructure`/`modifyContent` effects are
+   exactly how one fast-forwards past a tech tree prerequisite it would otherwise take longer to
+   reach, rather than a second, unrelated unlock system.
+8. **Specials** — cast once per match, during a Build Phase of the player's choosing, for a
+   short-lived bonus. Mario's own examples: "grant 20% more damage to random units, give shield to
+   the commander." **Named at canon 2.16, and named as a game-wide category, not a faction voice**:
+   unlike a Nexus power (whose specific *names* carry faction flavor — "Factory Permit" for Citizens —
+   over one shared code-level effect union), "Special" is the plain, standard term for the category
+   itself across every faction, the same way "Nexus power" and "Upgrade" are. A specific Special may
+   still get a flavored name in play; the category word does not change per faction. Modelled the
+   same way as Nexus powers otherwise: a small army-specific pool the Commander Army carries, of
+   which the player prepares one and may trigger it exactly once — not one bespoke ability bolted on
+   separately. See the terminology glossary (Section 2.1a) for the alternatives considered and where
+   the vocabulary still needs attention.
+
+   **The least-evidenced part of this list, and provisional on purpose.** A Special is a *third*
+   decision channel inside one Build Phase, beside placement and the Nexus draft, and nothing yet
+   shows that a Build Phase wants one. Milestone 5 builds the slot and Milestone 6 plays the first
+   whole loop; if the channel is not missed there, retiring Specials or folding them back into the
+   Nexus power pool costs nothing that has been built by then. A slot with a question attached, not
+   settled content.
+
+Two things this list deliberately does not restate: the starting resource amount, already covered by
+"starting package" (Section 1's own list), and the visual/narrative dressing — portraits, barks,
+effect motifs — Section 1 already names. Both still apply; they are not missing, only not repeated
+here.
+
+**Still open, and reserved for Milestone 12 on evidence, same as before:** the tech tree's depth and
+branching factor, the upgrade pool's size, and the Special pool's size are numbers, not decisions —
+Milestone 12 tunes them once a real roster exists to tune them against.
+
+What a player can do during one match still splits by who decides it and when it is available, which
+is what actually matters for the Build Phase UI and the loader's legality check:
 
 | Tier | What it holds | Who decides it | When it is available |
 | --- | --- | --- | --- |
 | **Common structures** | the structures every Commander of the faction can always build, and the units those structures produce | the faction | always; never drafted, never unlocked |
-| **Army structures** | the special structures this Commander Army brought — a subset of the faction's structure pool — and their units | the Commander Army: authored, grown through a campaign's unlocks, or drafted in a future drafting mode | fixed for the whole match |
-| **Nexus powers** | the powers the Grid Nexus can deal — a subset of the faction's power pool | the army defines the pool; **the Nexus deals a small hand from it at the start of every Build Phase, and the player keeps one** | dealt each Build Phase |
+| **Army structures** | the special structures this Commander Army brought — a subset of the faction's structure pool, its own tech tree branch — and their units | the Commander Army: authored, grown through a campaign's unlocks, or drafted in a future drafting mode | unlocked over the match as the tree opens |
+| **Nexus powers** | the powers the Grid Nexus can deal — a subset of the faction's power pool | the army defines the pool; **the Nexus deals a small hand from it at the start of every Build Phase, and the player takes one — there is no skip** (Section 4.5, Q45 answered) | dealt each Build Phase |
+| **Specials** | the one-cast bonus, drawn from the army's small Special pool | the Commander Army | prepared once, triggered once, whenever the player chooses |
 
-Around those three sit the things that frame the deck rather than fill it: the Commander, the
+Around those sit the things that frame this composition rather than fill it: the Commander, the
 starting package, the faction's rules (Section 4.1) and the Commander's exceptions to them.
 
 **Consequences worth designing for now, before a roster exists:**
 
 - **Keep the common tier small.** Economy, supply, one basic producer, one basic defence. If the
   shared core is most of what a player builds, two Commanders of the same faction play the same and
-  the deck stops mattering — the oldest lesson of every deck-building game. Anything with a signature
-  belongs in the army tiers.
-- **Deck size is a number, and a fixed one.** An army carries at most *N* army structures and *M*
-  Nexus powers. The numbers are Milestone 12's to decide on evidence — three to five structures and
-  six to ten powers are the working guesses — but a cap is not optional: a cap is what makes a choice
-  a choice, and what makes drafting a game rather than a menu.
+  the choice of Commander stops mattering. Anything with a signature belongs in the army tiers.
+- **Army breadth is a number, and a fixed one.** An army carries at most *N* army structures (tech
+  tree nodes), *M* Nexus powers, and now a small Special pool too. The numbers are Milestone 12's
+  to decide on evidence — three to five structures and six to ten powers are the working guesses —
+  but a cap is not optional: a cap is what makes a choice a choice, and what makes drafting a game
+  rather than a menu.
+- **Rule shapes before roster breadth.** Section 1's bench finding is an argument about where
+  Milestone 12 spends its passes, not only a fact about the fixtures: one rule made the Ravels
+  legible where stats alone did not. A pass that adds a rule shape is usually worth more than one
+  that adds three more units, and an army's cap is better spent on what the faction *does
+  differently* than on how many rows fill its menu.
 - **Legality is data validation.** An army may reference only content from its own faction's pools,
-  within the caps, checked at load time the way every scenario field already is. This is the
-  deck-legality check of every card game, and it is what makes accepting a player-defined Commander
-  safe later: the loader, not a reviewer, says whether a deck is legal.
-- **Three producers, one shape.** A first-party authored army, a campaign's progression (the unlock
-  record of Q31 is literally cards added to the player's deck between missions, and Milestone 4's
-  army panel is the deck laid out), and **the run draft** of Challenge mode — add, remove, or
-  upgrade a card between battles ([`game-modes.md`](game-modes.md) Section 3.2) — all produce the
-  same `CommanderArmyDefinition`. The match never knows which one did. A player-built army at match
-  start is a fourth producer of the same shape, still undesigned.
-- **Every card carries `rarity`, `tier`, and `role` from the day it is authored**
+  within the caps, checked at load time the way every scenario field already is. The loader, not a
+  reviewer, says whether an army is legal — which is what makes accepting a player-defined Commander
+  safe later.
+- **Three producers, one shape — and now genuinely three, uncorrelated.** A first-party authored
+  army, a campaign's bonus goals (`campaigns.md` Section 4.3, only for content not already unlocked),
+  and **Challenge's own progression** — playing runs unlocks more of the faction's pool directly,
+  independent of the Campaign ([`game-modes.md`](game-modes.md) Section 3.2) — all add to the same
+  `CommanderArmyDefinition` shape. The match never knows which one did, and neither mode gates the
+  other. A player-built army at match start is a fourth producer of the same shape, still undesigned.
+- **Every offerable item carries `rarity`, `tier`, and `role` from the day it is authored**
   ([`game-modes.md`](game-modes.md) Section 4). Rarity is how often a draft offers it, tier is the
-  earliest depth it may appear at, role is what it is for — and both modes read all three: the
-  Campaign unlocks by tier, a run deals by rarity and varies by role. A card without tags cannot be
-  dealt, which is the cheapest possible way to make sure nobody forgets them.
+  earliest depth it may appear at (for a tech tree node, its depth in the tree), role is what it is
+  for — and both modes read all three: the Campaign unlocks by tier, a run deals by rarity and varies
+  by role. An item without tags cannot be dealt, which is the cheapest possible way to make sure
+  nobody forgets them.
 - **Alder fits without an exception.** Their refusal (Q11) is a near-empty Nexus power pool and a
   larger structure pool — expressed by the numbers, not by a special case in the model.
 
@@ -105,29 +183,105 @@ time real content touches them:
 interface FactionDefinition {
   readonly id: ContentId
   readonly commonStructures: readonly ContentId[]  // tier 1: always buildable by any Commander
-  readonly structurePool: readonly ContentId[]     // tier 2 candidates
+  readonly techTree: readonly TechTreeNode[]        // tier 2 candidates, prerequisite graph
   readonly nexusPowerPool: readonly ContentId[]    // tier 3 candidates
   readonly upgradePool: readonly ContentId[]
+  readonly specialPool: readonly ContentId[]     // tier 4 candidates, one cast per match
   readonly rules: readonly ContentId[]             // the faction's rule shapes (Section 4.1)
   readonly commanders: readonly ContentId[]
+}
+
+interface TechTreeNode {
+  readonly structure: ContentId
+  readonly requires: readonly ContentId[]          // completed structures that unlock this one
 }
 
 interface CommanderArmyDefinition {
   readonly id: ContentId
   readonly faction: ContentId
   readonly commander: ContentId
-  readonly startingPackage: ContentId
-  readonly structures: readonly ContentId[]        // ⊆ faction.structurePool, at most N
+  readonly startingPackage: ContentId              // resources, starting units, starting structures
+  readonly structures: readonly ContentId[]        // ⊆ faction.techTree, at most N
+  readonly startingBlueprints: readonly ContentId[] // ⊆ structures, unlocked with no prerequisite
   readonly nexusPowers: readonly ContentId[]       // ⊆ faction.nexusPowerPool, at most M
   readonly upgrades: readonly ContentId[]          // ⊆ faction.upgradePool
+  readonly startingUpgrades: readonly ContentId[]  // ⊆ upgrades, already unlocked at match start
+  readonly specials: readonly ContentId[]        // ⊆ faction.specialPool, small
   readonly ruleExceptions: readonly ContentId[]
 }
 ```
 
 Where this shows on screen: the Build Phase construct menu lists the common tier and the army tier
-as two groups under one digit sequence, and the Nexus draft is its own panel — three tiers, three
-places, so a player learns the split by looking at it
+(the tech tree, greyed out past what is unlocked) as two groups under one digit sequence, the Nexus
+draft is its own panel, and the Special is a single slot the player arms and fires when ready —
+four tiers, four places, so a player learns the split by looking at it
 ([`engine.md`](engine.md) Section 9.2, [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md)).
+
+### 2.1a Terminology glossary — analysis and alternatives — GUIDANCE, except the loose-word/exact-name principle below, which is RULE
+
+**Owner direction, canon 2.16 (second pass):** Mario, on naming: "the name I'm looking for 'Spells'
+is not only for Citizen, is for the game. They are nexus active abilities, that can be strategically
+casted during a build phase. We should re-evaluate the terminology around this to be clear... I don't
+want esoteric names, I want regular gaming conventions as much as possible, adding a little flavor
+here and there. Using typical names will help players learn the game faster and feel more intuitive."
+This section is that re-evaluation: every term this document leans on, what it currently means, the
+alternatives considered, and — the point of doing this now rather than later — which ones are still
+genuinely ambiguous and need an owner decision before Milestone 5/8 build a UI that has to print one
+of these words on screen.
+
+**The standard this section holds itself to:** prefer a word a strategy-game or deckbuilder player
+already knows (`Upgrade`, `Tech Tree`, `Blueprint`, `Draft`, `Ability`) over an invented one, add
+flavor through the *name of a specific instance* (a faction's voice, per Section 4.5), never through
+the *category word*, and use one category word per concept — never two words for the same thing in
+different documents.
+
+| Term | What it names | Analysis | Alternatives considered | Ambiguity |
+| --- | --- | --- | --- | --- |
+| **Commander Army** | The whole playable content package (Section 2.1) | Already load-bearing across the codebase and this canon; changing it now would touch every document. Reads as a proper noun-phrase rather than a genre borrowing, which is fine — most strategy games have one bespoke top-level term ("Civilization," "Faction Deck," "Army List") | *Army*, *Loadout*, *Roster* alone (each too narrow — "roster" implies only units) | **Low.** Settled since canon 2.10; nothing this session found reason to revisit |
+| **Faction** | The whole civilization's pool everything it can ever field | Standard RTS/4X term (Civilization, StarCraft's "race," Age of Empires' "civilization"). No better candidate | *Race* (dated, and the setting has no biological races distinct from politics), *Civilization* (too large a borrowed connotation) | **Low** |
+| **Grid Nexus / Prime Nexus** | The replica on the Grid / the one that stays home | Already RULE, validator-enforced, and it is what visually anchors a base the way a "Town Hall" or "Command Center" does in other RTS. The fiction (a psychic replica, not a building) is the reason it isn't just called that | *Home Base*, *Command Center* (would erase the replica/home distinction the lore is built on) | **Low** |
+| **Commander** | The persistent frontline `@` | Standard across the genre (C&C's "General," Age of Mythology's "hero," MOBA's "hero unit"). Already a strong fit with the `@` presentation | *Hero*, *General* (fine alternates, but "Commander" is already load-bearing in the title "Commander Army" — changing it would mean renaming the whole content-package term too) | **Low** |
+| **Unit** / **Structure** | A mobile entity / an immobile one | The two most standard RTS nouns that exist; no genre reinvents these | — | **None** |
+| **Blueprint** | One unlockable, buildable structure design | Common in survival/crafting and some RTS (Supreme Commander literally calls them blueprints). Reads clearly as "the thing you unlock," distinct from "Structure" (the built, physical thing) | *Design*, *Schematic*, *Plan* (all fine, more generic); *Unlock* (too broad — Nexus powers and upgrades are also "unlocks") | **Medium.** The Blueprint/Structure split needs one crisp sentence somewhere prominent ("a Blueprint is what you may build; a Structure is what you did build") or players and future sessions will use the words interchangeably |
+| **Tech tree** | The blueprint prerequisite graph | The single most standard term available — nearly every strategy game uses this exact phrase. Correct choice, low risk | *Build order tree*, *Construction tree* | **Low** |
+| **Upgrade** | A persistent improvement to a unit or structure (levels 1–3), unlocked through the tech tree | Standard term, but **this document uses "upgrade" for two different systems**: (1) the tech-tree upgrade path itself, and (2) `modifyContent`, one of the six Nexus power effect *kinds*, which also permanently improves a unit or structure stat. A player dealt a Nexus power that reads "all troopers gain +2 integrity" has just received something that is, in every meaningful sense, an upgrade — but it did not come from the tech tree | *Tech Upgrade* vs *Power Upgrade* as qualifiers, if the collision proves confusing in play; or reserve "Upgrade" for the tech-tree kind only and give `modifyContent`'s player-facing copy a different verb ("boosts," "improves") so the noun "Upgrade" is never ambiguous | **Answered.** "There can be many types of upgrades, anything in theory can be upgraded" — the word stays broad; what must stay exact is *which mechanism* granted it. See the principle below |
+| **Nexus Power** | The item dealt from a small hand at each Build Phase, one kept (Section 4.5) | Mario's own confirmation this turn: "Nexus Powers make sense for the 'cards'." This is the game's card-equivalent noun and should be treated as the primary vocabulary word a player learns, the way "Boon" is Hades' or "Relic" is Slay the Spire's | *Boon*, *Relic*, *Perk*, *Ability* (all genre-standard elsewhere, but "Nexus Power" is already thematically anchored — it comes from the Nexus specifically, which "Perk" or "Relic" would lose) | **Low**, now that it is explicitly confirmed as the card-equivalent term |
+| **Special** | The once-per-match, Build-Phase-cast active ability (Section 2.1, item 8) | Mario: "the one-time abilities could be called 'Specials' (special one time ability)... We'll see if the UI and gameplay favors this or not, but we can at least define the concept." Standard, intuitive, low-friction word (fighting games' "special move," Mario Kart's "special item," C&C Generals' closest real precedent — a cooldown-gated, cast-anytime commander power). Deliberately plain rather than thematic, per Mario's explicit "no esoteric names" direction | *Special Ability* (more explicit, marginally more words); *Commander Power* (rejected — reads as a synonym for "Nexus Power" and would collide); *Directive*, *Override*, *Protocol* (this document's own earlier, too-Citizen-flavored guesses, now retired) | **Medium.** "Special" as a bare noun can read as an adjective missing its noun in some UI copy ("Cast your Special" reads fine; "Special: ready" is a little terse) — worth a UI mockup before locking it, exactly as Mario proposed |
+| **Card** | Working shorthand (`game-modes.md` Section 2) for *any* offerable content item — a structure, a Nexus power, an upgrade, a Commander variant | **This is the term most worth flagging.** Mario's own phrasing this turn — "Nexus Powers make sense for the 'cards'" — reads naturally as mapping "card" onto Nexus power *specifically*, not the broader umbrella `game-modes.md` currently defines it as. If that is the intent, "Card" should either narrow to mean "Nexus Power" alone in player-facing text (keeping the broader sense only as an internal/engineering shorthand, the way `game-modes.md` already hedges with "not a claim that an army behaves like a trading-card deck"), or the two meanings need to be kept visibly separate so a future session does not silently conflate them | Keep "Card" as pure engineering shorthand, never shown to a player; or drop it in favor of always naming the specific tier ("a structure," "a Nexus power," "an upgrade") | **Answered.** "Card is more from the UI point of view, we can use it as long as the inner term is clear" — it stays broad, as interface vocabulary. See the principle below |
+| **Pool** | A faction's or army's catalogue of a given tier (structure pool, upgrade pool, Nexus power pool, special pool) | Standard collection noun, but always used bare ("the pool") in several places across this canon where it is ambiguous which pool is meant — the faction's whole catalogue, or one army's own narrower slice of it | Always qualify it ("Nexus power pool," never bare "pool") | **Medium.** Mechanical fix, not a naming fix: audit bare uses of "pool" and add the qualifier |
+| **Draft** | Choosing from an offered hand — the *Nexus draft* (every Build Phase, from the Nexus power pool) and the *run draft* (between Challenge battles, from the faction pool) | Both already qualified by an adjective, which is exactly the right pattern. A Special is deliberately **not** drafted — it is prepared once, from a small pool, and triggered on the player's own timing — so "draft" should never be used as a verb for a Special, to keep the distinction sharp in UI copy | — | **Low**, provided the "no drafting a Special" distinction is kept in mind when writing UI text |
+| **Rarity / Tier / Role** | The three tags every offerable item carries (`game-modes.md` Section 4) | Standard deckbuilder/gacha vocabulary (Slay the Spire, Teamfight Tactics). No better candidates found | — | **Low** |
+
+**Two open items this table surfaces, not yet decided:**
+
+**Both were answered by Mario the same day, and the answer is one principle rather than two
+rulings.** Mario: "Card is more from the UI point of view, we can use it as long as the inner term is
+clear. The same for Upgrade, there can be many types of upgrades, anything in theory can be upgraded.
+The important terms are not those, but the game concepts without ambiguity (eg Nexus Powers provide
+upgrades, tech tree research, building blueprints, special abilities, one time bonuses, and more)."
+
+**The principle — RULE, because it decides how every later screen and schema is named:**
+
+> **A generic word may be loose in the interface; a mechanism name must be exact in the model.**
+> "Card" and "Upgrade" are *presentation* vocabulary — a card is the shape a thing takes on screen,
+> an upgrade is anything that makes something better — and both may stay broad, as long as the
+> underlying concept the player is looking at is unambiguous. The mechanism names — **Nexus Power**,
+> **tech tree**, **blueprint**, **Special**, **research** — are *model* vocabulary, and each one names
+> exactly one thing, always.
+
+This is the same split the engine already enforces one layer down, where cells carry style **roles**
+and never literal colors ([`engine.md`](engine.md) Section 9.1): the interface is allowed a loose,
+human word; the thing underneath it is not. So `game-modes.md` Section 2 keeps "Card" as it stands,
+`modifyContent` may say "upgrade" in card text without apology, and neither needs a rename — what
+needs care is only that the player can always tell *which mechanism* a given card belongs to.
+
+One thing Mario's own example sentence implies, worth naming before Milestone 8 builds the draft:
+**Nexus Powers are the delivery mechanism for most of the other parts**, not a peer sitting beside
+them. "Nexus Powers provide upgrades, tech tree research, building blueprints, special abilities, one
+time bonuses, and more" describes a system that reaches into the tech tree, the upgrade path, and
+possibly the Special pool. The six effect kinds (Section 4.5) already cover most of that; whether a
+Nexus Power may also grant a **Special** is the one case not yet written down either way, and is
+cheap to decide when Milestone 8 needs it.
 
 ### 2.2 Nexus, faction, and Commander — the affinity model — GUIDANCE
 
@@ -148,10 +302,10 @@ two things is design space, and it is wider than "which faction am I playing":
 | **Proxy** | the connection runs through a record, a relic, or a process rather than a living person | powers key on death, absence, and restoration rather than presence |
 
 **None of these needs a special case in the model**, which is the reason to write them down before a
-roster exists: an army is already a deck validated against named pools (Section 2.1), so *dual-bound*
-is an army whose legality check names two factions, and *proxy* is an army whose powers lean on the
-death/absence/restoration cadence [`engine.md`](engine.md) Section 5.1 already specifies. Affinity is
-fiction plus data. It is not new machinery.
+roster exists: an army is already a bounded composition validated against named pools (Section 2.1),
+so *dual-bound* is an army whose legality check names two factions, and *proxy* is an army whose
+powers lean on the death/absence/restoration cadence [`engine.md`](engine.md) Section 5.1 already
+specifies. Affinity is fiction plus data. It is not new machinery.
 
 Two constraints keep it from turning to mush:
 
@@ -381,8 +535,25 @@ One design note worth keeping: `reveal` exists so that knowing what is coming is
 *spends a pick on* rather than something the HUD gives away — which is what keeps a hidden
 simultaneous plan worth hiding.
 
+**Nexus powers are almost always strictly advantageous, and there is no way to skip one — canon
+2.16.** Mario: "Most upgrades on this game are strictly better. This is not exactly like in Slay the
+Spire, where adding cards to the deck automatically dilute the good cards. Here, they are nexus
+powers, almost always advantageous." Unlike a typical deckbuilder's rares, a Nexus power dealt is a
+power gained — there is no probabilistic downside to manage, so there is no reason to let a player
+decline one. **Alder is the single named exception**: their faction mechanic converts a power they
+would otherwise take into "honor," spent elsewhere (Section 4.1's refusal doctrine, sharpened here —
+Q11). A tutorial-level Alder campaign may lock even that choice out, the same way many strategy games
+gate an advanced mechanic behind a difficulty or content tier, rather than exposing it on day one.
+
 Nothing here is authorized to build. Milestone 8 builds two or three kinds for one mission;
 Milestone 12 is where the pool earns breadth.
+
+**`unlockStructure` has two triggers, not two mechanisms — canon 2.16.** A Nexus power can grant a
+structure outright; completing a prerequisite structure can grant its dependents the same way,
+through the tech tree ([`engine.md`](engine.md) Section 5.4, Section 2.1 above). A power that
+unlocks a structure is simply fast-forwarding past a prerequisite the tree would otherwise require —
+one effect kind, reached two ways. A **Special** (Section 2.1) is a separate, smaller pool from
+Nexus powers: prepared once and triggered once per match, rather than dealt every Build Phase.
 
 ### 4.6 The three starting Commanders — GUIDANCE (Q43)
 
@@ -474,7 +645,7 @@ dice, and the campaign should let that happen and then hand him the redraw.
 - **Two near-identical Citizens** let a player practise the fundamentals twice under different
   stories — the second time with attention spare for the fiction rather than the rules.
 - **One Ravel from the start** makes the opening a choice, teaches the game's other temperament
-  early, and proves the deck model across factions before Milestone 12 authors any breadth.
+  early, and proves the composition model across factions before Milestone 12 authors any breadth.
 - **All three run on one set of maps** (`campaigns.md` Section 4.3), which is what keeps three
   openings affordable.
 
@@ -524,7 +695,7 @@ Units:
 - role, producer, supply, cadence, counters, glyph role
 
 Structures:
-- common (the faction's, always available) versus army (this deck's, within the cap — Section 2.1)
+- common (the faction's, always available) versus army (this army's own tech tree branch, within the cap — Section 2.1)
 - rarity, tier, role tags (game-modes.md Section 4)
 - role, footprint, radius, worker/production behavior, glyph role
 
