@@ -26,6 +26,7 @@ import type {
 } from "../view/index.ts"
 import { AnsiBackend } from "../view/backends/ansi.ts"
 import { selectBackend } from "../view/backends/index.ts"
+import { createTerminalSession } from "./lifecycle.ts"
 
 const FRAMES_PER_SECOND = 30
 
@@ -86,20 +87,11 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
     ...(options.startTick === undefined ? {} : { startTimeMs: options.startTick * view.tickDurationMs }),
   })
   let timer: NodeJS.Timeout | null = null
-  let disposed = false
   let lastRealMs = Date.now()
   let failure: unknown = null
 
-  const dispose = async (): Promise<void> => {
-    if (disposed) return
-    disposed = true
-    if (timer !== null) clearInterval(timer)
-    stdin.off("data", onKey)
-    stdout.off("resize", onResize)
-    process.off("SIGINT", onSignal)
-    process.off("SIGTERM", onSignal)
-    await backend.stop()
-  }
+  const session = createTerminalSession()
+  const dispose = session.dispose
 
   const exit = options.exit ?? ((code: number): void => process.exit(code))
   const leave = (): void => {
@@ -109,9 +101,17 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
     })
   }
 
-  function onSignal(): void {
-    leave()
-  }
+  session.onDispose(() => {
+    if (timer !== null) clearInterval(timer)
+  })
+  session.onDispose(() => {
+    stdin.off("data", onKey)
+  })
+  session.onDispose(() => {
+    stdout.off("resize", onResize)
+  })
+  session.onSignal(leave)
+  session.onDispose(() => backend.stop())
 
   function onResize(): void {
     playback.fit(stdout.columns ?? 0, stdout.rows ?? 0, required)
@@ -133,8 +133,6 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
     onResize()
     stdin.on("data", onKey)
     stdout.on("resize", onResize)
-    process.on("SIGINT", onSignal)
-    process.on("SIGTERM", onSignal)
 
     await new Promise<void>((settle) => {
       timer = setInterval(() => {

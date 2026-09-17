@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Terminal Nexus — the Grid tool (Milestone 1, Gate 1B)",
+  "description": "Terminal Nexus — the Grid tool, and the game's own menu (Milestone 3, Gate 3A)",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=22.18.0"
@@ -14,6 +14,7 @@
     "test": "./scripts/run-tests.sh node",
     "test:bun": "./scripts/run-tests.sh bun",
     "grid": "node bin/grid.ts",
+    "terminal-nexus": "node bin/terminal-nexus.ts",
     "maps": "ls scenarios/*.map.json"
   },
   "devDependencies": {

@@ -30,9 +30,14 @@ Terminal Nexus is a next-gen ASCII auto-battler linux shell strategy game. Choos
 
 Pre-production. The first playable artifact is **`grid`**, the engine, editor, and replay tool
 Milestone 1's Pulse Playground grew into: units on a small Grid resolving a deterministic battle
-from a seed, with a levelled report and a minimal ASCII view. There is no Build Phase, no economy,
-and no campaign yet — those, and the game's own executable, come later. `grid` is not that game;
-it is the tool that builds and replays it.
+from a seed, with a levelled report and a minimal ASCII view. `grid` is not the game; it is the tool
+that builds and replays it.
+
+**`terminal-nexus`** is the game's own executable (Milestone 3, Gate 3A): it launches straight to a
+top-level menu — Campaign, Challenge, Settings, Exit — every item reachable by its displayed hotkey,
+by arrows and Enter, or by a mouse click, all three proven equivalent. There is still no Build Phase,
+no economy, and no campaign content yet — Campaign, Challenge, and Settings are honest stubs until
+later milestones build their real destinations.
 
 ## Local Development
 
@@ -93,6 +98,17 @@ npm run grid -- <map> \
 it resumes from the same instant. That is the resize gate, not a crash. `--turn 90` seeks straight to
 tick 90 instead of playing from the start, in watch, headless and verify alike.
 
+### The game's own menu
+
+```bash
+npm run terminal-nexus
+```
+
+Launches straight to the top-level menu — Campaign, Challenge, Settings, Exit — on the same terminal
+stack as `grid`. Every item shows its hotkey (`[1] Campaign`) and works three equivalent ways: press
+the hotkey, arrow to it and press Enter, or click its row. Campaign, Challenge, and Settings are
+honest stubs for now (later milestones build their real destinations); Exit actually quits, cleanly.
+
 ### Read what happened
 
 `watch` is one of three actions. `--headless` resolves without a terminal and prints the levelled
@@ -146,9 +162,11 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the workflow and evidence requirements.
 ```text
 .
 ├── src/                   The kernel and tools: pulse (deterministic engine), content, scenario,
-│                          state, events, grid, report, view, cli, rng
+│                          state, events, grid, report, view, cli, rng, menu (the menu-list shape,
+│                          input adapters, and driver terminal-nexus's menu is built on)
 ├── scenarios/             Checked-in .map.json fixtures — one file per rule under test
-├── bin/                   grid.ts, the CLI entry point (`./bin/grid.ts <map> [--headless|--verify]`)
+├── bin/                   grid.ts (the engine/editor/replay tool) and terminal-nexus.ts (the game's
+│                          own entry point, launching straight to the top-level menu)
 ├── tests/                 The test suite; Node's runner and Bun both run it
 ├── specs/                 Focused canon and milestone contracts
 ├── evidence/              Gate reports and screenshots — what was measured, not just claimed
