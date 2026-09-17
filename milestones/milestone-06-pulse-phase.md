@@ -3,7 +3,7 @@
 **Document role:** Milestone tracker — the explicit Build→Pulse handoff, victory/defeat, and Recall
 **Status:** GATED
 **Depends on:** Milestone 5 (Build Phase produces what this Pulse resolves)
-**Updated:** 2026-09-10
+**Updated:** 2026-09-17
 **License:** Apache-2.0
 
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
@@ -67,6 +67,54 @@ three, [`milestone-02-campaign-design.md`](milestone-02-campaign-design.md) Sect
   producing its recipe on an interval, pulled from backlog at the smallest size that makes a second
   Pulse show something new.
 
+### 2.2 How the ending should feel — the owner's sketch, to be tested, not decided
+
+Mario, 2026-09-17, unprompted while reviewing something else: *"The pulse ending is not clear yet, we
+will know after playtests. I have the feeling we need some visual warning, like an alarm, then after
+3-5 seconds, the units stop shooting, 1 second later they start walking back, 2 seconds later the
+build phase begins (no need to wait for units to be back) they all appear back in the base and the UI
+changes. The camera is centered at the nexus. But again, we have to test this first to know what looks
+good and informative."*
+
+Recorded here because this gate is where it gets built, and because the sequence above is specific
+enough to try directly rather than re-derive. **It is a starting point for a playtest, not a
+specification** — his own framing, and the right one: this is exactly the kind of thing Milestone 1
+only got right after the Pulse ran end to end and someone watched it.
+
+As a first thing to build and look at:
+
+| At | What happens | Which world it belongs to |
+| --- | --- | --- |
+| 0s | A visual warning — an alarm — and the camera moves to centre on the Grid Nexus | Presentation only |
+| +3–5s | Units stop shooting | The kernel has already stopped; this is when the screen shows it |
+| +6s | Units start walking back | Presentation only — the state change already happened |
+| +8s | The Build Phase begins. Units snap home, the interface changes | The Build Phase's own start |
+
+Four things worth knowing before building it:
+
+**The walk-back is free to cut short, and the sketch already assumes that.** "No need to wait for units
+to be back — they all appear back in the base" is exactly what the rules already say: at Pulse end
+survivors regroup instantly in state, and the walk home is a presentation flourish on top of a move
+that already happened. So the Build Phase can open on schedule regardless of where the animation got
+to, and nothing about the simulation cares. The sketch and the architecture agree, which is a good
+sign for both.
+
+**The timings are in seconds, not ticks, and should stay that way.** Everything above is presentation
+time. None of it may feed back into the Pulse, and none of it changes how long the Pulse itself ran.
+
+**The alarm implies the ending is known a few seconds early — and that is only true for some endings.**
+A Pulse that ends because it ran out of ticks is predictable: the warning can start before the last
+tick resolves. A Pulse that ends because a Grid Nexus was destroyed or a side was wiped out is not
+predictable — it just happens. So either the alarm is specific to the scheduled ending and a sudden
+one gets a different, sharper treatment, or the alarm plays *after* the fact everywhere and reads as a
+"stand down" signal rather than a countdown. **This is the one question in the sketch that a playtest
+will not answer on its own, because it depends on which of the two it is trying to be.** Worth deciding
+what the alarm *means* before choosing how it looks.
+
+**Centring the camera on the Grid Nexus is new**, and it is a genuinely good idea for a reason beyond
+the ending: it puts the player where the next Build Phase starts, so the transition does not also ask
+them to find their own base again.
+
 ## 3. New question this raises
 
 **Does PERIMETER's own defensive framing ("hold the perimeter") need a victory shape the kernel does
@@ -108,5 +156,9 @@ that units visibly came home — not just that the screen stopped moving.
 - [ ] Q36 is resolved (built, or explicitly deferred with a reason) before this gate closes;
 - [ ] the Pulse-end sequence — stop, finish in-flight effects, Recall — is legible at every capability
       tier and in monochrome;
+- [ ] the owner's ending sketch (Section 2.2) has been built roughly, watched, and reported on — what
+      read well, what did not, and what the alarm turned out to mean for a sudden ending versus a
+      scheduled one. A gate report that does not say what the ending actually looked like has not
+      answered this milestone's question;
 - [ ] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED**;
 - [ ] `./scripts/check-repository.sh` passes.
