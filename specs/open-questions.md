@@ -3,7 +3,7 @@
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
 **Canon version:** 2.16
-**Updated:** 2026-09-12
+**Updated:** 2026-09-17
 **License:** Apache-2.0
 
 ## 1. Why this file exists
@@ -916,6 +916,46 @@ would be a new claim.
 **Recommendation: A for 11A, with B made observable as a toggle in 11B if it is cheap, and judged
 by playing both.** A is the run every proven structure has; B is the one Terminal Nexus's own fiction
 argues for, and it should be tried rather than assumed either way. C waits for an economy to carry.
+
+### Q49 — Should the Build Phase show the player what the Pulse is about to bring?
+
+**Status:** OPEN — blocks nothing before Milestone 5's own Build Phase gate, which is where it would
+be built. Registered because it competes directly with Q30's decision to keep that screen small, and
+because it is a claim about every mission the game will ever ship, not about one screen.
+
+Once the Pulse starts, the player is a spectator. Every decision they have is made beforehand, and
+they cannot correct any of it. Into the Breach is the closest studied case of a resolution a player
+cannot interfere with, and its whole design answer is to show everything first: every enemy attack is
+telegraphed, turn order is inspectable, and the developers' stated goal was that "every death felt
+like your own fault"
+([Subset Games](https://subsetgames.com/itb.html);
+[postmortem](https://www.gamedeveloper.com/game-platforms/road-to-the-igf-subset-games-i-into-the-breach-i-);
+the GDC talk is already cited in [`game-modes.md`](game-modes.md) Section 6).
+
+Terminal Nexus currently has nothing equivalent. A mission's scripted arrivals are authored data
+(Q32, answered — a tick-gated trigger list in the map file), so showing them costs no simulation
+change at all; it is purely a question of whether the Build Phase draws them. Note that PERIMETER's
+own briefing already promises exactly this, in a line written for flavour long before the design
+question was asked: the structure "has already assigned the contact a name, a heraldry, and an
+estimated time of arrival."
+
+| Option | Cost |
+| --- | --- |
+| A. **Both — draw the approach edge on the Grid, and state each wave's arrival in text.** The player can see where the raid enters and roughly when each wave lands, before committing | The most complete answer, and the one that makes an un-steerable Pulse read as the player's own doing. Costs the most Build Phase interface work, on a screen Q30 deliberately kept minimal, and it lands in the same milestone as the cursor/scrolling spike Q37 already added |
+| B. **Text only — state the waves and their timing, draw nothing on the Grid** | Most of the value for a fraction of the work: a line or two in the existing side panel, no new drawing. Weaker for the placement decision specifically, since "from the north-west" read as text is harder to translate into where to stand than a marked edge |
+| C. **Neither — let the player learn the raid by losing to it once, and rely on replay** | Free, and defensible for a campaign whose missions are meant to be replayed. But it makes the first attempt at every mission a guess, which is a poor fit for a mode that is also the first-time player experience, and it puts the weight on a replay feature that does not exist yet |
+
+**Recommendation: B for Milestone 5, A once the Build Phase's own drawing work is proven.** Start with
+the cheap half, because it is a line of text against a screen that already has to show something, and
+it captures the principle. Add the drawn approach edge when the cursor and scrolling work has landed
+and drawing on the Grid is no longer new. The thing worth deciding *now*, ahead of either, is the
+principle itself — **anything the player needs in order to judge a Build Phase decision should be on
+screen during the Build Phase** — because it also rules out a class of content: a Nexus power whose
+value cannot be known until after the Pulse is a coin flip the player cannot correct, and the draft
+should not deal one.
+
+A side benefit worth naming: the telegraph is also a debugging tool. An arrival edge and a time drawn
+on screen is the fastest way to see that a mission's trigger list is wrong.
 
 ## 5. Answered
 
