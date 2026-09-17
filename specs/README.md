@@ -2,8 +2,8 @@
 
 **Document role:** Canon index and reading order
 **Status:** Canonical
-**Canon version:** 2.9
-**Updated:** 2026-08-26
+**Canon version:** 2.16
+**Updated:** 2026-09-12
 **License:** Apache-2.0
 
 The project canon is this document set, not one monolithic file. Each document has one job, and the
@@ -31,6 +31,37 @@ folder rather than versioned here: they are notes for upcoming work, task tracke
 historical reference after, which is a different job than a document that only changes at a named
 canon version. The horizontal contract this replaced is preserved, unbuilt, in
 [`backlog-pulse-completion.md`](backlog-pulse-completion.md).
+
+**Canon 2.10 recorded the owner's design notes on three things the campaign milestones build
+against**: the input model ([`engine.md`](engine.md) Section 9.7 — one command vocabulary behind
+keyboard, mouse, and an agent driver, with displayed hotkeys), a Commander Army as a bounded subset
+of its faction's pools ([`commander-armies.md`](commander-armies.md) Section 2.1 — the "deck" framing
+itself is retracted at canon 2.16, kept only as an idea), and missions as multi-Pulse trigger lists
+([`campaigns.md`](campaigns.md) Section 2.1). Milestones 3, 5, 6, 8, and 9 cite them; Q39 (declarative
+triggers versus a scripting API) is the one fork left for Mario.
+
+**Canon 2.11 named the single-player modes and put the experience before the content.** Mario
+re-scoped Milestone 2 to design and orientation: [`game-modes.md`](game-modes.md) is the vocabulary
+— **Campaign** as the first-time player experience and the world's canon, **Challenge** as seeded
+runs with a draft between battles — and [`../milestones/README.md`](../milestones/README.md) now
+carries a build order (UX core first, then the two mode shells, then depth, then content) with small
+gates in every milestone, plus Milestones 11 (runs) and 12 (content iteration).
+
+**Canon 2.12–2.14 gave the first Nexus and the first Commanders a face.** Each Nexus is named for the
+faction that holds it, and the **Citizen Nexus** is an administrator rather than a weapon
+([`terminal-nexus-lore.md`](terminal-nexus-lore.md) Sections 3.1–3.2). A Commander is that Nexus's
+signature, bound by one of six affinities, and a Nexus power is a name plus a plain line of
+description over a small union of effect kinds in code
+([`commander-armies.md`](commander-armies.md) Sections 2.2 and 4.5). The game opens with **three
+Commanders** — two Citizens who play almost alike and one Ravel who does not (Section 4.6) — but
+shows a new player none of them upfront: Vasse's mission 1 is the whole first-time experience, and
+completing it unlocks the other two as campaign rows, each its own opening reusing PERIMETER's
+literal map with roles swapped ([`campaigns.md`](campaigns.md) Section 4.3, Q43 and Q47). Missions
+carry a bounded `ObjectiveDefinition` (Section 2.2) rather than a fixed length, resolved above the
+kernel's own unchanged victory check. Q45 and Q46 are answered, Milestone 2 is accepted, and a
+Commander Army's full composition — Nexus and faction, Commander, starting units and structures,
+blueprints and the tech tree, upgrades, Nexus powers, and Specials — is written down at canon 2.16
+([`commander-armies.md`](commander-armies.md) Section 2.1). Milestone 3 (Game Menu) is now open.
 
 For a new coding session, read:
 
@@ -84,9 +115,12 @@ today; the milestone marked CURRENT decides that.
   soundness. Nothing here is built; it is a starting design for whichever level first needs it.
 - [`commander-armies.md`](commander-armies.md) — playable packages of Commander, units, structures,
   upgrades, and Nexus powers. Rosters intentionally undefined.
+- [`game-modes.md`](game-modes.md) — the single-player modes and their shared vocabulary: Campaign
+  (first-time experience, canon), Challenge (seeded runs with a draft between battles), the run's
+  starting shape, content rules for both fronts, and the reference games each claim rests on.
 - [`campaigns.md`](campaigns.md) — mission and campaign structure, teaching, Citizen opening,
   cutscenes, opponent policies, authoring tools. PERIMETER (Mission 1) is in active implementation
-  across [`../milestones/`](../milestones/)'s ten-milestone sequence.
+  across [`../milestones/`](../milestones/)'s sequence.
 - [`backlog-pulse-completion.md`](backlog-pulse-completion.md) — the horizontal "finish the kernel"
   contract this roadmap replaced: routing, economy, production, visibility, replay hardening.
   Preserved verbatim, pulled in level by level rather than built as one pass.

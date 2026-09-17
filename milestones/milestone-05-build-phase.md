@@ -3,7 +3,7 @@
 **Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
 **Status:** GATED
 **Depends on:** Milestone 4 (launches the mission), Milestone 2 (the mission's own budget/units decided)
-**Updated:** 2026-08-26
+**Updated:** 2026-09-12
 **License:** Apache-2.0
 
 > **This is where scrolling was always going to land.** Gate 1A deliberately used a Grid that fit the
@@ -30,6 +30,16 @@ real cursor-driven map scrolling — before handing off into Milestone 6's Pulse
   real, small draft tied to Commander Vasse — this milestone builds the *mechanism* (offer a choice,
   accept a pick, apply its effect) against a placeholder option if Milestone 8 has not landed yet, so
   neither milestone blocks on the other's exact sequencing.
+- **The Special slot — keep the space, and report whether the channel earns it.**
+  [`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1 names *four* places in a
+  Build Phase, not three: the construct menu's two groups, the Nexus draft panel, and a Special the
+  player arms and fires once per match. It is also flagged provisional there — a third decision
+  channel beside placement and the draft, with nothing yet showing that a Build Phase wants one.
+  PERIMETER has no Special to arm, so this milestone authors no content for it; it keeps the layout
+  honest about a fourth place (the same way the army group is empty but not assumed away, below) and
+  says in its report whether the Build Phase felt short of a channel. Milestone 6 plays the first
+  whole loop and is where the answer lands — retiring Specials, or folding them back into the Nexus
+  power pool, is a legitimate outcome of that report.
 - **Real map scrolling, at last**: the viewport clamp (48×16 to 72×24 tiles) and cursor-driven
   scrolling at a 3-tile margin are already RULE (`engine.md` Section 3), unbuilt since Gate 1A's Grid
   always fit the viewport whole. Built here, for real, against a Grid sized to actually need it.
@@ -38,8 +48,42 @@ real cursor-driven map scrolling — before handing off into Milestone 6's Pulse
   side panel's own layout across the viewport's minimum-to-maximum span. This is a reversible UI-layout
   decision a session may make alone (`../specs/project-governance.md` Section 2) — pick something,
   ship it, and record why in the gate report rather than treating it as a blocker.
-- **Keyboard controls** for cursor movement, placement, menu navigation, and committing the Build
-  Phase — mouse stays optional per `engine.md` 9.6's existing accessibility RULE, not required here.
+- **All three input adapters, on the screen that needs them most** — per
+  [`../specs/engine.md`](../specs/engine.md) Section 9.7 (canon 2.10), which supersedes an earlier
+  draft of this line that left the mouse optional. Keyboard: digits arm a construct-menu item, arrows
+  move the cursor one tile and Shift+Arrow five, Enter places, Esc disarms, `p` commits after one
+  confirmation, and the armed item stays armed so a run of placements is one digit then arrows and
+  Enter. Mouse: a click on a menu row is its hotkey; a click on a tile moves the cursor and places
+  the armed item; the wheel scrolls; right-click is Esc. Driver: the same Build Phase played from a
+  command stream — the agent-playtest path — with raw key and mouse events injectable so the
+  mappings themselves are under test. The construct menu shows the common tier and the army tier as
+  two groups under one digit sequence, and the Nexus draft is its own panel
+  ([`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1) — for PERIMETER the
+  army group is empty, and the layout should not assume it always is.
+- **Opens with the scrolling-and-placement spike — Q37, answered.** Before the real build: an
+  interactive spike of exactly the two interactions Mario named as needing the most attention —
+  scrolling a Grid larger than the viewport and placing a selected structure — driven through
+  keyboard, mouse, and the driver, at the viewport range's minimum and maximum, with click-to-place
+  versus click-then-confirm made observable as a toggle rather than argued. It also records which of
+  the project's target terminals actually deliver Shift+Arrow and picks the modifier-free fallback
+  for the five-tile jump. Static mockups at the range's extremes are a cheap by-product, not the
+  deliverable. Its findings go in this milestone's gate report and retune the GUIDANCE bindings in
+  `engine.md` 9.7.
+
+### 2.1 Gates
+
+- **5A — The scrolling-and-placement spike** (Q37, answered): interactive, all three adapters,
+  viewport extremes, the click-to-place toggle, the Shift+Arrow terminal findings. Report first, then
+  build.
+- **5B — Construct menu and legality.** The two-group menu (common tier, army tier), cost and effect
+  per item, the legality panel that says why, placement validation that rejects with a reason.
+- **5C — Scrolling and the adaptive layout.** Cursor-driven scrolling at the 3-tile margin across the
+  full 48×16–72×24 range; the side panel's layout at both ends; edge markers and the position
+  readout.
+- **5D — The Nexus draft slot and commit.** The upgrade-pick mechanism against a placeholder option
+  (Milestone 8 fills it), `p` with its one confirmation, undo and removal of planned placements, the
+  hotkey-versus-click identical-plan test, and the Special slot's own space in the layout with the
+  report's line on whether a third decision channel was missed.
 
 ## 3. Grounded in already-locked contracts
 
@@ -61,7 +105,9 @@ per Milestone 2's decision).
 
 Automated: placement validation rejects an illegal plan with a stated reason, never silently clamps
 it; scrolling keeps the cursor's margin correctly at every viewport size in the clamped range; the
-same Build Phase plan produces identical composed frames across capability tiers and reduced motion.
+same Build Phase plan produces identical composed frames across capability tiers and reduced motion;
+the same plan, entered once by hotkeys and once by clicks through the driver, produces an identical
+committed plan and identical frames — the "same command, whichever adapter" RULE, asserted.
 
 Human, and this is the real gate — mirroring the old Milestone 3's own pass evidence: a fresh player
 can expand toward the legal zone, understand *why* an illegal placement failed, revise a hidden plan,
@@ -70,11 +116,17 @@ looking around, not like fighting the cursor.
 
 ## 6. Definition of done
 
+- [ ] the scrolling-and-placement spike (Q37) ran first, its terminal findings and the click-to-place
+      toggle are in the gate report, and `engine.md` 9.7's bindings were retuned or confirmed from it;
 - [ ] the construct menu, cost/effect, and legality panel are built and legible at every capability
-      tier and in monochrome;
+      tier and in monochrome, with every item's hotkey displayed and clickable;
+- [ ] the driver plays a full Build Phase from a command stream, and a test proves hotkey and click
+      entry of the same plan are identical;
 - [ ] cursor-driven scrolling works correctly across the full 48×16-72×24 viewport range;
 - [ ] the GUI's own layout adapts across that range without becoming illegible at either end;
 - [ ] the Nexus-upgrade pick mechanism works against at least a placeholder option;
+- [ ] the report says whether the Build Phase felt short of a third decision channel, so the
+      provisional Special slot (`../specs/commander-armies.md` Section 2.1) gains evidence either way;
 - [ ] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED**;
 - [ ] `./scripts/check-repository.sh` passes;
 - [ ] new questions this raises are rows in [`../specs/open-questions.md`](../specs/open-questions.md).

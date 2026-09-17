@@ -275,6 +275,7 @@ than because the active gate's Section 3 requires it, stop and check the marker.
 | [`replay-format.md`](../../../specs/replay-format.md) | The `.replay.json` design — schema, log levels, soundness. GUIDANCE, unbuilt; Milestone 2's locked contract to implement |
 | [`commander-armies.md`](../../../specs/commander-armies.md) | Playable Commander Army packages — Commander, units, structures, upgrades, Nexus powers. Rosters intentionally undefined until Milestone 4 |
 | [`campaigns.md`](../../../specs/campaigns.md) | Mission and campaign structure, teaching, the Citizen opening, cutscenes, opponent policies, authoring tools |
+| [`game-modes.md`](../../../specs/game-modes.md) | The single-player modes and their vocabulary — Campaign (first-time experience, canon) and Challenge (seeded runs with a draft between battles), the run's starting shape, content rules for both, and the reference games behind each claim |
 | `milestone-<n>-*.md` | The one narrow implementation contract — only the milestone marked **CURRENT** is authority, and only through its **Active gate** |
 | [`project-governance.md`](../../../specs/project-governance.md) | Canon maintenance protocol, bounded autonomy, the evidence loop, the execution ledger, locked product decisions, test/playtest strategy, deferred systems |
 | [`open-questions.md`](../../../specs/open-questions.md) | The durable queue of decisions genuinely waiting on Mario, each with a recommendation |

@@ -3,7 +3,7 @@
 **Document role:** Milestone tracker — polish PERIMETER, author and build RIGHT OF SALVAGE
 **Status:** GATED
 **Depends on:** Milestones 2 through 9 (every mechanism this milestone exercises for real)
-**Updated:** 2026-08-26
+**Updated:** 2026-09-09
 **License:** Technical work is Apache-2.0; new mission material is CC BY-SA 4.0
 
 > **This is where milestones 4 and 9's "mostly empty for now" finally fills in.** The campaign menu's
@@ -42,6 +42,20 @@ what needs it, so it lands here rather than staying deferred.
 (Milestone 4) actually displays — and by the second mission, enemy intel (Q35) has real Ravel content
 in it from the first. If either screen reads wrong once there is something to show, that is this
 milestone's finding to act on, not a defect to carry forward.
+
+### 2.1 Gates
+
+- **10A — PERIMETER, polished.** The whole loop played start to finish and judged as one thing;
+  rough edges from milestones 3-9 fixed here.
+- **10B — RIGHT OF SALVAGE, written.** Briefing, exchange, barks, debrief, artifact entry, inside the
+  lore budgets — reviewed before anything is built against it.
+- **10C — RIGHT OF SALVAGE, built.** The salvage economy from backlog, the mission's map and trigger
+  list, unlocks and intel exercised for real on the campaign menu.
+
+This is the Campaign's proof; Milestone 11 is the Challenge's. Since canon 2.11 the Campaign is the
+first-time player experience and the world's canon ([`../specs/game-modes.md`](../specs/game-modes.md)
+Section 3.1), so the bar here is "a new player comes out able to play a run, and the world feels
+real" — not length.
 
 ## 3. Explicitly not this milestone
 

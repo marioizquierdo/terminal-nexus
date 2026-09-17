@@ -2,8 +2,8 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.9
-**Updated:** 2026-08-28
+**Canon version:** 2.16
+**Updated:** 2026-09-17
 **License:** Apache-2.0
 
 ## 1. Why this file exists
@@ -58,7 +58,7 @@ what the art is actually showing — it is drawn on an Outpost.
 
 ### Q7 — Do workers carry, or produce in place?
 
-**Status:** OPEN — blocks nothing before Milestone 4.
+**Status:** OPEN — blocks nothing before Milestone 12.
 
 [`engine.md`](engine.md) Section 6 says workers do not carry bundles home and produce continuously
 at a job, then says they return toward the Nexus when storage fills and resume "immediately" when
@@ -68,7 +68,7 @@ capacity opens. Returning-when-full is carry-shaped behaviour inside a no-carry 
 **Recommendation:** keep produce-in-place, and make a full store simply **stall** the worker at its
 job rather than send it home. Stalled workers are readable (they stop moving), they punish
 under-built storage without a walk-home animation nobody asked for, and they remove the travel-time
-contradiction. Decide with the Milestone 4 microgame.
+contradiction. Decide with the Milestone 12 microgame.
 
 ### Q8 — When does an air unit first exist?
 
@@ -572,6 +572,11 @@ structures, production, and multiple Pulses in a single match, none of which exi
 place to design it is alongside Milestone 2's routing work and Milestone 3's Build Phase, not as a
 speculative addition to a milestone still officially unauthorized.
 
+**Closer than it was, canon 2.10:** missions are now multi-Pulse by owner direction
+([`campaigns.md`](campaigns.md) Section 2.1), and Milestone 2 proposes PERIMETER itself as three
+Pulses — so "regroup between Pulses" stops being hypothetical the moment that mission plays. The
+outpost idea itself is still unowned; the precondition this row was waiting on is no longer missing.
+
 ### Q24 — Does the terminal cell's own aspect ratio distort movement and fire enough to fix?
 
 **Status:** OPEN — the owner asked this be noted and set aside, not explored now; blocks nothing.
@@ -657,7 +662,7 @@ real, live possibility per Q8's own design (ground and air deliberately share ti
 | B. **Flip the default for ground-layer content**: a `units`/`workers` entity with no `targetLayers` declared cannot target `air` unless it opts in | Closer to what most real designs probably want (a melee grunt hitting a flyer standing on its tile is the surprising case, not the normal one). Requires auditing every future ground-melee unit's intent at authoring time, and is a breaking semantic change to a field this spike just built — real churn for zero current content, since no accepted roster has air units yet |
 | C. **A loader-time or test-time lint**: flag (not reject) a ground-layer `attack` with no `targetLayers` declared, as a nudge rather than a rule change | Cheap and catches the authoring-discipline risk without changing runtime behaviour or requiring a breaking default flip |
 
-**Recommendation: A for now, reconsider at C's cost the day Milestone 4 authors the first real air
+**Recommendation: A for now, reconsider at C's cost the day Milestone 12 authors the first real air
 unit** — there is no content yet for a wrong default to actually harm, and the field is new enough
 that changing its default later costs nothing extra compared to changing it now. C is the cheap middle
 ground if a lint turns out easy to add whenever someone is next in `scenario/load.ts` or
@@ -681,14 +686,14 @@ opponent the winner.
 
 | Option | Cost |
 | --- | --- |
-| A. **Leave it.** No accepted roster is spawner-only today (Milestone 4 hasn't selected one), and the fixture that surfaces this is bench content built to surface exactly this kind of interaction | Free. The bug, if it is one, only reaches a real match the day a real Commander Army's opening force is entirely non-mobile — a design choice Milestone 4 has not made and may never make |
+| A. **Leave it.** No accepted roster is spawner-only today (Milestone 12 hasn't selected one), and the fixture that surfaces this is bench content built to surface exactly this kind of interaction | Free. The bug, if it is one, only reaches a real match the day a real Commander Army's opening force is entirely non-mobile — a design choice Milestone 12 has not made and may never make |
 | B. **Extend `hasMobile`'s computation**: a side counts as `hasMobile` if its initial roster contains *either* a mobile entity *or* an entity with `spawn` defined — "this side promises future mobile forces" | Closes the specific gap the spawner exposes, cheaply (one extra condition in `createContext`, `pulse/context.ts`). Introduces a subtler problem: a spawner that is *itself* still alive but between spawn cycles (all its children currently dead, more due next interval) would read as `mobileAlive === false` at that instant, risking a **false** annihilation mid-match rather than a missing one |
 | C. **Redefine annihilation for a spawn-having side**: require the spawning structure itself, not just its current children, to also be dead | Solves B's false-positive risk by tying annihilation to the *producer*, not the momentary output — but this starts to resemble a second victory condition ("destroy the production"), adjacent to but distinct from nexus-destroyed, and is a real product-model decision, not a bug fix |
 
 **Recommendation: A for now.** Both real fixes (B, C) trade one edge case for a different, subtler
 one, and neither should be picked without a real roster to test it against — exactly Q20's own
 reasoning for deferring a harder call until the fixture that needs it exists rather than the one that
-merely revealed it. Revisit the moment Milestone 4 (or any earlier session) authors a Commander Army
+merely revealed it. Revisit the moment Milestone 12 (or any earlier session) authors a Commander Army
 whose opening force is entirely non-mobile.
 
 ### Q30 — How much Build-Phase side panel does Milestone 5 actually need?
@@ -733,45 +738,12 @@ does not exist yet.
 contract can read at authoring time; a real save system is a `replay-format.md`-adjacent problem for
 whichever level first needs a unlock state that outlives one authoring session, not this one.
 
-### Q32 — How is a scripted (not adaptive) mission opponent actually authored as content?
-
-**Status:** OPEN — blocks nothing before Milestone 2 finalizes the Ravel raid; the recommendation is
-already assumed by [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md) Section 4.4.
-
-`campaigns.md` Section 6 names "scripted tutorials" as the simplest opponent-policy tier but does not
-specify its shape. PERIMETER's raid needs to arrive from the northwest on a fixed, deterministic
-schedule — closer to a timed placement/trigger list than to anything that decides.
-
-| Option | Cost |
-| --- | --- |
-| A. **A second, one-sided placement block with tick-gated triggers** — the enemy's units and structures exist in the map file from tick 0 exactly like today's fixtures, but a small ordered list of triggers (`{ atTick, action }`) governs when reinforcements arrive or a group starts advancing, authored and validated the same way a `.map.json` file already is | Reuses the existing map-authoring and validation machinery almost entirely; the only new surface is the trigger list itself, which is data, not a policy engine |
-| B. **A tiny scripted "policy" module** — a function that reads the bounded planning view every tick and returns intents, hard-coded rather than adaptive | Closer to what `project-governance.md` Section 10's local-policy framework eventually wants, but is a runtime interface (inputs, outputs, a call site inside the tick loop) for a script that will only ever return one fixed sequence — real machinery for something a data list already expresses |
-
-**Recommendation: A.** A tick-gated trigger list is data, validated at load time exactly like every
-other scenario field, and needs no new runtime interface. Build B's policy-module shape only once a
-mission genuinely needs to react to what the player does, which no belief-ramp mission through
-PERIMETER does.
-
-### Q33 — Does PERIMETER's map need a real fix for Q15's on-axis routing dead end, or is authoring around it enough?
-
-**Status:** OPEN — blocks nothing before the PERIMETER map is authored; the recommendation is already
-assumed by [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md) Section 4.3.
-
-Q15 (still open, `backlog-pulse-completion.md`) is a real, measured kernel gap: a mover whose approach
-is exactly on-axis with its goal and meets an obstacle has no fallback direction under Manhattan
-distance. PERIMETER's raid approaches from a named direction, which makes it easy to author straight
-into this exact dead end by accident — or easy to avoid entirely by authoring the approach lane
-slightly off-axis.
-
-| Option | Cost |
-| --- | --- |
-| A. **Author the map to avoid the dead end** — an approach lane not perfectly axis-aligned with the Nexus, the same way an earlier fixture in the unit-architecture spike was repositioned off-axis for the identical reason | Free, and ships Level 1 without depending on a kernel fix this milestone does not own. Does not advance Q15 itself |
-| B. **Fix Q15 as part of Milestone 5 or 6**, since a scripted, predictable raid is a comparatively low-risk place to exercise real routing for the first time | Real kernel work — pathfinding, not a map layout choice — inside a milestone whose own Section 1 explicitly excludes "real routing/pathfinding fixes". Widens that milestone's scope for a fix nothing about PERIMETER specifically requires |
-
-**Recommendation: A.** Author around it, exactly as already stated in
-`../milestones/milestone-02-campaign-design.md` Section 4.3. Q15 stays open and unowned by any single level until
-a mission's own design genuinely cannot be authored around it — at which point that mission's gate is
-where it gets fixed, not retrofitted here on spec.
+**Widened at canon 2.13, and A is now the floor rather than the answer.** The Campaign opens with a
+choice of Commander and a player may keep several campaigns in progress
+([`campaigns.md`](campaigns.md) Section 4.3), so progress is **per save slot, each slot naming its
+Commander** — and bonus goals unlock content for Challenge mode, which means the record outlives a
+single campaign. A flat checked-in list still serves the first playable mission; it does not serve
+that shape, and Milestone 4 is where the difference gets designed rather than discovered.
 
 ### Q34 — Does building Commander Vasse in Level 1 mean authoring the Citizens Commander Army early?
 
@@ -780,7 +752,7 @@ where it gets fixed, not retrofitted here on spec.
 
 Mario's own milestone list puts a real Commander in Level 1: "focus on the first Citizen commander.
 Develop the initial draft of Nexus upgrades." Every earlier framing in this repository deferred both —
-`commander-armies.md` Section 1 ("Do not invent production-ready stats before Milestone 4 selects the
+`commander-armies.md` Section 1 ("Do not invent production-ready stats before Milestone 12 selects the
 minimum Citizens-versus-Ravels microgame"), `AGENTS.md` Section 2's standing ban, and `campaigns.md`
 Section 4.1's own belief ramp, which spends the Commander death/absence/restoration beat narratively
 at **Mission 3** (RESTORATION), not Mission 1. This is a real scope question, not a formality: getting
@@ -845,34 +817,20 @@ scripted schedule ends" to read as a *win*.
 cheapest possible evidence (playing the fixture once) decides whether it is needed, and B's cost is
 mostly the canon ceremony a RULE change requires, not the code.
 
-### Q37 — Does Milestone 5's Build Phase GUI need a design spike before the real build?
+**Narrowed at canon 2.13 by Q44's answer.** Missions now declare goals — "survive N Pulses,"
+"capture X by Pulse N," "destroy the enemy Grid Nexus" — which is the general form this row's Option B
+was reaching for ([`campaigns.md`](campaigns.md) Section 4.3). What is left of Q36 is only the kernel
+half: does `engine.md` Section 4.3's victory check accept a mission-supplied objective, or does the
+scenario layer resolve goals above it and hand the kernel an ordinary outcome? The second costs no
+RULE change and is worth trying first.
 
-**Status:** OPEN — blocks nothing before Milestone 5 starts; the recommendation is already assumed by
-[`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md).
-
-Mario, in the ten-milestone review: "I think defining the in-game GUI will require some pause and
-maybe a spike." Milestones 3 and 4 (a list menu, a handful of info panels) are well-trodden shapes
-this project already knows how to build well — `grid`'s own watch view already proves cell frames,
-capability tiers, and monochrome all compose cleanly. Milestone 5 is different in kind, not degree: it
-asks for cursor-driven scrolling (never built), a GUI that adapts across the whole 48×16-72×24
-viewport range (never built), and a dense side panel (construct menu, cost/effect, legality panel) —
-all three interacting at once, in a terminal, which is a genuinely harder and less precedented problem
-than anything Milestone 1 solved. Building the real interactive version first and discovering the
-layout does not work is expensive; a scenario like Q25's transparency amendment (prototype it, show
-what it buys, then ask) is exactly this project's own established way of de-risking a UI decision
-before committing code to it.
-
-| Option | Cost |
-| --- | --- |
-| A. **A static ASCII mockup pass before Milestone 5's real build**: a handful of hand-drawn or scripted frames showing the Build Phase screen at the viewport's minimum, default, and maximum sizes, with the construct menu, legality panel, and a scrolled Grid all present at once — reviewed by Mario before any interactive code exists | Cheap (no interaction, no kernel, just composed frames — the same technique `scripts/capture-screenshots.mjs` already uses for real gameplay) and it is the direct de-risking move for exactly the concern raised. Costs a short detour before Milestone 5 can start its own real work |
-| B. **Skip the mockup and build the real thing directly**, treating Milestone 5's own acceptance criteria (human check: "scrolling feels like looking around, not like fighting the cursor") as the first real feedback | Faster to a working build, but the failure mode is expensive: discovering the layout is wrong only after cursor logic, scrolling math, and panel rendering are all real code, which then all need revisiting together rather than one flat mockup |
-| C. **Treat this as Milestone 2's own job**, expanding its design-decision scope to include a GUI sketch alongside PERIMETER's map and unit list | Keeps all of Level 1's upfront design in one milestone, but Milestone 2 is scoped to *what PERIMETER contains*, not *how the engine presents it* — engine.md 9.2's panel shape is a cross-mission concern, not specific to this one map, so folding it into Milestone 2 mixes two different kinds of decision |
-
-**Recommendation: A, run as a short, explicit step at the start of Milestone 5 itself** (not folded
-into Milestone 2, which stays about PERIMETER's own content) — a few static mockups at the range's
-extremes, shown to Mario, before writing the real cursor/scrolling/panel code. This is cheap relative
-to the cost of a wrong layout discovered after the fact, and it matches how this project already
-de-risks presentation decisions (Q25) rather than introducing a new process.
+**B has a natural home since canon 2.10.** The trigger model in [`campaigns.md`](campaigns.md)
+Section 2.1 carries `win` and `lose` as simulation actions — "the Nexus still stands when Pulse 3
+ends" is a trigger (`when: { event: "pulse.end", pulse: 3 }`, `do: [{ win: true }]`), not a bespoke
+flag on the kernel's own victory check. If A shows the plain tick-limit draw does not read as
+success, B is that trigger action rather than a new victory branch, and the kernel's RULE-level
+condition (Nexus destroyed, annihilation, tick limit) stays exactly as it is, with a mission's
+objective layered above it. Still a RULE-adjacent change the day it lands; still Mario's call.
 
 ### Q38 — Does PERIMETER's own map need real scrolling, or does Milestone 5 prove scrolling on different content?
 
@@ -903,130 +861,101 @@ and it means Milestone 5's acceptance evidence is about the mission that motivat
 capability, not a fixture invented to exercise it. Milestone 2's own Section 4.3 should record the
 final map's size specifically with this in mind.
 
-### Q39 — Where does the campaign start?
+**Sharpened by canon 2.10:** Mario's own input notes name scrolling as "the part that needs more
+attention" and give it a spike (Q37, now answered), so a PERIMETER map that never scrolls would leave
+that spike proving the game's most-scrutinised interaction on a fixture the campaign never plays.
+Option A is now the stronger recommendation, not merely the cheaper one.
 
-**Status:** OPEN — **blocks Milestone 2's own closure**, and blocks the mission that Milestone 10 will
-author. Milestones 3 through 9 build systems any answer would need, so they are not blocked.
+### Q39 — Is the mission-scripting surface declarative triggers, or a scripting API?
 
-Mario has already decided the shape: Citizens first, the Ravels as the enemy, the story kicked off by
-the pyramid waking up. What is undecided is **which moment of that story the player is dropped into**,
-and what they are doing in it. Four openings, worked up in
-[`../evidence/milestone-02-campaign-design/where-to-start.md`](../evidence/milestone-02-campaign-design/where-to-start.md).
+**Status:** OPEN — blocks nothing before Milestone 6 builds PERIMETER's raid and Milestone 9 its
+intro; both proceed under the recommendation. Mario raised it directly with the design notes that
+became canon 2.10: "we should decide if this is better than providing a scripting API/DSL to just
+write some JS code on top of it, which may be easier."
 
-| Option | Cost |
-| --- | --- |
-| 1. **The raid arrives.** The pyramid rose fourteen hours ago; a Ravel raiding party is inbound; hold the line and keep the workers alive | Cheapest — every unit it needs already exists as test content and the fight is the kind the engine is already proven on. Best teacher too: defending puts the most weight on the decisions a player can only make *before* the fight, which is the whole game. Weakest on distinctiveness — "hold the line against the first wave" is the genre's most common opening, and the game's real subject sits behind it |
-| 2. **The pyramid wakes up, and nothing attacks you.** No enemy army. An ancient maintenance machine walks the site, hostile to nobody, lethal anyway. You survive it. The Ravels arrive in mission two and the war is a relief | The only opening whose first mission *is* the game's premise, and by far the most distinctive. Costs the most: a neutral third party is behaviour the engine does not have, a mission with no opponent needs a way to win that the rules do not currently offer (running out the clock is a draw today — this is Q36 made harder), and it spends the setting's best late card in mission one |
-| 3. **You lose the first battle.** A prologue at the annex at full strength; the pyramid rises through your own base and takes the map | Fits the story exactly and is the natural home for the changing-interface idea. But it needs a full-strength army invented for one mission and never used again — the roster work `commander-armies.md` Section 1 defers — plus scripted terrain destruction and a defeat the game treats as an outcome rather than a failure. See Q41, where this is asked properly |
-| 4. **First contact is small and strange.** A quiet survey outpost, a handful of units, a Ravel scavenging crew that runs rather than fights | The gentlest on-ramp, and it makes the raid land harder later. But a first mission with almost no build phase teaches almost nothing about the game, and the build phase *is* the game. A good mission two; a poor mission one |
-
-**Recommendation: build 1 as the first real mission, and put a two-minute version of 2 in front of it
-as an opening scene.** Three reasons: the first mission you build is also how you learn your own game,
-and a defence mission puts every unproven mechanic under load with nothing new underneath it; option
-2's real asset is that the player meets the machine before they meet a war, and that can be had for the
-price of one scene (two lines of text and a picture) without the neutral-enemy engineering; and option
-4 works better as mission two than as mission one. Option 3 is Q41's question, not this one's.
-
-**If distinctiveness matters more than build cost right now, 2 is the honest answer** and the
-recommendation would change. Its problem is engineering and pacing, not the idea.
-
-**Proceeding under:** option 1 with option 2's opening scene.
-[`../evidence/milestone-02-campaign-design/what-a-mission-looks-like.md`](../evidence/milestone-02-campaign-design/what-a-mission-looks-like.md)
-is the only artifact that assumes it; the unlock system, the teaching rule and both teaching curricula
-hold for any of the four and are written as decided.
-
-### Q40 — Is a mission's unlock fixed, or does the player choose one of two?
-
-**Status:** OPEN — blocks nothing before Milestone 4 needs to write an unlock down; the recommendation
-is assumed by
-[`../evidence/milestone-02-campaign-design/unlocking-and-teaching.md`](../evidence/milestone-02-campaign-design/unlocking-and-teaching.md).
-
-Mario: "after each level, we unlock new units and powers." Q31 already settled *where* an unlock is
-written down (a small checked-in list, not a save system). This is the different question of whether
-the grant is authored or chosen, and it decides what the campaign menu is: a record, or a decision
-point.
+[`campaigns.md`](campaigns.md) Section 2.1 records the *shape* Mario asked for — StarCraft-editor
+style triggers, a condition and a list of actions, over a mission of many Pulses — and the split that
+makes it safe: simulation actions run inside the kernel as validated intents, presentation actions
+never touch state. What it does not settle is the **authored surface**: whether a mission author
+writes typed data, or code.
 
 | Option | Cost |
 | --- | --- |
-| A. **Fixed.** The mission grants the one thing it declares | The next mission can *assume* what the player has, which is what makes a teaching sequence possible at all — every mission's lesson can lean on the previous mission's unlock. One line of debrief text, no new screen, no branching |
-| B. **A choice of one from two.** Each mission offers two and the player keeps one | More interesting per mission, and it makes the campaign menu somewhere that something happens. But it doubles the authoring (two options, both worth taking), forces every later mission to work under every possible combination of past choices, and needs a new screen. For six missions it buys replay value the campaign cannot yet afford to balance |
-| C. **Fixed now, stored as a list**, so widening to a choice later is a data change rather than a redesign | Free — the field is already a list of strings |
+| A. **Declarative triggers** — a mission is TypeScript object literals of typed conditions and actions; the vocabulary grows in engine code, each new kind with a named scenario, and a mission never contains a function | Every shape a mission wants that the vocabulary lacks is an engine change, not a mission edit — slower on the first mission, and authors learn a vocabulary rather than a language. TypeScript literals already give autocomplete and type errors, so most of what a "DSL" promises ergonomically is there for free |
+| B. **A scripting API** — a mission is a TypeScript module exporting functions called at mission events, handed an API object (`spawn`, `order`, `say`, …) | Easiest first mission, and the ceiling is the language. But arbitrary code can read a clock, call `Math.random`, close over mutable state, and run in an order nothing pins down — determinism becomes author discipline instead of structure, the exact thing [`engine.md`](engine.md) Section 1 exists to make structural. Nothing can be validated statically (dangling references, unreachable objectives, a `win` nobody can trigger); a preview tool cannot "jump to a trigger" it cannot see; a replay must ship the script; and a user-authored campaign is arbitrary local code with no sandbox (`engine.md` Section 8 says so of hooks in as many words) |
+| C. **A with the narrow-hook door** — declarative by default; where a mission's shape is genuinely too odd for the vocabulary, it registers a typed hook that receives read-only context and returns intents the kernel validates, exactly the mechanism `engine.md` Section 8 already sketches for exceptional content; a hook used by two missions becomes a vocabulary entry | Everything A costs, plus one more thing to review carefully — a hook is code, and the review-time rule "intents out, never mutation" is what keeps it honest |
 
-**Recommendation: A, implemented as C.** The real argument for fixed is not simplicity: a teaching
-campaign has to know what the player knows, and option B turns that into a probability distribution.
+**Recommendation: C, which is A in practice.** The reasons are the project's own invariants, not
+taste: only the Pulse mutates state, and data cannot mutate anything; a trigger list can be validated,
+previewed, jumped to, diffed, and replayed, and code can only be run; and "custom campaigns for custom
+Commander Armies" — Mario's stated reason for wanting this at all — is only safe to accept from
+strangers if a mission is data. "Easier" is true for the first mission and false by the third, when
+three missions' worth of ad-hoc script have to agree about what a wave is. **What would reopen this:**
+if by Milestone 10 RIGHT OF SALVAGE needs more than a handful of new vocabulary kinds, or a hook that
+cannot be expressed as intents, the vocabulary is failing at its job and B deserves a real look with
+that evidence in hand.
 
-### Q41 — Does the campaign want a "big battle you are meant to lose," and where does it go?
+### Q40 — Within a run, what persists from one battle to the next?
 
-**Status:** OPEN — blocks nothing. Deliberately recorded far ahead of any build. Explored in
-[`../evidence/milestone-02-campaign-design/where-to-start.md`](../evidence/milestone-02-campaign-design/where-to-start.md),
-final section.
+**Status:** OPEN — blocks nothing before Milestone 11's gate 11A; it proceeds under the
+recommendation. Registered at canon 2.11 with the Challenge mode itself
+([`game-modes.md`](game-modes.md) Section 3.2).
 
-Mario asked for this to be explored: a bigger battle with real upgrade choices, ending in defeat, then
-starting over. The story already contains its aftermath — the pyramid destroying the annex is the event
-mission one opens fourteen hours after — so the scene is written and only its placement is open. The
-trope's engine is **contrast**, which requires the player to have *used* the power rather than merely
-been shown it, and it has one nasty failure mode: a mission you are meant to lose that reads as a
-mission you failed is worse than no prologue at all.
-
-| Option | Cost |
-| --- | --- |
-| A. **A prologue before everything.** Full-strength annex security; the pyramid rises through your base mid-mission and takes the map | Fits the story exactly, and is the natural home for the pre-pyramid-interface idea (the game's vocabulary arriving at the moment the machine does). But it needs a full-strength army authored for one mission and never seen again, scripted terrain destruction, and a defeat treated as an outcome rather than a failure. The most expensive mission in the campaign, built first |
-| B. **Folded into mission one, for free.** The annex's wreckage and salvage already on the ground at build phase, and the briefing carries the rest | Near-free. But the player never held the big army, and telling is not contrast |
-| C. **After the opening arc, as the turn into the next one.** Six missions of accumulated unlocks, then a mission that takes it all away | Strongest on the trope's own terms — the big army is the one the player actually built, so the contrast is earned rather than granted — and it needs no change to the unlock system, since a mission may already restrict what is available on its own map without the unlock list shrinking. Costs one mission's authoring, at a point where the tooling is mature |
-
-**Recommendation: C as the design, A as the ambition, B as the free consolation — and build none of it
-now.** C is better than A on the trope's own terms and costs a fraction as much. A stays worth wanting,
-mostly for the interface swap rather than the spectacle; if it is ever built it should be built **last**,
-because it depends most on tools that do not exist and it is the one where being wrong damages the
-game's first ten minutes rather than its middle.
-
-### Q42 — Does a second Commander appear, as what, and where in the arc?
-
-**Status:** OPEN — blocks nothing before an arc-2 milestone exists. Registered so the decision is not
-made by accident inside some future mission's authoring session. Depends on Q43 only for the name of
-the person the second Commander is contrasted *against*.
-
-`commander-armies.md` Section 4.4 already proposes the cast and gives each of them a stated
-disagreement, so nothing needs inventing — only placing. The constraint that decides it: a mission in
-which the player has a *different* Commander teaches two things at once — its own new idea, and "your
-Commander changed" — and all six of the opening arc's lessons are already spoken for.
+A run is a series of battles with the army changing between them. The army composition — its
+structures and Nexus power pool — obviously persists; that is what the run draft edits. What is not obvious is
+whether anything *on the Grid* does. `terminal-nexus-concept.md`'s promise that "persistence creates
+short stories — survivors matter" is stated for the Pulses of one match; carrying it across battles
+would be a new claim.
 
 | Option | Cost |
 | --- | --- |
-| A. **The rival Citizen officer (Marshal Teag) as a voice at mission four, playable at the start of arc 2.** At mission four she is a human authority who *approves your build* — a second entity choosing for you, alongside the machine, and only one of them can be argued with. In arc 2 you are her: build anything, advance nothing, win by finishing with a bigger perimeter than you started | Mission four costs a voice and one build-phase restriction: no units, no package, no roster. The arc-2 mission is the cheapest real Commander swap available — a starting package and one different upgrade set on otherwise identical faction content |
-| B. **The Ravel leader, playable for one mission** — the perspective flip | Great teaching (you learn the enemy's rules by using them), but it means building a second faction's whole package before the first one is settled, against the authoring order in `commander-armies.md` Section 6 |
-| C. **A different Ravel antagonist** — one whose objective is to bring every Nexus down, his own included | Cheapest: a second enemy schedule, no new player content. Teaches that an opponent can want something other than your death, which nothing else in the arc does |
-| D. **Nobody until the opening arc ships** | Free and defensible. Costs the campaign its only chance to make the faction's internal argument playable rather than described |
+| A. **Deck and Commander only.** Every battle starts from a fresh Grid with the army's starting package; nothing built or fielded carries over | The smallest run, the cheapest to build (a battle is a match, unchanged), and the one every reference deckbuilder uses. Loses the "veterans" fantasy an RTS audience may expect |
+| B. **Deck, Commander, and surviving units** — the roster that walked out of the last battle walks into the next, capped by supply | Into the Breach's pilot and XCOM's soldiers, at army scale: real attachment, real dread. Costs a between-battle roster state the match does not have, a supply rule for what a fresh Grid can field at tick 0, and a balance problem — a good early battle snowballs, which the rarity/tier dealing cannot see |
+| C. **Deck, Commander, and a carried resource** — unspent resource banks into the next battle's allotment | Cheap, and it rewards efficient play without roster snowballing. Interacts with Milestone 7's economy, which does not exist when 11A is built |
 
-**Recommendation: A**, with **C** as a cheap addition inside the arc if a mission wants an enemy with a
-different goal. A gives the player the character six missions before they play her, at almost no content
-cost, and puts the actual Commander swap where it does not compete with a teaching lesson. B stays
-available and should wait until the Citizens' own roster is settled.
+**Recommendation: A for 11A, with B made observable as a toggle in 11B if it is cheap, and judged
+by playing both.** A is the run every proven structure has; B is the one Terminal Nexus's own fiction
+argues for, and it should be tried rather than assumed either way. C waits for an economy to carry.
 
-### Q43 — What does the Citizen Commander do for a living?
+### Q49 — Should the Build Phase show the player what the Pulse is about to bring?
 
-**Status:** OPEN — **blocks Milestone 8**, which builds one named Commander, and shapes every line of
-dialogue the campaign writes. Worked up in
-[`../evidence/milestone-02-campaign-design/who-leads-and-what-happens.md`](../evidence/milestone-02-campaign-design/who-leads-and-what-happens.md).
+**Status:** OPEN — blocks nothing before Milestone 5's own Build Phase gate, which is where it would
+be built. Registered because it competes directly with Q30's decision to keep that screen small, and
+because it is a claim about every mission the game will ever ship, not about one screen.
 
-`commander-armies.md` Section 4.4 proposes Commander Edda Vasse, "a perimeter officer who never asked
-for the connection," and `campaigns.md` Section 4.2 already writes her into mission one. Mario has said
-the earlier decisions were the previous session's drafting rather than his choices, and named this
-specifically as undecided. The name is the easy part; her **profession** is what decides what the
-campaign is about and how she sounds in every line she ever gets.
+Once the Pulse starts, the player is a spectator. Every decision they have is made beforehand, and
+they cannot correct any of it. Into the Breach is the closest studied case of a resolution a player
+cannot interfere with, and its whole design answer is to show everything first: every enemy attack is
+telegraphed, turn order is inspectable, and the developers' stated goal was that "every death felt
+like your own fault"
+([Subset Games](https://subsetgames.com/itb.html);
+[postmortem](https://www.gamedeveloper.com/game-platforms/road-to-the-igf-subset-games-i-into-the-breach-i-);
+the GDC talk is already cited in [`game-modes.md`](game-modes.md) Section 6).
+
+Terminal Nexus currently has nothing equivalent. A mission's scripted arrivals are authored data
+(Q32, answered — a tick-gated trigger list in the map file), so showing them costs no simulation
+change at all; it is purely a question of whether the Build Phase draws them. Note that PERIMETER's
+own briefing already promises exactly this, in a line written for flavour long before the design
+question was asked: the structure "has already assigned the contact a name, a heraldry, and an
+estimated time of arrival."
 
 | Option | Cost |
 | --- | --- |
-| A. **A line officer** — career military, holds the site under emergency powers | Immediately legible, perfect fit for a first mission about holding a perimeter, and already written. The risk is that she is the default: a competent soldier in a science-fiction war is a character the player has met many times |
-| B. **The survey lead** — the scientist who studied the buried ruin for fourteen years without learning how old it was, and the machine picks *her* | Wonderful irony, and her ignorance is the player's ignorance, so the game never pretends the protagonist understands more than the player does. But a Commander is a unit that stands on the front line and fights, and a career archaeologist doing that needs explaining |
-| C. **The construction foreman** — the person who was building the annex when it stopped existing | The most *Citizen* answer: the faction is pragmatic builders and ordinary people being brave inside procedures, and the game's core loop is literally building and then hoping. Same frontline problem as B |
-| D. **An engineering officer** — military rank, engineering corps, commands this perimeter because she built it | Merges A and C. She does the player's own job (placing things and hoping), so the faction's identity arrives through a person rather than a description; and an engineer standing inside her own fortifications solves B and C's frontline problem for free. Keeps A's legibility |
+| A. **Both — draw the approach edge on the Grid, and state each wave's arrival in text.** The player can see where the raid enters and roughly when each wave lands, before committing | The most complete answer, and the one that makes an un-steerable Pulse read as the player's own doing. Costs the most Build Phase interface work, on a screen Q30 deliberately kept minimal, and it lands in the same milestone as the cursor/scrolling spike Q37 already added |
+| B. **Text only — state the waves and their timing, draw nothing on the Grid** | Most of the value for a fraction of the work: a line or two in the existing side panel, no new drawing. Weaker for the placement decision specifically, since "from the north-west" read as text is harder to translate into where to stand than a marked edge |
+| C. **Neither — let the player learn the raid by losing to it once, and rely on replay** | Free, and defensible for a campaign whose missions are meant to be replayed. But it makes the first attempt at every mission a guess, which is a poor fit for a mode that is also the first-time player experience, and it puts the weight on a replay feature that does not exist yet |
 
-**Recommendation: D, and keep B as a second character who does not command.** Split the two jobs: the
-Commander decides things, the survey lead wonders what the thing is. That lets the Commander stay dry
-and practical instead of delivering exposition, gives the campaign a voice asking the questions the
-player is asking, and costs a recurring name plus a few lines per mission. Edda Vasse is a good name
-and works fine for D — the decision being asked for is the job, not the name.
+**Recommendation: B for Milestone 5, A once the Build Phase's own drawing work is proven.** Start with
+the cheap half, because it is a line of text against a screen that already has to show something, and
+it captures the principle. Add the drawn approach edge when the cursor and scrolling work has landed
+and drawing on the Grid is no longer new. The thing worth deciding *now*, ahead of either, is the
+principle itself — **anything the player needs in order to judge a Build Phase decision should be on
+screen during the Build Phase** — because it also rules out a class of content: a Nexus power whose
+value cannot be known until after the Pulse is a coin flip the player cannot correct, and the draft
+should not deal one.
+
+A side benefit worth naming: the telegraph is also a debugging tool. An arrival edge and a time drawn
+on screen is the fastest way to see that a mission's trigger list is wrong.
 
 ## 5. Answered
 
@@ -1044,6 +973,165 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q17 | 2026-08-21 | **Resolved by an unrelated fix, not decided among its options.** Four-way movement and Manhattan distance (Q15's fix, shipped for legibility) removed the degenerate tie itself: under Chebyshev a rank-deployed army had every enemy at the same distance; under Manhattan the same layout does not, because the axis the old metric ignored (`min(|dx|,|dy|)`) is exactly the one Manhattan keeps. Verified, not assumed: `citizen-mirror-skirmish.ts` (rank-deployed) now pairs each attacker with a distinct nearest opponent from tick 1, no stampede | [`grid/coords.ts`](../src/grid/coords.ts) `gridDistance`; `specs/open-questions.md` Q15 |
 | Q25 | 2026-08-26 | **A confirmed (256-colour tier stays derived from `rgb`; 16-colour stays hand-authored) and C shipped**: `CellStyle.fade`, a `fgRole`-only 0–1 scalar resolved only at `color256`/`truecolor`, narrowly scoped to `fx.damage.flash` per a recorded departure from craft rule 7. B and D not done, per the recommendation | [`engine.md`](engine.md) Section 9.1; [`ascii-effects.md`](ascii-effects.md) craft rule 7; `src/view/roles.ts`, `src/view/frame.ts`, `src/view/effects/composite.ts`, `src/view/effects/recipes.ts` |
 | Q29 | 2026-08-26 | **Recall is the existing end-of-Pulse regroup rule, named, not a new mechanic.** Confirmed directly by Mario's own description of the Pulse phase: "instantly recall all units back to their proper location next to their home buildings" — exactly `engine.md` Section 5's existing rule, Option A | [`../milestones/milestone-06-pulse-phase.md`](../milestones/milestone-06-pulse-phase.md) |
+| Q42 | 2026-09-09 | **No player-facing taxonomy; a bounded union in code.** A power is a name and one plain line saying what it does (*"Factory Permit — Unlocks building: Factory"*). The effect kinds — `unlockStructure`, `spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`, `reveal` — are engineering names the player never sees | [`commander-armies.md`](commander-armies.md) Section 4.5; [`engine.md`](engine.md) Section 5.4 |
+| Q43 | 2026-09-10 | **No upfront Commander choice.** A new player starts Vasse's mission 1 directly; completing it unlocks Averno and Dob Hunter as two new campaign-menu rows, each their own opening on the same maps. Save slots are per Commander (`campaigns.md` Section 4.3) | [`campaigns.md`](campaigns.md) Section 4.3; [`../milestones/milestone-03-game-menu.md`](../milestones/milestone-03-game-menu.md) |
+| Q44 | 2026-09-09 | **Missions have goals, not fixed lengths.** A main goal (usually "destroy the enemy Grid Nexus"; also survive/capture/accumulate shapes) plus an optional bonus goal that unlocks Challenge content. A Pulse counter shows only when the goal is about Pulses. Canon 2.12's fixed 3/4/5-Pulse contract survives as a pacing estimate only | [`campaigns.md`](campaigns.md) Section 4.3 |
+| Q47 | 2026-09-10 | **One map file, roles swapped — no second map authored.** The Ravel opening's mission 1 reuses PERIMETER's literal Grid: the raid's staging area becomes Dob's starting camp, the Citizen base becomes the scripted defender, and his objective is `destroyNexus` targeting the fabricator. Only `playerArmy`, `opponentArmies`, `objective`, and the trigger list's perspective change | [`campaigns.md`](campaigns.md) Section 4.3 |
+| Q48 | 2026-09-10 | **Bonus goals are shown in the briefing, not revealed as a surprise.** A player decides whether to play toward one from the start, the same way the main goal is already stated (Q44) | [`campaigns.md`](campaigns.md) Section 4.3 |
+| Q41 | 2026-09-12 | **Unlocks only, confirmed — and Challenge's own progression is the primary source.** Playing Challenge unlocks more of the faction's pool directly; the Campaign's bonus goals add a few more, only if Challenge has not already unlocked them. No permanent stat buffs, ever | [`game-modes.md`](game-modes.md) Section 3.2 |
+| Q45 | 2026-09-12 | **No skip, in general.** A dealt Nexus power is close to strictly advantageous, unlike a typical deckbuilder's rares, so there is no dilution to protect against and no reason to decline one. Alder alone may convert a power into "honor," their own faction mechanic — and even that may be locked out at tutorial difficulty | [`commander-armies.md`](commander-armies.md) Section 4.5 |
+| Q46 | 2026-09-12 | **Challenge keeps its own progression, uncorrelated with the Campaign.** A run starts from a basic Commander package unlocked from the beginning; playing Challenge itself unlocks more. The Campaign's bonus goals add a few more, only for things not already unlocked. Playing Challenge without ever touching the Campaign is always allowed — a dismissible "we recommend the Campaign first" message is the only nudge | [`game-modes.md`](game-modes.md) Section 3.2 |
+| Q37 | 2026-09-01 | **Yes — a spike, and wider than the row's Option A.** Mario: "Scrolling in the map and placing selected bases is the part that needs more attention and will need a spike to verify assumptions." Not only static mockups: an interactive spike of cursor scrolling and placement, driven through keyboard, mouse, and the driver alike, that also verifies which target terminals deliver Shift+Arrow | [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md); [`engine.md`](engine.md) Section 9.7 |
+| Q32 | 2026-09-12 | **A tick-gated trigger list (Option A).** PERIMETER's raid is a second, one-sided placement block with tick-gated triggers (`{ atTick, action }`), authored and validated the same way a `.map.json` file already is — not a policy module. Generalised at canon 2.10 into the trigger model every mission now uses | [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md) Section 4.4; [`campaigns.md`](campaigns.md) Section 2.1 |
+| Q33 | 2026-09-12 | **Author around Q15's dead end (Option A).** PERIMETER's approach lane is off-axis from the Nexus by design, not a kernel routing fix. Q15 stays open and unowned until a mission's own design genuinely cannot be authored around it | [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md) Section 4.3 |
+
+### Q46 — answered
+
+Mario, 2026-09-12: "Generally speaking, we should keep Campaign and Challenges uncorrelated. Some
+players may not like the campaign mode, and that should not stop them from unlocking all the
+content. But we can have a small trick here. The Challenge mode has a progression similar to Slay
+the Spire; it starts with the basic commander decks, and as you play you unlock more and more
+content... The Campaign can also unlock content on the Challenge mode, but only a few things and
+only if they are not already unlocked. If a player wants to play the Challenge mode without playing
+the campaign, we will show a message that says 'We recommend you play the Campaign first' but still
+allow them to proceed if they insist."
+
+None of Q46's original three options was quite right, because all three assumed Challenge draws its
+starting roster from Campaign progress. The actual answer inverts that: **Challenge is
+self-sufficient.** It ships with basic Commander packages available from the start, and playing
+Challenge itself is what unlocks the rest of the faction pools — directly, the same way Slay the
+Spire's own meta-progression works, with no dependency on the Campaign at all. The Campaign is a
+**secondary, additive** source of the same unlocks: a bonus goal may grant one, but only if Challenge
+hasn't already granted it first — the two tracks write to one shared unlock set, never overwrite or
+duplicate each other, and neither gates the other. The one place they touch the player directly is a
+soft, dismissible nudge the first time Challenge opens before the Campaign has been touched.
+
+### Q45 — answered
+
+Mario, 2026-09-12: "Most upgrades on this game are strictly better. This is not exactly like in Slay
+the Spire, where adding cards to the deck automatically dilute the good cards. Here, they are nexus
+powers, almost always advantageous. The only faction that can skip powers is Alder, that grants them
+'honor' that they can cash into other things, it's their specific mechanic. If we do Alder campaigns
+later, we can just 'lock' options at the 'tutorial' level... So in general no, there's no way to skip
+the Nexus Powers."
+
+This closes the row outright rather than choosing among its three options: the premise behind
+"skippable in Challenge" (Option A) and "skippable with banking" (Option C) was that declining a
+power protects a build from dilution, the way skipping a card does in a deckbuilder. That premise is
+false here — a Nexus power is close to strictly good, so there is nothing to protect against by
+declining one. Option B, always mandatory, is the answer, with exactly one named exception: **Alder**,
+whose faction mechanic converts a would-be power into "honor" spent elsewhere. Even that exception is
+optional to expose — a tutorial-level Alder campaign may lock the conversion out entirely, the same
+way many strategy games gate an advanced mechanic behind a difficulty or content tier.
+
+### Q41 — answered
+
+Folded into Q46's answer, 2026-09-12: unlocks are the only thing that persists between runs, and the
+mechanism is now concrete rather than assumed — Challenge's own progression is the primary writer to
+that unlock set, with the Campaign's bonus goals as a secondary, non-duplicating source. Nothing about
+the row's own reasoning (never a power ladder; a difficulty ladder once someone has won a run) changed.
+
+### Q42 — answered
+
+Mario, canon 2.13: "Nexus powers don't have to be classified as 'permit' or 'revision'. There's no
+need to classify them so strictly, and this will add too many new terms (note they would need to be
+different per faction to match their styles). The power name can have the naming: 'Factory Permit',
+but the description should just say what it does: 'Unlocks building: Factory'. We will keep track of
+all power types in code, using names that make sense for the code, not for the faction."
+
+The half of the canon 2.12 proposal that survives is the half that was load-bearing: **a small
+bounded union of effect kinds**, which is what lets a card, a panel, and a schema be sized before
+Milestones 5, 8, and 11 render them. The half dropped is the player-facing taxonomy — six capitalised
+instrument names, renamed per faction, would have been five vocabularies for a player to learn in
+exchange for nothing they could act on.
+
+So: to a player, a power is a **name and one plain line**. In code the kinds are `unlockStructure`,
+`spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`, and `reveal`
+([`commander-armies.md`](commander-armies.md) Section 4.5). One design point is kept from the
+original proposal: `reveal` exists so that information is a card a player spends a pick on rather
+than something the HUD gives away.
+
+### Q44 — answered
+
+Mario, canon 2.13: "About number of pulses, we don't need to make it strict. Instead, we will have a
+few different goals for each mission."
+
+**Neither of the row's options was chosen, because the question was mis-framed.** It asked whether a
+mission's *fixed length* is shown to the player; the answer is that a mission does not have a fixed
+length. It has a **goal**, and the length falls out of it. Most goals are "destroy the enemy Grid
+Nexus"; others are "survive N Pulses," "capture and hold X by Pulse N," "accumulate X of Y," "keep Z
+alive." A Pulse counter appears in the header when the goal is about Pulses and not otherwise — which
+resolves the original tension without a rule, since the mission that wants the dread of a countdown
+gets one and the rest do not.
+
+Missions also gain **bonus goals**: harder, optional, achievement-shaped, and the thing that unlocks
+content for Challenge mode ([`campaigns.md`](campaigns.md) Section 4.3). That is now the coupling
+between the two modes.
+
+**This narrows Q36 rather than answering it.** Q36 asks whether a defensive mission needs a victory
+shape the kernel lacks; a mission-goal system is exactly the general form its Option B guessed at, so
+what remains of Q36 is the narrower kernel question — does the victory check accept a mission-supplied
+objective, and at what cost to a RULE. Still Milestone 6's, still on evidence.
+
+### Q48 — answered
+
+Mario, 2026-09-10: "Campaign levels could have a main mission, and a bonus goal (basically an
+achievement)... I want to see what you are able to imagine" — asked as part of a wider design pass,
+not as a fork with named options. Resolved here as GUIDANCE rather than put to Mario as a question:
+bonus goals are stated in the briefing alongside the main goal (Q44), never revealed only at debrief.
+See [`campaigns.md`](campaigns.md) Section 4.3.
+
+### Q47 — answered
+
+Resolved as GUIDANCE while writing up the two openings Q43 settled: does the Ravel opening need its
+own map, or does it reuse PERIMETER's? One map, roles swapped — the raid's staging area becomes Dob
+Hunter's camp, the Citizen base becomes the scripted defender. See
+[`campaigns.md`](campaigns.md) Section 4.3.
+
+### Q43 — answered
+
+Mario, 2026-09-10: "Perhaps we can just start with Vasse, so we have a more controlled start, and
+after that first level is completed, the Averno and Dob Hunter campaigns become unlocked." No
+Commander-choice screen at the top level — a new player starts Vasse's mission 1 directly, and
+completing it unlocks the other two openings as campaign-menu rows. See
+[`campaigns.md`](campaigns.md) Section 4.3; withdraws the "selection screen for three" instruction an
+earlier draft gave Milestone 3.
+
+### Q37 — answered
+
+Registered 2026-08-26 as "does Milestone 5 need a design spike," recommending a static ASCII mockup
+pass (Option A) at the start of that milestone. Answered by Mario's design notes of 2026-09-01, which
+became canon 2.10: the spike is wanted, and its subject is narrower and more demanding than a layout
+mockup — **scrolling the map and placing selected structures**, "the part that needs more attention,"
+with assumptions to *verify* rather than frames to look at. The same notes fix what the spike must
+exercise: every menu item by hotkey and by click with identical effect, cursor movement by arrow and
+by Shift+Arrow five tiles at a time, and all of it drivable by an agent for playtesting.
+
+So the answer is Option A's *timing* (a short, explicit step opening Milestone 5, before the real
+build) with a different *artifact*: an interactive spike, not a static one, scoped to scrolling and
+placement, run through all three input adapters of [`engine.md`](engine.md) Section 9.7, and
+recording which of the project's target terminals actually deliver modified arrow keys — the one
+assumption in the keymap that a terminal can silently break. The static mockups at the viewport
+range's extremes remain a cheap thing to produce along the way; they are no longer the deliverable.
+
+### Q33 — answered
+
+Registered 2026-08-26 as whether PERIMETER's map needs a real fix for Q15's on-axis routing dead end.
+**Decided: author around it (Option A).** The approach lane is off-axis from the Nexus by
+construction — free, and it ships Level 1 without depending on a kernel fix this milestone does not
+own. Q15 itself stays open and unowned by any single milestone until a mission's own design genuinely
+cannot be authored around it. [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md)
+Section 4.3.
+
+### Q32 — answered
+
+Registered 2026-08-26 as how a scripted, non-adaptive mission opponent is authored as content.
+**Decided: a tick-gated trigger list (Option A), not a policy module.** PERIMETER's raid is a second,
+one-sided placement block with `{ atTick, action }` triggers, authored and validated the same way a
+`.map.json` file already is. Generalised at canon 2.10 into the full trigger model every mission now
+uses — a condition and a list of simulation/presentation-band actions
+([`campaigns.md`](campaigns.md) Section 2.1). [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md)
+Section 4.4.
 
 ### Q29 — answered
 

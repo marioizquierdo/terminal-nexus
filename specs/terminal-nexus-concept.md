@@ -2,8 +2,8 @@
 
 **Document role:** One-page product definition
 **Status:** Canonical
-**Canon version:** 2.9
-**Updated:** 2026-08-26
+**Canon version:** 2.16
+**Updated:** 2026-09-12
 **License:** CC BY-SA 4.0 for creative direction; Apache-2.0 for technical product requirements
 
 ## The game in one sentence
@@ -33,15 +33,34 @@ The emotional loop is:
 
 > **Build. Commit. Pulse. Understand. Adapt.**
 
+## How the game is played
+
+Two single-player modes share that match, and both are designed for from the start
+([`game-modes.md`](game-modes.md)):
+
+- **Campaign** — the first-time player experience and the world's canon: a short, authored sequence
+  of missions that teaches one mechanic at a time, unlocks the cards it introduces, and tells the
+  story. Judged on whether a new player comes out able to play a run, and whether the world feels
+  real — never on length.
+- **Challenge** — seeded runs: a series of battles against escalating Commander Armies, with a run
+  draft between battles — add a card, remove one, or upgrade one — so the build is polished battle
+  by battle. The same seed gives the same run. This is where replay value lives.
+
+Skirmish (one battle, any legal army) falls out of the same pieces; multiplayer comes later, on the
+same deterministic match. A mode is data over one match loop and one army shape — nothing below the
+mode knows which one it is serving.
+
 ## What makes it special
 
 - **A base is a spatial puzzle.** Buildings extend connected construction territory, protect economic routes, shape paths, and create spawn and regroup anchors.
 - **Automatic battle preserves strategic authorship.** The spectacle is hands-off, but its causes should be readable in the player's previous decisions.
 - **Persistence creates short stories.** Survivors matter, workers flee, factories can be lost, salvage can be contested, and a commander can fall and later return.
 - **Modern drafting disrupts solved build orders.** The Nexus offers a small randomized upgrade draft; research changes its quality, breadth, and flexibility.
+- **A Commander Army is a bounded composition, not (necessarily) a deck.** The faction is the pool of everything it can field; an army brings a Commander, starting units and structures, a tech tree, upgrades, a small pool of Nexus powers, and a Special to one fight (`commander-armies.md` Section 2.1). A campaign grows that composition mission by mission, and the same shape leaves room for drafting modes later. Whether it is well described as a "deck of cards" is retracted as a claim, not decided either way.
+- **It plays at typing speed.** Every menu item shows its hotkey, every hotkey is also a click, and the whole game can be driven from a command stream — by a proficient player, by a mouse, or by an agent playtesting it.
 - **Faction identity is mechanical and symbolic.** Strategy, geometry, glyphs, motion, color, prose, portraits, and effects all express the same civilization.
 - **The simulation is deterministic.** A seed and complete committed plans reproduce the same outcome. Playback speed, animation frames, palette, and renderer never alter play.
-- **The architecture invites creation.** First-party maps, armies, campaigns, effects, and themes use inspectable definitions that may become a future modding surface.
+- **The architecture invites creation.** First-party maps, armies, campaigns, effects, and themes use inspectable definitions that may become a future modding surface. This is deliberate and it is why the foundation is being built so carefully: the game is designed for a world where players extend games **with their own agents** — missions, Commander Armies, cards, short stories — which is also how this project builds itself. Content is data with small named vocabularies, and the setting under-specifies on purpose, so there is room to add ([`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 10.6).
 
 ## The fantasy
 
