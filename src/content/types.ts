@@ -66,7 +66,7 @@ export type Behavior = "advance" | "flee" | "static" | "support"
  * It is a **fixture rule on the bench**, not authored Commander Army content: it exists
  * because a Ravel army without it fails the alignment test in `terminal-nexus-lore.md` Section 8.6,
  * where a themed reskin of a generic ability fails and a rule that *is* the characterisation passes.
- * Milestone 4 confirms or discards it when it selects the real microgame.
+ * Milestone 12 confirms or discards it when it selects the real microgame.
  */
 export type Detonation = AreaDamage & {
   /**

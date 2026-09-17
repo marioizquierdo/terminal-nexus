@@ -1,7 +1,7 @@
 // Ravel fixture content — disposable, tuned for contrast, not for balance.
 //
 // The same status as the Citizen fixture in milestone-1-spike-battle.md 3.6: **not a Commander
-// Army, not canon**. `commander-armies.md` Section 1 forbids production stats before Milestone 4
+// Army, not canon**. `commander-armies.md` Section 1 forbids production stats before Milestone 12
 // selects the Citizens-versus-Ravels microgame, and saying these are throwaway is what keeps them
 // throwaway.
 //

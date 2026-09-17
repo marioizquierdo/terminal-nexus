@@ -293,7 +293,7 @@ Rules for the format:
 ### 3.6 Fixture content — disposable, tuned for legibility not balance
 
 Not a Commander Army, not canon. [`commander-armies.md`](../specs/commander-armies.md) forbids production
-rosters before Milestone 4; saying these are throwaway is what keeps them throwaway. Change them
+rosters before Milestone 12; saying these are throwaway is what keeps them throwaway. Change them
 freely if the fight is boring — that is what `grid` is for.
 
 | Id | Layer | Footprint | HP | Move | Speed tier | Attack | Range | Damage | Cooldown |

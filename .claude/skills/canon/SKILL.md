@@ -212,8 +212,8 @@ report's Section 9 "Canon impact" table applies until Mario accepts the gate**:
 Read the script (`scripts/check-repository.sh`) rather than assume; here is its current shape,
 section by section:
 
-1. **Required files exist** — every canonical `specs/*.md`, `concept/README.md`, the five milestone
-   docs, `templates/gate-report.md`, plus `README.md`, `DEVELOPMENT.md`, `AGENTS.md`, `CLAUDE.md`,
+1. **Required files exist** — every canonical `specs/*.md`, `concept/README.md`, `milestones/README.md` and
+   every milestone tracker, `templates/gate-report.md`, plus `README.md`, `DEVELOPMENT.md`, `AGENTS.md`, `CLAUDE.md`,
    `CONTRIBUTING.md`, `LICENSE`, `LICENSE-CREATIVE`, `NOTICE`, the devcontainer config, and the CI
    workflow file.
 2. **Canon version agreement** — every document under `specs/` and `concept/` declares the same
@@ -222,11 +222,14 @@ section by section:
    check `AGENTS.md`'s own header warns about).
 3. **Required metadata header** — every canon document (except `specs/README.md` itself) carries
    `Document role`, `Status`, `Canon version`, `Updated`, and `License`.
-4. **Exactly one CURRENT milestone** — exactly one `specs/milestone-*.md` declares `**Status:**
-   CURRENT`; it must declare an `**Active gate:**`; `project-governance.md`'s ledger must mark that
-   same milestone number `CURRENT`; and the ledger must have exactly one `CURRENT` row total.
-5. **Open-question references resolve** — every `Q<n>` mentioned anywhere under `specs/` or
-   `concept/` must be defined as a `### Q<n>` heading in `open-questions.md`; every row whose
+4. **Exactly one CURRENT milestone** — exactly one `milestones/milestone-*.md` declares `**Status:**
+   CURRENT`, and it must declare an `**Active gate:**`. The cross-check is against
+   `milestones/README.md`'s own table, which must mark that same file `CURRENT` and have exactly one
+   `CURRENT` row — **not** against `project-governance.md`'s ledger, which is the slower-moving
+   governance record. Keeping the ledger roughly in step is good practice; the table is what fails
+   the build.
+5. **Open-question references resolve** — every `Q<n>` mentioned anywhere under `specs/`,
+   `concept/`, or `milestones/` must be defined as a `### Q<n>` heading in `open-questions.md`; every row whose
    `**Status:**` is `OPEN` must contain `**Recommendation` somewhere in its body.
 6. **Authority markers** — only `RULE` and `GUIDANCE` may appear as authority markers; the retired
    markers `LAW` and `UNPROVEN` fail the build unless the line is marked `<!-- stale-ok -->`.
@@ -272,11 +275,11 @@ than because the active gate's Section 3 requires it, stop and check the marker.
 | [`terminal-nexus-lore.md`](../../../specs/terminal-nexus-lore.md) | Universe, Prime Nexuses, Nexus Symbols, Ancients, Originals, faction identity, ASCII semiotics, voice |
 | [`engine.md`](../../../specs/engine.md) | The three worlds (state/Pulse/presentation), the Grid and its layers, logical time, determinism, events, content sketches, rendering, runtime direction — this is where RULE/GUIDANCE markers live |
 | [`ascii-effects.md`](../../../specs/ascii-effects.md) | The particle/effect system: the pure-function contract, starter vocabulary, craft rules |
-| [`replay-format.md`](../../../specs/replay-format.md) | The `.replay.json` design — schema, log levels, soundness. GUIDANCE, unbuilt; Milestone 2's locked contract to implement |
-| [`commander-armies.md`](../../../specs/commander-armies.md) | Playable Commander Army packages — Commander, units, structures, upgrades, Nexus powers. Rosters intentionally undefined until Milestone 4 |
+| [`replay-format.md`](../../../specs/replay-format.md) | The `.replay.json` design — schema, log levels, soundness. GUIDANCE, unbuilt; no milestone owns building it yet |
+| [`commander-armies.md`](../../../specs/commander-armies.md) | Playable Commander Army packages — Commander, units, structures, upgrades, Nexus powers. Rosters intentionally undefined until Milestone 12 |
 | [`campaigns.md`](../../../specs/campaigns.md) | Mission and campaign structure, teaching, the Citizen opening, cutscenes, opponent policies, authoring tools |
 | [`game-modes.md`](../../../specs/game-modes.md) | The single-player modes and their vocabulary — Campaign (first-time experience, canon) and Challenge (seeded runs with a draft between battles), the run's starting shape, content rules for both, and the reference games behind each claim |
-| `milestone-<n>-*.md` | The one narrow implementation contract — only the milestone marked **CURRENT** is authority, and only through its **Active gate** |
+| `milestones/milestone-<n>-*.md` | The one narrow implementation contract — only the milestone marked **CURRENT** is authority, and only through its **Active gate** |
 | [`project-governance.md`](../../../specs/project-governance.md) | Canon maintenance protocol, bounded autonomy, the evidence loop, the execution ledger, locked product decisions, test/playtest strategy, deferred systems |
 | [`open-questions.md`](../../../specs/open-questions.md) | The durable queue of decisions genuinely waiting on Mario, each with a recommendation |
 | [`templates/gate-report.md`](../../../specs/templates/gate-report.md) | The fill-in template that closes a gate — copy it, never edit it in place |

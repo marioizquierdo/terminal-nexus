@@ -160,7 +160,7 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Swatch>>> = {
     "terrain.rock": { ansi: 37, rgb: [128, 132, 138] },
     "terrain.deposit": { ansi: 33, rgb: [198, 160, 40] },
     // Citizen rust orange against Ravel bioluminescent cyan-green: the two Energy palettes the lore
-    // gives the factions that Milestone 4 will pair.
+    // gives the factions that Milestone 12 will pair.
     "player.a": { ansi: 33, rgb: [201, 118, 68] },
     "player.b": { ansi: 92, rgb: [104, 226, 132] },
     "item.salvage": { ansi: 32, rgb: [124, 158, 118] },
