@@ -104,16 +104,28 @@ terminal that can do more was still getting the tier most exposed to a terminal 
 inconsistently defined colours). `--theme` defaults to `dark` — the palette the lore and every
 screenshot are designed against — and `light` is one flag away for a light terminal background.
 
-**`terminal-nexus`** (Milestone 3, Gate 3A) launches straight to a top-level menu — Campaign,
+**`terminal-nexus`** (Milestone 3, Gates 3A–3B) launches straight to a top-level menu — Campaign,
 Challenge, Settings, Exit — on the same `TerminalBackend`/cell-frame stack `grid` uses, not a second
 presentation system. `src/menu/` holds the reusable menu-list shape, the keyboard and mouse adapters,
 and the driver; `src/view/menu.ts` composes the frame; `src/cli/lifecycle.ts` is the one idempotent
 disposer both `grid watch` and this menu build their lifecycle on. Every menu item shows its hotkey
 (`[1] Campaign`) and is reachable three equivalent ways — the hotkey, arrows and Enter, or a mouse
 click on its row (opt-in SGR mouse reporting, switched off by the disposer on every exit path).
-Campaign, Challenge, and Settings are honest stubs at this gate (3B and 3C build their real
-destinations); Exit is real. `terminal-nexus` flags: `--capability`, `--theme`, `--glyphs`,
-`--backend` — the same bootstrapping subset `grid` takes, not yet an interactive Settings screen.
+Campaign and Challenge are still honest stubs (3C builds their real destinations); Exit is real, and
+now so is Settings. `terminal-nexus` flags: `--capability`, `--theme`, `--glyphs`, `--reduced-motion`,
+`--backend`.
+
+Settings (`src/settings/`, Gate 3B) is a second menu screen reached from the top level by its own
+hotkey, built from the exact same list shape and the exact same three adapters rather than a second
+kind of screen invented for it: four rows — colour depth, background, symbols, reduced motion — each
+cycling to their own next value in place, plus a row that goes back (its own hotkey, or Esc). A change
+shows up on the very next frame with no restart of the terminal: `TerminalBackend` gained an optional
+`setPresentation(capability, theme)`, implemented by both `AnsiBackend` and `OpenTuiBackend`, so the
+same running backend can be told to draw differently instead of being torn down and rebuilt. Every
+change is written straight to `~/.terminal-nexus/settings.json` — a small file of its own that `grid`
+never reads, and deliberately not a step toward any future save/progression format — and read back on
+the next launch; an explicit command-line flag still overrides it for that one run without changing
+what is saved.
 
 `bun test` drives one file at a time (`./scripts/run-tests.sh bun`): its `node:test` shim rejects a
 test registered while another file's tests are still running, and it does not implement `t.skip()`.
@@ -144,7 +156,10 @@ assert on, and it says nothing about spacing, density, or where the eye goes.
 `node scripts/capture-menu-screenshot.mjs` does the same for `terminal-nexus`'s menu, sharing the
 same `scripts/lib/terminal-capture.mjs` pipeline: launch, arrow keys by real tmux key name, a hotkey
 digit, and — driving the mouse adapter with the literal bytes a terminal actually sends, not a
-description of one — a raw SGR mouse click at the row's own rendered cell.
+description of one — a raw SGR mouse click at the row's own rendered cell. Its shots also cover the
+Settings screen: entering it, cycling a row, and coming back. Cycling a row does more work than a
+plain navigation redraw (it writes the settings file, then redraws), so that shot waits for the new
+text to actually appear rather than capturing on a fixed delay.
 
 Requires `tmux` and the browser at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`. Editing the
 `shots` array at the top of the script is how you add a frame worth looking at.

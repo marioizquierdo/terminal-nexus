@@ -33,11 +33,12 @@ Milestone 1's Pulse Playground grew into: units on a small Grid resolving a dete
 from a seed, with a levelled report and a minimal ASCII view. `grid` is not the game; it is the tool
 that builds and replays it.
 
-**`terminal-nexus`** is the game's own executable (Milestone 3, Gate 3A): it launches straight to a
-top-level menu — Campaign, Challenge, Settings, Exit — every item reachable by its displayed hotkey,
-by arrows and Enter, or by a mouse click, all three proven equivalent. There is still no Build Phase,
-no economy, and no campaign content yet — Campaign, Challenge, and Settings are honest stubs until
-later milestones build their real destinations.
+**`terminal-nexus`** is the game's own executable (Milestone 3, Gates 3A–3B): it launches straight to
+a top-level menu — Campaign, Challenge, Settings, Exit — every item reachable by its displayed
+hotkey, by arrows and Enter, or by a mouse click, all three proven equivalent. Settings is real:
+colour depth, background, symbols, and reduced motion each cycle in place and persist across a
+relaunch. There is still no Build Phase, no economy, and no campaign content yet — Campaign and
+Challenge remain honest stubs until later milestones build their real destinations.
 
 ## Local Development
 
@@ -106,8 +107,10 @@ npm run terminal-nexus
 
 Launches straight to the top-level menu — Campaign, Challenge, Settings, Exit — on the same terminal
 stack as `grid`. Every item shows its hotkey (`[1] Campaign`) and works three equivalent ways: press
-the hotkey, arrow to it and press Enter, or click its row. Campaign, Challenge, and Settings are
-honest stubs for now (later milestones build their real destinations); Exit actually quits, cleanly.
+the hotkey, arrow to it and press Enter, or click its row. Settings is a real second screen: colour
+depth, background, symbols, and reduced motion each cycle to their next value on the spot, take effect
+immediately, and are remembered on the next launch. Campaign and Challenge are still honest stubs for
+now (later milestones build their real destinations); Exit actually quits, cleanly.
 
 ### Read what happened
 
@@ -163,7 +166,8 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the workflow and evidence requirements.
 .
 ├── src/                   The kernel and tools: pulse (deterministic engine), content, scenario,
 │                          state, events, grid, report, view, cli, rng, menu (the menu-list shape,
-│                          input adapters, and driver terminal-nexus's menu is built on)
+│                          input adapters, and driver terminal-nexus's menu is built on), settings
+│                          (the small persisted-choices file its Settings screen reads and writes)
 ├── scenarios/             Checked-in .map.json fixtures — one file per rule under test
 ├── bin/                   grid.ts (the engine/editor/replay tool) and terminal-nexus.ts (the game's
 │                          own entry point, launching straight to the top-level menu)

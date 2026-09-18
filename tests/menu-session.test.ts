@@ -8,8 +8,21 @@ import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { runMenu, TOP_LEVEL_ITEMS } from "../src/cli/menu.ts"
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../src/menu/mouse.ts"
+import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
+import type { Settings, SettingsStore } from "../src/settings/index.ts"
 
 const ESC = String.fromCharCode(27)
+
+/** A settings screen exists (tests/menu-settings.test.ts covers it); these lifecycle tests only need
+ *  *some* legal starting settings and a store that never actually touches a disk. */
+const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, capability: "monochrome" }
+
+function noopSettingsStore(): SettingsStore {
+  return {
+    load: async () => null,
+    save: async () => {},
+  }
+}
 
 class FakeStdout extends EventEmitter {
   isTTY = true
@@ -53,7 +66,8 @@ async function menuSession(
   const exits: number[] = []
 
   const session = runMenu({
-    capability: "monochrome",
+    settings: TEST_SETTINGS,
+    settingsStore: noopSettingsStore(),
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
@@ -133,7 +147,8 @@ test("a non-TTY launch prints one line and no escape sequences, and needs no sig
   stdout.isTTY = false
   stdin.isTTY = false
   const status = await runMenu({
-    capability: "monochrome",
+    settings: TEST_SETTINGS,
+    settingsStore: noopSettingsStore(),
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
@@ -156,7 +171,8 @@ test("a render failure is caught, still disposes, and reports failure", async ()
   }
 
   const status = await runMenu({
-    capability: "monochrome",
+    settings: TEST_SETTINGS,
+    settingsStore: noopSettingsStore(),
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
