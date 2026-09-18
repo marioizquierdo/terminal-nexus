@@ -21,7 +21,7 @@ export const MOUSE_REPORTING_OFF = `${ESC}[?1006l${ESC}[?1000l`
  * press, `m` a release. Matched against a whole "key" the way `keysFromChunk` already hands one to
  * us — an escape-prefixed chunk arrives as one string, never split mid-sequence.
  */
-const SGR_MOUSE = /^\[<(\d+);(\d+);(\d+)([Mm])$/
+const SGR_MOUSE = /^\u001b\[<(\d+);(\d+);(\d+)([Mm])$/
 
 export type MouseClick = Readonly<{ column: number; row: number }>
 

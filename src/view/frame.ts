@@ -36,6 +36,14 @@ export interface TerminalBackend {
   start(): Promise<void>
   present(frame: ReadonlyCellFrame): void | Promise<void>
   stop(): Promise<void>
+  /**
+   * Changes which colour depth and background future `present()` calls resolve roles against,
+   * without re-entering the alternate screen or touching raw mode — Gate 3B's Settings screen needs
+   * a colour change to redraw instantly, not flash the terminal by stopping and restarting the whole
+   * backend. Optional: a backend whose session never changes these (`grid watch`'s fixed-for-the-
+   * session use) may simply not implement it.
+   */
+  setPresentation?(capability: CapabilityMode, theme: Theme): void
 }
 
 export const BLANK: Cell = { glyph: " ", style: {} }

@@ -30,6 +30,12 @@ export type MenuCompositionInput = Readonly<{
    *  nothing, per milestone-03-game-menu.md's "stub honestly rather than half-build." */
   notice: string | null
   glyphPack?: GlyphPack
+  /** Printed after "TERMINAL NEXUS" in the header — which screen this is. Defaults to the top-level
+   *  menu's own subtitle so every existing caller keeps today's frame unchanged. */
+  subtitle?: string
+  /** Whether this screen has somewhere to go back to — adds "esc back" to the footer's controls
+   *  line. Advertising a control that does nothing would be the opposite of honest. */
+  showBack?: boolean
 }>
 
 function put(
@@ -86,7 +92,7 @@ function drawBorder(cells: BandCell[], size: { width: number; height: number }, 
  *  invented, since a stub screen still owes the player something true about the game. */
 const TAGLINE = "Build. Commit. Pulse. Understand. Adapt."
 
-const CONTROLS = "arrows + enter, or a digit, or click a row  -  q quit"
+const BASE_CONTROLS = "arrows + enter, or a digit, or click a row"
 
 export function composeMenuFrame(
   input: MenuCompositionInput,
@@ -97,11 +103,12 @@ export function composeMenuFrame(
   const pack: GlyphPack = input.glyphPack ?? "ascii"
   const cells: BandCell[] = []
   const band = BANDS.chrome
+  const controls = `${BASE_CONTROLS}${input.showBack === true ? "  -  esc back" : ""}  -  q quit`
 
   drawBorder(cells, size, pack)
 
   text(cells, band, 2, 1, "TERMINAL NEXUS", "chrome.title", { bold: true })
-  text(cells, band, 18, 1, "top-level menu", "chrome.muted", { dim: true })
+  text(cells, band, 18, 1, input.subtitle ?? "top-level menu", "chrome.muted", { dim: true })
   text(cells, band, 2, 2, TAGLINE, "chrome.muted", { dim: true })
 
   input.state.items.forEach((item, index) => {
@@ -127,7 +134,7 @@ export function composeMenuFrame(
     text(cells, band, 2, size.height - 6, input.notice, "chrome.value")
   }
 
-  text(cells, band, 2, size.height - 3, CONTROLS, "chrome.muted", { dim: true })
+  text(cells, band, 2, size.height - 3, controls, "chrome.muted", { dim: true })
 
   return composeBands(size.width, size.height, cells)
 }

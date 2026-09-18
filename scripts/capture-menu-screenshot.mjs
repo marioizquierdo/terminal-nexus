@@ -18,7 +18,11 @@ const SESSION = "terminal-nexus-capture"
 const COLS = 80
 const ROWS = 24
 
-function shoot(name, caption, { args = "--capability truecolor --theme dark", drive } = {}) {
+function shoot(
+  name,
+  caption,
+  { args = "--capability truecolor --theme dark", drive, waitForText, background = "dark" } = {},
+) {
   killSession(repoRoot, SESSION)
   tmux(repoRoot, [
     "new-session",
@@ -33,6 +37,13 @@ function shoot(name, caption, { args = "--capability truecolor --theme dark", dr
   ])
   waitFor(repoRoot, SESSION, (text) => text.includes("TERMINAL NEXUS"), "the first frame")
   if (drive !== undefined) drive()
+  // `send-keys` returns as soon as the bytes are injected into the pty, not once the app has
+  // reacted to them — a plain navigation redraw is fast enough that this was never visible, but a
+  // settings row that cycles a value, writes it to a real file, and re-renders needs to actually be
+  // waited for, or the capture below can land a beat early and show the screen mid-change.
+  if (waitForText !== undefined) {
+    waitFor(repoRoot, SESSION, (text) => text.includes(waitForText), `"${waitForText}" to appear`)
+  }
   const colour = pane(repoRoot, SESSION, { colour: true })
   const html = ansiToHtml(colour, COLS, ROWS)
   renderPng({
@@ -42,7 +53,11 @@ function shoot(name, caption, { args = "--capability truecolor --theme dark", dr
     rows: ROWS,
     scratchDir: scratch,
     targetPath: join(outputDirectory, `${name}.png`),
-    background: "dark",
+    // Matches the page wrapper to whichever theme this shot actually demonstrates — the same thing
+    // capture-screenshots.mjs does for grid's own light-theme shots. The light theme's palette is
+    // designed to sit on a light terminal background; without this, its own text renders nearly
+    // invisibly against a page still assuming a dark one.
+    background,
   })
   killSession(repoRoot, SESSION)
 }
@@ -81,5 +96,30 @@ shoot(
   },
 )
 
+// Gate 3B — the Settings screen.
+shoot("settings-screen", "Settings, reached by its own hotkey - four choices and a way back", {
+  drive: () => tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "3"]),
+  waitForText: "Colour depth: truecolor",
+})
+
+shoot(
+  "settings-light-theme",
+  "Cycling Background to light takes effect on the very next frame, no restart, no flicker",
+  {
+    drive: () => tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "32"]), // 3 = Settings, 2 = Background
+    waitForText: "Background: light",
+    background: "light",
+  },
+)
+
+shoot(
+  "settings-back-to-top",
+  "Pressing Back (or Esc) returns to exactly where the player was, still highlighting Settings",
+  {
+    drive: () => tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "35"]), // 3 = Settings, 5 = Back
+    waitForText: "top-level menu",
+  },
+)
+
 rmSync(scratch, { recursive: true, force: true })
-console.log(`wrote ${join(outputDirectory, "menu-top-level.png")} and four more`)
+console.log(`wrote ${join(outputDirectory, "menu-top-level.png")} and seven more`)

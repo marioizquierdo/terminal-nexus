@@ -34,7 +34,7 @@ test("every cell is exactly one printable column, at every capability tier and i
 test("monochrome emits no colour code at all; a colour tier emits at least one", () => {
   const frame = composeMenuFrame({ state: createMenuList(ITEMS), notice: null }, "monochrome")
   const codes = (ansi: string): number[] =>
-    [...ansi.matchAll(/\[([0-9;]*)m/g)].flatMap((match) => (match[1] ?? "").split(";").filter(Boolean).map(Number))
+    [...ansi.matchAll(/\u001b\[([0-9;]*)m/g)].flatMap((match) => (match[1] ?? "").split(";").filter(Boolean).map(Number))
   const isColourCode = (code: number): boolean => (code >= 30 && code <= 49) || (code >= 90 && code <= 107)
 
   assert.ok(!codes(frameToAnsi(frame, "monochrome")).some(isColourCode), "monochrome emitted a colour code")

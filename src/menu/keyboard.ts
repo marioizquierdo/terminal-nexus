@@ -15,6 +15,9 @@ const ACTIVATE_KEYS = new Set(["\r", "\n"])
 const ESC = String.fromCharCode(27)
 const ARROW_UP = `${ESC}[A`
 const ARROW_DOWN = `${ESC}[B`
+/** Esc alone, as one whole "key" from `keysFromChunk` — not a CSI/SS3 sequence, so it never collides
+ *  with an arrow key or a mouse report despite starting with the same byte. */
+const BACK_KEY = ESC
 
 /**
  * One raw key to one command, or `null` when this key means nothing on a menu screen. `state` is
@@ -23,6 +26,7 @@ const ARROW_DOWN = `${ESC}[B`
  */
 export function keyboardCommand(key: string, state: MenuListState): MenuCommand | null {
   if (QUIT_KEYS.has(key)) return { kind: "quit" }
+  if (key === BACK_KEY) return { kind: "back" }
   if (key === ARROW_UP) return { kind: "highlight", index: moveHighlight(state, -1) }
   if (key === ARROW_DOWN) return { kind: "highlight", index: moveHighlight(state, 1) }
   if (ACTIVATE_KEYS.has(key)) return { kind: "activate", index: state.highlighted }
