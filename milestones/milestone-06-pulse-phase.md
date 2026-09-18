@@ -102,14 +102,11 @@ sign for both.
 **The timings are in seconds, not ticks, and should stay that way.** Everything above is presentation
 time. None of it may feed back into the Pulse, and none of it changes how long the Pulse itself ran.
 
-**The alarm implies the ending is known a few seconds early — and that is only true for some endings.**
-A Pulse that ends because it ran out of ticks is predictable: the warning can start before the last
-tick resolves. A Pulse that ends because a Grid Nexus was destroyed or a side was wiped out is not
-predictable — it just happens. So either the alarm is specific to the scheduled ending and a sudden
-one gets a different, sharper treatment, or the alarm plays *after* the fact everywhere and reads as a
-"stand down" signal rather than a countdown. **This is the one question in the sketch that a playtest
-will not answer on its own, because it depends on which of the two it is trying to be.** Worth deciding
-what the alarm *means* before choosing how it looks.
+**The alarm is pacing, not a countdown.** Mario, asked directly: it is "just an idea for UX, to create
+anticipation and not just stop the pulse right away." So it plays *after* the ending is decided, as the
+transition's opening beat — which means it needs nothing predicted in advance and works the same way
+whether the Pulse ran out of ticks or a Grid Nexus just died. Build it as a flourish on an ending that
+already happened, not as a warning about one that is coming.
 
 **Centring the camera on the Grid Nexus is new**, and it is a genuinely good idea for a reason beyond
 the ending: it puts the player where the next Build Phase starts, so the transition does not also ask

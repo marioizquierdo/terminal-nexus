@@ -1,7 +1,7 @@
 // The Proving Grounds — a third fixture roster, disposable bench content exactly like the Citizen and
 // Ravel fixtures beside it (milestone-1-spike-battle.md 3.6, commander-armies.md Section 1): **not a
 // Commander Army, not canon, not faction lore**. commander-armies.md still reserves real rosters for
-// Milestone 4; a design here that does not pan out is discarded from this file, never reverted out of
+// Milestone 12; a design here that does not pan out is discarded from this file, never reverted out of
 // citizen.ts or ravel.ts, both of which carry tuned relationships other tests depend on.
 //
 // This roster exists for a different reason than the other two: not to characterise a faction, but to
