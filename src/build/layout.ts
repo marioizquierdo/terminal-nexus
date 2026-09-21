@@ -4,7 +4,6 @@
 // "mouse geometry lives only in the mouse adapter... a change of tile width or panel layout changes
 // one adapter and no command."
 
-import type { MenuLayout } from "../menu/layout.ts"
 import { menuItemLabel } from "../menu/layout.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import type { ConstructGroup, ConstructItem } from "./types.ts"
@@ -47,8 +46,6 @@ export type BuildLayout = Readonly<{
   /** Frame row the panel's pinned key bindings sit on — its last usable line, so they do not move
    *  as the rest of the panel grows and shrinks with what the player is doing. */
   panelBindingsRow: number
-  /** Where the construct menu's rows are drawn, and therefore where a click on one lands. */
-  construct: MenuLayout
 }>
 
 /** The panel's own rows, counted from its first. Row 0 is what the player has to spend, because it
@@ -153,7 +150,6 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLay
     footerRow: offset.row + composition.height - 1 - FOOTER_ROWS,
     panelRow: offset.row + 1,
     panelBindingsRow: offset.row + composition.height - 1 - FOOTER_ROWS - 1,
-    construct: { column: panelColumn, row: offset.row + 1 + CONSTRUCT_FIRST_ROW, rowStep: 1 },
   }
 }
 

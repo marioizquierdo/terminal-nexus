@@ -176,7 +176,17 @@ function drawPreview(cells: BandCell[], input: BuildCompositionInput): void {
   if (item === undefined) return
   const definition = context.registry.get(item.contentId)
   const anchor = anchorForCursor(state.cursor, definition.footprint)
-  const legal = legalityAt(context, state.planned, item.contentId, anchor).ok
+  // The same call `place()` makes, budget and all. Without `remaining` the ghost answers a
+  // different question from the one Enter answers, and draws a perfectly legal-looking structure on
+  // a tile where pressing Enter is refused — which is the exact opposite of "what you see is what
+  // Enter places".
+  const legal = legalityAt(
+    context,
+    state.planned,
+    item.contentId,
+    anchor,
+    remaining(context, state),
+  ).ok
   const range = visibleRange(state.camera, state.viewport)
 
   for (const offset of definition.footprint) {
@@ -213,22 +223,31 @@ function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
 }
 
 /**
- * The live bindings, as many as the width honestly holds. The first five are the ones a player
- * cannot work the screen without; the rest are also on the panel, so dropping them here loses
- * nothing.
+ * The live bindings, most important first, and **only ever whole ones**. Every binding is optional
+ * to the same degree: the line takes them in order while each still fits, and stops.
+ *
+ * An earlier version kept five of them as a fixed prefix and appended the rest while they fit, on
+ * the assumption that the prefix always fits. It does not. The footer's width comes from the
+ * composition's, the composition's from the viewport's, and the viewport shrinks to fit a Grid
+ * smaller than the screen — which `isGated` deliberately allows, so a tutorial Grid is never gated
+ * on a terminal that could show all of it. On a 20-tile Grid the prefix was cut mid-binding and
+ * `q quit`, the one key a player most needs to find, was the half that fell off. Found by a review's
+ * short-Grid case, not by anything that runs today.
  */
-function controlsLine(limit: number): string {
-  const essential = [
+export function controlsLine(limit: number): string {
+  const bindings = [
     "arrows move",
-    "shift+arrow / pgup pgdn jump 5",
     "enter place",
     "esc disarm",
     "q quit",
+    "shift+arrow / pgup pgdn jump 5",
+    "home end jump sideways",
+    "bksp remove",
+    "u undo",
   ]
-  const extra = ["home end jump sideways", "bksp remove", "u undo"]
-  let line = essential.join("  ")
-  for (const binding of extra) {
-    const grown = `${line}  ${binding}`
+  let line = ""
+  for (const binding of bindings) {
+    const grown = line === "" ? binding : `${line}  ${binding}`
     if (grown.length > limit) break
     line = grown
   }
@@ -398,31 +417,41 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
 
   const lines = constructLines(layout, context.catalog)
   const lastLine = lines[lines.length - 1]
-  let row = (lastLine?.row ?? layout.panelRow) + 2
-
-  text(cells, band, column, row, item.effect, "chrome.value", { limit })
-  row += 2
-
   const anchor = anchorForCursor(state.cursor, context.registry.get(item.contentId).footprint)
   const legality = legalityAt(context, state.planned, item.contentId, anchor, left)
-  if (!legality.ok) {
-    // The panel that says *why* — gate 5B's own reason to exist. A footer line would do for one
-    // message, but it is gone the moment anything else happens, and "why can I not build here" is
-    // a question the player asks while looking at the Grid, not while reading a status line.
-    text(cells, band, column, row, "CANNOT BUILD HERE", "notice.gate", { bold: true, limit })
-    text(cells, band, column, row + 1, legality.reason, "chrome.value", { limit })
-    if (legality.tile !== undefined) {
-      text(
-        cells,
-        band,
-        column,
-        row + 2,
-        `at ${legality.tile.x},${legality.tile.y}`,
-        "chrome.muted",
-        { dim: true, limit },
-      )
-    }
-  }
+
+  // Written as a list and then laid out, so the whole block can be dropped in one piece when the
+  // panel is too short for it. The panel's height is the viewport's, and the viewport shrinks to
+  // fit a small Grid — `isGated` deliberately never gates one that fits the screen entirely — so a
+  // block that just keeps writing downward eventually overwrites the pinned bindings, then the
+  // footer's position readout, then the controls line. A panel that silently draws over the footer
+  // is worse than one that omits a line it has no room for.
+  const detail: readonly (readonly [string, StyleRole, Readonly<{ bold?: boolean; dim?: boolean }>])[] =
+    [
+      [item.effect, "chrome.value", {}],
+      ...(legality.ok
+        ? []
+        : ([
+            ["", "chrome.value", {}],
+            // The panel that says *why* — gate 5B's own reason to exist. A footer line would do for
+            // one message, but it is gone the moment anything else happens, and "why can I not
+            // build here" is a question the player asks while looking at the Grid.
+            ["CANNOT BUILD HERE", "notice.gate", { bold: true }],
+            [legality.reason, "chrome.value", {}],
+            ...(legality.tile === undefined
+              ? []
+              : ([[`at ${legality.tile.x},${legality.tile.y}`, "chrome.muted", { dim: true }]] as const)),
+          ] as const)),
+    ]
+
+  const first = (lastLine?.row ?? layout.panelRow) + 2
+  // One row of clearance above the pinned bindings, so the two never touch.
+  const available = layout.panelBindingsRow - 1 - first
+  if (available < detail.length) return
+  detail.forEach(([value, role, extra], index) => {
+    if (value === "") return
+    text(cells, band, column, first + index, value, role, { ...extra, limit })
+  })
 }
 
 export function composeBuildFrame(

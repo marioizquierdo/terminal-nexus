@@ -7,7 +7,6 @@
 // different anchor calculations, three different legality shapes, and three different ways to
 // straddle a rock — and they are drawn from the existing fixture rosters rather than invented.
 
-import type { MenuItem } from "../menu/types.ts"
 import type { GridTerrain, TerrainId } from "../grid/types.ts"
 import type { ConstructItem, StandingStructure } from "./types.ts"
 
@@ -154,12 +153,3 @@ export const SPIKE_CATALOG: readonly ConstructItem[] = [
  * resource is actually *earned* is Milestone 7's; this is an opening allotment and nothing more.
  */
 export const SPIKE_ALLOTMENT = 100
-
-/**
- * The construct menu as menu rows — the same `MenuItem` shape the top-level menu and Settings use,
- * so the list widget's "hotkey, arrows and Enter, or a click" behaviour and `menuIndexAt`'s
- * hit-testing both apply here without a second implementation of either.
- */
-export function menuItemsFor(catalog: readonly ConstructItem[]): readonly MenuItem[] {
-  return catalog.map((item) => ({ id: item.contentId, hotkey: item.hotkey, label: item.label }))
-}

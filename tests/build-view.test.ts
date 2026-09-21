@@ -10,9 +10,10 @@ import { BuildSession } from "../src/build/session.ts"
 import { SPIKE_ALLOTMENT, SPIKE_CATALOG } from "../src/build/catalog.ts"
 import { remaining } from "../src/build/state.ts"
 import { spikeContext } from "../src/cli/spike.ts"
-import { composeBuildFrame } from "../src/view/build.ts"
+import { composeBuildFrame, controlsLine } from "../src/view/build.ts"
 import { cellAt, frameToText, offendingGlyph } from "../src/view/frame.ts"
 import { CAPABILITY_MODES } from "../src/view/roles.ts"
+import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 
 const MINIMUM = { columns: 80, rows: 24 }
@@ -343,4 +344,86 @@ test("the scroll margin the screen prints is the one it is actually using", () =
     }
     assert.equal(layout.viewport.width - 1 - (build.state.cursor.x - build.state.camera.x), margin)
   }
+})
+
+test("the ghost preview answers the same question Enter does, budget included", () => {
+  // A review found this: the preview checked legality without the budget, so after spending down it
+  // drew a perfectly normal-looking structure on a tile where Enter was refused. "What you see is
+  // what Enter places" is the whole point of having a preview at all.
+  const context = spikeContext()
+  const layout = buildLayout(MINIMUM, context.grid)
+  const build = new BuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
+  build.handleData("1", layout)
+  build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
+  build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
+  build.run([{ kind: "move-cursor", dx: 8, dy: 0 }])
+  assert.ok(remaining(context, build.state) < SPIKE_CATALOG[0]!.cost, "not actually unaffordable")
+
+  const frame = composeBuildFrame({ context, state: build.state, layout }, "monochrome")
+  const cell = cellForTile(layout, build.state.camera, build.state.cursor)
+  assert.equal(
+    cellAt(frame, cell.x, cell.y).glyph,
+    "x",
+    "the preview says this placement is fine, and pressing Enter refuses it",
+  )
+  // And the refusal is real, so the two genuinely agree.
+  const planned = build.state.planned.length
+  build.dispatch({ kind: "place" })
+  assert.equal(build.state.planned.length, planned)
+})
+
+test("on a Grid short enough to shrink the panel, the detail block is dropped rather than drawn over the footer", () => {
+  // `isGated` deliberately never gates a Grid that fits the screen entirely ("a small tutorial Grid
+  // is never gated"), so the viewport — and with it the panel's height — can be much shorter than
+  // the spike's. A detail block that just keeps writing downward overwrites the pinned bindings,
+  // then the footer's position readout, then the controls line. Found by review, not by use: no
+  // Grid this small is wired up today, and nothing in the layout prevented it.
+  const small: GridTerrain = {
+    width: 20,
+    height: 10,
+    tiles: new Array<TerrainId>(200).fill("terrain.plain"),
+  }
+  const context = { ...spikeContext(), grid: small, standing: [] }
+  const layout = buildLayout(MINIMUM, small)
+  const build = new BuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
+  build.handleData("1", layout) // a 3x2 barracks at 2,2 hangs off the Grid, so it is refused
+  const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
+
+  // The furniture that must survive, whole.
+  assert.match(text, /\[u\] undo {2}\[bksp\] remove/)
+  assert.match(text, /view x 0-19 y 0-9 of 20x10/)
+  assert.match(text, /arrows move.*q quit/, "the quit key fell off a narrower footer")
+  // And the menu itself is still there — it is the block below it that gave way.
+  assert.match(text, /\[1\] Barracks/)
+  assert.match(text, /RESOURCE/)
+
+  // Every line is still exactly the width it should be: nothing was written over anything.
+  for (const row of text.split("\n")) assert.ok(row.length <= 80, `a row ran past 80: "${row}"`)
+})
+
+test("a panel with room for the detail block still draws it", () => {
+  // The other half of the clamp: it must give way only when it genuinely has to.
+  const roomy = screenAt(MINIMUM, (build, layout) => {
+    build.handleData("1", layout)
+    build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }])
+  })
+  assert.match(roomy.text, /CANNOT BUILD HERE/)
+  assert.match(roomy.text, /rock in the way/)
+})
+
+test("the footer's bindings line is always whole bindings, at every width it can have", () => {
+  // The line shrinks with the composition, and the composition shrinks with the Grid. Whatever it
+  // ends up being, it must never be a binding cut in half — a player reading "esc dis" learns
+  // nothing and a player who cannot find "q quit" is stuck in an alternate screen.
+  const whole = controlsLine(Number.POSITIVE_INFINITY)
+  const bindings = whole.split("  ")
+  for (let limit = 10; limit <= whole.length + 5; limit += 1) {
+    const line = controlsLine(limit)
+    assert.ok(line.length <= limit, `"${line}" is wider than ${limit}`)
+    for (const part of line === "" ? [] : line.split("  ")) {
+      assert.ok(bindings.includes(part), `"${part}" is not a whole binding (limit ${limit})`)
+    }
+  }
+  // The four a player cannot work the screen without come first, so they are the last to go.
+  assert.deepEqual(bindings.slice(0, 4), ["arrows move", "enter place", "esc disarm", "q quit"])
 })

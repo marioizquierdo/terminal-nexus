@@ -140,11 +140,11 @@ true the moment a heading sits between two rows.
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Whole suite, Node 22.22.2 | 342 pass, 0 fail | `npm test` |
-| Whole suite, Bun 1.3.11 | 341 pass, 0 fail | `npm run test:bun` |
+| Whole suite, Node 22.22.2 | 346 pass, 0 fail | `npm test` |
+| Whole suite, Bun 1.3.11 | 345 pass, 0 fail | `npm run test:bun` |
 | Type checking, strict | clean | `npm run typecheck` |
 | Canon invariants | pass | `./scripts/check-repository.sh` |
-| This milestone's own tests | 64 pass | `node --test tests/build-{camera,spike,view,lifecycle}.test.ts` |
+| This milestone's own tests | 68 pass | `node --test tests/build-{camera,spike,view,lifecycle}.test.ts` |
 | Two groups under one digit sequence; `3` arms the third row of the whole menu | holds | `tests/build-spike.test.ts` |
 | The empty army group is drawn, and every item row stays distinct and ordered | holds | same file |
 | Placing spends, removing and undoing refund exactly; the allotment comes back whole | holds | same file |
@@ -165,6 +165,10 @@ true the moment a heading sits between two rows.
 | The footer never names a key the adapter does not bind | holds | same file |
 | Every exit path leaves raw mode, the alternate screen and mouse reporting off | holds | `tests/build-lifecycle.test.ts` |
 | No raw escape byte reached a source file | holds | `grep -rlP '\x1b' src tests scripts` |
+| The ghost preview answers the same question Enter does, budget included | holds | `tests/build-view.test.ts`, added after the review |
+| On a Grid short enough to shrink the panel, the detail block gives way rather than overwriting the footer | holds | same file |
+| …and still draws when there is room for it | holds | same file |
+| The footer's bindings line is whole bindings at every width, with the four essentials last to go | holds, checked at every width from 10 | same file |
 
 Twelve real-terminal screenshots in `evidence/screenshots/`. The two worth looking at side by side
 are `build-idle.png` (nothing selected — the panel is the menu, the budget and two keys) and
@@ -250,6 +254,40 @@ arrives — rather than arithmetic over the three constants, after a first versi
 `whole + cheapest > allotment` and failed on numbers that were perfectly fine. An assertion about
 constants was a worse test than an assertion about what happens.
 
+**The pre-merge review found three things, and one of them cascaded into a fourth.** Every automated
+check was green before it ran, which is the point of running it — this is Milestone 3B's lesson and
+the second gate in a row where it has paid.
+
+1. **The ghost preview ignored the budget.** `place()` and the panel both asked whether a placement
+   was legal *including affordability*; the preview asked without it. So after spending down, the
+   Grid drew a perfectly normal-looking structure on a tile where the panel said CANNOT BUILD HERE
+   and Enter refused. One missing argument, and it contradicted the preview's entire reason to
+   exist. The lesson is narrower than "pass the argument": **three callers asking the same question
+   need the same call**, and a function whose last parameter is optional will eventually be called
+   without it by one of them.
+2. **The selected-item block could overwrite the footer.** It laid out downward from the last menu
+   row with nothing stopping it. The panel's height is the viewport's, the viewport shrinks to fit a
+   Grid smaller than the screen, and `isGated` deliberately permits exactly that — so on a 20 x 10
+   Grid the block ran through the pinned bindings, the position readout and into the controls line.
+   Not reachable through `--spike` today, because only the 96 x 40 Grid is wired up; entirely
+   reachable by the next person who wires up a tutorial-sized one. It is now written as a list and
+   dropped whole when the panel has no room, because a panel that omits a line is better than one
+   that silently draws over the footer.
+3. **Two pieces of the flat-list geometry were stale and unread**: `BuildLayout.construct` still
+   described a uniform row step that the grouped menu made wrong by one row — and by two past the
+   ARMY heading — while its comment still claimed it was where a click lands. Deleted, along with
+   `menuItemsFor`, which nothing had called since the hit-test changed. **A stale layout constant is
+   worse than a missing one**: the next person to reach for it gets plausible, wrong answers.
+
+**And writing the test for the second one found a fourth.** Composing at 20 x 10 showed the footer's
+bindings line cut mid-binding, with `q quit` as the half that fell off — the one key a player most
+needs to find, missing from a screen they cannot otherwise leave. The line had been built as a fixed
+prefix of five "essential" bindings plus extras appended while they fit, on the assumption that the
+prefix always fits. It does not, for the same reason as the second finding: the footer's width comes
+from the Grid's. It is now one priority-ordered list appended while each still fits, so the line is
+always whole bindings and the four a player cannot work without are the last to go. **A test written
+for one bug found another, because it put the code somewhere it had never been run.**
+
 **Nothing was discarded wholesale.** The scope Q30 recommended a year of documents ago — build the
 menu and the legality panel, skip the radius preview — was the right scope, and skipping the preview
 cost nothing because nothing in the catalog has a radius to preview.
@@ -261,8 +299,9 @@ cost nothing because nothing in the catalog has a radius to preview.
 The menu has two groups, one digit sequence and no mode; every row carries its cost; the budget is
 spent and refunded exactly and cannot go negative or be overspent; a refused placement says why in
 the panel and names its tile; and the screen says all of it in fewer lines than gate 5A used to say
-less. 64 tests across this milestone's four files, green on both runtimes, with the whole suite at
-342 and 341.
+less. 68 tests across this milestone's four files, green on both runtimes, with the whole suite at
+346 and 345. Four defects found by a pre-merge review and the tests written for it, all fixed with
+regression tests — Section 7 has them.
 
 PASS means the automated evidence holds. The one thing only Mario can score — whether the screen now
 reads as something you use rather than something being demonstrated — is in Section 5 and
