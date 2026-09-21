@@ -18,6 +18,7 @@ import type { ActiveEffect, EffectBand, EffectCellSource } from "./effects/index
 import { mergeEffectCells } from "./effects/index.ts"
 import type { BandCell, Cell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
+import { put, text, toAscii } from "./draw.ts"
 import type { CapabilityMode, StyleRole } from "./roles.ts"
 import { chromeGlyph, entityGlyph, playerRole, salvageGlyph, terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
@@ -80,70 +81,6 @@ export type CompositionInput = Readonly<{
   /** Ranged kills still waiting for their own tracer to land — drawn, but never counted anywhere. */
   heldCorpses?: readonly HeldCorpse[]
 }>
-
-function put(
-  cells: BandCell[],
-  band: number,
-  x: number,
-  y: number,
-  glyph: string,
-  role?: StyleRole,
-  extra: Readonly<{ dim?: boolean; bold?: boolean; limit?: number }> = {},
-): void {
-  const style = {
-    ...(role === undefined ? {} : { fgRole: role }),
-    ...(extra.dim === true ? { dim: true } : {}),
-    ...(extra.bold === true ? { bold: true } : {}),
-  }
-  cells.push({ band, x, y, cell: { glyph, style } })
-}
-
-/**
- * ASCII-safe is the baseline (engine.md 9.6): every cell is one column wide and printable. Authored
- * text — a scenario name, say — may hold typographic characters, so it is transliterated here
- * rather than trusted, and anything left over becomes a question mark. The alternative is a frame
- * that fails its own width-one invariant because someone typed an em dash.
- */
-/** Glyphs the Unicode pack may put on screen; everything else outside ASCII becomes a question mark. */
-const PACK_SAFE = new Set(["\u00b7", "\u2593", "\u25c6", "\u25aa", "\u2500", "\u2502", "\u250c", "\u2510", "\u2514", "\u2518", "\u2504", "\u2506"])
-
-const TRANSLITERATE: Readonly<Record<string, string>> = {
-  "\u2014": "-",
-  "\u2013": "-",
-  "\u2018": "'",
-  "\u2019": "'",
-  "\u201c": '"',
-  "\u201d": '"',
-  "\u2026": "...",
-}
-
-export function toAscii(value: string): string {
-  let out = ""
-  for (const character of value) {
-    const replacement = TRANSLITERATE[character]
-    if (replacement !== undefined) {
-      out += replacement
-      continue
-    }
-    const code = character.codePointAt(0) ?? 0
-    out += (code >= 0x20 && code <= 0x7e) || PACK_SAFE.has(character) ? character : "?"
-  }
-  return out
-}
-
-function text(
-  cells: BandCell[],
-  band: number,
-  x: number,
-  y: number,
-  value: string,
-  role?: StyleRole,
-  extra: Readonly<{ dim?: boolean; bold?: boolean; limit?: number }> = {},
-): void {
-  const limit = extra.limit ?? Number.POSITIVE_INFINITY
-  const glyphs = [...toAscii(value)].slice(0, Math.max(0, limit))
-  glyphs.forEach((glyph, index) => put(cells, band, x + index, y, glyph, role, extra))
-}
 
 function drawGridEdge(
   cells: BandCell[],
@@ -584,4 +521,5 @@ export function gateFrame(
   return composeBands(Math.max(width, 1), Math.max(height, 1), cells)
 }
 
+export { toAscii }
 export type { Cell }

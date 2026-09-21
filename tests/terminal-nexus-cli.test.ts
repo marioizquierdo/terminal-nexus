@@ -46,3 +46,26 @@ test("an unknown --theme is a clear error", () => {
   assert.notEqual(result.status, 0)
   assert.match(result.stderr, /unknown theme/)
 })
+
+test("--spike without a TTY says so in one line, and never writes an escape sequence", () => {
+  // Same rule as a plain launch (engine.md 10.1): no terminal, no escape sequences, one line.
+  const result = runTerminalNexus(["--spike"])
+  assert.equal(result.status, 0)
+  assert.equal(result.stderr, "")
+  assert.doesNotMatch(result.stdout, new RegExp(ESC))
+  assert.match(result.stdout.trimEnd(), /^terminal-nexus --spike needs an interactive terminal\.$/)
+})
+
+test("--help documents the spike and its one tuning flag", () => {
+  // engine.md 9.7's "a hotkey that is not displayed does not exist", applied to the command line:
+  // a flag nobody can find is a flag nobody can try.
+  const result = runTerminalNexus(["--help"])
+  assert.match(result.stdout, /--spike/)
+  assert.match(result.stdout, /--scroll-margin/)
+})
+
+test("a nonsense --scroll-margin is a clear error, not a silently ignored flag", () => {
+  const result = runTerminalNexus(["--spike", "--scroll-margin", "wide"])
+  assert.notEqual(result.status, 0)
+  assert.match(result.stderr, /--scroll-margin must be an integer/)
+})

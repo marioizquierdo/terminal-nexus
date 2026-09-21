@@ -12,6 +12,7 @@ import { menuItemRow } from "../menu/layout.ts"
 import type { MenuListState } from "../menu/list.ts"
 import type { BandCell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
+import { put, text } from "./draw.ts"
 import type { CapabilityMode, StyleRole } from "./roles.ts"
 import { chromeGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
@@ -37,36 +38,6 @@ export type MenuCompositionInput = Readonly<{
    *  line. Advertising a control that does nothing would be the opposite of honest. */
   showBack?: boolean
 }>
-
-function put(
-  cells: BandCell[],
-  band: number,
-  x: number,
-  y: number,
-  glyph: string,
-  role?: StyleRole,
-  extra: Readonly<{ dim?: boolean; bold?: boolean; inverse?: boolean }> = {},
-): void {
-  const style = {
-    ...(role === undefined ? {} : { fgRole: role }),
-    ...(extra.dim === true ? { dim: true } : {}),
-    ...(extra.bold === true ? { bold: true } : {}),
-    ...(extra.inverse === true ? { inverse: true } : {}),
-  }
-  cells.push({ band, x, y, cell: { glyph, style } })
-}
-
-function text(
-  cells: BandCell[],
-  band: number,
-  x: number,
-  y: number,
-  value: string,
-  role?: StyleRole,
-  extra: Readonly<{ dim?: boolean; bold?: boolean; inverse?: boolean }> = {},
-): void {
-  ;[...value].forEach((glyph, index) => put(cells, band, x + index, y, glyph, role, extra))
-}
 
 /** The border only — no inner divider, unlike the Grid screen's Grid/panel split, because a menu has
  *  one pane, not two. */

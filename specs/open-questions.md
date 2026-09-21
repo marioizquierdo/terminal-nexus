@@ -3,7 +3,7 @@
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
 **Canon version:** 2.16
-**Updated:** 2026-09-17
+**Updated:** 2026-09-21
 **License:** Apache-2.0
 
 ## 1. Why this file exists
@@ -956,6 +956,38 @@ should not deal one.
 
 A side benefit worth naming: the telegraph is also a debugging tool. An arrival edge and a time drawn
 on screen is the fastest way to see that a mission's trigger list is wrong.
+
+### Q50 — With a structure armed, does a click on a tile place it, or does a second click confirm?
+
+**Status:** OPEN — blocks nothing. Both behaviours are built and ship behind a toggle
+(`terminal-nexus --spike`, the `[t]` key), so every later gate can proceed under the recommendation
+below and switch if Mario picks the other one.
+
+[`engine.md`](engine.md) Section 9.7 already recommends click-to-place — "single-click placement is
+safe because a plan is revisable until commit" — and, in the same section, calls the choice "a feel
+decision the spike makes observable as a toggle rather than argues about." Gate 5A built the toggle.
+This row is the question the toggle exists to put to Mario, with what building it turned up.
+
+**What the spike found, and it is not a matter of taste.** The two behaviours are not symmetric,
+because clicking a tile moves the cursor, and moving the cursor scrolls the map. A click within three
+tiles of the edge of the screen therefore slides the whole Grid under the mouse pointer. With
+click-to-place that is invisible — the structure is already down before anything moves. With
+click-then-confirm, the second click at the same spot on screen lands on a *different tile*, one row
+or one column from the one the player aimed at, and places there without complaint. Pressing Enter
+instead is unaffected, and the screen already offers that; but "click the same place twice" is the
+gesture the mode is named for, and near the edge of the screen it quietly does the wrong thing.
+
+| Option | Cost |
+| --- | --- |
+| A. **A click places it.** The armed structure goes down where you clicked, and stays armed | What the canon already recommends, and the only one of the two the scrolling problem above cannot touch. A misclick costs one `[u]` undo, on a plan nothing has committed yet |
+| B. **A click moves the cursor; a second click places.** | Safer for a player who mouses imprecisely, and the only option for a future action that *is* irreversible. Costs a gesture per structure, undoing the fast path entirely, and carries the near-the-edge misplacement above unless something else changes — the honest fixes all cost more than the mode does: suppress scrolling until the placement resolves (which contradicts the cursor-drives-the-camera rule), or accept the second click anywhere at all (which makes repositioning impossible) |
+| C. **Ship both and let the player choose in Settings** | Cheap now — the toggle exists and is one settings row away from being permanent. But it is two behaviours to keep working, tested and taught forever, for a choice nobody has yet asked for; Settings is where a decision goes to be avoided |
+
+**Recommendation: A**, and delete the toggle once Mario has looked at it. The canon already leaned
+this way; the spike turned a preference into a reason. Keep B's code in the git history rather than
+in the product — if a later Build Phase action genuinely cannot be undone (nothing in Milestone 5 is
+like that: every placement is revisable until the commit key), confirmation belongs on that one
+action, not on every click.
 
 ## 5. Answered
 

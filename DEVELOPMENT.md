@@ -83,6 +83,10 @@ bun bin/grid.ts scenarios/citizen-mirror-skirmish --headless
 # run terminal-nexus — the game's own entry point, distinct from grid: no map, straight to the menu
 ./bin/terminal-nexus.ts                                                     # top-level menu
 ./bin/terminal-nexus.ts --capability truecolor --theme dark --backend auto
+
+# the Build Phase scrolling-and-placement spike (Milestone 5, gate 5A)
+./bin/terminal-nexus.ts --spike
+./bin/terminal-nexus.ts --spike --scroll-margin 5 --capability monochrome
 ```
 
 Pinned by Gate 1A, measured 2026-08-21:
@@ -114,6 +118,26 @@ a mouse click on its row (opt-in SGR mouse reporting, switched off by the dispos
 path). Settings and Exit are real; Campaign and Challenge are honest about not being built yet, each
 in its own way (below). `terminal-nexus` flags: `--capability`, `--theme`, `--glyphs`,
 `--reduced-motion`, `--backend`.
+
+**The Build Phase spike** (`--spike`, Milestone 5 gate 5A) is the first screen in the project that
+shows a **window onto a Grid larger than itself**: a 96 x 40 map in a viewport that is 48 x 16 tiles
+at 80 columns and 72 x 24 at 104. Move the cursor with the arrow keys and the map scrolls once the
+cursor comes within three tiles of an edge; the frame's border marks every side with more map beyond
+it and the footer names the visible range, because there is no minimap. Press `1`, `2` or `3` (or
+click the row) to arm a structure, then Enter or a click to place it at the cursor; it stays armed,
+so a run of them is one digit then arrows and Enter. `[u]` undoes, Backspace removes the one under
+the cursor, and `[t]` switches between placing on the first click and confirming on a second — a
+toggle rather than a decision, because which one feels right is Mario's call (open question Q50).
+Shift+Arrow jumps five tiles, and so do PageUp/PageDown and Home/End, because several terminals
+deliver no shifted arrows at all — `node scripts/probe-modified-keys.mjs` prints the survey, and
+`evidence/gate-5a-report.md` has the table. `--scroll-margin <tiles>` changes the three-tile trigger
+distance so it can be judged against another number rather than argued about. It is a spike: nothing
+it plans reaches the simulation, and nothing is saved.
+
+Its own code: `src/build/` holds the camera arithmetic, the pure reducer, the three adapters and the
+driver; `src/view/build.ts` composes the frame; `src/cli/spike.ts` runs it on the same backend and the
+same idempotent disposer as the menu. `src/view/draw.ts` is where the `put`/`text` band-writing
+helpers moved once a third screen wanted them.
 
 Campaign and Challenge (Gate 3C) hand off to Milestones 4 and 11, neither of which is built yet, so
 each says so — differently, matching what the milestone's own text asks for. Campaign's hotkey opens
@@ -163,6 +187,18 @@ the same path a person gets — pauses it, steps to an exact tick, captures the 
 sequences, and renders it to a PNG in `evidence/screenshots/` through the Chromium already present
 for Playwright. Use it when a change touches the composition: a frame's *text* is what the tests
 assert on, and it says nothing about spacing, density, or where the eye goes.
+
+`node scripts/capture-spike-screenshots.mjs` does the same for the Build Phase spike, at each of the
+terminal sizes that actually mean something: 80 x 24 (the floor and the minimum viewport), 104 x 32
+(the maximum viewport), 128 x 24 (two columns per tile), and 79 x 24 (one column below the floor, so
+the resize gate). `--only <name>` captures a single shot. Every key it sends goes in by its real tmux
+key name or as the literal bytes a terminal emits, so the adapters are driven by reality rather than
+by a description of it.
+
+`node scripts/probe-modified-keys.mjs` is not a screenshot but belongs to the same family: it prints
+what every terminal description installed on the machine claims it sends for Shift+Arrow, PageUp and
+Home, then drives a real pseudo-terminal and prints what actually arrived. Run it before trusting any
+remembered escape sequence.
 
 `node scripts/capture-menu-screenshot.mjs` does the same for `terminal-nexus`'s menu, sharing the
 same `scripts/lib/terminal-capture.mjs` pipeline: launch, arrow keys by real tmux key name, a hotkey
