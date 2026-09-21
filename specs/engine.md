@@ -2,7 +2,7 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.16
+**Canon version:** 2.17
 **Updated:** 2026-09-12
 **License:** Apache-2.0
 
@@ -236,6 +236,14 @@ minimap.**
 - **The cursor drives it.** Move the cursor within a **scroll margin of 3 tiles** of a viewport edge
   and the camera follows. That is the whole interaction — no separate pan mode, no modifier keys, no
   second cursor. It works identically in the Build Phase and during a Pulse.
+- **The margin is a follow rule, not an invariant** (gate 5A). It says where the camera must be
+  relative to the cursor *when it can be*. At the Grid's own edge the camera has nowhere left to go,
+  so the cursor legitimately reaches the edge of the screen — which is correct, because there is no
+  more Grid to reveal by scrolling further. Stated because the rule is otherwise unimplementable as
+  written, and because "the margin holds wherever the camera can still scroll" is a checkable
+  sentence where "the margin holds" is not. Three tiles is **confirmed on evidence** and remains the
+  number: the first person to actually scroll a Grid found nothing wrong with it (2026-09-21), with
+  a fuller judgement deferred, so `terminal-nexus --spike --scroll-margin` keeps it adjustable.
 - **The UI must show that there is more Grid.** Without a minimap the burden falls on two cheap
   signals, and both are required: **edge markers on the frame border** for each side with more Grid
   beyond it, and a **position readout** in the footer naming the visible tile range and the Grid size.
@@ -840,6 +848,9 @@ an entity is standing on.
 The two phases need different amounts of screen, and pretending otherwise wastes the Grid:
 
 **Both phases share the same frame**: a Grid pane, a 30-column side panel, a header, and a footer.
+The header belongs to the Grid pane; **the footer may run the full width beneath both**, which is
+what the Build Phase does (gate 5A) — at the 80-column floor the Grid pane is 46 usable columns and
+the position readout, the live bindings and the status line are each longer than that.
 Both support the cursor, selection, inspection, and scrolling — a player watching a Pulse can hover a
 unit to read its state in real time, and can scroll the Grid, exactly as they can while building.
 Keeping one composition means one cursor, one scroll rule, and one set of muscle memory.
@@ -985,7 +996,8 @@ followed by arrows and Enter — the fast path a proficient player types without
 | --- | --- | --- |
 | `1`–`9`, `0` | select item *n* of the panel's current list — construct menu, Nexus draft, or a menu screen's options | digits always address the list; they never mean anything else |
 | Arrows | move the cursor one tile | the cursor drives the camera at the 3-tile margin (3.3) |
-| Shift+Arrow | move the cursor five tiles | fast pan across a scrolling Grid — see the caveat below |
+| Shift+Arrow | move the cursor five tiles | fast pan across a scrolling Grid. **Two sequence families, both bound** (gate 5A): xterm's `CSI 1;<modifier>` and rxvt's `CSI a/b/c/d`. Any modifier counts, not Shift alone — nothing else on these screens binds a modified arrow, so a terminal that eats Shift but passes Alt or Ctrl still gives its player the fast pan |
+| PageUp / PageDown, Home / End | move the cursor five tiles — the modifier-free fallback | **Required, not optional** (gate 5A): four surveyed terminal families send no shifted arrow at all, so without this they would have no fast pan. Decoded from a table, because Home and End have three live spellings between xterm, screen/tmux/linux and rxvt |
 | Enter | confirm: place the armed structure at the cursor, or activate the highlighted item | |
 | Esc | disarm the current selection, close an overlay, back out of a menu | never quits the game by itself |
 | Tab / Shift+Tab | jump the cursor to the player's next / previous own structure | the placement anchor jump: "go to my barracks, build next to it" — works on every terminal |
@@ -996,7 +1008,7 @@ followed by arrows and Enter — the fast path a proficient player types without
 | `q`, Space, `.`, `,`, `[`, `]`, `r` | unchanged from `grid` during a Pulse: quit, pause, step, speed, restart | one keymap across `grid` and `terminal-nexus` |
 | Mouse: click a menu row | the row's hotkey | identical effect, by construction |
 | Mouse: click a Grid tile | move the cursor there; if a structure is armed, place it — the same as arrows then Enter | single-click placement is safe because a plan is revisable until commit |
-| Mouse: wheel | scroll the camera | the mouse's Shift+Arrow |
+| Mouse: wheel | **move the cursor five tiles**; the camera follows it, as it follows every other cursor move | the mouse's Shift+Arrow, literally. An independent camera would be the separate pan mode 3.3 forbids, and would strand the cursor off screen (gate 5A) |
 | Mouse: right click | Esc | the RTS convention for "cancel" |
 
 Three conventions behind that table, so a retune keeps them:
@@ -1012,21 +1024,33 @@ Three conventions behind that table, so a retune keeps them:
    right-click cancels. A player who has used a terminal editor, a roguelike, or an RTS should guess
    the first key right.
 
-**Terminal caveats the Milestone 5 spike must verify, not assume** (Q37):
+**Terminal caveats, verified rather than assumed** (Q37; measured by gate 5A on 2026-09-21,
+`evidence/gate-5a-report.md` Section 4.1 has the table and the ten terminals it could *not* test):
 
-- **Modified arrows are not universal.** Shift+Arrow arrives as an xterm-style modified sequence
-  (`CSI 1;2A` and its siblings) on most emulators and is swallowed or remapped on some terminal and
-  multiplexer configurations. The spike checks the terminals the project actually targets and
-  chooses a modifier-free fallback for the five-tile jump — PageUp/PageDown and Home/End, or a
-  second key pair — so a player whose terminal eats Shift still has the fast pan. The fallback is
-  displayed like any other binding.
+- **Modified arrows are not universal, and not single-valued.** Measured: xterm, xterm-256color,
+  tmux and tmux-256color send `CSI 1;2A` and its siblings; rxvt and rxvt-unicode send a completely
+  different, shorter form (`CSI a`/`b`/`c`/`d`); and **screen, screen-256color, the Linux virtual
+  console, vt100, vt220 and ansi define no shifted arrow at all** — on those, Shift+Up is simply Up.
+  Both families are bound, and the modifier-free fallback above is required rather than a courtesy.
+  PageUp and PageDown exist on every terminal description surveyed except vt100 and ansi, which
+  makes them better supported than the binding this table recommends first. Both are displayed.
+  **An emulator this project has not measured is not a supported one**: PuTTY, Alacritty, kitty,
+  WezTerm, Ghostty, iTerm2, the GNOME/VTE family, Windows Terminal, Konsole and foot are all
+  untested, and their own documentation is not evidence this project has gathered.
 - **Mouse reporting is opt-in and must be undone.** A terminal reports the mouse only after the
   program asks (SGR extended mode, `1006`, over `1000`/`1002`); the disposer of 10.1 switches it off
   on every exit path. A game that leaves mouse reporting on is rejected for the same reason as one
   that leaves raw mode on. Where no mouse arrives — a plain SSH session, the driver, a non-TTY —
   nothing is lost, because the keyboard is complete.
-- **Click-to-place versus click-to-move-then-confirm** is a feel decision the spike makes
-  observable as a toggle rather than argues about; the table above recommends click-to-place.
+- **A click places the armed structure — RULE, decided** (Q50, answered 2026-09-21). Gate 5A built
+  both behaviours behind a toggle and Mario chose this one after trying them; the other is deleted
+  rather than kept as a setting. It is not only a preference: a click moves the cursor, and moving
+  the cursor scrolls the Grid, so with click-then-confirm a first click within the scroll margin
+  slides the map under the pointer and the second click at the same spot on screen places on a
+  *different tile*. Single-click placement has no second click and cannot hit this.
+  **What makes it safe is that a plan is revisable** — undo, remove-under-cursor, and nothing
+  committed until the commit key. If a future Build Phase action is genuinely irreversible,
+  confirmation belongs on that one action, never back on every click.
 
 ---
 

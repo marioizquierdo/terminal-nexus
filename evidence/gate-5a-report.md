@@ -1,8 +1,8 @@
 # Gate report — Milestone 5, Gate 5A: the scrolling-and-placement spike
 
 **Document role:** Gate evidence report for Gate 5A
-**Status:** BUILT — Section 8 concludes PASS on every automated check; the two questions only the owner can answer (Section 5) are outstanding
-**Canon version:** 2.16
+**Status:** ACCEPTED 2026-09-21 — Section 8 concludes PASS, Mario answered both questions in Section 5, and Section 9's canon changes are applied at canon 2.17
+**Canon version:** 2.17
 **Updated:** 2026-09-21
 **License:** Apache-2.0
 
@@ -428,7 +428,9 @@ owner accepts" is the project's own convention, and Gate 1A's report closed the 
 
 ## 9. Canon impact
 
-**Nothing below is applied. All of it waits for Mario to accept the gate.**
+**Applied at canon 2.17.** Mario accepted the gate on 2026-09-21 — *"5A accepted"* — and every row
+below is now in the document that owns it. Kept here as the record of what each change was earned by,
+which is the thing a canon document does not carry.
 
 | Proposed rule | Would live in | Earned by |
 | --- | --- | --- |
@@ -452,5 +454,11 @@ already in the register's answered section and needs no further movement.
 
 ## 10. Next authorized action
 
-Gate 5B — the construct menu and the legality panel — after Mario has looked at the spike, answered
-Q50, and said whether scrolling feels right; not before, and no other gate in the meantime.
+**Gate 5B — the construct menu and the legality panel.** Authorized: Mario accepted this gate,
+answered Q50, confirmed the margin for now, and asked for 5B directly. It carries one instruction
+beyond the milestone's own text, from his acceptance: *"The UI is starting to look good (although
+still has too much text focused on demo instead of trying to be as simple and direct as possible)."*
+This screen explains itself — a gate number in its header, a line promising nothing reaches the
+simulation, a subtitle naming the spike — which was right for something built to be looked at once
+and wrong for a screen a player uses. 5B rebuilds that panel anyway; every line it leaves behind
+should be something a player needs while deciding where to build.

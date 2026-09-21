@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.16
+**Canon version:** 2.17
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -78,18 +78,31 @@ counts, and the Commander Army's own composition list. Gate 2D closed 2026-09-12
 the design, answered Q45 and Q46, and gave the composition list himself. Nothing about Milestone 2
 itself is open work for a new session.
 
-The current milestone is **[`milestones/milestone-03-game-menu.md`](milestones/milestone-03-game-menu.md)
-— Game Menu**: can a player launch `terminal-nexus` and navigate a top-level menu — Campaign,
-Challenge, Settings, Exit — built on the same terminal stack `grid` already proved? Its active gate is
-**3A — the menu and the three adapters**: `bin/terminal-nexus.ts`, the list shape with displayed
-hotkeys, the keyboard and mouse adapters, the driver, and the shared disposer.
+**Milestone 3 is accepted** (2026-09-21). `terminal-nexus` launches into a real top-level menu built
+on the same terminal stack `grid` proved, with a reusable list shape, keyboard/mouse/driver adapters,
+one shared disposer (`src/cli/lifecycle.ts`), a Settings screen that persists, and honest placeholders
+for the two modes that have no milestone built yet. Nothing about it is open work.
+
+**Milestone 5 gate 5A is accepted** (2026-09-21). The viewport rule of `engine.md` 3.3 — written
+before the kernel existed and executed by nothing until now, because Gate 1A deliberately used a Grid
+that fit the screen whole — finally runs: a Grid larger than the screen, a camera the cursor drags at
+a 3-tile margin, edge markers and a position readout in place of the minimap the canon refuses to
+have, and structures armed by a digit or a click and placed at the cursor. Three input assumptions
+were replaced by measurements at canon 2.17; they are in Section 4 below and in `engine.md` 9.7.
+
+The current milestone is **[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md)
+— Build Phase**: can a player place buildings, pick a Nexus upgrade, and scroll a real map, by
+keyboard, mouse and driver alike? Its active gate is **5B — the construct menu and legality**: the
+two-group menu with each item's cost and effect, the side panel that says *why* an illegal placement
+was refused, validation that rejects with a reason and never silently clamps, and cutting gate 5A's
+demo text down to what a player actually needs while deciding where to build.
 
 So the authorised work for a new session is, in order:
 
 1. **whatever the owner's most recent feedback asks for**, if any exists since
    `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
    outstanding or that everything still is;
-2. **Milestone 3 gate 3A**, per its own file — the next gate in the build order
+2. **Milestone 5 gate 5B**, per its own file — the next gate in the build order
    [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
    order — read that table's build-order column, and take one gate per session.
 
@@ -150,7 +163,9 @@ deleted, and the renderer must be replaceable without one simulation test changi
   several tiles**, and that matters strategically. A mover tests its whole footprint against its
   mask. Range measures to the nearest occupied tile.
 - The viewport is clamped to between 48 × 16 and 72 × 24 tiles; the cursor drives scrolling at a
-  3-tile margin; there is no minimap. 80 × 24 is the floor and the acceptance target.
+  3-tile margin; there is no minimap. 80 × 24 is the floor and the acceptance target. **The margin
+  is a follow rule, not an invariant**: at the Grid's own edge the camera has nowhere to go and the
+  cursor reaches the edge of the screen, which is correct — there is no more Grid to reveal.
 - Grid orientation is a rendering choice. Portrait and landscape change no coordinate.
 - Terminal composition produces an engine-owned structured cell frame. Cells carry style **roles**,
   never literal colors.
@@ -184,6 +199,11 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - **Every interactive action is a named command.** Keyboard, mouse, and a driver (for agents and
   tests) are three adapters onto one vocabulary; every menu item displays its hotkey and is clickable
   with identical effect; the driver can inject raw key and mouse events and read the cell frame back.
+  **Three bindings are measured rather than assumed** (gate 5A): Shift+Arrow has two live sequence
+  families and several terminals send none at all, so a modifier-free fallback is required, not
+  optional; the mouse wheel moves the *cursor* five tiles rather than a camera of its own, because a
+  second camera is the pan mode the scrolling rule forbids; and a click places the armed structure,
+  with no second click to confirm.
 - **A mission is a sequence of Build Phase / Nexus Pulse cycles driven by triggers.** Simulation
   actions run inside the kernel as validated intents; presentation actions never touch state. A
   scripted Pulse is still a Pulse.
