@@ -23,6 +23,9 @@ export type BuildContext = Readonly<{
   registry: ContentRegistry
   catalog: readonly ConstructItem[]
   standing: readonly StandingStructure[]
+  /** The Build Phase's starting allotment. Build Phase only *spends* it; Milestone 7's worker
+   *  economy is what eventually earns it (milestone-05-build-phase.md Section 4). */
+  allotment: number
   /**
    * How close to a viewport edge the cursor gets before the camera follows. Three tiles is the
    * canon's number, and `project-governance.md` Section 7 says in as many words that it is "locked
@@ -46,6 +49,26 @@ export type BuildState = Readonly<{
   nextOrdinal: number
 }>
 
+/**
+ * What the plan has cost so far, summed from the plan itself rather than tracked beside it. Two
+ * numbers that have to agree are one number too many: a stored total drifts the first time a code
+ * path removes a placement and forgets to refund, and that is exactly the bug a Build Phase would
+ * hide until someone counted.
+ */
+export function spent(context: BuildContext, state: BuildState): number {
+  let total = 0
+  for (const placement of state.planned) {
+    const item = context.catalog.find((row) => row.contentId === placement.contentId)
+    total += item?.cost ?? 0
+  }
+  return total
+}
+
+/** What is left to spend. Never negative, because nothing can be placed that costs more than this. */
+export function remaining(context: BuildContext, state: BuildState): number {
+  return context.allotment - spent(context, state)
+}
+
 /** The five-tile jump — Shift+Arrow, its modifier-free fallback, and the mouse wheel all produce a
  *  `move-cursor` of this size. GUIDANCE (engine.md 9.7's bindings table), not RULE. */
 export const JUMP_TILES = 5
@@ -66,7 +89,7 @@ export function createBuildState(
     viewport,
     armed: null,
     planned: [],
-    message: "Pick a structure, move the cursor, place it.",
+    message: "",
     nextOrdinal: 1,
   }
 }
@@ -82,7 +105,15 @@ export function anchorForCursor(cursor: Coord, footprint: readonly Coord[]): Coo
   return { x: cursor.x - centre.x, y: cursor.y - centre.y }
 }
 
-export type Legality = Readonly<{ ok: true }> | Readonly<{ ok: false; reason: string }>
+/**
+ * Why a placement is refused, in a form the panel can lay out rather than only print. `reason` is
+ * the sentence; `tile` is the one the reason is about, when it is about a tile, so "there is rock
+ * here" can point at *which* here — the difference between a panel that says why and one that only
+ * says no (milestone-05-build-phase.md gate 5B).
+ */
+export type Legality =
+  | Readonly<{ ok: true }>
+  | Readonly<{ ok: false; reason: string; tile?: Coord }>
 
 /** Every tile a plan already claims, planned and standing alike, keyed `x,y`. Rebuilt per check
  *  rather than cached: a spike's plan is a handful of structures, and a stale cache is a bug that
@@ -107,29 +138,45 @@ export function shortName(context: BuildContext, contentId: string): string {
   return context.registry.get(contentId).short
 }
 
+/** What a catalog row costs, or 0 for content the catalog does not sell (the standing structures). */
+export function costOf(context: BuildContext, contentId: string): number {
+  return context.catalog.find((row) => row.contentId === contentId)?.cost ?? 0
+}
+
 /**
- * Why a placement is refused, in a sentence a player can act on. The Build Phase proper gets a whole
- * side panel for this (gate 5B); the spike needs only enough to prove that an illegal placement is
- * refused *with a reason* and — the part that actually matters — is **never silently moved to a
- * legal tile instead**.
+ * Why a placement is refused, in a sentence a player can act on — and **never a silent correction**.
+ * Nothing here moves a structure to a legal tile: a plan the player did not draw is worse than a
+ * refusal they can understand.
+ *
+ * Order matters, and it is cheapest-answer-first only by coincidence; what it really is, is
+ * *most-informative*-first. Affordability is checked before the tiles because "you cannot afford
+ * this" is true wherever the cursor is, and reporting a rock the player could just move off would
+ * send them to fix the wrong thing.
  */
 export function legalityAt(
   context: BuildContext,
   planned: readonly PlannedPlacement[],
   contentId: string,
   anchor: Coord,
+  remaining?: number,
 ): Legality {
+  const item = context.catalog.find((row) => row.contentId === contentId)
+  if (item !== undefined && remaining !== undefined && item.cost > remaining) {
+    return { ok: false, reason: `costs ${item.cost}, ${remaining} left` }
+  }
   const footprint = context.registry.get(contentId).footprint
   const claimed = claimedTiles(context, planned)
   for (const tile of tilesOf(anchor, footprint)) {
-    if (!inBounds(context.grid, tile)) return { ok: false, reason: "it would hang off the Grid" }
+    if (!inBounds(context.grid, tile)) {
+      return { ok: false, reason: "it would hang off the Grid" }
+    }
     const terrainId = context.grid.tiles[tile.y * context.grid.width + tile.x]
     if (terrainId !== undefined && TERRAIN[terrainId].impassable) {
-      return { ok: false, reason: `there is rock at ${tile.x},${tile.y}` }
+      return { ok: false, reason: "rock in the way", tile }
     }
     const occupant = claimed.get(`${tile.x},${tile.y}`)
     if (occupant !== undefined) {
-      return { ok: false, reason: `it would overlap the ${shortName(context, occupant)}` }
+      return { ok: false, reason: `the ${shortName(context, occupant)} is here`, tile }
     }
   }
   return { ok: true }
@@ -169,12 +216,18 @@ function place(context: BuildContext, state: BuildState): BuildState {
   if (item === undefined) return state
   const footprint = context.registry.get(item.contentId).footprint
   const anchor = anchorForCursor(state.cursor, footprint)
-  const legality = legalityAt(context, state.planned, item.contentId, anchor)
+  const legality = legalityAt(
+    context,
+    state.planned,
+    item.contentId,
+    anchor,
+    remaining(context, state),
+  )
   if (!legality.ok) {
     // Refused, and nothing moved. Silently sliding a structure to the nearest legal tile is the one
     // failure this check exists to prevent: the player would learn nothing and get a plan they did
     // not draw.
-    return { ...state, message: `No - ${legality.reason}.` }
+    return { ...state, message: `Cannot build here: ${legality.reason}.` }
   }
   return {
     ...state,
@@ -185,7 +238,7 @@ function place(context: BuildContext, state: BuildState): BuildState {
     nextOrdinal: state.nextOrdinal + 1,
     // Still armed: engine.md 9.7's own fast path, "a run of the same structure is one digit
     // followed by arrows and Enter."
-    message: `Placed a ${shortName(context, item.contentId)} at ${state.cursor.x},${state.cursor.y}. Still armed.`,
+    message: `${shortName(context, item.contentId)} planned at ${state.cursor.x},${state.cursor.y} for ${item.cost}.`,
   }
 }
 
@@ -220,7 +273,7 @@ export function applyBuildCommand(
       return {
         ...state,
         armed: command.index,
-        message: `Armed: ${shortName(context, item.contentId)}. Enter places it at the cursor.`,
+        message: `${item.label} selected - ${item.cost} to build.`,
       }
     }
 
@@ -237,7 +290,7 @@ export function applyBuildCommand(
       return {
         ...state,
         planned: state.planned.filter((placement) => placement.ordinal !== target.ordinal),
-        message: `Removed the planned ${shortName(context, target.contentId)}.`,
+        message: `${shortName(context, target.contentId)} removed, ${costOf(context, target.contentId)} back.`,
       }
     }
 
@@ -247,7 +300,7 @@ export function applyBuildCommand(
       return {
         ...state,
         planned: state.planned.slice(0, -1),
-        message: `Undid the planned ${shortName(context, last.contentId)}.`,
+        message: `${shortName(context, last.contentId)} undone, ${costOf(context, last.contentId)} back.`,
       }
     }
 

@@ -9,7 +9,13 @@
 import { FIXTURE_REGISTRY } from "../content/index.ts"
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../menu/mouse.ts"
 import { BuildSession } from "../build/session.ts"
-import { SPIKE_CATALOG, SPIKE_STANDING, SPIKE_START_CURSOR, spikeGrid } from "../build/catalog.ts"
+import {
+  SPIKE_ALLOTMENT,
+  SPIKE_CATALOG,
+  SPIKE_STANDING,
+  SPIKE_START_CURSOR,
+  spikeGrid,
+} from "../build/catalog.ts"
 import { isGated } from "../build/camera.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
@@ -46,6 +52,7 @@ export function spikeContext(scrollMargin?: number): BuildContext {
     registry: FIXTURE_REGISTRY,
     catalog: SPIKE_CATALOG,
     standing: SPIKE_STANDING,
+    allotment: SPIKE_ALLOTMENT,
     ...(scrollMargin === undefined ? {} : { scrollMargin }),
   }
 }

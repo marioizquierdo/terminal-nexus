@@ -107,13 +107,53 @@ export const SPIKE_STANDING: readonly StandingStructure[] = [
   { contentId: "structure.citizen.barracks", anchor: { x: 25, y: 10 } },
 ]
 
-/** Three footprints, three hotkeys. `label` is exactly what the row shows after its bracketed key,
- *  so the composer and the mouse adapter measure the same row. */
+/**
+ * What the Build Phase can spend its allotment on. Three footprints, three costs, three one-line
+ * reasons to pick one over another — enough for the menu to be a real choice rather than a list.
+ *
+ * The costs are round numbers chosen so the allotment buys a few things and not everything, because
+ * the decision this gate is building is *what to spend on*, and a budget that affords the whole menu
+ * is not a budget. They are not balance: `AGENTS.md` Section 2 reserves real costs for Milestone 12,
+ * and Milestone 2 asked for Build Phase to stay "small and legible over rich".
+ *
+ * The army group is empty, and that is PERIMETER's actual answer rather than an omission —
+ * milestone-02-campaign-design.md Section 4.2: "The menu draws entirely from the Citizen common
+ * tier... the Nexus draft is where the one army-specific choice lives."
+ */
 export const SPIKE_CATALOG: readonly ConstructItem[] = [
-  { hotkey: "1", contentId: "structure.citizen.barracks", label: "Barracks   3x2" },
-  { hotkey: "2", contentId: "structure.bench.hatchery", label: "Hatchery   2x2" },
-  { hotkey: "3", contentId: "structure.bench.beamturret", label: "Turret     1x1" },
+  {
+    hotkey: "1",
+    contentId: "structure.citizen.barracks",
+    label: "Barracks",
+    group: "common",
+    cost: 40,
+    effect: "Trains troopers each Pulse",
+  },
+  {
+    hotkey: "2",
+    contentId: "structure.bench.hatchery",
+    label: "Hatchery",
+    group: "common",
+    cost: 30,
+    effect: "Spawns swarmers, slowly",
+  },
+  {
+    hotkey: "3",
+    contentId: "structure.bench.beamturret",
+    label: "Turret",
+    group: "common",
+    cost: 15,
+    effect: "Shoots what comes close",
+  },
 ]
+
+/**
+ * What the player has to spend. Small enough that the menu is a choice — the whole catalog costs 85
+ * and a second barracks would take the total past this — and, per Milestone 2 Section 4.2, "small
+ * enough that the interesting decisions are placement and composition, not a spreadsheet". How a
+ * resource is actually *earned* is Milestone 7's; this is an opening allotment and nothing more.
+ */
+export const SPIKE_ALLOTMENT = 100
 
 /**
  * The construct menu as menu rows — the same `MenuItem` shape the top-level menu and Settings use,

@@ -9,12 +9,39 @@
 
 import type { Coord } from "../grid/types.ts"
 
-/** One row of the construct menu. A `MenuItem` is derived from this for the list widget and for
- *  mouse hit-testing, so the panel and the adapter cannot disagree about where a row is. */
+/**
+ * Which of a Commander Army's two structure groups a construct-menu row belongs to —
+ * `commander-armies.md` Section 2.1: a faction's **common** structures, mostly shared across its
+ * Commanders, and the **army** structures that make one Commander's package its own. PERIMETER
+ * offers nothing army-specific (milestone-02-campaign-design.md Section 4.2: "The menu draws
+ * entirely from the Citizen common tier"), so that group is empty here — drawn as empty rather than
+ * assumed away, because a layout that silently depends on there never being one breaks the first
+ * time there is.
+ */
+export type ConstructGroup = "common" | "army"
+
+/**
+ * One row of the construct menu. A `MenuItem` is derived from this for the list widget and for
+ * mouse hit-testing, so the panel and the adapter cannot disagree about where a row is.
+ *
+ * `hotkey` addresses the row's position in the **whole menu**, not its position within its group:
+ * engine.md 9.7's first convention is that digits always address the list and never mean anything
+ * else, and two groups each counting from 1 would need a mode or a focus concept to disambiguate —
+ * which is the thing that convention exists to forbid.
+ */
 export type ConstructItem = Readonly<{
   hotkey: string
   contentId: string
   label: string
+  group: ConstructGroup
+  /** What it costs out of the Build Phase's starting allotment. */
+  cost: number
+  /**
+   * One short authored line saying what this structure is *for*. Authored rather than derived from
+   * the content definition on purpose: "120 hp, 3x2" is a fact about a structure, and what a player
+   * is choosing between is what it does.
+   */
+  effect: string
 }>
 
 export type BuildCommand =

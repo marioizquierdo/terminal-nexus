@@ -7,9 +7,8 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { SPIKE_CATALOG, menuItemsFor, spikeGrid } from "../src/build/catalog.ts"
-import { footprintExtent } from "../src/grid/coords.ts"
-import { buildLayout, cellForTile } from "../src/build/layout.ts"
+import { SPIKE_ALLOTMENT, SPIKE_CATALOG, spikeGrid } from "../src/build/catalog.ts"
+import { buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import {
   MOUSE_LEFT,
@@ -20,10 +19,9 @@ import {
   parseMouseEvent,
 } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
-import { JUMP_TILES, anchorForCursor, legalityAt } from "../src/build/state.ts"
+import { JUMP_TILES, anchorForCursor, legalityAt, remaining, spent } from "../src/build/state.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { spikeContext } from "../src/cli/spike.ts"
-import { menuItemLabel, menuItemRow } from "../src/menu/layout.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { fitViewport } from "../src/build/camera.ts"
@@ -71,15 +69,19 @@ function clickTileBytes(
   return formatMouseEvent(MOUSE_LEFT, cell.x + 1, cell.y + 1)
 }
 
-/** Likewise for a construct row, from `menuItemRow` and `menuItemLabel` — the same two functions the
- *  panel draws the row with. */
+/** Likewise for a construct row, from `constructLines` — the same function the panel draws with,
+ *  which is what makes a click that lands on a group heading's row impossible to mistake for a
+ *  click on an item. */
 function clickRowBytes(layout: ReturnType<typeof buildLayout>, index: number): string {
-  const items = menuItemsFor(SPIKE_CATALOG)
-  const row = menuItemRow(layout.construct, index)
+  const line = constructLines(layout, SPIKE_CATALOG).find(
+    (candidate) => candidate.kind === "item" && candidate.index === index,
+  )
+  assert.ok(line !== undefined, `no construct row is drawn for item ${index}`)
+  const item = SPIKE_CATALOG[index]!
   // Anywhere inside the row's own drawn text; the middle proves the whole row is live, not just its
   // first cell.
-  const column = layout.construct.column + Math.floor(menuItemLabel(items[index]!).length / 2)
-  return formatMouseEvent(MOUSE_LEFT, column + 1, row + 1)
+  const column = layout.panelColumn + Math.floor(`[${item.hotkey}] ${item.label}`.length / 2)
+  return formatMouseEvent(MOUSE_LEFT, column + 1, line.row + 1)
 }
 
 test("the same plan by hotkeys, by clicks, and from a script is the same plan and the same screen", () => {
@@ -125,7 +127,7 @@ test("the armed item stays armed after placing - the fast path a proficient play
   assert.equal(build.state.armed, 0)
   build.handleData(ENTER, layout)
   assert.equal(build.state.armed, 0, "still armed after a placement")
-  assert.match(build.state.message, /Still armed/)
+  assert.match(build.state.message, /planned at/)
 })
 
 test("keyboard: Shift+Arrow and its modifier-free fallback both jump exactly five tiles", () => {
@@ -263,14 +265,14 @@ test("legality: an illegal placement is refused with a reason and nothing is mov
   const cursorBefore = { ...build.state.cursor }
   build.handleData(ENTER, layout)
   assert.equal(build.state.planned.length, 0)
-  assert.match(build.state.message, /rock at/)
+  assert.match(build.state.message, /rock in the way/)
   assert.deepEqual(build.state.cursor, cursorBefore, "the cursor did not slide somewhere legal")
 
   // The standing Grid Nexus, at 17,10 through 19,11.
   build.run([{ kind: "move-cursor", dx: 18 - 8, dy: 10 - 5 }])
   build.handleData(ENTER, layout)
   assert.equal(build.state.planned.length, 0)
-  assert.match(build.state.message, /overlap the nexus/)
+  assert.match(build.state.message, /the nexus is here/)
 
   // The Grid's own north-west corner, where a 3x2 footprint hangs off the edge.
   build.run([{ kind: "move-cursor", dx: -999, dy: -999 }])
@@ -296,7 +298,7 @@ test("legality: a second structure may not overlap the first one planned", () =>
   assert.equal(build.state.planned.length, 1)
   build.run([{ kind: "move-cursor", dx: 1, dy: 0 }, { kind: "place" }])
   assert.equal(build.state.planned.length, 1)
-  assert.match(build.state.message, /overlap the barracks/)
+  assert.match(build.state.message, /the barracks is here/)
 })
 
 test("a plan is revisable: remove under the cursor, and undo the last one", () => {
@@ -328,16 +330,120 @@ test("the cursor points at a structure's centre tile, the way the scenario forma
   assert.deepEqual(anchorForCursor({ x: 30, y: 14 }, turret.footprint), { x: 30, y: 14 })
 })
 
-test("the construct rows' labels state the footprint their content actually has", () => {
+test("every construct row names content that exists, costs something, and says what it does", () => {
   const context = spikeContext()
   for (const item of SPIKE_CATALOG) {
-    const extent = footprintExtent(context.registry.get(item.contentId).footprint)
-    const size = `${extent.width}x${extent.height}`
-    assert.ok(
-      item.label.includes(size),
-      `"${item.label}" should say ${size}, which is what ${item.contentId} actually is`,
-    )
+    assert.ok(context.registry.has(item.contentId), `${item.contentId} is not real content`)
+    assert.ok(item.cost > 0, `${item.label} costs nothing`)
+    assert.ok(item.effect.length > 0, `${item.label} does not say what it does`)
+    // The effect line has to fit the panel it is drawn in, or it says what it does only halfway.
+    assert.ok(item.effect.length <= 28, `"${item.effect}" is wider than the panel`)
   }
+})
+
+test("the budget actually runs out, which is the only thing that makes the menu a choice", () => {
+  // Asserted as behaviour rather than as arithmetic over the constants: what matters is that a
+  // player placing things hits the wall, not that three particular numbers sum a particular way.
+  const { build, layout } = session()
+  build.handleData("1", layout) // the most expensive row
+  const context = spikeContext()
+  assert.equal(remaining(context, build.state), SPIKE_ALLOTMENT)
+
+  let placed = 0
+  for (let step = 0; step < 20 && !/costs/.test(build.state.message); step += 1) {
+    build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
+    placed = build.state.planned.length
+  }
+  assert.ok(placed > 0, "nothing could be placed at all")
+  assert.match(build.state.message, /costs \d+, \d+ left/, "the budget never ran out")
+  assert.ok(remaining(context, build.state) >= 0, "spending went past the allotment")
+})
+
+test("spending is exactly as revisable as the plan: placing spends, removing and undoing refund", () => {
+  const context = spikeContext()
+  const { build, layout } = session()
+  const barracks = SPIKE_CATALOG[0]!
+  const turret = SPIKE_CATALOG[2]!
+
+  build.handleData("1", layout)
+  build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
+  assert.equal(spent(context, build.state), barracks.cost)
+
+  build.handleData("3", layout)
+  build.run([{ kind: "move-cursor", dx: 6, dy: 0 }, { kind: "place" }])
+  assert.equal(spent(context, build.state), barracks.cost + turret.cost)
+  assert.equal(remaining(context, build.state), SPIKE_ALLOTMENT - barracks.cost - turret.cost)
+
+  // Undo refunds the last one exactly, and Backspace refunds whichever is under the cursor.
+  build.handleData("u", layout)
+  assert.equal(spent(context, build.state), barracks.cost)
+  build.run([{ kind: "move-cursor", dx: -6, dy: 0 }])
+  build.handleData(String.fromCharCode(127), layout)
+  assert.equal(spent(context, build.state), 0)
+  assert.equal(remaining(context, build.state), SPIKE_ALLOTMENT, "the allotment came back whole")
+})
+
+test("a placement that cannot be afforded is refused, and changes nothing at all", () => {
+  const context = spikeContext()
+  const { build, layout } = session()
+  // Spend down to less than the barracks costs, then try a barracks.
+  build.handleData("1", layout)
+  build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
+  build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
+  const before = build.state
+  const left = remaining(context, build.state)
+  assert.ok(left < SPIKE_CATALOG[0]!.cost, "the test did not actually spend enough to matter")
+
+  build.run([{ kind: "move-cursor", dx: 4, dy: 0 }])
+  build.handleData("\r", layout)
+  assert.equal(build.state.planned.length, before.planned.length, "it was planned anyway")
+  assert.equal(remaining(context, build.state), left, "the budget moved on a refused placement")
+  assert.match(build.state.message, /costs 40, \d+ left/)
+})
+
+test("affordability is reported before a tile problem, because it is true wherever the cursor is", () => {
+  const context = spikeContext()
+  const { build } = session()
+  // Onto rock, with a budget that cannot pay for it either. Reporting the rock would send the
+  // player to move the cursor, which would not help.
+  const anchor = anchorForCursor({ x: 8, y: 5 }, context.registry.get(SPIKE_CATALOG[0]!.contentId).footprint)
+  const broke = legalityAt(context, [], SPIKE_CATALOG[0]!.contentId, anchor, 5)
+  assert.equal(broke.ok, false)
+  assert.match(broke.ok === false ? broke.reason : "", /costs 40, 5 left/)
+  // With money, the same tile reports the rock, and says which tile it means.
+  const rich = legalityAt(context, [], SPIKE_CATALOG[0]!.contentId, anchor, 100)
+  assert.equal(rich.ok, false)
+  assert.match(rich.ok === false ? rich.reason : "", /rock in the way/)
+  assert.deepEqual(rich.ok === false ? rich.tile : null, { x: 8, y: 5 })
+  void build
+})
+
+test("the two groups share one digit sequence, with no mode to tell them apart", () => {
+  // engine.md 9.7's first convention: "digits always address the list; they never mean anything
+  // else". Two groups each counting from 1 would need a focus concept to disambiguate, which is the
+  // thing that convention exists to forbid — so a hotkey addresses the whole menu.
+  const hotkeys = SPIKE_CATALOG.map((item) => item.hotkey)
+  assert.deepEqual(hotkeys, [...new Set(hotkeys)], "two rows share a hotkey")
+  assert.deepEqual(hotkeys, ["1", "2", "3"], "the digits do not run straight through the menu")
+  const { build, layout } = session()
+  build.handleData("3", layout)
+  assert.equal(build.state.armed, 2, "the third digit armed the third row of the whole menu")
+})
+
+test("the empty army group is drawn, not skipped, so no hotkey moves when it fills", () => {
+  const context = spikeContext()
+  const layout = buildLayout(MINIMUM, context.grid)
+  const lines = constructLines(layout, context.catalog)
+  const groups = lines.filter((line) => line.kind === "group")
+  assert.equal(groups.length, 2, "both groups have a heading")
+  assert.ok(
+    lines.some((line) => line.kind === "empty"),
+    "the empty army group is drawn as empty rather than vanishing",
+  )
+  // Every item row is distinct and ordered, which is what a click relies on.
+  const itemRows = lines.filter((line) => line.kind === "item").map((line) => line.row)
+  assert.deepEqual(itemRows, [...itemRows].sort((a, b) => a - b))
+  assert.deepEqual(itemRows, [...new Set(itemRows)])
 })
 
 test("scrolling: the whole Grid is reachable, at the smallest terminal and the largest", () => {
