@@ -1,7 +1,7 @@
 # Gate report — Milestone 5, Gate 5A: the scrolling-and-placement spike
 
 **Document role:** Gate evidence report for Gate 5A
-**Status:** In progress — Sections 1 and 2 written before any code, per the template
+**Status:** BUILT — Section 8 concludes PASS on every automated check; the two questions only the owner can answer (Section 5) are outstanding
 **Canon version:** 2.16
 **Updated:** 2026-09-21
 **License:** Apache-2.0
@@ -107,45 +107,314 @@ npm run typecheck
 npm test
 npm run test:bun
 
-# run — the spike itself, from the game's own menu (Campaign, then the spike row) or directly
+# run — the spike itself. Section 7 records why this is a flag rather than a menu row.
 ./bin/terminal-nexus.ts --spike
 ./bin/terminal-nexus.ts --spike --capability monochrome
+./bin/terminal-nexus.ts --spike --scroll-margin 5      # the one tuning number, to feel against 3
 
 # the modified-arrow-key survey: what terminals claim, and what one actually delivers
 node scripts/probe-modified-keys.mjs
 
-# real-terminal screenshots, at the viewport's minimum and maximum size
+# real-terminal screenshots, at every terminal size that means something
 node scripts/capture-spike-screenshots.mjs
+node scripts/capture-spike-screenshots.mjs --only spike-minimum
 ```
+
+Two lines of Section 1 above stopped being true while the work happened, and are left standing
+rather than quietly edited, because a frame rewritten to match what got built is worth nothing.
+Section 7 records both: the screen is reached by a flag rather than from the menu, and the scroll
+margin became a parameter that Section 1 did not plan for.
 
 ## 3. What was built
 
-_To be filled in._
+One screen, reachable with `./bin/terminal-nexus.ts --spike`, and the small pile of pure code under
+it. What exists now that did not before:
+
+**The map camera** (`src/build/camera.ts`). The arithmetic of the viewport rule, which has been
+written down since before the first line of the kernel existed and executed by nothing: how many
+tiles a terminal of a given size has room for, whether one tile is drawn in one terminal column or
+two, whether the terminal is below the floor and should show a resize notice instead, and — the
+whole interaction — where the camera goes when the cursor moves. Pure arithmetic over tiles: no
+terminal, no frame, no cells, which is what lets the entire scrolling rule be checked without a
+terminal at all.
+
+**The screen's state, as one pure function** (`src/build/state.ts`). A command in, the next state
+out. It holds the cursor, the camera, which structure is armed, what has been planned, and which of
+the two click behaviours is live. It also holds the legality check: a placement that would hang off
+the map, sit on rock, or overlap something is refused with a short reason, and nothing is moved to
+make it fit.
+
+**The three ways in** (`src/build/keyboard.ts`, `mouse.ts`, `session.ts`). Keys, mouse bytes and a
+scripted list of commands, all producing the same named commands, with the session object being the
+real dispatch that a live terminal uses — not a parallel copy written for tests. The construct menu
+reuses the menu-row shape, the hit-testing and the `[1] Barracks` label format the game menu already
+had, rather than growing a second list widget.
+
+**The frame** (`src/view/build.ts`). The Build Phase composition, drawn for the first time: a map
+pane showing a window onto a map larger than itself, a 30-column side panel, markers on the frame's
+border for each side with more map beyond it, and a footer naming the visible tile range. Plus the
+placement preview — the armed structure's own glyphs under the cursor when it would be legal there,
+a block of `x` when it would not.
+
+**The map itself** (`src/build/catalog.ts`): 96 x 40 tiles, which is larger than the biggest viewport
+the game will ever show, so scrolling is unavoidable rather than optional. Built by a function rather
+than checked in as a scenario file, because a scenario file is simulation input and every one of them
+is replayed twenty times by the determinism suite — this map never reaches the simulation at all.
+
+**The terminal survey** (`scripts/probe-modified-keys.mjs`, `scripts/lib/key-echo.mjs`) and
+**eleven real-terminal screenshots** (`scripts/capture-spike-screenshots.mjs`).
+
+Two things moved rather than appeared. `src/view/draw.ts` is the pair of helpers that put a glyph or
+a string into the frame; the Pulse view and the menu each had their own copy, and this screen would
+have been the third, so they were extracted and both existing callers switched over. And the
+repository's ignore list stopped hiding `src/build/` — see Section 7, which is where that belongs.
 
 ## 4. Automated results
 
-_To be filled in._
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Whole suite, Node 22.22.2 | 329 pass, 0 fail | `npm test` |
+| Whole suite, Bun 1.3.11 | 328 pass, 0 fail across 31 files | `npm run test:bun` |
+| Type checking, strict | clean | `npm run typecheck` |
+| Canon invariants | pass | `./scripts/check-repository.sh` |
+| This gate's own tests | 51 pass | `node --test tests/build-{camera,spike,view,lifecycle}.test.ts` |
+| Minimum viewport needs exactly 80 x 24; maximum exactly 104 x 32 | holds | `tests/build-camera.test.ts`, `engine-3.3-clamp` |
+| A terminal of any size shows at most 72 x 24 tiles | holds, checked at 400 x 120 | same file |
+| One column per tile below 128 columns, two at 128 and above | holds | `engine-9.3-tile-width` |
+| Below 80 x 24 the screen gates; a map smaller than the viewport never gates | holds | `engine-3.3-gate` |
+| The cursor keeps its three-tile margin, checked at every one of the 3,840 tiles of the map | holds | `engine-3.3-scroll`, exhaustive walk |
+| …and at every viewport width from 48 to 72, at three heights | holds | same file |
+| The camera never leaves the map, and the cursor is never off screen | holds | same two tests |
+| Edge markers name exactly the sides with more map, and none when it all fits | holds | `engine-3.3-markers` |
+| The footer names the visible range and the map's size | holds | `tests/build-view.test.ts`, `engine-3.3-readout` |
+| The same plan by raw keys, by raw mouse bytes and from a script: identical state and identical frame | holds | `tests/build-spike.test.ts` |
+| A click on a construct row does exactly what its digit does | holds | same file |
+| An illegal placement is refused with its own reason and nothing is moved to fit | holds, for off-map, rock, a standing structure and a planned one | same file |
+| The armed structure stays armed after placing | holds | same file |
+| Shift+Arrow (two encodings), PageUp/PageDown and all four spellings of Home/End each jump five tiles | holds | same file |
+| Two keys in one chunk are two keys | holds | same file |
+| Every capability tier puts identical glyphs on screen | holds | `tests/build-view.test.ts` |
+| Every glyph is one cell wide, at three terminal sizes in both glyph packs | holds | same file |
+| `q`, an interrupt byte, Esc, SIGINT and SIGTERM all reach one disposer; raw mode, the alternate screen and mouse reporting all off after each | holds | `tests/build-lifecycle.test.ts` |
+| Resizing below the floor gates and back above it restores the screen at the same cursor | holds | same file |
+| No raw escape byte reached a source file | holds | `grep -rlP '\x1b' src tests scripts` returns nothing |
+
+### 4.1 The modified-arrow survey
+
+`node scripts/probe-modified-keys.mjs`, measured 2026-09-21 on this machine. **Leg one** is what each
+terminal description installed here claims it sends, read out of its own terminfo entry — this covers
+terminals nobody here can run. **Leg two** drives a real pseudo-terminal and reports what actually
+arrived.
+
+| Terminal | Shift+Up | Shift+Down | Shift+Left | Shift+Right | PageUp | PageDown | Home | End |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| xterm | `ESC [1;2A` | `ESC [1;2B` | `ESC [1;2D` | `ESC [1;2C` | `ESC [5~` | `ESC [6~` | `ESC OH` | `ESC OF` |
+| xterm-256color | `ESC [1;2A` | `ESC [1;2B` | `ESC [1;2D` | `ESC [1;2C` | `ESC [5~` | `ESC [6~` | `ESC OH` | `ESC OF` |
+| tmux, tmux-256color | `ESC [1;2A` | `ESC [1;2B` | `ESC [1;2D` | `ESC [1;2C` | `ESC [5~` | `ESC [6~` | `ESC [1~` | `ESC [4~` |
+| rxvt, rxvt-unicode-256color | `ESC [a` | `ESC [b` | `ESC [d` | `ESC [c` | `ESC [5~` | `ESC [6~` | `ESC [7~` | `ESC [8~` |
+| screen, screen-256color | **none** | **none** | **none** | **none** | `ESC [5~` | `ESC [6~` | `ESC [1~` | `ESC [4~` |
+| linux (the Linux virtual console) | **none** | **none** | **none** | **none** | `ESC [5~` | `ESC [6~` | `ESC [1~` | `ESC [4~` |
+| vt220 | **none** | **none** | **none** | **none** | `ESC [5~` | `ESC [6~` | **none** | **none** |
+| vt100 | **none** | **none** | **none** | **none** | **none** | **none** | **none** | **none** |
+| ansi | **none** | **none** | **none** | **none** | **none** | **none** | `ESC [H` | **none** |
+
+**Not surveyed, because no terminal description for them is installed on this machine, and this gate
+does not guess:** PuTTY, Alacritty, kitty, WezTerm, Ghostty, iTerm2, the GNOME/VTE family, Windows
+Terminal, Konsole, foot. Their own documentation is not evidence this project has gathered, and
+`AGENTS.md` Section 5 is explicit that an untested platform is not a supported one.
+
+Leg two, on a real pseudo-terminal — tmux 3.4, default configuration, no `tmux.conf`, keys sent by
+name and read back off a raw-mode echo:
+
+| Pressed | Delivered |
+| --- | --- |
+| Up | `ESC [ A` |
+| Shift+Up / Down / Left / Right | `ESC [ 1 ; 2 A` / `B` / `D` / `C` |
+| PageUp / PageDown | `ESC [ 5 ~` / `ESC [ 6 ~` |
+| Home / End | `ESC [ 1 ~` / `ESC [ 4 ~` |
+| Ctrl+Up | `ESC [ 1 ; 5 A` |
+
+And end to end, in the real screen rather than in a test: `evidence/screenshots/spike-scrolled.png`
+was produced by sending four Shift+Rights and four PageDowns through tmux into the running program,
+and its footer reads `cursor 38,33` — twenty tiles east and twenty south of where it started, which
+is four five-tile jumps on each axis.
 
 ## 5. Human observations
 
-_To be filled in._
+**Nobody has played this yet.** Mario has not seen it, and every claim in Section 4 is a claim a
+machine can check. The two questions this gate actually exists to ask are both questions only he can
+answer, and both are waiting:
+
+1. **Does scrolling feel like looking around the map, or like fighting the cursor?** The screenshots
+   show that it works. They cannot show how it feels to hold an arrow key down. If the three-tile
+   trigger distance is wrong, `--scroll-margin 2` and `--scroll-margin 5` are one flag away, and the
+   header prints which one is live — the project's own governance already says this milestone may
+   retune that number on evidence from the first person who actually scrolls a map, and that person
+   is him.
+2. **Which click behaviour should the game keep?** Press `[t]` to switch between them. Section 6 and
+   open question Q50 both argue for placing on the first click, and the argument is stronger than a
+   preference — but it is still his call.
+
+Eleven screenshots are in `evidence/screenshots/spike-*.png`, each captured from a real terminal at
+the size it is about.
 
 ## 6. Interpretation
 
-_To be filled in._
+**The viewport rule survived contact, and it did not need changing.** That is the least dramatic
+possible outcome and the most valuable one: a rule written years before anything could run it turned
+out to be implementable exactly as stated, including the three-tile margin, the clamp at both ends,
+and the "spend extra terminal space on centring, never on more map" clause. The one place it looked
+self-contradictory — what happens to the margin at the map's own edge — dissolves on contact. The
+margin is a rule about where the camera follows the cursor *to*, not an invariant about where the
+cursor may be; at the edge of the map the camera has nowhere left to go, and the cursor correctly
+reaches the edge of the screen, because there is no more map to reveal by scrolling further. The
+exhaustive test walks all 3,840 tiles and states the exception as "the camera is already as far as
+it can scroll", which is checkable, rather than as "sometimes", which is not.
+
+**Shift+Arrow was the right thing to be suspicious about.** The canon flagged it as the one keymap
+assumption a terminal can silently break, and the survey shows it breaking in two different ways at
+once: some terminals send nothing at all (`screen`, the Linux console, and the whole vt lineage), and
+rxvt sends something completely different from xterm's. Either one alone would have produced a game
+where the fast pan silently does nothing on some machines and nobody could say why. The fallback
+matters more than it looked: PageUp and PageDown exist on every terminal description surveyed except
+vt100 and ansi, which makes them a better-supported binding than the one the canon recommends first.
+
+**The wheel forced a real decision, and the canon answers it if you read both halves.** The input
+model's binding table says the wheel scrolls the camera; the viewport rule says the cursor drives the
+camera and there is no separate pan mode. A wheel with a camera of its own would be exactly that pan
+mode, and would leave the cursor stranded off screen. The reading that keeps both true is the one the
+table's own gloss already points at — "the mouse's Shift+Arrow" — so the wheel jumps the *cursor*
+five tiles and the camera follows. This is a GUIDANCE departure in letter and an agreement in spirit,
+and Section 9 proposes the wording change.
+
+**Click-then-confirm is worse than it looks, for a reason nobody could have argued from a document.**
+A click moves the cursor; moving the cursor scrolls the map; so a first click near the edge of the
+screen slides the whole map under the pointer, and the second click at the same place lands on the
+neighbouring tile and places there without complaint. Pressing Enter instead is unaffected and the
+screen says so, but "click the same place twice" is the gesture the mode is named for. This is
+precisely what the canon meant by making a feel decision observable instead of arguing about it: the
+toggle did not settle a matter of taste, it exposed a structural interaction between two features
+that were specified separately. The recommendation is to keep placing on the first click, and Q50
+puts it to Mario with the finding attached.
+
+**On the fourth decision channel** (the milestone asks each of its gates to notice whether a Build
+Phase feels short of one): nothing to report yet, and it would be dishonest to claim otherwise. This
+screen has one channel — placement — and no upgrade pick, no Special, and no costs. Gate 5D and
+Milestone 6 are where that question can actually be felt.
+
+**What is deliberately still missing**, so the next session does not mistake this for a Build Phase:
+no costs or spending, no two-group construct menu, no legality *panel* (the reason appears as one
+footer line), no upgrade draft, no Special slot, no commit key, and no adaptive side-panel layout —
+the panel is a fixed 30 columns and its blocks stay at the top of a tall screen rather than spreading
+out. Those are gates 5B, 5C and 5D, and this gate ran first on purpose.
 
 ## 7. Failures, surprises, and discarded approaches
 
-_To be filled in._
+**The repository's ignore list swallowed the whole module.** `.gitignore` carried an unanchored
+`build/`, meant for build output at the root. Git matches an unanchored directory pattern at any
+depth, so the moment `src/build/` existed, all eight of its files were invisible: the commit went
+through, the working tree was clean, and every test passed — because the files were still on disk.
+A fresh clone would have failed to start. Caught by reading the commit's own file list rather than by
+any check. The rule is now `/build/`, anchored, with a comment saying why. **The general lesson: a
+commit that succeeds is not evidence that the files are in it**, and a module directory whose name
+collides with a conventional build-output name is worth a second look before pushing.
+
+**The first placement test failed, and the test was right.** Click-then-confirm, driven by clicking
+the same screen cell twice, placed nothing. The instinct was to fix the test's click coordinates. The
+actual cause is the finding in Section 6: the first click had scrolled the map. The behaviour is now
+pinned by a test that states it in full, so it cannot change silently, and it became the strongest
+piece of evidence in Q50. **A failing test that contradicts a design assumption is a finding, not a
+broken test** — and one afternoon of "fix the coordinates" would have buried it.
+
+**The first screenshot found a layout bug no test could have.** The marker for "there is more map to
+the east" sits on the rule between the map and the side panel. Drawn sparsely, the first one lands
+next to the first construct row — and a lone `>` beside `[1] Barracks` reads unmistakably as a caret
+pointing at it. It is not: it means the map continues. Fixed by drawing the vertical markers every
+two rows instead of every six, so a run of them reads as an edge rather than as a pointer. No
+assertion about frame *text* would ever have caught this; it is purely about what a person's eye does
+with one character. This is the third gate in a row where a real-terminal screenshot caught something
+the tests structurally could not.
+
+**Three lines were truncated mid-word at 80 columns**, and only the screenshot showed it. The map
+pane is 46 usable columns at the floor, and the position readout, the live key bindings and the
+status line are all longer than that. Fixed by stopping the map/panel divider above the footer, so
+the footer's three rows run the whole width — a layout choice a session may make alone, made here
+rather than registered as a question, and worth revisiting in gate 5C when the panel's own layout is
+the subject. The bindings line now also grows with the terminal: at 80 columns it stops after `q
+quit`, and what falls off is shown on the panel instead of being cut in half.
+
+**A third copy of the same two helper functions.** Two screens each had their own `put`/`text` pair
+for writing into a frame. Writing a third would have been the point at which they quietly drift, so
+they moved to `src/view/draw.ts` and both existing callers switched. The project's own rule — extract
+after two real uses reveal the boundary — landed exactly here.
+
+**The map is code, not a scenario file, and that was deliberate.** Checking in a 96 x 40 `.map.json`
+would have cost the determinism suite twenty replays of a map that never reaches the simulation. The
+development notes already warn that Bun enforces a per-test timeout Node does not, and that adding a
+scenario file is the usual way to trip it.
+
+**The screen is reached by a flag, not from the menu, and Section 1 said otherwise.** The plan
+written before coding said "reachable from the game's own menu". Wiring it in would have meant
+restructuring the menu's own event loop — it disposes its terminal session and exits when an item
+ends it, so handing off to another screen and coming back needs a state machine the menu does not
+have. That is accepted, merged Milestone 3 code, and rebuilding it to host a throwaway spike is the
+opposite of a small change inside the current gate. `--spike` is one documented flag, it appears in
+`--help` and in the development notes, and a test asserts it is documented. When the real Build Phase
+is reached from a mission (Milestone 6 closes that loop), the handoff gets built once, for the thing
+that actually needs it.
+
+**The scroll margin became a parameter, which Section 1 also did not plan for.** The project's
+governance says in as many words that this milestone may retune the three-tile margin "on evidence
+from the first person who actually scrolls a Grid". A number nobody can change is a number nobody can
+judge, so it became `--scroll-margin` and it is printed in the header. That is the canon's own
+preferred move — make the fork observable rather than argue it — applied to something the frame had
+not thought to make observable.
+
+**Nothing was discarded wholesale**, which is itself worth saying: the shape the milestone described
+was buildable as described. The three departures from it are all narrow, all recorded above, and all
+in Section 9 as proposed wording changes rather than applied ones.
 
 ## 8. Decision
 
-_To be filled in._
+> **PASS**
+
+Both interactions work, through all three ways in, at both ends of the supported screen size, proven
+by 51 tests of which the scrolling ones are exhaustive rather than sampled, and by eleven screenshots
+of a real terminal. The question about Shift+Arrow is answered with a measurement rather than a
+memory, and the answer changed the code: two sequence families and a modifier-free fallback, where
+the canon assumed one sequence. The click question is not answered — deliberately. It ships as a
+toggle with a recommendation and a finding attached, which is exactly what the milestone asked this
+gate to produce.
+
+PASS here means the automated evidence holds and the gate's question is answered. It does not mean
+accepted: the two things only Mario can judge (how scrolling feels, and which click behaviour to
+keep) are both listed in Section 5 and both outstanding. That separation is the project's own
+convention, and Gate 1A's report closed the same way.
 
 ## 9. Canon impact
 
-_To be filled in._
+**Nothing below is applied. All of it waits for Mario to accept the gate.**
+
+| Proposed rule | Would live in | Earned by |
+| --- | --- | --- |
+| The five-tile jump binds Shift+Arrow **in two sequence families** (xterm's `CSI 1;<mod>` and rxvt's `CSI a/b/c/d`) **and** a modifier-free fallback (PageUp/PageDown, Home/End in all four of their live spellings). Both are displayed | `engine.md` 9.7's bindings table, replacing the single "Shift+Arrow" row | The terminal survey in Section 4.1: four surveyed terminal families send no shifted arrow at all, and rxvt sends a different sequence from xterm |
+| A modified arrow counts as the jump **for any modifier, not Shift alone** | same table, as a note | Nothing else on the screen binds a modified arrow, so a terminal that eats Shift but passes Alt or Ctrl still gives its player the fast pan. A liberal reading costs nothing and rescues a case |
+| **The mouse wheel moves the cursor five tiles**; the camera follows it, as it follows every other cursor move. It is not an independent camera | `engine.md` 9.7's mouse rows, replacing "wheel — scroll the camera" | Section 6: an independent camera would be the separate pan mode 3.3 forbids, and would strand the cursor off screen |
+| The three-tile scroll margin, **confirmed, not retuned** — pending Mario's own look | `project-governance.md` Section 7, which currently says Milestone 5 may retune it | The exhaustive walk holds at three tiles at every viewport size; but "confirmed" here means "nothing is wrong with it", and only a person can say it feels right |
+| The margin is a **follow rule, not an invariant**: at the map's own edge the cursor reaches the edge of the screen, because there is no more map to reveal | `engine.md` 3.3, one clarifying sentence | The only reading under which the rule is implementable at all, and the one the exhaustive test encodes |
+| The Build Phase's **footer may run the full width**, under both panes, rather than stopping at the map pane | `engine.md` 9.2, which is GUIDANCE on composition | At 80 columns the map pane is 46 usable columns and all three footer lines are longer than that |
+
+Questions raised, each already added to [`../specs/open-questions.md`](../specs/open-questions.md)
+with a recommendation:
+
+| ID | Question | Recommendation |
+| --- | --- | --- |
+| Q50 | With a structure armed, does a click on a tile place it, or does a second click confirm? | **Place on the first click**, and delete the toggle once Mario has looked at it — the canon already leaned that way, and the spike turned a preference into a reason |
+
+Q37, which asked for this spike, is answered by the gate's existence and by Section 4.1's table; it is
+already in the register's answered section and needs no further movement.
 
 ## 10. Next authorized action
 
-_To be filled in._
+Gate 5B — the construct menu and the legality panel — after Mario has looked at the spike, answered
+Q50, and said whether scrolling feels right; not before, and no other gate in the meantime.
