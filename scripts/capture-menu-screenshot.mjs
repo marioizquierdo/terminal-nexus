@@ -81,8 +81,14 @@ shoot(
 
 shoot(
   "menu-stub-notice",
-  "Pressing 2 (Challenge): an honest stub notice, not a dead end",
+  "Pressing 2 (Challenge, shown dimmed): an honest stub notice, not a dead end",
   { drive: () => tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "2"]) },
+)
+
+shoot(
+  "menu-challenge-dimmed",
+  "Gate 3C - Challenge already says why it's dimmed before it's even pressed; highlighting it is still plain inverse video",
+  { drive: () => tmux(repoRoot, ["send-keys", "-t", SESSION, "Down"]) },
 )
 
 shoot(
@@ -129,5 +135,27 @@ shoot(
   },
 )
 
+// Gate 3C — Campaign's own placeholder screen.
+shoot("campaign-screen", "Campaign, reached by its own hotkey - a real screen, not a notice pinned to the menu behind it", {
+  drive: () => tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "1"]),
+  waitForText: "Campaign is not built yet",
+})
+
+shoot(
+  "campaign-back-to-top",
+  "Pressing Back (or Esc) returns to the top-level menu, still highlighting Campaign",
+  {
+    // Same reasoning as settings-back-to-top's own comment: "top-level menu" is on screen from the
+    // very first frame, so the eventual wait below only means something once we've first confirmed
+    // we actually left it.
+    drive: () => {
+      tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "1"]) // 1 = Campaign
+      waitFor(repoRoot, SESSION, (text) => text.includes("Campaign is not built yet"), "the Campaign screen")
+      tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "1"]) // 1 = Back, Campaign screen's only row
+    },
+    waitForText: "top-level menu",
+  },
+)
+
 rmSync(scratch, { recursive: true, force: true })
-console.log(`wrote ${join(outputDirectory, "menu-top-level.png")} and seven more`)
+console.log(`wrote ${join(outputDirectory, "menu-top-level.png")} and ten more`)

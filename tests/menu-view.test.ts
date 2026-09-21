@@ -78,6 +78,34 @@ test("a notice, when set, is on screen; when null, nothing is printed in its pla
   assert.ok(!withoutNotice.includes("Campaign is not built yet."))
 })
 
+test("a disabled item renders dimmed when not highlighted, and exactly like any other when it is", () => {
+  const items: readonly MenuItem[] = [
+    { id: "a", hotkey: "1", label: "Alpha" },
+    { id: "b", hotkey: "2", label: "Bravo (Milestone 11)", disabled: true },
+  ]
+
+  // Neither item highlighted at once, so highlight `1` (the disabled one) here to see item 0 - the
+  // live one - in its own normal, unhighlighted state.
+  const withDisabledHighlighted = composeMenuFrame(
+    { state: { items, highlighted: 1 }, notice: null },
+    "color16",
+  )
+  const liveCell = cellAt(withDisabledHighlighted, MENU_LAYOUT.column, menuItemRow(MENU_LAYOUT, 0))
+  assert.equal(liveCell.style.fgRole, "chrome.hotkey", "a live row's own hotkey lost its usual role")
+  const highlightedDisabledCell = cellAt(withDisabledHighlighted, MENU_LAYOUT.column, menuItemRow(MENU_LAYOUT, 1))
+  assert.equal(highlightedDisabledCell.style.inverse, true, "a highlighted disabled row was not inverse")
+
+  // And the reverse: highlight `0` (the default) to see the disabled item, index 1, at rest.
+  const atRest = composeMenuFrame({ state: createMenuList(items), notice: null }, "color16")
+  const disabledCell = cellAt(atRest, MENU_LAYOUT.column, menuItemRow(MENU_LAYOUT, 1))
+  assert.equal(disabledCell.style.fgRole, "chrome.muted", "a disabled row did not use the muted role")
+  assert.equal(disabledCell.style.dim, true, "a disabled row was not dimmed")
+  assert.notEqual(disabledCell.style.fgRole, "chrome.hotkey", "a disabled row's hotkey read like a live one")
+
+  const text = frameToText(atRest)
+  assert.ok(text.includes(menuItemLabel(items[1] as MenuItem)), "a disabled item's hotkey is not displayed at all")
+})
+
 test("an empty item list renders a legal, complete frame rather than throwing", () => {
   const frame = composeMenuFrame({ state: createMenuList([]), notice: null }, "truecolor")
   assert.equal(offendingGlyph(frame), null)
