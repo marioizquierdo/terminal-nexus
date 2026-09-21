@@ -2,9 +2,10 @@
 
 **Document role:** Milestone tracker — the game's own entry point, as distinct from `grid`'s
 **Status:** CURRENT
-**Active gate:** 3C — Mode select and honest handoffs, the last gate in this milestone
+**Active gate:** none — all three gates (3A, 3B, 3C) are built; owner acceptance is what closes this
+milestone and opens Milestone 5
 **Depends on:** Milestone 2 (campaign design decided — accepted 2026-09-12)
-**Updated:** 2026-09-18
+**Updated:** 2026-09-21
 **License:** Apache-2.0
 
 > **Start simple, with the minimum.** Mario's own words. This is the first time anything under the
@@ -46,6 +47,22 @@
 > keystroke. **3C is next**, in the build order this file's own Section 1.1 already gives — not
 > authorized by this note, only unblocked by it.
 
+> **Gate 3C: BUILT, 2026-09-21** — [`../evidence/gate-3c-report.md`](../evidence/gate-3c-report.md)
+> concludes PASS on every automated check it set for itself; owner viewing is outstanding, the same
+> "built, not yet accepted" state Gates 3A and 3B passed through. This is the last gate the milestone
+> names. Neither Milestone 4 nor Milestone 11 is built yet, so Campaign and Challenge each say so in
+> the way this file's own Section 2 asks for, and the two ways turned out to need different handling
+> rather than one generic "disabled" behaviour: Campaign's hotkey now opens a real second screen — the
+> same reusable list/session/view shape Settings already proved, a plain message, and a Back row —
+> instead of pinning a notice to the menu behind it. Challenge stays on the top-level menu but renders
+> dimmed, and its own label already names the milestone that builds it, so a player learns why before
+> ever pressing it rather than only after. Pressing Challenge's hotkey still does exactly what it
+> always has (Gate 3A's own stub notice) — `engine.md` 9.7 is a RULE that a displayed hotkey activates
+> the item it belongs to, so dimming only ever changes how a row is drawn, never whether pressing it
+> does something, and nothing about the command vocabulary, the adapters, or the pure reducer changed
+> to build it. With all three gates built, the milestone's own question is answered; what remains is
+> Mario looking at it.
+
 ## 1. Question
 
 Can a player launch `terminal-nexus` and navigate a top-level menu — **Campaign, Challenge,
@@ -64,9 +81,10 @@ Campaign once there is anything to load.)
 - **3B — Settings. BUILT**, see the note above and
   [`../evidence/gate-3b-report.md`](../evidence/gate-3b-report.md). Capability tier, theme, glyph
   pack, and reduced motion as a menu, each cycling in place and persisted to a small settings file.
-- **3C — Mode select and honest handoffs.** Campaign hands off to Milestone 4 or an explicit
-  placeholder; Challenge hands off to Milestone 11 or is disabled with the reason shown; nothing is
-  silently broken.
+- **3C — Mode select and honest handoffs. BUILT**, see the note above and
+  [`../evidence/gate-3c-report.md`](../evidence/gate-3c-report.md). Campaign hands off to its own
+  placeholder screen since Milestone 4 isn't built yet; Challenge shows dimmed on the top-level menu,
+  its own label naming Milestone 11; nothing is silently broken.
 
 ## 2. What gets built
 
@@ -126,21 +144,25 @@ gameplay, a real save/progression format (Q31 stays open), sound.
 
 ## 5. Definition of done
 
-Checked items below are what **Gate 3A** and **Gate 3B** (this file's own Section 1.1) close; the
-milestone as a whole is not done until 3C also checks its own.
+Checked items below are what **Gates 3A, 3B, and 3C** (this file's own Section 1.1) close between
+them — the last of the three, so every item is now checked; the milestone as a whole still awaits
+Mario's own acceptance before it counts as done, the same way Milestone 1's gates did.
 
 - [x] `bin/terminal-nexus.ts` exists and launches to the top-level menu from a clean checkout;
-- [ ] all four options are reachable and do something honest — **3A**: Campaign, Challenge, and
-      Settings each show a plain, honest stub notice naming the milestone/gate that builds them for
+- [x] all four options are reachable and do something honest — **3A**: Campaign, Challenge, and
+      Settings each showed a plain, honest stub notice naming the milestone/gate that builds them for
       real, and Exit actually cleans up and quits; **3B**: Settings now persists every choice it
-      shows, across a full stop-and-restart, not just for the rest of the current run; **still open
-      for 3C**: Campaign/Challenge's real handoffs or a disabled-with-reason state;
+      shows, across a full stop-and-restart, not just for the rest of the current run; **3C**: Campaign
+      now opens its own placeholder screen instead of a notice on the menu behind it, and Challenge
+      shows dimmed with its own reason right in its label;
 - [x] every option shows its hotkey, and hotkey, arrows-and-Enter, and click are proven equivalent
       through the driver;
 - [x] the disposer leaves mouse reporting off on every exit path, alongside raw mode;
 - [x] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED** —
       [`../evidence/gate-3a-report.md`](../evidence/gate-3a-report.md) for 3A,
-      [`../evidence/gate-3b-report.md`](../evidence/gate-3b-report.md) for 3B;
+      [`../evidence/gate-3b-report.md`](../evidence/gate-3b-report.md) for 3B,
+      [`../evidence/gate-3c-report.md`](../evidence/gate-3c-report.md) for 3C;
 - [x] `./scripts/check-repository.sh` passes;
 - [x] new questions this raises are rows in [`../specs/open-questions.md`](../specs/open-questions.md)
-      — none needed registering for either gate; see each gate report's own Section 6 for why.
+      — none needed registering for any of the three gates; see each gate report's own Section 6 for
+      why.

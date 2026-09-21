@@ -7,11 +7,19 @@
  * One selectable row. `hotkey` is stable across screens, sessions, and terminal sizes — engine.md
  * 9.7's own reason: muscle memory transfers. `id` is what application code switches on; `hotkey` and
  * `label` are what the player sees, and only ever those two things: `[${hotkey}] ${label}`.
+ *
+ * `disabled` is a rendering hint only — dimmed instead of the normal hotkey/label colours when not
+ * highlighted (milestone-03-game-menu.md Gate 3C). It changes nothing about the command vocabulary:
+ * the item still has a real, displayed hotkey, and engine.md 9.7 is a RULE that a displayed hotkey
+ * activates the item it belongs to, so `disabled` never suppresses that. A row using it just has
+ * nothing further to do once activated (the milestone's own "disabled with the reason shown" is the
+ * label's job, not a new kind of command).
  */
 export type MenuItem = Readonly<{
   id: string
   hotkey: string
   label: string
+  disabled?: boolean
 }>
 
 /**

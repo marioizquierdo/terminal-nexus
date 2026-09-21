@@ -104,16 +104,27 @@ terminal that can do more was still getting the tier most exposed to a terminal 
 inconsistently defined colours). `--theme` defaults to `dark` — the palette the lore and every
 screenshot are designed against — and `light` is one flag away for a light terminal background.
 
-**`terminal-nexus`** (Milestone 3, Gates 3A–3B) launches straight to a top-level menu — Campaign,
-Challenge, Settings, Exit — on the same `TerminalBackend`/cell-frame stack `grid` uses, not a second
-presentation system. `src/menu/` holds the reusable menu-list shape, the keyboard and mouse adapters,
-and the driver; `src/view/menu.ts` composes the frame; `src/cli/lifecycle.ts` is the one idempotent
-disposer both `grid watch` and this menu build their lifecycle on. Every menu item shows its hotkey
-(`[1] Campaign`) and is reachable three equivalent ways — the hotkey, arrows and Enter, or a mouse
-click on its row (opt-in SGR mouse reporting, switched off by the disposer on every exit path).
-Campaign and Challenge are still honest stubs (3C builds their real destinations); Exit is real, and
-now so is Settings. `terminal-nexus` flags: `--capability`, `--theme`, `--glyphs`, `--reduced-motion`,
-`--backend`.
+**`terminal-nexus`** (Milestone 3, all three gates built) launches straight to a top-level menu —
+Campaign, Challenge, Settings, Exit — on the same `TerminalBackend`/cell-frame stack `grid` uses, not
+a second presentation system. `src/menu/` holds the reusable menu-list shape, the keyboard and mouse
+adapters, and the driver; `src/view/menu.ts` composes the frame; `src/cli/lifecycle.ts` is the one
+idempotent disposer both `grid watch` and this menu build their lifecycle on. Every menu item shows
+its hotkey (`[1] Campaign`) and is reachable three equivalent ways — the hotkey, arrows and Enter, or
+a mouse click on its row (opt-in SGR mouse reporting, switched off by the disposer on every exit
+path). Settings and Exit are real; Campaign and Challenge are honest about not being built yet, each
+in its own way (below). `terminal-nexus` flags: `--capability`, `--theme`, `--glyphs`,
+`--reduced-motion`, `--backend`.
+
+Campaign and Challenge (Gate 3C) hand off to Milestones 4 and 11, neither of which is built yet, so
+each says so — differently, matching what the milestone's own text asks for. Campaign's hotkey opens
+a real second screen (`src/cli/menu.ts`'s `campaignMenu`, the exact same session/list/view machinery
+Settings already uses) with a plain message and a Back row. Challenge stays on the top-level menu but
+renders dimmed — `MenuItem` gained an optional `disabled` flag that `src/view/menu.ts` reads to draw a
+row in the muted style instead of its usual colours — and its own label already names the milestone
+that builds it (`"Challenge (Milestone 11)"`), rather than making a player press it to find out.
+Activating a dimmed row is unchanged from any other item — engine.md 9.7 is a RULE that a displayed
+hotkey activates the item it belongs to, so `disabled` only ever changes how a row is drawn, never
+whether pressing it does something.
 
 Settings (`src/settings/`, Gate 3B) is a second menu screen reached from the top level by its own
 hotkey, built from the exact same list shape and the exact same three adapters rather than a second
@@ -157,9 +168,10 @@ assert on, and it says nothing about spacing, density, or where the eye goes.
 same `scripts/lib/terminal-capture.mjs` pipeline: launch, arrow keys by real tmux key name, a hotkey
 digit, and — driving the mouse adapter with the literal bytes a terminal actually sends, not a
 description of one — a raw SGR mouse click at the row's own rendered cell. Its shots also cover the
-Settings screen: entering it, cycling a row, and coming back. Cycling a row does more work than a
-plain navigation redraw (it writes the settings file, then redraws), so that shot waits for the new
-text to actually appear rather than capturing on a fixed delay.
+Settings screen (entering it, cycling a row, and coming back — cycling does more work than a plain
+navigation redraw, since it writes the settings file too, so that shot waits for the new text to
+actually appear rather than capturing on a fixed delay) and Campaign's placeholder screen the same
+way, plus one of Challenge dimmed and highlighted on the top-level menu itself.
 
 Requires `tmux` and the browser at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`. Editing the
 `shots` array at the top of the script is how you add a frame worth looking at.

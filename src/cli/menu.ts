@@ -1,7 +1,9 @@
 // `terminal-nexus`'s menu screens — milestone-03-game-menu.md. Gate 3A built the top-level menu and
-// the three input adapters; Gate 3B adds Settings as a real second screen, reusing that same
-// reusable list shape rather than inventing anything new for it. Campaign and Challenge are still
-// honest stubs (Gate 3C builds their real destinations); Exit is real.
+// the three input adapters; Gate 3B added Settings as a real second screen, reusing that same
+// reusable list shape rather than inventing anything new for it. Gate 3C gives Campaign its own
+// placeholder screen (the same reuse again) now that Milestone 4 isn't built yet, and dims Challenge
+// in place on the top-level menu instead, since Milestone 11 isn't either; Settings and Exit are
+// unchanged.
 //
 // The event loop here is deliberately unlike `watch.ts`'s: a menu has no ticks and nothing animates,
 // so there is no per-frame timer — a redraw happens only in response to input or a resize.
@@ -20,18 +22,27 @@ import type { Settings, SettingsStore } from "../settings/index.ts"
 /** Canon 2.11 named these four; Q43 withdrew a fifth ("choose your Commander") upfront screen. */
 export const TOP_LEVEL_ITEMS: readonly MenuItem[] = [
   { id: "campaign", hotkey: "1", label: "Campaign" },
-  { id: "challenge", hotkey: "2", label: "Challenge" },
+  // Dimmed and already saying why (Gate 3C) - Milestone 11 hasn't landed, and "disabled with the
+  // reason shown" (milestone-03-game-menu.md Section 2) means the reason belongs in the label a
+  // player sees before ever pressing anything, not only after.
+  { id: "challenge", hotkey: "2", label: "Challenge (Milestone 11)", disabled: true },
   { id: "settings", hotkey: "3", label: "Settings" },
   { id: "exit", hotkey: "4", label: "Exit" },
 ]
 
+/** Campaign's own placeholder screen (Gate 3C) has exactly one row - there is nothing to configure
+ *  yet, only somewhere honest to land instead of a notice on the screen the player just left. */
+const CAMPAIGN_ITEMS: readonly MenuItem[] = [{ id: "back", hotkey: "1", label: "Back" }]
+
+const CAMPAIGN_PLACEHOLDER = "Campaign is not built yet - Milestone 4 adds the campaign menu."
+
 /**
- * "Stub honestly rather than half-build" (milestone-03-game-menu.md Section 3) — every option not
- * built yet says plainly what it is waiting on, rather than silently doing nothing. Settings no
- * longer needs one: this gate builds it for real.
+ * "Stub honestly rather than half-build" (milestone-03-game-menu.md Section 3) — an option not built
+ * yet says plainly what it is waiting on, rather than silently doing nothing. Settings no longer
+ * needs one (Gate 3B built it for real); Campaign no longer does either (Gate 3C gave it its own
+ * screen, above) — only Challenge still shows one, on top of its label already saying why.
  */
 const STUB_NOTICES: Readonly<Record<string, string>> = {
-  campaign: "Campaign is not built yet - Milestone 4 adds the campaign menu.",
   challenge: "Challenge is not built yet - Milestone 11 adds the run screen.",
 }
 
@@ -85,7 +96,15 @@ export type MenuOptions = Readonly<{
   exit?: (code: number) => void
 }>
 
-type Screen = "top" | "settings"
+type Screen = "top" | "settings" | "campaign"
+
+/** What each screen's frame says about itself — the one place that grows when a screen is added,
+ *  instead of a `screen === "x" ? ... : screen === "y" ? ...` chain repeated at every call site. */
+const SCREEN_INFO: Readonly<Record<Screen, Readonly<{ subtitle: string; showBack: boolean }>>> = {
+  top: { subtitle: "top-level menu", showBack: false },
+  settings: { subtitle: "settings", showBack: true },
+  campaign: { subtitle: "campaign", showBack: true },
+}
 
 export async function runMenu(options: MenuOptions): Promise<number> {
   const { stdout, stdin } = options
@@ -142,16 +161,17 @@ export async function runMenu(options: MenuOptions): Promise<number> {
 
   function render(): void {
     if (leaving) return
-    const active = screen === "top" ? topMenu : settingsMenu
+    const active = sessionFor(screen)
+    const info = SCREEN_INFO[screen]
     const frame = gated
       ? gateFrame(stdout.columns ?? MENU_SIZE.width, stdout.rows ?? MENU_SIZE.height, MENU_SIZE)
       : composeMenuFrame(
           {
             state: active.state,
-            notice: screen === "top" ? notice : null,
+            notice: screen === "top" ? notice : screen === "campaign" ? CAMPAIGN_PLACEHOLDER : null,
             glyphPack: settings.glyphPack,
-            subtitle: screen === "top" ? "top-level menu" : "settings",
-            showBack: screen === "settings",
+            subtitle: info.subtitle,
+            showBack: info.showBack,
           },
           settings.capability,
         )
@@ -168,6 +188,14 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     render()
   }
 
+  /** Which session is listening on the current screen — the one place this switches, so a caller
+   *  juggling more than one screen (`onData` below) never repeats the same three-way branch. */
+  function sessionFor(current: Screen): MenuSession {
+    if (current === "top") return topMenu
+    if (current === "settings") return settingsMenu
+    return campaignMenu
+  }
+
   const topMenu = new MenuSession({
     items: TOP_LEVEL_ITEMS,
     onActivate: (item: MenuItem) => {
@@ -180,10 +208,27 @@ export async function runMenu(options: MenuOptions): Promise<number> {
         goTo("settings")
         return
       }
+      if (item.id === "campaign") {
+        notice = null
+        goTo("campaign")
+        return
+      }
+      // Only Challenge reaches here now — a dimmed, disabled row that already says why in its own
+      // label (Gate 3C), still activatable per engine.md 9.7, still showing the fuller notice it
+      // always has since Gate 3A.
       notice = STUB_NOTICES[item.id] ?? null
       render()
     },
     onQuit: leave,
+  })
+
+  const campaignMenu = new MenuSession({
+    items: CAMPAIGN_ITEMS,
+    onActivate: (item: MenuItem) => {
+      if (item.id === "back") goTo("top")
+    },
+    onQuit: leave,
+    onBack: () => goTo("top"),
   })
 
   const settingsMenu = new MenuSession({
@@ -226,8 +271,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     // player can no longer see.
     for (const key of keysFromChunk(data.toString("utf8"))) {
       if (leaving) break
-      const active = screen === "top" ? topMenu : settingsMenu
-      active.handleKey(key, MENU_LAYOUT)
+      sessionFor(screen).handleKey(key, MENU_LAYOUT)
     }
     render()
   }

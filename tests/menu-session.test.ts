@@ -29,8 +29,13 @@ class FakeStdout extends EventEmitter {
   columns = 80
   rows = 24
   written = ""
+  /** Just the most recent write — `written`'s cumulative history never loses an earlier screen's
+   *  text even once a later frame has genuinely replaced it, so it cannot prove something is *absent*
+   *  from what's on screen right now (menu-settings-screen.test.ts hit this first). */
+  lastWrite = ""
   write(text: string): boolean {
     this.written += text
+    this.lastWrite = text
     return true
   }
 }
@@ -131,14 +136,33 @@ test("activating the menu's own Exit item — by its hotkey — reaches the same
   assert.ok(stdout.written.includes(MOUSE_REPORTING_OFF))
 })
 
-test("activating a stubbed item shows a notice and does not quit", async () => {
-  const campaign = TOP_LEVEL_ITEMS.find((item) => item.id === "campaign")
-  assert.ok(campaign)
+test("activating Challenge, a dimmed stub, shows a notice and does not quit or change screen", async () => {
+  const challenge = TOP_LEVEL_ITEMS.find((item) => item.id === "challenge")
+  assert.ok(challenge)
+  assert.equal(challenge!.disabled, true, "Challenge is no longer marked disabled")
   const { stdout, exits } = await menuSession((input) => {
-    input.emit("data", Buffer.from(campaign!.hotkey))
+    input.emit("data", Buffer.from(challenge!.hotkey))
   })
   assert.deepEqual(exits, [], "a stub option should not exit the application")
   assert.ok(stdout.written.includes("not built yet"), "no honest stub notice was ever drawn")
+  assert.ok(stdout.written.includes("top-level menu"), "activating a dimmed stub left the top-level menu")
+})
+
+test("activating Campaign leaves the top-level menu for its own placeholder screen", async () => {
+  const campaign = TOP_LEVEL_ITEMS.find((item) => item.id === "campaign")
+  assert.ok(campaign)
+  assert.notEqual(campaign!.disabled, true, "Campaign should not be a dimmed stub - it gets a real screen")
+  const { stdout, exits } = await menuSession((input) => {
+    input.emit("data", Buffer.from(campaign!.hotkey))
+  })
+  assert.deepEqual(exits, [], "a placeholder screen should not exit the application")
+  assert.ok(stdout.written.includes("Campaign is not built yet"), "no honest placeholder message was ever drawn")
+  assert.ok(stdout.written.includes("campaign"), "the subtitle never switched away from the top-level menu")
+  assert.ok(stdout.written.includes("Back"), "the placeholder screen has no way back")
+  // The top-level menu's own other items are gone from the *current* frame - this is a different
+  // screen, not a notice pinned to the one the player was already looking at. (`written`'s full
+  // history still has them, from the very first frame drawn before any key was pressed at all.)
+  assert.ok(!stdout.lastWrite.includes("[4] Exit"), "the top-level menu's own items are still on screen")
 })
 
 test("a non-TTY launch prints one line and no escape sequences, and needs no signal to end", async () => {

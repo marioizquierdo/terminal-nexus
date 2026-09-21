@@ -33,12 +33,13 @@ Milestone 1's Pulse Playground grew into: units on a small Grid resolving a dete
 from a seed, with a levelled report and a minimal ASCII view. `grid` is not the game; it is the tool
 that builds and replays it.
 
-**`terminal-nexus`** is the game's own executable (Milestone 3, Gates 3A–3B): it launches straight to
-a top-level menu — Campaign, Challenge, Settings, Exit — every item reachable by its displayed
-hotkey, by arrows and Enter, or by a mouse click, all three proven equivalent. Settings is real:
-colour depth, background, symbols, and reduced motion each cycle in place and persist across a
-relaunch. There is still no Build Phase, no economy, and no campaign content yet — Campaign and
-Challenge remain honest stubs until later milestones build their real destinations.
+**`terminal-nexus`** is the game's own executable (Milestone 3, all three gates built): it launches
+straight to a top-level menu — Campaign, Challenge, Settings, Exit — every item reachable by its
+displayed hotkey, by arrows and Enter, or by a mouse click, all three proven equivalent. Settings is
+real: colour depth, background, symbols, and reduced motion each cycle in place and persist across a
+relaunch. There is still no Build Phase, no economy, and no campaign content yet: Campaign opens its
+own honest placeholder screen, and Challenge shows dimmed on the menu with its own reason right in
+its label, until Milestones 4 and 11 build their real destinations.
 
 ## Local Development
 
@@ -109,8 +110,9 @@ Launches straight to the top-level menu — Campaign, Challenge, Settings, Exit 
 stack as `grid`. Every item shows its hotkey (`[1] Campaign`) and works three equivalent ways: press
 the hotkey, arrow to it and press Enter, or click its row. Settings is a real second screen: colour
 depth, background, symbols, and reduced motion each cycle to their next value on the spot, take effect
-immediately, and are remembered on the next launch. Campaign and Challenge are still honest stubs for
-now (later milestones build their real destinations); Exit actually quits, cleanly.
+immediately, and are remembered on the next launch. Campaign opens its own placeholder screen saying
+plainly that it's not built yet; Challenge shows dimmed, right on the menu, its own label already
+naming the milestone that builds it — neither is silently broken, and Exit actually quits, cleanly.
 
 ### Read what happened
 

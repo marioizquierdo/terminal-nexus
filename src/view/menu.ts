@@ -126,6 +126,15 @@ export function composeMenuFrame(
       })
       return
     }
+    if (item.disabled === true) {
+      // Dimmed rather than the normal hotkey/label colours (Gate 3C) — the row is still real (its
+      // hotkey still activates it, per engine.md 9.7's RULE), it just has nothing further to do once
+      // activated, and looks that way before it's even pressed. Highlighting it still inverts the
+      // whole block below, same as any other item — inverse video is what "selected" means, and that
+      // stays true regardless of whether the selected item is this one.
+      text(cells, band, MENU_LAYOUT.column, row, hotkeyPart + labelPart, "chrome.muted", { dim: true })
+      return
+    }
     text(cells, band, MENU_LAYOUT.column, row, hotkeyPart, "chrome.hotkey", { bold: true })
     text(cells, band, MENU_LAYOUT.column + hotkeyPart.length, row, labelPart, "chrome.value")
   })
