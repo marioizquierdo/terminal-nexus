@@ -1,11 +1,8 @@
-// The viewport and the camera — engine.md 3.3, which is RULE and which nothing has ever executed.
-// Gate 1A deliberately used a Grid that fit the screen whole, so every number below has been written
-// down and unbuilt since before the first line of the kernel existed. Milestone 5 is where the bill
-// comes due; gate 5A is the spike that pays it.
+// The viewport and the camera — engine.md 3.3's scrolling rule.
 //
-// Everything here is pure arithmetic over tiles. No terminal, no frame, no cells: a camera is a
-// position in tiles, a viewport is a size in tiles, and what either looks like is `src/view`'s
-// problem. That split is what lets the whole scrolling rule be tested without a TTY.
+// Pure arithmetic over tiles: a camera is a position in tiles, a viewport is a size in tiles, and
+// what either looks like is `src/view`'s problem. That split is what lets the whole scrolling rule
+// be tested without a TTY.
 
 import type { Coord, GridTerrain } from "../grid/types.ts"
 
@@ -14,9 +11,7 @@ export const MIN_VIEWPORT = { width: 48, height: 16 } as const
 /** RULE: nobody sees more Grid than this, however large their monitor. Fairness, and bounded
  *  arithmetic for every layout, cursor and scroll calculation downstream. */
 export const MAX_VIEWPORT = { width: 72, height: 24 } as const
-/** RULE that it exists, GUIDANCE on the number (project-governance.md Section 7: "the tuning numbers
- *  inside them — the 3-tile margin above all — are locked direction, and Milestone 5 may retune them
- *  on evidence from the first person who actually scrolls a Grid"). */
+/** RULE that a margin exists; GUIDANCE on the number, which `--scroll-margin` can override. */
 export const SCROLL_MARGIN = 3
 
 /** The chrome the Grid pane does not get: engine.md 3.1's own 80-column arithmetic. */
@@ -47,10 +42,9 @@ export function availableTiles(terminal: TerminalSize, tileWidth: TileWidth): Vi
 }
 
 /**
- * Step 2: two columns per tile if the terminal can show the viewport that way, otherwise one.
- * engine.md 9.3 states the same rule as a width — "one terminal column at 80 columns and two at 128
- * or wider" — and the two agree by construction, because 128 is exactly the width at which two
- * columns per tile still leaves room for the 48-tile minimum viewport.
+ * Step 2: two columns per tile if the terminal can show the viewport that way, otherwise one. This
+ * and engine.md 9.3's "one column at 80, two at 128 or wider" agree by construction — 128 is exactly
+ * the width at which two columns per tile still leaves room for the 48-tile minimum viewport.
  */
 export function tileWidthFor(terminal: TerminalSize, grid: GridTerrain): TileWidth {
   const wanted = Math.min(MIN_VIEWPORT.width, grid.width)
@@ -117,10 +111,9 @@ export function followCursor(
   grid: GridTerrain,
   margin: number = SCROLL_MARGIN,
 ): Camera {
-  // Clamped through the same function everything else clamps through, rather than repeating its
-  // arithmetic inline. That is also where the margin stops being honoured and is right to: at the
-  // Grid's own edge the camera has nowhere left to go, so the cursor legitimately reaches the edge
-  // of the screen, because there is no more Grid to reveal by scrolling further.
+  // The clamp is where the margin stops being honoured, and is right to: at the Grid's own edge the
+  // camera has nowhere left to go, so the cursor reaches the edge of the screen because there is no
+  // more Grid to reveal.
   return clampCamera(
     {
       x: followAxis(camera.x, cursor.x, viewport.width, margin),

@@ -10,7 +10,7 @@ import { BuildSession } from "../src/build/session.ts"
 import { SPIKE_ALLOTMENT, SPIKE_CATALOG } from "../src/build/catalog.ts"
 import { remaining } from "../src/build/state.ts"
 import { spikeContext } from "../src/cli/spike.ts"
-import { composeBuildFrame, controlsLine } from "../src/view/build.ts"
+import { bindingLines, composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText, offendingGlyph } from "../src/view/frame.ts"
 import { CAPABILITY_MODES } from "../src/view/roles.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
@@ -184,7 +184,7 @@ test("every glyph on the frame is one cell wide, at both sizes and in both packs
   }
 })
 
-test("the construct rows, the armed item and the click mode are all on screen", () => {
+test("the construct rows and the armed item's own line are all on screen", () => {
   const armed = screenAt(MINIMUM, (build, layout) => {
     build.handleData("2", layout)
   })
@@ -202,8 +202,8 @@ test("the construct rows, the armed item and the click mode are all on screen", 
   assert.match(armed.text, /Spawns swarmers, slowly/)
   // Every binding the footer has no room for at 80 columns is on the panel instead, because a
   // binding that is displayed nowhere does not exist (engine.md 9.7).
-  assert.match(armed.text, /\[u\] undo/)
-  assert.match(armed.text, /\[bksp\] remove/)
+  assert.match(armed.text, /u undo/)
+  assert.match(armed.text, /bksp remove/)
 })
 
 test("the panel says nothing about an item until one is selected", () => {
@@ -216,7 +216,7 @@ test("the panel says nothing about an item until one is selected", () => {
   // But the menu, the budget and the revision keys are always there.
   assert.match(idle.text, /RESOURCE/)
   assert.match(idle.text, /\[1\] Barracks/)
-  assert.match(idle.text, /\[u\] undo/)
+  assert.match(idle.text, /u undo/)
 })
 
 test("the panel says why a placement is refused, and which tile it means", () => {
@@ -321,7 +321,7 @@ test("no header or footer line is cut off at the 80-column floor", () => {
   // screenshot showed it, so each one is now asserted whole at the narrowest size that must work.
   const { text } = screenAt(MINIMUM)
   assert.match(text, /TERMINAL NEXUS build phase/)
-  assert.match(text, /view x 0-47 y 1-16 of 96x40 {3}cursor 18,13 {3}margin 3/)
+  assert.match(text, /view x 0-47 y 1-16 of 96x40 {3}cursor 18,13/)
   assert.match(text, /arrows move.*q quit/)
   assert.match(text, /RESOURCE {10}100 of 100/, "the panel's own first line, whole")
 })
@@ -390,7 +390,7 @@ test("on a Grid short enough to shrink the panel, the detail block is dropped ra
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
 
   // The furniture that must survive, whole.
-  assert.match(text, /\[u\] undo {2}\[bksp\] remove/)
+  assert.match(text, /u undo/)
   assert.match(text, /view x 0-19 y 0-9 of 20x10/)
   assert.match(text, /arrows move.*q quit/, "the quit key fell off a narrower footer")
   // And the menu itself is still there — it is the block below it that gave way.
@@ -411,19 +411,122 @@ test("a panel with room for the detail block still draws it", () => {
   assert.match(roomy.text, /rock in the way/)
 })
 
-test("the footer's bindings line is always whole bindings, at every width it can have", () => {
-  // The line shrinks with the composition, and the composition shrinks with the Grid. Whatever it
-  // ends up being, it must never be a binding cut in half — a player reading "esc dis" learns
-  // nothing and a player who cannot find "q quit" is stuck in an alternate screen.
-  const whole = controlsLine(Number.POSITIVE_INFINITY)
-  const bindings = whole.split("  ")
-  for (let limit = 10; limit <= whole.length + 5; limit += 1) {
-    const line = controlsLine(limit)
-    assert.ok(line.length <= limit, `"${line}" is wider than ${limit}`)
-    for (const part of line === "" ? [] : line.split("  ")) {
-      assert.ok(bindings.includes(part), `"${part}" is not a whole binding (limit ${limit})`)
+test("every binding survives the split whole, at every width the screen can have", () => {
+  // The footer shrinks with the composition and the composition shrinks with the Grid. Whatever the
+  // two lines end up being, a binding must never be cut in half — a player reading "esc dis" learns
+  // nothing and one who cannot find "q quit" is stuck in an alternate screen. And nothing may be
+  // lost between the two surfaces: what leaves the footer arrives in the panel.
+  const all = bindingLines(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY).footer.split("  ")
+  for (let footerLimit = 10; footerLimit <= all.join("  ").length + 5; footerLimit += 1) {
+    for (const panelLimit of [26, 28, 40]) {
+      const { footer, panel } = bindingLines(footerLimit, panelLimit)
+      assert.ok(footer.length <= footerLimit, `footer "${footer}" is wider than ${footerLimit}`)
+      for (const line of panel) {
+        assert.ok(line.length <= panelLimit, `panel "${line}" is wider than ${panelLimit}`)
+      }
+      const shown = [footer, ...panel].flatMap((line) => (line === "" ? [] : line.split("  ")))
+      assert.deepEqual(shown, all, `a binding was lost or cut at ${footerLimit}/${panelLimit}`)
     }
   }
-  // The four a player cannot work the screen without come first, so they are the last to go.
-  assert.deepEqual(bindings.slice(0, 4), ["arrows move", "enter place", "esc disarm", "q quit"])
+  // The four a player cannot work the screen without come first, so they are the last to leave the
+  // footer.
+  assert.deepEqual(all.slice(0, 4), ["arrows move", "enter place", "esc disarm", "q quit"])
+})
+
+test("every key the adapters bind is named on screen at the 80-column floor", () => {
+  // The converse of the test above, and the one that matters at the acceptance size: a key nobody
+  // can find is a key that does not exist (engine.md 9.7). The footer alone cannot hold them at 80
+  // columns, which is why the overflow goes in the panel — so the check is against the whole
+  // screen, not one line.
+  const { text } = screenAt(MINIMUM)
+  const bound: readonly (readonly [string, string, RegExp])[] = [
+    ["\u001b[A", "arrows", /arrows move/],
+    ["\r", "enter", /enter place/],
+    ["\u001b", "esc", /esc disarm/],
+    ["q", "quit", /q quit/],
+    ["\u001b[1;2A", "shift+arrow", /shift\+arrow jump 5/],
+    ["\u001b[5~", "pgup", /pgup pgdn jump 5/],
+    ["\u001bOH", "home", /home end jump 5/],
+    ["\u007f", "backspace", /bksp remove/],
+    ["u", "undo", /u undo/],
+  ]
+  for (const [key, name, shown] of bound) {
+    assert.notEqual(
+      buildKeyboardCommand(key, { itemCount: 3, armed: true }),
+      null,
+      `the adapter should bind ${name}`,
+    )
+    assert.match(text, shown, `${name} is bound but named nowhere on an 80x24 screen`)
+  }
+})
+
+test("a terminal wide enough puts every binding in the footer and leaves the panel alone", () => {
+  // The whole of the layout's adaptation to width, in one assertion: the footer takes what it can
+  // hold and the panel shows the remainder, so a wide terminal simply has no remainder.
+  const wide = screenAt({ columns: 160, rows: 40 })
+  const footer = wide.text.split("\n").find((row) => row.includes("arrows move"))
+  assert.ok(footer !== undefined)
+  assert.match(footer, /u undo/, "a wide footer holds the last binding too")
+  assert.equal(bindingLines(wide.layout.footerLimit, wide.layout.panelLimit).panel.length, 0)
+})
+
+test("engine-3.3-markers: the markers keep the same spacing in tiles at both tile widths", () => {
+  // They are drawn on terminal cells but they mark *Grid*, so their density is counted in tiles. A
+  // step measured in columns halves the moment a tile becomes two columns wide, which is the width
+  // a wide terminal actually uses.
+  const spacing = (terminal: { columns: number; rows: number }): number => {
+    const { text, layout } = screenAt(terminal, (build) => {
+      build.run([{ kind: "move-cursor", dx: 20, dy: 20 }])
+    })
+    const top = text.split("\n")[layout.offset.row] as string
+    const columns = [...top].flatMap((glyph, index) => (glyph === "^" ? [index] : []))
+    assert.ok(columns.length >= 2, `the north edge should be marked on ${terminal.columns} columns`)
+    return ((columns[1] as number) - (columns[0] as number)) / layout.tileWidth
+  }
+  assert.equal(spacing(MINIMUM), spacing({ columns: 160, rows: 40 }))
+})
+
+test("no line is drawn over another, at every terminal size in the supported range", () => {
+  // The range is 48x16 to 72x24 tiles, and the screenshots only ever catch the sizes somebody
+  // thought to capture. Every size in between is swept here instead: the frame stays the terminal's
+  // own size, the footer keeps all three of its lines, and the panel never reaches them.
+  for (let columns = 80; columns <= 106; columns += 1) {
+    for (let rows = 24; rows <= 32; rows += 1) {
+      const { text, layout, frame } = screenAt({ columns, rows }, (build, l) => {
+        build.handleData("1", l)
+        build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }])
+      })
+      assert.equal(frame.width, columns, `frame width at ${columns}x${rows}`)
+      assert.equal(frame.height, rows, `frame height at ${columns}x${rows}`)
+      const lines = text.split("\n")
+      assert.match(lines[layout.footerRow] as string, /view x /, `readout at ${columns}x${rows}`)
+      assert.match(lines[layout.footerRow + 1] as string, /arrows move/, `keys at ${columns}x${rows}`)
+      assert.match(lines[layout.footerRow + 2] as string, /Barracks selected/, `status at ${columns}x${rows}`)
+      // And the thing the player is being told stays on screen through the whole range.
+      assert.match(text, /CANNOT BUILD HERE/, `the refusal at ${columns}x${rows}`)
+    }
+  }
+})
+
+test("engine-3.3-markers: the side markers are an unbroken run, not a column of carets", () => {
+  // The east border is the rule between the Grid and the side panel. A marker every few rows there
+  // reads as a caret pointing at whichever panel row it lands beside — `> [1] Barracks` looks
+  // selected. Every row carrying one is what makes it a border instead.
+  // Far enough in that all four sides have more Grid beyond them.
+  const { text, layout } = screenAt(MINIMUM, (build) => {
+    build.run([{ kind: "move-cursor", dx: 40, dy: 20 }])
+  })
+  const lines = text.split("\n")
+  for (let row = layout.origin.row; row < layout.origin.row + layout.viewport.height; row += 1) {
+    assert.equal(
+      (lines[row] as string)[layout.dividerColumn],
+      ">",
+      `the east edge is unmarked on row ${row}`,
+    )
+    assert.equal(
+      (lines[row] as string)[layout.offset.column],
+      "<",
+      `the west edge is unmarked on row ${row}`,
+    )
+  }
 })

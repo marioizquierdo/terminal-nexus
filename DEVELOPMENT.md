@@ -119,7 +119,7 @@ path). Settings and Exit are real; Campaign and Challenge are honest about not b
 in its own way (below). `terminal-nexus` flags: `--capability`, `--theme`, `--glyphs`,
 `--reduced-motion`, `--backend`.
 
-**The Build Phase spike** (`--spike`, Milestone 5 gate 5A) is the first screen in the project that
+**The Build Phase** (`--spike`, Milestone 5) is the first screen in the project that
 shows a **window onto a Grid larger than itself**: a 96 x 40 map in a viewport that is 48 x 16 tiles
 at 80 columns and 72 x 24 at 104. Move the cursor with the arrow keys and the map scrolls once the
 cursor comes within three tiles of an edge; the frame's border marks every side with more map beyond
@@ -129,15 +129,16 @@ so a run of them is one digit then arrows and Enter. Every row shows what it cos
 line shows what is left of a 100-point starting allotment, a row that no longer fits is dimmed, and
 picking one shows what it does. When a placement is refused the panel says why — "rock in the way",
 "the nexus is here", "costs 40, 20 left" — and names the tile when the reason is a tile. `[u]` undoes
-and Backspace removes the one under the cursor, both refunding, which together are what make placing
-on a single click safe: a plan stays revisable until it is committed. The gate shipped a second click behaviour beside that one — click
-to move the cursor, click again to confirm — as a toggle, because which one felt right was Mario's
-call; he picked placing on the first click (Q50, answered), and the other one is gone rather than
-kept as a setting. Shift+Arrow jumps five tiles, and so do PageUp/PageDown and Home/End, because several terminals
+and Backspace removes the one under the cursor, both refunding, which is what makes placing on a
+single click safe: a plan stays revisable until it is committed (Q50).
+
+Shift+Arrow jumps five tiles, and so do PageUp/PageDown and Home/End, because several terminals
 deliver no shifted arrows at all — `node scripts/probe-modified-keys.mjs` prints the survey, and
-`evidence/gate-5a-report.md` has the table. `--scroll-margin <tiles>` changes the three-tile trigger
-distance so it can be judged against another number rather than argued about. It is a spike: nothing
-it plans reaches the simulation, and nothing is saved.
+`evidence/gate-5a-report.md` has the table. **The footer and the panel share one list of bindings**:
+the footer takes as many as its width holds and the panel shows the rest, so a wide terminal has them
+all on one line and an 80-column one loses none of them. `--scroll-margin <tiles>` changes the
+three-tile trigger distance so it can be judged against another number. Nothing it plans reaches the
+simulation, and nothing is saved.
 
 Its own code: `src/build/` holds the camera arithmetic, the pure reducer, the three adapters and the
 driver; `src/view/build.ts` composes the frame; `src/cli/spike.ts` runs it on the same backend and the

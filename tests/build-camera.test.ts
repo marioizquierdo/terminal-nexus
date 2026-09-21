@@ -120,17 +120,36 @@ test("engine-3.3-scroll: the margin holds at every cursor position the Grid can 
 })
 
 test("engine-3.3-scroll: the margin holds at every viewport size in the clamped range", () => {
+  // Every size in the range, not the three somebody picked: 25 widths by 9 heights, walked on both
+  // axes and in both directions. The camera has to keep the cursor visible and hold its margin
+  // wherever the Grid still has room to scroll, whatever shape the window is.
+  const walk = (viewport: Viewport, axis: "x" | "y", fixed: number): void => {
+    const span = axis === "x" ? viewport.width : viewport.height
+    const length = axis === "x" ? GRID.width : GRID.height
+    const room = length - span
+    let camera: Camera = { x: 0, y: 0 }
+    const step = (position: number): void => {
+      const cursor = axis === "x" ? { x: position, y: fixed } : { x: fixed, y: position }
+      camera = followCursor(camera, cursor, viewport, GRID)
+      const range = visibleRange(camera, viewport)
+      const [first, last, at] =
+        axis === "x"
+          ? ([range.firstX, range.lastX, camera.x] as const)
+          : ([range.firstY, range.lastY, camera.y] as const)
+      const where = `${viewport.width}x${viewport.height} ${axis}=${position}`
+      assert.ok(position >= first && position <= last, `cursor off screen at ${where}`)
+      if (at > 0) assert.ok(position - first >= SCROLL_MARGIN, `leading margin at ${where}`)
+      if (at < room) assert.ok(last - position >= SCROLL_MARGIN, `trailing margin at ${where}`)
+    }
+    for (let position = 0; position < length; position += 1) step(position)
+    for (let position = length - 1; position >= 0; position -= 1) step(position)
+  }
+
   for (let width = MIN_VIEWPORT.width; width <= MAX_VIEWPORT.width; width += 1) {
-    for (const height of [MIN_VIEWPORT.height, 20, MAX_VIEWPORT.height]) {
+    for (let height = MIN_VIEWPORT.height; height <= MAX_VIEWPORT.height; height += 1) {
       const viewport: Viewport = { width, height }
-      let camera: Camera = { x: 0, y: 0 }
-      for (let x = 0; x < GRID.width; x += 1) {
-        camera = followCursor(camera, { x, y: 5 }, viewport, GRID)
-        const range = visibleRange(camera, viewport)
-        assert.ok(x >= range.firstX && x <= range.lastX, `${width}x${height} cursor visible at ${x}`)
-        if (camera.x > 0) assert.ok(x - range.firstX >= SCROLL_MARGIN)
-        if (camera.x < GRID.width - width) assert.ok(range.lastX - x >= SCROLL_MARGIN)
-      }
+      walk(viewport, "x", 5)
+      walk(viewport, "y", 5)
     }
   }
 })

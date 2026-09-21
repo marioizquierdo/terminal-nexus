@@ -1,12 +1,10 @@
-// The Build Phase spike's frame — engine.md 9.2's Build Phase composition, built for the first
-// time. Same band compositor, same style roles, same glyph packs as the Pulse view and the menu, so
-// monochrome, the colour tiers and the optional pack come free rather than needing a third
-// accessibility pass.
+// The Build Phase frame — engine.md 9.2's composition, on the same band compositor, style roles and
+// glyph packs as the Pulse view and the menu, so monochrome and the colour tiers come free.
 //
-// What is new here, and what gate 5A is actually about: the Grid pane shows a **window onto a Grid
-// larger than itself**. Every tile is drawn at `tile - camera`, clipped to the viewport, and the two
-// signals engine.md 3.3 requires in place of a minimap — edge markers on the frame border, and a
-// position readout naming the visible range — are drawn from the same camera the cursor moved.
+// The Grid pane is a **window onto a Grid larger than itself**: every tile is drawn at
+// `tile - camera` and clipped to the viewport, and the two signals engine.md 3.3 requires in place
+// of a minimap — edge markers on the frame border, a position readout naming the visible range —
+// come from the same camera the cursor moved.
 
 import { tilesOf } from "../grid/coords.ts"
 import type { ContentRegistry } from "../content/index.ts"
@@ -33,13 +31,16 @@ import type { GlyphPack } from "./theme.ts"
  */
 const EDGE_GLYPHS = { north: "^", south: "v", west: "<", east: ">" } as const
 /**
- * How often a marker repeats along its border. The vertical sides are denser than the horizontal
- * ones for a reason the first real screenshot made obvious: the east markers sit on the rule between
- * the Grid and the side panel, and a *single* `>` there sits right beside the first construct row
- * and reads as a caret pointing at it. A run of them down the whole rule cannot be read as pointing
- * at anything — it reads as an edge, which is what it is.
+ * How often a marker repeats along its border. Horizontally it is **counted in tiles**, so the
+ * spacing does not halve when a tile becomes two columns wide, and the dashes between them keep the
+ * border reading as one line.
+ *
+ * Vertically there is no gap at all. The east border is the rule between the Grid and the side
+ * panel, and a broken column of arrows beside panel rows reads as a caret pointing at the row it
+ * happens to sit next to — `> [1] Barracks` looks selected. An unbroken run cannot point at any one
+ * row, because it points at all of them.
  */
-const EDGE_MARKER_STEP = { horizontal: 6, vertical: 2 } as const
+const EDGE_MARKER_STEP = { horizontal: 4, vertical: 1 } as const
 
 /** A structure the player is about to place, and whether they may. Drawn in the highlights band, so
  *  it is presentation and can never change occupancy (engine.md 9.4). */
@@ -68,11 +69,8 @@ function drawChrome(cells: BandCell[], layout: BuildLayout, pack: GlyphPack): vo
   for (let y = top + 1; y < bottom; y += 1) {
     put(cells, band, left, y, vertical, "chrome.frame")
     put(cells, band, right, y, vertical, "chrome.frame")
-    // The Grid/panel divider stops above the footer. The footer's three rows then run the whole
-    // interior width, which is the only way the position readout, the live bindings and the status
-    // line all fit at 80 columns — where the Grid pane alone is 46 usable columns, and every one of
-    // those three lines is longer than that. A reversible layout choice, made here rather than
-    // registered as a question (project-governance.md Section 2), and recorded in the gate report.
+    // The divider stops above the footer, so the footer's three rows run the whole interior width.
+    // At 80 columns the Grid pane is 46 usable columns and all three lines are longer than that.
     if (y < layout.footerRow) put(cells, band, layout.dividerColumn, y, vertical, "chrome.frame")
   }
   for (const [x, y] of [
@@ -98,14 +96,12 @@ function drawEdgeMarkers(cells: BandCell[], input: BuildCompositionInput): void 
   const top = layout.offset.row
   const bottom = layout.offset.row + layout.composition.height - 1
 
-  // Drawn in the frame's own colour rather than the hotkey colour they used in gate 5A. A marker is
-  // part of the border, and `chrome.hotkey` is the role that means "this is a key you can press" —
-  // an edge marker wearing it competes with the construct menu's own `[1]` for the same meaning,
-  // which is the opposite of what it is for. Bold keeps it distinct from the plain border glyph, and
-  // the shape carries it in monochrome either way. Where these markers *sit*, and how dense they
-  // are, is gate 5C's to tune along with the rest of the scrolling furniture.
-  const marker = { bold: true }
-  for (let x = firstColumn; x <= lastColumn; x += EDGE_MARKER_STEP.horizontal) {
+  // The frame's own colour and weight. A marker replaces a piece of border, so it should read as a
+  // border made of arrows — `chrome.hotkey` means "a key you can press", and bold made the run beside
+  // the panel shout over the menu it sits next to.
+  const marker = {}
+  const step = EDGE_MARKER_STEP.horizontal * layout.tileWidth
+  for (let x = firstColumn; x <= lastColumn; x += step) {
     if (markers.north) put(cells, band, x, top, EDGE_GLYPHS.north, "chrome.frame", marker)
     if (markers.south) put(cells, band, x, bottom, EDGE_GLYPHS.south, "chrome.frame", marker)
   }
@@ -127,10 +123,10 @@ function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPa
       if (terrainId === undefined) continue
       const { glyph, role } = terrainGlyph(terrainId, pack)
       const cell = cellForTile(layout, state.camera, { x, y })
-      // The same lattice the Pulse view draws featureless ground with: 288 identical dots compete
-      // with everything on top of them, and negative space is material. Rock and deposits are
-      // features and are always drawn. The lattice is keyed to absolute tile coordinates, not to
-      // screen position, so it scrolls *with* the Grid instead of crawling across it.
+      // The same lattice the Pulse view draws featureless ground with — a full field of dots
+      // competes with everything on top of it. Rock and deposits are features and always drawn. The
+      // lattice is keyed to absolute tile coordinates, so it scrolls with the Grid rather than
+      // crawling across it.
       const featureless = terrainId === "terrain.plain"
       const onLattice = x % 4 === 0 && y % 2 === 0
       put(cells, BANDS.terrain, cell.x, cell.y, featureless && !onLattice ? " " : glyph, role, {
@@ -176,10 +172,8 @@ function drawPreview(cells: BandCell[], input: BuildCompositionInput): void {
   if (item === undefined) return
   const definition = context.registry.get(item.contentId)
   const anchor = anchorForCursor(state.cursor, definition.footprint)
-  // The same call `place()` makes, budget and all. Without `remaining` the ghost answers a
-  // different question from the one Enter answers, and draws a perfectly legal-looking structure on
-  // a tile where pressing Enter is refused — which is the exact opposite of "what you see is what
-  // Enter places".
+  // The same call `place()` makes, budget and all, so the ghost answers exactly the question Enter
+  // answers.
   const legal = legalityAt(
     context,
     state.planned,
@@ -222,36 +216,57 @@ function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
   }
 }
 
-/**
- * The live bindings, most important first, and **only ever whole ones**. Every binding is optional
- * to the same degree: the line takes them in order while each still fits, and stops.
- *
- * An earlier version kept five of them as a fixed prefix and appended the rest while they fit, on
- * the assumption that the prefix always fits. It does not. The footer's width comes from the
- * composition's, the composition's from the viewport's, and the viewport shrinks to fit a Grid
- * smaller than the screen — which `isGated` deliberately allows, so a tutorial Grid is never gated
- * on a terminal that could show all of it. On a 20-tile Grid the prefix was cut mid-binding and
- * `q quit`, the one key a player most needs to find, was the half that fell off. Found by a review's
- * short-Grid case, not by anything that runs today.
- */
-export function controlsLine(limit: number): string {
-  const bindings = [
-    "arrows move",
-    "enter place",
-    "esc disarm",
-    "q quit",
-    "shift+arrow / pgup pgdn jump 5",
-    "home end jump sideways",
-    "bksp remove",
-    "u undo",
-  ]
+/** Every binding live on this screen, most important first. One list, because the footer and the
+ *  panel share it — see `bindingLines`. */
+const BINDINGS = [
+  "arrows move",
+  "enter place",
+  "esc disarm",
+  "q quit",
+  "shift+arrow jump 5",
+  "pgup pgdn jump 5",
+  "home end jump 5",
+  "bksp remove",
+  "u undo",
+] as const
+
+/** Two glyphs between bindings, so a pair of them cannot read as one. */
+const BINDING_GAP = "  "
+
+function packed(bindings: readonly string[], limit: number): { line: string; rest: string[] } {
   let line = ""
-  for (const binding of bindings) {
-    const grown = line === "" ? binding : `${line}  ${binding}`
-    if (grown.length > limit) break
+  for (let index = 0; index < bindings.length; index += 1) {
+    const binding = bindings[index] as string
+    const grown = line === "" ? binding : line + BINDING_GAP + binding
+    if (grown.length > limit) return { line, rest: [...bindings.slice(index)] }
     line = grown
   }
-  return line
+  return { line, rest: [] }
+}
+
+/**
+ * How the bindings divide between the footer's one row and the side panel's last few — the screen's
+ * adaptation to its own width. The footer takes them in order while they fit; whatever is left over
+ * packs into panel-width rows. A wide terminal fits them all in the footer and the panel rows come
+ * back as blank space. **Only whole bindings, anywhere**: a key cut in half is a key nobody can
+ * press, and the jump keys that fall off first are exactly the ones the terminal survey found some
+ * emulators deliver only one of.
+ */
+export function bindingLines(
+  footerLimit: number,
+  panelLimit: number,
+): Readonly<{ footer: string; panel: readonly string[] }> {
+  const { line: footer, rest } = packed(BINDINGS, footerLimit)
+  const panel: string[] = []
+  let remaining = rest
+  while (remaining.length > 0) {
+    const { line, rest: next } = packed(remaining, panelLimit)
+    // A binding longer than the panel is wide would otherwise loop forever producing empty rows.
+    if (line === "") break
+    panel.push(line)
+    remaining = next
+  }
+  return { footer, panel }
 }
 
 function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput): void {
@@ -262,12 +277,8 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput): v
   const headerRow = layout.offset.row + 1
   const range = visibleRange(state.camera, state.viewport)
 
-  // The header is one line, and the other two rows of its budget are deliberately blank. Gate 5A's
-  // header carried a gate number, a line of viewport diagnostics and a promise that nothing reached
-  // the simulation — true, and none of it anything a player needs while choosing where to build.
-  // Mario, accepting that gate: "still has too much text focused on demo instead of trying to be as
-  // simple and direct as possible." The diagnostics still genuinely wanted — the scroll margin he
-  // has not finished judging — moved to the footer row that was already diagnostics.
+  // The header is one line; the other two rows of its budget stay blank. Nothing goes here that a
+  // player does not need while choosing where to build.
   text(cells, band, left, headerRow, "TERMINAL NEXUS", "chrome.title", { bold: true, limit })
   text(cells, band, left + 15, headerRow, "build phase", "chrome.muted", {
     dim: true,
@@ -275,10 +286,12 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput): v
   })
 
   // The footer runs the whole interior width, under both panes — see `drawChrome`.
-  const footerLimit = layout.offset.column + layout.composition.width - 2 - left
+  const footerLimit = layout.footerLimit
 
   // engine.md 3.3's second required signal: "a position readout in the footer naming the visible
-  // tile range and the Grid size."
+  // tile range and the Grid size." The margin joins it only when `--scroll-margin` overrode the
+  // canon's three, so the default screen carries no number nobody needs.
+  const margin = context.scrollMargin ?? SCROLL_MARGIN
   text(
     cells,
     band,
@@ -286,19 +299,20 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput): v
     layout.footerRow,
     `view x ${range.firstX}-${range.lastX} y ${range.firstY}-${range.lastY} ` +
       `of ${context.grid.width}x${context.grid.height}   cursor ${state.cursor.x},${state.cursor.y}` +
-      `   margin ${context.scrollMargin ?? SCROLL_MARGIN}`,
+      (margin === SCROLL_MARGIN ? "" : `   margin ${margin}`),
     "chrome.label",
     { limit: footerLimit },
   )
-  // The screen documents itself — engine.md 9.7's second convention. Both jump bindings are listed
-  // first, because the terminal survey found emulators that deliver only one of them, and a fast pan
-  // nobody can find is the same as no fast pan. The rest are appended only while they fit: at 80
-  // columns the line is full after `q quit`, and what falls off is shown in the panel instead rather
-  // than silently truncated mid-word.
-  text(cells, band, left, layout.footerRow + 1, controlsLine(footerLimit), "chrome.muted", {
-    dim: true,
-    limit: footerLimit,
-  })
+  // The screen documents itself (engine.md 9.7). What does not fit here is drawn in the panel.
+  text(
+    cells,
+    band,
+    left,
+    layout.footerRow + 1,
+    bindingLines(footerLimit, layout.panelLimit).footer,
+    "chrome.muted",
+    { dim: true, limit: footerLimit },
+  )
   text(cells, band, left, layout.footerRow + 2, state.message, "chrome.value", {
     limit: footerLimit,
   })
@@ -324,31 +338,25 @@ const GROUP_LABELS: Readonly<Record<ConstructGroup, string>> = {
 }
 
 /**
- * The side panel — engine.md 9.2's Build Phase list, at the scope Q30 recommends: the construct
- * menu, the selected item's cost and effect, and the panel that says *why* a placement was refused.
- * No radius preview, because nothing this gate places has a radius worth previewing.
+ * The side panel — engine.md 9.2's Build Phase list: the construct menu, what is left to spend, the
+ * selected item's cost and effect, and why a placement was refused. No radius preview, because
+ * nothing placed here has a radius.
  *
- * **It says less than gate 5A's did, on purpose.** Mario, accepting that gate: "still has too much
- * text focused on demo instead of trying to be as simple and direct as possible." The subtitle
- * naming the spike is gone, and so is the running commentary. What is left follows one rule — every
- * line is something a player needs while deciding where to build — and most of the panel is blank
- * until they are actually doing something, because a panel that is always full is a panel nobody
- * reads.
+ * One rule decides what goes on it: every line is something a player needs while deciding where to
+ * build. Most of it is blank until they are doing something — a panel that is always full is a
+ * panel nobody reads.
  */
-/** The two revision bindings, pinned to the panel's last line. They live here because the footer's
- *  one control row cannot hold them at 80 columns, and a binding displayed nowhere does not exist
- *  (engine.md 9.7). Pinned rather than appended so they do not move as the panel above them grows
- *  and shrinks with what the player is doing. */
+/** The bindings the footer had no room for, pinned to the bottom of the panel. A wide enough
+ *  terminal fits them all in the footer and this draws nothing. */
 function drawPanelBindings(cells: BandCell[], layout: BuildLayout): void {
-  text(
-    cells,
-    BANDS.chrome,
-    layout.panelColumn,
-    layout.panelBindingsRow,
-    "[u] undo  [bksp] remove",
-    "chrome.muted",
-    { dim: true, limit: layout.panelLimit },
-  )
+  const lines = bindingLines(layout.footerLimit, layout.panelLimit).panel
+  lines.forEach((line, index) => {
+    const row = layout.panelBindingsRow - (lines.length - 1 - index)
+    text(cells, BANDS.chrome, layout.panelColumn, row, line, "chrome.muted", {
+      dim: true,
+      limit: layout.panelLimit,
+    })
+  })
 }
 
 function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
@@ -421,11 +429,9 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
   const legality = legalityAt(context, state.planned, item.contentId, anchor, left)
 
   // Written as a list and then laid out, so the whole block can be dropped in one piece when the
-  // panel is too short for it. The panel's height is the viewport's, and the viewport shrinks to
-  // fit a small Grid — `isGated` deliberately never gates one that fits the screen entirely — so a
-  // block that just keeps writing downward eventually overwrites the pinned bindings, then the
-  // footer's position readout, then the controls line. A panel that silently draws over the footer
-  // is worse than one that omits a line it has no room for.
+  // panel is too short for it. The panel's height is the viewport's, and the viewport shrinks to fit
+  // a small Grid, so a block that keeps writing downward would reach the bindings and then the
+  // footer. Omitting a line beats drawing over one.
   const detail: readonly (readonly [string, StyleRole, Readonly<{ bold?: boolean; dim?: boolean }>])[] =
     [
       [item.effect, "chrome.value", {}],
@@ -433,9 +439,8 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
         ? []
         : ([
             ["", "chrome.value", {}],
-            // The panel that says *why* — gate 5B's own reason to exist. A footer line would do for
-            // one message, but it is gone the moment anything else happens, and "why can I not
-            // build here" is a question the player asks while looking at the Grid.
+            // In the panel, not the status line: a footer message is gone the moment anything else
+            // happens, and "why can I not build here" is asked while looking at the Grid.
             ["CANNOT BUILD HERE", "notice.gate", { bold: true }],
             [legality.reason, "chrome.value", {}],
             ...(legality.tile === undefined
@@ -445,8 +450,10 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
     ]
 
   const first = (lastLine?.row ?? layout.panelRow) + 2
-  // One row of clearance above the pinned bindings, so the two never touch.
-  const available = layout.panelBindingsRow - 1 - first
+  // One row of clearance above the bindings block, so the two never touch. The block's height is
+  // the terminal's to decide, so this is read rather than assumed.
+  const bindingRows = bindingLines(layout.footerLimit, layout.panelLimit).panel.length
+  const available = layout.panelBindingsRow - bindingRows - first
   if (available < detail.length) return
   detail.forEach(([value, role, extra], index) => {
     if (value === "") return

@@ -1,11 +1,9 @@
-// The Build Phase command vocabulary — engine.md 9.7's RULE: "Everything a player can do on an
-// interactive screen... is a named command. Commands are the only way input reaches the application
-// shell, and a command's effect never depends on which adapter produced it."
+// The Build Phase command vocabulary — engine.md 9.7's RULE that everything a player can do is a
+// named command whose effect never depends on which adapter produced it.
 //
-// Keyboard, mouse and driver all produce exactly these. Nothing below this line knows a key code, a
-// terminal cell, or which of the three it was — which is the whole point, and what makes "the same
-// plan, entered by hotkeys or by clicks, is the same plan" a thing a test can assert rather than a
-// thing a comment can claim.
+// Keyboard, mouse and driver all produce exactly these, and nothing downstream knows a key code or a
+// terminal cell. That is what makes "the same plan, entered by hotkeys or by clicks, is the same
+// plan" assertable.
 
 import type { Coord } from "../grid/types.ts"
 

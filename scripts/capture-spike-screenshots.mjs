@@ -1,4 +1,4 @@
-// Real-terminal screenshots of the Build Phase spike — Milestone 5 gate 5A.
+// Real-terminal screenshots of the Build Phase — Milestone 5.
 //
 //   node scripts/capture-spike-screenshots.mjs
 //   node scripts/capture-spike-screenshots.mjs --only spike-minimum
@@ -186,7 +186,7 @@ shoot(
 
 shoot(
   "build-idle",
-  "Nothing selected: the panel is the menu, the budget and the two keys that revise a plan, and nothing else. It fills up only while you are doing something",
+  "Nothing selected: the panel is the menu, the budget and whichever bindings the footer had no room for, and nothing else. It fills up only while you are doing something",
 )
 
 shoot(
