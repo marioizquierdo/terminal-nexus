@@ -3,7 +3,7 @@
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
 **Canon version:** 2.16
-**Updated:** 2026-09-17
+**Updated:** 2026-09-21
 **License:** Apache-2.0
 
 ## 1. Why this file exists
@@ -963,6 +963,7 @@ Rows move here with the date, the decision, and the document that now owns it.
 
 | ID | Answered | Decision | Now owned by |
 | --- | --- | --- | --- |
+| Q50 | 2026-09-21 | **A click places the armed structure — no second click to confirm.** Mario, shown both behaviours side by side: "Click to place looks good to me too. We can always implement undo or destroy later, for now this is good." (Undo and remove already exist: `u` and Backspace.) The toggle is deleted rather than kept as a setting | [`engine.md`](engine.md) Section 9.7, whose own recommendation this confirms; [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md) |
 | Q1 | 2026-08-20 | **Tile width is adaptive presentation capability**: one column per tile in the 80x24 composition, two columns per tile at 128 columns or wider. Same tiles, same actors, same revealed information — only the composition changes. The 80x24 floor is preserved and the concept art's look is reachable on a wide terminal | [`engine.md`](engine.md) Section 9.3 |
 | Q2 | 2026-08-20 | **One resource.** Salvage recovers the same resource rather than a second one. Nexus energy is a state readout, not a currency. A second resource is an addition a later microgame may earn; it is not assumed | [`engine.md`](engine.md) Section 6 |
 | Q3 | 2026-08-20 | **Units may span multiple tiles.** Large units are a normal, strategically important case, not a later extension — a Ravel raider drawn `>x<` is one unit occupying three tiles. The collision system tests a mover's whole footprint against its mask; damage and destruction apply to the entity, not the tile | [`engine.md`](engine.md) Section 3.5 |
@@ -984,6 +985,29 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q37 | 2026-09-01 | **Yes — a spike, and wider than the row's Option A.** Mario: "Scrolling in the map and placing selected bases is the part that needs more attention and will need a spike to verify assumptions." Not only static mockups: an interactive spike of cursor scrolling and placement, driven through keyboard, mouse, and the driver alike, that also verifies which target terminals deliver Shift+Arrow | [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md); [`engine.md`](engine.md) Section 9.7 |
 | Q32 | 2026-09-12 | **A tick-gated trigger list (Option A).** PERIMETER's raid is a second, one-sided placement block with tick-gated triggers (`{ atTick, action }`), authored and validated the same way a `.map.json` file already is — not a policy module. Generalised at canon 2.10 into the trigger model every mission now uses | [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md) Section 4.4; [`campaigns.md`](campaigns.md) Section 2.1 |
 | Q33 | 2026-09-12 | **Author around Q15's dead end (Option A).** PERIMETER's approach lane is off-axis from the Nexus by design, not a kernel routing fix. Q15 stays open and unowned until a mission's own design genuinely cannot be authored around it | [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md) Section 4.3 |
+
+### Q50 — answered
+
+Registered 2026-09-21 by gate 5A, which built both click behaviours behind a toggle because
+[`engine.md`](engine.md) Section 9.7 called the choice "a feel decision the spike makes observable as
+a toggle rather than argues about". **Decided: a click places it** — Mario, having tried both.
+
+Worth recording for whoever revisits it, because the toggle turned up something an argument would
+not have. The two behaviours are not symmetric. A click moves the cursor, and moving the cursor
+scrolls the map, so a first click within three tiles of the edge of the screen slides the whole Grid
+under the pointer — and the second click at the same spot on screen then lands on a *different tile*
+and places there without complaint. Pressing Enter instead is unaffected, and the screen offers it,
+but "click the same place twice" is the gesture that mode is named for. Placing on the first click
+has no second click and cannot hit this at all.
+
+**What keeps the decision safe is that a plan is revisable**: `u` undoes the last placement and
+Backspace removes the one under the cursor, both built in gate 5A. If some future Build Phase action
+is genuinely irreversible, confirmation belongs on that one action rather than on every click — and
+this row is where to start reading before adding it.
+
+`engine.md` 9.7's own "observable as a toggle" sentence is now stale, and its wording change is in
+gate 5A's report (Section 9) so that it lands with that gate's other canon changes in one version
+bump rather than two.
 
 ### Q46 — answered
 

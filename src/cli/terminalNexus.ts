@@ -9,8 +9,9 @@
 
 import { parseCapability, parseGlyphPack, parseTheme } from "../view/index.ts"
 import { detectCapability } from "./index.ts"
-import { parseArgs } from "./args.ts"
+import { parseArgs, parseInteger } from "./args.ts"
 import { runMenu } from "./menu.ts"
+import { runSpike } from "./spike.ts"
 import { DEFAULT_SETTINGS, createSettingsStore, defaultSettingsPath } from "../settings/index.ts"
 import type { Settings } from "../settings/index.ts"
 
@@ -20,6 +21,14 @@ const USAGE = `terminal-nexus — the Terminal Nexus game
                   [--theme dark|light] [--glyphs ascii|unicode] [--reduced-motion]
                   [--backend auto|ansi|opentui]
       launches the top-level menu: Campaign, Challenge, Settings, Exit
+
+  terminal-nexus --spike [the same presentation flags]
+      opens the Build Phase scrolling-and-placement spike (Milestone 5, gate 5A): a Grid
+      larger than the screen, a cursor that scrolls it, and three structures to place, by
+      keyboard, by mouse, or from a script. It answers a question rather than shipping a
+      screen - nothing it plans reaches the simulation, and nothing is saved.
+      --scroll-margin <tiles> changes how close to the edge of the screen the cursor gets
+      before the map starts scrolling. Three is the canon's number; try 2 and 5 against it.
 
 A first launch guesses colour depth the way \`grid\` does; every launch after that remembers whatever
 was last chosen on the Settings screen (~/.terminal-nexus/settings.json). Any flag above overrides
@@ -45,6 +54,19 @@ export async function main(argv: readonly string[]): Promise<number> {
     theme: parseTheme(args.options.get("theme") ?? base.theme),
     glyphPack: parseGlyphPack(args.options.get("glyphs") ?? base.glyphPack),
     reducedMotion: args.flags.has("reduced-motion") ? true : base.reducedMotion,
+  }
+
+  if (args.flags.has("spike")) {
+    const margin = args.options.get("scroll-margin")
+    return runSpike({
+      settings,
+      backend: args.options.get("backend") ?? "auto",
+      stdout: process.stdout,
+      stdin: process.stdin,
+      ...(margin === undefined
+        ? {}
+        : { scrollMargin: parseInteger(margin, "--scroll-margin") }),
+    })
   }
 
   return runMenu({

@@ -1,10 +1,25 @@
 # Milestone 5 — Build Phase
 
 **Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
-**Status:** GATED
-**Depends on:** Milestone 4 (launches the mission), Milestone 2 (the mission's own budget/units decided)
-**Updated:** 2026-09-12
+**Status:** CURRENT
+**Active gate:** 5A — the scrolling-and-placement spike: cursor-driven scrolling on a Grid larger
+than the viewport, and placing a selected structure, driven through keyboard, mouse, and the driver
+alike, at the viewport range's minimum and maximum size, with click-to-place versus
+click-then-confirm built as a toggle to look at rather than an argument to have, and a recorded
+finding on which of the project's target terminals actually deliver Shift+Arrow
+**Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
+mission's own budget/units decided — accepted 2026-09-12)
+**Updated:** 2026-09-21
 **License:** Apache-2.0
+
+> **Milestone 4 has not landed, and this milestone does not wait for it.** An earlier draft of the
+> header above named Milestone 4 as a dependency, from back when the campaign menu was expected to be
+> built before the Build Phase. The re-cut build order (canon 2.11,
+> [`README.md`](README.md)'s own table) puts this milestone third — straight after the game menu — and
+> the campaign menu seventh, so anything below that reads as "the player arrives here from the
+> campaign menu" describes where the Build Phase will eventually be reached from, not a prerequisite
+> for building it. Gate 5A in particular is a self-contained spike: it needs a Grid, a cursor, and a
+> terminal, none of which Milestone 4 supplies.
 
 > **This is where scrolling was always going to land.** Gate 1A deliberately used a Grid that fit the
 > viewport entirely specifically to defer this:
@@ -15,9 +30,9 @@
 
 ## 1. Question
 
-Can a player, from the campaign menu, place buildings and pick a Nexus upgrade during a hidden Build
-Phase — with keyboard controls, a GUI that adapts across the whole supported terminal size range, and
-real cursor-driven map scrolling — before handing off into Milestone 6's Pulse?
+Can a player place buildings and pick a Nexus upgrade during a hidden Build Phase — with keyboard
+controls, a GUI that adapts across the whole supported terminal size range, and real cursor-driven
+map scrolling — before handing off into Milestone 6's Pulse?
 
 ## 2. What gets built
 

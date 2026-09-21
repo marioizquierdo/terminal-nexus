@@ -20,6 +20,7 @@ const VALUE_OPTIONS = new Set([
   "cosmetic-seed",
   "glyphs",
   "theme",
+  "scroll-margin",
 ])
 
 export function parseArgs(argv: readonly string[]): ParsedArgs {

@@ -1,9 +1,9 @@
 # Milestone 3 — Game Menu
 
-**Document role:** Milestone tracker — the game's own entry point, as distinct from `grid`'s
-**Status:** CURRENT
-**Active gate:** none — all three gates (3A, 3B, 3C) are built; owner acceptance is what closes this
-milestone and opens Milestone 5
+**Document role:** Milestone tracker — accepted, kept as historical reference for the game's own entry point, as distinct from `grid`'s
+**Status:** COMPLETE
+**Active gate:** none — all three gates (3A, 3B, 3C) are built, evidenced, and accepted by the owner
+2026-09-21; see below
 **Depends on:** Milestone 2 (campaign design decided — accepted 2026-09-12)
 **Updated:** 2026-09-21
 **License:** Apache-2.0
@@ -62,6 +62,13 @@ milestone and opens Milestone 5
 > does something, and nothing about the command vocabulary, the adapters, or the pure reducer changed
 > to build it. With all three gates built, the milestone's own question is answered; what remains is
 > Mario looking at it.
+
+> **ACCEPTED, 2026-09-21.** Mario reviewed all three gates and formally accepted Milestone 3. The
+> game menu is done: `terminal-nexus` launches, the four top-level options behave, Settings is real
+> and remembered between runs, and Campaign and Challenge are each honest about the milestone that
+> will fill them in. Nothing in this file is open work for a new session. Milestone 5 — Build Phase
+> is now the current milestone, at its own gate 5A; [`README.md`](README.md)'s table is the authority
+> for that, as always.
 
 ## 1. Question
 

@@ -1,7 +1,11 @@
 # Dependencies and build output
 node_modules/
 dist/
-build/
+# Anchored to the repository root on purpose. Unanchored, `build/` also matches any directory of
+# that name anywhere in the tree — which silently swallowed the whole of `src/build/`, the Build
+# Phase module, the first time one existed (Milestone 5 gate 5A). The rule means "build output at
+# the root", and now says so.
+/build/
 coverage/
 .cache/
 tmp/
