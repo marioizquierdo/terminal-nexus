@@ -21,9 +21,13 @@ export type MenuItem = Readonly<{
  *
  *   - `highlight`  — move the highlight to this item, without activating it (arrow keys).
  *   - `activate`   — run this item now (a hotkey, a mouse click, or Enter on the highlighted item).
+ *   - `back`       — leave the current screen for whatever it was reached from (Esc). A screen with
+ *     nowhere to go back to (the top-level menu) simply does nothing with it — engine.md 9.7: "Esc
+ *     backs out of it... never quits the game by itself."
  *   - `quit`       — leave the application (`q`, an interrupt byte, SIGINT, SIGTERM).
  */
 export type MenuCommand =
   | Readonly<{ kind: "highlight"; index: number }>
   | Readonly<{ kind: "activate"; index: number }>
+  | Readonly<{ kind: "back" }>
   | Readonly<{ kind: "quit" }>

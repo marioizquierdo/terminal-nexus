@@ -2,9 +2,9 @@
 
 **Document role:** Milestone tracker — the game's own entry point, as distinct from `grid`'s
 **Status:** CURRENT
-**Active gate:** 3A — The menu and the three adapters; gates 3B and 3C follow once 3A closes
+**Active gate:** 3C — Mode select and honest handoffs, the last gate in this milestone
 **Depends on:** Milestone 2 (campaign design decided — accepted 2026-09-12)
-**Updated:** 2026-09-13
+**Updated:** 2026-09-18
 **License:** Apache-2.0
 
 > **Start simple, with the minimum.** Mario's own words. This is the first time anything under the
@@ -27,6 +27,25 @@
 > to anything. **3B and 3C are next**, in the build order this file's own Section 1.1 already gives —
 > not authorized by this note, only unblocked by it.
 
+> **Gate 3B: BUILT, 2026-09-18** — [`../evidence/gate-3b-report.md`](../evidence/gate-3b-report.md)
+> concludes PASS on every automated check it set for itself; owner viewing is outstanding, the same
+> "built, not yet accepted" state Gate 3A passed through. Settings is now a real second screen, reached
+> from the top-level menu by its own hotkey: four rows — colour depth, background, symbols, reduced
+> motion — that each cycle to their next value in place, plus a row that goes Back, all driven by the
+> exact same hotkey/arrow/click machinery Gate 3A already built rather than a second one invented for
+> this screen. Changing a row takes effect on the very next frame, with no stop-and-restart of the
+> terminal itself, and is written to a small settings file
+> (`~/.terminal-nexus/settings.json`, distinct from any future save/progression format) that the next
+> launch reads back. Two real bugs were found and fixed before either could ship: the ANSI and OpenTUI
+> backends had no way to change colour depth or theme once running, so showing a change "on the very
+> next frame" always meant tearing the terminal down and setting it back up, until both backends
+> gained a way to update their own presentation in place; and a hotkey typed immediately before a
+> second keystroke, both landing in the same chunk of input — the exact shape a quick typist or a
+> script produces — could send that second keystroke to the screen the player had just left, because
+> the menu had been deciding which screen was listening once per chunk of input rather than once per
+> keystroke. **3C is next**, in the build order this file's own Section 1.1 already gives — not
+> authorized by this note, only unblocked by it.
+
 ## 1. Question
 
 Can a player launch `terminal-nexus` and navigate a top-level menu — **Campaign, Challenge,
@@ -42,8 +61,9 @@ Campaign once there is anything to load.)
   shape with displayed hotkeys, the keyboard and mouse adapters, the driver, and the shared disposer —
   with the hotkey/arrow/click equivalence test. The smallest possible screen that exercises the whole
   input model of [`../specs/engine.md`](../specs/engine.md) 9.7.
-- **3B — Settings.** Capability tier, theme, glyph pack, reduced motion as a menu, persisted to a
-  small settings file.
+- **3B — Settings. BUILT**, see the note above and
+  [`../evidence/gate-3b-report.md`](../evidence/gate-3b-report.md). Capability tier, theme, glyph
+  pack, and reduced motion as a menu, each cycling in place and persisted to a small settings file.
 - **3C — Mode select and honest handoffs.** Campaign hands off to Milestone 4 or an explicit
   placeholder; Challenge hands off to Milestone 11 or is disabled with the reason shown; nothing is
   silently broken.
@@ -106,19 +126,21 @@ gameplay, a real save/progression format (Q31 stays open), sound.
 
 ## 5. Definition of done
 
-Checked items below are what **Gate 3A** (this file's own Section 1.1) closes; the milestone as a
-whole is not done until 3B and 3C also check theirs.
+Checked items below are what **Gate 3A** and **Gate 3B** (this file's own Section 1.1) close; the
+milestone as a whole is not done until 3C also checks its own.
 
 - [x] `bin/terminal-nexus.ts` exists and launches to the top-level menu from a clean checkout;
 - [ ] all four options are reachable and do something honest — **3A**: Campaign, Challenge, and
       Settings each show a plain, honest stub notice naming the milestone/gate that builds them for
-      real, and Exit actually cleans up and quits; **still open for 3B/3C**: Settings persisting a
-      choice, and Campaign/Challenge's real handoffs or a disabled-with-reason state;
+      real, and Exit actually cleans up and quits; **3B**: Settings now persists every choice it
+      shows, across a full stop-and-restart, not just for the rest of the current run; **still open
+      for 3C**: Campaign/Challenge's real handoffs or a disabled-with-reason state;
 - [x] every option shows its hotkey, and hotkey, arrows-and-Enter, and click are proven equivalent
       through the driver;
 - [x] the disposer leaves mouse reporting off on every exit path, alongside raw mode;
 - [x] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED** —
-      [`../evidence/gate-3a-report.md`](../evidence/gate-3a-report.md);
+      [`../evidence/gate-3a-report.md`](../evidence/gate-3a-report.md) for 3A,
+      [`../evidence/gate-3b-report.md`](../evidence/gate-3b-report.md) for 3B;
 - [x] `./scripts/check-repository.sh` passes;
 - [x] new questions this raises are rows in [`../specs/open-questions.md`](../specs/open-questions.md)
-      — none needed registering; see the gate report Section 6 for why.
+      — none needed registering for either gate; see each gate report's own Section 6 for why.

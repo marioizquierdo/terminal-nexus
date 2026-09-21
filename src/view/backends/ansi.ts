@@ -30,11 +30,18 @@ export type AnsiBackendOptions = Readonly<{
 export class AnsiBackend implements TerminalBackend {
   readonly name = "direct-ansi"
   private readonly options: AnsiBackendOptions
+  // Held separately from `options` (which stays exactly what the caller passed in, unread after
+  // construction for these two) so `setPresentation` can change them without needing `options`
+  // itself to be mutable.
+  private capability: CapabilityMode
+  private theme: Theme
   private started = false
   private stopped = false
 
   constructor(options: AnsiBackendOptions) {
     this.options = options
+    this.capability = options.capability
+    this.theme = options.theme ?? DEFAULT_THEME
   }
 
   async start(): Promise<void> {
@@ -49,8 +56,12 @@ export class AnsiBackend implements TerminalBackend {
   }
 
   present(frame: ReadonlyCellFrame): void {
-    const theme = this.options.theme ?? DEFAULT_THEME
-    this.options.stdout.write(CURSOR_HOME + frameToAnsi(frame, this.options.capability, theme) + RESET)
+    this.options.stdout.write(CURSOR_HOME + frameToAnsi(frame, this.capability, this.theme) + RESET)
+  }
+
+  setPresentation(capability: CapabilityMode, theme: Theme): void {
+    this.capability = capability
+    this.theme = theme
   }
 
   /** Idempotent: safe from a signal handler, an error path, and the normal exit, in any order. */

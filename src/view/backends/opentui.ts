@@ -83,6 +83,11 @@ export async function createOpenTuiBackend(options: BackendOptions): Promise<Nam
     exitOnCtrlC: false,
   })
 
+  // Mutable, like `AnsiBackend`'s own capability/theme fields — `setPresentation` changes these
+  // without touching the renderer's own lifecycle, so a live Settings change never flashes the
+  // alternate screen.
+  let capability = options.capability
+  let theme = options.theme ?? DEFAULT_THEME
   let stopped = false
   return {
     name: "opentui",
@@ -92,14 +97,12 @@ export async function createOpenTuiBackend(options: BackendOptions): Promise<Nam
     present(frame: ReadonlyCellFrame): void {
       const buffer = renderer.nextRenderBuffer
       if (buffer === undefined) throw new Error("opentui renderer exposed no buffer")
-      drawFrameInto(
-        core,
-        buffer as unknown as CellSink,
-        frame,
-        options.capability,
-        options.theme ?? DEFAULT_THEME,
-      )
+      drawFrameInto(core, buffer as unknown as CellSink, frame, capability, theme)
       renderer.requestRender()
+    },
+    setPresentation(nextCapability: CapabilityMode, nextTheme: Theme): void {
+      capability = nextCapability
+      theme = nextTheme
     },
     /** Idempotent, like every other exit path. */
     async stop(): Promise<void> {

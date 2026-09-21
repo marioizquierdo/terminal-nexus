@@ -32,9 +32,10 @@ export type MenuOutcome = Readonly<{
 }>
 
 /**
- * Applies one command. `quit` passes through untouched — leaving the application is not a list
- * concern, and the session that owns the disposer decides what it means — so this reducer only ever
- * changes `highlighted`, and only ever in response to `highlight` or `activate`.
+ * Applies one command. `quit` and `back` both pass through untouched — leaving the application or
+ * the current screen is not a list concern, and the session that owns the disposer/the screen stack
+ * decides what either means — so this reducer only ever changes `highlighted`, and only ever in
+ * response to `highlight` or `activate`.
  */
 export function applyMenuCommand(state: MenuListState, command: MenuCommand): MenuOutcome {
   switch (command.kind) {
@@ -48,6 +49,7 @@ export function applyMenuCommand(state: MenuListState, command: MenuCommand): Me
       return { state: { ...state, highlighted: command.index }, activated: item }
     }
     case "quit":
+    case "back":
       return { state, activated: null }
     default:
       return { state, activated: null }
