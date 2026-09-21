@@ -343,6 +343,17 @@ rather than registered as a question, and worth revisiting in gate 5C when the p
 the subject. The bindings line now also grows with the terminal: at 80 columns it stops after `q
 quit`, and what falls off is shown on the panel instead of being cut in half.
 
+**One performance-budget failure, on a run that had a Bun suite beside it.** The busiest-frame test
+("two armies, every effect on") failed its 95th-percentile budget once and passed on re-run and on
+every run since. It is worth chasing rather than shrugging at, because this gate moved the two
+helpers that write every single cell of every frame into another module, and a hot path is exactly
+where that could cost something. It did not. Measured five runs on this branch against five on
+`main`, same machine, same command: p95 1.00-1.21 ms here against 0.99-1.20 ms there, and the
+composed output is byte-identical (5,938 bytes per frame on both). The budget is 83 ms, so failing it
+means the process stalled for eighty times its normal frame cost — machine load, not this change. Not
+fixed, because there is nothing here to fix; recorded because "it passed the second time" is not an
+explanation, and the next session to see it should know the comparison has already been run.
+
 **A third copy of the same two helper functions.** Two screens each had their own `put`/`text` pair
 for writing into a frame. Writing a third would have been the point at which they quietly drift, so
 they moved to `src/view/draw.ts` and both existing callers switched. The project's own rule — extract
