@@ -112,6 +112,9 @@ npm run test:bun
 ./bin/terminal-nexus.ts --spike --capability monochrome
 ./bin/terminal-nexus.ts --spike --scroll-margin 5      # the one tuning number, to feel against 3
 
+# the pre-merge review that found the dead `t` binding still printed in the footer
+# (Milestone 3B's own lesson: every automated check passed before it ran)
+
 # the modified-arrow-key survey: what terminals claim, and what one actually delivers
 node scripts/probe-modified-keys.mjs
 
@@ -162,7 +165,7 @@ than checked in as a scenario file, because a scenario file is simulation input 
 is replayed twenty times by the determinism suite — this map never reaches the simulation at all.
 
 **The terminal survey** (`scripts/probe-modified-keys.mjs`, `scripts/lib/key-echo.mjs`) and
-**eleven real-terminal screenshots** (`scripts/capture-spike-screenshots.mjs`).
+**ten real-terminal screenshots** (`scripts/capture-spike-screenshots.mjs`).
 
 Two things moved rather than appeared. `src/view/draw.ts` is the pair of helpers that put a glyph or
 a string into the frame; the Pulse view and the menu each had their own copy, and this screen would
@@ -173,11 +176,11 @@ repository's ignore list stopped hiding `src/build/` — see Section 7, which is
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Whole suite, Node 22.22.2 | 329 pass, 0 fail | `npm test` |
-| Whole suite, Bun 1.3.11 | 328 pass, 0 fail across 31 files | `npm run test:bun` |
+| Whole suite, Node 22.22.2 | 332 pass, 0 fail | `npm test` |
+| Whole suite, Bun 1.3.11 | 331 pass, 0 fail across 31 files | `npm run test:bun` |
 | Type checking, strict | clean | `npm run typecheck` |
 | Canon invariants | pass | `./scripts/check-repository.sh` |
-| This gate's own tests | 51 pass | `node --test tests/build-{camera,spike,view,lifecycle}.test.ts` |
+| This gate's own tests | 53 pass | `node --test tests/build-{camera,spike,view,lifecycle}.test.ts` |
 | Minimum viewport needs exactly 80 x 24; maximum exactly 104 x 32 | holds | `tests/build-camera.test.ts`, `engine-3.3-clamp` |
 | A terminal of any size shows at most 72 x 24 tiles | holds, checked at 400 x 120 | same file |
 | One column per tile below 128 columns, two at 128 and above | holds | `engine-9.3-tile-width` |
@@ -198,6 +201,9 @@ repository's ignore list stopped hiding `src/build/` — see Section 7, which is
 | `q`, an interrupt byte, Esc, SIGINT and SIGTERM all reach one disposer; raw mode, the alternate screen and mouse reporting all off after each | holds | `tests/build-lifecycle.test.ts` |
 | Resizing below the floor gates and back above it restores the screen at the same cursor | holds | same file |
 | No raw escape byte reached a source file | holds | `grep -rlP '\x1b' src tests scripts` returns nothing |
+| The footer never names a key the keyboard adapter does not bind | holds, checked on the widest composition | `tests/build-view.test.ts` — added after the review found `t click mode` surviving the toggle's deletion |
+| No header or footer line is cut off at the 80-column floor | holds | same file |
+| The scroll margin the header prints is the one the camera follows at | holds at 2 and 5 | same file |
 
 ### 4.1 The modified-arrow survey
 
@@ -241,22 +247,29 @@ is four five-tile jumps on each axis.
 
 ## 5. Human observations
 
-**Nobody has played this yet.** Mario has not seen it, and every claim in Section 4 is a claim a
-machine can check. The two questions this gate actually exists to ask are both questions only he can
-answer, and both are waiting:
+**Mario looked at it on 2026-09-21 and answered both questions this gate exists to ask.** In his own
+words: *"ill confirm scroll margin later, default 3 for now seen right. Click to place looks good to
+me too. We can always implement undo or destroy later, for now this is good."*
 
-1. **Does scrolling feel like looking around the map, or like fighting the cursor?** The screenshots
-   show that it works. They cannot show how it feels to hold an arrow key down. If the three-tile
-   trigger distance is wrong, `--scroll-margin 2` and `--scroll-margin 5` are one flag away, and the
-   header prints which one is live — the project's own governance already says this milestone may
-   retune that number on evidence from the first person who actually scrolls a map, and that person
-   is him.
-2. **Which click behaviour should the game keep?** Press `[t]` to switch between them. Section 6 and
-   open question Q50 both argue for placing on the first click, and the argument is stronger than a
-   preference — but it is still his call.
+1. **Does scrolling feel like looking around the map, or like fighting the cursor?** Three tiles
+   reads right to him, with a full confirmation deferred. So the margin is unchanged, and
+   `--scroll-margin` stays on the command line rather than being hard-coded back down — the thing
+   that lets him settle it later is the ability to feel another number against this one.
+2. **Which click behaviour should the game keep?** *"Click to place looks good to me."* Answered as
+   Q50, and the toggle is deleted rather than kept as a setting, which is what that row's own
+   recommendation said to do once he had looked. Section 7 records what removing it turned up.
 
-Eleven screenshots are in `evidence/screenshots/spike-*.png`, each captured from a real terminal at
-the size it is about.
+One thing his answer assumed that is already true: undo and destroy exist. `u` undoes the last
+placement and Backspace removes whatever is under the cursor, both built in this gate, both on the
+panel. They are also the reason placing on a single click is safe at all, so they were never
+optional here.
+
+**Still not observed, and not claimed:** nobody has played a *Build Phase*, because there is not one
+yet — no costs, no upgrade pick, no commit. Whether the whole thing hangs together as a phase is
+Milestone 6's question, not this one's.
+
+Ten screenshots are in `evidence/screenshots/spike-*.png`, each captured from a real terminal at the
+size it is about. An eleventh showed the click-then-confirm mode and was deleted with it.
 
 ## 6. Interpretation
 
@@ -286,6 +299,16 @@ mode, and would leave the cursor stranded off screen. The reading that keeps bot
 table's own gloss already points at — "the mouse's Shift+Arrow" — so the wheel jumps the *cursor*
 five tiles and the camera follows. This is a GUIDANCE departure in letter and an agreement in spirit,
 and Section 9 proposes the wording change.
+
+**Deleting the toggle after the answer found a live bug the tests could not.** With Q50 answered, the
+`t` binding came out of the keyboard adapter and a new test asserted it now means nothing. It did —
+and the footer went on printing `t click mode` anyway, because the bindings line appends its optional
+extras only while they fit, so the dead key appeared at 142 columns and wider and nowhere narrower.
+Every screenshot in this gate is at 80, 104 or 128 columns, so nothing looked at it. A pre-merge
+review over the whole diff caught it (Milestone 3B's own lesson, applied). Fixed, and the test that
+should have caught it now composes the frame at its widest and checks **every** key the footer names
+against the real adapter, rather than checking the adapter alone. The general shape is worth keeping:
+**a test that a binding is dead is not a test that the screen stopped advertising it.**
 
 **Click-then-confirm is worse than it looks, for a reason nobody could have argued from a document.**
 A click moves the cursor; moving the cursor scrolls the map; so a first click near the edge of the
@@ -390,17 +413,18 @@ in Section 9 as proposed wording changes rather than applied ones.
 > **PASS**
 
 Both interactions work, through all three ways in, at both ends of the supported screen size, proven
-by 51 tests of which the scrolling ones are exhaustive rather than sampled, and by eleven screenshots
+by 53 tests of which the scrolling ones are exhaustive rather than sampled, and by ten screenshots
 of a real terminal. The question about Shift+Arrow is answered with a measurement rather than a
 memory, and the answer changed the code: two sequence families and a modifier-free fallback, where
-the canon assumed one sequence. The click question is not answered — deliberately. It ships as a
-toggle with a recommendation and a finding attached, which is exactly what the milestone asked this
-gate to produce.
+the canon assumed one sequence. The click question was put to Mario as a toggle rather than as an
+argument, which is exactly what the milestone asked this gate to produce, and he answered it: a click
+places it. The toggle is gone.
 
 PASS here means the automated evidence holds and the gate's question is answered. It does not mean
-accepted: the two things only Mario can judge (how scrolling feels, and which click behaviour to
-keep) are both listed in Section 5 and both outstanding. That separation is the project's own
-convention, and Gate 1A's report closed the same way.
+accepted — that is still Mario's to give. What has changed since this section was first written is
+that the two things only he could judge (Section 5) are no longer outstanding: he looked, the scroll
+margin stands at three, and Q50 is closed. That separation between "the evidence holds" and "the
+owner accepts" is the project's own convention, and Gate 1A's report closed the same way.
 
 ## 9. Canon impact
 
@@ -414,13 +438,14 @@ convention, and Gate 1A's report closed the same way.
 | The three-tile scroll margin, **confirmed, not retuned** — pending Mario's own look | `project-governance.md` Section 7, which currently says Milestone 5 may retune it | The exhaustive walk holds at three tiles at every viewport size; but "confirmed" here means "nothing is wrong with it", and only a person can say it feels right |
 | The margin is a **follow rule, not an invariant**: at the map's own edge the cursor reaches the edge of the screen, because there is no more map to reveal | `engine.md` 3.3, one clarifying sentence | The only reading under which the rule is implementable at all, and the one the exhaustive test encodes |
 | The Build Phase's **footer may run the full width**, under both panes, rather than stopping at the map pane | `engine.md` 9.2, which is GUIDANCE on composition | At 80 columns the map pane is 46 usable columns and all three footer lines are longer than that |
+| **A click places the armed structure**; there is no confirm-on-second-click mode. The sentence calling this "a feel decision the spike makes observable as a toggle" describes a spike that has now run | `engine.md` 9.7's mouse rows and its click-to-place caveat | Q50, answered by Mario on 2026-09-21 after trying both. Held here rather than applied on its own, so this gate's canon changes land in one version bump instead of two |
 
 Questions raised, each already added to [`../specs/open-questions.md`](../specs/open-questions.md)
 with a recommendation:
 
-| ID | Question | Recommendation |
+| ID | Question | Recommendation, and what happened |
 | --- | --- | --- |
-| Q50 | With a structure armed, does a click on a tile place it, or does a second click confirm? | **Place on the first click**, and delete the toggle once Mario has looked at it — the canon already leaned that way, and the spike turned a preference into a reason |
+| Q50 | With a structure armed, does a click on a tile place it, or does a second click confirm? | Recommended **place on the first click**, and delete the toggle once Mario had looked. **Answered 2026-09-21**: he picked it, the toggle is deleted, and the row is in the register's answered section |
 
 Q37, which asked for this spike, is answered by the gate's existence and by Section 4.1's table; it is
 already in the register's answered section and needs no further movement.

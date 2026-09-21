@@ -9,18 +9,6 @@
 
 import type { Coord } from "../grid/types.ts"
 
-/**
- * The click question this spike exists to make observable rather than argue about — Q37, and
- * engine.md 9.7's own "a feel decision the spike makes observable as a toggle." Both behaviours
- * ship; one key flips between them; the screen always says which one is live.
- *
- *   `place`   — a click on a tile places the armed structure there immediately. The keymap's own
- *               recommendation, and safe in principle because a plan stays revisable until commit.
- *   `confirm` — a click moves the cursor there; a second click on the same tile places. Costs a
- *               gesture, and makes a misclick cost nothing.
- */
-export type ClickMode = "place" | "confirm"
-
 /** One row of the construct menu. A `MenuItem` is derived from this for the list widget and for
  *  mouse hit-testing, so the panel and the adapter cannot disagree about where a row is. */
 export type ConstructItem = Readonly<{
@@ -32,8 +20,16 @@ export type ConstructItem = Readonly<{
 export type BuildCommand =
   /** Arrows, and the five-tile jump: one command, a different distance. */
   | Readonly<{ kind: "move-cursor"; dx: number; dy: number }>
-  /** A click on a Grid tile. What it *does* depends on the click mode, and that decision lives in
-   *  the reducer rather than the mouse adapter, so the driver reproduces it exactly. */
+  /**
+   * A click on a Grid tile: move the cursor there and, if a structure is armed, place it — "the
+   * same as arrows then Enter" (engine.md 9.7). What a click *does* lives in the reducer rather
+   * than in the mouse adapter, so the driver reproduces it exactly.
+   *
+   * Gate 5A shipped a second behaviour beside this one — click to move the cursor, click again to
+   * confirm — as a toggle, because engine.md 9.7 called the choice "a feel decision the spike makes
+   * observable as a toggle rather than argues about". Mario looked at both and chose this one
+   * (Q50, answered 2026-09-21), so the other is gone rather than kept as a setting.
+   */
   | Readonly<{ kind: "click-tile"; x: number; y: number }>
   /** Arm item *n* of the construct menu — a digit, or a click on the row. Stays armed after
    *  placing, so a run of the same structure is one digit then arrows and Enter. */
@@ -44,7 +40,6 @@ export type BuildCommand =
   /** Remove the planned, uncommitted placement under the cursor — Backspace or Delete. */
   | Readonly<{ kind: "remove" }>
   | Readonly<{ kind: "undo" }>
-  | Readonly<{ kind: "toggle-click-mode" }>
   /** Leave this screen for whatever it was reached from — Esc with nothing armed, or right-click. */
   | Readonly<{ kind: "back" }>
   | Readonly<{ kind: "quit" }>

@@ -169,19 +169,6 @@ shoot(
 )
 
 shoot(
-  "spike-confirm-mode",
-  "The click question, made observable: [t] flips between placing on the first click and confirming on a second. Both ship; Mario picks",
-  {
-    drive: () => {
-      literal("t")
-      literal("1")
-      literal(`${ESC}[<0;31;17M`)
-    },
-    waitForText: "Click again",
-  },
-)
-
-shoot(
   "spike-monochrome",
   "Monochrome is the floor, not the degraded mode: the same screen with every colour removed, including the edge markers and the preview",
   {

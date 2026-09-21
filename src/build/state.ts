@@ -11,7 +11,6 @@ import type { Camera, Viewport } from "./camera.ts"
 import { SCROLL_MARGIN, clampToGrid, followCursor } from "./camera.ts"
 import type {
   BuildCommand,
-  ClickMode,
   ConstructItem,
   PlannedPlacement,
   StandingStructure,
@@ -42,10 +41,6 @@ export type BuildState = Readonly<{
   /** Index into `catalog`, or `null` for nothing armed. */
   armed: number | null
   planned: readonly PlannedPlacement[]
-  clickMode: ClickMode
-  /** In `confirm` click mode, the tile a first click landed on and a second click would place on.
-   *  Always `null` in `place` mode, where there is no second click to wait for. */
-  pendingConfirm: Coord | null
   /** The one line of feedback the footer shows: what just happened, or why it did not. */
   message: string
   nextOrdinal: number
@@ -71,8 +66,6 @@ export function createBuildState(
     viewport,
     armed: null,
     planned: [],
-    clickMode: "place",
-    pendingConfirm: null,
     message: "Pick a structure, move the cursor, place it.",
     nextOrdinal: 1,
   }
@@ -165,8 +158,6 @@ function withCursor(context: BuildContext, state: BuildState, tile: Coord): Buil
     ...state,
     cursor,
     camera: followCursor(state.camera, cursor, state.viewport, context.grid, marginOf(context)),
-    // A cursor that moved is no longer waiting on a second click at the tile it left.
-    pendingConfirm: null,
   }
 }
 
@@ -183,7 +174,7 @@ function place(context: BuildContext, state: BuildState): BuildState {
     // Refused, and nothing moved. Silently sliding a structure to the nearest legal tile is the one
     // failure this check exists to prevent: the player would learn nothing and get a plan they did
     // not draw.
-    return { ...state, pendingConfirm: null, message: `No - ${legality.reason}.` }
+    return { ...state, message: `No - ${legality.reason}.` }
   }
   return {
     ...state,
@@ -192,7 +183,6 @@ function place(context: BuildContext, state: BuildState): BuildState {
       { ordinal: state.nextOrdinal, contentId: item.contentId, anchor },
     ],
     nextOrdinal: state.nextOrdinal + 1,
-    pendingConfirm: null,
     // Still armed: engine.md 9.7's own fast path, "a run of the same structure is one digit
     // followed by arrows and Enter."
     message: `Placed a ${shortName(context, item.contentId)} at ${state.cursor.x},${state.cursor.y}. Still armed.`,
@@ -217,21 +207,11 @@ export function applyBuildCommand(
       })
 
     case "click-tile": {
-      const tile = clampToGrid({ x: command.x, y: command.y }, context.grid)
-      const onPendingTile =
-        state.pendingConfirm !== null &&
-        state.pendingConfirm.x === tile.x &&
-        state.pendingConfirm.y === tile.y
-      const moved = withCursor(context, state, tile)
-      if (state.armed === null) return moved
-      if (state.clickMode === "place") return place(context, moved)
-      // `confirm` mode: the first click on a tile only arms the confirmation; the second one places.
-      if (onPendingTile) return place(context, moved)
-      return {
-        ...moved,
-        pendingConfirm: tile,
-        message: `Click again at ${tile.x},${tile.y} to place, or press Enter.`,
-      }
+      // "Move the cursor there; if a structure is armed, place it — the same as arrows then Enter"
+      // (engine.md 9.7). Single-click placement is safe because a plan stays revisable until the
+      // commit: `u` undoes the last one and Backspace removes the one under the cursor.
+      const moved = withCursor(context, state, clampToGrid({ x: command.x, y: command.y }, context.grid))
+      return state.armed === null ? moved : place(context, moved)
     }
 
     case "arm": {
@@ -240,14 +220,13 @@ export function applyBuildCommand(
       return {
         ...state,
         armed: command.index,
-        pendingConfirm: null,
         message: `Armed: ${shortName(context, item.contentId)}. Enter places it at the cursor.`,
       }
     }
 
     case "disarm":
-      if (state.armed === null && state.pendingConfirm === null) return state
-      return { ...state, armed: null, pendingConfirm: null, message: "Disarmed." }
+      if (state.armed === null) return state
+      return { ...state, armed: null, message: "Disarmed." }
 
     case "place":
       return place(context, state)
@@ -258,7 +237,6 @@ export function applyBuildCommand(
       return {
         ...state,
         planned: state.planned.filter((placement) => placement.ordinal !== target.ordinal),
-        pendingConfirm: null,
         message: `Removed the planned ${shortName(context, target.contentId)}.`,
       }
     }
@@ -269,21 +247,7 @@ export function applyBuildCommand(
       return {
         ...state,
         planned: state.planned.slice(0, -1),
-        pendingConfirm: null,
         message: `Undid the planned ${shortName(context, last.contentId)}.`,
-      }
-    }
-
-    case "toggle-click-mode": {
-      const clickMode: ClickMode = state.clickMode === "place" ? "confirm" : "place"
-      return {
-        ...state,
-        clickMode,
-        pendingConfirm: null,
-        message:
-          clickMode === "place"
-            ? "Clicking a tile now places straight away."
-            : "Clicking a tile now moves the cursor; click again to place.",
       }
     }
 

@@ -957,44 +957,13 @@ should not deal one.
 A side benefit worth naming: the telegraph is also a debugging tool. An arrival edge and a time drawn
 on screen is the fastest way to see that a mission's trigger list is wrong.
 
-### Q50 — With a structure armed, does a click on a tile place it, or does a second click confirm?
-
-**Status:** OPEN — blocks nothing. Both behaviours are built and ship behind a toggle
-(`terminal-nexus --spike`, the `[t]` key), so every later gate can proceed under the recommendation
-below and switch if Mario picks the other one.
-
-[`engine.md`](engine.md) Section 9.7 already recommends click-to-place — "single-click placement is
-safe because a plan is revisable until commit" — and, in the same section, calls the choice "a feel
-decision the spike makes observable as a toggle rather than argues about." Gate 5A built the toggle.
-This row is the question the toggle exists to put to Mario, with what building it turned up.
-
-**What the spike found, and it is not a matter of taste.** The two behaviours are not symmetric,
-because clicking a tile moves the cursor, and moving the cursor scrolls the map. A click within three
-tiles of the edge of the screen therefore slides the whole Grid under the mouse pointer. With
-click-to-place that is invisible — the structure is already down before anything moves. With
-click-then-confirm, the second click at the same spot on screen lands on a *different tile*, one row
-or one column from the one the player aimed at, and places there without complaint. Pressing Enter
-instead is unaffected, and the screen already offers that; but "click the same place twice" is the
-gesture the mode is named for, and near the edge of the screen it quietly does the wrong thing.
-
-| Option | Cost |
-| --- | --- |
-| A. **A click places it.** The armed structure goes down where you clicked, and stays armed | What the canon already recommends, and the only one of the two the scrolling problem above cannot touch. A misclick costs one `[u]` undo, on a plan nothing has committed yet |
-| B. **A click moves the cursor; a second click places.** | Safer for a player who mouses imprecisely, and the only option for a future action that *is* irreversible. Costs a gesture per structure, undoing the fast path entirely, and carries the near-the-edge misplacement above unless something else changes — the honest fixes all cost more than the mode does: suppress scrolling until the placement resolves (which contradicts the cursor-drives-the-camera rule), or accept the second click anywhere at all (which makes repositioning impossible) |
-| C. **Ship both and let the player choose in Settings** | Cheap now — the toggle exists and is one settings row away from being permanent. But it is two behaviours to keep working, tested and taught forever, for a choice nobody has yet asked for; Settings is where a decision goes to be avoided |
-
-**Recommendation: A**, and delete the toggle once Mario has looked at it. The canon already leaned
-this way; the spike turned a preference into a reason. Keep B's code in the git history rather than
-in the product — if a later Build Phase action genuinely cannot be undone (nothing in Milestone 5 is
-like that: every placement is revisable until the commit key), confirmation belongs on that one
-action, not on every click.
-
 ## 5. Answered
 
 Rows move here with the date, the decision, and the document that now owns it.
 
 | ID | Answered | Decision | Now owned by |
 | --- | --- | --- | --- |
+| Q50 | 2026-09-21 | **A click places the armed structure — no second click to confirm.** Mario, shown both behaviours side by side: "Click to place looks good to me too. We can always implement undo or destroy later, for now this is good." (Undo and remove already exist: `u` and Backspace.) The toggle is deleted rather than kept as a setting | [`engine.md`](engine.md) Section 9.7, whose own recommendation this confirms; [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md) |
 | Q1 | 2026-08-20 | **Tile width is adaptive presentation capability**: one column per tile in the 80x24 composition, two columns per tile at 128 columns or wider. Same tiles, same actors, same revealed information — only the composition changes. The 80x24 floor is preserved and the concept art's look is reachable on a wide terminal | [`engine.md`](engine.md) Section 9.3 |
 | Q2 | 2026-08-20 | **One resource.** Salvage recovers the same resource rather than a second one. Nexus energy is a state readout, not a currency. A second resource is an addition a later microgame may earn; it is not assumed | [`engine.md`](engine.md) Section 6 |
 | Q3 | 2026-08-20 | **Units may span multiple tiles.** Large units are a normal, strategically important case, not a later extension — a Ravel raider drawn `>x<` is one unit occupying three tiles. The collision system tests a mover's whole footprint against its mask; damage and destruction apply to the entity, not the tile | [`engine.md`](engine.md) Section 3.5 |
@@ -1016,6 +985,29 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q37 | 2026-09-01 | **Yes — a spike, and wider than the row's Option A.** Mario: "Scrolling in the map and placing selected bases is the part that needs more attention and will need a spike to verify assumptions." Not only static mockups: an interactive spike of cursor scrolling and placement, driven through keyboard, mouse, and the driver alike, that also verifies which target terminals deliver Shift+Arrow | [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md); [`engine.md`](engine.md) Section 9.7 |
 | Q32 | 2026-09-12 | **A tick-gated trigger list (Option A).** PERIMETER's raid is a second, one-sided placement block with tick-gated triggers (`{ atTick, action }`), authored and validated the same way a `.map.json` file already is — not a policy module. Generalised at canon 2.10 into the trigger model every mission now uses | [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md) Section 4.4; [`campaigns.md`](campaigns.md) Section 2.1 |
 | Q33 | 2026-09-12 | **Author around Q15's dead end (Option A).** PERIMETER's approach lane is off-axis from the Nexus by design, not a kernel routing fix. Q15 stays open and unowned until a mission's own design genuinely cannot be authored around it | [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md) Section 4.3 |
+
+### Q50 — answered
+
+Registered 2026-09-21 by gate 5A, which built both click behaviours behind a toggle because
+[`engine.md`](engine.md) Section 9.7 called the choice "a feel decision the spike makes observable as
+a toggle rather than argues about". **Decided: a click places it** — Mario, having tried both.
+
+Worth recording for whoever revisits it, because the toggle turned up something an argument would
+not have. The two behaviours are not symmetric. A click moves the cursor, and moving the cursor
+scrolls the map, so a first click within three tiles of the edge of the screen slides the whole Grid
+under the pointer — and the second click at the same spot on screen then lands on a *different tile*
+and places there without complaint. Pressing Enter instead is unaffected, and the screen offers it,
+but "click the same place twice" is the gesture that mode is named for. Placing on the first click
+has no second click and cannot hit this at all.
+
+**What keeps the decision safe is that a plan is revisable**: `u` undoes the last placement and
+Backspace removes the one under the cursor, both built in gate 5A. If some future Build Phase action
+is genuinely irreversible, confirmation belongs on that one action rather than on every click — and
+this row is where to start reading before adding it.
+
+`engine.md` 9.7's own "observable as a toggle" sentence is now stale, and its wording change is in
+gate 5A's report (Section 9) so that it lands with that gate's other canon changes in one version
+bump rather than two.
 
 ### Q46 — answered
 

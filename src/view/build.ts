@@ -223,7 +223,7 @@ function controlsLine(limit: number): string {
     "esc disarm",
     "q quit",
   ]
-  const extra = ["home end jump sideways", "bksp remove", "u undo", "t click mode"]
+  const extra = ["home end jump sideways", "bksp remove", "u undo"]
   let line = essential.join("  ")
   for (const binding of extra) {
     const grown = `${line}  ${binding}`
@@ -251,9 +251,12 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput): v
     band,
     left,
     headerRow + 1,
-    `Grid ${context.grid.width}x${context.grid.height}   ` +
-      `view ${state.viewport.width}x${state.viewport.height}   ` +
-      `${layout.tileWidth} col/tile   margin ${context.scrollMargin ?? SCROLL_MARGIN}`,
+    // Two spaces between fields, not three: at the 80-column floor the Grid pane is 46 usable
+    // columns and three-space gaps put this line at 47, which silently cut "margin 3" to "margin".
+    // Caught by a screenshot, twice now — a truncated line is invisible in a frame's own text.
+    `Grid ${context.grid.width}x${context.grid.height}  ` +
+      `view ${state.viewport.width}x${state.viewport.height}  ` +
+      `${layout.tileWidth} col/tile  margin ${context.scrollMargin ?? SCROLL_MARGIN}`,
     "chrome.value",
     { limit },
   )
@@ -345,9 +348,6 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
     armedItem === undefined || armedItem === null
       ? ["nothing - press 1, 2 or 3", "chrome.muted"]
       : [shortName(context, armedItem.contentId), "chrome.value"],
-  ])
-  block("CLICK MODE  [t]", [
-    [state.clickMode === "place" ? "click places it" : "click, then click again", "chrome.value"],
   ])
   block("PLANNED", [
     state.planned.length === 0

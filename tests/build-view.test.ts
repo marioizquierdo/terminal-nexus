@@ -11,6 +11,7 @@ import { spikeContext } from "../src/cli/spike.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText, offendingGlyph } from "../src/view/frame.ts"
 import { CAPABILITY_MODES } from "../src/view/roles.ts"
+import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 
 const MINIMUM = { columns: 80, rows: 24 }
 const MAXIMUM = { columns: 104, rows: 32 }
@@ -190,11 +191,63 @@ test("the construct rows, the armed item and the click mode are all on screen", 
   assert.match(armed.text, /\[3\] Turret/)
   assert.match(armed.text, /ARMED/)
   assert.match(armed.text, /hatch/)
-  assert.match(armed.text, /CLICK MODE {2}\[t\]/)
-  assert.match(armed.text, /click places it/)
+  // Every binding the footer has no room for at 80 columns is on the panel instead, because a
+  // binding that is displayed nowhere does not exist (engine.md 9.7).
+  assert.match(armed.text, /\[u\] undo/)
+  assert.match(armed.text, /\[bksp\] remove/)
+})
 
-  const confirmMode = screenAt(MINIMUM, (build, layout) => {
-    build.handleData("t", layout)
-  })
-  assert.match(confirmMode.text, /click again/i)
+test("the footer never advertises a key the keyboard adapter does not bind", () => {
+  // A retired binding that is still printed is worse than one that never existed, and the adapter
+  // test alone cannot catch it: the footer only shows its optional extras once the terminal is wide
+  // enough, so `t click mode` survived the toggle's deletion and rendered at 142 columns and up,
+  // where no screenshot in this gate was ever taken. Checked on the widest composition there is.
+  const widest = screenAt({ columns: 200, rows: 44 })
+  const controls = widest.text
+    .split("\n")
+    .find((row) => row.includes("arrows move"))
+  assert.ok(controls !== undefined, "the controls line is on screen")
+
+  // Every single-character key the line names, checked against the real adapter.
+  const named = [...new Set(controls.match(/\b[a-z]\b/g) ?? [])]
+  assert.ok(named.length > 0, "the line names at least one letter key")
+  for (const key of named) {
+    assert.notEqual(
+      buildKeyboardCommand(key, { itemCount: 3, armed: true }),
+      null,
+      `the footer offers "${key}", which the adapter does not bind`,
+    )
+  }
+  assert.doesNotMatch(controls, /click mode/, "the click-mode toggle is gone (Q50)")
+})
+
+test("no header or footer line is cut off at the 80-column floor", () => {
+  // 80x24 is the acceptance target, and the Grid pane is only 46 usable columns of it. Every line
+  // below has been truncated mid-word at some point in this gate's own history and only a
+  // screenshot showed it, so each one is now asserted whole at the narrowest size that must work.
+  const { text } = screenAt(MINIMUM)
+  assert.match(text, /Grid 96x40 {2}view 48x16 {2}1 col\/tile {2}margin 3/)
+  assert.match(text, /view x 0-47 y 1-16 of 96x40 {3}cursor 18,13/)
+  assert.match(text, /arrows move.*q quit/)
+  assert.match(text, /Pick a structure, move the cursor, place it\./)
+})
+
+test("the scroll margin the screen prints is the one it is actually using", () => {
+  // Mario deferred confirming the three-tile default and will judge it against another number, so
+  // a header that printed one margin while the camera used another would waste exactly that check.
+  for (const margin of [2, 5]) {
+    const context = { ...spikeContext(), scrollMargin: margin }
+    const layout = buildLayout(MINIMUM, context.grid)
+    const build = new BuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
+    const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
+    assert.match(text, new RegExp(`margin ${margin}`))
+    // And the camera really follows at that distance, not at the default.
+    build.dispatch({ kind: "move-cursor", dx: 0, dy: 0 })
+    let steps = 0
+    while (build.state.camera.x === 0 && steps < context.grid.width) {
+      build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
+      steps += 1
+    }
+    assert.equal(layout.viewport.width - 1 - (build.state.cursor.x - build.state.camera.x), margin)
+  }
 })

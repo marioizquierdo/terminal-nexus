@@ -92,23 +92,17 @@ export function clampCamera(camera: Camera, viewport: Viewport, grid: GridTerrai
   }
 }
 
-function followAxis(
-  camera: number,
-  cursor: number,
-  span: number,
-  gridSpan: number,
-  margin: number,
-): number {
-  // The margin is a *follow* rule, not an invariant. It says where the camera must be relative to
-  // the cursor when it can be: no closer than `margin` tiles to either edge. At the Grid's own edge
-  // the camera has nowhere left to go, so the cursor legitimately reaches the viewport edge — which
-  // is right, because there is no more Grid to reveal by scrolling further. Written as a range the
-  // camera is nudged into rather than a position it is moved to, so a camera already inside the
-  // range does not twitch every time the cursor moves one tile.
+/**
+ * Where one axis of the camera wants to be, before the Grid's own edges get a say. The margin is a
+ * *follow* rule, not an invariant: it says where the camera must be relative to the cursor when it
+ * can be — no closer than `margin` tiles to either edge. Written as a range the camera is nudged
+ * into rather than a position it is moved to, so a camera already inside the range does not twitch
+ * every time the cursor moves one tile.
+ */
+function followAxis(camera: number, cursor: number, span: number, margin: number): number {
   const latest = cursor - margin
   const earliest = cursor - (span - 1 - margin)
-  const nudged = Math.min(Math.max(camera, earliest), latest)
-  return Math.min(Math.max(0, nudged), Math.max(0, gridSpan - span))
+  return Math.min(Math.max(camera, earliest), latest)
 }
 
 /**
@@ -123,10 +117,18 @@ export function followCursor(
   grid: GridTerrain,
   margin: number = SCROLL_MARGIN,
 ): Camera {
-  return {
-    x: followAxis(camera.x, cursor.x, viewport.width, grid.width, margin),
-    y: followAxis(camera.y, cursor.y, viewport.height, grid.height, margin),
-  }
+  // Clamped through the same function everything else clamps through, rather than repeating its
+  // arithmetic inline. That is also where the margin stops being honoured and is right to: at the
+  // Grid's own edge the camera has nowhere left to go, so the cursor legitimately reaches the edge
+  // of the screen, because there is no more Grid to reveal by scrolling further.
+  return clampCamera(
+    {
+      x: followAxis(camera.x, cursor.x, viewport.width, margin),
+      y: followAxis(camera.y, cursor.y, viewport.height, margin),
+    },
+    viewport,
+    grid,
+  )
 }
 
 export type VisibleRange = Readonly<{

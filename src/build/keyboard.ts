@@ -93,7 +93,6 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (PLACE_KEYS.has(key)) return { kind: "place" }
   if (REMOVE_KEYS.has(key)) return { kind: "remove" }
   if (key === "u") return { kind: "undo" }
-  if (key === "t") return { kind: "toggle-click-mode" }
 
   const plain = PLAIN_ARROWS[key]
   if (plain !== undefined) return { kind: "move-cursor", ...plain }

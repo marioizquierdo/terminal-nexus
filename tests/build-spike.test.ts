@@ -7,7 +7,8 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { SPIKE_CATALOG, footprintLabel, menuItemsFor, spikeGrid } from "../src/build/catalog.ts"
+import { SPIKE_CATALOG, menuItemsFor, spikeGrid } from "../src/build/catalog.ts"
+import { footprintExtent } from "../src/grid/coords.ts"
 import { buildLayout, cellForTile } from "../src/build/layout.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import {
@@ -173,6 +174,15 @@ test("keyboard: Esc disarms when something is armed, and otherwise backs out", (
   assert.deepEqual(buildKeyboardCommand(ESC, { itemCount: 3, armed: false }), { kind: "back" })
 })
 
+test("keyboard: a letter this screen does not bind means nothing at all", () => {
+  // `t` was the click-mode toggle until Q50 was answered. A retired binding that quietly still does
+  // something is worse than one that never existed, so it is asserted dead rather than forgotten.
+  const context = { itemCount: 3, armed: true }
+  for (const key of ["t", "h", "j", "k", "l", "x"]) {
+    assert.equal(buildKeyboardCommand(key, context), null, `"${key}" should mean nothing here`)
+  }
+})
+
 test("mouse: the wheel moves the cursor five tiles and drags the camera with it", () => {
   const { build, layout } = session()
   const before = { ...build.state.camera }
@@ -214,68 +224,33 @@ test("parseMouseEvent: a release is not a press, and the bytes round-trip", () =
   assert.equal(parseMouseEvent("not a mouse report"), null)
 })
 
-test("click modes: place-on-first-click and click-then-confirm both reach the same plan", () => {
-  const immediate = session()
-  immediate.build.handleData("1", immediate.layout)
-  immediate.build.handleData(
-    clickTileBytes(immediate.layout, immediate.build, { x: 30, y: 14 }),
-    immediate.layout,
+test("a click on a tile places the armed structure there, exactly as arrows then Enter would", () => {
+  // Q50, answered: a click places it. Gate 5A shipped a second behaviour beside this one — click,
+  // then click again to confirm — as a toggle; Mario chose this one and the other is gone.
+  const byClick = session()
+  byClick.build.handleData("1", byClick.layout)
+  byClick.build.handleData(
+    clickTileBytes(byClick.layout, byClick.build, { x: 30, y: 14 }),
+    byClick.layout,
   )
-  assert.equal(immediate.build.state.planned.length, 1)
+  assert.equal(byClick.build.state.planned.length, 1)
 
-  const confirmed = session()
-  confirmed.build.handleData("t", confirmed.layout) // flip to click-then-confirm
-  assert.equal(confirmed.build.state.clickMode, "confirm")
-  confirmed.build.handleData("1", confirmed.layout)
-  confirmed.build.handleData(
-    clickTileBytes(confirmed.layout, confirmed.build, { x: 30, y: 14 }),
-    confirmed.layout,
-  )
-  assert.equal(confirmed.build.state.planned.length, 0, "the first click only moves the cursor")
-  assert.deepEqual(confirmed.build.state.cursor, { x: 30, y: 14 })
-  // Aimed at the same tile again — recomputed against the camera as it is *now*, because the first
-  // click may have scrolled the Grid underneath the pointer. The test below is about exactly that.
-  confirmed.build.handleData(
-    clickTileBytes(confirmed.layout, confirmed.build, { x: 30, y: 14 }),
-    confirmed.layout,
-  )
-  assert.equal(confirmed.build.state.planned.length, 1, "the second click places it")
-  assert.deepEqual(confirmed.build.state.planned[0], immediate.build.state.planned[0])
+  const byKeyboard = session()
+  byKeyboard.build.handleData("1", byKeyboard.layout)
+  byKeyboard.build.run([{ kind: "move-cursor", dx: 12, dy: 1 }])
+  byKeyboard.build.handleData(ENTER, byKeyboard.layout)
+  assert.deepEqual(byClick.build.state, byKeyboard.build.state)
 })
 
-test("click-then-confirm: a first click near a viewport edge scrolls the Grid under the pointer", () => {
-  // Gate 5A's own finding, pinned here so it cannot change silently. Cursor-driven scrolling is a
-  // RULE: a click within three tiles of a viewport edge moves the cursor there and the camera
-  // follows. In click-then-confirm mode that means the *same screen cell* is a different tile by
-  // the time the player clicks it again — so "click twice in the same place" quietly confirms the
-  // neighbour of the tile they aimed at. Pressing Enter, which the message offers, is unaffected;
-  // click-to-place, having no second click, cannot hit this at all.
+test("a misclick costs one undo, which is what makes placing on the first click safe", () => {
+  // The whole argument for single-click placement (engine.md 9.7): a plan is revisable until the
+  // commit. If that stopped being true, the click behaviour would have to be revisited with it.
   const { build, layout } = session()
-  build.handleData("t1", layout)
-  const cellAimedAt = cellForTile(layout, build.state.camera, { x: 30, y: 14 })
-  const sameCellTwice = formatMouseEvent(MOUSE_LEFT, cellAimedAt.x + 1, cellAimedAt.y + 1)
-
-  build.handleData(sameCellTwice, layout)
-  assert.deepEqual(build.state.cursor, { x: 30, y: 14 })
-  assert.deepEqual(build.state.camera, { x: 0, y: 2 }, "the camera followed the cursor south by one")
-
-  build.handleData(sameCellTwice, layout)
-  assert.equal(build.state.planned.length, 0, "nothing was placed")
-  assert.deepEqual(build.state.cursor, { x: 30, y: 15 }, "the same cell is now the tile below")
-
-  // Enter is the escape hatch the footer message already names, and it places where the cursor is.
-  build.handleData(ENTER, layout)
-  assert.equal(build.state.planned.length, 1)
-})
-
-test("click-then-confirm: a click somewhere else cancels the pending confirmation", () => {
-  const { build, layout } = session()
-  build.handleData("t1", layout)
+  build.handleData("1", layout)
   build.handleData(clickTileBytes(layout, build, { x: 30, y: 14 }), layout)
-  build.handleData(clickTileBytes(layout, build, { x: 34, y: 14 }), layout)
-  assert.equal(build.state.planned.length, 0, "the second click was at a different tile")
-  build.handleData(clickTileBytes(layout, build, { x: 34, y: 14 }), layout)
   assert.equal(build.state.planned.length, 1)
+  build.handleData("u", layout)
+  assert.equal(build.state.planned.length, 0)
 })
 
 test("legality: an illegal placement is refused with a reason and nothing is moved to fit", () => {
@@ -356,7 +331,8 @@ test("the cursor points at a structure's centre tile, the way the scenario forma
 test("the construct rows' labels state the footprint their content actually has", () => {
   const context = spikeContext()
   for (const item of SPIKE_CATALOG) {
-    const size = footprintLabel(context.registry, item.contentId)
+    const extent = footprintExtent(context.registry.get(item.contentId).footprint)
+    const size = `${extent.width}x${extent.height}`
     assert.ok(
       item.label.includes(size),
       `"${item.label}" should say ${size}, which is what ${item.contentId} actually is`,

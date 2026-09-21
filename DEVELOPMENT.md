@@ -125,10 +125,12 @@ at 80 columns and 72 x 24 at 104. Move the cursor with the arrow keys and the ma
 cursor comes within three tiles of an edge; the frame's border marks every side with more map beyond
 it and the footer names the visible range, because there is no minimap. Press `1`, `2` or `3` (or
 click the row) to arm a structure, then Enter or a click to place it at the cursor; it stays armed,
-so a run of them is one digit then arrows and Enter. `[u]` undoes, Backspace removes the one under
-the cursor, and `[t]` switches between placing on the first click and confirming on a second — a
-toggle rather than a decision, because which one feels right is Mario's call (open question Q50).
-Shift+Arrow jumps five tiles, and so do PageUp/PageDown and Home/End, because several terminals
+so a run of them is one digit then arrows and Enter. `[u]` undoes and Backspace removes the one
+under the cursor, which together are what make placing on a single click safe: a plan stays
+revisable until it is committed. The gate shipped a second click behaviour beside that one — click
+to move the cursor, click again to confirm — as a toggle, because which one felt right was Mario's
+call; he picked placing on the first click (Q50, answered), and the other one is gone rather than
+kept as a setting. Shift+Arrow jumps five tiles, and so do PageUp/PageDown and Home/End, because several terminals
 deliver no shifted arrows at all — `node scripts/probe-modified-keys.mjs` prints the survey, and
 `evidence/gate-5a-report.md` has the table. `--scroll-margin <tiles>` changes the three-tile trigger
 distance so it can be judged against another number rather than argued about. It is a spike: nothing

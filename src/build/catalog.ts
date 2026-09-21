@@ -8,8 +8,6 @@
 // straddle a rock — and they are drawn from the existing fixture rosters rather than invented.
 
 import type { MenuItem } from "../menu/types.ts"
-import { footprintExtent } from "../grid/coords.ts"
-import type { ContentRegistry } from "../content/index.ts"
 import type { GridTerrain, TerrainId } from "../grid/types.ts"
 import type { ConstructItem, StandingStructure } from "./types.ts"
 
@@ -124,11 +122,4 @@ export const SPIKE_CATALOG: readonly ConstructItem[] = [
  */
 export function menuItemsFor(catalog: readonly ConstructItem[]): readonly MenuItem[] {
   return catalog.map((item) => ({ id: item.contentId, hotkey: item.hotkey, label: item.label }))
-}
-
-/** `3x2`, from the content's own footprint — so a row cannot claim a size the definition disagrees
- *  with. Used by the gate's own test rather than by the panel, which shows the authored label. */
-export function footprintLabel(registry: ContentRegistry, contentId: string): string {
-  const extent = footprintExtent(registry.get(contentId).footprint)
-  return `${extent.width}x${extent.height}`
 }
