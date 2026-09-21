@@ -2,7 +2,7 @@
 
 **Document role:** Playable faction packages: Commanders, units, structures, upgrades, and Nexus powers
 **Status:** Canonical identity direction; rosters intentionally undefined
-**Canon version:** 2.17
+**Canon version:** 2.18
 **Updated:** 2026-09-12
 **License:** Creative identity is CC BY-SA 4.0; mechanical definitions and schemas are Apache-2.0
 
@@ -216,6 +216,11 @@ Where this shows on screen: the Build Phase construct menu lists the common tier
 draft is its own panel, and the Special is a single slot the player arms and fires when ready —
 four tiers, four places, so a player learns the split by looking at it
 ([`engine.md`](engine.md) Section 9.2, [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md)).
+
+**An empty group is drawn, not skipped** — RULE, built at gate 5B. PERIMETER's army group has nothing
+in it, and a group that disappears when empty reflows the panel and moves every hotkey below it the
+first time content arrives. Hotkeys have to be stable for muscle memory to transfer
+([`engine.md`](engine.md) Section 9.7), so the heading stays and says the group is empty.
 
 ### 2.1a Terminology glossary — analysis and alternatives — GUIDANCE, except the loose-word/exact-name principle below, which is RULE
 

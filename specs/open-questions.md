@@ -2,7 +2,7 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.17
+**Canon version:** 2.18
 **Updated:** 2026-09-21
 **License:** Apache-2.0
 
@@ -696,28 +696,6 @@ reasoning for deferring a harder call until the fixture that needs it exists rat
 merely revealed it. Revisit the moment Milestone 12 (or any earlier session) authors a Commander Army
 whose opening force is entirely non-mobile.
 
-### Q30 — How much Build-Phase side panel does Milestone 5 actually need?
-
-**Status:** OPEN — blocks nothing before Milestone 5 starts; the recommendation is already assumed by
-[`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md).
-
-`engine.md` Section 9.2 already specifies the Build Phase side panel's shape — construct menu,
-selected item's cost and effect, a placement-legality panel, radius preview, legend — as GUIDANCE
-written before any of it existed. PERIMETER's own Build Phase (Milestone 5) is deliberately tiny (a short,
-fixed construct menu, one producer structure, one legal placement zone), so building the *full*
-panel Section 9.2 describes risks building UI for options that do not exist yet on this level.
-
-| Option | Cost |
-| --- | --- |
-| A. **Build exactly what PERIMETER's own content needs, and skip the rest.** Construct menu (short), cost/effect, and a legality panel that explains a rejected placement are load-bearing the moment there is a menu at all. Radius preview is skipped unless the producer structure has a radius worth previewing | Smallest artifact that satisfies "a Build Phase a player can actually use." Risks needing a second pass the moment Level 2 adds a structure with a real radius |
-| B. **Build the full Section 9.2 panel now**, radius preview and all, so every later level reuses it without changes | More up-front work for a feature (radius preview) nothing in PERIMETER exercises, which is exactly what governance Section 2 warns against — a framework before two real uses reveal its contract |
-
-**Recommendation: A.** Build the legality panel and the construct menu — both load-bearing for even
-the smallest Build Phase — and defer radius preview until a level actually ships something with a
-radius. This is a narrow, reversible UI-scope decision that Milestone 5's own session may equally well
-just decide alone under governance Section 2; it is registered mainly so the *reason* for the smaller
-scope is written down rather than looking like an oversight later.
-
 ### Q31 — What shape does an "unlock record" take, with no save system yet?
 
 **Status:** OPEN — blocks nothing before Milestone 4 needs to write one; the recommendation is already
@@ -963,6 +941,7 @@ Rows move here with the date, the decision, and the document that now owns it.
 
 | ID | Answered | Decision | Now owned by |
 | --- | --- | --- | --- |
+| Q30 | 2026-09-21 | **A, built.** The Build Phase panel is the construct menu, what is left to spend, the selected item's cost and effect, and the reason a placement was refused — and **no radius preview**, because nothing in the content that exists has a radius. Gate 5B built exactly the recommendation and the panel came out shorter than gate 5A's, not longer: the blocks it replaced were reporting things already visible on the Grid | [`engine.md`](engine.md) Section 9.2; [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md) |
 | Q50 | 2026-09-21 | **A click places the armed structure — no second click to confirm.** Mario, shown both behaviours side by side: "Click to place looks good to me too. We can always implement undo or destroy later, for now this is good." (Undo and remove already exist: `u` and Backspace.) The toggle is deleted rather than kept as a setting | [`engine.md`](engine.md) Section 9.7, whose own recommendation this confirms; [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md) |
 | Q1 | 2026-08-20 | **Tile width is adaptive presentation capability**: one column per tile in the 80x24 composition, two columns per tile at 128 columns or wider. Same tiles, same actors, same revealed information — only the composition changes. The 80x24 floor is preserved and the concept art's look is reachable on a wide terminal | [`engine.md`](engine.md) Section 9.3 |
 | Q2 | 2026-08-20 | **One resource.** Salvage recovers the same resource rather than a second one. Nexus energy is a state readout, not a currency. A second resource is an addition a later microgame may earn; it is not assumed | [`engine.md`](engine.md) Section 6 |
@@ -1409,3 +1388,12 @@ Milestone 1 was refocused onto the Pulse and delivery left the milestone altoget
 [`../milestones/milestone-01-grid-battles.md`](../milestones/milestone-01-grid-battles.md) carries the gate structure;
 [`project-governance.md`](project-governance.md) Section 5 carries delivery as its own gated
 workstream.
+
+### Q30 — answered
+
+Built rather than argued, at gate 5B. The recommendation was followed exactly — construct menu,
+budget, the selected item's cost and effect, the reason a refusal happened, and no radius preview —
+and the result is worth one sentence for whoever reopens the scope question: **the smaller panel came
+out shorter *and* more useful than the one it replaced**, because four of gate 5A's six blocks were
+reporting things the Grid already showed. A panel that narrates state grows; a panel that answers
+questions does not. [`engine.md`](engine.md) Section 9.2 now carries the contents.
