@@ -15,7 +15,7 @@ import type { BuildLayout } from "../build/layout.ts"
 import { RESOURCE_ROW, cellForTile, constructLines } from "../build/layout.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
 import { anchorForCursor, legalityAt, remaining } from "../build/state.ts"
-import type { ConstructGroup } from "../build/types.ts"
+import type { ConstructGroup, ConstructItem } from "../build/types.ts"
 import type { BandCell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import { put, text } from "./draw.ts"
@@ -346,10 +346,28 @@ const GROUP_LABELS: Readonly<Record<ConstructGroup, string>> = {
  * build. Most of it is blank until they are doing something — a panel that is always full is a
  * panel nobody reads.
  */
-/** The bindings the footer had no room for, pinned to the bottom of the panel. A wide enough
- *  terminal fits them all in the footer and this draws nothing. */
-function drawPanelBindings(cells: BandCell[], layout: BuildLayout): void {
+/**
+ * The bindings the footer had no room for, pinned to the bottom of the panel and growing upward. A
+ * wide enough terminal fits them all in the footer and this is empty.
+ *
+ * Bounded by the construct menu, which wins: the panel is as tall as the viewport and the viewport
+ * shrinks to fit a small Grid, so the block can reach the menu. A hidden menu row is still a live
+ * click target — worse than a binding the player has to find elsewhere — so the lowest-priority
+ * lines are dropped instead.
+ */
+function panelBindings(
+  layout: BuildLayout,
+  catalog: readonly ConstructItem[],
+): readonly string[] {
   const lines = bindingLines(layout.footerLimit, layout.panelLimit).panel
+  const menu = constructLines(layout, catalog)
+  const floor = (menu[menu.length - 1]?.row ?? layout.panelRow) + 2
+  return lines.slice(0, Math.max(0, Math.min(lines.length, layout.panelBindingsRow - floor + 1)))
+}
+
+function drawPanelBindings(cells: BandCell[], input: BuildCompositionInput): void {
+  const { layout } = input
+  const lines = panelBindings(layout, input.context.catalog)
   lines.forEach((line, index) => {
     const row = layout.panelBindingsRow - (lines.length - 1 - index)
     text(cells, BANDS.chrome, layout.panelColumn, row, line, "chrome.muted", {
@@ -452,7 +470,7 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
   const first = (lastLine?.row ?? layout.panelRow) + 2
   // One row of clearance above the bindings block, so the two never touch. The block's height is
   // the terminal's to decide, so this is read rather than assumed.
-  const bindingRows = bindingLines(layout.footerLimit, layout.panelLimit).panel.length
+  const bindingRows = panelBindings(layout, context.catalog).length
   const available = layout.panelBindingsRow - bindingRows - first
   if (available < detail.length) return
   detail.forEach(([value, role, extra], index) => {
@@ -476,7 +494,7 @@ export function composeBuildFrame(
   drawEdgeMarkers(cells, input)
   drawHeaderAndFooter(cells, input)
   drawPanel(cells, input)
-  drawPanelBindings(cells, input.layout)
+  drawPanelBindings(cells, input)
 
   return composeBands(input.layout.frame.width, input.layout.frame.height, cells)
 }

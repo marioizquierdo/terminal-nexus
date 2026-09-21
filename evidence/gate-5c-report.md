@@ -103,8 +103,8 @@ say what the code does now rather than which gate changed it and why.
 | --- | --- | --- |
 | `./scripts/check-repository.sh` | passes at canon 2.18 | run before and after |
 | `npm run typecheck` | clean | `tsc --noEmit`, strict with `exactOptionalPropertyTypes` |
-| `npm test` (Node 22.22.2) | **351 pass, 0 fail** | four Build Phase test files plus the rest of the suite |
-| `npm run test:bun` (Bun 1.3.11) | **350 pass, 0 fail** | one Node-only test does not run under Bun |
+| `npm test` (Node 22.22.2) | **352 pass, 0 fail** | four Build Phase test files plus the rest of the suite |
+| `npm run test:bun` (Bun 1.3.11) | **351 pass, 0 fail** | one Node-only test does not run under Bun |
 | The margin holds at every viewport size in the range | 25 widths x 9 heights, both axes, both directions | `tests/build-camera.test.ts` — the cursor stays on screen, and the margin holds wherever the Grid still has room to scroll |
 | Every key the adapters bind is named on screen at 80x24 | 9 of 9 | `tests/build-view.test.ts` — each one checked against `buildKeyboardCommand` and then found on the composed frame |
 | Nothing is lost or cut in the footer/panel split | every footer width from 10 to 82, at three panel widths | the two surfaces' bindings, concatenated, equal the whole list exactly |
@@ -112,6 +112,7 @@ say what the code does now rather than which gate changed it and why.
 | Nothing is drawn over anything, across the range | 27 widths x 9 heights | the frame stays the terminal's size, all three footer rows survive, and the refusal block stays on screen |
 | Edge-marker spacing is the same in tiles at both tile widths | 80x24 and 160x40 | measured off the composed frame, divided by the tile width |
 | The side markers are an unbroken run | every viewport row | both borders, at the minimum size |
+| The bindings block never draws over the construct menu | an 8x6 Grid at 80x24 | `tests/build-view.test.ts` — every menu row still on its own line; found by the pre-merge review, reproduced, then fixed |
 | Real-terminal screenshots | 12 regenerated | `evidence/screenshots/`, tmux -> `capture-pane -e` -> headless Chromium |
 
 Measurements:
@@ -182,6 +183,21 @@ that looks like a selection is invisible in text because the glyph is correct an
   tiles east on a 96-tile Grid in a 48-tile viewport, which leaves the camera at zero — there is no
   more Grid to the west, so there is correctly no marker. The test was wrong, not the code, and the
   fix was to move the cursor far enough in that all four sides have Grid beyond them.
+- **The pre-merge review found the defect this gate introduced, and it is the same shape as the one
+  it found last gate.** Pinning the overflow bindings to the bottom of the panel and growing them
+  upward gave them no lower bound, so on a panel short enough — an 8x6 Grid at 80x24, which
+  `isGated` deliberately passes because it fits the screen entirely — four binding rows drew straight
+  over the construct menu: `shift+arrow jump 5        15` where `[3] Turret 15` belongs. The detail
+  block already had the symmetric guard from gate 5B; this did not, and the single pinned row it
+  replaced could only ever clobber one line, so the change *widened* an existing hole rather than
+  opening a new one. A hidden menu row is worse than a hidden binding, because it stays a live click
+  target, so the menu wins and the lowest-priority binding lines are dropped. Reproduced against a
+  failing test before the fix. The blast radius on anything shipped today is zero — the 96x40 Grid
+  never gets a panel that short — which is exactly why no test and no screenshot would have found it.
+- **A consequence worth stating: on a Grid that small the jump keys are displayed nowhere.** The
+  footer holds the four essentials and the panel has no room. That is the right trade at a size
+  nothing is wired up at, and the honest place to fix it is the `?` help overlay `engine.md` 9.7
+  already specifies and nothing has built.
 - **Not done, deliberately: nothing was added to fill the panel's blank middle.** At 104x32 and up
   there are a dozen blank panel rows with nothing in them. Filling them would be the demo text the
   last gate removed, wearing a layout argument as a disguise.

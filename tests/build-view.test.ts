@@ -530,3 +530,35 @@ test("engine-3.3-markers: the side markers are an unbroken run, not a column of 
     )
   }
 })
+
+test("the bindings block gives way to the construct menu, never draws over it", () => {
+  // The panel's height is the viewport's, and the viewport shrinks to fit a Grid smaller than the
+  // screen — `isGated` deliberately passes one that fits entirely. The bindings are pinned to the
+  // panel's last line and grow upward, so on a short enough panel they reach the menu. The menu
+  // wins: a hidden construct row is still a live click target, which is worse than a binding the
+  // player has to find elsewhere.
+  const tiny: GridTerrain = {
+    width: 8,
+    height: 6,
+    tiles: new Array<TerrainId>(48).fill("terrain.plain"),
+  }
+  const context = { ...spikeContext(), grid: tiny, standing: [] }
+  const layout = buildLayout(MINIMUM, tiny)
+  const build = new BuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
+  const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
+
+  for (const line of constructLines(layout, context.catalog)) {
+    if (line.kind === "item") {
+      const item = context.catalog[line.index]
+      assert.ok(item !== undefined)
+      assert.match(
+        text.split("\n")[line.row] as string,
+        new RegExp(`\\[${item.hotkey}\\] ${item.label}`),
+        `the menu row for ${item.label} was drawn over`,
+      )
+    }
+    if (line.kind === "empty") {
+      assert.match(text.split("\n")[line.row] as string, /none for this Commander/)
+    }
+  }
+})
