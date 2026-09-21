@@ -113,11 +113,19 @@ export async function runMenu(options: MenuOptions): Promise<number> {
   let leaving = false
   let failure: unknown = null
   let settleSession: (() => void) | null = null
-  // The most recent write to the settings file still in flight, if any — awaited by the disposer so
-  // the last thing a player changed is genuinely on disk before the process actually exits, not just
-  // requested. Never allowed to reject: a settings file that failed to save is not a reason to fail
-  // the whole session on the way out.
-  let pendingSave: Promise<void> | null = null
+  // The tail of every settings write so far, chained rather than fired independently — awaited by
+  // the disposer so the last thing a player changed is genuinely on disk before the process actually
+  // exits, not just requested. Chaining (not just tracking the latest promise) matters: two changes
+  // picked in quick succession each start a real filesystem write with no ordering guarantee of its
+  // own, so an unchained pair can finish in either order and the earlier value can land on disk
+  // *after* the later one, silently reverting the player's last choice. Each write here only starts
+  // once the previous one has settled, so the last write in the chain — whenever it actually runs —
+  // always saves whatever `settings` holds by then, never a value some other write has since replaced.
+  let pendingSave: Promise<void> = Promise.resolve()
+  // The most recent save failure, if any, surfaced once the terminal is back in its normal state
+  // (Section "if (failure..." below) rather than mid-session, where writing to stderr would land
+  // inside the alternate screen and corrupt whatever the menu is showing.
+  let settingsSaveError: unknown = null
 
   const session = createTerminalSession()
   const dispose = session.dispose
@@ -190,9 +198,13 @@ export async function runMenu(options: MenuOptions): Promise<number> {
       // Takes effect on the very next frame, without stopping and restarting the backend — the
       // point of Gate 3B's own `setPresentation` addition (src/view/frame.ts, src/view/backends/).
       backend.setPresentation?.(settings.capability, settings.theme)
-      pendingSave = options.settingsStore.save(settings).catch(() => {
-        /* a failed write is not a reason to crash or block the exit path */
-      })
+      pendingSave = pendingSave.then(() =>
+        options.settingsStore.save(settings).catch((error: unknown) => {
+          // A failed write is not a reason to crash or block the exit path, but it should not vanish
+          // without a trace either — recorded here, reported once the session actually ends.
+          settingsSaveError = error
+        }),
+      )
       render()
     },
     onQuit: leave,
@@ -248,6 +260,14 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     failure = error
   } finally {
     await dispose()
+  }
+
+  if (settingsSaveError !== null) {
+    // Reported, not swallowed — a settings file that silently never saves would otherwise be
+    // invisible until someone thinks to check it by hand. Written only now, after `dispose()` has
+    // already restored the terminal to its normal state, so it lands as a plain line rather than
+    // inside whatever the alternate screen was showing.
+    process.stderr.write(`terminal-nexus: could not save settings: ${String(settingsSaveError)}\n`)
   }
 
   if (failure !== null) {

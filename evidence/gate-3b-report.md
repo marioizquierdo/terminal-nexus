@@ -3,7 +3,7 @@
 **Document role:** Gate evidence report for Gate 3B
 **Status:** BUILT — Section 8 concludes PASS on every automated check; owner review is outstanding
 **Canon version:** 2.16
-**Updated:** 2026-09-18
+**Updated:** 2026-09-21
 **License:** Apache-2.0
 
 ---
@@ -131,15 +131,24 @@ construction options, so `setPresentation` can change what the very next `presen
 without stopping and restarting the backend. See Section 7 — this did not exist before this gate,
 and nothing needed it to.
 
+**Settings are now saved one at a time, in order, with a failure that actually gets reported** — a
+pre-merge quality review (Section 7) found that two changes picked close together could fire two
+independent, unordered writes to the settings file, letting a stale one land on disk after a fresher
+one and quietly revert the player's last choice. Fixed by chaining every write onto the one before
+it, so the file is always caught up to whatever the player picked last. The same review also pointed
+out that a save failure was being discarded with no trace at all; the last one, if any, is now
+reported in one line once the session actually ends.
+
 **A repo-wide raw-byte audit** — two escape-sequence regexes that shipped merged in Gate 3A
 (`src/menu/mouse.ts`'s `SGR_MOUSE`, `tests/menu-view.test.ts`'s colour-code extractor) turned out to
 contain a literal raw ESC control byte instead of the six-character text ``, the same class of
 bug Gate 3A's own report already named and thought it had fixed once (Section 7 there). Both fixed
 here, alongside a fresh instance in this gate's own new screenshot-script code. See Section 7.
 
-**Tests** (new files, plus additions to existing ones): `tests/menu-settings-screen.test.ts` (8
+**Tests** (new files, plus additions to existing ones): `tests/menu-settings-screen.test.ts` (9
 tests — the sharp-edge equivalence test extended to all four settings rows, Back and Esc, the
-live-presentation-update proof, and the persistence-survives-a-relaunch end-to-end case),
+live-presentation-update proof, the persistence-survives-a-relaunch end-to-end case, and, added during
+the pre-merge review, a deterministic proof that two rapid saves never run concurrently),
 `tests/settings-store.test.ts` (8 tests), `tests/settings-types.test.ts` (4 tests); three
 `runMenu(...)` call sites in `tests/menu-session.test.ts` updated for the new `settings`/
 `settingsStore` options; one regex fixed in `tests/menu-view.test.ts` (the raw-byte audit above).
@@ -160,9 +169,10 @@ light-theme shots). Three new PNGs — `settings-screen`, `settings-light-theme`
 | --- | --- | --- |
 | `./scripts/check-repository.sh` | PASS | Canon 2.16, gate 3C now current, zero failures |
 | `npm run typecheck` (`tsc --noEmit`) | PASS | Clean, `strict`/`noUncheckedIndexedAccess`/`exactOptionalPropertyTypes` all on |
-| `npm test` (Node 22.22.2) | PASS | 268/268, 0 failures |
-| `npm run test:bun` (Bun 1.3.11) | PASS | 267/267 across 26 files, 0 failures |
+| `npm test` (Node 22.22.2) | PASS | 269/269, 0 failures |
+| `npm run test:bun` (Bun 1.3.11) | PASS | 268/268 across 26 files, 0 failures |
 | Node/Bun count reconciled | explained | Same single-test gap as Gate 3A's own report: `tests/lifecycle.test.ts`'s `if (!RUNTIME_IS_BUN)` OpenTUI-fallback test, registered only where the fallback actually happens (Node) |
+| Two settings changes picked close together save in order, never concurrently | PASS | `tests/menu-settings-screen.test.ts`, added during the pre-merge review in Section 7; fails against the pre-fix code (proven directly, then reverted) |
 | Every Settings row displays its own hotkey | PASS | `tests/menu-settings-screen.test.ts` test 1 |
 | Raw hotkey, raw arrow-then-Enter, raw mouse click at the row's own position → identical next value, for all four rows | PASS | `tests/menu-settings-screen.test.ts` test 2, "the sharp edge" |
 | Back row returns to the top-level menu | PASS | `tests/menu-settings-screen.test.ts` test 3 |
@@ -179,7 +189,7 @@ light-theme shots). Three new PNGs — `settings-screen`, `settings-light-theme`
 | Repo-wide raw-byte scan comes back clean | PASS | `grep -rlP '\x1b'` limited to expected files (`.mjs`/`.ts` sources that intentionally hold escape-sequence constants as `` text) after the fixes in Section 7 |
 | Real terminal (tmux/PTY): Settings reached by its own hotkey, four rows and Back all visible | PASS | `evidence/screenshots/settings-screen.png` |
 | Real terminal: cycling Background to light takes effect with no restart, no flicker | PASS | `evidence/screenshots/settings-light-theme.png` |
-| Real terminal: Back returns to the top-level menu, still highlighting Settings | PASS | `evidence/screenshots/settings-back-to-top.png` |
+| Real terminal: Back returns to the top-level menu, still highlighting Settings | PASS | `evidence/screenshots/settings-back-to-top.png`, re-captured after the pre-merge review found its wait condition was not actually synchronizing on anything (Section 7) |
 | Real terminal: Gate 3A's five screenshots still look correct against current code | PASS | `evidence/screenshots/menu-{top-level,monochrome,highlight-moved,stub-notice,mouse-click}.png`, regenerated |
 
 Measurements: not applicable — this gate has no performance or balance claim.
@@ -226,6 +236,60 @@ revisit cheaply if evidence says otherwise:
   above as assumptions rather than blockers, the same treatment Gate 3A gave its own two candidates.
 
 ## 7. Failures, surprises, and discarded approaches
+
+**The most serious bug in this whole gate was found only by asking for a dedicated pre-merge review,
+after everything above already showed green.** Mario asked for one before merging this PR, on top of
+the automated evidence and the screenshots. It found three things worth recording in detail.
+
+*A data-loss bug in the exact feature this gate claims to have built.* Every settings change kicked
+off its own independent write to the settings file, with nothing making sure they finished in the
+order they were made. Two changes picked close enough together — the exact "fast typist or a script"
+shape this gate's own cross-screen-routing fix (below) already treats as real — could have their
+writes actually reach disk in either order, so a later, correct choice could be silently overwritten
+by an earlier, stale one finishing its write second. This directly contradicted a claim this very
+report made in Section 3 before the review ("the last thing a player changed is genuinely on disk").
+Proven, not just suspected: a standalone script driving the shipped code through the exact "open
+Settings, cycle colour depth twice, quit" sequence 300 times over showed the wrong value saved about
+7% of the time; a lower-level probe hitting the settings-file writer directly, 500 times, showed it
+about 14% of the time — both consistent with an honest race rather than a one-off fluke. Fixed by
+chaining every write onto the promise of the one before it, so a write only ever starts once the
+previous one has actually finished, guaranteeing the file always catches up to the true final choice.
+Covered by a new test that does not rely on hitting the race by luck: a stand-in settings store whose
+first write deliberately hangs until the test releases it, proving the second write is never even
+*started* while the first is still in flight. Run against the code as it stood before this fix, the
+same test fails immediately and correctly, which is what makes it a real regression test rather than
+a tautology.
+
+*A save that fails leaves no trace anywhere.* The existing code already chose, reasonably, not to
+crash or block quitting the game over a settings file that failed to write. But it went a step
+further than that and didn't record the failure anywhere at all — a permanently broken save path (a
+read-only home directory, a full disk) would look, from every angle a player or a future session
+could check, exactly like a save path that was working perfectly. Fixed by remembering the most
+recent failure and printing one line about it after the session ends and the terminal is back to
+normal — deliberately not mid-session, where writing to the screen would land inside the very menu
+it's reporting on and corrupt whatever the player was looking at.
+
+*A screenshot's own timing check was not actually checking anything.* The Settings-to-Back
+screenshot waited for the words "top-level menu" to reappear before capturing the frame — except
+those words are already on screen from the very first frame, before either key is even sent, so the
+wait was satisfied instantly regardless of whether the Back key had actually been processed yet. The
+checked-in image happened to be correct anyway, purely because of incidental delay elsewhere in the
+pipeline, not because anything had actually been waited for — exactly the kind of accidentally-passing
+check that can start capturing the wrong frame the moment something upstream gets faster. Fixed by
+waiting for the Settings screen to genuinely appear first, then sending Back, so the final wait is
+now checking a real transition instead of text that was never going to be absent.
+
+*Along the way: a new shape of the TypeScript narrowing gap this gate had already met once.* Writing
+the deterministic race test needed a variable set inside a callback and read afterward — this gate's
+existing `required()` helper (Section 7 below) was built for a different shape of this same problem
+and didn't fix this one; even an explicit type-guard function couldn't. The type checker, it turns
+out, loses track of a local variable's real type the moment the *only* place it's ever assigned is
+inside a nested function, even though that function demonstrably already ran by the time it's read.
+Confirmed with a series of small standalone files before touching the real test, to make sure the
+fix wasn't papering over something else. Worked around without any assertion or cast: give the
+variable a harmless placeholder function to start with instead of `undefined`, so there is no
+narrowing left to do. Left here as its own lesson rather than folded into `required()`, since the two
+do not share a fix.
 
 **A real architectural gap: no backend could change how it draws without being torn down.** Designing
 "a settings change is visible on the very next frame" surfaced that `AnsiBackend` and
@@ -339,7 +403,13 @@ a script could actually trigger — were found and fixed during this gate's own 
 before either shipped, each with a regression test. A third risk Gate 3A's report had already named
 and partly fixed (raw control bytes landing in source text through a tool-call round-trip) turned out
 to have shipped merged in two more places from that same gate; both are now fixed, and a repository-
-wide scan confirms nothing else was missed. Explicit exclusions (Campaign/Challenge, any
+wide scan confirms nothing else was missed. A dedicated pre-merge review, asked for on top of all of
+this, then found a genuine data-loss bug in the save path itself (Section 7) — the most serious defect
+in the whole gate, and one every automated check above had missed because none of them had asked
+whether two rapid changes could race each other on disk. It is now fixed, proven with a test that
+fails against the pre-fix code and passes against the fix, and the two smaller gaps the same review
+raised (a save failure vanishing with no trace, and a screenshot's wait condition that was not
+actually waiting on anything) are fixed too. Explicit exclusions (Campaign/Challenge, any
 save/progression format, sound, any setting beyond the milestone's own four) are named, not silently
 missing. No new open question needed registering; the two candidate forks are recorded in Section 6
 as reversible assumptions.

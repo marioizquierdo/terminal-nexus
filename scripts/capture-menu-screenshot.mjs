@@ -116,7 +116,15 @@ shoot(
   "settings-back-to-top",
   "Pressing Back (or Esc) returns to exactly where the player was, still highlighting Settings",
   {
-    drive: () => tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "35"]), // 3 = Settings, 5 = Back
+    // "top-level menu" is already on screen before either key is sent (it's the very first frame's
+    // own subtitle too), so waiting for it to reappear only means something once we've first
+    // confirmed we actually left it — sending Back before that would make the eventual
+    // `waitForText` below pass immediately without ever having waited on anything.
+    drive: () => {
+      tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "3"]) // 3 = Settings
+      waitFor(repoRoot, SESSION, (text) => text.includes("Colour depth"), "the Settings screen")
+      tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "5"]) // 5 = Back
+    },
     waitForText: "top-level menu",
   },
 )

@@ -284,6 +284,72 @@ test("a colour-depth change is visible on the very next frame, without restartin
   void session
 })
 
+test("two changes picked in quick succession save in order, one write at a time", async () => {
+  // A store whose first save hangs until the test explicitly releases it — reproducing, on demand
+  // and every time, the exact ordering a real filesystem never promises: two writes started close
+  // together can finish in either order. Before this gate's own fix, each setting change fired an
+  // independent, unchained write, so the first (now-stale) write landing *after* the second could
+  // silently revert the player's last choice back to their first one. `saveCalls` records what each
+  // write was actually asked to save, in the order `save()` itself was invoked.
+  const saveCalls: Settings[] = []
+  // A placeholder, not a sentinel meaning "not captured yet" - TypeScript cannot see that the
+  // Promise executor below always runs synchronously and reassigns this before `store.save()` even
+  // returns, so a `| undefined` version of this variable gets stuck narrowed to `undefined` forever
+  // at any read inside this same function (a closure-and-narrowing gap, same family as `required`
+  // above but not one it fixes). Never actually called: the assertions below already prove
+  // `store.save()` ran first, which is what replaces it.
+  let releaseFirstSave: () => void = () => {}
+  const store: SettingsStore = {
+    load: async () => null,
+    save: (settings) => {
+      saveCalls.push(settings)
+      if (saveCalls.length === 1) {
+        return new Promise<void>((resolve) => {
+          releaseFirstSave = resolve
+        })
+      }
+      return Promise.resolve()
+    },
+  }
+  const stdout = new FakeStdout()
+  const stdin = new FakeStdin()
+  const session = runMenu({
+    settings: TEST_SETTINGS,
+    settingsStore: store,
+    backend: "ansi",
+    stdout: stdout as unknown as NodeJS.WriteStream,
+    stdin: stdin as unknown as NodeJS.ReadStream,
+    exit: () => {},
+  })
+  await wait(30)
+  stdin.emit("data", Buffer.from(SETTINGS_HOTKEY))
+  await wait(10)
+  stdin.emit("data", Buffer.from("1")) // first change: color16 -> color256; its own save now hangs
+  await wait(10)
+  assert.equal(saveCalls.length, 1, "the first change's save never started")
+
+  stdin.emit("data", Buffer.from("1")) // second change: color256 -> truecolor, while the first save is still in flight
+  await wait(20)
+  assert.equal(
+    saveCalls.length,
+    1,
+    "the second save started before the first one finished - the exact race that could revert a choice",
+  )
+
+  releaseFirstSave()
+  await wait(20)
+  assert.equal(saveCalls.length, 2, "the second save never started once the first one finished")
+  assert.equal(
+    saveCalls[1]?.capability,
+    nextCapability(nextCapability(TEST_SETTINGS.capability)),
+    "the second, later save did not carry the later value",
+  )
+
+  stdin.emit("data", Buffer.from("q"))
+  await wait(30)
+  void session
+})
+
 test("a setting changed on the Settings screen survives a full stop-and-restart", async () => {
   const directory = mkdtempSync(join(tmpdir(), "terminal-nexus-settings-e2e-"))
   const path = join(directory, "settings.json")
