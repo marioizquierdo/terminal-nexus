@@ -4,8 +4,9 @@
 // "mouse geometry lives only in the mouse adapter... a change of tile width or panel layout changes
 // one adapter and no command."
 
-import type { MenuLayout } from "../menu/layout.ts"
+import { menuItemLabel } from "../menu/layout.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
+import type { ConstructGroup, ConstructItem } from "./types.ts"
 import type { Camera, TerminalSize, TileWidth, Viewport } from "./camera.ts"
 import {
   BORDER_COLUMNS,
@@ -40,12 +41,84 @@ export type BuildLayout = Readonly<{
   paneLimit: number
   /** Frame row the three footer rows start at. */
   footerRow: number
-  /** Where the construct menu's rows are drawn, and therefore where a click on one lands. */
-  construct: MenuLayout
+  /** Frame row the panel's first line is drawn on. */
+  panelRow: number
+  /** Frame row the panel's pinned key bindings sit on — its last usable line, so they do not move
+   *  as the rest of the panel grows and shrinks with what the player is doing. */
+  panelBindingsRow: number
 }>
 
-/** Rows the panel leaves above the construct list: a title, the gate it belongs to, and a gap. */
-const CONSTRUCT_FIRST_ROW = 4
+/** The panel's own rows, counted from its first. Row 0 is what the player has to spend, because it
+ *  is the number every other choice on this panel is measured against; row 1 is deliberately blank. */
+export const RESOURCE_ROW = 0
+const CONSTRUCT_FIRST_ROW = 2
+
+/** The order the construct groups are drawn in — `commander-armies.md` Section 2.1's own order: the
+ *  faction's common structures first, then what makes one Commander's package its own. */
+export const CONSTRUCT_GROUPS: readonly ConstructGroup[] = ["common", "army"]
+
+/**
+ * One line of the construct block. Computed once and read by both the composer (to draw) and the
+ * mouse adapter (to hit-test), which is the only way a click cannot land on a row the frame did not
+ * draw there. `src/menu/layout.ts` does the same job for a flat list; this one exists because a list
+ * split into labelled groups no longer has a uniform row step, and `menuIndexAt`'s arithmetic — one
+ * multiply — quietly stops being true the moment a heading sits between two items.
+ */
+export type ConstructLine =
+  | Readonly<{ kind: "group"; row: number; group: ConstructGroup }>
+  | Readonly<{ kind: "item"; row: number; index: number }>
+  | Readonly<{ kind: "empty"; row: number; group: ConstructGroup }>
+
+export function constructLines(
+  layout: BuildLayout,
+  catalog: readonly ConstructItem[],
+): readonly ConstructLine[] {
+  const lines: ConstructLine[] = []
+  let row = layout.panelRow + CONSTRUCT_FIRST_ROW
+  for (const group of CONSTRUCT_GROUPS) {
+    lines.push({ kind: "group", row, group })
+    row += 1
+    const members = catalog
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => item.group === group)
+    if (members.length === 0) {
+      // An empty group is drawn, not skipped. PERIMETER has no army-specific structure and the
+      // layout must not come to depend on that: a group that vanishes when empty is a panel that
+      // reflows the first time content fills it, and a hotkey that moves is a hotkey you cannot
+      // learn (engine.md 9.7: "hotkeys are stable... so muscle memory transfers").
+      lines.push({ kind: "empty", row, group })
+      row += 1
+    } else {
+      for (const { index } of members) {
+        lines.push({ kind: "item", row, index })
+        row += 1
+      }
+    }
+    row += 1
+  }
+  return lines
+}
+
+/** The construct row at a frame cell, or `null` when the cell hits none — including a cell past the
+ *  end of the row's own drawn text, so blank space beside a short label is not a click target. */
+export function constructIndexAt(
+  layout: BuildLayout,
+  catalog: readonly ConstructItem[],
+  column: number,
+  row: number,
+): number | null {
+  for (const line of constructLines(layout, catalog)) {
+    if (line.kind !== "item" || line.row !== row) continue
+    const item = catalog[line.index]
+    if (item === undefined) return null
+    // The row's clickable width is its hotkey and label — the cost is right-aligned across the
+    // panel and clicking the gap between them would be clicking nothing in particular.
+    const width = menuItemLabel({ id: item.contentId, hotkey: item.hotkey, label: item.label }).length
+    if (column < layout.panelColumn || column >= layout.panelColumn + width) return null
+    return line.index
+  }
+  return null
+}
 
 export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLayout {
   const tileWidth = tileWidthFor(terminal, grid)
@@ -75,7 +148,8 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLay
     panelLimit: right - panelColumn,
     paneLimit: dividerColumn - offset.column - 3,
     footerRow: offset.row + composition.height - 1 - FOOTER_ROWS,
-    construct: { column: panelColumn, row: offset.row + CONSTRUCT_FIRST_ROW, rowStep: 1 },
+    panelRow: offset.row + 1,
+    panelBindingsRow: offset.row + composition.height - 1 - FOOTER_ROWS - 1,
   }
 }
 

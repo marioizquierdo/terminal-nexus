@@ -100,20 +100,20 @@ shoot(
 
 shoot(
   "spike-armed-preview",
-  "A barracks armed with [1] and previewed at the cursor. The ghost is the structure's own glyphs, so what you see is what Enter places",
+  "Picking [1] shows what it does and what it costs, and previews it at the cursor in its own glyphs - what you see is what Enter places",
   {
     drive: () => {
       literal("1")
       for (let step = 0; step < 6; step += 1) key("Right")
       key("Down")
     },
-    waitForText: "Armed",
+    waitForText: "selected -",
   },
 )
 
 shoot(
   "spike-illegal",
-  "The same barracks over rock: the preview turns to a block of x and the footer says why. Shape carries the refusal, so it survives monochrome",
+  "The same barracks over rock: the panel says why and names the tile, and the preview turns to a block of x. Shape carries the refusal, so it survives monochrome",
   {
     drive: () => {
       literal("1")
@@ -123,7 +123,7 @@ shoot(
       // shape. Both are in the shot, which is the point: you can see it is wrong before you try.
       literal("\r")
     },
-    waitForText: "rock at",
+    waitForText: "rock in the way",
   },
 )
 
@@ -164,8 +164,29 @@ shoot(
       // `formatMouseEvent` would.
       literal(`${ESC}[<0;31;17M`)
     },
-    waitForText: "Placed",
+    waitForText: "planned at",
   },
+)
+
+shoot(
+  "build-spent-down",
+  "Two barracks placed and the budget nearly gone: the rows that no longer fit are dimmed, and the selected one says what it would cost against what is left",
+  {
+    drive: () => {
+      literal("1")
+      for (let step = 0; step < 6; step += 1) key("Right")
+      key("Down")
+      literal("\r")
+      for (let step = 0; step < 4; step += 1) key("Right")
+      literal("\r")
+    },
+    waitForText: "CANNOT BUILD HERE",
+  },
+)
+
+shoot(
+  "build-idle",
+  "Nothing selected: the panel is the menu, the budget and the two keys that revise a plan, and nothing else. It fills up only while you are doing something",
 )
 
 shoot(
@@ -177,7 +198,7 @@ shoot(
       literal("1")
       for (let step = 0; step < 4; step += 1) key("S-Right")
     },
-    waitForText: "Armed",
+    waitForText: "selected -",
   },
 )
 

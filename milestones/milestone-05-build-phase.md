@@ -2,11 +2,10 @@
 
 **Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
 **Status:** CURRENT
-**Active gate:** 5A — the scrolling-and-placement spike: cursor-driven scrolling on a Grid larger
-than the viewport, and placing a selected structure, driven through keyboard, mouse, and the driver
-alike, at the viewport range's minimum and maximum size, with click-to-place versus
-click-then-confirm built as a toggle to look at rather than an argument to have, and a recorded
-finding on which of the project's target terminals actually deliver Shift+Arrow
+**Active gate:** 5B — the construct menu and legality: the two-group menu (the common tier and the
+army tier) with each item's cost and effect on its row, the side panel that says *why* an illegal
+placement was refused rather than only that it was, and placement validation that rejects with a
+reason and never silently clamps
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
 mission's own budget/units decided — accepted 2026-09-12)
 **Updated:** 2026-09-21
@@ -20,6 +19,21 @@ mission's own budget/units decided — accepted 2026-09-12)
 > campaign menu" describes where the Build Phase will eventually be reached from, not a prerequisite
 > for building it. Gate 5A in particular is a self-contained spike: it needs a Grid, a cursor, and a
 > terminal, none of which Milestone 4 supplies.
+
+> **Gate 5A: ACCEPTED, 2026-09-21** — [`../evidence/gate-5a-report.md`](../evidence/gate-5a-report.md)
+> concludes PASS; Mario ran it, answered both questions it was built to ask, and accepted the gate.
+> The viewport rule finally executes: a 96 x 40 Grid in a viewport of 48 x 16 tiles at 80 columns and
+> 72 x 24 at 104, the camera following the cursor at three tiles, edge markers and a position readout
+> in place of the minimap the canon refuses to have. Structures are armed by a digit or a click and
+> placed at the cursor, and an illegal placement is refused with a reason rather than slid somewhere
+> legal. Three findings changed canon at 2.17: Shift+Arrow is neither universal nor single-valued
+> (measured across thirteen terminal descriptions — several send no shifted arrow at all), the mouse
+> wheel moves the cursor rather than a camera of its own, and a click places the armed structure
+> (Q50). The three-tile margin stands, with Mario's fuller judgement deferred.
+>
+> His one piece of feedback on the screen itself: *"The UI is starting to look good (although still
+> has too much text focused on demo instead of trying to be as simple and direct as possible)."*
+> **Gate 5B owns acting on it**, since 5B rebuilds that panel anyway — see its own line below.
 
 > **This is where scrolling was always going to land.** Gate 1A deliberately used a Grid that fit the
 > viewport entirely specifically to defer this:
@@ -92,6 +106,12 @@ map scrolling — before handing off into Milestone 6's Pulse?
   build.
 - **5B — Construct menu and legality.** The two-group menu (common tier, army tier), cost and effect
   per item, the legality panel that says why, placement validation that rejects with a reason.
+  **Also: cut the spike's demo text.** Gate 5A's screen explained itself — a gate number in the
+  header, a line promising nothing reaches the simulation, a subtitle naming the spike. That was
+  right for a thing built to be looked at once and wrong for a screen a player uses, and Mario said
+  so on accepting 5A: *"still has too much text focused on demo instead of trying to be as simple
+  and direct as possible."* Every line this gate leaves on screen should be something a player needs
+  while deciding where to build.
 - **5C — Scrolling and the adaptive layout.** Cursor-driven scrolling at the 3-tile margin across the
   full 48×16–72×24 range; the side panel's layout at both ends; edge markers and the position
   readout.
@@ -131,8 +151,11 @@ looking around, not like fighting the cursor.
 
 ## 6. Definition of done
 
-- [ ] the scrolling-and-placement spike (Q37) ran first, its terminal findings and the click-to-place
-      toggle are in the gate report, and `engine.md` 9.7's bindings were retuned or confirmed from it;
+- [x] the scrolling-and-placement spike (Q37) ran first, its terminal findings and the click-to-place
+      toggle are in the gate report, and `engine.md` 9.7's bindings were retuned or confirmed from it
+      — **done, gate 5A, accepted 2026-09-21**: both Shift+Arrow sequence families and a required
+      modifier-free fallback are now in 9.7, the wheel is settled as a cursor jump, and the toggle
+      answered Q50 and was then deleted;
 - [ ] the construct menu, cost/effect, and legality panel are built and legible at every capability
       tier and in monochrome, with every item's hotkey displayed and clickable;
 - [ ] the driver plays a full Build Phase from a command stream, and a test proves hotkey and click

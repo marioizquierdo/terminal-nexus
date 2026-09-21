@@ -2,7 +2,7 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.16
+**Canon version:** 2.17
 **Updated:** 2026-09-21
 **License:** Apache-2.0
 

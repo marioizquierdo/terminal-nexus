@@ -9,20 +9,19 @@
 // position readout naming the visible range — are drawn from the same camera the cursor moved.
 
 import { tilesOf } from "../grid/coords.ts"
-import { menuItemLabel, menuItemRow } from "../menu/layout.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { Coord } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
 import { SCROLL_MARGIN, edgeMarkers, visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
-import { cellForTile } from "../build/layout.ts"
-import { menuItemsFor } from "../build/catalog.ts"
+import { RESOURCE_ROW, cellForTile, constructLines } from "../build/layout.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
-import { anchorForCursor, legalityAt, shortName } from "../build/state.ts"
+import { anchorForCursor, legalityAt, remaining } from "../build/state.ts"
+import type { ConstructGroup } from "../build/types.ts"
 import type { BandCell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import { put, text } from "./draw.ts"
-import type { CapabilityMode } from "./roles.ts"
+import type { CapabilityMode, StyleRole } from "./roles.ts"
 import { chromeGlyph, entityGlyph, playerRole, terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 
@@ -99,18 +98,21 @@ function drawEdgeMarkers(cells: BandCell[], input: BuildCompositionInput): void 
   const top = layout.offset.row
   const bottom = layout.offset.row + layout.composition.height - 1
 
+  // Drawn in the frame's own colour rather than the hotkey colour they used in gate 5A. A marker is
+  // part of the border, and `chrome.hotkey` is the role that means "this is a key you can press" —
+  // an edge marker wearing it competes with the construct menu's own `[1]` for the same meaning,
+  // which is the opposite of what it is for. Bold keeps it distinct from the plain border glyph, and
+  // the shape carries it in monochrome either way. Where these markers *sit*, and how dense they
+  // are, is gate 5C's to tune along with the rest of the scrolling furniture.
+  const marker = { bold: true }
   for (let x = firstColumn; x <= lastColumn; x += EDGE_MARKER_STEP.horizontal) {
-    if (markers.north) put(cells, band, x, top, EDGE_GLYPHS.north, "chrome.hotkey", { bold: true })
-    if (markers.south) put(cells, band, x, bottom, EDGE_GLYPHS.south, "chrome.hotkey", { bold: true })
+    if (markers.north) put(cells, band, x, top, EDGE_GLYPHS.north, "chrome.frame", marker)
+    if (markers.south) put(cells, band, x, bottom, EDGE_GLYPHS.south, "chrome.frame", marker)
   }
   const lastRow = layout.origin.row + layout.viewport.height
   for (let y = layout.origin.row; y < lastRow; y += EDGE_MARKER_STEP.vertical) {
-    if (markers.west) {
-      put(cells, band, layout.offset.column, y, EDGE_GLYPHS.west, "chrome.hotkey", { bold: true })
-    }
-    if (markers.east) {
-      put(cells, band, layout.dividerColumn, y, EDGE_GLYPHS.east, "chrome.hotkey", { bold: true })
-    }
+    if (markers.west) put(cells, band, layout.offset.column, y, EDGE_GLYPHS.west, "chrome.frame", marker)
+    if (markers.east) put(cells, band, layout.dividerColumn, y, EDGE_GLYPHS.east, "chrome.frame", marker)
   }
 }
 
@@ -174,7 +176,17 @@ function drawPreview(cells: BandCell[], input: BuildCompositionInput): void {
   if (item === undefined) return
   const definition = context.registry.get(item.contentId)
   const anchor = anchorForCursor(state.cursor, definition.footprint)
-  const legal = legalityAt(context, state.planned, item.contentId, anchor).ok
+  // The same call `place()` makes, budget and all. Without `remaining` the ghost answers a
+  // different question from the one Enter answers, and draws a perfectly legal-looking structure on
+  // a tile where pressing Enter is refused — which is the exact opposite of "what you see is what
+  // Enter places".
+  const legal = legalityAt(
+    context,
+    state.planned,
+    item.contentId,
+    anchor,
+    remaining(context, state),
+  ).ok
   const range = visibleRange(state.camera, state.viewport)
 
   for (const offset of definition.footprint) {
@@ -211,22 +223,31 @@ function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
 }
 
 /**
- * The live bindings, as many as the width honestly holds. The first five are the ones a player
- * cannot work the screen without; the rest are also on the panel, so dropping them here loses
- * nothing.
+ * The live bindings, most important first, and **only ever whole ones**. Every binding is optional
+ * to the same degree: the line takes them in order while each still fits, and stops.
+ *
+ * An earlier version kept five of them as a fixed prefix and appended the rest while they fit, on
+ * the assumption that the prefix always fits. It does not. The footer's width comes from the
+ * composition's, the composition's from the viewport's, and the viewport shrinks to fit a Grid
+ * smaller than the screen — which `isGated` deliberately allows, so a tutorial Grid is never gated
+ * on a terminal that could show all of it. On a 20-tile Grid the prefix was cut mid-binding and
+ * `q quit`, the one key a player most needs to find, was the half that fell off. Found by a review's
+ * short-Grid case, not by anything that runs today.
  */
-function controlsLine(limit: number): string {
-  const essential = [
+export function controlsLine(limit: number): string {
+  const bindings = [
     "arrows move",
-    "shift+arrow / pgup pgdn jump 5",
     "enter place",
     "esc disarm",
     "q quit",
+    "shift+arrow / pgup pgdn jump 5",
+    "home end jump sideways",
+    "bksp remove",
+    "u undo",
   ]
-  const extra = ["home end jump sideways", "bksp remove", "u undo"]
-  let line = essential.join("  ")
-  for (const binding of extra) {
-    const grown = `${line}  ${binding}`
+  let line = ""
+  for (const binding of bindings) {
+    const grown = line === "" ? binding : `${line}  ${binding}`
     if (grown.length > limit) break
     line = grown
   }
@@ -241,34 +262,17 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput): v
   const headerRow = layout.offset.row + 1
   const range = visibleRange(state.camera, state.viewport)
 
+  // The header is one line, and the other two rows of its budget are deliberately blank. Gate 5A's
+  // header carried a gate number, a line of viewport diagnostics and a promise that nothing reached
+  // the simulation — true, and none of it anything a player needs while choosing where to build.
+  // Mario, accepting that gate: "still has too much text focused on demo instead of trying to be as
+  // simple and direct as possible." The diagnostics still genuinely wanted — the scroll margin he
+  // has not finished judging — moved to the footer row that was already diagnostics.
   text(cells, band, left, headerRow, "TERMINAL NEXUS", "chrome.title", { bold: true, limit })
-  text(cells, band, left + 15, headerRow, "build spike - gate 5A", "chrome.muted", {
+  text(cells, band, left + 15, headerRow, "build phase", "chrome.muted", {
     dim: true,
     limit: limit - 16,
   })
-  text(
-    cells,
-    band,
-    left,
-    headerRow + 1,
-    // Two spaces between fields, not three: at the 80-column floor the Grid pane is 46 usable
-    // columns and three-space gaps put this line at 47, which silently cut "margin 3" to "margin".
-    // Caught by a screenshot, twice now — a truncated line is invisible in a frame's own text.
-    `Grid ${context.grid.width}x${context.grid.height}  ` +
-      `view ${state.viewport.width}x${state.viewport.height}  ` +
-      `${layout.tileWidth} col/tile  margin ${context.scrollMargin ?? SCROLL_MARGIN}`,
-    "chrome.value",
-    { limit },
-  )
-  text(
-    cells,
-    band,
-    left,
-    headerRow + 2,
-    "Nothing here reaches the simulation.",
-    "chrome.muted",
-    { dim: true, limit },
-  )
 
   // The footer runs the whole interior width, under both panes — see `drawChrome`.
   const footerLimit = layout.offset.column + layout.composition.width - 2 - left
@@ -281,7 +285,8 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput): v
     left,
     layout.footerRow,
     `view x ${range.firstX}-${range.lastX} y ${range.firstY}-${range.lastY} ` +
-      `of ${context.grid.width}x${context.grid.height}   cursor ${state.cursor.x},${state.cursor.y}`,
+      `of ${context.grid.width}x${context.grid.height}   cursor ${state.cursor.x},${state.cursor.y}` +
+      `   margin ${context.scrollMargin ?? SCROLL_MARGIN}`,
     "chrome.label",
     { limit: footerLimit },
   )
@@ -299,75 +304,154 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput): v
   })
 }
 
+/** Right-aligned against the panel's own right edge — a column of costs reads as a column only if
+ *  the numbers line up, and they do not line up if each one starts after a different-length name. */
+function rightAlign(
+  cells: BandCell[],
+  layout: BuildLayout,
+  row: number,
+  value: string,
+  role: StyleRole,
+  extra: Readonly<{ dim?: boolean; bold?: boolean }> = {},
+): void {
+  const column = layout.panelColumn + layout.panelLimit - value.length
+  text(cells, BANDS.chrome, column, row, value, role, extra)
+}
+
+const GROUP_LABELS: Readonly<Record<ConstructGroup, string>> = {
+  common: "COMMON",
+  army: "ARMY",
+}
+
+/**
+ * The side panel — engine.md 9.2's Build Phase list, at the scope Q30 recommends: the construct
+ * menu, the selected item's cost and effect, and the panel that says *why* a placement was refused.
+ * No radius preview, because nothing this gate places has a radius worth previewing.
+ *
+ * **It says less than gate 5A's did, on purpose.** Mario, accepting that gate: "still has too much
+ * text focused on demo instead of trying to be as simple and direct as possible." The subtitle
+ * naming the spike is gone, and so is the running commentary. What is left follows one rule — every
+ * line is something a player needs while deciding where to build — and most of the panel is blank
+ * until they are actually doing something, because a panel that is always full is a panel nobody
+ * reads.
+ */
+/** The two revision bindings, pinned to the panel's last line. They live here because the footer's
+ *  one control row cannot hold them at 80 columns, and a binding displayed nowhere does not exist
+ *  (engine.md 9.7). Pinned rather than appended so they do not move as the panel above them grows
+ *  and shrinks with what the player is doing. */
+function drawPanelBindings(cells: BandCell[], layout: BuildLayout): void {
+  text(
+    cells,
+    BANDS.chrome,
+    layout.panelColumn,
+    layout.panelBindingsRow,
+    "[u] undo  [bksp] remove",
+    "chrome.muted",
+    { dim: true, limit: layout.panelLimit },
+  )
+}
+
 function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
   const { context, state, layout } = input
   const band = BANDS.chrome
   const column = layout.panelColumn
   const limit = layout.panelLimit
-  const top = layout.offset.row + 1
+  const left = remaining(context, state)
 
-  text(cells, band, column, top, "BUILD PHASE", "chrome.title", { bold: true, limit })
-  text(cells, band, column, top + 1, "scrolling + placement spike", "chrome.muted", {
-    dim: true,
-    limit,
-  })
+  // What there is to spend, on the panel's first line, because it is the number every choice below
+  // it is measured against.
+  text(cells, band, column, layout.panelRow + RESOURCE_ROW, "RESOURCE", "chrome.label", { limit })
+  rightAlign(
+    cells,
+    layout,
+    layout.panelRow + RESOURCE_ROW,
+    `${left} of ${context.allotment}`,
+    "chrome.title",
+    { bold: true },
+  )
 
-  text(cells, band, column, layout.construct.row - 1, "CONSTRUCT", "chrome.label", { limit })
-  const items = menuItemsFor(context.catalog)
-  items.forEach((item, index) => {
-    const row = menuItemRow(layout.construct, index)
-    const label = menuItemLabel(item)
-    if (index === state.armed) {
-      // Inverse video is what "armed" looks like, the same way it is what "selected" looks like on
-      // every other list in the game — one visual vocabulary, and it survives monochrome.
-      text(cells, band, layout.construct.column, row, label, "chrome.title", {
-        bold: true,
-        inverse: true,
+  for (const line of constructLines(layout, context.catalog)) {
+    if (line.kind === "group") {
+      text(cells, band, column, line.row, GROUP_LABELS[line.group], "chrome.label", { limit })
+      continue
+    }
+    if (line.kind === "empty") {
+      // Honest about the empty group rather than hiding it — PERIMETER offers nothing
+      // army-specific, and that is an answer, not a gap.
+      text(cells, band, column, line.row, "none for this Commander", "chrome.muted", {
+        dim: true,
         limit,
       })
-      return
+      continue
     }
-    text(cells, band, layout.construct.column, row, `[${item.hotkey}]`, "chrome.hotkey", {
-      bold: true,
-      limit,
+    const item = context.catalog[line.index]
+    if (item === undefined) continue
+    const selected = line.index === state.armed
+    // A row costing more than is left is dimmed. Dim is an attribute, not a colour, so it survives
+    // monochrome — and the reason is spelled out in full the moment the player tries it anyway.
+    const affordable = item.cost <= left
+    const label = `[${item.hotkey}] ${item.label}`
+    if (selected) {
+      text(cells, band, column, line.row, label, "chrome.title", { bold: true, inverse: true, limit })
+    } else {
+      text(cells, band, column, line.row, `[${item.hotkey}]`, "chrome.hotkey", {
+        bold: true,
+        dim: !affordable,
+        limit,
+      })
+      text(cells, band, column + 3, line.row, ` ${item.label}`, "chrome.value", {
+        dim: !affordable,
+        limit,
+      })
+    }
+    rightAlign(cells, layout, line.row, String(item.cost), "chrome.value", {
+      dim: !affordable,
+      bold: selected,
     })
-    text(cells, band, layout.construct.column + 3, row, ` ${item.label}`, "chrome.value", { limit })
-  })
-
-  let row = menuItemRow(layout.construct, items.length) + 1
-  const block = (label: string, lines: readonly (readonly [string, "chrome.value" | "chrome.muted"])[]): void => {
-    text(cells, band, column, row, label, "chrome.label", { limit })
-    lines.forEach(([value, role], index) => {
-      text(cells, band, column, row + 1 + index, value, role, { limit })
-    })
-    row += lines.length + 2
   }
 
-  const armedItem = state.armed === null ? null : context.catalog[state.armed]
-  block("ARMED", [
-    armedItem === undefined || armedItem === null
-      ? ["nothing - press 1, 2 or 3", "chrome.muted"]
-      : [shortName(context, armedItem.contentId), "chrome.value"],
-  ])
-  block("PLANNED", [
-    state.planned.length === 0
-      ? ["nothing planned yet", "chrome.muted"]
-      : [`${state.planned.length} structure${state.planned.length === 1 ? "" : "s"}`, "chrome.value"],
-    // The two revision bindings live here because the footer's one control line cannot hold them at
-    // 80 columns — and a binding that is displayed nowhere does not exist (engine.md 9.7).
-    ["[u] undo   [bksp] remove", "chrome.muted"],
-  ])
+  // Everything below here appears only while something is selected. Nothing to build, nothing to
+  // read.
+  const item = state.armed === null ? null : context.catalog[state.armed]
+  if (item === undefined || item === null) return
 
-  // The tile under the cursor, named. Cheap, and the fastest way to tell whether the thing refusing
-  // a placement is the rock you can see or the plan you forgot about.
-  const terrainId = context.grid.tiles[state.cursor.y * context.grid.width + state.cursor.x]
-  const terrainName = terrainId === undefined ? "off Grid" : terrainId.replace("terrain.", "")
-  block("UNDER CURSOR", [
+  const lines = constructLines(layout, context.catalog)
+  const lastLine = lines[lines.length - 1]
+  const anchor = anchorForCursor(state.cursor, context.registry.get(item.contentId).footprint)
+  const legality = legalityAt(context, state.planned, item.contentId, anchor, left)
+
+  // Written as a list and then laid out, so the whole block can be dropped in one piece when the
+  // panel is too short for it. The panel's height is the viewport's, and the viewport shrinks to
+  // fit a small Grid — `isGated` deliberately never gates one that fits the screen entirely — so a
+  // block that just keeps writing downward eventually overwrites the pinned bindings, then the
+  // footer's position readout, then the controls line. A panel that silently draws over the footer
+  // is worse than one that omits a line it has no room for.
+  const detail: readonly (readonly [string, StyleRole, Readonly<{ bold?: boolean; dim?: boolean }>])[] =
     [
-      `${terrainName}${terrainId !== undefined && TERRAIN[terrainId].impassable ? " (blocked)" : ""}`,
-      "chrome.value",
-    ],
-  ])
+      [item.effect, "chrome.value", {}],
+      ...(legality.ok
+        ? []
+        : ([
+            ["", "chrome.value", {}],
+            // The panel that says *why* — gate 5B's own reason to exist. A footer line would do for
+            // one message, but it is gone the moment anything else happens, and "why can I not
+            // build here" is a question the player asks while looking at the Grid.
+            ["CANNOT BUILD HERE", "notice.gate", { bold: true }],
+            [legality.reason, "chrome.value", {}],
+            ...(legality.tile === undefined
+              ? []
+              : ([[`at ${legality.tile.x},${legality.tile.y}`, "chrome.muted", { dim: true }]] as const)),
+          ] as const)),
+    ]
+
+  const first = (lastLine?.row ?? layout.panelRow) + 2
+  // One row of clearance above the pinned bindings, so the two never touch.
+  const available = layout.panelBindingsRow - 1 - first
+  if (available < detail.length) return
+  detail.forEach(([value, role, extra], index) => {
+    if (value === "") return
+    text(cells, band, column, first + index, value, role, { ...extra, limit })
+  })
 }
 
 export function composeBuildFrame(
@@ -385,6 +469,7 @@ export function composeBuildFrame(
   drawEdgeMarkers(cells, input)
   drawHeaderAndFooter(cells, input)
   drawPanel(cells, input)
+  drawPanelBindings(cells, input.layout)
 
   return composeBands(input.layout.frame.width, input.layout.frame.height, cells)
 }

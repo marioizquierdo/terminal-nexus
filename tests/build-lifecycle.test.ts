@@ -83,7 +83,7 @@ test("launching enters the alternate screen, raw mode, and turns mouse reporting
   assert.ok(stdout.written.includes(`${ESC}[?25l`), "never hid the cursor")
   assert.equal(stdin.raw, true, "never entered raw mode")
   assert.ok(stdout.written.includes(MOUSE_REPORTING_ON), "never turned mouse reporting on")
-  assert.ok(stdout.written.includes("BUILD PHASE"), "never drew a first frame")
+  assert.ok(stdout.written.includes("RESOURCE"), "never drew a first frame")
 })
 
 test("q, an interrupt byte, and Esc with nothing armed all reach the one disposer", async () => {
@@ -136,7 +136,7 @@ test("below the floor the screen gates, and resizing back above it restores the 
     output.emit("resize")
     assert.ok(output.lastWrite.includes("TERMINAL TOO SMALL"), "79 columns did not gate")
     assert.ok(
-      !output.lastWrite.includes("BUILD PHASE"),
+      !output.lastWrite.includes("RESOURCE"),
       "the gated frame still drew the Build Phase behind it",
     )
     // Keys do nothing while gated — there is no screen to act on.
@@ -145,18 +145,18 @@ test("below the floor the screen gates, and resizing back above it restores the 
     output.columns = 80
     output.emit("resize")
   })
-  assert.ok(stdout.lastWrite.includes("BUILD PHASE"), "resizing back did not restore the screen")
-  assert.ok(stdout.lastWrite.includes("view 48x16"), "the viewport did not come back")
+  assert.ok(stdout.lastWrite.includes("RESOURCE"), "resizing back did not restore the screen")
+  assert.ok(stdout.lastWrite.includes("view x 0-47"), "the viewport did not come back")
 })
 
 test("a bigger terminal shows a bigger viewport, and the frame is cleared when its size changes", async () => {
   const { stdout } = await spikeSession((_input, output) => {
-    assert.ok(output.lastWrite.includes("view 48x16"), "did not start at the minimum viewport")
+    assert.ok(output.lastWrite.includes("view x 0-47"), "did not start at the minimum viewport")
     output.columns = 104
     output.rows = 32
     output.emit("resize")
   })
-  assert.ok(stdout.lastWrite.includes("view 72x24"), "growing the terminal did not grow the viewport")
+  assert.ok(stdout.lastWrite.includes("view x 0-71"), "growing the terminal did not grow the viewport")
   assert.ok(
     stdout.written.includes(`${ESC}[2J`),
     "a frame that changed size was drawn over the old one without clearing it",

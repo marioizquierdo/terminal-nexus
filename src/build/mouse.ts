@@ -7,10 +7,8 @@
 // what `ESC [ < 0 ; 12 ; 7 M` means, and this file only knows what a *tile* click means. What it
 // adds is the two gestures a flat menu had no use for: the wheel, and the right button.
 
-import { menuIndexAt } from "../menu/layout.ts"
-import { menuItemsFor } from "./catalog.ts"
 import type { BuildLayout } from "./layout.ts"
-import { tileAtCell } from "./layout.ts"
+import { constructIndexAt, tileAtCell } from "./layout.ts"
 import type { Camera } from "./camera.ts"
 import { JUMP_TILES } from "./state.ts"
 import type { BuildCommand, ConstructItem } from "./types.ts"
@@ -73,8 +71,9 @@ export function buildMouseCommand(
   if (event.button !== MOUSE_LEFT) return null
 
   // A click on a construct row is that row's hotkey, by construction: both this and the composer ask
-  // `layout.construct` where the row is, so they cannot disagree.
-  const rowIndex = menuIndexAt(menuItemsFor(catalog), layout.construct, event.column, event.row)
+  // `constructLines` where each row is, so they cannot disagree — including about where the group
+  // headings between them push everything below.
+  const rowIndex = constructIndexAt(layout, catalog, event.column, event.row)
   if (rowIndex !== null) return { kind: "arm", index: rowIndex }
 
   const tile = tileAtCell(layout, camera, event.column, event.row)

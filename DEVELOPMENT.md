@@ -125,9 +125,12 @@ at 80 columns and 72 x 24 at 104. Move the cursor with the arrow keys and the ma
 cursor comes within three tiles of an edge; the frame's border marks every side with more map beyond
 it and the footer names the visible range, because there is no minimap. Press `1`, `2` or `3` (or
 click the row) to arm a structure, then Enter or a click to place it at the cursor; it stays armed,
-so a run of them is one digit then arrows and Enter. `[u]` undoes and Backspace removes the one
-under the cursor, which together are what make placing on a single click safe: a plan stays
-revisable until it is committed. The gate shipped a second click behaviour beside that one — click
+so a run of them is one digit then arrows and Enter. Every row shows what it costs, the panel's first
+line shows what is left of a 100-point starting allotment, a row that no longer fits is dimmed, and
+picking one shows what it does. When a placement is refused the panel says why — "rock in the way",
+"the nexus is here", "costs 40, 20 left" — and names the tile when the reason is a tile. `[u]` undoes
+and Backspace removes the one under the cursor, both refunding, which together are what make placing
+on a single click safe: a plan stays revisable until it is committed. The gate shipped a second click behaviour beside that one — click
 to move the cursor, click again to confirm — as a toggle, because which one felt right was Mario's
 call; he picked placing on the first click (Q50, answered), and the other one is gone rather than
 kept as a setting. Shift+Arrow jumps five tiles, and so do PageUp/PageDown and Home/End, because several terminals

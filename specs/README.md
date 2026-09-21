@@ -2,7 +2,7 @@
 
 **Document role:** Canon index and reading order
 **Status:** Canonical
-**Canon version:** 2.16
+**Canon version:** 2.17
 **Updated:** 2026-09-12
 **License:** Apache-2.0
 
@@ -61,7 +61,9 @@ carry a bounded `ObjectiveDefinition` (Section 2.2) rather than a fixed length, 
 kernel's own unchanged victory check. Q45 and Q46 are answered, Milestone 2 is accepted, and a
 Commander Army's full composition — Nexus and faction, Commander, starting units and structures,
 blueprints and the tech tree, upgrades, Nexus powers, and Specials — is written down at canon 2.16
-([`commander-armies.md`](commander-armies.md) Section 2.1). Milestone 3 (Game Menu) is now open.
+([`commander-armies.md`](commander-armies.md) Section 2.1). Milestone 3 (Game Menu) is built and
+accepted; **Milestone 5 (Build Phase) is open at gate 5B**, its scrolling-and-placement spike having
+been accepted at canon 2.17 along with the three input findings it measured.
 
 For a new coding session, read:
 
