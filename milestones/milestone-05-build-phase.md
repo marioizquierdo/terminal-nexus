@@ -64,6 +64,20 @@ mission's own budget/units decided — accepted 2026-09-12)
 > This milestone is the Build Phase. Nothing about that plan changed; this is just where the bill
 > comes due.
 
+> **Gate 5D: built and reported, awaiting Mario's review** —
+> [`../evidence/gate-5d-report.md`](../evidence/gate-5d-report.md) concludes PASS. The Build Phase now
+> opens on a Nexus power draft (two placeholder powers, not real Milestone-8 content) that may not be
+> skipped; `p` asks once, in plain yes/no terms, whether to end the Build Phase and start the Nexus
+> Pulse, and accepting locks every other action. The panel gained the NEXUS and SPECIAL rows
+> `commander-armies.md` Section 2.1 names as a Build Phase's third and fourth decision surfaces,
+> SPECIAL always drawn as an empty "none available" row the same way the empty ARMY group already is.
+> A dedicated test suite (`tests/build-nexus.test.ts`) covers the whole mechanism, including one test
+> that plays pick-then-build-then-commit-then-confirm once by keyboard bytes, once by mouse bytes, and
+> once by a driver script, and checks all three land on the identical final state. This is the last
+> gate this milestone's own tracker lists — accepting it closes Milestone 5. This gate is unrelated to
+> gate 5C's own two open questions (which border/scrollbar style, whether the selection marker reads
+> right); both stay open for Mario's manual test.
+
 ## 1. Question
 
 Can a player place buildings and pick a Nexus upgrade during a hidden Build Phase — with keyboard
@@ -181,13 +195,24 @@ looking around, not like fighting the cursor.
 - [x] the construct menu, cost/effect, and legality panel are built and legible at every capability
       tier and in monochrome, with every item's hotkey displayed and clickable — **done, gate 5B,
       accepted 2026-09-21**;
-- [ ] the driver plays a full Build Phase from a command stream, and a test proves hotkey and click
-      entry of the same plan are identical;
-- [ ] cursor-driven scrolling works correctly across the full 48×16-72×24 viewport range;
-- [ ] the GUI's own layout adapts across that range without becoming illegible at either end;
-- [ ] the Nexus-upgrade pick mechanism works against at least a placeholder option;
-- [ ] the report says whether the Build Phase felt short of a third decision channel, so the
-      provisional Special slot (`../specs/commander-armies.md` Section 2.1) gains evidence either way;
-- [ ] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED**;
-- [ ] `./scripts/check-repository.sh` passes;
-- [ ] new questions this raises are rows in [`../specs/open-questions.md`](../specs/open-questions.md).
+- [x] the driver plays a full Build Phase from a command stream, and a test proves hotkey and click
+      entry of the same plan are identical — **done, gate 5D**: the pick-build-commit-confirm script
+      produces an identical final state by keyboard bytes, mouse bytes, and a driver script;
+- [ ] cursor-driven scrolling works correctly across the full 48×16-72×24 viewport range — gate 5C's
+      own code is merged and its automated evidence passes, but the gate itself is not yet formally
+      accepted (see the note above);
+- [ ] the GUI's own layout adapts across that range without becoming illegible at either end — same
+      status as the line above, gate 5C's;
+- [x] the Nexus-upgrade pick mechanism works against at least a placeholder option — **done, gate
+      5D**: two placeholder powers, offered once, picked by digit or click, applying their effect
+      exactly once;
+- [x] the report says whether the Build Phase felt short of a third decision channel, so the
+      provisional Special slot (`../specs/commander-armies.md` Section 2.1) gains evidence either way
+      — **done, gate 5D**: the slot fits in the layout without strain, which is the only question this
+      gate could actually answer; whether a Build Phase genuinely wants a third channel is the
+      canon's own Milestone 6 question, per `commander-armies.md` Section 2.1 itself;
+- [x] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED** — gates 5A-5D each have one,
+      all four concluding **PASS**;
+- [x] `./scripts/check-repository.sh` passes;
+- [x] new questions this raises are rows in [`../specs/open-questions.md`](../specs/open-questions.md)
+      — gate 5D raised none of its own; the two still open are gate 5C's, already registered there.
