@@ -8,6 +8,7 @@ import assert from "node:assert/strict"
 import { buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
 import { scrollThumb } from "../src/build/camera.ts"
 import { BuildSession } from "../src/build/session.ts"
+import type { BuildSessionOptions } from "../src/build/session.ts"
 import { SPIKE_ALLOTMENT, SPIKE_CATALOG } from "../src/build/catalog.ts"
 import { remaining } from "../src/build/state.ts"
 import { spikeContext } from "../src/cli/spike.ts"
@@ -16,6 +17,31 @@ import { cellAt, frameToText, offendingGlyph } from "../src/view/frame.ts"
 import { CAPABILITY_MODES } from "../src/view/roles.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
+
+/**
+ * Every test here is about rendering — not about the Nexus draft gate 5D adds in front of
+ * everything else. Every `BuildSession` starts past that gate already, on the first placeholder
+ * option, so the screens under test look exactly as they did before this gate existed.
+ */
+/** A picked power that adds nothing to the budget, so every test that is not about the Nexus
+ *  draft itself sees exactly the allotment its own numbers already assume. */
+const NEUTRAL_NEXUS_DRAFT = [
+  { hotkey: "1", name: "Test Pick", description: "No effect.", bonusAllotment: 0 },
+] as const
+
+/** Every caller passes a context whose `nexusDraft` is already `NEUTRAL_NEXUS_DRAFT` — this only
+ *  picks it, so the same context object a caller renders with is the one the pick was made against. */
+function readyBuildSession(options: BuildSessionOptions): BuildSession {
+  const build = new BuildSession(options)
+  build.dispatch({ kind: "pick-nexus", index: 0 })
+  return build
+}
+
+/** `spikeContext()`, with the neutral draft baked in from the start so every place that builds a
+ *  session from it and every place that renders from it agree on what was picked. */
+function neutralContext(): ReturnType<typeof spikeContext> {
+  return { ...spikeContext(), nexusDraft: NEUTRAL_NEXUS_DRAFT }
+}
 
 const MINIMUM = { columns: 80, rows: 24 }
 const MAXIMUM = { columns: 104, rows: 32 }
@@ -26,9 +52,9 @@ function screenAt(
   drive: (build: BuildSession, layout: ReturnType<typeof buildLayout>) => void = () => {},
   edgeStyle?: "hard-soft" | "scrollbar",
 ) {
-  const context = spikeContext()
+  const context = neutralContext()
   const layout = buildLayout(terminal, context.grid)
-  const build = new BuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
+  const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   drive(build, layout)
   const frame = composeBuildFrame(
     { context, state: build.state, layout, ...(edgeStyle === undefined ? {} : { edgeStyle }) },
@@ -188,9 +214,9 @@ test("a planned structure is drawn, and reads differently from one already stand
 })
 
 test("every capability tier puts identical glyphs on screen", () => {
-  const context = spikeContext()
+  const context = neutralContext()
   const layout = buildLayout(MINIMUM, context.grid)
-  const build = new BuildSession({ context, cursor: { x: 30, y: 20 }, viewport: layout.viewport })
+  const build = readyBuildSession({ context, cursor: { x: 30, y: 20 }, viewport: layout.viewport })
   build.handleData("1", layout)
   const texts = CAPABILITY_MODES.map((capability) =>
     frameToText(composeBuildFrame({ context, state: build.state, layout }, capability)),
@@ -201,9 +227,9 @@ test("every capability tier puts identical glyphs on screen", () => {
 test("every glyph on the frame is one cell wide, at both sizes and in both packs", () => {
   for (const terminal of [MINIMUM, MAXIMUM, WIDE]) {
     for (const glyphPack of ["ascii", "unicode"] as const) {
-      const context = spikeContext()
+      const context = neutralContext()
       const layout = buildLayout(terminal, context.grid)
-      const build = new BuildSession({ context, cursor: { x: 40, y: 20 }, viewport: layout.viewport })
+      const build = readyBuildSession({ context, cursor: { x: 40, y: 20 }, viewport: layout.viewport })
       build.handleData("2", layout)
       const frame = composeBuildFrame({ context, state: build.state, layout, glyphPack }, "truecolor")
       assert.equal(
@@ -274,9 +300,9 @@ test("the panel says why a placement is refused, and which tile it means", () =>
 })
 
 test("the budget on screen is the budget the reducer is enforcing", () => {
-  const context = spikeContext()
+  const context = neutralContext()
   const layout = buildLayout(MINIMUM, context.grid)
-  const build = new BuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
+  const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   const show = (): string =>
     frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
 
@@ -309,9 +335,9 @@ test("the budget on screen is the budget the reducer is enforcing", () => {
 })
 
 test("selecting something unaffordable says so before the player tries it", () => {
-  const context = spikeContext()
+  const context = neutralContext()
   const layout = buildLayout(MINIMUM, context.grid)
-  const build = new BuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
+  const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
   build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
@@ -361,9 +387,9 @@ test("the scroll margin the screen prints is the one it is actually using", () =
   // Mario deferred confirming the three-tile default and will judge it against another number, so
   // a header that printed one margin while the camera used another would waste exactly that check.
   for (const margin of [2, 5]) {
-    const context = { ...spikeContext(), scrollMargin: margin }
+    const context = { ...neutralContext(), scrollMargin: margin }
     const layout = buildLayout(MINIMUM, context.grid)
-    const build = new BuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
+    const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
     const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
     assert.match(text, new RegExp(`margin ${margin}`))
     // And the camera really follows at that distance, not at the default.
@@ -381,9 +407,9 @@ test("the ghost preview answers the same question Enter does, budget included", 
   // A review found this: the preview checked legality without the budget, so after spending down it
   // drew a perfectly normal-looking structure on a tile where Enter was refused. "What you see is
   // what Enter places" is the whole point of having a preview at all.
-  const context = spikeContext()
+  const context = neutralContext()
   const layout = buildLayout(MINIMUM, context.grid)
-  const build = new BuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
+  const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
   build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
@@ -414,9 +440,9 @@ test("on a Grid short enough to shrink the panel, the detail block is dropped ra
     height: 10,
     tiles: new Array<TerrainId>(200).fill("terrain.plain"),
   }
-  const context = { ...spikeContext(), grid: small, standing: [] }
+  const context = { ...neutralContext(), grid: small, standing: [] }
   const layout = buildLayout(MINIMUM, small)
-  const build = new BuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
+  const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
   build.handleData("1", layout) // a 3x2 barracks at 2,2 hangs off the Grid, so it is refused
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
 
@@ -574,9 +600,9 @@ test("the bindings block gives way to the construct menu, never draws over it", 
     height: 6,
     tiles: new Array<TerrainId>(48).fill("terrain.plain"),
   }
-  const context = { ...spikeContext(), grid: tiny, standing: [] }
+  const context = { ...neutralContext(), grid: tiny, standing: [] }
   const layout = buildLayout(MINIMUM, tiny)
-  const build = new BuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
+  const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
 
   for (const line of constructLines(layout, context.catalog)) {
@@ -730,4 +756,50 @@ test("--edge-style scrollbar: the thumb sits exactly where scrollThumb says it d
     const expectSoft = i < start || i > end
     assert.equal(dim, expectSoft, `west border row ${i}: thumb ${start}-${end}`)
   }
+})
+
+test("the normal panel names the picked Nexus power and the empty Special slot", () => {
+  const built = screenAt(MINIMUM)
+  assert.match(built.text, /NEXUS {2,}Test Pick/)
+  assert.match(built.text, /SPECIAL {2,}none available/)
+})
+
+test("the Nexus draft is its own screen, with none of the construct menu's own content on it", () => {
+  const context = spikeContext()
+  const layout = buildLayout(MINIMUM, context.grid)
+  const build = new BuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
+  const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
+  assert.match(text, /NEXUS POWER/)
+  for (const option of context.nexusDraft) {
+    assert.match(text, new RegExp(`\\[${option.hotkey}\\] ${option.name}`))
+  }
+  assert.doesNotMatch(text, /RESOURCE/)
+  assert.doesNotMatch(text, /COMMON/)
+  assert.doesNotMatch(text, /SPECIAL/)
+  // The Grid and the cursor are still the same screen underneath the draft.
+  assert.match(text, /view x 0-47/)
+})
+
+test("the commit confirmation is its own screen too, asking only y or n", () => {
+  const built = screenAt(MINIMUM, (build) => {
+    build.dispatch({ kind: "commit" })
+  })
+  assert.match(built.text, /START NEXUS PULSE/)
+  assert.match(built.text, /\[y\] Yes, start the Pulse/)
+  assert.match(built.text, /\[n\] No, keep building/)
+  assert.doesNotMatch(built.text, /RESOURCE/)
+})
+
+test("the committed screen names the pick and the count, and the footer carries the full sentence", () => {
+  const built = screenAt(MINIMUM, (build, layout) => {
+    build.handleData("1", layout)
+    build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
+    build.dispatch({ kind: "commit" })
+    build.dispatch({ kind: "confirm-commit", accept: true })
+  })
+  assert.match(built.text, /BUILD COMMITTED/)
+  assert.match(built.text, /Nexus: Test Pick/)
+  assert.match(built.text, /1 structure planned/)
+  assert.match(built.text, /\[q\] to exit/)
+  assert.match(built.text, /Build committed - 1 planned, Nexus Pulse would begin here \(Milestone 6\)\./)
 })

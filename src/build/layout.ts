@@ -3,8 +3,10 @@
 // `src/menu/layout.ts` is the same idea for the menu.
 
 import { menuItemLabel } from "../menu/layout.ts"
+import type { MenuLayout } from "../menu/layout.ts"
+import type { MenuItem } from "../menu/types.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
-import type { ConstructGroup, ConstructItem } from "./types.ts"
+import type { ConstructGroup, ConstructItem, NexusPowerOption } from "./types.ts"
 import type { Camera, TerminalSize, TileWidth, Viewport } from "./camera.ts"
 import {
   BORDER_COLUMNS,
@@ -115,6 +117,31 @@ export function constructIndexAt(
   }
   return null
 }
+
+/**
+ * The Nexus draft's own two-row-per-option list — a hotkey/name line the player can click, and a
+ * plain description line beneath it. Reuses `src/menu/layout.ts`'s flat-list geometry rather than
+ * inventing one: the draft is exactly the uniform-row-step case that shape already fits, once the
+ * construct menu's own groups made `constructLines` necessary for *that* screen.
+ */
+export function nexusDraftLayout(layout: BuildLayout): MenuLayout {
+  return { column: layout.panelColumn, row: layout.panelRow + 1, rowStep: 3 }
+}
+
+export function nexusDraftItems(draft: readonly NexusPowerOption[]): readonly MenuItem[] {
+  return draft.map((option) => ({ id: option.hotkey, hotkey: option.hotkey, label: option.name }))
+}
+
+/** The commit confirmation's own two rows — `y`/`n`, never digits, per engine.md 9.7's own line for
+ *  `p`: "asks once, [y]es/[n]o." */
+export function confirmLayout(layout: BuildLayout): MenuLayout {
+  return { column: layout.panelColumn, row: layout.panelRow + 2, rowStep: 1 }
+}
+
+export const CONFIRM_ITEMS: readonly MenuItem[] = [
+  { id: "yes", hotkey: "y", label: "Yes, start the Pulse" },
+  { id: "no", hotkey: "n", label: "No, keep building" },
+]
 
 export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLayout {
   const tileWidth = tileWidthFor(terminal, grid)

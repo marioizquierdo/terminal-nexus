@@ -7,7 +7,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { SPIKE_ALLOTMENT, SPIKE_CATALOG, spikeGrid } from "../src/build/catalog.ts"
+import { SPIKE_ALLOTMENT, SPIKE_CATALOG, SPIKE_NEXUS_DRAFT, spikeGrid } from "../src/build/catalog.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
 import { buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
@@ -21,12 +21,32 @@ import {
   parseMouseEvent,
 } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
+import type { BuildSessionOptions } from "../src/build/session.ts"
 import { JUMP_TILES, anchorForCursor, legalityAt, remaining, spent } from "../src/build/state.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { spikeContext } from "../src/cli/spike.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { fitViewport } from "../src/build/camera.ts"
+
+/**
+ * Every test here is about placement, scrolling, or the adapters — not about the Nexus draft gate
+ * 5D adds in front of all of it. Rather than repeat "pick a placeholder power" at every call site,
+ * every `BuildSession` in this file starts past that gate already, on the first option, the same
+ * way a real player would be past it within one keypress. The handful of tests that check the
+ * drafting gate itself construct a session with `new BuildSession` directly instead.
+ */
+/** A picked power that adds nothing to the budget, so every test that is not about the Nexus
+ *  draft itself sees exactly the allotment its own numbers already assume. */
+const NEUTRAL_NEXUS_DRAFT = [
+  { hotkey: "1", name: "Test Pick", description: "No effect.", bonusAllotment: 0 },
+] as const
+
+function readyBuildSession(options: BuildSessionOptions): BuildSession {
+  const build = new BuildSession(options)
+  build.dispatch({ kind: "pick-nexus", index: 0 })
+  return build
+}
 
 const ESC = String.fromCharCode(27)
 const UP = `${ESC}[A`
@@ -41,22 +61,26 @@ const ENTER = "\r"
 const MINIMUM = { columns: 80, rows: 24 }
 const MAXIMUM = { columns: 104, rows: 32 }
 
-function session(terminal = MINIMUM): { build: BuildSession; layout: ReturnType<typeof buildLayout> } {
-  const context = spikeContext()
+function session(
+  terminal = MINIMUM,
+): { build: BuildSession; layout: ReturnType<typeof buildLayout>; context: ReturnType<typeof spikeContext> } {
+  const context = { ...spikeContext(), nexusDraft: NEUTRAL_NEXUS_DRAFT }
   const layout = buildLayout(terminal, context.grid)
-  const build = new BuildSession({
+  const build = readyBuildSession({
     context,
     cursor: { x: 18, y: 13 },
     viewport: layout.viewport,
   })
-  return { build, layout }
+  return { build, layout, context }
 }
 
 /** The frame as text, which is what "the same screen" means for an assertion. */
-function screen(build: BuildSession, layout: ReturnType<typeof buildLayout>): string {
-  return frameToText(
-    composeBuildFrame({ context: spikeContext(), state: build.state, layout }, "monochrome"),
-  )
+function screen(
+  build: BuildSession,
+  layout: ReturnType<typeof buildLayout>,
+  context: ReturnType<typeof spikeContext>,
+): string {
+  return frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
 }
 
 /** The raw bytes a left click on this Grid tile sends, derived from the composer's own geometry —
@@ -119,8 +143,14 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   // Not just the plan: the whole state, camera and cursor and message included.
   assert.deepEqual(byMouse.build.state, byKeyboard.build.state)
   assert.deepEqual(byDriver.build.state, byKeyboard.build.state)
-  assert.equal(screen(byMouse.build, byMouse.layout), screen(byKeyboard.build, byKeyboard.layout))
-  assert.equal(screen(byDriver.build, byDriver.layout), screen(byKeyboard.build, byKeyboard.layout))
+  assert.equal(
+    screen(byMouse.build, byMouse.layout, byMouse.context),
+    screen(byKeyboard.build, byKeyboard.layout, byKeyboard.context),
+  )
+  assert.equal(
+    screen(byDriver.build, byDriver.layout, byDriver.context),
+    screen(byKeyboard.build, byKeyboard.layout, byKeyboard.context),
+  )
 })
 
 test("the armed item stays armed after placing - the fast path a proficient player types", () => {
@@ -479,7 +509,7 @@ test("the scroll margin is a parameter, so the canon's three tiles can be felt a
   for (const margin of [1, 3, 5]) {
     const context = { ...spikeContext(), scrollMargin: margin }
     const layout = buildLayout(MINIMUM, context.grid)
-    const build = new BuildSession({ context, cursor: { x: 0, y: 0 }, viewport: layout.viewport })
+    const build = readyBuildSession({ context, cursor: { x: 0, y: 0 }, viewport: layout.viewport })
     // Walk east until the camera first moves: it should be exactly at the margin from the east edge.
     let steps = 0
     while (build.state.camera.x === 0 && steps < context.grid.width) {
@@ -497,7 +527,7 @@ test("the scroll margin is a parameter, so the canon's three tiles can be felt a
 test("a resize keeps the cursor where it was and re-fits the camera around it", () => {
   const context = spikeContext()
   const small = buildLayout(MINIMUM, context.grid)
-  const build = new BuildSession({ context, cursor: { x: 60, y: 30 }, viewport: small.viewport })
+  const build = readyBuildSession({ context, cursor: { x: 60, y: 30 }, viewport: small.viewport })
   const cursor = { ...build.state.cursor }
   build.resize(fitViewport(MAXIMUM, context.grid, 1))
   assert.deepEqual(build.state.cursor, cursor)
@@ -511,7 +541,7 @@ test("back and quit leave the screen rather than changing it", () => {
   const layout = buildLayout(MINIMUM, context.grid)
   let backs = 0
   let quits = 0
-  const build = new BuildSession({
+  const build = readyBuildSession({
     context,
     cursor: { x: 18, y: 13 },
     viewport: layout.viewport,
@@ -558,8 +588,9 @@ test("a refusal's message clears once the cursor leaves the tile it was about", 
     catalog: SPIKE_CATALOG,
     standing: [],
     allotment: SPIKE_ALLOTMENT,
+    nexusDraft: SPIKE_NEXUS_DRAFT,
   }
-  const build = new BuildSession({ context, cursor: { x: 5, y: 5 }, viewport: { width: 10, height: 10 } })
+  const build = readyBuildSession({ context, cursor: { x: 5, y: 5 }, viewport: { width: 10, height: 10 } })
 
   // Turret: a 1x1 footprint, so the cursor's own tile is the whole placement and there is no
   // footprint-centring arithmetic to account for.
@@ -593,8 +624,9 @@ test("a refusal's message survives a move that is clamped back to the same tile"
     catalog: SPIKE_CATALOG,
     standing: [],
     allotment: SPIKE_ALLOTMENT,
+    nexusDraft: SPIKE_NEXUS_DRAFT,
   }
-  const build = new BuildSession({ context, cursor: { x: 9, y: 9 }, viewport: { width: 10, height: 10 } })
+  const build = readyBuildSession({ context, cursor: { x: 9, y: 9 }, viewport: { width: 10, height: 10 } })
   build.dispatch({ kind: "arm", index: 2 })
   build.dispatch({ kind: "place" })
   assert.match(build.state.message, /Cannot build here/)

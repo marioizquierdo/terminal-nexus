@@ -68,6 +68,16 @@ export type BuildCommand =
   /** Leave this screen for whatever it was reached from — Esc with nothing armed, or right-click. */
   | Readonly<{ kind: "back" }>
   | Readonly<{ kind: "quit" }>
+  /** Pick Nexus power *n* of the draft — a digit or a click, while the draft is showing. The one
+   *  other place digits address a list, per engine.md 9.7: "select item n of the panel's current
+   *  list — construct menu, Nexus draft, or a menu screen's options." */
+  | Readonly<{ kind: "pick-nexus"; index: number }>
+  /** `p` — open the one confirmation before committing. Refused, not a no-op, before a Nexus power
+   *  is picked or after the Build Phase is already committed. */
+  | Readonly<{ kind: "commit" }>
+  /** `y`/`n`, or Esc for `n` — resolve the confirmation `commit` opened. Anything else leaves it
+   *  open, which is what makes committing "the one action that must not fire by accident". */
+  | Readonly<{ kind: "confirm-commit"; accept: boolean }>
 
 /** A structure the player has planned but not committed. Nothing here ever reaches the kernel: a
  *  plan is a plan on a screen, and gate 5D is what turns one into a commit. */
@@ -82,4 +92,19 @@ export type PlannedPlacement = Readonly<{
 export type StandingStructure = Readonly<{
   contentId: string
   anchor: Coord
+}>
+
+/**
+ * One option in the Nexus draft. **Placeholder content, not Milestone 8's real draft** — a Nexus
+ * power there is "a name and one plain line of description" applying one of six effect kinds
+ * (`commander-armies.md` Section 4.5); these two are plain numbers instead, on purpose, so nothing
+ * here reads as an attempt at real design. What this gate builds is the *mechanism* — offer a
+ * choice, accept a pick, apply its effect — against whatever option happens to be in the slot.
+ */
+export type NexusPowerOption = Readonly<{
+  hotkey: string
+  name: string
+  description: string
+  /** Added to the starting allotment the moment this option is picked. */
+  bonusAllotment: number
 }>

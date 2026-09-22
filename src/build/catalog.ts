@@ -7,7 +7,7 @@
 // the existing fixture rosters rather than invented.
 
 import type { GridTerrain, TerrainId } from "../grid/types.ts"
-import type { ConstructItem, StandingStructure } from "./types.ts"
+import type { ConstructItem, NexusPowerOption, StandingStructure } from "./types.ts"
 
 /**
  * 96 x 40 tiles — larger than the **maximum** viewport (72 x 24) on both axes, deliberately. A Grid
@@ -148,3 +148,23 @@ export const SPIKE_CATALOG: readonly ConstructItem[] = [
  * opening allotment and nothing more.
  */
 export const SPIKE_ALLOTMENT = 100
+
+/**
+ * The Nexus draft this gate proves the mechanism against. Two placeholder options, not a real
+ * choice: each is a plain number, so the difference a pick makes is checkable without needing
+ * Milestone 8's actual Commander Vasse content to exist first.
+ */
+export const SPIKE_NEXUS_DRAFT: readonly NexusPowerOption[] = [
+  {
+    hotkey: "1",
+    name: "Reserve Fund",
+    description: "Adds 30 to the starting allotment.",
+    bonusAllotment: 30,
+  },
+  {
+    hotkey: "2",
+    name: "War Chest",
+    description: "Adds 60 to the starting allotment.",
+    bonusAllotment: 60,
+  },
+]

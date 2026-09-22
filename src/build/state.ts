@@ -11,6 +11,7 @@ import { SCROLL_MARGIN, clampToGrid, followCursor } from "./camera.ts"
 import type {
   BuildCommand,
   ConstructItem,
+  NexusPowerOption,
   PlannedPlacement,
   StandingStructure,
 } from "./types.ts"
@@ -34,6 +35,9 @@ export type BuildContext = Readonly<{
    * for. Defaults to the canon's three.
    */
   scrollMargin?: number
+  /** The Nexus draft this Build Phase offers — placeholder options, not Milestone 8's real one
+   *  (`types.ts`'s own doc comment on `NexusPowerOption` has the reasoning). */
+  nexusDraft: readonly NexusPowerOption[]
 }>
 
 export type BuildState = Readonly<{
@@ -46,6 +50,21 @@ export type BuildState = Readonly<{
   /** The one line of feedback the footer shows: what just happened, or why it did not. */
   message: string
   nextOrdinal: number
+  /** Index into `context.nexusDraft`, or `null` before a pick — and a Nexus power, once dealt, may
+   *  not be skipped (`commander-armies.md` Section 4.5), so every state-changing command is refused
+   *  until this stops being `null`. */
+  nexusPick: number | null
+  /** Added to `context.allotment` by whichever option `nexusPick` names. Kept separately rather than
+   *  folded into a mutated allotment, for the same reason `spent` is summed rather than tracked: one
+   *  stored total is one number that can drift from what actually produced it. */
+  bonusAllotment: number
+  /** `p` was pressed and the Build Phase is waiting on `[y]es`/`[n]o` — "the one action that must
+   *  not fire by accident" (engine.md 9.7). Every other state-changing command is refused while this
+   *  is true, so answering the prompt is the only way forward. */
+  confirmingCommit: boolean
+  /** The Build Phase is done. Nothing here reaches a Nexus Pulse — Milestone 6 builds that — so this
+   *  just freezes the plan and says so; every state-changing command is refused from here on. */
+  committed: boolean
 }>
 
 /**
@@ -65,7 +84,7 @@ export function spent(context: BuildContext, state: BuildState): number {
 
 /** What is left to spend. Never negative, because nothing can be placed that costs more than this. */
 export function remaining(context: BuildContext, state: BuildState): number {
-  return context.allotment - spent(context, state)
+  return context.allotment + state.bonusAllotment - spent(context, state)
 }
 
 /** The five-tile jump — Shift+Arrow, its modifier-free fallback, and the mouse wheel all produce a
@@ -90,7 +109,24 @@ export function createBuildState(
     planned: [],
     message: "",
     nextOrdinal: 1,
+    nexusPick: null,
+    bonusAllotment: 0,
+    confirmingCommit: false,
+    committed: false,
   }
+}
+
+/**
+ * Why a state-changing command is refused right now, or `null` when none of these apply. Checked in
+ * priority order — most-final first, exactly the way `legalityAt` checks affordability before a
+ * tile: a player told to answer the confirmation when the real reason is "already committed" would
+ * be sent to fix the wrong thing.
+ */
+function lockReason(state: BuildState): string | null {
+  if (state.committed) return "The Build Phase is committed."
+  if (state.confirmingCommit) return "Answer the Nexus Pulse prompt first: [y]es or [n]o."
+  if (state.nexusPick === null) return "Pick a Nexus power first."
+  return null
 }
 
 /**
@@ -216,6 +252,8 @@ function withCursor(context: BuildContext, state: BuildState, tile: Coord): Buil
 }
 
 function place(context: BuildContext, state: BuildState): BuildState {
+  const lock = lockReason(state)
+  if (lock !== null) return { ...state, message: lock }
   if (state.armed === null) {
     return { ...state, message: "Nothing armed - press a construct menu key first." }
   }
@@ -275,6 +313,8 @@ export function applyBuildCommand(
     }
 
     case "arm": {
+      const lock = lockReason(state)
+      if (lock !== null) return { ...state, message: lock }
       const item = context.catalog[command.index]
       if (item === undefined) return state
       return {
@@ -292,6 +332,8 @@ export function applyBuildCommand(
       return place(context, state)
 
     case "remove": {
+      const lock = lockReason(state)
+      if (lock !== null) return { ...state, message: lock }
       const target = plannedAt(context, state.planned, state.cursor)
       if (target === null) return { ...state, message: "Nothing planned under the cursor." }
       return {
@@ -302,12 +344,48 @@ export function applyBuildCommand(
     }
 
     case "undo": {
+      const lock = lockReason(state)
+      if (lock !== null) return { ...state, message: lock }
       const last = state.planned[state.planned.length - 1]
       if (last === undefined) return { ...state, message: "Nothing to undo." }
       return {
         ...state,
         planned: state.planned.slice(0, -1),
         message: `${shortName(context, last.contentId)} undone, ${costOf(context, last.contentId)} back.`,
+      }
+    }
+
+    case "pick-nexus": {
+      // Defensively guarded like every other command, even though the keyboard and mouse adapters
+      // only ever produce this while the draft is showing — a driver script is free to send one
+      // anywhere, and the answer must be the same refusal a player pressing an unavailable key gets.
+      if (state.nexusPick !== null) return { ...state, message: "Already picked." }
+      const option = context.nexusDraft[command.index]
+      if (option === undefined) return state
+      return {
+        ...state,
+        nexusPick: command.index,
+        bonusAllotment: option.bonusAllotment,
+        message: `${option.name} picked.`,
+      }
+    }
+
+    case "commit": {
+      const lock = lockReason(state)
+      if (lock !== null) return { ...state, message: lock }
+      return { ...state, confirmingCommit: true, message: "Start Nexus Pulse? [y]es / [n]o" }
+    }
+
+    case "confirm-commit": {
+      // Meaningless outside the one moment it answers — a stray "y" is not a command here any more
+      // than a stray "3" is one before anything is armed.
+      if (!state.confirmingCommit) return state
+      if (!command.accept) return { ...state, confirmingCommit: false, message: "Cancelled." }
+      return {
+        ...state,
+        confirmingCommit: false,
+        committed: true,
+        message: `Build committed - ${state.planned.length} planned, Nexus Pulse would begin here (Milestone 6).`,
       }
     }
 
