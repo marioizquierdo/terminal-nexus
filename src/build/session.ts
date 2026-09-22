@@ -1,11 +1,10 @@
-// The Build Phase spike's dispatch core — the state plus the one function a live terminal's stdin
-// handler, a test, and an agent playtest all call. `src/menu/session.ts` is the same shape for the
-// menu, and the same sentence applies: this *is* the real adapter dispatch, not a parallel copy
-// built for tests, which is the only reason "the driver injects raw key and mouse events into the
-// real adapters" (engine.md 9.7) is a true statement rather than an aspiration.
+// The Build Phase's dispatch core — the state plus the one function a live terminal's stdin handler,
+// a test, and an agent playtest all call. It *is* the real adapter dispatch rather than a parallel
+// copy for tests, which is what makes engine.md 9.7's "the driver injects raw key and mouse events
+// into the real adapters" true. `src/menu/session.ts` is the same shape for the menu.
 //
-// No stdin, no ANSI, no backend, and no `src/view` import: composing what this looks like is
-// `src/view/build.ts`'s job and wiring it to a terminal is `src/cli/spike.ts`'s.
+// No stdin, no ANSI, no backend, no `src/view` import: composing the frame is `src/view/build.ts`'s
+// job and wiring it to a terminal is `src/cli/spike.ts`'s.
 
 import { keysFromChunk } from "../view/playback.ts"
 import type { BuildLayout } from "./layout.ts"

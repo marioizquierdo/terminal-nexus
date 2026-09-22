@@ -1,7 +1,7 @@
 # Gate report — Milestone 5, Gate 5B: the construct menu and legality
 
 **Document role:** Gate evidence report for Gate 5B
-**Status:** BUILT — Section 8 concludes PASS on every automated check; the one question only the owner can answer (Section 5) is outstanding
+**Status:** ACCEPTED, 2026-09-21 — Section 8 concludes PASS; Mario merged it and accepted the gate, with a larger manual test deferred. Section 9's four proposals are applied at canon 2.18
 **Canon version:** 2.17
 **Updated:** 2026-09-21
 **License:** Apache-2.0
@@ -309,7 +309,7 @@ outstanding, as the project's own convention requires.
 
 ## 9. Canon impact
 
-**Nothing is applied. All of it waits for Mario to accept the gate.**
+**Applied at canon 2.18**, on Mario's acceptance.
 
 | Proposed rule | Would live in | Earned by |
 | --- | --- | --- |

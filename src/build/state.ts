@@ -1,7 +1,6 @@
-// The Build Phase spike's pure reducer: a command in, the next state out. No terminal, no frame, no
-// clock — the same separation `src/menu/list.ts` already draws for the menu, and for the same
-// reason. Every claim gate 5A makes about scrolling and placement is a claim about this file, and
-// none of it needs a TTY to check.
+// The Build Phase's pure reducer: a command in, the next state out. No terminal, no frame, no
+// clock — the same separation `src/menu/list.ts` draws for the menu, so every claim about scrolling
+// and placement is checkable without a TTY.
 
 import { footprintCentre, inBounds, tilesOf } from "../grid/coords.ts"
 import type { ContentRegistry } from "../content/index.ts"

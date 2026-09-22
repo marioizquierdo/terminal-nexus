@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.17
+**Canon version:** 2.18
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -90,19 +90,24 @@ a 3-tile margin, edge markers and a position readout in place of the minimap the
 have, and structures armed by a digit or a click and placed at the cursor. Three input assumptions
 were replaced by measurements at canon 2.17; they are in Section 4 below and in `engine.md` 9.7.
 
+**Milestone 5 gate 5B is accepted** (2026-09-21). The Build Phase has a construct menu in two groups
+under one digit sequence, a cost and one line of effect per row, a budget that runs down and dims
+what it can no longer afford, and a panel that answers a refused placement with its reason and its
+tile. Four rules earned by building it are at canon 2.18, in Section 4 below.
+
 The current milestone is **[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md)
 — Build Phase**: can a player place buildings, pick a Nexus upgrade, and scroll a real map, by
-keyboard, mouse and driver alike? Its active gate is **5B — the construct menu and legality**: the
-two-group menu with each item's cost and effect, the side panel that says *why* an illegal placement
-was refused, validation that rejects with a reason and never silently clamps, and cutting gate 5A's
-demo text down to what a player actually needs while deciding where to build.
+keyboard, mouse and driver alike? Its active gate is **5C — scrolling and the adaptive layout**:
+cursor-driven scrolling at the 3-tile margin across the whole supported viewport range, the side
+panel's layout at both ends of that range, and the edge markers and position readout tuned rather
+than left where the spike put them.
 
 So the authorised work for a new session is, in order:
 
 1. **whatever the owner's most recent feedback asks for**, if any exists since
    `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
    outstanding or that everything still is;
-2. **Milestone 5 gate 5B**, per its own file — the next gate in the build order
+2. **Milestone 5 gate 5C**, per its own file — the next gate in the build order
    [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
    order — read that table's build-order column, and take one gate per session.
 
@@ -204,6 +209,11 @@ deleted, and the renderer must be replaceable without one simulation test changi
   optional; the mouse wheel moves the *cursor* five tiles rather than a camera of its own, because a
   second camera is the pan mode the scrolling rule forbids; and a click places the armed structure,
   with no second click to confirm.
+- **The Build Phase panel is the construct menu, what is left to spend, the selected item's cost and
+  effect, and the reason a placement was refused** — no radius preview until something has a radius
+  (Q30). A refusal is answered in the panel and names its tile, and **affordability is reported before
+  any tile problem**. A menu split into groups still shares **one digit sequence**, and an **empty
+  group is drawn, not skipped**, so no hotkey moves when content arrives.
 - **A mission is a sequence of Build Phase / Nexus Pulse cycles driven by triggers.** Simulation
   actions run inside the kernel as validated intents; presentation actions never touch state. A
   scripted Pulse is still a Pulse.

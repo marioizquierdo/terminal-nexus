@@ -1,8 +1,6 @@
 // Where everything is on screen — the one geometry the composer (drawing) and the mouse adapter
-// (hit-testing) both read, so a click can never target a tile or a row the frame did not draw
-// there. `src/menu/layout.ts` is the same idea for the menu; engine.md 9.7 is why both exist:
-// "mouse geometry lives only in the mouse adapter... a change of tile width or panel layout changes
-// one adapter and no command."
+// (hit-testing) both read, so a click can never target a tile or a row the frame did not draw there.
+// `src/menu/layout.ts` is the same idea for the menu.
 
 import { menuItemLabel } from "../menu/layout.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
@@ -37,13 +35,15 @@ export type BuildLayout = Readonly<{
    *  screens' panels line up rather than each inventing their own inset. */
   panelColumn: number
   panelLimit: number
-  /** How many glyphs fit on one row of the Grid pane's header and footer. */
+  /** How many glyphs fit on one row of the Grid pane's header. */
   paneLimit: number
+  /** How many glyphs fit on one footer row, which runs the full width beneath both panes. */
+  footerLimit: number
   /** Frame row the three footer rows start at. */
   footerRow: number
   /** Frame row the panel's first line is drawn on. */
   panelRow: number
-  /** Frame row the panel's pinned key bindings sit on — its last usable line, so they do not move
+  /** Frame row the panel's last binding sits on — its last usable line, so the bindings do not move
    *  as the rest of the panel grows and shrinks with what the player is doing. */
   panelBindingsRow: number
 }>
@@ -58,11 +58,9 @@ const CONSTRUCT_FIRST_ROW = 2
 export const CONSTRUCT_GROUPS: readonly ConstructGroup[] = ["common", "army"]
 
 /**
- * One line of the construct block. Computed once and read by both the composer (to draw) and the
- * mouse adapter (to hit-test), which is the only way a click cannot land on a row the frame did not
- * draw there. `src/menu/layout.ts` does the same job for a flat list; this one exists because a list
- * split into labelled groups no longer has a uniform row step, and `menuIndexAt`'s arithmetic — one
- * multiply — quietly stops being true the moment a heading sits between two items.
+ * One line of the construct block, computed once and read by both the composer and the mouse
+ * adapter. A list split into labelled groups has no uniform row step, so the rows are enumerated
+ * rather than multiplied out.
  */
 export type ConstructLine =
   | Readonly<{ kind: "group"; row: number; group: ConstructGroup }>
@@ -82,10 +80,8 @@ export function constructLines(
       .map((item, index) => ({ item, index }))
       .filter(({ item }) => item.group === group)
     if (members.length === 0) {
-      // An empty group is drawn, not skipped. PERIMETER has no army-specific structure and the
-      // layout must not come to depend on that: a group that vanishes when empty is a panel that
-      // reflows the first time content fills it, and a hotkey that moves is a hotkey you cannot
-      // learn (engine.md 9.7: "hotkeys are stable... so muscle memory transfers").
+      // An empty group is drawn, not skipped (commander-armies.md 2.1): one that vanishes reflows
+      // the panel and moves every hotkey below it the first time it fills.
       lines.push({ kind: "empty", row, group })
       row += 1
     } else {
@@ -147,6 +143,7 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLay
     panelColumn,
     panelLimit: right - panelColumn,
     paneLimit: dividerColumn - offset.column - 3,
+    footerLimit: composition.width - 4,
     footerRow: offset.row + composition.height - 1 - FOOTER_ROWS,
     panelRow: offset.row + 1,
     panelBindingsRow: offset.row + composition.height - 1 - FOOTER_ROWS - 1,

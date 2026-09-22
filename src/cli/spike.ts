@@ -1,10 +1,9 @@
-// `terminal-nexus --spike` — the live terminal loop for Milestone 5's gate 5A.
+// `terminal-nexus --spike` — the Build Phase's live terminal loop.
 //
-// Deliberately built the same way `src/cli/menu.ts` is, on the same pieces: the shared idempotent
-// disposer (`lifecycle.ts`), the same backend selection, the same opt-in SGR mouse reporting
-// switched off on every exit path. Nothing about a terminal session is reinvented here; what is new
-// is that the frame's size now depends on the terminal's, because the whole point of the screen is
-// that a bigger terminal shows more Grid — up to the 72 x 24 ceiling and not one tile past it.
+// Built on the same pieces as `src/cli/menu.ts`: the shared idempotent disposer (`lifecycle.ts`),
+// the same backend selection, the same opt-in SGR mouse reporting switched off on every exit path.
+// What differs is that the frame's size follows the terminal's, because a bigger terminal shows more
+// Grid — up to the 72 x 24 ceiling and not one tile past it.
 
 import { FIXTURE_REGISTRY } from "../content/index.ts"
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../menu/mouse.ts"
@@ -41,8 +40,7 @@ export type SpikeOptions = Readonly<{
   stdout: NodeJS.WriteStream
   stdin: NodeJS.ReadStream
   exit?: (code: number) => void
-  /** `--scroll-margin`, so the one tuning number this milestone is allowed to retune can be felt
-   *  rather than argued about. Omitted means the canon's three tiles. */
+  /** `--scroll-margin`, so the margin can be felt against another number. Omitted means three. */
   scrollMargin?: number
 }>
 

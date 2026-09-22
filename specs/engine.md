@@ -2,7 +2,7 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.17
+**Canon version:** 2.18
 **Updated:** 2026-09-12
 **License:** Apache-2.0
 
@@ -859,8 +859,17 @@ What differs is what the side panel holds:
 
 | | Side panel carries |
 | --- | --- |
-| **Build Phase** | Construct menu, selected item's cost and effect, the placement-legality panel that says *why*, radius preview, legend |
+| **Build Phase** | Construct menu, what is left to spend, the selected item's cost and effect, and the reason a placement was refused |
 | **Nexus Pulse** | Pulse number, both Nexus states, force totals, playback controls, and — when something is selected — that entity's live state |
+
+**A refusal is answered in the panel, not only announced in the status line** — RULE, built at gate
+5B. A refused placement names its reason, and names the tile when the reason is a tile, so the player
+can fix it rather than guess. **Affordability is reported before any tile problem**: telling somebody
+a rock is in the way when they cannot afford the building sends them to fix the wrong thing.
+
+**No radius preview until something placed has a radius.** An earlier draft of the row above listed
+one; nothing in the content that exists has a radius, and a preview of nothing is a framework built
+before its first use (Q30).
 
 **The Pulse view shows everything by default.** Selection is an addition the player reaches for, never
 a prerequisite for following the fight. If a Pulse can only be understood by clicking things, the
@@ -994,7 +1003,7 @@ followed by arrows and Enter — the fast path a proficient player types without
 
 | Key | Command | Note |
 | --- | --- | --- |
-| `1`–`9`, `0` | select item *n* of the panel's current list — construct menu, Nexus draft, or a menu screen's options | digits always address the list; they never mean anything else |
+| `1`–`9`, `0` | select item *n* of the panel's current list — construct menu, Nexus draft, or a menu screen's options | digits always address the list; they never mean anything else. **A list split into groups still shares one digit sequence** (gate 5B): a hotkey addresses the whole menu, never a position within a group, because per-group numbering needs a focused group and that is the mode this convention exists to forbid |
 | Arrows | move the cursor one tile | the cursor drives the camera at the 3-tile margin (3.3) |
 | Shift+Arrow | move the cursor five tiles | fast pan across a scrolling Grid. **Two sequence families, both bound** (gate 5A): xterm's `CSI 1;<modifier>` and rxvt's `CSI a/b/c/d`. Any modifier counts, not Shift alone — nothing else on these screens binds a modified arrow, so a terminal that eats Shift but passes Alt or Ctrl still gives its player the fast pan |
 | PageUp / PageDown, Home / End | move the cursor five tiles — the modifier-free fallback | **Required, not optional** (gate 5A): four surveyed terminal families send no shifted arrow at all, so without this they would have no fast pan. Decoded from a table, because Home and End have three live spellings between xterm, screen/tmux/linux and rxvt |

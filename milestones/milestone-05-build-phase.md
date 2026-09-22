@@ -2,10 +2,9 @@
 
 **Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
 **Status:** CURRENT
-**Active gate:** 5B — the construct menu and legality: the two-group menu (the common tier and the
-army tier) with each item's cost and effect on its row, the side panel that says *why* an illegal
-placement was refused rather than only that it was, and placement validation that rejects with a
-reason and never silently clamps
+**Active gate:** 5C — scrolling and the adaptive layout: cursor-driven scrolling at the 3-tile margin
+across the full 48x16-72x24 viewport range, the side panel's own layout at both ends of it, and the
+edge markers and position readout tuned rather than left where the spike put them
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
 mission's own budget/units decided — accepted 2026-09-12)
 **Updated:** 2026-09-21
@@ -34,6 +33,15 @@ mission's own budget/units decided — accepted 2026-09-12)
 > His one piece of feedback on the screen itself: *"The UI is starting to look good (although still
 > has too much text focused on demo instead of trying to be as simple and direct as possible)."*
 > **Gate 5B owns acting on it**, since 5B rebuilds that panel anyway — see its own line below.
+
+> **Gate 5B: ACCEPTED, 2026-09-21** — [`../evidence/gate-5b-report.md`](../evidence/gate-5b-report.md)
+> concludes PASS; merged, and accepted by Mario: *"We are finally implementing functionality and I
+> love it... I think we are already going the right direction."* A larger manual test is deferred, the
+> same way the scroll margin's fuller judgement was. The construct menu lists both groups under one
+> digit sequence with a cost and a one-line effect per row, the budget runs down and dims what it can
+> no longer afford, and a refused placement is answered with its reason and its tile. The demo text is
+> gone, and the panel got shorter doing it — what it dropped was narrating things the Grid already
+> showed. Four rules earned by building them are in canon 2.18; Q30 is answered.
 
 > **This is where scrolling was always going to land.** Gate 1A deliberately used a Grid that fit the
 > viewport entirely specifically to defer this:
@@ -156,8 +164,9 @@ looking around, not like fighting the cursor.
       — **done, gate 5A, accepted 2026-09-21**: both Shift+Arrow sequence families and a required
       modifier-free fallback are now in 9.7, the wheel is settled as a cursor jump, and the toggle
       answered Q50 and was then deleted;
-- [ ] the construct menu, cost/effect, and legality panel are built and legible at every capability
-      tier and in monochrome, with every item's hotkey displayed and clickable;
+- [x] the construct menu, cost/effect, and legality panel are built and legible at every capability
+      tier and in monochrome, with every item's hotkey displayed and clickable — **done, gate 5B,
+      accepted 2026-09-21**;
 - [ ] the driver plays a full Build Phase from a command stream, and a test proves hotkey and click
       entry of the same plan are identical;
 - [ ] cursor-driven scrolling works correctly across the full 48×16-72×24 viewport range;

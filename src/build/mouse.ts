@@ -1,11 +1,9 @@
-// The mouse adapter for the Build Phase spike. Engine.md 9.7 again: "mouse geometry lives only in
-// the mouse adapter. A click arrives as a terminal cell; the adapter converts it to a tile using the
-// tile width and the composition's layout, and emits a command that names a tile or a menu item.
-// Nothing downstream ever learns a cell coordinate."
+// The Build Phase's mouse adapter. Per engine.md 9.7, mouse geometry lives only here: a click
+// arrives as a terminal cell, is converted to a tile through the layout, and leaves as a command
+// naming a tile or a menu row. Nothing downstream learns a cell coordinate.
 //
-// The SGR parsing itself is `src/menu/mouse.ts`'s, reused rather than rewritten — one place knows
-// what `ESC [ < 0 ; 12 ; 7 M` means, and this file only knows what a *tile* click means. What it
-// adds is the two gestures a flat menu had no use for: the wheel, and the right button.
+// SGR parsing is `src/menu/mouse.ts`'s, reused rather than rewritten. What this adds is the two
+// gestures a flat menu has no use for: the wheel, and the right button.
 
 import type { BuildLayout } from "./layout.ts"
 import { constructIndexAt, tileAtCell } from "./layout.ts"

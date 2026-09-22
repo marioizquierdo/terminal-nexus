@@ -1,18 +1,13 @@
-// The keyboard adapter for the Build Phase spike — engine.md 9.7's keymap, and the one part of it
-// a terminal can silently break.
+// The keyboard adapter — engine.md 9.7's keymap, and the one part of it a terminal can silently
+// break. Shift+Arrow is neither universal nor single-valued (measured by
+// `scripts/probe-modified-keys.mjs`; the table is in `evidence/gate-5a-report.md`):
 //
-// **What the survey found** (`node scripts/probe-modified-keys.mjs`, 2026-09-21, full table in
-// `evidence/gate-5a-report.md`): Shift+Arrow is neither universal nor single-valued.
+//   - xterm and tmux send `ESC [ 1 ; 2 A` and its siblings;
+//   - rxvt sends a shorter, unrelated form: `ESC [ a b c d`;
+//   - screen, the Linux console, vt100, vt220 and ansi define no shifted arrow at all.
 //
-//   - xterm, xterm-256color, tmux and tmux-256color send `ESC [ 1 ; 2 A` and its siblings;
-//   - rxvt and rxvt-unicode send a completely different, shorter form: `ESC [ a b c d`;
-//   - screen, screen-256color, the Linux virtual console, vt100, vt220 and ansi define no shifted
-//     arrow at all. On those terminals Shift+Up is simply Up, and the five-tile jump would not
-//     exist if Shift+Arrow were its only binding.
-//
-// So this adapter accepts both sequence families, and the fast pan also has a modifier-free
-// fallback — PageUp/PageDown and Home/End — which the survey found on every terminal description
-// tested except vt100 and ansi. Both are displayed in the footer, because a hotkey that is not
+// So both families are accepted, and the five-tile jump also has a modifier-free fallback —
+// PageUp/PageDown and Home/End. Every one of them is named on screen, because a key that is not
 // displayed does not exist.
 
 import type { BuildCommand } from "./types.ts"
@@ -44,10 +39,9 @@ const RXVT_SHIFTED_ARROWS: Readonly<Record<string, Readonly<{ dx: number; dy: nu
 }
 
 /**
- * xterm's modified arrows: `ESC [ 1 ; <modifier> <letter>`. Any modifier ≥ 2 counts, not Shift
- * alone — nothing else on this screen binds a modified arrow, so a terminal that eats Shift but
- * passes Alt or Ctrl still gives its player the fast pan instead of nothing. Deliberately liberal,
- * and a departure from the bindings table's Shift-only line, recorded in the gate report.
+ * xterm's modified arrows: `ESC [ 1 ; <modifier> <letter>`. Any modifier >= 2 counts, not Shift
+ * alone — nothing else here binds a modified arrow, so a terminal that eats Shift but passes Alt or
+ * Ctrl still gives its player the fast pan.
  */
 const XTERM_MODIFIED_ARROW = /^\u001b\[1;(\d+)([ABCD])$/
 const ARROW_LETTERS: Readonly<Record<string, Readonly<{ dx: number; dy: number }>>> = {
@@ -58,10 +52,9 @@ const ARROW_LETTERS: Readonly<Record<string, Readonly<{ dx: number; dy: number }
 }
 
 /**
- * The modifier-free fallback, in every encoding the survey turned up: PageUp/PageDown are
- * `ESC [ 5 ~` and `ESC [ 6 ~` everywhere they exist at all, but Home and End have three live
- * spellings between xterm (`ESC O H`), screen/tmux/linux (`ESC [ 1 ~`) and rxvt (`ESC [ 7 ~`) —
- * which is exactly why they are decoded from a table rather than from one remembered sequence.
+ * The modifier-free fallback, in every encoding the survey turned up. PageUp/PageDown are `ESC [ 5 ~`
+ * and `ESC [ 6 ~` wherever they exist, but Home and End have three live spellings between xterm
+ * (`ESC O H`), screen/tmux/linux (`ESC [ 1 ~`) and rxvt (`ESC [ 7 ~`), hence the table.
  */
 const FALLBACK_JUMPS: Readonly<Record<string, Readonly<{ dx: number; dy: number }>>> = {
   [`${ESC}[5~`]: { dx: 0, dy: -JUMP_TILES },

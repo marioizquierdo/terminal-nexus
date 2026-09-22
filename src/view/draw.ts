@@ -1,12 +1,8 @@
-// Putting a glyph, or a string of them, into a band. Three screens now want the identical pair of
-// helpers — the Pulse composition (`compose.ts`), the menu (`menu.ts`) and the Build Phase spike
-// (`build.ts`) — which is the point at which `AGENTS.md` Section 4's "extract a framework only after
-// two real uses reveal the boundary" stops being a reason to keep copying it and starts being a
-// reason to stop.
+// Putting a glyph, or a string of them, into a band — shared by the Pulse composition
+// (`compose.ts`), the menu (`menu.ts`) and the Build Phase (`build.ts`).
 //
-// The boundary the three uses revealed is small and exactly this: a band write, an optional style
-// role, four attribute flags, a column limit, and the guarantee that authored text is transliterated
-// to ASCII before it can put a two-column glyph in a one-column cell.
+// A band write, an optional style role, four attribute flags, a column limit, and the guarantee that
+// authored text is transliterated to ASCII before it can put a two-column glyph in a one-column cell.
 
 import type { BandCell } from "./frame.ts"
 import type { StyleRole } from "./roles.ts"
@@ -49,9 +45,8 @@ const TRANSLITERATE: Readonly<Record<string, string>> = {
 
 /**
  * ASCII-safe is the baseline (engine.md 9.6): every cell is one column wide and printable. Authored
- * text — a scenario name, a structure's label — may hold typographic characters, so it is
- * transliterated here rather than trusted, and anything left over becomes a question mark. The
- * alternative is a frame that fails its own width-one invariant because someone typed an em dash.
+ * text may hold typographic characters, so it is transliterated here rather than trusted, and
+ * anything left over becomes a question mark — an em dash must not break the width-one invariant.
  */
 export function toAscii(value: string): string {
   let out = ""

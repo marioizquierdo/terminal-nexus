@@ -1,11 +1,10 @@
-// The spike's disposable content: a Grid big enough that scrolling is unavoidable, two structures
-// already standing on it, and three things to build.
+// The Build Phase's placeholder content: a Grid big enough that scrolling is unavoidable, two
+// structures already standing on it, and three things to build.
 //
-// **None of this is Commander Army authoring.** `AGENTS.md` Section 2 reserves that for Milestone 12,
-// and PERIMETER's own construct menu is Milestone 5's gate 5B. These three rows exist because
-// placement is only interesting when the footprints differ — 3x2, 2x2 and 1x1 exercise three
-// different anchor calculations, three different legality shapes, and three different ways to
-// straddle a rock — and they are drawn from the existing fixture rosters rather than invented.
+// **None of this is Commander Army authoring** — `AGENTS.md` Section 2 reserves that for Milestone
+// 12. The three rows differ in footprint (3x2, 2x2, 1x1) so that placement exercises three anchor
+// calculations, three legality shapes and three ways to straddle a rock, and they are drawn from
+// the existing fixture rosters rather than invented.
 
 import type { GridTerrain, TerrainId } from "../grid/types.ts"
 import type { ConstructItem, StandingStructure } from "./types.ts"
@@ -60,11 +59,9 @@ const DEPOSITS: readonly Readonly<{ x: number; y: number }>[] = [
 ]
 
 /**
- * Built by a function rather than checked in as a `.map.json` scenario on purpose: a scenario file
- * is simulation input, and every one of them is replayed twenty times by the determinism suite. This
- * Grid never reaches the kernel — nothing here spends a tick — so making the test suite carry a
- * 96 x 40 fixture would cost real time to prove nothing. Deterministic all the same: no randomness,
- * no clock, the same tiles every run.
+ * Built by a function rather than checked in as a `.map.json` scenario: a scenario file is
+ * simulation input and the determinism suite replays every one of them twenty times. This Grid never
+ * reaches the kernel. Deterministic all the same — no randomness, no clock, the same tiles each run.
  */
 export function spikeGrid(): GridTerrain {
   const { width, height } = SPIKE_GRID_SIZE
@@ -108,16 +105,15 @@ export const SPIKE_STANDING: readonly StandingStructure[] = [
 
 /**
  * What the Build Phase can spend its allotment on. Three footprints, three costs, three one-line
- * reasons to pick one over another — enough for the menu to be a real choice rather than a list.
+ * reasons to pick one over another.
  *
- * The costs are round numbers chosen so the allotment buys a few things and not everything, because
- * the decision this gate is building is *what to spend on*, and a budget that affords the whole menu
- * is not a budget. They are not balance: `AGENTS.md` Section 2 reserves real costs for Milestone 12,
- * and Milestone 2 asked for Build Phase to stay "small and legible over rich".
+ * The costs are round numbers chosen so the allotment buys a few things and not everything — a
+ * budget that affords the whole menu is not a budget. They are not balance; `AGENTS.md` Section 2
+ * reserves real costs for Milestone 12.
  *
- * The army group is empty, and that is PERIMETER's actual answer rather than an omission —
- * milestone-02-campaign-design.md Section 4.2: "The menu draws entirely from the Citizen common
- * tier... the Nexus draft is where the one army-specific choice lives."
+ * The army group is empty, which is PERIMETER's answer rather than an omission: its menu draws
+ * entirely from the Citizen common tier, and the Nexus draft holds the army-specific choice
+ * (milestone-02-campaign-design.md Section 4.2).
  */
 export const SPIKE_CATALOG: readonly ConstructItem[] = [
   {
@@ -147,9 +143,8 @@ export const SPIKE_CATALOG: readonly ConstructItem[] = [
 ]
 
 /**
- * What the player has to spend. Small enough that the menu is a choice — the whole catalog costs 85
- * and a second barracks would take the total past this — and, per Milestone 2 Section 4.2, "small
- * enough that the interesting decisions are placement and composition, not a spreadsheet". How a
- * resource is actually *earned* is Milestone 7's; this is an opening allotment and nothing more.
+ * What the player has to spend. The whole catalog costs 85 and a second barracks takes the total
+ * past this, so the menu is a choice. How a resource is *earned* is Milestone 7's; this is an
+ * opening allotment and nothing more.
  */
 export const SPIKE_ALLOTMENT = 100
