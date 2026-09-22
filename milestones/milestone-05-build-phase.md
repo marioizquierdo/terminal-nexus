@@ -2,9 +2,9 @@
 
 **Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
 **Status:** CURRENT
-**Active gate:** 5C — scrolling and the adaptive layout: cursor-driven scrolling at the 3-tile margin
-across the full 48x16-72x24 viewport range, the side panel's own layout at both ends of it, and the
-edge markers and position readout tuned rather than left where the spike put them
+**Active gate:** 5D — the Nexus draft slot and commit: the upgrade-pick mechanism against a
+placeholder option, `p` with its one confirmation, the hotkey-versus-click identical-plan test, and
+the Special slot's own space in the layout
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
 mission's own budget/units decided — accepted 2026-09-12)
 **Updated:** 2026-09-21
@@ -42,6 +42,20 @@ mission's own budget/units decided — accepted 2026-09-12)
 > no longer afford, and a refused placement is answered with its reason and its tile. The demo text is
 > gone, and the panel got shorter doing it — what it dropped was narrating things the Grid already
 > showed. Four rules earned by building them are in canon 2.18; Q30 is answered.
+
+> **Gate 5C: code merged across two rounds; not yet formally accepted.** Round 1
+> ([`../evidence/gate-5c-report.md`](../evidence/gate-5c-report.md), PASS) walked cursor-driven
+> scrolling across the whole supported viewport range — it needed no change — and put the footer and
+> the side panel on one shared list of key bindings. Round 2 acted on Mario's own live feedback:
+> replaced the arrow edge markers with a border that goes solid where the map ends and dim where it
+> does not, gave the armed construct row an explicit `>` marker, fixed three small bugs the work
+> turned up (an unaffordable armed row's cost read as affordable; the cursor was nearly invisible on
+> bare ground; a stale refusal could outlive its own tile), and built a proportional scrollbar as a
+> second, switchable option (`--edge-style scrollbar`) next to the default. Mario, on merging round 2:
+> *"I like the changes."* Two things are still his alone to judge, on the manual test he plans to run:
+> which border treatment reads better, and whether the marker and cursor read as intended — so the
+> canon proposals in the report stay proposed rather than applied until he has. Proceeding to gate 5D
+> is his own call, made explicitly: neither open question touches anything 5D adds.
 
 > **This is where scrolling was always going to land.** Gate 1A deliberately used a Grid that fit the
 > viewport entirely specifically to defer this:
