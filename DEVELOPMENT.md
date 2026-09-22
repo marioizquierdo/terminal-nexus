@@ -123,22 +123,29 @@ in its own way (below). `terminal-nexus` flags: `--capability`, `--theme`, `--gl
 shows a **window onto a Grid larger than itself**: a 96 x 40 map in a viewport that is 48 x 16 tiles
 at 80 columns and 72 x 24 at 104. Move the cursor with the arrow keys and the map scrolls once the
 cursor comes within three tiles of an edge; the frame's border marks every side with more map beyond
-it and the footer names the visible range, because there is no minimap. Press `1`, `2` or `3` (or
+it — solid where a side truly ends, a dim dashed run where there is more to scroll — and the footer
+names the visible range, because there is no minimap. Press `1`, `2` or `3` (or
 click the row) to arm a structure, then Enter or a click to place it at the cursor; it stays armed,
 so a run of them is one digit then arrows and Enter. Every row shows what it costs, the panel's first
 line shows what is left of a 100-point starting allotment, a row that no longer fits is dimmed, and
 picking one shows what it does. When a placement is refused the panel says why — "rock in the way",
 "the nexus is here", "costs 40, 20 left" — and names the tile when the reason is a tile. `[u]` undoes
 and Backspace removes the one under the cursor, both refunding, which is what makes placing on a
-single click safe: a plan stays revisable until it is committed (Q50).
+single click safe: a plan stays revisable until it is committed (Q50). The armed row carries an
+explicit `>` alongside its inverse bar, and the cursor itself is bold and undimmed over bare ground
+so it does not disappear into the ground's own dim glyph — except over a planned structure, where
+it leaves that structure's own dim (still just a plan, not built) alone.
 
 Shift+Arrow jumps five tiles, and so do PageUp/PageDown and Home/End, because several terminals
 deliver no shifted arrows at all — `node scripts/probe-modified-keys.mjs` prints the survey, and
 `evidence/gate-5a-report.md` has the table. **The footer and the panel share one list of bindings**:
 the footer takes as many as its width holds and the panel shows the rest, so a wide terminal has them
 all on one line and an 80-column one loses none of them. `--scroll-margin <tiles>` changes the
-three-tile trigger distance so it can be judged against another number. Nothing it plans reaches the
-simulation, and nothing is saved.
+three-tile trigger distance so it can be judged against another number. `--edge-style scrollbar`
+swaps the plain hard/soft border for a proportional thumb on the bottom and west sides, showing
+roughly *where* the visible slice sits rather than only that there is more of it — a second option
+next to the default, not a replacement, so the two can be compared rather than argued about. Nothing
+it plans reaches the simulation, and nothing is saved.
 
 Its own code: `src/build/` holds the camera arithmetic, the pure reducer, the three adapters and the
 driver; `src/view/build.ts` composes the frame; `src/cli/spike.ts` runs it on the same backend and the

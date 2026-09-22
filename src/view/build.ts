@@ -10,12 +10,12 @@ import { tilesOf } from "../grid/coords.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { Coord } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
-import { SCROLL_MARGIN, edgeMarkers, visibleRange } from "../build/camera.ts"
+import { SCROLL_MARGIN, edgeMarkers, scrollThumb, visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import { RESOURCE_ROW, cellForTile, constructLines } from "../build/layout.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
 import { anchorForCursor, legalityAt, remaining } from "../build/state.ts"
-import type { ConstructGroup, ConstructItem } from "../build/types.ts"
+import type { ConstructGroup, ConstructItem, PlannedPlacement } from "../build/types.ts"
 import type { BandCell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import { put, text } from "./draw.ts"
@@ -23,56 +23,99 @@ import type { CapabilityMode, StyleRole } from "./roles.ts"
 import { chromeGlyph, entityGlyph, playerRole, terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 
-/**
- * The edge markers. Plain ASCII arrows rather than pack glyphs: they carry "there is more Grid this
- * way" and nothing else does, so under engine.md 9.6 they must survive monochrome and the ASCII
- * baseline unchanged. Drawn every `EDGE_MARKER_STEP` cells along the border segment beside the Grid
- * pane, so they read as an edge rather than as a stray character.
- */
-const EDGE_GLYPHS = { north: "^", south: "v", west: "<", east: ">" } as const
-/**
- * How often a marker repeats along its border. Horizontally it is **counted in tiles**, so the
- * spacing does not halve when a tile becomes two columns wide, and the dashes between them keep the
- * border reading as one line.
- *
- * Vertically there is no gap at all. The east border is the rule between the Grid and the side
- * panel, and a broken column of arrows beside panel rows reads as a caret pointing at the row it
- * happens to sit next to — `> [1] Barracks` looks selected. An unbroken run cannot point at any one
- * row, because it points at all of them.
- */
-const EDGE_MARKER_STEP = { horizontal: 4, vertical: 1 } as const
-
 /** A structure the player is about to place, and whether they may. Drawn in the highlights band, so
  *  it is presentation and can never change occupancy (engine.md 9.4). */
 const ILLEGAL_PREVIEW_GLYPH = "x"
+
+/**
+ * The second way of showing "there is more Grid this way" (Q37's own open question, made
+ * observable rather than argued about): `hard-soft`, the default, marks a whole border side either
+ * plain or dim; `scrollbar` additionally turns the bottom and west sides into a proportional thumb,
+ * showing roughly where the visible slice sits rather than only that there is more of it. North and
+ * east stay a plain yes/no in both modes — a *partial* thumb right beside the side panel would
+ * reintroduce the very thing the plain run was built to avoid: some rows marked and others not,
+ * beside a list of rows, reading as a pointer rather than a border.
+ */
+export type EdgeStyle = "hard-soft" | "scrollbar"
+
+export function parseEdgeStyle(value: string): EdgeStyle {
+  if (value === "hard-soft" || value === "scrollbar") return value
+  throw new Error(`unknown --edge-style "${value}"; expected hard-soft or scrollbar`)
+}
 
 export type BuildCompositionInput = Readonly<{
   context: BuildContext
   state: BuildState
   layout: BuildLayout
   glyphPack?: GlyphPack
+  edgeStyle?: EdgeStyle
 }>
 
-function drawChrome(cells: BandCell[], layout: BuildLayout, pack: GlyphPack): void {
+/**
+ * The frame border, and engine.md 3.3's required "there is more Grid" signal drawn as part of it
+ * rather than overlaid on it: solid where a side genuinely ends, a dim dashed run where it does not.
+ * Only the border segment actually beside the Grid pane carries this — the header, the footer, and
+ * the side panel's own border never scroll, so they stay solid regardless.
+ */
+function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
+  const { layout, state, context } = input
+  const edgeStyle = input.edgeStyle ?? "hard-soft"
   const band = BANDS.chrome
-  const horizontal = chromeGlyph(pack, "horizontal")
-  const vertical = chromeGlyph(pack, "vertical")
+  const hardH = chromeGlyph(pack, "horizontal")
+  const hardV = chromeGlyph(pack, "vertical")
+  const softH = chromeGlyph(pack, "softHorizontal")
+  const softV = chromeGlyph(pack, "softVertical")
   const left = layout.offset.column
   const right = layout.offset.column + layout.composition.width - 1
   const top = layout.offset.row
   const bottom = layout.offset.row + layout.composition.height - 1
+  const markers = edgeMarkers(state.camera, state.viewport, context.grid)
+  const gridLeft = layout.origin.column
+  const gridRight = layout.dividerColumn - 1
+  const gridTop = layout.origin.row
+  const gridBottom = layout.origin.row + layout.viewport.height - 1
 
+  // Only computed in scrollbar mode, and only for the two sides that get one — see `EdgeStyle`.
+  const southThumb =
+    edgeStyle === "scrollbar"
+      ? scrollThumb(state.camera.x, state.viewport.width, context.grid.width, gridRight - gridLeft + 1)
+      : null
+  const westThumb =
+    edgeStyle === "scrollbar"
+      ? scrollThumb(state.camera.y, state.viewport.height, context.grid.height, gridBottom - gridTop + 1)
+      : null
+
+  // South (bottom, an X-axis thumb in scrollbar mode) and west (a Y-axis thumb) never consult
+  // `markers.south`/`markers.west` once in scrollbar mode: those are per-direction facts about the
+  // *other* axis's plain treatment, and mixing them in would make a thumb border show a dim segment
+  // for a reason that has nothing to do with the axis it is actually representing. Each mode owns
+  // its own test for these two sides, in full, rather than falling back into the other's.
   for (let x = left; x <= right; x += 1) {
-    put(cells, band, x, top, horizontal, "chrome.frame")
-    put(cells, band, x, bottom, horizontal, "chrome.frame")
+    const overGrid = x >= gridLeft && x <= gridRight
+    const north = overGrid && markers.north
+    const south =
+      overGrid &&
+      (edgeStyle === "scrollbar"
+        ? southThumb !== null && (x - gridLeft < southThumb.start || x - gridLeft > southThumb.end)
+        : markers.south)
+    put(cells, band, x, top, north ? softH : hardH, "chrome.frame", { dim: north })
+    put(cells, band, x, bottom, south ? softH : hardH, "chrome.frame", { dim: south })
   }
   for (let y = top + 1; y < bottom; y += 1) {
-    put(cells, band, left, y, vertical, "chrome.frame")
-    put(cells, band, right, y, vertical, "chrome.frame")
+    const overGrid = y >= gridTop && y <= gridBottom
+    const west =
+      overGrid &&
+      (edgeStyle === "scrollbar"
+        ? westThumb !== null && (y - gridTop < westThumb.start || y - gridTop > westThumb.end)
+        : markers.west)
+    const east = overGrid && markers.east
+    put(cells, band, left, y, west ? softV : hardV, "chrome.frame", { dim: west })
     // The divider stops above the footer, so the footer's three rows run the whole interior width.
     // At 80 columns the Grid pane is 46 usable columns and all three lines are longer than that.
-    if (y < layout.footerRow) put(cells, band, layout.dividerColumn, y, vertical, "chrome.frame")
+    if (y < layout.footerRow) put(cells, band, layout.dividerColumn, y, east ? softV : hardV, "chrome.frame", { dim: east })
   }
+  // Corners sit outside the Grid pane's own column/row range, so they are always the plain corner
+  // glyph — a run that goes soft only steps away from one never looks broken at the point itself.
   for (const [x, y] of [
     [left, top],
     [right, top],
@@ -82,33 +125,6 @@ function drawChrome(cells: BandCell[], layout: BuildLayout, pack: GlyphPack): vo
     const part =
       y === top ? (x === left ? "topLeft" : "topRight") : x === left ? "bottomLeft" : "bottomRight"
     put(cells, band, x, y, chromeGlyph(pack, part), "chrome.frame")
-  }
-}
-
-/** engine.md 3.3: "The UI must show that there is more Grid... edge markers on the frame border for
- *  each side with more Grid beyond it" — required, because there is no minimap. */
-function drawEdgeMarkers(cells: BandCell[], input: BuildCompositionInput): void {
-  const { layout, state, context } = input
-  const markers = edgeMarkers(state.camera, state.viewport, context.grid)
-  const band = BANDS.chrome
-  const firstColumn = layout.origin.column
-  const lastColumn = layout.dividerColumn - 1
-  const top = layout.offset.row
-  const bottom = layout.offset.row + layout.composition.height - 1
-
-  // The frame's own colour and weight. A marker replaces a piece of border, so it should read as a
-  // border made of arrows — `chrome.hotkey` means "a key you can press", and bold made the run beside
-  // the panel shout over the menu it sits next to.
-  const marker = {}
-  const step = EDGE_MARKER_STEP.horizontal * layout.tileWidth
-  for (let x = firstColumn; x <= lastColumn; x += step) {
-    if (markers.north) put(cells, band, x, top, EDGE_GLYPHS.north, "chrome.frame", marker)
-    if (markers.south) put(cells, band, x, bottom, EDGE_GLYPHS.south, "chrome.frame", marker)
-  }
-  const lastRow = layout.origin.row + layout.viewport.height
-  for (let y = layout.origin.row; y < lastRow; y += EDGE_MARKER_STEP.vertical) {
-    if (markers.west) put(cells, band, layout.offset.column, y, EDGE_GLYPHS.west, "chrome.frame", marker)
-    if (markers.east) put(cells, band, layout.dividerColumn, y, EDGE_GLYPHS.east, "chrome.frame", marker)
   }
 }
 
@@ -197,22 +213,43 @@ function drawPreview(cells: BandCell[], input: BuildCompositionInput): void {
   }
 }
 
+/** Whether a structure — standing or still only planned — covers this tile. */
+function structureAt(context: BuildContext, planned: readonly PlannedPlacement[], tile: Coord): boolean {
+  const covers = (contentId: string, anchor: Coord): boolean =>
+    tilesOf(anchor, context.registry.get(contentId).footprint).some((t) => t.x === tile.x && t.y === tile.y)
+  return (
+    context.standing.some((s) => covers(s.contentId, s.anchor)) ||
+    planned.some((p) => covers(p.contentId, p.anchor))
+  )
+}
+
 /** One cursor, drawn as a style-only write so it keeps whatever glyph is beneath it — the mechanism
  *  `src/view/frame.ts` already provides, and the only honest way to mark a tile without deleting
- *  what is standing on it. Inverse video carries "here" at every capability tier. */
+ *  what is standing on it. Inverse video carries "here" at every capability tier.
+ *
+ * Bare ground gets a contrast boost on top of that: it is drawn dim, and inverting a dim cell is
+ * still a dim one, so `bold` and an explicit `dim: false` are added — `composeBands` merges a
+ * style-only write onto whatever is beneath rather than replacing it, so without clearing it the
+ * ground's own `dim: true` would survive underneath and fight the cursor's `bold` for intensity. A
+ * structure does not get this: its own dim means something else — "this one is still only planned"
+ * — and the cursor must not blur that distinction away.
+ */
 function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
-  const { state, layout } = input
+  const { context, state, layout } = input
   const range = visibleRange(state.camera, state.viewport)
   if (state.cursor.x < range.firstX || state.cursor.x > range.lastX) return
   if (state.cursor.y < range.firstY || state.cursor.y > range.lastY) return
   const cell = cellForTile(layout, state.camera, state.cursor)
+  const onStructure = structureAt(context, state.planned, state.cursor)
+  // `chrome.title` rather than the ground's own role: bold survives monochrome but changes nothing
+  // about which colour a terminal picks for it, so a coloured screen still needs an explicit,
+  // reliably bright role to get the same lift monochrome gets from the attribute alone. The same
+  // role and weight the armed construct row already uses, so "here" and "active" read as one idea.
+  const style = onStructure
+    ? { inverse: true }
+    : { inverse: true, bold: true, dim: false, fgRole: "chrome.title" as const }
   for (let extra = 0; extra < layout.tileWidth; extra += 1) {
-    cells.push({
-      band: BANDS.highlights,
-      x: cell.x + extra,
-      y: cell.y,
-      style: { inverse: true },
-    })
+    cells.push({ band: BANDS.highlights, x: cell.x + extra, y: cell.y, style })
   }
 }
 
@@ -418,7 +455,10 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
     const affordable = item.cost <= left
     const label = `[${item.hotkey}] ${item.label}`
     if (selected) {
-      text(cells, band, column, line.row, label, "chrome.title", { bold: true, inverse: true, limit })
+      // The inverse bar says "this row"; the arrow says "armed" specifically, in a symbol a player
+      // can learn independent of any one render tier — and, now that the border no longer prints a
+      // `>` on every row beside it, this is the only one on screen.
+      text(cells, band, column, line.row, `> ${label}`, "chrome.title", { bold: true, inverse: true, limit })
     } else {
       text(cells, band, column, line.row, `[${item.hotkey}]`, "chrome.hotkey", {
         bold: true,
@@ -430,9 +470,11 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
         limit,
       })
     }
+    // Unaffordable always wins: `dim` and `bold` together cancel out on most terminals, so a row
+    // that is both armed and no longer affordable used to read identically to a plain armed row.
     rightAlign(cells, layout, line.row, String(item.cost), "chrome.value", {
       dim: !affordable,
-      bold: selected,
+      bold: selected && affordable,
     })
   }
 
@@ -490,8 +532,7 @@ export function composeBuildFrame(
   drawGrid(cells, input, pack)
   drawPreview(cells, input)
   drawCursor(cells, input)
-  drawChrome(cells, input.layout, pack)
-  drawEdgeMarkers(cells, input)
+  drawChrome(cells, input, pack)
   drawHeaderAndFooter(cells, input)
   drawPanel(cells, input)
   drawPanelBindings(cells, input)

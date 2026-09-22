@@ -8,6 +8,7 @@
 // most of its own flags, just with a saved file added underneath.
 
 import { parseCapability, parseGlyphPack, parseTheme } from "../view/index.ts"
+import { parseEdgeStyle } from "../view/build.ts"
 import { detectCapability } from "./index.ts"
 import { parseArgs, parseInteger } from "./args.ts"
 import { runMenu } from "./menu.ts"
@@ -29,6 +30,9 @@ const USAGE = `terminal-nexus — the Terminal Nexus game
       screen - nothing it plans reaches the simulation, and nothing is saved.
       --scroll-margin <tiles> changes how close to the edge of the screen the cursor gets
       before the map starts scrolling. Three is the canon's number; try 2 and 5 against it.
+      --edge-style hard-soft|scrollbar picks how the border says "there is more Grid this way" -
+      the default marks a whole side plain or dim; scrollbar also turns the bottom and west
+      sides into a proportional thumb.
 
 A first launch guesses colour depth the way \`grid\` does; every launch after that remembers whatever
 was last chosen on the Settings screen (~/.terminal-nexus/settings.json). Any flag above overrides
@@ -58,6 +62,7 @@ export async function main(argv: readonly string[]): Promise<number> {
 
   if (args.flags.has("spike")) {
     const margin = args.options.get("scroll-margin")
+    const edgeStyle = args.options.get("edge-style")
     return runSpike({
       settings,
       backend: args.options.get("backend") ?? "auto",
@@ -66,6 +71,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       ...(margin === undefined
         ? {}
         : { scrollMargin: parseInteger(margin, "--scroll-margin") }),
+      ...(edgeStyle === undefined ? {} : { edgeStyle: parseEdgeStyle(edgeStyle) }),
     })
   }
 
