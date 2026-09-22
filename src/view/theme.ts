@@ -56,6 +56,12 @@ export const CHROME_GLYPHS: Readonly<Record<GlyphPack, Readonly<Record<string, s
     edgeHorizontal: "-",
     edgeVertical: "|",
     edgeCorner: "+",
+    // A border segment with more Grid beyond it, drawn dim: the same dot that marks featureless
+    // ground elsewhere in the game, reused here for the same meaning — faint and keeps going. The
+    // solid border above is what "no more Grid this way" already looks like; nothing new was needed
+    // for that half.
+    softHorizontal: ".",
+    softVertical: ".",
   },
   unicode: {
     horizontal: "─",
@@ -67,6 +73,8 @@ export const CHROME_GLYPHS: Readonly<Record<GlyphPack, Readonly<Record<string, s
     edgeHorizontal: "┄",
     edgeVertical: "┆",
     edgeCorner: "·",
+    softHorizontal: "┄",
+    softVertical: "┆",
   },
 }
 

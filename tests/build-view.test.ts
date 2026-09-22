@@ -51,37 +51,60 @@ test("a terminal larger than the maximum viewport spends the difference on centr
   assert.equal(huge.frame.width, 200)
 })
 
-test("engine-3.3-markers: the frame shows which sides have more Grid, and stops when they do not", () => {
+/** Whether the border cell at this position is drawn as the game's "soft" (dim, more-Grid-this-way)
+ *  edge glyph rather than the plain solid one — checked against the frame's own style, not the
+ *  glyph alone, since dimness is the actual signal (the ascii soft glyph is a plain "."). */
+function isSoftEdge(frame: ReturnType<typeof composeBuildFrame>, x: number, y: number): boolean {
+  return cellAt(frame, x, y).style.dim === true
+}
+
+test("engine-3.3-markers: the border goes soft on sides with more Grid, and stays solid where it does not", () => {
   // Hard against the Grid's north-west corner: nothing north of here, nothing west of here.
   const corner = screenAt(MINIMUM, (build) => {
     build.run([{ kind: "move-cursor", dx: -999, dy: -999 }])
   })
-  const rows = corner.text.split("\n")
-  const top = rows[corner.layout.offset.row] ?? ""
-  const bottom = rows[corner.layout.offset.row + corner.layout.composition.height - 1] ?? ""
-  assert.equal(top.includes("^"), false, "nothing north of the Grid's own top edge")
-  assert.ok(bottom.includes("v"), "more Grid to the south")
-
-  const west = rows
-    .slice(corner.layout.origin.row, corner.layout.origin.row + corner.layout.viewport.height)
-    .map((row) => row[corner.layout.offset.column] ?? " ")
-    .join("")
-  assert.equal(west.includes("<"), false, "nothing west of the Grid's own left edge")
+  const midGridColumn = corner.layout.origin.column + 5
+  const midGridRow = corner.layout.origin.row + 5
+  assert.equal(
+    isSoftEdge(corner.frame, midGridColumn, corner.layout.offset.row),
+    false,
+    "nothing north of the Grid's own top edge",
+  )
+  assert.equal(
+    isSoftEdge(corner.frame, corner.layout.offset.column, midGridRow),
+    false,
+    "nothing west of the Grid's own left edge",
+  )
+  assert.ok(
+    isSoftEdge(corner.frame, midGridColumn, corner.layout.offset.row + corner.layout.composition.height - 1),
+    "more Grid to the south",
+  )
+  assert.ok(
+    isSoftEdge(corner.frame, corner.layout.dividerColumn, midGridRow),
+    "more Grid to the east",
+  )
 
   // Walk into the middle and every side has more Grid beyond it.
   const middle = screenAt(MINIMUM, (build) => {
     build.run([{ kind: "move-cursor", dx: 30, dy: 12 }])
   })
-  const middleRows = middle.text.split("\n")
-  assert.ok((middleRows[middle.layout.offset.row] ?? "").includes("^"))
+  const midColumn = middle.layout.origin.column + 5
+  const midRow = middle.layout.origin.row + 5
+  assert.ok(isSoftEdge(middle.frame, midColumn, middle.layout.offset.row), "north, from the middle")
   assert.ok(
-    (middleRows[middle.layout.offset.row + middle.layout.composition.height - 1] ?? "").includes("v"),
+    isSoftEdge(middle.frame, midColumn, middle.layout.offset.row + middle.layout.composition.height - 1),
+    "south, from the middle",
   )
-  const middleWest = middleRows
-    .slice(middle.layout.origin.row, middle.layout.origin.row + middle.layout.viewport.height)
-    .map((row) => row[middle.layout.offset.column] ?? " ")
-    .join("")
-  assert.ok(middleWest.includes("<"))
+  assert.ok(isSoftEdge(middle.frame, middle.layout.offset.column, midRow), "west, from the middle")
+  assert.ok(isSoftEdge(middle.frame, middle.layout.dividerColumn, midRow), "east, from the middle")
+
+  // The header, footer and side panel's own border never scroll, so they stay solid regardless —
+  // checked over the panel's own top border segment, which sits past the divider.
+  assert.equal(
+    isSoftEdge(middle.frame, middle.layout.dividerColumn + 3, middle.layout.offset.row),
+    false,
+    "the panel's own border segment does not go soft",
+  )
 })
 
 test("engine-3.3-readout: the footer names the visible tile range and the Grid's own size", () => {
@@ -470,20 +493,22 @@ test("a terminal wide enough puts every binding in the footer and leaves the pan
   assert.equal(bindingLines(wide.layout.footerLimit, wide.layout.panelLimit).panel.length, 0)
 })
 
-test("engine-3.3-markers: the markers keep the same spacing in tiles at both tile widths", () => {
-  // They are drawn on terminal cells but they mark *Grid*, so their density is counted in tiles. A
-  // step measured in columns halves the moment a tile becomes two columns wide, which is the width
-  // a wide terminal actually uses.
-  const spacing = (terminal: { columns: number; rows: number }): number => {
-    const { text, layout } = screenAt(terminal, (build) => {
+test("engine-3.3-markers: the soft border runs the whole Grid-pane segment, at both tile widths", () => {
+  // A signal that only reaches some of a wide border is a signal a player can miss. The whole
+  // segment beside the Grid pane goes soft together, at one column per tile and at two.
+  const wholeSegmentIsSoft = (terminal: { columns: number; rows: number }): void => {
+    const { frame, layout } = screenAt(terminal, (build) => {
       build.run([{ kind: "move-cursor", dx: 20, dy: 20 }])
     })
-    const top = text.split("\n")[layout.offset.row] as string
-    const columns = [...top].flatMap((glyph, index) => (glyph === "^" ? [index] : []))
-    assert.ok(columns.length >= 2, `the north edge should be marked on ${terminal.columns} columns`)
-    return ((columns[1] as number) - (columns[0] as number)) / layout.tileWidth
+    for (let x = layout.origin.column; x <= layout.dividerColumn - 1; x += 1) {
+      assert.ok(
+        cellAt(frame, x, layout.offset.row).style.dim === true,
+        `column ${x} of the north border should be soft at ${terminal.columns} columns`,
+      )
+    }
   }
-  assert.equal(spacing(MINIMUM), spacing({ columns: 160, rows: 40 }))
+  wholeSegmentIsSoft(MINIMUM)
+  wholeSegmentIsSoft({ columns: 160, rows: 40 })
 })
 
 test("no line is drawn over another, at every terminal size in the supported range", () => {
@@ -508,25 +533,24 @@ test("no line is drawn over another, at every terminal size in the supported ran
   }
 })
 
-test("engine-3.3-markers: the side markers are an unbroken run, not a column of carets", () => {
-  // The east border is the rule between the Grid and the side panel. A marker every few rows there
-  // reads as a caret pointing at whichever panel row it lands beside — `> [1] Barracks` looks
-  // selected. Every row carrying one is what makes it a border instead.
+test("engine-3.3-markers: the side border is soft on every row, not a broken column of carets", () => {
+  // The east border is the rule between the Grid and the side panel. A signal on only some rows
+  // there reads as a caret pointing at whichever panel row it lands beside — `> [1] Barracks` looks
+  // selected. Soft the whole way down is what makes it read as a border instead.
   // Far enough in that all four sides have more Grid beyond them.
-  const { text, layout } = screenAt(MINIMUM, (build) => {
+  const { frame, layout } = screenAt(MINIMUM, (build) => {
     build.run([{ kind: "move-cursor", dx: 40, dy: 20 }])
   })
-  const lines = text.split("\n")
   for (let row = layout.origin.row; row < layout.origin.row + layout.viewport.height; row += 1) {
     assert.equal(
-      (lines[row] as string)[layout.dividerColumn],
-      ">",
-      `the east edge is unmarked on row ${row}`,
+      cellAt(frame, layout.dividerColumn, row).style.dim,
+      true,
+      `the east edge is not soft on row ${row}`,
     )
     assert.equal(
-      (lines[row] as string)[layout.offset.column],
-      "<",
-      `the west edge is unmarked on row ${row}`,
+      cellAt(frame, layout.offset.column, row).style.dim,
+      true,
+      `the west edge is not soft on row ${row}`,
     )
   }
 })
@@ -561,4 +585,67 @@ test("the bindings block gives way to the construct menu, never draws over it", 
       assert.match(text.split("\n")[line.row] as string, /none for this Commander/)
     }
   }
+})
+
+test("the armed row carries an explicit marker, not only inverse video", () => {
+  // Inverse video alone survives every capability tier, but it is a video attribute, not a symbol —
+  // the owner asked for something a player can point to and name. It rides alongside the bar, not
+  // instead of it, and it is unambiguous now that the border no longer prints its own `>` beside
+  // every panel row.
+  const armed = screenAt(MINIMUM, (build, layout) => {
+    build.handleData("2", layout)
+  })
+  assert.match(armed.text, /> \[2\] Hatchery/)
+  const unselected = armed.text.split("\n").find((row) => row.includes("[1] Barracks"))
+  assert.ok(unselected !== undefined)
+  assert.doesNotMatch(unselected, />/, "an unarmed row carries no marker")
+})
+
+test("a row that is armed but no longer affordable is not styled identically to a plain armed row", () => {
+  // dim and bold together used to cancel out on the cost figure, so spending past an armed item's
+  // own cost left it looking exactly as affordable as it did before.
+  const spentDown = screenAt(MINIMUM, (build, layout) => {
+    build.handleData("1", layout) // arm Barracks, cost 40
+    build.run([
+      { kind: "move-cursor", dx: 12, dy: 1 },
+      { kind: "place" },
+      { kind: "move-cursor", dx: 4, dy: 0 },
+      { kind: "place" },
+    ]) // two placements, 80 of 100 spent, 20 left — Barracks (40) no longer affordable
+  })
+  assert.match(spentDown.text, /RESOURCE\s+20 of 100/)
+  const barracksLine = constructLines(spentDown.layout, spentDown.context.catalog).find(
+    (line) => line.kind === "item" && spentDown.context.catalog[line.index]?.label === "Barracks",
+  )
+  assert.ok(barracksLine !== undefined)
+  // "40" is two glyphs, right-aligned against the panel's own right edge.
+  const column = spentDown.layout.panelColumn + spentDown.layout.panelLimit - 2
+  const style = cellAt(spentDown.frame, column, barracksLine.row).style
+  assert.equal(style.dim, true, "the unaffordable cost should be dim")
+  assert.notEqual(style.bold, true, "dim and bold should not both be set")
+})
+
+test("the cursor is bold and undimmed over bare ground, so it reads over a dim ground glyph", () => {
+  const idle = screenAt(MINIMUM)
+  const cell = cellForTile(idle.layout, idle.build.state.camera, idle.build.state.cursor)
+  const style = cellAt(idle.frame, cell.x, cell.y).style
+  assert.equal(style.inverse, true)
+  assert.equal(style.bold, true)
+  assert.notEqual(style.dim, true, "bold and dim on the same cell fight each other")
+})
+
+test("the cursor does not blur a structure's own dim-versus-built distinction", () => {
+  // A player's cursor sits right where they just placed something — the common case, not an edge
+  // case — and a plan (dim) must not suddenly read as built (bold) just because the cursor is there.
+  const onPlan = screenAt(MINIMUM, (build, layout) => {
+    build.handleData("1", layout)
+    // Disarmed, or the still-armed preview draws its own overlay on the same cell and the test
+    // would be inspecting the ghost rather than the plan.
+    build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }, { kind: "disarm" }])
+  })
+  const cell = cellForTile(onPlan.layout, onPlan.build.state.camera, { x: 30, y: 14 })
+  const style = cellAt(onPlan.frame, cell.x, cell.y).style
+  assert.equal(style.inverse, true, "the cursor is still there")
+  assert.equal(style.dim, true, "the plan is still a plan")
+  assert.notEqual(style.bold, true, "and not quietly promoted to built")
 })

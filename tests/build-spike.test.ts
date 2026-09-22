@@ -8,6 +8,8 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SPIKE_ALLOTMENT, SPIKE_CATALOG, spikeGrid } from "../src/build/catalog.ts"
+import { FIXTURE_REGISTRY } from "../src/content/index.ts"
+import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
 import { buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import {
@@ -537,4 +539,41 @@ test("two keys arriving in one chunk are two keys, not one", () => {
   assert.deepEqual(build.state.cursor, { x: start.x + 2, y: start.y })
   build.handleData(UP + LEFT, layout)
   assert.deepEqual(build.state.cursor, { x: start.x + 1, y: start.y - 1 })
+})
+
+test("a refusal's message clears once the cursor leaves the tile it was about", () => {
+  // The panel already recomputes its own "why" live from the current cursor position; the footer's
+  // one-line echo of the same refusal must not go on saying so once that stops being true, or the
+  // two disagree with each other on screen. A tiny hand-built grid with a single rock tile, rather
+  // than the spike's own terrain, so the test does not have to reason about which other tiles a
+  // move happens to land on.
+  const width = 10
+  const height = 10
+  const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.plain")
+  tiles[5 * width + 5] = "terrain.rock"
+  const grid: GridTerrain = { width, height, tiles }
+  const context = {
+    grid,
+    registry: FIXTURE_REGISTRY,
+    catalog: SPIKE_CATALOG,
+    standing: [],
+    allotment: SPIKE_ALLOTMENT,
+  }
+  const build = new BuildSession({ context, cursor: { x: 5, y: 5 }, viewport: { width: 10, height: 10 } })
+
+  // Turret: a 1x1 footprint, so the cursor's own tile is the whole placement and there is no
+  // footprint-centring arithmetic to account for.
+  build.dispatch({ kind: "arm", index: 2 })
+  build.dispatch({ kind: "place" })
+  assert.match(build.state.message, /Cannot build here/, "the test did not actually trigger a refusal")
+
+  build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
+  assert.doesNotMatch(build.state.message, /Cannot build here/)
+
+  // A message about the last action, rather than about a tile, is not stale just because the
+  // cursor moved — it stays until the next one.
+  build.dispatch({ kind: "place" })
+  assert.match(build.state.message, /planned at/)
+  build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
+  assert.match(build.state.message, /planned at/, "an action message should survive a cursor move")
 })

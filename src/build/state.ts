@@ -204,6 +204,11 @@ function withCursor(context: BuildContext, state: BuildState, tile: Coord): Buil
     ...state,
     cursor,
     camera: followCursor(state.camera, cursor, state.viewport, context.grid, marginOf(context)),
+    // A refusal names a tile, and the panel already recomputes its own "why" live from wherever the
+    // cursor now is — so a refusal message left behind after the cursor moves away disagrees with
+    // the panel above it. Every other message is about the last action rather than a tile, and
+    // stays until the next one.
+    message: state.message.startsWith("Cannot build here:") ? "" : state.message,
   }
 }
 
