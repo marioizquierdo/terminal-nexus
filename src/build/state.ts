@@ -200,6 +200,7 @@ export function plannedAt(
 /** Moves the cursor and lets it drag the camera — the one place scrolling ever happens. */
 function withCursor(context: BuildContext, state: BuildState, tile: Coord): BuildState {
   const cursor = clampToGrid(tile, context.grid)
+  const moved = cursor.x !== state.cursor.x || cursor.y !== state.cursor.y
   return {
     ...state,
     cursor,
@@ -207,8 +208,10 @@ function withCursor(context: BuildContext, state: BuildState, tile: Coord): Buil
     // A refusal names a tile, and the panel already recomputes its own "why" live from wherever the
     // cursor now is — so a refusal message left behind after the cursor moves away disagrees with
     // the panel above it. Every other message is about the last action rather than a tile, and
-    // stays until the next one.
-    message: state.message.startsWith("Cannot build here:") ? "" : state.message,
+    // stays until the next one — and so does a refusal when the cursor did not actually move:
+    // pressing further into the Grid's own edge is clamped back to the same tile, which is not
+    // "the cursor left the tile the refusal was about."
+    message: moved && state.message.startsWith("Cannot build here:") ? "" : state.message,
   }
 }
 

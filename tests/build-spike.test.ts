@@ -577,3 +577,29 @@ test("a refusal's message clears once the cursor leaves the tile it was about", 
   build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
   assert.match(build.state.message, /planned at/, "an action message should survive a cursor move")
 })
+
+test("a refusal's message survives a move that is clamped back to the same tile", () => {
+  // Pressing further into the Grid's own edge does not move the cursor at all — clampToGrid leaves
+  // it exactly where it was. That is not "the cursor left the tile the refusal was about," so the
+  // refusal has not gone stale and must not be cleared.
+  const width = 10
+  const height = 10
+  const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.plain")
+  tiles[9 * width + 9] = "terrain.rock"
+  const grid: GridTerrain = { width, height, tiles }
+  const context = {
+    grid,
+    registry: FIXTURE_REGISTRY,
+    catalog: SPIKE_CATALOG,
+    standing: [],
+    allotment: SPIKE_ALLOTMENT,
+  }
+  const build = new BuildSession({ context, cursor: { x: 9, y: 9 }, viewport: { width: 10, height: 10 } })
+  build.dispatch({ kind: "arm", index: 2 })
+  build.dispatch({ kind: "place" })
+  assert.match(build.state.message, /Cannot build here/)
+
+  build.dispatch({ kind: "move-cursor", dx: 1, dy: 1 })
+  assert.deepEqual(build.state.cursor, { x: 9, y: 9 }, "the move should have been clamped to a no-op")
+  assert.match(build.state.message, /Cannot build here/, "the cursor never left the tile the refusal named")
+})

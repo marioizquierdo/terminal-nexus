@@ -17,6 +17,7 @@ import {
   fitViewport,
   followCursor,
   isGated,
+  scrollThumb,
   tileWidthFor,
   visibleRange,
 } from "../src/build/camera.ts"
@@ -194,4 +195,28 @@ test("clampToGrid: the cursor can never leave the Grid, however far a jump overs
     x: GRID.width - 1,
     y: GRID.height - 1,
   })
+})
+
+test("scrollThumb: null when the axis has nothing to scroll", () => {
+  assert.equal(scrollThumb(0, 48, 48, 48), null, "the viewport already shows the whole axis")
+  assert.equal(scrollThumb(0, 48, 40, 48), null, "the Grid is smaller than the viewport")
+})
+
+test("scrollThumb: the thumb sits flush at either end and proportionally between", () => {
+  // 96 wide, viewport 48 wide, track the same 48 cells the border actually has.
+  assert.deepEqual(scrollThumb(0, 48, 96, 48), { start: 0, end: 23 }, "flush west")
+  assert.deepEqual(scrollThumb(48, 48, 96, 48), { start: 24, end: 47 }, "flush east")
+  // The worked example from the gate report: tiles 20-67 of 96, on a 48-cell track.
+  assert.deepEqual(scrollThumb(20, 48, 96, 48), { start: 10, end: 33 })
+})
+
+test("scrollThumb: never wider than the track, however small the track is", () => {
+  for (let track = 1; track <= 48; track += 1) {
+    for (let position = 0; position <= 48; position += 1) {
+      const thumb = scrollThumb(position, 48, 96, track)
+      if (thumb === null) continue
+      assert.ok(thumb.start >= 0 && thumb.end < track, `thumb out of range at track ${track}`)
+      assert.ok(thumb.start <= thumb.end, `an empty thumb at track ${track}, position ${position}`)
+    }
+  }
 })

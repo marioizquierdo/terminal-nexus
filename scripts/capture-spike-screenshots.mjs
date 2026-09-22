@@ -142,6 +142,21 @@ shoot(
 )
 
 shoot(
+  "spike-scrollbar",
+  "The same scrolled position with --edge-style scrollbar: the bottom and west borders show roughly where the visible slice sits, not only that there is more of it",
+  {
+    args: "--capability truecolor --theme dark --edge-style scrollbar",
+    drive: () => {
+      for (let step = 0; step < 4; step += 1) {
+        key("S-Right")
+        key("NPage")
+      }
+    },
+    waitForText: "view x",
+  },
+)
+
+shoot(
   "spike-crater",
   "The north-east crater, 70 tiles east of where the cursor started - the part of the Grid that exists only because scrolling does",
   {

@@ -19,6 +19,7 @@ import { isGated } from "../build/camera.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
 import { composeBuildFrame } from "../view/build.ts"
+import type { EdgeStyle } from "../view/build.ts"
 import { gateFrame, keysFromChunk } from "../view/index.ts"
 import { selectBackend } from "../view/backends/index.ts"
 import { createTerminalSession } from "./lifecycle.ts"
@@ -42,6 +43,8 @@ export type SpikeOptions = Readonly<{
   exit?: (code: number) => void
   /** `--scroll-margin`, so the margin can be felt against another number. Omitted means three. */
   scrollMargin?: number
+  /** `--edge-style`, so the scrollbar can be felt against the default hard/soft border. */
+  edgeStyle?: EdgeStyle
 }>
 
 export function spikeContext(scrollMargin?: number): BuildContext {
@@ -113,7 +116,13 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     const frame = gated
       ? gateFrame(size.columns, size.rows, SPIKE_MINIMUM)
       : composeBuildFrame(
-          { context, state: build.state, layout, glyphPack: options.settings.glyphPack },
+          {
+            context,
+            state: build.state,
+            layout,
+            glyphPack: options.settings.glyphPack,
+            ...(options.edgeStyle === undefined ? {} : { edgeStyle: options.edgeStyle }),
+          },
           options.settings.capability,
         )
     if (frame.width !== lastFrame.width || frame.height !== lastFrame.height) {

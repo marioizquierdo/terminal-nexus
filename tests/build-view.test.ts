@@ -6,6 +6,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
+import { scrollThumb } from "../src/build/camera.ts"
 import { BuildSession } from "../src/build/session.ts"
 import { SPIKE_ALLOTMENT, SPIKE_CATALOG } from "../src/build/catalog.ts"
 import { remaining } from "../src/build/state.ts"
@@ -20,12 +21,19 @@ const MINIMUM = { columns: 80, rows: 24 }
 const MAXIMUM = { columns: 104, rows: 32 }
 const WIDE = { columns: 128, rows: 24 }
 
-function screenAt(terminal: { columns: number; rows: number }, drive: (build: BuildSession, layout: ReturnType<typeof buildLayout>) => void = () => {}) {
+function screenAt(
+  terminal: { columns: number; rows: number },
+  drive: (build: BuildSession, layout: ReturnType<typeof buildLayout>) => void = () => {},
+  edgeStyle?: "hard-soft" | "scrollbar",
+) {
   const context = spikeContext()
   const layout = buildLayout(terminal, context.grid)
   const build = new BuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   drive(build, layout)
-  const frame = composeBuildFrame({ context, state: build.state, layout }, "monochrome")
+  const frame = composeBuildFrame(
+    { context, state: build.state, layout, ...(edgeStyle === undefined ? {} : { edgeStyle }) },
+    "monochrome",
+  )
   return { context, layout, build, frame, text: frameToText(frame) }
 }
 
@@ -648,4 +656,78 @@ test("the cursor does not blur a structure's own dim-versus-built distinction", 
   assert.equal(style.inverse, true, "the cursor is still there")
   assert.equal(style.dim, true, "the plan is still a plan")
   assert.notEqual(style.bold, true, "and not quietly promoted to built")
+})
+
+test("--edge-style scrollbar: the bottom and west borders carry a thumb, north and east stay plain", () => {
+  const { frame, layout } = screenAt(
+    MINIMUM,
+    (build) => {
+      build.run([{ kind: "move-cursor", dx: 40, dy: 20 }])
+    },
+    "scrollbar",
+  )
+  const bottomRow = layout.offset.row + layout.composition.height - 1
+  const bottomCells = []
+  for (let x = layout.origin.column; x <= layout.dividerColumn - 1; x += 1) {
+    bottomCells.push(cellAt(frame, x, bottomRow).style.dim === true)
+  }
+  // A thumb both marks *and* leaves the rest soft — some cells dim, some not, on the same border
+  // that the plain hard-soft mode would have made uniformly one or the other.
+  assert.ok(bottomCells.some((dim) => dim), "the bottom border should have a soft (track) segment")
+  assert.ok(bottomCells.some((dim) => !dim), "and a plain (thumb) segment")
+
+  const westCells = []
+  for (let y = layout.origin.row; y < layout.origin.row + layout.viewport.height; y += 1) {
+    westCells.push(cellAt(frame, layout.offset.column, y).style.dim === true)
+  }
+  assert.ok(westCells.some((dim) => dim), "the west border should have a track segment")
+  assert.ok(westCells.some((dim) => !dim), "and a thumb segment")
+
+  // North and east are still a plain yes/no in scrollbar mode — a partial thumb beside the panel
+  // is exactly the caret-like confusion the plain run was built to avoid.
+  for (let y = layout.origin.row; y < layout.origin.row + layout.viewport.height; y += 1) {
+    assert.equal(cellAt(frame, layout.dividerColumn, y).style.dim, true, `east row ${y} should be uniformly soft`)
+  }
+})
+
+test("--edge-style scrollbar: the west thumb still shows at an east/west edge, and vice versa", () => {
+  // The two thumbs represent different axes, and one border's thumb must not depend on the *other*
+  // axis's own edge state. Flush west (camera.x = 0) with real vertical scroll room left is exactly
+  // the case that showed nothing at all before this was fixed.
+  const { frame, layout } = screenAt(
+    MINIMUM,
+    (build) => {
+      build.run([{ kind: "move-cursor", dx: -999, dy: 20 }])
+    },
+    "scrollbar",
+  )
+  const westDim = []
+  for (let i = 0; i < layout.viewport.height; i += 1) {
+    westDim.push(cellAt(frame, layout.offset.column, layout.origin.row + i).style.dim === true)
+  }
+  assert.ok(westDim.some((d) => d), "the west border should still show a track segment")
+  assert.ok(westDim.some((d) => !d), "and a thumb segment, despite camera.x being flush at 0")
+})
+
+test("--edge-style scrollbar: the thumb sits exactly where scrollThumb says it does", () => {
+  const { frame, layout, build, context } = screenAt(
+    MINIMUM,
+    (b) => {
+      b.run([{ kind: "move-cursor", dx: 40, dy: 20 }])
+    },
+    "scrollbar",
+  )
+  const thumb = scrollThumb(
+    build.state.camera.y,
+    layout.viewport.height,
+    context.grid.height,
+    layout.viewport.height,
+  )
+  if (thumb === null) throw new Error("expected a thumb once scrolled away from the corner")
+  const { start, end } = thumb
+  for (let i = 0; i < layout.viewport.height; i += 1) {
+    const dim = cellAt(frame, layout.offset.column, layout.origin.row + i).style.dim === true
+    const expectSoft = i < start || i > end
+    assert.equal(dim, expectSoft, `west border row ${i}: thumb ${start}-${end}`)
+  }
 })

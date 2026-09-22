@@ -10,7 +10,7 @@ import { tilesOf } from "../grid/coords.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { Coord } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
-import { SCROLL_MARGIN, edgeMarkers, visibleRange } from "../build/camera.ts"
+import { SCROLL_MARGIN, edgeMarkers, scrollThumb, visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import { RESOURCE_ROW, cellForTile, constructLines } from "../build/layout.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
@@ -27,11 +27,28 @@ import type { GlyphPack } from "./theme.ts"
  *  it is presentation and can never change occupancy (engine.md 9.4). */
 const ILLEGAL_PREVIEW_GLYPH = "x"
 
+/**
+ * The second way of showing "there is more Grid this way" (Q37's own open question, made
+ * observable rather than argued about): `hard-soft`, the default, marks a whole border side either
+ * plain or dim; `scrollbar` additionally turns the bottom and west sides into a proportional thumb,
+ * showing roughly where the visible slice sits rather than only that there is more of it. North and
+ * east stay a plain yes/no in both modes — a *partial* thumb right beside the side panel would
+ * reintroduce the very thing the plain run was built to avoid: some rows marked and others not,
+ * beside a list of rows, reading as a pointer rather than a border.
+ */
+export type EdgeStyle = "hard-soft" | "scrollbar"
+
+export function parseEdgeStyle(value: string): EdgeStyle {
+  if (value === "hard-soft" || value === "scrollbar") return value
+  throw new Error(`unknown --edge-style "${value}"; expected hard-soft or scrollbar`)
+}
+
 export type BuildCompositionInput = Readonly<{
   context: BuildContext
   state: BuildState
   layout: BuildLayout
   glyphPack?: GlyphPack
+  edgeStyle?: EdgeStyle
 }>
 
 /**
@@ -42,6 +59,7 @@ export type BuildCompositionInput = Readonly<{
  */
 function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
   const { layout, state, context } = input
+  const edgeStyle = input.edgeStyle ?? "hard-soft"
   const band = BANDS.chrome
   const hardH = chromeGlyph(pack, "horizontal")
   const hardV = chromeGlyph(pack, "vertical")
@@ -57,16 +75,39 @@ function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack: Glyph
   const gridTop = layout.origin.row
   const gridBottom = layout.origin.row + layout.viewport.height - 1
 
+  // Only computed in scrollbar mode, and only for the two sides that get one — see `EdgeStyle`.
+  const southThumb =
+    edgeStyle === "scrollbar"
+      ? scrollThumb(state.camera.x, state.viewport.width, context.grid.width, gridRight - gridLeft + 1)
+      : null
+  const westThumb =
+    edgeStyle === "scrollbar"
+      ? scrollThumb(state.camera.y, state.viewport.height, context.grid.height, gridBottom - gridTop + 1)
+      : null
+
+  // South (bottom, an X-axis thumb in scrollbar mode) and west (a Y-axis thumb) never consult
+  // `markers.south`/`markers.west` once in scrollbar mode: those are per-direction facts about the
+  // *other* axis's plain treatment, and mixing them in would make a thumb border show a dim segment
+  // for a reason that has nothing to do with the axis it is actually representing. Each mode owns
+  // its own test for these two sides, in full, rather than falling back into the other's.
   for (let x = left; x <= right; x += 1) {
     const overGrid = x >= gridLeft && x <= gridRight
     const north = overGrid && markers.north
-    const south = overGrid && markers.south
+    const south =
+      overGrid &&
+      (edgeStyle === "scrollbar"
+        ? southThumb !== null && (x - gridLeft < southThumb.start || x - gridLeft > southThumb.end)
+        : markers.south)
     put(cells, band, x, top, north ? softH : hardH, "chrome.frame", { dim: north })
     put(cells, band, x, bottom, south ? softH : hardH, "chrome.frame", { dim: south })
   }
   for (let y = top + 1; y < bottom; y += 1) {
     const overGrid = y >= gridTop && y <= gridBottom
-    const west = overGrid && markers.west
+    const west =
+      overGrid &&
+      (edgeStyle === "scrollbar"
+        ? westThumb !== null && (y - gridTop < westThumb.start || y - gridTop > westThumb.end)
+        : markers.west)
     const east = overGrid && markers.east
     put(cells, band, left, y, west ? softV : hardV, "chrome.frame", { dim: west })
     // The divider stops above the footer, so the footer's three rows run the whole interior width.

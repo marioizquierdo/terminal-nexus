@@ -935,6 +935,27 @@ should not deal one.
 A side benefit worth naming: the telegraph is also a debugging tool. An arrival edge and a time drawn
 on screen is the fastest way to see that a mission's trigger list is wrong.
 
+### Q51 — When should the game get a real accent-colour palette, with variations per faction?
+
+**Status:** OPEN — blocks nothing now; only the Citizen faction has any content to colour yet.
+
+Mario, reviewing gate 5C: "at some point, we should also think about a balanced color palette for
+accent colours, that will give visual identity to the game, and have variations for each faction."
+Right now `src/view/roles.ts` has one dark theme and one light theme, and `player.a`/`player.b` carry
+*ownership* (case, in the glyph family) rather than faction identity — engine.md is explicit that
+"faction identity lives in the glyph family and the effect language; ownership keeps the colour."
+Nothing today asks a faction for its own accent colour, and there is only one faction (Citizen) with
+any structures or units drawn on screen to judge a palette against.
+
+| Option | Cost |
+| --- | --- |
+| A. **Design the palette now**, against the Citizen faction alone, and extend it faction-by-faction as each one is built | Gets the colour system in place early, but a palette designed against a sample size of one faction is a guess about what needs to visually differ from what — exactly the "framework before two real uses reveal the boundary" governance Section 2 warns against |
+| B. **Wait until a second faction has content on screen**, then design the palette against both at once, so the *differences* it needs to carry are things that actually exist | Nothing to design against until then, but the wait is short — Milestone 8 is Commander Vasse specifically, and canon 2.16 already names four more factions (Ravel, Feudal, Glitch, Alder) that will eventually need this |
+
+**Recommendation: B.** A palette's whole job is to make faction A read differently from faction B at
+a glance; there is no faction B yet to check that against, monochrome or otherwise. Revisit this the
+moment a second faction's structures or units are drawn — Milestone 8 at the latest.
+
 ## 5. Answered
 
 Rows move here with the date, the decision, and the document that now owns it.

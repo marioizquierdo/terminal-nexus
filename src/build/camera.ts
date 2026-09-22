@@ -165,6 +165,25 @@ export function edgeMarkers(camera: Camera, viewport: Viewport, grid: GridTerrai
   }
 }
 
+/**
+ * The proportional scrollbar thumb for one axis — an alternative to `edgeMarkers`' plain yes/no,
+ * tried as a second option rather than assumed better. `null` means the axis does not scroll at all
+ * (the whole segment stays the plain, undimmed border); otherwise the returned range is the segment
+ * of `trackLength` cells that represents the visible range, so a player can read not just "there is
+ * more" but roughly *where* the visible slice sits in the whole.
+ */
+export function scrollThumb(
+  position: number,
+  extent: number,
+  total: number,
+  trackLength: number,
+): Readonly<{ start: number; end: number }> | null {
+  if (total <= extent || trackLength <= 0) return null
+  const start = Math.floor((position / total) * trackLength)
+  const end = Math.max(start, Math.ceil(((position + extent) / total) * trackLength) - 1)
+  return { start: Math.min(start, trackLength - 1), end: Math.min(end, trackLength - 1) }
+}
+
 /** Keeps a tile inside the Grid — every cursor move goes through this, so the cursor can never be
  *  somewhere the Grid is not. */
 export function clampToGrid(tile: Coord, grid: GridTerrain): Coord {
