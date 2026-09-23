@@ -11,6 +11,7 @@ import { BuildSession } from "../build/session.ts"
 import {
   SPIKE_ALLOTMENT,
   SPIKE_CATALOG,
+  SPIKE_NEXUS_DRAFT,
   SPIKE_STANDING,
   SPIKE_START_CURSOR,
   spikeGrid,
@@ -54,6 +55,7 @@ export function spikeContext(scrollMargin?: number): BuildContext {
     catalog: SPIKE_CATALOG,
     standing: SPIKE_STANDING,
     allotment: SPIKE_ALLOTMENT,
+    nexusDraft: SPIKE_NEXUS_DRAFT,
     ...(scrollMargin === undefined ? {} : { scrollMargin }),
   }
 }

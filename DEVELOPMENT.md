@@ -147,6 +147,18 @@ roughly *where* the visible slice sits rather than only that there is more of it
 next to the default, not a replacement, so the two can be compared rather than argued about. Nothing
 it plans reaches the simulation, and nothing is saved.
 
+Before any of that, the Build Phase opens on a **Nexus power draft** (gate 5D): two placeholder
+powers — a plain bump to the starting allotment, not real Milestone-8 content — that must be picked
+with a digit or a click before anything else can happen, because a dealt Nexus power may not be
+skipped. Once picked, the screen becomes the construct menu described above, and the panel's own
+NEXUS and SPECIAL rows name what was picked and hold the Special slot's own reserved space, empty for
+now. `p` asks, once, whether to end the Build Phase and start the Nexus Pulse; `y`/`n` (or Esc)
+answers, and accepting locks everything else — arming, placing, undo, and removal are all refused
+once committed, each naming which of the three gates (drafting, confirming, or already committed) is
+holding it. Whichever of the draft, the confirmation, or the construct menu the panel is currently
+showing is the one a digit or a click addresses, so a hotkey and a click always land on the same
+command, whichever adapter sent it.
+
 Its own code: `src/build/` holds the camera arithmetic, the pure reducer, the three adapters and the
 driver; `src/view/build.ts` composes the frame; `src/cli/spike.ts` runs it on the same backend and the
 same idempotent disposer as the menu. `src/view/draw.ts` is where the `put`/`text` band-writing

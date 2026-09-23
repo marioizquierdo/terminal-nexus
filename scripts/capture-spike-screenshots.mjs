@@ -84,18 +84,22 @@ function shoot(
 shoot(
   "spike-minimum",
   "80x24, the acceptance floor: a 48x16 window onto a 96x40 Grid. The footer names the visible range; the border marks the sides with more Grid",
+  {
+    drive: () => literal("1"), // pick the first Nexus power, past the draft gate 5D adds
+    waitForText: "RESOURCE",
+  },
 )
 
 shoot(
   "spike-maximum",
   "104x32, the largest viewport the game will ever show: 72x24 tiles. A bigger terminal than this buys margin, never more Grid",
-  { cols: 104, rows: 32 },
+  { cols: 104, rows: 32, drive: () => literal("1"), waitForText: "RESOURCE" },
 )
 
 shoot(
   "spike-wide-tiles",
   "128x24: the same 48x16 viewport at two terminal columns per tile, where a tile stops being squashed 2:1",
-  { cols: 128, rows: 24 },
+  { cols: 128, rows: 24, drive: () => literal("1"), waitForText: "RESOURCE" },
 )
 
 shoot(
@@ -103,7 +107,8 @@ shoot(
   "Picking [1] shows what it does and what it costs, and previews it at the cursor in its own glyphs - what you see is what Enter places",
   {
     drive: () => {
-      literal("1")
+      literal("1") // pick the first Nexus power, past the draft gate 5D adds
+      literal("1") // arm Barracks
       for (let step = 0; step < 6; step += 1) key("Right")
       key("Down")
     },
@@ -116,7 +121,8 @@ shoot(
   "The same barracks over rock: the panel says why and names the tile, and the preview turns to a block of x. Shape carries the refusal, so it survives monochrome",
   {
     drive: () => {
-      literal("1")
+      literal("1") // pick the first Nexus power, past the draft gate 5D adds
+      literal("1") // arm Barracks
       for (let step = 0; step < 10; step += 1) key("Left")
       for (let step = 0; step < 8; step += 1) key("Up")
       // Pressing Enter is what produces the refusal *message*; the preview alone only shows the
@@ -132,6 +138,7 @@ shoot(
   "Scrolled into the middle of the Grid with Shift+Arrow and PageDown - real modified-arrow bytes through tmux. All four borders now mark more Grid",
   {
     drive: () => {
+      literal("1") // pick the first Nexus power, past the draft gate 5D adds
       for (let step = 0; step < 4; step += 1) {
         key("S-Right")
         key("NPage")
@@ -147,6 +154,7 @@ shoot(
   {
     args: "--capability truecolor --theme dark --edge-style scrollbar",
     drive: () => {
+      literal("1") // pick the first Nexus power, past the draft gate 5D adds
       for (let step = 0; step < 4; step += 1) {
         key("S-Right")
         key("NPage")
@@ -161,6 +169,7 @@ shoot(
   "The north-east crater, 70 tiles east of where the cursor started - the part of the Grid that exists only because scrolling does",
   {
     drive: () => {
+      literal("1") // pick the first Nexus power, past the draft gate 5D adds
       for (let step = 0; step < 12; step += 1) key("S-Right")
       for (let step = 0; step < 2; step += 1) key("PPage")
     },
@@ -173,7 +182,8 @@ shoot(
   "A real SGR mouse click placing a structure: the bytes a terminal actually sends, not a description of one",
   {
     drive: () => {
-      literal("1")
+      literal("1") // pick the first Nexus power, past the draft gate 5D adds
+      literal("1") // arm Barracks
       // Column 31, row 17 (1-based) is tile 30,14 at the opening camera — the same cell
       // `cellForTile` hands the tests, formatted the way src/build/mouse.ts's own
       // `formatMouseEvent` would.
@@ -188,7 +198,8 @@ shoot(
   "Two barracks placed and the budget nearly gone: the rows that no longer fit are dimmed, and the selected one says what it would cost against what is left",
   {
     drive: () => {
-      literal("1")
+      literal("1") // pick the first Nexus power, past the draft gate 5D adds
+      literal("1") // arm Barracks
       for (let step = 0; step < 6; step += 1) key("Right")
       key("Down")
       literal("\r")
@@ -202,6 +213,10 @@ shoot(
 shoot(
   "build-idle",
   "Nothing selected: the panel is the menu, the budget and whichever bindings the footer had no room for, and nothing else. It fills up only while you are doing something",
+  {
+    drive: () => literal("1"), // pick the first Nexus power, past the draft gate 5D adds
+    waitForText: "RESOURCE",
+  },
 )
 
 shoot(
@@ -210,7 +225,8 @@ shoot(
   {
     args: "--capability monochrome",
     drive: () => {
-      literal("1")
+      literal("1") // pick the first Nexus power, past the draft gate 5D adds
+      literal("1") // arm Barracks
       for (let step = 0; step < 4; step += 1) key("S-Right")
     },
     waitForText: "selected -",
@@ -221,6 +237,41 @@ shoot(
   "spike-resize-gate",
   "79x24, one column below the floor: playback gates rather than cropping the Grid, and says exactly what it needs",
   { cols: 79, rows: 24 },
+)
+
+shoot(
+  "build-nexus-draft",
+  "Gate 5D: the Build Phase opens on the Nexus power draft, not the construct menu - a dealt power may not be skipped, so nothing else happens until one is picked",
+)
+
+shoot(
+  "build-nexus-confirm",
+  "Pressing [p] asks once, in plain yes-or-no terms, whether to end the Build Phase and start the Nexus Pulse",
+  {
+    drive: () => {
+      literal("1") // pick the first Nexus power, past the draft gate 5D adds
+      literal("p") // ask to start the Nexus Pulse
+    },
+    waitForText: "START NEXUS PULSE",
+  },
+)
+
+shoot(
+  "build-nexus-committed",
+  "Accepting the prompt commits the Build Phase: the panel names the Nexus power picked and how many structures were planned, and nothing more can change",
+  {
+    drive: () => {
+      literal("1") // pick the first Nexus power, past the draft gate 5D adds
+      literal("1") // arm Barracks
+      for (let step = 0; step < 6; step += 1) key("Right")
+      key("Down")
+      literal("\r") // place it
+      key("Escape") // disarm, so the cursor's own tile does not still show the armed preview
+      literal("p") // ask to start the Nexus Pulse
+      literal("y") // accept
+    },
+    waitForText: "BUILD COMMITTED",
+  },
 )
 
 rmSync(scratch, { recursive: true, force: true })

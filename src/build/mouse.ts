@@ -6,10 +6,19 @@
 // gestures a flat menu has no use for: the wheel, and the right button.
 
 import type { BuildLayout } from "./layout.ts"
-import { constructIndexAt, tileAtCell } from "./layout.ts"
+import { CONFIRM_ITEMS, confirmLayout, constructIndexAt, nexusDraftItems, nexusDraftLayout, tileAtCell } from "./layout.ts"
+import { menuIndexAt } from "../menu/layout.ts"
 import type { Camera } from "./camera.ts"
 import { JUMP_TILES } from "./state.ts"
-import type { BuildCommand, ConstructItem } from "./types.ts"
+import type { BuildCommand, ConstructItem, NexusPowerOption } from "./types.ts"
+
+/** What the panel is currently showing, so a click can be hit-tested against the right list. Mirrors
+ *  `KeyboardContext`'s `draftOptionCount`/`confirming` — the same two facts, read by the other
+ *  adapter. */
+export type MouseUiState = Readonly<{
+  draftOptions?: readonly NexusPowerOption[]
+  confirming?: boolean
+}>
 
 const SGR_MOUSE = /^\u001b\[<(\d+);(\d+);(\d+)([Mm])$/
 
@@ -59,6 +68,7 @@ export function buildMouseCommand(
   camera: Camera,
   layout: BuildLayout,
   catalog: readonly ConstructItem[],
+  ui: MouseUiState = {},
 ): BuildCommand | null {
   if (!event.press) return null
 
@@ -67,6 +77,26 @@ export function buildMouseCommand(
   // "Mouse: right click — Esc. The RTS convention for cancel."
   if (event.button === MOUSE_RIGHT) return { kind: "disarm" }
   if (event.button !== MOUSE_LEFT) return null
+
+  // Whichever list the panel is currently showing — the confirmation, the Nexus draft, or the
+  // construct menu — is the one a click can hit, in that priority order, the same order the
+  // keyboard adapter's own digit handling checks state in.
+  if (ui.confirming === true) {
+    const index = menuIndexAt(CONFIRM_ITEMS, confirmLayout(layout), event.column, event.row)
+    if (index !== null) return { kind: "confirm-commit", accept: index === 0 }
+    return null
+  }
+
+  if (ui.draftOptions !== undefined && ui.draftOptions.length > 0) {
+    const index = menuIndexAt(
+      nexusDraftItems(ui.draftOptions),
+      nexusDraftLayout(layout),
+      event.column,
+      event.row,
+    )
+    if (index !== null) return { kind: "pick-nexus", index }
+    return null
+  }
 
   // A click on a construct row is that row's hotkey, by construction: both this and the composer ask
   // `constructLines` where each row is, so they cannot disagree — including about where the group

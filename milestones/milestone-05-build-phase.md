@@ -2,9 +2,9 @@
 
 **Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
 **Status:** CURRENT
-**Active gate:** 5C — scrolling and the adaptive layout: cursor-driven scrolling at the 3-tile margin
-across the full 48x16-72x24 viewport range, the side panel's own layout at both ends of it, and the
-edge markers and position readout tuned rather than left where the spike put them
+**Active gate:** 5D — the Nexus draft slot and commit: the upgrade-pick mechanism against a
+placeholder option, `p` with its one confirmation, the hotkey-versus-click identical-plan test, and
+the Special slot's own space in the layout
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
 mission's own budget/units decided — accepted 2026-09-12)
 **Updated:** 2026-09-21
@@ -43,12 +43,40 @@ mission's own budget/units decided — accepted 2026-09-12)
 > gone, and the panel got shorter doing it — what it dropped was narrating things the Grid already
 > showed. Four rules earned by building them are in canon 2.18; Q30 is answered.
 
+> **Gate 5C: code merged across two rounds; not yet formally accepted.** Round 1
+> ([`../evidence/gate-5c-report.md`](../evidence/gate-5c-report.md), PASS) walked cursor-driven
+> scrolling across the whole supported viewport range — it needed no change — and put the footer and
+> the side panel on one shared list of key bindings. Round 2 acted on Mario's own live feedback:
+> replaced the arrow edge markers with a border that goes solid where the map ends and dim where it
+> does not, gave the armed construct row an explicit `>` marker, fixed three small bugs the work
+> turned up (an unaffordable armed row's cost read as affordable; the cursor was nearly invisible on
+> bare ground; a stale refusal could outlive its own tile), and built a proportional scrollbar as a
+> second, switchable option (`--edge-style scrollbar`) next to the default. Mario, on merging round 2:
+> *"I like the changes."* Two things are still his alone to judge, on the manual test he plans to run:
+> which border treatment reads better, and whether the marker and cursor read as intended — so the
+> canon proposals in the report stay proposed rather than applied until he has. Proceeding to gate 5D
+> is his own call, made explicitly: neither open question touches anything 5D adds.
+
 > **This is where scrolling was always going to land.** Gate 1A deliberately used a Grid that fit the
 > viewport entirely specifically to defer this:
 > [`milestone-01-grid-battles.md`](milestone-01-grid-battles.md) says so at its own Section 1 — "Not
 > in Gate 1A specifically: selection, inspection, and scrolling... They arrive with the Build Phase."
 > This milestone is the Build Phase. Nothing about that plan changed; this is just where the bill
 > comes due.
+
+> **Gate 5D: built and reported, awaiting Mario's review** —
+> [`../evidence/gate-5d-report.md`](../evidence/gate-5d-report.md) concludes PASS. The Build Phase now
+> opens on a Nexus power draft (two placeholder powers, not real Milestone-8 content) that may not be
+> skipped; `p` asks once, in plain yes/no terms, whether to end the Build Phase and start the Nexus
+> Pulse, and accepting locks every other action. The panel gained the NEXUS and SPECIAL rows
+> `commander-armies.md` Section 2.1 names as a Build Phase's third and fourth decision surfaces,
+> SPECIAL always drawn as an empty "none available" row the same way the empty ARMY group already is.
+> A dedicated test suite (`tests/build-nexus.test.ts`) covers the whole mechanism, including one test
+> that plays pick-then-build-then-commit-then-confirm once by keyboard bytes, once by mouse bytes, and
+> once by a driver script, and checks all three land on the identical final state. This is the last
+> gate this milestone's own tracker lists — accepting it closes Milestone 5. This gate is unrelated to
+> gate 5C's own two open questions (which border/scrollbar style, whether the selection marker reads
+> right); both stay open for Mario's manual test.
 
 ## 1. Question
 
@@ -167,13 +195,24 @@ looking around, not like fighting the cursor.
 - [x] the construct menu, cost/effect, and legality panel are built and legible at every capability
       tier and in monochrome, with every item's hotkey displayed and clickable — **done, gate 5B,
       accepted 2026-09-21**;
-- [ ] the driver plays a full Build Phase from a command stream, and a test proves hotkey and click
-      entry of the same plan are identical;
-- [ ] cursor-driven scrolling works correctly across the full 48×16-72×24 viewport range;
-- [ ] the GUI's own layout adapts across that range without becoming illegible at either end;
-- [ ] the Nexus-upgrade pick mechanism works against at least a placeholder option;
-- [ ] the report says whether the Build Phase felt short of a third decision channel, so the
-      provisional Special slot (`../specs/commander-armies.md` Section 2.1) gains evidence either way;
-- [ ] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED**;
-- [ ] `./scripts/check-repository.sh` passes;
-- [ ] new questions this raises are rows in [`../specs/open-questions.md`](../specs/open-questions.md).
+- [x] the driver plays a full Build Phase from a command stream, and a test proves hotkey and click
+      entry of the same plan are identical — **done, gate 5D**: the pick-build-commit-confirm script
+      produces an identical final state by keyboard bytes, mouse bytes, and a driver script;
+- [ ] cursor-driven scrolling works correctly across the full 48×16-72×24 viewport range — gate 5C's
+      own code is merged and its automated evidence passes, but the gate itself is not yet formally
+      accepted (see the note above);
+- [ ] the GUI's own layout adapts across that range without becoming illegible at either end — same
+      status as the line above, gate 5C's;
+- [x] the Nexus-upgrade pick mechanism works against at least a placeholder option — **done, gate
+      5D**: two placeholder powers, offered once, picked by digit or click, applying their effect
+      exactly once;
+- [x] the report says whether the Build Phase felt short of a third decision channel, so the
+      provisional Special slot (`../specs/commander-armies.md` Section 2.1) gains evidence either way
+      — **done, gate 5D**: the slot fits in the layout without strain, which is the only question this
+      gate could actually answer; whether a Build Phase genuinely wants a third channel is the
+      canon's own Milestone 6 question, per `commander-armies.md` Section 2.1 itself;
+- [x] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED** — gates 5A-5D each have one,
+      all four concluding **PASS**;
+- [x] `./scripts/check-repository.sh` passes;
+- [x] new questions this raises are rows in [`../specs/open-questions.md`](../specs/open-questions.md)
+      — gate 5D raised none of its own; the two still open are gate 5C's, already registered there.

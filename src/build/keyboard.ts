@@ -77,15 +77,31 @@ export type KeyboardContext = Readonly<{
    *  the current selection, close an overlay, back out of a menu", and "never quits the game by
    *  itself." */
   armed: boolean
+  /** > 0 while the Nexus draft is showing — digits pick from it instead of the construct menu, per
+   *  engine.md 9.7's own list of what digits address: "the construct menu, Nexus draft, or a menu
+   *  screen's options." Absent or 0 the rest of the time. */
+  draftOptionCount?: number
+  /** True while the commit confirmation is open, so Esc answers it rather than disarming or
+   *  leaving — nothing can be armed while it is open anyway. */
+  confirming?: boolean
 }>
 
 /** One already-split raw key to one command, or `null` when the key means nothing here. */
 export function buildKeyboardCommand(key: string, context: KeyboardContext): BuildCommand | null {
   if (QUIT_KEYS.has(key)) return { kind: "quit" }
-  if (key === ESC) return context.armed ? { kind: "disarm" } : { kind: "back" }
+  if (key === ESC) {
+    if (context.confirming) return { kind: "confirm-commit", accept: false }
+    return context.armed ? { kind: "disarm" } : { kind: "back" }
+  }
   if (PLACE_KEYS.has(key)) return { kind: "place" }
   if (REMOVE_KEYS.has(key)) return { kind: "remove" }
   if (key === "u") return { kind: "undo" }
+  // Otherwise-idle keys: `y`/`n` only ever mean something while the confirmation is open, and the
+  // reducer is what decides that — a stray `y` elsewhere is exactly as inert as a stray digit is
+  // before anything is armed.
+  if (key === "y") return { kind: "confirm-commit", accept: true }
+  if (key === "n") return { kind: "confirm-commit", accept: false }
+  if (key === "p") return { kind: "commit" }
 
   const plain = PLAIN_ARROWS[key]
   if (plain !== undefined) return { kind: "move-cursor", ...plain }
@@ -107,9 +123,14 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (fallback !== undefined) return { kind: "move-cursor", ...fallback }
 
   // Digits always address the list, and never mean anything else on this screen — engine.md 9.7's
-  // first convention, "no modes". `0` is the tenth row, not the zeroth.
+  // first convention, "no modes". `0` is the tenth row, not the zeroth. Which list is "the list"
+  // changes with the screen, never with the key: the Nexus draft first, the construct menu once it
+  // is picked.
   if (key.length === 1 && key >= "0" && key <= "9") {
     const index = key === "0" ? 9 : Number(key) - 1
+    if (context.draftOptionCount !== undefined && context.draftOptionCount > 0) {
+      return index < context.draftOptionCount ? { kind: "pick-nexus", index } : null
+    }
     return index < context.itemCount ? { kind: "arm", index } : null
   }
 

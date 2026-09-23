@@ -12,7 +12,16 @@ import type { Coord } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
 import { SCROLL_MARGIN, edgeMarkers, scrollThumb, visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
-import { RESOURCE_ROW, cellForTile, constructLines } from "../build/layout.ts"
+import {
+  CONFIRM_ITEMS,
+  RESOURCE_ROW,
+  cellForTile,
+  confirmLayout,
+  constructLines,
+  nexusDraftItems,
+  nexusDraftLayout,
+} from "../build/layout.ts"
+import { menuItemLabel, menuItemRow } from "../menu/layout.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
 import { anchorForCursor, legalityAt, remaining } from "../build/state.ts"
 import type { ConstructGroup, ConstructItem, PlannedPlacement } from "../build/types.ts"
@@ -374,6 +383,22 @@ const GROUP_LABELS: Readonly<Record<ConstructGroup, string>> = {
   army: "ARMY",
 }
 
+/** `[x] label`, the one two-tone split every plain (unselected, non-inverse) menu row on this
+ *  screen uses — the construct menu's own rows, the Nexus draft's options, the commit confirmation.
+ *  `column + 3` assumes a one-character hotkey, true of every hotkey this screen has. */
+function drawHotkeyRow(
+  cells: BandCell[],
+  column: number,
+  row: number,
+  hotkey: string,
+  label: string,
+  limit: number,
+  dim = false,
+): void {
+  text(cells, BANDS.chrome, column, row, `[${hotkey}]`, "chrome.hotkey", { bold: true, dim, limit })
+  text(cells, BANDS.chrome, column + 3, row, ` ${label}`, "chrome.value", { dim, limit })
+}
+
 /**
  * The side panel — engine.md 9.2's Build Phase list: the construct menu, what is left to spend, the
  * selected item's cost and effect, and why a placement was refused. No radius preview, because
@@ -460,15 +485,7 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
       // `>` on every row beside it, this is the only one on screen.
       text(cells, band, column, line.row, `> ${label}`, "chrome.title", { bold: true, inverse: true, limit })
     } else {
-      text(cells, band, column, line.row, `[${item.hotkey}]`, "chrome.hotkey", {
-        bold: true,
-        dim: !affordable,
-        limit,
-      })
-      text(cells, band, column + 3, line.row, ` ${item.label}`, "chrome.value", {
-        dim: !affordable,
-        limit,
-      })
+      drawHotkeyRow(cells, column, line.row, item.hotkey, item.label, limit, !affordable)
     }
     // Unaffordable always wins: `dim` and `bold` together cancel out on most terminals, so a row
     // that is both armed and no longer affordable used to read identically to a plain armed row.
@@ -478,13 +495,32 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
     })
   }
 
+  // The other two of `commander-armies.md` Section 2.1's four Build Phase places, drawn in its own
+  // order: the construct menu's two groups (above), the Nexus draft, then the Special. The pick is
+  // already made by the time this panel ever draws — the draft is its own screen, before this one.
+  // One row each, label and value on the same line the way RESOURCE already is, rather than the
+  // group's own two-line shape: this pair is a fact to glance at, not a list to choose from, and the
+  // detail block below still has to fit in what a floor-sized terminal leaves after them.
+  const lines = constructLines(layout, context.catalog)
+  const lastLine = lines[lines.length - 1]
+  const nexusRow = (lastLine?.row ?? layout.panelRow) + 2
+  const specialRow = nexusRow + 1
+  const picked = state.nexusPick === null ? null : context.nexusDraft[state.nexusPick]
+  if (picked !== undefined && picked !== null) {
+    text(cells, band, column, nexusRow, "NEXUS", "chrome.label", { limit })
+    rightAlign(cells, layout, nexusRow, picked.name, "chrome.value", {})
+  }
+  // PERIMETER has none to arm — honest about the empty slot rather than hiding it, the same call
+  // the empty army group already makes. Whether the Build Phase actually wanted a fourth channel
+  // here is this gate's own report's to answer, not this panel's.
+  text(cells, band, column, specialRow, "SPECIAL", "chrome.label", { limit })
+  rightAlign(cells, layout, specialRow, "none available", "chrome.muted", { dim: true })
+
   // Everything below here appears only while something is selected. Nothing to build, nothing to
   // read.
   const item = state.armed === null ? null : context.catalog[state.armed]
   if (item === undefined || item === null) return
 
-  const lines = constructLines(layout, context.catalog)
-  const lastLine = lines[lines.length - 1]
   const anchor = anchorForCursor(state.cursor, context.registry.get(item.contentId).footprint)
   const legality = legalityAt(context, state.planned, item.contentId, anchor, left)
 
@@ -492,24 +528,29 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
   // panel is too short for it. The panel's height is the viewport's, and the viewport shrinks to fit
   // a small Grid, so a block that keeps writing downward would reach the bindings and then the
   // footer. Omitting a line beats drawing over one.
+  // The tile, when the reason has one, rides on the reason's own line rather than a row of its
+  // own — the Nexus/Special summary above now shares this floor-sized panel with the detail block,
+  // and every row this block does not need is a row that stays available for the next thing that
+  // does.
+  const reasonLine = legality.ok
+    ? ""
+    : legality.tile === undefined
+      ? legality.reason
+      : `${legality.reason} at ${legality.tile.x},${legality.tile.y}`
   const detail: readonly (readonly [string, StyleRole, Readonly<{ bold?: boolean; dim?: boolean }>])[] =
     [
       [item.effect, "chrome.value", {}],
       ...(legality.ok
         ? []
         : ([
-            ["", "chrome.value", {}],
             // In the panel, not the status line: a footer message is gone the moment anything else
             // happens, and "why can I not build here" is asked while looking at the Grid.
             ["CANNOT BUILD HERE", "notice.gate", { bold: true }],
-            [legality.reason, "chrome.value", {}],
-            ...(legality.tile === undefined
-              ? []
-              : ([[`at ${legality.tile.x},${legality.tile.y}`, "chrome.muted", { dim: true }]] as const)),
+            [reasonLine, "chrome.value", {}],
           ] as const)),
     ]
 
-  const first = (lastLine?.row ?? layout.panelRow) + 2
+  const first = specialRow + 1
   // One row of clearance above the bindings block, so the two never touch. The block's height is
   // the terminal's to decide, so this is read rather than assumed.
   const bindingRows = panelBindings(layout, context.catalog).length
@@ -519,6 +560,66 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
     if (value === "") return
     text(cells, band, column, first + index, value, role, { ...extra, limit })
   })
+}
+
+/**
+ * The Nexus draft — its own screen, shown instead of the normal panel until picked. `commander-
+ * armies.md` Section 4.5: a power "may not be skipped", so there is nothing here but the choice
+ * itself; the construct menu, the budget, the Special slot all wait behind it.
+ */
+function drawNexusDraftPanel(cells: BandCell[], input: BuildCompositionInput): void {
+  const { context, layout } = input
+  const band = BANDS.chrome
+  const column = layout.panelColumn
+  const limit = layout.panelLimit
+  text(cells, band, column, layout.panelRow, "NEXUS POWER", "chrome.label", { limit })
+  const menuLayout = nexusDraftLayout(layout)
+  context.nexusDraft.forEach((option, index) => {
+    const row = menuItemRow(menuLayout, index)
+    drawHotkeyRow(cells, column, row, option.hotkey, option.name, limit)
+    text(cells, band, column, row + 1, option.description, "chrome.muted", { dim: true, limit })
+  })
+}
+
+/** `p`'s one confirmation — engine.md 9.7: "asks once, [y]es/[n]o; the one action that must not
+ *  fire by accident." Its own screen for the same reason the draft gets one: nothing else should be
+ *  reachable while an unanswered "are you sure" is on the table. */
+function drawConfirmPanel(cells: BandCell[], input: BuildCompositionInput): void {
+  const { layout } = input
+  const band = BANDS.chrome
+  const column = layout.panelColumn
+  const limit = layout.panelLimit
+  text(cells, band, column, layout.panelRow, "START NEXUS PULSE?", "chrome.label", { limit })
+  const menuLayout = confirmLayout(layout)
+  CONFIRM_ITEMS.forEach((item, index) => {
+    drawHotkeyRow(cells, column, menuItemRow(menuLayout, index), item.hotkey, item.label, limit)
+  })
+}
+
+/** The Build Phase is done. Nothing here reaches a Nexus Pulse — Milestone 6 builds that — so this
+ *  is the whole of the screen from here: what happened, and how to leave. The footer's own status
+ *  line already carries the full sentence (`state.message`); this is the short, panel-width form. */
+function drawCommittedPanel(cells: BandCell[], input: BuildCompositionInput): void {
+  const { context, state, layout } = input
+  const band = BANDS.chrome
+  const column = layout.panelColumn
+  const limit = layout.panelLimit
+  const picked = state.nexusPick === null ? null : context.nexusDraft[state.nexusPick]
+  text(cells, band, column, layout.panelRow, "BUILD COMMITTED", "chrome.label", { limit })
+  if (picked !== undefined && picked !== null) {
+    text(cells, band, column, layout.panelRow + 2, `Nexus: ${picked.name}`, "chrome.value", { limit })
+  }
+  const count = state.planned.length
+  text(
+    cells,
+    band,
+    column,
+    layout.panelRow + 3,
+    `${count} structure${count === 1 ? "" : "s"} planned`,
+    "chrome.value",
+    { limit },
+  )
+  text(cells, band, column, layout.panelRow + 5, "[q] to exit", "chrome.muted", { dim: true, limit })
 }
 
 export function composeBuildFrame(
@@ -534,8 +635,21 @@ export function composeBuildFrame(
   drawCursor(cells, input)
   drawChrome(cells, input, pack)
   drawHeaderAndFooter(cells, input)
-  drawPanel(cells, input)
-  drawPanelBindings(cells, input)
+
+  // Three screens share this one frame, in the order a Build Phase actually moves through them:
+  // the Nexus draft (nothing may be skipped), the construct menu and its budget, and the commit
+  // confirmation on top of it when `p` is pressed. The Grid, the cursor and the footer are the same
+  // in all three — only the panel's own content changes.
+  if (input.state.committed) {
+    drawCommittedPanel(cells, input)
+  } else if (input.state.confirmingCommit) {
+    drawConfirmPanel(cells, input)
+  } else if (input.state.nexusPick === null) {
+    drawNexusDraftPanel(cells, input)
+  } else {
+    drawPanel(cells, input)
+    drawPanelBindings(cells, input)
+  }
 
   return composeBands(input.layout.frame.width, input.layout.frame.height, cells)
 }

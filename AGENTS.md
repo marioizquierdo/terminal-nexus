@@ -95,19 +95,33 @@ under one digit sequence, a cost and one line of effect per row, a budget that r
 what it can no longer afford, and a panel that answers a refused placement with its reason and its
 tile. Four rules earned by building it are at canon 2.18, in Section 4 below.
 
+**Milestone 5 gate 5C is built and merged, across two rounds, but not yet formally accepted**
+(2026-09-22). Scrolling now works across the whole supported viewport range and needed no change to
+do it; the footer and the side panel share one list of key bindings. A second round acted on Mario's
+own live feedback: the arrow edge markers are gone, replaced by a border that goes solid where the
+map ends and dim where it does not, with a second, switchable scrollbar option next to it
+(`--edge-style scrollbar`); the armed construct row carries an explicit marker; and five small bugs
+found along the way are fixed. Mario merged it and said "I like the changes," but two things stay his
+to judge before this gate's own canon proposals are applied: which border treatment reads better, and
+whether the marker and cursor read as intended. He asked directly whether the next gate could proceed
+regardless — it can, since neither open question touches anything gate 5D adds, and building 5D is
+his own explicit direction rather than this session continuing merely because time remained.
+
 The current milestone is **[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md)
 — Build Phase**: can a player place buildings, pick a Nexus upgrade, and scroll a real map, by
-keyboard, mouse and driver alike? Its active gate is **5C — scrolling and the adaptive layout**:
-cursor-driven scrolling at the 3-tile margin across the whole supported viewport range, the side
-panel's layout at both ends of that range, and the edge markers and position readout tuned rather
-than left where the spike put them.
+keyboard, mouse and driver alike? Its active gate is **5D — the Nexus draft slot and commit**: the
+upgrade-pick mechanism (offer a choice, accept a pick, apply its effect) against a placeholder
+option, since Milestone 8 owns the real Commander Vasse draft; `p` with its one `[y]es`/`[n]o`
+confirmation to commit the Build Phase; the hotkey-versus-click identical-plan test; and the Special
+slot's own labelled, empty space in the layout, with the report saying whether the Build Phase felt
+short a decision channel.
 
 So the authorised work for a new session is, in order:
 
 1. **whatever the owner's most recent feedback asks for**, if any exists since
    `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
    outstanding or that everything still is;
-2. **Milestone 5 gate 5C**, per its own file — the next gate in the build order
+2. **Milestone 5 gate 5D**, per its own file — the next gate in the build order
    [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
    order — read that table's build-order column, and take one gate per session.
 

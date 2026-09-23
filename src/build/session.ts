@@ -72,10 +72,18 @@ export class BuildSession {
     const mouse = parseMouseEvent(key)
     const command =
       mouse !== null
-        ? buildMouseCommand(mouse, this.buildState.camera, layout, this.context.catalog)
+        ? buildMouseCommand(mouse, this.buildState.camera, layout, this.context.catalog, {
+            ...(this.buildState.nexusPick === null
+              ? { draftOptions: this.context.nexusDraft }
+              : {}),
+            confirming: this.buildState.confirmingCommit,
+          })
         : buildKeyboardCommand(key, {
             itemCount: this.context.catalog.length,
             armed: this.buildState.armed !== null,
+            draftOptionCount:
+              this.buildState.nexusPick === null ? this.context.nexusDraft.length : 0,
+            confirming: this.buildState.confirmingCommit,
           })
     if (command !== null) this.dispatch(command)
   }
