@@ -6,6 +6,8 @@ import { footprintCentre, inBounds, tilesOf } from "../grid/coords.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
+import type { StatusMessage } from "../status.ts"
+import { NO_STATUS, status } from "../status.ts"
 import type { Camera, Viewport } from "./camera.ts"
 import { SCROLL_MARGIN, clampToGrid, followCursor } from "./camera.ts"
 import type {
@@ -47,8 +49,16 @@ export type BuildState = Readonly<{
   /** Index into `catalog`, or `null` for nothing armed. */
   armed: number | null
   planned: readonly PlannedPlacement[]
-  /** The one line of feedback the footer shows: what just happened, or why it did not. */
-  message: string
+  /** The one line of feedback the status line shows: what just happened, or why it did not. A
+   *  message about a tile (`status.tile`, a refused placement) lapses once the cursor leaves it. */
+  status: StatusMessage
+  /** The tile a placement just succeeded on, or `null`. Set by a successful `place()`; cleared the
+   *  moment the cursor actually moves off it (`withCursor`), or anything changes what that tile
+   *  means — a fresh `arm`, a `disarm`, a `remove` or an `undo`. While it matches the cursor, a
+   *  repeated place is a no-op and the preview shows the plan undisturbed, rather than recomputing
+   *  "occupied by itself" as a refusal — the false "just failed" reading an owner playtest found
+   *  confusing (2026-09-26). */
+  justPlacedAt: Coord | null
   nextOrdinal: number
   /** Index into `context.nexusDraft`, or `null` before a pick — and a Nexus power, once dealt, may
    *  not be skipped (`commander-armies.md` Section 4.5), so every state-changing command is refused
@@ -107,7 +117,8 @@ export function createBuildState(
     viewport,
     armed: null,
     planned: [],
-    message: "",
+    status: NO_STATUS,
+    justPlacedAt: null,
     nextOrdinal: 1,
     nexusPick: null,
     bonusAllotment: 0,
@@ -122,10 +133,10 @@ export function createBuildState(
  * tile: a player told to answer the confirmation when the real reason is "already committed" would
  * be sent to fix the wrong thing.
  */
-function lockReason(state: BuildState): string | null {
-  if (state.committed) return "The Build Phase is committed."
-  if (state.confirmingCommit) return "Answer the Nexus Pulse prompt first: [y]es or [n]o."
-  if (state.nexusPick === null) return "Pick a Nexus power first."
+function lockReason(state: BuildState): StatusMessage | null {
+  if (state.committed) return status("The Build Phase is committed.", "warning")
+  if (state.confirmingCommit) return status("Answer the Nexus Pulse prompt first: [y]es or [n]o.", "warning")
+  if (state.nexusPick === null) return status("Pick a Nexus power first.", "warning")
   return null
 }
 
@@ -140,15 +151,32 @@ export function anchorForCursor(cursor: Coord, footprint: readonly Coord[]): Coo
   return { x: cursor.x - centre.x, y: cursor.y - centre.y }
 }
 
+function sameTile(a: Coord, b: Coord): boolean {
+  return a.x === b.x && a.y === b.y
+}
+
 /**
- * Why a placement is refused, in a form the panel can lay out rather than only print. `reason` is
+ * Why a placement is refused, in a form a caller can lay out rather than only print. `reason` is
  * the sentence; `tile` is the one the reason is about, when it is about a tile, so "there is rock
- * here" can point at *which* here — the difference between a panel that says why and one that only
+ * here" can point at *which* here — the difference between a screen that says why and one that only
  * says no (milestone-05-build-phase.md gate 5B).
  */
 export type Legality =
   | Readonly<{ ok: true }>
   | Readonly<{ ok: false; reason: string; tile?: Coord }>
+
+export type Refusal = Readonly<{ reason: string; tile?: Coord }>
+
+/**
+ * The one sentence a refused placement is reported in — the reducer's own status after a refused
+ * Enter, and the status line's live reading of the armed preview, word for word. Names the tile when
+ * the reason is about one (engine.md 9.2's RULE: the player can fix it rather than guess).
+ */
+export function refusalText(refusal: Refusal): string {
+  return refusal.tile === undefined
+    ? `Cannot build here: ${refusal.reason}.`
+    : `Cannot build here: ${refusal.reason} at ${refusal.tile.x},${refusal.tile.y}.`
+}
 
 /** Every tile a plan already claims, planned and standing alike, keyed `x,y`. Rebuilt per check
  *  rather than cached: a spike's plan is a handful of structures, and a stale cache is a bug that
@@ -217,6 +245,44 @@ export function legalityAt(
   return { ok: true }
 }
 
+/**
+ * What Enter would do right now with the armed structure, derived in one place: `place()` acts on
+ * it, and the view draws it — the ghost under the cursor, the status line's live refusal, the panel's
+ * effect line. "What you see is what Enter does" is then one function rather than several copies
+ * that have to agree (they once disagreed about the budget, and later about the tile just built on).
+ */
+export type ArmedPreview = Readonly<{
+  item: ConstructItem
+  footprint: readonly Coord[]
+  anchor: Coord
+  /** The cursor is still on the tile this item was just placed on: Enter does nothing there, and the
+   *  view lets the dimmed plan show through rather than recomputing "occupied by itself". */
+  justPlaced: boolean
+  /** Why Enter would be refused here, or `null` when it would place — or, on the just-placed tile,
+   *  do nothing at all. */
+  refusal: Refusal | null
+}>
+
+/** `null` when there is nothing to place: nothing armed, or the screen is locked (the Nexus draft,
+ *  the commit confirmation, a committed Build Phase), where no ghost should be drawn either. */
+export function armedPreview(context: BuildContext, state: BuildState): ArmedPreview | null {
+  if (state.armed === null || lockReason(state) !== null) return null
+  const item = context.catalog[state.armed]
+  if (item === undefined) return null
+  const footprint = context.registry.get(item.contentId).footprint
+  const anchor = anchorForCursor(state.cursor, footprint)
+  const justPlaced = state.justPlacedAt !== null && sameTile(state.justPlacedAt, state.cursor)
+  // The same call, budget and all, whichever side is asking.
+  const legality = justPlaced
+    ? null
+    : legalityAt(context, state.planned, item.contentId, anchor, remaining(context, state))
+  const refusal: Refusal | null =
+    legality === null || legality.ok
+      ? null
+      : { reason: legality.reason, ...(legality.tile === undefined ? {} : { tile: legality.tile }) }
+  return { item, footprint, anchor, justPlaced, refusal }
+}
+
 /** The planned placement covering this tile, if any — what Backspace removes. */
 export function plannedAt(
   context: BuildContext,
@@ -236,44 +302,43 @@ export function plannedAt(
 /** Moves the cursor and lets it drag the camera — the one place scrolling ever happens. */
 function withCursor(context: BuildContext, state: BuildState, tile: Coord): BuildState {
   const cursor = clampToGrid(tile, context.grid)
-  const moved = cursor.x !== state.cursor.x || cursor.y !== state.cursor.y
+  const moved = !sameTile(cursor, state.cursor)
+  // A refusal names a tile, and the view already recomputes its own live reading from wherever the
+  // cursor now is — so a refusal left behind after the cursor moves away disagrees with what is drawn
+  // above it. Every other message is about the last action rather than a tile, and stays until the
+  // next one — and so does a tile-scoped one when the cursor did not actually move: pressing further
+  // into the Grid's own edge is clamped back to the same tile, which is not "the cursor left the tile
+  // this was about."
+  const lapsed = moved && state.status.tile !== undefined
   return {
     ...state,
     cursor,
     camera: followCursor(state.camera, cursor, state.viewport, context.grid, marginOf(context)),
-    // A refusal names a tile, and the panel already recomputes its own "why" live from wherever the
-    // cursor now is — so a refusal message left behind after the cursor moves away disagrees with
-    // the panel above it. Every other message is about the last action rather than a tile, and
-    // stays until the next one — and so does a refusal when the cursor did not actually move:
-    // pressing further into the Grid's own edge is clamped back to the same tile, which is not
-    // "the cursor left the tile the refusal was about."
-    message: moved && state.message.startsWith("Cannot build here:") ? "" : state.message,
+    status: lapsed ? NO_STATUS : state.status,
+    justPlacedAt: moved ? null : state.justPlacedAt,
   }
 }
 
 function place(context: BuildContext, state: BuildState): BuildState {
   const lock = lockReason(state)
-  if (lock !== null) return { ...state, message: lock }
-  if (state.armed === null) {
-    return { ...state, message: "Nothing armed - press a construct menu key first." }
+  if (lock !== null) return { ...state, status: lock }
+  const preview = armedPreview(context, state)
+  if (preview === null) {
+    return { ...state, status: status("Nothing armed - press a construct menu key first.", "warning") }
   }
-  const item = context.catalog[state.armed]
-  if (item === undefined) return state
-  const footprint = context.registry.get(item.contentId).footprint
-  const anchor = anchorForCursor(state.cursor, footprint)
-  const legality = legalityAt(
-    context,
-    state.planned,
-    item.contentId,
-    anchor,
-    remaining(context, state),
-  )
-  if (!legality.ok) {
+  // The tile a placement just succeeded on absorbs a repeated place entirely rather than re-placing
+  // or recomputing a refusal against the plan's own last entry — the false "just failed" reading an
+  // owner playtest found confusing. Nothing changes at all until the cursor actually moves.
+  if (preview.justPlaced) return state
+  if (preview.refusal !== null) {
     // Refused, and nothing moved. Silently sliding a structure to the nearest legal tile is the one
     // failure this check exists to prevent: the player would learn nothing and get a plan they did
-    // not draw.
-    return { ...state, message: `Cannot build here: ${legality.reason}.` }
+    // not draw. The message is about this tile, so it lapses when the cursor leaves it — and its
+    // "danger" tone is how the status line tells an attempt apart from merely looking: hovering an
+    // illegal tile reads the same sentence quietly, trying to build there reads it in red.
+    return { ...state, status: status(refusalText(preview.refusal), "danger", state.cursor) }
   }
+  const { item, anchor } = preview
   return {
     ...state,
     planned: [
@@ -281,9 +346,13 @@ function place(context: BuildContext, state: BuildState): BuildState {
       { ordinal: state.nextOrdinal, contentId: item.contentId, anchor },
     ],
     nextOrdinal: state.nextOrdinal + 1,
+    justPlacedAt: state.cursor,
     // Still armed: engine.md 9.7's own fast path, "a run of the same structure is one digit
     // followed by arrows and Enter."
-    message: `${shortName(context, item.contentId)} planned at ${state.cursor.x},${state.cursor.y} for ${item.cost}.`,
+    status: status(
+      `${shortName(context, item.contentId)} planned at ${state.cursor.x},${state.cursor.y} for ${item.cost}.`,
+      "success",
+    ),
   }
 }
 
@@ -305,53 +374,67 @@ export function applyBuildCommand(
       })
 
     case "click-tile": {
-      // "Move the cursor there; if a structure is armed, place it — the same as arrows then Enter"
-      // (engine.md 9.7). Single-click placement is safe because a plan stays revisable until the
-      // commit: `u` undoes the last one and Backspace removes the one under the cursor.
-      const moved = withCursor(context, state, clampToGrid({ x: command.x, y: command.y }, context.grid))
-      return state.armed === null ? moved : place(context, moved)
+      // Two clicks, not one — Q52 (2026-09-26), reversing gate 5A's own Q50. A click on a tile that
+      // is not already where the cursor sits only moves the cursor there and shows the armed preview,
+      // exactly like arriving by arrow keys; a second click **on that same tile** is what places, by
+      // simply calling `place()` once the cursor is already there. Checked against `state.cursor`
+      // (tile identity) rather than the click's own screen cell, which is what makes this safe against
+      // the exact asymmetry Q50's own writeup found unsafe: a first click within the scroll margin can
+      // slide the Grid under the pointer, so a second click at the same *screen position* can resolve
+      // to a different *tile* — and correctly reads here as a fresh first click, not a wrong placement.
+      const target = clampToGrid({ x: command.x, y: command.y }, context.grid)
+      const confirming = state.armed !== null && target.x === state.cursor.x && target.y === state.cursor.y
+      const moved = withCursor(context, state, target)
+      return confirming ? place(context, moved) : moved
     }
 
     case "arm": {
       const lock = lockReason(state)
-      if (lock !== null) return { ...state, message: lock }
+      if (lock !== null) return { ...state, status: lock }
       const item = context.catalog[command.index]
       if (item === undefined) return state
       return {
         ...state,
         armed: command.index,
-        message: `${item.label} selected - ${item.cost} to build.`,
+        // A fresh arm always re-evaluates its own tile rather than inheriting a suppression the last
+        // armed item earned — a different (or re-picked) item at this tile is a new question.
+        justPlacedAt: null,
+        status: status(`${item.label} selected - ${item.cost} to build.`),
       }
     }
 
     case "disarm":
       if (state.armed === null) return state
-      return { ...state, armed: null, message: "Disarmed." }
+      return { ...state, armed: null, justPlacedAt: null, status: status("Disarmed.") }
 
     case "place":
       return place(context, state)
 
     case "remove": {
       const lock = lockReason(state)
-      if (lock !== null) return { ...state, message: lock }
+      if (lock !== null) return { ...state, status: lock }
       const target = plannedAt(context, state.planned, state.cursor)
-      if (target === null) return { ...state, message: "Nothing planned under the cursor." }
+      if (target === null) return { ...state, status: status("Nothing planned under the cursor.", "warning") }
       return {
         ...state,
         planned: state.planned.filter((placement) => placement.ordinal !== target.ordinal),
-        message: `${shortName(context, target.contentId)} removed, ${costOf(context, target.contentId)} back.`,
+        // The plan changed under the cursor, so "just placed here" no longer describes this tile —
+        // left set, the next Enter here would be silently absorbed instead of placing again.
+        justPlacedAt: null,
+        status: status(`${shortName(context, target.contentId)} removed, ${costOf(context, target.contentId)} back.`),
       }
     }
 
     case "undo": {
       const lock = lockReason(state)
-      if (lock !== null) return { ...state, message: lock }
+      if (lock !== null) return { ...state, status: lock }
       const last = state.planned[state.planned.length - 1]
-      if (last === undefined) return { ...state, message: "Nothing to undo." }
+      if (last === undefined) return { ...state, status: status("Nothing to undo.", "warning") }
       return {
         ...state,
         planned: state.planned.slice(0, -1),
-        message: `${shortName(context, last.contentId)} undone, ${costOf(context, last.contentId)} back.`,
+        justPlacedAt: null,
+        status: status(`${shortName(context, last.contentId)} undone, ${costOf(context, last.contentId)} back.`),
       }
     }
 
@@ -359,33 +442,36 @@ export function applyBuildCommand(
       // Defensively guarded like every other command, even though the keyboard and mouse adapters
       // only ever produce this while the draft is showing — a driver script is free to send one
       // anywhere, and the answer must be the same refusal a player pressing an unavailable key gets.
-      if (state.nexusPick !== null) return { ...state, message: "Already picked." }
+      if (state.nexusPick !== null) return { ...state, status: status("Already picked.", "warning") }
       const option = context.nexusDraft[command.index]
       if (option === undefined) return state
       return {
         ...state,
         nexusPick: command.index,
         bonusAllotment: option.bonusAllotment,
-        message: `${option.name} picked.`,
+        status: status(`${option.name} picked.`, "success"),
       }
     }
 
     case "commit": {
       const lock = lockReason(state)
-      if (lock !== null) return { ...state, message: lock }
-      return { ...state, confirmingCommit: true, message: "Start Nexus Pulse? [y]es / [n]o" }
+      if (lock !== null) return { ...state, status: lock }
+      return { ...state, confirmingCommit: true, status: status("Start Nexus Pulse? [y]es / [n]o") }
     }
 
     case "confirm-commit": {
       // Meaningless outside the one moment it answers — a stray "y" is not a command here any more
       // than a stray "3" is one before anything is armed.
       if (!state.confirmingCommit) return state
-      if (!command.accept) return { ...state, confirmingCommit: false, message: "Cancelled." }
+      if (!command.accept) return { ...state, confirmingCommit: false, status: status("Cancelled.") }
       return {
         ...state,
         confirmingCommit: false,
         committed: true,
-        message: `Build committed - ${state.planned.length} planned, Nexus Pulse would begin here (Milestone 6).`,
+        status: status(
+          `Build committed - ${state.planned.length} planned, Nexus Pulse would begin here (Milestone 6).`,
+          "success",
+        ),
       }
     }
 

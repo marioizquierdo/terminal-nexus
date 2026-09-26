@@ -121,31 +121,42 @@ in its own way (below). `terminal-nexus` flags: `--capability`, `--theme`, `--gl
 
 **The Build Phase** (`--spike`, Milestone 5) is the first screen in the project that
 shows a **window onto a Grid larger than itself**: a 96 x 40 map in a viewport that is 48 x 16 tiles
-at 80 columns and 72 x 24 at 104. Move the cursor with the arrow keys and the map scrolls once the
-cursor comes within three tiles of an edge; the frame's border marks every side with more map beyond
-it — solid where a side truly ends, a dim dashed run where there is more to scroll — and the footer
-names the visible range, because there is no minimap. Press `1`, `2` or `3` (or
-click the row) to arm a structure, then Enter or a click to place it at the cursor; it stays armed,
-so a run of them is one digit then arrows and Enter. Every row shows what it costs, the panel's first
-line shows what is left of a 100-point starting allotment, a row that no longer fits is dimmed, and
-picking one shows what it does. When a placement is refused the panel says why — "rock in the way",
-"the nexus is here", "costs 40, 20 left" — and names the tile when the reason is a tile. `[u]` undoes
-and Backspace removes the one under the cursor, both refunding, which is what makes placing on a
-single click safe: a plan stays revisable until it is committed (Q50). The armed row carries an
-explicit `>` alongside its inverse bar, and the cursor itself is bold and undimmed over bare ground
-so it does not disappear into the ground's own dim glyph — except over a planned structure, where
-it leaves that structure's own dim (still just a plan, not built) alone.
+at 80 columns and 72 x 24 at 104. The screen is a top bar (the title, and on the right what is left to
+spend), the Grid in **a rectangle of its own** — a line directly above and below it, not a header and
+a footer — the side panel beside it, and a bottom bar of three lines: the position readout, the key
+help, and the **status line**. Move the cursor with the arrow keys and the map scrolls once the cursor
+comes within three tiles of an edge; each side of the Grid's rectangle is a dim line where there is
+more map that way and a heavy one (`===` along the top and bottom, a bold `|` down the sides) where
+the map ends, every side at once when the whole Grid fits — and the readout names the visible range,
+because there is no minimap. Press `1`, `2` or `3` (or click the row) to arm a structure; Enter or
+Space places it at the cursor. A mouse click is two-stage (Q52, 2026-09-26): the first click on a tile
+moves the cursor there and shows the armed preview, exactly like arriving by arrow keys, and a
+**second click on that same tile** places it — a later `Shift+click` for a one-click placement is
+planned, not built. It stays armed after placing, so a run of the same structure is one digit then
+repeated arrows/Enter or click-click. Every row shows what it costs, the top bar shows what is left of
+the budget, a row that no longer fits is dimmed, and arming one shows what it does. **Why a placement
+would be refused is the status line's job** — "rock in the way at 8,5", "the nexus is here at
+18,10", "costs 40, 20 left" (affordability first, and no tile when it is not about one) — quietly
+while the preview merely sits on the tile, in red once Enter or a confirming click actually tries;
+the preview itself is a grey block of `x`. Right after a successful placement the tile just built
+shows the plan, not a refusal, and a repeated Enter there does nothing until the cursor moves (or an
+undo, removal or re-arm changes what the tile means). `[u]` undoes and Backspace removes the one under
+the cursor, both refunding, which is what makes a plan revisable until it is committed. The armed row
+carries an explicit `>` alongside its inverse bar, and the cursor itself is bold and undimmed over
+bare ground so it does not disappear into the ground's own dim glyph — except over a planned
+structure, where it leaves that structure's own dim (still just a plan, not built) alone.
 
 Shift+Arrow jumps five tiles, and so do PageUp/PageDown and Home/End, because several terminals
 deliver no shifted arrows at all — `node scripts/probe-modified-keys.mjs` prints the survey, and
-`evidence/gate-5a-report.md` has the table. **The footer and the panel share one list of bindings**:
-the footer takes as many as its width holds and the panel shows the rest, so a wide terminal has them
-all on one line and an 80-column one loses none of them. `--scroll-margin <tiles>` changes the
-three-tile trigger distance so it can be judged against another number. `--edge-style scrollbar`
-swaps the plain hard/soft border for a proportional thumb on the bottom and west sides, showing
-roughly *where* the visible slice sits rather than only that there is more of it — a second option
-next to the default, not a replacement, so the two can be compared rather than argued about. Nothing
-it plans reaches the simulation, and nothing is saved.
+`evidence/gate-5a-report.md` has the table. So does Option+Arrow as macOS terminals send it (`ESC b`,
+`ESC f`, or `ESC` before an arrow), bound from their documented defaults; **`node
+scripts/lib/key-echo.mjs` prints exactly what each key sends in the terminal it runs in** (press `q`
+to leave), which is how to check a terminal nobody has measured yet. **The footer and the panel share
+one list of bindings**: the bottom bar takes as many as its width holds, trimmed to the essentials —
+arrows, place, disarm, quit, the fast move, remove, undo — and the panel shows the rest, so a wide
+terminal has them all on one line and an 80-column one loses none of them (the other fast-move keys
+stay bound but unlisted). `--scroll-margin <tiles>` changes the three-tile trigger distance so it can
+be judged against another number. Nothing it plans reaches the simulation, and nothing is saved.
 
 Before any of that, the Build Phase opens on a **Nexus power draft** (gate 5D): two placeholder
 powers — a plain bump to the starting allotment, not real Milestone-8 content — that must be picked

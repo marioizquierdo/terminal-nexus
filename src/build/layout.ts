@@ -30,6 +30,14 @@ export type BuildLayout = Readonly<{
   tileWidth: TileWidth
   /** Frame cell of the viewport's own north-west tile. */
   origin: Readonly<{ column: number; row: number }>
+  /**
+   * The four lines that close the Grid pane into a rectangle of its own, as frame rows and columns:
+   * a rule directly above the Grid and one directly below it (each running the whole width, so the
+   * top bar and the bottom bar read as bars), and the two vertical lines beside it. These — not the
+   * frame's outer border — are the sides that carry engine.md 3.3's "there is more Grid this way"
+   * signal, because they are where the Grid actually stops.
+   */
+  gridBox: Readonly<{ top: number; bottom: number; left: number; right: number }>
   /** Frame column of the vertical rule between the Grid pane and the side panel. */
   dividerColumn: number
   /** Frame column the side panel's own text starts at, and how many glyphs fit on one of its rows —
@@ -41,9 +49,10 @@ export type BuildLayout = Readonly<{
   paneLimit: number
   /** How many glyphs fit on one footer row, which runs the full width beneath both panes. */
   footerLimit: number
-  /** Frame row the three footer rows start at. */
+  /** Frame row the bottom bar's three lines start at — the first row below the Grid's own bottom
+   *  rule: the position readout, then the key help, then the status line. */
   footerRow: number
-  /** Frame row the panel's first line is drawn on. */
+  /** Frame row the panel's first line is drawn on — the top bar's row, beside the title. */
   panelRow: number
   /** Frame row the panel's last binding sits on — its last usable line, so the bindings do not move
    *  as the rest of the panel grows and shrinks with what the player is doing. */
@@ -51,7 +60,8 @@ export type BuildLayout = Readonly<{
 }>
 
 /** The panel's own rows, counted from its first. Row 0 is what the player has to spend, because it
- *  is the number every other choice on this panel is measured against; row 1 is deliberately blank. */
+ *  is the number every other choice on this panel is measured against — it shares the top bar's row
+ *  with the title; row 1 is where the rule above the Grid runs across the panel too. */
 export const RESOURCE_ROW = 0
 const CONSTRUCT_FIRST_ROW = 2
 
@@ -97,6 +107,20 @@ export function constructLines(
   return lines
 }
 
+/**
+ * The panel's NEXUS and SPECIAL rows, one blank row below the construct menu — the other two of
+ * `commander-armies.md` Section 2.1's four Build Phase places. Read by the composer, and by the
+ * bindings block that grows up from the panel's bottom, which must stop short of both.
+ */
+export function summaryRows(
+  layout: BuildLayout,
+  catalog: readonly ConstructItem[],
+): Readonly<{ nexus: number; special: number }> {
+  const lines = constructLines(layout, catalog)
+  const nexus = (lines[lines.length - 1]?.row ?? layout.panelRow) + 2
+  return { nexus, special: nexus + 1 }
+}
+
 /** The construct row at a frame cell, or `null` when the cell hits none — including a cell past the
  *  end of the row's own drawn text, so blank space beside a short label is not a click target. */
 export function constructIndexAt(
@@ -125,7 +149,8 @@ export function constructIndexAt(
  * construct menu's own groups made `constructLines` necessary for *that* screen.
  */
 export function nexusDraftLayout(layout: BuildLayout): MenuLayout {
-  return { column: layout.panelColumn, row: layout.panelRow + 1, rowStep: 3 }
+  // Below the rule that closes the Grid's top, which crosses the panel on its second row.
+  return { column: layout.panelColumn, row: layout.panelRow + 2, rowStep: 3 }
 }
 
 export function nexusDraftItems(draft: readonly NexusPowerOption[]): readonly MenuItem[] {
@@ -159,6 +184,12 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLay
   const dividerColumn = offset.column + 1 + viewport.width * tileWidth
   const panelColumn = dividerColumn + 2
   const right = offset.column + composition.width - 1
+  const gridBox = {
+    top: origin.row - 1,
+    bottom: origin.row + viewport.height,
+    left: offset.column,
+    right: dividerColumn,
+  }
   return {
     frame,
     composition,
@@ -166,14 +197,15 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLay
     viewport,
     tileWidth,
     origin,
+    gridBox,
     dividerColumn,
     panelColumn,
     panelLimit: right - panelColumn,
     paneLimit: dividerColumn - offset.column - 3,
     footerLimit: composition.width - 4,
-    footerRow: offset.row + composition.height - 1 - FOOTER_ROWS,
+    footerRow: gridBox.bottom + 1,
     panelRow: offset.row + 1,
-    panelBindingsRow: offset.row + composition.height - 1 - FOOTER_ROWS - 1,
+    panelBindingsRow: gridBox.bottom - 1,
   }
 }
 

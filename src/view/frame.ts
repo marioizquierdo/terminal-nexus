@@ -169,6 +169,13 @@ const PACK_GLYPHS = new Set([
   "\u2518",
   "\u2504",
   "\u2506",
+  "\u2501", // heavy horizontal, a border side that has reached the Grid's own edge
+  "\u2503", // heavy vertical, the same
+  "\u251c", // the junctions where the rules closing the Grid pane meet the frame and the divider
+  "\u2524",
+  "\u252c",
+  "\u2534",
+  "\u253c",
 ])
 
 /** Every gameplay glyph occupies exactly one cell — engine.md 9.6. Asserted, not assumed. */

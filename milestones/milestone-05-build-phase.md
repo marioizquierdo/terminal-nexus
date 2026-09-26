@@ -2,12 +2,13 @@
 
 **Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
 **Status:** CURRENT
-**Active gate:** 5D — the Nexus draft slot and commit: the upgrade-pick mechanism against a
-placeholder option, `p` with its one confirmation, the hotkey-versus-click identical-plan test, and
-the Special slot's own space in the layout
+**Active gate:** 5F — layout and keyboard focus: the side panel moves to the left of the Grid, a
+menu/Grid keyboard focus with a smart cursor, and the Nexus power pick as a popup the player opens from
+a "Nexus Powers" entry at the top of the menu. Gates 5D and 5E are built and reported (PASS) but not
+yet formally accepted; this gate depends on neither acceptance, the same way 5D did not wait on 5C's
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
 mission's own budget/units decided — accepted 2026-09-12)
-**Updated:** 2026-09-21
+**Updated:** 2026-09-26
 **License:** Apache-2.0
 
 > **Milestone 4 has not landed, and this milestone does not wait for it.** An earlier draft of the
@@ -52,10 +53,12 @@ mission's own budget/units decided — accepted 2026-09-12)
 > turned up (an unaffordable armed row's cost read as affordable; the cursor was nearly invisible on
 > bare ground; a stale refusal could outlive its own tile), and built a proportional scrollbar as a
 > second, switchable option (`--edge-style scrollbar`) next to the default. Mario, on merging round 2:
-> *"I like the changes."* Two things are still his alone to judge, on the manual test he plans to run:
-> which border treatment reads better, and whether the marker and cursor read as intended — so the
-> canon proposals in the report stay proposed rather than applied until he has. Proceeding to gate 5D
-> is his own call, made explicitly: neither open question touches anything 5D adds.
+> *"I like the changes."* Two things were his alone to judge. **The first is now resolved (2026-09-26):
+> no scrollbar; the border instead reads as a heavier, doubled line on whichever side truly has no more
+> Grid to reveal, and as the everyday lighter line otherwise — canon 2.19.** The second — whether the
+> armed row's marker and the cursor's own brightness read as intended — is untouched by that and still
+> open. Proceeding to gate 5D was his own call, made explicitly: neither open question touched anything
+> 5D added.
 
 > **This is where scrolling was always going to land.** Gate 1A deliberately used a Grid that fit the
 > viewport entirely specifically to defer this:
@@ -73,10 +76,67 @@ mission's own budget/units decided — accepted 2026-09-12)
 > SPECIAL always drawn as an empty "none available" row the same way the empty ARMY group already is.
 > A dedicated test suite (`tests/build-nexus.test.ts`) covers the whole mechanism, including one test
 > that plays pick-then-build-then-commit-then-confirm once by keyboard bytes, once by mouse bytes, and
-> once by a driver script, and checks all three land on the identical final state. This is the last
-> gate this milestone's own tracker lists — accepting it closes Milestone 5. This gate is unrelated to
-> gate 5C's own two open questions (which border/scrollbar style, whether the selection marker reads
-> right); both stay open for Mario's manual test.
+> once by a driver script, and checks all three land on the identical final state. This was written as
+> the last gate this milestone's own tracker listed; **it no longer is — see Gate 5E below**, opened by
+> the owner's own feedback after playing this build. This gate was unrelated to gate 5C's own two open
+> questions (which border/scrollbar style, whether the selection marker reads right); the first is now
+> resolved (see 5C's own line above), the second is still open for Mario's manual test.
+
+> **Gate 5E: built and reported (PASS), awaiting Mario's look** —
+> [`../evidence/gate-5e-report.md`](../evidence/gate-5e-report.md). Mario ran the merged Build Phase
+> in iTerm2 and gave two rounds of direct feedback (2026-09-26). Everything in it that was small and
+> local is built; everything that reshapes the screen or needs a clock became gates 5F-5H below, with
+> the decisions it settled in `engine.md` (Sections 3.1, 3.3, 9.2 and 9.7, canon 2.19) and the ones it
+> did not in `open-questions.md` (Q52-Q59). Built:
+>
+> - **The interface can be found in daylight**: the frame lines moved off a colour known to vanish in
+>   bright light, and the key help, the header subtitle and the Nexus draft's descriptions are no
+>   longer dimmed.
+> - **The Grid is its own closed rectangle**, with a line directly above and below it — the cause of
+>   "the cursor ends at what it seems arbitrary" was two blank header rows between the Grid's top and
+>   the nearest line — and its sides read light where there is more Grid and heavy (`===`) where the
+>   map ends. The scrollbar experiment is retired.
+> - **Placing**: a second click on the same tile places (Q52); Space places like Enter; the tile just
+>   built on shows the plan, not a false refusal, and absorbs a repeated Enter until the cursor moves
+>   (or an undo, removal or re-arm changes what the tile means).
+> - **Refusals**: said on the status line with their tile, not on the panel — quietly while the player
+>   only looks, in red once they try — over a grey rather than red block of `x`.
+> - **The status line** is a small typed value (text, tone, the tile it is about), one place resolving
+>   tones onto styles; the key help is trimmed to the essentials.
+> - **Option+Arrow** is the fast move, and no longer splits into an Escape that leaves the screen.
+> - Three small bugs the work turned up: the budget read "130 of 100" after a +30 power; the panel's
+>   overflow key help overwrote the NEXUS and SPECIAL rows on a short Grid; a Nexus draft description
+>   was cut mid-word at 80 columns.
+
+> **Gate 5F: layout and keyboard focus — not yet built.** The owner's feedback that reshapes the
+> screen, in the order the pieces depend on each other:
+>
+> - **The side panel moves to the left of the Grid** (`engine.md` 9.2): "My eyes were on the left and
+>   I didn't notice that I needed to select the things to build on the right." The top bar carries
+>   the title and where the player is; the bottom bar carries the key help and the status line.
+> - **Keyboard focus between the menu and the Grid** (`engine.md` 9.7's Tab row): Tab toggles; on the
+>   menu, Up/Down move a highlight and Enter/Space activates; arming moves focus to the Grid; Esc
+>   returns it. Where focus goes after a placement is Q57 (recommended: back to wherever the arming
+>   came from). The key help says where focus is.
+> - **A smart cursor** (Q55): arming from the menu puts the cursor on the nearest tile where the
+>   structure can go, aligned with the plan with one tile between structures, so the menu-driven flow
+>   needs no arrow keys at all.
+> - **A "Nexus Powers (1)" entry at the top of the menu** opening a popup in the middle of the screen
+>   — the game's first overlay, holding focus until Esc — where a pending power is picked and the
+>   active ones read. Never forced open; "may not be skipped" refuses only the commit (`engine.md`
+>   9.7). Its hotkey is a letter, never a digit.
+
+> **Gate 5G: Debug Mode — not yet built.** A `[d] Debug` overlay of live-editable development flags
+> (`engine.md` 9.7): the second overlay, so the overlay shape is extracted here rather than in 5F.
+> First fields: the border glyphs, where focus goes after a placement (Q57), the smart cursor on/off,
+> and whatever 5F left as a guess. Every flag names the question it serves and is deleted once it is
+> answered.
+
+> **Gate 5H: movement feel — not yet built.** The screen's first frame timer, and what it enables
+> (`engine.md` 3.3): held-key speed tiers (Q54), a scroll margin that is a share of the viewport, the
+> fast modifier and an unarmed click recentring the view, camera moves eased over a few frames, a
+> brief cursor flash when a placement is tried and refused, and an armed click that does not scroll
+> (Q58). Every number is a Debug Mode field, tuned by the owner's own feel.
 
 ## 1. Question
 
@@ -119,7 +179,8 @@ map scrolling — before handing off into Milestone 6's Pulse?
   move the cursor one tile and Shift+Arrow five, Enter places, Esc disarms, `p` commits after one
   confirmation, and the armed item stays armed so a run of placements is one digit then arrows and
   Enter. Mouse: a click on a menu row is its hotkey; a click on a tile moves the cursor and places
-  the armed item; the wheel scrolls; right-click is Esc. Driver: the same Build Phase played from a
+  the armed item (a second click on the same tile, since Q52); the wheel scrolls; right-click is Esc.
+  Driver: the same Build Phase played from a
   command stream — the agent-playtest path — with raw key and mouse events injectable so the
   mappings themselves are under test. The construct menu shows the common tier and the army tier as
   two groups under one digit sequence, and the Nexus draft is its own panel
@@ -155,6 +216,19 @@ map scrolling — before handing off into Milestone 6's Pulse?
   (Milestone 8 fills it), `p` with its one confirmation, undo and removal of planned placements, the
   hotkey-versus-click identical-plan test, and the Special slot's own space in the layout with the
   report's line on whether a third decision channel was missed.
+- **5E — UI refinement from the owner's own playtest of 5A-5D**, opened 2026-09-26 (not part of the
+  milestone's original scope in Sections 1-2 above — added by direct owner feedback, per `AGENTS.md`
+  Section 2's own priority order for what a session works on): everything small and local in that
+  feedback — contrast, the Grid as a closed rectangle with light and heavy sides, two-click placement,
+  Space, the just-placed tile, refusals on a typed status line, trimmed key help, Option+Arrow.
+- **5F — Layout and keyboard focus**, from the same feedback: the side panel on the left, focus
+  between the menu and the Grid (Q57), a smart cursor (Q55), and the Nexus Powers popup — the first
+  overlay.
+- **5G — Debug Mode**: a `[d]` overlay of live-editable development flags, the second overlay, and
+  from here on the way this project shows the owner two answers side by side.
+- **5H — Movement feel**: a frame timer; held-key speed tiers and a share-of-viewport margin (Q54);
+  recentring and eased camera moves; a cursor flash on a refused attempt; an armed click that does not
+  scroll (Q58).
 
 ## 3. Grounded in already-locked contracts
 
@@ -216,3 +290,61 @@ looking around, not like fighting the cursor.
 - [x] `./scripts/check-repository.sh` passes;
 - [x] new questions this raises are rows in [`../specs/open-questions.md`](../specs/open-questions.md)
       — gate 5D raised none of its own; the two still open are gate 5C's, already registered there.
+
+Gate 5E's own definition of done, added 2026-09-26:
+
+- [x] a mouse click on a Grid tile moves the cursor there; a second click on the same tile places
+      (Q52), and Space places alongside Enter;
+- [x] the tile a structure was just placed on shows the plan, not an illegal-preview block, until the
+      cursor moves off it, and a repeated place command there is a no-op;
+- [x] the status line is a small typed value (text, tone, the tile it is about) rather than a plain
+      string, and a refused placement is answered there with its tile — the panel no longer carries
+      one;
+- [x] the key help is trimmed to the essentials;
+- [x] the Grid pane is a closed rectangle whose sides read light where there is more Grid and heavy
+      where the map ends, in both glyph packs and monochrome;
+- [x] a gate report exists for 5E, ending in PASS / REVISE / STOP / BLOCKED — **PASS**, pending the
+      owner's look.
+
+Moved out of 5E when it was split (2026-09-26), into the gates below: the focus toggle and the Nexus
+Powers popup (5F), and the speed tiers and share-of-viewport margin (5H).
+
+Gate 5F's definition of done:
+
+- [ ] the side panel is on the left of the Grid at every size in the supported range, the top bar and
+      the bottom bar run the whole width, and the Grid pane is still a closed rectangle with its light
+      and heavy sides;
+- [ ] Tab moves keyboard focus between the menu and the Grid; on the menu, Up/Down highlight and
+      Enter/Space activate; arming moves focus to the Grid; Esc returns it; after a placement focus
+      goes where Q57's answer says (its recommendation until then); a digit arms from anywhere; the
+      key help says where focus is;
+- [ ] arming from the menu puts the cursor on a tile where the structure can go, by a deterministic
+      rule the driver can assert (Q55);
+- [ ] a "Nexus Powers" entry with a pending count sits at the top of the menu under a letter hotkey,
+      opens a popup over the Grid that holds focus until Esc, picks a pending power by key or click and
+      lists the active ones; nothing opens it but the player; the commit refuses while a pick is
+      pending, and nothing else does;
+- [ ] the same plan by keyboard (hotkeys, and the focus flow), by mouse and by driver still produces
+      the identical state and frames;
+- [ ] screenshots at 80x24, 104x32 and 128x24, and a gate report ending in PASS / REVISE / STOP /
+      BLOCKED.
+
+Gate 5G's definition of done:
+
+- [ ] `d` opens a Debug Mode overlay over the Grid listing live-editable flags, each naming the
+      question it serves and whether it applies at once or on restart; changing one changes the
+      running screen; Esc closes it;
+- [ ] the overlay shape shared with the Nexus Powers popup is extracted once, here, now that there
+      are two uses;
+- [ ] a gate report ending in PASS / REVISE / STOP / BLOCKED.
+
+Gate 5H's definition of done:
+
+- [ ] the Build Phase screen has a frame timer that runs only while something is animating;
+- [ ] held-key speed tiers, a share-of-viewport scroll margin, recentring on the fast modifier and
+      on an unarmed click, eased camera moves, and a cursor flash on a refused attempt — every number a
+      Debug Mode field (Q54);
+- [ ] Q58 answered, and built to the answer;
+- [ ] the reducer still has no clock: timing lives in the adapter and the view, and every existing
+      "same plan, every adapter" test still holds;
+- [ ] a gate report ending in PASS / REVISE / STOP / BLOCKED.

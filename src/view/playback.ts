@@ -112,9 +112,15 @@ export class Playback {
  * legal CSI parameter byte) runs through parameter bytes `0x30`-`0x3F` and intermediate bytes
  * `0x20`-`0x2F` to one final byte `0x40`-`0x7E`; an SS3 sequence (`ESC O` plus one character, the
  * form some terminals use for arrows in application cursor-key mode) is fixed at three characters.
+ * **A meta (Alt/Option) key is one key too**: ESC arriving in the same read as one printable
+ * character or DEL (`ESC b`, `ESC f`, `ESC DEL` — what macOS terminals send for Option+Left, Option+
+ * Right and Option+Backspace by default), or as a prefix to a whole escape sequence (`ESC ESC [ A`, a
+ * terminal set to treat Option as Meta). Split apart, the leading ESC reads as a bare Escape —
+ * "disarm", or with nothing armed "leave this screen" — which is what pressing Option+Left used to
+ * do (found 2026-09-26 reading this function against the owner's own iTerm2, not by a report).
  * Anything else — including a sequence truncated at the end of this chunk, which a byte-level split
- * across two reads can still produce — is a bare ESC, one character long, so an unrecognised prefix
- * terminates rather than swallowing whatever follows it in the same chunk.
+ * across two reads can still produce, and two Escape presses in a row — is a bare ESC, one character
+ * long, so an unrecognised prefix terminates rather than swallowing whatever follows it.
  */
 function endOfEscapeSequence(chunk: string, start: number): number {
   const next = chunk.charCodeAt(start + 1)
@@ -126,6 +132,12 @@ function endOfEscapeSequence(chunk: string, start: number): number {
     return chunk.length
   }
   if (next === 0x4f /* O */) return Math.min(start + 3, chunk.length)
+  if (next === 0x1b /* ESC */) {
+    // Meta-prefixed only when a real sequence follows the second ESC; ESC ESC is two presses.
+    const inner = endOfEscapeSequence(chunk, start + 1)
+    return inner > start + 2 ? inner : start + 1
+  }
+  if (next >= 0x20 && next <= 0x7f) return start + 2
   return Math.min(start + 1, chunk.length)
 }
 

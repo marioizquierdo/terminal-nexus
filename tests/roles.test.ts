@@ -63,6 +63,26 @@ test("chrome.muted survives compose.ts's extra dim attribute in either theme", (
   assert.ok(lightBg - lightMuted > 40, `light chrome.muted, dimmed, is only ${lightMuted} from ~${lightBg}`)
 })
 
+test("chrome.frame survives compose.ts's extra dim attribute in either theme (2026-09-26 playtest)", () => {
+  // The border's own soft (scrolling) segments carry `dim: true` the same way chrome.muted's cells
+  // do, and an owner playtest found the border unreadable in bright ambient light - "during day time
+  // I was not able to tell where the UI is" - which is exactly the compounding the chrome.muted test
+  // above already guards against. Same bound, same reasoning, applied to the role that was missed.
+  const halved = (rgb: readonly [number, number, number]): number =>
+    (rgb[0] + rgb[1] + rgb[2]) / 3 / 2
+  const darkBg = 11
+  const lightBg = 239
+  const darkFrame = halved(rgbFor("chrome.frame", "truecolor", "dark"))
+  const lightFrame = halved(rgbFor("chrome.frame", "truecolor", "light"))
+  assert.ok(darkFrame - darkBg > 40, `dark chrome.frame, dimmed, is only ${darkFrame} against ~${darkBg}`)
+  assert.ok(lightBg - lightFrame > 40, `light chrome.frame, dimmed, is only ${lightFrame} from ~${lightBg}`)
+})
+
+test("chrome.frame's 16-colour tier stays off ANSI 90 too, in both themes", () => {
+  assert.notEqual(sgrFor("chrome.frame", "color16", "dark")[0], 90, "chrome.frame/dark regressed to ANSI 90")
+  assert.notEqual(sgrFor("chrome.frame", "color16", "light")[0], 90, "chrome.frame/light regressed to ANSI 90")
+})
+
 test("player.a and player.b use ANSI-16 codes that actually match their hue elsewhere in the table", () => {
   // 96 (bright cyan) and 93 (bright yellow) were the codes in place before this fix, for roles the
   // 256/truecolor entries and the surrounding comment both call rust orange and bioluminescent
@@ -92,8 +112,9 @@ test("the 256-colour tier is derived from rgb, not a fourth hand-authored value 
   // Pinned against node scripts/measure-palette-derivation.mjs's own output, 2026-08-24: these are
   // the *derived* indices, and for chrome.frame and player.b (dark) they differ from what used to be
   // hand-authored (240 and 84) - proof the switch actually took effect, not just that some number
-  // came back.
-  assert.deepEqual(sgrFor("chrome.frame", "color256", "dark"), [38, 5, 59])
+  // came back. chrome.frame's own rgb moved again 2026-09-26 (the same low-contrast-border fix
+  // chrome.muted already had), so its derived index moved too - recomputed, not guessed.
+  assert.deepEqual(sgrFor("chrome.frame", "color256", "dark"), [38, 5, 247])
   assert.deepEqual(sgrFor("player.b", "color256", "dark"), [38, 5, 78])
   // player.a's dark 256 index happened to already match its hand-authored value (173) before this
   // change - included so the pin set covers a "no visible change" role too, not only ones that moved.

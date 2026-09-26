@@ -2,8 +2,8 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.18
-**Updated:** 2026-09-21
+**Canon version:** 2.19
+**Updated:** 2026-09-26
 **License:** Apache-2.0
 
 ## 1. Why this file exists
@@ -956,6 +956,192 @@ any structures or units drawn on screen to judge a palette against.
 a glance; there is no faction B yet to check that against, monochrome or otherwise. Revisit this the
 moment a second faction's structures or units are drawn — Milestone 8 at the latest.
 
+### Q53 — Now that Tab is the menu/Grid focus toggle, does the game still want a "jump to my next structure" binding, and on what key?
+
+**Status:** OPEN — blocks nothing before whichever session builds the focus-toggle mode; a real trade,
+not a blocker to design around.
+
+`engine.md` 9.7's bindings table previously recommended Tab / Shift+Tab as "jump the cursor to the
+player's next / previous own structure" — GUIDANCE, never actually implemented (no code binds Tab
+today). The owner's 2026-09-26 feedback asks for Tab to toggle keyboard focus between the side menu
+and the Grid instead, as part of a fuller keyboard-only play style (highlight a menu entry, Enter/Space
+arms it and moves focus to the Grid, place, focus returns to the menu). `engine.md` has been updated
+to retire the structure-jump idea from Tab specifically, since nothing depended on it, rather than
+leave two GUIDANCE recommendations for the same key.
+
+| Option | Cost |
+| --- | --- |
+| A. **Drop the structure-jump idea entirely.** Nothing has ever used it; the focus toggle is the more concretely specified, currently-requested feature | Loses a genuinely useful RTS convention ("go to my barracks, build next to it") that this project itself named as the reason for the original binding |
+| B. **Give structure-jump a different key later**, once the focus-toggle mode exists and its own key needs (Tab, Esc, Delete) are settled and shown not to already crowd the vocabulary | Keeps the idea alive without deciding a key for it before there's a real keymap to fit it into |
+
+**Recommendation: B.** Build the focus toggle first — it is the concretely specified, owner-requested
+feature — and revisit structure-jump as a small addition once its own keymap exists, rather than
+solve for a key nothing currently claims.
+
+### Q54 — Exact cursor-movement speed tiers, thresholds, and timings
+
+**Status:** OBSERVABLE — gate 5H builds the speed ramp `engine.md` 3.3 describes, with every number a
+live field in gate 5G's Debug Mode panel, and the owner's own feel settles them.
+
+The owner's own description (2026-09-26): "different speed modes: slow (1 tile per pulse), normal
+(2), fast (4) and faster (8). It starts at normal speed, and quickly changes to fast; faster is
+activated anytime with shift; if the user changes direction... then the speed changes to slow... The
+scroll margin] needs to be dependent on the screen size, I feel like about 20% of the height or width
+of the screen should be enough to trigger scrolling." These are a real proposal, not yet felt against
+a terminal — the same position `--scroll-margin`'s own three-tiles-by-default already treats numbers
+this way (Q37's own precedent).
+
+| Option | Cost |
+| --- | --- |
+| A. **Build the proposed shape exactly** (four tiers, direction-change reset, held-key ramp, a percentage-of-viewport margin) and expose the numbers as flags/fixtures the way `--scroll-margin` already is, so they can be felt and retuned without a second round of guessing | Real engineering: this needs the Build Phase's live loop to track key-hold duration and direction history, neither of which exist today (`src/build/keyboard.ts` currently turns one key event into one fixed-size command, nothing more) |
+| B. **Build a simpler two-tier version first** (normal / fast-via-shift only, no held-key ramp, no direction-reset), and only add the fuller tiering if the simple version still feels slow | Cheaper first pass, but risks a second, larger rebuild if the owner's fuller description turns out to be the point rather than a nice-to-have |
+
+**Recommendation: A.** The owner's description is specific enough to build directly rather than
+simplify first and re-ask; make every number a parameter the way the margin already is, so this
+session's guesses are replaceable by his own feel without another round trip.
+
+### Q55 — Smart cursor placement, and interpolated cursor/camera movement: build now or keep in mind?
+
+**Status:** OBSERVABLE — revised 2026-09-26, the same day it was registered: each now has a gate.
+The smart cursor goes with gate 5F's keyboard focus, because the owner's own keyboard-only flow
+("down-down-space, place, space, place") only works if arming from the menu puts the cursor
+somewhere it can build; interpolation goes with gate 5H, because it needs the frame timer the speed
+tiers of Q54 need anyway. The original recommendation below — land the click, focus and speed
+mechanics first — is kept as written; what changed is that the focus mechanic turned out to depend
+on the smart cursor rather than merely sit beside it. **Defined enough to build**: from the last
+placement (or the Nexus, before any), the nearest tile where the armed structure is legal, searched
+outward toward the Grid's centre, preferring a position aligned with an existing structure with one
+tile between them — deterministic, a function of the plan, so the reducer can own it and the driver
+can assert it. An on/off field in the Debug Mode panel lets the owner compare it with plain "stay
+where you are".
+
+Two further ideas from the same 2026-09-26 feedback, each real but distinct from anything else in this
+round: (1) when focus moves to the Grid right after arming a structure from the menu, place the cursor
+at the nearest empty tile toward the map's centre, aligned with existing placements so a run forms a
+tidy grid with one tile of spacing — a placement heuristic, not a UI wiring detail; (2) render the Grid
+pane on its own timer, decoupled from key events, so cursor and camera movement (including the speed
+tiers of Q54, and a "click to centre" mouse gesture when nothing is armed) ease toward their target
+over several frames instead of jumping — asked directly as "do you think this would be possible?". It
+is: `src/cli/spike.ts`'s live loop redraws once per input event today and has no independent frame
+timer at all, unlike the Nexus Pulse view, which already proves the same "presentation interpolates,
+simulation does not" pattern this would need (`engine.md` Section 1). Neither idea is specified enough
+to build blind — the smart-cursor rule needs a precise definition of "aligned, one tile of spacing" for
+an irregular existing layout, and the interpolation idea needs its own frame-timer plumbing decision
+(when the loop starts and stops, so an idle screen is not redrawing needlessly).
+
+**Recommendation: keep both in mind, build neither in the same pass as Q52/Q53/Q54.** Land the click,
+focus, and speed-tier mechanics first — they are what the owner actually asked to be able to use next
+— then revisit interpolation as the natural way to make the speed tiers *look* smooth once they exist,
+and scope the smart-cursor heuristic as its own small follow-up once there is a real focus-toggle mode
+for it to trigger from.
+
+### Q56 — The heavy border's vertical glyph, and whether a corner reacts to it
+
+**Status:** OBSERVABLE — built as recommended in gate 5E (canon 2.19): ASCII's heavy side is a bold
+`|`, the Unicode pack's is `┃`, and the Grid rectangle's corners read heavy only when the whole Grid
+is visible. Blocks nothing; awaiting the owner's look in his own terminal —
+`evidence/screenshots/build-grid-edge.png` is the picture to compare against, and gate 5G's Debug
+Mode panel is the place to try another glyph if bold alone reads too faintly.
+
+`engine.md` 3.3 now says a border side that has actually reached the Grid's own edge reads as a
+heavier, doubled run — `=` for a horizontal (top/bottom) run, the owner's own example. The ASCII pack
+has no equally clean doubled *vertical* bar: a real doubled-bar character (`‖`/`║`) is not ASCII,
+contradicting the pack's own "everything here is one cell wide, ASCII-safe is the baseline" premise
+(`theme.ts`); `#` is already `terrain.rock`'s glyph and would read as rock on the very same screen;
+`H` reads as a letter, not a line. Separately, the four corners are drawn as a single plain glyph
+today regardless of the sides beside them (`drawChrome`'s own comment: a soft run "never looks broken
+at the point itself"); once a side can read *heavy*, a `+` corner meeting a doubled `=` run is a real
+weight mismatch exactly where the eye rests first on a rectangle.
+
+| Option | Cost |
+| --- | --- |
+| A. **Leave verticals as plain `|` even when heavy**, accepting an asymmetry between axes | Simplest; but a Grid that fits the viewport (every side heavy at once) would read heavy on top/bottom and ordinary on the sides, undercutting the "one visual statement" the whole point of the whole-grid-heavy case is |
+| B. **Reuse a different existing glyph for a heavy vertical** — e.g. two adjacent `|` is impossible in one cell, but a bold/inverse attribute on the ordinary `|` could carry the same "heavier" idea without a new character, at the cost of leaning on colour/attribute rather than shape (this project's own preference is shape that survives monochrome) | Keeps ASCII-only and one-cell-wide; whether attribute-only "heavy" reads as clearly as a doubled character is unverified |
+| C. **Give the Unicode pack a clean answer (heavy box-drawing characters, e.g. `━`/`┃`) and accept the ASCII pack simply has no heavy vertical**, leaving it plain there | The Unicode pack is not the acceptance target; ASCII stays the floor, so this leaves the floor with the asymmetry option A already costs |
+
+**Recommendation: B**, tried as a comparison against A rather than argued — attribute-only weight is
+cheap to build and screenshot beside the horizontal `=`, and this project already prefers observable
+comparisons to a guessed pick (Section 2 of this register). Corners: give the whole-Grid-heavy case
+(only) its own corner glyph too, since that is the one case where all four sides agree and the visual
+mismatch is most visible; leave corners exactly as today whenever sides merely differ between light
+and heavy, since the existing reasoning for a plain corner there still holds.
+
+### Q57 — After a placement, where does keyboard focus go — and what returns it to the menu?
+
+**Status:** OPEN — blocks nothing before gate 5F builds keyboard focus; 5F proceeds under the
+recommendation, with the alternatives one Debug Mode field away.
+
+Two statements in canon pull opposite ways once focus exists. `engine.md` 9.7's fast path — **the
+armed item stays armed after placing, so a run is one digit followed by arrows and Enter** — assumes
+arrows keep moving the Grid cursor after a placement. The owner's own sketch of the focus toggle
+(2026-09-26) returns focus to the menu after every placement: "then the focus comes back to the menu,
+the user can click enter/space again to build another building". If focus always returns to the
+menu, the second arrow press of the fast path moves the menu highlight instead of the cursor, and the
+path a proficient player types without looking breaks. Separately, the same sketch returns focus with
+"esc or delete" — but the Mac key labelled delete sends Backspace, which is already "remove the
+planned structure under the cursor", so one key cannot mean both.
+
+| Option | Cost |
+| --- | --- |
+| A. **Always back to the menu** after a placement, as sketched | The keyboard-only flow reads exactly as described; the digit-then-arrows fast path breaks on its second placement, which is the one flow canon calls the proficient player's |
+| B. **Always stay on the Grid** | The fast path is untouched; the menu-driven flow needs a Tab or an Esc after every placement to pick again, which is what the sketch was trying to remove |
+| C. **Back to wherever the arming came from**: arming from the menu (highlight, then Enter/Space) returns focus to the menu after a placement; arming by digit (or a click on a row) keeps focus on the Grid | Both flows work as their users expect; the rule is one more thing to explain, and the key help must show where focus is — which convention 1 (`engine.md` 9.7) already demands once arrows can mean two things |
+
+For the key that returns focus: **Esc** (disarm, and back to the menu — the same "cancel" it already
+is), Tab (toggle), and a right click (which is already Esc). Backspace stays "remove under the
+cursor" in both focuses.
+
+**Recommendation: C**, with A and B as a Debug Mode choice so the owner can feel all three rather
+than read about them. C keeps the one path canon promised a proficient player while delivering the
+flow the owner sketched, and with gate 5F's smart cursor (Q55) the sketched flow needs no arrow keys
+at all: down, down, space arms and lands the cursor on a free tile, space places and returns to the
+menu, space arms again at the next free tile, and so on.
+
+### Q58 — Should a click with something armed be allowed to scroll the view?
+
+**Status:** OPEN — blocks nothing today; gate 5H decides it while it widens the scroll margin, which
+is what turns it from a corner case into a common one.
+
+Q52 made placement by mouse a two-click gesture, safe because the second click is compared by tile,
+not by screen position: when the first click lands inside the scroll margin, the camera follows the
+cursor and the tile under the pointer changes, so a second click on the same spot is correctly read
+as a first click on a new tile. Correct — but from the player's side, they clicked the same place
+twice and nothing was built. With a three-tile margin that happens only near the Grid pane's edges;
+at the ~20% margin the owner asked for (Q54), it is roughly a fifth of the pane on every side.
+
+| Option | Cost |
+| --- | --- |
+| A. **Keep today's behaviour**: an armed click scrolls like any cursor move | Nothing to build; the "nothing happened" second click becomes common as the margin widens |
+| B. **An armed click moves the cursor but never the camera**; the follow rule applies again at the next keyboard move or wheel step | The confirming click always lands on the tile the preview is on. A bend to 3.3's "the cursor drives the camera" for one input — acceptable because the margin is already a follow rule, not an invariant (gate 5A) — and a cursor can briefly sit inside the margin, which the margin rule's own wording already allows at the Grid's edge |
+| C. Compare the confirming click by screen position again | Q50's own finding: after a scroll, the same screen cell is a different tile, and this would place on it — rejected |
+
+**Recommendation: B.** It keeps both of Q52's properties — two deliberate clicks, and never a
+placement on a tile the player did not click — and removes the one surprise left. An unarmed click is
+unaffected: it is the "click to centre" the owner asked for (gate 5H), where moving the view is the
+whole point.
+
+### Q59 — A `[m] Map` popup that shows the whole Grid at once
+
+**Status:** OPEN — keep in mind, not needed for Milestone 5; registered at the owner's request, the
+same shape Q19 was.
+
+The owner, reviewing the retired scrollbar experiment (2026-09-26): "Perhaps we should have a '[m]
+Map' hotkey that opens a popup in the middle with the whole map. Take note of this, we may develop it
+later on another session spike, because everything needs a special representation for the minimap,
+but it seems it would be really useful for checking large maps, navigation, and checking for status
+during large pulses." `engine.md` 3.3 still says there is no minimap; a popup the player opens is a
+different thing from a minimap always on screen, but it shares the hard part — drawing a Grid larger
+than the maximum viewport in a fraction of the cells, which the game has deliberately never needed.
+
+| Option | Cost |
+| --- | --- |
+| A. **A spike of its own**, once gate 5F's overlay exists and some map is bigger than the maximum viewport (72 × 24) | Waits for a real need; the spike's question is the downsampled representation, which nothing else answers |
+| B. Build it inside Milestone 5 | No mission map needs it yet; the representation question would be answered against the spike's own test Grid, not a real one |
+
+**Recommendation: A.** `m` is reserved for it (`engine.md` 9.7) so nothing else takes the key. The
+natural moment is the first mission map that does not fit the maximum viewport, or the first Pulse
+large enough that watching it needs an overview — whichever comes first.
+
 ## 5. Answered
 
 Rows move here with the date, the decision, and the document that now owns it.
@@ -963,7 +1149,8 @@ Rows move here with the date, the decision, and the document that now owns it.
 | ID | Answered | Decision | Now owned by |
 | --- | --- | --- | --- |
 | Q30 | 2026-09-21 | **A, built.** The Build Phase panel is the construct menu, what is left to spend, the selected item's cost and effect, and the reason a placement was refused — and **no radius preview**, because nothing in the content that exists has a radius. Gate 5B built exactly the recommendation and the panel came out shorter than gate 5A's, not longer: the blocks it replaced were reporting things already visible on the Grid | [`engine.md`](engine.md) Section 9.2; [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md) |
-| Q50 | 2026-09-21 | **A click places the armed structure — no second click to confirm.** Mario, shown both behaviours side by side: "Click to place looks good to me too. We can always implement undo or destroy later, for now this is good." (Undo and remove already exist: `u` and Backspace.) The toggle is deleted rather than kept as a setting | [`engine.md`](engine.md) Section 9.7, whose own recommendation this confirms; [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md) |
+| Q50 | 2026-09-21 | **A click places the armed structure — no second click to confirm.** Mario, shown both behaviours side by side: "Click to place looks good to me too. We can always implement undo or destroy later, for now this is good." (Undo and remove already exist: `u` and Backspace.) The toggle is deleted rather than kept as a setting. **Revisited 2026-09-26, see Q52** | [`engine.md`](engine.md) Section 9.7, whose own recommendation this confirms; [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md) |
+| Q52 | 2026-09-26 | **Reversed: a second click on the same tile places it, not the first.** Owner, after living with gate 5D's build: "the building is placed right away, but there should be a confirmation... the default should require a second click." A future `Shift+click` is planned as a one-click escape hatch, not built now. Q50's own asymmetry finding (a first click can scroll the camera, so a second click at the same *screen position* lands on a different *tile*) is what makes this safe to re-adopt: the check is on tile identity, not screen position | [`engine.md`](engine.md) Section 9.7 |
 | Q1 | 2026-08-20 | **Tile width is adaptive presentation capability**: one column per tile in the 80x24 composition, two columns per tile at 128 columns or wider. Same tiles, same actors, same revealed information — only the composition changes. The 80x24 floor is preserved and the concept art's look is reachable on a wide terminal | [`engine.md`](engine.md) Section 9.3 |
 | Q2 | 2026-08-20 | **One resource.** Salvage recovers the same resource rather than a second one. Nexus energy is a state readout, not a currency. A second resource is an addition a later microgame may earn; it is not assumed | [`engine.md`](engine.md) Section 6 |
 | Q3 | 2026-08-20 | **Units may span multiple tiles.** Large units are a normal, strategically important case, not a later extension — a Ravel raider drawn `>x<` is one unit occupying three tiles. The collision system tests a mover's whole footprint against its mask; damage and destruction apply to the entity, not the tile | [`engine.md`](engine.md) Section 3.5 |
@@ -1008,6 +1195,33 @@ this row is where to start reading before adding it.
 `engine.md` 9.7's own "observable as a toggle" sentence is now stale, and its wording change is in
 gate 5A's report (Section 9) so that it lands with that gate's other canon changes in one version
 bump rather than two.
+
+**Revisited 2026-09-26 — see Q52.** The account above is left exactly as it was written; it is still
+the honest record of what Mario decided on 2026-09-21 and why. It stopped being current five days
+later, on his own further playtest.
+
+### Q52 — answered
+
+Registered and answered the same day, 2026-09-26, reversing Q50 directly. Mario, after playing the
+merged Build Phase in a real terminal: "Click to place building: the building is placed right away,
+but there should be a confirmation. Perhaps later we can create a 'shift click' to auto-confirm, but
+the default should require a second click." **Decided: a second click on the same tile places it; the
+first only moves the cursor there and shows the armed preview.** A later `Shift+click` as a one-click
+escape hatch is noted as a real idea and explicitly not built yet.
+
+This reopens exactly the asymmetry Q50's own writeup found and rejected — a first click within the
+scroll margin can slide the Grid under the pointer, so a second click at the same *screen position*
+lands on a different *tile*. What makes it safe to re-adopt anyway: the reducer's placement check
+(`src/build/state.ts`'s `applyBuildCommand`, `click-tile` case) already compares tile identity, not
+screen position — `withCursor`'s own `moved` result is true whenever the resolved tile differs from
+the cursor's current one, camera shift included. A second click after the camera moved is therefore
+correctly read as a *first* click on a new tile (arm/preview only), never a mis-click that places on
+the wrong one; it just means the player's "second click" needs one more click to actually confirm,
+which is a milder cost than Q50's original bug (a silent wrong placement) rather than the same one
+recurring.
+
+`engine.md` 9.7 carries the reversal; `../milestones/milestone-05-build-phase.md` gate 5E is where it
+gets built.
 
 ### Q46 — answered
 

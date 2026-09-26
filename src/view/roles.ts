@@ -147,7 +147,13 @@ type Swatch = Readonly<{
  */
 const PALETTE: Readonly<Record<Theme, Record<StyleRole, Swatch>>> = {
   dark: {
-    "chrome.frame": { ansi: 90, rgb: [88, 96, 105] },
+    // Moved off ANSI 90 onto 37 for the same reason `chrome.label`/`chrome.muted` were, above: the
+    // border carries the same `dim` attribute on its own soft (scrolling) segments, so a role that
+    // starts at "bright black" reads as gone entirely on real terminals - exactly the owner finding
+    // this fix already answered once for the other two roles (2026-09-26 playtest: "during day time
+    // I was not able to tell where the UI is"). Same rgb as `chrome.muted`'s own fix - a value
+    // already proven legible dimmed, rather than a new number invented for this role.
+    "chrome.frame": { ansi: 37, rgb: [150, 158, 168] },
     "chrome.title": { ansi: 97, rgb: [236, 240, 245] },
     "chrome.label": { ansi: 37, rgb: [148, 156, 166] },
     "chrome.value": { ansi: 37, rgb: [206, 213, 221] },
@@ -177,7 +183,9 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Swatch>>> = {
   // against BACKGROUND_RGB.light, keeping each role's hue identity but moving its lightness to the
   // other end. Same structure as `dark`, so a future third theme is a table, not a redesign.
   light: {
-    "chrome.frame": { ansi: 90, rgb: [150, 146, 140] },
+    // Same fix as dark's chrome.frame, above - off ANSI 90, rgb matched to this theme's own
+    // chrome.muted (already proven legible dimmed).
+    "chrome.frame": { ansi: 30, rgb: [110, 104, 96] },
     "chrome.title": { ansi: 30, rgb: [28, 26, 24] },
     "chrome.label": { ansi: 30, rgb: [90, 86, 80] },
     "chrome.value": { ansi: 30, rgb: [48, 44, 40] },

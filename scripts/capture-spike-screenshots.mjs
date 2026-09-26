@@ -83,10 +83,25 @@ function shoot(
 
 shoot(
   "spike-minimum",
-  "80x24, the acceptance floor: a 48x16 window onto a 96x40 Grid. The footer names the visible range; the border marks the sides with more Grid",
+  "80x24, the acceptance floor: a 48x16 window onto a 96x40 Grid, closed into its own rectangle. The footer names the visible range; each side of the rectangle is light where there is more Grid that way",
   {
     drive: () => literal("1"), // pick the first Nexus power, past the draft gate 5D adds
     waitForText: "RESOURCE",
+  },
+)
+
+shoot(
+  "build-grid-edge",
+  "Hard against the Grid's north-west corner: the top and left sides read heavy (===) because the map ends there, the bottom and right stay light because there is more Grid that way",
+  {
+    drive: () => {
+      literal("1") // pick the first Nexus power, past the draft gate 5D adds
+      for (let step = 0; step < 5; step += 1) {
+        key("S-Left")
+        key("S-Up")
+      }
+    },
+    waitForText: "cursor 0,0",
   },
 )
 
@@ -118,15 +133,15 @@ shoot(
 
 shoot(
   "spike-illegal",
-  "The same barracks over rock: the panel says why and names the tile, and the preview turns to a block of x. Shape carries the refusal, so it survives monochrome",
+  "The same barracks over rock, after pressing Enter: the preview is a grey block of x and the status line says why, naming the tile - in red, because a placement was tried and refused. Shape carries the refusal, so it survives monochrome",
   {
     drive: () => {
       literal("1") // pick the first Nexus power, past the draft gate 5D adds
       literal("1") // arm Barracks
       for (let step = 0; step < 10; step += 1) key("Left")
       for (let step = 0; step < 8; step += 1) key("Up")
-      // Pressing Enter is what produces the refusal *message*; the preview alone only shows the
-      // shape. Both are in the shot, which is the point: you can see it is wrong before you try.
+      // Only looking, the status line already says why, quietly; pressing Enter is what turns the
+      // same sentence red — the acknowledgement that the attempt was received and refused.
       literal("\r")
     },
     waitForText: "rock in the way",
@@ -137,22 +152,6 @@ shoot(
   "spike-scrolled",
   "Scrolled into the middle of the Grid with Shift+Arrow and PageDown - real modified-arrow bytes through tmux. All four borders now mark more Grid",
   {
-    drive: () => {
-      literal("1") // pick the first Nexus power, past the draft gate 5D adds
-      for (let step = 0; step < 4; step += 1) {
-        key("S-Right")
-        key("NPage")
-      }
-    },
-    waitForText: "view x",
-  },
-)
-
-shoot(
-  "spike-scrollbar",
-  "The same scrolled position with --edge-style scrollbar: the bottom and west borders show roughly where the visible slice sits, not only that there is more of it",
-  {
-    args: "--capability truecolor --theme dark --edge-style scrollbar",
     drive: () => {
       literal("1") // pick the first Nexus power, past the draft gate 5D adds
       for (let step = 0; step < 4; step += 1) {
@@ -179,15 +178,35 @@ shoot(
 
 shoot(
   "spike-mouse-place",
-  "A real SGR mouse click placing a structure: the bytes a terminal actually sends, not a description of one",
+  "Two real SGR mouse clicks placing a structure - the first arms the preview at the tile, the second confirms it (Q52): the bytes a terminal actually sends, not a description of one",
   {
     drive: () => {
       literal("1") // pick the first Nexus power, past the draft gate 5D adds
       literal("1") // arm Barracks
-      // Column 31, row 17 (1-based) is tile 30,14 at the opening camera — the same cell
+      // Column 32, row 13 (1-based) is tile 30,10 at the opening camera — the same cell
       // `cellForTile` hands the tests, formatted the way src/build/mouse.ts's own
-      // `formatMouseEvent` would.
-      literal(`${ESC}[<0;31;17M`)
+      // `formatMouseEvent` would. The first click only moves the cursor there; the second, on the
+      // same tile, is what actually places it. Chosen well inside the scroll margin: a first click
+      // near the Grid pane's edge scrolls the map under the pointer, and a second click in the same
+      // place is then a first click on the tile beside it (Q52's own finding).
+      literal(`${ESC}[<0;32;13M`)
+      literal(`${ESC}[<0;32;13M`)
+    },
+    waitForText: "planned at",
+  },
+)
+
+shoot(
+  "build-just-placed",
+  "Right after a placement, still armed and the cursor still on it: the built structure shows through undisturbed rather than the illegal-preview block a fresh legality check would otherwise find here (2026-09-26 owner feedback) - pressing Enter again here does nothing until the cursor moves",
+  {
+    drive: () => {
+      literal("1") // pick the first Nexus power, past the draft gate 5D adds
+      literal("1") // arm Barracks
+      for (let step = 0; step < 6; step += 1) key("Right")
+      key("Down")
+      literal("\r") // place it
+      literal("\r") // a repeated place on the same tile: a no-op, not a refusal
     },
     waitForText: "planned at",
   },
@@ -195,9 +214,11 @@ shoot(
 
 shoot(
   "build-spent-down",
-  "Two barracks placed and the budget nearly gone: the rows that no longer fit are dimmed, and the selected one says what it would cost against what is left",
+  "Two barracks and a hatchery placed, 20 of 130 left: the rows that no longer fit are dimmed, and the status line says what the selected one would cost against what is left - affordability first, whatever the tile",
   {
     drive: () => {
+      // The first Nexus power adds 30, so the budget is 130: two barracks (80) and a hatchery (30)
+      // leave 20, which a barracks (40) no longer fits and the turret (15) still does.
       literal("1") // pick the first Nexus power, past the draft gate 5D adds
       literal("1") // arm Barracks
       for (let step = 0; step < 6; step += 1) key("Right")
@@ -205,8 +226,13 @@ shoot(
       literal("\r")
       for (let step = 0; step < 4; step += 1) key("Right")
       literal("\r")
+      literal("2") // arm Hatchery
+      for (let step = 0; step < 4; step += 1) key("Right")
+      literal("\r")
+      for (let step = 0; step < 4; step += 1) key("Right") // clear of the hatchery, so it shows
+      literal("1") // Barracks again: 40, with 20 left
     },
-    waitForText: "CANNOT BUILD HERE",
+    waitForText: "costs 40, 20 left",
   },
 )
 
@@ -221,7 +247,7 @@ shoot(
 
 shoot(
   "spike-monochrome",
-  "Monochrome is the floor, not the degraded mode: the same screen with every colour removed, including the edge markers and the preview",
+  "Monochrome is the floor, not the degraded mode: the same screen with every colour removed, the light and heavy edges and the preview included",
   {
     args: "--capability monochrome",
     drive: () => {
@@ -265,8 +291,7 @@ shoot(
       literal("1") // arm Barracks
       for (let step = 0; step < 6; step += 1) key("Right")
       key("Down")
-      literal("\r") // place it
-      key("Escape") // disarm, so the cursor's own tile does not still show the armed preview
+      literal("\r") // place it - still armed, cursor still on it, and it reads as built, not refused
       literal("p") // ask to start the Nexus Pulse
       literal("y") // accept
     },

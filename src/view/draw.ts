@@ -31,6 +31,13 @@ const PACK_SAFE = new Set([
   "┘",
   "┄",
   "┆",
+  "━",
+  "┃",
+  "├",
+  "┤",
+  "┬",
+  "┴",
+  "┼",
 ])
 
 const TRANSLITERATE: Readonly<Record<string, string>> = {

@@ -6,7 +6,6 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
-import { scrollThumb } from "../src/build/camera.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildSessionOptions } from "../src/build/session.ts"
 import { SPIKE_ALLOTMENT, SPIKE_CATALOG } from "../src/build/catalog.ts"
@@ -50,16 +49,12 @@ const WIDE = { columns: 128, rows: 24 }
 function screenAt(
   terminal: { columns: number; rows: number },
   drive: (build: BuildSession, layout: ReturnType<typeof buildLayout>) => void = () => {},
-  edgeStyle?: "hard-soft" | "scrollbar",
 ) {
   const context = neutralContext()
   const layout = buildLayout(terminal, context.grid)
   const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   drive(build, layout)
-  const frame = composeBuildFrame(
-    { context, state: build.state, layout, ...(edgeStyle === undefined ? {} : { edgeStyle }) },
-    "monochrome",
-  )
+  const frame = composeBuildFrame({ context, state: build.state, layout }, "monochrome")
   return { context, layout, build, frame, text: frameToText(frame) }
 }
 
@@ -85,60 +80,83 @@ test("a terminal larger than the maximum viewport spends the difference on centr
   assert.equal(huge.frame.width, 200)
 })
 
-/** Whether the border cell at this position is drawn as the game's "soft" (dim, more-Grid-this-way)
- *  edge glyph rather than the plain solid one — checked against the frame's own style, not the
- *  glyph alone, since dimness is the actual signal (the ascii soft glyph is a plain "."). */
+/** Whether the frame cell at this position is drawn as the game's "soft" (dim, more-Grid-this-way)
+ *  line rather than a plain or heavy one — checked against the frame's own style, not the glyph
+ *  alone, since the soft line is the frame's own `-`/`|` and dimness is the actual signal. */
 function isSoftEdge(frame: ReturnType<typeof composeBuildFrame>, x: number, y: number): boolean {
   return cellAt(frame, x, y).style.dim === true
 }
 
-test("engine-3.3-markers: the border goes soft on sides with more Grid, and stays solid where it does not", () => {
+test("the Grid pane is a closed rectangle: a line directly above, below, and beside it", () => {
+  // The owner could not tell where the Grid ended (2026-09-26): two blank header rows sat between its
+  // top edge and the nearest line, and the footer sat against its bottom edge with no line at all.
+  // Every side of the Grid pane is now a frame line touching the Grid's own first or last row/column.
+  for (const glyphPack of ["ascii", "unicode"] as const) {
+    const context = neutralContext()
+    const layout = buildLayout(MINIMUM, context.grid)
+    const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
+    const frame = composeBuildFrame({ context, state: build.state, layout, glyphPack }, "monochrome")
+    const { gridBox, origin, viewport } = layout
+    assert.equal(gridBox.top, origin.row - 1, "the top rule sits directly on the Grid's first row")
+    assert.equal(gridBox.bottom, origin.row + viewport.height, "the bottom rule directly under its last")
+    const blank = (x: number, y: number): boolean => cellAt(frame, x, y).glyph === " "
+    for (let x = gridBox.left + 1; x < gridBox.right; x += 1) {
+      assert.ok(!blank(x, gridBox.top), `${glyphPack}: a gap in the top rule at column ${x}`)
+      assert.ok(!blank(x, gridBox.bottom), `${glyphPack}: a gap in the bottom rule at column ${x}`)
+    }
+    for (let y = gridBox.top + 1; y < gridBox.bottom; y += 1) {
+      assert.ok(!blank(gridBox.left, y), `${glyphPack}: a gap in the left side at row ${y}`)
+      assert.ok(!blank(gridBox.right, y), `${glyphPack}: a gap in the right side at row ${y}`)
+    }
+    // The rules meet the frame and the divider in a real junction, not a line running past them.
+    const junctions = glyphPack === "ascii" ? ["+", "+", "+"] : ["├", "┼", "┴"]
+    assert.equal(cellAt(frame, gridBox.left, gridBox.top).glyph, junctions[0])
+    assert.equal(cellAt(frame, gridBox.right, gridBox.top).glyph, junctions[1])
+    assert.equal(cellAt(frame, gridBox.right, gridBox.bottom).glyph, junctions[2])
+  }
+})
+
+test("engine-3.3-markers: a Grid side goes soft where there is more Grid, and heavy where there is not", () => {
   // Hard against the Grid's north-west corner: nothing north of here, nothing west of here.
   const corner = screenAt(MINIMUM, (build) => {
     build.run([{ kind: "move-cursor", dx: -999, dy: -999 }])
   })
+  const { gridBox } = corner.layout
   const midGridColumn = corner.layout.origin.column + 5
   const midGridRow = corner.layout.origin.row + 5
   assert.equal(
-    isSoftEdge(corner.frame, midGridColumn, corner.layout.offset.row),
+    isSoftEdge(corner.frame, midGridColumn, gridBox.top),
     false,
     "nothing north of the Grid's own top edge",
   )
   assert.equal(
-    isSoftEdge(corner.frame, corner.layout.offset.column, midGridRow),
+    isSoftEdge(corner.frame, gridBox.left, midGridRow),
     false,
     "nothing west of the Grid's own left edge",
   )
-  assert.ok(
-    isSoftEdge(corner.frame, midGridColumn, corner.layout.offset.row + corner.layout.composition.height - 1),
-    "more Grid to the south",
-  )
-  assert.ok(
-    isSoftEdge(corner.frame, corner.layout.dividerColumn, midGridRow),
-    "more Grid to the east",
-  )
+  assert.ok(isSoftEdge(corner.frame, midGridColumn, gridBox.bottom), "more Grid to the south")
+  assert.ok(isSoftEdge(corner.frame, gridBox.right, midGridRow), "more Grid to the east")
 
   // Walk into the middle and every side has more Grid beyond it.
   const middle = screenAt(MINIMUM, (build) => {
     build.run([{ kind: "move-cursor", dx: 30, dy: 12 }])
   })
+  const box = middle.layout.gridBox
   const midColumn = middle.layout.origin.column + 5
   const midRow = middle.layout.origin.row + 5
-  assert.ok(isSoftEdge(middle.frame, midColumn, middle.layout.offset.row), "north, from the middle")
-  assert.ok(
-    isSoftEdge(middle.frame, midColumn, middle.layout.offset.row + middle.layout.composition.height - 1),
-    "south, from the middle",
-  )
-  assert.ok(isSoftEdge(middle.frame, middle.layout.offset.column, midRow), "west, from the middle")
-  assert.ok(isSoftEdge(middle.frame, middle.layout.dividerColumn, midRow), "east, from the middle")
+  assert.ok(isSoftEdge(middle.frame, midColumn, box.top), "north, from the middle")
+  assert.ok(isSoftEdge(middle.frame, midColumn, box.bottom), "south, from the middle")
+  assert.ok(isSoftEdge(middle.frame, box.left, midRow), "west, from the middle")
+  assert.ok(isSoftEdge(middle.frame, box.right, midRow), "east, from the middle")
+  // Soft is the frame's own line, drawn dim — not the ground lattice's dot, which is what made the
+  // earlier dotted edge read as "arbitrary" beside a field of the same dots.
+  assert.equal(cellAt(middle.frame, midColumn, box.top).glyph, "-")
+  assert.equal(cellAt(middle.frame, box.left, midRow).glyph, "|")
 
-  // The header, footer and side panel's own border never scroll, so they stay solid regardless —
-  // checked over the panel's own top border segment, which sits past the divider.
-  assert.equal(
-    isSoftEdge(middle.frame, middle.layout.dividerColumn + 3, middle.layout.offset.row),
-    false,
-    "the panel's own border segment does not go soft",
-  )
+  // The outer border and the rules where they cross the side panel never scroll, so they stay plain
+  // regardless.
+  assert.equal(isSoftEdge(middle.frame, box.right + 3, box.top), false, "the rule over the panel")
+  assert.equal(isSoftEdge(middle.frame, midColumn, middle.layout.offset.row), false, "the outer top border")
 })
 
 test("engine-3.3-readout: the footer names the visible tile range and the Grid's own size", () => {
@@ -213,6 +231,40 @@ test("a planned structure is drawn, and reads differently from one already stand
   assert.equal(cellAt(planned.frame, standing.x, standing.y).style.bold, true, "a built one is not")
 })
 
+test("right after a placement, still armed, the tile reads as built rather than refused", () => {
+  // The bug an owner playtest found (2026-09-26): still armed and the cursor still on the tile just
+  // placed, the ghost preview used to recompute legality fresh, find the plan's own last entry "in
+  // the way", and paint an illegal block over a structure that had just been correctly built - and
+  // the side panel independently made the identical mistake with its own refusal block.
+  const justPlaced = screenAt(MINIMUM, (build, layout) => {
+    build.handleData("1", layout)
+    build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
+  })
+  assert.doesNotMatch(justPlaced.text, /Cannot build here/i, "nothing refuses the tile it just built on")
+  const cell = cellForTile(justPlaced.layout, justPlaced.build.state.camera, { x: 30, y: 14 })
+  assert.notEqual(cellAt(justPlaced.frame, cell.x, cell.y).glyph, "x", "no illegal block over the built structure")
+  assert.match(justPlaced.text, /planned at 30,14/, "the footer reports the success, not a live refusal")
+})
+
+test("undoing the placement just made lets the same tile be built on again at once", () => {
+  // The just-placed tile absorbs a repeated Enter — but only while it is still what was just placed.
+  // Undo or remove it and that stops being true; a stale suppression would swallow the next Enter
+  // silently, on a tile that is now empty.
+  for (const revise of [{ kind: "undo" } as const, { kind: "remove" } as const]) {
+    const context = neutralContext()
+    const layout = buildLayout(MINIMUM, context.grid)
+    const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
+    build.handleData("1", layout)
+    build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }, revise])
+    assert.equal(build.state.planned.length, 0, `${revise.kind} did not take the placement back`)
+    const cell = cellForTile(layout, build.state.camera, build.state.cursor)
+    const frame = composeBuildFrame({ context, state: build.state, layout }, "monochrome")
+    assert.notEqual(cellAt(frame, cell.x, cell.y).glyph, " ", `after ${revise.kind} the ghost is back`)
+    build.dispatch({ kind: "place" })
+    assert.equal(build.state.planned.length, 1, `after ${revise.kind}, Enter on the same tile places again`)
+  }
+})
+
 test("every capability tier puts identical glyphs on screen", () => {
   const context = neutralContext()
   const layout = buildLayout(MINIMUM, context.grid)
@@ -265,38 +317,88 @@ test("the construct rows and the armed item's own line are all on screen", () =>
 
 test("the panel says nothing about an item until one is selected", () => {
   // "Simple and direct" (Mario, accepting gate 5A) taken literally: a panel that is always full is
-  // a panel nobody reads, so the item detail and the legality block appear only while they apply.
+  // a panel nobody reads, so the item's effect line appears only while something is armed.
   const idle = screenAt(MINIMUM)
   assert.doesNotMatch(idle.text, /Spawns swarmers/)
   assert.doesNotMatch(idle.text, /Trains troopers/)
-  assert.doesNotMatch(idle.text, /CANNOT BUILD HERE/)
+  assert.doesNotMatch(idle.text, /Cannot build here/i)
   // But the menu, the budget and the revision keys are always there.
   assert.match(idle.text, /RESOURCE/)
   assert.match(idle.text, /\[1\] Barracks/)
   assert.match(idle.text, /u undo/)
 })
 
-test("the panel says why a placement is refused, and which tile it means", () => {
+/** The status line — the bottom bar's last row, where the Build Phase answers "why not". */
+function statusRow(screen: ReturnType<typeof screenAt>): string {
+  return (screen.text.split("\n")[screen.layout.footerRow + 2] as string).replace(/^\|\s*|\s*\|$/g, "")
+}
+
+test("the status line says why a placement would be refused, and which tile it means", () => {
+  // Moved off the side panel, where the owner never looked for it (2026-09-26): "it would make more
+  // sense to show that feedback on the low bar ... so we keep that low bar for cursor status
+  // feedback." The panel keeps the menu and what the armed row does, and nothing else.
   const onRock = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }])
   })
-  assert.match(onRock.text, /CANNOT BUILD HERE/)
-  assert.match(onRock.text, /rock in the way/)
-  assert.match(onRock.text, /at 8,5/, "the panel names the tile the reason is about")
+  assert.equal(statusRow(onRock), "Cannot build here: rock in the way at 8,5.")
+  assert.doesNotMatch(onRock.text, /CANNOT BUILD HERE/, "not shouted, and not on the panel as well")
+  assert.match(onRock.text, /Trains troopers each Pulse/, "the panel still says what the armed row does")
 
   const onNexus = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 0, dy: -3 }])
   })
-  assert.match(onNexus.text, /the nexus is here/)
+  assert.match(statusRow(onNexus), /^Cannot build here: the nexus is here at \d+,\d+\.$/)
 
   // And it is gone the moment the placement is legal again, rather than lingering.
   const fine = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 12, dy: 1 }])
   })
-  assert.doesNotMatch(fine.text, /CANNOT BUILD HERE/)
+  assert.doesNotMatch(fine.text, /Cannot build here/i)
+})
+
+test("looking at an illegal tile reads quietly, trying to build there reads in red", () => {
+  // The owner found the all-red illegal ghost too intense: "we should try grey instead, and if the
+  // user tries to click, then flash the cursor so the UI shows that the action has been received
+  // but it can't be done in there." Grey while looking; red — on the status line — once tried. (The
+  // cursor flash needs a frame timer this screen does not have yet.)
+  const looking = screenAt(MINIMUM, (build, layout) => {
+    build.handleData("1", layout)
+    build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }])
+  })
+  // A tile of the ghost's footprint beside the cursor's own, which the cursor highlight would restyle.
+  const ghost = cellForTile(looking.layout, looking.build.state.camera, { x: 7, y: 5 })
+  const ghostCell = cellAt(looking.frame, ghost.x, ghost.y)
+  assert.equal(ghostCell.glyph, "x", "shape still carries it, for monochrome")
+  assert.equal(ghostCell.style.fgRole, "chrome.muted", "the illegal ghost is grey, not red")
+  assert.notEqual(ghostCell.style.bold, true)
+  const statusColumn = looking.layout.offset.column + 2
+  const quiet = cellAt(looking.frame, statusColumn, looking.layout.footerRow + 2).style
+  assert.equal(quiet.fgRole, "chrome.value", "a refusal nobody has tried yet is not an alarm")
+
+  const tried = screenAt(MINIMUM, (build, layout) => {
+    build.handleData("1", layout)
+    build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "place" }])
+  })
+  assert.equal(statusRow(tried), "Cannot build here: rock in the way at 8,5.", "the same sentence")
+  const loud = cellAt(tried.frame, statusColumn, tried.layout.footerRow + 2).style
+  assert.equal(loud.fgRole, "notice.gate", "an attempt that was refused is")
+  assert.equal(loud.bold, true)
+  assert.equal(tried.build.state.planned.length, 0)
+})
+
+test("while the commit question is open, the status line asks it, whatever the ghost would say", () => {
+  // A refusal is about what Enter would do right now; with the confirmation open, Enter does
+  // nothing to the Grid, so the ghost and its refusal both step aside for the question.
+  const asking = screenAt(MINIMUM, (build, layout) => {
+    build.handleData("1", layout)
+    build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "commit" }])
+  })
+  assert.match(statusRow(asking), /^Start Nexus Pulse\? \[y\]es \/ \[n\]o$/)
+  const ghost = cellForTile(asking.layout, asking.build.state.camera, { x: 8, y: 5 })
+  assert.notEqual(cellAt(asking.frame, ghost.x, ghost.y).glyph, "x", "no ghost behind the question")
 })
 
 test("the budget on screen is the budget the reducer is enforcing", () => {
@@ -312,7 +414,7 @@ test("the budget on screen is the budget the reducer is enforcing", () => {
   assert.match(show(), new RegExp(`${remaining(context, build.state)} of ${SPIKE_ALLOTMENT}`))
   // A row that can no longer be afforded is dimmed — an attribute, not a colour, so it survives
   // monochrome. Checked on an *unselected* row: the selected one is inverse video, which is what
-  // "selected" means everywhere in this game, and it gets the CANNOT BUILD HERE block instead.
+  // "selected" means everywhere in this game, and its unaffordability is the status line's to say.
   build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
   build.handleData("3", layout) // select the cheap turret, leaving the barracks row unselected
   assert.ok(remaining(context, build.state) < SPIKE_CATALOG[0]!.cost, "not actually unaffordable")
@@ -341,11 +443,14 @@ test("selecting something unaffordable says so before the player tries it", () =
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
   build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
+  // Off the tile just placed on, which absorbs a repeated place entirely rather than reporting
+  // anything (2026-09-26) - the refusal under test here is unaffordability, not that suppression.
+  build.run([{ kind: "move-cursor", dx: 1, dy: 0 }])
   // Barracks still selected, and now unaffordable wherever the cursor is.
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
-  assert.match(text, /CANNOT BUILD HERE/)
-  assert.match(text, /costs 40, 20 left/)
-  assert.doesNotMatch(text, /at \d+,\d+$/m, "affordability is not about a tile, so none is named")
+  const status = (text.split("\n")[layout.footerRow + 2] as string).replace(/^\|\s*|\s*\|$/g, "")
+  // Affordability first, before any tile problem — and it is not about a tile, so none is named.
+  assert.equal(status, "Cannot build here: costs 40, 20 left.")
 })
 
 test("the footer never advertises a key the keyboard adapter does not bind", () => {
@@ -446,8 +551,10 @@ test("on a Grid short enough to shrink the panel, the detail block is dropped ra
   build.handleData("1", layout) // a 3x2 barracks at 2,2 hangs off the Grid, so it is refused
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
 
-  // The furniture that must survive, whole.
-  assert.match(text, /u undo/)
+  // The furniture that must survive, whole. A panel this short has no row left for the optional
+  // bindings the footer could not hold (fast move, remove, undo): they are dropped rather than drawn
+  // over the menu or the NEXUS/SPECIAL rows — the menu's rows are click targets, and a Grid this
+  // small exists nowhere yet. The side panel moving left (the next gate) is where to revisit it.
   assert.match(text, /view x 0-19 y 0-9 of 20x10/)
   assert.match(text, /arrows move.*q quit/, "the quit key fell off a narrower footer")
   // And the menu itself is still there — it is the block below it that gave way.
@@ -458,14 +565,26 @@ test("on a Grid short enough to shrink the panel, the detail block is dropped ra
   for (const row of text.split("\n")) assert.ok(row.length <= 80, `a row ran past 80: "${row}"`)
 })
 
-test("a panel with room for the detail block still draws it", () => {
+test("a panel with room for the effect line still draws it", () => {
   // The other half of the clamp: it must give way only when it genuinely has to.
   const roomy = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }])
   })
-  assert.match(roomy.text, /CANNOT BUILD HERE/)
-  assert.match(roomy.text, /rock in the way/)
+  assert.match(roomy.text, /Trains troopers each Pulse/)
+})
+
+test("on a small Grid the panel's bindings never draw over the NEXUS and SPECIAL rows", () => {
+  // The bindings block grows up from the panel's bottom and was bounded by the construct menu alone,
+  // so the NEXUS/SPECIAL rows gate 5D added below the menu were written over on a Grid short enough
+  // to shrink the panel. Found by rendering the screen, not by a test.
+  const small: GridTerrain = { width: 20, height: 10, tiles: new Array<TerrainId>(200).fill("terrain.plain") }
+  const context = { ...neutralContext(), grid: small, standing: [] }
+  const layout = buildLayout(MINIMUM, small)
+  const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
+  const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
+  assert.match(text, /NEXUS {2,}Test Pick\|/)
+  assert.match(text, /SPECIAL {2,}none available\|/)
 })
 
 test("every binding survives the split whole, at every width the screen can have", () => {
@@ -487,23 +606,24 @@ test("every binding survives the split whole, at every width the screen can have
   }
   // The four a player cannot work the screen without come first, so they are the last to leave the
   // footer.
-  assert.deepEqual(all.slice(0, 4), ["arrows move", "enter place", "esc disarm", "q quit"])
+  assert.deepEqual(all.slice(0, 4), ["arrows move", "enter/space place", "esc disarm", "q quit"])
 })
 
 test("every key the adapters bind is named on screen at the 80-column floor", () => {
   // The converse of the test above, and the one that matters at the acceptance size: a key nobody
   // can find is a key that does not exist (engine.md 9.7). The footer alone cannot hold them at 80
   // columns, which is why the overflow goes in the panel — so the check is against the whole
-  // screen, not one line.
+  // screen, not one line. PageUp/PageDown and Home/End are a deliberate, owner-directed exception
+  // (2026-09-26): still bound (`tests/build-keyboard.test.ts` covers that), but no longer displayed
+  // anywhere, since they are a redundant alternate path to the same fast-move Shift+Arrow already
+  // shows, not a unique undiscoverable action.
   const { text } = screenAt(MINIMUM)
   const bound: readonly (readonly [string, string, RegExp])[] = [
     ["\u001b[A", "arrows", /arrows move/],
-    ["\r", "enter", /enter place/],
+    ["\r", "enter", /enter\/space place/],
     ["\u001b", "esc", /esc disarm/],
     ["q", "quit", /q quit/],
-    ["\u001b[1;2A", "shift+arrow", /shift\+arrow jump 5/],
-    ["\u001b[5~", "pgup", /pgup pgdn jump 5/],
-    ["\u001bOH", "home", /home end jump 5/],
+    ["\u001b[1;2A", "shift+arrow", /shift\+arrow fast move/],
     ["\u007f", "backspace", /bksp remove/],
     ["u", "undo", /u undo/],
   ]
@@ -534,9 +654,9 @@ test("engine-3.3-markers: the soft border runs the whole Grid-pane segment, at b
     const { frame, layout } = screenAt(terminal, (build) => {
       build.run([{ kind: "move-cursor", dx: 20, dy: 20 }])
     })
-    for (let x = layout.origin.column; x <= layout.dividerColumn - 1; x += 1) {
+    for (let x = layout.gridBox.left + 1; x < layout.gridBox.right; x += 1) {
       assert.ok(
-        cellAt(frame, x, layout.offset.row).style.dim === true,
+        cellAt(frame, x, layout.gridBox.top).style.dim === true,
         `column ${x} of the north border should be soft at ${terminal.columns} columns`,
       )
     }
@@ -560,9 +680,15 @@ test("no line is drawn over another, at every terminal size in the supported ran
       const lines = text.split("\n")
       assert.match(lines[layout.footerRow] as string, /view x /, `readout at ${columns}x${rows}`)
       assert.match(lines[layout.footerRow + 1] as string, /arrows move/, `keys at ${columns}x${rows}`)
-      assert.match(lines[layout.footerRow + 2] as string, /Barracks selected/, `status at ${columns}x${rows}`)
-      // And the thing the player is being told stays on screen through the whole range.
-      assert.match(text, /CANNOT BUILD HERE/, `the refusal at ${columns}x${rows}`)
+      // The status line reads the live refusal, tile and all, rather than the stale "Barracks
+      // selected" from arming a moment ago — and it stays whole through the whole range.
+      assert.match(
+        lines[layout.footerRow + 2] as string,
+        /Cannot build here: rock in the way at 8,5\./,
+        `status at ${columns}x${rows}`,
+      )
+      // The rule under the Grid is its own row: the Grid's last row never touches the readout.
+      assert.equal(layout.gridBox.bottom, layout.footerRow - 1, `bottom rule at ${columns}x${rows}`)
     }
   }
 })
@@ -684,78 +810,49 @@ test("the cursor does not blur a structure's own dim-versus-built distinction", 
   assert.notEqual(style.bold, true, "and not quietly promoted to built")
 })
 
-test("--edge-style scrollbar: the bottom and west borders carry a thumb, north and east stay plain", () => {
-  const { frame, layout } = screenAt(
-    MINIMUM,
-    (build) => {
-      build.run([{ kind: "move-cursor", dx: 40, dy: 20 }])
-    },
-    "scrollbar",
+test("engine-3.3-markers: a side that has reached the Grid's own edge reads heavy, not merely solid", () => {
+  // Retired --edge-style scrollbar's replacement (canon 2.19): the reached-the-edge case is a real
+  // glyph swap on the horizontal run (heavier than the everyday border) and a bold attribute on the
+  // vertical one and on the corners, when every side has reached its edge at once.
+  const corner = screenAt(MINIMUM, (build) => {
+    build.run([{ kind: "move-cursor", dx: -999, dy: -999 }])
+  })
+  const { gridBox } = corner.layout
+  const midGridColumn = corner.layout.origin.column + 5
+  assert.equal(
+    cellAt(corner.frame, midGridColumn, gridBox.top).glyph,
+    "=",
+    "the north border reads heavy at the Grid's own top edge",
   )
-  const bottomRow = layout.offset.row + layout.composition.height - 1
-  const bottomCells = []
-  for (let x = layout.origin.column; x <= layout.dividerColumn - 1; x += 1) {
-    bottomCells.push(cellAt(frame, x, bottomRow).style.dim === true)
-  }
-  // A thumb both marks *and* leaves the rest soft — some cells dim, some not, on the same border
-  // that the plain hard-soft mode would have made uniformly one or the other.
-  assert.ok(bottomCells.some((dim) => dim), "the bottom border should have a soft (track) segment")
-  assert.ok(bottomCells.some((dim) => !dim), "and a plain (thumb) segment")
-
-  const westCells = []
-  for (let y = layout.origin.row; y < layout.origin.row + layout.viewport.height; y += 1) {
-    westCells.push(cellAt(frame, layout.offset.column, y).style.dim === true)
-  }
-  assert.ok(westCells.some((dim) => dim), "the west border should have a track segment")
-  assert.ok(westCells.some((dim) => !dim), "and a thumb segment")
-
-  // North and east are still a plain yes/no in scrollbar mode — a partial thumb beside the panel
-  // is exactly the caret-like confusion the plain run was built to avoid.
-  for (let y = layout.origin.row; y < layout.origin.row + layout.viewport.height; y += 1) {
-    assert.equal(cellAt(frame, layout.dividerColumn, y).style.dim, true, `east row ${y} should be uniformly soft`)
-  }
-})
-
-test("--edge-style scrollbar: the west thumb still shows at an east/west edge, and vice versa", () => {
-  // The two thumbs represent different axes, and one border's thumb must not depend on the *other*
-  // axis's own edge state. Flush west (camera.x = 0) with real vertical scroll room left is exactly
-  // the case that showed nothing at all before this was fixed.
-  const { frame, layout } = screenAt(
-    MINIMUM,
-    (build) => {
-      build.run([{ kind: "move-cursor", dx: -999, dy: 20 }])
-    },
-    "scrollbar",
+  assert.equal(
+    cellAt(corner.frame, gridBox.left, corner.layout.origin.row + 5).style.bold,
+    true,
+    "the west border reads bold at the Grid's own left edge",
   )
-  const westDim = []
-  for (let i = 0; i < layout.viewport.height; i += 1) {
-    westDim.push(cellAt(frame, layout.offset.column, layout.origin.row + i).style.dim === true)
-  }
-  assert.ok(westDim.some((d) => d), "the west border should still show a track segment")
-  assert.ok(westDim.some((d) => !d), "and a thumb segment, despite camera.x being flush at 0")
-})
+  assert.notEqual(
+    cellAt(corner.frame, gridBox.left, gridBox.top).style.bold,
+    true,
+    "a corner whose sides disagree stays plain (Q56)",
+  )
 
-test("--edge-style scrollbar: the thumb sits exactly where scrollThumb says it does", () => {
-  const { frame, layout, build, context } = screenAt(
-    MINIMUM,
-    (b) => {
-      b.run([{ kind: "move-cursor", dx: 40, dy: 20 }])
-    },
-    "scrollbar",
-  )
-  const thumb = scrollThumb(
-    build.state.camera.y,
-    layout.viewport.height,
-    context.grid.height,
-    layout.viewport.height,
-  )
-  if (thumb === null) throw new Error("expected a thumb once scrolled away from the corner")
-  const { start, end } = thumb
-  for (let i = 0; i < layout.viewport.height; i += 1) {
-    const dim = cellAt(frame, layout.offset.column, layout.origin.row + i).style.dim === true
-    const expectSoft = i < start || i > end
-    assert.equal(dim, expectSoft, `west border row ${i}: thumb ${start}-${end}`)
+  // A Grid that fits the viewport whole (never scrolls) reads heavy on every side and every corner
+  // at once — one visual statement, not four sides that merely happen to agree.
+  const small: GridTerrain = { width: 20, height: 10, tiles: new Array<TerrainId>(200).fill("terrain.plain") }
+  const context = { ...neutralContext(), grid: small, standing: [] }
+  const layout = buildLayout(MINIMUM, small)
+  const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
+  const frame = composeBuildFrame({ context, state: build.state, layout }, "monochrome")
+  for (const [x, y] of [
+    [layout.gridBox.left, layout.gridBox.top],
+    [layout.gridBox.right, layout.gridBox.top],
+    [layout.gridBox.left, layout.gridBox.bottom],
+    [layout.gridBox.right, layout.gridBox.bottom],
+  ] as const) {
+    assert.equal(cellAt(frame, x, y).style.bold, true, `the Grid's corner at ${x},${y} reads heavy too`)
   }
+  assert.equal(cellAt(frame, layout.gridBox.left + 3, layout.gridBox.bottom).glyph, "=")
+  // The outer frame is not the Grid, and does not join in.
+  assert.notEqual(cellAt(frame, layout.offset.column, layout.offset.row).style.bold, true)
 })
 
 test("the normal panel names the picked Nexus power and the empty Special slot", () => {

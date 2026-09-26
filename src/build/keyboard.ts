@@ -7,15 +7,17 @@
 //   - screen, the Linux console, vt100, vt220 and ansi define no shifted arrow at all.
 //
 // So both families are accepted, and the five-tile jump also has a modifier-free fallback —
-// PageUp/PageDown and Home/End. Every one of them is named on screen, because a key that is not
-// displayed does not exist.
+// PageUp/PageDown and Home/End — plus the Option/Meta forms a Mac sends. The screen names the fast
+// move once, as "shift+arrow fast move"; the others are the same move under other keys, left off the
+// key help on the owner's own call (2026-09-26: "leave pgup/home keys out, people will figure that
+// out just fine").
 
 import type { BuildCommand } from "./types.ts"
 import { JUMP_TILES } from "./state.ts"
 
 const ESC = String.fromCharCode(27)
 const QUIT_KEYS = new Set(["q", String.fromCharCode(3)])
-const PLACE_KEYS = new Set(["\r", "\n"])
+const PLACE_KEYS = new Set(["\r", "\n", " "])
 const REMOVE_KEYS = new Set([String.fromCharCode(127), String.fromCharCode(8), `${ESC}[3~`])
 
 /** `ESC [ A` and the application-cursor-mode `ESC O A` a terminal may switch to at any moment. */
@@ -49,6 +51,25 @@ const ARROW_LETTERS: Readonly<Record<string, Readonly<{ dx: number; dy: number }
   B: { dx: 0, dy: 1 },
   C: { dx: 1, dy: 0 },
   D: { dx: -1, dy: 0 },
+}
+
+/**
+ * Option+Arrow the way macOS terminals send it by default, which is not xterm's `CSI 1;3` form (that
+ * one is already covered above, since any modifier counts): Option+Left/Right arrive as the readline
+ * word-movement keys `ESC b`/`ESC f`, and a terminal set to treat Option as Meta prefixes the ordinary
+ * arrow with a second ESC. Both mean the fast move — "move word by word" is what Option means on a
+ * Mac (owner, 2026-09-26: "we should also allow option"). Bound from the terminals' documented
+ * defaults, not yet measured on the owner's own iTerm2 profile: `node scripts/lib/key-echo.mjs` in
+ * that terminal is how to check. `keysFromChunk` keeps each of these whole; before it did, Option+Left
+ * split into a bare Escape and left the screen.
+ */
+const META_JUMPS: Readonly<Record<string, Readonly<{ dx: number; dy: number }>>> = {
+  [`${ESC}b`]: { dx: -1, dy: 0 },
+  [`${ESC}f`]: { dx: 1, dy: 0 },
+  [`${ESC}${ESC}[A`]: { dx: 0, dy: -1 },
+  [`${ESC}${ESC}[B`]: { dx: 0, dy: 1 },
+  [`${ESC}${ESC}[C`]: { dx: 1, dy: 0 },
+  [`${ESC}${ESC}[D`]: { dx: -1, dy: 0 },
 }
 
 /**
@@ -117,6 +138,11 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
     if (direction !== undefined && Number(modified[1]) >= 2) {
       return { kind: "move-cursor", dx: direction.dx * JUMP_TILES, dy: direction.dy * JUMP_TILES }
     }
+  }
+
+  const meta = META_JUMPS[key]
+  if (meta !== undefined) {
+    return { kind: "move-cursor", dx: meta.dx * JUMP_TILES, dy: meta.dy * JUMP_TILES }
   }
 
   const fallback = FALLBACK_JUMPS[key]

@@ -155,16 +155,18 @@ export const SPIKE_ALLOTMENT = 100
  * Milestone 8's actual Commander Vasse content to exist first.
  */
 export const SPIKE_NEXUS_DRAFT: readonly NexusPowerOption[] = [
+  // Each description fits the 28 glyphs a panel row has at the 80-column floor — the longer
+  // "starting allotment" wording was cut off mid-word there.
   {
     hotkey: "1",
     name: "Reserve Fund",
-    description: "Adds 30 to the starting allotment.",
+    description: "Adds 30 resource to spend.",
     bonusAllotment: 30,
   },
   {
     hotkey: "2",
     name: "War Chest",
-    description: "Adds 60 to the starting allotment.",
+    description: "Adds 60 resource to spend.",
     bonusAllotment: 60,
   },
 ]

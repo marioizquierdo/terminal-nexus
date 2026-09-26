@@ -13,6 +13,8 @@ import { MOUSE_LEFT, buildMouseCommand, formatMouseEvent, parseMouseEvent } from
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { spikeContext } from "../src/cli/spike.ts"
+import { composeBuildFrame } from "../src/view/build.ts"
+import { frameToText } from "../src/view/frame.ts"
 
 const ESC = String.fromCharCode(27)
 const MINIMUM = { columns: 80, rows: 24 }
@@ -35,7 +37,7 @@ test("drafting refuses every state-changing command, and names the reason", () =
     { kind: "commit" },
   ] as const) {
     build.dispatch(command)
-    assert.match(build.state.message, /Pick a Nexus power first/, `${command.kind} was not refused`)
+    assert.match(build.state.status.text, /Pick a Nexus power first/, `${command.kind} was not refused`)
     assert.equal(build.state.armed, before.armed, `${command.kind} changed armed`)
     assert.deepEqual(build.state.planned, before.planned, `${command.kind} changed the plan`)
   }
@@ -45,7 +47,7 @@ test("moving the cursor is not refused while drafting - only state-changing comm
   const { build } = session()
   build.dispatch({ kind: "move-cursor", dx: 3, dy: 2 })
   assert.deepEqual(build.state.cursor, { x: 21, y: 15 })
-  assert.doesNotMatch(build.state.message, /Pick a Nexus power first/)
+  assert.doesNotMatch(build.state.status.text, /Pick a Nexus power first/)
 })
 
 test("picking applies its own effect exactly once, and cannot be changed afterward", () => {
@@ -54,13 +56,23 @@ test("picking applies its own effect exactly once, and cannot be changed afterwa
   build.dispatch({ kind: "pick-nexus", index: 1 }) // War Chest, +60
   assert.equal(build.state.nexusPick, 1)
   assert.equal(build.state.bonusAllotment, context.nexusDraft[1]!.bonusAllotment)
-  assert.match(build.state.message, /War Chest picked/)
+  assert.match(build.state.status.text, /War Chest picked/)
 
   const after = build.state
   build.dispatch({ kind: "pick-nexus", index: 0 })
   assert.equal(build.state.nexusPick, after.nexusPick, "a second pick changed the first")
   assert.equal(build.state.bonusAllotment, after.bonusAllotment)
-  assert.match(build.state.message, /Already picked/)
+  assert.match(build.state.status.text, /Already picked/)
+})
+
+test("the budget on screen counts the picked power's share in its total, not only in what is left", () => {
+  // Reserve Fund adds 30 to a 100-point allotment. The panel used to read "130 of 100" — more left
+  // than there ever was — which looks exactly like a bug to anyone who has not read the reducer.
+  const context = spikeContext()
+  const { build, layout } = session()
+  build.dispatch({ kind: "pick-nexus", index: 0 })
+  const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
+  assert.match(text, /RESOURCE {2,}130 of 130/)
 })
 
 test("an out-of-range pick is ignored, not a crash and not a partial pick", () => {
@@ -83,12 +95,12 @@ test("commit is refused before a pick, and opens the confirmation once one is ma
   const { build } = session()
   build.dispatch({ kind: "commit" })
   assert.equal(build.state.confirmingCommit, false, "commit opened the prompt before a pick")
-  assert.match(build.state.message, /Pick a Nexus power first/)
+  assert.match(build.state.status.text, /Pick a Nexus power first/)
 
   build.dispatch({ kind: "pick-nexus", index: 0 })
   build.dispatch({ kind: "commit" })
   assert.equal(build.state.confirmingCommit, true)
-  assert.match(build.state.message, /Start Nexus Pulse/)
+  assert.match(build.state.status.text, /Start Nexus Pulse/)
 })
 
 test("nothing but the confirmation itself changes state while it is open", () => {
@@ -125,7 +137,7 @@ test("declining the confirmation cancels it and changes nothing else", () => {
   assert.equal(build.state.confirmingCommit, false)
   assert.equal(build.state.committed, false)
   assert.deepEqual(build.state.planned, beforeCommit.planned)
-  assert.match(build.state.message, /Cancelled/)
+  assert.match(build.state.status.text, /Cancelled/)
 
   // And building can continue exactly as if nothing happened.
   build.dispatch({ kind: "arm", index: 1 })
@@ -142,8 +154,8 @@ test("accepting the confirmation commits, and locks every state-changing command
 
   assert.equal(build.state.committed, true)
   assert.equal(build.state.confirmingCommit, false)
-  assert.match(build.state.message, /Build committed/)
-  assert.match(build.state.message, /1 planned/)
+  assert.match(build.state.status.text, /Build committed/)
+  assert.match(build.state.status.text, /1 planned/)
 
   const committed = build.state
   for (const command of [
@@ -267,8 +279,15 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   const byMouse = session()
   byMouse.build.handleData(clickMenuBytes(nexusDraftLayout(byMouse.layout), 0), byMouse.layout)
   byMouse.build.handleData(clickRowBytes(byMouse.layout, 0), byMouse.layout)
-  byMouse.build.handleData(clickTileBytes(byMouse.layout, byMouse.build, { x: 30, y: 14 }), byMouse.layout)
-  byMouse.build.handleData(clickTileBytes(byMouse.layout, byMouse.build, { x: 34, y: 14 }), byMouse.layout)
+  // A click only arms the preview at a tile; a second click on that same tile places it (Q52).
+  // Recomputed fresh each time, since the camera can move between clicks.
+  const clickTile = (tile: { x: number; y: number }): void => {
+    byMouse.build.handleData(clickTileBytes(byMouse.layout, byMouse.build, tile), byMouse.layout)
+  }
+  clickTile({ x: 30, y: 14 })
+  clickTile({ x: 30, y: 14 })
+  clickTile({ x: 34, y: 14 })
+  clickTile({ x: 34, y: 14 })
   byMouse.build.handleData("p", byMouse.layout)
   byMouse.build.handleData(clickMenuBytes(confirmLayout(byMouse.layout), 0), byMouse.layout)
 

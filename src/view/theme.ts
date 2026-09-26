@@ -53,15 +53,26 @@ export const CHROME_GLYPHS: Readonly<Record<GlyphPack, Readonly<Record<string, s
     topRight: "+",
     bottomLeft: "+",
     bottomRight: "+",
+    // Where two frame lines meet partway along one of them: named for the direction the stem
+    // points, so `teeRight` is the left border's junction with a rule running right from it.
+    teeRight: "+",
+    teeLeft: "+",
+    teeDown: "+",
+    teeUp: "+",
+    cross: "+",
     edgeHorizontal: "-",
     edgeVertical: "|",
     edgeCorner: "+",
-    // A border segment with more Grid beyond it, drawn dim: the same dot that marks featureless
-    // ground elsewhere in the game, reused here for the same meaning — faint and keeps going. The
-    // solid border above is what "no more Grid this way" already looks like; nothing new was needed
-    // for that half.
-    softHorizontal: ".",
-    softVertical: ".",
+    // The three weights of the Build Phase frame beside the Grid pane (canon 2.19, the owner's own
+    // "'---' UI, and '===' for the map edge"). Soft — more Grid beyond this side — is the frame's own
+    // line, drawn dim by the caller: one unbroken rectangle, never the ground lattice's `.`, which is
+    // what made the dotted edge of gate 5C read as "arbitrary". Heavy — the Grid's own edge — is a
+    // heavier glyph, drawn bold. ASCII has no heavier vertical bar, so `heavyVertical` is the plain
+    // `|` and bold alone carries it (`open-questions.md` Q56).
+    softHorizontal: "-",
+    softVertical: "|",
+    heavyHorizontal: "=",
+    heavyVertical: "|",
   },
   unicode: {
     horizontal: "─",
@@ -70,11 +81,18 @@ export const CHROME_GLYPHS: Readonly<Record<GlyphPack, Readonly<Record<string, s
     topRight: "┐",
     bottomLeft: "└",
     bottomRight: "┘",
+    teeRight: "├",
+    teeLeft: "┤",
+    teeDown: "┬",
+    teeUp: "┴",
+    cross: "┼",
     edgeHorizontal: "┄",
     edgeVertical: "┆",
     edgeCorner: "·",
-    softHorizontal: "┄",
-    softVertical: "┆",
+    softHorizontal: "─",
+    softVertical: "│",
+    heavyHorizontal: "━",
+    heavyVertical: "┃",
   },
 }
 
