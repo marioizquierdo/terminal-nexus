@@ -2,7 +2,7 @@
 
 **Document role:** Single-player structure, mission definitions, progression, cutscenes, and initial narrative direction
 **Status:** Canonical direction; PERIMETER (Mission 1) is in active implementation across `milestones/`
-**Canon version:** 2.18
+**Canon version:** 2.19
 **Updated:** 2026-09-12
 **License:** Narrative material is CC BY-SA 4.0; technical schemas are Apache-2.0
 

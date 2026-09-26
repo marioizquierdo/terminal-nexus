@@ -2,12 +2,14 @@
 
 **Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
 **Status:** CURRENT
-**Active gate:** 5D — the Nexus draft slot and commit: the upgrade-pick mechanism against a
-placeholder option, `p` with its one confirmation, the hotkey-versus-click identical-plan test, and
-the Special slot's own space in the layout
+**Active gate:** 5E — UI/UX refinement from the owner's own real-terminal playtest of gates 5A-5D:
+click-to-place becomes a two-stage confirm, the menu/Grid keyboard focus toggle, the Nexus power pick
+as an openable popup rather than a forced screen, and the status-line/footer polish described below.
+Gate 5D itself is built and reported (PASS) but not yet formally accepted — see its own line below —
+and this gate does not depend on that acceptance, the same way 5D did not wait on 5C's
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
 mission's own budget/units decided — accepted 2026-09-12)
-**Updated:** 2026-09-21
+**Updated:** 2026-09-26
 **License:** Apache-2.0
 
 > **Milestone 4 has not landed, and this milestone does not wait for it.** An earlier draft of the
@@ -52,10 +54,12 @@ mission's own budget/units decided — accepted 2026-09-12)
 > turned up (an unaffordable armed row's cost read as affordable; the cursor was nearly invisible on
 > bare ground; a stale refusal could outlive its own tile), and built a proportional scrollbar as a
 > second, switchable option (`--edge-style scrollbar`) next to the default. Mario, on merging round 2:
-> *"I like the changes."* Two things are still his alone to judge, on the manual test he plans to run:
-> which border treatment reads better, and whether the marker and cursor read as intended — so the
-> canon proposals in the report stay proposed rather than applied until he has. Proceeding to gate 5D
-> is his own call, made explicitly: neither open question touches anything 5D adds.
+> *"I like the changes."* Two things were his alone to judge. **The first is now resolved (2026-09-26):
+> no scrollbar; the border instead reads as a heavier, doubled line on whichever side truly has no more
+> Grid to reveal, and as the everyday lighter line otherwise — canon 2.19.** The second — whether the
+> armed row's marker and the cursor's own brightness read as intended — is untouched by that and still
+> open. Proceeding to gate 5D was his own call, made explicitly: neither open question touched anything
+> 5D added.
 
 > **This is where scrolling was always going to land.** Gate 1A deliberately used a Grid that fit the
 > viewport entirely specifically to defer this:
@@ -73,10 +77,41 @@ mission's own budget/units decided — accepted 2026-09-12)
 > SPECIAL always drawn as an empty "none available" row the same way the empty ARMY group already is.
 > A dedicated test suite (`tests/build-nexus.test.ts`) covers the whole mechanism, including one test
 > that plays pick-then-build-then-commit-then-confirm once by keyboard bytes, once by mouse bytes, and
-> once by a driver script, and checks all three land on the identical final state. This is the last
-> gate this milestone's own tracker lists — accepting it closes Milestone 5. This gate is unrelated to
-> gate 5C's own two open questions (which border/scrollbar style, whether the selection marker reads
-> right); both stay open for Mario's manual test.
+> once by a driver script, and checks all three land on the identical final state. This was written as
+> the last gate this milestone's own tracker listed; **it no longer is — see Gate 5E below**, opened by
+> the owner's own feedback after playing this build. This gate was unrelated to gate 5C's own two open
+> questions (which border/scrollbar style, whether the selection marker reads right); the first is now
+> resolved (see 5C's own line above), the second is still open for Mario's manual test.
+
+> **Gate 5E: scoped 2026-09-26, not yet built.** Mario ran the merged Build Phase in a real terminal
+> and gave two rounds of direct feedback. One item was small and clear enough to fix immediately, on
+> its own PR rather than folded in here: the frame border and the divider between the Grid pane and
+> the side panel were using a colour already known to read as nearly invisible in bright ambient light
+> — the same bug an earlier fix had already caught for two other roles and simply missed for the
+> border. Everything else is real design and engineering work, captured in `engine.md` (Sections 3.3
+> and 9.7, canon 2.19) and `open-questions.md` (Q52-Q55) rather than only in this paragraph, so a
+> session picking this gate up reads settled canon first and a feedback transcript second:
+>
+> - **Click-to-place becomes a two-stage confirm** (Q52, reversing Q50): a first click arms/previews,
+>   a second click on the same tile places. Space is added alongside Enter for keyboard placement. The
+>   moment right after a placement no longer shows the illegal-preview block on the tile just built.
+> - **A menu/Grid keyboard focus toggle**, reusing the highlight/activate shape `src/menu/list.ts`
+>   already has: Tab switches focus, Up/Down highlights a menu entry, Enter/Space arms it and moves
+>   focus to the Grid, placing returns focus to the menu. This retires Tab's previous, never-built
+>   "jump to my next structure" GUIDANCE (Q53).
+> - **The Nexus power pick becomes a popup the player opens** ("Nexus Powers (n)" in the panel), not a
+>   screen forced open the instant the Build Phase begins — the "may not be skipped" rule's own
+>   refusal narrows from every state-changing command down to just the commit itself, so the popup can
+>   stay genuinely optional to open rather than every other action nagging until it does.
+> - **The status line becomes a small, typed concept** (text plus a tone/emphasis, resolved onto style
+>   attributes the renderer already has) rather than a plain string, and a live "cannot build here"
+>   is echoed there in addition to the panel's own required detail (`engine.md` 9.2's RULE is
+>   unchanged — this is additive). The footer's key-bindings line is trimmed to the essentials.
+> - **Cursor movement speed tiers and a percentage-of-viewport scroll margin** (Q54) — a real design,
+>   not yet felt against a terminal, so every number stays a parameter the way `--scroll-margin`
+>   already is.
+> - Smart-cursor auto-placement and frame-timer-based movement interpolation are registered (Q55) and
+>   explicitly **not** in this gate's scope.
 
 ## 1. Question
 
@@ -155,6 +190,12 @@ map scrolling — before handing off into Milestone 6's Pulse?
   (Milestone 8 fills it), `p` with its one confirmation, undo and removal of planned placements, the
   hotkey-versus-click identical-plan test, and the Special slot's own space in the layout with the
   report's line on whether a third decision channel was missed.
+- **5E — UI/UX refinement from the owner's own playtest of 5A-5D**, opened 2026-09-26 (not part of the
+  milestone's original scope in Section 1-2 above — added by direct owner feedback, per
+  `AGENTS.md` Section 2's own priority order for what a session works on). See the status block above
+  for the full scope; in one line: the click-to-place confirm reverses (Q52), a menu/Grid keyboard
+  focus toggle is added, the Nexus pick becomes an openable popup, the status line and footer bindings
+  get a polish pass, and cursor movement gets a real speed-tier model (Q54).
 
 ## 3. Grounded in already-locked contracts
 
@@ -216,3 +257,21 @@ looking around, not like fighting the cursor.
 - [x] `./scripts/check-repository.sh` passes;
 - [x] new questions this raises are rows in [`../specs/open-questions.md`](../specs/open-questions.md)
       — gate 5D raised none of its own; the two still open are gate 5C's, already registered there.
+
+Gate 5E's own definition of done, added 2026-09-26 and unstarted:
+
+- [ ] a mouse click on a Grid tile arms/moves only; a second click on the same tile places (Q52),
+      and Space places alongside Enter from the keyboard;
+- [ ] the tile a structure was just placed on shows success, not an illegal-preview block, until the
+      cursor moves off it, and a repeated place command there is a no-op;
+- [ ] a menu/Grid keyboard focus toggle exists (Tab switches, Up/Down highlights, Enter/Space arms and
+      moves focus, Esc/Delete returns it), reusing `src/menu/list.ts`'s highlight/activate shape;
+- [ ] the Nexus power pick is reachable as a "Nexus Powers (n)" panel entry that opens a popup, not a
+      screen forced open at the start of the Build Phase, with the "may not be skipped" invariant
+      (`commander-armies.md` 4.5) still enforced;
+- [ ] the status line is a small typed concept (text plus tone/emphasis) rather than a plain string,
+      and echoes a live "cannot build here" alongside the panel's own required detail;
+- [ ] the footer's key-bindings line is trimmed to the essentials;
+- [ ] cursor movement has a real speed-tier model and a percentage-of-viewport scroll margin, with
+      every number exposed as a parameter (Q54);
+- [ ] a gate report exists for 5E, ending in PASS / REVISE / STOP / BLOCKED.

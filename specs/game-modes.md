@@ -2,7 +2,7 @@
 
 **Document role:** Vocabulary and structure for the single-player modes — Campaign and Challenge — and the seam every later mode shares
 **Status:** Canonical direction; structure is GUIDANCE until a milestone earns it
-**Canon version:** 2.18
+**Canon version:** 2.19
 **Updated:** 2026-09-12
 **License:** Apache-2.0 for structure and schemas; mode names and any fiction they carry are CC BY-SA 4.0
 

@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.18
+**Canon version:** 2.19
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -101,20 +101,41 @@ do it; the footer and the side panel share one list of key bindings. A second ro
 own live feedback: the arrow edge markers are gone, replaced by a border that goes solid where the
 map ends and dim where it does not, with a second, switchable scrollbar option next to it
 (`--edge-style scrollbar`); the armed construct row carries an explicit marker; and five small bugs
-found along the way are fixed. Mario merged it and said "I like the changes," but two things stay his
-to judge before this gate's own canon proposals are applied: which border treatment reads better, and
-whether the marker and cursor read as intended. He asked directly whether the next gate could proceed
-regardless — it can, since neither open question touches anything gate 5D adds, and building 5D is
-his own explicit direction rather than this session continuing merely because time remained.
+found along the way are fixed. Mario merged it and said "I like the changes," and two things stayed
+his to judge. **The first is now resolved (2026-09-26): no scrollbar; the border reads as the everyday
+lighter line wherever there is more Grid to scroll to, and as a heavier, doubled line only where a
+side has actually reached the Grid's own edge (canon 2.19).** The second — whether the marker and
+cursor read as intended — is untouched and still open.
+
+**Milestone 5 gate 5D is built and reported (PASS), but not yet formally accepted** (2026-09-22,
+report 2026-09-23). The Build Phase now opens on a mandatory Nexus power draft — two placeholder
+powers, not real Milestone 8 content — that may not be skipped; `p` asks once, in plain yes/no terms,
+whether to end the Build Phase and start the Nexus Pulse, and accepting locks every other action but
+not cursor movement. A dedicated test proves keyboard, mouse, and a driver script land on the
+identical committed state. This was written as the milestone's last listed gate; it no longer is.
+
+**Milestone 5 gate 5E was opened 2026-09-26 by the owner's own direct feedback**, after running the
+merged build in a real terminal — not a continuation "because time remained," but his own explicit
+next direction, the same way gate 5D followed 5C before 5C was formally accepted. One item from that
+feedback was small and clear enough to fix immediately, on its own PR: the frame border's low
+contrast in bright light (the same bug class an earlier fix had already caught for two other roles).
+Everything else needs real design and is captured in canon rather than only in a feedback transcript
+— `engine.md` Sections 3.3 and 9.7 (canon 2.19) and `open-questions.md` Q52-Q55 — because a session
+picking this gate up should read settled decisions first.
 
 The current milestone is **[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md)
 — Build Phase**: can a player place buildings, pick a Nexus upgrade, and scroll a real map, by
-keyboard, mouse and driver alike? Its active gate is **5D — the Nexus draft slot and commit**: the
-upgrade-pick mechanism (offer a choice, accept a pick, apply its effect) against a placeholder
-option, since Milestone 8 owns the real Commander Vasse draft; `p` with its one `[y]es`/`[n]o`
-confirmation to commit the Build Phase; the hotkey-versus-click identical-plan test; and the Special
-slot's own labelled, empty space in the layout, with the report saying whether the Build Phase felt
-short a decision channel.
+keyboard, mouse and driver alike? Its active gate is **5E — UI/UX refinement from the owner's own
+playtest**: mouse placement becomes a two-stage click-to-confirm (Q52, reversing Q50); Space places
+alongside Enter, and the just-placed tile stops showing a false illegal-preview; a menu/Grid keyboard
+focus toggle is added, reusing the highlight/activate shape `src/menu/list.ts` already has; the Nexus
+power pick becomes a popup the player opens rather than a screen forced on them — "may not be
+skipped" narrows from refusing every command to refusing only the commit itself, so the popup can
+stay genuinely optional rather than every other action nagging until it opens; the status line becomes a small typed concept (text plus tone) that also echoes a live
+placement refusal, and the footer's key-bindings line is trimmed; and cursor movement gets a real
+speed-tier model with a percentage-of-viewport scroll margin (Q54, numbers not yet felt against a
+terminal). Smart-cursor auto-placement and frame-timer movement interpolation are registered (Q55)
+and explicitly out of this gate's scope.
 
 So the authorised work for a new session is, in order:
 
@@ -280,6 +301,14 @@ deleted, and the renderer must be replaceable without one simulation test changi
   artifacts, or pushing directly to `main`.
 - Update `README.md`, `DEVELOPMENT.md`, the dev container, CI, and agent instructions together when
   canonical development commands change.
+- **A planned experimentation vehicle: a `[d] Debug Mode` panel, not yet built** (owner direction,
+  2026-09-26): a dedicated in-game panel of live-editable flags — a border character, a colour, a
+  timing constant — some changeable hot, some needing a restart, most destined to be deleted once a
+  question is settled and a few destined to become real settings later. The point is a fast, visible
+  way for Mario to try an idea during his own playtest without a new CLI flag and a rebuild each time,
+  the same spirit `--scroll-margin` and `--edge-style` already served one flag at a time. Build it
+  once a session actually needs to make several such things tunable at once; until then this bullet is
+  the record of the direction, not a claim that the panel exists.
 
 ### Write for a person, not for the filing system
 

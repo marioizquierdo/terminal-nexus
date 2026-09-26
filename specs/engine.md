@@ -2,8 +2,8 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.18
-**Updated:** 2026-09-12
+**Canon version:** 2.19
+**Updated:** 2026-09-26
 **License:** Apache-2.0
 
 ## 0. How to read this document
@@ -250,6 +250,36 @@ minimap.**
 - Small Grids that fit entirely inside the viewport never scroll and show no edge markers. Tutorials
   and opening missions should use them deliberately: `small` and `medium` presets fit the minimum
   viewport, so a new player meets the game without ever learning to scroll.
+- **The edge marker is a border weight, in one style — RULE, decided 2026-09-26.** A side with **more
+  Grid to scroll to keeps reading as the frame's lighter, everyday border** (`-`, unchanged from
+  before this decision); a side that has **actually reached the Grid's own edge** — no more Grid that
+  way at all — reads *heavier* there instead: a doubled run (`=`), because that is the side telling
+  the player "this is a wall, not merely a border." When the whole Grid fits the viewport and nothing
+  scrolls in any direction, every side has reached its edge at once, so every side reads heavy at
+  once — one visual statement ("you are seeing the whole map"), not four independently-agreeing sides.
+  This resolves one of gate 5C's own two open questions — which border treatment reads better —
+  closing out that half of it; the gate's other open question (whether the armed row's marker and the
+  cursor's own brightness read as intended) is untouched and still his to judge. **A second, switchable
+  `--edge-style scrollbar` mode — a proportional thumb on two sides — was built alongside gate 5C as
+  the observable alternative this decision needed, and is retired now that the choice is made**, per
+  the owner's own read of it: "I feel like it is not necessary... For now, let's settle on no
+  scrollbar." A `[m] Map` popup showing the whole Grid at once, for large maps a border weight alone
+  cannot make legible, is a real idea for later and deliberately not designed here — it needs its own
+  minimap-style representation, which the game has otherwise avoided entirely, and deserves its own
+  gate rather than a rider on this one. **Two glyph-level details are not decided here** — the ASCII
+  pack has no clean single-cell "doubled" vertical bar the way `=` doubles `-` cleanly (candidates
+  considered and rejected: real doubled-bar characters are not ASCII; `#` already means rock terrain
+  on the very same screen), and whether a corner should also read heavy when every side around it does
+  — see `open-questions.md` Q56.
+- **Cursor movement is GUIDANCE for a speed model, not only a fixed step.** Today one key event moves
+  the cursor a fixed distance (one tile, or `JUMP_TILES` with a modifier), which means the *only* thing
+  driving repeated movement is the terminal's own key-repeat rate — measured directly against an owner
+  playtest that found slowing that rate down made movement worse, not more precise, because there is
+  no internal notion of how long a key has been held. A held-key speed ramp (slow, normal, fast,
+  faster; a direction change resets to slow; the fast modifier is instant top gear and, at least for
+  the mouse wheel and click-to-scroll, recentres the camera on the cursor rather than only dragging it
+  to the margin) is the recommended shape; the exact tiers, thresholds and timings are explicitly not
+  decided here — see `open-questions.md` Q54.
 
 Cropping the Grid to fit without scrolling is not allowed. Below the minimum the renderer gates; it
 never silently hides part of the Grid.
@@ -867,6 +897,28 @@ What differs is what the side panel holds:
 can fix it rather than guess. **Affordability is reported before any tile problem**: telling somebody
 a rock is in the way when they cannot afford the building sends them to fix the wrong thing.
 
+**The status line is also where a live refusal belongs — additive, not a replacement for the above**
+(GUIDANCE, 2026-09-26 owner feedback: "it would make more sense to show that feedback on the low bar
+... so we keep that low bar for cursor status feedback"). The panel keeps its own reason-and-tile
+detail exactly as the RULE above requires; the one-line footer status ("Barracks selected", "hatch
+planned at 12,4") should also mirror a live "cannot build here" while the armed preview sits over an
+illegal tile, styled as a refusal (a red-adjacent tone, not necessarily bold or shouted in capitals —
+"CANNOT BUILD HERE" as literal uppercase was a gate 5B choice for the panel specifically, not a
+constraint on how the status line says the same thing). The status line itself should stop being a
+plain string: a small, reusable type — text plus something like a `tone` (`neutral`/`success`/
+`warning`/`danger`) or an explicit emphasis flag, resolved onto the style attributes `CellStyle`
+already exposes (`fgRole`, `bold`, `dim`, `inverse`) rather than a new renderer capability — so every
+screen that reports what just happened uses the same small vocabulary. Naming this concept plainly
+(not "the message field") is part of the job; "status line" is used here as the working name.
+
+**The footer's key-bindings line is trimmed to the essentials, GUIDANCE** (2026-09-26 owner feedback):
+list only what a player would not otherwise guess — arrows move, a fast-move modifier — and leave the
+less-discoverable-but-lower-value bindings (PageUp/PageDown, Home/End as the arrow-jump's fallback) off
+this one line; a curious player finds them, and the fuller list the side panel shows when the footer
+runs out of room (9.7's own "the footer and the side panel share one list of bindings," gate 5C) is
+untouched by this — the trim is specific to the footer's own space-constrained line, not to what the
+game documents about itself overall.
+
 **No radius preview until something placed has a radius.** An earlier draft of the row above listed
 one; nothing in the content that exists has a radius, and a preview of nothing is a framework built
 before its first use (Q30).
@@ -1007,9 +1059,9 @@ followed by arrows and Enter — the fast path a proficient player types without
 | Arrows | move the cursor one tile | the cursor drives the camera at the 3-tile margin (3.3) |
 | Shift+Arrow | move the cursor five tiles | fast pan across a scrolling Grid. **Two sequence families, both bound** (gate 5A): xterm's `CSI 1;<modifier>` and rxvt's `CSI a/b/c/d`. Any modifier counts, not Shift alone — nothing else on these screens binds a modified arrow, so a terminal that eats Shift but passes Alt or Ctrl still gives its player the fast pan |
 | PageUp / PageDown, Home / End | move the cursor five tiles — the modifier-free fallback | **Required, not optional** (gate 5A): four surveyed terminal families send no shifted arrow at all, so without this they would have no fast pan. Decoded from a table, because Home and End have three live spellings between xterm, screen/tmux/linux and rxvt |
-| Enter | confirm: place the armed structure at the cursor, or activate the highlighted item | |
+| Enter, Space | confirm: place the armed structure at the cursor, or activate the highlighted item | Space added 2026-09-26 (owner: "should also work with space, that was my reflex") — an alias of Enter everywhere on this screen, never a second meaning of its own |
 | Esc | disarm the current selection, close an overlay, back out of a menu | never quits the game by itself |
-| Tab / Shift+Tab | jump the cursor to the player's next / previous own structure | the placement anchor jump: "go to my barracks, build next to it" — works on every terminal |
+| Tab | move focus between the side panel's menu and the Grid, for a keyboard-only play style | **Superseded 2026-09-26**, before ever being built: this row previously read "jump the cursor to the player's next / previous own structure" (Shift+Tab reversing it) — GUIDANCE, never implemented (no code binds Tab today). The owner asked for a menu/Grid focus toggle instead, a more concretely specified and now-requested idea; the structure-jump idea is retired rather than kept on a different key, since nothing depended on it. **Focus, once it exists, is its own state alongside `armed`**: with focus on the menu, Up/Down highlights an entry the way `src/menu/list.ts`'s existing `highlight`/`activate` commands already do elsewhere in the game, and Enter/Space arms it and moves focus to the Grid; with focus on the Grid, arrows move the cursor and Enter/Space places, then focus returns to the menu automatically. Esc/Delete return focus to the menu manually at any time; a menu item's own hotkey digit still arms it immediately regardless of focus, unaffected by any of this |
 | Backspace, Delete | remove the planned, uncommitted placement under the cursor | plans are revisable until commit (Milestone 5) |
 | `u` | undo the last planned placement | |
 | `p` | Start Nexus Pulse — the commit | asks once, `[y]es / [n]o`; the one action that must not fire by accident |
@@ -1033,6 +1085,32 @@ Three conventions behind that table, so a retune keeps them:
    right-click cancels. A player who has used a terminal editor, a roguelike, or an RTS should guess
    the first key right.
 
+**The Nexus power pick is a popup the player opens, not a screen forced on them — GUIDANCE, revised
+2026-09-26.** Gate 5D built the pick as its own full-screen step that opens the Build Phase and blocks
+everything else until answered. The owner's own later playtest asked for something friendlier: a
+"Nexus Powers (n)" entry in the side panel, `n` the number of pending picks, that opens a popup only
+when the player actively selects it — never forced open the instant the Build Phase begins — inside
+which they can make a pending pick and review ones already made. **A dealt Nexus power still may not
+be skipped** (`commander-armies.md` Section 4.5, unchanged) — but where that gets enforced has to move
+for the popup to actually feel optional. Today every state-changing command refuses itself with "Pick
+a Nexus power first" the instant a pick is outstanding (`lockReason`, checked by arm/place/remove/undo
+alike), which is exactly right for a forced full screen but would make an *optional* popup feel just
+as forced — every other action would still nag until it's opened. The fix is to narrow the check to
+the one place the invariant actually has to hold: refuse only the commit itself (`p`, and its
+confirmation) while a pick is outstanding, and let arming, placing, undoing and removing proceed
+freely regardless. Nothing about the invariant's own guarantee changes — the Build Phase still cannot
+end without a pick — only where the refusal fires.
+
+**Two related ideas, floated by the owner in the same feedback and deliberately not built yet:** a
+"smart cursor" that jumps to the nearest empty, centre-ward tile aligned with existing placements the
+moment a structure is armed from the menu, so a run of the same structure tends to lay out a tidy grid
+with one tile of spacing; and rendering the Grid pane on its own faster timer, decoupled from key
+events, so cursor and camera movement can ease toward their target over several frames instead of
+jumping — the same "presentation may interpolate without changing simulation" latitude Section 1
+already grants, applied to a screen that has never needed a frame timer before because it has only
+ever redrawn once per input event (`src/cli/spike.ts`'s `render()`). Both are real, separable pieces of
+work, not included in the mechanism above — see `open-questions.md` Q55.
+
 **Terminal caveats, verified rather than assumed** (Q37; measured by gate 5A on 2026-09-21,
 `evidence/gate-5a-report.md` Section 4.1 has the table and the ten terminals it could *not* test):
 
@@ -1051,15 +1129,30 @@ Three conventions behind that table, so a retune keeps them:
   on every exit path. A game that leaves mouse reporting on is rejected for the same reason as one
   that leaves raw mode on. Where no mouse arrives — a plain SSH session, the driver, a non-TTY —
   nothing is lost, because the keyboard is complete.
-- **A click places the armed structure — RULE, decided** (Q50, answered 2026-09-21). Gate 5A built
-  both behaviours behind a toggle and Mario chose this one after trying them; the other is deleted
-  rather than kept as a setting. It is not only a preference: a click moves the cursor, and moving
-  the cursor scrolls the Grid, so with click-then-confirm a first click within the scroll margin
-  slides the map under the pointer and the second click at the same spot on screen places on a
-  *different tile*. Single-click placement has no second click and cannot hit this.
-  **What makes it safe is that a plan is revisable** — undo, remove-under-cursor, and nothing
-  committed until the commit key. If a future Build Phase action is genuinely irreversible,
+- **A second click on the same tile places the armed structure — RULE, revised** (Q52, 2026-09-26,
+  reversing Q50's 2026-09-21 decision — see `open-questions.md` for both). A first click on a tile
+  only moves the cursor there and shows the armed preview, the same as arriving there by arrow keys;
+  a second click **on that same tile** is what commits the placement. This deliberately reopens the
+  asymmetry Q50's own writeup found and rejected at the time — a first click within the scroll margin
+  can slide the Grid under the pointer, so a second click at the same *screen position* can land on a
+  different *tile* — but it is safe this time for the reason it was not safe as a toggle: the check is
+  on tile identity, never on screen position, so a camera-shifted second click is correctly read as a
+  fresh first click on a new tile (one more click confirms it), not a placement on the wrong one. A
+  later `Shift+click` is planned as a one-click escape hatch for a proficient player who wants the old
+  behaviour back; not built yet. Keyboard placement (Enter, and now Space — below) is unaffected and
+  stays a single press, which already asks for two deliberate actions (arm, then place) the way a
+  first click now also does.
+  **What still makes any of this safe is that a plan is revisable** — undo, remove-under-cursor, and
+  nothing committed until the commit key. If a future Build Phase action is genuinely irreversible,
   confirmation belongs on that one action, never back on every click.
+- **Placing the just-placed tile again is a no-op, not a refusal — RULE** (2026-09-26 owner playtest).
+  The moment after a structure is placed, the tile under the cursor is now occupied by that same
+  structure; if the preview redrew its normal legality check it would report the tile as taken and
+  show the illegal-placement block on top of what the player just correctly built, reading as a
+  failure. Instead: right after a successful placement, the cursor's own tile shows the placement as
+  a success (not a refusal) until the cursor moves off it, and a repeated place command on that same
+  tile does nothing at all rather than re-place or show illegal — the structure stays armed for the
+  *next* one, exactly as before, once the cursor has actually moved.
 
 ---
 
