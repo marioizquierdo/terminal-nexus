@@ -46,14 +46,17 @@ export type BuildCommand =
   /** Arrows, and the five-tile jump: one command, a different distance. */
   | Readonly<{ kind: "move-cursor"; dx: number; dy: number }>
   /**
-   * A click on a Grid tile: move the cursor there and, if a structure is armed, place it — "the
-   * same as arrows then Enter" (engine.md 9.7). What a click *does* lives in the reducer rather
-   * than in the mouse adapter, so the driver reproduces it exactly.
+   * A click on a Grid tile: move the cursor there, and if the cursor was *already* there with a
+   * structure armed, place it — a second click on the same tile, not the first. What a click *does*
+   * lives in the reducer rather than in the mouse adapter, so the driver reproduces it exactly.
    *
-   * Gate 5A shipped a second behaviour beside this one — click to move the cursor, click again to
-   * confirm — as a toggle, because engine.md 9.7 called the choice "a feel decision the spike makes
-   * observable as a toggle rather than argues about". Mario looked at both and chose this one
-   * (Q50, answered 2026-09-21), so the other is gone rather than kept as a setting.
+   * Gate 5A shipped this as a single-click-places toggle against a click-then-confirm alternative,
+   * and Mario chose single-click after trying both (Q50, answered 2026-09-21). Q52 (2026-09-26)
+   * reversed that, after living with it in real play: "the building is placed right away, but there
+   * should be a confirmation... the default should require a second click." Safe to re-adopt despite
+   * Q50's own asymmetry finding (a first click can scroll the camera, so a second click at the same
+   * *screen position* can land on a different *tile*) because the check is on tile identity, never
+   * screen position — see `open-questions.md` Q52 for the full reasoning.
    */
   | Readonly<{ kind: "click-tile"; x: number; y: number }>
   /** Arm item *n* of the construct menu — a digit, or a click on the row. Stays armed after

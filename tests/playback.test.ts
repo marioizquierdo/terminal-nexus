@@ -171,6 +171,21 @@ test("an SS3 arrow (application cursor-key mode) is exactly three characters, ev
   assert.deepEqual(keysFromChunk(`${escape}OAq${escape}OB`), [`${escape}OA`, "q", `${escape}OB`])
 })
 
+test("a meta (Option/Alt) key is one key, never a bare Escape plus a stray character", () => {
+  // macOS terminals send Option+Left/Right as ESC b / ESC f and Option+Backspace as ESC DEL by
+  // default. Split apart, the leading ESC reads as Escape — "disarm", or "leave this screen".
+  const escape = String.fromCharCode(27)
+  assert.deepEqual(keysFromChunk(`${escape}b`), [`${escape}b`])
+  assert.deepEqual(keysFromChunk(`${escape}f${escape}b`), [`${escape}f`, `${escape}b`])
+  assert.deepEqual(keysFromChunk(`${escape}\u007f`), [`${escape}\u007f`])
+  // A terminal treating Option as Meta prefixes a whole arrow sequence instead.
+  assert.deepEqual(keysFromChunk(`${escape}${escape}[A`), [`${escape}${escape}[A`])
+  // But a genuine Escape is still Escape: alone, at the end of a chunk, or pressed twice.
+  assert.deepEqual(keysFromChunk(escape), [escape])
+  assert.deepEqual(keysFromChunk(`${escape}${escape}`), [escape, escape])
+  assert.deepEqual(keysFromChunk(`${escape}[A${escape}`), [`${escape}[A`, escape])
+})
+
 test("stepping a chunk of ticks advances by exactly that many ticks", () => {
   const clock = playback()
   clock.apply("pause")

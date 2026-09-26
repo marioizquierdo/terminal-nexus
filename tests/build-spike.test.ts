@@ -124,8 +124,18 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
 
   const byMouse = session()
   byMouse.build.handleData(clickRowBytes(byMouse.layout, 0), byMouse.layout)
-  byMouse.build.handleData(clickTileBytes(byMouse.layout, byMouse.build, { x: 30, y: 14 }), byMouse.layout)
-  byMouse.build.handleData(clickTileBytes(byMouse.layout, byMouse.build, { x: 34, y: 14 }), byMouse.layout)
+  // A click only arms the preview at a tile; a second click on that same tile is what places it
+  // (Q52) — so each of the two placements below is two clicks, not one. Recomputed fresh each time
+  // (not the same bytes reused) because the camera itself can move between clicks: the second click's
+  // bytes must name the same *tile* the first one did, which is what a real second click landing on
+  // the same on-screen row would also do once the display has caught up.
+  const clickTile = (tile: { x: number; y: number }): void => {
+    byMouse.build.handleData(clickTileBytes(byMouse.layout, byMouse.build, tile), byMouse.layout)
+  }
+  clickTile({ x: 30, y: 14 })
+  clickTile({ x: 30, y: 14 })
+  clickTile({ x: 34, y: 14 })
+  clickTile({ x: 34, y: 14 })
 
   const script: readonly BuildCommand[] = [
     { kind: "arm", index: 0 },
@@ -159,7 +169,41 @@ test("the armed item stays armed after placing - the fast path a proficient play
   assert.equal(build.state.armed, 0)
   build.handleData(ENTER, layout)
   assert.equal(build.state.armed, 0, "still armed after a placement")
-  assert.match(build.state.message, /planned at/)
+  assert.match(build.state.status.text, /planned at/)
+})
+
+test("keyboard: Space places, exactly like Enter", () => {
+  const bySpace = session()
+  bySpace.build.handleData("1", bySpace.layout)
+  bySpace.build.run([{ kind: "move-cursor", dx: 12, dy: 1 }])
+  bySpace.build.handleData(" ", bySpace.layout)
+
+  const byEnter = session()
+  byEnter.build.handleData("1", byEnter.layout)
+  byEnter.build.run([{ kind: "move-cursor", dx: 12, dy: 1 }])
+  byEnter.build.handleData(ENTER, byEnter.layout)
+
+  assert.equal(bySpace.build.state.planned.length, 1)
+  assert.deepEqual(bySpace.build.state, byEnter.build.state)
+})
+
+test("the just-placed tile absorbs a repeated place entirely, until the cursor moves off it", () => {
+  const { build, layout } = session()
+  build.handleData("1", layout)
+  build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
+  assert.equal(build.state.planned.length, 1)
+  const justPlaced = build.state
+
+  // Enter/Space again, still on the same tile: a true no-op, not a re-place and not a refusal.
+  build.dispatch({ kind: "place" })
+  assert.equal(build.state, justPlaced, "a repeated place on the just-placed tile changes nothing at all")
+
+  // Once the cursor actually moves off it and back, the tile is fair game again — this time refused,
+  // since the plan's own barracks is now what is in the way, a real and different reason.
+  build.run([{ kind: "move-cursor", dx: 1, dy: 0 }, { kind: "move-cursor", dx: -1, dy: 0 }])
+  build.dispatch({ kind: "place" })
+  assert.equal(build.state.planned.length, 1, "still refused, but as a real refusal this time")
+  assert.match(build.state.status.text, /the barracks is here/)
 })
 
 test("keyboard: Shift+Arrow and its modifier-free fallback both jump exactly five tiles", () => {
@@ -194,6 +238,35 @@ test("keyboard: Shift+Arrow and its modifier-free fallback both jump exactly fiv
   // A terminal that switched to application cursor mode sends `ESC O A`, not `ESC [ A`. Both are
   // plain arrows, and both move one tile.
   assert.deepEqual(buildKeyboardCommand(`${ESC}OB`, context), { kind: "move-cursor", dx: 0, dy: 1 })
+})
+
+test("keyboard: Option+Arrow as macOS terminals send it is the fast move, never Escape", () => {
+  // ESC b / ESC f are Option+Left/Right's default word-movement keys; a terminal set to treat Option
+  // as Meta prefixes the arrow with ESC instead. Before `keysFromChunk` kept these whole, Option+Left
+  // arrived as a bare Escape plus a stray "b" - which, with nothing armed, left the screen.
+  const context = { itemCount: 3, armed: false }
+  assert.deepEqual(buildKeyboardCommand(`${ESC}b`, context), { kind: "move-cursor", dx: -JUMP_TILES, dy: 0 })
+  assert.deepEqual(buildKeyboardCommand(`${ESC}f`, context), { kind: "move-cursor", dx: JUMP_TILES, dy: 0 })
+  assert.deepEqual(buildKeyboardCommand(`${ESC}${ESC}[A`, context), {
+    kind: "move-cursor",
+    dx: 0,
+    dy: -JUMP_TILES,
+  })
+  // End to end, through the real splitter: nothing is armed, and the screen is not left.
+  let backs = 0
+  const context2 = spikeContext()
+  const layout = buildLayout(MINIMUM, context2.grid)
+  const build = readyBuildSession({
+    context: context2,
+    cursor: { x: 18, y: 13 },
+    viewport: layout.viewport,
+    onBack: () => {
+      backs += 1
+    },
+  })
+  build.handleData(`${ESC}f`, layout)
+  assert.equal(backs, 0, "Option+Right left the screen")
+  assert.equal(build.state.cursor.x, 18 + JUMP_TILES)
 })
 
 test("keyboard: digits always address the list, and a digit past its end means nothing", () => {
@@ -258,16 +331,20 @@ test("parseMouseEvent: a release is not a press, and the bytes round-trip", () =
   assert.equal(parseMouseEvent("not a mouse report"), null)
 })
 
-test("a click on a tile places the armed structure there, exactly as arrows then Enter would", () => {
-  // Q50, answered: a click places it. Gate 5A shipped a second behaviour beside this one — click,
-  // then click again to confirm — as a toggle; Mario chose this one and the other is gone.
+test("a click on a tile only arms the preview there - a second click on the same tile places it (Q52)", () => {
   const byClick = session()
   byClick.build.handleData("1", byClick.layout)
-  byClick.build.handleData(
-    clickTileBytes(byClick.layout, byClick.build, { x: 30, y: 14 }),
-    byClick.layout,
-  )
-  assert.equal(byClick.build.state.planned.length, 1)
+  // Recomputed fresh for each click, not the same bytes reused: the camera itself can move between
+  // clicks (it does here, since the opening cursor needs a margin from the bottom the target row
+  // does not), and what makes a real second click "the same tile" is landing on the same logical
+  // tile as it now sits on screen, not replaying the identical bytes — that case is its own test.
+  const clickAt3014 = (): void =>
+    byClick.build.handleData(clickTileBytes(byClick.layout, byClick.build, { x: 30, y: 14 }), byClick.layout)
+  clickAt3014()
+  assert.equal(byClick.build.state.planned.length, 0, "the first click only moves the cursor")
+  assert.deepEqual(byClick.build.state.cursor, { x: 30, y: 14 })
+  clickAt3014()
+  assert.equal(byClick.build.state.planned.length, 1, "the second click, on the same tile, places it")
 
   const byKeyboard = session()
   byKeyboard.build.handleData("1", byKeyboard.layout)
@@ -276,12 +353,35 @@ test("a click on a tile places the armed structure there, exactly as arrows then
   assert.deepEqual(byClick.build.state, byKeyboard.build.state)
 })
 
-test("a misclick costs one undo, which is what makes placing on the first click safe", () => {
-  // The whole argument for single-click placement (engine.md 9.7): a plan is revisable until the
-  // commit. If that stopped being true, the click behaviour would have to be revisited with it.
+test("a click that scrolled the camera is a fresh first click, not a mis-place on the wrong tile", () => {
+  // Q50's own finding, deliberately re-tested rather than assumed fixed: a first click within the
+  // scroll margin can slide the Grid under the pointer, so replaying the same *screen position*
+  // resolves to a different *tile* the second time. Comparing tile identity (what the mouse adapter
+  // already resolves screen cells to) rather than screen position is what keeps this safe.
   const { build, layout } = session()
   build.handleData("1", layout)
-  build.handleData(clickTileBytes(layout, build, { x: 30, y: 14 }), layout)
+  // x=46 is within the 3-tile margin of the opening viewport's own right edge (0-47), so landing the
+  // cursor here forces the camera to scroll east to keep the margin.
+  const cameraBefore = { ...build.state.camera }
+  const bytes = clickTileBytes(layout, build, { x: 46, y: 13 })
+  build.handleData(bytes, layout)
+  assert.deepEqual(build.state.cursor, { x: 46, y: 13 }, "the first click only moved the cursor")
+  assert.equal(build.state.planned.length, 0)
+  assert.notEqual(build.state.camera.x, cameraBefore.x, "the test did not actually scroll the camera")
+
+  // The exact same bytes again - the same screen cell, not the same tile, now that the camera moved.
+  build.handleData(bytes, layout)
+  assert.notEqual(build.state.cursor.x, 46, "the same screen cell now names a different tile")
+  assert.equal(build.state.planned.length, 0, "a camera-shifted click must not place on the wrong tile")
+})
+
+test("a misclick costs one undo, which is what makes a two-click placement revisable", () => {
+  const { build, layout } = session()
+  build.handleData("1", layout)
+  const clickAt3014 = (): void =>
+    build.handleData(clickTileBytes(layout, build, { x: 30, y: 14 }), layout)
+  clickAt3014()
+  clickAt3014()
   assert.equal(build.state.planned.length, 1)
   build.handleData("u", layout)
   assert.equal(build.state.planned.length, 0)
@@ -297,20 +397,20 @@ test("legality: an illegal placement is refused with a reason and nothing is mov
   const cursorBefore = { ...build.state.cursor }
   build.handleData(ENTER, layout)
   assert.equal(build.state.planned.length, 0)
-  assert.match(build.state.message, /rock in the way/)
+  assert.match(build.state.status.text, /rock in the way/)
   assert.deepEqual(build.state.cursor, cursorBefore, "the cursor did not slide somewhere legal")
 
   // The standing Grid Nexus, at 17,10 through 19,11.
   build.run([{ kind: "move-cursor", dx: 18 - 8, dy: 10 - 5 }])
   build.handleData(ENTER, layout)
   assert.equal(build.state.planned.length, 0)
-  assert.match(build.state.message, /the nexus is here/)
+  assert.match(build.state.status.text, /the nexus is here/)
 
   // The Grid's own north-west corner, where a 3x2 footprint hangs off the edge.
   build.run([{ kind: "move-cursor", dx: -999, dy: -999 }])
   build.handleData(ENTER, layout)
   assert.equal(build.state.planned.length, 0)
-  assert.match(build.state.message, /off the Grid/)
+  assert.match(build.state.status.text, /off the Grid/)
 
   // And a legal one, for contrast: the refusals above are about the tile, not about placement.
   build.run([{ kind: "move-cursor", dx: 30, dy: 14 }])
@@ -330,7 +430,7 @@ test("legality: a second structure may not overlap the first one planned", () =>
   assert.equal(build.state.planned.length, 1)
   build.run([{ kind: "move-cursor", dx: 1, dy: 0 }, { kind: "place" }])
   assert.equal(build.state.planned.length, 1)
-  assert.match(build.state.message, /the barracks is here/)
+  assert.match(build.state.status.text, /the barracks is here/)
 })
 
 test("a plan is revisable: remove under the cursor, and undo the last one", () => {
@@ -350,7 +450,7 @@ test("a plan is revisable: remove under the cursor, and undo the last one", () =
   build.handleData(String.fromCharCode(127), layout)
   assert.equal(build.state.planned.length, 0)
   build.handleData("u", layout)
-  assert.match(build.state.message, /Nothing to undo/)
+  assert.match(build.state.status.text, /Nothing to undo/)
 })
 
 test("the cursor points at a structure's centre tile, the way the scenario format already does", () => {
@@ -382,12 +482,12 @@ test("the budget actually runs out, which is the only thing that makes the menu 
   assert.equal(remaining(context, build.state), SPIKE_ALLOTMENT)
 
   let placed = 0
-  for (let step = 0; step < 20 && !/costs/.test(build.state.message); step += 1) {
+  for (let step = 0; step < 20 && !/costs/.test(build.state.status.text); step += 1) {
     build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
     placed = build.state.planned.length
   }
   assert.ok(placed > 0, "nothing could be placed at all")
-  assert.match(build.state.message, /costs \d+, \d+ left/, "the budget never ran out")
+  assert.match(build.state.status.text, /costs \d+, \d+ left/, "the budget never ran out")
   assert.ok(remaining(context, build.state) >= 0, "spending went past the allotment")
 })
 
@@ -430,7 +530,7 @@ test("a placement that cannot be afforded is refused, and changes nothing at all
   build.handleData("\r", layout)
   assert.equal(build.state.planned.length, before.planned.length, "it was planned anyway")
   assert.equal(remaining(context, build.state), left, "the budget moved on a refused placement")
-  assert.match(build.state.message, /costs 40, \d+ left/)
+  assert.match(build.state.status.text, /costs 40, \d+ left/)
 })
 
 test("affordability is reported before a tile problem, because it is true wherever the cursor is", () => {
@@ -596,17 +696,17 @@ test("a refusal's message clears once the cursor leaves the tile it was about", 
   // footprint-centring arithmetic to account for.
   build.dispatch({ kind: "arm", index: 2 })
   build.dispatch({ kind: "place" })
-  assert.match(build.state.message, /Cannot build here/, "the test did not actually trigger a refusal")
+  assert.match(build.state.status.text, /Cannot build here/, "the test did not actually trigger a refusal")
 
   build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
-  assert.doesNotMatch(build.state.message, /Cannot build here/)
+  assert.doesNotMatch(build.state.status.text, /Cannot build here/)
 
   // A message about the last action, rather than about a tile, is not stale just because the
   // cursor moved — it stays until the next one.
   build.dispatch({ kind: "place" })
-  assert.match(build.state.message, /planned at/)
+  assert.match(build.state.status.text, /planned at/)
   build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
-  assert.match(build.state.message, /planned at/, "an action message should survive a cursor move")
+  assert.match(build.state.status.text, /planned at/, "an action message should survive a cursor move")
 })
 
 test("a refusal's message survives a move that is clamped back to the same tile", () => {
@@ -629,9 +729,9 @@ test("a refusal's message survives a move that is clamped back to the same tile"
   const build = readyBuildSession({ context, cursor: { x: 9, y: 9 }, viewport: { width: 10, height: 10 } })
   build.dispatch({ kind: "arm", index: 2 })
   build.dispatch({ kind: "place" })
-  assert.match(build.state.message, /Cannot build here/)
+  assert.match(build.state.status.text, /Cannot build here/)
 
   build.dispatch({ kind: "move-cursor", dx: 1, dy: 1 })
   assert.deepEqual(build.state.cursor, { x: 9, y: 9 }, "the move should have been clamped to a no-op")
-  assert.match(build.state.message, /Cannot build here/, "the cursor never left the tile the refusal named")
+  assert.match(build.state.status.text, /Cannot build here/, "the cursor never left the tile the refusal named")
 })

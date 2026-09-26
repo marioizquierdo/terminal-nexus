@@ -108,43 +108,45 @@ side has actually reached the Grid's own edge (canon 2.19).** The second — whe
 cursor read as intended — is untouched and still open.
 
 **Milestone 5 gate 5D is built and reported (PASS), but not yet formally accepted** (2026-09-22,
-report 2026-09-23). The Build Phase now opens on a mandatory Nexus power draft — two placeholder
-powers, not real Milestone 8 content — that may not be skipped; `p` asks once, in plain yes/no terms,
-whether to end the Build Phase and start the Nexus Pulse, and accepting locks every other action but
-not cursor movement. A dedicated test proves keyboard, mouse, and a driver script land on the
-identical committed state. This was written as the milestone's last listed gate; it no longer is.
+report 2026-09-23). The Build Phase opens on a Nexus power draft — two placeholder powers, not real
+Milestone 8 content — that may not be skipped; `p` asks once, in plain yes/no terms, whether to end
+the Build Phase and start the Nexus Pulse, and accepting locks every other action but not cursor
+movement. A dedicated test proves keyboard, mouse, and a driver script land on the identical
+committed state.
 
-**Milestone 5 gate 5E was opened 2026-09-26 by the owner's own direct feedback**, after running the
-merged build in a real terminal — not a continuation "because time remained," but his own explicit
-next direction, the same way gate 5D followed 5C before 5C was formally accepted. One item from that
-feedback was small and clear enough to fix immediately, on its own PR: the frame border's low
-contrast in bright light (the same bug class an earlier fix had already caught for two other roles).
-Everything else needs real design and is captured in canon rather than only in a feedback transcript
-— `engine.md` Sections 3.3 and 9.7 (canon 2.19) and `open-questions.md` Q52-Q55 — because a session
-picking this gate up should read settled decisions first.
+**Milestone 5 gate 5E is built and reported (PASS), awaiting Mario's look** (2026-09-26). He ran the
+merged build in iTerm2 and gave two rounds of direct feedback; everything small and local in it is
+built. The interface is readable in daylight; the Grid is a closed rectangle of its own whose sides
+read light where there is more Grid and heavy (`===`) where the map ends — the missing line directly
+above and below the Grid was why its edge looked "arbitrary"; a second click on the same tile places
+(Q52, reversing Q50) and Space places like Enter; the tile just built on no longer shows a false
+refusal; a refused placement is answered on a typed status line with its tile — quietly while
+looking, in red once tried — over a grey block of `x`; the key help is trimmed; Option+Arrow is the
+fast move and no longer leaves the screen. What reshapes the screen or needs a clock became gates
+5F-5H, with every decision in canon (`engine.md` Sections 3.1, 3.3, 9.2, 9.7 at canon 2.19) and every
+undecided fork in `open-questions.md` (Q53-Q59), each with a recommendation.
 
 The current milestone is **[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md)
 — Build Phase**: can a player place buildings, pick a Nexus upgrade, and scroll a real map, by
-keyboard, mouse and driver alike? Its active gate is **5E — UI/UX refinement from the owner's own
-playtest**: mouse placement becomes a two-stage click-to-confirm (Q52, reversing Q50); Space places
-alongside Enter, and the just-placed tile stops showing a false illegal-preview; a menu/Grid keyboard
-focus toggle is added, reusing the highlight/activate shape `src/menu/list.ts` already has; the Nexus
-power pick becomes a popup the player opens rather than a screen forced on them — "may not be
-skipped" narrows from refusing every command to refusing only the commit itself, so the popup can
-stay genuinely optional rather than every other action nagging until it opens; the status line becomes a small typed concept (text plus tone) that also echoes a live
-placement refusal, and the footer's key-bindings line is trimmed; and cursor movement gets a real
-speed-tier model with a percentage-of-viewport scroll margin (Q54, numbers not yet felt against a
-terminal). Smart-cursor auto-placement and frame-timer movement interpolation are registered (Q55)
-and explicitly out of this gate's scope.
+keyboard, mouse and driver alike? Its active gate is **5F — layout and keyboard focus**: the side
+panel moves to the left of the Grid; Tab moves keyboard focus between the menu and the Grid, with
+arrows and Enter/Space working the menu and a smart cursor that lands on a buildable tile when
+something is armed from it (Q55; where focus goes after a placement is Q57); and the Nexus power pick
+becomes a "Nexus Powers (1)" entry at the top of the menu that opens a popup over the Grid — the
+game's first overlay — never forced open, with "may not be skipped" refusing only the commit. After
+it: **5G**, a `[d] Debug` overlay of live-editable development flags, and **5H**, movement feel — a
+frame timer, held-key speed tiers, a share-of-viewport margin, recentring, eased camera moves
+(Q54, Q58).
 
 So the authorised work for a new session is, in order:
 
 1. **whatever the owner's most recent feedback asks for**, if any exists since
    `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
    outstanding or that everything still is;
-2. **Milestone 5 gate 5D**, per its own file — the next gate in the build order
+2. **Milestone 5 gate 5F**, per its own file — the next gate in the build order
    [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
-   order — read that table's build-order column, and take one gate per session.
+   order — read that table's build-order column, and take one gate per session unless the owner's
+   own prompt asks for more.
 
 Each milestone names exactly what it needs in its own "Depends on" line, and its gates are the unit
 of work.
@@ -203,9 +205,10 @@ deleted, and the renderer must be replaceable without one simulation test changi
   several tiles**, and that matters strategically. A mover tests its whole footprint against its
   mask. Range measures to the nearest occupied tile.
 - The viewport is clamped to between 48 × 16 and 72 × 24 tiles; the cursor drives scrolling at a
-  3-tile margin; there is no minimap. 80 × 24 is the floor and the acceptance target. **The margin
-  is a follow rule, not an invariant**: at the Grid's own edge the camera has nowhere to go and the
-  cursor reaches the edge of the screen, which is correct — there is no more Grid to reveal.
+  margin (three tiles today; the number is GUIDANCE, and gate 5H makes it a share of the viewport);
+  there is no minimap. 80 × 24 is the floor and the acceptance target. **The margin is a follow rule,
+  not an invariant**: at the Grid's own edge the camera has nowhere to go and the cursor reaches the
+  edge of the screen, which is correct — there is no more Grid to reveal.
 - Grid orientation is a rendering choice. Portrait and landscape change no coordinate.
 - Terminal composition produces an engine-owned structured cell frame. Cells carry style **roles**,
   never literal colors.
@@ -241,14 +244,19 @@ deleted, and the renderer must be replaceable without one simulation test changi
   with identical effect; the driver can inject raw key and mouse events and read the cell frame back.
   **Three bindings are measured rather than assumed** (gate 5A): Shift+Arrow has two live sequence
   families and several terminals send none at all, so a modifier-free fallback is required, not
-  optional; the mouse wheel moves the *cursor* five tiles rather than a camera of its own, because a
-  second camera is the pan mode the scrolling rule forbids; and a click places the armed structure,
-  with no second click to confirm.
-- **The Build Phase panel is the construct menu, what is left to spend, the selected item's cost and
-  effect, and the reason a placement was refused** — no radius preview until something has a radius
-  (Q30). A refusal is answered in the panel and names its tile, and **affordability is reported before
-  any tile problem**. A menu split into groups still shares **one digit sequence**, and an **empty
-  group is drawn, not skipped**, so no hotkey moves when content arrives.
+  optional; and the mouse wheel moves the *cursor* five tiles rather than a camera of its own, because
+  a second camera is the pan mode the scrolling rule forbids. **A second click on the same tile places
+  the armed structure** — compared by tile, never by screen position, so a click that scrolled the
+  view cannot place on a neighbour (Q52, reversing gate 5A's one-click Q50).
+- **The Build Phase panel is the construct menu, what is left to spend, and the selected item's cost
+  and effect** — no radius preview until something has a radius (Q30). **A refused placement is
+  answered on the status line, and names its tile**; **affordability is reported before any tile
+  problem**. A menu split into groups still shares **one digit sequence**, and an **empty group is
+  drawn, not skipped**, so no hotkey moves when content arrives.
+- **The status line is a typed message** — text, a tone, and the tile it is about, if any — never a
+  bare string, and a tone resolves onto style roles in one place (`src/view/status.ts`). **The Grid
+  pane is a closed rectangle** whose sides carry the "more Grid this way" signal as weight: light
+  where the view can scroll further, heavy where the map ends.
 - **A mission is a sequence of Build Phase / Nexus Pulse cycles driven by triggers.** Simulation
   actions run inside the kernel as validated intents; presentation actions never touch state. A
   scripted Pulse is still a Pulse.
@@ -301,14 +309,13 @@ deleted, and the renderer must be replaceable without one simulation test changi
   artifacts, or pushing directly to `main`.
 - Update `README.md`, `DEVELOPMENT.md`, the dev container, CI, and agent instructions together when
   canonical development commands change.
-- **A planned experimentation vehicle: a `[d] Debug Mode` panel, not yet built** (owner direction,
-  2026-09-26): a dedicated in-game panel of live-editable flags — a border character, a colour, a
-  timing constant — some changeable hot, some needing a restart, most destined to be deleted once a
-  question is settled and a few destined to become real settings later. The point is a fast, visible
-  way for Mario to try an idea during his own playtest without a new CLI flag and a rebuild each time,
-  the same spirit `--scroll-margin` and `--edge-style` already served one flag at a time. Build it
-  once a session actually needs to make several such things tunable at once; until then this bullet is
-  the record of the direction, not a claim that the panel exists.
+- **Show Mario options through Debug Mode, once it exists** (owner direction, 2026-09-26; built at
+  Milestone 5 gate 5G, not before): a `[d] Debug` in-game panel of live-editable flags — a border
+  character, a colour, a timing constant — some applied at once, some on restart. When a session has a
+  genuine fork the owner should feel rather than read about, the preferred move (Section 6's "make it
+  observable") is a Debug Mode field, not a new command-line flag. Every flag names the question it
+  serves and is deleted once the question is answered; a few graduate into real settings. Until gate
+  5G lands, `--scroll-margin`-style flags remain the fallback.
 
 ### Write for a person, not for the filing system
 

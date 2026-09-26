@@ -3,14 +3,12 @@
 //
 // The Grid pane is a **window onto a Grid larger than itself**: every tile is drawn at
 // `tile - camera` and clipped to the viewport, and the two signals engine.md 3.3 requires in place
-// of a minimap — edge markers on the frame border, a position readout naming the visible range —
-// come from the same camera the cursor moved.
+// of a minimap — the weight of the lines around the Grid pane, a position readout naming the visible
+// range — come from the same camera the cursor moved.
 
 import { tilesOf } from "../grid/coords.ts"
-import type { ContentRegistry } from "../content/index.ts"
 import type { Coord } from "../grid/types.ts"
-import { TERRAIN } from "../grid/types.ts"
-import { SCROLL_MARGIN, edgeMarkers, scrollThumb, visibleRange } from "../build/camera.ts"
+import { SCROLL_MARGIN, edgeMarkers, visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import {
   CONFIRM_ITEMS,
@@ -18,12 +16,12 @@ import {
   cellForTile,
   confirmLayout,
   constructLines,
-  nexusDraftItems,
   nexusDraftLayout,
+  summaryRows,
 } from "../build/layout.ts"
-import { menuItemLabel, menuItemRow } from "../menu/layout.ts"
-import type { BuildContext, BuildState } from "../build/state.ts"
-import { anchorForCursor, legalityAt, remaining } from "../build/state.ts"
+import { menuItemRow } from "../menu/layout.ts"
+import type { ArmedPreview, BuildContext, BuildState } from "../build/state.ts"
+import { armedPreview, refusalText, remaining } from "../build/state.ts"
 import type { ConstructGroup, ConstructItem, PlannedPlacement } from "../build/types.ts"
 import type { BandCell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
@@ -31,109 +29,116 @@ import { put, text } from "./draw.ts"
 import type { CapabilityMode, StyleRole } from "./roles.ts"
 import { chromeGlyph, entityGlyph, playerRole, terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
+import { statusStyle } from "./status.ts"
+import type { StatusMessage } from "../status.ts"
+import { status } from "../status.ts"
 
 /** A structure the player is about to place, and whether they may. Drawn in the highlights band, so
  *  it is presentation and can never change occupancy (engine.md 9.4). */
 const ILLEGAL_PREVIEW_GLYPH = "x"
-
-/**
- * The second way of showing "there is more Grid this way" (Q37's own open question, made
- * observable rather than argued about): `hard-soft`, the default, marks a whole border side either
- * plain or dim; `scrollbar` additionally turns the bottom and west sides into a proportional thumb,
- * showing roughly where the visible slice sits rather than only that there is more of it. North and
- * east stay a plain yes/no in both modes — a *partial* thumb right beside the side panel would
- * reintroduce the very thing the plain run was built to avoid: some rows marked and others not,
- * beside a list of rows, reading as a pointer rather than a border.
- */
-export type EdgeStyle = "hard-soft" | "scrollbar"
-
-export function parseEdgeStyle(value: string): EdgeStyle {
-  if (value === "hard-soft" || value === "scrollbar") return value
-  throw new Error(`unknown --edge-style "${value}"; expected hard-soft or scrollbar`)
-}
 
 export type BuildCompositionInput = Readonly<{
   context: BuildContext
   state: BuildState
   layout: BuildLayout
   glyphPack?: GlyphPack
-  edgeStyle?: EdgeStyle
 }>
 
+/** Which of a frame cell's four neighbours a line continues into. */
+type Joins = { n: boolean; s: boolean; e: boolean; w: boolean }
+
+/** The glyph for a frame cell, from which way its lines run — a straight run, a corner, a tee, or a
+ *  crossing. Every junction is derived rather than placed by hand, so moving a line (the side panel
+ *  moving to the left is the next one, canon 2.19) moves its junctions with it. */
+function lineGlyph(pack: GlyphPack, { n, s, e, w }: Joins): string {
+  if (n && s && !e && !w) return chromeGlyph(pack, "vertical")
+  if (e && w && !n && !s) return chromeGlyph(pack, "horizontal")
+  if (n && s && e && w) return chromeGlyph(pack, "cross")
+  if (n && s) return chromeGlyph(pack, e ? "teeRight" : "teeLeft")
+  if (e && w) return chromeGlyph(pack, s ? "teeDown" : "teeUp")
+  if (s) return chromeGlyph(pack, e ? "topLeft" : "topRight")
+  return chromeGlyph(pack, e ? "bottomLeft" : "bottomRight")
+}
+
 /**
- * The frame border, and engine.md 3.3's required "there is more Grid" signal drawn as part of it
- * rather than overlaid on it: solid where a side genuinely ends, a dim dashed run where it does not.
- * Only the border segment actually beside the Grid pane carries this — the header, the footer, and
- * the side panel's own border never scroll, so they stay solid regardless.
+ * The frame: an outer border, a rule under the top bar and another over the bottom bar (both the
+ * whole width), and the divider between the Grid pane and the side panel. Together they close the
+ * Grid pane into **a rectangle of its own** — the owner's 2026-09-26 playtest could not tell where the
+ * Grid ended, because two blank header rows sat between its top edge and the nearest line, and the
+ * footer sat against its bottom edge with no line at all.
+ *
+ * engine.md 3.3's required "there is more Grid" signal is drawn as the weight of that rectangle's
+ * four sides, not overlaid on them (canon 2.19, the owner's "'---' UI, and '===' for the map edge"): a
+ * side with more Grid to scroll to is the frame's own line drawn dim, and a side that has actually
+ * reached the Grid's own edge is drawn heavy — a wall, not merely a border. Heavy is a real glyph
+ * where the pack has one (`=`, or the box-drawing heavy lines) plus `bold`; ASCII has no heavier
+ * vertical bar, so its vertical heavy is `|` carried by `bold` alone (`open-questions.md` Q56).
+ * Everything else — the outer border, the rules where they cross the side panel — never scrolls and
+ * is drawn plain.
  */
 function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
   const { layout, state, context } = input
-  const edgeStyle = input.edgeStyle ?? "hard-soft"
-  const band = BANDS.chrome
-  const hardH = chromeGlyph(pack, "horizontal")
-  const hardV = chromeGlyph(pack, "vertical")
-  const softH = chromeGlyph(pack, "softHorizontal")
-  const softV = chromeGlyph(pack, "softVertical")
+  const box = layout.gridBox
   const left = layout.offset.column
   const right = layout.offset.column + layout.composition.width - 1
   const top = layout.offset.row
   const bottom = layout.offset.row + layout.composition.height - 1
+
+  const lines = new Map<number, Joins & { x: number; y: number }>()
+  const join = (x: number, y: number, side: keyof Joins): void => {
+    const key = y * layout.frame.width + x
+    const cell = lines.get(key) ?? { x, y, n: false, s: false, e: false, w: false }
+    lines.set(key, { ...cell, [side]: true })
+  }
+  const horizontalLine = (y: number, from: number, to: number): void => {
+    for (let x = from; x <= to; x += 1) {
+      if (x > from) join(x, y, "w")
+      if (x < to) join(x, y, "e")
+    }
+  }
+  const verticalLine = (x: number, from: number, to: number): void => {
+    for (let y = from; y <= to; y += 1) {
+      if (y > from) join(x, y, "n")
+      if (y < to) join(x, y, "s")
+    }
+  }
+  horizontalLine(top, left, right)
+  horizontalLine(bottom, left, right)
+  verticalLine(left, top, bottom)
+  verticalLine(right, top, bottom)
+  horizontalLine(box.top, left, right)
+  horizontalLine(box.bottom, left, right)
+  // The divider stops at the rule over the bottom bar, so the bar's three lines run the whole width:
+  // at 80 columns the Grid pane is 46 usable columns and all three are longer than that.
+  verticalLine(layout.dividerColumn, top, box.bottom)
+
   const markers = edgeMarkers(state.camera, state.viewport, context.grid)
-  const gridLeft = layout.origin.column
-  const gridRight = layout.dividerColumn - 1
-  const gridTop = layout.origin.row
-  const gridBottom = layout.origin.row + layout.viewport.height - 1
+  // A Grid that fits the viewport whole never scrolls in any direction, so every side has reached its
+  // edge at once — and the rectangle's four corners read heavy too, as one statement ("you are
+  // seeing the whole map") rather than four sides that merely agree. When the sides differ, a plain
+  // corner is still right (Q56).
+  const wholeGridVisible = !markers.north && !markers.south && !markers.west && !markers.east
+  const soft = { dim: true }
+  const heavy = { bold: true }
 
-  // Only computed in scrollbar mode, and only for the two sides that get one — see `EdgeStyle`.
-  const southThumb =
-    edgeStyle === "scrollbar"
-      ? scrollThumb(state.camera.x, state.viewport.width, context.grid.width, gridRight - gridLeft + 1)
-      : null
-  const westThumb =
-    edgeStyle === "scrollbar"
-      ? scrollThumb(state.camera.y, state.viewport.height, context.grid.height, gridBottom - gridTop + 1)
-      : null
-
-  // South (bottom, an X-axis thumb in scrollbar mode) and west (a Y-axis thumb) never consult
-  // `markers.south`/`markers.west` once in scrollbar mode: those are per-direction facts about the
-  // *other* axis's plain treatment, and mixing them in would make a thumb border show a dim segment
-  // for a reason that has nothing to do with the axis it is actually representing. Each mode owns
-  // its own test for these two sides, in full, rather than falling back into the other's.
-  for (let x = left; x <= right; x += 1) {
-    const overGrid = x >= gridLeft && x <= gridRight
-    const north = overGrid && markers.north
-    const south =
-      overGrid &&
-      (edgeStyle === "scrollbar"
-        ? southThumb !== null && (x - gridLeft < southThumb.start || x - gridLeft > southThumb.end)
-        : markers.south)
-    put(cells, band, x, top, north ? softH : hardH, "chrome.frame", { dim: north })
-    put(cells, band, x, bottom, south ? softH : hardH, "chrome.frame", { dim: south })
-  }
-  for (let y = top + 1; y < bottom; y += 1) {
-    const overGrid = y >= gridTop && y <= gridBottom
-    const west =
-      overGrid &&
-      (edgeStyle === "scrollbar"
-        ? westThumb !== null && (y - gridTop < westThumb.start || y - gridTop > westThumb.end)
-        : markers.west)
-    const east = overGrid && markers.east
-    put(cells, band, left, y, west ? softV : hardV, "chrome.frame", { dim: west })
-    // The divider stops above the footer, so the footer's three rows run the whole interior width.
-    // At 80 columns the Grid pane is 46 usable columns and all three lines are longer than that.
-    if (y < layout.footerRow) put(cells, band, layout.dividerColumn, y, east ? softV : hardV, "chrome.frame", { dim: east })
-  }
-  // Corners sit outside the Grid pane's own column/row range, so they are always the plain corner
-  // glyph — a run that goes soft only steps away from one never looks broken at the point itself.
-  for (const [x, y] of [
-    [left, top],
-    [right, top],
-    [left, bottom],
-    [right, bottom],
-  ] as const) {
-    const part =
-      y === top ? (x === left ? "topLeft" : "topRight") : x === left ? "bottomLeft" : "bottomRight"
-    put(cells, band, x, y, chromeGlyph(pack, part), "chrome.frame")
+  for (const cell of lines.values()) {
+    const { x, y } = cell
+    const alongTopOrBottom = (y === box.top || y === box.bottom) && x > box.left && x < box.right
+    const alongLeftOrRight = (x === box.left || x === box.right) && y > box.top && y < box.bottom
+    const gridCorner = (x === box.left || x === box.right) && (y === box.top || y === box.bottom)
+    if (alongTopOrBottom) {
+      const more = y === box.top ? markers.north : markers.south
+      const glyph = chromeGlyph(pack, more ? "softHorizontal" : "heavyHorizontal")
+      put(cells, BANDS.chrome, x, y, glyph, "chrome.frame", more ? soft : heavy)
+    } else if (alongLeftOrRight) {
+      const more = x === box.left ? markers.west : markers.east
+      const glyph = chromeGlyph(pack, more ? "softVertical" : "heavyVertical")
+      put(cells, BANDS.chrome, x, y, glyph, "chrome.frame", more ? soft : heavy)
+    } else {
+      put(cells, BANDS.chrome, x, y, lineGlyph(pack, cell), "chrome.frame", {
+        bold: gridCorner && wholeGridVisible,
+      })
+    }
   }
 }
 
@@ -187,38 +192,32 @@ function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPa
   for (const placement of state.planned) drawStructure(placement.contentId, placement.anchor, true)
 }
 
-/** The armed structure's footprint under the cursor, and whether it would be refused there. Shape
- *  carries the answer, not colour: a legal preview is the structure's own glyphs, an illegal one is
- *  a block of `x`. Both read identically in monochrome, which is the point. */
-function drawPreview(cells: BandCell[], input: BuildCompositionInput): void {
-  const { context, state, layout } = input
-  if (state.armed === null) return
-  const item = context.catalog[state.armed]
-  if (item === undefined) return
-  const definition = context.registry.get(item.contentId)
-  const anchor = anchorForCursor(state.cursor, definition.footprint)
-  // The same call `place()` makes, budget and all, so the ghost answers exactly the question Enter
-  // answers.
-  const legal = legalityAt(
-    context,
-    state.planned,
-    item.contentId,
-    anchor,
-    remaining(context, state),
-  ).ok
+/**
+ * The armed structure's footprint under the cursor, and whether it would be refused there. Shape
+ * carries the answer, not colour: a legal preview is the structure's own glyphs, an illegal one is a
+ * block of `x`. Both read identically in monochrome, which is the point.
+ *
+ * The illegal block is grey, not red (owner, 2026-09-26: "the red color seems a bit too intense, we
+ * should try grey instead"). Red is kept for the moment a placement is actually *attempted* and
+ * refused — the status line's job, not the ghost's — so looking and trying read differently.
+ */
+function drawPreview(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
+  const { state, layout } = input
+  // Nothing armed — or the tile a placement just succeeded on, where the dimmed plan `drawGrid`
+  // already drew shows through undisturbed.
+  if (preview === null || preview.justPlaced) return
+  const legal = preview.refusal === null
   const range = visibleRange(state.camera, state.viewport)
 
-  for (const offset of definition.footprint) {
-    const tile = { x: anchor.x + offset.x, y: anchor.y + offset.y }
+  for (const offset of preview.footprint) {
+    const tile = { x: preview.anchor.x + offset.x, y: preview.anchor.y + offset.y }
     if (tile.x < range.firstX || tile.x > range.lastX) continue
     if (tile.y < range.firstY || tile.y > range.lastY) continue
     const cell = cellForTile(layout, state.camera, tile)
     const glyph = legal
-      ? entityGlyph(item.contentId, "A", { x: offset.x, y: offset.y })
+      ? entityGlyph(preview.item.contentId, "A", { x: offset.x, y: offset.y })
       : ILLEGAL_PREVIEW_GLYPH
-    put(cells, BANDS.highlights, cell.x, cell.y, glyph, legal ? "chrome.hotkey" : "notice.gate", {
-      bold: !legal,
-    })
+    put(cells, BANDS.highlights, cell.x, cell.y, glyph, legal ? "chrome.hotkey" : "chrome.muted")
   }
 }
 
@@ -263,15 +262,16 @@ function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
 }
 
 /** Every binding live on this screen, most important first. One list, because the footer and the
- *  panel share it — see `bindingLines`. */
+ *  panel share it — see `bindingLines`. Trimmed to the essentials a player would not otherwise guess
+ *  (2026-09-26 owner feedback: "no need to explain shift+arrow is a jump 5, just say arrows move,
+ *  shift+arrow fast move, leave pgup/home keys out, people will figure that out just fine") — the
+ *  keys themselves (PageUp/PageDown, Home/End) are unchanged, only this help text shrank. */
 const BINDINGS = [
   "arrows move",
-  "enter place",
+  "enter/space place",
   "esc disarm",
   "q quit",
-  "shift+arrow jump 5",
-  "pgup pgdn jump 5",
-  "home end jump 5",
+  "shift+arrow fast move",
   "bksp remove",
   "u undo",
 ] as const
@@ -315,7 +315,7 @@ export function bindingLines(
   return { footer, panel }
 }
 
-function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput): void {
+function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
   const { context, state, layout } = input
   const band = BANDS.chrome
   const limit = layout.paneLimit
@@ -324,12 +324,10 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput): v
   const range = visibleRange(state.camera, state.viewport)
 
   // The header is one line; the other two rows of its budget stay blank. Nothing goes here that a
-  // player does not need while choosing where to build.
+  // player does not need while choosing where to build. Not dimmed: the owner could not find the
+  // interface at all in daylight (2026-09-26), and `chrome.muted` is already the quieter role.
   text(cells, band, left, headerRow, "TERMINAL NEXUS", "chrome.title", { bold: true, limit })
-  text(cells, band, left + 15, headerRow, "build phase", "chrome.muted", {
-    dim: true,
-    limit: limit - 16,
-  })
+  text(cells, band, left + 15, headerRow, "build phase", "chrome.muted", { limit: limit - 16 })
 
   // The footer runs the whole interior width, under both panes — see `drawChrome`.
   const footerLimit = layout.footerLimit
@@ -357,11 +355,29 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput): v
     layout.footerRow + 1,
     bindingLines(footerLimit, layout.panelLimit).footer,
     "chrome.muted",
-    { dim: true, limit: footerLimit },
+    { limit: footerLimit },
   )
-  text(cells, band, left, layout.footerRow + 2, state.message, "chrome.value", {
+  const shown = statusLine(state, preview)
+  const style = statusStyle(shown.tone)
+  text(cells, band, left, layout.footerRow + 2, shown.text, style.role, {
+    ...(style.bold === undefined ? {} : { bold: style.bold }),
     limit: footerLimit,
   })
+}
+
+/**
+ * The status line — the footer's last row, and the one place the Build Phase answers "what just
+ * happened, or why not" (owner, 2026-09-26: "we keep that low bar for cursor status feedback"). It
+ * shows the reducer's own `state.status`, with one exception: while the armed ghost sits on a tile
+ * Enter would refuse, the refusal is what it says, naming the tile — quietly while the player is only
+ * looking, and in the reducer's own red once they actually try (a refused `place()` leaves a
+ * `danger` status scoped to this tile, and that one is shown as it is).
+ */
+function statusLine(state: BuildState, preview: ArmedPreview | null): StatusMessage {
+  if (preview === null || preview.refusal === null) return state.status
+  const tile = state.status.tile
+  const attempted = tile !== undefined && tile.x === state.cursor.x && tile.y === state.cursor.y
+  return attempted ? state.status : status(refusalText(preview.refusal))
 }
 
 /** Right-aligned against the panel's own right edge — a column of costs reads as a column only if
@@ -400,30 +416,21 @@ function drawHotkeyRow(
 }
 
 /**
- * The side panel — engine.md 9.2's Build Phase list: the construct menu, what is left to spend, the
- * selected item's cost and effect, and why a placement was refused. No radius preview, because
- * nothing placed here has a radius.
- *
- * One rule decides what goes on it: every line is something a player needs while deciding where to
- * build. Most of it is blank until they are doing something — a panel that is always full is a
- * panel nobody reads.
- */
-/**
  * The bindings the footer had no room for, pinned to the bottom of the panel and growing upward. A
  * wide enough terminal fits them all in the footer and this is empty.
  *
- * Bounded by the construct menu, which wins: the panel is as tall as the viewport and the viewport
- * shrinks to fit a small Grid, so the block can reach the menu. A hidden menu row is still a live
- * click target — worse than a binding the player has to find elsewhere — so the lowest-priority
- * lines are dropped instead.
+ * Bounded by the construct menu and the NEXUS/SPECIAL rows below it, which win: the panel is as
+ * tall as the viewport and the viewport shrinks to fit a small Grid, so the block can reach them. A
+ * hidden menu row is still a live click target — worse than a binding the player has to find
+ * elsewhere — so the lowest-priority lines are dropped instead. (The bound once stopped at the menu
+ * alone, and the NEXUS/SPECIAL rows gate 5D added below it were drawn over on a small Grid.)
  */
 function panelBindings(
   layout: BuildLayout,
   catalog: readonly ConstructItem[],
 ): readonly string[] {
   const lines = bindingLines(layout.footerLimit, layout.panelLimit).panel
-  const menu = constructLines(layout, catalog)
-  const floor = (menu[menu.length - 1]?.row ?? layout.panelRow) + 2
+  const floor = summaryRows(layout, catalog).special + 2
   return lines.slice(0, Math.max(0, Math.min(lines.length, layout.panelBindingsRow - floor + 1)))
 }
 
@@ -432,14 +439,20 @@ function drawPanelBindings(cells: BandCell[], input: BuildCompositionInput): voi
   const lines = panelBindings(layout, input.context.catalog)
   lines.forEach((line, index) => {
     const row = layout.panelBindingsRow - (lines.length - 1 - index)
-    text(cells, BANDS.chrome, layout.panelColumn, row, line, "chrome.muted", {
-      dim: true,
-      limit: layout.panelLimit,
-    })
+    text(cells, BANDS.chrome, layout.panelColumn, row, line, "chrome.muted", { limit: layout.panelLimit })
   })
 }
 
-function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
+/**
+ * The side panel — engine.md 9.2's Build Phase list: the construct menu, what is left to spend, and
+ * the selected item's cost and effect. Why a placement is refused is the status line's to say (canon
+ * 2.19), and there is no radius preview, because nothing placed here has a radius.
+ *
+ * One rule decides what goes on it: every line is something a player needs while deciding where to
+ * build. Most of it is blank until they are doing something — a panel that is always full is a
+ * panel nobody reads.
+ */
+function drawPanel(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
   const { context, state, layout } = input
   const band = BANDS.chrome
   const column = layout.panelColumn
@@ -449,11 +462,12 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
   // What there is to spend, on the panel's first line, because it is the number every choice below
   // it is measured against.
   text(cells, band, column, layout.panelRow + RESOURCE_ROW, "RESOURCE", "chrome.label", { limit })
+  // Out of the whole budget, the picked Nexus power's share included — "130 of 100" read as a bug.
   rightAlign(
     cells,
     layout,
     layout.panelRow + RESOURCE_ROW,
-    `${left} of ${context.allotment}`,
+    `${left} of ${context.allotment + state.bonusAllotment}`,
     "chrome.title",
     { bold: true },
   )
@@ -500,11 +514,8 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
   // already made by the time this panel ever draws — the draft is its own screen, before this one.
   // One row each, label and value on the same line the way RESOURCE already is, rather than the
   // group's own two-line shape: this pair is a fact to glance at, not a list to choose from, and the
-  // detail block below still has to fit in what a floor-sized terminal leaves after them.
-  const lines = constructLines(layout, context.catalog)
-  const lastLine = lines[lines.length - 1]
-  const nexusRow = (lastLine?.row ?? layout.panelRow) + 2
-  const specialRow = nexusRow + 1
+  // effect line below still has to fit in what a floor-sized terminal leaves after them.
+  const { nexus: nexusRow, special: specialRow } = summaryRows(layout, context.catalog)
   const picked = state.nexusPick === null ? null : context.nexusDraft[state.nexusPick]
   if (picked !== undefined && picked !== null) {
     text(cells, band, column, nexusRow, "NEXUS", "chrome.label", { limit })
@@ -516,50 +527,18 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
   text(cells, band, column, specialRow, "SPECIAL", "chrome.label", { limit })
   rightAlign(cells, layout, specialRow, "none available", "chrome.muted", { dim: true })
 
-  // Everything below here appears only while something is selected. Nothing to build, nothing to
-  // read.
-  const item = state.armed === null ? null : context.catalog[state.armed]
-  if (item === undefined || item === null) return
-
-  const anchor = anchorForCursor(state.cursor, context.registry.get(item.contentId).footprint)
-  const legality = legalityAt(context, state.planned, item.contentId, anchor, left)
-
-  // Written as a list and then laid out, so the whole block can be dropped in one piece when the
-  // panel is too short for it. The panel's height is the viewport's, and the viewport shrinks to fit
-  // a small Grid, so a block that keeps writing downward would reach the bindings and then the
-  // footer. Omitting a line beats drawing over one.
-  // The tile, when the reason has one, rides on the reason's own line rather than a row of its
-  // own — the Nexus/Special summary above now shares this floor-sized panel with the detail block,
-  // and every row this block does not need is a row that stays available for the next thing that
-  // does.
-  const reasonLine = legality.ok
-    ? ""
-    : legality.tile === undefined
-      ? legality.reason
-      : `${legality.reason} at ${legality.tile.x},${legality.tile.y}`
-  const detail: readonly (readonly [string, StyleRole, Readonly<{ bold?: boolean; dim?: boolean }>])[] =
-    [
-      [item.effect, "chrome.value", {}],
-      ...(legality.ok
-        ? []
-        : ([
-            // In the panel, not the status line: a footer message is gone the moment anything else
-            // happens, and "why can I not build here" is asked while looking at the Grid.
-            ["CANNOT BUILD HERE", "notice.gate", { bold: true }],
-            [reasonLine, "chrome.value", {}],
-          ] as const)),
-    ]
-
-  const first = specialRow + 1
-  // One row of clearance above the bindings block, so the two never touch. The block's height is
-  // the terminal's to decide, so this is read rather than assumed.
+  // The armed item's one line of effect, and only while something is armed — nothing to build,
+  // nothing to read. Why a placement would be refused is not here any more: the status line says it,
+  // with its tile, where the owner looked for it (2026-09-26), so the panel stays the menu and what
+  // the selected row does.
+  if (preview === null) return
+  const row = specialRow + 2
+  // One row of clearance above the bindings block, so the two never touch. The panel's height is the
+  // viewport's, and the viewport shrinks to fit a small Grid, so the line is dropped rather than
+  // drawn over the bindings or the footer when there is no room for it.
   const bindingRows = panelBindings(layout, context.catalog).length
-  const available = layout.panelBindingsRow - bindingRows - first
-  if (available < detail.length) return
-  detail.forEach(([value, role, extra], index) => {
-    if (value === "") return
-    text(cells, band, column, first + index, value, role, { ...extra, limit })
-  })
+  if (row > layout.panelBindingsRow - bindingRows - 1) return
+  text(cells, band, column, row, preview.item.effect, "chrome.value", { limit })
 }
 
 /**
@@ -577,7 +556,8 @@ function drawNexusDraftPanel(cells: BandCell[], input: BuildCompositionInput): v
   context.nexusDraft.forEach((option, index) => {
     const row = menuItemRow(menuLayout, index)
     drawHotkeyRow(cells, column, row, option.hotkey, option.name, limit)
-    text(cells, band, column, row + 1, option.description, "chrome.muted", { dim: true, limit })
+    // The line a player actually chooses by — quieter than the name, never dimmed out of reach.
+    text(cells, band, column, row + 1, option.description, "chrome.muted", { limit })
   })
 }
 
@@ -598,7 +578,7 @@ function drawConfirmPanel(cells: BandCell[], input: BuildCompositionInput): void
 
 /** The Build Phase is done. Nothing here reaches a Nexus Pulse — Milestone 6 builds that — so this
  *  is the whole of the screen from here: what happened, and how to leave. The footer's own status
- *  line already carries the full sentence (`state.message`); this is the short, panel-width form. */
+ *  line already carries the full sentence (`state.status`); this is the short, panel-width form. */
 function drawCommittedPanel(cells: BandCell[], input: BuildCompositionInput): void {
   const { context, state, layout } = input
   const band = BANDS.chrome
@@ -619,7 +599,7 @@ function drawCommittedPanel(cells: BandCell[], input: BuildCompositionInput): vo
     "chrome.value",
     { limit },
   )
-  text(cells, band, column, layout.panelRow + 5, "[q] to exit", "chrome.muted", { dim: true, limit })
+  text(cells, band, column, layout.panelRow + 5, "[q] to exit", "chrome.muted", { limit })
 }
 
 export function composeBuildFrame(
@@ -629,12 +609,15 @@ export function composeBuildFrame(
   void capability
   const pack: GlyphPack = input.glyphPack ?? "ascii"
   const cells: BandCell[] = []
+  // What Enter would do at the cursor, derived once and read by the ghost, the status line and the
+  // panel alike — the reducer's `place()` acts on the very same derivation.
+  const preview = armedPreview(input.context, input.state)
 
   drawGrid(cells, input, pack)
-  drawPreview(cells, input)
+  drawPreview(cells, input, preview)
   drawCursor(cells, input)
   drawChrome(cells, input, pack)
-  drawHeaderAndFooter(cells, input)
+  drawHeaderAndFooter(cells, input, preview)
 
   // Three screens share this one frame, in the order a Build Phase actually moves through them:
   // the Nexus draft (nothing may be skipped), the construct menu and its budget, and the commit
@@ -647,7 +630,7 @@ export function composeBuildFrame(
   } else if (input.state.nexusPick === null) {
     drawNexusDraftPanel(cells, input)
   } else {
-    drawPanel(cells, input)
+    drawPanel(cells, input, preview)
     drawPanelBindings(cells, input)
   }
 

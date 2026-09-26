@@ -16,8 +16,13 @@ export const SCROLL_MARGIN = 3
 
 /** The chrome the Grid pane does not get: engine.md 3.1's own 80-column arithmetic. */
 export const PANEL_COLUMNS = 30
-export const HEADER_ROWS = 3
-export const FOOTER_ROWS = 3
+/** The top bar's one line, and the rule directly above the Grid that closes its rectangle. */
+export const HEADER_ROWS = 2
+/** The rule directly below the Grid, then the bottom bar's three lines: the position readout, the key
+ *  help, and the status line. Canon 2.19 moved one row here from the header, whose two blank rows had
+ *  left the Grid's own top edge three rows short of any line — why the cursor seemed to stop at "an
+ *  arbitrary place" in the owner's playtest. */
+export const FOOTER_ROWS = 4
 /** Left border + right border. 1 + 48 + 1 + 30 = exactly 80 (engine.md 3.1). */
 export const BORDER_COLUMNS = 2
 /** Top border + header + footer + bottom border = engine.md 3.1's 8-row vertical chrome budget (Q12). */
@@ -163,25 +168,6 @@ export function edgeMarkers(camera: Camera, viewport: Viewport, grid: GridTerrai
     west: range.firstX > 0,
     east: range.lastX < grid.width - 1,
   }
-}
-
-/**
- * The proportional scrollbar thumb for one axis — an alternative to `edgeMarkers`' plain yes/no,
- * tried as a second option rather than assumed better. `null` means the axis does not scroll at all
- * (the whole segment stays the plain, undimmed border); otherwise the returned range is the segment
- * of `trackLength` cells that represents the visible range, so a player can read not just "there is
- * more" but roughly *where* the visible slice sits in the whole.
- */
-export function scrollThumb(
-  position: number,
-  extent: number,
-  total: number,
-  trackLength: number,
-): Readonly<{ start: number; end: number }> | null {
-  if (total <= extent || trackLength <= 0) return null
-  const start = Math.floor((position / total) * trackLength)
-  const end = Math.max(start, Math.ceil(((position + extent) / total) * trackLength) - 1)
-  return { start: Math.min(start, trackLength - 1), end: Math.min(end, trackLength - 1) }
 }
 
 /** Keeps a tile inside the Grid — every cursor move goes through this, so the cursor can never be
