@@ -60,7 +60,10 @@ export type BuildCommand =
    */
   | Readonly<{ kind: "click-tile"; x: number; y: number }>
   /** Arm item *n* of the construct menu — a digit, or a click on the row. Stays armed after
-   *  placing, so a run of the same structure is one digit then arrows and Enter. */
+   *  placing, so a run of the same structure is one digit then arrows and Enter. Moves focus to the
+   *  Grid and leaves the cursor where it is: this is the fast path of a player who is already
+   *  pointing. Arming from the menu's own highlight (`activate`) is the other path, and moves the
+   *  cursor for them (Q55). */
   | Readonly<{ kind: "arm"; index: number }>
   | Readonly<{ kind: "disarm" }>
   /** Place the armed structure at the cursor — Enter. */
@@ -71,16 +74,56 @@ export type BuildCommand =
   /** Leave this screen for whatever it was reached from — Esc with nothing armed, or right-click. */
   | Readonly<{ kind: "back" }>
   | Readonly<{ kind: "quit" }>
-  /** Pick Nexus power *n* of the draft — a digit or a click, while the draft is showing. The one
-   *  other place digits address a list, per engine.md 9.7: "select item n of the panel's current
-   *  list — construct menu, Nexus draft, or a menu screen's options." */
+  /** Pick Nexus power *n* of the draft — a digit or a click while the Nexus Powers popup is open.
+   *  The one other place digits address a list, per engine.md 9.7: "select item n of the panel's
+   *  current list — construct menu, Nexus draft, or a menu screen's options." */
   | Readonly<{ kind: "pick-nexus"; index: number }>
-  /** `p` — open the one confirmation before committing. Refused, not a no-op, before a Nexus power
-   *  is picked or after the Build Phase is already committed. */
+  /** `p` — open the one confirmation before committing. Refused, not a no-op, while a Nexus power
+   *  is still waiting to be picked — the only command that is (gate 5F) — or after the Build Phase
+   *  is already committed. */
   | Readonly<{ kind: "commit" }>
   /** `y`/`n`, or Esc for `n` — resolve the confirmation `commit` opened. Anything else leaves it
    *  open, which is what makes committing "the one action that must not fire by accident". */
   | Readonly<{ kind: "confirm-commit"; accept: boolean }>
+  /**
+   * Move keyboard focus to the side panel's menu or to the Grid — Tab (gate 5F, engine.md 9.7's Tab
+   * row). Named by target rather than as a toggle, so a driver script says where it means focus to be
+   * and a repeated one is harmless; the keyboard adapter turns Tab into whichever target is the other.
+   */
+  | Readonly<{ kind: "focus"; target: Focus }>
+  /** Up/Down while the menu (or an open overlay) has focus: move its highlight one entry, wrapping at
+   *  both ends the way `src/menu/list.ts` already does on the game menu. */
+  | Readonly<{ kind: "highlight"; delta: -1 | 1 }>
+  /**
+   * Enter/Space while the menu (or an open overlay) has focus: do what the highlighted entry is for —
+   * open the Nexus Powers popup, arm a construct row, or, inside the popup, pick the highlighted
+   * power. Resolved by the reducer against its own highlight, so the driver never has to know which
+   * row is where.
+   */
+  | Readonly<{ kind: "activate" }>
+  /** The "Nexus Powers" entry's own letter, `n`, or a click on it: open the popup. Only ever the
+   *  player's own action — nothing opens it for them (owner, 2026-09-26). */
+  | Readonly<{ kind: "open-nexus-powers" }>
+  /** Esc, `n` again, a right click or the popup's own `[esc] Close` row: close whatever overlay is
+   *  open. */
+  | Readonly<{ kind: "close-overlay" }>
+
+/** Which half of the screen the arrow keys and Enter/Space belong to (engine.md 9.7, gate 5F). The
+ *  digit hotkeys ignore it: a digit arms its row from anywhere. */
+export type Focus = "menu" | "grid"
+
+/**
+ * One entry of the side panel's menu, in the order Up/Down walk it: the "Nexus Powers" entry first —
+ * the owner asked for it at the top — then the construct rows in hotkey order. The menu highlight is
+ * an index into this list (`menuEntries` in `state.ts`), so every construct row keeps its digit.
+ */
+export type MenuEntry =
+  | Readonly<{ kind: "nexus" }>
+  | Readonly<{ kind: "construct"; index: number }>
+
+/** The overlays this screen has. One so far; gate 5G's Debug Mode is the second, and the shape they
+ *  share is extracted there, not here. */
+export type Overlay = "nexus-powers"
 
 /** A structure the player has planned but not committed. Nothing here ever reaches the kernel: a
  *  plan is a plan on a screen, and gate 5D is what turns one into a commit. */

@@ -45,6 +45,10 @@ const NEUTRAL_NEXUS_DRAFT = [
 function readyBuildSession(options: BuildSessionOptions): BuildSession {
   const build = new BuildSession(options)
   build.dispatch({ kind: "pick-nexus", index: 0 })
+  // Keyboard focus starts on the menu since gate 5F; every test here that presses an arrow means the
+  // Grid's cursor, the way every one of them was written before focus existed. The focus model's own
+  // tests are in `tests/build-focus.test.ts`.
+  build.dispatch({ kind: "focus", target: "grid" })
   return build
 }
 
@@ -276,9 +280,13 @@ test("keyboard: digits always address the list, and a digit past its end means n
   assert.equal(buildKeyboardCommand("0", context), null)
 })
 
-test("keyboard: Esc disarms when something is armed, and otherwise backs out", () => {
-  assert.deepEqual(buildKeyboardCommand(ESC, { itemCount: 3, armed: true }), { kind: "disarm" })
-  assert.deepEqual(buildKeyboardCommand(ESC, { itemCount: 3, armed: false }), { kind: "back" })
+test("keyboard: Esc is one level of cancel — the Grid gives focus back, the menu disarms, then backs out", () => {
+  // On the Grid, Esc always hands the keyboard back to the menu, disarming on the way (Q57); on the
+  // menu it disarms; only a menu with nothing armed leaves the screen.
+  assert.deepEqual(buildKeyboardCommand(ESC, { itemCount: 3, armed: true, focus: "grid" }), { kind: "disarm" })
+  assert.deepEqual(buildKeyboardCommand(ESC, { itemCount: 3, armed: false, focus: "grid" }), { kind: "disarm" })
+  assert.deepEqual(buildKeyboardCommand(ESC, { itemCount: 3, armed: true, focus: "menu" }), { kind: "disarm" })
+  assert.deepEqual(buildKeyboardCommand(ESC, { itemCount: 3, armed: false, focus: "menu" }), { kind: "back" })
 })
 
 test("keyboard: a letter this screen does not bind means nothing at all", () => {
@@ -566,10 +574,14 @@ test("the empty army group is drawn, not skipped, so no hotkey moves when it fil
   const context = spikeContext()
   const layout = buildLayout(MINIMUM, context.grid)
   const lines = constructLines(layout, context.catalog)
-  const groups = lines.filter((line) => line.kind === "group")
-  assert.equal(groups.length, 2, "both groups have a heading")
+  // The common group is a list with a heading; the empty army group is still drawn — as the one-line
+  // "ARMY  none available" fact gate 5F made it, the same form the SPECIAL row has.
+  assert.deepEqual(
+    lines.filter((line) => line.kind === "group").map((line) => line.kind === "group" && line.group),
+    ["common"],
+  )
   assert.ok(
-    lines.some((line) => line.kind === "empty"),
+    lines.some((line) => line.kind === "empty" && line.group === "army"),
     "the empty army group is drawn as empty rather than vanishing",
   )
   // Every item row is distinct and ordered, which is what a click relies on.
@@ -652,6 +664,8 @@ test("back and quit leave the screen rather than changing it", () => {
       quits += 1
     },
   })
+  // Back is Esc on the menu with nothing armed — on the Grid, Esc first hands focus to the menu.
+  build.dispatch({ kind: "focus", target: "menu" })
   const before = build.state
   build.handleData(ESC, layout) // nothing armed
   build.handleData("q", layout)

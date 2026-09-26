@@ -12,17 +12,18 @@ import { SCROLL_MARGIN, edgeMarkers, visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import {
   CONFIRM_ITEMS,
+  NEXUS_ROW,
   RESOURCE_ROW,
   cellForTile,
   confirmLayout,
   constructLines,
-  nexusDraftLayout,
+  nexusPopupLayout,
   summaryRows,
 } from "../build/layout.ts"
 import { menuItemRow } from "../menu/layout.ts"
 import type { ArmedPreview, BuildContext, BuildState } from "../build/state.ts"
-import { armedPreview, refusalText, remaining } from "../build/state.ts"
-import type { ConstructGroup, ConstructItem, PlannedPlacement } from "../build/types.ts"
+import { armedPreview, menuEntries, nexusPowers, pendingPicks, refusalText, remaining } from "../build/state.ts"
+import type { ConstructGroup, ConstructItem, MenuEntry, PlannedPlacement } from "../build/types.ts"
 import type { BandCell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import { put, text } from "./draw.ts"
@@ -62,7 +63,8 @@ function lineGlyph(pack: GlyphPack, { n, s, e, w }: Joins): string {
 
 /**
  * The frame: an outer border, a rule under the top bar and another over the bottom bar (both the
- * whole width), and the divider between the Grid pane and the side panel. Together they close the
+ * whole width), and the divider between the side panel and the Grid pane, which runs only between
+ * those two rules so both bars run the whole width (gate 5F; engine.md 9.2). Together they close the
  * Grid pane into **a rectangle of its own** — the owner's 2026-09-26 playtest could not tell where the
  * Grid ended, because two blank header rows sat between its top edge and the nearest line, and the
  * footer sat against its bottom edge with no line at all.
@@ -107,10 +109,14 @@ function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack: Glyph
   verticalLine(left, top, bottom)
   verticalLine(right, top, bottom)
   horizontalLine(box.top, left, right)
-  horizontalLine(box.bottom, left, right)
-  // The divider stops at the rule over the bottom bar, so the bar's three lines run the whole width:
-  // at 80 columns the Grid pane is 46 usable columns and all three are longer than that.
-  verticalLine(layout.dividerColumn, top, box.bottom)
+  horizontalLine(layout.paneBottom, left, right)
+  // A Grid shorter than the pane still closes directly under its last row (engine.md 3.3), across
+  // the Grid pane alone — the panel beside it runs on down to the bottom bar.
+  if (box.bottom < layout.paneBottom) horizontalLine(box.bottom, box.left, box.right)
+  // The divider runs only between the two rules, so the top bar and the bottom bar each run the
+  // whole width: at 80 columns the Grid pane is 48 columns, and the key help, the position readout
+  // and the status line are all longer than that.
+  verticalLine(layout.dividerColumn, box.top, layout.paneBottom)
 
   const markers = edgeMarkers(state.camera, state.viewport, context.grid)
   // A Grid that fits the viewport whole never scrolls in any direction, so every side has reached its
@@ -261,20 +267,55 @@ function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
   }
 }
 
-/** Every binding live on this screen, most important first. One list, because the footer and the
- *  panel share it — see `bindingLines`. Trimmed to the essentials a player would not otherwise guess
- *  (2026-09-26 owner feedback: "no need to explain shift+arrow is a jump 5, just say arrows move,
- *  shift+arrow fast move, leave pgup/home keys out, people will figure that out just fine") — the
- *  keys themselves (PageUp/PageDown, Home/End) are unchanged, only this help text shrank. */
-const BINDINGS = [
-  "arrows move",
-  "enter/space place",
-  "esc disarm",
-  "q quit",
-  "shift+arrow fast move",
-  "bksp remove",
-  "u undo",
-] as const
+/**
+ * The key help: where keyboard focus is, and the bindings live there, most important first — one list
+ * per focus, because focus makes arrows and Enter/Space mean two things and engine.md 9.7's first
+ * convention asks the footer to say which (gate 5F). The label is drawn ahead of the list, in the
+ * title's weight, so it is the first thing read on the line.
+ *
+ * Trimmed to the essentials a player would not otherwise guess (2026-09-26 owner feedback: "no need
+ * to explain shift+arrow is a jump 5, just say arrows move, shift+arrow fast move, leave pgup/home
+ * keys out, people will figure that out just fine") — the keys themselves (PageUp/PageDown,
+ * Home/End) are unchanged, only this help text shrank. `p` is listed on the menu's own list: the
+ * commit is the menu's business, and on the Grid's list it would push a third row onto the panel at
+ * 80 columns.
+ */
+export type KeyHelp = Readonly<{ label: string; bindings: readonly string[] }>
+
+export const GRID_KEY_HELP: KeyHelp = {
+  label: "GRID",
+  bindings: [
+    "arrows move",
+    "enter/space place",
+    "tab/esc menu",
+    "q quit",
+    "shift+arrow fast move",
+    "bksp remove",
+    "u undo",
+  ],
+}
+
+export const MENU_KEY_HELP: KeyHelp = {
+  label: "MENU",
+  bindings: ["up/down choose", "enter/space select", "tab grid", "q quit", "p start pulse"],
+}
+
+const POPUP_KEY_HELP: KeyHelp = {
+  label: "NEXUS POWERS",
+  bindings: ["up/down choose", "enter/space pick", "esc close", "q quit"],
+}
+
+const CONFIRM_KEY_HELP: KeyHelp = { label: "START PULSE?", bindings: ["y yes", "n/esc no", "q quit"] }
+
+const COMMITTED_KEY_HELP: KeyHelp = { label: "COMMITTED", bindings: ["q quit"] }
+
+/** Which key help is live: whatever holds the keyboard right now. */
+export function keyHelp(state: BuildState): KeyHelp {
+  if (state.committed) return COMMITTED_KEY_HELP
+  if (state.confirmingCommit) return CONFIRM_KEY_HELP
+  if (state.overlay !== null) return POPUP_KEY_HELP
+  return state.focus === "menu" ? MENU_KEY_HELP : GRID_KEY_HELP
+}
 
 /** Two glyphs between bindings, so a pair of them cannot read as one. */
 const BINDING_GAP = "  "
@@ -301,8 +342,10 @@ function packed(bindings: readonly string[], limit: number): { line: string; res
 export function bindingLines(
   footerLimit: number,
   panelLimit: number,
+  help: KeyHelp = GRID_KEY_HELP,
 ): Readonly<{ footer: string; panel: readonly string[] }> {
-  const { line: footer, rest } = packed(BINDINGS, footerLimit)
+  // The focus label takes the front of the footer's line, and a gap after it.
+  const { line: footer, rest } = packed(help.bindings, footerLimit - help.label.length - BINDING_GAP.length)
   const panel: string[] = []
   let remaining = rest
   while (remaining.length > 0) {
@@ -318,16 +361,17 @@ export function bindingLines(
 function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
   const { context, state, layout } = input
   const band = BANDS.chrome
-  const limit = layout.paneLimit
   const left = layout.offset.column + 2
   const headerRow = layout.offset.row + 1
   const range = visibleRange(state.camera, state.viewport)
 
-  // The header is one line; the other two rows of its budget stay blank. Nothing goes here that a
-  // player does not need while choosing where to build. Not dimmed: the owner could not find the
-  // interface at all in daylight (2026-09-26), and `chrome.muted` is already the quieter role.
+  // The top bar: the game's title and where the player is (engine.md 9.2), across the whole width.
+  // Nothing goes here that a player does not need while choosing where to build. Not dimmed: the
+  // owner could not find the interface at all in daylight (2026-09-26), and `chrome.muted` is already
+  // the quieter role.
+  const limit = layout.headerLimit
   text(cells, band, left, headerRow, "TERMINAL NEXUS", "chrome.title", { bold: true, limit })
-  text(cells, band, left + 15, headerRow, "build phase", "chrome.muted", { limit: limit - 16 })
+  text(cells, band, left + 15, headerRow, "build phase", "chrome.muted", { limit: limit - 15 })
 
   // The footer runs the whole interior width, under both panes — see `drawChrome`.
   const footerLimit = layout.footerLimit
@@ -347,15 +391,19 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
     "chrome.label",
     { limit: footerLimit },
   )
-  // The screen documents itself (engine.md 9.7). What does not fit here is drawn in the panel.
+  // The screen documents itself (engine.md 9.7), starting with where focus is. What does not fit
+  // here is drawn in the panel.
+  const help = keyHelp(state)
+  text(cells, band, left, layout.footerRow + 1, help.label, "chrome.title", { bold: true, limit: footerLimit })
+  const helpColumn = left + help.label.length + BINDING_GAP.length
   text(
     cells,
     band,
-    left,
+    helpColumn,
     layout.footerRow + 1,
-    bindingLines(footerLimit, layout.panelLimit).footer,
+    bindingLines(footerLimit, layout.panelLimit, help).footer,
     "chrome.muted",
-    { limit: footerLimit },
+    { limit: footerLimit - (helpColumn - left) },
   )
   const shown = statusLine(state, preview)
   const style = statusStyle(shown.tone)
@@ -388,7 +436,7 @@ function rightAlign(
   row: number,
   value: string,
   role: StyleRole,
-  extra: Readonly<{ dim?: boolean; bold?: boolean }> = {},
+  extra: Readonly<{ dim?: boolean; bold?: boolean; inverse?: boolean }> = {},
 ): void {
   const column = layout.panelColumn + layout.panelLimit - value.length
   text(cells, BANDS.chrome, column, row, value, role, extra)
@@ -400,8 +448,8 @@ const GROUP_LABELS: Readonly<Record<ConstructGroup, string>> = {
 }
 
 /** `[x] label`, the one two-tone split every plain (unselected, non-inverse) menu row on this
- *  screen uses — the construct menu's own rows, the Nexus draft's options, the commit confirmation.
- *  `column + 3` assumes a one-character hotkey, true of every hotkey this screen has. */
+ *  screen uses — the construct menu's own rows, the Nexus powers, the commit confirmation, the
+ *  popup's `[esc] Close`. */
 function drawHotkeyRow(
   cells: BandCell[],
   column: number,
@@ -412,31 +460,28 @@ function drawHotkeyRow(
   dim = false,
 ): void {
   text(cells, BANDS.chrome, column, row, `[${hotkey}]`, "chrome.hotkey", { bold: true, dim, limit })
-  text(cells, BANDS.chrome, column + 3, row, ` ${label}`, "chrome.value", { dim, limit })
+  const after = hotkey.length + 2
+  text(cells, BANDS.chrome, column + after, row, ` ${label}`, "chrome.value", { dim, limit: limit - after })
 }
 
 /**
  * The bindings the footer had no room for, pinned to the bottom of the panel and growing upward. A
  * wide enough terminal fits them all in the footer and this is empty.
  *
- * Bounded by the construct menu and the NEXUS/SPECIAL rows below it, which win: the panel is as
- * tall as the viewport and the viewport shrinks to fit a small Grid, so the block can reach them. A
- * hidden menu row is still a live click target — worse than a binding the player has to find
- * elsewhere — so the lowest-priority lines are dropped instead. (The bound once stopped at the menu
- * alone, and the NEXUS/SPECIAL rows gate 5D added below it were drawn over on a small Grid.)
+ * Bounded by the construct menu and the SPECIAL row below it, which win: the panel is as tall as the
+ * viewport and the viewport shrinks to fit a small Grid, so the block can reach them. A hidden menu
+ * row is still a live click target — worse than a binding the player has to find elsewhere — so the
+ * lowest-priority lines are dropped instead.
  */
-function panelBindings(
-  layout: BuildLayout,
-  catalog: readonly ConstructItem[],
-): readonly string[] {
-  const lines = bindingLines(layout.footerLimit, layout.panelLimit).panel
+function panelBindings(layout: BuildLayout, catalog: readonly ConstructItem[], help: KeyHelp): readonly string[] {
+  const lines = bindingLines(layout.footerLimit, layout.panelLimit, help).panel
   const floor = summaryRows(layout, catalog).special + 2
   return lines.slice(0, Math.max(0, Math.min(lines.length, layout.panelBindingsRow - floor + 1)))
 }
 
 function drawPanelBindings(cells: BandCell[], input: BuildCompositionInput): void {
   const { layout } = input
-  const lines = panelBindings(layout, input.context.catalog)
+  const lines = panelBindings(layout, input.context.catalog, keyHelp(input.state))
   lines.forEach((line, index) => {
     const row = layout.panelBindingsRow - (lines.length - 1 - index)
     text(cells, BANDS.chrome, layout.panelColumn, row, line, "chrome.muted", { limit: layout.panelLimit })
@@ -444,9 +489,98 @@ function drawPanelBindings(cells: BandCell[], input: BuildCompositionInput): voi
 }
 
 /**
- * The side panel — engine.md 9.2's Build Phase list: the construct menu, what is left to spend, and
- * the selected item's cost and effect. Why a placement is refused is the status line's to say (canon
- * 2.19), and there is no radius preview, because nothing placed here has a radius.
+ * One entry of the side panel's menu. **Two marks, two meanings** (gate 5F): a `>` before the row
+ * says *armed* — the one structure Enter places — and an inverse bar across the whole row says
+ * *here* — the row the keyboard is on. While the menu has focus the bar is its highlight; while the
+ * Grid has it, the bar sits on the armed row, which is exactly how the armed row read before focus
+ * existed. The two agree most of the time (arming moves the highlight onto its row), and when they
+ * do not — Up/Down after arming — both are drawn, so neither fact is lost.
+ */
+function drawMenuRow(
+  cells: BandCell[],
+  layout: BuildLayout,
+  row: number,
+  entry: Readonly<{
+    hotkey: string
+    label: string
+    /** Drawn straight after the label in the hotkey's colour — the pending count on "Nexus Powers". */
+    badge?: string
+    /** Right-aligned against the divider: a cost, or how many powers are active. */
+    value?: string
+    armed: boolean
+    bar: boolean
+    /** The row costs more than is left. Dim is an attribute, not a colour, so it survives
+     *  monochrome — and the reason is spelled out in full the moment the player tries it anyway. */
+    unaffordable?: boolean
+  }>,
+): void {
+  const band = BANDS.chrome
+  const column = layout.panelColumn
+  const limit = layout.panelLimit
+  const inverse = entry.bar
+  const dim = entry.unaffordable === true && !entry.bar
+  if (entry.bar) text(cells, band, column, row, " ".repeat(limit), "chrome.title", { inverse: true, limit })
+  let at = column
+  if (entry.armed) {
+    text(cells, band, at, row, ">", "chrome.title", { bold: true, inverse, limit })
+    at += 2
+  }
+  // Inside the bar every part takes the bar's own role, so it reads as one bar rather than a teal
+  // block, a white block and a grey one side by side (found in the gate 5F screenshots).
+  const hotkey = `[${entry.hotkey}]`
+  const hotkeyRole: StyleRole = entry.bar ? "chrome.title" : "chrome.hotkey"
+  text(cells, band, at, row, hotkey, hotkeyRole, { bold: true, inverse, dim, limit: column + limit - at })
+  at += hotkey.length + 1
+  const labelRole: StyleRole = entry.armed || entry.bar ? "chrome.title" : "chrome.value"
+  text(cells, band, at, row, entry.label, labelRole, {
+    bold: entry.armed,
+    inverse,
+    dim,
+    limit: column + limit - at,
+  })
+  at += entry.label.length
+  if (entry.badge !== undefined) {
+    text(cells, band, at, row, entry.badge, hotkeyRole, { bold: true, inverse, limit: column + limit - at })
+  }
+  if (entry.value !== undefined) {
+    // Unaffordable always wins: `dim` and `bold` together cancel out on most terminals, so a row that
+    // is both armed and no longer affordable used to read identically to a plain armed row.
+    // In the bar the cost keeps only its dimness, the one fact it adds there: this row no longer fits.
+    rightAlign(cells, layout, row, entry.value, entry.bar ? "chrome.title" : "chrome.value", {
+      dim: entry.unaffordable === true,
+      bold: entry.armed && entry.unaffordable !== true,
+      inverse,
+    })
+  }
+}
+
+function sameEntry(a: MenuEntry | undefined, b: MenuEntry): boolean {
+  if (a === undefined || a.kind !== b.kind) return false
+  return a.kind === "nexus" || (b.kind === "construct" && a.index === b.index)
+}
+
+/**
+ * The one line under the menu that says what a row is for — the highlighted row's while the menu
+ * has focus (so a player reads what they are choosing before they choose it), the armed structure's
+ * while the Grid has it. `null` when there is nothing to say.
+ */
+function effectLine(context: BuildContext, state: BuildState, preview: ArmedPreview | null): string | null {
+  if (state.focus === "menu") {
+    const entry = menuEntries(context)[state.menuHighlight]
+    if (entry === undefined) return null
+    if (entry.kind === "nexus") {
+      return pendingPicks(context, state) > 0 ? "Pick one before the Pulse" : "Read the active powers"
+    }
+    return context.catalog[entry.index]?.effect ?? null
+  }
+  return preview?.item.effect ?? null
+}
+
+/**
+ * The side panel — engine.md 9.2's Build Phase list: the Nexus Powers entry at the top (gate 5F),
+ * what is left to spend, the construct menu, the Special slot, and one line saying what the row in
+ * question does. Why a placement is refused is the status line's to say (canon 2.19), and there is no
+ * radius preview, because nothing placed here has a radius.
  *
  * One rule decides what goes on it: every line is something a player needs while deciding where to
  * build. Most of it is blank until they are doing something — a panel that is always full is a
@@ -458,9 +592,24 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput, preview: Arm
   const column = layout.panelColumn
   const limit = layout.panelLimit
   const left = remaining(context, state)
+  const highlighted = menuEntries(context)[state.menuHighlight]
+  const barOn = (entry: MenuEntry, armed: boolean): boolean =>
+    state.focus === "menu" ? sameEntry(highlighted, entry) : armed
 
-  // What there is to spend, on the panel's first line, because it is the number every choice below
-  // it is measured against.
+  // The Nexus Powers entry. Its "(1)" is the number of picks waiting — the one thing that will stop
+  // the commit — drawn in the hotkey's colour so it catches the eye without a popup forcing it.
+  const pending = pendingPicks(context, state)
+  const active = nexusPowers(context, state).active.length
+  drawMenuRow(cells, layout, layout.panelRow + NEXUS_ROW, {
+    hotkey: "n",
+    label: "Nexus Powers",
+    ...(pending > 0 ? { badge: ` (${pending})` } : {}),
+    ...(active > 0 ? { value: `${active} active` } : {}),
+    armed: false,
+    bar: barOn({ kind: "nexus" }, false),
+  })
+
+  // What there is to spend, directly above the costs it is measured against.
   text(cells, band, column, layout.panelRow + RESOURCE_ROW, "RESOURCE", "chrome.label", { limit })
   // Out of the whole budget, the picked Nexus power's share included — "130 of 100" read as a bug.
   rightAlign(
@@ -480,85 +629,113 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput, preview: Arm
     if (line.kind === "empty") {
       // Honest about the empty group rather than hiding it — PERIMETER offers nothing
       // army-specific, and that is an answer, not a gap.
-      text(cells, band, column, line.row, "none for this Commander", "chrome.muted", {
-        dim: true,
-        limit,
-      })
+      text(cells, band, column, line.row, GROUP_LABELS[line.group], "chrome.label", { limit })
+      rightAlign(cells, layout, line.row, "none available", "chrome.muted", { dim: true })
       continue
     }
     const item = context.catalog[line.index]
     if (item === undefined) continue
-    const selected = line.index === state.armed
-    // A row costing more than is left is dimmed. Dim is an attribute, not a colour, so it survives
-    // monochrome — and the reason is spelled out in full the moment the player tries it anyway.
-    const affordable = item.cost <= left
-    const label = `[${item.hotkey}] ${item.label}`
-    if (selected) {
-      // The inverse bar says "this row"; the arrow says "armed" specifically, in a symbol a player
-      // can learn independent of any one render tier — and, now that the border no longer prints a
-      // `>` on every row beside it, this is the only one on screen.
-      text(cells, band, column, line.row, `> ${label}`, "chrome.title", { bold: true, inverse: true, limit })
-    } else {
-      drawHotkeyRow(cells, column, line.row, item.hotkey, item.label, limit, !affordable)
-    }
-    // Unaffordable always wins: `dim` and `bold` together cancel out on most terminals, so a row
-    // that is both armed and no longer affordable used to read identically to a plain armed row.
-    rightAlign(cells, layout, line.row, String(item.cost), "chrome.value", {
-      dim: !affordable,
-      bold: selected && affordable,
+    const armed = line.index === state.armed
+    drawMenuRow(cells, layout, line.row, {
+      hotkey: item.hotkey,
+      label: item.label,
+      value: String(item.cost),
+      armed,
+      bar: barOn({ kind: "construct", index: line.index }, armed),
+      unaffordable: item.cost > left,
     })
   }
 
-  // The other two of `commander-armies.md` Section 2.1's four Build Phase places, drawn in its own
-  // order: the construct menu's two groups (above), the Nexus draft, then the Special. The pick is
-  // already made by the time this panel ever draws — the draft is its own screen, before this one.
-  // One row each, label and value on the same line the way RESOURCE already is, rather than the
-  // group's own two-line shape: this pair is a fact to glance at, not a list to choose from, and the
-  // effect line below still has to fit in what a floor-sized terminal leaves after them.
-  const { nexus: nexusRow, special: specialRow } = summaryRows(layout, context.catalog)
-  const picked = state.nexusPick === null ? null : context.nexusDraft[state.nexusPick]
-  if (picked !== undefined && picked !== null) {
-    text(cells, band, column, nexusRow, "NEXUS", "chrome.label", { limit })
-    rightAlign(cells, layout, nexusRow, picked.name, "chrome.value", {})
-  }
-  // PERIMETER has none to arm — honest about the empty slot rather than hiding it, the same call
-  // the empty army group already makes. Whether the Build Phase actually wanted a fourth channel
-  // here is this gate's own report's to answer, not this panel's.
+  // The Special slot: PERIMETER has none to arm — honest about the empty slot rather than hiding it,
+  // the same call the empty army group already makes.
+  const { special: specialRow } = summaryRows(layout, context.catalog)
   text(cells, band, column, specialRow, "SPECIAL", "chrome.label", { limit })
   rightAlign(cells, layout, specialRow, "none available", "chrome.muted", { dim: true })
 
-  // The armed item's one line of effect, and only while something is armed — nothing to build,
-  // nothing to read. Why a placement would be refused is not here any more: the status line says it,
-  // with its tile, where the owner looked for it (2026-09-26), so the panel stays the menu and what
-  // the selected row does.
-  if (preview === null) return
+  const effect = effectLine(context, state, preview)
+  if (effect === null) return
   const row = specialRow + 2
   // One row of clearance above the bindings block, so the two never touch. The panel's height is the
   // viewport's, and the viewport shrinks to fit a small Grid, so the line is dropped rather than
   // drawn over the bindings or the footer when there is no room for it.
-  const bindingRows = panelBindings(layout, context.catalog).length
+  const bindingRows = panelBindings(layout, context.catalog, keyHelp(state)).length
   if (row > layout.panelBindingsRow - bindingRows - 1) return
-  text(cells, band, column, row, preview.item.effect, "chrome.value", { limit })
+  text(cells, band, column, row, effect, "chrome.value", { limit })
 }
 
 /**
- * The Nexus draft — its own screen, shown instead of the normal panel until picked. `commander-
- * armies.md` Section 4.5: a power "may not be skipped", so there is nothing here but the choice
- * itself; the construct menu, the budget, the Special slot all wait behind it.
+ * The Nexus Powers popup — the game's first overlay (gate 5F; engine.md 9.7), opened only by the
+ * player, centred over the Grid pane and drawn over everything on it. A pending power is picked here
+ * by its digit, by Up/Down and Enter, or by a click; the active ones are read here. A dealt power may
+ * not be skipped, but that is the commit's to refuse, not this popup's to force (canon 2.19).
+ *
+ * Drawn last, in the chrome band: bands are fixed (engine.md 9.4, RULE), and within one band a later
+ * write replaces an earlier one, so an overlay needs no band of its own to sit on top.
  */
-function drawNexusDraftPanel(cells: BandCell[], input: BuildCompositionInput): void {
-  const { context, layout } = input
+function drawNexusPopup(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
+  const { context, state, layout } = input
   const band = BANDS.chrome
-  const column = layout.panelColumn
-  const limit = layout.panelLimit
-  text(cells, band, column, layout.panelRow, "NEXUS POWER", "chrome.label", { limit })
-  const menuLayout = nexusDraftLayout(layout)
-  context.nexusDraft.forEach((option, index) => {
-    const row = menuItemRow(menuLayout, index)
-    drawHotkeyRow(cells, column, row, option.hotkey, option.name, limit)
+  const powers = nexusPowers(context, state)
+  const popup = nexusPopupLayout(layout, powers.pending.length, powers.active.length)
+  const { box, textColumn, textLimit } = popup
+
+  for (let y = box.top; y <= box.bottom; y += 1) {
+    for (let x = box.left; x <= box.right; x += 1) {
+      const top = y === box.top
+      const bottom = y === box.bottom
+      const side = x === box.left || x === box.right
+      let glyph = " "
+      if ((top || bottom) && side) {
+        glyph = chromeGlyph(pack, top ? (x === box.left ? "topLeft" : "topRight") : x === box.left ? "bottomLeft" : "bottomRight")
+      } else if (top || bottom) {
+        glyph = chromeGlyph(pack, "horizontal")
+      } else if (side) {
+        glyph = chromeGlyph(pack, "vertical")
+      }
+      put(cells, band, x, y, glyph, "chrome.frame", { bold: glyph !== " " })
+    }
+  }
+  text(cells, band, box.left + 2, box.top, " NEXUS POWERS ", "chrome.title", { bold: true, limit: textLimit })
+
+  text(
+    cells,
+    band,
+    textColumn,
+    popup.pendingHeadingRow,
+    powers.pending.length > 0 ? "PICK ONE - needed before the Pulse" : "PICK",
+    "chrome.label",
+    { limit: textLimit },
+  )
+  if (powers.pending.length === 0) {
+    text(cells, band, textColumn, popup.pendingHeadingRow + 1, "Nothing waiting.", "chrome.muted", { limit: textLimit })
+  }
+  powers.pending.forEach(({ option }, index) => {
+    const row = popup.pendingRows[index] as number
+    if (index === state.overlayHighlight) {
+      text(cells, band, textColumn, row, " ".repeat(textLimit), "chrome.title", { inverse: true, limit: textLimit })
+      text(cells, band, textColumn, row, `[${option.hotkey}]`, "chrome.title", { bold: true, inverse: true, limit: textLimit })
+      text(cells, band, textColumn + option.hotkey.length + 3, row, option.name, "chrome.title", {
+        inverse: true,
+        limit: textLimit - option.hotkey.length - 3,
+      })
+    } else {
+      drawHotkeyRow(cells, textColumn, row, option.hotkey, option.name, textLimit)
+    }
     // The line a player actually chooses by — quieter than the name, never dimmed out of reach.
-    text(cells, band, column, row + 1, option.description, "chrome.muted", { limit })
+    text(cells, band, textColumn + 4, row + 1, option.description, "chrome.muted", { limit: textLimit - 4 })
   })
+
+  text(cells, band, textColumn, popup.activeHeadingRow, "ACTIVE", "chrome.label", { limit: textLimit })
+  if (powers.active.length === 0) {
+    text(cells, band, textColumn, popup.activeHeadingRow + 1, "None yet.", "chrome.muted", { limit: textLimit })
+  }
+  powers.active.forEach((option, index) => {
+    const row = popup.activeRows[index] as number
+    text(cells, band, textColumn, row, option.name, "chrome.value", { bold: true, limit: textLimit })
+    text(cells, band, textColumn + 4, row + 1, option.description, "chrome.muted", { limit: textLimit - 4 })
+  })
+
+  drawHotkeyRow(cells, textColumn, popup.closeRow, "esc", "Close", textLimit)
 }
 
 /** `p`'s one confirmation — engine.md 9.7: "asks once, [y]es/[n]o; the one action that must not
@@ -619,20 +796,22 @@ export function composeBuildFrame(
   drawChrome(cells, input, pack)
   drawHeaderAndFooter(cells, input, preview)
 
-  // Three screens share this one frame, in the order a Build Phase actually moves through them:
-  // the Nexus draft (nothing may be skipped), the construct menu and its budget, and the commit
-  // confirmation on top of it when `p` is pressed. The Grid, the cursor and the footer are the same
-  // in all three — only the panel's own content changes.
+  // The panel's own content changes with where the Build Phase is: the commit confirmation replaces
+  // the menu while it is open, and a committed Build Phase replaces both. The Grid, the cursor and the
+  // bars are the same throughout; the Nexus Powers popup goes over all of it.
   if (input.state.committed) {
     drawCommittedPanel(cells, input)
   } else if (input.state.confirmingCommit) {
     drawConfirmPanel(cells, input)
-  } else if (input.state.nexusPick === null) {
-    drawNexusDraftPanel(cells, input)
   } else {
-    drawPanel(cells, input, preview)
-    drawPanelBindings(cells, input)
+    // Clipped to the panel's own rows: on a terminal too short for the whole menu, a row that does
+    // not fit is left off rather than drawn over the rule and the bottom bar.
+    const panel: BandCell[] = []
+    drawPanel(panel, input, preview)
+    drawPanelBindings(panel, input)
+    for (const cell of panel) if (cell.y <= input.layout.panelBindingsRow) cells.push(cell)
   }
+  if (input.state.overlay === "nexus-powers") drawNexusPopup(cells, input, pack)
 
   return composeBands(input.layout.frame.width, input.layout.frame.height, cells)
 }

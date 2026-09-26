@@ -11,7 +11,7 @@ import type { BuildSessionOptions } from "../src/build/session.ts"
 import { SPIKE_ALLOTMENT, SPIKE_CATALOG } from "../src/build/catalog.ts"
 import { remaining } from "../src/build/state.ts"
 import { spikeContext } from "../src/cli/spike.ts"
-import { bindingLines, composeBuildFrame } from "../src/view/build.ts"
+import { GRID_KEY_HELP, MENU_KEY_HELP, bindingLines, composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText, offendingGlyph } from "../src/view/frame.ts"
 import { CAPABILITY_MODES } from "../src/view/roles.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
@@ -33,6 +33,10 @@ const NEUTRAL_NEXUS_DRAFT = [
 function readyBuildSession(options: BuildSessionOptions): BuildSession {
   const build = new BuildSession(options)
   build.dispatch({ kind: "pick-nexus", index: 0 })
+  // Keyboard focus starts on the menu since gate 5F; every test here that presses an arrow means the
+  // Grid's cursor, the way every one of them was written before focus existed. The focus model's own
+  // tests are in `tests/build-focus.test.ts`.
+  build.dispatch({ kind: "focus", target: "grid" })
   return build
 }
 
@@ -108,11 +112,14 @@ test("the Grid pane is a closed rectangle: a line directly above, below, and bes
       assert.ok(!blank(gridBox.left, y), `${glyphPack}: a gap in the left side at row ${y}`)
       assert.ok(!blank(gridBox.right, y), `${glyphPack}: a gap in the right side at row ${y}`)
     }
-    // The rules meet the frame and the divider in a real junction, not a line running past them.
-    const junctions = glyphPack === "ascii" ? ["+", "+", "+"] : ["├", "┼", "┴"]
+    // The rules meet the frame and the divider in a real junction, not a line running past them. The
+    // divider starts at the top rule rather than crossing it (gate 5F: the top bar runs the whole
+    // width), so its top end is a tee, not a crossing.
+    const junctions = glyphPack === "ascii" ? ["+", "+", "+", "+"] : ["┬", "┤", "┤", "┴"]
     assert.equal(cellAt(frame, gridBox.left, gridBox.top).glyph, junctions[0])
     assert.equal(cellAt(frame, gridBox.right, gridBox.top).glyph, junctions[1])
     assert.equal(cellAt(frame, gridBox.right, gridBox.bottom).glyph, junctions[2])
+    assert.equal(cellAt(frame, gridBox.left, gridBox.bottom).glyph, junctions[3])
   }
 })
 
@@ -302,8 +309,7 @@ test("the construct rows and the armed item's own line are all on screen", () =>
   assert.match(armed.text, /\[3\] Turret/)
   // Both groups are labelled, and the empty one says so rather than vanishing.
   assert.match(armed.text, /COMMON/)
-  assert.match(armed.text, /ARMY/)
-  assert.match(armed.text, /none for this Commander/)
+  assert.match(armed.text, /ARMY {2,}none available/)
   // Every item's cost is on its own row, and the budget is on the panel's first line.
   assert.match(armed.text, /RESOURCE/)
   for (const item of SPIKE_CATALOG) assert.match(armed.text, new RegExp(String(item.cost)))
@@ -574,7 +580,7 @@ test("a panel with room for the effect line still draws it", () => {
   assert.match(roomy.text, /Trains troopers each Pulse/)
 })
 
-test("on a small Grid the panel's bindings never draw over the NEXUS and SPECIAL rows", () => {
+test("on a small Grid the panel's bindings never draw over the Nexus Powers entry or the SPECIAL row", () => {
   // The bindings block grows up from the panel's bottom and was bounded by the construct menu alone,
   // so the NEXUS/SPECIAL rows gate 5D added below the menu were written over on a Grid short enough
   // to shrink the panel. Found by rendering the screen, not by a test.
@@ -583,8 +589,9 @@ test("on a small Grid the panel's bindings never draw over the NEXUS and SPECIAL
   const layout = buildLayout(MINIMUM, small)
   const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
-  assert.match(text, /NEXUS {2,}Test Pick\|/)
-  assert.match(text, /SPECIAL {2,}none available\|/)
+  // Against the divider — or against the junction where this short Grid's own bottom edge meets it.
+  assert.match(text, /\[n\] Nexus Powers {2,}1 active[|+]/)
+  assert.match(text, /SPECIAL {2,}none available[|+]/)
 })
 
 test("every binding survives the split whole, at every width the screen can have", () => {
@@ -592,21 +599,26 @@ test("every binding survives the split whole, at every width the screen can have
   // two lines end up being, a binding must never be cut in half — a player reading "esc dis" learns
   // nothing and one who cannot find "q quit" is stuck in an alternate screen. And nothing may be
   // lost between the two surfaces: what leaves the footer arrives in the panel.
-  const all = bindingLines(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY).footer.split("  ")
-  for (let footerLimit = 10; footerLimit <= all.join("  ").length + 5; footerLimit += 1) {
-    for (const panelLimit of [26, 28, 40]) {
-      const { footer, panel } = bindingLines(footerLimit, panelLimit)
-      assert.ok(footer.length <= footerLimit, `footer "${footer}" is wider than ${footerLimit}`)
-      for (const line of panel) {
-        assert.ok(line.length <= panelLimit, `panel "${line}" is wider than ${panelLimit}`)
+  for (const help of [GRID_KEY_HELP, MENU_KEY_HELP]) {
+    const all = bindingLines(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, help).footer.split("  ")
+    assert.deepEqual(all, help.bindings)
+    for (let footerLimit = 10; footerLimit <= all.join("  ").length + 5; footerLimit += 1) {
+      for (const panelLimit of [26, 28, 40]) {
+        const { footer, panel } = bindingLines(footerLimit, panelLimit, help)
+        // The focus label and its gap come out of the same line.
+        const room = footerLimit - help.label.length - 2
+        assert.ok(footer.length <= room, `footer "${footer}" is wider than ${room}`)
+        for (const line of panel) {
+          assert.ok(line.length <= panelLimit, `panel "${line}" is wider than ${panelLimit}`)
+        }
+        const shown = [footer, ...panel].flatMap((line) => (line === "" ? [] : line.split("  ")))
+        assert.deepEqual(shown, all, `a binding was lost or cut at ${footerLimit}/${panelLimit}`)
       }
-      const shown = [footer, ...panel].flatMap((line) => (line === "" ? [] : line.split("  ")))
-      assert.deepEqual(shown, all, `a binding was lost or cut at ${footerLimit}/${panelLimit}`)
     }
   }
-  // The four a player cannot work the screen without come first, so they are the last to leave the
+  // The four a player cannot work the Grid without come first, so they are the last to leave the
   // footer.
-  assert.deepEqual(all.slice(0, 4), ["arrows move", "enter/space place", "esc disarm", "q quit"])
+  assert.deepEqual(GRID_KEY_HELP.bindings.slice(0, 4), ["arrows move", "enter/space place", "tab/esc menu", "q quit"])
 })
 
 test("every key the adapters bind is named on screen at the 80-column floor", () => {
@@ -617,23 +629,47 @@ test("every key the adapters bind is named on screen at the 80-column floor", ()
   // (2026-09-26): still bound (`tests/build-keyboard.test.ts` covers that), but no longer displayed
   // anywhere, since they are a redundant alternate path to the same fast-move Shift+Arrow already
   // shows, not a unique undiscoverable action.
-  const { text } = screenAt(MINIMUM)
-  const bound: readonly (readonly [string, string, RegExp])[] = [
+  // Once per focus: arrows and Enter/Space mean different things on the menu and on the Grid, so
+  // each screen has to name what they mean there, and say which focus it is (engine.md 9.7).
+  const onGrid = screenAt(MINIMUM).text
+  const gridBound: readonly (readonly [string, string, RegExp])[] = [
     ["\u001b[A", "arrows", /arrows move/],
     ["\r", "enter", /enter\/space place/],
-    ["\u001b", "esc", /esc disarm/],
+    ["\t", "tab", /tab\/esc menu/],
+    ["\u001b", "esc", /tab\/esc menu/],
     ["q", "quit", /q quit/],
     ["\u001b[1;2A", "shift+arrow", /shift\+arrow fast move/],
     ["\u007f", "backspace", /bksp remove/],
     ["u", "undo", /u undo/],
+    ["n", "nexus powers", /\[n\] Nexus Powers/],
   ]
-  for (const [key, name, shown] of bound) {
+  assert.match(onGrid, /\| GRID {2}arrows move/, "the key help does not say focus is on the Grid")
+  for (const [key, name, shown] of gridBound) {
     assert.notEqual(
-      buildKeyboardCommand(key, { itemCount: 3, armed: true }),
+      buildKeyboardCommand(key, { itemCount: 3, armed: true, focus: "grid" }),
       null,
-      `the adapter should bind ${name}`,
+      `the adapter should bind ${name} on the Grid`,
     )
-    assert.match(text, shown, `${name} is bound but named nowhere on an 80x24 screen`)
+    assert.match(onGrid, shown, `${name} is bound but named nowhere on an 80x24 screen`)
+  }
+  const onMenu = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" })).text
+  const menuBound: readonly (readonly [string, string, RegExp])[] = [
+    ["\u001b[B", "down", /up\/down choose/],
+    ["\r", "enter", /enter\/space select/],
+    ["\t", "tab", /tab grid/],
+    ["q", "quit", /q quit/],
+    ["p", "commit", /p start pulse/],
+    ["n", "nexus powers", /\[n\] Nexus Powers/],
+    ["1", "a digit", /\[1\] Barracks/],
+  ]
+  assert.match(onMenu, /\| MENU {2}up\/down choose/, "the key help does not say focus is on the menu")
+  for (const [key, name, shown] of menuBound) {
+    assert.notEqual(
+      buildKeyboardCommand(key, { itemCount: 3, armed: false, focus: "menu" }),
+      null,
+      `the adapter should bind ${name} on the menu`,
+    )
+    assert.match(onMenu, shown, `${name} is bound but named nowhere on an 80x24 screen`)
   }
 })
 
@@ -644,7 +680,7 @@ test("a terminal wide enough puts every binding in the footer and leaves the pan
   const footer = wide.text.split("\n").find((row) => row.includes("arrows move"))
   assert.ok(footer !== undefined)
   assert.match(footer, /u undo/, "a wide footer holds the last binding too")
-  assert.equal(bindingLines(wide.layout.footerLimit, wide.layout.panelLimit).panel.length, 0)
+  assert.equal(bindingLines(wide.layout.footerLimit, wide.layout.panelLimit, GRID_KEY_HELP).panel.length, 0)
 })
 
 test("engine-3.3-markers: the soft border runs the whole Grid-pane segment, at both tile widths", () => {
@@ -694,21 +730,22 @@ test("no line is drawn over another, at every terminal size in the supported ran
 })
 
 test("engine-3.3-markers: the side border is soft on every row, not a broken column of carets", () => {
-  // The east border is the rule between the Grid and the side panel. A signal on only some rows
-  // there reads as a caret pointing at whichever panel row it lands beside — `> [1] Barracks` looks
-  // selected. Soft the whole way down is what makes it read as a border instead.
+  // The west border is the rule between the side panel and the Grid (gate 5F). A signal on only
+  // some rows there reads as a caret pointing at whichever panel row it lands beside — `> [1]
+  // Barracks` looks selected. Soft the whole way down is what makes it read as a border instead.
   // Far enough in that all four sides have more Grid beyond them.
   const { frame, layout } = screenAt(MINIMUM, (build) => {
     build.run([{ kind: "move-cursor", dx: 40, dy: 20 }])
   })
+  assert.equal(layout.gridBox.left, layout.dividerColumn, "the divider is the Grid's west side")
   for (let row = layout.origin.row; row < layout.origin.row + layout.viewport.height; row += 1) {
     assert.equal(
-      cellAt(frame, layout.dividerColumn, row).style.dim,
+      cellAt(frame, layout.gridBox.right, row).style.dim,
       true,
       `the east edge is not soft on row ${row}`,
     )
     assert.equal(
-      cellAt(frame, layout.offset.column, row).style.dim,
+      cellAt(frame, layout.gridBox.left, row).style.dim,
       true,
       `the west edge is not soft on row ${row}`,
     )
@@ -742,7 +779,7 @@ test("the bindings block gives way to the construct menu, never draws over it", 
       )
     }
     if (line.kind === "empty") {
-      assert.match(text.split("\n")[line.row] as string, /none for this Commander/)
+      assert.match(text.split("\n")[line.row] as string, /ARMY {2,}none available/)
     }
   }
 })
@@ -855,26 +892,10 @@ test("engine-3.3-markers: a side that has reached the Grid's own edge reads heav
   assert.notEqual(cellAt(frame, layout.offset.column, layout.offset.row).style.bold, true)
 })
 
-test("the normal panel names the picked Nexus power and the empty Special slot", () => {
+test("the normal panel says how many Nexus powers are active, and names the empty Special slot", () => {
   const built = screenAt(MINIMUM)
-  assert.match(built.text, /NEXUS {2,}Test Pick/)
+  assert.match(built.text, /\[n\] Nexus Powers {2,}1 active/)
   assert.match(built.text, /SPECIAL {2,}none available/)
-})
-
-test("the Nexus draft is its own screen, with none of the construct menu's own content on it", () => {
-  const context = spikeContext()
-  const layout = buildLayout(MINIMUM, context.grid)
-  const build = new BuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
-  const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
-  assert.match(text, /NEXUS POWER/)
-  for (const option of context.nexusDraft) {
-    assert.match(text, new RegExp(`\\[${option.hotkey}\\] ${option.name}`))
-  }
-  assert.doesNotMatch(text, /RESOURCE/)
-  assert.doesNotMatch(text, /COMMON/)
-  assert.doesNotMatch(text, /SPECIAL/)
-  // The Grid and the cursor are still the same screen underneath the draft.
-  assert.match(text, /view x 0-47/)
 })
 
 test("the commit confirmation is its own screen too, asking only y or n", () => {

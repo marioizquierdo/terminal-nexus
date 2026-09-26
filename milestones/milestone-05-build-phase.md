@@ -4,7 +4,8 @@
 **Status:** CURRENT
 **Active gate:** 5F — layout and keyboard focus: the side panel moves to the left of the Grid, a
 menu/Grid keyboard focus with a smart cursor, and the Nexus power pick as a popup the player opens from
-a "Nexus Powers" entry at the top of the menu. Gates 5D and 5E are built and reported (PASS) but not
+a "Nexus Powers" entry at the top of the menu. **Built and reported (PASS), awaiting Mario's look**;
+gate 5G does not start before it. Gates 5D and 5E are built and reported (PASS) but not
 yet formally accepted; this gate depends on neither acceptance, the same way 5D did not wait on 5C's
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
 mission's own budget/units decided — accepted 2026-09-12)
@@ -108,8 +109,18 @@ mission's own budget/units decided — accepted 2026-09-12)
 >   overflow key help overwrote the NEXUS and SPECIAL rows on a short Grid; a Nexus draft description
 >   was cut mid-word at 80 columns.
 
-> **Gate 5F: layout and keyboard focus — not yet built.** The owner's feedback that reshapes the
-> screen, in the order the pieces depend on each other:
+> **Gate 5F: built and reported (PASS), awaiting Mario's look** —
+> [`../evidence/gate-5f-report.md`](../evidence/gate-5f-report.md). The menu is on the left and the
+> screen opens with the keyboard on it: Tab moves between the menu and the Grid, Up/Down and Space
+> work the menu, and arming from it puts the cursor one tile beside the last thing planned, so the
+> owner's "down, down, space, place, space, place" is a passing test. Focus after a placement goes
+> back to wherever the arming came from (Q57's recommendation); Esc is one level of cancel. "[n]
+> Nexus Powers (1)" at the top of the menu opens a popup over the Grid, never on its own, and a
+> waiting pick now refuses only the commit. Two things were found only by looking: moving the top bar
+> to the whole width cost the panel two rows, so a short Grid's menu ran over the bottom bar (fixed:
+> the pane keeps 16 rows and a short Grid closes on its own edge), and the highlight bar was drawn in
+> three colours. One new question, Q60 (does the popup close itself after a pick?). What was asked
+> of it:
 >
 > - **The side panel moves to the left of the Grid** (`engine.md` 9.2): "My eyes were on the left and
 >   I didn't notice that I needed to select the things to build on the right." The top bar carries
@@ -128,15 +139,19 @@ mission's own budget/units decided — accepted 2026-09-12)
 
 > **Gate 5G: Debug Mode — not yet built.** A `[d] Debug` overlay of live-editable development flags
 > (`engine.md` 9.7): the second overlay, so the overlay shape is extracted here rather than in 5F.
-> First fields: the border glyphs, where focus goes after a placement (Q57), the smart cursor on/off,
-> and whatever 5F left as a guess. Every flag names the question it serves and is deleted once it is
+> First fields: the border glyphs, where focus goes after a placement (Q57, already a context option,
+> `focusAfterPlace`), the smart cursor on/off (Q55, `smartCursor`), whether the Nexus Powers popup
+> closes itself after a pick (Q60), and which focus the screen opens on — the two guesses 5F left. Every flag names the question it serves and is deleted once it is
 > answered.
 
 > **Gate 5H: movement feel — not yet built.** The screen's first frame timer, and what it enables
 > (`engine.md` 3.3): held-key speed tiers (Q54), a scroll margin that is a share of the viewport, the
 > fast modifier and an unarmed click recentring the view, camera moves eased over a few frames, a
 > brief cursor flash when a placement is tried and refused, and an armed click that does not scroll
-> (Q58). Every number is a Debug Mode field, tuned by the owner's own feel.
+> (Q58). Every number is a Debug Mode field, tuned by the owner's own feel. The same timer should
+> give a lone Esc a short timeout: today Esc and the next key arriving in one read are taken as one
+> Option+key sequence (gate 5F's report, Section 7), harmless for a person typing but a trap for
+> anything sending keys programmatically, and Esc is used far more since 5F.
 
 ## 1. Question
 
@@ -311,23 +326,23 @@ Powers popup (5F), and the speed tiers and share-of-viewport margin (5H).
 
 Gate 5F's definition of done:
 
-- [ ] the side panel is on the left of the Grid at every size in the supported range, the top bar and
+- [x] the side panel is on the left of the Grid at every size in the supported range, the top bar and
       the bottom bar run the whole width, and the Grid pane is still a closed rectangle with its light
-      and heavy sides;
-- [ ] Tab moves keyboard focus between the menu and the Grid; on the menu, Up/Down highlight and
+      and heavy sides — including a Grid shorter than the panel, which closes on its own edge;
+- [x] Tab moves keyboard focus between the menu and the Grid; on the menu, Up/Down highlight and
       Enter/Space activate; arming moves focus to the Grid; Esc returns it; after a placement focus
       goes where Q57's answer says (its recommendation until then); a digit arms from anywhere; the
       key help says where focus is;
-- [ ] arming from the menu puts the cursor on a tile where the structure can go, by a deterministic
+- [x] arming from the menu puts the cursor on a tile where the structure can go, by a deterministic
       rule the driver can assert (Q55);
-- [ ] a "Nexus Powers" entry with a pending count sits at the top of the menu under a letter hotkey,
-      opens a popup over the Grid that holds focus until Esc, picks a pending power by key or click and
-      lists the active ones; nothing opens it but the player; the commit refuses while a pick is
-      pending, and nothing else does;
-- [ ] the same plan by keyboard (hotkeys, and the focus flow), by mouse and by driver still produces
+- [x] a "Nexus Powers" entry with a pending count sits at the top of the menu under a letter hotkey
+      (`n`), opens a popup over the Grid that holds focus until Esc, picks a pending power by key or
+      click and lists the active ones; nothing opens it but the player; the commit refuses while a
+      pick is pending, and nothing else does;
+- [x] the same plan by keyboard (hotkeys, and the focus flow), by mouse and by driver still produces
       the identical state and frames;
-- [ ] screenshots at 80x24, 104x32 and 128x24, and a gate report ending in PASS / REVISE / STOP /
-      BLOCKED.
+- [x] screenshots at 80x24, 104x32 and 128x24, and a gate report ending in PASS / REVISE / STOP /
+      BLOCKED — **PASS**, pending the owner's look.
 
 Gate 5G's definition of done:
 

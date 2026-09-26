@@ -12,7 +12,7 @@
 // key help on the owner's own call (2026-09-26: "leave pgup/home keys out, people will figure that
 // out just fine").
 
-import type { BuildCommand } from "./types.ts"
+import type { BuildCommand, Focus } from "./types.ts"
 import { JUMP_TILES } from "./state.ts"
 
 const ESC = String.fromCharCode(27)
@@ -90,6 +90,10 @@ const FALLBACK_JUMPS: Readonly<Record<string, Readonly<{ dx: number; dy: number 
   [`${ESC}[8~`]: { dx: JUMP_TILES, dy: 0 },
 }
 
+const TAB = "\t"
+const MENU_UP = new Set([`${ESC}[A`, `${ESC}OA`])
+const MENU_DOWN = new Set([`${ESC}[B`, `${ESC}OB`])
+
 export type KeyboardContext = Readonly<{
   /** How many construct-menu rows there are, so a digit past the end of the list means nothing
    *  rather than arming something that is not on screen. */
@@ -98,32 +102,37 @@ export type KeyboardContext = Readonly<{
    *  the current selection, close an overlay, back out of a menu", and "never quits the game by
    *  itself." */
   armed: boolean
-  /** > 0 while the Nexus draft is showing — digits pick from it instead of the construct menu, per
-   *  engine.md 9.7's own list of what digits address: "the construct menu, Nexus draft, or a menu
-   *  screen's options." Absent or 0 the rest of the time. */
-  draftOptionCount?: number
+  /** Which half of the screen arrows and Enter/Space belong to (gate 5F). Defaults to the Grid, the
+   *  meaning every key had before focus existed. */
+  focus?: Focus
+  /** While the Nexus Powers popup is open: how many powers are waiting to be picked. The popup holds
+   *  the keyboard — arrows and Enter/Space work its list, digits pick from it, Esc closes it — and
+   *  nothing underneath answers a key until it does. Absent while no overlay is open. */
+  overlayPendingCount?: number
   /** True while the commit confirmation is open, so Esc answers it rather than disarming or
    *  leaving — nothing can be armed while it is open anyway. */
   confirming?: boolean
 }>
 
-/** One already-split raw key to one command, or `null` when the key means nothing here. */
-export function buildKeyboardCommand(key: string, context: KeyboardContext): BuildCommand | null {
-  if (QUIT_KEYS.has(key)) return { kind: "quit" }
-  if (key === ESC) {
-    if (context.confirming) return { kind: "confirm-commit", accept: false }
-    return context.armed ? { kind: "disarm" } : { kind: "back" }
-  }
-  if (PLACE_KEYS.has(key)) return { kind: "place" }
-  if (REMOVE_KEYS.has(key)) return { kind: "remove" }
-  if (key === "u") return { kind: "undo" }
-  // Otherwise-idle keys: `y`/`n` only ever mean something while the confirmation is open, and the
-  // reducer is what decides that — a stray `y` elsewhere is exactly as inert as a stray digit is
-  // before anything is armed.
-  if (key === "y") return { kind: "confirm-commit", accept: true }
-  if (key === "n") return { kind: "confirm-commit", accept: false }
-  if (key === "p") return { kind: "commit" }
+function digitIndex(key: string): number | null {
+  if (key.length !== 1 || key < "0" || key > "9") return null
+  return key === "0" ? 9 : Number(key) - 1
+}
 
+/** The overlay's own keys. Everything else is swallowed: an overlay that let `u` reach the plan
+ *  underneath it would be one the player cannot trust to be modal. */
+function overlayCommand(key: string, pendingCount: number): BuildCommand | null {
+  if (key === ESC || key === "n") return { kind: "close-overlay" }
+  if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
+  if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
+  if (PLACE_KEYS.has(key)) return { kind: "activate" }
+  const index = digitIndex(key)
+  if (index !== null && index < pendingCount) return { kind: "pick-nexus", index }
+  return null
+}
+
+/** Any of the Grid's cursor keys, as the move it is — or `null`. */
+function cursorMove(key: string): BuildCommand | null {
   const plain = PLAIN_ARROWS[key]
   if (plain !== undefined) return { kind: "move-cursor", ...plain }
 
@@ -147,18 +156,66 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
 
   const fallback = FALLBACK_JUMPS[key]
   if (fallback !== undefined) return { kind: "move-cursor", ...fallback }
+  return null
+}
+
+/**
+ * One already-split raw key to one command, or `null` when the key means nothing here.
+ *
+ * **Focus is the one mode this screen has, and it is the one engine.md 9.7's first convention
+ * allows**: "if a panel genuinely needs arrow keys of its own... Tab moves focus and the footer says
+ * where focus is." Arrows and Enter/Space follow focus; nothing else does — a digit arms its row, `n`
+ * opens the Nexus Powers, `u`, Backspace and `p` do what they always did, whichever half has focus.
+ */
+export function buildKeyboardCommand(key: string, context: KeyboardContext): BuildCommand | null {
+  if (QUIT_KEYS.has(key)) return { kind: "quit" }
+  const focus = context.focus ?? "grid"
+
+  if (context.confirming === true) {
+    // The commit question owns `y`, `n` and Esc; the Grid is still there to look at, so arrows move
+    // the cursor whichever half had focus when `p` was pressed. Everything else reaches the reducer,
+    // which refuses it with the reason.
+    if (key === ESC || key === "n") return { kind: "confirm-commit", accept: false }
+    if (key === "y") return { kind: "confirm-commit", accept: true }
+    if (key === TAB) return null
+    const move = cursorMove(key)
+    if (move !== null) return move
+  } else if (context.overlayPendingCount !== undefined) {
+    return overlayCommand(key, context.overlayPendingCount)
+  }
+
+  if (key === ESC) {
+    // One level of "cancel" per press: the Grid gives focus back to the menu (disarming on the way,
+    // Q57), the menu disarms, and only a menu with nothing armed leaves the screen.
+    if (focus === "grid" || context.armed) return { kind: "disarm" }
+    return { kind: "back" }
+  }
+  if (key === TAB) return { kind: "focus", target: focus === "grid" ? "menu" : "grid" }
+  if (PLACE_KEYS.has(key)) return focus === "menu" ? { kind: "activate" } : { kind: "place" }
+  if (REMOVE_KEYS.has(key)) return { kind: "remove" }
+  if (key === "u") return { kind: "undo" }
+  // `y` only ever means something while the confirmation is open, and the reducer is what decides
+  // that — a stray `y` elsewhere is exactly as inert as a stray digit is before anything is armed.
+  if (key === "y") return { kind: "confirm-commit", accept: true }
+  // `n` is the Nexus Powers entry's letter, and `[n]o` only while the commit question is open (above)
+  // — when the menu, and the entry on it, is not drawn at all. Why `n` and not another letter is in
+  // `evidence/gate-5f-report.md`.
+  if (key === "n") return { kind: "open-nexus-powers" }
+  if (key === "p") return { kind: "commit" }
+
+  if (focus === "menu") {
+    if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
+    if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
+  } else {
+    const move = cursorMove(key)
+    if (move !== null) return move
+  }
 
   // Digits always address the list, and never mean anything else on this screen — engine.md 9.7's
-  // first convention, "no modes". `0` is the tenth row, not the zeroth. Which list is "the list"
-  // changes with the screen, never with the key: the Nexus draft first, the construct menu once it
-  // is picked.
-  if (key.length === 1 && key >= "0" && key <= "9") {
-    const index = key === "0" ? 9 : Number(key) - 1
-    if (context.draftOptionCount !== undefined && context.draftOptionCount > 0) {
-      return index < context.draftOptionCount ? { kind: "pick-nexus", index } : null
-    }
-    return index < context.itemCount ? { kind: "arm", index } : null
-  }
+  // first convention, "no modes". `0` is the tenth row, not the zeroth. A digit arms its row from
+  // either focus.
+  const index = digitIndex(key)
+  if (index !== null) return index < context.itemCount ? { kind: "arm", index } : null
 
   return null
 }

@@ -5,18 +5,19 @@
 // SGR parsing is `src/menu/mouse.ts`'s, reused rather than rewritten. What this adds is the two
 // gestures a flat menu has no use for: the wheel, and the right button.
 
-import type { BuildLayout } from "./layout.ts"
-import { CONFIRM_ITEMS, confirmLayout, constructIndexAt, nexusDraftItems, nexusDraftLayout, tileAtCell } from "./layout.ts"
+import type { BuildLayout, NexusPopupLayout } from "./layout.ts"
+import { CONFIRM_ITEMS, confirmLayout, menuEntryAt, popupHitAt, tileAtCell } from "./layout.ts"
 import { menuIndexAt } from "../menu/layout.ts"
 import type { Camera } from "./camera.ts"
 import { JUMP_TILES } from "./state.ts"
-import type { BuildCommand, ConstructItem, NexusPowerOption } from "./types.ts"
+import type { BuildCommand, ConstructItem } from "./types.ts"
 
-/** What the panel is currently showing, so a click can be hit-tested against the right list. Mirrors
- *  `KeyboardContext`'s `draftOptionCount`/`confirming` — the same two facts, read by the other
+/** What is on screen, so a click can be hit-tested against the right thing. Mirrors
+ *  `KeyboardContext`'s `overlayPendingCount`/`confirming` — the same facts, read by the other
  *  adapter. */
 export type MouseUiState = Readonly<{
-  draftOptions?: readonly NexusPowerOption[]
+  /** The open popup's geometry, when one is open: it holds the mouse as it holds the keyboard. */
+  popup?: NexusPopupLayout
   confirming?: boolean
 }>
 
@@ -72,37 +73,36 @@ export function buildMouseCommand(
 ): BuildCommand | null {
   if (!event.press) return null
 
+  // An open popup holds the mouse: a pending power is picked by a click on either of its rows, the
+  // close row closes it, a right click is Esc, and nothing reaches the Grid or the menu beneath.
+  if (ui.popup !== undefined) {
+    if (event.button === MOUSE_RIGHT) return { kind: "close-overlay" }
+    if (event.button !== MOUSE_LEFT) return null
+    const hit = popupHitAt(ui.popup, event.column, event.row)
+    if (hit.kind === "pending") return { kind: "pick-nexus", index: hit.index }
+    if (hit.kind === "close") return { kind: "close-overlay" }
+    return null
+  }
+
   if (event.button === MOUSE_WHEEL_UP) return { kind: "move-cursor", dx: 0, dy: -JUMP_TILES }
   if (event.button === MOUSE_WHEEL_DOWN) return { kind: "move-cursor", dx: 0, dy: JUMP_TILES }
   // "Mouse: right click — Esc. The RTS convention for cancel."
   if (event.button === MOUSE_RIGHT) return { kind: "disarm" }
   if (event.button !== MOUSE_LEFT) return null
 
-  // Whichever list the panel is currently showing — the confirmation, the Nexus draft, or the
-  // construct menu — is the one a click can hit, in that priority order, the same order the
-  // keyboard adapter's own digit handling checks state in.
   if (ui.confirming === true) {
     const index = menuIndexAt(CONFIRM_ITEMS, confirmLayout(layout), event.column, event.row)
     if (index !== null) return { kind: "confirm-commit", accept: index === 0 }
     return null
   }
 
-  if (ui.draftOptions !== undefined && ui.draftOptions.length > 0) {
-    const index = menuIndexAt(
-      nexusDraftItems(ui.draftOptions),
-      nexusDraftLayout(layout),
-      event.column,
-      event.row,
-    )
-    if (index !== null) return { kind: "pick-nexus", index }
-    return null
+  // A click on a menu row is that row's hotkey, by construction: both this and the composer ask
+  // `menuEntryAt`/`constructLines` where each row is, so they cannot disagree — including about where
+  // the group headings between them push everything below.
+  const entry = menuEntryAt(layout, catalog, event.column, event.row)
+  if (entry !== null) {
+    return entry.kind === "nexus" ? { kind: "open-nexus-powers" } : { kind: "arm", index: entry.index }
   }
-
-  // A click on a construct row is that row's hotkey, by construction: both this and the composer ask
-  // `constructLines` where each row is, so they cannot disagree — including about where the group
-  // headings between them push everything below.
-  const rowIndex = constructIndexAt(layout, catalog, event.column, event.row)
-  if (rowIndex !== null) return { kind: "arm", index: rowIndex }
 
   const tile = tileAtCell(layout, camera, event.column, event.row)
   if (tile === null) return null
