@@ -1002,7 +1002,14 @@ session's guesses are replaceable by his own feel without another round trip.
 
 ### Q55 — Smart cursor placement, and interpolated cursor/camera movement: build now or keep in mind?
 
-**Status:** OBSERVABLE — revised 2026-09-26, the same day it was registered: each now has a gate.
+**Status:** OBSERVABLE — the smart-cursor half **built in gate 5F** (2026-09-26,
+`evidence/gate-5f-report.md` Section 3): beside the last thing planned, or the Grid Nexus before
+anything is, one tile apart and aligned with it, the side facing the map's centre first; failing
+that, the nearest spot anywhere with a free tile around it; failing that, the nearest spot at all;
+failing that, the cursor stays. Only a menu-driven arm uses it — a digit leaves the cursor where the
+player pointed. `BuildContext.smartCursor` switches it off, ready for Debug Mode. Awaiting the
+owner's feel; the interpolation half is still gate 5H's. Revised 2026-09-26, the same day it was
+registered: each now has a gate.
 The smart cursor goes with gate 5F's keyboard focus, because the owner's own keyboard-only flow
 ("down-down-space, place, space, place") only works if arming from the menu puts the cursor
 somewhere it can build; interpolation goes with gate 5H, because it needs the frame timer the speed
@@ -1068,8 +1075,9 @@ and heavy, since the existing reasoning for a plain corner there still holds.
 
 ### Q57 — After a placement, where does keyboard focus go — and what returns it to the menu?
 
-**Status:** OPEN — blocks nothing before gate 5F builds keyboard focus; 5F proceeds under the
-recommendation, with the alternatives one Debug Mode field away.
+**Status:** OPEN — **built in gate 5F under the recommendation** (option C, below; Esc returns focus,
+disarming on the way; Backspace stays "remove"). Options A and B are `BuildContext.focusAfterPlace`
+values (`"menu"`, `"grid"`), one Debug Mode field away in gate 5G. The owner's feel decides it.
 
 Two statements in canon pull opposite ways once focus exists. `engine.md` 9.7's fast path — **the
 armed item stays armed after placing, so a run is one digit followed by arrows and Enter** — assumes
@@ -1141,6 +1149,27 @@ than the maximum viewport in a fraction of the cells, which the game has deliber
 **Recommendation: A.** `m` is reserved for it (`engine.md` 9.7) so nothing else takes the key. The
 natural moment is the first mission map that does not fit the maximum viewport, or the first Pulse
 large enough that watching it needs an overview — whichever comes first.
+
+### Q60 — After a Nexus power is picked, does the popup stay open until Esc, or close itself?
+
+**Status:** OPEN — blocks nothing; gate 5F built the recommendation, and gate 5G's Debug Mode is the
+place to offer the other.
+
+Gate 5F's Nexus Powers popup, per the milestone tracker, "holds focus until Esc". So after a pick it
+stays open, showing "Nothing waiting" and the pick listed as active with its one line of
+description. That costs one key on every Build Phase's most common path (open, pick, close), and the
+same line is already on screen elsewhere: the menu entry reads "1 active" and the status line says
+"Reserve Fund picked."
+
+| Option | Cost |
+| --- | --- |
+| A. **Stay open until Esc** (built) | One extra key per Build Phase; the player sees the pick land in the "active" list before leaving, and the popup never closes under them |
+| B. **Close on the pick** | One key saved; the confirmation is the status line and the menu entry alone. A player who meant to read the active list afterwards has to reopen it |
+
+**Recommendation: A, with B one Debug Mode field away.** Once Milestone 8 deals more than one power,
+or several over a campaign, the popup becomes the place to read what is active, and closing it the
+instant something changes there would hide the change. Until then the owner's feel is the better
+judge, and gate 5G makes that a toggle rather than a rebuild.
 
 ## 5. Answered
 

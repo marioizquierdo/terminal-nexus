@@ -8,11 +8,12 @@
 
 import { keysFromChunk } from "../view/playback.ts"
 import type { BuildLayout } from "./layout.ts"
+import { nexusPopupLayout } from "./layout.ts"
 import type { Viewport } from "./camera.ts"
 import { buildKeyboardCommand } from "./keyboard.ts"
 import { buildMouseCommand, parseMouseEvent } from "./mouse.ts"
 import type { BuildContext, BuildState } from "./state.ts"
-import { applyBuildCommand, createBuildState, withViewport } from "./state.ts"
+import { applyBuildCommand, createBuildState, nexusPowers, withViewport } from "./state.ts"
 import type { BuildCommand } from "./types.ts"
 import type { Coord } from "../grid/types.ts"
 
@@ -70,20 +71,22 @@ export class BuildSession {
    */
   handleKey(key: string, layout: BuildLayout): void {
     const mouse = parseMouseEvent(key)
+    const state = this.buildState
+    const pendingCount = nexusPowers(this.context, state).pending.length
     const command =
       mouse !== null
-        ? buildMouseCommand(mouse, this.buildState.camera, layout, this.context.catalog, {
-            ...(this.buildState.nexusPick === null
-              ? { draftOptions: this.context.nexusDraft }
-              : {}),
-            confirming: this.buildState.confirmingCommit,
+        ? buildMouseCommand(mouse, state.camera, layout, this.context.catalog, {
+            ...(state.overlay === null
+              ? {}
+              : { popup: nexusPopupLayout(layout, pendingCount, nexusPowers(this.context, state).active.length) }),
+            confirming: state.confirmingCommit,
           })
         : buildKeyboardCommand(key, {
             itemCount: this.context.catalog.length,
-            armed: this.buildState.armed !== null,
-            draftOptionCount:
-              this.buildState.nexusPick === null ? this.context.nexusDraft.length : 0,
-            confirming: this.buildState.confirmingCommit,
+            armed: state.armed !== null,
+            focus: state.focus,
+            ...(state.overlay === null ? {} : { overlayPendingCount: pendingCount }),
+            confirming: state.confirmingCommit,
           })
     if (command !== null) this.dispatch(command)
   }

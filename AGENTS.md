@@ -126,9 +126,21 @@ fast move and no longer leaves the screen. What reshapes the screen or needs a c
 5F-5H, with every decision in canon (`engine.md` Sections 3.1, 3.3, 9.2, 9.7 at canon 2.19) and every
 undecided fork in `open-questions.md` (Q53-Q59), each with a recommendation.
 
+**Milestone 5 gate 5F is built and reported (PASS), awaiting Mario's look** (2026-09-26). The menu
+is on the left of the Grid, the top and bottom bars run the whole width, and the screen opens with
+the keyboard on the menu: Tab moves between the menu and the Grid, Up/Down and Space work the menu,
+and arming from it puts the cursor one tile beside the last thing planned, so a run of buildings needs
+no arrow key. After a placement focus goes back to wherever the arming came from (Q57's
+recommendation, built); Esc is one level of cancel. The Nexus power pick is a "[n] Nexus Powers (1)"
+entry at the top of the menu that opens a popup over the Grid only when asked, and a waiting pick
+refuses only the commit. Two things were found only by looking at screenshots and are fixed — a short
+Grid's menu ran over the bottom bar, and the highlight bar was three colours — and one question was
+registered (Q60: does the popup close itself after a pick?).
+
 The current milestone is **[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md)
 — Build Phase**: can a player place buildings, pick a Nexus upgrade, and scroll a real map, by
-keyboard, mouse and driver alike? Its active gate is **5F — layout and keyboard focus**: the side
+keyboard, mouse and driver alike? Its active gate is **5F — layout and keyboard focus**, now built
+and awaiting Mario's look (`evidence/gate-5f-report.md`): the side
 panel moves to the left of the Grid; Tab moves keyboard focus between the menu and the Grid, with
 arrows and Enter/Space working the menu and a smart cursor that lands on a buildable tile when
 something is armed from it (Q55; where focus goes after a placement is Q57); and the Nexus power pick
@@ -143,7 +155,8 @@ So the authorised work for a new session is, in order:
 1. **whatever the owner's most recent feedback asks for**, if any exists since
    `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
    outstanding or that everything still is;
-2. **Milestone 5 gate 5F**, per its own file — the next gate in the build order
+2. **Milestone 5 gate 5G, once Mario has looked at 5F** — gate 5F is built; do not start 5G on
+   the strength of the tracker alone. Per its own file — the next gate in the build order
    [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
    order — read that table's build-order column, and take one gate per session unless the owner's
    own prompt asks for more.
