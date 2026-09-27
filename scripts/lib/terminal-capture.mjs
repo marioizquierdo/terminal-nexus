@@ -14,8 +14,10 @@
 //   chromium       already present here for Playwright; used headless purely as a renderer.
 
 import { execFileSync } from "node:child_process"
-import { mkdirSync, writeFileSync } from "node:fs"
+import { createHash } from "node:crypto"
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
+import pngjs from "pngjs"
 
 export const CHROMIUM = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
 export const ESC = String.fromCharCode(27)
@@ -57,7 +59,7 @@ export function tmux(repoRoot, args) {
 
 export function killSession(repoRoot, session) {
   try {
-    tmux(repoRoot, ["kill-session", "-t", session])
+    execFileSync("tmux", ["kill-session", "-t", session], { cwd: repoRoot, stdio: "ignore" })
   } catch {
     // No session to kill, which is the normal case.
   }
@@ -88,8 +90,39 @@ export function waitFor(repoRoot, session, predicate, what, timeoutMs = 20000) {
   }
 }
 
+/** How long to leave between two sends. tmux can hand two quick sends to the app as one read, and
+ *  one read holding an Esc and the next key is a single Option+key sequence to `keysFromChunk` — a
+ *  real terminal's rule, and a real way for a screenshot script to press a different key than it
+ *  meant. A short pause after every send keeps each one its own read. */
+export const KEY_PAUSE_SECONDS = 0.05
+
 export function sendKeys(repoRoot, session, literal) {
   tmux(repoRoot, ["send-keys", "-t", session, "-l", literal])
+  pause(KEY_PAUSE_SECONDS)
+}
+
+/** One key by its tmux name (`Down`, `S-Left`, `NPage`), paced like `sendKeys`. */
+export function sendKey(repoRoot, session, name) {
+  tmux(repoRoot, ["send-keys", "-t", session, name])
+  pause(KEY_PAUSE_SECONDS)
+}
+
+/**
+ * The pane with colour, once it has stopped changing: two captures ~200 ms apart that agree. Call it
+ * after `waitFor` has seen the text the shot is about. That text appearing only proves the app got
+ * *at least* that far — a later key may still be on its way, which is how a shot once came out with
+ * a popup still open: its "1 active" line was drawn before the key that closes the popup was.
+ */
+export function settledPane(repoRoot, session, { intervalSeconds = 0.2, timeoutMs = 10000 } = {}) {
+  const deadline = Date.now() + timeoutMs
+  let previous = pane(repoRoot, session, { colour: true })
+  for (;;) {
+    pause(intervalSeconds)
+    const current = pane(repoRoot, session, { colour: true })
+    if (current === previous) return current
+    if (Date.now() > deadline) throw new Error("the pane never stopped changing")
+    previous = current
+  }
 }
 
 /** The tick readout in the footer, e.g. "tick 0143/0480". */
@@ -152,8 +185,11 @@ export function ansiToHtml(text, cols, rows) {
     value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 
   const lines = text.split("\n").slice(0, rows)
+  // The style carries over from one line to the next, as it does in a terminal: tmux's
+  // `capture-pane -e` sets a colour once and lets it run on, so a style reset at every line start
+  // drew the first cell of such a line (usually the frame's left border) in the default colour.
+  let style = { fg: null, bg: null, bold: false, dim: false, underline: false, inverse: false }
   const rendered = lines.map((line) => {
-    let style = { fg: null, bg: null, bold: false, dim: false, underline: false, inverse: false }
     let html = ""
     let plainLength = 0
     let open = false
@@ -264,22 +300,104 @@ function pageFor(html, caption, cols, rows, background) {
 `
 }
 
+/** The marker a rendered image carries, followed by a hash of the page it was rendered from. */
+const SOURCE_MARKER = "terminal-nexus-source"
+
+/** A hash of everything that decides what an image looks like, so an unchanged shot is recognised
+ *  without rendering it again. */
+export function sourceHash(...parts) {
+  const hash = createHash("sha256")
+  for (const part of parts) hash.update(String(part)).update("\u0000")
+  return hash.digest("hex").slice(0, 32)
+}
+
+/** Whether the image at `path` was rendered from exactly this source. */
+export function isUnchanged(path, hash) {
+  if (!existsSync(path)) return false
+  return readFileSync(path).includes(Buffer.from(`${SOURCE_MARKER}\u0000${hash}`, "latin1"))
+}
+
+function samePixels(first, second) {
+  try {
+    const a = pngjs.PNG.sync.read(first)
+    const b = pngjs.PNG.sync.read(second)
+    return a.width === b.width && a.height === b.height && Buffer.compare(a.data, b.data) === 0
+  } catch {
+    return false
+  }
+}
+
+function crc32(bytes) {
+  let crc = 0xffffffff
+  for (const byte of bytes) {
+    crc ^= byte
+    for (let bit = 0; bit < 8; bit += 1) crc = crc & 1 ? (crc >>> 1) ^ 0xedb88320 : crc >>> 1
+  }
+  return (crc ^ 0xffffffff) >>> 0
+}
+
+/** The PNG with a `tEXt` chunk carrying the source hash, inserted just before `IEND`. */
+export function stampPng(png, hash) {
+  const body = Buffer.concat([Buffer.from("tEXt", "latin1"), Buffer.from(`${SOURCE_MARKER}\u0000${hash}`, "latin1")])
+  const chunk = Buffer.alloc(body.length + 8)
+  chunk.writeUInt32BE(body.length - 4, 0)
+  body.copy(chunk, 4)
+  chunk.writeUInt32BE(crc32(body), body.length + 4)
+  const iend = png.length - 12
+  return Buffer.concat([png.subarray(0, iend), chunk, png.subarray(iend)])
+}
+
+/** The GIF with a comment extension carrying the source hash, inserted just before the trailer. */
+export function stampGif(gif, hash) {
+  const text = Buffer.from(`${SOURCE_MARKER}\u0000${hash}`, "latin1")
+  const block = Buffer.concat([Buffer.from([0x21, 0xfe, text.length]), text, Buffer.from([0])])
+  return Buffer.concat([gif.subarray(0, gif.length - 1), block, gif.subarray(gif.length - 1)])
+}
+
+/** Forces every image to be rendered and written again, unchanged or not. */
+export const FORCE_RENDER = process.argv.includes("--force") || process.env.TN_CAPTURE_FORCE === "1"
+
 /**
  * Render a captured-and-converted frame to a PNG at `targetPath`, via headless Chromium.
  * `background` is the page/pane backdrop the capture sits on - "dark" (default) or "light", to
  * match whichever `--theme` the session being captured was actually running. The ANSI capture
  * itself carries the theme's real colours already; this only affects the page around it, which a
  * light-theme capture would otherwise sit on the tool's own dark backdrop and read as broken.
+ *
+ * **An unchanged shot is not rewritten.** The PNG carries a hash of the page it was rendered from;
+ * when the file at `targetPath` already carries the same hash, nothing is rendered and nothing is
+ * written, so regenerating every screenshot leaves the ones that did not change byte-for-byte alone
+ * instead of adding a fresh copy of each to the repository's history. `--force` (or
+ * `TN_CAPTURE_FORCE=1`) renders them all anyway, for when Chromium or the font is what changed.
+ * Returns `targetPath`; `renderPngIfChanged` also says whether it wrote.
  */
-export function renderPng({ html, caption, cols, rows, scratchDir, targetPath, background = "dark" }) {
+export function renderPng(options) {
+  return renderPngIfChanged(options).path
+}
+
+export function renderPngIfChanged({
+  html,
+  caption,
+  cols,
+  rows,
+  scratchDir,
+  targetPath,
+  background = "dark",
+  scale = 2,
+}) {
+  const page = pageFor(html, caption, cols, rows, background)
+  const hash = sourceHash(page, scale)
+  if (!FORCE_RENDER && isUnchanged(targetPath, hash)) return { path: targetPath, written: false }
+
   mkdirSync(scratchDir, { recursive: true })
   const pagePath = join(scratchDir, `${Math.random().toString(36).slice(2)}.html`)
-  writeFileSync(pagePath, pageFor(html, caption, cols, rows, background), "utf8")
+  writeFileSync(pagePath, page, "utf8")
 
   // DejaVu Sans Mono advances 0.602em, so the window is sized from the cell grid, not guessed.
   const width = Math.ceil(cols * 16 * 0.602) + 108
   const height = Math.ceil(rows * 16 * 1.25) + 160
 
+  const shotPath = join(scratchDir, `${Math.random().toString(36).slice(2)}.png`)
   execFileSync(
     CHROMIUM,
     [
@@ -287,12 +405,19 @@ export function renderPng({ html, caption, cols, rows, scratchDir, targetPath, b
       "--no-sandbox",
       "--disable-gpu",
       "--hide-scrollbars",
-      "--force-device-scale-factor=2",
+      `--force-device-scale-factor=${scale}`,
       `--window-size=${width},${height}`,
-      `--screenshot=${targetPath}`,
+      `--screenshot=${shotPath}`,
       `file://${pagePath}`,
     ],
     { stdio: "pipe" },
   )
-  return targetPath
+  const rendered = readFileSync(shotPath)
+  // An image from before images carried a hash can still be the same picture: compare pixels, and
+  // leave an identical one alone rather than rewrite it only to add the hash.
+  if (!FORCE_RENDER && existsSync(targetPath) && samePixels(readFileSync(targetPath), rendered)) {
+    return { path: targetPath, written: false }
+  }
+  writeFileSync(targetPath, stampPng(rendered, hash))
+  return { path: targetPath, written: true }
 }

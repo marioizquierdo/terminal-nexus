@@ -8,6 +8,12 @@ description: Run `grid` (the Terminal Nexus engine/editor/replay tool) on a real
 The tests assert what a frame *contains*. They say nothing about how it **looks** — spacing,
 density, where the eye goes, whether colour helps or clutters. This is how you look at it.
 
+**For the Build Phase screen, use the `playtest` skill first** (`scripts/playtest.mjs`): it presses
+keys without a terminal and renders frames composed in-process, so a picture can never be captured one
+key early, and it makes GIFs. This skill's tmux pipeline is for `grid` battles, the menu, and the few
+shots whose subject is the real terminal path itself (startup, resize, real modified-key and mouse
+bytes).
+
 ## The two-speed rule
 
 Iterate in text, confirm in pixels. A text frame costs nothing and answers most questions:
@@ -38,6 +44,15 @@ node scripts/capture-screenshots.mjs --only mirror-melee  # one of them
 Output lands in `evidence/screenshots/`. The pipeline is tmux (a real PTY, so the ANSI backend takes
 the same path a person gets) → `capture-pane -e` (keeps the escape sequences, so colour survives) →
 HTML → headless Chromium at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
+
+**Race-free on purpose.** Send keys with `sendKey`/`sendKeys` from `scripts/lib/terminal-capture.mjs`
+(one tmux call per key, then a short pause — an Esc and the next key in one read become one Option+key)
+and photograph with `settledPane` after `waitFor` has seen the text the shot is about: it waits until
+two captures 200 ms apart agree. Text appearing proves the app got at least that far, not that it
+stopped there.
+
+**Unchanged shots are not rewritten.** Each image carries a hash of the page it came from, so a
+regeneration only rewrites images whose content changed; `--force` re-renders all of them.
 
 Add a frame worth looking at by editing the `shots` array at the top of the script. Each entry takes
 `name`, `caption`, `scenario`, `tick`, `cols`, `rows`, and optionally `capability`, `glyphs`,

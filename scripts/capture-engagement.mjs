@@ -26,10 +26,10 @@ import {
   pane,
   renderPng,
   sendKeys,
+  settledPane,
   startWatch,
   stepToTick,
   tickOf,
-  waitFor,
 } from "./lib/terminal-capture.mjs"
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
@@ -115,10 +115,9 @@ async function main() {
     if (frame > 0) sendKeys(repoRoot, SESSION, ".")
     // The frame-step key mutates presentation time synchronously, but the redraw it triggers is the
     // next render tick — give it a beat before capturing, the same margin startWatch's own waits use.
-    waitFor(repoRoot, SESSION, (text) => text.length > 0, "a redraw", 2000)
-    const text = pane(repoRoot, SESSION)
-    const tick = tickOf(text)
-    const captured = pane(repoRoot, SESSION, { colour: true })
+    // `settledPane` waits until two captures agree, so the capture is of the redrawn frame.
+    const captured = settledPane(repoRoot, SESSION)
+    const tick = tickOf(pane(repoRoot, SESSION))
     const name = `frame-${String(frame).padStart(2, "0")}`
     const html = ansiToHtml(captured, cols, rows)
     const file = renderPng({

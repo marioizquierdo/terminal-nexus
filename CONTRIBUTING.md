@@ -16,9 +16,14 @@ Open an issue or discussion before work that changes a locked decision, widens t
 ## Pull requests
 
 - Keep one pull request focused on one decision or artifact.
-- Explain the question and explicit exclusions.
-- Include exact verification commands and evidence.
-- Separate automated results from human observations.
+- Write the description for someone reading it on a phone who will play the build rather than read
+  the diff: what changed on screen, how to try it (exact command and keys), screenshots, and the
+  decisions that are still open — in plain English, in the order of
+  `.github/pull_request_template.md`. Agents use the `pr-description` skill
+  (`.claude/skills/pr-description/SKILL.md`), which has the full rules.
+- Say what no person has tried yet, and what is known to be broken.
+- Keep gate, report, canon and question bookkeeping in the template's collapsed footer; the gate
+  report holds the full evidence and exclusions.
 - Update canon only when accepted evidence earns a durable conclusion.
 - Do not combine completion of one gate with the next gate's implementation.
 

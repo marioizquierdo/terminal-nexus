@@ -16,6 +16,7 @@ On Claude Code on the web:
 - register an undecided fork in `specs/open-questions.md` with a recommendation, then keep working on
   everything the answer does not touch;
 - stop with evidence for Mario rather than continuing to the next gate;
+- open or update pull requests using the `pr-description` skill;
 - **write anything Mario reads in plain English** — describe the actual idea or decision, not the
   document section it lives in. Internal shorthand is for notes aimed at the next agent only.
   AGENTS.md Section 5 has the rule and examples.
