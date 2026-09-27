@@ -36,7 +36,7 @@ import {
  *  inverse come out exactly as the terminal backend would send them. */
 export function frameHtml(frame, capability = "truecolor", theme = "dark") {
   const ansi = frameToAnsi(frame, capability, theme).replace(/\r\n/gu, "\n")
-  return ansiToHtml(ansi, frame.width, frame.height)
+  return ansiToHtml(ansi, frame.width, frame.height, theme)
 }
 
 /** One frame to a PNG. Returns `{ path, written }`; an unchanged image is left alone. */

@@ -264,6 +264,31 @@ test("Left/Right on the menu flicker the row; a second Right in a row moves focu
   assert.equal(reset.build.state.focus, "menu")
 })
 
+test("Backspace on the menu flickers the row and removes nothing under the hidden map cursor", () => {
+  // It removes what is under the map cursor, which the menu hides (feedback F17): a flicker says the
+  // key arrived, like Left does.
+  const side = session()
+  keys(side, "1", ENTER) // a Barracks, placed where the smart cursor put it; the keyboard is back on the menu
+  assert.equal(side.build.state.planned.length, 1)
+  assert.equal(side.build.state.focus, "menu")
+  keys(side, "\u007f")
+  assert.equal(side.build.state.planned.length, 1, "Backspace on the menu removed a building")
+  assert.equal(side.build.state.ack?.kind, "refused")
+  assert.equal(side.build.state.focus, "menu")
+})
+
+test("a popup's shadow is a dim shade, visible on the dark theme's near-black ground", () => {
+  const side = session()
+  keys(side, "n")
+  const frame = screen(side).frame
+  const text = frameToText(frame).split("\n")
+  // The shade runs along the popup's bottom edge, one row below it.
+  const shadowRow = text.findIndex((line) => line.includes("::::::::::"))
+  assert.ok(shadowRow > 0, "no shadow row under the popup")
+  const column = (text[shadowRow] as string).indexOf("::::::::::")
+  assert.equal(cellAt(frame, column, shadowRow).style.dim, true)
+})
+
 test("a menu row is drawn in four states: plain, selected, pressed and refused", () => {
   const side = session()
   const row = side.layout.panelRow + NEXUS_ROW

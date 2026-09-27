@@ -200,13 +200,20 @@ also finishes the playback, and `tests/lifecycle.test.ts` fails without the fix.
   goes light, like the other three sides). The column comes from the menu, which is one character
   narrower; the map keeps all 48 of its columns at 80 × 24.
 
-**Open — for his eye, each small:**
+**Built** — the orchestrator's pass (2026-09-27):
 
-- A popup's shadow is black on the dark theme's near-black background, so it barely shows; the solid
-  border does the work. On the light theme it will show.
-- Backspace on the menu does nothing and says nothing (it removes the building under the map cursor,
-  which is hidden while the menu has focus). A flicker, like Left/Right, would say "not here".
-- "Reserve Fund picked." stays on the status line until the next action, which can be a while.
+- A popup's shadow was blank cells, invisible on the dark theme's near-black ground. It is now a dim
+  shade (`:` in the ASCII glyphs, `░` in Unicode), which reads on both themes and in monochrome.
+- Backspace on the menu did nothing and said nothing (it removes the building under the map cursor,
+  which the menu hides). It now flickers the highlighted row, like Left, and removes nothing.
+- Found while checking the shadow: the screenshot tool drew reversed cells dark-on-dark on the light
+  theme (it assumed a dark terminal background). Fixed in `scripts/lib/terminal-capture.mjs`; the
+  game itself was always right in a light terminal.
+
+**Contested — kept as is, for his eye:** "Reserve Fund picked." stays on the status line until the
+next action. The status line is the record of the last thing that happened, so a message that stays is
+doing its job; clearing it on a timer would need the frame timer gate 5H adds. If he wants
+confirmations to fade after a few seconds, it rides 5H.
 
 ## Design documents owed an update (for the orchestrator)
 

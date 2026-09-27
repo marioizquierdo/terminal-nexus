@@ -786,16 +786,17 @@ const TERRAIN_INFO: Readonly<Record<string, Readonly<{ name: string; line: strin
  * Drawn last in the chrome band: bands are fixed (engine.md 9.4, RULE), and within one band a later
  * write replaces an earlier one, so a popup needs no band of its own to sit on top.
  */
-function drawOverlay(cells: BandCell[], input: BuildCompositionInput): void {
+function drawOverlay(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
   const spec = overlaySpec(input.context, input.state)
   if (spec === null) return
   const placed = placeOverlay(input.layout, spec)
   const band = BANDS.chrome
   const { box, textColumn, textLimit } = placed
 
-  // The shadow: one cell right and one below, blanked.
-  for (let y = box.top + 1; y <= box.bottom + 1; y += 1) put(cells, band, box.right + 1, y, " ")
-  for (let x = box.left + 1; x <= box.right + 1; x += 1) put(cells, band, x, box.bottom + 1, " ")
+  // The shadow: one cell right and one below, a dim shade over whatever was there.
+  const shade = chromeGlyph(pack, "shadow")
+  for (let y = box.top + 1; y <= box.bottom + 1; y += 1) put(cells, band, box.right + 1, y, shade, "chrome.frame", { dim: true })
+  for (let x = box.left + 1; x <= box.right + 1; x += 1) put(cells, band, x, box.bottom + 1, shade, "chrome.frame", { dim: true })
 
   for (let y = box.top; y <= box.bottom; y += 1) {
     for (let x = box.left; x <= box.right; x += 1) {
@@ -890,7 +891,7 @@ export function composeBuildFrame(
     drawPanelBindings(panel, input)
   }
   for (const cell of panel) if (cell.y <= input.layout.panelBindingsRow) cells.push(cell)
-  drawOverlay(cells, input)
+  drawOverlay(cells, input, pack)
 
   return composeBands(input.layout.frame.width, input.layout.frame.height, cells)
 }
