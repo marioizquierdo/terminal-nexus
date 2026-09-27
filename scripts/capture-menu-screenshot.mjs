@@ -9,7 +9,17 @@
 import { rmSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
-import { ESC, ansiToHtml, killSession, pane, renderPng, tmux, waitFor } from "./lib/terminal-capture.mjs"
+import {
+  ESC,
+  ansiToHtml,
+  killSession,
+  renderPngIfChanged,
+  sendKey,
+  sendKeys,
+  settledPane,
+  tmux,
+  waitFor,
+} from "./lib/terminal-capture.mjs"
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
 const outputDirectory = join(repoRoot, "evidence", "screenshots")
@@ -44,9 +54,10 @@ function shoot(
   if (waitForText !== undefined) {
     waitFor(repoRoot, SESSION, (text) => text.includes(waitForText), `"${waitForText}" to appear`)
   }
-  const colour = pane(repoRoot, SESSION, { colour: true })
+  // The text appearing proves the app got at least that far; a still pane proves it got no further.
+  const colour = settledPane(repoRoot, SESSION)
   const html = ansiToHtml(colour, COLS, ROWS)
-  renderPng({
+  const result = renderPngIfChanged({
     html,
     caption,
     cols: COLS,
@@ -59,6 +70,7 @@ function shoot(
     // invisibly against a page still assuming a dark one.
     background,
   })
+  console.log(`${result.written ? "wrote" : "unchanged"} ${name}.png`)
   killSession(repoRoot, SESSION)
 }
 
@@ -69,26 +81,29 @@ shoot(
   "Monochrome is the floor, not the degraded mode - the same screen with --capability monochrome",
   {
     args: "--capability monochrome",
-    drive: () => tmux(repoRoot, ["send-keys", "-t", SESSION, "Down"]),
+    drive: () => sendKey(repoRoot, SESSION, "Down"),
   },
 )
 
 shoot(
   "menu-highlight-moved",
   "Arrow-down twice, driven by real terminal key names through tmux: the highlight moves to Settings",
-  { drive: () => tmux(repoRoot, ["send-keys", "-t", SESSION, "Down", "Down"]) },
+  { drive: () => {
+    sendKey(repoRoot, SESSION, "Down")
+    sendKey(repoRoot, SESSION, "Down")
+  } },
 )
 
 shoot(
   "menu-stub-notice",
   "Pressing 2 (Challenge, shown dimmed): an honest stub notice, not a dead end",
-  { drive: () => tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "2"]) },
+  { drive: () => sendKeys(repoRoot, SESSION, "2") },
 )
 
 shoot(
   "menu-challenge-dimmed",
   "Gate 3C - Challenge already says why it's dimmed before it's even pressed; highlighting it is still plain inverse video",
-  { drive: () => tmux(repoRoot, ["send-keys", "-t", SESSION, "Down"]) },
+  { drive: () => sendKey(repoRoot, SESSION, "Down") },
 )
 
 shoot(
@@ -98,13 +113,13 @@ shoot(
     // The exact bytes a left click at column 8, row 11 (1-based terminal coordinates) sends —
     // MENU_LAYOUT's column 4 / row 10 (0-based) for item index 2, Settings — formatted the same way
     // src/menu/mouse.ts's own formatMouseClick would.
-    drive: () => tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", `${ESC}[<0;8;11M`]),
+    drive: () => sendKeys(repoRoot, SESSION, `${ESC}[<0;8;11M`),
   },
 )
 
 // Gate 3B — the Settings screen.
 shoot("settings-screen", "Settings, reached by its own hotkey - four choices and a way back", {
-  drive: () => tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "3"]),
+  drive: () => sendKeys(repoRoot, SESSION, "3"),
   waitForText: "Colour depth: truecolor",
 })
 
@@ -112,7 +127,10 @@ shoot(
   "settings-light-theme",
   "Cycling Background to light takes effect on the very next frame, no restart, no flicker",
   {
-    drive: () => tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "32"]), // 3 = Settings, 2 = Background
+    drive: () => {
+      sendKeys(repoRoot, SESSION, "3") // 3 = Settings
+      sendKeys(repoRoot, SESSION, "2") // 2 = Background
+    },
     waitForText: "Background: light",
     background: "light",
   },
@@ -127,9 +145,9 @@ shoot(
     // confirmed we actually left it — sending Back before that would make the eventual
     // `waitForText` below pass immediately without ever having waited on anything.
     drive: () => {
-      tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "3"]) // 3 = Settings
+      sendKeys(repoRoot, SESSION, "3") // 3 = Settings
       waitFor(repoRoot, SESSION, (text) => text.includes("Colour depth"), "the Settings screen")
-      tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "5"]) // 5 = Back
+      sendKeys(repoRoot, SESSION, "5") // 5 = Back
     },
     waitForText: "top-level menu",
   },
@@ -137,7 +155,7 @@ shoot(
 
 // Gate 3C — Campaign's own placeholder screen.
 shoot("campaign-screen", "Campaign, reached by its own hotkey - a real screen, not a notice pinned to the menu behind it", {
-  drive: () => tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "1"]),
+  drive: () => sendKeys(repoRoot, SESSION, "1"),
   waitForText: "Campaign is not built yet",
 })
 
@@ -149,9 +167,9 @@ shoot(
     // very first frame, so the eventual wait below only means something once we've first confirmed
     // we actually left it.
     drive: () => {
-      tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "1"]) // 1 = Campaign
+      sendKeys(repoRoot, SESSION, "1") // 1 = Campaign
       waitFor(repoRoot, SESSION, (text) => text.includes("Campaign is not built yet"), "the Campaign screen")
-      tmux(repoRoot, ["send-keys", "-t", SESSION, "-l", "1"]) // 1 = Back, Campaign screen's only row
+      sendKeys(repoRoot, SESSION, "1") // 1 = Back, Campaign screen's only row
     },
     waitForText: "top-level menu",
   },

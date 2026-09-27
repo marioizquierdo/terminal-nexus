@@ -25,6 +25,9 @@ canon, though it is not the only feedback loop any more: `grid` (`./bin/grid.ts`
 has the commands) resolves and reports on an actual battle, and `npm test` runs the test suite across
 two runtimes. A `.claude/skills/grid` skill has `grid`'s CLI, report grammar, and scenario-authoring
 workflow in more detail than this file does — read it before re-deriving any of that from source.
+A `.claude/skills/playtest` skill (`node scripts/playtest.mjs`) presses keys on the Build Phase
+screen without a terminal and returns every step's screen as text, PNGs or a GIF — the quickest way
+to see a change working and to make a pull request's pictures.
 
 ## 1. Start with authority, not code
 

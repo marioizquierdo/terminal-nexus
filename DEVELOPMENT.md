@@ -98,6 +98,8 @@ Pinned by Gate 1A, measured 2026-08-21:
 | `typescript` | 7.0.2 | Type checking only |
 | `@types/node` | 22.20.1 | Type checking only |
 | `@opentui/core` | 0.5.6 | Terminal backend. **Native core loads under Bun, not under Node** |
+| `gifenc` | 1.0.3 | Dev only: GIFs of a scripted playtest (MIT, no dependencies; checked 2026-09-27) |
+| `pngjs` | 7.0.0 | Dev only: reads Chromium's PNGs for those GIFs and for "is this shot unchanged?" (MIT, no dependencies) |
 
 `watch` options: `--capability monochrome|color16|color256|truecolor`, `--theme dark|light`,
 `--glyphs ascii|unicode`, `--tile-width 1|2`, `--no-effects`, `--reduced-motion`,
@@ -211,6 +213,41 @@ give the test an explicit `{ timeout: 120_000 }` (`test(name, { timeout }, fn)`,
 works identically under Node). **Before adding a new scenario file, run `./scripts/run-tests.sh bun`
 once** — not just `npm test` — since this class of failure is Bun-only and easy to miss.
 
+### Scripted playtests and demos
+
+```bash
+node scripts/playtest.mjs --keys "Down Down Space*4"                  # every step's status, then the final screen
+node scripts/playtest.mjs --keys "n 1 n Tab S-Left*3 Enter" --print all
+node scripts/playtest.mjs --keys "Down Down Space*4" --gif --png final --name hatchery-run
+node scripts/playtest.mjs --file flow.keys --size 104x32 --capability monochrome --png all
+```
+
+Presses keys on the Build Phase screen (`--spike`) without a terminal and keeps what the screen
+showed after every key: the text of every step in `.playtest/<name>.txt`, and on request PNGs
+(`--png final`, `--png all`, `--png 0,3,6`) and an animated GIF of the whole sequence (`--gif`).
+Output goes to `.playtest/`, which git ignores; pass `--out evidence/screenshots` only for an image
+that is going into a pull request. `--help` lists everything, including `--size`, `--capability`,
+`--theme`, `--glyphs`, `--delay` and `--hold`.
+
+Use it to see a change working, to check a flow a person described, and to make the pictures a pull
+request shows. The keys go through the real keyboard and mouse adapters as the exact bytes a terminal
+sends, one key at a time, and each frame comes from the same composer the live screen uses — so there
+is no capture race, and no Esc glued to the next key by accident. Key names: `Up Down Left Right`,
+`S-` (Shift) and `M-` (Option) arrows, `Tab S-Tab Esc Enter Space Bksp Del PgUp PgDn Home End`, any
+single character, `Name*N` to repeat, `click:X,Y` for a Grid tile and `click@COL,ROW` for a screen
+cell (`rclick`, `wheelup`, `wheeldown` likewise), `#` for a comment in a file. The full table is at
+the top of `src/playtest/keys.ts`. A script that leaves the screen (`q`, or Esc with nothing armed)
+stops there and says so.
+
+Only the Build Phase is wired up. Another screen gets a sibling of `src/playtest/build.ts` — take
+steps, return frames — and the command line, the key names and the image code carry over unchanged.
+
+Images come from the same pipeline as the real-terminal screenshots below (`frameToAnsi` → HTML →
+headless Chromium), plus `pngjs` and `gifenc` for the GIF: one shared palette, and every frame after
+the first stores only the pixels that changed, so a six-key GIF at 80 x 24 is about 200 KB at the
+default `--scale 2`. Chromium's bundled ffmpeg (`/opt/pw-browsers/ffmpeg-1011`) was checked and cannot
+help: it reads only MJPEG and writes only VP8 WebM, and a WebM does not play inline in a pull request.
+
 ### Screenshots of the real terminal
 
 ```bash
@@ -224,12 +261,29 @@ sequences, and renders it to a PNG in `evidence/screenshots/` through the Chromi
 for Playwright. Use it when a change touches the composition: a frame's *text* is what the tests
 assert on, and it says nothing about spacing, density, or where the eye goes.
 
-`node scripts/capture-spike-screenshots.mjs` does the same for the Build Phase spike, at each of the
-terminal sizes that actually mean something: 80 x 24 (the floor and the minimum viewport), 104 x 32
-(the maximum viewport), 128 x 24 (two columns per tile), and 79 x 24 (one column below the floor, so
-the resize gate). `--only <name>` captures a single shot. Every key it sends goes in by its real tmux
-key name or as the literal bytes a terminal emits, so the adapters are driven by reality rather than
-by a description of it.
+`node scripts/capture-spike-screenshots.mjs` covers the Build Phase, at each of the terminal sizes
+that actually mean something: 80 x 24 (the floor and the minimum viewport), 104 x 32 (the maximum
+viewport), 128 x 24 (two columns per tile), and 79 x 24 (one column below the floor, so the resize
+gate). `--only <name>` captures a single shot; `--out <dir>` writes somewhere other than
+`evidence/screenshots/`. **Most of its shots are composed in-process**, through the scripted playtest
+above, because a shot about layout or a flow must not be able to come out one key early — one did,
+with a popup still open, because the text it waited for was drawn before the key that closed it. Each
+names text its frame must contain and fails if it does not. **A few stay on tmux on purpose**, because
+the terminal path is what they prove: startup, the resize gate, real Shift+Arrow and PageDown bytes,
+real SGR mouse clicks, and `--capability monochrome` end to end.
+
+The tmux path is made race-free in `scripts/lib/terminal-capture.mjs`: every key is its own tmux call
+followed by a short pause (an Esc and the next key in one read are one Option+key to the input
+splitter), and after the expected text appears the shot waits until two captures 200 ms apart agree
+(`settledPane`) before rendering. `capture-menu-screenshot.mjs` uses the same two helpers.
+
+**An unchanged shot is not rewritten.** Every image the shared pipeline renders records a hash of
+the page it was rendered from; when a regeneration would produce the same page, the file is left
+alone. An older image without the hash is compared pixel by pixel and also left alone when it
+matches. So regenerating every screenshot after a change touches only the images the change actually
+shows up in, instead of adding a fresh copy of each to the repository's history. `--force` (or
+`TN_CAPTURE_FORCE=1`) re-renders everything — for when Chromium or the font changed rather than the
+game.
 
 `node scripts/probe-modified-keys.mjs` is not a screenshot but belongs to the same family: it prints
 what every terminal description installed on the machine claims it sends for Shift+Arrow, PageUp and

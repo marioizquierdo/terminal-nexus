@@ -19,9 +19,9 @@ import { fileURLToPath } from "node:url"
 import {
   ansiToHtml,
   killSession,
-  pane,
   renderPng,
   sendKeys,
+  settledPane,
   startWatch,
   stepPastEnd,
   stepToTick,
@@ -410,7 +410,7 @@ function captureGate(shot) {
     command,
   ])
   waitFor(repoRoot, SESSION, (text) => text.includes("TERMINAL TOO SMALL"), "the resize gate")
-  const captured = pane(repoRoot, SESSION, { colour: true })
+  const captured = settledPane(repoRoot, SESSION)
   sendKeys(repoRoot, SESSION, "q")
   killSession(repoRoot, SESSION)
   return captured
@@ -434,7 +434,7 @@ function capture(shot) {
     // see stepPastEnd's own comment.
     stepPastEnd(repoRoot, SESSION, shot.afterTick, shot.tick)
   }
-  const captured = pane(repoRoot, SESSION, { colour: true })
+  const captured = settledPane(repoRoot, SESSION)
   sendKeys(repoRoot, SESSION, "q")
   killSession(repoRoot, SESSION)
   return captured

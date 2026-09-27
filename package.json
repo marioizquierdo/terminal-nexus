@@ -19,6 +19,8 @@
   },
   "devDependencies": {
     "@types/node": "22.20.1",
+    "gifenc": "1.0.3",
+    "pngjs": "7.0.0",
     "typescript": "7.0.2"
   },
   "dependencies": {
