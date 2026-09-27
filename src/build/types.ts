@@ -6,6 +6,7 @@
 // plan" assertable.
 
 import type { Coord } from "../grid/types.ts"
+import type { DebugField } from "./debug.ts"
 
 /**
  * Which of a Commander Army's two structure groups a construct-menu row belongs to —
@@ -106,6 +107,19 @@ export type BuildCommand =
   | Readonly<{ kind: "open-nexus-powers" }>
   /** `e`, or activating the Explore entry: focus to the Grid with nothing armed. */
   | Readonly<{ kind: "explore" }>
+  /** `d`, or a click on the top bar's `[d] debug`: open the Debug Mode popup (gate 5G). */
+  | Readonly<{ kind: "open-debug" }>
+  /**
+   * One step of a Debug Mode flag: Left (`-1`) or Right (`+1`) on its row, or a click on the left or
+   * right half of its value. Named by field rather than by the popup's highlight, so a driver script
+   * can set a flag without walking the list; with the popup open it also moves the highlight there.
+   */
+  | Readonly<{ kind: "debug-adjust"; field: DebugField; step: -1 | 1 }>
+  /** A click on a Debug Mode row away from its value: highlight it, so its question shows. */
+  | Readonly<{ kind: "debug-select"; row: number }>
+  /** `r` in the Debug Mode popup, or its restart row: start the Build Phase over, keeping the flags —
+   *  how a flag marked "restart" takes effect. */
+  | Readonly<{ kind: "debug-restart" }>
 
 /** Which half of the screen the arrow keys and Enter/Space belong to. The digit hotkeys ignore it. */
 export type Focus = "menu" | "grid"
@@ -120,8 +134,8 @@ export type MenuEntry =
   | Readonly<{ kind: "explore" }>
   | Readonly<{ kind: "construct"; index: number }>
 
-/** The popups this screen has — one overlay shape, three questions (`src/build/overlay.ts`). */
-export type Overlay = "nexus-powers" | "confirm-commit" | "exit"
+/** The popups this screen has — one overlay shape for all four (`src/build/overlay.ts`). */
+export type Overlay = "nexus-powers" | "confirm-commit" | "exit" | "debug"
 
 /**
  * What the last command wants acknowledged on screen — a brief "pressed" flash on the row it

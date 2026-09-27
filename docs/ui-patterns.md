@@ -3,7 +3,7 @@
 **Document role:** The interaction and drawing patterns every interactive screen follows
 **Status:** WORKING — built on the Build Phase first; not canon yet (promoted into `specs/engine.md`
 Section 9 when the owner accepts them)
-**Updated:** 2026-09-27
+**Updated:** 2026-09-27 (Debug Mode, gate 5G)
 **License:** Apache-2.0
 
 These came out of the owner's playtests of the Build Phase (2026-09-26 and 2026-09-27; the item-by-item
@@ -78,6 +78,29 @@ why.
 - **A choice closes its popup** (Q60, owner 2026-09-27): picking a Nexus power, like answering a
   question, returns the player to where they were. What the pick did is on the status line and on the
   menu; reopening the popup shows it listed as active.
+- **A setting is a row whose value Left and Right change** (Debug Mode, gate 5G): its name, the value
+  between `<` and `>` (the arrows say which keys change it), and, quietly on the right, when a change is
+  seen — `now` or `restart`. Enter/Space is Right. A choice of two comes round at either end; a number
+  stops at its ends and the status line says so. **By mouse, the left half of the value box is Left
+  and the right half is Right** — two targets six cells wide each, big enough for a finger on the
+  browser playtest page; a click anywhere else on the row highlights it. Every change is said on the
+  status line. (`settingColumns` in `src/build/overlay.ts`.)
+- **What a highlighted row is for is written under the list**, wrapped at words, in a fixed number of
+  lines so the popup does not change height as the highlight moves — the popup's version of the
+  menu's effect line. (A `note` row.)
+- **A popup that belongs to a menu row keeps that row lit behind it** (the Nexus popup, the
+  start-the-Pulse question); **one that belongs to no row** (Debug Mode) **leaves the menu unlit**, so
+  its own highlight is the only one on screen.
+
+## 5a. Development tools
+
+- **Debug Mode is found, not hidden**: `[d] debug` sits at the right of the top bar — the hotkey in
+  the hotkey colour, the name quiet — and is a click target, like every other entry point. It is in
+  the top bar rather than the menu because it is a tool for playtesting, not a game action, and will
+  shrink as its questions are answered.
+- **Every flag names the question it serves** and whether it applies now or on restart; the popup's
+  title says nothing in it is saved. A restart row starts the Build Phase over keeping the flags,
+  which is how a "restart" flag takes effect.
 
 ## 6. Panels
 
@@ -99,7 +122,8 @@ why.
 
 - **One line answers "what just happened, or why not"**: a typed message (text, a tone, and the tile
   it is about), never a bare string. A message about a tile lapses when the cursor leaves it.
-- **Say the result and the way back**: `Hatchery placed (resources: 70) - [u] undo`.
+- **Say the result and the way back**: `Hatchery placed (resources: 70) - [u] undo`,
+  `Debug - Opens on: map - applies on restart: [r]`.
 - **Looking reads quietly; trying reads loudly**: a refusal is neutral while the player only hovers,
   red and bold once they press Enter.
 

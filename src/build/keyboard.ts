@@ -141,6 +141,19 @@ function overlayCommand(key: string, overlay: Overlay, pendingCount: number): Bu
       if (index !== null && index < pendingCount) return { kind: "pick-nexus", index }
       return null
     }
+    case "debug": {
+      // `d` closes what `d` opened, the way `n` closes the Nexus popup.
+      if (key === "d") return { kind: "cancel" }
+      if (key === "q") return { kind: "request-exit" }
+      if (key === "r") return { kind: "debug-restart" }
+      if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
+      if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
+      // Left and Right change the highlighted flag's value — the one popup whose rows have one.
+      if (MENU_LEFT.has(key)) return { kind: "nudge", direction: "left" }
+      if (MENU_RIGHT.has(key)) return { kind: "nudge", direction: "right" }
+      if (PLACE_KEYS.has(key)) return { kind: "activate" }
+      return null
+    }
     default:
       return null
   }
@@ -197,6 +210,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (key === "u") return { kind: "undo" }
   if (key === "n") return { kind: "open-nexus-powers" }
   if (key === "e") return { kind: "explore" }
+  if (key === "d") return { kind: "open-debug" }
   if (key === "p") return { kind: "commit" }
   // `y` only ever means something while the start-the-Pulse question is open; outside it is inert.
   if (key === "y") return null

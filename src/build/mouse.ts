@@ -6,7 +6,7 @@
 // gestures a flat menu has no use for: the wheel, and the right button.
 
 import type { BuildLayout } from "./layout.ts"
-import { menuEntryAt, tileAtCell } from "./layout.ts"
+import { debugHintAt, menuEntryAt, tileAtCell } from "./layout.ts"
 import type { PlacedOverlay } from "./overlay.ts"
 import { overlayHitAt } from "./overlay.ts"
 import type { Camera } from "./camera.ts"
@@ -96,5 +96,9 @@ export function buildMouseCommand(
   if (event.button === MOUSE_WHEEL_UP) return { kind: "move-cursor", dx: 0, dy: -JUMP_TILES }
   if (event.button === MOUSE_WHEEL_DOWN) return { kind: "move-cursor", dx: 0, dy: JUMP_TILES }
   if (event.button !== MOUSE_LEFT) return null
+  // The top bar's `[d] debug` opens Debug Mode. Only with no popup open: over one, a click there is a
+  // click outside it, which closes it, like any other (so a second click on the hint closes Debug
+  // Mode itself).
+  if (debugHintAt(layout, event.column, event.row)) return { kind: "open-debug" }
   return underneath()
 }

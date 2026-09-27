@@ -9,7 +9,17 @@ import { TERRAIN } from "../grid/types.ts"
 import type { StatusMessage } from "../status.ts"
 import { NO_STATUS, status } from "../status.ts"
 import type { Camera, Viewport } from "./camera.ts"
-import { SCROLL_MARGIN, clampToGrid, followCursor } from "./camera.ts"
+import { clampToGrid, followCursor } from "./camera.ts"
+import type { DebugField, DebugFlags } from "./debug.ts"
+import {
+  DEBUG_ROW_COUNT,
+  adjustDebug,
+  fieldAtRow,
+  fieldSpec,
+  formatDebugValue,
+  initialDebugFlags,
+  rowOfField,
+} from "./debug.ts"
 import type {
   Ack,
   BuildCommand,
@@ -38,15 +48,16 @@ export type BuildContext = Readonly<{
    * direction" whose tuning "Milestone 5 may retune on evidence from the first person who actually
    * scrolls a Grid". So the spike takes it as a parameter and puts it on the command line and in
    * the header — a number Mario can feel the difference between beats a number this session argues
-   * for. Defaults to the canon's three.
+   * for. Defaults to the canon's three. **Only where the margin starts**: since gate 5G it is a Debug
+   * Mode flag, `state.debug.scrollMargin`, and that is what the reducer reads.
    */
   scrollMargin?: number
   /** The Nexus draft this Build Phase offers — placeholder options, not Milestone 8's real one
    *  (`types.ts`'s own doc comment on `NexusPowerOption` has the reasoning). */
   nexusDraft: readonly NexusPowerOption[]
   /** Q55's smart cursor: arming from the menu moves the cursor to a tile the structure can go.
-   *  Defaults on; off leaves the cursor where it is, which is the comparison gate 5G's Debug Mode
-   *  offers. */
+   *  Defaults on. Like `scrollMargin`, only the starting value of its Debug Mode flag,
+   *  `state.debug.smartCursor`. */
   smartCursor?: boolean
 }>
 
@@ -100,6 +111,14 @@ export type BuildState = Readonly<{
   /** The Build Phase is done. Nothing here reaches a Nexus Pulse — Milestone 6 builds that — so this
    *  just freezes the plan and says so; every state-changing command is refused from here on. */
   committed: boolean
+  /**
+   * Debug Mode's flags (gate 5G, `src/build/debug.ts`). State rather than context because they change
+   * while the screen is open; the reducer reads the ones that change what a command does, and the
+   * live loop reads the flash timings. Survive a Debug Mode restart; not saved anywhere else.
+   */
+  debug: DebugFlags
+  /** Where the cursor started — where a Debug Mode restart puts it back. */
+  startCursor: Coord
 }>
 
 /**
@@ -126,19 +145,25 @@ export function remaining(context: BuildContext, state: BuildState): number {
  *  `move-cursor` of this size. GUIDANCE (engine.md 9.7's bindings table), not RULE. */
 export const JUMP_TILES = 5
 
-function marginOf(context: BuildContext): number {
-  return context.scrollMargin ?? SCROLL_MARGIN
+/** The scroll margin in force: Debug Mode's flag, which starts at the context's (or the canon's three). */
+function marginOf(state: Readonly<{ debug: DebugFlags }>): number {
+  return state.debug.scrollMargin
 }
 
+/**
+ * A fresh Build Phase. `debug` carries a Debug Mode restart's flags over; otherwise they start from
+ * the context (`initialDebugFlags`).
+ */
 export function createBuildState(
   context: BuildContext,
   cursor: Coord,
   viewport: Viewport,
+  debug: DebugFlags = initialDebugFlags(context),
 ): BuildState {
   const start = clampToGrid(cursor, context.grid)
   return {
     cursor: start,
-    camera: followCursor({ x: 0, y: 0 }, start, viewport, context.grid, marginOf(context)),
+    camera: followCursor({ x: 0, y: 0 }, start, viewport, context.grid, debug.scrollMargin),
     viewport,
     armed: null,
     inspecting: false,
@@ -146,8 +171,9 @@ export function createBuildState(
     nudged: false,
     // The menu, on its first entry — the side panel is where the owner's eyes went first (2026-09-26),
     // and the first entry is the Nexus Powers one, so Enter from a standing start opens the choice
-    // the commit will eventually insist on.
-    focus: "menu",
+    // the commit will eventually insist on. Whether it should rather be the map is a guess gate 5F
+    // left open, and a Debug Mode flag: on the map, the screen opens exploring.
+    focus: debug.startFocus,
     menuHighlight: 0,
     overlay: null,
     overlayHighlight: 0,
@@ -157,6 +183,8 @@ export function createBuildState(
     nexusPick: null,
     bonusAllotment: 0,
     committed: false,
+    debug,
+    startCursor: cursor,
   }
 }
 
@@ -520,7 +548,7 @@ function withCursor(context: BuildContext, state: BuildState, tile: Coord): Buil
   return {
     ...state,
     cursor,
-    camera: followCursor(state.camera, cursor, state.viewport, context.grid, marginOf(context)),
+    camera: followCursor(state.camera, cursor, state.viewport, context.grid, marginOf(state)),
     status: lapsed ? NO_STATUS : state.status,
   }
 }
@@ -579,7 +607,7 @@ function armItem(
     ack: acknowledge(state, "pressed", entry),
   }
   const smart =
-    from === "menu" && context.smartCursor !== false
+    from === "menu" && state.debug.smartCursor
       ? smartCursorTile(context, state.planned, item.contentId, state.cursor)
       : null
   const moved = smart === null ? armed : withCursor(context, armed, smart)
@@ -688,6 +716,57 @@ function cancel(context: BuildContext, state: BuildState): BuildState {
   }
   void context
   return openOverlay(state, "exit")
+}
+
+/**
+ * `d`: the Debug Mode popup (gate 5G). Opens over anything but another popup — including a committed
+ * Build Phase, since starting over from there is exactly what a playtest of the flags wants.
+ */
+function openDebug(state: BuildState): BuildState {
+  if (state.overlay !== null) return state
+  return { ...state, overlay: "debug", overlayHighlight: 0 }
+}
+
+/**
+ * One step of a Debug Mode flag, said on the status line. A new scroll margin is felt at once: the
+ * camera settles under the new rule straight away rather than at the next arrow key.
+ */
+function adjustFlag(context: BuildContext, state: BuildState, field: DebugField, step: -1 | 1): BuildState {
+  const spec = fieldSpec(field)
+  const highlight = state.overlay === "debug" ? { overlayHighlight: rowOfField(field) } : {}
+  const { flags, changed } = adjustDebug(state.debug, field, step)
+  if (!changed) {
+    const end = step > 0 ? "largest" : "smallest"
+    return {
+      ...state,
+      ...highlight,
+      status: status(`Debug - ${spec.label} is already ${formatDebugValue(state.debug, field)}, the ${end} value.`, "warning"),
+    }
+  }
+  const later = spec.applies === "restart" ? " - applies on restart: [r]" : ""
+  const next: BuildState = {
+    ...state,
+    ...highlight,
+    debug: flags,
+    status: status(`Debug - ${spec.label}: ${formatDebugValue(flags, field)}${later}.`),
+  }
+  if (field !== "scrollMargin") return next
+  return { ...next, camera: followCursor(next.camera, next.cursor, next.viewport, context.grid, flags.scrollMargin) }
+}
+
+/** Starts the Build Phase over, keeping the Debug Mode flags — how a flag marked "restart" takes
+ *  effect. The last acknowledgement is carried over so its sequence keeps counting up and the live
+ *  loop never mistakes a new one for one it has already shown. */
+function restartWithFlags(context: BuildContext, state: BuildState): BuildState {
+  const fresh = createBuildState(context, state.startCursor, state.viewport, state.debug)
+  return { ...fresh, ack: state.ack, status: status("Build Phase restarted with the debug settings.") }
+}
+
+/** Enter/Space, or Right/Left, on the Debug Mode popup's highlighted row. */
+function stepHighlighted(context: BuildContext, state: BuildState, step: -1 | 1, activate: boolean): BuildState {
+  const field = fieldAtRow(state.overlayHighlight)
+  if (field !== null) return adjustFlag(context, state, field, step)
+  return activate ? restartWithFlags(context, state) : state
 }
 
 /**
@@ -819,6 +898,9 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return command.target === "menu" ? toMenu(state) : toGridExploring(state)
 
     case "highlight": {
+      if (state.overlay === "debug") {
+        return { ...state, overlayHighlight: wrap(state.overlayHighlight + command.delta, DEBUG_ROW_COUNT) }
+      }
       if (state.overlay === "nexus-powers") {
         const count = nexusPowers(context, state).pending.length
         return { ...state, overlayHighlight: wrap(state.overlayHighlight + command.delta, count) }
@@ -829,6 +911,8 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     }
 
     case "activate": {
+      // On a flag, Enter/Space is Right: a choice of two flips, a number steps up.
+      if (state.overlay === "debug") return stepHighlighted(context, state, 1, true)
       if (state.overlay === "nexus-powers") {
         const pending = nexusPowers(context, state).pending[state.overlayHighlight]
         if (pending === undefined) return { ...state, status: status("No Nexus power waiting.", "warning") }
@@ -839,6 +923,8 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     }
 
     case "nudge": {
+      // In Debug Mode, Left and Right are what a flag's row is for: they change its value.
+      if (state.overlay === "debug") return stepHighlighted(context, state, command.direction === "right" ? 1 : -1, false)
       if (state.focus !== "menu" || state.overlay !== null || state.committed) return state
       if (command.direction === "right" && state.nudged) return { ...toGridExploring(state), nudged: false }
       return {
@@ -853,6 +939,20 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
 
     case "explore":
       return explore(state)
+
+    case "open-debug":
+      return openDebug(state)
+
+    // A driver may set a flag with the popup closed; a player reaches this only through the popup.
+    case "debug-adjust":
+      return adjustFlag(context, state, command.field, command.step)
+
+    case "debug-select":
+      if (state.overlay !== "debug" || command.row < 0 || command.row >= DEBUG_ROW_COUNT) return state
+      return { ...state, overlayHighlight: command.row }
+
+    case "debug-restart":
+      return restartWithFlags(context, state)
 
     case "quit":
       return state
@@ -897,6 +997,6 @@ export function withViewport(
   return {
     ...state,
     viewport,
-    camera: followCursor(state.camera, state.cursor, viewport, context.grid, marginOf(context)),
+    camera: followCursor(state.camera, state.cursor, viewport, context.grid, marginOf(state)),
   }
 }

@@ -11,6 +11,7 @@ import type { Coord } from "../grid/types.ts"
 import { SCROLL_MARGIN, edgeMarkers, visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import {
+  DEBUG_HINT,
   EXPLORE_ROW,
   NEXUS_ROW,
   RESOURCE_ROW,
@@ -18,7 +19,7 @@ import {
   constructLines,
   summaryRows,
 } from "../build/layout.ts"
-import { CLOSE_LABEL, overlaySpec, placeOverlay } from "../build/overlay.ts"
+import { CLOSE_LABEL, overlaySpec, placeOverlay, settingColumns, wrapWords } from "../build/overlay.ts"
 import type { ArmedPreview, BuildContext, BuildState } from "../build/state.ts"
 import {
   armedPreview,
@@ -335,10 +336,15 @@ const NEXUS_KEY_HELP: KeyHelp = { label: "NEXUS", bindings: ["up/down choose", "
 const CONFIRM_KEY_HELP: KeyHelp = { label: "START PULSE?", bindings: ["y yes", "n/esc no"] }
 const EXIT_KEY_HELP: KeyHelp = { label: "EXIT?", bindings: ["q quit", "esc keep playing"] }
 const COMMITTED_KEY_HELP: KeyHelp = { label: "COMMITTED", bindings: ["esc exit"] }
+const DEBUG_KEY_HELP: KeyHelp = {
+  label: "DEBUG",
+  bindings: ["up/down choose", "left/right change", "r restart", "esc close"],
+}
 
 /** Which key help is live: whatever holds the keyboard right now. */
 export function keyHelp(state: BuildState): KeyHelp {
   if (state.overlay === "exit") return EXIT_KEY_HELP
+  if (state.overlay === "debug") return DEBUG_KEY_HELP
   if (state.committed) return COMMITTED_KEY_HELP
   if (state.overlay === "confirm-commit") return CONFIRM_KEY_HELP
   if (state.overlay === "nexus-powers") return NEXUS_KEY_HELP
@@ -397,11 +403,17 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
   const limit = layout.headerLimit
   text(cells, band, left, headerRow, "TERMINAL NEXUS", "chrome.title", { bold: true, limit })
   text(cells, band, left + 15, headerRow, "build phase", "chrome.muted", { limit: limit - 15 })
+  // Debug Mode's way in, right-aligned: its hotkey in the hotkey colour, its name quiet — findable
+  // without competing with the game's own title (gate 5G).
+  const hint = layout.debugHint
+  text(cells, band, hint.from, hint.row, DEBUG_HINT.slice(0, 3), "chrome.hotkey", { bold: true })
+  text(cells, band, hint.from + 3, hint.row, DEBUG_HINT.slice(3), "chrome.muted")
 
   const footerLimit = layout.footerLimit
   // engine.md 3.3's second required signal: "a position readout in the footer naming the visible
-  // tile range and the Grid size."
-  const margin = context.scrollMargin ?? SCROLL_MARGIN
+  // tile range and the Grid size." The margin is named whenever it is not the canon's three — set by
+  // `--scroll-margin` or by Debug Mode.
+  const margin = state.debug.scrollMargin
   text(
     cells,
     band,
@@ -579,6 +591,9 @@ function effectLine(context: BuildContext, state: BuildState, preview: ArmedPrev
 function rowState(input: BuildCompositionInput, entry: number, armed: boolean): RowState {
   const { state, flash } = input
   if (flash !== undefined && flash.entry === entry) return flash.kind
+  // The Nexus and start-the-Pulse popups each belong to a menu row, which stays lit behind them; Debug
+  // Mode belongs to none, so while it has the keyboard its own highlight is the only one on screen.
+  if (state.overlay === "debug") return "plain"
   if (state.overlay !== null && state.focus !== "menu") return "plain"
   if (state.focus === "menu") return state.menuHighlight === entry ? "selected" : "plain"
   return armed ? "selected" : "plain"
@@ -753,22 +768,6 @@ function drawInfoPanel(cells: BandCell[], input: BuildCompositionInput, pack: Gl
   }
 }
 
-/** Splits text into lines of at most `limit` glyphs, breaking between words. */
-function wrapWords(value: string, limit: number): readonly string[] {
-  const lines: string[] = []
-  let current = ""
-  for (const word of value.split(" ").filter((part) => part !== "")) {
-    const grown = current === "" ? word : `${current} ${word}`
-    if (grown.length <= limit || current === "") current = grown
-    else {
-      lines.push(current)
-      current = word
-    }
-  }
-  if (current !== "") lines.push(current)
-  return lines
-}
-
 /** What a bare tile is, for the information panel. */
 const TERRAIN_INFO: Readonly<Record<string, Readonly<{ name: string; line: string }>>> = {
   "terrain.plain": { name: "Open ground", line: "You can build here." },
@@ -812,7 +811,7 @@ function drawOverlay(cells: BandCell[], input: BuildCompositionInput, pack: Glyp
   })
   text(cells, band, placed.close.from, placed.close.row, CLOSE_LABEL, "chrome.frame", { bold: true, inverse: true })
 
-  for (const { row, spec: entry, secondLine } of placed.rows) {
+  for (const { row, spec: entry, secondLine, text: placedText = "" } of placed.rows) {
     switch (entry.kind) {
       case "blank":
         break
@@ -841,6 +840,29 @@ function drawOverlay(cells: BandCell[], input: BuildCompositionInput, pack: Glyp
         })
         break
       }
+      case "setting": {
+        // One line: the name, the value between `<` and `>` (the arrows say Left and Right change it,
+        // and each half of the box is the click that does), and when a change is seen, quietly.
+        const on = entry.highlighted
+        const columns = settingColumns(placed)
+        const role: StyleRole = on ? "chrome.title" : "chrome.value"
+        if (on) text(cells, band, textColumn, row, " ".repeat(textLimit), "chrome.title", { inverse: true, limit: textLimit })
+        text(cells, band, textColumn, row, entry.label, role, { inverse: on, limit: columns.labelLimit })
+        const inner = columns.valueTo - columns.valueFrom - 3
+        const padding = Math.max(0, inner - entry.value.length)
+        const value = `${" ".repeat(Math.ceil(padding / 2))}${entry.value}${" ".repeat(Math.floor(padding / 2))}`
+        text(cells, band, columns.valueFrom, row, "<", on ? "chrome.title" : "chrome.hotkey", { bold: true, inverse: on })
+        text(cells, band, columns.valueFrom + 2, row, value, role, { bold: true, inverse: on, limit: inner })
+        text(cells, band, columns.valueTo, row, ">", on ? "chrome.title" : "chrome.hotkey", { bold: true, inverse: on })
+        const applies = entry.applies === "now" ? "now" : "restart"
+        text(cells, band, columns.appliesRight - applies.length + 1, row, applies, on ? "chrome.title" : "chrome.muted", {
+          inverse: on,
+        })
+        break
+      }
+      case "note":
+        text(cells, band, textColumn, row, placedText, "chrome.value", { limit: textLimit })
+        break
     }
   }
 }

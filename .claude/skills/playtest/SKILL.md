@@ -35,7 +35,10 @@ the same targets. `#` starts a comment in a `--file`. The table with bytes is at
 
 Useful openings on the `--spike` screen: focus starts on the menu's Nexus Powers row; `n 1` picks
 the first Nexus power, which closes the popup (budget becomes 130); `Down Down Space` arms the Hatchery
-from the menu; a digit arms by hotkey and moves focus to the Grid; `Tab` switches focus.
+from the menu; a digit arms by hotkey and moves focus to the Grid; `Tab` switches focus. `d` opens
+Debug Mode (Up/Down choose a flag, Left/Right change it, `r` restarts keeping the flags, `Esc`
+closes): `d Right Esc` turns the smart cursor off, `d Down Down Right r` restarts with the keyboard
+on the map.
 
 ## Workflow
 

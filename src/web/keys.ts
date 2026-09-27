@@ -98,6 +98,7 @@ export const KEY_BAR: Readonly<Record<"common" | "menu" | "build" | "pulse", rea
     { name: "Bksp", label: "Bksp" },
     { name: "p", label: "p" },
     { name: "y", label: "y" },
+    { name: "d", label: "d debug" },
     { name: "q", label: "q" },
   ],
   pulse: [
