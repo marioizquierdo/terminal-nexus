@@ -2,7 +2,7 @@
 
 **Document role:** Gate evidence report for Gate 5G
 **Status:** COMPLETE — PASS, awaiting the owner's look
-**Canon version:** 2.20
+**Canon version:** 2.22
 **Updated:** 2026-09-27
 **License:** Apache-2.0
 
@@ -10,9 +10,9 @@
 
 ## 1. Frame — written before coding
 
-- **Canon version:** 2.20, unchanged. This session did not edit `specs/`, `AGENTS.md` or
-  `milestones/` (another session is editing the design documents); the text those documents owe is
-  proposed to the orchestrator in Section 9.
+- **Canon version:** 2.20 when the work started. The building session did not edit `specs/`,
+  `AGENTS.md` or `milestones/` (another session was editing the design documents at the time); it
+  proposed their text in Section 9, and the orchestrating session applied it at canon 2.22.
 - **Milestone and gate:** Milestone 5 — Build Phase, gate 5G, Debug Mode.
 - **Question this gate answers:** can the owner try two answers to an open question during a
   playtest — change a value on the running screen and feel the difference — without a new
@@ -191,8 +191,11 @@ feeling any of them settle its question?
 - **Owed by gate 5H:** its speed tiers, margin share and easing times are meant to be Debug Mode flags
   too. At 80x24 the popup is full at five, so 5H needs the popup to scroll (or a second page).
 - **Flaky under load:** the Pulse-view performance test's worst case hit Bun's 5 s timeout once and a
-  Node test failed once on the untouched baseline; both passed on a re-run. Not this gate's code, but
-  worth knowing when a full run fails once.
+  Node test failed once on the untouched baseline; both passed on a re-run. The orchestrating session's
+  full Bun run after merging onto main had the same test fail differently: one of 1,800 playback
+  frames took 41 ms against a 33 ms budget. Alone it passed 3 / 3 (worst frame 10-22 ms). The gate
+  changes no Pulse playback code, so this is the test's sensitivity to a busy machine — a single
+  garbage-collection pause is enough — and worth making robust in its own change.
 
 ## 8. Decision
 
@@ -205,15 +208,16 @@ Nothing is saved and nothing reaches the kernel. Pending the owner's look.
 
 ## 9. Canon impact
 
-Proposed, not applied — the orchestrator owns the design documents in this round:
+Proposed by the building session, applied by the orchestrating session at canon 2.22:
 
 | Proposed rule | Would live in | Earned by |
 | --- | --- | --- |
 | Debug Mode's flags are Build Phase state, per session and never saved; the reducer reads the rule-changing ones, the live loop reads the timing ones; `[r]` restarts keeping them | `specs/engine.md` 9.7, the Debug Mode paragraph | this gate |
 | A setting row: value between `<` `>`, Left/Right change it, each half of the value box is its click target, a choice of two comes round, a number stops at its ends | `docs/ui-patterns.md` (done), later `engine.md` 9 | this gate |
 
-Questions raised: none new. "Where the screen opens" is a guess gate 5F made that has no register
-entry; the flag is its observable form, and the orchestrator may want a Q row for it.
+Questions raised: Q61, where the Build Phase opens (the menu or the map). It was a guess gate 5F made
+with no register entry; the "Opens on" flag is its observable form, and the recommendation is the menu
+until Mario has tried both.
 
 ## 10. Next authorized action
 

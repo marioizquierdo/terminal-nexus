@@ -84,11 +84,11 @@ function lineGlyph(pack: GlyphPack, { n, s, e, w }: Joins): string {
  * footer sat against its bottom edge with no line at all.
  *
  * engine.md 3.3's required "there is more Grid" signal is drawn as the weight of that rectangle's
- * four sides, not overlaid on them (canon 2.19, the owner's "'---' UI, and '===' for the map edge"): a
- * side with more Grid to scroll to is the frame's own line drawn dim, and a side that has actually
- * reached the Grid's own edge is drawn heavy — a wall, not merely a border. Heavy is a real glyph
- * where the pack has one (`=`, or the box-drawing heavy lines) plus `bold`; ASCII has no heavier
- * vertical bar, so its vertical heavy is `|` carried by `bold` alone (`open-questions.md` Q56).
+ * four sides, not overlaid on them: a side with more Grid to scroll to is the frame's own line drawn
+ * dim, and a side that has actually reached the Grid's own edge is a **solid bar** — an inverse-video
+ * cell, a wall rather than merely a border, the same weight in every glyph pack and in monochrome
+ * (canon 2.21, replacing 2.19's `=` and bold `|`, which ASCII could not make equal; Q56). The west
+ * side is a column of its own beside the menu's plain divider (feedback F17).
  * Everything else — the outer border, the rules where they cross the side panel — never scrolls and
  * is drawn plain.
  */

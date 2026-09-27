@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.21
+**Canon version:** 2.22
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -158,25 +158,24 @@ divider (feedback F17); and the browser playtest page exists, as a development t
 `specs/engine.md` 10.2 and Section 4 below. The Pulse playback's `q` now also finishes the playback
 (F16), which Milestone 6's Pulse-to-Build-Phase handover needed.
 
+**Milestone 5 gate 5G is built and reported (PASS), awaiting Mario's look** (2026-09-27): `d` or
+`[d] debug` in the top bar opens a popup of live experiments — the smart cursor, the scroll margin,
+whether the screen opens on the menu or the map (Q61), and the menu's flash timings — each naming the
+question it serves, changed with Left/Right, restarted with `[r]`, never saved.
+
 The current milestone is **[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md)
 — Build Phase**: can a player place buildings, pick a Nexus upgrade, and scroll a real map, by
-keyboard, mouse and driver alike? Its active gate is **5F — layout and keyboard focus**, now built
-and awaiting Mario's look (`evidence/gate-5f-report.md`): the side
-panel moves to the left of the Grid; Tab moves keyboard focus between the menu and the Grid, with
-arrows and Enter/Space working the menu and a smart cursor that lands on a buildable tile when
-something is armed from it (Q55; where focus goes after a placement is Q57); and the Nexus power pick
-becomes a "Nexus Powers (1)" entry at the top of the menu that opens a popup over the Grid — the
-game's first overlay — never forced open, with "may not be skipped" refusing only the commit. After
-it: **5G**, a `[d] Debug` overlay of live-editable development flags, and **5H**, movement feel — a
-frame timer, held-key speed tiers, a share-of-viewport margin, recentring, eased camera moves
-(Q54, Q58).
+keyboard, mouse and driver alike? Its active gate is **5G — Debug Mode**, now built and awaiting
+Mario's look (`evidence/gate-5g-report.md`). After it: **5H**, movement feel — a frame timer, held-key
+speed tiers, a share-of-viewport margin, recentring, eased camera moves (Q54, Q58), every number a
+Debug Mode flag, and a Debug Mode popup that scrolls.
 
 So the authorised work for a new session is, in order:
 
 1. **whatever the owner's most recent feedback asks for**, if any exists since
    `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
    outstanding or that everything still is;
-2. **Milestone 5 gate 5G, once Mario has looked at 5F** — gate 5F is built; do not start 5G on
+2. **Milestone 5 gate 5H, once Mario has looked at 5G** — gate 5G is built; do not start 5H on
    the strength of the tracker alone. Per its own file — the next gate in the build order
    [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
    order — read that table's build-order column, and take one gate per session unless the owner's
@@ -361,13 +360,12 @@ deleted, and the renderer must be replaceable without one simulation test changi
   artifacts, or pushing directly to `main`.
 - Update `README.md`, `DEVELOPMENT.md`, the dev container, CI, and agent instructions together when
   canonical development commands change.
-- **Show Mario options through Debug Mode, once it exists** (owner direction, 2026-09-26; built at
-  Milestone 5 gate 5G, not before): a `[d] Debug` in-game panel of live-editable flags — a border
-  character, a colour, a timing constant — some applied at once, some on restart. When a session has a
-  genuine fork the owner should feel rather than read about, the preferred move (Section 6's "make it
-  observable") is a Debug Mode field, not a new command-line flag. Every flag names the question it
-  serves and is deleted once the question is answered; a few graduate into real settings. Until gate
-  5G lands, `--scroll-margin`-style flags remain the fallback.
+- **Show Mario options through Debug Mode** (owner direction, 2026-09-26; built at Milestone 5 gate
+  5G): press `d` in the Build Phase for a panel of live-editable flags, some applied at once, some on
+  restart (`src/build/debug.ts` is the list). When a session has a genuine fork the owner should feel
+  rather than read about, the preferred move (Section 6's "make it observable") is a Debug Mode field,
+  not a new command-line flag. Every flag names the question it serves and is deleted once the
+  question is answered; a few graduate into real settings.
 
 ### Write for a person, not for the filing system
 

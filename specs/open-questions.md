@@ -2,7 +2,7 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.21
+**Canon version:** 2.22
 **Updated:** 2026-09-27
 **License:** Apache-2.0
 
@@ -1086,6 +1086,23 @@ than the maximum viewport in a fraction of the cells, which the game has deliber
 **Recommendation: A.** `m` is reserved for it (`engine.md` 9.7) so nothing else takes the key. The
 natural moment is the first mission map that does not fit the maximum viewport, or the first Pulse
 large enough that watching it needs an overview — whichever comes first.
+
+### Q61 — Does the Build Phase open with the keyboard on the menu or on the map?
+
+**Status:** OPEN — OBSERVABLE; a Debug Mode flag ("Opens on"), registered by gate 5G.
+
+Gate 5F opened the Build Phase with the keyboard on the menu, because the owner's eyes went to the
+side panel first (2026-09-26) and its first entry is the Nexus power pick the commit will insist on.
+Nobody decided it; it was the natural reading of "the menu orchestrates the Build Phase". Opening on
+the map would put the cursor in play at once, exploring.
+
+| Option | Cost |
+| --- | --- |
+| A. **The menu** (as built) | One Tab or Right before the first arrow on the map; the Nexus pick is one Enter away |
+| B. The map, exploring | The first thing on screen is the Grid; the menu is one Tab away, and the Nexus pick easier to miss until the commit refuses |
+
+**Recommendation: A**, until Mario has tried both: press `d`, set "Opens on" to map, then `r`. The
+flag is deleted once he answers.
 
 ## 5. Answered
 

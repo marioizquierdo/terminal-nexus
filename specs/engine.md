@@ -2,7 +2,7 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.21
+**Canon version:** 2.22
 **Updated:** 2026-09-27
 **License:** Apache-2.0
 
@@ -1259,7 +1259,13 @@ flags apply at once, some on the next frame, a few need a restart, and the panel
 flag names the question it serves and is deleted once that question is answered**, a few graduating
 into real settings; it is an experiment harness, not a second settings screen. It replaces the
 one-flag-at-a-time `--scroll-margin`/`--edge-style` pattern of gates 5A-5C as the way this project
-shows the owner two answers side by side.
+shows the owner two answers side by side. **Built at gate 5G (canon 2.22):** the flags are Build
+Phase state, per session and never saved; the reducer reads those that change what a command does,
+the live loop reads the timing ones, and a restart row starts the Build Phase over keeping them. The
+entry point is `[d] debug` in the top bar, not the menu. A setting row shows its value between `<`
+and `>`, Left/Right change it, and each half of the value box is a click target. The first five
+flags: the smart cursor (Q55), the scroll margin in tiles (Q54), whether the screen opens on the menu
+or the map (Q61), and how long a menu row's pressed flash and refused flicker last.
 
 **Terminal caveats, verified rather than assumed** (Q37; measured by gate 5A on 2026-09-21,
 `evidence/gate-5a-report.md` Section 4.1 has the table and the ten terminals it could *not* test):
