@@ -217,22 +217,16 @@ confirmations to fade after a few seconds, it rides 5H.
 
 ## Design documents owed an update (for the orchestrator)
 
-Owner direction in this feedback contradicts a few sentences of the design documents. The code follows
-the owner; the documents were not bumped in this round so the orchestrator can do it in one pass:
-
-- `specs/engine.md` 9.7 — "stays armed after placing, so a run of the same structure is one digit
-  followed by arrows and Enter": now every placement returns to the menu, disarmed (F8, Q57 answered).
-- `specs/engine.md` 9.7 bindings table — Esc (one level of back, ending in the exit question), `x` as
-  Esc, `q` asks, Tab/`e`/Right-twice to the map, Enter/Space inspect while exploring, a click that
-  focuses before it activates (F1, F4, F11, F12, F13).
-- `specs/engine.md` 3.3 — the heavy edge is a solid bar on all four sides, replacing `=` and bold `|`
-  (F10, Q56 answered).
-- `specs/engine.md` 9.2 — planned buildings drawn at full strength (F5); the information panel (F12);
-  the popup shape (F11); the empty-group one-liner and the pane-height rule (gate 5F report).
-- `specs/engine.md` 9.4 — a popup is drawn last in the chrome band, no band of its own.
-- `docs/ui-patterns.md` — promote into `engine.md` Section 9 once accepted.
-- `AGENTS.md` Section 4 — the input-model and Build-Phase-panel bullets.
-- `specs/engine.md` 9.2 / 9.7 — the Nexus Powers popup closes on the pick (Q60 answered, 2026-09-27);
-  the map's west side is its own column beside the menu's divider (F17).
+**Done at canon 2.21 (2026-09-27).** The design documents now describe what the code does:
+`specs/engine.md` 3.3 (the solid-bar map edge on all four sides, Q56; the map's west side as its own
+column beside the menu's plain divider, F17; a short map closing on its own edge), 9.2 (planned
+buildings at full strength, F5; the information panel, F12; the one popup shape, F11; the one-line
+empty group; the per-mode key help), 9.4 (a popup drawn last in the chrome band, with no band of its
+own) and 9.7 (the menu orchestrates and every placement returns to it, disarmed, F8 and Q57; the
+bindings table — Esc and `x` as one back, `q` asks, Tab, `[e] Explore`, a second Right, Enter/Space
+inspecting while exploring, a click that focuses before it activates, a click outside a popup; the
+Nexus popup closing on the pick, Q60); and `AGENTS.md` Section 4's input-model and Build Phase panel
+summaries. `docs/ui-patterns.md` is pointed to from `engine.md` Section 9 as the working list, and
+stays unpromoted until the owner accepts it.
 
 The browser playtest page's own rule is already in `specs/engine.md` 10.2 (canon 2.20).

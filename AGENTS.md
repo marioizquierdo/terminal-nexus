@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.20
+**Canon version:** 2.21
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -280,22 +280,35 @@ deleted, and the renderer must be replaceable without one simulation test changi
   bonus — modeled like a small Nexus-power pool but match-scoped rather than dealt each Build Phase.
 - **Every interactive action is a named command.** Keyboard, mouse, and a driver (for agents and
   tests) are three adapters onto one vocabulary; every menu item displays its hotkey and is clickable
-  with identical effect; the driver can inject raw key and mouse events and read the cell frame back.
+  with identical effect — a click moves focus first, so a click on the menu while the keyboard is
+  elsewhere only highlights the row; the driver can inject raw key and mouse events and read the cell
+  frame back.
   **Three bindings are measured rather than assumed** (gate 5A): Shift+Arrow has two live sequence
   families and several terminals send none at all, so a modifier-free fallback is required, not
   optional; and the mouse wheel moves the *cursor* five tiles rather than a camera of its own, because
   a second camera is the pan mode the scrolling rule forbids. **A second click on the same tile places
   the armed structure** — compared by tile, never by screen position, so a click that scrolled the
-  view cannot place on a neighbour (Q52, reversing gate 5A's one-click Q50).
+  view cannot place on a neighbour (Q52, reversing gate 5A's one-click Q50). **Keyboard focus is
+  reducer state, on the menu or the Grid, and the menu orchestrates the Build Phase**: a structure is
+  armed only while the Grid has focus, and every placement returns focus to the menu, disarmed (Q57).
+  **Esc, `x` and a right click are one cancel** that goes back one level — popup, information panel,
+  Grid to menu — and on the menu asks "Exit the game?"; `q` asks the same question, and only Ctrl+C
+  quits at once. Leaving always asks.
 - **The Build Phase panel is the construct menu, what is left to spend, and the selected item's cost
-  and effect** — no radius preview until something has a radius (Q30). **A refused placement is
+  and effect**, under `[n] Nexus` and `[e] Explore` entries at its top — no radius preview until
+  something has a radius (Q30). While exploring, Enter/Space replaces the menu with an **information
+  panel** about what is under the cursor. **Every popup is one shape** — a title and rows as data,
+  options naming the command a click sends, drawn and hit-tested from the same placement — and is
+  drawn last in the `chrome` band, never in a band of its own. **A refused placement is
   answered on the status line, and names its tile**; **affordability is reported before any tile
   problem**. A menu split into groups still shares **one digit sequence**, and an **empty group is
   drawn, not skipped**, so no hotkey moves when content arrives.
 - **The status line is a typed message** — text, a tone, and the tile it is about, if any — never a
   bare string, and a tone resolves onto style roles in one place (`src/view/status.ts`). **The Grid
-  pane is a closed rectangle** whose sides carry the "more Grid this way" signal as weight: light
-  where the view can scroll further, heavy where the map ends.
+  pane is a closed rectangle** whose sides carry the "more Grid this way" signal as weight: a light
+  line where the view can scroll further, a **solid bar** (an inverse-video cell) where the map ends,
+  the same on all four sides and in every glyph pack; its west side is its own column beside the
+  menu's plain divider.
 - **A mission is a sequence of Build Phase / Nexus Pulse cycles driven by triggers.** Simulation
   actions run inside the kernel as validated intents; presentation actions never touch state. A
   scripted Pulse is still a Pulse.
