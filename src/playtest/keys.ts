@@ -110,14 +110,23 @@ function parseStep(token: string): PlaytestStep {
     return { kind: "mouse", label: token, button, target }
   }
 
-  const named = NAMED_KEYS[token.toLowerCase()]
-  const bytes = named ?? ([...token].length === 1 ? token : null)
+  return { kind: "key", label: token, bytes: keyBytes(token) }
+}
+
+/**
+ * The bytes a terminal sends for one key name — the same table a script and the browser playtest
+ * page's keys both go through (`src/web/keys.ts`), so the page's Esc is a script's `Esc`, byte for
+ * byte. Throws on a name it does not know.
+ */
+export function keyBytes(name: string): string {
+  const named = NAMED_KEYS[name.toLowerCase()]
+  const bytes = named ?? ([...name].length === 1 ? name : null)
   if (bytes === null) {
-    throw new Error(`unknown key "${token}" — see src/playtest/keys.ts for the names a script can use`)
+    throw new Error(`unknown key "${name}" — see src/playtest/keys.ts for the names a script can use`)
   }
   // Every step must reach the adapters as exactly one key, or the script is not saying what it
   // appears to say.
   const split = keysFromChunk(bytes)
-  if (split.length !== 1) throw new Error(`"${token}" would arrive as ${split.length} keys, not one`)
-  return { kind: "key", label: token, bytes }
+  if (split.length !== 1) throw new Error(`"${name}" would arrive as ${split.length} keys, not one`)
+  return bytes
 }

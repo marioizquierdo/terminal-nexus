@@ -132,6 +132,10 @@ function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack: Glyph
   verticalLine(layout.dividerColumn, box.top, layout.paneBottom)
 
   const markers = edgeMarkers(state.camera, state.viewport, context.grid)
+  // The Grid's west side is its own column next to the divider. It is drawn only where the map ends
+  // there: beside the plain divider a second, lighter line would read as a double border, so while
+  // there is more Grid to the west the divider alone is the light side, and the column is a gutter.
+  if (!markers.west) verticalLine(box.left, box.top, box.bottom)
   const soft = { dim: true }
   // A side that has reached the map's own edge is a **solid bar** — an inverse-video cell — on all
   // four sides alike (owner, 2026-09-27: "the rectangle needs to be a rectangle"). The `=` / bold `|`
@@ -146,7 +150,14 @@ function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack: Glyph
 
   for (const cell of lines.values()) {
     const { x, y } = cell
-    const alongTopOrBottom = (y === box.top || y === box.bottom) && x > box.left && x < box.right
+    const westGutter = x === box.left && !leftHeavy
+    // While there is more Grid to the west, the divider is the Grid's light west side, drawn soft
+    // like the other three — beside the Grid's rows only; above and below it is the panel's rule.
+    if (x === layout.dividerColumn && !leftHeavy && y > box.top && y < box.bottom) {
+      put(cells, BANDS.chrome, x, y, chromeGlyph(pack, "softVertical"), "chrome.frame", soft)
+      continue
+    }
+    const alongTopOrBottom = (y === box.top || y === box.bottom) && (x > box.left || westGutter) && x < box.right
     const alongLeftOrRight = (x === box.left || x === box.right) && y > box.top && y < box.bottom
     const gridCorner = (x === box.left || x === box.right) && (y === box.top || y === box.bottom)
     if (alongTopOrBottom) {

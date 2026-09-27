@@ -150,11 +150,17 @@ mission's own budget/units decided — accepted 2026-09-12)
 > feedback:** proportional click-scrolling (5H), and a new "placement juice" gate after 5H — per
 > building placement frames, particles, and colour/brightness interpolation on the effect system.
 
+> **Between 5F and 5G (2026-09-27, canon 2.20), built on Mario's word:** the Nexus Powers popup closes
+> on the pick (Q60); the map's west edge is its own column beside a plain menu divider (feedback F17);
+> and a browser playtest page, so gates 5G and 5H can be played from a phone during review
+> (`bun scripts/build-web.mjs`; a development tool, `engine.md` 10.2).
+
 > **Gate 5G: Debug Mode — not yet built.** A `[d] Debug` overlay of live-editable development flags
 > (`engine.md` 9.7): the second overlay, so the overlay shape is extracted here rather than in 5F.
 > First fields: the border glyphs, where focus goes after a placement (Q57, already a context option,
-> `focusAfterPlace`), the smart cursor on/off (Q55, `smartCursor`), whether the Nexus Powers popup
-> closes itself after a pick (Q60), and which focus the screen opens on — the two guesses 5F left. Every flag names the question it serves and is deleted once it is
+> `focusAfterPlace`), the smart cursor on/off (Q55, `smartCursor`), and which focus the screen opens
+> on. (Whether the Nexus Powers popup closes after a pick is answered — it does, Q60 — so it needs no
+> field.) Every flag names the question it serves and is deleted once it is
 > answered.
 
 > **Gate 5H: movement feel — not yet built.** The screen's first frame timer, and what it enables

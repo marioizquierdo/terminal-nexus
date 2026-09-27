@@ -198,16 +198,19 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLay
     column: Math.floor((frame.width - composition.width) / 2),
     row: Math.floor((frame.height - composition.height) / 2),
   }
-  // The side panel on the left (gate 5F; engine.md 9.2): the frame's left border, the panel's 29
-  // columns, the divider, then the Grid pane and the frame's right border — the same 30 columns of
-  // panel-and-divider gate 5A-5E drew on the right, mirrored.
-  const dividerColumn = offset.column + PANEL_COLUMNS
-  const origin = { column: dividerColumn + 1, row: offset.row + 1 + HEADER_ROWS }
+  // The side panel on the left (gate 5F; engine.md 9.2): the frame's left border, the panel's 28
+  // columns, the divider, the Grid rectangle's own west side, then the Grid and the frame's right
+  // border — the same 30 columns of panel and dividers gate 5A-5E drew on the right, mirrored. The
+  // divider and the Grid's west side are two columns, not one (owner, 2026-09-27): shared, the map's
+  // solid "the map ends here" bar sat against the menu text and read as a heavy menu border.
+  const gridLeft = offset.column + PANEL_COLUMNS
+  const dividerColumn = gridLeft - 1
+  const origin = { column: gridLeft + 1, row: offset.row + 1 + HEADER_ROWS }
   const right = offset.column + composition.width - 1
   const gridBox = {
     top: origin.row - 1,
     bottom: origin.row + viewport.height,
-    left: dividerColumn,
+    left: gridLeft,
     right,
   }
   const paneBottom = origin.row + paneHeight

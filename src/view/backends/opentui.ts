@@ -76,9 +76,11 @@ export function drawFrameInto(
 
 export async function createOpenTuiBackend(options: BackendOptions): Promise<NamedBackend> {
   const core: OpenTuiCore = await import("@opentui/core")
+  // OpenTUI drives a real terminal and nothing else, so here the ports are the Node streams they
+  // always are on this path (`ports.ts` describes only what the screen loops themselves use).
   const renderer = await core.createCliRenderer({
-    stdin: options.stdin,
-    stdout: options.stdout,
+    stdin: options.stdin as NodeJS.ReadStream,
+    stdout: options.stdout as NodeJS.WriteStream,
     targetFps: 30,
     exitOnCtrlC: false,
   })

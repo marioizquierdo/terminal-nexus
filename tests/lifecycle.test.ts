@@ -236,6 +236,47 @@ test("quitting with q runs the disposer and restores the terminal", async () => 
   assert.match(stdout.written, /melee-kill  ticks \d+  state sha256:/)
 })
 
+test("q also finishes the playback itself, so whatever ran the Pulse can carry on", async () => {
+  // The bug the browser playtest page found: q restored the terminal, then the loop waited forever
+  // on a promise nothing settled. A terminal hid it (exit ends the process first); anything that runs
+  // a Pulse and then carries on — the page, and later a Pulse handing back to the Build Phase — hung.
+  const scenario = await loadScenarioFile("melee-kill.map.json")
+  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  const timeline = buildTimeline(scenario, loaded.state, loaded.registry, scenario.pulseTicks, scenario.seed)
+  const { stdout, stdin } = fakes()
+  const hooked: Array<() => void> = []
+  const errors: string[] = []
+  const exits: number[] = []
+  const finished = watchPulse({
+    timeline,
+    capability: "monochrome",
+    tileWidth: 1,
+    speed: 1,
+    backend: "ansi",
+    presentation: DEFAULT_PRESENTATION,
+    stdout,
+    stdin,
+    // A host with no process at all — the browser page's shape: no signals, and text, not bytes.
+    host: {
+      onInterrupt: (leave) => {
+        hooked.push(leave)
+        return () => hooked.splice(hooked.indexOf(leave), 1)
+      },
+      exit: (code) => exits.push(code),
+      reportError: (text) => errors.push(text),
+    },
+  })
+  await new Promise((resolve) => setTimeout(resolve, 60))
+  assert.equal(hooked.length, 1, "the host's interrupt hook was not used")
+  stdin.emit("data", "q")
+  const code = await Promise.race([finished, new Promise((resolve) => setTimeout(() => resolve("hung"), 1000))])
+  assert.equal(code, 0, "q did not finish the playback")
+  assert.deepEqual(exits, [0])
+  assert.equal(hooked.length, 0, "the interrupt hook outlived the session")
+  assert.deepEqual(errors, [])
+  assert.equal(stdout.written.match(/state sha256:/gu)?.length, 1, "the hashes were printed twice")
+})
+
 test("an interrupt byte in raw mode ends the session the same way", async () => {
   const { stdout, stdin, exits } = await watchSession((input) => {
     input.emit("data", Buffer.from([3]))

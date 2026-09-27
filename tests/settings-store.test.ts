@@ -7,8 +7,8 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { createSettingsStore, parseSettings } from "../src/settings/store.ts"
-import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
+import { createSettingsStore } from "../src/settings/store.ts"
+import { DEFAULT_SETTINGS, parseSettings } from "../src/settings/types.ts"
 import type { Settings } from "../src/settings/types.ts"
 
 function tempSettingsPath(): { path: string; cleanup: () => void } {

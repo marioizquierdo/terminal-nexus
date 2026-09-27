@@ -636,10 +636,13 @@ function pickNexus(context: BuildContext, state: BuildState, index: number): Bui
   if (state.nexusPick !== null) return { ...state, status: status("Already picked.", "warning") }
   const option = context.nexusDraft[index]
   if (option === undefined) return state
+  // The popup closes on the pick (owner, 2026-09-27 — answering Q60): open, pick, and the player is
+  // back on the menu. The confirmation is the status line and the entry's "1 active".
   return {
     ...state,
     nexusPick: index,
     bonusAllotment: option.bonusAllotment,
+    overlay: state.overlay === "nexus-powers" ? null : state.overlay,
     overlayHighlight: 0,
     status: status(`${option.name} picked.`, "success"),
   }

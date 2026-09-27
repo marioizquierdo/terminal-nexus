@@ -48,6 +48,29 @@ correct canon work never breaks it. What it enforces:
 
 Add a check here whenever you find yourself remembering a rule instead of relying on one.
 
+### Play it in a browser (a phone, during review)
+
+```bash
+bun scripts/build-web.mjs                      # dist/terminal-nexus-playtest.html, about 135 KB
+bun scripts/build-web.mjs --out some/page.html
+```
+
+One self-contained HTML file with the real menu, Build Phase and two Pulse replays, painted on a
+canvas, with an on-screen key bar for the keys a phone keyboard lacks and taps as mouse clicks. It
+opens straight from disk; for a phone, a session publishes it as a private claude.ai page for the pull
+request, with the commit printed at the top of the page. It is **a development tool, not a platform**
+(`specs/engine.md` 10.2): the browser runs the terminal's own three screen loops through a stand-in
+terminal (`src/view/backends/ports.ts`), and adds only a canvas backend
+(`src/view/backends/canvas.ts`), key and tap translation (`src/web/keys.ts`, through the scripted
+playtest's own key names) and browser-stored settings (`src/web/host.ts`, the one file that touches the
+DOM). The build needs Bun and **fails if anything the page reaches imports a Node-only module**;
+`tests/web.test.ts` holds the page to the terminal's characters, colours and keys, and (in the Bun pass)
+runs the bundle in a sandbox with no Node features and requires the same fingerprints Node computes.
+
+What it cannot show: raw keyboard mode, terminal cleanup, signals, real terminals' own key encodings
+(iTerm2's Option key), the OpenTUI backend, or frame timing. Those stay terminal-only, and a terminal
+at 80 x 24 stays the acceptance target.
+
 ### Install, build, test, run
 
 Gate 1A selected the toolchain. There is **no build step**: Node 22.18+ and Bun 1.3+ both execute
@@ -64,7 +87,7 @@ npm install
 # test
 npm test            # Node's runner over tests/*.test.ts
 npm run test:bun    # the same suite under Bun, one file at a time
-npm run typecheck   # tsc --noEmit
+npm run typecheck   # tsc --noEmit, then the browser page's one DOM file against tsconfig.web.json
 
 # run — <map> is a .map.json path, suffix optional; no subcommand, watch is the default action
 ./bin/grid.ts scenarios/citizen-mirror-skirmish                              # watch (the default)
@@ -217,7 +240,7 @@ once** — not just `npm test` — since this class of failure is Bun-only and e
 
 ```bash
 node scripts/playtest.mjs --keys "Down Down Space*4"                  # every step's status, then the final screen
-node scripts/playtest.mjs --keys "n 1 n Tab S-Left*3 Enter" --print all
+node scripts/playtest.mjs --keys "n 1 Tab S-Left*3 Enter" --print all
 node scripts/playtest.mjs --keys "Down Down Space*4" --gif --png final --name hatchery-run
 node scripts/playtest.mjs --file flow.keys --size 104x32 --capability monochrome --png all
 ```

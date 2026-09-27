@@ -1,0 +1,12 @@
+{
+  // The browser playtest page's host (src/web/host.ts) is the one file that uses the DOM, so it is
+  // checked on its own with the browser's types; everything it imports is also checked by the main
+  // tsconfig.json, which leaves the DOM out so nothing else can reach for it by accident.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "resolveJsonModule": true
+  },
+  "include": ["src/web/host.ts"],
+  "exclude": []
+}

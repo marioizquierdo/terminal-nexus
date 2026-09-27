@@ -2,8 +2,8 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.19
-**Updated:** 2026-09-26
+**Canon version:** 2.20
+**Updated:** 2026-09-27
 **License:** Apache-2.0
 
 ## 0. How to read this document
@@ -1266,6 +1266,13 @@ on the same semantic contract.
 
 Every rung above the first is an architectural possibility, not a commitment. None of it is
 authorized by this document.
+
+**The browser playtest page is a development tool, not a rung** (owner, 2026-09-27). It exists so the
+game can be played from a phone during review (`bun scripts/build-web.mjs`, `src/web/`), and it must
+run the terminal's own screen loops — the menu, the Build Phase, Pulse playback — handed a stand-in
+terminal: it converts frames to pixels, taps and keys to terminal bytes, and settings to browser
+storage, and decides nothing about what the game shows or does. A terminal at 80 × 24 stays the
+acceptance target; the page never is one.
 
 ---
 

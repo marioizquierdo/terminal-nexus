@@ -26,7 +26,11 @@ import type {
 } from "../view/index.ts"
 import { AnsiBackend } from "../view/backends/ansi.ts"
 import { selectBackend } from "../view/backends/index.ts"
-import { createTerminalSession } from "./lifecycle.ts"
+import type { NamedBackend } from "../view/backends/index.ts"
+import { chunkText } from "../view/backends/ports.ts"
+import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
+import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
+import type { Host } from "./lifecycle.ts"
 
 const FRAMES_PER_SECOND = 30
 
@@ -37,12 +41,15 @@ export type WatchOptions = Readonly<{
   theme?: Theme
   tileWidth: TileWidth
   speed: number
-  backend: string
+  /** A backend name, or a backend itself (the browser playtest page's canvas). */
+  backend: string | NamedBackend
   presentation: PresentationOptions
   /** `grid --turn` — start playback seeked to this tick instead of tick 0. */
   startTick?: number
-  stdout: NodeJS.WriteStream
-  stdin: NodeJS.ReadStream
+  stdout: TerminalOutput
+  stdin: TerminalInput
+  /** Interrupts, exit and error reporting; a terminal program's `process` unless given. */
+  host?: Host
   /**
    * How the session ends. Injectable so that a test can drive `q`, SIGINT and SIGTERM through the
    * real code path — "every lifecycle path runs the same disposer" is only worth asserting if the
@@ -86,18 +93,28 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
     speed: options.speed,
     ...(options.startTick === undefined ? {} : { startTimeMs: options.startTick * view.tickDurationMs }),
   })
-  let timer: NodeJS.Timeout | null = null
+  let timer: ReturnType<typeof setInterval> | null = null
   let lastRealMs = Date.now()
   let failure: unknown = null
 
-  const session = createTerminalSession()
+  const host = options.host ?? PROCESS_HOST
+  const session = createTerminalSession(host)
   const dispose = session.dispose
 
-  const exit = options.exit ?? ((code: number): void => process.exit(code))
+  const exit = options.exit ?? host.exit
+  // Resolves the playback loop below. Leaving must end it too: without that, `q` restored the
+  // terminal and then waited on a promise nothing would ever settle — invisible in a terminal, where
+  // `exit` ends the process first, and a hang for anything that runs a Pulse and then carries on
+  // (the browser playtest page today; a Pulse handing back to the Build Phase later).
+  let settlePlayback: (() => void) | null = null
+  let leaving = false
   const leave = (): void => {
+    if (leaving) return
+    leaving = true
     void dispose().then(() => {
       stdout.write(`${hashLine(timeline)}\n`)
       exit(0)
+      settlePlayback?.()
     })
   }
 
@@ -117,8 +134,8 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
     playback.fit(stdout.columns ?? 0, stdout.rows ?? 0, required)
   }
 
-  function onKey(data: Buffer): void {
-    for (const key of keysFromChunk(data.toString("utf8"))) {
+  function onKey(data: string | Uint8Array): void {
+    for (const key of keysFromChunk(chunkText(data))) {
       const control = controlForKey(key)
       if (control === "quit") {
         leave()
@@ -135,6 +152,7 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
     stdout.on("resize", onResize)
 
     await new Promise<void>((settle) => {
+      settlePlayback = settle
       timer = setInterval(() => {
         const now = Date.now()
         const elapsed = now - lastRealMs
@@ -172,10 +190,11 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
   }
 
   if (failure !== null) {
-    process.stderr.write(`watch failed: ${String(failure)}\n`)
+    host.reportError(`watch failed: ${String(failure)}\n`)
     return 1
   }
-  stdout.write(`${hashLine(timeline)}\n`)
+  // A `q` already printed the hashes on its way out; the normal end prints them here.
+  if (!leaving) stdout.write(`${hashLine(timeline)}\n`)
   return 0
 }
 

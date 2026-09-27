@@ -75,6 +75,9 @@ why.
 - **A popup holds the keyboard and the mouse** until closed; keys it does not use do nothing.
 - **Questions are popups** — the start-the-Pulse question and the exit question use the same shape.
 - **Nothing opens a popup but the player.**
+- **A choice closes its popup** (Q60, owner 2026-09-27): picking a Nexus power, like answering a
+  question, returns the player to where they were. What the pick did is on the status line and on the
+  menu; reopening the popup shows it listed as active.
 
 ## 6. Panels
 

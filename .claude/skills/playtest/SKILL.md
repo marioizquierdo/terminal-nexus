@@ -14,7 +14,7 @@ after every key with the same composer the live screen uses. No terminal, no tim
 ```bash
 node scripts/playtest.mjs --keys "Down Down Space*4"                 # status per step + final screen
 node scripts/playtest.mjs --keys "Down Down Space*4" --print all     # every step's full screen
-node scripts/playtest.mjs --keys "n 1 n Tab S-Left*5" --png final    # one PNG
+node scripts/playtest.mjs --keys "n 1 Tab S-Left*5" --png final    # one PNG
 node scripts/playtest.mjs --keys "Down Down Space*4" --gif --name hatchery-run
 node scripts/playtest.mjs --file flow.keys --size 104x32 --capability monochrome --png all
 node scripts/playtest.mjs --help
@@ -33,8 +33,8 @@ it is off screen), `click@COL,ROW` clicks a 0-based screen cell; `rclick`, `whee
 the same targets. `#` starts a comment in a `--file`. The table with bytes is at the top of
 `src/playtest/keys.ts`. An unknown name is an error, never a guess.
 
-Useful openings on the `--spike` screen: focus starts on the menu's Nexus Powers row; `n 1 n` picks
-the first Nexus power and closes the popup (budget becomes 130); `Down Down Space` arms the Hatchery
+Useful openings on the `--spike` screen: focus starts on the menu's Nexus Powers row; `n 1` picks
+the first Nexus power, which closes the popup (budget becomes 130); `Down Down Space` arms the Hatchery
 from the menu; a digit arms by hotkey and moves focus to the Grid; `Tab` switches focus.
 
 ## Workflow

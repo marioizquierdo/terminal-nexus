@@ -58,6 +58,11 @@ jobs:
       - name: Test on Bun
         run: npm run test:bun
 
+      # The browser playtest page runs the game's own code; building it fails if anything reachable
+      # from the page imports a Node-only module.
+      - name: Build the browser playtest page
+        run: bun scripts/build-web.mjs
+
       - name: Verify every map resolves identically
         run: |
           for map in scenarios/*.map.json; do

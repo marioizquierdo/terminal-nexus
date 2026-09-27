@@ -90,8 +90,10 @@ test("the side panel is on the left of the Grid at every size in the supported r
     const { layout } = side
     const { lines } = screen(side)
     assert.ok(layout.panelColumn < layout.dividerColumn, `panel left of the divider at ${terminal.columns}`)
-    assert.equal(layout.gridBox.left, layout.dividerColumn, "the divider is the Grid rectangle's west side")
-    assert.equal(layout.origin.column, layout.dividerColumn + 1)
+    // The divider and the Grid's own west side are neighbouring columns (owner, 2026-09-27), so the
+    // map's solid "ends here" bar never sits against the menu text.
+    assert.equal(layout.gridBox.left, layout.dividerColumn + 1, "the Grid's west side is next to the divider")
+    assert.equal(layout.origin.column, layout.gridBox.left + 1)
     assert.equal(layout.gridBox.right, layout.offset.column + layout.composition.width - 1)
     assert.equal(layout.panelRow, layout.origin.row)
     assert.match(lines[layout.panelRow + NEXUS_ROW] as string, /^\s*\| \[n\] Nexus \(1\)/)
@@ -441,7 +443,7 @@ test("with the smart cursor off, a menu arm leaves the cursor where it is", () =
 
 test("the focus flow by keyboard bytes and the same commands from a driver are the same state and frame", () => {
   const byKeyboard = session()
-  keys(byKeyboard, SPACE, DOWN, SPACE, ESC) // open Nexus, pick the second, close
+  keys(byKeyboard, SPACE, DOWN, SPACE) // open Nexus, pick the second, which closes it
   keys(byKeyboard, DOWN, DOWN, SPACE, SPACE) // highlight Barracks, arm, place
   keys(byKeyboard, DOWN, DOWN, SPACE, SPACE) // highlight Turret, arm, place
   keys(byKeyboard, "p", "y")
@@ -450,7 +452,6 @@ test("the focus flow by keyboard bytes and the same commands from a driver are t
     { kind: "activate" },
     { kind: "highlight", delta: 1 },
     { kind: "activate" },
-    { kind: "cancel" },
     { kind: "highlight", delta: 1 },
     { kind: "highlight", delta: 1 },
     { kind: "activate" },
@@ -472,7 +473,7 @@ test("the focus flow by keyboard bytes and the same commands from a driver are t
 
   // And a mouse player clicking the same rows and the same tiles plans the same thing.
   const byMouse = session()
-  keys(byMouse, "n", "2", ESC)
+  keys(byMouse, "n", "2")
   for (const placement of byKeyboard.build.state.planned) {
     const index = SPIKE_CATALOG.findIndex((item) => item.contentId === placement.contentId)
     const row = menuEntryRow(byMouse.layout, SPIKE_CATALOG, { kind: "construct", index }) as number

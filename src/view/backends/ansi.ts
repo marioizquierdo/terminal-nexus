@@ -10,6 +10,7 @@ import type { ReadonlyCellFrame, TerminalBackend } from "../frame.ts"
 import { frameToAnsi } from "../frame.ts"
 import type { CapabilityMode, Theme } from "../roles.ts"
 import { DEFAULT_THEME } from "../roles.ts"
+import type { TerminalInput, TerminalOutput } from "./ports.ts"
 
 const ESC = "\u001b"
 const ALT_SCREEN_ON = `${ESC}[?1049h`
@@ -21,8 +22,8 @@ const CLEAR = `${ESC}[2J`
 const RESET = `${ESC}[0m`
 
 export type AnsiBackendOptions = Readonly<{
-  stdout: NodeJS.WriteStream
-  stdin: NodeJS.ReadStream
+  stdout: TerminalOutput
+  stdin: TerminalInput
   capability: CapabilityMode
   theme?: Theme
 }>
@@ -51,7 +52,7 @@ export class AnsiBackend implements TerminalBackend {
     if (stdout.isTTY) stdout.write(ALT_SCREEN_ON + CURSOR_HIDE + CLEAR)
     if (stdin.isTTY && typeof stdin.setRawMode === "function") {
       stdin.setRawMode(true)
-      stdin.resume()
+      stdin.resume?.()
     }
   }
 
@@ -71,7 +72,7 @@ export class AnsiBackend implements TerminalBackend {
     const { stdout, stdin } = this.options
     if (stdin.isTTY && typeof stdin.setRawMode === "function") {
       stdin.setRawMode(false)
-      stdin.pause()
+      stdin.pause?.()
     }
     if (stdout.isTTY) stdout.write(RESET + CURSOR_SHOW + ALT_SCREEN_OFF)
   }

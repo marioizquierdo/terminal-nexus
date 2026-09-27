@@ -10,7 +10,7 @@
   },
   "scripts": {
     "check": "./scripts/check-repository.sh",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.web.json",
     "test": "./scripts/run-tests.sh node",
     "test:bun": "./scripts/run-tests.sh bun",
     "grid": "node bin/grid.ts",

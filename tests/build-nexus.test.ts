@@ -68,7 +68,7 @@ test("nothing opens the Nexus popup but the player", () => {
   assert.equal(build.state.overlay, "nexus-powers")
 })
 
-test("the popup holds the keyboard until Esc: arrows work its list, and nothing reaches the plan", () => {
+test("the popup holds the keyboard until a pick or Esc: arrows work its list, and nothing reaches the plan", () => {
   const { build, layout } = session()
   build.handleData("1", layout) // arm a barracks, focus on the Grid
   build.handleData("n", layout)
@@ -80,24 +80,29 @@ test("the popup holds the keyboard until Esc: arrows work its list, and nothing 
   // "2" is the popup's own second option — digits address the popup's list while it is open.
   assert.equal(build.state.nexusPick, 1)
   assert.equal(build.state.planned.length, 0)
-  assert.equal(build.state.overlay, "nexus-powers", "picking closed the popup — it closes on Esc")
+  // The pick closes the popup (owner, 2026-09-27 — Q60), and leaves what was behind it as it was.
+  assert.equal(build.state.overlay, null, "picking left the popup open")
   assert.equal(build.state.focus, "grid", "Tab moved focus from behind the popup")
+  assert.equal(build.state.armed, 0, "the pick disarmed what was armed behind the popup")
+  // Esc closes it without a pick, and x is Esc, everywhere.
+  build.handleData("n", layout)
   build.handleData(ESC, layout)
   assert.equal(build.state.overlay, null)
   assert.equal(build.state.armed, 0, "Esc closed the popup and disarmed in the same press")
-  // x is Esc, everywhere.
   build.handleData("n", layout)
   build.handleData("x", layout)
   assert.equal(build.state.overlay, null)
 })
 
-test("the popup picks by Up/Down and Enter too, and lists the pick as active afterwards", () => {
+test("the popup picks by Up/Down and Enter too, closes, and lists the pick as active when reopened", () => {
   const context = spikeContext()
   const { build, layout } = session()
   build.handleData("n", layout)
   build.handleData(`${ESC}[B`, layout)
   build.handleData(" ", layout)
   assert.equal(build.state.nexusPick, 1)
+  assert.equal(build.state.overlay, null)
+  build.handleData("n", layout)
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
   assert.match(text, /NEXUS POWERS/)
   assert.match(text, /Nothing waiting\./)
@@ -311,7 +316,9 @@ test("mouse: inside a popup a click picks or closes; outside it, a click closes 
   const second = popup.rows.filter((row) => row.spec.kind === "option")[2]!
   side.build.handleData(formatMouseEvent(MOUSE_LEFT, popup.textColumn + 6, second.row + 1), side.layout)
   assert.equal(side.build.state.nexusPick, 1)
-  // `[esc]` in the top-right corner closes it.
+  assert.equal(side.build.state.overlay, null, "a pick closes the popup")
+  // `[esc]` in the top-right corner closes it without a pick.
+  side.build.handleData("n", side.layout)
   side.build.handleData(clickPopupCloseBytes(side), side.layout)
   assert.equal(side.build.state.overlay, null)
 
@@ -372,8 +379,7 @@ function clickTileBytes(
 test("the same pick-build-commit script produces an identical state by hotkeys, by clicks, and from a driver script", () => {
   const byKeyboard = session()
   byKeyboard.build.handleData("n", byKeyboard.layout) // open the Nexus Powers
-  byKeyboard.build.handleData("1", byKeyboard.layout) // pick Reserve Fund
-  byKeyboard.build.handleData(ESC, byKeyboard.layout) // close the popup
+  byKeyboard.build.handleData("1", byKeyboard.layout) // pick Reserve Fund, which closes the popup
   byKeyboard.build.handleData("1", byKeyboard.layout) // arm Barracks
   for (let step = 0; step < 12; step += 1) byKeyboard.build.handleData(`${ESC}[C`, byKeyboard.layout)
   byKeyboard.build.handleData(`${ESC}[B`, byKeyboard.layout)
@@ -388,7 +394,6 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   // The screen opens with the keyboard on the menu, so one click on Nexus opens it.
   byMouse.build.handleData(clickNexusEntryBytes(byMouse.layout), byMouse.layout)
   byMouse.build.handleData(clickPopupBytes(byMouse, (c) => c.kind === "pick-nexus" && c.index === 0), byMouse.layout)
-  byMouse.build.handleData(clickPopupCloseBytes(byMouse), byMouse.layout)
   // Digits are the hotkey path both players share; the rest is clicks.
   byMouse.build.handleData("1", byMouse.layout)
   // A click only arms the preview at a tile; a second click on that same tile places it (Q52).
@@ -407,7 +412,6 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   const script: readonly BuildCommand[] = [
     { kind: "open-nexus-powers" },
     { kind: "pick-nexus", index: 0 },
-    { kind: "cancel" },
     { kind: "arm", index: 0 },
     { kind: "move-cursor", dx: 12, dy: 1 },
     { kind: "place" },
