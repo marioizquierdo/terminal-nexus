@@ -11,6 +11,7 @@ import { NO_STATUS, status } from "../status.ts"
 import type { Camera, Viewport } from "./camera.ts"
 import { SCROLL_MARGIN, clampToGrid, followCursor } from "./camera.ts"
 import type {
+  Ack,
   BuildCommand,
   ConstructItem,
   Focus,
@@ -20,15 +21,6 @@ import type {
   PlannedPlacement,
   StandingStructure,
 } from "./types.ts"
-
-/**
- * Where keyboard focus goes after a successful placement — Q57, open. `"origin"` is its
- * recommendation and the default: back to wherever the arming came from (the menu for a
- * menu-driven arm, the Grid for a digit or a click on a row). `"menu"` and `"grid"` are its other two
- * options, always and never. A context field rather than a guess baked in, so gate 5G's Debug Mode
- * can let the owner feel all three.
- */
-export type FocusAfterPlace = "origin" | "menu" | "grid"
 
 /** Everything about the screen that never changes while it is open. Split from the state proper so
  *  the reducer's signature says plainly which half a command can move. */
@@ -56,28 +48,38 @@ export type BuildContext = Readonly<{
    *  Defaults on; off leaves the cursor where it is, which is the comparison gate 5G's Debug Mode
    *  offers. */
   smartCursor?: boolean
-  /** Q57 — see `FocusAfterPlace`. Defaults to its recommendation, `"origin"`. */
-  focusAfterPlace?: FocusAfterPlace
 }>
 
 export type BuildState = Readonly<{
   cursor: Coord
   camera: Camera
   viewport: Viewport
-  /** Index into `catalog`, or `null` for nothing armed. */
+  /**
+   * Index into `catalog`, or `null` for nothing armed. **A structure is armed only while the Grid has
+   * focus** (owner, 2026-09-27): every way focus leaves the Grid — Tab, Esc, a click on the menu, a
+   * placement — disarms, so the screen is always in one of three plain modes: the menu (no cursor),
+   * placing (a row marked armed, the cursor carrying its ghost) or exploring (no row marked, the bare
+   * cursor).
+   */
   armed: number | null
-  /** How the armed item was armed: from the menu's highlight (`activate`), or by its hotkey — a
-   *  digit, or a click on its row. Decides where focus goes after a placement (Q57's "back to
-   *  wherever the arming came from"). Meaningless while nothing is armed. */
-  armedFrom: "menu" | "hotkey"
   /** Which half of the screen the arrow keys and Enter/Space belong to (engine.md 9.7, gate 5F).
    *  Reducer state, not adapter state, so a driver can assert it and the key help can say it. */
   focus: Focus
+  /** Exploring, the side panel shows what is under the cursor instead of the menu — Enter/Space on
+   *  the Grid, or a click on a building. Only ever true while the Grid has focus and nothing is
+   *  armed; Esc closes it first. */
+  inspecting: boolean
+  /** The last thing a command asked to have acknowledged on screen — see `Ack`. */
+  ack: Ack | null
+  /** The previous command was a Right on the menu that only flickered: a second one in a row moves
+   *  focus to the Grid. Cleared by any other command. */
+  nudged: boolean
   /** Index into `menuEntries(context)` — the side panel's highlighted entry. Drawn only while the
    *  menu has focus; kept while it does not, so Tab returns to the same row. */
   menuHighlight: number
-  /** The overlay drawn over the Grid and holding the keyboard, or `null`. Never opened by anything
-   *  but the player (owner, 2026-09-26). */
+  /** The popup drawn over the Grid and holding the keyboard and mouse, or `null`: the Nexus powers,
+   *  the start-the-Pulse question (`p` — "the one action that must not fire by accident", engine.md
+   *  9.7), or the exit question. Never opened by anything but the player. */
   overlay: Overlay | null
   /** Index into the popup's pending powers — its own highlight, reset whenever it opens. */
   overlayHighlight: number
@@ -85,13 +87,6 @@ export type BuildState = Readonly<{
   /** The one line of feedback the status line shows: what just happened, or why it did not. A
    *  message about a tile (`status.tile`, a refused placement) lapses once the cursor leaves it. */
   status: StatusMessage
-  /** The tile a placement just succeeded on, or `null`. Set by a successful `place()`; cleared the
-   *  moment the cursor actually moves off it (`withCursor`), or anything changes what that tile
-   *  means — a fresh `arm`, a `disarm`, a `remove` or an `undo`. While it matches the cursor, a
-   *  repeated place is a no-op and the preview shows the plan undisturbed, rather than recomputing
-   *  "occupied by itself" as a refusal — the false "just failed" reading an owner playtest found
-   *  confusing (2026-09-26). */
-  justPlacedAt: Coord | null
   nextOrdinal: number
   /** Index into `context.nexusDraft`, or `null` before a pick. A Nexus power, once dealt, may not be
    *  skipped (`commander-armies.md` Section 4.5), so the **commit** is refused until this stops being
@@ -102,10 +97,6 @@ export type BuildState = Readonly<{
    *  folded into a mutated allotment, for the same reason `spent` is summed rather than tracked: one
    *  stored total is one number that can drift from what actually produced it. */
   bonusAllotment: number
-  /** `p` was pressed and the Build Phase is waiting on `[y]es`/`[n]o` — "the one action that must
-   *  not fire by accident" (engine.md 9.7). Every other state-changing command is refused while this
-   *  is true, so answering the prompt is the only way forward. */
-  confirmingCommit: boolean
   /** The Build Phase is done. Nothing here reaches a Nexus Pulse — Milestone 6 builds that — so this
    *  just freezes the plan and says so; every state-changing command is refused from here on. */
   committed: boolean
@@ -150,7 +141,9 @@ export function createBuildState(
     camera: followCursor({ x: 0, y: 0 }, start, viewport, context.grid, marginOf(context)),
     viewport,
     armed: null,
-    armedFrom: "hotkey",
+    inspecting: false,
+    ack: null,
+    nudged: false,
     // The menu, on its first entry — the side panel is where the owner's eyes went first (2026-09-26),
     // and the first entry is the Nexus Powers one, so Enter from a standing start opens the choice
     // the commit will eventually insist on.
@@ -160,11 +153,9 @@ export function createBuildState(
     overlayHighlight: 0,
     planned: [],
     status: NO_STATUS,
-    justPlacedAt: null,
     nextOrdinal: 1,
     nexusPick: null,
     bonusAllotment: 0,
-    confirmingCommit: false,
     committed: false,
   }
 }
@@ -184,8 +175,8 @@ export function createBuildState(
  */
 function editLock(state: BuildState): StatusMessage | null {
   if (state.committed) return status("The Build Phase is committed.", "warning")
-  if (state.confirmingCommit) return status("Answer the Nexus Pulse prompt first: [y]es or [n]o.", "warning")
-  if (state.overlay !== null) return status("Close Nexus Powers first: [esc].", "warning")
+  if (state.overlay === "confirm-commit") return status("Answer the Nexus Pulse prompt first: [y]es or [n]o.", "warning")
+  if (state.overlay !== null) return status("Close the popup first: [esc].", "warning")
   return null
 }
 
@@ -194,7 +185,7 @@ function editLock(state: BuildState): StatusMessage | null {
 function commitLock(state: BuildState): StatusMessage | null {
   const edit = editLock(state)
   if (edit !== null) return edit
-  if (state.nexusPick === null) return status("Pick a Nexus power first: [n] Nexus Powers.", "warning")
+  if (state.nexusPick === null) return status("Pick a Nexus power first: [n] Nexus.", "warning")
   return null
 }
 
@@ -204,13 +195,20 @@ function commitLock(state: BuildState): StatusMessage | null {
  * can never disagree about how many there are.
  */
 export function menuEntries(context: BuildContext): readonly MenuEntry[] {
-  return [{ kind: "nexus" }, ...context.catalog.map((_, index) => ({ kind: "construct" as const, index }))]
+  return [
+    { kind: "nexus" },
+    { kind: "explore" },
+    ...context.catalog.map((_, index) => ({ kind: "construct" as const, index })),
+  ]
 }
 
-/** The menu entry a construct row is — so arming by digit moves the highlight onto its row, and Tab
- *  back to the menu lands where the player's attention already is. */
-function entryOfConstruct(index: number): number {
-  return index + 1
+/** How many entries sit above the construct rows. */
+const ENTRIES_BEFORE_CONSTRUCT = 2
+
+/** The menu entry a construct row is — so arming by digit moves the highlight onto its row, and focus
+ *  back on the menu lands where the player's attention already is. */
+export function entryOfConstruct(index: number): number {
+  return index + ENTRIES_BEFORE_CONSTRUCT
 }
 
 /** The Nexus powers as the popup shows them: those still waiting to be picked (a draft of several,
@@ -465,17 +463,13 @@ export function smartCursorTile(
  * What Enter would do right now with the armed structure, derived in one place: `place()` acts on
  * it, and the view draws it — the ghost under the cursor, the status line's live refusal, the panel's
  * effect line. "What you see is what Enter does" is then one function rather than several copies
- * that have to agree (they once disagreed about the budget, and later about the tile just built on).
+ * that have to agree (they once disagreed about the budget).
  */
 export type ArmedPreview = Readonly<{
   item: ConstructItem
   footprint: readonly Coord[]
   anchor: Coord
-  /** The cursor is still on the tile this item was just placed on: Enter does nothing there, and the
-   *  view lets the dimmed plan show through rather than recomputing "occupied by itself". */
-  justPlaced: boolean
-  /** Why Enter would be refused here, or `null` when it would place — or, on the just-placed tile,
-   *  do nothing at all. */
+  /** Why Enter would be refused here, or `null` when it would place. */
   refusal: Refusal | null
 }>
 
@@ -488,16 +482,13 @@ export function armedPreview(context: BuildContext, state: BuildState): ArmedPre
   if (item === undefined) return null
   const footprint = context.registry.get(item.contentId).footprint
   const anchor = anchorForCursor(state.cursor, footprint)
-  const justPlaced = state.justPlacedAt !== null && sameTile(state.justPlacedAt, state.cursor)
   // The same call, budget and all, whichever side is asking.
-  const legality = justPlaced
-    ? null
-    : legalityAt(context, state.planned, item.contentId, anchor, remaining(context, state))
+  const legality = legalityAt(context, state.planned, item.contentId, anchor, remaining(context, state))
   const refusal: Refusal | null =
-    legality === null || legality.ok
+    legality.ok
       ? null
       : { reason: legality.reason, ...(legality.tile === undefined ? {} : { tile: legality.tile }) }
-  return { item, footprint, anchor, justPlaced, refusal }
+  return { item, footprint, anchor, refusal }
 }
 
 /** The planned placement covering this tile, if any — what Backspace removes. */
@@ -524,32 +515,38 @@ function withCursor(context: BuildContext, state: BuildState, tile: Coord): Buil
   // cursor now is — so a refusal left behind after the cursor moves away disagrees with what is drawn
   // above it. Every other message is about the last action rather than a tile, and stays until the
   // next one — and so does a tile-scoped one when the cursor did not actually move: pressing further
-  // into the Grid's own edge is clamped back to the same tile, which is not "the cursor left the tile
-  // this was about."
+  // into the Grid's own edge is clamped back to the same tile.
   const lapsed = moved && state.status.tile !== undefined
   return {
     ...state,
     cursor,
     camera: followCursor(state.camera, cursor, state.viewport, context.grid, marginOf(context)),
     status: lapsed ? NO_STATUS : state.status,
-    justPlacedAt: moved ? null : state.justPlacedAt,
   }
 }
 
-/** Q57: where focus goes once a placement succeeds. Its recommendation, the default, sends it back to
- *  wherever the arming came from — so the menu-driven flow ("down, down, space, place, space,
- *  place") and the digit-then-arrows fast path both keep working. */
-function focusAfterPlacing(context: BuildContext, state: BuildState): Focus {
-  const rule = context.focusAfterPlace ?? "origin"
-  if (rule === "menu" || rule === "grid") return rule
-  return state.armedFrom === "menu" ? "menu" : "grid"
+/** The next acknowledgement: a new sequence number, so the live loop sees a fresh one even when two
+ *  in a row are for the same row. */
+function acknowledge(state: BuildState, kind: Ack["kind"], entry: number): Ack {
+  return { seq: (state.ack?.seq ?? 0) + 1, kind, entry }
+}
+
+/** Gives the keyboard to the menu. A structure is armed only while the Grid has focus, so this
+ *  disarms, and the information panel — a Grid-side view — closes with it. */
+function toMenu(state: BuildState): BuildState {
+  return { ...state, focus: "menu", armed: null, inspecting: false }
+}
+
+/** Gives the keyboard to the Grid, exploring: nothing armed. */
+function toGridExploring(state: BuildState): BuildState {
+  return { ...state, focus: "grid", armed: null, inspecting: false }
 }
 
 /**
- * Arms catalog row `index`: the one path a digit, a click on the row and the menu's own Enter/Space
- * share. Focus moves to the Grid, where the placing happens, and the menu highlight follows the row,
- * so Tab or Esc back to the menu lands on what was just armed. Only a menu-driven arm moves the
- * cursor (Q55): a digit is the fast path of a player already pointing somewhere.
+ * Arms catalog row `index`: the one path a digit and the menu's own Enter/Space share. Focus moves to
+ * the Grid, where the placing happens, and the menu highlight follows the row. Only a menu-driven arm
+ * moves the cursor (Q55): a digit is the fast path of a player already pointing somewhere. A row that
+ * costs more than is left is refused here, with the reason, rather than armed to be refused later.
  */
 function armItem(
   context: BuildContext,
@@ -561,15 +558,25 @@ function armItem(
   if (lock !== null) return { ...state, status: lock }
   const item = context.catalog[index]
   if (item === undefined) return state
+  const entry = entryOfConstruct(index)
+  const left = remaining(context, state)
+  if (item.cost > left) {
+    // A disabled row: the key was understood, and nothing happens — the row flickers and the status
+    // line says why, affordability first (engine.md 9.2).
+    return {
+      ...state,
+      menuHighlight: entry,
+      ack: acknowledge(state, "refused", entry),
+      status: status(refusalText({ reason: `costs ${item.cost}, ${left} left` }), "warning"),
+    }
+  }
   const armed: BuildState = {
     ...state,
     armed: index,
-    armedFrom: from,
     focus: "grid",
-    menuHighlight: entryOfConstruct(index),
-    // A fresh arm always re-evaluates its own tile rather than inheriting a suppression the last
-    // armed item earned — a different (or re-picked) item at this tile is a new question.
-    justPlacedAt: null,
+    inspecting: false,
+    menuHighlight: entry,
+    ack: acknowledge(state, "pressed", entry),
   }
   const smart =
     from === "menu" && context.smartCursor !== false
@@ -579,26 +586,53 @@ function armItem(
   return { ...moved, status: status(`${item.label} selected - ${item.cost} to build.`) }
 }
 
-/** Enter/Space on the menu: whatever the highlighted entry is for. */
-function activateMenu(context: BuildContext, state: BuildState): BuildState {
-  const entry = menuEntries(context)[state.menuHighlight]
-  if (entry === undefined) return state
-  if (entry.kind === "nexus") return openNexusPowers(state)
-  return armItem(context, state, entry.index, "menu")
+/** Enter/Space (or a click) on menu entry `entry`: whatever it is for. */
+function activateEntry(context: BuildContext, state: BuildState, entry: number): BuildState {
+  const target = menuEntries(context)[entry]
+  if (target === undefined) return state
+  const highlighted: BuildState = { ...state, menuHighlight: entry }
+  if (target.kind === "construct") return armItem(context, highlighted, target.index, "menu")
+  if (target.kind === "nexus") return openNexus(highlighted)
+  return explore(highlighted)
 }
 
-function openNexusPowers(state: BuildState): BuildState {
-  // Reading the powers does not edit the plan, but the commit question and a committed Build Phase
-  // each own the whole screen, and a popup over either would be a second question on top of one.
-  if (state.committed || state.confirmingCommit) return { ...state, status: editLock(state) ?? state.status }
-  return { ...state, overlay: "nexus-powers", overlayHighlight: 0 }
+/** `n`, or the Nexus entry: open its popup. Its row flashes "pressed", however it was reached — a
+ *  hotkey is the row's own activation, the same as Enter on it or a click. */
+function openNexus(state: BuildState): BuildState {
+  const opened = openOverlay(state, "nexus-powers")
+  if (opened.overlay !== "nexus-powers") return opened
+  return { ...opened, menuHighlight: 0, ack: acknowledge(state, "pressed", 0) }
+}
+
+/** `e`, or the Explore entry: the Grid, with nothing armed. */
+function explore(state: BuildState): BuildState {
+  if (state.overlay !== null || state.committed) return state
+  return {
+    ...toGridExploring(state),
+    menuHighlight: 1,
+    ack: acknowledge(state, "pressed", 1),
+    status: status("Exploring - arrows move, enter/space inspects."),
+  }
+}
+
+function openOverlay(state: BuildState, overlay: Overlay): BuildState {
+  // The start-the-Pulse question and a committed Build Phase each own the whole screen; a popup over
+  // either would be a second question on top of one. The exit question is the one exception: it can
+  // always be asked.
+  if (overlay !== "exit") {
+    const lock = state.committed || state.overlay === "confirm-commit" ? editLock(state) : null
+    if (lock !== null) return { ...state, status: lock }
+  }
+  return { ...state, overlay, overlayHighlight: 0 }
 }
 
 function pickNexus(context: BuildContext, state: BuildState, index: number): BuildState {
   // Defensively guarded like every other command: a driver script is free to send one anywhere, and
-  // the answer must be the same refusal a player pressing an unavailable key gets. An open popup is
-  // where a pick is normally made, so unlike the edits it is not a reason to refuse one.
-  if (state.committed || state.confirmingCommit) return { ...state, status: editLock(state) ?? state.status }
+  // the answer must be the same refusal a player pressing an unavailable key gets. An open Nexus popup
+  // is where a pick is normally made, so it is not a reason to refuse one.
+  if (state.committed || state.overlay === "confirm-commit" || state.overlay === "exit") {
+    return { ...state, status: editLock(state) ?? state.status }
+  }
   if (state.nexusPick !== null) return { ...state, status: status("Already picked.", "warning") }
   const option = context.nexusDraft[index]
   if (option === undefined) return state
@@ -616,42 +650,46 @@ function place(context: BuildContext, state: BuildState): BuildState {
   if (lock !== null) return { ...state, status: lock }
   const preview = armedPreview(context, state)
   if (preview === null) {
-    return { ...state, status: status("Nothing armed - press a construct menu key first.", "warning") }
+    return { ...state, status: status("Nothing armed - pick something to build from the menu first.", "warning") }
   }
-  // The tile a placement just succeeded on absorbs a repeated place entirely rather than re-placing
-  // or recomputing a refusal against the plan's own last entry — the false "just failed" reading an
-  // owner playtest found confusing. Nothing changes at all until the cursor actually moves.
-  if (preview.justPlaced) return state
   if (preview.refusal !== null) {
     // Refused, and nothing moved. Silently sliding a structure to the nearest legal tile is the one
-    // failure this check exists to prevent: the player would learn nothing and get a plan they did
-    // not draw. The message is about this tile, so it lapses when the cursor leaves it — and its
-    // "danger" tone is how the status line tells an attempt apart from merely looking: hovering an
-    // illegal tile reads the same sentence quietly, trying to build there reads it in red.
+    // failure this check exists to prevent. The message is about this tile, so it lapses when the
+    // cursor leaves it — and its "danger" tone is how the status line tells an attempt apart from
+    // merely looking.
     return { ...state, status: status(refusalText(preview.refusal), "danger", state.cursor) }
   }
   const { item, anchor } = preview
-  return {
+  const placed: BuildState = {
     ...state,
-    focus: focusAfterPlacing(context, state),
-    planned: [
-      ...state.planned,
-      { ordinal: state.nextOrdinal, contentId: item.contentId, anchor },
-    ],
+    planned: [...state.planned, { ordinal: state.nextOrdinal, contentId: item.contentId, anchor }],
     nextOrdinal: state.nextOrdinal + 1,
-    justPlacedAt: state.cursor,
-    // Still armed: engine.md 9.7's own fast path, "a run of the same structure is one digit
-    // followed by arrows and Enter."
-    status: status(
-      `${shortName(context, item.contentId)} planned at ${state.cursor.x},${state.cursor.y} for ${item.cost}.`,
-      "success",
-    ),
+  }
+  // Back to the menu, always (owner, 2026-09-27 — answering Q57): the menu orchestrates the Build
+  // Phase, and the Grid cursor is for placing and exploring. Disarms with it.
+  return {
+    ...toMenu(placed),
+    status: status(`${item.label} placed (resources: ${remaining(context, placed)}) - [u] undo`, "success"),
   }
 }
 
+/** The one "back" of the screen — Esc, `x`, a right click. One level per press. */
+function cancel(context: BuildContext, state: BuildState): BuildState {
+  if (state.overlay === "confirm-commit") return { ...state, overlay: null, status: status("Cancelled.") }
+  if (state.overlay !== null) return { ...state, overlay: null }
+  if (state.committed) return openOverlay(state, "exit")
+  if (state.focus === "grid") {
+    if (state.inspecting) return { ...state, inspecting: false }
+    const wasArmed = state.armed !== null
+    return { ...toMenu(state), status: wasArmed ? status("Cancelled.") : state.status }
+  }
+  void context
+  return openOverlay(state, "exit")
+}
+
 /**
- * One command, applied. `back` and `quit` pass through untouched — leaving the screen is not a
- * Build Phase concern, and the session that owns the disposer decides what either means, exactly as
+ * One command, applied. `quit` passes through untouched — leaving the screen is not a Build Phase
+ * concern, and the session that owns the disposer decides what it means, exactly as
  * `src/menu/list.ts` already does for the menu.
  */
 export function applyBuildCommand(
@@ -659,6 +697,14 @@ export function applyBuildCommand(
   state: BuildState,
   command: BuildCommand,
 ): BuildState {
+  // A Right on the menu that only flickered arms the next Right to move focus; anything else between
+  // the two cancels that.
+  const base: BuildState =
+    state.nudged && !(command.kind === "nudge" && command.direction === "right") ? { ...state, nudged: false } : state
+  return applyCommand(context, base, command)
+}
+
+function applyCommand(context: BuildContext, state: BuildState, command: BuildCommand): BuildState {
   switch (command.kind) {
     case "move-cursor":
       return withCursor(context, state, {
@@ -667,33 +713,48 @@ export function applyBuildCommand(
       })
 
     case "click-tile": {
-      // Two clicks, not one — Q52 (2026-09-26), reversing gate 5A's own Q50. A click on a tile that
-      // is not already where the cursor sits only moves the cursor there and shows the armed preview,
-      // exactly like arriving by arrow keys; a second click **on that same tile** is what places, by
-      // simply calling `place()` once the cursor is already there. Checked against `state.cursor`
-      // (tile identity) rather than the click's own screen cell, which is what makes this safe against
-      // the exact asymmetry Q50's own writeup found unsafe: a first click within the scroll margin can
-      // slide the Grid under the pointer, so a second click at the same *screen position* can resolve
-      // to a different *tile* — and correctly reads here as a fresh first click, not a wrong placement.
       const target = clampToGrid({ x: command.x, y: command.y }, context.grid)
-      const confirming = state.armed !== null && target.x === state.cursor.x && target.y === state.cursor.y
-      // A click on the Grid is attention on the Grid: it takes keyboard focus there too, so the next
-      // arrow press moves the cursor that was just clicked rather than a menu highlight.
+      // A click outside an open popup closes it and brings focus to where it landed — and does
+      // nothing else, so a click meant to dismiss never also places or picks (owner, 2026-09-27).
+      if (state.overlay !== null) {
+        if (state.overlay === "confirm-commit" || state.committed) return { ...state, overlay: null }
+        return withCursor(context, { ...state, overlay: null, focus: "grid", armed: state.armed }, target)
+      }
+      if (state.committed) return state
+      // Two clicks, not one — Q52. A click on a tile that is not already where the cursor sits only
+      // moves the cursor there and shows the armed preview; a second click **on that same tile** is
+      // what places. Checked against `state.cursor` (tile identity), never the click's screen cell.
+      const confirming =
+        state.focus === "grid" && state.armed !== null && target.x === state.cursor.x && target.y === state.cursor.y
+      // A click on the Grid is attention on the Grid: it takes keyboard focus there too.
       const moved = { ...withCursor(context, state, target), focus: "grid" as const }
-      return confirming ? place(context, moved) : moved
+      if (confirming) return place(context, moved)
+      if (moved.armed !== null) return moved
+      // Exploring: a click on a building opens its information panel; a click on bare ground closes it.
+      return { ...moved, inspecting: structureCovering(context, moved.planned, target) }
+    }
+
+    case "click-menu": {
+      if (state.committed) return state
+      // A click anywhere outside a popup dismisses it first — and only that, plus focus.
+      if (state.overlay !== null) {
+        if (state.overlay === "confirm-commit") return { ...state, overlay: null, status: status("Cancelled.") }
+        return { ...toMenu({ ...state, overlay: null }), menuHighlight: command.entry }
+      }
+      // A first click on the menu while the keyboard is elsewhere only brings focus and highlights.
+      if (state.focus !== "menu") return { ...toMenu(state), menuHighlight: command.entry }
+      return activateEntry(context, state, command.entry)
     }
 
     case "arm":
       return armItem(context, state, command.index, "hotkey")
 
-    case "disarm":
-      // Esc on the Grid, and a right click: cancel, and give the keyboard back to the menu (Q57 — the
-      // same "cancel" Esc already was, one level further). With nothing armed, only the focus moves.
-      if (state.armed === null) return state.focus === "menu" ? state : { ...state, focus: "menu" }
-      return { ...state, armed: null, justPlacedAt: null, focus: "menu", status: status("Disarmed.") }
-
     case "place":
       return place(context, state)
+
+    case "inspect":
+      if (state.focus !== "grid" || state.armed !== null || state.overlay !== null) return state
+      return { ...state, inspecting: true }
 
     case "remove": {
       const lock = editLock(state)
@@ -703,9 +764,6 @@ export function applyBuildCommand(
       return {
         ...state,
         planned: state.planned.filter((placement) => placement.ordinal !== target.ordinal),
-        // The plan changed under the cursor, so "just placed here" no longer describes this tile —
-        // left set, the next Enter here would be silently absorbed instead of placing again.
-        justPlacedAt: null,
         status: status(`${shortName(context, target.contentId)} removed, ${costOf(context, target.contentId)} back.`),
       }
     }
@@ -718,10 +776,15 @@ export function applyBuildCommand(
       return {
         ...state,
         planned: state.planned.slice(0, -1),
-        justPlacedAt: null,
         status: status(`${shortName(context, last.contentId)} undone, ${costOf(context, last.contentId)} back.`),
       }
     }
+
+    case "cancel":
+      return cancel(context, state)
+
+    case "request-exit":
+      return openOverlay(state, "exit")
 
     case "pick-nexus":
       return pickNexus(context, state, command.index)
@@ -729,17 +792,17 @@ export function applyBuildCommand(
     case "commit": {
       const lock = commitLock(state)
       if (lock !== null) return { ...state, status: lock }
-      return { ...state, confirmingCommit: true, status: status("Start Nexus Pulse? [y]es / [n]o") }
+      return { ...toMenu(state), overlay: "confirm-commit", status: status("Start the Nexus Pulse? [y]es / [n]o") }
     }
 
     case "confirm-commit": {
       // Meaningless outside the one moment it answers — a stray "y" is not a command here any more
       // than a stray "3" is one before anything is armed.
-      if (!state.confirmingCommit) return state
-      if (!command.accept) return { ...state, confirmingCommit: false, status: status("Cancelled.") }
+      if (state.overlay !== "confirm-commit") return state
+      if (!command.accept) return { ...state, overlay: null, status: status("Cancelled.") }
       return {
         ...state,
-        confirmingCommit: false,
+        overlay: null,
         committed: true,
         status: status(
           `Build committed - ${state.planned.length} planned, Nexus Pulse would begin here (Milestone 6).`,
@@ -749,39 +812,73 @@ export function applyBuildCommand(
     }
 
     case "focus":
-      // An open overlay holds the keyboard until it is closed (engine.md 9.7).
-      if (state.overlay !== null || state.focus === command.target) return state
-      return { ...state, focus: command.target }
+      if (state.overlay !== null || state.committed || state.focus === command.target) return state
+      return command.target === "menu" ? toMenu(state) : toGridExploring(state)
 
     case "highlight": {
-      if (state.overlay !== null) {
+      if (state.overlay === "nexus-powers") {
         const count = nexusPowers(context, state).pending.length
         return { ...state, overlayHighlight: wrap(state.overlayHighlight + command.delta, count) }
       }
+      if (state.overlay !== null || state.focus !== "menu") return state
       const count = menuEntries(context).length
       return { ...state, menuHighlight: wrap(state.menuHighlight + command.delta, count) }
     }
 
     case "activate": {
-      if (state.overlay === null) return activateMenu(context, state)
-      const pending = nexusPowers(context, state).pending[state.overlayHighlight]
-      if (pending === undefined) return { ...state, status: status("No Nexus power waiting.", "warning") }
-      return pickNexus(context, state, pending.index)
+      if (state.overlay === "nexus-powers") {
+        const pending = nexusPowers(context, state).pending[state.overlayHighlight]
+        if (pending === undefined) return { ...state, status: status("No Nexus power waiting.", "warning") }
+        return pickNexus(context, state, pending.index)
+      }
+      if (state.overlay !== null || state.focus !== "menu" || state.committed) return state
+      return activateEntry(context, state, state.menuHighlight)
+    }
+
+    case "nudge": {
+      if (state.focus !== "menu" || state.overlay !== null || state.committed) return state
+      if (command.direction === "right" && state.nudged) return { ...toGridExploring(state), nudged: false }
+      return {
+        ...state,
+        nudged: command.direction === "right",
+        ack: acknowledge(state, "refused", state.menuHighlight),
+      }
     }
 
     case "open-nexus-powers":
-      return openNexusPowers(state)
+      return openNexus(state)
 
-    case "close-overlay":
-      return state.overlay === null ? state : { ...state, overlay: null }
+    case "explore":
+      return explore(state)
 
-    case "back":
     case "quit":
       return state
 
     default:
       return state
   }
+}
+
+/** Whether a structure — standing or planned — covers this tile. */
+export function structureCovering(context: BuildContext, planned: readonly PlannedPlacement[], tile: Coord): boolean {
+  return structureAtTile(context, planned, tile) !== null
+}
+
+/** The structure covering a tile, standing or planned, or `null` — what the information panel shows. */
+export function structureAtTile(
+  context: BuildContext,
+  planned: readonly PlannedPlacement[],
+  tile: Coord,
+): Readonly<{ contentId: string; anchor: Coord; planned: boolean }> | null {
+  const plannedHere = plannedAt(context, planned, tile)
+  if (plannedHere !== null) return { contentId: plannedHere.contentId, anchor: plannedHere.anchor, planned: true }
+  for (const structure of context.standing) {
+    const footprint = context.registry.get(structure.contentId).footprint
+    if (tilesOf(structure.anchor, footprint).some((t) => sameTile(t, tile))) {
+      return { contentId: structure.contentId, anchor: structure.anchor, planned: false }
+    }
+  }
+  return null
 }
 
 /**

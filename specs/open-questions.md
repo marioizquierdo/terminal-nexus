@@ -1042,69 +1042,6 @@ focus, and speed-tier mechanics first — they are what the owner actually asked
 and scope the smart-cursor heuristic as its own small follow-up once there is a real focus-toggle mode
 for it to trigger from.
 
-### Q56 — The heavy border's vertical glyph, and whether a corner reacts to it
-
-**Status:** OBSERVABLE — built as recommended in gate 5E (canon 2.19): ASCII's heavy side is a bold
-`|`, the Unicode pack's is `┃`, and the Grid rectangle's corners read heavy only when the whole Grid
-is visible. Blocks nothing; awaiting the owner's look in his own terminal —
-`evidence/screenshots/build-grid-edge.png` is the picture to compare against, and gate 5G's Debug
-Mode panel is the place to try another glyph if bold alone reads too faintly.
-
-`engine.md` 3.3 now says a border side that has actually reached the Grid's own edge reads as a
-heavier, doubled run — `=` for a horizontal (top/bottom) run, the owner's own example. The ASCII pack
-has no equally clean doubled *vertical* bar: a real doubled-bar character (`‖`/`║`) is not ASCII,
-contradicting the pack's own "everything here is one cell wide, ASCII-safe is the baseline" premise
-(`theme.ts`); `#` is already `terrain.rock`'s glyph and would read as rock on the very same screen;
-`H` reads as a letter, not a line. Separately, the four corners are drawn as a single plain glyph
-today regardless of the sides beside them (`drawChrome`'s own comment: a soft run "never looks broken
-at the point itself"); once a side can read *heavy*, a `+` corner meeting a doubled `=` run is a real
-weight mismatch exactly where the eye rests first on a rectangle.
-
-| Option | Cost |
-| --- | --- |
-| A. **Leave verticals as plain `|` even when heavy**, accepting an asymmetry between axes | Simplest; but a Grid that fits the viewport (every side heavy at once) would read heavy on top/bottom and ordinary on the sides, undercutting the "one visual statement" the whole point of the whole-grid-heavy case is |
-| B. **Reuse a different existing glyph for a heavy vertical** — e.g. two adjacent `|` is impossible in one cell, but a bold/inverse attribute on the ordinary `|` could carry the same "heavier" idea without a new character, at the cost of leaning on colour/attribute rather than shape (this project's own preference is shape that survives monochrome) | Keeps ASCII-only and one-cell-wide; whether attribute-only "heavy" reads as clearly as a doubled character is unverified |
-| C. **Give the Unicode pack a clean answer (heavy box-drawing characters, e.g. `━`/`┃`) and accept the ASCII pack simply has no heavy vertical**, leaving it plain there | The Unicode pack is not the acceptance target; ASCII stays the floor, so this leaves the floor with the asymmetry option A already costs |
-
-**Recommendation: B**, tried as a comparison against A rather than argued — attribute-only weight is
-cheap to build and screenshot beside the horizontal `=`, and this project already prefers observable
-comparisons to a guessed pick (Section 2 of this register). Corners: give the whole-Grid-heavy case
-(only) its own corner glyph too, since that is the one case where all four sides agree and the visual
-mismatch is most visible; leave corners exactly as today whenever sides merely differ between light
-and heavy, since the existing reasoning for a plain corner there still holds.
-
-### Q57 — After a placement, where does keyboard focus go — and what returns it to the menu?
-
-**Status:** OPEN — **built in gate 5F under the recommendation** (option C, below; Esc returns focus,
-disarming on the way; Backspace stays "remove"). Options A and B are `BuildContext.focusAfterPlace`
-values (`"menu"`, `"grid"`), one Debug Mode field away in gate 5G. The owner's feel decides it.
-
-Two statements in canon pull opposite ways once focus exists. `engine.md` 9.7's fast path — **the
-armed item stays armed after placing, so a run is one digit followed by arrows and Enter** — assumes
-arrows keep moving the Grid cursor after a placement. The owner's own sketch of the focus toggle
-(2026-09-26) returns focus to the menu after every placement: "then the focus comes back to the menu,
-the user can click enter/space again to build another building". If focus always returns to the
-menu, the second arrow press of the fast path moves the menu highlight instead of the cursor, and the
-path a proficient player types without looking breaks. Separately, the same sketch returns focus with
-"esc or delete" — but the Mac key labelled delete sends Backspace, which is already "remove the
-planned structure under the cursor", so one key cannot mean both.
-
-| Option | Cost |
-| --- | --- |
-| A. **Always back to the menu** after a placement, as sketched | The keyboard-only flow reads exactly as described; the digit-then-arrows fast path breaks on its second placement, which is the one flow canon calls the proficient player's |
-| B. **Always stay on the Grid** | The fast path is untouched; the menu-driven flow needs a Tab or an Esc after every placement to pick again, which is what the sketch was trying to remove |
-| C. **Back to wherever the arming came from**: arming from the menu (highlight, then Enter/Space) returns focus to the menu after a placement; arming by digit (or a click on a row) keeps focus on the Grid | Both flows work as their users expect; the rule is one more thing to explain, and the key help must show where focus is — which convention 1 (`engine.md` 9.7) already demands once arrows can mean two things |
-
-For the key that returns focus: **Esc** (disarm, and back to the menu — the same "cancel" it already
-is), Tab (toggle), and a right click (which is already Esc). Backspace stays "remove under the
-cursor" in both focuses.
-
-**Recommendation: C**, with A and B as a Debug Mode choice so the owner can feel all three rather
-than read about them. C keeps the one path canon promised a proficient player while delivering the
-flow the owner sketched, and with gate 5F's smart cursor (Q55) the sketched flow needs no arrow keys
-at all: down, down, space arms and lands the cursor on a free tile, space places and returns to the
-menu, space arms again at the next free tile, and so on.
-
 ### Q58 — Should a click with something armed be allowed to scroll the view?
 
 **Status:** OPEN — blocks nothing today; gate 5H decides it while it widens the scroll margin, which
@@ -1180,6 +1117,8 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q30 | 2026-09-21 | **A, built.** The Build Phase panel is the construct menu, what is left to spend, the selected item's cost and effect, and the reason a placement was refused — and **no radius preview**, because nothing in the content that exists has a radius. Gate 5B built exactly the recommendation and the panel came out shorter than gate 5A's, not longer: the blocks it replaced were reporting things already visible on the Grid | [`engine.md`](engine.md) Section 9.2; [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md) |
 | Q50 | 2026-09-21 | **A click places the armed structure — no second click to confirm.** Mario, shown both behaviours side by side: "Click to place looks good to me too. We can always implement undo or destroy later, for now this is good." (Undo and remove already exist: `u` and Backspace.) The toggle is deleted rather than kept as a setting. **Revisited 2026-09-26, see Q52** | [`engine.md`](engine.md) Section 9.7, whose own recommendation this confirms; [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md) |
 | Q52 | 2026-09-26 | **Reversed: a second click on the same tile places it, not the first.** Owner, after living with gate 5D's build: "the building is placed right away, but there should be a confirmation... the default should require a second click." A future `Shift+click` is planned as a one-click escape hatch, not built now. Q50's own asymmetry finding (a first click can scroll the camera, so a second click at the same *screen position* lands on a different *tile*) is what makes this safe to re-adopt: the check is on tile identity, not screen position | [`engine.md`](engine.md) Section 9.7 |
+| Q56 | 2026-09-27 | **A solid bar, on all four sides.** Owner, after playing gate 5F: "The grid borders need to also use the 'thick' version horizontally... it should use something that is more clear... The rectangle needs to be a rectangle." A side that has reached the map's edge is drawn as an inverse-video cell — the same weight horizontally and vertically, in every glyph pack and in monochrome — and a corner is solid where a solid side runs into it. Replaces the `=` / bold `|` pair gate 5E built | `../src/view/build.ts` (`drawChrome`); `engine.md` 3.3 owes the update (`../docs/feedback/2026-09-27-build-phase-playtest.md`, F10) |
+| Q57 | 2026-09-27 | **A — always back to the menu**, reversing the recommendation gate 5F built. Owner: "I like keeping that as the main orchestrator, so when a building is placed, the focus should always come back to the menu." A placement also disarms: a building is armed only while the map has focus. Esc returns focus to the menu (and on the menu asks "Exit the game?"); Backspace stays "remove". The digit path is now "digit, arrows, Enter" per building | `../src/build/state.ts` (`place`); `engine.md` 9.7 owes the update (`../docs/feedback/2026-09-27-build-phase-playtest.md`, F8) |
 | Q1 | 2026-08-20 | **Tile width is adaptive presentation capability**: one column per tile in the 80x24 composition, two columns per tile at 128 columns or wider. Same tiles, same actors, same revealed information — only the composition changes. The 80x24 floor is preserved and the concept art's look is reachable on a wide terminal | [`engine.md`](engine.md) Section 9.3 |
 | Q2 | 2026-08-20 | **One resource.** Salvage recovers the same resource rather than a second one. Nexus energy is a state readout, not a currency. A second resource is an addition a later microgame may earn; it is not assumed | [`engine.md`](engine.md) Section 6 |
 | Q3 | 2026-08-20 | **Units may span multiple tiles.** Large units are a normal, strategically important case, not a later extension — a Ravel raider drawn `>x<` is one unit occupying three tiles. The collision system tests a mover's whole footprint against its mask; damage and destruction apply to the entity, not the tile | [`engine.md`](engine.md) Section 3.5 |
@@ -1652,6 +1591,67 @@ Milestone 1 was refocused onto the Pulse and delivery left the milestone altoget
 [`../milestones/milestone-01-grid-battles.md`](../milestones/milestone-01-grid-battles.md) carries the gate structure;
 [`project-governance.md`](project-governance.md) Section 5 carries delivery as its own gated
 workstream.
+
+### Q56 — answered
+
+**Question:** Q56 — The heavy border's vertical glyph, and whether a corner reacts to it
+
+**Status:** ANSWERED 2026-09-27 — a solid bar on all four sides, at the owner's direction (the Answered table above has the decision). The original entry follows.
+
+`engine.md` 3.3 now says a border side that has actually reached the Grid's own edge reads as a
+heavier, doubled run — `=` for a horizontal (top/bottom) run, the owner's own example. The ASCII pack
+has no equally clean doubled *vertical* bar: a real doubled-bar character (`‖`/`║`) is not ASCII,
+contradicting the pack's own "everything here is one cell wide, ASCII-safe is the baseline" premise
+(`theme.ts`); `#` is already `terrain.rock`'s glyph and would read as rock on the very same screen;
+`H` reads as a letter, not a line. Separately, the four corners are drawn as a single plain glyph
+today regardless of the sides beside them (`drawChrome`'s own comment: a soft run "never looks broken
+at the point itself"); once a side can read *heavy*, a `+` corner meeting a doubled `=` run is a real
+weight mismatch exactly where the eye rests first on a rectangle.
+
+| Option | Cost |
+| --- | --- |
+| A. **Leave verticals as plain `|` even when heavy**, accepting an asymmetry between axes | Simplest; but a Grid that fits the viewport (every side heavy at once) would read heavy on top/bottom and ordinary on the sides, undercutting the "one visual statement" the whole point of the whole-grid-heavy case is |
+| B. **Reuse a different existing glyph for a heavy vertical** — e.g. two adjacent `|` is impossible in one cell, but a bold/inverse attribute on the ordinary `|` could carry the same "heavier" idea without a new character, at the cost of leaning on colour/attribute rather than shape (this project's own preference is shape that survives monochrome) | Keeps ASCII-only and one-cell-wide; whether attribute-only "heavy" reads as clearly as a doubled character is unverified |
+| C. **Give the Unicode pack a clean answer (heavy box-drawing characters, e.g. `━`/`┃`) and accept the ASCII pack simply has no heavy vertical**, leaving it plain there | The Unicode pack is not the acceptance target; ASCII stays the floor, so this leaves the floor with the asymmetry option A already costs |
+
+**Recommendation: B**, tried as a comparison against A rather than argued — attribute-only weight is
+cheap to build and screenshot beside the horizontal `=`, and this project already prefers observable
+comparisons to a guessed pick (Section 2 of this register). Corners: give the whole-Grid-heavy case
+(only) its own corner glyph too, since that is the one case where all four sides agree and the visual
+mismatch is most visible; leave corners exactly as today whenever sides merely differ between light
+and heavy, since the existing reasoning for a plain corner there still holds.
+
+### Q57 — answered
+
+**Question:** Q57 — After a placement, where does keyboard focus go — and what returns it to the menu?
+
+**Status:** ANSWERED 2026-09-27 — A, "always back to the menu", at the owner's direction, reversing the recommendation below (the Answered table above has the decision). The original entry follows.
+
+Two statements in canon pull opposite ways once focus exists. `engine.md` 9.7's fast path — **the
+armed item stays armed after placing, so a run is one digit followed by arrows and Enter** — assumes
+arrows keep moving the Grid cursor after a placement. The owner's own sketch of the focus toggle
+(2026-09-26) returns focus to the menu after every placement: "then the focus comes back to the menu,
+the user can click enter/space again to build another building". If focus always returns to the
+menu, the second arrow press of the fast path moves the menu highlight instead of the cursor, and the
+path a proficient player types without looking breaks. Separately, the same sketch returns focus with
+"esc or delete" — but the Mac key labelled delete sends Backspace, which is already "remove the
+planned structure under the cursor", so one key cannot mean both.
+
+| Option | Cost |
+| --- | --- |
+| A. **Always back to the menu** after a placement, as sketched | The keyboard-only flow reads exactly as described; the digit-then-arrows fast path breaks on its second placement, which is the one flow canon calls the proficient player's |
+| B. **Always stay on the Grid** | The fast path is untouched; the menu-driven flow needs a Tab or an Esc after every placement to pick again, which is what the sketch was trying to remove |
+| C. **Back to wherever the arming came from**: arming from the menu (highlight, then Enter/Space) returns focus to the menu after a placement; arming by digit (or a click on a row) keeps focus on the Grid | Both flows work as their users expect; the rule is one more thing to explain, and the key help must show where focus is — which convention 1 (`engine.md` 9.7) already demands once arrows can mean two things |
+
+For the key that returns focus: **Esc** (disarm, and back to the menu — the same "cancel" it already
+is), Tab (toggle), and a right click (which is already Esc). Backspace stays "remove under the
+cursor" in both focuses.
+
+**Recommendation: C**, with A and B as a Debug Mode choice so the owner can feel all three rather
+than read about them. C keeps the one path canon promised a proficient player while delivering the
+flow the owner sketched, and with gate 5F's smart cursor (Q55) the sketched flow needs no arrow keys
+at all: down, down, space arms and lands the cursor on a free tile, space places and returns to the
+menu, space arms again at the next free tile, and so on.
 
 ### Q30 — answered
 

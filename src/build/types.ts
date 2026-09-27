@@ -46,84 +46,90 @@ export type BuildCommand =
   /** Arrows, and the five-tile jump: one command, a different distance. */
   | Readonly<{ kind: "move-cursor"; dx: number; dy: number }>
   /**
-   * A click on a Grid tile: move the cursor there, and if the cursor was *already* there with a
-   * structure armed, place it — a second click on the same tile, not the first. What a click *does*
-   * lives in the reducer rather than in the mouse adapter, so the driver reproduces it exactly.
+   * A click on a Grid tile. What it does is the reducer's to decide, from what is on screen — so the
+   * driver reproduces a click exactly (engine.md 9.7):
    *
-   * Gate 5A shipped this as a single-click-places toggle against a click-then-confirm alternative,
-   * and Mario chose single-click after trying both (Q50, answered 2026-09-21). Q52 (2026-09-26)
-   * reversed that, after living with it in real play: "the building is placed right away, but there
-   * should be a confirmation... the default should require a second click." Safe to re-adopt despite
-   * Q50's own asymmetry finding (a first click can scroll the camera, so a second click at the same
-   * *screen position* can land on a different *tile*) because the check is on tile identity, never
-   * screen position — see `open-questions.md` Q52 for the full reasoning.
+   * - with a popup open, it closes the popup and moves focus and the cursor there — nothing more;
+   * - otherwise it moves focus to the Grid and the cursor to the tile; with a structure armed and the
+   *   cursor *already* on that tile, it places (a second click on the same tile — Q52, compared by
+   *   tile, never by screen position); exploring, a click on a building opens its information panel.
    */
   | Readonly<{ kind: "click-tile"; x: number; y: number }>
-  /** Arm item *n* of the construct menu — a digit, or a click on the row. Stays armed after
-   *  placing, so a run of the same structure is one digit then arrows and Enter. Moves focus to the
-   *  Grid and leaves the cursor where it is: this is the fast path of a player who is already
-   *  pointing. Arming from the menu's own highlight (`activate`) is the other path, and moves the
-   *  cursor for them (Q55). */
+  /**
+   * A click on menu entry *n* (an index into `menuEntries`). With the keyboard elsewhere — the Grid,
+   * or a popup — it only brings focus to the menu and highlights the row; with the keyboard already
+   * on the menu it activates the row, exactly as Enter would (owner, 2026-09-27: a first click on the
+   * menu "should simply highlight a menu option").
+   */
+  | Readonly<{ kind: "click-menu"; entry: number }>
+  /** Arm item *n* of the construct menu — its digit, from anywhere. Moves focus to the Grid and leaves
+   *  the cursor where it is: the fast path of a player already pointing. */
   | Readonly<{ kind: "arm"; index: number }>
-  | Readonly<{ kind: "disarm" }>
-  /** Place the armed structure at the cursor — Enter. */
+  /** Place the armed structure at the cursor — Enter or Space on the Grid while something is armed. */
   | Readonly<{ kind: "place" }>
+  /** Enter or Space on the Grid while exploring: open (or refresh) the information panel for what is
+   *  under the cursor. */
+  | Readonly<{ kind: "inspect" }>
   /** Remove the planned, uncommitted placement under the cursor — Backspace or Delete. */
   | Readonly<{ kind: "remove" }>
   | Readonly<{ kind: "undo" }>
-  /** Leave this screen for whatever it was reached from — Esc with nothing armed, or right-click. */
-  | Readonly<{ kind: "back" }>
+  /**
+   * Esc, `x` and a right click: step back one level — close a popup, close the information panel,
+   * give the keyboard back to the menu (disarming), and on the menu ask whether to exit. One command
+   * for every way of saying "back", so they cannot drift apart (owner, 2026-09-27: "it should be
+   * equivalent to do [esc], and x").
+   */
+  | Readonly<{ kind: "cancel" }>
+  /** Leave the screen. Only the exit question's `[q]` (or Ctrl+C) sends it; the session decides what
+   *  leaving means. */
   | Readonly<{ kind: "quit" }>
-  /** Pick Nexus power *n* of the draft — a digit or a click while the Nexus Powers popup is open.
-   *  The one other place digits address a list, per engine.md 9.7: "select item n of the panel's
-   *  current list — construct menu, Nexus draft, or a menu screen's options." */
+  /** `q` anywhere but the exit question: ask it, rather than quit outright and lose a plan. */
+  | Readonly<{ kind: "request-exit" }>
+  /** Pick Nexus power *n* — a digit or a click while the Nexus popup is open. */
   | Readonly<{ kind: "pick-nexus"; index: number }>
-  /** `p` — open the one confirmation before committing. Refused, not a no-op, while a Nexus power
-   *  is still waiting to be picked — the only command that is (gate 5F) — or after the Build Phase
-   *  is already committed. */
+  /** `p` — ask, in a popup, whether to start the Nexus Pulse. Refused while a Nexus power is still
+   *  waiting to be picked — the one thing that pick refuses. */
   | Readonly<{ kind: "commit" }>
-  /** `y`/`n`, or Esc for `n` — resolve the confirmation `commit` opened. Anything else leaves it
-   *  open, which is what makes committing "the one action that must not fire by accident". */
+  /** `y`/`n` (or a click on either) inside the start-the-Pulse popup. */
   | Readonly<{ kind: "confirm-commit"; accept: boolean }>
-  /**
-   * Move keyboard focus to the side panel's menu or to the Grid — Tab (gate 5F, engine.md 9.7's Tab
-   * row). Named by target rather than as a toggle, so a driver script says where it means focus to be
-   * and a repeated one is harmless; the keyboard adapter turns Tab into whichever target is the other.
-   */
+  /** Tab, and a second Right on the menu: move keyboard focus. To the Grid it arrives exploring; to the
+   *  menu it disarms (a building is armed only while the Grid has focus). */
   | Readonly<{ kind: "focus"; target: Focus }>
-  /** Up/Down while the menu (or an open overlay) has focus: move its highlight one entry, wrapping at
-   *  both ends the way `src/menu/list.ts` already does on the game menu. */
+  /** Up/Down on the menu or inside a popup's list: move its highlight, wrapping at both ends. */
   | Readonly<{ kind: "highlight"; delta: -1 | 1 }>
-  /**
-   * Enter/Space while the menu (or an open overlay) has focus: do what the highlighted entry is for —
-   * open the Nexus Powers popup, arm a construct row, or, inside the popup, pick the highlighted
-   * power. Resolved by the reducer against its own highlight, so the driver never has to know which
-   * row is where.
-   */
+  /** Enter/Space on the menu or inside a popup's list: do what the highlighted entry is for. */
   | Readonly<{ kind: "activate" }>
-  /** The "Nexus Powers" entry's own letter, `n`, or a click on it: open the popup. Only ever the
-   *  player's own action — nothing opens it for them (owner, 2026-09-26). */
+  /** Left/Right on the menu: nothing to do there, so the row flickers to say the key arrived; a second
+   *  Right in a row moves focus to the Grid (owner, 2026-09-27). */
+  | Readonly<{ kind: "nudge"; direction: "left" | "right" }>
+  /** `n`, or activating the Nexus entry: open the Nexus popup. */
   | Readonly<{ kind: "open-nexus-powers" }>
-  /** Esc, `n` again, a right click or the popup's own `[esc] Close` row: close whatever overlay is
-   *  open. */
-  | Readonly<{ kind: "close-overlay" }>
+  /** `e`, or activating the Explore entry: focus to the Grid with nothing armed. */
+  | Readonly<{ kind: "explore" }>
 
-/** Which half of the screen the arrow keys and Enter/Space belong to (engine.md 9.7, gate 5F). The
- *  digit hotkeys ignore it: a digit arms its row from anywhere. */
+/** Which half of the screen the arrow keys and Enter/Space belong to. The digit hotkeys ignore it. */
 export type Focus = "menu" | "grid"
 
 /**
- * One entry of the side panel's menu, in the order Up/Down walk it: the "Nexus Powers" entry first —
- * the owner asked for it at the top — then the construct rows in hotkey order. The menu highlight is
- * an index into this list (`menuEntries` in `state.ts`), so every construct row keeps its digit.
+ * One entry of the side panel's menu, in the order Up/Down walk it: Nexus, Explore, then the
+ * construct rows in hotkey order. The menu highlight is an index into this list (`menuEntries` in
+ * `state.ts`), so every construct row keeps its digit.
  */
 export type MenuEntry =
   | Readonly<{ kind: "nexus" }>
+  | Readonly<{ kind: "explore" }>
   | Readonly<{ kind: "construct"; index: number }>
 
-/** The overlays this screen has. One so far; gate 5G's Debug Mode is the second, and the shape they
- *  share is extracted there, not here. */
-export type Overlay = "nexus-powers"
+/** The popups this screen has — one overlay shape, three questions (`src/build/overlay.ts`). */
+export type Overlay = "nexus-powers" | "confirm-commit" | "exit"
+
+/**
+ * What the last command wants acknowledged on screen — a brief "pressed" flash on the row it
+ * activated, or a flicker on the row that had nothing to do (owner, 2026-09-27). The reducer records
+ * it with a sequence number and no clock; the live loop shows it for a few frames from the moment it
+ * first sees a new `seq`, so timing stays in the adapter and the reducer stays pure.
+ */
+export type Ack = Readonly<{ seq: number; kind: "pressed" | "refused"; entry: number }>
 
 /** A structure the player has planned but not committed. Nothing here ever reaches the kernel: a
  *  plan is a plan on a screen, and gate 5D is what turns one into a commit. */

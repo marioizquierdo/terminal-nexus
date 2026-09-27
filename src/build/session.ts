@@ -8,7 +8,7 @@
 
 import { keysFromChunk } from "../view/playback.ts"
 import type { BuildLayout } from "./layout.ts"
-import { nexusPopupLayout } from "./layout.ts"
+import { overlaySpec, placeOverlay } from "./overlay.ts"
 import type { Viewport } from "./camera.ts"
 import { buildKeyboardCommand } from "./keyboard.ts"
 import { buildMouseCommand, parseMouseEvent } from "./mouse.ts"
@@ -21,22 +21,17 @@ export type BuildSessionOptions = Readonly<{
   context: BuildContext
   cursor: Coord
   viewport: Viewport
-  /** Esc with nothing armed, or a right click with nothing armed: leave this screen for whatever it
-   *  was reached from. What that means is the caller's business. */
-  onBack?: () => void
   onQuit?: () => void
 }>
 
 export class BuildSession {
   private buildState: BuildState
   private readonly context: BuildContext
-  private readonly onBack: () => void
   private readonly onQuit: () => void
 
   constructor(options: BuildSessionOptions) {
     this.context = options.context
     this.buildState = createBuildState(options.context, options.cursor, options.viewport)
-    this.onBack = options.onBack ?? ((): void => {})
     this.onQuit = options.onQuit ?? ((): void => {})
   }
 
@@ -48,10 +43,6 @@ export class BuildSession {
   dispatch(command: BuildCommand): void {
     if (command.kind === "quit") {
       this.onQuit()
-      return
-    }
-    if (command.kind === "back") {
-      this.onBack()
       return
     }
     this.buildState = applyBuildCommand(this.context, this.buildState, command)
@@ -72,21 +63,18 @@ export class BuildSession {
   handleKey(key: string, layout: BuildLayout): void {
     const mouse = parseMouseEvent(key)
     const state = this.buildState
-    const pendingCount = nexusPowers(this.context, state).pending.length
+    const spec = overlaySpec(this.context, state)
     const command =
       mouse !== null
         ? buildMouseCommand(mouse, state.camera, layout, this.context.catalog, {
-            ...(state.overlay === null
-              ? {}
-              : { popup: nexusPopupLayout(layout, pendingCount, nexusPowers(this.context, state).active.length) }),
-            confirming: state.confirmingCommit,
+            ...(spec === null ? {} : { overlay: placeOverlay(layout, spec) }),
           })
         : buildKeyboardCommand(key, {
             itemCount: this.context.catalog.length,
             armed: state.armed !== null,
             focus: state.focus,
-            ...(state.overlay === null ? {} : { overlayPendingCount: pendingCount }),
-            confirming: state.confirmingCommit,
+            overlay: state.overlay,
+            overlayPendingCount: nexusPowers(this.context, state).pending.length,
           })
     if (command !== null) this.dispatch(command)
   }

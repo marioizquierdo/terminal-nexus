@@ -50,7 +50,7 @@ export type BuildPlaytest = Readonly<{
   frames: readonly PlaytestFrame[]
   /** Set when the script left the screen (`q`, or Esc with nothing armed); the steps after that one
    *  were not run, because there is no screen left for them to reach. */
-  ended: Readonly<{ by: "quit" | "back"; atStep: number; skipped: number }> | null
+  ended: Readonly<{ by: "quit"; atStep: number; skipped: number }> | null
 }>
 
 export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
@@ -65,14 +65,11 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   }
   const layout = buildLayout(terminal, context.grid)
 
-  let leftBy: "quit" | "back" | null = null
+  let leftBy: "quit" | null = null
   const build = new BuildSession({
     context,
     cursor: options.cursor ?? SPIKE_START_CURSOR,
     viewport: layout.viewport,
-    onBack: () => {
-      leftBy = "back"
-    },
     onQuit: () => {
       leftBy = "quit"
     },

@@ -86,14 +86,16 @@ test("launching enters the alternate screen, raw mode, and turns mouse reporting
   assert.ok(stdout.written.includes("RESOURCE"), "never drew a first frame")
 })
 
-test("q, an interrupt byte, and Esc with nothing armed all reach the one disposer", async () => {
-  for (const [name, bytes] of [
-    ["q", Buffer.from("q")],
-    ["an interrupt byte", Buffer.from([3])],
-    ["esc", Buffer.from(ESC)],
+test("q then q, an interrupt byte, and Esc then q all reach the one disposer", async () => {
+  // q and Esc ask "Exit the game?" first (owner, 2026-09-27) — its [q] is what leaves; Ctrl+C leaves
+  // outright. Each arrives as its own read, the way a person's separate key presses do.
+  for (const [name, reads] of [
+    ["q q", [Buffer.from("q"), Buffer.from("q")]],
+    ["an interrupt byte", [Buffer.from([3])]],
+    ["esc q", [Buffer.from(ESC), Buffer.from("q")]],
   ] as const) {
     const { stdout, stdin, exits } = await spikeSession((input) => {
-      input.emit("data", bytes)
+      for (const read of reads) input.emit("data", read)
     })
     assert.deepEqual(exits, [0], `${name} did not end the session`)
     assert.equal(stdin.raw, false, `${name} left the terminal in raw mode`)
@@ -102,20 +104,27 @@ test("q, an interrupt byte, and Esc with nothing armed all reach the one dispose
   }
 })
 
+test("a lone q or Esc only asks — it never leaves the screen by itself", async () => {
+  // engine.md 9.7: Esc "never quits the game by itself"; since the exit question, neither does q.
+  for (const key of ["q", ESC]) {
+    const { stdout, exits } = await spikeSession((input) => {
+      input.emit("data", Buffer.from(key))
+    })
+    assert.deepEqual(exits, [], `${JSON.stringify(key)} left without asking`)
+    assert.ok(stdout.lastWrite.includes("EXIT THE GAME?"), "the exit question was not drawn")
+  }
+})
+
 test("Esc with something armed disarms instead of leaving", async () => {
-  // engine.md 9.7: Esc "never quits the game by itself". Arming first is what makes it a disarm.
   const { stdout, exits } = await spikeSession((input) => {
-    // The screen opens on the Nexus draft — gate 5D — so the first "1" picks its own first option,
-    // and the second is what actually arms a construct item.
-    input.emit("data", Buffer.from("1"))
     input.emit("data", Buffer.from("1"))
     input.emit("data", Buffer.from(ESC))
   })
   assert.deepEqual(exits, [], "Esc quit while a structure was armed")
-  assert.ok(stdout.lastWrite.includes("Disarmed"), "Esc did not disarm")
+  assert.ok(stdout.lastWrite.includes("Cancelled"), "Esc did not disarm")
 })
 
-test("a right click with nothing armed disarms rather than leaving the screen", async () => {
+test("a right click never leaves the screen", async () => {
   const { exits } = await spikeSession((input) => {
     input.emit("data", Buffer.from(`${ESC}[<2;10;10M`))
   })

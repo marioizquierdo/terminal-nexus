@@ -137,6 +137,19 @@ mission's own budget/units decided — accepted 2026-09-12)
 >   active ones read. Never forced open; "may not be skipped" refuses only the commit (`engine.md`
 >   9.7). Its hotkey is a letter, never a digit.
 
+> **Gate 5F, round 2: built and reported (PASS), awaiting Mario's look** —
+> [`../evidence/gate-5f-round-2-report.md`](../evidence/gate-5f-round-2-report.md), from his playtest of
+> 5F (2026-09-27). Every item he sent, and what happened to it, is logged in
+> [`../docs/feedback/2026-09-27-build-phase-playtest.md`](../docs/feedback/2026-09-27-build-phase-playtest.md);
+> the patterns behind them in [`../docs/ui-patterns.md`](../docs/ui-patterns.md). In short: three plain
+> modes (menu, placing, exploring) with one "you are here" each; placing always returns to the menu
+> (Q57 answered); Esc, `x` and right click are one cancel ending in an "Exit the game?" question; a
+> first click highlights, a second activates, a click outside a popup dismisses it; one popup shape for
+> all three questions (the overlay extraction 5G was going to do); an information panel; a solid map
+> edge on all four sides (Q56 answered); `[e] Explore`. **Owed by later gates, from the same
+> feedback:** proportional click-scrolling (5H), and a new "placement juice" gate after 5H — per
+> building placement frames, particles, and colour/brightness interpolation on the effect system.
+
 > **Gate 5G: Debug Mode — not yet built.** A `[d] Debug` overlay of live-editable development flags
 > (`engine.md` 9.7): the second overlay, so the overlay shape is extracted here rather than in 5F.
 > First fields: the border glyphs, where focus goes after a placement (Q57, already a context option,

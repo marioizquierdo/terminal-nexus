@@ -2,9 +2,8 @@
 // (hit-testing) both read, so a click can never target a tile or a row the frame did not draw there.
 // `src/menu/layout.ts` is the same idea for the menu.
 
-import type { MenuLayout } from "../menu/layout.ts"
-import type { MenuItem } from "../menu/types.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
+import { entryOfConstruct } from "./state.ts"
 import type { ConstructGroup, ConstructItem, MenuEntry } from "./types.ts"
 import type { Camera, TerminalSize, TileWidth, Viewport } from "./camera.ts"
 import {
@@ -69,11 +68,12 @@ export type BuildLayout = Readonly<{
   panelBindingsRow: number
 }>
 
-/** The panel's own rows, counted from its first (gate 5F). Row 0 is the "Nexus Powers" entry — the
- *  owner asked for it at the top of the menu; row 2 is what the player has to spend, directly above
+/** The panel's own rows, counted from its first. Rows 0 and 1 are the Nexus and Explore entries — the
+ *  owner asked for both at the top of the menu; row 3 is what the player has to spend, directly above
  *  the costs it is measured against; the construct groups start on row 4. */
 export const NEXUS_ROW = 0
-export const RESOURCE_ROW = 2
+export const EXPLORE_ROW = 1
+export const RESOURCE_ROW = 3
 const CONSTRUCT_FIRST_ROW = 4
 
 /** The order the construct groups are drawn in — `commander-armies.md` Section 2.1's own order: the
@@ -152,6 +152,7 @@ export function menuEntryRow(
   entry: MenuEntry,
 ): number | null {
   if (entry.kind === "nexus") return layout.panelRow + NEXUS_ROW
+  if (entry.kind === "explore") return layout.panelRow + EXPLORE_ROW
   for (const line of constructLines(layout, catalog)) {
     if (line.kind === "item" && line.index === entry.index) return line.row
   }
@@ -159,118 +160,25 @@ export function menuEntryRow(
 }
 
 /**
- * The menu entry at a frame cell, or `null` when the cell hits none. **The whole panel row is the
- * target**, not only its label: since gate 5F a highlighted row is drawn as a bar across the panel's
- * full width, and a row that looks like one bar but only answers on half of it is a row that
- * sometimes ignores a click.
+ * The menu entry at a frame cell, as an index into `menuEntries`, or `null` when the cell hits none.
+ * **The whole panel row is the target**, not only its label: a highlighted row is drawn as a bar
+ * across the panel's full width, and a row that looks like one bar but only answers on half of it is
+ * a row that sometimes ignores a click.
  */
 export function menuEntryAt(
   layout: BuildLayout,
   catalog: readonly ConstructItem[],
   column: number,
   row: number,
-): MenuEntry | null {
+): number | null {
   if (column < layout.panelColumn || column >= layout.panelColumn + layout.panelLimit) return null
-  if (row === layout.panelRow + NEXUS_ROW) return { kind: "nexus" }
+  if (row === layout.panelRow + NEXUS_ROW) return 0
+  if (row === layout.panelRow + EXPLORE_ROW) return 1
   for (const line of constructLines(layout, catalog)) {
-    if (line.kind === "item" && line.row === row) return { kind: "construct", index: line.index }
+    if (line.kind === "item" && line.row === row) return entryOfConstruct(line.index)
   }
   return null
 }
-
-/**
- * The Nexus Powers popup — the game's first overlay (gate 5F), centred over the Grid pane and drawn
- * above everything on it. Its geometry lives here, beside the panel's, because the mouse adapter
- * hit-tests it exactly as it hit-tests a construct row: one function, read by both the composer and
- * the adapter, so a click can never land on an option the frame did not draw there.
- *
- * Deliberately not a general overlay: gate 5G's Debug Mode is the second overlay, and the shape the
- * two share is extracted then, from two real uses rather than one guess.
- */
-export type NexusPopupLayout = Readonly<{
-  box: Readonly<{ left: number; top: number; right: number; bottom: number }>
-  /** Where the popup's own text starts, and how much of it fits on a row. */
-  textColumn: number
-  textLimit: number
-  /** "PICK ONE", or "nothing waiting" under it when the pick is made. */
-  pendingHeadingRow: number
-  /** One per pending power: its hotkey-and-name row. Its description is the row below. */
-  pendingRows: readonly number[]
-  activeHeadingRow: number
-  /** One per active power: its name row. Its description is the row below. */
-  activeRows: readonly number[]
-  /** `[esc] Close`, clickable — the one way out a mouse-only player can see. */
-  closeRow: number
-}>
-
-/** The popup's width: wide enough for a power's name and its one line of description with room to
- *  spare, and never wider than the Grid pane it sits over. */
-const POPUP_WIDTH = 44
-
-export function nexusPopupLayout(
-  layout: BuildLayout,
-  pendingCount: number,
-  activeCount: number,
-): NexusPopupLayout {
-  const paneWidth = layout.gridBox.right - layout.gridBox.left - 1
-  const width = Math.min(POPUP_WIDTH, Math.max(20, paneWidth - 4))
-  // Border, blank, heading, the pending block, blank, heading, the active block, blank, close,
-  // border. An empty block is one row: its "nothing waiting" / "none yet" line.
-  const pendingBlock = Math.max(1, pendingCount * 2)
-  const activeBlock = Math.max(1, activeCount * 2)
-  const height = 1 + 1 + 1 + pendingBlock + 1 + 1 + activeBlock + 1 + 1 + 1
-  // Centred in the pane between the two full-width rules, which is the Grid's own height except on a
-  // Grid shorter than the panel.
-  const paneHeight = layout.paneBottom - layout.gridBox.top - 1
-  const left = layout.gridBox.left + 1 + Math.floor((paneWidth - width) / 2)
-  const top = Math.max(layout.offset.row + 1, layout.gridBox.top + 1 + Math.floor((paneHeight - height) / 2))
-  const textColumn = left + 2
-  const pendingHeadingRow = top + 2
-  const pendingRows = Array.from({ length: pendingCount }, (_, index) => pendingHeadingRow + 1 + index * 2)
-  const activeHeadingRow = pendingHeadingRow + 1 + pendingBlock + 1
-  const activeRows = Array.from({ length: activeCount }, (_, index) => activeHeadingRow + 1 + index * 2)
-  const closeRow = activeHeadingRow + 1 + activeBlock + 1
-  return {
-    box: { left, top, right: left + width - 1, bottom: closeRow + 1 },
-    textColumn,
-    textLimit: width - 4,
-    pendingHeadingRow,
-    pendingRows,
-    activeHeadingRow,
-    activeRows,
-    closeRow,
-  }
-}
-
-/** What a click inside the popup means: a pending power (either of its two rows), the close row, or
- *  nothing. A click outside the popup is `"outside"` — the popup holds the mouse as well as the
- *  keyboard, so the caller ignores it rather than letting it reach the Grid underneath. */
-export type PopupHit =
-  | Readonly<{ kind: "pending"; index: number }>
-  | Readonly<{ kind: "close" }>
-  | Readonly<{ kind: "none" }>
-  | Readonly<{ kind: "outside" }>
-
-export function popupHitAt(popup: NexusPopupLayout, column: number, row: number): PopupHit {
-  const { box } = popup
-  if (column < box.left || column > box.right || row < box.top || row > box.bottom) return { kind: "outside" }
-  if (column < popup.textColumn || column >= popup.textColumn + popup.textLimit) return { kind: "none" }
-  const index = popup.pendingRows.findIndex((first) => row === first || row === first + 1)
-  if (index >= 0) return { kind: "pending", index }
-  if (row === popup.closeRow) return { kind: "close" }
-  return { kind: "none" }
-}
-
-/** The commit confirmation's own two rows — `y`/`n`, never digits, per engine.md 9.7's own line for
- *  `p`: "asks once, [y]es/[n]o." */
-export function confirmLayout(layout: BuildLayout): MenuLayout {
-  return { column: layout.panelColumn, row: layout.panelRow + 2, rowStep: 1 }
-}
-
-export const CONFIRM_ITEMS: readonly MenuItem[] = [
-  { id: "yes", hotkey: "y", label: "Yes, start the Pulse" },
-  { id: "no", hotkey: "n", label: "No, keep building" },
-]
 
 export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLayout {
   const tileWidth = tileWidthFor(terminal, grid)

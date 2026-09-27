@@ -140,6 +140,15 @@ refuses only the commit. Two things were found only by looking at screenshots an
 Grid's menu ran over the bottom bar, and the highlight bar was three colours — and one question was
 registered (Q60: does the popup close itself after a pick?).
 
+**Gate 5F's second round is built and reported (PASS), awaiting Mario's look** (2026-09-27). His
+playtest of 5F became three plain modes (menu, placing, exploring), one cancel (Esc, `x`, right click)
+ending in an exit question, clicks that focus before they activate, one popup shape, an information
+panel, and a solid map edge. **Two documents now carry the interface's rules and the feedback's
+state: [`docs/ui-patterns.md`](docs/ui-patterns.md) — follow it on every new screen — and
+[`docs/feedback/2026-09-27-build-phase-playtest.md`](docs/feedback/2026-09-27-build-phase-playtest.md),
+where every owner item is built, scheduled or contested; an orchestrator session works through what is
+still open there before gate 5G.**
+
 The current milestone is **[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md)
 — Build Phase**: can a player place buildings, pick a Nexus upgrade, and scroll a real map, by
 keyboard, mouse and driver alike? Its active gate is **5F — layout and keyboard focus**, now built

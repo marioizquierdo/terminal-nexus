@@ -11,7 +11,7 @@ import type { BuildSessionOptions } from "../src/build/session.ts"
 import { SPIKE_ALLOTMENT, SPIKE_CATALOG } from "../src/build/catalog.ts"
 import { remaining } from "../src/build/state.ts"
 import { spikeContext } from "../src/cli/spike.ts"
-import { GRID_KEY_HELP, MENU_KEY_HELP, bindingLines, composeBuildFrame } from "../src/view/build.ts"
+import { PLACE_KEY_HELP, EXPLORE_KEY_HELP, MENU_KEY_HELP, bindingLines, composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText, offendingGlyph } from "../src/view/frame.ts"
 import { CAPABILITY_MODES } from "../src/view/roles.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
@@ -103,7 +103,9 @@ test("the Grid pane is a closed rectangle: a line directly above, below, and bes
     const { gridBox, origin, viewport } = layout
     assert.equal(gridBox.top, origin.row - 1, "the top rule sits directly on the Grid's first row")
     assert.equal(gridBox.bottom, origin.row + viewport.height, "the bottom rule directly under its last")
-    const blank = (x: number, y: number): boolean => cellAt(frame, x, y).glyph === " "
+    // A solid (reverse-video) cell is a line too — the heavy edge where the map ends.
+    const blank = (x: number, y: number): boolean =>
+      cellAt(frame, x, y).glyph === " " && cellAt(frame, x, y).style.inverse !== true
     for (let x = gridBox.left + 1; x < gridBox.right; x += 1) {
       assert.ok(!blank(x, gridBox.top), `${glyphPack}: a gap in the top rule at column ${x}`)
       assert.ok(!blank(x, gridBox.bottom), `${glyphPack}: a gap in the bottom rule at column ${x}`)
@@ -115,11 +117,12 @@ test("the Grid pane is a closed rectangle: a line directly above, below, and bes
     // The rules meet the frame and the divider in a real junction, not a line running past them. The
     // divider starts at the top rule rather than crossing it (gate 5F: the top bar runs the whole
     // width), so its top end is a tee, not a crossing.
-    const junctions = glyphPack === "ascii" ? ["+", "+", "+", "+"] : ["┬", "┤", "┤", "┴"]
-    assert.equal(cellAt(frame, gridBox.left, gridBox.top).glyph, junctions[0])
-    assert.equal(cellAt(frame, gridBox.right, gridBox.top).glyph, junctions[1])
-    assert.equal(cellAt(frame, gridBox.right, gridBox.bottom).glyph, junctions[2])
-    assert.equal(cellAt(frame, gridBox.left, gridBox.bottom).glyph, junctions[3])
+    // Here the view touches the map's west edge, so the west side and its corners are the solid bar;
+    // the east corners, where no heavy side meets, are real junctions.
+    const junctions = glyphPack === "ascii" ? ["+", "+"] : ["┤", "┤"]
+    assert.equal(cellAt(frame, gridBox.right, gridBox.top).glyph, junctions[0])
+    assert.equal(cellAt(frame, gridBox.right, gridBox.bottom).glyph, junctions[1])
+    assert.equal(cellAt(frame, gridBox.left, gridBox.top).style.inverse, true)
   }
 })
 
@@ -227,18 +230,19 @@ test("the cursor keeps whatever glyph is beneath it", () => {
   assert.notEqual(drawn.glyph, " ", "and the Nexus is still visible under it")
 })
 
-test("a planned structure is drawn, and reads differently from one already standing", () => {
+test("a planned structure is drawn at full strength, like one already standing", () => {
+  // Owner, 2026-09-27: "not sure why they are greyed out, it will look better if they are fully
+  // built." Undo and remove are what keep a plan revisable, not the grey.
   const planned = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
-    build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }, { kind: "disarm" }])
+    build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
   })
   const cell = cellForTile(planned.layout, planned.build.state.camera, { x: 30, y: 14 })
-  assert.equal(cellAt(planned.frame, cell.x, cell.y).style.dim, true, "a plan is dimmed")
-  const standing = cellForTile(planned.layout, planned.build.state.camera, { x: 18, y: 10 })
-  assert.equal(cellAt(planned.frame, standing.x, standing.y).style.bold, true, "a built one is not")
+  assert.notEqual(cellAt(planned.frame, cell.x, cell.y).style.dim, true, "a plan is not dimmed")
+  assert.equal(cellAt(planned.frame, cell.x, cell.y).style.bold, true)
 })
 
-test("right after a placement, still armed, the tile reads as built rather than refused", () => {
+test("right after a placement the tile reads as built, and the status line says so with the budget", () => {
   // The bug an owner playtest found (2026-09-26): still armed and the cursor still on the tile just
   // placed, the ghost preview used to recompute legality fresh, find the plan's own last entry "in
   // the way", and paint an illegal block over a structure that had just been correctly built - and
@@ -250,7 +254,9 @@ test("right after a placement, still armed, the tile reads as built rather than 
   assert.doesNotMatch(justPlaced.text, /Cannot build here/i, "nothing refuses the tile it just built on")
   const cell = cellForTile(justPlaced.layout, justPlaced.build.state.camera, { x: 30, y: 14 })
   assert.notEqual(cellAt(justPlaced.frame, cell.x, cell.y).glyph, "x", "no illegal block over the built structure")
-  assert.match(justPlaced.text, /planned at 30,14/, "the footer reports the success, not a live refusal")
+  // Owner, 2026-09-27: "hatch placed (resources: 30) - [u] undo" — what is left, and the way back.
+  assert.match(justPlaced.text, /Barracks placed \(resources: 60\) - \[u\] undo/, "the footer reports the success")
+  assert.equal(justPlaced.build.state.focus, "menu", "and the keyboard is back on the menu")
 })
 
 test("undoing the placement just made lets the same tile be built on again at once", () => {
@@ -264,6 +270,7 @@ test("undoing the placement just made lets the same tile be built on again at on
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }, revise])
     assert.equal(build.state.planned.length, 0, `${revise.kind} did not take the placement back`)
+    build.handleData("1", layout) // placing returned the keyboard to the menu; arm again, in place
     const cell = cellForTile(layout, build.state.camera, build.state.cursor)
     const frame = composeBuildFrame({ context, state: build.state, layout }, "monochrome")
     assert.notEqual(cellAt(frame, cell.x, cell.y).glyph, " ", `after ${revise.kind} the ghost is back`)
@@ -324,7 +331,7 @@ test("the construct rows and the armed item's own line are all on screen", () =>
 test("the panel says nothing about an item until one is selected", () => {
   // "Simple and direct" (Mario, accepting gate 5A) taken literally: a panel that is always full is
   // a panel nobody reads, so the item's effect line appears only while something is armed.
-  const idle = screenAt(MINIMUM)
+  const idle = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" }))
   assert.doesNotMatch(idle.text, /Spawns swarmers/)
   assert.doesNotMatch(idle.text, /Trains troopers/)
   assert.doesNotMatch(idle.text, /Cannot build here/i)
@@ -402,7 +409,7 @@ test("while the commit question is open, the status line asks it, whatever the g
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "commit" }])
   })
-  assert.match(statusRow(asking), /^Start Nexus Pulse\? \[y\]es \/ \[n\]o$/)
+  assert.match(statusRow(asking), /^Start the Nexus Pulse\? \[y\]es \/ \[n\]o$/)
   const ghost = cellForTile(asking.layout, asking.build.state.camera, { x: 8, y: 5 })
   assert.notEqual(cellAt(asking.frame, ghost.x, ghost.y).glyph, "x", "no ghost behind the question")
 })
@@ -418,6 +425,7 @@ test("the budget on screen is the budget the reducer is enforcing", () => {
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
   assert.match(show(), new RegExp(`${remaining(context, build.state)} of ${SPIKE_ALLOTMENT}`))
+  build.handleData("1", layout) // placing disarms; the digit arms again, in place
   // A row that can no longer be afforded is dimmed — an attribute, not a colour, so it survives
   // monochrome. Checked on an *unselected* row: the selected one is inverse video, which is what
   // "selected" means everywhere in this game, and its unaffordability is the status line's to say.
@@ -448,11 +456,12 @@ test("selecting something unaffordable says so before the player tries it", () =
   const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
+  build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
-  // Off the tile just placed on, which absorbs a repeated place entirely rather than reporting
-  // anything (2026-09-26) - the refusal under test here is unaffordability, not that suppression.
-  build.run([{ kind: "move-cursor", dx: 1, dy: 0 }])
-  // Barracks still selected, and now unaffordable wherever the cursor is.
+  // Arming the barracks again, now unaffordable wherever the cursor is: refused at the menu, before
+  // any tile question, and the row stays unarmed.
+  build.handleData("1", layout)
+  assert.equal(build.state.armed, null, "an unaffordable row was armed")
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
   const status = (text.split("\n")[layout.footerRow + 2] as string).replace(/^\|\s*|\s*\|$/g, "")
   // Affordability first, before any tile problem — and it is not about a tile, so none is named.
@@ -460,27 +469,21 @@ test("selecting something unaffordable says so before the player tries it", () =
 })
 
 test("the footer never advertises a key the keyboard adapter does not bind", () => {
-  // A retired binding that is still printed is worse than one that never existed, and the adapter
-  // test alone cannot catch it: the footer only shows its optional extras once the terminal is wide
-  // enough, so `t click mode` survived the toggle's deletion and rendered at 142 columns and up,
-  // where no screenshot in this gate was ever taken. Checked on the widest composition there is.
-  const widest = screenAt({ columns: 200, rows: 44 })
-  const controls = widest.text
-    .split("\n")
-    .find((row) => row.includes("arrows move"))
-  assert.ok(controls !== undefined, "the controls line is on screen")
-
-  // Every single-character key the line names, checked against the real adapter.
-  const named = [...new Set(controls.match(/\b[a-z]\b/g) ?? [])]
-  assert.ok(named.length > 0, "the line names at least one letter key")
-  for (const key of named) {
-    assert.notEqual(
-      buildKeyboardCommand(key, { itemCount: 3, armed: true }),
-      null,
-      `the footer offers "${key}", which the adapter does not bind`,
-    )
+  // A retired binding that is still printed is worse than one that never existed. Every key help
+  // list, checked against the real adapter in the focus it is shown in.
+  const lists = [
+    [MENU_KEY_HELP, { itemCount: 3, armed: false, focus: "menu" as const }],
+    [PLACE_KEY_HELP, { itemCount: 3, armed: true, focus: "grid" as const }],
+    [EXPLORE_KEY_HELP, { itemCount: 3, armed: false, focus: "grid" as const }],
+  ] as const
+  for (const [help, context] of lists) {
+    for (const binding of help.bindings) {
+      for (const key of binding.match(/\b[a-z]\b/g) ?? []) {
+        assert.notEqual(buildKeyboardCommand(key, context), null, `${help.label} offers "${key}", which is not bound`)
+      }
+    }
+    assert.ok(!help.bindings.some((binding) => /q quit/.test(binding)), `${help.label} still lists q quit`)
   }
-  assert.doesNotMatch(controls, /click mode/, "the click-mode toggle is gone (Q50)")
 })
 
 test("no header or footer line is cut off at the 80-column floor", () => {
@@ -490,8 +493,8 @@ test("no header or footer line is cut off at the 80-column floor", () => {
   const { text } = screenAt(MINIMUM)
   assert.match(text, /TERMINAL NEXUS build phase/)
   assert.match(text, /view x 0-47 y 1-16 of 96x40 {3}cursor 18,13/)
-  assert.match(text, /arrows move.*q quit/)
-  assert.match(text, /RESOURCE {10}100 of 100/, "the panel's own first line, whole")
+  assert.match(text, /EXPLORE {2}arrows move {2}enter\/space inspect {2}tab\/esc menu/)
+  assert.match(text, /RESOURCE {10}100 of 100/, "the panel's budget line, whole")
 })
 
 test("the scroll margin the screen prints is the one it is actually using", () => {
@@ -514,30 +517,29 @@ test("the scroll margin the screen prints is the one it is actually using", () =
   }
 })
 
-test("the ghost preview answers the same question Enter does, budget included", () => {
-  // A review found this: the preview checked legality without the budget, so after spending down it
-  // drew a perfectly normal-looking structure on a tile where Enter was refused. "What you see is
-  // what Enter places" is the whole point of having a preview at all.
+test("a row that costs more than is left cannot be armed: it flickers and says why", () => {
+  // Since a placement disarms and budgets only fall by placing, an armed structure can never become
+  // unaffordable while armed; the refusal moved to the moment of arming, and names the cost first.
   const context = neutralContext()
   const layout = buildLayout(MINIMUM, context.grid)
   const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
+  build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
-  build.run([{ kind: "move-cursor", dx: 8, dy: 0 }])
   assert.ok(remaining(context, build.state) < SPIKE_CATALOG[0]!.cost, "not actually unaffordable")
-
+  const before = build.state.ack?.seq ?? 0
+  build.handleData("1", layout)
+  assert.equal(build.state.armed, null)
+  assert.equal(build.state.ack?.kind, "refused")
+  assert.ok((build.state.ack?.seq ?? 0) > before, "no flicker was asked for")
+  assert.match(build.state.status.text, /costs 40, 20 left/)
+  // Drawn: the row is dim, the unaffordable cost with it.
   const frame = composeBuildFrame({ context, state: build.state, layout }, "monochrome")
-  const cell = cellForTile(layout, build.state.camera, build.state.cursor)
-  assert.equal(
-    cellAt(frame, cell.x, cell.y).glyph,
-    "x",
-    "the preview says this placement is fine, and pressing Enter refuses it",
-  )
-  // And the refusal is real, so the two genuinely agree.
-  const planned = build.state.planned.length
-  build.dispatch({ kind: "place" })
-  assert.equal(build.state.planned.length, planned)
+  const barracksLine = constructLines(layout, context.catalog).find((line) => line.kind === "item" && line.index === 0)
+  assert.ok(barracksLine !== undefined)
+  const costColumn = layout.panelColumn + layout.panelLimit - 2
+  assert.equal(cellAt(frame, costColumn, barracksLine.row).style.dim, true)
 })
 
 test("on a Grid short enough to shrink the panel, the detail block is dropped rather than drawn over the footer", () => {
@@ -562,7 +564,7 @@ test("on a Grid short enough to shrink the panel, the detail block is dropped ra
   // over the menu or the NEXUS/SPECIAL rows — the menu's rows are click targets, and a Grid this
   // small exists nowhere yet. The side panel moving left (the next gate) is where to revisit it.
   assert.match(text, /view x 0-19 y 0-9 of 20x10/)
-  assert.match(text, /arrows move.*q quit/, "the quit key fell off a narrower footer")
+  assert.match(text, /arrows move {2}enter\/space place/, "the essential keys fell off a narrower footer")
   // And the menu itself is still there — it is the block below it that gave way.
   assert.match(text, /\[1\] Barracks/)
   assert.match(text, /RESOURCE/)
@@ -590,8 +592,9 @@ test("on a small Grid the panel's bindings never draw over the Nexus Powers entr
   const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
   // Against the divider — or against the junction where this short Grid's own bottom edge meets it.
-  assert.match(text, /\[n\] Nexus Powers {2,}1 active[|+]/)
-  assert.match(text, /SPECIAL {2,}none available[|+]/)
+  // Against the divider — or, where this small Grid is the solid bar of a map edge, against nothing.
+  assert.match(text, /\[n\] Nexus {2,}1 active(?:[|+ ]|$)/m)
+  assert.match(text, /SPECIAL {2,}none available(?:[|+ ]|$)/m)
 })
 
 test("every binding survives the split whole, at every width the screen can have", () => {
@@ -599,7 +602,7 @@ test("every binding survives the split whole, at every width the screen can have
   // two lines end up being, a binding must never be cut in half — a player reading "esc dis" learns
   // nothing and one who cannot find "q quit" is stuck in an alternate screen. And nothing may be
   // lost between the two surfaces: what leaves the footer arrives in the panel.
-  for (const help of [GRID_KEY_HELP, MENU_KEY_HELP]) {
+  for (const help of [PLACE_KEY_HELP, MENU_KEY_HELP, EXPLORE_KEY_HELP]) {
     const all = bindingLines(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, help).footer.split("  ")
     assert.deepEqual(all, help.bindings)
     for (let footerLimit = 10; footerLimit <= all.join("  ").length + 5; footerLimit += 1) {
@@ -618,7 +621,7 @@ test("every binding survives the split whole, at every width the screen can have
   }
   // The four a player cannot work the Grid without come first, so they are the last to leave the
   // footer.
-  assert.deepEqual(GRID_KEY_HELP.bindings.slice(0, 4), ["arrows move", "enter/space place", "tab/esc menu", "q quit"])
+  assert.deepEqual(PLACE_KEY_HELP.bindings.slice(0, 3), ["arrows move", "enter/space place", "esc cancel"])
 })
 
 test("every key the adapters bind is named on screen at the 80-column floor", () => {
@@ -631,56 +634,63 @@ test("every key the adapters bind is named on screen at the 80-column floor", ()
   // shows, not a unique undiscoverable action.
   // Once per focus: arrows and Enter/Space mean different things on the menu and on the Grid, so
   // each screen has to name what they mean there, and say which focus it is (engine.md 9.7).
-  const onGrid = screenAt(MINIMUM).text
-  const gridBound: readonly (readonly [string, string, RegExp])[] = [
-    ["\u001b[A", "arrows", /arrows move/],
-    ["\r", "enter", /enter\/space place/],
-    ["\t", "tab", /tab\/esc menu/],
-    ["\u001b", "esc", /tab\/esc menu/],
-    ["q", "quit", /q quit/],
-    ["\u001b[1;2A", "shift+arrow", /shift\+arrow fast move/],
-    ["\u007f", "backspace", /bksp remove/],
-    ["u", "undo", /u undo/],
-    ["n", "nexus powers", /\[n\] Nexus Powers/],
-  ]
-  assert.match(onGrid, /\| GRID {2}arrows move/, "the key help does not say focus is on the Grid")
-  for (const [key, name, shown] of gridBound) {
-    assert.notEqual(
-      buildKeyboardCommand(key, { itemCount: 3, armed: true, focus: "grid" }),
-      null,
-      `the adapter should bind ${name} on the Grid`,
-    )
-    assert.match(onGrid, shown, `${name} is bound but named nowhere on an 80x24 screen`)
-  }
-  const onMenu = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" })).text
-  const menuBound: readonly (readonly [string, string, RegExp])[] = [
-    ["\u001b[B", "down", /up\/down choose/],
-    ["\r", "enter", /enter\/space select/],
-    ["\t", "tab", /tab grid/],
-    ["q", "quit", /q quit/],
-    ["p", "commit", /p start pulse/],
-    ["n", "nexus powers", /\[n\] Nexus Powers/],
-    ["1", "a digit", /\[1\] Barracks/],
-  ]
-  assert.match(onMenu, /\| MENU {2}up\/down choose/, "the key help does not say focus is on the menu")
-  for (const [key, name, shown] of menuBound) {
-    assert.notEqual(
-      buildKeyboardCommand(key, { itemCount: 3, armed: false, focus: "menu" }),
-      null,
-      `the adapter should bind ${name} on the menu`,
-    )
-    assert.match(onMenu, shown, `${name} is bound but named nowhere on an 80x24 screen`)
+  const modes = [
+    {
+      label: "PLACE",
+      drive: (build: BuildSession, layout: ReturnType<typeof buildLayout>) => build.handleData("1", layout),
+      context: { itemCount: 3, armed: true, focus: "grid" as const },
+      bound: [
+        ["\u001b[A", "arrows", /arrows move/],
+        ["\r", "enter", /enter\/space place/],
+        ["\u001b", "esc", /esc cancel/],
+        ["\u001b[1;2A", "shift+arrow", /shift\+arrow fast move/],
+        ["\u007f", "backspace", /bksp remove/],
+        ["u", "undo", /u undo/],
+        ["n", "nexus", /\[n\] Nexus/],
+      ],
+    },
+    {
+      label: "EXPLORE",
+      drive: () => {},
+      context: { itemCount: 3, armed: false, focus: "grid" as const },
+      bound: [
+        ["\r", "enter", /enter\/space inspect/],
+        ["\t", "tab", /tab\/esc menu/],
+        ["e", "explore", /\[e\] Explore/],
+      ],
+    },
+    {
+      label: "MENU",
+      drive: (build: BuildSession) => build.dispatch({ kind: "focus", target: "menu" }),
+      context: { itemCount: 3, armed: false, focus: "menu" as const },
+      bound: [
+        ["\u001b[B", "down", /up\/down choose/],
+        ["\r", "enter", /enter\/space select/],
+        ["\t", "tab", /tab grid/],
+        ["p", "commit", /p start pulse/],
+        ["u", "undo", /u undo/],
+        ["1", "a digit", /\[1\] Barracks/],
+      ],
+    },
+  ] as const
+  for (const mode of modes) {
+    const { text } = screenAt(MINIMUM, mode.drive)
+    assert.match(text, new RegExp(`\\| ${mode.label} {2}`), `the key help does not say ${mode.label}`)
+    for (const [key, name, shown] of mode.bound) {
+      assert.notEqual(buildKeyboardCommand(key, mode.context), null, `${mode.label}: ${name} is not bound`)
+      assert.match(text, shown, `${mode.label}: ${name} is bound but named nowhere on an 80x24 screen`)
+    }
   }
 })
 
 test("a terminal wide enough puts every binding in the footer and leaves the panel alone", () => {
   // The whole of the layout's adaptation to width, in one assertion: the footer takes what it can
   // hold and the panel shows the remainder, so a wide terminal simply has no remainder.
-  const wide = screenAt({ columns: 160, rows: 40 })
+  const wide = screenAt({ columns: 160, rows: 40 }, (build, layout) => build.handleData("1", layout))
   const footer = wide.text.split("\n").find((row) => row.includes("arrows move"))
   assert.ok(footer !== undefined)
   assert.match(footer, /u undo/, "a wide footer holds the last binding too")
-  assert.equal(bindingLines(wide.layout.footerLimit, wide.layout.panelLimit, GRID_KEY_HELP).panel.length, 0)
+  assert.equal(bindingLines(wide.layout.footerLimit, wide.layout.panelLimit, PLACE_KEY_HELP).panel.length, 0)
 })
 
 test("engine-3.3-markers: the soft border runs the whole Grid-pane segment, at both tile widths", () => {
@@ -798,30 +808,6 @@ test("the armed row carries an explicit marker, not only inverse video", () => {
   assert.doesNotMatch(unselected, />/, "an unarmed row carries no marker")
 })
 
-test("a row that is armed but no longer affordable is not styled identically to a plain armed row", () => {
-  // dim and bold together used to cancel out on the cost figure, so spending past an armed item's
-  // own cost left it looking exactly as affordable as it did before.
-  const spentDown = screenAt(MINIMUM, (build, layout) => {
-    build.handleData("1", layout) // arm Barracks, cost 40
-    build.run([
-      { kind: "move-cursor", dx: 12, dy: 1 },
-      { kind: "place" },
-      { kind: "move-cursor", dx: 4, dy: 0 },
-      { kind: "place" },
-    ]) // two placements, 80 of 100 spent, 20 left — Barracks (40) no longer affordable
-  })
-  assert.match(spentDown.text, /RESOURCE\s+20 of 100/)
-  const barracksLine = constructLines(spentDown.layout, spentDown.context.catalog).find(
-    (line) => line.kind === "item" && spentDown.context.catalog[line.index]?.label === "Barracks",
-  )
-  assert.ok(barracksLine !== undefined)
-  // "40" is two glyphs, right-aligned against the panel's own right edge.
-  const column = spentDown.layout.panelColumn + spentDown.layout.panelLimit - 2
-  const style = cellAt(spentDown.frame, column, barracksLine.row).style
-  assert.equal(style.dim, true, "the unaffordable cost should be dim")
-  assert.notEqual(style.bold, true, "dim and bold should not both be set")
-})
-
 test("the cursor is bold and undimmed over bare ground, so it reads over a dim ground glyph", () => {
   const idle = screenAt(MINIMUM)
   const cell = cellForTile(idle.layout, idle.build.state.camera, idle.build.state.cursor)
@@ -831,49 +817,34 @@ test("the cursor is bold and undimmed over bare ground, so it reads over a dim g
   assert.notEqual(style.dim, true, "bold and dim on the same cell fight each other")
 })
 
-test("the cursor does not blur a structure's own dim-versus-built distinction", () => {
-  // A player's cursor sits right where they just placed something — the common case, not an edge
-  // case — and a plan (dim) must not suddenly read as built (bold) just because the cursor is there.
-  const onPlan = screenAt(MINIMUM, (build, layout) => {
-    build.handleData("1", layout)
-    // Disarmed, or the still-armed preview draws its own overlay on the same cell and the test
-    // would be inspecting the ghost rather than the plan.
-    build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }, { kind: "disarm" }])
-  })
-  const cell = cellForTile(onPlan.layout, onPlan.build.state.camera, { x: 30, y: 14 })
-  const style = cellAt(onPlan.frame, cell.x, cell.y).style
-  assert.equal(style.inverse, true, "the cursor is still there")
-  assert.equal(style.dim, true, "the plan is still a plan")
-  assert.notEqual(style.bold, true, "and not quietly promoted to built")
+test("the cursor shows only while the Grid has the keyboard", () => {
+  // Owner, 2026-09-27: focus on the menu => no cursor. One "you are here" at a time.
+  const onMenu = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" }))
+  const cell = cellForTile(onMenu.layout, onMenu.build.state.camera, onMenu.build.state.cursor)
+  assert.notEqual(cellAt(onMenu.frame, cell.x, cell.y).style.inverse, true, "a cursor is drawn with the menu focused")
+  const onGrid = screenAt(MINIMUM)
+  const gridCell = cellForTile(onGrid.layout, onGrid.build.state.camera, onGrid.build.state.cursor)
+  assert.equal(cellAt(onGrid.frame, gridCell.x, gridCell.y).style.inverse, true)
 })
 
-test("engine-3.3-markers: a side that has reached the Grid's own edge reads heavy, not merely solid", () => {
-  // Retired --edge-style scrollbar's replacement (canon 2.19): the reached-the-edge case is a real
-  // glyph swap on the horizontal run (heavier than the everyday border) and a bold attribute on the
-  // vertical one and on the corners, when every side has reached its edge at once.
+test("engine-3.3-markers: a side that has reached the map's edge is a solid bar, on all four sides alike", () => {
+  // Owner, 2026-09-27: the heavy edge must read the same horizontally and vertically — "the rectangle
+  // needs to be a rectangle". A solid (reverse-video) bar is the same weight in both directions, in
+  // every glyph pack, and needs no colour.
   const corner = screenAt(MINIMUM, (build) => {
     build.run([{ kind: "move-cursor", dx: -999, dy: -999 }])
   })
   const { gridBox } = corner.layout
-  const midGridColumn = corner.layout.origin.column + 5
-  assert.equal(
-    cellAt(corner.frame, midGridColumn, gridBox.top).glyph,
-    "=",
-    "the north border reads heavy at the Grid's own top edge",
-  )
-  assert.equal(
-    cellAt(corner.frame, gridBox.left, corner.layout.origin.row + 5).style.bold,
-    true,
-    "the west border reads bold at the Grid's own left edge",
-  )
-  assert.notEqual(
-    cellAt(corner.frame, gridBox.left, gridBox.top).style.bold,
-    true,
-    "a corner whose sides disagree stays plain (Q56)",
-  )
+  const solid = (frame: typeof corner.frame, x: number, y: number): boolean =>
+    cellAt(frame, x, y).glyph === " " && cellAt(frame, x, y).style.inverse === true
+  assert.ok(solid(corner.frame, corner.layout.origin.column + 5, gridBox.top), "north edge")
+  assert.ok(solid(corner.frame, gridBox.left, corner.layout.origin.row + 5), "west edge")
+  assert.ok(solid(corner.frame, gridBox.left, gridBox.top), "the corner where both meet")
+  // The sides with more map beyond them stay the thin, dim line.
+  assert.ok(!solid(corner.frame, corner.layout.origin.column + 5, gridBox.bottom), "south has more map")
+  assert.ok(!solid(corner.frame, gridBox.right, corner.layout.origin.row + 5), "east has more map")
 
-  // A Grid that fits the viewport whole (never scrolls) reads heavy on every side and every corner
-  // at once — one visual statement, not four sides that merely happen to agree.
+  // A Grid that fits the viewport whole is solid all round.
   const small: GridTerrain = { width: 20, height: 10, tiles: new Array<TerrainId>(200).fill("terrain.plain") }
   const context = { ...neutralContext(), grid: small, standing: [] }
   const layout = buildLayout(MINIMUM, small)
@@ -884,28 +855,30 @@ test("engine-3.3-markers: a side that has reached the Grid's own edge reads heav
     [layout.gridBox.right, layout.gridBox.top],
     [layout.gridBox.left, layout.gridBox.bottom],
     [layout.gridBox.right, layout.gridBox.bottom],
+    [layout.gridBox.left + 3, layout.gridBox.bottom],
+    [layout.gridBox.right, layout.gridBox.top + 3],
   ] as const) {
-    assert.equal(cellAt(frame, x, y).style.bold, true, `the Grid's corner at ${x},${y} reads heavy too`)
+    assert.ok(solid(frame, x, y), `the Grid's edge at ${x},${y} is solid`)
   }
-  assert.equal(cellAt(frame, layout.gridBox.left + 3, layout.gridBox.bottom).glyph, "=")
   // The outer frame is not the Grid, and does not join in.
-  assert.notEqual(cellAt(frame, layout.offset.column, layout.offset.row).style.bold, true)
+  assert.ok(!solid(frame, layout.offset.column, layout.offset.row))
 })
 
 test("the normal panel says how many Nexus powers are active, and names the empty Special slot", () => {
   const built = screenAt(MINIMUM)
-  assert.match(built.text, /\[n\] Nexus Powers {2,}1 active/)
+  assert.match(built.text, /\[n\] Nexus {2,}1 active/)
   assert.match(built.text, /SPECIAL {2,}none available/)
 })
 
-test("the commit confirmation is its own screen too, asking only y or n", () => {
+test("the commit confirmation is a popup over the Grid, asking only y or n", () => {
   const built = screenAt(MINIMUM, (build) => {
     build.dispatch({ kind: "commit" })
   })
-  assert.match(built.text, /START NEXUS PULSE/)
+  assert.match(built.text, /START THE NEXUS PULSE\?/)
   assert.match(built.text, /\[y\] Yes, start the Pulse/)
   assert.match(built.text, /\[n\] No, keep building/)
-  assert.doesNotMatch(built.text, /RESOURCE/)
+  assert.match(built.text, /\[esc\]/)
+  assert.match(built.text, /START PULSE\? {2}y yes {2}n\/esc no/)
 })
 
 test("the committed screen names the pick and the count, and the footer carries the full sentence", () => {
@@ -918,6 +891,6 @@ test("the committed screen names the pick and the count, and the footer carries 
   assert.match(built.text, /BUILD COMMITTED/)
   assert.match(built.text, /Nexus: Test Pick/)
   assert.match(built.text, /1 structure planned/)
-  assert.match(built.text, /\[q\] to exit/)
+  assert.match(built.text, /\[esc\] to exit/)
   assert.match(built.text, /Build committed - 1 planned, Nexus Pulse would begin here \(Milestone 6\)\./)
 })

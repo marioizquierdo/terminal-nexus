@@ -6,16 +6,9 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SPIKE_CATALOG } from "../src/build/catalog.ts"
-import {
-  NEXUS_ROW,
-  buildLayout,
-  cellForTile,
-  confirmLayout,
-  constructLines,
-  nexusPopupLayout,
-} from "../src/build/layout.ts"
-import { CONFIRM_ITEMS } from "../src/build/layout.ts"
-import { menuItemRow } from "../src/menu/layout.ts"
+import { NEXUS_ROW, buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
+import { overlaySpec, placeOverlay } from "../src/build/overlay.ts"
+import type { PlacedOverlay } from "../src/build/overlay.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, buildMouseCommand, formatMouseEvent, parseMouseEvent } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
@@ -51,8 +44,8 @@ test("a waiting Nexus power refuses the commit, and nothing else", () => {
   assert.equal(build.state.planned.length, 0, "undo was refused while a pick was waiting")
 
   build.dispatch({ kind: "commit" })
-  assert.equal(build.state.confirmingCommit, false)
-  assert.match(build.state.status.text, /Pick a Nexus power first: \[n\] Nexus Powers\./)
+  assert.equal(build.state.overlay === "confirm-commit", false)
+  assert.match(build.state.status.text, /Pick a Nexus power first: \[n\] Nexus\./)
   assert.equal(build.state.status.tone, "warning")
 })
 
@@ -63,13 +56,12 @@ test("moving the cursor is never refused while a pick is waiting", () => {
   assert.doesNotMatch(build.state.status.text, /Pick a Nexus power first/)
 })
 
-test("nothing opens the Nexus Powers popup but the player", () => {
+test("nothing opens the Nexus popup but the player", () => {
   // Owner, 2026-09-26: never forced open the instant the Build Phase begins. Not at the start, not
   // after building, and not when the commit refuses for want of a pick — the refusal names the key.
   const { build, layout } = session()
   assert.equal(build.state.overlay, null, "the Build Phase opened on the popup")
   build.handleData("1", layout)
-  build.handleData("\r", layout)
   build.handleData("p", layout)
   assert.equal(build.state.overlay, null, "something other than the player opened the popup")
   build.handleData("n", layout)
@@ -88,11 +80,15 @@ test("the popup holds the keyboard until Esc: arrows work its list, and nothing 
   // "2" is the popup's own second option — digits address the popup's list while it is open.
   assert.equal(build.state.nexusPick, 1)
   assert.equal(build.state.planned.length, 0)
-  assert.equal(build.state.focus, "grid", "Tab moved focus from behind the popup")
   assert.equal(build.state.overlay, "nexus-powers", "picking closed the popup — it closes on Esc")
+  assert.equal(build.state.focus, "grid", "Tab moved focus from behind the popup")
   build.handleData(ESC, layout)
   assert.equal(build.state.overlay, null)
   assert.equal(build.state.armed, 0, "Esc closed the popup and disarmed in the same press")
+  // x is Esc, everywhere.
+  build.handleData("n", layout)
+  build.handleData("x", layout)
+  assert.equal(build.state.overlay, null)
 })
 
 test("the popup picks by Up/Down and Enter too, and lists the pick as active afterwards", () => {
@@ -107,7 +103,7 @@ test("the popup picks by Up/Down and Enter too, and lists the pick as active aft
   assert.match(text, /Nothing waiting\./)
   assert.match(text, /ACTIVE/)
   assert.match(text, /War Chest/)
-  assert.match(text, /\[esc\] Close/)
+  assert.match(text, /\[esc\]/)
   // Enter with nothing left to pick says so, rather than doing something else.
   build.handleData("\r", layout)
   assert.match(build.state.status.text, /No Nexus power waiting/)
@@ -120,7 +116,7 @@ test("an open popup draws no placement ghost behind it, and refuses edits sent b
   build.dispatch({ kind: "open-nexus-powers" })
   build.dispatch({ kind: "place" })
   assert.equal(build.state.planned.length, 0)
-  assert.match(build.state.status.text, /Close Nexus Powers first/)
+  assert.match(build.state.status.text, /Close the popup first/)
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
   const cursorCell = cellForTile(layout, build.state.camera, build.state.cursor)
   const turretGlyph = text.split("\n")[cursorCell.y]?.[cursorCell.x]
@@ -171,13 +167,13 @@ test("once picked, the construct menu and every other command work exactly as be
 test("commit is refused before a pick, and opens the confirmation once one is made", () => {
   const { build } = session()
   build.dispatch({ kind: "commit" })
-  assert.equal(build.state.confirmingCommit, false, "commit opened the prompt before a pick")
+  assert.equal(build.state.overlay === "confirm-commit", false, "commit opened the prompt before a pick")
   assert.match(build.state.status.text, /Pick a Nexus power first/)
 
   build.dispatch({ kind: "pick-nexus", index: 0 })
   build.dispatch({ kind: "commit" })
-  assert.equal(build.state.confirmingCommit, true)
-  assert.match(build.state.status.text, /Start Nexus Pulse/)
+  assert.equal(build.state.overlay, "confirm-commit")
+  assert.match(build.state.status.text, /Start the Nexus Pulse/)
 })
 
 test("nothing but the confirmation itself changes state while it is open", () => {
@@ -198,8 +194,7 @@ test("nothing but the confirmation itself changes state while it is open", () =>
     { kind: "open-nexus-powers" },
   ] as const) {
     build.dispatch(command)
-    assert.equal(build.state.overlay, null, `${command.kind} opened a popup over the prompt`)
-    assert.equal(build.state.confirmingCommit, true, `${command.kind} closed the prompt`)
+    assert.equal(build.state.overlay, "confirm-commit", `${command.kind} closed the prompt`)
     assert.deepEqual(build.state.planned, beforeCommit.planned, `${command.kind} changed the plan`)
   }
 })
@@ -213,7 +208,7 @@ test("declining the confirmation cancels it and changes nothing else", () => {
   build.dispatch({ kind: "commit" })
   build.dispatch({ kind: "confirm-commit", accept: false })
 
-  assert.equal(build.state.confirmingCommit, false)
+  assert.equal(build.state.overlay === "confirm-commit", false)
   assert.equal(build.state.committed, false)
   assert.deepEqual(build.state.planned, beforeCommit.planned)
   assert.match(build.state.status.text, /Cancelled/)
@@ -232,7 +227,7 @@ test("accepting the confirmation commits, and locks every state-changing command
   build.dispatch({ kind: "confirm-commit", accept: true })
 
   assert.equal(build.state.committed, true)
-  assert.equal(build.state.confirmingCommit, false)
+  assert.equal(build.state.overlay === "confirm-commit", false)
   assert.match(build.state.status.text, /Build committed/)
   assert.match(build.state.status.text, /1 planned/)
 
@@ -259,8 +254,8 @@ test("a stray y or n outside the confirmation is exactly as inert as a stray dig
   assert.deepEqual(build.state, before)
 })
 
-test("keyboard: a digit picks from the popup while it is open, and arms the construct menu otherwise", () => {
-  const popupContext = { itemCount: 3, armed: false, overlayPendingCount: 2 }
+test("keyboard: a digit picks from the Nexus popup while it is open, and arms the construct menu otherwise", () => {
+  const popupContext = { itemCount: 3, armed: false, overlay: "nexus-powers" as const, overlayPendingCount: 2 }
   assert.deepEqual(buildKeyboardCommand("1", popupContext), { kind: "pick-nexus", index: 0 })
   assert.deepEqual(buildKeyboardCommand("2", popupContext), { kind: "pick-nexus", index: 1 })
   assert.equal(buildKeyboardCommand("3", popupContext), null, "a third popup digit picks nothing")
@@ -268,72 +263,88 @@ test("keyboard: a digit picks from the popup while it is open, and arms the cons
 
   const builtContext = { itemCount: 3, armed: false }
   assert.deepEqual(buildKeyboardCommand("1", builtContext), { kind: "arm", index: 0 })
-  // A waiting pick no longer takes the digits: only an open popup does.
   assert.deepEqual(buildKeyboardCommand("1", { ...builtContext, focus: "menu" as const }), { kind: "arm", index: 0 })
 })
 
-test("keyboard: n opens the Nexus Powers, and is [n]o only while the commit question is open", () => {
+test("keyboard: n opens the Nexus popup, and is [n]o only while the start-the-Pulse question is open", () => {
   const idle = { itemCount: 3, armed: false }
-  assert.deepEqual(buildKeyboardCommand("y", idle), { kind: "confirm-commit", accept: true })
+  assert.equal(buildKeyboardCommand("y", idle), null)
   assert.deepEqual(buildKeyboardCommand("n", idle), { kind: "open-nexus-powers" })
   assert.deepEqual(buildKeyboardCommand("p", idle), { kind: "commit" })
-  assert.deepEqual(buildKeyboardCommand("n", { ...idle, overlayPendingCount: 1 }), { kind: "close-overlay" })
+  assert.deepEqual(buildKeyboardCommand("n", { ...idle, overlay: "nexus-powers" as const }), { kind: "cancel" })
 
-  const confirming = { itemCount: 3, armed: false, confirming: true }
+  const confirming = { itemCount: 3, armed: false, overlay: "confirm-commit" as const }
+  assert.deepEqual(buildKeyboardCommand("y", confirming), { kind: "confirm-commit", accept: true })
   assert.deepEqual(buildKeyboardCommand("n", confirming), { kind: "confirm-commit", accept: false })
-  assert.deepEqual(buildKeyboardCommand("\u001b", confirming), { kind: "confirm-commit", accept: false })
-  // Esc's ordinary meaning returns the moment the prompt is answered.
-  assert.deepEqual(buildKeyboardCommand("\u001b", { itemCount: 3, armed: true }), { kind: "disarm" })
+  assert.deepEqual(buildKeyboardCommand("\u001b", confirming), { kind: "cancel" })
+  // The question is modal: the arrows do not reach the Grid behind it.
+  assert.equal(buildKeyboardCommand(`${ESC}[C`, confirming), null)
 })
 
-test("mouse: the Nexus Powers entry opens the popup; inside it a click picks, closes, or does nothing", () => {
-  const context = spikeContext()
-  const layout = buildLayout(MINIMUM, context.grid)
-  const at = (column: number, row: number) => {
-    const event = parseMouseEvent(formatMouseEvent(MOUSE_LEFT, column + 1, row + 1))
-    assert.ok(event !== null)
-    return event
-  }
-  assert.deepEqual(
-    buildMouseCommand(at(layout.panelColumn + 5, layout.panelRow + NEXUS_ROW), { x: 0, y: 0 }, layout, SPIKE_CATALOG),
-    { kind: "open-nexus-powers" },
-  )
+/** The open popup, placed exactly as the composer and the mouse adapter place it. */
+function placedPopup(side: ReturnType<typeof session>): PlacedOverlay {
+  const spec = overlaySpec(spikeContext(), side.build.state)
+  assert.ok(spec !== null, "no popup is open")
+  return placeOverlay(side.layout, spec)
+}
 
-  const popup = nexusPopupLayout(layout, 2, 0)
-  const inPopup = (column: number, row: number) =>
-    buildMouseCommand(at(column, row), { x: 0, y: 0 }, layout, SPIKE_CATALOG, { popup })
+/** The click bytes for the popup option whose command matches, or for its `[esc]`. */
+function clickPopupBytes(side: ReturnType<typeof session>, match: (command: BuildCommand) => boolean): string {
+  const popup = placedPopup(side)
+  const row = popup.rows.find((candidate) => candidate.spec.kind === "option" && match(candidate.spec.command))
+  assert.ok(row !== undefined, "no such option in the popup")
+  return formatMouseEvent(MOUSE_LEFT, popup.textColumn + 2, row.row + 1)
+}
+function clickPopupCloseBytes(side: ReturnType<typeof session>): string {
+  const popup = placedPopup(side)
+  return formatMouseEvent(MOUSE_LEFT, popup.close.from + 1, popup.close.row + 1)
+}
+function clickNexusEntryBytes(layout: ReturnType<typeof buildLayout>): string {
+  return formatMouseEvent(MOUSE_LEFT, layout.panelColumn + 5, layout.panelRow + NEXUS_ROW + 1)
+}
+
+test("mouse: inside a popup a click picks or closes; outside it, a click closes it and brings focus there", () => {
+  const side = session()
+  side.build.handleData("n", side.layout)
+  const popup = placedPopup(side)
   // Either row of an option — its name or its description — picks it.
-  assert.deepEqual(inPopup(popup.textColumn + 1, popup.pendingRows[1]!), { kind: "pick-nexus", index: 1 })
-  assert.deepEqual(inPopup(popup.textColumn + 6, popup.pendingRows[1]! + 1), { kind: "pick-nexus", index: 1 })
-  assert.deepEqual(inPopup(popup.textColumn + 2, popup.closeRow), { kind: "close-overlay" })
-  // The popup holds the mouse: a click beside it, on the Grid or the menu, reaches neither.
-  assert.equal(inPopup(popup.box.left - 2, popup.pendingRows[0]!), null)
-  assert.equal(inPopup(layout.panelColumn + 2, layout.panelRow + NEXUS_ROW), null)
-  const right = parseMouseEvent(formatMouseEvent(MOUSE_RIGHT, 10, 10))
-  assert.ok(right !== null)
-  assert.deepEqual(buildMouseCommand(right, { x: 0, y: 0 }, layout, SPIKE_CATALOG, { popup }), {
-    kind: "close-overlay",
-  })
+  const second = popup.rows.filter((row) => row.spec.kind === "option")[2]!
+  side.build.handleData(formatMouseEvent(MOUSE_LEFT, popup.textColumn + 6, second.row + 1), side.layout)
+  assert.equal(side.build.state.nexusPick, 1)
+  // `[esc]` in the top-right corner closes it.
+  side.build.handleData(clickPopupCloseBytes(side), side.layout)
+  assert.equal(side.build.state.overlay, null)
+
+  // A click outside it — here, on the Grid — closes it and moves focus and the cursor there, and does
+  // nothing more (owner, 2026-09-27).
+  side.build.handleData("n", side.layout)
+  side.build.dispatch({ kind: "focus", target: "menu" })
+  const cell = cellForTile(side.layout, side.build.state.camera, { x: 20, y: 15 })
+  side.build.handleData(formatMouseEvent(MOUSE_LEFT, cell.x + 1, cell.y + 1), side.layout)
+  assert.equal(side.build.state.overlay, null)
+  assert.equal(side.build.state.focus, "grid")
+  assert.deepEqual(side.build.state.cursor, { x: 20, y: 15 })
+  assert.equal(side.build.state.planned.length, 0)
+
+  // A right click is Esc.
+  side.build.handleData("n", side.layout)
+  side.build.handleData(formatMouseEvent(MOUSE_RIGHT, 10, 10), side.layout)
+  assert.equal(side.build.state.overlay, null)
 })
 
-test("mouse: a click on the confirmation's own rows answers it, not the tile beneath", () => {
-  const context = spikeContext()
-  const layout = buildLayout(MINIMUM, context.grid)
-  const layoutY = confirmLayout(layout)
-  const yesRow = menuItemRow(layoutY, 0)
-  const noRow = menuItemRow(layoutY, 1)
-  const yesEvent = parseMouseEvent(formatMouseEvent(MOUSE_LEFT, layoutY.column + 1, yesRow + 1))
-  const noEvent = parseMouseEvent(formatMouseEvent(MOUSE_LEFT, layoutY.column + 1, noRow + 1))
-  assert.ok(yesEvent !== null && noEvent !== null)
-  assert.deepEqual(
-    buildMouseCommand(yesEvent, { x: 0, y: 0 }, layout, SPIKE_CATALOG, { confirming: true }),
-    { kind: "confirm-commit", accept: true },
-  )
-  assert.deepEqual(
-    buildMouseCommand(noEvent, { x: 0, y: 0 }, layout, SPIKE_CATALOG, { confirming: true }),
-    { kind: "confirm-commit", accept: false },
-  )
-  assert.equal(CONFIRM_ITEMS.length, 2)
+test("mouse: the start-the-Pulse popup answers by click, and a click outside it cancels", () => {
+  const yes = session()
+  yes.build.dispatch({ kind: "pick-nexus", index: 0 })
+  yes.build.handleData("p", yes.layout)
+  yes.build.handleData(clickPopupBytes(yes, (c) => c.kind === "confirm-commit" && c.accept), yes.layout)
+  assert.equal(yes.build.state.committed, true)
+
+  const outside = session()
+  outside.build.dispatch({ kind: "pick-nexus", index: 0 })
+  outside.build.handleData("p", outside.layout)
+  outside.build.handleData(clickNexusEntryBytes(outside.layout), outside.layout)
+  assert.equal(outside.build.state.overlay, null)
+  assert.equal(outside.build.state.committed, false)
 })
 
 /** A click on a construct row, from `constructLines` — the same geometry the panel itself draws
@@ -358,24 +369,6 @@ function clickTileBytes(
   return formatMouseEvent(MOUSE_LEFT, cell.x + 1, cell.y + 1)
 }
 
-/** A click on the confirmation's `y`/`n` row — the same `confirmLayout` geometry the composer draws
- *  it with. */
-function clickMenuBytes(menuLayout: ReturnType<typeof confirmLayout>, index: number): string {
-  const row = menuItemRow(menuLayout, index)
-  return formatMouseEvent(MOUSE_LEFT, menuLayout.column + 1, row + 1)
-}
-
-/** A click on the Nexus Powers entry, on popup option *n*, or on the popup's close row — from the
- *  same `nexusPopupLayout` the composer draws the popup with. */
-function clickNexusEntryBytes(layout: ReturnType<typeof buildLayout>): string {
-  return formatMouseEvent(MOUSE_LEFT, layout.panelColumn + 5, layout.panelRow + NEXUS_ROW + 1)
-}
-function clickPopupBytes(layout: ReturnType<typeof buildLayout>, target: number | "close", pending: number, active: number): string {
-  const popup = nexusPopupLayout(layout, pending, active)
-  const row = target === "close" ? popup.closeRow : popup.pendingRows[target]!
-  return formatMouseEvent(MOUSE_LEFT, popup.textColumn + 2, row + 1)
-}
-
 test("the same pick-build-commit script produces an identical state by hotkeys, by clicks, and from a driver script", () => {
   const byKeyboard = session()
   byKeyboard.build.handleData("n", byKeyboard.layout) // open the Nexus Powers
@@ -385,16 +378,19 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   for (let step = 0; step < 12; step += 1) byKeyboard.build.handleData(`${ESC}[C`, byKeyboard.layout)
   byKeyboard.build.handleData(`${ESC}[B`, byKeyboard.layout)
   byKeyboard.build.handleData("\r", byKeyboard.layout)
+  byKeyboard.build.handleData("1", byKeyboard.layout) // placing handed the keyboard to the menu
   for (let step = 0; step < 4; step += 1) byKeyboard.build.handleData(`${ESC}[C`, byKeyboard.layout)
   byKeyboard.build.handleData("\r", byKeyboard.layout)
   byKeyboard.build.handleData("p", byKeyboard.layout)
   byKeyboard.build.handleData("y", byKeyboard.layout)
 
   const byMouse = session()
+  // The screen opens with the keyboard on the menu, so one click on Nexus opens it.
   byMouse.build.handleData(clickNexusEntryBytes(byMouse.layout), byMouse.layout)
-  byMouse.build.handleData(clickPopupBytes(byMouse.layout, 0, 2, 0), byMouse.layout)
-  byMouse.build.handleData(clickPopupBytes(byMouse.layout, "close", 0, 1), byMouse.layout)
-  byMouse.build.handleData(clickRowBytes(byMouse.layout, 0), byMouse.layout)
+  byMouse.build.handleData(clickPopupBytes(byMouse, (c) => c.kind === "pick-nexus" && c.index === 0), byMouse.layout)
+  byMouse.build.handleData(clickPopupCloseBytes(byMouse), byMouse.layout)
+  // Digits are the hotkey path both players share; the rest is clicks.
+  byMouse.build.handleData("1", byMouse.layout)
   // A click only arms the preview at a tile; a second click on that same tile places it (Q52).
   // Recomputed fresh each time, since the camera can move between clicks.
   const clickTile = (tile: { x: number; y: number }): void => {
@@ -402,18 +398,20 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   }
   clickTile({ x: 30, y: 14 })
   clickTile({ x: 30, y: 14 })
+  byMouse.build.handleData("1", byMouse.layout)
   clickTile({ x: 34, y: 14 })
   clickTile({ x: 34, y: 14 })
   byMouse.build.handleData("p", byMouse.layout)
-  byMouse.build.handleData(clickMenuBytes(confirmLayout(byMouse.layout), 0), byMouse.layout)
+  byMouse.build.handleData(clickPopupBytes(byMouse, (c) => c.kind === "confirm-commit" && c.accept), byMouse.layout)
 
   const script: readonly BuildCommand[] = [
     { kind: "open-nexus-powers" },
     { kind: "pick-nexus", index: 0 },
-    { kind: "close-overlay" },
+    { kind: "cancel" },
     { kind: "arm", index: 0 },
     { kind: "move-cursor", dx: 12, dy: 1 },
     { kind: "place" },
+    { kind: "arm", index: 0 },
     { kind: "move-cursor", dx: 4, dy: 0 },
     { kind: "place" },
     { kind: "commit" },

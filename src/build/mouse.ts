@@ -5,20 +5,17 @@
 // SGR parsing is `src/menu/mouse.ts`'s, reused rather than rewritten. What this adds is the two
 // gestures a flat menu has no use for: the wheel, and the right button.
 
-import type { BuildLayout, NexusPopupLayout } from "./layout.ts"
-import { CONFIRM_ITEMS, confirmLayout, menuEntryAt, popupHitAt, tileAtCell } from "./layout.ts"
-import { menuIndexAt } from "../menu/layout.ts"
+import type { BuildLayout } from "./layout.ts"
+import { menuEntryAt, tileAtCell } from "./layout.ts"
+import type { PlacedOverlay } from "./overlay.ts"
+import { overlayHitAt } from "./overlay.ts"
 import type { Camera } from "./camera.ts"
 import { JUMP_TILES } from "./state.ts"
 import type { BuildCommand, ConstructItem } from "./types.ts"
 
-/** What is on screen, so a click can be hit-tested against the right thing. Mirrors
- *  `KeyboardContext`'s `overlayPendingCount`/`confirming` — the same facts, read by the other
- *  adapter. */
+/** What is on screen beyond the layout: the open popup, placed, since it holds the mouse. */
 export type MouseUiState = Readonly<{
-  /** The open popup's geometry, when one is open: it holds the mouse as it holds the keyboard. */
-  popup?: NexusPopupLayout
-  confirming?: boolean
+  overlay?: PlacedOverlay
 }>
 
 const SGR_MOUSE = /^\u001b\[<(\d+);(\d+);(\d+)([Mm])$/
@@ -72,39 +69,32 @@ export function buildMouseCommand(
   ui: MouseUiState = {},
 ): BuildCommand | null {
   if (!event.press) return null
+  // "Mouse: right click — Esc. The RTS convention for cancel." One cancel, whatever is open.
+  if (event.button === MOUSE_RIGHT) return { kind: "cancel" }
 
-  // An open popup holds the mouse: a pending power is picked by a click on either of its rows, the
-  // close row closes it, a right click is Esc, and nothing reaches the Grid or the menu beneath.
-  if (ui.popup !== undefined) {
-    if (event.button === MOUSE_RIGHT) return { kind: "close-overlay" }
+  // What the click lands on underneath any popup — a menu row or a tile — named as the reducer's own
+  // click commands, which decide what a click means from what is on screen.
+  const underneath = (): BuildCommand | null => {
+    const entry = menuEntryAt(layout, catalog, event.column, event.row)
+    if (entry !== null) return { kind: "click-menu", entry }
+    const tile = tileAtCell(layout, camera, event.column, event.row)
+    if (tile !== null) return { kind: "click-tile", x: tile.x, y: tile.y }
+    return null
+  }
+
+  // An open popup holds the mouse. Inside it, a click is one of its options or its `[esc]`; outside
+  // it, the click closes it and brings focus to wherever it landed, and does nothing more (owner,
+  // 2026-09-27 — he clicked Nexus, missed the popup in the middle, and thought the mouse was broken).
+  if (ui.overlay !== undefined) {
     if (event.button !== MOUSE_LEFT) return null
-    const hit = popupHitAt(ui.popup, event.column, event.row)
-    if (hit.kind === "pending") return { kind: "pick-nexus", index: hit.index }
-    if (hit.kind === "close") return { kind: "close-overlay" }
+    const hit = overlayHitAt(ui.overlay, event.column, event.row)
+    if (hit.kind === "command") return hit.command
+    if (hit.kind === "outside") return underneath() ?? { kind: "cancel" }
     return null
   }
 
   if (event.button === MOUSE_WHEEL_UP) return { kind: "move-cursor", dx: 0, dy: -JUMP_TILES }
   if (event.button === MOUSE_WHEEL_DOWN) return { kind: "move-cursor", dx: 0, dy: JUMP_TILES }
-  // "Mouse: right click — Esc. The RTS convention for cancel."
-  if (event.button === MOUSE_RIGHT) return { kind: "disarm" }
   if (event.button !== MOUSE_LEFT) return null
-
-  if (ui.confirming === true) {
-    const index = menuIndexAt(CONFIRM_ITEMS, confirmLayout(layout), event.column, event.row)
-    if (index !== null) return { kind: "confirm-commit", accept: index === 0 }
-    return null
-  }
-
-  // A click on a menu row is that row's hotkey, by construction: both this and the composer ask
-  // `menuEntryAt`/`constructLines` where each row is, so they cannot disagree — including about where
-  // the group headings between them push everything below.
-  const entry = menuEntryAt(layout, catalog, event.column, event.row)
-  if (entry !== null) {
-    return entry.kind === "nexus" ? { kind: "open-nexus-powers" } : { kind: "arm", index: entry.index }
-  }
-
-  const tile = tileAtCell(layout, camera, event.column, event.row)
-  if (tile === null) return null
-  return { kind: "click-tile", x: tile.x, y: tile.y }
+  return underneath()
 }
