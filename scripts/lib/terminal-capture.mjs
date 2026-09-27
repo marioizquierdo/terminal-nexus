@@ -31,6 +31,9 @@ export const PALETTE = {
 }
 export const BACKGROUND = "#0c0c0c"
 export const FOREGROUND = "#d0d0d0"
+/** The light-background terminal's defaults: what reverse video swaps with, and uncoloured text. */
+const LIGHT_BACKGROUND = "#f2f0ea"
+const LIGHT_FOREGROUND = "#1c1a18"
 
 /** The xterm 256-colour palette: sixteen system colours, a 6x6x6 cube, then twenty-four greys. */
 export function xterm256(index) {
@@ -179,8 +182,12 @@ export function stepPastEnd(repoRoot, session, lastResolvedTick, tick) {
   pause(0.2)
 }
 
-/** Turn one captured pane into HTML: a span per styled run, nothing else. */
-export function ansiToHtml(text, cols, rows) {
+/** Turn one captured pane into HTML: a span per styled run, nothing else. `theme` is the terminal's
+ *  own background: reverse video swaps a cell's colour with it, so on a light terminal a reversed
+ *  cell's text is light, not the dark default (it was drawn dark-on-dark before 2026-09-27). */
+export function ansiToHtml(text, cols, rows, theme = "dark") {
+  const defaultBackground = theme === "light" ? LIGHT_BACKGROUND : BACKGROUND
+  const defaultForeground = theme === "light" ? LIGHT_FOREGROUND : FOREGROUND
   const escapeHtml = (value) =>
     value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 
@@ -195,9 +202,9 @@ export function ansiToHtml(text, cols, rows) {
     let open = false
 
     const openSpan = () => {
-      const foreground = style.fg ?? FOREGROUND
+      const foreground = style.fg ?? defaultForeground
       const background = style.bg
-      const parts = [`color:${style.inverse ? (background ?? BACKGROUND) : foreground}`]
+      const parts = [`color:${style.inverse ? (background ?? defaultBackground) : foreground}`]
       if (style.inverse) parts.push(`background:${foreground}`)
       else if (background !== null) parts.push(`background:${background}`)
       if (style.bold) parts.push("font-weight:700")
@@ -271,7 +278,7 @@ export function ansiToHtml(text, cols, rows) {
 
 function pageFor(html, caption, cols, rows, background) {
   const page = background === "light" ? "#e8e6e0" : "#17181c"
-  const pre = background === "light" ? "#f2f0ea" : BACKGROUND
+  const pre = background === "light" ? LIGHT_BACKGROUND : BACKGROUND
   const captionColor = background === "light" ? "#6b6660" : "#8a8f98"
   return `<!doctype html>
 <meta charset="utf-8">
@@ -282,7 +289,7 @@ function pageFor(html, caption, cols, rows, background) {
     margin: 0;
     padding: 14px 16px;
     background: ${pre};
-    color: ${FOREGROUND};
+    color: ${background === "light" ? LIGHT_FOREGROUND : FOREGROUND};
     font-family: "DejaVu Sans Mono", monospace;
     font-size: 16px;
     line-height: 1.25;

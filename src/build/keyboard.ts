@@ -209,6 +209,10 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
     if (MENU_LEFT.has(key)) return { kind: "nudge", direction: "left" }
     if (MENU_RIGHT.has(key)) return { kind: "nudge", direction: "right" }
     if (PLACE_KEYS.has(key)) return { kind: "activate" }
+    // Backspace removes what is under the map cursor, which is hidden while the menu has the
+    // keyboard: the row flickers, like Left, to say the key arrived and has nothing to do here
+    // (feedback F17).
+    if (REMOVE_KEYS.has(key)) return { kind: "nudge", direction: "left" }
   } else {
     if (PLACE_KEYS.has(key)) return context.armed ? { kind: "place" } : { kind: "inspect" }
     if (REMOVE_KEYS.has(key)) return { kind: "remove" }

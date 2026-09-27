@@ -73,6 +73,9 @@ export const CHROME_GLYPHS: Readonly<Record<GlyphPack, Readonly<Record<string, s
     softVertical: "|",
     heavyHorizontal: "=",
     heavyVertical: "|",
+    // A popup's shadow, drawn dim: a blank cell vanished against the dark theme's near-black ground
+    // (feedback F17), so the shadow is a shade, which reads on either theme and in monochrome.
+    shadow: ":",
   },
   unicode: {
     horizontal: "─",
@@ -93,6 +96,7 @@ export const CHROME_GLYPHS: Readonly<Record<GlyphPack, Readonly<Record<string, s
     softVertical: "│",
     heavyHorizontal: "━",
     heavyVertical: "┃",
+    shadow: "░",
   },
 }
 

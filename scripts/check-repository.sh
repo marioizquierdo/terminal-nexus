@@ -35,11 +35,13 @@ is_historical_archive() {
   return 1
 }
 
-# Markdown files, excluding VCS and dependency directories.
+# Markdown files, excluding VCS and dependency directories, and the throwaway checkouts a background
+# agent works in (`.claude/worktrees/`, ignored by git): a copy of the repository is not the repository.
 markdown_files() {
   find . -type f -name '*.md' \
     -not -path './.git/*' \
     -not -path './node_modules/*' \
+    -not -path './.claude/worktrees/*' \
     -print | sort
 }
 
@@ -242,7 +244,7 @@ retired_terms=(
 
 for term in "${retired_terms[@]}"; do
   hits="$(grep -RInEi "$term" --include='*.md' --include='*.sh' \
-    --exclude-dir='.git' --exclude-dir='node_modules' . 2>/dev/null \
+    --exclude-dir='.git' --exclude-dir='node_modules' --exclude-dir='worktrees' . 2>/dev/null \
     | grep -v 'stale-ok' \
     | grep -v '^\./scripts/check-repository\.sh:' || true)"
 
