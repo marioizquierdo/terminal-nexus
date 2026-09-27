@@ -2,7 +2,7 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.19
+**Canon version:** 2.20
 **Updated:** 2026-09-26
 **License:** Apache-2.0
 
@@ -1087,27 +1087,6 @@ than the maximum viewport in a fraction of the cells, which the game has deliber
 natural moment is the first mission map that does not fit the maximum viewport, or the first Pulse
 large enough that watching it needs an overview — whichever comes first.
 
-### Q60 — After a Nexus power is picked, does the popup stay open until Esc, or close itself?
-
-**Status:** OPEN — blocks nothing; gate 5F built the recommendation, and gate 5G's Debug Mode is the
-place to offer the other.
-
-Gate 5F's Nexus Powers popup, per the milestone tracker, "holds focus until Esc". So after a pick it
-stays open, showing "Nothing waiting" and the pick listed as active with its one line of
-description. That costs one key on every Build Phase's most common path (open, pick, close), and the
-same line is already on screen elsewhere: the menu entry reads "1 active" and the status line says
-"Reserve Fund picked."
-
-| Option | Cost |
-| --- | --- |
-| A. **Stay open until Esc** (built) | One extra key per Build Phase; the player sees the pick land in the "active" list before leaving, and the popup never closes under them |
-| B. **Close on the pick** | One key saved; the confirmation is the status line and the menu entry alone. A player who meant to read the active list afterwards has to reopen it |
-
-**Recommendation: A, with B one Debug Mode field away.** Once Milestone 8 deals more than one power,
-or several over a campaign, the popup becomes the place to read what is active, and closing it the
-instant something changes there would hide the change. Until then the owner's feel is the better
-judge, and gate 5G makes that a toggle rather than a rebuild.
-
 ## 5. Answered
 
 Rows move here with the date, the decision, and the document that now owns it.
@@ -1117,6 +1096,7 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q30 | 2026-09-21 | **A, built.** The Build Phase panel is the construct menu, what is left to spend, the selected item's cost and effect, and the reason a placement was refused — and **no radius preview**, because nothing in the content that exists has a radius. Gate 5B built exactly the recommendation and the panel came out shorter than gate 5A's, not longer: the blocks it replaced were reporting things already visible on the Grid | [`engine.md`](engine.md) Section 9.2; [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md) |
 | Q50 | 2026-09-21 | **A click places the armed structure — no second click to confirm.** Mario, shown both behaviours side by side: "Click to place looks good to me too. We can always implement undo or destroy later, for now this is good." (Undo and remove already exist: `u` and Backspace.) The toggle is deleted rather than kept as a setting. **Revisited 2026-09-26, see Q52** | [`engine.md`](engine.md) Section 9.7, whose own recommendation this confirms; [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md) |
 | Q52 | 2026-09-26 | **Reversed: a second click on the same tile places it, not the first.** Owner, after living with gate 5D's build: "the building is placed right away, but there should be a confirmation... the default should require a second click." A future `Shift+click` is planned as a one-click escape hatch, not built now. Q50's own asymmetry finding (a first click can scroll the camera, so a second click at the same *screen position* lands on a different *tile*) is what makes this safe to re-adopt: the check is on tile identity, not screen position | [`engine.md`](engine.md) Section 9.7 |
+| Q60 | 2026-09-27 | **B — the popup closes on the pick.** The owner, asked directly ("does the Nexus Powers popup close itself after you pick a power? My recommendation is that it closes"), agreed. Open, pick, and the player is back on the menu; the status line and the entry's "1 active" confirm it, and reopening the popup shows the pick listed as active. Esc still closes it without a pick. The register's own written recommendation was A (stay open); the question was put to him with B recommended, on the grounds that the pick is confirmed in two other places and the open popup cost a key on every Build Phase | `../src/build/state.ts` (`pickNexus`) |
 | Q56 | 2026-09-27 | **A solid bar, on all four sides.** Owner, after playing gate 5F: "The grid borders need to also use the 'thick' version horizontally... it should use something that is more clear... The rectangle needs to be a rectangle." A side that has reached the map's edge is drawn as an inverse-video cell — the same weight horizontally and vertically, in every glyph pack and in monochrome — and a corner is solid where a solid side runs into it. Replaces the `=` / bold `|` pair gate 5E built | `../src/view/build.ts` (`drawChrome`); `engine.md` 3.3 owes the update (`../docs/feedback/2026-09-27-build-phase-playtest.md`, F10) |
 | Q57 | 2026-09-27 | **A — always back to the menu**, reversing the recommendation gate 5F built. Owner: "I like keeping that as the main orchestrator, so when a building is placed, the focus should always come back to the menu." A placement also disarms: a building is armed only while the map has focus. Esc returns focus to the menu (and on the menu asks "Exit the game?"); Backspace stays "remove". The digit path is now "digit, arrows, Enter" per building | `../src/build/state.ts` (`place`); `engine.md` 9.7 owes the update (`../docs/feedback/2026-09-27-build-phase-playtest.md`, F8) |
 | Q1 | 2026-08-20 | **Tile width is adaptive presentation capability**: one column per tile in the 80x24 composition, two columns per tile at 128 columns or wider. Same tiles, same actors, same revealed information — only the composition changes. The 80x24 floor is preserved and the concept art's look is reachable on a wide terminal | [`engine.md`](engine.md) Section 9.3 |
@@ -1661,3 +1641,25 @@ and the result is worth one sentence for whoever reopens the scope question: **t
 out shorter *and* more useful than the one it replaced**, because four of gate 5A's six blocks were
 reporting things the Grid already showed. A panel that narrates state grows; a panel that answers
 questions does not. [`engine.md`](engine.md) Section 9.2 now carries the contents.
+
+### Q60 — answered
+
+**Question:** Q60 — After a Nexus power is picked, does the popup stay open until Esc, or close itself?
+
+**Status:** ANSWERED 2026-09-27 — B, "close on the pick", at the owner's direction (the Answered table above has the decision). The original entry follows.
+
+Gate 5F's Nexus Powers popup, per the milestone tracker, "holds focus until Esc". So after a pick it
+stays open, showing "Nothing waiting" and the pick listed as active with its one line of
+description. That costs one key on every Build Phase's most common path (open, pick, close), and the
+same line is already on screen elsewhere: the menu entry reads "1 active" and the status line says
+"Reserve Fund picked."
+
+| Option | Cost |
+| --- | --- |
+| A. **Stay open until Esc** (built) | One extra key per Build Phase; the player sees the pick land in the "active" list before leaving, and the popup never closes under them |
+| B. **Close on the pick** | One key saved; the confirmation is the status line and the menu entry alone. A player who meant to read the active list afterwards has to reopen it |
+
+**Recommendation: A, with B one Debug Mode field away.** Once Milestone 8 deals more than one power,
+or several over a campaign, the popup becomes the place to read what is active, and closing it the
+instant something changes there would hide the change. Until then the owner's feel is the better
+judge, and gate 5G makes that a toggle rather than a rebuild.

@@ -23,7 +23,11 @@ import { composeBuildFrame } from "../view/build.ts"
 import type { BuildFlash } from "../view/build.ts"
 import { gateFrame, keysFromChunk } from "../view/index.ts"
 import { selectBackend } from "../view/backends/index.ts"
-import { createTerminalSession } from "./lifecycle.ts"
+import type { NamedBackend } from "../view/backends/index.ts"
+import { chunkText } from "../view/backends/ports.ts"
+import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
+import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
+import type { Host } from "./lifecycle.ts"
 import type { Settings } from "../settings/index.ts"
 
 const ESC = "\u001b"
@@ -42,9 +46,12 @@ const FLASH_MS = { pressed: 90, refused: 140 } as const
 
 export type SpikeOptions = Readonly<{
   settings: Settings
-  backend: string
-  stdout: NodeJS.WriteStream
-  stdin: NodeJS.ReadStream
+  /** A backend name, or a backend itself (the browser playtest page's canvas). */
+  backend: string | NamedBackend
+  stdout: TerminalOutput
+  stdin: TerminalInput
+  /** Interrupts, exit and error reporting; a terminal program's `process` unless given. */
+  host?: Host
   exit?: (code: number) => void
   /** `--scroll-margin`, so the margin can be felt against another number. Omitted means three. */
   scrollMargin?: number
@@ -93,9 +100,10 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
   /** The frame size last presented, so a redraw only clears when the size genuinely changed. */
   let lastFrame = { width: layout.frame.width, height: layout.frame.height }
 
-  const session = createTerminalSession()
+  const host = options.host ?? PROCESS_HOST
+  const session = createTerminalSession(host)
   const dispose = session.dispose
-  const exit = options.exit ?? ((code: number): void => process.exit(code))
+  const exit = options.exit ?? host.exit
 
   const leave = (): void => {
     if (leaving) return
@@ -171,9 +179,9 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     render()
   }
 
-  function onData(data: Buffer): void {
+  function onData(data: string | Uint8Array): void {
     if (gated || leaving) return
-    for (const key of keysFromChunk(data.toString("utf8"))) {
+    for (const key of keysFromChunk(chunkText(data))) {
       if (leaving) break
       build.handleKey(key, layout)
     }
@@ -209,7 +217,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
   }
 
   if (failure !== null) {
-    process.stderr.write(`terminal-nexus --spike failed: ${String(failure)}\n`)
+    host.reportError(`terminal-nexus --spike failed: ${String(failure)}\n`)
     return 1
   }
   return 0

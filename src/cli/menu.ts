@@ -15,7 +15,11 @@ import { composeMenuFrame, MENU_LAYOUT, MENU_SIZE } from "../view/menu.ts"
 import { gateFrame, keysFromChunk } from "../view/index.ts"
 import { AnsiBackend } from "../view/backends/ansi.ts"
 import { selectBackend } from "../view/backends/index.ts"
-import { createTerminalSession } from "./lifecycle.ts"
+import type { NamedBackend } from "../view/backends/index.ts"
+import { chunkText } from "../view/backends/ports.ts"
+import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
+import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
+import type { Host } from "./lifecycle.ts"
 import { nextCapability, nextGlyphPack, nextTheme, toggleReducedMotion } from "../settings/types.ts"
 import type { Settings, SettingsStore } from "../settings/index.ts"
 
@@ -89,9 +93,12 @@ export type MenuOptions = Readonly<{
   settings: Settings
   /** Where a change made on the Settings screen is written back to. */
   settingsStore: SettingsStore
-  backend: string
-  stdout: NodeJS.WriteStream
-  stdin: NodeJS.ReadStream
+  /** A backend name, or a backend itself (the browser playtest page's canvas). */
+  backend: string | NamedBackend
+  stdout: TerminalOutput
+  stdin: TerminalInput
+  /** Interrupts, exit and error reporting; a terminal program's `process` unless given. */
+  host?: Host
   /** Injectable for the same reason `watch.ts`'s is: a test drives quit paths through real code. */
   exit?: (code: number) => void
 }>
@@ -146,9 +153,10 @@ export async function runMenu(options: MenuOptions): Promise<number> {
   // inside the alternate screen and corrupt whatever the menu is showing.
   let settingsSaveError: unknown = null
 
-  const session = createTerminalSession()
+  const host = options.host ?? PROCESS_HOST
+  const session = createTerminalSession(host)
   const dispose = session.dispose
-  const exit = options.exit ?? ((code: number): void => process.exit(code))
+  const exit = options.exit ?? host.exit
 
   const leave = (): void => {
     if (leaving) return
@@ -261,7 +269,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     render()
   }
 
-  function onData(data: Buffer): void {
+  function onData(data: string | Uint8Array): void {
     if (gated || leaving) return
     // Split here, and re-read `screen` before *every* key — not once for the whole chunk — because
     // a hotkey that changes screen and a second key typed right behind it can arrive in the same
@@ -269,7 +277,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     // dispatching every remaining key in the chunk to the screen that was current when the chunk
     // *started*, silently misrouting anything typed right after the switch to a session menu the
     // player can no longer see.
-    for (const key of keysFromChunk(data.toString("utf8"))) {
+    for (const key of keysFromChunk(chunkText(data))) {
       if (leaving) break
       sessionFor(screen).handleKey(key, MENU_LAYOUT)
     }
@@ -311,11 +319,11 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     // invisible until someone thinks to check it by hand. Written only now, after `dispose()` has
     // already restored the terminal to its normal state, so it lands as a plain line rather than
     // inside whatever the alternate screen was showing.
-    process.stderr.write(`terminal-nexus: could not save settings: ${String(settingsSaveError)}\n`)
+    host.reportError(`terminal-nexus: could not save settings: ${String(settingsSaveError)}\n`)
   }
 
   if (failure !== null) {
-    process.stderr.write(`terminal-nexus failed: ${String(failure)}\n`)
+    host.reportError(`terminal-nexus failed: ${String(failure)}\n`)
     return 1
   }
   return 0

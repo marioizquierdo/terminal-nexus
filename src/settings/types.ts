@@ -49,3 +49,46 @@ export function nextGlyphPack(current: GlyphPack): GlyphPack {
 export function toggleReducedMotion(current: boolean): boolean {
   return !current
 }
+
+// Where settings are kept is the caller's choice: a file in the home directory for the terminal game
+// (`store.ts`), browser storage for the playtest page (`src/web/host.ts`). The shape and the
+// forgiving parse are shared here, where nothing touches a disk.
+
+export type SettingsStore = Readonly<{
+  /**
+   * `null` means nothing has ever been saved — no file, or a file that is not even valid JSON —
+   * which is the caller's cue to apply its own first-run guess (the way `grid` picks a colour depth
+   * from the terminal itself) rather than a fixed baseline. Never rejects and never throws: a file
+   * that exists and is a genuine object but has a field missing, of the wrong type, or left over from
+   * an older or newer version of the game still comes back as real `Settings`, with only that one
+   * field falling back to `DEFAULT_SETTINGS` (see `parseSettings`) — a saved preference is not
+   * discarded wholesale over one bad field.
+   */
+  load(): Promise<Settings | null>
+  /** Creates the containing folder if it does not exist yet, then writes the whole file. */
+  save(settings: Settings): Promise<void>
+}>
+
+function isOneOf<T extends string>(all: readonly T[], value: unknown): value is T {
+  return typeof value === "string" && (all as readonly string[]).includes(value)
+}
+
+/**
+ * Builds a legal `Settings` from whatever JSON was on disk, one field at a time — a saved file
+ * missing a field entirely (an older version of the game), carrying a field this version no longer
+ * recognises (a newer one), or holding a field of the wrong type (hand-edited, or truncated) still
+ * yields every *other* field it got right, rather than falling back to `DEFAULT_SETTINGS` wholesale.
+ */
+export function parseSettings(value: unknown): Settings {
+  const record = typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {}
+  const capability: CapabilityMode = isOneOf(CAPABILITY_MODES, record["capability"])
+    ? record["capability"]
+    : DEFAULT_SETTINGS.capability
+  const theme: Theme = isOneOf(THEMES, record["theme"]) ? record["theme"] : DEFAULT_SETTINGS.theme
+  const glyphPack: GlyphPack = isOneOf(GLYPH_PACKS, record["glyphPack"])
+    ? record["glyphPack"]
+    : DEFAULT_SETTINGS.glyphPack
+  const reducedMotion =
+    typeof record["reducedMotion"] === "boolean" ? record["reducedMotion"] : DEFAULT_SETTINGS.reducedMotion
+  return { capability, theme, glyphPack, reducedMotion }
+}

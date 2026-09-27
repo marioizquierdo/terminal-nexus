@@ -186,17 +186,22 @@ question) — the extraction gate 5G was going to do.
 Found by the browser-rendering research (2026-09-27), not by a player: the Pulse playback loop cleans
 up the terminal on `q` but then waits for the program to exit, and never resolves by itself. The
 terminal hides it because the process exits. It breaks the first time one process must go Pulse →
-back to Build Phase, which is Milestone 6. **Scheduled — fix with the portable-rendering work if that
-is approved, otherwise at the start of Milestone 6.**
+back to Build Phase, which is Milestone 6. **Built** (the browser playtest pull request): leaving now
+also finishes the playback, and `tests/lifecycle.test.ts` fails without the fix.
 
 ### F17 — First-time pass over the round-2 build (played as a new user, through the playtest tool)
 
+**Built** — the first item, after he agreed the menu side of the map gets a solid bar like the others:
+
+- On a map scrolled to its west edge, the map's solid west bar sat directly against the menu, so the
+  divider looked like a thick panel border rather than "the map ends here" (`build-idle.png`). The
+  divider and the map's west side are now two columns: the divider is a plain line, the map's own
+  west side is solid where the map ends and a blank gutter where there is more map (the divider then
+  goes light, like the other three sides). The column comes from the menu, which is one character
+  narrower; the map keeps all 48 of its columns at 80 × 24.
+
 **Open — for his eye, each small:**
 
-- On a map scrolled to its west edge, the map's solid west bar sits directly against the menu, so the
-  divider looks like a thick panel border rather than "the map ends here" (`build-idle.png`). One fix:
-  keep the divider plain and draw the solid edge one column inside the map pane. Worth seeing before
-  deciding.
 - A popup's shadow is black on the dark theme's near-black background, so it barely shows; the solid
   border does the work. On the light theme it will show.
 - Backspace on the menu does nothing and says nothing (it removes the building under the map cursor,
@@ -220,3 +225,7 @@ the owner; the documents were not bumped in this round so the orchestrator can d
 - `specs/engine.md` 9.4 — a popup is drawn last in the chrome band, no band of its own.
 - `docs/ui-patterns.md` — promote into `engine.md` Section 9 once accepted.
 - `AGENTS.md` Section 4 — the input-model and Build-Phase-panel bullets.
+- `specs/engine.md` 9.2 / 9.7 — the Nexus Powers popup closes on the pick (Q60 answered, 2026-09-27);
+  the map's west side is its own column beside the menu's divider (F17).
+
+The browser playtest page's own rule is already in `specs/engine.md` 10.2 (canon 2.20).

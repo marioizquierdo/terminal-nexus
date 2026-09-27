@@ -1,0 +1,94 @@
+<title>Terminal Nexus Playtest</title>
+<meta name="description" content="The game's own menu, Build Phase and Pulse playback, painted cell by cell in a browser.">
+<style>
+  /* One look on purpose: the game's own dark terminal. The screen inside the canvas follows the
+     game's Settings (dark or light); the page around it stays the terminal it imitates. */
+  :root {
+    color-scheme: dark;
+    --ground: #0a0a0c;
+    --panel: #14171b;
+    --line: #2a3038;
+    --ink: #d6dae0;
+    --muted: #8a939e;
+    --accent: #5cc8d4;
+    --warn: #e0a458;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font: 14px/1.45 "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    padding-inline: 16px;
+    padding-block: 12px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow: hidden;
+  }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+  h1 {
+    margin: 0;
+    font: 600 14px/1.2 "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .stamp { color: var(--muted); font: 12px "IBM Plex Mono", ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; }
+  .row { display: flex; gap: 6px; align-items: center; overflow-x: auto; flex: none; scrollbar-width: none; }
+  .row::-webkit-scrollbar { display: none; }
+  button, select {
+    flex: none;
+    font: 500 13px "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 8px 10px;
+    min-width: 40px;
+    touch-action: manipulation;
+  }
+  button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  button:active { background: var(--line); }
+  button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .spacer { flex: 1 0 8px; }
+  #stage { flex: 1 1 auto; min-height: 0; min-width: 0; overflow: hidden; display: flex; justify-content: center; align-items: flex-start; }
+  #screen { display: block; touch-action: none; -webkit-user-select: none; user-select: none; }
+  #typing { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+  #status { margin: 0; min-height: 1.45em; color: var(--warn); font: 12px "IBM Plex Mono", ui-monospace, Menlo, monospace; }
+  .hint { margin: 0; color: var(--muted); font-size: 12px; max-width: 70ch; }
+  .rotate { display: none; margin: 0; color: var(--accent); font-size: 12px; }
+  @media (orientation: portrait) and (max-width: 600px) { .rotate { display: block; } }
+  /* A phone on its side has about 390 px of height: the screen gets all of it but the key bar. */
+  @media (max-height: 500px) {
+    body { padding-block: 4px; gap: 4px; }
+    header, .hint, #status:empty { display: none; }
+    button, select { padding: 5px 8px; }
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500&display=swap">
+
+<header>
+  <h1>Terminal Nexus</h1>
+  <span class="stamp">playtest build <span id="build"></span></span>
+</header>
+<nav class="row" aria-label="Screen">
+  <button type="button" data-mode="menu">Menu</button>
+  <button type="button" data-mode="build">Build Phase</button>
+  <button type="button" data-mode="pulse-grand">Pulse: grand battle</button>
+  <button type="button" data-mode="pulse-mirror">Pulse: Citizens v Ravels</button>
+  <span class="spacer"></span>
+  <label class="stamp" for="size">terminal</label>
+  <select id="size" aria-label="Terminal size in columns by rows">
+    <option value="80x24" selected>80 × 24</option>
+    <option value="104x32">104 × 32</option>
+    <option value="128x24">128 × 24</option>
+  </select>
+</nav>
+<p class="rotate">Turn the phone sideways: the game's screen is 80 columns wide.</p>
+<div id="stage"><canvas id="screen" aria-label="The game's screen"></canvas></div>
+<div class="row" id="keys" role="toolbar" aria-label="Keys"></div>
+<p id="status" role="status"></p>
+<p class="hint">This is the game's own code: the same menu, Build Phase and Pulse playback the terminal runs, painted cell by cell. Tap a tile or a menu row to click it; tap the same tile twice to place. Shift makes the next arrow a fast move. "abc" opens the phone's keyboard for letters. A development tool; the terminal is still the real game.</p>
+<input id="typing" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Type keys">
+<!--BUNDLE-->

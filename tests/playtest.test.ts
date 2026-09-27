@@ -51,9 +51,9 @@ test("the owner's menu flow — Down three times, then Space four times — plan
 })
 
 test("a click on a tile goes through the mouse adapter at wherever that tile is drawn", () => {
-  // Arm Barracks by its digit, then click the same tile twice: the first click moves the cursor
+  // Pick a Nexus power (which closes its popup), arm Barracks by its digit, then click the same tile twice: the first click moves the cursor
   // there, the second places.
-  const run = runBuildPlaytest({ steps: parseKeyScript("n 1 n 1 click:30,10 click:30,10") })
+  const run = runBuildPlaytest({ steps: parseKeyScript("n 1 1 click:30,10 click:30,10") })
   const last = run.frames[run.frames.length - 1]!
   assert.equal(last.state.planned.length, 1)
   assert.match(frameToText(last.frame), /Barracks placed \(resources: 90\)/)

@@ -59,8 +59,8 @@ mkdirSync(outputDirectory, { recursive: true })
 const report = (result) =>
   console.log(`${result.written ? "wrote" : "unchanged"} ${relative(repoRoot, result.path)}`)
 
-/** Open the Nexus Powers popup, pick its first power, and close it again. */
-const PICK_FIRST_POWER = "n 1 n"
+/** Open the Nexus Powers popup and pick its first power, which closes it. */
+const PICK_FIRST_POWER = "n 1"
 
 // --- In-process shots ----------------------------------------------------------------------------
 
@@ -149,8 +149,8 @@ scripted(
 
 scripted(
   "build-nexus-popup-picked",
-  "104x32, after picking: nothing waiting, the pick listed as active with what it does, and the budget above the menu already counting it",
-  { keys: "n 2", expect: "Nothing waiting", cols: 104, rows: 32 },
+  "104x32, reopened after a pick (the pick itself closes it): nothing waiting, the pick listed as active with what it does, and the budget above the menu already counting it",
+  { keys: "n 2 n", expect: "Nothing waiting", cols: 104, rows: 32 },
 )
 
 scripted(
@@ -266,11 +266,10 @@ function live(name, caption, { cols = 80, rows = 24, args = "--capability trueco
 
 const key = (name) => sendKey(repoRoot, SESSION, name)
 const literal = (bytes) => sendKeys(repoRoot, SESSION, bytes)
-/** In tmux, `n`, `1`, `n` — never Esc to close: see `KEY_PAUSE_SECONDS`. */
+/** In tmux, `n` then `1` — the pick closes the popup (Q60), so no Esc: see `KEY_PAUSE_SECONDS`. */
 const pickFirstPower = () => {
   literal("n")
   literal("1")
-  literal("n")
 }
 
 live(

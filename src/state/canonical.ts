@@ -6,7 +6,7 @@
 // on any conforming runtime — which is what makes the Bun/Node hash comparison meaningful rather
 // than lucky.
 
-import { createHash } from "node:crypto"
+import { sha256Hex } from "./sha256.ts"
 
 export type Jsonish =
   | null
@@ -48,8 +48,10 @@ function stringify(value: unknown): string {
   throw new Error(`refusing to serialize a ${typeof value}`)
 }
 
+/** The hex SHA-256 of `text` — plain JavaScript, not `node:crypto`, so a browser build computes the
+ *  identical fingerprint (`./sha256.ts`). */
 export function sha256(text: string): string {
-  return createHash("sha256").update(text, "utf8").digest("hex")
+  return sha256Hex(text)
 }
 
 export function hashOf(value: unknown): string {

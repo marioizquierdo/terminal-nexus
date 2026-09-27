@@ -16,8 +16,8 @@ export type TerminalSession = Readonly<{
    */
   onDispose(step: () => unknown): void
   /**
-   * Hooks SIGINT and SIGTERM to `leave` and registers their own removal as a dispose step, so a
-   * caller never has to remember to unhook a signal handler by hand.
+   * Hooks the host's interrupts (SIGINT and SIGTERM, for a terminal program) to `leave` and registers
+   * their own removal as a dispose step, so a caller never has to remember to unhook one by hand.
    */
   onSignal(leave: () => void): void
   /**
@@ -28,7 +28,38 @@ export type TerminalSession = Readonly<{
   dispose(): Promise<void>
 }>
 
-export function createTerminalSession(): TerminalSession {
+/**
+ * What a screen loop needs from the program around it, beyond the terminal itself: interrupts to
+ * listen for, how to end, and where a failure is reported once the screen is restored. A terminal
+ * program is `PROCESS_HOST`; the browser playtest page supplies its own (no signals, a tab never
+ * exits, errors to the console) — so no loop reaches for `process` directly.
+ */
+export type Host = Readonly<{
+  /** Calls `leave` on an interrupt; returns what unhooks it again. */
+  onInterrupt(leave: () => void): () => void
+  exit(code: number): void
+  reportError(text: string): void
+}>
+
+export const PROCESS_HOST: Host = {
+  onInterrupt(leave) {
+    const handler = (): void => leave()
+    process.on("SIGINT", handler)
+    process.on("SIGTERM", handler)
+    return () => {
+      process.off("SIGINT", handler)
+      process.off("SIGTERM", handler)
+    }
+  },
+  exit(code) {
+    process.exit(code)
+  },
+  reportError(text) {
+    process.stderr.write(text)
+  },
+}
+
+export function createTerminalSession(host: Host = PROCESS_HOST): TerminalSession {
   const steps: Array<() => unknown> = []
   let settled: Promise<void> | null = null
 
@@ -37,13 +68,7 @@ export function createTerminalSession(): TerminalSession {
       steps.push(step)
     },
     onSignal(leave) {
-      const handler = (): void => leave()
-      process.on("SIGINT", handler)
-      process.on("SIGTERM", handler)
-      steps.push(() => {
-        process.off("SIGINT", handler)
-        process.off("SIGTERM", handler)
-      })
+      steps.push(host.onInterrupt(leave))
     },
     dispose() {
       settled ??= (async () => {

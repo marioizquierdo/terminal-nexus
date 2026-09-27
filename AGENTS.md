@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.19
+**Canon version:** 2.20
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -27,7 +27,10 @@ two runtimes. A `.claude/skills/grid` skill has `grid`'s CLI, report grammar, an
 workflow in more detail than this file does — read it before re-deriving any of that from source.
 A `.claude/skills/playtest` skill (`node scripts/playtest.mjs`) presses keys on the Build Phase
 screen without a terminal and returns every step's screen as text, PNGs or a GIF — the quickest way
-to see a change working and to make a pull request's pictures.
+to see a change working and to make a pull request's pictures. `bun scripts/build-web.mjs` builds
+the **browser playtest page** — the real menu, Build Phase and Pulse playback in one HTML file, for
+playing from a phone during review; publish it as a private page on the pull request when a change is
+worth playing (`DEVELOPMENT.md` has the details).
 
 ## 1. Start with authority, not code
 
@@ -149,6 +152,12 @@ state: [`docs/ui-patterns.md`](docs/ui-patterns.md) — follow it on every new s
 where every owner item is built, scheduled or contested; an orchestrator session works through what is
 still open there before gate 5G.**
 
+**After round 2 (2026-09-27, canon 2.20)**, Mario agreed three things and they are built: the Nexus
+Powers popup closes on the pick (Q60); the map's west edge is its own column beside a plain menu
+divider (feedback F17); and the browser playtest page exists, as a development tool whose rule is in
+`specs/engine.md` 10.2 and Section 4 below. The Pulse playback's `q` now also finishes the playback
+(F16), which Milestone 6's Pulse-to-Build-Phase handover needed.
+
 The current milestone is **[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md)
 — Build Phase**: can a player place buildings, pick a Nexus upgrade, and scroll a real map, by
 keyboard, mouse and driver alike? Its active gate is **5F — layout and keyboard focus**, now built
@@ -239,6 +248,11 @@ deleted, and the renderer must be replaceable without one simulation test changi
   never literal colors.
 - OpenTUI, direct ANSI, browser, SSH, mobile, and future graphical renderers are adapters. The
   terminal library and the JavaScript runtime are independent choices.
+- **The browser playtest page is a development tool, never a platform**: it runs the terminal's own
+  screen loops through a stand-in terminal and converts only frames, input bytes and settings storage;
+  nothing reachable from it may import a Node-only module (the build fails if one does). A terminal at
+  80 × 24 stays the acceptance target. State fingerprints use a plain-JavaScript SHA-256 so both
+  places compute the same hashes.
 - Presentation may interpolate, skip, pause, accelerate, reduce motion, or recolor without changing
   simulation.
 - Corruption effects live in the `effects` band or above; they never remove the only carrier of a

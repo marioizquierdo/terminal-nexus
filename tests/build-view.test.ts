@@ -144,6 +144,12 @@ test("engine-3.3-markers: a Grid side goes soft where there is more Grid, and he
     false,
     "nothing west of the Grid's own left edge",
   )
+  // The map's west edge is a solid bar in its own column, and the menu's divider beside it stays a
+  // plain line (owner, 2026-09-27): shared, the bar read as a heavy menu border.
+  assert.equal(cellAt(corner.frame, gridBox.left, midGridRow).style.inverse, true, "the west edge is solid")
+  assert.equal(cellAt(corner.frame, corner.layout.dividerColumn, midGridRow).glyph, "|")
+  assert.notEqual(cellAt(corner.frame, corner.layout.dividerColumn, midGridRow).style.inverse, true)
+  assert.notEqual(cellAt(corner.frame, corner.layout.dividerColumn, midGridRow).style.dim, true)
   assert.ok(isSoftEdge(corner.frame, midGridColumn, gridBox.bottom), "more Grid to the south")
   assert.ok(isSoftEdge(corner.frame, gridBox.right, midGridRow), "more Grid to the east")
 
@@ -156,12 +162,15 @@ test("engine-3.3-markers: a Grid side goes soft where there is more Grid, and he
   const midRow = middle.layout.origin.row + 5
   assert.ok(isSoftEdge(middle.frame, midColumn, box.top), "north, from the middle")
   assert.ok(isSoftEdge(middle.frame, midColumn, box.bottom), "south, from the middle")
-  assert.ok(isSoftEdge(middle.frame, box.left, midRow), "west, from the middle")
+  // West, the light side is the divider itself; the Grid's own west column is a blank gutter until
+  // the map's edge comes into view and it turns solid.
+  assert.ok(isSoftEdge(middle.frame, middle.layout.dividerColumn, midRow), "west, from the middle")
+  assert.equal(cellAt(middle.frame, box.left, midRow).glyph, " ")
   assert.ok(isSoftEdge(middle.frame, box.right, midRow), "east, from the middle")
   // Soft is the frame's own line, drawn dim — not the ground lattice's dot, which is what made the
   // earlier dotted edge read as "arbitrary" beside a field of the same dots.
   assert.equal(cellAt(middle.frame, midColumn, box.top).glyph, "-")
-  assert.equal(cellAt(middle.frame, box.left, midRow).glyph, "|")
+  assert.equal(cellAt(middle.frame, middle.layout.dividerColumn, midRow).glyph, "|")
 
   // The outer border and the rules where they cross the side panel never scroll, so they stay plain
   // regardless.
@@ -494,7 +503,7 @@ test("no header or footer line is cut off at the 80-column floor", () => {
   assert.match(text, /TERMINAL NEXUS build phase/)
   assert.match(text, /view x 0-47 y 1-16 of 96x40 {3}cursor 18,13/)
   assert.match(text, /EXPLORE {2}arrows move {2}enter\/space inspect {2}tab\/esc menu/)
-  assert.match(text, /RESOURCE {10}100 of 100/, "the panel's budget line, whole")
+  assert.match(text, /RESOURCE {9}100 of 100/, "the panel's budget line, whole")
 })
 
 test("the scroll margin the screen prints is the one it is actually using", () => {
@@ -747,7 +756,7 @@ test("engine-3.3-markers: the side border is soft on every row, not a broken col
   const { frame, layout } = screenAt(MINIMUM, (build) => {
     build.run([{ kind: "move-cursor", dx: 40, dy: 20 }])
   })
-  assert.equal(layout.gridBox.left, layout.dividerColumn, "the divider is the Grid's west side")
+  assert.equal(layout.gridBox.left, layout.dividerColumn + 1, "the Grid's west side is next to the divider")
   for (let row = layout.origin.row; row < layout.origin.row + layout.viewport.height; row += 1) {
     assert.equal(
       cellAt(frame, layout.gridBox.right, row).style.dim,
@@ -755,7 +764,7 @@ test("engine-3.3-markers: the side border is soft on every row, not a broken col
       `the east edge is not soft on row ${row}`,
     )
     assert.equal(
-      cellAt(frame, layout.gridBox.left, row).style.dim,
+      cellAt(frame, layout.dividerColumn, row).style.dim,
       true,
       `the west edge is not soft on row ${row}`,
     )
