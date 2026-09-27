@@ -12,11 +12,10 @@
 // key help on the owner's own call (2026-09-26: "leave pgup/home keys out, people will figure that
 // out just fine").
 
-import type { BuildCommand, Focus } from "./types.ts"
+import type { BuildCommand, Focus, Overlay } from "./types.ts"
 import { JUMP_TILES } from "./state.ts"
 
 const ESC = String.fromCharCode(27)
-const QUIT_KEYS = new Set(["q", String.fromCharCode(3)])
 const PLACE_KEYS = new Set(["\r", "\n", " "])
 const REMOVE_KEYS = new Set([String.fromCharCode(127), String.fromCharCode(8), `${ESC}[3~`])
 
@@ -93,25 +92,24 @@ const FALLBACK_JUMPS: Readonly<Record<string, Readonly<{ dx: number; dy: number 
 const TAB = "\t"
 const MENU_UP = new Set([`${ESC}[A`, `${ESC}OA`])
 const MENU_DOWN = new Set([`${ESC}[B`, `${ESC}OB`])
+const MENU_LEFT = new Set([`${ESC}[D`, `${ESC}OD`])
+const MENU_RIGHT = new Set([`${ESC}[C`, `${ESC}OC`])
 
 export type KeyboardContext = Readonly<{
   /** How many construct-menu rows there are, so a digit past the end of the list means nothing
    *  rather than arming something that is not on screen. */
   itemCount: number
-  /** Esc disarms when something is armed, and otherwise leaves the screen — engine.md 9.7: "disarm
-   *  the current selection, close an overlay, back out of a menu", and "never quits the game by
-   *  itself." */
+  /** Whether a structure is armed: on the Grid, Enter/Space then places rather than inspects. */
   armed: boolean
   /** Which half of the screen arrows and Enter/Space belong to (gate 5F). Defaults to the Grid, the
    *  meaning every key had before focus existed. */
   focus?: Focus
-  /** While the Nexus Powers popup is open: how many powers are waiting to be picked. The popup holds
-   *  the keyboard — arrows and Enter/Space work its list, digits pick from it, Esc closes it — and
-   *  nothing underneath answers a key until it does. Absent while no overlay is open. */
+  /** The popup that is open, if any. A popup holds the keyboard: only its own keys reach it, and
+   *  nothing underneath answers a key until it closes. */
+  overlay?: Overlay | null
+  /** While the Nexus popup is open: how many powers are waiting to be picked, so a digit past them
+   *  means nothing. */
   overlayPendingCount?: number
-  /** True while the commit confirmation is open, so Esc answers it rather than disarming or
-   *  leaving — nothing can be armed while it is open anyway. */
-  confirming?: boolean
 }>
 
 function digitIndex(key: string): number | null {
@@ -119,16 +117,33 @@ function digitIndex(key: string): number | null {
   return key === "0" ? 9 : Number(key) - 1
 }
 
-/** The overlay's own keys. Everything else is swallowed: an overlay that let `u` reach the plan
- *  underneath it would be one the player cannot trust to be modal. */
-function overlayCommand(key: string, pendingCount: number): BuildCommand | null {
-  if (key === ESC || key === "n") return { kind: "close-overlay" }
-  if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
-  if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
-  if (PLACE_KEYS.has(key)) return { kind: "activate" }
-  const index = digitIndex(key)
-  if (index !== null && index < pendingCount) return { kind: "pick-nexus", index }
-  return null
+/** `x` is Esc, everywhere (owner, 2026-09-27: "it should be equivalent to do [esc], and x"). */
+const CANCEL_KEYS = new Set([ESC, "x"])
+
+/** A popup's own keys. Everything else is swallowed: a popup that let `u` reach the plan underneath
+ *  it would be one the player cannot trust to be modal. */
+function overlayCommand(key: string, overlay: Overlay, pendingCount: number): BuildCommand | null {
+  if (CANCEL_KEYS.has(key)) return { kind: "cancel" }
+  switch (overlay) {
+    case "exit":
+      return key === "q" ? { kind: "quit" } : null
+    case "confirm-commit":
+      if (key === "y") return { kind: "confirm-commit", accept: true }
+      if (key === "n") return { kind: "confirm-commit", accept: false }
+      return key === "q" ? { kind: "request-exit" } : null
+    case "nexus-powers": {
+      if (key === "n") return { kind: "cancel" }
+      if (key === "q") return { kind: "request-exit" }
+      if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
+      if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
+      if (PLACE_KEYS.has(key)) return { kind: "activate" }
+      const index = digitIndex(key)
+      if (index !== null && index < pendingCount) return { kind: "pick-nexus", index }
+      return null
+    }
+    default:
+      return null
+  }
 }
 
 /** Any of the Grid's cursor keys, as the move it is — or `null`. */
@@ -168,45 +183,35 @@ function cursorMove(key: string): BuildCommand | null {
  * opens the Nexus Powers, `u`, Backspace and `p` do what they always did, whichever half has focus.
  */
 export function buildKeyboardCommand(key: string, context: KeyboardContext): BuildCommand | null {
-  if (QUIT_KEYS.has(key)) return { kind: "quit" }
+  // Ctrl+C always quits outright; `q` asks first, so a stray press cannot lose a plan.
+  if (key === String.fromCharCode(3)) return { kind: "quit" }
+  const overlay = context.overlay ?? null
+  if (overlay !== null) return overlayCommand(key, overlay, context.overlayPendingCount ?? 0)
   const focus = context.focus ?? "grid"
 
-  if (context.confirming === true) {
-    // The commit question owns `y`, `n` and Esc; the Grid is still there to look at, so arrows move
-    // the cursor whichever half had focus when `p` was pressed. Everything else reaches the reducer,
-    // which refuses it with the reason.
-    if (key === ESC || key === "n") return { kind: "confirm-commit", accept: false }
-    if (key === "y") return { kind: "confirm-commit", accept: true }
-    if (key === TAB) return null
-    const move = cursorMove(key)
-    if (move !== null) return move
-  } else if (context.overlayPendingCount !== undefined) {
-    return overlayCommand(key, context.overlayPendingCount)
-  }
-
-  if (key === ESC) {
-    // One level of "cancel" per press: the Grid gives focus back to the menu (disarming on the way,
-    // Q57), the menu disarms, and only a menu with nothing armed leaves the screen.
-    if (focus === "grid" || context.armed) return { kind: "disarm" }
-    return { kind: "back" }
-  }
+  // One "back" for Esc and `x`, walking a stack the reducer knows: the information panel, then the
+  // Grid (to the menu, disarming), then the menu (the exit question).
+  if (CANCEL_KEYS.has(key)) return { kind: "cancel" }
+  if (key === "q") return { kind: "request-exit" }
   if (key === TAB) return { kind: "focus", target: focus === "grid" ? "menu" : "grid" }
-  if (PLACE_KEYS.has(key)) return focus === "menu" ? { kind: "activate" } : { kind: "place" }
-  if (REMOVE_KEYS.has(key)) return { kind: "remove" }
   if (key === "u") return { kind: "undo" }
-  // `y` only ever means something while the confirmation is open, and the reducer is what decides
-  // that — a stray `y` elsewhere is exactly as inert as a stray digit is before anything is armed.
-  if (key === "y") return { kind: "confirm-commit", accept: true }
-  // `n` is the Nexus Powers entry's letter, and `[n]o` only while the commit question is open (above)
-  // — when the menu, and the entry on it, is not drawn at all. Why `n` and not another letter is in
-  // `evidence/gate-5f-report.md`.
   if (key === "n") return { kind: "open-nexus-powers" }
+  if (key === "e") return { kind: "explore" }
   if (key === "p") return { kind: "commit" }
+  // `y` only ever means something while the start-the-Pulse question is open; outside it is inert.
+  if (key === "y") return null
 
   if (focus === "menu") {
     if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
     if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
+    // Left/Right have nothing to do on the menu: the row flickers so the player sees where the keys
+    // went, and a second Right moves focus to the Grid (owner, 2026-09-27).
+    if (MENU_LEFT.has(key)) return { kind: "nudge", direction: "left" }
+    if (MENU_RIGHT.has(key)) return { kind: "nudge", direction: "right" }
+    if (PLACE_KEYS.has(key)) return { kind: "activate" }
   } else {
+    if (PLACE_KEYS.has(key)) return context.armed ? { kind: "place" } : { kind: "inspect" }
+    if (REMOVE_KEYS.has(key)) return { kind: "remove" }
     const move = cursorMove(key)
     if (move !== null) return move
   }

@@ -30,21 +30,22 @@ test("an unknown key name fails loudly instead of becoming some other key", () =
   assert.throws(() => parseKeyScript("Down Dwn"), /unknown key "Dwn"/)
 })
 
-test("the owner's menu flow — Down, Down, then Space four times — plans two hatcheries", () => {
-  const run = runBuildPlaytest({ steps: parseKeyScript("Down Down Space*4") })
-  assert.equal(run.frames.length, 7, "the opening screen plus one frame per key")
+test("the owner's menu flow — Down three times, then Space four times — plans two hatcheries", () => {
+  // Nexus, Explore, Barracks, Hatchery: the menu gained an Explore entry under Nexus (2026-09-27).
+  const run = runBuildPlaytest({ steps: parseKeyScript("Down*3 Space*4") })
+  assert.equal(run.frames.length, 8, "the opening screen plus one frame per key")
   const states = run.frames.map((frame) => frame.state)
   // Arming from the menu moves focus to the Grid; placing sends it back to the menu.
   assert.deepEqual(
     states.map((state) => state.focus),
-    ["menu", "menu", "menu", "grid", "menu", "grid", "menu"],
+    ["menu", "menu", "menu", "menu", "grid", "menu", "grid", "menu"],
   )
   assert.deepEqual(
     states.map((state) => state.planned.length),
-    [0, 0, 0, 0, 1, 1, 2],
+    [0, 0, 0, 0, 0, 1, 1, 2],
   )
-  const final = frameToText(run.frames[6]!.frame)
-  assert.match(final, /hatch planned at 21,13 for 30\./)
+  const final = frameToText(run.frames[7]!.frame)
+  assert.match(final, /Hatchery placed \(resources: 40\) - \[u\] undo/)
   assert.match(final, /RESOURCE\s+40 of 100/)
   assert.equal(run.ended, null)
 })
@@ -55,14 +56,15 @@ test("a click on a tile goes through the mouse adapter at wherever that tile is 
   const run = runBuildPlaytest({ steps: parseKeyScript("n 1 n 1 click:30,10 click:30,10") })
   const last = run.frames[run.frames.length - 1]!
   assert.equal(last.state.planned.length, 1)
-  assert.match(frameToText(last.frame), /barracks planned at 30,10/)
+  assert.match(frameToText(last.frame), /Barracks placed \(resources: 90\)/)
   assert.match(last.bytes, /^\u001b\[<0;\d+;\d+M\u001b\[<0;\d+;\d+m$/u, "a press and then a release")
 })
 
 test("leaving the screen stops the script and says how many steps were not run", () => {
-  const run = runBuildPlaytest({ steps: parseKeyScript("Tab q Down Down") })
-  assert.deepEqual(run.ended, { by: "quit", atStep: 2, skipped: 2 })
-  assert.equal(run.frames.length, 3)
+  // q asks "Exit the game?" first; its own q is what leaves.
+  const run = runBuildPlaytest({ steps: parseKeyScript("Tab q q Down Down") })
+  assert.deepEqual(run.ended, { by: "quit", atStep: 3, skipped: 2 })
+  assert.equal(run.frames.length, 4)
 })
 
 test("a terminal below the 80x24 floor is refused rather than played", () => {

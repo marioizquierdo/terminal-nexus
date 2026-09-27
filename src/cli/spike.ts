@@ -20,6 +20,7 @@ import { isGated } from "../build/camera.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
 import { composeBuildFrame } from "../view/build.ts"
+import type { BuildFlash } from "../view/build.ts"
 import { gateFrame, keysFromChunk } from "../view/index.ts"
 import { selectBackend } from "../view/backends/index.ts"
 import { createTerminalSession } from "./lifecycle.ts"
@@ -34,6 +35,10 @@ const CLEAR = `${ESC}[2J`
 /** The floor the resize gate is measured against — engine.md 3.3's own "80 x 24 remains the floor
  *  and the acceptance target". */
 export const SPIKE_MINIMUM = { width: 80, height: 24 } as const
+
+/** How long a row's "pressed" flash and "refused" flicker last. A little longer than the owner's
+ *  ~50 ms, so a terminal redrawing at 60 Hz shows at least a few frames of it. */
+const FLASH_MS = { pressed: 90, refused: 140 } as const
 
 export type SpikeOptions = Readonly<{
   settings: Settings
@@ -105,17 +110,43 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     context,
     cursor: SPIKE_START_CURSOR,
     viewport: layout.viewport,
-    onBack: leave,
     onQuit: leave,
   })
+
+  // The one piece of timing on this screen, and it lives here, not in the reducer: the reducer
+  // records an acknowledgement with a sequence number (`BuildState.ack`), and this loop shows it for
+  // a few frames from the moment it first sees a new one, then redraws without it.
+  let seenAck: Readonly<{ seq: number; at: number }> | null = null
+  let flashTimer: ReturnType<typeof setTimeout> | null = null
+  function currentFlash(): BuildFlash | undefined {
+    const ack = build.state.ack
+    if (ack === null) return undefined
+    const now = Date.now()
+    if (seenAck?.seq !== ack.seq) {
+      seenAck = { seq: ack.seq, at: now }
+      if (flashTimer !== null) clearTimeout(flashTimer)
+      flashTimer = setTimeout(() => {
+        flashTimer = null
+        render()
+      }, FLASH_MS[ack.kind] + 5)
+    }
+    return now - seenAck.at < FLASH_MS[ack.kind] ? { kind: ack.kind, entry: ack.entry } : undefined
+  }
 
   function render(): void {
     if (leaving) return
     const size = terminalSize()
+    const flash = gated ? undefined : currentFlash()
     const frame = gated
       ? gateFrame(size.columns, size.rows, SPIKE_MINIMUM)
       : composeBuildFrame(
-          { context, state: build.state, layout, glyphPack: options.settings.glyphPack },
+          {
+            context,
+            state: build.state,
+            layout,
+            glyphPack: options.settings.glyphPack,
+            ...(flash === undefined ? {} : { flash }),
+          },
           options.settings.capability,
         )
     if (frame.width !== lastFrame.width || frame.height !== lastFrame.height) {
@@ -151,6 +182,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
 
   session.onDispose(() => {
     stdin.off("data", onData)
+    if (flashTimer !== null) clearTimeout(flashTimer)
   })
   session.onDispose(() => {
     stdout.off("resize", onResize)

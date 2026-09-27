@@ -105,39 +105,45 @@ function scriptedGif(name, { keys, expect, cols = 80, rows = 24, capability = "t
 }
 
 scriptedGif("build-hatchery-run", {
-  // The owner's own flow from the opening screen: arm the Hatchery from the menu, place it, arm it
-  // again, place it again — no arrow key on the Grid at all.
-  keys: "Down Down Space Space Space Space",
-  expect: "hatch planned at 21,13",
+  // The owner's own flow from the opening screen: highlight the Hatchery, arm it from the menu (the
+  // cursor lands for you), place it, arm it again, place it again — no arrow key on the Grid at all.
+  keys: "Down*3 Space*4",
+  expect: "Hatchery placed (resources: 40)",
 })
 
 scripted(
   "spike-minimum",
-  "80x24, the acceptance floor: the menu on the left, a 48x16 window onto a 96x40 Grid closed into its own rectangle on the right, the top and bottom bars across the whole width",
+  "80x24, the acceptance floor: the menu on the left, a 48x16 window onto a 96x40 Grid closed into its own rectangle, a solid bar on each side where the map ends",
   { keys: PICK_FIRST_POWER, expect: "MENU  up/down" },
 )
 
 scripted(
   "build-focus-grid",
-  "Tab moves keyboard focus to the Grid: the key help now starts GRID and lists what arrows and Enter mean there, and the menu's highlight bar is gone",
-  { keys: `${PICK_FIRST_POWER} Tab`, expect: "GRID  arrows move" },
+  "Tab (or [e] Explore) moves the keyboard to the Grid with nothing armed: the key help says EXPLORE, no menu row is marked, and the cursor is the one highlight on screen",
+  { keys: `${PICK_FIRST_POWER} Tab`, expect: "EXPLORE  arrows move" },
+)
+
+scripted(
+  "build-info-panel",
+  "Exploring, Enter on a building swaps the menu for its information: its own glyphs, its name and what it is for, and its numbers. [esc] top right brings the menu back",
+  { keys: `${PICK_FIRST_POWER} Tab Up*2 Enter`, expect: "Citizen Nexus" },
 )
 
 scripted(
   "build-smart-cursor",
-  "Down, down, Space: the Hatchery is armed from the menu and the cursor lands for you - one free tile east of the Grid Nexus, sharing its top row - so Space places it with no arrow key",
-  { keys: `${PICK_FIRST_POWER} Down Down Space`, expect: "Hatchery selected" },
+  "Down three times and Space: the Hatchery is armed from the menu and the cursor lands for you - one free tile east of the Grid Nexus, sharing its top row. The armed row and the cursor are the only two highlights",
+  { keys: `${PICK_FIRST_POWER} Down*3 Space`, expect: "Hatchery selected" },
 )
 
 scripted(
   "build-menu-run",
-  "The owner's own flow, Space four more times: place, arm again, place, arm again. Three barracks in a tidy line, aligned, one free tile between each, and focus back on the menu after every placement",
-  { keys: `${PICK_FIRST_POWER} Down Space*6`, expect: "10 of 130" },
+  "The owner's own flow: Space arms, Space places and returns the keyboard to the menu, again and again. Three barracks in a tidy line, one free tile between each, drawn at full strength",
+  { keys: `${PICK_FIRST_POWER} Down*2 Space*6`, expect: "10 of 130" },
 )
 
 scripted(
   "build-nexus-popup",
-  "[n] opens the Nexus Powers popup over the Grid - the game's first overlay. Pick by digit, by Up/Down and Enter, or by a click; Esc closes it. A power may not be skipped, but only the commit says so",
+  "[n] opens the Nexus popup: a solid border, [esc] in its corner, and a shadow, so it cannot be missed. A click outside it closes it and brings the keyboard to wherever the click landed",
   { keys: "n Down", expect: "PICK ONE" },
 )
 
@@ -148,8 +154,14 @@ scripted(
 )
 
 scripted(
+  "build-exit-question",
+  "Esc on the menu asks before leaving: [q] quits, Esc or x keeps playing. A stray q asks the same question rather than losing a plan",
+  { keys: `${PICK_FIRST_POWER} Esc`, expect: "EXIT THE GAME?" },
+)
+
+scripted(
   "build-grid-edge",
-  "Hard against the Grid's north-west corner: the top and left sides read heavy (===) because the map ends there, the bottom and right stay light because there is more Grid that way",
+  "Hard against the Grid's north-west corner: the top and left sides are solid bars because the map ends there, the bottom and right stay thin because there is more map that way",
   { keys: `${PICK_FIRST_POWER} Tab S-Left*5 S-Up*5`, expect: "cursor 0,0" },
 )
 
@@ -167,15 +179,13 @@ scripted(
 
 scripted(
   "spike-armed-preview",
-  "The digit fast path: [1] arms Barracks from anywhere, moves focus to the Grid and leaves the cursor where it is; the preview shows at the cursor in its own glyphs - what you see is what Enter places",
+  "The digit fast path: [1] arms Barracks from anywhere and leaves the cursor where it is; the preview shows at the cursor in its own glyphs - what you see is what Enter places",
   { keys: `${PICK_FIRST_POWER} 1 Right*6 Down`, expect: "selected -" },
 )
 
 scripted(
   "spike-illegal",
-  "The same barracks over rock, after pressing Enter: the preview is a grey block of x and the status line says why, naming the tile - in red, because a placement was tried and refused. Shape carries the refusal, so it survives monochrome",
-  // Only looking, the status line already says why, quietly; pressing Enter is what turns the same
-  // sentence red — the acknowledgement that the attempt was received and refused.
+  "The same barracks over rock, after pressing Enter: the preview is a grey block of x and the status line says why, naming the tile - in red, because a placement was tried and refused",
   { keys: `${PICK_FIRST_POWER} 1 Left*10 Up*8 Enter`, expect: "rock in the way" },
 )
 
@@ -187,26 +197,23 @@ scripted(
 
 scripted(
   "build-just-placed",
-  "Right after a placement, still armed and the cursor still on it: the built structure shows through undisturbed rather than the illegal-preview block a fresh legality check would otherwise find here (2026-09-26 owner feedback) - pressing Enter again here does nothing until the cursor moves",
-  // The second Enter is a repeated place on the same tile: a no-op, not a refusal.
-  { keys: `${PICK_FIRST_POWER} 1 Right*6 Down Enter Enter`, expect: "planned at" },
+  "Right after a placement: the building is drawn in full, the keyboard is back on the menu on the same row, and the status line says what is left and how to take it back",
+  { keys: `${PICK_FIRST_POWER} 1 Right*6 Down Enter`, expect: "Barracks placed (resources: 90) - [u] undo" },
 )
 
 scripted(
   "build-spent-down",
-  "Two barracks and a hatchery placed, 20 of 130 left: the rows that no longer fit are dimmed, and the status line says what the selected one would cost against what is left - affordability first, whatever the tile",
-  // The first Nexus power adds 30, so the budget is 130: two barracks (80) and a hatchery (30) leave
-  // 20, which a barracks (40) no longer fits and the turret (15) still does.
+  "Two barracks and a hatchery placed, 20 of 130 left: the rows that no longer fit are dimmed, and pressing [1] anyway is refused at the menu with the cost - affordability first, before any tile",
   {
-    keys: `${PICK_FIRST_POWER} 1 Right*6 Down Enter Right*4 Enter 2 Right*4 Enter Right*4 1`,
+    keys: `${PICK_FIRST_POWER} 1 Right*6 Down Enter 1 Right*4 Enter 2 Right*4 Enter 1`,
     expect: "costs 40, 20 left",
   },
 )
 
 scripted(
   "build-nexus-confirm",
-  "Pressing [p] asks once, in plain yes-or-no terms, whether to end the Build Phase and start the Nexus Pulse",
-  { keys: `${PICK_FIRST_POWER} p`, expect: "START NEXUS PULSE" },
+  "Pressing [p] asks once, in a popup, whether to end the Build Phase and start the Nexus Pulse",
+  { keys: `${PICK_FIRST_POWER} p`, expect: "START THE NEXUS PULSE?" },
 )
 
 scripted(
@@ -268,7 +275,7 @@ const pickFirstPower = () => {
 
 live(
   "build-idle",
-  "The Build Phase opens on the menu, on the left: keyboard focus on the Nexus Powers entry at the top, its (1) the one pick still waiting. Nothing is forced open - the key help says focus is on the MENU",
+  "The Build Phase opens on the menu, on the left: the keyboard on [n] Nexus at the top, its (1) the one pick still waiting, [e] Explore under it. No cursor on the Grid while the menu has the keyboard",
   { waitForText: "RESOURCE" },
 )
 
@@ -304,7 +311,7 @@ live(
       literal(`${ESC}[<0;62;13M`)
       literal(`${ESC}[<0;62;13M`)
     },
-    waitForText: "planned at",
+    waitForText: "Barracks placed",
   },
 )
 
