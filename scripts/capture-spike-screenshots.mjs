@@ -36,6 +36,7 @@ import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { BuildAnimation, FRAME_MS } from "../src/view/build-live.ts"
+import { cellForTile } from "../src/build/layout.ts"
 import { renderFramePng, renderFramesGif } from "./lib/frame-capture.mjs"
 import {
   ESC,
@@ -135,6 +136,227 @@ function slideGif(name, { before, move, cols = 80, rows = 24, capability = "true
   }
   report(renderFramesGif({ shots, capability, targetPath: join(outputDirectory, `${name}.gif`), scratchDir: scratch }))
 }
+
+/**
+ * A building going up (gate 5I), frame by frame as the live screen draws it: `before` sets the scene
+ * (and any Debug Mode flags, by keys), `place` is the key that places, and the GIF is every `stepMs`
+ * of what `BuildAnimation` gives from that moment until nothing is moving — the same function the live
+ * loop calls, fed a clock that steps instead of waits. Each frame is shown for `showMs`, so a GIF can
+ * run slower than life and say so in its caption. `stillAtMs` makes one PNG of that instant instead.
+ */
+function placementGif(
+  name,
+  { before, place, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", reducedMotion = false, stepMs = 50, showMs = 100, stillAtMs, caption },
+) {
+  if (only !== null && only !== name) return
+  const run = runBuildPlaytest({ steps: parseKeyScript(`${before} ${place}`), columns: cols, rows, capability })
+  const from = run.frames[run.frames.length - 2]
+  const to = run.frames[run.frames.length - 1]
+  if (!frameToText(to.frame).includes(expect)) {
+    throw new Error(`${name}: expected "${expect}" on screen after "${before} ${place}", got:\n${frameToText(to.frame)}`)
+  }
+  const options = { reducedMotion }
+  const compose = (state, live) =>
+    composeBuildFrame(
+      {
+        context: run.context,
+        state,
+        layout: run.layout,
+        camera: live.camera,
+        reducedMotion,
+        ...(live.placing === undefined ? {} : { placing: live.placing }),
+        ...(live.flash === undefined ? {} : { flash: live.flash }),
+      },
+      capability,
+    )
+  const animation = new BuildAnimation()
+  const opening = animation.frame(from.state, 0, options)
+  const shots = [{ frame: compose(from.state, opening), caption: `before: ${before}`, delayMs: 1000 }]
+  const speed = showMs === stepMs ? "" : ` (shown at ${Math.round((stepMs / showMs) * 100)}% speed)`
+  for (let now = 1; ; now += stepMs) {
+    const live = animation.frame(to.state, now, options)
+    const frame = compose(to.state, live)
+    if (stillAtMs !== undefined && now - 1 >= stillAtMs) {
+      report(renderFramePng({ frame, capability, theme, caption, targetPath: join(outputDirectory, `${name}.png`), scratchDir: scratch }))
+      return
+    }
+    const done = live.busyUntil === null
+    shots.push({ frame, caption: `${place}: ${now - 1} ms after placing${done ? ", settled" : speed}`, delayMs: done ? 2500 : showMs })
+    if (done) break
+  }
+  report(renderFramesGif({ shots, capability, theme, targetPath: join(outputDirectory, `${name}.gif`), scratchDir: scratch }))
+}
+
+/**
+ * The same placement as a contact sheet: a window of the Grid around the building at each of
+ * `timesMs` after placing, side by side with the time over each — the whole run in one still, which a
+ * phone shows without playing anything. The window is `span` tiles either side of the placement.
+ */
+function placementSheet(name, { before, place, expect, timesMs, capability = "truecolor", theme = "dark", caption, span = { x: 5, y: 3 } }) {
+  if (only !== null && only !== name) return
+  const run = runBuildPlaytest({ steps: parseKeyScript(`${before} ${place}`), capability })
+  const to = run.frames[run.frames.length - 1]
+  if (!frameToText(to.frame).includes(expect)) throw new Error(`${name}: expected "${expect}" after "${before} ${place}"`)
+  const placement = to.state.planned[to.state.planned.length - 1]
+  const definition = run.context.registry.get(placement.contentId)
+  const extent = definition.footprint.reduce((size, o) => ({ w: Math.max(size.w, o.x + 1), h: Math.max(size.h, o.y + 1) }), { w: 0, h: 0 })
+  const origin = cellForTile(run.layout, to.state.camera, placement.anchor)
+  const panelWidth = extent.w + span.x * 2
+  const panelHeight = extent.h + span.y * 2
+  const gap = 2
+  const width = timesMs.length * (panelWidth + gap) + gap
+  const height = panelHeight + 3
+  const cells = new Array(width * height).fill({ glyph: " ", style: {} })
+  const write = (x, y, cell) => {
+    if (x >= 0 && y >= 0 && x < width && y < height) cells[y * width + x] = cell
+  }
+  timesMs.forEach((elapsedMs, index) => {
+    const frame = composeBuildFrame(
+      { context: run.context, state: to.state, layout: run.layout, placing: [{ ordinal: placement.ordinal, elapsedMs }] },
+      capability,
+    )
+    const left = gap + index * (panelWidth + gap)
+    const label = `${elapsedMs} ms`
+    ;[...label].forEach((glyph, offset) => write(left + offset, 0, { glyph, style: { fgRole: "chrome.title", bold: true } }))
+    for (let y = 0; y < panelHeight; y += 1) {
+      for (let x = 0; x < panelWidth; x += 1) {
+        const source = frame.cells[(origin.y - span.y + y) * frame.width + (origin.x - span.x + x)]
+        if (source !== undefined) write(left + x, 2 + y, source)
+      }
+    }
+  })
+  report(
+    renderFramePng({
+      frame: { width, height, cells },
+      capability,
+      theme,
+      caption,
+      targetPath: join(outputDirectory, `${name}.png`),
+      scratchDir: scratch,
+    }),
+  )
+}
+
+// Gate 5I: placement juice. Each placement is armed from the menu, where the cursor lands for you
+// beside the Grid Nexus, and placed with Space.
+
+const SHEET_TIMES = [0, 150, 300, 450, 500, 600, 750]
+
+placementSheet("build-place-sheet-barracks", {
+  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  place: "Space",
+  expect: "Barracks placed",
+  timesMs: SHEET_TIMES,
+  caption: "A Barracks at the defaults: footings, walls, roof beam, then finished, lit and throwing sparks",
+})
+
+placementSheet("build-place-sheet-hatchery", {
+  before: `${PICK_FIRST_POWER} Down*3 Space`,
+  place: "Space",
+  expect: "Hatchery placed",
+  timesMs: SHEET_TIMES,
+  caption: "A Hatchery is grown, not built: seeds, a swelling sac, the peak splitting, then lit",
+})
+
+placementSheet("build-place-sheet-turret", {
+  before: `${PICK_FIRST_POWER} Down*4 Space`,
+  place: "Space",
+  expect: "Turret placed",
+  timesMs: SHEET_TIMES,
+  caption: "A one-tile Turret rises in place - dot, stack, mast - then the alarm mark, lit",
+})
+
+placementSheet("build-place-sheet-rainbow", {
+  before: `${PICK_FIRST_POWER} d Down Right Down Right Esc Down*2 Space`,
+  place: "Space",
+  expect: "Barracks placed",
+  timesMs: SHEET_TIMES,
+  caption: "Lighting: rainbow, Particles: many - the theme's own hues sweep across it and fade",
+})
+
+placementSheet("build-place-sheet-light", {
+  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  place: "Space",
+  expect: "Barracks placed",
+  timesMs: SHEET_TIMES,
+  theme: "light",
+  caption: "The light theme: the flash pulls toward its darkest ink, then settles",
+})
+
+placementSheet("build-place-sheet-16", {
+  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  place: "Space",
+  expect: "Barracks placed",
+  timesMs: SHEET_TIMES,
+  capability: "color16",
+  caption: "16 colours: no blend, so the light is a step - bright white, then its own colour",
+})
+
+placementSheet("build-place-sheet-monochrome", {
+  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  place: "Space",
+  expect: "Barracks placed",
+  timesMs: SHEET_TIMES,
+  capability: "monochrome",
+  caption: "Monochrome: no colour to light, so the plain scaffold turning bold carries it",
+})
+
+placementGif("build-place-barracks", {
+  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  place: "Space",
+  expect: "Barracks placed",
+})
+
+placementGif("build-place-hatchery", {
+  before: `${PICK_FIRST_POWER} Down*3 Space`,
+  place: "Space",
+  expect: "Hatchery placed",
+})
+
+placementGif("build-place-turret", {
+  before: `${PICK_FIRST_POWER} Down*4 Space`,
+  place: "Space",
+  expect: "Turret placed",
+})
+
+placementGif("build-place-barracks-light", {
+  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  place: "Space",
+  expect: "Barracks placed",
+  theme: "light",
+})
+
+placementGif("build-place-barracks-16", {
+  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  place: "Space",
+  expect: "Barracks placed",
+  capability: "color16",
+})
+
+placementGif("build-place-barracks-monochrome", {
+  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  place: "Space",
+  expect: "Barracks placed",
+  capability: "monochrome",
+})
+
+placementGif("build-place-rainbow", {
+  // Debug Mode's Lighting set to rainbow and Particles to many, then a Barracks.
+  before: `${PICK_FIRST_POWER} d Down Right Down Right Esc Down*2 Space`,
+  place: "Space",
+  expect: "Barracks placed",
+})
+
+placementGif("build-place-reduced-motion", {
+  // Reduced motion: the finished Barracks at once, no frames and no light, and the sparks become a
+  // still mark at its four corners for the glow.
+  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  place: "Space",
+  expect: "Barracks placed",
+  reducedMotion: true,
+  stillAtMs: 100,
+  caption: "Reduced motion, 100 ms after placing: finished at once, unlit, a still mark at the four corners",
+})
 
 scriptedGif("build-hatchery-run", {
   // The owner's own flow from the opening screen: highlight the Hatchery, arm it from the menu (the
@@ -262,14 +484,14 @@ scripted(
   { keys: "d", expect: "DEBUG MODE - not saved" },
 )
 
-// The flags' order changed at gate 5H (its movement numbers first), and Up from the first row wraps to
-// the restart row, so the 5G flags at the end are a few Ups away: Up*4 is "Opens on", Up*5 "Smart
-// cursor".
+// The flags' order: gate 5I's placement juice first, then gate 5H's movement numbers (Scroll margin
+// is four Downs in), then gate 5G's. Up from the first row wraps to the restart row, so the 5G flags
+// at the end are a few Ups away: Up*4 is "Opens on", Up*5 "Smart cursor".
 
 scripted(
   "build-debug-104x32",
   "Right twice on Scroll margin: 20% of the view becomes 30%, the status line says so, and the position readout names the margin now in force",
-  { keys: "d Right Right", cols: 104, rows: 32, expect: "margin 30%" },
+  { keys: "d Down*4 Right Right", cols: 104, rows: 32, expect: "margin 30%" },
 )
 
 scripted(
@@ -294,8 +516,8 @@ scriptedGif("build-debug-smart-cursor", {
 
 scripted(
   "build-debug-scrolled",
-  "Debug Mode scrolls: twenty flags do not fit at 80x24, so the list moves with the highlight and says how many rows are hidden above and below (^ 4 more, v 11 more). A click on either line, or the wheel, scrolls it too",
-  { keys: "d Down*6", expect: "v 11 more" },
+  "Debug Mode scrolls: twenty-four flags do not fit at 80x24, so the list moves with the highlight and says how many rows are hidden above and below (^ 4 more, v 15 more). A click on either line, or the wheel, scrolls it too",
+  { keys: "d Down*6", expect: "v 15 more" },
 )
 
 scriptedGif("build-held-arrow", {

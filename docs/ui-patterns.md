@@ -3,7 +3,7 @@
 **Document role:** The interaction and drawing patterns every interactive screen follows
 **Status:** WORKING — built on the Build Phase first; not canon yet (promoted into `specs/engine.md`
 Section 9 when the owner accepts them)
-**Updated:** 2026-09-28 (movement feel, gate 5H)
+**Updated:** 2026-09-28 (placement juice, gate 5I)
 **License:** Apache-2.0
 
 These came out of the owner's playtests of the Build Phase (2026-09-26 and 2026-09-27; the item-by-item
@@ -142,6 +142,24 @@ why.
 - **Every number is a Debug Mode flag** until the owner has felt it.
 - **A refused try is seen where the eye is**: the footprint flashes in the "danger" colour for a moment
   as the status line says why.
+
+## 7b. A building going up (gate 5I)
+
+- **A placement is felt, then settles into the plain plan.** The building plays a few frames of its
+  own as it goes up (drawn plain — a scaffold), then stands finished (bold, as every building is),
+  lit for a moment, with a few sparks thrown off its edge. After under a second it is exactly the
+  still picture every other frame shows.
+- **Juice is presentation, never plan**: nothing about it reaches the reducer; the live loop times it
+  from the frame that first drew the placement, and the view draws "this placement, this long ago".
+  Undo or Backspace mid-animation removes the building at once — no ghost frames.
+- **An effect never covers a building**: sparks are dropped on any tile a building stands on.
+- **Light is a role pulled toward another role, never a colour** (`CellStyle.tint`): a real blend at
+  256 colours and truecolor, a step at 16, nothing in monochrome, where the plain-to-bold change of the
+  frames carries it.
+- **Reduced motion shows the finished building at once**, unlit; the sparks become a still mark at
+  its corners.
+- **Every duration and intensity is a Debug Mode flag with an off value** (Build animation, Lighting,
+  Particles, Glow time).
 
 ## 8. The status line
 

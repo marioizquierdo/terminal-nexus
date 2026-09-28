@@ -179,7 +179,16 @@ confirming second click lands where the first did (Q58); **exploring, a click ne
 further the nearer the edge**. A placement tried and refused flashes its footprint. A lone Esc at the
 end of a read waits 50 ms for the rest of a key sequence before it counts as Esc — so anything sending
 keys programmatically leaves a pause after an Esc. **Every one of these numbers is a Debug Mode flag**
-(`d`); the popup scrolls, since there are twenty.
+(`d`); the popup scrolls, since there are twenty-four.
+
+**A placed building goes up** (gate 5I): it plays a few frames of its own (authored beside its art in
+`src/content/art.ts`'s `PLACEMENT_ART`, with a generic fallback for anything not drawn yet), then
+stands finished with a brief light on its characters and a few sparks around it — all of it timed by
+the live loop and drawn by `src/view/placement.ts` as a pure function of the time since the
+placement, and none of it in the plan. Debug Mode's first four rows tune it (Build animation,
+Lighting — including a rainbow — Particles, Glow time); reduced motion shows the finished building at
+once. Scripted playtests draw buildings finished; `scripts/capture-spike-screenshots.mjs`'s
+`placementGif` and `placementSheet` step the animation with a fake clock.
 
 Shift+Arrow is the fast move, and so are PageUp/PageDown and Home/End, because several terminals
 deliver no shifted arrows at all — `node scripts/probe-modified-keys.mjs` prints the survey, and

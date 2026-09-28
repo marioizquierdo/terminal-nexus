@@ -123,9 +123,9 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
 
   // **The screen's clock lives here, never in the reducer** (gate 5H). Everything that moves between
   // commands — the view sliding to a new position, a menu row's flash, the cursor's flash on a
-  // refused placement — is `BuildAnimation`'s pure function of the state and the time read here, and
-  // the frame timer below runs only while one of them is still moving; an idle screen draws once per
-  // input, as it always has. The same clock times the held-key speed ramp (passed with each key) and
+  // refused placement, a building going up (gate 5I) — is `BuildAnimation`'s pure function of the
+  // state and the time read here, and the frame timer below runs only while one of them is still
+  // moving; an idle screen draws once per input, as it always has. The same clock times the held-key speed ramp (passed with each key) and
   // the lone-Esc timeout (`KeyReader`).
   const clock = options.now ?? ((): number => Date.now())
   const animation = new BuildAnimation()
@@ -148,7 +148,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     if (leaving) return
     const size = terminalSize()
     const now = clock()
-    const live = gated ? null : animation.frame(build.state, now)
+    const live = gated ? null : animation.frame(build.state, now, { reducedMotion: options.settings.reducedMotion })
     const frame =
       gated || live === null
         ? gateFrame(size.columns, size.rows, SPIKE_MINIMUM)
@@ -161,6 +161,8 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
               camera: live.camera,
               ...(live.flash === undefined ? {} : { flash: live.flash }),
               ...(live.refusedFlash === true ? { refusedFlash: true } : {}),
+              ...(live.placing === undefined ? {} : { placing: live.placing }),
+              reducedMotion: options.settings.reducedMotion,
             },
             options.settings.capability,
           )

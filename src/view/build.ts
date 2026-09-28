@@ -42,6 +42,9 @@ import type { CapabilityMode, StyleRole } from "./roles.ts"
 import { chromeGlyph, entityGlyph, playerRole, terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 import { statusStyle } from "./status.ts"
+import { EFFECT_RECIPES } from "./effects/recipes.ts"
+import type { PlacementClock } from "./placement.ts"
+import { placementCell, placementSparks } from "./placement.ts"
 import type { StatusMessage } from "../status.ts"
 import { status } from "../status.ts"
 
@@ -66,6 +69,15 @@ export type BuildCompositionInput = Readonly<{
   /** The cursor flashes where a placement was just tried and refused, while the live loop shows it
    *  (gate 5H; Debug Mode's "Refused cursor"). Presentation only. */
   refusedFlash?: boolean
+  /**
+   * Planned placements still animating, by ordinal, with how long ago each was placed (gate 5I). The
+   * live loop supplies it; a still frame names whatever instant it wants to draw. Absent — every
+   * test, every scripted playtest — each building is drawn finished. A clock whose ordinal is no
+   * longer planned (undone, removed) draws nothing: the plan decides what stands, the clock only how.
+   */
+  placing?: readonly PlacementClock[]
+  /** The player's reduced-motion setting: a placement then shows its finished building at once. */
+  reducedMotion?: boolean
 }>
 
 export type BuildFlash = Readonly<{ kind: "pressed" | "refused"; entry: number }>
@@ -217,26 +229,94 @@ function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPa
     }
   }
 
-  const drawStructure = (contentId: string, anchor: Coord, planned: boolean): void => {
+  const clocks = new Map((input.placing ?? []).map((clock) => [clock.ordinal, clock.elapsedMs]))
+  const reducedMotion = input.reducedMotion === true
+
+  const drawStructure = (contentId: string, anchor: Coord, elapsedMs: number | undefined): void => {
     const definition = context.registry.get(contentId)
     for (const offset of definition.footprint) {
       const tile = { x: anchor.x + offset.x, y: anchor.y + offset.y }
       if (tile.x < range.firstX || tile.x > range.lastX) continue
       if (tile.y < range.firstY || tile.y > range.lastY) continue
       const cell = cellForTile(layout, state.camera, tile)
-      const glyph = entityGlyph(contentId, "A", { x: offset.x, y: offset.y })
       // Drawn at full strength, planned or standing (owner, 2026-09-27: "it will look better if
-      // they are fully built"). A plan stays revisable — undo, remove — until the Pulse starts.
-      void planned
-      put(cells, BANDS.structures, cell.x, cell.y, glyph, playerRole("A"), { bold: true })
+      // they are fully built"). A plan stays revisable — undo, remove — until the Pulse starts. While
+      // a placement is still going up (gate 5I) it is drawn as its frame and light at that instant.
+      const look =
+        elapsedMs === undefined
+          ? { glyph: entityGlyph(contentId, "A", { x: offset.x, y: offset.y }), bold: true }
+          : placementCell(contentId, definition.footprint, offset, elapsedMs, state.debug, reducedMotion)
+      if (look.glyph !== null) {
+        cells.push({
+          band: BANDS.structures,
+          x: cell.x,
+          y: cell.y,
+          cell: {
+            glyph: look.glyph,
+            style: {
+              fgRole: playerRole("A"),
+              ...(look.bold ? { bold: true } : {}),
+              ...("tint" in look && look.tint !== undefined && look.tint.amount > 0 ? { tint: look.tint } : {}),
+            },
+          },
+        })
+      }
       for (let extra = 1; extra < layout.tileWidth; extra += 1) {
         put(cells, BANDS.structures, cell.x + extra, cell.y, " ", playerRole("A"))
       }
     }
   }
 
-  for (const structure of context.standing) drawStructure(structure.contentId, structure.anchor, false)
-  for (const placement of state.planned) drawStructure(placement.contentId, placement.anchor, true)
+  for (const structure of context.standing) drawStructure(structure.contentId, structure.anchor, undefined)
+  for (const placement of state.planned) drawStructure(placement.contentId, placement.anchor, clocks.get(placement.ordinal))
+}
+
+/**
+ * The sparks around every placement still in its glow (gate 5I), in the `effects` band. The corruption
+ * law is enforced here as the Pulse compositor enforces it: a spark that would land on any building's
+ * tile — standing, planned, or still going up — is dropped, so an effect never replaces the glyph that
+ * says a building is there. Clipped to the view like everything else on the Grid.
+ */
+function drawPlacementSparks(cells: BandCell[], input: BuildCompositionInput, capability: CapabilityMode): void {
+  const { context, state, layout } = input
+  if (input.placing === undefined || input.placing.length === 0) return
+  const range = visibleRange(state.camera, state.viewport)
+  const reducedMotion = input.reducedMotion === true
+  for (const clock of input.placing) {
+    const placement = state.planned.find((planned) => planned.ordinal === clock.ordinal)
+    if (placement === undefined) continue
+    const instance = placementSparks(placement, context.registry.get(placement.contentId).footprint, state.debug, reducedMotion)
+    if (instance === null) continue
+    const recipe = EFFECT_RECIPES[instance.recipe]
+    if (recipe === undefined) continue
+    const painted = recipe(instance, {
+      timeMs: clock.elapsedMs,
+      cosmeticSeed: 0,
+      tileWidth: layout.tileWidth,
+      reducedMotion,
+      capability,
+    })
+    for (const spark of painted) {
+      const { tile } = spark
+      if (tile.x < range.firstX || tile.x > range.lastX || tile.y < range.firstY || tile.y > range.lastY) continue
+      if (tile.x >= context.grid.width || tile.y >= context.grid.height) continue
+      if (structureAt(context, state.planned, tile)) continue
+      const cell = cellForTile(layout, state.camera, tile)
+      cells.push({
+        band: BANDS.effects,
+        x: cell.x,
+        y: cell.y,
+        cell: {
+          glyph: spark.glyph,
+          style: {
+            ...(spark.role === undefined ? {} : { fgRole: spark.role }),
+            ...(spark.bold === true ? { bold: true } : {}),
+            ...(spark.dim === true ? { dim: true } : {}),
+          },
+        },
+      })
+    }
+  }
 }
 
 /**
@@ -929,7 +1009,6 @@ export function composeBuildFrame(
   given: BuildCompositionInput,
   capability: CapabilityMode,
 ): ReadonlyCellFrame {
-  void capability
   // A sliding view is drawn through the camera it has reached, not the one it is heading for: the
   // Grid, the preview, the cursor, the edge weights and the position readout all move together.
   const input: BuildCompositionInput =
@@ -941,6 +1020,7 @@ export function composeBuildFrame(
   const preview = armedPreview(input.context, input.state)
 
   drawGrid(cells, input, pack)
+  drawPlacementSparks(cells, input, capability)
   drawPreview(cells, input, preview)
   drawCursor(cells, input)
   drawRefusedFlash(cells, input, preview)

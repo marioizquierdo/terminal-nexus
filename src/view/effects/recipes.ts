@@ -23,6 +23,10 @@ import type {
 } from "./types.ts"
 import { paramNumber, paramString, progressOf } from "./types.ts"
 import { cosmeticHash, cosmeticPick, cosmeticUnit } from "./random.ts"
+import { RAINBOW_ROLES } from "../roles.ts"
+import type { StyleRole } from "../roles.ts"
+
+const PLACE_RAINBOW = RAINBOW_ROLES
 
 type Family = Readonly<{
   trail: readonly string[]
@@ -794,6 +798,96 @@ const nexusCritical: EffectRecipe = (instance, context) => {
   return cells
 }
 
+// ---------------------------------------------------------------------------
+// Placement (gate 5I — the Build Phase, not the Pulse)
+// ---------------------------------------------------------------------------
+
+/** Sparks for `few` and `many` — the two non-zero values of Debug Mode's "Particles". */
+export const PLACE_PARTICLE_COUNTS = { few: 6, many: 14 } as const
+
+/**
+ * A building has just finished going up: sparks thrown off its footprint's edge, flying outward and
+ * thinning to dust (feedback F9: "particle effects" on placement). Its window is the building's glow
+ * — the beat after its last placement frame — so it is the IMPACT and DECAY of the placement; the
+ * placement frames themselves are the ANTICIPATION and ACTION, and the finished building is the
+ * SETTLE, which is state.
+ *
+ * Its own physical language, not a weapon's (craft rule 2): stars and dust, never the `-|/\` of shots
+ * and blows, and only a handful of cells — negative space is material (rule 5). Every spark starts on
+ * the ring one tile out from the footprint and moves away from it, so a spark never lands on the
+ * building it came from; the compositor would drop it if it did (the corruption law).
+ *
+ * **Randomness is a hash of the placement's identity** — the plan's ordinal, the structure and its
+ * anchor — never of the moment it was placed, and never a stream: the same placement scatters the
+ * same way however many frames were drawn, and whenever it happened.
+ *
+ * Reduced motion: no flight at all, a still mark at the four corners outside the footprint for the
+ * window — "here, just now", without anything moving. Monochrome: the same glyphs; the colour only
+ * warms them.
+ */
+const structurePlace: EffectRecipe = (instance, context) => {
+  const width = Math.max(1, paramNumber(instance, "width", 1))
+  const height = Math.max(1, paramNumber(instance, "height", 1))
+  const count = Math.max(0, paramNumber(instance, "count", PLACE_PARTICLE_COUNTS.few))
+  const rainbow = paramNumber(instance, "rainbow", 0) === 1
+  const identity = `${instance.recipe}:${paramString(instance, "content")}`
+  const ordinal = paramNumber(instance, "ordinal", 0)
+  const { origin } = instance
+  const hashOf = (salt: number): number =>
+    cosmeticHash(context.cosmeticSeed ^ ordinal, identity, 0, origin.x, origin.y, salt)
+  const hueOf = (hash: number): StyleRole => cosmeticPick(hash, PLACE_RAINBOW)
+  const cells: PositionedCell[] = []
+  const progress = progressOf(instance, context)
+  if (progress >= 1) return cells
+
+  if (context.reducedMotion) {
+    const corners = [
+      { x: -1, y: -1 },
+      { x: width, y: -1 },
+      { x: -1, y: height },
+      { x: width, y: height },
+    ]
+    corners.forEach((corner, index) => {
+      cells.push({
+        tile: { x: origin.x + corner.x, y: origin.y + corner.y },
+        glyph: "+",
+        role: rainbow ? hueOf(hashOf(index)) : "fx.critical",
+      })
+    })
+    return cells
+  }
+
+  const ring = footprintRing(width, height, 1)
+  const reach = count > PLACE_PARTICLE_COUNTS.few ? 3 : 2
+  for (let index = 0; index < count; index += 1) {
+    const hash = hashOf(index + 1)
+    // Staggered launches, so a burst reads as a burst rather than one frame of noise.
+    const launch = cosmeticUnit(draw(hash, 1)) * 0.25
+    const life = 0.45 + cosmeticUnit(draw(hash, 2)) * 0.5
+    const q = (progress - launch) / life
+    if (q < 0 || q >= 1) continue
+    const from = cosmeticPick(draw(hash, 3), ring)
+    const dx = from.x < 0 ? -1 : from.x >= width ? 1 : 0
+    const dy = from.y < 0 ? -1 : from.y >= height ? 1 : 0
+    const travel = 1 + (draw(hash, 4) % reach)
+    const distance = Math.min(travel, Math.floor(easeOut(q) * (travel + 1)))
+    const tile = { x: origin.x + from.x + dx * distance, y: origin.y + from.y + dy * distance }
+    const spark = q < 0.3
+    const dust = q >= 0.65
+    // A spark is a star; in flight it leans the way it is going (`'` up, `,` down), then settles to dust.
+    const glyph = spark ? "*" : dust ? "." : dx === 0 && dy < 0 ? "'" : dx === 0 && dy > 0 ? "," : "+"
+    const role: StyleRole = rainbow ? hueOf(draw(hash, 5)) : dust ? "fx.debris" : "fx.critical"
+    cells.push({
+      tile,
+      glyph,
+      role,
+      ...(spark ? { bold: true } : {}),
+      ...(dust ? { dim: true } : {}),
+    })
+  }
+  return cells
+}
+
 export const EFFECT_RECIPES: Readonly<Record<string, EffectRecipe>> = {
   "fx.move.trail": moveTrail,
   "fx.melee.wind": meleeWind,
@@ -806,6 +900,7 @@ export const EFFECT_RECIPES: Readonly<Record<string, EffectRecipe>> = {
   "fx.structure.collapse": structureCollapse,
   "fx.blast.detonation": blastDetonation,
   "fx.nexus.critical": nexusCritical,
+  "fx.structure.place": structurePlace,
 }
 
 export const EFFECT_IDS: readonly string[] = Object.keys(EFFECT_RECIPES)

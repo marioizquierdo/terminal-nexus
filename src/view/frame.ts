@@ -1,7 +1,7 @@
 // The terminal boundary — engine.md 9.1. An engine-owned structured cell frame, and an excellent
 // snapshot surface. No backend object ever appears inside a frame.
 
-import type { CapabilityMode, StyleRole, Theme } from "./roles.ts"
+import type { CapabilityMode, RoleTint, StyleRole, Theme } from "./roles.ts"
 import { DEFAULT_THEME, sgrBackgroundFor, sgrFor } from "./roles.ts"
 
 const ESC = "\u001b"
@@ -22,6 +22,14 @@ export type CellStyle = Readonly<{
    * general fade-out license for glyph-bearing effects.
    */
   fade?: number
+  /**
+   * `fgRole` pulled part of the way toward another role (gate 5I): light on a placed building's
+   * characters, and its rainbow. A role and a number, never a colour — `roles.ts`'s `RoleTint` says
+   * how each tier resolves it (a real blend at 256 colours and truecolor, a step onto the other role's
+   * hue at 16, nothing in monochrome). Set only by the Build Phase's placement light
+   * (`src/view/placement.ts`).
+   */
+  tint?: RoleTint
 }>
 
 export type Cell = Readonly<{ glyph: string; style: CellStyle }>
@@ -115,7 +123,7 @@ export function frameToText(frame: ReadonlyCellFrame): string {
 }
 
 function sgrOf(style: CellStyle, capability: CapabilityMode, theme: Theme): string {
-  const parts: number[] = [...sgrFor(style.fgRole, capability, theme, style.fade ?? 0)]
+  const parts: number[] = [...sgrFor(style.fgRole, capability, theme, style.fade ?? 0, style.tint)]
   for (const code of sgrBackgroundFor(style.bgRole, capability, theme)) parts.push(code)
   if (style.bold === true) parts.push(1)
   if (style.dim === true) parts.push(2)

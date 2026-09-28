@@ -103,12 +103,22 @@ function sampleInstances(): EffectInstance[] {
       params: { width: 3, height: 2, periodMs: 1200 },
       ...common,
     },
+    {
+      // Gate 5I: the Build Phase's placement sparks, drawn by src/view/build.ts rather than derived
+      // from Pulse events — held to the same contract all the same.
+      recipe: "fx.structure.place",
+      band: "effects",
+      durationMs: 400,
+      params: { width: 3, height: 2, count: 6, ordinal: 1, content: "structure.citizen.barracks", rainbow: 0 },
+      ...common,
+    },
   ]
 }
 
 test("the starter vocabulary is authored, all of it", () => {
   // The ten of ascii-effects.md Section 5, plus fx.blast.detonation, which the Ravel volatile
-  // munitions rule earned — the list is GUIDANCE and predates the rule.
+  // munitions rule earned — the list is GUIDANCE and predates the rule — and fx.structure.place,
+  // gate 5I's placement sparks.
   const canon = [
     "fx.move.trail",
     "fx.melee.wind",
@@ -125,7 +135,9 @@ test("the starter vocabulary is authored, all of it", () => {
     assert.ok(EFFECT_RECIPES[id] !== undefined, `${id} is not authored`)
   }
   assert.ok(EFFECT_RECIPES["fx.blast.detonation"] !== undefined)
-  assert.equal(EFFECT_IDS.length, canon.length + 1)
+  // Gate 5I: the Build Phase's placement sparks — the first effect that is not a Pulse cue.
+  assert.ok(EFFECT_RECIPES["fx.structure.place"] !== undefined)
+  assert.equal(EFFECT_IDS.length, canon.length + 2)
 })
 
 test("f(t) is a pure function of absolute time, in any order and after any skipping", () => {

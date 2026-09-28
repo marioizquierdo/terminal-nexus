@@ -17,7 +17,10 @@
 //   and the reducer only ever sees an ordinary `move-cursor` of the size they chose;
 // - `easeMs`, the flash durations, `refusedCursorMs` and `escTimeoutMs` are presentation and input
 //   timing: the reducer stores them and nothing else, and the live loop (`src/cli/spike.ts`, through
-//   `src/view/build-live.ts`) reads them.
+//   `src/view/build-live.ts`) reads them;
+// - the placement juice (`placeFramesMs`, `placeGlowMs`, `placeParticles`, `placeLight`, gate 5I) is
+//   presentation alone: the reducer stores it, the live loop times it, and the Build Phase view draws
+//   it (`src/view/placement.ts`). A plan is identical with every one of them on or off.
 //
 // None of them reaches the simulation kernel (`src/pulse`, `src/state`): a Build Phase plan is a plan
 // on a screen until the Pulse, and nothing here is part of it.
@@ -34,7 +37,24 @@ import type { Focus } from "./types.ts"
  */
 export type ClickScroll = "edges" | "centre" | "margin"
 
+/** How many sparks fly off a building as it finishes (gate 5I, feedback F9). */
+export type PlaceParticles = "off" | "few" | "many"
+
+/** The light on a building's characters as it finishes (gate 5I, feedback F9): a flash toward the
+ *  theme's strongest ink that settles back, the theme's rainbow hues sweeping across it, or none. */
+export type PlaceLight = "off" | "light" | "rainbow"
+
 export type DebugFlags = Readonly<{
+  /** F9: how long a placed building takes to rise through its placement frames, in milliseconds; 0
+   *  shows it finished at once. */
+  placeFramesMs: number
+  /** F9: how long the light and the particles take to settle once the building is finished; 0 is
+   *  neither. */
+  placeGlowMs: number
+  /** F9: the burst of particles around the footprint. */
+  placeParticles: PlaceParticles
+  /** F9: the light on the building's own characters. */
+  placeLight: PlaceLight
   /** Q54: how close to the view's edge the cursor gets before the camera follows, as a **percentage**
    *  of the view's own width (for the sides) and height (for the top and bottom). A number of tiles
    *  until gate 5H. */
@@ -122,9 +142,45 @@ const FLASH_VALUES = [0, 50, 90, 140, 250, 400] as const
 /** The owner's own "about 20% of the height or width of the screen" (2026-09-26). */
 export const DEFAULT_SCROLL_MARGIN_PERCENT = 20
 
-/** The flags, in the order the popup lists them: gate 5H's movement numbers first, since they are the
- *  ones waiting to be felt, then gate 5G's. */
+/** The flags, in the order the popup lists them: gate 5I's placement juice first, since it is the
+ *  newest thing waiting to be felt, then gate 5H's movement numbers, then gate 5G's. */
 export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
+  {
+    field: "placeFramesMs",
+    label: "Build animation",
+    applies: "now",
+    question: "How long a new building takes to rise through its frames. Off: it appears finished at once. (F9)",
+    values: [0, 200, 300, 450, 600, 900],
+    cycles: false,
+    format: millis,
+  },
+  {
+    field: "placeLight",
+    label: "Lighting",
+    applies: "now",
+    question: "Light on a building's characters as it finishes: a flash that settles, a rainbow, or none. (F9)",
+    values: ["light", "rainbow", "off"],
+    cycles: true,
+    format: (value: PlaceLight) => value,
+  },
+  {
+    field: "placeParticles",
+    label: "Particles",
+    applies: "now",
+    question: "Sparks thrown out around a building as it finishes: a few, many, or none. (F9)",
+    values: ["few", "many", "off"],
+    cycles: true,
+    format: (value: PlaceParticles) => value,
+  },
+  {
+    field: "placeGlowMs",
+    label: "Glow time",
+    applies: "now",
+    question: "How long the light and the sparks take to settle once the building is finished. (F9)",
+    values: [0, 150, 250, 400, 600, 900],
+    cycles: false,
+    format: millis,
+  },
   {
     field: "scrollMargin",
     label: "Scroll margin",
@@ -338,12 +394,21 @@ export const DEFAULT_MOVEMENT = {
   escTimeoutMs: 50,
 } as const satisfies Partial<DebugFlags>
 
+/** Gate 5I's placement juice as built: this session's first guesses, for the owner to retune by feel. */
+export const DEFAULT_PLACEMENT = {
+  placeFramesMs: 450,
+  placeGlowMs: 400,
+  placeParticles: "few",
+  placeLight: "light",
+} as const satisfies Partial<DebugFlags>
+
 /** The flags a screen opens with: what the context asks for (`--scroll-margin`, a test's
  *  `smartCursor: false`), and otherwise what gates 5F-5H built. */
 export function initialDebugFlags(
   context: Readonly<{ scrollMargin?: number; smartCursor?: boolean }>,
 ): DebugFlags {
   return {
+    ...DEFAULT_PLACEMENT,
     ...DEFAULT_MOVEMENT,
     smartCursor: context.smartCursor ?? true,
     scrollMargin: context.scrollMargin ?? DEFAULT_SCROLL_MARGIN_PERCENT,

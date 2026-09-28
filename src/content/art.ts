@@ -209,3 +209,45 @@ export const DEATH_ART: Readonly<Record<string, readonly UnitArt[]>> = {
 export function deathFramesFor(contentId: string): readonly UnitArt[] | undefined {
   return DEATH_ART[contentId]
 }
+
+/**
+ * A short, ordered sequence a structure plays as it is placed in the Build Phase (gate 5I, the owner's
+ * own words, feedback F9: "every building should define an array of frames played when it is placed").
+ * The finished building is `CONTENT_ART` and is not repeated here: these are the frames *before* it,
+ * foundation first. Each frame is a `UnitArt` the size of the footprint — `tests/content.test.ts`
+ * holds it to that, as it does `DEATH_ART` — and a space means "nothing standing here yet", so the
+ * ground shows through.
+ *
+ * Optional and purely additive: a structure with no entry gets a generic run derived from its own
+ * finished art (`src/view/placement.ts`), so no content ever waits on an artist. Read only by the
+ * Build Phase view, never by the kernel (engine.md 9.6: the simulation never knows a glyph).
+ *
+ * Case is applied later, as for every other piece of art: author in lower case.
+ */
+export const PLACEMENT_ART: Readonly<Record<string, readonly UnitArt[]>> = {
+  /**
+   * Footings, then the walls go up around an open yard, then the roof beam closes over it before the
+   * `b` moves in: the Citizen bracket assembled from the ground, one course at a time.
+   */
+  "structure.citizen.barracks": [
+    ["   ", "._."],
+    [". .", "|_|"],
+    ["[ ]", "|_|"],
+  ],
+  /**
+   * Not built — grown. Seeds, a sac swelling in two halves, the upper half splitting into the peak it
+   * keeps: the bench's egg-sac diamond arriving the way something organic would.
+   */
+  "structure.bench.hatchery": [
+    ["  ", ".,"],
+    [",.", "()"],
+    ["/\\", "()"],
+  ],
+  /** One tile, so the frames are a mark rising in place: a dot, a stack, a mast, then the alarm. */
+  "structure.bench.beamturret": [["."], [":"], ["|"]],
+}
+
+/** The placement frames authored for a content id, or `undefined` (the view derives a generic run). */
+export function placementFramesFor(contentId: string): readonly UnitArt[] | undefined {
+  return PLACEMENT_ART[contentId]
+}

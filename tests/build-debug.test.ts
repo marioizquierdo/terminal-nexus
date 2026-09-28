@@ -114,11 +114,17 @@ test("d opens Debug Mode over the Grid: every flag, its value, and when a change
   assert.equal(side.build.state.overlay, "debug")
   const text = screen(side)
   assert.match(text, /DEBUG MODE - not saved/)
+  // Gate 5I's placement juice leads the list: the newest thing waiting to be felt.
+  assert.match(text, /Build animation\s+<\s+450 ms\s+>\s+now/)
   assert.match(text, /Scroll margin\s+<\s+20%\s+>\s+now/)
   assert.match(text, /\[r\] Restart with these settings/)
   // The key help says where the keyboard is, and the highlighted row's question is shown.
   assert.match(text, /DEBUG {2}up\/down choose {2}left\/right change/)
-  assert.ok(text.includes("(Q54)"), "the scroll margin's question is not shown")
+  assert.ok(text.includes("(F9)"), "the build animation's question is not shown")
+  const margin = session()
+  keys(margin, "d")
+  goTo(margin, "scrollMargin")
+  assert.ok(screen(margin).includes("(Q54)"), "the scroll margin's question is not shown")
   // Every flag is listed — scrolled into view by walking down the list (gate 5H: at 80x24 they do not
   // all fit at once).
   const seen = new Set<string>()
@@ -280,7 +286,9 @@ test("a number stops at its ends and says so; a choice of two comes round", () =
   assert.equal(adjustDebug(flags, "clickScroll", -1).flags.clickScroll, "margin")
 
   const side = session()
-  keys(side, "d", ...Array.from({ length: 12 }, () => LEFT))
+  keys(side, "d")
+  goTo(side, "scrollMargin")
+  keys(side, ...Array.from({ length: 12 }, () => LEFT))
   assert.equal(side.build.state.debug.scrollMargin, 0)
   assert.equal(side.build.state.status.tone, "warning")
   assert.match(side.build.state.status.text, /already 0%, the smallest/)

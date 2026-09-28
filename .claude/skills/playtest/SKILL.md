@@ -40,15 +40,17 @@ Useful openings on the `--spike` screen: focus starts on the menu's Nexus Powers
 the first Nexus power, which closes the popup (budget becomes 130); `Down Down Space` arms the Hatchery
 from the menu; a digit arms by hotkey and moves focus to the Grid; `Tab` switches focus. `d` opens
 Debug Mode (Up/Down choose a flag, Left/Right change it, `r` restarts keeping the flags, `Esc`
-closes). Its list scrolls and starts on gate 5H's movement numbers (`d Right` widens the scroll
-margin); Up from the top wraps to the restart row, so the older flags at the bottom are close that
+closes). Its list scrolls and starts on gate 5I's placement juice (`d Right` lengthens the build
+animation, `d Down Right` sets Lighting to rainbow), then gate 5H's movement numbers (`d Down*4
+Right` widens the scroll margin); Up from the top wraps to the restart row, so the older flags at the bottom are close that
 way: `d Up*5 Right Esc` turns the smart cursor off, `d Up*4 Right r` restarts with the keyboard on the
 map. `src/build/debug.ts`'s `DEBUG_FIELDS` is the order.
 
-What a script cannot show is time between keys on the live screen — the view sliding, a flash. For
-those, compose a frame with `camera` / `refusedFlash` / `flash` yourself, or step `BuildAnimation`
-(`src/view/build-live.ts`) with a fake clock: `slideGif` in `scripts/capture-spike-screenshots.mjs`
-does exactly that.
+What a script cannot show is time between keys on the live screen — the view sliding, a flash, a
+building going up (script frames always draw buildings finished). For those, compose a frame with
+`camera` / `refusedFlash` / `flash` / `placing: [{ ordinal, elapsedMs }]` yourself, or step
+`BuildAnimation` (`src/view/build-live.ts`) with a fake clock: `slideGif`, `placementGif` and
+`placementSheet` in `scripts/capture-spike-screenshots.mjs` do exactly that.
 
 ## Workflow
 
