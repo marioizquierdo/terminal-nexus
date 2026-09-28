@@ -28,7 +28,10 @@ about 1 MB; six keys at 80x24 is about 200 KB).
 
 `Up Down Left Right`, `S-Up` etc. (Shift, xterm bytes), `M-Up` etc. (Option as Esc+), `Tab S-Tab Esc
 Enter Space Bksp Del PgUp PgDn Home End C-c`, any single character (`n`, `1`, `p`, `y`), `Name*N` to
-repeat. Mouse: `click:X,Y` clicks Grid tile X,Y wherever the camera has it drawn right now (fails if
+repeat, `Name~MS` for a key arriving MS ms after the previous step (untimed steps are 1000 ms apart,
+so each is its own press). The held-key speed ramp only runs on timed steps: `e Right Right~400
+Right~30*12` is a tap, the terminal's repeat delay, then auto-repeat — the summary line prints each
+step's cursor and speed tier (`slow`, `normal`, `fast`, `faster`). Mouse: `click:X,Y` clicks Grid tile X,Y wherever the camera has it drawn right now (fails if
 it is off screen), `click@COL,ROW` clicks a 0-based screen cell; `rclick`, `wheelup`, `wheeldown` take
 the same targets. `#` starts a comment in a `--file`. The table with bytes is at the top of
 `src/playtest/keys.ts`. An unknown name is an error, never a guess.
@@ -37,8 +40,15 @@ Useful openings on the `--spike` screen: focus starts on the menu's Nexus Powers
 the first Nexus power, which closes the popup (budget becomes 130); `Down Down Space` arms the Hatchery
 from the menu; a digit arms by hotkey and moves focus to the Grid; `Tab` switches focus. `d` opens
 Debug Mode (Up/Down choose a flag, Left/Right change it, `r` restarts keeping the flags, `Esc`
-closes): `d Right Esc` turns the smart cursor off, `d Down Down Right r` restarts with the keyboard
-on the map.
+closes). Its list scrolls and starts on gate 5H's movement numbers (`d Right` widens the scroll
+margin); Up from the top wraps to the restart row, so the older flags at the bottom are close that
+way: `d Up*5 Right Esc` turns the smart cursor off, `d Up*4 Right r` restarts with the keyboard on the
+map. `src/build/debug.ts`'s `DEBUG_FIELDS` is the order.
+
+What a script cannot show is time between keys on the live screen — the view sliding, a flash. For
+those, compose a frame with `camera` / `refusedFlash` / `flash` yourself, or step `BuildAnimation`
+(`src/view/build-live.ts`) with a fake clock: `slideGif` in `scripts/capture-spike-screenshots.mjs`
+does exactly that.
 
 ## Workflow
 

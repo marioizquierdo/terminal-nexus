@@ -109,7 +109,7 @@ bun bin/grid.ts scenarios/citizen-mirror-skirmish --headless
 
 # the Build Phase scrolling-and-placement spike (Milestone 5, gate 5A)
 ./bin/terminal-nexus.ts --spike
-./bin/terminal-nexus.ts --spike --scroll-margin 5 --capability monochrome
+./bin/terminal-nexus.ts --spike --scroll-margin 30 --capability monochrome   # margin: % of the view
 ```
 
 Pinned by Gate 1A, measured 2026-08-21:
@@ -156,8 +156,8 @@ range, because there is no minimap.
 **The menu runs the screen** (the owner's round-2 direction; `docs/ui-patterns.md` has the rules).
 The keyboard starts on the menu: Up/Down and Enter/Space work it, `[n] Nexus` opens the Nexus Powers
 popup (a pick closes it), `[e] Explore` (or Tab, or a second Right) moves the keyboard to the map with
-nothing armed, where the arrows move the cursor, the map scrolls once the cursor comes within three
-tiles of an edge, and Enter/Space on a building opens an information panel. Arming a building (Enter
+nothing armed, where the arrows move the cursor, the map scrolls once the cursor comes within a fifth
+of the view of an edge, and Enter/Space on a building opens an information panel. Arming a building (Enter
 on its row, or its digit from anywhere) puts the cursor beside the last thing planned; Enter or Space
 places it, and **every placement returns the keyboard to the menu, disarmed**. A mouse click first
 moves focus and only then activates; on the map a **second click on the same tile** places (Q52). Esc,
@@ -168,7 +168,20 @@ the way at 8,5", "costs 40, 20 left" (affordability first) — quietly while the
 the tile, in red once a placement is tried. `[u]` undoes and Backspace (on the map) removes the one
 under the cursor, both refunding, which keeps a plan revisable until `p` starts the Pulse.
 
-Shift+Arrow jumps five tiles, and so do PageUp/PageDown and Home/End, because several terminals
+**Moving has speed tiers** (gate 5H): a tap moves one tile; a held arrow moves two a step, then four
+once held for a moment; Shift+Arrow moves eight; and a change of direction drops a held arrow back to
+one a step, for pointing precisely, until it is let go. Terminals send no key-up, so "held" is read
+from how close together the key's repeats arrive (`src/build/motion.ts`); the reducer only ever sees
+a move of the size chosen. The view **slides** to where it scrolled over a few frames — the screen's
+first frame timer, running only while something moves (`src/view/build-live.ts`) — and a fast move
+re-centres the view on the cursor. **A click with a building armed never scrolls the view**, so the
+confirming second click lands where the first did (Q58); **exploring, a click near an edge scrolls
+further the nearer the edge**. A placement tried and refused flashes its footprint. A lone Esc at the
+end of a read waits 50 ms for the rest of a key sequence before it counts as Esc — so anything sending
+keys programmatically leaves a pause after an Esc. **Every one of these numbers is a Debug Mode flag**
+(`d`); the popup scrolls, since there are twenty.
+
+Shift+Arrow is the fast move, and so are PageUp/PageDown and Home/End, because several terminals
 deliver no shifted arrows at all — `node scripts/probe-modified-keys.mjs` prints the survey, and
 `evidence/gate-5a-report.md` has the table. So does Option+Arrow as macOS terminals send it (`ESC b`,
 `ESC f`, or `ESC` before an arrow), bound from their documented defaults; **`node
@@ -177,8 +190,9 @@ to leave), which is how to check a terminal nobody has measured yet. **The foote
 one list of bindings**: the bottom bar takes as many as its width holds, trimmed to the essentials —
 arrows, place, disarm, quit, the fast move, remove, undo — and the panel shows the rest, so a wide
 terminal has them all on one line and an 80-column one loses none of them (the other fast-move keys
-stay bound but unlisted). `--scroll-margin <tiles>` changes the three-tile trigger distance so it can
-be judged against another number. Nothing it plans reaches the simulation, and nothing is saved.
+stay bound but unlisted). `--scroll-margin <percent>` starts the scroll margin at another share of the
+view than 20% (Debug Mode changes it live). Nothing it plans reaches the simulation, and nothing is
+saved.
 
 Before any of that, the Build Phase opens on a **Nexus power draft** (gate 5D): two placeholder
 powers — a plain bump to the starting allotment, not real Milestone-8 content — that must be picked
@@ -254,7 +268,10 @@ request shows. The keys go through the real keyboard and mouse adapters as the e
 sends, one key at a time, and each frame comes from the same composer the live screen uses — so there
 is no capture race, and no Esc glued to the next key by accident. Key names: `Up Down Left Right`,
 `S-` (Shift) and `M-` (Option) arrows, `Tab S-Tab Esc Enter Space Bksp Del PgUp PgDn Home End`, any
-single character, `Name*N` to repeat, `click:X,Y` for a Grid tile and `click@COL,ROW` for a screen
+single character, `Name*N` to repeat, `Name~MS` for a key arriving MS milliseconds after the one
+before (untimed keys are a second apart, so each is a press of its own; `Right Right~400 Right~30*12`
+is a held arrow's auto-repeat, which the speed ramp reads — the per-step summary prints the tier),
+`click:X,Y` for a Grid tile and `click@COL,ROW` for a screen
 cell (`rclick`, `wheelup`, `wheeldown` likewise), `#` for a comment in a file. The full table is at
 the top of `src/playtest/keys.ts`. A script that leaves the screen (`q`, or Esc with nothing armed)
 stops there and says so.

@@ -3,7 +3,7 @@
 **Document role:** The interaction and drawing patterns every interactive screen follows
 **Status:** WORKING — built on the Build Phase first; not canon yet (promoted into `specs/engine.md`
 Section 9 when the owner accepts them)
-**Updated:** 2026-09-27 (Debug Mode, gate 5G)
+**Updated:** 2026-09-28 (movement feel, gate 5H)
 **License:** Apache-2.0
 
 These came out of the owner's playtests of the Build Phase (2026-09-26 and 2026-09-27; the item-by-item
@@ -88,6 +88,12 @@ why.
 - **What a highlighted row is for is written under the list**, wrapped at words, in a fixed number of
   lines so the popup does not change height as the highlight moves — the popup's version of the
   menu's effect line. (A `note` row.)
+- **A list longer than the popup can hold scrolls** (gate 5H): it keeps the highlighted row in view
+  (in the middle while it can), and the line above and below it says how many rows are hidden that
+  way — `^ 4 more`, `v 11 more` — in the hotkey colour, blank at the list's own ends. A click on that
+  line, or the wheel over the popup, scrolls. The window is derived from the highlight, never stored,
+  so the reducer needs to know nothing about the popup's height. (`OverlayScroll` and `scrollWindow`
+  in `src/build/overlay.ts`.)
 - **A popup that belongs to a menu row keeps that row lit behind it** (the Nexus popup, the
   start-the-Pulse question); **one that belongs to no row** (Debug Mode) **leaves the menu unlit**, so
   its own highlight is the only one on screen.
@@ -120,6 +126,22 @@ why.
   has reached the map's edge is a **solid bar** — the same weight horizontally and vertically, in every
   glyph pack, without colour. A corner is solid where a solid side runs into it.
 - **A map shorter than the panel** closes directly under its own last row; the panel keeps its height.
+
+## 7a. Moving around the map (gate 5H)
+
+- **A tap is one tile, always.** Precise placement is the common case; speed comes from holding.
+- **Holding speeds up, turning slows down**: a held arrow goes normal (2) then fast (4); Shift is
+  faster (8) at once; a change of direction drops to slow (1) until the key is let go. Terminals send
+  no key-up, so "held" is read from the gaps between repeats — in the input path, never the reducer.
+- **The view slides; it never jumps**: a camera change is eased over a few frames, drawn through the
+  camera it has reached. Hit-testing uses the drawn camera, so a click lands on what the player saw.
+  Nothing animates unless something moved — an idle screen draws once per input.
+- **Pointing to confirm never moves the view**: with a building armed, a click moves the cursor and
+  the preview only (Q58). **Exploring, a click near an edge brings that part of the map in** —
+  further the nearer the edge — and a fast move re-centres the view on the cursor.
+- **Every number is a Debug Mode flag** until the owner has felt it.
+- **A refused try is seen where the eye is**: the footprint flashes in the "danger" colour for a moment
+  as the status line says why.
 
 ## 8. The status line
 

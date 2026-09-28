@@ -70,7 +70,10 @@ export function killSession(repoRoot, session) {
 
 export function pane(repoRoot, session, { colour = false } = {}) {
   const args = ["capture-pane", "-t", session, "-p"]
-  if (colour) args.splice(1, 0, "-e")
+  // `-N` keeps trailing spaces: without it tmux drops the inverse-video blanks at the end of a line,
+  // which is exactly what the map's solid edge along the bottom of the Grid is (found at gate 5H, when
+  // a live shot reached the Grid's south edge and its solid bar was missing from the picture only).
+  if (colour) args.splice(1, 0, "-e", "-N")
   return tmux(repoRoot, args)
 }
 

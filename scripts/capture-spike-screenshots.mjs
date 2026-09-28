@@ -34,6 +34,8 @@ import { fileURLToPath } from "node:url"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { frameToText } from "../src/view/frame.ts"
+import { composeBuildFrame } from "../src/view/build.ts"
+import { BuildAnimation, FRAME_MS } from "../src/view/build-live.ts"
 import { renderFramePng, renderFramesGif } from "./lib/frame-capture.mjs"
 import {
   ESC,
@@ -64,7 +66,9 @@ const PICK_FIRST_POWER = "n 1"
 
 // --- In-process shots ----------------------------------------------------------------------------
 
-function scripted(name, caption, { keys, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark" }) {
+/** `present`: what the live screen adds between keys (gate 5H) — a refused-placement flash, say —
+ *  composed onto the last frame, since a key script alone never shows a moment in time. */
+function scripted(name, caption, { keys, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", present }) {
   if (only !== null && only !== name) return
   const run = runBuildPlaytest({ steps: parseKeyScript(keys), columns: cols, rows, capability })
   const last = run.frames[run.frames.length - 1]
@@ -72,9 +76,13 @@ function scripted(name, caption, { keys, expect, cols = 80, rows = 24, capabilit
   if (!text.includes(expect)) {
     throw new Error(`${name}: expected "${expect}" on screen after "${keys}", got:\n${text}`)
   }
+  const frame =
+    present === undefined
+      ? last.frame
+      : composeBuildFrame({ context: run.context, state: last.state, layout: run.layout, ...present }, capability)
   report(
     renderFramePng({
-      frame: last.frame,
+      frame,
       capability,
       theme,
       caption,
@@ -103,6 +111,29 @@ function scriptedGif(name, { keys, expect, cols = 80, rows = 24, capability = "t
     scratchDir: scratch,
   })
   report(result)
+}
+
+/**
+ * The view sliding (gate 5H), frame by frame as the live screen draws it: `before` sets the scene,
+ * `move` is one more key, and the GIF is every frame `BuildAnimation` gives between the two cameras
+ * at the live loop's own frame interval — the same function, fed a clock that steps instead of waits.
+ */
+function slideGif(name, { before, move, cols = 80, rows = 24, capability = "truecolor" }) {
+  if (only !== null && only !== name) return
+  const run = runBuildPlaytest({ steps: parseKeyScript(`${before} ${move}`), columns: cols, rows, capability })
+  const from = run.frames[run.frames.length - 2]
+  const to = run.frames[run.frames.length - 1]
+  const animation = new BuildAnimation()
+  animation.frame(from.state, 0)
+  const shots = [{ frame: from.frame, caption: "before", delayMs: 900 }]
+  for (let now = 1; ; now += FRAME_MS) {
+    const live = animation.frame(to.state, now)
+    const frame = composeBuildFrame({ context: run.context, state: to.state, layout: run.layout, camera: live.camera }, capability)
+    const done = live.busyUntil === null
+    shots.push({ frame, caption: `${move}: ${now - 1} ms`, delayMs: done ? 2500 : 250 })
+    if (done) break
+  }
+  report(renderFramesGif({ shots, capability, targetPath: join(outputDirectory, `${name}.gif`), scratchDir: scratch }))
 }
 
 scriptedGif("build-hatchery-run", {
@@ -192,8 +223,8 @@ scripted(
 
 scripted(
   "spike-crater",
-  "The north-east crater, 70 tiles east of where the cursor started - the part of the Grid that exists only because scrolling does",
-  { keys: `${PICK_FIRST_POWER} Tab S-Right*12 PgUp*2`, expect: "view x" },
+  "The north-east crater, 64 tiles east of where the cursor started - the part of the Grid that exists only because scrolling does",
+  { keys: `${PICK_FIRST_POWER} Tab S-Right*8 PgUp`, expect: "view x" },
 )
 
 scripted(
@@ -231,28 +262,77 @@ scripted(
   { keys: "d", expect: "DEBUG MODE - not saved" },
 )
 
+// The flags' order changed at gate 5H (its movement numbers first), and Up from the first row wraps to
+// the restart row, so the 5G flags at the end are a few Ups away: Up*4 is "Opens on", Up*5 "Smart
+// cursor".
+
 scripted(
   "build-debug-104x32",
-  "Right twice on Scroll margin: 3 tiles becomes 5, the status line says so, and the position readout names the margin now in force",
-  { keys: "d Down Right Right", cols: 104, rows: 32, expect: "margin 5" },
+  "Right twice on Scroll margin: 20% of the view becomes 30%, the status line says so, and the position readout names the margin now in force",
+  { keys: "d Right Right", cols: 104, rows: 32, expect: "margin 30%" },
 )
 
 scripted(
   "build-debug-light",
   "The light theme: \"Opens on\" is marked restart - it takes effect through [r] Restart with these settings, which starts the Build Phase over and keeps every flag",
-  { keys: "d Down Down Right", theme: "light", expect: "applies on restart" },
+  { keys: "d Up*4 Right", theme: "light", expect: "applies on restart" },
 )
 
 scripted(
   "build-debug-restarted-on-map",
   "After [r]: the Build Phase starts over with the keyboard on the map, exploring - one of the two answers to where the screen should open",
-  { keys: "d Down Down Right r", expect: "Build Phase restarted with the debug settings." },
+  { keys: "d Up*4 Right r", expect: "Build Phase restarted with the debug settings." },
 )
 
 scriptedGif("build-debug-smart-cursor", {
   // Smart cursor off, then the owner's own flow: the cursor stays where it was instead of jumping.
-  keys: "d Right Esc Down Down Space",
+  keys: "d Up*5 Right Esc Down Down Space",
   expect: "Barracks selected",
+})
+
+// Gate 5H: movement feel.
+
+scripted(
+  "build-debug-scrolled",
+  "Debug Mode scrolls: twenty flags do not fit at 80x24, so the list moves with the highlight and says how many rows are hidden above and below (^ 4 more, v 11 more). A click on either line, or the wheel, scrolls it too",
+  { keys: "d Down*6", expect: "v 11 more" },
+)
+
+scriptedGif("build-held-arrow", {
+  // A tap, the terminal's repeat delay, then auto-repeats 30 ms apart: one tile, one tile, then two a
+  // step, then four once held for 300 ms. Then Left, straight after: a change of direction, one tile
+  // a step for pointing precisely, even held. Shift+Down: eight at once.
+  keys: "e Right Right~400 Right~30*14 Left~30 Left~400 Left~30*3 S-Down",
+  expect: "cursor 51,21",
+  delayMs: 450,
+})
+
+scriptedGif("build-armed-click-still", {
+  // Armed, a click near the edge moves the cursor and the preview there and does not scroll the view,
+  // so the second click on the same spot lands on the same tile and places (Q58).
+  keys: `${PICK_FIRST_POWER} 1 click:43,10 click:43,10`,
+  expect: "Barracks placed",
+})
+
+scriptedGif("build-explore-edge-click", {
+  // Exploring, a click near an edge scrolls the view, further the nearer the edge: two columns in, a
+  // long way; eight columns in, a little; in the middle, not at all (feedback F6).
+  keys: `${PICK_FIRST_POWER} e click@76,10 click@70,10 click@55,10`,
+  expect: "EXPLORE",
+  delayMs: 1200,
+})
+
+scripted(
+  "build-refused-flash",
+  "Enter on rock: the whole footprint flashes solid for a quarter of a second as the status line says why, so an eye on the map sees it did not build",
+  { keys: `${PICK_FIRST_POWER} 1 Up*8 Left*10 Enter`, expect: "Cannot build here", present: { refusedFlash: true } },
+)
+
+slideGif("build-view-slide", {
+  // Shift+Right: the view slides to put the cursor in the middle, over 150 ms and a few frames, fast
+  // at first and settling at the end — every frame the live screen draws, as it draws them.
+  before: `${PICK_FIRST_POWER} e S-Right*2`,
+  move: "S-Right",
 })
 
 // --- Real-terminal shots -------------------------------------------------------------------------
@@ -318,12 +398,14 @@ live(
     drive: () => {
       pickFirstPower()
       key("Tab")
+      // Eight tiles a press since gate 5H (it was five): four east and two south still leave more
+      // Grid on every side.
       for (let step = 0; step < 4; step += 1) {
         key("S-Right")
-        key("NPage")
+        if (step < 2) key("NPage")
       }
     },
-    waitForText: "cursor 38,33",
+    waitForText: "cursor 50,29",
   },
 )
 
@@ -357,7 +439,7 @@ live(
       literal("1") // arm Barracks
       for (let step = 0; step < 4; step += 1) key("S-Right")
     },
-    waitForText: "cursor 38,13",
+    waitForText: "cursor 50,13",
   },
 )
 
