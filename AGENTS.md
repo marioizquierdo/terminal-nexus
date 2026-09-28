@@ -172,19 +172,19 @@ numbers — scrolls.
 
 The current milestone is **[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md)
 — Build Phase**: can a player place buildings, pick a Nexus upgrade, and scroll a real map, by
-keyboard, mouse and driver alike? Its active gate is **5H — movement feel**, built and awaiting Mario's
-feel (`evidence/gate-5h-report.md`). **Mario asked on 2026-09-28 to keep going without waiting to
-look at 5G first**: he will test several merged changes together, and the orchestrating session keeps
-working through the feedback log in the meantime. The next item there is the **placement juice** gate
-(feedback F9: placement frames, particles, colour interpolation), which 5H's frame timer unblocks.
+keyboard, mouse and driver alike? Its active gate is **5I — placement juice** (feedback F9): a building
+plays a short run of frames as it goes down, with particles and a brief light on its characters, on
+5H's frame timer. **Mario asked on 2026-09-28 to keep going without waiting to look at 5G or 5H
+first**: he will test several merged changes together, and the orchestrating session keeps working
+through the feedback log in the meantime.
 
 So the authorised work for a new session is, in order:
 
 1. **whatever the owner's most recent feedback asks for**, if any exists since
    `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
    outstanding or that everything still is;
-2. **The next gate in the tracker after 5H** (placement juice) — the owner asked on 2026-09-28 to
-   keep going through the feedback before testing; a later prompt from him that says otherwise wins. Per its own file — the next gate in the build order
+2. **Milestone 5 gate 5I** (placement juice) — the owner asked on 2026-09-28 to keep going through
+   the feedback before testing; a later prompt from him that says otherwise wins. Per its own file — the next gate in the build order
    [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
    order — read that table's build-order column, and take one gate per session unless the owner's
    own prompt asks for more.

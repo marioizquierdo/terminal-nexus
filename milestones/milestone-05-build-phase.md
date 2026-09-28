@@ -2,10 +2,9 @@
 
 **Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
 **Status:** CURRENT
-**Active gate:** 5H — movement feel: a frame timer, held-key speed tiers, a share-of-viewport
-scroll margin, recentring, eased camera moves, every number a Debug Mode flag. **Built and reported (PASS), awaiting
-Mario's feel**; started at Mario's request (2026-09-28: "keep going ... I'll test everything after we merge a few
-more changes all together") before his look at 5G; 5D-5G are built and reported (PASS) but not yet
+**Active gate:** 5I — placement juice: a building plays a short run of frames as it goes down, with
+particles and a brief light on its characters, on 5H's frame timer, every number a Debug Mode flag.
+**In progress**, at Mario's "keep going" (2026-09-28); 5D-5H are built and reported (PASS) but not yet
 formally accepted, and this gate depends on none of those acceptances.
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
 mission's own budget/units decided — accepted 2026-09-12)
@@ -179,6 +178,17 @@ mission's own budget/units decided — accepted 2026-09-12)
 > screenshots had been dropping the solid bottom map edge (a tmux capture setting). Registered: Q62
 > (what an exploring click does to the view) and Q63 (the wheel's step).
 
+> **Gate 5I: placement juice — in progress** (feedback F9, the owner's: "every building should define
+> an array of frames played when it is placed, and particle effects ... colour interpolation (a
+> rainbow, lighting on the characters), a simplified shader"). Presentation only, on 5H's frame timer:
+> each structure carries a short run of placement frames authored beside its art, with a generic
+> fallback so no content blocks; a small burst of particles around the footprint in the `effects`
+> band, which never overwrites a building's glyph; and a brief light on the placed building's
+> characters, expressed as a style-role operation the renderer resolves per theme and capability,
+> never a literal colour, degrading to bold/dim where colour is short. A "rainbow" is one value of the
+> lighting flag. Reduced motion shows the finished building at once. Every duration and intensity is
+> a Debug Mode flag, and each effect can be switched off.
+
 ## 1. Question
 
 Can a player place buildings and pick a Nexus upgrade during a hidden Build Phase — with keyboard
@@ -270,6 +280,8 @@ map scrolling — before handing off into Milestone 6's Pulse?
 - **5H — Movement feel**: a frame timer; held-key speed tiers and a share-of-viewport margin (Q54);
   recentring and eased camera moves; a cursor flash on a refused attempt; an armed click that does not
   scroll (Q58).
+- **5I — Placement juice** (feedback F9): per-structure placement frames, particles, and light on a
+  placed building's characters, on 5H's frame timer; presentation only.
 
 ## 3. Grounded in already-locked contracts
 
@@ -392,3 +404,18 @@ Gate 5H's definition of done:
 - [x] the reducer still has no clock: timing lives in the adapter and the view, and every existing
       "same plan, every adapter" test still holds;
 - [x] a gate report ending in PASS / REVISE / STOP / BLOCKED — **PASS**, pending the owner's feel.
+
+Gate 5I's definition of done:
+
+- [ ] placing a structure plays its own short run of frames (a generic fallback for any structure
+      without authored ones), then shows the finished building; removing or undoing mid-animation is
+      correct at once;
+- [ ] a particle burst around the footprint in the `effects` band, obeying the corruption law, with
+      cosmetic randomness from a hash of the placement's identity, never a stream;
+- [ ] a brief light on the placed building's characters as a style-role operation, resolved per
+      capability and theme, degrading in 16-colour and monochrome; a "rainbow" value;
+- [ ] every effect is a pure function of time since the placement, off under reduced motion, and a
+      Debug Mode flag (duration, intensity, on/off); the reducer still has no clock, and the plan is
+      identical with every effect on or off;
+- [ ] the terminal and the browser page draw it; the Build Phase screen stays inside the frame budget;
+- [ ] a gate report ending in PASS / REVISE / STOP / BLOCKED.

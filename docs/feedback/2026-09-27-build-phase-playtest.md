@@ -113,7 +113,7 @@ next canon change (listed in the round-2 report).
 > simplified shader: change colour, transparency, light/dark, and move positions by frame
 > interpolation. Building placement could show lighting effects.
 
-**Scheduled — a new gate after 5H, "placement juice"**, because it needs 5H's frame timer on this
+**Scheduled — gate 5I, "placement juice"** (in progress 2026-09-28), because it needs 5H's frame timer on this
 screen. Groundwork that already exists: the Pulse view's effect system (`src/view/effects`) with
 effects as pure functions of presentation time, and `CellStyle.fade` for transparency at the
 256-colour and truecolour tiers. What is new: per-structure placement frames (authored beside
