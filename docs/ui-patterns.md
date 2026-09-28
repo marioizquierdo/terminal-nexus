@@ -98,6 +98,9 @@ why.
   the hotkey colour, the name quiet — and is a click target, like every other entry point. It is in
   the top bar rather than the menu because it is a tool for playtesting, not a game action, and will
   shrink as its questions are answered.
+- **Agents ask the owner to flip flags.** A choice that is his to feel ships behind a flag, defaulting
+  to the recommended answer, and the pull request tells him which one to flip with `d` (his own
+  request, 2026-09-28). A new behaviour whose worth is in doubt gets an on/off flag.
 - **Every flag names the question it serves** and whether it applies now or on restart; the popup's
   title says nothing in it is saved. A restart row starts the Build Phase over keeping the flags,
   which is how a "restart" flag takes effect.

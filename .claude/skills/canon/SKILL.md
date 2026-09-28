@@ -68,7 +68,10 @@ Never do these without authority:
 
 Before asking, try to make the fork **observable** instead — a parameter, toggle, or side-by-side
 fixture Mario can look at beats a paragraph arguing for one answer, and it's usually cheaper than it
-looks. Ask only when alternatives materially change the product promise, an experiment, or
+looks. **In the Build Phase the observable form is a Debug Mode flag** (`src/build/debug.ts`,
+opened with `d`): build both answers, default to the recommended one, and ask Mario in the pull
+request to flip it — he asked agents to do exactly this. Register the question too when it is his to
+settle, and note in its row which flag shows it. Ask only when alternatives materially change the product promise, an experiment, or
 irreversible architecture — and ask in the register below, never in a PR comment, which gets lost.
 
 ## Registering an open question

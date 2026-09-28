@@ -24,7 +24,9 @@ When an agent hits an underdetermined fork:
    ([`project-governance.md`](project-governance.md) Section 2).
 2. Prefer making the fork **observable** rather than asking. A parameter, toggle, fixture, or side
    by side comparison that lets Mario look at both answers is worth more than a paragraph of
-   speculation, and costs less than a stalled session.
+   speculation, and costs less than a stalled session. In the Build Phase the toggle is a **Debug
+   Mode flag** the owner flips with `d`; the row names the flag, and the pull request asks him to
+   try it.
 3. If it is still a real decision, add a row to Section 4 with: the question, why it blocks, the
    options, the cost of each, and **a recommendation**. A question without a recommendation is an
    unfinished question.

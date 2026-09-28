@@ -165,18 +165,19 @@ question it serves, changed with Left/Right, restarted with `[r]`, never saved.
 
 The current milestone is **[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md)
 — Build Phase**: can a player place buildings, pick a Nexus upgrade, and scroll a real map, by
-keyboard, mouse and driver alike? Its active gate is **5G — Debug Mode**, now built and awaiting
-Mario's look (`evidence/gate-5g-report.md`). After it: **5H**, movement feel — a frame timer, held-key
+keyboard, mouse and driver alike? Its active gate is **5H — movement feel** — a frame timer, held-key
 speed tiers, a share-of-viewport margin, recentring, eased camera moves (Q54, Q58), every number a
-Debug Mode flag, and a Debug Mode popup that scrolls.
+Debug Mode flag, and a Debug Mode popup that scrolls. **Mario asked on 2026-09-28 to keep going
+without waiting to look at 5G first**: he will test several merged changes together, and the
+orchestrating session keeps working through the feedback log in the meantime.
 
 So the authorised work for a new session is, in order:
 
 1. **whatever the owner's most recent feedback asks for**, if any exists since
    `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
    outstanding or that everything still is;
-2. **Milestone 5 gate 5H, once Mario has looked at 5G** — gate 5G is built; do not start 5H on
-   the strength of the tracker alone. Per its own file — the next gate in the build order
+2. **Milestone 5 gate 5H** — started at the owner's own request (2026-09-28) before his look at 5G;
+   after it, the next gate still waits for his word unless his prompt asks for more. Per its own file — the next gate in the build order
    [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
    order — read that table's build-order column, and take one gate per session unless the owner's
    own prompt asks for more.
@@ -360,12 +361,18 @@ deleted, and the renderer must be replaceable without one simulation test changi
   artifacts, or pushing directly to `main`.
 - Update `README.md`, `DEVELOPMENT.md`, the dev container, CI, and agent instructions together when
   canonical development commands change.
-- **Show Mario options through Debug Mode** (owner direction, 2026-09-26; built at Milestone 5 gate
-  5G): press `d` in the Build Phase for a panel of live-editable flags, some applied at once, some on
-  restart (`src/build/debug.ts` is the list). When a session has a genuine fork the owner should feel
-  rather than read about, the preferred move (Section 6's "make it observable") is a Debug Mode field,
-  not a new command-line flag. Every flag names the question it serves and is deleted once the
-  question is answered; a few graduate into real settings.
+- **Ask Mario to feel a choice through Debug Mode** (owner direction, 2026-09-26, repeated 2026-09-28:
+  agents "can ask me to enable/disable a feature with d debug settings"). Press `d` in the Build Phase
+  for a panel of live-editable flags, some applied at once, some on restart (`src/build/debug.ts` is
+  the list). When a session has a fork the owner should feel rather than read about — a timing, a
+  look, a movement rule, or whether a new feature should exist at all — build both answers behind a
+  Debug Mode flag and **ask him in plain words to flip it**: "press `d`, set Armed click scrolls to
+  on, and tell me which you prefer." A new behaviour whose worth is in doubt ships with an on/off
+  flag, so he can switch it off without a rebuild. This is Section 6's "make it observable" in its
+  preferred form, ahead of a command-line flag or a registered question. Every flag names the
+  question it serves and is deleted once the question is answered; a few graduate into real
+  settings. The Debug Mode popup is only in the Build Phase today; a screen without one falls back
+  to a command-line flag.
 
 ### Write for a person, not for the filing system
 
@@ -397,7 +404,8 @@ This will happen. It is expected, and there is a procedure — see
    organization, diagnostics. Governance Section 2 already grants this. Do not ask.
 2. **Make it observable** if you can. A parameter, toggle, or side-by-side fixture that lets Mario
    *look* at both answers beats a paragraph arguing for one. This is the preferred move and it is
-   cheap far more often than it looks.
+   cheap far more often than it looks. In the Build Phase the form is a **Debug Mode flag** that he
+   flips with `d` — and the pull request asks him to (Section 5).
 3. **Register it** if it is genuinely the owner's call: add a `Q<n>` row with the question, why it
    blocks, the options, their costs, and **a recommendation**. The validator rejects an `OPEN`
    question with no recommendation, because a question without one just moves the work to Mario.

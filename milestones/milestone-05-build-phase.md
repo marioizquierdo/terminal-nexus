@@ -2,13 +2,14 @@
 
 **Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
 **Status:** CURRENT
-**Active gate:** 5G — Debug Mode: a popup of live-editable development flags, each naming the
-question it serves, so Mario can feel two answers during a playtest. **Built and reported (PASS),
-awaiting Mario's look**; gate 5H does not start before it. Gates 5D-5F are built and reported (PASS)
-but not yet formally accepted; this gate depends on none of those acceptances.
+**Active gate:** 5H — movement feel: a frame timer, held-key speed tiers, a share-of-viewport
+scroll margin, recentring, eased camera moves, every number a Debug Mode flag. **In progress**,
+started at Mario's request (2026-09-28: "keep going ... I'll test everything after we merge a few
+more changes all together") before his look at 5G; 5D-5G are built and reported (PASS) but not yet
+formally accepted, and this gate depends on none of those acceptances.
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
 mission's own budget/units decided — accepted 2026-09-12)
-**Updated:** 2026-09-27
+**Updated:** 2026-09-28
 **License:** Apache-2.0
 
 > **Milestone 4 has not landed, and this milestone does not wait for it.** An earlier draft of the

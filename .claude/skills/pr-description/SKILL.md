@@ -47,7 +47,9 @@ internal work.
 vertically, before first (side by side is unreadable on a phone).
 
 **Decisions** — each open choice: the question in plain words, the default this PR picked, and how to
-flip it. Omit the section if there are none.
+flip it. In the Build Phase that is almost always a Debug Mode flag, so give the exact keys: "press
+`d`, set Armed click scrolls to on, and tell me which feels better." Mario asked to be asked this way.
+Omit the section if there are none.
 
 **Known issues** — omit if none.
 

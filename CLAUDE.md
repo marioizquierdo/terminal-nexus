@@ -15,6 +15,9 @@ On Claude Code on the web:
 - implement only the gate the current milestone marks as its **Active gate**;
 - register an undecided fork in `specs/open-questions.md` with a recommendation, then keep working on
   everything the answer does not touch;
+- when a choice is Mario's to feel — a timing, a look, whether a feature should exist — put both
+  answers behind a **Debug Mode flag** (`d` in the Build Phase, `src/build/debug.ts`) and ask him in
+  the pull request to flip it; he asked for exactly this (AGENTS.md Section 5);
 - stop with evidence for Mario rather than continuing to the next gate;
 - open or update pull requests using the `pr-description` skill;
 - **write anything Mario reads in plain English** — describe the actual idea or decision, not the
