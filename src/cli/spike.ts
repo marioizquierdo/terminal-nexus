@@ -11,13 +11,14 @@ import { BuildSession } from "../build/session.ts"
 import {
   SPIKE_ALLOTMENT,
   SPIKE_CATALOG,
+  SPIKE_EDGE_STYLE,
   SPIKE_NEXUS_DRAFT,
   SPIKE_STANDING,
   SPIKE_START_CURSOR,
   spikeGrid,
 } from "../build/catalog.ts"
 import { isGated } from "../build/camera.ts"
-import { buildLayout } from "../build/layout.ts"
+import { buildLayout, layoutMatches, layoutOptions } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import { BuildAnimation, nextFrameDelay } from "../view/build-live.ts"
@@ -65,6 +66,7 @@ export function spikeContext(scrollMargin?: number): BuildContext {
     standing: SPIKE_STANDING,
     allotment: SPIKE_ALLOTMENT,
     nexusDraft: SPIKE_NEXUS_DRAFT,
+    edgeStyle: SPIKE_EDGE_STYLE,
     ...(scrollMargin === undefined ? {} : { scrollMargin }),
   }
 }
@@ -149,6 +151,13 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     if (leaving) return
     const size = terminalSize()
     const now = clock()
+    // A Debug Mode flag that moves the Grid pane (F25's shared west side) takes effect at once: a new
+    // layout, and the session told its new viewport, exactly as a resize does.
+    if (!gated && !layoutMatches(layout, build.state.debug)) {
+      layout = buildLayout(size, context.grid, layoutOptions(build.state.debug))
+      build.resize(layout.viewport)
+      animation.snap(build.state, now)
+    }
     const live = gated
       ? null
       : animation.frame(build.state, now, {
@@ -190,7 +199,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     const size = terminalSize()
     gated = isGated(size, context.grid)
     if (!gated) {
-      layout = buildLayout(size, context.grid)
+      layout = buildLayout(size, context.grid, layoutOptions(build.state.debug))
       build.resize(layout.viewport)
       animation.snap(build.state, clock())
     }

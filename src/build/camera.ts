@@ -16,6 +16,9 @@ export const SCROLL_MARGIN = 3
 
 /** The chrome the Grid pane does not get: engine.md 3.1's own 80-column arithmetic. */
 export const PANEL_COLUMNS = 30
+/** The same, when the menu's divider doubles as the Grid's west side (Debug Mode's "Shared west
+ *  side", feedback F25): the column the separate west side took goes to the Grid. */
+export const SHARED_PANEL_COLUMNS = PANEL_COLUMNS - 1
 /** The top bar's one line, and the rule directly above the Grid that closes its rectangle. */
 export const HEADER_ROWS = 2
 /** The rule directly below the Grid, then the bottom bar's three lines: the position readout, the key
@@ -39,9 +42,13 @@ export type TerminalSize = Readonly<{ columns: number; rows: number }>
  * 3.3's own fitting order, and deliberately allowed to come back negative-ish small: the caller
  * decides whether that means "gate" (below the minimum) or "centre the leftover" (above the maximum).
  */
-export function availableTiles(terminal: TerminalSize, tileWidth: TileWidth): Viewport {
+export function availableTiles(
+  terminal: TerminalSize,
+  tileWidth: TileWidth,
+  panelColumns: number = PANEL_COLUMNS,
+): Viewport {
   return {
-    width: Math.max(0, Math.floor((terminal.columns - BORDER_COLUMNS - PANEL_COLUMNS) / tileWidth)),
+    width: Math.max(0, Math.floor((terminal.columns - BORDER_COLUMNS - panelColumns) / tileWidth)),
     height: Math.max(0, terminal.rows - CHROME_ROWS),
   }
 }
@@ -51,9 +58,13 @@ export function availableTiles(terminal: TerminalSize, tileWidth: TileWidth): Vi
  * and engine.md 9.3's "one column at 80, two at 128 or wider" agree by construction — 128 is exactly
  * the width at which two columns per tile still leaves room for the 48-tile minimum viewport.
  */
-export function tileWidthFor(terminal: TerminalSize, grid: GridTerrain): TileWidth {
+export function tileWidthFor(
+  terminal: TerminalSize,
+  grid: GridTerrain,
+  panelColumns: number = PANEL_COLUMNS,
+): TileWidth {
   const wanted = Math.min(MIN_VIEWPORT.width, grid.width)
-  return availableTiles(terminal, 2).width >= wanted ? 2 : 1
+  return availableTiles(terminal, 2, panelColumns).width >= wanted ? 2 : 1
 }
 
 /**
@@ -75,8 +86,9 @@ export function fitViewport(
   terminal: TerminalSize,
   grid: GridTerrain,
   tileWidth: TileWidth,
+  panelColumns: number = PANEL_COLUMNS,
 ): Viewport {
-  const available = availableTiles(terminal, tileWidth)
+  const available = availableTiles(terminal, tileWidth, panelColumns)
   return {
     width: Math.min(available.width, MAX_VIEWPORT.width, grid.width),
     height: Math.min(available.height, MAX_VIEWPORT.height, grid.height),

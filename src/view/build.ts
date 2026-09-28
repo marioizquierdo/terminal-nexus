@@ -42,6 +42,8 @@ import type { CapabilityMode, StyleRole } from "./roles.ts"
 import { chromeGlyph, entityGlyph, playerRole, terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 import { statusStyle } from "./status.ts"
+import type { ArmWeight, Arms, EdgePlace } from "./edge.ts"
+import { edgeCell, resolveEdgeStyle } from "./edge.ts"
 import { EFFECT_RECIPES } from "./effects/recipes.ts"
 import type { EffectCellSource } from "./effects/composite.ts"
 import { EFFECT_BAND_NUMBERS, effectCellStyle, mergeEffectCells } from "./effects/composite.ts"
@@ -123,6 +125,9 @@ function lineGlyph(pack: GlyphPack, { n, s, e, w }: Joins): string {
  * cell, a wall rather than merely a border, the same weight in every glyph pack and in monochrome
  * (canon 2.21, replacing 2.19's `=` and bold `|`, which ASCII could not make equal; Q56). The west
  * side is a column of its own beside the menu's plain divider (feedback F17).
+ * Since feedback F25 the solid bar is one of several Experiments (Debug Mode's "Map edge", "Map edge
+ * colour" and "Shared west side"; `src/view/edge.ts` draws them), each the same weight on all four
+ * sides, and the west side may share the divider's column instead.
  * Everything else — the outer border, the rules where they cross the side panel — never scrolls and
  * is drawn plain.
  */
@@ -167,50 +172,83 @@ function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack: Glyph
   verticalLine(layout.dividerColumn, box.top, layout.paneBottom)
 
   const markers = edgeMarkers(state.camera, state.viewport, context.grid)
-  // The Grid's west side is its own column next to the divider. It is drawn only where the map ends
-  // there: beside the plain divider a second, lighter line would read as a double border, so while
-  // there is more Grid to the west the divider alone is the light side, and the column is a gutter.
-  if (!markers.west) verticalLine(box.left, box.top, box.bottom)
+  const heavy = { north: !markers.north, south: !markers.south, west: !markers.west, east: !markers.east }
+  // The Grid's west side is its own column next to the divider (feedback F17), unless it shares the
+  // divider (F25's Experiment). Its own column is drawn only where the map ends there: beside the
+  // plain divider a second, lighter line would read as a double border, so while there is more Grid to
+  // the west the divider alone is the light side, and the column is a gutter.
+  if (!layout.sharedWest && heavy.west) verticalLine(box.left, box.top, box.bottom)
+  // The rectangle the four sides actually run along: its west side is the divider whenever the
+  // divider is what is drawn there — shared, or light — and the Grid's own column only when that
+  // column carries the map's edge.
+  const west = heavy.west ? box.left : layout.dividerColumn
+  const rect = { left: west, right: box.right, top: box.top, bottom: box.bottom }
+
+  // Whether the line from a cell to its neighbour runs along a side that has reached the map's own
+  // edge. Everything is decided per line segment, so a corner, a tee where the divider meets a rule,
+  // and a straight run all come out of the same test.
+  const heavySegment = (x: number, y: number, dx: number, dy: number): boolean => {
+    if (dy === 0) {
+      const from = Math.min(x, x + dx)
+      const to = Math.max(x, x + dx)
+      if (from < rect.left || to > rect.right) return false
+      return (y === rect.top && heavy.north) || (y === rect.bottom && heavy.south)
+    }
+    const from = Math.min(y, y + dy)
+    const to = Math.max(y, y + dy)
+    if (from < rect.top || to > rect.bottom) return false
+    return (x === rect.left && heavy.west) || (x === rect.right && heavy.east)
+  }
+  const style = resolveEdgeStyle(state.debug.mapEdge, context.edgeStyle)
   const soft = { dim: true }
-  // A side that has reached the map's own edge is a **solid bar** — an inverse-video cell — on all
-  // four sides alike (owner, 2026-09-27: "the rectangle needs to be a rectangle"). The `=` / bold `|`
-  // pair it replaces could not be the same weight in both directions in ASCII (Q56); a solid bar is,
-  // in every glyph pack and in monochrome, and needs no colour to read. A corner is solid when either
-  // side meeting there is, so a heavy side runs unbroken to its end.
-  const topHeavy = !markers.north
-  const bottomHeavy = !markers.south
-  const leftHeavy = !markers.west
-  const rightHeavy = !markers.east
-  const solid = (x: number, y: number): void => put(cells, BANDS.chrome, x, y, " ", "chrome.frame", { inverse: true })
 
   for (const cell of lines.values()) {
     const { x, y } = cell
-    const westGutter = x === box.left && !leftHeavy
-    // While there is more Grid to the west, the divider is the Grid's light west side, drawn soft
-    // like the other three — beside the Grid's rows only; above and below it is the panel's rule.
-    if (x === layout.dividerColumn && !leftHeavy && y > box.top && y < box.bottom) {
-      put(cells, BANDS.chrome, x, y, chromeGlyph(pack, "softVertical"), "chrome.frame", soft)
+    const weight = (joined: boolean, dx: number, dy: number): ArmWeight =>
+      !joined ? 0 : heavySegment(x, y, dx, dy) ? 2 : 1
+    const arms: Arms = {
+      n: weight(cell.n, 0, -1),
+      s: weight(cell.s, 0, 1),
+      e: weight(cell.e, 1, 0),
+      w: weight(cell.w, -1, 0),
+    }
+    const horizontalEdge = arms.e === 2 || arms.w === 2
+    const verticalEdge = arms.n === 2 || arms.s === 2
+    // A side that has reached the map's own edge is drawn in the map-edge style, on all four sides
+    // alike (owner, 2026-09-27: "the rectangle needs to be a rectangle"); a corner takes it when either
+    // side meeting there does, so a heavy side runs unbroken to its end.
+    if (horizontalEdge || verticalEdge) {
+      // A corner is a corner by where it is, even where only one of its sides is an edge: a half
+      // block's quadrant there stops at the frame line it meets instead of running half a cell past it.
+      const corner = (x === rect.left || x === rect.right) && (y === rect.top || y === rect.bottom)
+      const northSouth = y === rect.top ? "n" : "s"
+      const westEast = x === rect.left ? "w" : "e"
+      const place: EdgePlace =
+        corner
+          ? (`${northSouth}${westEast}` as EdgePlace)
+          : horizontalEdge
+            ? y === rect.top
+              ? "north"
+              : "south"
+            : x === rect.left
+              ? "west"
+              : "east"
+      // Along the map, in map columns or rows from its own corner — the drawn camera's position plus
+      // the distance into the view — so a patterned edge scrolls with the map.
+      const phase = horizontalEdge
+        ? state.camera.x * layout.tileWidth + (x - layout.origin.column)
+        : state.camera.y + (y - layout.origin.row)
+      const drawn = edgeCell(pack, style, state.debug.mapEdgeColour, arms, place, phase)
+      put(cells, BANDS.chrome, x, y, drawn.glyph, drawn.role, drawn.extra)
       continue
     }
-    const alongTopOrBottom = (y === box.top || y === box.bottom) && (x > box.left || westGutter) && x < box.right
-    const alongLeftOrRight = (x === box.left || x === box.right) && y > box.top && y < box.bottom
-    const gridCorner = (x === box.left || x === box.right) && (y === box.top || y === box.bottom)
-    if (alongTopOrBottom) {
-      const heavy = y === box.top ? topHeavy : bottomHeavy
-      if (heavy) solid(x, y)
-      else put(cells, BANDS.chrome, x, y, chromeGlyph(pack, "softHorizontal"), "chrome.frame", soft)
-    } else if (alongLeftOrRight) {
-      const heavy = x === box.left ? leftHeavy : rightHeavy
-      if (heavy) solid(x, y)
-      else put(cells, BANDS.chrome, x, y, chromeGlyph(pack, "softVertical"), "chrome.frame", soft)
-    } else if (
-      gridCorner &&
-      ((y === box.top ? topHeavy : bottomHeavy) || (x === box.left ? leftHeavy : rightHeavy))
-    ) {
-      solid(x, y)
-    } else {
-      put(cells, BANDS.chrome, x, y, lineGlyph(pack, cell), "chrome.frame")
-    }
+    // A side with more Grid beyond it is the frame's own line drawn dim — beside the Grid only; the
+    // corners where it meets the frame, and the rules above and below the panel, stay plain.
+    const alongTopOrBottom = (y === rect.top || y === rect.bottom) && x > rect.left && x < rect.right
+    const alongLeftOrRight = (x === rect.left || x === rect.right) && y > rect.top && y < rect.bottom
+    if (alongTopOrBottom) put(cells, BANDS.chrome, x, y, chromeGlyph(pack, "softHorizontal"), "chrome.frame", soft)
+    else if (alongLeftOrRight) put(cells, BANDS.chrome, x, y, chromeGlyph(pack, "softVertical"), "chrome.frame", soft)
+    else put(cells, BANDS.chrome, x, y, lineGlyph(pack, cell), "chrome.frame")
   }
 }
 

@@ -43,8 +43,10 @@ Debug Mode (Up/Down choose a flag, Left/Right change it, `r` restarts keeping th
 closes). Its list scrolls and starts on gate 5I's placement juice (`d Right` lengthens the build
 animation, `d Down Right` sets Lighting to rainbow), then gate 5H's movement numbers (`d Down*4
 Right` widens the scroll margin); Up from the top wraps to the restart row, so the older flags at the bottom are close that
-way: `d Up*5 Right Esc` turns the smart cursor off, `d Up*4 Right r` restarts with the keyboard on the
-map. `src/build/debug.ts`'s `DEBUG_FIELDS` is the order.
+way: `d Up*2 Right` shares the menu's divider as the map's west side, `d Up*3 Right*2` makes the map's
+edge quiet, `d Up*4 Right` cycles its style (use `--glyphs unicode` to see the thin ones), `d Up*8
+Right Esc` turns the smart cursor off, `d Up*7 Right r` restarts with the keyboard on the map.
+`src/build/debug.ts`'s `DEBUG_FIELDS` is the order.
 
 What a script cannot show is time between keys on the live screen — the view sliding, a flash, a
 building going up (script frames always draw buildings finished). For those, compose a frame with

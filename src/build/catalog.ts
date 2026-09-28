@@ -7,6 +7,7 @@
 // the existing fixture rosters rather than invented.
 
 import type { GridTerrain, TerrainId } from "../grid/types.ts"
+import type { MapEdgeStyle } from "./debug.ts"
 import type { ConstructItem, NexusPowerOption, StandingStructure } from "./types.ts"
 
 /**
@@ -95,6 +96,14 @@ export function spikeGrid(): GridTerrain {
 
   return { width, height, tiles }
 }
+
+/**
+ * This map's own border (feedback F25: "I wonder if the map can define different borders to give it
+ * personality"): a dashed heavy line, a wire fence round a military perimeter — PERIMETER's register
+ * is "plain, military, correct". Shown when Debug Mode's "Map edge" is `the map`. A proof of the hook,
+ * not map design: a real map would carry this in its own definition, beside its tiles.
+ */
+export const SPIKE_EDGE_STYLE: MapEdgeStyle = "fence"
 
 /** Already standing when the screen opens: something to build next to, and something a careless
  *  placement can overlap and be refused for. */

@@ -10,7 +10,7 @@
 import { SPIKE_START_CURSOR } from "../build/catalog.ts"
 import { isGated } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
-import { buildLayout, cellForTile, tileAtCell } from "../build/layout.ts"
+import { buildLayout, cellForTile, layoutMatches, layoutOptions, tileAtCell } from "../build/layout.ts"
 import { formatMouseEvent } from "../build/mouse.ts"
 import { BuildSession } from "../build/session.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
@@ -70,7 +70,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   if (isGated(terminal, context.grid)) {
     throw new Error(`${terminal.columns}x${terminal.rows} is below the Build Phase's 80x24 floor`)
   }
-  const layout = buildLayout(terminal, context.grid)
+  let layout = buildLayout(terminal, context.grid)
 
   let leftBy: "quit" | null = null
   const build = new BuildSession({
@@ -95,6 +95,12 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   for (const [position, step] of options.steps.entries()) {
     clock += step.afterMs ?? UNTIMED_GAP_MS
     const bytes = deliver(build, layout, step, clock)
+    // A Debug Mode flag that moves the Grid pane (F25's shared west side) re-lays the screen out at
+    // once, as the live loop does, so the next click lands on what this step's frame drew.
+    if (!layoutMatches(layout, build.state.debug)) {
+      layout = buildLayout(terminal, context.grid, layoutOptions(build.state.debug))
+      build.resize(layout.viewport)
+    }
     frames.push({ index: position + 1, label: step.label, bytes, state: build.state, frame: compose(), moveKind: build.moveKind })
     if (leftBy !== null) {
       ended = { by: leftBy, atStep: position + 1, skipped: options.steps.length - position - 1 }

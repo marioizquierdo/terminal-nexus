@@ -22,6 +22,11 @@
 // - the placement juice (`placeFramesMs`, `placeGlowMs`, `placeParticles`, `placeLight`, gate 5I) is
 //   presentation alone: the reducer stores it, the live loop times it, and the Build Phase view draws
 //   it (`src/view/placement.ts`). A plan is identical with every one of them on or off.
+// - the map-edge Experiments (`mapEdge`, `mapEdgeColour`, `sharedWestBorder`, feedback F25) are
+//   presentation and geometry: the Build Phase view draws the first two (`src/view/edge.ts`), and the
+//   third decides where the Grid pane starts, so it is read by the one layout drawing and
+//   hit-testing share (`src/build/layout.ts`'s `layoutOptions`); the live loop and the scripted
+//   playtest rebuild the layout the moment it changes.
 //
 // None of them reaches the simulation kernel (`src/pulse`, `src/state`): a Build Phase plan is a plan
 // on a screen until the Pulse, and nothing here is part of it.
@@ -44,6 +49,30 @@ export type PlaceParticles = "off" | "few" | "many"
 /** The light on a building's characters as it finishes (gate 5I, feedback F9): a flash toward the
  *  theme's strongest ink that settles back, the theme's rainbow hues sweeping across it, or none. */
 export type PlaceLight = "off" | "light" | "rainbow"
+
+/**
+ * How a side of the Grid rectangle that has reached the map's own edge is drawn (feedback F25: "a
+ * little thick... perhaps we can add some options"). Every style keeps the rectangle's rule: the same
+ * weight on all four sides, horizontal and vertical alike, and the same meaning in every glyph pack.
+ * The glyphs are `src/view/edge.ts`'s; this is only the list of names.
+ *
+ * - `solid`: an inverse-video cell — the wall canon 2.21 chose;
+ * - `half`: a half block on the map's side of the cell (quadrants at the corners);
+ * - `heavy`: a heavy box line, joined to the frame's light lines with mixed-weight junctions;
+ * - `double`: a double box line;
+ * - `shade`: a light shade, a dotted band;
+ * - `fence`: a dashed heavy line — not in the Experiment's list, but a style a map can name as its
+ *   own (the PERIMETER stand-in's, `SPIKE_EDGE_STYLE`), to prove the "map-defined border" hook.
+ */
+export type MapEdgeStyle = "solid" | "half" | "heavy" | "double" | "shade" | "fence"
+
+/** The Experiment's choice: one of the general styles, or whatever the map names (`map`). */
+export type MapEdgeChoice = Exclude<MapEdgeStyle, "fence"> | "map"
+
+/** How loudly the map's edge is drawn (F25: "the border color should probably be less accentuated"):
+ *  the frame's own colour (`strong`, as built), that colour dimmed (`dim`), or a quieter colour of its
+ *  own between the frame and the ground (`quiet`, the style role `chrome.edge`). */
+export type MapEdgeColour = "strong" | "dim" | "quiet"
 
 export type DebugFlags = Readonly<{
   /** F9: how long a placed building takes to rise through its placement frames, in milliseconds; 0
@@ -104,6 +133,13 @@ export type DebugFlags = Readonly<{
   pressedFlashMs: number
   /** How long a menu row's "refused" flicker lasts, in milliseconds. */
   refusedFlashMs: number
+  /** F25: what a side of the Grid rectangle that has reached the map's edge is drawn with. */
+  mapEdge: MapEdgeChoice
+  /** F25: how loudly it is drawn. */
+  mapEdgeColour: MapEdgeColour
+  /** F25: the menu's divider doubles as the Grid's west side, and the column the separate west side
+   *  took goes to the Grid. Off: the west side is a column of its own beside the divider (F17). */
+  sharedWestBorder: boolean
 }>
 
 export type DebugField = keyof DebugFlags
@@ -364,6 +400,35 @@ export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
     cycles: false,
     format: millis,
   },
+  // The map's edge (feedback F25), a block of its own: what it is drawn with, how loudly, and whether
+  // it shares the menu's divider.
+  {
+    field: "mapEdge",
+    label: "Map edge",
+    applies: "now",
+    question: "The map's own edge: solid, half block, heavy, double, shade, or the map's own. Thin ones need Unicode glyphs. (F25)",
+    values: ["solid", "half", "heavy", "double", "shade", "map"],
+    cycles: true,
+    format: (value: MapEdgeChoice) => (value === "map" ? "the map" : value),
+  },
+  {
+    field: "mapEdgeColour",
+    label: "Map edge colour",
+    applies: "now",
+    question: "How loud the map's edge is: the frame's own colour, dimmed, or a quieter grey of its own. (F25)",
+    values: ["strong", "dim", "quiet"],
+    cycles: true,
+    format: (value: MapEdgeColour) => value,
+  },
+  {
+    field: "sharedWestBorder",
+    label: "Shared west side",
+    applies: "now",
+    question: "The menu's divider doubles as the map's west side, and the map gets its column. Off: a column of its own. (F25)",
+    values: [false, true],
+    cycles: true,
+    format: onOff,
+  },
 ]
 
 /** The popup's last row, after the flags: start the Build Phase over, keeping them. */
@@ -405,6 +470,14 @@ export const DEFAULT_PLACEMENT = {
   placeLight: "light",
 } as const satisfies Partial<DebugFlags>
 
+/** The map edge as built (canon 2.21's solid bar, in the frame's colour, in a column of its own):
+ *  feedback F25 asked for options to try, not for a new default. */
+export const DEFAULT_MAP_EDGE = {
+  mapEdge: "solid",
+  mapEdgeColour: "strong",
+  sharedWestBorder: false,
+} as const satisfies Partial<DebugFlags>
+
 /** The flags a screen opens with: what the context asks for (`--scroll-margin`, a test's
  *  `smartCursor: false`), and otherwise what gates 5F-5H built. */
 export function initialDebugFlags(
@@ -418,6 +491,7 @@ export function initialDebugFlags(
     startFocus: "menu",
     pressedFlashMs: DEFAULT_FLASH_MS.pressed,
     refusedFlashMs: DEFAULT_FLASH_MS.refused,
+    ...DEFAULT_MAP_EDGE,
   }
 }
 

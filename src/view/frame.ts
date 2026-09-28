@@ -186,6 +186,14 @@ const PACK_GLYPHS = new Set([
   "\u253c",
 ])
 
+/**
+ * The Box Drawing and Block Elements blocks (U+2500-U+259F), whole: one-cell, never combining, and
+ * what the map-edge styles are made of (feedback F25) — a heavy or double line meets the frame's light
+ * rules in mixed-weight junctions (`src/view/edge.ts`), and listing each of those here by hand would be
+ * a second copy of that table to keep in step.
+ */
+const BOX_AND_BLOCKS = { from: 0x2500, to: 0x259f } as const
+
 /** Every gameplay glyph occupies exactly one cell — engine.md 9.6. Asserted, not assumed. */
 export function offendingGlyph(frame: ReadonlyCellFrame): string | null {
   for (const cell of frame.cells) {
@@ -193,6 +201,7 @@ export function offendingGlyph(frame: ReadonlyCellFrame): string | null {
     const code = cell.glyph.codePointAt(0) ?? 0
     if (code >= 0x20 && code <= 0x7e) continue
     if (PACK_GLYPHS.has(cell.glyph)) continue
+    if (code >= BOX_AND_BLOCKS.from && code <= BOX_AND_BLOCKS.to) continue
     return cell.glyph
   }
   return null

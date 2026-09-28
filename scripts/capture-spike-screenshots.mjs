@@ -490,8 +490,9 @@ scripted(
 )
 
 // The flags' order: gate 5I's placement juice first, then gate 5H's movement numbers (Scroll margin
-// is four Downs in), then gate 5G's. Up from the first row wraps to the restart row, so the 5G flags
-// at the end are a few Ups away: Up*4 is "Opens on", Up*5 "Smart cursor".
+// is four Downs in), then gate 5G's, then the map-edge Experiments (F25). Up from the first row wraps
+// to the restart row, so the flags at the end are a few Ups away: Up*2 is "Shared west side", Up*3
+// "Map edge colour", Up*4 "Map edge", Up*7 "Opens on", Up*8 "Smart cursor".
 
 scripted(
   "build-debug-104x32",
@@ -502,18 +503,18 @@ scripted(
 scripted(
   "build-debug-light",
   "The light theme: \"Opens on\" is marked restart - it takes effect through [r] Restart with these settings, which starts the Build Phase over and keeps every flag",
-  { keys: "d Up*4 Right", theme: "light", expect: "applies on restart" },
+  { keys: "d Up*7 Right", theme: "light", expect: "applies on restart" },
 )
 
 scripted(
   "build-debug-restarted-on-map",
   "After [r]: the Build Phase starts over with the keyboard on the map, exploring - one of the two answers to where the screen should open",
-  { keys: "d Up*4 Right r", expect: "Build Phase restarted with the debug settings." },
+  { keys: "d Up*7 Right r", expect: "Build Phase restarted with the debug settings." },
 )
 
 scriptedGif("build-debug-smart-cursor", {
   // Smart cursor off, then the owner's own flow: the cursor stays where it was instead of jumping.
-  keys: "d Up*5 Right Esc Down Down Space",
+  keys: "d Up*8 Right Esc Down Down Space",
   expect: "Barracks selected",
 })
 
@@ -521,8 +522,8 @@ scriptedGif("build-debug-smart-cursor", {
 
 scripted(
   "build-debug-scrolled",
-  "Debug Mode scrolls: twenty-four flags do not fit at 80x24, so the list moves with the highlight and says how many rows are hidden above and below (^ 4 more, v 15 more). A click on either line, or the wheel, scrolls it too",
-  { keys: "d Down*6", expect: "v 15 more" },
+  "Debug Mode scrolls: twenty-seven flags do not fit at 80x24, so the list moves with the highlight and says how many rows are hidden above and below (^ 4 more, v 18 more). A click on either line, or the wheel, scrolls it too",
+  { keys: "d Down*6", expect: "v 18 more" },
 )
 
 scriptedGif("build-held-arrow", {

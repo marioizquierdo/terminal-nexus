@@ -17,6 +17,10 @@ export const STYLE_ROLES = [
   // survives monochrome; a style role (chrome.hotkey) colours it where colour exists, and colour
   // never carries it alone." Named by canon before this gate, not invented here.
   "chrome.hotkey",
+  // The map's edge drawn quietly — Debug Mode's "Map edge colour: quiet" (feedback F25: "the border
+  // color should probably be less accentuated"). A grey between the frame's and the ground's, so the
+  // edge still reads as a wall while the menu and the bars stay the loudest lines on screen.
+  "chrome.edge",
   "terrain.plain",
   "terrain.rock",
   "terrain.deposit",
@@ -183,6 +187,9 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Swatch>>> = {
     // not terrain.deposit's gold — so a bracketed hotkey reads as "interactive chrome," never as a
     // gameplay colour.
     "chrome.hotkey": { ansi: 96, rgb: [86, 204, 214] },
+    // Roughly two thirds of the way from the ground to `chrome.frame`: bright black at 16 colours,
+    // which reads as a block or a line but not as dimmed text (why the frame itself left it).
+    "chrome.edge": { ansi: 90, rgb: [100, 106, 116] },
     "terrain.plain": { ansi: 90, rgb: [72, 78, 86] },
     "terrain.rock": { ansi: 37, rgb: [128, 132, 138] },
     "terrain.deposit": { ansi: 33, rgb: [198, 160, 40] },
@@ -219,6 +226,8 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Swatch>>> = {
     "chrome.muted": { ansi: 30, rgb: [110, 104, 96] },
     // Same hue as dark's, moved dark enough to stay legible on a light background instead of bright.
     "chrome.hotkey": { ansi: 36, rgb: [8, 110, 120] },
+    // The same step toward the pale ground from this theme's `chrome.frame`.
+    "chrome.edge": { ansi: 90, rgb: [164, 158, 148] },
     "terrain.plain": { ansi: 90, rgb: [196, 192, 184] },
     "terrain.rock": { ansi: 30, rgb: [70, 66, 60] },
     "terrain.deposit": { ansi: 33, rgb: [168, 124, 24] },

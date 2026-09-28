@@ -126,6 +126,17 @@ why.
   has reached the map's edge is a **solid bar** — the same weight horizontally and vertically, in every
   glyph pack, without colour. A corner is solid where a solid side runs into it.
 - **A map shorter than the panel** closes directly under its own last row; the panel keeps its height.
+- **The map's edge has Experiments, all keeping the one rule — the same weight on every side**
+  (feedback F25; Debug Mode's "Map edge", "Map edge colour" and "Shared west side"): the solid bar, a
+  half block on the map's side of the cell, a heavy or a double line (joined to the frame's light rules
+  in mixed-weight junctions), a light shade, or **the map's own style** — a map names one for itself
+  (the Build Phase map's is a dashed "fence"). Drawn in the frame's colour, dimmed, or a quieter grey
+  of its own (the `chrome.edge` role). Where ASCII has no glyph for a style, it falls back to the solid
+  bar; a shade is `:` and the fence `+---+`, its posts fixed to the map so they scroll with it.
+  (`src/view/edge.ts`.)
+- **The west side may share the menu's divider**, giving the map the column back: layout, drawing and
+  hit-testing read the flag from one place (`layoutOptions` in `src/build/layout.ts`), and the screen
+  is laid out again the moment it changes, exactly as for a resize.
 
 ## 7a. Moving around the map (gate 5H, reworked 2026-09-28)
 

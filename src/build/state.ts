@@ -10,7 +10,7 @@ import type { StatusMessage } from "../status.ts"
 import { NO_STATUS, status } from "../status.ts"
 import type { Camera, Margin, Viewport } from "./camera.ts"
 import { centreOn, clampToGrid, edgeClickCamera, followCursor, marginForView } from "./camera.ts"
-import type { DebugField, DebugFlags } from "./debug.ts"
+import type { DebugField, DebugFlags, MapEdgeStyle } from "./debug.ts"
 import {
   DEBUG_ROW_COUNT,
   adjustDebug,
@@ -61,6 +61,13 @@ export type BuildContext = Readonly<{
    *  Defaults on. Like `scrollMargin`, only the starting value of its Debug Mode flag,
    *  `state.debug.smartCursor`. */
   smartCursor?: boolean
+  /**
+   * The map's own border style — the "map-defined border" of feedback F25 ("defining custom borders
+   * could accentuate the location"), drawn where the Grid rectangle reaches the map's edge when Debug
+   * Mode's "Map edge" is set to `the map`. Presentation only, and a name rather than glyphs: the view
+   * owns what each style looks like (`src/view/edge.ts`). Absent: the solid bar.
+   */
+  edgeStyle?: MapEdgeStyle
 }>
 
 export type BuildState = Readonly<{
