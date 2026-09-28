@@ -2,10 +2,13 @@
 
 **Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
 **Status:** CURRENT
-**Active gate:** 5I — placement juice: a building plays a short run of frames as it goes down, with
-particles and a brief light on its characters, on 5H's frame timer, every number a Debug Mode flag.
-**Built and reported (PASS), awaiting Mario's look**, at his "keep going" (2026-09-28); 5D-5H are built and reported (PASS) but not yet
-formally accepted, and this gate depends on none of those acceptances.
+**Active gate:** 5J — the third round of the owner's feedback (his playtest of the 5G-5I demo page,
+2026-09-28, `docs/feedback/2026-09-28-pr46-playtest.md`): Debug Mode becomes Settings with Experiments
+and an export, simpler arrow-key acceleration and a 12-tile Shift jump, interpolation for the view and
+the cursor, a click on the menu that activates, "Explore Map" first, map-border Experiments, and one
+presentation toolkit (animations, particles, shading, tweens). **In progress**, on the same branch as
+5G-5I, at his "let's make a new revision"; 5D-5I are built and reported (PASS) but not yet formally
+accepted, and this gate depends on none of those acceptances.
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
 mission's own budget/units decided — accepted 2026-09-12)
 **Updated:** 2026-09-28
@@ -282,6 +285,10 @@ map scrolling — before handing off into Milestone 6's Pulse?
   scroll (Q58).
 - **5I — Placement juice** (feedback F9): per-structure placement frames, particles, and light on a
   placed building's characters, on 5H's frame timer; presentation only.
+- **5J — The owner's third round** (feedback F18-F27, 2026-09-28): Settings with Experiments and an
+  export in place of Debug Mode; the arrow-key ramp simplified and Shift a 12-tile jump; interpolation
+  for the view and the cursor; menu clicks that activate; "Explore Map" first and self-explaining;
+  map-border Experiments; the presentation toolkit formalised, with the placement juice moved onto it.
 
 ## 3. Grounded in already-locked contracts
 
@@ -419,3 +426,26 @@ Gate 5I's definition of done:
       identical with every effect on or off;
 - [x] the terminal and the browser page draw it; the Build Phase screen stays inside the frame budget;
 - [x] a gate report ending in PASS / REVISE / STOP / BLOCKED — **PASS**, pending the owner's look.
+
+Gate 5J's definition of done:
+
+- [ ] Esc on the menu, `q`, and a top-bar entry open a game menu with Settings and Quit; leaving still
+      always asks; Settings holds the real player settings (saved) and, at its bottom, every Debug
+      Mode flag as an Experiment (not saved); `d` jumps to the Experiments;
+- [ ] Settings export as a short text to paste into a pull request comment, and an agent can start the
+      game, the scripted playtest and the browser page from that text;
+- [ ] one press moves 1 tile, a held or rapidly tapped arrow 2 at once and 4 after 300 ms, Shift (and
+      the other fast moves) a 12-tile jump; the slow-after-a-turn rule is gone;
+- [ ] every camera move and every cursor move is interpolated (a tween, a pure function of time), off
+      under reduced motion; state and commands still use destinations only;
+- [ ] a mouse click on a menu row activates it — a building is armed at once, with its preview at the
+      cursor; the keyboard alone keeps a "highlighted, not chosen" state;
+- [ ] "Explore Map" is the first menu entry and opens a headed information panel that follows the
+      cursor; Esc returns to the menu;
+- [ ] the War Chest placeholder power gives 2000;
+- [ ] the map border's glyph, colour, a shared west border, and a map-defined border are Experiments;
+- [ ] animations (frame sequences with a play/cancel/speed/queue interface and completion as scheduled
+      data), particles, shading and tweens are named, separate modules; light and sparks are general
+      effects; placement looks as it did;
+- [ ] keyboard, mouse and driver still produce the same plan; a gate report ending in PASS / REVISE /
+      STOP / BLOCKED.
