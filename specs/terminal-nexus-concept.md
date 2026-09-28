@@ -2,7 +2,7 @@
 
 **Document role:** One-page product definition
 **Status:** Canonical
-**Canon version:** 2.21
+**Canon version:** 2.22
 **Updated:** 2026-09-12
 **License:** CC BY-SA 4.0 for creative direction; Apache-2.0 for technical product requirements
 

@@ -132,6 +132,19 @@ test("the deterministic modules name no clock, no Math.random, and no terminal",
   }
 })
 
+test("the Build Phase reducer and its Debug Mode flags name no clock and never reach the kernel's tick", () => {
+  // Gate 5G: Debug Mode's timing flags are read by the live loop (src/cli/spike.ts), never here —
+  // the reducer stores a number and nothing more, so it stays a pure function a driver can replay.
+  assertNoDependencyOn("build", ["pulse", "cli"])
+  const forbidden = [/\bDate\s*\.\s*now\b/, /\bnew\s+Date\b/, /\bperformance\s*\.\s*now\b/, /\bset(Timeout|Interval)\b/]
+  for (const file of sourceFiles(join(SRC, "build"))) {
+    const source = readFileSync(file, "utf8")
+    for (const pattern of forbidden) {
+      assert.ok(!pattern.test(source), `src/${relative(SRC, file)} mentions ${String(pattern)}; timing belongs to the live loop`)
+    }
+  }
+})
+
 test("no source file imports a package the repository has not pinned", () => {
   const manifest = JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8")) as {
     dependencies?: Record<string, string>

@@ -55,6 +55,9 @@ export type BuildLayout = Readonly<{
   panelLimit: number
   /** How many glyphs fit on the top bar's one line, which runs the whole width. */
   headerLimit: number
+  /** Where the top bar's `[d] debug` sits, right-aligned: drawn there, and its click target (gate
+   *  5G). In the top bar rather than the menu because it is a development tool, not a game action. */
+  debugHint: Readonly<{ row: number; from: number; to: number }>
   /** How many glyphs fit on one footer row, which runs the full width beneath both panes. */
   footerLimit: number
   /** Frame row the bottom bar's three lines start at — the first row below the Grid's own bottom
@@ -75,6 +78,15 @@ export const NEXUS_ROW = 0
 export const EXPLORE_ROW = 1
 export const RESOURCE_ROW = 3
 const CONSTRUCT_FIRST_ROW = 4
+
+/** The top bar's way into Debug Mode: its hotkey and its name, like every other entry point. */
+export const DEBUG_HINT = "[d] debug"
+
+/** Whether a frame cell is on the top bar's `[d] debug`. */
+export function debugHintAt(layout: BuildLayout, column: number, row: number): boolean {
+  const hint = layout.debugHint
+  return row === hint.row && column >= hint.from && column <= hint.to
+}
 
 /** The order the construct groups are drawn in — `commander-armies.md` Section 2.1's own order: the
  *  faction's common structures first, then what makes one Commander's package its own. */
@@ -215,6 +227,8 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLay
   }
   const paneBottom = origin.row + paneHeight
   const panelColumn = offset.column + 2
+  const headerLimit = composition.width - 4
+  const debugTo = offset.column + 2 + headerLimit - 1
   return {
     frame,
     composition,
@@ -227,7 +241,8 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLay
     dividerColumn,
     panelColumn,
     panelLimit: dividerColumn - panelColumn,
-    headerLimit: composition.width - 4,
+    headerLimit,
+    debugHint: { row: offset.row + 1, from: debugTo - DEBUG_HINT.length + 1, to: debugTo },
     footerLimit: composition.width - 4,
     footerRow: paneBottom + 1,
     panelRow: gridBox.top + 1,

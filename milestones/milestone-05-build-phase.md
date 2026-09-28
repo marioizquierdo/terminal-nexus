@@ -2,14 +2,13 @@
 
 **Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
 **Status:** CURRENT
-**Active gate:** 5F — layout and keyboard focus: the side panel moves to the left of the Grid, a
-menu/Grid keyboard focus with a smart cursor, and the Nexus power pick as a popup the player opens from
-a "Nexus Powers" entry at the top of the menu. **Built and reported (PASS), awaiting Mario's look**;
-gate 5G does not start before it. Gates 5D and 5E are built and reported (PASS) but not
-yet formally accepted; this gate depends on neither acceptance, the same way 5D did not wait on 5C's
+**Active gate:** 5G — Debug Mode: a popup of live-editable development flags, each naming the
+question it serves, so Mario can feel two answers during a playtest. **Built and reported (PASS),
+awaiting Mario's look**; gate 5H does not start before it. Gates 5D-5F are built and reported (PASS)
+but not yet formally accepted; this gate depends on none of those acceptances.
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
 mission's own budget/units decided — accepted 2026-09-12)
-**Updated:** 2026-09-26
+**Updated:** 2026-09-27
 **License:** Apache-2.0
 
 > **Milestone 4 has not landed, and this milestone does not wait for it.** An earlier draft of the
@@ -155,13 +154,15 @@ mission's own budget/units decided — accepted 2026-09-12)
 > and a browser playtest page, so gates 5G and 5H can be played from a phone during review
 > (`bun scripts/build-web.mjs`; a development tool, `engine.md` 10.2).
 
-> **Gate 5G: Debug Mode — not yet built.** A `[d] Debug` overlay of live-editable development flags
-> (`engine.md` 9.7): the second overlay, so the overlay shape is extracted here rather than in 5F.
-> First fields: the border glyphs, where focus goes after a placement (Q57, already a context option,
-> `focusAfterPlace`), the smart cursor on/off (Q55, `smartCursor`), and which focus the screen opens
-> on. (Whether the Nexus Powers popup closes after a pick is answered — it does, Q60 — so it needs no
-> field.) Every flag names the question it serves and is deleted once it is
-> answered.
+> **Gate 5G: Debug Mode — built and reported (PASS), awaiting Mario's look**
+> (`../evidence/gate-5g-report.md`). `d`, or `[d] debug` at the right of the top bar, opens a popup of
+> experiments, each with its value, whether it applies now or on restart, and the question it serves:
+> the smart cursor on/off (Q55), the scroll margin in tiles (Q54), whether the screen opens on the menu
+> or the map (Q61), and the pressed-flash and refused-flicker durations. Left/Right change a value;
+> `[r]` restarts the Build Phase keeping them; Esc closes it. Per session, never saved. It is the popup
+> shape's fourth use, adding a setting row. Where focus goes after a placement (Q57) and whether the
+> Nexus popup closes on a pick (Q60) are answered and have no flag; the border glyphs are settled (the
+> solid bar) and have none either.
 
 > **Gate 5H: movement feel — not yet built.** The screen's first frame timer, and what it enables
 > (`engine.md` 3.3): held-key speed tiers (Q54), a scroll margin that is a share of the viewport, the
@@ -365,12 +366,13 @@ Gate 5F's definition of done:
 
 Gate 5G's definition of done:
 
-- [ ] `d` opens a Debug Mode overlay over the Grid listing live-editable flags, each naming the
+- [x] `d` opens a Debug Mode overlay over the Grid listing live-editable flags, each naming the
       question it serves and whether it applies at once or on restart; changing one changes the
       running screen; Esc closes it;
-- [ ] the overlay shape shared with the Nexus Powers popup is extracted once, here, now that there
-      are two uses;
-- [ ] a gate report ending in PASS / REVISE / STOP / BLOCKED.
+- [x] it reuses the popup shape the other three popups already share (extracted in 5F's second
+      round), adding only a setting row; keyboard, mouse and driver produce the identical state and
+      frames;
+- [x] a gate report ending in PASS / REVISE / STOP / BLOCKED — **PASS**, pending the owner's look.
 
 Gate 5H's definition of done:
 
@@ -379,6 +381,7 @@ Gate 5H's definition of done:
       on an unarmed click, eased camera moves, and a cursor flash on a refused attempt — every number a
       Debug Mode field (Q54);
 - [ ] Q58 answered, and built to the answer;
+- [ ] the Debug Mode popup scrolls, since at 80x24 it is full with 5G's five flags;
 - [ ] the reducer still has no clock: timing lives in the adapter and the view, and every existing
       "same plan, every adapter" test still holds;
 - [ ] a gate report ending in PASS / REVISE / STOP / BLOCKED.

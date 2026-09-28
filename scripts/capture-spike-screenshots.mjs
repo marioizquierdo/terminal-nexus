@@ -64,7 +64,7 @@ const PICK_FIRST_POWER = "n 1"
 
 // --- In-process shots ----------------------------------------------------------------------------
 
-function scripted(name, caption, { keys, expect, cols = 80, rows = 24, capability = "truecolor" }) {
+function scripted(name, caption, { keys, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark" }) {
   if (only !== null && only !== name) return
   const run = runBuildPlaytest({ steps: parseKeyScript(keys), columns: cols, rows, capability })
   const last = run.frames[run.frames.length - 1]
@@ -76,6 +76,7 @@ function scripted(name, caption, { keys, expect, cols = 80, rows = 24, capabilit
     renderFramePng({
       frame: last.frame,
       capability,
+      theme,
       caption,
       targetPath: join(outputDirectory, `${name}.png`),
       scratchDir: scratch,
@@ -221,6 +222,38 @@ scripted(
   "Accepting the prompt commits the Build Phase: the panel names the Nexus power picked and how many structures were planned, and nothing more can change",
   { keys: `${PICK_FIRST_POWER} 1 Right*6 Down Enter p y`, expect: "BUILD COMMITTED" },
 )
+
+// Debug Mode (gate 5G): the popup of development flags, opened by [d] or the top bar's "[d] debug".
+
+scripted(
+  "build-debug-80x24",
+  "[d] opens Debug Mode: each experiment with its value between < and >, and whether a change shows now or on restart. The question the highlighted one serves is written underneath",
+  { keys: "d", expect: "DEBUG MODE - not saved" },
+)
+
+scripted(
+  "build-debug-104x32",
+  "Right twice on Scroll margin: 3 tiles becomes 5, the status line says so, and the position readout names the margin now in force",
+  { keys: "d Down Right Right", cols: 104, rows: 32, expect: "margin 5" },
+)
+
+scripted(
+  "build-debug-light",
+  "The light theme: \"Opens on\" is marked restart - it takes effect through [r] Restart with these settings, which starts the Build Phase over and keeps every flag",
+  { keys: "d Down Down Right", theme: "light", expect: "applies on restart" },
+)
+
+scripted(
+  "build-debug-restarted-on-map",
+  "After [r]: the Build Phase starts over with the keyboard on the map, exploring - one of the two answers to where the screen should open",
+  { keys: "d Down Down Right r", expect: "Build Phase restarted with the debug settings." },
+)
+
+scriptedGif("build-debug-smart-cursor", {
+  // Smart cursor off, then the owner's own flow: the cursor stays where it was instead of jumping.
+  keys: "d Right Esc Down Down Space",
+  expect: "Barracks selected",
+})
 
 // --- Real-terminal shots -------------------------------------------------------------------------
 
