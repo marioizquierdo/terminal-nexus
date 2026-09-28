@@ -250,9 +250,11 @@ test("exploring, 'centres' centres every click, and 'margin' is the old follow-o
   assert.equal(margin.build.state.camera.x - before.x, 42 - (48 - 1 - 10), "follow-only moves just enough for the margin")
 })
 
-test("armed, a click never scrolls the view, whatever the explore setting (Q58)", () => {
+test("with Armed click scrolls off, an armed click never scrolls the view, whatever the explore setting (Q58)", () => {
   for (const mode of [0, 1, 2]) {
     const side = exploring(spikeContext(), { x: 40, y: 20 })
+    side.build.dispatch({ kind: "debug-adjust", field: "armedClickScrolls", step: 1 })
+    assert.equal(side.build.state.debug.armedClickScrolls, false)
     for (let step = 0; step < mode; step += 1) side.build.dispatch({ kind: "debug-adjust", field: "clickScroll", step: 1 })
     side.build.handleData("1", side.layout)
     const camera = side.build.state.camera
@@ -262,6 +264,49 @@ test("armed, a click never scrolls the view, whatever the explore setting (Q58)"
     clickTile(side, tile)
     assert.equal(side.build.state.planned.length, 1, "the second click on the same spot did not place")
   }
+})
+
+test("armed, a click scrolls like an exploring one, and a quick double click places where the first pointed (F22)", () => {
+  const side = exploring(spikeContext(), { x: 40, y: 20 })
+  assert.equal(side.build.state.debug.armedClickScrolls, true)
+  side.build.handleData("1", side.layout)
+  const camera = side.build.state.camera
+  const tile = { x: camera.x + 46, y: camera.y + 8 }
+  const cell = cellForTile(side.layout, camera, tile)
+  const click = formatMouseEvent(MOUSE_LEFT, cell.x + 1, cell.y + 1)
+  side.build.handleData(click, side.layout, { now: 1000 })
+  assert.deepEqual(side.build.state.cursor, tile)
+  assert.notDeepEqual(side.build.state.camera, camera, "a click in the edge zone did not scroll")
+  // The same screen cell, 200 ms later: the view has moved, so that cell is another tile now — but a
+  // double click means "here", the tile the first click chose.
+  side.build.handleData(click, side.layout, { now: 1200 })
+  assert.equal(side.build.state.planned.length, 1, "the double click did not place")
+  // Where Enter would have placed it after the first click alone.
+  const reference = exploring(spikeContext(), { x: 40, y: 20 })
+  reference.build.handleData("1", reference.layout)
+  reference.build.handleData(click, reference.layout, { now: 1000 })
+  reference.build.dispatch({ kind: "place" })
+  assert.deepEqual(side.build.state.planned, reference.build.state.planned)
+})
+
+test("a slow second click on a scrolled spot is a fresh first click, not a place on the wrong tile (F22)", () => {
+  const side = exploring(spikeContext(), { x: 40, y: 20 })
+  side.build.handleData("1", side.layout)
+  const camera = side.build.state.camera
+  const tile = { x: camera.x + 46, y: camera.y + 8 }
+  const cell = cellForTile(side.layout, camera, tile)
+  const click = formatMouseEvent(MOUSE_LEFT, cell.x + 1, cell.y + 1)
+  side.build.handleData(click, side.layout, { now: 1000 })
+  side.build.handleData(click, side.layout, { now: 1000 + side.build.state.debug.doubleClickMs + 1 })
+  assert.equal(side.build.state.planned.length, 0)
+  assert.notDeepEqual(side.build.state.cursor, tile)
+  // With the double click off, even a quick one only moves the cursor.
+  const off = exploring(spikeContext(), { x: 40, y: 20 })
+  while (off.build.state.debug.doubleClickMs > 0) off.build.dispatch({ kind: "debug-adjust", field: "doubleClickMs", step: -1 })
+  off.build.handleData("1", off.layout)
+  off.build.handleData(click, off.layout, { now: 1000 })
+  off.build.handleData(click, off.layout, { now: 1100 })
+  assert.equal(off.build.state.planned.length, 0)
 })
 
 test("the fast move recentres the view on the cursor along the axis it moved; off, it only follows", () => {

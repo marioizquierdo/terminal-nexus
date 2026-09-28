@@ -118,7 +118,12 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   // Two barracks, side by side, at tiles that are on screen from the start: 1 arms it, the cursor
   // walks to 30,14, Enter places (and hands the keyboard back to the menu); 1 arms it again, four more
   // steps east and one more Enter places the second.
+  // An armed click scrolls the view near its edges (F22) and an arrow does not, so with that on the
+  // same plan has a different camera by mouse; the parity asserted here is the plan and the screen,
+  // so the Experiment is switched to a still view for all three players alike.
+  const stillClicks: BuildCommand = { kind: "debug-adjust", field: "armedClickScrolls", step: 1 }
   const byKeyboard = session()
+  byKeyboard.build.dispatch(stillClicks)
   byKeyboard.build.handleData("1", byKeyboard.layout)
   for (let step = 0; step < 12; step += 1) byKeyboard.build.handleData(RIGHT, byKeyboard.layout)
   byKeyboard.build.handleData(DOWN, byKeyboard.layout)
@@ -128,6 +133,7 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   byKeyboard.build.handleData(ENTER, byKeyboard.layout)
 
   const byMouse = session()
+  byMouse.build.dispatch(stillClicks)
   // The keyboard is on the Grid in Explore Map, whose panel covers the menu: the first click on the
   // panel only gives the menu back; the second arms the row at once (feedback F22). After a placement
   // the menu is back, so one click arms the second barracks.
@@ -162,7 +168,7 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
     { kind: "place" },
   ]
   const byDriver = session()
-  byDriver.build.run(script)
+  byDriver.build.run([stillClicks, ...script])
 
   assert.equal(byKeyboard.build.state.planned.length, 2, "two structures were actually planned")
   assert.deepEqual(byMouse.build.state.planned, byKeyboard.build.state.planned)
@@ -375,10 +381,12 @@ test("a click on a tile only arms the preview there - a second click on the same
   assert.equal(byClick.build.state.highlightHidden, true)
 })
 
-test("an armed click never scrolls the view, so the same screen spot clicked twice places there (Q58)", () => {
+test("with Armed click scrolls off, an armed click never scrolls the view, so the same screen spot clicked twice places there (Q58)", () => {
   // x=46 is inside the scroll margin of the opening view's right edge (0-47). Before gate 5H the
   // first click scrolled the Grid under the pointer and the second landed on another tile.
   const { build, layout } = session()
+  build.dispatch({ kind: "debug-adjust", field: "armedClickScrolls", step: 1 })
+  assert.equal(build.state.debug.armedClickScrolls, false)
   build.handleData("1", layout)
   const cameraBefore = { ...build.state.camera }
   const bytes = clickTileBytes(layout, build, { x: 46, y: 13 })
@@ -398,9 +406,9 @@ test("a click that scrolled the camera is a fresh first click, not a mis-place o
   // scroll margin can slide the Grid under the pointer, so replaying the same *screen position*
   // resolves to a different *tile* the second time. Comparing tile identity (what the mouse adapter
   // already resolves screen cells to) rather than screen position is what keeps this safe. Since
-  // gate 5H an armed click scrolls only with Debug Mode's "Armed click scrolls" on.
+  // gate 5H an armed click scrolls only with the Experiment "Armed click scrolls" on — the default
+  // since the owner's F22. Without key timing (a driver script) there is no double click either.
   const { build, layout } = session()
-  build.dispatch({ kind: "debug-adjust", field: "armedClickScrolls", step: 1 })
   assert.equal(build.state.debug.armedClickScrolls, true)
   build.handleData("1", layout)
   // x=46 is within the 3-tile margin of the opening viewport's own right edge (0-47), so landing the

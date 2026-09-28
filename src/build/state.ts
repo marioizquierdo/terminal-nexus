@@ -614,16 +614,18 @@ function withCursor(context: BuildContext, state: BuildState, tile: Coord, scrol
 }
 
 /**
- * A click on a Grid tile, as a cursor move: what it does to the camera depends on what the click is
- * for. **With a structure armed it never scrolls** (Q58, option B; Debug Mode can allow it): the
- * player is pointing at a tile to confirm with a second click, and a view that slid under the pointer
- * would make that second click land on a different tile. **Exploring**, the view comes to the click
- * (feedback F6): nearer an edge scrolls further, or every click centres, or — the gate 5A-5G
- * behaviour — only the margin follows.
+ * A click on a Grid tile, as a cursor move: the view comes to the click (feedback F6) — nearer an
+ * edge scrolls further, or every click centres, or (the gate 5A-5G behaviour) only the margin
+ * follows. **With a structure armed it scrolls the same way** (owner, 2026-09-28, F22: "keep clicking
+ * on the grid with the ghost building placement cursor to keep scrolling, and double click will
+ * place"), reversing Q58's option B: a view that slid under the pointer would make a slow second
+ * click land on a different tile, so a quick **double click** places where the first click pointed —
+ * the input path's call, since only it knows when the clicks came (`BuildSession`). The Experiment
+ * "Armed click scrolls" switches back to a still view.
  */
 function clickCameraMove(context: BuildContext, state: BuildState): CameraMove {
   const flags = state.debug
-  if (state.armed !== null) return flags.armedClickScrolls ? "follow" : "still"
+  if (state.armed !== null && !flags.armedClickScrolls) return "still"
   switch (flags.clickScroll) {
     case "centre":
       return (camera, cursor) => centreOn(camera, cursor, state.viewport, context.grid)

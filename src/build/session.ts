@@ -40,6 +40,9 @@ export class BuildSession {
   private readonly onQuit: () => void
   /** The held-key ramp: input-path state, beside the reducer and never in it. */
   private readonly ramp = new SpeedRamp()
+  /** The last left click on a Grid tile with a building armed: where on screen, when, and the tile it
+   *  pointed at — so a double click places there even if the first click scrolled the view (F22). */
+  private lastArmedClick: Readonly<{ column: number; row: number; at: number; tile: Coord }> | null = null
 
   constructor(options: BuildSessionOptions) {
     this.context = options.context
@@ -92,6 +95,33 @@ export class BuildSession {
             overlayPendingCount: nexusPowers(this.context, state).pending.length,
             jumpStep: state.debug.jumpStep,
           })
+    if (mouse !== null && mouse.press && command?.kind === "click-tile") {
+      // A double click places where its first click pointed. The reducer places on a second click of
+      // the tile the cursor is on, so the second half of a quick double click on the same screen cell
+      // is sent as a click on the first one's tile — exactly what a driver would send for "click it
+      // again" — whatever the view did in between.
+      const last = this.lastArmedClick
+      const window = state.debug.doubleClickMs
+      const double =
+        state.armed !== null &&
+        timing.now !== undefined &&
+        window > 0 &&
+        last !== null &&
+        last.column === mouse.column &&
+        last.row === mouse.row &&
+        timing.now - last.at <= window
+      if (double) {
+        command = { kind: "click-tile", x: last.tile.x, y: last.tile.y }
+        this.lastArmedClick = null
+      } else {
+        this.lastArmedClick =
+          state.armed !== null && timing.now !== undefined
+            ? { column: mouse.column, row: mouse.row, at: timing.now, tile: { x: command.x, y: command.y } }
+            : null
+      }
+    } else if (mouse !== null && mouse.press) {
+      this.lastArmedClick = null
+    }
     const cursorKey = mouse === null && command?.kind === "move-cursor" ? cursorKeyOf(key) : null
     if (cursorKey !== null) {
       // A cursor key on the Grid: how far is the ramp's call when the key's arrival time is known — a

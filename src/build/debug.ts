@@ -93,9 +93,13 @@ export type DebugFlags = Readonly<{
   clickScroll: ClickScroll
   /** F6: how deep each edge zone of `clickScroll: "edges"` is, as a percentage of the view. */
   clickZone: number
-  /** Q58: whether a click with a building armed may scroll the view. Off: it moves the cursor only,
-   *  so the confirming second click lands on the tile under the preview. */
+  /** Q58, F22: whether a click with a building armed scrolls the view as an exploring click does.
+   *  Off: it moves the cursor only, so a confirming second click lands on the tile under the preview. */
   armedClickScrolls: boolean
+  /** F22: two left clicks on the same screen cell at most this far apart, with a building armed, place
+   *  it where the first click pointed — even when the first one scrolled the view. 0: off. The input
+   *  path's (`BuildSession`), which alone knows when clicks arrive. */
+  doubleClickMs: number
   /** How long the drawn view takes to slide to a new camera position, in milliseconds; 0 jumps. The
    *  live loop's alone — state and every command use the camera's target. */
   easeMs: number
@@ -250,10 +254,19 @@ export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
     field: "armedClickScrolls",
     label: "Armed click scrolls",
     applies: "now",
-    question: "With a building armed, may a click scroll the view? Off: the second click always lands under the preview. (Q58)",
+    question: "With a building armed, does a click near an edge scroll the view? Off: never, so any second click places. (F22)",
     values: [false, true],
     cycles: true,
     format: onOff,
+  },
+  {
+    field: "doubleClickMs",
+    label: "Double click",
+    applies: "now",
+    question: "Two clicks this close on one spot place the building where the first pointed, even if the view scrolled. (F22)",
+    values: [0, 250, 300, 400, 500, 700],
+    cycles: false,
+    format: millis,
   },
   {
     field: "easeMs",
@@ -447,7 +460,8 @@ export const DEFAULT_FLASH_MS = { pressed: 90, refused: 140 } as const
 export const DEFAULT_MOVEMENT = {
   clickScroll: "edges",
   clickZone: 33,
-  armedClickScrolls: false,
+  armedClickScrolls: true,
+  doubleClickMs: 400,
   easeMs: 150,
   cursorGlideMs: 100,
   fastRecentres: true,
