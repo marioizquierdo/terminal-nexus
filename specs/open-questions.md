@@ -2,7 +2,7 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.23
+**Canon version:** 2.24
 **Updated:** 2026-09-27
 **License:** Apache-2.0
 
@@ -1140,6 +1140,36 @@ Trackpads send wheel events in bursts, so a larger step may overshoot.
 | B. Follow Shift's step | One number for "fast"; may overshoot on a trackpad |
 
 **Recommendation: A** until the owner has tried the wheel on his own trackpad.
+
+### Q64 — On the light theme, what should a placed building's "light" look like?
+
+**Status:** OPEN — blocks nothing; registered by gate 5I.
+
+The light pulls a building's colour toward the theme's strongest ink. On the dark theme that is a
+bright flash; on the light theme it is the darkest ink, so the building darkens as it finishes, like
+ink setting.
+
+| Option | Cost |
+| --- | --- |
+| A. **The darkest ink** (built) | Reads as ink setting, not as light |
+| B. A warm glow role of its own (amber) per theme | One more role and a colour per theme |
+
+**Recommendation: A** until Mario has played the light theme: switch to it in Settings, place a
+building, and say whether it should glow instead.
+
+### Q65 — Should undo and Backspace get a short removal animation?
+
+**Status:** OPEN — blocks nothing; registered by gate 5I.
+
+Placement now animates; removal is instant. The building must still leave the plan at once, so a
+removal animation would be an effect over empty ground, not a delayed disappearance.
+
+| Option | Cost |
+| --- | --- |
+| A. **Yes, as its own small gate** after placement has been felt | A second effect family to author |
+| B. No; removal stays instant | Asymmetric with placement |
+
+**Recommendation: A**, after the owner has felt placement.
 
 ## 5. Answered
 

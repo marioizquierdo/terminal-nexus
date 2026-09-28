@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.23
+**Canon version:** 2.24
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -170,11 +170,17 @@ Phase has its first frame timer; a tap moves one tile, a held arrow speeds up (2
 a refused placement flashes; a lone Esc waits 50 ms; Debug Mode — now twenty flags, every one of those
 numbers — scrolls.
 
+**Milestone 5 gate 5I is built and reported (PASS), awaiting Mario's look** (2026-09-28): a placed
+building plays its own short run of frames, then stands lit with a few sparks around it, all
+presentation, all four numbers in Debug Mode, off under reduced motion.
+
 The current milestone is **[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md)
 — Build Phase**: can a player place buildings, pick a Nexus upgrade, and scroll a real map, by
-keyboard, mouse and driver alike? Its active gate is **5I — placement juice** (feedback F9): a building
-plays a short run of frames as it goes down, with particles and a brief light on its characters, on
-5H's frame timer. **Mario asked on 2026-09-28 to keep going without waiting to look at 5G or 5H
+keyboard, mouse and driver alike? Its active gate is **5I — placement juice** (feedback F9), built and
+awaiting Mario's look (`evidence/gate-5i-report.md`): a building plays a short run of frames as it
+goes down, with particles and a brief light on its characters, on 5H's frame timer. **It closes the
+last item of his round-2 feedback log that could be built now**; what the tracker does next waits
+for his word. **Mario asked on 2026-09-28 to keep going without waiting to look at 5G or 5H
 first**: he will test several merged changes together, and the orchestrating session keeps working
 through the feedback log in the meantime.
 
@@ -183,9 +189,9 @@ So the authorised work for a new session is, in order:
 1. **whatever the owner's most recent feedback asks for**, if any exists since
    `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
    outstanding or that everything still is;
-2. **Milestone 5 gate 5I** (placement juice) — the owner asked on 2026-09-28 to keep going through
-   the feedback before testing; a later prompt from him that says otherwise wins. Per its own file — the next gate in the build order
-   [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
+2. **Mario's testing of gates 5G-5I together** (his 2026-09-28 plan) — the round-2 feedback log has
+   nothing left that can be built now, so the next gate waits for his word; when it comes, it is the
+   next gate in the build order [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
    order — read that table's build-order column, and take one gate per session unless the owner's
    own prompt asks for more.
 

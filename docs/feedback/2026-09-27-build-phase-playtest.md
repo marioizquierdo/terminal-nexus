@@ -113,12 +113,11 @@ next canon change (listed in the round-2 report).
 > simplified shader: change colour, transparency, light/dark, and move positions by frame
 > interpolation. Building placement could show lighting effects.
 
-**Scheduled — gate 5I, "placement juice"** (in progress 2026-09-28), because it needs 5H's frame timer on this
-screen. Groundwork that already exists: the Pulse view's effect system (`src/view/effects`) with
-effects as pure functions of presentation time, and `CellStyle.fade` for transparency at the
-256-colour and truecolour tiers. What is new: per-structure placement frames (authored beside
-`src/content/art.ts`), and colour/brightness interpolation as a style-role operation (never a literal
-colour — the renderer still resolves roles per theme and capability). Written into the tracker.
+**Built — gate 5I (2026-09-28).** Per-structure placement frames (Barracks, Hatchery, Turret
+authored; a generic fallback for the rest), sparks around the footprint, and light on the characters
+as a style-role blend with a rainbow value (the "simplified shader": colour and brightness change
+over time, in every colour tier). Every duration and intensity is a Debug Mode flag with an off
+value. Needs his eye, and his feel on the numbers. Not built: a removal animation (Q65).
 
 ### F10 — The Grid rectangle's heavy edges must be consistent on all four sides
 

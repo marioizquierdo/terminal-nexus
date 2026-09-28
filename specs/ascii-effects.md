@@ -2,7 +2,7 @@
 
 **Document role:** The effect system: contract, starter vocabulary, and the craft rules behind it
 **Status:** Canonical direction; the vocabulary is proven or discarded by Milestone 1 Gate 1B
-**Canon version:** 2.23
+**Canon version:** 2.24
 **Updated:** 2026-09-10
 **License:** Apache-2.0 for the contract and schemas; CC BY-SA 4.0 for the authored vocabulary
 
@@ -186,6 +186,7 @@ the theme maps them.
 | `fx.death.collapse` | actor died | `effects` | impact, decay, settle | Expanding then thinning debris over the actor's footprint. Must be visibly heavier than `fx.impact.burst` — dying and being hit are the two events players confuse most |
 | `fx.structure.collapse` | structure destroyed | `effects` | slow, ~600 ms | Footprint-sized, slower, settling downward. Scale with footprint area, not a constant. Settles into salvage, which is state |
 | `fx.nexus.critical` | Nexus below threshold | `effects` | sustained, looping | A slow pulse across the Nexus footprint, phase-locked to absolute time so it is identical on every client. The one sustained effect, and the one allowed real visual weight |
+| `fx.structure.place` | a building finished going up (Build Phase) | `effects` | impact + decay, the placement's glow (~400 ms) | **Added at gate 5I.** Sparks launched from the ring one tile outside the footprint, flying outward and thinning to dust; never on a building. Randomness hashes the placement's identity (plan ordinal, structure, anchor), never its start time. Reduced motion: a still mark at the four corners |
 | `fx.blast.detonation` | an entity detonated | `effects` | impact, expansion, thinning | **Added at Milestone 1B**, because the vocabulary predates volatile munitions and a death that damages a radius is not a death. A ring that reaches its radius and thins, sparser than it is dense from the first frame. The second effect allowed real weight, because it is the one event that can end an army in a single tick |
 
 **Simultaneous instances of the same effect are staggered in presentation** (Milestone 1B). A
@@ -235,6 +236,9 @@ An effect is a pure function, so it is **directly testable without a terminal**:
 - an effect emits nothing outside the Grid clip;
 - every glyph it emits has terminal width one;
 - the full, reduced-motion, and monochrome forms all exist and all emit something at the impact beat.
+
+An effect for something the **player** does (a placement) hashes that action's identity rather than
+its start time, so the same plan throws the same sparks however fast it was typed (gate 5I).
 
 Snapshot the composed frame at fixed timestamps and diff it. **Do not test effects by watching them**
 — watch them to judge them, test them to keep them.

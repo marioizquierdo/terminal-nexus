@@ -4,7 +4,7 @@
 **Status:** CURRENT
 **Active gate:** 5I — placement juice: a building plays a short run of frames as it goes down, with
 particles and a brief light on its characters, on 5H's frame timer, every number a Debug Mode flag.
-**In progress**, at Mario's "keep going" (2026-09-28); 5D-5H are built and reported (PASS) but not yet
+**Built and reported (PASS), awaiting Mario's look**, at his "keep going" (2026-09-28); 5D-5H are built and reported (PASS) but not yet
 formally accepted, and this gate depends on none of those acceptances.
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
 mission's own budget/units decided — accepted 2026-09-12)
@@ -178,16 +178,16 @@ mission's own budget/units decided — accepted 2026-09-12)
 > screenshots had been dropping the solid bottom map edge (a tmux capture setting). Registered: Q62
 > (what an exploring click does to the view) and Q63 (the wheel's step).
 
-> **Gate 5I: placement juice — in progress** (feedback F9, the owner's: "every building should define
-> an array of frames played when it is placed, and particle effects ... colour interpolation (a
-> rainbow, lighting on the characters), a simplified shader"). Presentation only, on 5H's frame timer:
-> each structure carries a short run of placement frames authored beside its art, with a generic
-> fallback so no content blocks; a small burst of particles around the footprint in the `effects`
-> band, which never overwrites a building's glyph; and a brief light on the placed building's
-> characters, expressed as a style-role operation the renderer resolves per theme and capability,
-> never a literal colour, degrading to bold/dim where colour is short. A "rainbow" is one value of the
-> lighting flag. Reduced motion shows the finished building at once. Every duration and intensity is
-> a Debug Mode flag, and each effect can be switched off.
+> **Gate 5I: placement juice — built and reported (PASS), awaiting Mario's look**
+> (`../evidence/gate-5i-report.md`). A placed building plays a few frames of its own as it goes up —
+> footings, walls, roof beam for the Barracks; seeds, a swelling sac, a splitting peak for the
+> Hatchery; a rising mark for the Turret — authored beside its art, with a generic bottom-up fallback
+> for anything undrawn. It then stands finished with a brief light on its characters (a style-role
+> blend the renderer resolves per colour tier; a "rainbow" walks six new theme hues) and a few sparks
+> thrown off its edge, which never land on a building. It is presentation only, timed from the frame
+> that first drew it, and over in 850 ms at the defaults. Reduced motion shows the finished building at
+> once. Debug Mode's first four rows tune it: Build animation, Lighting, Particles, Glow time.
+> Registered: Q64 (the light theme's "light") and Q65 (a removal animation).
 
 ## 1. Question
 
@@ -407,15 +407,15 @@ Gate 5H's definition of done:
 
 Gate 5I's definition of done:
 
-- [ ] placing a structure plays its own short run of frames (a generic fallback for any structure
+- [x] placing a structure plays its own short run of frames (a generic fallback for any structure
       without authored ones), then shows the finished building; removing or undoing mid-animation is
       correct at once;
-- [ ] a particle burst around the footprint in the `effects` band, obeying the corruption law, with
+- [x] a particle burst around the footprint in the `effects` band, obeying the corruption law, with
       cosmetic randomness from a hash of the placement's identity, never a stream;
-- [ ] a brief light on the placed building's characters as a style-role operation, resolved per
+- [x] a brief light on the placed building's characters as a style-role operation, resolved per
       capability and theme, degrading in 16-colour and monochrome; a "rainbow" value;
-- [ ] every effect is a pure function of time since the placement, off under reduced motion, and a
+- [x] every effect is a pure function of time since the placement, off under reduced motion, and a
       Debug Mode flag (duration, intensity, on/off); the reducer still has no clock, and the plan is
       identical with every effect on or off;
-- [ ] the terminal and the browser page draw it; the Build Phase screen stays inside the frame budget;
-- [ ] a gate report ending in PASS / REVISE / STOP / BLOCKED.
+- [x] the terminal and the browser page draw it; the Build Phase screen stays inside the frame budget;
+- [x] a gate report ending in PASS / REVISE / STOP / BLOCKED — **PASS**, pending the owner's look.

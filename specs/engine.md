@@ -2,7 +2,7 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.23
+**Canon version:** 2.24
 **Updated:** 2026-09-27
 **License:** Apache-2.0
 
@@ -873,6 +873,7 @@ type CellStyle = Readonly<{
   underline?: boolean
   inverse?: boolean
   fade?: number            // 0-1, fgRole only: 0 the role's own colour, 1 the theme's background
+  tint?: { role: string; amount: number } // 0-1, fgRole pulled toward another role (canon 2.24)
 }>
 
 type Cell = Readonly<{ glyph: string; style: CellStyle }>
@@ -901,6 +902,14 @@ only a role and a number, so "never a colour" stays literally true. It resolves 
 entirely, unchanged from before this field existed. It is `fgRole`-only: a background is never faded.
 Scope is deliberately narrow, not a general fade-out licence for effects — `ascii-effects.md` craft
 rule 7 still holds everywhere except the one recorded departure it names.
+
+**`tint` — added at canon 2.24 (gate 5I).** `tint?: { role, amount }` pulls the cell's `fgRole` part
+of the way (`amount` 0–1) toward another role; the cell still carries only roles and a number.
+`truecolor` interpolates the two roles' colours; `color256` interpolates, then takes the nearest
+palette colour; `color16` has no continuum and steps onto the other role's own colour from 0.5 up;
+`monochrome` ignores it. It is applied before `fade`. Scope: a placed building's light in the Build
+Phase. The rainbow's six hue roles (`fx.hue.red` … `fx.hue.magenta`) are ordinary roles with a colour
+per theme.
 
 This is the terminal boundary and an excellent snapshot surface. It is **not** the universal renderer
 API; a future graphical renderer consumes events and `PlayerView`, not cells.
@@ -1088,6 +1097,15 @@ stream.
 
 The particle system, its contract, its starter vocabulary, and the craft rules that make ASCII motion
 read as weight are specified in **[`ascii-effects.md`](ascii-effects.md)**.
+
+**Placement juice — GUIDANCE, gate 5I.** A structure may carry **placement frames**: a short list of
+footprint-sized frames played before its finished art as it is placed (a space is empty ground). Only
+the Build Phase view reads them; a structure without them gets a generic run derived from its finished
+art, so no content waits on an artist. It is presentation only: the live loop times each placement
+from the first frame that drew it, the view draws a pure function of the plan and the time since
+placement, and a placement that leaves the plan stops at once. The finished building then takes a
+brief light on its characters (`tint`, above) and throws a few sparks (`fx.structure.place`). Reduced
+motion shows it finished at once. Every duration and intensity is a Debug Mode flag.
 
 ### 9.6 Accessibility and input — RULE
 

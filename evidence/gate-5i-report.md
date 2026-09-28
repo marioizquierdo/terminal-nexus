@@ -2,7 +2,7 @@
 
 **Document role:** Gate evidence report for Gate 5I
 **Status:** COMPLETE — PASS, awaiting the owner's look
-**Canon version:** 2.23
+**Canon version:** 2.24
 **Updated:** 2026-09-28
 **License:** Apache-2.0
 
@@ -10,8 +10,10 @@
 
 ## 1. Frame — written before coding
 
-- **Canon version:** 2.23. The building session did not edit `specs/`, `AGENTS.md`, `milestones/` or
-  `docs/feedback/`; it proposes their text in Section 9 for the orchestrating session to apply.
+- **Canon version:** 2.23 when the work started. The building session did not edit `specs/`,
+  `AGENTS.md`, `milestones/` or `docs/feedback/`; it proposed their text in Section 9, and the
+  orchestrating session applied it at canon 2.24 (the placement-frames note went into `engine.md`
+  9.5, beside the effects, rather than 9.6).
 - **Milestone and gate:** Milestone 5 — Build Phase, gate 5I, placement juice (feedback F9).
 - **Question this gate answers:** can placing a building feel like something happened — a short run of
   frames of its own as it goes up, a brief light on its characters, a few sparks around it — while
@@ -220,7 +222,7 @@ and the browser page draw it, inside the frame budget. What is left is the owner
 
 ## 9. Canon impact
 
-Proposed for the orchestrating session to apply (GUIDANCE unless marked):
+Proposed by the building session and applied at canon 2.24 (GUIDANCE unless marked):
 
 | Proposed rule | Would live in | Earned by |
 | --- | --- | --- |
@@ -241,4 +243,5 @@ Questions raised (for the orchestrator to register):
 ## 10. Next authorized action
 
 The owner places buildings with the defaults, then flips Lighting, Particles and Build animation in
-Debug Mode and says which values stay; the orchestrating session carries on through the feedback log.
+Debug Mode and says which values stay; with this gate the round-2 feedback log has nothing left that can be built now, so the next gate
+waits for his word.
