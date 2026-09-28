@@ -484,11 +484,12 @@ export const DEFAULT_PLACEMENT = {
   placeLight: "light",
 } as const satisfies Partial<DebugFlags>
 
-/** The map edge as built (canon 2.21's solid bar, in the frame's colour, in a column of its own):
- *  feedback F25 asked for options to try, not for a new default. */
+/** The map edge: canon 2.21's solid bar in a column of its own, in the quieter edge colour since the
+ *  owner found it "a little thick" and "should probably be less accentuated" (F25) — the glyph and the
+ *  shared column stay options for him to try. */
 export const DEFAULT_MAP_EDGE = {
   mapEdge: "solid",
-  mapEdgeColour: "strong",
+  mapEdgeColour: "quiet",
   sharedWestBorder: false,
 } as const satisfies Partial<DebugFlags>
 

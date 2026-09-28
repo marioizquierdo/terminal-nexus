@@ -163,15 +163,15 @@ test("the edge style changes only the sides where the map ends: in the middle of
   }
 })
 
-test("the defaults are today's look: a solid bar in the frame's colour, in a column of its own", () => {
+test("the defaults: a solid bar in the quieter edge colour (\"less accentuated\"), in a column of its own", () => {
   const flags = initialDebugFlags({})
   assert.equal(flags.mapEdge, "solid")
-  assert.equal(flags.mapEdgeColour, "strong")
+  assert.equal(flags.mapEdgeColour, "quiet")
   assert.equal(flags.sharedWestBorder, false)
   const s = screen(spikeContext(), {}, "ascii", { x: 0, y: 0 })
   const west = cellAt(s.frame, s.layout.gridBox.left, s.layout.origin.row + 3)
   assert.equal(west.style.inverse, true)
-  assert.equal(west.style.fgRole, "chrome.frame")
+  assert.equal(west.style.fgRole, "chrome.edge")
   assert.equal(s.layout.gridBox.left, s.layout.dividerColumn + 1)
   // The three flags are in Debug Mode's list, each naming its question.
   for (const field of ["mapEdge", "mapEdgeColour", "sharedWestBorder"]) {
