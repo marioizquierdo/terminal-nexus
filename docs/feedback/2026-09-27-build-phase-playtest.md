@@ -76,12 +76,12 @@ still work until the Pulse starts, which is what keeps a plan revisable without 
 > Clicking 2 rows from the limit should scroll a lot faster than clicking 5 rows from the border. It
 > seems limited to 1-3 rows. Make those areas larger.
 
-**Scheduled — gate 5H (movement feel).** Today a click only moves the cursor and the camera follows
-it with the 3-tile margin; that margin is exactly what gate 5H turns into a share of the viewport.
-**Note the conflict with an open question**: Q58 recommends an armed click never scroll at all (so a
-confirming second click lands where the first did). This feedback wants click-scrolling to be
-*stronger*. Proposed reconciliation for 5H: a proportional scroll when **exploring** (nothing armed),
-no scroll while a building is armed — to confirm with him when 5H starts.
+**Built — gate 5H (2026-09-28).** Exploring, a click inside an edge zone a third of the view deep
+brings the clicked tile toward the middle in proportion to how deep it landed — at 80x24, clicks 2 and
+8 columns in from the edge scroll 19 and 8 tiles, a click in the middle none. With a building armed
+nothing scrolls (Q58, option B), so the confirming click lands where the first did — the
+reconciliation proposed here. Debug Mode flags "Explore click" (Q62) and "Click edge zone" let him
+tune it; awaiting his feel.
 
 ### F7 — The cursor shows only when the Grid has focus; three clear modes
 

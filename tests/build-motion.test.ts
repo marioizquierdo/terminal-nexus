@@ -401,8 +401,11 @@ test("the live screen redraws on a timer while the view slides, and not at all o
   stdin.emit("data", Buffer.from(`${ESC}[1;2C`)) // Shift+Right twice: the view slides east
   stdin.emit("data", Buffer.from(`${ESC}[1;2C`))
   await wait(300)
+  // The two key presses redraw once each; anything beyond that was drawn by the frame timer. At
+  // least one such frame is the property — how many depends on how busy the machine is, since a
+  // late first tick can land after the 150 ms slide has already ended.
   const moving = stdout.frames - idle
-  assert.ok(moving > 3, `only ${moving} frames while the view slid`)
+  assert.ok(moving > 2, `only ${moving} frames while the view slid - the frame timer never ran`)
   const settled = stdout.frames
   await wait(120)
   assert.equal(stdout.frames, settled, "the frame timer kept running after the slide")

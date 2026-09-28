@@ -2,7 +2,7 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.22
+**Canon version:** 2.23
 **Updated:** 2026-09-27
 **License:** Apache-2.0
 
@@ -982,8 +982,11 @@ solve for a key nothing currently claims.
 
 ### Q54 — Exact cursor-movement speed tiers, thresholds, and timings
 
-**Status:** OBSERVABLE — gate 5H builds the speed ramp `engine.md` 3.3 describes, with every number a
-live field in gate 5G's Debug Mode panel, and the owner's own feel settles them.
+**Status:** OBSERVABLE — **built at gate 5H (option A)**, every number a Debug Mode flag: tiers
+1/2/4/8, held-to-fast 300 ms, repeat gap 120 ms, repeat delay 700 ms, slow after a turn on, margin
+20%. A single tap is the slow step; the 2s begin with the terminal's fast repeats. Not built: "moving
+away from where slow began" ending the slow hold. Awaiting the owner's feel — press `d` and change
+"Held to go fast", "Repeat gap" and the step sizes.
 
 The owner's own description (2026-09-26): "different speed modes: slow (1 tile per pulse), normal
 (2), fast (4) and faster (8). It starts at normal speed, and quickly changes to fast; faster is
@@ -1010,7 +1013,7 @@ anything is, one tile apart and aligned with it, the side facing the map's centr
 that, the nearest spot anywhere with a free tile around it; failing that, the nearest spot at all;
 failing that, the cursor stays. Only a menu-driven arm uses it — a digit leaves the cursor where the
 player pointed. `BuildContext.smartCursor` switches it off, ready for Debug Mode. Awaiting the
-owner's feel; the interpolation half is still gate 5H's. Revised 2026-09-26, the same day it was
+owner's feel; the interpolation half is **built at gate 5H** (the view slides, the "View slide" flag). Revised 2026-09-26, the same day it was
 registered: each now has a gate.
 The smart cursor goes with gate 5F's keyboard focus, because the owner's own keyboard-only flow
 ("down-down-space, place, space, place") only works if arming from the menu puts the cursor
@@ -1046,8 +1049,9 @@ for it to trigger from.
 
 ### Q58 — Should a click with something armed be allowed to scroll the view?
 
-**Status:** OPEN — blocks nothing today; gate 5H decides it while it widens the scroll margin, which
-is what turns it from a corner case into a common one.
+**Status:** OBSERVABLE — **option B built at gate 5H** (the recommendation): an armed click never
+scrolls. Option A is the Debug Mode flag "Armed click scrolls"; the row moves to Answered once the
+owner has felt both.
 
 Q52 made placement by mouse a two-click gesture, safe because the second click is compared by tile,
 not by screen position: when the first click lands inside the scroll margin, the camera follows the
@@ -1105,6 +1109,37 @@ the map would put the cursor in play at once, exploring.
 
 **Recommendation: A**, until Mario has tried both: press `d`, set "Opens on" to map, then `r`. The
 flag is deleted once he answers.
+
+### Q62 — What does a click on the map do to the view with nothing armed?
+
+**Status:** OBSERVABLE — a Debug Mode flag ("Explore click"), registered by gate 5H.
+
+The owner asked for clicks near the edge to scroll further the nearer they are, with bigger zones
+(feedback F6), and `engine.md` 3.3's older guidance said an unarmed click recentres the view. The two
+read differently for a click in the middle of the map, which is usually an inspect.
+
+| Option | Cost |
+| --- | --- |
+| A. **Proportional edge zones** (built, default): a click inside a zone a third of the view deep carries the tile toward the middle in proportion to its depth | Contains recentring at the very edge; a middle click leaves the view alone |
+| B. Always centre on the clicked tile | The view jumps on every inspect click |
+| C. The margin only, as gates 5A-5G did | What F6 found too weak |
+
+**Recommendation: A.** Try it: press `d`, set "Explore click" to centres, click near an edge and in
+the middle, and compare.
+
+### Q63 — Should the mouse wheel move the fast step (8 tiles) rather than 5?
+
+**Status:** OPEN — blocks nothing; registered by gate 5H when Shift's step went from 5 to 8.
+
+The wheel has moved the cursor five tiles since gate 5A, the same as Shift+Arrow did. Shift is now 8.
+Trackpads send wheel events in bursts, so a larger step may overshoot.
+
+| Option | Cost |
+| --- | --- |
+| A. **Keep 5** | The wheel and Shift differ |
+| B. Follow Shift's step | One number for "fast"; may overshoot on a trackpad |
+
+**Recommendation: A** until the owner has tried the wheel on his own trackpad.
 
 ## 5. Answered
 

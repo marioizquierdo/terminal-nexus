@@ -3,8 +3,8 @@
 **Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
 **Status:** CURRENT
 **Active gate:** 5H — movement feel: a frame timer, held-key speed tiers, a share-of-viewport
-scroll margin, recentring, eased camera moves, every number a Debug Mode flag. **In progress**,
-started at Mario's request (2026-09-28: "keep going ... I'll test everything after we merge a few
+scroll margin, recentring, eased camera moves, every number a Debug Mode flag. **Built and reported (PASS), awaiting
+Mario's feel**; started at Mario's request (2026-09-28: "keep going ... I'll test everything after we merge a few
 more changes all together") before his look at 5G; 5D-5G are built and reported (PASS) but not yet
 formally accepted, and this gate depends on none of those acceptances.
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
@@ -165,14 +165,19 @@ mission's own budget/units decided — accepted 2026-09-12)
 > Nexus popup closes on a pick (Q60) are answered and have no flag; the border glyphs are settled (the
 > solid bar) and have none either.
 
-> **Gate 5H: movement feel — not yet built.** The screen's first frame timer, and what it enables
-> (`engine.md` 3.3): held-key speed tiers (Q54), a scroll margin that is a share of the viewport, the
-> fast modifier and an unarmed click recentring the view, camera moves eased over a few frames, a
-> brief cursor flash when a placement is tried and refused, and an armed click that does not scroll
-> (Q58). Every number is a Debug Mode field, tuned by the owner's own feel. The same timer should
-> give a lone Esc a short timeout: today Esc and the next key arriving in one read are taken as one
-> Option+key sequence (gate 5F's report, Section 7), harmless for a person typing but a trap for
-> anything sending keys programmatically, and Esc is used far more since 5F.
+> **Gate 5H: movement feel — built and reported (PASS), awaiting Mario's feel**
+> (`../evidence/gate-5h-report.md`). The Build Phase screen has its first frame timer, running only
+> while something moves. A tap moves one tile; a held arrow moves 2 a step, then 4 once held 300 ms;
+> Shift (and Option, PageUp, Home) moves 8; a change of direction drops a held arrow to 1 a step until
+> it is let go (Q54, the owner's own tiers). Terminals send no key-up, so "held" is read from the gaps
+> between repeats, in the input path; the reducer sees only distances. The scroll margin is 20% of the
+> view per axis. With a building armed a click never scrolls the view (Q58, option B); exploring, a
+> click near an edge scrolls further the nearer it is (feedback F6, Q62), and the fast move re-centres
+> the view. The view slides over 150 ms; a refused placement flashes its footprint; a lone Esc waits
+> 50 ms for the rest of a key. Debug Mode gained sixteen flags — every number above — and scrolls.
+> Found along the way: the terminal's own repeat delay needed a second timing flag, and real-terminal
+> screenshots had been dropping the solid bottom map edge (a tmux capture setting). Registered: Q62
+> (what an exploring click does to the view) and Q63 (the wheel's step).
 
 ## 1. Question
 
@@ -377,12 +382,13 @@ Gate 5G's definition of done:
 
 Gate 5H's definition of done:
 
-- [ ] the Build Phase screen has a frame timer that runs only while something is animating;
-- [ ] held-key speed tiers, a share-of-viewport scroll margin, recentring on the fast modifier and
+- [x] the Build Phase screen has a frame timer that runs only while something is animating;
+- [x] held-key speed tiers, a share-of-viewport scroll margin, recentring on the fast modifier and
       on an unarmed click, eased camera moves, and a cursor flash on a refused attempt — every number a
       Debug Mode field (Q54);
-- [ ] Q58 answered, and built to the answer;
-- [ ] the Debug Mode popup scrolls, since at 80x24 it is full with 5G's five flags;
-- [ ] the reducer still has no clock: timing lives in the adapter and the view, and every existing
+- [x] Q58 answered, and built to the answer — option B, the recommendation; option A remains a Debug
+      Mode flag until the owner has felt both;
+- [x] the Debug Mode popup scrolls, since at 80x24 it is full with 5G's five flags;
+- [x] the reducer still has no clock: timing lives in the adapter and the view, and every existing
       "same plan, every adapter" test still holds;
-- [ ] a gate report ending in PASS / REVISE / STOP / BLOCKED.
+- [x] a gate report ending in PASS / REVISE / STOP / BLOCKED — **PASS**, pending the owner's feel.

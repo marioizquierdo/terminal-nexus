@@ -2,7 +2,7 @@
 
 **Document role:** Gate evidence report for Gate 5H
 **Status:** COMPLETE — PASS, awaiting the owner's look
-**Canon version:** 2.22
+**Canon version:** 2.23
 **Updated:** 2026-09-28
 **License:** Apache-2.0
 
@@ -10,8 +10,9 @@
 
 ## 1. Frame — written before coding
 
-- **Canon version:** 2.22. The building session did not edit `specs/`, `AGENTS.md`, `milestones/` or
-  `docs/feedback/`; it proposes their text in Section 9 and the orchestrating session applies it.
+- **Canon version:** 2.22 when the work started. The building session did not edit `specs/`,
+  `AGENTS.md`, `milestones/` or `docs/feedback/`; it proposed their text in Section 9, and the
+  orchestrating session applied it at canon 2.23.
 - **Milestone and gate:** Milestone 5 — Build Phase, gate 5H, movement feel.
 - **Question this gate answers:** once the Build Phase screen has a clock of its own, can moving
   around a Grid larger than the screen feel fast when the player wants distance and precise when they
@@ -291,8 +292,9 @@ is a Debug Mode flag with his own numbers or a stated guess as its starting valu
 
 ## 9. Canon impact
 
-Proposed changes, each with the document that would own it. **Nothing here is applied until Mario
-accepts the gate.**
+Proposed by the building session and applied by the orchestrating session at canon 2.23, all as
+GUIDANCE (the owner asked to keep going before looking; each number stays a Debug Mode flag he can
+change). The popup-scrolling rule is in `docs/ui-patterns.md`, not yet in `engine.md` 9.2.
 
 | Proposed rule | Would live in | Earned by |
 | --- | --- | --- |
@@ -308,10 +310,10 @@ Questions raised (for the orchestrator to register):
 
 | ID | Question | Recommendation |
 | --- | --- | --- |
-| new | What does a click on the map do to the view with nothing armed: scroll by how near the edge it is, always centre, or only the margin? | Proportional edges (built as the default); it contains recentring at the very edge and leaves a click in the middle alone |
-| new (small) | Should the mouse wheel move the Shift step (8) rather than 5? | Keep 5 until the owner has tried the wheel on his trackpad; a flag is cheap if he wants to compare |
+| Q62 | What does a click on the map do to the view with nothing armed: scroll by how near the edge it is, always centre, or only the margin? | Proportional edges (built as the default); it contains recentring at the very edge and leaves a click in the middle alone |
+| Q63 | Should the mouse wheel move the Shift step (8) rather than 5? | Keep 5 until the owner has tried the wheel on his trackpad; a flag is cheap if he wants to compare |
 
 ## 10. Next authorized action
 
-The owner feels the flags and says which numbers stay; then the "placement juice" gate after 5H, not
-before his look.
+The owner feels the flags and says which numbers stay. At his 2026-09-28 "keep going", the
+orchestrating session goes on to the "placement juice" gate without waiting for that look.

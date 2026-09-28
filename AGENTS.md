@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.22
+**Canon version:** 2.23
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -163,21 +163,28 @@ divider (feedback F17); and the browser playtest page exists, as a development t
 whether the screen opens on the menu or the map (Q61), and the menu's flash timings — each naming the
 question it serves, changed with Left/Right, restarted with `[r]`, never saved.
 
+**Milestone 5 gate 5H is built and reported (PASS), awaiting Mario's feel** (2026-09-28): the Build
+Phase has its first frame timer; a tap moves one tile, a held arrow speeds up (2 then 4), Shift moves
+8, and turning slows to 1; the scroll margin is 20% of the view; an armed click never scrolls the view
+(Q58) and an exploring click near an edge scrolls further the nearer it is (F6, Q62); the view slides;
+a refused placement flashes; a lone Esc waits 50 ms; Debug Mode — now twenty flags, every one of those
+numbers — scrolls.
+
 The current milestone is **[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md)
 — Build Phase**: can a player place buildings, pick a Nexus upgrade, and scroll a real map, by
-keyboard, mouse and driver alike? Its active gate is **5H — movement feel** — a frame timer, held-key
-speed tiers, a share-of-viewport margin, recentring, eased camera moves (Q54, Q58), every number a
-Debug Mode flag, and a Debug Mode popup that scrolls. **Mario asked on 2026-09-28 to keep going
-without waiting to look at 5G first**: he will test several merged changes together, and the
-orchestrating session keeps working through the feedback log in the meantime.
+keyboard, mouse and driver alike? Its active gate is **5H — movement feel**, built and awaiting Mario's
+feel (`evidence/gate-5h-report.md`). **Mario asked on 2026-09-28 to keep going without waiting to
+look at 5G first**: he will test several merged changes together, and the orchestrating session keeps
+working through the feedback log in the meantime. The next item there is the **placement juice** gate
+(feedback F9: placement frames, particles, colour interpolation), which 5H's frame timer unblocks.
 
 So the authorised work for a new session is, in order:
 
 1. **whatever the owner's most recent feedback asks for**, if any exists since
    `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
    outstanding or that everything still is;
-2. **Milestone 5 gate 5H** — started at the owner's own request (2026-09-28) before his look at 5G;
-   after it, the next gate still waits for his word unless his prompt asks for more. Per its own file — the next gate in the build order
+2. **The next gate in the tracker after 5H** (placement juice) — the owner asked on 2026-09-28 to
+   keep going through the feedback before testing; a later prompt from him that says otherwise wins. Per its own file — the next gate in the build order
    [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
    order — read that table's build-order column, and take one gate per session unless the owner's
    own prompt asks for more.
@@ -239,7 +246,7 @@ deleted, and the renderer must be replaceable without one simulation test changi
   several tiles**, and that matters strategically. A mover tests its whole footprint against its
   mask. Range measures to the nearest occupied tile.
 - The viewport is clamped to between 48 × 16 and 72 × 24 tiles; the cursor drives scrolling at a
-  margin (three tiles today; the number is GUIDANCE, and gate 5H makes it a share of the viewport);
+  margin (a share of the view, 20% to start; the number is GUIDANCE);
   there is no minimap. 80 × 24 is the floor and the acceptance target. **The margin is a follow rule,
   not an invariant**: at the Grid's own edge the camera has nowhere to go and the cursor reaches the
   edge of the screen, which is correct — there is no more Grid to reveal.
@@ -293,7 +300,9 @@ deleted, and the renderer must be replaceable without one simulation test changi
   armed only while the Grid has focus, and every placement returns focus to the menu, disarmed (Q57).
   **Esc, `x` and a right click are one cancel** that goes back one level — popup, information panel,
   Grid to menu — and on the menu asks "Exit the game?"; `q` asks the same question, and only Ctrl+C
-  quits at once. Leaving always asks.
+  quits at once. Leaving always asks. **A click with a structure armed never scrolls the view**
+  (Q58); cursor speed and every animation are timed in the input path and the view, never the
+  reducer.
 - **The Build Phase panel is the construct menu, what is left to spend, and the selected item's cost
   and effect**, under `[n] Nexus` and `[e] Explore` entries at its top — no radius preview until
   something has a radius (Q30). While exploring, Enter/Space replaces the menu with an **information
