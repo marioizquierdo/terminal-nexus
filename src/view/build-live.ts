@@ -25,6 +25,8 @@ import { flashDuration } from "../build/debug.ts"
 import type { BuildFlash } from "./build.ts"
 import type { PlacementClock } from "./placement.ts"
 import { placementTiming } from "./placement.ts"
+import type { Tween } from "./tween.ts"
+import { retarget, samePoint, still, tileAt, tweenActive, tweenEnd } from "./tween.ts"
 
 export type LiveFrame = Readonly<{
   /** The camera to draw through. */
@@ -37,34 +39,13 @@ export type LiveFrame = Readonly<{
   busyUntil: number | null
 }>
 
-type Ease = Readonly<{ from: Camera; to: Camera; start: number; duration: number }>
-
 /** What the live screen knows that the reducer does not: the player's reduced-motion setting. */
 export type LiveOptions = Readonly<{ reducedMotion?: boolean }>
 
-/** Fast at first and settling at the end: a slide that starts where the player's eye already is. */
-function easeOut(progress: number): number {
-  return 1 - (1 - progress) ** 3
-}
-
-function sameCamera(a: Camera, b: Camera): boolean {
-  return a.x === b.x && a.y === b.y
-}
-
-/** Where an ease has got to at `now`, in whole tiles. */
-function easedAt(ease: Ease, now: number): Camera {
-  if (ease.duration <= 0) return ease.to
-  const progress = Math.min(1, Math.max(0, (now - ease.start) / ease.duration))
-  if (progress >= 1) return ease.to
-  const eased = easeOut(progress)
-  return {
-    x: Math.round(ease.from.x + (ease.to.x - ease.from.x) * eased),
-    y: Math.round(ease.from.y + (ease.to.y - ease.from.y) * eased),
-  }
-}
+const cameraAtTime = (tween: Tween<Camera>, now: number): Camera => tileAt(tween, now)
 
 export class BuildAnimation {
-  private ease: Ease | null = null
+  private ease: Tween<Camera> | null = null
   private seenAck: Readonly<{ seq: number; at: number }> | null = null
   private seenRefusal: Readonly<{ seq: number; at: number }> | null = null
   /** When each planned ordinal was first drawn, and what it was then — a different structure or
@@ -81,20 +62,17 @@ export class BuildAnimation {
   cameraAt(state: BuildState, now: number): Camera {
     const target = state.camera
     if (this.ease === null) {
-      this.ease = { from: target, to: target, start: now, duration: 0 }
+      this.ease = still(target, now)
       return target
     }
-    if (!sameCamera(this.ease.to, target)) {
-      const from = easedAt(this.ease, now)
-      this.ease = { from, to: target, start: now, duration: sameCamera(from, target) ? 0 : state.debug.easeMs }
-    }
-    return easedAt(this.ease, now)
+    this.ease = retarget(this.ease, target, now, state.debug.easeMs, cameraAtTime, samePoint)
+    return tileAt(this.ease, now)
   }
 
   /** Stop any slide and draw the state's own camera — after a resize, when a slide from a view of
    *  another size would mean nothing. */
   snap(state: BuildState, now: number): void {
-    this.ease = { from: state.camera, to: state.camera, start: now, duration: 0 }
+    this.ease = still(state.camera, now)
   }
 
   /**
@@ -134,7 +112,7 @@ export class BuildAnimation {
     const camera = this.cameraAt(state, now)
     const ends: number[] = []
     const ease = this.ease
-    if (ease !== null && ease.duration > 0 && now < ease.start + ease.duration) ends.push(ease.start + ease.duration)
+    if (ease !== null && tweenActive(ease, now)) ends.push(tweenEnd(ease))
 
     let flash: BuildFlash | undefined
     const ack = state.ack
