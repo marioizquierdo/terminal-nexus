@@ -536,7 +536,7 @@ scriptedGif("build-debug-smart-cursor", {
 scripted(
   "build-debug-scrolled",
   "Settings scroll: the settings and the experiments do not fit at 80x24, so the list moves with the highlight and says how many rows are hidden above and below. A click on either line, or the wheel, scrolls it too",
-  { keys: "d Down*6", expect: "v 18 more" },
+  { keys: "d Down*6", expect: "v 19 more" },
 )
 
 scriptedGif("build-held-arrow", {
@@ -639,14 +639,14 @@ live(
     drive: () => {
       pickFirstPower()
       key("Tab")
-      // Eight tiles a press since gate 5H (it was five): four east and two south still leave more
-      // Grid on every side.
-      for (let step = 0; step < 4; step += 1) {
-        key("S-Right")
-        if (step < 2) key("NPage")
-      }
+      // A twelve-tile jump since gate 5J (five until 5H, then eight): two east and one south, from
+      // 18,13, still leave more Grid on every side. tmux's pause between keys is longer than the jump
+      // repeat limit, so no jump is dropped.
+      key("S-Right")
+      key("NPage")
+      key("S-Right")
     },
-    waitForText: "cursor 50,29",
+    waitForText: "cursor 42,25",
   },
 )
 
@@ -678,9 +678,13 @@ live(
     drive: () => {
       pickFirstPower()
       literal("1") // arm Barracks
-      for (let step = 0; step < 4; step += 1) key("S-Right")
+      // Two twelve-tile jumps (gate 5J), with a key between them so the second is not a held
+      // Shift's repeat inside the jump limit.
+      key("S-Right")
+      key("Down")
+      key("S-Right")
     },
-    waitForText: "cursor 50,13",
+    waitForText: "cursor 42,14",
   },
 )
 

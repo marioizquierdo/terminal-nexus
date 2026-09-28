@@ -2,7 +2,7 @@
 
 **Document role:** Canon index and reading order
 **Status:** Canonical
-**Canon version:** 2.24
+**Canon version:** 2.25
 **Updated:** 2026-09-12
 **License:** Apache-2.0
 

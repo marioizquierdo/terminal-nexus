@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.24
+**Canon version:** 2.25
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -175,24 +175,35 @@ numbers — scrolls.
 building plays its own short run of frames, then stands lit with a few sparks around it, all
 presentation, all four numbers in Debug Mode, off under reduced motion.
 
+**Milestone 5 gate 5J is built and reported (PASS), awaiting Mario's playtest** (2026-09-28): his
+third round of feedback, from playing the 5G-5I demo page
+([`docs/feedback/2026-09-28-pr46-playtest.md`](docs/feedback/2026-09-28-pr46-playtest.md), F18-F27).
+Debug Mode became **Settings** — Esc or `q` opens a game menu with Settings and Quit, the player's own
+settings are saved, and **Experiments** sit at the bottom (`d` jumps there) with an **export** to paste
+into a pull request and `--settings` to read it back. One press moves 1 tile, a held arrow 2 then 4,
+Shift jumps 12; the view slides and the cursor glides on every move; a click on a menu row activates
+it; armed clicks scroll and a double click places; `[e] Explore Map` is first and follows the cursor;
+the map edge is quieter, with its glyph and a shared west side as Experiments; and presentation is
+four named families (animations, particles, shading, tweens) with the placement juice on them. 5G-5I
+were reworked by it rather than superseded, and all of them await his playtest together.
+
 The current milestone is **[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md)
 — Build Phase**: can a player place buildings, pick a Nexus upgrade, and scroll a real map, by
-keyboard, mouse and driver alike? Its active gate is **5I — placement juice** (feedback F9), built and
-awaiting Mario's look (`evidence/gate-5i-report.md`): a building plays a short run of frames as it
-goes down, with particles and a brief light on its characters, on 5H's frame timer. **It closes the
-last item of his round-2 feedback log that could be built now**; what the tracker does next waits
-for his word. **Mario asked on 2026-09-28 to keep going without waiting to look at 5G or 5H
-first**: he will test several merged changes together, and the orchestrating session keeps working
-through the feedback log in the meantime.
+keyboard, mouse and driver alike? Its active gate is **5J — the owner's third round**, built and
+awaiting Mario's playtest (`evidence/gate-5j-report.md`). **Mario asked on 2026-09-28 to keep going
+without waiting to look at each gate first**: he tests several merged changes together, then plays,
+exports his Experiments, and pastes them into the pull request.
 
 So the authorised work for a new session is, in order:
 
 1. **whatever the owner's most recent feedback asks for**, if any exists since
    `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
-   outstanding or that everything still is;
-2. **Mario's testing of gates 5G-5I together** (his 2026-09-28 plan) — the round-2 feedback log has
-   nothing left that can be built now, so the next gate waits for his word; when it comes, it is the
-   next gate in the build order [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
+   outstanding or that everything still is; **a pasted settings export is feedback**: start the game
+   with it (`--settings`), and settle each Experiment it answers — adopt the value as the default,
+   delete the Experiment, record the answer;
+2. **Mario's playtest of gates 5G-5J together** — the feedback logs have nothing left that can be
+   built now, so the next gate waits for his word; when it comes, it is the next gate in the build
+   order [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
    order — read that table's build-order column, and take one gate per session unless the owner's
    own prompt asks for more.
 

@@ -6,8 +6,8 @@
 2026-09-28, `docs/feedback/2026-09-28-pr46-playtest.md`): Debug Mode becomes Settings with Experiments
 and an export, simpler arrow-key acceleration and a 12-tile Shift jump, interpolation for the view and
 the cursor, a click on the menu that activates, "Explore Map" first, map-border Experiments, and one
-presentation toolkit (animations, particles, shading, tweens). **In progress**, on the same branch as
-5G-5I, at his "let's make a new revision"; 5D-5I are built and reported (PASS) but not yet formally
+presentation toolkit (animations, particles, shading, tweens). **Built and reported (PASS), awaiting
+Mario's playtest** (`evidence/gate-5j-report.md`), on the same branch as 5G-5I, at his "let's make a new revision"; 5D-5I are built and reported (PASS) but not yet formally
 accepted, and this gate depends on none of those acceptances.
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
 mission's own budget/units decided — accepted 2026-09-12)
@@ -429,23 +429,23 @@ Gate 5I's definition of done:
 
 Gate 5J's definition of done:
 
-- [ ] Esc on the menu, `q`, and a top-bar entry open a game menu with Settings and Quit; leaving still
+- [x] Esc on the menu, `q`, and a top-bar entry open a game menu with Settings and Quit; leaving still
       always asks; Settings holds the real player settings (saved) and, at its bottom, every Debug
       Mode flag as an Experiment (not saved); `d` jumps to the Experiments;
-- [ ] Settings export as a short text to paste into a pull request comment, and an agent can start the
+- [x] Settings export as a short text to paste into a pull request comment, and an agent can start the
       game, the scripted playtest and the browser page from that text;
-- [ ] one press moves 1 tile, a held or rapidly tapped arrow 2 at once and 4 after 300 ms, Shift (and
+- [x] one press moves 1 tile, a held or rapidly tapped arrow 2 at once and 4 after 300 ms, Shift (and
       the other fast moves) a 12-tile jump; the slow-after-a-turn rule is gone;
-- [ ] every camera move and every cursor move is interpolated (a tween, a pure function of time), off
+- [x] every camera move and every cursor move is interpolated (a tween, a pure function of time), off
       under reduced motion; state and commands still use destinations only;
-- [ ] a mouse click on a menu row activates it — a building is armed at once, with its preview at the
+- [x] a mouse click on a menu row activates it — a building is armed at once, with its preview at the
       cursor; the keyboard alone keeps a "highlighted, not chosen" state;
-- [ ] "Explore Map" is the first menu entry and opens a headed information panel that follows the
+- [x] "Explore Map" is the first menu entry and opens a headed information panel that follows the
       cursor; Esc returns to the menu;
-- [ ] the War Chest placeholder power gives 2000;
-- [ ] the map border's glyph, colour, a shared west border, and a map-defined border are Experiments;
-- [ ] animations (frame sequences with a play/cancel/speed/queue interface and completion as scheduled
+- [x] the War Chest placeholder power gives 2000;
+- [x] the map border's glyph, colour, a shared west border, and a map-defined border are Experiments;
+- [x] animations (frame sequences with a play/cancel/speed/queue interface and completion as scheduled
       data), particles, shading and tweens are named, separate modules; light and sparks are general
       effects; placement looks as it did;
-- [ ] keyboard, mouse and driver still produce the same plan; a gate report ending in PASS / REVISE /
-      STOP / BLOCKED.
+- [x] keyboard, mouse and driver still produce the same plan; a gate report ending in PASS / REVISE /
+      STOP / BLOCKED — **PASS**, pending the owner's playtest.

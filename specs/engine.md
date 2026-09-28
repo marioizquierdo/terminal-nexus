@@ -2,7 +2,7 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.24
+**Canon version:** 2.25
 **Updated:** 2026-09-27
 **License:** Apache-2.0
 
@@ -238,7 +238,7 @@ minimap.**
 
 - The camera position is in tiles and is clamped so the viewport never leaves the Grid.
 - **The cursor drives it.** Move the cursor within the **scroll margin** of a viewport edge — a share
-  of the view along each axis, 20% to start (GUIDANCE, a Debug Mode flag; three tiles until gate 5H)
+  of the view along each axis, 20% to start (GUIDANCE, an Experiment; three tiles until gate 5H)
   — and the camera follows. That is the whole interaction — no separate pan mode, no modifier keys, no
   second cursor. It works identically in the Build Phase and during a Pulse.
 - **The margin is a follow rule, not an invariant** (gate 5A). It says where the camera must be
@@ -248,7 +248,7 @@ minimap.**
   written, and because "the margin holds wherever the camera can still scroll" is a checkable
   sentence where "the margin holds" is not. Since gate 5H the margin is 20% of the view's width for the sides and of its height for
   the top and bottom — 10 × 3 tiles at the minimum view, 14 × 5 at the maximum — rounded, and capped
-  so an axis's two margins never meet; `--scroll-margin <percent>` and Debug Mode set it (it was
+  so an axis's two margins never meet; `--scroll-margin <percent>` and an Experiment set it (it was
   three tiles from gate 5A, which the owner's 2026-09-26 playtest found too few: "about 20% of the
   height or width").
   (Q54). That a margin exists, and that the cursor drives it, is unchanged.
@@ -1218,14 +1218,14 @@ building beside the last with no arrow key at all.
 | Shift+Arrow | the fast move: a **jump of 12 tiles** (the Experiment "Shift jump"; 5 until gate 5H, 8 until gate 5J), re-centring the view along the axis moved; held, it jumps again at most every 150 ms | fast pan across a scrolling Grid (owner, 2026-09-28: "Holding shift should behave fundamentally different, instead of just speed up to 8, it should move the cursor 12 tiles"). **Two sequence families, both bound** (gate 5A): xterm's `CSI 1;<modifier>` and rxvt's `CSI a/b/c/d`. Any modifier counts, not Shift alone — nothing else on these screens binds a modified arrow, so a terminal that eats Shift but passes Alt or Ctrl still gives its player the fast pan. **Option+Arrow as a Mac sends it is the same move** (owner, 2026-09-26: "we should also allow option (it is typical to move word by word)"): macOS terminals send Option+Left/Right as `ESC b`/`ESC f`, and one set to treat Option as Meta sends `ESC` before an ordinary arrow. Before canon 2.19 the input splitter broke both into a bare Escape plus a stray key — and a bare Escape with nothing armed leaves the screen. Bound from the terminals' documented defaults; **not yet measured on the owner's own iTerm2** — `node scripts/lib/key-echo.mjs`, run in that terminal, prints exactly what each key sends |
 | PageUp / PageDown, Home / End | the fast move — the modifier-free fallback | **Required, not optional** (gate 5A): four surveyed terminal families send no shifted arrow at all, so without this they would have no fast pan. Decoded from a table, because Home and End have three live spellings between xterm, screen/tmux/linux and rxvt |
 | Enter, Space | on the menu: activate the highlighted entry — arm a structure (focus moves to the Grid), open the Nexus powers, or explore. On the Grid while placing: place the armed structure at the cursor. On the map after a click brought the keyboard there: open Explore Map (9.2). In the Nexus powers popup: pick the highlighted power (the two questions answer to their own letters) | Space added 2026-09-26 (owner: "should also work with space, that was my reflex") — an alias of Enter everywhere on this screen, never a second meaning of its own |
-| Esc, `x` | **go back one level** (the `cancel` command): close the open popup; else close the information panel; else leave the Grid for the menu, disarming; else, on the menu, open the **"Exit the game?"** question, whose `[q] Quit` leaves and whose `[esc] Keep playing` closes it | **RULE since canon 2.21: Esc never leaves the game by itself — leaving always asks.** `x` is Esc everywhere (owner, 2026-09-27: "it should be equivalent to do [esc], and x"), and so is a right click. A lone Esc at the end of a read waits a short timeout (50 ms, a Debug Mode field) for the rest of a sequence; Esc then a letter or digit in one read is two keys; Esc then an arrow in one read is Option+Arrow, so anything scripting keys pauses after Esc (gate 5H) |
+| Esc, `x` | **go back one level** (the `cancel` command): close the open popup, returning to the popup it was opened from if any (Settings to the game menu, the export to Settings); else leave the Grid — placing or Explore Map — for the menu, disarming; else, on the menu, open the **game menu**: `[s] Settings`, `[q] Quit`, `[esc] Back to the game` | **RULE since canon 2.21: Esc never leaves the game by itself — leaving always asks.** `x` is Esc everywhere (owner, 2026-09-27: "it should be equivalent to do [esc], and x"), and so is a right click. A lone Esc at the end of a read waits a short timeout (50 ms, an Experiment) for the rest of a sequence; Esc then a letter or digit in one read is two keys; Esc then an arrow in one read is Option+Arrow, so anything scripting keys pauses after Esc (gate 5H) |
 | Tab | toggle keyboard focus between the side panel's menu and the Grid (arriving on the Grid exploring, nothing armed); does nothing while a popup is open | **Gate 5F, owner-requested 2026-09-26.** This row previously read "jump the cursor to the player's next / previous own structure" — GUIDANCE, never built, now retired from Tab (Q53 keeps the idea for another key). **Focus is its own state beside `armed`**, and the rule above holds: a structure is armed only while the Grid has focus, and every placement returns focus to the menu (Q57, answered 2026-09-27). **Convention 1 below applies: the key help says where focus is**, because focus makes arrows mean two things |
 | Backspace, Delete | on the Grid: remove the planned, uncommitted placement under the cursor | plans are revisable until commit (Milestone 5). The Mac key labelled "delete" sends Backspace, so it cannot also return focus to the menu, as the owner's first sketch of the focus toggle had it — Esc does (Q57). On the menu, where the cursor is hidden, it does nothing |
 | `u` | undo the last planned placement | |
 | `p` | Start Nexus Pulse — the commit | moves focus to the menu and asks once in a popup, `[y]es / [n]o` (Esc is no); the one action that must not fire by accident. Refused while a dealt Nexus power is still waiting to be picked |
 | `n` | open the Nexus powers popup — the menu's `[n] Nexus` entry | pressed again inside the popup, closes it. Inside the start-the-Pulse question `n` is its `[n]o` instead: a popup holds the keyboard, so the two never meet |
 | `e` | Explore Map — the menu's first entry, `[e] Explore Map`: focus to the Grid with nothing armed, the side panel describing what is under the cursor as it moves (9.2) | added 2026-09-27 (owner: "Pressing [e] changes the focus to the map in navigation mode"); first, renamed and self-explaining at gate 5J (feedback F23). Tab and a second Right arrive the same way |
-| `q` | open the "Exit the game?" question | never quits outright, so a stray press cannot lose a plan; only the question's own `[q]` quits. Not listed in the key help, since the question shows it |
+| `q` | open the game menu | never quits outright, so a stray press cannot lose a plan; only the game menu's own `[q]` (or Enter or a click on its Quit row) quits. A click on `[esc] menu` at the right of the top bar opens it too (gate 5J, owner: "When pressing [esc] or explicitly opening the main menu, there should be an option for '[s] Settings' along with '[q] Quit'") |
 | Ctrl+C | quit at once | the one immediate way out, from anywhere |
 | `?` | help overlay listing every binding live on this screen | the footer already shows the most important ones (3.1's controls row) |
 | `q`, Space, `.`, `,`, `[`, `]`, `r` | unchanged from `grid` during a Pulse: quit, pause, step, speed, restart | one keymap across `grid` and `terminal-nexus` |
@@ -1236,7 +1236,9 @@ building beside the last with no arrow key at all.
 | Mouse: right click | Esc — go back one level | the RTS convention for "cancel" |
 
 **Letters are spoken for before they are built**, so a new binding does not collide with a planned
-one: `d` opens the Debug Mode panel (gate 5G), and `m` is kept for a whole-map popup (Q59). The
+one: `d` opens Settings at its Experiments, and `m` is kept for a whole-map popup (Q59); inside
+their own popups `s` is Settings (the game menu) and `e` is Export (Settings) — outside them `e` is
+still Explore Map. The
 entries above the construct groups get **letters**, never digits — a digit would renumber every
 construct row beneath it, which is exactly what one digit sequence per menu (the first row of the
 table above) exists to prevent: `[e] Explore Map` and `[n] Nexus`. `n` is also the start-the-Pulse
@@ -1268,7 +1270,7 @@ a pending pick by keyboard or mouse, read what each power does, and review the o
 The popup is the game's first **overlay** — drawn over the Grid pane, holding the keyboard and the
 mouse until it closes. The start-the-Pulse question and the exit question became popups too, so with
 three real uses the shape was extracted at gate 5F's second round (the one popup shape of 9.2); the
-Debug Mode panel (below) will be the fourth. **The popup closes on the pick — GUIDANCE, canon 2.21**
+Settings popup (below) is the fourth. **The popup closes on the pick — GUIDANCE, canon 2.21**
 (owner, 2026-09-27, answering Q60): open, pick, and the player is back on the menu; the status line
 and the entry's "1 active" confirm it, and reopening the popup lists the pick as active. Esc, `n` or
 a click outside close it without a pick. The entry itself is `[n] Nexus`, with the number of picks
@@ -1296,24 +1298,32 @@ can ease toward their target over a few frames instead of jumping — the same "
 interpolate without changing simulation" latitude Section 1 already grants, on a screen that has
 only ever redrawn once per input event (`src/cli/spike.ts`'s `render()`) (gate 5H).
 
-**Debug Mode — GUIDANCE, gate 5G** (owner direction, 2026-09-26). A `[d] Debug` panel, opened over
-the Grid like any other overlay, lists live-editable development flags — a border glyph, a colour, a
-scroll-margin share, a speed tier, an easing time — so the owner
-can try an idea during a playtest instead of asking for a new command-line flag and a rebuild. Some
-flags apply at once, some on the next frame, a few need a restart, and the panel says which. **Every
-flag names the question it serves and is deleted once that question is answered**, a few graduating
-into real settings; it is an experiment harness, not a second settings screen. It replaces the
-one-flag-at-a-time `--scroll-margin`/`--edge-style` pattern of gates 5A-5C as the way this project
-shows the owner two answers side by side. **Built at gate 5G (canon 2.22):** the flags are Build
-Phase state, per session and never saved; the reducer reads those that change what a command does,
-the live loop reads the timing ones, and a restart row starts the Build Phase over keeping them. The
-entry point is `[d] debug` in the top bar, not the menu. A setting row shows its value between `<`
-and `>`, Left/Right change it, and each half of the value box is a click target. The first five
-flags: the smart cursor (Q55), the scroll margin in tiles (Q54), whether the screen opens on the menu
-or the map (Q61), and how long a menu row's pressed flash and refused flicker last. Gate 5H added
-sixteen movement fields — the speed tiers and their timings, the margin share, click scrolling, the
-slide, the refused flash and the Esc timeout — and the popup scrolls, keeping the highlighted row in
-view with a "^ n more / v n more" line above and below.
+**Settings and Experiments — GUIDANCE, gate 5G as Debug Mode, gate 5J as Settings** (owner
+direction, 2026-09-26 and 2026-09-28: "Let's solidify this as Settings"). The game menu's
+`[s] Settings` is one scrolling popup, the same shape as every other. First come **the player's own
+settings** — background (dark or light), colour depth, symbols, reduced motion — which apply at once
+and are saved through the same store as the title menu's Settings. Then, clearly apart at the bottom,
+**Experiments**: live-editable playtest flags — a border glyph, a colour, a scroll-margin share, a
+step size, an easing time — so the owner can try an idea during a playtest instead of asking for a
+new command-line flag and a rebuild. Some apply at once, a few only on restart, and each row says
+which. **Every Experiment names the question it serves and is normally deleted before its pull
+request is accepted**, a few staying longer or graduating into real settings; they are Build Phase
+state, per session, **never saved**, because their defaults change from build to build. The reducer
+reads those that change what a command does, the input path and the live loop read the timing ones,
+and a restart row starts the Build Phase over keeping every setting and experiment. `d` opens
+Settings straight at the Experiments. A row shows its value between `<` and `>`, Left/Right change it,
+and each half of the value box is a click target; the list keeps the highlighted row in view with a
+"^ n more / v n more" line above and below. **Export settings** (`[e]`) shows every setting and
+experiment as `name = value` text — the experiments that differ from this build's defaults first,
+each with the default it replaced, then the settings, then the rest, with the build's commit near the
+top — so the owner can paste what felt right into a pull request comment. The adapter, never the
+reducer, also copies it to the clipboard (OSC 52 in a terminal, the clipboard API on the browser page)
+and saves it to a file beside the settings. `--settings "<text>"` (the terminal game and the scripted
+playtest) and `#settings=` (the browser page) read it back, skipping an unknown name or a bad value
+one at a time, so an agent sees exactly what the owner saw. It replaced the one-flag-at-a-time
+`--scroll-margin`/`--edge-style` pattern of gates 5A-5C, and gate 5G's `[d] debug` popup, as the way
+this project shows the owner two answers side by side. The title menu's Settings screen has the
+player settings only.
 
 **Terminal caveats, verified rather than assumed** (Q37; measured by gate 5A on 2026-09-21,
 `evidence/gate-5a-report.md` Section 4.1 has the table and the ten terminals it could *not* test):
