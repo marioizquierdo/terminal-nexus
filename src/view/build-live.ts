@@ -3,9 +3,18 @@
 // number the caller passes in, so every animation here is a pure function of the state and the time
 // and a test can drive it without waiting:
 //
-//   - **the view slides** (engine.md 3.3's "camera moves eased over a few frames"): when the state's
-//     camera jumps, the drawn camera eases from wherever it was drawn toward it over Debug Mode's
-//     "View slide" milliseconds, whole tiles at a time, fast at first and settling at the end;
+//   - **the view slides** (engine.md 3.3's "camera moves eased over a few frames"): whenever the
+//     state's camera changes — a click, an arrow at the margin, a Shift jump, arming with the smart
+//     cursor, anything — the drawn camera eases from wherever it was drawn toward it over Debug
+//     Mode's "View slide" milliseconds, whole tiles at a time, fast at first and settling at the end.
+//     Only a resize snaps (`snap`);
+//   - **the cursor glides** (owner, 2026-09-28: "interpolations are easy and powerful"): whenever the
+//     state's cursor changes, the drawn cursor eases from the tile it was drawn on to the new one over
+//     Debug Mode's "Cursor glide" milliseconds, so a Shift jump or a far click reads as motion rather
+//     than a teleport. The glide is of the cursor's place **in the view** (its tile less the
+//     camera's), added to the drawn camera: when only the camera moves — the cursor dragging it at the
+//     margin — the cursor rides along with the slide, and a gliding cursor can never be drawn outside
+//     the view it is gliding across. The armed preview and the refused flash move with it;
 //   - **a menu row flashes** "pressed" or flickers "refused" (gate 5F), for Debug Mode's durations;
 //   - **the cursor flashes** where a placement was just tried and refused (gate 5H);
 //   - **a building goes up** (gate 5I): each planned placement plays its frames, light and sparks
@@ -14,23 +23,30 @@
 // `busyUntil` says whether anything is still moving, and until when: the live loop runs its frame
 // timer only while it is not `null`, and otherwise draws once per input, as the screen always has.
 //
+// Under reduced motion both snap: the view jumps and the cursor jumps, as they did before gate 5H.
+//
 // Presentation only (engine.md Section 1: "presentation may interpolate... without changing
-// simulation"): state, commands and a scripted playtest all use the state's own camera. The one
-// place the drawn camera reaches input is the mouse, so a click lands on the tile drawn under the
-// pointer while the view is still sliding.
+// simulation"): state, commands and a scripted playtest all use the state's own camera and cursor —
+// the state is already where things are going. The one place the drawn camera reaches input is the
+// mouse, so a click lands on the tile drawn under the pointer while the view is still sliding. The
+// drawn cursor never reaches input: a click names a tile, and a second click on the tile the cursor
+// is heading for places there even mid-glide.
 
 import type { Camera } from "../build/camera.ts"
+import type { Coord } from "../grid/types.ts"
 import type { BuildState } from "../build/state.ts"
 import { flashDuration } from "../build/debug.ts"
 import type { BuildFlash } from "./build.ts"
 import type { PlacementClock } from "./placement.ts"
 import { placementTiming } from "./placement.ts"
-import type { Tween } from "./tween.ts"
+import type { Point, Tween } from "./tween.ts"
 import { retarget, samePoint, still, tileAt, tweenActive, tweenEnd } from "./tween.ts"
 
 export type LiveFrame = Readonly<{
   /** The camera to draw through. */
   camera: Camera
+  /** The tile to draw the cursor on — the state's own once it has finished gliding. */
+  cursor: Coord
   flash?: BuildFlash
   refusedFlash?: boolean
   /** Planned placements still going up, and how long ago each was placed (gate 5I). */
@@ -44,8 +60,12 @@ export type LiveOptions = Readonly<{ reducedMotion?: boolean }>
 
 const cameraAtTime = (tween: Tween<Camera>, now: number): Camera => tileAt(tween, now)
 
+const offsetOf = (tile: Coord, camera: Camera): Point => ({ x: tile.x - camera.x, y: tile.y - camera.y })
+
 export class BuildAnimation {
   private ease: Tween<Camera> | null = null
+  /** The cursor's place in the view — its tile less the camera's — on its way somewhere. */
+  private glide: Tween<Point> | null = null
   private seenAck: Readonly<{ seq: number; at: number }> | null = null
   private seenRefusal: Readonly<{ seq: number; at: number }> | null = null
   /** When each planned ordinal was first drawn, and what it was then — a different structure or
@@ -59,20 +79,38 @@ export class BuildAnimation {
    * The camera drawn at `now`. A new target starts a slide from wherever the view is drawn at that
    * moment, so a second scroll in the middle of the first continues smoothly rather than snapping.
    */
-  cameraAt(state: BuildState, now: number): Camera {
+  cameraAt(state: BuildState, now: number, options: LiveOptions = {}): Camera {
     const target = state.camera
     if (this.ease === null) {
       this.ease = still(target, now)
       return target
     }
-    this.ease = retarget(this.ease, target, now, state.debug.easeMs, cameraAtTime, samePoint)
+    const duration = options.reducedMotion === true ? 0 : state.debug.easeMs
+    this.ease = retarget(this.ease, target, now, duration, cameraAtTime, samePoint)
     return tileAt(this.ease, now)
   }
 
-  /** Stop any slide and draw the state's own camera — after a resize, when a slide from a view of
-   *  another size would mean nothing. */
+  /**
+   * The tile the cursor is drawn on at `now`, through the drawn `camera`. A new cursor or camera
+   * starts a glide of the cursor's place in the view from wherever it is drawn at that moment, like
+   * the camera's own slide.
+   */
+  cursorAt(state: BuildState, now: number, camera: Camera, options: LiveOptions = {}): Coord {
+    const target = offsetOf(state.cursor, state.camera)
+    if (this.glide === null) this.glide = still(target, now)
+    else {
+      const duration = options.reducedMotion === true ? 0 : state.debug.cursorGlideMs
+      this.glide = retarget(this.glide, target, now, duration, tileAt, samePoint)
+    }
+    const offset = tileAt(this.glide, now)
+    return { x: camera.x + offset.x, y: camera.y + offset.y }
+  }
+
+  /** Stop any slide or glide and draw the state's own camera and cursor — after a resize, when a
+   *  slide from a view of another size would mean nothing. */
   snap(state: BuildState, now: number): void {
     this.ease = still(state.camera, now)
+    this.glide = still(offsetOf(state.cursor, state.camera), now)
   }
 
   /**
@@ -109,10 +147,12 @@ export class BuildAnimation {
 
   /** Everything time-dependent the frame at `now` shows. */
   frame(state: BuildState, now: number, options: LiveOptions = {}): LiveFrame {
-    const camera = this.cameraAt(state, now)
+    const camera = this.cameraAt(state, now, options)
+    const cursor = this.cursorAt(state, now, camera, options)
     const ends: number[] = []
-    const ease = this.ease
-    if (ease !== null && tweenActive(ease, now)) ends.push(tweenEnd(ease))
+    for (const tween of [this.ease, this.glide]) {
+      if (tween !== null && tweenActive(tween, now)) ends.push(tweenEnd(tween))
+    }
 
     let flash: BuildFlash | undefined
     const ack = state.ack
@@ -142,6 +182,7 @@ export class BuildAnimation {
 
     return {
       camera,
+      cursor,
       ...(flash === undefined ? {} : { flash }),
       ...(refusedFlash ? { refusedFlash } : {}),
       ...(placing.length === 0 ? {} : { placing }),

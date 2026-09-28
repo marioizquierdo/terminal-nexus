@@ -12,12 +12,13 @@
 // - `smartCursor`, `scrollMargin`, `startFocus`, `clickScroll`, `clickZone`, `armedClickScrolls` and
 //   `fastRecentres` change what a command does, so the reducer reads them from the state it is handed
 //   — never from a global — and a driver script replays them exactly;
-// - the speed tiers and key timings (`slowStep` through `slowAfterTurn`, gate 5H) decide how big a
-//   move the input path sends: the session's key-repeat tracker reads them (`src/build/motion.ts`),
-//   and the reducer only ever sees an ordinary `move-cursor` of the size they chose;
-// - `easeMs`, the flash durations, `refusedCursorMs` and `escTimeoutMs` are presentation and input
-//   timing: the reducer stores them and nothing else, and the live loop (`src/cli/spike.ts`, through
-//   `src/view/build-live.ts`) reads them;
+// - the step sizes and key timings (`tapStep` through `jumpRepeatMs`, gate 5H, reworked after the
+//   owner's 2026-09-28 playtest) decide how big a move the input path sends: the session's held-key
+//   ramp reads them (`src/build/motion.ts`), and the reducer only ever sees an ordinary
+//   `move-cursor` of the size they chose;
+// - `easeMs`, `cursorGlideMs`, the flash durations, `refusedCursorMs` and `escTimeoutMs` are
+//   presentation and input timing: the reducer stores them and nothing else, and the live loop
+//   (`src/cli/spike.ts`, through `src/view/build-live.ts`) reads them;
 // - the placement juice (`placeFramesMs`, `placeGlowMs`, `placeParticles`, `placeLight`, gate 5I) is
 //   presentation alone: the reducer stores it, the live loop times it, and the Build Phase view draws
 //   it (`src/view/placement.ts`). A plan is identical with every one of them on or off.
@@ -69,26 +70,27 @@ export type DebugFlags = Readonly<{
   /** How long the drawn view takes to slide to a new camera position, in milliseconds; 0 jumps. The
    *  live loop's alone — state and every command use the camera's target. */
   easeMs: number
+  /** How long the drawn cursor takes to glide from its old tile to its new one, in milliseconds; 0
+   *  jumps. Presentation alone, like `easeMs`: the state's cursor is already where it is going. */
+  cursorGlideMs: number
   /** Whether a fast move (Shift, Option, PageUp/Home) re-centres the view on the cursor along the
    *  axis it moved, rather than only dragging it to the margin (engine.md 3.3). */
   fastRecentres: boolean
-  /** Q54's four speed tiers, in tiles per step: a tap (and a held arrow just after a turn); each
-   *  repeat of a held arrow at first; each repeat once held for `rampMs`; and every fast move. */
-  slowStep: number
-  normalStep: number
+  /** The held-key ramp, in tiles per press: a tap; each press of a run (a held arrow's repeats, or
+   *  fast tapping); each press once the run has lasted `rampMs`. */
+  tapStep: number
+  holdStep: number
   fastStep: number
-  fasterStep: number
-  /** How long an arrow has to be held before its repeats go from the normal step to the fast one. */
+  /** How far the fast move (Shift, Option, PageUp/PageDown, Home/End) jumps — a jump, not a speed. */
+  jumpStep: number
+  /** How long a run moves at the hold step before it moves at the fast step, in milliseconds. */
   rampMs: number
-  /** Terminals send no key-up: two presses of one arrow at most this far apart are one held key. */
-  repeatGapMs: number
-  /** The longest pause a terminal leaves before it starts repeating a held key. A press of the same
-   *  arrow within it may be the first repeat, so a slow-after-a-turn hold survives it; a press of a
-   *  different arrow within it is a change of direction. */
-  repeatDelayMs: number
-  /** Whether a change of direction drops a held arrow to the slow step, for precise pointing, until
-   *  the arrow is let go or anything else is pressed. */
-  slowAfterTurn: boolean
+  /** Terminals send no key-up: a press of the same arrow at most this long after the one before is
+   *  part of a run — the terminal's first repeat of a held key, or a quick tap. */
+  holdWindowMs: number
+  /** A held fast move jumps again at most this often; the terminal's repeats in between are dropped.
+   *  0: every repeat jumps. */
+  jumpRepeatMs: number
   /** How long the cursor flashes when a placement is tried and refused, in milliseconds. */
   refusedCursorMs: number
   /** How long a lone Esc at the end of a read waits for the rest of a key sequence before it counts
@@ -221,34 +223,43 @@ export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
     field: "easeMs",
     label: "View slide",
     applies: "now",
-    question: "How long the view takes to slide to where it scrolled. Off: it jumps, as before.",
+    question: "How long the view takes to slide to where it scrolled, by mouse or keyboard. Off: it jumps, as before.",
     values: [0, 50, 100, 150, 200, 300, 500],
     cycles: false,
     format: millis,
   },
   {
-    field: "fastRecentres",
-    label: "Fast move centres",
+    field: "cursorGlideMs",
+    label: "Cursor glide",
     applies: "now",
-    question: "Shift+arrow (or Option, PageUp, Home) brings the view along so the cursor stays mid-screen, not at the margin.",
+    question: "How long the cursor takes to glide to its new tile, so a Shift jump or a far click reads as motion. Off: it jumps.",
+    values: [0, 50, 80, 100, 150, 200, 300],
+    cycles: false,
+    format: millis,
+  },
+  {
+    field: "fastRecentres",
+    label: "Shift centres",
+    applies: "now",
+    question: "Shift+arrow (or Option, PageUp, Home) brings the view along so the cursor lands mid-screen, not at the margin.",
     values: [true, false],
     cycles: true,
     format: onOff,
   },
   {
-    field: "slowStep",
-    label: "Slow step",
+    field: "tapStep",
+    label: "Tap step",
     applies: "now",
-    question: "How far a tap moves, and a held arrow just after a change of direction. Asked for: 1. (Q54)",
+    question: "How far a single press of an arrow moves. Asked for: 1.",
     values: [1, 2, 3],
     cycles: false,
     format: tiles,
   },
   {
-    field: "normalStep",
-    label: "Normal step",
+    field: "holdStep",
+    label: "Hold step",
     applies: "now",
-    question: "How far each repeat of a held arrow moves at first. Asked for: 2. (Q54)",
+    question: "How far each press moves once you hold the arrow, or tap it quickly. Asked for: 2.",
     values: [1, 2, 3, 4],
     cycles: false,
     format: tiles,
@@ -257,17 +268,8 @@ export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
     field: "fastStep",
     label: "Fast step",
     applies: "now",
-    question: "How far each repeat moves once the arrow has been held a while (Held to go fast). Asked for: 4. (Q54)",
+    question: "How far each press moves once you have held the arrow a moment (Held to go fast). Asked for: 4.",
     values: [2, 3, 4, 5, 6, 8],
-    cycles: false,
-    format: tiles,
-  },
-  {
-    field: "fasterStep",
-    label: "Shift step",
-    applies: "now",
-    question: "How far Shift+arrow moves, and Option+arrow, PageUp and Home. Asked for: 8; it was 5. (Q54)",
-    values: [3, 4, 5, 6, 8, 10, 12, 16],
     cycles: false,
     format: tiles,
   },
@@ -275,37 +277,37 @@ export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
     field: "rampMs",
     label: "Held to go fast",
     applies: "now",
-    question: "How long an arrow is held before it speeds up from the normal step to the fast one. (Q54)",
-    values: [0, 150, 300, 500, 800, 1200],
+    question: "How long a held arrow moves at the hold step before it speeds up to the fast step. Asked for: 300 ms.",
+    values: [0, 150, 200, 300, 400, 500, 800],
     cycles: false,
     format: duration,
   },
   {
-    field: "repeatGapMs",
-    label: "Repeat gap",
+    field: "holdWindowMs",
+    label: "Hold window",
     applies: "now",
-    question: "Presses of one arrow closer than this count as holding it. Too low: it never speeds up. Too high: quick taps do. (Q54)",
-    values: [50, 80, 120, 160, 200, 300],
+    question: "Arrow presses closer than this count as holding. Too low: quick taps stay slow. Too high: careful taps speed up.",
+    values: [150, 250, 350, 500, 700, 900],
     cycles: false,
     format: duration,
   },
   {
-    field: "repeatDelayMs",
-    label: "Repeat delay",
+    field: "jumpStep",
+    label: "Shift jump",
     applies: "now",
-    question: "The pause before your terminal repeats a held key. Another arrow within it is a change of direction. (Q54)",
-    values: [250, 400, 550, 700, 1000, 1500],
+    question: "How far Shift+arrow jumps the cursor, and Option+arrow, PageUp and Home. Asked for: 12.",
+    values: [4, 6, 8, 10, 12, 16, 20, 24],
     cycles: false,
-    format: duration,
+    format: tiles,
   },
   {
-    field: "slowAfterTurn",
-    label: "Slow after a turn",
+    field: "jumpRepeatMs",
+    label: "Jump repeat",
     applies: "now",
-    question: "Changing direction drops a held arrow to the slow step, for precise pointing, until you let go. (Q54)",
-    values: [true, false],
-    cycles: true,
-    format: onOff,
+    question: "Holding Shift+arrow jumps again at most this often, so each jump is seen to land. Off: every key repeat jumps.",
+    values: [0, 100, 150, 200, 300, 500],
+    cycles: false,
+    format: millis,
   },
   {
     field: "refusedCursorMs",
@@ -374,22 +376,23 @@ export const DEBUG_RESTART_QUESTION =
 /** The live loop's flash durations as gate 5F built them — the starting values of the two flags. */
 export const DEFAULT_FLASH_MS = { pressed: 90, refused: 140 } as const
 
-/** Gate 5H's movement numbers as built: the owner's own tiers (slow 1, normal 2, fast 4, faster 8),
- *  and this session's first guesses at the timings, for him to retune by feel. */
+/** The movement numbers: the owner's own (a tap 1, a held or quickly tapped arrow 2, then 4 after
+ *  300 ms, Shift a jump of 12 — his playtest of 2026-09-28), and first guesses at the rest, for him
+ *  to retune by feel. */
 export const DEFAULT_MOVEMENT = {
   clickScroll: "edges",
   clickZone: 33,
   armedClickScrolls: false,
   easeMs: 150,
+  cursorGlideMs: 100,
   fastRecentres: true,
-  slowStep: 1,
-  normalStep: 2,
+  tapStep: 1,
+  holdStep: 2,
   fastStep: 4,
-  fasterStep: 8,
+  jumpStep: 12,
   rampMs: 300,
-  repeatGapMs: 120,
-  repeatDelayMs: 700,
-  slowAfterTurn: true,
+  holdWindowMs: 500,
+  jumpRepeatMs: 150,
   refusedCursorMs: 250,
   escTimeoutMs: 50,
 } as const satisfies Partial<DebugFlags>

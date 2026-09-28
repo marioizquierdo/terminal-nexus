@@ -11,7 +11,7 @@ import type { BuildLayout } from "./layout.ts"
 import { overlaySpec, placeOverlay } from "./overlay.ts"
 import type { Camera, Viewport } from "./camera.ts"
 import { buildKeyboardCommand, cursorKeyOf } from "./keyboard.ts"
-import type { SpeedTier } from "./motion.ts"
+import type { MoveKind } from "./motion.ts"
 import { SpeedRamp } from "./motion.ts"
 import { buildMouseCommand, parseMouseEvent } from "./mouse.ts"
 import type { BuildContext, BuildState } from "./state.ts"
@@ -29,7 +29,7 @@ export type BuildSessionOptions = Readonly<{
 /**
  * What a live input path knows about a key that a driver script does not have to: when it arrived
  * (milliseconds on any steady clock — the live loop's own, a test's injected number), which
- * drives the held-key speed ramp; and the camera the screen is drawing right now, which differs from
+ * drives the held-key ramp and how often a held Shift+arrow jumps; and the camera the screen is drawing right now, which differs from
  * the state's while the view slides (gate 5H), so a click lands where the player saw it.
  */
 export type KeyTiming = Readonly<{ now?: number; camera?: Camera }>
@@ -38,7 +38,7 @@ export class BuildSession {
   private buildState: BuildState
   private readonly context: BuildContext
   private readonly onQuit: () => void
-  /** The held-key speed ramp: input-path state, beside the reducer and never in it. */
+  /** The held-key ramp: input-path state, beside the reducer and never in it. */
   private readonly ramp = new SpeedRamp()
 
   constructor(options: BuildSessionOptions) {
@@ -89,18 +89,29 @@ export class BuildSession {
             focus: state.focus,
             overlay: state.overlay,
             overlayPendingCount: nexusPowers(this.context, state).pending.length,
-            fastStep: state.debug.fasterStep,
+            jumpStep: state.debug.jumpStep,
           })
     const cursorKey = mouse === null && command?.kind === "move-cursor" ? cursorKeyOf(key) : null
-    if (cursorKey !== null && !cursorKey.fast) {
-      // A plain arrow on the Grid: how far is the speed ramp's call when the key's arrival time is
-      // known — a live terminal — and a tap's otherwise, so a driver script and every test that
-      // sends keys without a clock sees each arrow as its own press.
+    if (cursorKey !== null) {
+      // A cursor key on the Grid: how far is the ramp's call when the key's arrival time is known — a
+      // live terminal — and otherwise a tap's (or a jump's), so a driver script and every test that
+      // sends keys without a clock sees each key as its own press. A held jump's repeat that came too
+      // soon moves nothing, and nothing is sent for it.
       const tiles =
-        timing.now === undefined ? state.debug.slowStep : this.ramp.step(cursorKey, timing.now, state.debug)
-      command = { kind: "move-cursor", dx: cursorKey.dx * tiles, dy: cursorKey.dy * tiles }
-    } else if (cursorKey !== null && timing.now !== undefined) {
-      this.ramp.step(cursorKey, timing.now, state.debug)
+        timing.now !== undefined
+          ? this.ramp.step(cursorKey, timing.now, state.debug)
+          : cursorKey.fast
+            ? state.debug.jumpStep
+            : state.debug.tapStep
+      command =
+        tiles === 0
+          ? null
+          : {
+              kind: "move-cursor",
+              dx: cursorKey.dx * tiles,
+              dy: cursorKey.dy * tiles,
+              ...(cursorKey.fast ? { fast: true } : {}),
+            }
     } else if (command !== null) {
       // Anything else pressed: the next arrow starts from scratch (the owner's "doing anything else
       // returns to normal").
@@ -115,9 +126,10 @@ export class BuildSession {
     for (const key of keysFromChunk(rawChunk)) this.handleKey(key, layout, timing)
   }
 
-  /** The speed tier the last cursor key moved at, or `null` before any timed one. */
-  get speedTier(): SpeedTier | null {
-    return this.ramp.tier
+  /** The kind of move the last timed cursor key made — tap, hold, fast or jump — or `null` before
+   *  any. */
+  get moveKind(): MoveKind | null {
+    return this.ramp.kind
   }
 
   /** A new terminal size. Not a command: nobody pressed anything. */

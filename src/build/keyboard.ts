@@ -6,8 +6,9 @@
 //   - rxvt sends a shorter, unrelated form: `ESC [ a b c d`;
 //   - screen, the Linux console, vt100, vt220 and ansi define no shifted arrow at all.
 //
-// So both families are accepted, and the fast move (five tiles until gate 5H, Debug Mode's "Shift
-// step" since) also has a modifier-free fallback —
+// So both families are accepted, and the fast move (five tiles until gate 5H; since the owner's
+// 2026-09-28 playtest a jump of Debug Mode's "Shift jump", twelve tiles) also has a modifier-free
+// fallback —
 // PageUp/PageDown and Home/End — plus the Option/Meta forms a Mac sends. The screen names the fast
 // move once, as "shift+arrow fast move"; the others are the same move under other keys, left off the
 // key help on the owner's own call (2026-09-26: "leave pgup/home keys out, people will figure that
@@ -89,9 +90,9 @@ const FALLBACK_JUMPS: Readonly<Record<string, Readonly<{ dx: number; dy: number 
   [`${ESC}[8~`]: { dx: 1, dy: 0 },
 }
 
-/** How far the fast move goes when nothing says otherwise: the owner's "faster" tier (gate 5H). The
- *  live screen passes Debug Mode's "Shift step" instead. */
-export const DEFAULT_FAST_STEP = 8
+/** How far the fast move jumps when nothing says otherwise: the owner's twelve tiles (2026-09-28).
+ *  The live screen passes Debug Mode's "Shift jump" instead. */
+export const DEFAULT_JUMP_STEP = 12
 
 const TAB = "\t"
 const MENU_UP = new Set([`${ESC}[A`, `${ESC}OA`])
@@ -114,8 +115,8 @@ export type KeyboardContext = Readonly<{
   /** While the Nexus popup is open: how many powers are waiting to be picked, so a digit past them
    *  means nothing. */
   overlayPendingCount?: number
-  /** How many tiles the fast move goes — Debug Mode's "Shift step". `DEFAULT_FAST_STEP` if absent. */
-  fastStep?: number
+  /** How many tiles the fast move jumps — Debug Mode's "Shift jump". `DEFAULT_JUMP_STEP` if absent. */
+  jumpStep?: number
 }>
 
 function digitIndex(key: string): number | null {
@@ -169,9 +170,9 @@ function overlayCommand(key: string, overlay: Overlay, pendingCount: number): Bu
 export type CursorKey = Readonly<{ dx: number; dy: number; fast: boolean }>
 
 /**
- * Any of the Grid's cursor keys, classified — or `null`. The plain arrows are what a held key's speed
- * ramp applies to (`src/build/motion.ts`); every other form is the fast move, whose size is a Debug
- * Mode flag rather than anything timing decides.
+ * Any of the Grid's cursor keys, classified — or `null`. The plain arrows are what a held key's ramp
+ * applies to (`src/build/motion.ts`); every other form is the fast move, a jump whose size is a Debug
+ * Mode flag rather than anything timing decides (timing only decides how often a held one repeats).
  */
 export function cursorKeyOf(key: string): CursorKey | null {
   const plain = PLAIN_ARROWS[key]
@@ -195,12 +196,12 @@ export function cursorKeyOf(key: string): CursorKey | null {
 }
 
 /** Any of the Grid's cursor keys, as the move it is — one tile for a plain arrow (the input path may
- *  scale it for a held key), `fastStep` tiles for the fast move — or `null`. */
-function cursorMove(key: string, fastStep: number): BuildCommand | null {
+ *  scale it for a held key), `jumpStep` tiles for the fast move — or `null`. */
+function cursorMove(key: string, jumpStep: number): BuildCommand | null {
   const move = cursorKeyOf(key)
   if (move === null) return null
   if (!move.fast) return { kind: "move-cursor", dx: move.dx, dy: move.dy }
-  return { kind: "move-cursor", dx: move.dx * fastStep, dy: move.dy * fastStep, fast: true }
+  return { kind: "move-cursor", dx: move.dx * jumpStep, dy: move.dy * jumpStep, fast: true }
 }
 
 /**
@@ -246,7 +247,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   } else {
     if (PLACE_KEYS.has(key)) return context.armed ? { kind: "place" } : { kind: "inspect" }
     if (REMOVE_KEYS.has(key)) return { kind: "remove" }
-    const move = cursorMove(key, context.fastStep ?? DEFAULT_FAST_STEP)
+    const move = cursorMove(key, context.jumpStep ?? DEFAULT_JUMP_STEP)
     if (move !== null) return move
   }
 

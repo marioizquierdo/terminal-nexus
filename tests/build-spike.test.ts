@@ -11,7 +11,7 @@ import { SPIKE_ALLOTMENT, SPIKE_CATALOG, SPIKE_NEXUS_DRAFT, spikeGrid } from "..
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
 import { buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
-import { DEFAULT_FAST_STEP, buildKeyboardCommand } from "../src/build/keyboard.ts"
+import { DEFAULT_JUMP_STEP, buildKeyboardCommand } from "../src/build/keyboard.ts"
 import {
   MOUSE_LEFT,
   MOUSE_RIGHT,
@@ -220,19 +220,20 @@ test("a second Enter after a placement arms again rather than placing a second b
   assert.equal(build.state.focus, "grid")
 })
 
-test("keyboard: Shift+Arrow and its modifier-free fallback are both the fast move, the Shift step long", () => {
+test("keyboard: Shift+Arrow and its modifier-free fallback are both the fast move, a jump of the Shift jump", () => {
   // Measured, not assumed — scripts/probe-modified-keys.mjs found three live encodings for a
   // shifted arrow and none at all on several terminals, which is why all of these are bound. Five
-  // tiles until gate 5H; the owner's "faster" tier, 8, since — a Debug Mode flag (`fastStep` here).
+  // tiles until gate 5H, then 8; a jump of 12 since the owner's 2026-09-28 playtest — a Debug Mode
+  // flag (`jumpStep` here).
   const context = { itemCount: 3, armed: false }
-  const fast = DEFAULT_FAST_STEP
+  const fast = DEFAULT_JUMP_STEP
   assert.deepEqual(buildKeyboardCommand(RIGHT, context), { kind: "move-cursor", dx: 1, dy: 0 })
   assert.deepEqual(buildKeyboardCommand(SHIFT_RIGHT, context), { kind: "move-cursor", dx: fast, dy: 0, fast: true })
   assert.deepEqual(buildKeyboardCommand(RXVT_SHIFT_RIGHT, context), { kind: "move-cursor", dx: fast, dy: 0, fast: true })
   assert.deepEqual(buildKeyboardCommand(PAGE_DOWN, context), { kind: "move-cursor", dx: 0, dy: fast, fast: true })
-  assert.deepEqual(buildKeyboardCommand(SHIFT_RIGHT, { ...context, fastStep: 12 }), {
+  assert.deepEqual(buildKeyboardCommand(SHIFT_RIGHT, { ...context, jumpStep: 6 }), {
     kind: "move-cursor",
-    dx: 12,
+    dx: 6,
     dy: 0,
     fast: true,
   })
@@ -251,7 +252,7 @@ test("keyboard: Option+Arrow as macOS terminals send it is the fast move, never 
   // as Meta prefixes the arrow with ESC instead. Before `keysFromChunk` kept these whole, Option+Left
   // arrived as a bare Escape plus a stray "b" - which, with nothing armed, left the screen.
   const context = { itemCount: 3, armed: false }
-  const fast = DEFAULT_FAST_STEP
+  const fast = DEFAULT_JUMP_STEP
   assert.deepEqual(buildKeyboardCommand(`${ESC}b`, context), { kind: "move-cursor", dx: -fast, dy: 0, fast: true })
   assert.deepEqual(buildKeyboardCommand(`${ESC}f`, context), { kind: "move-cursor", dx: fast, dy: 0, fast: true })
   assert.deepEqual(buildKeyboardCommand(`${ESC}${ESC}[A`, context), { kind: "move-cursor", dx: 0, dy: -fast, fast: true })
@@ -262,7 +263,7 @@ test("keyboard: Option+Arrow as macOS terminals send it is the fast move, never 
   build.handleData(`${ESC}f`, layout)
   assert.equal(build.state.focus, "grid", "Option+Right was read as an Esc")
   assert.equal(build.state.overlay, null, "Option+Right was read as an Esc")
-  assert.equal(build.state.cursor.x, 18 + DEFAULT_FAST_STEP)
+  assert.equal(build.state.cursor.x, 18 + DEFAULT_JUMP_STEP)
 })
 
 test("keyboard: digits always address the list, and a digit past its end means nothing", () => {

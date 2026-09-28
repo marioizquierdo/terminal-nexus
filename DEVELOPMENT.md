@@ -168,13 +168,16 @@ the way at 8,5", "costs 40, 20 left" (affordability first) — quietly while the
 the tile, in red once a placement is tried. `[u]` undoes and Backspace (on the map) removes the one
 under the cursor, both refunding, which keeps a plan revisable until `p` starts the Pulse.
 
-**Moving has speed tiers** (gate 5H): a tap moves one tile; a held arrow moves two a step, then four
-once held for a moment; Shift+Arrow moves eight; and a change of direction drops a held arrow back to
-one a step, for pointing precisely, until it is let go. Terminals send no key-up, so "held" is read
-from how close together the key's repeats arrive (`src/build/motion.ts`); the reducer only ever sees
-a move of the size chosen. The view **slides** to where it scrolled over a few frames — the screen's
-first frame timer, running only while something moves (`src/view/build-live.ts`) — and a fast move
-re-centres the view on the cursor. **A click with a building armed never scrolls the view**, so the
+**Moving ramps up, and Shift jumps** (gate 5H, reworked after the owner's 2026-09-28 playtest): a
+single press moves one tile; the same arrow again soon after — the terminal's first repeat of a held
+key, or quick tapping — moves two a press at once, and four once that run has lasted 300 ms; any other
+key starts again at one. Shift+Arrow is not a speed but a **jump of twelve tiles**; held, it jumps
+again at most every 150 ms, so each jump is seen to land. Terminals send no key-up, so "held" is read
+from how close together the presses arrive (`src/build/motion.ts`); the reducer only ever sees a move
+of the size chosen. **Everything that moves is interpolated** (`src/view/tween.ts`): the view
+**slides** to wherever it scrolled, by any means, and the cursor **glides** to its new tile, over a
+few frames — the screen's frame timer runs only while something moves (`src/view/build-live.ts`),
+and reduced motion snaps both. A jump re-centres the view on the cursor. **A click with a building armed never scrolls the view**, so the
 confirming second click lands where the first did (Q58); **exploring, a click near an edge scrolls
 further the nearer the edge**. A placement tried and refused flashes its footprint. A lone Esc at the
 end of a read waits 50 ms for the rest of a key sequence before it counts as Esc — so anything sending
@@ -279,7 +282,8 @@ is no capture race, and no Esc glued to the next key by accident. Key names: `Up
 `S-` (Shift) and `M-` (Option) arrows, `Tab S-Tab Esc Enter Space Bksp Del PgUp PgDn Home End`, any
 single character, `Name*N` to repeat, `Name~MS` for a key arriving MS milliseconds after the one
 before (untimed keys are a second apart, so each is a press of its own; `Right Right~400 Right~30*12`
-is a held arrow's auto-repeat, which the speed ramp reads — the per-step summary prints the tier),
+is a held arrow's auto-repeat, which the held-key ramp reads — the per-step summary prints the kind
+of move: tap, hold, fast or jump),
 `click:X,Y` for a Grid tile and `click@COL,ROW` for a screen
 cell (`rclick`, `wheelup`, `wheeldown` likewise), `#` for a comment in a file. The full table is at
 the top of `src/playtest/keys.ts`. A script that leaves the screen (`q`, or Esc with nothing armed)

@@ -20,7 +20,7 @@ import { composeBuildFrame } from "../view/build.ts"
 import type { ReadonlyCellFrame } from "../view/frame.ts"
 import type { CapabilityMode } from "../view/roles.ts"
 import type { GlyphPack } from "../view/theme.ts"
-import type { SpeedTier } from "../build/motion.ts"
+import type { MoveKind } from "../build/motion.ts"
 import type { PlaytestStep } from "./keys.ts"
 
 export type BuildPlaytestOptions = Readonly<{
@@ -43,8 +43,9 @@ export type PlaytestFrame = Readonly<{
   bytes: string
   state: BuildState
   frame: ReadonlyCellFrame
-  /** The speed tier the last arrow moved at (gate 5H), or `null` before any. */
-  speedTier: SpeedTier | null
+  /** The kind of move the last timed cursor key made — tap, hold, fast or jump — or `null` before
+   *  any. */
+  moveKind: MoveKind | null
 }>
 
 export type BuildPlaytest = Readonly<{
@@ -84,17 +85,17 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   const compose = (): ReadonlyCellFrame =>
     composeBuildFrame({ context, state: build.state, layout, glyphPack }, capability)
 
-  const frames: PlaytestFrame[] = [{ index: 0, label: "start", bytes: "", state: build.state, frame: compose(), speedTier: null }]
+  const frames: PlaytestFrame[] = [{ index: 0, label: "start", bytes: "", state: build.state, frame: compose(), moveKind: null }]
   let ended: BuildPlaytest["ended"] = null
 
   // A clock of the script's own: each step arrives `afterMs` after the one before, or a second after it
   // when the script does not say — long enough that every untimed key is a press of its own, so the
-  // held-key speed ramp (gate 5H) only ever runs where a script asks for it (`Right~30*12`).
+  // held-key ramp (gate 5H) only ever runs where a script asks for it (`Right~30*12`).
   let clock = 0
   for (const [position, step] of options.steps.entries()) {
     clock += step.afterMs ?? UNTIMED_GAP_MS
     const bytes = deliver(build, layout, step, clock)
-    frames.push({ index: position + 1, label: step.label, bytes, state: build.state, frame: compose(), speedTier: build.speedTier })
+    frames.push({ index: position + 1, label: step.label, bytes, state: build.state, frame: compose(), moveKind: build.moveKind })
     if (leftBy !== null) {
       ended = { by: leftBy, atStep: position + 1, skipped: options.steps.length - position - 1 }
       break

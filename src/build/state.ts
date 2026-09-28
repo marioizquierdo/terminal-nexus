@@ -150,8 +150,8 @@ export function remaining(context: BuildContext, state: BuildState): number {
 }
 
 /** The mouse wheel's five-tile step. GUIDANCE (engine.md 9.7's bindings table), not RULE. Until gate
- *  5H Shift+Arrow and its modifier-free fallbacks moved this far too; since then they move Debug
- *  Mode's "Shift step" (8 to start, the owner's "faster" tier), and the wheel alone keeps five. */
+ *  5H Shift+Arrow and its modifier-free fallbacks moved this far too; since then they jump Debug
+ *  Mode's "Shift jump" (12 since the owner's 2026-09-28 playtest), and the wheel alone keeps five. */
 export const JUMP_TILES = 5
 
 /** The scroll margin in force, in tiles along each axis: Debug Mode's percentage of the view (gate 5H),

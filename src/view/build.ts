@@ -66,6 +66,13 @@ export type BuildCompositionInput = Readonly<{
    * every test, every scripted playtest.
    */
   camera?: Camera
+  /**
+   * The tile the cursor is drawn on, while the live loop glides it toward the state's own cursor
+   * (after the owner's 2026-09-28 playtest). Presentation only: the armed preview and the refused
+   * flash are drawn shifted along with it, but what they say — legal or not, and why — is about the
+   * state's cursor, where Enter would act. Absent, the state's cursor is drawn.
+   */
+  cursor?: Coord
   /** The cursor flashes where a placement was just tried and refused, while the live loop shows it
    *  (gate 5H; Debug Mode's "Refused cursor"). Presentation only. */
   refusedFlash?: boolean
@@ -333,9 +340,10 @@ function drawPreview(cells: BandCell[], input: BuildCompositionInput, preview: A
   if (preview === null) return
   const legal = preview.refusal === null
   const range = visibleRange(state.camera, state.viewport)
+  const shift = glideShift(input)
 
   for (const offset of preview.footprint) {
-    const tile = { x: preview.anchor.x + offset.x, y: preview.anchor.y + offset.y }
+    const tile = { x: preview.anchor.x + offset.x + shift.x, y: preview.anchor.y + offset.y + shift.y }
     if (tile.x < range.firstX || tile.x > range.lastX) continue
     if (tile.y < range.firstY || tile.y > range.lastY) continue
     const cell = cellForTile(layout, state.camera, tile)
@@ -344,6 +352,14 @@ function drawPreview(cells: BandCell[], input: BuildCompositionInput, preview: A
       : ILLEGAL_PREVIEW_GLYPH
     put(cells, BANDS.highlights, cell.x, cell.y, glyph, legal ? "chrome.hotkey" : "chrome.muted")
   }
+}
+
+/** How far the drawn cursor still is from the state's own, mid-glide: what the preview and the
+ *  refused flash are shifted by so they travel with it. */
+function glideShift(input: BuildCompositionInput): Coord {
+  const drawn = input.cursor
+  if (drawn === undefined) return { x: 0, y: 0 }
+  return { x: drawn.x - input.state.cursor.x, y: drawn.y - input.state.cursor.y }
 }
 
 /** Whether a structure — standing or still only planned — covers this tile. */
@@ -373,10 +389,12 @@ function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
   // screen never shows two "you are here"s at once (owner, 2026-09-27).
   if (state.focus !== "grid" || state.overlay !== null || state.committed) return
   const range = visibleRange(state.camera, state.viewport)
-  if (state.cursor.x < range.firstX || state.cursor.x > range.lastX) return
-  if (state.cursor.y < range.firstY || state.cursor.y > range.lastY) return
-  const cell = cellForTile(layout, state.camera, state.cursor)
-  const onStructure = structureAt(context, state.planned, state.cursor)
+  // Where the cursor is drawn: mid-glide, a tile on its way (and what stands there decides its style).
+  const cursor = input.cursor ?? state.cursor
+  if (cursor.x < range.firstX || cursor.x > range.lastX) return
+  if (cursor.y < range.firstY || cursor.y > range.lastY) return
+  const cell = cellForTile(layout, state.camera, cursor)
+  const onStructure = structureAt(context, state.planned, cursor)
   // `chrome.title` rather than the ground's own role: bold survives monochrome but changes nothing
   // about which colour a terminal picks for it, so a coloured screen still needs an explicit,
   // reliably bright role to get the same lift monochrome gets from the attribute alone. The same
@@ -493,10 +511,14 @@ function drawRefusedFlash(cells: BandCell[], input: BuildCompositionInput, previ
   const { state, layout } = input
   if (input.refusedFlash !== true || state.focus !== "grid" || state.overlay !== null) return
   const range = visibleRange(state.camera, state.viewport)
+  const shift = glideShift(input)
   const tiles =
     preview === null
-      ? [state.cursor]
-      : preview.footprint.map((offset) => ({ x: preview.anchor.x + offset.x, y: preview.anchor.y + offset.y }))
+      ? [input.cursor ?? state.cursor]
+      : preview.footprint.map((offset) => ({
+          x: preview.anchor.x + offset.x + shift.x,
+          y: preview.anchor.y + offset.y + shift.y,
+        }))
   const danger = statusStyle("danger")
   const style = { inverse: true, bold: true, dim: false, fgRole: danger.role }
   for (const tile of tiles) {

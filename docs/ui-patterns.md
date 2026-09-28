@@ -127,15 +127,22 @@ why.
   glyph pack, without colour. A corner is solid where a solid side runs into it.
 - **A map shorter than the panel** closes directly under its own last row; the panel keeps its height.
 
-## 7a. Moving around the map (gate 5H)
+## 7a. Moving around the map (gate 5H, reworked 2026-09-28)
 
 - **A tap is one tile, always.** Precise placement is the common case; speed comes from holding.
-- **Holding speeds up, turning slows down**: a held arrow goes normal (2) then fast (4); Shift is
-  faster (8) at once; a change of direction drops to slow (1) until the key is let go. Terminals send
-  no key-up, so "held" is read from the gaps between repeats — in the input path, never the reducer.
-- **The view slides; it never jumps**: a camera change is eased over a few frames, drawn through the
-  camera it has reached. Hit-testing uses the drawn camera, so a click lands on what the player saw.
-  Nothing animates unless something moved — an idle screen draws once per input.
+- **Holding (or tapping quickly) speeds up at once, and a different key starts over**: the same arrow
+  again within the hold window moves 2 a press straight away, then 4 once the run is 300 ms old;
+  another arrow, or anything else, is a tap again. There is no slow tier. Terminals send no key-up,
+  so "held" is read from the gaps between presses — in the input path, never the reducer.
+- **Shift is a jump, not a speed**: 12 tiles a press, and a held one jumps again no faster than the
+  eye can follow it land (every 150 ms). Option+Arrow, PageUp/PageDown and Home/End are the same jump.
+- **Everything that moves is interpolated; nothing teleports**: every camera change slides and every
+  cursor move glides, over a few frames, from wherever it is drawn at that moment — a second move
+  mid-way continues smoothly. The state already holds the destination; a tween (`src/view/tween.ts`)
+  is how the screen gets there. The cursor glides across the *view* (its tile less the camera's), so
+  it rides along when only the map scrolls and is never drawn outside the view. Hit-testing uses the
+  drawn camera, so a click lands on what the player saw. Reduced motion snaps everything. Nothing
+  animates unless something moved — an idle screen draws once per input.
 - **Pointing to confirm never moves the view**: with a building armed, a click moves the cursor and
   the preview only (Q58). **Exploring, a click near an edge brings that part of the map in** —
   further the nearer the edge — and a fast move re-centres the view on the cursor.

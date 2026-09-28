@@ -111,7 +111,7 @@ writeFileSync(textPath, transcript, "utf8")
 
 for (const frame of run.frames) {
   const { cursor } = frame.state
-  const where = `cursor ${`${cursor.x},${cursor.y}`.padEnd(5)}${frame.speedTier === null ? "" : ` ${frame.speedTier}`}`.padEnd(20)
+  const where = `cursor ${`${cursor.x},${cursor.y}`.padEnd(5)}${frame.moveKind === null ? "" : ` ${frame.moveKind}`}`.padEnd(20)
   const summary = `step ${String(frame.index).padStart(2)}  ${frame.label.padEnd(12)} focus ${frame.state.focus.padEnd(4)}  ${where}${statusOf(frame)}`
   if (values.print === "all") process.stdout.write(`${heading(frame)}\n${frameToText(frame.frame)}\n\n`)
   else process.stdout.write(`${summary}\n`)

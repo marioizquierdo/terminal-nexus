@@ -115,8 +115,9 @@ function scriptedGif(name, { keys, expect, cols = 80, rows = 24, capability = "t
 }
 
 /**
- * The view sliding (gate 5H), frame by frame as the live screen draws it: `before` sets the scene,
- * `move` is one more key, and the GIF is every frame `BuildAnimation` gives between the two cameras
+ * The view sliding and the cursor gliding (gate 5H, and the owner's 2026-09-28 playtest), frame by
+ * frame as the live screen draws them: `before` sets the scene, `move` is one more key, and the GIF
+ * is every frame `BuildAnimation` gives between the two cameras and cursors
  * at the live loop's own frame interval — the same function, fed a clock that steps instead of waits.
  */
 function slideGif(name, { before, move, cols = 80, rows = 24, capability = "truecolor" }) {
@@ -129,7 +130,10 @@ function slideGif(name, { before, move, cols = 80, rows = 24, capability = "true
   const shots = [{ frame: from.frame, caption: "before", delayMs: 900 }]
   for (let now = 1; ; now += FRAME_MS) {
     const live = animation.frame(to.state, now)
-    const frame = composeBuildFrame({ context: run.context, state: to.state, layout: run.layout, camera: live.camera }, capability)
+    const frame = composeBuildFrame(
+      { context: run.context, state: to.state, layout: run.layout, camera: live.camera, cursor: live.cursor },
+      capability,
+    )
     const done = live.busyUntil === null
     shots.push({ frame, caption: `${move}: ${now - 1} ms`, delayMs: done ? 2500 : 250 })
     if (done) break
@@ -163,6 +167,7 @@ function placementGif(
         state,
         layout: run.layout,
         camera: live.camera,
+        cursor: live.cursor,
         reducedMotion,
         ...(live.placing === undefined ? {} : { placing: live.placing }),
         ...(live.flash === undefined ? {} : { flash: live.flash }),
@@ -521,11 +526,11 @@ scripted(
 )
 
 scriptedGif("build-held-arrow", {
-  // A tap, the terminal's repeat delay, then auto-repeats 30 ms apart: one tile, one tile, then two a
-  // step, then four once held for 300 ms. Then Left, straight after: a change of direction, one tile
-  // a step for pointing precisely, even held. Shift+Down: eight at once.
-  keys: "e Right Right~400 Right~30*14 Left~30 Left~400 Left~30*3 S-Down",
-  expect: "cursor 51,21",
+  // A tap, the terminal's repeat delay, then auto-repeats 30 ms apart: one tile, then two a press from
+  // the first repeat, then four once the run is 300 ms old. Then Left, straight after: a different
+  // arrow starts again at one, then two. Shift+Down: a jump of twelve.
+  keys: "e Right Right~400 Right~30*14 Left~30 Left~30*3 S-Down",
+  expect: "cursor 52,25",
   delayMs: 450,
 })
 
