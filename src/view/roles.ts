@@ -35,7 +35,8 @@ export const STYLE_ROLES = [
   // The rainbow (gate 5I, feedback F9: "colour interpolation (a rainbow, lighting on the characters)").
   // Six hues the theme owns like any other role, so a rainbow is a walk through roles rather than a
   // list of colours in a view module — and at 16 colours each one is a real ANSI hue, so the walk
-  // still reads as a rainbow there. Used only by placement light (`src/view/placement.ts`).
+  // still reads as a rainbow there. Used by the shading and particle recipes' rainbow palettes
+  // (`src/view/effects/shading.ts`, `particles.ts`) — a placed building's light and sparks today.
   "fx.hue.red",
   "fx.hue.yellow",
   "fx.hue.green",

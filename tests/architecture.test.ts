@@ -150,7 +150,7 @@ test("the Build Phase's animation and key timing take the time as a number, and 
   // these as a number — which is what lets a test drive the ease, the flashes, the held-key ramp and the
   // Esc timeout without waiting.
   const forbidden = [/\bDate\s*\.\s*now\b/, /\bnew\s+Date\b/, /\bperformance\s*\.\s*now\b/, /\bset(Timeout|Interval)\b/]
-  for (const file of [join(SRC, "view", "build-live.ts"), join(SRC, "view", "placement.ts"), join(SRC, "view", "key-reader.ts"), join(SRC, "build", "motion.ts")]) {
+  for (const file of [join(SRC, "view", "build-live.ts"), join(SRC, "view", "placement.ts"), join(SRC, "view", "animation.ts"), join(SRC, "view", "tween.ts"), join(SRC, "view", "key-reader.ts"), join(SRC, "build", "motion.ts")]) {
     const source = readFileSync(file, "utf8")
     for (const pattern of forbidden) {
       assert.ok(!pattern.test(source), `src/${relative(SRC, file)} mentions ${String(pattern)}; the live loop owns the clock`)

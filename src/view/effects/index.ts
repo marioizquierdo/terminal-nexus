@@ -1,6 +1,8 @@
 export * from "./types.ts"
 export * from "./random.ts"
 export * from "./recipes.ts"
+export * from "./particles.ts"
+export * from "./shading.ts"
 export * from "./derive.ts"
 export * from "./composite.ts"
 

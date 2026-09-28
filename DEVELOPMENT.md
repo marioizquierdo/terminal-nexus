@@ -193,6 +193,15 @@ Lighting — including a rainbow — Particles, Glow time); reduced motion shows
 once. Scripted playtests draw buildings finished; `scripts/capture-spike-screenshots.mjs`'s
 `placementGif` and `placementSheet` step the animation with a fake clock.
 
+It is built from **the presentation toolkit's four families**, each a pure function of absolute
+presentation time and each usable by anything on the Grid: **Animations** (`src/view/animation.ts` —
+frames plus a little metadata, played on a per-entity track of timestamped requests: `play` with a
+replace/queue/ignore policy, `cancel`, `accelerate`, `finish`, and follow-ups scheduled as data when
+an animation completes), **Particles** (`src/view/effects/particles.ts`, `fx.sparks.burst`, and most of
+the Pulse vocabulary), **Shading** (`src/view/effects/shading.ts`, `fx.light.flash`, glyphless tints
+and lights) and **Tweens** (`src/view/tween.ts`). A placement is one `play` of its frames with the
+light and the sparks as its follow-ups; `tests/animation.test.ts` holds the track to its contract.
+
 Shift+Arrow is the fast move, and so are PageUp/PageDown and Home/End, because several terminals
 deliver no shifted arrows at all — `node scripts/probe-modified-keys.mjs` prints the survey, and
 `evidence/gate-5a-report.md` has the table. So does Option+Arrow as macOS terminals send it (`ESC b`,

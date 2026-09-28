@@ -1,12 +1,17 @@
 // The effect contract — ascii-effects.md Section 1, transcribed rather than reinterpreted.
 //
+// Two of the presentation toolkit's four families speak through it (the others are Animations,
+// `../animation.ts`, and Tweens, `../tween.ts`): **Particles**, glyph-bearing cells thrown around
+// something, and **Shading**, glyphless cells that change the colour or attributes of what is already
+// drawn. A cell with `glyph: ""` is shading; anything else is a particle.
+//
 // An effect is a **pure function from absolute presentation time to sparse cells**. Five rules, all
 // load-bearing: absolute time in and cells out with no accumulated state; effects cannot touch
 // state; cosmetic randomness only; tile coordinates, never columns; and an effect never carries a
 // required cue alone.
 
 import type { Coord } from "../../grid/types.ts"
-import type { CapabilityMode, StyleRole } from "../roles.ts"
+import type { CapabilityMode, RoleTint, StyleRole } from "../roles.ts"
 
 /** Effects may paint here and nowhere else — ascii-effects.md 1.1. */
 export type EffectBand = "ground-items" | "projectiles" | "effects" | "highlights"
@@ -33,6 +38,12 @@ export type PositionedCell = Readonly<{
    * a general licence for glyph-bearing recipes to fade out.
    */
   fade?: number
+  /**
+   * `role` of whatever is beneath pulled part of the way toward another role — Shading's light and
+   * rainbow (`shading.ts`), threaded through to `CellStyle.tint`. Only on a glyphless cell: shading
+   * recolours characters already drawn and never brings one of its own.
+   */
+  tint?: RoleTint
 }>
 
 export type EffectContext = Readonly<{

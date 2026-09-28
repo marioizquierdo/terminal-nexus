@@ -149,7 +149,12 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     if (leaving) return
     const size = terminalSize()
     const now = clock()
-    const live = gated ? null : animation.frame(build.state, now, { reducedMotion: options.settings.reducedMotion })
+    const live = gated
+      ? null
+      : animation.frame(build.state, now, {
+          reducedMotion: options.settings.reducedMotion,
+          footprintOf: (contentId) => context.registry.get(contentId).footprint,
+        })
     const frame =
       gated || live === null
         ? gateFrame(size.columns, size.rows, SPIKE_MINIMUM)

@@ -43,8 +43,12 @@ import { chromeGlyph, entityGlyph, playerRole, terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 import { statusStyle } from "./status.ts"
 import { EFFECT_RECIPES } from "./effects/recipes.ts"
+import type { EffectCellSource } from "./effects/composite.ts"
+import { EFFECT_BAND_NUMBERS, effectCellStyle, mergeEffectCells } from "./effects/composite.ts"
+import type { TrackSchedule } from "./animation.ts"
+import { trackEffectsAt } from "./animation.ts"
 import type { PlacementClock } from "./placement.ts"
-import { placementCell, placementSparks } from "./placement.ts"
+import { placementEffectContext, placementLook, placementSchedule } from "./placement.ts"
 import type { StatusMessage } from "../status.ts"
 import { status } from "../status.ts"
 
@@ -210,8 +214,28 @@ function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack: Glyph
   }
 }
 
+/** A planned placement still animating: its track on its own clock, and how far along it is. */
+type Animating = Readonly<{ placement: PlannedPlacement; schedule: TrackSchedule; elapsedMs: number }>
+
+/** Every clock the live loop handed in whose ordinal is still planned, scheduled once per frame and
+ *  read by both the structures and the effects. A clock for an ordinal no longer planned (undone,
+ *  removed) draws nothing: the plan decides what stands, the clock only how. */
+function animatingPlacements(input: BuildCompositionInput): Map<number, Animating> {
+  const { context, state } = input
+  const reducedMotion = input.reducedMotion === true
+  const animating = new Map<number, Animating>()
+  for (const clock of input.placing ?? []) {
+    const placement = state.planned.find((planned) => planned.ordinal === clock.ordinal)
+    if (placement === undefined) continue
+    const footprint = context.registry.get(placement.contentId).footprint
+    const schedule = placementSchedule(placement, footprint, state.debug, reducedMotion)
+    animating.set(clock.ordinal, { placement, schedule, elapsedMs: clock.elapsedMs })
+  }
+  return animating
+}
+
 /** Everything that is actually on the Grid, drawn through the camera and clipped to the viewport. */
-function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
+function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, animating: ReadonlyMap<number, Animating>): void {
   const { context, state, layout } = input
   const range = visibleRange(state.camera, state.viewport)
 
@@ -236,10 +260,7 @@ function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPa
     }
   }
 
-  const clocks = new Map((input.placing ?? []).map((clock) => [clock.ordinal, clock.elapsedMs]))
-  const reducedMotion = input.reducedMotion === true
-
-  const drawStructure = (contentId: string, anchor: Coord, elapsedMs: number | undefined): void => {
+  const drawStructure = (contentId: string, anchor: Coord, animation: Animating | undefined): void => {
     const definition = context.registry.get(contentId)
     for (const offset of definition.footprint) {
       const tile = { x: anchor.x + offset.x, y: anchor.y + offset.y }
@@ -248,11 +269,12 @@ function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPa
       const cell = cellForTile(layout, state.camera, tile)
       // Drawn at full strength, planned or standing (owner, 2026-09-27: "it will look better if
       // they are fully built"). A plan stays revisable — undo, remove — until the Pulse starts. While
-      // a placement is still going up (gate 5I) it is drawn as its frame and light at that instant.
+      // a placement is still going up (gate 5I) it is drawn as its track's frame at that instant; the
+      // light on it is shading, drawn with the other effects (`drawEffects`).
       const look =
-        elapsedMs === undefined
+        animation === undefined
           ? { glyph: entityGlyph(contentId, "A", { x: offset.x, y: offset.y }), bold: true }
-          : placementCell(contentId, definition.footprint, offset, elapsedMs, state.debug, reducedMotion)
+          : placementLook(animation.schedule, contentId, offset, animation.elapsedMs)
       if (look.glyph !== null) {
         cells.push({
           band: BANDS.structures,
@@ -263,7 +285,6 @@ function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPa
             style: {
               fgRole: playerRole("A"),
               ...(look.bold ? { bold: true } : {}),
-              ...("tint" in look && look.tint !== undefined && look.tint.amount > 0 ? { tint: look.tint } : {}),
             },
           },
         })
@@ -275,54 +296,51 @@ function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPa
   }
 
   for (const structure of context.standing) drawStructure(structure.contentId, structure.anchor, undefined)
-  for (const placement of state.planned) drawStructure(placement.contentId, placement.anchor, clocks.get(placement.ordinal))
+  for (const placement of state.planned) drawStructure(placement.contentId, placement.anchor, animating.get(placement.ordinal))
 }
 
 /**
- * The sparks around every placement still in its glow (gate 5I), in the `effects` band. The corruption
- * law is enforced here as the Pulse compositor enforces it: a spark that would land on any building's
- * tile — standing, planned, or still going up — is dropped, so an effect never replaces the glyph that
- * says a building is there. Clipped to the view like everything else on the Grid.
+ * The effects of every placement still animating (gate 5I) — its track's follow-ups: the light
+ * (shading, `highlights`) and the sparks (particles, `effects`). The corruption law is enforced here as
+ * the Pulse compositor enforces it, through the same translation (`effectCellStyle`): a glyphless cell
+ * only restyles whatever is beneath it, and a particle that would land on any building's tile —
+ * standing, planned, or still going up — is dropped, so an effect never replaces the glyph that says a
+ * building is there. Two effects on one tile merge the way the Pulse's do. Clipped to the view like
+ * everything else on the Grid.
  */
-function drawPlacementSparks(cells: BandCell[], input: BuildCompositionInput, capability: CapabilityMode): void {
+function drawEffects(
+  cells: BandCell[],
+  input: BuildCompositionInput,
+  animating: ReadonlyMap<number, Animating>,
+  capability: CapabilityMode,
+): void {
   const { context, state, layout } = input
-  if (input.placing === undefined || input.placing.length === 0) return
+  if (animating.size === 0) return
   const range = visibleRange(state.camera, state.viewport)
   const reducedMotion = input.reducedMotion === true
-  for (const clock of input.placing) {
-    const placement = state.planned.find((planned) => planned.ordinal === clock.ordinal)
-    if (placement === undefined) continue
-    const instance = placementSparks(placement, context.registry.get(placement.contentId).footprint, state.debug, reducedMotion)
-    if (instance === null) continue
-    const recipe = EFFECT_RECIPES[instance.recipe]
-    if (recipe === undefined) continue
-    const painted = recipe(instance, {
-      timeMs: clock.elapsedMs,
-      cosmeticSeed: 0,
-      tileWidth: layout.tileWidth,
-      reducedMotion,
-      capability,
-    })
-    for (const spark of painted) {
-      const { tile } = spark
-      if (tile.x < range.firstX || tile.x > range.lastX || tile.y < range.firstY || tile.y > range.lastY) continue
-      if (tile.x >= context.grid.width || tile.y >= context.grid.height) continue
-      if (structureAt(context, state.planned, tile)) continue
-      const cell = cellForTile(layout, state.camera, tile)
-      cells.push({
-        band: BANDS.effects,
-        x: cell.x,
-        y: cell.y,
-        cell: {
-          glyph: spark.glyph,
-          style: {
-            ...(spark.role === undefined ? {} : { fgRole: spark.role }),
-            ...(spark.bold === true ? { bold: true } : {}),
-            ...(spark.dim === true ? { dim: true } : {}),
-          },
-        },
-      })
+  const sources: EffectCellSource[] = []
+  for (const { schedule, elapsedMs } of animating.values()) {
+    const effectContext = placementEffectContext(elapsedMs, reducedMotion, capability, layout.tileWidth)
+    for (const instance of trackEffectsAt(schedule, elapsedMs)) {
+      const recipe = EFFECT_RECIPES[instance.recipe]
+      if (recipe === undefined) continue
+      for (const cell of recipe(instance, effectContext)) {
+        const { tile } = cell
+        if (tile.x < range.firstX || tile.x > range.lastX || tile.y < range.firstY || tile.y > range.lastY) continue
+        if (tile.x >= context.grid.width || tile.y >= context.grid.height) continue
+        sources.push({ band: instance.band, cell })
+      }
     }
+  }
+  for (const { band, cell } of mergeEffectCells(sources)) {
+    const at = cellForTile(layout, state.camera, cell.tile)
+    const style = effectCellStyle(cell)
+    if (cell.glyph === "") {
+      cells.push({ band: EFFECT_BAND_NUMBERS[band], x: at.x, y: at.y, style })
+      continue
+    }
+    if (structureAt(context, state.planned, cell.tile)) continue
+    cells.push({ band: EFFECT_BAND_NUMBERS[band], x: at.x, y: at.y, cell: { glyph: cell.glyph, style } })
   }
 }
 
@@ -1041,8 +1059,9 @@ export function composeBuildFrame(
   // panel alike — the reducer's `place()` acts on the very same derivation.
   const preview = armedPreview(input.context, input.state)
 
-  drawGrid(cells, input, pack)
-  drawPlacementSparks(cells, input, capability)
+  const animating = animatingPlacements(input)
+  drawGrid(cells, input, pack, animating)
+  drawEffects(cells, input, animating, capability)
   drawPreview(cells, input, preview)
   drawCursor(cells, input)
   drawRefusedFlash(cells, input, preview)

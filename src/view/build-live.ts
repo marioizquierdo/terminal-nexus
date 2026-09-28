@@ -37,8 +37,10 @@ import type { Coord } from "../grid/types.ts"
 import type { BuildState } from "../build/state.ts"
 import { flashDuration } from "../build/debug.ts"
 import type { BuildFlash } from "./build.ts"
+import type { Footprint } from "../grid/types.ts"
 import type { PlacementClock } from "./placement.ts"
-import { placementTiming } from "./placement.ts"
+import { placementRequest } from "./placement.ts"
+import { scheduleTrack, trackBusyAt } from "./animation.ts"
 import type { Point, Tween } from "./tween.ts"
 import { retarget, samePoint, still, tileAt, tweenActive, tweenEnd } from "./tween.ts"
 
@@ -56,7 +58,15 @@ export type LiveFrame = Readonly<{
 }>
 
 /** What the live screen knows that the reducer does not: the player's reduced-motion setting. */
-export type LiveOptions = Readonly<{ reducedMotion?: boolean }>
+export type LiveOptions = Readonly<{
+  reducedMotion?: boolean
+  /** A structure's footprint, for the placement tracks. Only their shape depends on it — when each
+   *  one settles, all this loop reads, depends on the Debug Mode timings alone — so without it (a
+   *  test) every structure is scheduled as one tile. */
+  footprintOf?: (contentId: string) => Footprint
+}>
+
+const ONE_TILE: Footprint = [{ x: 0, y: 0 }]
 
 const cameraAtTime = (tween: Tween<Camera>, now: number): Camera => tileAt(tween, now)
 
@@ -68,10 +78,15 @@ export class BuildAnimation {
   private glide: Tween<Point> | null = null
   private seenAck: Readonly<{ seq: number; at: number }> | null = null
   private seenRefusal: Readonly<{ seq: number; at: number }> | null = null
-  /** When each planned ordinal was first drawn, and what it was then — a different structure or
-   *  anchor under the same ordinal (a Debug Mode restart numbers the plan from 1 again) is a new
-   *  placement. */
-  private placedAt = new Map<number, Readonly<{ key: string; at: number }>>()
+  /**
+   * Each planned ordinal's animation track (`animation.ts`), by the one thing about it that varies:
+   * when its `play` was requested — the first frame that drew it — or `null` for what was already
+   * planned when the screen first drew, which never animates. The request itself is rebuilt every
+   * frame from the current Debug Mode timings (`placementRequest`). A different structure or anchor
+   * under the same ordinal (a Debug Mode restart numbers the plan from 1 again) is a new target, with
+   * a new track.
+   */
+  private tracks = new Map<number, Readonly<{ key: string; playedAt: number | null }>>()
   /** False until the first frame: whatever is already planned then was not placed just now. */
   private primed = false
 
@@ -114,33 +129,35 @@ export class BuildAnimation {
   }
 
   /**
-   * The planned placements still going up at `now`. Each is timed from the first frame that drew it
-   * — the frame the key press that placed it produced — and forgotten the moment it leaves the plan,
-   * so an undo or a removal mid-animation draws nothing at once, and a placement put back later starts
-   * over.
+   * The planned placements still going up at `now` — each one's track, scheduled and asked whether it
+   * has settled. Each is timed from the first frame that drew it — the frame the key press that placed
+   * it produced — and forgotten the moment it leaves the plan, so an undo or a removal mid-animation
+   * draws nothing at once, and a placement put back later starts over.
    */
   placementsAt(state: BuildState, now: number, options: LiveOptions = {}): { placing: PlacementClock[]; until: number | null } {
-    const planned = new Set<number>()
+    const planned = new Map<number, BuildState["planned"][number]>()
     for (const placement of state.planned) {
       const key = `${placement.contentId}@${placement.anchor.x},${placement.anchor.y}`
-      const seen = this.placedAt.get(placement.ordinal)
+      const seen = this.tracks.get(placement.ordinal)
       if (seen === undefined || seen.key !== key) {
-        this.placedAt.set(placement.ordinal, { key, at: this.primed ? now : Number.NEGATIVE_INFINITY })
+        this.tracks.set(placement.ordinal, { key, playedAt: this.primed ? now : null })
       }
-      planned.add(placement.ordinal)
+      planned.set(placement.ordinal, placement)
     }
-    for (const ordinal of [...this.placedAt.keys()]) if (!planned.has(ordinal)) this.placedAt.delete(ordinal)
+    for (const ordinal of [...this.tracks.keys()]) if (!planned.has(ordinal)) this.tracks.delete(ordinal)
     this.primed = true
 
-    const { totalMs } = placementTiming(state.debug, options.reducedMotion === true)
+    const reducedMotion = options.reducedMotion === true
     const placing: PlacementClock[] = []
     let until: number | null = null
-    if (totalMs <= 0) return { placing, until }
-    for (const [ordinal, seen] of this.placedAt) {
-      const elapsedMs = now - seen.at
-      if (elapsedMs >= totalMs) continue
-      placing.push({ ordinal, elapsedMs })
-      until = Math.max(until ?? 0, seen.at + totalMs)
+    for (const [ordinal, track] of this.tracks) {
+      const placement = planned.get(ordinal)
+      if (track.playedAt === null || placement === undefined) continue
+      const footprint = options.footprintOf?.(placement.contentId) ?? ONE_TILE
+      const schedule = scheduleTrack([placementRequest(placement, footprint, state.debug, reducedMotion, track.playedAt)])
+      if (!trackBusyAt(schedule, now)) continue
+      placing.push({ ordinal, elapsedMs: now - track.playedAt })
+      until = Math.max(until ?? 0, schedule.settlesAtMs)
     }
     return { placing, until }
   }

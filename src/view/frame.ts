@@ -26,8 +26,8 @@ export type CellStyle = Readonly<{
    * `fgRole` pulled part of the way toward another role (gate 5I): light on a placed building's
    * characters, and its rainbow. A role and a number, never a colour — `roles.ts`'s `RoleTint` says
    * how each tier resolves it (a real blend at 256 colours and truecolor, a step onto the other role's
-   * hue at 16, nothing in monochrome). Set only by the Build Phase's placement light
-   * (`src/view/placement.ts`).
+   * hue at 16, nothing in monochrome). Set only by shading — a glyphless effect cell's `tint`
+   * (`src/view/effects/shading.ts`), a placed building's light today.
    */
   tint?: RoleTint
 }>

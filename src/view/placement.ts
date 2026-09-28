@@ -2,6 +2,15 @@
 // places it — a short run of frames as it goes up, a light on its characters as it finishes, and a
 // burst of sparks around it.
 //
+// Since the presentation toolkit was formalised (owner, 2026-09-28) this file only *says what a
+// placement is* in the toolkit's terms; the toolkit draws it:
+//
+//   - an **Animation** (`animation.ts`): the structure's placement frames, played once on the
+//     placement's own track — `placementRequest`, a `play` with the default `replace` policy;
+//   - two **follow-ups** of that play, scheduled at the moment its last frame ends: a **Shading**
+//     light over the footprint (`fx.light.flash`, `effects/shading.ts`) and a **Particles** burst
+//     around it (`fx.sparks.burst`, `effects/particles.ts`) — both generic recipes, usable by anything.
+//
 // **Every answer here is a pure function of the plan and the time since the placement.** The reducer
 // never learns a placement is animating: the live loop (`src/view/build-live.ts`) notes when it first
 // saw each planned ordinal and hands the Build Phase view "ordinal N, placed this many ms ago". So a
@@ -13,20 +22,22 @@
 //   0 ............ framesMs ................ framesMs + glowMs
 //   | placement frames: foundation -> ... |  finished, lit, sparks  |  settled (state alone)
 //   |  (ANTICIPATION and ACTION)          |  (IMPACT and DECAY)     |  (SETTLE)
+//   |  the Animation                      |  its two follow-ups     |
 //
 // Reduced motion drops the frames and the light — the finished building is there at once — and the
-// sparks become a still mark at the footprint's four corners for the glow (`fx.structure.place`'s
-// own reduced form).
+// sparks become a still mark at the footprint's four corners for the glow (`fx.sparks.burst`'s own
+// reduced form).
 
 import type { UnitArt } from "../content/art.ts"
 import { placementFramesFor } from "../content/art.ts"
 import type { DebugFlags } from "../build/debug.ts"
 import type { Coord, Footprint } from "../grid/types.ts"
 import { footprintExtent } from "../grid/coords.ts"
-import type { EffectInstance } from "./effects/types.ts"
-import { PLACE_PARTICLE_COUNTS } from "./effects/recipes.ts"
-import type { RoleTint } from "./roles.ts"
-import { RAINBOW_ROLES } from "./roles.ts"
+import type { Animation, FollowUp, PlayRequest, TrackSchedule } from "./animation.ts"
+import { animationOf, frameGlyph, play, scheduleTrack, trackEffectsAt, trackFrameAt } from "./animation.ts"
+import type { EffectContext } from "./effects/types.ts"
+import { EFFECT_RECIPES } from "./effects/recipes.ts"
+import type { CapabilityMode, RoleTint } from "./roles.ts"
 import { entityGlyph } from "./theme.ts"
 
 /** One planned placement still animating: which one, and how long ago it was placed. */
@@ -40,6 +51,9 @@ export type PlacementTiming = Readonly<{
   /** When the whole thing is over — the live loop stops its frame timer after this. */
   totalMs: number
 }>
+
+/** Sparks for `few` and `many` — the two non-zero values of Debug Mode's "Particles". */
+export const PLACE_PARTICLE_COUNTS = { few: 6, many: 14 } as const
 
 export function placementTiming(flags: DebugFlags, reducedMotion: boolean): PlacementTiming {
   const framesMs = reducedMotion ? 0 : Math.max(0, flags.placeFramesMs)
@@ -74,19 +88,116 @@ export function placementRun(contentId: string, footprint: Footprint): readonly 
   return run
 }
 
-/** How one tile of an animating building is drawn right now. `glyph: null` is nothing standing
- *  there yet — the ground shows. */
-export type PlacementCell = Readonly<{ glyph: string | null; bold: boolean; tint?: RoleTint }>
-
-/** How long each hue of the rainbow holds on one tile before the next — above the ~60 ms under which
- *  a beat did not happen (ascii-effects.md Section 2). */
-export const RAINBOW_STEP_MS = 60
+/** A planned placement — which one, what, where: everything its animation and its effects hash. */
+export type PlacedStructure = Readonly<{ ordinal: number; contentId: string; anchor: Coord }>
 
 /**
- * One tile of a building placed `elapsedMs` ago. During the frames it is the frame's glyph, drawn
- * plain — a scaffold, lighter than the building it becomes; after them it is the finished glyph,
- * drawn bold as every building is, carrying the light while the glow lasts. In monochrome, where a
- * tint shows nothing, that plain-to-bold step is what is left of the light.
+ * The structure's placement frames as an Animation: played once over Debug Mode's "Build animation"
+ * time, then cleared, so the structure's own finished art shows. Frames are drawn plain — a scaffold,
+ * lighter than the bold building it becomes, which is all of the light that survives monochrome.
+ */
+export function placementAnimation(contentId: string, footprint: Footprint, flags: DebugFlags, reducedMotion: boolean): Animation {
+  return animationOf(`place:${contentId}`, placementRun(contentId, footprint), placementTiming(flags, reducedMotion).framesMs)
+}
+
+/**
+ * What happens the moment the frames end: a light over the footprint and a burst of sparks around it,
+ * each lasting the glow. The sparks' randomness hashes the placement's identity — ordinal, structure,
+ * anchor — never the moment it happened.
+ */
+export function placementFollowUps(placement: PlacedStructure, footprint: Footprint, flags: DebugFlags, reducedMotion: boolean): FollowUp[] {
+  const { glowMs } = placementTiming(flags, reducedMotion)
+  if (glowMs <= 0) return []
+  const { width, height } = footprintExtent(footprint)
+  const rainbow = flags.placeLight === "rainbow"
+  const followUps: FollowUp[] = []
+  if (!reducedMotion && flags.placeLight !== "off") {
+    followUps.push({
+      kind: "effect",
+      effect: {
+        recipe: "fx.light.flash",
+        band: "highlights",
+        durationMs: glowMs,
+        origin: placement.anchor,
+        family: "neutral",
+        params: { width, height, palette: rainbow ? "rainbow" : "flash" },
+      },
+    })
+  }
+  if (flags.placeParticles !== "off") {
+    const count = PLACE_PARTICLE_COUNTS[flags.placeParticles]
+    followUps.push({
+      kind: "effect",
+      effect: {
+        recipe: "fx.sparks.burst",
+        band: "effects",
+        durationMs: glowMs,
+        origin: placement.anchor,
+        family: "neutral",
+        params: {
+          width,
+          height,
+          count,
+          reach: count > PLACE_PARTICLE_COUNTS.few ? 3 : 2,
+          palette: rainbow ? "rainbow" : "sparks",
+          key: placement.contentId,
+          id: placement.ordinal,
+        },
+      },
+    })
+  }
+  return followUps
+}
+
+/** The one request a placement makes of its track: play its frames at `atMs`, then light and sparks. */
+export function placementRequest(
+  placement: PlacedStructure,
+  footprint: Footprint,
+  flags: DebugFlags,
+  reducedMotion: boolean,
+  atMs = 0,
+): PlayRequest {
+  return play(placementAnimation(placement.contentId, footprint, flags, reducedMotion), atMs, {
+    policy: "replace",
+    then: placementFollowUps(placement, footprint, flags, reducedMotion),
+  })
+}
+
+/** A placement's track on its own clock — time 0 is the moment it was placed. */
+export function placementSchedule(placement: PlacedStructure, footprint: Footprint, flags: DebugFlags, reducedMotion: boolean): TrackSchedule {
+  return scheduleTrack([placementRequest(placement, footprint, flags, reducedMotion)])
+}
+
+/** How one tile of an animating building is drawn right now. `glyph: null` is nothing standing
+ *  there yet — the ground shows. */
+export type PlacementLook = Readonly<{ glyph: string | null; bold: boolean }>
+
+/** A building's own characters at one offset, `elapsedMs` into its track: the frame playing, or — once
+ *  the frames are over — its finished art, drawn bold as every building is. */
+export function placementLook(schedule: TrackSchedule, contentId: string, offset: Coord, elapsedMs: number): PlacementLook {
+  const drawn = trackFrameAt(schedule, elapsedMs)
+  if (drawn === null) return { glyph: entityGlyph(contentId, "A", offset), bold: true }
+  return { glyph: frameGlyph(drawn.frame, offset), bold: drawn.frame.bold === true }
+}
+
+/** The context a placement's effects are drawn in: its own clock, and no cosmetic seed — a
+ *  placement's scatter hashes which placement it is, and nothing else. */
+export function placementEffectContext(
+  elapsedMs: number,
+  reducedMotion: boolean,
+  capability: CapabilityMode = "truecolor",
+  tileWidth: 1 | 2 = 1,
+): EffectContext {
+  return { timeMs: elapsedMs, cosmeticSeed: 0, tileWidth, reducedMotion, capability }
+}
+
+/** One tile, with the light it carries. */
+export type PlacementCell = PlacementLook & Readonly<{ tint?: RoleTint }>
+
+/**
+ * One tile of a building placed `elapsedMs` ago, as the Build Phase view composes it: its look from
+ * the track, and the tint the light paints on it. The view draws the same two things through its
+ * compositor; this is the single-tile answer tests and capture scripts ask for.
  */
 export function placementCell(
   contentId: string,
@@ -96,63 +207,14 @@ export function placementCell(
   flags: DebugFlags,
   reducedMotion: boolean,
 ): PlacementCell {
-  const timing = placementTiming(flags, reducedMotion)
-  const finished = entityGlyph(contentId, "A", offset)
-  if (elapsedMs < timing.framesMs) {
-    const run = placementRun(contentId, footprint)
-    const index = Math.min(run.length - 1, Math.floor((elapsedMs / timing.framesMs) * run.length))
-    const drawn = run[index]?.[offset.y]?.[offset.x] ?? " "
-    return { glyph: drawn === " " ? null : drawn, bold: false }
+  const schedule = placementSchedule({ ordinal: 0, contentId, anchor: { x: 0, y: 0 } }, footprint, flags, reducedMotion)
+  const look = placementLook(schedule, contentId, offset, elapsedMs)
+  const context = placementEffectContext(elapsedMs, reducedMotion)
+  let tint: RoleTint | undefined
+  for (const effect of trackEffectsAt(schedule, elapsedMs)) {
+    for (const cell of EFFECT_RECIPES[effect.recipe]?.(effect, context) ?? []) {
+      if (cell.glyph === "" && cell.tint !== undefined && cell.tile.x === offset.x && cell.tile.y === offset.y) tint = cell.tint
+    }
   }
-  const sinceFinished = elapsedMs - timing.framesMs
-  if (reducedMotion || flags.placeLight === "off" || timing.glowMs <= 0 || sinceFinished >= timing.glowMs) {
-    return { glyph: finished, bold: true }
-  }
-  const progress = sinceFinished / timing.glowMs
-  if (flags.placeLight === "rainbow") {
-    // A diagonal wave of hue sweeping across the building, fading back to its own colour.
-    const step = Math.floor(sinceFinished / RAINBOW_STEP_MS) + offset.x + offset.y
-    const role = RAINBOW_ROLES[step % RAINBOW_ROLES.length] ?? "fx.hue.red"
-    return { glyph: finished, bold: true, tint: { role, amount: roundAmount(1 - progress) } }
-  }
-  // A flash toward the theme's strongest ink, falling off fast and settling slowly.
-  return { glyph: finished, bold: true, tint: { role: "fx.flash", amount: roundAmount((1 - progress) ** 2) } }
-}
-
-/** Blends to a hundredth: finer than any tier can show, and it keeps a frame's cells comparable. */
-function roundAmount(amount: number): number {
-  return Math.round(Math.max(0, Math.min(1, amount)) * 100) / 100
-}
-
-/**
- * The spark burst for one placement, as an ordinary effect instance of `fx.structure.place` on the
- * placement's own clock (time 0 is the moment it was placed), or `null` when there are none. Its
- * identity — ordinal, structure, anchor — is what its randomness hashes.
- */
-export function placementSparks(
-  placement: Readonly<{ ordinal: number; contentId: string; anchor: Coord }>,
-  footprint: Footprint,
-  flags: DebugFlags,
-  reducedMotion: boolean,
-): EffectInstance | null {
-  if (flags.placeParticles === "off") return null
-  const timing = placementTiming(flags, reducedMotion)
-  if (timing.glowMs <= 0) return null
-  const { width, height } = footprintExtent(footprint)
-  return {
-    recipe: "fx.structure.place",
-    band: "effects",
-    startMs: timing.framesMs,
-    durationMs: timing.glowMs,
-    origin: placement.anchor,
-    family: "neutral",
-    params: {
-      width,
-      height,
-      count: PLACE_PARTICLE_COUNTS[flags.placeParticles],
-      ordinal: placement.ordinal,
-      content: placement.contentId,
-      rainbow: flags.placeLight === "rainbow" ? 1 : 0,
-    },
-  }
+  return tint === undefined ? look : { ...look, tint }
 }

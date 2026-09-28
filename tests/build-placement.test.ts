@@ -23,7 +23,7 @@ import { BuildAnimation } from "../src/view/build-live.ts"
 import { cellAt, frameToAnsi, frameToText } from "../src/view/frame.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
 import { paintOps } from "../src/view/backends/canvas.ts"
-import { placementCell, placementRun, placementTiming } from "../src/view/placement.ts"
+import { placementCell, placementRequest, placementRun, placementSchedule, placementTiming } from "../src/view/placement.ts"
 import type { PlacementClock } from "../src/view/placement.ts"
 import { CAPABILITY_MODES, RAINBOW_ROLES, rgbFor, sgrFor } from "../src/view/roles.ts"
 import { entityGlyph } from "../src/view/theme.ts"
@@ -234,6 +234,46 @@ test("a placement's sparks are a hash of which placement it is, never of when it
   assert.equal(at(t), at(t))
   // A different placement — another ordinal — scatters differently.
   assert.notEqual(at(t), at(t, placement.ordinal + 7))
+})
+
+// --- On the presentation toolkit ---------------------------------------------------------------------
+
+test("a placement is one play on its track: its frames, then light and sparks as follow-ups at their end", () => {
+  const footprint = FIXTURE_REGISTRY.get(BARRACKS).footprint
+  const placement = { ordinal: 3, contentId: BARRACKS, anchor: { x: 10, y: 4 } }
+  const request = placementRequest(placement, footprint, FLAGS, false)
+  assert.equal(request.policy, "replace")
+  assert.equal(request.animation.durationMs, FLAGS.placeFramesMs)
+  assert.deepEqual(request.animation.frames.map((frame) => frame.rows), PLACEMENT_ART[BARRACKS])
+  const schedule = placementSchedule(placement, footprint, FLAGS, false)
+  const timing = placementTiming(FLAGS, false)
+  assert.deepEqual(
+    schedule.effects.map((effect) => [effect.recipe, effect.band, effect.startMs, effect.durationMs]),
+    [
+      ["fx.light.flash", "highlights", timing.framesMs, timing.glowMs],
+      ["fx.sparks.burst", "effects", timing.framesMs, timing.glowMs],
+    ],
+  )
+  assert.equal(schedule.settlesAtMs, timing.totalMs)
+  // Reduced motion: no frames, no light — the sparks' still marks from the moment it is placed.
+  const reduced = placementSchedule(placement, footprint, FLAGS, true)
+  assert.deepEqual(reduced.effects.map((effect) => [effect.recipe, effect.startMs]), [["fx.sparks.burst", 0]])
+  assert.equal(reduced.settlesAtMs, placementTiming(FLAGS, true).totalMs)
+  // Everything off: nothing to schedule, settled at once.
+  const off = { ...FLAGS, placeFramesMs: 0, placeLight: "off" as const, placeParticles: "off" as const }
+  assert.equal(placementSchedule(placement, footprint, off, false).settlesAtMs, 0)
+})
+
+test("the live loop stops when the track settles, whether or not it knows the footprint", () => {
+  const { run, state: before } = placed("n 1 Down*2 Space")
+  const { state: after } = placed()
+  const footprintOf = (contentId: string) => run.context.registry.get(contentId).footprint
+  for (const options of [{}, { footprintOf }]) {
+    const animation = new BuildAnimation()
+    animation.frame(before, 0, options)
+    const first = animation.frame(after, 1_000, options)
+    assert.equal(first.busyUntil, 1_000 + placementTiming(FLAGS, false).totalMs)
+  }
 })
 
 // --- The live loop's clock -------------------------------------------------------------------------
