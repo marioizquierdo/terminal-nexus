@@ -29,8 +29,9 @@ A `.claude/skills/playtest` skill (`node scripts/playtest.mjs`) presses keys on 
 screen without a terminal and returns every step's screen as text, PNGs or a GIF — the quickest way
 to see a change working and to make a pull request's pictures. `bun scripts/build-web.mjs` builds
 the **browser playtest page** — the real menu, Build Phase and Pulse playback in one HTML file, for
-playing from a phone during review; publish it as a private page on the pull request when a change is
-worth playing (`DEVELOPMENT.md` has the details).
+playing from a phone or any other device during review; publish it as a private page on the pull
+request only when a change must be played to be judged — a picture, a GIF or a code block is cheaper
+and often enough (Section 5; `DEVELOPMENT.md` has the details).
 
 ## 1. Start with authority, not code
 
@@ -271,6 +272,9 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - Corruption effects live in the `effects` band or above; they never remove the only carrier of a
   required semantic cue.
 - Effects are pure functions of absolute presentation time. `f(t)` never depends on `f(t-1)`.
+  Presentation has **four families** — animations (an entity's own frames), particles, shading
+  (glyphless colour) and tweens (interpolation) — and an animation's completion is **scheduled data,
+  never a callback** (`specs/ascii-effects.md` 1.2).
 - Gameplay randomness is one seeded PRNG — **PCG32**, with published vectors. Cosmetic randomness is
   a **hash of an effect instance's identity, never a stream**: a stream's answers depend on how many
   times it has been asked, which is exactly what effect purity forbids.
@@ -293,26 +297,30 @@ deleted, and the renderer must be replaceable without one simulation test changi
   bonus — modeled like a small Nexus-power pool but match-scoped rather than dealt each Build Phase.
 - **Every interactive action is a named command.** Keyboard, mouse, and a driver (for agents and
   tests) are three adapters onto one vocabulary; every menu item displays its hotkey and is clickable
-  with identical effect — a click moves focus first, so a click on the menu while the keyboard is
-  elsewhere only highlights the row; the driver can inject raw key and mouse events and read the cell
-  frame back.
+  with identical effect — **a click activates what it lands on** (owner, 2026-09-28): a click on a
+  building's row arms it at once with its preview at the cursor, whatever had focus, and only the
+  keyboard has a "highlighted, not yet chosen" state; the driver can inject raw key and mouse events
+  and read the cell frame back.
   **Three bindings are measured rather than assumed** (gate 5A): Shift+Arrow has two live sequence
   families and several terminals send none at all, so a modifier-free fallback is required, not
   optional; and the mouse wheel moves the *cursor* five tiles rather than a camera of its own, because
   a second camera is the pan mode the scrolling rule forbids. **A second click on the same tile places
   the armed structure** — compared by tile, never by screen position, so a click that scrolled the
-  view cannot place on a neighbour (Q52, reversing gate 5A's one-click Q50). **Keyboard focus is
+  view cannot place on a neighbour (Q52, reversing gate 5A's one-click Q50); **a quick double click on
+  one spot places where its first click pointed**, timed in the input path (gate 5J). **Keyboard focus is
   reducer state, on the menu or the Grid, and the menu orchestrates the Build Phase**: a structure is
   armed only while the Grid has focus, and every placement returns focus to the menu, disarmed (Q57).
-  **Esc, `x` and a right click are one cancel** that goes back one level — popup, information panel,
-  Grid to menu — and on the menu asks "Exit the game?"; `q` asks the same question, and only Ctrl+C
-  quits at once. Leaving always asks. **A click with a structure armed never scrolls the view**
-  (Q58); cursor speed and every animation are timed in the input path and the view, never the
-  reducer.
+  **Esc, `x` and a right click are one cancel** that goes back one level — popup, then the Grid
+  (placing or Explore Map) to the menu — and on the menu opens the **game menu** (`[s] Settings`,
+  `[q] Quit`); `q` opens it too, and only Ctrl+C quits at once. Leaving always asks. A click scrolls
+  the view near its edges, armed or not (gate 5J, reversing Q58). How far a key moves the cursor is
+  timed in the input path, and every animation — including the camera's slide and the cursor's
+  glide, which interpolate every move — in the view; never the reducer.
 - **The Build Phase panel is the construct menu, what is left to spend, and the selected item's cost
-  and effect**, under `[n] Nexus` and `[e] Explore` entries at its top — no radius preview until
-  something has a radius (Q30). While exploring, Enter/Space replaces the menu with an **information
-  panel** about what is under the cursor. **Every popup is one shape** — a title and rows as data,
+  and effect**, under `[e] Explore Map` and `[n] Nexus` entries at its top, Explore Map first — no
+  radius preview until something has a radius (Q30). **Explore Map** replaces the menu with a panel
+  headed "EXPLORE MAP" describing whatever is under the cursor as it moves; Esc gives the menu back.
+  An armed row is marked as armed, never with the keyboard's highlight bar. **Every popup is one shape** — a title and rows as data,
   options naming the command a click sends, drawn and hit-tested from the same placement — and is
   drawn last in the `chrome` band, never in a band of its own. **A refused placement is
   answered on the status line, and names its tile**; **affordability is reported before any tile
@@ -376,18 +384,29 @@ deleted, and the renderer must be replaceable without one simulation test changi
   artifacts, or pushing directly to `main`.
 - Update `README.md`, `DEVELOPMENT.md`, the dev container, CI, and agent instructions together when
   canonical development commands change.
-- **Ask Mario to feel a choice through Debug Mode** (owner direction, 2026-09-26, repeated 2026-09-28:
-  agents "can ask me to enable/disable a feature with d debug settings"). Press `d` in the Build Phase
-  for a panel of live-editable flags, some applied at once, some on restart (`src/build/debug.ts` is
-  the list). When a session has a fork the owner should feel rather than read about — a timing, a
-  look, a movement rule, or whether a new feature should exist at all — build both answers behind a
-  Debug Mode flag and **ask him in plain words to flip it**: "press `d`, set Armed click scrolls to
-  on, and tell me which you prefer." A new behaviour whose worth is in doubt ships with an on/off
-  flag, so he can switch it off without a rebuild. This is Section 6's "make it observable" in its
-  preferred form, ahead of a command-line flag or a registered question. Every flag names the
-  question it serves and is deleted once the question is answered; a few graduate into real
-  settings. The Debug Mode popup is only in the Build Phase today; a screen without one falls back
-  to a command-line flag.
+- **Ask Mario to feel a choice through an Experiment** (owner direction, 2026-09-26 and 2026-09-28:
+  "The agent should feel free to add experimental flags anytime they need particular feedback from
+  me, so I can try with and without them, adjust speed settings, etc until it feels right").
+  **Settings** (Esc, then `s`, in the Build Phase) holds the player's own saved settings and, at its
+  bottom, **Experiments**: live-editable flags, some applied at once, some on restart
+  (`src/build/debug.ts` is the list); `d` jumps straight to them. When a session has a fork the owner
+  should feel rather than read about — a timing, a look, a movement rule, or whether a new feature
+  should exist at all — add an Experiment defaulting to the recommended answer and **ask him in plain
+  words to flip it**: "press `d`, set Armed click scrolls to off, and tell me which you prefer." Then
+  **ask him to paste the export into the pull request**: Settings' **Export settings** (`e`) copies
+  every setting and experiment as `name = value` text, changed experiments first; reproduce what he
+  had with `--settings "<pasted text>"` (`terminal-nexus --spike` or `scripts/playtest.mjs`) or
+  `#settings=` on the browser page. A new behaviour whose worth is in doubt ships with an on/off
+  Experiment, so he can switch it off without a rebuild. This is Section 6's "make it observable" in
+  its preferred form, ahead of a command-line flag or a registered question. Every Experiment names
+  the question it serves and is **normally deleted before its pull request is accepted**; a few stay
+  longer or graduate into real Settings. Settings is only in the Build Phase today; a screen without
+  it falls back to a command-line flag.
+- **Size the pull request's Demo to the change** (owner, 2026-09-28: "we have to be a little more
+  smart about how many tokens we spend building a playable demo"): a code block or nothing for a
+  change that does not show on screen, screenshots for one that changes how things look, a GIF for
+  movement or timing, and a playable page only when it must be played to be judged. The
+  `pr-description` skill has the layers and the "On Claude Web Artifact" / "On MacOS" shape.
 
 ### Write for a person, not for the filing system
 
@@ -419,8 +438,9 @@ This will happen. It is expected, and there is a procedure — see
    organization, diagnostics. Governance Section 2 already grants this. Do not ask.
 2. **Make it observable** if you can. A parameter, toggle, or side-by-side fixture that lets Mario
    *look* at both answers beats a paragraph arguing for one. This is the preferred move and it is
-   cheap far more often than it looks. In the Build Phase the form is a **Debug Mode flag** that he
-   flips with `d` — and the pull request asks him to (Section 5).
+   cheap far more often than it looks. In the Build Phase the form is an **Experiment** in Settings,
+   which he flips with `d` and reports back by pasting the export — and the pull request asks him to
+   (Section 5).
 3. **Register it** if it is genuinely the owner's call: add a `Q<n>` row with the question, why it
    blocks, the options, their costs, and **a recommendation**. The validator rejects an `OPEN`
    question with no recommendation, because a question without one just moves the work to Mario.
