@@ -213,7 +213,7 @@ function menuSpec(state: BuildState): OverlaySpec {
  *  Up/Down move, like every other list here, so it scrolls the same way. */
 function exportSpec(context: BuildContext, state: BuildState): OverlaySpec {
   const rows: OverlayRow[] = []
-  if (context.exportDestination !== undefined) rows.push({ kind: "note", text: context.exportDestination, lines: 2 })
+  if (context.exportDestination !== undefined) rows.push({ kind: "note", text: context.exportDestination, lines: 3 })
   rows.push({ kind: "more", direction: "above" })
   const from = rows.length
   exportText(context, state)

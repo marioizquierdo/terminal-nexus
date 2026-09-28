@@ -17,6 +17,7 @@ node scripts/playtest.mjs --keys "Down Down Space*4" --print all     # every ste
 node scripts/playtest.mjs --keys "n 1 Tab S-Left*5" --png final    # one PNG
 node scripts/playtest.mjs --keys "Down Down Space*4" --gif --name hatchery-run
 node scripts/playtest.mjs --file flow.keys --size 104x32 --capability monochrome --png all
+node scripts/playtest.mjs --settings "placeLight=rainbow scrollMargin=25" --keys "1 Enter"  # start from an export
 node scripts/playtest.mjs --help
 ```
 
@@ -41,15 +42,23 @@ Enter there, opens the Explore Map panel; Esc comes back); `n 1` picks the first
 closes the popup (budget becomes 130) and leaves the highlight on the Nexus row, so `n 1 Down Down
 Space` arms the Hatchery from the menu (`n 2` is the War Chest: 2000 more to spend); a digit arms by
 hotkey and moves focus to the Grid; `Tab` switches focus. A click on a building's row arms it at once
-(`click@3,9` is the Hatchery at 80x24), and a second click on the same tile places. `d` opens
-Debug Mode (Up/Down choose a flag, Left/Right change it, `r` restarts keeping the flags, `Esc`
-closes). Its list scrolls and starts on gate 5I's placement juice (`d Right` lengthens the build
-animation, `d Down Right` sets Lighting to rainbow), then gate 5H's movement numbers (`d Down*4
-Right` widens the scroll margin); Up from the top wraps to the restart row, so the older flags at the bottom are close that
-way: `d Up*2 Right` shares the menu's divider as the map's west side, `d Up*3 Right*2` makes the map's
-edge quiet, `d Up*4 Right` cycles its style (use `--glyphs unicode` to see the thin ones), `d Up*8
-Right Esc` turns the smart cursor off, `d Up*7 Right r` restarts with the keyboard on the map.
-`src/build/debug.ts`'s `DEBUG_FIELDS` is the order.
+(`click@3,9` is the Hatchery at 80x24), and a second click on the same tile places. `Esc` on the menu
+(or `q` anywhere) opens the game menu: `s` Settings, `q` quits. **Settings** lists the player's own
+settings first (`Esc s Right` switches the background to light), then the **Experiments** — the
+playtest flags, which `d` opens straight at (Up/Down choose, Left/Right change, `r` restarts keeping
+everything, `e` exports, `Esc` closes). The Experiments start on gate 5I's placement juice (`d Right`
+lengthens the build animation, `d Down Right` sets Lighting to rainbow), then gate 5H's movement
+numbers (`d Down*4 Right` widens the scroll margin). From the first setting, Up comes round to Export,
+Restart, then the last experiments: `Esc s Up*3 Right` shares the menu's divider as the map's west
+side, `Esc s Up*4 Right*2` makes the map's edge quiet, `Esc s Up*5 Right` cycles its style (use
+`--glyphs unicode` to see the thin ones), `Esc s Up*9 Right Esc Esc` turns the smart cursor off,
+`Esc s Up*8 Right r` restarts with the keyboard on the map. `src/build/debug.ts`'s `DEBUG_FIELDS` is
+the order.
+
+**Reproducing what the owner played**: he exports his settings (Settings, `e`) and pastes the text
+into the pull request; `--settings "<that text>"` starts the script from exactly those settings and
+experiments (the whole export, or just pairs: `--settings "placeLight=rainbow scrollMargin=25"`).
+Unknown names and bad values are skipped and named on stderr.
 
 What a script cannot show is time between keys on the live screen — the view sliding, a flash, a
 building going up (script frames always draw buildings finished). For those, compose a frame with

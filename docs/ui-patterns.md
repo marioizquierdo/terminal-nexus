@@ -3,12 +3,13 @@
 **Document role:** The interaction and drawing patterns every interactive screen follows
 **Status:** WORKING — built on the Build Phase first; not canon yet (promoted into `specs/engine.md`
 Section 9 when the owner accepts them)
-**Updated:** 2026-09-28 (a click activates; Explore Map — round-3 feedback F22, F23)
+**Updated:** 2026-09-28 (a click activates; Explore Map — round-3 feedback F22, F23; Settings,
+Experiments and the export, replacing Debug Mode's popup)
 **License:** Apache-2.0
 
 These came out of the owner's playtests of the Build Phase (2026-09-26 and 2026-09-27; the item-by-item
 log is [`feedback/2026-09-27-build-phase-playtest.md`](feedback/2026-09-27-build-phase-playtest.md)).
-They are written as rules so the next screens — the Nexus Pulse view, Debug Mode, the campaign menu —
+They are written as rules so the next screens — the Nexus Pulse view, the campaign menu —
 behave the same way without anyone re-deriving them. Where the Build Phase implements one, the file is
 named. When a new screen needs to break one, change this document in the same pull request and say
 why.
@@ -41,11 +42,15 @@ why.
 ## 2. Back, cancel and close
 
 - **Esc, `x` and a right click are one command** (`cancel`) and always mean the same thing.
-- **Esc walks back one level at a time**: a popup, then the map — placing, Explore Map or the map a
-  click opened — to the menu, then on the menu it asks "Exit the game?". Esc never leaves the game by
+- **Esc walks back one level at a time**: a popup (to the popup it was opened from, if any — Settings
+  to the game menu, the export to Settings), then the map — placing, Explore Map or the map a click
+  opened — to the menu, then on the menu it opens the **game menu**. Esc never leaves the game by
   itself.
-- **Leaving always asks**: `q` opens the exit question; only the question's own `[q]` quits. Ctrl+C
-  is the one immediate way out.
+- **The game menu is the way out, and the way to Settings** (owner, 2026-09-28): `[s] Settings`,
+  `[q] Quit`, `[esc] Back to the game`. Esc on the menu, `q` anywhere, and a click on `[esc] menu` at
+  the right of the top bar open it.
+- **Leaving always asks**: only the game menu's own `[q]` (or Enter or a click on its Quit row) quits.
+  Ctrl+C is the one immediate way out.
 - **A building is armed only while the map has focus.** Anything that takes the keyboard off the map
   disarms, so a stale ghost can never sit on the map while you work the menu.
 
@@ -93,12 +98,13 @@ why.
   border, `[esc]` in the top-right corner (the key, the label and the click target at once), and a
   one-cell shadow that blanks what is behind it. Centred over the map.
 - **A popup holds the keyboard and the mouse** until closed; keys it does not use do nothing.
-- **Questions are popups** — the start-the-Pulse question and the exit question use the same shape.
+- **Questions and menus are popups** — the start-the-Pulse question, the game menu, Settings and the
+  export use the same shape.
 - **Nothing opens a popup but the player.**
 - **A choice closes its popup** (Q60, owner 2026-09-27): picking a Nexus power, like answering a
   question, returns the player to where they were. What the pick did is on the status line and on the
   menu; reopening the popup shows it listed as active.
-- **A setting is a row whose value Left and Right change** (Debug Mode, gate 5G): its name, the value
+- **A setting is a row whose value Left and Right change** (Settings, since gate 5G): its name, the value
   between `<` and `>` (the arrows say which keys change it), and, quietly on the right, when a change is
   seen — `now` or `restart`. Enter/Space is Right. A choice of two comes round at either end; a number
   stops at its ends and the status line says so. **By mouse, the left half of the value box is Left
@@ -114,22 +120,38 @@ why.
   line, or the wheel over the popup, scrolls. The window is derived from the highlight, never stored,
   so the reducer needs to know nothing about the popup's height. (`OverlayScroll` and `scrollWindow`
   in `src/build/overlay.ts`.)
+- **A list in sections keeps each section's heading in the list** (Settings: "YOUR SETTINGS - saved",
+  then "EXPERIMENTS - for playtests, not saved"): the headings scroll with the rows and are never
+  highlighted; Up/Down skip them.
+- **A text too long for its popup is a list too** (the export): each line a row, with a highlight
+  Up/Down move, so it scrolls exactly as every other list does.
 - **A popup that belongs to a menu row keeps that row lit behind it** (the Nexus popup, the
-  start-the-Pulse question); **one that belongs to no row** (Debug Mode) **leaves the menu unlit**, so
-  its own highlight is the only one on screen.
+  start-the-Pulse question); **one that belongs to no row** (the game menu, Settings, the export)
+  **leaves the menu unlit**, so its own highlight is the only one on screen.
 
-## 5a. Development tools
+## 5a. Settings, Experiments and the export
 
-- **Debug Mode is found, not hidden**: `[d] debug` sits at the right of the top bar — the hotkey in
-  the hotkey colour, the name quiet — and is a click target, like every other entry point. It is in
-  the top bar rather than the menu because it is a tool for playtesting, not a game action, and will
-  shrink as its questions are answered.
-- **Agents ask the owner to flip flags.** A choice that is his to feel ships behind a flag, defaulting
-  to the recommended answer, and the pull request tells him which one to flip with `d` (his own
-  request, 2026-09-28). A new behaviour whose worth is in doubt gets an on/off flag.
-- **Every flag names the question it serves** and whether it applies now or on restart; the popup's
-  title says nothing in it is saved. A restart row starts the Build Phase over keeping the flags,
-  which is how a "restart" flag takes effect.
+- **Settings are found, not hidden**: the game menu's `[s] Settings` (Esc, then `s`), and `[esc] menu`
+  at the right of the top bar for a pointer — the hotkey in the hotkey colour, the name quiet.
+- **The player's settings come first, the Experiments last** (owner, 2026-09-28: "At the bottom of
+  those settings, we can include 'Experiments'"). Player settings — background, colour depth, symbols,
+  reduced motion — apply at once and are **saved**, through the same store as the title menu's
+  Settings. Experiments are the playtest flags (gate 5G's Debug Mode) and are **never saved**:
+  defaults change from build to build. `d` opens Settings straight at the Experiments.
+- **Agents ask the owner to flip experiments.** A choice that is his to feel ships behind an
+  experiment, defaulting to the recommended answer, and the pull request tells him which one to flip
+  (Esc, `s`, or `d` for the Experiments) and asks him to **paste the export back** (his own request,
+  2026-09-28). A new behaviour whose worth is in doubt gets an on/off experiment. Most experiments
+  are deleted before the pull request is accepted; a few stay longer, or become real settings.
+- **Every experiment names the question it serves** and whether it applies now or on restart. A
+  restart row starts the Build Phase over keeping every setting and experiment, which is how a
+  "restart" experiment takes effect.
+- **The export is text a person can paste and a program can read back**: `name = value` lines, `#`
+  comments, the experiments that differ from this build's defaults first (each with the default it
+  replaced), then the settings, then the other experiments, and the build's commit near the top. It
+  is shown in a popup, and also copied to the clipboard and written to a file by the adapter — never
+  by the reducer. `--settings "<text>"`, and `#settings=` on the browser page, read it back; reading
+  skips an unknown name or a bad value one at a time rather than refusing the text.
 
 ## 6. Panels
 
@@ -150,7 +172,7 @@ why.
   glyph pack, without colour. A corner is solid where a solid side runs into it.
 - **A map shorter than the panel** closes directly under its own last row; the panel keeps its height.
 - **The map's edge has Experiments, all keeping the one rule — the same weight on every side**
-  (feedback F25; Debug Mode's "Map edge", "Map edge colour" and "Shared west side"): the solid bar, a
+  (feedback F25; the Experiments "Map edge", "Map edge colour" and "Shared west side"): the solid bar, a
   half block on the map's side of the cell, a heavy or a double line (joined to the frame's light rules
   in mixed-weight junctions), a light shade, or **the map's own style** — a map names one for itself
   (the Build Phase map's is a dashed "fence"). Drawn in the frame's colour, dimmed, or a quieter grey
@@ -180,7 +202,7 @@ why.
 - **Pointing to confirm never moves the view**: with a building armed, a click moves the cursor and
   the preview only (Q58). **Exploring, a click near an edge brings that part of the map in** —
   further the nearer the edge — and a fast move re-centres the view on the cursor.
-- **Every number is a Debug Mode flag** until the owner has felt it.
+- **Every number is an Experiment** until the owner has felt it.
 - **A refused try is seen where the eye is**: the footprint flashes in the "danger" colour for a moment
   as the status line says why.
 
@@ -199,7 +221,7 @@ why.
   frames carries it.
 - **Reduced motion shows the finished building at once**, unlit; the sparks become a still mark at
   its corners.
-- **Every duration and intensity is a Debug Mode flag with an off value** (Build animation, Lighting,
+- **Every duration and intensity is an Experiment with an off value** (Build animation, Lighting,
   Particles, Glow time).
 
 ## 8. The status line
@@ -207,7 +229,7 @@ why.
 - **One line answers "what just happened, or why not"**: a typed message (text, a tone, and the tile
   it is about), never a bare string. A message about a tile lapses when the cursor leaves it.
 - **Say the result and the way back**: `Hatchery placed (resources: 70) - [u] undo`,
-  `Debug - Opens on: map - applies on restart: [r]`.
+  `Experiment - Opens on: map - applies on restart: [r]`.
 - **Looking reads quietly; trying reads loudly**: a refusal is neutral while the player only hovers,
   red and bold once they press Enter.
 

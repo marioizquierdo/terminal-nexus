@@ -232,7 +232,8 @@ test("[e] shows the export in a popup, hands the same text to the adapter, and E
   const text = screen(side)
   assert.match(text, /EXPORT SETTINGS/)
   assert.match(text, /Copied to the clipboard\./)
-  assert.match(text, /Terminal Nexus settings - build abc1234/)
+  assert.match(text, /Terminal Nexus settings/)
+  assert.match(text, /# build abc1234/)
   assert.match(text, /# Changed experiments/)
   assert.match(text, /placeFramesMs = 600/)
   // Up/Down walk the text; the window follows.
@@ -263,10 +264,11 @@ test("the export lists changed experiments first with their defaults, then the s
   }
   const text = formatSettingsExport(snapshot, "592f3cb")
   const lines = text.trimEnd().split("\n")
-  assert.equal(lines[0], "Terminal Nexus settings - build 592f3cb")
-  assert.equal(lines[1], "# Changed experiments")
+  assert.equal(lines[0], "Terminal Nexus settings")
+  assert.equal(lines[1], "# build 592f3cb")
+  assert.equal(lines[2], "# Changed experiments")
   const changedEnd = lines.indexOf("# Settings")
-  const changed = lines.slice(2, changedEnd)
+  const changed = lines.slice(3, changedEnd)
   assert.deepEqual(
     changed.map((line) => line.split(" ")[0]),
     DEBUG_FIELDS.map((spec) => spec.field).filter((field) => ["placeLight", "scrollMargin", "smartCursor"].includes(field)),
@@ -275,7 +277,7 @@ test("the export lists changed experiments first with their defaults, then the s
   assert.ok(changed.some((line) => line.startsWith("smartCursor = off  # Smart cursor, default on")))
   assert.ok(lines.includes("theme = light  # Background"))
   assert.ok(lines.includes("# Experiments at their defaults"))
-  assert.equal(lines.length, 1 + 1 + 3 + 1 + PLAYER_FIELDS.length + 1 + (DEBUG_FIELDS.length - 3))
+  assert.equal(lines.length, 2 + 1 + 3 + 1 + PLAYER_FIELDS.length + 1 + (DEBUG_FIELDS.length - 3))
   // With nothing changed it says so, and a build without a commit id says nothing about one.
   const plain = formatSettingsExport({ settings: DEFAULT_SETTINGS, experiments: defaultExperiments() })
   assert.match(plain, /^Terminal Nexus settings\n# Changed experiments: none\n/)
@@ -460,7 +462,7 @@ test("the live screen saves a changed setting through the store and hands an exp
   await new Promise((resolve) => setTimeout(resolve, 30))
   assert.deepEqual(saves, [{ ...DEFAULT_SETTINGS, capability: "monochrome", theme: "light" }])
   assert.equal(exported.length, 1)
-  assert.match(exported[0] as string, /^Terminal Nexus settings - build abc1234\n/)
+  assert.match(exported[0] as string, /^Terminal Nexus settings\n# build abc1234\n/)
   assert.match(exported[0] as string, /theme = light/)
   assert.ok(stdout.written.includes("Sent to the test."), "the export popup does not say where the text went")
   stdin.emit("data", Buffer.from([3]))

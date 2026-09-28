@@ -65,13 +65,15 @@ nothing to host. When there is a playable page, give it two sub-headings:
 Without a playable page, the numbered steps go straight under **Demo** with the MacOS commands.
 
 **Decisions** — each open choice: the question in plain words, the default this PR picked, and how to
-flip it. In the Build Phase that is almost always an **Experiment** (Settings → Experiments, the
-bottom of the Settings popup), so give the exact keys: "press `d` to jump to Experiments, set Armed
-click scrolls to on, and tell me which feels better." Mario asked to be asked this way. End the
-section with the export line, so his answer comes back as data rather than a description: "When it
-feels right, choose **Export settings** in Settings and paste the text as a comment here." An agent
-that reads an exported block back starts the game with it (`--settings`) to see what he saw. Omit
-the section if there are none.
+flip it. In the Build Phase that is almost always an **Experiment** (the bottom of the Settings popup:
+Esc, then `s`), so give the exact keys: "press `d` to jump to the Experiments, go down to Armed click
+scrolls, press Right to flip it, and tell me which feels better." Mario asked to be asked this way.
+End the section with the export line, so his answer comes back as data rather than a description:
+"When it feels right, press `e` in Settings (**Export settings**) — it is copied to your clipboard and
+saved to `~/.terminal-nexus/settings-export.txt` — and paste it as a comment here." An agent that
+reads an exported block back starts the game with it (`./bin/terminal-nexus.ts --spike --settings
+"<text>"`, or `node scripts/playtest.mjs --settings "<text>"`, or `#settings=<url-encoded text>` on
+the browser page) to see what he saw. Omit the section if there are none.
 
 **Known issues** — omit if none.
 

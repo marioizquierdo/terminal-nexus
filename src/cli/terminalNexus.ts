@@ -33,7 +33,7 @@ const USAGE = `terminal-nexus — the Terminal Nexus game
       opens the Build Phase scrolling-and-placement spike (Milestone 5, gate 5A): a Grid
       larger than the screen, a cursor that scrolls it, and three structures to place, by
       keyboard, by mouse, or from a script. It answers a question rather than shipping a
-      screen - nothing it plans reaches the simulation, and nothing is saved.
+      screen - nothing it plans reaches the simulation, and the plan is not saved.
       --scroll-margin <percent> changes how close to the edge of the view the cursor gets
       before the map starts scrolling, as a share of the view's width and height (20 unless
       given; "25" and "25%" are the same). Esc opens the game menu: Settings (saved, like the

@@ -5,7 +5,8 @@
 // **The format** is plain lines of `name = value`, with `#` starting a comment, so it reads in a pull
 // request comment and parses back without a schema:
 //
-//     Terminal Nexus settings - build 592f3cb
+//     Terminal Nexus settings
+//     # build 592f3cb
 //     # Changed experiments
 //     placeLight = rainbow  # Lighting, default light
 //     # Settings
@@ -51,7 +52,7 @@ export const EXPORT_TITLE = "Terminal Nexus settings"
 /** The text of an export. `build` names the commit it came from, when the adapter knows it. */
 export function formatSettingsExport(snapshot: SettingsSnapshot, build?: string): string {
   const defaults = defaultExperiments()
-  const lines: string[] = [build === undefined ? EXPORT_TITLE : `${EXPORT_TITLE} - build ${build}`]
+  const lines: string[] = build === undefined ? [EXPORT_TITLE] : [EXPORT_TITLE, `# build ${build}`]
   const changed = DEBUG_FIELDS.filter((spec) => snapshot.experiments[spec.field] !== defaults[spec.field])
   if (changed.length === 0) lines.push("# Changed experiments: none")
   else {

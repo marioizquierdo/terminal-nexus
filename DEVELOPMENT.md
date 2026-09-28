@@ -63,7 +63,10 @@ request, with the commit printed at the top of the page. It is **a development t
 terminal (`src/view/backends/ports.ts`), and adds only a canvas backend
 (`src/view/backends/canvas.ts`), key and tap translation (`src/web/keys.ts`, through the scripted
 playtest's own key names) and browser-stored settings (`src/web/host.ts`, the one file that touches the
-DOM). The build needs Bun and **fails if anything the page reaches imports a Node-only module**;
+DOM). A **settings text box** under the screen is the page's end of the export: "Export settings" in the
+game's Settings fills it and copies it to the clipboard, and pasting an export into it ("Start the
+Build Phase with these") — or opening the page with `#settings=<text>` in its address — starts the
+Build Phase with those settings and experiments. The build needs Bun and **fails if anything the page reaches imports a Node-only module**;
 `tests/web.test.ts` holds the page to the terminal's characters, colours and keys, and (in the Bun pass)
 runs the bundle in a sandbox with no Node features and requires the same fingerprints Node computes.
 
@@ -110,6 +113,8 @@ bun bin/grid.ts scenarios/citizen-mirror-skirmish --headless
 # the Build Phase scrolling-and-placement spike (Milestone 5, gate 5A)
 ./bin/terminal-nexus.ts --spike
 ./bin/terminal-nexus.ts --spike --scroll-margin 30 --capability monochrome   # margin: % of the view
+./bin/terminal-nexus.ts --spike --settings "$(pbpaste)"   # start from an exported settings text
+./bin/terminal-nexus.ts --spike --settings "placeLight=rainbow scrollMargin=25"
 ```
 
 Pinned by Gate 1A, measured 2026-08-21:
@@ -165,7 +170,8 @@ a click on a building's row arms it at once, its ghost at the cursor; on the map
 the same tile** places (Q52); a click on the map from the menu keeps the menu beside it, so the next
 click can arm from it. Only the keyboard shows a "highlighted, not yet chosen" bar. Esc, `x` and a
 right click go back one level — popup, then the map (Explore Map or placing) to the menu — and on the
-menu ask "Exit the game?"; `q` asks the same, and only Ctrl+C quits at once. Every row shows its cost, a row that no
+menu open the **game menu**: `[s] Settings`, `[q] Quit`, and Esc back to the game; `q`, and a click on
+`[esc] menu` in the top bar, open it too, and only Ctrl+C quits at once. Every row shows its cost, a row that no
 longer fits is dimmed, and **why a placement would be refused is the status line's job** — "rock in
 the way at 8,5", "costs 40, 20 left" (affordability first) — quietly while the grey `x` preview sits on
 the tile, in red once a placement is tried. `[u]` undoes and Backspace (on the map) removes the one
@@ -184,14 +190,28 @@ and reduced motion snaps both. A jump re-centres the view on the cursor. **A cli
 confirming second click lands where the first did (Q58); **exploring, a click near an edge scrolls
 further the nearer the edge**. A placement tried and refused flashes its footprint. A lone Esc at the
 end of a read waits 50 ms for the rest of a key sequence before it counts as Esc — so anything sending
-keys programmatically leaves a pause after an Esc. **Every one of these numbers is a Debug Mode flag**
-(`d`); the popup scrolls, since there are twenty-four.
+keys programmatically leaves a pause after an Esc. **Every one of these numbers is an Experiment**
+(`d`, below); the list scrolls, since there are twenty-four.
+
+**Settings, Experiments and the export** (owner, 2026-09-28). The game menu's `[s] Settings` is one
+scrolling popup: first the player's own settings — background, colour depth, symbols, reduced motion —
+changed live with Left/Right and saved to the same `~/.terminal-nexus/settings.json` the title menu's
+Settings writes; then, apart at the bottom, **Experiments**: gate 5G's Debug Mode flags, each naming
+the question it serves, never saved (`src/build/debug.ts` is the list; `src/build/settings.ts` the
+popup's rows). `d` opens Settings straight at the Experiments. `[r]` restarts the Build Phase keeping
+everything; `[e] Export settings` shows every setting and experiment as `name = value` text — changed
+experiments first, each with the default it replaced, the commit on the first line
+(`src/build/settings-export.ts`) — and in a terminal also copies it to the clipboard with OSC 52 (in
+iTerm2 allow "Applications in terminal may access clipboard") and writes
+`~/.terminal-nexus/settings-export.txt`. **`--settings "<text>"`** reads an export back — the whole
+text or just some pairs, unknown names and bad values skipped one at a time — for `--spike` and for
+`scripts/playtest.mjs`, so an agent can reproduce exactly what the owner played.
 
 **A placed building goes up** (gate 5I): it plays a few frames of its own (authored beside its art in
 `src/content/art.ts`'s `PLACEMENT_ART`, with a generic fallback for anything not drawn yet), then
 stands finished with a brief light on its characters and a few sparks around it — all of it timed by
 the live loop and drawn by `src/view/placement.ts` as a pure function of the time since the
-placement, and none of it in the plan. Debug Mode's first four rows tune it (Build animation,
+placement, and none of it in the plan. The first four Experiments tune it (Build animation,
 Lighting — including a rainbow — Particles, Glow time); reduced motion shows the finished building at
 once. Scripted playtests draw buildings finished; `scripts/capture-spike-screenshots.mjs`'s
 `placementGif` and `placementSheet` step the animation with a fake clock.
@@ -215,7 +235,7 @@ one list of bindings**: the bottom bar takes as many as its width holds, trimmed
 arrows, place, disarm, quit, the fast move, remove, undo — and the panel shows the rest, so a wide
 terminal has them all on one line and an 80-column one loses none of them (the other fast-move keys
 stay bound but unlisted). `--scroll-margin <percent>` starts the scroll margin at another share of the
-view than 20% (Debug Mode changes it live). Nothing it plans reaches the simulation, and nothing is
+view than 20% (its Experiment changes it live). Nothing it plans reaches the simulation, and the plan is not
 saved.
 
 Before any of that, the Build Phase opens on a **Nexus power draft** (gate 5D): two placeholder
@@ -285,7 +305,8 @@ showed after every key: the text of every step in `.playtest/<name>.txt`, and on
 (`--png final`, `--png all`, `--png 0,3,6`) and an animated GIF of the whole sequence (`--gif`).
 Output goes to `.playtest/`, which git ignores; pass `--out evidence/screenshots` only for an image
 that is going into a pull request. `--help` lists everything, including `--size`, `--capability`,
-`--theme`, `--glyphs`, `--delay` and `--hold`.
+`--theme`, `--glyphs`, `--delay` and `--hold` — and `--settings "<text>"`, which starts the script from
+an exported settings text, the way to reproduce what the owner pasted into a pull request.
 
 Use it to see a change working, to check a flow a person described, and to make the pictures a pull
 request shows. The keys go through the real keyboard and mouse adapters as the exact bytes a terminal
