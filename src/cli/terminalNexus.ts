@@ -27,8 +27,10 @@ const USAGE = `terminal-nexus — the Terminal Nexus game
       larger than the screen, a cursor that scrolls it, and three structures to place, by
       keyboard, by mouse, or from a script. It answers a question rather than shipping a
       screen - nothing it plans reaches the simulation, and nothing is saved.
-      --scroll-margin <tiles> changes how close to the edge of the screen the cursor gets
-      before the map starts scrolling. Three is the canon's number; try 2 and 5 against it.
+      --scroll-margin <percent> changes how close to the edge of the view the cursor gets
+      before the map starts scrolling, as a share of the view's width and height (20 unless
+      given; "25" and "25%" are the same). Press d on the screen for this and every other
+      movement number, live.
 
 A first launch guesses colour depth the way \`grid\` does; every launch after that remembers whatever
 was last chosen on the Settings screen (~/.terminal-nexus/settings.json). Any flag above overrides
@@ -65,7 +67,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       stdin: process.stdin,
       ...(margin === undefined
         ? {}
-        : { scrollMargin: parseInteger(margin, "--scroll-margin") }),
+        : { scrollMargin: parseInteger(margin.endsWith("%") ? margin.slice(0, -1) : margin, "--scroll-margin") }),
     })
   }
 

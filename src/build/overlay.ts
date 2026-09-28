@@ -48,8 +48,27 @@ export type OverlayRow =
   /** Text wrapped at words to the popup's width, in a fixed number of lines so the popup keeps its
    *  height whichever text it holds. A line that does not fit is dropped, never cut. */
   | Readonly<{ kind: "note"; text: string; lines: number }>
+  /**
+   * The line just above or just below a list that scrolls (gate 5H): blank while the list shows its
+   * own end, and "^ 3 more" / "v 12 more" while rows are hidden past it — the visible "more" cue. A
+   * click on it brings the nearest hidden row into view.
+   */
+  | Readonly<{ kind: "more"; direction: "above" | "below" }>
 
-export type OverlaySpec = Readonly<{ title: string; rows: readonly OverlayRow[] }>
+/**
+ * A run of one-line rows that scrolls when the popup is taller than the Grid pane can hold (gate 5H —
+ * Debug Mode, full at 80x24 with gate 5G's five flags). `from` and `to` (exclusive) index `rows`;
+ * `highlight` is the row the keyboard is on, which is always kept in view; `select` is the command
+ * that highlights the scrolling row at `index` (0 is `rows[from]`), for a click on a "more" line.
+ */
+export type OverlayScroll = Readonly<{
+  from: number
+  to: number
+  highlight: number
+  select: (index: number) => BuildCommand
+}>
+
+export type OverlaySpec = Readonly<{ title: string; rows: readonly OverlayRow[]; scroll?: OverlayScroll }>
 
 /** How many lines the Debug Mode popup keeps for the highlighted flag's question. Every question
  *  fits in this many at the narrowest popup (a test holds them to it). */
@@ -58,7 +77,8 @@ export const DEBUG_NOTE_LINES = 3
 /** The Debug Mode popup: every flag with its value and when a change is seen, the restart, and the
  *  question the highlighted row serves. */
 function debugSpec(state: BuildState): OverlaySpec {
-  const rows: OverlayRow[] = [{ kind: "blank" }]
+  const rows: OverlayRow[] = [{ kind: "more", direction: "above" }]
+  const from = rows.length
   DEBUG_FIELDS.forEach((spec, index) => {
     rows.push({
       kind: "setting",
@@ -71,8 +91,9 @@ function debugSpec(state: BuildState): OverlaySpec {
       select: { kind: "debug-select", row: index },
     })
   })
+  const to = rows.length
   rows.push(
-    { kind: "blank" },
+    { kind: "more", direction: "below" },
     {
       kind: "option",
       hotkey: "r",
@@ -84,7 +105,13 @@ function debugSpec(state: BuildState): OverlaySpec {
   )
   const field = fieldAtRow(state.overlayHighlight)
   rows.push({ kind: "note", text: field === null ? DEBUG_RESTART_QUESTION : fieldSpec(field).question, lines: DEBUG_NOTE_LINES })
-  return { title: "DEBUG MODE - not saved", rows }
+  // On the restart row the list keeps showing its last flags, the ones nearest to it.
+  const highlight = from + Math.min(state.overlayHighlight, DEBUG_FIELDS.length - 1)
+  return {
+    title: "DEBUG MODE - not saved",
+    rows,
+    scroll: { from, to, highlight, select: (index) => ({ kind: "debug-select", row: index }) },
+  }
 }
 
 /** The popup the state has open, as data, or `null`. */
@@ -158,6 +185,8 @@ export type PlacedOverlay = Readonly<{
   rows: readonly PlacedRow[]
   /** `[esc]` in the top border's right end: the close hotkey, drawn, and its click target. */
   close: Readonly<{ row: number; from: number; to: number }>
+  /** The scrolling list's window, or `null` for a popup with no list that scrolls. */
+  window: ScrollWindow | null
 }>
 
 /** Wider than the gate 5F popup (owner, 2026-09-27: "the popup probably larger too"), never wider than
@@ -192,19 +221,53 @@ function linesOf(entry: OverlayRow, textLimit: number): readonly (string | undef
   return [undefined]
 }
 
+/** Which of a scrolling list's rows are on screen: `offset` rows hidden above, then `visible` rows. */
+export type ScrollWindow = Readonly<{ offset: number; visible: number; count: number }>
+
+/**
+ * The window a scrolling list shows when only `visible` of its `count` rows fit: the highlighted row
+ * kept in the middle while it can be, and the window pinned at either end of the list. Derived from
+ * the highlight alone, so it needs no state of its own — the reducer does not know how tall the
+ * popup is, and does not need to.
+ */
+export function scrollWindow(count: number, visible: number, highlight: number): ScrollWindow {
+  const shown = Math.max(1, Math.min(count, visible))
+  const offset = Math.min(Math.max(0, highlight - Math.floor((shown - 1) / 2)), count - shown)
+  return { offset, visible: shown, count }
+}
+
 export function placeOverlay(layout: BuildLayout, spec: OverlaySpec): PlacedOverlay {
   const paneWidth = layout.gridBox.right - layout.gridBox.left - 1
   const paneHeight = layout.paneBottom - layout.gridBox.top - 1
   const width = Math.min(POPUP_WIDTH, Math.max(24, paneWidth - 3))
   const textLimit = width - 4
-  const lines = spec.rows.reduce((count, row) => count + linesOf(row, textLimit).length, 0)
+  const allLines = spec.rows.reduce((count, row) => count + linesOf(row, textLimit).length, 0)
+  // The border, the rows, a blank row of padding, the border, and a row of shadow must fit the Grid
+  // pane; a list that would not is scrolled to fit (gate 5H).
+  const room = paneHeight - 4
+  const scroll = spec.scroll
+  const window =
+    scroll === undefined
+      ? null
+      : scrollWindow(scroll.to - scroll.from, scroll.to - scroll.from - Math.max(0, allLines - room), scroll.highlight - scroll.from)
+  const shownRows = spec.rows.filter((_, index) => {
+    if (scroll === undefined || window === null || index < scroll.from || index >= scroll.to) return true
+    const position = index - scroll.from
+    return position >= window.offset && position < window.offset + window.visible
+  })
+  const lines = shownRows.reduce((count, row) => count + linesOf(row, textLimit).length, 0)
   // Border, the rows, a blank row of padding, border.
   const height = lines + 3
   const left = layout.gridBox.left + 1 + Math.floor((paneWidth - width - 1) / 2)
   const top = Math.max(layout.offset.row + 1, layout.gridBox.top + 1 + Math.floor((paneHeight - height - 1) / 2))
   const placed: PlacedRow[] = []
   let row = top + 1
-  for (const entry of spec.rows) {
+  for (const entry of shownRows) {
+    if (entry.kind === "more") {
+      placed.push({ row, spec: entry, secondLine: false, text: moreText(entry.direction, window) })
+      row += 1
+      continue
+    }
     linesOf(entry, textLimit).forEach((text, index) => {
       placed.push({ row, spec: entry, secondLine: index > 0, ...(text === undefined ? {} : { text }) })
       row += 1
@@ -218,7 +281,21 @@ export function placeOverlay(layout: BuildLayout, spec: OverlaySpec): PlacedOver
     textLimit,
     rows: placed,
     close: { row: top, from: right - 1 - CLOSE_LABEL.length, to: right - 2 },
+    window,
   }
+}
+
+/** How many rows a "more" line stands for: those hidden past it, or 0 when there are none. */
+function hiddenPast(direction: "above" | "below", window: ScrollWindow | null): number {
+  if (window === null) return 0
+  return direction === "above" ? window.offset : window.count - window.offset - window.visible
+}
+
+/** "^ 3 more" / "v 12 more", or nothing while the list shows its own end. */
+function moreText(direction: "above" | "below", window: ScrollWindow | null): string {
+  const hidden = hiddenPast(direction, window)
+  if (hidden === 0) return ""
+  return `${direction === "above" ? "^" : "v"} ${hidden} more`
 }
 
 /** What a click at a frame cell means with this popup open. `outside` is the caller's to act on: a
@@ -237,6 +314,14 @@ export function overlayHitAt(placed: PlacedOverlay, column: number, row: number)
   if (column < placed.textColumn || column >= placed.textColumn + placed.textLimit) return { kind: "none" }
   const hit = placed.rows.find((candidate) => candidate.row === row)
   if (hit !== undefined && hit.spec.kind === "option") return { kind: "command", command: hit.spec.command }
+  if (hit !== undefined && hit.spec.kind === "more") {
+    // A click on "^ 3 more" / "v 12 more" highlights the nearest hidden row, which brings it into view.
+    const { window } = placed
+    const scroll = placed.spec.scroll
+    if (window === null || scroll === undefined || hiddenPast(hit.spec.direction, window) === 0) return { kind: "none" }
+    const index = hit.spec.direction === "above" ? window.offset - 1 : window.offset + window.visible
+    return { kind: "command", command: scroll.select(index) }
+  }
   if (hit !== undefined && hit.spec.kind === "setting") {
     const columns = settingColumns(placed)
     if (column >= columns.valueFrom && column < columns.valueMiddle) return { kind: "command", command: hit.spec.decrease }

@@ -9,22 +9,73 @@
 //
 // Where each flag is read:
 //
-// - `smartCursor`, `scrollMargin` and `startFocus` change what a command does, so the reducer reads
-//   them from the state it is handed — never from a global — and a driver script replays them exactly;
-// - `pressedFlashMs` and `refusedFlashMs` are presentation only: the reducer stores them and nothing
-//   else, and the live loop (`src/cli/spike.ts`) reads them when it times a row's flash.
+// - `smartCursor`, `scrollMargin`, `startFocus`, `clickScroll`, `clickZone`, `armedClickScrolls` and
+//   `fastRecentres` change what a command does, so the reducer reads them from the state it is handed
+//   — never from a global — and a driver script replays them exactly;
+// - the speed tiers and key timings (`slowStep` through `slowAfterTurn`, gate 5H) decide how big a
+//   move the input path sends: the session's key-repeat tracker reads them (`src/build/motion.ts`),
+//   and the reducer only ever sees an ordinary `move-cursor` of the size they chose;
+// - `easeMs`, the flash durations, `refusedCursorMs` and `escTimeoutMs` are presentation and input
+//   timing: the reducer stores them and nothing else, and the live loop (`src/cli/spike.ts`, through
+//   `src/view/build-live.ts`) reads them.
 //
 // None of them reaches the simulation kernel (`src/pulse`, `src/state`): a Build Phase plan is a plan
 // on a screen until the Pulse, and nothing here is part of it.
 
-import { SCROLL_MARGIN } from "./camera.ts"
 import type { Focus } from "./types.ts"
 
+/**
+ * What a click on the map does to the view while nothing is armed (feedback F6, gate 5H):
+ *
+ * - `edges`: a click inside an edge zone scrolls, further the nearer the edge — at the very edge the
+ *   clicked tile comes to the middle of the view, at the zone's inner boundary nothing moves;
+ * - `centre`: every click centres the view on the clicked tile;
+ * - `margin`: the scroll margin alone, as every gate before 5H did.
+ */
+export type ClickScroll = "edges" | "centre" | "margin"
+
 export type DebugFlags = Readonly<{
+  /** Q54: how close to the view's edge the cursor gets before the camera follows, as a **percentage**
+   *  of the view's own width (for the sides) and height (for the top and bottom). A number of tiles
+   *  until gate 5H. */
+  scrollMargin: number
+  /** F6: what a click does to the view while exploring. */
+  clickScroll: ClickScroll
+  /** F6: how deep each edge zone of `clickScroll: "edges"` is, as a percentage of the view. */
+  clickZone: number
+  /** Q58: whether a click with a building armed may scroll the view. Off: it moves the cursor only,
+   *  so the confirming second click lands on the tile under the preview. */
+  armedClickScrolls: boolean
+  /** How long the drawn view takes to slide to a new camera position, in milliseconds; 0 jumps. The
+   *  live loop's alone — state and every command use the camera's target. */
+  easeMs: number
+  /** Whether a fast move (Shift, Option, PageUp/Home) re-centres the view on the cursor along the
+   *  axis it moved, rather than only dragging it to the margin (engine.md 3.3). */
+  fastRecentres: boolean
+  /** Q54's four speed tiers, in tiles per step: a tap (and a held arrow just after a turn); each
+   *  repeat of a held arrow at first; each repeat once held for `rampMs`; and every fast move. */
+  slowStep: number
+  normalStep: number
+  fastStep: number
+  fasterStep: number
+  /** How long an arrow has to be held before its repeats go from the normal step to the fast one. */
+  rampMs: number
+  /** Terminals send no key-up: two presses of one arrow at most this far apart are one held key. */
+  repeatGapMs: number
+  /** The longest pause a terminal leaves before it starts repeating a held key. A press of the same
+   *  arrow within it may be the first repeat, so a slow-after-a-turn hold survives it; a press of a
+   *  different arrow within it is a change of direction. */
+  repeatDelayMs: number
+  /** Whether a change of direction drops a held arrow to the slow step, for precise pointing, until
+   *  the arrow is let go or anything else is pressed. */
+  slowAfterTurn: boolean
+  /** How long the cursor flashes when a placement is tried and refused, in milliseconds. */
+  refusedCursorMs: number
+  /** How long a lone Esc at the end of a read waits for the rest of a key sequence before it counts
+   *  as Esc, in milliseconds; 0 is not at all. */
+  escTimeoutMs: number
   /** Q55: arming from the menu moves the cursor beside the last thing planned. */
   smartCursor: boolean
-  /** Q54: how close to the view's edge the cursor gets before the camera follows, in tiles. */
-  scrollMargin: number
   /** Which half of the screen has the keyboard when the Build Phase opens — a guess gate 5F made. */
   startFocus: Focus
   /** How long a menu row's "pressed" flash lasts, in milliseconds. */
@@ -60,13 +111,164 @@ type AnyFieldSpec = { [F in DebugField]: FieldSpec<F> }[DebugField]
 
 const tiles = (value: number): string => `${value} tile${value === 1 ? "" : "s"}`
 const millis = (value: number): string => (value === 0 ? "off" : `${value} ms`)
+const duration = (value: number): string => `${value} ms`
+const percent = (value: number): string => `${value}%`
+const onOff = (value: boolean): string => (value ? "on" : "off")
 
 /** The owner's own "about 50 ms" (2026-09-27), the 90 and 140 the live loop was built with, and a
  *  spread either side to feel the difference against. */
 const FLASH_VALUES = [0, 50, 90, 140, 250, 400] as const
 
-/** The flags, in the order the popup lists them. */
+/** The owner's own "about 20% of the height or width of the screen" (2026-09-26). */
+export const DEFAULT_SCROLL_MARGIN_PERCENT = 20
+
+/** The flags, in the order the popup lists them: gate 5H's movement numbers first, since they are the
+ *  ones waiting to be felt, then gate 5G's. */
 export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
+  {
+    field: "scrollMargin",
+    label: "Scroll margin",
+    applies: "now",
+    question: "How near the edge the cursor gets before the map scrolls, as a share of the view. Asked for: about 20%. (Q54)",
+    values: [0, 5, 10, 15, 20, 25, 30, 35, 40],
+    cycles: false,
+    format: percent,
+  },
+  {
+    field: "clickScroll",
+    label: "Explore click",
+    applies: "now",
+    question: "Exploring, a click near an edge: edges scrolls more the nearer it is; centres always centres; margin: as before. (F6)",
+    values: ["edges", "centre", "margin"],
+    cycles: true,
+    format: (value: ClickScroll) => (value === "centre" ? "centres" : value),
+  },
+  {
+    field: "clickZone",
+    label: "Click edge zone",
+    applies: "now",
+    question: "How deep the edges are where a click scrolls the view (Explore click: edges), as a share of the view. (F6)",
+    values: [15, 20, 25, 33, 40, 50],
+    cycles: false,
+    format: percent,
+  },
+  {
+    field: "armedClickScrolls",
+    label: "Armed click scrolls",
+    applies: "now",
+    question: "With a building armed, may a click scroll the view? Off: the second click always lands under the preview. (Q58)",
+    values: [false, true],
+    cycles: true,
+    format: onOff,
+  },
+  {
+    field: "easeMs",
+    label: "View slide",
+    applies: "now",
+    question: "How long the view takes to slide to where it scrolled. Off: it jumps, as before.",
+    values: [0, 50, 100, 150, 200, 300, 500],
+    cycles: false,
+    format: millis,
+  },
+  {
+    field: "fastRecentres",
+    label: "Fast move centres",
+    applies: "now",
+    question: "Shift+arrow (or Option, PageUp, Home) brings the view along so the cursor stays mid-screen, not at the margin.",
+    values: [true, false],
+    cycles: true,
+    format: onOff,
+  },
+  {
+    field: "slowStep",
+    label: "Slow step",
+    applies: "now",
+    question: "How far a tap moves, and a held arrow just after a change of direction. Asked for: 1. (Q54)",
+    values: [1, 2, 3],
+    cycles: false,
+    format: tiles,
+  },
+  {
+    field: "normalStep",
+    label: "Normal step",
+    applies: "now",
+    question: "How far each repeat of a held arrow moves at first. Asked for: 2. (Q54)",
+    values: [1, 2, 3, 4],
+    cycles: false,
+    format: tiles,
+  },
+  {
+    field: "fastStep",
+    label: "Fast step",
+    applies: "now",
+    question: "How far each repeat moves once the arrow has been held a while (Held to go fast). Asked for: 4. (Q54)",
+    values: [2, 3, 4, 5, 6, 8],
+    cycles: false,
+    format: tiles,
+  },
+  {
+    field: "fasterStep",
+    label: "Shift step",
+    applies: "now",
+    question: "How far Shift+arrow moves, and Option+arrow, PageUp and Home. Asked for: 8; it was 5. (Q54)",
+    values: [3, 4, 5, 6, 8, 10, 12, 16],
+    cycles: false,
+    format: tiles,
+  },
+  {
+    field: "rampMs",
+    label: "Held to go fast",
+    applies: "now",
+    question: "How long an arrow is held before it speeds up from the normal step to the fast one. (Q54)",
+    values: [0, 150, 300, 500, 800, 1200],
+    cycles: false,
+    format: duration,
+  },
+  {
+    field: "repeatGapMs",
+    label: "Repeat gap",
+    applies: "now",
+    question: "Presses of one arrow closer than this count as holding it. Too low: it never speeds up. Too high: quick taps do. (Q54)",
+    values: [50, 80, 120, 160, 200, 300],
+    cycles: false,
+    format: duration,
+  },
+  {
+    field: "repeatDelayMs",
+    label: "Repeat delay",
+    applies: "now",
+    question: "The pause before your terminal repeats a held key. Another arrow within it is a change of direction. (Q54)",
+    values: [250, 400, 550, 700, 1000, 1500],
+    cycles: false,
+    format: duration,
+  },
+  {
+    field: "slowAfterTurn",
+    label: "Slow after a turn",
+    applies: "now",
+    question: "Changing direction drops a held arrow to the slow step, for precise pointing, until you let go. (Q54)",
+    values: [true, false],
+    cycles: true,
+    format: onOff,
+  },
+  {
+    field: "refusedCursorMs",
+    label: "Refused cursor",
+    applies: "now",
+    question: "How long the building under the cursor flashes when you try to build where you cannot.",
+    values: [0, 100, 150, 250, 400, 600],
+    cycles: false,
+    format: millis,
+  },
+  {
+    field: "escTimeoutMs",
+    label: "Esc timeout",
+    applies: "now",
+    question: "How long a lone Esc waits for the rest of a key (Option+arrow over a slow link) before it counts as Esc.",
+    values: [0, 10, 25, 50, 100, 200],
+    cycles: false,
+    format: millis,
+  },
   {
     field: "smartCursor",
     label: "Smart cursor",
@@ -75,16 +277,7 @@ export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
       "Picking a building from the menu puts the cursor beside the last thing you planned. Off: it stays put. (Q55)",
     values: [true, false],
     cycles: true,
-    format: (value: boolean) => (value ? "on" : "off"),
-  },
-  {
-    field: "scrollMargin",
-    label: "Scroll margin",
-    applies: "now",
-    question: "How near the edge of the view the cursor gets before the map scrolls along. (Q54)",
-    values: [0, 1, 2, 3, 4, 5, 6, 8],
-    cycles: false,
-    format: tiles,
+    format: onOff,
   },
   {
     field: "startFocus",
@@ -125,14 +318,35 @@ export const DEBUG_RESTART_QUESTION =
 /** The live loop's flash durations as gate 5F built them — the starting values of the two flags. */
 export const DEFAULT_FLASH_MS = { pressed: 90, refused: 140 } as const
 
+/** Gate 5H's movement numbers as built: the owner's own tiers (slow 1, normal 2, fast 4, faster 8),
+ *  and this session's first guesses at the timings, for him to retune by feel. */
+export const DEFAULT_MOVEMENT = {
+  clickScroll: "edges",
+  clickZone: 33,
+  armedClickScrolls: false,
+  easeMs: 150,
+  fastRecentres: true,
+  slowStep: 1,
+  normalStep: 2,
+  fastStep: 4,
+  fasterStep: 8,
+  rampMs: 300,
+  repeatGapMs: 120,
+  repeatDelayMs: 700,
+  slowAfterTurn: true,
+  refusedCursorMs: 250,
+  escTimeoutMs: 50,
+} as const satisfies Partial<DebugFlags>
+
 /** The flags a screen opens with: what the context asks for (`--scroll-margin`, a test's
- *  `smartCursor: false`), and otherwise what gate 5F built. */
+ *  `smartCursor: false`), and otherwise what gates 5F-5H built. */
 export function initialDebugFlags(
   context: Readonly<{ scrollMargin?: number; smartCursor?: boolean }>,
 ): DebugFlags {
   return {
+    ...DEFAULT_MOVEMENT,
     smartCursor: context.smartCursor ?? true,
-    scrollMargin: context.scrollMargin ?? SCROLL_MARGIN,
+    scrollMargin: context.scrollMargin ?? DEFAULT_SCROLL_MARGIN_PERCENT,
     startFocus: "menu",
     pressedFlashMs: DEFAULT_FLASH_MS.pressed,
     refusedFlashMs: DEFAULT_FLASH_MS.refused,

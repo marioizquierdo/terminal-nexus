@@ -86,6 +86,9 @@ export function buildMouseCommand(
   // it, the click closes it and brings focus to wherever it landed, and does nothing more (owner,
   // 2026-09-27 — he clicked Nexus, missed the popup in the middle, and thought the mouse was broken).
   if (ui.overlay !== undefined) {
+    // The wheel walks a popup's list, which scrolls Debug Mode's (gate 5H) — Up and Down's own job.
+    if (event.button === MOUSE_WHEEL_UP) return { kind: "highlight", delta: -1 }
+    if (event.button === MOUSE_WHEEL_DOWN) return { kind: "highlight", delta: 1 }
     if (event.button !== MOUSE_LEFT) return null
     const hit = overlayHitAt(ui.overlay, event.column, event.row)
     if (hit.kind === "command") return hit.command

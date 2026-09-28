@@ -53,8 +53,13 @@ class FakeStdin extends EventEmitter {
   }
 }
 
+/** Long enough for a lone Esc's timeout (gate 5H; 50 ms unless Debug Mode says otherwise) to run out,
+ *  and for the frame timer's last frame after it. */
+const AFTER_ESC_TIMEOUT_MS = 150
+
 async function spikeSession(
   end: (stdin: FakeStdin, stdout: FakeStdout) => void,
+  settleMs = 30,
 ): Promise<{ stdout: FakeStdout; stdin: FakeStdin; exits: number[] }> {
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()
@@ -72,7 +77,7 @@ async function spikeSession(
 
   await new Promise((resolve) => setTimeout(resolve, 30))
   end(stdin, stdout)
-  await new Promise((resolve) => setTimeout(resolve, 30))
+  await new Promise((resolve) => setTimeout(resolve, settleMs))
   void session
   return { stdout, stdin, exits }
 }
@@ -109,7 +114,7 @@ test("a lone q or Esc only asks — it never leaves the screen by itself", async
   for (const key of ["q", ESC]) {
     const { stdout, exits } = await spikeSession((input) => {
       input.emit("data", Buffer.from(key))
-    })
+    }, AFTER_ESC_TIMEOUT_MS)
     assert.deepEqual(exits, [], `${JSON.stringify(key)} left without asking`)
     assert.ok(stdout.lastWrite.includes("EXIT THE GAME?"), "the exit question was not drawn")
   }
@@ -119,9 +124,22 @@ test("Esc with something armed disarms instead of leaving", async () => {
   const { stdout, exits } = await spikeSession((input) => {
     input.emit("data", Buffer.from("1"))
     input.emit("data", Buffer.from(ESC))
-  })
+  }, AFTER_ESC_TIMEOUT_MS)
   assert.deepEqual(exits, [], "Esc quit while a structure was armed")
   assert.ok(stdout.lastWrite.includes("Cancelled"), "Esc did not disarm")
+})
+
+test("a lone Esc waits a moment for the rest of a key: Esc then [A in the next read is one Up arrow", async () => {
+  // Gate 5H: an arrow split across two reads (a slow link) used to arrive as Esc and then two stray
+  // characters. Within the timeout the two reads are joined and are the one key they always were.
+  const { stdout, exits } = await spikeSession((input) => {
+    input.emit("data", Buffer.from("e")) // explore, so the arrow moves the map cursor
+    input.emit("data", Buffer.from(ESC))
+    input.emit("data", Buffer.from("[A"))
+  }, AFTER_ESC_TIMEOUT_MS)
+  assert.deepEqual(exits, [])
+  assert.ok(!stdout.lastWrite.includes("EXIT THE GAME?"), "the split arrow was read as Esc")
+  assert.match(stdout.lastWrite, /cursor 18,12/, "the split arrow did not move the cursor up one tile")
 })
 
 test("a right click never leaves the screen", async () => {

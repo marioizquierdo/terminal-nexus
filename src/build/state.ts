@@ -8,8 +8,8 @@ import type { Coord, GridTerrain } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
 import type { StatusMessage } from "../status.ts"
 import { NO_STATUS, status } from "../status.ts"
-import type { Camera, Viewport } from "./camera.ts"
-import { clampToGrid, followCursor } from "./camera.ts"
+import type { Camera, Margin, Viewport } from "./camera.ts"
+import { centreOn, clampToGrid, edgeClickCamera, followCursor, marginForView } from "./camera.ts"
 import type { DebugField, DebugFlags } from "./debug.ts"
 import {
   DEBUG_ROW_COUNT,
@@ -48,8 +48,10 @@ export type BuildContext = Readonly<{
    * direction" whose tuning "Milestone 5 may retune on evidence from the first person who actually
    * scrolls a Grid". So the spike takes it as a parameter and puts it on the command line and in
    * the header — a number Mario can feel the difference between beats a number this session argues
-   * for. Defaults to the canon's three. **Only where the margin starts**: since gate 5G it is a Debug
-   * Mode flag, `state.debug.scrollMargin`, and that is what the reducer reads.
+   * for. **Only where the margin starts**: since gate 5G it is a Debug Mode flag,
+   * `state.debug.scrollMargin`, and that is what the reducer reads. **Since gate 5H it is a
+   * percentage of the view** — of its width for the sides and its height for the top and bottom —
+   * defaulting to the owner's 20%, rather than a number of tiles.
    */
   scrollMargin?: number
   /** The Nexus draft this Build Phase offers — placeholder options, not Milestone 8's real one
@@ -82,6 +84,12 @@ export type BuildState = Readonly<{
   inspecting: boolean
   /** The last thing a command asked to have acknowledged on screen — see `Ack`. */
   ack: Ack | null
+  /**
+   * The last placement that was tried and refused, with a sequence number and no clock, the way `ack`
+   * is: the live loop flashes the cursor there for a moment from when it first sees a new `seq`
+   * (gate 5H; how long is Debug Mode's "Refused cursor"). Counts up across a Debug Mode restart.
+   */
+  refusedTry: Readonly<{ seq: number; tile: Coord }> | null
   /** The previous command was a Right on the menu that only flickered: a second one in a row moves
    *  focus to the Grid. Cleared by any other command. */
   nudged: boolean
@@ -141,13 +149,15 @@ export function remaining(context: BuildContext, state: BuildState): number {
   return context.allotment + state.bonusAllotment - spent(context, state)
 }
 
-/** The five-tile jump — Shift+Arrow, its modifier-free fallback, and the mouse wheel all produce a
- *  `move-cursor` of this size. GUIDANCE (engine.md 9.7's bindings table), not RULE. */
+/** The mouse wheel's five-tile step. GUIDANCE (engine.md 9.7's bindings table), not RULE. Until gate
+ *  5H Shift+Arrow and its modifier-free fallbacks moved this far too; since then they move Debug
+ *  Mode's "Shift step" (8 to start, the owner's "faster" tier), and the wheel alone keeps five. */
 export const JUMP_TILES = 5
 
-/** The scroll margin in force: Debug Mode's flag, which starts at the context's (or the canon's three). */
-function marginOf(state: Readonly<{ debug: DebugFlags }>): number {
-  return state.debug.scrollMargin
+/** The scroll margin in force, in tiles along each axis: Debug Mode's percentage of the view (gate 5H),
+ *  which starts at the context's (`--scroll-margin`) or the owner's 20%. */
+function marginOf(state: Readonly<{ debug: DebugFlags; viewport: Viewport }>): Margin {
+  return marginForView(state.debug.scrollMargin, state.viewport)
 }
 
 /**
@@ -163,11 +173,12 @@ export function createBuildState(
   const start = clampToGrid(cursor, context.grid)
   return {
     cursor: start,
-    camera: followCursor({ x: 0, y: 0 }, start, viewport, context.grid, debug.scrollMargin),
+    camera: followCursor({ x: 0, y: 0 }, start, viewport, context.grid, marginOf({ debug, viewport })),
     viewport,
     armed: null,
     inspecting: false,
     ack: null,
+    refusedTry: null,
     nudged: false,
     // The menu, on its first entry — the side panel is where the owner's eyes went first (2026-09-26),
     // and the first entry is the Nexus Powers one, so Enter from a standing start opens the choice
@@ -535,10 +546,24 @@ export function plannedAt(
   return null
 }
 
+/**
+ * How a cursor move treats the camera:
+ *
+ * - `follow` — the scroll margin's follow rule, what every move did before gate 5H;
+ * - `still` — the camera stays put (an armed click, Q58: the confirming click must land where the
+ *   first one did);
+ * - a function — the camera placed first (recentred, or an edge-zone click), then the follow rule on
+ *   top, so the margin still holds wherever the camera can scroll.
+ */
+type CameraMove = "follow" | "still" | ((camera: Camera, cursor: Coord) => Camera)
+
 /** Moves the cursor and lets it drag the camera — the one place scrolling ever happens. */
-function withCursor(context: BuildContext, state: BuildState, tile: Coord): BuildState {
+function withCursor(context: BuildContext, state: BuildState, tile: Coord, scroll: CameraMove = "follow"): BuildState {
   const cursor = clampToGrid(tile, context.grid)
   const moved = !sameTile(cursor, state.cursor)
+  const placed = typeof scroll === "function" ? scroll(state.camera, cursor) : state.camera
+  const camera =
+    scroll === "still" ? state.camera : followCursor(placed, cursor, state.viewport, context.grid, marginOf(state))
   // A refusal names a tile, and the view already recomputes its own live reading from wherever the
   // cursor now is — so a refusal left behind after the cursor moves away disagrees with what is drawn
   // above it. Every other message is about the last action rather than a tile, and stays until the
@@ -548,9 +573,38 @@ function withCursor(context: BuildContext, state: BuildState, tile: Coord): Buil
   return {
     ...state,
     cursor,
-    camera: followCursor(state.camera, cursor, state.viewport, context.grid, marginOf(state)),
+    camera,
     status: lapsed ? NO_STATUS : state.status,
   }
+}
+
+/**
+ * A click on a Grid tile, as a cursor move: what it does to the camera depends on what the click is
+ * for. **With a structure armed it never scrolls** (Q58, option B; Debug Mode can allow it): the
+ * player is pointing at a tile to confirm with a second click, and a view that slid under the pointer
+ * would make that second click land on a different tile. **Exploring**, the view comes to the click
+ * (feedback F6): nearer an edge scrolls further, or every click centres, or — the gate 5A-5G
+ * behaviour — only the margin follows.
+ */
+function clickCameraMove(context: BuildContext, state: BuildState): CameraMove {
+  const flags = state.debug
+  if (state.armed !== null) return flags.armedClickScrolls ? "follow" : "still"
+  switch (flags.clickScroll) {
+    case "centre":
+      return (camera, cursor) => centreOn(camera, cursor, state.viewport, context.grid)
+    case "edges":
+      return (camera, cursor) => edgeClickCamera(camera, cursor, state.viewport, context.grid, flags.clickZone)
+    default:
+      return "follow"
+  }
+}
+
+/** A fast move (Shift and its fallbacks) re-centres the view on the cursor along the axis it moved,
+ *  when Debug Mode's "Fast move centres" is on (engine.md 3.3's recentring). */
+function moveCameraMove(context: BuildContext, state: BuildState, command: Readonly<{ dx: number; dy: number; fast?: boolean }>): CameraMove {
+  if (command.fast !== true || !state.debug.fastRecentres) return "follow"
+  return (camera, cursor) =>
+    centreOn(camera, cursor, state.viewport, context.grid, { x: command.dx !== 0, y: command.dy !== 0 })
 }
 
 /** The next acknowledgement: a new sequence number, so the live loop sees a fresh one even when two
@@ -688,7 +742,11 @@ function place(context: BuildContext, state: BuildState): BuildState {
     // failure this check exists to prevent. The message is about this tile, so it lapses when the
     // cursor leaves it — and its "danger" tone is how the status line tells an attempt apart from
     // merely looking.
-    return { ...state, status: status(refusalText(preview.refusal), "danger", state.cursor) }
+    return {
+      ...state,
+      status: status(refusalText(preview.refusal), "danger", state.cursor),
+      refusedTry: { seq: (state.refusedTry?.seq ?? 0) + 1, tile: state.cursor },
+    }
   }
   const { item, anchor } = preview
   const placed: BuildState = {
@@ -751,7 +809,7 @@ function adjustFlag(context: BuildContext, state: BuildState, field: DebugField,
     status: status(`Debug - ${spec.label}: ${formatDebugValue(flags, field)}${later}.`),
   }
   if (field !== "scrollMargin") return next
-  return { ...next, camera: followCursor(next.camera, next.cursor, next.viewport, context.grid, flags.scrollMargin) }
+  return { ...next, camera: followCursor(next.camera, next.cursor, next.viewport, context.grid, marginOf(next)) }
 }
 
 /** Starts the Build Phase over, keeping the Debug Mode flags — how a flag marked "restart" takes
@@ -759,7 +817,12 @@ function adjustFlag(context: BuildContext, state: BuildState, field: DebugField,
  *  loop never mistakes a new one for one it has already shown. */
 function restartWithFlags(context: BuildContext, state: BuildState): BuildState {
   const fresh = createBuildState(context, state.startCursor, state.viewport, state.debug)
-  return { ...fresh, ack: state.ack, status: status("Build Phase restarted with the debug settings.") }
+  return {
+    ...fresh,
+    ack: state.ack,
+    refusedTry: state.refusedTry,
+    status: status("Build Phase restarted with the debug settings."),
+  }
 }
 
 /** Enter/Space, or Right/Left, on the Debug Mode popup's highlighted row. */
@@ -789,10 +852,12 @@ export function applyBuildCommand(
 function applyCommand(context: BuildContext, state: BuildState, command: BuildCommand): BuildState {
   switch (command.kind) {
     case "move-cursor":
-      return withCursor(context, state, {
-        x: state.cursor.x + command.dx,
-        y: state.cursor.y + command.dy,
-      })
+      return withCursor(
+        context,
+        state,
+        { x: state.cursor.x + command.dx, y: state.cursor.y + command.dy },
+        moveCameraMove(context, state, command),
+      )
 
     case "click-tile": {
       const target = clampToGrid({ x: command.x, y: command.y }, context.grid)
@@ -800,7 +865,8 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // nothing else, so a click meant to dismiss never also places or picks (owner, 2026-09-27).
       if (state.overlay !== null) {
         if (state.overlay === "confirm-commit" || state.committed) return { ...state, overlay: null }
-        return withCursor(context, { ...state, overlay: null, focus: "grid", armed: state.armed }, target)
+        const dismissed: BuildState = { ...state, overlay: null, focus: "grid", armed: state.armed }
+        return withCursor(context, dismissed, target, clickCameraMove(context, dismissed))
       }
       if (state.committed) return state
       // Two clicks, not one — Q52. A click on a tile that is not already where the cursor sits only
@@ -808,8 +874,9 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // what places. Checked against `state.cursor` (tile identity), never the click's screen cell.
       const confirming =
         state.focus === "grid" && state.armed !== null && target.x === state.cursor.x && target.y === state.cursor.y
-      // A click on the Grid is attention on the Grid: it takes keyboard focus there too.
-      const moved = { ...withCursor(context, state, target), focus: "grid" as const }
+      // A click on the Grid is attention on the Grid: it takes keyboard focus there too. Armed, it
+      // never scrolls the view (Q58), so a second click lands on the tile the preview is on.
+      const moved = { ...withCursor(context, state, target, clickCameraMove(context, state)), focus: "grid" as const }
       if (confirming) return place(context, moved)
       if (moved.armed !== null) return moved
       // Exploring: a click on a building opens its information panel; a click on bare ground closes it.

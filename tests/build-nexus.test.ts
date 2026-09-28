@@ -381,8 +381,9 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   byKeyboard.build.handleData("n", byKeyboard.layout) // open the Nexus Powers
   byKeyboard.build.handleData("1", byKeyboard.layout) // pick Reserve Fund, which closes the popup
   byKeyboard.build.handleData("1", byKeyboard.layout) // arm Barracks
+  // Row 13, clear of the scroll margin: an armed click never scrolls the view (Q58) and an arrow
+  // does, so a plan laid inside the margin is the same plan by both, but not the same camera.
   for (let step = 0; step < 12; step += 1) byKeyboard.build.handleData(`${ESC}[C`, byKeyboard.layout)
-  byKeyboard.build.handleData(`${ESC}[B`, byKeyboard.layout)
   byKeyboard.build.handleData("\r", byKeyboard.layout)
   byKeyboard.build.handleData("1", byKeyboard.layout) // placing handed the keyboard to the menu
   for (let step = 0; step < 4; step += 1) byKeyboard.build.handleData(`${ESC}[C`, byKeyboard.layout)
@@ -401,11 +402,11 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   const clickTile = (tile: { x: number; y: number }): void => {
     byMouse.build.handleData(clickTileBytes(byMouse.layout, byMouse.build, tile), byMouse.layout)
   }
-  clickTile({ x: 30, y: 14 })
-  clickTile({ x: 30, y: 14 })
+  clickTile({ x: 30, y: 13 })
+  clickTile({ x: 30, y: 13 })
   byMouse.build.handleData("1", byMouse.layout)
-  clickTile({ x: 34, y: 14 })
-  clickTile({ x: 34, y: 14 })
+  clickTile({ x: 34, y: 13 })
+  clickTile({ x: 34, y: 13 })
   byMouse.build.handleData("p", byMouse.layout)
   byMouse.build.handleData(clickPopupBytes(byMouse, (c) => c.kind === "confirm-commit" && c.accept), byMouse.layout)
 
@@ -413,7 +414,7 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
     { kind: "open-nexus-powers" },
     { kind: "pick-nexus", index: 0 },
     { kind: "arm", index: 0 },
-    { kind: "move-cursor", dx: 12, dy: 1 },
+    { kind: "move-cursor", dx: 12, dy: 0 },
     { kind: "place" },
     { kind: "arm", index: 0 },
     { kind: "move-cursor", dx: 4, dy: 0 },

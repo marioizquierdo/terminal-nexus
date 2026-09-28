@@ -20,6 +20,7 @@ import { composeBuildFrame } from "../view/build.ts"
 import type { ReadonlyCellFrame } from "../view/frame.ts"
 import type { CapabilityMode } from "../view/roles.ts"
 import type { GlyphPack } from "../view/theme.ts"
+import type { SpeedTier } from "../build/motion.ts"
 import type { PlaytestStep } from "./keys.ts"
 
 export type BuildPlaytestOptions = Readonly<{
@@ -42,6 +43,8 @@ export type PlaytestFrame = Readonly<{
   bytes: string
   state: BuildState
   frame: ReadonlyCellFrame
+  /** The speed tier the last arrow moved at (gate 5H), or `null` before any. */
+  speedTier: SpeedTier | null
 }>
 
 export type BuildPlaytest = Readonly<{
@@ -52,6 +55,9 @@ export type BuildPlaytest = Readonly<{
    *  were not run, because there is no screen left for them to reach. */
   ended: Readonly<{ by: "quit"; atStep: number; skipped: number }> | null
 }>
+
+/** How far apart two steps are when a script does not say: longer than any key-repeat delay. */
+export const UNTIMED_GAP_MS = 1000
 
 export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   const context = options.context ?? spikeContext()
@@ -78,12 +84,17 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   const compose = (): ReadonlyCellFrame =>
     composeBuildFrame({ context, state: build.state, layout, glyphPack }, capability)
 
-  const frames: PlaytestFrame[] = [{ index: 0, label: "start", bytes: "", state: build.state, frame: compose() }]
+  const frames: PlaytestFrame[] = [{ index: 0, label: "start", bytes: "", state: build.state, frame: compose(), speedTier: null }]
   let ended: BuildPlaytest["ended"] = null
 
+  // A clock of the script's own: each step arrives `afterMs` after the one before, or a second after it
+  // when the script does not say — long enough that every untimed key is a press of its own, so the
+  // held-key speed ramp (gate 5H) only ever runs where a script asks for it (`Right~30*12`).
+  let clock = 0
   for (const [position, step] of options.steps.entries()) {
-    const bytes = deliver(build, layout, step)
-    frames.push({ index: position + 1, label: step.label, bytes, state: build.state, frame: compose() })
+    clock += step.afterMs ?? UNTIMED_GAP_MS
+    const bytes = deliver(build, layout, step, clock)
+    frames.push({ index: position + 1, label: step.label, bytes, state: build.state, frame: compose(), speedTier: build.speedTier })
     if (leftBy !== null) {
       ended = { by: leftBy, atStep: position + 1, skipped: options.steps.length - position - 1 }
       break
@@ -95,9 +106,9 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
 
 /** One step into the real adapters, on its own — never concatenated with the next one. Returns the
  *  bytes it sent. */
-function deliver(build: BuildSession, layout: BuildLayout, step: PlaytestStep): string {
+function deliver(build: BuildSession, layout: BuildLayout, step: PlaytestStep, now: number): string {
   if (step.kind === "key") {
-    build.handleData(step.bytes, layout)
+    build.handleData(step.bytes, layout, { now })
     return step.bytes
   }
   const cell = mouseCell(build.state, layout, step)
@@ -105,8 +116,8 @@ function deliver(build: BuildSession, layout: BuildLayout, step: PlaytestStep): 
   // what makes this the real sequence rather than half of it.
   const press = formatMouseEvent(step.button, cell.x + 1, cell.y + 1)
   const release = `${press.slice(0, -1)}m`
-  build.handleData(press, layout)
-  if (step.button < 64) build.handleData(release, layout)
+  build.handleData(press, layout, { now })
+  if (step.button < 64) build.handleData(release, layout, { now })
   return step.button < 64 ? press + release : press
 }
 

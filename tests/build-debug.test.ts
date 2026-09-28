@@ -17,7 +17,7 @@ import {
 } from "../src/build/debug.ts"
 import type { DebugField } from "../src/build/debug.ts"
 import { buildLayout, cellForTile, menuEntryRow } from "../src/build/layout.ts"
-import { MOUSE_LEFT, MOUSE_RIGHT, formatMouseEvent } from "../src/build/mouse.ts"
+import { MOUSE_LEFT, MOUSE_RIGHT, MOUSE_WHEEL_DOWN, MOUSE_WHEEL_UP, formatMouseEvent } from "../src/build/mouse.ts"
 import { DEBUG_NOTE_LINES, overlaySpec, placeOverlay, settingColumns, wrapWords } from "../src/build/overlay.ts"
 import type { PlacedOverlay } from "../src/build/overlay.ts"
 import { BuildSession } from "../src/build/session.ts"
@@ -77,9 +77,33 @@ function settingRow(side: Side, field: DebugField): number {
   return hit.row
 }
 
+/** Whether flag `field`'s row is on screen — the popup scrolls since gate 5H. */
+function onScreen(side: Side, field: DebugField): boolean {
+  const label = DEBUG_FIELDS[rowOfField(field)]?.label
+  return placed(side).rows.some((row) => row.spec.kind === "setting" && row.spec.label === label)
+}
+
+/** The mouse's way to a flag that is scrolled out of view: the wheel, over the popup, until it shows. */
+function wheelTo(side: Side, field: DebugField): void {
+  const box = placed(side).box
+  const down = rowOfField(field) > side.build.state.overlayHighlight
+  for (let turns = 0; turns < DEBUG_FIELDS.length && !onScreen(side, field); turns += 1) {
+    click(side, box.left + 2, box.top + 2, down ? MOUSE_WHEEL_DOWN : MOUSE_WHEEL_UP)
+  }
+}
+
 function clickValue(side: Side, field: DebugField, half: "left" | "right"): void {
+  wheelTo(side, field)
   const columns = settingColumns(placed(side))
   click(side, half === "left" ? columns.valueFrom : columns.valueTo, settingRow(side, field))
+}
+
+/** The keyboard's way to a flag: Up or Down from wherever the highlight is, never by a count that
+ *  breaks when a flag is added. */
+function goTo(side: Side, field: DebugField): void {
+  const target = rowOfField(field)
+  const from = side.build.state.overlayHighlight
+  keys(side, ...Array.from({ length: Math.abs(target - from) }, () => (target > from ? DOWN : UP)))
 }
 
 // --- Opening and closing ---------------------------------------------------------------------------
@@ -90,13 +114,59 @@ test("d opens Debug Mode over the Grid: every flag, its value, and when a change
   assert.equal(side.build.state.overlay, "debug")
   const text = screen(side)
   assert.match(text, /DEBUG MODE - not saved/)
-  for (const spec of DEBUG_FIELDS) assert.ok(text.includes(spec.label), `${spec.label} is not listed`)
-  assert.match(text, /Smart cursor\s+<\s+on\s+>\s+now/)
-  assert.match(text, /Opens on\s+<\s+menu\s+>\s+restart/)
+  assert.match(text, /Scroll margin\s+<\s+20%\s+>\s+now/)
   assert.match(text, /\[r\] Restart with these settings/)
   // The key help says where the keyboard is, and the highlighted row's question is shown.
   assert.match(text, /DEBUG {2}up\/down choose {2}left\/right change/)
-  assert.ok(text.includes("(Q55)"), "the smart cursor's question is not shown")
+  assert.ok(text.includes("(Q54)"), "the scroll margin's question is not shown")
+  // Every flag is listed — scrolled into view by walking down the list (gate 5H: at 80x24 they do not
+  // all fit at once).
+  const seen = new Set<string>()
+  for (let row = 0; row < DEBUG_FIELDS.length; row += 1) {
+    const now = screen(side)
+    for (const spec of DEBUG_FIELDS) if (now.includes(spec.label)) seen.add(spec.label)
+    keys(side, DOWN)
+  }
+  for (const spec of DEBUG_FIELDS) assert.ok(seen.has(spec.label), `${spec.label} is never listed`)
+  const walked = session()
+  keys(walked, "d")
+  goTo(walked, "smartCursor")
+  assert.match(screen(walked), /Smart cursor\s+<\s+on\s+>\s+now/)
+  assert.ok(screen(walked).includes("(Q55)"), "the smart cursor's question is not shown")
+  goTo(walked, "startFocus")
+  assert.match(screen(walked), /Opens on\s+<\s+menu\s+>\s+restart/)
+})
+
+test("the popup scrolls: a 'more' cue says how many rows are hidden, and the highlight is always in view", () => {
+  for (const size of SIZES) {
+    const side = session(spikeContext(), size)
+    keys(side, "d")
+    const opening = placed(side)
+    assert.ok(opening.window !== null)
+    const hiddenAtFirst = DEBUG_FIELDS.length - opening.window.visible
+    if (hiddenAtFirst === 0) continue
+    assert.match(screen(side), new RegExp(`v ${hiddenAtFirst} more`), `no "more" cue at ${size.columns}x${size.rows}`)
+    assert.doesNotMatch(screen(side), /\^ \d+ more/, "a cue for rows above the first one")
+    for (let row = 0; row < DEBUG_FIELDS.length; row += 1) {
+      const field = DEBUG_FIELDS[row]?.field as DebugField
+      assert.ok(onScreen(side, field), `row ${row} highlighted but not shown at ${size.columns}x${size.rows}`)
+      keys(side, DOWN)
+    }
+    // On the restart row the list shows its last flags, and says how many are above.
+    assert.match(screen(side), new RegExp(`\\^ ${hiddenAtFirst} more`))
+    assert.doesNotMatch(screen(side), /v \d+ more/)
+  }
+  // A click on the cue scrolls toward what it names; the wheel walks the list.
+  const side = session()
+  keys(side, "d")
+  const cue = placed(side).rows.find((row) => row.spec.kind === "more" && row.text !== "")
+  assert.ok(cue !== undefined)
+  click(side, placed(side).textColumn + 1, cue.row)
+  const window = placed(side).window
+  assert.ok(window !== null && window.offset > 0, "a click on the 'more' cue did not scroll")
+  const before = side.build.state.overlayHighlight
+  click(side, placed(side).box.left + 3, placed(side).box.top + 3, MOUSE_WHEEL_DOWN)
+  assert.equal(side.build.state.overlayHighlight, before + 1)
 })
 
 test("Esc, x, d, a right click and a click outside all close it, and it holds the keyboard until then", () => {
@@ -161,7 +231,9 @@ test("smart cursor off: arming from the menu leaves the cursor where it is", () 
   const on = session()
   keys(on, DOWN, DOWN, SPACE) // highlight Barracks, arm it from the menu
   const off = session()
-  keys(off, "d", RIGHT, ESC, DOWN, DOWN, SPACE)
+  keys(off, "d")
+  goTo(off, "smartCursor")
+  keys(off, RIGHT, ESC, DOWN, DOWN, SPACE)
   assert.equal(off.build.state.debug.smartCursor, false)
   assert.equal(off.build.state.armed, 0)
   assert.deepEqual(off.build.state.cursor, { x: 18, y: 13 }, "the cursor moved with the smart cursor off")
@@ -170,21 +242,26 @@ test("smart cursor off: arming from the menu leaves the cursor where it is", () 
 
 test("scroll margin: the camera follows exactly as a screen opened with that margin does, from the moment it changes", () => {
   const moves = [RIGHT, RIGHT, DOWN, ...Array.from({ length: 30 }, () => RIGHT), ...Array.from({ length: 6 }, () => DOWN)]
-  for (const target of [0, 1, 5, 8]) {
+  const values = [0, 5, 10, 15, 20, 25, 30, 35, 40]
+  for (const target of [0, 10, 30, 40]) {
     const reference = session({ ...spikeContext(), scrollMargin: target })
     keys(reference, TAB, ...moves)
     const tuned = session()
-    const step = target > 3 ? RIGHT : LEFT
-    keys(tuned, "d", DOWN, ...Array.from({ length: Math.abs(target - 3) }, () => step), ESC, TAB, ...moves)
+    const steps = values.indexOf(target) - values.indexOf(20)
+    keys(tuned, "d")
+    goTo(tuned, "scrollMargin")
+    keys(tuned, ...Array.from({ length: Math.abs(steps) }, () => (steps > 0 ? RIGHT : LEFT)), ESC, TAB, ...moves)
     assert.equal(tuned.build.state.debug.scrollMargin, target)
-    assert.deepEqual(tuned.build.state.camera, reference.build.state.camera, `margin ${target}`)
-    assert.match(screen(tuned), target === 3 ? /cursor \d+,\d+\s*\n/ : new RegExp(`margin ${target}`))
+    assert.deepEqual(tuned.build.state.camera, reference.build.state.camera, `margin ${target}%`)
+    assert.match(screen(tuned), new RegExp(`margin ${target}%`))
   }
   // Widening the margin is felt at once: the camera settles under the new rule before any key moves.
   const side = session()
-  keys(side, TAB, ...Array.from({ length: 28 }, () => RIGHT))
+  keys(side, TAB, ...Array.from({ length: 16 }, () => RIGHT))
   const before = side.build.state.camera
-  keys(side, "d", DOWN, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT)
+  keys(side, "d")
+  goTo(side, "scrollMargin")
+  keys(side, RIGHT, RIGHT, RIGHT, RIGHT)
   assert.notDeepEqual(side.build.state.camera, before, "a wider margin did not move the camera")
 })
 
@@ -192,30 +269,35 @@ test("a number stops at its ends and says so; a choice of two comes round", () =
   const flags = initialDebugFlags({})
   const smallest = adjustDebug({ ...flags, scrollMargin: 0 }, "scrollMargin", -1)
   assert.equal(smallest.changed, false)
-  assert.equal(adjustDebug({ ...flags, scrollMargin: 8 }, "scrollMargin", 1).changed, false)
+  assert.equal(adjustDebug({ ...flags, scrollMargin: 40 }, "scrollMargin", 1).changed, false)
   // A `--scroll-margin` the list does not hold steps to its nearest neighbour.
-  assert.equal(adjustDebug({ ...flags, scrollMargin: 12 }, "scrollMargin", -1).flags.scrollMargin, 8)
-  assert.equal(adjustDebug({ ...flags, scrollMargin: 7 }, "scrollMargin", 1).flags.scrollMargin, 8)
+  assert.equal(adjustDebug({ ...flags, scrollMargin: 12 }, "scrollMargin", -1).flags.scrollMargin, 10)
+  assert.equal(adjustDebug({ ...flags, scrollMargin: 12 }, "scrollMargin", 1).flags.scrollMargin, 15)
   assert.equal(adjustDebug(flags, "smartCursor", 1).flags.smartCursor, false)
   assert.equal(adjustDebug(adjustDebug(flags, "smartCursor", 1).flags, "smartCursor", 1).flags.smartCursor, true)
   assert.equal(adjustDebug(flags, "startFocus", -1).flags.startFocus, "grid")
+  assert.equal(adjustDebug(flags, "clickScroll", 1).flags.clickScroll, "centre")
+  assert.equal(adjustDebug(flags, "clickScroll", -1).flags.clickScroll, "margin")
 
   const side = session()
-  keys(side, "d", DOWN, ...Array.from({ length: 12 }, () => LEFT))
+  keys(side, "d", ...Array.from({ length: 12 }, () => LEFT))
   assert.equal(side.build.state.debug.scrollMargin, 0)
   assert.equal(side.build.state.status.tone, "warning")
-  assert.match(side.build.state.status.text, /already 0 tiles, the smallest/)
+  assert.match(side.build.state.status.text, /already 0%, the smallest/)
 })
 
 test("opens on the map: nothing changes until the restart, which keeps every flag and starts the plan over", () => {
   const side = session()
   keys(side, "n", "1", "1", RIGHT, ENTER) // pick a power, plan a Barracks
   assert.equal(side.build.state.planned.length, 1)
-  keys(side, "d", DOWN, DOWN, RIGHT)
+  keys(side, "d")
+  goTo(side, "startFocus")
+  keys(side, RIGHT)
   assert.equal(side.build.state.debug.startFocus, "grid")
   assert.equal(side.build.state.focus, "menu", "a restart flag changed the running screen")
   assert.match(side.build.state.status.text, /applies on restart/)
-  keys(side, UP, UP, LEFT) // and the smart cursor off
+  goTo(side, "smartCursor")
+  keys(side, LEFT) // and the smart cursor off
   keys(side, "r")
   const state = side.build.state
   assert.equal(state.overlay, null)
@@ -235,7 +317,11 @@ test("opens on the map: nothing changes until the restart, which keeps every fla
 
 test("the flash timings are what the live loop reads, and zero means no flash at all", () => {
   const side = session()
-  keys(side, "d", DOWN, DOWN, DOWN, LEFT, LEFT, DOWN, RIGHT)
+  keys(side, "d")
+  goTo(side, "pressedFlashMs")
+  keys(side, LEFT, LEFT)
+  goTo(side, "refusedFlashMs")
+  keys(side, RIGHT)
   assert.equal(flashDuration(side.build.state.debug, "pressed"), 0)
   assert.equal(flashDuration(side.build.state.debug, "refused"), 250)
   assert.match(screen(side), /Pressed flash\s+<\s+off\s+>/)
@@ -261,7 +347,15 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
   // Smart cursor off, margin up two, open on the map, a shorter pressed flash; restart; then arm the
   // Barracks from the menu and place it where the cursor stayed.
   const byKeyboard = session()
-  keys(byKeyboard, "d", RIGHT, DOWN, RIGHT, RIGHT, DOWN, RIGHT, DOWN, LEFT, "r")
+  keys(byKeyboard, "d")
+  goTo(byKeyboard, "smartCursor")
+  keys(byKeyboard, RIGHT)
+  goTo(byKeyboard, "scrollMargin")
+  keys(byKeyboard, RIGHT, RIGHT)
+  goTo(byKeyboard, "startFocus")
+  keys(byKeyboard, RIGHT)
+  goTo(byKeyboard, "pressedFlashMs")
+  keys(byKeyboard, LEFT, "r")
   keys(byKeyboard, TAB, DOWN, DOWN, SPACE, ENTER)
 
   const byMouse = session()
@@ -301,7 +395,13 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
   byDriver.build.run(script)
 
   const expected = byKeyboard.build.state
-  assert.deepEqual(expected.debug, { smartCursor: false, scrollMargin: 5, startFocus: "grid", pressedFlashMs: 50, refusedFlashMs: 140 })
+  assert.deepEqual(expected.debug, {
+    ...initialDebugFlags({}),
+    smartCursor: false,
+    scrollMargin: 30,
+    startFocus: "grid",
+    pressedFlashMs: 50,
+  })
   assert.equal(expected.planned.length, 1)
   assert.equal(expected.menuHighlight, entryOfConstruct(0))
   assert.deepEqual(byMouse.build.state, expected)

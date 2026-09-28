@@ -9,8 +9,10 @@
 import { keysFromChunk } from "../view/playback.ts"
 import type { BuildLayout } from "./layout.ts"
 import { overlaySpec, placeOverlay } from "./overlay.ts"
-import type { Viewport } from "./camera.ts"
-import { buildKeyboardCommand } from "./keyboard.ts"
+import type { Camera, Viewport } from "./camera.ts"
+import { buildKeyboardCommand, cursorKeyOf } from "./keyboard.ts"
+import type { SpeedTier } from "./motion.ts"
+import { SpeedRamp } from "./motion.ts"
 import { buildMouseCommand, parseMouseEvent } from "./mouse.ts"
 import type { BuildContext, BuildState } from "./state.ts"
 import { applyBuildCommand, createBuildState, nexusPowers, withViewport } from "./state.ts"
@@ -24,10 +26,20 @@ export type BuildSessionOptions = Readonly<{
   onQuit?: () => void
 }>
 
+/**
+ * What a live input path knows about a key that a driver script does not have to: when it arrived
+ * (milliseconds on any steady clock — the live loop's own, a test's injected number), which
+ * drives the held-key speed ramp; and the camera the screen is drawing right now, which differs from
+ * the state's while the view slides (gate 5H), so a click lands where the player saw it.
+ */
+export type KeyTiming = Readonly<{ now?: number; camera?: Camera }>
+
 export class BuildSession {
   private buildState: BuildState
   private readonly context: BuildContext
   private readonly onQuit: () => void
+  /** The held-key speed ramp: input-path state, beside the reducer and never in it. */
+  private readonly ramp = new SpeedRamp()
 
   constructor(options: BuildSessionOptions) {
     this.context = options.context
@@ -60,13 +72,15 @@ export class BuildSession {
    * is current between keys of the same chunk — the bug Gate 3B found and fixed for the menu, which
    * would be exactly as easy to reintroduce here.
    */
-  handleKey(key: string, layout: BuildLayout): void {
+  handleKey(key: string, layout: BuildLayout, timing: KeyTiming = {}): void {
     const mouse = parseMouseEvent(key)
     const state = this.buildState
     const spec = overlaySpec(this.context, state)
-    const command =
+    let command =
       mouse !== null
-        ? buildMouseCommand(mouse, state.camera, layout, this.context.catalog, {
+        ? // A click lands on the tile drawn under the pointer: while the view is still sliding, that
+          // is the drawn camera's tile, not the target's (gate 5H).
+          buildMouseCommand(mouse, timing.camera ?? state.camera, layout, this.context.catalog, {
             ...(spec === null ? {} : { overlay: placeOverlay(layout, spec) }),
           })
         : buildKeyboardCommand(key, {
@@ -75,14 +89,35 @@ export class BuildSession {
             focus: state.focus,
             overlay: state.overlay,
             overlayPendingCount: nexusPowers(this.context, state).pending.length,
+            fastStep: state.debug.fasterStep,
           })
+    const cursorKey = mouse === null && command?.kind === "move-cursor" ? cursorKeyOf(key) : null
+    if (cursorKey !== null && !cursorKey.fast) {
+      // A plain arrow on the Grid: how far is the speed ramp's call when the key's arrival time is
+      // known — a live terminal — and a tap's otherwise, so a driver script and every test that
+      // sends keys without a clock sees each arrow as its own press.
+      const tiles =
+        timing.now === undefined ? state.debug.slowStep : this.ramp.step(cursorKey, timing.now, state.debug)
+      command = { kind: "move-cursor", dx: cursorKey.dx * tiles, dy: cursorKey.dy * tiles }
+    } else if (cursorKey !== null && timing.now !== undefined) {
+      this.ramp.step(cursorKey, timing.now, state.debug)
+    } else if (command !== null) {
+      // Anything else pressed: the next arrow starts from scratch (the owner's "doing anything else
+      // returns to normal").
+      this.ramp.reset()
+    }
     if (command !== null) this.dispatch(command)
   }
 
   /** The driver's raw-bytes path — "a scripted list of... raw key and mouse events" — and what a
    *  live terminal's `data` handler calls. */
-  handleData(rawChunk: string, layout: BuildLayout): void {
-    for (const key of keysFromChunk(rawChunk)) this.handleKey(key, layout)
+  handleData(rawChunk: string, layout: BuildLayout, timing: KeyTiming = {}): void {
+    for (const key of keysFromChunk(rawChunk)) this.handleKey(key, layout, timing)
+  }
+
+  /** The speed tier the last cursor key moved at, or `null` before any timed one. */
+  get speedTier(): SpeedTier | null {
+    return this.ramp.tier
   }
 
   /** A new terminal size. Not a command: nobody pressed anything. */

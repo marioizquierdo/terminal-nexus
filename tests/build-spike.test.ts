@@ -11,7 +11,7 @@ import { SPIKE_ALLOTMENT, SPIKE_CATALOG, SPIKE_NEXUS_DRAFT, spikeGrid } from "..
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
 import { buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
-import { buildKeyboardCommand } from "../src/build/keyboard.ts"
+import { DEFAULT_FAST_STEP, buildKeyboardCommand } from "../src/build/keyboard.ts"
 import {
   MOUSE_LEFT,
   MOUSE_RIGHT,
@@ -220,34 +220,26 @@ test("a second Enter after a placement arms again rather than placing a second b
   assert.equal(build.state.focus, "grid")
 })
 
-test("keyboard: Shift+Arrow and its modifier-free fallback both jump exactly five tiles", () => {
+test("keyboard: Shift+Arrow and its modifier-free fallback are both the fast move, the Shift step long", () => {
   // Measured, not assumed — scripts/probe-modified-keys.mjs found three live encodings for a
-  // shifted arrow and none at all on several terminals, which is why all of these are bound.
+  // shifted arrow and none at all on several terminals, which is why all of these are bound. Five
+  // tiles until gate 5H; the owner's "faster" tier, 8, since — a Debug Mode flag (`fastStep` here).
   const context = { itemCount: 3, armed: false }
+  const fast = DEFAULT_FAST_STEP
   assert.deepEqual(buildKeyboardCommand(RIGHT, context), { kind: "move-cursor", dx: 1, dy: 0 })
-  assert.deepEqual(buildKeyboardCommand(SHIFT_RIGHT, context), {
+  assert.deepEqual(buildKeyboardCommand(SHIFT_RIGHT, context), { kind: "move-cursor", dx: fast, dy: 0, fast: true })
+  assert.deepEqual(buildKeyboardCommand(RXVT_SHIFT_RIGHT, context), { kind: "move-cursor", dx: fast, dy: 0, fast: true })
+  assert.deepEqual(buildKeyboardCommand(PAGE_DOWN, context), { kind: "move-cursor", dx: 0, dy: fast, fast: true })
+  assert.deepEqual(buildKeyboardCommand(SHIFT_RIGHT, { ...context, fastStep: 12 }), {
     kind: "move-cursor",
-    dx: JUMP_TILES,
+    dx: 12,
     dy: 0,
-  })
-  assert.deepEqual(buildKeyboardCommand(RXVT_SHIFT_RIGHT, context), {
-    kind: "move-cursor",
-    dx: JUMP_TILES,
-    dy: 0,
-  })
-  assert.deepEqual(buildKeyboardCommand(PAGE_DOWN, context), {
-    kind: "move-cursor",
-    dx: 0,
-    dy: JUMP_TILES,
+    fast: true,
   })
   // Home and End have three live spellings between xterm, screen/tmux/linux and rxvt; all of them
-  // mean the same five tiles.
+  // mean the same move.
   for (const home of [`${ESC}OH`, `${ESC}[1~`, `${ESC}[7~`, `${ESC}[H`]) {
-    assert.deepEqual(buildKeyboardCommand(home, context), {
-      kind: "move-cursor",
-      dx: -JUMP_TILES,
-      dy: 0,
-    })
+    assert.deepEqual(buildKeyboardCommand(home, context), { kind: "move-cursor", dx: -fast, dy: 0, fast: true })
   }
   // A terminal that switched to application cursor mode sends `ESC O A`, not `ESC [ A`. Both are
   // plain arrows, and both move one tile.
@@ -259,13 +251,10 @@ test("keyboard: Option+Arrow as macOS terminals send it is the fast move, never 
   // as Meta prefixes the arrow with ESC instead. Before `keysFromChunk` kept these whole, Option+Left
   // arrived as a bare Escape plus a stray "b" - which, with nothing armed, left the screen.
   const context = { itemCount: 3, armed: false }
-  assert.deepEqual(buildKeyboardCommand(`${ESC}b`, context), { kind: "move-cursor", dx: -JUMP_TILES, dy: 0 })
-  assert.deepEqual(buildKeyboardCommand(`${ESC}f`, context), { kind: "move-cursor", dx: JUMP_TILES, dy: 0 })
-  assert.deepEqual(buildKeyboardCommand(`${ESC}${ESC}[A`, context), {
-    kind: "move-cursor",
-    dx: 0,
-    dy: -JUMP_TILES,
-  })
+  const fast = DEFAULT_FAST_STEP
+  assert.deepEqual(buildKeyboardCommand(`${ESC}b`, context), { kind: "move-cursor", dx: -fast, dy: 0, fast: true })
+  assert.deepEqual(buildKeyboardCommand(`${ESC}f`, context), { kind: "move-cursor", dx: fast, dy: 0, fast: true })
+  assert.deepEqual(buildKeyboardCommand(`${ESC}${ESC}[A`, context), { kind: "move-cursor", dx: 0, dy: -fast, fast: true })
   // End to end, through the real splitter: nothing is armed, and the screen is not left.
   const context2 = spikeContext()
   const layout = buildLayout(MINIMUM, context2.grid)
@@ -273,7 +262,7 @@ test("keyboard: Option+Arrow as macOS terminals send it is the fast move, never 
   build.handleData(`${ESC}f`, layout)
   assert.equal(build.state.focus, "grid", "Option+Right was read as an Esc")
   assert.equal(build.state.overlay, null, "Option+Right was read as an Esc")
-  assert.equal(build.state.cursor.x, 18 + JUMP_TILES)
+  assert.equal(build.state.cursor.x, 18 + DEFAULT_FAST_STEP)
 })
 
 test("keyboard: digits always address the list, and a digit past its end means nothing", () => {
@@ -369,15 +358,38 @@ test("a click on a tile only arms the preview there - a second click on the same
   byKeyboard.build.handleData("1", byKeyboard.layout)
   byKeyboard.build.run([{ kind: "move-cursor", dx: 12, dy: 1 }])
   byKeyboard.build.handleData(ENTER, byKeyboard.layout)
-  assert.deepEqual(byClick.build.state, byKeyboard.build.state)
+  // The same plan, cursor and everything else. Only the camera may differ: an armed click never
+  // scrolls the view (Q58, gate 5H), where the keyboard's move lets the camera follow its margin.
+  assert.deepEqual({ ...byClick.build.state, camera: null }, { ...byKeyboard.build.state, camera: null })
+})
+
+test("an armed click never scrolls the view, so the same screen spot clicked twice places there (Q58)", () => {
+  // x=46 is inside the scroll margin of the opening view's right edge (0-47). Before gate 5H the
+  // first click scrolled the Grid under the pointer and the second landed on another tile.
+  const { build, layout } = session()
+  build.handleData("1", layout)
+  const cameraBefore = { ...build.state.camera }
+  const bytes = clickTileBytes(layout, build, { x: 46, y: 13 })
+  build.handleData(bytes, layout)
+  assert.deepEqual(build.state.cursor, { x: 46, y: 13 })
+  assert.deepEqual(build.state.camera, cameraBefore, "an armed click scrolled the view")
+  build.handleData(bytes, layout)
+  assert.equal(build.state.planned.length, 1, "the second click on the same spot did not place")
+  // The next keyboard move lets the margin follow again: the rule bends for the click alone.
+  build.handleData("1", layout)
+  build.handleData(RIGHT, layout)
+  assert.notDeepEqual(build.state.camera, cameraBefore, "the margin did not follow the next arrow")
 })
 
 test("a click that scrolled the camera is a fresh first click, not a mis-place on the wrong tile", () => {
   // Q50's own finding, deliberately re-tested rather than assumed fixed: a first click within the
   // scroll margin can slide the Grid under the pointer, so replaying the same *screen position*
   // resolves to a different *tile* the second time. Comparing tile identity (what the mouse adapter
-  // already resolves screen cells to) rather than screen position is what keeps this safe.
+  // already resolves screen cells to) rather than screen position is what keeps this safe. Since
+  // gate 5H an armed click scrolls only with Debug Mode's "Armed click scrolls" on.
   const { build, layout } = session()
+  build.dispatch({ kind: "debug-adjust", field: "armedClickScrolls", step: 1 })
+  assert.equal(build.state.debug.armedClickScrolls, true)
   build.handleData("1", layout)
   // x=46 is within the 3-tile margin of the opening viewport's own right edge (0-47), so landing the
   // cursor here forces the camera to scroll east to keep the margin.
@@ -629,12 +641,13 @@ test("scrolling: the whole Grid is reachable, at the smallest terminal and the l
   }
 })
 
-test("the scroll margin is a parameter, so the canon's three tiles can be felt against another number", () => {
+test("the scroll margin is a share of the view, so the owner's 20% can be felt against another number", () => {
   // project-governance.md Section 7: the 3-tile margin is "locked direction, and Milestone 5 may
-  // retune [it] on evidence from the first person who actually scrolls a Grid". A number nobody can
-  // change is a number nobody can judge, so the spike takes it from the command line.
-  for (const margin of [1, 3, 5]) {
-    const context = { ...spikeContext(), scrollMargin: margin }
+  // retune [it] on evidence from the first person who actually scrolls a Grid". Gate 5H made it a
+  // share of the view's width and height (the owner: "about 20% of the height or width"). 48 tiles
+  // wide at 80 columns: 10% is 5 tiles, 20% is 10, 30% is 14.
+  for (const [percent, margin] of [[10, 5], [20, 10], [30, 14]] as const) {
+    const context = { ...spikeContext(), scrollMargin: percent }
     const layout = buildLayout(MINIMUM, context.grid)
     const build = readyBuildSession({ context, cursor: { x: 0, y: 0 }, viewport: layout.viewport })
     // Walk east until the camera first moves: it should be exactly at the margin from the east edge.

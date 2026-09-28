@@ -19,10 +19,10 @@ import {
 import { isGated } from "../build/camera.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
-import { flashDuration } from "../build/debug.ts"
 import { composeBuildFrame } from "../view/build.ts"
-import type { BuildFlash } from "../view/build.ts"
-import { gateFrame, keysFromChunk } from "../view/index.ts"
+import { BuildAnimation, nextFrameDelay } from "../view/build-live.ts"
+import { KeyReader } from "../view/key-reader.ts"
+import { gateFrame } from "../view/index.ts"
 import { selectBackend } from "../view/backends/index.ts"
 import type { NamedBackend } from "../view/backends/index.ts"
 import { chunkText } from "../view/backends/ports.ts"
@@ -50,8 +50,11 @@ export type SpikeOptions = Readonly<{
   /** Interrupts, exit and error reporting; a terminal program's `process` unless given. */
   host?: Host
   exit?: (code: number) => void
-  /** `--scroll-margin`, so the margin can be felt against another number. Omitted means three. */
+  /** `--scroll-margin`, so the margin can be felt against another number: a percentage of the view
+   *  since gate 5H. Omitted means the owner's 20%. */
   scrollMargin?: number
+  /** The screen's clock, in milliseconds. `Date.now` unless a test injects one. */
+  now?: () => number
 }>
 
 export function spikeContext(scrollMargin?: number): BuildContext {
@@ -118,46 +121,50 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     onQuit: leave,
   })
 
-  // The one piece of timing on this screen, and it lives here, not in the reducer: the reducer
-  // records an acknowledgement with a sequence number (`BuildState.ack`), and this loop shows it for
-  // a few frames from the moment it first sees a new one, then redraws without it. How long is a
-  // Debug Mode flag (gate 5G): the reducer only stores the number, and this is the one place that
-  // reads it — 90 ms pressed and 140 ms refused to start with, a little longer than the owner's
-  // ~50 ms so a terminal redrawing at 60 Hz shows at least a few frames.
-  let seenAck: Readonly<{ seq: number; at: number }> | null = null
-  let flashTimer: ReturnType<typeof setTimeout> | null = null
-  function currentFlash(): BuildFlash | undefined {
-    const ack = build.state.ack
-    if (ack === null) return undefined
-    const now = Date.now()
-    const duration = flashDuration(build.state.debug, ack.kind)
-    if (seenAck?.seq !== ack.seq) {
-      seenAck = { seq: ack.seq, at: now }
-      if (flashTimer !== null) clearTimeout(flashTimer)
-      flashTimer = setTimeout(() => {
-        flashTimer = null
-        render()
-      }, duration + 5)
-    }
-    return now - seenAck.at < duration ? { kind: ack.kind, entry: ack.entry } : undefined
+  // **The screen's clock lives here, never in the reducer** (gate 5H). Everything that moves between
+  // commands — the view sliding to a new position, a menu row's flash, the cursor's flash on a
+  // refused placement — is `BuildAnimation`'s pure function of the state and the time read here, and
+  // the frame timer below runs only while one of them is still moving; an idle screen draws once per
+  // input, as it always has. The same clock times the held-key speed ramp (passed with each key) and
+  // the lone-Esc timeout (`KeyReader`).
+  const clock = options.now ?? ((): number => Date.now())
+  const animation = new BuildAnimation()
+  const reader = new KeyReader()
+  let frameTimer: ReturnType<typeof setTimeout> | null = null
+  let escapeTimer: ReturnType<typeof setTimeout> | null = null
+
+  function scheduleFrame(busyUntil: number | null, now: number): void {
+    if (frameTimer !== null) clearTimeout(frameTimer)
+    frameTimer = null
+    const delay = nextFrameDelay(busyUntil, now)
+    if (delay === null) return
+    frameTimer = setTimeout(() => {
+      frameTimer = null
+      render()
+    }, delay)
   }
 
   function render(): void {
     if (leaving) return
     const size = terminalSize()
-    const flash = gated ? undefined : currentFlash()
-    const frame = gated
-      ? gateFrame(size.columns, size.rows, SPIKE_MINIMUM)
-      : composeBuildFrame(
-          {
-            context,
-            state: build.state,
-            layout,
-            glyphPack: options.settings.glyphPack,
-            ...(flash === undefined ? {} : { flash }),
-          },
-          options.settings.capability,
-        )
+    const now = clock()
+    const live = gated ? null : animation.frame(build.state, now)
+    const frame =
+      gated || live === null
+        ? gateFrame(size.columns, size.rows, SPIKE_MINIMUM)
+        : composeBuildFrame(
+            {
+              context,
+              state: build.state,
+              layout,
+              glyphPack: options.settings.glyphPack,
+              camera: live.camera,
+              ...(live.flash === undefined ? {} : { flash: live.flash }),
+              ...(live.refusedFlash === true ? { refusedFlash: true } : {}),
+            },
+            options.settings.capability,
+          )
+    scheduleFrame(live?.busyUntil ?? null, now)
     if (frame.width !== lastFrame.width || frame.height !== lastFrame.height) {
       stdout.write(CLEAR)
       lastFrame = { width: frame.width, height: frame.height }
@@ -176,22 +183,43 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     if (!gated) {
       layout = buildLayout(size, context.grid)
       build.resize(layout.viewport)
+      animation.snap(build.state, clock())
     }
     render()
   }
 
+  function handleKeys(keys: readonly string[], now: number): void {
+    for (const key of keys) {
+      if (leaving) break
+      build.handleKey(key, layout, { now, camera: animation.cameraAt(build.state, now) })
+    }
+  }
+
   function onData(data: string | Uint8Array): void {
     if (gated || leaving) return
-    for (const key of keysFromChunk(chunkText(data))) {
-      if (leaving) break
-      build.handleKey(key, layout)
+    const now = clock()
+    const timeout = build.state.debug.escTimeoutMs
+    if (escapeTimer !== null) clearTimeout(escapeTimer)
+    escapeTimer = null
+    handleKeys(reader.feed(chunkText(data), now, timeout), now)
+    // A lone Esc (or any unfinished sequence) at the end of the read waits for the rest of itself;
+    // when nothing comes, it is a key of its own.
+    const deadline = reader.deadline(timeout)
+    if (deadline !== null) {
+      escapeTimer = setTimeout(() => {
+        escapeTimer = null
+        if (gated || leaving) return
+        handleKeys(reader.flush(), clock())
+        render()
+      }, Math.max(0, deadline - now))
     }
     render()
   }
 
   session.onDispose(() => {
     stdin.off("data", onData)
-    if (flashTimer !== null) clearTimeout(flashTimer)
+    if (frameTimer !== null) clearTimeout(frameTimer)
+    if (escapeTimer !== null) clearTimeout(escapeTimer)
   })
   session.onDispose(() => {
     stdout.off("resize", onResize)

@@ -8,7 +8,9 @@
 
 import { footprintExtent, tilesOf } from "../grid/coords.ts"
 import type { Coord } from "../grid/types.ts"
-import { SCROLL_MARGIN, edgeMarkers, visibleRange } from "../build/camera.ts"
+import type { Camera } from "../build/camera.ts"
+import { edgeMarkers, visibleRange } from "../build/camera.ts"
+import { DEFAULT_SCROLL_MARGIN_PERCENT } from "../build/debug.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import {
   DEBUG_HINT,
@@ -55,6 +57,15 @@ export type BuildCompositionInput = Readonly<{
   /** A menu row's brief acknowledgement, while the live loop is showing one — a "pressed" flash or a
    *  "refused" flicker. Presentation only; absent in every still frame. */
   flash?: BuildFlash
+  /**
+   * The camera the Grid is drawn through, while the live loop is sliding the view toward the state's
+   * own camera (gate 5H). Presentation only: absent, the state's camera is drawn — every still frame,
+   * every test, every scripted playtest.
+   */
+  camera?: Camera
+  /** The cursor flashes where a placement was just tried and refused, while the live loop shows it
+   *  (gate 5H; Debug Mode's "Refused cursor"). Presentation only. */
+  refusedFlash?: boolean
 }>
 
 export type BuildFlash = Readonly<{ kind: "pressed" | "refused"; entry: number }>
@@ -392,6 +403,31 @@ export function bindingLines(
   return { footer, panel }
 }
 
+/**
+ * A placement was just tried and refused: the whole footprint under the cursor flashes solid in the
+ * status line's own "danger" colour for a moment (gate 5H), so the eye that was on the map learns it
+ * did not build without reading the bottom bar. A style-only write, like the cursor, so the `x` block
+ * and whatever it covers keep their glyphs; inverse video carries it in monochrome.
+ */
+function drawRefusedFlash(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
+  const { state, layout } = input
+  if (input.refusedFlash !== true || state.focus !== "grid" || state.overlay !== null) return
+  const range = visibleRange(state.camera, state.viewport)
+  const tiles =
+    preview === null
+      ? [state.cursor]
+      : preview.footprint.map((offset) => ({ x: preview.anchor.x + offset.x, y: preview.anchor.y + offset.y }))
+  const danger = statusStyle("danger")
+  const style = { inverse: true, bold: true, dim: false, fgRole: danger.role }
+  for (const tile of tiles) {
+    if (tile.x < range.firstX || tile.x > range.lastX || tile.y < range.firstY || tile.y > range.lastY) continue
+    const cell = cellForTile(layout, state.camera, tile)
+    for (let extra = 0; extra < layout.tileWidth; extra += 1) {
+      cells.push({ band: BANDS.highlights, x: cell.x + extra, y: cell.y, style })
+    }
+  }
+}
+
 function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
   const { context, state, layout } = input
   const band = BANDS.chrome
@@ -411,7 +447,7 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
 
   const footerLimit = layout.footerLimit
   // engine.md 3.3's second required signal: "a position readout in the footer naming the visible
-  // tile range and the Grid size." The margin is named whenever it is not the canon's three — set by
+  // tile range and the Grid size." The margin is named whenever it is not the owner's 20% — set by
   // `--scroll-margin` or by Debug Mode.
   const margin = state.debug.scrollMargin
   text(
@@ -421,7 +457,7 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
     layout.footerRow,
     `view x ${range.firstX}-${range.lastX} y ${range.firstY}-${range.lastY} ` +
       `of ${context.grid.width}x${context.grid.height}   cursor ${state.cursor.x},${state.cursor.y}` +
-      (margin === SCROLL_MARGIN ? "" : `   margin ${margin}`),
+      (margin === DEFAULT_SCROLL_MARGIN_PERCENT ? "" : `   margin ${margin}%`),
     "chrome.label",
     { limit: footerLimit },
   )
@@ -863,6 +899,10 @@ function drawOverlay(cells: BandCell[], input: BuildCompositionInput, pack: Glyp
       case "note":
         text(cells, band, textColumn, row, placedText, "chrome.value", { limit: textLimit })
         break
+      case "more":
+        // The scrolling list's "more" cue: quiet, but never dimmed out of reach — it is clickable.
+        text(cells, band, textColumn, row, placedText, "chrome.hotkey", { bold: true, limit: textLimit })
+        break
     }
   }
 }
@@ -886,10 +926,14 @@ function drawCommittedPanel(cells: BandCell[], input: BuildCompositionInput): vo
 }
 
 export function composeBuildFrame(
-  input: BuildCompositionInput,
+  given: BuildCompositionInput,
   capability: CapabilityMode,
 ): ReadonlyCellFrame {
   void capability
+  // A sliding view is drawn through the camera it has reached, not the one it is heading for: the
+  // Grid, the preview, the cursor, the edge weights and the position readout all move together.
+  const input: BuildCompositionInput =
+    given.camera === undefined ? given : { ...given, state: { ...given.state, camera: given.camera } }
   const pack: GlyphPack = input.glyphPack ?? "ascii"
   const cells: BandCell[] = []
   // What Enter would do at the cursor, derived once and read by the ghost, the status line and the
@@ -899,6 +943,7 @@ export function composeBuildFrame(
   drawGrid(cells, input, pack)
   drawPreview(cells, input, preview)
   drawCursor(cells, input)
+  drawRefusedFlash(cells, input, preview)
   drawChrome(cells, input, pack)
   drawHeaderAndFooter(cells, input, preview)
 

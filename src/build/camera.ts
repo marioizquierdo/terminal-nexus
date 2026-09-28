@@ -104,6 +104,9 @@ function followAxis(camera: number, cursor: number, span: number, margin: number
   return Math.min(Math.max(camera, earliest), latest)
 }
 
+/** A margin in tiles along each axis: the same number both ways (gates 5A-5G), or one per axis. */
+export type Margin = number | Readonly<{ x: number; y: number }>
+
 /**
  * **The whole scrolling interaction** — engine.md 3.3: "The cursor drives it. Move the cursor within
  * a scroll margin of 3 tiles of a viewport edge and the camera follows. That is the whole
@@ -114,15 +117,107 @@ export function followCursor(
   cursor: Coord,
   viewport: Viewport,
   grid: GridTerrain,
-  margin: number = SCROLL_MARGIN,
+  margin: Margin = SCROLL_MARGIN,
 ): Camera {
+  const along = typeof margin === "number" ? { x: margin, y: margin } : margin
   // The clamp is where the margin stops being honoured, and is right to: at the Grid's own edge the
   // camera has nowhere left to go, so the cursor reaches the edge of the screen because there is no
   // more Grid to reveal.
   return clampCamera(
     {
-      x: followAxis(camera.x, cursor.x, viewport.width, margin),
-      y: followAxis(camera.y, cursor.y, viewport.height, margin),
+      x: followAxis(camera.x, cursor.x, viewport.width, along.x),
+      y: followAxis(camera.y, cursor.y, viewport.height, along.y),
+    },
+    viewport,
+    grid,
+  )
+}
+
+/**
+ * A share of a view's span as a whole number of tiles — the scroll margin since gate 5H ("it needs to
+ * be dependent on the screen size, I feel like about 20% of the height or width", owner, 2026-09-26).
+ * Rounded to the nearest tile, and never so large that the two margins of one axis meet: a margin
+ * past the middle would leave the cursor nowhere to be without the camera moving, and the camera
+ * would twitch on every step.
+ */
+export function shareOfSpan(percent: number, span: number): number {
+  const tiles = Math.round((span * Math.max(0, percent)) / 100)
+  return Math.max(0, Math.min(tiles, Math.floor((span - 1) / 2)))
+}
+
+/** The scroll margin in tiles along each axis for a margin given as a percentage of the view: 20% of
+ *  the 48 x 16 minimum view is 10 tiles to either side and 3 above and below. */
+export function marginForView(percent: number, viewport: Viewport): Readonly<{ x: number; y: number }> {
+  return { x: shareOfSpan(percent, viewport.width), y: shareOfSpan(percent, viewport.height) }
+}
+
+/** The camera position along one axis that puts `tile` in the middle of a view `span` wide. */
+function centredAxis(tile: number, span: number): number {
+  return tile - Math.floor((span - 1) / 2)
+}
+
+/**
+ * **Recentring** (engine.md 3.3, gate 5H): the camera moved so `tile` sits in the middle of the view
+ * along the axes asked for, clamped to the Grid like every other camera. The fast modifier recentres
+ * along the axis it moved; an exploring click can recentre on both.
+ */
+export function centreOn(
+  camera: Camera,
+  tile: Coord,
+  viewport: Viewport,
+  grid: GridTerrain,
+  axes: Readonly<{ x: boolean; y: boolean }> = { x: true, y: true },
+): Camera {
+  return clampCamera(
+    {
+      x: axes.x ? centredAxis(tile.x, viewport.width) : camera.x,
+      y: axes.y ? centredAxis(tile.y, viewport.height) : camera.y,
+    },
+    viewport,
+    grid,
+  )
+}
+
+/**
+ * One axis of an edge-zone click. `position` is the clicked tile's place in the view (0 is the first
+ * column or row). Inside a zone `zone` tiles deep at either end, the tile is carried toward the
+ * middle by the share of the zone the click was into: at the very edge all the way to the middle, at
+ * the zone's inner boundary not at all, and in proportion between — so a click two rows from the
+ * edge scrolls much further than a click five rows in (owner, feedback F6).
+ */
+function edgeAxis(camera: number, tile: number, span: number, zone: number): number {
+  if (zone <= 0) return camera
+  const position = tile - camera
+  const middle = Math.floor((span - 1) / 2)
+  const fromNear = position
+  const fromFar = span - 1 - position
+  if (fromNear < zone && position < middle) {
+    const depth = (zone - fromNear) / zone
+    const target = position + depth * (middle - position)
+    return tile - Math.round(target)
+  }
+  if (fromFar < zone && position > middle) {
+    const depth = (zone - fromFar) / zone
+    const target = position - depth * (position - middle)
+    return tile - Math.round(target)
+  }
+  return camera
+}
+
+/** Where an exploring click inside an edge zone moves the camera (feedback F6): see `edgeAxis`. The
+ *  zone is a percentage of the view along each axis. Clamped to the Grid. */
+export function edgeClickCamera(
+  camera: Camera,
+  tile: Coord,
+  viewport: Viewport,
+  grid: GridTerrain,
+  zonePercent: number,
+): Camera {
+  const zone = marginForView(zonePercent, viewport)
+  return clampCamera(
+    {
+      x: edgeAxis(camera.x, tile.x, viewport.width, zone.x),
+      y: edgeAxis(camera.y, tile.y, viewport.height, zone.y),
     },
     viewport,
     grid,

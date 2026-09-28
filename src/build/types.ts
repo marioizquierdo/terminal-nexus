@@ -44,8 +44,14 @@ export type ConstructItem = Readonly<{
 }>
 
 export type BuildCommand =
-  /** Arrows, and the five-tile jump: one command, a different distance. */
-  | Readonly<{ kind: "move-cursor"; dx: number; dy: number }>
+  /**
+   * Arrows, and the fast move: one command, a different distance. **How far is the input path's
+   * decision, never the reducer's** (gate 5H): a held arrow's speed tier comes from key timing the
+   * reducer never sees, and arrives here as an ordinary distance. `fast` marks the fast move (Shift,
+   * Option, PageUp/Home and the like) — not a distance but what it is for, so the reducer can recentre
+   * the view on it when Debug Mode's "Fast move centres" says so.
+   */
+  | Readonly<{ kind: "move-cursor"; dx: number; dy: number; fast?: boolean }>
   /**
    * A click on a Grid tile. What it does is the reducer's to decide, from what is on screen — so the
    * driver reproduces a click exactly (engine.md 9.7):
