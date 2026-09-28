@@ -248,7 +248,7 @@ function placementSheet(name, { before, place, expect, timesMs, capability = "tr
 const SHEET_TIMES = [0, 150, 300, 450, 500, 600, 750]
 
 placementSheet("build-place-sheet-barracks", {
-  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  before: `${PICK_FIRST_POWER} Down Space`,
   place: "Space",
   expect: "Barracks placed",
   timesMs: SHEET_TIMES,
@@ -256,7 +256,7 @@ placementSheet("build-place-sheet-barracks", {
 })
 
 placementSheet("build-place-sheet-hatchery", {
-  before: `${PICK_FIRST_POWER} Down*3 Space`,
+  before: `${PICK_FIRST_POWER} Down*2 Space`,
   place: "Space",
   expect: "Hatchery placed",
   timesMs: SHEET_TIMES,
@@ -264,7 +264,7 @@ placementSheet("build-place-sheet-hatchery", {
 })
 
 placementSheet("build-place-sheet-turret", {
-  before: `${PICK_FIRST_POWER} Down*4 Space`,
+  before: `${PICK_FIRST_POWER} Down*3 Space`,
   place: "Space",
   expect: "Turret placed",
   timesMs: SHEET_TIMES,
@@ -272,7 +272,7 @@ placementSheet("build-place-sheet-turret", {
 })
 
 placementSheet("build-place-sheet-rainbow", {
-  before: `${PICK_FIRST_POWER} d Down Right Down Right Esc Down*2 Space`,
+  before: `${PICK_FIRST_POWER} d Down Right Down Right Esc Down Space`,
   place: "Space",
   expect: "Barracks placed",
   timesMs: SHEET_TIMES,
@@ -280,7 +280,7 @@ placementSheet("build-place-sheet-rainbow", {
 })
 
 placementSheet("build-place-sheet-light", {
-  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  before: `${PICK_FIRST_POWER} Down Space`,
   place: "Space",
   expect: "Barracks placed",
   timesMs: SHEET_TIMES,
@@ -289,7 +289,7 @@ placementSheet("build-place-sheet-light", {
 })
 
 placementSheet("build-place-sheet-16", {
-  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  before: `${PICK_FIRST_POWER} Down Space`,
   place: "Space",
   expect: "Barracks placed",
   timesMs: SHEET_TIMES,
@@ -298,7 +298,7 @@ placementSheet("build-place-sheet-16", {
 })
 
 placementSheet("build-place-sheet-monochrome", {
-  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  before: `${PICK_FIRST_POWER} Down Space`,
   place: "Space",
   expect: "Barracks placed",
   timesMs: SHEET_TIMES,
@@ -307,39 +307,39 @@ placementSheet("build-place-sheet-monochrome", {
 })
 
 placementGif("build-place-barracks", {
-  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  before: `${PICK_FIRST_POWER} Down Space`,
   place: "Space",
   expect: "Barracks placed",
 })
 
 placementGif("build-place-hatchery", {
-  before: `${PICK_FIRST_POWER} Down*3 Space`,
+  before: `${PICK_FIRST_POWER} Down*2 Space`,
   place: "Space",
   expect: "Hatchery placed",
 })
 
 placementGif("build-place-turret", {
-  before: `${PICK_FIRST_POWER} Down*4 Space`,
+  before: `${PICK_FIRST_POWER} Down*3 Space`,
   place: "Space",
   expect: "Turret placed",
 })
 
 placementGif("build-place-barracks-light", {
-  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  before: `${PICK_FIRST_POWER} Down Space`,
   place: "Space",
   expect: "Barracks placed",
   theme: "light",
 })
 
 placementGif("build-place-barracks-16", {
-  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  before: `${PICK_FIRST_POWER} Down Space`,
   place: "Space",
   expect: "Barracks placed",
   capability: "color16",
 })
 
 placementGif("build-place-barracks-monochrome", {
-  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  before: `${PICK_FIRST_POWER} Down Space`,
   place: "Space",
   expect: "Barracks placed",
   capability: "monochrome",
@@ -347,7 +347,7 @@ placementGif("build-place-barracks-monochrome", {
 
 placementGif("build-place-rainbow", {
   // Debug Mode's Lighting set to rainbow and Particles to many, then a Barracks.
-  before: `${PICK_FIRST_POWER} d Down Right Down Right Esc Down*2 Space`,
+  before: `${PICK_FIRST_POWER} d Down Right Down Right Esc Down Space`,
   place: "Space",
   expect: "Barracks placed",
 })
@@ -355,7 +355,7 @@ placementGif("build-place-rainbow", {
 placementGif("build-place-reduced-motion", {
   // Reduced motion: the finished Barracks at once, no frames and no light, and the sparks become a
   // still mark at its four corners for the glow.
-  before: `${PICK_FIRST_POWER} Down*2 Space`,
+  before: `${PICK_FIRST_POWER} Down Space`,
   place: "Space",
   expect: "Barracks placed",
   reducedMotion: true,
@@ -378,26 +378,26 @@ scripted(
 
 scripted(
   "build-focus-grid",
-  "Tab (or [e] Explore) moves the keyboard to the Grid with nothing armed: the key help says EXPLORE, no menu row is marked, and the cursor is the one highlight on screen",
-  { keys: `${PICK_FIRST_POWER} Tab`, expect: "EXPLORE  arrows move" },
+  "Tab (or [e] Explore Map) moves the keyboard to the Grid with nothing armed: the menu gives way to the EXPLORE MAP panel, which follows the cursor, and the cursor is the one highlight on screen",
+  { keys: `${PICK_FIRST_POWER} Tab`, expect: "EXPLORE MAP  arrows move" },
 )
 
 scripted(
   "build-info-panel",
-  "Exploring, Enter on a building swaps the menu for its information: its own glyphs, its name and what it is for, and its numbers. [esc] top right brings the menu back",
-  { keys: `${PICK_FIRST_POWER} Tab Up*2 Enter`, expect: "Citizen Nexus" },
+  "Explore Map with the cursor on a building: its own glyphs, its name and what it is for, and its numbers, under the EXPLORE MAP header. [esc] top right brings the menu back",
+  { keys: `${PICK_FIRST_POWER} Tab Up*2`, expect: "Citizen Nexus" },
 )
 
 scripted(
   "build-smart-cursor",
-  "Down three times and Space: the Hatchery is armed from the menu and the cursor lands for you - one free tile east of the Grid Nexus, sharing its top row. The armed row and the cursor are the only two highlights",
-  { keys: `${PICK_FIRST_POWER} Down*3 Space`, expect: "Hatchery selected" },
+  "Down twice and Space: the Hatchery is armed from the menu and the cursor lands for you - one free tile east of the Grid Nexus, sharing its top row. The armed row is marked with > and its name underlined; the cursor is the one highlight",
+  { keys: `${PICK_FIRST_POWER} Down*2 Space`, expect: "Hatchery selected" },
 )
 
 scripted(
   "build-menu-run",
   "The owner's own flow: Space arms, Space places and returns the keyboard to the menu, again and again. Three barracks in a tidy line, one free tile between each, drawn at full strength",
-  { keys: `${PICK_FIRST_POWER} Down*2 Space*6`, expect: "10 of 130" },
+  { keys: `${PICK_FIRST_POWER} Down Space*6`, expect: "10 of 130" },
 )
 
 scripted(
@@ -615,7 +615,7 @@ const pickFirstPower = () => {
 
 live(
   "build-idle",
-  "The Build Phase opens on the menu, on the left: the keyboard on [n] Nexus at the top, its (1) the one pick still waiting, [e] Explore under it. No cursor on the Grid while the menu has the keyboard",
+  "The Build Phase opens on the menu, on the left: the keyboard on [e] Explore Map at the top, [n] Nexus under it with its (1), the one pick still waiting. No cursor on the Grid while the menu has the keyboard",
   { waitForText: "RESOURCE" },
 )
 

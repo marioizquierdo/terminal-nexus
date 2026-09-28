@@ -129,11 +129,15 @@ test("an open popup draws no placement ghost behind it, and refuses edits sent b
 })
 
 test("picking applies its own effect exactly once, and cannot be changed afterward", () => {
-  const { build } = session()
+  const { build, layout } = session()
   const context = spikeContext()
-  build.dispatch({ kind: "pick-nexus", index: 1 }) // War Chest, +60
+  build.dispatch({ kind: "pick-nexus", index: 1 }) // War Chest, +2000
   assert.equal(build.state.nexusPick, 1)
   assert.equal(build.state.bonusAllotment, context.nexusDraft[1]!.bonusAllotment)
+  // The owner's number (2026-09-28, feedback F24): enough to place buildings freely in a playtest.
+  assert.equal(build.state.bonusAllotment, 2000)
+  const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
+  assert.match(text, /RESOURCE {7}2100 of 2100\|/, "the panel's budget line, whole, with the War Chest")
   assert.match(build.state.status.text, /War Chest picked/)
 
   const after = build.state
@@ -427,7 +431,12 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
 
   assert.equal(byKeyboard.build.state.committed, true, "the test did not actually reach committed")
   assert.equal(byKeyboard.build.state.planned.length, 2)
-  assert.deepEqual(byMouse.build.state, byKeyboard.build.state)
+  // The one difference is the point of feedback F22: a placement by the mouse leaves the menu with no
+  // "highlighted, not yet chosen" bar, one by the keyboard leaves it showing for the next key. The
+  // committed screen draws no menu, so the frames still match.
+  assert.equal(byMouse.build.state.highlightHidden, true)
+  assert.equal(byKeyboard.build.state.highlightHidden, false)
+  assert.deepEqual({ ...byMouse.build.state, highlightHidden: false }, byKeyboard.build.state)
   assert.deepEqual(byDriver.build.state, byKeyboard.build.state)
   const frame = (side: ReturnType<typeof session>): string =>
     frameToText(composeBuildFrame({ context: spikeContext(), state: side.build.state, layout: side.layout }, "monochrome"))

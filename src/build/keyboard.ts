@@ -104,7 +104,7 @@ export type KeyboardContext = Readonly<{
   /** How many construct-menu rows there are, so a digit past the end of the list means nothing
    *  rather than arming something that is not on screen. */
   itemCount: number
-  /** Whether a structure is armed: on the Grid, Enter/Space then places rather than inspects. */
+  /** Whether a structure is armed: on the Grid, Enter/Space then places rather than opening Explore Map. */
   armed: boolean
   /** Which half of the screen arrows and Enter/Space belong to (gate 5F). Defaults to the Grid, the
    *  meaning every key had before focus existed. */
@@ -219,8 +219,8 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (overlay !== null) return overlayCommand(key, overlay, context.overlayPendingCount ?? 0)
   const focus = context.focus ?? "grid"
 
-  // One "back" for Esc and `x`, walking a stack the reducer knows: the information panel, then the
-  // Grid (to the menu, disarming), then the menu (the exit question).
+  // One "back" for Esc and `x`, walking a stack the reducer knows: the Grid — placing or Explore Map —
+  // to the menu, disarming, then the menu (the exit question).
   if (CANCEL_KEYS.has(key)) return { kind: "cancel" }
   if (key === "q") return { kind: "request-exit" }
   if (key === TAB) return { kind: "focus", target: focus === "grid" ? "menu" : "grid" }

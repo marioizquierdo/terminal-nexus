@@ -59,14 +59,19 @@ export type BuildCommand =
    * - with a popup open, it closes the popup and moves focus and the cursor there — nothing more;
    * - otherwise it moves focus to the Grid and the cursor to the tile; with a structure armed and the
    *   cursor *already* on that tile, it places (a second click on the same tile — Q52, compared by
-   *   tile, never by screen position); exploring, a click on a building opens its information panel.
+   *   tile, never by screen position). With nothing armed it only moves the cursor: in Explore Map
+   *   the panel follows it; from the menu the menu stays drawn, so a mouse player who clicked around
+   *   the map can still click a building on it (feedback F22).
    */
   | Readonly<{ kind: "click-tile"; x: number; y: number }>
   /**
-   * A click on menu entry *n* (an index into `menuEntries`). With the keyboard elsewhere — the Grid,
-   * or a popup — it only brings focus to the menu and highlights the row; with the keyboard already
-   * on the menu it activates the row, exactly as Enter would (owner, 2026-09-27: a first click on the
-   * menu "should simply highlight a menu option").
+   * A click on menu entry *n* (an index into `menuEntries`). **A click activates what it lands on**
+   * (owner, 2026-09-28, feedback F22 — reversing the 2026-09-27 rule that a first click only
+   * highlighted): a construct row arms at once and hands the mouse to the Grid with the ghost at the
+   * cursor, the Nexus entry opens its popup, Explore Map opens the map. Only the keyboard has a
+   * "highlighted, not yet chosen" state. Two exceptions, both about what the click could see: with a
+   * popup open it only closes the popup and brings focus to the menu; and while the Explore Map panel
+   * covers the menu it only gives the menu back, since the row it landed on was not drawn.
    */
   | Readonly<{ kind: "click-menu"; entry: number }>
   /** Arm item *n* of the construct menu — its digit, from anywhere. Moves focus to the Grid and leaves
@@ -74,8 +79,9 @@ export type BuildCommand =
   | Readonly<{ kind: "arm"; index: number }>
   /** Place the armed structure at the cursor — Enter or Space on the Grid while something is armed. */
   | Readonly<{ kind: "place" }>
-  /** Enter or Space on the Grid while exploring: open (or refresh) the information panel for what is
-   *  under the cursor. */
+  /** Enter or Space on the Grid with nothing armed: Explore Map, the side panel showing what is under
+   *  the cursor. Reached this way only from the map a mouse click opened with the menu still showing;
+   *  `[e]`, Tab and the menu entry arrive in Explore Map directly (feedback F23). */
   | Readonly<{ kind: "inspect" }>
   /** Remove the planned, uncommitted placement under the cursor — Backspace or Delete. */
   | Readonly<{ kind: "remove" }>
@@ -99,8 +105,8 @@ export type BuildCommand =
   | Readonly<{ kind: "commit" }>
   /** `y`/`n` (or a click on either) inside the start-the-Pulse popup. */
   | Readonly<{ kind: "confirm-commit"; accept: boolean }>
-  /** Tab, and a second Right on the menu: move keyboard focus. To the Grid it arrives exploring; to the
-   *  menu it disarms (a building is armed only while the Grid has focus). */
+  /** Tab, and a second Right on the menu: move keyboard focus. To the Grid it arrives in Explore Map;
+   *  to the menu it disarms (a building is armed only while the Grid has focus). */
   | Readonly<{ kind: "focus"; target: Focus }>
   /** Up/Down on the menu or inside a popup's list: move its highlight, wrapping at both ends. */
   | Readonly<{ kind: "highlight"; delta: -1 | 1 }>
@@ -111,7 +117,8 @@ export type BuildCommand =
   | Readonly<{ kind: "nudge"; direction: "left" | "right" }>
   /** `n`, or activating the Nexus entry: open the Nexus popup. */
   | Readonly<{ kind: "open-nexus-powers" }>
-  /** `e`, or activating the Explore entry: focus to the Grid with nothing armed. */
+  /** `e`, or activating the Explore Map entry: focus to the Grid with nothing armed, the side panel
+   *  showing what is under the cursor as it moves (feedback F23). */
   | Readonly<{ kind: "explore" }>
   /** `d`, or a click on the top bar's `[d] debug`: open the Debug Mode popup (gate 5G). */
   | Readonly<{ kind: "open-debug" }>
@@ -131,9 +138,9 @@ export type BuildCommand =
 export type Focus = "menu" | "grid"
 
 /**
- * One entry of the side panel's menu, in the order Up/Down walk it: Nexus, Explore, then the
- * construct rows in hotkey order. The menu highlight is an index into this list (`menuEntries` in
- * `state.ts`), so every construct row keeps its digit.
+ * One entry of the side panel's menu, in the order Up/Down walk it: Explore Map (first, owner
+ * 2026-09-28), Nexus, then the construct rows in hotkey order. The menu highlight is an index into
+ * this list (`menuEntries` in `state.ts`), so every construct row keeps its digit.
  */
 export type MenuEntry =
   | Readonly<{ kind: "nexus" }>

@@ -3,7 +3,7 @@
 // `src/menu/layout.ts` is the same idea for the menu.
 
 import type { Coord, GridTerrain } from "../grid/types.ts"
-import { entryOfConstruct } from "./state.ts"
+import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct } from "./state.ts"
 import type { ConstructGroup, ConstructItem, MenuEntry } from "./types.ts"
 import type { Camera, TerminalSize, TileWidth, Viewport } from "./camera.ts"
 import type { DebugFlags } from "./debug.ts"
@@ -79,11 +79,12 @@ export type BuildLayout = Readonly<{
   panelBindingsRow: number
 }>
 
-/** The panel's own rows, counted from its first. Rows 0 and 1 are the Nexus and Explore entries — the
- *  owner asked for both at the top of the menu; row 3 is what the player has to spend, directly above
- *  the costs it is measured against; the construct groups start on row 4. */
-export const NEXUS_ROW = 0
-export const EXPLORE_ROW = 1
+/** The panel's own rows, counted from its first. Rows 0 and 1 are the Explore Map and Nexus entries —
+ *  the owner asked for both at the top of the menu, and for Explore Map first (2026-09-28, feedback
+ *  F23); row 3 is what the player has to spend, directly above the costs it is measured against; the
+ *  construct groups start on row 4. */
+export const EXPLORE_ROW = 0
+export const NEXUS_ROW = 1
 export const RESOURCE_ROW = 3
 const CONSTRUCT_FIRST_ROW = 4
 
@@ -192,8 +193,8 @@ export function menuEntryAt(
   row: number,
 ): number | null {
   if (column < layout.panelColumn || column >= layout.panelColumn + layout.panelLimit) return null
-  if (row === layout.panelRow + NEXUS_ROW) return 0
-  if (row === layout.panelRow + EXPLORE_ROW) return 1
+  if (row === layout.panelRow + EXPLORE_ROW) return EXPLORE_ENTRY
+  if (row === layout.panelRow + NEXUS_ROW) return NEXUS_ENTRY
   for (const line of constructLines(layout, catalog)) {
     if (line.kind === "item" && line.row === row) return entryOfConstruct(line.index)
   }

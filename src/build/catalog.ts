@@ -175,7 +175,9 @@ export const SPIKE_NEXUS_DRAFT: readonly NexusPowerOption[] = [
   {
     hotkey: "2",
     name: "War Chest",
-    description: "Adds 60 resource to spend.",
-    bonusAllotment: 60,
+    // 2000, not a balanced number (owner, 2026-09-28, feedback F24): enough to place buildings freely
+    // while playtesting placement. Placeholder content, like the whole draft.
+    description: "Adds 2000 resource to spend.",
+    bonusAllotment: 2000,
   },
 ]

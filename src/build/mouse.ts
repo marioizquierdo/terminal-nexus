@@ -10,12 +10,14 @@ import { debugHintAt, menuEntryAt, tileAtCell } from "./layout.ts"
 import type { PlacedOverlay } from "./overlay.ts"
 import { overlayHitAt } from "./overlay.ts"
 import type { Camera } from "./camera.ts"
-import { JUMP_TILES } from "./state.ts"
+import { EXPLORE_ENTRY, JUMP_TILES } from "./state.ts"
 import type { BuildCommand, ConstructItem } from "./types.ts"
 
-/** What is on screen beyond the layout: the open popup, placed, since it holds the mouse. */
+/** What is on screen beyond the layout: the open popup, placed, since it holds the mouse; and whether
+ *  the Explore Map panel is drawn where the menu usually is. */
 export type MouseUiState = Readonly<{
   overlay?: PlacedOverlay
+  explorePanel?: boolean
 }>
 
 const SGR_MOUSE = /^\u001b\[<(\d+);(\d+);(\d+)([Mm])$/
@@ -103,5 +105,21 @@ export function buildMouseCommand(
   // click outside it, which closes it, like any other (so a second click on the hint closes Debug
   // Mode itself).
   if (debugHintAt(layout, event.column, event.row)) return { kind: "open-debug" }
+  // The Explore Map panel covers the menu, so the whole panel is one target — its `[esc]`, its title,
+  // anything on it — and what it does is give the menu back. Sent as the menu click it is, so a
+  // driver's `click-menu` in Explore Map means exactly the same (the reducer chooses nothing there).
+  if (ui.explorePanel === true && inPanel(layout, event.column, event.row)) {
+    return { kind: "click-menu", entry: menuEntryAt(layout, catalog, event.column, event.row) ?? EXPLORE_ENTRY }
+  }
   return underneath()
+}
+
+/** Whether a frame cell is on the side panel — its full width, from its first row to its last. */
+function inPanel(layout: BuildLayout, column: number, row: number): boolean {
+  return (
+    column >= layout.panelColumn &&
+    column < layout.panelColumn + layout.panelLimit &&
+    row >= layout.panelRow &&
+    row <= layout.panelBindingsRow
+  )
 }

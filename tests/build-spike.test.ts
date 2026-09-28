@@ -128,9 +128,9 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   byKeyboard.build.handleData(ENTER, byKeyboard.layout)
 
   const byMouse = session()
-  // The first click on the menu, with the keyboard on the Grid, only brings focus there; the second
-  // arms the row (owner, 2026-09-27). After a placement the keyboard is back on the menu, so one
-  // click arms the second barracks.
+  // The keyboard is on the Grid in Explore Map, whose panel covers the menu: the first click on the
+  // panel only gives the menu back; the second arms the row at once (feedback F22). After a placement
+  // the menu is back, so one click arms the second barracks.
   byMouse.build.handleData(clickRowBytes(byMouse.layout, 0), byMouse.layout)
   byMouse.build.handleData(clickRowBytes(byMouse.layout, 0), byMouse.layout)
   // A click only arms the preview at a tile; a second click on that same tile is what places it
@@ -148,6 +148,10 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   // exactly 34,14 — so a single click there is already the confirming "second click on the same tile".
   assert.deepEqual(byMouse.build.state.cursor, { x: 34, y: 14 }, "the smart cursor did not land beside the first")
   clickTile({ x: 34, y: 14 })
+  // Placed by the mouse, the menu shows no "highlighted, not yet chosen" bar; the first key shows it
+  // again and does nothing else — after which the two players' screens are the same.
+  assert.equal(byMouse.build.state.highlightHidden, true)
+  byMouse.build.handleData(DOWN, byMouse.layout)
 
   const script: readonly BuildCommand[] = [
     { kind: "arm", index: 0 },
@@ -306,14 +310,16 @@ test("mouse: the wheel moves the cursor five tiles and drags the camera with it"
   assert.equal(build.state.cursor.y, startY)
 })
 
-test("mouse: right click is Esc; a first click on the menu highlights, a second activates", () => {
+test("mouse: right click is Esc; a click on a menu row arms it at once (feedback F22)", () => {
   const { build, layout } = session()
+  // The session starts in Explore Map, whose panel covers the menu: the first click gives it back.
   build.handleData(clickRowBytes(layout, 1), layout)
-  assert.equal(build.state.armed, null, "the first click from the Grid only brings focus to the menu")
+  assert.equal(build.state.armed, null, "a click on Explore Map's panel armed a row nobody could see")
   assert.equal(build.state.focus, "menu")
-  assert.equal(build.state.menuHighlight, 3)
+  // With the menu drawn, one click arms.
   build.handleData(clickRowBytes(layout, 1), layout)
   assert.equal(build.state.armed, 1)
+  assert.equal(build.state.menuHighlight, 3)
   build.handleData(formatMouseEvent(MOUSE_RIGHT, 10, 10), layout)
   assert.equal(build.state.armed, null)
 })
@@ -360,8 +366,13 @@ test("a click on a tile only arms the preview there - a second click on the same
   byKeyboard.build.run([{ kind: "move-cursor", dx: 12, dy: 1 }])
   byKeyboard.build.handleData(ENTER, byKeyboard.layout)
   // The same plan, cursor and everything else. Only the camera may differ: an armed click never
-  // scrolls the view (Q58, gate 5H), where the keyboard's move lets the camera follow its margin.
-  assert.deepEqual({ ...byClick.build.state, camera: null }, { ...byKeyboard.build.state, camera: null })
+  // scrolls the view (Q58, gate 5H), where the keyboard's move lets the camera follow its margin; and
+  // a placement by the mouse leaves no highlight bar on the menu (feedback F22).
+  assert.deepEqual(
+    { ...byClick.build.state, camera: null, highlightHidden: false },
+    { ...byKeyboard.build.state, camera: null },
+  )
+  assert.equal(byClick.build.state.highlightHidden, true)
 })
 
 test("an armed click never scrolls the view, so the same screen spot clicked twice places there (Q58)", () => {

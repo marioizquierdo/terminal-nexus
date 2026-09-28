@@ -3,7 +3,7 @@
 **Document role:** The interaction and drawing patterns every interactive screen follows
 **Status:** WORKING — built on the Build Phase first; not canon yet (promoted into `specs/engine.md`
 Section 9 when the owner accepts them)
-**Updated:** 2026-09-28 (placement juice, gate 5I)
+**Updated:** 2026-09-28 (a click activates; Explore Map — round-3 feedback F22, F23)
 **License:** Apache-2.0
 
 These came out of the owner's playtests of the Build Phase (2026-09-26 and 2026-09-27; the item-by-item
@@ -18,21 +18,32 @@ why.
 - **One place has the keyboard at a time**, and the screen shows exactly one "you are here" for it:
   the menu's highlight bar, or the map cursor — never both. (`BuildState.focus`; the cursor is drawn
   only while the Grid has focus.)
+- **The highlight bar means "the keyboard is here, not chosen yet"** — and only that (feedback F22).
+  It is a keyboard idea: after the mouse works the menu it is not drawn, and the first menu key only
+  shows it again, on the row it remembers, and does nothing else (`BuildState.highlightHidden`).
+  Something chosen — an armed building — is marked as chosen (section 4), never with the bar.
 - **The key help starts with where the keyboard is**, in capitals, then the keys that work there:
-  `MENU`, `PLACE`, `EXPLORE`, `INFO`, or the open popup's name. (`keyHelp` in `src/view/build.ts`.)
+  `MENU`, `PLACE`, `EXPLORE MAP`, `MAP`, or the open popup's name. (`keyHelp` in `src/view/build.ts`.)
 - **Focus is state, not adapter memory**, so a script can set it and a test can read it.
 - **The menu orchestrates.** Actions start on the menu; the map cursor is for placing and exploring.
   After a placement the keyboard goes back to the menu, on the same row.
 - **A mode has one meaning per key.** Arrows and Enter/Space follow focus; nothing else does. Digits
   always arm their row; letters always name commands, from any focus.
-- **Several ways in, all shown**: Tab toggles; an explicit menu entry (`[e] Explore`); a click on the
-  area; and on the menu, Right twice (the first flickers to say "you are on the menu").
+- **Several ways in, all shown**: Tab toggles; an explicit menu entry (`[e] Explore Map`, the menu's
+  first); a click on the area; and on the menu, Right twice (the first flickers to say "you are on
+  the menu").
+- **The map has three modes, each named in the key help**: `PLACE` (a building armed, its ghost at
+  the cursor), `EXPLORE MAP` (nothing armed; the side panel describes what is under the cursor —
+  section 6), and `MAP` — the map a mouse click opened from the menu, with the menu left beside it so
+  the next click can arm a building from it. Every keyboard way onto the map with nothing armed
+  (`e`, the entry, Tab, Right twice) arrives in Explore Map; Enter/Space on the `MAP` opens it.
 
 ## 2. Back, cancel and close
 
 - **Esc, `x` and a right click are one command** (`cancel`) and always mean the same thing.
-- **Esc walks back one level at a time**: a popup, then an information panel, then the map (to the
-  menu), then on the menu it asks "Exit the game?". Esc never leaves the game by itself.
+- **Esc walks back one level at a time**: a popup, then the map — placing, Explore Map or the map a
+  click opened — to the menu, then on the menu it asks "Exit the game?". Esc never leaves the game by
+  itself.
 - **Leaving always asks**: `q` opens the exit question; only the question's own `[q]` quits. Ctrl+C
   is the one immediate way out.
 - **A building is armed only while the map has focus.** Anything that takes the keyboard off the map
@@ -40,9 +51,16 @@ why.
 
 ## 3. Mouse
 
-- **A click moves focus to where it lands.** A first click on the menu while the keyboard is
-  elsewhere only highlights the row; a click on a row the keyboard is already on activates it.
-- **A second click on the same tile confirms**, compared by tile, never by screen cell.
+- **A click activates what it lands on** (owner, 2026-09-28, feedback F22 — reversing the 2026-09-27
+  rule that a first click on the menu only highlighted). A click on a building's row arms it at once,
+  whatever had focus: the map takes the mouse with the ghost at the cursor — where the player was
+  pointing if the map had focus, the smart-cursor spot if the menu did (Enter's twin). A click on
+  `[n] Nexus` opens its popup; on `[e] Explore Map`, Explore Map. Only the keyboard has a "highlighted,
+  not yet chosen" state.
+- **A click can only choose what it could see.** While the Explore Map panel covers the menu, a click
+  anywhere on the panel gives the menu back and chooses nothing.
+- **A second click on the same tile confirms**, compared by tile, never by screen cell. The
+  placement returns the menu with nothing looking chosen.
 - **A click outside a popup closes it** and moves focus to where it landed — and does nothing else, so
   a dismissing click never also places or picks.
 - **Whole rows are click targets**, the same width the highlight bar is drawn.
@@ -59,8 +77,10 @@ why.
     hotkey's colour;
   - **refused** — for a few frames when a key reached the row but had nothing to do (Left/Right, an
     unaffordable row): the bar dims and comes back.
-- Plus **disabled** (dimmed) for a row that cannot be used now — an unaffordable one — and **`>`** for
-  the one item that is armed.
+- Plus **disabled** (dimmed) for a row that cannot be used now — an unaffordable one — and **armed**
+  for the one building being placed: `>` before it, the whole row in the hotkey's colour and bold, its
+  name underlined, and **no bar** — the bar is the keyboard's "not chosen yet", and armed is chosen.
+  Legible in monochrome by the marker and the underline.
 - **Timing lives in the live loop, not the reducer.** The reducer records an acknowledgement with a
   sequence number (`BuildState.ack`); the terminal loop shows it for its duration from when it first
   sees it (`src/cli/spike.ts`). Still frames — tests, screenshots — never carry one unless asked.
@@ -113,10 +133,13 @@ why.
 
 ## 6. Panels
 
-- **The side panel shows one thing at a time**: the menu, or — while exploring — the information
-  panel for what is under the cursor, with `[esc]` in its top-right corner.
-- **The information panel card**: the thing's own glyphs as its icon, its name, what it is for in one
-  line (wrapped at words, never cut), then its numbers as label/value rows. Later: a larger ASCII art
+- **The side panel shows one thing at a time**: the menu, or — in Explore Map — the **Explore Map
+  panel** for what is under the cursor, following it as it moves with no key to press (feedback F23).
+- **A panel that replaces the menu names itself** in a header bar across its top — inverse, in the
+  title's weight, like a popup's top border — with `[esc]` at its right (`EXPLORE MAP  [esc]`). The
+  "pressed" flash of the row that opened it plays on the header, since the row is gone.
+- **The Explore Map card**: the thing's own glyphs as its icon, its name, what it is for in one line
+  (wrapped at words, never cut), then its numbers as label/value rows. Later: a larger ASCII art
   version, and live numbers during a Pulse.
 - **Text in the panel never cuts a word**; a line that does not fit wraps or is dropped.
 

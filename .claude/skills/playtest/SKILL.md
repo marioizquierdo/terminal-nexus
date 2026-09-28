@@ -36,9 +36,12 @@ it is off screen), `click@COL,ROW` clicks a 0-based screen cell; `rclick`, `whee
 the same targets. `#` starts a comment in a `--file`. The table with bytes is at the top of
 `src/playtest/keys.ts`. An unknown name is an error, never a guess.
 
-Useful openings on the `--spike` screen: focus starts on the menu's Nexus Powers row; `n 1` picks
-the first Nexus power, which closes the popup (budget becomes 130); `Down Down Space` arms the Hatchery
-from the menu; a digit arms by hotkey and moves focus to the Grid; `Tab` switches focus. `d` opens
+Useful openings on the `--spike` screen: focus starts on the menu's first row, Explore Map (`e`, or
+Enter there, opens the Explore Map panel; Esc comes back); `n 1` picks the first Nexus power, which
+closes the popup (budget becomes 130) and leaves the highlight on the Nexus row, so `n 1 Down Down
+Space` arms the Hatchery from the menu (`n 2` is the War Chest: 2000 more to spend); a digit arms by
+hotkey and moves focus to the Grid; `Tab` switches focus. A click on a building's row arms it at once
+(`click@3,9` is the Hatchery at 80x24), and a second click on the same tile places. `d` opens
 Debug Mode (Up/Down choose a flag, Left/Right change it, `r` restarts keeping the flags, `Esc`
 closes). Its list scrolls and starts on gate 5I's placement juice (`d Right` lengthens the build
 animation, `d Down Right` sets Lighting to rainbow), then gate 5H's movement numbers (`d Down*4

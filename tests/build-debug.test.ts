@@ -315,7 +315,7 @@ test("opens on the map: nothing changes until the restart, which keeps every fla
   assert.deepEqual(state.cursor, { x: 18, y: 13 })
   assert.equal(state.debug.startFocus, "grid")
   assert.equal(state.debug.smartCursor, false)
-  assert.match(screen(side), /EXPLORE {2}arrows move/)
+  assert.match(screen(side), /EXPLORE MAP {2}arrows move/)
 
   // The restart row does the same by Enter.
   const byEnter = session()
@@ -377,13 +377,17 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
   const restart = placed(byMouse).rows.find((row) => row.spec.kind === "option")
   assert.ok(restart !== undefined)
   click(byMouse, placed(byMouse).textColumn + 4, restart.row)
-  // The keyboard is on the map after the restart: the first click on a menu row brings it back and
-  // highlights; the second arms; a click on the tile the cursor already sits on places (Q52).
+  // The keyboard is on the map after the restart, in Explore Map, whose panel covers the menu: the
+  // first click on it brings the menu back; the second arms the row at once (feedback F22); a click
+  // on the tile the cursor already sits on places (Q52). The first key after the mouse only shows the
+  // menu's highlight again, which the keyboard's own placement left showing.
   const row = menuEntryRow(byMouse.layout, SPIKE_CATALOG, { kind: "construct", index: 0 }) as number
   click(byMouse, byMouse.layout.panelColumn + 3, row)
   click(byMouse, byMouse.layout.panelColumn + 3, row)
   const cell = cellForTile(byMouse.layout, byMouse.build.state.camera, byMouse.build.state.cursor)
   click(byMouse, cell.x, cell.y)
+  assert.equal(byMouse.build.state.highlightHidden, true)
+  keys(byMouse, DOWN)
 
   const script: readonly BuildCommand[] = [
     { kind: "open-debug" },

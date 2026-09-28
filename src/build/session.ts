@@ -15,7 +15,7 @@ import type { MoveKind } from "./motion.ts"
 import { SpeedRamp } from "./motion.ts"
 import { buildMouseCommand, parseMouseEvent } from "./mouse.ts"
 import type { BuildContext, BuildState } from "./state.ts"
-import { applyBuildCommand, createBuildState, nexusPowers, withViewport } from "./state.ts"
+import { applyBuildCommand, createBuildState, exploring, nexusPowers, withViewport } from "./state.ts"
 import type { BuildCommand } from "./types.ts"
 import type { Coord } from "../grid/types.ts"
 
@@ -82,6 +82,7 @@ export class BuildSession {
           // is the drawn camera's tile, not the target's (gate 5H).
           buildMouseCommand(mouse, timing.camera ?? state.camera, layout, this.context.catalog, {
             ...(spec === null ? {} : { overlay: placeOverlay(layout, spec) }),
+            explorePanel: exploring(state),
           })
         : buildKeyboardCommand(key, {
             itemCount: this.context.catalog.length,

@@ -24,8 +24,11 @@ import {
 import { CLOSE_LABEL, overlaySpec, placeOverlay, settingColumns, wrapWords } from "../build/overlay.ts"
 import type { ArmedPreview, BuildContext, BuildState } from "../build/state.ts"
 import {
+  EXPLORE_ENTRY,
+  NEXUS_ENTRY,
   armedPreview,
   entryOfConstruct,
+  exploring,
   menuEntries,
   nexusPowers,
   pendingPicks,
@@ -486,15 +489,16 @@ export const PLACE_KEY_HELP: KeyHelp = {
   bindings: ["arrows move", "enter/space place", "esc cancel", "shift+arrow fast move", "bksp remove", "u undo"],
 }
 
-/** The Grid, with nothing armed. */
+/** Explore Map: the Grid with nothing armed, the panel following the cursor (feedback F23). */
 export const EXPLORE_KEY_HELP: KeyHelp = {
-  label: "EXPLORE",
-  bindings: ["arrows move", "enter/space inspect", "tab/esc menu", "shift+arrow fast move", "bksp remove"],
+  label: "EXPLORE MAP",
+  bindings: ["arrows move", "tab/esc menu", "shift+arrow fast move", "bksp remove"],
 }
 
-const INFO_KEY_HELP: KeyHelp = {
-  label: "INFO",
-  bindings: ["arrows move", "esc close", "tab menu", "shift+arrow fast move"],
+/** The map a mouse click opened from the menu: nothing armed, the menu still drawn beside it. */
+export const MAP_KEY_HELP: KeyHelp = {
+  label: "MAP",
+  bindings: ["arrows move", "enter/space explore", "tab/esc menu", "shift+arrow fast move", "bksp remove"],
 }
 
 const NEXUS_KEY_HELP: KeyHelp = { label: "NEXUS", bindings: ["up/down choose", "enter/space pick", "esc close"] }
@@ -515,7 +519,7 @@ export function keyHelp(state: BuildState): KeyHelp {
   if (state.overlay === "nexus-powers") return NEXUS_KEY_HELP
   if (state.focus === "menu") return MENU_KEY_HELP
   if (state.armed !== null) return PLACE_KEY_HELP
-  return state.inspecting ? INFO_KEY_HELP : EXPLORE_KEY_HELP
+  return state.exploreMap ? EXPLORE_KEY_HELP : MAP_KEY_HELP
 }
 
 /** Two glyphs between bindings, so a pair of them cannot read as one. */
@@ -700,9 +704,9 @@ type RowState = "plain" | "selected" | "pressed" | "refused"
 
 /**
  * One entry of the side panel's menu. `>` before the row says *armed* — the one structure Enter
- * places — and the bar says *where the keyboard is*. A structure is armed only while the Grid has
- * focus, so the bar is the menu highlight while the menu has focus, the armed row while placing, and
- * nowhere while exploring (owner, 2026-09-27).
+ * places — and the bar says *where the keyboard is, not yet chosen*. A structure is armed only while
+ * the Grid has focus, so the bar is the menu highlight while the menu has focus and nowhere while
+ * placing, where the armed row is marked as armed instead (owner, 2026-09-27 and 2026-09-28).
  */
 function drawMenuRow(
   cells: BandCell[],
@@ -736,9 +740,13 @@ function drawMenuRow(
     dim: entry.state === "refused" || (entry.disabled === true && !inverse),
   }
   if (bar) text(cells, band, column, row, " ".repeat(limit), barRole, { ...extra, limit })
+  // Armed is not the keyboard's bar (feedback F22): the bar says "the keyboard is here, not chosen
+  // yet", and an armed row is chosen. It is `>`, and the whole row in the hotkey's colour, bold, its
+  // name underlined — legible in monochrome by the marker and the underline alone.
+  const armedRole: StyleRole = "chrome.hotkey"
   let at = column
   if (entry.armed) {
-    text(cells, band, at, row, ">", barRole, { ...extra, limit })
+    text(cells, band, at, row, ">", bar ? barRole : armedRole, { ...extra, bold: true, limit })
     at += 2
   }
   const hotkey = `[${entry.hotkey}]`
@@ -746,8 +754,9 @@ function drawMenuRow(
   // block, a white block and a grey one side by side.
   text(cells, band, at, row, hotkey, bar ? barRole : "chrome.hotkey", { ...extra, bold: true, limit: column + limit - at })
   at += hotkey.length + 1
-  text(cells, band, at, row, entry.label, bar ? barRole : entry.armed ? "chrome.title" : "chrome.value", {
+  text(cells, band, at, row, entry.label, bar ? barRole : entry.armed ? armedRole : "chrome.value", {
     ...extra,
+    ...(entry.armed ? { underline: true } : {}),
     limit: column + limit - at,
   })
   at += entry.label.length
@@ -756,7 +765,7 @@ function drawMenuRow(
   }
   if (entry.value !== undefined) {
     // In the bar the cost keeps only its dimness, the one fact it adds there: this row no longer fits.
-    rightAlign(cells, layout, row, entry.value, bar ? barRole : "chrome.value", {
+    rightAlign(cells, layout, row, entry.value, bar ? barRole : entry.armed ? armedRole : "chrome.value", {
       ...extra,
       dim: entry.disabled === true || entry.state === "refused",
     })
@@ -770,27 +779,35 @@ function drawMenuRow(
  */
 function effectLine(context: BuildContext, state: BuildState, preview: ArmedPreview | null): string | null {
   if (state.focus === "menu") {
+    // No bar, no line: it describes the row the keyboard is on, and after a click nothing is.
+    if (state.highlightHidden) return null
     const entry = menuEntries(context)[state.menuHighlight]
     if (entry === undefined) return null
     if (entry.kind === "nexus") {
       return pendingPicks(context, state) > 0 ? "Pick one before the Pulse" : "Read the active powers"
     }
-    if (entry.kind === "explore") return "Look around; inspect anything"
+    if (entry.kind === "explore") return "See what is on every tile"
     return context.catalog[entry.index]?.effect ?? null
   }
   return preview?.item.effect ?? null
 }
 
-/** How the row for menu entry `entry` is drawn right now. */
-function rowState(input: BuildCompositionInput, entry: number, armed: boolean): RowState {
+/**
+ * How the row for menu entry `entry` is drawn right now. **The bar means one thing: the keyboard is
+ * on this row and has not chosen it yet** (feedback F22). So it is drawn only while the menu has
+ * focus, and not after the mouse worked the menu (`highlightHidden` — a click chooses, it does not
+ * highlight); an armed row is drawn as armed (`drawMenuRow`), never with the bar.
+ */
+function rowState(input: BuildCompositionInput, entry: number): RowState {
   const { state, flash } = input
   if (flash !== undefined && flash.entry === entry) return flash.kind
   // The Nexus and start-the-Pulse popups each belong to a menu row, which stays lit behind them; Debug
   // Mode belongs to none, so while it has the keyboard its own highlight is the only one on screen.
-  if (state.overlay === "debug") return "plain"
-  if (state.overlay !== null && state.focus !== "menu") return "plain"
-  if (state.focus === "menu") return state.menuHighlight === entry ? "selected" : "plain"
-  return armed ? "selected" : "plain"
+  if (state.overlay === "debug" || state.focus !== "menu") return "plain"
+  // The Nexus popup keeps its row lit however it was opened — by a click as much as by a key.
+  const ownsPopup = state.overlay === "nexus-powers" && entry === NEXUS_ENTRY
+  if (state.highlightHidden && !ownsPopup) return "plain"
+  return state.menuHighlight === entry ? "selected" : "plain"
 }
 
 /**
@@ -806,6 +823,13 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput, preview: Arm
   const limit = layout.panelLimit
   const left = remaining(context, state)
 
+  // Explore Map, first (owner, 2026-09-28, feedback F23).
+  drawMenuRow(cells, layout, layout.panelRow + EXPLORE_ROW, {
+    hotkey: "e",
+    label: "Explore Map",
+    armed: false,
+    state: rowState(input, EXPLORE_ENTRY),
+  })
   // Nexus. Its "(1)" is the number of picks waiting — the one thing that will stop the commit —
   // drawn in the hotkey's colour so it catches the eye without a popup forcing it.
   const pending = pendingPicks(context, state)
@@ -816,13 +840,7 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput, preview: Arm
     ...(pending > 0 ? { badge: ` (${pending})` } : {}),
     ...(active > 0 ? { value: `${active} active` } : {}),
     armed: false,
-    state: rowState(input, 0, false),
-  })
-  drawMenuRow(cells, layout, layout.panelRow + EXPLORE_ROW, {
-    hotkey: "e",
-    label: "Explore",
-    armed: false,
-    state: rowState(input, 1, false),
+    state: rowState(input, NEXUS_ENTRY),
   })
 
   // What there is to spend, directly above the costs it is measured against.
@@ -854,7 +872,7 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput, preview: Arm
       label: item.label,
       value: String(item.cost),
       armed,
-      state: rowState(input, entryOfConstruct(line.index), armed),
+      state: rowState(input, entryOfConstruct(line.index)),
       disabled: item.cost > left,
     })
   }
@@ -887,19 +905,33 @@ function displayName(context: BuildContext, contentId: string): string {
   return definition.short.charAt(0).toUpperCase() + definition.short.slice(1)
 }
 
+/** The Explore Map panel's header (feedback F23), and how far below it the card starts. */
+export const EXPLORE_TITLE = "EXPLORE MAP"
+const EXPLORE_CARD_ROW = 2
+
 /**
- * The information panel (owner, 2026-09-27): exploring, Enter/Space — or a click on a building —
- * replaces the menu with what is under the cursor: its own glyphs as its icon, its name and one line
- * of what it is for, and its numbers. `[esc]` top-right brings the menu back. A first version of the
- * presentation card he described; the larger art and live stats during a Pulse come later.
+ * The Explore Map panel (owner, 2026-09-27 and 2026-09-28): while the Grid has the keyboard with
+ * nothing armed, the menu gives way to what is under the cursor, following it as it moves — its own
+ * glyphs as its icon, its name and one line of what it is for, and its numbers. A header bar names
+ * the mode, the way a popup's top border names the popup, with `[esc]` at its right; the whole panel
+ * is a click back to the menu. A first version of the presentation card he described; the larger
+ * art and live stats during a Pulse come later.
  */
 function drawInfoPanel(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
   const { context, state, layout } = input
   const band = BANDS.chrome
   const column = layout.panelColumn
   const limit = layout.panelLimit
-  let row = layout.panelRow
-  text(cells, band, column + limit - CLOSE_LABEL.length, row, CLOSE_LABEL, "chrome.hotkey", { bold: true })
+  // The header: an inverse bar across the panel, the popup's own title weight, so "where am I" reads
+  // at a glance and survives monochrome. It stands where the Explore Map row was, so the "pressed"
+  // flash of activating that row plays on it, in the row's own pressed style.
+  const pressed = input.flash?.kind === "pressed" && input.flash.entry === EXPLORE_ENTRY
+  const headerRole: StyleRole = pressed ? "chrome.hotkey" : "chrome.title"
+  const header = { bold: true, inverse: true, underline: pressed }
+  text(cells, band, column, layout.panelRow, " ".repeat(limit), headerRole, { ...header, limit })
+  text(cells, band, column + 1, layout.panelRow, EXPLORE_TITLE, headerRole, { ...header, limit })
+  text(cells, band, column + limit - CLOSE_LABEL.length, layout.panelRow, CLOSE_LABEL, headerRole, header)
+  let row = layout.panelRow + EXPLORE_CARD_ROW
 
   const structure = structureAtTile(context, state.planned, state.cursor)
   if (structure === null) {
@@ -907,7 +939,7 @@ function drawInfoPanel(cells: BandCell[], input: BuildCompositionInput, pack: Gl
     const { glyph, role } = terrainGlyph(terrainId, pack)
     put(cells, band, column, row, glyph === " " ? "." : glyph, role, {})
     const terrain = TERRAIN_INFO[terrainId] ?? { name: "Ground", line: "" }
-    text(cells, band, column + 3, row, terrain.name, "chrome.title", { bold: true, limit: limit - 3 - CLOSE_LABEL.length - 1 })
+    text(cells, band, column + 3, row, terrain.name, "chrome.title", { bold: true, limit: limit - 3 })
     text(cells, band, column, row + 2, terrain.line, "chrome.value", { limit })
     text(cells, band, column, row + 4, "TILE", "chrome.label", { limit })
     rightAlign(cells, layout, row + 4, `${state.cursor.x},${state.cursor.y}`, "chrome.value")
@@ -926,7 +958,7 @@ function drawInfoPanel(cells: BandCell[], input: BuildCompositionInput, pack: Gl
   const nameColumn = column + artWidth + 2
   text(cells, band, nameColumn, row, displayName(context, structure.contentId), "chrome.title", {
     bold: true,
-    limit: column + limit - CLOSE_LABEL.length - 1 - nameColumn,
+    limit: column + limit - nameColumn,
   })
   text(cells, band, nameColumn, row + 1, structure.planned ? "planned" : "standing", "chrome.muted", {
     limit: column + limit - nameColumn,
@@ -1111,7 +1143,7 @@ export function composeBuildFrame(
   // fit is left off rather than drawn over the rule and the bottom bar.
   const panel: BandCell[] = []
   if (input.state.committed) drawCommittedPanel(panel, input)
-  else if (input.state.inspecting && input.state.focus === "grid") drawInfoPanel(panel, input, pack)
+  else if (exploring(input.state)) drawInfoPanel(panel, input, pack)
   else {
     drawPanel(panel, input, preview)
     drawPanelBindings(panel, input)

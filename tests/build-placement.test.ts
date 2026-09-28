@@ -31,7 +31,7 @@ import { entityGlyph } from "../src/view/theme.ts"
 const FLAGS: DebugFlags = initialDebugFlags({})
 const BARRACKS = "structure.citizen.barracks"
 /** Arm the Barracks from the menu (the cursor lands beside the Grid Nexus) and place it with Space. */
-const PLACE_BARRACKS = "n 1 Down*2 Space Space"
+const PLACE_BARRACKS = "n 1 Down Space Space"
 
 function placed(keys = PLACE_BARRACKS): { run: BuildPlaytest; state: BuildState } {
   const run = runBuildPlaytest({ steps: parseKeyScript(keys) })
@@ -279,7 +279,7 @@ test("the live loop stops when the track settles, whether or not it knows the fo
 // --- The live loop's clock -------------------------------------------------------------------------
 
 test("the live loop times each placement from the frame that first drew it, and stops when it settles", () => {
-  const { state: before } = placed("n 1 Down*2 Space")
+  const { state: before } = placed("n 1 Down Space")
   const { state: after } = placed()
   const placement = lastPlacement(after)
   const animation = new BuildAnimation()
@@ -301,7 +301,7 @@ test("whatever is already planned when the screen first draws is not animated", 
 })
 
 test("undo, Backspace, or another placement mid-animation is correct at once: no ghost glyphs", () => {
-  const { run, state: armed } = placed("n 1 Down*2 Space")
+  const { run, state: armed } = placed("n 1 Down Space")
   const { state: one } = placed()
   const first = lastPlacement(one)
   const animation = new BuildAnimation()
@@ -344,7 +344,7 @@ test("undo, Backspace, or another placement mid-animation is correct at once: no
 
 test("the plan is identical with every placement effect on or off", () => {
   // Build animation to 900, lighting to rainbow, particles to many, glow off — by Debug Mode's own keys.
-  const tuned = placed("n 1 d Right*2 Down Right Down Right Down Left*3 Esc Down*2 Space Space")
+  const tuned = placed("n 1 d Right*2 Down Right Down Right Down Left*3 Esc Down Space Space")
   const plain = placed()
   assert.deepEqual(tuned.state.debug.placeFramesMs, 900)
   assert.deepEqual(tuned.state.debug.placeLight, "rainbow")

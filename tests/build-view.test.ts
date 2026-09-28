@@ -11,7 +11,7 @@ import type { BuildSessionOptions } from "../src/build/session.ts"
 import { SPIKE_ALLOTMENT, SPIKE_CATALOG } from "../src/build/catalog.ts"
 import { remaining } from "../src/build/state.ts"
 import { spikeContext } from "../src/cli/spike.ts"
-import { PLACE_KEY_HELP, EXPLORE_KEY_HELP, MENU_KEY_HELP, bindingLines, composeBuildFrame } from "../src/view/build.ts"
+import { PLACE_KEY_HELP, EXPLORE_KEY_HELP, MAP_KEY_HELP, MENU_KEY_HELP, bindingLines, composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText, offendingGlyph } from "../src/view/frame.ts"
 import { CAPABILITY_MODES } from "../src/view/roles.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
@@ -430,6 +430,8 @@ test("the budget on screen is the budget the reducer is enforcing", () => {
   const show = (): string =>
     frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
 
+  // The Grid arrives in Explore Map, whose panel covers the menu; the budget is the menu's.
+  build.dispatch({ kind: "focus", target: "menu" })
   assert.match(show(), new RegExp(`${SPIKE_ALLOTMENT} of ${SPIKE_ALLOTMENT}`))
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
@@ -484,6 +486,7 @@ test("the footer never advertises a key the keyboard adapter does not bind", () 
     [MENU_KEY_HELP, { itemCount: 3, armed: false, focus: "menu" as const }],
     [PLACE_KEY_HELP, { itemCount: 3, armed: true, focus: "grid" as const }],
     [EXPLORE_KEY_HELP, { itemCount: 3, armed: false, focus: "grid" as const }],
+    [MAP_KEY_HELP, { itemCount: 3, armed: false, focus: "grid" as const }],
   ] as const
   for (const [help, context] of lists) {
     for (const binding of help.bindings) {
@@ -502,8 +505,11 @@ test("no header or footer line is cut off at the 80-column floor", () => {
   const { text } = screenAt(MINIMUM)
   assert.match(text, /TERMINAL NEXUS build phase/)
   assert.match(text, /view x 0-47 y 1-16 of 96x40 {3}cursor 18,13/)
-  assert.match(text, /EXPLORE {2}arrows move {2}enter\/space inspect {2}tab\/esc menu/)
-  assert.match(text, /RESOURCE {9}100 of 100/, "the panel's budget line, whole")
+  assert.match(text, /EXPLORE MAP {2}arrows move {2}tab\/esc menu {2}shift\+arrow fast move {2}bksp remove/)
+  assert.match(text, / {2}EXPLORE MAP {10}\[esc\]\|/, "the Explore Map header, whole")
+  const menu = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" })).text
+  assert.match(menu, /RESOURCE {9}100 of 100/, "the panel's budget line, whole")
+  assert.match(menu, /\[e\] Explore Map {12}\|/, "the first menu entry, whole")
 })
 
 test("the scroll margin the screen prints is the one it is actually using", () => {
@@ -600,6 +606,7 @@ test("on a small Grid the panel's bindings never draw over the Nexus Powers entr
   const context = { ...neutralContext(), grid: small, standing: [] }
   const layout = buildLayout(MINIMUM, small)
   const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
+  build.dispatch({ kind: "focus", target: "menu" }) // Explore Map's panel would cover the menu
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
   // Against the divider — or against the junction where this short Grid's own bottom edge meets it.
   // Against the divider — or, where this small Grid is the solid bar of a map edge, against nothing.
@@ -612,10 +619,11 @@ test("every binding survives the split whole, at every width the screen can have
   // two lines end up being, a binding must never be cut in half — a player reading "esc dis" learns
   // nothing and one who cannot find "q quit" is stuck in an alternate screen. And nothing may be
   // lost between the two surfaces: what leaves the footer arrives in the panel.
-  for (const help of [PLACE_KEY_HELP, MENU_KEY_HELP, EXPLORE_KEY_HELP]) {
+  for (const help of [PLACE_KEY_HELP, MENU_KEY_HELP, EXPLORE_KEY_HELP, MAP_KEY_HELP]) {
     const all = bindingLines(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, help).footer.split("  ")
     assert.deepEqual(all, help.bindings)
-    for (let footerLimit = 10; footerLimit <= all.join("  ").length + 5; footerLimit += 1) {
+    // From the narrowest footer that still holds the focus label and its gap.
+    for (let footerLimit = help.label.length + 2; footerLimit <= all.join("  ").length + 5; footerLimit += 1) {
       for (const panelLimit of [26, 28, 40]) {
         const { footer, panel } = bindingLines(footerLimit, panelLimit, help)
         // The focus label and its gap come out of the same line.
@@ -660,13 +668,31 @@ test("every key the adapters bind is named on screen at the 80-column floor", ()
       ],
     },
     {
-      label: "EXPLORE",
+      // Explore Map: its panel covers the menu, so only the way back to it is named — the menu's own
+      // hotkeys are named on the menu (feedback F23).
+      label: "EXPLORE MAP",
       drive: () => {},
       context: { itemCount: 3, armed: false, focus: "grid" as const },
       bound: [
-        ["\r", "enter", /enter\/space inspect/],
+        ["\u001b[A", "arrows", /arrows move/],
         ["\t", "tab", /tab\/esc menu/],
-        ["e", "explore", /\[e\] Explore/],
+        ["\u001b", "esc", /tab\/esc menu/],
+        ["\u007f", "backspace", /bksp remove/],
+      ],
+    },
+    {
+      // The map a mouse click opened from the menu: the menu still drawn beside it.
+      label: "MAP",
+      drive: (build: BuildSession) =>
+        build.run([
+          { kind: "focus", target: "menu" },
+          { kind: "click-tile", x: 30, y: 14 },
+        ]),
+      context: { itemCount: 3, armed: false, focus: "grid" as const },
+      bound: [
+        ["\r", "enter", /enter\/space explore/],
+        ["\t", "tab", /tab\/esc menu/],
+        ["e", "explore", /\[e\] Explore Map/],
       ],
     },
     {
@@ -786,6 +812,11 @@ test("the bindings block gives way to the construct menu, never draws over it", 
   const context = { ...neutralContext(), grid: tiny, standing: [] }
   const layout = buildLayout(MINIMUM, tiny)
   const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
+  // The map with the menu beside it (a click from the menu): Explore Map's panel would cover the menu.
+  build.run([
+    { kind: "focus", target: "menu" },
+    { kind: "click-tile", x: 2, y: 2 },
+  ])
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
 
   for (const line of constructLines(layout, context.catalog)) {
@@ -875,7 +906,7 @@ test("engine-3.3-markers: a side that has reached the map's edge is a solid bar,
 })
 
 test("the normal panel says how many Nexus powers are active, and names the empty Special slot", () => {
-  const built = screenAt(MINIMUM)
+  const built = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" }))
   assert.match(built.text, /\[n\] Nexus {2,}1 active/)
   assert.match(built.text, /SPECIAL {2,}none available/)
 })
