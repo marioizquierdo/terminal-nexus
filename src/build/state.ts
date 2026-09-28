@@ -11,15 +11,23 @@ import { NO_STATUS, status } from "../status.ts"
 import type { Camera, Margin, Viewport } from "./camera.ts"
 import { centreOn, clampToGrid, edgeClickCamera, followCursor, marginForView } from "./camera.ts"
 import type { DebugField, DebugFlags, MapEdgeStyle } from "./debug.ts"
+import { adjustDebug, fieldSpec, formatDebugValue, initialDebugFlags, rowOfField } from "./debug.ts"
+import type { Settings } from "../settings/types.ts"
+import { DEFAULT_SETTINGS } from "../settings/types.ts"
+import type { PlayerField } from "./settings.ts"
 import {
-  DEBUG_ROW_COUNT,
-  adjustDebug,
-  fieldAtRow,
-  fieldSpec,
-  formatDebugValue,
-  initialDebugFlags,
-  rowOfField,
-} from "./debug.ts"
+  FIRST_EXPERIMENT_ROW,
+  GAME_MENU_ROWS,
+  FIRST_SETTING_ROW,
+  SETTINGS_EXPORT_ROW,
+  adjustSetting,
+  formatPlayerValue,
+  playerRow,
+  playerSpec,
+  settingsRowAt,
+  stepSettingsRow,
+} from "./settings.ts"
+import { formatSettingsExport } from "./settings-export.ts"
 import type {
   Ack,
   BuildCommand,
@@ -68,6 +76,17 @@ export type BuildContext = Readonly<{
    * owns what each style looks like (`src/view/edge.ts`). Absent: the solid bar.
    */
   edgeStyle?: MapEdgeStyle
+  /** The player's settings the screen opens with — saved ones, or a command line's. The Settings
+   *  popup changes them in `BuildState.settings`; saving is the live loop's (`src/cli/spike.ts`). */
+  settings?: Settings
+  /** Experiments to open with instead of this build's defaults — an imported export
+   *  (`settings-export.ts`), so an agent can start from exactly what the owner had. */
+  experiments?: Partial<DebugFlags>
+  /** The commit this build is, when the adapter knows it: the first line of an export names it. */
+  buildId?: string
+  /** Where the adapter puts an export besides the screen, said in the export popup — "Copied to the
+   *  clipboard and saved to ...". Absent: the popup says nothing about a copy. */
+  exportDestination?: string
 }>
 
 export type BuildState = Readonly<{
@@ -125,8 +144,13 @@ export type BuildState = Readonly<{
    *  the start-the-Pulse question (`p` — "the one action that must not fire by accident", engine.md
    *  9.7), or the exit question. Never opened by anything but the player. */
   overlay: Overlay | null
-  /** Index into the popup's pending powers — its own highlight, reset whenever it opens. */
+  /** The popup's own highlight, reset whenever one opens: an index into the Nexus popup's pending
+   *  powers or the game menu's rows, a row id in Settings (`src/build/settings.ts`), and the first
+   *  line shown in the export. */
   overlayHighlight: number
+  /** The popups under the open one, nearest last — what Esc goes back to, one at a time: the game menu
+   *  under Settings opened from it, Settings under the export. Empty: Esc goes back to the game. */
+  overlayUnder: readonly Overlay[]
   planned: readonly PlannedPlacement[]
   /** The one line of feedback the status line shows: what just happened, or why it did not. A
    *  message about a tile (`status.tile`, a refused placement) lapses once the cursor leaves it. */
@@ -150,6 +174,12 @@ export type BuildState = Readonly<{
    * live loop reads the flash timings. Survive a Debug Mode restart; not saved anywhere else.
    */
   debug: DebugFlags
+  /**
+   * The player's own settings — background, colour depth, symbols, reduced motion — as the Settings
+   * popup last left them. The reducer only records them; the live loop draws with them and saves them
+   * whenever they change (owner, 2026-09-28: settings players may adjust, beside the experiments).
+   */
+  settings: Settings
   /** Where the cursor started — where a Debug Mode restart puts it back. */
   startCursor: Coord
 }>
@@ -193,7 +223,8 @@ export function createBuildState(
   context: BuildContext,
   cursor: Coord,
   viewport: Viewport,
-  debug: DebugFlags = initialDebugFlags(context),
+  debug: DebugFlags = { ...initialDebugFlags(context), ...context.experiments },
+  settings: Settings = context.settings ?? DEFAULT_SETTINGS,
 ): BuildState {
   const start = clampToGrid(cursor, context.grid)
   return {
@@ -213,6 +244,7 @@ export function createBuildState(
     highlightHidden: false,
     overlay: null,
     overlayHighlight: 0,
+    overlayUnder: [],
     planned: [],
     status: NO_STATUS,
     nextOrdinal: 1,
@@ -220,6 +252,7 @@ export function createBuildState(
     bonusAllotment: 0,
     committed: false,
     debug,
+    settings,
     startCursor: cursor,
   }
 }
@@ -752,20 +785,20 @@ function explore(state: BuildState): BuildState {
 
 function openOverlay(state: BuildState, overlay: Overlay): BuildState {
   // The start-the-Pulse question and a committed Build Phase each own the whole screen; a popup over
-  // either would be a second question on top of one. The exit question is the one exception: it can
-  // always be asked.
-  if (overlay !== "exit") {
+  // either would be a second question on top of one. The game menu is the one exception: leaving can
+  // always be asked about.
+  if (overlay !== "menu") {
     const lock = state.committed || state.overlay === "confirm-commit" ? editLock(state) : null
     if (lock !== null) return { ...state, status: lock }
   }
-  return { ...state, overlay, overlayHighlight: 0 }
+  return { ...state, overlay, overlayHighlight: 0, overlayUnder: [] }
 }
 
 function pickNexus(context: BuildContext, state: BuildState, index: number): BuildState {
   // Defensively guarded like every other command: a driver script is free to send one anywhere, and
   // the answer must be the same refusal a player pressing an unavailable key gets. An open Nexus popup
   // is where a pick is normally made, so it is not a reason to refuse one.
-  if (state.committed || state.overlay === "confirm-commit" || state.overlay === "exit") {
+  if (state.committed || state.overlay === "confirm-commit" || state.overlay === "menu") {
     return { ...state, status: editLock(state) ?? state.status }
   }
   if (state.nexusPick !== null) return { ...state, status: status("Already picked.", "warning") }
@@ -815,42 +848,55 @@ function place(context: BuildContext, state: BuildState): BuildState {
   }
 }
 
-/** The one "back" of the screen — Esc, `x`, a right click. One level per press. */
+/** The one "back" of the screen — Esc, `x`, a right click. One level per press: a popup goes back to
+ *  the one it was opened from (Settings to the game menu, the export to Settings), or closes. */
 function cancel(context: BuildContext, state: BuildState): BuildState {
   if (state.overlay === "confirm-commit") return { ...state, overlay: null, status: status("Cancelled.") }
-  if (state.overlay !== null) return { ...state, overlay: null }
-  if (state.committed) return openOverlay(state, "exit")
+  const under = state.overlayUnder[state.overlayUnder.length - 1]
+  if (state.overlay !== null && under !== undefined) {
+    // Back to the popup this one was opened from, on the row that opened it.
+    const highlight = under === "menu" ? GAME_MENU_ROWS.indexOf("settings") : under === "settings" ? SETTINGS_EXPORT_ROW : 0
+    return { ...state, overlay: under, overlayHighlight: highlight, overlayUnder: state.overlayUnder.slice(0, -1) }
+  }
+  if (state.overlay !== null) return { ...state, overlay: null, overlayUnder: [] }
+  if (state.committed) return openOverlay(state, "menu")
   if (state.focus === "grid") {
     const wasArmed = state.armed !== null
     return { ...toMenu(state), status: wasArmed ? status("Cancelled.") : state.status }
   }
   void context
-  return openOverlay(state, "exit")
+  return openOverlay(state, "menu")
 }
 
 /**
- * `d`: the Debug Mode popup (gate 5G). Opens over anything but another popup — including a committed
- * Build Phase, since starting over from there is exactly what a playtest of the flags wants.
+ * The Settings popup, from the game menu's `[s]` (at the player's settings) or from `d` (at the
+ * experiments). Opens over nothing but the game menu, which it then goes back to — and over a
+ * committed Build Phase, since starting over from there is exactly what a playtest wants.
  */
-function openDebug(state: BuildState): BuildState {
-  if (state.overlay !== null) return state
-  return { ...state, overlay: "debug", overlayHighlight: 0 }
+function openSettings(state: BuildState, section: "settings" | "experiments"): BuildState {
+  if (state.overlay !== null && state.overlay !== "menu") return state
+  return {
+    ...state,
+    overlay: "settings",
+    overlayHighlight: section === "settings" ? FIRST_SETTING_ROW : FIRST_EXPERIMENT_ROW,
+    overlayUnder: state.overlay === "menu" ? ["menu"] : [],
+  }
 }
 
 /**
- * One step of a Debug Mode flag, said on the status line. A new scroll margin is felt at once: the
+ * One step of an experiment, said on the status line. A new scroll margin is felt at once: the
  * camera settles under the new rule straight away rather than at the next arrow key.
  */
 function adjustFlag(context: BuildContext, state: BuildState, field: DebugField, step: -1 | 1): BuildState {
   const spec = fieldSpec(field)
-  const highlight = state.overlay === "debug" ? { overlayHighlight: rowOfField(field) } : {}
+  const highlight = state.overlay === "settings" ? { overlayHighlight: rowOfField(field) } : {}
   const { flags, changed } = adjustDebug(state.debug, field, step)
   if (!changed) {
     const end = step > 0 ? "largest" : "smallest"
     return {
       ...state,
       ...highlight,
-      status: status(`Debug - ${spec.label} is already ${formatDebugValue(state.debug, field)}, the ${end} value.`, "warning"),
+      status: status(`Experiment - ${spec.label} is already ${formatDebugValue(state.debug, field)}, the ${end} value.`, "warning"),
     }
   }
   const later = spec.applies === "restart" ? " - applies on restart: [r]" : ""
@@ -858,30 +904,67 @@ function adjustFlag(context: BuildContext, state: BuildState, field: DebugField,
     ...state,
     ...highlight,
     debug: flags,
-    status: status(`Debug - ${spec.label}: ${formatDebugValue(flags, field)}${later}.`),
+    status: status(`Experiment - ${spec.label}: ${formatDebugValue(flags, field)}${later}.`),
   }
   if (field !== "scrollMargin") return next
   return { ...next, camera: followCursor(next.camera, next.cursor, next.viewport, context.grid, marginOf(next)) }
 }
 
-/** Starts the Build Phase over, keeping the Debug Mode flags — how a flag marked "restart" takes
- *  effect. The last acknowledgement is carried over so its sequence keeps counting up and the live
- *  loop never mistakes a new one for one it has already shown. */
+/** One step of a player setting. Recorded here and nowhere else: the live loop sees the new value,
+ *  draws with it and saves it. */
+function adjustPlayerSetting(state: BuildState, field: PlayerField, step: -1 | 1): BuildState {
+  const settings = adjustSetting(state.settings, field, step)
+  const highlight = state.overlay === "settings" ? { overlayHighlight: playerRow(field) } : {}
+  return {
+    ...state,
+    ...highlight,
+    settings,
+    status: status(`${playerSpec(field).label}: ${formatPlayerValue(settings, field)}.`),
+  }
+}
+
+/** Starts the Build Phase over, keeping the settings and the experiments — how an experiment marked
+ *  "restart" takes effect. The last acknowledgement is carried over so its sequence keeps counting up
+ *  and the live loop never mistakes a new one for one it has already shown. */
 function restartWithFlags(context: BuildContext, state: BuildState): BuildState {
-  const fresh = createBuildState(context, state.startCursor, state.viewport, state.debug)
+  const fresh = createBuildState(context, state.startCursor, state.viewport, state.debug, state.settings)
   return {
     ...fresh,
     ack: state.ack,
     refusedTry: state.refusedTry,
-    status: status("Build Phase restarted with the debug settings."),
+    status: status("Build Phase restarted with these settings."),
   }
 }
 
-/** Enter/Space, or Right/Left, on the Debug Mode popup's highlighted row. */
+/** The export popup: the settings as text, from Settings (which Esc goes back to) or a driver. */
+function exportSettings(state: BuildState): BuildState {
+  if (state.overlay !== null && state.overlay !== "settings") return state
+  return {
+    ...state,
+    overlay: "export",
+    overlayHighlight: 0,
+    overlayUnder: state.overlay === "settings" ? [...state.overlayUnder, "settings"] : [],
+    status: status("Settings exported - paste them into the pull request.", "success"),
+  }
+}
+
+/** The export's text for this state — what the popup shows and what the session copies. */
+export function exportText(context: BuildContext, state: BuildState): string {
+  return formatSettingsExport({ settings: state.settings, experiments: state.debug }, context.buildId)
+}
+
+function exportLineCount(context: BuildContext, state: BuildState): number {
+  return exportText(context, state).trimEnd().split("\n").length
+}
+
+/** Enter/Space, or Right/Left, on the Settings popup's highlighted row. */
 function stepHighlighted(context: BuildContext, state: BuildState, step: -1 | 1, activate: boolean): BuildState {
-  const field = fieldAtRow(state.overlayHighlight)
-  if (field !== null) return adjustFlag(context, state, field, step)
-  return activate ? restartWithFlags(context, state) : state
+  const row = settingsRowAt(state.overlayHighlight)
+  if (row === null) return state
+  if (row.kind === "experiment") return adjustFlag(context, state, row.field, step)
+  if (row.kind === "player") return adjustPlayerSetting(state, row.field, step)
+  if (!activate) return state
+  return row.kind === "restart" ? restartWithFlags(context, state) : exportSettings(state)
 }
 
 /**
@@ -898,7 +981,9 @@ export function applyBuildCommand(
   // the two cancels that.
   const base: BuildState =
     state.nudged && !(command.kind === "nudge" && command.direction === "right") ? { ...state, nudged: false } : state
-  return applyCommand(context, base, command)
+  const next = applyCommand(context, base, command)
+  // Whatever closed the popup — a click outside it, a pick, an answer — closed the ones under it too.
+  return next.overlay === null && next.overlayUnder.length > 0 ? { ...next, overlayUnder: [] } : next
 }
 
 function applyCommand(context: BuildContext, state: BuildState, command: BuildCommand): BuildState {
@@ -993,8 +1078,8 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     case "cancel":
       return cancel(context, state)
 
-    case "request-exit":
-      return openOverlay(state, "exit")
+    case "open-menu":
+      return openOverlay(state, "menu")
 
     case "pick-nexus":
       return pickNexus(context, state, command.index)
@@ -1027,8 +1112,15 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return command.target === "menu" ? { ...toMenu(state), highlightHidden: false } : toGridExploring(state)
 
     case "highlight": {
-      if (state.overlay === "debug") {
-        return { ...state, overlayHighlight: wrap(state.overlayHighlight + command.delta, DEBUG_ROW_COUNT) }
+      if (state.overlay === "settings") return { ...state, overlayHighlight: stepSettingsRow(state.overlayHighlight, command.delta) }
+      if (state.overlay === "menu") {
+        return { ...state, overlayHighlight: wrap(state.overlayHighlight + command.delta, GAME_MENU_ROWS.length) }
+      }
+      if (state.overlay === "export") {
+        // The export's highlight walks its lines, stopping at either end; the popup's window follows
+        // it (`src/build/overlay.ts`).
+        const last = exportLineCount(context, state) - 1
+        return { ...state, overlayHighlight: Math.max(0, Math.min(last, state.overlayHighlight + command.delta)) }
       }
       if (state.overlay === "nexus-powers") {
         const count = nexusPowers(context, state).pending.length
@@ -1041,8 +1133,15 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     }
 
     case "activate": {
-      // On a flag, Enter/Space is Right: a choice of two flips, a number steps up.
-      if (state.overlay === "debug") return stepHighlighted(context, state, 1, true)
+      // On a setting, Enter/Space is Right: a choice of two flips, a number steps up.
+      if (state.overlay === "settings") return stepHighlighted(context, state, 1, true)
+      if (state.overlay === "menu") {
+        // `[q] Quit` is not the reducer's to act on: the keyboard sends `quit` for Enter on it, and a
+        // click on it sends `quit` too (`src/build/keyboard.ts`, the popup's own rows).
+        const row = GAME_MENU_ROWS[state.overlayHighlight]
+        if (row === "settings") return openSettings(state, "settings")
+        return row === "back" ? cancel(context, state) : state
+      }
       if (state.overlay === "nexus-powers") {
         const pending = nexusPowers(context, state).pending[state.overlayHighlight]
         if (pending === undefined) return { ...state, status: status("No Nexus power waiting.", "warning") }
@@ -1054,8 +1153,8 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     }
 
     case "nudge": {
-      // In Debug Mode, Left and Right are what a flag's row is for: they change its value.
-      if (state.overlay === "debug") return stepHighlighted(context, state, command.direction === "right" ? 1 : -1, false)
+      // In Settings, Left and Right are what a row is for: they change its value.
+      if (state.overlay === "settings") return stepHighlighted(context, state, command.direction === "right" ? 1 : -1, false)
       if (state.focus !== "menu" || state.overlay !== null || state.committed) return state
       if (state.highlightHidden) return revealHighlight(state)
       if (command.direction === "right" && state.nudged) return { ...toGridExploring(state), nudged: false }
@@ -1072,19 +1171,29 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     case "explore":
       return explore(state)
 
-    case "open-debug":
-      return openDebug(state)
+    case "open-settings":
+      return openSettings(state, command.section)
 
-    // A driver may set a flag with the popup closed; a player reaches this only through the popup.
+    // A driver may change a setting with the popup closed; a player reaches these only through it.
     case "debug-adjust":
       return adjustFlag(context, state, command.field, command.step)
 
-    case "debug-select":
-      if (state.overlay !== "debug" || command.row < 0 || command.row >= DEBUG_ROW_COUNT) return state
+    case "setting-adjust":
+      return adjustPlayerSetting(state, command.field, command.step)
+
+    case "settings-select":
+      if (state.overlay !== "settings" || settingsRowAt(command.row) === null) return state
       return { ...state, overlayHighlight: command.row }
 
     case "debug-restart":
       return restartWithFlags(context, state)
+
+    case "export-settings":
+      return exportSettings(state)
+
+    case "export-select":
+      if (state.overlay !== "export") return state
+      return { ...state, overlayHighlight: Math.max(0, Math.min(exportLineCount(context, state) - 1, command.line)) }
 
     case "quit":
       return state

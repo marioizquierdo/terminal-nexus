@@ -14,6 +14,7 @@
 // key help on the owner's own call (2026-09-26: "leave pgup/home keys out, people will figure that
 // out just fine").
 
+import { GAME_MENU_ROWS } from "./settings.ts"
 import type { BuildCommand, Focus, Overlay } from "./types.ts"
 
 const ESC = String.fromCharCode(27)
@@ -115,6 +116,8 @@ export type KeyboardContext = Readonly<{
   /** While the Nexus popup is open: how many powers are waiting to be picked, so a digit past them
    *  means nothing. */
   overlayPendingCount?: number
+  /** The open popup's highlight — which of the game menu's rows Enter means. */
+  overlayHighlight?: number
   /** How many tiles the fast move jumps — Debug Mode's "Shift jump". `DEFAULT_JUMP_STEP` if absent. */
   jumpStep?: number
 }>
@@ -129,18 +132,27 @@ const CANCEL_KEYS = new Set([ESC, "x"])
 
 /** A popup's own keys. Everything else is swallowed: a popup that let `u` reach the plan underneath
  *  it would be one the player cannot trust to be modal. */
-function overlayCommand(key: string, overlay: Overlay, pendingCount: number): BuildCommand | null {
+function overlayCommand(key: string, overlay: Overlay, pendingCount: number, highlight: number): BuildCommand | null {
   if (CANCEL_KEYS.has(key)) return { kind: "cancel" }
   switch (overlay) {
-    case "exit":
-      return key === "q" ? { kind: "quit" } : null
+    case "menu": {
+      // The game menu (owner, 2026-09-28): its own hotkeys, or Up/Down and Enter on its rows. Enter
+      // on `[q] Quit` is the quit itself — the reducer never sees a quit it would have to pass on.
+      if (key === "q") return { kind: "quit" }
+      if (key === "s") return { kind: "open-settings", section: "settings" }
+      if (key === "d") return { kind: "open-settings", section: "experiments" }
+      if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
+      if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
+      if (PLACE_KEYS.has(key)) return GAME_MENU_ROWS[highlight] === "quit" ? { kind: "quit" } : { kind: "activate" }
+      return null
+    }
     case "confirm-commit":
       if (key === "y") return { kind: "confirm-commit", accept: true }
       if (key === "n") return { kind: "confirm-commit", accept: false }
-      return key === "q" ? { kind: "request-exit" } : null
+      return key === "q" ? { kind: "open-menu" } : null
     case "nexus-powers": {
       if (key === "n") return { kind: "cancel" }
-      if (key === "q") return { kind: "request-exit" }
+      if (key === "q") return { kind: "open-menu" }
       if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
       if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
       if (PLACE_KEYS.has(key)) return { kind: "activate" }
@@ -148,17 +160,26 @@ function overlayCommand(key: string, overlay: Overlay, pendingCount: number): Bu
       if (index !== null && index < pendingCount) return { kind: "pick-nexus", index }
       return null
     }
-    case "debug": {
+    case "settings": {
       // `d` closes what `d` opened, the way `n` closes the Nexus popup.
       if (key === "d") return { kind: "cancel" }
-      if (key === "q") return { kind: "request-exit" }
+      if (key === "q") return { kind: "open-menu" }
       if (key === "r") return { kind: "debug-restart" }
+      if (key === "e") return { kind: "export-settings" }
       if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
       if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
-      // Left and Right change the highlighted flag's value — the one popup whose rows have one.
+      // Left and Right change the highlighted setting's value — the one popup whose rows have one.
       if (MENU_LEFT.has(key)) return { kind: "nudge", direction: "left" }
       if (MENU_RIGHT.has(key)) return { kind: "nudge", direction: "right" }
       if (PLACE_KEYS.has(key)) return { kind: "activate" }
+      return null
+    }
+    case "export": {
+      // `e` closes what `e` opened; Up/Down scroll the text.
+      if (key === "e" || PLACE_KEYS.has(key)) return { kind: "cancel" }
+      if (key === "q") return { kind: "open-menu" }
+      if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
+      if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
       return null
     }
     default:
@@ -213,21 +234,24 @@ function cursorMove(key: string, jumpStep: number): BuildCommand | null {
  * opens the Nexus Powers, `u`, Backspace and `p` do what they always did, whichever half has focus.
  */
 export function buildKeyboardCommand(key: string, context: KeyboardContext): BuildCommand | null {
-  // Ctrl+C always quits outright; `q` asks first, so a stray press cannot lose a plan.
+  // Ctrl+C always quits outright; `q` opens the game menu first, so a stray press cannot lose a plan.
   if (key === String.fromCharCode(3)) return { kind: "quit" }
   const overlay = context.overlay ?? null
-  if (overlay !== null) return overlayCommand(key, overlay, context.overlayPendingCount ?? 0)
+  if (overlay !== null) {
+    return overlayCommand(key, overlay, context.overlayPendingCount ?? 0, context.overlayHighlight ?? 0)
+  }
   const focus = context.focus ?? "grid"
 
   // One "back" for Esc and `x`, walking a stack the reducer knows: the Grid — placing or Explore Map —
-  // to the menu, disarming, then the menu (the exit question).
+  // to the menu, disarming, then the menu (the game menu: Settings, Quit).
   if (CANCEL_KEYS.has(key)) return { kind: "cancel" }
-  if (key === "q") return { kind: "request-exit" }
+  if (key === "q") return { kind: "open-menu" }
   if (key === TAB) return { kind: "focus", target: focus === "grid" ? "menu" : "grid" }
   if (key === "u") return { kind: "undo" }
   if (key === "n") return { kind: "open-nexus-powers" }
   if (key === "e") return { kind: "explore" }
-  if (key === "d") return { kind: "open-debug" }
+  // `d` is Debug Mode's old key, kept as a shortcut: Settings, at its Experiments.
+  if (key === "d") return { kind: "open-settings", section: "experiments" }
   if (key === "p") return { kind: "commit" }
   // `y` only ever means something while the start-the-Pulse question is open; outside it is inert.
   if (key === "y") return null

@@ -98,7 +98,10 @@ export const KEY_BAR: Readonly<Record<"common" | "menu" | "build" | "pulse", rea
     { name: "Bksp", label: "Bksp" },
     { name: "p", label: "p" },
     { name: "y", label: "y" },
-    { name: "d", label: "d debug" },
+    // Settings is Esc then s; its Experiments are d; r restarts and e exports inside it.
+    { name: "s", label: "s settings" },
+    { name: "d", label: "d experiments" },
+    { name: "r", label: "r" },
     { name: "q", label: "q" },
   ],
   pulse: [

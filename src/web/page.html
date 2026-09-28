@@ -56,6 +56,20 @@
   #typing { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
   #status { margin: 0; min-height: 1.45em; color: var(--warn); font: 12px "IBM Plex Mono", ui-monospace, Menlo, monospace; }
   .hint { margin: 0; color: var(--muted); font-size: 12px; max-width: 70ch; }
+  #settings-box { flex: none; font-size: 12px; color: var(--muted); }
+  #settings-box[open] { display: flex; flex-direction: column; gap: 6px; }
+  #settings-box summary { cursor: pointer; }
+  #settings-text {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 80ch;
+    font: 12px/1.4 "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 6px;
+  }
   .rotate { display: none; margin: 0; color: var(--accent); font-size: 12px; }
   @media (orientation: portrait) and (max-width: 600px) { .rotate { display: block; } }
   /* A phone on its side has about 390 px of height: the screen gets all of it but the key bar. */
@@ -89,6 +103,15 @@
 <div id="stage"><canvas id="screen" aria-label="The game's screen"></canvas></div>
 <div class="row" id="keys" role="toolbar" aria-label="Keys"></div>
 <p id="status" role="status"></p>
+<details id="settings-box">
+  <summary>Settings text: export and import</summary>
+  <p class="hint">"Export settings" in the game's Settings puts its text here and on the clipboard: paste it into the pull request. Paste an export here and start with it to play what someone else had.</p>
+  <textarea id="settings-text" rows="8" spellcheck="false" autocapitalize="off" aria-label="Settings text"></textarea>
+  <div class="row">
+    <button type="button" id="settings-copy">Copy</button>
+    <button type="button" id="settings-apply">Start the Build Phase with these</button>
+  </div>
+</details>
 <p class="hint">This is the game's own code: the same menu, Build Phase and Pulse playback the terminal runs, painted cell by cell. Tap a tile or a menu row to click it; tap the same tile twice to place. Shift makes the next arrow a fast move. "abc" opens the phone's keyboard for letters. A development tool; the terminal is still the real game.</p>
 <input id="typing" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Type keys">
 <!--BUNDLE-->

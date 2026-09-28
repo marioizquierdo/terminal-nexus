@@ -244,7 +244,7 @@ test("a digit arms its row from either focus and leaves the cursor where it is",
   }
 })
 
-test("Esc walks back a stack: popup, Explore Map to the menu, then the exit question", () => {
+test("Esc walks back a stack: popup, Explore Map to the menu, then the game menu", () => {
   const side = session()
   keys(side, TAB) // Explore Map
   assert.equal(side.build.state.exploreMap, true)
@@ -257,17 +257,19 @@ test("Esc walks back a stack: popup, Explore Map to the menu, then the exit ques
   assert.equal(side.build.state.exploreMap, false)
   assert.equal(side.build.state.focus, "menu")
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, "exit")
-  assert.match(screen(side).text, /EXIT THE GAME\?/)
+  assert.equal(side.build.state.overlay, "menu")
+  assert.match(screen(side).text, /MENU/)
+  assert.match(screen(side).text, /\[s\] Settings/)
+  assert.match(screen(side).text, /\[q\] Quit/)
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, null, "Esc on the exit question keeps playing")
+  assert.equal(side.build.state.overlay, null, "Esc on the game menu goes back to the game")
   assert.equal(side.quits(), 0)
 })
 
-test("the exit question: q asks, its own [q] quits, Ctrl+C always quits outright", () => {
+test("the game menu: q opens it, its own [q] quits, Ctrl+C always quits outright", () => {
   const side = session()
   keys(side, "q")
-  assert.equal(side.build.state.overlay, "exit")
+  assert.equal(side.build.state.overlay, "menu")
   assert.equal(side.quits(), 0)
   keys(side, "q")
   assert.equal(side.quits(), 1)

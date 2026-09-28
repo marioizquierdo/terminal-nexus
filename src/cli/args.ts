@@ -21,6 +21,7 @@ const VALUE_OPTIONS = new Set([
   "glyphs",
   "theme",
   "scroll-margin",
+  "settings",
 ])
 
 export function parseArgs(argv: readonly string[]): ParsedArgs {

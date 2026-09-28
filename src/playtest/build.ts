@@ -19,6 +19,9 @@ import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import type { ReadonlyCellFrame } from "../view/frame.ts"
 import type { CapabilityMode } from "../view/roles.ts"
+import type { DebugFlags } from "../build/debug.ts"
+import { DEFAULT_SETTINGS } from "../settings/types.ts"
+import type { Settings } from "../settings/types.ts"
 import type { GlyphPack } from "../view/theme.ts"
 import type { MoveKind } from "../build/motion.ts"
 import type { PlaytestStep } from "./keys.ts"
@@ -30,6 +33,11 @@ export type BuildPlaytestOptions = Readonly<{
   rows?: number
   capability?: CapabilityMode
   glyphPack?: GlyphPack
+  /** The player's settings to open with — an imported export's (`--settings`). `capability` and
+   *  `glyphPack`, when given, win over these, as a command-line flag does. */
+  settings?: Settings
+  /** Experiments to open with instead of this build's defaults — an imported export's. */
+  experiments?: Partial<DebugFlags>
   context?: BuildContext
   cursor?: Coord
 }>
@@ -61,9 +69,18 @@ export type BuildPlaytest = Readonly<{
 export const UNTIMED_GAP_MS = 1000
 
 export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
-  const context = options.context ?? spikeContext()
-  const capability = options.capability ?? "truecolor"
-  const glyphPack = options.glyphPack ?? "ascii"
+  const base = options.settings ?? { ...DEFAULT_SETTINGS, capability: "truecolor" as const }
+  const settings: Settings = {
+    ...base,
+    ...(options.capability === undefined ? {} : { capability: options.capability }),
+    ...(options.glyphPack === undefined ? {} : { glyphPack: options.glyphPack }),
+  }
+  const context: BuildContext = {
+    ...(options.context ?? spikeContext()),
+    settings,
+    exportDestination: "Not copied anywhere: this is a scripted playtest.",
+    ...(options.experiments === undefined ? {} : { experiments: options.experiments }),
+  }
   const terminal = { columns: options.columns ?? 80, rows: options.rows ?? 24 }
   // Below the floor the live screen shows its "terminal too small" notice instead of this one, so
   // a playtest there would be of a different screen.
@@ -82,8 +99,19 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     },
   })
 
+  // Imported experiments may move the Grid pane from the first frame (the map-edge ones).
+  if (!layoutMatches(layout, build.state.debug)) {
+    layout = buildLayout(terminal, context.grid, layoutOptions(build.state.debug))
+    build.resize(layout.viewport)
+  }
+
+  // Drawn with the settings the script has reached: a step that changes the colour depth or the
+  // symbols in Settings shows the change, as the live screen does.
   const compose = (): ReadonlyCellFrame =>
-    composeBuildFrame({ context, state: build.state, layout, glyphPack }, capability)
+    composeBuildFrame(
+      { context, state: build.state, layout, glyphPack: build.state.settings.glyphPack },
+      build.state.settings.capability,
+    )
 
   const frames: PlaytestFrame[] = [{ index: 0, label: "start", bytes: "", state: build.state, frame: compose(), moveKind: null }]
   let ended: BuildPlaytest["ended"] = null

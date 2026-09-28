@@ -7,6 +7,7 @@
 
 import type { Coord } from "../grid/types.ts"
 import type { DebugField } from "./debug.ts"
+import type { PlayerField } from "./settings.ts"
 
 /**
  * Which of a Commander Army's two structure groups a construct-menu row belongs to —
@@ -87,17 +88,18 @@ export type BuildCommand =
   | Readonly<{ kind: "remove" }>
   | Readonly<{ kind: "undo" }>
   /**
-   * Esc, `x` and a right click: step back one level — close a popup, close the information panel,
-   * give the keyboard back to the menu (disarming), and on the menu ask whether to exit. One command
-   * for every way of saying "back", so they cannot drift apart (owner, 2026-09-27: "it should be
-   * equivalent to do [esc], and x").
+   * Esc, `x` and a right click: step back one level — close a popup (Settings opened from the game
+   * menu goes back to it), close the information panel, give the keyboard back to the menu
+   * (disarming), and on the menu open the game menu. One command for every way of saying "back", so
+   * they cannot drift apart (owner, 2026-09-27: "it should be equivalent to do [esc], and x").
    */
   | Readonly<{ kind: "cancel" }>
-  /** Leave the screen. Only the exit question's `[q]` (or Ctrl+C) sends it; the session decides what
+  /** Leave the screen. Only the game menu's `[q]` (or Ctrl+C) sends it; the session decides what
    *  leaving means. */
   | Readonly<{ kind: "quit" }>
-  /** `q` anywhere but the exit question: ask it, rather than quit outright and lose a plan. */
-  | Readonly<{ kind: "request-exit" }>
+  /** `q` anywhere but the game menu, or a click on the top bar's `[esc] menu`: open the game menu —
+   *  Settings and Quit — rather than quit outright and lose a plan (owner, 2026-09-28). */
+  | Readonly<{ kind: "open-menu" }>
   /** Pick Nexus power *n* — a digit or a click while the Nexus popup is open. */
   | Readonly<{ kind: "pick-nexus"; index: number }>
   /** `p` — ask, in a popup, whether to start the Nexus Pulse. Refused while a Nexus power is still
@@ -120,19 +122,37 @@ export type BuildCommand =
   /** `e`, or activating the Explore Map entry: focus to the Grid with nothing armed, the side panel
    *  showing what is under the cursor as it moves (feedback F23). */
   | Readonly<{ kind: "explore" }>
-  /** `d`, or a click on the top bar's `[d] debug`: open the Debug Mode popup (gate 5G). */
-  | Readonly<{ kind: "open-debug" }>
   /**
-   * One step of a Debug Mode flag: Left (`-1`) or Right (`+1`) on its row, or a click on the left or
-   * right half of its value. Named by field rather than by the popup's highlight, so a driver script
-   * can set a flag without walking the list; with the popup open it also moves the highlight there.
+   * The Settings popup: the player's own settings, then Experiments (owner, 2026-09-28). `[s]` in the
+   * game menu opens it at the settings; `d` — the old Debug Mode key, kept as a shortcut — opens it at
+   * the experiments.
+   */
+  | Readonly<{ kind: "open-settings"; section: "settings" | "experiments" }>
+  /** One step of a player setting (background, colour depth, symbols, reduced motion): Left or Right
+   *  on its row, or a click on either half of its value. Named by field, like `debug-adjust`. */
+  | Readonly<{ kind: "setting-adjust"; field: PlayerField; step: -1 | 1 }>
+  /**
+   * One step of an experiment (a Debug Mode flag): Left (`-1`) or Right (`+1`) on its row, or a click
+   * on the left or right half of its value. Named by field rather than by the popup's highlight, so a
+   * driver script can set a flag without walking the list; with the popup open it also moves the
+   * highlight there.
    */
   | Readonly<{ kind: "debug-adjust"; field: DebugField; step: -1 | 1 }>
-  /** A click on a Debug Mode row away from its value: highlight it, so its question shows. */
-  | Readonly<{ kind: "debug-select"; row: number }>
-  /** `r` in the Debug Mode popup, or its restart row: start the Build Phase over, keeping the flags —
-   *  how a flag marked "restart" takes effect. */
+  /** A click on a Settings row away from its value: highlight it, so what it is for shows. `row` is
+   *  the row's id (`src/build/settings.ts`). */
+  | Readonly<{ kind: "settings-select"; row: number }>
+  /** `r` in the Settings popup, or its restart row: start the Build Phase over, keeping every setting
+   *  and experiment — how an experiment marked "restart" takes effect. */
   | Readonly<{ kind: "debug-restart" }>
+  /**
+   * `e` in the Settings popup, or its export row: show the settings and experiments as text to paste
+   * into a pull request comment. The reducer only opens the popup that shows it; copying the text to
+   * the clipboard and a file is the session's side effect (`BuildSession`'s `onExport`).
+   */
+  | Readonly<{ kind: "export-settings" }>
+  /** A click on the export popup's "more" line: highlight line `line` of the text, bringing it into
+   *  view. Up/Down and the wheel move the highlight a line at a time. */
+  | Readonly<{ kind: "export-select"; line: number }>
 
 /** Which half of the screen the arrow keys and Enter/Space belong to. The digit hotkeys ignore it. */
 export type Focus = "menu" | "grid"
@@ -147,8 +167,9 @@ export type MenuEntry =
   | Readonly<{ kind: "explore" }>
   | Readonly<{ kind: "construct"; index: number }>
 
-/** The popups this screen has — one overlay shape for all four (`src/build/overlay.ts`). */
-export type Overlay = "nexus-powers" | "confirm-commit" | "exit" | "debug"
+/** The popups this screen has — one overlay shape for all of them (`src/build/overlay.ts`): the Nexus
+ *  powers, the start-the-Pulse question, the game menu (Settings, Quit), Settings, and the export. */
+export type Overlay = "nexus-powers" | "confirm-commit" | "menu" | "settings" | "export"
 
 /**
  * What the last command wants acknowledged on screen — a brief "pressed" flash on the row it

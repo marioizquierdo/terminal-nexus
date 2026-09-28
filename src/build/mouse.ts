@@ -6,7 +6,7 @@
 // gestures a flat menu has no use for: the wheel, and the right button.
 
 import type { BuildLayout } from "./layout.ts"
-import { debugHintAt, menuEntryAt, tileAtCell } from "./layout.ts"
+import { menuEntryAt, menuHintAt, tileAtCell } from "./layout.ts"
 import type { PlacedOverlay } from "./overlay.ts"
 import { overlayHitAt } from "./overlay.ts"
 import type { Camera } from "./camera.ts"
@@ -88,7 +88,8 @@ export function buildMouseCommand(
   // it, the click closes it and brings focus to wherever it landed, and does nothing more (owner,
   // 2026-09-27 — he clicked Nexus, missed the popup in the middle, and thought the mouse was broken).
   if (ui.overlay !== undefined) {
-    // The wheel walks a popup's list, which scrolls Debug Mode's (gate 5H) — Up and Down's own job.
+    // The wheel walks a popup's list, which scrolls Settings' and the export's (gate 5H) — Up and
+    // Down's own job.
     if (event.button === MOUSE_WHEEL_UP) return { kind: "highlight", delta: -1 }
     if (event.button === MOUSE_WHEEL_DOWN) return { kind: "highlight", delta: 1 }
     if (event.button !== MOUSE_LEFT) return null
@@ -101,10 +102,10 @@ export function buildMouseCommand(
   if (event.button === MOUSE_WHEEL_UP) return { kind: "move-cursor", dx: 0, dy: -JUMP_TILES }
   if (event.button === MOUSE_WHEEL_DOWN) return { kind: "move-cursor", dx: 0, dy: JUMP_TILES }
   if (event.button !== MOUSE_LEFT) return null
-  // The top bar's `[d] debug` opens Debug Mode. Only with no popup open: over one, a click there is a
-  // click outside it, which closes it, like any other (so a second click on the hint closes Debug
-  // Mode itself).
-  if (debugHintAt(layout, event.column, event.row)) return { kind: "open-debug" }
+  // The top bar's `[esc] menu` opens the game menu. Only with no popup open: over one, a click there
+  // is a click outside it, which closes it, like any other (so a second click on the hint closes the
+  // menu itself).
+  if (menuHintAt(layout, event.column, event.row)) return { kind: "open-menu" }
   // The Explore Map panel covers the menu, so the whole panel is one target — its `[esc]`, its title,
   // anything on it — and what it does is give the menu back. Sent as the menu click it is, so a
   // driver's `click-menu` in Explore Map means exactly the same (the reducer chooses nothing there).

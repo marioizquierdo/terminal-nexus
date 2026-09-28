@@ -110,13 +110,14 @@ test("q then q, an interrupt byte, and Esc then q all reach the one disposer", a
 })
 
 test("a lone q or Esc only asks — it never leaves the screen by itself", async () => {
-  // engine.md 9.7: Esc "never quits the game by itself"; since the exit question, neither does q.
+  // engine.md 9.7: Esc "never quits the game by itself"; since the exit question, neither does q —
+  // both open the game menu (Settings, Quit) now.
   for (const key of ["q", ESC]) {
     const { stdout, exits } = await spikeSession((input) => {
       input.emit("data", Buffer.from(key))
     }, AFTER_ESC_TIMEOUT_MS)
     assert.deepEqual(exits, [], `${JSON.stringify(key)} left without asking`)
-    assert.ok(stdout.lastWrite.includes("EXIT THE GAME?"), "the exit question was not drawn")
+    assert.ok(stdout.lastWrite.includes("Back to the game"), "the game menu was not drawn")
   }
 })
 
@@ -138,7 +139,7 @@ test("a lone Esc waits a moment for the rest of a key: Esc then [A in the next r
     input.emit("data", Buffer.from("[A"))
   }, AFTER_ESC_TIMEOUT_MS)
   assert.deepEqual(exits, [])
-  assert.ok(!stdout.lastWrite.includes("EXIT THE GAME?"), "the split arrow was read as Esc")
+  assert.ok(!stdout.lastWrite.includes("Back to the game"), "the split arrow was read as Esc")
   assert.match(stdout.lastWrite, /cursor 18,12/, "the split arrow did not move the cursor up one tile")
 })
 

@@ -414,8 +414,8 @@ scripted(
 
 scripted(
   "build-exit-question",
-  "Esc on the menu asks before leaving: [q] quits, Esc or x keeps playing. A stray q asks the same question rather than losing a plan",
-  { keys: `${PICK_FIRST_POWER} Esc`, expect: "EXIT THE GAME?" },
+  "Esc on the menu opens the game menu: [s] Settings, [q] Quit, and Esc back to the game. A stray q opens it too rather than losing a plan; [esc] menu in the top bar is the click",
+  { keys: `${PICK_FIRST_POWER} Esc`, expect: "Back to the game" },
 )
 
 scripted(
@@ -481,18 +481,31 @@ scripted(
   { keys: `${PICK_FIRST_POWER} 1 Right*6 Down Enter p y`, expect: "BUILD COMMITTED" },
 )
 
-// Debug Mode (gate 5G): the popup of development flags, opened by [d] or the top bar's "[d] debug".
+// Settings (owner, 2026-09-28): the game menu's [s], the player's own settings first, then the
+// Experiments — Debug Mode's flags — which [d] opens straight at.
+
+scripted(
+  "build-settings",
+  "Settings from the game menu: the player's own settings, saved, then - apart, at the bottom - the Experiments, not saved. Left and Right change a value; what the highlighted row is for is written underneath",
+  { keys: "Esc s", expect: "YOUR SETTINGS - saved" },
+)
+
+scripted(
+  "build-settings-export",
+  "[e] Export settings: every setting and experiment as text, changed experiments first with the default each replaced - copied to the clipboard and a file, to paste into a pull request",
+  { keys: "d Right Down Right e", expect: "# Changed experiments" },
+)
 
 scripted(
   "build-debug-80x24",
-  "[d] opens Debug Mode: each experiment with its value between < and >, and whether a change shows now or on restart. The question the highlighted one serves is written underneath",
-  { keys: "d", expect: "DEBUG MODE - not saved" },
+  "[d] opens Settings at its Experiments: each with its value between < and >, and whether a change shows now or on restart. The question the highlighted one serves is written underneath",
+  { keys: "d", expect: "EXPERIMENTS - for playtests, not saved" },
 )
 
-// The flags' order: gate 5I's placement juice first, then gate 5H's movement numbers (Scroll margin
-// is four Downs in), then gate 5G's, then the map-edge Experiments (F25). Up from the first row wraps
-// to the restart row, so the flags at the end are a few Ups away: Up*2 is "Shared west side", Up*3
-// "Map edge colour", Up*4 "Map edge", Up*7 "Opens on", Up*8 "Smart cursor".
+// The experiments' order: gate 5I's placement juice first, then gate 5H's movement numbers (Scroll
+// margin is four Downs in), then gate 5G's, then the map-edge Experiments (F25). From the player's
+// first setting (Esc s), Up comes round to Export, then Restart, then the last experiments: Up*3 is
+// "Shared west side", Up*4 "Map edge colour", Up*5 "Map edge", Up*8 "Opens on", Up*9 "Smart cursor".
 
 scripted(
   "build-debug-104x32",
@@ -503,18 +516,18 @@ scripted(
 scripted(
   "build-debug-light",
   "The light theme: \"Opens on\" is marked restart - it takes effect through [r] Restart with these settings, which starts the Build Phase over and keeps every flag",
-  { keys: "d Up*7 Right", theme: "light", expect: "applies on restart" },
+  { keys: "Esc s Up*8 Right", theme: "light", expect: "applies on restart" },
 )
 
 scripted(
   "build-debug-restarted-on-map",
   "After [r]: the Build Phase starts over with the keyboard on the map, exploring - one of the two answers to where the screen should open",
-  { keys: "d Up*7 Right r", expect: "Build Phase restarted with the debug settings." },
+  { keys: "Esc s Up*8 Right r", expect: "Build Phase restarted with these settings." },
 )
 
 scriptedGif("build-debug-smart-cursor", {
   // Smart cursor off, then the owner's own flow: the cursor stays where it was instead of jumping.
-  keys: "d Up*8 Right Esc Down Down Space",
+  keys: "Esc s Up*9 Right Esc Esc Down Down Space",
   expect: "Barracks selected",
 })
 
@@ -522,7 +535,7 @@ scriptedGif("build-debug-smart-cursor", {
 
 scripted(
   "build-debug-scrolled",
-  "Debug Mode scrolls: twenty-seven flags do not fit at 80x24, so the list moves with the highlight and says how many rows are hidden above and below (^ 4 more, v 18 more). A click on either line, or the wheel, scrolls it too",
+  "Settings scroll: the settings and the experiments do not fit at 80x24, so the list moves with the highlight and says how many rows are hidden above and below. A click on either line, or the wheel, scrolls it too",
   { keys: "d Down*6", expect: "v 18 more" },
 )
 

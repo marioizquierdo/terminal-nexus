@@ -252,8 +252,8 @@ test("shared west side: the Grid gets the column, and drawing and hit-testing ag
 })
 
 test("shared west side is live: flipping it re-lays the screen out, and a click lands on the tile drawn under it", () => {
-  // Debug Mode's list comes round from the top to the restart row, then the shared-west row above it.
-  const run = runBuildPlaytest({ steps: parseKeyScript("d Up Up Right Esc Tab") })
+  // From Settings' first row, Up comes round to Export, then Restart, then the shared-west row (the last).
+  const run = runBuildPlaytest({ steps: parseKeyScript("Esc s Up Up Up Right Esc Esc Tab") })
   const last = run.frames[run.frames.length - 1]
   assert.ok(last !== undefined)
   assert.equal(last.state.debug.sharedWestBorder, true)
@@ -273,14 +273,14 @@ test("shared west side is live: flipping it re-lays the screen out, and a click 
   // And a click on a screen cell of the Grid's new first column lands on the tile drawn there.
   const column = run.layout.origin.column
   const row = run.layout.origin.row + 4
-  const clicked = runBuildPlaytest({ steps: parseKeyScript(`d Up Up Right Esc Tab click@${column},${row}`) })
+  const clicked = runBuildPlaytest({ steps: parseKeyScript(`Esc s Up Up Up Right Esc Esc Tab click@${column},${row}`) })
   const final = clicked.frames[clicked.frames.length - 1]
   const before = clicked.frames[clicked.frames.length - 2]
   assert.ok(final !== undefined && before !== undefined)
   // Measured against the view the click was made on: an exploring click near an edge then scrolls.
   assert.deepEqual(final.state.cursor, tileAtCell(clicked.layout, before.state.camera, column, row))
   // Flipped back, the layout is the separate column again.
-  const back = runBuildPlaytest({ steps: parseKeyScript("d Up Up Right Right Esc") })
+  const back = runBuildPlaytest({ steps: parseKeyScript("Esc s Up Up Up Right Right Esc Esc") })
   assert.equal(back.layout.sharedWest, false)
   assert.equal(back.layout.viewport.width, 48)
 })

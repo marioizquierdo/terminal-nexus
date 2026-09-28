@@ -30,7 +30,8 @@ import { chunkText } from "../view/backends/ports.ts"
 import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
-import type { Settings } from "../settings/index.ts"
+import type { Settings, SettingsStore } from "../settings/types.ts"
+import type { DebugFlags } from "../build/debug.ts"
 
 const ESC = "\u001b"
 /** Written before a frame whose size just changed: the backend draws from the cursor home position
@@ -56,9 +57,23 @@ export type SpikeOptions = Readonly<{
   scrollMargin?: number
   /** The screen's clock, in milliseconds. `Date.now` unless a test injects one. */
   now?: () => number
+  /** Where a change made in the Settings popup is saved — the same store the title menu's Settings
+   *  screen uses (a file for the terminal, browser storage for the playtest page). Absent: changes
+   *  apply for this run only. */
+  settingsStore?: SettingsStore
+  /** Experiments to open with instead of this build's defaults: an imported export (`--settings`). */
+  experiments?: Partial<DebugFlags>
+  /** The commit this build is, named at the top of an export. */
+  buildId?: string
+  /**
+   * What an export does besides showing its text: the terminal copies it to the clipboard and writes
+   * a file, the playtest page copies it and shows it under the screen. `destination` is the sentence
+   * the export popup says about it. Side effects stay here, in the adapter, never in the reducer.
+   */
+  exporter?: Readonly<{ destination: string; export: (text: string) => Promise<void> | void }>
 }>
 
-export function spikeContext(scrollMargin?: number): BuildContext {
+export function spikeContext(scrollMargin?: number, extra: Partial<BuildContext> = {}): BuildContext {
   return {
     grid: spikeGrid(),
     registry: FIXTURE_REGISTRY,
@@ -68,6 +83,7 @@ export function spikeContext(scrollMargin?: number): BuildContext {
     nexusDraft: SPIKE_NEXUS_DRAFT,
     edgeStyle: SPIKE_EDGE_STYLE,
     ...(scrollMargin === undefined ? {} : { scrollMargin }),
+    ...extra,
   }
 }
 
@@ -79,7 +95,12 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     return 0
   }
 
-  const context = spikeContext(options.scrollMargin)
+  const context = spikeContext(options.scrollMargin, {
+    settings: options.settings,
+    ...(options.experiments === undefined ? {} : { experiments: options.experiments }),
+    ...(options.buildId === undefined ? {} : { buildId: options.buildId }),
+    ...(options.exporter === undefined ? {} : { exportDestination: options.exporter.destination }),
+  })
   const terminalSize = (): { columns: number; rows: number } => ({
     columns: stdout.columns ?? SPIKE_MINIMUM.width,
     rows: stdout.rows ?? SPIKE_MINIMUM.height,
@@ -116,11 +137,47 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     })
   }
 
+  // Saving works as the title menu's Settings screen does (`src/cli/menu.ts`): each write chained on
+  // the last, so the last change is the one on disk, and awaited by the disposer before the process
+  // exits; a failure is reported once the terminal is back to normal, never mid-screen.
+  let pendingSave: Promise<void> = Promise.resolve()
+  let sideEffectError: unknown = null
+  const saveSettings = (settings: Settings): void => {
+    // A new colour depth or background is drawn on the very next frame, without restarting the
+    // backend (`setPresentation`, gate 3B).
+    backend.setPresentation?.(settings.capability, settings.theme)
+    const store = options.settingsStore
+    if (store === undefined) return
+    pendingSave = pendingSave.then(() =>
+      store.save(settings).catch((error: unknown) => {
+        sideEffectError = error
+      }),
+    )
+  }
+  const exportSettings = (text: string): void => {
+    const exporter = options.exporter
+    if (exporter === undefined) return
+    // Started at once, inside the key press or tap that asked for it — a browser allows a clipboard
+    // write only then — and awaited by the disposer like a save.
+    let started: Promise<void>
+    try {
+      started = Promise.resolve(exporter.export(text))
+    } catch (error) {
+      started = Promise.reject(error)
+    }
+    const done = started.catch((error: unknown) => {
+      sideEffectError = error
+    })
+    pendingSave = pendingSave.then(() => done)
+  }
+
   const build = new BuildSession({
     context,
     cursor: SPIKE_START_CURSOR,
     viewport: layout.viewport,
     onQuit: leave,
+    onSettingsChange: saveSettings,
+    onExport: exportSettings,
   })
 
   // **The screen's clock lives here, never in the reducer** (gate 5H). Everything that moves between
@@ -158,10 +215,12 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
       build.resize(layout.viewport)
       animation.snap(build.state, now)
     }
+    // The player's settings as the Settings popup last left them — changed live, mid-screen.
+    const settings = build.state.settings
     const live = gated
       ? null
       : animation.frame(build.state, now, {
-          reducedMotion: options.settings.reducedMotion,
+          reducedMotion: settings.reducedMotion,
           footprintOf: (contentId) => context.registry.get(contentId).footprint,
         })
     const frame =
@@ -172,15 +231,15 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
               context,
               state: build.state,
               layout,
-              glyphPack: options.settings.glyphPack,
+              glyphPack: settings.glyphPack,
               camera: live.camera,
               cursor: live.cursor,
               ...(live.flash === undefined ? {} : { flash: live.flash }),
               ...(live.refusedFlash === true ? { refusedFlash: true } : {}),
               ...(live.placing === undefined ? {} : { placing: live.placing }),
-              reducedMotion: options.settings.reducedMotion,
+              reducedMotion: settings.reducedMotion,
             },
-            options.settings.capability,
+            settings.capability,
           )
     scheduleFrame(live?.busyUntil ?? null, now)
     if (frame.width !== lastFrame.width || frame.height !== lastFrame.height) {
@@ -209,7 +268,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
   function handleKeys(keys: readonly string[], now: number): void {
     for (const key of keys) {
       if (leaving) break
-      const camera = animation.cameraAt(build.state, now, { reducedMotion: options.settings.reducedMotion })
+      const camera = animation.cameraAt(build.state, now, { reducedMotion: build.state.settings.reducedMotion })
       build.handleKey(key, layout, { now, camera })
     }
   }
@@ -247,6 +306,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
   session.onDispose(() => {
     stdout.write(MOUSE_REPORTING_OFF)
   })
+  session.onDispose(() => pendingSave)
   session.onDispose(() => backend.stop())
 
   try {
@@ -264,6 +324,9 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     await dispose()
   }
 
+  if (sideEffectError !== null) {
+    host.reportError(`terminal-nexus: could not save settings or the export: ${String(sideEffectError)}\n`)
+  }
   if (failure !== null) {
     host.reportError(`terminal-nexus --spike failed: ${String(failure)}\n`)
     return 1

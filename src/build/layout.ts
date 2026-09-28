@@ -63,9 +63,10 @@ export type BuildLayout = Readonly<{
   panelLimit: number
   /** How many glyphs fit on the top bar's one line, which runs the whole width. */
   headerLimit: number
-  /** Where the top bar's `[d] debug` sits, right-aligned: drawn there, and its click target (gate
-   *  5G). In the top bar rather than the menu because it is a development tool, not a game action. */
-  debugHint: Readonly<{ row: number; from: number; to: number }>
+  /** Where the top bar's `[esc] menu` sits, right-aligned: drawn there, and its click target — the
+   *  way into the game menu (Settings, Quit) for a pointer, as Esc is for the keyboard. It replaced
+   *  gate 5G's `[d] debug` when Debug Mode became Settings (owner, 2026-09-28). */
+  menuHint: Readonly<{ row: number; from: number; to: number }>
   /** How many glyphs fit on one footer row, which runs the full width beneath both panes. */
   footerLimit: number
   /** Frame row the bottom bar's three lines start at — the first row below the Grid's own bottom
@@ -88,12 +89,12 @@ export const NEXUS_ROW = 1
 export const RESOURCE_ROW = 3
 const CONSTRUCT_FIRST_ROW = 4
 
-/** The top bar's way into Debug Mode: its hotkey and its name, like every other entry point. */
-export const DEBUG_HINT = "[d] debug"
+/** The top bar's way into the game menu: its hotkey and its name, like every other entry point. */
+export const MENU_HINT = "[esc] menu"
 
-/** Whether a frame cell is on the top bar's `[d] debug`. */
-export function debugHintAt(layout: BuildLayout, column: number, row: number): boolean {
-  const hint = layout.debugHint
+/** Whether a frame cell is on the top bar's `[esc] menu`. */
+export function menuHintAt(layout: BuildLayout, column: number, row: number): boolean {
+  const hint = layout.menuHint
   return row === hint.row && column >= hint.from && column <= hint.to
 }
 
@@ -257,7 +258,7 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain, options: 
   const paneBottom = origin.row + paneHeight
   const panelColumn = offset.column + 2
   const headerLimit = composition.width - 4
-  const debugTo = offset.column + 2 + headerLimit - 1
+  const hintTo = offset.column + 2 + headerLimit - 1
   return {
     frame,
     composition,
@@ -272,7 +273,7 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain, options: 
     panelColumn,
     panelLimit: dividerColumn - panelColumn,
     headerLimit,
-    debugHint: { row: offset.row + 1, from: debugTo - DEBUG_HINT.length + 1, to: debugTo },
+    menuHint: { row: offset.row + 1, from: hintTo - MENU_HINT.length + 1, to: hintTo },
     footerLimit: composition.width - 4,
     footerRow: paneBottom + 1,
     panelRow: gridBox.top + 1,

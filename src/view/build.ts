@@ -13,8 +13,8 @@ import { edgeMarkers, visibleRange } from "../build/camera.ts"
 import { DEFAULT_SCROLL_MARGIN_PERCENT } from "../build/debug.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import {
-  DEBUG_HINT,
   EXPLORE_ROW,
+  MENU_HINT,
   NEXUS_ROW,
   RESOURCE_ROW,
   cellForTile,
@@ -474,7 +474,7 @@ function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
  *
  * Trimmed to what a player would not otherwise guess: PageUp/PageDown, Home/End and Option+Arrow are
  * still bound, only unlisted (owner, 2026-09-26). `q` is not listed at all (owner, 2026-09-27): Esc on
- * the menu asks "Exit the game?", and that question shows `[q] Quit` itself.
+ * the menu opens the game menu, which shows `[q] Quit` itself, and the top bar says `[esc] menu`.
  */
 export type KeyHelp = Readonly<{ label: string; bindings: readonly string[] }>
 
@@ -503,17 +503,19 @@ export const MAP_KEY_HELP: KeyHelp = {
 
 const NEXUS_KEY_HELP: KeyHelp = { label: "NEXUS", bindings: ["up/down choose", "enter/space pick", "esc close"] }
 const CONFIRM_KEY_HELP: KeyHelp = { label: "START PULSE?", bindings: ["y yes", "n/esc no"] }
-const EXIT_KEY_HELP: KeyHelp = { label: "EXIT?", bindings: ["q quit", "esc keep playing"] }
-const COMMITTED_KEY_HELP: KeyHelp = { label: "COMMITTED", bindings: ["esc exit"] }
-const DEBUG_KEY_HELP: KeyHelp = {
-  label: "DEBUG",
-  bindings: ["up/down choose", "left/right change", "r restart", "esc close"],
+const GAME_MENU_KEY_HELP: KeyHelp = { label: "MENU", bindings: ["s settings", "q quit", "esc back to the game"] }
+const COMMITTED_KEY_HELP: KeyHelp = { label: "COMMITTED", bindings: ["esc menu"] }
+const SETTINGS_KEY_HELP: KeyHelp = {
+  label: "SETTINGS",
+  bindings: ["up/down choose", "left/right change", "e export", "r restart", "esc close"],
 }
+const EXPORT_KEY_HELP: KeyHelp = { label: "EXPORT", bindings: ["up/down scroll", "esc back"] }
 
 /** Which key help is live: whatever holds the keyboard right now. */
 export function keyHelp(state: BuildState): KeyHelp {
-  if (state.overlay === "exit") return EXIT_KEY_HELP
-  if (state.overlay === "debug") return DEBUG_KEY_HELP
+  if (state.overlay === "menu") return GAME_MENU_KEY_HELP
+  if (state.overlay === "settings") return SETTINGS_KEY_HELP
+  if (state.overlay === "export") return EXPORT_KEY_HELP
   if (state.committed) return COMMITTED_KEY_HELP
   if (state.overlay === "confirm-commit") return CONFIRM_KEY_HELP
   if (state.overlay === "nexus-powers") return NEXUS_KEY_HELP
@@ -601,11 +603,12 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
   const limit = layout.headerLimit
   text(cells, band, left, headerRow, "TERMINAL NEXUS", "chrome.title", { bold: true, limit })
   text(cells, band, left + 15, headerRow, "build phase", "chrome.muted", { limit: limit - 15 })
-  // Debug Mode's way in, right-aligned: its hotkey in the hotkey colour, its name quiet — findable
-  // without competing with the game's own title (gate 5G).
-  const hint = layout.debugHint
-  text(cells, band, hint.from, hint.row, DEBUG_HINT.slice(0, 3), "chrome.hotkey", { bold: true })
-  text(cells, band, hint.from + 3, hint.row, DEBUG_HINT.slice(3), "chrome.muted")
+  // The game menu's way in, right-aligned: its hotkey in the hotkey colour, its name quiet — findable
+  // without competing with the game's own title (where gate 5G put `[d] debug`).
+  const hint = layout.menuHint
+  const hotkey = MENU_HINT.slice(0, MENU_HINT.indexOf("]") + 1)
+  text(cells, band, hint.from, hint.row, hotkey, "chrome.hotkey", { bold: true })
+  text(cells, band, hint.from + hotkey.length, hint.row, MENU_HINT.slice(hotkey.length), "chrome.muted")
 
   const footerLimit = layout.footerLimit
   // engine.md 3.3's second required signal: "a position readout in the footer naming the visible
@@ -801,9 +804,11 @@ function effectLine(context: BuildContext, state: BuildState, preview: ArmedPrev
 function rowState(input: BuildCompositionInput, entry: number): RowState {
   const { state, flash } = input
   if (flash !== undefined && flash.entry === entry) return flash.kind
-  // The Nexus and start-the-Pulse popups each belong to a menu row, which stays lit behind them; Debug
-  // Mode belongs to none, so while it has the keyboard its own highlight is the only one on screen.
-  if (state.overlay === "debug" || state.focus !== "menu") return "plain"
+  // The Nexus and start-the-Pulse popups each belong to a menu row, which stays lit behind them; the
+  // game menu, Settings and the export belong to none, so while one has the keyboard its own highlight
+  // is the only one on screen.
+  if (state.overlay === "menu" || state.overlay === "settings" || state.overlay === "export") return "plain"
+  if (state.focus !== "menu") return "plain"
   // The Nexus popup keeps its row lit however it was opened — by a click as much as by a key.
   const ownsPopup = state.overlay === "nexus-powers" && entry === NEXUS_ENTRY
   if (state.highlightHidden && !ownsPopup) return "plain"
@@ -1044,12 +1049,15 @@ function drawOverlay(cells: BandCell[], input: BuildCompositionInput, pack: Glyp
       case "heading":
         text(cells, band, textColumn, row, entry.text, "chrome.label", { limit: textLimit })
         break
-      case "text":
-        text(cells, band, textColumn, row, entry.text, entry.muted === true ? "chrome.muted" : "chrome.value", {
-          bold: entry.strong === true,
-          limit: textLimit,
-        })
+      case "text": {
+        // A line of the export keeps its value when it is too long for the popup: its comment goes.
+        const shown = entry.code === true && entry.text.length > textLimit ? entry.text.replace(/\s+#.*$/u, "") : entry.text
+        const on = entry.highlighted === true
+        if (on) text(cells, band, textColumn, row, " ".repeat(textLimit), "chrome.title", { inverse: true, limit: textLimit })
+        const role: StyleRole = on ? "chrome.title" : entry.muted === true || (entry.code === true && shown.startsWith("#")) ? "chrome.muted" : "chrome.value"
+        text(cells, band, textColumn, row, shown, role, { bold: entry.strong === true, inverse: on, limit: textLimit })
         break
+      }
       case "option": {
         if (secondLine) {
           // The line a player actually chooses by — quieter than the name, never dimmed out of reach.
@@ -1112,7 +1120,7 @@ function drawCommittedPanel(cells: BandCell[], input: BuildCompositionInput): vo
   text(cells, band, column, layout.panelRow + 3, `${count} structure${count === 1 ? "" : "s"} planned`, "chrome.value", {
     limit,
   })
-  text(cells, band, column, layout.panelRow + 5, "[esc] to exit", "chrome.muted", { limit })
+  text(cells, band, column, layout.panelRow + 5, "[esc] menu", "chrome.muted", { limit })
 }
 
 export function composeBuildFrame(

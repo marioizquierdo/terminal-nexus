@@ -21,6 +21,8 @@ import { dirname, join, relative, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { parseArgs } from "node:util"
 import { parseKeyScript } from "../src/playtest/keys.ts"
+import { defaultExperiments, parseSettingsExport } from "../src/build/settings-export.ts"
+import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { parseCapability, parseTheme } from "../src/view/roles.ts"
@@ -37,6 +39,9 @@ const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <pat
   --capability <mode>  truecolor (default), color256, color16, monochrome
   --theme <theme>      dark (default) or light
   --glyphs <pack>      ascii (default) or unicode
+  --settings "<text>"  start from an exported settings text (Settings > Export settings): paste the
+                       whole export, or pairs like "placeLight=rainbow scrollMargin=25"; the three
+                       flags above still win for their own setting
   --out <dir>          where files go (default .playtest/, ignored by git)
   --name <name>        file name prefix (default playtest)
   --print <which>      frames printed to stdout: final (default), all, none
@@ -54,9 +59,10 @@ const { values } = parseArgs({
     keys: { type: "string" },
     file: { type: "string" },
     size: { type: "string", default: "80x24" },
-    capability: { type: "string", default: "truecolor" },
-    theme: { type: "string", default: "dark" },
-    glyphs: { type: "string", default: "ascii" },
+    capability: { type: "string" },
+    theme: { type: "string" },
+    glyphs: { type: "string" },
+    settings: { type: "string" },
     out: { type: "string", default: ".playtest" },
     name: { type: "string", default: "playtest" },
     print: { type: "string", default: "final" },
@@ -78,9 +84,17 @@ if (values.help || (values.keys === undefined && values.file === undefined)) {
 
 const size = /^(\d+)x(\d+)$/u.exec(values.size)
 if (size === null) throw new Error(`--size wants COLSxROWS, like 80x24, not "${values.size}"`)
-const capability = parseCapability(values.capability)
-const theme = parseTheme(values.theme)
-const glyphPack = parseGlyphPack(values.glyphs)
+// An exported settings text first, then the flags over it; truecolor, dark and ascii otherwise.
+const base = { ...DEFAULT_SETTINGS, capability: "truecolor" }
+const imported =
+  values.settings === undefined
+    ? null
+    : parseSettingsExport(values.settings, { settings: base, experiments: defaultExperiments() })
+if (imported !== null && imported.ignored.length > 0) process.stderr.write(`--settings ignored ${imported.ignored.join(", ")}\n`)
+const startSettings = imported?.snapshot.settings ?? base
+const capability = parseCapability(values.capability ?? startSettings.capability)
+const theme = parseTheme(values.theme ?? startSettings.theme)
+const glyphPack = parseGlyphPack(values.glyphs ?? startSettings.glyphPack)
 const script = values.file === undefined ? values.keys : readFileSync(values.file, "utf8")
 
 const steps = parseKeyScript(script)
@@ -88,8 +102,8 @@ const run = runBuildPlaytest({
   steps,
   columns: Number(size[1]),
   rows: Number(size[2]),
-  capability,
-  glyphPack,
+  settings: { ...startSettings, capability, theme, glyphPack },
+  ...(imported === null ? {} : { experiments: imported.snapshot.experiments }),
 })
 const last = run.frames.length - 1
 
@@ -148,8 +162,8 @@ if (values.png !== undefined) {
     report(
       renderFramePng({
         frame: frame.frame,
-        capability,
-        theme,
+        capability: frame.state.settings.capability,
+        theme: frame.state.settings.theme,
         caption: caption(frame),
         targetPath: join(outDir, name),
         scratchDir: scratch,
@@ -166,8 +180,8 @@ if (values.gif) {
       caption: caption(frame),
       delayMs: index === last ? Number(values.hold) : Number(values.delay),
     })),
-    capability,
-    theme,
+    capability: run.frames[last].state.settings.capability,
+    theme: run.frames[last].state.settings.theme,
     targetPath: join(outDir, `${values.name}.gif`),
     scratchDir: scratch,
     scale: Number(values.scale ?? 2),

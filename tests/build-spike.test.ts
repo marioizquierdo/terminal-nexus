@@ -283,16 +283,16 @@ test("keyboard: digits always address the list, and a digit past its end means n
   assert.equal(buildKeyboardCommand("0", context), null)
 })
 
-test("keyboard: Esc and x are one cancel in every focus, and q asks rather than quits", () => {
+test("keyboard: Esc and x are one cancel in every focus, and q opens the game menu rather than quits", () => {
   for (const focus of ["menu", "grid"] as const) {
     for (const armed of [true, false]) {
       assert.deepEqual(buildKeyboardCommand(ESC, { itemCount: 3, armed, focus }), { kind: "cancel" })
       assert.deepEqual(buildKeyboardCommand("x", { itemCount: 3, armed, focus }), { kind: "cancel" })
-      assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed, focus }), { kind: "request-exit" })
+      assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed, focus }), { kind: "open-menu" })
     }
   }
-  // Inside the exit question, q is the answer; Ctrl+C always quits outright.
-  assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed: false, overlay: "exit" }), { kind: "quit" })
+  // Inside the game menu, q is Quit; Ctrl+C always quits outright.
+  assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed: false, overlay: "menu" }), { kind: "quit" })
   assert.deepEqual(buildKeyboardCommand(String.fromCharCode(3), { itemCount: 3, armed: false }), { kind: "quit" })
 })
 
@@ -696,7 +696,7 @@ test("a resize keeps the cursor where it was and re-fits the camera around it", 
   assert.ok(build.state.camera.y >= 0 && build.state.camera.y <= context.grid.height - 24)
 })
 
-test("Esc walks back to an exit question; only its q quits, and neither touches the plan", () => {
+test("Esc walks back to the game menu; only its q quits, and neither touches the plan", () => {
   const context = spikeContext()
   const layout = buildLayout(MINIMUM, context.grid)
   let quits = 0
@@ -711,15 +711,15 @@ test("Esc walks back to an exit question; only its q quits, and neither touches 
   const planned = build.state.planned
   build.handleData(ESC, layout) // Grid -> menu
   assert.equal(build.state.focus, "menu")
-  build.handleData(ESC, layout) // menu -> "Exit the game?"
-  assert.equal(build.state.overlay, "exit")
+  build.handleData(ESC, layout) // menu -> the game menu
+  assert.equal(build.state.overlay, "menu")
   build.handleData(ESC, layout) // Esc again keeps playing
   assert.equal(build.state.overlay, null)
   assert.equal(quits, 0)
-  build.handleData("q", layout) // q asks
-  assert.equal(build.state.overlay, "exit")
+  build.handleData("q", layout) // q opens the game menu
+  assert.equal(build.state.overlay, "menu")
   assert.equal(quits, 0, "a bare q quit without asking")
-  build.handleData("q", layout) // q in the question quits
+  build.handleData("q", layout) // q in the game menu quits
   assert.equal(quits, 1)
   assert.equal(build.state.planned, planned, "nothing touched the plan")
 })

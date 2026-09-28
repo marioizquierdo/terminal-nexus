@@ -9,6 +9,8 @@
 //   keys    -> terminal bytes `src/web/keys.ts`, through the scripted playtest's own key names
 //   taps    -> SGR mouse reports, the same bytes a terminal sends for a click
 //   settings -> browser storage instead of ~/.terminal-nexus/settings.json
+//   export   -> the clipboard and a text box under the screen, instead of OSC 52 and a file
+//   import   -> `#settings=<text>` in the page's address, or that same text box
 //
 // Built into one self-contained HTML file by `scripts/build-web.mjs`.
 
@@ -21,6 +23,8 @@ import { loadScenario } from "../scenario/load.ts"
 import type { ScenarioDefinition } from "../scenario/types.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
 import { DEFAULT_SETTINGS, parseSettings } from "../settings/types.ts"
+import type { DebugFlags } from "../build/debug.ts"
+import { defaultExperiments, parseSettingsExport } from "../build/settings-export.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
 import { DEFAULT_PRESENTATION } from "../view/snapshot.ts"
 import { CanvasBackend } from "../view/backends/canvas.ts"
@@ -117,6 +121,8 @@ const keyBar = element<HTMLElement>("keys")
 const typing = element<HTMLInputElement>("typing")
 const status = element<HTMLElement>("status")
 const sizeSelect = element<HTMLSelectElement>("size")
+const settingsBox = element<HTMLDetailsElement>("settings-box")
+const settingsText = element<HTMLTextAreaElement>("settings-text")
 
 element("build").textContent = `${__TN_BUILD__.commit} · ${__TN_BUILD__.branch}`
 
@@ -125,6 +131,23 @@ let running: Promise<number> | null = null
 let switching = false
 let shift = false
 let mode: Mode = "build"
+/**
+ * Settings text to start the Build Phase with — from `#settings=` in the address, or the text box's
+ * "Start the Build Phase with these". Its player settings apply for this visit without being saved,
+ * as `--settings` does in a terminal; changing one in the game's Settings saves them all.
+ */
+let imported: string | null = null
+
+function importFromAddress(): void {
+  const match = /(?:^#|&)settings=([^&]*)/u.exec(window.location.hash)
+  if (match === null) return
+  try {
+    imported = decodeURIComponent(match[1] ?? "")
+  } catch {
+    imported = match[1] ?? ""
+  }
+  settingsText.value = imported
+}
 
 /** A tab never exits; a screen that ends just says so, and a mode button starts another. */
 const host: Host = {
@@ -153,7 +176,14 @@ async function start(next: Mode): Promise<void> {
   renderKeyBar()
   status.textContent = ""
 
-  const settings: Settings = (await settingsStore.load()) ?? { ...DEFAULT_SETTINGS, capability: "truecolor" }
+  const saved: Settings = (await settingsStore.load()) ?? { ...DEFAULT_SETTINGS, capability: "truecolor" }
+  const importing =
+    next === "build" && imported !== null
+      ? parseSettingsExport(imported, { settings: saved, experiments: defaultExperiments() })
+      : null
+  if (importing !== null && importing.ignored.length > 0) status.textContent = `Settings text: ignored ${importing.ignored.join(", ")}`
+  const settings: Settings = importing?.snapshot.settings ?? saved
+  const experiments: DebugFlags | null = importing?.snapshot.experiments ?? null
   backend = new CanvasBackend({
     canvas,
     capability: settings.capability,
@@ -163,7 +193,27 @@ async function start(next: Mode): Promise<void> {
   })
   const common = { backend, stdout: terminal, stdin: keyboard, host } as const
   if (next === "menu") running = runMenu({ ...common, settings, settingsStore })
-  else if (next === "build") running = runSpike({ ...common, settings })
+  else if (next === "build") {
+    running = runSpike({
+      ...common,
+      settings,
+      settingsStore,
+      buildId: __TN_BUILD__.commit,
+      ...(experiments === null ? {} : { experiments }),
+      exporter: {
+        destination: "Copied to the clipboard, and shown in the settings text box under the screen.",
+        export: (text) => {
+          settingsText.value = text
+          settingsBox.open = true
+          // Inside the key press or tap that asked for it, so the browser allows the write; a refusal
+          // leaves the text box, which is why it is filled first.
+          return navigator.clipboard?.writeText(text).catch(() => {
+            status.textContent = "The clipboard refused the export: copy it from the settings text box."
+          })
+        },
+      },
+    })
+  }
   else {
     const scenario = PULSES[next]
     const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
@@ -223,7 +273,9 @@ keyBar.addEventListener("click", (event) => {
 
 // A hardware keyboard: an iPad's, or a laptop's.
 window.addEventListener("keydown", (event) => {
-  if (event.target === typing || event.target instanceof HTMLSelectElement) return
+  if (event.target === typing || event.target instanceof HTMLSelectElement || event.target instanceof HTMLTextAreaElement) {
+    return
+  }
   const bytes = bytesForKeyPress(event)
   if (bytes === null) return
   event.preventDefault()
@@ -284,4 +336,19 @@ sizeSelect.addEventListener("change", () => {
 // The window changed shape: the loops re-present, and the canvas refits the space it has.
 window.addEventListener("resize", () => outputEvents.emit("resize"))
 
+element("settings-copy").addEventListener("click", () => {
+  void navigator.clipboard?.writeText(settingsText.value).catch(() => {
+    settingsText.select()
+  })
+})
+element("settings-apply").addEventListener("click", () => {
+  imported = settingsText.value
+  void start("build")
+})
+window.addEventListener("hashchange", () => {
+  importFromAddress()
+  if (imported !== null) void start("build")
+})
+
+importFromAddress()
 void start("build")

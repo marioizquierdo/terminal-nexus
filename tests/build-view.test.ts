@@ -932,6 +932,6 @@ test("the committed screen names the pick and the count, and the footer carries 
   assert.match(built.text, /BUILD COMMITTED/)
   assert.match(built.text, /Nexus: Test Pick/)
   assert.match(built.text, /1 structure planned/)
-  assert.match(built.text, /\[esc\] to exit/)
+  assert.match(built.text, /\[esc\] menu/)
   assert.match(built.text, /Build committed - 1 planned, Nexus Pulse would begin here \(Milestone 6\)\./)
 })

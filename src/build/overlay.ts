@@ -1,7 +1,8 @@
-// The Build Phase's popups — one shape for all four: the Nexus powers, the start-the-Pulse question,
-// the exit question, and Debug Mode. Extracted when there were three real uses (AGENTS.md: "extract a
-// framework only after two real uses reveal the boundary"); Debug Mode, the fourth, added the one row
-// the first three had no use for — a setting whose value Left and Right change.
+// The Build Phase's popups — one shape for all of them: the Nexus powers, the start-the-Pulse
+// question, the game menu (Settings, Quit), Settings with its Experiments, and the export. Extracted
+// when there were three real uses (AGENTS.md: "extract a framework only after two real uses reveal the
+// boundary"); Debug Mode, the fourth — Settings since the owner's 2026-09-28 direction — added the one
+// row the first three had no use for: a setting whose value Left and Right change.
 //
 // A popup is **data**: a title and a list of rows, some of them options that name the command a click
 // on them sends. `overlaySpec` derives it from the state; `placeOverlay` puts it on the frame;
@@ -10,16 +11,29 @@
 // there — the same guarantee `layout.ts` gives the side panel.
 
 import type { DebugApplies } from "./debug.ts"
-import { DEBUG_FIELDS, DEBUG_RESTART_QUESTION, DEBUG_RESTART_ROW, fieldAtRow, fieldSpec, formatDebugValue } from "./debug.ts"
+import { DEBUG_FIELDS, DEBUG_RESTART_QUESTION, fieldSpec, formatDebugValue } from "./debug.ts"
 import type { BuildLayout } from "./layout.ts"
+import {
+  GAME_MENU_ROWS,
+  PLAYER_FIELDS,
+  SETTINGS_EXPORT_ROW,
+  SETTINGS_RESTART_ROW,
+  formatPlayerValue,
+  playerRow,
+  playerSpec,
+  settingsRowAt,
+} from "./settings.ts"
 import type { BuildContext, BuildState } from "./state.ts"
-import { nexusPowers } from "./state.ts"
+import { exportText, nexusPowers } from "./state.ts"
 import type { BuildCommand } from "./types.ts"
 
 export type OverlayRow =
   | Readonly<{ kind: "blank" }>
   | Readonly<{ kind: "heading"; text: string }>
-  | Readonly<{ kind: "text"; text: string; muted?: boolean; strong?: boolean }>
+  /** A line of text. `code` marks a line of the settings export: drawn as it is, except that a
+   *  `# comment` at its end is left off when the whole line does not fit; `highlighted` is the
+   *  export's own highlight, which Up/Down move to scroll it. */
+  | Readonly<{ kind: "text"; text: string; muted?: boolean; strong?: boolean; code?: boolean; highlighted?: boolean }>
   /** A choice: its hotkey and label, what clicking it sends, and whether the keyboard is on it. An
    *  option with a description takes a second row for it, and either row is its click target. */
   | Readonly<{
@@ -70,25 +84,54 @@ export type OverlayScroll = Readonly<{
 
 export type OverlaySpec = Readonly<{ title: string; rows: readonly OverlayRow[]; scroll?: OverlayScroll }>
 
-/** How many lines the Debug Mode popup keeps for the highlighted flag's question. Every question
- *  fits in this many at the narrowest popup (a test holds them to it). */
+/** How many lines the Settings popup keeps for what the highlighted row is for. Every question fits
+ *  in this many at the narrowest popup (a test holds them to it). */
 export const DEBUG_NOTE_LINES = 3
 
-/** The Debug Mode popup: every flag with its value and when a change is seen, the restart, and the
- *  question the highlighted row serves. */
-function debugSpec(state: BuildState): OverlaySpec {
+/** The Settings popup's two section headings, drawn in its list. */
+export const SETTINGS_HEADING = "YOUR SETTINGS - saved"
+export const EXPERIMENTS_HEADING = "EXPERIMENTS - for playtests, not saved"
+export const EXPORT_QUESTION =
+  "Shows every setting and experiment as text, and copies it, to paste into a pull request comment."
+
+/**
+ * The Settings popup (owner, 2026-09-28): the player's own settings, then — clearly apart, at the
+ * bottom — the Experiments, every Debug Mode flag with the question it serves; then the restart and
+ * the export, and what the highlighted row is for. The list scrolls; its two headings scroll with it.
+ */
+function settingsSpec(state: BuildState): OverlaySpec {
   const rows: OverlayRow[] = [{ kind: "more", direction: "above" }]
   const from = rows.length
-  DEBUG_FIELDS.forEach((spec, index) => {
+  /** Where each row id sits in `rows`, so the window can follow the highlight. */
+  const lineOf = new Map<number, number>()
+  const select = (row: number): BuildCommand => ({ kind: "settings-select", row })
+  rows.push({ kind: "heading", text: SETTINGS_HEADING })
+  for (const spec of PLAYER_FIELDS) {
+    const row = playerRow(spec.field)
+    lineOf.set(row, rows.length)
+    rows.push({
+      kind: "setting",
+      label: spec.label,
+      value: formatPlayerValue(state.settings, spec.field),
+      applies: "now",
+      highlighted: row === state.overlayHighlight,
+      decrease: { kind: "setting-adjust", field: spec.field, step: -1 },
+      increase: { kind: "setting-adjust", field: spec.field, step: 1 },
+      select: select(row),
+    })
+  }
+  rows.push({ kind: "heading", text: EXPERIMENTS_HEADING })
+  DEBUG_FIELDS.forEach((spec, row) => {
+    lineOf.set(row, rows.length)
     rows.push({
       kind: "setting",
       label: spec.label,
       value: formatDebugValue(state.debug, spec.field),
       applies: spec.applies,
-      highlighted: index === state.overlayHighlight,
+      highlighted: row === state.overlayHighlight,
       decrease: { kind: "debug-adjust", field: spec.field, step: -1 },
       increase: { kind: "debug-adjust", field: spec.field, step: 1 },
-      select: { kind: "debug-select", row: index },
+      select: select(row),
     })
   })
   const to = rows.length
@@ -99,18 +142,92 @@ function debugSpec(state: BuildState): OverlaySpec {
       hotkey: "r",
       label: "Restart with these settings",
       command: { kind: "debug-restart" },
-      highlighted: state.overlayHighlight === DEBUG_RESTART_ROW,
+      highlighted: state.overlayHighlight === SETTINGS_RESTART_ROW,
     },
-    { kind: "blank" },
+    {
+      kind: "option",
+      hotkey: "e",
+      label: "Export settings",
+      command: { kind: "export-settings" },
+      highlighted: state.overlayHighlight === SETTINGS_EXPORT_ROW,
+    },
   )
-  const field = fieldAtRow(state.overlayHighlight)
-  rows.push({ kind: "note", text: field === null ? DEBUG_RESTART_QUESTION : fieldSpec(field).question, lines: DEBUG_NOTE_LINES })
-  // On the restart row the list keeps showing its last flags, the ones nearest to it.
-  const highlight = from + Math.min(state.overlayHighlight, DEBUG_FIELDS.length - 1)
+  const highlighted = settingsRowAt(state.overlayHighlight)
+  const note =
+    highlighted === null || highlighted.kind === "restart"
+      ? DEBUG_RESTART_QUESTION
+      : highlighted.kind === "export"
+        ? EXPORT_QUESTION
+        : highlighted.kind === "player"
+          ? playerSpec(highlighted.field).question
+          : fieldSpec(highlighted.field).question
+  rows.push({ kind: "note", text: note, lines: DEBUG_NOTE_LINES })
+  // On the restart and export rows the list keeps showing its last rows, the ones nearest to them.
+  const line = lineOf.get(state.overlayHighlight) ?? to - 1
+  // A heading directly above the highlighted row is kept in view with it where the window allows: the
+  // first setting of each section opens with its heading showing.
+  const highlight = rows[line - 1]?.kind === "heading" ? line - 1 : line
+  // Clicks on a "more" line highlight the setting nearest it; a heading there selects the row under it.
+  const selectLine = (index: number): BuildCommand => {
+    const at = from + index
+    const entry = rows[at]?.kind === "heading" ? rows[at + 1] : rows[at]
+    return entry?.kind === "setting" ? entry.select : select(state.overlayHighlight)
+  }
   return {
-    title: "DEBUG MODE - not saved",
+    title: "SETTINGS",
     rows,
-    scroll: { from, to, highlight, select: (index) => ({ kind: "debug-select", row: index }) },
+    scroll: { from, to, highlight, select: selectLine },
+  }
+}
+
+/** The game menu: Settings, Quit, and the way back (owner, 2026-09-28). Every row is an option, and
+ *  the highlight is `GAME_MENU_ROWS`'s index. */
+function menuSpec(state: BuildState): OverlaySpec {
+  const on = (row: (typeof GAME_MENU_ROWS)[number]): boolean => GAME_MENU_ROWS[state.overlayHighlight] === row
+  return {
+    title: "MENU",
+    rows: [
+      { kind: "blank" },
+      {
+        kind: "option",
+        hotkey: "s",
+        label: "Settings",
+        command: { kind: "open-settings", section: "settings" },
+        highlighted: on("settings"),
+        description: "Colours, experiments, export",
+      },
+      {
+        kind: "option",
+        hotkey: "q",
+        label: "Quit",
+        command: { kind: "quit" },
+        highlighted: on("quit"),
+        description: "The plan is not saved.",
+      },
+      { kind: "option", hotkey: "esc", label: "Back to the game", command: { kind: "cancel" }, highlighted: on("back") },
+    ],
+  }
+}
+
+/** The export: where the text also went, then the text itself — a list of its lines with a highlight
+ *  Up/Down move, like every other list here, so it scrolls the same way. */
+function exportSpec(context: BuildContext, state: BuildState): OverlaySpec {
+  const rows: OverlayRow[] = []
+  if (context.exportDestination !== undefined) rows.push({ kind: "note", text: context.exportDestination, lines: 2 })
+  rows.push({ kind: "more", direction: "above" })
+  const from = rows.length
+  exportText(context, state)
+    .trimEnd()
+    .split("\n")
+    .forEach((line, index) => {
+      rows.push({ kind: "text", text: line, code: true, ...(index === state.overlayHighlight ? { highlighted: true } : {}) })
+    })
+  const to = rows.length
+  rows.push({ kind: "more", direction: "below" }, { kind: "option", hotkey: "esc", label: "Back to Settings", command: { kind: "cancel" } })
+  return {
+    title: "EXPORT SETTINGS",
+    rows,
+    scroll: { from, to, highlight: from + state.overlayHighlight, select: (line) => ({ kind: "export-select", line }) },
   }
 }
 
@@ -154,19 +271,12 @@ export function overlaySpec(context: BuildContext, state: BuildState): OverlaySp
           { kind: "option", hotkey: "n", label: "No, keep building", command: { kind: "confirm-commit", accept: false } },
         ],
       }
-    case "exit":
-      return {
-        title: "EXIT THE GAME?",
-        rows: [
-          { kind: "blank" },
-          { kind: "text", text: "The plan is not saved." },
-          { kind: "blank" },
-          { kind: "option", hotkey: "q", label: "Quit", command: { kind: "quit" } },
-          { kind: "option", hotkey: "esc", label: "Keep playing", command: { kind: "cancel" } },
-        ],
-      }
-    case "debug":
-      return debugSpec(state)
+    case "menu":
+      return menuSpec(state)
+    case "settings":
+      return settingsSpec(state)
+    case "export":
+      return exportSpec(context, state)
     default:
       return null
   }

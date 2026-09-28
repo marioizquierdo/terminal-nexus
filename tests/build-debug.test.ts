@@ -1,4 +1,6 @@
-// Gate 5G: Debug Mode — a popup of live-editable development flags. Driven through raw bytes into
+// Gate 5G: Debug Mode — a popup of live-editable development flags; since the owner's 2026-09-28
+// direction, the Experiments section at the bottom of Settings (`tests/build-settings.test.ts` has the
+// player's half, the game menu and the export). Driven through raw bytes into
 // the real adapters where an adapter is what is being claimed, and through commands where the reducer
 // is; and one flow three ways (keys, clicks, a driver script) to hold "the same plan is the same
 // state and the same frame" for the debug flow too.
@@ -18,7 +20,15 @@ import {
 import type { DebugField } from "../src/build/debug.ts"
 import { buildLayout, cellForTile, menuEntryRow } from "../src/build/layout.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, MOUSE_WHEEL_DOWN, MOUSE_WHEEL_UP, formatMouseEvent } from "../src/build/mouse.ts"
-import { DEBUG_NOTE_LINES, overlaySpec, placeOverlay, settingColumns, wrapWords } from "../src/build/overlay.ts"
+import {
+  DEBUG_NOTE_LINES,
+  EXPORT_QUESTION,
+  overlaySpec,
+  placeOverlay,
+  settingColumns,
+  wrapWords,
+} from "../src/build/overlay.ts"
+import { GAME_MENU_ROWS, PLAYER_FIELDS, SETTINGS_ORDER, SETTINGS_RESTART_ROW, stepSettingsRow } from "../src/build/settings.ts"
 import type { PlacedOverlay } from "../src/build/overlay.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildContext } from "../src/build/state.ts"
@@ -86,8 +96,8 @@ function onScreen(side: Side, field: DebugField): boolean {
 /** The mouse's way to a flag that is scrolled out of view: the wheel, over the popup, until it shows. */
 function wheelTo(side: Side, field: DebugField): void {
   const box = placed(side).box
-  const down = rowOfField(field) > side.build.state.overlayHighlight
-  for (let turns = 0; turns < DEBUG_FIELDS.length && !onScreen(side, field); turns += 1) {
+  const down = SETTINGS_ORDER.indexOf(rowOfField(field)) > SETTINGS_ORDER.indexOf(side.build.state.overlayHighlight)
+  for (let turns = 0; turns < SETTINGS_ORDER.length && !onScreen(side, field); turns += 1) {
     click(side, box.left + 2, box.top + 2, down ? MOUSE_WHEEL_DOWN : MOUSE_WHEEL_UP)
   }
 }
@@ -108,23 +118,26 @@ function goTo(side: Side, field: DebugField): void {
 
 // --- Opening and closing ---------------------------------------------------------------------------
 
-test("d opens Debug Mode over the Grid: every flag, its value, and when a change is seen", () => {
+test("d opens Settings at its Experiments: every flag, its value, and when a change is seen", () => {
   const side = session()
   keys(side, "d")
-  assert.equal(side.build.state.overlay, "debug")
+  assert.equal(side.build.state.overlay, "settings")
+  assert.equal(side.build.state.overlayHighlight, rowOfField(DEBUG_FIELDS[0]?.field as DebugField))
   const text = screen(side)
-  assert.match(text, /DEBUG MODE - not saved/)
+  assert.match(text, /SETTINGS/)
+  assert.match(text, /EXPERIMENTS - for playtests, not saved/)
   // Gate 5I's placement juice leads the list: the newest thing waiting to be felt.
   assert.match(text, /Build animation\s+<\s+450 ms\s+>\s+now/)
-  assert.match(text, /Scroll margin\s+<\s+20%\s+>\s+now/)
   assert.match(text, /\[r\] Restart with these settings/)
+  assert.match(text, /\[e\] Export settings/)
   // The key help says where the keyboard is, and the highlighted row's question is shown.
-  assert.match(text, /DEBUG {2}up\/down choose {2}left\/right change/)
+  assert.match(text, /SETTINGS {2}up\/down choose {2}left\/right change/)
   assert.ok(text.includes("(F9)"), "the build animation's question is not shown")
   const margin = session()
   keys(margin, "d")
   goTo(margin, "scrollMargin")
   assert.ok(screen(margin).includes("(Q54)"), "the scroll margin's question is not shown")
+  assert.match(screen(margin), /Scroll margin\s+<\s+20%\s+>\s+now/)
   // Every flag is listed — scrolled into view by walking down the list (gate 5H: at 80x24 they do not
   // all fit at once).
   const seen = new Set<string>()
@@ -146,16 +159,18 @@ test("d opens Debug Mode over the Grid: every flag, its value, and when a change
 test("the popup scrolls: a 'more' cue says how many rows are hidden, and the highlight is always in view", () => {
   for (const size of SIZES) {
     const side = session(spikeContext(), size)
-    keys(side, "d")
+    keys(side, ESC, "s") // Settings from the game menu: the top of the list
     const opening = placed(side)
     assert.ok(opening.window !== null)
-    const hiddenAtFirst = DEBUG_FIELDS.length - opening.window.visible
+    const hiddenAtFirst = opening.window.count - opening.window.visible
     if (hiddenAtFirst === 0) continue
     assert.match(screen(side), new RegExp(`v ${hiddenAtFirst} more`), `no "more" cue at ${size.columns}x${size.rows}`)
     assert.doesNotMatch(screen(side), /\^ \d+ more/, "a cue for rows above the first one")
-    for (let row = 0; row < DEBUG_FIELDS.length; row += 1) {
-      const field = DEBUG_FIELDS[row]?.field as DebugField
-      assert.ok(onScreen(side, field), `row ${row} highlighted but not shown at ${size.columns}x${size.rows}`)
+    for (const id of SETTINGS_ORDER) {
+      if (id === SETTINGS_RESTART_ROW) break
+      assert.equal(side.build.state.overlayHighlight, id)
+      const on = placed(side).rows.some((row) => row.spec.kind === "setting" && row.spec.highlighted)
+      assert.ok(on, `row ${id} highlighted but not shown at ${size.columns}x${size.rows}`)
       keys(side, DOWN)
     }
     // On the restart row the list shows its last flags, and says how many are above.
@@ -164,7 +179,7 @@ test("the popup scrolls: a 'more' cue says how many rows are hidden, and the hig
   }
   // A click on the cue scrolls toward what it names; the wheel walks the list.
   const side = session()
-  keys(side, "d")
+  keys(side, ESC, "s")
   const cue = placed(side).rows.find((row) => row.spec.kind === "more" && row.text !== "")
   assert.ok(cue !== undefined)
   click(side, placed(side).textColumn + 1, cue.row)
@@ -172,7 +187,7 @@ test("the popup scrolls: a 'more' cue says how many rows are hidden, and the hig
   assert.ok(window !== null && window.offset > 0, "a click on the 'more' cue did not scroll")
   const before = side.build.state.overlayHighlight
   click(side, placed(side).box.left + 3, placed(side).box.top + 3, MOUSE_WHEEL_DOWN)
-  assert.equal(side.build.state.overlayHighlight, before + 1)
+  assert.equal(side.build.state.overlayHighlight, stepSettingsRow(before, 1))
 })
 
 test("Esc, x, d, a right click and a click outside all close it, and it holds the keyboard until then", () => {
@@ -188,20 +203,20 @@ test("Esc, x, d, a right click and a click outside all close it, and it holds th
 
   // Keys the popup has no use for do nothing underneath it: no arm, no undo, no Nexus popup.
   const held = session()
-  keys(held, "d", "1", "u", "n", "e", "p", TAB)
-  assert.equal(held.build.state.overlay, "debug")
+  keys(held, "d", "1", "u", "n", "p", TAB)
+  assert.equal(held.build.state.overlay, "settings")
   assert.equal(held.build.state.armed, null)
   assert.equal(held.build.state.focus, "menu")
 })
 
-test("the top bar's [d] debug is drawn at every size and a click on it opens Debug Mode, and a second closes it", () => {
+test("the top bar's [esc] menu is drawn at every size and a click on it opens the game menu, and a second closes it", () => {
   for (const size of SIZES) {
     const side = session(spikeContext(), size)
-    const hint = side.layout.debugHint
+    const hint = side.layout.menuHint
     const line = screen(side).split("\n")[hint.row] ?? ""
-    assert.equal(line.slice(hint.from, hint.to + 1), "[d] debug", `not drawn at ${size.columns}x${size.rows}`)
+    assert.equal(line.slice(hint.from, hint.to + 1), "[esc] menu", `not drawn at ${size.columns}x${size.rows}`)
     click(side, hint.from + 1, hint.row)
-    assert.equal(side.build.state.overlay, "debug", `a click did not open it at ${size.columns}x${size.rows}`)
+    assert.equal(side.build.state.overlay, "menu", `a click did not open it at ${size.columns}x${size.rows}`)
     click(side, hint.to, hint.row)
     assert.equal(side.build.state.overlay, null, "a click on the hint over the open popup did not close it")
   }
@@ -223,8 +238,9 @@ test("the popup fits inside the Grid pane at every size, and every question fits
     assert.ok(popup.box.top > side.layout.gridBox.top, `the popup covers the top rule at ${size.columns}x${size.rows}`)
     assert.ok(popup.box.bottom + 1 < side.layout.paneBottom, `the popup covers the bottom rule at ${size.columns}x${size.rows}`)
     const columns = settingColumns(popup)
-    for (const spec of DEBUG_FIELDS) assert.ok(spec.label.length <= columns.labelLimit, `${spec.label} is cut`)
-    for (const question of [...DEBUG_FIELDS.map((spec) => spec.question), DEBUG_RESTART_QUESTION]) {
+    for (const spec of [...DEBUG_FIELDS, ...PLAYER_FIELDS]) assert.ok(spec.label.length <= columns.labelLimit, `${spec.label} is cut`)
+    const questions = [...DEBUG_FIELDS, ...PLAYER_FIELDS].map((spec) => spec.question)
+    for (const question of [...questions, DEBUG_RESTART_QUESTION, EXPORT_QUESTION]) {
       const lines = wrapWords(question, popup.textLimit)
       assert.ok(lines.length <= DEBUG_NOTE_LINES, `"${question}" needs ${lines.length} lines at ${size.columns}x${size.rows}`)
     }
@@ -320,7 +336,7 @@ test("opens on the map: nothing changes until the restart, which keeps every fla
   // The restart row does the same by Enter.
   const byEnter = session()
   keys(byEnter, "d", ...Array.from({ length: DEBUG_RESTART_ROW }, () => DOWN), ENTER)
-  assert.equal(byEnter.build.state.status.text, "Build Phase restarted with the debug settings.")
+  assert.equal(byEnter.build.state.status.text, "Build Phase restarted with these settings.")
 })
 
 test("the flash timings are what the live loop reads, and zero means no flash at all", () => {
@@ -335,12 +351,12 @@ test("the flash timings are what the live loop reads, and zero means no flash at
   assert.match(screen(side), /Pressed flash\s+<\s+off\s+>/)
 })
 
-test("Debug Mode opens on a committed Build Phase too, so a playtest can start over from there", () => {
+test("Settings open on a committed Build Phase too, so a playtest can start over from there", () => {
   const side = session()
   keys(side, "n", "1", "p", "y")
   assert.equal(side.build.state.committed, true)
   keys(side, "d")
-  assert.equal(side.build.state.overlay, "debug")
+  assert.equal(side.build.state.overlay, "settings")
   keys(side, "r")
   assert.equal(side.build.state.committed, false)
 })
@@ -366,9 +382,14 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
   keys(byKeyboard, LEFT, "r")
   keys(byKeyboard, TAB, DOWN, DOWN, SPACE, ENTER)
 
+  // By mouse there is no `d`: the top bar's [esc] menu, then the game menu's [s] Settings.
   const byMouse = session()
-  const hint = byMouse.layout.debugHint
+  const hint = byMouse.layout.menuHint
   click(byMouse, hint.from, hint.row)
+  const settingsOption = placed(byMouse).rows.find((row) => row.spec.kind === "option" && row.spec.hotkey === "s" && !row.secondLine)
+  assert.ok(settingsOption !== undefined)
+  assert.equal(GAME_MENU_ROWS[0], "settings")
+  click(byMouse, placed(byMouse).textColumn + 2, settingsOption.row)
   clickValue(byMouse, "smartCursor", "right")
   clickValue(byMouse, "scrollMargin", "right")
   clickValue(byMouse, "scrollMargin", "right")
@@ -390,7 +411,7 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
   keys(byMouse, DOWN)
 
   const script: readonly BuildCommand[] = [
-    { kind: "open-debug" },
+    { kind: "open-settings", section: "experiments" },
     { kind: "debug-adjust", field: "smartCursor", step: 1 },
     { kind: "debug-adjust", field: "scrollMargin", step: 1 },
     { kind: "debug-adjust", field: "scrollMargin", step: 1 },

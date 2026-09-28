@@ -15,15 +15,24 @@ import type { MoveKind } from "./motion.ts"
 import { SpeedRamp } from "./motion.ts"
 import { buildMouseCommand, parseMouseEvent } from "./mouse.ts"
 import type { BuildContext, BuildState } from "./state.ts"
-import { applyBuildCommand, createBuildState, exploring, nexusPowers, withViewport } from "./state.ts"
+import { applyBuildCommand, createBuildState, exploring, exportText, nexusPowers, withViewport } from "./state.ts"
 import type { BuildCommand } from "./types.ts"
 import type { Coord } from "../grid/types.ts"
+import type { Settings } from "../settings/types.ts"
 
 export type BuildSessionOptions = Readonly<{
   context: BuildContext
   cursor: Coord
   viewport: Viewport
   onQuit?: () => void
+  /**
+   * The export's side effects — copying the text to the clipboard, writing it to a file — which the
+   * reducer never has (owner, 2026-09-28: "export settings, and copy-paste them into a PR comment").
+   * Called with the text each time the export popup is opened.
+   */
+  onExport?: (text: string) => void
+  /** The player changed a setting in the Settings popup: the live loop redraws with it and saves it. */
+  onSettingsChange?: (settings: Settings) => void
 }>
 
 /**
@@ -38,6 +47,8 @@ export class BuildSession {
   private buildState: BuildState
   private readonly context: BuildContext
   private readonly onQuit: () => void
+  private readonly onExport: (text: string) => void
+  private readonly onSettingsChange: (settings: Settings) => void
   /** The held-key ramp: input-path state, beside the reducer and never in it. */
   private readonly ramp = new SpeedRamp()
   /** The last left click on a Grid tile with a building armed: where on screen, when, and the tile it
@@ -48,6 +59,8 @@ export class BuildSession {
     this.context = options.context
     this.buildState = createBuildState(options.context, options.cursor, options.viewport)
     this.onQuit = options.onQuit ?? ((): void => {})
+    this.onExport = options.onExport ?? ((): void => {})
+    this.onSettingsChange = options.onSettingsChange ?? ((): void => {})
   }
 
   get state(): BuildState {
@@ -60,7 +73,13 @@ export class BuildSession {
       this.onQuit()
       return
     }
-    this.buildState = applyBuildCommand(this.context, this.buildState, command)
+    const before = this.buildState
+    this.buildState = applyBuildCommand(this.context, before, command)
+    // Side effects the reducer only records, handed to the adapter that owns them.
+    if (this.buildState.settings !== before.settings) this.onSettingsChange(this.buildState.settings)
+    if (this.buildState.overlay === "export" && before.overlay !== "export") {
+      this.onExport(exportText(this.context, this.buildState))
+    }
   }
 
   /** A whole script at once, which is what an agent playtest actually looks like. */
@@ -93,6 +112,7 @@ export class BuildSession {
             focus: state.focus,
             overlay: state.overlay,
             overlayPendingCount: nexusPowers(this.context, state).pending.length,
+            overlayHighlight: state.overlayHighlight,
             jumpStep: state.debug.jumpStep,
           })
     if (mouse !== null && mouse.press && command?.kind === "click-tile") {
