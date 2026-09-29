@@ -3,8 +3,11 @@
 **Document role:** The interaction and drawing patterns every interactive screen follows
 **Status:** WORKING — built on the Build Phase first; not canon yet (promoted into `specs/engine.md`
 Section 9 when the owner accepts them)
-**Updated:** 2026-09-29 (round-4 feedback F34-F37: the top bar names what Esc does; popups lose
-their `[esc]`, gain a message form and a scroll bar; Settings' layout; Restart in the game menu)
+**Updated:** 2026-09-29 (round-4 feedback F30-F33: arming where the cursor is, focus that goes back to
+where it came from, one "active" style for every menu row, Explore Map as that style, removal sparks;
+F34-F37: the top bar names what Esc does; popups lose their `[esc]`, gain a message form and a scroll
+bar; Settings' layout; Restart in the game menu); 2026-09-28 (a click activates; Explore Map —
+round-3 feedback F22, F23; Settings, Experiments and the export, replacing Debug Mode's popup)
 **License:** Apache-2.0
 
 These came out of the owner's playtests of the Build Phase (2026-09-26 and 2026-09-27; the item-by-item
@@ -26,33 +29,49 @@ why.
 - **The key help starts with where the keyboard is**, in capitals, then the keys that work there:
   `MENU`, `PLACE`, `EXPLORE MAP`, `MAP`, or the open popup's name. (`keyHelp` in `src/view/build.ts`.)
 - **Focus is state, not adapter memory**, so a script can set it and a test can read it.
-- **The menu orchestrates.** Actions start on the menu; the map cursor is for placing and exploring.
-  After a placement the keyboard goes back to the menu, on the same row.
+- **Finishing goes back to where it started** (owner, 2026-09-29, feedback F30). Placing and Explore
+  Map remember where they were begun (`BuildState.origin`): begun on the map — a digit pressed there,
+  Enter/Space or `e` in plain navigation — a placement or Esc leaves the keyboard on the map in plain
+  navigation, the cursor where it was; begun on the menu — Enter/Space or a click on a row, or a digit
+  while the menu had the keyboard — they go back to the menu, on the same row (with nothing looking
+  chosen after the mouse). The menu still orchestrates; the map is a place to work from too.
 - **A mode has one meaning per key.** Arrows and Enter/Space follow focus; nothing else does. Digits
   always arm their row; letters always name commands, from any focus.
-- **Several ways in, all shown**: Tab toggles; an explicit menu entry (`[e] Explore Map`, the menu's
-  first); a click on the area; and on the menu, Right twice (the first flickers to say "you are on
-  the menu").
+- **Several ways in, all shown**: Tab toggles; a click on the area; and on the menu, Right twice (the
+  first flickers to say "you are on the menu").
 - **The map has three modes, each named in the key help**: `PLACE` (a building armed, its ghost at
   the cursor), `EXPLORE MAP` (nothing armed; the side panel describes what is under the cursor —
-  section 6), and `MAP` — the map a mouse click opened from the menu, with the menu left beside it so
-  the next click can arm a building from it. Every keyboard way onto the map with nothing armed
-  (`e`, the entry, Tab, Right twice) arrives in Explore Map; Enter/Space on the `MAP` opens it.
+  section 6), and `MAP` — **plain navigation**: the bare cursor with the menu left beside it, so the
+  next click can arm a building from it. Tab, Right twice, a click on the map and finishing something
+  begun on the map all arrive in plain navigation; Explore Map is reached only by `e`, its menu row,
+  and Enter/Space in plain navigation.
+- **The screen opens on the menu, at Explore Map** (owner, 2026-09-29, feedback F31), and the map
+  cursor, not yet drawn, **on the player's Grid Nexus** — where nothing has been pointed at yet.
+- **Arming puts the building where the cursor is** (feedback F30): a digit, Enter on a row or a click
+  on it keeps the cursor where it is when the building fits there. Otherwise the cursor moves to the
+  nearest spot within 12 tiles of it that leaves one free tile between the building and every other
+  structure, or, with none in reach, the nearest that fits at all — nearest by straight-line distance,
+  ties to the more horizontal move, then east, then south (`armingSpot` in `src/build/state.ts`).
+  With nothing in reach the cursor steps one tile right and one down and the building is drawn as
+  itself, not as the refusal's `x`, until the player moves or tries to place. **Never from the last
+  building placed**: press a building's key again right after placing one and the cursor, still on the
+  new one, moves a gap away from it.
 
 ## 2. Back, cancel and close
 
 - **Esc, `x` and a right click are one command** (`cancel`) and always mean the same thing.
 - **Esc walks back one level at a time**: a popup (to the popup it was opened from, if any — Settings
-  to the game menu, the export to Settings), then the map — placing, Explore Map or the map a click
-  opened — to the menu, then on the menu it opens the **game menu**. Esc never leaves the game by
-  itself.
+  to the game menu, the export to Settings), then placing or Explore Map to where it was begun (plain
+  navigation on the map, or the menu), then plain navigation to the menu, then on the menu it opens
+  the **game menu**. Esc never leaves the game by itself. A key that opened something closes it the
+  same way (`e` for Explore Map, `n` for the Nexus popup, `d` for Settings).
 - **The game menu is the way out, the way to Settings, and the way to start over** (owner,
   2026-09-28; Restart since 2026-09-29, F34): `[s] Settings`, `[r] Restart` (the Build Phase over,
   every setting and experiment kept, the plan lost), `[q] Quit`, `[esc] Back to the game`. Esc on the
   menu and `q` anywhere open it.
 - **The top bar's right end says what Esc does right now** (owner, 2026-09-29, F37): `menu [esc]` on
   the menu (and on a committed Build Phase), `back [esc]` while the map has the keyboard (placing,
-  Explore Map, or the map a click opened), `close [esc]` while a popup is open. The action first and
+  Explore Map, or plain navigation), `close [esc]` while a popup is open. The action first and
   the key after it, as a way back reads; the name quiet, the key in the hotkey colour. **A click on it
   sends exactly what Esc sends** — one level back, so over Settings opened from the game menu it goes
   back to the game menu, where a click outside would close both. It is the one place Esc is named:
@@ -66,14 +85,14 @@ why.
 
 - **A click activates what it lands on** (owner, 2026-09-28, feedback F22 — reversing the 2026-09-27
   rule that a first click on the menu only highlighted). A click on a building's row arms it at once,
-  whatever had focus: the map takes the mouse with the ghost at the cursor — where the player was
-  pointing if the map had focus, the smart-cursor spot if the menu did (Enter's twin). A click on
-  `[n] Nexus` opens its popup; on `[e] Explore Map`, Explore Map. Only the keyboard has a "highlighted,
-  not yet chosen" state.
-- **A click can only choose what it could see.** While the Explore Map panel covers the menu, a click
-  anywhere on the panel gives the menu back and chooses nothing.
-- **A second click on the same tile confirms**, compared by tile, never by screen cell. The
-  placement returns the menu with nothing looking chosen.
+  whatever had focus: the map takes the mouse with the ghost at the cursor when it fits there — where
+  the player was pointing — and otherwise at the nearest good spot, exactly as a key would. A click on
+  `[n] Nexus` opens its popup; on `[e] Explore Map`, Explore Map. A click on a row is the menu's, so
+  what it starts comes back to the menu. Only the keyboard has a "highlighted, not yet chosen" state.
+- **A click can only choose what it could see.** While Explore Map covers the menu, a click anywhere
+  on the panel — its own active row included — closes it, as Esc does, and chooses nothing.
+- **A second click on the same tile confirms**, compared by tile, never by screen cell. A placement
+  armed from the menu returns the menu with nothing looking chosen ("focused but unselected").
 - **A click outside a popup closes it** and moves focus to where it landed — and does nothing else, so
   a dismissing click never also places or picks.
 - **Whole rows are click targets**, the same width the highlight bar is drawn.
@@ -83,17 +102,19 @@ why.
 ## 4. Menu rows
 
 - **Every row shows its hotkey** as `[x]` in the hotkey colour; the bracket survives monochrome.
-- **Four states**, legible without colour:
-  - **plain**;
-  - **selected** — an inverse bar across the whole row, one colour;
-  - **pressed** — for a few frames after activation, a stronger bar: bold and underlined, in the
-    hotkey's colour;
-  - **refused** — for a few frames when a key reached the row but had nothing to do (Left/Right, an
-    unaffordable row): the bar dims and comes back.
-- Plus **disabled** (dimmed) for a row that cannot be used now — an unaffordable one — and **armed**
-  for the one building being placed: `>` before it, the whole row in the hotkey's colour and bold, its
-  name underlined, and **no bar** — the bar is the keyboard's "not chosen yet", and armed is chosen.
-  Legible in monochrome by the marker and the underline.
+- **Two states, and only two** (owner, 2026-09-29, feedback F32), legible without colour:
+  - **highlighted** — an inverse bar across the whole row, one colour: where the keyboard is, not
+    chosen yet; drawn only while the menu has the keyboard;
+  - **active** — the row's action is under way: `>` before it, the whole row in the hotkey's colour
+    and bold, its name underlined, and **no bar**. A building while it is armed, `[e] Explore Map`
+    while Explore Map is open, `[n] Nexus` while its popup is. One test says which rows are active
+    (`menuRowActive`) and one function draws every row (`drawMenuRow`, both in `src/view/build.ts`),
+    so a later change to the style reaches all of them. Legible in monochrome by the marker and the
+    underline.
+- Two brief flashes of the bar acknowledge a key: **pressed** — for a few frames after activation, a
+  stronger bar, bold and underlined, in the hotkey's colour; **refused** — for a few frames when a key
+  reached the row but had nothing to do (Left/Right, an unaffordable row): the bar dims and comes back.
+  A row that cannot be used now — an unaffordable one — is **disabled** (dimmed) in any of them.
 - **Timing lives in the live loop, not the reducer.** The reducer records an acknowledgement with a
   sequence number (`BuildState.ack`); the terminal loop shows it for its duration from when it first
   sees it (`src/cli/spike.ts`). Still frames — tests, screenshots — never carry one unless asked.
@@ -141,16 +162,17 @@ why.
   its lower half down**, bringing the next hidden rows into view; the wheel and Up/Down still walk the
   highlight a row at a time. Drawn and hit-tested from the one placement (`PlacedOverlay.scrollBar`).
   It replaced the `^ 4 more` / `v 11 more` lines (F35: "There's no need to say ...").
-- **A long list says where the highlight is beside its title** (Settings: `SETTINGS (6/30)`), moving
+- **A long list says where the highlight is beside its title** (Settings: `SETTINGS (6/28)`), moving
   with it.
 - **A list in sections keeps each section's heading in the list** (Settings: "YOUR SETTINGS - saved",
   then "EXPERIMENTS - for playtests, not saved"): the headings scroll with the rows and are never
   highlighted; Up/Down skip them.
 - **A text too long for its popup is a list too** (the export): each line a row, with a highlight
   Up/Down move, so it scrolls exactly as every other list does.
-- **A popup that belongs to a menu row keeps that row lit behind it** (the Nexus popup, the
-  start-the-Pulse question); **one that belongs to no row** (the game menu, Settings, the export)
-  **leaves the menu unlit**, so its own highlight is the only one on screen.
+- **A popup that belongs to a menu row keeps that row active behind it** (the Nexus popup: `> [n]
+  Nexus`); the start-the-Pulse question keeps the menu's highlight; **one that belongs to no row** (the
+  game menu, Settings, the export) **leaves the menu unlit**, so its own highlight is the only one on
+  screen.
 
 ## 5a. Settings, Experiments and the export
 
@@ -184,9 +206,10 @@ why.
 
 - **The side panel shows one thing at a time**: the menu, or — in Explore Map — the **Explore Map
   panel** for what is under the cursor, following it as it moves with no key to press (feedback F23).
-- **A panel that replaces the menu names itself** in a header bar across its top — inverse, in the
-  title's weight, like a popup's top border — with `[esc]` at its right (`EXPLORE MAP  [esc]`). The
-  "pressed" flash of the row that opened it plays on the header, since the row is gone.
+- **A panel that replaces the menu keeps the row that opened it as its header** (feedback F32): the
+  row stays where it is, drawn active (`> [e] Explore Map`), a separator runs across the panel under it
+  (`-` in ASCII, `─` in Unicode), and the panel's own content fills the rest. No `[esc]` of its own:
+  what Esc does is the top bar's to say. The row's "pressed" flash plays on the row itself.
 - **The Explore Map card**: the thing's own glyphs as its icon, its name, what it is for in one line
   (wrapped at words, never cut), then its numbers as label/value rows. Later: a larger ASCII art
   version, and live numbers during a Pulse.
@@ -251,6 +274,10 @@ why.
   frames carries it.
 - **Reduced motion shows the finished building at once**, unlit; the sparks become a still mark at
   its corners.
+- **Removing is felt too** (owner, 2026-09-29, feedback F33): undo and Backspace/Delete take a planned
+  building away at once and throw the same burst of sparks where it stood, for the same "Particles"
+  and "Glow time". The live loop notes what left the plan and when (`removing`, beside `placing`); the
+  plan never hears of it.
 - **Every duration and intensity is an Experiment with an off value** (Build animation, Lighting,
   Particles, Glow time).
 
@@ -259,7 +286,7 @@ why.
 - **One line answers "what just happened, or why not"**: a typed message (text, a tone, and the tile
   it is about), never a bare string. A message about a tile lapses when the cursor leaves it.
 - **Say the result and the way back**: `Hatchery placed (resources: 70) - [u] undo`,
-  `Experiment - Opens on: map - applies after a restart`.
+  `Explore Map - arrows look around, e or esc to go back.`
 - **Looking reads quietly; trying reads loudly**: a refusal is neutral while the player only hovers,
   red and bold once they press Enter.
 

@@ -161,24 +161,32 @@ none — in a quieter colour than the frame; the menu's divider is the map's wes
 picks from his 2026-09-29 playtest). The readout names the visible range, because there is no minimap.
 
 **The menu runs the screen** (the owner's round-2 direction; `docs/ui-patterns.md` has the rules).
-The keyboard starts on the menu: Up/Down and Enter/Space work it. `[e] Explore Map`, its first entry
-(or Tab, or a second Right), moves the keyboard to the map with nothing armed and swaps the menu for an
-**Explore Map** panel that describes whatever is under the cursor as it moves; the arrows move the
-cursor, and the map scrolls once the cursor comes within a quarter of the view of an edge. `[n] Nexus`
-opens the Nexus Powers popup (a pick closes it). Arming a building (Enter on its row, or its digit
-from anywhere) puts the cursor beside the last thing planned; Enter or Space places it, and **every
-placement returns the keyboard to the menu, disarmed**. **A mouse click activates what it lands on**:
-a click on a building's row arms it at once, its ghost at the cursor; on the map a **second click on
+The keyboard starts on the menu, on its first entry, and the map cursor on the Grid Nexus: Up/Down
+and Enter/Space work the menu. Tab (or a second Right) moves the keyboard to the map in **plain
+navigation** — nothing armed, the menu still drawn beside it; the arrows move the cursor, and the map
+scrolls once the cursor comes within a quarter of the view of an edge. `[e] Explore Map` (or Enter in
+plain navigation) turns its row active — `> [e] Explore Map` — and swaps the rest of the menu for a
+panel that describes whatever is under the cursor as it moves; `e` again, Esc or a click on the panel
+goes back. `[n] Nexus` opens the Nexus Powers popup (a pick closes it). Arming a building (its digit,
+Enter on its row, or a click on it) keeps the cursor where it is when the building fits there, and
+otherwise moves it to the nearest spot within 12 tiles that leaves a free tile around it; Enter or
+Space places it, and **the keyboard goes back to where the arming came from, disarmed** — the map, in
+plain navigation, for a digit pressed on the map; the menu for anything started on the menu. A row
+whose action is under way — a building armed, Explore Map open, the Nexus popup open — is drawn
+**active**: `>` before it, in the hotkey's colour. **A mouse click activates what it lands on**: a
+click on a building's row arms it at once, its ghost at the cursor; on the map a **second click on
 the same tile** places (Q52); a click on the map from the menu keeps the menu beside it, so the next
 click can arm from it. Only the keyboard shows a "highlighted, not yet chosen" bar. Esc, `x` and a
-right click go back one level — popup, then the map (Explore Map or placing) to the menu — and on the
-menu open the **game menu**: `[s] Settings`, `[r] Restart`, `[q] Quit`, and Esc back to the game; `q`
-opens it too, and only Ctrl+C quits at once. The top bar's right end always says what Esc does right
-now — `menu [esc]`, `back [esc]` or `close [esc]` — and a click on it is Esc. Every row shows its cost, a row that no
+right click go back one level — popup, then placing or Explore Map to where it was started, then the
+map to the menu — and on the menu open the **game menu**: `[s] Settings`, `[r] Restart`, `[q] Quit`,
+and Esc back to the game; `q` opens it too, and only Ctrl+C quits at once. The top bar's right end
+always says what Esc does right now — `menu [esc]`, `back [esc]` or `close [esc]` — and a click on it
+is Esc. Every row shows its cost, a row that no
 longer fits is dimmed, and **why a placement would be refused is the status line's job** — "rock in
 the way at 8,5", "costs 40, 20 left" (affordability first) — quietly while the grey `x` preview sits on
 the tile, in red once a placement is tried. `[u]` undoes and Backspace (on the map) removes the one
-under the cursor, both refunding, which keeps a plan revisable until `p` starts the Pulse.
+under the cursor, both refunding (and throwing the placement's sparks where it stood), which keeps a
+plan revisable until `p` starts the Pulse.
 
 **Moving ramps up, and Shift jumps** (gate 5H, reworked after the owner's 2026-09-28 playtest): a
 single press moves one tile; the same arrow again within 150 ms — a held key's repeats, or quick
@@ -194,7 +202,7 @@ confirming second click lands where the first did (Q58); **exploring, a click ne
 further the nearer the edge**. A placement tried and refused flashes its footprint. A lone Esc at the
 end of a read waits 100 ms for the rest of a key sequence before it counts as Esc — so anything sending
 keys programmatically leaves a pause after an Esc. **Every one of these numbers is an Experiment**
-(`d`, below); the list scrolls, since there are twenty-five.
+(`d`, below); the list scrolls, since there are twenty-three.
 
 **Settings, Experiments and the export** (owner, 2026-09-28). The game menu's `[s] Settings` is one
 scrolling popup: first the player's own settings — background, colour depth, symbols, reduced motion —
@@ -202,7 +210,7 @@ changed live with Left/Right and saved to the same `~/.terminal-nexus/settings.j
 Settings writes; then, apart at the bottom, **Experiments**: gate 5G's Debug Mode flags, each naming
 the question it serves, never saved (`src/build/debug.ts` is the list; `src/build/settings.ts` the
 popup's rows). `d` opens Settings straight at the Experiments. The title says where the highlight is
-in the list (`SETTINGS (6/30)`), a scroll bar in the popup's right border shows and scrolls the rest
+in the list (`SETTINGS (6/28)`), a scroll bar in the popup's right border shows and scrolls the rest
 (click its upper or lower half, or use the wheel), and what the highlighted row is for is written under
 a line below the list. The game menu's `[r] Restart` starts the Build Phase over keeping everything; a
 changed setting that only applies after a restart is announced in a message popup when Settings

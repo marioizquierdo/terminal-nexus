@@ -39,23 +39,28 @@ the same targets. `#` starts a comment in a `--file`. The table with bytes is at
 `src/playtest/keys.ts`. An unknown name is an error, never a guess.
 
 Useful openings on the `--spike` screen: focus starts on the menu's first row, Explore Map (`e`, or
-Enter there, opens the Explore Map panel; Esc comes back); `n 1` picks the first Nexus power, which
-closes the popup (budget becomes 130) and leaves the highlight on the Nexus row, so `n 1 Down Down
-Space` arms the Hatchery from the menu (`n 2` is the War Chest: 2000 more to spend); a digit arms by
-hotkey and moves focus to the Grid; `Tab` switches focus. A click on a building's row arms it at once
+Enter there, opens it; `e` or Esc goes back), and the map cursor on the Grid Nexus (18,10); `n 1`
+picks the first Nexus power, which closes the popup (budget becomes 130) and leaves the highlight on
+the Nexus row, so `n 1 Down Down Space` arms the Hatchery from the menu (`n 2` is the War Chest: 2000
+more to spend). Arming — a digit, Enter on a row, a click on it — keeps the cursor where it is when the
+building fits there, and otherwise moves it to the nearest spot a free tile from everything (from the
+Nexus, that is 18,13 for a Barracks). A digit pressed on the map comes back to the map after the
+placement (plain navigation, `MAP` in the key help); anything started on the menu comes back to the
+menu. `Tab` switches focus, arriving on the map in plain navigation. A click on a building's row arms it at once
 (`click@3,9` is the Hatchery at 80x24), and a second click on the same tile places. `Esc` on the menu
 (or `q` anywhere) opens the game menu: `s` Settings, `r` Restart (the Build Phase over, every setting
 kept), `q` quits. The top bar's right end says what Esc does now — `menu [esc]`, `back [esc]`,
 `close [esc]` — and clicking it is Esc (`click@70,1` at 80x24). **Settings** lists the player's own
 settings first (`Esc s Right` switches the background to light), then the **Experiments** — the
 playtest flags, which `d` opens straight at (Up/Down choose, Left/Right change, `e` exports, `Esc`
-closes) — and last, **Export settings**. The title shows the highlight's place, `SETTINGS (6/30)`;
+closes) — and last, **Export settings**. The title shows the highlight's place, `SETTINGS (6/28)`;
 the right border beside the list is its scroll bar (a click on its lower half scrolls down). The
 Experiments start on gate 5I's placement juice (`d Right` lengthens the build animation, `d Down
 Right` sets Lighting to rainbow), then gate 5H's movement numbers (`d Down*4 Right` widens the scroll
 margin). From the first setting, Up comes round to Export, then the last experiments. Closing
 Settings with a changed Experiment that only applies after a restart shows a **RESTART NEEDED**
-message (Esc closes it, back on the game menu's Restart; `r` then restarts). `src/build/debug.ts`'s
+message (Esc closes it, back on the game menu's Restart; `r` then restarts) — no Experiment needs a
+restart today, since "Opens on" was deleted. `src/build/debug.ts`'s
 `DEBUG_FIELDS` is the order. The map's edge is not an Experiment: it is the map's own style (the spike
 map's fence; `--glyphs unicode` shows the Unicode forms), and the menu's divider is its west side.
 
@@ -70,7 +75,8 @@ Unknown names and bad values are skipped and named on stderr.
 
 What a script cannot show is time between keys on the live screen — the view sliding, a flash, a
 building going up (script frames always draw buildings finished). For those, compose a frame with
-`camera` / `refusedFlash` / `flash` / `placing: [{ ordinal, elapsedMs }]` yourself, or step
+`camera` / `refusedFlash` / `flash` / `placing: [{ ordinal, elapsedMs }]` / `removing: [{ ordinal,
+contentId, anchor, elapsedMs }]` yourself, or step
 `BuildAnimation` (`src/view/build-live.ts`) with a fake clock: `slideGif`, `placementGif` and
 `placementSheet` in `scripts/capture-spike-screenshots.mjs` do exactly that.
 

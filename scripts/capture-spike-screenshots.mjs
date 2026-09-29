@@ -535,7 +535,7 @@ scriptedGif("build-arm-at-cursor", {
 
 scripted(
   "build-debug-scrolled",
-  "Settings scroll: the settings and the experiments do not fit at 80x24, so the list moves with the highlight, the title says where it is - SETTINGS (11/30) - and the right border is a scroll bar with a thumb. A click on its upper or lower half, or the wheel, scrolls it too",
+  "Settings scroll: the settings and the experiments do not fit at 80x24, so the list moves with the highlight, the title says where it is - SETTINGS (11/28) - and the right border is a scroll bar with a thumb. A click on its upper or lower half, or the wheel, scrolls it too",
   { keys: "d Down*6", expect: "SETTINGS (11/" },
 )
 
