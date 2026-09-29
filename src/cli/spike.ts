@@ -298,7 +298,12 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
 
   function onResize(): void {
     const size = terminalSize()
+    const wasGated = gated
     gated = isGated(size, context.grid)
+    // A Nexus Pulse holds still while the terminal is too small to draw it, and resumes from the same
+    // instant (engine.md 9.6). No frame timer runs behind the gate, so nothing would tell the Pulse the
+    // time had passed: the moment the gate closes or opens, the clock is moved on without the Pulse.
+    if (wasGated || gated) build.advance(clock(), true)
     if (!gated) {
       layout = buildLayout(size, context.grid)
       build.resize(layout.viewport)

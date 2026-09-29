@@ -13,6 +13,7 @@ import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, buildMouseCommand, formatMouseEvent, parseMouseEvent } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildCommand } from "../src/build/types.ts"
+import { startPulse } from "../src/cli/pulse-run.ts"
 import { spikeContext } from "../src/cli/spike.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { frameToText } from "../src/view/frame.ts"
@@ -23,7 +24,7 @@ const MINIMUM = { columns: 80, rows: 24 }
 function session(): { build: BuildSession; layout: ReturnType<typeof buildLayout> } {
   const context = spikeContext()
   const layout = buildLayout(MINIMUM, context.grid)
-  const build = new BuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
+  const build = new BuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport, startPulse })
   return { build, layout }
 }
 
@@ -450,4 +451,18 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
     frameToText(composeBuildFrame({ context: spikeContext(), state: side.build.state, layout: side.layout }, "monochrome"))
   assert.equal(frame(byMouse), frame(byKeyboard))
   assert.equal(frame(byDriver), frame(byKeyboard))
+
+  // Gate 6A: the commit starts a Nexus Pulse, and whichever adapter started it, it is the same Pulse —
+  // the kernel's own two hashes, the ending's Recall, and what each of them shows at the same instant.
+  const pulseOf = (side: ReturnType<typeof session>) => {
+    assert.ok(side.build.pulse !== null, "the commit did not start a Pulse")
+    return side.build.pulse.resolved
+  }
+  for (const side of [byKeyboard, byMouse, byDriver]) side.build.advance(0)
+  for (const other of [byMouse, byDriver]) {
+    assert.equal(pulseOf(other).timeline.stateHash, pulseOf(byKeyboard).timeline.stateHash)
+    assert.equal(pulseOf(other).timeline.eventsHash, pulseOf(byKeyboard).timeline.eventsHash)
+    assert.deepEqual(pulseOf(other).recall.moves, pulseOf(byKeyboard).recall.moves)
+    assert.deepEqual(other.build.pulseFrame(other.layout)?.sample.state, byKeyboard.build.pulseFrame(byKeyboard.layout)?.sample.state)
+  }
 })
