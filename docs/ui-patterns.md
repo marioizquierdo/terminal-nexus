@@ -3,7 +3,7 @@
 **Document role:** The interaction and drawing patterns every interactive screen follows
 **Status:** WORKING — built on the Build Phase first; not canon yet (promoted into `specs/engine.md`
 Section 9 when the owner accepts them)
-**Updated:** 2026-09-29 (round-4 feedback F30-F33: arming where the cursor is, focus that goes back to
+**Updated:** 2026-09-29 (section 0, the UX goals read out of four rounds of feedback; round-4 feedback F30-F33: arming where the cursor is, focus that goes back to
 where it came from, one "active" style for every menu row, Explore Map as that style, removal sparks;
 F34-F37: the top bar names what Esc does; popups lose their `[esc]`, gain a message form and a scroll
 bar; Settings' layout; Restart in the game menu); 2026-09-28 (a click activates; Explore Map —
@@ -16,6 +16,57 @@ They are written as rules so the next screens — the Nexus Pulse view, the camp
 behave the same way without anyone re-deriving them. Where the Build Phase implements one, the file is
 named. When a new screen needs to break one, change this document in the same pull request and say
 why.
+
+## 0. What the interface is for — the UX goals
+
+The rules below are the letter; these are the spirit, read out of four rounds of the owner's feedback
+(2026-09-26 to 2026-09-29). When a screen needs something no rule covers, ask which of these it
+serves, and when two rules disagree, the goal decides. Each names where it showed up.
+
+1. **Point at it or press it, and the same thing happens.** Keyboard, mouse, a finger and a script are
+   equal doors onto one set of commands. Every row shows its key and is clickable, and a click does
+   what its key does ("mobile tap, which for our code is the same as a mouse click, so we just call it
+   mouse click", F22). The keyboard is the floor, never the only way.
+2. **Tell me where I am and what happens next.** Every mode has a name in the key help, whatever is
+   under way is marked (`>`), and a label says what a key will *do*, not what state we are in: the top
+   bar reads `menu [esc]`, `back [esc]`, `close [esc]` (F32, F37). Say the result and the way back on
+   the status line.
+3. **Don't move things under the player.** A picked building appears where the cursor already is;
+   finishing goes back to where you began; a popup keeps its height as the highlight moves; a list
+   scrolls instead of jumping; a double click places where you pointed even if the view moved (F22,
+   F30, F35). Whatever the player was looking at should still be there afterwards.
+4. **Suggest, never insist.** The game proposes — the nearest good spot, the building's own ghost
+   instead of a red `x`, "restart later" as a warning rather than a wall — and one key overrules it.
+   Recommend early and nearby; refuse late and in words (F30, F34).
+5. **One pattern, said once.** One active style for every menu row, one popup shape, one Esc, one scroll
+   bar. When he spots a pattern he asks for it to be the same everywhere, "so if we decide to change or
+   style it later, it will be consistent to all menu items" (F32). Before drawing something new, find
+   the pattern that already exists; if you need a variant, change the pattern.
+6. **Every cell earns its place.** Take away what restates the obvious: "^ 9 more" (the scrolling says
+   so), a "now" column (say "restart" only when it matters), `[esc]` in every popup (the top bar has
+   it), a separate divider column (F25, F34-F37). The freed space goes to what he is looking at.
+7. **Motion explains change, and nothing else moves.** Every camera and cursor move is interpolated;
+   what just happened is animated briefly (a building rising, sparks) and then the screen is still;
+   reduced motion snaps. Effects are presentation and never touch the plan (F20, F26, F27). "Interpolation
+   is easy and powerful" — reach for it before a jump cut.
+8. **Taps are precise, holds are fast.** One press is one tile; holding accelerates; a long move is also
+   a single key (Shift jumps 12), so speed is never required to get anywhere (F21, F29). Feel numbers
+   are Experiments until he has felt them.
+9. **The world may style its own frame.** A map names its own edge, and the rugged edge "even in ascii
+   mode" is what he loved most (F38). Content brings personality to the chrome, and the chrome stays
+   legible in monochrome and ASCII first.
+10. **Give him something to feel, not something to judge.** A fork ships as an Experiment he can flip,
+    and his exported settings are the answer (F19). Agents add Experiments freely and remove them when
+    answered.
+11. **Degrade gracefully, enhance progressively.** It works on a bare terminal — ASCII, monochrome, no
+    mouse, no key-up — and gets better where the host offers more: Unicode, truecolour, a pointer, key
+    releases (Q66). Never require the enhanced path, and always keep the plain one working.
+12. **Keep what the player made safe.** Leaving asks, a stray key never loses a plan, undo exists, a
+    restart is a choice and not a surprise (F13, F34).
+13. **Portable by construction.** The screen is a grid of styled cells plus a fixed set of commands; any
+    host that can draw cells and deliver keys and a pointer can run the game. The one capability a host
+    must do *well* is map navigation
+    ([`portability.md`](portability.md)).
 
 ## 1. Focus
 
@@ -254,9 +305,13 @@ why.
   it rides along when only the map scrolls and is never drawn outside the view. Hit-testing uses the
   drawn camera, so a click lands on what the player saw. Reduced motion snaps everything. Nothing
   animates unless something moved — an idle screen draws once per input.
-- **Pointing to confirm never moves the view**: with a building armed, a click moves the cursor and
-  the preview only (Q58). **Exploring, a click near an edge brings that part of the map in** —
-  further the nearer the edge — and a fast move re-centres the view on the cursor.
+- **A click near an edge brings that part of the map in** — further the nearer the edge — whether or
+  not a building is armed (owner, 2026-09-28, F22: "keep clicking on the grid with the ghost building
+  placement cursor to keep scrolling"), and a fast move re-centres the view on the cursor. **Because
+  the view can move under a click, a double click places where its first click pointed**: two clicks on
+  one screen cell within 400 ms are one "here", timed in the input path (`BuildSession`), while a slow
+  second click on a spot the view has left is a fresh first click, never a placement on a tile nobody
+  pointed at.
 - **Every number is an Experiment** until the owner has felt it.
 - **A refused try is seen where the eye is**: the footprint flashes in the "danger" colour for a moment
   as the status line says why.
