@@ -245,7 +245,8 @@ function placementSheet(name, { before, place, expect, timesMs, capability = "tr
 // Gate 5I: placement juice. Each placement is armed from the menu, where the cursor lands for you
 // beside the Grid Nexus, and placed with Space.
 
-const SHEET_TIMES = [0, 150, 300, 450, 500, 600, 750]
+// The owner's defaults (2026-09-29): 300 ms of frames, then 250 ms of light and sparks.
+const SHEET_TIMES = [0, 100, 200, 300, 400, 500, 600]
 
 placementSheet("build-place-sheet-barracks", {
   before: `${PICK_FIRST_POWER} Down Space`,
@@ -372,7 +373,7 @@ scriptedGif("build-hatchery-run", {
 
 scripted(
   "spike-minimum",
-  "80x24, the acceptance floor: the menu on the left, a 48x16 window onto a 96x40 Grid closed into its own rectangle, a solid bar on each side where the map ends",
+  "80x24, the acceptance floor: the menu on the left, a 49x16 window onto a 96x40 Grid closed into its own rectangle, and the map's own fence where the map ends - on the west, the menu's divider is that edge",
   { keys: PICK_FIRST_POWER, expect: "MENU  up/down" },
 )
 
@@ -420,7 +421,7 @@ scripted(
 
 scripted(
   "build-grid-edge",
-  "Hard against the Grid's north-west corner: the top and left sides are solid bars because the map ends there, the bottom and right stay thin because there is more map that way",
+  "Hard against the Grid's north-west corner: the top and left sides are the map's own edge - this map's fence, in the quieter edge colour - because the map ends there, the bottom and right stay thin because there is more map that way",
   { keys: `${PICK_FIRST_POWER} Tab S-Left*5 S-Up*5`, expect: "cursor 0,0" },
 )
 
@@ -432,7 +433,7 @@ scripted(
 
 scripted(
   "spike-wide-tiles",
-  "128x24: the same 48x16 viewport at two terminal columns per tile, where a tile stops being squashed 2:1",
+  "128x24: a 48x16 viewport at two terminal columns per tile, where a tile stops being squashed 2:1",
   { keys: PICK_FIRST_POWER, expect: "MENU  up/down", cols: 128, rows: 24 },
 )
 
@@ -503,31 +504,32 @@ scripted(
 )
 
 // The experiments' order: gate 5I's placement juice first, then gate 5H's movement numbers (Scroll
-// margin is four Downs in), then gate 5G's, then the map-edge Experiments (F25). From the player's
-// first setting (Esc s), Up comes round to Export, then Restart, then the last experiments: Up*3 is
-// "Shared west side", Up*4 "Map edge colour", Up*5 "Map edge", Up*8 "Opens on", Up*9 "Smart cursor".
+// margin is four Downs in), then gate 5G's. From the player's first setting (Esc s), Up comes round to
+// Export, then Restart, then the last experiments: Up*3 is "Refused flicker", Up*4 "Pressed flash",
+// Up*5 "Opens on", Up*6 "Smart cursor". (The map-edge Experiments were settled by the owner's
+// playtest of 2026-09-29 and deleted.)
 
 scripted(
   "build-debug-104x32",
-  "Right twice on Scroll margin: 20% of the view becomes 30%, the status line says so, and the position readout names the margin now in force",
-  { keys: "d Down*4 Right Right", cols: 104, rows: 32, expect: "margin 30%" },
+  "Right twice on Scroll margin: 25% of the view becomes 35%, the status line says so, and the position readout names the margin now in force",
+  { keys: "d Down*4 Right Right", cols: 104, rows: 32, expect: "margin 35%" },
 )
 
 scripted(
   "build-debug-light",
   "The light theme: \"Opens on\" is marked restart - it takes effect through [r] Restart with these settings, which starts the Build Phase over and keeps every flag",
-  { keys: "Esc s Up*8 Right", theme: "light", expect: "applies on restart" },
+  { keys: "Esc s Up*5 Right", theme: "light", expect: "applies on restart" },
 )
 
 scripted(
   "build-debug-restarted-on-map",
   "After [r]: the Build Phase starts over with the keyboard on the map, exploring - one of the two answers to where the screen should open",
-  { keys: "Esc s Up*8 Right r", expect: "Build Phase restarted with these settings." },
+  { keys: "Esc s Up*5 Right r", expect: "Build Phase restarted with these settings." },
 )
 
 scriptedGif("build-debug-smart-cursor", {
   // Smart cursor off, then the owner's own flow: the cursor stays where it was instead of jumping.
-  keys: "Esc s Up*9 Right Esc Esc Down Down Space",
+  keys: "Esc s Up*6 Right Esc Esc Down Down Space",
   expect: "Barracks selected",
 })
 
@@ -536,14 +538,15 @@ scriptedGif("build-debug-smart-cursor", {
 scripted(
   "build-debug-scrolled",
   "Settings scroll: the settings and the experiments do not fit at 80x24, so the list moves with the highlight and says how many rows are hidden above and below. A click on either line, or the wheel, scrolls it too",
-  { keys: "d Down*6", expect: "v 19 more" },
+  { keys: "d Down*6", expect: "v 16 more" },
 )
 
 scriptedGif("build-held-arrow", {
-  // A tap, the terminal's repeat delay, then auto-repeats 30 ms apart: one tile, then two a press from
+  // A tap, the terminal's repeat delay (150 ms here, inside the owner's 150 ms hold window; a longer
+  // delay loses only the first repeat), then auto-repeats 30 ms apart: one tile, then two a press from
   // the first repeat, then four once the run is 300 ms old. Then Left, straight after: a different
   // arrow starts again at one, then two. Shift+Down: a jump of twelve.
-  keys: "e Right Right~400 Right~30*14 Left~30 Left~30*3 S-Down",
+  keys: "e Right Right~150 Right~30*14 Left~30 Left~30*3 S-Down",
   expect: "cursor 52,25",
   delayMs: 450,
 })
@@ -565,7 +568,7 @@ scriptedGif("build-explore-edge-click", {
 
 scripted(
   "build-refused-flash",
-  "Enter on rock: the whole footprint flashes solid for a quarter of a second as the status line says why, so an eye on the map sees it did not build",
+  "Enter on rock: the whole footprint flashes solid for 150 ms as the status line says why, so an eye on the map sees it did not build",
   { keys: `${PICK_FIRST_POWER} 1 Up*8 Left*10 Enter`, expect: "Cannot build here", present: { refusedFlash: true } },
 )
 
@@ -657,14 +660,14 @@ live(
     drive: () => {
       pickFirstPower()
       literal("1") // arm Barracks
-      // Column 62, row 13 (1-based) is tile 30,10 at the opening camera — the same cell
+      // Column 61, row 12 (1-based) is tile 30,10 at the opening camera — the same cell
       // `cellForTile` hands the tests, formatted the way src/build/mouse.ts's own
       // `formatMouseEvent` would. The first click only moves the cursor there; the second, on the
       // same tile, is what actually places it. Chosen well inside the scroll margin: a first click
       // near the Grid pane's edge scrolls the map under the pointer, and a second click in the same
       // place is then a first click on the tile beside it (Q52's own finding).
-      literal(`${ESC}[<0;62;13M`)
-      literal(`${ESC}[<0;62;13M`)
+      literal(`${ESC}[<0;61;12M`)
+      literal(`${ESC}[<0;61;12M`)
     },
     waitForText: "Barracks placed",
   },

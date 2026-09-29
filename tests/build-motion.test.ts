@@ -94,17 +94,21 @@ test("a single press moves one tile", () => {
 })
 
 test("a held arrow's first repeat already moves two, and 300 ms into the run each press moves four", () => {
-  // The first press, the terminal's repeat delay (400 ms), then repeats 30 ms apart.
-  const times = held(0, 16)
+  // The first press, the terminal's repeat delay, then repeats 30 ms apart. The owner's hold window
+  // is 150 ms (his settings export, 2026-09-29), so this is a terminal whose repeat delay fits in it;
+  // one with a longer delay loses only its first repeat (the next test).
+  const delay = FLAGS.holdWindowMs
+  assert.equal(delay, 150)
+  const times = held(0, 16, delay)
   const got = kinds(EAST, times)
   assert.equal(got[0], "tap 1")
   assert.equal(got[1], "hold 2", "the first repeat did not go straight to the hold step")
-  // The run started moving at 2 on the first repeat (t = 400); from t = 700 it moves 4.
+  // The run started moving at 2 on the first repeat (t = 150); from t = 450 it moves 4.
   times.forEach((at, index) => {
     if (index === 0) return
-    assert.equal(got[index], at - 400 >= 300 ? "fast 4" : "hold 2", `press at ${at} ms`)
+    assert.equal(got[index], at - delay >= 300 ? "fast 4" : "hold 2", `press at ${at} ms`)
   })
-  // The same through the session: 1 + 2 * 10 (400..670) + 4 * 6 (700..850).
+  // The same through the session: 1 + 2 * 10 (150..420) + 4 * 6 (450..600).
   const side = exploring(spikeContext(), { x: 0, y: 13 })
   timed(side, times.map((at) => [RIGHT, at] as const))
   assert.equal(side.build.state.cursor.x, 1 + 2 * 10 + 4 * 6)
@@ -126,7 +130,7 @@ test("a different arrow, or anything else pressed, starts again at one tile", ()
   let memory: RampMemory | null = null
   for (const at of held(0, 20)) memory = rampStep(memory, EAST, at, FLAGS).memory
   // Overshot: Left straight after, held. An ordinary new press, then an ordinary run.
-  assert.deepEqual(kinds(WEST, held(1000, 2), FLAGS, memory), ["tap 1", "hold 2", "hold 2"])
+  assert.deepEqual(kinds(WEST, held(1000, 2, FLAGS.holdWindowMs), FLAGS, memory), ["tap 1", "hold 2", "hold 2"])
   // Tab and back, fast enough that the arrow would still have been part of the run.
   const side = exploring()
   timed(side, held(0, 12).map((at) => [RIGHT, at] as const))
@@ -141,8 +145,10 @@ test("the numbers are live: a retuned hold step and ramp time change the next ru
   const tuned = exploring()
   tuned.build.dispatch({ kind: "debug-adjust", field: "holdStep", step: 1 }) // 3
   tuned.build.dispatch({ kind: "debug-adjust", field: "rampMs", step: 1 }) // 400
-  timed(tuned, [[RIGHT, 0], [RIGHT, 400], [RIGHT, 430], [RIGHT, 800]])
-  assert.equal(tuned.build.state.cursor.x, 18 + 1 + 3 + 3 + 4)
+  // Presses 100 ms apart, inside the 150 ms hold window: a tap, then a run from t = 100 at the hold
+  // step, which the default 300 ms ramp would have sped up at t = 400 and the retuned 400 ms at 500.
+  timed(tuned, [[RIGHT, 0], [RIGHT, 100], [RIGHT, 200], [RIGHT, 300], [RIGHT, 400], [RIGHT, 500]])
+  assert.equal(tuned.build.state.cursor.x, 18 + 1 + 3 + 3 + 3 + 3 + 4)
 })
 
 test("Shift+Arrow jumps twelve tiles; held, it jumps again at most once per jump repeat", () => {
@@ -192,13 +198,17 @@ test("without a clock every arrow is a tap and every Shift+Arrow one jump: drive
 test("the margin is a share of the view's own width and height, never so wide the two sides meet", () => {
   assert.deepEqual(marginForView(20, { width: 48, height: 16 }), { x: 10, y: 3 })
   assert.deepEqual(marginForView(20, { width: 72, height: 24 }), { x: 14, y: 5 })
+  // The owner's 25% (2026-09-29) of the 49 x 16 view at 80 x 24.
+  assert.equal(FLAGS.scrollMargin, 25)
+  assert.deepEqual(marginForView(25, { width: 49, height: 16 }), { x: 12, y: 4 })
   assert.equal(shareOfSpan(0, 48), 0)
   assert.equal(shareOfSpan(90, 16), 7, "a margin past the middle is capped")
-  // The camera follows at that distance: walking east, it first moves with the cursor 10 tiles from
+  // The camera follows at that distance: walking east, it first moves with the cursor 12 tiles from
   // the view's east edge.
   const side = exploring(spikeContext(), { x: 0, y: 0 })
+  assert.equal(side.layout.viewport.width, 49)
   while (side.build.state.camera.x === 0) side.build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
-  assert.equal(side.layout.viewport.width - 1 - (side.build.state.cursor.x - side.build.state.camera.x), 10)
+  assert.equal(side.layout.viewport.width - 1 - (side.build.state.cursor.x - side.build.state.camera.x), 12)
 })
 
 // --- Clicks and the view ---------------------------------------------------------------------------
@@ -215,7 +225,8 @@ test("exploring, a click near an edge scrolls further the nearer the edge it lan
     clickTile(side, { x: camera.x + column, y: camera.y + 8 })
     return side.build.state.camera.x - camera.x
   }
-  const width = 48
+  const width = exploring().layout.viewport.width
+  assert.equal(width, 49)
   // Two columns from the east edge scrolls much further than five; the middle does not scroll.
   const nearEdge = moveFor(width - 1 - 2)
   const fiveIn = moveFor(width - 1 - 5)
@@ -247,7 +258,8 @@ test("exploring, 'centres' centres every click, and 'margin' is the old follow-o
   assert.equal(margin.build.state.debug.clickScroll, "margin")
   const before = margin.build.state.camera
   clickTile(margin, { x: before.x + 42, y: before.y + 8 })
-  assert.equal(margin.build.state.camera.x - before.x, 42 - (48 - 1 - 10), "follow-only moves just enough for the margin")
+  // The 49-tile view at 80 columns, and the owner's 25% margin of it: 12 tiles.
+  assert.equal(margin.build.state.camera.x - before.x, 42 - (49 - 1 - 12), "follow-only moves just enough for the margin")
 })
 
 test("with Armed click scrolls off, an armed click never scrolls the view, whatever the explore setting (Q58)", () => {
@@ -313,12 +325,13 @@ test("the fast move recentres the view on the cursor along the axis it moved; of
   const side = exploring(spikeContext(), { x: 40, y: 20 })
   side.build.handleData(SHIFT_RIGHT, side.layout)
   const { cursor, camera } = side.build.state
-  assert.equal(cursor.x - camera.x, Math.floor((48 - 1) / 2))
+  assert.equal(cursor.x - camera.x, Math.floor((49 - 1) / 2))
   const off = exploring(spikeContext(), { x: 40, y: 20 })
   off.build.dispatch({ kind: "debug-adjust", field: "fastRecentres", step: 1 })
   off.build.handleData(SHIFT_RIGHT, off.layout)
-  // Only dragged along: the cursor sits on the margin's inner edge, 10 tiles from the east side.
-  assert.equal(off.build.state.cursor.x - off.build.state.camera.x, 48 - 1 - 10)
+  // Only dragged along: the cursor sits on the margin's inner edge, 12 tiles from the east side of
+  // the 49-tile view.
+  assert.equal(off.build.state.cursor.x - off.build.state.camera.x, 49 - 1 - 12)
 })
 
 test("a click during a slide lands on the tile drawn under the pointer, not the one the view is heading to", () => {

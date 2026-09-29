@@ -661,12 +661,12 @@ test("scrolling: the whole Grid is reachable, at the smallest terminal and the l
   }
 })
 
-test("the scroll margin is a share of the view, so the owner's 20% can be felt against another number", () => {
+test("the scroll margin is a share of the view, so the owner's 25% can be felt against another number", () => {
   // project-governance.md Section 7: the 3-tile margin is "locked direction, and Milestone 5 may
   // retune [it] on evidence from the first person who actually scrolls a Grid". Gate 5H made it a
-  // share of the view's width and height (the owner: "about 20% of the height or width"). 48 tiles
-  // wide at 80 columns: 10% is 5 tiles, 20% is 10, 30% is 14.
-  for (const [percent, margin] of [[10, 5], [20, 10], [30, 14]] as const) {
+  // share of the view's width and height (the owner: "about 20% of the height or width", then 25%
+  // after playing it). 49 tiles wide at 80 columns: 10% is 5 tiles, 20% is 10, 25% is 12, 30% is 15.
+  for (const [percent, margin] of [[10, 5], [20, 10], [25, 12], [30, 15]] as const) {
     const context = { ...spikeContext(), scrollMargin: percent }
     const layout = buildLayout(MINIMUM, context.grid)
     const build = readyBuildSession({ context, cursor: { x: 0, y: 0 }, viewport: layout.viewport })

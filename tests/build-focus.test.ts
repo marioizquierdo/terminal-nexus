@@ -98,9 +98,9 @@ test("the side panel is on the left of the Grid at every size in the supported r
     const { layout } = side
     const { lines } = screen(side)
     assert.ok(layout.panelColumn < layout.dividerColumn, `panel left of the divider at ${terminal.columns}`)
-    // The divider and the Grid's own west side are neighbouring columns (owner, 2026-09-27), so the
-    // map's solid "ends here" bar never sits against the menu text.
-    assert.equal(layout.gridBox.left, layout.dividerColumn + 1, "the Grid's west side is next to the divider")
+    // The divider is the Grid's own west side (owner, 2026-09-29, replacing a column of its own
+    // beside it): the map's edge, drawn quietly in the map's own style, is the line beside the menu.
+    assert.equal(layout.gridBox.left, layout.dividerColumn, "the Grid's west side is the divider")
     assert.equal(layout.origin.column, layout.gridBox.left + 1)
     assert.equal(layout.gridBox.right, layout.offset.column + layout.composition.width - 1)
     assert.equal(layout.panelRow, layout.origin.row)
@@ -108,8 +108,9 @@ test("the side panel is on the left of the Grid at every size in the supported r
     assert.equal(EXPLORE_ROW, 0)
     assert.match(lines[layout.panelRow + EXPLORE_ROW] as string, /^\s*\| \[e\] Explore Map /)
     assert.match(lines[layout.panelRow + NEXUS_ROW] as string, /^\s*\| \[n\] Nexus \(1\)/)
-    // Still the arithmetic engine.md 3.1 derives the floor from: 1 + 30 + 48 + 1 = 80.
-    assert.equal(layout.composition.width, 32 + layout.viewport.width * layout.tileWidth)
+    // engine.md 3.1's floor arithmetic, 1 + 30 + 48 + 1 = 80, with the shared west side's column
+    // given to the Grid: 1 + 29 + 49 + 1 at 80 columns.
+    assert.equal(layout.composition.width, 31 + layout.viewport.width * layout.tileWidth)
   }
 })
 
@@ -137,7 +138,7 @@ test("a Grid shorter than the panel still closes directly under its last row", (
   assert.equal(layout.gridBox.bottom, layout.origin.row + 10)
   assert.ok(layout.paneBottom > layout.gridBox.bottom)
   for (let x = layout.gridBox.left + 1; x < layout.gridBox.right; x += 1) {
-    assert.equal(cellAt(frame, x, layout.gridBox.bottom).style.inverse, true, "the whole map is visible: a solid edge")
+    assert.equal(cellAt(frame, x, layout.gridBox.bottom).style.fgRole, "chrome.edge", "the whole map is visible: the map's edge")
   }
   assert.match(lines[menuEntryRow(layout, SPIKE_CATALOG, { kind: "construct", index: 2 })!] as string, /\[3\] Turret/)
   assert.match(lines[layout.footerRow] as string, /view x 0-19 y 0-9 of 20x10/)
@@ -167,7 +168,8 @@ test("Tab, [e], Enter on the first entry and a second Right all arrive in Explor
     assert.match(lines[side.layout.footerRow + 1] as string, /\| EXPLORE MAP {2}arrows move {2}tab\/esc menu/)
     // The header replaces the menu: an inverse bar naming the mode, with `[esc]` at its right.
     const header = lines[side.layout.panelRow] as string
-    assert.match(header, /\| {2}EXPLORE MAP +\[esc\]\|/)
+    assert.match(header, /\| {2}EXPLORE MAP +\[esc\]/)
+    assert.equal(header.indexOf("[esc]") + "[esc]".length, side.layout.dividerColumn, "[esc] ends against the divider")
     assert.equal(cellAt(frame, side.layout.panelColumn + 3, side.layout.panelRow).style.inverse, true)
     assert.doesNotMatch(screen(side).text, /\[1\] Barracks/, "the menu is still drawn beside Explore Map")
     const cursor = cellForTile(side.layout, side.build.state.camera, side.build.state.cursor)

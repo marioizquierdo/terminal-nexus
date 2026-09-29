@@ -154,6 +154,26 @@ export type BuildCommand =
    *  view. Up/Down and the wheel move the highlight a line at a time. */
   | Readonly<{ kind: "export-select"; line: number }>
 
+/**
+ * How the sides of the Grid rectangle that have reached the map's own edge are drawn — **the map's
+ * own style**, named in its definition (`BuildContext.edgeStyle`; the solid bar when it names none).
+ * The owner chose this over one style for every map after trying both (2026-09-29, feedback F25:
+ * "using map-specific borders looks a lot better... allowing the map to define different styles will
+ * be awesome"). Every style keeps the rectangle's rule — the same weight on all four sides and the
+ * same meaning in every glyph pack — and is a name, not glyphs: `src/view/edge.ts` draws them.
+ *
+ * - `solid`: an inverse-video cell — the wall canon 2.21 chose, and what a map that names none gets;
+ * - `half`: a half block on the map's side of the cell (quadrants at the corners);
+ * - `heavy`: a heavy box line, joined to the frame's light lines with mixed-weight junctions;
+ * - `double`: a double box line;
+ * - `shade`: a light shade, a dotted band;
+ * - `fence`: a dashed heavy line with posts (the PERIMETER stand-in's, `SPIKE_EDGE_STYLE`).
+ */
+export type MapEdgeStyle = "solid" | "half" | "heavy" | "double" | "shade" | "fence"
+
+/** Every style a map may name, in the order the tests walk them. */
+export const MAP_EDGE_STYLES: readonly MapEdgeStyle[] = ["solid", "half", "heavy", "double", "shade", "fence"]
+
 /** Which half of the screen the arrow keys and Enter/Space belong to. The digit hotkeys ignore it. */
 export type Focus = "menu" | "grid"
 

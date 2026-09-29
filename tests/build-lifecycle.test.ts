@@ -177,12 +177,12 @@ test("below the floor the screen gates, and resizing back above it restores the 
     output.emit("resize")
   })
   assert.ok(stdout.lastWrite.includes("RESOURCE"), "resizing back did not restore the screen")
-  assert.ok(stdout.lastWrite.includes("view x 0-47"), "the viewport did not come back")
+  assert.ok(stdout.lastWrite.includes("view x 0-48"), "the viewport did not come back")
 })
 
 test("a bigger terminal shows a bigger viewport, and the frame is cleared when its size changes", async () => {
   const { stdout } = await spikeSession((_input, output) => {
-    assert.ok(output.lastWrite.includes("view x 0-47"), "did not start at the minimum viewport")
+    assert.ok(output.lastWrite.includes("view x 0-48"), "did not start at the 80-column viewport")
     output.columns = 104
     output.rows = 32
     output.emit("resize")

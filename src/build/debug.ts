@@ -22,11 +22,11 @@
 // - the placement juice (`placeFramesMs`, `placeGlowMs`, `placeParticles`, `placeLight`, gate 5I) is
 //   presentation alone: the reducer stores it, the live loop times it, and the Build Phase view draws
 //   it (`src/view/placement.ts`). A plan is identical with every one of them on or off.
-// - the map-edge Experiments (`mapEdge`, `mapEdgeColour`, `sharedWestBorder`, feedback F25) are
-//   presentation and geometry: the Build Phase view draws the first two (`src/view/edge.ts`), and the
-//   third decides where the Grid pane starts, so it is read by the one layout drawing and
-//   hit-testing share (`src/build/layout.ts`'s `layoutOptions`); the live loop and the scripted
-//   playtest rebuild the layout the moment it changes.
+//
+// The map's edge is no longer an Experiment: the owner's playtest of 2026-09-29 settled its three
+// (feedback F25), and they are the rule now — the map's own edge style (`BuildContext.edgeStyle`,
+// `src/view/edge.ts`), the quieter edge colour, and the menu's divider as the Grid's west side
+// (`src/build/layout.ts`).
 //
 // None of them reaches the simulation kernel (`src/pulse`, `src/state`): a Build Phase plan is a plan
 // on a screen until the Pulse, and nothing here is part of it.
@@ -49,30 +49,6 @@ export type PlaceParticles = "off" | "few" | "many"
 /** The light on a building's characters as it finishes (gate 5I, feedback F9): a flash toward the
  *  theme's strongest ink that settles back, the theme's rainbow hues sweeping across it, or none. */
 export type PlaceLight = "off" | "light" | "rainbow"
-
-/**
- * How a side of the Grid rectangle that has reached the map's own edge is drawn (feedback F25: "a
- * little thick... perhaps we can add some options"). Every style keeps the rectangle's rule: the same
- * weight on all four sides, horizontal and vertical alike, and the same meaning in every glyph pack.
- * The glyphs are `src/view/edge.ts`'s; this is only the list of names.
- *
- * - `solid`: an inverse-video cell — the wall canon 2.21 chose;
- * - `half`: a half block on the map's side of the cell (quadrants at the corners);
- * - `heavy`: a heavy box line, joined to the frame's light lines with mixed-weight junctions;
- * - `double`: a double box line;
- * - `shade`: a light shade, a dotted band;
- * - `fence`: a dashed heavy line — not in the Experiment's list, but a style a map can name as its
- *   own (the PERIMETER stand-in's, `SPIKE_EDGE_STYLE`), to prove the "map-defined border" hook.
- */
-export type MapEdgeStyle = "solid" | "half" | "heavy" | "double" | "shade" | "fence"
-
-/** The Experiment's choice: one of the general styles, or whatever the map names (`map`). */
-export type MapEdgeChoice = Exclude<MapEdgeStyle, "fence"> | "map"
-
-/** How loudly the map's edge is drawn (F25: "the border color should probably be less accentuated"):
- *  the frame's own colour (`strong`, as built), that colour dimmed (`dim`), or a quieter colour of its
- *  own between the frame and the ground (`quiet`, the style role `chrome.edge`). */
-export type MapEdgeColour = "strong" | "dim" | "quiet"
 
 export type DebugFlags = Readonly<{
   /** F9: how long a placed building takes to rise through its placement frames, in milliseconds; 0
@@ -137,13 +113,6 @@ export type DebugFlags = Readonly<{
   pressedFlashMs: number
   /** How long a menu row's "refused" flicker lasts, in milliseconds. */
   refusedFlashMs: number
-  /** F25: what a side of the Grid rectangle that has reached the map's edge is drawn with. */
-  mapEdge: MapEdgeChoice
-  /** F25: how loudly it is drawn. */
-  mapEdgeColour: MapEdgeColour
-  /** F25: the menu's divider doubles as the Grid's west side, and the column the separate west side
-   *  took goes to the Grid. Off: the west side is a column of its own beside the divider (F17). */
-  sharedWestBorder: boolean
 }>
 
 export type DebugField = keyof DebugFlags
@@ -181,8 +150,9 @@ const onOff = (value: boolean): string => (value ? "on" : "off")
  *  spread either side to feel the difference against. */
 const FLASH_VALUES = [0, 50, 90, 140, 250, 400] as const
 
-/** The owner's own "about 20% of the height or width of the screen" (2026-09-26). */
-export const DEFAULT_SCROLL_MARGIN_PERCENT = 20
+/** The owner's own "about 20% of the height or width of the screen" (2026-09-26), then 25% after
+ *  playing it (his settings export, 2026-09-29). */
+export const DEFAULT_SCROLL_MARGIN_PERCENT = 25
 
 /** The flags, in the order the popup lists them: gate 5I's placement juice first, since it is the
  *  newest thing waiting to be felt, then gate 5H's movement numbers, then gate 5G's. */
@@ -227,7 +197,7 @@ export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
     field: "scrollMargin",
     label: "Scroll margin",
     applies: "now",
-    question: "How near the edge the cursor gets before the map scrolls, as a share of the view. Asked for: about 20%. (Q54)",
+    question: "How near the edge the cursor gets before the map scrolls, as a share of the view. Picked after playing: 25%. (Q54)",
     values: [0, 5, 10, 15, 20, 25, 30, 35, 40],
     cycles: false,
     format: percent,
@@ -413,35 +383,6 @@ export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
     cycles: false,
     format: millis,
   },
-  // The map's edge (feedback F25), a block of its own: what it is drawn with, how loudly, and whether
-  // it shares the menu's divider.
-  {
-    field: "mapEdge",
-    label: "Map edge",
-    applies: "now",
-    question: "The map's own edge: solid, half block, heavy, double, shade, or the map's own. Thin ones need Unicode glyphs. (F25)",
-    values: ["solid", "half", "heavy", "double", "shade", "map"],
-    cycles: true,
-    format: (value: MapEdgeChoice) => (value === "map" ? "the map" : value),
-  },
-  {
-    field: "mapEdgeColour",
-    label: "Map edge colour",
-    applies: "now",
-    question: "How loud the map's edge is: the frame's own colour, dimmed, or a quieter grey of its own. (F25)",
-    values: ["strong", "dim", "quiet"],
-    cycles: true,
-    format: (value: MapEdgeColour) => value,
-  },
-  {
-    field: "sharedWestBorder",
-    label: "Shared west side",
-    applies: "now",
-    question: "The menu's divider doubles as the map's west side, and the map gets its column. Off: a column of its own. (F25)",
-    values: [false, true],
-    cycles: true,
-    format: onOff,
-  },
 ]
 
 /** The popup's last row, after the flags: start the Build Phase over, keeping them. */
@@ -455,42 +396,35 @@ export const DEBUG_RESTART_QUESTION =
 export const DEFAULT_FLASH_MS = { pressed: 90, refused: 140 } as const
 
 /** The movement numbers: the owner's own (a tap 1, a held or quickly tapped arrow 2, then 4 after
- *  300 ms, Shift a jump of 12 — his playtest of 2026-09-28), and first guesses at the rest, for him
- *  to retune by feel. */
+ *  300 ms, Shift a jump of 12 — his playtest of 2026-09-28; the cursor glide, hold window, refused
+ *  cursor and Esc timeout from his settings export of 2026-09-29), and first guesses at the rest, for
+ *  him to retune by feel. */
 export const DEFAULT_MOVEMENT = {
   clickScroll: "edges",
   clickZone: 33,
   armedClickScrolls: true,
   doubleClickMs: 400,
   easeMs: 150,
-  cursorGlideMs: 100,
+  cursorGlideMs: 80,
   fastRecentres: true,
   tapStep: 1,
   holdStep: 2,
   fastStep: 4,
   jumpStep: 12,
   rampMs: 300,
-  holdWindowMs: 500,
+  holdWindowMs: 150,
   jumpRepeatMs: 150,
-  refusedCursorMs: 250,
-  escTimeoutMs: 50,
+  refusedCursorMs: 150,
+  escTimeoutMs: 100,
 } as const satisfies Partial<DebugFlags>
 
-/** Gate 5I's placement juice as built: this session's first guesses, for the owner to retune by feel. */
+/** Gate 5I's placement juice: the two durations are the owner's own (his settings export,
+ *  2026-09-29), the particles and the light still the first guesses he kept. */
 export const DEFAULT_PLACEMENT = {
-  placeFramesMs: 450,
-  placeGlowMs: 400,
+  placeFramesMs: 300,
+  placeGlowMs: 250,
   placeParticles: "few",
   placeLight: "light",
-} as const satisfies Partial<DebugFlags>
-
-/** The map edge: canon 2.21's solid bar in a column of its own, in the quieter edge colour since the
- *  owner found it "a little thick" and "should probably be less accentuated" (F25) — the glyph and the
- *  shared column stay options for him to try. */
-export const DEFAULT_MAP_EDGE = {
-  mapEdge: "solid",
-  mapEdgeColour: "quiet",
-  sharedWestBorder: false,
 } as const satisfies Partial<DebugFlags>
 
 /** The flags a screen opens with: what the context asks for (`--scroll-margin`, a test's
@@ -506,7 +440,6 @@ export function initialDebugFlags(
     startFocus: "menu",
     pressedFlashMs: DEFAULT_FLASH_MS.pressed,
     refusedFlashMs: DEFAULT_FLASH_MS.refused,
-    ...DEFAULT_MAP_EDGE,
   }
 }
 

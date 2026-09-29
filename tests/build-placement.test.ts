@@ -344,7 +344,7 @@ test("undo, Backspace, or another placement mid-animation is correct at once: no
 
 test("the plan is identical with every placement effect on or off", () => {
   // Build animation to 900, lighting to rainbow, particles to many, glow off — by Debug Mode's own keys.
-  const tuned = placed("n 1 d Right*2 Down Right Down Right Down Left*3 Esc Down Space Space")
+  const tuned = placed("n 1 d Right*3 Down Right Down Right Down Left*3 Esc Down Space Space")
   const plain = placed()
   assert.deepEqual(tuned.state.debug.placeFramesMs, 900)
   assert.deepEqual(tuned.state.debug.placeLight, "rainbow")

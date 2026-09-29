@@ -1,6 +1,7 @@
 // The map's own edge — the sides of the Grid rectangle that have reached the end of the map — in each
-// of Debug Mode's styles and colours (feedback F25: "a little thick... perhaps we can add some options
-// on an experimental flag... the border color should probably be less accentuated").
+// style a map may name (feedback F25; the owner's choice of 2026-09-29: "using map-specific borders
+// looks a lot better! Even in ascii mode, the rugged border style applied to the UI border when
+// reaching the map edge is an awesome UI touch").
 //
 // **One rule holds for every style: the same weight on all four sides.** A style is a glyph for each
 // place on the rectangle — its four sides and four corners — or, for the line styles, a junction worked
@@ -9,11 +10,11 @@
 // thing in both glyph packs: where the ASCII pack has no glyph for a style it falls back to the solid
 // bar (an inverse-video cell), which is the same weight in both directions (Q56).
 //
-// Colour is a role and attributes, never a colour (engine.md 9.1): `strong` is the frame's own role,
-// `dim` that role with the dim attribute, `quiet` a role of its own (`chrome.edge`) between the frame
-// and the ground in each theme.
+// Colour is a role, never a colour (engine.md 9.1): the edge is always `chrome.edge`, a quieter role
+// of its own between the frame and the ground in each theme (F25: "the border color should probably
+// be less accentuated" — the owner kept it after trying the frame's own colour and a dimmed one).
 
-import type { MapEdgeChoice, MapEdgeColour, MapEdgeStyle } from "../build/debug.ts"
+import type { MapEdgeStyle } from "../build/types.ts"
 import type { DrawExtra } from "./draw.ts"
 import type { StyleRole } from "./roles.ts"
 import type { GlyphPack } from "./theme.ts"
@@ -29,12 +30,6 @@ export type Arms = Readonly<{ n: ArmWeight; s: ArmWeight; e: ArmWeight; w: ArmWe
 export type EdgePlace = "north" | "south" | "west" | "east" | "nw" | "ne" | "sw" | "se"
 
 export type EdgeCell = Readonly<{ glyph: string; role: StyleRole; extra: DrawExtra }>
-
-/** The style actually drawn: the Experiment's choice, or — for `map` — the one the map names, and the
- *  solid bar for a map that names none. */
-export function resolveEdgeStyle(choice: MapEdgeChoice, mapStyle: MapEdgeStyle | undefined): MapEdgeStyle {
-  return choice === "map" ? (mapStyle ?? "solid") : choice
-}
 
 /**
  * Box-drawing junctions by their arms, as `n s e w` with `0` none, `l` light and `h` heavy (or `d`
@@ -115,15 +110,13 @@ const HALF_BLOCKS: Readonly<Record<EdgePlace, string>> = {
 export function edgeCell(
   pack: GlyphPack,
   style: MapEdgeStyle,
-  colour: MapEdgeColour,
   arms: Arms,
   place: EdgePlace,
   phase: number,
 ): EdgeCell {
-  const role: StyleRole = colour === "quiet" ? "chrome.edge" : "chrome.frame"
-  const dim = colour === "dim"
-  const solid: EdgeCell = { glyph: " ", role, extra: { inverse: true, ...(dim ? { dim: true } : {}) } }
-  const glyph = (value: string): EdgeCell => ({ glyph: value, role, extra: dim ? { dim: true } : {} })
+  const role: StyleRole = "chrome.edge"
+  const solid: EdgeCell = { glyph: " ", role, extra: { inverse: true } }
+  const glyph = (value: string): EdgeCell => ({ glyph: value, role, extra: {} })
 
   if (style === "solid") return solid
   if (pack === "ascii") {

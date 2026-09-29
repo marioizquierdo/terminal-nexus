@@ -17,9 +17,10 @@ export const STYLE_ROLES = [
   // survives monochrome; a style role (chrome.hotkey) colours it where colour exists, and colour
   // never carries it alone." Named by canon before this gate, not invented here.
   "chrome.hotkey",
-  // The map's edge drawn quietly — Debug Mode's "Map edge colour: quiet" (feedback F25: "the border
-  // color should probably be less accentuated"). A grey between the frame's and the ground's, so the
-  // edge still reads as a wall while the menu and the bars stay the loudest lines on screen.
+  // The map's edge, drawn quietly (feedback F25: "the border color should probably be less
+  // accentuated"; the owner kept it over the frame's own colour, 2026-09-29). A grey between the
+  // frame's and the ground's, so the edge still reads as a wall while the menu and the bars stay the
+  // loudest lines on screen.
   "chrome.edge",
   "terrain.plain",
   "terrain.rock",

@@ -10,7 +10,7 @@ import type { StatusMessage } from "../status.ts"
 import { NO_STATUS, status } from "../status.ts"
 import type { Camera, Margin, Viewport } from "./camera.ts"
 import { centreOn, clampToGrid, edgeClickCamera, followCursor, marginForView } from "./camera.ts"
-import type { DebugField, DebugFlags, MapEdgeStyle } from "./debug.ts"
+import type { DebugField, DebugFlags } from "./debug.ts"
 import { adjustDebug, fieldSpec, formatDebugValue, initialDebugFlags, rowOfField } from "./debug.ts"
 import type { Settings } from "../settings/types.ts"
 import { DEFAULT_SETTINGS } from "../settings/types.ts"
@@ -33,6 +33,7 @@ import type {
   BuildCommand,
   ConstructItem,
   Focus,
+  MapEdgeStyle,
   MenuEntry,
   NexusPowerOption,
   Overlay,
@@ -59,7 +60,7 @@ export type BuildContext = Readonly<{
    * for. **Only where the margin starts**: since gate 5G it is a Debug Mode flag,
    * `state.debug.scrollMargin`, and that is what the reducer reads. **Since gate 5H it is a
    * percentage of the view** — of its width for the sides and its height for the top and bottom —
-   * defaulting to the owner's 20%, rather than a number of tiles.
+   * defaulting to the owner's 25%, rather than a number of tiles.
    */
   scrollMargin?: number
   /** The Nexus draft this Build Phase offers — placeholder options, not Milestone 8's real one
@@ -71,9 +72,9 @@ export type BuildContext = Readonly<{
   smartCursor?: boolean
   /**
    * The map's own border style — the "map-defined border" of feedback F25 ("defining custom borders
-   * could accentuate the location"), drawn where the Grid rectangle reaches the map's edge when Debug
-   * Mode's "Map edge" is set to `the map`. Presentation only, and a name rather than glyphs: the view
-   * owns what each style looks like (`src/view/edge.ts`). Absent: the solid bar.
+   * could accentuate the location"), drawn wherever the Grid rectangle reaches the map's edge; the
+   * owner's choice over one style for every map (2026-09-29). Presentation only, and a name rather
+   * than glyphs: the view owns what each style looks like (`src/view/edge.ts`). Absent: the solid bar.
    */
   edgeStyle?: MapEdgeStyle
   /** The player's settings the screen opens with — saved ones, or a command line's. The Settings
@@ -210,7 +211,7 @@ export function remaining(context: BuildContext, state: BuildState): number {
 export const JUMP_TILES = 5
 
 /** The scroll margin in force, in tiles along each axis: Debug Mode's percentage of the view (gate 5H),
- *  which starts at the context's (`--scroll-margin`) or the owner's 20%. */
+ *  which starts at the context's (`--scroll-margin`) or the owner's 25%. */
 function marginOf(state: Readonly<{ debug: DebugFlags; viewport: Viewport }>): Margin {
   return marginForView(state.debug.scrollMargin, state.viewport)
 }

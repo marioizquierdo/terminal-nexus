@@ -68,10 +68,17 @@ test("the frame is exactly the terminal's size, at the minimum and at the maximu
   assert.equal(screenAt(MAXIMUM).frame.width, 104)
   assert.equal(screenAt(MAXIMUM).frame.height, 32)
   // 1 border + 48 tiles + 1 border + 30 panel = 80, and the same arithmetic at two columns per tile
-  // is 128 — engine.md 3.1's "the two compositions fall out of one number".
+  // is 128 — engine.md 3.1's "the two compositions fall out of one number" — is where the floor and
+  // the switch to wide tiles still are. Since the menu's divider became the Grid's west side
+  // (2026-09-29) the panel takes 29 of those columns: 49 tiles at 80, and at 128 the 48 wide tiles
+  // fill 127 of them, centred.
+  assert.equal(screenAt(MINIMUM).layout.viewport.width, 49)
+  assert.equal(screenAt(MINIMUM).layout.composition.width, 80)
   const wide = screenAt(WIDE)
   assert.equal(wide.layout.tileWidth, 2)
-  assert.equal(wide.layout.composition.width, 128)
+  assert.equal(wide.layout.viewport.width, 48)
+  assert.equal(wide.layout.composition.width, 127)
+  assert.equal(wide.frame.width, 128)
 })
 
 test("a terminal larger than the maximum viewport spends the difference on centring", () => {
@@ -117,12 +124,14 @@ test("the Grid pane is a closed rectangle: a line directly above, below, and bes
     // The rules meet the frame and the divider in a real junction, not a line running past them. The
     // divider starts at the top rule rather than crossing it (gate 5F: the top bar runs the whole
     // width), so its top end is a tee, not a crossing.
-    // Here the view touches the map's west edge, so the west side and its corners are the solid bar;
-    // the east corners, where no heavy side meets, are real junctions.
+    // Here the view touches the map's west edge, so the west side and its corners are the map's edge,
+    // in its own style and the quiet edge colour; the east corners, where no heavy side meets, are
+    // real junctions.
     const junctions = glyphPack === "ascii" ? ["+", "+"] : ["┤", "┤"]
     assert.equal(cellAt(frame, gridBox.right, gridBox.top).glyph, junctions[0])
     assert.equal(cellAt(frame, gridBox.right, gridBox.bottom).glyph, junctions[1])
-    assert.equal(cellAt(frame, gridBox.left, gridBox.top).style.inverse, true)
+    assert.equal(cellAt(frame, gridBox.left, gridBox.top).style.fgRole, "chrome.edge")
+    assert.notEqual(cellAt(frame, gridBox.left, gridBox.top).style.dim, true)
   }
 })
 
@@ -144,12 +153,10 @@ test("engine-3.3-markers: a Grid side goes soft where there is more Grid, and he
     false,
     "nothing west of the Grid's own left edge",
   )
-  // The map's west edge is a solid bar in its own column, and the menu's divider beside it stays a
-  // plain line (owner, 2026-09-27): shared, the bar read as a heavy menu border.
-  assert.equal(cellAt(corner.frame, gridBox.left, midGridRow).style.inverse, true, "the west edge is solid")
-  assert.equal(cellAt(corner.frame, corner.layout.dividerColumn, midGridRow).glyph, "|")
-  assert.notEqual(cellAt(corner.frame, corner.layout.dividerColumn, midGridRow).style.inverse, true)
-  assert.notEqual(cellAt(corner.frame, corner.layout.dividerColumn, midGridRow).style.dim, true)
+  // The map's west edge is drawn on the menu's divider, which is the Grid's west side (owner,
+  // 2026-09-29): in the map's own edge style and the quiet edge colour, never soft.
+  assert.equal(gridBox.left, corner.layout.dividerColumn, "the divider is the Grid's west side")
+  assert.equal(cellAt(corner.frame, gridBox.left, midGridRow).style.fgRole, "chrome.edge", "the west edge is the map's edge")
   assert.ok(isSoftEdge(corner.frame, midGridColumn, gridBox.bottom), "more Grid to the south")
   assert.ok(isSoftEdge(corner.frame, gridBox.right, midGridRow), "more Grid to the east")
 
@@ -162,10 +169,9 @@ test("engine-3.3-markers: a Grid side goes soft where there is more Grid, and he
   const midRow = middle.layout.origin.row + 5
   assert.ok(isSoftEdge(middle.frame, midColumn, box.top), "north, from the middle")
   assert.ok(isSoftEdge(middle.frame, midColumn, box.bottom), "south, from the middle")
-  // West, the light side is the divider itself; the Grid's own west column is a blank gutter until
-  // the map's edge comes into view and it turns solid.
+  // West, the light side is the divider itself, which is the Grid's west side.
+  assert.equal(box.left, middle.layout.dividerColumn)
   assert.ok(isSoftEdge(middle.frame, middle.layout.dividerColumn, midRow), "west, from the middle")
-  assert.equal(cellAt(middle.frame, box.left, midRow).glyph, " ")
   assert.ok(isSoftEdge(middle.frame, box.right, midRow), "east, from the middle")
   // Soft is the frame's own line, drawn dim — not the ground lattice's dot, which is what made the
   // earlier dotted edge read as "arbitrary" beside a field of the same dots.
@@ -180,7 +186,8 @@ test("engine-3.3-markers: a Grid side goes soft where there is more Grid, and he
 
 test("engine-3.3-readout: the footer names the visible tile range and the Grid's own size", () => {
   const opening = screenAt(MINIMUM)
-  assert.match(opening.text, /view x 0-47 y 1-16 of 96x40/)
+  // 49 tiles across at 80 columns, and the owner's 25% margin keeps the cursor 4 rows off the bottom.
+  assert.match(opening.text, /view x 0-48 y 2-17 of 96x40/)
   assert.match(opening.text, /cursor 18,13/)
 
   const scrolled = screenAt(MINIMUM, (build) => {
@@ -499,23 +506,24 @@ test("the footer never advertises a key the keyboard adapter does not bind", () 
 })
 
 test("no header or footer line is cut off at the 80-column floor", () => {
-  // 80x24 is the acceptance target, and the Grid pane is only 46 usable columns of it. Every line
+  // 80x24 is the acceptance target, and the Grid pane is only 49 columns of it. Every line
   // below has been truncated mid-word at some point in this gate's own history and only a
   // screenshot showed it, so each one is now asserted whole at the narrowest size that must work.
   const { text } = screenAt(MINIMUM)
   assert.match(text, /TERMINAL NEXUS build phase/)
-  assert.match(text, /view x 0-47 y 1-16 of 96x40 {3}cursor 18,13/)
+  assert.match(text, /view x 0-48 y 2-17 of 96x40 {3}cursor 18,13/)
   assert.match(text, /EXPLORE MAP {2}arrows move {2}tab\/esc menu {2}shift\+arrow fast move {2}bksp remove/)
-  assert.match(text, / {2}EXPLORE MAP {10}\[esc\]\|/, "the Explore Map header, whole")
+  // Against the divider, which here is the map's own west edge (the spike map's fence: a rail or a post).
+  assert.match(text, / {2}EXPLORE MAP {10}\[esc\][|+]/, "the Explore Map header, whole")
   const menu = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" })).text
   assert.match(menu, /RESOURCE {9}100 of 100/, "the panel's budget line, whole")
-  assert.match(menu, /\[e\] Explore Map {12}\|/, "the first menu entry, whole")
+  assert.match(menu, /\[e\] Explore Map {12}[|+]/, "the first menu entry, whole")
 })
 
 test("the scroll margin the screen prints is the one it is actually using", () => {
   // Mario deferred confirming the three-tile default and will judge it against another number, so
   // a header that printed one margin while the camera used another would waste exactly that check.
-  // A share of the view since gate 5H: 48 tiles wide at 80 columns, so 5% is 2 tiles and 10% is 5.
+  // A share of the view since gate 5H: 49 tiles wide at 80 columns, so 5% is 2 tiles and 10% is 5.
   for (const [percent, margin] of [[5, 2], [10, 5]] as const) {
     const context = { ...neutralContext(), scrollMargin: percent }
     const layout = buildLayout(MINIMUM, context.grid)
@@ -783,7 +791,7 @@ test("engine-3.3-markers: the side border is soft on every row, not a broken col
   const { frame, layout } = screenAt(MINIMUM, (build) => {
     build.run([{ kind: "move-cursor", dx: 40, dy: 20 }])
   })
-  assert.equal(layout.gridBox.left, layout.dividerColumn + 1, "the Grid's west side is next to the divider")
+  assert.equal(layout.gridBox.left, layout.dividerColumn, "the divider is the Grid's west side")
   for (let row = layout.origin.row; row < layout.origin.row + layout.viewport.height; row += 1) {
     assert.equal(
       cellAt(frame, layout.gridBox.right, row).style.dim,
@@ -868,13 +876,20 @@ test("the cursor shows only while the Grid has the keyboard", () => {
   assert.equal(cellAt(onGrid.frame, gridCell.x, gridCell.y).style.inverse, true)
 })
 
-test("engine-3.3-markers: a side that has reached the map's edge is a solid bar, on all four sides alike", () => {
+test("engine-3.3-markers: a map that names no edge style ends in a solid bar, on all four sides alike", () => {
   // Owner, 2026-09-27: the heavy edge must read the same horizontally and vertically — "the rectangle
   // needs to be a rectangle". A solid (reverse-video) bar is the same weight in both directions, in
-  // every glyph pack, and needs no colour.
-  const corner = screenAt(MINIMUM, (build) => {
-    build.run([{ kind: "move-cursor", dx: -999, dy: -999 }])
-  })
+  // every glyph pack, and needs no colour. Since 2026-09-29 a map may name its own edge style (the
+  // spike map's fence; every style is checked in `tests/build-edge.test.ts`); the solid bar is what a
+  // map that names none gets.
+  const { edgeStyle: _fence, ...unnamed } = neutralContext()
+  const cornerLayout = buildLayout(MINIMUM, unnamed.grid)
+  const cornerBuild = readyBuildSession({ context: unnamed, cursor: { x: 18, y: 13 }, viewport: cornerLayout.viewport })
+  cornerBuild.run([{ kind: "move-cursor", dx: -999, dy: -999 }])
+  const corner = {
+    layout: cornerLayout,
+    frame: composeBuildFrame({ context: unnamed, state: cornerBuild.state, layout: cornerLayout }, "monochrome"),
+  }
   const { gridBox } = corner.layout
   const solid = (frame: typeof corner.frame, x: number, y: number): boolean =>
     cellAt(frame, x, y).glyph === " " && cellAt(frame, x, y).style.inverse === true
@@ -887,7 +902,7 @@ test("engine-3.3-markers: a side that has reached the map's edge is a solid bar,
 
   // A Grid that fits the viewport whole is solid all round.
   const small: GridTerrain = { width: 20, height: 10, tiles: new Array<TerrainId>(200).fill("terrain.plain") }
-  const context = { ...neutralContext(), grid: small, standing: [] }
+  const context = { ...unnamed, grid: small, standing: [] }
   const layout = buildLayout(MINIMUM, small)
   const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
   const frame = composeBuildFrame({ context, state: build.state, layout }, "monochrome")

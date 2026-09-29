@@ -14,6 +14,7 @@ import {
   DEBUG_RESTART_ROW,
   adjustDebug,
   flashDuration,
+  DEFAULT_SCROLL_MARGIN_PERCENT,
   initialDebugFlags,
   rowOfField,
 } from "../src/build/debug.ts"
@@ -127,7 +128,7 @@ test("d opens Settings at its Experiments: every flag, its value, and when a cha
   assert.match(text, /SETTINGS/)
   assert.match(text, /EXPERIMENTS - for playtests, not saved/)
   // Gate 5I's placement juice leads the list: the newest thing waiting to be felt.
-  assert.match(text, /Build animation\s+<\s+450 ms\s+>\s+now/)
+  assert.match(text, /Build animation\s+<\s+300 ms\s+>\s+now/)
   assert.match(text, /\[r\] Restart with these settings/)
   assert.match(text, /\[e\] Export settings/)
   // The key help says where the keyboard is, and the highlighted row's question is shown.
@@ -137,7 +138,7 @@ test("d opens Settings at its Experiments: every flag, its value, and when a cha
   keys(margin, "d")
   goTo(margin, "scrollMargin")
   assert.ok(screen(margin).includes("(Q54)"), "the scroll margin's question is not shown")
-  assert.match(screen(margin), /Scroll margin\s+<\s+20%\s+>\s+now/)
+  assert.match(screen(margin), /Scroll margin\s+<\s+25%\s+>\s+now/)
   // Every flag is listed — scrolled into view by walking down the list (gate 5H: at 80x24 they do not
   // all fit at once).
   const seen = new Set<string>()
@@ -269,7 +270,7 @@ test("scroll margin: the camera follows exactly as a screen opened with that mar
     const reference = session({ ...spikeContext(), scrollMargin: target })
     keys(reference, TAB, ...moves)
     const tuned = session()
-    const steps = values.indexOf(target) - values.indexOf(20)
+    const steps = values.indexOf(target) - values.indexOf(DEFAULT_SCROLL_MARGIN_PERCENT)
     keys(tuned, "d")
     goTo(tuned, "scrollMargin")
     keys(tuned, ...Array.from({ length: Math.abs(steps) }, () => (steps > 0 ? RIGHT : LEFT)), ESC, TAB, ...moves)
@@ -431,7 +432,7 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
   assert.deepEqual(expected.debug, {
     ...initialDebugFlags({}),
     smartCursor: false,
-    scrollMargin: 30,
+    scrollMargin: DEFAULT_SCROLL_MARGIN_PERCENT + 10,
     startFocus: "grid",
     pressedFlashMs: 50,
   })

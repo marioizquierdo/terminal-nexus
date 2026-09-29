@@ -18,7 +18,7 @@ import {
   spikeGrid,
 } from "../build/catalog.ts"
 import { isGated } from "../build/camera.ts"
-import { buildLayout, layoutMatches, layoutOptions } from "../build/layout.ts"
+import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import { BuildAnimation, nextFrameDelay } from "../view/build-live.ts"
@@ -53,7 +53,7 @@ export type SpikeOptions = Readonly<{
   host?: Host
   exit?: (code: number) => void
   /** `--scroll-margin`, so the margin can be felt against another number: a percentage of the view
-   *  since gate 5H. Omitted means the owner's 20%. */
+   *  since gate 5H. Omitted means the owner's 25%. */
   scrollMargin?: number
   /** The screen's clock, in milliseconds. `Date.now` unless a test injects one. */
   now?: () => number
@@ -208,13 +208,6 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     if (leaving) return
     const size = terminalSize()
     const now = clock()
-    // A Debug Mode flag that moves the Grid pane (F25's shared west side) takes effect at once: a new
-    // layout, and the session told its new viewport, exactly as a resize does.
-    if (!gated && !layoutMatches(layout, build.state.debug)) {
-      layout = buildLayout(size, context.grid, layoutOptions(build.state.debug))
-      build.resize(layout.viewport)
-      animation.snap(build.state, now)
-    }
     // The player's settings as the Settings popup last left them — changed live, mid-screen.
     const settings = build.state.settings
     const live = gated
@@ -258,7 +251,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     const size = terminalSize()
     gated = isGated(size, context.grid)
     if (!gated) {
-      layout = buildLayout(size, context.grid, layoutOptions(build.state.debug))
+      layout = buildLayout(size, context.grid)
       build.resize(layout.viewport)
       animation.snap(build.state, clock())
     }

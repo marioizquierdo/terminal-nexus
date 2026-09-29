@@ -150,19 +150,20 @@ in its own way (below). `terminal-nexus` flags: `--capability`, `--theme`, `--gl
 `--reduced-motion`, `--backend`.
 
 **The Build Phase** (`--spike`, Milestone 5) is the first screen in the project that
-shows a **window onto a Grid larger than itself**: a 96 x 40 map in a viewport that is 48 x 16 tiles
+shows a **window onto a Grid larger than itself**: a 96 x 40 map in a viewport that is 49 x 16 tiles
 at 80 columns and 72 x 24 at 104. The screen is a full-width top bar, the **menu on the left**, the
 Grid in **a rectangle of its own** beside it, and a full-width bottom bar of three lines: the position
 readout, the key help for whatever has the keyboard, and the **status line**. Each side of the Grid's
-rectangle is a dim line where there is more map that way and a **solid bar** where the map ends; the
-map's west side is its own column beside the menu's plain divider. The readout names the visible
-range, because there is no minimap.
+rectangle is a dim line where there is more map that way and **the map's own edge** where the map
+ends — a style the map names for itself (this map's is a fence), the solid bar for a map that names
+none — in a quieter colour than the frame; the menu's divider is the map's west side (the owner's
+picks from his 2026-09-29 playtest). The readout names the visible range, because there is no minimap.
 
 **The menu runs the screen** (the owner's round-2 direction; `docs/ui-patterns.md` has the rules).
 The keyboard starts on the menu: Up/Down and Enter/Space work it. `[e] Explore Map`, its first entry
 (or Tab, or a second Right), moves the keyboard to the map with nothing armed and swaps the menu for an
 **Explore Map** panel that describes whatever is under the cursor as it moves; the arrows move the
-cursor, and the map scrolls once the cursor comes within a fifth of the view of an edge. `[n] Nexus`
+cursor, and the map scrolls once the cursor comes within a quarter of the view of an edge. `[n] Nexus`
 opens the Nexus Powers popup (a pick closes it). Arming a building (Enter on its row, or its digit
 from anywhere) puts the cursor beside the last thing planned; Enter or Space places it, and **every
 placement returns the keyboard to the menu, disarmed**. **A mouse click activates what it lands on**:
@@ -178,9 +179,9 @@ the tile, in red once a placement is tried. `[u]` undoes and Backspace (on the m
 under the cursor, both refunding, which keeps a plan revisable until `p` starts the Pulse.
 
 **Moving ramps up, and Shift jumps** (gate 5H, reworked after the owner's 2026-09-28 playtest): a
-single press moves one tile; the same arrow again soon after — the terminal's first repeat of a held
-key, or quick tapping — moves two a press at once, and four once that run has lasted 300 ms; any other
-key starts again at one. Shift+Arrow is not a speed but a **jump of twelve tiles**; held, it jumps
+single press moves one tile; the same arrow again within 150 ms — a held key's repeats, or quick
+tapping — moves two a press at once, and four once that run has lasted 300 ms; any other key starts
+again at one. Shift+Arrow is not a speed but a **jump of twelve tiles**; held, it jumps
 again at most every 150 ms, so each jump is seen to land. Terminals send no key-up, so "held" is read
 from how close together the presses arrive (`src/build/motion.ts`); the reducer only ever sees a move
 of the size chosen. **Everything that moves is interpolated** (`src/view/tween.ts`): the view
@@ -189,9 +190,9 @@ few frames — the screen's frame timer runs only while something moves (`src/vi
 and reduced motion snaps both. A jump re-centres the view on the cursor. **A click with a building armed never scrolls the view**, so the
 confirming second click lands where the first did (Q58); **exploring, a click near an edge scrolls
 further the nearer the edge**. A placement tried and refused flashes its footprint. A lone Esc at the
-end of a read waits 50 ms for the rest of a key sequence before it counts as Esc — so anything sending
+end of a read waits 100 ms for the rest of a key sequence before it counts as Esc — so anything sending
 keys programmatically leaves a pause after an Esc. **Every one of these numbers is an Experiment**
-(`d`, below); the list scrolls, since there are twenty-four.
+(`d`, below); the list scrolls, since there are twenty-five.
 
 **Settings, Experiments and the export** (owner, 2026-09-28). The game menu's `[s] Settings` is one
 scrolling popup: first the player's own settings — background, colour depth, symbols, reduced motion —
@@ -235,7 +236,7 @@ one list of bindings**: the bottom bar takes as many as its width holds, trimmed
 arrows, place, disarm, quit, the fast move, remove, undo — and the panel shows the rest, so a wide
 terminal has them all on one line and an 80-column one loses none of them (the other fast-move keys
 stay bound but unlisted). `--scroll-margin <percent>` starts the scroll margin at another share of the
-view than 20% (its Experiment changes it live). Nothing it plans reaches the simulation, and the plan is not
+view than 25% (its Experiment changes it live). Nothing it plans reaches the simulation, and the plan is not
 saved.
 
 Before any of that, the Build Phase opens on a **Nexus power draft** (gate 5D): two placeholder
@@ -314,7 +315,7 @@ sends, one key at a time, and each frame comes from the same composer the live s
 is no capture race, and no Esc glued to the next key by accident. Key names: `Up Down Left Right`,
 `S-` (Shift) and `M-` (Option) arrows, `Tab S-Tab Esc Enter Space Bksp Del PgUp PgDn Home End`, any
 single character, `Name*N` to repeat, `Name~MS` for a key arriving MS milliseconds after the one
-before (untimed keys are a second apart, so each is a press of its own; `Right Right~400 Right~30*12`
+before (untimed keys are a second apart, so each is a press of its own; `Right Right~150 Right~30*12`
 is a held arrow's auto-repeat, which the held-key ramp reads — the per-step summary prints the kind
 of move: tap, hold, fast or jump),
 `click:X,Y` for a Grid tile and `click@COL,ROW` for a screen

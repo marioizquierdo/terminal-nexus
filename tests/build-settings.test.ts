@@ -235,7 +235,7 @@ test("[e] shows the export in a popup, hands the same text to the adapter, and E
   assert.match(text, /Terminal Nexus settings/)
   assert.match(text, /# build abc1234/)
   assert.match(text, /# Changed experiments/)
-  assert.match(text, /placeFramesMs = 600/)
+  assert.match(text, /placeFramesMs = 450/)
   // Up/Down walk the text; the window follows.
   for (let line = 0; line < 40; line += 1) keys(side, DOWN)
   assert.match(screen(side), /refusedFlashMs = 140/)
@@ -260,7 +260,7 @@ test("[e] shows the export in a popup, hands the same text to the adapter, and E
 test("the export lists changed experiments first with their defaults, then the settings, then the rest", () => {
   const snapshot: SettingsSnapshot = {
     settings: { ...DEFAULT_SETTINGS, theme: "light" },
-    experiments: { ...defaultExperiments(), placeLight: "rainbow", scrollMargin: 25, smartCursor: false },
+    experiments: { ...defaultExperiments(), placeLight: "rainbow", scrollMargin: 30, smartCursor: false },
   }
   const text = formatSettingsExport(snapshot, "592f3cb")
   const lines = text.trimEnd().split("\n")
@@ -313,7 +313,7 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
   const result = parseSettingsExport(
     [
       "some chatter from a pull request comment",
-      "placeLight=rainbow, scrollMargin=25%; placeFramesMs=600ms",
+      "placeLight=rainbow, scrollMargin=30%; placeFramesMs=600ms",
       "retiredFlag = 3  # a flag an older build had",
       "easeMs = 99999  # out of range: keeps its default",
       "clickScroll = sideways",
@@ -325,7 +325,7 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
   )
   const { experiments, settings } = result.snapshot
   assert.equal(experiments.placeLight, "rainbow")
-  assert.equal(experiments.scrollMargin, 25)
+  assert.equal(experiments.scrollMargin, 30)
   assert.equal(experiments.placeFramesMs, 600)
   assert.equal(experiments.startFocus, "grid")
   assert.equal(experiments.smartCursor, false)
@@ -336,6 +336,44 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
   // Nothing readable at all is the base, unchanged.
   assert.deepEqual(parseSettingsExport("", base).snapshot, base)
   assert.deepEqual(parseSettingsExport("= = # nothing", base).snapshot, base)
+})
+
+test("the owner's export of 2026-09-29 is this build's defaults, and the map-edge names it carried are skipped", () => {
+  // His favourite settings, as the export writes them (the three map-edge Experiments he settled were
+  // deleted, so a build after them skips those names rather than failing on them).
+  const base: SettingsSnapshot = { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() }
+  const result = parseSettingsExport(
+    [
+      "Terminal Nexus settings",
+      "# Changed experiments",
+      "placeFramesMs = 300  # Build animation, default 450",
+      "placeGlowMs = 250  # Glow time, default 400",
+      "scrollMargin = 25  # Scroll margin, default 20",
+      "cursorGlideMs = 80  # Cursor glide, default 100",
+      "holdWindowMs = 150  # Hold window, default 500",
+      "refusedCursorMs = 150  # Refused cursor, default 250",
+      "escTimeoutMs = 100  # Esc timeout, default 50",
+      "mapEdge = map  # Map edge, default solid",
+      "sharedWestBorder = on  # Shared west side, default off",
+      "# Experiments at their defaults",
+      "mapEdgeColour = quiet  # Map edge colour",
+    ].join("\n"),
+    base,
+  )
+  const picked = ["placeFramesMs", "placeGlowMs", "scrollMargin", "cursorGlideMs", "holdWindowMs", "refusedCursorMs", "escTimeoutMs"]
+  assert.deepEqual(result.applied, picked, "every value he picked was read")
+  assert.deepEqual(result.snapshot.experiments, defaultExperiments(), "and every one of them is now the default")
+  assert.deepEqual(result.ignored, ["mapEdge=map", "sharedWestBorder=on", "mapEdgeColour=quiet"])
+  const defaults = defaultExperiments()
+  assert.deepEqual(
+    Object.fromEntries(picked.map((field) => [field, defaults[field as keyof typeof defaults]])),
+    { placeFramesMs: 300, placeGlowMs: 250, scrollMargin: 25, cursorGlideMs: 80, holdWindowMs: 150, refusedCursorMs: 150, escTimeoutMs: 100 },
+  )
+  // And each new default is a value its Experiment's list holds, so Left/Right step from it exactly.
+  for (const spec of DEBUG_FIELDS) {
+    const value = defaultExperiments()[spec.field]
+    assert.ok((spec.values as readonly unknown[]).includes(value), `${spec.field}'s default ${String(value)} is in its list`)
+  }
 })
 
 test("--settings on the command line: settings over what is saved, and every experiment from the text", () => {

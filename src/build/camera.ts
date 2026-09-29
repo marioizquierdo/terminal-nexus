@@ -14,11 +14,18 @@ export const MAX_VIEWPORT = { width: 72, height: 24 } as const
 /** RULE that a margin exists; GUIDANCE on the number, which `--scroll-margin` can override. */
 export const SCROLL_MARGIN = 3
 
-/** The chrome the Grid pane does not get: engine.md 3.1's own 80-column arithmetic. */
-export const PANEL_COLUMNS = 30
-/** The same, when the menu's divider doubles as the Grid's west side (Debug Mode's "Shared west
- *  side", feedback F25): the column the separate west side took goes to the Grid. */
-export const SHARED_PANEL_COLUMNS = PANEL_COLUMNS - 1
+/**
+ * The side panel's share of the terminal floor: engine.md 3.1's own 80-column arithmetic
+ * (1 + 30 + 48 + 1), which the resize gate and the choice of tile width still measure against — so
+ * 80 × 24 stays the floor and 128 columns stays where tiles go two columns wide.
+ */
+export const FLOOR_PANEL_COLUMNS = 30
+/**
+ * The columns the side panel actually takes: the panel and its divider, which **is** the Grid's west
+ * side (the owner's choice of 2026-09-29, feedback F25, replacing a column of its own beside the
+ * divider, F17). The column that sharing saves goes to the Grid: 49 tiles at 80 × 24, not 48.
+ */
+export const PANEL_COLUMNS = FLOOR_PANEL_COLUMNS - 1
 /** The top bar's one line, and the rule directly above the Grid that closes its rectangle. */
 export const HEADER_ROWS = 2
 /** The rule directly below the Grid, then the bottom bar's three lines: the position readout, the key
@@ -26,7 +33,8 @@ export const HEADER_ROWS = 2
  *  left the Grid's own top edge three rows short of any line — why the cursor seemed to stop at "an
  *  arbitrary place" in the owner's playtest. */
 export const FOOTER_ROWS = 4
-/** Left border + right border. 1 + 48 + 1 + 30 = exactly 80 (engine.md 3.1). */
+/** Left border + right border. 1 + 48 + 1 + 30 = exactly 80 (engine.md 3.1): the floor's arithmetic;
+ *  since the shared west side the Grid gets one more of those columns (`PANEL_COLUMNS`). */
 export const BORDER_COLUMNS = 2
 /** Top border + header + footer + bottom border = engine.md 3.1's 8-row vertical chrome budget (Q12). */
 export const CHROME_ROWS = BORDER_COLUMNS + HEADER_ROWS + FOOTER_ROWS
@@ -58,13 +66,9 @@ export function availableTiles(
  * and engine.md 9.3's "one column at 80, two at 128 or wider" agree by construction — 128 is exactly
  * the width at which two columns per tile still leaves room for the 48-tile minimum viewport.
  */
-export function tileWidthFor(
-  terminal: TerminalSize,
-  grid: GridTerrain,
-  panelColumns: number = PANEL_COLUMNS,
-): TileWidth {
+export function tileWidthFor(terminal: TerminalSize, grid: GridTerrain): TileWidth {
   const wanted = Math.min(MIN_VIEWPORT.width, grid.width)
-  return availableTiles(terminal, 2, panelColumns).width >= wanted ? 2 : 1
+  return availableTiles(terminal, 2, FLOOR_PANEL_COLUMNS).width >= wanted ? 2 : 1
 }
 
 /**
@@ -74,7 +78,7 @@ export function tileWidthFor(
  * is the acceptance target, and a terminal too small for the wide one simply uses the narrow one.
  */
 export function isGated(terminal: TerminalSize, grid: GridTerrain): boolean {
-  const available = availableTiles(terminal, 1)
+  const available = availableTiles(terminal, 1, FLOOR_PANEL_COLUMNS)
   return (
     available.width < Math.min(MIN_VIEWPORT.width, grid.width) ||
     available.height < Math.min(MIN_VIEWPORT.height, grid.height)
@@ -86,9 +90,8 @@ export function fitViewport(
   terminal: TerminalSize,
   grid: GridTerrain,
   tileWidth: TileWidth,
-  panelColumns: number = PANEL_COLUMNS,
 ): Viewport {
-  const available = availableTiles(terminal, tileWidth, panelColumns)
+  const available = availableTiles(terminal, tileWidth)
   return {
     width: Math.min(available.width, MAX_VIEWPORT.width, grid.width),
     height: Math.min(available.height, MAX_VIEWPORT.height, grid.height),
@@ -157,8 +160,8 @@ export function shareOfSpan(percent: number, span: number): number {
   return Math.max(0, Math.min(tiles, Math.floor((span - 1) / 2)))
 }
 
-/** The scroll margin in tiles along each axis for a margin given as a percentage of the view: 20% of
- *  the 48 x 16 minimum view is 10 tiles to either side and 3 above and below. */
+/** The scroll margin in tiles along each axis for a margin given as a percentage of the view: the
+ *  owner's 25% of the 49 x 16 view at 80 x 24 is 12 tiles to either side and 4 above and below. */
 export function marginForView(percent: number, viewport: Viewport): Readonly<{ x: number; y: number }> {
   return { x: shareOfSpan(percent, viewport.width), y: shareOfSpan(percent, viewport.height) }
 }

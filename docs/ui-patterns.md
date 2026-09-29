@@ -168,20 +168,23 @@ why.
 ## 7. The map rectangle
 
 - **The map is a closed rectangle.** A side with more map beyond it is a thin, dim line; a side that
-  has reached the map's edge is a **solid bar** — the same weight horizontally and vertically, in every
-  glyph pack, without colour. A corner is solid where a solid side runs into it.
+  has reached the map's edge is **the map's own edge** — the same weight horizontally and vertically,
+  in every glyph pack. A corner is the edge where an edge side runs into it.
 - **A map shorter than the panel** closes directly under its own last row; the panel keeps its height.
-- **The map's edge has Experiments, all keeping the one rule — the same weight on every side**
-  (feedback F25; the Experiments "Map edge", "Map edge colour" and "Shared west side"): the solid bar, a
-  half block on the map's side of the cell, a heavy or a double line (joined to the frame's light rules
-  in mixed-weight junctions), a light shade, or **the map's own style** — a map names one for itself
-  (the Build Phase map's is a dashed "fence"). Drawn in the frame's colour, dimmed, or a quieter grey
-  of its own (the `chrome.edge` role). Where ASCII has no glyph for a style, it falls back to the solid
-  bar; a shade is `:` and the fence `+---+`, its posts fixed to the map so they scroll with it.
-  (`src/view/edge.ts`.)
-- **The west side may share the menu's divider**, giving the map the column back: layout, drawing and
-  hit-testing read the flag from one place (`layoutOptions` in `src/build/layout.ts`), and the screen
-  is laid out again the moment it changes, exactly as for a resize.
+- **A map names its own edge style** (feedback F25; settled by the owner's playtest of 2026-09-29:
+  "using map-specific borders looks a lot better!"): the solid bar (an inverse-video cell, and what a
+  map that names none gets), a half block on the map's side of the cell, a heavy or a double line
+  (joined to the frame's light rules in mixed-weight junctions), a light shade, or a dashed "fence"
+  (the Build Phase map's). Every style keeps the one rule — the same weight on every side. Where ASCII
+  has no glyph for a style, it falls back to the solid bar; a shade is `:` and the fence `+---+`,
+  its posts fixed to the map so they scroll with it. (`BuildContext.edgeStyle`, drawn by
+  `src/view/edge.ts`.)
+- **The edge is drawn quietly**: a grey of its own between the frame and the ground (the
+  `chrome.edge` role), so it reads as a wall while the menu and the bars stay the loudest lines.
+- **The menu's divider is the map's west side**: one column, a plain line beside the menu's own rows
+  and rules, a light or map-edge side beside the map's rows — and the map has the column a separate
+  west side took (49 tiles at 80 columns). Layout, drawing and hit-testing read it from one place
+  (`buildLayout` in `src/build/layout.ts`).
 
 ## 7a. Moving around the map (gate 5H, reworked 2026-09-28)
 

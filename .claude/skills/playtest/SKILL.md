@@ -30,8 +30,9 @@ about 1 MB; six keys at 80x24 is about 200 KB).
 `Up Down Left Right`, `S-Up` etc. (Shift, xterm bytes), `M-Up` etc. (Option as Esc+), `Tab S-Tab Esc
 Enter Space Bksp Del PgUp PgDn Home End C-c`, any single character (`n`, `1`, `p`, `y`), `Name*N` to
 repeat, `Name~MS` for a key arriving MS ms after the previous step (untimed steps are 1000 ms apart,
-so each is its own press). The held-key ramp only runs on timed steps: `e Right Right~400
-Right~30*12` is a tap, the terminal's repeat delay, then auto-repeat — the summary line prints each
+so each is its own press). The held-key ramp only runs on timed steps: `e Right Right~150
+Right~30*12` is a tap, the terminal's repeat delay (inside the 150 ms hold window), then
+auto-repeat — the summary line prints each
 step's cursor and the kind of move the last timed cursor key made (`tap`, `hold`, `fast`, `jump`). Mouse: `click:X,Y` clicks Grid tile X,Y wherever the camera has it drawn right now (fails if
 it is off screen), `click@COL,ROW` clicks a 0-based screen cell; `rclick`, `wheelup`, `wheeldown` take
 the same targets. `#` starts a comment in a `--file`. The table with bytes is at the top of
@@ -49,11 +50,10 @@ playtest flags, which `d` opens straight at (Up/Down choose, Left/Right change, 
 everything, `e` exports, `Esc` closes). The Experiments start on gate 5I's placement juice (`d Right`
 lengthens the build animation, `d Down Right` sets Lighting to rainbow), then gate 5H's movement
 numbers (`d Down*4 Right` widens the scroll margin). From the first setting, Up comes round to Export,
-Restart, then the last experiments: `Esc s Up*3 Right` shares the menu's divider as the map's west
-side, `Esc s Up*4 Right*2` makes the map's edge quiet, `Esc s Up*5 Right` cycles its style (use
-`--glyphs unicode` to see the thin ones), `Esc s Up*9 Right Esc Esc` turns the smart cursor off,
-`Esc s Up*8 Right r` restarts with the keyboard on the map. `src/build/debug.ts`'s `DEBUG_FIELDS` is
-the order.
+Restart, then the last experiments: `Esc s Up*6 Right Esc Esc` turns the smart cursor off,
+`Esc s Up*5 Right r` restarts with the keyboard on the map. `src/build/debug.ts`'s `DEBUG_FIELDS` is
+the order. The map's edge is not an Experiment: it is the map's own style (the spike map's fence;
+`--glyphs unicode` shows the Unicode forms), and the menu's divider is its west side.
 
 **Reproducing what the owner played**: he exports his settings (Settings, `e`) and pastes the text
 into the pull request; `--settings "<that text>"` starts the script from exactly those settings and

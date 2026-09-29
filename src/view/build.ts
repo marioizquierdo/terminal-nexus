@@ -46,7 +46,7 @@ import { chromeGlyph, entityGlyph, playerRole, terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 import { statusStyle } from "./status.ts"
 import type { ArmWeight, Arms, EdgePlace } from "./edge.ts"
-import { edgeCell, resolveEdgeStyle } from "./edge.ts"
+import { edgeCell } from "./edge.ts"
 import { EFFECT_RECIPES } from "./effects/recipes.ts"
 import type { EffectCellSource } from "./effects/composite.ts"
 import { EFFECT_BAND_NUMBERS, effectCellStyle, mergeEffectCells } from "./effects/composite.ts"
@@ -126,11 +126,12 @@ function lineGlyph(pack: GlyphPack, { n, s, e, w }: Joins): string {
  * four sides, not overlaid on them: a side with more Grid to scroll to is the frame's own line drawn
  * dim, and a side that has actually reached the Grid's own edge is a **solid bar** — an inverse-video
  * cell, a wall rather than merely a border, the same weight in every glyph pack and in monochrome
- * (canon 2.21, replacing 2.19's `=` and bold `|`, which ASCII could not make equal; Q56). The west
- * side is a column of its own beside the menu's plain divider (feedback F17).
- * Since feedback F25 the solid bar is one of several Experiments (Debug Mode's "Map edge", "Map edge
- * colour" and "Shared west side"; `src/view/edge.ts` draws them), each the same weight on all four
- * sides, and the west side may share the divider's column instead.
+ * (canon 2.21, replacing 2.19's `=` and bold `|`, which ASCII could not make equal; Q56).
+ * Since the owner's playtest of 2026-09-29 (feedback F25) that edge is drawn in **the map's own
+ * style** — the solid bar only when the map names none — in the quieter edge colour, each style the
+ * same weight on all four sides (`src/view/edge.ts` draws them); and the menu's divider **is** the
+ * Grid's west side, one shared column, plain beside the menu's rules and a light or map-edge side
+ * beside the Grid's rows.
  * Everything else — the outer border, the rules where they cross the side panel — never scrolls and
  * is drawn plain.
  */
@@ -176,16 +177,9 @@ function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack: Glyph
 
   const markers = edgeMarkers(state.camera, state.viewport, context.grid)
   const heavy = { north: !markers.north, south: !markers.south, west: !markers.west, east: !markers.east }
-  // The Grid's west side is its own column next to the divider (feedback F17), unless it shares the
-  // divider (F25's Experiment). Its own column is drawn only where the map ends there: beside the
-  // plain divider a second, lighter line would read as a double border, so while there is more Grid to
-  // the west the divider alone is the light side, and the column is a gutter.
-  if (!layout.sharedWest && heavy.west) verticalLine(box.left, box.top, box.bottom)
-  // The rectangle the four sides actually run along: its west side is the divider whenever the
-  // divider is what is drawn there — shared, or light — and the Grid's own column only when that
-  // column carries the map's edge.
-  const west = heavy.west ? box.left : layout.dividerColumn
-  const rect = { left: west, right: box.right, top: box.top, bottom: box.bottom }
+  // The rectangle the four sides run along. Its west side is the menu's divider (`box.left` is
+  // `layout.dividerColumn`): the owner's choice of 2026-09-29 (F25), replacing a column of its own.
+  const rect = { left: box.left, right: box.right, top: box.top, bottom: box.bottom }
 
   // Whether the line from a cell to its neighbour runs along a side that has reached the map's own
   // edge. Everything is decided per line segment, so a corner, a tee where the divider meets a rule,
@@ -202,7 +196,7 @@ function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack: Glyph
     if (from < rect.top || to > rect.bottom) return false
     return (x === rect.left && heavy.west) || (x === rect.right && heavy.east)
   }
-  const style = resolveEdgeStyle(state.debug.mapEdge, context.edgeStyle)
+  const style = context.edgeStyle ?? "solid"
   const soft = { dim: true }
 
   for (const cell of lines.values()) {
@@ -241,7 +235,7 @@ function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack: Glyph
       const phase = horizontalEdge
         ? state.camera.x * layout.tileWidth + (x - layout.origin.column)
         : state.camera.y + (y - layout.origin.row)
-      const drawn = edgeCell(pack, style, state.debug.mapEdgeColour, arms, place, phase)
+      const drawn = edgeCell(pack, style, arms, place, phase)
       put(cells, BANDS.chrome, x, y, drawn.glyph, drawn.role, drawn.extra)
       continue
     }
@@ -612,7 +606,7 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
 
   const footerLimit = layout.footerLimit
   // engine.md 3.3's second required signal: "a position readout in the footer naming the visible
-  // tile range and the Grid size." The margin is named whenever it is not the owner's 20% — set by
+  // tile range and the Grid size." The margin is named whenever it is not the owner's 25% — set by
   // `--scroll-margin` or by Debug Mode.
   const margin = state.debug.scrollMargin
   text(

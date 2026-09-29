@@ -6,14 +6,12 @@ import type { Coord, GridTerrain } from "../grid/types.ts"
 import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct } from "./state.ts"
 import type { ConstructGroup, ConstructItem, MenuEntry } from "./types.ts"
 import type { Camera, TerminalSize, TileWidth, Viewport } from "./camera.ts"
-import type { DebugFlags } from "./debug.ts"
 import {
   BORDER_COLUMNS,
   FOOTER_ROWS,
   HEADER_ROWS,
   MIN_VIEWPORT,
   PANEL_COLUMNS,
-  SHARED_PANEL_COLUMNS,
   availableTiles,
   fitViewport,
   tileWidthFor,
@@ -23,8 +21,9 @@ export type BuildLayout = Readonly<{
   /** The whole frame, which is the whole terminal: a frame the size of the screen overwrites
    *  everything on it, so growing the window never leaves a stale strip behind. */
   frame: Readonly<{ width: number; height: number }>
-  /** Border, panel and Grid pane together — the 1 + 30 + 48 + 1 arithmetic of engine.md 3.1, the
-   *  panel on the left since gate 5F. */
+  /** Border, panel and Grid pane together — 1 + 29 + 49 + 1 at 80 columns (engine.md 3.1's
+   *  1 + 30 + 48 + 1, with the shared west side's column given to the Grid), the panel on the left
+   *  since gate 5F. */
   composition: Readonly<{ width: number; height: number }>
   /** Where that composition sits inside the frame. Terminal space beyond the maximum viewport is
    *  spent on centring — engine.md 3.3, "never on more Grid". */
@@ -41,12 +40,6 @@ export type BuildLayout = Readonly<{
    * because they are where the Grid actually stops.
    */
   gridBox: Readonly<{ top: number; bottom: number; left: number; right: number }>
-  /**
-   * Whether the menu's divider is also the Grid's west side (Debug Mode's "Shared west side",
-   * feedback F25). Then `gridBox.left` *is* `dividerColumn`, and the column a separate west side
-   * would take is the Grid's; otherwise `gridBox.left` is `dividerColumn + 1` (feedback F17).
-   */
-  sharedWest: boolean
   /**
    * Frame row of the full-width rule over the bottom bar. The same row as `gridBox.bottom` whenever
    * the Grid fills the pane; below it when the Grid is shorter than the panel needs (gate 5F), and
@@ -202,27 +195,9 @@ export function menuEntryAt(
   return null
 }
 
-/** What a layout depends on besides the terminal and the Grid: today, only whether the Grid's west
- *  side shares the menu's divider (feedback F25). */
-export type LayoutOptions = Readonly<{ sharedWest?: boolean }>
-
-/** The layout options a Build Phase's Debug Mode flags ask for — what the live loop and the scripted
- *  playtest pass to `buildLayout`, and compare against the layout they have (`layoutMatches`). */
-export function layoutOptions(flags: Pick<DebugFlags, "sharedWestBorder">): LayoutOptions {
-  return { sharedWest: flags.sharedWestBorder }
-}
-
-/** Whether a layout was built for these flags; when not, the caller builds a new one and hands the
- *  session its new viewport, exactly as for a resize. */
-export function layoutMatches(layout: BuildLayout, flags: Pick<DebugFlags, "sharedWestBorder">): boolean {
-  return layout.sharedWest === flags.sharedWestBorder
-}
-
-export function buildLayout(terminal: TerminalSize, grid: GridTerrain, options: LayoutOptions = {}): BuildLayout {
-  const sharedWest = options.sharedWest === true
-  const panelColumns = sharedWest ? SHARED_PANEL_COLUMNS : PANEL_COLUMNS
-  const tileWidth = tileWidthFor(terminal, grid, panelColumns)
-  const viewport = fitViewport(terminal, grid, tileWidth, panelColumns)
+export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLayout {
+  const tileWidth = tileWidthFor(terminal, grid)
+  const viewport = fitViewport(terminal, grid, tileWidth)
   // The pane between the two full-width rules is as tall as the viewport — but never shorter than
   // the minimum viewport's 16 rows while the terminal has them, because the side panel is designed at
   // that height and, since the top bar runs the whole width (gate 5F), has no rows beside it to
@@ -230,7 +205,7 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain, options: 
   // sits in the top of a pane taller than itself, closed by its own bottom edge.
   const paneHeight = Math.max(viewport.height, Math.min(MIN_VIEWPORT.height, availableTiles(terminal, 1).height))
   const composition = {
-    width: BORDER_COLUMNS + panelColumns + viewport.width * tileWidth,
+    width: BORDER_COLUMNS + PANEL_COLUMNS + viewport.width * tileWidth,
     height: BORDER_COLUMNS + HEADER_ROWS + paneHeight + FOOTER_ROWS,
   }
   const frame = { width: Math.max(terminal.columns, composition.width), height: Math.max(terminal.rows, composition.height) }
@@ -239,14 +214,13 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain, options: 
     row: Math.floor((frame.height - composition.height) / 2),
   }
   // The side panel on the left (gate 5F; engine.md 9.2): the frame's left border, the panel's 28
-  // columns, the divider, the Grid rectangle's own west side, then the Grid and the frame's right
-  // border — the same 30 columns of panel and dividers gate 5A-5E drew on the right, mirrored. The
-  // divider and the Grid's west side are two columns, not one (owner, 2026-09-27): shared, the map's
-  // solid "the map ends here" bar sat against the menu text and read as a heavy menu border. Shared
-  // (feedback F25, an Experiment) they are one column again — the divider — and the Grid gets the
-  // column back; the edge styles thinner than a solid bar are what might make that read well now.
-  const dividerColumn = offset.column + PANEL_COLUMNS - 1
-  const gridLeft = sharedWest ? dividerColumn : dividerColumn + 1
+  // columns, then the divider — which is also the Grid rectangle's west side — the Grid, and the
+  // frame's right border. From 2026-09-27 (F17) the Grid's west side was a column of its own beside
+  // the divider, because the solid "the map ends here" bar sat against the menu text and read as a
+  // heavy menu border; the quieter edge colour and the map's own edge styles fixed that, and the
+  // owner chose the shared column after trying both (2026-09-29, F25), so the Grid has it back.
+  const dividerColumn = offset.column + PANEL_COLUMNS
+  const gridLeft = dividerColumn
   const origin = { column: gridLeft + 1, row: offset.row + 1 + HEADER_ROWS }
   const right = offset.column + composition.width - 1
   const gridBox = {
@@ -267,7 +241,6 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain, options: 
     tileWidth,
     origin,
     gridBox,
-    sharedWest,
     paneBottom,
     dividerColumn,
     panelColumn,

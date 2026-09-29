@@ -35,7 +35,7 @@ const USAGE = `terminal-nexus — the Terminal Nexus game
       keyboard, by mouse, or from a script. It answers a question rather than shipping a
       screen - nothing it plans reaches the simulation, and the plan is not saved.
       --scroll-margin <percent> changes how close to the edge of the view the cursor gets
-      before the map starts scrolling, as a share of the view's width and height (20 unless
+      before the map starts scrolling, as a share of the view's width and height (25 unless
       given; "25" and "25%" are the same). Esc opens the game menu: Settings (saved, like the
       title menu's) and, at their bottom, Experiments - every movement and effect number, live,
       never saved; d jumps straight to them. "Export settings" copies them all as text.
