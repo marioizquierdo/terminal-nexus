@@ -71,6 +71,17 @@ it says where.
     connector and the check-in trigger disconnected or failed a few times: retry, and keep no state
     only in a trigger.
 
+11. **A red assertion in the live-loop test looks like a hang** (gate 6A round 2).
+    `tests/build-lifecycle.test.ts` leaves the terminal loop running when an assertion throws, so Node
+    never exits and a fifteen-minute "run" is really a one-line failure. Run it alone with
+    `node --test --test-timeout=30000`, and run the whole suite the same way when editing it.
+12. **"Only this flashes" needs a scope.** Reversed video is also the cursor and a spark out on the map,
+    so a test that says "nothing else is reversed" over the whole frame is false on the first fight.
+    Assert inside the panel, and assert the light's cells on the border.
+13. **A colour cue is tuned by looking at it in four places.** The light read well in the dark theme and
+    needed checking in the light theme (where "toward white" is dark ink), in monochrome (bold) and at
+    16 colours (a step, not a blend) before the pull request could call it done.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

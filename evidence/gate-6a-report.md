@@ -1,7 +1,7 @@
 # Gate report — Milestone 6, Gate 6A: Start, end, Recall
 
 **Document role:** Gate evidence report for Gate 6A
-**Status:** PASS — built and evidenced; awaiting Mario's playtest (acceptance is his)
+**Status:** PASS — built and evidenced; awaiting Mario's playtest (acceptance is his). Reworked once from his first look at the pull request: Section 11 is that round, and where it disagrees with Sections 3-6 (the alarm), it wins
 **Canon version:** 2.26
 **Updated:** 2026-09-29
 **License:** Apache-2.0
@@ -82,8 +82,8 @@ bun scripts/build-web.mjs
 npm run typecheck && npm test && npm run test:bun && ./scripts/check-repository.sh
 # run
 ./bin/terminal-nexus.ts --spike
-./bin/terminal-nexus.ts --spike --keys "n 2 1 Enter p y"       # open already in the Pulse
-node scripts/playtest.mjs --keys "n 2 1 Enter p y wait~4000*8" --print final
+./bin/terminal-nexus.ts --spike --keys "n 2 1 Enter s s"       # open already in the Pulse
+node scripts/playtest.mjs --keys "n 2 1 Enter s s wait~4000*8" --print final
 ```
 
 Baseline before this gate (the merged Milestone 5 build): typecheck clean, Node 585 / 585.
@@ -93,7 +93,7 @@ Baseline before this gate (the merged Milestone 5 build): typecheck clean, Node 
 Built by one agent in one session, in five commits (record, frame, rules layer, the Pulse on screen,
 tests) plus this evidence and documentation. **The kernel is untouched** — see Section 4.
 
-**What a player does and sees.** Plan something, press `p`, answer `y`. The screen keeps its top bar,
+**What a player does and sees (first build; Section 11 replaces the key and the alarm).** Plan something, press `p`, answer `y`. The screen keeps its top bar,
 its closed map rectangle, its bottom bar and its popups, and becomes the Nexus Pulse: the panel on the
 left shows the clock, one line per side (units, a health bar, the number) and the last five events in
 words (`3.5s trooper > raider`), coloured by side; the view opens on the player's Nexus and the arrows
@@ -155,7 +155,7 @@ is the way to a fresh Build Phase until 6B builds the loop.
 | `npm run test:bun` (Bun 1.3.11) | all files pass, the browser-page test included |
 | `./scripts/check-repository.sh` | passes; canon 2.26; gate 6A |
 | Kernel untouched | `git diff origin/main --stat -- src/pulse src/state src/scenario src/grid src/content src/events src/rng src/report` prints nothing |
-| Browser page | `bun scripts/build-web.mjs` builds (200 KB, 100 source files, nothing Node-only reachable); headless Chromium on `#keys=<plan> p y` shows the Pulse at 6.0 s of 30.0 s |
+| Browser page | `bun scripts/build-web.mjs` builds (200 KB, 100 source files, nothing Node-only reachable); headless Chromium on `#keys=<plan> s Enter` shows the Pulse six seconds in, its timer at 0:10 (first build: `p y`, 6.0 s of 30.0 s) |
 | Same plan, same Pulse | five repeat runs give the same state and event hashes, equal to calling `resolvePulse` directly on the same opening state; **identical under Node and Bun** (state `9b03136f…b551`, events `93638c7e…7616`, 175 ticks) |
 | Every ending reachable from the spike's own data | see below |
 | Cost | committing a plan, resolving the Pulse and working out Recall: median 24 ms (Node), 29 ms (Bun), worst 83 ms on a cold start; composing and encoding one Pulse frame at 80 × 24: 1.8 ms (Node), 1.9 ms (Bun), 5.7 KB of ANSI for a full frame (the backend sends only changed cells) |
@@ -189,6 +189,8 @@ the Build Phase's animation, the Pulse's ending and the presenter take time as a
 
 ## 5. Human observations
 
+*(First build — the alarm described here was replaced in round 2; `pulse-alarm.png` is retired and `pulse-last-seconds.png` is its successor. See Section 11.)*
+
 **No human has played this build.** What an agent saw, reading the pictures in `evidence/screenshots/`
 (`pulse-start`, `-fight`, `-alarm`, `-result-victory`, `-result-defeat`, `-result-timeup`,
 `-experiments`, and the GIF `pulse-ending`), running `scripts/playtest.mjs` flows, and loading the browser
@@ -207,6 +209,8 @@ page in headless Chromium:
 - **Nobody has judged the timings.** That is what the Experiments are for, and what Mario is asked to do.
 
 ## 6. Interpretation
+
+*(First build — "the alarm" below is the first version of the warning; Section 11 says what replaced it. The finding about a pre-resolved Pulse holds for the timer and the light too.)*
 
 **What the sketch asked, and what it looks like built.** Mario's 2026-09-17 sequence — an alarm, then
 after 3–5 seconds the units stop shooting, a second later they walk back, two seconds later the Build
@@ -328,8 +332,113 @@ playtest — no human has yet watched the ending, which is what the milestone's 
 
 ## 10. Next authorized action
 
-Mario plays the Pulse — plan, `p`, `y`, and watch to the result — flips the ending's Experiments (`d`),
+Mario plays the Pulse — plan, `[s] Start`, `s` or Enter, and watch to the result — flips the ending's Experiments (`d`),
 and pastes his settings export into the pull request; an agent settles each Experiment it answers
 (adopt the value, delete the Experiment, record the answer). Gate 6B (the loop into the next Build
 Phase, the trigger runner's simulation band, PERIMETER's three waves, Q36) waits for his word;
 `docs/next-steps.md` has the prompt to start it. Nothing else is authorized.
+
+## 11. Round 2 — the owner's first look at the pull request (2026-09-29)
+
+Mario's feedback, in the log at `docs/feedback/2026-09-29-pr48-pulse.md` (F41-F46): the Build Phase needs a
+visible way to end the phase, like a strategy game's "end turn" button; the alarm's red was far too
+intense ("a nuclear boom"), though the anticipation was right; the Pulse title should show a timer and only
+that timer should flash in the last three seconds; the border of the screen should light up like a
+lighthouse calling, not a red alert; red is for the Nexus being damaged, and even then shorter and gentler;
+then review the code for simplification.
+
+**What changed.**
+
+- **`[s] Start`.** A boxed button at the bottom right of the menu panel, on every Build Phase screen, in the
+  hotkey colour (dim, with its reason on a click, until the Nexus power is picked). `s` or a click asks once;
+  the popup is "START PULSE 1?" with `[s] Start Pulse 1` highlighted and `[n] Keep building`; Enter, Space or
+  `s` accept. `p` and `y` still work, unlisted. The three-row box collides with the menu's effect line and the
+  bound-key help at 80 × 24, so the help is written beside the button when it fits there and above it when
+  not (`panelBindings` in `src/view/build.ts`), and the layout module owns the box (`startButton`).
+- **The timer.** The panel's title is `NEXUS PULSE 1` with the time left to the last shot at its right end
+  (`0:12`); for the last three seconds (the Experiment **Final warning**, 3000 ms, 0 = off) that timer alone
+  flashes — reversed video, 0.3 s on and 0.3 s off, held lit under reduced motion. Nothing else on the
+  screen flashes, and the alarm's banners, red status line and red frame are gone.
+- **The light.** In the same seconds a soft light sweeps once every two seconds clockwise round the map's
+  border, from a faint glow to a bright head with an 18-cell tail, a colour pulled toward white and never
+  a glyph; in monochrome the border goes bold as it passes; under reduced motion it is a steady glow.
+- **Red.** Only for the player's Nexus being hurt: its first hit (0.2 s), its health below a quarter (a
+  0.15 s blip every 1.5 s until it falls), and the result of a lost Pulse (0.25 s), at most 0.6 of the way
+  to the danger colour, a tint of the border and nothing else; none under reduced motion; the Experiment
+  **Red alerts** turns it off.
+
+**Interpretation flagged for Mario.** "When losing" is read as *the moment a lost Pulse's result appears*.
+If he meant "while my side is behind in the fight", that is a different, more frequent signal and he
+should say so. With the placeholder data, a lost Pulse where the Nexus is never hit (nothing built against
+the default raid) flashes red only at the result; the first-hit and low-health flashes show with **Your
+units: none** (the raid then reaches the Nexus at 11.6 s).
+
+**Evidence.**
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` (both configs) | clean |
+| `npm test` (Node 22.22.2) | **665 / 665** (646 at the first build): 9 new for the Start button and its popup, the ending's own tests rewritten (14), the Pulse screen's rewritten for the timer, the light and the red, and one for Pause once the result stands |
+| `npm run test:bun` (Bun 1.3.11) | all 49 files pass |
+| `./scripts/check-repository.sh` | passes; canon 2.26; gate 6A |
+| Kernel untouched | `git diff origin/main -- src/pulse src/state src/scenario src/grid src/content src/events src/rng src/report` is empty |
+| Browser page | rebuilt from the committed tree (202 KB, 100 source files); headless Chromium on `#keys=n 2 1 Enter 3 Enter 3 Enter s Enter` shows the Pulse with its timer counting down |
+| Pictures | new: `build-start-button`, `pulse-last-seconds`, `pulse-nexus-hit`; redone: `build-nexus-confirm`, `pulse-start`, `pulse-fight`, `pulse-experiments`, and the GIF `pulse-ending`; retired: `pulse-alarm`. Each was opened and looked at before the pull request linked it; the light was also rendered in the light theme, monochrome and 16 colours |
+| The review changed no pixel | after the simplification pass every picture and the GIF re-rendered byte-identical |
+
+Tests worth naming: the timer is the only reversed cell inside the panel and never more than the four
+characters of `0:03`; the light is confined to the border and its head moves and returns after one period;
+red is faint (peak 0.6), brief (under a third of a Pulse's frames), absent from a cleanly won Pulse, off
+with the Experiment and under reduced motion; every phase is told apart at all four colour depths with no
+colour code in monochrome; the lifecycle test plays the timer on the live loop's own clock.
+
+**Review (the `simplify` pass, four independent reviewers: reuse, simplification, efficiency, altitude).**
+It found the same few things in different words. **Applied:** the corruption law's tail was written three
+times — one `paintEffectCells` now serves the Pulse view, the Build Phase and the old Pulse composer; the
+force bar, the tile centre and the grid distance were copied and are shared; per-frame work done again and
+again is done once (the ending's moments, the border's cells, the light's per-frame maths, the force counts,
+the units that came home, the feed's last five lines, tile keys as numbers rather than strings); the Pulse
+number, the presenter's dead presentation options and the frame-timer merge lost their detours; the reducer
+no longer names an Experiment (`FIRST_PULSE_EXPERIMENT_ROW` lives with the list); `START_KEY` and the
+button's bottom row are data; dead and unused exports, an unused `player` field and the alarm's stale
+comments are gone; the tests share `click`, `atHome`, the winning key script (derived from the plan, not
+retyped) and the SGR reader. **A real mismatch the review found and fixed:** the Pause row was hit-tested
+after the result stood though no row was drawn — Space or a click there toggled an invisible pause; Pause
+is now ignored once the result stands, with a test. **Skipped, with reasons:** the two biggest per-frame
+costs (rebuilding the frame's rules and repainting the terrain, together about 40% of a roughly 1 ms
+frame) are old code, and a cache needs invalidation rules — a separate change; two duplicates sit in the
+kernel's directories, which this gate may not touch (the opening's copy of the scenario loader's tail, and a
+"is a structure" test written at a dozen sites — the right home is `src/content/`); "a Pulse is on screen"
+has three sources, and a commit that is applied and then reverted if the kernel cannot start is a
+redesign of the commit path that gate 6B rewrites anyway (the loop back into the next Build Phase);
+one table for each control's key, label and row, and the composition input built by hand in three
+places, are the same kind of change; routing the result headline's colour through the status tone
+resolver would change how a victory looks (the two disagree on purpose — a look, not a cleanup).
+
+**Failures, surprises, discarded approaches (round 2).**
+
+- **A failing assertion looked like a 15-minute hang.** `tests/build-lifecycle.test.ts` leaves the live loop
+  running when an assertion throws, so Node never exits. Run it with `--test-timeout=30000` when editing
+  it; the failure is then a line, not a stall.
+- **A test tried to move a Pulse's clock backwards** (it is forward-only by design), and one asked for
+  "the ceasefire" at 1.5 s after the stop — which is already Recall (the walk starts a second after the
+  stop). Both are tests' mistakes, fixed, and both are what the earlier round's note about scripted Pulses
+  predicted.
+- **Reversed video is not only the timer's.** The cursor and a spark are reversed too, out on the map, so
+  "only the timer flashes" is asserted inside the panel and the light's cells on the border, not over
+  the whole frame.
+- **The timer touched the divider** until it was pulled in one column, as the panel's prose is; the
+  screenshot showed it, the text tests did not.
+- **The first Start button collided** with the armed row's effect line and the key help at 80 × 24 (seven
+  tests failed at once); the help now goes beside the button.
+- **Discarded:** a blinking or inverse status line for the last seconds (a second thing to flash, which he
+  asked against); red on the timer itself at the very end (the timer is the one cue, and it should stay the
+  colour of everything else); a light that lights the whole border at once (it reads as a frame flash, not a
+  lighthouse).
+
+**Decision (round 2): PASS, still awaiting his playtest.** Nothing in this round widened the gate: no loop
+into a second Build Phase, no trigger runner, no automatic production.
+
+**Next authorized action (unchanged):** he plays it, flips **Final warning** and **Red alerts** if he wants,
+pastes his settings export, says whether "when losing" is the result or the fight, and an agent settles
+what it answers. Gate 6B waits for his word.
