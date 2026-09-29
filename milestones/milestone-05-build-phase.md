@@ -1,20 +1,27 @@
 # Milestone 5 — Build Phase
 
-**Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
-**Status:** CURRENT
-**Active gate:** 5K — the owner's fourth round (his playtest of the gate 5J build, 2026-09-29,
-`docs/feedback/2026-09-29-pr46-round-4.md`): arming where the cursor is, one "active" style for every
-menu row, Explore Map as that style with the tile below it, Settings without the now/restart column
-and with a restart warning, a position count and a scroll bar, a top-right Esc label that says what
-Esc does, sparks on removal, his exported numbers as defaults, the map's own edge as the rule, and a
-way to start the game in a particular state. **Built and reported (PASS), awaiting Mario's playtest**
-(`evidence/gate-5k-report.md`), on the same branch as 5G-5J; 5D-5J are
-built and reported (PASS) but not yet formally accepted, and this gate depends on none of those
-acceptances.
+**Document role:** Milestone tracker — accepted, kept as historical reference for the mission's own Build Phase: placement, upgrade pick, scrolling
+**Status:** COMPLETE
+**Active gate:** none — every gate (5A-5K) is built, evidenced and accepted by the owner 2026-09-29; see below
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
 mission's own budget/units decided — accepted 2026-09-12)
-**Updated:** 2026-09-28
+**Updated:** 2026-09-29
 **License:** Apache-2.0
+
+> **ACCEPTED, 2026-09-29.** Mario played and merged the Build Phase work — gates 5D-5K, which he tested
+> together — and the polish pull request after it, and said Milestone 5 is accepted. The Build Phase is done:
+> the screen opens on a menu at Explore Map; a player arms a building by digit, click or Enter and it
+> appears where the cursor already is; Esc walks back one level at a time; `p` asks once before the plan is
+> committed; a Nexus power is picked from a popup; the map scrolls by cursor, slides and glides; Settings
+> holds the player's own choices and, at its bottom, Experiments with an export. Every gate's checklist
+> below is ticked, including the two lines that were gate 5C's own formal acceptance, and gate 5C's second
+> open question (whether the armed row's marker and the cursor read as intended) was overtaken by the
+> active-row style and the ghost preview. The per-gate notes further down say "awaiting Mario's look";
+> they are the record of what was true when each gate was written, not open work. **Milestone 6 — the
+> Nexus Pulse Phase is now the current milestone, at its own gate 6A**;
+> [`README.md`](README.md)'s table is the authority for that, as always. Still queued beside it, not part
+> of it: [`../docs/next-steps.md`](../docs/next-steps.md) (Q66's key releases, and a rename of the
+> old Debug Mode code to "experiments").
 
 > **Milestone 4 has not landed, and this milestone does not wait for it.** An earlier draft of the
 > header above named Milestone 4 as a dependency, from back when the campaign menu was expected to be
@@ -337,11 +344,10 @@ looking around, not like fighting the cursor.
 - [x] the driver plays a full Build Phase from a command stream, and a test proves hotkey and click
       entry of the same plan are identical — **done, gate 5D**: the pick-build-commit-confirm script
       produces an identical final state by keyboard bytes, mouse bytes, and a driver script;
-- [ ] cursor-driven scrolling works correctly across the full 48×16-72×24 viewport range — gate 5C's
-      own code is merged and its automated evidence passes, but the gate itself is not yet formally
-      accepted (see the note above);
-- [ ] the GUI's own layout adapts across that range without becoming illegible at either end — same
-      status as the line above, gate 5C's;
+- [x] cursor-driven scrolling works correctly across the full 48×16-72×24 viewport range — gate 5C's
+      code and automated evidence, formally accepted with the milestone on 2026-09-29;
+- [x] the GUI's own layout adapts across that range without becoming illegible at either end — same
+      as the line above, gate 5C's, accepted 2026-09-29;
 - [x] the Nexus-upgrade pick mechanism works against at least a placeholder option — **done, gate
       5D**: two placeholder powers, offered once, picked by digit or click, applying their effect
       exactly once;

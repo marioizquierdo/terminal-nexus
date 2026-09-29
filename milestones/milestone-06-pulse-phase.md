@@ -1,10 +1,22 @@
 # Milestone 6 — Nexus Pulse Phase
 
 **Document role:** Milestone tracker — the explicit Build→Pulse handoff, victory/defeat, and Recall
-**Status:** GATED
-**Depends on:** Milestone 5 (Build Phase produces what this Pulse resolves)
-**Updated:** 2026-09-17
+**Status:** CURRENT
+**Active gate:** 6A — Start, end, Recall: connect the Build Phase's commit to the Pulse playback.
+"Start Nexus Pulse" is an explicit action from the Build Phase's `p` question, then the end condition, the
+stop / finish-in-flight / Recall sequence, and a result a viewer can read unprompted. The kernel is
+Milestone 1's and does not change; if 6A finds it must, that is a finding for its gate report. The Build
+Phase's commit and the Pulse playback both already exist. 6B and 6C wait for the owner's word.
+**Depends on:** Milestone 5 (Build Phase produces what this Pulse resolves — accepted 2026-09-29)
+**Updated:** 2026-09-29
 **License:** Apache-2.0
+
+> **Promoted to CURRENT, 2026-09-29**, when Mario accepted Milestone 5 and gave his word to start this
+> one. What exists to build on: the Build Phase commits a plan behind one yes/no question (`p`), and the
+> Pulse playback already runs in the terminal and in the browser page (`src/cli/watch.ts`). What does
+> not exist: the step between them, a Pulse that ends anywhere a viewer can read, and a player-visible
+> result. Gate 6A is that step and nothing more — no loop back into a second Build Phase, no trigger
+> runner, no automatic production (6B and 6C).
 
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
 > how the Pulse resolves — that stays the deterministic kernel, unmodified. What is new is the
