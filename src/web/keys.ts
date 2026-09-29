@@ -98,6 +98,10 @@ export const KEY_BAR: Readonly<Record<"common" | "menu" | "build" | "pulse", rea
     { name: "Bksp", label: "Bksp" },
     { name: "p", label: "p" },
     { name: "y", label: "y" },
+    // A Nexus Pulse plays on this screen once `p` and `y` start it: Space pauses it, these two set its
+    // speed, and `r` (below) watches it again.
+    { name: "[", label: "[ slower" },
+    { name: "]", label: "] faster" },
     // Settings is Esc then s; its Experiments are d; e exports inside it; r restarts from the game menu.
     { name: "s", label: "s settings" },
     { name: "d", label: "d experiments" },
