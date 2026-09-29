@@ -39,6 +39,9 @@ thing a person can now do: "Scripted playtests that make GIFs without a terminal
 **Changes** — player-visible bullets, "before -> after" where it helps. At most one bullet for
 internal work.
 
+**Workflow and tools** — only when the PR changes skills, scripts or agent instructions (see
+"Pushing more commits" below).
+
 **Demo** — how to see the change, and what to look for while you do. One section: the pictures, the
 playable page and the steps to try all live here (it replaced separate "Try it" and "Screenshots"
 sections). **Size it to the change** — the cheapest layer that shows it, because a playable page
@@ -117,8 +120,18 @@ The repository is public, so an image committed on the branch displays inline fr
 
 ## Pushing more commits to an open PR
 
-Rewrite the description to describe the PR as it now stands, and re-pin the screenshot URLs to the
-new head commit. No "Update:" sections, no changelog of the PR's own history.
+Rewrite the description to describe the PR as it now stands **against `main`** — everything a merge
+would bring, not the last round of work on the branch (owner, 2026-09-29: "describe what changed from
+main, which has a larger umbrella vs the last iteration"). A long-lived PR gathers several rounds;
+its description is still one "before → after" from main. Re-pin the screenshot URLs to the new head
+commit. No "Update:" sections, no changelog of the PR's own history.
+
+Leave out what is minor and temporary — a placeholder number, a stand-in for content a later
+milestone brings (the owner, of a placeholder Nexus power's value: "that is minor and temporal").
+
+When the PR changes how agents work — a skill, the playtest tooling, the demo page, the agent
+instructions — give it its own short section after **Changes**, **Workflow and tools**: what an agent
+(or Mario) can now do that it could not, in a few bullets.
 
 ## Before submitting
 
