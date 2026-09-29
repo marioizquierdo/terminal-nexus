@@ -3,8 +3,8 @@
 **Document role:** The interaction and drawing patterns every interactive screen follows
 **Status:** WORKING — built on the Build Phase first; not canon yet (promoted into `specs/engine.md`
 Section 9 when the owner accepts them)
-**Updated:** 2026-09-28 (a click activates; Explore Map — round-3 feedback F22, F23; Settings,
-Experiments and the export, replacing Debug Mode's popup)
+**Updated:** 2026-09-29 (round-4 feedback F34-F37: the top bar names what Esc does; popups lose
+their `[esc]`, gain a message form and a scroll bar; Settings' layout; Restart in the game menu)
 **License:** Apache-2.0
 
 These came out of the owner's playtests of the Build Phase (2026-09-26 and 2026-09-27; the item-by-item
@@ -46,9 +46,17 @@ why.
   to the game menu, the export to Settings), then the map — placing, Explore Map or the map a click
   opened — to the menu, then on the menu it opens the **game menu**. Esc never leaves the game by
   itself.
-- **The game menu is the way out, and the way to Settings** (owner, 2026-09-28): `[s] Settings`,
-  `[q] Quit`, `[esc] Back to the game`. Esc on the menu, `q` anywhere, and a click on `[esc] menu` at
-  the right of the top bar open it.
+- **The game menu is the way out, the way to Settings, and the way to start over** (owner,
+  2026-09-28; Restart since 2026-09-29, F34): `[s] Settings`, `[r] Restart` (the Build Phase over,
+  every setting and experiment kept, the plan lost), `[q] Quit`, `[esc] Back to the game`. Esc on the
+  menu and `q` anywhere open it.
+- **The top bar's right end says what Esc does right now** (owner, 2026-09-29, F37): `menu [esc]` on
+  the menu (and on a committed Build Phase), `back [esc]` while the map has the keyboard (placing,
+  Explore Map, or the map a click opened), `close [esc]` while a popup is open. The action first and
+  the key after it, as a way back reads; the name quiet, the key in the hotkey colour. **A click on it
+  sends exactly what Esc sends** — one level back, so over Settings opened from the game menu it goes
+  back to the game menu, where a click outside would close both. It is the one place Esc is named:
+  popups do not carry their own. (`escLabel` and `escHintSpan` in `src/build/layout.ts`.)
 - **Leaving always asks**: only the game menu's own `[q]` (or Enter or a click on its Quit row) quits.
   Ctrl+C is the one immediate way out.
 - **A building is armed only while the map has focus.** Anything that takes the keyboard off the map
@@ -95,31 +103,46 @@ why.
 - **One shape for every popup** (`src/build/overlay.ts`): a title and rows as data; options name the
   command a click on them sends.
 - **Drawn to be unmissable**: a solid border in the same weight as a map edge, the title in the top
-  border, `[esc]` in the top-right corner (the key, the label and the click target at once), and a
-  one-cell shadow that blanks what is behind it. Centred over the map.
+  border, and a one-cell shadow that blanks what is behind it. Centred over the map. **No `[esc]` in
+  the border** (F37): the top bar's `close [esc]` says it and is its click target.
 - **A popup holds the keyboard and the mouse** until closed; keys it does not use do nothing.
 - **Questions and menus are popups** — the start-the-Pulse question, the game menu, Settings and the
   export use the same shape.
-- **Nothing opens a popup but the player.**
+- **Nothing opens a popup but the player** — a message only as the answer to what the player just
+  did (below).
+- **A message is a popup with nothing to choose** (F34, "a good case example to improve the popup
+  implementation"): a title and its text, wrapped at words in as many lines as it needs. Esc (or `x`,
+  or a right click) and a click outside close it, and nothing else does — no Enter, no hotkeys, no
+  wheel. It sits over whatever was open, and Esc goes back to that. It is for a warning the player
+  should read once and may act on later, not for an answer to a question. (`BuildState.message`,
+  `messageSpec` in `src/build/overlay.ts`.)
 - **A choice closes its popup** (Q60, owner 2026-09-27): picking a Nexus power, like answering a
   question, returns the player to where they were. What the pick did is on the status line and on the
   menu; reopening the popup shows it listed as active.
-- **A setting is a row whose value Left and Right change** (Settings, since gate 5G): its name, the value
-  between `<` and `>` (the arrows say which keys change it), and, quietly on the right, when a change is
-  seen — `now` or `restart`. Enter/Space is Right. A choice of two comes round at either end; a number
+- **A setting is a row whose value Left and Right change** (Settings, since gate 5G): its name, and
+  the value between `<` and `>` (the arrows say which keys change it) against the row's right end —
+  nothing else (F34 removed the `now`/`restart` column). Enter/Space is Right. A choice of two comes round at either end; a number
   stops at its ends and the status line says so. **By mouse, the left half of the value box is Left
   and the right half is Right** — two targets six cells wide each, big enough for a finger on the
   browser playtest page; a click anywhere else on the row highlights it. Every change is said on the
   status line. (`settingColumns` in `src/build/overlay.ts`.)
-- **What a highlighted row is for is written under the list**, wrapped at words, in a fixed number of
-  lines so the popup does not change height as the highlight moves — the popup's version of the
-  menu's effect line. (A `note` row.)
-- **A list longer than the popup can hold scrolls** (gate 5H): it keeps the highlighted row in view
-  (in the middle while it can), and the line above and below it says how many rows are hidden that
-  way — `^ 4 more`, `v 11 more` — in the hotkey colour, blank at the list's own ends. A click on that
-  line, or the wheel over the popup, scrolls. The window is derived from the highlight, never stored,
-  so the reducer needs to know nothing about the popup's height. (`OverlayScroll` and `scrollWindow`
-  in `src/build/overlay.ts`.)
+- **What a highlighted row is for is written under the list, below a line across the popup** (F35:
+  "closer to the selection"), wrapped at words, in a fixed number of lines so the popup does not
+  change height as the highlight moves — the popup's version of the menu's effect line. (A `rule` row,
+  then a `note` row.)
+- **A popup has at most one list that scrolls** (F36), so a scroll bar has one place to be. A list
+  longer than the popup can hold keeps the highlighted row in view (in the middle while it can); the
+  window is derived from the highlight, never stored, so the reducer needs to know nothing about the
+  popup's height. (`OverlayScroll` and `scrollWindow` in `src/build/overlay.ts`.)
+- **The scroll bar is the popup's right border beside the list**, drawn only while rows are hidden:
+  an up symbol on the list's first row, a down symbol on its last, and between them a textured track
+  with a solid thumb whose length is the share in view and whose place is the share above (`^ v :` in
+  ASCII, `▲ ▼ ░` in Unicode, all inverse like the border). **A click on its upper half scrolls up, on
+  its lower half down**, bringing the next hidden rows into view; the wheel and Up/Down still walk the
+  highlight a row at a time. Drawn and hit-tested from the one placement (`PlacedOverlay.scrollBar`).
+  It replaced the `^ 4 more` / `v 11 more` lines (F35: "There's no need to say ...").
+- **A long list says where the highlight is beside its title** (Settings: `SETTINGS (6/30)`), moving
+  with it.
 - **A list in sections keeps each section's heading in the list** (Settings: "YOUR SETTINGS - saved",
   then "EXPERIMENTS - for playtests, not saved"): the headings scroll with the rows and are never
   highlighted; Up/Down skip them.
@@ -131,8 +154,10 @@ why.
 
 ## 5a. Settings, Experiments and the export
 
-- **Settings are found, not hidden**: the game menu's `[s] Settings` (Esc, then `s`), and `[esc] menu`
-  at the right of the top bar for a pointer — the hotkey in the hotkey colour, the name quiet.
+- **Settings are found, not hidden**: the game menu's `[s] Settings` (Esc, then `s`), and `menu [esc]`
+  at the right of the top bar for a pointer.
+- **Settings is one scrolling list**: the player's settings, the Experiments, and **Export settings**
+  as its last row (`e` still exports from anywhere in it) — no fixed rows under it (F35).
 - **The player's settings come first, the Experiments last** (owner, 2026-09-28: "At the bottom of
   those settings, we can include 'Experiments'"). Player settings — background, colour depth, symbols,
   reduced motion — apply at once and are **saved**, through the same store as the title menu's
@@ -143,9 +168,11 @@ why.
   (Esc, `s`, or `d` for the Experiments) and asks him to **paste the export back** (his own request,
   2026-09-28). A new behaviour whose worth is in doubt gets an on/off experiment. Most experiments
   are deleted before the pull request is accepted; a few stay longer, or become real settings.
-- **Every experiment names the question it serves** and whether it applies now or on restart. A
-  restart row starts the Build Phase over keeping every setting and experiment, which is how a
-  "restart" experiment takes effect.
+- **Every experiment names the question it serves.** One that only takes effect when the Build Phase
+  starts over says so on the status line when changed ("applies after a restart") and, **when Settings
+  closes with such a change pending, in a message popup** — once per change, not when a value is put
+  back, and not again on the next visit, since the player may keep playing and restart later (F34).
+  The game menu's `[r] Restart` is how it takes effect. (`pendingRestart` in `src/build/settings.ts`.)
 - **The export is text a person can paste and a program can read back**: `name = value` lines, `#`
   comments, the experiments that differ from this build's defaults first (each with the default it
   replaced), then the settings, then the other experiments, and the build's commit near the top. It
@@ -232,7 +259,7 @@ why.
 - **One line answers "what just happened, or why not"**: a typed message (text, a tone, and the tile
   it is about), never a bare string. A message about a tile lapses when the cursor leaves it.
 - **Say the result and the way back**: `Hatchery placed (resources: 70) - [u] undo`,
-  `Experiment - Opens on: map - applies on restart: [r]`.
+  `Experiment - Opens on: map - applies after a restart`.
 - **Looking reads quietly; trying reads loudly**: a refusal is neutral while the player only hovers,
   red and bold once they press Enter.
 

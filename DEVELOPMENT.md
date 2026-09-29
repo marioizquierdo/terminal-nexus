@@ -172,8 +172,9 @@ a click on a building's row arms it at once, its ghost at the cursor; on the map
 the same tile** places (Q52); a click on the map from the menu keeps the menu beside it, so the next
 click can arm from it. Only the keyboard shows a "highlighted, not yet chosen" bar. Esc, `x` and a
 right click go back one level — popup, then the map (Explore Map or placing) to the menu — and on the
-menu open the **game menu**: `[s] Settings`, `[q] Quit`, and Esc back to the game; `q`, and a click on
-`[esc] menu` in the top bar, open it too, and only Ctrl+C quits at once. Every row shows its cost, a row that no
+menu open the **game menu**: `[s] Settings`, `[r] Restart`, `[q] Quit`, and Esc back to the game; `q`
+opens it too, and only Ctrl+C quits at once. The top bar's right end always says what Esc does right
+now — `menu [esc]`, `back [esc]` or `close [esc]` — and a click on it is Esc. Every row shows its cost, a row that no
 longer fits is dimmed, and **why a placement would be refused is the status line's job** — "rock in
 the way at 8,5", "costs 40, 20 left" (affordability first) — quietly while the grey `x` preview sits on
 the tile, in red once a placement is tried. `[u]` undoes and Backspace (on the map) removes the one
@@ -200,8 +201,12 @@ scrolling popup: first the player's own settings — background, colour depth, s
 changed live with Left/Right and saved to the same `~/.terminal-nexus/settings.json` the title menu's
 Settings writes; then, apart at the bottom, **Experiments**: gate 5G's Debug Mode flags, each naming
 the question it serves, never saved (`src/build/debug.ts` is the list; `src/build/settings.ts` the
-popup's rows). `d` opens Settings straight at the Experiments. `[r]` restarts the Build Phase keeping
-everything; `[e] Export settings` shows every setting and experiment as `name = value` text — changed
+popup's rows). `d` opens Settings straight at the Experiments. The title says where the highlight is
+in the list (`SETTINGS (6/30)`), a scroll bar in the popup's right border shows and scrolls the rest
+(click its upper or lower half, or use the wheel), and what the highlighted row is for is written under
+a line below the list. The game menu's `[r] Restart` starts the Build Phase over keeping everything; a
+changed setting that only applies after a restart is announced in a message popup when Settings
+closes. `[e] Export settings`, the list's last row, shows every setting and experiment as `name = value` text — changed
 experiments first, each with the default it replaced, the commit on the first line
 (`src/build/settings-export.ts`) — and in a terminal also copies it to the clipboard with OSC 52 (in
 iTerm2 allow "Applications in terminal may access clipboard") and writes

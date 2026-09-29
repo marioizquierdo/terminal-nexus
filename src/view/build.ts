@@ -470,7 +470,7 @@ function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
  *
  * Trimmed to what a player would not otherwise guess: PageUp/PageDown, Home/End and Option+Arrow are
  * still bound, only unlisted (owner, 2026-09-26). `q` is not listed at all (owner, 2026-09-27): Esc on
- * the menu opens the game menu, which shows `[q] Quit` itself, and the top bar says `[esc] menu`.
+ * the menu opens the game menu, which shows `[q] Quit` itself, and the top bar says `menu [esc]`.
  */
 export type KeyHelp = Readonly<{ label: string; bindings: readonly string[] }>
 

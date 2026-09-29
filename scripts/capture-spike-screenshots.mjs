@@ -403,7 +403,7 @@ scripted(
 
 scripted(
   "build-nexus-popup",
-  "[n] opens the Nexus popup: a solid border, [esc] in its corner, and a shadow, so it cannot be missed. A click outside it closes it and brings the keyboard to wherever the click landed",
+  "[n] opens the Nexus popup: a solid border with its title in it, and a shadow, so it cannot be missed. The top bar's right end now says close [esc] - the one place Esc is named - and a click outside the popup closes it and brings the keyboard to wherever the click landed",
   { keys: "n Down", expect: "PICK ONE" },
 )
 
@@ -415,7 +415,7 @@ scripted(
 
 scripted(
   "build-exit-question",
-  "Esc on the menu opens the game menu: [s] Settings, [q] Quit, and Esc back to the game. A stray q opens it too rather than losing a plan; [esc] menu in the top bar is the click",
+  "Esc on the menu opens the game menu: [s] Settings, [r] Restart, [q] Quit, and Esc back to the game. A stray q opens it too rather than losing a plan; menu [esc] at the right of the top bar is the click",
   { keys: `${PICK_FIRST_POWER} Esc`, expect: "Back to the game" },
 )
 
@@ -487,7 +487,7 @@ scripted(
 
 scripted(
   "build-settings",
-  "Settings from the game menu: the player's own settings, saved, then - apart, at the bottom - the Experiments, not saved. Left and Right change a value; what the highlighted row is for is written underneath",
+  "Settings from the game menu: the player's own settings, saved, then - apart - the Experiments, not saved, and Export settings last. The title says where the highlight is in the list, the right border is the list's scroll bar, and what the highlighted row is for is written under a line below it",
   { keys: "Esc s", expect: "YOUR SETTINGS - saved" },
 )
 
@@ -499,15 +499,15 @@ scripted(
 
 scripted(
   "build-debug-80x24",
-  "[d] opens Settings at its Experiments: each with its value between < and >, and whether a change shows now or on restart. The question the highlighted one serves is written underneath",
+  "[d] opens Settings at its Experiments: each with its value between < and >, and nothing else on the row. The question the highlighted one serves is written under the list",
   { keys: "d", expect: "EXPERIMENTS - for playtests, not saved" },
 )
 
 // The experiments' order: gate 5I's placement juice first, then gate 5H's movement numbers (Scroll
 // margin is four Downs in), then gate 5G's. From the player's first setting (Esc s), Up comes round to
-// Export, then Restart, then the last experiments: Up*3 is "Refused flicker", Up*4 "Pressed flash",
-// Up*5 "Opens on", Up*6 "Smart cursor". (The map-edge Experiments were settled by the owner's
-// playtest of 2026-09-29 and deleted.)
+// Export, the list's last row, then the last experiments: Up*2 is "Refused flicker", Up*3 "Pressed
+// flash", Up*4 "Opens on", Up*5 "Smart cursor". (The map-edge Experiments were settled by the owner's
+// playtest of 2026-09-29 and deleted; the restart is the game menu's [r] since feedback F34.)
 
 scripted(
   "build-debug-104x32",
@@ -517,19 +517,19 @@ scripted(
 
 scripted(
   "build-debug-light",
-  "The light theme: \"Opens on\" is marked restart - it takes effect through [r] Restart with these settings, which starts the Build Phase over and keeps every flag",
-  { keys: "Esc s Up*5 Right", theme: "light", expect: "applies on restart" },
+  "The light theme: \"Opens on\" only takes effect after a restart - the status line says so, and closing Settings says it once more in a message; the game menu's [r] Restart starts the Build Phase over keeping every flag",
+  { keys: "Esc s Up*4 Right", theme: "light", expect: "applies after a restart" },
 )
 
 scripted(
   "build-debug-restarted-on-map",
-  "After [r]: the Build Phase starts over with the keyboard on the map, exploring - one of the two answers to where the screen should open",
-  { keys: "Esc s Up*5 Right r", expect: "Build Phase restarted with these settings." },
+  "After the game menu's [r] Restart: the Build Phase starts over with the keyboard on the map, exploring - one of the two answers to where the screen should open",
+  { keys: "Esc s Up*4 Right Esc Esc r", expect: "Build Phase restarted with these settings." },
 )
 
 scriptedGif("build-debug-smart-cursor", {
   // Smart cursor off, then the owner's own flow: the cursor stays where it was instead of jumping.
-  keys: "Esc s Up*6 Right Esc Esc Down Down Space",
+  keys: "Esc s Up*5 Right Esc Esc Down Down Space",
   expect: "Barracks selected",
 })
 
@@ -537,8 +537,14 @@ scriptedGif("build-debug-smart-cursor", {
 
 scripted(
   "build-debug-scrolled",
-  "Settings scroll: the settings and the experiments do not fit at 80x24, so the list moves with the highlight and says how many rows are hidden above and below. A click on either line, or the wheel, scrolls it too",
-  { keys: "d Down*6", expect: "v 16 more" },
+  "Settings scroll: the settings and the experiments do not fit at 80x24, so the list moves with the highlight, the title says where it is - SETTINGS (11/30) - and the right border is a scroll bar with a thumb. A click on its upper or lower half, or the wheel, scrolls it too",
+  { keys: "d Down*6", expect: "SETTINGS (11/" },
+)
+
+scripted(
+  "build-esc-back",
+  "The top bar's right end says what Esc does right now: back [esc] on the map (here Explore Map), menu [esc] on the menu, close [esc] over a popup - and a click on it is Esc",
+  { keys: "e", expect: "back [esc]" },
 )
 
 scriptedGif("build-held-arrow", {

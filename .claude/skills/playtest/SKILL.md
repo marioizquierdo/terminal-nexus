@@ -44,16 +44,20 @@ closes the popup (budget becomes 130) and leaves the highlight on the Nexus row,
 Space` arms the Hatchery from the menu (`n 2` is the War Chest: 2000 more to spend); a digit arms by
 hotkey and moves focus to the Grid; `Tab` switches focus. A click on a building's row arms it at once
 (`click@3,9` is the Hatchery at 80x24), and a second click on the same tile places. `Esc` on the menu
-(or `q` anywhere) opens the game menu: `s` Settings, `q` quits. **Settings** lists the player's own
+(or `q` anywhere) opens the game menu: `s` Settings, `r` Restart (the Build Phase over, every setting
+kept), `q` quits. The top bar's right end says what Esc does now — `menu [esc]`, `back [esc]`,
+`close [esc]` — and clicking it is Esc (`click@70,1` at 80x24). **Settings** lists the player's own
 settings first (`Esc s Right` switches the background to light), then the **Experiments** — the
-playtest flags, which `d` opens straight at (Up/Down choose, Left/Right change, `r` restarts keeping
-everything, `e` exports, `Esc` closes). The Experiments start on gate 5I's placement juice (`d Right`
-lengthens the build animation, `d Down Right` sets Lighting to rainbow), then gate 5H's movement
-numbers (`d Down*4 Right` widens the scroll margin). From the first setting, Up comes round to Export,
-Restart, then the last experiments: `Esc s Up*6 Right Esc Esc` turns the smart cursor off,
-`Esc s Up*5 Right r` restarts with the keyboard on the map. `src/build/debug.ts`'s `DEBUG_FIELDS` is
-the order. The map's edge is not an Experiment: it is the map's own style (the spike map's fence;
-`--glyphs unicode` shows the Unicode forms), and the menu's divider is its west side.
+playtest flags, which `d` opens straight at (Up/Down choose, Left/Right change, `e` exports, `Esc`
+closes) — and last, **Export settings**. The title shows the highlight's place, `SETTINGS (6/30)`;
+the right border beside the list is its scroll bar (a click on its lower half scrolls down). The
+Experiments start on gate 5I's placement juice (`d Right` lengthens the build animation, `d Down
+Right` sets Lighting to rainbow), then gate 5H's movement numbers (`d Down*4 Right` widens the scroll
+margin). From the first setting, Up comes round to Export, then the last experiments. Closing
+Settings with a changed Experiment that only applies after a restart shows a **RESTART NEEDED**
+message (Esc closes it, back on the game menu's Restart; `r` then restarts). `src/build/debug.ts`'s
+`DEBUG_FIELDS` is the order. The map's edge is not an Experiment: it is the map's own style (the spike
+map's fence; `--glyphs unicode` shows the Unicode forms), and the menu's divider is its west side.
 
 **Reproducing what the owner played**: he exports his settings (Settings, `e`) and pastes the text
 into the pull request; `--settings "<that text>"` starts the script from exactly those settings and

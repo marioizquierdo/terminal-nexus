@@ -440,7 +440,7 @@ export function fieldSpec(field: DebugField): AnyFieldSpec {
   return DEBUG_FIELDS.find((spec) => spec.field === field) as AnyFieldSpec
 }
 
-/** The flag on popup row `row`, or `null` for the restart row (or anything past it). */
+/** The flag on popup row `row`, or `null` for a row past them (Export settings). */
 export function fieldAtRow(row: number): DebugField | null {
   return DEBUG_FIELDS[row]?.field ?? null
 }
