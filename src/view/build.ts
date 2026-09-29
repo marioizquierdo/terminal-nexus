@@ -18,9 +18,12 @@ import {
   NEXUS_ROW,
   RESOURCE_ROW,
   cellForTile,
+  START_LABEL,
   constructLines,
   escHintSpan,
   escLabel,
+  menuFloor,
+  startButton,
   summaryRows,
 } from "../build/layout.ts"
 import { overlaySpec, placeOverlay, settingColumns, wrapWords } from "../build/overlay.ts"
@@ -42,10 +45,11 @@ import type { ConstructGroup, ConstructItem, PlannedPlacement } from "../build/t
 import { CONTENT_ART } from "../content/art.ts"
 import type { BandCell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
+import type { DrawExtra } from "./draw.ts"
 import { put, text } from "./draw.ts"
 import { drawTerrain } from "./grid-layer.ts"
 import type { PulseFrame } from "./pulse-scene.ts"
-import { drawAlarm, drawPulseEffects, drawPulseEntities, drawPulsePanel, pulseKeyHelp, pulseStatus, pulseSubtitle } from "./pulse-scene.ts"
+import { drawFrameLight, drawPulseEffects, drawPulseEntities, drawPulsePanel, pulseKeyHelp, pulseStatus, pulseSubtitle } from "./pulse-scene.ts"
 import type { CapabilityMode, StyleRole } from "./roles.ts"
 import { chromeGlyph, entityGlyph, playerRole, terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
@@ -483,7 +487,7 @@ export type KeyHelp = Readonly<{ label: string; bindings: readonly string[] }>
 
 export const MENU_KEY_HELP: KeyHelp = {
   label: "MENU",
-  bindings: ["up/down choose", "enter/space select", "tab grid", "u undo", "p start pulse"],
+  bindings: ["up/down choose", "enter/space select", "tab grid", "u undo", "s start"],
 }
 
 /** The Grid, with a building armed. */
@@ -508,7 +512,7 @@ export const MAP_KEY_HELP: KeyHelp = {
 }
 
 const NEXUS_KEY_HELP: KeyHelp = { label: "NEXUS", bindings: ["up/down choose", "enter/space pick", "esc close"] }
-const CONFIRM_KEY_HELP: KeyHelp = { label: "START PULSE?", bindings: ["y yes", "n/esc no"] }
+const CONFIRM_KEY_HELP: KeyHelp = { label: "START PULSE?", bindings: ["enter/s/space start", "n/esc keep building"] }
 const GAME_MENU_KEY_HELP: KeyHelp = { label: "MENU", bindings: ["s settings", "r restart", "q quit", "esc back to the game"] }
 const COMMITTED_KEY_HELP: KeyHelp = { label: "COMMITTED", bindings: ["esc menu"] }
 const SETTINGS_KEY_HELP: KeyHelp = {
@@ -610,15 +614,8 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
   // The top bar: the game's title and where the player is (engine.md 9.2), across the whole width.
   const limit = layout.headerLimit
   text(cells, band, left, headerRow, "TERMINAL NEXUS", "chrome.title", { bold: true, limit })
-  const subtitle =
-    input.pulse === undefined
-      ? { text: "build phase", role: "chrome.muted" as StyleRole, lit: false, alarm: false }
-      : { ...pulseSubtitle(input.pulse), alarm: input.pulse.phase === "alarm" }
-  text(cells, band, left + 15, headerRow, subtitle.text, subtitle.role, {
-    bold: subtitle.alarm,
-    inverse: subtitle.lit,
-    limit: limit - 15,
-  })
+  const subtitle = input.pulse === undefined ? "build phase" : pulseSubtitle(input.pulse)
+  text(cells, band, left + 15, headerRow, subtitle, "chrome.muted", { limit: limit - 15 })
   // What Esc does right now, right-aligned (feedback F37): "menu [esc]", "back [esc]", "close [esc]" —
   // the name quiet, the key in the hotkey colour after it, findable without competing with the game's
   // own title. The same text is the click target that sends Esc.
@@ -702,21 +699,35 @@ const GROUP_LABELS: Readonly<Record<ConstructGroup, string>> = {
 
 /**
  * The bindings the footer had no room for, pinned to the bottom of the panel and growing upward.
- * Bounded by the menu, which wins: a hidden menu row is still a live click target, so the
+ * **Beside the Start button** — in the room left of it, on its own three rows — when every one of them
+ * fits there whole, which is how the floor's two or three short ones (`bksp remove`, `u undo`) share
+ * the panel's bottom with a button three rows tall; otherwise stacked above the button at the panel's
+ * width. Bounded by the menu, which wins: a hidden menu row is still a live click target, so the
  * lowest-priority lines are dropped instead.
  */
-function panelBindings(layout: BuildLayout, catalog: readonly ConstructItem[], help: KeyHelp): readonly string[] {
-  const lines = bindingLines(layout.footerLimit, layout.panelLimit, help).panel
+type PanelBindings = Readonly<{ lines: readonly string[]; beside: boolean; limit: number }>
+
+function panelBindings(layout: BuildLayout, catalog: readonly ConstructItem[], help: KeyHelp): PanelBindings {
   const floor = summaryRows(layout, catalog).special + 2
-  return lines.slice(0, Math.max(0, Math.min(lines.length, layout.panelBindingsRow - floor + 1)))
+  const wide = bindingLines(layout.footerLimit, layout.panelLimit, help).panel
+  const room = startButton(layout).left - layout.panelColumn - 1
+  const narrow = bindingLines(layout.footerLimit, room, help).panel
+  const count = (lines: readonly string[]): number => lines.flatMap((line) => line.split(BINDING_GAP)).length
+  const fitsBeside =
+    narrow.length > 0 &&
+    count(narrow) === count(wide) &&
+    layout.panelBindingsRow - narrow.length + 1 >= floor
+  if (fitsBeside) return { lines: narrow, beside: true, limit: room }
+  const lines = wide.slice(0, Math.max(0, Math.min(wide.length, menuFloor(layout) - floor + 1)))
+  return { lines, beside: false, limit: layout.panelLimit }
 }
 
 function drawPanelBindings(cells: BandCell[], input: BuildCompositionInput): void {
   const { layout } = input
-  const lines = panelBindings(layout, input.context.catalog, keyHelp(input.state))
+  const { lines, beside, limit } = panelBindings(layout, input.context.catalog, keyHelp(input.state))
+  const last = beside ? layout.panelBindingsRow : menuFloor(layout)
   lines.forEach((line, index) => {
-    const row = layout.panelBindingsRow - (lines.length - 1 - index)
-    text(cells, BANDS.chrome, layout.panelColumn, row, line, "chrome.muted", { limit: layout.panelLimit })
+    text(cells, BANDS.chrome, layout.panelColumn, last - (lines.length - 1 - index), line, "chrome.muted", { limit })
   })
 }
 
@@ -930,11 +941,35 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput, preview: Arm
   const effect = effectLine(context, state, preview)
   if (effect === null) return
   const row = specialRow + 2
-  // One row of clearance above the bindings block, so the two never touch; dropped rather than drawn
-  // over the bindings when a short panel has no room.
-  const bindingRows = panelBindings(layout, context.catalog, keyHelp(state)).length
-  if (row > layout.panelBindingsRow - bindingRows - 1) return
+  // One row of clearance above the bindings block, so the two never touch (the Start button's own
+  // border is clearance enough when there are none); dropped rather than drawn over the bindings when a
+  // short panel has no room.
+  const bindings = panelBindings(layout, context.catalog, keyHelp(state))
+  const bindingRows = bindings.beside ? 0 : bindings.lines.length
+  if (row > menuFloor(layout) - (bindingRows === 0 ? 0 : bindingRows + 1)) return
   text(cells, band, column, row, effect, "chrome.value", { limit })
+}
+
+/**
+ * The `[s] Start` button (owner, 2026-09-29, feedback F41) — the strategy game's "end turn": a box at
+ * the bottom right of the panel with the hotkey in its own colour. Drawn on the menu and on Explore
+ * Map's panel alike, and dim while a Nexus power still waits to be picked, because pressing it would
+ * only be refused (a click on it still answers, with the reason).
+ */
+function drawStartButton(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
+  const { context, state, layout } = input
+  const { top, left, width } = startButton(layout)
+  const band = BANDS.chrome
+  const ready = pendingPicks(context, state) === 0
+  const frame: StyleRole = ready ? "chrome.hotkey" : "chrome.muted"
+  const extra: DrawExtra = ready ? { bold: true } : { dim: true }
+  const glyph = (key: Parameters<typeof chromeGlyph>[1]): string => chromeGlyph(pack, key)
+  const bottom = top + 2
+  text(cells, band, left, top, glyph("topLeft") + glyph("horizontal").repeat(width - 2) + glyph("topRight"), frame, extra)
+  text(cells, band, left, bottom, glyph("bottomLeft") + glyph("horizontal").repeat(width - 2) + glyph("bottomRight"), frame, extra)
+  text(cells, band, left, top + 1, glyph("vertical"), frame, extra)
+  text(cells, band, left + width - 1, top + 1, glyph("vertical"), frame, extra)
+  text(cells, band, left + 2, top + 1, START_LABEL, ready ? "chrome.hotkey" : "chrome.muted", extra)
 }
 
 /** A plain name for what is under the cursor — the catalog's own label where there is one. */
@@ -1021,12 +1056,12 @@ function drawInfoPanel(cells: BandCell[], input: BuildCompositionInput, pack: Gl
     stats.push(["ATTACK", `${definition.attack.damage} at range ${definition.attack.range}`])
   }
   for (const [label, value] of stats) {
-    if (row > layout.panelBindingsRow) break
+    if (row > menuFloor(layout)) break
     text(cells, band, column, row, label, "chrome.label", { limit })
     rightAlign(cells, layout, row, value, "chrome.value")
     row += 1
   }
-  if (structure.planned && row + 1 <= layout.panelBindingsRow) {
+  if (structure.planned && row + 1 <= menuFloor(layout)) {
     text(cells, band, column, row + 1, "[bksp] remove  [u] undo", "chrome.muted", { limit })
   }
 }
@@ -1191,7 +1226,7 @@ export function composeBuildFrame(
     drawPulseEffects(cells, view, input.pulse, drawPulseEntities(cells, view, input.pulse))
     drawCursor(cells, input)
     drawChrome(cells, input, pack)
-    drawAlarm(cells, input.layout, input.pulse)
+    drawFrameLight(cells, input.layout, input.pulse)
     drawHeaderAndFooter(cells, input, null)
     const panel: BandCell[] = []
     drawPulsePanel(panel, input.layout, input.pulse)
@@ -1219,6 +1254,7 @@ export function composeBuildFrame(
     drawPanel(panel, input, preview)
     drawPanelBindings(panel, input)
   }
+  if (!input.state.committed) drawStartButton(panel, input, pack)
   for (const cell of panel) if (cell.y <= input.layout.panelBindingsRow) cells.push(cell)
   drawOverlay(cells, input, pack)
 

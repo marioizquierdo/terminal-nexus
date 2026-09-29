@@ -125,8 +125,8 @@ function scriptedGif(name, { keys, expect, cols = 80, rows = 24, capability = "t
 /**
  * The Nexus Pulse's ending as the live screen draws it (gate 6A): `plan` commits a build and starts
  * the Pulse, then the GIF is the screen every `stepMs` from `fromMs` to `toMs` on the Pulse's own
- * clock, shown for as long as it lasted — the alarm's flashing, the cease-fire, the walk home and the
- * result, in real time. A Pulse's screen is a pure function of that clock, so a script that waits
+ * clock, shown for as long as it lasted — the timer's flashing and the light round the border, the
+ * cease-fire, the walk home and the result, in real time. A Pulse's screen is a pure function of that clock, so a script that waits
  * gets exactly what a player who watched gets.
  */
 function pulseGif(name, { plan, fromMs, toMs, stepMs = 250, expect, experiments, cols = 80, rows = 24, capability = "truecolor", scale = 1 }) {
@@ -519,35 +519,47 @@ scripted(
 )
 
 scripted(
+  "build-start-button",
+  "The end-of-turn button: [s] Start, boxed at the bottom of the menu on every Build Phase screen",
+  { keys: PICK_FIRST_POWER, expect: "[s] Start" },
+)
+
+scripted(
   "build-nexus-confirm",
-  "Pressing [p] asks once, in a popup, whether to end the Build Phase and start the Nexus Pulse",
-  { keys: `${PICK_FIRST_POWER} p`, expect: "START THE NEXUS PULSE?" },
+  "[s] Start asks once, in a popup: Enter, Space or [s] again starts Pulse 1, [n] keeps building",
+  { keys: `${PICK_FIRST_POWER} s`, expect: "START PULSE 1?" },
 )
 
 // Gate 6A: the Nexus Pulse on the Build Phase's own screen. Accepting the question no longer stops at
 // "committed" - it starts the Pulse - so the committed panel gate 5D drew (`build-nexus-committed.png`,
 // left in place as that gate's evidence) is only what a build with no Pulse to start still shows.
 // The plan: the War Chest, two Turrets across the muster point and a Hatchery behind them.
-const PULSE_PLAN = "n 2 3 click:22,9 click:22,9 3 click:22,12 click:22,12 2 click:20,14 click:20,14 p y"
-// The same commit with nothing built: the War Chest picked (a pick cannot be skipped), then p and y.
-const NOTHING_BUILT = "n 2 p y"
+const PULSE_PLAN = "n 2 3 click:22,9 click:22,9 3 click:22,12 click:22,12 2 click:20,14 click:20,14 s s"
+// The same commit with nothing built: the War Chest picked (a pick cannot be skipped), then [s] twice.
+const NOTHING_BUILT = "n 2 s s"
 
 scripted(
   "pulse-start",
-  "y starts the Nexus Pulse on this same screen: the view goes to your Nexus, the panel keeps score",
-  { keys: PULSE_PLAN, expect: "0.0s of 30.0s" },
+  "The second [s] starts the Pulse on this screen: the view goes to your Nexus, the title has a timer",
+  { keys: PULSE_PLAN, expect: "NEXUS PULSE 1" },
 )
 
 scripted(
   "pulse-fight",
   "Seven seconds in: the raid meets the Turrets. Score on the left, the last five events under it",
-  { keys: `${PULSE_PLAN} wait~7000`, expect: "7.0s of 30.0s" },
+  { keys: `${PULSE_PLAN} wait~7000`, expect: "0:08" },
 )
 
 scripted(
-  "pulse-alarm",
-  "Four seconds before the shooting stops the alarm starts: PULSE ENDING flashes in the top bar and the panel",
-  { keys: `${PULSE_PLAN} wait~10700`, expect: "PULSE ENDING" },
+  "pulse-last-seconds",
+  "The last three seconds: the timer flashes, a light sweeps the map's border like a lighthouse",
+  { keys: `${PULSE_PLAN} wait~12400`, expect: "The Pulse is about to end." },
+)
+
+scripted(
+  "pulse-nexus-hit",
+  "Your Nexus is hit for the first time: the border goes a faint red for a fifth of a second",
+  { keys: `${NOTHING_BUILT} wait~11600`, expect: "NEXUS PULSE 1", experiments: { crew: "none" } },
 )
 
 scripted(
@@ -570,15 +582,15 @@ scripted(
 
 scripted(
   "pulse-experiments",
-  "d opens the Experiments mid-Pulse: the ending's timings first (Alarm lead, Walk-back, Centre on Nexus)",
-  { keys: `${PULSE_PLAN} wait~3000 d`, expect: "Alarm lead" },
+  "d opens the Experiments mid-Pulse: the ending's first (Final warning, Red alerts, Walk-back)",
+  { keys: `${PULSE_PLAN} wait~3000 d`, expect: "Final warning" },
 )
 
 pulseGif("pulse-ending", {
-  // The last moments of the Pulse above, in real time: the alarm flashing while the fight goes on,
-  // the shooting stopping, the survivors walking home, the result.
+  // The last moments of the Pulse above, in real time: the timer flashing and the light turning while
+  // the fight goes on, the shooting stopping, the survivors walking home, the result.
   plan: PULSE_PLAN,
-  fromMs: 9500,
+  fromMs: 10500,
   toMs: 19000,
   expect: "VICTORY",
 })

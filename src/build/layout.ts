@@ -108,6 +108,37 @@ export function pulseControlAt(layout: BuildLayout, column: number, row: number)
   return pulseControlRows(layout).find((control) => control.row === row)?.control ?? null
 }
 
+/**
+ * The `[s] Start` button (owner, 2026-09-29, feedback F41): the strategy game's "end turn", a boxed
+ * button at the bottom right of the menu panel, on every Build Phase screen that can still be edited.
+ * Three rows tall — the box's top, its label, its bottom — pinned to the panel's last rows the way the
+ * Pulse's controls are, right-aligned with a column of air before the divider. The composer draws it
+ * and the mouse adapter hit-tests it from this one place.
+ */
+export const START_KEY = "s"
+export const START_LABEL = `[${START_KEY}] Start`
+export const START_BUTTON_ROWS = 3
+
+export function startButton(layout: BuildLayout): Readonly<{ top: number; left: number; width: number }> {
+  const width = START_LABEL.length + 4
+  return {
+    top: layout.panelBindingsRow - START_BUTTON_ROWS + 1,
+    left: layout.panelColumn + layout.panelLimit - 1 - width,
+    width,
+  }
+}
+
+/** Whether a frame cell is on the Start button's box. */
+export function startButtonAt(layout: BuildLayout, column: number, row: number): boolean {
+  const { top, left, width } = startButton(layout)
+  return column >= left && column < left + width && row >= top && row < top + START_BUTTON_ROWS
+}
+
+/** The last panel row the menu's own text may use: the rows above the Start button. */
+export function menuFloor(layout: BuildLayout): number {
+  return startButton(layout).top - 1
+}
+
 /** The key the top bar's right end names. */
 export const ESC_KEY = "[esc]"
 

@@ -115,6 +115,7 @@ export class BuildSession {
       capability: settings.capability,
       tileWidth: layout.tileWidth,
       reducedMotion: settings.reducedMotion,
+      pulseNumber: this.buildState.pulseNumber,
     })
   }
 

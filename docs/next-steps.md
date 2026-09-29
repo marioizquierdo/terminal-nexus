@@ -2,7 +2,7 @@
 
 **Document role:** The queue: what waits on Mario, what comes next, and the small work that has piled up beside the milestones
 **Status:** WORKING — keep it short; delete an item when it is done, and move a decision into `specs/open-questions.md` when it becomes one
-**Updated:** 2026-09-29 (after Milestone 5 was accepted and gate 6A, the Nexus Pulse from `p, y` to a result, was built)
+**Updated:** 2026-09-29 (after Milestone 5 was accepted and gate 6A, the Nexus Pulse from `[s] Start` to a result, was built and reworked once)
 **License:** Apache-2.0
 
 Milestones say what the game must become (`milestones/`); this says what is waiting *right now*, and
@@ -10,13 +10,16 @@ the cleanup that does not belong to any gate.
 
 ## 1. Waiting on Mario
 
-- **Play gate 6A's Nexus Pulse and send an export.** Plan something, press `p`, then `y`, and watch it
-  to the result. Then press `d`: the first Experiments now are the ending's own — Alarm lead, Walk-back
-  delay, Walk-back time, Centre on Nexus — and the last two are the raid and your units (Raid: none
-  is a Pulse nobody comes to, TIME'S UP; Your units: none loses the Nexus). Settings, `e` (Export),
-  paste it as a comment; an agent starts the game with `--settings "<text>"` and settles each
-  Experiment it answers (`AGENTS.md` Section 2, item 1). The questions for him: does the alarm read
-  as anticipation or as noise, is the result clear without being told, and do the timings feel right?
+- **Play gate 6A's Nexus Pulse and send an export.** Plan something and press `[s] Start` (or `s`), then
+  Enter, and watch it to the result. Then press `d`: the first Experiments now are the ending's own —
+  Final warning (3000 ms; 0 turns off the timer's flash and the light), Red alerts (on or off),
+  Walk-back delay, Walk-back time, Centre on Nexus — and the last two are the raid and your units
+  (Raid: none is a Pulse nobody comes to, TIME'S UP; Your units: none loses the Nexus). Settings, `e`
+  (Export), paste it as a comment; an agent starts the game with `--settings "<text>"` and settles each
+  Experiment it answers (`AGENTS.md` Section 2, item 1). The questions for him: does the timer and the
+  light read as anticipation without being an alarm, is the red now rare and faint enough (does he
+  read "when losing" as a lost Pulse's result, or does he want something during the fight?), is the
+  result clear without being told, and do the timings feel right?
 - **Run the key-release probe in iTerm2.** `node scripts/probe-key-release.mjs`, hold an arrow, let it
   go, tap it, `q`. If the lines say `release`, Q66's tier 3 is buildable there (section 4).
 - **One question:** was "press `b`" an example of a key or a request for letter hotkeys? (Q67.)

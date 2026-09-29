@@ -15,9 +15,11 @@ import { BuildSession } from "../src/build/session.ts"
 import { nexusTile } from "../src/build/state.ts"
 import { spikeContext } from "../src/cli/spike.ts"
 import { buildLayout } from "../src/build/layout.ts"
+import type { BuildLayout } from "../src/build/layout.ts"
 import { frameToAnsi, frameToText } from "../src/view/frame.ts"
+import type { CellStyle, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { CAPABILITY_MODES } from "../src/view/index.ts"
-import { ALARM_HALF_PERIOD_MS } from "../src/view/ending.ts"
+import { BEAM_PERIOD_MS, TIMER_HALF_PERIOD_MS } from "../src/view/ending.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { DEFENCE, MINIMUM, at, frameOf, newSession, play, prepare, screenText } from "./pulse-helpers.ts"
 import type { Played } from "./pulse-helpers.ts"
@@ -37,6 +39,23 @@ const times = (played: Pick<Played, "build">) => {
   return pulse.times(played.build.state.debug)
 }
 
+/** The frame's cells that satisfy `test`, each with the screen position it is drawn at. */
+const cellsWhere = (frame: ReadonlyCellFrame, test: (style: CellStyle) => boolean): Array<{ x: number; y: number; style: CellStyle }> =>
+  frame.cells.flatMap((cell, index) => (test(cell.style) ? [{ x: index % frame.width, y: Math.floor(index / frame.width), style: cell.style }] : []))
+
+/** The timer's cells: the reversed ones inside the panel, west of the Grid. (Reversed video is also the
+ *  cursor's and a spark's, out on the map.) */
+const timerCells = (frame: ReadonlyCellFrame, layout: BuildLayout) =>
+  cellsWhere(frame, (style) => style.inverse === true).filter((cell) => cell.x < layout.gridBox.left)
+
+/** The light's cells: the tinted ones on the Grid's border. */
+const lightCells = (frame: ReadonlyCellFrame, layout: BuildLayout) => {
+  const box = layout.gridBox
+  return cellsWhere(frame, (style) => style.tint?.role === "fx.flash").filter(
+    (cell) => cell.x === box.left || cell.x === box.right || cell.y === box.top || cell.y === box.bottom,
+  )
+}
+
 const click = (played: Pick<Played, "build" | "layout">, column: number, row: number, button = MOUSE_LEFT, now?: number): void => {
   played.build.handleData(formatMouseEvent(button, column + 1, row + 1), played.layout, now === undefined ? {} : { now })
 }
@@ -49,8 +68,8 @@ test("answering yes turns the screen into the Nexus Pulse, with the keyboard on 
   assert.equal(state.armed, null)
   const text = screenText(played)
   assert.match(text, /TERMINAL NEXUS nexus pulse/)
-  assert.match(text, /^\| NEXUS PULSE /m)
-  assert.match(text, /0\.0s of 30\.0s {2}1x/)
+  assert.match(text, /^\| NEXUS PULSE 1 +\d:\d\d +\|/m)
+  assert.match(text, /^\| time left {2}1x/m)
   assert.match(text, /YOU {3}5 \[#+\]/)
   assert.match(text, /RAID {2}7 \[#+\]/)
   assert.match(text, /\[space\] Pause/)
@@ -83,21 +102,22 @@ test("the view is centred on the player's Nexus when the Pulse starts, wherever 
   )
 })
 
-test("the ending says what is happening in words at every moment: the alarm, cease fire, recall, the result", () => {
+test("the ending says what is happening in words at every moment: the last seconds, cease fire, recall, the result", () => {
   const played = victorious()
   const moments = times(played)
-  assert.ok(moments.alarmMs !== null && moments.alarmMs < moments.stopMs)
+  assert.ok(moments.warnMs !== null && moments.warnMs < moments.stopMs)
 
   at(played, 500)
-  assert.doesNotMatch(screenText(played), /PULSE ENDING|CEASE FIRE|RECALL|VICTORY/)
+  assert.doesNotMatch(screenText(played), /about to end|CEASE FIRE|RECALL|VICTORY/)
 
-  // The alarm: named in the top bar, the panel and the status line — three places that do not depend on
-  // a flash, a colour or a blink being seen.
-  at(played, moments.alarmMs + 40)
-  const alarm = screenText(played)
-  assert.match(alarm, /TERMINAL NEXUS PULSE ENDING/)
-  assert.match(alarm, /^\| PULSE ENDING /m)
-  assert.match(alarm, /Pulse ending - hold your fire\./)
+  // The last seconds: the title is still the Pulse's, with the time left beside it, and the status line
+  // says the end is near in plain words — no banner, nothing that needs a flash or a colour to be read.
+  at(played, moments.warnMs + 40)
+  const final = screenText(played)
+  assert.match(final, /TERMINAL NEXUS nexus pulse\b/)
+  assert.match(final, /^\| NEXUS PULSE 1 +0:0[123] +\|/m)
+  assert.match(final, /The Pulse is about to end\./)
+  assert.doesNotMatch(final, /PULSE ENDING|hold your fire/)
 
   at(played, moments.stopMs + 20)
   const halted = screenText(played)
@@ -127,6 +147,20 @@ test("the ending says what is happening in words at every moment: the alarm, cea
   assert.match(home, /\[r\] Watch again/)
 })
 
+test("the timer counts down the seconds left to the last shot, and its last second reads 0:01", () => {
+  const played = victorious()
+  const moments = times(played)
+  const stop = Math.ceil(moments.stopMs / 1000)
+  const clock = (ms: number): string => {
+    at(played, ms)
+    return /^\| NEXUS PULSE 1 +(\d:\d\d) +\|/m.exec(screenText(played))?.[1] ?? "none"
+  }
+  const m = (seconds: number): string => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`
+  assert.equal(clock(0), m(stop))
+  assert.equal(clock(1000), m(stop - 1))
+  assert.equal(clock(moments.stopMs - 1), "0:01", "the last second reads 0:01, not 0:00")
+})
+
 test("a lost Pulse and a timed-out one say so plainly, and a draw is a draw", () => {
   const lost = play()
   at(lost, 0)
@@ -145,9 +179,9 @@ test("a lost Pulse and a timed-out one say so plainly, and a draw is a draw", ()
 
   const timedOut = play({ raid: 1 })
   at(timedOut, 0)
-  // A scheduled ending reads like a sudden one: it too gets its alarm, ahead of the stop.
-  at(timedOut, times(timedOut).alarmMs! + 40)
-  assert.match(screenText(timedOut), /Pulse ending - hold your fire\./)
+  // A scheduled ending reads like a sudden one: it too gets its last seconds, ahead of the stop.
+  at(timedOut, times(timedOut).warnMs! + 40)
+  assert.match(screenText(timedOut), /The Pulse is about to end\./)
   at(timedOut, times(timedOut).homeMs + 100)
   assert.match(screenText(timedOut), /^\| TIME'S UP /m)
   assert.match(screenText(timedOut), /The time ran out before either side won\./)
@@ -201,14 +235,21 @@ test("the survivors are drawn walking home, and home when the walk ends", () => 
   for (const move of moves) assert.deepEqual(drawn(moments.homeMs + 10).get(move.ordinal), move.to, `${move.ordinal} did not come home`)
 })
 
-test("reduced motion holds the alarm steady and puts the survivors home the moment the walk begins", () => {
+test("reduced motion holds the timer and the light steady and puts the survivors home the moment the walk begins", () => {
   const played = victorious()
   played.build.dispatch({ kind: "setting-adjust", field: "reducedMotion", step: 1 })
   assert.equal(played.build.state.settings.reducedMotion, true)
   const moments = times(played)
-  for (let ms = moments.alarmMs! + 10; ms < moments.stopMs; ms += 173) {
+  const shown = (ms: number): string => {
     at(played, ms)
-    assert.equal(played.build.pulseFrame(played.layout)?.alarmLit, true, `the alarm blinked at ${ms} ms`)
+    const frame = frameOf(played, "truecolor")
+    return JSON.stringify([timerCells(frame, played.layout), lightCells(frame, played.layout)])
+  }
+  const first = shown(moments.warnMs! + 10)
+  assert.ok(JSON.parse(first)[0].length > 0, "the timer is not held lit")
+  assert.ok(JSON.parse(first)[1].length > 0, "the light is not on")
+  for (let ms = moments.warnMs! + 500; ms < moments.stopMs - 50; ms += 173) {
+    assert.equal(shown(ms), first, `the timer or the light moved at ${ms} ms`)
   }
   at(played, moments.walkMs + 5)
   const positions = played.build.pulseFrame(played.layout)!.positions
@@ -222,23 +263,62 @@ test("reduced motion holds the alarm steady and puts the survivors home the mome
   }), "nothing was still walking with motion on")
 })
 
-test("the alarm flashes the Grid's frame and stops flashing when it ends", () => {
+test("the timer is the only thing that flashes: it goes inverse in the last seconds and nothing else on screen does", () => {
   const played = victorious()
   const moments = times(played)
-  const styled = (ms: number): number => {
+  const inverse = (ms: number) => {
     at(played, ms)
-    const frame = frameOf(played, "truecolor")
-    return frame.cells.filter((cell) => cell.style.fgRole === "notice.gate" && cell.style.inverse === true).length
+    return timerCells(frameOf(played, "truecolor"), played.layout)
   }
-  assert.equal(styled(500), 0, "something flashed before the alarm")
-  const lit = styled(moments.alarmMs! + 20)
-  assert.ok(lit > 80, `only ${lit} cells flashed: the frame did not`)
-  const dark = styled(moments.alarmMs! + 20 + 350)
-  assert.ok(dark < lit, "the flash never went dark")
-  assert.equal(styled(moments.stopMs + 20), 0, "it kept flashing after the fight stopped")
+  assert.equal(inverse(500).length, 0, "something was reversed before the last seconds")
+  const seen = new Set<number>()
+  for (let ms = moments.warnMs! + 10; ms < moments.stopMs; ms += 50) {
+    const cells = inverse(ms)
+    seen.add(cells.length)
+    // Never more than the four characters of `0:03`, and always on the title's row.
+    assert.ok(cells.length <= 4, `${cells.length} cells flashed at ${ms} ms: more than the timer`)
+    assert.ok(cells.every((cell) => cell.y === played.layout.panelRow), `something other than the timer flashed at ${ms} ms`)
+  }
+  assert.ok(seen.has(0) && [...seen].some((count) => count > 0), "the timer never flashed on and off")
+  assert.equal(inverse(moments.stopMs + 20).length, 0, "it kept flashing after the fight stopped")
 })
 
-test("the ending is plain to see at every colour depth: the alarm is reversed video and, in monochrome, no phase leans on colour", () => {
+test("the timer's blink is slow: lit for 0.3 s, then plain for the next 0.3 s — a racing game's clock, not a strobe", () => {
+  // A Pulse's time only moves forward, so this one starts from the top.
+  const played = victorious()
+  const moments = times(played)
+  const lit = (ms: number): number => {
+    at(played, ms)
+    return timerCells(frameOf(played, "truecolor"), played.layout).length
+  }
+  assert.ok(lit(moments.warnMs! + 20) > 0, "the timer is not lit as the last seconds begin")
+  assert.equal(lit(moments.warnMs! + 20 + TIMER_HALF_PERIOD_MS), 0)
+  assert.ok(lit(moments.warnMs! + 20 + 2 * TIMER_HALF_PERIOD_MS) > 0)
+})
+
+test("a light sweeps the map's border in the last seconds, and goes out soon after the shooting stops", () => {
+  const played = victorious()
+  const moments = times(played)
+  const lightAt = (ms: number) => {
+    at(played, ms)
+    return lightCells(frameOf(played, "truecolor"), played.layout)
+  }
+  assert.equal(lightAt(500).length, 0, "there was light before the last seconds")
+  const one = lightAt(moments.warnMs! + 800)
+  assert.ok(one.length > 20, `only ${one.length} border cells were lit`)
+  // A turn later it has moved on: the brightest cell is somewhere else.
+  const brightest = (cells: typeof one): number => cells.reduce((best, cell) => Math.max(best, cell.style.tint!.amount), 0)
+  const head = (cells: typeof one) => cells.find((cell) => cell.style.tint!.amount === brightest(cells))
+  const later = lightAt(moments.warnMs! + 800 + 500)
+  assert.notDeepEqual([head(one)?.x, head(one)?.y], [head(later)?.x, head(later)?.y], "the light did not move")
+  const again = lightAt(moments.warnMs! + 800 + BEAM_PERIOD_MS)
+  assert.deepEqual([head(one)?.x, head(one)?.y], [head(again)?.x, head(again)?.y], "one turn is not one period")
+  // It goes out soon after the shooting stops, and never lights a glyph: every cell it touches is a tint only.
+  assert.ok(lightAt(moments.stopMs + 20).length > 0, "the light went out the instant the shooting stopped")
+  assert.equal(lightAt(moments.stopMs + 1000).length, 0, "the light stayed on after the fight")
+})
+
+test("the ending is plain to see at every colour depth: monochrome uses bold and reversed video, never a colour code", () => {
   const escape = String.fromCharCode(27)
   const codes = (text: string): number[] =>
     [...text.matchAll(new RegExp(`${escape}\\[([0-9;]*)m`, "g"))].flatMap((match) =>
@@ -253,19 +333,50 @@ test("the ending is plain to see at every colour depth: the alarm is reversed vi
       at(played, ms)
       return frameToAnsi(frameOf(played, capability), capability)
     }
-    const lit = ansiAt(moments.alarmMs! + 20)
-    const dark = ansiAt(moments.alarmMs! + 20 + ALARM_HALF_PERIOD_MS)
-    const phases = { lit, dark, ceaseFire: ansiAt(moments.stopMs + 20), recall: ansiAt(moments.walkMs + 20), result: ansiAt(moments.homeMs + 20) }
+    const lit = ansiAt(moments.warnMs! + 20)
+    const dark = ansiAt(moments.warnMs! + 20 + TIMER_HALF_PERIOD_MS)
+    const phases = { lit, dark, ceaseFire: ansiAt(moments.stopMs + 500), recall: ansiAt(moments.walkMs + 20), result: ansiAt(moments.homeMs + 20) }
     if (capability === "monochrome") {
       for (const [phase, ansi] of Object.entries(phases)) {
         assert.ok(!codes(ansi).some(isColour), `${phase}: monochrome emitted a colour code`)
       }
     }
-    assert.ok(codes(lit).includes(7), `${capability}: the lit alarm is not reversed video`)
-    assert.notEqual(lit, dark, `${capability}: the alarm's flash cannot be seen`)
+    assert.ok(codes(lit).includes(7), `${capability}: the lit timer is not reversed video`)
+    assert.notEqual(lit, dark, `${capability}: the timer's flash cannot be seen`)
     // The phases are told apart by their words as much as by anything drawn: each screen differs from the last.
     assert.equal(new Set(Object.values(phases)).size, 5, `${capability}: two moments of the ending look the same`)
   }
+})
+
+test("red is for the player's Nexus being hurt: faint, brief, off with the Experiment, and never under reduced motion", () => {
+  // A Nexus that falls: the raid gets through an undefended base.
+  const redLevels = (played: Played, mutate: (played: Played) => void = () => {}): number[] => {
+    at(played, 0)
+    mutate(played)
+    const levels: number[] = []
+    for (let ms = 0; ms < times(played).homeMs + 400; ms += 25) {
+      at(played, ms)
+      levels.push(played.build.pulseFrame(played.layout)!.redAlert)
+    }
+    return levels
+  }
+  const fell = redLevels(play({ crew: 1 }))
+  assert.equal(fell[0], 0, "the border was red before anything was hit")
+  assert.ok(Math.max(...fell) > 0, "a Nexus that fell never flashed red")
+  assert.ok(Math.max(...fell) <= 0.6, `the red reached ${Math.max(...fell)}: it should stay a faint tint`)
+  const redFrames = fell.filter((level) => level > 0).length
+  assert.ok(redFrames < fell.length / 3, `red for ${redFrames} of ${fell.length} frames is not brief`)
+
+  // A Pulse the player's Nexus never suffers in is never red: the last seconds are light, not alarm.
+  const safe = redLevels(play({ plan: DEFENCE }))
+  assert.equal(Math.max(...safe), 0, "the border went red in a Pulse that was won cleanly")
+
+  // The red is an Experiment, and off it is gone; under reduced motion it is gone too, every flash of it
+  // being said again in words.
+  const off = redLevels(play({ crew: 1 }), (played) => played.build.dispatch({ kind: "debug-adjust", field: "redAlerts", step: 1 }))
+  assert.equal(Math.max(...off), 0, "red with the Experiment off")
+  const still = redLevels(play({ crew: 1 }), (played) => played.build.dispatch({ kind: "setting-adjust", field: "reducedMotion", step: 1 }))
+  assert.equal(Math.max(...still), 0, "red under reduced motion")
 })
 
 test("the playback keys pause, slow, speed, step and replay the Pulse — and only while no popup is open", () => {
@@ -387,19 +498,19 @@ test("a click on the map looks around it — the cursor moves, the view follows,
   assert.equal(played.build.state.cursor.x, before.x + 1)
 })
 
-test("the view looks at the Nexus again when the alarm starts — unless Centre on Nexus is off", () => {
+test("the view looks at the Nexus again when the last seconds start — unless Centre on Nexus is off", () => {
   for (const centre of [true, false]) {
     const played = victorious()
     if (!centre) played.build.dispatch({ kind: "debug-adjust", field: "endCentre", step: 1 })
     assert.equal(played.build.state.debug.endCentre, centre)
     const moments = times(played)
-    at(played, moments.alarmMs! - 200)
+    at(played, moments.warnMs! - 200)
     // The player looks around: far to the east, then south.
     played.build.run([{ kind: "move-cursor", dx: 30, dy: 12, fast: true }])
     const wandered = played.build.state.cursor
-    at(played, moments.alarmMs! + 50)
+    at(played, moments.warnMs! + 50)
     const nexus = nexusTile(played.context)!
-    if (centre) assert.deepEqual(played.build.state.cursor, nexus, "the alarm did not bring the view back to the Nexus")
+    if (centre) assert.deepEqual(played.build.state.cursor, nexus, "the last seconds did not bring the view back to the Nexus")
     else assert.deepEqual(played.build.state.cursor, wandered, "the view moved with Centre on Nexus off")
   }
 })
@@ -420,16 +531,18 @@ test("changing an ending Experiment is felt at once, and `d` opens Settings at t
   const played = victorious()
   const moments = times(played)
   at(played, moments.stopMs - 1500)
-  assert.match(screenText(played), /PULSE ENDING/, "the default alarm lead of four seconds")
-  // The alarm lead to off: the same instant is now plain fighting.
-  for (let step = 0; step < 4; step += 1) played.build.dispatch({ kind: "debug-adjust", field: "endAlarmLeadMs", step: -1 })
-  assert.equal(played.build.state.debug.endAlarmLeadMs, 0)
-  assert.doesNotMatch(screenText(played), /PULSE ENDING/)
+  assert.match(screenText(played), /about to end/, "the default warning of three seconds")
+  // The warning to off: the same instant is now plain fighting, and the timer's flash and the light with it.
+  for (let step = 0; step < 4; step += 1) played.build.dispatch({ kind: "debug-adjust", field: "endWarnMs", step: -1 })
+  assert.equal(played.build.state.debug.endWarnMs, 0)
+  assert.doesNotMatch(screenText(played), /about to end/)
+  const frame = frameOf(played, "truecolor")
+  assert.equal(timerCells(frame, played.layout).length + lightCells(frame, played.layout).length, 0, "the warning was still on")
 
   played.build.handleData("d", played.layout)
   assert.equal(played.build.state.overlay, "settings")
-  assert.equal(played.build.state.overlayHighlight, rowOfField("endAlarmLeadMs"), "d did not open at the ending's Experiments")
-  assert.match(screenText(played), /Alarm lead/)
+  assert.equal(played.build.state.overlayHighlight, rowOfField("endWarnMs"), "d did not open at the ending's Experiments")
+  assert.match(screenText(played), /Final warning/)
   // Before a Pulse it is still the first Experiment.
   const before = newSession()
   before.build.handleData("d", before.layout)

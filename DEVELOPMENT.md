@@ -116,7 +116,7 @@ bun bin/grid.ts scenarios/citizen-mirror-skirmish --headless
 ./bin/terminal-nexus.ts --spike --settings "$(pbpaste)"   # start from an exported settings text
 ./bin/terminal-nexus.ts --spike --settings "placeLight=rainbow scrollMargin=25"
 ./bin/terminal-nexus.ts --spike --keys "n 1 1 Enter"         # open already in a state: a power picked, a Barracks placed
-./bin/terminal-nexus.ts --spike --keys "n 2 p y"             # open already in a Nexus Pulse, with nothing built (gate 6A)
+./bin/terminal-nexus.ts --spike --keys "n 2 s s"             # open already in a Nexus Pulse, with nothing built (gate 6A)
 ```
 
 Pinned by Gate 1A, measured 2026-08-21:
@@ -262,8 +262,10 @@ powers — a plain bump to the starting allotment, not real Milestone-8 content 
 with a digit or a click before anything else can happen, because a dealt Nexus power may not be
 skipped. Once picked, the screen becomes the construct menu described above, and the panel's own
 NEXUS and SPECIAL rows name what was picked and hold the Special slot's own reserved space, empty for
-now. `p` asks, once, whether to end the Build Phase and start the Nexus Pulse; `y`/`n` (or Esc)
-answers, and accepting locks everything else — arming, placing, undo, and removal are all refused
+now. `[s] Start` — a boxed button at the bottom of the menu, the strategy game's "end turn" — asks,
+once, whether to end the Build Phase and start the Nexus Pulse (`p` is an unlisted alias for `s`);
+Enter, Space or `s` again starts it, `n` or Esc keeps building (`y` still accepts too, unlisted),
+and accepting locks everything else — arming, placing, undo, and removal are all refused
 once committed, each naming which of the three gates (drafting, confirming, or already committed) is
 holding it. Whichever of the draft, the confirmation, or the construct menu the panel is currently
 showing is the one a digit or a click addresses, so a hotkey and a click always land on the same
@@ -277,9 +279,12 @@ describes, built for the first time here in `src/match/recall.ts` as a pure func
 kernel, never inside its tick — is worked out from where it ended. The Pulse then plays on the Build
 Phase's own screen (`src/view/pulse-scene.ts`, `pulse-live.ts`): the panel keeps score and lists the
 last events, the arrows look around, Space pauses, `[` and `]` change the speed, `.` and `,` step, `r`
-watches it again; the ending is an alarm, a cease fire, the survivors walking home and a result
-(`src/view/ending.ts`, every moment a function of presentation time; four timings are Experiments,
-Alarm lead, Walk-back delay, Walk-back time and Centre on Nexus). The Build Phase's reducer knows none
+watches it again. The Pulse's title carries a countdown to the last shot; the ending is the timer
+flashing and a light sweeping round the map's border in the last three seconds, a cease fire, the
+survivors walking home and a result (`src/view/ending.ts`, every moment a function of presentation
+time). Red is kept for the player's own Nexus being hurt — its first hit, very low health, a lost
+Pulse — faint and brief. Five timings and switches are Experiments: Final warning, Red alerts,
+Walk-back delay, Walk-back time and Centre on Nexus. The Build Phase's reducer knows none
 of it except two commands — `look-at`, which the Pulse sends to centre the view, and `pulse-failed`,
 which takes the commit back if the kernel cannot start from the plan. A context that carries no
 `startPulse` still just freezes the plan, as before. Restart, from the game menu, is the way back to
@@ -355,7 +360,7 @@ single character, `Name*N` to repeat, `Name~MS` for a key arriving MS millisecon
 before (untimed keys are a second apart, so each is a press of its own; `Right Right~150 Right~30*12`
 is a held arrow's auto-repeat, which the held-key ramp reads — the per-step summary prints the kind
 of move: tap, hold, fast or jump), `wait` or `wait~MS` for no key at all while time passes (a second
-by default) — how a script watches a Nexus Pulse: `n 2 p y wait~1000*20` starts one with nothing built
+by default) — how a script watches a Nexus Pulse: `n 2 s s wait~1000*20` starts one with nothing built
 and shows it twenty seconds in, second by second, and `--settings "raid=none"` or `"crew=none"` reach
 the endings the default raid does not,
 `click:X,Y` for a Grid tile and `click@COL,ROW` for a screen

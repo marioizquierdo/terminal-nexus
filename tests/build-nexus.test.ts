@@ -183,7 +183,7 @@ test("commit is refused before a pick, and opens the confirmation once one is ma
   build.dispatch({ kind: "pick-nexus", index: 0 })
   build.dispatch({ kind: "commit" })
   assert.equal(build.state.overlay, "confirm-commit")
-  assert.match(build.state.status.text, /Start the Nexus Pulse/)
+  assert.match(build.state.status.text, /Start Pulse 1\?/)
 })
 
 test("nothing but the confirmation itself changes state while it is open", () => {

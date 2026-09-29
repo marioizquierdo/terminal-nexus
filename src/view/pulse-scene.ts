@@ -18,7 +18,8 @@ import type { PlayerId } from "../state/types.ts"
 import { PLAYERS } from "../state/types.ts"
 import type { StatusMessage } from "../status.ts"
 import { status } from "../status.ts"
-import type { EndingPhase, PulseResult } from "./ending.ts"
+import type { EndingPhase, EndingTimes, PulseResult } from "./ending.ts"
+import { beamAt, formatTimer, timerLit, timerSeconds } from "./ending.ts"
 import { EFFECT_BAND_NUMBERS, effectCellStyle, mergeEffectCells } from "./effects/composite.ts"
 import type { EffectCellSource } from "./effects/composite.ts"
 import type { BandCell } from "./frame.ts"
@@ -35,14 +36,20 @@ export type PulseFrame = Readonly<{
   registry: ContentRegistry
   /** Each side's health at tick zero, structures excluded — what a force bar is measured against. */
   openingHealth: ReadonlyMap<PlayerId, number>
-  /** The Pulse's tick limit, and how many ticks a second run. */
-  pulseTicks: number
   ticksPerSecond: number
+  /** Which Pulse of the mission this is — the title's number. */
+  pulseNumber: number
   paused: boolean
   speed: number
   phase: EndingPhase
-  /** The alarm's flash is lit at this instant. */
-  alarmLit: boolean
+  /** Where the Pulse is in presentation time, and the ending's moments: the timer, the light and the
+   *  walk are all read from these, so the scene holds no clock of its own. */
+  timeMs: number
+  times: EndingTimes
+  reducedMotion: boolean
+  /** How red the map's border is at this instant, 0 (not at all) to a faint ceiling: the player's Nexus
+   *  being hurt, and nothing else. */
+  redAlert: number
   /** Where every entity is drawn: the fight's own interpolated positions, then Recall's walk home. */
   positions: ReadonlyMap<number, Coord>
   result: PulseResult
@@ -124,43 +131,54 @@ export function drawPulseEffects(
 }
 
 /**
- * The alarm: the Grid pane's four sides flash in the danger colour, inverse and bold, on top of whatever
- * line each already is — a style-only write, so the map's own edge and the frame's junctions keep their
- * glyphs. It is the eye-catching half of the alarm; the words — "PULSE ENDING" in the panel, the top bar
- * and the status line — carry the meaning, so a monochrome screen or a player who cannot see the flash
- * loses nothing but the flash.
+ * The light on the map's border (owner, 2026-09-29, feedback F44-F45): in the last seconds a soft white
+ * light sweeps round the frame like a lighthouse calling, and, a moment at a time, the border goes a
+ * faint red when the player's Nexus is hurt. Both are a colour pulled a little toward another — a
+ * style-only write, so the map's own edge and the frame's junctions keep their glyphs and nothing on
+ * the Grid is ever covered. Where colour cannot show (monochrome) the beam is the border going bold as
+ * it passes; the red has nothing to say there, because every red flash is said again in words.
  */
-export function drawAlarm(cells: BandCell[], layout: BuildLayout, pulse: PulseFrame): void {
-  if (pulse.phase !== "alarm" || !pulse.alarmLit) return
+export function drawFrameLight(cells: BandCell[], layout: BuildLayout, pulse: PulseFrame): void {
   const box = layout.gridBox
-  const style = { inverse: true, bold: true, fgRole: "notice.gate" as const }
-  for (let x = box.left; x <= box.right; x += 1) {
-    cells.push({ band: BANDS.chrome, x, y: box.top, style })
-    cells.push({ band: BANDS.chrome, x, y: box.bottom, style })
-  }
-  for (let y = box.top + 1; y < box.bottom; y += 1) {
-    cells.push({ band: BANDS.chrome, x: box.left, y, style })
-    cells.push({ band: BANDS.chrome, x: box.right, y, style })
-  }
+  // The border's cells, clockwise from the top left corner.
+  const border: Coord[] = []
+  for (let x = box.left; x <= box.right; x += 1) border.push({ x, y: box.top })
+  for (let y = box.top + 1; y < box.bottom; y += 1) border.push({ x: box.right, y })
+  for (let x = box.right; x >= box.left; x -= 1) border.push({ x, y: box.bottom })
+  for (let y = box.bottom - 1; y > box.top; y -= 1) border.push({ x: box.left, y })
+  border.forEach(({ x, y }, index) => {
+    const light = beamAt(pulse.times, pulse.timeMs, index, border.length, pulse.reducedMotion)
+    if (pulse.redAlert > 0) {
+      cells.push({ band: BANDS.chrome, x, y, style: { tint: { role: "notice.gate", amount: pulse.redAlert } } })
+    } else if (light > 0) {
+      cells.push({
+        band: BANDS.chrome,
+        x,
+        y,
+        style: { tint: { role: "fx.flash", amount: light }, ...(light >= BEAM_BOLD ? { bold: true, dim: false } : {}) },
+      })
+    }
+  })
 }
+
+/** How lit a border cell must be before monochrome shows it, by going bold. */
+const BEAM_BOLD = 0.4
 
 // ---------------------------------------------------------------------------------------------
 // The panel, the top bar, the key help and the status line
 // ---------------------------------------------------------------------------------------------
 
-/** The top bar's second word: where the player is. The alarm names itself here too. */
-export function pulseSubtitle(pulse: PulseFrame): Readonly<{ text: string; role: StyleRole; lit: boolean }> {
+/** The top bar's second word: where the player is. */
+export function pulseSubtitle(pulse: PulseFrame): string {
   switch (pulse.phase) {
-    case "alarm":
-      return { text: "PULSE ENDING", role: "notice.gate", lit: pulse.alarmLit }
     case "halted":
-      return { text: "cease fire", role: "chrome.muted", lit: false }
+      return "cease fire"
     case "walking":
-      return { text: "recall", role: "chrome.muted", lit: false }
+      return "recall"
     case "home":
-      return { text: `nexus pulse - ${pulse.result.headline.toLowerCase()}`, role: "chrome.muted", lit: false }
+      return `nexus pulse - ${pulse.result.headline.toLowerCase()}`
     default:
-      return { text: "nexus pulse", role: "chrome.muted", lit: false }
+      return "nexus pulse"
   }
 }
 
@@ -192,8 +210,8 @@ const cameHome = (count: number): string => (count === 0 ? "None of yours came h
 export function pulseStatus(pulse: PulseFrame): StatusMessage {
   const held = pulse.paused && pulse.phase !== "home" ? "Paused. " : ""
   switch (pulse.phase) {
-    case "alarm":
-      return status(`${held}Pulse ending - hold your fire.`, "warning")
+    case "final":
+      return status(`${held}The Pulse is about to end.`)
     case "halted":
       return status(`${held}Cease fire. The Pulse is over.`)
     case "walking":
@@ -279,11 +297,10 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
     at += 1
   }
 
-  // The headline: what this moment of the Pulse is called.
+  // The headline: what this moment of the Pulse is called. While it runs that is its title, with the time
+  // left until the shooting stops at the right end — the one thing on the screen that flashes, in the
+  // last seconds (feedback F43).
   switch (pulse.phase) {
-    case "alarm":
-      line("PULSE ENDING".padEnd(limit), "notice.gate", { bold: true, inverse: pulse.alarmLit })
-      break
     case "halted":
       line("CEASE FIRE", "chrome.title", { bold: true })
       break
@@ -297,11 +314,21 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
         { bold: true },
       )
       break
-    default:
-      line("NEXUS PULSE", "chrome.title", { bold: true })
+    default: {
+      const lit = timerLit(pulse.times, pulse.timeMs, pulse.reducedMotion)
+      const timer = formatTimer(timerSeconds(pulse.times, pulse.timeMs))
+      // One column in from the divider, as the panel's prose is.
+      const right = limit - 1
+      text(cells, band, column + right - timer.length, layout.panelRow + at, timer, lit ? "chrome.title" : "chrome.value", {
+        bold: lit,
+        inverse: lit,
+      })
+      line(`NEXUS PULSE ${pulse.pulseNumber}`, "chrome.title", { bold: true, limit: right - timer.length - 1 })
+    }
   }
 
-  // Under it: the clock while it runs, what the phase means as it ends, why it ended once it has.
+  // Under it: what the timer counts and how fast it runs while it goes, what the phase means as it ends,
+  // why it ended once it has.
   if (pulse.phase === "home") {
     for (const reason of wrapWords(pulse.result.reason, limit - 1)) line(reason, "chrome.value")
   } else if (pulse.phase === "halted") {
@@ -309,7 +336,7 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
   } else if (pulse.phase === "walking") {
     line("The survivors walk home.", "chrome.label")
   } else {
-    line(`${secondsOf(pulse, pulse.sample.tick)}s of ${secondsOf(pulse, pulse.pulseTicks)}s  ${pulse.speed}x${pulse.paused ? " paused" : ""}`, "chrome.label")
+    line(`time left  ${pulse.speed}x${pulse.paused ? " paused" : ""}`, "chrome.label")
   }
   gap()
 

@@ -210,15 +210,19 @@ The current milestone is **[`milestones/milestone-06-pulse-phase.md`](milestones
 — the Nexus Pulse Phase** (promoted 2026-09-29): can a player start the Pulse from a completed Build
 Phase, watch the unmodified kernel resolve it, see a legible ending with Recall, and land in the next
 Build Phase? Its active gate is **6A — Start, end, Recall**: Start Nexus Pulse as an explicit action from
-the Build Phase's `p` question, the end condition, the stop / finish-in-flight / Recall sequence, and a
+the Build Phase's Start button, the end condition, the stop / finish-in-flight / Recall sequence, and a
 result a viewer can read unprompted. **Gate 6A is built and reported (PASS), awaiting Mario's playtest**
-(2026-09-29, `evidence/gate-6a-report.md`): `p`, then yes, starts the Pulse on the Build Phase's own
-screen — the unmodified kernel resolves the committed plan plus a placeholder crew and raid — with a
-score, a feed of events, pause / speed / step / watch-again, and an ending of an alarm, a cease fire,
-the survivors walking home and a plain result (won, lost, drawn or timed out, and why). Recall, which
+(2026-09-29, `evidence/gate-6a-report.md`; reworked once from his feedback the same day): a boxed
+**`[s] Start`** button at the bottom of the menu — the strategy game's "end turn" — asks once, and
+Enter, Space or `s` again starts the Pulse on the Build Phase's own screen — the unmodified kernel
+resolves the committed plan plus a placeholder crew and raid — with a countdown timer in the title, a
+score, a feed of events, pause / speed / step / watch-again, and an ending of the timer flashing and a
+light sweeping the map's border like a lighthouse in the last three seconds, a cease fire, the survivors
+walking home and a plain result (won, lost, drawn or timed out, and why). **Red is kept for the player's
+own Nexus being hurt** — its first hit, very low health, a lost Pulse — faint and brief. Recall, which
 the rules described and no code ran, is built for the first time in `src/match/`, beside the kernel;
-the kernel is untouched. The ending's four timings, and the raid's and the crew's size, are Experiments
-(`d`); the interface rules are `docs/ui-patterns.md` section 7c. **Do not start 6B** (the loop back into
+the kernel is untouched. The ending's timings, the red's switch, and the raid's and the crew's size are
+Experiments (`d`); the interface rules are `docs/ui-patterns.md` sections 6 and 7c. **Do not start 6B** (the loop back into
 the next Build Phase and the trigger runner) or 6C (automatic production) without Mario's word. **Mario
 asked on 2026-09-28 to keep going without waiting to look at each gate first**: he tests several merged
 changes together, then plays, exports his Experiments, and pastes them into the pull request.

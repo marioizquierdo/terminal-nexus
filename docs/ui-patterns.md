@@ -3,7 +3,7 @@
 **Document role:** The interaction and drawing patterns every interactive screen follows
 **Status:** WORKING — built on the Build Phase first; not canon yet (promoted into `specs/engine.md`
 Section 9 when the owner accepts them)
-**Updated:** 2026-09-29 (section 7c, the Nexus Pulse on screen — gate 6A; section 0, the UX goals read out of four rounds of feedback; round-4 feedback F30-F33: arming where the cursor is, focus that goes back to
+**Updated:** 2026-09-29 (section 6, the Start button, and section 7c, the Nexus Pulse on screen — gate 6A, and its second round: the timer, the light, and red kept for the Nexus being hurt; section 0, the UX goals read out of four rounds of feedback; round-4 feedback F30-F33: arming where the cursor is, focus that goes back to
 where it came from, one "active" style for every menu row, Explore Map as that style, removal sparks;
 F34-F37: the top bar names what Esc does; popups lose their `[esc]`, gain a message form and a scroll
 bar; Settings' layout; Restart in the game menu); 2026-09-28 (a click activates; Explore Map —
@@ -267,6 +267,15 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   (wrapped at words, never cut), then its numbers as label/value rows. Later: a larger ASCII art
   version, and live numbers during a Pulse.
 - **Text in the panel never cuts a word**; a line that does not fit wraps or is dropped.
+- **The action that finishes the phase is advertised, not hidden behind a key** (owner, 2026-09-29,
+  feedback F41): the strategy game's "end turn" button — `[s] Start`, boxed (`+---+` in ASCII, the
+  frame's own corners in Unicode), at the bottom right of the menu panel, in the hotkey colour, on
+  every Build Phase screen from the first (dim, and refused with its reason, until the dealt Nexus
+  power is picked). A click on it or `s` asks once, in a popup, "Start Pulse 1?"; Enter, Space or `s`
+  again accepts (its highlighted row reads `[s] Start Pulse 1`), `n` or Esc keeps building. Popups
+  are drawn over it. Wherever the panel's key help would have run under the button it is written
+  beside it instead. (`startButton` in `src/build/layout.ts`, drawn by `drawStartButton` in
+  `src/view/build.ts`.)
 
 ## 7. The map rectangle
 
@@ -345,8 +354,9 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   key help change. A 96 x 40 map does not fit a fixed pane, so the Pulse uses the Build Phase's
   camera: it opens looking at the player's Nexus, the arrow keys look around while it plays, and the
   Pulse never waits for the player.
-- **The panel says what is happening, in this order**: a headline (`NEXUS PULSE`, and later the
-  ending's beats), the clock (`7.0s of 30.0s  1x`), one line per side (how many units, a bar of the
+- **The panel says what is happening, in this order**: a headline (`NEXUS PULSE 1` with the **time
+  left until the last shot** at its right end, and later the ending's beats), what the timer counts
+  and how fast it runs (`time left  1x`), one line per side (how many units, a bar of the
   health left of what it began with, and the number), the last five events in plain words — `3.5s
   trooper > raider`, `3.8s raider dies` — each in the colour of the side it is about, and the two
   controls at the bottom.
@@ -354,13 +364,22 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   `[r] Watch again`, each clickable and doing what its key does. `[` and `]` change the speed, `.`
   and `,` step a frame and a tick — key help only, since a row for each would crowd the panel at 80
   columns. Popups and the game menu keep every one of these keys for themselves while they are open.
-- **The ending is four beats, always in this order**: the **alarm** (`PULSE ENDING` flashes in the top
-  bar, in the panel's headline and in the map's frame — a style change and never a glyph change, so
-  it cannot hide anything on the map and it reads in monochrome as reversed video), **cease fire**,
-  **Recall** (the survivors walk home) and the **result** (`VICTORY`, `DEFEAT`, `DRAW` or `TIME'S UP`,
-  why, and how many of yours came home). Each is a pure function of the presentation time, so
-  pause, speed, a step or "Watch again" all keep it whole. Reduced motion holds the alarm lit and
-  puts everyone home the moment the walk would begin.
+- **The ending is four beats, always in this order**: the **last seconds** (the title's timer flashes,
+  slowly, like a racing game's clock, and a soft light sweeps once every two seconds round the map's
+  border like a lighthouse calling — a colour pulled toward the light and never a glyph, so it cannot
+  hide anything on the map; in monochrome the timer is reversed video and the border goes bold as
+  the light passes), **cease fire**, **Recall** (the survivors walk home) and the **result**
+  (`VICTORY`, `DEFEAT`, `DRAW` or `TIME'S UP`, why, and how many of yours came home). Each is a pure
+  function of the presentation time, so pause, speed, a step or "Watch again" all keep it whole.
+  Reduced motion holds the timer lit and the light steady, and puts everyone home the moment the
+  walk would begin.
+- **The timer is the only thing on the screen that flashes, and red is kept for one thing** (owner,
+  2026-09-29): the player's own Nexus being hurt — its first hit, its health very low (a short blip
+  every second and a half until it falls), and the result of a lost Pulse. Each is a faint, brief
+  tint of the border (a fifth of a second, at most about half the way to the danger colour), never a
+  banner, an inverse frame or a word in capitals, and every one is said again in words on the panel,
+  so nothing depends on seeing it. Reduced motion has no red at all. A new warning goes to the timer
+  or the light, never to a bigger red.
 - **The result is words first, colour second.** The headline, the reason and the count are on the
   panel and again, as one sentence, on the status line (green for a win, red for a loss, plain for a
   draw or a time-out) — the words carry the cue where colour cannot.
@@ -369,9 +388,9 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   Pulse before the first frame. What the presentation asks of the Build Phase — centre the view on
   the Nexus at the start and when the ending begins — goes through the same named command a player's
   key does (`look-at`), so a script, the terminal and the browser page see the same thing.
-- **The ending's timings are Experiments** (`d`, Alarm lead, Walk-back delay, Walk-back time, Centre on
-  Nexus) and so are the raid and the crew the spike starts a Pulse with (Raid, Your units), so every
-  way a Pulse can end can be watched without editing code.
+- **The ending's timings are Experiments** (`d`, Final warning, Red alerts, Walk-back delay, Walk-back
+  time, Centre on Nexus) and so are the raid and the crew the spike starts a Pulse with (Raid, Your
+  units), so every way a Pulse can end can be watched without editing code.
 
 ## 8. The status line
 

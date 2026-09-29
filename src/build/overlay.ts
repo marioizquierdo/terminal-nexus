@@ -17,6 +17,7 @@
 
 import { DEBUG_FIELDS, fieldSpec, formatDebugValue } from "./debug.ts"
 import type { BuildLayout } from "./layout.ts"
+import { START_KEY } from "./layout.ts"
 import {
   GAME_MENU_ROWS,
   PLAYER_FIELDS,
@@ -275,14 +276,21 @@ export function overlaySpec(context: BuildContext, state: BuildState): OverlaySp
       return { title: "NEXUS POWERS", rows }
     }
     case "confirm-commit":
+      // `[s] Start Pulse 1` is highlighted because it is what Enter, Space and `s` do (feedback F42).
       return {
-        title: "START THE NEXUS PULSE?",
+        title: `START PULSE ${state.pulseNumber}?`,
         rows: [
           { kind: "blank" },
-          { kind: "text", text: "Ends the Build Phase. The plan is locked in." },
+          { kind: "note", text: "Ends the Build Phase and locks the plan." },
           { kind: "blank" },
-          { kind: "option", hotkey: "y", label: "Yes, start the Pulse", command: { kind: "confirm-commit", accept: true } },
-          { kind: "option", hotkey: "n", label: "No, keep building", command: { kind: "confirm-commit", accept: false } },
+          {
+            kind: "option",
+            hotkey: START_KEY,
+            label: `Start Pulse ${state.pulseNumber}`,
+            command: { kind: "confirm-commit", accept: true },
+            highlighted: true,
+          },
+          { kind: "option", hotkey: "n", label: "Keep building", command: { kind: "confirm-commit", accept: false } },
         ],
       }
     case "menu":

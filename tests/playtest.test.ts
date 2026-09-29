@@ -86,17 +86,17 @@ test("wait is a step where nothing is pressed and time passes: a second by defau
 })
 
 test("a scripted playtest plays a Nexus Pulse on the script's own clock and shows every phase of its ending", () => {
-  // A Nexus power, two Turrets and a Hatchery, the commit and its yes; then the script lets it play.
-  const plan = "n 2 3 click:22,9 click:22,9 3 click:22,12 click:22,12 2 click:20,14 click:20,14 p y"
+  // A Nexus power, two Turrets and a Hatchery, the commit and its confirmation; then the script lets it play.
+  const plan = "n 2 3 click:22,9 click:22,9 3 click:22,12 click:22,12 2 click:20,14 click:20,14 s s"
   const run = runBuildPlaytest({ steps: parseKeyScript(`${plan} wait~1000*20`) })
   const texts = run.frames.map((frame) => frameToText(frame.frame))
   const started = texts.findIndex((text) => text.includes("nexus pulse"))
   assert.ok(started > 0, "the script never reached the Pulse")
-  // The frame right after `y` is the Pulse's own first moment, already looking at the Nexus.
-  assert.match(texts[started]!, /0\.0s of 30\.0s/)
+  // The frame right after the second `s` is the Pulse's own first moment, already looking at the Nexus.
+  assert.match(texts[started]!, /^\| NEXUS PULSE 1 +0:15 /m)
   assert.match(texts[started]!, /view x 0-48 y 3-18/)
-  const seen = ["NEXUS PULSE", "PULSE ENDING", "CEASE FIRE", "RECALL", "VICTORY"].map((word) =>
-    texts.findIndex((text) => new RegExp(`^\\| ${word} `, "m").test(text)),
+  const seen = [/^\| NEXUS PULSE /m, /The Pulse is about to end\./, /^\| CEASE FIRE /m, /^\| RECALL /m, /^\| VICTORY /m].map((phase) =>
+    texts.findIndex((text) => phase.test(text)),
   )
   assert.ok(seen.every((index) => index >= 0), `a phase never appeared: ${JSON.stringify(seen)}`)
   assert.deepEqual([...seen].sort((a, b) => a - b), seen, "the phases did not come in order")

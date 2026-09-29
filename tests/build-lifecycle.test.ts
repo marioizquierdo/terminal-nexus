@@ -17,6 +17,10 @@ import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import type { Settings } from "../src/settings/index.ts"
 
 const ESC = String.fromCharCode(27)
+
+/** The title row's clock, whatever styling sits between the words and the time. */
+const timerAt = (write: string): string | undefined => new RegExp(`NEXUS PULSE 1(?:${ESC}\\[[0-9;]*m)* +(\\d:\\d\\d)`).exec(write)?.[1]
+
 const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, capability: "monochrome" }
 
 class FakeStdout extends EventEmitter {
@@ -249,9 +253,9 @@ test("--keys that cannot be delivered stops there and says why when the screen c
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
 /** A plan that wins: a Nexus power, two Turrets and a Hatchery, the commit and its yes. */
-const WINNING_PLAN = "n 2 3 click:22,9 click:22,9 3 click:22,12 click:22,12 2 click:20,14 click:20,14 p y"
+const WINNING_PLAN = "n 2 3 click:22,9 click:22,9 3 click:22,12 click:22,12 2 click:20,14 click:20,14 s s"
 
-test("the live loop plays a Nexus Pulse on its own clock: alarm, result, then idle — and starts over on Restart", async () => {
+test("the live loop plays a Nexus Pulse on its own clock: timer, last seconds, result, then idle — and starts over on Restart", async () => {
   let t = 5_000
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()
@@ -270,17 +274,17 @@ test("the live loop plays a Nexus Pulse on its own clock: alarm, result, then id
   await sleep(80)
   // Opened already in the Pulse the start keys committed, at its very beginning — however many seconds of
   // script clock the keys took, the live clock started the Pulse at zero.
-  assert.match(stdout.lastWrite, /0\.0s of 30\.0s/, "the Pulse did not open at zero")
+  assert.equal(timerAt(stdout.lastWrite), "0:15", "the Pulse did not open at zero")
   assert.match(stdout.lastWrite, /nexus pulse/)
 
   t += 6_000
   await sleep(80)
-  assert.match(stdout.lastWrite, /6\.0s of 30\.0s/, "the Pulse did not follow the screen's clock")
+  assert.equal(timerAt(stdout.lastWrite), "0:09", "the Pulse did not follow the screen's clock")
 
-  // The alarm, in the run-up to the stop (the Pulse ends near 14.6 s and the lead is four seconds).
-  t += 5_000
+  // The last seconds, in the run-up to the stop (the Pulse ends near 14.6 s and the warning is three seconds).
+  t += 6_000
   await sleep(80)
-  assert.match(stdout.lastWrite, /PULSE ENDING/, "no alarm before the fight stopped")
+  assert.match(stdout.lastWrite, /about to end/, "no warning before the fight stopped")
 
   // The result stands, in words a viewer can read without being told.
   t += 8_000
@@ -323,7 +327,7 @@ test("a Nexus Pulse holds still behind the resize gate and resumes from the same
   await sleep(60)
   t += 3_000
   await sleep(60)
-  assert.match(stdout.lastWrite, /3\.0s of 30\.0s/)
+  assert.equal(timerAt(stdout.lastWrite), "0:12")
 
   stdout.columns = 60
   stdout.emit("resize")
@@ -334,7 +338,7 @@ test("a Nexus Pulse holds still behind the resize gate and resumes from the same
   stdout.columns = 80
   stdout.emit("resize")
   await sleep(60)
-  assert.match(stdout.lastWrite, /3\.0s of 30\.0s/, "the Pulse ran on behind the gate")
+  assert.equal(timerAt(stdout.lastWrite), "0:12", "the Pulse ran on behind the gate")
   stdin.emit("data", Buffer.from([3]))
   await sleep(30)
 })

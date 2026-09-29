@@ -427,7 +427,7 @@ test("while the commit question is open, the status line asks it, whatever the g
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "commit" }])
   })
-  assert.match(statusRow(asking), /^Start the Nexus Pulse\? \[y\]es \/ \[n\]o$/)
+  assert.match(statusRow(asking), /^Start Pulse 1\? Enter starts it; Esc keeps building\.$/)
   const ghost = cellForTile(asking.layout, asking.build.state.camera, { x: 8, y: 5 })
   assert.notEqual(cellAt(asking.frame, ghost.x, ghost.y).glyph, "x", "no ghost behind the question")
 })
@@ -715,7 +715,7 @@ test("every key the adapters bind is named on screen at the 80-column floor", ()
         ["\u001b[B", "down", /up\/down choose/],
         ["\r", "enter", /enter\/space select/],
         ["\t", "tab", /tab grid/],
-        ["p", "commit", /p start pulse/],
+        ["s", "commit", /s start/],
         ["u", "undo", /u undo/],
         ["1", "a digit", /\[1\] Barracks/],
       ],
@@ -930,15 +930,15 @@ test("the normal panel says how many Nexus powers are active, and names the empt
   assert.match(built.text, /SPECIAL {2,}none available/)
 })
 
-test("the commit confirmation is a popup over the Grid, asking only y or n", () => {
+test("the commit confirmation is a popup over the Grid: Start Pulse 1, or keep building", () => {
   const built = screenAt(MINIMUM, (build) => {
     build.dispatch({ kind: "commit" })
   })
-  assert.match(built.text, /START THE NEXUS PULSE\?/)
-  assert.match(built.text, /\[y\] Yes, start the Pulse/)
-  assert.match(built.text, /\[n\] No, keep building/)
+  assert.match(built.text, /START PULSE 1\?/)
+  assert.match(built.text, /\[s\] Start Pulse 1/)
+  assert.match(built.text, /\[n\] Keep building/)
   assert.match(built.text, /\[esc\]/)
-  assert.match(built.text, /START PULSE\? {2}y yes {2}n\/esc no/)
+  assert.match(built.text, /START PULSE\? {2}enter\/s\/space start {2}n\/esc keep building/)
 })
 
 test("the committed screen names the pick and the count, and the footer carries the full sentence", () => {

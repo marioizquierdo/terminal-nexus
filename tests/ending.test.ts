@@ -1,6 +1,7 @@
-// The Nexus Pulse's ending — gate 6A, the owner's sketch (milestone 6, Section 2.2). Every moment of it is a
-// pure function of presentation time, so the tests are arithmetic: the moments, their order at every
-// Experiment value, the alarm's flash, the walk home, and the words of the result.
+// The Nexus Pulse's ending — gate 6A, the owner's sketch (milestone 6, Section 2.2) and his answer to its
+// first build (feedback F43-F45). Every moment of it is a pure function of presentation time, so the tests
+// are arithmetic: the moments, their order at every Experiment value, the timer and its flash, the light
+// that sweeps the border, the red that means the Nexus is hurt, the walk home, and the words of the result.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -9,28 +10,46 @@ import type { DebugFlags } from "../src/build/debug.ts"
 import type { RecallMove } from "../src/match/index.ts"
 import type { Outcome } from "../src/state/types.ts"
 import {
-  ALARM_HALF_PERIOD_MS,
-  alarmLit,
+  BEAM_FADE_MS,
+  BEAM_GLOW,
+  BEAM_PEAK,
+  BEAM_PERIOD_MS,
+  BEAM_STEADY,
+  BEAM_TAIL_CELLS,
+  RED_DEFEAT_MS,
+  RED_FIRST_HIT_MS,
+  RED_LOW_BLIP_MS,
+  RED_LOW_EVERY_MS,
+  RED_PEAK,
+  TIMER_HALF_PERIOD_MS,
+  beamAt,
   endingTimes,
+  formatTimer,
+  nexusStrain,
   phaseAt,
+  redAlert,
   resultOf,
+  timerLit,
+  timerSeconds,
   walkPositions,
 } from "../src/view/ending.ts"
-import type { EndingFlags, EndingPhase } from "../src/view/ending.ts"
+import type { EndingFlags, EndingPhase, NexusStrain } from "../src/view/ending.ts"
+import { DEFENCE, play } from "./pulse-helpers.ts"
 
 const SKETCH: EndingFlags = {
-  endAlarmLeadMs: DEFAULT_ENDING.endAlarmLeadMs,
+  endWarnMs: DEFAULT_ENDING.endWarnMs,
   endWalkPauseMs: DEFAULT_ENDING.endWalkPauseMs,
   endWalkMs: DEFAULT_ENDING.endWalkMs,
 }
 
-test("the defaults are the owner's sketch: an alarm ~4 s ahead, one second to the walk, two of walking", () => {
-  // "some visual warning, like an alarm, then after 3-5 seconds, the units stop shooting, 1 second later
-  // they start walking back, 2 seconds later the build phase begins" (owner, 2026-09-17).
-  assert.deepEqual(SKETCH, { endAlarmLeadMs: 4000, endWalkPauseMs: 1000, endWalkMs: 2000 })
+test("the defaults are the owner's: a warning in the last 3 s, one second to the walk, two of walking", () => {
+  // "some visual warning ... then after 3-5 seconds, the units stop shooting, 1 second later they start
+  // walking back, 2 seconds later the build phase begins" (owner, 2026-09-17), and "the last 3 seconds"
+  // (2026-09-29).
+  assert.deepEqual(SKETCH, { endWarnMs: 3000, endWalkPauseMs: 1000, endWalkMs: 2000 })
   const times = endingTimes(20_000, 20_400, SKETCH)
   assert.equal(times.stopMs, 20_000)
-  assert.equal(times.alarmMs, 16_000, "the alarm starts four seconds before the shooting stops")
+  assert.equal(times.warnMs, 17_000, "the warning starts three seconds before the shooting stops")
   assert.equal(times.walkMs, 21_000, "the walk starts one second after it stops")
   assert.equal(times.homeMs, 23_000, "and takes two seconds")
 })
@@ -42,9 +61,9 @@ test("the walk waits for every effect in flight to land, and never starts before
   assert.equal(endingTimes(20_000, 20_300, { ...SKETCH, endWalkPauseMs: 0 }).walkMs, 20_300)
 })
 
-test("no alarm lead means no alarm, and a short Pulse's alarm cannot start before the Pulse does", () => {
-  assert.equal(endingTimes(20_000, 20_000, { ...SKETCH, endAlarmLeadMs: 0 }).alarmMs, null)
-  assert.equal(endingTimes(2_500, 2_500, SKETCH).alarmMs, 0, "the alarm was scheduled before time zero")
+test("no warning means none, and a short Pulse's warning cannot start before the Pulse does", () => {
+  assert.equal(endingTimes(20_000, 20_000, { ...SKETCH, endWarnMs: 0 }).warnMs, null)
+  assert.equal(endingTimes(2_500, 2_500, SKETCH).warnMs, 0, "the warning was scheduled before time zero")
   assert.equal(endingTimes(20_000, 20_000, { ...SKETCH, endWalkMs: 0 }).homeMs, 21_000, "no walk: home the moment it starts")
 })
 
@@ -54,15 +73,15 @@ test("the phases come in order and never go backwards, at every value of every e
     assert.ok(spec !== undefined, `${field} is not an Experiment`)
     return spec.values as readonly number[]
   }
-  const order: readonly EndingPhase[] = ["fighting", "alarm", "halted", "walking", "home"]
+  const order: readonly EndingPhase[] = ["fighting", "final", "halted", "walking", "home"]
   let combinations = 0
-  for (const endAlarmLeadMs of values("endAlarmLeadMs")) {
+  for (const endWarnMs of values("endWarnMs")) {
     for (const endWalkPauseMs of values("endWalkPauseMs")) {
       for (const endWalkMs of values("endWalkMs")) {
         for (const [stop, effectsEnd] of [[600, 600], [9_000, 9_500], [20_000, 23_000], [30_000, 30_100]] as const) {
-          const flags = { endAlarmLeadMs, endWalkPauseMs, endWalkMs }
+          const flags = { endWarnMs, endWalkPauseMs, endWalkMs }
           const times = endingTimes(stop, effectsEnd, flags)
-          assert.ok((times.alarmMs ?? 0) <= times.stopMs, "the alarm starts after the fight stops")
+          assert.ok((times.warnMs ?? 0) <= times.stopMs, "the warning starts after the fight stops")
           assert.ok(times.stopMs <= times.walkMs && times.walkMs <= times.homeMs, "the moments are out of order")
           let last = -1
           for (let t = 0; t <= times.homeMs + 500; t += 50) {
@@ -70,7 +89,7 @@ test("the phases come in order and never go backwards, at every value of every e
             assert.ok(index >= last, `${JSON.stringify(flags)} at ${t} ms went back from ${order[last]} to ${order[index]}`)
             last = index
           }
-          assert.equal(phaseAt(times, 0), times.alarmMs === 0 ? "alarm" : "fighting")
+          assert.equal(phaseAt(times, 0), times.warnMs === 0 ? "final" : "fighting")
           assert.equal(phaseAt(times, times.homeMs + 1), "home")
           assert.equal(phaseAt(times, times.stopMs), times.walkMs === times.stopMs ? (times.homeMs === times.walkMs ? "home" : "walking") : "halted")
           combinations += 1
@@ -81,20 +100,113 @@ test("the phases come in order and never go backwards, at every value of every e
   assert.ok(combinations > 500, "the sweep did not cover the Experiments")
 })
 
-test("the alarm is only ever in the run-up to the stop, and flashes on and off while it lasts", () => {
+test("the timer counts down to the stop in whole seconds, and reads 0:00 once it has", () => {
+  const times = endingTimes(14_580, 14_900, SKETCH)
+  assert.equal(timerSeconds(times, 0), 15, "14.58 s left is 15 on the clock: a part of a second is the second it is in")
+  assert.equal(timerSeconds(times, 11_579), 4)
+  assert.equal(timerSeconds(times, 11_580), 3)
+  assert.equal(timerSeconds(times, 14_579), 1)
+  assert.equal(timerSeconds(times, 14_580), 0)
+  assert.equal(timerSeconds(times, 30_000), 0, "it went negative after the stop")
+  assert.deepEqual([0, 7, 12, 59, 60, 61, 600].map(formatTimer), ["0:00", "0:07", "0:12", "0:59", "1:00", "1:01", "10:00"])
+})
+
+test("only the timer flashes, and only in the last seconds: on and off from the moment they begin", () => {
+  const times = endingTimes(20_000, 20_000, SKETCH) // the last seconds: 17 000 -> 20 000
+  assert.equal(timerLit(times, 16_999, false), false, "it flashed before the last seconds")
+  assert.equal(timerLit(times, 17_000, false), true)
+  assert.equal(timerLit(times, 17_000 + TIMER_HALF_PERIOD_MS - 1, false), true)
+  assert.equal(timerLit(times, 17_000 + TIMER_HALF_PERIOD_MS, false), false)
+  assert.equal(timerLit(times, 17_000 + 2 * TIMER_HALF_PERIOD_MS, false), true)
+  assert.equal(timerLit(times, 19_999, false) || !timerLit(times, 19_999, false), true)
+  assert.equal(timerLit(times, 20_000, false), false, "it kept flashing after the shooting stopped")
+  // Reduced motion holds it lit — a steady cue, not an absent one — and no warning lights nothing.
+  for (let t = 17_000; t < 20_000; t += 130) assert.equal(timerLit(times, t, true), true)
+  assert.equal(timerLit(times, 16_000, true), false)
+  assert.equal(timerLit(endingTimes(20_000, 20_000, { ...SKETCH, endWarnMs: 0 }), 19_000, false), false)
+})
+
+test("the light sweeps round the border in the last seconds, clockwise, with a tail behind its head", () => {
   const times = endingTimes(20_000, 20_000, SKETCH)
-  assert.equal(phaseAt(times, 15_999), "fighting")
-  assert.equal(phaseAt(times, 16_000), "alarm")
-  assert.equal(phaseAt(times, 19_999), "alarm")
-  assert.equal(phaseAt(times, 20_000), "halted")
-  // Lit for a half period, dark for the next, and so on from the moment it starts.
-  assert.equal(alarmLit(times, 16_000, false), true)
-  assert.equal(alarmLit(times, 16_000 + ALARM_HALF_PERIOD_MS - 1, false), true)
-  assert.equal(alarmLit(times, 16_000 + ALARM_HALF_PERIOD_MS, false), false)
-  assert.equal(alarmLit(times, 16_000 + 2 * ALARM_HALF_PERIOD_MS, false), true)
-  // Reduced motion holds it lit: a steady cue, not an absent one. No alarm, nothing lit.
-  for (let t = 16_000; t < 20_000; t += 130) assert.equal(alarmLit(times, t, true), true)
-  assert.equal(alarmLit(endingTimes(20_000, 20_000, { ...SKETCH, endAlarmLeadMs: 0 }), 19_000, false), false)
+  const length = 134
+  const at = (timeMs: number): number[] => Array.from({ length }, (_, index) => beamAt(times, timeMs, index, length, false))
+  const peakIndex = (levels: readonly number[]): number => levels.indexOf(Math.max(...levels))
+  // Nothing before it begins, and nothing a moment after the shooting has stopped.
+  assert.ok(at(16_999).every((level) => level === 0))
+  assert.ok(at(20_000 + BEAM_FADE_MS).every((level) => level === 0))
+  // Halfway round after half a period: the head has moved on, clockwise (a higher index), by about half.
+  const settled = 17_000 + BEAM_FADE_MS
+  const first = peakIndex(at(settled))
+  const later = peakIndex(at(settled + BEAM_PERIOD_MS / 4))
+  assert.ok(later > first && later - first < length / 2, `the head went from ${first} to ${later}, not a quarter turn clockwise`)
+  // The head is the brightest cell, the tail fades to the glow behind it, and nothing is ever brighter than the peak.
+  const levels = at(settled + 250)
+  const head = peakIndex(levels)
+  assert.ok(levels[head]! <= BEAM_PEAK + 1e-9)
+  for (let step = 1; step < BEAM_TAIL_CELLS; step += 1) {
+    const behind = levels[(head - step + length) % length]!
+    const before = levels[(head - step + 1 + length) % length]!
+    assert.ok(behind <= before + 1e-9, "the tail brightens away from the head")
+  }
+  assert.ok(Math.abs(levels[(head + 5) % length]! - BEAM_GLOW) < 1e-9, "ahead of the head the border has only the glow")
+  // It comes up and goes out gently.
+  assert.ok(Math.max(...at(17_000 + BEAM_FADE_MS / 2)) < Math.max(...at(settled)), "it did not fade in")
+  assert.ok(Math.max(...at(20_000 + BEAM_FADE_MS / 2)) < Math.max(...at(20_000 - 1)), "it did not fade out")
+  // No warning, no light.
+  const none = endingTimes(20_000, 20_000, { ...SKETCH, endWarnMs: 0 })
+  assert.ok(Array.from({ length }, (_, index) => beamAt(none, 19_000, index, length, false)).every((level) => level === 0))
+})
+
+test("under reduced motion the light is one steady glow, the same on every cell, for as long as the warning lasts", () => {
+  const times = endingTimes(20_000, 20_000, SKETCH)
+  for (const t of [17_000, 18_333, 19_999]) {
+    const levels = Array.from({ length: 40 }, (_, index) => beamAt(times, t, index, 40, true))
+    assert.ok(levels.every((level) => level === BEAM_STEADY), `not steady at ${t} ms`)
+  }
+  assert.equal(beamAt(times, 16_999, 3, 40, true), 0)
+})
+
+test("red means one thing: the player's Nexus is hurt — its first hit, very low health, a lost Pulse", () => {
+  const times = endingTimes(20_000, 20_000, SKETCH) // home at 23 000
+  const hurt: NexusStrain = { hitMs: 5_000, lowMs: 12_000, fallMs: 18_000 }
+  const red = (strain: NexusStrain, t: number, defeated = false, reduced = false): number => redAlert(strain, times, defeated, t, reduced)
+  // Nothing before the first hit, and nothing for a Nexus that was never hurt.
+  assert.equal(red(hurt, 4_999), 0)
+  assert.equal(red({ hitMs: null, lowMs: null, fallMs: null }, 10_000, false), 0)
+  // The first hit: a short flash that fades to nothing.
+  assert.ok(Math.abs(red(hurt, 5_000) - RED_PEAK) < 1e-9)
+  assert.ok(red(hurt, 5_000 + RED_FIRST_HIT_MS / 2) < red(hurt, 5_000))
+  assert.equal(red(hurt, 5_000 + RED_FIRST_HIT_MS), 0)
+  // Very low health: a shorter blip every second and a half while it lasts, until the Nexus falls.
+  for (const start of [12_000, 12_000 + RED_LOW_EVERY_MS, 12_000 + 2 * RED_LOW_EVERY_MS]) {
+    assert.ok(red(hurt, start) > 0, `no blip at ${start}`)
+    assert.equal(red(hurt, start + RED_LOW_BLIP_MS), 0, `the blip at ${start} was too long`)
+  }
+  assert.equal(red(hurt, 12_000 + 3 * RED_LOW_EVERY_MS - 1), 0, "it flashed between blips")
+  assert.equal(red(hurt, 18_000 + 200), 0, "it kept blipping after the Nexus fell")
+  // A lost Pulse: one more, when the result appears, and only for a loss.
+  assert.ok(red(hurt, times.homeMs, true) > 0)
+  assert.equal(red(hurt, times.homeMs + RED_DEFEAT_MS, true), 0)
+  assert.equal(red(hurt, times.homeMs, false), 0, "a won or drawn Pulse flashed red")
+  // Never more than the faint ceiling, and none at all under reduced motion.
+  for (let t = 0; t < 25_000; t += 25) assert.ok(red(hurt, t, true) <= RED_PEAK + 1e-9)
+  for (let t = 0; t < 25_000; t += 250) assert.equal(red(hurt, t, true, true), 0)
+})
+
+test("the strain on a Nexus is read from the Pulse: its first hit, when it was nearly gone, when it fell", () => {
+  // No units of your own: the raid goes for the Nexus, and it falls (a kernel ending) — so all three happen.
+  const lost = play({ crew: 1 }).pulse.timeline
+  const strain = nexusStrain(lost)
+  assert.ok(strain.hitMs !== null && strain.lowMs !== null && strain.fallMs !== null, JSON.stringify(strain))
+  assert.ok(strain.hitMs <= strain.lowMs && strain.lowMs <= strain.fallMs, "a Nexus fell before it was hurt")
+  const lastTick = lost.states[lost.states.length - 1]!.tick
+  const stopMs = (lastTick * 1000) / lost.ticksPerSecond
+  assert.ok(strain.fallMs <= stopMs + 1000, "it fell after the Pulse ended")
+  // A defence that holds may never let the raid touch the Nexus at all; whatever happened, the order holds.
+  const held = nexusStrain(play({ plan: DEFENCE }).pulse.timeline)
+  if (held.lowMs !== null) assert.ok(held.hitMs !== null && held.hitMs <= held.lowMs)
+  // The other side's Nexus is not the player's: side B has none in the spike.
+  assert.deepEqual(nexusStrain(lost, "B"), { hitMs: null, lowMs: null, fallMs: null })
 })
 
 const MOVES: readonly RecallMove[] = [
@@ -168,7 +280,7 @@ test("the result says what happened in words: won, lost, drawn or timed out — 
 })
 
 test("no ending Experiment needs a restart, and each names the question it serves", () => {
-  for (const field of ["endAlarmLeadMs", "endWalkPauseMs", "endWalkMs", "endCentre", "raid", "crew"] as const satisfies readonly (keyof DebugFlags)[]) {
+  for (const field of ["endWarnMs", "endWalkPauseMs", "endWalkMs", "endCentre", "redAlerts", "raid", "crew"] as const satisfies readonly (keyof DebugFlags)[]) {
     const spec = DEBUG_FIELDS.find((candidate) => candidate.field === field)
     assert.ok(spec !== undefined, `${field} is not an Experiment`)
     assert.equal(spec.applies, "now")

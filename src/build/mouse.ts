@@ -6,7 +6,7 @@
 // gestures a flat menu has no use for: the wheel, and the right button.
 
 import type { BuildLayout } from "./layout.ts"
-import { ESC_KEY, escHintAt, menuEntryAt, pulseControlAt, tileAtCell } from "./layout.ts"
+import { ESC_KEY, escHintAt, menuEntryAt, pulseControlAt, startButtonAt, tileAtCell } from "./layout.ts"
 import type { PlacedOverlay } from "./overlay.ts"
 import { overlayHitAt } from "./overlay.ts"
 import type { Camera } from "./camera.ts"
@@ -122,6 +122,9 @@ export function buildMouseCommand(
     if (control !== null) return { kind: "pulse", control }
     if (inPanel(layout, event.column, event.row)) return null
   }
+  // The Start button is on the menu and on Explore Map's panel alike, so it is looked for first: a click
+  // on it is `s`, and nothing else on the screen is under it.
+  if (startButtonAt(layout, event.column, event.row)) return { kind: "commit" }
   // Explore Map covers the menu below its own row, so the whole panel is one target — its own row,
   // drawn active, and the card under it — and what it does is close Explore Map, as Esc does. Sent as
   // the menu click it is, so a driver's `click-menu` in Explore Map means exactly the same.

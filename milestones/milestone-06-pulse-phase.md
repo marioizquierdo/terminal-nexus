@@ -19,15 +19,30 @@ Milestone 1's and did not change. 6B and 6C wait for the owner's word.
 > runner, no automatic production (6B and 6C).
 
 > **Gate 6A is built, 2026-09-29** (`../evidence/gate-6a-report.md`, PASS; awaiting Mario's playtest).
-> `p`, then yes, starts the Nexus Pulse on the Build Phase's own screen: the plan he committed, plus a
+> `[s] Start`, then Enter, starts the Nexus Pulse on the Build Phase's own screen: the plan he committed, plus a
 > placeholder crew and raid, becomes the kernel's opening state, the unmodified kernel resolves it, and
 > the Pulse plays with a running score, a feed of what is happening, pause, speed, step and watch-again.
-> It ends the way section 2.2's sketch asked — an alarm, the shooting stopping, the survivors walking
-> home, a plain result (won, lost, drawn or timed out, and why) — with the four timings as Experiments
-> (press `d`). Recall, which the rules described and no code ran, exists for the first time
+> It ends the way section 2.2's sketch asked — a warning, the shooting stopping, the survivors walking
+> home, a plain result (won, lost, drawn or timed out, and why) — with the timings as Experiments
+> (press `d`); the warning is a flashing timer and a light on the border (round 2, below). Recall, which the rules described and no code ran, exists for the first time
 > (`src/match/`). What it does **not** do, on purpose: go back into a second Build Phase (6B), run a
 > trigger list (6B), or make the Barracks train anything (6C). Restart, from the game menu, is the way
 > back until 6B builds the loop.
+
+> **Gate 6A, round 2 — the owner's look at the pull request, 2026-09-29**
+> ([`../docs/feedback/2026-09-29-pr48-pulse.md`](../docs/feedback/2026-09-29-pr48-pulse.md), F41-F46).
+> Definition of done:
+>
+> - [x] the Build Phase menu has a boxed `[s] Start` button at the bottom right of its panel, clickable,
+>       dim while a Nexus power is still waiting (F41);
+> - [x] the question is `START PULSE 1?` with `[s] Start Pulse 1` and `[n] Keep building`; Enter, Space
+>       and `s` start it (F42);
+> - [x] the Pulse's title carries a timer to the stop, and in the last three seconds only that timer
+>       flashes; no red banners (F43);
+> - [x] the same seconds light the map's border with a soft sweeping light, not a red alert (F44);
+> - [x] red is only for the player's Nexus being hurt — first hit, very low health, a lost Pulse — brief
+>       and faint, with an on/off Experiment (F45);
+> - [ ] the branch's changed code has been reviewed for simplification and the findings applied (F46).
 
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
 > how the Pulse resolves — that stays the deterministic kernel, unmodified. What is new is the
@@ -176,8 +191,8 @@ that units visibly came home — not just that the screen stopped moving.
       across runs and runtimes like any other kernel input;
 - [ ] Q36 is resolved (built, or explicitly deferred with a reason) before this gate closes;
 - [x] the Pulse-end sequence — stop, finish in-flight effects, Recall — is legible at every capability
-      tier and in monochrome (6A: a test plays it at all four depths; the alarm is reversed video, and
-      each phase is also named in words);
+      tier and in monochrome (6A: a test plays it at all four depths; the timer's flash is reversed video,
+      and each phase is also named in words);
 - [ ] the owner's ending sketch (Section 2.2) has been built roughly, watched, and reported on — what
       read well, what did not, and what the alarm turned out to mean for a sudden ending versus a
       scheduled one. A gate report that does not say what the ending actually looked like has not

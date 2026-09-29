@@ -25,7 +25,7 @@
 //   presentation alone: the reducer stores it, the live loop times it, and the Build Phase view draws
 //   it (`src/view/placement.ts`). A plan is identical with every one of them on or off.
 //
-// - the Nexus Pulse's ending (`endAlarmLeadMs` through `endCentre`, gate 6A) is presentation alone: the
+// - the Nexus Pulse's ending (`endWarnMs` through `redAlerts`, gate 6A) is presentation alone: the
 //   view times it from the Pulse's own clock (`src/view/ending.ts`) and the reducer stores the numbers.
 //   `raid` and `crew` pick which placeholder Pulse the next commit starts (`src/build/catalog.ts`) — they
 //   change what the kernel is handed, never how it resolves it.
@@ -122,15 +122,19 @@ export type DebugFlags = Readonly<{
   pressedFlashMs: number
   /** How long a menu row's "refused" flicker lasts, in milliseconds. */
   refusedFlashMs: number
-  /** Gate 6A, the owner's ending sketch (milestone 6, Section 2.2): how long the alarm sounds before the
-   *  fight is seen to stop, in milliseconds. 0 is no alarm — the fight simply stops. */
-  endAlarmLeadMs: number
+  /** Gate 6A, the owner's ending sketch (milestone 6, Section 2.2): how long before the fight is seen to
+   *  stop its timer flashes and a light sweeps the map's border, in milliseconds — "the last 3 seconds"
+   *  (feedback F43). 0 is neither: the fight simply stops. */
+  endWarnMs: number
   /** How long after the fight stops the survivors wait before they start walking home. */
   endWalkPauseMs: number
   /** How long the walk home takes; the result appears when it ends. 0: they are simply home. */
   endWalkMs: number
-  /** Whether the view slides to centre on the player's Grid Nexus when the alarm starts. */
+  /** Whether the view slides to centre on the player's Grid Nexus when the last seconds begin. */
   endCentre: boolean
+  /** Whether the map's border flashes a faint red when the player's Nexus is hurt: its first hit, its
+   *  health very low, a lost Pulse (feedback F45). Red means nothing else. */
+  redAlerts: boolean
   /** Which raid the next Nexus Pulse faces. */
   raid: RaidSize
   /** Whether the player starts the next Nexus Pulse with units of their own. */
@@ -389,10 +393,10 @@ export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
   // Gate 6A: the Nexus Pulse's ending, then which Pulse to watch it on. While a Pulse is on screen, `d`
   // opens Settings straight at the first of these.
   {
-    field: "endAlarmLeadMs",
-    label: "Alarm lead",
+    field: "endWarnMs",
+    label: "Final warning",
     applies: "now",
-    question: "How long the alarm sounds before the fight is seen to stop. Off: no alarm. Asked for: 3-5 s.",
+    question: "How long before the fight stops its timer flashes and a light sweeps the border. Off: neither. Asked for: 3 s.",
     values: [0, 1000, 2000, 3000, 4000, 5000, 6000, 8000],
     cycles: false,
     format: millis,
@@ -419,7 +423,16 @@ export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
     field: "endCentre",
     label: "Centre on Nexus",
     applies: "now",
-    question: "When the alarm starts, does the view slide to centre on your Nexus, so the next Build Phase starts at your base?",
+    question: "When the last seconds begin, does the view slide to centre on your Nexus, so the next Build Phase starts at your base?",
+    values: [true, false],
+    cycles: true,
+    format: onOff,
+  },
+  {
+    field: "redAlerts",
+    label: "Red alerts",
+    applies: "now",
+    question: "A faint red flash on the border when your Nexus is first hit, nearly gone, or the Pulse is lost. Off: never red.",
     values: [true, false],
     cycles: true,
     format: onOff,
@@ -479,14 +492,15 @@ export const DEFAULT_PLACEMENT = {
   placeLight: "light",
 } as const satisfies Partial<DebugFlags>
 
-/** Gate 6A's ending, as the owner sketched it (milestone 6, Section 2.2): an alarm about four seconds
- *  before the shooting stops ("3-5 seconds"), one second to the walk home, two seconds of walking. First
- *  guesses at his numbers, for him to retune by feel. */
+/** Gate 6A's ending, as the owner sketched it (milestone 6, Section 2.2) and answered it (feedback
+ *  F43): the last three seconds are the warning, one second to the walk home, two seconds of walking.
+ *  First guesses at his numbers, for him to retune by feel. */
 export const DEFAULT_ENDING = {
-  endAlarmLeadMs: 4000,
+  endWarnMs: 3000,
   endWalkPauseMs: 1000,
   endWalkMs: 2000,
   endCentre: true,
+  redAlerts: true,
 } as const satisfies Partial<DebugFlags>
 
 /** The placeholder Pulse the spike starts: the probe, against a player with units of their own. */

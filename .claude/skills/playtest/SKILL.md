@@ -66,18 +66,22 @@ restart today, since "Opens on" was deleted. `src/build/debug.ts`'s
 `DEBUG_FIELDS` is the order. The map's edge is not an Experiment: it is the map's own style (the spike
 map's fence; `--glyphs unicode` shows the Unicode forms), and the menu's divider is its west side.
 
-**A Nexus Pulse** (gate 6A): `p` asks, `y` starts it on the same screen, and from then on each step's
-frame is the Pulse at the script's own clock — the frame after `y` is 0.0 s, the frame after
-`wait~7000` is 7.0 s. A whole plan and its Pulse: `n 2 3 click:22,9 click:22,9 3 click:22,12
-click:22,12 2 click:20,14 click:20,14 p y wait~1000*20` (the War Chest, two Turrets across the muster
-point, a Hatchery behind them — a win); `n 2 p y wait~40000` is nothing built, and a loss. Its ending
-is an alarm (about 10.5 s in for that first plan), a cease fire, the survivors walking home and a
-result; `--settings "raid=none"` (nobody comes: TIME'S UP), `"crew=none"` (no units of your own: the
-Nexus falls), `"raid=heavy"`, `"endAlarmLeadMs=0"` (no alarm), `"endWalkMs=0"` (no walk) and
-`"endCentre=off"` reach the rest. During a Pulse Space pauses, `[` and `]` change the speed, `.` and `,`
-step, `r` watches it again, and `d` still opens the Experiments; `Esc` opens the game menu and its
-Restart is the way back to a fresh Build Phase. `scripts/capture-spike-screenshots.mjs` has
-`pulseGif` (an ending frame by frame, in real time) and shows each ending as a still.
+**A Nexus Pulse** (gate 6A): `s` asks (the `[s] Start` button; `p` is an unlisted alias), a second `s`
+(or `Enter` or `Space`) starts it on the same screen, and from then on each step's frame is the Pulse
+at the script's own clock — the frame after the second `s` is 0.0 s (the title's timer at its full
+countdown), the frame after `wait~7000` is 7.0 s. A whole plan and its Pulse: `n 2 3 click:22,9
+click:22,9 3 click:22,12 click:22,12 2 click:20,14 click:20,14 s s wait~1000*20` (the War Chest, two
+Turrets across the muster point, a Hatchery behind them — a win); `n 2 s s wait~40000` is nothing
+built, and a loss. Its ending is the last three seconds (about 11.6 s in for that first plan: the
+title's timer flashes and a light sweeps the map's border), a cease fire, the survivors walking home
+and a result; red on the border is only the player's own Nexus being hurt. `--settings "raid=none"`
+(nobody comes: TIME'S UP), `"crew=none"` (no units of your own: the Nexus falls, and the border
+blushes red at its first hit), `"raid=heavy"`, `"endWarnMs=0"` (no timer flash, no light),
+`"redAlerts=off"`, `"endWalkMs=0"` (no walk) and `"endCentre=off"` reach the rest. During a Pulse
+Space pauses, `[` and `]` change the speed, `.` and `,` step, `r` watches it again, and `d` still
+opens the Experiments; `Esc` opens the game menu and its Restart is the way back to a fresh Build
+Phase. `scripts/capture-spike-screenshots.mjs` has `pulseGif` (an ending frame by frame, in real time)
+and shows each ending as a still.
 
 **Reproducing what the owner played**: he exports his settings (Settings, `e`) and pastes the text
 into the pull request; `--settings "<that text>"` starts the script from exactly those settings and

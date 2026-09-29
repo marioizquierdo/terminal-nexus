@@ -195,9 +195,12 @@ export type BuildState = Readonly<{
    *  folded into a mutated allotment, for the same reason `spent` is summed rather than tracked: one
    *  stored total is one number that can drift from what actually produced it. */
   bonusAllotment: number
-  /** The Build Phase is done. Nothing here reaches a Nexus Pulse — Milestone 6 builds that — so this
-   *  just freezes the plan and says so; every state-changing command is refused from here on. */
+  /** The Build Phase is done: the plan is frozen and every state-changing command is refused from here
+   *  on. With a Pulse to start (`BuildSession`'s `startPulse`) the Nexus Pulse plays from this moment. */
   committed: boolean
+  /** Which Pulse of the mission this Build Phase is planning — "Start Pulse 1". It is 1 until the loop
+   *  into a next Build Phase exists (Milestone 6's second gate), which is what will count it up. */
+  pulseNumber: number
   /**
    * the Experiments (gate 5G, `src/build/debug.ts`). State rather than context because they change
    * while the screen is open; the reducer reads the ones that change what a command does, and the
@@ -315,6 +318,7 @@ export function createBuildState(
     nexusPick: null,
     bonusAllotment: 0,
     committed: false,
+    pulseNumber: 1,
     debug,
     settings,
     startCursor: cursor,
@@ -338,7 +342,7 @@ export function createBuildState(
  */
 function editLock(state: BuildState): StatusMessage | null {
   if (state.committed) return status("The Build Phase is committed.", "warning")
-  if (state.overlay === "confirm-commit") return status("Answer the Nexus Pulse prompt first: [y]es or [n]o.", "warning")
+  if (state.overlay === "confirm-commit") return status("Answer the Start question first: [s] start or [n] keep building.", "warning")
   if (state.overlay !== null) return status("Close the popup first: [esc].", "warning")
   return null
 }
@@ -950,7 +954,7 @@ function openSettings(state: BuildState, section: "settings" | "experiments"): B
   if (state.overlay !== null && state.overlay !== "menu") return state
   // While the Nexus Pulse is on screen, `d` opens the Experiments already at the ending's — the ones
   // someone watching it wants to change (gate 6A) — rather than at the Build Phase's first.
-  const experiments = state.committed ? rowOfField("endAlarmLeadMs") : FIRST_EXPERIMENT_ROW
+  const experiments = state.committed ? rowOfField("endWarnMs") : FIRST_EXPERIMENT_ROW
   return {
     ...state,
     overlay: "settings",
@@ -1212,7 +1216,11 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     case "commit": {
       const lock = commitLock(state)
       if (lock !== null) return { ...state, status: lock }
-      return { ...toMenu(state), overlay: "confirm-commit", status: status("Start the Nexus Pulse? [y]es / [n]o") }
+      return {
+        ...toMenu(state),
+        overlay: "confirm-commit",
+        status: status(`Start Pulse ${state.pulseNumber}? Enter starts it; Esc keeps building.`),
+      }
     }
 
     case "confirm-commit": {
