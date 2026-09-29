@@ -3,6 +3,7 @@
 // `src/menu/layout.ts` is the same idea for the menu.
 
 import type { Coord, GridTerrain } from "../grid/types.ts"
+import type { PlaybackControl } from "../view/playback.ts"
 import type { BuildState } from "./state.ts"
 import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct } from "./state.ts"
 import type { ConstructGroup, ConstructItem, MenuEntry } from "./types.ts"
@@ -83,6 +84,29 @@ export const EXPLORE_ROW = 0
 export const NEXUS_ROW = 1
 export const RESOURCE_ROW = 3
 const CONSTRUCT_FIRST_ROW = 4
+
+/**
+ * The Nexus Pulse panel's clickable rows (gate 6A): the playback controls with their hotkeys, pinned to
+ * the bottom of the panel where the Build Phase's overflow key help sits. The composer draws them and
+ * the mouse adapter hit-tests them from this one place, as it does every other row. `[` and `]` (speed)
+ * and `.` and `,` (step) are keys only: the panel has room for two rows and these are the two a player
+ * reaches for.
+ */
+export type PulseControlRow = Readonly<{ row: number; hotkey: string; control: PlaybackControl }>
+
+export function pulseControlRows(layout: BuildLayout): readonly PulseControlRow[] {
+  return [
+    { row: layout.panelBindingsRow - 1, hotkey: "space", control: "toggle" },
+    { row: layout.panelBindingsRow, hotkey: "r", control: "restart" },
+  ]
+}
+
+/** The playback control on the panel row at a frame cell, or `null` — the whole row is the target, the
+ *  width a highlight bar would be drawn. */
+export function pulseControlAt(layout: BuildLayout, column: number, row: number): PlaybackControl | null {
+  if (column < layout.panelColumn || column >= layout.panelColumn + layout.panelLimit) return null
+  return pulseControlRows(layout).find((control) => control.row === row)?.control ?? null
+}
 
 /** The key the top bar's right end names. */
 export const ESC_KEY = "[esc]"

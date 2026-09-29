@@ -6,6 +6,7 @@
 // plan" assertable.
 
 import type { Coord } from "../grid/types.ts"
+import type { PlaybackControl } from "../view/playback.ts"
 import type { DebugField } from "./debug.ts"
 import type { PlayerField } from "./settings.ts"
 
@@ -158,6 +159,23 @@ export type BuildCommand =
   /** A click on the export popup's scroll bar: highlight line `line` of the text, bringing it into
    *  view. Up/Down and the wheel move the highlight a line at a time. */
   | Readonly<{ kind: "export-select"; line: number }>
+  /**
+   * A Nexus Pulse playback control — Space, `[`, `]`, `.`, `,` and `r` while a Pulse is on screen, or a
+   * click on the panel's control rows (gate 6A): the same vocabulary `grid watch` has, one keymap across
+   * both. The reducer has nothing to change for it — the Pulse's clock is the presenter's, never the
+   * state's — so it passes through like `quit`, and the session hands it to the Pulse it belongs to.
+   */
+  | Readonly<{ kind: "pulse"; control: PlaybackControl }>
+  /**
+   * Centre the view on a tile and put the cursor there. Sent by the Pulse when it starts and when its
+   * ending begins ("the camera is centred at the nexus", milestone 6 Section 2.2): a state change like
+   * any other move, so what the player does next — scrolling, looking around — starts from where the
+   * story left the view, and the view's slide is the presentation's to draw.
+   */
+  | Readonly<{ kind: "look-at"; x: number; y: number }>
+  /** The shell could not start the Pulse the player just committed: the commit is undone, so they can fix
+   *  the plan, and the reason is said on the status line. */
+  | Readonly<{ kind: "pulse-failed"; reason: string }>
 
 /**
  * How the sides of the Grid rectangle that have reached the map's own edge are drawn — **the map's

@@ -15,7 +15,7 @@ import type { PulseTimeline } from "../view/index.ts"
 import type { ScenarioDefinition } from "../scenario/index.ts"
 
 export function buildTimeline(
-  scenario: ScenarioDefinition,
+  scenario: Pick<ScenarioDefinition, "id" | "name">,
   initialState: MatchState,
   registry: ContentRegistry,
   pulseTicks: number,

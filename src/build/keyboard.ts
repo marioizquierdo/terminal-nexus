@@ -14,6 +14,7 @@
 // key help on the owner's own call (2026-09-26: "leave pgup/home keys out, people will figure that
 // out just fine").
 
+import type { PlaybackControl } from "../view/playback.ts"
 import { GAME_MENU_ROWS } from "./settings.ts"
 import type { BuildCommand, Focus, Overlay } from "./types.ts"
 
@@ -95,6 +96,18 @@ const FALLBACK_JUMPS: Readonly<Record<string, Readonly<{ dx: number; dy: number 
  *  The live screen passes the "Shift jump" Experiment instead. */
 export const DEFAULT_JUMP_STEP = 12
 
+/** `grid watch`'s keymap, kept for the Nexus Pulse (engine.md 9.7: one keymap across `grid` and
+ *  `terminal-nexus`) — Space pauses, `[` and `]` change the speed, `.` and `,` step a frame and a tick,
+ *  `r` watches it again. Only while a Pulse is on screen, and never inside a popup. */
+const PULSE_KEYS: Readonly<Record<string, PlaybackControl>> = {
+  " ": "toggle",
+  "[": "slower",
+  "]": "faster",
+  ".": "step-frame",
+  ",": "step-tick",
+  r: "restart",
+}
+
 const TAB = "\t"
 const MENU_UP = new Set([`${ESC}[A`, `${ESC}OA`])
 const MENU_DOWN = new Set([`${ESC}[B`, `${ESC}OB`])
@@ -120,6 +133,8 @@ export type KeyboardContext = Readonly<{
   overlayHighlight?: number
   /** How many tiles the fast move jumps — the "Shift jump" Experiment. `DEFAULT_JUMP_STEP` if absent. */
   jumpStep?: number
+  /** A Nexus Pulse is on screen (gate 6A): its playback keys are the screen's, ahead of the Grid's. */
+  pulse?: boolean
 }>
 
 function digitIndex(key: string): number | null {
@@ -247,6 +262,14 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
     return overlayCommand(key, overlay, context.overlayPendingCount ?? 0, context.overlayHighlight ?? 0)
   }
   const focus = context.focus ?? "grid"
+
+  // A Nexus Pulse on screen takes its own playback keys first: Space pauses it rather than opening
+  // Explore Map, and `r` watches it again. Everything else — the arrows that look around the map, Esc,
+  // `q`, `d` — is still the screen's.
+  if (context.pulse === true) {
+    const control = PULSE_KEYS[key]
+    if (control !== undefined) return { kind: "pulse", control }
+  }
 
   // One "back" for Esc and `x`, walking a stack the reducer knows: the Grid — placing or Explore Map —
   // to the menu, disarming, then the menu (the game menu: Settings, Quit).

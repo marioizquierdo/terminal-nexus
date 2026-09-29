@@ -25,6 +25,11 @@
 //   presentation alone: the reducer stores it, the live loop times it, and the Build Phase view draws
 //   it (`src/view/placement.ts`). A plan is identical with every one of them on or off.
 //
+// - the Nexus Pulse's ending (`endAlarmLeadMs` through `endCentre`, gate 6A) is presentation alone: the
+//   view times it from the Pulse's own clock (`src/view/ending.ts`) and the reducer stores the numbers.
+//   `raid` and `crew` pick which placeholder Pulse the next commit starts (`src/build/catalog.ts`) — they
+//   change what the kernel is handed, never how it resolves it.
+//
 // The map's edge is no longer an Experiment: the owner's playtest of 2026-09-29 settled its three
 // (feedback F25), and they are the rule now — the map's own edge style (`BuildContext.edgeStyle`,
 // `src/view/edge.ts`), the quieter edge colour, and the menu's divider as the Grid's west side
@@ -49,6 +54,14 @@ export type PlaceParticles = "off" | "few" | "many"
 /** The light on a building's characters as it finishes (gate 5I, feedback F9): a flash toward the
  *  theme's strongest ink that settles back, the theme's rainbow hues sweeping across it, or none. */
 export type PlaceLight = "off" | "light" | "rainbow"
+
+/** How big a raid the placeholder Nexus Pulse brings (gate 6A): none — nobody comes, so the time runs
+ *  out; the probe the Build Phase is tuned against; or a heavy raid that needs a real defence. */
+export type RaidSize = "none" | "probe" | "heavy"
+
+/** Whether the player starts the placeholder Pulse with units of their own (gate 6A). None means the
+ *  Nexus and what was built are all that stand between the raid and a lost Pulse. */
+export type CrewSize = "some" | "none"
 
 export type DebugFlags = Readonly<{
   /** F9: how long a placed building takes to rise through its placement frames, in milliseconds; 0
@@ -109,6 +122,19 @@ export type DebugFlags = Readonly<{
   pressedFlashMs: number
   /** How long a menu row's "refused" flicker lasts, in milliseconds. */
   refusedFlashMs: number
+  /** Gate 6A, the owner's ending sketch (milestone 6, Section 2.2): how long the alarm sounds before the
+   *  fight is seen to stop, in milliseconds. 0 is no alarm — the fight simply stops. */
+  endAlarmLeadMs: number
+  /** How long after the fight stops the survivors wait before they start walking home. */
+  endWalkPauseMs: number
+  /** How long the walk home takes; the result appears when it ends. 0: they are simply home. */
+  endWalkMs: number
+  /** Whether the view slides to centre on the player's Grid Nexus when the alarm starts. */
+  endCentre: boolean
+  /** Which raid the next Nexus Pulse faces. */
+  raid: RaidSize
+  /** Whether the player starts the next Nexus Pulse with units of their own. */
+  crew: CrewSize
 }>
 
 export type DebugField = keyof DebugFlags
@@ -360,6 +386,62 @@ export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
     cycles: false,
     format: millis,
   },
+  // Gate 6A: the Nexus Pulse's ending, then which Pulse to watch it on. While a Pulse is on screen, `d`
+  // opens Settings straight at the first of these.
+  {
+    field: "endAlarmLeadMs",
+    label: "Alarm lead",
+    applies: "now",
+    question: "How long the alarm sounds before the fight is seen to stop. Off: no alarm. Sketched: 3-5 s. (Milestone 6)",
+    values: [0, 1000, 2000, 3000, 4000, 5000, 6000, 8000],
+    cycles: false,
+    format: millis,
+  },
+  {
+    field: "endWalkPauseMs",
+    label: "Walk-back delay",
+    applies: "now",
+    question: "How long after the fight stops before the survivors start walking home. Sketched: 1 second. (Milestone 6)",
+    values: [0, 500, 1000, 1500, 2000, 3000],
+    cycles: false,
+    format: millis,
+  },
+  {
+    field: "endWalkMs",
+    label: "Walk-back time",
+    applies: "now",
+    question: "How long the walk home takes; the result shows when it ends. Off: they are simply home. Sketched: 2 seconds. (Milestone 6)",
+    values: [0, 1000, 2000, 3000, 4000, 6000],
+    cycles: false,
+    format: millis,
+  },
+  {
+    field: "endCentre",
+    label: "Centre on Nexus",
+    applies: "now",
+    question: "When the alarm starts, does the view slide to centre on your Nexus, so the next Build Phase starts at your base? (Milestone 6)",
+    values: [true, false],
+    cycles: true,
+    format: onOff,
+  },
+  {
+    field: "raid",
+    label: "Raid",
+    applies: "now",
+    question: "Which raid the next Pulse faces: none (the time runs out), the probe, or a heavy one. Restart to build again.",
+    values: ["probe", "none", "heavy"],
+    cycles: true,
+    format: (value: RaidSize) => value,
+  },
+  {
+    field: "crew",
+    label: "Your units",
+    applies: "now",
+    question: "Whether you start the next Pulse with units of your own. None: only the Nexus and what you built stand against the raid.",
+    values: ["some", "none"],
+    cycles: true,
+    format: (value: CrewSize) => value,
+  },
 ]
 
 /** The live loop's flash durations as gate 5F built them — the starting values of the two flags. */
@@ -397,13 +479,28 @@ export const DEFAULT_PLACEMENT = {
   placeLight: "light",
 } as const satisfies Partial<DebugFlags>
 
+/** Gate 6A's ending, as the owner sketched it (milestone 6, Section 2.2): an alarm about four seconds
+ *  before the shooting stops ("3-5 seconds"), one second to the walk home, two seconds of walking. First
+ *  guesses at his numbers, for him to retune by feel. */
+export const DEFAULT_ENDING = {
+  endAlarmLeadMs: 4000,
+  endWalkPauseMs: 1000,
+  endWalkMs: 2000,
+  endCentre: true,
+} as const satisfies Partial<DebugFlags>
+
+/** The placeholder Pulse the spike starts: the probe, against a player with units of their own. */
+export const DEFAULT_PULSE = { raid: "probe", crew: "some" } as const satisfies Partial<DebugFlags>
+
 /** The flags a screen opens with: what the context asks for (`--scroll-margin`), and otherwise what
- *  gates 5F-5K built. (The smart cursor's and "Opens on"'s flags were settled by the owner on
+ *  gates 5F-6A built. (The smart cursor's and "Opens on"'s flags were settled by the owner on
  *  2026-09-29, feedback F30 and F31, and deleted.) */
 export function initialDebugFlags(context: Readonly<{ scrollMargin?: number }>): DebugFlags {
   return {
     ...DEFAULT_PLACEMENT,
     ...DEFAULT_MOVEMENT,
+    ...DEFAULT_ENDING,
+    ...DEFAULT_PULSE,
     scrollMargin: context.scrollMargin ?? DEFAULT_SCROLL_MARGIN_PERCENT,
     pressedFlashMs: DEFAULT_FLASH_MS.pressed,
     refusedFlashMs: DEFAULT_FLASH_MS.refused,

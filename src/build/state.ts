@@ -6,6 +6,7 @@ import { footprintCentre, footprintExtent, inBounds, tilesOf } from "../grid/coo
 import type { ContentRegistry } from "../content/index.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
+import type { PulseSetup } from "../match/types.ts"
 import type { StatusMessage } from "../status.ts"
 import { NO_STATUS, status } from "../status.ts"
 import type { Camera, Margin, Viewport } from "./camera.ts"
@@ -84,6 +85,12 @@ export type BuildContext = Readonly<{
   experiments?: Partial<DebugFlags>
   /** The commit this build is, when the adapter knows it: the first line of an export names it. */
   buildId?: string
+  /**
+   * What a Nexus Pulse starts with besides the plan, as a function of the Experiments (gate 6A: the
+   * "Raid" and "Your units" flags pick which placeholder Pulse). Absent: committing only freezes the
+   * plan, as it did before a Pulse existed — every context the tests build by hand.
+   */
+  pulse?: (experiments: DebugFlags) => PulseSetup
   /** Where the adapter puts an export besides the screen, said in the export popup — "Copied to the
    *  clipboard and saved to ...". Absent: the popup says nothing about a copy. */
   exportDestination?: string
@@ -941,10 +948,13 @@ function cancel(context: BuildContext, state: BuildState): BuildState {
  */
 function openSettings(state: BuildState, section: "settings" | "experiments"): BuildState {
   if (state.overlay !== null && state.overlay !== "menu") return state
+  // While the Nexus Pulse is on screen, `d` opens the Experiments already at the ending's — the ones
+  // someone watching it wants to change (gate 6A) — rather than at the Build Phase's first.
+  const experiments = state.committed ? rowOfField("endAlarmLeadMs") : FIRST_EXPERIMENT_ROW
   return {
     ...state,
     overlay: "settings",
-    overlayHighlight: section === "settings" ? FIRST_SETTING_ROW : FIRST_EXPERIMENT_ROW,
+    overlayHighlight: section === "settings" ? FIRST_SETTING_ROW : experiments,
     overlayUnder: state.overlay === "menu" ? ["menu"] : [],
   }
 }
@@ -1113,7 +1123,9 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
         const dismissed: BuildState = { ...state, overlay: null, focus: "grid", armed: state.armed }
         return withCursor(context, dismissed, target, clickCameraMove(context, dismissed))
       }
-      if (state.committed) return state
+      // A committed plan locks every edit but not looking: a click on the map moves the cursor there and
+      // scrolls the view as it does while exploring (gate 6A — the Pulse's map is a map to look around).
+      // Nothing is armed once committed, so no second click can place anything.
       // Two clicks, not one — Q52. A click on a tile that is not already where the cursor sits only
       // moves the cursor there and shows the armed preview; a second click **on that same tile** is
       // what places. Checked against `state.cursor` (tile identity), never the click's screen cell.
@@ -1208,16 +1220,32 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // than a stray "3" is one before anything is armed.
       if (state.overlay !== "confirm-commit") return state
       if (!command.accept) return { ...state, overlay: null, status: status("Cancelled.") }
+      // The Nexus Pulse starts (gate 6A). The keyboard goes to the Grid, where the arrows look around it
+      // — a committed plan locks every edit but not the cursor — and nothing is armed or being explored.
       return {
         ...state,
         overlay: null,
         committed: true,
-        status: status(
-          `Build committed - ${state.planned.length} planned, Nexus Pulse would begin here (Milestone 6).`,
-          "success",
-        ),
+        focus: "grid",
+        armed: null,
+        armGhost: false,
+        exploreMap: false,
+        status: status(`Build committed - ${state.planned.length} planned.`, "success"),
       }
     }
+
+    case "look-at": {
+      const tile = clampToGrid({ x: command.x, y: command.y }, context.grid)
+      return withCursor(context, state, tile, (camera, cursor) => centreOn(camera, cursor, state.viewport, context.grid))
+    }
+
+    case "pulse-failed":
+      return {
+        ...state,
+        committed: false,
+        overlay: null,
+        status: status(`The Nexus Pulse could not start: ${command.reason}`, "danger"),
+      }
 
     case "focus":
       if (state.overlay !== null || state.committed || state.focus === command.target) return state

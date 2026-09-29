@@ -43,6 +43,9 @@ import { CONTENT_ART } from "../content/art.ts"
 import type { BandCell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import { put, text } from "./draw.ts"
+import { drawTerrain } from "./grid-layer.ts"
+import type { PulseFrame } from "./pulse-scene.ts"
+import { drawAlarm, drawPulseEffects, drawPulseEntities, drawPulsePanel, pulseKeyHelp, pulseStatus, pulseSubtitle } from "./pulse-scene.ts"
 import type { CapabilityMode, StyleRole } from "./roles.ts"
 import { chromeGlyph, entityGlyph, playerRole, terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
@@ -99,6 +102,13 @@ export type BuildCompositionInput = Readonly<{
   removing?: readonly RemovalClock[]
   /** The player's reduced-motion setting: a placement then shows its finished building at once. */
   reducedMotion?: boolean
+  /**
+   * A Nexus Pulse is on screen (gate 6A): what it is showing at this instant, worked out by the presenter
+   * (`pulse-live.ts`). Present, the Grid shows the fight and the panel the forces and the ending, in this
+   * same frame and under the same popups; absent — every Build Phase frame, and every test that never
+   * starts a Pulse — the frame is the Build Phase's, exactly as it always was.
+   */
+  pulse?: PulseFrame
 }>
 
 export type BuildFlash = Readonly<{ kind: "pressed" | "refused"; entry: number }>
@@ -279,26 +289,7 @@ function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPa
   const { context, state, layout } = input
   const range = visibleRange(state.camera, state.viewport)
 
-  for (let y = range.firstY; y <= range.lastY; y += 1) {
-    for (let x = range.firstX; x <= range.lastX; x += 1) {
-      const terrainId = context.grid.tiles[y * context.grid.width + x]
-      if (terrainId === undefined) continue
-      const { glyph, role } = terrainGlyph(terrainId, pack)
-      const cell = cellForTile(layout, state.camera, { x, y })
-      // The same lattice the Pulse view draws featureless ground with — a full field of dots
-      // competes with everything on top of it. Rock and deposits are features and always drawn. The
-      // lattice is keyed to absolute tile coordinates, so it scrolls with the Grid rather than
-      // crawling across it.
-      const featureless = terrainId === "terrain.plain"
-      const onLattice = x % 4 === 0 && y % 2 === 0
-      put(cells, BANDS.terrain, cell.x, cell.y, featureless && !onLattice ? " " : glyph, role, {
-        dim: true,
-      })
-      for (let extra = 1; extra < layout.tileWidth; extra += 1) {
-        put(cells, BANDS.terrain, cell.x + extra, cell.y, " ", role)
-      }
-    }
-  }
+  drawTerrain(cells, { grid: context.grid, camera: state.camera, viewport: state.viewport, layout }, pack)
 
   const drawStructure = (contentId: string, anchor: Coord, animation: Animating | undefined): void => {
     const definition = context.registry.get(contentId)
@@ -456,7 +447,9 @@ function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
   const { context, state, layout } = input
   // The cursor is the Grid's own focus mark: drawn only while the Grid has the keyboard, so the
   // screen never shows two "you are here"s at once (owner, 2026-09-27).
-  if (state.focus !== "grid" || state.overlay !== null || state.committed) return
+  // A committed plan hides the cursor, except while a Pulse is on screen: there it is how the player looks
+  // around the map, the arrows moving it and the view following (gate 6A).
+  if (state.focus !== "grid" || state.overlay !== null || (state.committed && input.pulse === undefined)) return
   const range = visibleRange(state.camera, state.viewport)
   // Where the cursor is drawn: mid-glide, a tile on its way (and what stands there decides its style).
   const cursor = input.cursor ?? state.cursor
@@ -617,7 +610,15 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
   // The top bar: the game's title and where the player is (engine.md 9.2), across the whole width.
   const limit = layout.headerLimit
   text(cells, band, left, headerRow, "TERMINAL NEXUS", "chrome.title", { bold: true, limit })
-  text(cells, band, left + 15, headerRow, "build phase", "chrome.muted", { limit: limit - 15 })
+  const subtitle =
+    input.pulse === undefined
+      ? { text: "build phase", role: "chrome.muted" as StyleRole, lit: false, alarm: false }
+      : { ...pulseSubtitle(input.pulse), alarm: input.pulse.phase === "alarm" }
+  text(cells, band, left + 15, headerRow, subtitle.text, subtitle.role, {
+    bold: subtitle.alarm,
+    inverse: subtitle.lit,
+    limit: limit - 15,
+  })
   // What Esc does right now, right-aligned (feedback F37): "menu [esc]", "back [esc]", "close [esc]" —
   // the name quiet, the key in the hotkey colour after it, findable without competing with the game's
   // own title. The same text is the click target that sends Esc.
@@ -643,8 +644,10 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
     "chrome.label",
     { limit: footerLimit },
   )
-  // The screen documents itself (engine.md 9.7), starting with where the keyboard is.
-  const help = keyHelp(state)
+  // The screen documents itself (engine.md 9.7), starting with where the keyboard is. A popup over a
+  // Pulse is what holds the keyboard, and says so; otherwise the Pulse does.
+  const pulse = state.overlay !== null ? undefined : input.pulse
+  const help = pulse === undefined ? keyHelp(state) : pulseKeyHelp(pulse)
   text(cells, band, left, layout.footerRow + 1, help.label, "chrome.title", { bold: true, limit: footerLimit })
   const helpColumn = left + help.label.length + BINDING_GAP.length
   text(
@@ -656,7 +659,7 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
     "chrome.muted",
     { limit: footerLimit - (helpColumn - left) },
   )
-  const shown = statusLine(state, preview)
+  const shown = pulse === undefined ? statusLine(state, preview) : pulseStatus(pulse)
   const style = statusStyle(shown.tone)
   text(cells, band, left, layout.footerRow + 2, shown.text, style.role, {
     ...(style.bold === undefined ? {} : { bold: style.bold }),
@@ -1179,6 +1182,23 @@ export function composeBuildFrame(
   // What Enter would do at the cursor, derived once and read by the ghost, the status line and the
   // panel alike — the reducer's `place()` acts on the very same derivation.
   const preview = armedPreview(input.context, input.state)
+
+  // A Nexus Pulse on screen replaces what the Build Phase drew on the Grid and in the panel with the fight
+  // and its forces; the frame, the top and bottom bars, the cursor and every popup are the same code.
+  if (input.pulse !== undefined) {
+    const view = { camera: input.state.camera, viewport: input.state.viewport, layout: input.layout, grid: input.context.grid }
+    drawTerrain(cells, view, pack)
+    drawPulseEffects(cells, view, input.pulse, drawPulseEntities(cells, view, input.pulse))
+    drawCursor(cells, input)
+    drawChrome(cells, input, pack)
+    drawAlarm(cells, input.layout, input.pulse)
+    drawHeaderAndFooter(cells, input, null)
+    const panel: BandCell[] = []
+    drawPulsePanel(panel, input.layout, input.pulse)
+    for (const cell of panel) if (cell.y <= input.layout.panelBindingsRow) cells.push(cell)
+    drawOverlay(cells, input, pack)
+    return composeBands(input.layout.frame.width, input.layout.frame.height, cells)
+  }
 
   const animating = animatingPlacements(input)
   drawGrid(cells, input, pack, animating)

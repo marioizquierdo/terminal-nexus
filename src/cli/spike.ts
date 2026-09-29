@@ -16,6 +16,7 @@ import {
   SPIKE_STANDING,
   SPIKE_START_CURSOR,
   spikeGrid,
+  spikePulse,
 } from "../build/catalog.ts"
 import { isGated } from "../build/camera.ts"
 import { buildLayout } from "../build/layout.ts"
@@ -30,6 +31,7 @@ import { chunkText } from "../view/backends/ports.ts"
 import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
+import { startPulse } from "./pulse-run.ts"
 import type { PlaytestStep } from "../playtest/keys.ts"
 import { UNTIMED_GAP_MS, deliverStep } from "../playtest/deliver.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
@@ -92,6 +94,7 @@ export function spikeContext(scrollMargin?: number, extra: Partial<BuildContext>
     allotment: SPIKE_ALLOTMENT,
     nexusDraft: SPIKE_NEXUS_DRAFT,
     edgeStyle: SPIKE_EDGE_STYLE,
+    pulse: spikePulse,
     ...(scrollMargin === undefined ? {} : { scrollMargin }),
     ...extra,
   }
@@ -188,6 +191,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     onQuit: leave,
     onSettingsChange: saveSettings,
     onExport: exportSettings,
+    startPulse,
   })
 
   // Start in a state: the script's own clock, a second between untimed steps as in a scripted
@@ -215,6 +219,9 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
   // has. The same clock times the held-key ramp (passed with each key) and the lone-Esc timeout
   // (`KeyReader`).
   const clock = options.now ?? ((): number => Date.now())
+  // A Nexus Pulse the start keys began was timed on the script's clock, a few seconds from nothing; from
+  // here it runs on the live one. Rebase without letting any time pass: it opens at zero.
+  build.advance(clock(), true)
   const animation = new BuildAnimation()
   const reader = new KeyReader()
   let frameTimer: ReturnType<typeof setTimeout> | null = null
@@ -235,6 +242,10 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     if (leaving) return
     const size = terminalSize()
     const now = clock()
+    // Time passes for a Nexus Pulse on screen — and holds while the terminal is too small to draw it, so
+    // resizing back resumes from the same instant. Before the animations are read: the Pulse may have just
+    // asked the view to look at the player's Nexus.
+    build.advance(now, gated)
     // The player's settings as the Settings popup last left them — changed live, mid-screen.
     const settings = build.state.settings
     const live = gated
@@ -243,6 +254,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
           reducedMotion: settings.reducedMotion,
           footprintOf: (contentId) => context.registry.get(contentId).footprint,
         })
+    const pulse = gated ? undefined : build.pulseFrame(layout)
     const frame =
       gated || live === null
         ? gateFrame(size.columns, size.rows, SPIKE_MINIMUM)
@@ -259,10 +271,19 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
               ...(live.placing === undefined ? {} : { placing: live.placing }),
               ...(live.removing === undefined ? {} : { removing: live.removing }),
               reducedMotion: settings.reducedMotion,
+              ...(pulse === undefined ? {} : { pulse }),
             },
             settings.capability,
           )
-    scheduleFrame(live?.busyUntil ?? null, now)
+    // The frame timer runs while anything is still moving: an animation, or a Pulse that is playing.
+    const pulseUntil = gated ? null : (build.pulse?.busyUntil(now, build.state.debug) ?? null)
+    const busyUntil =
+      live?.busyUntil === undefined || live.busyUntil === null
+        ? pulseUntil
+        : pulseUntil === null
+          ? live.busyUntil
+          : Math.max(live.busyUntil, pulseUntil)
+    scheduleFrame(busyUntil, now)
     if (frame.width !== lastFrame.width || frame.height !== lastFrame.height) {
       stdout.write(CLEAR)
       lastFrame = { width: frame.width, height: frame.height }

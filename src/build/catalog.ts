@@ -7,6 +7,8 @@
 // the existing fixture rosters rather than invented.
 
 import type { GridTerrain, TerrainId } from "../grid/types.ts"
+import type { Force, PulseSetup } from "../match/types.ts"
+import type { CrewSize, RaidSize } from "./debug.ts"
 import type { ConstructItem, MapEdgeStyle, NexusPowerOption, StandingStructure } from "./types.ts"
 
 /**
@@ -182,3 +184,49 @@ export const SPIKE_NEXUS_DRAFT: readonly NexusPowerOption[] = [
     bonusAllotment: 2000,
   },
 ]
+
+/** The placeholder Nexus Pulse's gameplay seed — "PULS" — and its length: 360 ticks, thirty seconds, the
+ *  tick limit a raid that never arrives, or never finishes, runs into. */
+export const SPIKE_PULSE_SEED = 0x50554c53
+export const SPIKE_PULSE_TICKS = 360
+
+/** Where the player's own units begin the Pulse — just east of the Nexus, toward where the raid comes
+ *  from — and where the raid does: the far edge of a Grid view opened on the base. A building committed
+ *  on either point moves the units mustered there aside (`src/match/opening.ts`). */
+const CREW_MUSTER = { x: 22, y: 10 } as const
+const RAID_MUSTER = { x: 46, y: 10 } as const
+
+const TROOPER = "unit.citizen.trooper"
+const MARKSMAN = "unit.citizen.marksman"
+const RUNNER = "unit.ravel.runner"
+const RAIDER = "unit.ravel.raider"
+
+const many = (contentId: string, count: number): string[] => Array.from({ length: count }, () => contentId)
+
+/** The two squads PERIMETER's briefing gives the player ("two squads, one fabricator"). */
+const CREW_UNITS: readonly string[] = [...many(TROOPER, 3), ...many(MARKSMAN, 2)]
+
+/**
+ * The raids, by size. **Placeholder content, not PERIMETER's waves** — those are gate 6B's — tuned
+ * against this map and these buildings so the probe reads as a choice: with nothing built the crew loses,
+ * with a single Turret it is a wash, and with two Turrets and a Hatchery the raid is beaten. The heavy raid
+ * needs the whole budget. Ravel units, as PERIMETER's briefing names its raiders.
+ */
+const RAIDS: Readonly<Record<RaidSize, readonly string[]>> = {
+  none: [],
+  probe: [...many(RUNNER, 4), ...many(RAIDER, 3)],
+  heavy: [...many(RUNNER, 6), ...many(RAIDER, 4)],
+}
+
+/**
+ * The Nexus Pulse the spike starts when the Build Phase is committed: the player's own units beside the
+ * Nexus (unless the "Your units" Experiment says none), a raid of the "Raid" Experiment's size at the far
+ * edge, one seed, one length. What the player built comes from the plan, not from here.
+ */
+export function spikePulse(choice: Readonly<{ raid: RaidSize; crew: CrewSize }>): PulseSetup {
+  const forces: Force[] = []
+  if (choice.crew === "some") forces.push({ player: "A", muster: CREW_MUSTER, units: CREW_UNITS })
+  const raid = RAIDS[choice.raid]
+  if (raid.length > 0) forces.push({ player: "B", muster: RAID_MUSTER, units: raid })
+  return { seed: SPIKE_PULSE_SEED, pulseTicks: SPIKE_PULSE_TICKS, forces }
+}

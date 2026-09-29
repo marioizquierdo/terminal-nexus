@@ -952,5 +952,8 @@ test("the committed screen names the pick and the count, and the footer carries 
   assert.match(built.text, /Nexus: Test Pick/)
   assert.match(built.text, /1 structure planned/)
   assert.match(built.text, /\[esc\] menu/)
-  assert.match(built.text, /Build committed - 1 planned, Nexus Pulse would begin here \(Milestone 6\)\./)
+  // The committed screen a session draws when nothing starts a Pulse (no presenter here): the plan is
+  // frozen and the status line says so — it no longer promises a Pulse "would begin here" (gate 6A).
+  assert.match(built.text, /Build committed - 1 planned\./)
+  assert.doesNotMatch(built.text, /would begin here/)
 })
