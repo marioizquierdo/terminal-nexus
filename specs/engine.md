@@ -2,7 +2,7 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.25
+**Canon version:** 2.26
 **Updated:** 2026-09-27
 **License:** Apache-2.0
 
@@ -966,7 +966,7 @@ What differs between the phases is what the side panel holds:
 
 | | Side panel carries |
 | --- | --- |
-| **Build Phase** | `[e] Explore Map` and `[n] Nexus` entries at the top (9.7), what is left to spend, the construct menu with each row's cost, the Special slot, and one line saying what the highlighted or armed row does — or, in Explore Map, the Explore Map panel in the menu's place (below) |
+| **Build Phase** | `[e] Explore Map` and `[n] Nexus` entries at the top (9.7), what is left to spend, the construct menu with each row's cost, the Special slot, and one line saying what the highlighted or active row does — or, in Explore Map, the Explore Map panel in the menu's place (below) |
 | **Nexus Pulse** | Pulse number, both Nexus states, force totals, playback controls, and — when something is selected — that entity's live state |
 
 **A refused placement is answered on the status line, and names its tile — RULE.** Built at gate 5B
@@ -1018,19 +1018,26 @@ moves every hotkey below it the first time it fills. **Since gate 5F it is one l
 label with "none available" beside it, the form the Special row already had, because the panel lost
 two rows when the top bar began to run the whole width.
 
-**The Explore Map panel — GUIDANCE, canon 2.21, reshaped at canon 2.25** (owner, 2026-09-27 and
-2026-09-28). `[e] Explore Map` is the menu's first entry. Reached by `e`, that entry, Tab or a second
-Right — or Enter/Space on the map after a click brought the keyboard there — it gives the Grid the
-keyboard with nothing armed and replaces the menu with a panel headed **EXPLORE MAP** with `[esc]` at
-its right, describing whatever is under the cursor **as the cursor moves**, no key needed: the
-building's own glyphs as its icon, its name, whether it is planned or standing, what it is for in one
-line wrapped between words (never cut mid-word), then its numbers as label/value rows — health, size,
-cost where the construct menu sells it, attack where it has one. On bare ground the card names the
-terrain in one line and gives the tile. Esc, `[esc]` or a click on the panel returns to the menu (9.7).
-A click on the map from the menu leaves the menu beside it rather than opening the panel, so the next
-click can arm from the menu. It is a first version of the presentation card the owner described; a
-larger ASCII art version waits for content that has one, and live numbers wait for the Nexus Pulse
-view (Milestone 6).
+**The Explore Map panel — GUIDANCE, canon 2.21, reshaped at canon 2.25 and 2.26** (owner,
+2026-09-27 to 2026-09-29). `[e] Explore Map` is the menu's first entry, and the screen opens with the
+keyboard on it. Reached by `e`, that entry, or Enter/Space in plain navigation, it gives the Grid the
+keyboard with nothing armed; **its own row stays at the top of the panel, drawn active**
+(`> [e] Explore Map`, the style every active row shares), a separator runs under it, and the rest of
+the panel describes whatever is under the cursor **as the cursor moves**, no key needed: the building's
+own glyphs as its icon, its name, whether it is planned or standing, what it is for in one line wrapped
+between words (never cut mid-word), then its numbers as label/value rows — health, size, cost where
+the construct menu sells it, attack where it has one. On bare ground the card names the terrain in one
+line and gives the tile. `e` is a toggle; `e`, Esc or a click anywhere on the panel goes back to where
+it was opened from (9.7). Tab, a second Right and a click on the map arrive in plain navigation
+instead, the menu left beside the map, so the next click can arm from it. It is a first version of the
+presentation card the owner described; a larger ASCII art version waits for content that has one, and
+live numbers wait for the Nexus Pulse view (Milestone 6).
+
+**A menu row has two states — RULE, canon 2.26** (owner, 2026-09-29, feedback F32: "we can
+standardize on the same style we use for buildings"): **highlighted**, the keyboard's inverse bar,
+drawn only while the menu has focus; and **active**, `>` before it in the hotkey colour with its name
+underlined, while its action is under way — a building armed, Explore Map open, the Nexus popup open.
+One function decides and draws it for every row, so a change of style reaches them all.
 
 **Popups have one shape — RULE for the shape as data, GUIDANCE for its look, canon 2.21, grown at
 2.26.** Every popup — the Nexus powers, the start-the-Pulse question, the game menu, Settings, the
@@ -1201,20 +1208,28 @@ as 3.3 already states. Clicking a Grid tile moves the cursor to it. In the Build
 *armed* from the construct menu by its hotkey, by Enter or Space on its highlighted row, or by a
 click, and placed at the cursor with Enter or Space (or a second click on the same tile — Q52, below).
 
-**The menu orchestrates the Build Phase — RULE, canon 2.21** (owner, 2026-09-27: "I like keeping
-that as the main orchestrator, so when a building is placed, the focus should always come back to
-the menu"; Q57). Keyboard focus is reducer state, on the menu or on the Grid, and the screen is
-always in one of three plain modes: **the menu** (the highlight bar, no Grid cursor), **placing**
-(focus on the Grid with a structure armed: its row marked `>`, the cursor carrying its ghost), or
-**exploring** (focus on the Grid with nothing armed: no row marked, the bare cursor). **A structure
-is armed only while the Grid has focus**: everything that takes the keyboard off the Grid — Tab, Esc,
-a click on the menu, and every placement — disarms, so a stale ghost can never sit on the map while
-the player works the menu. **Every placement returns focus to the menu, disarmed**, on the row just
-used. This replaces canon 2.19's "stays armed after placing, so a run of the same structure is one
-digit followed by arrows and Enter": the digit fast path is now a digit, arrows and Enter for each
-building — a digit still arms from either focus and leaves the cursor where it was — and the
-menu-driven path is Enter or Space on the row again, which with the smart cursor below lands the next
-building beside the last with no arrow key at all.
+**The menu orchestrates the Build Phase — RULE, canon 2.21; finishing returns to where it began
+since canon 2.26** (owner, 2026-09-27, Q57; refined 2026-09-29, feedback F30). Keyboard focus is
+reducer state, on the menu or on the Grid, and the screen is always in one of four plain modes:
+**the menu** (the highlight bar, no Grid cursor), **placing** (focus on the Grid with a structure
+armed: its row drawn active, the cursor carrying its ghost), **Explore Map** (focus on the Grid,
+nothing armed, the tile panel in the menu's place) and **plain navigation** (focus on the Grid,
+nothing armed, the bare cursor and the menu beside it). **A structure is armed only while the Grid has
+focus**, so a stale ghost can never sit on the map while the player works the menu. **Finishing goes
+back to where it began**: a placement, or Esc while placing, goes back — disarmed — to plain
+navigation when the arming began on the map (a digit pressed there), and to the menu, on the row just
+used, when it began on the menu (Enter/Space or a click on its row, or a digit while the menu had
+focus); Explore Map follows the same rule. With the mouse, "back to the menu" leaves no highlight bar
+(9.2). **Arming puts the building where the cursor is** — its digit, Enter/Space on its row or a click
+on it — when it fits there; otherwise the spot within 12 tiles of the cursor that costs the least to
+reach, a tile sideways costing one and a tile up or down two, trying first spots that leave one free
+tile between it and every structure and only then spots that merely fit (ties: the more horizontal
+move, then east, then south); with none in reach the cursor steps one right and one down and the
+building is drawn as itself, not refused, until the player moves or tries to place. The cursor opens
+on the Grid Nexus. The owner's own flow (2026-09-29): find a good area, press a building's key — it
+stays under the cursor — place it, press the key again, and the next one lands a free column to the
+right. This retires Q55's smart cursor, which placed the next building beside the last one planned
+wherever the cursor was.
 
 **Bindings — GUIDANCE**, the starting keymap. Milestones 3 and 5 retune on evidence and record why:
 
@@ -1225,18 +1240,18 @@ building beside the last with no arrow key at all.
 | Shift+Arrow | the fast move: a **jump of 12 tiles** (the Experiment "Shift jump"; 5 until gate 5H, 8 until gate 5J), re-centring the view along the axis moved; held, it jumps again at most every 150 ms | fast pan across a scrolling Grid (owner, 2026-09-28: "Holding shift should behave fundamentally different, instead of just speed up to 8, it should move the cursor 12 tiles"). **Two sequence families, both bound** (gate 5A): xterm's `CSI 1;<modifier>` and rxvt's `CSI a/b/c/d`. Any modifier counts, not Shift alone — nothing else on these screens binds a modified arrow, so a terminal that eats Shift but passes Alt or Ctrl still gives its player the fast pan. **Option+Arrow as a Mac sends it is the same move** (owner, 2026-09-26: "we should also allow option (it is typical to move word by word)"): macOS terminals send Option+Left/Right as `ESC b`/`ESC f`, and one set to treat Option as Meta sends `ESC` before an ordinary arrow. Before canon 2.19 the input splitter broke both into a bare Escape plus a stray key — and a bare Escape with nothing armed leaves the screen. Bound from the terminals' documented defaults; **not yet measured on the owner's own iTerm2** — `node scripts/lib/key-echo.mjs`, run in that terminal, prints exactly what each key sends |
 | PageUp / PageDown, Home / End | the fast move — the modifier-free fallback | **Required, not optional** (gate 5A): four surveyed terminal families send no shifted arrow at all, so without this they would have no fast pan. Decoded from a table, because Home and End have three live spellings between xterm, screen/tmux/linux and rxvt |
 | Enter, Space | on the menu: activate the highlighted entry — arm a structure (focus moves to the Grid), open the Nexus powers, or explore. On the Grid while placing: place the armed structure at the cursor. On the map after a click brought the keyboard there: open Explore Map (9.2). In the Nexus powers popup: pick the highlighted power (the two questions answer to their own letters) | Space added 2026-09-26 (owner: "should also work with space, that was my reflex") — an alias of Enter everywhere on this screen, never a second meaning of its own |
-| Esc, `x` | **go back one level** (the `cancel` command): close the open popup, returning to the popup it was opened from if any (Settings to the game menu, the export to Settings); else leave the Grid — placing or Explore Map — for the menu, disarming; else, on the menu, open the **game menu**: `[s] Settings`, `[r] Restart`, `[q] Quit`, `[esc] Back to the game` | **RULE since canon 2.21: Esc never leaves the game by itself — leaving always asks.** `x` is Esc everywhere (owner, 2026-09-27: "it should be equivalent to do [esc], and x"), and so is a right click. A lone Esc at the end of a read waits a short timeout (50 ms, an Experiment) for the rest of a sequence; Esc then a letter or digit in one read is two keys; Esc then an arrow in one read is Option+Arrow, so anything scripting keys pauses after Esc (gate 5H) |
-| Tab | toggle keyboard focus between the side panel's menu and the Grid (arriving on the Grid exploring, nothing armed); does nothing while a popup is open | **Gate 5F, owner-requested 2026-09-26.** This row previously read "jump the cursor to the player's next / previous own structure" — GUIDANCE, never built, now retired from Tab (Q53 keeps the idea for another key). **Focus is its own state beside `armed`**, and the rule above holds: a structure is armed only while the Grid has focus, and every placement returns focus to the menu (Q57, answered 2026-09-27). **Convention 1 below applies: the key help says where focus is**, because focus makes arrows mean two things |
+| Esc, `x` | **go back one level** (the `cancel` command): close the open popup, returning to the popup it was opened from if any (Settings to the game menu, the export to Settings); else leave placing or Explore Map for where it began, disarming; else leave plain navigation for the menu; else, on the menu, open the **game menu**: `[s] Settings`, `[r] Restart`, `[q] Quit`, `[esc] Back to the game` | **RULE since canon 2.21: Esc never leaves the game by itself — leaving always asks.** `x` is Esc everywhere (owner, 2026-09-27: "it should be equivalent to do [esc], and x"), and so is a right click. A lone Esc at the end of a read waits a short timeout (50 ms, an Experiment) for the rest of a sequence; Esc then a letter or digit in one read is two keys; Esc then an arrow in one read is Option+Arrow, so anything scripting keys pauses after Esc (gate 5H) |
+| Tab | toggle keyboard focus between the side panel's menu and the Grid (arriving on the Grid in plain navigation, nothing armed); does nothing while a popup is open | **Gate 5F, owner-requested 2026-09-26.** This row previously read "jump the cursor to the player's next / previous own structure" — GUIDANCE, never built, now retired from Tab (Q53 keeps the idea for another key). **Focus is its own state beside `armed`**, and the rule above holds: a structure is armed only while the Grid has focus, and finishing returns focus to where it began (Q57, answered 2026-09-27, refined 2026-09-29). **Convention 1 below applies: the key help says where focus is**, because focus makes arrows mean two things |
 | Backspace, Delete | on the Grid: remove the planned, uncommitted placement under the cursor | plans are revisable until commit (Milestone 5). The Mac key labelled "delete" sends Backspace, so it cannot also return focus to the menu, as the owner's first sketch of the focus toggle had it — Esc does (Q57). On the menu, where the cursor is hidden, it does nothing |
 | `u` | undo the last planned placement | |
 | `p` | Start Nexus Pulse — the commit | moves focus to the menu and asks once in a popup, `[y]es / [n]o` (Esc is no); the one action that must not fire by accident. Refused while a dealt Nexus power is still waiting to be picked |
 | `n` | open the Nexus powers popup — the menu's `[n] Nexus` entry | pressed again inside the popup, closes it. Inside the start-the-Pulse question `n` is its `[n]o` instead: a popup holds the keyboard, so the two never meet |
-| `e` | Explore Map — the menu's first entry, `[e] Explore Map`: focus to the Grid with nothing armed, the side panel describing what is under the cursor as it moves (9.2) | added 2026-09-27 (owner: "Pressing [e] changes the focus to the map in navigation mode"); first, renamed and self-explaining at gate 5J (feedback F23). Tab and a second Right arrive the same way |
+| `e` | Explore Map — the menu's first entry, `[e] Explore Map`: focus to the Grid with nothing armed, the side panel describing what is under the cursor as it moves (9.2) | added 2026-09-27 (owner: "Pressing [e] changes the focus to the map in navigation mode"); first, renamed and self-explaining at gate 5J (feedback F23); a toggle, its row drawn active while open, since gate 5K (F32). Tab and a second Right arrive in plain navigation instead |
 | `q` | open the game menu | never quits outright, so a stray press cannot lose a plan; only the game menu's own `[q]` (or Enter or a click on its Quit row) quits. The top bar's `menu [esc]` is Esc, which on the menu opens it (gate 5J, owner: "When pressing [esc] or explicitly opening the main menu, there should be an option for '[s] Settings' along with '[q] Quit'") |
 | Ctrl+C | quit at once | the one immediate way out, from anywhere |
 | `?` | help overlay listing every binding live on this screen | the footer already shows the most important ones (3.1's controls row) |
 | `q`, Space, `.`, `,`, `[`, `]`, `r` | unchanged from `grid` during a Pulse: quit, pause, step, speed, restart | one keymap across `grid` and `terminal-nexus` |
-| Mouse: click a menu row | **activate at once**, whatever had focus: arm the building (its preview at the cursor — where the cursor is if the Grid had focus, the smart-cursor spot if the menu did), open the Nexus powers, or open Explore Map — the row's hotkey. While the Explore Map panel covers the menu, a click on the panel only gives the menu back | owner, 2026-09-28 (feedback F22), reversing 2026-09-27's highlight-first: "The selected state only makes sense when using the keyboard, but using the mouse should activate what is being clicked." After the mouse works the menu no highlight bar is drawn; the first menu key only shows it again, on the row it remembers. An armed row is marked as armed (`>`, underlined), never with the keyboard's bar. The whole row is the target, the width its highlight bar is drawn |
+| Mouse: click a menu row | **activate at once**, whatever had focus: arm the building (its preview at the cursor when it fits there, else at the nearest good spot (the arming rule above); what a row click starts returns to the menu), open the Nexus powers, or open Explore Map — the row's hotkey. While the Explore Map panel covers the menu, a click on the panel only gives the menu back | owner, 2026-09-28 (feedback F22), reversing 2026-09-27's highlight-first: "The selected state only makes sense when using the keyboard, but using the mouse should activate what is being clicked." After the mouse works the menu no highlight bar is drawn; the first menu key only shows it again, on the row it remembers. An armed row is marked as armed (`>`, underlined), never with the keyboard's bar. The whole row is the target, the width its highlight bar is drawn |
 | Mouse: click a Grid tile | move focus to the Grid and the cursor to the tile, the armed preview with it; **a second click on the same tile places it, and so does a quick double click on the same spot** (3.3). With nothing armed it only moves the cursor: in Explore Map the panel follows it; from the menu, the menu stays drawn beside the map | Q52, reversing Q50 — the terminal caveats below have the reasoning. A click near an edge scrolls in proportion, armed or not (3.3, Q62, F22). A `Shift+click` to place in one click is still planned |
 | Mouse: click outside an open popup | close the popup and move focus to where the click landed — and nothing more | a dismissing click never also places, picks or activates (owner, 2026-09-27: he clicked Nexus, missed the popup in the middle of the screen, and thought the mouse was broken). A click on the top bar's `close [esc]` goes back one level, as Esc does, where a click outside closes every popup at once; a click on one of its options chooses it |
 | Mouse: click the top bar's right end | Esc — the `cancel` command, one level back | the right end names what Esc does now: `menu [esc]` on the menu (or a committed Build Phase), `back [esc]` while the Grid has focus, `close [esc]` while a popup is open (owner, 2026-09-29, feedback F37: "we can reverse the title and hotkey for some actions that navigate 'back'"). It is the one place Esc is named on screen |
@@ -1294,7 +1309,7 @@ placing, undoing and removing proceed freely regardless (`commitLock` in `src/bu
 Nothing about the invariant's own guarantee changes — the Build Phase still cannot
 end without a pick — only where the refusal fires.
 
-**Two related ideas from the same feedback, each with a gate now** (Q55): a **smart cursor** that,
+**Two related ideas from the same feedback, each with a gate now** (Q55): a **smart cursor** (built at gate 5F, replaced at gate 5K by arming where the cursor is, above) that,
 when a structure is armed from the menu and focus moves to the Grid, puts the cursor on the nearest
 tile where it can legally go — toward the centre of the map, aligned with what is already planned and
 leaving one tile free between structures — in practice one tile beside the last thing planned,

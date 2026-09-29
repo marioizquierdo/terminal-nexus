@@ -2,7 +2,7 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.25
+**Canon version:** 2.26
 **Updated:** 2026-09-27
 **License:** Apache-2.0
 
@@ -1006,48 +1006,6 @@ this way (Q37's own precedent).
 simplify first and re-ask; make every number a parameter the way the margin already is, so this
 session's guesses are replaceable by his own feel without another round trip.
 
-### Q55 — Smart cursor placement, and interpolated cursor/camera movement: build now or keep in mind?
-
-**Status:** OBSERVABLE — the smart-cursor half **built in gate 5F** (2026-09-26,
-`evidence/gate-5f-report.md` Section 3): beside the last thing planned, or the Grid Nexus before
-anything is, one tile apart and aligned with it, the side facing the map's centre first; failing
-that, the nearest spot anywhere with a free tile around it; failing that, the nearest spot at all;
-failing that, the cursor stays. Only a menu-driven arm uses it — a digit leaves the cursor where the
-player pointed. `BuildContext.smartCursor` switches it off, ready for Debug Mode. Awaiting the
-owner's feel; the interpolation half is **built at gate 5H** (the view slides, the "View slide" flag). Revised 2026-09-26, the same day it was
-registered: each now has a gate.
-The smart cursor goes with gate 5F's keyboard focus, because the owner's own keyboard-only flow
-("down-down-space, place, space, place") only works if arming from the menu puts the cursor
-somewhere it can build; interpolation goes with gate 5H, because it needs the frame timer the speed
-tiers of Q54 need anyway. The original recommendation below — land the click, focus and speed
-mechanics first — is kept as written; what changed is that the focus mechanic turned out to depend
-on the smart cursor rather than merely sit beside it. **Defined enough to build**: from the last
-placement (or the Nexus, before any), the nearest tile where the armed structure is legal, searched
-outward toward the Grid's centre, preferring a position aligned with an existing structure with one
-tile between them — deterministic, a function of the plan, so the reducer can own it and the driver
-can assert it. An on/off field in the Debug Mode panel lets the owner compare it with plain "stay
-where you are".
-
-Two further ideas from the same 2026-09-26 feedback, each real but distinct from anything else in this
-round: (1) when focus moves to the Grid right after arming a structure from the menu, place the cursor
-at the nearest empty tile toward the map's centre, aligned with existing placements so a run forms a
-tidy grid with one tile of spacing — a placement heuristic, not a UI wiring detail; (2) render the Grid
-pane on its own timer, decoupled from key events, so cursor and camera movement (including the speed
-tiers of Q54, and a "click to centre" mouse gesture when nothing is armed) ease toward their target
-over several frames instead of jumping — asked directly as "do you think this would be possible?". It
-is: `src/cli/spike.ts`'s live loop redraws once per input event today and has no independent frame
-timer at all, unlike the Nexus Pulse view, which already proves the same "presentation interpolates,
-simulation does not" pattern this would need (`engine.md` Section 1). Neither idea is specified enough
-to build blind — the smart-cursor rule needs a precise definition of "aligned, one tile of spacing" for
-an irregular existing layout, and the interpolation idea needs its own frame-timer plumbing decision
-(when the loop starts and stops, so an idle screen is not redrawing needlessly).
-
-**Recommendation: keep both in mind, build neither in the same pass as Q52/Q53/Q54.** Land the click,
-focus, and speed-tier mechanics first — they are what the owner actually asked to be able to use next
-— then revisit interpolation as the natural way to make the speed tiers *look* smooth once they exist,
-and scope the smart-cursor heuristic as its own small follow-up once there is a real focus-toggle mode
-for it to trigger from.
-
 ### Q59 — A `[m] Map` popup that shows the whole Grid at once
 
 **Status:** OPEN — keep in mind, not needed for Milestone 5; registered at the owner's request, the
@@ -1151,8 +1109,9 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q52 | 2026-09-26 | **Reversed: a second click on the same tile places it, not the first.** Owner, after living with gate 5D's build: "the building is placed right away, but there should be a confirmation... the default should require a second click." A future `Shift+click` is planned as a one-click escape hatch, not built now. Q50's own asymmetry finding (a first click can scroll the camera, so a second click at the same *screen position* lands on a different *tile*) is what makes this safe to re-adopt: the check is on tile identity, not screen position | [`engine.md`](engine.md) Section 9.7 |
 | Q60 | 2026-09-27 | **B — the popup closes on the pick.** The owner, asked directly ("does the Nexus Powers popup close itself after you pick a power? My recommendation is that it closes"), agreed. Open, pick, and the player is back on the menu; the status line and the entry's "1 active" confirm it, and reopening the popup shows the pick listed as active. Esc still closes it without a pick. The register's own written recommendation was A (stay open); the question was put to him with B recommended, on the grounds that the pick is confirmed in two other places and the open popup cost a key on every Build Phase | [`engine.md`](engine.md) 9.7 (canon 2.21); `../src/build/state.ts` (`pickNexus`) |
 | Q56 | 2026-09-27 | **A solid bar, on all four sides.** Owner, after playing gate 5F: "The grid borders need to also use the 'thick' version horizontally... it should use something that is more clear... The rectangle needs to be a rectangle." A side that has reached the map's edge is drawn as an inverse-video cell — the same weight horizontally and vertically, in every glyph pack and in monochrome — and a corner is solid where a solid side runs into it. Replaces the `=` / bold `|` pair gate 5E built | [`engine.md`](engine.md) 3.3 (canon 2.21); `../src/view/build.ts` (`drawChrome`) |
-| Q57 | 2026-09-27 | **A — always back to the menu**, reversing the recommendation gate 5F built. Owner: "I like keeping that as the main orchestrator, so when a building is placed, the focus should always come back to the menu." A placement also disarms: a building is armed only while the map has focus. Esc returns focus to the menu (and on the menu asks "Exit the game?"); Backspace stays "remove". The digit path is now "digit, arrows, Enter" per building | [`engine.md`](engine.md) 9.7 (canon 2.21); `../src/build/state.ts` (`place`) |
+| Q57 | 2026-09-27 | **A — always back to the menu**, reversing the recommendation gate 5F built. Owner: "I like keeping that as the main orchestrator, so when a building is placed, the focus should always come back to the menu." A placement also disarms: a building is armed only while the map has focus. Esc returns focus to the menu (and on the menu asks "Exit the game?"); Backspace stays "remove". The digit path is now "digit, arrows, Enter" per building **Refined 2026-09-29 (F30): finishing returns to where it began** — the map in plain navigation when the arming began there, the menu when it began on the menu | [`engine.md`](engine.md) 9.7 (canon 2.21, 2.26); `../src/build/state.ts` (`place`) |
 | Q58 | 2026-09-28 | **Yes — an armed click scrolls like any other, and a quick double click places where its first click pointed**, reversing option B, which gate 5H built. Owner, after playing the demo page (feedback F22): "then I can keep clicking on the grid with the ghost building placement cursor to keep scrolling, and double click will place the building." A double click is two left clicks on the same screen cell within 400 ms (an Experiment); the input path sends the second as a click on the first one's tile, so the reducer's compare-by-tile rule (Q52) still holds and a slow second click on a moved view still never places on a tile nobody pointed at. The still view stays one Experiment away ("Armed click scrolls") | [`engine.md`](engine.md) 3.3 and 9.7 (canon 2.25); `../src/build/session.ts` (`lastArmedClick`) |
+| Q55 | 2026-09-29 | **Both halves built; the smart cursor replaced.** Interpolation: the view slides and the cursor glides (gates 5H and 5J). Placement: the owner (feedback F30) — "selecting a building should always try the 'recommended nearest empty space' for the building, but that should be based on the previous cursor location (or on top of the nexus by default), not on the last placed building." Arming now keeps the building where the cursor is when it fits, else the cheapest spot within 12 tiles (sideways cheaper than up or down) leaving a free tile around it, else one step right and down drawn as the building rather than refused; the cursor opens on the Grid Nexus. The "Smart cursor" Experiment is deleted | [`engine.md`](engine.md) 9.7 (canon 2.26) |
 | Q65 | 2026-09-29 | **Yes — removing a planned building throws the same sparks a placement does.** Owner (feedback F33): "Canceling a placed building should also have spark effect, it's easy to do :)". The building still leaves the plan at once; the sparks are presentation over the ground it stood on | [`ascii-effects.md`](ascii-effects.md) Section 5 (`fx.sparks.burst`) (canon 2.26) |
 | Q61 | 2026-09-29 | **A — the menu, with the highlight on Explore Map.** Owner (feedback F31): "When the build mode is launched, the focus should be on the Menu, at the Explore Map option. No need to have a experiment setting for this. This allows the user to press 'Enter' or 'e' to move the cursor into the map, but also allows them to press 'down' to see more options." The "Opens on" Experiment is deleted | [`engine.md`](engine.md) 9.7 (canon 2.26) |
 | Q1 | 2026-08-20 | **Tile width is adaptive presentation capability**: one column per tile in the 80x24 composition, two columns per tile at 128 columns or wider. Same tiles, same actors, same revealed information — only the composition changes. The 80x24 floor is preserved and the concept art's look is reachable on a wide terminal | [`engine.md`](engine.md) Section 9.3 |
@@ -1781,3 +1740,30 @@ removal animation would be an effect over empty ground, not a delayed disappeara
 | B. No; removal stays instant | Asymmetric with placement |
 
 **Recommendation: A**, after the owner has felt placement.
+
+### Q55 — answered
+
+**Question:** Q55 — Smart cursor placement, and interpolated cursor/camera movement: build now or keep in mind?
+
+
+**Status:** ANSWERED 2026-09-29 — both halves built; the smart cursor replaced by arming where the cursor is (the Answered table has the decision). The original entry follows.
+
+Two further ideas from the same 2026-09-26 feedback, each real but distinct from anything else in this
+round: (1) when focus moves to the Grid right after arming a structure from the menu, place the cursor
+at the nearest empty tile toward the map's centre, aligned with existing placements so a run forms a
+tidy grid with one tile of spacing — a placement heuristic, not a UI wiring detail; (2) render the Grid
+pane on its own timer, decoupled from key events, so cursor and camera movement (including the speed
+tiers of Q54, and a "click to centre" mouse gesture when nothing is armed) ease toward their target
+over several frames instead of jumping — asked directly as "do you think this would be possible?". It
+is: `src/cli/spike.ts`'s live loop redraws once per input event today and has no independent frame
+timer at all, unlike the Nexus Pulse view, which already proves the same "presentation interpolates,
+simulation does not" pattern this would need (`engine.md` Section 1). Neither idea is specified enough
+to build blind — the smart-cursor rule needs a precise definition of "aligned, one tile of spacing" for
+an irregular existing layout, and the interpolation idea needs its own frame-timer plumbing decision
+(when the loop starts and stops, so an idle screen is not redrawing needlessly).
+
+**Recommendation: keep both in mind, build neither in the same pass as Q52/Q53/Q54.** Land the click,
+focus, and speed-tier mechanics first — they are what the owner actually asked to be able to use next
+— then revisit interpolation as the natural way to make the speed tiers *look* smooth once they exist,
+and scope the smart-cursor heuristic as its own small follow-up once there is a real focus-toggle mode
+for it to trigger from.

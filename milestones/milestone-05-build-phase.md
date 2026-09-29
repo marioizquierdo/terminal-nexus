@@ -7,7 +7,8 @@
 menu row, Explore Map as that style with the tile below it, Settings without the now/restart column
 and with a restart warning, a position count and a scroll bar, a top-right Esc label that says what
 Esc does, sparks on removal, his exported numbers as defaults, the map's own edge as the rule, and a
-way to start the game in a particular state. **In progress**, on the same branch as 5G-5J; 5D-5J are
+way to start the game in a particular state. **Built and reported (PASS), awaiting Mario's playtest**
+(`evidence/gate-5k-report.md`), on the same branch as 5G-5J; 5D-5J are
 built and reported (PASS) but not yet formally accepted, and this gate depends on none of those
 acceptances.
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
@@ -456,24 +457,24 @@ Gate 5J's definition of done:
 
 Gate 5K's definition of done:
 
-- [ ] arming a building keeps the cursor where it is when the building fits there, and otherwise moves
+- [x] arming a building keeps the cursor where it is when the building fits there, and otherwise moves
       it to the nearest good spot within 12 tiles (one tile clear of other buildings where possible),
       or one tile right and down with the preview (not the refusal) when none; no spot is chosen from
       the last building placed; the Nexus is the start when nothing has been pointed at;
-- [ ] after a placement, and on Esc while placing, the keyboard returns to where the arming came
+- [x] after a placement, and on Esc while placing, the keyboard returns to where the arming came
       from — plain navigation on the map (menu visible) or the menu; Tab reaches plain navigation;
-- [ ] the Build Phase opens on the menu at Explore Map, with no Experiment for it;
-- [ ] every menu row has the same two states — highlighted by the keyboard, and active (`>` and the
+- [x] the Build Phase opens on the menu at Explore Map, with no Experiment for it;
+- [x] every menu row has the same two states — highlighted by the keyboard, and active (`>` and the
       active colours) while its action is under way; Explore Map active is the header of the tile
       panel, over a separator, and `e` toggles it;
-- [ ] removing or undoing a building throws sparks;
-- [ ] Settings shows no now/restart column; a change that needs a restart raises a message popup; the
+- [x] removing or undoing a building throws sparks;
+- [x] Settings shows no now/restart column; a change that needs a restart raises a message popup; the
       title carries the position (k/N); the description sits under the list, below a line; Export is
       the list's last row; there are no "more" rows and no fixed restart/export rows;
-- [ ] a popup with a scrolling section has a scroll bar in its right border, clickable at both ends;
-- [ ] the top bar's right end says what Esc does — menu, back or close — and popups carry no `[esc]`;
-- [ ] his exported numbers are the defaults; the map's own edge, quiet and on the shared west side,
+- [x] a popup with a scrolling section has a scroll bar in its right border, clickable at both ends;
+- [x] the top bar's right end says what Esc does — menu, back or close — and popups carry no `[esc]`;
+- [x] his exported numbers are the defaults; the map's own edge, quiet and on the shared west side,
       is the rule, and its three Experiments are gone;
-- [ ] the game and the browser page can start the Build Phase in a state given as keys;
-- [ ] keyboard, mouse and driver still produce the same plan; a gate report ending in PASS / REVISE /
-      STOP / BLOCKED.
+- [x] the game and the browser page can start the Build Phase in a state given as keys;
+- [x] keyboard, mouse and driver still produce the same plan; a gate report ending in PASS / REVISE /
+      STOP / BLOCKED — **PASS**, pending the owner's playtest.

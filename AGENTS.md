@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.25
+**Canon version:** 2.26
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -183,14 +183,27 @@ settings are saved, and **Experiments** sit at the bottom (`d` jumps there) with
 into a pull request and `--settings` to read it back. One press moves 1 tile, a held arrow 2 then 4,
 Shift jumps 12; the view slides and the cursor glides on every move; a click on a menu row activates
 it; armed clicks scroll and a double click places; `[e] Explore Map` is first and follows the cursor;
-the map edge is quieter, with its glyph and a shared west side as Experiments; and presentation is
+the map edge is quieter, with its glyph and a shared west side as Experiments (settled at 5K); and presentation is
 four named families (animations, particles, shading, tweens) with the placement juice on them. 5G-5I
 were reworked by it rather than superseded, and all of them await his playtest together.
 
+**Milestone 5 gate 5K is built and reported (PASS), awaiting Mario's playtest** (2026-09-29): his
+fourth round and his settings export
+([`docs/feedback/2026-09-29-pr46-round-4.md`](docs/feedback/2026-09-29-pr46-round-4.md), F28-F40).
+Arming puts a building where the cursor is (or the nearest good spot, a free column to the right);
+placing or Esc goes back to where it began — the map in plain navigation, or the menu; the Build Phase
+opens on the menu at Explore Map; every menu row has one active style (`>`), Explore Map included, its
+row over a separator above the tile details; removal throws sparks; Settings has a position count, a
+scroll bar in the popup border, Export as its last row, and a message popup when a change needs a
+restart; the top bar's right end names what Esc does and popups carry no `[esc]`; his numbers are the
+defaults and the map's own edge on the shared divider is the rule; and `--keys`/`#keys=` open the game
+in a state. Q66 — reading key releases where the terminal reports them — waits on
+`node scripts/probe-key-release.mjs` in his iTerm2.
+
 The current milestone is **[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md)
 — Build Phase**: can a player place buildings, pick a Nexus upgrade, and scroll a real map, by
-keyboard, mouse and driver alike? Its active gate is **5J — the owner's third round**, built and
-awaiting Mario's playtest (`evidence/gate-5j-report.md`). **Mario asked on 2026-09-28 to keep going
+keyboard, mouse and driver alike? Its active gate is **5K — the owner's fourth round**, built and
+awaiting Mario's playtest (`evidence/gate-5k-report.md`). **Mario asked on 2026-09-28 to keep going
 without waiting to look at each gate first**: he tests several merged changes together, then plays,
 exports his Experiments, and pastes them into the pull request.
 
@@ -201,11 +214,11 @@ So the authorised work for a new session is, in order:
    outstanding or that everything still is; **a pasted settings export is feedback**: start the game
    with it (`--settings`), and settle each Experiment it answers — adopt the value as the default,
    delete the Experiment, record the answer;
-2. **Mario's playtest of gates 5G-5J together** — the feedback logs have nothing left that can be
-   built now, so the next gate waits for his word; when it comes, it is the next gate in the build
-   order [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
-   order — read that table's build-order column, and take one gate per session unless the owner's
-   own prompt asks for more.
+2. **Mario's playtest of gates 5G-5K together** — the feedback logs have nothing left that can be
+   built now except Q66, which waits on his key-release probe; the next gate waits for his word, and
+   when it comes it is the next gate in the build order [`milestones/README.md`](milestones/README.md)
+   carries. Milestone numbers are identities, not an order — read that table's build-order column, and
+   take one gate per session unless the owner's own prompt asks for more.
 
 Each milestone names exactly what it needs in its own "Depends on" line, and its gates are the unit
 of work.
@@ -320,9 +333,13 @@ deleted, and the renderer must be replaceable without one simulation test changi
   view cannot place on a neighbour (Q52, reversing gate 5A's one-click Q50); **a quick double click on
   one spot places where its first click pointed**, timed in the input path (gate 5J). **Keyboard focus is
   reducer state, on the menu or the Grid, and the menu orchestrates the Build Phase**: a structure is
-  armed only while the Grid has focus, and every placement returns focus to the menu, disarmed (Q57).
-  **Esc, `x` and a right click are one cancel** that goes back one level — popup, then the Grid
-  (placing or Explore Map) to the menu — and on the menu opens the **game menu** (`[s] Settings`,
+  armed only while the Grid has focus, and **finishing goes back to where it started** (Q57, refined
+  2026-09-29): placing or Explore Map begun on the map returns to plain navigation there; begun on the
+  menu, to the menu, disarmed. **Arming puts the building where the cursor is** when it fits, else the
+  cheapest spot within 12 tiles (sideways cheaper than up or down) leaving a free tile around it —
+  never beside the last building placed; the cursor opens on the Grid Nexus. **Esc, `x` and a right
+  click are one cancel** that goes back one level — popup, then placing or Explore Map to where it
+  began, then the map to the menu — and on the menu opens the **game menu** (`[s] Settings`,
   `[r] Restart`, `[q] Quit`); `q` opens it too, and only Ctrl+C quits at once. Leaving always asks.
   **The top bar's right end says what Esc does** — `menu [esc]`, `back [esc]`, `close [esc]` — and a
   click on it is Esc; no popup carries its own `[esc]`. A click scrolls
@@ -331,9 +348,11 @@ deleted, and the renderer must be replaceable without one simulation test changi
   glide, which interpolate every move — in the view; never the reducer.
 - **The Build Phase panel is the construct menu, what is left to spend, and the selected item's cost
   and effect**, under `[e] Explore Map` and `[n] Nexus` entries at its top, Explore Map first — no
-  radius preview until something has a radius (Q30). **Explore Map** replaces the menu with a panel
-  headed "EXPLORE MAP" describing whatever is under the cursor as it moves; Esc gives the menu back.
-  An armed row is marked as armed, never with the keyboard's highlight bar. **Every popup is one shape** — a title and rows as data,
+  radius preview until something has a radius (Q30). **Explore Map** keeps its row at the top of the panel,
+  drawn active, with a separator under it and the details of whatever is under the cursor below; `e`,
+  Esc or a click on the panel goes back. **A menu row has two states**: highlighted (the keyboard's
+  bar, only while the menu has focus) and **active** (`>`, the hotkey colour, underlined) while its
+  action is under way — a building armed, Explore Map open, the Nexus popup open — one style for all. **Every popup is one shape** — a title and rows as data,
   options naming the command a click sends, at most one scrolling list with a scroll bar in its right
   border, drawn and hit-tested from the same placement; a **message** is the shape with nothing to
   choose, closed by Esc or a click outside — and is
