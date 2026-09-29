@@ -5,7 +5,7 @@
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import type { PlaybackControl } from "../view/playback.ts"
 import type { BuildState } from "./state.ts"
-import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct } from "./state.ts"
+import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct, startEntry } from "./state.ts"
 import type { ConstructGroup, ConstructItem, MenuEntry } from "./types.ts"
 import type { Camera, TerminalSize, TileWidth, Viewport } from "./camera.ts"
 import {
@@ -114,35 +114,22 @@ export function pulseControlAt(layout: BuildLayout, column: number, row: number)
 }
 
 /**
- * The `[s] Start` button (owner, 2026-09-29, feedback F41): the strategy game's "end turn", a boxed
- * button at the bottom right of the menu panel, on every Build Phase screen that can still be edited.
- * Three rows tall — the box's top, its label, its bottom — pinned to the panel's last rows the way the
- * Pulse's controls are, right-aligned with a column of air before the divider. The composer draws it
- * and the mouse adapter hit-tests it from this one place.
+ * The Start Pulse entry (owner, 2026-09-29, feedback F41, then F47: "a regular menu item, at the
+ * bottom"): the menu's last row, drawn and hit-tested like every other. It is pinned to the panel's
+ * bottom line rather than placed after the last group, so it does not move as the menu above it grows,
+ * and the rest of the menu — and the key help that grows up from the bottom — ends on the row above it.
+ * `s` is its hotkey.
  */
 export const START_KEY = "s"
-export const START_LABEL = `[${START_KEY}] Start`
-export const START_BUTTON_ROWS = 3
+export const START_LABEL = "Start Pulse"
 
-export function startButton(layout: BuildLayout): Readonly<{ top: number; bottom: number; left: number; width: number }> {
-  const width = START_LABEL.length + 4
-  return {
-    top: layout.panelBindingsRow - START_BUTTON_ROWS + 1,
-    bottom: layout.panelBindingsRow,
-    left: layout.panelColumn + layout.panelLimit - 1 - width,
-    width,
-  }
+export function startRow(layout: BuildLayout): number {
+  return layout.panelBindingsRow
 }
 
-/** Whether a frame cell is on the Start button's box. */
-export function startButtonAt(layout: BuildLayout, column: number, row: number): boolean {
-  const { top, bottom, left, width } = startButton(layout)
-  return column >= left && column < left + width && row >= top && row <= bottom
-}
-
-/** The last panel row the menu's own text may use: the rows above the Start button. */
+/** The last panel row the menu's other text may use: the rows above the Start Pulse entry. */
 export function menuFloor(layout: BuildLayout): number {
-  return startButton(layout).top - 1
+  return startRow(layout) - 1
 }
 
 /** The key the top bar's right end names. */
@@ -248,6 +235,7 @@ export function menuEntryRow(
 ): number | null {
   if (entry.kind === "nexus") return layout.panelRow + NEXUS_ROW
   if (entry.kind === "explore") return layout.panelRow + EXPLORE_ROW
+  if (entry.kind === "start") return startRow(layout)
   for (const line of constructLines(layout, catalog)) {
     if (line.kind === "item" && line.index === entry.index) return line.row
   }
@@ -267,6 +255,9 @@ export function menuEntryAt(
   row: number,
 ): number | null {
   if (!inPanelColumns(layout, column)) return null
+  // Start Pulse first: it is the one row pinned to the panel's bottom, and wins where a taller menu
+  // would reach it.
+  if (row === startRow(layout)) return startEntry(catalog.length)
   if (row === layout.panelRow + EXPLORE_ROW) return EXPLORE_ENTRY
   if (row === layout.panelRow + NEXUS_ROW) return NEXUS_ENTRY
   for (const line of constructLines(layout, catalog)) {

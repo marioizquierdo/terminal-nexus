@@ -212,9 +212,10 @@ Phase, watch the unmodified kernel resolve it, see a legible ending with Recall,
 Build Phase? Its active gate is **6A — Start, end, Recall**: Start Nexus Pulse as an explicit action from
 the Build Phase's Start button, the end condition, the stop / finish-in-flight / Recall sequence, and a
 result a viewer can read unprompted. **Gate 6A is built and reported (PASS), awaiting Mario's playtest**
-(2026-09-29, `evidence/gate-6a-report.md`; reworked once from his feedback the same day): a boxed
-**`[s] Start`** button at the bottom of the menu — the strategy game's "end turn" — asks once, and
-Enter, Space or `s` again starts the Pulse on the Build Phase's own screen — the unmodified kernel
+(2026-09-29, `evidence/gate-6a-report.md`; reworked twice from his feedback the same day):
+**`[s] Start Pulse`**, the menu's last row — reached by Up and Down like every other, since a menu can
+always be walked with Up, Down and Enter alone — opens a "Battle Round 1" screen announcing the round,
+and Enter, Space or `[s] Start` starts the Pulse on the Build Phase's own screen — the unmodified kernel
 resolves the committed plan plus a placeholder crew and raid — with a countdown timer in the title, a
 score, a feed of events, pause / speed / step / watch-again, and an ending of the timer flashing and a
 light sweeping the map's border like a lighthouse in the last three seconds, a cease fire, the survivors

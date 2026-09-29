@@ -427,7 +427,7 @@ test("while the commit question is open, the status line asks it, whatever the g
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "commit" }])
   })
-  assert.match(statusRow(asking), /^Start Pulse 1\? Enter starts it; Esc keeps building\.$/)
+  assert.match(statusRow(asking), /^Battle Round 1: Enter starts it, Esc goes back\.$/)
   const ghost = cellForTile(asking.layout, asking.build.state.camera, { x: 8, y: 5 })
   assert.notEqual(cellAt(asking.frame, ghost.x, ghost.y).glyph, "x", "no ghost behind the question")
 })
@@ -715,7 +715,7 @@ test("every key the adapters bind is named on screen at the 80-column floor", ()
         ["\u001b[B", "down", /up\/down choose/],
         ["\r", "enter", /enter\/space select/],
         ["\t", "tab", /tab grid/],
-        ["s", "commit", /s start/],
+        ["s", "commit", /\[s\] Start Pulse/],
         ["u", "undo", /u undo/],
         ["1", "a digit", /\[1\] Barracks/],
       ],
@@ -930,15 +930,16 @@ test("the normal panel says how many Nexus powers are active, and names the empt
   assert.match(built.text, /SPECIAL {2,}none available/)
 })
 
-test("the commit confirmation is a popup over the Grid: Start Pulse 1, or keep building", () => {
+test("the commit confirmation is a screen over the Grid: Battle Round 1, what it announces, and [s] Start", () => {
   const built = screenAt(MINIMUM, (build) => {
     build.dispatch({ kind: "commit" })
   })
-  assert.match(built.text, /START PULSE 1\?/)
-  assert.match(built.text, /\[s\] Start Pulse 1/)
-  assert.match(built.text, /\[n\] Keep building/)
-  assert.match(built.text, /\[esc\]/)
-  assert.match(built.text, /START PULSE\? {2}enter\/s\/space start {2}n\/esc keep building/)
+  assert.match(built.text, /Battle Round 1/)
+  for (const order of ["Activate Nexus.", "Collect Resources.", "Spawn Units."]) assert.match(built.text, new RegExp(order.replace(".", "\\.")))
+  assert.match(built.text, /\[s\] Start\b/)
+  assert.doesNotMatch(built.text, /Keep building|\?\s*\|/, "one row, and no question")
+  assert.match(built.text, /close \[esc\]/)
+  assert.match(built.text, /BATTLE ROUND {2}enter\/s\/space start {2}esc back/)
 })
 
 test("the committed screen names the pick and the count, and the footer carries the full sentence", () => {
@@ -946,7 +947,7 @@ test("the committed screen names the pick and the count, and the footer carries 
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
     build.dispatch({ kind: "commit" })
-    build.dispatch({ kind: "confirm-commit", accept: true })
+    build.dispatch({ kind: "confirm-commit" })
   })
   assert.match(built.text, /BUILD COMMITTED/)
   assert.match(built.text, /Nexus: Test Pick/)

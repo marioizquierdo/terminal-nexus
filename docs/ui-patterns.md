@@ -3,7 +3,7 @@
 **Document role:** The interaction and drawing patterns every interactive screen follows
 **Status:** WORKING — built on the Build Phase first; not canon yet (promoted into `specs/engine.md`
 Section 9 when the owner accepts them)
-**Updated:** 2026-09-29 (section 6, the Start button, and section 7c, the Nexus Pulse on screen — gate 6A, and its second round: the timer, the light, and red kept for the Nexus being hurt; section 0, the UX goals read out of four rounds of feedback; round-4 feedback F30-F33: arming where the cursor is, focus that goes back to
+**Updated:** 2026-09-29 (gate 6A round 3: section 4's first rule — a menu can always be walked with Up, Down and Enter — and the Start button becoming the menu's last row and its question a "Battle Round 1" screen, sections 5 and 6; earlier the same day: section 6, the Start button, and section 7c, the Nexus Pulse on screen — gate 6A, and its second round: the timer, the light, and red kept for the Nexus being hurt; section 0, the UX goals read out of four rounds of feedback; round-4 feedback F30-F33: arming where the cursor is, focus that goes back to
 where it came from, one "active" style for every menu row, Explore Map as that style, removal sparks;
 F34-F37: the top bar names what Esc does; popups lose their `[esc]`, gain a message form and a scroll
 bar; Settings' layout; Restart in the game menu); 2026-09-28 (a click activates; Explore Map —
@@ -26,7 +26,8 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
 1. **Point at it or press it, and the same thing happens.** Keyboard, mouse, a finger and a script are
    equal doors onto one set of commands. Every row shows its key and is clickable, and a click does
    what its key does ("mobile tap, which for our code is the same as a mouse click, so we just call it
-   mouse click", F22). The keyboard is the floor, never the only way.
+   mouse click", F22). The keyboard is the floor, never the only way — and the floor of a menu is Up,
+   Down and Enter: hotkeys and clicks are shortcuts onto rows that can always be walked (F48).
 2. **Tell me where I am and what happens next.** Every mode has a name in the key help, whatever is
    under way is marked (`>`), and a label says what a key will *do*, not what state we are in: the top
    bar reads `menu [esc]`, `back [esc]`, `close [esc]` (F32, F37). Say the result and the way back on
@@ -154,13 +155,22 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
 
 ## 4. Menu rows
 
+- **A menu can always be walked with Up, Down and Enter alone** (owner, 2026-09-29, feedback F48: "It
+  is important that the menu can always be navigated with up/down/enter. The hotkeys and mouse clicks
+  are the additional enhanced functionality."). Every action a menu offers is a row in it, in the
+  order Up and Down walk, and Enter (or Space) on the highlighted row does what the row's hotkey and a
+  click on it do. A hotkey or a click is a shortcut to a row, never the only way to an action: an
+  action with a key or a button and no row makes the menu incomplete. (The boxed `[s] Start` button of
+  gate 6A was that — `s` and a click reached it, Up and Down did not — and became the menu's last
+  row.) The same holds for a popup's options. A test walks the whole menu with those three keys.
 - **Every row shows its hotkey** as `[x]` in the hotkey colour; the bracket survives monochrome.
 - **Two states, and only two** (owner, 2026-09-29, feedback F32), legible without colour:
   - **highlighted** — an inverse bar across the whole row, one colour: where the keyboard is, not
     chosen yet; drawn only while the menu has the keyboard;
   - **active** — the row's action is under way: `>` before it, the whole row in the hotkey's colour
     and bold, its name underlined, and **no bar**. A building while it is armed, `[e] Explore Map`
-    while Explore Map is open, `[n] Nexus` while its popup is. One test says which rows are active
+    while Explore Map is open, `[n] Nexus` while its popup is, `[s] Start Pulse` while its screen is.
+    One test says which rows are active
     (`menuRowActive`) and one function draws every row (`drawMenuRow`, both in `src/view/build.ts`),
     so a later change to the style reaches all of them. Legible in monochrome by the marker and the
     underline.
@@ -180,8 +190,15 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   border, and a one-cell shadow that blanks what is behind it. Centred over the map. **No `[esc]` in
   the border** (F37): the top bar's `close [esc]` says it and is its click target.
 - **A popup holds the keyboard and the mouse** until closed; keys it does not use do nothing.
-- **Questions and menus are popups** — the start-the-Pulse question, the game menu, Settings and the
-  export use the same shape.
+- **Questions, confirmations and menus are popups** — the Battle Round screen, the game menu, Settings
+  and the export use the same shape.
+- **A confirmation is a screen, not a question** (owner, 2026-09-29, feedback F49-F50). Its title says
+  what is about to happen — `Battle Round 1`, not `START PULSE 1?` — its body announces it, and it has
+  one row, the action, highlighted: `[s] Start`. Going back is Esc (the top bar's `close [esc]`), never a
+  second row to press. The body is data: a mission may write its own text for round *n*
+  (`BuildContext.roundText`), and the default is "Activate Nexus. Collect Resources. Spawn Units.", one
+  sentence to a line so a sentence never wraps at the 80-column floor. (`overlaySpec` in
+  `src/build/overlay.ts`.)
 - **Nothing opens a popup but the player** — a message only as the answer to what the player just
   did (below).
 - **A message is a popup with nothing to choose** (F34, "a good case example to improve the popup
@@ -223,7 +240,7 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
 - **A text too long for its popup is a list too** (the export): each line a row, with a highlight
   Up/Down move, so it scrolls exactly as every other list does.
 - **A popup that belongs to a menu row keeps that row active behind it** (the Nexus popup: `> [n]
-  Nexus`); the start-the-Pulse question keeps the menu's highlight; **one that belongs to no row** (the
+  Nexus`; the Battle Round screen, `> [s] Start Pulse`); **one that belongs to no row** (the
   game menu, Settings, the export) **leaves the menu unlit**, so its own highlight is the only one on
   screen.
 
@@ -267,15 +284,14 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   (wrapped at words, never cut), then its numbers as label/value rows. Later: a larger ASCII art
   version, and live numbers during a Pulse.
 - **Text in the panel never cuts a word**; a line that does not fit wraps or is dropped.
-- **The action that finishes the phase is advertised, not hidden behind a key** (owner, 2026-09-29,
-  feedback F41): the strategy game's "end turn" button — `[s] Start`, boxed (`+---+` in ASCII, the
-  frame's own corners in Unicode), at the bottom right of the menu panel, in the hotkey colour, on
-  every Build Phase screen from the first (dim, and refused with its reason, until the dealt Nexus
-  power is picked). A click on it or `s` asks once, in a popup, "Start Pulse 1?"; Enter, Space or `s`
-  again accepts (its highlighted row reads `[s] Start Pulse 1`), `n` or Esc keeps building. Popups
-  are drawn over it. Wherever the panel's key help would have run under the button it is written
-  beside it instead. (`startButton` in `src/build/layout.ts`, drawn by `drawStartButton` in
-  `src/view/build.ts`.)
+- **The action that finishes the phase is the menu's last row** (owner, 2026-09-29, feedback F41, then
+  F47: "It just needs to be the last option on the menu... a regular menu item, at the bottom"):
+  `[s] Start Pulse`, on the panel's bottom line, drawn and highlighted like every other row and reached
+  by Up and Down (section 4's first rule). A boxed "end turn" button was tried first and was too large,
+  and Up and Down could not reach it. It is dim, and refused with its reason, until the dealt Nexus power
+  is picked; Enter on it, `s` or a click opens the Battle Round screen (section 5). It belongs to the menu,
+  so Explore Map, which replaces the menu, hides it with the rest, and the panel's key help stacks
+  directly above it. (`startRow` in `src/build/layout.ts`, drawn in `drawPanel` in `src/view/build.ts`.)
 
 ## 7. The map rectangle
 
@@ -404,5 +420,6 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
 ## 9. Words
 
 - Plain words on screen; no internal ids or code names. Each Nexus is named for its faction
-  ("Citizen Nexus").
+  ("Citizen Nexus"). What the player calls a Pulse is open (Q68): the start screen says **Battle
+  Round**; the menu row and the running screen still say Pulse until it is settled.
 - Short labels in the key help: `arrows move`, `enter/space place`, `esc cancel`.

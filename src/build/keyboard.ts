@@ -165,9 +165,9 @@ function overlayCommand(key: string, overlay: Overlay, pendingCount: number, hig
     }
     case "confirm-commit":
       // Enter, Space and `s` again start the Pulse (owner, 2026-09-29, feedback F42) — `s` is the key
-      // that asked, so pressing it twice is "yes"; `y` still works, unlisted, for older scripts.
-      if (key === START_KEY || key === "y" || PLACE_KEYS.has(key)) return { kind: "confirm-commit", accept: true }
-      if (key === "n") return { kind: "confirm-commit", accept: false }
+      // that asked, so pressing it twice is "yes"; `y` still works, unlisted, for older scripts. Going
+      // back is Esc's, above: there is no second row to press (feedback F50).
+      if (key === START_KEY || key === "y" || PLACE_KEYS.has(key)) return { kind: "confirm-commit" }
       return key === "q" ? { kind: "open-menu" } : null
     case "nexus-powers": {
       if (key === "n") return { kind: "cancel" }
@@ -284,9 +284,9 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (key === "e") return { kind: "explore" }
   // `d` is Debug Mode's old key, kept as a shortcut: Settings, at its Experiments.
   if (key === "d") return { kind: "open-settings", section: "experiments" }
-  // `s` is the Start button's key (feedback F41); `p`, its first key, is kept as another way to press it.
+  // `s` is the Start Pulse row's key (feedback F41, F47); `p`, its first key, is kept as another way to press it.
   if (key === START_KEY || key === "p") return { kind: "commit" }
-  // `y` only ever means something while the start-the-Pulse question is open; outside it is inert.
+  // `y` only ever means something while the Battle Round confirmation is open; outside it is inert.
   if (key === "y") return null
 
   if (focus === "menu") {

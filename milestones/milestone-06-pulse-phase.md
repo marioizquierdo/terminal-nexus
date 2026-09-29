@@ -4,7 +4,7 @@
 **Status:** CURRENT
 **Active gate:** 6A — Start, end, Recall: connect the Build Phase's commit to the Pulse playback.
 **Built and reported (PASS), awaiting Mario's playtest** (2026-09-29, `../evidence/gate-6a-report.md`).
-"Start Nexus Pulse" is an explicit action from the Build Phase's `p` question, then the end condition, the
+"Start Nexus Pulse" is an explicit action from the Build Phase's `[s] Start Pulse` row, then the end condition, the
 stop / finish-in-flight / Recall sequence, and a result a viewer can read unprompted. The kernel is
 Milestone 1's and did not change. 6B and 6C wait for the owner's word.
 **Depends on:** Milestone 5 (Build Phase produces what this Pulse resolves — accepted 2026-09-29)
@@ -19,7 +19,7 @@ Milestone 1's and did not change. 6B and 6C wait for the owner's word.
 > runner, no automatic production (6B and 6C).
 
 > **Gate 6A is built, 2026-09-29** (`../evidence/gate-6a-report.md`, PASS; awaiting Mario's playtest).
-> `[s] Start`, then Enter, starts the Nexus Pulse on the Build Phase's own screen: the plan he committed, plus a
+> `[s] Start Pulse` (the menu's last row), then Enter on the Battle Round 1 screen, starts the Nexus Pulse on the Build Phase's own screen: the plan he committed, plus a
 > placeholder crew and raid, becomes the kernel's opening state, the unmodified kernel resolves it, and
 > the Pulse plays with a running score, a feed of what is happening, pause, speed, step and watch-again.
 > It ends the way section 2.2's sketch asked — a warning, the shooting stopping, the survivors walking
@@ -33,16 +33,29 @@ Milestone 1's and did not change. 6B and 6C wait for the owner's word.
 > ([`../docs/feedback/2026-09-29-pr48-pulse.md`](../docs/feedback/2026-09-29-pr48-pulse.md), F41-F46).
 > Definition of done:
 >
-> - [x] the Build Phase menu has a boxed `[s] Start` button at the bottom right of its panel, clickable,
->       dim while a Nexus power is still waiting (F41);
+> - [x] the Build Phase menu advertises the action that finishes it: a boxed `[s] Start` button, clickable,
+>       dim while a Nexus power is still waiting (F41 — became the menu's last row in round 3, F47);
 > - [x] the question is `START PULSE 1?` with `[s] Start Pulse 1` and `[n] Keep building`; Enter, Space
->       and `s` start it (F42);
+>       and `s` start it (F42 — became the Battle Round screen in round 3, F49-F50);
 > - [x] the Pulse's title carries a timer to the stop, and in the last three seconds only that timer
 >       flashes; no red banners (F43);
 > - [x] the same seconds light the map's border with a soft sweeping light, not a red alert (F44);
 > - [x] red is only for the player's Nexus being hurt — first hit, very low health, a lost Pulse — brief
 >       and faint, with an on/off Experiment (F45);
-> - [ ] the branch's changed code has been reviewed for simplification and the findings applied (F46).
+> - [x] the branch's changed code has been reviewed for simplification and the findings applied (F46).
+
+> **Gate 6A, round 3 — the owner's second look at the pull request, 2026-09-29**
+> ([`../docs/feedback/2026-09-29-pr48-round-3.md`](../docs/feedback/2026-09-29-pr48-round-3.md), F47-F51).
+> Definition of done:
+>
+> - [x] `[s] Start Pulse` is a regular row at the bottom of the menu, reached by Up/Down and pressed by
+>       Enter like every other row, and by a click or `s` (F47);
+> - [x] the rule "a menu can always be walked with Up, Down and Enter; hotkeys and clicks are extras" is
+>       in `docs/ui-patterns.md` (F48);
+> - [x] the start confirmation is a screen titled `Battle Round 1` whose text is "Activate Nexus. Collect
+>       Resources. Spawn Units." unless a mission supplies its own (F49);
+> - [x] its one row is `[s] Start`; Esc goes back and `n` is no longer a key (F50);
+> - [ ] the menu reorganisation is his to start, on a spike of its own (F51 — scheduled, nothing built).
 
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
 > how the Pulse resolves — that stays the deterministic kernel, unmodified. What is new is the

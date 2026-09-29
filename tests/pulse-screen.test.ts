@@ -87,7 +87,7 @@ test("the view is centred on the player's Nexus when the Pulse starts, wherever 
     { kind: "move-cursor", dx: 20, dy: 10, fast: true },
   ])
   assert.ok(session.build.state.camera.x > 0, "the player did not scroll away")
-  session.build.run([{ kind: "commit" }, { kind: "confirm-commit", accept: true }])
+  session.build.run([{ kind: "commit" }, { kind: "confirm-commit" }])
   session.build.advance(0)
   const nexus = nexusTile(session.context)
   assert.ok(nexus !== null)
@@ -589,7 +589,7 @@ test("starting over from the game menu is a fresh Build Phase with the Experimen
   assert.equal(played.build.state.debug.raid, "none", "restarting lost an Experiment")
   assert.match(screenText(played), /\[1\] Barracks/, "the Build Phase's menu is not back")
   prepare(played.build)
-  played.build.run([{ kind: "commit" }, { kind: "confirm-commit", accept: true }])
+  played.build.run([{ kind: "commit" }, { kind: "confirm-commit" }])
   assert.ok(played.build.pulse !== null && played.build.pulse !== first, "a new Pulse did not start")
 })
 
@@ -604,7 +604,7 @@ test("a Pulse the kernel cannot start from undoes the commit and says why, rathe
       throw new Error("no room for the units")
     },
   })
-  build.run([{ kind: "pick-nexus", index: 0 }, { kind: "commit" }, { kind: "confirm-commit", accept: true }])
+  build.run([{ kind: "pick-nexus", index: 0 }, { kind: "commit" }, { kind: "confirm-commit" }])
   assert.equal(build.state.committed, false, "the commit stood with no Pulse behind it")
   assert.equal(build.pulse, null)
   assert.equal(build.state.status.tone, "danger")
@@ -618,7 +618,7 @@ test("a session with nothing to start a Pulse still freezes the plan and draws t
   const context = spikeContext()
   const layout = buildLayout(MINIMUM, context.grid)
   const build = new BuildSession({ context, cursor: SPIKE_START_CURSOR, viewport: layout.viewport })
-  build.run([{ kind: "pick-nexus", index: 0 }, { kind: "commit" }, { kind: "confirm-commit", accept: true }])
+  build.run([{ kind: "pick-nexus", index: 0 }, { kind: "commit" }, { kind: "confirm-commit" }])
   assert.equal(build.state.committed, true)
   assert.equal(build.pulse, null)
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))

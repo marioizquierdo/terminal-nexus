@@ -91,6 +91,12 @@ export type BuildContext = Readonly<{
    * plan — every context the tests build by hand.
    */
   pulse?: (experiments: DebugFlags) => PulseSetup
+  /**
+   * What the Battle Round confirmation announces for round *n*, keyed by its number (owner, 2026-09-29,
+   * feedback F49: "campaign missions may inject pulse-n text here"). A round with no entry says
+   * `DEFAULT_ROUND_TEXT` (`overlay.ts`). Nothing supplies one yet; a mission's own data will.
+   */
+  roundText?: Readonly<Record<number, string>>
   /** Where the adapter puts an export besides the screen, said in the export popup — "Copied to the
    *  clipboard and saved to ...". Absent: the popup says nothing about a copy. */
   exportDestination?: string
@@ -166,7 +172,7 @@ export type BuildState = Readonly<{
    */
   highlightHidden: boolean
   /** The popup drawn over the Grid and holding the keyboard and mouse, or `null`: the Nexus powers,
-   *  the start-the-Pulse question (`p` — "the one action that must not fire by accident", engine.md
+   *  the Battle Round confirmation (`s` — "the one action that must not fire by accident", engine.md
    *  9.7), the game menu, Settings, the export, or a message. Never opened by anything but the player —
    *  a message only as the answer to something the player did (closing Settings with a change that
    *  needs a restart). */
@@ -198,7 +204,7 @@ export type BuildState = Readonly<{
   /** The Build Phase is done: the plan is frozen and every state-changing command is refused from here
    *  on. With a Pulse to start (`BuildSession`'s `startPulse`) the Nexus Pulse plays from this moment. */
   committed: boolean
-  /** Which Pulse of the mission this Build Phase is planning — "Start Pulse 1". It is 1 until the loop
+  /** Which Pulse of the mission this Build Phase is planning — "Battle Round 1". It is 1 until the loop
    *  into a next Build Phase exists (Milestone 6's second gate), which is what will count it up. */
   pulseNumber: number
   /**
@@ -342,7 +348,7 @@ export function createBuildState(
  */
 function editLock(state: BuildState): StatusMessage | null {
   if (state.committed) return status("The Build Phase is committed.", "warning")
-  if (state.overlay === "confirm-commit") return status("Answer the Start question first: [s] start or [n] keep building.", "warning")
+  if (state.overlay === "confirm-commit") return status("Start or go back first: [s] start, [esc] back.", "warning")
   if (state.overlay !== null) return status("Close the popup first: [esc].", "warning")
   return null
 }
@@ -358,14 +364,16 @@ function commitLock(state: BuildState): StatusMessage | null {
 
 /**
  * The side panel's menu, in the order Up/Down walk it — Explore Map first (owner, 2026-09-28, feedback
- * F23), then the Nexus Powers entry, then every construct row. Derived from the catalog rather than
- * stored, so the highlight and the rows drawn can never disagree about how many there are.
+ * F23), then the Nexus Powers entry, every construct row, and Start Pulse last (owner, 2026-09-29,
+ * feedback F47). Derived from the catalog rather than stored, so the highlight and the rows drawn can
+ * never disagree about how many there are.
  */
 export function menuEntries(context: BuildContext): readonly MenuEntry[] {
   return [
     { kind: "explore" },
     { kind: "nexus" },
     ...context.catalog.map((_, index) => ({ kind: "construct" as const, index })),
+    { kind: "start" },
   ]
 }
 
@@ -386,6 +394,11 @@ const ENTRIES_BEFORE_CONSTRUCT = 2
  *  back on the menu lands where the player's attention already is. */
 export function entryOfConstruct(index: number): number {
   return index + ENTRIES_BEFORE_CONSTRUCT
+}
+
+/** The menu's last entry, Start Pulse: the one after the last construct row of a catalog this long. */
+export function startEntry(catalogSize: number): number {
+  return entryOfConstruct(catalogSize)
 }
 
 /** The Nexus powers as the popup shows them: those still waiting to be picked (a draft of several,
@@ -814,7 +827,24 @@ function activateEntry(context: BuildContext, state: BuildState, entry: number, 
   // A click on the Nexus entry puts focus where it landed, on the menu, before the popup takes the
   // keyboard — so the pick hands the player back to the menu, not to a building they had armed.
   if (target.kind === "nexus") return openNexus(by === "click" ? toMenu(highlighted) : highlighted)
+  if (target.kind === "start") return startPulse(context, highlighted)
   return openExplore(highlighted, "menu")
+}
+
+/** `s`, or the Start Pulse entry: open the Battle Round confirmation over the Grid, the menu lit behind
+ *  it. Its row flashes "pressed" however it was reached — or, refused (a Nexus power still waiting), a
+ *  flicker beside the status line's reason. */
+function startPulse(context: BuildContext, state: BuildState): BuildState {
+  const entry = startEntry(context.catalog.length)
+  const lock = commitLock(state)
+  if (lock !== null) return { ...state, status: lock, ack: acknowledge(state, "refused", entry) }
+  return {
+    ...toMenu(state),
+    menuHighlight: entry,
+    overlay: "confirm-commit",
+    ack: acknowledge(state, "pressed", entry),
+    status: status(`Battle Round ${state.pulseNumber}: Enter starts it, Esc goes back.`),
+  }
 }
 
 /** `n`, or the Nexus entry: open its popup. Its row flashes "pressed", however it was reached — a
@@ -1213,21 +1243,13 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     case "pick-nexus":
       return pickNexus(context, state, command.index)
 
-    case "commit": {
-      const lock = commitLock(state)
-      if (lock !== null) return { ...state, status: lock }
-      return {
-        ...toMenu(state),
-        overlay: "confirm-commit",
-        status: status(`Start Pulse ${state.pulseNumber}? Enter starts it; Esc keeps building.`),
-      }
-    }
+    case "commit":
+      return startPulse(context, state)
 
     case "confirm-commit": {
       // Meaningless outside the one moment it answers — a stray "y" is not a command here any more
       // than a stray "3" is one before anything is armed.
       if (state.overlay !== "confirm-commit") return state
-      if (!command.accept) return { ...state, overlay: null, status: status("Cancelled.") }
       // The Nexus Pulse starts (gate 6A). The keyboard goes to the Grid, where the arrows look around it
       // — a committed plan locks every edit but not the cursor — and nothing is armed or being explored.
       return {

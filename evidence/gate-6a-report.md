@@ -332,7 +332,7 @@ playtest — no human has yet watched the ending, which is what the milestone's 
 
 ## 10. Next authorized action
 
-Mario plays the Pulse — plan, `[s] Start`, `s` or Enter, and watch to the result — flips the ending's Experiments (`d`),
+Mario plays the Pulse — plan, `[s] Start Pulse` (the menu's last row), Enter on the Battle Round 1 screen, and watch to the result — flips the ending's Experiments (`d`),
 and pastes his settings export into the pull request; an agent settles each Experiment it answers
 (adopt the value, delete the Experiment, record the answer). Gate 6B (the loop into the next Build
 Phase, the trigger runner's simulation band, PERIMETER's three waves, Q36) waits for his word;
@@ -347,7 +347,8 @@ that timer should flash in the last three seconds; the border of the screen shou
 lighthouse calling, not a red alert; red is for the Nexus being damaged, and even then shorter and gentler;
 then review the code for simplification.
 
-**What changed.**
+**What changed.** (Round 3, Section 12, replaced the button with a menu row and the question with the
+Battle Round screen; the rest of this section still stands.)
 
 - **`[s] Start`.** A boxed button at the bottom right of the menu panel, on every Build Phase screen, in the
   hotkey colour (dim, with its reason on a click, until the Nexus power is picked). `s` or a click asks once;
@@ -442,3 +443,90 @@ into a second Build Phase, no trigger runner, no automatic production.
 **Next authorized action (unchanged):** he plays it, flips **Final warning** and **Red alerts** if he wants,
 pastes his settings export, says whether "when losing" is the result or the fight, and an agent settles
 what it answers. Gate 6B waits for his word.
+
+## 12. Round 3 — the owner's second look at the pull request (2026-09-29)
+
+Mario's feedback, in the log at `docs/feedback/2026-09-29-pr48-round-3.md` (F47-F51): the Start button is too
+large — it should be the last option of the menu, a regular row called `[s] Start Pulse`; the menu must
+always be navigable with Up, Down and Enter, with hotkeys and clicks only extras, and that goes in the UI
+spec; the start popup should be a confirmation screen, not a question, titled "Battle Round 1", its body
+announcing the round (a mission may write its own text; the default "Activate Nexus. Collect Resources.
+Spawn Units."), and he feels the word "pulse" may stay private; remove "Keep building" (Esc cancels); and
+the menu will be reorganised later, on a spike of its own.
+
+**What changed.**
+
+- **`[s] Start Pulse` is a menu row.** A new last entry in `menuEntries` (`{ kind: "start" }`), drawn by the
+  same `drawMenuRow` as the others on the panel's bottom line (`startRow` in `src/build/layout.ts`), so Up and
+  Down reach it, Enter and Space press it, a click anywhere on its row presses it, and `s` (and the
+  unlisted `p`) still ask from anywhere. Dim while a Nexus power waits, and a press then flickers the row and
+  says why on the status line; drawn active (`> [s] Start Pulse`) while its screen is open; hidden by
+  Explore Map with the rest of the menu (a click there only closes Explore Map). The box, its geometry
+  (`startButton`, `startButtonAt`, `START_BUTTON_ROWS`), its drawing and the "help beside the button" layout
+  are deleted; the menu's key help no longer lists `s start` because the row says it. One line under the menu
+  says what the row does while it is highlighted ("Lock the plan and fight", or "Pick a Nexus power first").
+- **The Battle Round screen.** The popup's title is `Battle Round 1`; its body is the announcement, one
+  sentence to a line, from `BuildContext.roundText[n]` when a mission supplies one and otherwise
+  "Activate Nexus. Collect Resources. Spawn Units."; its one row is `[s] Start`, highlighted. Enter, Space,
+  `s` (and unlisted `y`) start the Pulse; Esc, `x`, `close [esc]` and a click outside go back; `n` is no
+  longer a key there. The command no longer carries a yes or no (`{ kind: "confirm-commit" }`): going
+  back is the cancel every popup has. The key help reads `BATTLE ROUND  enter/s/space start  esc back`.
+- **The rule.** `docs/ui-patterns.md` section 4 opens with "a menu can always be walked with Up, Down and
+  Enter alone", section 0's first goal says it too, and sections 5 (a confirmation is a screen, not a
+  question) and 6 (the last row) are rewritten. A test presses Down and Enter on every menu entry in turn and
+  fails to compile if a new kind of entry has no case.
+
+**Interpretations flagged for Mario.**
+
+- **Which word the player reads.** He wrote the menu row as "[s] Start Pulse" and also felt "pulse" could
+  stay private. As built, the row and the running screen's title say Pulse and only the start screen says
+  Battle Round. Registered as Q68 (recommendation: Battle Round wherever the player reads, decided with the
+  menu spike); until he says, the words are one line each and nothing else depends on them.
+- **The row sits on the panel's bottom line** rather than right after the last group, so it does not move as
+  the menu grows. If he meant "directly under the last item", it is `startRow` (one function).
+- **A mission's text is data with nothing supplying it yet** (`roundText`); he said missions "may" inject it,
+  so the seam is there and one test proves it, but no mission writes one.
+
+**Evidence.**
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` (both configs) | clean |
+| `npm test` (Node 22.22.2) | **670 / 670** (665 before): the Start tests rewritten (14: the row, Up/Down/Enter, the rule, dim and refused, `s` / `p` / click / Enter alike, active, Explore Map, the screen's rows, a mission's text, its keys, clicks, the floor's layout); three older tests updated for the new row and screen |
+| `npm run test:bun` (Bun 1.3.11) | all test files pass |
+| `./scripts/check-repository.sh` | passes; canon 2.26; gate 6A |
+| Kernel untouched | `git diff origin/main -- src/pulse src/state src/scenario src/grid src/content src/events src/rng src/report` is empty |
+| Keyboard only | `node scripts/playtest.mjs --keys "n 2 1 Enter 3 Enter 3 Enter Down Enter Enter wait~2000"` — Down from the last placed row lands on `[s] Start Pulse`, Enter opens Battle Round 1, Enter starts the Pulse |
+| Pictures | new `build-start-row` (the row highlighted at the menu's bottom), redone `build-nexus-confirm` (the Battle Round 1 screen), retired `build-start-button`; both opened and looked at |
+
+Tests whose *meaning* changed: the old "button is a box three rows tall" and "help sits beside the box" are
+now "one plain row on the panel's bottom line" and "the help stacks directly above it"; "n keeps building" is
+now "n is not a key there"; the popup test expects one option, not two; the menu-walk test counts one more
+entry; the key-naming test wants `[s] Start Pulse` on screen instead of `s start` in the help.
+
+**Failures, surprises, discarded approaches (round 3).**
+
+- **The button broke a rule nobody had written down.** `s` and a click reached it, Up and Down did not; the
+  owner named the rule ("the menu can always be navigated with up/down/enter") and it is now in the UI
+  spec and enforced by a test that a new kind of entry cannot skip.
+- **A one-paragraph announcement wrapped badly.** The default is 47 characters and the popup's text is 40
+  wide at 80 columns, so wrapping left "Units." alone on a line; each sentence now has its own line, which
+  also reads as a list of orders.
+- **Deleting the box deleted work.** The "help beside the button" layout, its measurements and a menu floor
+  computed from the box were all there only for it; `panelBindings` is a plain stack again.
+- **Nothing in the plain screenshots showed the highlight** — text mode drops the inverse bar, so the
+  Up/Down test checks the state and the picture (`build-start-row`) shows the bar.
+
+**Proposed canon text (for the next canon bump; not applied — no `specs/` rule changed).**
+
+- `engine.md` 9.7 (RULE): "A menu can always be walked with Up, Down and Enter alone. Every action a menu
+  offers is a row in it; hotkeys and mouse clicks are shortcuts onto rows, never the only way to an action."
+- `engine.md` 9.2 (GUIDANCE): "The Build Phase menu's last entry is Start Pulse. It opens a confirmation
+  screen titled with the round's name — Battle Round 1 — whose body is the round's announcement (a mission
+  may supply its own text; the default is 'Activate Nexus. Collect Resources. Spawn Units.') and whose only
+  row is Start. Esc goes back."
+
+**Decision: PASS.** Round 3 is built and checked; gate 6A still awaits his playtest.
+
+**Next authorized action.** Mario plays it again and answers Q68 (the player's word for a Pulse); the menu
+reorganisation spike (F51) waits for his word, as do gates 6B and 6C. Nothing else is authorized.

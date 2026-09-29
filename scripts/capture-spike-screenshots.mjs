@@ -519,15 +519,15 @@ scripted(
 )
 
 scripted(
-  "build-start-button",
-  "The end-of-turn button: [s] Start, boxed at the bottom of the menu on every Build Phase screen",
-  { keys: PICK_FIRST_POWER, expect: "[s] Start" },
+  "build-start-row",
+  "Start Pulse is the menu's last row: Up from the top reaches it, Enter presses it",
+  { keys: `${PICK_FIRST_POWER} Up Up`, expect: "[s] Start Pulse" },
 )
 
 scripted(
   "build-nexus-confirm",
-  "[s] Start asks once, in a popup: Enter, Space or [s] again starts Pulse 1, [n] keeps building",
-  { keys: `${PICK_FIRST_POWER} s`, expect: "START PULSE 1?" },
+  "Start Pulse opens Battle Round 1: what it announces, and one row, [s] Start. Esc goes back",
+  { keys: `${PICK_FIRST_POWER} s`, expect: "Battle Round 1" },
 )
 
 // Gate 6A: the Nexus Pulse on the Build Phase's own screen. Accepting the question no longer stops at

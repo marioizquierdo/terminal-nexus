@@ -17,14 +17,14 @@ import {
   EXPLORE_ROW,
   NEXUS_ROW,
   RESOURCE_ROW,
-  cellForTile,
   START_KEY,
   START_LABEL,
+  cellForTile,
   constructLines,
   escHintSpan,
   escLabel,
   menuFloor,
-  startButton,
+  startRow,
   summaryRows,
 } from "../build/layout.ts"
 import { overlaySpec, placeOverlay, settingColumns, wrapWords } from "../build/overlay.ts"
@@ -40,13 +40,13 @@ import {
   pendingPicks,
   refusalText,
   remaining,
+  startEntry,
   structureAtTile,
 } from "../build/state.ts"
 import type { ConstructGroup, ConstructItem, PlannedPlacement } from "../build/types.ts"
 import { CONTENT_ART } from "../content/art.ts"
 import type { BandCell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
-import type { DrawExtra } from "./draw.ts"
 import { put, text } from "./draw.ts"
 import { drawTerrain } from "./grid-layer.ts"
 import type { PulseFrame } from "./pulse-scene.ts"
@@ -484,7 +484,7 @@ export type KeyHelp = Readonly<{ label: string; bindings: readonly string[] }>
 
 export const MENU_KEY_HELP: KeyHelp = {
   label: "MENU",
-  bindings: ["up/down choose", "enter/space select", "tab grid", "u undo", `${START_KEY} start`],
+  bindings: ["up/down choose", "enter/space select", "tab grid", "u undo"],
 }
 
 /** The Grid, with a building armed. */
@@ -509,7 +509,7 @@ export const MAP_KEY_HELP: KeyHelp = {
 }
 
 const NEXUS_KEY_HELP: KeyHelp = { label: "NEXUS", bindings: ["up/down choose", "enter/space pick", "esc close"] }
-const CONFIRM_KEY_HELP: KeyHelp = { label: "START PULSE?", bindings: ["enter/s/space start", "n/esc keep building"] }
+const CONFIRM_KEY_HELP: KeyHelp = { label: "BATTLE ROUND", bindings: ["enter/s/space start", "esc back"] }
 const GAME_MENU_KEY_HELP: KeyHelp = { label: "MENU", bindings: ["s settings", "r restart", "q quit", "esc back to the game"] }
 const COMMITTED_KEY_HELP: KeyHelp = { label: "COMMITTED", bindings: ["esc menu"] }
 const SETTINGS_KEY_HELP: KeyHelp = {
@@ -695,36 +695,21 @@ const GROUP_LABELS: Readonly<Record<ConstructGroup, string>> = {
 }
 
 /**
- * The bindings the footer had no room for, pinned to the bottom of the panel and growing upward.
- * **Beside the Start button** — in the room left of it, on its own three rows — when every one of them
- * fits there whole, which is how the floor's two or three short ones (`bksp remove`, `u undo`) share
- * the panel's bottom with a button three rows tall; otherwise stacked above the button at the panel's
- * width. Bounded by the menu, which wins: a hidden menu row is still a live click target, so the
- * lowest-priority lines are dropped instead.
+ * The bindings the footer had no room for, stacked above the Start Pulse row at the bottom of the panel
+ * and growing upward. Bounded by the menu, which wins: a hidden menu row is still a live click target,
+ * so the lowest-priority lines are dropped instead.
  */
-type PanelBindings = Readonly<{ lines: readonly string[]; beside: boolean; limit: number }>
-
-function panelBindings(layout: BuildLayout, catalog: readonly ConstructItem[], help: KeyHelp): PanelBindings {
+function panelBindings(layout: BuildLayout, catalog: readonly ConstructItem[], help: KeyHelp): readonly string[] {
   const floor = summaryRows(layout, catalog).special + 2
-  const wide = bindingLines(layout.footerLimit, layout.panelLimit, help).panel
-  const room = startButton(layout).left - layout.panelColumn - 1
-  const narrow = bindingLines(layout.footerLimit, room, help).panel
-  const count = (lines: readonly string[]): number => lines.flatMap((line) => line.split(BINDING_GAP)).length
-  const fitsBeside =
-    narrow.length > 0 &&
-    count(narrow) === count(wide) &&
-    layout.panelBindingsRow - narrow.length + 1 >= floor
-  if (fitsBeside) return { lines: narrow, beside: true, limit: room }
-  const lines = wide.slice(0, Math.max(0, Math.min(wide.length, menuFloor(layout) - floor + 1)))
-  return { lines, beside: false, limit: layout.panelLimit }
+  const lines = bindingLines(layout.footerLimit, layout.panelLimit, help).panel
+  return lines.slice(0, Math.max(0, Math.min(lines.length, menuFloor(layout) - floor + 1)))
 }
 
 function drawPanelBindings(cells: BandCell[], input: BuildCompositionInput): void {
   const { layout } = input
-  const { lines, beside, limit } = panelBindings(layout, input.context.catalog, keyHelp(input.state))
-  const last = beside ? layout.panelBindingsRow : menuFloor(layout)
+  const lines = panelBindings(layout, input.context.catalog, keyHelp(input.state))
   lines.forEach((line, index) => {
-    text(cells, BANDS.chrome, layout.panelColumn, last - (lines.length - 1 - index), line, "chrome.muted", { limit })
+    text(cells, BANDS.chrome, layout.panelColumn, menuFloor(layout) - (lines.length - 1 - index), line, "chrome.muted", { limit: layout.panelLimit })
   })
 }
 
@@ -737,13 +722,15 @@ type RowState = "plain" | "selected" | "pressed" | "refused"
 /**
  * Whether menu entry `entry`'s action is under way right now — **the one test for the "active" style**
  * every menu row shares (owner, 2026-09-29, feedback F32): a building while it is armed, `[e] Explore
- * Map` while Explore Map is open, `[n] Nexus` while its popup is. A menu row has two states and no
- * more: *highlighted* by the keyboard (the bar, only while the menu has the keyboard) and *active*.
+ * Map` while Explore Map is open, `[n] Nexus` while its popup is, `[s] Start Pulse` while its
+ * confirmation is. A menu row has two states and no more: *highlighted* by the keyboard (the bar, only
+ * while the menu has the keyboard) and *active*.
  */
-export function menuRowActive(state: BuildState, entry: number): boolean {
+export function menuRowActive(context: BuildContext, state: BuildState, entry: number): boolean {
   if (state.committed) return false
   if (entry === NEXUS_ENTRY) return state.overlay === "nexus-powers"
   if (entry === EXPLORE_ENTRY) return exploring(state)
+  if (entry === startEntry(context.catalog.length)) return state.overlay === "confirm-commit"
   return state.armed !== null && entryOfConstruct(state.armed) === entry
 }
 
@@ -831,6 +818,9 @@ function effectLine(context: BuildContext, state: BuildState, preview: ArmedPrev
       return pendingPicks(context, state) > 0 ? "Pick one before the Pulse" : "Read the active powers"
     }
     if (entry.kind === "explore") return "See what is on every tile"
+    if (entry.kind === "start") {
+      return pendingPicks(context, state) > 0 ? "Pick a Nexus power first" : "Lock the plan and fight"
+    }
     return context.catalog[entry.index]?.effect ?? null
   }
   return preview?.item.effect ?? null
@@ -846,8 +836,8 @@ function effectLine(context: BuildContext, state: BuildState, preview: ArmedPrev
 function rowState(input: BuildCompositionInput, entry: number): RowState {
   const { state, flash } = input
   if (flash !== undefined && flash.entry === entry) return flash.kind
-  if (menuRowActive(state, entry)) return "plain"
-  // The start-the-Pulse question belongs to the menu, which stays lit behind it; the game menu,
+  if (menuRowActive(input.context, state, entry)) return "plain"
+  // The Battle Round confirmation belongs to the menu, which stays lit behind it; the game menu,
   // Settings, the export and a message belong to none, so while one has the keyboard its own
   // highlight (or none) is the only one on screen.
   if (state.overlay === "menu" || state.overlay === "settings" || state.overlay === "export" || state.overlay === "message") {
@@ -863,7 +853,7 @@ function drawExploreRow(cells: BandCell[], input: BuildCompositionInput): void {
   drawMenuRow(cells, input.layout, input.layout.panelRow + EXPLORE_ROW, {
     hotkey: "e",
     label: "Explore Map",
-    active: menuRowActive(input.state, EXPLORE_ENTRY),
+    active: menuRowActive(input.context, input.state, EXPLORE_ENTRY),
     state: rowState(input, EXPLORE_ENTRY),
   })
 }
@@ -892,7 +882,7 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput, preview: Arm
     label: "Nexus",
     ...(pending > 0 ? { badge: ` (${pending})` } : {}),
     ...(active > 0 ? { value: `${active} active` } : {}),
-    active: menuRowActive(state, NEXUS_ENTRY),
+    active: menuRowActive(context, state, NEXUS_ENTRY),
     state: rowState(input, NEXUS_ENTRY),
   })
 
@@ -924,7 +914,7 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput, preview: Arm
       hotkey: item.hotkey,
       label: item.label,
       value: String(item.cost),
-      active: menuRowActive(state, entry),
+      active: menuRowActive(context, state, entry),
       state: rowState(input, entry),
       disabled: item.cost > left,
     })
@@ -935,38 +925,25 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput, preview: Arm
   text(cells, band, column, specialRow, "SPECIAL", "chrome.label", { limit })
   rightAlign(cells, layout, specialRow, "none available", "chrome.muted", { dim: true })
 
+  // Start Pulse, the menu's last row, on the panel's bottom line. Dim while a Nexus power still waits
+  // to be picked, because pressing it would only be refused — it still answers, with the reason.
+  const start = startEntry(context.catalog.length)
+  drawMenuRow(cells, layout, startRow(layout), {
+    hotkey: START_KEY,
+    label: START_LABEL,
+    active: menuRowActive(context, state, start),
+    state: rowState(input, start),
+    disabled: pending > 0,
+  })
+
   const effect = effectLine(context, state, preview)
   if (effect === null) return
   const row = specialRow + 2
-  // One row of clearance above the bindings block, so the two never touch (the Start button's own
-  // border is clearance enough when there are none); dropped rather than drawn over the bindings when a
-  // short panel has no room.
-  const bindings = panelBindings(layout, context.catalog, keyHelp(state))
-  const bindingRows = bindings.beside ? 0 : bindings.lines.length
+  // One row of clearance above the bindings block, so the two never touch; dropped rather than drawn
+  // over the bindings when a short panel has no room.
+  const bindingRows = panelBindings(layout, context.catalog, keyHelp(state)).length
   if (row > menuFloor(layout) - (bindingRows === 0 ? 0 : bindingRows + 1)) return
   text(cells, band, column, row, effect, "chrome.value", { limit })
-}
-
-/**
- * The `[s] Start` button (owner, 2026-09-29, feedback F41) — the strategy game's "end turn": a box at
- * the bottom right of the panel with the hotkey in its own colour. Drawn on the menu and on Explore
- * Map's panel alike, and dim while a Nexus power still waits to be picked, because pressing it would
- * only be refused (a click on it still answers, with the reason).
- */
-function drawStartButton(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
-  const { context, state, layout } = input
-  const { top, bottom, left, width } = startButton(layout)
-  const band = BANDS.chrome
-  const ready = pendingPicks(context, state) === 0
-  const role: StyleRole = ready ? "chrome.hotkey" : "chrome.muted"
-  const extra: DrawExtra = ready ? { bold: true } : { dim: true }
-  const glyph = (key: Parameters<typeof chromeGlyph>[1]): string => chromeGlyph(pack, key)
-  const rule = glyph("horizontal").repeat(width - 2)
-  text(cells, band, left, top, glyph("topLeft") + rule + glyph("topRight"), role, extra)
-  text(cells, band, left, bottom, glyph("bottomLeft") + rule + glyph("bottomRight"), role, extra)
-  text(cells, band, left, top + 1, glyph("vertical"), role, extra)
-  text(cells, band, left + width - 1, top + 1, glyph("vertical"), role, extra)
-  text(cells, band, left + 2, top + 1, START_LABEL, role, extra)
 }
 
 /** A plain name for what is under the cursor — the catalog's own label where there is one. */
@@ -1251,7 +1228,6 @@ export function composeBuildFrame(
     drawPanel(panel, input, preview)
     drawPanelBindings(panel, input)
   }
-  if (!input.state.committed) drawStartButton(panel, input, pack)
   for (const cell of panel) if (cell.y <= input.layout.panelBindingsRow) cells.push(cell)
   drawOverlay(cells, input, pack)
 

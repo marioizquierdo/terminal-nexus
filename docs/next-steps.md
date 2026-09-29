@@ -10,8 +10,8 @@ the cleanup that does not belong to any gate.
 
 ## 1. Waiting on Mario
 
-- **Play gate 6A's Nexus Pulse and send an export.** Plan something and press `[s] Start` (or `s`), then
-  Enter, and watch it to the result. Then press `d`: the first Experiments now are the ending's own —
+- **Play gate 6A's Nexus Pulse and send an export.** Plan something and choose `[s] Start Pulse` (the
+  menu's last row, or `s`), then Enter on the Battle Round 1 screen, and watch it to the result. Then press `d`: the first Experiments now are the ending's own —
   Final warning (3000 ms; 0 turns off the timer's flash and the light), Red alerts (on or off),
   Walk-back delay, Walk-back time, Centre on Nexus — and the last two are the raid and your units
   (Raid: none is a Pulse nobody comes to, TIME'S UP; Your units: none loses the Nexus). Settings, `e`
@@ -23,6 +23,12 @@ the cleanup that does not belong to any gate.
 - **Run the key-release probe in iTerm2.** `node scripts/probe-key-release.mjs`, hold an arrow, let it
   go, tap it, `q`. If the lines say `release`, Q66's tier 3 is buildable there (section 4).
 - **One question:** was "press `b`" an example of a key or a request for letter hotkeys? (Q67.)
+- **One more:** should the player ever read the word "Pulse"? The start screen says Battle Round; the menu
+  row and the running screen still say Pulse (Q68 — recommended to settle in the menu spike he
+  announced).
+- **The menu reorganisation spike** (F51 of the round-3 feedback): his to start. It has the rule "a menu can
+  always be walked with Up, Down and Enter" (`docs/ui-patterns.md` section 4) and one list of the menu's
+  entries (`menuEntries`) to work from.
 
 ## 2. The next gate: 6B — the loop back into the next Build Phase
 

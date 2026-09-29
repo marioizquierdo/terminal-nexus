@@ -66,7 +66,8 @@ restart today, since "Opens on" was deleted. `src/build/debug.ts`'s
 `DEBUG_FIELDS` is the order. The map's edge is not an Experiment: it is the map's own style (the spike
 map's fence; `--glyphs unicode` shows the Unicode forms), and the menu's divider is its west side.
 
-**A Nexus Pulse** (gate 6A): `s` asks (the `[s] Start` button; `p` is an unlisted alias), a second `s`
+**A Nexus Pulse** (gate 6A): `s` asks (the menu's last row, `[s] Start Pulse`, which Up then Enter also
+reaches; `p` is an unlisted alias) and opens the Battle Round 1 screen, a second `s`
 (or `Enter` or `Space`) starts it on the same screen, and from then on each step's frame is the Pulse
 at the script's own clock — the frame after the second `s` is 0.0 s (the title's timer at its full
 countdown), the frame after `wait~7000` is 7.0 s. A whole plan and its Pulse: `n 2 3 click:22,9

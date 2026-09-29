@@ -262,10 +262,11 @@ powers — a plain bump to the starting allotment, not real Milestone-8 content 
 with a digit or a click before anything else can happen, because a dealt Nexus power may not be
 skipped. Once picked, the screen becomes the construct menu described above, and the panel's own
 NEXUS and SPECIAL rows name what was picked and hold the Special slot's own reserved space, empty for
-now. `[s] Start` — a boxed button at the bottom of the menu, the strategy game's "end turn" — asks,
-once, whether to end the Build Phase and start the Nexus Pulse (`p` is an unlisted alias for `s`);
-Enter, Space or `s` again starts it, `n` or Esc keeps building (`y` still accepts too, unlisted),
-and accepting locks everything else — arming, placing, undo, and removal are all refused
+now. `[s] Start Pulse` — the menu's last row, reached by Up and Down like every other — opens, once,
+the **Battle Round 1** screen: what the round announces ("Activate Nexus. Collect Resources. Spawn
+Units.", or a mission's own text) and one row, `[s] Start`, to end the Build Phase and start the Nexus
+Pulse (`s`, or its unlisted alias `p`, or a click, opens the screen from anywhere). Enter, Space or
+`s` again starts it, and Esc goes back (`y` still accepts too, unlisted); accepting locks everything else — arming, placing, undo, and removal are all refused
 once committed, each naming which of the three gates (drafting, confirming, or already committed) is
 holding it. Whichever of the draft, the confirmation, or the construct menu the panel is currently
 showing is the one a digit or a click addresses, so a hotkey and a click always land on the same
