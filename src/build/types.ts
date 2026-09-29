@@ -50,7 +50,7 @@ export type BuildCommand =
    * decision, never the reducer's** (gate 5H): how far a held arrow goes comes from key timing the
    * reducer never sees, and arrives here as an ordinary distance. `fast` marks the fast move (Shift,
    * Option, PageUp/Home and the like, a jump) — not a distance but what it is for, so the reducer can
-   * recentre the view on it when Debug Mode's "Shift centres" says so.
+   * recentre the view on it when the "Shift centres" Experiment says so.
    */
   | Readonly<{ kind: "move-cursor"; dx: number; dy: number; fast?: boolean }>
   /**

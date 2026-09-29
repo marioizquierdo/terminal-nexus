@@ -10,15 +10,15 @@
 //     Only a resize snaps (`snap`);
 //   - **the cursor glides** (owner, 2026-09-28: "interpolations are easy and powerful"): whenever the
 //     state's cursor changes, the drawn cursor eases from the tile it was drawn on to the new one over
-//     Debug Mode's "Cursor glide" milliseconds, so a Shift jump or a far click reads as motion rather
+//     the "Cursor glide" Experiment milliseconds, so a Shift jump or a far click reads as motion rather
 //     than a teleport. The glide is of the cursor's place **in the view** (its tile less the
 //     camera's), added to the drawn camera: when only the camera moves — the cursor dragging it at the
 //     margin — the cursor rides along with the slide, and a gliding cursor can never be drawn outside
 //     the view it is gliding across. The armed preview and the refused flash move with it;
-//   - **a menu row flashes** "pressed" or flickers "refused" (gate 5F), for Debug Mode's durations;
+//   - **a menu row flashes** "pressed" or flickers "refused" (gate 5F), for the Experiments' durations;
 //   - **the cursor flashes** where a placement was just tried and refused (gate 5H);
 //   - **a building goes up** (gate 5I): each planned placement plays its frames, light and sparks
-//     for Debug Mode's "Build animation" and "Glow time", timed from the frame that first drew it;
+//     for the "Build animation" Experiment and "Glow time", timed from the frame that first drew it;
 //   - **a building comes down** (feedback F33): one that leaves the plan — undone, or removed with
 //     Backspace/Delete — throws the same sparks where it stood, timed from the first frame without it.
 //
@@ -65,7 +65,7 @@ export type LiveFrame = Readonly<{
 export type LiveOptions = Readonly<{
   reducedMotion?: boolean
   /** A structure's footprint, for the placement tracks. Only their shape depends on it — when each
-   *  one settles, all this loop reads, depends on the Debug Mode timings alone — so without it (a
+   *  one settles, all this loop reads, depends on the Experiment timings alone — so without it (a
    *  test) every structure is scheduled as one tile. */
   footprintOf?: (contentId: string) => Footprint
 }>
@@ -86,8 +86,8 @@ export class BuildAnimation {
    * Each planned ordinal's animation track (`animation.ts`), by the one thing about it that varies:
    * when its `play` was requested — the first frame that drew it — or `null` for what was already
    * planned when the screen first drew, which never animates. The request itself is rebuilt every
-   * frame from the current Debug Mode timings (`placementRequest`). A different structure or anchor
-   * under the same ordinal (a Debug Mode restart numbers the plan from 1 again) is a new target, with
+   * frame from the current Experiment timings (`placementRequest`). A different structure or anchor
+   * under the same ordinal (a restart numbers the plan from 1 again) is a new target, with
    * a new track.
    */
   private tracks = new Map<number, Readonly<{ key: string; placement: PlacedStructure; playedAt: number | null }>>()

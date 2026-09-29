@@ -7,7 +7,7 @@
 //   - screen, the Linux console, vt100, vt220 and ansi define no shifted arrow at all.
 //
 // So both families are accepted, and the fast move (five tiles until gate 5H; since the owner's
-// 2026-09-28 playtest a jump of Debug Mode's "Shift jump", twelve tiles) also has a modifier-free
+// 2026-09-28 playtest a jump of the "Shift jump" Experiment, twelve tiles) also has a modifier-free
 // fallback —
 // PageUp/PageDown and Home/End — plus the Option/Meta forms a Mac sends. The screen names the fast
 // move once, as "shift+arrow fast move"; the others are the same move under other keys, left off the
@@ -92,7 +92,7 @@ const FALLBACK_JUMPS: Readonly<Record<string, Readonly<{ dx: number; dy: number 
 }
 
 /** How far the fast move jumps when nothing says otherwise: the owner's twelve tiles (2026-09-28).
- *  The live screen passes Debug Mode's "Shift jump" instead. */
+ *  The live screen passes the "Shift jump" Experiment instead. */
 export const DEFAULT_JUMP_STEP = 12
 
 const TAB = "\t"
@@ -118,7 +118,7 @@ export type KeyboardContext = Readonly<{
   overlayPendingCount?: number
   /** The open popup's highlight — which of the game menu's rows Enter means. */
   overlayHighlight?: number
-  /** How many tiles the fast move jumps — Debug Mode's "Shift jump". `DEFAULT_JUMP_STEP` if absent. */
+  /** How many tiles the fast move jumps — the "Shift jump" Experiment. `DEFAULT_JUMP_STEP` if absent. */
   jumpStep?: number
 }>
 

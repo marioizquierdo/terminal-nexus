@@ -1,7 +1,7 @@
 // Settings, the game menu and the export (owner, 2026-09-28): "When pressing [esc] or explicitly
 // opening the main menu, there should be an option for '[s] Settings' along with '[q] Quit' ... At the
 // bottom of those settings, we can include 'Experiments' ... Then, we need a way to export the
-// settings." Debug Mode's own flags are `tests/build-debug.test.ts`; this file is everything around
+// settings." The Experiments' own tests are `tests/build-debug.test.ts`; this file is everything around
 // them — the menu that leads to Settings, the player's half, the export and its way back in.
 
 import { test } from "node:test"

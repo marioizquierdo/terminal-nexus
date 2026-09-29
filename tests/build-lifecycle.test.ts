@@ -54,7 +54,7 @@ class FakeStdin extends EventEmitter {
   }
 }
 
-/** Long enough for a lone Esc's timeout (gate 5H; 50 ms unless Debug Mode says otherwise) to run out,
+/** Long enough for a lone Esc's timeout (gate 5H; 50 ms unless an Experiment says otherwise) to run out,
  *  and for the frame timer's last frame after it. */
 const AFTER_ESC_TIMEOUT_MS = 150
 

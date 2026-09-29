@@ -1,6 +1,6 @@
 // Gate 5I: placement juice (feedback F9). A building plays its own frames as it goes up, is lit as it
 // finishes, and throws off a few sparks — all of it presentation, a pure function of the plan and the
-// time since the placement, every number a Debug Mode flag. The claims here are made against an
+// time since the placement, every number an Experiment. The claims here are made against an
 // injected time, a number: nothing waits.
 
 import { test } from "node:test"
@@ -423,7 +423,7 @@ test("removal sparks are presentation only: the plan is the same with them on or
 // --- Presentation only ---------------------------------------------------------------------------
 
 test("the plan is identical with every placement effect on or off", () => {
-  // Build animation to 900, lighting to rainbow, particles to many, glow off — by Debug Mode's own keys.
+  // Build animation to 900, lighting to rainbow, particles to many, glow off — by an Experiment's own keys.
   const tuned = placed("n 1 d Right*3 Down Right Down Right Down Left*3 Esc Down Space Space")
   const plain = placed()
   assert.deepEqual(tuned.state.debug.placeFramesMs, 900)
