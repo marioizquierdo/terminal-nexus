@@ -1070,23 +1070,6 @@ than the maximum viewport in a fraction of the cells, which the game has deliber
 natural moment is the first mission map that does not fit the maximum viewport, or the first Pulse
 large enough that watching it needs an overview — whichever comes first.
 
-### Q61 — Does the Build Phase open with the keyboard on the menu or on the map?
-
-**Status:** OPEN — OBSERVABLE; a Debug Mode flag ("Opens on"), registered by gate 5G.
-
-Gate 5F opened the Build Phase with the keyboard on the menu, because the owner's eyes went to the
-side panel first (2026-09-26) and its first entry is the Nexus power pick the commit will insist on.
-Nobody decided it; it was the natural reading of "the menu orchestrates the Build Phase". Opening on
-the map would put the cursor in play at once, exploring.
-
-| Option | Cost |
-| --- | --- |
-| A. **The menu** (as built) | One Tab or Right before the first arrow on the map; the Nexus pick is one Enter away |
-| B. The map, exploring | The first thing on screen is the Grid; the menu is one Tab away, and the Nexus pick easier to miss until the commit refuses |
-
-**Recommendation: A**, until Mario has tried both: press `d`, set "Opens on" to map, then `r`. The
-flag is deleted once he answers.
-
 ### Q62 — What does a click on the map do to the view with nothing armed?
 
 **Status:** OBSERVABLE — a Debug Mode flag ("Explore click"), registered by gate 5H.
@@ -1135,19 +1118,27 @@ ink setting.
 **Recommendation: A** until Mario has played the light theme: switch to it in Settings, place a
 building, and say whether it should glow instead.
 
-### Q65 — Should undo and Backspace get a short removal animation?
+### Q66 — Should the Build Phase read key releases where the terminal reports them?
 
-**Status:** OPEN — blocks nothing; registered by gate 5I.
+**Status:** OPEN — blocks nothing; registered by gate 5K (owner, 2026-09-29, feedback F29).
 
-Placement now animates; removal is instant. The building must still leave the plan at once, so a
-removal animation would be an effect over empty ground, not a delayed disappearance.
+A classic terminal sends bytes only when a key goes down, and while it is held the operating system
+repeats it at its own delay and rate; nothing says when it is let go. So "held" is guessed from the
+gaps between presses (`src/build/motion.ts`, tuned by the "Hold window" Experiment), and a quick run
+of taps can read as a hold. The owner: "I really hope we can reliably manage key-press vs key-hold on
+all platforms, instead of relying on the OS settings … when tapping, I wish we could move the cursor at
+regular 1 block intervals." The kitty keyboard protocol (kitty, WezTerm, Ghostty, foot, Alacritty,
+and — unmeasured — recent iTerm2) reports press, repeat and release; Windows Terminal has
+win32-input-mode; the browser page has key-up events. `node scripts/probe-key-release.mjs` says which
+kind a terminal is.
 
 | Option | Cost |
 | --- | --- |
-| A. **Yes, as its own small gate** after placement has been felt | A second effect family to author |
-| B. No; removal stays instant | Asymmetric with placement |
+| A. **Use releases where they arrive, timing elsewhere**: ask for the kitty protocol on start (and pop it on exit, through the one disposer), and when release events come, a press is one tile, a hold accelerates until its release, and the OS repeat is ignored; the browser page uses key-up | A second input path to keep in step with the first; the disposer must restore the keyboard mode on every exit path |
+| B. Timing only, everywhere | Nothing new; taps and holds stay a guess shaped by the OS repeat settings |
 
-**Recommendation: A**, after the owner has felt placement.
+**Recommendation: A**, after the probe has been run in the owner's iTerm2 — if it reports releases
+there, the next gate builds it; if not, B with the Experiment, and A for the terminals that can.
 
 ## 5. Answered
 
@@ -1162,6 +1153,8 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q56 | 2026-09-27 | **A solid bar, on all four sides.** Owner, after playing gate 5F: "The grid borders need to also use the 'thick' version horizontally... it should use something that is more clear... The rectangle needs to be a rectangle." A side that has reached the map's edge is drawn as an inverse-video cell — the same weight horizontally and vertically, in every glyph pack and in monochrome — and a corner is solid where a solid side runs into it. Replaces the `=` / bold `|` pair gate 5E built | [`engine.md`](engine.md) 3.3 (canon 2.21); `../src/view/build.ts` (`drawChrome`) |
 | Q57 | 2026-09-27 | **A — always back to the menu**, reversing the recommendation gate 5F built. Owner: "I like keeping that as the main orchestrator, so when a building is placed, the focus should always come back to the menu." A placement also disarms: a building is armed only while the map has focus. Esc returns focus to the menu (and on the menu asks "Exit the game?"); Backspace stays "remove". The digit path is now "digit, arrows, Enter" per building | [`engine.md`](engine.md) 9.7 (canon 2.21); `../src/build/state.ts` (`place`) |
 | Q58 | 2026-09-28 | **Yes — an armed click scrolls like any other, and a quick double click places where its first click pointed**, reversing option B, which gate 5H built. Owner, after playing the demo page (feedback F22): "then I can keep clicking on the grid with the ghost building placement cursor to keep scrolling, and double click will place the building." A double click is two left clicks on the same screen cell within 400 ms (an Experiment); the input path sends the second as a click on the first one's tile, so the reducer's compare-by-tile rule (Q52) still holds and a slow second click on a moved view still never places on a tile nobody pointed at. The still view stays one Experiment away ("Armed click scrolls") | [`engine.md`](engine.md) 3.3 and 9.7 (canon 2.25); `../src/build/session.ts` (`lastArmedClick`) |
+| Q65 | 2026-09-29 | **Yes — removing a planned building throws the same sparks a placement does.** Owner (feedback F33): "Canceling a placed building should also have spark effect, it's easy to do :)". The building still leaves the plan at once; the sparks are presentation over the ground it stood on | [`ascii-effects.md`](ascii-effects.md) Section 5 (`fx.sparks.burst`) (canon 2.26) |
+| Q61 | 2026-09-29 | **A — the menu, with the highlight on Explore Map.** Owner (feedback F31): "When the build mode is launched, the focus should be on the Menu, at the Explore Map option. No need to have a experiment setting for this. This allows the user to press 'Enter' or 'e' to move the cursor into the map, but also allows them to press 'down' to see more options." The "Opens on" Experiment is deleted | [`engine.md`](engine.md) 9.7 (canon 2.26) |
 | Q1 | 2026-08-20 | **Tile width is adaptive presentation capability**: one column per tile in the 80x24 composition, two columns per tile at 128 columns or wider. Same tiles, same actors, same revealed information — only the composition changes. The 80x24 floor is preserved and the concept art's look is reachable on a wide terminal | [`engine.md`](engine.md) Section 9.3 |
 | Q2 | 2026-08-20 | **One resource.** Salvage recovers the same resource rather than a second one. Nexus energy is a state readout, not a currency. A second resource is an addition a later microgame may earn; it is not assumed | [`engine.md`](engine.md) Section 6 |
 | Q3 | 2026-08-20 | **Units may span multiple tiles.** Large units are a normal, strategically important case, not a later extension — a Ravel raider drawn `>x<` is one unit occupying three tiles. The collision system tests a mover's whole footprint against its mask; damage and destruction apply to the entity, not the tile | [`engine.md`](engine.md) Section 3.5 |
@@ -1751,3 +1744,40 @@ same line is already on screen elsewhere: the menu entry reads "1 active" and th
 or several over a campaign, the popup becomes the place to read what is active, and closing it the
 instant something changes there would hide the change. Until then the owner's feel is the better
 judge, and gate 5G makes that a toggle rather than a rebuild.
+
+### Q61 — answered
+
+**Question:** Q61 — Does the Build Phase open with the keyboard on the menu or on the map?
+
+
+**Status:** ANSWERED 2026-09-29 — A, the menu, at Explore Map (the Answered table has the decision). The original entry follows.
+
+Gate 5F opened the Build Phase with the keyboard on the menu, because the owner's eyes went to the
+side panel first (2026-09-26) and its first entry is the Nexus power pick the commit will insist on.
+Nobody decided it; it was the natural reading of "the menu orchestrates the Build Phase". Opening on
+the map would put the cursor in play at once, exploring.
+
+| Option | Cost |
+| --- | --- |
+| A. **The menu** (as built) | One Tab or Right before the first arrow on the map; the Nexus pick is one Enter away |
+| B. The map, exploring | The first thing on screen is the Grid; the menu is one Tab away, and the Nexus pick easier to miss until the commit refuses |
+
+**Recommendation: A**, until Mario has tried both: press `d`, set "Opens on" to map, then `r`. The
+flag is deleted once he answers.
+
+### Q65 — answered
+
+**Question:** Q65 — Should undo and Backspace get a short removal animation?
+
+
+**Status:** ANSWERED 2026-09-29 — yes, sparks (the Answered table has the decision). The original entry follows.
+
+Placement now animates; removal is instant. The building must still leave the plan at once, so a
+removal animation would be an effect over empty ground, not a delayed disappearance.
+
+| Option | Cost |
+| --- | --- |
+| A. **Yes, as its own small gate** after placement has been felt | A second effect family to author |
+| B. No; removal stays instant | Asymmetric with placement |
+
+**Recommendation: A**, after the owner has felt placement.

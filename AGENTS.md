@@ -264,7 +264,7 @@ deleted, and the renderer must be replaceable without one simulation test changi
   several tiles**, and that matters strategically. A mover tests its whole footprint against its
   mask. Range measures to the nearest occupied tile.
 - The viewport is clamped to between 48 × 16 and 72 × 24 tiles; the cursor drives scrolling at a
-  margin (a share of the view, 20% to start; the number is GUIDANCE);
+  margin (a share of the view, 25% — the owner's pick; the number is GUIDANCE);
   there is no minimap. 80 × 24 is the floor and the acceptance target. **The margin is a follow rule,
   not an invariant**: at the Grid's own edge the camera has nowhere to go and the cursor reaches the
   edge of the screen, which is correct — there is no more Grid to reveal.
@@ -340,9 +340,10 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - **The status line is a typed message** — text, a tone, and the tile it is about, if any — never a
   bare string, and a tone resolves onto style roles in one place (`src/view/status.ts`). **The Grid
   pane is a closed rectangle** whose sides carry the "more Grid this way" signal as weight: a light
-  line where the view can scroll further, a **solid bar** (an inverse-video cell) where the map ends,
-  the same on all four sides and in every glyph pack; its west side is its own column beside the
-  menu's plain divider.
+  line where the view can scroll further, and **the map's own edge** where the map ends — a style the
+  map names for itself (a solid inverse-video bar when it names none), in the quieter edge colour, the
+  same weight on all four sides and in every glyph pack. **The menu's divider is its west side**, so
+  the Grid has that column: 49 tiles at 80 × 24, which stays the floor.
 - **A mission is a sequence of Build Phase / Nexus Pulse cycles driven by triggers.** Simulation
   actions run inside the kernel as validated intents; presentation actions never touch state. A
   scripted Pulse is still a Pulse.

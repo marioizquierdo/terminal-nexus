@@ -211,7 +211,9 @@ spent on centring and on a larger inspection panel — **never on more Grid**.
 
 **Fitting, in order:**
 
-1. Subtract chrome from the terminal: a border, a header, a footer, and a 30-column side panel.
+1. Subtract chrome from the terminal: a border, a header, a footer, and a 29-column side panel whose
+   divider is the Grid's west side (below). The resize gate and the choice of tile width still measure
+   against a 30-column panel, so 80 × 24 stays the floor and two columns per tile still starts at 128.
 2. Choose tile width — 2 columns per tile if the terminal can show the viewport that way, otherwise 1
    (Section 9.3).
 3. `viewport = min(availableTiles, maximumViewport, gridSize)`.
@@ -238,7 +240,8 @@ minimap.**
 
 - The camera position is in tiles and is clamped so the viewport never leaves the Grid.
 - **The cursor drives it.** Move the cursor within the **scroll margin** of a viewport edge — a share
-  of the view along each axis, 20% to start (GUIDANCE, an Experiment; three tiles until gate 5H)
+  of the view along each axis, 25% (the owner's pick, 2026-09-29; GUIDANCE, an Experiment; three
+  tiles until gate 5H, 20% until gate 5K)
   — and the camera follows. That is the whole interaction — no separate pan mode, no modifier keys, no
   second cursor. It works identically in the Build Phase and during a Pulse.
 - **The margin is a follow rule, not an invariant** (gate 5A). It says where the camera must be
@@ -246,8 +249,8 @@ minimap.**
   so the cursor legitimately reaches the edge of the screen — which is correct, because there is no
   more Grid to reveal by scrolling further. Stated because the rule is otherwise unimplementable as
   written, and because "the margin holds wherever the camera can still scroll" is a checkable
-  sentence where "the margin holds" is not. Since gate 5H the margin is 20% of the view's width for the sides and of its height for
-  the top and bottom — 10 × 3 tiles at the minimum view, 14 × 5 at the maximum — rounded, and capped
+  sentence where "the margin holds" is not. Since gate 5H the margin is a share of the view's width for the sides and of its height for
+  the top and bottom — 25% since gate 5K, 12 × 4 tiles at 80 × 24 — rounded, and capped
   so an axis's two margins never meet; `--scroll-margin <percent>` and an Experiment set it (it was
   three tiles from gate 5A, which the owner's 2026-09-26 playtest found too few: "about 20% of the
   height or width").
@@ -266,35 +269,31 @@ minimap.**
   Grid ended ("the cursor ends at what it seems arbitrary") because two blank header rows sat between
   the Grid's top and the nearest line and the footer sat against its bottom with none: whatever the
   sides said about scrolling, they said it three rows away from the edge they were about.
-- **The edge marker is the weight of that rectangle's sides — RULE, decided 2026-09-26; a solid bar
-  since canon 2.21.** A side with **more Grid to scroll to** is the frame's own line drawn dim (`-`,
-  `|`); a side that has **reached the Grid's own edge** is a **solid bar** — an inverse-video cell —
-  the same weight along the top and bottom as down the sides, in every glyph pack and in monochrome,
-  with no colour needed to read it. A corner is solid wherever a solid side runs into it, so a heavy
-  side runs unbroken to its end. When the whole Grid fits and nothing scrolls, every side and all four
-  corners are solid at once: one statement, "this is the whole map". The frame's outer border and the
-  rules where they cross the side panel never scroll, and stay plain.
-  The solid bar replaces the `=` along the top and bottom and the bold `|` down the sides that canon
-  2.19 first drew (the owner's own "'---' UI, and '===' for the map edge"): ASCII has no heavier
-  vertical bar, so the two directions could never carry the same weight, and after playing it the
-  owner asked for exactly that (2026-09-27: "The grid borders need to also use the 'thick' version
-  horizontally... The rectangle needs to be a rectangle"; Q56). This settled which border treatment
-  reads better, one of gate 5C's two open questions; the other (whether the armed row's marker and
-  the cursor's brightness read as intended) is still the owner's to judge. The dotted soft edge gate
-  5C first drew is retired — its `.` was the ground lattice's own glyph, dimness and colour family,
-  right beside the lattice — and so is **the switchable `--edge-style scrollbar`** built beside 5C as
-  the alternative this decision needed ("I feel like it is not necessary... For now, let's settle on
-  no scrollbar"). A `[m] Map` popup that shows the whole Grid at once is a separate idea for later,
-  deliberately not designed here (Q59).
-- **The Grid's west side is a column of its own, beside the side panel's plain divider — RULE,
-  canon 2.21** (owner, 2026-09-27). With the side panel on the left of the Grid (9.2), a solid west
-  bar drawn on the divider itself sat directly against the menu text and read as a heavy menu border
-  rather than "the map ends here". So the divider is a plain line that belongs to the panel, and the
-  column beside it belongs to the Grid: a solid bar where the map ends to the west; where there is
-  more map to the west, a blank gutter, and the divider is drawn light beside the Grid's rows, like
-  the other three light sides. The column comes out of the menu, which is one character narrower; the
-  Grid keeps all 48 of its columns at 80 × 24 (`src/build/layout.ts`, `src/view/build.ts`'s
-  `drawChrome`).
+- **The edge marker is the weight of that rectangle's sides — RULE, decided 2026-09-26; the map's own
+  edge since canon 2.26.** A side with **more Grid to scroll to** is the frame's own line drawn dim
+  (`-`, `|`); a side that has **reached the Grid's own edge** is drawn in **the map's own edge style**,
+  named in the map's definition — a solid bar (an inverse-video cell) for a map that names none; a
+  dashed fence for PERIMETER's stand-in map — in the quieter edge colour (`chrome.edge`), the same
+  weight along the top and bottom as down the sides, in every glyph pack and in monochrome, with no
+  colour needed to read it. A corner takes the edge wherever an edge side runs into it; a patterned
+  edge is fixed to the map and scrolls with it. When the whole Grid fits, every side and all four
+  corners are the edge at once: "this is the whole map". The frame's outer border and the rules where
+  they cross the side panel never scroll, and stay plain. History: canon 2.19's `=` and bold `|`
+  became the solid bar at 2.21 (Q56: "the rectangle needs to be a rectangle"); gate 5J made the
+  glyph, the colour and a shared west side Experiments (feedback F25), and the owner's playtest of
+  2026-09-29 chose (F38): "using map-specific borders looks a lot better! Even in ascii mode, the
+  rugged border style applied to the UI border when reaching the map edge is an awesome UI touch …
+  quiet and merged with the west side." The style vocabulary a map may name is solid, half, heavy,
+  double, shade and fence (`src/view/edge.ts`). The switchable `--edge-style scrollbar` and gate 5C's
+  dotted soft edge stay retired; a `[m] Map` popup that shows the whole Grid at once is a separate
+  idea for later (Q59).
+- **The side panel's divider is the Grid's west side — RULE, canon 2.26** (owner, 2026-09-29,
+  reversing canon 2.21's separate column). One column: a plain line beside the menu's own rows and
+  rules, and a light or map-edge side beside the Grid's rows. Canon 2.21 gave the Grid a column of its
+  own because a solid bar on the divider read as a heavy menu border; the quieter edge colour and the
+  map's own styles removed that reason, and the column goes to the Grid: 49 tiles at 80 × 24
+  (`src/build/layout.ts`; `src/build/camera.ts`'s `FLOOR_PANEL_COLUMNS` keeps the floor measured
+  against 30 columns).
 - **A Grid shorter than the pane closes directly under its own last row** (gate 5F): the Grid pane
   keeps the minimum viewport's 16 rows while the terminal has them, because the side panel is
   designed at that height (9.2), and a shorter Grid sits at the top of it with its own bottom edge
