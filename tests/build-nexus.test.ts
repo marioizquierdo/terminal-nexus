@@ -6,7 +6,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SPIKE_CATALOG } from "../src/build/catalog.ts"
-import { NEXUS_ROW, buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
+import { NEXUS_ROW, buildLayout, cellForTile, constructLines, escHintSpan, escLabel } from "../src/build/layout.ts"
 import { overlaySpec, placeOverlay } from "../src/build/overlay.ts"
 import type { PlacedOverlay } from "../src/build/overlay.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
@@ -297,7 +297,7 @@ function placedPopup(side: ReturnType<typeof session>): PlacedOverlay {
   return placeOverlay(side.layout, spec)
 }
 
-/** The click bytes for the popup option whose command matches, or for its `[esc]`. */
+/** The click bytes for the popup option whose command matches, or for the top bar's "close [esc]". */
 function clickPopupBytes(side: ReturnType<typeof session>, match: (command: BuildCommand) => boolean): string {
   const popup = placedPopup(side)
   const row = popup.rows.find((candidate) => candidate.spec.kind === "option" && match(candidate.spec.command))
@@ -305,8 +305,9 @@ function clickPopupBytes(side: ReturnType<typeof session>, match: (command: Buil
   return formatMouseEvent(MOUSE_LEFT, popup.textColumn + 2, row.row + 1)
 }
 function clickPopupCloseBytes(side: ReturnType<typeof session>): string {
-  const popup = placedPopup(side)
-  return formatMouseEvent(MOUSE_LEFT, popup.close.from + 1, popup.close.row + 1)
+  const hint = escHintSpan(side.layout, escLabel(side.build.state))
+  assert.equal(escLabel(side.build.state), "close [esc]")
+  return formatMouseEvent(MOUSE_LEFT, hint.from + 1, hint.row + 1)
 }
 function clickNexusEntryBytes(layout: ReturnType<typeof buildLayout>): string {
   return formatMouseEvent(MOUSE_LEFT, layout.panelColumn + 5, layout.panelRow + NEXUS_ROW + 1)
@@ -321,7 +322,7 @@ test("mouse: inside a popup a click picks or closes; outside it, a click closes 
   side.build.handleData(formatMouseEvent(MOUSE_LEFT, popup.textColumn + 6, second.row + 1), side.layout)
   assert.equal(side.build.state.nexusPick, 1)
   assert.equal(side.build.state.overlay, null, "a pick closes the popup")
-  // `[esc]` in the top-right corner closes it without a pick.
+  // The top bar's "close [esc]" closes it without a pick.
   side.build.handleData("n", side.layout)
   side.build.handleData(clickPopupCloseBytes(side), side.layout)
   assert.equal(side.build.state.overlay, null)

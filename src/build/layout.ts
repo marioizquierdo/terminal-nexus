@@ -3,6 +3,7 @@
 // `src/menu/layout.ts` is the same idea for the menu.
 
 import type { Coord, GridTerrain } from "../grid/types.ts"
+import type { BuildState } from "./state.ts"
 import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct } from "./state.ts"
 import type { ConstructGroup, ConstructItem, MenuEntry } from "./types.ts"
 import type { Camera, TerminalSize, TileWidth, Viewport } from "./camera.ts"
@@ -56,10 +57,11 @@ export type BuildLayout = Readonly<{
   panelLimit: number
   /** How many glyphs fit on the top bar's one line, which runs the whole width. */
   headerLimit: number
-  /** Where the top bar's `[esc] menu` sits, right-aligned: drawn there, and its click target — the
-   *  way into the game menu (Settings, Quit) for a pointer, as Esc is for the keyboard. It replaced
-   *  gate 5G's `[d] debug` when Debug Mode became Settings (owner, 2026-09-28). */
-  menuHint: Readonly<{ row: number; from: number; to: number }>
+  /** Where the top bar's Esc label ends, right-aligned — "menu [esc]", "back [esc]" or "close [esc]",
+   *  saying what Esc does right now (feedback F37): drawn there, and its click target, which sends
+   *  exactly what Esc sends. `escHint` gives the columns a given label covers. It replaced gate 5G's
+   *  `[d] debug`, then 5J's fixed `[esc] menu`. */
+  escHint: Readonly<{ row: number; to: number }>
   /** How many glyphs fit on one footer row, which runs the full width beneath both panes. */
   footerLimit: number
   /** Frame row the bottom bar's three lines start at — the first row below the Grid's own bottom
@@ -82,12 +84,29 @@ export const NEXUS_ROW = 1
 export const RESOURCE_ROW = 3
 const CONSTRUCT_FIRST_ROW = 4
 
-/** The top bar's way into the game menu: its hotkey and its name, like every other entry point. */
-export const MENU_HINT = "[esc] menu"
+/** The key the top bar's right end names. */
+export const ESC_KEY = "[esc]"
 
-/** Whether a frame cell is on the top bar's `[esc] menu`. */
-export function menuHintAt(layout: BuildLayout, column: number, row: number): boolean {
-  const hint = layout.menuHint
+/**
+ * What Esc does right now, as the top bar's right end says it (owner, 2026-09-29, feedback F37: "The
+ * '[esc] menu' at the top right should be dynamic"): **close** while a popup is open, **back** while
+ * the map has the keyboard — placing, Explore Map, or the map a click opened — and **menu** on the
+ * menu (and on a committed Build Phase), where Esc opens the game menu. The label comes first and the
+ * key after it — "menu [esc]" — the way a way-back is read, hotkey on the right.
+ */
+export function escLabel(state: Pick<BuildState, "overlay" | "focus" | "committed">): string {
+  const action = state.overlay !== null ? "close" : state.committed || state.focus !== "grid" ? "menu" : "back"
+  return `${action} ${ESC_KEY}`
+}
+
+/** The columns the top bar's Esc label covers, right-aligned — where it is drawn and clicked. */
+export function escHintSpan(layout: BuildLayout, label: string): Readonly<{ row: number; from: number; to: number }> {
+  return { row: layout.escHint.row, from: layout.escHint.to - label.length + 1, to: layout.escHint.to }
+}
+
+/** Whether a frame cell is on the top bar's Esc label. */
+export function escHintAt(layout: BuildLayout, label: string, column: number, row: number): boolean {
+  const hint = escHintSpan(layout, label)
   return row === hint.row && column >= hint.from && column <= hint.to
 }
 
@@ -246,7 +265,7 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLay
     panelColumn,
     panelLimit: dividerColumn - panelColumn,
     headerLimit,
-    menuHint: { row: offset.row + 1, from: hintTo - MENU_HINT.length + 1, to: hintTo },
+    escHint: { row: offset.row + 1, to: hintTo },
     footerLimit: composition.width - 4,
     footerRow: paneBottom + 1,
     panelRow: gridBox.top + 1,

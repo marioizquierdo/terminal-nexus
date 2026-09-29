@@ -97,8 +97,8 @@ export type BuildCommand =
   /** Leave the screen. Only the game menu's `[q]` (or Ctrl+C) sends it; the session decides what
    *  leaving means. */
   | Readonly<{ kind: "quit" }>
-  /** `q` anywhere but the game menu, or a click on the top bar's `[esc] menu`: open the game menu —
-   *  Settings and Quit — rather than quit outright and lose a plan (owner, 2026-09-28). */
+  /** `q` anywhere but the game menu: open the game menu — Settings, Restart and Quit — rather than
+   *  quit outright and lose a plan (owner, 2026-09-28). */
   | Readonly<{ kind: "open-menu" }>
   /** Pick Nexus power *n* — a digit or a click while the Nexus popup is open. */
   | Readonly<{ kind: "pick-nexus"; index: number }>
@@ -138,11 +138,12 @@ export type BuildCommand =
    * highlight there.
    */
   | Readonly<{ kind: "debug-adjust"; field: DebugField; step: -1 | 1 }>
-  /** A click on a Settings row away from its value: highlight it, so what it is for shows. `row` is
-   *  the row's id (`src/build/settings.ts`). */
+  /** A click on a Settings row away from its value, or on the popup's scroll bar: highlight it, so
+   *  what it is for shows and the list scrolls to it. `row` is the row's id (`src/build/settings.ts`). */
   | Readonly<{ kind: "settings-select"; row: number }>
-  /** `r` in the Settings popup, or its restart row: start the Build Phase over, keeping every setting
-   *  and experiment — how an experiment marked "restart" takes effect. */
+  /** `r` in the game menu, or its `[r] Restart` row (feedback F34 moved it there from Settings): start
+   *  the Build Phase over, keeping every setting and experiment — how one that applies only after a
+   *  restart takes effect. */
   | Readonly<{ kind: "debug-restart" }>
   /**
    * `e` in the Settings popup, or its export row: show the settings and experiments as text to paste
@@ -150,7 +151,7 @@ export type BuildCommand =
    * the clipboard and a file is the session's side effect (`BuildSession`'s `onExport`).
    */
   | Readonly<{ kind: "export-settings" }>
-  /** A click on the export popup's "more" line: highlight line `line` of the text, bringing it into
+  /** A click on the export popup's scroll bar: highlight line `line` of the text, bringing it into
    *  view. Up/Down and the wheel move the highlight a line at a time. */
   | Readonly<{ kind: "export-select"; line: number }>
 
@@ -188,8 +189,16 @@ export type MenuEntry =
   | Readonly<{ kind: "construct"; index: number }>
 
 /** The popups this screen has — one overlay shape for all of them (`src/build/overlay.ts`): the Nexus
- *  powers, the start-the-Pulse question, the game menu (Settings, Quit), Settings, and the export. */
-export type Overlay = "nexus-powers" | "confirm-commit" | "menu" | "settings" | "export"
+ *  powers, the start-the-Pulse question, the game menu (Settings, Restart, Quit), Settings, the export,
+ *  and a message — `BuildState.message`, a title and text with nothing to choose. */
+export type Overlay = "nexus-powers" | "confirm-commit" | "menu" | "settings" | "export" | "message"
+
+/**
+ * A message popup's words (feedback F34, owner 2026-09-29: "This popup does not have an action, it's
+ * just a warning message ... clicking outside or pressing esc should close it"). Any warning the screen
+ * needs to give once, and out of the way of the status line, is one of these.
+ */
+export type PopupMessage = Readonly<{ title: string; text: string }>
 
 /**
  * What the last command wants acknowledged on screen — a brief "pressed" flash on the row it

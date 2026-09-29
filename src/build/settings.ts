@@ -8,18 +8,21 @@
 // `debug.ts`, whose spec list the Experiments section wraps unchanged.
 //
 // **Row ids.** `BuildState.overlayHighlight` names the highlighted row by an id, and the ids are
-// chosen so that an experiment's id is its index in `DEBUG_FIELDS` — `rowOfField(field)` — and the
-// restart row keeps `DEBUG_RESTART_ROW`, exactly as when Debug Mode was a popup of its own. The export
+// chosen so that an experiment's id is its index in `DEBUG_FIELDS` — `rowOfField(field)`. The export
 // row and the player settings come after them in id space. What Up/Down walk is the *display* order,
-// `SETTINGS_ORDER`: player settings, experiments, restart, export.
+// `SETTINGS_ORDER`: player settings, experiments, export — the export the list's last row (feedback
+// F35). Starting over is not a Settings row any more: it is the game menu's `[r] Restart` (F34), and a
+// setting that only takes effect then is announced by a message popup when Settings closes
+// (`pendingRestart`, `restartMessage`).
 
 import type { Settings } from "../settings/types.ts"
 import { CAPABILITY_MODES, THEMES } from "../view/roles.ts"
 import type { CapabilityMode, Theme } from "../view/roles.ts"
 import { GLYPH_PACKS } from "../view/theme.ts"
 import type { GlyphPack } from "../view/theme.ts"
-import type { DebugField } from "./debug.ts"
-import { DEBUG_FIELDS, DEBUG_RESTART_ROW } from "./debug.ts"
+import type { DebugApplies, DebugField, DebugFlags } from "./debug.ts"
+import { DEBUG_FIELDS } from "./debug.ts"
+import type { PopupMessage } from "./types.ts"
 
 export type PlayerField = keyof Settings
 
@@ -96,19 +99,53 @@ export function adjustSetting(settings: Settings, field: PlayerField, step: -1 |
 
 /**
  * The game menu's rows, in order (owner, 2026-09-28: "When pressing [esc] or explicitly opening the
- * main menu, there should be an option for '[s] Settings' along with '[q] Quit'"), and the way back to
- * the game. `overlayHighlight` indexes this list while the game menu is open.
+ * main menu, there should be an option for '[s] Settings' along with '[q] Quit'"), `[r] Restart` —
+ * starting the Build Phase over with every setting kept, moved here from Settings (feedback F34) — and
+ * the way back to the game. `overlayHighlight` indexes this list while the game menu is open.
  */
-export const GAME_MENU_ROWS = ["settings", "quit", "back"] as const
+export const GAME_MENU_ROWS = ["settings", "restart", "quit", "back"] as const
 export type GameMenuRow = (typeof GAME_MENU_ROWS)[number]
+
+/** What the game menu's `[r] Restart` row says under its name. */
+export const RESTART_DESCRIPTION = "Start over; the plan is lost."
+
+// --- Settings that apply after a restart -------------------------------------------------------------
+
+/** What `pendingRestart` needs of an experiment's spec: `DEBUG_FIELDS` itself, or a test's own list. */
+export type RestartFieldSpec = Readonly<{ field: DebugField; label: string; applies: DebugApplies }>
+
+/**
+ * The names of the settings changed since this Build Phase started that only take effect when it
+ * starts over — every field marked `applies: "restart"` whose value differs from `started`, the flags
+ * the running Build Phase was created with. Empty when there are none, or when each was put back.
+ * Pure, and over any spec list, so the mechanism is tested even while no Experiment needs a restart.
+ */
+export function pendingRestart(
+  started: DebugFlags,
+  current: DebugFlags,
+  fields: readonly RestartFieldSpec[] = DEBUG_FIELDS,
+): readonly string[] {
+  return fields
+    .filter((spec) => spec.applies === "restart" && started[spec.field] !== current[spec.field])
+    .map((spec) => spec.label)
+}
+
+/** The message popup that says so (owner, 2026-09-29, feedback F34: "it's just a warning message ...
+ *  The user may decide to keep playing and restart later"). */
+export function restartMessage(labels: readonly string[]): PopupMessage {
+  return {
+    title: "RESTART NEEDED",
+    text:
+      `Some settings apply only after a restart: ${labels.join(", ")}. ` +
+      "Choose [r] Restart in the menu when you're ready - the plan starts over.",
+  }
+}
 
 // --- The popup's rows -------------------------------------------------------------------------------
 
-/** The restart row keeps Debug Mode's own id. */
-export const SETTINGS_RESTART_ROW = DEBUG_RESTART_ROW
-/** "Export settings", after the restart. */
-export const SETTINGS_EXPORT_ROW = DEBUG_FIELDS.length + 1
-const FIRST_PLAYER_ROW = DEBUG_FIELDS.length + 2
+/** "Export settings", the list's last row, after the experiments. */
+export const SETTINGS_EXPORT_ROW = DEBUG_FIELDS.length
+const FIRST_PLAYER_ROW = DEBUG_FIELDS.length + 1
 
 /** The id of player setting `field`'s row. */
 export function playerRow(field: PlayerField): number {
@@ -123,20 +160,17 @@ export const FIRST_EXPERIMENT_ROW = 0
 export const SETTINGS_ORDER: readonly number[] = [
   ...PLAYER_FIELDS.map((_, index) => FIRST_PLAYER_ROW + index),
   ...DEBUG_FIELDS.map((_, index) => index),
-  SETTINGS_RESTART_ROW,
   SETTINGS_EXPORT_ROW,
 ]
 
 export type SettingsRow =
   | Readonly<{ kind: "player"; field: PlayerField }>
   | Readonly<{ kind: "experiment"; field: DebugField }>
-  | Readonly<{ kind: "restart" }>
   | Readonly<{ kind: "export" }>
 
 /** What row id `row` is, or `null` for an id no row has. */
 export function settingsRowAt(row: number): SettingsRow | null {
   if (row >= 0 && row < DEBUG_FIELDS.length) return { kind: "experiment", field: (DEBUG_FIELDS[row] as { field: DebugField }).field }
-  if (row === SETTINGS_RESTART_ROW) return { kind: "restart" }
   if (row === SETTINGS_EXPORT_ROW) return { kind: "export" }
   const player = PLAYER_FIELDS[row - FIRST_PLAYER_ROW]
   return player === undefined ? null : { kind: "player", field: player.field }

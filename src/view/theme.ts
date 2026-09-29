@@ -76,6 +76,11 @@ export const CHROME_GLYPHS: Readonly<Record<GlyphPack, Readonly<Record<string, s
     // A popup's shadow, drawn dim: a blank cell vanished against the dark theme's near-black ground
     // (feedback F17), so the shadow is a shade, which reads on either theme and in monochrome.
     shadow: ":",
+    // A popup's scroll bar, in its right border (feedback F36): the two ends, and the track the solid
+    // thumb sits in. Drawn inverse, as the border is.
+    scrollUp: "^",
+    scrollDown: "v",
+    scrollTrack: ":",
   },
   unicode: {
     horizontal: "─",
@@ -97,6 +102,9 @@ export const CHROME_GLYPHS: Readonly<Record<GlyphPack, Readonly<Record<string, s
     heavyHorizontal: "━",
     heavyVertical: "┃",
     shadow: "░",
+    scrollUp: "▲",
+    scrollDown: "▼",
+    scrollTrack: "░",
   },
 }
 

@@ -24,6 +24,8 @@ import {
   formatPlayerValue,
   playerRow,
   playerSpec,
+  pendingRestart,
+  restartMessage,
   settingsRowAt,
   stepSettingsRow,
 } from "./settings.ts"
@@ -38,6 +40,7 @@ import type {
   NexusPowerOption,
   Overlay,
   PlannedPlacement,
+  PopupMessage,
   StandingStructure,
 } from "./types.ts"
 
@@ -143,7 +146,9 @@ export type BuildState = Readonly<{
   highlightHidden: boolean
   /** The popup drawn over the Grid and holding the keyboard and mouse, or `null`: the Nexus powers,
    *  the start-the-Pulse question (`p` — "the one action that must not fire by accident", engine.md
-   *  9.7), or the exit question. Never opened by anything but the player. */
+   *  9.7), the game menu, Settings, the export, or a message. Never opened by anything but the player —
+   *  a message only as the answer to something the player did (closing Settings with a change that
+   *  needs a restart). */
   overlay: Overlay | null
   /** The popup's own highlight, reset whenever one opens: an index into the Nexus popup's pending
    *  powers or the game menu's rows, a row id in Settings (`src/build/settings.ts`), and the first
@@ -152,6 +157,9 @@ export type BuildState = Readonly<{
   /** The popups under the open one, nearest last — what Esc goes back to, one at a time: the game menu
    *  under Settings opened from it, Settings under the export. Empty: Esc goes back to the game. */
   overlayUnder: readonly Overlay[]
+  /** What the message popup says while `overlay` is `"message"`, and `null` otherwise (feedback F34):
+   *  a title and text, nothing to choose. */
+  message: PopupMessage | null
   planned: readonly PlannedPlacement[]
   /** The one line of feedback the status line shows: what just happened, or why it did not. A
    *  message about a tile (`status.tile`, a refused placement) lapses once the cursor leaves it. */
@@ -183,6 +191,13 @@ export type BuildState = Readonly<{
   settings: Settings
   /** Where the cursor started — where a Debug Mode restart puts it back. */
   startCursor: Coord
+  /** The flags this Build Phase started with: an experiment that applies only after a restart is
+   *  pending while its value differs from its value here (`pendingRestart`). */
+  startFlags: DebugFlags
+  /** The names of the pending restart settings the message popup last announced, so closing Settings
+   *  again without changing them does not say it again — the player may keep playing and restart
+   *  later (feedback F34). Empty after a restart. */
+  restartWarned: readonly string[]
 }>
 
 /**
@@ -246,6 +261,7 @@ export function createBuildState(
     overlay: null,
     overlayHighlight: 0,
     overlayUnder: [],
+    message: null,
     planned: [],
     status: NO_STATUS,
     nextOrdinal: 1,
@@ -255,6 +271,8 @@ export function createBuildState(
     debug,
     settings,
     startCursor: cursor,
+    startFlags: debug,
+    restartWarned: [],
   }
 }
 
@@ -855,8 +873,10 @@ function cancel(context: BuildContext, state: BuildState): BuildState {
   if (state.overlay === "confirm-commit") return { ...state, overlay: null, status: status("Cancelled.") }
   const under = state.overlayUnder[state.overlayUnder.length - 1]
   if (state.overlay !== null && under !== undefined) {
-    // Back to the popup this one was opened from, on the row that opened it.
-    const highlight = under === "menu" ? GAME_MENU_ROWS.indexOf("settings") : under === "settings" ? SETTINGS_EXPORT_ROW : 0
+    // Back to the popup this one was opened from, on the row that opened it — or, from the message
+    // that a restart is needed, on the game menu's Restart, the row it points at.
+    const menuRow = state.overlay === "message" ? "restart" : "settings"
+    const highlight = under === "menu" ? GAME_MENU_ROWS.indexOf(menuRow) : under === "settings" ? SETTINGS_EXPORT_ROW : 0
     return { ...state, overlay: under, overlayHighlight: highlight, overlayUnder: state.overlayUnder.slice(0, -1) }
   }
   if (state.overlay !== null) return { ...state, overlay: null, overlayUnder: [] }
@@ -900,7 +920,7 @@ function adjustFlag(context: BuildContext, state: BuildState, field: DebugField,
       status: status(`Experiment - ${spec.label} is already ${formatDebugValue(state.debug, field)}, the ${end} value.`, "warning"),
     }
   }
-  const later = spec.applies === "restart" ? " - applies on restart: [r]" : ""
+  const later = spec.applies === "restart" ? " - applies after a restart" : ""
   const next: BuildState = {
     ...state,
     ...highlight,
@@ -964,8 +984,42 @@ function stepHighlighted(context: BuildContext, state: BuildState, step: -1 | 1,
   if (row === null) return state
   if (row.kind === "experiment") return adjustFlag(context, state, row.field, step)
   if (row.kind === "player") return adjustPlayerSetting(state, row.field, step)
-  if (!activate) return state
-  return row.kind === "restart" ? restartWithFlags(context, state) : exportSettings(state)
+  return activate ? exportSettings(state) : state
+}
+
+/** Settings, or the export opened from it, is showing. */
+function inSettings(overlay: Overlay | null): boolean {
+  return overlay === "settings" || overlay === "export"
+}
+
+/**
+ * The message popup over whatever is open — which Esc then goes back to — or over the game. Any
+ * warning the screen needs to give once is one of these (feedback F34).
+ */
+function showMessage(state: BuildState, message: PopupMessage): BuildState {
+  return {
+    ...state,
+    overlay: "message",
+    message,
+    overlayHighlight: 0,
+    overlayUnder: state.overlay === null ? [] : [...state.overlayUnder, state.overlay],
+  }
+}
+
+/**
+ * Settings has just closed — by Esc back to the game menu, by `q`, by a click outside, whichever way —
+ * with a setting changed that only takes effect when the Build Phase starts over: say so, once, in a
+ * message popup (feedback F34). **When Settings closes rather than as the value changes**, so a player
+ * stepping through a setting's values is not interrupted at every press, and one who puts it back
+ * hears nothing; and **once per change**, so closing Settings again later does not repeat it — the
+ * player may keep playing and restart when they choose. The status line says "applies after a
+ * restart" at the change itself.
+ */
+function warnIfRestartNeeded(before: BuildState, next: BuildState): BuildState {
+  if (!inSettings(before.overlay) || inSettings(next.overlay)) return next
+  const pending = pendingRestart(next.startFlags, next.debug)
+  if (pending.length === 0 || pending.join("\n") === next.restartWarned.join("\n")) return next
+  return { ...showMessage(next, restartMessage(pending)), restartWarned: pending }
 }
 
 /**
@@ -982,9 +1036,12 @@ export function applyBuildCommand(
   // the two cancels that.
   const base: BuildState =
     state.nudged && !(command.kind === "nudge" && command.direction === "right") ? { ...state, nudged: false } : state
-  const next = applyCommand(context, base, command)
-  // Whatever closed the popup — a click outside it, a pick, an answer — closed the ones under it too.
-  return next.overlay === null && next.overlayUnder.length > 0 ? { ...next, overlayUnder: [] } : next
+  const applied = applyCommand(context, base, command)
+  // Whatever closed the popup — a click outside it, a pick, an answer — closed the ones under it too;
+  // and a message's words go with it.
+  const closed = applied.overlay === null && applied.overlayUnder.length > 0 ? { ...applied, overlayUnder: [] } : applied
+  const next = closed.overlay !== "message" && closed.message !== null ? { ...closed, message: null } : closed
+  return warnIfRestartNeeded(base, next)
 }
 
 function applyCommand(context: BuildContext, state: BuildState, command: BuildCommand): BuildState {
@@ -1141,6 +1198,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
         // click on it sends `quit` too (`src/build/keyboard.ts`, the popup's own rows).
         const row = GAME_MENU_ROWS[state.overlayHighlight]
         if (row === "settings") return openSettings(state, "settings")
+        if (row === "restart") return restartWithFlags(context, state)
         return row === "back" ? cancel(context, state) : state
       }
       if (state.overlay === "nexus-powers") {

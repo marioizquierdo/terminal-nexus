@@ -13,12 +13,14 @@ import { edgeMarkers, visibleRange } from "../build/camera.ts"
 import { DEFAULT_SCROLL_MARGIN_PERCENT } from "../build/debug.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import {
+  ESC_KEY,
   EXPLORE_ROW,
-  MENU_HINT,
   NEXUS_ROW,
   RESOURCE_ROW,
   cellForTile,
   constructLines,
+  escHintSpan,
+  escLabel,
   summaryRows,
 } from "../build/layout.ts"
 import { CLOSE_LABEL, overlaySpec, placeOverlay, settingColumns, wrapWords } from "../build/overlay.ts"
@@ -497,11 +499,11 @@ export const MAP_KEY_HELP: KeyHelp = {
 
 const NEXUS_KEY_HELP: KeyHelp = { label: "NEXUS", bindings: ["up/down choose", "enter/space pick", "esc close"] }
 const CONFIRM_KEY_HELP: KeyHelp = { label: "START PULSE?", bindings: ["y yes", "n/esc no"] }
-const GAME_MENU_KEY_HELP: KeyHelp = { label: "MENU", bindings: ["s settings", "q quit", "esc back to the game"] }
+const GAME_MENU_KEY_HELP: KeyHelp = { label: "MENU", bindings: ["s settings", "r restart", "q quit", "esc back to the game"] }
 const COMMITTED_KEY_HELP: KeyHelp = { label: "COMMITTED", bindings: ["esc menu"] }
 const SETTINGS_KEY_HELP: KeyHelp = {
   label: "SETTINGS",
-  bindings: ["up/down choose", "left/right change", "e export", "r restart", "esc close"],
+  bindings: ["up/down choose", "left/right change", "e export", "esc close"],
 }
 const EXPORT_KEY_HELP: KeyHelp = { label: "EXPORT", bindings: ["up/down scroll", "esc back"] }
 
@@ -510,6 +512,8 @@ export function keyHelp(state: BuildState): KeyHelp {
   if (state.overlay === "menu") return GAME_MENU_KEY_HELP
   if (state.overlay === "settings") return SETTINGS_KEY_HELP
   if (state.overlay === "export") return EXPORT_KEY_HELP
+  // A message is named by its own title: the one thing the keyboard can do there is close it.
+  if (state.overlay === "message") return { label: state.message?.title ?? "MESSAGE", bindings: ["esc close"] }
   if (state.committed) return COMMITTED_KEY_HELP
   if (state.overlay === "confirm-commit") return CONFIRM_KEY_HELP
   if (state.overlay === "nexus-powers") return NEXUS_KEY_HELP
@@ -597,12 +601,14 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
   const limit = layout.headerLimit
   text(cells, band, left, headerRow, "TERMINAL NEXUS", "chrome.title", { bold: true, limit })
   text(cells, band, left + 15, headerRow, "build phase", "chrome.muted", { limit: limit - 15 })
-  // The game menu's way in, right-aligned: its hotkey in the hotkey colour, its name quiet — findable
-  // without competing with the game's own title (where gate 5G put `[d] debug`).
-  const hint = layout.menuHint
-  const hotkey = MENU_HINT.slice(0, MENU_HINT.indexOf("]") + 1)
-  text(cells, band, hint.from, hint.row, hotkey, "chrome.hotkey", { bold: true })
-  text(cells, band, hint.from + hotkey.length, hint.row, MENU_HINT.slice(hotkey.length), "chrome.muted")
+  // What Esc does right now, right-aligned (feedback F37): "menu [esc]", "back [esc]", "close [esc]" —
+  // the name quiet, the key in the hotkey colour after it, findable without competing with the game's
+  // own title. The same text is the click target that sends Esc.
+  const escText = escLabel(state)
+  const hint = escHintSpan(layout, escText)
+  const name = escText.slice(0, escText.length - ESC_KEY.length)
+  text(cells, band, hint.from, hint.row, name, "chrome.muted")
+  text(cells, band, hint.from + name.length, hint.row, ESC_KEY, "chrome.hotkey", { bold: true })
 
   const footerLimit = layout.footerLimit
   // engine.md 3.3's second required signal: "a position readout in the footer naming the visible
@@ -799,9 +805,11 @@ function rowState(input: BuildCompositionInput, entry: number): RowState {
   const { state, flash } = input
   if (flash !== undefined && flash.entry === entry) return flash.kind
   // The Nexus and start-the-Pulse popups each belong to a menu row, which stays lit behind them; the
-  // game menu, Settings and the export belong to none, so while one has the keyboard its own highlight
-  // is the only one on screen.
-  if (state.overlay === "menu" || state.overlay === "settings" || state.overlay === "export") return "plain"
+  // game menu, Settings, the export and a message belong to none, so while one has the keyboard its own
+  // highlight (or none) is the only one on screen.
+  if (state.overlay === "menu" || state.overlay === "settings" || state.overlay === "export" || state.overlay === "message") {
+    return "plain"
+  }
   if (state.focus !== "menu") return "plain"
   // The Nexus popup keeps its row lit however it was opened — by a click as much as by a key.
   const ownsPopup = state.overlay === "nexus-powers" && entry === NEXUS_ENTRY
@@ -1001,11 +1009,12 @@ const TERRAIN_INFO: Readonly<Record<string, Readonly<{ name: string; line: strin
 }
 
 /**
- * A popup — the Nexus powers, the start-the-Pulse question, or the exit question — drawn from its
- * spec (`src/build/overlay.ts`), over everything on the Grid. A solid border in the same weight as a
- * map edge, `[esc]` in its top-right corner, and a one-cell shadow that blanks what is behind it, so
- * it cannot be missed (owner, 2026-09-27: he clicked Nexus, did not notice the popup, and thought the
- * mouse had stopped working).
+ * A popup — the Nexus powers, the start-the-Pulse question, the game menu, Settings, the export, a
+ * message — drawn from its spec (`src/build/overlay.ts`), over everything on the Grid. A solid border
+ * with the title in it, and a one-cell shadow that blanks what is behind it, so it cannot be missed
+ * (owner, 2026-09-27: he clicked Nexus, did not notice the popup, and thought the mouse had stopped
+ * working). No `[esc]` in the border since feedback F37: the top bar's "close [esc]" says it. Beside a
+ * list that overflows, the right border is its scroll bar (F36).
  *
  * Drawn last in the chrome band: bands are fixed (engine.md 9.4, RULE), and within one band a later
  * write replaces an earlier one, so a popup needs no band of its own to sit on top.
@@ -1028,13 +1037,28 @@ function drawOverlay(cells: BandCell[], input: BuildCompositionInput, pack: Glyp
       put(cells, band, x, y, " ", "chrome.frame", edge ? { inverse: true } : {})
     }
   }
-  // Title and `[esc]` sit in the top border, drawn in reverse so they read as part of it.
+  // The title sits in the top border, drawn in reverse so it reads as part of it.
   text(cells, band, box.left + 2, box.top, ` ${spec.title} `, "chrome.title", {
     bold: true,
     inverse: true,
-    limit: placed.close.from - box.left - 3,
+    limit: box.right - box.left - 3,
   })
-  text(cells, band, placed.close.from, placed.close.row, CLOSE_LABEL, "chrome.frame", { bold: true, inverse: true })
+  // The scroll bar, in the right border beside the list: an up symbol, a textured track with a solid
+  // thumb where the part in view sits, a down symbol — all inverse, so they read as the border itself.
+  const bar = placed.scrollBar
+  if (bar !== null) {
+    for (let y = bar.top; y <= bar.bottom; y += 1) {
+      const glyph =
+        y === bar.top
+          ? chromeGlyph(pack, "scrollUp")
+          : y === bar.bottom
+            ? chromeGlyph(pack, "scrollDown")
+            : y >= bar.thumbTop && y <= bar.thumbBottom
+              ? " "
+              : chromeGlyph(pack, "scrollTrack")
+      put(cells, band, bar.column, y, glyph, "chrome.frame", { inverse: true, bold: y === bar.top || y === bar.bottom })
+    }
+  }
 
   for (const { row, spec: entry, secondLine, text: placedText = "" } of placed.rows) {
     switch (entry.kind) {
@@ -1070,7 +1094,7 @@ function drawOverlay(cells: BandCell[], input: BuildCompositionInput, pack: Glyp
       }
       case "setting": {
         // One line: the name, the value between `<` and `>` (the arrows say Left and Right change it,
-        // and each half of the box is the click that does), and when a change is seen, quietly.
+        // and each half of the box is the click that does), against the row's right end.
         const on = entry.highlighted
         const columns = settingColumns(placed)
         const role: StyleRole = on ? "chrome.title" : "chrome.value"
@@ -1082,19 +1106,17 @@ function drawOverlay(cells: BandCell[], input: BuildCompositionInput, pack: Glyp
         text(cells, band, columns.valueFrom, row, "<", on ? "chrome.title" : "chrome.hotkey", { bold: true, inverse: on })
         text(cells, band, columns.valueFrom + 2, row, value, role, { bold: true, inverse: on, limit: inner })
         text(cells, band, columns.valueTo, row, ">", on ? "chrome.title" : "chrome.hotkey", { bold: true, inverse: on })
-        const applies = entry.applies === "now" ? "now" : "restart"
-        text(cells, band, columns.appliesRight - applies.length + 1, row, applies, on ? "chrome.title" : "chrome.muted", {
-          inverse: on,
-        })
         break
       }
       case "note":
         text(cells, band, textColumn, row, placedText, "chrome.value", { limit: textLimit })
         break
-      case "more":
-        // The scrolling list's "more" cue: quiet, but never dimmed out of reach — it is clickable.
-        text(cells, band, textColumn, row, placedText, "chrome.hotkey", { bold: true, limit: textLimit })
+      case "rule": {
+        // Border to border, inside the solid frame: what is above is apart from what is below.
+        const line = chromeGlyph(pack, "horizontal")
+        for (let x = box.left + 1; x < box.right; x += 1) put(cells, band, x, row, line, "chrome.frame")
         break
+      }
     }
   }
 }

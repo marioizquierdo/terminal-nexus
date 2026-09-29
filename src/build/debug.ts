@@ -385,13 +385,6 @@ export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
   },
 ]
 
-/** The popup's last row, after the flags: start the Build Phase over, keeping them. */
-export const DEBUG_RESTART_ROW = DEBUG_FIELDS.length
-/** How many rows Up/Down walk in the popup: every flag, then the restart. */
-export const DEBUG_ROW_COUNT = DEBUG_FIELDS.length + 1
-export const DEBUG_RESTART_QUESTION =
-  "Starts this Build Phase over with the settings above, so one marked restart takes effect. The plan is lost."
-
 /** The live loop's flash durations as gate 5F built them — the starting values of the two flags. */
 export const DEFAULT_FLASH_MS = { pressed: 90, refused: 140 } as const
 

@@ -140,6 +140,7 @@ function overlayCommand(key: string, overlay: Overlay, pendingCount: number, hig
       // on `[q] Quit` is the quit itself — the reducer never sees a quit it would have to pass on.
       if (key === "q") return { kind: "quit" }
       if (key === "s") return { kind: "open-settings", section: "settings" }
+      if (key === "r") return { kind: "debug-restart" }
       if (key === "d") return { kind: "open-settings", section: "experiments" }
       if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
       if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
@@ -164,7 +165,8 @@ function overlayCommand(key: string, overlay: Overlay, pendingCount: number, hig
       // `d` closes what `d` opened, the way `n` closes the Nexus popup.
       if (key === "d") return { kind: "cancel" }
       if (key === "q") return { kind: "open-menu" }
-      if (key === "r") return { kind: "debug-restart" }
+      // Export settings is the list's last row; `e` still reaches it from anywhere in the list. The
+      // restart is the game menu's `[r]` now (feedback F34).
       if (key === "e") return { kind: "export-settings" }
       if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
       if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
@@ -182,6 +184,10 @@ function overlayCommand(key: string, overlay: Overlay, pendingCount: number, hig
       if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
       return null
     }
+    case "message":
+      // Nothing to choose: only the cancel above closes it (feedback F34, "clicking outside or pressing
+      // esc should close it").
+      return null
     default:
       return null
   }

@@ -10,8 +10,6 @@ import assert from "node:assert/strict"
 import { SPIKE_CATALOG } from "../src/build/catalog.ts"
 import {
   DEBUG_FIELDS,
-  DEBUG_RESTART_QUESTION,
-  DEBUG_RESTART_ROW,
   adjustDebug,
   flashDuration,
   DEFAULT_SCROLL_MARGIN_PERCENT,
@@ -19,7 +17,7 @@ import {
   rowOfField,
 } from "../src/build/debug.ts"
 import type { DebugField } from "../src/build/debug.ts"
-import { buildLayout, cellForTile, menuEntryRow } from "../src/build/layout.ts"
+import { buildLayout, cellForTile, escHintSpan, escLabel, menuEntryRow } from "../src/build/layout.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, MOUSE_WHEEL_DOWN, MOUSE_WHEEL_UP, formatMouseEvent } from "../src/build/mouse.ts"
 import {
   DEBUG_NOTE_LINES,
@@ -29,7 +27,7 @@ import {
   settingColumns,
   wrapWords,
 } from "../src/build/overlay.ts"
-import { GAME_MENU_ROWS, PLAYER_FIELDS, SETTINGS_ORDER, SETTINGS_RESTART_ROW, stepSettingsRow } from "../src/build/settings.ts"
+import { GAME_MENU_ROWS, PLAYER_FIELDS, SETTINGS_ORDER } from "../src/build/settings.ts"
 import type { PlacedOverlay } from "../src/build/overlay.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildContext } from "../src/build/state.ts"
@@ -119,7 +117,7 @@ function goTo(side: Side, field: DebugField): void {
 
 // --- Opening and closing ---------------------------------------------------------------------------
 
-test("d opens Settings at its Experiments: every flag, its value, and when a change is seen", () => {
+test("d opens Settings at its Experiments: every flag and its value", () => {
   const side = session()
   keys(side, "d")
   assert.equal(side.build.state.overlay, "settings")
@@ -127,10 +125,10 @@ test("d opens Settings at its Experiments: every flag, its value, and when a cha
   const text = screen(side)
   assert.match(text, /SETTINGS/)
   assert.match(text, /EXPERIMENTS - for playtests, not saved/)
-  // Gate 5I's placement juice leads the list: the newest thing waiting to be felt.
-  assert.match(text, /Build animation\s+<\s+300 ms\s+>\s+now/)
-  assert.match(text, /\[r\] Restart with these settings/)
-  assert.match(text, /\[e\] Export settings/)
+  // Gate 5I's placement juice leads the list: the newest thing waiting to be felt. No "now" or
+  // "restart" beside a value any more (feedback F34).
+  assert.match(text, /Build animation\s+<\s+300 ms\s+>/)
+  assert.doesNotMatch(text, /> +(now|restart)\b/)
   // The key help says where the keyboard is, and the highlighted row's question is shown.
   assert.match(text, /SETTINGS {2}up\/down choose {2}left\/right change/)
   assert.ok(text.includes("(F9)"), "the build animation's question is not shown")
@@ -138,7 +136,7 @@ test("d opens Settings at its Experiments: every flag, its value, and when a cha
   keys(margin, "d")
   goTo(margin, "scrollMargin")
   assert.ok(screen(margin).includes("(Q54)"), "the scroll margin's question is not shown")
-  assert.match(screen(margin), /Scroll margin\s+<\s+25%\s+>\s+now/)
+  assert.match(screen(margin), /Scroll margin\s+<\s+25%\s+>/)
   // Every flag is listed — scrolled into view by walking down the list (gate 5H: at 80x24 they do not
   // all fit at once).
   const seen = new Set<string>()
@@ -151,44 +149,10 @@ test("d opens Settings at its Experiments: every flag, its value, and when a cha
   const walked = session()
   keys(walked, "d")
   goTo(walked, "smartCursor")
-  assert.match(screen(walked), /Smart cursor\s+<\s+on\s+>\s+now/)
+  assert.match(screen(walked), /Smart cursor\s+<\s+on\s+>/)
   assert.ok(screen(walked).includes("(Q55)"), "the smart cursor's question is not shown")
   goTo(walked, "startFocus")
-  assert.match(screen(walked), /Opens on\s+<\s+menu\s+>\s+restart/)
-})
-
-test("the popup scrolls: a 'more' cue says how many rows are hidden, and the highlight is always in view", () => {
-  for (const size of SIZES) {
-    const side = session(spikeContext(), size)
-    keys(side, ESC, "s") // Settings from the game menu: the top of the list
-    const opening = placed(side)
-    assert.ok(opening.window !== null)
-    const hiddenAtFirst = opening.window.count - opening.window.visible
-    if (hiddenAtFirst === 0) continue
-    assert.match(screen(side), new RegExp(`v ${hiddenAtFirst} more`), `no "more" cue at ${size.columns}x${size.rows}`)
-    assert.doesNotMatch(screen(side), /\^ \d+ more/, "a cue for rows above the first one")
-    for (const id of SETTINGS_ORDER) {
-      if (id === SETTINGS_RESTART_ROW) break
-      assert.equal(side.build.state.overlayHighlight, id)
-      const on = placed(side).rows.some((row) => row.spec.kind === "setting" && row.spec.highlighted)
-      assert.ok(on, `row ${id} highlighted but not shown at ${size.columns}x${size.rows}`)
-      keys(side, DOWN)
-    }
-    // On the restart row the list shows its last flags, and says how many are above.
-    assert.match(screen(side), new RegExp(`\\^ ${hiddenAtFirst} more`))
-    assert.doesNotMatch(screen(side), /v \d+ more/)
-  }
-  // A click on the cue scrolls toward what it names; the wheel walks the list.
-  const side = session()
-  keys(side, ESC, "s")
-  const cue = placed(side).rows.find((row) => row.spec.kind === "more" && row.text !== "")
-  assert.ok(cue !== undefined)
-  click(side, placed(side).textColumn + 1, cue.row)
-  const window = placed(side).window
-  assert.ok(window !== null && window.offset > 0, "a click on the 'more' cue did not scroll")
-  const before = side.build.state.overlayHighlight
-  click(side, placed(side).box.left + 3, placed(side).box.top + 3, MOUSE_WHEEL_DOWN)
-  assert.equal(side.build.state.overlayHighlight, stepSettingsRow(before, 1))
+  assert.match(screen(walked), /Opens on\s+<\s+menu\s+>/)
 })
 
 test("Esc, x, d, a right click and a click outside all close it, and it holds the keyboard until then", () => {
@@ -210,19 +174,6 @@ test("Esc, x, d, a right click and a click outside all close it, and it holds th
   assert.equal(held.build.state.focus, "menu")
 })
 
-test("the top bar's [esc] menu is drawn at every size and a click on it opens the game menu, and a second closes it", () => {
-  for (const size of SIZES) {
-    const side = session(spikeContext(), size)
-    const hint = side.layout.menuHint
-    const line = screen(side).split("\n")[hint.row] ?? ""
-    assert.equal(line.slice(hint.from, hint.to + 1), "[esc] menu", `not drawn at ${size.columns}x${size.rows}`)
-    click(side, hint.from + 1, hint.row)
-    assert.equal(side.build.state.overlay, "menu", `a click did not open it at ${size.columns}x${size.rows}`)
-    click(side, hint.to, hint.row)
-    assert.equal(side.build.state.overlay, null, "a click on the hint over the open popup did not close it")
-  }
-})
-
 test("while Debug Mode is open its highlight is the only one on screen", () => {
   const side = session()
   keys(side, "d")
@@ -241,7 +192,7 @@ test("the popup fits inside the Grid pane at every size, and every question fits
     const columns = settingColumns(popup)
     for (const spec of [...DEBUG_FIELDS, ...PLAYER_FIELDS]) assert.ok(spec.label.length <= columns.labelLimit, `${spec.label} is cut`)
     const questions = [...DEBUG_FIELDS, ...PLAYER_FIELDS].map((spec) => spec.question)
-    for (const question of [...questions, DEBUG_RESTART_QUESTION, EXPORT_QUESTION]) {
+    for (const question of [...questions, EXPORT_QUESTION]) {
       const lines = wrapWords(question, popup.textLimit)
       assert.ok(lines.length <= DEBUG_NOTE_LINES, `"${question}" needs ${lines.length} lines at ${size.columns}x${size.rows}`)
     }
@@ -320,10 +271,13 @@ test("opens on the map: nothing changes until the restart, which keeps every fla
   keys(side, RIGHT)
   assert.equal(side.build.state.debug.startFocus, "grid")
   assert.equal(side.build.state.focus, "menu", "a restart flag changed the running screen")
-  assert.match(side.build.state.status.text, /applies on restart/)
+  assert.match(side.build.state.status.text, /applies after a restart/)
   goTo(side, "smartCursor")
   keys(side, LEFT) // and the smart cursor off
-  keys(side, "r")
+  // Closing Settings says a restart is needed; the game menu's [r] is the restart.
+  keys(side, ESC)
+  assert.equal(side.build.state.overlay, "message")
+  keys(side, ESC, "q", "r")
   const state = side.build.state
   assert.equal(state.overlay, null)
   assert.equal(state.focus, "grid")
@@ -334,9 +288,11 @@ test("opens on the map: nothing changes until the restart, which keeps every fla
   assert.equal(state.debug.smartCursor, false)
   assert.match(screen(side), /EXPLORE MAP {2}arrows move/)
 
-  // The restart row does the same by Enter.
+  // The game menu's Restart row does the same by Enter.
   const byEnter = session()
-  keys(byEnter, "d", ...Array.from({ length: DEBUG_RESTART_ROW }, () => DOWN), ENTER)
+  keys(byEnter, ESC, DOWN)
+  assert.equal(GAME_MENU_ROWS[byEnter.build.state.overlayHighlight], "restart")
+  keys(byEnter, ENTER)
   assert.equal(byEnter.build.state.status.text, "Build Phase restarted with these settings.")
 })
 
@@ -358,7 +314,7 @@ test("Settings open on a committed Build Phase too, so a playtest can start over
   assert.equal(side.build.state.committed, true)
   keys(side, "d")
   assert.equal(side.build.state.overlay, "settings")
-  keys(side, "r")
+  keys(side, "q", "r")
   assert.equal(side.build.state.committed, false)
 })
 
@@ -380,13 +336,15 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
   goTo(byKeyboard, "startFocus")
   keys(byKeyboard, RIGHT)
   goTo(byKeyboard, "pressedFlashMs")
-  keys(byKeyboard, LEFT, "r")
+  // `q` leaves Settings for the game menu, where a message says a restart is needed; Esc gives the
+  // game menu back, on its Restart row.
+  keys(byKeyboard, LEFT, "q", ESC, "r")
   keys(byKeyboard, TAB, DOWN, DOWN, SPACE, ENTER)
 
-  // By mouse there is no `d`: the top bar's [esc] menu, then the game menu's [s] Settings.
+  // By mouse there is no `d`: the top bar's "menu [esc]", then the game menu's [s] Settings.
   const byMouse = session()
-  const hint = byMouse.layout.menuHint
-  click(byMouse, hint.from, hint.row)
+  const menuHint = escHintSpan(byMouse.layout, escLabel(byMouse.build.state))
+  click(byMouse, menuHint.from, menuHint.row)
   const settingsOption = placed(byMouse).rows.find((row) => row.spec.kind === "option" && row.spec.hotkey === "s" && !row.secondLine)
   assert.ok(settingsOption !== undefined)
   assert.equal(GAME_MENU_ROWS[0], "settings")
@@ -396,7 +354,14 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
   clickValue(byMouse, "scrollMargin", "right")
   clickValue(byMouse, "startFocus", "right")
   clickValue(byMouse, "pressedFlashMs", "left")
-  const restart = placed(byMouse).rows.find((row) => row.spec.kind === "option")
+  // "close [esc]" in the top bar is Esc: back to the game menu, with the message over it; again, and
+  // the message closes; then the game menu's Restart.
+  const closeHint = (): ReturnType<typeof escHintSpan> => escHintSpan(byMouse.layout, escLabel(byMouse.build.state))
+  click(byMouse, closeHint().from, closeHint().row)
+  assert.equal(byMouse.build.state.overlay, "message")
+  click(byMouse, closeHint().to, closeHint().row)
+  assert.equal(byMouse.build.state.overlay, "menu")
+  const restart = placed(byMouse).rows.find((row) => row.spec.kind === "option" && row.spec.hotkey === "r")
   assert.ok(restart !== undefined)
   click(byMouse, placed(byMouse).textColumn + 4, restart.row)
   // The keyboard is on the map after the restart, in Explore Map, whose panel covers the menu: the

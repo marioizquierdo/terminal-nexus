@@ -8,6 +8,7 @@
 
 import { keysFromChunk } from "../view/playback.ts"
 import type { BuildLayout } from "./layout.ts"
+import { escLabel } from "./layout.ts"
 import { overlaySpec, placeOverlay } from "./overlay.ts"
 import type { Camera, Viewport } from "./camera.ts"
 import { buildKeyboardCommand, cursorKeyOf } from "./keyboard.ts"
@@ -105,6 +106,7 @@ export class BuildSession {
           buildMouseCommand(mouse, timing.camera ?? state.camera, layout, this.context.catalog, {
             ...(spec === null ? {} : { overlay: placeOverlay(layout, spec) }),
             explorePanel: exploring(state),
+            escLabel: escLabel(state),
           })
         : buildKeyboardCommand(key, {
             itemCount: this.context.catalog.length,

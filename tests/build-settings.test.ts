@@ -11,9 +11,9 @@ import { mkdtempSync, readFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { DEBUG_FIELDS, initialDebugFlags } from "../src/build/debug.ts"
-import { buildLayout } from "../src/build/layout.ts"
+import { buildLayout, escHintSpan, escLabel } from "../src/build/layout.ts"
 import { MOUSE_LEFT, formatMouseEvent } from "../src/build/mouse.ts"
-import { overlaySpec, placeOverlay } from "../src/build/overlay.ts"
+import { overlaySpec, placeOverlay, settingColumns } from "../src/build/overlay.ts"
 import type { PlacedOverlay } from "../src/build/overlay.ts"
 import { BuildSession } from "../src/build/session.ts"
 import { GAME_MENU_ROWS, PLAYER_FIELDS, SETTINGS_EXPORT_ROW, playerRow } from "../src/build/settings.ts"
@@ -93,7 +93,7 @@ function clickOption(side: Side, hotkey: string): void {
 
 // --- The game menu -----------------------------------------------------------------------------------
 
-test("Esc on the menu, q anywhere, and the top bar's [esc] menu all open the game menu: Settings, Quit, Back", () => {
+test("Esc on the menu, q anywhere, and the top bar's menu [esc] all open the game menu: Settings, Restart, Quit, Back", () => {
   for (const open of [[ESC], ["q"]]) {
     const side = session()
     keys(side, ...open)
@@ -101,12 +101,14 @@ test("Esc on the menu, q anywhere, and the top bar's [esc] menu all open the gam
     const text = screen(side)
     assert.match(text, /MENU/)
     assert.match(text, /\[s\] Settings/)
+    assert.match(text, /\[r\] Restart/)
     assert.match(text, /\[q\] Quit/)
     assert.match(text, /\[esc\] Back to the game/)
-    assert.match(text, /MENU {2}s settings {2}q quit {2}esc back to the game/)
+    assert.match(text, /MENU {2}s settings {2}r restart {2}q quit {2}esc back to the game/)
   }
   const clicked = session()
-  click(clicked, clicked.layout.menuHint.from + 1, clicked.layout.menuHint.row)
+  const hint = escHintSpan(clicked.layout, "menu [esc]")
+  click(clicked, hint.from + 1, hint.row)
   assert.equal(clicked.build.state.overlay, "menu")
   // From the map, Esc walks back to the menu first; a committed Build Phase opens the game menu too.
   const grid = session()
@@ -127,7 +129,7 @@ test("leaving always goes through the game menu: its q, Enter on Quit, or a clic
   assert.equal(byKey.quits, 1)
 
   const byEnter = session()
-  keys(byEnter, ESC, DOWN)
+  keys(byEnter, ESC, DOWN, DOWN)
   assert.equal(GAME_MENU_ROWS[byEnter.build.state.overlayHighlight], "quit")
   keys(byEnter, ENTER)
   assert.equal(byEnter.quits, 1)
@@ -137,7 +139,7 @@ test("leaving always goes through the game menu: its q, Enter on Quit, or a clic
   clickOption(byClick, "q")
   assert.equal(byClick.quits, 1)
 
-  // Up/Down walk the three rows and come round; Enter on Back goes back to the game.
+  // Up/Down walk the four rows and come round; Enter on Back goes back to the game.
   const walk = session()
   keys(walk, ESC, UP)
   assert.equal(GAME_MENU_ROWS[walk.build.state.overlayHighlight], "back")
@@ -158,7 +160,7 @@ test("[s] opens Settings at the player's settings; Esc goes back to the game men
   assert.deepEqual(side.build.state.overlayUnder, ["menu"])
   const text = screen(side)
   assert.match(text, /YOUR SETTINGS - saved/)
-  assert.match(text, /Background\s+<\s+dark\s+>\s+now/)
+  assert.match(text, /Background\s+<\s+dark\s+>/)
   assert.match(text, /match your terminal's own/, "the highlighted setting does not say what it is for")
   keys(side, ESC)
   assert.equal(side.build.state.overlay, "menu")
@@ -199,7 +201,8 @@ test("a player setting changes at once, is handed to the live loop to save, and 
   keys(side, DOWN, DOWN, ENTER)
   assert.equal(side.build.state.settings.reducedMotion, true)
   const before = side.build.state.settings
-  keys(side, "r")
+  keys(side, "q", "r") // the game menu's Restart
+  assert.equal(side.build.state.status.text, "Build Phase restarted with these settings.")
   assert.equal(side.build.state.settings, before, "a restart forgot the player's settings")
   assert.equal(side.saved.length, 8, "every change, and only a change, is handed on to be saved")
 })
@@ -214,7 +217,7 @@ test("every player setting's value box is a click target, the same as Left and R
     keys(byClick, ESC, "s")
     const row = placed(byClick).rows.find((entry) => entry.spec.kind === "setting" && entry.spec.label === spec.label)
     assert.ok(row !== undefined, `${spec.label} is not on screen`)
-    click(byClick, placed(byClick).box.right - 12, row.row)
+    click(byClick, settingColumns(placed(byClick)).valueTo, row.row)
     assert.deepEqual(byClick.build.state.settings, byKey.build.state.settings, spec.label)
   }
 })
@@ -251,7 +254,7 @@ test("[e] shows the export in a popup, hands the same text to the adapter, and E
   keys(byEnter, ESC, "s", UP, ENTER) // Up from the first row comes round to the last: Export
   assert.equal(byEnter.build.state.overlay, "export")
   const byClick = session()
-  keys(byClick, "d")
+  keys(byClick, ESC, "s", UP) // the list's last row, in view
   clickOption(byClick, "e")
   assert.equal(byClick.build.state.overlay, "export")
   assert.equal(byClick.exports.length, 1)
@@ -410,18 +413,25 @@ test("the settings flow by keys, by clicks, and from a driver script is the same
   keys(byKeyboard, DOWN, RIGHT, "e")
 
   const byMouse = session()
-  click(byMouse, byMouse.layout.menuHint.from, byMouse.layout.menuHint.row)
+  const menuHint = escHintSpan(byMouse.layout, escLabel(byMouse.build.state))
+  click(byMouse, menuHint.from, menuHint.row)
   clickOption(byMouse, "s")
   const background = placed(byMouse).rows.find((entry) => entry.spec.kind === "setting" && entry.spec.label === "Background")
   assert.ok(background !== undefined)
-  click(byMouse, placed(byMouse).box.right - 12, background.row)
+  click(byMouse, settingColumns(placed(byMouse)).valueTo, background.row)
   // By mouse, the lighting row is reached with the wheel; its value box is the click.
   while (!placed(byMouse).rows.some((entry) => entry.spec.kind === "setting" && entry.spec.label === "Lighting")) {
     keys(byMouse, formatMouseEvent(65, placed(byMouse).box.left + 3, placed(byMouse).box.top + 3))
   }
   const lighting = placed(byMouse).rows.find((entry) => entry.spec.kind === "setting" && entry.spec.label === "Lighting")
   assert.ok(lighting !== undefined)
-  click(byMouse, placed(byMouse).box.right - 12, lighting.row)
+  click(byMouse, settingColumns(placed(byMouse)).valueTo, lighting.row)
+  // Export settings is the list's last row: the scroll bar's lower half brings it into view.
+  while (!placed(byMouse).rows.some((entry) => entry.spec.kind === "option" && entry.spec.hotkey === "e")) {
+    const bar = placed(byMouse).scrollBar
+    assert.ok(bar !== null, "the list overflows, so it has a scroll bar")
+    click(byMouse, bar.column, bar.bottom)
+  }
   clickOption(byMouse, "e")
 
   const script: readonly BuildCommand[] = [

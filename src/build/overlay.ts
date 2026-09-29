@@ -1,23 +1,28 @@
 // The Build Phase's popups — one shape for all of them: the Nexus powers, the start-the-Pulse
-// question, the game menu (Settings, Quit), Settings with its Experiments, and the export. Extracted
-// when there were three real uses (AGENTS.md: "extract a framework only after two real uses reveal the
-// boundary"); Debug Mode, the fourth — Settings since the owner's 2026-09-28 direction — added the one
-// row the first three had no use for: a setting whose value Left and Right change.
+// question, the game menu (Settings, Restart, Quit), Settings with its Experiments, the export, and a
+// message. Extracted when there were three real uses (AGENTS.md: "extract a framework only after two
+// real uses reveal the boundary"); Debug Mode, the fourth — Settings since the owner's 2026-09-28
+// direction — added the one row the first three had no use for: a setting whose value Left and Right
+// change. The message (feedback F34, 2026-09-29) is the shape with nothing to choose: a title and text.
 //
 // A popup is **data**: a title and a list of rows, some of them options that name the command a click
-// on them sends. `overlaySpec` derives it from the state; `placeOverlay` puts it on the frame;
-// `overlayHitAt` answers what a click at a frame cell means. The composer draws from the same placed
-// spec the mouse adapter hit-tests against, so a click can never land on a row the frame did not draw
-// there — the same guarantee `layout.ts` gives the side panel.
+// on them sends, and at most one run of rows that scrolls. `overlaySpec` derives it from the state;
+// `placeOverlay` puts it on the frame; `overlayHitAt` answers what a click at a frame cell means. The
+// composer draws from the same placed spec the mouse adapter hit-tests against, so a click can never
+// land on a row the frame did not draw there — the same guarantee `layout.ts` gives the side panel.
+//
+// **Esc is not in a popup** (feedback F37): the top bar's right end says what Esc does — "close [esc]"
+// while a popup is open — and is its click target, so a popup's own border carries only its title and,
+// beside a list that overflows, its scroll bar.
 
-import type { DebugApplies } from "./debug.ts"
-import { DEBUG_FIELDS, DEBUG_RESTART_QUESTION, fieldSpec, formatDebugValue } from "./debug.ts"
+import { DEBUG_FIELDS, fieldSpec, formatDebugValue } from "./debug.ts"
 import type { BuildLayout } from "./layout.ts"
 import {
   GAME_MENU_ROWS,
   PLAYER_FIELDS,
+  RESTART_DESCRIPTION,
   SETTINGS_EXPORT_ROW,
-  SETTINGS_RESTART_ROW,
+  SETTINGS_ORDER,
   formatPlayerValue,
   playerRow,
   playerSpec,
@@ -25,7 +30,7 @@ import {
 } from "./settings.ts"
 import type { BuildContext, BuildState } from "./state.ts"
 import { exportText, nexusPowers } from "./state.ts"
-import type { BuildCommand } from "./types.ts"
+import type { BuildCommand, PopupMessage } from "./types.ts"
 
 export type OverlayRow =
   | Readonly<{ kind: "blank" }>
@@ -45,35 +50,35 @@ export type OverlayRow =
       description?: string
     }>
   /**
-   * A setting (Debug Mode): its name, its value between `<` and `>`, and when a change is seen. Left
-   * and Right change the value; a click on the left half of the value is Left, on the right half is
-   * Right, and anywhere else on the row highlights it.
+   * A setting: its name and its value between `<` and `>` (feedback F34: no "now"/"restart" column —
+   * a setting that only applies after a restart says so in a message when Settings closes). Left and
+   * Right change the value; a click on the left half of the value is Left, on the right half is Right,
+   * and anywhere else on the row highlights it.
    */
   | Readonly<{
       kind: "setting"
       label: string
       value: string
-      applies: DebugApplies
       highlighted: boolean
       decrease: BuildCommand
       increase: BuildCommand
       select: BuildCommand
     }>
-  /** Text wrapped at words to the popup's width, in a fixed number of lines so the popup keeps its
-   *  height whichever text it holds. A line that does not fit is dropped, never cut. */
-  | Readonly<{ kind: "note"; text: string; lines: number }>
-  /**
-   * The line just above or just below a list that scrolls (gate 5H): blank while the list shows its
-   * own end, and "^ 3 more" / "v 12 more" while rows are hidden past it — the visible "more" cue. A
-   * click on it brings the nearest hidden row into view.
-   */
-  | Readonly<{ kind: "more"; direction: "above" | "below" }>
+  /** Text wrapped at words to the popup's width. With `lines`, in exactly that many lines, so the
+   *  popup keeps its height whichever text it holds — a line that does not fit is dropped, never cut;
+   *  without, in as many as the text needs (a message). */
+  | Readonly<{ kind: "note"; text: string; lines?: number }>
+  /** A line across the popup, border to border: what is above it is apart from what is below — in
+   *  Settings, the list from what its highlighted row is for (feedback F35). */
+  | Readonly<{ kind: "rule" }>
 
 /**
- * A run of one-line rows that scrolls when the popup is taller than the Grid pane can hold (gate 5H —
- * Debug Mode, full at 80x24 with gate 5G's five flags). `from` and `to` (exclusive) index `rows`;
- * `highlight` is the row the keyboard is on, which is always kept in view; `select` is the command
- * that highlights the scrolling row at `index` (0 is `rows[from]`), for a click on a "more" line.
+ * A popup's one run of one-line rows that scrolls when the popup is taller than the Grid pane can
+ * hold (gate 5H — Settings and the export). **A popup has at most one** (owner, 2026-09-29, feedback
+ * F36: "We can safely allow only one scrolling section on the whole popup"), so the scroll bar has
+ * one place to be: the right border beside it. `from` and `to` (exclusive) index `rows`; `highlight`
+ * is the row the keyboard is on, which is always kept in view; `select` is the command that highlights
+ * the scrolling row at `index` (0 is `rows[from]`) — what a click on the scroll bar sends.
  */
 export type OverlayScroll = Readonly<{
   from: number
@@ -84,8 +89,10 @@ export type OverlayScroll = Readonly<{
 
 export type OverlaySpec = Readonly<{ title: string; rows: readonly OverlayRow[]; scroll?: OverlayScroll }>
 
-/** How many lines the Settings popup keeps for what the highlighted row is for. Every question fits
- *  in this many at the narrowest popup (a test holds them to it). */
+/** How many lines the Settings popup keeps under its list, below a line across the popup, for what
+ *  the highlighted row is for. Every question fits in this many at the narrowest popup (a test holds
+ *  them to it); the rows the list's "more" lines and its two fixed rows took went to the list itself
+ *  (feedback F35). */
 export const DEBUG_NOTE_LINES = 3
 
 /** The Settings popup's two section headings, drawn in its list. */
@@ -95,12 +102,14 @@ export const EXPORT_QUESTION =
   "Shows every setting and experiment as text, and copies it, to paste into a pull request comment."
 
 /**
- * The Settings popup (owner, 2026-09-28): the player's own settings, then — clearly apart, at the
- * bottom — the Experiments, every Debug Mode flag with the question it serves; then the restart and
- * the export, and what the highlighted row is for. The list scrolls; its two headings scroll with it.
+ * The Settings popup (owner, 2026-09-28; laid out again from his feedback F35, 2026-09-29): its
+ * position in the list beside the title — "(3/28)" — then the player's own settings, then, clearly
+ * apart, the Experiments, each with the question it serves, and Export settings as the list's last
+ * row; then a line across the popup, and under it what the highlighted row is for. The list scrolls;
+ * its two headings scroll with it.
  */
 function settingsSpec(state: BuildState): OverlaySpec {
-  const rows: OverlayRow[] = [{ kind: "more", direction: "above" }]
+  const rows: OverlayRow[] = []
   const from = rows.length
   /** Where each row id sits in `rows`, so the window can follow the highlight. */
   const lineOf = new Map<number, number>()
@@ -113,7 +122,6 @@ function settingsSpec(state: BuildState): OverlaySpec {
       kind: "setting",
       label: spec.label,
       value: formatPlayerValue(state.settings, spec.field),
-      applies: "now",
       highlighted: row === state.overlayHighlight,
       decrease: { kind: "setting-adjust", field: spec.field, step: -1 },
       increase: { kind: "setting-adjust", field: spec.field, step: 1 },
@@ -127,61 +135,51 @@ function settingsSpec(state: BuildState): OverlaySpec {
       kind: "setting",
       label: spec.label,
       value: formatDebugValue(state.debug, spec.field),
-      applies: spec.applies,
       highlighted: row === state.overlayHighlight,
       decrease: { kind: "debug-adjust", field: spec.field, step: -1 },
       increase: { kind: "debug-adjust", field: spec.field, step: 1 },
       select: select(row),
     })
   })
+  lineOf.set(SETTINGS_EXPORT_ROW, rows.length)
+  rows.push({
+    kind: "option",
+    hotkey: "e",
+    label: "Export settings",
+    command: { kind: "export-settings" },
+    highlighted: state.overlayHighlight === SETTINGS_EXPORT_ROW,
+  })
   const to = rows.length
-  rows.push(
-    { kind: "more", direction: "below" },
-    {
-      kind: "option",
-      hotkey: "r",
-      label: "Restart with these settings",
-      command: { kind: "debug-restart" },
-      highlighted: state.overlayHighlight === SETTINGS_RESTART_ROW,
-    },
-    {
-      kind: "option",
-      hotkey: "e",
-      label: "Export settings",
-      command: { kind: "export-settings" },
-      highlighted: state.overlayHighlight === SETTINGS_EXPORT_ROW,
-    },
-  )
   const highlighted = settingsRowAt(state.overlayHighlight)
   const note =
-    highlighted === null || highlighted.kind === "restart"
-      ? DEBUG_RESTART_QUESTION
-      : highlighted.kind === "export"
-        ? EXPORT_QUESTION
-        : highlighted.kind === "player"
-          ? playerSpec(highlighted.field).question
-          : fieldSpec(highlighted.field).question
-  rows.push({ kind: "note", text: note, lines: DEBUG_NOTE_LINES })
-  // On the restart and export rows the list keeps showing its last rows, the ones nearest to them.
+    highlighted === null || highlighted.kind === "export"
+      ? EXPORT_QUESTION
+      : highlighted.kind === "player"
+        ? playerSpec(highlighted.field).question
+        : fieldSpec(highlighted.field).question
+  rows.push({ kind: "rule" }, { kind: "note", text: note, lines: DEBUG_NOTE_LINES })
   const line = lineOf.get(state.overlayHighlight) ?? to - 1
   // A heading directly above the highlighted row is kept in view with it where the window allows: the
   // first setting of each section opens with its heading showing.
   const highlight = rows[line - 1]?.kind === "heading" ? line - 1 : line
-  // Clicks on a "more" line highlight the setting nearest it; a heading there selects the row under it.
+  // A click on the scroll bar highlights the row it brings into view; a heading there selects the row
+  // under it.
   const selectLine = (index: number): BuildCommand => {
     const at = from + index
     const entry = rows[at]?.kind === "heading" ? rows[at + 1] : rows[at]
-    return entry?.kind === "setting" ? entry.select : select(state.overlayHighlight)
+    if (entry?.kind === "setting") return entry.select
+    return entry?.kind === "option" ? select(SETTINGS_EXPORT_ROW) : select(state.overlayHighlight)
   }
+  const position = Math.max(0, SETTINGS_ORDER.indexOf(state.overlayHighlight)) + 1
   return {
-    title: "SETTINGS",
+    title: `SETTINGS (${position}/${SETTINGS_ORDER.length})`,
     rows,
     scroll: { from, to, highlight, select: selectLine },
   }
 }
 
-/** The game menu: Settings, Quit, and the way back (owner, 2026-09-28). Every row is an option, and
- *  the highlight is `GAME_MENU_ROWS`'s index. */
+/** The game menu: Settings, Restart, Quit, and the way back (owner, 2026-09-28; Restart since
+ *  feedback F34). Every row is an option, and the highlight is `GAME_MENU_ROWS`'s index. */
 function menuSpec(state: BuildState): OverlaySpec {
   const on = (row: (typeof GAME_MENU_ROWS)[number]): boolean => GAME_MENU_ROWS[state.overlayHighlight] === row
   return {
@@ -195,6 +193,14 @@ function menuSpec(state: BuildState): OverlaySpec {
         command: { kind: "open-settings", section: "settings" },
         highlighted: on("settings"),
         description: "Colours, experiments, export",
+      },
+      {
+        kind: "option",
+        hotkey: "r",
+        label: "Restart",
+        command: { kind: "debug-restart" },
+        highlighted: on("restart"),
+        description: RESTART_DESCRIPTION,
       },
       {
         kind: "option",
@@ -214,7 +220,6 @@ function menuSpec(state: BuildState): OverlaySpec {
 function exportSpec(context: BuildContext, state: BuildState): OverlaySpec {
   const rows: OverlayRow[] = []
   if (context.exportDestination !== undefined) rows.push({ kind: "note", text: context.exportDestination, lines: 3 })
-  rows.push({ kind: "more", direction: "above" })
   const from = rows.length
   exportText(context, state)
     .trimEnd()
@@ -223,12 +228,21 @@ function exportSpec(context: BuildContext, state: BuildState): OverlaySpec {
       rows.push({ kind: "text", text: line, code: true, ...(index === state.overlayHighlight ? { highlighted: true } : {}) })
     })
   const to = rows.length
-  rows.push({ kind: "more", direction: "below" }, { kind: "option", hotkey: "esc", label: "Back to Settings", command: { kind: "cancel" } })
+  rows.push({ kind: "option", hotkey: "esc", label: "Back to Settings", command: { kind: "cancel" } })
   return {
     title: "EXPORT SETTINGS",
     rows,
     scroll: { from, to, highlight: from + state.overlayHighlight, select: (line) => ({ kind: "export-select", line }) },
   }
+}
+
+/**
+ * A message popup: a title and its text, wrapped to the popup's width in as many lines as it needs,
+ * and nothing to choose. It holds the keyboard like any popup; Esc (or `x`, or a right click) and a
+ * click outside it close it, and nothing else does (feedback F34).
+ */
+export function messageSpec(message: PopupMessage): OverlaySpec {
+  return { title: message.title, rows: [{ kind: "blank" }, { kind: "note", text: message.text }] }
 }
 
 /** The popup the state has open, as data, or `null`. */
@@ -277,6 +291,8 @@ export function overlaySpec(context: BuildContext, state: BuildState): OverlaySp
       return settingsSpec(state)
     case "export":
       return exportSpec(context, state)
+    case "message":
+      return state.message === null ? null : messageSpec(state.message)
     default:
       return null
   }
@@ -286,6 +302,15 @@ export function overlaySpec(context: BuildContext, state: BuildState): OverlaySp
  *  their own wrapped line of it in `text`. */
 export type PlacedRow = Readonly<{ row: number; spec: OverlayRow; secondLine: boolean; text?: string }>
 
+/**
+ * The scroll bar in a popup's right border, beside its scrolling rows, while they overflow (feedback
+ * F36): an up symbol on the first of those rows, a down symbol on the last, and between them a track
+ * with a thumb showing which part of the list is in view. A click on its upper half scrolls up, on its
+ * lower half down. `thumbTop`..`thumbBottom` (inclusive) is empty (`thumbTop > thumbBottom`) when the
+ * bar has no room between its two symbols.
+ */
+export type ScrollBar = Readonly<{ column: number; top: number; bottom: number; thumbTop: number; thumbBottom: number }>
+
 export type PlacedOverlay = Readonly<{
   spec: OverlaySpec
   /** The border's own rectangle, inclusive. The shadow falls one cell right of it and one below. */
@@ -293,15 +318,16 @@ export type PlacedOverlay = Readonly<{
   textColumn: number
   textLimit: number
   rows: readonly PlacedRow[]
-  /** `[esc]` in the top border's right end: the close hotkey, drawn, and its click target. */
-  close: Readonly<{ row: number; from: number; to: number }>
   /** The scrolling list's window, or `null` for a popup with no list that scrolls. */
   window: ScrollWindow | null
+  /** The scroll bar, or `null` while nothing is scrolled out of view. */
+  scrollBar: ScrollBar | null
 }>
 
 /** Wider than the gate 5F popup (owner, 2026-09-27: "the popup probably larger too"), never wider than
  *  the Grid pane it sits over, less a column for its shadow. */
 const POPUP_WIDTH = 52
+/** `[esc]` as the Explore Map panel's header draws it. No popup draws it any more (feedback F37). */
 export const CLOSE_LABEL = "[esc]"
 
 /** Splits text into lines of at most `limit` glyphs, breaking between words — never inside one, unless
@@ -326,7 +352,7 @@ function linesOf(entry: OverlayRow, textLimit: number): readonly (string | undef
   if (entry.kind === "option" && entry.description !== undefined) return [undefined, undefined]
   if (entry.kind === "note") {
     const wrapped = wrapWords(entry.text, textLimit)
-    return Array.from({ length: entry.lines }, (_, index) => wrapped[index] ?? "")
+    return Array.from({ length: entry.lines ?? Math.max(1, wrapped.length) }, (_, index) => wrapped[index] ?? "")
   }
   return [undefined]
 }
@@ -346,6 +372,17 @@ export function scrollWindow(count: number, visible: number, highlight: number):
   return { offset, visible: shown, count }
 }
 
+/** The scroll bar beside frame rows `top`..`bottom`, for this window — or `null` when nothing is
+ *  hidden. The thumb's length is the share of the list in view, and its place the share above it. */
+function scrollBarFor(column: number, top: number, bottom: number, window: ScrollWindow): ScrollBar | null {
+  if (window.visible >= window.count) return null
+  const track = bottom - top - 1
+  if (track <= 0) return { column, top, bottom, thumbTop: top + 1, thumbBottom: top }
+  const size = Math.min(track, Math.max(1, Math.round((track * window.visible) / window.count)))
+  const start = Math.round(((track - size) * window.offset) / (window.count - window.visible))
+  return { column, top, bottom, thumbTop: top + 1 + start, thumbBottom: top + start + size }
+}
+
 export function placeOverlay(layout: BuildLayout, spec: OverlaySpec): PlacedOverlay {
   const paneWidth = layout.gridBox.right - layout.gridBox.left - 1
   const paneHeight = layout.paneBottom - layout.gridBox.top - 1
@@ -360,52 +397,41 @@ export function placeOverlay(layout: BuildLayout, spec: OverlaySpec): PlacedOver
     scroll === undefined
       ? null
       : scrollWindow(scroll.to - scroll.from, scroll.to - scroll.from - Math.max(0, allLines - room), scroll.highlight - scroll.from)
-  const shownRows = spec.rows.filter((_, index) => {
+  const shown = (index: number): boolean => {
     if (scroll === undefined || window === null || index < scroll.from || index >= scroll.to) return true
     const position = index - scroll.from
     return position >= window.offset && position < window.offset + window.visible
-  })
-  const lines = shownRows.reduce((count, row) => count + linesOf(row, textLimit).length, 0)
+  }
+  const lines = spec.rows.reduce((count, row, index) => count + (shown(index) ? linesOf(row, textLimit).length : 0), 0)
   // Border, the rows, a blank row of padding, border.
   const height = lines + 3
   const left = layout.gridBox.left + 1 + Math.floor((paneWidth - width - 1) / 2)
   const top = Math.max(layout.offset.row + 1, layout.gridBox.top + 1 + Math.floor((paneHeight - height - 1) / 2))
+  const right = left + width - 1
   const placed: PlacedRow[] = []
   let row = top + 1
-  for (const entry of shownRows) {
-    if (entry.kind === "more") {
-      placed.push({ row, spec: entry, secondLine: false, text: moreText(entry.direction, window) })
+  /** The frame rows the scrolling section is drawn on, first and last. */
+  const section: number[] = []
+  for (const [index, entry] of spec.rows.entries()) {
+    if (!shown(index)) continue
+    const inSection = scroll !== undefined && index >= scroll.from && index < scroll.to
+    for (const [line, text] of linesOf(entry, textLimit).entries()) {
+      if (inSection) section.push(row)
+      placed.push({ row, spec: entry, secondLine: line > 0, ...(text === undefined ? {} : { text }) })
       row += 1
-      continue
     }
-    linesOf(entry, textLimit).forEach((text, index) => {
-      placed.push({ row, spec: entry, secondLine: index > 0, ...(text === undefined ? {} : { text }) })
-      row += 1
-    })
   }
-  const right = left + width - 1
+  const first = section[0]
+  const last = section[section.length - 1]
   return {
     spec,
     box: { left, top, right, bottom: top + height - 1 },
     textColumn: left + 2,
     textLimit,
     rows: placed,
-    close: { row: top, from: right - 1 - CLOSE_LABEL.length, to: right - 2 },
     window,
+    scrollBar: window === null || first === undefined || last === undefined ? null : scrollBarFor(right, first, last, window),
   }
-}
-
-/** How many rows a "more" line stands for: those hidden past it, or 0 when there are none. */
-function hiddenPast(direction: "above" | "below", window: ScrollWindow | null): number {
-  if (window === null) return 0
-  return direction === "above" ? window.offset : window.count - window.offset - window.visible
-}
-
-/** "^ 3 more" / "v 12 more", or nothing while the list shows its own end. */
-function moreText(direction: "above" | "below", window: ScrollWindow | null): string {
-  const hidden = hiddenPast(direction, window)
-  if (hidden === 0) return ""
-  return `${direction === "above" ? "^" : "v"} ${hidden} more`
 }
 
 /** What a click at a frame cell means with this popup open. `outside` is the caller's to act on: a
@@ -415,23 +441,32 @@ export type OverlayHit =
   | Readonly<{ kind: "command"; command: BuildCommand }>
   | Readonly<{ kind: "none" }>
 
+/**
+ * What a click on the scroll bar at frame row `row` sends: on its upper half (the up symbol's side),
+ * the row just above the window, and on its lower half the row just below it — highlighted, which
+ * brings it into view, as the wheel would a line at a time. Nothing when the list already shows its
+ * own end that way.
+ */
+function scrollBarCommand(placed: PlacedOverlay, row: number): BuildCommand | null {
+  const { scrollBar: bar, window } = placed
+  const scroll = placed.spec.scroll
+  if (bar === null || window === null || scroll === undefined) return null
+  const up = (row - bar.top) * 2 < bar.bottom - bar.top + 1
+  if (up) return window.offset === 0 ? null : scroll.select(window.offset - 1)
+  const below = window.offset + window.visible
+  return below >= window.count ? null : scroll.select(below)
+}
+
 export function overlayHitAt(placed: PlacedOverlay, column: number, row: number): OverlayHit {
-  const { box } = placed
+  const { box, scrollBar: bar } = placed
   if (column < box.left || column > box.right || row < box.top || row > box.bottom) return { kind: "outside" }
-  if (row === placed.close.row && column >= placed.close.from && column <= placed.close.to) {
-    return { kind: "command", command: { kind: "cancel" } }
+  if (bar !== null && column === bar.column && row >= bar.top && row <= bar.bottom) {
+    const command = scrollBarCommand(placed, row)
+    return command === null ? { kind: "none" } : { kind: "command", command }
   }
   if (column < placed.textColumn || column >= placed.textColumn + placed.textLimit) return { kind: "none" }
   const hit = placed.rows.find((candidate) => candidate.row === row)
   if (hit !== undefined && hit.spec.kind === "option") return { kind: "command", command: hit.spec.command }
-  if (hit !== undefined && hit.spec.kind === "more") {
-    // A click on "^ 3 more" / "v 12 more" highlights the nearest hidden row, which brings it into view.
-    const { window } = placed
-    const scroll = placed.spec.scroll
-    if (window === null || scroll === undefined || hiddenPast(hit.spec.direction, window) === 0) return { kind: "none" }
-    const index = hit.spec.direction === "above" ? window.offset - 1 : window.offset + window.visible
-    return { kind: "command", command: scroll.select(index) }
-  }
   if (hit !== undefined && hit.spec.kind === "setting") {
     const columns = settingColumns(placed)
     if (column >= columns.valueFrom && column < columns.valueMiddle) return { kind: "command", command: hit.spec.decrease }
@@ -441,15 +476,13 @@ export function overlayHitAt(placed: PlacedOverlay, column: number, row: number)
   return { kind: "none" }
 }
 
-/** "restart", the longer of the two words a setting's "when is it seen" column holds. */
-const APPLIES_WIDTH = 7
 /** `<`, a space, eight glyphs of value, a space, `>` — room for "140 ms" or "8 tiles". */
 const VALUE_WIDTH = 12
 
 /**
- * Where a setting row's parts sit — its name, its `< value >` box and its "now" / "restart" — as frame
- * columns, the same for every setting row in a popup. Read by the composer to draw them and by
- * `overlayHitAt` to hit-test them. The value box is split down the middle: the left half is the
+ * Where a setting row's parts sit — its name and its `< value >` box, the box against the row's right
+ * end — as frame columns, the same for every setting row in a popup. Read by the composer to draw them
+ * and by `overlayHitAt` to hit-test them. The value box is split down the middle: the left half is the
  * decrease target and the right half the increase one, each six columns wide, so a finger on a phone
  * can hit it (the browser playtest page).
  */
@@ -458,16 +491,13 @@ export function settingColumns(placed: PlacedOverlay): Readonly<{
   valueFrom: number
   valueMiddle: number
   valueTo: number
-  appliesRight: number
 }> {
-  const appliesRight = placed.textColumn + placed.textLimit - 1
-  const valueTo = appliesRight - APPLIES_WIDTH - 1
+  const valueTo = placed.textColumn + placed.textLimit - 1
   const valueFrom = valueTo - VALUE_WIDTH + 1
   return {
     labelLimit: valueFrom - 1 - placed.textColumn,
     valueFrom,
     valueMiddle: valueFrom + VALUE_WIDTH / 2,
     valueTo,
-    appliesRight,
   }
 }
