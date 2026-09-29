@@ -68,8 +68,15 @@ function assertNoDependencyOn(from: string, forbidden: readonly string[]): void 
   }
 }
 
-test("src/pulse never reaches the view, the report, or the shell", () => {
-  assertNoDependencyOn("pulse", ["view", "report", "cli"])
+test("src/pulse never reaches the view, the report, the shell, or the match layer", () => {
+  // The match layer (gate 6A: the opening state and Recall) sits beside the tick kernel and is never
+  // called from inside it, so no Pulse's hashes can depend on it.
+  assertNoDependencyOn("pulse", ["view", "report", "cli", "match"])
+})
+
+test("src/match never reaches the view, the report, the shell, or the Build Phase", () => {
+  // Rules-layer code around the kernel: deterministic, and blind to how anything is drawn or asked for.
+  assertNoDependencyOn("match", ["view", "report", "cli", "build"])
 })
 
 test("the simulation never reaches a glyph", () => {
@@ -84,6 +91,7 @@ test("the simulation never reaches a glyph", () => {
     "content/index.ts",
     "scenario/index.ts",
     "pulse/index.ts",
+    "match/index.ts",
     "state/types.ts",
     "events/types.ts",
     "report/index.ts",
@@ -111,7 +119,7 @@ test("src/view never reaches the kernel", () => {
 })
 
 test("the deterministic modules name no clock, no Math.random, and no terminal", () => {
-  const kernel = ["grid", "rng", "content", "events", "state", "scenario", "pulse"]
+  const kernel = ["grid", "rng", "content", "events", "state", "scenario", "pulse", "match"]
   const forbidden = [
     /\bMath\s*\.\s*random\b/,
     /\bDate\s*\.\s*now\b/,
