@@ -11,7 +11,7 @@ import { BuildSession } from "../src/build/session.ts"
 import { SPIKE_PULSE_SEED, SPIKE_PULSE_TICKS, SPIKE_START_CURSOR, spikePulse } from "../src/build/catalog.ts"
 import { startPulse } from "../src/cli/pulse-run.ts"
 import { spikeContext } from "../src/cli/spike.ts"
-import { tilesOf } from "../src/grid/coords.ts"
+import { inBounds, tilesOf } from "../src/grid/coords.ts"
 import { openingState } from "../src/match/index.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
 import { hashState } from "../src/state/serialize.ts"
@@ -101,7 +101,7 @@ test("the timeline runs to the outcome and no further; Recall hands the next Bui
     const keys = new Set<string>()
     for (const entity of recall.state.entities) {
       for (const tile of tilesOf(entity.anchor, FIXTURE_REGISTRY.get(entity.contentId).footprint)) {
-        assert.ok(tile.x >= 0 && tile.y >= 0 && tile.x < timeline.grid.width && tile.y < timeline.grid.height)
+        assert.ok(inBounds(timeline.grid, tile))
         const key = `${tile.x},${tile.y}`
         assert.ok(!keys.has(key), `${key} is covered twice after Recall`)
         keys.add(key)

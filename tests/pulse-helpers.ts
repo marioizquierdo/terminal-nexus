@@ -8,6 +8,7 @@ import type { BuildLayout } from "../src/build/layout.ts"
 import { buildLayout } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildContext } from "../src/build/state.ts"
+import { MOUSE_LEFT, formatMouseEvent } from "../src/build/mouse.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { startPulse } from "../src/cli/pulse-run.ts"
 import { spikeContext } from "../src/cli/spike.ts"
@@ -32,6 +33,10 @@ export const DEFENCE: readonly Spot[] = [
   [TURRET, 22, 12],
   [HATCHERY, 20, 14],
 ]
+
+/** The same plan as a key script: the War Chest, then each spot's building armed by its digit and placed by two
+ *  clicks on its tile — for the tests, screenshots and playtests that press keys rather than drive commands. */
+export const DEFENCE_KEYS = ["n 2", ...DEFENCE.map(([index, x, y]) => `${index + 1} click:${x},${y} click:${x},${y}`)].join(" ")
 
 export type Scenario = Readonly<{
   plan?: readonly Spot[]
@@ -111,8 +116,29 @@ export function frameOf(played: Pick<Played, "build" | "context" | "layout">, ca
   )
 }
 
+/** A mouse click at a frame cell (0-based column and row), through the real mouse adapter; `now` is the screen's
+ *  clock when the click arrived, for anything that times it. */
+export function click(
+  played: Pick<Played, "build" | "layout">,
+  column: number,
+  row: number,
+  button: number = MOUSE_LEFT,
+  now?: number,
+): void {
+  played.build.handleData(formatMouseEvent(button, column + 1, row + 1), played.layout, now === undefined ? {} : { now })
+}
+
 /** Time passes for the Pulse on screen: the session's clock starts at zero when this is first called
  *  right after the commit, and `ms` is then milliseconds since. */
 export function at(played: Pick<Played, "build">, ms: number): void {
   played.build.advance(ms)
+}
+
+/** The Pulse played from its start until just after its result stands (a hundred milliseconds past the walk
+ *  home). A Pulse's time only moves forward, so this is for a Pulse nothing else has been asked of yet. */
+export function atHome(played: Pick<Played, "build">): void {
+  const pulse = played.build.pulse
+  assert.ok(pulse !== null, "there is no Pulse on screen")
+  played.build.advance(0)
+  played.build.advance(pulse.times(played.build.state.debug).homeMs + 100)
 }

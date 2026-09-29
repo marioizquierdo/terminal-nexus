@@ -529,6 +529,10 @@ export function rowOfField(field: DebugField): number {
   return DEBUG_FIELDS.findIndex((spec) => spec.field === field)
 }
 
+/** Where `d` opens Settings while a Nexus Pulse is on screen: the first of the ending's own Experiments,
+ *  which are what someone watching it wants to change, rather than the Build Phase's first. */
+export const FIRST_PULSE_EXPERIMENT_ROW = rowOfField("endWarnMs")
+
 /** A flag's current value, as the popup shows it. */
 export function formatDebugValue(flags: DebugFlags, field: DebugField): string {
   const spec = fieldSpec(field) as FieldSpec<DebugField>

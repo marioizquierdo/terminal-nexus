@@ -19,7 +19,7 @@ import {
 } from "../src/view/index.ts"
 import type { CapabilityMode, PulseTimeline, TileWidth } from "../src/view/index.ts"
 import type { PlayerId } from "../src/state/types.ts"
-import { loadScenarioFile, scenarioFiles } from "./helpers.ts"
+import { isColourCode, loadScenarioFile, scenarioFiles, sgrCodes } from "./helpers.ts"
 
 async function timelineFor(name: string): Promise<PulseTimeline> {
   const scenario = await loadScenarioFile(name)
@@ -136,19 +136,12 @@ test("monochrome renders every scenario, and no cell depends on colour to exist"
       `${name}: the glyphs differ between monochrome and colour`,
     )
     // Monochrome keeps attributes — bold and dim are not colour — but must emit no colour code.
-    const escape = String.fromCharCode(27)
-    const codes = (text: string): number[] =>
-      [...text.matchAll(new RegExp(`${escape}\\[([0-9;]*)m`, "g"))].flatMap((match) =>
-        (match[1] ?? "").split(";").filter((part) => part !== "").map(Number),
-      )
-    const isColour = (code: number): boolean =>
-      (code >= 30 && code <= 49) || (code >= 90 && code <= 107)
     assert.ok(
-      !codes(frameToAnsi(mono, "monochrome")).some(isColour),
+      !sgrCodes(frameToAnsi(mono, "monochrome")).some(isColourCode),
       `${name}: monochrome emitted a colour code`,
     )
     assert.ok(
-      codes(frameToAnsi(colour, "color16")).some(isColour),
+      sgrCodes(frameToAnsi(colour, "color16")).some(isColourCode),
       `${name}: colour emitted no colour at all`,
     )
   }

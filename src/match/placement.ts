@@ -5,7 +5,7 @@
 // Deterministic by construction: a fixed search order, no randomness, no clock. Nothing here decides an
 // outcome — it decides *where* something that has already been decided goes.
 
-import { footprintCentre } from "../grid/coords.ts"
+import { footprintCentre, gridDistance } from "../grid/coords.ts"
 import type { CollisionMask } from "../grid/occupancy.ts"
 import type { Coord, Footprint } from "../grid/types.ts"
 
@@ -14,7 +14,7 @@ import type { Coord, Footprint } from "../grid/types.ts"
  * to east). Manhattan because that is the distance the kernel measures everything in (engine.md 3.6),
  * so "nearest" here means what it means to a unit walking there.
  */
-export function diamond(radius: number): Coord[] {
+function diamond(radius: number): Coord[] {
   if (radius === 0) return [{ x: 0, y: 0 }]
   const offsets: Coord[] = []
   for (let dy = -radius; dy <= radius; dy += 1) {
@@ -25,7 +25,11 @@ export function diamond(radius: number): Coord[] {
   return offsets
 }
 
-const manhattan = (a: Coord, b: Coord): number => Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
+/** The tile at the centre of a footprint whose anchor is `anchor` — where a thing is, for "nearest". */
+export function centreTile(anchor: Coord, footprint: Footprint): Coord {
+  const centre = footprintCentre(footprint)
+  return { x: anchor.x + centre.x, y: anchor.y + centre.y }
+}
 
 /**
  * The anchor for `footprint` whose **centre tile** is nearest `around` and whose whole footprint fits
@@ -48,7 +52,7 @@ export function nearestFit(
       .map((offset) => ({ x: around.x + offset.x, y: around.y + offset.y }))
       .map((tile) => ({ tile, anchor: { x: tile.x - centre.x, y: tile.y - centre.y } }))
     // Stable sort: equal distances keep the diamond's own reading order.
-    candidates.sort((a, b) => manhattan(a.tile, prefer) - manhattan(b.tile, prefer))
+    candidates.sort((a, b) => gridDistance(a.tile, prefer) - gridDistance(b.tile, prefer))
     for (const { anchor } of candidates) {
       if (mask.footprintFits(anchor, footprint)) return anchor
     }

@@ -5,9 +5,9 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { footprintCentre, tilesOf } from "../src/grid/coords.ts"
+import { gridDistance, tilesOf } from "../src/grid/coords.ts"
 import type { Coord, GridTerrain, TerrainId } from "../src/grid/types.ts"
-import { PulseSetupError, openingState, recall } from "../src/match/index.ts"
+import { PulseSetupError, centreTile, openingState, recall } from "../src/match/index.ts"
 import type { Force, PulseSetup, StructurePlacement } from "../src/match/index.ts"
 import { gameplayRng } from "../src/rng/pcg32.ts"
 import { loadScenario } from "../src/scenario/index.ts"
@@ -63,12 +63,9 @@ function assertNoTileShared(state: MatchState, label: string): void {
   assert.equal(new Set(keys).size, keys.length, `${label}: two entities cover one tile`)
 }
 
-const centreOf = (entity: EntityState): Coord => {
-  const centre = footprintCentre(definitionOf(entity).footprint)
-  return { x: entity.anchor.x + centre.x, y: entity.anchor.y + centre.y }
-}
+const centreOf = (entity: EntityState): Coord => centreTile(entity.anchor, definitionOf(entity).footprint)
 
-const distance = (a: Coord, b: Coord): number => Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
+const distance = gridDistance
 
 // ---------------------------------------------------------------------------------------------
 // The opening state

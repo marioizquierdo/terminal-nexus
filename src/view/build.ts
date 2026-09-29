@@ -18,6 +18,7 @@ import {
   NEXUS_ROW,
   RESOURCE_ROW,
   cellForTile,
+  START_KEY,
   START_LABEL,
   constructLines,
   escHintSpan,
@@ -58,7 +59,7 @@ import type { ArmWeight, Arms, EdgePlace } from "./edge.ts"
 import { edgeCell } from "./edge.ts"
 import { EFFECT_RECIPES } from "./effects/recipes.ts"
 import type { EffectCellSource } from "./effects/composite.ts"
-import { EFFECT_BAND_NUMBERS, effectCellStyle, mergeEffectCells } from "./effects/composite.ts"
+import { paintEffectCells } from "./effects/composite.ts"
 import type { TrackSchedule } from "./animation.ts"
 import { trackEffectsAt } from "./animation.ts"
 import type { PlacementClock, RemovalClock } from "./placement.ts"
@@ -338,7 +339,7 @@ function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPa
  * The effects of every placement still animating (gate 5I) — its track's follow-ups: the light
  * (shading, `highlights`) and the sparks (particles, `effects`) — and of every building just removed
  * (feedback F33), whose track is its sparks alone. The corruption law is enforced here as
- * the Pulse compositor enforces it, through the same translation (`effectCellStyle`): a glyphless cell
+ * the Pulse compositor enforces it, through the same helper (`paintEffectCells`): a glyphless cell
  * only restyles whatever is beneath it, and a particle that would land on any building's tile —
  * standing, planned, or still going up — is dropped, so an effect never replaces the glyph that says a
  * building is there. Two effects on one tile merge the way the Pulse's do. Clipped to the view like
@@ -373,16 +374,12 @@ function drawEffects(
       }
     }
   }
-  for (const { band, cell } of mergeEffectCells(sources)) {
-    const at = cellForTile(layout, state.camera, cell.tile)
-    const style = effectCellStyle(cell)
-    if (cell.glyph === "") {
-      cells.push({ band: EFFECT_BAND_NUMBERS[band], x: at.x, y: at.y, style })
-      continue
-    }
-    if (structureAt(context, state.planned, cell.tile)) continue
-    cells.push({ band: EFFECT_BAND_NUMBERS[band], x: at.x, y: at.y, cell: { glyph: cell.glyph, style } })
-  }
+  paintEffectCells(
+    cells,
+    sources,
+    (tile) => cellForTile(layout, state.camera, tile),
+    (tile) => structureAt(context, state.planned, tile),
+  )
 }
 
 /**
@@ -487,7 +484,7 @@ export type KeyHelp = Readonly<{ label: string; bindings: readonly string[] }>
 
 export const MENU_KEY_HELP: KeyHelp = {
   label: "MENU",
-  bindings: ["up/down choose", "enter/space select", "tab grid", "u undo", "s start"],
+  bindings: ["up/down choose", "enter/space select", "tab grid", "u undo", `${START_KEY} start`],
 }
 
 /** The Grid, with a building armed. */
@@ -958,18 +955,18 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput, preview: Arm
  */
 function drawStartButton(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
   const { context, state, layout } = input
-  const { top, left, width } = startButton(layout)
+  const { top, bottom, left, width } = startButton(layout)
   const band = BANDS.chrome
   const ready = pendingPicks(context, state) === 0
-  const frame: StyleRole = ready ? "chrome.hotkey" : "chrome.muted"
+  const role: StyleRole = ready ? "chrome.hotkey" : "chrome.muted"
   const extra: DrawExtra = ready ? { bold: true } : { dim: true }
   const glyph = (key: Parameters<typeof chromeGlyph>[1]): string => chromeGlyph(pack, key)
-  const bottom = top + 2
-  text(cells, band, left, top, glyph("topLeft") + glyph("horizontal").repeat(width - 2) + glyph("topRight"), frame, extra)
-  text(cells, band, left, bottom, glyph("bottomLeft") + glyph("horizontal").repeat(width - 2) + glyph("bottomRight"), frame, extra)
-  text(cells, band, left, top + 1, glyph("vertical"), frame, extra)
-  text(cells, band, left + width - 1, top + 1, glyph("vertical"), frame, extra)
-  text(cells, band, left + 2, top + 1, START_LABEL, ready ? "chrome.hotkey" : "chrome.muted", extra)
+  const rule = glyph("horizontal").repeat(width - 2)
+  text(cells, band, left, top, glyph("topLeft") + rule + glyph("topRight"), role, extra)
+  text(cells, band, left, bottom, glyph("bottomLeft") + rule + glyph("bottomRight"), role, extra)
+  text(cells, band, left, top + 1, glyph("vertical"), role, extra)
+  text(cells, band, left + width - 1, top + 1, glyph("vertical"), role, extra)
+  text(cells, band, left + 2, top + 1, START_LABEL, role, extra)
 }
 
 /** A plain name for what is under the cursor — the catalog's own label where there is one. */
@@ -1214,9 +1211,6 @@ export function composeBuildFrame(
     given.camera === undefined ? given : { ...given, state: { ...given.state, camera: given.camera } }
   const pack: GlyphPack = input.glyphPack ?? "ascii"
   const cells: BandCell[] = []
-  // What Enter would do at the cursor, derived once and read by the ghost, the status line and the
-  // panel alike — the reducer's `place()` acts on the very same derivation.
-  const preview = armedPreview(input.context, input.state)
 
   // A Nexus Pulse on screen replaces what the Build Phase drew on the Grid and in the panel with the fight
   // and its forces; the frame, the top and bottom bars, the cursor and every popup are the same code.
@@ -1229,12 +1223,15 @@ export function composeBuildFrame(
     drawFrameLight(cells, input.layout, input.pulse)
     drawHeaderAndFooter(cells, input, null)
     const panel: BandCell[] = []
-    drawPulsePanel(panel, input.layout, input.pulse)
+    drawPulsePanel(panel, input.layout, input.pulse, input.state.pulseNumber)
     for (const cell of panel) if (cell.y <= input.layout.panelBindingsRow) cells.push(cell)
     drawOverlay(cells, input, pack)
     return composeBands(input.layout.frame.width, input.layout.frame.height, cells)
   }
 
+  // What Enter would do at the cursor, derived once and read by the ghost, the status line and the
+  // panel alike — the reducer's `place()` acts on the very same derivation.
+  const preview = armedPreview(input.context, input.state)
   const animating = animatingPlacements(input)
   drawGrid(cells, input, pack, animating)
   drawEffects(cells, input, animating, capability)

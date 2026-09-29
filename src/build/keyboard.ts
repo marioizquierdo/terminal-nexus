@@ -15,6 +15,7 @@
 // out just fine").
 
 import type { PlaybackControl } from "../view/playback.ts"
+import { START_KEY } from "./layout.ts"
 import { GAME_MENU_ROWS } from "./settings.ts"
 import type { BuildCommand, Focus, Overlay } from "./types.ts"
 
@@ -165,7 +166,7 @@ function overlayCommand(key: string, overlay: Overlay, pendingCount: number, hig
     case "confirm-commit":
       // Enter, Space and `s` again start the Pulse (owner, 2026-09-29, feedback F42) — `s` is the key
       // that asked, so pressing it twice is "yes"; `y` still works, unlisted, for older scripts.
-      if (key === "s" || key === "y" || PLACE_KEYS.has(key)) return { kind: "confirm-commit", accept: true }
+      if (key === START_KEY || key === "y" || PLACE_KEYS.has(key)) return { kind: "confirm-commit", accept: true }
       if (key === "n") return { kind: "confirm-commit", accept: false }
       return key === "q" ? { kind: "open-menu" } : null
     case "nexus-powers": {
@@ -284,7 +285,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   // `d` is Debug Mode's old key, kept as a shortcut: Settings, at its Experiments.
   if (key === "d") return { kind: "open-settings", section: "experiments" }
   // `s` is the Start button's key (feedback F41); `p`, its first key, is kept as another way to press it.
-  if (key === "s" || key === "p") return { kind: "commit" }
+  if (key === START_KEY || key === "p") return { kind: "commit" }
   // `y` only ever means something while the start-the-Pulse question is open; outside it is inert.
   if (key === "y") return null
 

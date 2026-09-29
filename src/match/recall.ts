@@ -26,12 +26,12 @@
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { freshEntityFields } from "../content/index.ts"
-import { footprintCentre, footprintDistance, nearestFootprintTile } from "../grid/coords.ts"
+import { footprintDistance, nearestFootprintTile } from "../grid/coords.ts"
 import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
 import type { Coord } from "../grid/types.ts"
 import { ENTITY_LAYERS } from "../grid/types.ts"
 import type { EntityState, MatchState } from "../state/types.ts"
-import { nearestFit } from "./placement.ts"
+import { centreTile, nearestFit } from "./placement.ts"
 import type { RecallMove, RecallResult } from "./types.ts"
 
 /** How far from its home a survivor may be set down before Recall gives the search up and widens it. */
@@ -40,11 +40,6 @@ const HOME_RADIUS = 8
 const FALLBACK_RADIUS = 40
 
 type Home = Readonly<{ entity: EntityState; definition: ContentDef; kind: "producer" | "nexus" }>
-
-function centreOf(entity: EntityState, definition: ContentDef): Coord {
-  const centre = footprintCentre(definition.footprint)
-  return { x: entity.anchor.x + centre.x, y: entity.anchor.y + centre.y }
-}
 
 /** The nearest of `candidates` to `survivor`, by the distance range is measured in; ties to the lower
  *  ordinal. `null` when there are none. */
@@ -121,7 +116,7 @@ export function recall(state: MatchState, registry: ContentRegistry): RecallResu
       layers: ENTITY_LAYERS,
       terrain: definition.layer === "air" ? "ignore" : "impassable",
     })
-    const here = centreOf(survivor, definition)
+    const here = centreTile(survivor.anchor, definition.footprint)
     // The tile of the home building nearest the survivor is what it comes back *to*: it arrives on the
     // side it was already on, not on the far side of the building.
     const target = nearestFootprintTile(here, home.entity.anchor, home.definition.footprint)

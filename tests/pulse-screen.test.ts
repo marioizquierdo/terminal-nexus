@@ -10,7 +10,7 @@ import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
 import { centreOn } from "../src/build/camera.ts"
 import { rowOfField } from "../src/build/debug.ts"
 import { escHintSpan, escLabel, pulseControlRows } from "../src/build/layout.ts"
-import { MOUSE_LEFT, MOUSE_RIGHT, formatMouseEvent } from "../src/build/mouse.ts"
+import { MOUSE_RIGHT } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
 import { nexusTile } from "../src/build/state.ts"
 import { spikeContext } from "../src/cli/spike.ts"
@@ -21,7 +21,8 @@ import type { CellStyle, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { CAPABILITY_MODES } from "../src/view/index.ts"
 import { BEAM_PERIOD_MS, TIMER_HALF_PERIOD_MS } from "../src/view/ending.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
-import { DEFENCE, MINIMUM, at, frameOf, newSession, play, prepare, screenText } from "./pulse-helpers.ts"
+import { isColourCode, sgrCodes } from "./helpers.ts"
+import { DEFENCE, MINIMUM, at, atHome, click, frameOf, newSession, play, prepare, screenText } from "./pulse-helpers.ts"
 import type { Played } from "./pulse-helpers.ts"
 
 const ESC = String.fromCharCode(27)
@@ -54,10 +55,6 @@ const lightCells = (frame: ReadonlyCellFrame, layout: BuildLayout) => {
   return cellsWhere(frame, (style) => style.tint?.role === "fx.flash").filter(
     (cell) => cell.x === box.left || cell.x === box.right || cell.y === box.top || cell.y === box.bottom,
   )
-}
-
-const click = (played: Pick<Played, "build" | "layout">, column: number, row: number, button = MOUSE_LEFT, now?: number): void => {
-  played.build.handleData(formatMouseEvent(button, column + 1, row + 1), played.layout, now === undefined ? {} : { now })
 }
 
 test("answering yes turns the screen into the Nexus Pulse, with the keyboard on the map", () => {
@@ -163,8 +160,7 @@ test("the timer counts down the seconds left to the last shot, and its last seco
 
 test("a lost Pulse and a timed-out one say so plainly, and a draw is a draw", () => {
   const lost = play()
-  at(lost, 0)
-  at(lost, times(lost).homeMs + 100)
+  atHome(lost)
   assert.match(screenText(lost), /^\| DEFEAT /m)
   assert.match(screenText(lost), /Your force was wiped out\./)
   // Nobody left to walk home is said as that, not as "0 of yours".
@@ -172,8 +168,7 @@ test("a lost Pulse and a timed-out one say so plainly, and a draw is a draw", ()
   assert.doesNotMatch(screenText(lost), /\b0 of yours came home/)
 
   const nexusFell = play({ crew: 1 })
-  at(nexusFell, 0)
-  at(nexusFell, times(nexusFell).homeMs + 100)
+  atHome(nexusFell)
   assert.match(screenText(nexusFell), /^\| DEFEAT /m)
   assert.match(screenText(nexusFell), /Your Nexus was destroyed\./)
 
@@ -187,8 +182,7 @@ test("a lost Pulse and a timed-out one say so plainly, and a draw is a draw", ()
   assert.match(screenText(timedOut), /The time ran out before either side won\./)
 
   const draw = play({ plan: [DEFENCE[0]!] })
-  at(draw, 0)
-  at(draw, times(draw).homeMs + 100)
+  atHome(draw)
   assert.match(screenText(draw), /^\| DRAW /m)
 })
 
@@ -198,8 +192,7 @@ test("at 80x24 the result's words are never cut off, whichever way the Pulse end
   const scenarios = [{}, { plan: DEFENCE }, { raid: 1 }, { crew: 1 }, { raid: 2 }, { plan: [DEFENCE[0]!] }] as const
   for (const scenario of scenarios) {
     const played = play(scenario)
-    at(played, 0)
-    at(played, times(played).homeMs + 100)
+    atHome(played)
     const lines = screenText(played).split("\n")
     const name = JSON.stringify(scenario)
     const statusRows = lines.filter((line) => /^\| (VICTORY|DEFEAT|DRAW|TIME'S UP) - /.test(line))
@@ -319,12 +312,6 @@ test("a light sweeps the map's border in the last seconds, and goes out soon aft
 })
 
 test("the ending is plain to see at every colour depth: monochrome uses bold and reversed video, never a colour code", () => {
-  const escape = String.fromCharCode(27)
-  const codes = (text: string): number[] =>
-    [...text.matchAll(new RegExp(`${escape}\\[([0-9;]*)m`, "g"))].flatMap((match) =>
-      (match[1] ?? "").split(";").filter((part) => part !== "").map(Number),
-    )
-  const isColour = (code: number): boolean => (code >= 30 && code <= 49) || (code >= 90 && code <= 107)
   for (const capability of CAPABILITY_MODES) {
     // A Pulse's time only moves forward, so each depth plays its own from the top.
     const played = victorious()
@@ -338,10 +325,10 @@ test("the ending is plain to see at every colour depth: monochrome uses bold and
     const phases = { lit, dark, ceaseFire: ansiAt(moments.stopMs + 500), recall: ansiAt(moments.walkMs + 20), result: ansiAt(moments.homeMs + 20) }
     if (capability === "monochrome") {
       for (const [phase, ansi] of Object.entries(phases)) {
-        assert.ok(!codes(ansi).some(isColour), `${phase}: monochrome emitted a colour code`)
+        assert.ok(!sgrCodes(ansi).some(isColourCode), `${phase}: monochrome emitted a colour code`)
       }
     }
-    assert.ok(codes(lit).includes(7), `${capability}: the lit timer is not reversed video`)
+    assert.ok(sgrCodes(lit).includes(7), `${capability}: the lit timer is not reversed video`)
     assert.notEqual(lit, dark, `${capability}: the timer's flash cannot be seen`)
     // The phases are told apart by their words as much as by anything drawn: each screen differs from the last.
     assert.equal(new Set(Object.values(phases)).size, 5, `${capability}: two moments of the ending look the same`)
@@ -469,6 +456,21 @@ test("the panel's rows are clickable: Pause and Resume, Watch again — and noth
   // A click just past the panel's right edge is the Grid, not a control.
   click(played, played.layout.panelColumn + played.layout.panelLimit + 3, pause.row)
   assert.equal(pulse.paused, false)
+})
+
+test("once the result stands there is nothing to pause: Space and a click on the row where Pause was do nothing", () => {
+  const played = victorious()
+  const pulse = played.build.pulse!
+  atHome(played)
+  assert.equal(pulse.paused, false)
+  played.build.handleData(" ", played.layout)
+  assert.equal(pulse.paused, false, "Space paused a Pulse whose result was standing")
+  const [pause, again] = pulseControlRows(played.layout)
+  click(played, played.layout.panelColumn + 3, pause!.row)
+  assert.equal(pulse.paused, false, "a click on the blank Pause row paused it")
+  // Watch again still works from there, and the Pause row is back with the Pulse.
+  click(played, played.layout.panelColumn + 3, again!.row)
+  assert.equal(pulse.timeMs, 0)
 })
 
 test("the top bar's Esc label, a right click and Esc are one way to the game menu, over a Pulse too", () => {

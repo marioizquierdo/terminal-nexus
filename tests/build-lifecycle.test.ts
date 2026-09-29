@@ -15,6 +15,7 @@ import { parseKeyScript } from "../src/playtest/keys.ts"
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../src/menu/mouse.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import type { Settings } from "../src/settings/index.ts"
+import { DEFENCE_KEYS } from "./pulse-helpers.ts"
 
 const ESC = String.fromCharCode(27)
 
@@ -253,7 +254,7 @@ test("--keys that cannot be delivered stops there and says why when the screen c
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
 /** A plan that wins: a Nexus power, two Turrets and a Hatchery, the commit and its yes. */
-const WINNING_PLAN = "n 2 3 click:22,9 click:22,9 3 click:22,12 click:22,12 2 click:20,14 click:20,14 s s"
+const WINNING_PLAN = `${DEFENCE_KEYS} s s`
 
 test("the live loop plays a Nexus Pulse on its own clock: timer, last seconds, result, then idle — and starts over on Restart", async () => {
   let t = 5_000

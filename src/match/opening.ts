@@ -11,7 +11,7 @@
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { freshEntityFields } from "../content/index.ts"
-import { footprintCentre, inBounds, tileIndex, tilesOf } from "../grid/coords.ts"
+import { inBounds, tileIndex, tilesOf } from "../grid/coords.ts"
 import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import { ENTITY_LAYERS, TERRAIN } from "../grid/types.ts"
@@ -19,12 +19,12 @@ import { gameplayRng } from "../rng/pcg32.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
 import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
 import { SCHEMA_VERSION } from "../state/types.ts"
-import { nearestFit } from "./placement.ts"
+import { centreTile, nearestFit } from "./placement.ts"
 import type { PulseSetup, StructurePlacement } from "./types.ts"
 import { PulseSetupError } from "./types.ts"
 
 /** How far from its muster point a unit may be set down before the Pulse is refused for lack of room. */
-export const MUSTER_RADIUS = 12
+const MUSTER_RADIUS = 12
 
 export type OpeningInput = Readonly<{
   grid: GridTerrain
@@ -78,7 +78,7 @@ export function openingState(input: OpeningInput): MatchState {
   structures.forEach((structure, position) => {
     const where = `structure ${position + 1}`
     const definition = known(structure.contentId, where)
-    claim(structure.player ?? "A", definition, structure.anchor, `${where} (${structure.contentId} at ${structure.anchor.x},${structure.anchor.y})`)
+    claim("A", definition, structure.anchor, `${where} (${structure.contentId} at ${structure.anchor.x},${structure.anchor.y})`)
   })
 
   // Units are set down after every structure, on tiles no other entity holds: at the start of a Pulse
@@ -106,13 +106,9 @@ export function openingState(input: OpeningInput): MatchState {
 
   // Grid reading order: north to south, then west to east, ties by side and then content id — the
   // loader's own order, so an editorial change (which list came first) can never move an id.
-  const centreOf = (entry: Placed): Coord => {
-    const centre = footprintCentre(entry.definition.footprint)
-    return { x: entry.anchor.x + centre.x, y: entry.anchor.y + centre.y }
-  }
   const ordered = [...placed].sort((a, b) => {
-    const ca = centreOf(a)
-    const cb = centreOf(b)
+    const ca = centreTile(a.anchor, a.definition.footprint)
+    const cb = centreTile(b.anchor, b.definition.footprint)
     return ca.y - cb.y || ca.x - cb.x || a.player.localeCompare(b.player) || a.definition.id.localeCompare(b.definition.id)
   })
 

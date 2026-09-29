@@ -4,8 +4,8 @@
 // **when to show what**, and that is presentation: a playback clock the player can pause, slow, step and
 // restart (`Playback`, `grid watch`'s own), and from it the ending's moments (`ending.ts`), every one a
 // pure function of the Pulse's presentation time. The clock is read in one place — the caller hands in
-// `now` as a number, as `BuildAnimation` is handed it — so a test drives a whole Pulse, alarm and walk
-// home included, without waiting a second.
+// `now` as a number, as `BuildAnimation` is handed it — so a test drives a whole Pulse, its last seconds
+// and its walk home included, without waiting a second.
 //
 // Two things reach back into the Build Phase's state, both as ordinary named commands (`due`): the view
 // is centred on the player's Grid Nexus when the Pulse starts and again when its ending begins. Nothing
@@ -18,7 +18,7 @@ import type { Coord } from "../grid/types.ts"
 import type { RecallResult } from "../match/types.ts"
 import type { Outcome } from "../state/types.ts"
 import { endingTimes, nexusStrain, phaseAt, redAlert, resultOf, walkPositions } from "./ending.ts"
-import type { EndingTimes, NexusStrain, PulseResult } from "./ending.ts"
+import type { EndingFlags, EndingPhase, EndingTimes, NexusStrain, PulseResult } from "./ending.ts"
 import type { CapabilityMode } from "./roles.ts"
 import { FRAME_MS } from "./build-live.ts"
 import { Playback } from "./playback.ts"
@@ -40,6 +40,10 @@ export type ResolvedPulse = Readonly<{
 /** Frames a second the playback's own single-frame step is worth (`grid watch`'s 30). */
 const STEP_FRAMES_PER_SECOND = 30
 
+/** A unit rather than a structure: structures sit on the obstacles layer, and a force bar leaves them out
+ *  (a 400-point Grid Nexus would swamp it). */
+const isMobile = (timeline: PulseTimeline, contentId: string): boolean => timeline.registry.get(contentId).layer !== "obstacles"
+
 const finalStateOf = (timeline: PulseTimeline) => timeline.states[timeline.states.length - 1]
 
 /** How the resolved Pulse ended. Always one: the resolver only stops on an outcome, and the tick limit is
@@ -56,6 +60,10 @@ export class PulsePresenter {
   private readonly result: PulseResult
   /** What happened to the player's Nexus, read once: the red flashes are timed from it. */
   private readonly strain: NexusStrain
+  /** How many mobile units the player has once Recall is done. It never changes, so it is counted once. */
+  private readonly home: number
+  /** The ending's moments under the Experiments last asked for, so a frame works them out once. */
+  private endingCache: Readonly<{ flags: EndingFlags; times: EndingTimes }> | null = null
   private lastNow: number | null = null
   /** The camera moves already made this run, so each is sent once: `start` and `end`. */
   private fired = new Set<"start" | "end">()
@@ -65,6 +73,9 @@ export class PulsePresenter {
     this.view = createView(resolved.timeline, presentation)
     this.result = resultOf(outcomeOf(resolved.timeline))
     this.strain = nexusStrain(resolved.timeline)
+    this.home = resolved.recall.state.entities.filter(
+      (entity) => entity.player === "A" && isMobile(resolved.timeline, entity.contentId),
+    ).length
     this.playback = new Playback({
       tickDurationMs: this.view.tickDurationMs,
       frameDurationMs: 1000 / STEP_FRAMES_PER_SECOND,
@@ -110,7 +121,15 @@ export class PulsePresenter {
   /** The ending's moments under the Experiments as they are set right now — so changing one is felt at
    *  once, and "Watch again" plays the new numbers from the top. */
   times(flags: DebugFlags): EndingTimes {
-    return endingTimes(this.view.lastTick * this.view.tickDurationMs, this.view.effectsEndMs, flags)
+    const { endWarnMs, endWalkPauseMs, endWalkMs } = flags
+    const cached = this.endingCache
+    if (cached !== null && cached.flags.endWarnMs === endWarnMs && cached.flags.endWalkPauseMs === endWalkPauseMs && cached.flags.endWalkMs === endWalkMs) {
+      return cached.times
+    }
+    const ending = { endWarnMs, endWalkPauseMs, endWalkMs }
+    const times = endingTimes(this.view.lastTick * this.view.tickDurationMs, this.view.effectsEndMs, ending)
+    this.endingCache = { flags: ending, times }
+    return times
   }
 
   /**
@@ -137,33 +156,37 @@ export class PulsePresenter {
     return commands
   }
 
+  /** Where the Pulse is in its ending right now, under the Experiments as they are set. */
+  phase(flags: DebugFlags): EndingPhase {
+    return phaseAt(this.times(flags), this.timeMs)
+  }
+
   /** When the last thing still moving finishes, or `null` when nothing is: the frame timer runs until
    *  then. While it runs the picture changes every frame — a fight, a timer's flash, a walk home. */
   busyUntil(now: number, flags: DebugFlags): number | null {
     if (this.playback.paused) return null
-    return phaseAt(this.times(flags), this.timeMs) === "home" ? null : now + FRAME_MS
+    return this.phase(flags) === "home" ? null : now + FRAME_MS
   }
 
   /** What the scene draws at the Pulse's current time. */
-  frame(
-    options: Readonly<{ flags: DebugFlags; capability: CapabilityMode; tileWidth: TileWidth; reducedMotion: boolean; pulseNumber: number }>,
-  ): PulseFrame {
-    const { flags, capability, tileWidth, reducedMotion, pulseNumber } = options
+  frame(options: Readonly<{ flags: DebugFlags; capability: CapabilityMode; tileWidth: TileWidth; reducedMotion: boolean }>): PulseFrame {
+    const { flags, capability, tileWidth, reducedMotion } = options
     const timeMs = this.timeMs
     const times = this.times(flags)
     const sample = this.view.sampleAt(timeMs, capability, tileWidth, reducedMotion)
     const walk = walkPositions(this.resolved.recall.moves, times, timeMs, reducedMotion)
     const positions = walk.size === 0 ? sample.positions : new Map([...sample.positions, ...walk])
-    const home = { A: 0, B: 0 }
-    for (const entity of this.resolved.recall.state.entities) {
-      if (this.resolved.timeline.registry.get(entity.contentId).layer !== "obstacles") home[entity.player] += 1
+    const forces = { A: { units: 0, hp: 0 }, B: { units: 0, hp: 0 } }
+    for (const entity of sample.state.entities) {
+      if (!isMobile(this.resolved.timeline, entity.contentId)) continue
+      forces[entity.player].units += 1
+      forces[entity.player].hp += entity.hp
     }
     return {
       sample,
       registry: this.resolved.timeline.registry,
       openingHealth: this.view.openingHealth,
       ticksPerSecond: this.resolved.timeline.ticksPerSecond,
-      pulseNumber,
       paused: this.playback.paused,
       speed: this.playback.speed,
       phase: phaseAt(times, timeMs),
@@ -173,7 +196,8 @@ export class PulsePresenter {
       redAlert: flags.redAlerts ? redAlert(this.strain, times, this.result.tone === "danger", timeMs, reducedMotion) : 0,
       positions,
       result: this.result,
-      home,
+      forces,
+      home: this.home,
     }
   }
 }

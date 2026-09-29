@@ -6,11 +6,10 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { START_BUTTON_ROWS, START_LABEL, menuFloor, startButton } from "../src/build/layout.ts"
-import { MOUSE_LEFT, formatMouseEvent } from "../src/build/mouse.ts"
 import { overlaySpec, placeOverlay } from "../src/build/overlay.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
-import { MINIMUM, frameOf, newSession, screenText } from "./pulse-helpers.ts"
+import { MINIMUM, click, frameOf, newSession, screenText } from "./pulse-helpers.ts"
 
 const ESC = String.fromCharCode(27)
 
@@ -19,10 +18,6 @@ function ready(size = MINIMUM) {
   const session = newSession(size)
   session.build.dispatch({ kind: "pick-nexus", index: 1 })
   return session
-}
-
-const click = (session: ReturnType<typeof newSession>, column: number, row: number): void => {
-  session.build.handleData(formatMouseEvent(MOUSE_LEFT, column + 1, row + 1), session.layout)
 }
 
 test("the Start button is a box at the bottom right of the menu panel, three rows tall, with its hotkey", () => {

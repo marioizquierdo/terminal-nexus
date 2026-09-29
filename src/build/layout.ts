@@ -101,10 +101,15 @@ export function pulseControlRows(layout: BuildLayout): readonly PulseControlRow[
   ]
 }
 
+/** Whether a frame column is one of the side panel's — the width a highlight bar or a click target spans. */
+export function inPanelColumns(layout: BuildLayout, column: number): boolean {
+  return column >= layout.panelColumn && column < layout.panelColumn + layout.panelLimit
+}
+
 /** The playback control on the panel row at a frame cell, or `null` — the whole row is the target, the
  *  width a highlight bar would be drawn. */
 export function pulseControlAt(layout: BuildLayout, column: number, row: number): PlaybackControl | null {
-  if (column < layout.panelColumn || column >= layout.panelColumn + layout.panelLimit) return null
+  if (!inPanelColumns(layout, column)) return null
   return pulseControlRows(layout).find((control) => control.row === row)?.control ?? null
 }
 
@@ -119,10 +124,11 @@ export const START_KEY = "s"
 export const START_LABEL = `[${START_KEY}] Start`
 export const START_BUTTON_ROWS = 3
 
-export function startButton(layout: BuildLayout): Readonly<{ top: number; left: number; width: number }> {
+export function startButton(layout: BuildLayout): Readonly<{ top: number; bottom: number; left: number; width: number }> {
   const width = START_LABEL.length + 4
   return {
     top: layout.panelBindingsRow - START_BUTTON_ROWS + 1,
+    bottom: layout.panelBindingsRow,
     left: layout.panelColumn + layout.panelLimit - 1 - width,
     width,
   }
@@ -130,8 +136,8 @@ export function startButton(layout: BuildLayout): Readonly<{ top: number; left: 
 
 /** Whether a frame cell is on the Start button's box. */
 export function startButtonAt(layout: BuildLayout, column: number, row: number): boolean {
-  const { top, left, width } = startButton(layout)
-  return column >= left && column < left + width && row >= top && row < top + START_BUTTON_ROWS
+  const { top, bottom, left, width } = startButton(layout)
+  return column >= left && column < left + width && row >= top && row <= bottom
 }
 
 /** The last panel row the menu's own text may use: the rows above the Start button. */
@@ -260,7 +266,7 @@ export function menuEntryAt(
   column: number,
   row: number,
 ): number | null {
-  if (column < layout.panelColumn || column >= layout.panelColumn + layout.panelLimit) return null
+  if (!inPanelColumns(layout, column)) return null
   if (row === layout.panelRow + EXPLORE_ROW) return EXPLORE_ENTRY
   if (row === layout.panelRow + NEXUS_ROW) return NEXUS_ENTRY
   for (const line of constructLines(layout, catalog)) {

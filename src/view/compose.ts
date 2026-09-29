@@ -15,7 +15,7 @@ import type { Coord, GridTerrain } from "../grid/types.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
 import { PLAYERS } from "../state/types.ts"
 import type { ActiveEffect, EffectCellSource } from "./effects/index.ts"
-import { EFFECT_BAND_NUMBERS, effectCellStyle, mergeEffectCells } from "./effects/index.ts"
+import { paintEffectCells } from "./effects/index.ts"
 import type { BandCell, Cell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import { put, text, toAscii } from "./draw.ts"
@@ -245,27 +245,15 @@ export function composeFrame(
       effectSources.push({ band, cell })
     }
   }
-  for (const source of mergeEffectCells(effectSources)) {
-    const cell = source.cell
-    const band = EFFECT_BAND_NUMBERS[source.band]
-    const column = origin.column + cell.tile.x * tileWidth
-    const row = origin.row + cell.tile.y
-    // Fade (and tint) only when it means something: 0 or absent is the role's own colour either way,
-    // and omitting the key keeps a frame with no faded cells identical to one from before Q25's
-    // amendment existed, byte for byte.
-    const style = effectCellStyle(cell)
-    if (cell.glyph === "") {
-      // An attribute change on whatever is already there — the damage flash, and only it. This is
-      // the one way an effect may touch a cell an entity is standing on.
-      cells.push({ band, x: column, y: row, style })
-      continue
-    }
-    // The corruption law, enforced by the compositor rather than by recipe discipline: an effect
-    // that would replace a unit, a structure or a wreck's glyph is dropped on that tile. The
-    // screen may look wrong; the player must still be able to see what is attacking them.
-    if (occupied.has(`${cell.tile.x},${cell.tile.y}`)) continue
-    cells.push({ band, x: column, y: row, cell: { glyph: cell.glyph, style } })
-  }
+  // The corruption law, enforced by the compositor rather than by recipe discipline: an effect that would
+  // replace a unit, a structure or a wreck's glyph is dropped on that tile — the screen may look wrong;
+  // the player must still be able to see what is attacking them.
+  paintEffectCells(
+    cells,
+    effectSources,
+    (tile) => ({ x: origin.column + tile.x * tileWidth, y: origin.row + tile.y }),
+    (tile) => occupied.has(`${tile.x},${tile.y}`),
+  )
 
   // Band 10 — chrome: frame, header, footer, side panel.
   drawChrome(cells, input, size, tileWidth, gridColumns, pack)
@@ -438,16 +426,17 @@ function forceTotals(input: CompositionInput): Record<PlayerId, string> {
     opening[player] = health
   })
 
-  const bar = (current: number, max: number): string => {
-    const width = 10
-    const filled = max <= 0 ? 0 : Math.max(current > 0 ? 1 : 0, Math.round((current / max) * width))
-    return `${"#".repeat(Math.min(width, filled))}${"-".repeat(Math.max(0, width - filled))}`
-  }
-
   return {
-    A: `A ${String(counts.A.units).padStart(2)} [${bar(counts.A.hp, opening.A)}] ${String(counts.A.hp).padStart(4)}`,
-    B: `B ${String(counts.B.units).padStart(2)} [${bar(counts.B.hp, opening.B)}] ${String(counts.B.hp).padStart(4)}`,
+    A: `A ${String(counts.A.units).padStart(2)} [${forceBar(counts.A.hp, opening.A)}] ${String(counts.A.hp).padStart(4)}`,
+    B: `B ${String(counts.B.units).padStart(2)} [${forceBar(counts.B.hp, opening.B)}] ${String(counts.B.hp).padStart(4)}`,
   }
+}
+
+/** Ten characters of `#` and `-`: how much of `max` is left in `current`, never empty while anything is. */
+export function forceBar(current: number, max: number): string {
+  const width = 10
+  const filled = max <= 0 ? 0 : Math.max(current > 0 ? 1 : 0, Math.round((current / max) * width))
+  return `${"#".repeat(Math.min(width, filled))}${"-".repeat(Math.max(0, width - filled))}`
 }
 
 /** `A:marksman#5` becomes `Am5`, so a whole event fits the panel's 28 usable columns. */

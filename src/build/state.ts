@@ -12,7 +12,7 @@ import { NO_STATUS, status } from "../status.ts"
 import type { Camera, Margin, Viewport } from "./camera.ts"
 import { centreOn, clampToGrid, edgeClickCamera, followCursor, marginForView } from "./camera.ts"
 import type { DebugField, DebugFlags } from "./debug.ts"
-import { adjustDebug, fieldSpec, formatDebugValue, initialDebugFlags, rowOfField } from "./debug.ts"
+import { FIRST_PULSE_EXPERIMENT_ROW, adjustDebug, fieldSpec, formatDebugValue, initialDebugFlags, rowOfField } from "./debug.ts"
 import type { Settings } from "../settings/types.ts"
 import { DEFAULT_SETTINGS } from "../settings/types.ts"
 import type { PlayerField } from "./settings.ts"
@@ -88,7 +88,7 @@ export type BuildContext = Readonly<{
   /**
    * What a Nexus Pulse starts with besides the plan, as a function of the Experiments (gate 6A: the
    * "Raid" and "Your units" flags pick which placeholder Pulse). Absent: committing only freezes the
-   * plan, as it did before a Pulse existed — every context the tests build by hand.
+   * plan — every context the tests build by hand.
    */
   pulse?: (experiments: DebugFlags) => PulseSetup
   /** Where the adapter puts an export besides the screen, said in the export popup — "Copied to the
@@ -954,7 +954,7 @@ function openSettings(state: BuildState, section: "settings" | "experiments"): B
   if (state.overlay !== null && state.overlay !== "menu") return state
   // While the Nexus Pulse is on screen, `d` opens the Experiments already at the ending's — the ones
   // someone watching it wants to change (gate 6A) — rather than at the Build Phase's first.
-  const experiments = state.committed ? rowOfField("endWarnMs") : FIRST_EXPERIMENT_ROW
+  const experiments = state.committed ? FIRST_PULSE_EXPERIMENT_ROW : FIRST_EXPERIMENT_ROW
   return {
     ...state,
     overlay: "settings",
@@ -1231,13 +1231,9 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // The Nexus Pulse starts (gate 6A). The keyboard goes to the Grid, where the arrows look around it
       // — a committed plan locks every edit but not the cursor — and nothing is armed or being explored.
       return {
-        ...state,
+        ...toMap(state),
         overlay: null,
         committed: true,
-        focus: "grid",
-        armed: null,
-        armGhost: false,
-        exploreMap: false,
         status: status(`Build committed - ${state.planned.length} planned.`, "success"),
       }
     }

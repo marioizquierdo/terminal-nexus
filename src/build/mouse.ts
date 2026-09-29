@@ -6,7 +6,7 @@
 // gestures a flat menu has no use for: the wheel, and the right button.
 
 import type { BuildLayout } from "./layout.ts"
-import { ESC_KEY, escHintAt, menuEntryAt, pulseControlAt, startButtonAt, tileAtCell } from "./layout.ts"
+import { ESC_KEY, escHintAt, inPanelColumns, menuEntryAt, pulseControlAt, startButtonAt, tileAtCell } from "./layout.ts"
 import type { PlacedOverlay } from "./overlay.ts"
 import { overlayHitAt } from "./overlay.ts"
 import type { Camera } from "./camera.ts"
@@ -136,10 +136,5 @@ export function buildMouseCommand(
 
 /** Whether a frame cell is on the side panel — its full width, from its first row to its last. */
 function inPanel(layout: BuildLayout, column: number, row: number): boolean {
-  return (
-    column >= layout.panelColumn &&
-    column < layout.panelColumn + layout.panelLimit &&
-    row >= layout.panelRow &&
-    row <= layout.panelBindingsRow
-  )
+  return inPanelColumns(layout, column) && row >= layout.panelRow && row <= layout.panelBindingsRow
 }

@@ -13,11 +13,10 @@
 // away" (owner, 2026-09-17) — and why it means the same for a Nexus that fell, a force wiped out, and the
 // clock running out: it is a flourish on an ending that already happened.
 //
-// **What is loud, and what is not** (owner, 2026-09-29, feedback F43-F45): the first version of the
-// warning was a red alert — banners, an inverse frame — and read as a nuclear launch. Now the only
-// thing that flashes is the timer in the Pulse's title, in its last seconds, like a racing game's clock;
-// the light that sweeps the map's border is a lighthouse calling, not an alarm; and **red is kept for
-// the player's Nexus being hurt** — its first hit, its health very low, a lost Pulse — brief and faint.
+// **What is loud, and what is not** (owner, 2026-09-29): the only thing that flashes is the timer in the
+// Pulse's title, in its last seconds, like a racing game's clock; the light that sweeps the map's border is
+// a lighthouse calling, not an alarm; and **red is kept for the player's Nexus being hurt** — its first
+// hit, its health very low, a lost Pulse — brief and faint.
 //
 // **Recall's state change is instant** (engine.md Section 5), and belongs to `src/match/recall.ts`. What
 // is drawn here is the walk home on top of it: presentation only, from where the fight left each survivor
@@ -116,22 +115,44 @@ export const BEAM_GLOW = 0.12
 export const BEAM_STEADY = 0.3
 export const BEAM_FADE_MS = 400
 
+/** How lit a border cell must be before monochrome shows it, by going bold. */
+export const BEAM_BOLD = 0.4
+
+/** What is the same for every border cell at one instant — worked out once a frame, not once a cell. */
+export type BeamFrame = Readonly<{ steady: boolean; envelope: number; head: number; length: number }>
+
 /**
- * How much light the border cell at `index` — of `length` cells, numbered clockwise from the top left
- * corner — has at this instant, from 0 (its own colour) to 1. It is on from the start of the last
- * seconds until a moment after the shooting stops, and it is a colour pulled toward the light, never a
- * glyph, so it hides nothing.
+ * The light at this instant, for a border of `length` cells, or `null` when it is off: it is on from the
+ * start of the last seconds until a moment after the shooting stops. Reduced motion is one steady glow
+ * rather than a turning beam.
  */
-export function beamAt(times: EndingTimes, timeMs: number, index: number, length: number, reducedMotion: boolean): number {
-  if (times.warnMs === null) return 0
+export function beamFrame(times: EndingTimes, timeMs: number, length: number, reducedMotion: boolean): BeamFrame | null {
+  if (times.warnMs === null) return null
   const end = times.stopMs + BEAM_FADE_MS
-  if (timeMs < times.warnMs || timeMs >= end) return 0
-  if (reducedMotion) return BEAM_STEADY
-  const envelope = Math.min(1, (timeMs - times.warnMs) / BEAM_FADE_MS, (end - timeMs) / BEAM_FADE_MS)
-  const head = (((timeMs - times.warnMs) % BEAM_PERIOD_MS) / BEAM_PERIOD_MS) * length
-  const behind = (((head - index) % length) + length) % length
+  if (timeMs < times.warnMs || timeMs >= end) return null
+  return {
+    steady: reducedMotion,
+    envelope: Math.min(1, (timeMs - times.warnMs) / BEAM_FADE_MS, (end - timeMs) / BEAM_FADE_MS),
+    head: (((timeMs - times.warnMs) % BEAM_PERIOD_MS) / BEAM_PERIOD_MS) * length,
+    length,
+  }
+}
+
+/**
+ * How much light the border cell at `index` — numbered clockwise from the top left corner — has in `beam`,
+ * from 0 (its own colour) to 1. A colour pulled toward the light, never a glyph, so it hides nothing.
+ */
+export function beamLight(beam: BeamFrame, index: number): number {
+  if (beam.steady) return BEAM_STEADY
+  const behind = (((beam.head - index) % beam.length) + beam.length) % beam.length
   const tail = behind < BEAM_TAIL_CELLS ? (1 - behind / BEAM_TAIL_CELLS) * (BEAM_PEAK - BEAM_GLOW) : 0
-  return envelope * (BEAM_GLOW + tail)
+  return beam.envelope * (BEAM_GLOW + tail)
+}
+
+/** One cell's light at one instant: `beamFrame` and `beamLight` together. */
+export function beamAt(times: EndingTimes, timeMs: number, index: number, length: number, reducedMotion: boolean): number {
+  const beam = beamFrame(times, timeMs, length, reducedMotion)
+  return beam === null ? 0 : beamLight(beam, index)
 }
 
 // ---------------------------------------------------------------------------------------------

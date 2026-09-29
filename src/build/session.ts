@@ -10,7 +10,6 @@ import { keysFromChunk } from "../view/playback.ts"
 import { PulsePresenter } from "../view/pulse-live.ts"
 import type { ResolvedPulse } from "../view/pulse-live.ts"
 import type { PulseFrame } from "../view/pulse-scene.ts"
-import { DEFAULT_PRESENTATION } from "../view/snapshot.ts"
 import type { BuildLayout } from "./layout.ts"
 import { escLabel } from "./layout.ts"
 import { overlaySpec, placeOverlay } from "./overlay.ts"
@@ -43,7 +42,7 @@ export type BuildSessionOptions = Readonly<{
    * start. **Injected, because `src/build` may never reach the kernel** (`tests/architecture.test.ts`):
    * the application shell owns that connection (`src/cli/pulse-run.ts`), and the session only hands it the
    * plan and plays what comes back. Absent — a hand-built session in a test — committing freezes the plan
-   * and nothing more, as it did before a Pulse existed.
+   * and nothing more.
    */
   startPulse?: (context: BuildContext, state: BuildState) => ResolvedPulse | null
 }>
@@ -115,7 +114,6 @@ export class BuildSession {
       capability: settings.capability,
       tileWidth: layout.tileWidth,
       reducedMotion: settings.reducedMotion,
-      pulseNumber: this.buildState.pulseNumber,
     })
   }
 
@@ -125,9 +123,11 @@ export class BuildSession {
       this.onQuit()
       return
     }
-    // A playback control belongs to the Pulse's clock, not to the state: handed on like a quit.
+    // A playback control belongs to the Pulse's clock, not to the state: handed on like a quit. Pause has
+    // nothing to pause once the result stands — and no row is drawn for it there — so it is not handed on.
     if (command.kind === "pulse") {
-      this.presenter?.apply(command.control)
+      const over = this.presenter?.phase(this.buildState.debug) === "home"
+      if (!(over && command.control === "toggle")) this.presenter?.apply(command.control)
       return
     }
     const before = this.buildState
@@ -153,12 +153,7 @@ export class BuildSession {
       return
     }
     if (resolved === null) return
-    const { settings } = this.buildState
-    this.presenter = new PulsePresenter(resolved, {
-      ...DEFAULT_PRESENTATION,
-      reducedMotion: settings.reducedMotion,
-      glyphPack: settings.glyphPack,
-    })
+    this.presenter = new PulsePresenter(resolved)
     // Started by a key that arrived at a known time: the Pulse is at zero from that moment.
     if (this.now !== undefined) this.presenter.advance(this.now)
   }
