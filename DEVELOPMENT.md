@@ -207,7 +207,10 @@ experiments first, each with the default it replaced, the commit on the first li
 iTerm2 allow "Applications in terminal may access clipboard") and writes
 `~/.terminal-nexus/settings-export.txt`. **`--settings "<text>"`** reads an export back — the whole
 text or just some pairs, unknown names and bad values skipped one at a time — for `--spike` and for
-`scripts/playtest.mjs`, so an agent can reproduce exactly what the owner played.
+`scripts/playtest.mjs`, so an agent can reproduce exactly what the owner played. **`--keys "<key script>"`** opens the Build Phase already in the state those keys reach —
+the scripted playtest's key names, through the same adapters a player's keys go through — and `#keys=`
+does the same on the browser page (`#keys=n%201%201%20Enter`); with `--settings` a demo opens exactly
+where and how it should.
 
 **A placed building goes up** (gate 5I): it plays a few frames of its own (authored beside its art in
 `src/content/art.ts`'s `PLACEMENT_ART`, with a generic fallback for anything not drawn yet), then
