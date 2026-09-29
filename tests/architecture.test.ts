@@ -68,8 +68,15 @@ function assertNoDependencyOn(from: string, forbidden: readonly string[]): void 
   }
 }
 
-test("src/pulse never reaches the view, the report, or the shell", () => {
-  assertNoDependencyOn("pulse", ["view", "report", "cli"])
+test("src/pulse never reaches the view, the report, the shell, or the match layer", () => {
+  // The match layer (gate 6A: the opening state and Recall) sits beside the tick kernel and is never
+  // called from inside it, so no Pulse's hashes can depend on it.
+  assertNoDependencyOn("pulse", ["view", "report", "cli", "match"])
+})
+
+test("src/match never reaches the view, the report, the shell, or the Build Phase", () => {
+  // Rules-layer code around the kernel: deterministic, and blind to how anything is drawn or asked for.
+  assertNoDependencyOn("match", ["view", "report", "cli", "build"])
 })
 
 test("the simulation never reaches a glyph", () => {
@@ -84,6 +91,7 @@ test("the simulation never reaches a glyph", () => {
     "content/index.ts",
     "scenario/index.ts",
     "pulse/index.ts",
+    "match/index.ts",
     "state/types.ts",
     "events/types.ts",
     "report/index.ts",
@@ -111,7 +119,7 @@ test("src/view never reaches the kernel", () => {
 })
 
 test("the deterministic modules name no clock, no Math.random, and no terminal", () => {
-  const kernel = ["grid", "rng", "content", "events", "state", "scenario", "pulse"]
+  const kernel = ["grid", "rng", "content", "events", "state", "scenario", "pulse", "match"]
   const forbidden = [
     /\bMath\s*\.\s*random\b/,
     /\bDate\s*\.\s*now\b/,
@@ -145,12 +153,12 @@ test("the Build Phase reducer and its Experiments name no clock and never reach 
   }
 })
 
-test("the Build Phase's animation and key timing take the time as a number, and name no clock", () => {
+test("the Build Phase's animation and key timing, and the Nexus Pulse's ending, take the time as a number, and name no clock", () => {
   // Gate 5H: the screen's clock is read in one place, the live loop (src/cli/spike.ts), and handed to
   // these as a number — which is what lets a test drive the ease, the flashes, the held-key ramp and the
   // Esc timeout without waiting.
   const forbidden = [/\bDate\s*\.\s*now\b/, /\bnew\s+Date\b/, /\bperformance\s*\.\s*now\b/, /\bset(Timeout|Interval)\b/]
-  for (const file of [join(SRC, "view", "build-live.ts"), join(SRC, "view", "placement.ts"), join(SRC, "view", "animation.ts"), join(SRC, "view", "tween.ts"), join(SRC, "view", "key-reader.ts"), join(SRC, "build", "motion.ts")]) {
+  for (const file of [join(SRC, "view", "build-live.ts"), join(SRC, "view", "placement.ts"), join(SRC, "view", "animation.ts"), join(SRC, "view", "tween.ts"), join(SRC, "view", "key-reader.ts"), join(SRC, "build", "motion.ts"), join(SRC, "view", "ending.ts"), join(SRC, "view", "pulse-live.ts"), join(SRC, "view", "pulse-scene.ts")]) {
     const source = readFileSync(file, "utf8")
     for (const pattern of forbidden) {
       assert.ok(!pattern.test(source), `src/${relative(SRC, file)} mentions ${String(pattern)}; the live loop owns the clock`)

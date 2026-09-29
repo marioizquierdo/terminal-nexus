@@ -8,6 +8,7 @@ import assert from "node:assert/strict"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { frameToText } from "../src/view/frame.ts"
+import { DEFENCE_KEYS } from "./pulse-helpers.ts"
 
 const ESC = String.fromCharCode(27)
 
@@ -69,4 +70,35 @@ test("leaving the screen stops the script and says how many steps were not run",
 
 test("a terminal below the 80x24 floor is refused rather than played", () => {
   assert.throws(() => runBuildPlaytest({ steps: [], columns: 79, rows: 24 }), /below/)
+})
+
+test("wait is a step where nothing is pressed and time passes: a second by default, or the milliseconds given", () => {
+  const steps = parseKeyScript("wait wait~4000 Wait~250*2 Down")
+  assert.deepEqual(
+    steps.map((step) => [step.kind, step.label, step.afterMs]),
+    [
+      ["wait", "wait", undefined],
+      ["wait", "wait~4000", 4000],
+      ["wait", "Wait~250", 250],
+      ["wait", "Wait~250", 250],
+      ["key", "Down", undefined],
+    ],
+  )
+})
+
+test("a scripted playtest plays a Nexus Pulse on the script's own clock and shows every phase of its ending", () => {
+  // A Nexus power, two Turrets and a Hatchery, the commit and its confirmation; then the script lets it play.
+  const plan = `${DEFENCE_KEYS} s s`
+  const run = runBuildPlaytest({ steps: parseKeyScript(`${plan} wait~1000*20`) })
+  const texts = run.frames.map((frame) => frameToText(frame.frame))
+  const started = texts.findIndex((text) => text.includes("nexus pulse"))
+  assert.ok(started > 0, "the script never reached the Pulse")
+  // The frame right after the second `s` is the Pulse's own first moment, already looking at the Nexus.
+  assert.match(texts[started]!, /^\| NEXUS PULSE 1 +0:15 /m)
+  assert.match(texts[started]!, /view x 0-48 y 3-18/)
+  const seen = [/^\| NEXUS PULSE /m, /The Pulse is about to end\./, /^\| CEASE FIRE /m, /^\| RECALL /m, /^\| VICTORY /m].map((phase) =>
+    texts.findIndex((text) => phase.test(text)),
+  )
+  assert.ok(seen.every((index) => index >= 0), `a phase never appeared: ${JSON.stringify(seen)}`)
+  assert.deepEqual([...seen].sort((a, b) => a - b), seen, "the phases did not come in order")
 })

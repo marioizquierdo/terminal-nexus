@@ -2,7 +2,7 @@
 
 **Document role:** The queue: what waits on Mario, what comes next, and the small work that has piled up beside the milestones
 **Status:** WORKING — keep it short; delete an item when it is done, and move a decision into `specs/open-questions.md` when it becomes one
-**Updated:** 2026-09-29 (after gates 5G-5K merged as pull request 46)
+**Updated:** 2026-09-29 (after Milestone 5 was accepted and gate 6A, the Nexus Pulse from `[s] Start` to a result, was built and reworked once)
 **License:** Apache-2.0
 
 Milestones say what the game must become (`milestones/`); this says what is waiting *right now*, and
@@ -10,54 +10,77 @@ the cleanup that does not belong to any gate.
 
 ## 1. Waiting on Mario
 
-- **Play the merged Build Phase and send an export.** Gates 5D-5K are built and reported (PASS) but not
-  formally accepted; he tests them together. Settings, `e` (Export), paste it as a comment; an agent
-  starts the game with `--settings "<text>"` and settles each Experiment it answers (`AGENTS.md`
-  Section 2, item 1).
+- **Play gate 6A's Nexus Pulse and send an export.** Plan something and choose `[s] Start Pulse` (the
+  menu's last row, or `s`), then Enter on the Battle Round 1 screen, and watch it to the result. Then press `d`: the first Experiments now are the ending's own —
+  Final warning (3000 ms; 0 turns off the timer's flash and the light), Red alerts (on or off),
+  Walk-back delay, Walk-back time, Centre on Nexus — and the last two are the raid and your units
+  (Raid: none is a Pulse nobody comes to, TIME'S UP; Your units: none loses the Nexus). Settings, `e`
+  (Export), paste it as a comment; an agent starts the game with `--settings "<text>"` and settles each
+  Experiment it answers (`AGENTS.md` Section 2, item 1). The questions for him: does the timer and the
+  light read as anticipation without being an alarm, is the red now rare and faint enough (does he
+  read "when losing" as a lost Pulse's result, or does he want something during the fight?), is the
+  result clear without being told, and do the timings feel right?
 - **Run the key-release probe in iTerm2.** `node scripts/probe-key-release.mjs`, hold an arrow, let it
   go, tap it, `q`. If the lines say `release`, Q66's tier 3 is buildable there (section 4).
 - **One question:** was "press `b`" an example of a key or a request for letter hotkeys? (Q67.)
-- **Accept Milestone 5, or say what is missing.** Every gate's checklist in
-  `milestones/milestone-05-build-phase.md` is ticked except two lines that are gate 5C's own formal
-  acceptance (scrolling and layout across the whole 48 × 16 to 72 × 24 range), which the built work
-  now covers (the viewport range is tested; layout adapts at both ends). Acceptance is his to state,
-  and the second of 5C's two open questions — whether the armed row's marker and the cursor read as
-  intended — was overtaken by the active-row style and the ghost preview.
+- **One more:** should the player ever read the word "Pulse"? The start screen says Battle Round; the menu
+  row and the running screen still say Pulse (Q68 — recommended to settle in the menu spike he
+  announced).
+- **The menu reorganisation spike** (F51 of the round-3 feedback): his to start. It has the rule "a menu can
+  always be walked with Up, Down and Enter" (`docs/ui-patterns.md` section 4) and one list of the menu's
+  entries (`menuEntries`) to work from.
 
-## 2. The next milestone: 6 — the Nexus Pulse Phase
+## 2. The next gate: 6B — the loop back into the next Build Phase
 
-Milestone 6 is next in the build order (`milestones/README.md`); it is `GATED` until he promotes it, and
-promoting it is a sentence from him. It needs Milestone 5 only for "the Build Phase produces what this
-Pulse resolves", and that exists: `p` asks the start-the-Pulse question, accepting locks the plan
-(`committed`), and the Pulse playback already runs in the terminal and on the page
-(`src/cli/watch.ts`). Its gates: **6A** start, end, Recall; **6B** the loop back into the next Build
-Phase and the trigger runner's simulation band; **6C** minimal automatic production. Take 6A only.
+Milestone 6 (`milestones/milestone-06-pulse-phase.md`) has three gates: **6A** start, end, Recall
+(built, awaiting his playtest); **6B** the loop back into the next Build Phase, and the trigger
+runner's simulation band; **6C** minimal automatic production. **6B waits for his word** — he has
+tested several merged gates together before, so it is likely to come with the 6A export. Take one gate
+per session.
 
-**A prompt to start it in a fresh session** (edit the first paragraph if any of it is not true):
+**A prompt to start 6B in a fresh session** (edit the first paragraph to match what he said):
 
 ```text
 Read CLAUDE.md and follow AGENTS.md.
 
-Mario has played and merged the Build Phase work (Milestone 5, gates 5D-5K) and the polish pull
-request after it. Treat this message as his word that Milestone 5 is accepted and that Milestone 6 —
-the Nexus Pulse Phase — is promoted to CURRENT. Record both first, as their own commit: the
-governance ledger, the milestone tracker (Milestone 6's header and Active gate 6A, Milestone 5
-COMPLETE), and milestones/README.md's table.
+Mario has played gate 6A (the Nexus Pulse from p, y to a result) and merged it. Treat this message as
+his word that 6A is accepted and that 6B is the Active gate. Record that first, as its own commit.
+If he pasted a settings export, settle each Experiment it answers before anything else.
 
 Then orient: run ./scripts/check-repository.sh; read milestones/milestone-06-pulse-phase.md,
-docs/next-steps.md (the carry-over), docs/ui-patterns.md (its section 0 goals apply to every new
-screen) and the feedback-round and playtest skills.
+docs/next-steps.md, docs/ui-patterns.md (sections 0 and 7c) and evidence/gate-6a-report.md (its
+sections 7 and 9 are the carry-over).
 
-Take gate 6A only — "Start, end, Recall": Start Nexus Pulse as an explicit action from the Build
-Phase's `p` question, the end condition, the stop / finish-in-flight / Recall sequence, and a result a
-viewer can read unprompted. The kernel is Milestone 1's and does not change; if you think it must,
-that is a finding for the gate report. The Build Phase commit and the Pulse playback both exist —
-this gate connects them. Where a timing or a look is Mario's to feel, add an Experiment and ask him to
-flip it and paste the export. End with a gate report and a pull request written with the
-pr-description skill (against main, its Demo sized to the change). Do not start 6B.
+Take gate 6B only — the loop: after Recall, the next Build Phase, until the mission's triggers end it;
+the trigger runner's simulation band (spawn, order, commitPlan, win, lose) as validated data;
+PERIMETER's three waves as the fixture; Q36 resolved or deferred with a reason. The kernel is
+Milestone 1's; a change to it is a finding, not an assumption. End with a gate report and a pull
+request written with the pr-description skill. Do not start 6C.
 ```
 
-## 3. Build Phase carry-over (small, none blocking)
+## 3. Carry-over (small, none blocking)
+
+**From gate 6A** (the Nexus Pulse on screen; `evidence/gate-6a-report.md` sections 7 and 9 have the reasons):
+
+- **The spike's Pulse is placeholder data.** Five units of yours at one muster point, a raid of seven
+  at the far edge, a 30-second limit, one seed (`spikePulse` in `src/build/catalog.ts`); the Raid and
+  Your units Experiments size them. PERIMETER's real map, units and waves are 6B's, and those two
+  Experiments are deleted then.
+- **The Barracks trains nothing yet** — its own blurb says "trains troopers each Pulse", and the kernel
+  has no production until 6C.
+- **Only the player's survivors walk home.** Recall regroups every survivor by the rule in
+  `engine.md` Section 5, but the raid has no producer and no Nexus in the spike, so its survivors stay
+  where they stood — visible in a lost Pulse. What a raid's leftovers do between Pulses is a 6B
+  question once there are several.
+- **The walk home is a straight glide** over whole tiles, with no routing; it may cross rock, which a
+  two-second flourish can afford.
+- **The status line under a popup mid-Pulse still says "Build committed - N planned."** True, but stale;
+  the Pulse's own message returns when the popup closes.
+- **No live numbers on the map cursor during a Pulse** (Explore Map's card is the Build Phase's), and
+  the enemy's opening force is visible in the Build Phase — hiding it (player projection) is later work.
+- **Watch again** replays a Pulse that was already resolved; it cannot, and must not, resolve a new one.
+
+**From the Build Phase:**
 
 - **The map's own Barracks sits right of the first free spot**, so arming a second Barracks goes below
   it and the third continues to the right. That is content, not the rule; a different starter map
@@ -105,7 +128,7 @@ always works; a host that offers more makes it better.**
 | Item | Why | Size |
 | --- | --- | --- |
 | Rename `debug.ts` / `DebugFlags` / `BuildState.debug` / `debug-*` to say "experiments" | Debug Mode became Settings; the code still says debug | ~200 mechanical lines; a pull request of its own so the diff is pure rename |
-| Compact `AGENTS.md` Section 2's per-gate paragraphs into two lines each plus a link | It is ~120 lines every session reads first; the detail lives in the tracker and the gate reports | do it right after Mario accepts a milestone |
+| Compact `AGENTS.md` Section 2's per-gate paragraphs into two lines each plus a link | It is ~130 lines every session reads first; the detail lives in the tracker and the gate reports | **due now — Milestone 5 was accepted 2026-09-29**; its own small pull request, since a docs-only diff is easy to review |
 | Screenshot flows set Experiments with `--settings`, not "Down*6" | Every added or removed Experiment shifts a count (three recounts this round) | a morning; only the flows that set a value, not the ones that show the popup |
 | A `ScreenHost` interface and an `InputEvent` with `phase` | Fewer TTY fakes, real key releases, gamepad and touch-hold | see `docs/portability.md` section 4 |
 | One launch-options module for the command line and `#settings=` / `#keys=` | A new option can reach one and not the other | small |

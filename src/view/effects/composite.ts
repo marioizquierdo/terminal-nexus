@@ -19,8 +19,9 @@
 // way two real flashlights pointed at the same wall add up without either one needing to remember
 // the other was there.
 
+import type { Coord } from "../../grid/types.ts"
 import type { EffectBand, PositionedCell } from "./types.ts"
-import type { CellStyle } from "../frame.ts"
+import type { BandCell, CellStyle } from "../frame.ts"
 import { BANDS } from "../frame.ts"
 
 /** The frame band each effect band paints in. */
@@ -192,4 +193,27 @@ export function mergeEffectCells(sources: readonly EffectCellSource[]): readonly
     resolved.push(group[0]?.cell.glyph === "" ? resolveLighting(group) : resolveParticles(group))
   }
   return resolved
+}
+
+/**
+ * Effect cells into the frame, under the corruption law — the one place it is enforced for every
+ * compositor that paints effects. Two effects on one tile merge (`mergeEffectCells`); a glyphless cell only
+ * restyles whatever is beneath it, and is the one write allowed onto an occupied tile; a cell with a glyph
+ * that would replace something's own (`blocked`) is dropped on that tile. `place` says where a tile is drawn.
+ */
+export function paintEffectCells(
+  cells: BandCell[],
+  sources: readonly EffectCellSource[],
+  place: (tile: Coord) => Readonly<{ x: number; y: number }>,
+  blocked: (tile: Coord) => boolean,
+): void {
+  for (const { band, cell } of mergeEffectCells(sources)) {
+    const at = place(cell.tile)
+    const style = effectCellStyle(cell)
+    if (cell.glyph === "") {
+      cells.push({ band: EFFECT_BAND_NUMBERS[band], x: at.x, y: at.y, style })
+    } else if (!blocked(cell.tile)) {
+      cells.push({ band: EFFECT_BAND_NUMBERS[band], x: at.x, y: at.y, cell: { glyph: cell.glyph, style } })
+    }
+  }
 }

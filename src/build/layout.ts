@@ -3,8 +3,9 @@
 // `src/menu/layout.ts` is the same idea for the menu.
 
 import type { Coord, GridTerrain } from "../grid/types.ts"
+import type { PlaybackControl } from "../view/playback.ts"
 import type { BuildState } from "./state.ts"
-import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct } from "./state.ts"
+import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct, startEntry } from "./state.ts"
 import type { ConstructGroup, ConstructItem, MenuEntry } from "./types.ts"
 import type { Camera, TerminalSize, TileWidth, Viewport } from "./camera.ts"
 import {
@@ -83,6 +84,53 @@ export const EXPLORE_ROW = 0
 export const NEXUS_ROW = 1
 export const RESOURCE_ROW = 3
 const CONSTRUCT_FIRST_ROW = 4
+
+/**
+ * The Nexus Pulse panel's clickable rows (gate 6A): the playback controls with their hotkeys, pinned to
+ * the bottom of the panel where the Build Phase's overflow key help sits. The composer draws them and
+ * the mouse adapter hit-tests them from this one place, as it does every other row. `[` and `]` (speed)
+ * and `.` and `,` (step) are keys only: the panel has room for two rows and these are the two a player
+ * reaches for.
+ */
+export type PulseControlRow = Readonly<{ row: number; hotkey: string; control: PlaybackControl }>
+
+export function pulseControlRows(layout: BuildLayout): readonly PulseControlRow[] {
+  return [
+    { row: layout.panelBindingsRow - 1, hotkey: "space", control: "toggle" },
+    { row: layout.panelBindingsRow, hotkey: "r", control: "restart" },
+  ]
+}
+
+/** Whether a frame column is one of the side panel's — the width a highlight bar or a click target spans. */
+export function inPanelColumns(layout: BuildLayout, column: number): boolean {
+  return column >= layout.panelColumn && column < layout.panelColumn + layout.panelLimit
+}
+
+/** The playback control on the panel row at a frame cell, or `null` — the whole row is the target, the
+ *  width a highlight bar would be drawn. */
+export function pulseControlAt(layout: BuildLayout, column: number, row: number): PlaybackControl | null {
+  if (!inPanelColumns(layout, column)) return null
+  return pulseControlRows(layout).find((control) => control.row === row)?.control ?? null
+}
+
+/**
+ * The Start Pulse entry (owner, 2026-09-29, feedback F41, then F47: "a regular menu item, at the
+ * bottom"): the menu's last row, drawn and hit-tested like every other. It is pinned to the panel's
+ * bottom line rather than placed after the last group, so it does not move as the menu above it grows,
+ * and the rest of the menu — and the key help that grows up from the bottom — ends on the row above it.
+ * `s` is its hotkey.
+ */
+export const START_KEY = "s"
+export const START_LABEL = "Start Pulse"
+
+export function startRow(layout: BuildLayout): number {
+  return layout.panelBindingsRow
+}
+
+/** The last panel row the menu's other text may use: the rows above the Start Pulse entry. */
+export function menuFloor(layout: BuildLayout): number {
+  return startRow(layout) - 1
+}
 
 /** The key the top bar's right end names. */
 export const ESC_KEY = "[esc]"
@@ -187,6 +235,7 @@ export function menuEntryRow(
 ): number | null {
   if (entry.kind === "nexus") return layout.panelRow + NEXUS_ROW
   if (entry.kind === "explore") return layout.panelRow + EXPLORE_ROW
+  if (entry.kind === "start") return startRow(layout)
   for (const line of constructLines(layout, catalog)) {
     if (line.kind === "item" && line.index === entry.index) return line.row
   }
@@ -205,7 +254,10 @@ export function menuEntryAt(
   column: number,
   row: number,
 ): number | null {
-  if (column < layout.panelColumn || column >= layout.panelColumn + layout.panelLimit) return null
+  if (!inPanelColumns(layout, column)) return null
+  // Start Pulse first: it is the one row pinned to the panel's bottom, and wins where a taller menu
+  // would reach it.
+  if (row === startRow(layout)) return startEntry(catalog.length)
   if (row === layout.panelRow + EXPLORE_ROW) return EXPLORE_ENTRY
   if (row === layout.panelRow + NEXUS_ROW) return NEXUS_ENTRY
   for (const line of constructLines(layout, catalog)) {

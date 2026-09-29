@@ -17,10 +17,14 @@ import {
   EXPLORE_ROW,
   NEXUS_ROW,
   RESOURCE_ROW,
+  START_KEY,
+  START_LABEL,
   cellForTile,
   constructLines,
   escHintSpan,
   escLabel,
+  menuFloor,
+  startRow,
   summaryRows,
 } from "../build/layout.ts"
 import { overlaySpec, placeOverlay, settingColumns, wrapWords } from "../build/overlay.ts"
@@ -36,6 +40,7 @@ import {
   pendingPicks,
   refusalText,
   remaining,
+  startEntry,
   structureAtTile,
 } from "../build/state.ts"
 import type { ConstructGroup, ConstructItem, PlannedPlacement } from "../build/types.ts"
@@ -43,6 +48,9 @@ import { CONTENT_ART } from "../content/art.ts"
 import type { BandCell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import { put, text } from "./draw.ts"
+import { drawTerrain } from "./grid-layer.ts"
+import type { PulseFrame } from "./pulse-scene.ts"
+import { drawFrameLight, drawPulseEffects, drawPulseEntities, drawPulsePanel, pulseKeyHelp, pulseStatus, pulseSubtitle } from "./pulse-scene.ts"
 import type { CapabilityMode, StyleRole } from "./roles.ts"
 import { chromeGlyph, entityGlyph, playerRole, terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
@@ -51,7 +59,7 @@ import type { ArmWeight, Arms, EdgePlace } from "./edge.ts"
 import { edgeCell } from "./edge.ts"
 import { EFFECT_RECIPES } from "./effects/recipes.ts"
 import type { EffectCellSource } from "./effects/composite.ts"
-import { EFFECT_BAND_NUMBERS, effectCellStyle, mergeEffectCells } from "./effects/composite.ts"
+import { paintEffectCells } from "./effects/composite.ts"
 import type { TrackSchedule } from "./animation.ts"
 import { trackEffectsAt } from "./animation.ts"
 import type { PlacementClock, RemovalClock } from "./placement.ts"
@@ -99,6 +107,13 @@ export type BuildCompositionInput = Readonly<{
   removing?: readonly RemovalClock[]
   /** The player's reduced-motion setting: a placement then shows its finished building at once. */
   reducedMotion?: boolean
+  /**
+   * A Nexus Pulse is on screen (gate 6A): what it is showing at this instant, worked out by the presenter
+   * (`pulse-live.ts`). Present, the Grid shows the fight and the panel the forces and the ending, in this
+   * same frame and under the same popups; absent — every Build Phase frame, and every test that never
+   * starts a Pulse — the frame is the Build Phase's, exactly as it always was.
+   */
+  pulse?: PulseFrame
 }>
 
 export type BuildFlash = Readonly<{ kind: "pressed" | "refused"; entry: number }>
@@ -279,26 +294,7 @@ function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPa
   const { context, state, layout } = input
   const range = visibleRange(state.camera, state.viewport)
 
-  for (let y = range.firstY; y <= range.lastY; y += 1) {
-    for (let x = range.firstX; x <= range.lastX; x += 1) {
-      const terrainId = context.grid.tiles[y * context.grid.width + x]
-      if (terrainId === undefined) continue
-      const { glyph, role } = terrainGlyph(terrainId, pack)
-      const cell = cellForTile(layout, state.camera, { x, y })
-      // The same lattice the Pulse view draws featureless ground with — a full field of dots
-      // competes with everything on top of it. Rock and deposits are features and always drawn. The
-      // lattice is keyed to absolute tile coordinates, so it scrolls with the Grid rather than
-      // crawling across it.
-      const featureless = terrainId === "terrain.plain"
-      const onLattice = x % 4 === 0 && y % 2 === 0
-      put(cells, BANDS.terrain, cell.x, cell.y, featureless && !onLattice ? " " : glyph, role, {
-        dim: true,
-      })
-      for (let extra = 1; extra < layout.tileWidth; extra += 1) {
-        put(cells, BANDS.terrain, cell.x + extra, cell.y, " ", role)
-      }
-    }
-  }
+  drawTerrain(cells, { grid: context.grid, camera: state.camera, viewport: state.viewport, layout }, pack)
 
   const drawStructure = (contentId: string, anchor: Coord, animation: Animating | undefined): void => {
     const definition = context.registry.get(contentId)
@@ -343,7 +339,7 @@ function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPa
  * The effects of every placement still animating (gate 5I) — its track's follow-ups: the light
  * (shading, `highlights`) and the sparks (particles, `effects`) — and of every building just removed
  * (feedback F33), whose track is its sparks alone. The corruption law is enforced here as
- * the Pulse compositor enforces it, through the same translation (`effectCellStyle`): a glyphless cell
+ * the Pulse compositor enforces it, through the same helper (`paintEffectCells`): a glyphless cell
  * only restyles whatever is beneath it, and a particle that would land on any building's tile —
  * standing, planned, or still going up — is dropped, so an effect never replaces the glyph that says a
  * building is there. Two effects on one tile merge the way the Pulse's do. Clipped to the view like
@@ -378,16 +374,12 @@ function drawEffects(
       }
     }
   }
-  for (const { band, cell } of mergeEffectCells(sources)) {
-    const at = cellForTile(layout, state.camera, cell.tile)
-    const style = effectCellStyle(cell)
-    if (cell.glyph === "") {
-      cells.push({ band: EFFECT_BAND_NUMBERS[band], x: at.x, y: at.y, style })
-      continue
-    }
-    if (structureAt(context, state.planned, cell.tile)) continue
-    cells.push({ band: EFFECT_BAND_NUMBERS[band], x: at.x, y: at.y, cell: { glyph: cell.glyph, style } })
-  }
+  paintEffectCells(
+    cells,
+    sources,
+    (tile) => cellForTile(layout, state.camera, tile),
+    (tile) => structureAt(context, state.planned, tile),
+  )
 }
 
 /**
@@ -456,7 +448,9 @@ function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
   const { context, state, layout } = input
   // The cursor is the Grid's own focus mark: drawn only while the Grid has the keyboard, so the
   // screen never shows two "you are here"s at once (owner, 2026-09-27).
-  if (state.focus !== "grid" || state.overlay !== null || state.committed) return
+  // A committed plan hides the cursor, except while a Pulse is on screen: there it is how the player looks
+  // around the map, the arrows moving it and the view following (gate 6A).
+  if (state.focus !== "grid" || state.overlay !== null || (state.committed && input.pulse === undefined)) return
   const range = visibleRange(state.camera, state.viewport)
   // Where the cursor is drawn: mid-glide, a tile on its way (and what stands there decides its style).
   const cursor = input.cursor ?? state.cursor
@@ -490,7 +484,7 @@ export type KeyHelp = Readonly<{ label: string; bindings: readonly string[] }>
 
 export const MENU_KEY_HELP: KeyHelp = {
   label: "MENU",
-  bindings: ["up/down choose", "enter/space select", "tab grid", "u undo", "p start pulse"],
+  bindings: ["up/down choose", "enter/space select", "tab grid", "u undo"],
 }
 
 /** The Grid, with a building armed. */
@@ -515,7 +509,7 @@ export const MAP_KEY_HELP: KeyHelp = {
 }
 
 const NEXUS_KEY_HELP: KeyHelp = { label: "NEXUS", bindings: ["up/down choose", "enter/space pick", "esc close"] }
-const CONFIRM_KEY_HELP: KeyHelp = { label: "START PULSE?", bindings: ["y yes", "n/esc no"] }
+const CONFIRM_KEY_HELP: KeyHelp = { label: "BATTLE ROUND", bindings: ["enter/s/space start", "esc back"] }
 const GAME_MENU_KEY_HELP: KeyHelp = { label: "MENU", bindings: ["s settings", "r restart", "q quit", "esc back to the game"] }
 const COMMITTED_KEY_HELP: KeyHelp = { label: "COMMITTED", bindings: ["esc menu"] }
 const SETTINGS_KEY_HELP: KeyHelp = {
@@ -617,7 +611,8 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
   // The top bar: the game's title and where the player is (engine.md 9.2), across the whole width.
   const limit = layout.headerLimit
   text(cells, band, left, headerRow, "TERMINAL NEXUS", "chrome.title", { bold: true, limit })
-  text(cells, band, left + 15, headerRow, "build phase", "chrome.muted", { limit: limit - 15 })
+  const subtitle = input.pulse === undefined ? "build phase" : pulseSubtitle(input.pulse)
+  text(cells, band, left + 15, headerRow, subtitle, "chrome.muted", { limit: limit - 15 })
   // What Esc does right now, right-aligned (feedback F37): "menu [esc]", "back [esc]", "close [esc]" —
   // the name quiet, the key in the hotkey colour after it, findable without competing with the game's
   // own title. The same text is the click target that sends Esc.
@@ -643,8 +638,10 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
     "chrome.label",
     { limit: footerLimit },
   )
-  // The screen documents itself (engine.md 9.7), starting with where the keyboard is.
-  const help = keyHelp(state)
+  // The screen documents itself (engine.md 9.7), starting with where the keyboard is. A popup over a
+  // Pulse is what holds the keyboard, and says so; otherwise the Pulse does.
+  const pulse = state.overlay !== null ? undefined : input.pulse
+  const help = pulse === undefined ? keyHelp(state) : pulseKeyHelp(pulse)
   text(cells, band, left, layout.footerRow + 1, help.label, "chrome.title", { bold: true, limit: footerLimit })
   const helpColumn = left + help.label.length + BINDING_GAP.length
   text(
@@ -656,7 +653,7 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
     "chrome.muted",
     { limit: footerLimit - (helpColumn - left) },
   )
-  const shown = statusLine(state, preview)
+  const shown = pulse === undefined ? statusLine(state, preview) : pulseStatus(pulse)
   const style = statusStyle(shown.tone)
   text(cells, band, left, layout.footerRow + 2, shown.text, style.role, {
     ...(style.bold === undefined ? {} : { bold: style.bold }),
@@ -698,22 +695,21 @@ const GROUP_LABELS: Readonly<Record<ConstructGroup, string>> = {
 }
 
 /**
- * The bindings the footer had no room for, pinned to the bottom of the panel and growing upward.
- * Bounded by the menu, which wins: a hidden menu row is still a live click target, so the
- * lowest-priority lines are dropped instead.
+ * The bindings the footer had no room for, stacked above the Start Pulse row at the bottom of the panel
+ * and growing upward. Bounded by the menu, which wins: a hidden menu row is still a live click target,
+ * so the lowest-priority lines are dropped instead.
  */
 function panelBindings(layout: BuildLayout, catalog: readonly ConstructItem[], help: KeyHelp): readonly string[] {
-  const lines = bindingLines(layout.footerLimit, layout.panelLimit, help).panel
   const floor = summaryRows(layout, catalog).special + 2
-  return lines.slice(0, Math.max(0, Math.min(lines.length, layout.panelBindingsRow - floor + 1)))
+  const lines = bindingLines(layout.footerLimit, layout.panelLimit, help).panel
+  return lines.slice(0, Math.max(0, Math.min(lines.length, menuFloor(layout) - floor + 1)))
 }
 
 function drawPanelBindings(cells: BandCell[], input: BuildCompositionInput): void {
   const { layout } = input
   const lines = panelBindings(layout, input.context.catalog, keyHelp(input.state))
   lines.forEach((line, index) => {
-    const row = layout.panelBindingsRow - (lines.length - 1 - index)
-    text(cells, BANDS.chrome, layout.panelColumn, row, line, "chrome.muted", { limit: layout.panelLimit })
+    text(cells, BANDS.chrome, layout.panelColumn, menuFloor(layout) - (lines.length - 1 - index), line, "chrome.muted", { limit: layout.panelLimit })
   })
 }
 
@@ -726,13 +722,15 @@ type RowState = "plain" | "selected" | "pressed" | "refused"
 /**
  * Whether menu entry `entry`'s action is under way right now — **the one test for the "active" style**
  * every menu row shares (owner, 2026-09-29, feedback F32): a building while it is armed, `[e] Explore
- * Map` while Explore Map is open, `[n] Nexus` while its popup is. A menu row has two states and no
- * more: *highlighted* by the keyboard (the bar, only while the menu has the keyboard) and *active*.
+ * Map` while Explore Map is open, `[n] Nexus` while its popup is, `[s] Start Pulse` while its
+ * confirmation is. A menu row has two states and no more: *highlighted* by the keyboard (the bar, only
+ * while the menu has the keyboard) and *active*.
  */
-export function menuRowActive(state: BuildState, entry: number): boolean {
+export function menuRowActive(context: BuildContext, state: BuildState, entry: number): boolean {
   if (state.committed) return false
   if (entry === NEXUS_ENTRY) return state.overlay === "nexus-powers"
   if (entry === EXPLORE_ENTRY) return exploring(state)
+  if (entry === startEntry(context.catalog.length)) return state.overlay === "confirm-commit"
   return state.armed !== null && entryOfConstruct(state.armed) === entry
 }
 
@@ -820,6 +818,9 @@ function effectLine(context: BuildContext, state: BuildState, preview: ArmedPrev
       return pendingPicks(context, state) > 0 ? "Pick one before the Pulse" : "Read the active powers"
     }
     if (entry.kind === "explore") return "See what is on every tile"
+    if (entry.kind === "start") {
+      return pendingPicks(context, state) > 0 ? "Pick a Nexus power first" : "Lock the plan and fight"
+    }
     return context.catalog[entry.index]?.effect ?? null
   }
   return preview?.item.effect ?? null
@@ -835,8 +836,8 @@ function effectLine(context: BuildContext, state: BuildState, preview: ArmedPrev
 function rowState(input: BuildCompositionInput, entry: number): RowState {
   const { state, flash } = input
   if (flash !== undefined && flash.entry === entry) return flash.kind
-  if (menuRowActive(state, entry)) return "plain"
-  // The start-the-Pulse question belongs to the menu, which stays lit behind it; the game menu,
+  if (menuRowActive(input.context, state, entry)) return "plain"
+  // The Battle Round confirmation belongs to the menu, which stays lit behind it; the game menu,
   // Settings, the export and a message belong to none, so while one has the keyboard its own
   // highlight (or none) is the only one on screen.
   if (state.overlay === "menu" || state.overlay === "settings" || state.overlay === "export" || state.overlay === "message") {
@@ -852,7 +853,7 @@ function drawExploreRow(cells: BandCell[], input: BuildCompositionInput): void {
   drawMenuRow(cells, input.layout, input.layout.panelRow + EXPLORE_ROW, {
     hotkey: "e",
     label: "Explore Map",
-    active: menuRowActive(input.state, EXPLORE_ENTRY),
+    active: menuRowActive(input.context, input.state, EXPLORE_ENTRY),
     state: rowState(input, EXPLORE_ENTRY),
   })
 }
@@ -881,7 +882,7 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput, preview: Arm
     label: "Nexus",
     ...(pending > 0 ? { badge: ` (${pending})` } : {}),
     ...(active > 0 ? { value: `${active} active` } : {}),
-    active: menuRowActive(state, NEXUS_ENTRY),
+    active: menuRowActive(context, state, NEXUS_ENTRY),
     state: rowState(input, NEXUS_ENTRY),
   })
 
@@ -913,7 +914,7 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput, preview: Arm
       hotkey: item.hotkey,
       label: item.label,
       value: String(item.cost),
-      active: menuRowActive(state, entry),
+      active: menuRowActive(context, state, entry),
       state: rowState(input, entry),
       disabled: item.cost > left,
     })
@@ -924,13 +925,24 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput, preview: Arm
   text(cells, band, column, specialRow, "SPECIAL", "chrome.label", { limit })
   rightAlign(cells, layout, specialRow, "none available", "chrome.muted", { dim: true })
 
+  // Start Pulse, the menu's last row, on the panel's bottom line. Dim while a Nexus power still waits
+  // to be picked, because pressing it would only be refused — it still answers, with the reason.
+  const start = startEntry(context.catalog.length)
+  drawMenuRow(cells, layout, startRow(layout), {
+    hotkey: START_KEY,
+    label: START_LABEL,
+    active: menuRowActive(context, state, start),
+    state: rowState(input, start),
+    disabled: pending > 0,
+  })
+
   const effect = effectLine(context, state, preview)
   if (effect === null) return
   const row = specialRow + 2
   // One row of clearance above the bindings block, so the two never touch; dropped rather than drawn
   // over the bindings when a short panel has no room.
   const bindingRows = panelBindings(layout, context.catalog, keyHelp(state)).length
-  if (row > layout.panelBindingsRow - bindingRows - 1) return
+  if (row > menuFloor(layout) - (bindingRows === 0 ? 0 : bindingRows + 1)) return
   text(cells, band, column, row, effect, "chrome.value", { limit })
 }
 
@@ -1018,12 +1030,12 @@ function drawInfoPanel(cells: BandCell[], input: BuildCompositionInput, pack: Gl
     stats.push(["ATTACK", `${definition.attack.damage} at range ${definition.attack.range}`])
   }
   for (const [label, value] of stats) {
-    if (row > layout.panelBindingsRow) break
+    if (row > menuFloor(layout)) break
     text(cells, band, column, row, label, "chrome.label", { limit })
     rightAlign(cells, layout, row, value, "chrome.value")
     row += 1
   }
-  if (structure.planned && row + 1 <= layout.panelBindingsRow) {
+  if (structure.planned && row + 1 <= menuFloor(layout)) {
     text(cells, band, column, row + 1, "[bksp] remove  [u] undo", "chrome.muted", { limit })
   }
 }
@@ -1176,10 +1188,27 @@ export function composeBuildFrame(
     given.camera === undefined ? given : { ...given, state: { ...given.state, camera: given.camera } }
   const pack: GlyphPack = input.glyphPack ?? "ascii"
   const cells: BandCell[] = []
+
+  // A Nexus Pulse on screen replaces what the Build Phase drew on the Grid and in the panel with the fight
+  // and its forces; the frame, the top and bottom bars, the cursor and every popup are the same code.
+  if (input.pulse !== undefined) {
+    const view = { camera: input.state.camera, viewport: input.state.viewport, layout: input.layout, grid: input.context.grid }
+    drawTerrain(cells, view, pack)
+    drawPulseEffects(cells, view, input.pulse, drawPulseEntities(cells, view, input.pulse))
+    drawCursor(cells, input)
+    drawChrome(cells, input, pack)
+    drawFrameLight(cells, input.layout, input.pulse)
+    drawHeaderAndFooter(cells, input, null)
+    const panel: BandCell[] = []
+    drawPulsePanel(panel, input.layout, input.pulse, input.state.pulseNumber)
+    for (const cell of panel) if (cell.y <= input.layout.panelBindingsRow) cells.push(cell)
+    drawOverlay(cells, input, pack)
+    return composeBands(input.layout.frame.width, input.layout.frame.height, cells)
+  }
+
   // What Enter would do at the cursor, derived once and read by the ghost, the status line and the
   // panel alike — the reducer's `place()` acts on the very same derivation.
   const preview = armedPreview(input.context, input.state)
-
   const animating = animatingPlacements(input)
   drawGrid(cells, input, pack, animating)
   drawEffects(cells, input, animating, capability)

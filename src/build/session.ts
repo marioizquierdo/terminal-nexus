@@ -7,6 +7,9 @@
 // job and wiring it to a terminal is `src/cli/spike.ts`'s.
 
 import { keysFromChunk } from "../view/playback.ts"
+import { PulsePresenter } from "../view/pulse-live.ts"
+import type { ResolvedPulse } from "../view/pulse-live.ts"
+import type { PulseFrame } from "../view/pulse-scene.ts"
 import type { BuildLayout } from "./layout.ts"
 import { escLabel } from "./layout.ts"
 import { overlaySpec, placeOverlay } from "./overlay.ts"
@@ -34,6 +37,14 @@ export type BuildSessionOptions = Readonly<{
   onExport?: (text: string) => void
   /** The player changed a setting in the Settings popup: the live loop redraws with it and saves it. */
   onSettingsChange?: (settings: Settings) => void
+  /**
+   * Resolves the Nexus Pulse the player has just committed to (gate 6A), or `null` when there is none to
+   * start. **Injected, because `src/build` may never reach the kernel** (`tests/architecture.test.ts`):
+   * the application shell owns that connection (`src/cli/pulse-run.ts`), and the session only hands it the
+   * plan and plays what comes back. Absent — a hand-built session in a test — committing freezes the plan
+   * and nothing more.
+   */
+  startPulse?: (context: BuildContext, state: BuildState) => ResolvedPulse | null
 }>
 
 /**
@@ -55,6 +66,12 @@ export class BuildSession {
   /** The last left click on a Grid tile with a building armed: where on screen, when, and the tile it
    *  pointed at — so a double click places there even if the first click scrolled the view (F22). */
   private lastArmedClick: Readonly<{ column: number; row: number; at: number; tile: Coord }> | null = null
+  private readonly startPulse: (context: BuildContext, state: BuildState) => ResolvedPulse | null
+  /** The Nexus Pulse on screen, from the moment the plan is committed until the Build Phase starts over. */
+  private presenter: PulsePresenter | null = null
+  /** The screen's clock at the last thing the session heard of it, so a Pulse begun by a key press is at
+   *  zero when that key arrived. `undefined` for a driver that never says. */
+  private now: number | undefined
 
   constructor(options: BuildSessionOptions) {
     this.context = options.context
@@ -62,16 +79,55 @@ export class BuildSession {
     this.onQuit = options.onQuit ?? ((): void => {})
     this.onExport = options.onExport ?? ((): void => {})
     this.onSettingsChange = options.onSettingsChange ?? ((): void => {})
+    this.startPulse = options.startPulse ?? ((): null => null)
   }
 
   get state(): BuildState {
     return this.buildState
   }
 
+  /** The Nexus Pulse on screen, or `null` — before the plan is committed, and after a restart. */
+  get pulse(): PulsePresenter | null {
+    return this.presenter
+  }
+
+  /**
+   * Time passes (`now` is the screen's own clock, in milliseconds — never read here): the Pulse on screen
+   * moves on with it, and whatever it asks of the screen in return — to look at the player's Nexus — is
+   * done as the ordinary command it is. `hold` keeps the Pulse still while the clock moves on: the
+   * terminal is too small to draw it.
+   */
+  advance(now: number, hold = false): void {
+    this.now = now
+    if (this.presenter === null) return
+    this.presenter.advance(now, hold)
+    for (const command of this.presenter.due(this.buildState.debug)) this.dispatch(command)
+  }
+
+  /** What the Pulse on screen is showing right now, for the composer — or `undefined` when there is
+   *  none. */
+  pulseFrame(layout: BuildLayout): PulseFrame | undefined {
+    if (this.presenter === null) return undefined
+    const { settings, debug } = this.buildState
+    return this.presenter.frame({
+      flags: debug,
+      capability: settings.capability,
+      tileWidth: layout.tileWidth,
+      reducedMotion: settings.reducedMotion,
+    })
+  }
+
   /** The driver's direct-command path — "a scripted list of commands" (engine.md 9.7). */
   dispatch(command: BuildCommand): void {
     if (command.kind === "quit") {
       this.onQuit()
+      return
+    }
+    // A playback control belongs to the Pulse's clock, not to the state: handed on like a quit. Pause has
+    // nothing to pause once the result stands — and no row is drawn for it there — so it is not handed on.
+    if (command.kind === "pulse") {
+      const over = this.presenter?.phase(this.buildState.debug) === "home"
+      if (!(over && command.control === "toggle")) this.presenter?.apply(command.control)
       return
     }
     const before = this.buildState
@@ -81,6 +137,25 @@ export class BuildSession {
     if (this.buildState.overlay === "export" && before.overlay !== "export") {
       this.onExport(exportText(this.context, this.buildState))
     }
+    // The plan was just committed: the Nexus Pulse starts. Or the Build Phase started over: it is gone.
+    if (!before.committed && this.buildState.committed) this.beginPulse()
+    else if (before.committed && !this.buildState.committed) this.presenter = null
+  }
+
+  /** Resolve the committed plan and put its Pulse on screen. A Pulse that cannot start — a plan that
+   *  leaves no room for the units — undoes the commit and says why, so the player can fix the plan. */
+  private beginPulse(): void {
+    let resolved: ResolvedPulse | null
+    try {
+      resolved = this.startPulse(this.context, this.buildState)
+    } catch (error) {
+      this.dispatch({ kind: "pulse-failed", reason: error instanceof Error ? error.message : String(error) })
+      return
+    }
+    if (resolved === null) return
+    this.presenter = new PulsePresenter(resolved)
+    // Started by a key that arrived at a known time: the Pulse is at zero from that moment.
+    if (this.now !== undefined) this.presenter.advance(this.now)
   }
 
   /** A whole script at once, which is what an agent playtest actually looks like. */
@@ -96,6 +171,8 @@ export class BuildSession {
    * would be exactly as easy to reintroduce here.
    */
   handleKey(key: string, layout: BuildLayout, timing: KeyTiming = {}): void {
+    // Time passes before the key does: a pause pressed a second into a Pulse pauses it a second in.
+    if (timing.now !== undefined) this.advance(timing.now)
     const mouse = parseMouseEvent(key)
     const state = this.buildState
     const spec = overlaySpec(this.context, state)
@@ -107,6 +184,7 @@ export class BuildSession {
             ...(spec === null ? {} : { overlay: placeOverlay(layout, spec) }),
             explorePanel: exploring(state),
             escLabel: escLabel(state),
+            pulse: this.presenter !== null,
           })
         : buildKeyboardCommand(key, {
             itemCount: this.context.catalog.length,
@@ -116,6 +194,7 @@ export class BuildSession {
             overlayPendingCount: nexusPowers(this.context, state).pending.length,
             overlayHighlight: state.overlayHighlight,
             jumpStep: state.debug.jumpStep,
+            pulse: this.presenter !== null,
           })
     if (mouse !== null && mouse.press && command?.kind === "click-tile") {
       // A double click places where its first click pointed. The reducer places on a second click of

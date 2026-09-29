@@ -13,6 +13,7 @@ import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, buildMouseCommand, formatMouseEvent, parseMouseEvent } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildCommand } from "../src/build/types.ts"
+import { startPulse } from "../src/cli/pulse-run.ts"
 import { spikeContext } from "../src/cli/spike.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { frameToText } from "../src/view/frame.ts"
@@ -23,7 +24,7 @@ const MINIMUM = { columns: 80, rows: 24 }
 function session(): { build: BuildSession; layout: ReturnType<typeof buildLayout> } {
   const context = spikeContext()
   const layout = buildLayout(MINIMUM, context.grid)
-  const build = new BuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
+  const build = new BuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport, startPulse })
   return { build, layout }
 }
 
@@ -182,7 +183,7 @@ test("commit is refused before a pick, and opens the confirmation once one is ma
   build.dispatch({ kind: "pick-nexus", index: 0 })
   build.dispatch({ kind: "commit" })
   assert.equal(build.state.overlay, "confirm-commit")
-  assert.match(build.state.status.text, /Start the Nexus Pulse/)
+  assert.match(build.state.status.text, /Battle Round 1/)
 })
 
 test("nothing but the confirmation itself changes state while it is open", () => {
@@ -208,14 +209,14 @@ test("nothing but the confirmation itself changes state while it is open", () =>
   }
 })
 
-test("declining the confirmation cancels it and changes nothing else", () => {
+test("going back from the confirmation (Esc) cancels it and changes nothing else", () => {
   const { build } = session()
   build.dispatch({ kind: "pick-nexus", index: 0 })
   build.dispatch({ kind: "arm", index: 0 })
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
   const beforeCommit = build.state
   build.dispatch({ kind: "commit" })
-  build.dispatch({ kind: "confirm-commit", accept: false })
+  build.dispatch({ kind: "cancel" })
 
   assert.equal(build.state.overlay === "confirm-commit", false)
   assert.equal(build.state.committed, false)
@@ -233,7 +234,7 @@ test("accepting the confirmation commits, and locks every state-changing command
   build.dispatch({ kind: "arm", index: 0 })
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
   build.dispatch({ kind: "commit" })
-  build.dispatch({ kind: "confirm-commit", accept: true })
+  build.dispatch({ kind: "confirm-commit" })
 
   assert.equal(build.state.committed, true)
   assert.equal(build.state.overlay === "confirm-commit", false)
@@ -248,7 +249,7 @@ test("accepting the confirmation commits, and locks every state-changing command
     { kind: "undo" },
     { kind: "pick-nexus", index: 1 },
     { kind: "commit" },
-    { kind: "confirm-commit", accept: true },
+    { kind: "confirm-commit" },
   ] as const) {
     build.dispatch(command)
     assert.deepEqual(build.state.planned, committed.planned, `${command.kind} changed the plan after commit`)
@@ -259,7 +260,7 @@ test("accepting the confirmation commits, and locks every state-changing command
 test("a stray y or n outside the confirmation is exactly as inert as a stray digit before anything is armed", () => {
   const { build } = session()
   const before = build.state
-  build.dispatch({ kind: "confirm-commit", accept: true })
+  build.dispatch({ kind: "confirm-commit" })
   assert.deepEqual(build.state, before)
 })
 
@@ -275,7 +276,7 @@ test("keyboard: a digit picks from the Nexus popup while it is open, and arms th
   assert.deepEqual(buildKeyboardCommand("1", { ...builtContext, focus: "menu" as const }), { kind: "arm", index: 0 })
 })
 
-test("keyboard: n opens the Nexus popup, and is [n]o only while the start-the-Pulse question is open", () => {
+test("keyboard: n opens the Nexus popup, and means nothing on the Battle Round confirmation", () => {
   const idle = { itemCount: 3, armed: false }
   assert.equal(buildKeyboardCommand("y", idle), null)
   assert.deepEqual(buildKeyboardCommand("n", idle), { kind: "open-nexus-powers" })
@@ -283,8 +284,9 @@ test("keyboard: n opens the Nexus popup, and is [n]o only while the start-the-Pu
   assert.deepEqual(buildKeyboardCommand("n", { ...idle, overlay: "nexus-powers" as const }), { kind: "cancel" })
 
   const confirming = { itemCount: 3, armed: false, overlay: "confirm-commit" as const }
-  assert.deepEqual(buildKeyboardCommand("y", confirming), { kind: "confirm-commit", accept: true })
-  assert.deepEqual(buildKeyboardCommand("n", confirming), { kind: "confirm-commit", accept: false })
+  assert.deepEqual(buildKeyboardCommand("y", confirming), { kind: "confirm-commit" })
+  // Only [s] Start is a row there (feedback F50): `n` is not "keep building", Esc is the way back.
+  assert.equal(buildKeyboardCommand("n", confirming), null)
   assert.deepEqual(buildKeyboardCommand("\u001b", confirming), { kind: "cancel" })
   // The question is modal: the arrows do not reach the Grid behind it.
   assert.equal(buildKeyboardCommand(`${ESC}[C`, confirming), null)
@@ -344,11 +346,11 @@ test("mouse: inside a popup a click picks or closes; outside it, a click closes 
   assert.equal(side.build.state.overlay, null)
 })
 
-test("mouse: the start-the-Pulse popup answers by click, and a click outside it cancels", () => {
+test("mouse: the Battle Round confirmation starts by click on [s] Start, and a click outside it cancels", () => {
   const yes = session()
   yes.build.dispatch({ kind: "pick-nexus", index: 0 })
   yes.build.handleData("p", yes.layout)
-  yes.build.handleData(clickPopupBytes(yes, (c) => c.kind === "confirm-commit" && c.accept), yes.layout)
+  yes.build.handleData(clickPopupBytes(yes, (c) => c.kind === "confirm-commit"), yes.layout)
   assert.equal(yes.build.state.committed, true)
 
   const outside = session()
@@ -421,7 +423,7 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   // Arming already put the cursor on 34,13, so one click there is the confirming second click.
   clickTile({ x: 34, y: 13 })
   byMouse.build.handleData("p", byMouse.layout)
-  byMouse.build.handleData(clickPopupBytes(byMouse, (c) => c.kind === "confirm-commit" && c.accept), byMouse.layout)
+  byMouse.build.handleData(clickPopupBytes(byMouse, (c) => c.kind === "confirm-commit"), byMouse.layout)
 
   const script: readonly BuildCommand[] = [
     { kind: "open-nexus-powers" },
@@ -432,7 +434,7 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
     { kind: "arm", index: 0 },
     { kind: "place" },
     { kind: "commit" },
-    { kind: "confirm-commit", accept: true },
+    { kind: "confirm-commit" },
   ]
   const byDriver = session()
   byDriver.build.run([stillClicks, ...script])
@@ -450,4 +452,18 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
     frameToText(composeBuildFrame({ context: spikeContext(), state: side.build.state, layout: side.layout }, "monochrome"))
   assert.equal(frame(byMouse), frame(byKeyboard))
   assert.equal(frame(byDriver), frame(byKeyboard))
+
+  // Gate 6A: the commit starts a Nexus Pulse, and whichever adapter started it, it is the same Pulse —
+  // the kernel's own two hashes, the ending's Recall, and what each of them shows at the same instant.
+  const pulseOf = (side: ReturnType<typeof session>) => {
+    assert.ok(side.build.pulse !== null, "the commit did not start a Pulse")
+    return side.build.pulse.resolved
+  }
+  for (const side of [byKeyboard, byMouse, byDriver]) side.build.advance(0)
+  for (const other of [byMouse, byDriver]) {
+    assert.equal(pulseOf(other).timeline.stateHash, pulseOf(byKeyboard).timeline.stateHash)
+    assert.equal(pulseOf(other).timeline.eventsHash, pulseOf(byKeyboard).timeline.eventsHash)
+    assert.deepEqual(pulseOf(other).recall.moves, pulseOf(byKeyboard).recall.moves)
+    assert.deepEqual(other.build.pulseFrame(other.layout)?.sample.state, byKeyboard.build.pulseFrame(byKeyboard.layout)?.sample.state)
+  }
 })

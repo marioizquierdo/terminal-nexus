@@ -812,6 +812,15 @@ success, B is that trigger action rather than a new victory branch, and the kern
 condition (Nexus destroyed, annihilation, tick limit) stays exactly as it is, with a mission's
 objective layered above it. Still a RULE-adjacent change the day it lands; still Mario's call.
 
+**Gate 6A (2026-09-29) can now show the plain draw, on placeholder content.** A Pulse that runs to its
+tick limit with both sides untouched ends on the Nexus Pulse screen as **TIME'S UP — "The time ran
+out before either side won."**, neutral in tone, with how many of the player's units came home
+([`../evidence/screenshots/pulse-result-timeup.png`](../evidence/screenshots/pulse-result-timeup.png);
+the spike's "Raid: none" Experiment reaches it). That is option A's cheapest possible evidence
+for the *screen*, but not for the *question*: whether a defensive mission's player reads it as success
+depends on PERIMETER's own briefing and debrief text around it, which arrives with 6B's fixture.
+Q36 stays open for 6B to close; nothing in 6A depends on the answer.
+
 ### Q38 — Does PERIMETER's own map need real scrolling, or does Milestone 5 prove scrolling on different content?
 
 **Status:** OPEN — blocks nothing before Milestone 2 locks the map's final dimensions; the
@@ -1135,6 +1144,26 @@ menu so no hotkey moves when content arrives (`engine.md` 9.7, RULE). Letters ar
 
 **Recommendation: A**, unless the owner says he meant letters — in which case C, shown in the row, so the
 digit contract stays a rule. Ask him once whether `b` was an example of a key or a request for letters.
+
+### Q68 — What does the player call a Nexus Pulse?
+
+**Status:** OPEN — blocks nothing; registered 2026-09-29 (the owner's round-3 feedback on gate 6A, F49).
+
+The confirmation is titled "Battle Round 1", because the owner felt "we may keep the term 'pulse' to
+ourselves and instead call this 'battle round'". He also wrote the menu row as "[s] Start Pulse". Canon
+still says the player-facing phases are **Build Phase** and **Nexus Pulse** (`AGENTS.md` Section 4), so as
+built the popup says Battle Round and the menu row and the running screen's title say Pulse — two names
+for one thing on one screen.
+
+| Option | Cost |
+| --- | --- |
+| A. **As built** — Pulse everywhere but the popup | Two names for one thing; the player learns both |
+| B. **Battle Round everywhere the player reads** (`[s] Start Battle Round`, a `BATTLE ROUND 1` panel title, the Nexus popup's "needed before the battle round"); "Pulse" stays the code, canon and lore name | A canon edit (the phase names above) and a sweep of the interface's words; the lore document's Nexus Pulse becomes the in-world name only |
+| C. Both, with a job each: **Battle Round n** is the round of a mission; **Nexus Pulse** is the thing the Nexus does inside it | Two names on purpose, so a player must be taught which is which |
+
+**Recommendation: B**, decided together with the menu reorganisation the owner has announced (F51),
+because the menu row is one of the places the word lives and he will be rewriting the menu anyway.
+Until then A stands, and the popup's title and body are data (`overlaySpec`), so B is a change of words.
 
 ## 5. Answered
 

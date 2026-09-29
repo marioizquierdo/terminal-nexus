@@ -1,10 +1,61 @@
 # Milestone 6 — Nexus Pulse Phase
 
 **Document role:** Milestone tracker — the explicit Build→Pulse handoff, victory/defeat, and Recall
-**Status:** GATED
-**Depends on:** Milestone 5 (Build Phase produces what this Pulse resolves)
-**Updated:** 2026-09-17
+**Status:** CURRENT
+**Active gate:** 6A — Start, end, Recall: connect the Build Phase's commit to the Pulse playback.
+**Built and reported (PASS), awaiting Mario's playtest** (2026-09-29, `../evidence/gate-6a-report.md`).
+"Start Nexus Pulse" is an explicit action from the Build Phase's `[s] Start Pulse` row, then the end condition, the
+stop / finish-in-flight / Recall sequence, and a result a viewer can read unprompted. The kernel is
+Milestone 1's and did not change. 6B and 6C wait for the owner's word.
+**Depends on:** Milestone 5 (Build Phase produces what this Pulse resolves — accepted 2026-09-29)
+**Updated:** 2026-09-29
 **License:** Apache-2.0
+
+> **Promoted to CURRENT, 2026-09-29**, when Mario accepted Milestone 5 and gave his word to start this
+> one. What exists to build on: the Build Phase commits a plan behind one yes/no question (`p`), and the
+> Pulse playback already runs in the terminal and in the browser page (`src/cli/watch.ts`). What does
+> not exist: the step between them, a Pulse that ends anywhere a viewer can read, and a player-visible
+> result. Gate 6A is that step and nothing more — no loop back into a second Build Phase, no trigger
+> runner, no automatic production (6B and 6C).
+
+> **Gate 6A is built, 2026-09-29** (`../evidence/gate-6a-report.md`, PASS; awaiting Mario's playtest).
+> `[s] Start Pulse` (the menu's last row), then Enter on the Battle Round 1 screen, starts the Nexus Pulse on the Build Phase's own screen: the plan he committed, plus a
+> placeholder crew and raid, becomes the kernel's opening state, the unmodified kernel resolves it, and
+> the Pulse plays with a running score, a feed of what is happening, pause, speed, step and watch-again.
+> It ends the way section 2.2's sketch asked — a warning, the shooting stopping, the survivors walking
+> home, a plain result (won, lost, drawn or timed out, and why) — with the timings as Experiments
+> (press `d`); the warning is a flashing timer and a light on the border (round 2, below). Recall, which the rules described and no code ran, exists for the first time
+> (`src/match/`). What it does **not** do, on purpose: go back into a second Build Phase (6B), run a
+> trigger list (6B), or make the Barracks train anything (6C). Restart, from the game menu, is the way
+> back until 6B builds the loop.
+
+> **Gate 6A, round 2 — the owner's look at the pull request, 2026-09-29**
+> ([`../docs/feedback/2026-09-29-pr48-pulse.md`](../docs/feedback/2026-09-29-pr48-pulse.md), F41-F46).
+> Definition of done:
+>
+> - [x] the Build Phase menu advertises the action that finishes it: a boxed `[s] Start` button, clickable,
+>       dim while a Nexus power is still waiting (F41 — became the menu's last row in round 3, F47);
+> - [x] the question is `START PULSE 1?` with `[s] Start Pulse 1` and `[n] Keep building`; Enter, Space
+>       and `s` start it (F42 — became the Battle Round screen in round 3, F49-F50);
+> - [x] the Pulse's title carries a timer to the stop, and in the last three seconds only that timer
+>       flashes; no red banners (F43);
+> - [x] the same seconds light the map's border with a soft sweeping light, not a red alert (F44);
+> - [x] red is only for the player's Nexus being hurt — first hit, very low health, a lost Pulse — brief
+>       and faint, with an on/off Experiment (F45);
+> - [x] the branch's changed code has been reviewed for simplification and the findings applied (F46).
+
+> **Gate 6A, round 3 — the owner's second look at the pull request, 2026-09-29**
+> ([`../docs/feedback/2026-09-29-pr48-round-3.md`](../docs/feedback/2026-09-29-pr48-round-3.md), F47-F51).
+> Definition of done:
+>
+> - [x] `[s] Start Pulse` is a regular row at the bottom of the menu, reached by Up/Down and pressed by
+>       Enter like every other row, and by a click or `s` (F47);
+> - [x] the rule "a menu can always be walked with Up, Down and Enter; hotkeys and clicks are extras" is
+>       in `docs/ui-patterns.md` (F48);
+> - [x] the start confirmation is a screen titled `Battle Round 1` whose text is "Activate Nexus. Collect
+>       Resources. Spawn Units." unless a mission supplies its own (F49);
+> - [x] its one row is `[s] Start`; Esc goes back and `n` is no longer a key (F50);
+> - [ ] the menu reorganisation is his to start, on a spike of its own (F51 — scheduled, nothing built).
 
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
 > how the Pulse resolves — that stays the deterministic kernel, unmodified. What is new is the
@@ -146,16 +197,19 @@ that units visibly came home — not just that the screen stopped moving.
 ## 6. Definition of done
 
 - [ ] "Start Nexus Pulse" is a real, explicit action from the Build Phase screen, and a completed
-      Pulse hands back into the next Build Phase until the mission's triggers end it;
+      Pulse hands back into the next Build Phase until the mission's triggers end it (6A built the
+      action and the ending; the hand-back is 6B);
 - [ ] PERIMETER's trigger list (`campaigns.md` Section 2.1's sketch) runs its simulation band —
       waves spawn and advance at their tick, `win` fires on the final `pulse.end` — hash-stable
       across runs and runtimes like any other kernel input;
 - [ ] Q36 is resolved (built, or explicitly deferred with a reason) before this gate closes;
-- [ ] the Pulse-end sequence — stop, finish in-flight effects, Recall — is legible at every capability
-      tier and in monochrome;
+- [x] the Pulse-end sequence — stop, finish in-flight effects, Recall — is legible at every capability
+      tier and in monochrome (6A: a test plays it at all four depths; the timer's flash is reversed video,
+      and each phase is also named in words);
 - [ ] the owner's ending sketch (Section 2.2) has been built roughly, watched, and reported on — what
       read well, what did not, and what the alarm turned out to mean for a sudden ending versus a
       scheduled one. A gate report that does not say what the ending actually looked like has not
-      answered this milestone's question;
+      answered this milestone's question (6A built it and reported what it looks like; **watched** waits
+      for Mario's playtest);
 - [ ] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED**;
 - [ ] `./scripts/check-repository.sh` passes.

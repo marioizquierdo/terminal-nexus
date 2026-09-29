@@ -6,6 +6,7 @@
 // plan" assertable.
 
 import type { Coord } from "../grid/types.ts"
+import type { PlaybackControl } from "../view/playback.ts"
 import type { DebugField } from "./debug.ts"
 import type { PlayerField } from "./settings.ts"
 
@@ -70,7 +71,7 @@ export type BuildCommand =
    * (owner, 2026-09-28, feedback F22 — reversing the 2026-09-27 rule that a first click only
    * highlighted): a construct row arms at once and hands the mouse to the Grid with the ghost at the
    * cursor, or the nearest spot that takes it; the Nexus entry opens its popup; Explore Map opens the
-   * map. All three are the menu's, so finishing them comes back to the menu. Only the keyboard has a
+   * map; Start Pulse opens its confirmation. All four are the menu's, so finishing them comes back to the menu. Only the keyboard has a
    * "highlighted, not yet chosen" state. Two exceptions, both about what the click could see: with a
    * popup open it only closes the popup and brings focus to the menu; and while Explore Map covers the
    * menu, a click on its own row or anywhere else on the panel closes it, as Esc does — the row it
@@ -105,11 +106,12 @@ export type BuildCommand =
   | Readonly<{ kind: "open-menu" }>
   /** Pick Nexus power *n* — a digit or a click while the Nexus popup is open. */
   | Readonly<{ kind: "pick-nexus"; index: number }>
-  /** `p` — ask, in a popup, whether to start the Nexus Pulse. Refused while a Nexus power is still
-   *  waiting to be picked — the one thing that pick refuses. */
+  /** `s` (or `p`), or the menu's last row, `[s] Start Pulse` — open the Battle Round confirmation.
+   *  Refused while a Nexus power is still waiting to be picked — the one thing that pick refuses. */
   | Readonly<{ kind: "commit" }>
-  /** `y`/`n` (or a click on either) inside the start-the-Pulse popup. */
-  | Readonly<{ kind: "confirm-commit"; accept: boolean }>
+  /** `[s] Start` — the confirmation's one row, by Enter, Space, `s` or a click: the Nexus Pulse starts.
+   *  Going back is the cancel every popup has (owner, 2026-09-29, feedback F50). */
+  | Readonly<{ kind: "confirm-commit" }>
   /** Tab, and a second Right on the menu: move keyboard focus. To the Grid it arrives in plain
    *  navigation (feedback F30); to the menu it disarms (a building is armed only while the Grid has
    *  focus). */
@@ -158,6 +160,23 @@ export type BuildCommand =
   /** A click on the export popup's scroll bar: highlight line `line` of the text, bringing it into
    *  view. Up/Down and the wheel move the highlight a line at a time. */
   | Readonly<{ kind: "export-select"; line: number }>
+  /**
+   * A Nexus Pulse playback control — Space, `[`, `]`, `.`, `,` and `r` while a Pulse is on screen, or a
+   * click on the panel's control rows (gate 6A): the same vocabulary `grid watch` has, one keymap across
+   * both. The reducer has nothing to change for it — the Pulse's clock is the presenter's, never the
+   * state's — so it passes through like `quit`, and the session hands it to the Pulse it belongs to.
+   */
+  | Readonly<{ kind: "pulse"; control: PlaybackControl }>
+  /**
+   * Centre the view on a tile and put the cursor there. Sent by the Pulse when it starts and when its
+   * ending begins ("the camera is centred at the nexus", milestone 6 Section 2.2): a state change like
+   * any other move, so what the player does next — scrolling, looking around — starts from where the
+   * story left the view, and the view's slide is the presentation's to draw.
+   */
+  | Readonly<{ kind: "look-at"; x: number; y: number }>
+  /** The shell could not start the Pulse the player just committed: the commit is undone, so they can fix
+   *  the plan, and the reason is said on the status line. */
+  | Readonly<{ kind: "pulse-failed"; reason: string }>
 
 /**
  * How the sides of the Grid rectangle that have reached the map's own edge are drawn — **the map's
@@ -184,16 +203,18 @@ export type Focus = "menu" | "grid"
 
 /**
  * One entry of the side panel's menu, in the order Up/Down walk it: Explore Map (first, owner
- * 2026-09-28), Nexus, then the construct rows in hotkey order. The menu highlight is an index into
- * this list (`menuEntries` in `state.ts`), so every construct row keeps its digit.
+ * 2026-09-28), Nexus, the construct rows in hotkey order, and Start Pulse last (owner, 2026-09-29,
+ * feedback F47). The menu highlight is an index into this list (`menuEntries` in `state.ts`), so every
+ * construct row keeps its digit.
  */
 export type MenuEntry =
   | Readonly<{ kind: "nexus" }>
   | Readonly<{ kind: "explore" }>
   | Readonly<{ kind: "construct"; index: number }>
+  | Readonly<{ kind: "start" }>
 
 /** The popups this screen has — one overlay shape for all of them (`src/build/overlay.ts`): the Nexus
- *  powers, the start-the-Pulse question, the game menu (Settings, Restart, Quit), Settings, the export,
+ *  powers, the Battle Round confirmation, the game menu (Settings, Restart, Quit), Settings, the export,
  *  and a message — `BuildState.message`, a title and text with nothing to choose. */
 export type Overlay = "nexus-powers" | "confirm-commit" | "menu" | "settings" | "export" | "message"
 

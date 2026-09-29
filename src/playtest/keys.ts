@@ -18,6 +18,8 @@
 //   Space*4                     any step repeated N times
 //   Right~30*12                 a step arriving 30 ms after the one before (a held key's auto-repeat,
 //                               for the held-key ramp); untimed steps are a second apart
+//   wait  wait~4000             nothing is pressed and time passes: a second by default, or the given
+//                               milliseconds — how a scripted playtest of a Nexus Pulse lets it play on
 //   click:20,13                 left click on Grid tile x=20, y=13, wherever it is drawn right now
 //   click@40,7                  left click on frame cell column 40, row 7 (0-based)
 //   rclick:… rclick@…           the same, with the right button
@@ -79,6 +81,8 @@ const MOUSE_BUTTONS: Readonly<Record<string, number>> = {
  *  is a press of its own. */
 export type PlaytestStep =
   | Readonly<{ kind: "key"; label: string; bytes: string; afterMs?: number }>
+  /** Nothing is pressed: the script's clock moves on, and with it a Nexus Pulse playing on screen. */
+  | Readonly<{ kind: "wait"; label: string; afterMs?: number }>
   | Readonly<{ kind: "mouse"; label: string; button: number; target: MouseTarget; afterMs?: number }>
 
 export type MouseTarget =
@@ -106,6 +110,7 @@ export function parseKeyScript(script: string): PlaytestStep[] {
 function parseStep(token: string): PlaytestStep {
   const timed = /^(.+)~(\d+)$/u.exec(token)
   if (timed !== null) return { ...parseStep(timed[1] as string), label: token, afterMs: Number(timed[2]) }
+  if (token.toLowerCase() === "wait") return { kind: "wait", label: token }
   const mouse = /^([a-z]+)([:@])(\d+),(\d+)$/iu.exec(token)
   if (mouse !== null) {
     const button = MOUSE_BUTTONS[(mouse[1] as string).toLowerCase()]

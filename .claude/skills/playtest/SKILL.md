@@ -33,7 +33,9 @@ repeat, `Name~MS` for a key arriving MS ms after the previous step (untimed step
 so each is its own press). The held-key ramp only runs on timed steps: `e Right Right~150
 Right~30*12` is a tap, the terminal's repeat delay (inside the 150 ms hold window), then
 auto-repeat — the summary line prints each
-step's cursor and the kind of move the last timed cursor key made (`tap`, `hold`, `fast`, `jump`). Mouse: `click:X,Y` clicks Grid tile X,Y wherever the camera has it drawn right now (fails if
+step's cursor and the kind of move the last timed cursor key made (`tap`, `hold`, `fast`, `jump`).
+`wait` is a step where no key is pressed and time passes — a second, or `wait~MS`; `wait~250*40` is
+ten seconds in quarter-second frames. It is how a script watches a Nexus Pulse. Mouse: `click:X,Y` clicks Grid tile X,Y wherever the camera has it drawn right now (fails if
 it is off screen), `click@COL,ROW` clicks a 0-based screen cell; `rclick`, `wheelup`, `wheeldown` take
 the same targets. `#` starts a comment in a `--file`. The table with bytes is at the top of
 `src/playtest/keys.ts`. An unknown name is an error, never a guess.
@@ -64,6 +66,24 @@ restart today, since "Opens on" was deleted. `src/build/debug.ts`'s
 `DEBUG_FIELDS` is the order. The map's edge is not an Experiment: it is the map's own style (the spike
 map's fence; `--glyphs unicode` shows the Unicode forms), and the menu's divider is its west side.
 
+**A Nexus Pulse** (gate 6A): `s` asks (the menu's last row, `[s] Start Pulse`, which Up then Enter also
+reaches; `p` is an unlisted alias) and opens the Battle Round 1 screen, a second `s`
+(or `Enter` or `Space`) starts it on the same screen, and from then on each step's frame is the Pulse
+at the script's own clock — the frame after the second `s` is 0.0 s (the title's timer at its full
+countdown), the frame after `wait~7000` is 7.0 s. A whole plan and its Pulse: `n 2 3 click:22,9
+click:22,9 3 click:22,12 click:22,12 2 click:20,14 click:20,14 s s wait~1000*20` (the War Chest, two
+Turrets across the muster point, a Hatchery behind them — a win); `n 2 s s wait~40000` is nothing
+built, and a loss. Its ending is the last three seconds (about 11.6 s in for that first plan: the
+title's timer flashes and a light sweeps the map's border), a cease fire, the survivors walking home
+and a result; red on the border is only the player's own Nexus being hurt. `--settings "raid=none"`
+(nobody comes: TIME'S UP), `"crew=none"` (no units of your own: the Nexus falls, and the border
+blushes red at its first hit), `"raid=heavy"`, `"endWarnMs=0"` (no timer flash, no light),
+`"redAlerts=off"`, `"endWalkMs=0"` (no walk) and `"endCentre=off"` reach the rest. During a Pulse
+Space pauses, `[` and `]` change the speed, `.` and `,` step, `r` watches it again, and `d` still
+opens the Experiments; `Esc` opens the game menu and its Restart is the way back to a fresh Build
+Phase. `scripts/capture-spike-screenshots.mjs` has `pulseGif` (an ending frame by frame, in real time)
+and shows each ending as a still.
+
 **Reproducing what the owner played**: he exports his settings (Settings, `e`) and pastes the text
 into the pull request; `--settings "<that text>"` starts the script from exactly those settings and
 experiments (the whole export, or just pairs: `--settings "placeLight=rainbow scrollMargin=25"`). The
@@ -74,7 +94,8 @@ about.
 Unknown names and bad values are skipped and named on stderr.
 
 What a script cannot show is time between keys on the live screen — the view sliding, a flash, a
-building going up (script frames always draw buildings finished). For those, compose a frame with
+building going up (script frames always draw buildings finished; a Nexus Pulse is the exception, since
+a `wait` moves its clock). For those, compose a frame with
 `camera` / `refusedFlash` / `flash` / `placing: [{ ordinal, elapsedMs }]` / `removing: [{ ordinal,
 contentId, anchor, elapsedMs }]` yourself, or step
 `BuildAnimation` (`src/view/build-live.ts`) with a fake clock: `slideGif`, `placementGif` and

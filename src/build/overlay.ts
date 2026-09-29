@@ -1,5 +1,5 @@
-// The Build Phase's popups — one shape for all of them: the Nexus powers, the start-the-Pulse
-// question, the game menu (Settings, Restart, Quit), Settings with its Experiments, the export, and a
+// The Build Phase's popups — one shape for all of them: the Nexus powers, the Battle Round
+// confirmation, the game menu (Settings, Restart, Quit), Settings with its Experiments, the export, and a
 // message. Extracted when there were three real uses (AGENTS.md: "extract a framework only after two
 // real uses reveal the boundary"); Debug Mode, the fourth — Settings since the owner's 2026-09-28
 // direction — added the one row the first three had no use for: a setting whose value Left and Right
@@ -17,6 +17,7 @@
 
 import { DEBUG_FIELDS, fieldSpec, formatDebugValue } from "./debug.ts"
 import type { BuildLayout } from "./layout.ts"
+import { START_KEY } from "./layout.ts"
 import {
   GAME_MENU_ROWS,
   PLAYER_FIELDS,
@@ -245,6 +246,20 @@ export function messageSpec(message: PopupMessage): OverlaySpec {
   return { title: message.title, rows: [{ kind: "blank" }, { kind: "note", text: message.text }] }
 }
 
+/** What the Battle Round confirmation announces when a mission has nothing of its own to say. */
+export const DEFAULT_ROUND_TEXT = "Activate Nexus. Collect Resources. Spawn Units."
+
+/** What the confirmation says for round `round`: the mission's own text for it, or the default. */
+export function roundAnnouncement(context: BuildContext, round: number): string {
+  return context.roundText?.[round] ?? DEFAULT_ROUND_TEXT
+}
+
+/** An announcement's sentences, each its own line on the screen: short orders read as a list, and the
+ *  popup is only 40 glyphs wide at the floor, where a sentence that wrapped would leave one word alone. */
+function sentences(text: string): readonly string[] {
+  return text.split(/(?<=[.!?])\s+/u).filter((sentence) => sentence !== "")
+}
+
 /** The popup the state has open, as data, or `null`. */
 export function overlaySpec(context: BuildContext, state: BuildState): OverlaySpec | null {
   switch (state.overlay) {
@@ -275,14 +290,16 @@ export function overlaySpec(context: BuildContext, state: BuildState): OverlaySp
       return { title: "NEXUS POWERS", rows }
     }
     case "confirm-commit":
+      // A confirmation screen, not a question (owner, 2026-09-29, feedback F49-F50): the round's title,
+      // what it announces, and the one row, `[s] Start`, highlighted because it is what Enter, Space and
+      // `s` do. Esc goes back, as from every popup.
       return {
-        title: "START THE NEXUS PULSE?",
+        title: `Battle Round ${state.pulseNumber}`,
         rows: [
           { kind: "blank" },
-          { kind: "text", text: "Ends the Build Phase. The plan is locked in." },
+          ...sentences(roundAnnouncement(context, state.pulseNumber)).map((text): OverlayRow => ({ kind: "note", text })),
           { kind: "blank" },
-          { kind: "option", hotkey: "y", label: "Yes, start the Pulse", command: { kind: "confirm-commit", accept: true } },
-          { kind: "option", hotkey: "n", label: "No, keep building", command: { kind: "confirm-commit", accept: false } },
+          { kind: "option", hotkey: START_KEY, label: "Start", command: { kind: "confirm-commit" }, highlighted: true },
         ],
       }
     case "menu":

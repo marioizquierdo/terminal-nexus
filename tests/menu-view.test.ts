@@ -8,6 +8,7 @@ import { MENU_LAYOUT, MENU_SIZE, composeMenuFrame } from "../src/view/menu.ts"
 import { menuItemLabel, menuItemRow } from "../src/menu/layout.ts"
 import { createMenuList } from "../src/menu/list.ts"
 import type { MenuItem } from "../src/menu/types.ts"
+import { isColourCode, sgrCodes } from "./helpers.ts"
 
 const ITEMS: readonly MenuItem[] = [
   { id: "campaign", hotkey: "1", label: "Campaign" },
@@ -33,14 +34,10 @@ test("every cell is exactly one printable column, at every capability tier and i
 
 test("monochrome emits no colour code at all; a colour tier emits at least one", () => {
   const frame = composeMenuFrame({ state: createMenuList(ITEMS), notice: null }, "monochrome")
-  const codes = (ansi: string): number[] =>
-    [...ansi.matchAll(/\u001b\[([0-9;]*)m/g)].flatMap((match) => (match[1] ?? "").split(";").filter(Boolean).map(Number))
-  const isColourCode = (code: number): boolean => (code >= 30 && code <= 49) || (code >= 90 && code <= 107)
-
-  assert.ok(!codes(frameToAnsi(frame, "monochrome")).some(isColourCode), "monochrome emitted a colour code")
+  assert.ok(!sgrCodes(frameToAnsi(frame, "monochrome")).some(isColourCode), "monochrome emitted a colour code")
 
   const colourFrame = composeMenuFrame({ state: createMenuList(ITEMS), notice: null }, "color16")
-  assert.ok(codes(frameToAnsi(colourFrame, "color16")).some(isColourCode), "color16 emitted no colour at all")
+  assert.ok(sgrCodes(frameToAnsi(colourFrame, "color16")).some(isColourCode), "color16 emitted no colour at all")
 })
 
 test("every item's hotkey and label are literally on screen — a hotkey that is not displayed does not exist", () => {

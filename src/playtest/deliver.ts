@@ -19,6 +19,11 @@ export const UNTIMED_GAP_MS = 1000
 /** One step into the real adapters, on its own — never concatenated with the next one. Returns the
  *  bytes it sent. */
 export function deliverStep(build: BuildSession, layout: BuildLayout, step: PlaytestStep, now: number): string {
+  if (step.kind === "wait") {
+    // Time passes and nothing is pressed: a Nexus Pulse on screen plays on to this moment.
+    build.advance(now)
+    return ""
+  }
   if (step.kind === "key") {
     build.handleData(step.bytes, layout, { now })
     return step.bytes

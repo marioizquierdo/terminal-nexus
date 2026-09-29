@@ -6,12 +6,13 @@ import { footprintCentre, footprintExtent, inBounds, tilesOf } from "../grid/coo
 import type { ContentRegistry } from "../content/index.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
+import type { PulseSetup } from "../match/types.ts"
 import type { StatusMessage } from "../status.ts"
 import { NO_STATUS, status } from "../status.ts"
 import type { Camera, Margin, Viewport } from "./camera.ts"
 import { centreOn, clampToGrid, edgeClickCamera, followCursor, marginForView } from "./camera.ts"
 import type { DebugField, DebugFlags } from "./debug.ts"
-import { adjustDebug, fieldSpec, formatDebugValue, initialDebugFlags, rowOfField } from "./debug.ts"
+import { FIRST_PULSE_EXPERIMENT_ROW, adjustDebug, fieldSpec, formatDebugValue, initialDebugFlags, rowOfField } from "./debug.ts"
 import type { Settings } from "../settings/types.ts"
 import { DEFAULT_SETTINGS } from "../settings/types.ts"
 import type { PlayerField } from "./settings.ts"
@@ -84,6 +85,18 @@ export type BuildContext = Readonly<{
   experiments?: Partial<DebugFlags>
   /** The commit this build is, when the adapter knows it: the first line of an export names it. */
   buildId?: string
+  /**
+   * What a Nexus Pulse starts with besides the plan, as a function of the Experiments (gate 6A: the
+   * "Raid" and "Your units" flags pick which placeholder Pulse). Absent: committing only freezes the
+   * plan — every context the tests build by hand.
+   */
+  pulse?: (experiments: DebugFlags) => PulseSetup
+  /**
+   * What the Battle Round confirmation announces for round *n*, keyed by its number (owner, 2026-09-29,
+   * feedback F49: "campaign missions may inject pulse-n text here"). A round with no entry says
+   * `DEFAULT_ROUND_TEXT` (`overlay.ts`). Nothing supplies one yet; a mission's own data will.
+   */
+  roundText?: Readonly<Record<number, string>>
   /** Where the adapter puts an export besides the screen, said in the export popup — "Copied to the
    *  clipboard and saved to ...". Absent: the popup says nothing about a copy. */
   exportDestination?: string
@@ -159,7 +172,7 @@ export type BuildState = Readonly<{
    */
   highlightHidden: boolean
   /** The popup drawn over the Grid and holding the keyboard and mouse, or `null`: the Nexus powers,
-   *  the start-the-Pulse question (`p` — "the one action that must not fire by accident", engine.md
+   *  the Battle Round confirmation (`s` — "the one action that must not fire by accident", engine.md
    *  9.7), the game menu, Settings, the export, or a message. Never opened by anything but the player —
    *  a message only as the answer to something the player did (closing Settings with a change that
    *  needs a restart). */
@@ -188,9 +201,12 @@ export type BuildState = Readonly<{
    *  folded into a mutated allotment, for the same reason `spent` is summed rather than tracked: one
    *  stored total is one number that can drift from what actually produced it. */
   bonusAllotment: number
-  /** The Build Phase is done. Nothing here reaches a Nexus Pulse — Milestone 6 builds that — so this
-   *  just freezes the plan and says so; every state-changing command is refused from here on. */
+  /** The Build Phase is done: the plan is frozen and every state-changing command is refused from here
+   *  on. With a Pulse to start (`BuildSession`'s `startPulse`) the Nexus Pulse plays from this moment. */
   committed: boolean
+  /** Which Pulse of the mission this Build Phase is planning — "Battle Round 1". It is 1 until the loop
+   *  into a next Build Phase exists (Milestone 6's second gate), which is what will count it up. */
+  pulseNumber: number
   /**
    * the Experiments (gate 5G, `src/build/debug.ts`). State rather than context because they change
    * while the screen is open; the reducer reads the ones that change what a command does, and the
@@ -308,6 +324,7 @@ export function createBuildState(
     nexusPick: null,
     bonusAllotment: 0,
     committed: false,
+    pulseNumber: 1,
     debug,
     settings,
     startCursor: cursor,
@@ -331,7 +348,7 @@ export function createBuildState(
  */
 function editLock(state: BuildState): StatusMessage | null {
   if (state.committed) return status("The Build Phase is committed.", "warning")
-  if (state.overlay === "confirm-commit") return status("Answer the Nexus Pulse prompt first: [y]es or [n]o.", "warning")
+  if (state.overlay === "confirm-commit") return status("Start or go back first: [s] start, [esc] back.", "warning")
   if (state.overlay !== null) return status("Close the popup first: [esc].", "warning")
   return null
 }
@@ -347,14 +364,16 @@ function commitLock(state: BuildState): StatusMessage | null {
 
 /**
  * The side panel's menu, in the order Up/Down walk it — Explore Map first (owner, 2026-09-28, feedback
- * F23), then the Nexus Powers entry, then every construct row. Derived from the catalog rather than
- * stored, so the highlight and the rows drawn can never disagree about how many there are.
+ * F23), then the Nexus Powers entry, every construct row, and Start Pulse last (owner, 2026-09-29,
+ * feedback F47). Derived from the catalog rather than stored, so the highlight and the rows drawn can
+ * never disagree about how many there are.
  */
 export function menuEntries(context: BuildContext): readonly MenuEntry[] {
   return [
     { kind: "explore" },
     { kind: "nexus" },
     ...context.catalog.map((_, index) => ({ kind: "construct" as const, index })),
+    { kind: "start" },
   ]
 }
 
@@ -375,6 +394,11 @@ const ENTRIES_BEFORE_CONSTRUCT = 2
  *  back on the menu lands where the player's attention already is. */
 export function entryOfConstruct(index: number): number {
   return index + ENTRIES_BEFORE_CONSTRUCT
+}
+
+/** The menu's last entry, Start Pulse: the one after the last construct row of a catalog this long. */
+export function startEntry(catalogSize: number): number {
+  return entryOfConstruct(catalogSize)
 }
 
 /** The Nexus powers as the popup shows them: those still waiting to be picked (a draft of several,
@@ -803,7 +827,24 @@ function activateEntry(context: BuildContext, state: BuildState, entry: number, 
   // A click on the Nexus entry puts focus where it landed, on the menu, before the popup takes the
   // keyboard — so the pick hands the player back to the menu, not to a building they had armed.
   if (target.kind === "nexus") return openNexus(by === "click" ? toMenu(highlighted) : highlighted)
+  if (target.kind === "start") return startPulse(context, highlighted)
   return openExplore(highlighted, "menu")
+}
+
+/** `s`, or the Start Pulse entry: open the Battle Round confirmation over the Grid, the menu lit behind
+ *  it. Its row flashes "pressed" however it was reached — or, refused (a Nexus power still waiting), a
+ *  flicker beside the status line's reason. */
+function startPulse(context: BuildContext, state: BuildState): BuildState {
+  const entry = startEntry(context.catalog.length)
+  const lock = commitLock(state)
+  if (lock !== null) return { ...state, status: lock, ack: acknowledge(state, "refused", entry) }
+  return {
+    ...toMenu(state),
+    menuHighlight: entry,
+    overlay: "confirm-commit",
+    ack: acknowledge(state, "pressed", entry),
+    status: status(`Battle Round ${state.pulseNumber}: Enter starts it, Esc goes back.`),
+  }
 }
 
 /** `n`, or the Nexus entry: open its popup. Its row flashes "pressed", however it was reached — a
@@ -941,10 +982,13 @@ function cancel(context: BuildContext, state: BuildState): BuildState {
  */
 function openSettings(state: BuildState, section: "settings" | "experiments"): BuildState {
   if (state.overlay !== null && state.overlay !== "menu") return state
+  // While the Nexus Pulse is on screen, `d` opens the Experiments already at the ending's — the ones
+  // someone watching it wants to change (gate 6A) — rather than at the Build Phase's first.
+  const experiments = state.committed ? FIRST_PULSE_EXPERIMENT_ROW : FIRST_EXPERIMENT_ROW
   return {
     ...state,
     overlay: "settings",
-    overlayHighlight: section === "settings" ? FIRST_SETTING_ROW : FIRST_EXPERIMENT_ROW,
+    overlayHighlight: section === "settings" ? FIRST_SETTING_ROW : experiments,
     overlayUnder: state.overlay === "menu" ? ["menu"] : [],
   }
 }
@@ -1113,7 +1157,9 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
         const dismissed: BuildState = { ...state, overlay: null, focus: "grid", armed: state.armed }
         return withCursor(context, dismissed, target, clickCameraMove(context, dismissed))
       }
-      if (state.committed) return state
+      // A committed plan locks every edit but not looking: a click on the map moves the cursor there and
+      // scrolls the view as it does while exploring (gate 6A — the Pulse's map is a map to look around).
+      // Nothing is armed once committed, so no second click can place anything.
       // Two clicks, not one — Q52. A click on a tile that is not already where the cursor sits only
       // moves the cursor there and shows the armed preview; a second click **on that same tile** is
       // what places. Checked against `state.cursor` (tile identity), never the click's screen cell.
@@ -1197,27 +1243,35 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     case "pick-nexus":
       return pickNexus(context, state, command.index)
 
-    case "commit": {
-      const lock = commitLock(state)
-      if (lock !== null) return { ...state, status: lock }
-      return { ...toMenu(state), overlay: "confirm-commit", status: status("Start the Nexus Pulse? [y]es / [n]o") }
-    }
+    case "commit":
+      return startPulse(context, state)
 
     case "confirm-commit": {
       // Meaningless outside the one moment it answers — a stray "y" is not a command here any more
       // than a stray "3" is one before anything is armed.
       if (state.overlay !== "confirm-commit") return state
-      if (!command.accept) return { ...state, overlay: null, status: status("Cancelled.") }
+      // The Nexus Pulse starts (gate 6A). The keyboard goes to the Grid, where the arrows look around it
+      // — a committed plan locks every edit but not the cursor — and nothing is armed or being explored.
       return {
-        ...state,
+        ...toMap(state),
         overlay: null,
         committed: true,
-        status: status(
-          `Build committed - ${state.planned.length} planned, Nexus Pulse would begin here (Milestone 6).`,
-          "success",
-        ),
+        status: status(`Build committed - ${state.planned.length} planned.`, "success"),
       }
     }
+
+    case "look-at": {
+      const tile = clampToGrid({ x: command.x, y: command.y }, context.grid)
+      return withCursor(context, state, tile, (camera, cursor) => centreOn(camera, cursor, state.viewport, context.grid))
+    }
+
+    case "pulse-failed":
+      return {
+        ...state,
+        committed: false,
+        overlay: null,
+        status: status(`The Nexus Pulse could not start: ${command.reason}`, "danger"),
+      }
 
     case "focus":
       if (state.overlay !== null || state.committed || state.focus === command.target) return state

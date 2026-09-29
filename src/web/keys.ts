@@ -96,10 +96,14 @@ export const KEY_BAR: Readonly<Record<"common" | "menu" | "build" | "pulse", rea
     { name: "3", label: "3" },
     { name: "u", label: "u" },
     { name: "Bksp", label: "Bksp" },
-    { name: "p", label: "p" },
-    { name: "y", label: "y" },
+    // `s` starts the Nexus Pulse (and, in the game menu that Esc opens, is Settings); Enter or Space
+    // in the popup that asks confirms it.
+    { name: "s", label: "s start" },
+    // A Nexus Pulse plays on this screen once it is started: Space pauses it, these two set its
+    // speed, and `r` (below) watches it again.
+    { name: "[", label: "[ slower" },
+    { name: "]", label: "] faster" },
     // Settings is Esc then s; its Experiments are d; e exports inside it; r restarts from the game menu.
-    { name: "s", label: "s settings" },
     { name: "d", label: "d experiments" },
     { name: "r", label: "r" },
     { name: "q", label: "q" },

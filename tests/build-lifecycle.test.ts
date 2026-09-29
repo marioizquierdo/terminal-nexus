@@ -15,8 +15,13 @@ import { parseKeyScript } from "../src/playtest/keys.ts"
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../src/menu/mouse.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import type { Settings } from "../src/settings/index.ts"
+import { DEFENCE_KEYS } from "./pulse-helpers.ts"
 
 const ESC = String.fromCharCode(27)
+
+/** The title row's clock, whatever styling sits between the words and the time. */
+const timerAt = (write: string): string | undefined => new RegExp(`NEXUS PULSE 1(?:${ESC}\\[[0-9;]*m)* +(\\d:\\d\\d)`).exec(write)?.[1]
+
 const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, capability: "monochrome" }
 
 class FakeStdout extends EventEmitter {
@@ -240,4 +245,101 @@ test("--keys that cannot be delivered stops there and says why when the screen c
   stdin.emit("data", Buffer.from([3]))
   await session
   assert.ok(reported.some((text) => text.includes("--keys stopped early") && text.includes("95,39")), reported.join(""))
+})
+
+// ---------------------------------------------------------------------------------------------
+// Gate 6A: the Nexus Pulse in the live loop
+// ---------------------------------------------------------------------------------------------
+
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+
+/** A plan that wins: a Nexus power, two Turrets and a Hatchery, the commit and its yes. */
+const WINNING_PLAN = `${DEFENCE_KEYS} s s`
+
+test("the live loop plays a Nexus Pulse on its own clock: timer, last seconds, result, then idle — and starts over on Restart", async () => {
+  let t = 5_000
+  const stdout = new FakeStdout()
+  const stdin = new FakeStdin()
+  const exits: number[] = []
+  void runSpike({
+    settings: TEST_SETTINGS,
+    backend: "ansi",
+    stdout: stdout as unknown as NodeJS.WriteStream,
+    stdin: stdin as unknown as NodeJS.ReadStream,
+    exit: (code) => {
+      exits.push(code)
+    },
+    now: () => t,
+    startKeys: parseKeyScript(WINNING_PLAN),
+  })
+  await sleep(80)
+  // Opened already in the Pulse the start keys committed, at its very beginning — however many seconds of
+  // script clock the keys took, the live clock started the Pulse at zero.
+  assert.equal(timerAt(stdout.lastWrite), "0:15", "the Pulse did not open at zero")
+  assert.match(stdout.lastWrite, /nexus pulse/)
+
+  t += 6_000
+  await sleep(80)
+  assert.equal(timerAt(stdout.lastWrite), "0:09", "the Pulse did not follow the screen's clock")
+
+  // The last seconds, in the run-up to the stop (the Pulse ends near 14.6 s and the warning is three seconds).
+  t += 6_000
+  await sleep(80)
+  assert.match(stdout.lastWrite, /about to end/, "no warning before the fight stopped")
+
+  // The result stands, in words a viewer can read without being told.
+  t += 8_000
+  await sleep(80)
+  assert.match(stdout.lastWrite, /VICTORY/)
+  assert.match(stdout.lastWrite, /came home/)
+
+  // And the screen goes idle: a standing result draws nothing more, so the terminal is left alone.
+  const size = stdout.written.length
+  await sleep(150)
+  assert.equal(stdout.written.length, size, "the frame timer kept running over a standing result")
+
+  // Esc, then Restart: the Build Phase again, fresh.
+  stdin.emit("data", Buffer.from(ESC))
+  await sleep(AFTER_ESC_TIMEOUT_MS)
+  stdin.emit("data", Buffer.from("r"))
+  await sleep(80)
+  assert.match(stdout.lastWrite, /RESOURCE/, "restarting did not bring the Build Phase back")
+  assert.doesNotMatch(stdout.lastWrite, /VICTORY/)
+
+  stdin.emit("data", Buffer.from([3]))
+  await sleep(50)
+  assert.deepEqual(exits, [0])
+  assert.equal(stdin.raw, false)
+})
+
+test("a Nexus Pulse holds still behind the resize gate and resumes from the same instant", async () => {
+  let t = 5_000
+  const stdout = new FakeStdout()
+  const stdin = new FakeStdin()
+  void runSpike({
+    settings: TEST_SETTINGS,
+    backend: "ansi",
+    stdout: stdout as unknown as NodeJS.WriteStream,
+    stdin: stdin as unknown as NodeJS.ReadStream,
+    exit: () => {},
+    now: () => t,
+    startKeys: parseKeyScript(WINNING_PLAN),
+  })
+  await sleep(60)
+  t += 3_000
+  await sleep(60)
+  assert.equal(timerAt(stdout.lastWrite), "0:12")
+
+  stdout.columns = 60
+  stdout.emit("resize")
+  await sleep(40)
+  assert.match(stdout.lastWrite, /TERMINAL TOO SMALL/)
+  t += 20_000 // a long time passes behind the gate
+  await sleep(60)
+  stdout.columns = 80
+  stdout.emit("resize")
+  await sleep(60)
+  assert.equal(timerAt(stdout.lastWrite), "0:12", "the Pulse ran on behind the gate")
+  stdin.emit("data", Buffer.from([3]))
+  await sleep(30)
 })

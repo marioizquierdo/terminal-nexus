@@ -2,7 +2,7 @@
 
 **Document role:** Milestone index — the sequence, current status, and how this folder differs from `specs/`
 **Status:** Canonical index (not a versioned canon document — see below)
-**Updated:** 2026-09-21
+**Updated:** 2026-09-29
 **License:** Apache-2.0
 
 ## Why milestones live here, not in `specs/`
@@ -65,8 +65,8 @@ needed the quality.
 | [1 — Grid Battles](milestone-01-grid-battles.md) | COMPLETE | done | Do units move, fight, and die deterministically from a seed, legibly on screen? |
 | [2 — Design and Orientation](milestone-02-campaign-design.md) | COMPLETE | done | What vocabulary and structure do the single-player modes need, and what few PERIMETER decisions does the UX build need, before milestones 3-6 build the game's experience? |
 | [3 — Game Menu](milestone-03-game-menu.md) | COMPLETE | done | Can a player launch `terminal-nexus` into a menu with displayed hotkeys, mouse parity, and a driver, and pick a mode? |
-| [5 — Build Phase](milestone-05-build-phase.md) | CURRENT | 3 | Can a player place buildings, pick a Nexus upgrade, and scroll a real map during Build Phase — by keyboard, mouse, and driver? |
-| [6 — Nexus Pulse Phase](milestone-06-pulse-phase.md) | GATED | 4 | Can a player start the Pulse, watch it resolve, see a legible ending with Recall, and land in the next Build Phase? |
+| [5 — Build Phase](milestone-05-build-phase.md) | COMPLETE | done | Can a player place buildings, pick a Nexus upgrade, and scroll a real map during Build Phase — by keyboard, mouse, and driver? |
+| [6 — Nexus Pulse Phase](milestone-06-pulse-phase.md) | CURRENT | 4 | Can a player start the Pulse, watch it resolve, see a legible ending with Recall, and land in the next Build Phase? |
 | [8 — Commander](milestone-08-commander.md) | GATED | 5 | Can Commander Vasse and a Nexus draft dealt from an army's pool exist without becoming a full Commander Army? |
 | [11 — Challenge Mode: Runs](milestone-11-challenge-runs.md) | GATED | 6 | Can a player play a seeded run of battles with a run draft between them, and does the same seed give the same run? |
 | [4 — Campaign Menu](milestone-04-campaign-menu.md) | GATED | 7 | Can a player start or load a campaign and see progress, army, and enemy intel? |

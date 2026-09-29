@@ -6,7 +6,7 @@
 // gestures a flat menu has no use for: the wheel, and the right button.
 
 import type { BuildLayout } from "./layout.ts"
-import { ESC_KEY, escHintAt, menuEntryAt, tileAtCell } from "./layout.ts"
+import { ESC_KEY, escHintAt, inPanelColumns, menuEntryAt, pulseControlAt, tileAtCell } from "./layout.ts"
 import type { PlacedOverlay } from "./overlay.ts"
 import { overlayHitAt } from "./overlay.ts"
 import type { Camera } from "./camera.ts"
@@ -21,6 +21,9 @@ export type MouseUiState = Readonly<{
   overlay?: PlacedOverlay
   explorePanel?: boolean
   escLabel?: string
+  /** A Nexus Pulse is on screen (gate 6A): its panel's control rows are click targets, and nothing else
+   *  on the panel is. */
+  pulse?: boolean
 }>
 
 const SGR_MOUSE = /^\u001b\[<(\d+);(\d+);(\d+)([Mm])$/
@@ -80,7 +83,8 @@ export function buildMouseCommand(
   // What the click lands on underneath any popup — a menu row or a tile — named as the reducer's own
   // click commands, which decide what a click means from what is on screen.
   const underneath = (): BuildCommand | null => {
-    const entry = menuEntryAt(layout, catalog, event.column, event.row)
+    // The Pulse's panel has no menu: a click there is not a menu row.
+    const entry = ui.pulse === true ? null : menuEntryAt(layout, catalog, event.column, event.row)
     if (entry !== null) return { kind: "click-menu", entry }
     const tile = tileAtCell(layout, camera, event.column, event.row)
     if (tile !== null) return { kind: "click-tile", x: tile.x, y: tile.y }
@@ -111,6 +115,13 @@ export function buildMouseCommand(
   if (event.button === MOUSE_WHEEL_UP) return { kind: "move-cursor", dx: 0, dy: -JUMP_TILES }
   if (event.button === MOUSE_WHEEL_DOWN) return { kind: "move-cursor", dx: 0, dy: JUMP_TILES }
   if (event.button !== MOUSE_LEFT) return null
+  // The Pulse's panel has control rows where the menu was; a click on one is that control, exactly as
+  // its hotkey is, and any other click on the panel does nothing (there is no menu underneath it).
+  if (ui.pulse === true) {
+    const control = pulseControlAt(layout, event.column, event.row)
+    if (control !== null) return { kind: "pulse", control }
+    if (inPanel(layout, event.column, event.row)) return null
+  }
   // Explore Map covers the menu below its own row, so the whole panel is one target — its own row,
   // drawn active, and the card under it — and what it does is close Explore Map, as Esc does. Sent as
   // the menu click it is, so a driver's `click-menu` in Explore Map means exactly the same.
@@ -122,10 +133,5 @@ export function buildMouseCommand(
 
 /** Whether a frame cell is on the side panel — its full width, from its first row to its last. */
 function inPanel(layout: BuildLayout, column: number, row: number): boolean {
-  return (
-    column >= layout.panelColumn &&
-    column < layout.panelColumn + layout.panelLimit &&
-    row >= layout.panelRow &&
-    row <= layout.panelBindingsRow
-  )
+  return inPanelColumns(layout, column) && row >= layout.panelRow && row <= layout.panelBindingsRow
 }

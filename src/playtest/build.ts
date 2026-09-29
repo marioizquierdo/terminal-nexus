@@ -13,6 +13,7 @@ import type { BuildLayout } from "../build/layout.ts"
 import { buildLayout } from "../build/layout.ts"
 import { BuildSession } from "../build/session.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
+import { startPulse } from "../cli/pulse-run.ts"
 import { spikeContext } from "../cli/spike.ts"
 import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
@@ -96,15 +97,27 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     onQuit: () => {
       leftBy = "quit"
     },
+    startPulse,
   })
 
   // Drawn with the settings the script has reached: a step that changes the colour depth or the
   // symbols in Settings shows the change, as the live screen does.
-  const compose = (): ReadonlyCellFrame =>
-    composeBuildFrame(
-      { context, state: build.state, layout, glyphPack: build.state.settings.glyphPack },
+  const compose = (): ReadonlyCellFrame => {
+    // A Nexus Pulse on screen is drawn at the script's clock: the frame after a step shows the Pulse as it
+    // is that long after it began. Nothing else on this screen depends on time in a scripted playtest.
+    const pulse = build.pulseFrame(layout)
+    return composeBuildFrame(
+      {
+        context,
+        state: build.state,
+        layout,
+        glyphPack: build.state.settings.glyphPack,
+        reducedMotion: build.state.settings.reducedMotion,
+        ...(pulse === undefined ? {} : { pulse }),
+      },
       build.state.settings.capability,
     )
+  }
 
   const frames: PlaytestFrame[] = [{ index: 0, label: "start", bytes: "", state: build.state, frame: compose(), moveKind: null }]
   let ended: BuildPlaytest["ended"] = null
@@ -116,6 +129,9 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   for (const [position, step] of options.steps.entries()) {
     clock += step.afterMs ?? UNTIMED_GAP_MS
     const bytes = deliverStep(build, layout, step, clock)
+    // What the live loop's next render would do first: let a Nexus Pulse on screen catch up with the clock
+    // (and, the moment it starts, look at the player's Nexus), so the frame is the one a player sees.
+    build.advance(clock)
     frames.push({ index: position + 1, label: step.label, bytes, state: build.state, frame: compose(), moveKind: build.moveKind })
     if (leftBy !== null) {
       ended = { by: leftBy, atStep: position + 1, skipped: options.steps.length - position - 1 }

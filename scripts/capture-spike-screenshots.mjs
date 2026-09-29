@@ -68,10 +68,18 @@ const PICK_FIRST_POWER = "n 1"
 // --- In-process shots ----------------------------------------------------------------------------
 
 /** `present`: what the live screen adds between keys (gate 5H) — a refused-placement flash, say —
- *  composed onto the last frame, since a key script alone never shows a moment in time. */
-function scripted(name, caption, { keys, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", present }) {
+ *  composed onto the last frame, since a key script alone never shows a moment in time.
+ *  `experiments`: Experiments to open with instead of the defaults (gate 6A's raid and crew sizes).
+ *  A `wait~MS` step in `keys` lets a Nexus Pulse on screen run that long on the script's own clock. */
+function scripted(name, caption, { keys, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", present, experiments }) {
   if (only !== null && only !== name) return
-  const run = runBuildPlaytest({ steps: parseKeyScript(keys), columns: cols, rows, capability })
+  const run = runBuildPlaytest({
+    steps: parseKeyScript(keys),
+    columns: cols,
+    rows,
+    capability,
+    ...(experiments === undefined ? {} : { experiments }),
+  })
   const last = run.frames[run.frames.length - 1]
   const text = frameToText(last.frame)
   if (!text.includes(expect)) {
@@ -112,6 +120,44 @@ function scriptedGif(name, { keys, expect, cols = 80, rows = 24, capability = "t
     scratchDir: scratch,
   })
   report(result)
+}
+
+/**
+ * The Nexus Pulse's ending as the live screen draws it (gate 6A): `plan` commits a build and starts
+ * the Pulse, then the GIF is the screen every `stepMs` from `fromMs` to `toMs` on the Pulse's own
+ * clock, shown for as long as it lasted — the timer's flashing and the light round the border, the
+ * cease-fire, the walk home and the result, in real time. A Pulse's screen is a pure function of that clock, so a script that waits
+ * gets exactly what a player who watched gets.
+ */
+function pulseGif(name, { plan, fromMs, toMs, stepMs = 250, expect, experiments, cols = 80, rows = 24, capability = "truecolor", scale = 1 }) {
+  if (only !== null && only !== name) return
+  const planSteps = parseKeyScript(plan).length
+  const waits = Array.from({ length: Math.round((toMs - fromMs) / stepMs) }, () => `wait~${stepMs}`)
+  const run = runBuildPlaytest({
+    steps: parseKeyScript([plan, `wait~${fromMs}`, ...waits].join(" ")),
+    columns: cols,
+    rows,
+    capability,
+    ...(experiments === undefined ? {} : { experiments }),
+  })
+  const frames = run.frames.slice(planSteps + 1)
+  const lastIndex = frames.length - 1
+  if (!frameToText(frames[lastIndex].frame).includes(expect)) {
+    throw new Error(`${name}: expected "${expect}" ${toMs} ms into the Pulse, got:\n${frameToText(frames[lastIndex].frame)}`)
+  }
+  report(
+    renderFramesGif({
+      shots: frames.map((frame, index) => ({
+        frame: frame.frame,
+        caption: `${((fromMs + index * stepMs) / 1000).toFixed(2)} s into the Pulse`,
+        delayMs: index === lastIndex ? 3000 : stepMs,
+      })),
+      capability,
+      targetPath: join(outputDirectory, `${name}.gif`),
+      scratchDir: scratch,
+      scale,
+    }),
+  )
 }
 
 /**
@@ -473,16 +519,81 @@ scripted(
 )
 
 scripted(
-  "build-nexus-confirm",
-  "Pressing [p] asks once, in a popup, whether to end the Build Phase and start the Nexus Pulse",
-  { keys: `${PICK_FIRST_POWER} p`, expect: "START THE NEXUS PULSE?" },
+  "build-start-row",
+  "Start Pulse is the menu's last row: Up from the top reaches it, Enter presses it",
+  { keys: `${PICK_FIRST_POWER} Up Up`, expect: "[s] Start Pulse" },
 )
 
 scripted(
-  "build-nexus-committed",
-  "Accepting the prompt commits the Build Phase: the panel names the Nexus power picked and how many structures were planned, and nothing more can change",
-  { keys: `${PICK_FIRST_POWER} 1 Right*6 Down*4 Enter p y`, expect: "BUILD COMMITTED" },
+  "build-nexus-confirm",
+  "Start Pulse opens Battle Round 1: what it announces, and one row, [s] Start. Esc goes back",
+  { keys: `${PICK_FIRST_POWER} s`, expect: "Battle Round 1" },
 )
+
+// Gate 6A: the Nexus Pulse on the Build Phase's own screen. Accepting the question no longer stops at
+// "committed" - it starts the Pulse - so the committed panel gate 5D drew (`build-nexus-committed.png`,
+// left in place as that gate's evidence) is only what a build with no Pulse to start still shows.
+// The plan: the War Chest, two Turrets across the muster point and a Hatchery behind them.
+const PULSE_PLAN = "n 2 3 click:22,9 click:22,9 3 click:22,12 click:22,12 2 click:20,14 click:20,14 s s"
+// The same commit with nothing built: the War Chest picked (a pick cannot be skipped), then [s] twice.
+const NOTHING_BUILT = "n 2 s s"
+
+scripted(
+  "pulse-start",
+  "The second [s] starts the Pulse on this screen: the view goes to your Nexus, the title has a timer",
+  { keys: PULSE_PLAN, expect: "NEXUS PULSE 1" },
+)
+
+scripted(
+  "pulse-fight",
+  "Seven seconds in: the raid meets the Turrets. Score on the left, the last five events under it",
+  { keys: `${PULSE_PLAN} wait~7000`, expect: "0:08" },
+)
+
+scripted(
+  "pulse-last-seconds",
+  "The last three seconds: the timer flashes, a light sweeps the map's border like a lighthouse",
+  { keys: `${PULSE_PLAN} wait~12400`, expect: "The Pulse is about to end." },
+)
+
+scripted(
+  "pulse-nexus-hit",
+  "Your Nexus is hit for the first time: the border goes a faint red for a fifth of a second",
+  { keys: `${NOTHING_BUILT} wait~11600`, expect: "NEXUS PULSE 1", experiments: { crew: "none" } },
+)
+
+scripted(
+  "pulse-result-victory",
+  "A Pulse won: VICTORY and why, the survivors walked home by Recall, and how to go on",
+  { keys: `${PULSE_PLAN} wait~19000`, expect: "VICTORY" },
+)
+
+scripted(
+  "pulse-result-defeat",
+  "Nothing built, five units against seven: DEFEAT, said as plainly as a win",
+  { keys: `${NOTHING_BUILT} wait~40000`, expect: "DEFEAT" },
+)
+
+scripted(
+  "pulse-result-timeup",
+  "No raid (an Experiment): the Pulse runs out its 30 seconds and says TIME'S UP",
+  { keys: `${NOTHING_BUILT} wait~40000`, expect: "TIME'S UP", experiments: { raid: "none" } },
+)
+
+scripted(
+  "pulse-experiments",
+  "d opens the Experiments mid-Pulse: the ending's first (Final warning, Red alerts, Walk-back)",
+  { keys: `${PULSE_PLAN} wait~3000 d`, expect: "Final warning" },
+)
+
+pulseGif("pulse-ending", {
+  // The last moments of the Pulse above, in real time: the timer flashing and the light turning while
+  // the fight goes on, the shooting stopping, the survivors walking home, the result.
+  plan: PULSE_PLAN,
+  fromMs: 10500,
+  toMs: 19000,
+  expect: "VICTORY",
+})
 
 // Settings (owner, 2026-09-28): the game menu's [s], the player's own settings first, then the
 // The Experiments, which [d] opens straight at.

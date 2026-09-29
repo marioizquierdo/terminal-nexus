@@ -72,3 +72,13 @@ export async function resolveAllScenarios(): Promise<Resolved[]> {
   for (const name of scenarioFiles()) resolved.push(await resolveScenario(name))
   return resolved
 }
+
+/** The numeric SGR parameters of every `ESC [ ... m` in an ANSI string, in order — what a terminal is told
+ *  about colour and weight. */
+export function sgrCodes(ansi: string): number[] {
+  return [...ansi.matchAll(/\u001b\[([0-9;]*)m/g)].flatMap((match) => (match[1] ?? "").split(";").filter(Boolean).map(Number))
+}
+
+/** Whether an SGR parameter sets a colour (foreground or background, standard or bright) — as opposed to
+ *  bold, dim or reversed video, which monochrome keeps. */
+export const isColourCode = (code: number): boolean => (code >= 30 && code <= 49) || (code >= 90 && code <= 107)

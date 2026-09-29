@@ -200,12 +200,33 @@ defaults and the map's own edge on the shared divider is the rule; and `--keys`/
 in a state. Q66 — reading key releases where the terminal reports them — waits on
 `node scripts/probe-key-release.mjs` in his iTerm2.
 
-The current milestone is **[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md)
-— Build Phase**: can a player place buildings, pick a Nexus upgrade, and scroll a real map, by
-keyboard, mouse and driver alike? Its active gate is **5K — the owner's fourth round**, built and
-awaiting Mario's playtest (`evidence/gate-5k-report.md`). **Mario asked on 2026-09-28 to keep going
-without waiting to look at each gate first**: he tests several merged changes together, then plays,
-exports his Experiments, and pastes them into the pull request.
+**Milestone 5 is accepted** (2026-09-29). Mario played and merged the Build Phase work (gates 5D-5K,
+tested together) and the polish pull request after it, and gave his word that Milestone 5 is accepted
+and Milestone 6 is promoted. Every "awaiting Mario" line about gates 5C-5K above is resolved by that;
+[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md) is COMPLETE and kept
+as a historical record, and nothing in it is open work.
+
+The current milestone is **[`milestones/milestone-06-pulse-phase.md`](milestones/milestone-06-pulse-phase.md)
+— the Nexus Pulse Phase** (promoted 2026-09-29): can a player start the Pulse from a completed Build
+Phase, watch the unmodified kernel resolve it, see a legible ending with Recall, and land in the next
+Build Phase? Its active gate is **6A — Start, end, Recall**: Start Nexus Pulse as an explicit action from
+the Build Phase's Start button, the end condition, the stop / finish-in-flight / Recall sequence, and a
+result a viewer can read unprompted. **Gate 6A is built and reported (PASS), awaiting Mario's playtest**
+(2026-09-29, `evidence/gate-6a-report.md`; reworked twice from his feedback the same day):
+**`[s] Start Pulse`**, the menu's last row — reached by Up and Down like every other, since a menu can
+always be walked with Up, Down and Enter alone — opens a "Battle Round 1" screen announcing the round,
+and Enter, Space or `[s] Start` starts the Pulse on the Build Phase's own screen — the unmodified kernel
+resolves the committed plan plus a placeholder crew and raid — with a countdown timer in the title, a
+score, a feed of events, pause / speed / step / watch-again, and an ending of the timer flashing and a
+light sweeping the map's border like a lighthouse in the last three seconds, a cease fire, the survivors
+walking home and a plain result (won, lost, drawn or timed out, and why). **Red is kept for the player's
+own Nexus being hurt** — its first hit, very low health, a lost Pulse — faint and brief. Recall, which
+the rules described and no code ran, is built for the first time in `src/match/`, beside the kernel;
+the kernel is untouched. The ending's timings, the red's switch, and the raid's and the crew's size are
+Experiments (`d`); the interface rules are `docs/ui-patterns.md` sections 6 and 7c. **Do not start 6B** (the loop back into
+the next Build Phase and the trigger runner) or 6C (automatic production) without Mario's word. **Mario
+asked on 2026-09-28 to keep going without waiting to look at each gate first**: he tests several merged
+changes together, then plays, exports his Experiments, and pastes them into the pull request.
 
 So the authorised work for a new session is, in order:
 
@@ -214,11 +235,12 @@ So the authorised work for a new session is, in order:
    outstanding or that everything still is; **a pasted settings export is feedback**: start the game
    with it (`--settings`), and settle each Experiment it answers — adopt the value as the default,
    delete the Experiment, record the answer;
-2. **Mario's playtest of gates 5G-5K together** — the feedback logs have nothing left that can be
-   built now except Q66, which waits on his key-release probe; the next gate waits for his word, and
-   when it comes it is the next gate in the build order [`milestones/README.md`](milestones/README.md)
-   carries. Milestone numbers are identities, not an order — read that table's build-order column, and
-   take one gate per session unless the owner's own prompt asks for more.
+2. **the current milestone's active gate** — gate 6A has nothing left to build until he has played
+   it (and Q66 waits on his key-release probe); the next gate waits for his word, and when it comes it
+   is the next gate in the build order
+   [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
+   order — read that table's build-order column, and take one gate per session unless the owner's own
+   prompt asks for more.
 
 Each milestone names exactly what it needs in its own "Depends on" line, and its gates are the unit
 of work.

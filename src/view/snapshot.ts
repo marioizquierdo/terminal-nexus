@@ -9,6 +9,7 @@ import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
+import type { ActiveEffect } from "./effects/index.ts"
 import { EffectTimeline, buildFlightHoldTicks, deriveEffects, flightHoldTicks } from "./effects/index.ts"
 import type { GlyphPack } from "./theme.ts"
 import type { ReadonlyCellFrame } from "./frame.ts"
@@ -58,6 +59,23 @@ export const DEFAULT_PRESENTATION: PresentationOptions = {
  */
 const STEP_LANDS_AT = 0.5
 
+/**
+ * Everything the view draws at one presentation instant, before it is laid onto a screen: which tick's
+ * state, where each entity is drawn between ticks, the ranged kills still waiting for their tracers, what
+ * every effect is painting, and the feed up to that tick. `composeAt` puts it in the old Pulse frame; the
+ * Build Phase's own frame puts it on the Grid through the camera (gate 6A). Pure, like the rest of the view.
+ */
+export type PulseSample = Readonly<{
+  tick: number
+  state: MatchState
+  /** Where each entity is drawn — interpolated, and never known to the simulation. */
+  positions: ReadonlyMap<number, Coord>
+  heldCorpses: readonly HeldCorpse[]
+  effects: readonly ActiveEffect[]
+  /** The feed's events up to this tick. */
+  recent: readonly DomainEvent[]
+}>
+
 export type PulseView = Readonly<{
   timeline: PulseTimeline
   presentation: PresentationOptions
@@ -66,6 +84,15 @@ export type PulseView = Readonly<{
   lastTick: number
   durationMs: number
   tickDurationMs: number
+  /** Each side's health at tick zero, structures excluded — what a force bar is measured against. */
+  openingHealth: ReadonlyMap<PlayerId, number>
+  /** When the last effect finishes: everything still "in flight" at the end of the fight has landed by
+   *  then — the Pulse's ending waits for it before Recall plays (milestone 6, Section 2). At least the
+   *  last tick's own time. */
+  effectsEndMs: number
+  /** The drawable data at a presentation time. `reducedMotion` overrides the view's own — a player who
+   *  turns it on mid-Pulse — without rebuilding the view. */
+  sampleAt(timeMs: number, capability: CapabilityMode, tileWidth: TileWidth, reducedMotion?: boolean): PulseSample
   snapshotAt(timeMs: number, capability: CapabilityMode, tileWidth: TileWidth): ReadonlyCellFrame
   /** The same composition with live playback controls filled in — what `watch` presents. */
   composeAt(
@@ -92,15 +119,18 @@ export function createView(
   const feed = timeline.events.filter((event) =>
     (FEED_KINDS as readonly string[]).includes(event.kind),
   )
-  const effects = new EffectTimeline(
-    presentation.effects
-      ? deriveEffects({
-          states: timeline.states,
-          events: timeline.events,
-          registry: timeline.registry,
-          ticksPerSecond: timeline.ticksPerSecond,
-        })
-      : [],
+  const instances = presentation.effects
+    ? deriveEffects({
+        states: timeline.states,
+        events: timeline.events,
+        registry: timeline.registry,
+        ticksPerSecond: timeline.ticksPerSecond,
+      })
+    : []
+  const effects = new EffectTimeline(instances)
+  const effectsEndMs = instances.reduce(
+    (latest, instance) => Math.max(latest, instance.startMs + instance.durationMs),
+    lastTick * tickDurationMs,
   )
 
   const clampTick = (tick: number): number => Math.max(0, Math.min(lastTick, tick))
@@ -139,12 +169,12 @@ export function createView(
     openingHealth.set(entity.player, (openingHealth.get(entity.player) ?? 0) + entity.hp)
   }
 
-  const composeAt = (
+  const sampleAt = (
     timeMs: number,
     capability: CapabilityMode,
     tileWidth: TileWidth,
-    controls: ViewControls,
-  ): ReadonlyCellFrame => {
+    reducedMotion: boolean = presentation.reducedMotion,
+  ): PulseSample => {
     const exact = (Math.max(0, timeMs) * timeline.ticksPerSecond) / 1000
     const tick = clampTick(Math.floor(exact))
     const state = timeline.states[tick]
@@ -177,6 +207,29 @@ export function createView(
       })
     }
 
+    return {
+      tick,
+      state,
+      positions,
+      heldCorpses,
+      effects: effects.cellsAt({
+        timeMs: Math.max(0, timeMs),
+        cosmeticSeed: presentation.cosmeticSeed,
+        tileWidth,
+        reducedMotion,
+        capability,
+      }),
+      recent: feed.filter((event) => event.tick <= tick),
+    }
+  }
+
+  const composeAt = (
+    timeMs: number,
+    capability: CapabilityMode,
+    tileWidth: TileWidth,
+    controls: ViewControls,
+  ): ReadonlyCellFrame => {
+    const sample = sampleAt(timeMs, capability, tileWidth)
     return composeFrame(
       {
         scenarioId: timeline.scenarioId,
@@ -185,24 +238,18 @@ export function createView(
         pulseTicks: timeline.pulseTicks,
         grid: timeline.grid,
         registry: timeline.registry,
-        state,
+        state: sample.state,
         roster,
         openingHealth,
-        positions,
-        heldCorpses,
-        tick,
-        recent: feed.filter((event) => event.tick <= tick),
+        positions: sample.positions,
+        heldCorpses: sample.heldCorpses,
+        tick: sample.tick,
+        recent: sample.recent,
         paused: controls.paused,
         speed: controls.speed,
-        status: statusOf(state, tick, lastTick),
+        status: statusOf(sample.state, sample.tick, lastTick),
         glyphPack: presentation.glyphPack,
-        effects: effects.cellsAt({
-          timeMs: Math.max(0, timeMs),
-          cosmeticSeed: presentation.cosmeticSeed,
-          tileWidth,
-          reducedMotion: presentation.reducedMotion,
-          capability,
-        }),
+        effects: sample.effects,
       },
       capability,
       tileWidth,
@@ -216,6 +263,9 @@ export function createView(
     lastTick,
     durationMs: (lastTick + 1) * tickDurationMs,
     tickDurationMs,
+    openingHealth,
+    effectsEndMs,
+    sampleAt,
     // `snapshotAt` deliberately takes no controls, so a snapshot test never depends on what the
     // player happened to be doing when it was taken.
     snapshotAt: (timeMs, capability, tileWidth) =>

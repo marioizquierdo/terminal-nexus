@@ -272,9 +272,9 @@ test("placing: the armed row is marked armed, not with the keyboard's bar; leavi
   assert.equal(side.build.state.armed, null, "a structure stayed armed with the keyboard on the menu")
 })
 
-test("Up/Down walk the whole menu — Explore Map, Nexus, the construct rows — and wrap", () => {
+test("Up/Down walk the whole menu — Explore Map, Nexus, the construct rows, Start Pulse — and wrap", () => {
   const side = session()
-  const entries = 2 + SPIKE_CATALOG.length
+  const entries = 3 + SPIKE_CATALOG.length
   keys(side, UP)
   assert.equal(side.build.state.menuHighlight, entries - 1)
   keys(side, DOWN)
@@ -890,7 +890,7 @@ test("the focus flow by keyboard bytes and the same commands from a driver are t
     { kind: "activate" },
     { kind: "place" },
     { kind: "commit" },
-    { kind: "confirm-commit", accept: true },
+    { kind: "confirm-commit" },
   ]
   const byDriver = session()
   byDriver.build.run(script)
