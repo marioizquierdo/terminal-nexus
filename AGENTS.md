@@ -443,6 +443,14 @@ deleted, and the renderer must be replaceable without one simulation test changi
   movement or timing, and a playable page only when it must be played to be judged. The
   `pr-description` skill has the layers and the "On Claude Web Artifact" / "On MacOS" shape.
 
+- **When the owner sends feedback**, follow the `feedback-round` skill (log his words, turn them into a
+  gate, split the work across agents by files, merge, write the canon, regenerate the evidence,
+  rewrite the pull request). What the last four rounds taught is in
+  [`docs/lessons-learned.md`](docs/lessons-learned.md); the goals behind his feedback, which decide
+  when two rules disagree, are `docs/ui-patterns.md` section 0; how the game could run on other
+  hosts is [`docs/portability.md`](docs/portability.md); and what is waiting — including the prompt to
+  start the next milestone — is [`docs/next-steps.md`](docs/next-steps.md).
+
 ### Write for a person, not for the filing system
 
 Everything a human reads — pull request descriptions, chat replies, commit messages, and any document

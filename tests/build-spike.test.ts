@@ -250,7 +250,7 @@ test("a second Enter after a placement never places a second building", () => {
 test("keyboard: Shift+Arrow and its modifier-free fallback are both the fast move, a jump of the Shift jump", () => {
   // Measured, not assumed — scripts/probe-modified-keys.mjs found three live encodings for a
   // shifted arrow and none at all on several terminals, which is why all of these are bound. Five
-  // tiles until gate 5H, then 8; a jump of 12 since the owner's 2026-09-28 playtest — a Debug Mode
+  // tiles until gate 5H, then 8; a jump of 12 since the owner's 2026-09-28 playtest — an Experiment
   // flag (`jumpStep` here).
   const context = { itemCount: 3, armed: false }
   const fast = DEFAULT_JUMP_STEP

@@ -1,6 +1,9 @@
-// Debug Mode (gate 5G): the Build Phase's live-editable development flags — an experiment harness
-// that lets the owner feel two answers to an open question during a playtest, instead of reading a
-// paragraph about them or asking for a new command-line flag (AGENTS.md Section 5, engine.md 9.7).
+// The **Experiments** (gate 5G's Debug Mode; the lower half of Settings since gate 5J): the Build
+// Phase's live-editable development flags — an experiment harness that lets the owner feel two
+// answers to an open question during a playtest, instead of reading a paragraph about them or asking
+// for a new command-line flag (AGENTS.md Section 5, engine.md 9.7). The names `debug.ts`, `DebugFlags`
+// and `BuildState.debug` are the harness's first ones and still stand; renaming them to say
+// "experiments" is a pure-rename job for a pull request of its own (docs/next-steps.md).
 //
 // **Every flag names the question it serves, and is deleted once that question is answered.** A few
 // may graduate into real settings; none of them is one yet, so nothing here is saved: the flags live
@@ -409,11 +412,6 @@ export function initialDebugFlags(context: Readonly<{ scrollMargin?: number }>):
 
 export function fieldSpec(field: DebugField): AnyFieldSpec {
   return DEBUG_FIELDS.find((spec) => spec.field === field) as AnyFieldSpec
-}
-
-/** The flag on popup row `row`, or `null` for a row past them (Export settings). */
-export function fieldAtRow(row: number): DebugField | null {
-  return DEBUG_FIELDS[row]?.field ?? null
 }
 
 export function rowOfField(field: DebugField): number {

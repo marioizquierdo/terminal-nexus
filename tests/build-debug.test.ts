@@ -171,7 +171,7 @@ test("Esc, x, d, a right click and a click outside all close it, and it holds th
   assert.equal(held.build.state.focus, "menu")
 })
 
-test("while Debug Mode is open its highlight is the only one on screen", () => {
+test("while Settings is open its highlight is the only one on screen", () => {
   const side = session()
   keys(side, "d")
   const frame = composeBuildFrame({ context: side.context, state: side.build.state, layout: side.layout }, "monochrome")

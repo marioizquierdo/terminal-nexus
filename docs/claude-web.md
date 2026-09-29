@@ -25,6 +25,14 @@ with no code yet, and the repository now has code, tests, and a working tool. `C
 `./scripts/check-repository.sh`, read the specs in order, find the current gate and what it
 authorizes) automatically. Just say what you want done; the agent orients itself.
 
+**One fresh session per gate, started with a prompt that names the gate.** A long session's context
+fills and its early decisions blur; a fresh one re-orients from `AGENTS.md` and starts clean. Write the
+prompt so it (1) says what the owner has accepted or promoted, in his voice, so the session records it
+rather than assuming it; (2) names the milestone file, the one gate to take, and what not to start;
+(3) lists what to read (`docs/next-steps.md`, `docs/ui-patterns.md`, the relevant skills); and (4) says
+how to finish (a gate report, and a pull request written with the `pr-description` skill). The prompt
+for the next milestone lives in [`next-steps.md`](next-steps.md); replace it when it is used.
+
 If you want a session to do exactly what an unattended session should do by default — pick up
 outstanding owner feedback and nothing else — a short prompt like this is enough:
 

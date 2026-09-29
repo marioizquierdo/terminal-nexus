@@ -1,6 +1,6 @@
 // The Build Phase's Settings popup (owner, 2026-09-28: "Let's solidify this as Settings"): the
 // player's own settings first — the four the title menu's Settings screen already has, saved the same
-// way — and then **Experiments**, every Debug Mode flag (`src/build/debug.ts`), which are for
+// way — and then **Experiments**, every Experiment (`src/build/debug.ts`), which are for
 // playtesting and are never saved. Two lists in one popup, one row shape (a value Left and Right
 // change), and one way out of it for the owner's feedback: the export (`settings-export.ts`).
 //

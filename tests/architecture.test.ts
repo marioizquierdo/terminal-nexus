@@ -132,8 +132,8 @@ test("the deterministic modules name no clock, no Math.random, and no terminal",
   }
 })
 
-test("the Build Phase reducer and its Debug Mode flags name no clock and never reach the kernel's tick", () => {
-  // Gate 5G: Debug Mode's timing flags are read by the live loop (src/cli/spike.ts), never here —
+test("the Build Phase reducer and its Experiments name no clock and never reach the kernel's tick", () => {
+  // Gate 5G: the Experiments' timing flags are read by the live loop (src/cli/spike.ts), never here —
   // the reducer stores a number and nothing more, so it stays a pure function a driver can replay.
   assertNoDependencyOn("build", ["pulse", "cli"])
   const forbidden = [/\bDate\s*\.\s*now\b/, /\bnew\s+Date\b/, /\bperformance\s*\.\s*now\b/, /\bset(Timeout|Interval)\b/]

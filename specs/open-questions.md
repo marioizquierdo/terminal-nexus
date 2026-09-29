@@ -1078,25 +1078,63 @@ building, and say whether it should glow instead.
 
 ### Q66 — Should the Build Phase read key releases where the terminal reports them?
 
-**Status:** OPEN — blocks nothing; registered by gate 5K (owner, 2026-09-29, feedback F29).
+**Status:** OPEN — blocks nothing; registered by gate 5K (owner, 2026-09-29, feedback F29). Waiting on
+`node scripts/probe-key-release.mjs` in the owner's iTerm2.
 
 A classic terminal sends bytes only when a key goes down, and while it is held the operating system
 repeats it at its own delay and rate; nothing says when it is let go. So "held" is guessed from the
 gaps between presses (`src/build/motion.ts`, tuned by the "Hold window" Experiment), and a quick run
 of taps can read as a hold. The owner: "I really hope we can reliably manage key-press vs key-hold on
 all platforms, instead of relying on the OS settings … when tapping, I wish we could move the cursor at
-regular 1 block intervals." The kitty keyboard protocol (kitty, WezTerm, Ghostty, foot, Alacritty,
-and — unmeasured — recent iTerm2) reports press, repeat and release; Windows Terminal has
-win32-input-mode; the browser page has key-up events. `node scripts/probe-key-release.mjs` says which
-kind a terminal is.
+regular 1 block intervals. The scroll acceleration makes a lot of sense when holding, but when tapping …
+the combination of keep-pressing, releasing, and tapping to adjust would work perfectly well." The
+kitty keyboard protocol (kitty, WezTerm, Ghostty, foot, Alacritty, and — unmeasured — recent iTerm2)
+reports press, repeat and release; Windows Terminal has win32-input-mode; the browser page has
+`keyup`. `node scripts/probe-key-release.mjs` says which kind a terminal is.
+
+**The shape that keeps both worlds working is progressive enhancement, in three tiers**, chosen at
+start from what the host says it reports (`docs/next-steps.md` has the detail):
+
+1. **Floor — no holding needed.** Every move is also a single key (a tap is a tile, Shift or
+   PageUp/PageDown jumps 12), so a hold is a convenience and never a requirement. True today.
+2. **Timing, when a host reports only presses** (the terminal today): infer a hold from the gaps
+   (today's ramp), *learn* the OS repeat interval from the first held run instead of asking the owner
+   to tune "Hold window", and read "no event for a while" as a release.
+3. **Releases, when a host reports them**: a press moves exactly one tile and nothing else; a hold is
+   press … release, run on the game's own repeat cadence with the acceleration curve, ignoring the OS
+   repeat rate entirely. That is his "regular 1 block intervals".
+
+Only the input path changes; the reducer still sees ordinary `move-cursor` commands, so keyboard, mouse
+and driver stay one plan. A test feeds the same intent as timed presses and as press/release events and
+expects the same positions.
 
 | Option | Cost |
 | --- | --- |
-| A. **Use releases where they arrive, timing elsewhere**: ask for the kitty protocol on start (and pop it on exit, through the one disposer), and when release events come, a press is one tile, a hold accelerates until its release, and the OS repeat is ignored; the browser page uses key-up | A second input path to keep in step with the first; the disposer must restore the keyboard mode on every exit path |
+| A. **The three tiers**: ask for the kitty protocol on start (query, then push flags; pop them on *every* exit path through the one disposer), use the browser's `keydown`/`keyup`, and fall back to timing where a host answers nothing. A bonus: with the protocol on, a lone Esc no longer needs its 100 ms wait | An input event with a `phase` in place of raw bytes (`docs/portability.md`), a second decoder to keep in step, and terminal-state cleanup that must be right; tmux, SSH and `screen` may not pass the protocol through |
 | B. Timing only, everywhere | Nothing new; taps and holds stay a guess shaped by the OS repeat settings |
 
-**Recommendation: A**, after the probe has been run in the owner's iTerm2 — if it reports releases
-there, the next gate builds it; if not, B with the Experiment, and A for the terminals that can.
+**Recommendation: A**, behind an Experiment ("Key releases": auto or off) so the owner can compare, after
+the probe has been run in his iTerm2 — if it reports releases there, the next gate builds it; if not,
+tier 2's learned repeat interval alone is worth building, and tier 3 serves the terminals and the page
+that can.
+
+### Q67 — Do buildings get letter hotkeys, or stay on digits?
+
+**Status:** OPEN — blocks nothing; registered 2026-09-29 (the owner's feedback wrote "press 'b' to build a
+barracks", read as the building's own key; the ambiguity is recorded so it is not lost).
+
+Buildings are picked by the digit of their menu row (`[1] Barracks`), one digit sequence for the whole
+menu so no hotkey moves when content arrives (`engine.md` 9.7, RULE). Letters are already spoken for:
+`e`, `n`, `p`, `q`, `u`, `x`, `s`, `r`, `d`. The owner's example used a letter.
+
+| Option | Cost |
+| --- | --- |
+| A. **Digits only** (as built) | A digit means nothing about the building; nothing moves when a row is added |
+| B. A mnemonic letter per building (`b` Barracks) | Collides quickly (Barracks and Bunker) and with the command letters; a letter moves or breaks when content changes; needs a per-language rule |
+| C. Digits stay the address, and a letter is *shown* beside the name where it is unique and free | Two keys for one row; some rows have none |
+
+**Recommendation: A**, unless the owner says he meant letters — in which case C, shown in the row, so the
+digit contract stays a rule. Ask him once whether `b` was an example of a key or a request for letters.
 
 ## 5. Answered
 

@@ -60,7 +60,7 @@ export type BuildContext = Readonly<{
    * direction" whose tuning "Milestone 5 may retune on evidence from the first person who actually
    * scrolls a Grid". So the spike takes it as a parameter and puts it on the command line and in
    * the header — a number Mario can feel the difference between beats a number this session argues
-   * for. **Only where the margin starts**: since gate 5G it is a Debug Mode flag,
+   * for. **Only where the margin starts**: since gate 5G it is an Experiment,
    * `state.debug.scrollMargin`, and that is what the reducer reads. **Since gate 5H it is a
    * percentage of the view** — of its width for the sides and its height for the top and bottom —
    * defaulting to the owner's 25%, rather than a number of tiles.
@@ -140,7 +140,7 @@ export type BuildState = Readonly<{
   /**
    * The last placement that was tried and refused, with a sequence number and no clock, the way `ack`
    * is: the live loop flashes the cursor there for a moment from when it first sees a new `seq`
-   * (gate 5H; how long is Debug Mode's "Refused cursor"). Counts up across a Debug Mode restart.
+   * (gate 5H; how long is the "Refused cursor" Experiment). Counts up across a restart.
    */
   refusedTry: Readonly<{ seq: number; tile: Coord }> | null
   /** The previous command was a Right on the menu that only flickered: a second one in a row moves
@@ -192,9 +192,9 @@ export type BuildState = Readonly<{
    *  just freezes the plan and says so; every state-changing command is refused from here on. */
   committed: boolean
   /**
-   * Debug Mode's flags (gate 5G, `src/build/debug.ts`). State rather than context because they change
+   * the Experiments (gate 5G, `src/build/debug.ts`). State rather than context because they change
    * while the screen is open; the reducer reads the ones that change what a command does, and the
-   * live loop reads the flash timings. Survive a Debug Mode restart; not saved anywhere else.
+   * live loop reads the flash timings. Survive a restart; not saved anywhere else.
    */
   debug: DebugFlags
   /**
@@ -203,7 +203,7 @@ export type BuildState = Readonly<{
    * whenever they change (owner, 2026-09-28: settings players may adjust, beside the experiments).
    */
   settings: Settings
-  /** Where the cursor started — where a Debug Mode restart puts it back. */
+  /** Where the cursor started — where a restart puts it back. */
   startCursor: Coord
   /** The flags this Build Phase started with: an experiment that applies only after a restart is
    *  pending while its value differs from its value here (`pendingRestart`). */
@@ -264,14 +264,14 @@ export function remaining(context: BuildContext, state: BuildState): number {
  *  Mode's "Shift jump" (12 since the owner's 2026-09-28 playtest), and the wheel alone keeps five. */
 export const JUMP_TILES = 5
 
-/** The scroll margin in force, in tiles along each axis: Debug Mode's percentage of the view (gate 5H),
+/** The scroll margin in force, in tiles along each axis: the Experiment's percentage of the view (gate 5H),
  *  which starts at the context's (`--scroll-margin`) or the owner's 25%. */
 function marginOf(state: Readonly<{ debug: DebugFlags; viewport: Viewport }>): Margin {
   return marginForView(state.debug.scrollMargin, state.viewport)
 }
 
 /**
- * A fresh Build Phase. `debug` carries a Debug Mode restart's flags over; otherwise they start from
+ * A fresh Build Phase. `debug` carries a restart's flags over; otherwise they start from
  * the context (`initialDebugFlags`).
  */
 export function createBuildState(
@@ -708,7 +708,7 @@ function clickCameraMove(context: BuildContext, state: BuildState): CameraMove {
 }
 
 /** A fast move (Shift and its fallbacks) re-centres the view on the cursor along the axis it moved,
- *  when Debug Mode's "Fast move centres" is on (engine.md 3.3's recentring). */
+ *  when the "Fast move centres" Experiment is on (engine.md 3.3's recentring). */
 function moveCameraMove(context: BuildContext, state: BuildState, command: Readonly<{ dx: number; dy: number; fast?: boolean }>): CameraMove {
   if (command.fast !== true || !state.debug.fastRecentres) return "follow"
   return (camera, cursor) =>
@@ -1315,11 +1315,6 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     default:
       return state
   }
-}
-
-/** Whether a structure — standing or planned — covers this tile. */
-export function structureCovering(context: BuildContext, planned: readonly PlannedPlacement[], tile: Coord): boolean {
-  return structureAtTile(context, planned, tile) !== null
 }
 
 /** The structure covering a tile, standing or planned, or `null` — what the information panel shows. */

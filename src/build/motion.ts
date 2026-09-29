@@ -7,7 +7,7 @@
 // **Terminals send no key-up.** A held key is a stream of auto-repeated presses: the first one, a
 // pause (the terminal's repeat delay — a few hundred milliseconds on a Mac, set by the user), then
 // presses a few tens of milliseconds apart. So "held" is read from the gaps, and every number is a
-// Debug Mode flag:
+// Experiment:
 //
 //   - a press is a **tap**, and moves the tap step (one tile) — a single press stays precise;
 //   - a press of the **same arrow** within `holdWindowMs` of the one before it is part of a **run** —

@@ -143,7 +143,7 @@ function slideGif(name, { before, move, cols = 80, rows = 24, capability = "true
 
 /**
  * A building going up (gate 5I), frame by frame as the live screen draws it: `before` sets the scene
- * (and any Debug Mode flags, by keys), `place` is the key that places, and the GIF is every `stepMs`
+ * (and any Experiments, by keys), `place` is the key that places, and the GIF is every `stepMs`
  * of what `BuildAnimation` gives from that moment until nothing is moving — the same function the live
  * loop calls, fed a clock that steps instead of waits. Each frame is shown for `showMs`, so a GIF can
  * run slower than life and say so in its caption. `stillAtMs` makes one PNG of that instant instead.
@@ -348,7 +348,7 @@ placementGif("build-place-barracks-monochrome", {
 })
 
 placementGif("build-place-rainbow", {
-  // Debug Mode's Lighting set to rainbow and Particles to many, then a Barracks.
+  // The Lighting Experiment set to rainbow and Particles to many, then a Barracks.
   before: `${PICK_FIRST_POWER} d Down Right Down Right Esc Down Space`,
   place: "Space",
   expect: "Barracks placed",
@@ -485,7 +485,7 @@ scripted(
 )
 
 // Settings (owner, 2026-09-28): the game menu's [s], the player's own settings first, then the
-// Experiments — Debug Mode's flags — which [d] opens straight at.
+// The Experiments, which [d] opens straight at.
 
 scripted(
   "build-settings",

@@ -17,7 +17,7 @@
 // still frame, a test, or a scripted playtest draws any instant of the animation by naming it, and the
 // plan is identical with every effect on or off (the three worlds: presentation never touches state).
 //
-// Timeline of one placement, all of it Debug Mode flags:
+// Timeline of one placement, all of it Experiments:
 //
 //   0 ............ framesMs ................ framesMs + glowMs
 //   | placement frames: foundation -> ... |  finished, lit, sparks  |  settled (state alone)
@@ -56,7 +56,7 @@ export type PlacementTiming = Readonly<{
   totalMs: number
 }>
 
-/** Sparks for `few` and `many` — the two non-zero values of Debug Mode's "Particles". */
+/** Sparks for `few` and `many` — the two non-zero values of the "Particles" Experiment. */
 export const PLACE_PARTICLE_COUNTS = { few: 6, many: 14 } as const
 
 export function placementTiming(flags: DebugFlags, reducedMotion: boolean): PlacementTiming {
@@ -96,7 +96,7 @@ export function placementRun(contentId: string, footprint: Footprint): readonly 
 export type PlacedStructure = Readonly<{ ordinal: number; contentId: string; anchor: Coord }>
 
 /**
- * The structure's placement frames as an Animation: played once over Debug Mode's "Build animation"
+ * The structure's placement frames as an Animation: played once over the "Build animation" Experiment
  * time, then cleared, so the structure's own finished art shows. Frames are drawn plain — a scaffold,
  * lighter than the bold building it becomes, which is all of the light that survives monochrome.
  */
@@ -135,7 +135,7 @@ export function placementFollowUps(placement: PlacedStructure, footprint: Footpr
 
 /**
  * The burst of sparks around a footprint, `glowMs` long — a placement's, and a removal's (feedback
- * F33) — or `null` when Debug Mode's "Particles" is off. `key` is the identity its scatter hashes, with
+ * F33) — or `null` when the "Particles" Experiment is off. `key` is the identity its scatter hashes, with
  * the placement's ordinal: a placement and the removal of the same building throw different sparks.
  */
 function sparksFollowUp(placement: PlacedStructure, footprint: Footprint, flags: DebugFlags, glowMs: number, key: string): FollowUp | null {

@@ -73,11 +73,11 @@ const JUMP_EAST = { dx: 1, dy: 0, fast: true }
 
 // --- The held-key ramp -----------------------------------------------------------------------------
 
-test("the ramp's numbers are the owner's — tap 1, hold 2, fast 4 after 300 ms, Shift a jump of 12 — each a Debug Mode flag", () => {
+test("the ramp's numbers are the owner's — tap 1, hold 2, fast 4 after 300 ms, Shift a jump of 12 — each an Experiment", () => {
   const { tapStep, holdStep, fastStep, rampMs, jumpStep } = DEFAULT_MOVEMENT
   assert.deepEqual({ tapStep, holdStep, fastStep, rampMs, jumpStep }, { tapStep: 1, holdStep: 2, fastStep: 4, rampMs: 300, jumpStep: 12 })
   for (const field of ["tapStep", "holdStep", "fastStep", "rampMs", "holdWindowMs", "jumpStep", "jumpRepeatMs", "cursorGlideMs"] as const) {
-    assert.ok(DEBUG_FIELDS.some((spec) => spec.field === field), `${field} is not in Debug Mode`)
+    assert.ok(DEBUG_FIELDS.some((spec) => spec.field === field), `${field} is not an Experiment`)
   }
   // The slow tier and slow-after-a-turn are gone, not merely hidden.
   for (const gone of ["slowStep", "normalStep", "fasterStep", "slowAfterTurn", "repeatGapMs", "repeatDelayMs"]) {
@@ -172,7 +172,7 @@ test("Shift+Arrow jumps twelve tiles; held, it jumps again at most once per jump
   // A plain arrow straight after a jump is a tap of its own, not part of a run.
   const memory = rampStep(null, JUMP_EAST, 0, FLAGS).memory
   assert.deepEqual(kinds(EAST, [50, 80], FLAGS, memory), ["tap 1", "hold 2"])
-  // Retuned in Debug Mode, the jump follows.
+  // Retuned as an Experiment, the jump follows.
   const tuned = exploring(spikeContext(), { x: 0, y: 13 })
   tuned.build.dispatch({ kind: "debug-adjust", field: "jumpStep", step: -1 }) // 10
   tuned.build.handleData(SHIFT_RIGHT, tuned.layout)
@@ -238,7 +238,7 @@ test("exploring, a click near an edge scrolls further the nearer the edge it lan
   const tile = { x: camera.x + width - 1, y: camera.y + 8 }
   clickTile(side, tile)
   assert.equal(tile.x - side.build.state.camera.x, Math.floor((width - 1) / 2))
-  // Pure: west and north work the same way, and the zone is a Debug Mode share of the view.
+  // Pure: west and north work the same way, and the zone is an Experiment's share of the view.
   const view = { width: 48, height: 16 }
   const grid = spikeContext().grid
   assert.ok(edgeClickCamera({ x: 30, y: 10 }, { x: 30, y: 10 }, view, grid, 33).x < 30)
@@ -346,7 +346,7 @@ test("a click during a slide lands on the tile drawn under the pointer, not the 
 
 // --- The sliding view, the gliding cursor and the frame timer ----------------------------------------------------------
 
-/** Walks a numeric Debug Mode flag to `value` with Left/Right, the way the popup does. */
+/** Walks a numeric Experiment to `value` with Left/Right, the way the popup does. */
 function setFlag(side: Side, field: "easeMs" | "cursorGlideMs", value: number): void {
   for (let guard = 0; guard < 20 && side.build.state.debug[field] !== value; guard += 1) {
     side.build.dispatch({ kind: "debug-adjust", field, step: side.build.state.debug[field] > value ? -1 : 1 })
@@ -554,7 +554,7 @@ test("Esc and a digit or letter in one read are two keys; only the Meta keys som
   const side = exploring()
   side.build.handleData("d", side.layout)
   side.build.handleData(`${ESC}1`, side.layout)
-  assert.equal(side.build.state.overlay, null, "Esc did not close Debug Mode")
+  assert.equal(side.build.state.overlay, null, "Esc did not close Settings")
   assert.equal(side.build.state.armed, 0, "the 1 after it was lost")
 })
 

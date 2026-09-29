@@ -85,7 +85,7 @@ export type BuildCompositionInput = Readonly<{
    */
   cursor?: Coord
   /** The cursor flashes where a placement was just tried and refused, while the live loop shows it
-   *  (gate 5H; Debug Mode's "Refused cursor"). Presentation only. */
+   *  (gate 5H; the "Refused cursor" Experiment). Presentation only. */
   refusedFlash?: boolean
   /**
    * Planned placements still animating, by ordinal, with how long ago each was placed (gate 5I). The
@@ -630,7 +630,7 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
   const footerLimit = layout.footerLimit
   // engine.md 3.3's second required signal: "a position readout in the footer naming the visible
   // tile range and the Grid size." The margin is named whenever it is not the owner's 25% — set by
-  // `--scroll-margin` or by Debug Mode.
+  // `--scroll-margin` or by an Experiment.
   const margin = state.debug.scrollMargin
   text(
     cells,
