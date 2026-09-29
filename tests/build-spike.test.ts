@@ -124,8 +124,8 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   // Two barracks, side by side, at tiles that are on screen from the start: 1 arms it where the cursor
   // is, the cursor walks to 30,14, Enter places (and leaves the keyboard on the map, where the arming
   // began); 1 arms it again, which moves the cursor off the new one to the nearest spot with a free
-  // tile around it — 30,17, below it (feedback F30) — and four steps east, three north and one more
-  // Enter place the second at 34,14.
+  // tile around it — a free column to its right, 34,14 (feedback F30) — and one more Enter places the
+  // second there.
   // An armed click scrolls the view near its edges (F22) and an arrow does not, so with that on the
   // same plan has a different camera by mouse; the parity asserted here is the plan and the screen,
   // so the Experiment is switched to a still view for all three players alike.
@@ -137,9 +137,7 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   byKeyboard.build.handleData(DOWN, byKeyboard.layout)
   byKeyboard.build.handleData(ENTER, byKeyboard.layout)
   byKeyboard.build.handleData("1", byKeyboard.layout)
-  assert.deepEqual(byKeyboard.build.state.cursor, { x: 30, y: 17 })
-  for (let step = 0; step < 4; step += 1) byKeyboard.build.handleData(RIGHT, byKeyboard.layout)
-  for (let step = 0; step < 3; step += 1) byKeyboard.build.handleData(UP, byKeyboard.layout)
+  assert.deepEqual(byKeyboard.build.state.cursor, { x: 34, y: 14 })
   byKeyboard.build.handleData(ENTER, byKeyboard.layout)
 
   const byMouse = session()
@@ -159,7 +157,7 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   clickTile({ x: 30, y: 14 })
   clickTile({ x: 30, y: 14 })
   byMouse.build.handleData("1", byMouse.layout)
-  clickTile({ x: 34, y: 14 })
+  // Arming already put the cursor on 34,14, so one click there is the confirming second click.
   clickTile({ x: 34, y: 14 })
   assert.equal(byMouse.build.state.focus, "grid", "a placement armed on the map left the map")
 
@@ -168,8 +166,6 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
     { kind: "move-cursor", dx: 12, dy: 1 },
     { kind: "place" },
     { kind: "arm", index: 0 },
-    ...Array.from({ length: 4 }, (): BuildCommand => ({ kind: "move-cursor", dx: 1, dy: 0 })),
-    ...Array.from({ length: 3 }, (): BuildCommand => ({ kind: "move-cursor", dx: 0, dy: -1 })),
     { kind: "place" },
   ]
   const byDriver = session()

@@ -243,8 +243,8 @@ function placementSheet(name, { before, place, expect, timesMs, capability = "tr
 }
 
 // Gate 5I: placement juice. Each placement is armed from the menu — the cursor opens on the Grid
-// Nexus, where nothing fits, so arming moves it to the nearest spot with a free tile around it, just
-// below (gate 5K) — and placed with Space.
+// Nexus, where nothing fits, so arming moves it to the nearest spot with a free tile around it, a
+// free column to its right (gate 5K) — and placed with Space.
 
 // The owner's defaults (2026-09-29): 300 ms of frames, then 250 ms of light and sparks.
 const SHEET_TIMES = [0, 100, 200, 300, 400, 500, 600]
@@ -393,13 +393,13 @@ scripted(
 
 scripted(
   "build-smart-cursor",
-  "Down twice and Space: the Hatchery is armed from the menu. The cursor was on the Grid Nexus, where it cannot go, so it moves to the nearest spot that leaves a free tile around it - just below. The armed row is active: > and its name underlined",
+  "Down twice and Space: the Hatchery is armed from the menu. The cursor was on the Grid Nexus, where it cannot go, so it moves to the nearest spot that leaves a free tile around it - a free column to its right. The armed row is active: > and its name underlined",
   { keys: `${PICK_FIRST_POWER} Down*2 Space`, expect: "Hatchery selected" },
 )
 
 scripted(
   "build-menu-run",
-  "The owner's own flow: Space arms, Space places and returns the keyboard to the menu, again and again. Each Barracks is armed where the last one left the cursor, and moves to the nearest spot a free tile away - three in a column",
+  "The owner's own flow: Space arms, Space places and returns the keyboard to the menu, again and again. Each Barracks is armed where the last one left the cursor, and moves a few tiles to the right, a free column away - three in a row",
   { keys: `${PICK_FIRST_POWER} Down Space*6`, expect: "10 of 130" },
 )
 
@@ -442,13 +442,13 @@ scripted(
 scripted(
   "spike-armed-preview",
   "The digit fast path: [1] arms Barracks from anywhere - at the cursor when it fits there, else the nearest good spot - and the preview shows at the cursor in its own glyphs: what you see is what Enter places",
-  { keys: `${PICK_FIRST_POWER} 1 Right*6 Down`, expect: "selected -" },
+  { keys: `${PICK_FIRST_POWER} 1 Right*6 Down*4`, expect: "selected -" },
 )
 
 scripted(
   "spike-illegal",
   "The same barracks over rock, after pressing Enter: the preview is a grey block of x and the status line says why, naming the tile - in red, because a placement was tried and refused",
-  { keys: `${PICK_FIRST_POWER} 1 Left*10 Up*8 Enter`, expect: "rock in the way" },
+  { keys: `${PICK_FIRST_POWER} 1 Left*14 Up*5 Enter`, expect: "rock in the way" },
 )
 
 scripted(
@@ -460,14 +460,14 @@ scripted(
 scripted(
   "build-just-placed",
   "Right after a placement: the building is drawn in full, the keyboard is back on the menu on the same row, and the status line says what is left and how to take it back",
-  { keys: `${PICK_FIRST_POWER} 1 Right*6 Down Enter`, expect: "Barracks placed (resources: 90) - [u] undo" },
+  { keys: `${PICK_FIRST_POWER} 1 Right*6 Down*4 Enter`, expect: "Barracks placed (resources: 90) - [u] undo" },
 )
 
 scripted(
   "build-spent-down",
   "Two barracks and a hatchery placed, 20 of 130 left: the rows that no longer fit are dimmed, and pressing [1] anyway is refused at the menu with the cost - affordability first, before any tile",
   {
-    keys: `${PICK_FIRST_POWER} 1 Right*6 Down Enter 1 Right*4 Enter 2 Enter 1`,
+    keys: `${PICK_FIRST_POWER} 1 Right*6 Down*4 Enter 1 Enter 2 Enter 1`,
     expect: "costs 40, 20 left",
   },
 )
@@ -481,7 +481,7 @@ scripted(
 scripted(
   "build-nexus-committed",
   "Accepting the prompt commits the Build Phase: the panel names the Nexus power picked and how many structures were planned, and nothing more can change",
-  { keys: `${PICK_FIRST_POWER} 1 Right*6 Down Enter p y`, expect: "BUILD COMMITTED" },
+  { keys: `${PICK_FIRST_POWER} 1 Right*6 Down*4 Enter p y`, expect: "BUILD COMMITTED" },
 )
 
 // Settings (owner, 2026-09-28): the game menu's [s], the player's own settings first, then the
@@ -526,7 +526,7 @@ scripted(
 scriptedGif("build-arm-at-cursor", {
   // The owner's own flow (feedback F30): on the map, find a spot and press 1 — the Barracks is armed
   // right there; Enter places it and the keyboard stays on the map; 1 again, with the cursor on the new
-  // one, moves it to the nearest spot a free tile away; Enter; Esc is plain navigation, then the menu.
+  // one, moves it a few tiles right, a free column away; Enter; Esc goes from the map to the menu.
   keys: `${PICK_FIRST_POWER} Tab Right*8 Down*6 1 Enter 1 Enter Esc`,
   expect: "MENU  up/down",
 })
@@ -573,7 +573,7 @@ scriptedGif("build-explore-edge-click", {
 scripted(
   "build-refused-flash",
   "Enter on rock: the whole footprint flashes solid for 150 ms as the status line says why, so an eye on the map sees it did not build",
-  { keys: `${PICK_FIRST_POWER} 1 Up*8 Left*10 Enter`, expect: "Cannot build here", present: { refusedFlash: true } },
+  { keys: `${PICK_FIRST_POWER} 1 Up*5 Left*14 Enter`, expect: "Cannot build here", present: { refusedFlash: true } },
 )
 
 slideGif("build-view-slide", {
@@ -663,15 +663,15 @@ live(
   {
     drive: () => {
       pickFirstPower()
-      literal("1") // arm Barracks: off the Grid Nexus, where the cursor opens, to 18,13 below it
-      // Column 61, row 12 (1-based) is tile 30,10 at the camera arming leaves — the same cell
+      literal("1") // arm Barracks: off the Grid Nexus, where the cursor opens, to 22,10 beside it
+      // Column 61, row 14 (1-based) is tile 30,10 at the opening camera — the same cell
       // `cellForTile` hands the tests, formatted the way src/build/mouse.ts's own
       // `formatMouseEvent` would. The first click only moves the cursor there; the second, on the
       // same tile, is what actually places it. Chosen well inside the scroll margin: a first click
       // near the Grid pane's edge scrolls the map under the pointer, and a second click in the same
       // place is then a first click on the tile beside it (Q52's own finding).
-      literal(`${ESC}[<0;61;12M`)
-      literal(`${ESC}[<0;61;12M`)
+      literal(`${ESC}[<0;61;14M`)
+      literal(`${ESC}[<0;61;14M`)
     },
     waitForText: "Barracks placed",
   },
@@ -691,7 +691,7 @@ live(
       key("Down")
       key("S-Right")
     },
-    waitForText: "cursor 42,14",
+    waitForText: "cursor 46,11",
   },
 )
 

@@ -50,8 +50,10 @@ why.
 - **Arming puts the building where the cursor is** (feedback F30): a digit, Enter on a row or a click
   on it keeps the cursor where it is when the building fits there. Otherwise the cursor moves to the
   nearest spot within 12 tiles of it that leaves one free tile between the building and every other
-  structure, or, with none in reach, the nearest that fits at all — nearest by straight-line distance,
-  ties to the more horizontal move, then east, then south (`armingSpot` in `src/build/state.ts`).
+  structure, or, with none in reach, the nearest that fits at all — nearest by the cursor's move, a
+  tile across costing 1 and a tile up or down 2, so a run grows to the right ("in most cases this
+  should move the cursor only a few tiles to the right", owner, 2026-09-29); ties to the more
+  horizontal move, then east, then south (`armingSpot` in `src/build/state.ts`).
   With nothing in reach the cursor steps one tile right and one down and the building is drawn as
   itself, not as the refusal's `x`, until the player moves or tries to place. **Never from the last
   building placed**: press a building's key again right after placing one and the cursor, still on the

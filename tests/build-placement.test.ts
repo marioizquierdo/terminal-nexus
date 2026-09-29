@@ -325,7 +325,8 @@ test("undo, Backspace, or another placement mid-animation is correct at once: no
   const live = animation.frame(undone, 300)
   assert.deepEqual(live.placing, [{ ordinal: first.ordinal, elapsedMs: 200 }])
   const drawn = compose(run, undone, { placing: live.placing as PlacementClock[] })
-  const expected = compose(run, one, { placing: [{ ordinal: first.ordinal, elapsedMs: 200 }] })
+  // Through the same camera: arming the second moved the cursor, and the view followed it.
+  const expected = compose(run, { ...one, camera: undone.camera }, { placing: [{ ordinal: first.ordinal, elapsedMs: 200 }] })
   const secondCells = footprintCells(run, two, second.contentId, second.anchor)
   for (const c of secondCells) assert.deepEqual(cellAt(drawn, c.x, c.y), cellAt(expected, c.x, c.y))
 

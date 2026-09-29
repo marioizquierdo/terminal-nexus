@@ -44,7 +44,7 @@ picks the first Nexus power, which closes the popup (budget becomes 130) and lea
 the Nexus row, so `n 1 Down Down Space` arms the Hatchery from the menu (`n 2` is the War Chest: 2000
 more to spend). Arming — a digit, Enter on a row, a click on it — keeps the cursor where it is when the
 building fits there, and otherwise moves it to the nearest spot a free tile from everything (from the
-Nexus, that is 18,13 for a Barracks). A digit pressed on the map comes back to the map after the
+Nexus, that is 22,10 for a Barracks, a free column to its right; a tile down counts as two across). A digit pressed on the map comes back to the map after the
 placement (plain navigation, `MAP` in the key help); anything started on the menu comes back to the
 menu. `Tab` switches focus, arriving on the map in plain navigation. A click on a building's row arms it at once
 (`click@3,9` is the Hatchery at 80x24), and a second click on the same tile places. `Esc` on the menu

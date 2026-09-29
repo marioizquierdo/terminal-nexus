@@ -598,14 +598,15 @@ test("a run of the same building lays each one a free tile from the last, never 
   for (let run = 0; run < 6; run += 1) keys(side, SPACE, SPACE)
   assert.deepEqual(
     side.build.state.planned.map((placement) => placement.anchor),
-    // Down the map: a 3x2 Barracks is nearer a gap below than a gap beside; round the rock at 18,26.
+    // A row to the right (owner, 2026-09-29: "in most cases this should move the cursor only a few
+    // tiles to the right"): a tile down costs twice a tile across.
     [
       { x: 17, y: 13 },
-      { x: 17, y: 16 },
-      { x: 17, y: 19 },
-      { x: 17, y: 22 },
-      { x: 15, y: 25 },
-      { x: 15, y: 28 },
+      { x: 21, y: 13 },
+      { x: 25, y: 13 },
+      { x: 29, y: 13 },
+      { x: 33, y: 13 },
+      { x: 37, y: 13 },
     ],
   )
   const footprint = (contentId: string) => FIXTURE_REGISTRY.get(contentId).footprint
@@ -660,8 +661,8 @@ test("where it does not fit, the nearest spot within reach that leaves a free ti
   for (const t of tilesOf(anchor, footprint)) {
     for (const u of others) assert.ok(Math.max(Math.abs(t.x - u.x), Math.abs(t.y - u.y)) >= 2, "it touches a structure")
   }
-  // Nearest: no gapped spot is closer to where the cursor was.
-  assert.deepEqual(spot, { x: 18, y: 16 })
+  // Nearest: a free column to the right of the first — sideways is cheaper than down.
+  assert.deepEqual(spot, { x: 22, y: 13 })
 
   // Touching is the fallback when nothing gapped is in reach: a corridor one Turret wide.
   const width = 8
@@ -676,7 +677,7 @@ test("where it does not fit, the nearest spot within reach that leaves a free ti
   assert.deepEqual(armingSpot(corridor, crowded, "structure.bench.beamturret", { x: 3, y: 1 }), { tile: { x: 4, y: 1 }, found: true })
 })
 
-test("ties are broken the same way every time: the more horizontal move, then east, then south", () => {
+test("sideways is cheaper than up or down, and ties go the same way every time: more horizontal, then east, then south", () => {
   // An open field with one Turret planned where the cursor is: four spots two tiles away tie on
   // distance; east wins.
   const width = 11
@@ -696,6 +697,16 @@ test("ties are broken the same way every time: the more horizontal move, then ea
   }
   const eastRock = rocky([{ x: 7, y: 5 }, { x: 7, y: 4 }, { x: 7, y: 6 }, { x: 8, y: 5 }, { x: 8, y: 4 }, { x: 8, y: 6 }])
   assert.deepEqual(armingSpot(eastRock, planned, "structure.bench.beamturret", { x: 5, y: 5 }).tile, { x: 3, y: 5 })
+  // Rock two and three tiles east and west: four tiles east and two tiles south both cost 4 (a tile
+  // down costs two across), and the tie goes to the more horizontal move. In the open field two east
+  // (cost 2) always beats two south (cost 4).
+  const walls = rocky([
+    ...[4, 5, 6].flatMap((y) => [{ x: 7, y }, { x: 3, y }]),
+    { x: 8, y: 5 },
+    { x: 2, y: 5 },
+  ])
+  assert.deepEqual(armingSpot(walls, planned, "structure.bench.beamturret", { x: 5, y: 5 }).tile, { x: 9, y: 5 })
+  assert.deepEqual(armingSpot(open, planned, "structure.bench.beamturret", { x: 5, y: 5 }).tile, { x: 7, y: 5 })
   // The answer is a function of the plan and the cursor alone: the same call, the same answer.
   assert.deepEqual(
     armingSpot(open, planned, "structure.bench.beamturret", { x: 5, y: 5 }),
@@ -767,7 +778,7 @@ test("the cursor opens on the Grid Nexus, and the first building armed finds the
   assert.notDeepEqual(armed.cursor, SPIKE_START_CURSOR, "the Barracks was left on top of the Nexus")
   const footprint = FIXTURE_REGISTRY.get("structure.citizen.barracks").footprint
   assert.ok(legalityAt(context, [], "structure.citizen.barracks", anchorForCursor(armed.cursor, footprint)).ok)
-  assert.deepEqual(armed.cursor, { x: 18, y: 13 }, "one free row below the Nexus")
+  assert.deepEqual(armed.cursor, { x: 22, y: 10 }, "one free column east of the Nexus")
   // A map with no Nexus has no default of its own.
   assert.equal(nexusTile({ ...context, standing: [] }), null)
 })

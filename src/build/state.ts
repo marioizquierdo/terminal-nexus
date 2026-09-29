@@ -214,6 +214,11 @@ export type BuildState = Readonly<{
   restartWarned: readonly string[]
 }>
 
+/** What a tile of vertical cursor movement costs, against one of horizontal, when arming ranks spots:
+ *  "in most cases this should move the cursor only a few tiles to the right" (owner, 2026-09-29), so
+ *  a run of the same building grows into a row rather than a column. */
+export const ARM_VERTICAL_COST = 2
+
 /**
  * How far arming looks for a spot when the building cannot go where the cursor is: up to this many
  * tiles from the cursor along each axis (owner, 2026-09-29, feedback F30: "if there's no empty space
@@ -515,12 +520,13 @@ export function legalityAt(
  *    structures need the gap);
  * 2. then, when no such spot is in reach, among spots that merely fit, touching or not.
  *
- * "Nearest" is the straight-line distance the cursor moves; ties go to the more horizontal move
- * (smaller vertical distance), then east before west, then south before north — a total order, so
- * there is exactly one answer, and a pure function of the plan and the cursor, so the reducer owns it
- * and a driver can assert it. **Never chosen from the last building placed**: the typical run — place
- * a Barracks, press its key again — finds the spot nearest the cursor, which is sitting on the new
- * Barracks, so the next one lands a gap away from it.
+ * "Nearest" is the cheapest cursor move, where a tile sideways costs 1 and a tile up or down costs
+ * `ARM_VERTICAL_COST` (2) — the owner expects the cursor to move "only a few tiles to the right" in
+ * most cases; ties go to the more horizontal move, then east before west, then south before north — a
+ * total order, so there is exactly one answer, and a pure function of the plan and the cursor, so the
+ * reducer owns it and a driver can assert it. **Never chosen from the last building placed**: the
+ * typical run — place a Barracks, press its key again — finds the spot nearest the cursor, which is
+ * sitting on the new Barracks, so the next one lands a gap to its right.
  *
  * `found: false` when nothing within reach fits: the cursor then steps one tile right and one down,
  * so the player sees something happened, and the preview is drawn as the building rather than the
@@ -565,12 +571,13 @@ export function armingSpot(
 
   if (fits(anchorOf(cursor))) return { tile: cursor, found: true }
 
-  // The order candidates are ranked in: distance, then the more horizontal move, then east, then
-  // south. Written as a comparison of the move (dx, dy) alone, so the answer cannot depend on the
-  // order the square is scanned in.
+  // The order candidates are ranked in: cost (sideways tiles plus twice the vertical ones), then the
+  // more horizontal move, then east, then south. Written as a comparison of the move (dx, dy) alone,
+  // so the answer cannot depend on the order the square is scanned in.
+  const cost = (move: Coord): number => Math.abs(move.x) + ARM_VERTICAL_COST * Math.abs(move.y)
   const better = (a: Coord, b: Coord): boolean => {
-    const da = a.x * a.x + a.y * a.y
-    const db = b.x * b.x + b.y * b.y
+    const da = cost(a)
+    const db = cost(b)
     if (da !== db) return da < db
     if (Math.abs(a.y) !== Math.abs(b.y)) return Math.abs(a.y) < Math.abs(b.y)
     if (a.x !== b.x) return a.x > b.x
