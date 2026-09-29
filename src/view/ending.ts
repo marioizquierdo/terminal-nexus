@@ -117,7 +117,7 @@ export type PulseResult = Readonly<{
 export function resultOf(outcome: Outcome, player: PlayerId = "A"): PulseResult {
   if (outcome.winner === null) {
     if (outcome.reason === "tick-limit") {
-      return { headline: "TIME'S UP", reason: "The time ran out with both sides still standing.", tone: "neutral" }
+      return { headline: "TIME'S UP", reason: "The time ran out before either side won.", tone: "neutral" }
     }
     return {
       headline: "DRAW",

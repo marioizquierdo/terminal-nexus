@@ -185,6 +185,9 @@ const unitsOf = (pulse: PulseFrame, player: PlayerId): number =>
 
 const secondsOf = (pulse: PulseFrame, tick: number): string => (tick / pulse.ticksPerSecond).toFixed(1)
 
+/** What Recall did, for the player's own side: "3 of yours came home." or, when nobody is left, "None of yours came home." */
+const cameHome = (count: number): string => (count === 0 ? "None of yours came home." : `${count} of yours came home.`)
+
 /** The one line under the map: what the Pulse is doing now, or how it ended, in plain words. */
 export function pulseStatus(pulse: PulseFrame): StatusMessage {
   const held = pulse.paused && pulse.phase !== "home" ? "Paused. " : ""
@@ -195,13 +198,11 @@ export function pulseStatus(pulse: PulseFrame): StatusMessage {
       return status(`${held}Cease fire. The Pulse is over.`)
     case "walking":
       return status(`${held}Recall - the survivors are heading home.`)
-    case "home": {
-      const came = pulse.home.A
+    case "home":
       return status(
-        `${pulse.result.headline} - ${pulse.result.reason} ${came} of yours came home.`,
+        `${pulse.result.headline} - ${pulse.result.reason} ${cameHome(pulse.home.A)}`,
         pulse.result.tone === "neutral" ? undefined : pulse.result.tone,
       )
-    }
     default:
       return status(
         `${held}Nexus Pulse - ${unitsOf(pulse, "A")} of yours against ${unitsOf(pulse, "B")} of the raid.`,
@@ -302,11 +303,11 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
 
   // Under it: the clock while it runs, what the phase means as it ends, why it ended once it has.
   if (pulse.phase === "home") {
-    for (const reason of wrapWords(pulse.result.reason, limit)) line(reason, "chrome.value")
+    for (const reason of wrapWords(pulse.result.reason, limit - 1)) line(reason, "chrome.value")
   } else if (pulse.phase === "halted") {
     line("The shooting has stopped.", "chrome.label")
   } else if (pulse.phase === "walking") {
-    line("Survivors are heading home.", "chrome.label")
+    line("The survivors walk home.", "chrome.label")
   } else {
     line(`${secondsOf(pulse, pulse.sample.tick)}s of ${secondsOf(pulse, pulse.pulseTicks)}s  ${pulse.speed}x${pulse.paused ? " paused" : ""}`, "chrome.label")
   }
@@ -318,9 +319,9 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
 
   if (pulse.phase === "home") {
     line("RECALL", "chrome.label")
-    line(`${pulse.home.A} of yours came home.`, "chrome.value")
+    line(cameHome(pulse.home.A), "chrome.value")
     gap()
-    for (const hint of wrapWords("Esc opens the menu; Restart there starts a new Build Phase.", limit)) line(hint, "chrome.muted")
+    for (const hint of wrapWords("For a new Build Phase: Esc, then Restart.", limit - 1)) line(hint, "chrome.muted")
   } else {
     line("RECENT", "chrome.label")
     const lines = pulse.sample.recent

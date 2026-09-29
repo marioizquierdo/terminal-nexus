@@ -158,7 +158,7 @@ test("the result says what happened in words: won, lost, drawn or timed out — 
   })
   assert.deepEqual(resultOf(outcome(null, "tick-limit")), {
     headline: "TIME'S UP",
-    reason: "The time ran out with both sides still standing.",
+    reason: "The time ran out before either side won.",
     tone: "neutral",
   })
   assert.equal(resultOf(outcome(null, "annihilation")).headline, "DRAW")

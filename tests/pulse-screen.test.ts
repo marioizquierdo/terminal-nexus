@@ -108,7 +108,7 @@ test("the ending says what is happening in words at every moment: the alarm, cea
   const walking = screenText(played)
   assert.match(walking, /TERMINAL NEXUS recall/)
   assert.match(walking, /^\| RECALL /m)
-  assert.match(walking, /Survivors are heading home\./)
+  assert.match(walking, /The survivors walk home\./)
   assert.match(walking, /Recall - the survivors are heading home\./)
 
   at(played, moments.homeMs + 20)
@@ -119,7 +119,8 @@ test("the ending says what is happening in words at every moment: the alarm, cea
   assert.match(home, /\d+ of yours came home\./)
   assert.match(home, /VICTORY - The raid was wiped out\. \d+ of yours came home\./)
   // What comes next is said once, in words, and the pause row is gone: there is nothing left to pause.
-  assert.match(home, /Esc opens the menu; Restart/)
+  assert.match(home, /For a new Build Phase:/)
+  assert.match(home, /Esc, then Restart\./)
   assert.doesNotMatch(home, /\[space\] Pause/)
   assert.match(home, /\[r\] Watch again/)
 })
@@ -130,6 +131,9 @@ test("a lost Pulse and a timed-out one say so plainly, and a draw is a draw", ()
   at(lost, times(lost).homeMs + 100)
   assert.match(screenText(lost), /^\| DEFEAT /m)
   assert.match(screenText(lost), /Your forces were wiped out\./)
+  // Nobody left to walk home is said as that, not as "0 of yours".
+  assert.match(screenText(lost), /None of yours came home\./)
+  assert.doesNotMatch(screenText(lost), /\b0 of yours came home/)
 
   const nexusFell = play({ crew: 1 })
   at(nexusFell, 0)
@@ -144,12 +148,34 @@ test("a lost Pulse and a timed-out one say so plainly, and a draw is a draw", ()
   assert.match(screenText(timedOut), /Pulse ending - hold your fire\./)
   at(timedOut, times(timedOut).homeMs + 100)
   assert.match(screenText(timedOut), /^\| TIME'S UP /m)
-  assert.match(screenText(timedOut), /The time ran out with both sides still standing\./)
+  assert.match(screenText(timedOut), /The time ran out before either side won\./)
 
   const draw = play({ plan: [DEFENCE[0]!] })
   at(draw, 0)
   at(draw, times(draw).homeMs + 100)
   assert.match(screenText(draw), /^\| DRAW /m)
+})
+
+test("at 80x24 the result's words are never cut off, whichever way the Pulse ended", () => {
+  // The status line is one row, 76 characters wide; the panel's text is 27 columns and its prose keeps the
+  // last one clear, so nothing touches the divider. A result that ran off the edge would be one nobody could read.
+  const scenarios = [{}, { plan: DEFENCE }, { raid: 1 }, { crew: 1 }, { raid: 2 }, { plan: [DEFENCE[0]!] }] as const
+  for (const scenario of scenarios) {
+    const played = play(scenario)
+    at(played, 0)
+    at(played, times(played).homeMs + 100)
+    const lines = screenText(played).split("\n")
+    const name = JSON.stringify(scenario)
+    const statusRows = lines.filter((line) => /^\| (VICTORY|DEFEAT|DRAW|TIME'S UP) - /.test(line))
+    assert.equal(statusRows.length, 1, `${name}: the status line is missing`)
+    assert.match(statusRows[0]!, /came home\. +\|$/, `${name}: the status line is cut off: ${statusRows[0]}`)
+    const first = lines.findIndex((line) => /^\| (VICTORY|DEFEAT|DRAW|TIME'S UP) +[|]/.test(line))
+    const last = lines.findIndex((line) => line.includes("[r] Watch again"))
+    assert.ok(first >= 0 && last > first, `${name}: the result panel is not on screen`)
+    for (const row of lines.slice(first, last + 1)) {
+      assert.equal(row[28], " ", `${name}: the panel's text runs into the divider: ${row}`)
+    }
+  }
 })
 
 test("the survivors are drawn walking home, and home when the walk ends", () => {
