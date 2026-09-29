@@ -323,7 +323,9 @@ deleted, and the renderer must be replaceable without one simulation test changi
   armed only while the Grid has focus, and every placement returns focus to the menu, disarmed (Q57).
   **Esc, `x` and a right click are one cancel** that goes back one level — popup, then the Grid
   (placing or Explore Map) to the menu — and on the menu opens the **game menu** (`[s] Settings`,
-  `[q] Quit`); `q` opens it too, and only Ctrl+C quits at once. Leaving always asks. A click scrolls
+  `[r] Restart`, `[q] Quit`); `q` opens it too, and only Ctrl+C quits at once. Leaving always asks.
+  **The top bar's right end says what Esc does** — `menu [esc]`, `back [esc]`, `close [esc]` — and a
+  click on it is Esc; no popup carries its own `[esc]`. A click scrolls
   the view near its edges, armed or not (gate 5J, reversing Q58). How far a key moves the cursor is
   timed in the input path, and every animation — including the camera's slide and the cursor's
   glide, which interpolate every move — in the view; never the reducer.
@@ -332,7 +334,9 @@ deleted, and the renderer must be replaceable without one simulation test changi
   radius preview until something has a radius (Q30). **Explore Map** replaces the menu with a panel
   headed "EXPLORE MAP" describing whatever is under the cursor as it moves; Esc gives the menu back.
   An armed row is marked as armed, never with the keyboard's highlight bar. **Every popup is one shape** — a title and rows as data,
-  options naming the command a click sends, drawn and hit-tested from the same placement — and is
+  options naming the command a click sends, at most one scrolling list with a scroll bar in its right
+  border, drawn and hit-tested from the same placement; a **message** is the shape with nothing to
+  choose, closed by Esc or a click outside — and is
   drawn last in the `chrome` band, never in a band of its own. **A refused placement is
   answered on the status line, and names its tile**; **affordability is reported before any tile
   problem**. A menu split into groups still shares **one digit sequence**, and an **empty group is

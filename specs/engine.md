@@ -1032,17 +1032,25 @@ click can arm from the menu. It is a first version of the presentation card the 
 larger ASCII art version waits for content that has one, and live numbers wait for the Nexus Pulse
 view (Milestone 6).
 
-**Popups have one shape — RULE for the shape as data, GUIDANCE for its look, canon 2.21.** Every
-popup — the Nexus powers, the start-the-Pulse question and the exit question today — is a title and a
-list of rows, some of them options that name the command a click on them sends (`src/build/overlay.ts`).
-The frame draws a popup from the same placed shape the mouse adapter hit-tests, so a click can never
-land on an option the frame drew somewhere else — the guarantee `src/build/layout.ts` already gives
-the side panel. Drawn to be unmissable (the owner clicked Nexus, did not notice the popup, and thought
-the mouse had stopped working): centred over the Grid pane, bordered in the same solid bar as a map
-edge (3.3), the title in the top border, `[esc]` in the top-right corner — the key, its label and its
-click target at once — and a one-cell shadow that blanks what is behind it. A popup holds the keyboard
-and the mouse until it closes, and nothing opens one but the player. It sits on top of everything
-else without a drawing band of its own (9.4).
+**Popups have one shape — RULE for the shape as data, GUIDANCE for its look, canon 2.21, grown at
+2.26.** Every popup — the Nexus powers, the start-the-Pulse question, the game menu, Settings, the
+export, and a message — is a title and a list of rows, some of them options that name the command a
+click on them sends, and **at most one run of rows that scrolls** (`src/build/overlay.ts`). The frame
+draws a popup from the same placed shape the mouse adapter hit-tests, so a click can never land on
+anything the frame drew somewhere else — the guarantee `src/build/layout.ts` already gives the side
+panel. Drawn to be unmissable (the owner clicked Nexus, did not notice the popup, and thought the mouse
+had stopped working): centred over the Grid pane, bordered in a solid bar, the title in the top border,
+and a one-cell shadow that blanks what is behind it. **No popup carries `[esc]`** since gate 5K: the
+top bar's right end names what Esc does — `close [esc]` while a popup is open — and is its click
+target (9.7, feedback F37). While its scrolling rows overflow, **the right border beside them is a
+scroll bar**: an up symbol, a track with a thumb showing the share in view, and a down symbol, in every
+glyph pack; a click on its upper half scrolls up and on its lower half down, and the wheel and Up/Down
+walk the highlight as before (F36). **A message is the shape with nothing to choose**: a title and
+wrapped text, closed by Esc (or `x`, or a right click) or a click outside, and by nothing else (F34:
+"This popup does not have an action, it's just a warning message"). A popup holds the keyboard and
+the mouse until it closes, and nothing opens one but the player — a message only as the answer to
+something the player just did. It sits on top of everything else without a drawing band of its own
+(9.4).
 
 **No radius preview until something placed has a radius.** An earlier draft of the table's Build
 Phase row listed one; nothing in the content that exists has a radius, and a preview of nothing is a framework built
@@ -1217,20 +1225,21 @@ building beside the last with no arrow key at all.
 | Shift+Arrow | the fast move: a **jump of 12 tiles** (the Experiment "Shift jump"; 5 until gate 5H, 8 until gate 5J), re-centring the view along the axis moved; held, it jumps again at most every 150 ms | fast pan across a scrolling Grid (owner, 2026-09-28: "Holding shift should behave fundamentally different, instead of just speed up to 8, it should move the cursor 12 tiles"). **Two sequence families, both bound** (gate 5A): xterm's `CSI 1;<modifier>` and rxvt's `CSI a/b/c/d`. Any modifier counts, not Shift alone — nothing else on these screens binds a modified arrow, so a terminal that eats Shift but passes Alt or Ctrl still gives its player the fast pan. **Option+Arrow as a Mac sends it is the same move** (owner, 2026-09-26: "we should also allow option (it is typical to move word by word)"): macOS terminals send Option+Left/Right as `ESC b`/`ESC f`, and one set to treat Option as Meta sends `ESC` before an ordinary arrow. Before canon 2.19 the input splitter broke both into a bare Escape plus a stray key — and a bare Escape with nothing armed leaves the screen. Bound from the terminals' documented defaults; **not yet measured on the owner's own iTerm2** — `node scripts/lib/key-echo.mjs`, run in that terminal, prints exactly what each key sends |
 | PageUp / PageDown, Home / End | the fast move — the modifier-free fallback | **Required, not optional** (gate 5A): four surveyed terminal families send no shifted arrow at all, so without this they would have no fast pan. Decoded from a table, because Home and End have three live spellings between xterm, screen/tmux/linux and rxvt |
 | Enter, Space | on the menu: activate the highlighted entry — arm a structure (focus moves to the Grid), open the Nexus powers, or explore. On the Grid while placing: place the armed structure at the cursor. On the map after a click brought the keyboard there: open Explore Map (9.2). In the Nexus powers popup: pick the highlighted power (the two questions answer to their own letters) | Space added 2026-09-26 (owner: "should also work with space, that was my reflex") — an alias of Enter everywhere on this screen, never a second meaning of its own |
-| Esc, `x` | **go back one level** (the `cancel` command): close the open popup, returning to the popup it was opened from if any (Settings to the game menu, the export to Settings); else leave the Grid — placing or Explore Map — for the menu, disarming; else, on the menu, open the **game menu**: `[s] Settings`, `[q] Quit`, `[esc] Back to the game` | **RULE since canon 2.21: Esc never leaves the game by itself — leaving always asks.** `x` is Esc everywhere (owner, 2026-09-27: "it should be equivalent to do [esc], and x"), and so is a right click. A lone Esc at the end of a read waits a short timeout (50 ms, an Experiment) for the rest of a sequence; Esc then a letter or digit in one read is two keys; Esc then an arrow in one read is Option+Arrow, so anything scripting keys pauses after Esc (gate 5H) |
+| Esc, `x` | **go back one level** (the `cancel` command): close the open popup, returning to the popup it was opened from if any (Settings to the game menu, the export to Settings); else leave the Grid — placing or Explore Map — for the menu, disarming; else, on the menu, open the **game menu**: `[s] Settings`, `[r] Restart`, `[q] Quit`, `[esc] Back to the game` | **RULE since canon 2.21: Esc never leaves the game by itself — leaving always asks.** `x` is Esc everywhere (owner, 2026-09-27: "it should be equivalent to do [esc], and x"), and so is a right click. A lone Esc at the end of a read waits a short timeout (50 ms, an Experiment) for the rest of a sequence; Esc then a letter or digit in one read is two keys; Esc then an arrow in one read is Option+Arrow, so anything scripting keys pauses after Esc (gate 5H) |
 | Tab | toggle keyboard focus between the side panel's menu and the Grid (arriving on the Grid exploring, nothing armed); does nothing while a popup is open | **Gate 5F, owner-requested 2026-09-26.** This row previously read "jump the cursor to the player's next / previous own structure" — GUIDANCE, never built, now retired from Tab (Q53 keeps the idea for another key). **Focus is its own state beside `armed`**, and the rule above holds: a structure is armed only while the Grid has focus, and every placement returns focus to the menu (Q57, answered 2026-09-27). **Convention 1 below applies: the key help says where focus is**, because focus makes arrows mean two things |
 | Backspace, Delete | on the Grid: remove the planned, uncommitted placement under the cursor | plans are revisable until commit (Milestone 5). The Mac key labelled "delete" sends Backspace, so it cannot also return focus to the menu, as the owner's first sketch of the focus toggle had it — Esc does (Q57). On the menu, where the cursor is hidden, it does nothing |
 | `u` | undo the last planned placement | |
 | `p` | Start Nexus Pulse — the commit | moves focus to the menu and asks once in a popup, `[y]es / [n]o` (Esc is no); the one action that must not fire by accident. Refused while a dealt Nexus power is still waiting to be picked |
 | `n` | open the Nexus powers popup — the menu's `[n] Nexus` entry | pressed again inside the popup, closes it. Inside the start-the-Pulse question `n` is its `[n]o` instead: a popup holds the keyboard, so the two never meet |
 | `e` | Explore Map — the menu's first entry, `[e] Explore Map`: focus to the Grid with nothing armed, the side panel describing what is under the cursor as it moves (9.2) | added 2026-09-27 (owner: "Pressing [e] changes the focus to the map in navigation mode"); first, renamed and self-explaining at gate 5J (feedback F23). Tab and a second Right arrive the same way |
-| `q` | open the game menu | never quits outright, so a stray press cannot lose a plan; only the game menu's own `[q]` (or Enter or a click on its Quit row) quits. A click on `[esc] menu` at the right of the top bar opens it too (gate 5J, owner: "When pressing [esc] or explicitly opening the main menu, there should be an option for '[s] Settings' along with '[q] Quit'") |
+| `q` | open the game menu | never quits outright, so a stray press cannot lose a plan; only the game menu's own `[q]` (or Enter or a click on its Quit row) quits. The top bar's `menu [esc]` is Esc, which on the menu opens it (gate 5J, owner: "When pressing [esc] or explicitly opening the main menu, there should be an option for '[s] Settings' along with '[q] Quit'") |
 | Ctrl+C | quit at once | the one immediate way out, from anywhere |
 | `?` | help overlay listing every binding live on this screen | the footer already shows the most important ones (3.1's controls row) |
 | `q`, Space, `.`, `,`, `[`, `]`, `r` | unchanged from `grid` during a Pulse: quit, pause, step, speed, restart | one keymap across `grid` and `terminal-nexus` |
 | Mouse: click a menu row | **activate at once**, whatever had focus: arm the building (its preview at the cursor — where the cursor is if the Grid had focus, the smart-cursor spot if the menu did), open the Nexus powers, or open Explore Map — the row's hotkey. While the Explore Map panel covers the menu, a click on the panel only gives the menu back | owner, 2026-09-28 (feedback F22), reversing 2026-09-27's highlight-first: "The selected state only makes sense when using the keyboard, but using the mouse should activate what is being clicked." After the mouse works the menu no highlight bar is drawn; the first menu key only shows it again, on the row it remembers. An armed row is marked as armed (`>`, underlined), never with the keyboard's bar. The whole row is the target, the width its highlight bar is drawn |
 | Mouse: click a Grid tile | move focus to the Grid and the cursor to the tile, the armed preview with it; **a second click on the same tile places it, and so does a quick double click on the same spot** (3.3). With nothing armed it only moves the cursor: in Explore Map the panel follows it; from the menu, the menu stays drawn beside the map | Q52, reversing Q50 — the terminal caveats below have the reasoning. A click near an edge scrolls in proportion, armed or not (3.3, Q62, F22). A `Shift+click` to place in one click is still planned |
-| Mouse: click outside an open popup | close the popup and move focus to where the click landed — and nothing more | a dismissing click never also places, picks or activates (owner, 2026-09-27: he clicked Nexus, missed the popup in the middle of the screen, and thought the mouse was broken). A click on the popup's `[esc]` closes it; a click on one of its options chooses it |
+| Mouse: click outside an open popup | close the popup and move focus to where the click landed — and nothing more | a dismissing click never also places, picks or activates (owner, 2026-09-27: he clicked Nexus, missed the popup in the middle of the screen, and thought the mouse was broken). A click on the top bar's `close [esc]` goes back one level, as Esc does, where a click outside closes every popup at once; a click on one of its options chooses it |
+| Mouse: click the top bar's right end | Esc — the `cancel` command, one level back | the right end names what Esc does now: `menu [esc]` on the menu (or a committed Build Phase), `back [esc]` while the Grid has focus, `close [esc]` while a popup is open (owner, 2026-09-29, feedback F37: "we can reverse the title and hotkey for some actions that navigate 'back'"). It is the one place Esc is named on screen |
 | Mouse: wheel | **move the cursor five tiles**; the camera follows it, as it follows every other cursor move | the mouse's Shift+Arrow, literally. An independent camera would be the separate pan mode 3.3 forbids, and would strand the cursor off screen (gate 5A). Inside a popup, the wheel walks its list |
 | Mouse: right click | Esc — go back one level | the RTS convention for "cancel" |
 
@@ -1304,15 +1313,18 @@ settings** — background (dark or light), colour depth, symbols, reduced motion
 and are saved through the same store as the title menu's Settings. Then, clearly apart at the bottom,
 **Experiments**: live-editable playtest flags — a border glyph, a colour, a scroll-margin share, a
 step size, an easing time — so the owner can try an idea during a playtest instead of asking for a
-new command-line flag and a rebuild. Some apply at once, a few only on restart, and each row says
-which. **Every Experiment names the question it serves and is normally deleted before its pull
+new command-line flag and a rebuild. A row is a name and a value; one that only takes effect when the
+Build Phase starts over says so on the status line when changed and, when Settings closes with such a
+change pending, once in a message popup (F34). **Every Experiment names the question it serves and is normally deleted before its pull
 request is accepted**, a few staying longer or graduating into real settings; they are Build Phase
 state, per session, **never saved**, because their defaults change from build to build. The reducer
 reads those that change what a command does, the input path and the live loop read the timing ones,
-and a restart row starts the Build Phase over keeping every setting and experiment. `d` opens
+and the game menu's `[r] Restart` starts the Build Phase over keeping every setting and experiment. `d` opens
 Settings straight at the Experiments. A row shows its value between `<` and `>`, Left/Right change it,
-and each half of the value box is a click target; the list keeps the highlighted row in view with a
-"^ n more / v n more" line above and below. **Export settings** (`[e]`) shows every setting and
+and each half of the value box is a click target; the title says where the highlight is
+(`SETTINGS (6/28)`), the list keeps it in view with a scroll bar in the right border, and what the
+highlighted row is for is written under a line below the list (F35). **Export settings** — the list's
+last row, and `[e]` from anywhere in it — shows every setting and
 experiment as `name = value` text — the experiments that differ from this build's defaults first,
 each with the default it replaced, then the settings, then the rest, with the build's commit near the
 top — so the owner can paste what felt right into a pull request comment. The adapter, never the
