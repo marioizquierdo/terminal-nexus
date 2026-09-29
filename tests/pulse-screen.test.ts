@@ -132,7 +132,7 @@ test("a lost Pulse and a timed-out one say so plainly, and a draw is a draw", ()
   at(lost, 0)
   at(lost, times(lost).homeMs + 100)
   assert.match(screenText(lost), /^\| DEFEAT /m)
-  assert.match(screenText(lost), /Your forces were wiped out\./)
+  assert.match(screenText(lost), /Your force was wiped out\./)
   // Nobody left to walk home is said as that, not as "0 of yours".
   assert.match(screenText(lost), /None of yours came home\./)
   assert.doesNotMatch(screenText(lost), /\b0 of yours came home/)

@@ -148,7 +148,7 @@ test("the result says what happened in words: won, lost, drawn or timed out — 
   })
   assert.deepEqual(resultOf(outcome("B", "annihilation")), {
     headline: "DEFEAT",
-    reason: "Your forces were wiped out.",
+    reason: "Your force was wiped out.",
     tone: "danger",
   })
   assert.deepEqual(resultOf(outcome("B", "nexus-destroyed")), {

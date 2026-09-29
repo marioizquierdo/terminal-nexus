@@ -121,7 +121,7 @@ export function resultOf(outcome: Outcome, player: PlayerId = "A"): PulseResult 
     }
     return {
       headline: "DRAW",
-      reason: outcome.reason === "nexus-destroyed" ? "Both Nexuses were destroyed." : "Both forces were wiped out.",
+      reason: outcome.reason === "nexus-destroyed" ? "Both Nexuses were destroyed." : "Both sides were wiped out.",
       tone: "neutral",
     }
   }
@@ -133,5 +133,5 @@ export function resultOf(outcome: Outcome, player: PlayerId = "A"): PulseResult 
   }
   return won
     ? { headline: "VICTORY", reason: "The raid was wiped out.", tone: "success" }
-    : { headline: "DEFEAT", reason: "Your forces were wiped out.", tone: "danger" }
+    : { headline: "DEFEAT", reason: "Your force was wiped out.", tone: "danger" }
 }
