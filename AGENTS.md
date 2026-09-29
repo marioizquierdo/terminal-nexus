@@ -211,11 +211,17 @@ The current milestone is **[`milestones/milestone-06-pulse-phase.md`](milestones
 Phase, watch the unmodified kernel resolve it, see a legible ending with Recall, and land in the next
 Build Phase? Its active gate is **6A — Start, end, Recall**: Start Nexus Pulse as an explicit action from
 the Build Phase's `p` question, the end condition, the stop / finish-in-flight / Recall sequence, and a
-result a viewer can read unprompted. The kernel is Milestone 1's and does not change; if 6A finds it
-must, that is a finding for its gate report. **Do not start 6B** (the loop back into the next Build
-Phase and the trigger runner) or 6C (automatic production) without Mario's word. **Mario asked on
-2026-09-28 to keep going without waiting to look at each gate first**: he tests several merged changes
-together, then plays, exports his Experiments, and pastes them into the pull request.
+result a viewer can read unprompted. **Gate 6A is built and reported (PASS), awaiting Mario's playtest**
+(2026-09-29, `evidence/gate-6a-report.md`): `p`, then yes, starts the Pulse on the Build Phase's own
+screen — the unmodified kernel resolves the committed plan plus a placeholder crew and raid — with a
+score, a feed of events, pause / speed / step / watch-again, and an ending of an alarm, a cease fire,
+the survivors walking home and a plain result (won, lost, drawn or timed out, and why). Recall, which
+the rules described and no code ran, is built for the first time in `src/match/`, beside the kernel;
+the kernel is untouched. The ending's four timings, and the raid's and the crew's size, are Experiments
+(`d`); the interface rules are `docs/ui-patterns.md` section 7c. **Do not start 6B** (the loop back into
+the next Build Phase and the trigger runner) or 6C (automatic production) without Mario's word. **Mario
+asked on 2026-09-28 to keep going without waiting to look at each gate first**: he tests several merged
+changes together, then plays, exports his Experiments, and pastes them into the pull request.
 
 So the authorised work for a new session is, in order:
 
@@ -224,9 +230,9 @@ So the authorised work for a new session is, in order:
    outstanding or that everything still is; **a pasted settings export is feedback**: start the game
    with it (`--settings`), and settle each Experiment it answers — adopt the value as the default,
    delete the Experiment, record the answer;
-2. **the current milestone's active gate** — the feedback logs have nothing left that can be built
-   now except Q66, which waits on his key-release probe; the next gate after the active one waits for
-   his word, and when it comes it is the next gate in the build order
+2. **the current milestone's active gate** — gate 6A has nothing left to build until he has played
+   it (and Q66 waits on his key-release probe); the next gate waits for his word, and when it comes it
+   is the next gate in the build order
    [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
    order — read that table's build-order column, and take one gate per session unless the owner's own
    prompt asks for more.

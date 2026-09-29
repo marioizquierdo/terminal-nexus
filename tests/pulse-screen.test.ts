@@ -15,7 +15,9 @@ import { BuildSession } from "../src/build/session.ts"
 import { nexusTile } from "../src/build/state.ts"
 import { spikeContext } from "../src/cli/spike.ts"
 import { buildLayout } from "../src/build/layout.ts"
-import { frameToText } from "../src/view/frame.ts"
+import { frameToAnsi, frameToText } from "../src/view/frame.ts"
+import { CAPABILITY_MODES } from "../src/view/index.ts"
+import { ALARM_HALF_PERIOD_MS } from "../src/view/ending.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { DEFENCE, MINIMUM, at, frameOf, newSession, play, prepare, screenText } from "./pulse-helpers.ts"
 import type { Played } from "./pulse-helpers.ts"
@@ -234,6 +236,36 @@ test("the alarm flashes the Grid's frame and stops flashing when it ends", () =>
   const dark = styled(moments.alarmMs! + 20 + 350)
   assert.ok(dark < lit, "the flash never went dark")
   assert.equal(styled(moments.stopMs + 20), 0, "it kept flashing after the fight stopped")
+})
+
+test("the ending is plain to see at every colour depth: the alarm is reversed video and, in monochrome, no phase leans on colour", () => {
+  const escape = String.fromCharCode(27)
+  const codes = (text: string): number[] =>
+    [...text.matchAll(new RegExp(`${escape}\\[([0-9;]*)m`, "g"))].flatMap((match) =>
+      (match[1] ?? "").split(";").filter((part) => part !== "").map(Number),
+    )
+  const isColour = (code: number): boolean => (code >= 30 && code <= 49) || (code >= 90 && code <= 107)
+  for (const capability of CAPABILITY_MODES) {
+    // A Pulse's time only moves forward, so each depth plays its own from the top.
+    const played = victorious()
+    const moments = times(played)
+    const ansiAt = (ms: number): string => {
+      at(played, ms)
+      return frameToAnsi(frameOf(played, capability), capability)
+    }
+    const lit = ansiAt(moments.alarmMs! + 20)
+    const dark = ansiAt(moments.alarmMs! + 20 + ALARM_HALF_PERIOD_MS)
+    const phases = { lit, dark, ceaseFire: ansiAt(moments.stopMs + 20), recall: ansiAt(moments.walkMs + 20), result: ansiAt(moments.homeMs + 20) }
+    if (capability === "monochrome") {
+      for (const [phase, ansi] of Object.entries(phases)) {
+        assert.ok(!codes(ansi).some(isColour), `${phase}: monochrome emitted a colour code`)
+      }
+    }
+    assert.ok(codes(lit).includes(7), `${capability}: the lit alarm is not reversed video`)
+    assert.notEqual(lit, dark, `${capability}: the alarm's flash cannot be seen`)
+    // The phases are told apart by their words as much as by anything drawn: each screen differs from the last.
+    assert.equal(new Set(Object.values(phases)).size, 5, `${capability}: two moments of the ending look the same`)
+  }
 })
 
 test("the playback keys pause, slow, speed, step and replay the Pulse — and only while no popup is open", () => {

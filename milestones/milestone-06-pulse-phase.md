@@ -3,10 +3,10 @@
 **Document role:** Milestone tracker — the explicit Build→Pulse handoff, victory/defeat, and Recall
 **Status:** CURRENT
 **Active gate:** 6A — Start, end, Recall: connect the Build Phase's commit to the Pulse playback.
+**Built and reported (PASS), awaiting Mario's playtest** (2026-09-29, `../evidence/gate-6a-report.md`).
 "Start Nexus Pulse" is an explicit action from the Build Phase's `p` question, then the end condition, the
 stop / finish-in-flight / Recall sequence, and a result a viewer can read unprompted. The kernel is
-Milestone 1's and does not change; if 6A finds it must, that is a finding for its gate report. The Build
-Phase's commit and the Pulse playback both already exist. 6B and 6C wait for the owner's word.
+Milestone 1's and did not change. 6B and 6C wait for the owner's word.
 **Depends on:** Milestone 5 (Build Phase produces what this Pulse resolves — accepted 2026-09-29)
 **Updated:** 2026-09-29
 **License:** Apache-2.0
@@ -17,6 +17,17 @@ Phase's commit and the Pulse playback both already exist. 6B and 6C wait for the
 > not exist: the step between them, a Pulse that ends anywhere a viewer can read, and a player-visible
 > result. Gate 6A is that step and nothing more — no loop back into a second Build Phase, no trigger
 > runner, no automatic production (6B and 6C).
+
+> **Gate 6A is built, 2026-09-29** (`../evidence/gate-6a-report.md`, PASS; awaiting Mario's playtest).
+> `p`, then yes, starts the Nexus Pulse on the Build Phase's own screen: the plan he committed, plus a
+> placeholder crew and raid, becomes the kernel's opening state, the unmodified kernel resolves it, and
+> the Pulse plays with a running score, a feed of what is happening, pause, speed, step and watch-again.
+> It ends the way section 2.2's sketch asked — an alarm, the shooting stopping, the survivors walking
+> home, a plain result (won, lost, drawn or timed out, and why) — with the four timings as Experiments
+> (press `d`). Recall, which the rules described and no code ran, exists for the first time
+> (`src/match/`). What it does **not** do, on purpose: go back into a second Build Phase (6B), run a
+> trigger list (6B), or make the Barracks train anything (6C). Restart, from the game menu, is the way
+> back until 6B builds the loop.
 
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
 > how the Pulse resolves — that stays the deterministic kernel, unmodified. What is new is the
@@ -158,16 +169,19 @@ that units visibly came home — not just that the screen stopped moving.
 ## 6. Definition of done
 
 - [ ] "Start Nexus Pulse" is a real, explicit action from the Build Phase screen, and a completed
-      Pulse hands back into the next Build Phase until the mission's triggers end it;
+      Pulse hands back into the next Build Phase until the mission's triggers end it (6A built the
+      action and the ending; the hand-back is 6B);
 - [ ] PERIMETER's trigger list (`campaigns.md` Section 2.1's sketch) runs its simulation band —
       waves spawn and advance at their tick, `win` fires on the final `pulse.end` — hash-stable
       across runs and runtimes like any other kernel input;
 - [ ] Q36 is resolved (built, or explicitly deferred with a reason) before this gate closes;
-- [ ] the Pulse-end sequence — stop, finish in-flight effects, Recall — is legible at every capability
-      tier and in monochrome;
+- [x] the Pulse-end sequence — stop, finish in-flight effects, Recall — is legible at every capability
+      tier and in monochrome (6A: a test plays it at all four depths; the alarm is reversed video, and
+      each phase is also named in words);
 - [ ] the owner's ending sketch (Section 2.2) has been built roughly, watched, and reported on — what
       read well, what did not, and what the alarm turned out to mean for a sudden ending versus a
       scheduled one. A gate report that does not say what the ending actually looked like has not
-      answered this milestone's question;
+      answered this milestone's question (6A built it and reported what it looks like; **watched** waits
+      for Mario's playtest);
 - [ ] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED**;
 - [ ] `./scripts/check-repository.sh` passes.

@@ -3,7 +3,7 @@
 **Document role:** The interaction and drawing patterns every interactive screen follows
 **Status:** WORKING — built on the Build Phase first; not canon yet (promoted into `specs/engine.md`
 Section 9 when the owner accepts them)
-**Updated:** 2026-09-29 (section 0, the UX goals read out of four rounds of feedback; round-4 feedback F30-F33: arming where the cursor is, focus that goes back to
+**Updated:** 2026-09-29 (section 7c, the Nexus Pulse on screen — gate 6A; section 0, the UX goals read out of four rounds of feedback; round-4 feedback F30-F33: arming where the cursor is, focus that goes back to
 where it came from, one "active" style for every menu row, Explore Map as that style, removal sparks;
 F34-F37: the top bar names what Esc does; popups lose their `[esc]`, gain a message form and a scroll
 bar; Settings' layout; Restart in the game menu); 2026-09-28 (a click activates; Explore Map —
@@ -337,6 +337,41 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   plan never hears of it.
 - **Every duration and intensity is an Experiment with an off value** (Build animation, Lighting,
   Particles, Glow time).
+
+## 7c. The Nexus Pulse on screen (gate 6A)
+
+- **The Pulse plays on the Build Phase's own screen, not a screen of its own.** The same top bar,
+  the same closed map rectangle, the same bottom bar and popups; only the panel's contents and the
+  key help change. A 96 x 40 map does not fit a fixed pane, so the Pulse uses the Build Phase's
+  camera: it opens looking at the player's Nexus, the arrow keys look around while it plays, and the
+  Pulse never waits for the player.
+- **The panel says what is happening, in this order**: a headline (`NEXUS PULSE`, and later the
+  ending's beats), the clock (`7.0s of 30.0s  1x`), one line per side (how many units, a bar of the
+  health left of what it began with, and the number), the last five events in plain words — `3.5s
+  trooper > raider`, `3.8s raider dies` — each in the colour of the side it is about, and the two
+  controls at the bottom.
+- **Two controls have rows and everything else is a key**: `[space] Pause` (`Resume` while paused) and
+  `[r] Watch again`, each clickable and doing what its key does. `[` and `]` change the speed, `.`
+  and `,` step a frame and a tick — key help only, since a row for each would crowd the panel at 80
+  columns. Popups and the game menu keep every one of these keys for themselves while they are open.
+- **The ending is four beats, always in this order**: the **alarm** (`PULSE ENDING` flashes in the top
+  bar, in the panel's headline and in the map's frame — a style change and never a glyph change, so
+  it cannot hide anything on the map and it reads in monochrome as reversed video), **cease fire**,
+  **Recall** (the survivors walk home) and the **result** (`VICTORY`, `DEFEAT`, `DRAW` or `TIME'S UP`,
+  why, and how many of yours came home). Each is a pure function of the presentation time, so
+  pause, speed, a step or "Watch again" all keep it whole. Reduced motion holds the alarm lit and
+  puts everyone home the moment the walk would begin.
+- **The result is words first, colour second.** The headline, the reason and the count are on the
+  panel and again, as one sentence, on the status line (green for a win, red for a loss, plain for a
+  draw or a time-out) — the words carry the cue where colour cannot.
+- **Nothing the player does can change what the Pulse did.** Pause, speed, stepping and looking around
+  are presentation; "Watch again" only starts the clock over, because the kernel resolved the whole
+  Pulse before the first frame. What the presentation asks of the Build Phase — centre the view on
+  the Nexus at the start and when the ending begins — goes through the same named command a player's
+  key does (`look-at`), so a script, the terminal and the browser page see the same thing.
+- **The ending's timings are Experiments** (`d`, Alarm lead, Walk-back delay, Walk-back time, Centre on
+  Nexus) and so are the raid and the crew the spike starts a Pulse with (Raid, Your units), so every
+  way a Pulse can end can be watched without editing code.
 
 ## 8. The status line
 

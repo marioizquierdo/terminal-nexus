@@ -812,6 +812,15 @@ success, B is that trigger action rather than a new victory branch, and the kern
 condition (Nexus destroyed, annihilation, tick limit) stays exactly as it is, with a mission's
 objective layered above it. Still a RULE-adjacent change the day it lands; still Mario's call.
 
+**Gate 6A (2026-09-29) can now show the plain draw, on placeholder content.** A Pulse that runs to its
+tick limit with both sides untouched ends on the Nexus Pulse screen as **TIME'S UP — "The time ran
+out before either side won."**, neutral in tone, with how many of the player's units came home
+([`../evidence/screenshots/pulse-result-timeup.png`](../evidence/screenshots/pulse-result-timeup.png);
+the spike's "Raid: none" Experiment reaches it). That is option A's cheapest possible evidence
+for the *screen*, but not for the *question*: whether a defensive mission's player reads it as success
+depends on PERIMETER's own briefing and debrief text around it, which arrives with 6B's fixture.
+Q36 stays open for 6B to close; nothing in 6A depends on the answer.
+
 ### Q38 — Does PERIMETER's own map need real scrolling, or does Milestone 5 prove scrolling on different content?
 
 **Status:** OPEN — blocks nothing before Milestone 2 locks the map's final dimensions; the
