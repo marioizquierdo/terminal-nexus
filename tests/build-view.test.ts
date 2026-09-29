@@ -272,7 +272,9 @@ test("right after a placement the tile reads as built, and the status line says 
   assert.notEqual(cellAt(justPlaced.frame, cell.x, cell.y).glyph, "x", "no illegal block over the built structure")
   // Owner, 2026-09-27: "hatch placed (resources: 30) - [u] undo" — what is left, and the way back.
   assert.match(justPlaced.text, /Barracks placed \(resources: 60\) - \[u\] undo/, "the footer reports the success")
-  assert.equal(justPlaced.build.state.focus, "menu", "and the keyboard is back on the menu")
+  // Armed by its digit on the map, so the keyboard stays on the map, where the arming began (F30).
+  assert.equal(justPlaced.build.state.focus, "grid", "and the keyboard is back where the arming began")
+  assert.equal(justPlaced.build.state.armed, null)
 })
 
 test("undoing the placement just made lets the same tile be built on again at once", () => {
@@ -512,9 +514,11 @@ test("no header or footer line is cut off at the 80-column floor", () => {
   const { text } = screenAt(MINIMUM)
   assert.match(text, /TERMINAL NEXUS build phase/)
   assert.match(text, /view x 0-48 y 2-17 of 96x40 {3}cursor 18,13/)
-  assert.match(text, /EXPLORE MAP {2}arrows move {2}tab\/esc menu {2}shift\+arrow fast move {2}bksp remove/)
+  assert.match(text, /MAP {2}arrows move {2}enter\/space explore {2}tab\/esc menu {2}shift\+arrow fast move/)
+  const explore = screenAt(MINIMUM, (build) => build.dispatch({ kind: "explore" })).text
+  assert.match(explore, /EXPLORE MAP {2}arrows move {2}e\/esc back {2}shift\+arrow fast move {2}bksp remove/)
   // Against the divider, which here is the map's own west edge (the spike map's fence: a rail or a post).
-  assert.match(text, / {2}EXPLORE MAP {10}\[esc\][|+]/, "the Explore Map header, whole")
+  assert.match(explore, /> \[e\] Explore Map {10}[|+]/, "the Explore Map row, whole")
   const menu = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" })).text
   assert.match(menu, /RESOURCE {9}100 of 100/, "the panel's budget line, whole")
   assert.match(menu, /\[e\] Explore Map {12}[|+]/, "the first menu entry, whole")
@@ -676,15 +680,15 @@ test("every key the adapters bind is named on screen at the 80-column floor", ()
       ],
     },
     {
-      // Explore Map: its panel covers the menu, so only the way back to it is named — the menu's own
-      // hotkeys are named on the menu (feedback F23).
+      // Explore Map: its panel covers the menu, so only the way back is named — the menu's own
+      // hotkeys are named on the menu (feedback F23), and `e`, which opened it, closes it (F32).
       label: "EXPLORE MAP",
-      drive: () => {},
+      drive: (build: BuildSession) => build.dispatch({ kind: "explore" }),
       context: { itemCount: 3, armed: false, focus: "grid" as const },
       bound: [
         ["\u001b[A", "arrows", /arrows move/],
-        ["\t", "tab", /tab\/esc menu/],
-        ["\u001b", "esc", /tab\/esc menu/],
+        ["e", "e", /e\/esc back/],
+        ["\u001b", "esc", /e\/esc back/],
         ["\u007f", "backspace", /bksp remove/],
       ],
     },

@@ -23,14 +23,15 @@ import { BuildAnimation } from "../src/view/build-live.ts"
 import { cellAt, frameToAnsi, frameToText } from "../src/view/frame.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
 import { paintOps } from "../src/view/backends/canvas.ts"
-import { placementCell, placementRequest, placementRun, placementSchedule, placementTiming } from "../src/view/placement.ts"
-import type { PlacementClock } from "../src/view/placement.ts"
+import { placementCell, placementRequest, placementRun, placementSchedule, placementTiming, removalSchedule } from "../src/view/placement.ts"
+import type { PlacementClock, RemovalClock } from "../src/view/placement.ts"
 import { CAPABILITY_MODES, RAINBOW_ROLES, rgbFor, sgrFor } from "../src/view/roles.ts"
 import { entityGlyph } from "../src/view/theme.ts"
 
 const FLAGS: DebugFlags = initialDebugFlags({})
 const BARRACKS = "structure.citizen.barracks"
-/** Arm the Barracks from the menu (the cursor lands beside the Grid Nexus) and place it with Space. */
+/** Arm the Barracks from the menu (the cursor opens on the Grid Nexus, so arming finds the nearest good
+ *  spot beside it) and place it with Space. */
 const PLACE_BARRACKS = "n 1 Down Space Space"
 
 function placed(keys = PLACE_BARRACKS): { run: BuildPlaytest; state: BuildState } {
@@ -338,6 +339,84 @@ test("undo, Backspace, or another placement mid-animation is correct at once: no
   // Put back later, it starts over rather than resuming.
   animation.frame(one, 2_000)
   assert.deepEqual(animation.frame(one, 2_010).placing, [{ ordinal: first.ordinal, elapsedMs: 10 }])
+})
+
+// --- Removing a planned building sparks too (feedback F33) ------------------------------------------
+
+/** How many cells a frame draws in the sparks' own colours. */
+function sparkCells(frame: ReadonlyCellFrame): number {
+  return frame.cells.filter((cell) => cell.style.fgRole === "fx.critical" || cell.style.fgRole === "fx.debris").length
+}
+
+test("undo and Backspace both throw the placement's sparks where the building stood, timed from the first frame without it", () => {
+  const { run, state: one } = placed()
+  const placement = lastPlacement(one)
+  const glow = placementTiming(FLAGS, false).glowMs
+  for (const [how, keys] of [
+    ["undo", `${PLACE_BARRACKS} u`],
+    // Tab gives the map back in plain navigation, the cursor still on the building just placed.
+    ["Backspace", `${PLACE_BARRACKS} Tab Bksp`],
+  ] as const) {
+    const { state: gone } = placed(keys)
+    assert.equal(gone.planned.length, 0, `${how} did not remove it`)
+    const animation = new BuildAnimation()
+    animation.frame(one, 0) // already planned when the screen first drew: not animating
+    const first = animation.frame(gone, 1_000)
+    assert.deepEqual(first.removing, [{ ...placement, elapsedMs: 0 }], `${how}: no sparks`)
+    assert.equal(first.busyUntil, 1_000 + glow)
+    assert.deepEqual(animation.frame(gone, 1_100).removing, [{ ...placement, elapsedMs: 100 }])
+    const done = animation.frame(gone, 1_000 + glow)
+    assert.equal(done.removing, undefined, `${how}: the sparks outlived the glow`)
+    assert.equal(done.busyUntil, null)
+  }
+  // Drawn: sparks around the empty footprint, and nothing at all once they settle — the still frame.
+  const { state: gone } = placed(`${PLACE_BARRACKS} u`)
+  const removing = (elapsedMs: number): RemovalClock[] => [{ ...placement, elapsedMs }]
+  let sparks = 0
+  for (let t = 0; t < glow; t += 10) sparks += sparkCells(compose(run, gone, { removing: removing(t) }))
+  assert.ok(sparks > 0, "no spark was ever drawn for a removal")
+  assert.equal(frameToText(compose(run, gone, { removing: removing(glow) })), frameToText(compose(run, gone)))
+  // The same recipe and timing as a placement's sparks — "Particles" and "Glow time" — from the moment
+  // it went, with a scatter of its own.
+  const footprint = FIXTURE_REGISTRY.get(BARRACKS).footprint
+  const schedule = removalSchedule(placement, footprint, FLAGS, false)
+  assert.deepEqual(
+    schedule.effects.map((effect) => [effect.recipe, effect.band, effect.startMs, effect.durationMs]),
+    [["fx.sparks.burst", "effects", 0, glow]],
+  )
+  assert.equal(schedule.settlesAtMs, glow)
+  const placing = placementSchedule(placement, footprint, FLAGS, false).effects.find((e) => e.recipe === "fx.sparks.burst")
+  assert.equal(schedule.effects[0]?.params?.count, placing?.params?.count)
+  assert.notEqual(schedule.effects[0]?.params?.key, placing?.params?.key)
+})
+
+test("removal sparks follow the Experiments: off when Particles is, a still mark under reduced motion", () => {
+  const { run, state: one } = placed()
+  const placement = lastPlacement(one)
+  const footprint = FIXTURE_REGISTRY.get(BARRACKS).footprint
+  const off = { ...FLAGS, placeParticles: "off" as const }
+  assert.deepEqual(removalSchedule(placement, footprint, off, false).effects, [])
+  const { state: gone } = placed(`${PLACE_BARRACKS} u`)
+  const animation = new BuildAnimation()
+  animation.frame(withFlags(one, off), 0)
+  const live = animation.frame(withFlags(gone, off), 1_000)
+  assert.equal(live.removing, undefined)
+  assert.equal(live.busyUntil, null)
+  // Reduced motion: the burst's own still form, the same at every instant of the glow.
+  const glow = placementTiming(FLAGS, true).glowMs
+  const at = (elapsedMs: number): string =>
+    frameToText(compose(run, gone, { removing: [{ ...placement, elapsedMs }], reducedMotion: true }))
+  assert.equal(at(0), at(glow - 1))
+  assert.notEqual(at(0), frameToText(compose(run, gone)), "no mark at all under reduced motion")
+})
+
+test("removal sparks are presentation only: the plan is the same with them on or off", () => {
+  const many = placed(`n 1 d Down*2 Right Esc Down Space Space u`)
+  const none = placed(`n 1 d Down*2 Left Esc Down Space Space u`)
+  assert.equal(many.state.debug.placeParticles, "many")
+  assert.equal(none.state.debug.placeParticles, "off")
+  assert.deepEqual(many.state.planned, none.state.planned)
+  assert.deepEqual({ ...many.state, debug: none.state.debug, status: none.state.status }, none.state)
 })
 
 // --- Presentation only ---------------------------------------------------------------------------

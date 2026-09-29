@@ -327,8 +327,6 @@ export type PlacedOverlay = Readonly<{
 /** Wider than the gate 5F popup (owner, 2026-09-27: "the popup probably larger too"), never wider than
  *  the Grid pane it sits over, less a column for its shadow. */
 const POPUP_WIDTH = 52
-/** `[esc]` as the Explore Map panel's header draws it. No popup draws it any more (feedback F37). */
-export const CLOSE_LABEL = "[esc]"
 
 /** Splits text into lines of at most `limit` glyphs, breaking between words — never inside one, unless
  *  a single word is longer than the whole line. */

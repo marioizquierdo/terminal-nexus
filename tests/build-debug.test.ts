@@ -146,13 +146,10 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
     keys(side, DOWN)
   }
   for (const spec of DEBUG_FIELDS) assert.ok(seen.has(spec.label), `${spec.label} is never listed`)
-  const walked = session()
-  keys(walked, "d")
-  goTo(walked, "smartCursor")
-  assert.match(screen(walked), /Smart cursor\s+<\s+on\s+>/)
-  assert.ok(screen(walked).includes("(Q55)"), "the smart cursor's question is not shown")
-  goTo(walked, "startFocus")
-  assert.match(screen(walked), /Opens on\s+<\s+menu\s+>/)
+  // Settled by the owner on 2026-09-29 (feedback F30, F31), and deleted.
+  for (const gone of ["Smart cursor", "Opens on"]) {
+    assert.ok(!DEBUG_FIELDS.some((spec) => spec.label === gone), `${gone} is still an Experiment`)
+  }
 })
 
 test("Esc, x, d, a right click and a click outside all close it, and it holds the keyboard until then", () => {
@@ -201,19 +198,6 @@ test("the popup fits inside the Grid pane at every size, and every question fits
 
 // --- What each flag changes ------------------------------------------------------------------------
 
-test("smart cursor off: arming from the menu leaves the cursor where it is", () => {
-  const on = session()
-  keys(on, DOWN, DOWN, SPACE) // highlight Barracks, arm it from the menu
-  const off = session()
-  keys(off, "d")
-  goTo(off, "smartCursor")
-  keys(off, RIGHT, ESC, DOWN, DOWN, SPACE)
-  assert.equal(off.build.state.debug.smartCursor, false)
-  assert.equal(off.build.state.armed, 0)
-  assert.deepEqual(off.build.state.cursor, { x: 18, y: 13 }, "the cursor moved with the smart cursor off")
-  assert.notDeepEqual(on.build.state.cursor, { x: 18, y: 13 }, "the smart cursor did not move the cursor when on")
-})
-
 test("scroll margin: the camera follows exactly as a screen opened with that margin does, from the moment it changes", () => {
   const moves = [RIGHT, RIGHT, DOWN, ...Array.from({ length: 30 }, () => RIGHT), ...Array.from({ length: 6 }, () => DOWN)]
   const values = [0, 5, 10, 15, 20, 25, 30, 35, 40]
@@ -247,9 +231,8 @@ test("a number stops at its ends and says so; a choice of two comes round", () =
   // A `--scroll-margin` the list does not hold steps to its nearest neighbour.
   assert.equal(adjustDebug({ ...flags, scrollMargin: 12 }, "scrollMargin", -1).flags.scrollMargin, 10)
   assert.equal(adjustDebug({ ...flags, scrollMargin: 12 }, "scrollMargin", 1).flags.scrollMargin, 15)
-  assert.equal(adjustDebug(flags, "smartCursor", 1).flags.smartCursor, false)
-  assert.equal(adjustDebug(adjustDebug(flags, "smartCursor", 1).flags, "smartCursor", 1).flags.smartCursor, true)
-  assert.equal(adjustDebug(flags, "startFocus", -1).flags.startFocus, "grid")
+  assert.equal(adjustDebug(flags, "armedClickScrolls", 1).flags.armedClickScrolls, false)
+  assert.equal(adjustDebug(adjustDebug(flags, "armedClickScrolls", 1).flags, "armedClickScrolls", 1).flags.armedClickScrolls, true)
   assert.equal(adjustDebug(flags, "clickScroll", 1).flags.clickScroll, "centre")
   assert.equal(adjustDebug(flags, "clickScroll", -1).flags.clickScroll, "margin")
 
@@ -262,31 +245,27 @@ test("a number stops at its ends and says so; a choice of two comes round", () =
   assert.match(side.build.state.status.text, /already 0%, the smallest/)
 })
 
-test("opens on the map: nothing changes until the restart, which keeps every flag and starts the plan over", () => {
+test("the restart keeps every flag and starts the plan over, on the menu at Explore Map", () => {
   const side = session()
   keys(side, "n", "1", "1", RIGHT, ENTER) // pick a power, plan a Barracks
   assert.equal(side.build.state.planned.length, 1)
   keys(side, "d")
-  goTo(side, "startFocus")
+  goTo(side, "armedClickScrolls")
   keys(side, RIGHT)
-  assert.equal(side.build.state.debug.startFocus, "grid")
-  assert.equal(side.build.state.focus, "menu", "a restart flag changed the running screen")
-  assert.match(side.build.state.status.text, /applies after a restart/)
-  goTo(side, "smartCursor")
-  keys(side, LEFT) // and the smart cursor off
-  // Closing Settings says a restart is needed; the game menu's [r] is the restart.
-  keys(side, ESC)
-  assert.equal(side.build.state.overlay, "message")
-  keys(side, ESC, "q", "r")
+  assert.equal(side.build.state.debug.armedClickScrolls, false)
+  // A flag that applies at once needs no restart message; the game menu's [r] is the restart.
+  keys(side, "q")
+  assert.equal(side.build.state.overlay, "menu")
+  keys(side, "r")
   const state = side.build.state
   assert.equal(state.overlay, null)
-  assert.equal(state.focus, "grid")
+  assert.equal(state.focus, "menu")
+  assert.equal(state.menuHighlight, 0)
   assert.equal(state.planned.length, 0)
   assert.equal(state.nexusPick, null)
   assert.deepEqual(state.cursor, { x: 18, y: 13 })
-  assert.equal(state.debug.startFocus, "grid")
-  assert.equal(state.debug.smartCursor, false)
-  assert.match(screen(side), /EXPLORE MAP {2}arrows move/)
+  assert.equal(state.debug.armedClickScrolls, false)
+  assert.match(screen(side), /MENU {2}up\/down choose/)
 
   // The game menu's Restart row does the same by Enter.
   const byEnter = session()
@@ -325,21 +304,17 @@ test("the browser playtest page's Build Phase key bar has d", () => {
 // --- Same flow, every adapter ----------------------------------------------------------------------
 
 test("the debug flow by keys, by clicks, and from a driver script is the same state and the same frame", () => {
-  // Smart cursor off, margin up two, open on the map, a shorter pressed flash; restart; then arm the
-  // Barracks from the menu and place it where the cursor stayed.
+  // Margin up two, a shorter pressed flash; restart; then arm the Barracks from the menu and place it
+  // where the cursor is, since it fits there.
   const byKeyboard = session()
   keys(byKeyboard, "d")
-  goTo(byKeyboard, "smartCursor")
-  keys(byKeyboard, RIGHT)
   goTo(byKeyboard, "scrollMargin")
   keys(byKeyboard, RIGHT, RIGHT)
-  goTo(byKeyboard, "startFocus")
-  keys(byKeyboard, RIGHT)
   goTo(byKeyboard, "pressedFlashMs")
-  // `q` leaves Settings for the game menu, where a message says a restart is needed; Esc gives the
-  // game menu back, on its Restart row.
-  keys(byKeyboard, LEFT, "q", ESC, "r")
-  keys(byKeyboard, TAB, DOWN, DOWN, SPACE, ENTER)
+  // `q` leaves Settings for the game menu (nothing here waits for a restart, so no message); its [r]
+  // restarts. The keyboard is then on the menu.
+  keys(byKeyboard, LEFT, "q", "r")
+  keys(byKeyboard, DOWN, DOWN, SPACE, ENTER)
 
   // By mouse there is no `d`: the top bar's "menu [esc]", then the game menu's [s] Settings.
   const byMouse = session()
@@ -349,27 +324,22 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
   assert.ok(settingsOption !== undefined)
   assert.equal(GAME_MENU_ROWS[0], "settings")
   click(byMouse, placed(byMouse).textColumn + 2, settingsOption.row)
-  clickValue(byMouse, "smartCursor", "right")
   clickValue(byMouse, "scrollMargin", "right")
   clickValue(byMouse, "scrollMargin", "right")
-  clickValue(byMouse, "startFocus", "right")
   clickValue(byMouse, "pressedFlashMs", "left")
-  // "close [esc]" in the top bar is Esc: back to the game menu, with the message over it; again, and
-  // the message closes; then the game menu's Restart.
-  const closeHint = (): ReturnType<typeof escHintSpan> => escHintSpan(byMouse.layout, escLabel(byMouse.build.state))
-  click(byMouse, closeHint().from, closeHint().row)
-  assert.equal(byMouse.build.state.overlay, "message")
-  click(byMouse, closeHint().to, closeHint().row)
+  // "close [esc]" in the top bar is Esc: back to the game menu (no message — nothing changed waits for
+  // a restart); then the game menu's Restart.
+  const closeHint = escHintSpan(byMouse.layout, escLabel(byMouse.build.state))
+  click(byMouse, closeHint.from, closeHint.row)
   assert.equal(byMouse.build.state.overlay, "menu")
   const restart = placed(byMouse).rows.find((row) => row.spec.kind === "option" && row.spec.hotkey === "r")
   assert.ok(restart !== undefined)
   click(byMouse, placed(byMouse).textColumn + 4, restart.row)
-  // The keyboard is on the map after the restart, in Explore Map, whose panel covers the menu: the
-  // first click on it brings the menu back; the second arms the row at once (feedback F22); a click
-  // on the tile the cursor already sits on places (Q52). The first key after the mouse only shows the
-  // menu's highlight again, which the keyboard's own placement left showing.
+  // The keyboard is on the menu after the restart: a click on the row arms it at once (feedback
+  // F22); a click on the tile the cursor already sits on places (Q52), back on the menu. The first key
+  // after the mouse only shows the menu's highlight again, which the keyboard's own placement left
+  // showing.
   const row = menuEntryRow(byMouse.layout, SPIKE_CATALOG, { kind: "construct", index: 0 }) as number
-  click(byMouse, byMouse.layout.panelColumn + 3, row)
   click(byMouse, byMouse.layout.panelColumn + 3, row)
   const cell = cellForTile(byMouse.layout, byMouse.build.state.camera, byMouse.build.state.cursor)
   click(byMouse, cell.x, cell.y)
@@ -378,13 +348,10 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
 
   const script: readonly BuildCommand[] = [
     { kind: "open-settings", section: "experiments" },
-    { kind: "debug-adjust", field: "smartCursor", step: 1 },
     { kind: "debug-adjust", field: "scrollMargin", step: 1 },
     { kind: "debug-adjust", field: "scrollMargin", step: 1 },
-    { kind: "debug-adjust", field: "startFocus", step: 1 },
     { kind: "debug-adjust", field: "pressedFlashMs", step: -1 },
     { kind: "debug-restart" },
-    { kind: "focus", target: "menu" },
     { kind: "highlight", delta: 1 },
     { kind: "highlight", delta: 1 },
     { kind: "activate" },
@@ -396,9 +363,7 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
   const expected = byKeyboard.build.state
   assert.deepEqual(expected.debug, {
     ...initialDebugFlags({}),
-    smartCursor: false,
     scrollMargin: DEFAULT_SCROLL_MARGIN_PERCENT + 10,
-    startFocus: "grid",
     pressedFlashMs: 50,
   })
   assert.equal(expected.planned.length, 1)

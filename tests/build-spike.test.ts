@@ -78,6 +78,12 @@ function session(
   return { build, layout, context }
 }
 
+/** A cursor move to `tile`, from wherever the cursor is now — arming may have moved it (feedback F30),
+ *  so a test that means a tile says the tile rather than a distance from a spot it cannot predict. */
+function moveTo(build: BuildSession, tile: { x: number; y: number }): void {
+  build.dispatch({ kind: "move-cursor", dx: tile.x - build.state.cursor.x, dy: tile.y - build.state.cursor.y })
+}
+
 /** The frame as text, which is what "the same screen" means for an assertion. */
 function screen(
   build: BuildSession,
@@ -115,9 +121,11 @@ function clickRowBytes(layout: ReturnType<typeof buildLayout>, index: number): s
 }
 
 test("the same plan by hotkeys, by clicks, and from a script is the same plan and the same screen", () => {
-  // Two barracks, side by side, at tiles that are on screen from the start: 1 arms it, the cursor
-  // walks to 30,14, Enter places (and hands the keyboard back to the menu); 1 arms it again, four more
-  // steps east and one more Enter places the second.
+  // Two barracks, side by side, at tiles that are on screen from the start: 1 arms it where the cursor
+  // is, the cursor walks to 30,14, Enter places (and leaves the keyboard on the map, where the arming
+  // began); 1 arms it again, which moves the cursor off the new one to the nearest spot with a free
+  // tile around it — 30,17, below it (feedback F30) — and four steps east, three north and one more
+  // Enter place the second at 34,14.
   // An armed click scrolls the view near its edges (F22) and an arrow does not, so with that on the
   // same plan has a different camera by mouse; the parity asserted here is the plan and the screen,
   // so the Experiment is switched to a still view for all three players alike.
@@ -129,16 +137,17 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   byKeyboard.build.handleData(DOWN, byKeyboard.layout)
   byKeyboard.build.handleData(ENTER, byKeyboard.layout)
   byKeyboard.build.handleData("1", byKeyboard.layout)
+  assert.deepEqual(byKeyboard.build.state.cursor, { x: 30, y: 17 })
   for (let step = 0; step < 4; step += 1) byKeyboard.build.handleData(RIGHT, byKeyboard.layout)
+  for (let step = 0; step < 3; step += 1) byKeyboard.build.handleData(UP, byKeyboard.layout)
   byKeyboard.build.handleData(ENTER, byKeyboard.layout)
 
   const byMouse = session()
   byMouse.build.dispatch(stillClicks)
-  // The keyboard is on the Grid in Explore Map, whose panel covers the menu: the first click on the
-  // panel only gives the menu back; the second arms the row at once (feedback F22). After a placement
-  // the menu is back, so one click arms the second barracks.
-  byMouse.build.handleData(clickRowBytes(byMouse.layout, 0), byMouse.layout)
-  byMouse.build.handleData(clickRowBytes(byMouse.layout, 0), byMouse.layout)
+  // Digits are the path both players share, so both armings began on the map and both placements
+  // leave the keyboard there (a click on a row is the menu's, and goes back to it — the focus tests
+  // hold that); the rest is clicks.
+  byMouse.build.handleData("1", byMouse.layout)
   // A click only arms the preview at a tile; a second click on that same tile is what places it
   // (Q52) — so each of the two placements below is two clicks, not one. Recomputed fresh each time
   // (not the same bytes reused) because the camera itself can move between clicks: the second click's
@@ -149,22 +158,18 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   }
   clickTile({ x: 30, y: 14 })
   clickTile({ x: 30, y: 14 })
-  byMouse.build.handleData(clickRowBytes(byMouse.layout, 0), byMouse.layout)
-  // Arming from the menu moved the cursor for the player — one free tile east of the first barracks,
-  // exactly 34,14 — so a single click there is already the confirming "second click on the same tile".
-  assert.deepEqual(byMouse.build.state.cursor, { x: 34, y: 14 }, "the smart cursor did not land beside the first")
+  byMouse.build.handleData("1", byMouse.layout)
   clickTile({ x: 34, y: 14 })
-  // Placed by the mouse, the menu shows no "highlighted, not yet chosen" bar; the first key shows it
-  // again and does nothing else — after which the two players' screens are the same.
-  assert.equal(byMouse.build.state.highlightHidden, true)
-  byMouse.build.handleData(DOWN, byMouse.layout)
+  clickTile({ x: 34, y: 14 })
+  assert.equal(byMouse.build.state.focus, "grid", "a placement armed on the map left the map")
 
   const script: readonly BuildCommand[] = [
     { kind: "arm", index: 0 },
     { kind: "move-cursor", dx: 12, dy: 1 },
     { kind: "place" },
     { kind: "arm", index: 0 },
-    { kind: "move-cursor", dx: 4, dy: 0 },
+    ...Array.from({ length: 4 }, (): BuildCommand => ({ kind: "move-cursor", dx: 1, dy: 0 })),
+    ...Array.from({ length: 3 }, (): BuildCommand => ({ kind: "move-cursor", dx: 0, dy: -1 })),
     { kind: "place" },
   ]
   const byDriver = session()
@@ -186,19 +191,24 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   )
 })
 
-test("after a placement the keyboard goes back to the menu, disarmed (owner, 2026-09-27)", () => {
-  // The menu orchestrates the Build Phase; the Grid cursor is for placing and exploring. This answers
-  // Q57 as "always back to the menu", replacing gate 5A's "stays armed after placing".
-  const { build, layout } = session()
-  build.handleData("1", layout)
-  assert.equal(build.state.armed, 0)
-  build.run([{ kind: "move-cursor", dx: 12, dy: 1 }])
-  build.handleData(ENTER, layout)
-  assert.equal(build.state.planned.length, 1)
-  assert.equal(build.state.armed, null, "a placement disarms")
-  assert.equal(build.state.focus, "menu")
-  assert.equal(build.state.menuHighlight, 2, "the highlight stays on the row just built from")
-  assert.match(build.state.status.text, /Barracks placed \(resources: 60\) - \[u\] undo/)
+test("after a placement the keyboard goes back to where the arming came from, disarmed (owner, 2026-09-29)", () => {
+  // Q57 answered "always back to the menu" (2026-09-27), replacing gate 5A's "stays armed after
+  // placing"; feedback F30 refined it: armed on the map, the keyboard stays on the map in plain
+  // navigation; armed from the menu, it goes back to the menu.
+  for (const start of ["grid", "menu"] as const) {
+    const { build, layout } = session()
+    build.dispatch({ kind: "focus", target: start })
+    build.handleData("1", layout)
+    assert.equal(build.state.armed, 0)
+    build.run([{ kind: "move-cursor", dx: 12, dy: 1 }])
+    build.handleData(ENTER, layout)
+    assert.equal(build.state.planned.length, 1)
+    assert.equal(build.state.armed, null, "a placement disarms")
+    assert.equal(build.state.focus, start)
+    assert.equal(build.state.exploreMap, false)
+    assert.equal(build.state.menuHighlight, 2, "the highlight stays on the row just built from")
+    assert.match(build.state.status.text, /Barracks placed \(resources: 60\) - \[u\] undo/)
+  }
 })
 
 test("keyboard: Space places, exactly like Enter", () => {
@@ -216,11 +226,13 @@ test("keyboard: Space places, exactly like Enter", () => {
   assert.deepEqual(bySpace.build.state, byEnter.build.state)
 })
 
-test("a second Enter after a placement arms again rather than placing a second building", () => {
-  // Enter places and returns the keyboard to the menu, on the same row; a second Enter there arms that
-  // row again (moving the cursor to the next free spot), and only a third places. A double press can
+test("a second Enter after a placement never places a second building", () => {
+  // Armed from the menu, Enter places and returns the keyboard to the menu, on the same row; a second
+  // Enter there arms that row again (moving the cursor to the next free spot), and only a third
+  // places. Armed on the map, a second Enter in plain navigation opens Explore Map. A double press can
   // never build twice.
   const { build, layout } = session()
+  build.dispatch({ kind: "focus", target: "menu" })
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }])
   build.handleData(ENTER, layout)
@@ -228,6 +240,15 @@ test("a second Enter after a placement arms again rather than placing a second b
   assert.equal(build.state.planned.length, 1)
   assert.equal(build.state.armed, 0)
   assert.equal(build.state.focus, "grid")
+
+  const onMap = session()
+  onMap.build.handleData("1", onMap.layout)
+  onMap.build.run([{ kind: "move-cursor", dx: 12, dy: 1 }])
+  onMap.build.handleData(ENTER, onMap.layout)
+  onMap.build.handleData(ENTER, onMap.layout)
+  assert.equal(onMap.build.state.planned.length, 1)
+  assert.equal(onMap.build.state.armed, null)
+  assert.equal(onMap.build.state.exploreMap, true)
 })
 
 test("keyboard: Shift+Arrow and its modifier-free fallback are both the fast move, a jump of the Shift jump", () => {
@@ -318,11 +339,7 @@ test("mouse: the wheel moves the cursor five tiles and drags the camera with it"
 
 test("mouse: right click is Esc; a click on a menu row arms it at once (feedback F22)", () => {
   const { build, layout } = session()
-  // The session starts in Explore Map, whose panel covers the menu: the first click gives it back.
-  build.handleData(clickRowBytes(layout, 1), layout)
-  assert.equal(build.state.armed, null, "a click on Explore Map's panel armed a row nobody could see")
-  assert.equal(build.state.focus, "menu")
-  // With the menu drawn, one click arms.
+  // The session starts in plain navigation, with the menu drawn beside the map: one click arms.
   build.handleData(clickRowBytes(layout, 1), layout)
   assert.equal(build.state.armed, 1)
   assert.equal(build.state.menuHighlight, 3)
@@ -378,7 +395,8 @@ test("a click on a tile only arms the preview there - a second click on the same
     { ...byClick.build.state, camera: null, highlightHidden: false },
     { ...byKeyboard.build.state, camera: null },
   )
-  assert.equal(byClick.build.state.highlightHidden, true)
+  // Armed by its digit on the map, placed by the mouse: back on the map, where the arming began.
+  assert.equal(byClick.build.state.focus, "grid")
 })
 
 test("with Armed click scrolls off, an armed click never scrolls the view, so the same screen spot clicked twice places there (Q58)", () => {
@@ -480,7 +498,8 @@ test("legality: a second structure may not overlap the first one planned", () =>
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
   assert.equal(build.state.planned.length, 1)
   build.handleData("1", layout)
-  build.run([{ kind: "move-cursor", dx: 1, dy: 0 }, { kind: "place" }])
+  moveTo(build, { x: 31, y: 14 }) // one tile east of the first one's centre
+  build.run([{ kind: "place" }])
   assert.equal(build.state.planned.length, 1)
   assert.match(build.state.status.text, /the barracks is here/)
 })
@@ -488,13 +507,9 @@ test("legality: a second structure may not overlap the first one planned", () =>
 test("a plan is revisable: remove under the cursor, and undo the last one", () => {
   const { build, layout } = session()
   build.handleData("1", layout)
-  build.run([
-    { kind: "move-cursor", dx: 12, dy: 1 },
-    { kind: "place" },
-    { kind: "arm", index: 0 },
-    { kind: "move-cursor", dx: 4, dy: 0 },
-    { kind: "place" },
-  ])
+  build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }, { kind: "arm", index: 0 }])
+  moveTo(build, { x: 34, y: 14 })
+  build.run([{ kind: "place" }])
   assert.equal(build.state.planned.length, 2)
   build.handleData("u", layout)
   assert.equal(build.state.planned.length, 1)
@@ -555,7 +570,8 @@ test("spending is exactly as revisable as the plan: placing spends, removing and
   assert.equal(spent(context, build.state), barracks.cost)
 
   build.handleData("3", layout)
-  build.run([{ kind: "move-cursor", dx: 6, dy: 0 }, { kind: "place" }])
+  moveTo(build, { x: 36, y: 14 })
+  build.run([{ kind: "place" }])
   assert.equal(spent(context, build.state), barracks.cost + turret.cost)
   assert.equal(remaining(context, build.state), SPIKE_ALLOTMENT - barracks.cost - turret.cost)
 
@@ -574,17 +590,20 @@ test("a placement that cannot be afforded is refused, and changes nothing at all
   // Spend down to less than the barracks costs, then try a barracks.
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }, { kind: "arm", index: 0 }])
-  build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
+  moveTo(build, { x: 34, y: 14 })
+  build.run([{ kind: "place" }])
   const before = build.state
   const left = remaining(context, build.state)
   assert.ok(left < SPIKE_CATALOG[0]!.cost, "the test did not actually spend enough to matter")
 
   // Refused at the menu, before any tile: an unaffordable row cannot be armed.
   build.handleData("1", layout)
+  assert.match(build.state.status.text, /costs 40, \d+ left/)
+  assert.equal(build.state.armed, null)
+  // Enter after it has nothing armed to place (on the map it opens Explore Map instead).
   build.handleData("\r", layout)
   assert.equal(build.state.planned.length, before.planned.length, "it was planned anyway")
   assert.equal(remaining(context, build.state), left, "the budget moved on a refused placement")
-  assert.match(build.state.status.text, /costs 40, \d+ left|Nothing armed/)
   assert.equal(build.state.armed, null)
 })
 
@@ -754,11 +773,13 @@ test("a refusal's message clears once the cursor leaves the tile it was about", 
     allotment: SPIKE_ALLOTMENT,
     nexusDraft: SPIKE_NEXUS_DRAFT,
   }
-  const build = readyBuildSession({ context, cursor: { x: 5, y: 5 }, viewport: { width: 10, height: 10 } })
+  const build = readyBuildSession({ context, cursor: { x: 4, y: 5 }, viewport: { width: 10, height: 10 } })
 
   // Turret: a 1x1 footprint, so the cursor's own tile is the whole placement and there is no
-  // footprint-centring arithmetic to account for.
+  // footprint-centring arithmetic to account for. Armed beside the rock (arming never lands on one,
+  // feedback F30), then moved onto it.
   build.dispatch({ kind: "arm", index: 2 })
+  build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
   build.dispatch({ kind: "place" })
   assert.match(build.state.status.text, /Cannot build here/, "the test did not actually trigger a refusal")
 
@@ -790,8 +811,9 @@ test("a refusal's message survives a move that is clamped back to the same tile"
     allotment: SPIKE_ALLOTMENT,
     nexusDraft: SPIKE_NEXUS_DRAFT,
   }
-  const build = readyBuildSession({ context, cursor: { x: 9, y: 9 }, viewport: { width: 10, height: 10 } })
+  const build = readyBuildSession({ context, cursor: { x: 8, y: 9 }, viewport: { width: 10, height: 10 } })
   build.dispatch({ kind: "arm", index: 2 })
+  build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
   build.dispatch({ kind: "place" })
   assert.match(build.state.status.text, /Cannot build here/)
 

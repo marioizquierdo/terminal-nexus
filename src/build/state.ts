@@ -69,10 +69,6 @@ export type BuildContext = Readonly<{
   /** The Nexus draft this Build Phase offers — placeholder options, not Milestone 8's real one
    *  (`types.ts`'s own doc comment on `NexusPowerOption` has the reasoning). */
   nexusDraft: readonly NexusPowerOption[]
-  /** Q55's smart cursor: arming from the menu moves the cursor to a tile the structure can go.
-   *  Defaults on. Like `scrollMargin`, only the starting value of its Debug Mode flag,
-   *  `state.debug.smartCursor`. */
-  smartCursor?: boolean
   /**
    * The map's own border style — the "map-defined border" of feedback F25 ("defining custom borders
    * could accentuate the location"), drawn wherever the Grid rectangle reaches the map's edge; the
@@ -99,26 +95,44 @@ export type BuildState = Readonly<{
   viewport: Viewport
   /**
    * Index into `catalog`, or `null` for nothing armed. **A structure is armed only while the Grid has
-   * focus** (owner, 2026-09-27): every way focus leaves the Grid — Tab, Esc, a placement — disarms,
-   * so the screen is always in one of a few plain modes: the menu (no cursor), placing (a row marked
-   * armed, the cursor carrying its ghost), Explore Map (the bare cursor, and the side panel showing
-   * what is under it — `exploring`), or the map a mouse click opened (the bare cursor, the menu still
-   * drawn beside it).
+   * focus** (owner, 2026-09-27): every way focus leaves the Grid — Tab, Esc, a placement from the
+   * menu — disarms, so the screen is always in one of a few plain modes: the menu (no cursor), placing
+   * (a row marked active, the cursor carrying its ghost), Explore Map (the bare cursor, and the side
+   * panel showing what is under it — `exploring`), or plain navigation (the bare cursor, the menu
+   * still drawn beside it).
    */
   armed: number | null
+  /**
+   * Where the Grid's current activity — placing, or Explore Map — was started from, and so where
+   * finishing it goes back to (owner, 2026-09-29, feedback F30): `grid` when it began on the map (a
+   * digit pressed there, Enter/Space or `e` in plain navigation) — a placement and Esc then leave the
+   * keyboard on the map in plain navigation; `menu` when it began on the menu (Enter/Space or a click
+   * on its row, a digit while the menu had the keyboard) — they go back to the menu. Meaningless while
+   * nothing is under way.
+   */
+  origin: Focus
+  /**
+   * Arming found no spot for the building within reach of the cursor (`ARM_SEARCH_TILES`), so the
+   * cursor stepped one tile right and one down and the preview is drawn as the building itself rather
+   * than the refusal's block of `x` (owner, 2026-09-29, feedback F30) — until the player moves the
+   * cursor or tries to place, after which the refusal is drawn as usual. Pure: set by arming, cleared
+   * by the next move, click or placement.
+   */
+  armGhost: boolean
   /** Which half of the screen the arrow keys and Enter/Space belong to (engine.md 9.7, gate 5F).
    *  Reducer state, not adapter state, so a driver can assert it and the key help can say it. */
   focus: Focus
   /**
-   * **Explore Map** (feedback F23, owner 2026-09-28): the side panel shows what is under the cursor
-   * in place of the menu, under an "EXPLORE MAP" header, and follows the cursor as it moves. `[e]`,
-   * the menu's first entry, Tab and a second Right all arrive in it; Esc leaves it for the menu. Only
-   * ever true while the Grid has focus and nothing is armed (read it through `exploring`).
+   * **Explore Map** (feedback F23, owner 2026-09-28; its look since F32): the side panel's first row
+   * reads `> [e] Explore Map` in the active style, and under a separator the rest of the panel shows
+   * what is under the cursor, following it as it moves. Reached only by `e`, the menu's first entry,
+   * and Enter/Space in plain navigation; `e` again, Esc, or a click on its row go back to where it was
+   * opened from (`origin`). Only ever true while the Grid has focus and nothing is armed (read it
+   * through `exploring`).
    *
-   * **A click on the map from the menu does not open it**: the menu stays drawn, so a player who
-   * clicks around the map with the mouse can still click a building on the menu and have it armed at
-   * once (feedback F22). Enter/Space there opens Explore Map, as it opened the information panel
-   * before.
+   * **Tab, a second Right and a click on the map do not open it** (feedback F30): they arrive in plain
+   * navigation, with the menu still drawn beside the map, so a player who clicks around the map with
+   * the mouse can still click a building on the menu and have it armed at once (feedback F22).
    */
   exploreMap: boolean
   /** The last thing a command asked to have acknowledged on screen — see `Ack`. */
@@ -201,6 +215,26 @@ export type BuildState = Readonly<{
 }>
 
 /**
+ * How far arming looks for a spot when the building cannot go where the cursor is: up to this many
+ * tiles from the cursor along each axis (owner, 2026-09-29, feedback F30: "if there's no empty space
+ * in 12 tiles around, it should stay").
+ */
+export const ARM_SEARCH_TILES = 12
+
+/**
+ * The tile the cursor opens on when nothing has been pointed at yet: the player's Grid Nexus — its
+ * centre tile, the way the cursor points at every structure (owner, 2026-09-29, feedback F30: "or on
+ * top of the nexus by default"). Found by the Nexus flag on its content definition, never by an id;
+ * `null` for a map with no Nexus standing on it.
+ */
+export function nexusTile(context: Pick<BuildContext, "registry" | "standing">): Coord | null {
+  const nexus = context.standing.find((structure) => context.registry.get(structure.contentId).nexus === true)
+  if (nexus === undefined) return null
+  const centre = footprintCentre(context.registry.get(nexus.contentId).footprint)
+  return { x: nexus.anchor.x + centre.x, y: nexus.anchor.y + centre.y }
+}
+
+/**
  * What the plan has cost so far, summed from the plan itself rather than tracked beside it. Two
  * numbers that have to agree are one number too many: a stored total drifts the first time a code
  * path removes a placement and forgets to refund, and that is exactly the bug a Build Phase would
@@ -248,14 +282,15 @@ export function createBuildState(
     camera: followCursor({ x: 0, y: 0 }, start, viewport, context.grid, marginOf({ debug, viewport })),
     viewport,
     armed: null,
-    exploreMap: debug.startFocus === "grid",
+    origin: "menu",
+    armGhost: false,
+    exploreMap: false,
     ack: null,
     refusedTry: null,
     nudged: false,
-    // The menu, on its first entry — the side panel is where the owner's eyes went first (2026-09-26),
-    // and since feedback F23 the first entry is Explore Map. Whether the screen should rather open on
-    // the map is a guess gate 5F left open, and a Debug Mode flag: on the map, it opens in Explore Map.
-    focus: debug.startFocus,
+    // The menu, on its first entry, Explore Map (owner, 2026-09-29, feedback F31: "When the build mode
+    // is launched, the focus should be on the Menu, at the Explore Map option").
+    focus: "menu",
     menuHighlight: EXPLORE_ENTRY,
     highlightHidden: false,
     overlay: null,
@@ -470,38 +505,45 @@ export function legalityAt(
 }
 
 /**
- * **The smart cursor** (Q55, gate 5F): the tile a menu-driven arm puts the cursor on, so the owner's
- * own keyboard flow — "down, down, space, place, space, place" — lays out a tidy row without an arrow
- * key. A pure function of the plan, so the reducer owns it and the driver can assert it; `null` when
- * nowhere on the Grid will take the structure, and the cursor then stays where it is.
+ * Where arming puts the cursor (owner, 2026-09-29, feedback F30 — replacing gate 5F's smart cursor,
+ * which put it beside the last thing planned): **where the cursor already is**, whenever the building
+ * can go there, so a player who found a good spot and pressed the building's key places it there.
+ * Otherwise the nearest spot within `ARM_SEARCH_TILES` of the cursor along each axis where it can:
  *
- * The rule, in the order it is tried:
+ * 1. first among spots that leave **one free tile** between it and every other structure — "leaving
+ *    1 space with the previous building if possible" (rock and the map's edge may touch it; only
+ *    structures need the gap);
+ * 2. then, when no such spot is in reach, among spots that merely fit, touching or not.
  *
- * 1. **Beside the last thing planned** — or, before anything is, the player's Grid Nexus (a flag on
- *    its content definition, never an id) — **one tile apart and aligned with it**: to the east or
- *    west sharing its top row, to the south or north sharing its left column. The four sides are
- *    tried nearest-the-Grid's-centre first ("toward the centre of the map"), ties in the order east,
- *    south, west, north.
- * 2. Otherwise **the nearest spot anywhere** that still leaves a free tile around it: nearest by the
- *    gap between the two footprints, then by distance from the Grid's centre, then north before
- *    south and west before east — a total order, so there is exactly one answer.
- * 3. Otherwise the same search without the free tile around it.
+ * "Nearest" is the straight-line distance the cursor moves; ties go to the more horizontal move
+ * (smaller vertical distance), then east before west, then south before north — a total order, so
+ * there is exactly one answer, and a pure function of the plan and the cursor, so the reducer owns it
+ * and a driver can assert it. **Never chosen from the last building placed**: the typical run — place
+ * a Barracks, press its key again — finds the spot nearest the cursor, which is sitting on the new
+ * Barracks, so the next one lands a gap away from it.
  *
- * Affordability is not a tile question and is left out: a structure the player cannot afford still
- * lands somewhere it would fit, and the status line says what it costs (engine.md 9.2's order —
- * affordability first — is about what the *refusal* says, not about where to look).
+ * `found: false` when nothing within reach fits: the cursor then steps one tile right and one down,
+ * so the player sees something happened, and the preview is drawn as the building rather than the
+ * refusal (`BuildState.armGhost`).
+ *
+ * Affordability is not a tile question and is left out: an unaffordable row is refused before it is
+ * armed (`armItem`).
  */
-export function smartCursorTile(
+export type ArmingSpot = Readonly<{ tile: Coord; found: boolean }>
+
+export function armingSpot(
   context: BuildContext,
   planned: readonly PlannedPlacement[],
   contentId: string,
-  fallback: Coord,
-): Coord | null {
+  cursor: Coord,
+): ArmingSpot {
   const footprint = context.registry.get(contentId).footprint
   const size = footprintExtent(footprint)
+  const offset = footprintCentre(footprint)
   const claimed = claimedTiles(context, planned)
   const { grid } = context
 
+  const anchorOf = (tile: Coord): Coord => ({ x: tile.x - offset.x, y: tile.y - offset.y })
   const fits = (anchor: Coord): boolean => {
     for (const tile of tilesOf(anchor, footprint)) {
       if (!inBounds(grid, tile)) return false
@@ -511,8 +553,7 @@ export function smartCursorTile(
     }
     return true
   }
-  // "One tile free between structures": nothing already claimed on the ring around the footprint's
-  // bounding box. Rock and the Grid's own edge may touch it — only structures need the gap.
+  // One free tile between structures: nothing claimed on the ring around the footprint's box.
   const spaced = (anchor: Coord): boolean => {
     for (let y = anchor.y - 1; y <= anchor.y + size.height; y += 1) {
       for (let x = anchor.x - 1; x <= anchor.x + size.width; x += 1) {
@@ -522,67 +563,32 @@ export function smartCursorTile(
     return true
   }
 
-  const last = planned.reduce<PlannedPlacement | null>(
-    (latest, placement) => (latest === null || placement.ordinal > latest.ordinal ? placement : latest),
-    null,
-  )
-  const nexus = context.standing.find((structure) => context.registry.get(structure.contentId).nexus === true)
-  const origin = last ?? nexus ?? null
-  const originAnchor = origin?.anchor ?? fallback
-  const originSize =
-    origin === null ? { width: 1, height: 1 } : footprintExtent(context.registry.get(origin.contentId).footprint)
-  const centre = { x: (grid.width - 1) / 2, y: (grid.height - 1) / 2 }
-  const cursorFor = (anchor: Coord): Coord => {
-    const offset = footprintCentre(footprint)
-    return { x: anchor.x + offset.x, y: anchor.y + offset.y }
-  }
+  if (fits(anchorOf(cursor))) return { tile: cursor, found: true }
 
-  // 1. Aligned with the origin, one tile apart, the side facing the centre first.
-  const toCentre = {
-    x: centre.x - (originAnchor.x + (originSize.width - 1) / 2),
-    y: centre.y - (originAnchor.y + (originSize.height - 1) / 2),
-  }
-  const sides = [
-    { score: toCentre.x, anchor: { x: originAnchor.x + originSize.width + 1, y: originAnchor.y } },
-    { score: toCentre.y, anchor: { x: originAnchor.x, y: originAnchor.y + originSize.height + 1 } },
-    { score: -toCentre.x, anchor: { x: originAnchor.x - size.width - 1, y: originAnchor.y } },
-    { score: -toCentre.y, anchor: { x: originAnchor.x, y: originAnchor.y - size.height - 1 } },
-  ]
-  // `sort` is stable, so equal scores keep the east, south, west, north order written above.
-  sides.sort((a, b) => b.score - a.score)
-  for (const side of sides) {
-    if (fits(side.anchor) && spaced(side.anchor)) return cursorFor(side.anchor)
-  }
-
-  // 2 and 3. The nearest spot anywhere, first with the free ring and then without it.
-  const gapTo = (anchor: Coord): number => {
-    const dx = Math.max(0, originAnchor.x - (anchor.x + size.width), anchor.x - (originAnchor.x + originSize.width))
-    const dy = Math.max(0, originAnchor.y - (anchor.y + size.height), anchor.y - (originAnchor.y + originSize.height))
-    return Math.max(dx, dy)
-  }
-  const fromCentre = (anchor: Coord): number => {
-    const dx = anchor.x + (size.width - 1) / 2 - centre.x
-    const dy = anchor.y + (size.height - 1) / 2 - centre.y
-    return dx * dx + dy * dy
+  // The order candidates are ranked in: distance, then the more horizontal move, then east, then
+  // south. Written as a comparison of the move (dx, dy) alone, so the answer cannot depend on the
+  // order the square is scanned in.
+  const better = (a: Coord, b: Coord): boolean => {
+    const da = a.x * a.x + a.y * a.y
+    const db = b.x * b.x + b.y * b.y
+    if (da !== db) return da < db
+    if (Math.abs(a.y) !== Math.abs(b.y)) return Math.abs(a.y) < Math.abs(b.y)
+    if (a.x !== b.x) return a.x > b.x
+    return a.y > b.y
   }
   for (const needSpace of [true, false]) {
-    let best: Readonly<{ anchor: Coord; gap: number; distance: number }> | null = null
-    for (let y = 0; y + size.height <= grid.height; y += 1) {
-      for (let x = 0; x + size.width <= grid.width; x += 1) {
-        const anchor = { x, y }
+    let best: Coord | null = null
+    for (let dy = -ARM_SEARCH_TILES; dy <= ARM_SEARCH_TILES; dy += 1) {
+      for (let dx = -ARM_SEARCH_TILES; dx <= ARM_SEARCH_TILES; dx += 1) {
+        const anchor = anchorOf({ x: cursor.x + dx, y: cursor.y + dy })
         if (!fits(anchor) || (needSpace && !spaced(anchor))) continue
-        const gap = gapTo(anchor)
-        const distance = fromCentre(anchor)
-        // Rows are scanned north to south and west to east, so a strict comparison keeps the first
-        // of any exact tie — the "north before south, west before east" of the rule above.
-        if (best === null || gap < best.gap || (gap === best.gap && distance < best.distance)) {
-          best = { anchor, gap, distance }
-        }
+        const move = { x: dx, y: dy }
+        if (best === null || better(move, best)) best = move
       }
     }
-    if (best !== null) return cursorFor(best.anchor)
+    if (best !== null) return { tile: { x: cursor.x + best.x, y: cursor.y + best.y }, found: true }
   }
-  return null
+  return { tile: clampToGrid({ x: cursor.x + 1, y: cursor.y + 1 }, grid), found: false }
 }
 
 /**
@@ -703,7 +709,7 @@ function acknowledge(state: BuildState, kind: Ack["kind"], entry: number): Ack {
 }
 
 /** Gives the keyboard to the menu. A structure is armed only while the Grid has focus, so this
- *  disarms, and the Explore Map panel — a Grid-side view — gives way to the menu with it. */
+ *  disarms, and Explore Map — a Grid-side view — gives way to the menu with it. */
 function toMenu(state: BuildState): BuildState {
   return { ...state, focus: "menu", armed: null, exploreMap: false }
 }
@@ -714,27 +720,29 @@ function revealHighlight(state: BuildState): BuildState {
   return { ...state, highlightHidden: false }
 }
 
-/** Gives the keyboard to the Grid in Explore Map: nothing armed, the panel following the cursor. */
-function toGridExploring(state: BuildState): BuildState {
-  return { ...state, focus: "grid", armed: null, exploreMap: true }
+/** Gives the keyboard to the Grid in **plain navigation**: nothing armed, no Explore Map — the bare
+ *  cursor with the menu drawn beside it. Where Tab, a second Right, a click on the map and finishing
+ *  something begun on the map all arrive (owner, 2026-09-29, feedback F30). */
+function toMap(state: BuildState): BuildState {
+  return { ...state, focus: "grid", armed: null, exploreMap: false }
+}
+
+/** Finishing what the Grid was doing — a placement, or Esc while placing or exploring: back to where
+ *  it was started from (`BuildState.origin`), one level. */
+function backToOrigin(state: BuildState): BuildState {
+  return state.origin === "grid" ? toMap(state) : toMenu(state)
 }
 
 /**
  * Arms catalog row `index`: the one path a digit, the menu's own Enter/Space and a click on the row
  * share. Focus moves to the Grid, where the placing happens, and the menu highlight follows the row.
- * Only a menu-driven arm moves the cursor (Q55): a digit is the fast path of a player already pointing
- * somewhere. **A click moves it only when the menu had the keyboard** (feedback F22): a player who was
- * working the map with the mouse and clicks a building wants its ghost where they were looking — on
- * screen, since the view always follows the cursor — not carried back to the base; a click with the
- * menu already in hand is Enter's twin and uses the smart cursor as Enter does. A row that costs more
- * than is left is refused here, with the reason, rather than armed to be refused later.
+ * `from` is where it was started — the menu (Enter/Space or a click on the row, or a digit while the
+ * menu had the keyboard) or the map (a digit there) — and is where a placement or Esc goes back to.
+ * The cursor stays where it is when the building can go there, and otherwise moves to the nearest
+ * spot that can take it (`armingSpot`, feedback F30). A row that costs more than is left is refused
+ * here, with the reason, rather than armed to be refused later.
  */
-function armItem(
-  context: BuildContext,
-  state: BuildState,
-  index: number,
-  from: "menu" | "hotkey" | "click",
-): BuildState {
+function armItem(context: BuildContext, state: BuildState, index: number, from: Focus): BuildState {
   const lock = editLock(state)
   if (lock !== null) return { ...state, status: lock }
   const item = context.catalog[index]
@@ -754,32 +762,35 @@ function armItem(
   const armed: BuildState = {
     ...state,
     armed: index,
+    origin: from,
     focus: "grid",
     exploreMap: false,
     menuHighlight: entry,
     ack: acknowledge(state, "pressed", entry),
   }
-  const fromMenu = from === "menu" || (from === "click" && state.focus === "menu")
-  const smart =
-    fromMenu && state.debug.smartCursor
-      ? smartCursorTile(context, state.planned, item.contentId, state.cursor)
-      : null
-  const moved = smart === null ? armed : withCursor(context, armed, smart)
-  return { ...moved, status: status(`${item.label} selected - ${item.cost} to build.`) }
+  const spot = armingSpot(context, state.planned, item.contentId, state.cursor)
+  const moved = withCursor(context, armed, spot.tile)
+  if (!spot.found) {
+    return {
+      ...moved,
+      armGhost: true,
+      status: status(`${item.label} selected - no room within ${ARM_SEARCH_TILES} tiles, move to find one.`, "warning"),
+    }
+  }
+  return { ...moved, armGhost: false, status: status(`${item.label} selected - ${item.cost} to build.`) }
 }
 
-/** Enter/Space (or a click) on menu entry `entry`: whatever it is for. */
+/** Enter/Space (or a click) on menu entry `entry`: whatever it is for. Both are the menu's own, so
+ *  whatever they start goes back to the menu when it is done. */
 function activateEntry(context: BuildContext, state: BuildState, entry: number, by: "key" | "click"): BuildState {
   const target = menuEntries(context)[entry]
   if (target === undefined) return state
   const highlighted: BuildState = { ...state, menuHighlight: entry }
-  if (target.kind === "construct") {
-    return armItem(context, highlighted, target.index, by === "click" ? "click" : "menu")
-  }
+  if (target.kind === "construct") return armItem(context, highlighted, target.index, "menu")
   // A click on the Nexus entry puts focus where it landed, on the menu, before the popup takes the
   // keyboard — so the pick hands the player back to the menu, not to a building they had armed.
   if (target.kind === "nexus") return openNexus(by === "click" ? toMenu(highlighted) : highlighted)
-  return explore(highlighted)
+  return openExplore(highlighted, "menu")
 }
 
 /** `n`, or the Nexus entry: open its popup. Its row flashes "pressed", however it was reached — a
@@ -790,16 +801,32 @@ function openNexus(state: BuildState): BuildState {
   return { ...opened, menuHighlight: NEXUS_ENTRY, ack: acknowledge(state, "pressed", NEXUS_ENTRY) }
 }
 
-/** `e`, or the Explore Map entry: the Grid with nothing armed, and the side panel showing what is
- *  under the cursor (feedback F23). */
-function explore(state: BuildState): BuildState {
+/** `e`, the Explore Map entry, or Enter/Space in plain navigation: the Grid with nothing armed, and
+ *  the side panel showing what is under the cursor (feedback F23). `from` is where Esc, `e` again or
+ *  a click on its row go back to. */
+function openExplore(state: BuildState, from: Focus): BuildState {
   if (state.overlay !== null || state.committed) return state
   return {
-    ...toGridExploring(state),
+    ...state,
+    focus: "grid",
+    armed: null,
+    exploreMap: true,
+    origin: from,
     menuHighlight: EXPLORE_ENTRY,
     ack: acknowledge(state, "pressed", EXPLORE_ENTRY),
-    status: status("Explore Map - arrows look around, esc back to the menu."),
+    status: EXPLORE_STATUS,
   }
+}
+
+/** What the status line says while Explore Map is open — and stops saying when it closes. */
+const EXPLORE_STATUS = status("Explore Map - arrows look around, e or esc to go back.")
+
+/** `e`: Explore Map is a toggle — open it from wherever the keyboard is, or, open, go back one level
+ *  exactly as Esc does (owner, 2026-09-29, feedback F32: "Pressing [e] again, or [esc], should be
+ *  equivalent"). */
+function toggleExplore(context: BuildContext, state: BuildState): BuildState {
+  if (exploring(state) && state.overlay === null) return cancel(context, state)
+  return openExplore(state, state.focus)
 }
 
 function openOverlay(state: BuildState, overlay: Overlay): BuildState {
@@ -859,10 +886,11 @@ function place(context: BuildContext, state: BuildState): BuildState {
     planned: [...state.planned, { ordinal: state.nextOrdinal, contentId: item.contentId, anchor }],
     nextOrdinal: state.nextOrdinal + 1,
   }
-  // Back to the menu, always (owner, 2026-09-27 — answering Q57): the menu orchestrates the Build
-  // Phase, and the Grid cursor is for placing and exploring. Disarms with it.
+  // Back to where the arming came from, disarmed (owner, 2026-09-29, feedback F30, refining Q57's
+  // "always the menu"): a building armed on the map leaves the keyboard on the map in plain
+  // navigation, the cursor on what was just placed; one armed from the menu goes back to the menu.
   return {
-    ...toMenu(placed),
+    ...backToOrigin(placed),
     status: status(`${item.label} placed (resources: ${remaining(context, placed)}) - [u] undo`, "success"),
   }
 }
@@ -882,8 +910,12 @@ function cancel(context: BuildContext, state: BuildState): BuildState {
   if (state.overlay !== null) return { ...state, overlay: null, overlayUnder: [] }
   if (state.committed) return openOverlay(state, "menu")
   if (state.focus === "grid") {
-    const wasArmed = state.armed !== null
-    return { ...toMenu(state), status: wasArmed ? status("Cancelled.") : state.status }
+    // Placing or exploring: back one level, to where it was started from. Plain navigation: to the
+    // menu.
+    if (state.armed !== null) return { ...backToOrigin(state), status: status("Cancelled.") }
+    if (!state.exploreMap) return toMenu(state)
+    const back = backToOrigin(state)
+    return state.status === EXPLORE_STATUS ? { ...back, status: NO_STATUS } : back
   }
   void context
   return openOverlay(state, "menu")
@@ -1034,12 +1066,17 @@ export function applyBuildCommand(
 ): BuildState {
   // A Right on the menu that only flickered arms the next Right to move focus; anything else between
   // the two cancels that.
-  const base: BuildState =
+  const unnudged: BuildState =
     state.nudged && !(command.kind === "nudge" && command.direction === "right") ? { ...state, nudged: false } : state
+  // The arming ghost (feedback F30) lasts until the player moves the cursor or tries to place.
+  const moves = command.kind === "move-cursor" || command.kind === "click-tile" || command.kind === "place"
+  const base: BuildState = moves && unnudged.armGhost ? { ...unnudged, armGhost: false } : unnudged
   const applied = applyCommand(context, base, command)
+  // Nothing armed, nothing to draw as a ghost.
+  const unghosted = applied.armed === null && applied.armGhost ? { ...applied, armGhost: false } : applied
   // Whatever closed the popup — a click outside it, a pick, an answer — closed the ones under it too;
   // and a message's words go with it.
-  const closed = applied.overlay === null && applied.overlayUnder.length > 0 ? { ...applied, overlayUnder: [] } : applied
+  const closed = unghosted.overlay === null && unghosted.overlayUnder.length > 0 ? { ...unghosted, overlayUnder: [] } : unghosted
   const next = closed.overlay !== "message" && closed.message !== null ? { ...closed, message: null } : closed
   return warnIfRestartNeeded(base, next)
 }
@@ -1069,13 +1106,15 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // what places. Checked against `state.cursor` (tile identity), never the click's screen cell.
       const confirming =
         state.focus === "grid" && state.armed !== null && target.x === state.cursor.x && target.y === state.cursor.y
-      // A click on the Grid is attention on the Grid: it takes keyboard focus there too. Armed, it
-      // never scrolls the view (Q58), so a second click lands on the tile the preview is on.
-      // With nothing armed it only moves the cursor: in Explore Map the panel follows it; from the menu
-      // the menu stays drawn, so the next click can arm a building from it (feedback F22).
+      // A click on the Grid is attention on the Grid: it takes keyboard focus there too. With nothing
+      // armed it only moves the cursor: in Explore Map the panel follows it; from the menu it arrives
+      // in plain navigation with the menu still drawn, so the next click can arm a building from it
+      // (feedback F22).
       const moved = { ...withCursor(context, state, target, clickCameraMove(context, state)), focus: "grid" as const }
       if (!confirming) return moved
-      // Placed by the mouse, back on the menu with nothing looking chosen (feedback F22).
+      // Placed by the mouse: back where the arming came from — for a building clicked on the menu,
+      // the menu with nothing looking chosen (feedback F22, F30: "get back to the menu, focused but
+      // unselected").
       const placed = place(context, moved)
       return placed.focus === "menu" ? { ...placed, highlightHidden: true } : placed
     }
@@ -1087,16 +1126,19 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
         if (state.overlay === "confirm-commit") return { ...state, overlay: null, status: status("Cancelled.") }
         return { ...toMenu({ ...state, overlay: null }), menuHighlight: command.entry, highlightHidden: true }
       }
-      // The Explore Map panel covers the menu, so the row under this click was not drawn: the click
-      // gives the menu back and chooses nothing.
-      if (exploring(state)) return { ...toMenu(state), highlightHidden: true }
+      // Explore Map covers the menu below its own row: a click on that row — drawn active — closes it,
+      // as Esc and `e` do (feedback F32), and so does a click anywhere else on the panel, where the
+      // row under the click was not drawn: it chooses nothing. Either way the menu is drawn again.
+      if (exploring(state)) return { ...cancel(context, state), highlightHidden: true }
       // Otherwise a click activates what it lands on, whatever had focus (feedback F22): a building
       // arms at once, its ghost at the cursor; Nexus opens its popup; Explore Map opens the map.
       return { ...activateEntry(context, state, command.entry, "click"), highlightHidden: true }
     }
 
     case "arm":
-      return armItem(context, state, command.index, "hotkey")
+      // A digit is the menu's when the menu has the keyboard, and the map's when the map does: where
+      // the placement, or Esc, will go back to.
+      return armItem(context, state, command.index, state.focus)
 
     case "place": {
       // Placed by the keyboard: back on the menu with its highlight showing, for the next key.
@@ -1105,9 +1147,9 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     }
 
     case "inspect":
-      // Enter/Space on the map a click opened: Explore Map, as `[e]` would.
-      if (state.focus !== "grid" || state.armed !== null) return state
-      return explore(state)
+      // Enter/Space in plain navigation: Explore Map, begun on the map. Already open, nothing more.
+      if (state.focus !== "grid" || state.armed !== null || state.exploreMap) return state
+      return openExplore(state, "grid")
 
     case "remove": {
       const lock = editLock(state)
@@ -1166,8 +1208,8 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
 
     case "focus":
       if (state.overlay !== null || state.committed || state.focus === command.target) return state
-      // To the Grid, Tab arrives in Explore Map (feedback F23): the one Grid mode with nothing armed.
-      return command.target === "menu" ? { ...toMenu(state), highlightHidden: false } : toGridExploring(state)
+      // To the Grid, Tab arrives in plain navigation (feedback F30) — Explore Map is `e`'s.
+      return command.target === "menu" ? { ...toMenu(state), highlightHidden: false } : toMap(state)
 
     case "highlight": {
       if (state.overlay === "settings") return { ...state, overlayHighlight: stepSettingsRow(state.overlayHighlight, command.delta) }
@@ -1216,7 +1258,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       if (state.overlay === "settings") return stepHighlighted(context, state, command.direction === "right" ? 1 : -1, false)
       if (state.focus !== "menu" || state.overlay !== null || state.committed) return state
       if (state.highlightHidden) return revealHighlight(state)
-      if (command.direction === "right" && state.nudged) return { ...toGridExploring(state), nudged: false }
+      if (command.direction === "right" && state.nudged) return { ...toMap(state), nudged: false }
       return {
         ...state,
         nudged: command.direction === "right",
@@ -1228,7 +1270,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return openNexus(state)
 
     case "explore":
-      return explore(state)
+      return toggleExplore(context, state)
 
     case "open-settings":
       return openSettings(state, command.section)

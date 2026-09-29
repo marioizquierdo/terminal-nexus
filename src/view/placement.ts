@@ -43,6 +43,10 @@ import { entityGlyph } from "./theme.ts"
 /** One planned placement still animating: which one, and how long ago it was placed. */
 export type PlacementClock = Readonly<{ ordinal: number; elapsedMs: number }>
 
+/** A building that just left the plan (undone or removed), still throwing its sparks: which one, where
+ *  it stood, and how long ago it went (feedback F33). */
+export type RemovalClock = PlacedStructure & Readonly<{ elapsedMs: number }>
+
 export type PlacementTiming = Readonly<{
   /** How long the placement frames run; 0 when there are none to show. */
   framesMs: number
@@ -124,29 +128,56 @@ export function placementFollowUps(placement: PlacedStructure, footprint: Footpr
       },
     })
   }
-  if (flags.placeParticles !== "off") {
-    const count = PLACE_PARTICLE_COUNTS[flags.placeParticles]
-    followUps.push({
-      kind: "effect",
-      effect: {
-        recipe: "fx.sparks.burst",
-        band: "effects",
-        durationMs: glowMs,
-        origin: placement.anchor,
-        family: "neutral",
-        params: {
-          width,
-          height,
-          count,
-          reach: count > PLACE_PARTICLE_COUNTS.few ? 3 : 2,
-          palette: rainbow ? "rainbow" : "sparks",
-          key: placement.contentId,
-          id: placement.ordinal,
-        },
-      },
-    })
-  }
+  const sparks = sparksFollowUp(placement, footprint, flags, glowMs, placement.contentId)
+  if (sparks !== null) followUps.push(sparks)
   return followUps
+}
+
+/**
+ * The burst of sparks around a footprint, `glowMs` long — a placement's, and a removal's (feedback
+ * F33) — or `null` when Debug Mode's "Particles" is off. `key` is the identity its scatter hashes, with
+ * the placement's ordinal: a placement and the removal of the same building throw different sparks.
+ */
+function sparksFollowUp(placement: PlacedStructure, footprint: Footprint, flags: DebugFlags, glowMs: number, key: string): FollowUp | null {
+  if (flags.placeParticles === "off" || glowMs <= 0) return null
+  const { width, height } = footprintExtent(footprint)
+  const count = PLACE_PARTICLE_COUNTS[flags.placeParticles]
+  return {
+    kind: "effect",
+    effect: {
+      recipe: "fx.sparks.burst",
+      band: "effects",
+      durationMs: glowMs,
+      origin: placement.anchor,
+      family: "neutral",
+      params: {
+        width,
+        height,
+        count,
+        reach: count > PLACE_PARTICLE_COUNTS.few ? 3 : 2,
+        palette: flags.placeLight === "rainbow" ? "rainbow" : "sparks",
+        key,
+        id: placement.ordinal,
+      },
+    },
+  }
+}
+
+/**
+ * **A planned building removed** — by undo, or Backspace/Delete (owner, 2026-09-29, feedback F33:
+ * "Canceling a placed building should also have spark effect"): no frames, the building is gone at
+ * once, and the same burst of sparks a placement throws flies off where it stood, for the same "Glow
+ * time" and "Particles". Reduced motion keeps the burst's own still form, as a placement's does. Like
+ * a placement, it is presentation alone: the live loop notes when an ordinal left the plan and hands
+ * the view "this one, removed this long ago"; the plan never learns it.
+ */
+export function removalSchedule(placement: PlacedStructure, footprint: Footprint, flags: DebugFlags, reducedMotion: boolean): TrackSchedule {
+  const glowMs = placementTiming(flags, reducedMotion).glowMs
+  const sparks = sparksFollowUp(placement, footprint, flags, glowMs, `remove:${placement.contentId}`)
+  // An animation with no frames completes the moment it plays, so its follow-up starts at once.
+  return scheduleTrack([
+    play(animationOf(`remove:${placement.contentId}`, [], 0), 0, { then: sparks === null ? [] : [sparks] }),
+  ])
 }
 
 /** The one request a placement makes of its track: play its frames at `atMs`, then light and sparks. */

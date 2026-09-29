@@ -394,8 +394,12 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   // does, so a plan laid inside the margin is the same plan by both, but not the same camera.
   for (let step = 0; step < 12; step += 1) byKeyboard.build.handleData(`${ESC}[C`, byKeyboard.layout)
   byKeyboard.build.handleData("\r", byKeyboard.layout)
-  byKeyboard.build.handleData("1", byKeyboard.layout) // placing handed the keyboard to the menu
+  // Placing handed the keyboard back to the menu, where the arming came from. The cursor is on the
+  // new Barracks, so arming another moves it to the nearest spot with a free tile around it — one
+  // below, at 30,16 (feedback F30) — and four right and three up take it to 34,13.
+  byKeyboard.build.handleData("1", byKeyboard.layout)
   for (let step = 0; step < 4; step += 1) byKeyboard.build.handleData(`${ESC}[C`, byKeyboard.layout)
+  for (let step = 0; step < 3; step += 1) byKeyboard.build.handleData(`${ESC}[A`, byKeyboard.layout)
   byKeyboard.build.handleData("\r", byKeyboard.layout)
   byKeyboard.build.handleData("p", byKeyboard.layout)
   byKeyboard.build.handleData("y", byKeyboard.layout)
@@ -427,7 +431,8 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
     { kind: "move-cursor", dx: 12, dy: 0 },
     { kind: "place" },
     { kind: "arm", index: 0 },
-    { kind: "move-cursor", dx: 4, dy: 0 },
+    ...Array.from({ length: 4 }, (): BuildCommand => ({ kind: "move-cursor", dx: 1, dy: 0 })),
+    ...Array.from({ length: 3 }, (): BuildCommand => ({ kind: "move-cursor", dx: 0, dy: -1 })),
     { kind: "place" },
     { kind: "commit" },
     { kind: "confirm-commit", accept: true },

@@ -9,8 +9,7 @@
 //
 // Where each flag is read:
 //
-// - `smartCursor`, `scrollMargin`, `startFocus`, `clickScroll`, `clickZone`, `armedClickScrolls` and
-//   `fastRecentres` change what a command does, so the reducer reads them from the state it is handed
+// - `scrollMargin`, `clickScroll`, `clickZone`, `armedClickScrolls` and `fastRecentres` change what a command does, so the reducer reads them from the state it is handed
 //   — never from a global — and a driver script replays them exactly;
 // - the step sizes and key timings (`tapStep` through `jumpRepeatMs`, gate 5H, reworked after the
 //   owner's 2026-09-28 playtest) decide how big a move the input path sends: the session's held-key
@@ -30,8 +29,6 @@
 //
 // None of them reaches the simulation kernel (`src/pulse`, `src/state`): a Build Phase plan is a plan
 // on a screen until the Pulse, and nothing here is part of it.
-
-import type { Focus } from "./types.ts"
 
 /**
  * What a click on the map does to the view while nothing is armed (feedback F6, gate 5H):
@@ -105,10 +102,6 @@ export type DebugFlags = Readonly<{
   /** How long a lone Esc at the end of a read waits for the rest of a key sequence before it counts
    *  as Esc, in milliseconds; 0 is not at all. */
   escTimeoutMs: number
-  /** Q55: arming from the menu moves the cursor beside the last thing planned. */
-  smartCursor: boolean
-  /** Which half of the screen has the keyboard when the Build Phase opens — a guess gate 5F made. */
-  startFocus: Focus
   /** How long a menu row's "pressed" flash lasts, in milliseconds. */
   pressedFlashMs: number
   /** How long a menu row's "refused" flicker lasts, in milliseconds. */
@@ -347,25 +340,6 @@ export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
     format: millis,
   },
   {
-    field: "smartCursor",
-    label: "Smart cursor",
-    applies: "now",
-    question:
-      "Picking a building from the menu puts the cursor beside the last thing you planned. Off: it stays put. (Q55)",
-    values: [true, false],
-    cycles: true,
-    format: onOff,
-  },
-  {
-    field: "startFocus",
-    label: "Opens on",
-    applies: "restart",
-    question: "Where the keyboard is when the Build Phase opens: the menu, or the map. Built as the menu, a guess.",
-    values: ["menu", "grid"],
-    cycles: true,
-    format: (value: Focus) => (value === "grid" ? "map" : "menu"),
-  },
-  {
     field: "pressedFlashMs",
     label: "Pressed flash",
     applies: "now",
@@ -420,17 +394,14 @@ export const DEFAULT_PLACEMENT = {
   placeLight: "light",
 } as const satisfies Partial<DebugFlags>
 
-/** The flags a screen opens with: what the context asks for (`--scroll-margin`, a test's
- *  `smartCursor: false`), and otherwise what gates 5F-5H built. */
-export function initialDebugFlags(
-  context: Readonly<{ scrollMargin?: number; smartCursor?: boolean }>,
-): DebugFlags {
+/** The flags a screen opens with: what the context asks for (`--scroll-margin`), and otherwise what
+ *  gates 5F-5K built. (The smart cursor's and "Opens on"'s flags were settled by the owner on
+ *  2026-09-29, feedback F30 and F31, and deleted.) */
+export function initialDebugFlags(context: Readonly<{ scrollMargin?: number }>): DebugFlags {
   return {
     ...DEFAULT_PLACEMENT,
     ...DEFAULT_MOVEMENT,
-    smartCursor: context.smartCursor ?? true,
     scrollMargin: context.scrollMargin ?? DEFAULT_SCROLL_MARGIN_PERCENT,
-    startFocus: "menu",
     pressedFlashMs: DEFAULT_FLASH_MS.pressed,
     refusedFlashMs: DEFAULT_FLASH_MS.refused,
   }

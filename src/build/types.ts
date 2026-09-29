@@ -61,28 +61,31 @@ export type BuildCommand =
    * - otherwise it moves focus to the Grid and the cursor to the tile; with a structure armed and the
    *   cursor *already* on that tile, it places (a second click on the same tile — Q52, compared by
    *   tile, never by screen position). With nothing armed it only moves the cursor: in Explore Map
-   *   the panel follows it; from the menu the menu stays drawn, so a mouse player who clicked around
-   *   the map can still click a building on it (feedback F22).
+   *   the panel follows it; from the menu it arrives in plain navigation, the menu still drawn, so a
+   *   mouse player who clicked around the map can still click a building on it (feedback F22).
    */
   | Readonly<{ kind: "click-tile"; x: number; y: number }>
   /**
    * A click on menu entry *n* (an index into `menuEntries`). **A click activates what it lands on**
    * (owner, 2026-09-28, feedback F22 — reversing the 2026-09-27 rule that a first click only
    * highlighted): a construct row arms at once and hands the mouse to the Grid with the ghost at the
-   * cursor, the Nexus entry opens its popup, Explore Map opens the map. Only the keyboard has a
+   * cursor, or the nearest spot that takes it; the Nexus entry opens its popup; Explore Map opens the
+   * map. All three are the menu's, so finishing them comes back to the menu. Only the keyboard has a
    * "highlighted, not yet chosen" state. Two exceptions, both about what the click could see: with a
-   * popup open it only closes the popup and brings focus to the menu; and while the Explore Map panel
-   * covers the menu it only gives the menu back, since the row it landed on was not drawn.
+   * popup open it only closes the popup and brings focus to the menu; and while Explore Map covers the
+   * menu, a click on its own row or anywhere else on the panel closes it, as Esc does — the row it
+   * landed on was not drawn, so it chooses nothing.
    */
   | Readonly<{ kind: "click-menu"; entry: number }>
-  /** Arm item *n* of the construct menu — its digit, from anywhere. Moves focus to the Grid and leaves
-   *  the cursor where it is: the fast path of a player already pointing. */
+  /** Arm item *n* of the construct menu — its digit, from anywhere. Moves focus to the Grid; the cursor
+   *  stays where it is when the building can go there, and otherwise moves to the nearest spot that
+   *  can take it (feedback F30). A placement or Esc goes back to whichever half had the keyboard. */
   | Readonly<{ kind: "arm"; index: number }>
   /** Place the armed structure at the cursor — Enter or Space on the Grid while something is armed. */
   | Readonly<{ kind: "place" }>
-  /** Enter or Space on the Grid with nothing armed: Explore Map, the side panel showing what is under
-   *  the cursor. Reached this way only from the map a mouse click opened with the menu still showing;
-   *  `[e]`, Tab and the menu entry arrive in Explore Map directly (feedback F23). */
+  /** Enter or Space on the Grid in plain navigation: Explore Map, the side panel showing what is under
+   *  the cursor, begun on the map — so Esc comes back to the map (feedback F30). Nothing, when Explore
+   *  Map is already open. */
   | Readonly<{ kind: "inspect" }>
   /** Remove the planned, uncommitted placement under the cursor — Backspace or Delete. */
   | Readonly<{ kind: "remove" }>
@@ -107,8 +110,9 @@ export type BuildCommand =
   | Readonly<{ kind: "commit" }>
   /** `y`/`n` (or a click on either) inside the start-the-Pulse popup. */
   | Readonly<{ kind: "confirm-commit"; accept: boolean }>
-  /** Tab, and a second Right on the menu: move keyboard focus. To the Grid it arrives in Explore Map;
-   *  to the menu it disarms (a building is armed only while the Grid has focus). */
+  /** Tab, and a second Right on the menu: move keyboard focus. To the Grid it arrives in plain
+   *  navigation (feedback F30); to the menu it disarms (a building is armed only while the Grid has
+   *  focus). */
   | Readonly<{ kind: "focus"; target: Focus }>
   /** Up/Down on the menu or inside a popup's list: move its highlight, wrapping at both ends. */
   | Readonly<{ kind: "highlight"; delta: -1 | 1 }>
@@ -119,8 +123,8 @@ export type BuildCommand =
   | Readonly<{ kind: "nudge"; direction: "left" | "right" }>
   /** `n`, or activating the Nexus entry: open the Nexus popup. */
   | Readonly<{ kind: "open-nexus-powers" }>
-  /** `e`, or activating the Explore Map entry: focus to the Grid with nothing armed, the side panel
-   *  showing what is under the cursor as it moves (feedback F23). */
+  /** `e`: Explore Map, a toggle — focus to the Grid with nothing armed, the side panel showing what is
+   *  under the cursor as it moves (feedback F23); with it open, back one level exactly as Esc (F32). */
   | Readonly<{ kind: "explore" }>
   /**
    * The Settings popup: the player's own settings, then Experiments (owner, 2026-09-28). `[s]` in the

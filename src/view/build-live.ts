@@ -4,7 +4,7 @@
 // and a test can drive it without waiting:
 //
 //   - **the view slides** (engine.md 3.3's "camera moves eased over a few frames"): whenever the
-//     state's camera changes — a click, an arrow at the margin, a Shift jump, arming with the smart
+//     state's camera changes — a click, an arrow at the margin, a Shift jump, arming that moved the
 //     cursor, anything — the drawn camera eases from wherever it was drawn toward it over Debug
 //     Mode's "View slide" milliseconds, whole tiles at a time, fast at first and settling at the end.
 //     Only a resize snaps (`snap`);
@@ -18,7 +18,9 @@
 //   - **a menu row flashes** "pressed" or flickers "refused" (gate 5F), for Debug Mode's durations;
 //   - **the cursor flashes** where a placement was just tried and refused (gate 5H);
 //   - **a building goes up** (gate 5I): each planned placement plays its frames, light and sparks
-//     for Debug Mode's "Build animation" and "Glow time", timed from the frame that first drew it.
+//     for Debug Mode's "Build animation" and "Glow time", timed from the frame that first drew it;
+//   - **a building comes down** (feedback F33): one that leaves the plan — undone, or removed with
+//     Backspace/Delete — throws the same sparks where it stood, timed from the first frame without it.
 //
 // `busyUntil` says whether anything is still moving, and until when: the live loop runs its frame
 // timer only while it is not `null`, and otherwise draws once per input, as the screen always has.
@@ -38,8 +40,8 @@ import type { BuildState } from "../build/state.ts"
 import { flashDuration } from "../build/debug.ts"
 import type { BuildFlash } from "./build.ts"
 import type { Footprint } from "../grid/types.ts"
-import type { PlacementClock } from "./placement.ts"
-import { placementRequest } from "./placement.ts"
+import type { PlacedStructure, PlacementClock, RemovalClock } from "./placement.ts"
+import { placementRequest, removalSchedule } from "./placement.ts"
 import { scheduleTrack, trackBusyAt } from "./animation.ts"
 import type { Point, Tween } from "./tween.ts"
 import { retarget, samePoint, still, tileAt, tweenActive, tweenEnd } from "./tween.ts"
@@ -53,6 +55,8 @@ export type LiveFrame = Readonly<{
   refusedFlash?: boolean
   /** Planned placements still going up, and how long ago each was placed (gate 5I). */
   placing?: readonly PlacementClock[]
+  /** Buildings that just left the plan, still throwing sparks, and how long ago each went (F33). */
+  removing?: readonly RemovalClock[]
   /** When the last thing still animating ends, or `null` when nothing is. */
   busyUntil: number | null
 }>
@@ -86,7 +90,10 @@ export class BuildAnimation {
    * under the same ordinal (a Debug Mode restart numbers the plan from 1 again) is a new target, with
    * a new track.
    */
-  private tracks = new Map<number, Readonly<{ key: string; playedAt: number | null }>>()
+  private tracks = new Map<number, Readonly<{ key: string; placement: PlacedStructure; playedAt: number | null }>>()
+  /** Buildings that left the plan while the screen was showing them, and when (feedback F33): kept
+   *  until their sparks settle. Presentation's own memory — the plan never hears of it. */
+  private removals: Readonly<{ placement: PlacedStructure; removedAt: number }>[] = []
   /** False until the first frame: whatever is already planned then was not placed just now. */
   private primed = false
 
@@ -134,17 +141,28 @@ export class BuildAnimation {
    * it produced — and forgotten the moment it leaves the plan, so an undo or a removal mid-animation
    * draws nothing at once, and a placement put back later starts over.
    */
-  placementsAt(state: BuildState, now: number, options: LiveOptions = {}): { placing: PlacementClock[]; until: number | null } {
+  placementsAt(
+    state: BuildState,
+    now: number,
+    options: LiveOptions = {},
+  ): { placing: PlacementClock[]; removing: RemovalClock[]; until: number | null } {
     const planned = new Map<number, BuildState["planned"][number]>()
     for (const placement of state.planned) {
       const key = `${placement.contentId}@${placement.anchor.x},${placement.anchor.y}`
       const seen = this.tracks.get(placement.ordinal)
       if (seen === undefined || seen.key !== key) {
-        this.tracks.set(placement.ordinal, { key, playedAt: this.primed ? now : null })
+        // The same ordinal under a different building (a restart numbers the plan from 1 again): the
+        // one it replaced has left the plan.
+        if (seen !== undefined) this.removals.push({ placement: seen.placement, removedAt: now })
+        this.tracks.set(placement.ordinal, { key, placement, playedAt: this.primed ? now : null })
       }
       planned.set(placement.ordinal, placement)
     }
-    for (const ordinal of [...this.tracks.keys()]) if (!planned.has(ordinal)) this.tracks.delete(ordinal)
+    for (const [ordinal, track] of [...this.tracks]) {
+      if (planned.has(ordinal)) continue
+      this.tracks.delete(ordinal)
+      this.removals.push({ placement: track.placement, removedAt: now })
+    }
     this.primed = true
 
     const reducedMotion = options.reducedMotion === true
@@ -159,7 +177,18 @@ export class BuildAnimation {
       placing.push({ ordinal, elapsedMs: now - track.playedAt })
       until = Math.max(until ?? 0, schedule.settlesAtMs)
     }
-    return { placing, until }
+
+    const removing: RemovalClock[] = []
+    this.removals = this.removals.filter(({ placement, removedAt }) => {
+      const footprint = options.footprintOf?.(placement.contentId) ?? ONE_TILE
+      const schedule = removalSchedule(placement, footprint, state.debug, reducedMotion)
+      const elapsedMs = now - removedAt
+      if (!trackBusyAt(schedule, elapsedMs)) return false
+      removing.push({ ...placement, elapsedMs })
+      until = Math.max(until ?? 0, removedAt + schedule.settlesAtMs)
+      return true
+    })
+    return { placing, removing, until }
   }
 
   /** Everything time-dependent the frame at `now` shows. */
@@ -194,7 +223,7 @@ export class BuildAnimation {
       }
     }
 
-    const { placing, until } = this.placementsAt(state, now, options)
+    const { placing, removing, until } = this.placementsAt(state, now, options)
     if (until !== null) ends.push(until)
 
     return {
@@ -203,6 +232,7 @@ export class BuildAnimation {
       ...(flash === undefined ? {} : { flash }),
       ...(refusedFlash ? { refusedFlash } : {}),
       ...(placing.length === 0 ? {} : { placing }),
+      ...(removing.length === 0 ? {} : { removing }),
       busyUntil: ends.length === 0 ? null : Math.max(...ends),
     }
   }

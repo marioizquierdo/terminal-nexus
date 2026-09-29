@@ -263,7 +263,7 @@ test("[e] shows the export in a popup, hands the same text to the adapter, and E
 test("the export lists changed experiments first with their defaults, then the settings, then the rest", () => {
   const snapshot: SettingsSnapshot = {
     settings: { ...DEFAULT_SETTINGS, theme: "light" },
-    experiments: { ...defaultExperiments(), placeLight: "rainbow", scrollMargin: 30, smartCursor: false },
+    experiments: { ...defaultExperiments(), placeLight: "rainbow", scrollMargin: 30, armedClickScrolls: false },
   }
   const text = formatSettingsExport(snapshot, "592f3cb")
   const lines = text.trimEnd().split("\n")
@@ -274,10 +274,10 @@ test("the export lists changed experiments first with their defaults, then the s
   const changed = lines.slice(3, changedEnd)
   assert.deepEqual(
     changed.map((line) => line.split(" ")[0]),
-    DEBUG_FIELDS.map((spec) => spec.field).filter((field) => ["placeLight", "scrollMargin", "smartCursor"].includes(field)),
+    DEBUG_FIELDS.map((spec) => spec.field).filter((field) => ["placeLight", "scrollMargin", "armedClickScrolls"].includes(field)),
   )
   assert.ok(changed.some((line) => line.startsWith("placeLight = rainbow  # Lighting, default light")))
-  assert.ok(changed.some((line) => line.startsWith("smartCursor = off  # Smart cursor, default on")))
+  assert.ok(changed.some((line) => line.startsWith("armedClickScrolls = off  # Armed click scrolls, default on")))
   assert.ok(lines.includes("theme = light  # Background"))
   assert.ok(lines.includes("# Experiments at their defaults"))
   assert.equal(lines.length, 2 + 1 + 3 + 1 + PLAYER_FIELDS.length + 1 + (DEBUG_FIELDS.length - 3))
@@ -298,8 +298,7 @@ test("an export read back gives exactly the settings and experiments it was made
       placeParticles: "many",
       scrollMargin: 12,
       clickScroll: "centre",
-      startFocus: "grid",
-      armedClickScrolls: true,
+      armedClickScrolls: false,
       easeMs: 0,
     },
   }
@@ -330,12 +329,12 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
   assert.equal(experiments.placeLight, "rainbow")
   assert.equal(experiments.scrollMargin, 30)
   assert.equal(experiments.placeFramesMs, 600)
-  assert.equal(experiments.startFocus, "grid")
-  assert.equal(experiments.smartCursor, false)
   assert.equal(experiments.easeMs, defaultExperiments().easeMs)
   assert.equal(experiments.clickScroll, defaultExperiments().clickScroll)
   assert.deepEqual(settings, { capability: "color256", theme: "light", glyphPack: "unicode", reducedMotion: true })
-  assert.deepEqual(result.ignored, ["retiredFlag=3", "easeMs=99999", "clickScroll=sideways"])
+  // "Opens on" and "Smart cursor" were settled and deleted (feedback F30, F31): an older export's
+  // lines for them are skipped like any retired name.
+  assert.deepEqual(result.ignored, ["retiredFlag=3", "easeMs=99999", "clickScroll=sideways", "startFocus=map", "smartCursor=off"])
   // Nothing readable at all is the base, unchanged.
   assert.deepEqual(parseSettingsExport("", base).snapshot, base)
   assert.deepEqual(parseSettingsExport("= = # nothing", base).snapshot, base)
@@ -388,9 +387,9 @@ test("--settings on the command line: settings over what is saved, and every exp
 })
 
 test("a Build Phase opened with imported experiments has them, and the playtest script's runner takes both halves", () => {
-  const side = session({ ...spikeContext(), experiments: { placeLight: "rainbow", startFocus: "grid" } })
+  const side = session({ ...spikeContext(), experiments: { placeLight: "rainbow", armedClickScrolls: false } })
   assert.equal(side.build.state.debug.placeLight, "rainbow")
-  assert.equal(side.build.state.focus, "grid", "a restart-only experiment applies from the first frame when imported")
+  assert.equal(side.build.state.debug.armedClickScrolls, false)
   const run = runBuildPlaytest({
     steps: parseKeyScript("d"),
     settings: { ...DEFAULT_SETTINGS, glyphPack: "unicode" },

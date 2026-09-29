@@ -141,7 +141,7 @@ test("a lone Esc waits a moment for the rest of a key: Esc then [A in the next r
   }, AFTER_ESC_TIMEOUT_MS)
   assert.deepEqual(exits, [])
   assert.ok(!stdout.lastWrite.includes("Back to the game"), "the split arrow was read as Esc")
-  assert.match(stdout.lastWrite, /cursor 18,12/, "the split arrow did not move the cursor up one tile")
+  assert.match(stdout.lastWrite, /cursor 18,9/, "the split arrow did not move the cursor up one tile") // from the Nexus
 })
 
 test("a right click never leaves the screen", async () => {

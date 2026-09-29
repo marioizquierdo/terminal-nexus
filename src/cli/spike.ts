@@ -257,6 +257,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
               ...(live.flash === undefined ? {} : { flash: live.flash }),
               ...(live.refusedFlash === true ? { refusedFlash: true } : {}),
               ...(live.placing === undefined ? {} : { placing: live.placing }),
+              ...(live.removing === undefined ? {} : { removing: live.removing }),
               reducedMotion: settings.reducedMotion,
             },
             settings.capability,

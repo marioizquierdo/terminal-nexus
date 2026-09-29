@@ -111,9 +111,9 @@ export function buildMouseCommand(
   if (event.button === MOUSE_WHEEL_UP) return { kind: "move-cursor", dx: 0, dy: -JUMP_TILES }
   if (event.button === MOUSE_WHEEL_DOWN) return { kind: "move-cursor", dx: 0, dy: JUMP_TILES }
   if (event.button !== MOUSE_LEFT) return null
-  // The Explore Map panel covers the menu, so the whole panel is one target — its `[esc]`, its title,
-  // anything on it — and what it does is give the menu back. Sent as the menu click it is, so a
-  // driver's `click-menu` in Explore Map means exactly the same (the reducer chooses nothing there).
+  // Explore Map covers the menu below its own row, so the whole panel is one target — its own row,
+  // drawn active, and the card under it — and what it does is close Explore Map, as Esc does. Sent as
+  // the menu click it is, so a driver's `click-menu` in Explore Map means exactly the same.
   if (ui.explorePanel === true && inPanel(layout, event.column, event.row)) {
     return { kind: "click-menu", entry: menuEntryAt(layout, catalog, event.column, event.row) ?? EXPLORE_ENTRY }
   }
