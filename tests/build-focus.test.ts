@@ -957,3 +957,13 @@ test("every construct row the menu draws is reachable by Up/Down", () => {
     assert.ok(barOn(side, line.row), `row ${line.index} is never highlighted`)
   }
 })
+
+test("undo and remove name the building the way the menu does", () => {
+  const run = runBuildPlaytest({ steps: parseKeyScript("Tab 1 Enter u") })
+  const last = run.frames.at(-1)
+  assert.ok(last !== undefined)
+  assert.match(last.state.status.text, /^Barracks undone, 40 back\.$/)
+  const removed = runBuildPlaytest({ steps: parseKeyScript("Tab 1 Enter Bksp") }).frames.at(-1)
+  assert.ok(removed !== undefined)
+  assert.match(removed.state.status.text, /^Barracks removed, 40 back\.$/)
+})

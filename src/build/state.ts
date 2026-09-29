@@ -465,6 +465,12 @@ export function shortName(context: BuildContext, contentId: string): string {
   return context.registry.get(contentId).short
 }
 
+/** A structure's name as the menu writes it ("Barracks"), for a sentence that starts with it; the
+ *  content's short name for anything the menu does not sell. */
+function displayName(context: BuildContext, contentId: string): string {
+  return context.catalog.find((row) => row.contentId === contentId)?.label ?? shortName(context, contentId)
+}
+
 /** What a catalog row costs, or 0 for content the catalog does not sell (the standing structures). */
 export function costOf(context: BuildContext, contentId: string): number {
   return context.catalog.find((row) => row.contentId === contentId)?.cost ?? 0
@@ -1166,7 +1172,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return {
         ...state,
         planned: state.planned.filter((placement) => placement.ordinal !== target.ordinal),
-        status: status(`${shortName(context, target.contentId)} removed, ${costOf(context, target.contentId)} back.`),
+        status: status(`${displayName(context, target.contentId)} removed, ${costOf(context, target.contentId)} back.`),
       }
     }
 
@@ -1178,7 +1184,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return {
         ...state,
         planned: state.planned.slice(0, -1),
-        status: status(`${shortName(context, last.contentId)} undone, ${costOf(context, last.contentId)} back.`),
+        status: status(`${displayName(context, last.contentId)} undone, ${costOf(context, last.contentId)} back.`),
       }
     }
 
