@@ -57,7 +57,11 @@ the order. The map's edge is not an Experiment: it is the map's own style (the s
 
 **Reproducing what the owner played**: he exports his settings (Settings, `e`) and pastes the text
 into the pull request; `--settings "<that text>"` starts the script from exactly those settings and
-experiments (the whole export, or just pairs: `--settings "placeLight=rainbow scrollMargin=25"`).
+experiments (the whole export, or just pairs: `--settings "placeLight=rainbow scrollMargin=25"`). The
+same key script can open the **live game** in a state: `./bin/terminal-nexus.ts --spike --keys "n 1 1
+Enter"` (and `#keys=` in the browser page's address) plays those keys through the real adapters
+before the player gets the keyboard — for a demo link, or to hand Mario the exact state a report is
+about.
 Unknown names and bad values are skipped and named on stderr.
 
 What a script cannot show is time between keys on the live screen — the view sliding, a flash, a

@@ -115,6 +115,7 @@ bun bin/grid.ts scenarios/citizen-mirror-skirmish --headless
 ./bin/terminal-nexus.ts --spike --scroll-margin 30 --capability monochrome   # margin: % of the view
 ./bin/terminal-nexus.ts --spike --settings "$(pbpaste)"   # start from an exported settings text
 ./bin/terminal-nexus.ts --spike --settings "placeLight=rainbow scrollMargin=25"
+./bin/terminal-nexus.ts --spike --keys "n 1 1 Enter"         # open already in a state: a power picked, a Barracks placed
 ```
 
 Pinned by Gate 1A, measured 2026-08-21:

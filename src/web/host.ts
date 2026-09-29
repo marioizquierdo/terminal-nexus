@@ -15,6 +15,7 @@
 // Built into one self-contained HTML file by `scripts/build-web.mjs`.
 
 import { runMenu } from "../cli/menu.ts"
+import type { PlaytestStep } from "../playtest/keys.ts"
 import { runSpike } from "../cli/spike.ts"
 import { watchPulse } from "../cli/watch.ts"
 import { buildTimeline } from "../cli/timeline.ts"
@@ -30,7 +31,7 @@ import { DEFAULT_PRESENTATION } from "../view/snapshot.ts"
 import { CanvasBackend } from "../view/backends/canvas.ts"
 import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, MOUSE_WHEEL_DOWN, MOUSE_WHEEL_UP } from "../build/mouse.ts"
-import { keyBytes } from "../playtest/keys.ts"
+import { keyBytes, parseKeyScript } from "../playtest/keys.ts"
 import { KEY_BAR, bytesForKeyPress, mouseBytes, withShift } from "./keys.ts"
 import grandBattle from "../../scenarios/grand-battle.map.json" with { type: "json" }
 import citizensVersusRavels from "../../scenarios/citizens-versus-ravels.map.json" with { type: "json" }
@@ -149,6 +150,21 @@ function importFromAddress(): void {
   settingsText.value = imported
 }
 
+/**
+ * A key script to open the Build Phase in a particular state — `#keys=<script>` in the address, in
+ * the scripted playtest's key names (`#keys=n%201%201%20Enter` picks a power and places a Barracks):
+ * how a demo link opens already where it should, as `--keys` does in a terminal.
+ */
+function keysFromAddress(): string | null {
+  const match = /(?:^#|&)keys=([^&]*)/u.exec(window.location.hash)
+  if (match === null) return null
+  try {
+    return decodeURIComponent(match[1] ?? "")
+  } catch {
+    return match[1] ?? ""
+  }
+}
+
 /** A tab never exits; a screen that ends just says so, and a mode button starts another. */
 const host: Host = {
   onInterrupt: () => () => {},
@@ -182,6 +198,15 @@ async function start(next: Mode): Promise<void> {
       ? parseSettingsExport(imported, { settings: saved, experiments: defaultExperiments() })
       : null
   if (importing !== null && importing.ignored.length > 0) status.textContent = `Settings text: ignored ${importing.ignored.join(", ")}`
+  const startScript = next === "build" ? keysFromAddress() : null
+  let startKeys: PlaytestStep[] | null = null
+  if (startScript !== null) {
+    try {
+      startKeys = parseKeyScript(startScript)
+    } catch (error) {
+      status.textContent = `#keys: ${error instanceof Error ? error.message : String(error)}`
+    }
+  }
   const settings: Settings = importing?.snapshot.settings ?? saved
   const experiments: DebugFlags | null = importing?.snapshot.experiments ?? null
   backend = new CanvasBackend({
@@ -200,6 +225,7 @@ async function start(next: Mode): Promise<void> {
       settingsStore,
       buildId: __TN_BUILD__.commit,
       ...(experiments === null ? {} : { experiments }),
+      ...(startKeys === null ? {} : { startKeys }),
       exporter: {
         destination: "Copied to the clipboard, and shown in the settings text box under the screen.",
         export: (text) => {

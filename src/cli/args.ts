@@ -22,6 +22,7 @@ const VALUE_OPTIONS = new Set([
   "theme",
   "scroll-margin",
   "settings",
+  "keys",
 ])
 
 export function parseArgs(argv: readonly string[]): ParsedArgs {

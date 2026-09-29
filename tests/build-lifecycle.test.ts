@@ -11,6 +11,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { runSpike } from "../src/cli/spike.ts"
+import { parseKeyScript } from "../src/playtest/keys.ts"
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../src/menu/mouse.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import type { Settings } from "../src/settings/index.ts"
@@ -192,4 +193,51 @@ test("a bigger terminal shows a bigger viewport, and the frame is cleared when i
     stdout.written.includes(`${ESC}[2J`),
     "a frame that changed size was drawn over the old one without clearing it",
   )
+})
+
+test("--keys opens the Build Phase already in the state those keys reach, then hands over the keyboard", async () => {
+  // Owner, 2026-09-29 (feedback F28/F40): demos and reports should start in a particular state. The
+  // keys go through the same adapters as a player's, before the first frame.
+  const stdout = new FakeStdout()
+  const stdin = new FakeStdin()
+  const exits: number[] = []
+  const session = runSpike({
+    settings: TEST_SETTINGS,
+    backend: "ansi",
+    stdout: stdout as unknown as NodeJS.WriteStream,
+    stdin: stdin as unknown as NodeJS.ReadStream,
+    exit: (code) => {
+      exits.push(code)
+    },
+    startKeys: parseKeyScript("n 1 1 Enter"),
+  })
+  await new Promise((resolve) => setTimeout(resolve, 30))
+  assert.ok(stdout.written.includes("Barracks placed"), "the start keys did not place the Barracks")
+  assert.ok(stdout.written.includes("1 active"), "the start keys did not pick the power")
+  // The keyboard is the player's now: Ctrl+C still leaves through the one disposer.
+  stdin.emit("data", Buffer.from([3]))
+  await new Promise((resolve) => setTimeout(resolve, 30))
+  void session
+  assert.deepEqual(exits, [0])
+  assert.equal(stdin.raw, false)
+})
+
+test("--keys that cannot be delivered stops there and says why when the screen closes", async () => {
+  const stdout = new FakeStdout()
+  const stdin = new FakeStdin()
+  const reported: string[] = []
+  const session = runSpike({
+    settings: TEST_SETTINGS,
+    backend: "ansi",
+    stdout: stdout as unknown as NodeJS.WriteStream,
+    stdin: stdin as unknown as NodeJS.ReadStream,
+    host: { onInterrupt: () => () => {}, exit: () => {}, reportError: (text) => reported.push(text) },
+    startKeys: parseKeyScript("click:95,39 n"),
+  })
+  await new Promise((resolve) => setTimeout(resolve, 30))
+  assert.ok(!stdout.written.includes("1 active"), "a step after the failed one ran")
+  assert.ok(stdout.written.includes("RESOURCE"), "the screen did not open")
+  stdin.emit("data", Buffer.from([3]))
+  await session
+  assert.ok(reported.some((text) => text.includes("--keys stopped early") && text.includes("95,39")), reported.join(""))
 })

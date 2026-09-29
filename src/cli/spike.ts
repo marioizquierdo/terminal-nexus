@@ -30,6 +30,8 @@ import { chunkText } from "../view/backends/ports.ts"
 import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
+import type { PlaytestStep } from "../playtest/keys.ts"
+import { UNTIMED_GAP_MS, deliverStep } from "../playtest/deliver.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
 import type { DebugFlags } from "../build/debug.ts"
 
@@ -65,6 +67,14 @@ export type SpikeOptions = Readonly<{
   experiments?: Partial<DebugFlags>
   /** The commit this build is, named at the top of an export. */
   buildId?: string
+  /**
+   * A key script to play before the player gets the keyboard (`--keys`, or `#keys=` on the browser
+   * page): the Build Phase opens already in the state those keys reach — a power picked, a building
+   * placed — through the same adapters a player's keys go through (`src/playtest/deliver.ts`). For
+   * demos and for reproducing a report. A step that cannot be delivered (a click on a tile off screen)
+   * stops the script there, and the reason is reported when the screen closes.
+   */
+  startKeys?: readonly PlaytestStep[]
   /**
    * What an export does besides showing its text: the terminal copies it to the clipboard and writes
    * a file, the playtest page copies it and shows it under the screen. `destination` is the sentence
@@ -179,6 +189,23 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     onSettingsChange: saveSettings,
     onExport: exportSettings,
   })
+
+  // Start in a state: the script's own clock, a second between untimed steps as in a scripted
+  // playtest, so each key is its own press; the live clock that follows is far past it.
+  let startKeysError: string | null = null
+  if (options.startKeys !== undefined) {
+    let clock = 0
+    for (const step of options.startKeys) {
+      clock += step.afterMs ?? UNTIMED_GAP_MS
+      try {
+        deliverStep(build, layout, step, clock)
+      } catch (error) {
+        startKeysError = error instanceof Error ? error.message : String(error)
+        break
+      }
+      if (leaving) break
+    }
+  }
 
   // **The screen's clock lives here, never in the reducer** (gate 5H). Everything that moves between
   // commands — the view sliding to a new position, the cursor gliding to a new tile, a menu row's
@@ -317,6 +344,9 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     await dispose()
   }
 
+  if (startKeysError !== null) {
+    host.reportError(`terminal-nexus: --keys stopped early: ${startKeysError}\n`)
+  }
   if (sideEffectError !== null) {
     host.reportError(`terminal-nexus: could not save settings or the export: ${String(sideEffectError)}\n`)
   }

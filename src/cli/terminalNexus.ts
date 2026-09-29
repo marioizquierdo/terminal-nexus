@@ -15,6 +15,7 @@ import { parseCapability, parseGlyphPack, parseTheme } from "../view/index.ts"
 import { detectCapability } from "./index.ts"
 import { parseArgs, parseInteger } from "./args.ts"
 import { runMenu } from "./menu.ts"
+import { parseKeyScript } from "../playtest/keys.ts"
 import { runSpike } from "./spike.ts"
 import { DEFAULT_SETTINGS, createSettingsStore, defaultSettingsPath } from "../settings/index.ts"
 import type { Settings } from "../settings/index.ts"
@@ -41,6 +42,9 @@ const USAGE = `terminal-nexus — the Terminal Nexus game
       never saved; d jumps straight to them. "Export settings" copies them all as text.
       --settings "<text>" starts with an exported text's settings and experiments, for this
       run only: paste the whole export, or just pairs like "placeLight=rainbow scrollMargin=25".
+      --keys "<key script>" opens it already in the state those keys reach, in the scripted
+      playtest's key names: --keys "n 1 1 Enter" picks the first power and places a Barracks.
+      For demos and for reproducing a report; the keyboard is yours after the last key.
 
 A first launch guesses colour depth the way \`grid\` does; every launch after that remembers whatever
 was last chosen on the Settings screen (~/.terminal-nexus/settings.json). Any flag above overrides
@@ -74,6 +78,7 @@ export async function main(argv: readonly string[]): Promise<number> {
   if (args.flags.has("spike")) {
     const margin = args.options.get("scroll-margin")
     const buildId = currentCommit()
+    const startKeys = args.options.get("keys")
     return runSpike({
       settings,
       settingsStore,
@@ -85,6 +90,7 @@ export async function main(argv: readonly string[]): Promise<number> {
         : { scrollMargin: parseInteger(margin.endsWith("%") ? margin.slice(0, -1) : margin, "--scroll-margin") }),
       ...(imported.experiments === undefined ? {} : { experiments: imported.experiments }),
       ...(buildId === undefined ? {} : { buildId }),
+      ...(startKeys === undefined ? {} : { startKeys: parseKeyScript(startKeys) }),
       exporter: terminalExporter(process.stdout, exportPath()),
     })
   }
