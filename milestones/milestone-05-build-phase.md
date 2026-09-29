@@ -2,13 +2,14 @@
 
 **Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
 **Status:** CURRENT
-**Active gate:** 5J — the third round of the owner's feedback (his playtest of the 5G-5I demo page,
-2026-09-28, `docs/feedback/2026-09-28-pr46-playtest.md`): Debug Mode becomes Settings with Experiments
-and an export, simpler arrow-key acceleration and a 12-tile Shift jump, interpolation for the view and
-the cursor, a click on the menu that activates, "Explore Map" first, map-border Experiments, and one
-presentation toolkit (animations, particles, shading, tweens). **Built and reported (PASS), awaiting
-Mario's playtest** (`evidence/gate-5j-report.md`), on the same branch as 5G-5I, at his "let's make a new revision"; 5D-5I are built and reported (PASS) but not yet formally
-accepted, and this gate depends on none of those acceptances.
+**Active gate:** 5K — the owner's fourth round (his playtest of the gate 5J build, 2026-09-29,
+`docs/feedback/2026-09-29-pr46-round-4.md`): arming where the cursor is, one "active" style for every
+menu row, Explore Map as that style with the tile below it, Settings without the now/restart column
+and with a restart warning, a position count and a scroll bar, a top-right Esc label that says what
+Esc does, sparks on removal, his exported numbers as defaults, the map's own edge as the rule, and a
+way to start the game in a particular state. **In progress**, on the same branch as 5G-5J; 5D-5J are
+built and reported (PASS) but not yet formally accepted, and this gate depends on none of those
+acceptances.
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
 mission's own budget/units decided — accepted 2026-09-12)
 **Updated:** 2026-09-28
@@ -289,6 +290,9 @@ map scrolling — before handing off into Milestone 6's Pulse?
   export in place of Debug Mode; the arrow-key ramp simplified and Shift a 12-tile jump; interpolation
   for the view and the cursor; menu clicks that activate; "Explore Map" first and self-explaining;
   map-border Experiments; the presentation toolkit formalised, with the placement juice moved onto it.
+- **5K — The owner's fourth round** (feedback F28-F40, 2026-09-29): arming where the cursor is, one
+  active style for every menu row, Settings and popup polish, the map's own edge as the rule, his
+  exported numbers, sparks on removal, and starting the game in a given state.
 
 ## 3. Grounded in already-locked contracts
 
@@ -449,3 +453,27 @@ Gate 5J's definition of done:
       effects; placement looks as it did;
 - [x] keyboard, mouse and driver still produce the same plan; a gate report ending in PASS / REVISE /
       STOP / BLOCKED — **PASS**, pending the owner's playtest.
+
+Gate 5K's definition of done:
+
+- [ ] arming a building keeps the cursor where it is when the building fits there, and otherwise moves
+      it to the nearest good spot within 12 tiles (one tile clear of other buildings where possible),
+      or one tile right and down with the preview (not the refusal) when none; no spot is chosen from
+      the last building placed; the Nexus is the start when nothing has been pointed at;
+- [ ] after a placement, and on Esc while placing, the keyboard returns to where the arming came
+      from — plain navigation on the map (menu visible) or the menu; Tab reaches plain navigation;
+- [ ] the Build Phase opens on the menu at Explore Map, with no Experiment for it;
+- [ ] every menu row has the same two states — highlighted by the keyboard, and active (`>` and the
+      active colours) while its action is under way; Explore Map active is the header of the tile
+      panel, over a separator, and `e` toggles it;
+- [ ] removing or undoing a building throws sparks;
+- [ ] Settings shows no now/restart column; a change that needs a restart raises a message popup; the
+      title carries the position (k/N); the description sits under the list, below a line; Export is
+      the list's last row; there are no "more" rows and no fixed restart/export rows;
+- [ ] a popup with a scrolling section has a scroll bar in its right border, clickable at both ends;
+- [ ] the top bar's right end says what Esc does — menu, back or close — and popups carry no `[esc]`;
+- [ ] his exported numbers are the defaults; the map's own edge, quiet and on the shared west side,
+      is the rule, and its three Experiments are gone;
+- [ ] the game and the browser page can start the Build Phase in a state given as keys;
+- [ ] keyboard, mouse and driver still produce the same plan; a gate report ending in PASS / REVISE /
+      STOP / BLOCKED.
