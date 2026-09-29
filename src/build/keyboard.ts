@@ -6,14 +6,16 @@
 //   - rxvt sends a shorter, unrelated form: `ESC [ a b c d`;
 //   - screen, the Linux console, vt100, vt220 and ansi define no shifted arrow at all.
 //
-// So both families are accepted, and the five-tile jump also has a modifier-free fallback —
+// So both families are accepted, and the fast move (five tiles until gate 5H; since the owner's
+// 2026-09-28 playtest a jump of Debug Mode's "Shift jump", twelve tiles) also has a modifier-free
+// fallback —
 // PageUp/PageDown and Home/End — plus the Option/Meta forms a Mac sends. The screen names the fast
 // move once, as "shift+arrow fast move"; the others are the same move under other keys, left off the
 // key help on the owner's own call (2026-09-26: "leave pgup/home keys out, people will figure that
 // out just fine").
 
+import { GAME_MENU_ROWS } from "./settings.ts"
 import type { BuildCommand, Focus, Overlay } from "./types.ts"
-import { JUMP_TILES } from "./state.ts"
 
 const ESC = String.fromCharCode(27)
 const PLACE_KEYS = new Set(["\r", "\n", " "])
@@ -77,17 +79,21 @@ const META_JUMPS: Readonly<Record<string, Readonly<{ dx: number; dy: number }>>>
  * (`ESC O H`), screen/tmux/linux (`ESC [ 1 ~`) and rxvt (`ESC [ 7 ~`), hence the table.
  */
 const FALLBACK_JUMPS: Readonly<Record<string, Readonly<{ dx: number; dy: number }>>> = {
-  [`${ESC}[5~`]: { dx: 0, dy: -JUMP_TILES },
-  [`${ESC}[6~`]: { dx: 0, dy: JUMP_TILES },
-  [`${ESC}[H`]: { dx: -JUMP_TILES, dy: 0 },
-  [`${ESC}OH`]: { dx: -JUMP_TILES, dy: 0 },
-  [`${ESC}[1~`]: { dx: -JUMP_TILES, dy: 0 },
-  [`${ESC}[7~`]: { dx: -JUMP_TILES, dy: 0 },
-  [`${ESC}[F`]: { dx: JUMP_TILES, dy: 0 },
-  [`${ESC}OF`]: { dx: JUMP_TILES, dy: 0 },
-  [`${ESC}[4~`]: { dx: JUMP_TILES, dy: 0 },
-  [`${ESC}[8~`]: { dx: JUMP_TILES, dy: 0 },
+  [`${ESC}[5~`]: { dx: 0, dy: -1 },
+  [`${ESC}[6~`]: { dx: 0, dy: 1 },
+  [`${ESC}[H`]: { dx: -1, dy: 0 },
+  [`${ESC}OH`]: { dx: -1, dy: 0 },
+  [`${ESC}[1~`]: { dx: -1, dy: 0 },
+  [`${ESC}[7~`]: { dx: -1, dy: 0 },
+  [`${ESC}[F`]: { dx: 1, dy: 0 },
+  [`${ESC}OF`]: { dx: 1, dy: 0 },
+  [`${ESC}[4~`]: { dx: 1, dy: 0 },
+  [`${ESC}[8~`]: { dx: 1, dy: 0 },
 }
+
+/** How far the fast move jumps when nothing says otherwise: the owner's twelve tiles (2026-09-28).
+ *  The live screen passes Debug Mode's "Shift jump" instead. */
+export const DEFAULT_JUMP_STEP = 12
 
 const TAB = "\t"
 const MENU_UP = new Set([`${ESC}[A`, `${ESC}OA`])
@@ -99,7 +105,7 @@ export type KeyboardContext = Readonly<{
   /** How many construct-menu rows there are, so a digit past the end of the list means nothing
    *  rather than arming something that is not on screen. */
   itemCount: number
-  /** Whether a structure is armed: on the Grid, Enter/Space then places rather than inspects. */
+  /** Whether a structure is armed: on the Grid, Enter/Space then places rather than opening Explore Map. */
   armed: boolean
   /** Which half of the screen arrows and Enter/Space belong to (gate 5F). Defaults to the Grid, the
    *  meaning every key had before focus existed. */
@@ -110,6 +116,10 @@ export type KeyboardContext = Readonly<{
   /** While the Nexus popup is open: how many powers are waiting to be picked, so a digit past them
    *  means nothing. */
   overlayPendingCount?: number
+  /** The open popup's highlight — which of the game menu's rows Enter means. */
+  overlayHighlight?: number
+  /** How many tiles the fast move jumps — Debug Mode's "Shift jump". `DEFAULT_JUMP_STEP` if absent. */
+  jumpStep?: number
 }>
 
 function digitIndex(key: string): number | null {
@@ -122,18 +132,28 @@ const CANCEL_KEYS = new Set([ESC, "x"])
 
 /** A popup's own keys. Everything else is swallowed: a popup that let `u` reach the plan underneath
  *  it would be one the player cannot trust to be modal. */
-function overlayCommand(key: string, overlay: Overlay, pendingCount: number): BuildCommand | null {
+function overlayCommand(key: string, overlay: Overlay, pendingCount: number, highlight: number): BuildCommand | null {
   if (CANCEL_KEYS.has(key)) return { kind: "cancel" }
   switch (overlay) {
-    case "exit":
-      return key === "q" ? { kind: "quit" } : null
+    case "menu": {
+      // The game menu (owner, 2026-09-28): its own hotkeys, or Up/Down and Enter on its rows. Enter
+      // on `[q] Quit` is the quit itself — the reducer never sees a quit it would have to pass on.
+      if (key === "q") return { kind: "quit" }
+      if (key === "s") return { kind: "open-settings", section: "settings" }
+      if (key === "r") return { kind: "debug-restart" }
+      if (key === "d") return { kind: "open-settings", section: "experiments" }
+      if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
+      if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
+      if (PLACE_KEYS.has(key)) return GAME_MENU_ROWS[highlight] === "quit" ? { kind: "quit" } : { kind: "activate" }
+      return null
+    }
     case "confirm-commit":
       if (key === "y") return { kind: "confirm-commit", accept: true }
       if (key === "n") return { kind: "confirm-commit", accept: false }
-      return key === "q" ? { kind: "request-exit" } : null
+      return key === "q" ? { kind: "open-menu" } : null
     case "nexus-powers": {
       if (key === "n") return { kind: "cancel" }
-      if (key === "q") return { kind: "request-exit" }
+      if (key === "q") return { kind: "open-menu" }
       if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
       if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
       if (PLACE_KEYS.has(key)) return { kind: "activate" }
@@ -141,50 +161,74 @@ function overlayCommand(key: string, overlay: Overlay, pendingCount: number): Bu
       if (index !== null && index < pendingCount) return { kind: "pick-nexus", index }
       return null
     }
-    case "debug": {
+    case "settings": {
       // `d` closes what `d` opened, the way `n` closes the Nexus popup.
       if (key === "d") return { kind: "cancel" }
-      if (key === "q") return { kind: "request-exit" }
-      if (key === "r") return { kind: "debug-restart" }
+      if (key === "q") return { kind: "open-menu" }
+      // Export settings is the list's last row; `e` still reaches it from anywhere in the list. The
+      // restart is the game menu's `[r]` now (feedback F34).
+      if (key === "e") return { kind: "export-settings" }
       if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
       if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
-      // Left and Right change the highlighted flag's value — the one popup whose rows have one.
+      // Left and Right change the highlighted setting's value — the one popup whose rows have one.
       if (MENU_LEFT.has(key)) return { kind: "nudge", direction: "left" }
       if (MENU_RIGHT.has(key)) return { kind: "nudge", direction: "right" }
       if (PLACE_KEYS.has(key)) return { kind: "activate" }
       return null
     }
+    case "export": {
+      // `e` closes what `e` opened; Up/Down scroll the text.
+      if (key === "e" || PLACE_KEYS.has(key)) return { kind: "cancel" }
+      if (key === "q") return { kind: "open-menu" }
+      if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
+      if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
+      return null
+    }
+    case "message":
+      // Nothing to choose: only the cancel above closes it (feedback F34, "clicking outside or pressing
+      // esc should close it").
+      return null
     default:
       return null
   }
 }
 
-/** Any of the Grid's cursor keys, as the move it is — or `null`. */
-function cursorMove(key: string): BuildCommand | null {
+/** A cursor key's direction, one tile long, and whether it is the fast move. */
+export type CursorKey = Readonly<{ dx: number; dy: number; fast: boolean }>
+
+/**
+ * Any of the Grid's cursor keys, classified — or `null`. The plain arrows are what a held key's ramp
+ * applies to (`src/build/motion.ts`); every other form is the fast move, a jump whose size is a Debug
+ * Mode flag rather than anything timing decides (timing only decides how often a held one repeats).
+ */
+export function cursorKeyOf(key: string): CursorKey | null {
   const plain = PLAIN_ARROWS[key]
-  if (plain !== undefined) return { kind: "move-cursor", ...plain }
+  if (plain !== undefined) return { ...plain, fast: false }
 
   const rxvt = RXVT_SHIFTED_ARROWS[key]
-  if (rxvt !== undefined) {
-    return { kind: "move-cursor", dx: rxvt.dx * JUMP_TILES, dy: rxvt.dy * JUMP_TILES }
-  }
+  if (rxvt !== undefined) return { ...rxvt, fast: true }
 
   const modified = XTERM_MODIFIED_ARROW.exec(key)
   if (modified !== null) {
     const direction = ARROW_LETTERS[modified[2] as string]
-    if (direction !== undefined && Number(modified[1]) >= 2) {
-      return { kind: "move-cursor", dx: direction.dx * JUMP_TILES, dy: direction.dy * JUMP_TILES }
-    }
+    if (direction !== undefined && Number(modified[1]) >= 2) return { ...direction, fast: true }
   }
 
   const meta = META_JUMPS[key]
-  if (meta !== undefined) {
-    return { kind: "move-cursor", dx: meta.dx * JUMP_TILES, dy: meta.dy * JUMP_TILES }
-  }
+  if (meta !== undefined) return { ...meta, fast: true }
 
   const fallback = FALLBACK_JUMPS[key]
-  if (fallback !== undefined) return { kind: "move-cursor", ...fallback }
+  if (fallback !== undefined) return { ...fallback, fast: true }
   return null
+}
+
+/** Any of the Grid's cursor keys, as the move it is — one tile for a plain arrow (the input path may
+ *  scale it for a held key), `jumpStep` tiles for the fast move — or `null`. */
+function cursorMove(key: string, jumpStep: number): BuildCommand | null {
+  const move = cursorKeyOf(key)
+  if (move === null) return null
+  if (!move.fast) return { kind: "move-cursor", dx: move.dx, dy: move.dy }
+  return { kind: "move-cursor", dx: move.dx * jumpStep, dy: move.dy * jumpStep, fast: true }
 }
 
 /**
@@ -196,21 +240,24 @@ function cursorMove(key: string): BuildCommand | null {
  * opens the Nexus Powers, `u`, Backspace and `p` do what they always did, whichever half has focus.
  */
 export function buildKeyboardCommand(key: string, context: KeyboardContext): BuildCommand | null {
-  // Ctrl+C always quits outright; `q` asks first, so a stray press cannot lose a plan.
+  // Ctrl+C always quits outright; `q` opens the game menu first, so a stray press cannot lose a plan.
   if (key === String.fromCharCode(3)) return { kind: "quit" }
   const overlay = context.overlay ?? null
-  if (overlay !== null) return overlayCommand(key, overlay, context.overlayPendingCount ?? 0)
+  if (overlay !== null) {
+    return overlayCommand(key, overlay, context.overlayPendingCount ?? 0, context.overlayHighlight ?? 0)
+  }
   const focus = context.focus ?? "grid"
 
-  // One "back" for Esc and `x`, walking a stack the reducer knows: the information panel, then the
-  // Grid (to the menu, disarming), then the menu (the exit question).
+  // One "back" for Esc and `x`, walking a stack the reducer knows: the Grid — placing or Explore Map —
+  // to the menu, disarming, then the menu (the game menu: Settings, Quit).
   if (CANCEL_KEYS.has(key)) return { kind: "cancel" }
-  if (key === "q") return { kind: "request-exit" }
+  if (key === "q") return { kind: "open-menu" }
   if (key === TAB) return { kind: "focus", target: focus === "grid" ? "menu" : "grid" }
   if (key === "u") return { kind: "undo" }
   if (key === "n") return { kind: "open-nexus-powers" }
   if (key === "e") return { kind: "explore" }
-  if (key === "d") return { kind: "open-debug" }
+  // `d` is Debug Mode's old key, kept as a shortcut: Settings, at its Experiments.
+  if (key === "d") return { kind: "open-settings", section: "experiments" }
   if (key === "p") return { kind: "commit" }
   // `y` only ever means something while the start-the-Pulse question is open; outside it is inert.
   if (key === "y") return null
@@ -230,7 +277,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   } else {
     if (PLACE_KEYS.has(key)) return context.armed ? { kind: "place" } : { kind: "inspect" }
     if (REMOVE_KEYS.has(key)) return { kind: "remove" }
-    const move = cursorMove(key)
+    const move = cursorMove(key, context.jumpStep ?? DEFAULT_JUMP_STEP)
     if (move !== null) return move
   }
 

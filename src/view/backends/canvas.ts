@@ -49,7 +49,7 @@ export function paintOps(
       const cell = frame.cells[y * frame.width + x]
       if (cell === undefined) continue
       const style = cell.style
-      let foreground = css(rgbFor(style.fgRole, capability, theme, style.fade ?? 0))
+      let foreground = css(rgbFor(style.fgRole, capability, theme, style.fade ?? 0, style.tint))
       let background =
         style.bgRole === undefined || capability === "monochrome" ? null : css(rgbFor(style.bgRole, capability, theme))
       if (style.inverse === true) {

@@ -1,14 +1,14 @@
 ---
 name: pr-description
-description: Write or update a pull request description for Terminal Nexus. Use whenever opening a PR, pushing commits to an open PR, or rewriting a PR body. Produces a phone-readable description that leads with what the player will see and what to try, embeds before/after screenshots, lists the decisions waiting on Mario, and keeps gate and canon bookkeeping in a collapsed footer.
+description: Write or update a pull request description for Terminal Nexus. Use whenever opening a PR, pushing commits to an open PR, or rewriting a PR body. Produces a phone-readable description that leads with what the player will see, a Demo section sized to the change (a code block, screenshots, a GIF, or a playable page — the cheapest one that shows it), the decisions waiting on Mario as Experiments to flip, and keeps gate and canon bookkeeping in a collapsed footer.
 ---
 
 # Writing a pull request description
 
 ## Who reads it
 
-Mario, on his iPhone — the GitHub app or mobile Safari. He merges without reading the diff, then
-plays the build. The description is his only briefing: in under a minute he must learn **what
+Mario, on whatever device he has — often his iPhone (the GitHub app or mobile Safari), sometimes a
+laptop or another machine. He merges without reading the diff, then plays the build. The description is his only briefing: in under a minute he must learn **what
 changed on screen, how to try it, and what he needs to decide**.
 
 It is not the gate report. The gate report is the record for the next agent; link it from the
@@ -36,18 +36,47 @@ thing a person can now do: "Scripted playtests that make GIFs without a terminal
 
 **What** — two or three sentences: what you will notice.
 
-**Try it** — a phone playtest link first, if one exists. Then the exact Mac command, e.g.
-`git pull && ./bin/terminal-nexus.ts --spike`. Then 3-6 numbered steps with exact keys, each ending
-in what should happen: "3. Press Space — the Hatchery appears next to the Nexus."
-
 **Changes** — player-visible bullets, "before -> after" where it helps. At most one bullet for
 internal work.
 
-**Screenshots** — 2-4 images or a GIF, each with a one-line caption. Before/after pairs stacked
-vertically, before first (side by side is unreadable on a phone).
+**Workflow and tools** — only when the PR changes skills, scripts or agent instructions (see
+"Pushing more commits" below).
+
+**Demo** — how to see the change, and what to look for while you do. One section: the pictures, the
+playable page and the steps to try all live here (it replaced separate "Try it" and "Screenshots"
+sections). **Size it to the change** — the cheapest layer that shows it, because a playable page
+costs far more to build and publish than a code block:
+
+| The change… | The Demo is… |
+|---|---|
+| doesn't change what's on screen (tooling, docs, a refactor) | a short code block — a command and its output, or the few screen lines that moved — or no Demo at all |
+| changes how something **looks** | 1-4 screenshots (before/after pairs stacked, before first) |
+| is about **movement or timing** | an animated GIF of the flow (under about 1 MB) |
+| needs to be **played** to judge (a feel, an interaction, a flow) | a playable page, plus the GIF or screenshots of its key moment |
+
+A text screen from the `playtest` skill in a code block is often enough for a layout change and costs
+nothing to host. When there is a playable page, give it two sub-headings:
+
+- **On Claude Web Artifact** — the private page link first (it works from his phone, his laptop, any
+  device signed in to claude.ai), then 3-6 numbered steps with exact keys, each ending in what should
+  happen: "3. Press Space — the Barracks rises next to the Nexus." Say which keys a phone's key bar
+  cannot send (a held key's repeat, for instance).
+- **On MacOS** — copy-paste commands for his own terminal, in one code block: e.g.
+  `git fetch && git checkout <branch> && git pull && ./bin/terminal-nexus.ts`, and any flag the demo
+  needs (`--settings "..."` to start with particular Experiments).
+
+Without a playable page, the numbered steps go straight under **Demo** with the MacOS commands.
 
 **Decisions** — each open choice: the question in plain words, the default this PR picked, and how to
-flip it. Omit the section if there are none.
+flip it. In the Build Phase that is almost always an **Experiment** (the bottom of the Settings popup:
+Esc, then `s`), so give the exact keys: "press `d` to jump to the Experiments, go down to Armed click
+scrolls, press Right to flip it, and tell me which feels better." Mario asked to be asked this way.
+End the section with the export line, so his answer comes back as data rather than a description:
+"When it feels right, press `e` in Settings (**Export settings**) — it is copied to your clipboard and
+saved to `~/.terminal-nexus/settings-export.txt` — and paste it as a comment here." An agent that
+reads an exported block back starts the game with it (`./bin/terminal-nexus.ts --spike --settings
+"<text>"`, or `node scripts/playtest.mjs --settings "<text>"`, or `#settings=<url-encoded text>` on
+the browser page) to see what he saw. Omit the section if there are none.
 
 **Known issues** — omit if none.
 
@@ -72,7 +101,7 @@ has been seen appending a "Generated by Claude Code" line under the body it was 
 back after creating it, and if a second footer appeared, set the body again with
 `update_pull_request` (which leaves it as sent). Two PRs have ended up with two footers.
 
-## Screenshots that display on a phone
+## Pictures that display on a phone
 
 The repository is public, so an image committed on the branch displays inline from its raw URL:
 
@@ -91,14 +120,24 @@ The repository is public, so an image committed on the branch displays inline fr
 
 ## Pushing more commits to an open PR
 
-Rewrite the description to describe the PR as it now stands, and re-pin the screenshot URLs to the
-new head commit. No "Update:" sections, no changelog of the PR's own history.
+Rewrite the description to describe the PR as it now stands **against `main`** — everything a merge
+would bring, not the last round of work on the branch (owner, 2026-09-29: "describe what changed from
+main, which has a larger umbrella vs the last iteration"). A long-lived PR gathers several rounds;
+its description is still one "before → after" from main. Re-pin the screenshot URLs to the new head
+commit. No "Update:" sections, no changelog of the PR's own history.
+
+Leave out what is minor and temporary — a placeholder number, a stand-in for content a later
+milestone brings (the owner, of a placeholder Nexus power's value: "that is minor and temporal").
+
+When the PR changes how agents work — a skill, the playtest tooling, the demo page, the agent
+instructions — give it its own short section after **Changes**, **Workflow and tools**: what an agent
+(or Mario) can now do that it could not, in a few bullets.
 
 ## Before submitting
 
 - [ ] The title says what the player (or developer) can now see or do, under 70 characters.
 - [ ] Every image was opened and checked; URLs are pinned to commit SHAs.
-- [ ] The "Try it" steps were run exactly as written.
+- [ ] The Demo is the cheapest layer that shows the change, and its steps were run exactly as written.
 - [ ] No section numbers, question ids or gate letters above the footer.
 - [ ] 150-400 words above the footer.
 - [ ] The attribution lines appear exactly once, at the end.

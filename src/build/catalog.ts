@@ -7,7 +7,7 @@
 // the existing fixture rosters rather than invented.
 
 import type { GridTerrain, TerrainId } from "../grid/types.ts"
-import type { ConstructItem, NexusPowerOption, StandingStructure } from "./types.ts"
+import type { ConstructItem, MapEdgeStyle, NexusPowerOption, StandingStructure } from "./types.ts"
 
 /**
  * 96 x 40 tiles — larger than the **maximum** viewport (72 x 24) on both axes, deliberately. A Grid
@@ -16,9 +16,11 @@ import type { ConstructItem, NexusPowerOption, StandingStructure } from "./types
  */
 export const SPIKE_GRID_SIZE = { width: 96, height: 40 } as const
 
-/** Where the cursor opens: just south of the Grid Nexus, so the first thing a player sees is their
- *  own base and everything else is somewhere to scroll to. */
-export const SPIKE_START_CURSOR = { x: 18, y: 13 } as const
+/** Where the cursor opens: on the Grid Nexus, its centre tile (owner, 2026-09-29, feedback F30: "on
+ *  top of the nexus by default"), so the first thing a player sees is their own base, everything else
+ *  is somewhere to scroll to, and the first building armed lands on the nearest good spot beside it.
+ *  `nexusTile(spikeContext())` says the same; a test holds the two together. */
+export const SPIKE_START_CURSOR = { x: 18, y: 10 } as const
 
 type Rect = Readonly<{ x: number; y: number; width: number; height: number }>
 
@@ -96,6 +98,14 @@ export function spikeGrid(): GridTerrain {
   return { width, height, tiles }
 }
 
+/**
+ * This map's own border (feedback F25: "I wonder if the map can define different borders to give it
+ * personality"): a dashed heavy line, a wire fence round a military perimeter — PERIMETER's register
+ * is "plain, military, correct". Drawn wherever the Grid reaches the map's edge. A proof of the hook,
+ * not map design: a real map would carry this in its own definition, beside its tiles.
+ */
+export const SPIKE_EDGE_STYLE: MapEdgeStyle = "fence"
+
 /** Already standing when the screen opens: something to build next to, and something a careless
  *  placement can overlap and be refused for. */
 export const SPIKE_STANDING: readonly StandingStructure[] = [
@@ -166,7 +176,9 @@ export const SPIKE_NEXUS_DRAFT: readonly NexusPowerOption[] = [
   {
     hotkey: "2",
     name: "War Chest",
-    description: "Adds 60 resource to spend.",
-    bonusAllotment: 60,
+    // 2000, not a balanced number (owner, 2026-09-28, feedback F24): enough to place buildings freely
+    // while playtesting placement. Placeholder content, like the whole draft.
+    description: "Adds 2000 resource to spend.",
+    bonusAllotment: 2000,
   },
 ]

@@ -14,8 +14,8 @@ import { footprintExtent, tilesOf } from "../grid/coords.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
 import { PLAYERS } from "../state/types.ts"
-import type { ActiveEffect, EffectBand, EffectCellSource } from "./effects/index.ts"
-import { mergeEffectCells } from "./effects/index.ts"
+import type { ActiveEffect, EffectCellSource } from "./effects/index.ts"
+import { EFFECT_BAND_NUMBERS, effectCellStyle, mergeEffectCells } from "./effects/index.ts"
 import type { BandCell, Cell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import { put, text, toAscii } from "./draw.ts"
@@ -113,13 +113,6 @@ function drawGridEdge(
   ] as const) {
     put(cells, BANDS.terrain, x, y, chromeGlyph(pack, "edgeCorner"), "chrome.muted", { dim: true })
   }
-}
-
-const EFFECT_BAND_NUMBERS: Readonly<Record<EffectBand, number>> = {
-  "ground-items": BANDS.groundItems,
-  projectiles: BANDS.projectiles,
-  effects: BANDS.effects,
-  highlights: BANDS.highlights,
 }
 
 export function gridOrigin(
@@ -257,16 +250,10 @@ export function composeFrame(
     const band = EFFECT_BAND_NUMBERS[source.band]
     const column = origin.column + cell.tile.x * tileWidth
     const row = origin.row + cell.tile.y
-    const style = {
-      ...(cell.role === undefined ? {} : { fgRole: cell.role }),
-      ...(cell.bold === true ? { bold: true } : {}),
-      ...(cell.dim === true ? { dim: true } : {}),
-      ...(cell.inverse === true ? { inverse: true } : {}),
-      // Only when it means something: fade 0 (or absent) is the role's own colour either way, and
-      // omitting the key here keeps a frame with no faded cells identical to one from before Q25's
-      // amendment existed, byte for byte.
-      ...(cell.fade !== undefined && cell.fade > 0 ? { fade: cell.fade } : {}),
-    }
+    // Fade (and tint) only when it means something: 0 or absent is the role's own colour either way,
+    // and omitting the key keeps a frame with no faded cells identical to one from before Q25's
+    // amendment existed, byte for byte.
+    const style = effectCellStyle(cell)
     if (cell.glyph === "") {
       // An attribute change on whatever is already there — the damage flash, and only it. This is
       // the one way an effect may touch a cell an entity is standing on.

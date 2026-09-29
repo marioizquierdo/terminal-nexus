@@ -2,13 +2,18 @@
 
 **Document role:** Milestone tracker — the mission's own Build Phase: placement, upgrade pick, scrolling
 **Status:** CURRENT
-**Active gate:** 5G — Debug Mode: a popup of live-editable development flags, each naming the
-question it serves, so Mario can feel two answers during a playtest. **Built and reported (PASS),
-awaiting Mario's look**; gate 5H does not start before it. Gates 5D-5F are built and reported (PASS)
-but not yet formally accepted; this gate depends on none of those acceptances.
+**Active gate:** 5K — the owner's fourth round (his playtest of the gate 5J build, 2026-09-29,
+`docs/feedback/2026-09-29-pr46-round-4.md`): arming where the cursor is, one "active" style for every
+menu row, Explore Map as that style with the tile below it, Settings without the now/restart column
+and with a restart warning, a position count and a scroll bar, a top-right Esc label that says what
+Esc does, sparks on removal, his exported numbers as defaults, the map's own edge as the rule, and a
+way to start the game in a particular state. **Built and reported (PASS), awaiting Mario's playtest**
+(`evidence/gate-5k-report.md`), on the same branch as 5G-5J; 5D-5J are
+built and reported (PASS) but not yet formally accepted, and this gate depends on none of those
+acceptances.
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
 mission's own budget/units decided — accepted 2026-09-12)
-**Updated:** 2026-09-27
+**Updated:** 2026-09-28
 **License:** Apache-2.0
 
 > **Milestone 4 has not landed, and this milestone does not wait for it.** An earlier draft of the
@@ -164,14 +169,30 @@ mission's own budget/units decided — accepted 2026-09-12)
 > Nexus popup closes on a pick (Q60) are answered and have no flag; the border glyphs are settled (the
 > solid bar) and have none either.
 
-> **Gate 5H: movement feel — not yet built.** The screen's first frame timer, and what it enables
-> (`engine.md` 3.3): held-key speed tiers (Q54), a scroll margin that is a share of the viewport, the
-> fast modifier and an unarmed click recentring the view, camera moves eased over a few frames, a
-> brief cursor flash when a placement is tried and refused, and an armed click that does not scroll
-> (Q58). Every number is a Debug Mode field, tuned by the owner's own feel. The same timer should
-> give a lone Esc a short timeout: today Esc and the next key arriving in one read are taken as one
-> Option+key sequence (gate 5F's report, Section 7), harmless for a person typing but a trap for
-> anything sending keys programmatically, and Esc is used far more since 5F.
+> **Gate 5H: movement feel — built and reported (PASS), awaiting Mario's feel**
+> (`../evidence/gate-5h-report.md`). The Build Phase screen has its first frame timer, running only
+> while something moves. A tap moves one tile; a held arrow moves 2 a step, then 4 once held 300 ms;
+> Shift (and Option, PageUp, Home) moves 8; a change of direction drops a held arrow to 1 a step until
+> it is let go (Q54, the owner's own tiers). Terminals send no key-up, so "held" is read from the gaps
+> between repeats, in the input path; the reducer sees only distances. The scroll margin is 20% of the
+> view per axis. With a building armed a click never scrolls the view (Q58, option B); exploring, a
+> click near an edge scrolls further the nearer it is (feedback F6, Q62), and the fast move re-centres
+> the view. The view slides over 150 ms; a refused placement flashes its footprint; a lone Esc waits
+> 50 ms for the rest of a key. Debug Mode gained sixteen flags — every number above — and scrolls.
+> Found along the way: the terminal's own repeat delay needed a second timing flag, and real-terminal
+> screenshots had been dropping the solid bottom map edge (a tmux capture setting). Registered: Q62
+> (what an exploring click does to the view) and Q63 (the wheel's step).
+
+> **Gate 5I: placement juice — built and reported (PASS), awaiting Mario's look**
+> (`../evidence/gate-5i-report.md`). A placed building plays a few frames of its own as it goes up —
+> footings, walls, roof beam for the Barracks; seeds, a swelling sac, a splitting peak for the
+> Hatchery; a rising mark for the Turret — authored beside its art, with a generic bottom-up fallback
+> for anything undrawn. It then stands finished with a brief light on its characters (a style-role
+> blend the renderer resolves per colour tier; a "rainbow" walks six new theme hues) and a few sparks
+> thrown off its edge, which never land on a building. It is presentation only, timed from the frame
+> that first drew it, and over in 850 ms at the defaults. Reduced motion shows the finished building at
+> once. Debug Mode's first four rows tune it: Build animation, Lighting, Particles, Glow time.
+> Registered: Q64 (the light theme's "light") and Q65 (a removal animation).
 
 ## 1. Question
 
@@ -264,6 +285,15 @@ map scrolling — before handing off into Milestone 6's Pulse?
 - **5H — Movement feel**: a frame timer; held-key speed tiers and a share-of-viewport margin (Q54);
   recentring and eased camera moves; a cursor flash on a refused attempt; an armed click that does not
   scroll (Q58).
+- **5I — Placement juice** (feedback F9): per-structure placement frames, particles, and light on a
+  placed building's characters, on 5H's frame timer; presentation only.
+- **5J — The owner's third round** (feedback F18-F27, 2026-09-28): Settings with Experiments and an
+  export in place of Debug Mode; the arrow-key ramp simplified and Shift a 12-tile jump; interpolation
+  for the view and the cursor; menu clicks that activate; "Explore Map" first and self-explaining;
+  map-border Experiments; the presentation toolkit formalised, with the placement juice moved onto it.
+- **5K — The owner's fourth round** (feedback F28-F40, 2026-09-29): arming where the cursor is, one
+  active style for every menu row, Settings and popup polish, the map's own edge as the rule, his
+  exported numbers, sparks on removal, and starting the game in a given state.
 
 ## 3. Grounded in already-locked contracts
 
@@ -376,12 +406,75 @@ Gate 5G's definition of done:
 
 Gate 5H's definition of done:
 
-- [ ] the Build Phase screen has a frame timer that runs only while something is animating;
-- [ ] held-key speed tiers, a share-of-viewport scroll margin, recentring on the fast modifier and
+- [x] the Build Phase screen has a frame timer that runs only while something is animating;
+- [x] held-key speed tiers, a share-of-viewport scroll margin, recentring on the fast modifier and
       on an unarmed click, eased camera moves, and a cursor flash on a refused attempt — every number a
       Debug Mode field (Q54);
-- [ ] Q58 answered, and built to the answer;
-- [ ] the Debug Mode popup scrolls, since at 80x24 it is full with 5G's five flags;
-- [ ] the reducer still has no clock: timing lives in the adapter and the view, and every existing
+- [x] Q58 answered, and built to the answer — option B, the recommendation; option A remains a Debug
+      Mode flag until the owner has felt both;
+- [x] the Debug Mode popup scrolls, since at 80x24 it is full with 5G's five flags;
+- [x] the reducer still has no clock: timing lives in the adapter and the view, and every existing
       "same plan, every adapter" test still holds;
-- [ ] a gate report ending in PASS / REVISE / STOP / BLOCKED.
+- [x] a gate report ending in PASS / REVISE / STOP / BLOCKED — **PASS**, pending the owner's feel.
+
+Gate 5I's definition of done:
+
+- [x] placing a structure plays its own short run of frames (a generic fallback for any structure
+      without authored ones), then shows the finished building; removing or undoing mid-animation is
+      correct at once;
+- [x] a particle burst around the footprint in the `effects` band, obeying the corruption law, with
+      cosmetic randomness from a hash of the placement's identity, never a stream;
+- [x] a brief light on the placed building's characters as a style-role operation, resolved per
+      capability and theme, degrading in 16-colour and monochrome; a "rainbow" value;
+- [x] every effect is a pure function of time since the placement, off under reduced motion, and a
+      Debug Mode flag (duration, intensity, on/off); the reducer still has no clock, and the plan is
+      identical with every effect on or off;
+- [x] the terminal and the browser page draw it; the Build Phase screen stays inside the frame budget;
+- [x] a gate report ending in PASS / REVISE / STOP / BLOCKED — **PASS**, pending the owner's look.
+
+Gate 5J's definition of done:
+
+- [x] Esc on the menu, `q`, and a top-bar entry open a game menu with Settings and Quit; leaving still
+      always asks; Settings holds the real player settings (saved) and, at its bottom, every Debug
+      Mode flag as an Experiment (not saved); `d` jumps to the Experiments;
+- [x] Settings export as a short text to paste into a pull request comment, and an agent can start the
+      game, the scripted playtest and the browser page from that text;
+- [x] one press moves 1 tile, a held or rapidly tapped arrow 2 at once and 4 after 300 ms, Shift (and
+      the other fast moves) a 12-tile jump; the slow-after-a-turn rule is gone;
+- [x] every camera move and every cursor move is interpolated (a tween, a pure function of time), off
+      under reduced motion; state and commands still use destinations only;
+- [x] a mouse click on a menu row activates it — a building is armed at once, with its preview at the
+      cursor; the keyboard alone keeps a "highlighted, not chosen" state;
+- [x] "Explore Map" is the first menu entry and opens a headed information panel that follows the
+      cursor; Esc returns to the menu;
+- [x] the War Chest placeholder power gives 2000;
+- [x] the map border's glyph, colour, a shared west border, and a map-defined border are Experiments;
+- [x] animations (frame sequences with a play/cancel/speed/queue interface and completion as scheduled
+      data), particles, shading and tweens are named, separate modules; light and sparks are general
+      effects; placement looks as it did;
+- [x] keyboard, mouse and driver still produce the same plan; a gate report ending in PASS / REVISE /
+      STOP / BLOCKED — **PASS**, pending the owner's playtest.
+
+Gate 5K's definition of done:
+
+- [x] arming a building keeps the cursor where it is when the building fits there, and otherwise moves
+      it to the nearest good spot within 12 tiles (one tile clear of other buildings where possible),
+      or one tile right and down with the preview (not the refusal) when none; no spot is chosen from
+      the last building placed; the Nexus is the start when nothing has been pointed at;
+- [x] after a placement, and on Esc while placing, the keyboard returns to where the arming came
+      from — plain navigation on the map (menu visible) or the menu; Tab reaches plain navigation;
+- [x] the Build Phase opens on the menu at Explore Map, with no Experiment for it;
+- [x] every menu row has the same two states — highlighted by the keyboard, and active (`>` and the
+      active colours) while its action is under way; Explore Map active is the header of the tile
+      panel, over a separator, and `e` toggles it;
+- [x] removing or undoing a building throws sparks;
+- [x] Settings shows no now/restart column; a change that needs a restart raises a message popup; the
+      title carries the position (k/N); the description sits under the list, below a line; Export is
+      the list's last row; there are no "more" rows and no fixed restart/export rows;
+- [x] a popup with a scrolling section has a scroll bar in its right border, clickable at both ends;
+- [x] the top bar's right end says what Esc does — menu, back or close — and popups carry no `[esc]`;
+- [x] his exported numbers are the defaults; the map's own edge, quiet and on the shared west side,
+      is the rule, and its three Experiments are gone;
+- [x] the game and the browser page can start the Build Phase in a state given as keys;
+- [x] keyboard, mouse and driver still produce the same plan; a gate report ending in PASS / REVISE /
+      STOP / BLOCKED — **PASS**, pending the owner's playtest.

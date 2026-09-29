@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.22
+**Canon version:** 2.26
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -29,8 +29,9 @@ A `.claude/skills/playtest` skill (`node scripts/playtest.mjs`) presses keys on 
 screen without a terminal and returns every step's screen as text, PNGs or a GIF — the quickest way
 to see a change working and to make a pull request's pictures. `bun scripts/build-web.mjs` builds
 the **browser playtest page** — the real menu, Build Phase and Pulse playback in one HTML file, for
-playing from a phone during review; publish it as a private page on the pull request when a change is
-worth playing (`DEVELOPMENT.md` has the details).
+playing from a phone or any other device during review; publish it as a private page on the pull
+request only when a change must be played to be judged — a picture, a GIF or a code block is cheaper
+and often enough (Section 5; `DEVELOPMENT.md` has the details).
 
 ## 1. Start with authority, not code
 
@@ -163,23 +164,61 @@ divider (feedback F17); and the browser playtest page exists, as a development t
 whether the screen opens on the menu or the map (Q61), and the menu's flash timings — each naming the
 question it serves, changed with Left/Right, restarted with `[r]`, never saved.
 
+**Milestone 5 gate 5H is built and reported (PASS), awaiting Mario's feel** (2026-09-28): the Build
+Phase has its first frame timer; a tap moves one tile, a held arrow speeds up (2 then 4), Shift moves
+8, and turning slows to 1; the scroll margin is 20% of the view; an armed click never scrolls the view
+(Q58) and an exploring click near an edge scrolls further the nearer it is (F6, Q62); the view slides;
+a refused placement flashes; a lone Esc waits 50 ms; Debug Mode — now twenty flags, every one of those
+numbers — scrolls.
+
+**Milestone 5 gate 5I is built and reported (PASS), awaiting Mario's look** (2026-09-28): a placed
+building plays its own short run of frames, then stands lit with a few sparks around it, all
+presentation, all four numbers in Debug Mode, off under reduced motion.
+
+**Milestone 5 gate 5J is built and reported (PASS), awaiting Mario's playtest** (2026-09-28): his
+third round of feedback, from playing the 5G-5I demo page
+([`docs/feedback/2026-09-28-pr46-playtest.md`](docs/feedback/2026-09-28-pr46-playtest.md), F18-F27).
+Debug Mode became **Settings** — Esc or `q` opens a game menu with Settings and Quit, the player's own
+settings are saved, and **Experiments** sit at the bottom (`d` jumps there) with an **export** to paste
+into a pull request and `--settings` to read it back. One press moves 1 tile, a held arrow 2 then 4,
+Shift jumps 12; the view slides and the cursor glides on every move; a click on a menu row activates
+it; armed clicks scroll and a double click places; `[e] Explore Map` is first and follows the cursor;
+the map edge is quieter, with its glyph and a shared west side as Experiments (settled at 5K); and presentation is
+four named families (animations, particles, shading, tweens) with the placement juice on them. 5G-5I
+were reworked by it rather than superseded, and all of them await his playtest together.
+
+**Milestone 5 gate 5K is built and reported (PASS), awaiting Mario's playtest** (2026-09-29): his
+fourth round and his settings export
+([`docs/feedback/2026-09-29-pr46-round-4.md`](docs/feedback/2026-09-29-pr46-round-4.md), F28-F40).
+Arming puts a building where the cursor is (or the nearest good spot, a free column to the right);
+placing or Esc goes back to where it began — the map in plain navigation, or the menu; the Build Phase
+opens on the menu at Explore Map; every menu row has one active style (`>`), Explore Map included, its
+row over a separator above the tile details; removal throws sparks; Settings has a position count, a
+scroll bar in the popup border, Export as its last row, and a message popup when a change needs a
+restart; the top bar's right end names what Esc does and popups carry no `[esc]`; his numbers are the
+defaults and the map's own edge on the shared divider is the rule; and `--keys`/`#keys=` open the game
+in a state. Q66 — reading key releases where the terminal reports them — waits on
+`node scripts/probe-key-release.mjs` in his iTerm2.
+
 The current milestone is **[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md)
 — Build Phase**: can a player place buildings, pick a Nexus upgrade, and scroll a real map, by
-keyboard, mouse and driver alike? Its active gate is **5G — Debug Mode**, now built and awaiting
-Mario's look (`evidence/gate-5g-report.md`). After it: **5H**, movement feel — a frame timer, held-key
-speed tiers, a share-of-viewport margin, recentring, eased camera moves (Q54, Q58), every number a
-Debug Mode flag, and a Debug Mode popup that scrolls.
+keyboard, mouse and driver alike? Its active gate is **5K — the owner's fourth round**, built and
+awaiting Mario's playtest (`evidence/gate-5k-report.md`). **Mario asked on 2026-09-28 to keep going
+without waiting to look at each gate first**: he tests several merged changes together, then plays,
+exports his Experiments, and pastes them into the pull request.
 
 So the authorised work for a new session is, in order:
 
 1. **whatever the owner's most recent feedback asks for**, if any exists since
    `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
-   outstanding or that everything still is;
-2. **Milestone 5 gate 5H, once Mario has looked at 5G** — gate 5G is built; do not start 5H on
-   the strength of the tracker alone. Per its own file — the next gate in the build order
-   [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
-   order — read that table's build-order column, and take one gate per session unless the owner's
-   own prompt asks for more.
+   outstanding or that everything still is; **a pasted settings export is feedback**: start the game
+   with it (`--settings`), and settle each Experiment it answers — adopt the value as the default,
+   delete the Experiment, record the answer;
+2. **Mario's playtest of gates 5G-5K together** — the feedback logs have nothing left that can be
+   built now except Q66, which waits on his key-release probe; the next gate waits for his word, and
+   when it comes it is the next gate in the build order [`milestones/README.md`](milestones/README.md)
+   carries. Milestone numbers are identities, not an order — read that table's build-order column, and
+   take one gate per session unless the owner's own prompt asks for more.
 
 Each milestone names exactly what it needs in its own "Depends on" line, and its gates are the unit
 of work.
@@ -238,7 +277,7 @@ deleted, and the renderer must be replaceable without one simulation test changi
   several tiles**, and that matters strategically. A mover tests its whole footprint against its
   mask. Range measures to the nearest occupied tile.
 - The viewport is clamped to between 48 × 16 and 72 × 24 tiles; the cursor drives scrolling at a
-  margin (three tiles today; the number is GUIDANCE, and gate 5H makes it a share of the viewport);
+  margin (a share of the view, 25% — the owner's pick; the number is GUIDANCE);
   there is no minimap. 80 × 24 is the floor and the acceptance target. **The margin is a follow rule,
   not an invariant**: at the Grid's own edge the camera has nowhere to go and the cursor reaches the
   edge of the screen, which is correct — there is no more Grid to reveal.
@@ -257,6 +296,9 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - Corruption effects live in the `effects` band or above; they never remove the only carrier of a
   required semantic cue.
 - Effects are pure functions of absolute presentation time. `f(t)` never depends on `f(t-1)`.
+  Presentation has **four families** — animations (an entity's own frames), particles, shading
+  (glyphless colour) and tweens (interpolation) — and an animation's completion is **scheduled data,
+  never a callback** (`specs/ascii-effects.md` 1.2).
 - Gameplay randomness is one seeded PRNG — **PCG32**, with published vectors. Cosmetic randomness is
   a **hash of an effect instance's identity, never a stream**: a stream's answers depend on how many
   times it has been asked, which is exactly what effect purity forbids.
@@ -279,25 +321,41 @@ deleted, and the renderer must be replaceable without one simulation test changi
   bonus — modeled like a small Nexus-power pool but match-scoped rather than dealt each Build Phase.
 - **Every interactive action is a named command.** Keyboard, mouse, and a driver (for agents and
   tests) are three adapters onto one vocabulary; every menu item displays its hotkey and is clickable
-  with identical effect — a click moves focus first, so a click on the menu while the keyboard is
-  elsewhere only highlights the row; the driver can inject raw key and mouse events and read the cell
-  frame back.
+  with identical effect — **a click activates what it lands on** (owner, 2026-09-28): a click on a
+  building's row arms it at once with its preview at the cursor, whatever had focus, and only the
+  keyboard has a "highlighted, not yet chosen" state; the driver can inject raw key and mouse events
+  and read the cell frame back.
   **Three bindings are measured rather than assumed** (gate 5A): Shift+Arrow has two live sequence
   families and several terminals send none at all, so a modifier-free fallback is required, not
   optional; and the mouse wheel moves the *cursor* five tiles rather than a camera of its own, because
   a second camera is the pan mode the scrolling rule forbids. **A second click on the same tile places
   the armed structure** — compared by tile, never by screen position, so a click that scrolled the
-  view cannot place on a neighbour (Q52, reversing gate 5A's one-click Q50). **Keyboard focus is
+  view cannot place on a neighbour (Q52, reversing gate 5A's one-click Q50); **a quick double click on
+  one spot places where its first click pointed**, timed in the input path (gate 5J). **Keyboard focus is
   reducer state, on the menu or the Grid, and the menu orchestrates the Build Phase**: a structure is
-  armed only while the Grid has focus, and every placement returns focus to the menu, disarmed (Q57).
-  **Esc, `x` and a right click are one cancel** that goes back one level — popup, information panel,
-  Grid to menu — and on the menu asks "Exit the game?"; `q` asks the same question, and only Ctrl+C
-  quits at once. Leaving always asks.
+  armed only while the Grid has focus, and **finishing goes back to where it started** (Q57, refined
+  2026-09-29): placing or Explore Map begun on the map returns to plain navigation there; begun on the
+  menu, to the menu, disarmed. **Arming puts the building where the cursor is** when it fits, else the
+  cheapest spot within 12 tiles (sideways cheaper than up or down) leaving a free tile around it —
+  never beside the last building placed; the cursor opens on the Grid Nexus. **Esc, `x` and a right
+  click are one cancel** that goes back one level — popup, then placing or Explore Map to where it
+  began, then the map to the menu — and on the menu opens the **game menu** (`[s] Settings`,
+  `[r] Restart`, `[q] Quit`); `q` opens it too, and only Ctrl+C quits at once. Leaving always asks.
+  **The top bar's right end says what Esc does** — `menu [esc]`, `back [esc]`, `close [esc]` — and a
+  click on it is Esc; no popup carries its own `[esc]`. A click scrolls
+  the view near its edges, armed or not (gate 5J, reversing Q58). How far a key moves the cursor is
+  timed in the input path, and every animation — including the camera's slide and the cursor's
+  glide, which interpolate every move — in the view; never the reducer.
 - **The Build Phase panel is the construct menu, what is left to spend, and the selected item's cost
-  and effect**, under `[n] Nexus` and `[e] Explore` entries at its top — no radius preview until
-  something has a radius (Q30). While exploring, Enter/Space replaces the menu with an **information
-  panel** about what is under the cursor. **Every popup is one shape** — a title and rows as data,
-  options naming the command a click sends, drawn and hit-tested from the same placement — and is
+  and effect**, under `[e] Explore Map` and `[n] Nexus` entries at its top, Explore Map first — no
+  radius preview until something has a radius (Q30). **Explore Map** keeps its row at the top of the panel,
+  drawn active, with a separator under it and the details of whatever is under the cursor below; `e`,
+  Esc or a click on the panel goes back. **A menu row has two states**: highlighted (the keyboard's
+  bar, only while the menu has focus) and **active** (`>`, the hotkey colour, underlined) while its
+  action is under way — a building armed, Explore Map open, the Nexus popup open — one style for all. **Every popup is one shape** — a title and rows as data,
+  options naming the command a click sends, at most one scrolling list with a scroll bar in its right
+  border, drawn and hit-tested from the same placement; a **message** is the shape with nothing to
+  choose, closed by Esc or a click outside — and is
   drawn last in the `chrome` band, never in a band of its own. **A refused placement is
   answered on the status line, and names its tile**; **affordability is reported before any tile
   problem**. A menu split into groups still shares **one digit sequence**, and an **empty group is
@@ -305,9 +363,10 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - **The status line is a typed message** — text, a tone, and the tile it is about, if any — never a
   bare string, and a tone resolves onto style roles in one place (`src/view/status.ts`). **The Grid
   pane is a closed rectangle** whose sides carry the "more Grid this way" signal as weight: a light
-  line where the view can scroll further, a **solid bar** (an inverse-video cell) where the map ends,
-  the same on all four sides and in every glyph pack; its west side is its own column beside the
-  menu's plain divider.
+  line where the view can scroll further, and **the map's own edge** where the map ends — a style the
+  map names for itself (a solid inverse-video bar when it names none), in the quieter edge colour, the
+  same weight on all four sides and in every glyph pack. **The menu's divider is its west side**, so
+  the Grid has that column: 49 tiles at 80 × 24, which stays the floor.
 - **A mission is a sequence of Build Phase / Nexus Pulse cycles driven by triggers.** Simulation
   actions run inside the kernel as validated intents; presentation actions never touch state. A
   scripted Pulse is still a Pulse.
@@ -360,12 +419,29 @@ deleted, and the renderer must be replaceable without one simulation test changi
   artifacts, or pushing directly to `main`.
 - Update `README.md`, `DEVELOPMENT.md`, the dev container, CI, and agent instructions together when
   canonical development commands change.
-- **Show Mario options through Debug Mode** (owner direction, 2026-09-26; built at Milestone 5 gate
-  5G): press `d` in the Build Phase for a panel of live-editable flags, some applied at once, some on
-  restart (`src/build/debug.ts` is the list). When a session has a genuine fork the owner should feel
-  rather than read about, the preferred move (Section 6's "make it observable") is a Debug Mode field,
-  not a new command-line flag. Every flag names the question it serves and is deleted once the
-  question is answered; a few graduate into real settings.
+- **Ask Mario to feel a choice through an Experiment** (owner direction, 2026-09-26 and 2026-09-28:
+  "The agent should feel free to add experimental flags anytime they need particular feedback from
+  me, so I can try with and without them, adjust speed settings, etc until it feels right").
+  **Settings** (Esc, then `s`, in the Build Phase) holds the player's own saved settings and, at its
+  bottom, **Experiments**: live-editable flags, some applied at once, some on restart
+  (`src/build/debug.ts` is the list); `d` jumps straight to them. When a session has a fork the owner
+  should feel rather than read about — a timing, a look, a movement rule, or whether a new feature
+  should exist at all — add an Experiment defaulting to the recommended answer and **ask him in plain
+  words to flip it**: "press `d`, set Armed click scrolls to off, and tell me which you prefer." Then
+  **ask him to paste the export into the pull request**: Settings' **Export settings** (`e`) copies
+  every setting and experiment as `name = value` text, changed experiments first; reproduce what he
+  had with `--settings "<pasted text>"` (`terminal-nexus --spike` or `scripts/playtest.mjs`) or
+  `#settings=` on the browser page. A new behaviour whose worth is in doubt ships with an on/off
+  Experiment, so he can switch it off without a rebuild. This is Section 6's "make it observable" in
+  its preferred form, ahead of a command-line flag or a registered question. Every Experiment names
+  the question it serves and is **normally deleted before its pull request is accepted**; a few stay
+  longer or graduate into real Settings. Settings is only in the Build Phase today; a screen without
+  it falls back to a command-line flag.
+- **Size the pull request's Demo to the change** (owner, 2026-09-28: "we have to be a little more
+  smart about how many tokens we spend building a playable demo"): a code block or nothing for a
+  change that does not show on screen, screenshots for one that changes how things look, a GIF for
+  movement or timing, and a playable page only when it must be played to be judged. The
+  `pr-description` skill has the layers and the "On Claude Web Artifact" / "On MacOS" shape.
 
 ### Write for a person, not for the filing system
 
@@ -397,7 +473,9 @@ This will happen. It is expected, and there is a procedure — see
    organization, diagnostics. Governance Section 2 already grants this. Do not ask.
 2. **Make it observable** if you can. A parameter, toggle, or side-by-side fixture that lets Mario
    *look* at both answers beats a paragraph arguing for one. This is the preferred move and it is
-   cheap far more often than it looks.
+   cheap far more often than it looks. In the Build Phase the form is an **Experiment** in Settings,
+   which he flips with `d` and reports back by pasting the export — and the pull request asks him to
+   (Section 5).
 3. **Register it** if it is genuinely the owner's call: add a `Q<n>` row with the question, why it
    blocks, the options, their costs, and **a recommendation**. The validator rejects an `OPEN`
    question with no recommendation, because a question without one just moves the work to Mario.

@@ -17,6 +17,7 @@ node scripts/playtest.mjs --keys "Down Down Space*4" --print all     # every ste
 node scripts/playtest.mjs --keys "n 1 Tab S-Left*5" --png final    # one PNG
 node scripts/playtest.mjs --keys "Down Down Space*4" --gif --name hatchery-run
 node scripts/playtest.mjs --file flow.keys --size 104x32 --capability monochrome --png all
+node scripts/playtest.mjs --settings "placeLight=rainbow scrollMargin=25" --keys "1 Enter"  # start from an export
 node scripts/playtest.mjs --help
 ```
 
@@ -28,17 +29,56 @@ about 1 MB; six keys at 80x24 is about 200 KB).
 
 `Up Down Left Right`, `S-Up` etc. (Shift, xterm bytes), `M-Up` etc. (Option as Esc+), `Tab S-Tab Esc
 Enter Space Bksp Del PgUp PgDn Home End C-c`, any single character (`n`, `1`, `p`, `y`), `Name*N` to
-repeat. Mouse: `click:X,Y` clicks Grid tile X,Y wherever the camera has it drawn right now (fails if
+repeat, `Name~MS` for a key arriving MS ms after the previous step (untimed steps are 1000 ms apart,
+so each is its own press). The held-key ramp only runs on timed steps: `e Right Right~150
+Right~30*12` is a tap, the terminal's repeat delay (inside the 150 ms hold window), then
+auto-repeat — the summary line prints each
+step's cursor and the kind of move the last timed cursor key made (`tap`, `hold`, `fast`, `jump`). Mouse: `click:X,Y` clicks Grid tile X,Y wherever the camera has it drawn right now (fails if
 it is off screen), `click@COL,ROW` clicks a 0-based screen cell; `rclick`, `wheelup`, `wheeldown` take
 the same targets. `#` starts a comment in a `--file`. The table with bytes is at the top of
 `src/playtest/keys.ts`. An unknown name is an error, never a guess.
 
-Useful openings on the `--spike` screen: focus starts on the menu's Nexus Powers row; `n 1` picks
-the first Nexus power, which closes the popup (budget becomes 130); `Down Down Space` arms the Hatchery
-from the menu; a digit arms by hotkey and moves focus to the Grid; `Tab` switches focus. `d` opens
-Debug Mode (Up/Down choose a flag, Left/Right change it, `r` restarts keeping the flags, `Esc`
-closes): `d Right Esc` turns the smart cursor off, `d Down Down Right r` restarts with the keyboard
-on the map.
+Useful openings on the `--spike` screen: focus starts on the menu's first row, Explore Map (`e`, or
+Enter there, opens it; `e` or Esc goes back), and the map cursor on the Grid Nexus (18,10); `n 1`
+picks the first Nexus power, which closes the popup (budget becomes 130) and leaves the highlight on
+the Nexus row, so `n 1 Down Down Space` arms the Hatchery from the menu (`n 2` is the War Chest: 2000
+more to spend). Arming — a digit, Enter on a row, a click on it — keeps the cursor where it is when the
+building fits there, and otherwise moves it to the nearest spot a free tile from everything (from the
+Nexus, that is 22,10 for a Barracks, a free column to its right; a tile down counts as two across). A digit pressed on the map comes back to the map after the
+placement (plain navigation, `MAP` in the key help); anything started on the menu comes back to the
+menu. `Tab` switches focus, arriving on the map in plain navigation. A click on a building's row arms it at once
+(`click@3,9` is the Hatchery at 80x24), and a second click on the same tile places. `Esc` on the menu
+(or `q` anywhere) opens the game menu: `s` Settings, `r` Restart (the Build Phase over, every setting
+kept), `q` quits. The top bar's right end says what Esc does now — `menu [esc]`, `back [esc]`,
+`close [esc]` — and clicking it is Esc (`click@70,1` at 80x24). **Settings** lists the player's own
+settings first (`Esc s Right` switches the background to light), then the **Experiments** — the
+playtest flags, which `d` opens straight at (Up/Down choose, Left/Right change, `e` exports, `Esc`
+closes) — and last, **Export settings**. The title shows the highlight's place, `SETTINGS (6/28)`;
+the right border beside the list is its scroll bar (a click on its lower half scrolls down). The
+Experiments start on gate 5I's placement juice (`d Right` lengthens the build animation, `d Down
+Right` sets Lighting to rainbow), then gate 5H's movement numbers (`d Down*4 Right` widens the scroll
+margin). From the first setting, Up comes round to Export, then the last experiments. Closing
+Settings with a changed Experiment that only applies after a restart shows a **RESTART NEEDED**
+message (Esc closes it, back on the game menu's Restart; `r` then restarts) — no Experiment needs a
+restart today, since "Opens on" was deleted. `src/build/debug.ts`'s
+`DEBUG_FIELDS` is the order. The map's edge is not an Experiment: it is the map's own style (the spike
+map's fence; `--glyphs unicode` shows the Unicode forms), and the menu's divider is its west side.
+
+**Reproducing what the owner played**: he exports his settings (Settings, `e`) and pastes the text
+into the pull request; `--settings "<that text>"` starts the script from exactly those settings and
+experiments (the whole export, or just pairs: `--settings "placeLight=rainbow scrollMargin=25"`). The
+same key script can open the **live game** in a state: `./bin/terminal-nexus.ts --spike --keys "n 1 1
+Enter"` (and `#keys=` in the browser page's address) plays those keys through the real adapters
+before the player gets the keyboard — for a demo link, or to hand Mario the exact state a report is
+about.
+Unknown names and bad values are skipped and named on stderr.
+
+What a script cannot show is time between keys on the live screen — the view sliding, a flash, a
+building going up (script frames always draw buildings finished). For those, compose a frame with
+`camera` / `refusedFlash` / `flash` / `placing: [{ ordinal, elapsedMs }]` / `removing: [{ ordinal,
+contentId, anchor, elapsedMs }]` yourself, or step
+`BuildAnimation` (`src/view/build-live.ts`) with a fake clock: `slideGif`, `placementGif` and
+`placementSheet` in `scripts/capture-spike-screenshots.mjs` do exactly that.
 
 ## Workflow
 

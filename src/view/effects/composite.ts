@@ -20,6 +20,33 @@
 // the other was there.
 
 import type { EffectBand, PositionedCell } from "./types.ts"
+import type { CellStyle } from "../frame.ts"
+import { BANDS } from "../frame.ts"
+
+/** The frame band each effect band paints in. */
+export const EFFECT_BAND_NUMBERS: Readonly<Record<EffectBand, number>> = {
+  "ground-items": BANDS.groundItems,
+  projectiles: BANDS.projectiles,
+  effects: BANDS.effects,
+  highlights: BANDS.highlights,
+}
+
+/**
+ * The style an effect cell carries into the frame — one translation, shared by the Pulse's compositor
+ * and the Build Phase's, so a recipe draws the same wherever it is used. Keys are present only when
+ * they mean something, so a frame with no faded or tinted cells is byte-for-byte what it was before
+ * either existed.
+ */
+export function effectCellStyle(cell: PositionedCell): CellStyle {
+  return {
+    ...(cell.role === undefined ? {} : { fgRole: cell.role }),
+    ...(cell.bold === true ? { bold: true } : {}),
+    ...(cell.dim === true ? { dim: true } : {}),
+    ...(cell.inverse === true ? { inverse: true } : {}),
+    ...(cell.fade !== undefined && cell.fade > 0 ? { fade: cell.fade } : {}),
+    ...(cell.tint !== undefined && cell.tint.amount > 0 ? { tint: cell.tint } : {}),
+  }
+}
 
 /** One effect's cell, carrying the band it belongs to — everything `mergeEffectCells` needs to know
  *  to decide whether it collides with another cell this frame. */

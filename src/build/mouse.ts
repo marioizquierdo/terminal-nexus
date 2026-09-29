@@ -6,16 +6,21 @@
 // gestures a flat menu has no use for: the wheel, and the right button.
 
 import type { BuildLayout } from "./layout.ts"
-import { debugHintAt, menuEntryAt, tileAtCell } from "./layout.ts"
+import { ESC_KEY, escHintAt, menuEntryAt, tileAtCell } from "./layout.ts"
 import type { PlacedOverlay } from "./overlay.ts"
 import { overlayHitAt } from "./overlay.ts"
 import type { Camera } from "./camera.ts"
-import { JUMP_TILES } from "./state.ts"
+import { EXPLORE_ENTRY, JUMP_TILES } from "./state.ts"
 import type { BuildCommand, ConstructItem } from "./types.ts"
 
-/** What is on screen beyond the layout: the open popup, placed, since it holds the mouse. */
+/** What is on screen beyond the layout: the open popup, placed, since it holds the mouse; whether the
+ *  Explore Map panel is drawn where the menu usually is; and the top bar's Esc label as drawn
+ *  (`escLabel`), whose width is its click target — "close [esc]" with a popup open, "menu [esc]"
+ *  otherwise, when not given. */
 export type MouseUiState = Readonly<{
   overlay?: PlacedOverlay
+  explorePanel?: boolean
+  escLabel?: string
 }>
 
 const SGR_MOUSE = /^\u001b\[<(\d+);(\d+);(\d+)([Mm])$/
@@ -82,10 +87,20 @@ export function buildMouseCommand(
     return null
   }
 
-  // An open popup holds the mouse. Inside it, a click is one of its options or its `[esc]`; outside
+  // The top bar's Esc label — "menu [esc]", "back [esc]", "close [esc]" — is Esc itself, whatever is
+  // open (feedback F37): one level back, exactly as the key goes, never the click-outside that closes
+  // every popup at once.
+  const escText = ui.escLabel ?? `${ui.overlay === undefined ? "menu" : "close"} ${ESC_KEY}`
+  if (event.button === MOUSE_LEFT && escHintAt(layout, escText, event.column, event.row)) return { kind: "cancel" }
+
+  // An open popup holds the mouse. Inside it, a click is one of its options or its scroll bar; outside
   // it, the click closes it and brings focus to wherever it landed, and does nothing more (owner,
   // 2026-09-27 — he clicked Nexus, missed the popup in the middle, and thought the mouse was broken).
   if (ui.overlay !== undefined) {
+    // The wheel walks a popup's list, which scrolls Settings' and the export's (gate 5H) — Up and
+    // Down's own job.
+    if (event.button === MOUSE_WHEEL_UP) return { kind: "highlight", delta: -1 }
+    if (event.button === MOUSE_WHEEL_DOWN) return { kind: "highlight", delta: 1 }
     if (event.button !== MOUSE_LEFT) return null
     const hit = overlayHitAt(ui.overlay, event.column, event.row)
     if (hit.kind === "command") return hit.command
@@ -96,9 +111,21 @@ export function buildMouseCommand(
   if (event.button === MOUSE_WHEEL_UP) return { kind: "move-cursor", dx: 0, dy: -JUMP_TILES }
   if (event.button === MOUSE_WHEEL_DOWN) return { kind: "move-cursor", dx: 0, dy: JUMP_TILES }
   if (event.button !== MOUSE_LEFT) return null
-  // The top bar's `[d] debug` opens Debug Mode. Only with no popup open: over one, a click there is a
-  // click outside it, which closes it, like any other (so a second click on the hint closes Debug
-  // Mode itself).
-  if (debugHintAt(layout, event.column, event.row)) return { kind: "open-debug" }
+  // Explore Map covers the menu below its own row, so the whole panel is one target — its own row,
+  // drawn active, and the card under it — and what it does is close Explore Map, as Esc does. Sent as
+  // the menu click it is, so a driver's `click-menu` in Explore Map means exactly the same.
+  if (ui.explorePanel === true && inPanel(layout, event.column, event.row)) {
+    return { kind: "click-menu", entry: menuEntryAt(layout, catalog, event.column, event.row) ?? EXPLORE_ENTRY }
+  }
   return underneath()
+}
+
+/** Whether a frame cell is on the side panel — its full width, from its first row to its last. */
+function inPanel(layout: BuildLayout, column: number, row: number): boolean {
+  return (
+    column >= layout.panelColumn &&
+    column < layout.panelColumn + layout.panelLimit &&
+    row >= layout.panelRow &&
+    row <= layout.panelBindingsRow
+  )
 }

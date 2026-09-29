@@ -23,6 +23,10 @@ import type {
 } from "./types.ts"
 import { paramNumber, paramString, progressOf } from "./types.ts"
 import { cosmeticHash, cosmeticPick, cosmeticUnit } from "./random.ts"
+import type { StyleRole } from "../roles.ts"
+import { EASINGS } from "../tween.ts"
+import { PARTICLE_RECIPES } from "./particles.ts"
+import { SHADING_RECIPES } from "./shading.ts"
 
 type Family = Readonly<{
   trail: readonly string[]
@@ -385,7 +389,8 @@ function deathFrameGlyphAt(
 }
 
 /**
- * Ease-out: fast at first, slowing toward the end. Owner playtest, 2026-08-24: "the explosion can be
+ * Ease-out: fast at first, slowing toward the end — the quadratic curve of the toolkit's tweens
+ * (`EASINGS.easeOutQuad`, `../tween.ts`), under the name these recipes have always used. Owner playtest, 2026-08-24: "the explosion can be
  * improved, by expanding faster at first, and then slowing down towards the end." A quadratic curve
  * is the cheapest shape that reads as deceleration, and it is shared by every expansion-from-a-centre
  * site below — the blast ring, the big-death shockwave, and the flying debris (drag decelerates real
@@ -397,10 +402,7 @@ function deathFrameGlyphAt(
  * would read as a bullet slowing down in flight. Deliberately NOT applied to `structureCollapse`'s
  * `collapsedRows`: that is a progressive top-down reveal, not an expansion from a centre.
  */
-export function easeOut(t: number): number {
-  const clamped = Math.max(0, Math.min(1, t))
-  return 1 - (1 - clamped) ** 2
-}
+export const easeOut: (t: number) => number = EASINGS.easeOutQuad
 
 /** Beats a big-body death choreography moves through, as fractions of the instance's own window. */
 const SHOCKWAVE_END = 0.15
@@ -806,6 +808,10 @@ export const EFFECT_RECIPES: Readonly<Record<string, EffectRecipe>> = {
   "fx.structure.collapse": structureCollapse,
   "fx.blast.detonation": blastDetonation,
   "fx.nexus.critical": nexusCritical,
+  // The toolkit's generic recipes, usable by anything with a footprint (gate 5I made them for a
+  // building going up; `particles.ts` and `shading.ts` say what each one takes).
+  ...PARTICLE_RECIPES,
+  ...SHADING_RECIPES,
 }
 
 export const EFFECT_IDS: readonly string[] = Object.keys(EFFECT_RECIPES)

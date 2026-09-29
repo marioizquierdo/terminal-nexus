@@ -6,7 +6,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SPIKE_CATALOG } from "../src/build/catalog.ts"
-import { NEXUS_ROW, buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
+import { NEXUS_ROW, buildLayout, cellForTile, constructLines, escHintSpan, escLabel } from "../src/build/layout.ts"
 import { overlaySpec, placeOverlay } from "../src/build/overlay.ts"
 import type { PlacedOverlay } from "../src/build/overlay.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
@@ -129,11 +129,15 @@ test("an open popup draws no placement ghost behind it, and refuses edits sent b
 })
 
 test("picking applies its own effect exactly once, and cannot be changed afterward", () => {
-  const { build } = session()
+  const { build, layout } = session()
   const context = spikeContext()
-  build.dispatch({ kind: "pick-nexus", index: 1 }) // War Chest, +60
+  build.dispatch({ kind: "pick-nexus", index: 1 }) // War Chest, +2000
   assert.equal(build.state.nexusPick, 1)
   assert.equal(build.state.bonusAllotment, context.nexusDraft[1]!.bonusAllotment)
+  // The owner's number (2026-09-28, feedback F24): enough to place buildings freely in a playtest.
+  assert.equal(build.state.bonusAllotment, 2000)
+  const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
+  assert.match(text, /RESOURCE {7}2100 of 2100\|/, "the panel's budget line, whole, with the War Chest")
   assert.match(build.state.status.text, /War Chest picked/)
 
   const after = build.state
@@ -293,7 +297,7 @@ function placedPopup(side: ReturnType<typeof session>): PlacedOverlay {
   return placeOverlay(side.layout, spec)
 }
 
-/** The click bytes for the popup option whose command matches, or for its `[esc]`. */
+/** The click bytes for the popup option whose command matches, or for the top bar's "close [esc]". */
 function clickPopupBytes(side: ReturnType<typeof session>, match: (command: BuildCommand) => boolean): string {
   const popup = placedPopup(side)
   const row = popup.rows.find((candidate) => candidate.spec.kind === "option" && match(candidate.spec.command))
@@ -301,8 +305,9 @@ function clickPopupBytes(side: ReturnType<typeof session>, match: (command: Buil
   return formatMouseEvent(MOUSE_LEFT, popup.textColumn + 2, row.row + 1)
 }
 function clickPopupCloseBytes(side: ReturnType<typeof session>): string {
-  const popup = placedPopup(side)
-  return formatMouseEvent(MOUSE_LEFT, popup.close.from + 1, popup.close.row + 1)
+  const hint = escHintSpan(side.layout, escLabel(side.build.state))
+  assert.equal(escLabel(side.build.state), "close [esc]")
+  return formatMouseEvent(MOUSE_LEFT, hint.from + 1, hint.row + 1)
 }
 function clickNexusEntryBytes(layout: ReturnType<typeof buildLayout>): string {
   return formatMouseEvent(MOUSE_LEFT, layout.panelColumn + 5, layout.panelRow + NEXUS_ROW + 1)
@@ -317,7 +322,7 @@ test("mouse: inside a popup a click picks or closes; outside it, a click closes 
   side.build.handleData(formatMouseEvent(MOUSE_LEFT, popup.textColumn + 6, second.row + 1), side.layout)
   assert.equal(side.build.state.nexusPick, 1)
   assert.equal(side.build.state.overlay, null, "a pick closes the popup")
-  // `[esc]` in the top-right corner closes it without a pick.
+  // The top bar's "close [esc]" closes it without a pick.
   side.build.handleData("n", side.layout)
   side.build.handleData(clickPopupCloseBytes(side), side.layout)
   assert.equal(side.build.state.overlay, null)
@@ -377,20 +382,29 @@ function clickTileBytes(
 }
 
 test("the same pick-build-commit script produces an identical state by hotkeys, by clicks, and from a driver script", () => {
+  // An armed click scrolls near the view's edges (F22) and an arrow does not: the parity here is the
+  // plan, so all three players switch that Experiment to a still view alike.
+  const stillClicks: BuildCommand = { kind: "debug-adjust", field: "armedClickScrolls", step: 1 }
   const byKeyboard = session()
+  byKeyboard.build.dispatch(stillClicks)
   byKeyboard.build.handleData("n", byKeyboard.layout) // open the Nexus Powers
   byKeyboard.build.handleData("1", byKeyboard.layout) // pick Reserve Fund, which closes the popup
   byKeyboard.build.handleData("1", byKeyboard.layout) // arm Barracks
+  // Row 13, clear of the scroll margin: an armed click never scrolls the view (Q58) and an arrow
+  // does, so a plan laid inside the margin is the same plan by both, but not the same camera.
   for (let step = 0; step < 12; step += 1) byKeyboard.build.handleData(`${ESC}[C`, byKeyboard.layout)
-  byKeyboard.build.handleData(`${ESC}[B`, byKeyboard.layout)
   byKeyboard.build.handleData("\r", byKeyboard.layout)
-  byKeyboard.build.handleData("1", byKeyboard.layout) // placing handed the keyboard to the menu
-  for (let step = 0; step < 4; step += 1) byKeyboard.build.handleData(`${ESC}[C`, byKeyboard.layout)
+  // Placing handed the keyboard back to the menu, where the arming came from. The cursor is on the
+  // new Barracks, so arming another moves it to the nearest spot with a free tile around it — a free
+  // column to its right, 34,13 (feedback F30) — and Enter places it there.
+  byKeyboard.build.handleData("1", byKeyboard.layout)
+  assert.deepEqual(byKeyboard.build.state.cursor, { x: 34, y: 13 })
   byKeyboard.build.handleData("\r", byKeyboard.layout)
   byKeyboard.build.handleData("p", byKeyboard.layout)
   byKeyboard.build.handleData("y", byKeyboard.layout)
 
   const byMouse = session()
+  byMouse.build.dispatch(stillClicks)
   // The screen opens with the keyboard on the menu, so one click on Nexus opens it.
   byMouse.build.handleData(clickNexusEntryBytes(byMouse.layout), byMouse.layout)
   byMouse.build.handleData(clickPopupBytes(byMouse, (c) => c.kind === "pick-nexus" && c.index === 0), byMouse.layout)
@@ -401,11 +415,11 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   const clickTile = (tile: { x: number; y: number }): void => {
     byMouse.build.handleData(clickTileBytes(byMouse.layout, byMouse.build, tile), byMouse.layout)
   }
-  clickTile({ x: 30, y: 14 })
-  clickTile({ x: 30, y: 14 })
+  clickTile({ x: 30, y: 13 })
+  clickTile({ x: 30, y: 13 })
   byMouse.build.handleData("1", byMouse.layout)
-  clickTile({ x: 34, y: 14 })
-  clickTile({ x: 34, y: 14 })
+  // Arming already put the cursor on 34,13, so one click there is the confirming second click.
+  clickTile({ x: 34, y: 13 })
   byMouse.build.handleData("p", byMouse.layout)
   byMouse.build.handleData(clickPopupBytes(byMouse, (c) => c.kind === "confirm-commit" && c.accept), byMouse.layout)
 
@@ -413,20 +427,24 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
     { kind: "open-nexus-powers" },
     { kind: "pick-nexus", index: 0 },
     { kind: "arm", index: 0 },
-    { kind: "move-cursor", dx: 12, dy: 1 },
+    { kind: "move-cursor", dx: 12, dy: 0 },
     { kind: "place" },
     { kind: "arm", index: 0 },
-    { kind: "move-cursor", dx: 4, dy: 0 },
     { kind: "place" },
     { kind: "commit" },
     { kind: "confirm-commit", accept: true },
   ]
   const byDriver = session()
-  byDriver.build.run(script)
+  byDriver.build.run([stillClicks, ...script])
 
   assert.equal(byKeyboard.build.state.committed, true, "the test did not actually reach committed")
   assert.equal(byKeyboard.build.state.planned.length, 2)
-  assert.deepEqual(byMouse.build.state, byKeyboard.build.state)
+  // The one difference is the point of feedback F22: a placement by the mouse leaves the menu with no
+  // "highlighted, not yet chosen" bar, one by the keyboard leaves it showing for the next key. The
+  // committed screen draws no menu, so the frames still match.
+  assert.equal(byMouse.build.state.highlightHidden, true)
+  assert.equal(byKeyboard.build.state.highlightHidden, false)
+  assert.deepEqual({ ...byMouse.build.state, highlightHidden: false }, byKeyboard.build.state)
   assert.deepEqual(byDriver.build.state, byKeyboard.build.state)
   const frame = (side: ReturnType<typeof session>): string =>
     frameToText(composeBuildFrame({ context: spikeContext(), state: side.build.state, layout: side.layout }, "monochrome"))

@@ -11,6 +11,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { runSpike } from "../src/cli/spike.ts"
+import { parseKeyScript } from "../src/playtest/keys.ts"
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../src/menu/mouse.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import type { Settings } from "../src/settings/index.ts"
@@ -53,8 +54,13 @@ class FakeStdin extends EventEmitter {
   }
 }
 
+/** Long enough for a lone Esc's timeout (gate 5H; 50 ms unless Debug Mode says otherwise) to run out,
+ *  and for the frame timer's last frame after it. */
+const AFTER_ESC_TIMEOUT_MS = 150
+
 async function spikeSession(
   end: (stdin: FakeStdin, stdout: FakeStdout) => void,
+  settleMs = 30,
 ): Promise<{ stdout: FakeStdout; stdin: FakeStdin; exits: number[] }> {
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()
@@ -72,7 +78,7 @@ async function spikeSession(
 
   await new Promise((resolve) => setTimeout(resolve, 30))
   end(stdin, stdout)
-  await new Promise((resolve) => setTimeout(resolve, 30))
+  await new Promise((resolve) => setTimeout(resolve, settleMs))
   void session
   return { stdout, stdin, exits }
 }
@@ -105,13 +111,14 @@ test("q then q, an interrupt byte, and Esc then q all reach the one disposer", a
 })
 
 test("a lone q or Esc only asks — it never leaves the screen by itself", async () => {
-  // engine.md 9.7: Esc "never quits the game by itself"; since the exit question, neither does q.
+  // engine.md 9.7: Esc "never quits the game by itself"; since the exit question, neither does q —
+  // both open the game menu (Settings, Quit) now.
   for (const key of ["q", ESC]) {
     const { stdout, exits } = await spikeSession((input) => {
       input.emit("data", Buffer.from(key))
-    })
+    }, AFTER_ESC_TIMEOUT_MS)
     assert.deepEqual(exits, [], `${JSON.stringify(key)} left without asking`)
-    assert.ok(stdout.lastWrite.includes("EXIT THE GAME?"), "the exit question was not drawn")
+    assert.ok(stdout.lastWrite.includes("Back to the game"), "the game menu was not drawn")
   }
 })
 
@@ -119,9 +126,22 @@ test("Esc with something armed disarms instead of leaving", async () => {
   const { stdout, exits } = await spikeSession((input) => {
     input.emit("data", Buffer.from("1"))
     input.emit("data", Buffer.from(ESC))
-  })
+  }, AFTER_ESC_TIMEOUT_MS)
   assert.deepEqual(exits, [], "Esc quit while a structure was armed")
   assert.ok(stdout.lastWrite.includes("Cancelled"), "Esc did not disarm")
+})
+
+test("a lone Esc waits a moment for the rest of a key: Esc then [A in the next read is one Up arrow", async () => {
+  // Gate 5H: an arrow split across two reads (a slow link) used to arrive as Esc and then two stray
+  // characters. Within the timeout the two reads are joined and are the one key they always were.
+  const { stdout, exits } = await spikeSession((input) => {
+    input.emit("data", Buffer.from("e")) // explore, so the arrow moves the map cursor
+    input.emit("data", Buffer.from(ESC))
+    input.emit("data", Buffer.from("[A"))
+  }, AFTER_ESC_TIMEOUT_MS)
+  assert.deepEqual(exits, [])
+  assert.ok(!stdout.lastWrite.includes("Back to the game"), "the split arrow was read as Esc")
+  assert.match(stdout.lastWrite, /cursor 18,9/, "the split arrow did not move the cursor up one tile") // from the Nexus
 })
 
 test("a right click never leaves the screen", async () => {
@@ -158,12 +178,12 @@ test("below the floor the screen gates, and resizing back above it restores the 
     output.emit("resize")
   })
   assert.ok(stdout.lastWrite.includes("RESOURCE"), "resizing back did not restore the screen")
-  assert.ok(stdout.lastWrite.includes("view x 0-47"), "the viewport did not come back")
+  assert.ok(stdout.lastWrite.includes("view x 0-48"), "the viewport did not come back")
 })
 
 test("a bigger terminal shows a bigger viewport, and the frame is cleared when its size changes", async () => {
   const { stdout } = await spikeSession((_input, output) => {
-    assert.ok(output.lastWrite.includes("view x 0-47"), "did not start at the minimum viewport")
+    assert.ok(output.lastWrite.includes("view x 0-48"), "did not start at the 80-column viewport")
     output.columns = 104
     output.rows = 32
     output.emit("resize")
@@ -173,4 +193,51 @@ test("a bigger terminal shows a bigger viewport, and the frame is cleared when i
     stdout.written.includes(`${ESC}[2J`),
     "a frame that changed size was drawn over the old one without clearing it",
   )
+})
+
+test("--keys opens the Build Phase already in the state those keys reach, then hands over the keyboard", async () => {
+  // Owner, 2026-09-29 (feedback F28/F40): demos and reports should start in a particular state. The
+  // keys go through the same adapters as a player's, before the first frame.
+  const stdout = new FakeStdout()
+  const stdin = new FakeStdin()
+  const exits: number[] = []
+  const session = runSpike({
+    settings: TEST_SETTINGS,
+    backend: "ansi",
+    stdout: stdout as unknown as NodeJS.WriteStream,
+    stdin: stdin as unknown as NodeJS.ReadStream,
+    exit: (code) => {
+      exits.push(code)
+    },
+    startKeys: parseKeyScript("n 1 1 Enter"),
+  })
+  await new Promise((resolve) => setTimeout(resolve, 30))
+  assert.ok(stdout.written.includes("Barracks placed"), "the start keys did not place the Barracks")
+  assert.ok(stdout.written.includes("1 active"), "the start keys did not pick the power")
+  // The keyboard is the player's now: Ctrl+C still leaves through the one disposer.
+  stdin.emit("data", Buffer.from([3]))
+  await new Promise((resolve) => setTimeout(resolve, 30))
+  void session
+  assert.deepEqual(exits, [0])
+  assert.equal(stdin.raw, false)
+})
+
+test("--keys that cannot be delivered stops there and says why when the screen closes", async () => {
+  const stdout = new FakeStdout()
+  const stdin = new FakeStdin()
+  const reported: string[] = []
+  const session = runSpike({
+    settings: TEST_SETTINGS,
+    backend: "ansi",
+    stdout: stdout as unknown as NodeJS.WriteStream,
+    stdin: stdin as unknown as NodeJS.ReadStream,
+    host: { onInterrupt: () => () => {}, exit: () => {}, reportError: (text) => reported.push(text) },
+    startKeys: parseKeyScript("click:95,39 n"),
+  })
+  await new Promise((resolve) => setTimeout(resolve, 30))
+  assert.ok(!stdout.written.includes("1 active"), "a step after the failed one ran")
+  assert.ok(stdout.written.includes("RESOURCE"), "the screen did not open")
+  stdin.emit("data", Buffer.from([3]))
+  await session
+  assert.ok(reported.some((text) => text.includes("--keys stopped early") && text.includes("95,39")), reported.join(""))
 })

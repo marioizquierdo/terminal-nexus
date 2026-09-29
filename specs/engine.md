@@ -2,7 +2,7 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.22
+**Canon version:** 2.26
 **Updated:** 2026-09-27
 **License:** Apache-2.0
 
@@ -211,7 +211,9 @@ spent on centring and on a larger inspection panel — **never on more Grid**.
 
 **Fitting, in order:**
 
-1. Subtract chrome from the terminal: a border, a header, a footer, and a 30-column side panel.
+1. Subtract chrome from the terminal: a border, a header, a footer, and a 29-column side panel whose
+   divider is the Grid's west side (below). The resize gate and the choice of tile width still measure
+   against a 30-column panel, so 80 × 24 stays the floor and two columns per tile still starts at 128.
 2. Choose tile width — 2 columns per tile if the terminal can show the viewport that way, otherwise 1
    (Section 9.3).
 3. `viewport = min(availableTiles, maximumViewport, gridSize)`.
@@ -237,19 +239,21 @@ with each other, whichever floor was intended.
 minimap.**
 
 - The camera position is in tiles and is clamped so the viewport never leaves the Grid.
-- **The cursor drives it.** Move the cursor within a **scroll margin of 3 tiles** of a viewport edge
-  and the camera follows. That is the whole interaction — no separate pan mode, no modifier keys, no
+- **The cursor drives it.** Move the cursor within the **scroll margin** of a viewport edge — a share
+  of the view along each axis, 25% (the owner's pick, 2026-09-29; GUIDANCE, an Experiment; three
+  tiles until gate 5H, 20% until gate 5K)
+  — and the camera follows. That is the whole interaction — no separate pan mode, no modifier keys, no
   second cursor. It works identically in the Build Phase and during a Pulse.
 - **The margin is a follow rule, not an invariant** (gate 5A). It says where the camera must be
   relative to the cursor *when it can be*. At the Grid's own edge the camera has nowhere left to go,
   so the cursor legitimately reaches the edge of the screen — which is correct, because there is no
   more Grid to reveal by scrolling further. Stated because the rule is otherwise unimplementable as
   written, and because "the margin holds wherever the camera can still scroll" is a checkable
-  sentence where "the margin holds" is not. Three tiles is what runs today, confirmed at gate 5A
-  (2026-09-21) and adjustable with `terminal-nexus --spike --scroll-margin`. **The number is being
-  revisited**: the owner's fuller playtest (2026-09-26) found three tiles too few — "try 6, or better,
-  it needs to be dependent on the screen size, I feel like about 20% of the height or width" — so
-  gate 5H makes the margin a share of the viewport's own width and height, as a live-tunable number
+  sentence where "the margin holds" is not. Since gate 5H the margin is a share of the view's width for the sides and of its height for
+  the top and bottom — 25% since gate 5K, 12 × 4 tiles at 80 × 24 — rounded, and capped
+  so an axis's two margins never meet; `--scroll-margin <percent>` and an Experiment set it (it was
+  three tiles from gate 5A, which the owner's 2026-09-26 playtest found too few: "about 20% of the
+  height or width").
   (Q54). That a margin exists, and that the cursor drives it, is unchanged.
 - **The UI must show that there is more Grid.** Without a minimap the burden falls on two cheap
   signals, and both are required: **the weight of the Grid pane's own sides** — every side with more
@@ -265,56 +269,70 @@ minimap.**
   Grid ended ("the cursor ends at what it seems arbitrary") because two blank header rows sat between
   the Grid's top and the nearest line and the footer sat against its bottom with none: whatever the
   sides said about scrolling, they said it three rows away from the edge they were about.
-- **The edge marker is the weight of that rectangle's sides — RULE, decided 2026-09-26; a solid bar
-  since canon 2.21.** A side with **more Grid to scroll to** is the frame's own line drawn dim (`-`,
-  `|`); a side that has **reached the Grid's own edge** is a **solid bar** — an inverse-video cell —
-  the same weight along the top and bottom as down the sides, in every glyph pack and in monochrome,
-  with no colour needed to read it. A corner is solid wherever a solid side runs into it, so a heavy
-  side runs unbroken to its end. When the whole Grid fits and nothing scrolls, every side and all four
-  corners are solid at once: one statement, "this is the whole map". The frame's outer border and the
-  rules where they cross the side panel never scroll, and stay plain.
-  The solid bar replaces the `=` along the top and bottom and the bold `|` down the sides that canon
-  2.19 first drew (the owner's own "'---' UI, and '===' for the map edge"): ASCII has no heavier
-  vertical bar, so the two directions could never carry the same weight, and after playing it the
-  owner asked for exactly that (2026-09-27: "The grid borders need to also use the 'thick' version
-  horizontally... The rectangle needs to be a rectangle"; Q56). This settled which border treatment
-  reads better, one of gate 5C's two open questions; the other (whether the armed row's marker and
-  the cursor's brightness read as intended) is still the owner's to judge. The dotted soft edge gate
-  5C first drew is retired — its `.` was the ground lattice's own glyph, dimness and colour family,
-  right beside the lattice — and so is **the switchable `--edge-style scrollbar`** built beside 5C as
-  the alternative this decision needed ("I feel like it is not necessary... For now, let's settle on
-  no scrollbar"). A `[m] Map` popup that shows the whole Grid at once is a separate idea for later,
-  deliberately not designed here (Q59).
-- **The Grid's west side is a column of its own, beside the side panel's plain divider — RULE,
-  canon 2.21** (owner, 2026-09-27). With the side panel on the left of the Grid (9.2), a solid west
-  bar drawn on the divider itself sat directly against the menu text and read as a heavy menu border
-  rather than "the map ends here". So the divider is a plain line that belongs to the panel, and the
-  column beside it belongs to the Grid: a solid bar where the map ends to the west; where there is
-  more map to the west, a blank gutter, and the divider is drawn light beside the Grid's rows, like
-  the other three light sides. The column comes out of the menu, which is one character narrower; the
-  Grid keeps all 48 of its columns at 80 × 24 (`src/build/layout.ts`, `src/view/build.ts`'s
-  `drawChrome`).
+- **The edge marker is the weight of that rectangle's sides — RULE, decided 2026-09-26; the map's own
+  edge since canon 2.26.** A side with **more Grid to scroll to** is the frame's own line drawn dim
+  (`-`, `|`); a side that has **reached the Grid's own edge** is drawn in **the map's own edge style**,
+  named in the map's definition — a solid bar (an inverse-video cell) for a map that names none; a
+  dashed fence for PERIMETER's stand-in map — in the quieter edge colour (`chrome.edge`), the same
+  weight along the top and bottom as down the sides, in every glyph pack and in monochrome, with no
+  colour needed to read it. A corner takes the edge wherever an edge side runs into it; a patterned
+  edge is fixed to the map and scrolls with it. When the whole Grid fits, every side and all four
+  corners are the edge at once: "this is the whole map". The frame's outer border and the rules where
+  they cross the side panel never scroll, and stay plain. History: canon 2.19's `=` and bold `|`
+  became the solid bar at 2.21 (Q56: "the rectangle needs to be a rectangle"); gate 5J made the
+  glyph, the colour and a shared west side Experiments (feedback F25), and the owner's playtest of
+  2026-09-29 chose (F38): "using map-specific borders looks a lot better! Even in ascii mode, the
+  rugged border style applied to the UI border when reaching the map edge is an awesome UI touch …
+  quiet and merged with the west side." The style vocabulary a map may name is solid, half, heavy,
+  double, shade and fence (`src/view/edge.ts`). The switchable `--edge-style scrollbar` and gate 5C's
+  dotted soft edge stay retired; a `[m] Map` popup that shows the whole Grid at once is a separate
+  idea for later (Q59).
+- **The side panel's divider is the Grid's west side — RULE, canon 2.26** (owner, 2026-09-29,
+  reversing canon 2.21's separate column). One column: a plain line beside the menu's own rows and
+  rules, and a light or map-edge side beside the Grid's rows. Canon 2.21 gave the Grid a column of its
+  own because a solid bar on the divider read as a heavy menu border; the quieter edge colour and the
+  map's own styles removed that reason, and the column goes to the Grid: 49 tiles at 80 × 24
+  (`src/build/layout.ts`; `src/build/camera.ts`'s `FLOOR_PANEL_COLUMNS` keeps the floor measured
+  against 30 columns).
 - **A Grid shorter than the pane closes directly under its own last row** (gate 5F): the Grid pane
   keeps the minimum viewport's 16 rows while the terminal has them, because the side panel is
   designed at that height (9.2), and a shorter Grid sits at the top of it with its own bottom edge
   drawn across the Grid pane alone — the rectangle stays closed at the Grid's real edge, never at the
   pane's.
-- **Cursor movement is GUIDANCE for a speed model, not only a fixed step** — gate 5H. Today one key
-  event moves the cursor a fixed distance (one tile, or `JUMP_TILES` with a modifier), which means the
-  *only* thing driving repeated movement is the terminal's own key-repeat rate — measured directly
-  against an owner playtest that found slowing that rate down made movement worse, not more precise,
-  because there is no internal notion of how long a key has been held. The recommended shape, from the
-  owner's own description: a held-key speed ramp (slow 1, normal 2, fast 4, faster 8 tiles a step;
-  start at normal and ramp to fast while held; the modifier is instant top gear; a change of direction
-  drops to slow for precise pointing, and moving away from where slow began, holding again, or doing
-  anything else returns to normal), a margin that is a share of the viewport (above), the modifier
-  and an unarmed click **recentring** the camera on the cursor rather than only dragging it to the
-  margin, and camera moves **eased over a few frames** rather than jumped — which needs this screen's
-  first frame timer, since it redraws once per input event today. Timing lives in the input adapter
-  and the view, never the reducer: a held key becomes a `move-cursor` of a computed size, and the
-  reducer stays a pure function of commands. The exact tiers, thresholds and timings are not decided
-  here — they become live Debug Mode fields (gate 5G) and are tuned by feel (Q54). Whether an armed
-  click may scroll the camera at all is Q58.
+- **Cursor movement ramps, and the fast move jumps — GUIDANCE, built at gate 5H, reworked at gate 5J**
+  (the owner's playtest of 2026-09-28). A single press moves one tile. A press of the same arrow soon
+  after the one before — within the hold window, 500 ms to start — is a run, whether it is the
+  terminal's auto-repeat of a held key or quick tapping, and moves two tiles a press at once; once the
+  run has lasted 300 ms, four. A different arrow, or any other key, starts again at one; there is no
+  slow step (the gate 5H "slow after a turn" rule is deleted: "we don't need to implement slow
+  speed"). The fast move — Shift and its fallbacks — is not a speed but a **jump of twelve tiles**,
+  and re-centres the view along the axis it moved; held, it jumps again at most every 150 ms, so each
+  jump is seen to land. Terminals send no key-up, so "held" is read from the gaps between presses.
+  Timing lives in the input path (`src/build/motion.ts`); the reducer receives an ordinary
+  `move-cursor` of the chosen size and stays a pure function of commands. Every number is an
+  Experiment (9.7), tuned by the owner's feel.
+- **A click scrolls the view the same way, armed or not** (feedback F6, gate 5H; armed since gate 5J,
+  feedback F22, reversing Q58's still view). A click inside an edge zone (a third of the view to
+  start) carries the clicked tile toward the middle in proportion to its depth: all the way to the
+  middle at the very edge, not at all at the zone's inner boundary; the Experiment's alternatives are
+  "always centre" and "margin only" (Q62). With a structure armed, the preview follows the click, so
+  the player can "keep clicking on the grid with the ghost building placement cursor to keep
+  scrolling". **A double click places where its first click pointed**: two left clicks on the same
+  screen cell within 400 ms (an Experiment) are one "here", even if the first scrolled the view. The
+  input path reads the clicks' timing, as it reads keys', and sends the reducer an ordinary click on
+  the first click's tile, so a driver script means the same thing. A slow second click on a spot the
+  view moved away from is a fresh first click, never a placement on a tile nobody pointed at (Q50's
+  finding). The Experiment "Armed click scrolls" switches back to a still view.
+- **Everything that moves is interpolated — the camera slides and the cursor glides** (gate 5H; the
+  glide at gate 5J, owner: "interpolations are easy and powerful"). Every change of camera, however
+  caused, eases over a few frames (150 ms to start), and every cursor move glides from the tile it
+  was drawn on (100 ms to start), whole tiles at a time, on the screen's frame timer, which runs only
+  while something animates. Both are **tweens** (`ascii-effects.md` 1.2): pure functions of time, and
+  a move in the middle of another continues from wherever things are drawn. The cursor glides across
+  the view, so it rides along when only the map scrolls and is never drawn outside it; the armed
+  preview travels with it. Only a resize snaps, and reduced motion snaps both. State, commands and
+  scripted playtests hold the destination; the mouse hit-tests the drawn camera, so a click lands on
+  the tile under the pointer.
 
 Cropping the Grid to fit without scrolling is not allowed. Below the minimum the renderer gates; it
 never silently hides part of the Grid.
@@ -866,6 +884,7 @@ type CellStyle = Readonly<{
   underline?: boolean
   inverse?: boolean
   fade?: number            // 0-1, fgRole only: 0 the role's own colour, 1 the theme's background
+  tint?: { role: string; amount: number } // 0-1, fgRole pulled toward another role (canon 2.24)
 }>
 
 type Cell = Readonly<{ glyph: string; style: CellStyle }>
@@ -894,6 +913,14 @@ only a role and a number, so "never a colour" stays literally true. It resolves 
 entirely, unchanged from before this field existed. It is `fgRole`-only: a background is never faded.
 Scope is deliberately narrow, not a general fade-out licence for effects — `ascii-effects.md` craft
 rule 7 still holds everywhere except the one recorded departure it names.
+
+**`tint` — added at canon 2.24 (gate 5I).** `tint?: { role, amount }` pulls the cell's `fgRole` part
+of the way (`amount` 0–1) toward another role; the cell still carries only roles and a number.
+`truecolor` interpolates the two roles' colours; `color256` interpolates, then takes the nearest
+palette colour; `color16` has no continuum and steps onto the other role's own colour from 0.5 up;
+`monochrome` ignores it. It is applied before `fade`. Scope: a placed building's light in the Build
+Phase. The rainbow's six hue roles (`fx.hue.red` … `fx.hue.magenta`) are ordinary roles with a colour
+per theme.
 
 This is the terminal boundary and an excellent snapshot surface. It is **not** the universal renderer
 API; a future graphical renderer consumes events and `PlayerView`, not cells.
@@ -939,7 +966,7 @@ What differs between the phases is what the side panel holds:
 
 | | Side panel carries |
 | --- | --- |
-| **Build Phase** | `[n] Nexus` and `[e] Explore` entries at the top (9.7), what is left to spend, the construct menu with each row's cost, the Special slot, and one line saying what the highlighted or armed row does — or, while exploring, the information panel in the menu's place (below) |
+| **Build Phase** | `[e] Explore Map` and `[n] Nexus` entries at the top (9.7), what is left to spend, the construct menu with each row's cost, the Special slot, and one line saying what the highlighted or active row does — or, in Explore Map, the Explore Map panel in the menu's place (below) |
 | **Nexus Pulse** | Pulse number, both Nexus states, force totals, playback controls, and — when something is selected — that entity's live state |
 
 **A refused placement is answered on the status line, and names its tile — RULE.** Built at gate 5B
@@ -991,26 +1018,46 @@ moves every hotkey below it the first time it fills. **Since gate 5F it is one l
 label with "none available" beside it, the form the Special row already had, because the panel lost
 two rows when the top bar began to run the whole width.
 
-**The information panel — GUIDANCE, canon 2.21** (owner, 2026-09-27). While exploring the Grid,
-Enter or Space — or a click on a building — replaces the menu with a card about what is under the
-cursor: the building's own glyphs as its icon, its name, whether it is planned or standing, what it is
-for in one line wrapped between words (never cut mid-word), then its numbers as label/value rows —
-health, size, cost where the construct menu sells it, attack where it has one. On bare ground the card
-names the terrain in one line and gives the tile. `[esc]` in its top-right corner is the way back to
-the menu (9.7). It is a first version of the presentation card the owner described; a larger ASCII art
-version waits for content that has one, and live numbers wait for the Nexus Pulse view (Milestone 6).
+**The Explore Map panel — GUIDANCE, canon 2.21, reshaped at canon 2.25 and 2.26** (owner,
+2026-09-27 to 2026-09-29). `[e] Explore Map` is the menu's first entry, and the screen opens with the
+keyboard on it. Reached by `e`, that entry, or Enter/Space in plain navigation, it gives the Grid the
+keyboard with nothing armed; **its own row stays at the top of the panel, drawn active**
+(`> [e] Explore Map`, the style every active row shares), a separator runs under it, and the rest of
+the panel describes whatever is under the cursor **as the cursor moves**, no key needed: the building's
+own glyphs as its icon, its name, whether it is planned or standing, what it is for in one line wrapped
+between words (never cut mid-word), then its numbers as label/value rows — health, size, cost where
+the construct menu sells it, attack where it has one. On bare ground the card names the terrain in one
+line and gives the tile. `e` is a toggle; `e`, Esc or a click anywhere on the panel goes back to where
+it was opened from (9.7). Tab, a second Right and a click on the map arrive in plain navigation
+instead, the menu left beside the map, so the next click can arm from it. It is a first version of the
+presentation card the owner described; a larger ASCII art version waits for content that has one, and
+live numbers wait for the Nexus Pulse view (Milestone 6).
 
-**Popups have one shape — RULE for the shape as data, GUIDANCE for its look, canon 2.21.** Every
-popup — the Nexus powers, the start-the-Pulse question and the exit question today — is a title and a
-list of rows, some of them options that name the command a click on them sends (`src/build/overlay.ts`).
-The frame draws a popup from the same placed shape the mouse adapter hit-tests, so a click can never
-land on an option the frame drew somewhere else — the guarantee `src/build/layout.ts` already gives
-the side panel. Drawn to be unmissable (the owner clicked Nexus, did not notice the popup, and thought
-the mouse had stopped working): centred over the Grid pane, bordered in the same solid bar as a map
-edge (3.3), the title in the top border, `[esc]` in the top-right corner — the key, its label and its
-click target at once — and a one-cell shadow that blanks what is behind it. A popup holds the keyboard
-and the mouse until it closes, and nothing opens one but the player. It sits on top of everything
-else without a drawing band of its own (9.4).
+**A menu row has two states — RULE, canon 2.26** (owner, 2026-09-29, feedback F32: "we can
+standardize on the same style we use for buildings"): **highlighted**, the keyboard's inverse bar,
+drawn only while the menu has focus; and **active**, `>` before it in the hotkey colour with its name
+underlined, while its action is under way — a building armed, Explore Map open, the Nexus popup open.
+One function decides and draws it for every row, so a change of style reaches them all.
+
+**Popups have one shape — RULE for the shape as data, GUIDANCE for its look, canon 2.21, grown at
+2.26.** Every popup — the Nexus powers, the start-the-Pulse question, the game menu, Settings, the
+export, and a message — is a title and a list of rows, some of them options that name the command a
+click on them sends, and **at most one run of rows that scrolls** (`src/build/overlay.ts`). The frame
+draws a popup from the same placed shape the mouse adapter hit-tests, so a click can never land on
+anything the frame drew somewhere else — the guarantee `src/build/layout.ts` already gives the side
+panel. Drawn to be unmissable (the owner clicked Nexus, did not notice the popup, and thought the mouse
+had stopped working): centred over the Grid pane, bordered in a solid bar, the title in the top border,
+and a one-cell shadow that blanks what is behind it. **No popup carries `[esc]`** since gate 5K: the
+top bar's right end names what Esc does — `close [esc]` while a popup is open — and is its click
+target (9.7, feedback F37). While its scrolling rows overflow, **the right border beside them is a
+scroll bar**: an up symbol, a track with a thumb showing the share in view, and a down symbol, in every
+glyph pack; a click on its upper half scrolls up and on its lower half down, and the wheel and Up/Down
+walk the highlight as before (F36). **A message is the shape with nothing to choose**: a title and
+wrapped text, closed by Esc (or `x`, or a right click) or a click outside, and by nothing else (F34:
+"This popup does not have an action, it's just a warning message"). A popup holds the keyboard and
+the mouse until it closes, and nothing opens one but the player — a message only as the answer to
+something the player just did. It sits on top of everything else without a drawing band of its own
+(9.4).
 
 **No radius preview until something placed has a radius.** An earlier draft of the table's Build
 Phase row listed one; nothing in the content that exists has a radius, and a preview of nothing is a framework built
@@ -1082,6 +1129,18 @@ stream.
 The particle system, its contract, its starter vocabulary, and the craft rules that make ASCII motion
 read as weight are specified in **[`ascii-effects.md`](ascii-effects.md)**.
 
+**Placement juice — GUIDANCE, gate 5I.** A structure may carry **placement frames**: a short list of
+footprint-sized frames played before its finished art as it is placed (a space is empty ground). Only
+the Build Phase view reads them; a structure without them gets a generic run derived from its finished
+art, so no content waits on an artist. It is presentation only: the live loop times each placement
+from the first frame that drew it, the view draws a pure function of the plan and the time since
+placement, and a placement that leaves the plan stops at once. **A placement is one *play* of its
+frames on that building's animation track, and the light (`fx.light.flash`, shading — `tint`, above)
+and the sparks (`fx.sparks.burst`, particles) are that play's follow-ups, scheduled when its last frame
+ends** (gate 5J). Reduced motion shows it finished at once. Every duration and intensity is an
+Experiment. The four families of presentation — animations, particles, shading and tweens — and the
+animation track are defined in [`ascii-effects.md`](ascii-effects.md) Section 1.2.
+
 ### 9.6 Accessibility and input — RULE
 
 - Keyboard-complete; mouse is optional direct manipulation.
@@ -1115,7 +1174,7 @@ adapter produced it. Three adapters exist, and all three are first-class:
 | Adapter | Produces commands from | Exists for |
 | --- | --- | --- |
 | **Keyboard** | key events, through one displayed keymap | the primary way to play; keyboard-complete stays the accessibility floor (9.6) |
-| **Mouse** | click, wheel, and, where the terminal reports it, motion — converted from terminal cells to tiles and menu rows by the adapter alone | direct manipulation: every menu item is clickable, and a click that activates it does exactly what its hotkey does. Since canon 2.21 a click also moves focus first: a click on the menu while the keyboard is elsewhere only moves focus there and highlights the row (the bindings table below) |
+| **Mouse** | click, wheel, and, where the terminal reports it, motion — converted from terminal cells to tiles and menu rows by the adapter alone | direct manipulation: every menu item is clickable, and a click that activates it does exactly what its hotkey does. Since canon 2.25 a click **activates what it lands on**, from any focus (owner, 2026-09-28: "using the mouse should activate what is being clicked"); only the keyboard has a "highlighted, not yet chosen" state (the bindings table below) |
 | **Driver** | a scripted list of commands, or of raw key and mouse events, from a file or a test | agents and tests: Claude playtesting the game without a terminal, and every input assertion the project makes |
 
 The driver is not a test-only afterthought. It is Section 1's practical test — "resolve an entire
@@ -1149,52 +1208,63 @@ as 3.3 already states. Clicking a Grid tile moves the cursor to it. In the Build
 *armed* from the construct menu by its hotkey, by Enter or Space on its highlighted row, or by a
 click, and placed at the cursor with Enter or Space (or a second click on the same tile — Q52, below).
 
-**The menu orchestrates the Build Phase — RULE, canon 2.21** (owner, 2026-09-27: "I like keeping
-that as the main orchestrator, so when a building is placed, the focus should always come back to
-the menu"; Q57). Keyboard focus is reducer state, on the menu or on the Grid, and the screen is
-always in one of three plain modes: **the menu** (the highlight bar, no Grid cursor), **placing**
-(focus on the Grid with a structure armed: its row marked `>`, the cursor carrying its ghost), or
-**exploring** (focus on the Grid with nothing armed: no row marked, the bare cursor). **A structure
-is armed only while the Grid has focus**: everything that takes the keyboard off the Grid — Tab, Esc,
-a click on the menu, and every placement — disarms, so a stale ghost can never sit on the map while
-the player works the menu. **Every placement returns focus to the menu, disarmed**, on the row just
-used. This replaces canon 2.19's "stays armed after placing, so a run of the same structure is one
-digit followed by arrows and Enter": the digit fast path is now a digit, arrows and Enter for each
-building — a digit still arms from either focus and leaves the cursor where it was — and the
-menu-driven path is Enter or Space on the row again, which with the smart cursor below lands the next
-building beside the last with no arrow key at all.
+**The menu orchestrates the Build Phase — RULE, canon 2.21; finishing returns to where it began
+since canon 2.26** (owner, 2026-09-27, Q57; refined 2026-09-29, feedback F30). Keyboard focus is
+reducer state, on the menu or on the Grid, and the screen is always in one of four plain modes:
+**the menu** (the highlight bar, no Grid cursor), **placing** (focus on the Grid with a structure
+armed: its row drawn active, the cursor carrying its ghost), **Explore Map** (focus on the Grid,
+nothing armed, the tile panel in the menu's place) and **plain navigation** (focus on the Grid,
+nothing armed, the bare cursor and the menu beside it). **A structure is armed only while the Grid has
+focus**, so a stale ghost can never sit on the map while the player works the menu. **Finishing goes
+back to where it began**: a placement, or Esc while placing, goes back — disarmed — to plain
+navigation when the arming began on the map (a digit pressed there), and to the menu, on the row just
+used, when it began on the menu (Enter/Space or a click on its row, or a digit while the menu had
+focus); Explore Map follows the same rule. With the mouse, "back to the menu" leaves no highlight bar
+(9.2). **Arming puts the building where the cursor is** — its digit, Enter/Space on its row or a click
+on it — when it fits there; otherwise the spot within 12 tiles of the cursor that costs the least to
+reach, a tile sideways costing one and a tile up or down two, trying first spots that leave one free
+tile between it and every structure and only then spots that merely fit (ties: the more horizontal
+move, then east, then south); with none in reach the cursor steps one right and one down and the
+building is drawn as itself, not refused, until the player moves or tries to place. The cursor opens
+on the Grid Nexus. The owner's own flow (2026-09-29): find a good area, press a building's key — it
+stays under the cursor — place it, press the key again, and the next one lands a free column to the
+right. This retires Q55's smart cursor, which placed the next building beside the last one planned
+wherever the cursor was.
 
 **Bindings — GUIDANCE**, the starting keymap. Milestones 3 and 5 retune on evidence and record why:
 
 | Key | Command | Note |
 | --- | --- | --- |
 | `1`–`9`, `0` | select item *n* of the panel's current list — construct menu, Nexus draft, or a menu screen's options | digits always address the list; they never mean anything else. **A list split into groups still shares one digit sequence** (gate 5B): a hotkey addresses the whole menu, never a position within a group, because per-group numbering needs a focused group and that is the mode this convention exists to forbid |
-| Arrows | on the Grid: move the cursor one tile. On the menu: Up/Down move the highlight; Left and Right have nothing to do there, so the highlighted row flickers — and a **second Right in a row moves focus to the Grid**, exploring | the cursor drives the camera at the 3-tile margin (3.3). The flicker and the second Right are the owner's (2026-09-27: "pressing right/left should flicker the item so the user understands the focus is on the menu. Pressing right again should bring focus to the grid") |
-| Shift+Arrow | move the cursor five tiles | fast pan across a scrolling Grid. **Two sequence families, both bound** (gate 5A): xterm's `CSI 1;<modifier>` and rxvt's `CSI a/b/c/d`. Any modifier counts, not Shift alone — nothing else on these screens binds a modified arrow, so a terminal that eats Shift but passes Alt or Ctrl still gives its player the fast pan. **Option+Arrow as a Mac sends it is the same move** (owner, 2026-09-26: "we should also allow option (it is typical to move word by word)"): macOS terminals send Option+Left/Right as `ESC b`/`ESC f`, and one set to treat Option as Meta sends `ESC` before an ordinary arrow. Before canon 2.19 the input splitter broke both into a bare Escape plus a stray key — and a bare Escape with nothing armed leaves the screen. Bound from the terminals' documented defaults; **not yet measured on the owner's own iTerm2** — `node scripts/lib/key-echo.mjs`, run in that terminal, prints exactly what each key sends |
-| PageUp / PageDown, Home / End | move the cursor five tiles — the modifier-free fallback | **Required, not optional** (gate 5A): four surveyed terminal families send no shifted arrow at all, so without this they would have no fast pan. Decoded from a table, because Home and End have three live spellings between xterm, screen/tmux/linux and rxvt |
-| Enter, Space | on the menu: activate the highlighted entry — arm a structure (focus moves to the Grid), open the Nexus powers, or explore. On the Grid while placing: place the armed structure at the cursor. On the Grid while exploring: **inspect** — the side panel shows the information panel for what is under the cursor (9.2). In the Nexus powers popup: pick the highlighted power (the two questions answer to their own letters) | Space added 2026-09-26 (owner: "should also work with space, that was my reflex") — an alias of Enter everywhere on this screen, never a second meaning of its own |
-| Esc, `x` | **go back one level** (the `cancel` command): close the open popup; else close the information panel; else leave the Grid for the menu, disarming; else, on the menu, open the **"Exit the game?"** question, whose `[q] Quit` leaves and whose `[esc] Keep playing` closes it | **RULE since canon 2.21: Esc never leaves the game by itself — leaving always asks.** `x` is Esc everywhere (owner, 2026-09-27: "it should be equivalent to do [esc], and x"), and so is a right click |
-| Tab | toggle keyboard focus between the side panel's menu and the Grid (arriving on the Grid exploring, nothing armed); does nothing while a popup is open | **Gate 5F, owner-requested 2026-09-26.** This row previously read "jump the cursor to the player's next / previous own structure" — GUIDANCE, never built, now retired from Tab (Q53 keeps the idea for another key). **Focus is its own state beside `armed`**, and the rule above holds: a structure is armed only while the Grid has focus, and every placement returns focus to the menu (Q57, answered 2026-09-27). **Convention 1 below applies: the key help says where focus is**, because focus makes arrows mean two things |
+| Arrows | on the Grid: move the cursor one tile. On the menu: Up/Down move the highlight; Left and Right have nothing to do there, so the highlighted row flickers — and a **second Right in a row moves focus to the Grid**, exploring | the cursor drives the camera at the scroll margin (3.3); one press moves one tile, a held or quickly tapped arrow two a press and then four (3.3's ramp). The flicker and the second Right are the owner's (2026-09-27: "pressing right/left should flicker the item so the user understands the focus is on the menu. Pressing right again should bring focus to the grid") |
+| Shift+Arrow | the fast move: a **jump of 12 tiles** (the Experiment "Shift jump"; 5 until gate 5H, 8 until gate 5J), re-centring the view along the axis moved; held, it jumps again at most every 150 ms | fast pan across a scrolling Grid (owner, 2026-09-28: "Holding shift should behave fundamentally different, instead of just speed up to 8, it should move the cursor 12 tiles"). **Two sequence families, both bound** (gate 5A): xterm's `CSI 1;<modifier>` and rxvt's `CSI a/b/c/d`. Any modifier counts, not Shift alone — nothing else on these screens binds a modified arrow, so a terminal that eats Shift but passes Alt or Ctrl still gives its player the fast pan. **Option+Arrow as a Mac sends it is the same move** (owner, 2026-09-26: "we should also allow option (it is typical to move word by word)"): macOS terminals send Option+Left/Right as `ESC b`/`ESC f`, and one set to treat Option as Meta sends `ESC` before an ordinary arrow. Before canon 2.19 the input splitter broke both into a bare Escape plus a stray key — and a bare Escape with nothing armed leaves the screen. Bound from the terminals' documented defaults; **not yet measured on the owner's own iTerm2** — `node scripts/lib/key-echo.mjs`, run in that terminal, prints exactly what each key sends |
+| PageUp / PageDown, Home / End | the fast move — the modifier-free fallback | **Required, not optional** (gate 5A): four surveyed terminal families send no shifted arrow at all, so without this they would have no fast pan. Decoded from a table, because Home and End have three live spellings between xterm, screen/tmux/linux and rxvt |
+| Enter, Space | on the menu: activate the highlighted entry — arm a structure (focus moves to the Grid), open the Nexus powers, or explore. On the Grid while placing: place the armed structure at the cursor. On the map after a click brought the keyboard there: open Explore Map (9.2). In the Nexus powers popup: pick the highlighted power (the two questions answer to their own letters) | Space added 2026-09-26 (owner: "should also work with space, that was my reflex") — an alias of Enter everywhere on this screen, never a second meaning of its own |
+| Esc, `x` | **go back one level** (the `cancel` command): close the open popup, returning to the popup it was opened from if any (Settings to the game menu, the export to Settings); else leave placing or Explore Map for where it began, disarming; else leave plain navigation for the menu; else, on the menu, open the **game menu**: `[s] Settings`, `[r] Restart`, `[q] Quit`, `[esc] Back to the game` | **RULE since canon 2.21: Esc never leaves the game by itself — leaving always asks.** `x` is Esc everywhere (owner, 2026-09-27: "it should be equivalent to do [esc], and x"), and so is a right click. A lone Esc at the end of a read waits a short timeout (50 ms, an Experiment) for the rest of a sequence; Esc then a letter or digit in one read is two keys; Esc then an arrow in one read is Option+Arrow, so anything scripting keys pauses after Esc (gate 5H) |
+| Tab | toggle keyboard focus between the side panel's menu and the Grid (arriving on the Grid in plain navigation, nothing armed); does nothing while a popup is open | **Gate 5F, owner-requested 2026-09-26.** This row previously read "jump the cursor to the player's next / previous own structure" — GUIDANCE, never built, now retired from Tab (Q53 keeps the idea for another key). **Focus is its own state beside `armed`**, and the rule above holds: a structure is armed only while the Grid has focus, and finishing returns focus to where it began (Q57, answered 2026-09-27, refined 2026-09-29). **Convention 1 below applies: the key help says where focus is**, because focus makes arrows mean two things |
 | Backspace, Delete | on the Grid: remove the planned, uncommitted placement under the cursor | plans are revisable until commit (Milestone 5). The Mac key labelled "delete" sends Backspace, so it cannot also return focus to the menu, as the owner's first sketch of the focus toggle had it — Esc does (Q57). On the menu, where the cursor is hidden, it does nothing |
 | `u` | undo the last planned placement | |
 | `p` | Start Nexus Pulse — the commit | moves focus to the menu and asks once in a popup, `[y]es / [n]o` (Esc is no); the one action that must not fire by accident. Refused while a dealt Nexus power is still waiting to be picked |
 | `n` | open the Nexus powers popup — the menu's `[n] Nexus` entry | pressed again inside the popup, closes it. Inside the start-the-Pulse question `n` is its `[n]o` instead: a popup holds the keyboard, so the two never meet |
-| `e` | explore — the menu's `[e] Explore` entry: focus to the Grid with nothing armed | added 2026-09-27 (owner: "Pressing [e] changes the focus to the map in navigation mode") |
-| `q` | open the "Exit the game?" question | never quits outright, so a stray press cannot lose a plan; only the question's own `[q]` quits. Not listed in the key help, since the question shows it |
+| `e` | Explore Map — the menu's first entry, `[e] Explore Map`: focus to the Grid with nothing armed, the side panel describing what is under the cursor as it moves (9.2) | added 2026-09-27 (owner: "Pressing [e] changes the focus to the map in navigation mode"); first, renamed and self-explaining at gate 5J (feedback F23); a toggle, its row drawn active while open, since gate 5K (F32). Tab and a second Right arrive in plain navigation instead |
+| `q` | open the game menu | never quits outright, so a stray press cannot lose a plan; only the game menu's own `[q]` (or Enter or a click on its Quit row) quits. The top bar's `menu [esc]` is Esc, which on the menu opens it (gate 5J, owner: "When pressing [esc] or explicitly opening the main menu, there should be an option for '[s] Settings' along with '[q] Quit'") |
 | Ctrl+C | quit at once | the one immediate way out, from anywhere |
 | `?` | help overlay listing every binding live on this screen | the footer already shows the most important ones (3.1's controls row) |
 | `q`, Space, `.`, `,`, `[`, `]`, `r` | unchanged from `grid` during a Pulse: quit, pause, step, speed, restart | one keymap across `grid` and `terminal-nexus` |
-| Mouse: click a menu row | **focus first**: while the keyboard is elsewhere, only move focus to the menu and highlight the row; a click on a row while the menu already has focus activates it — the row's hotkey | owner, 2026-09-27: "Clicking on the menu first when the focus was not there should simply highlight a menu option, not activate it." An activating click has identical effect to the hotkey, by construction. The whole row is the target, the width its highlight bar is drawn |
-| Mouse: click a Grid tile | move focus to the Grid and the cursor to the tile, showing the armed preview; **a second click on the same tile places it**. Exploring, a click on a building opens its information panel and a click on bare ground closes it | Q52, reversing Q50 — the terminal caveats below have the reasoning. Planned, not built: with nothing armed, a click centres the view on the tile, eased over a few frames (gate 5H); an armed click should not scroll the view at all, so the confirming click lands where the first one did (Q58); a `Shift+click` to place in one click |
-| Mouse: click outside an open popup | close the popup and move focus to where the click landed — and nothing more | a dismissing click never also places, picks or activates (owner, 2026-09-27: he clicked Nexus, missed the popup in the middle of the screen, and thought the mouse was broken). A click on the popup's `[esc]` closes it; a click on one of its options chooses it |
-| Mouse: wheel | **move the cursor five tiles**; the camera follows it, as it follows every other cursor move | the mouse's Shift+Arrow, literally. An independent camera would be the separate pan mode 3.3 forbids, and would strand the cursor off screen (gate 5A) |
+| Mouse: click a menu row | **activate at once**, whatever had focus: arm the building (its preview at the cursor when it fits there, else at the nearest good spot (the arming rule above); what a row click starts returns to the menu), open the Nexus powers, or open Explore Map — the row's hotkey. While the Explore Map panel covers the menu, a click on the panel only gives the menu back | owner, 2026-09-28 (feedback F22), reversing 2026-09-27's highlight-first: "The selected state only makes sense when using the keyboard, but using the mouse should activate what is being clicked." After the mouse works the menu no highlight bar is drawn; the first menu key only shows it again, on the row it remembers. An armed row is marked as armed (`>`, underlined), never with the keyboard's bar. The whole row is the target, the width its highlight bar is drawn |
+| Mouse: click a Grid tile | move focus to the Grid and the cursor to the tile, the armed preview with it; **a second click on the same tile places it, and so does a quick double click on the same spot** (3.3). With nothing armed it only moves the cursor: in Explore Map the panel follows it; from the menu, the menu stays drawn beside the map | Q52, reversing Q50 — the terminal caveats below have the reasoning. A click near an edge scrolls in proportion, armed or not (3.3, Q62, F22). A `Shift+click` to place in one click is still planned |
+| Mouse: click outside an open popup | close the popup and move focus to where the click landed — and nothing more | a dismissing click never also places, picks or activates (owner, 2026-09-27: he clicked Nexus, missed the popup in the middle of the screen, and thought the mouse was broken). A click on the top bar's `close [esc]` goes back one level, as Esc does, where a click outside closes every popup at once; a click on one of its options chooses it |
+| Mouse: click the top bar's right end | Esc — the `cancel` command, one level back | the right end names what Esc does now: `menu [esc]` on the menu (or a committed Build Phase), `back [esc]` while the Grid has focus, `close [esc]` while a popup is open (owner, 2026-09-29, feedback F37: "we can reverse the title and hotkey for some actions that navigate 'back'"). It is the one place Esc is named on screen |
+| Mouse: wheel | **move the cursor five tiles**; the camera follows it, as it follows every other cursor move | the mouse's Shift+Arrow, literally. An independent camera would be the separate pan mode 3.3 forbids, and would strand the cursor off screen (gate 5A). Inside a popup, the wheel walks its list |
 | Mouse: right click | Esc — go back one level | the RTS convention for "cancel" |
 
 **Letters are spoken for before they are built**, so a new binding does not collide with a planned
-one: `d` opens the Debug Mode panel (gate 5G), and `m` is kept for a whole-map popup (Q59). The
+one: `d` opens Settings at its Experiments, and `m` is kept for a whole-map popup (Q59); inside
+their own popups `s` is Settings (the game menu) and `e` is Export (Settings) — outside them `e` is
+still Explore Map. The
 entries above the construct groups get **letters**, never digits — a digit would renumber every
 construct row beneath it, which is exactly what one digit sequence per menu (the first row of the
-table above) exists to prevent: `[n] Nexus` and `[e] Explore`. `n` is also the start-the-Pulse
+table above) exists to prevent: `[e] Explore Map` and `[n] Nexus`. `n` is also the start-the-Pulse
 question's `[n]o`; the two never meet, because a popup holds the keyboard. `p`, `q`, `u` and `x` are
 taken.
 
@@ -1223,7 +1293,7 @@ a pending pick by keyboard or mouse, read what each power does, and review the o
 The popup is the game's first **overlay** — drawn over the Grid pane, holding the keyboard and the
 mouse until it closes. The start-the-Pulse question and the exit question became popups too, so with
 three real uses the shape was extracted at gate 5F's second round (the one popup shape of 9.2); the
-Debug Mode panel (below) will be the fourth. **The popup closes on the pick — GUIDANCE, canon 2.21**
+Settings popup (below) is the fourth. **The popup closes on the pick — GUIDANCE, canon 2.21**
 (owner, 2026-09-27, answering Q60): open, pick, and the player is back on the menu; the status line
 and the entry's "1 active" confirm it, and reopening the popup lists the pick as active. Esc, `n` or
 a click outside close it without a pick. The entry itself is `[n] Nexus`, with the number of picks
@@ -1239,33 +1309,47 @@ placing, undoing and removing proceed freely regardless (`commitLock` in `src/bu
 Nothing about the invariant's own guarantee changes — the Build Phase still cannot
 end without a pick — only where the refusal fires.
 
-**Two related ideas from the same feedback, each with a gate now** (Q55): a **smart cursor** that,
+**Two related ideas from the same feedback, each with a gate now** (Q55): a **smart cursor** (built at gate 5F, replaced at gate 5K by arming where the cursor is, above) that,
 when a structure is armed from the menu and focus moves to the Grid, puts the cursor on the nearest
 tile where it can legally go — toward the centre of the map, aligned with what is already planned and
 leaving one tile free between structures — in practice one tile beside the last thing planned,
 aligned with it — so the owner's "down, down, space, place, space, place" lays out a tidy row without
 the arrow keys: each placement returns to the menu on the same row, and Space arms it again beside
 the one just placed (gate 5F, with the focus it belongs to; it is a deterministic rule of the
-plan, so the reducer can own it); and **a frame timer** for the Grid pane, so camera and cursor moves
+plan, so the reducer can own it); and **a frame timer** for the Grid pane (built at gate 5H), so camera and cursor moves
 can ease toward their target over a few frames instead of jumping — the same "presentation may
 interpolate without changing simulation" latitude Section 1 already grants, on a screen that has
 only ever redrawn once per input event (`src/cli/spike.ts`'s `render()`) (gate 5H).
 
-**Debug Mode — GUIDANCE, gate 5G** (owner direction, 2026-09-26). A `[d] Debug` panel, opened over
-the Grid like any other overlay, lists live-editable development flags — a border glyph, a colour, a
-scroll-margin share, a speed tier, an easing time — so the owner
-can try an idea during a playtest instead of asking for a new command-line flag and a rebuild. Some
-flags apply at once, some on the next frame, a few need a restart, and the panel says which. **Every
-flag names the question it serves and is deleted once that question is answered**, a few graduating
-into real settings; it is an experiment harness, not a second settings screen. It replaces the
-one-flag-at-a-time `--scroll-margin`/`--edge-style` pattern of gates 5A-5C as the way this project
-shows the owner two answers side by side. **Built at gate 5G (canon 2.22):** the flags are Build
-Phase state, per session and never saved; the reducer reads those that change what a command does,
-the live loop reads the timing ones, and a restart row starts the Build Phase over keeping them. The
-entry point is `[d] debug` in the top bar, not the menu. A setting row shows its value between `<`
-and `>`, Left/Right change it, and each half of the value box is a click target. The first five
-flags: the smart cursor (Q55), the scroll margin in tiles (Q54), whether the screen opens on the menu
-or the map (Q61), and how long a menu row's pressed flash and refused flicker last.
+**Settings and Experiments — GUIDANCE, gate 5G as Debug Mode, gate 5J as Settings** (owner
+direction, 2026-09-26 and 2026-09-28: "Let's solidify this as Settings"). The game menu's
+`[s] Settings` is one scrolling popup, the same shape as every other. First come **the player's own
+settings** — background (dark or light), colour depth, symbols, reduced motion — which apply at once
+and are saved through the same store as the title menu's Settings. Then, clearly apart at the bottom,
+**Experiments**: live-editable playtest flags — a border glyph, a colour, a scroll-margin share, a
+step size, an easing time — so the owner can try an idea during a playtest instead of asking for a
+new command-line flag and a rebuild. A row is a name and a value; one that only takes effect when the
+Build Phase starts over says so on the status line when changed and, when Settings closes with such a
+change pending, once in a message popup (F34). **Every Experiment names the question it serves and is normally deleted before its pull
+request is accepted**, a few staying longer or graduating into real settings; they are Build Phase
+state, per session, **never saved**, because their defaults change from build to build. The reducer
+reads those that change what a command does, the input path and the live loop read the timing ones,
+and the game menu's `[r] Restart` starts the Build Phase over keeping every setting and experiment. `d` opens
+Settings straight at the Experiments. A row shows its value between `<` and `>`, Left/Right change it,
+and each half of the value box is a click target; the title says where the highlight is
+(`SETTINGS (6/28)`), the list keeps it in view with a scroll bar in the right border, and what the
+highlighted row is for is written under a line below the list (F35). **Export settings** — the list's
+last row, and `[e]` from anywhere in it — shows every setting and
+experiment as `name = value` text — the experiments that differ from this build's defaults first,
+each with the default it replaced, then the settings, then the rest, with the build's commit near the
+top — so the owner can paste what felt right into a pull request comment. The adapter, never the
+reducer, also copies it to the clipboard (OSC 52 in a terminal, the clipboard API on the browser page)
+and saves it to a file beside the settings. `--settings "<text>"` (the terminal game and the scripted
+playtest) and `#settings=` (the browser page) read it back, skipping an unknown name or a bad value
+one at a time, so an agent sees exactly what the owner saw. It replaced the one-flag-at-a-time
+`--scroll-margin`/`--edge-style` pattern of gates 5A-5C, and gate 5G's `[d] debug` popup, as the way
+this project shows the owner two answers side by side. The title menu's Settings screen has the
+player settings only.
 
 **Terminal caveats, verified rather than assumed** (Q37; measured by gate 5A on 2026-09-21,
 `evidence/gate-5a-report.md` Section 4.1 has the table and the ten terminals it could *not* test):

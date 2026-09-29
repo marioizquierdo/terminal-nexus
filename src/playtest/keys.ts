@@ -16,6 +16,8 @@
 //   C-c                         Ctrl+C                          0x03
 //   a  1  ?                     any single printable character, sent as itself
 //   Space*4                     any step repeated N times
+//   Right~30*12                 a step arriving 30 ms after the one before (a held key's auto-repeat,
+//                               for the held-key ramp); untimed steps are a second apart
 //   click:20,13                 left click on Grid tile x=20, y=13, wherever it is drawn right now
 //   click@40,7                  left click on frame cell column 40, row 7 (0-based)
 //   rclick:… rclick@…           the same, with the right button
@@ -71,10 +73,13 @@ const MOUSE_BUTTONS: Readonly<Record<string, number>> = {
 }
 
 /** One thing the player does. A key is its bytes; a mouse action keeps its target unresolved,
- *  because a tile's position on screen depends on where the camera is at the moment of the click. */
+ *  because a tile's position on screen depends on where the camera is at the moment of the click.
+ *  `afterMs`, when a script gives one (`Right~30`), is how long after the previous step it arrives —
+ *  what the held-key ramp reads (gate 5H); without it, steps are a second apart, so every key
+ *  is a press of its own. */
 export type PlaytestStep =
-  | Readonly<{ kind: "key"; label: string; bytes: string }>
-  | Readonly<{ kind: "mouse"; label: string; button: number; target: MouseTarget }>
+  | Readonly<{ kind: "key"; label: string; bytes: string; afterMs?: number }>
+  | Readonly<{ kind: "mouse"; label: string; button: number; target: MouseTarget; afterMs?: number }>
 
 export type MouseTarget =
   | Readonly<{ kind: "tile"; tile: Coord }>
@@ -99,6 +104,8 @@ export function parseKeyScript(script: string): PlaytestStep[] {
 }
 
 function parseStep(token: string): PlaytestStep {
+  const timed = /^(.+)~(\d+)$/u.exec(token)
+  if (timed !== null) return { ...parseStep(timed[1] as string), label: token, afterMs: Number(timed[2]) }
   const mouse = /^([a-z]+)([:@])(\d+),(\d+)$/iu.exec(token)
   if (mouse !== null) {
     const button = MOUSE_BUTTONS[(mouse[1] as string).toLowerCase()]

@@ -103,12 +103,46 @@ function sampleInstances(): EffectInstance[] {
       params: { width: 3, height: 2, periodMs: 1200 },
       ...common,
     },
+    {
+      // The toolkit's generic particles — gate 5I's placement sparks, drawn by src/view/build.ts
+      // rather than derived from Pulse events, held to the same contract all the same. Once keyed by
+      // a player action's identity, once by its start time, as a Pulse effect would be.
+      recipe: "fx.sparks.burst",
+      band: "effects",
+      durationMs: 400,
+      params: { width: 3, height: 2, count: 6, reach: 2, key: "structure.citizen.barracks", id: 1 },
+      ...common,
+    },
+    {
+      recipe: "fx.sparks.burst",
+      band: "effects",
+      durationMs: 400,
+      params: { width: 2, height: 2, count: 14, reach: 3, palette: "rainbow" },
+      ...common,
+    },
+    {
+      // The toolkit's generic shading — gate 5I's placement light, and its rainbow.
+      recipe: "fx.light.flash",
+      band: "highlights",
+      durationMs: 400,
+      params: { width: 3, height: 2 },
+      ...common,
+    },
+    {
+      recipe: "fx.light.flash",
+      band: "highlights",
+      durationMs: 400,
+      params: { width: 3, height: 2, palette: "rainbow" },
+      ...common,
+    },
   ]
 }
 
 test("the starter vocabulary is authored, all of it", () => {
   // The ten of ascii-effects.md Section 5, plus fx.blast.detonation, which the Ravel volatile
-  // munitions rule earned — the list is GUIDANCE and predates the rule.
+  // munitions rule earned — the list is GUIDANCE and predates the rule — and the presentation
+  // toolkit's two generic recipes, fx.sparks.burst (particles) and fx.light.flash (shading), which
+  // gate 5I's placement sparks and light became.
   const canon = [
     "fx.move.trail",
     "fx.melee.wind",
@@ -125,7 +159,10 @@ test("the starter vocabulary is authored, all of it", () => {
     assert.ok(EFFECT_RECIPES[id] !== undefined, `${id} is not authored`)
   }
   assert.ok(EFFECT_RECIPES["fx.blast.detonation"] !== undefined)
-  assert.equal(EFFECT_IDS.length, canon.length + 1)
+  // The toolkit's generic particles and shading — the first effects that are not a Pulse cue.
+  assert.ok(EFFECT_RECIPES["fx.sparks.burst"] !== undefined)
+  assert.ok(EFFECT_RECIPES["fx.light.flash"] !== undefined)
+  assert.equal(EFFECT_IDS.length, canon.length + 3)
 })
 
 test("f(t) is a pure function of absolute time, in any order and after any skipping", () => {
@@ -1296,4 +1333,69 @@ test("every glyph PARTICLE_MERGE_TABLE can produce is one printable ASCII charac
     const code = glyph.codePointAt(0) ?? 0
     assert.ok(code >= 0x21 && code <= 0x7e, `"${a}"+"${b}" merged to "${glyph}", not printable ASCII`)
   }
+})
+
+// --- The toolkit's generic particles and shading -------------------------------------------------
+
+test("shading is glyphless: fx.light.flash only ever tints its own footprint, with declared roles", () => {
+  for (const instance of sampleInstances().filter((i) => i.recipe === "fx.light.flash")) {
+    const recipe = EFFECT_RECIPES[instance.recipe]
+    assert.ok(recipe !== undefined)
+    let lit = 0
+    for (const reducedMotion of [false, true]) {
+      for (let timeMs = instance.startMs; timeMs < instance.startMs + instance.durationMs; timeMs += 7) {
+        for (const cell of recipe(instance, context({ timeMs, reducedMotion }))) {
+          assert.equal(cell.glyph, "", "a light brought a character of its own")
+          assert.ok(cell.tint !== undefined && cell.tint.amount > 0 && cell.tint.amount <= 1)
+          assert.ok((STYLE_ROLES as readonly string[]).includes(cell.tint.role), `invented the role ${cell.tint.role}`)
+          const dx = cell.tile.x - instance.origin.x
+          const dy = cell.tile.y - instance.origin.y
+          assert.ok(dx >= 0 && dy >= 0 && dx < 3 && dy < 2, `lit a tile outside its footprint: ${dx},${dy}`)
+          lit += 1
+        }
+      }
+    }
+    assert.ok(lit > 0)
+  }
+})
+
+test("the light falls off; its reduced-motion form holds still", () => {
+  const instance = sampleInstances().find((i) => i.recipe === "fx.light.flash" && i.params.palette === undefined)
+  assert.ok(instance !== undefined)
+  const recipe = EFFECT_RECIPES["fx.light.flash"]
+  assert.ok(recipe !== undefined)
+  const amount = (timeMs: number, reducedMotion = false): number =>
+    recipe(instance, context({ timeMs, reducedMotion }))[0]?.tint?.amount ?? 0
+  assert.equal(amount(instance.startMs), 1)
+  assert.ok(amount(instance.startMs + 100) > amount(instance.startMs + 300))
+  assert.deepEqual(recipe(instance, context({ timeMs: instance.startMs + instance.durationMs })), [])
+  assert.equal(amount(instance.startMs, true), amount(instance.startMs + instance.durationMs - 1, true))
+})
+
+test("sparks never start on the footprint they come from, and hash a player action's identity, not its time", () => {
+  const recipe = EFFECT_RECIPES["fx.sparks.burst"]
+  assert.ok(recipe !== undefined)
+  for (const instance of sampleInstances().filter((i) => i.recipe === "fx.sparks.burst")) {
+    const width = Number(instance.params.width)
+    const height = Number(instance.params.height)
+    for (const reducedMotion of [false, true]) {
+      for (let timeMs = instance.startMs; timeMs < instance.startMs + instance.durationMs; timeMs += 7) {
+        for (const cell of recipe(instance, context({ timeMs, reducedMotion }))) {
+          const dx = cell.tile.x - instance.origin.x
+          const dy = cell.tile.y - instance.origin.y
+          assert.ok(!(dx >= 0 && dy >= 0 && dx < width && dy < height), `a spark landed on its own footprint at ${timeMs}`)
+        }
+      }
+    }
+  }
+  // Keyed: the same burst started at another moment and sampled as far in scatters identically.
+  const keyed = sampleInstances().find((i) => i.recipe === "fx.sparks.burst" && i.params.key !== undefined)
+  assert.ok(keyed !== undefined)
+  const at = (instance: EffectInstance, since: number): string =>
+    JSON.stringify(recipe(instance, context({ timeMs: instance.startMs + since })))
+  assert.equal(at(keyed, 120), at({ ...keyed, startMs: keyed.startMs + 5_000 }, 120))
+  // Unkeyed, as a Pulse effect: its start time is part of its identity.
+  const unkeyed = sampleInstances().find((i) => i.recipe === "fx.sparks.burst" && i.params.key === undefined)
+  assert.ok(unkeyed !== undefined)
+  assert.notEqual(at(unkeyed, 120), at({ ...unkeyed, startMs: unkeyed.startMs + 5_000 }, 120))
 })

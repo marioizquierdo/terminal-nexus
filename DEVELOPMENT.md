@@ -63,7 +63,10 @@ request, with the commit printed at the top of the page. It is **a development t
 terminal (`src/view/backends/ports.ts`), and adds only a canvas backend
 (`src/view/backends/canvas.ts`), key and tap translation (`src/web/keys.ts`, through the scripted
 playtest's own key names) and browser-stored settings (`src/web/host.ts`, the one file that touches the
-DOM). The build needs Bun and **fails if anything the page reaches imports a Node-only module**;
+DOM). A **settings text box** under the screen is the page's end of the export: "Export settings" in the
+game's Settings fills it and copies it to the clipboard, and pasting an export into it ("Start the
+Build Phase with these") — or opening the page with `#settings=<text>` in its address — starts the
+Build Phase with those settings and experiments. The build needs Bun and **fails if anything the page reaches imports a Node-only module**;
 `tests/web.test.ts` holds the page to the terminal's characters, colours and keys, and (in the Bun pass)
 runs the bundle in a sandbox with no Node features and requires the same fingerprints Node computes.
 
@@ -109,7 +112,10 @@ bun bin/grid.ts scenarios/citizen-mirror-skirmish --headless
 
 # the Build Phase scrolling-and-placement spike (Milestone 5, gate 5A)
 ./bin/terminal-nexus.ts --spike
-./bin/terminal-nexus.ts --spike --scroll-margin 5 --capability monochrome
+./bin/terminal-nexus.ts --spike --scroll-margin 30 --capability monochrome   # margin: % of the view
+./bin/terminal-nexus.ts --spike --settings "$(pbpaste)"   # start from an exported settings text
+./bin/terminal-nexus.ts --spike --settings "placeLight=rainbow scrollMargin=25"
+./bin/terminal-nexus.ts --spike --keys "n 1 1 Enter"         # open already in a state: a power picked, a Barracks placed
 ```
 
 Pinned by Gate 1A, measured 2026-08-21:
@@ -145,30 +151,99 @@ in its own way (below). `terminal-nexus` flags: `--capability`, `--theme`, `--gl
 `--reduced-motion`, `--backend`.
 
 **The Build Phase** (`--spike`, Milestone 5) is the first screen in the project that
-shows a **window onto a Grid larger than itself**: a 96 x 40 map in a viewport that is 48 x 16 tiles
+shows a **window onto a Grid larger than itself**: a 96 x 40 map in a viewport that is 49 x 16 tiles
 at 80 columns and 72 x 24 at 104. The screen is a full-width top bar, the **menu on the left**, the
 Grid in **a rectangle of its own** beside it, and a full-width bottom bar of three lines: the position
 readout, the key help for whatever has the keyboard, and the **status line**. Each side of the Grid's
-rectangle is a dim line where there is more map that way and a **solid bar** where the map ends; the
-map's west side is its own column beside the menu's plain divider. The readout names the visible
-range, because there is no minimap.
+rectangle is a dim line where there is more map that way and **the map's own edge** where the map
+ends — a style the map names for itself (this map's is a fence), the solid bar for a map that names
+none — in a quieter colour than the frame; the menu's divider is the map's west side (the owner's
+picks from his 2026-09-29 playtest). The readout names the visible range, because there is no minimap.
 
 **The menu runs the screen** (the owner's round-2 direction; `docs/ui-patterns.md` has the rules).
-The keyboard starts on the menu: Up/Down and Enter/Space work it, `[n] Nexus` opens the Nexus Powers
-popup (a pick closes it), `[e] Explore` (or Tab, or a second Right) moves the keyboard to the map with
-nothing armed, where the arrows move the cursor, the map scrolls once the cursor comes within three
-tiles of an edge, and Enter/Space on a building opens an information panel. Arming a building (Enter
-on its row, or its digit from anywhere) puts the cursor beside the last thing planned; Enter or Space
-places it, and **every placement returns the keyboard to the menu, disarmed**. A mouse click first
-moves focus and only then activates; on the map a **second click on the same tile** places (Q52). Esc,
-`x` and a right click go back one level — popup, information panel, map — and on the menu ask "Exit the
-game?"; `q` asks the same, and only Ctrl+C quits at once. Every row shows its cost, a row that no
+The keyboard starts on the menu, on its first entry, and the map cursor on the Grid Nexus: Up/Down
+and Enter/Space work the menu. Tab (or a second Right) moves the keyboard to the map in **plain
+navigation** — nothing armed, the menu still drawn beside it; the arrows move the cursor, and the map
+scrolls once the cursor comes within a quarter of the view of an edge. `[e] Explore Map` (or Enter in
+plain navigation) turns its row active — `> [e] Explore Map` — and swaps the rest of the menu for a
+panel that describes whatever is under the cursor as it moves; `e` again, Esc or a click on the panel
+goes back. `[n] Nexus` opens the Nexus Powers popup (a pick closes it). Arming a building (its digit,
+Enter on its row, or a click on it) keeps the cursor where it is when the building fits there, and
+otherwise moves it to the nearest spot within 12 tiles that leaves a free tile around it; Enter or
+Space places it, and **the keyboard goes back to where the arming came from, disarmed** — the map, in
+plain navigation, for a digit pressed on the map; the menu for anything started on the menu. A row
+whose action is under way — a building armed, Explore Map open, the Nexus popup open — is drawn
+**active**: `>` before it, in the hotkey's colour. **A mouse click activates what it lands on**: a
+click on a building's row arms it at once, its ghost at the cursor; on the map a **second click on
+the same tile** places (Q52); a click on the map from the menu keeps the menu beside it, so the next
+click can arm from it. Only the keyboard shows a "highlighted, not yet chosen" bar. Esc, `x` and a
+right click go back one level — popup, then placing or Explore Map to where it was started, then the
+map to the menu — and on the menu open the **game menu**: `[s] Settings`, `[r] Restart`, `[q] Quit`,
+and Esc back to the game; `q` opens it too, and only Ctrl+C quits at once. The top bar's right end
+always says what Esc does right now — `menu [esc]`, `back [esc]` or `close [esc]` — and a click on it
+is Esc. Every row shows its cost, a row that no
 longer fits is dimmed, and **why a placement would be refused is the status line's job** — "rock in
 the way at 8,5", "costs 40, 20 left" (affordability first) — quietly while the grey `x` preview sits on
 the tile, in red once a placement is tried. `[u]` undoes and Backspace (on the map) removes the one
-under the cursor, both refunding, which keeps a plan revisable until `p` starts the Pulse.
+under the cursor, both refunding (and throwing the placement's sparks where it stood), which keeps a
+plan revisable until `p` starts the Pulse.
 
-Shift+Arrow jumps five tiles, and so do PageUp/PageDown and Home/End, because several terminals
+**Moving ramps up, and Shift jumps** (gate 5H, reworked after the owner's 2026-09-28 playtest): a
+single press moves one tile; the same arrow again within 150 ms — a held key's repeats, or quick
+tapping — moves two a press at once, and four once that run has lasted 300 ms; any other key starts
+again at one. Shift+Arrow is not a speed but a **jump of twelve tiles**; held, it jumps
+again at most every 150 ms, so each jump is seen to land. Terminals send no key-up, so "held" is read
+from how close together the presses arrive (`src/build/motion.ts`); the reducer only ever sees a move
+of the size chosen. **Everything that moves is interpolated** (`src/view/tween.ts`): the view
+**slides** to wherever it scrolled, by any means, and the cursor **glides** to its new tile, over a
+few frames — the screen's frame timer runs only while something moves (`src/view/build-live.ts`),
+and reduced motion snaps both. A jump re-centres the view on the cursor. **A click with a building armed never scrolls the view**, so the
+confirming second click lands where the first did (Q58); **exploring, a click near an edge scrolls
+further the nearer the edge**. A placement tried and refused flashes its footprint. A lone Esc at the
+end of a read waits 100 ms for the rest of a key sequence before it counts as Esc — so anything sending
+keys programmatically leaves a pause after an Esc. **Every one of these numbers is an Experiment**
+(`d`, below); the list scrolls, since there are twenty-three.
+
+**Settings, Experiments and the export** (owner, 2026-09-28). The game menu's `[s] Settings` is one
+scrolling popup: first the player's own settings — background, colour depth, symbols, reduced motion —
+changed live with Left/Right and saved to the same `~/.terminal-nexus/settings.json` the title menu's
+Settings writes; then, apart at the bottom, **Experiments**: gate 5G's Debug Mode flags, each naming
+the question it serves, never saved (`src/build/debug.ts` is the list; `src/build/settings.ts` the
+popup's rows). `d` opens Settings straight at the Experiments. The title says where the highlight is
+in the list (`SETTINGS (6/28)`), a scroll bar in the popup's right border shows and scrolls the rest
+(click its upper or lower half, or use the wheel), and what the highlighted row is for is written under
+a line below the list. The game menu's `[r] Restart` starts the Build Phase over keeping everything; a
+changed setting that only applies after a restart is announced in a message popup when Settings
+closes. `[e] Export settings`, the list's last row, shows every setting and experiment as `name = value` text — changed
+experiments first, each with the default it replaced, the commit on the first line
+(`src/build/settings-export.ts`) — and in a terminal also copies it to the clipboard with OSC 52 (in
+iTerm2 allow "Applications in terminal may access clipboard") and writes
+`~/.terminal-nexus/settings-export.txt`. **`--settings "<text>"`** reads an export back — the whole
+text or just some pairs, unknown names and bad values skipped one at a time — for `--spike` and for
+`scripts/playtest.mjs`, so an agent can reproduce exactly what the owner played. **`--keys "<key script>"`** opens the Build Phase already in the state those keys reach —
+the scripted playtest's key names, through the same adapters a player's keys go through — and `#keys=`
+does the same on the browser page (`#keys=n%201%201%20Enter`); with `--settings` a demo opens exactly
+where and how it should.
+
+**A placed building goes up** (gate 5I): it plays a few frames of its own (authored beside its art in
+`src/content/art.ts`'s `PLACEMENT_ART`, with a generic fallback for anything not drawn yet), then
+stands finished with a brief light on its characters and a few sparks around it — all of it timed by
+the live loop and drawn by `src/view/placement.ts` as a pure function of the time since the
+placement, and none of it in the plan. The first four Experiments tune it (Build animation,
+Lighting — including a rainbow — Particles, Glow time); reduced motion shows the finished building at
+once. Scripted playtests draw buildings finished; `scripts/capture-spike-screenshots.mjs`'s
+`placementGif` and `placementSheet` step the animation with a fake clock.
+
+It is built from **the presentation toolkit's four families**, each a pure function of absolute
+presentation time and each usable by anything on the Grid: **Animations** (`src/view/animation.ts` —
+frames plus a little metadata, played on a per-entity track of timestamped requests: `play` with a
+replace/queue/ignore policy, `cancel`, `accelerate`, `finish`, and follow-ups scheduled as data when
+an animation completes), **Particles** (`src/view/effects/particles.ts`, `fx.sparks.burst`, and most of
+the Pulse vocabulary), **Shading** (`src/view/effects/shading.ts`, `fx.light.flash`, glyphless tints
+and lights) and **Tweens** (`src/view/tween.ts`). A placement is one `play` of its frames with the
+light and the sparks as its follow-ups; `tests/animation.test.ts` holds the track to its contract.
+
+Shift+Arrow is the fast move, and so are PageUp/PageDown and Home/End, because several terminals
 deliver no shifted arrows at all — `node scripts/probe-modified-keys.mjs` prints the survey, and
 `evidence/gate-5a-report.md` has the table. So does Option+Arrow as macOS terminals send it (`ESC b`,
 `ESC f`, or `ESC` before an arrow), bound from their documented defaults; **`node
@@ -177,8 +252,9 @@ to leave), which is how to check a terminal nobody has measured yet. **The foote
 one list of bindings**: the bottom bar takes as many as its width holds, trimmed to the essentials —
 arrows, place, disarm, quit, the fast move, remove, undo — and the panel shows the rest, so a wide
 terminal has them all on one line and an 80-column one loses none of them (the other fast-move keys
-stay bound but unlisted). `--scroll-margin <tiles>` changes the three-tile trigger distance so it can
-be judged against another number. Nothing it plans reaches the simulation, and nothing is saved.
+stay bound but unlisted). `--scroll-margin <percent>` starts the scroll margin at another share of the
+view than 25% (its Experiment changes it live). Nothing it plans reaches the simulation, and the plan is not
+saved.
 
 Before any of that, the Build Phase opens on a **Nexus power draft** (gate 5D): two placeholder
 powers — a plain bump to the starting allotment, not real Milestone-8 content — that must be picked
@@ -247,14 +323,19 @@ showed after every key: the text of every step in `.playtest/<name>.txt`, and on
 (`--png final`, `--png all`, `--png 0,3,6`) and an animated GIF of the whole sequence (`--gif`).
 Output goes to `.playtest/`, which git ignores; pass `--out evidence/screenshots` only for an image
 that is going into a pull request. `--help` lists everything, including `--size`, `--capability`,
-`--theme`, `--glyphs`, `--delay` and `--hold`.
+`--theme`, `--glyphs`, `--delay` and `--hold` — and `--settings "<text>"`, which starts the script from
+an exported settings text, the way to reproduce what the owner pasted into a pull request.
 
 Use it to see a change working, to check a flow a person described, and to make the pictures a pull
 request shows. The keys go through the real keyboard and mouse adapters as the exact bytes a terminal
 sends, one key at a time, and each frame comes from the same composer the live screen uses — so there
 is no capture race, and no Esc glued to the next key by accident. Key names: `Up Down Left Right`,
 `S-` (Shift) and `M-` (Option) arrows, `Tab S-Tab Esc Enter Space Bksp Del PgUp PgDn Home End`, any
-single character, `Name*N` to repeat, `click:X,Y` for a Grid tile and `click@COL,ROW` for a screen
+single character, `Name*N` to repeat, `Name~MS` for a key arriving MS milliseconds after the one
+before (untimed keys are a second apart, so each is a press of its own; `Right Right~150 Right~30*12`
+is a held arrow's auto-repeat, which the held-key ramp reads — the per-step summary prints the kind
+of move: tap, hold, fast or jump),
+`click:X,Y` for a Grid tile and `click@COL,ROW` for a screen
 cell (`rclick`, `wheelup`, `wheeldown` likewise), `#` for a comment in a file. The full table is at
 the top of `src/playtest/keys.ts`. A script that leaves the screen (`q`, or Esc with nothing armed)
 stops there and says so.

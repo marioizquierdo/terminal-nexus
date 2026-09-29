@@ -27,6 +27,7 @@ export type PlaybackOptions = Readonly<{
 
 const MIN_SPEED = 0.25
 const MAX_SPEED = 8
+const ESCAPE = String.fromCharCode(27)
 
 export class Playback {
   private timeMs: number
@@ -137,8 +138,37 @@ function endOfEscapeSequence(chunk: string, start: number): number {
     const inner = endOfEscapeSequence(chunk, start + 1)
     return inner > start + 2 ? inner : start + 1
   }
-  if (next >= 0x20 && next <= 0x7f) return start + 2
+  // Only the Meta keys something binds stay one key: `ESC b`, `ESC f` and `ESC DEL`, Option+Left,
+  // Option+Right and Option+Backspace as a Mac sends them. Any other printable character after an ESC
+  // is far likelier to be Esc and then that key, sent close together by a script or a fast hand — Esc
+  // then `1` read as an unbound Meta-1 swallowed both (gate 5F's report, Section 7; split since gate
+  // 5H).
+  if (next === 0x62 /* b */ || next === 0x66 /* f */ || next === 0x7f /* DEL */) return start + 2
   return Math.min(start + 1, chunk.length)
+}
+
+/**
+ * Where an escape sequence that has not finished arriving begins at the end of `chunk` — a lone ESC,
+ * `ESC ESC`, `ESC [` with no final byte yet, `ESC O` with nothing after it — or `-1` when the chunk
+ * ends on a whole key. A terminal writes one key at a time, but a slow link (SSH) or a byte-level
+ * split can still deliver a sequence across two reads.
+ */
+export function incompleteEscapeAt(chunk: string): number {
+  const last = chunk.lastIndexOf(ESCAPE)
+  if (last < 0) return -1
+  // A second ESC just before it makes it a Meta prefix still waiting for its key.
+  const start = last > 0 && chunk[last - 1] === ESCAPE ? last - 1 : last
+  const tail = chunk.slice(last)
+  if (tail === ESCAPE) return start
+  if (tail[1] === "[") {
+    for (let index = 2; index < tail.length; index += 1) {
+      const code = tail.charCodeAt(index)
+      if (code >= 0x40 && code <= 0x7e) return -1
+    }
+    return start
+  }
+  if (tail[1] === "O") return tail.length < 3 ? start : -1
+  return -1
 }
 
 /**

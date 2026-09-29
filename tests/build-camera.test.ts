@@ -30,10 +30,12 @@ function plainGrid(width: number, height: number): GridTerrain {
   return { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") }
 }
 
-test("engine-3.3-clamp: the minimum viewport needs exactly 80x24 and the maximum exactly 104x32", () => {
-  // The two rows of engine.md 3.3's own terminal-size table, at one column per tile.
+test("engine-3.3-clamp: the minimum viewport fits 80x24 and the maximum exactly 104x32", () => {
+  // The two rows of engine.md 3.3's own terminal-size table, at one column per tile. Since the menu's
+  // divider became the Grid's west side (owner, 2026-09-29), the column that saves is the Grid's: 80
+  // columns show one tile more than the minimum, and 80 x 24 is still the floor (the gate test below).
   assert.deepEqual(fitViewport({ columns: 80, rows: 24 }, GRID, 1), {
-    width: MIN_VIEWPORT.width,
+    width: MIN_VIEWPORT.width + 1,
     height: MIN_VIEWPORT.height,
   })
   assert.deepEqual(fitViewport({ columns: 104, rows: 32 }, GRID, 1), {

@@ -1,7 +1,7 @@
 // The terminal boundary — engine.md 9.1. An engine-owned structured cell frame, and an excellent
 // snapshot surface. No backend object ever appears inside a frame.
 
-import type { CapabilityMode, StyleRole, Theme } from "./roles.ts"
+import type { CapabilityMode, RoleTint, StyleRole, Theme } from "./roles.ts"
 import { DEFAULT_THEME, sgrBackgroundFor, sgrFor } from "./roles.ts"
 
 const ESC = "\u001b"
@@ -22,6 +22,14 @@ export type CellStyle = Readonly<{
    * general fade-out license for glyph-bearing effects.
    */
   fade?: number
+  /**
+   * `fgRole` pulled part of the way toward another role (gate 5I): light on a placed building's
+   * characters, and its rainbow. A role and a number, never a colour — `roles.ts`'s `RoleTint` says
+   * how each tier resolves it (a real blend at 256 colours and truecolor, a step onto the other role's
+   * hue at 16, nothing in monochrome). Set only by shading — a glyphless effect cell's `tint`
+   * (`src/view/effects/shading.ts`), a placed building's light today.
+   */
+  tint?: RoleTint
 }>
 
 export type Cell = Readonly<{ glyph: string; style: CellStyle }>
@@ -115,7 +123,7 @@ export function frameToText(frame: ReadonlyCellFrame): string {
 }
 
 function sgrOf(style: CellStyle, capability: CapabilityMode, theme: Theme): string {
-  const parts: number[] = [...sgrFor(style.fgRole, capability, theme, style.fade ?? 0)]
+  const parts: number[] = [...sgrFor(style.fgRole, capability, theme, style.fade ?? 0, style.tint)]
   for (const code of sgrBackgroundFor(style.bgRole, capability, theme)) parts.push(code)
   if (style.bold === true) parts.push(1)
   if (style.dim === true) parts.push(2)
@@ -178,6 +186,14 @@ const PACK_GLYPHS = new Set([
   "\u253c",
 ])
 
+/**
+ * The Box Drawing and Block Elements blocks (U+2500-U+259F), whole: one-cell, never combining, and
+ * what the map-edge styles are made of (feedback F25) — a heavy or double line meets the frame's light
+ * rules in mixed-weight junctions (`src/view/edge.ts`), and listing each of those here by hand would be
+ * a second copy of that table to keep in step.
+ */
+const BOX_AND_BLOCKS = { from: 0x2500, to: 0x259f } as const
+
 /** Every gameplay glyph occupies exactly one cell — engine.md 9.6. Asserted, not assumed. */
 export function offendingGlyph(frame: ReadonlyCellFrame): string | null {
   for (const cell of frame.cells) {
@@ -185,6 +201,7 @@ export function offendingGlyph(frame: ReadonlyCellFrame): string | null {
     const code = cell.glyph.codePointAt(0) ?? 0
     if (code >= 0x20 && code <= 0x7e) continue
     if (PACK_GLYPHS.has(cell.glyph)) continue
+    if (code >= BOX_AND_BLOCKS.from && code <= BOX_AND_BLOCKS.to) continue
     return cell.glyph
   }
   return null

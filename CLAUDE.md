@@ -15,6 +15,14 @@ On Claude Code on the web:
 - implement only the gate the current milestone marks as its **Active gate**;
 - register an undecided fork in `specs/open-questions.md` with a recommendation, then keep working on
   everything the answer does not touch;
+- when a choice is Mario's to feel — a timing, a look, whether a feature should exist — put both
+  answers behind an **Experiment** (Settings → Experiments in the Build Phase, `d` jumps there;
+  `src/build/debug.ts`), ask him in the pull request to flip it and to paste the **settings export**
+  as a comment, and start the game with `--settings "<that text>"` to see what he saw; he asked for
+  exactly this (AGENTS.md Section 5). Remove an Experiment once its question is answered, normally
+  before the pull request is accepted;
+- size a pull request's **Demo** to the change — a code block, screenshots, a GIF, or a playable page
+  only when it must be played (the `pr-description` skill);
 - stop with evidence for Mario rather than continuing to the next gate;
 - open or update pull requests using the `pr-description` skill;
 - **write anything Mario reads in plain English** — describe the actual idea or decision, not the

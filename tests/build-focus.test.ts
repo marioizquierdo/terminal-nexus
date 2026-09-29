@@ -1,5 +1,5 @@
-// Gate 5F and its second round: the menu on the left, keyboard focus, the smart cursor, popups, and
-// the interaction patterns of `docs/ui-patterns.md` — driven through raw bytes into the real adapters
+// Gate 5F and its second round, and gate 5K: the menu on the left, keyboard focus and where it returns
+// to, where arming puts the cursor, popups, and the interaction patterns of `docs/ui-patterns.md` — driven through raw bytes into the real adapters
 // where an adapter is what is being claimed, and through commands where the reducer is.
 
 import { test } from "node:test"
@@ -11,9 +11,22 @@ import { EXPLORE_ROW, NEXUS_ROW, buildLayout, cellForTile, constructLines, menuE
 import { MOUSE_LEFT, formatMouseEvent } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildContext } from "../src/build/state.ts"
-import { anchorForCursor, entryOfConstruct, legalityAt, smartCursorTile } from "../src/build/state.ts"
+import {
+  ARM_SEARCH_TILES,
+  EXPLORE_ENTRY,
+  NEXUS_ENTRY,
+  anchorForCursor,
+  armingSpot,
+  entryOfConstruct,
+  legalityAt,
+  menuEntries,
+  nexusTile,
+} from "../src/build/state.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { spikeContext } from "../src/cli/spike.ts"
+import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
+import { runBuildPlaytest } from "../src/playtest/build.ts"
+import { parseKeyScript } from "../src/playtest/keys.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import type { BuildFlash } from "../src/view/build.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
@@ -90,16 +103,19 @@ test("the side panel is on the left of the Grid at every size in the supported r
     const { layout } = side
     const { lines } = screen(side)
     assert.ok(layout.panelColumn < layout.dividerColumn, `panel left of the divider at ${terminal.columns}`)
-    // The divider and the Grid's own west side are neighbouring columns (owner, 2026-09-27), so the
-    // map's solid "ends here" bar never sits against the menu text.
-    assert.equal(layout.gridBox.left, layout.dividerColumn + 1, "the Grid's west side is next to the divider")
+    // The divider is the Grid's own west side (owner, 2026-09-29, replacing a column of its own
+    // beside it): the map's edge, drawn quietly in the map's own style, is the line beside the menu.
+    assert.equal(layout.gridBox.left, layout.dividerColumn, "the Grid's west side is the divider")
     assert.equal(layout.origin.column, layout.gridBox.left + 1)
     assert.equal(layout.gridBox.right, layout.offset.column + layout.composition.width - 1)
     assert.equal(layout.panelRow, layout.origin.row)
+    // Explore Map first, then the Nexus Powers (owner, 2026-09-28, feedback F23).
+    assert.equal(EXPLORE_ROW, 0)
+    assert.match(lines[layout.panelRow + EXPLORE_ROW] as string, /^\s*\| \[e\] Explore Map /)
     assert.match(lines[layout.panelRow + NEXUS_ROW] as string, /^\s*\| \[n\] Nexus \(1\)/)
-    assert.match(lines[layout.panelRow + EXPLORE_ROW] as string, /^\s*\| \[e\] Explore/)
-    // Still the arithmetic engine.md 3.1 derives the floor from: 1 + 30 + 48 + 1 = 80.
-    assert.equal(layout.composition.width, 32 + layout.viewport.width * layout.tileWidth)
+    // engine.md 3.1's floor arithmetic, 1 + 30 + 48 + 1 = 80, with the shared west side's column
+    // given to the Grid: 1 + 29 + 49 + 1 at 80 columns.
+    assert.equal(layout.composition.width, 31 + layout.viewport.width * layout.tileWidth)
   }
 })
 
@@ -127,7 +143,7 @@ test("a Grid shorter than the panel still closes directly under its last row", (
   assert.equal(layout.gridBox.bottom, layout.origin.row + 10)
   assert.ok(layout.paneBottom > layout.gridBox.bottom)
   for (let x = layout.gridBox.left + 1; x < layout.gridBox.right; x += 1) {
-    assert.equal(cellAt(frame, x, layout.gridBox.bottom).style.inverse, true, "the whole map is visible: a solid edge")
+    assert.equal(cellAt(frame, x, layout.gridBox.bottom).style.fgRole, "chrome.edge", "the whole map is visible: the map's edge")
   }
   assert.match(lines[menuEntryRow(layout, SPIKE_CATALOG, { kind: "construct", index: 2 })!] as string, /\[3\] Turret/)
   assert.match(lines[layout.footerRow] as string, /view x 0-19 y 0-9 of 20x10/)
@@ -135,44 +151,128 @@ test("a Grid shorter than the panel still closes directly under its last row", (
 
 // --- Focus: three plain modes ---------------------------------------------------------------------
 
-test("the Build Phase opens on the menu, on the Nexus entry, with no cursor on the Grid", () => {
+test("the Build Phase opens on the menu, on its first entry, Explore Map, with no cursor on the Grid", () => {
   const side = session()
   assert.equal(side.build.state.focus, "menu")
-  assert.equal(side.build.state.menuHighlight, 0)
-  assert.ok(barOn(side, side.layout.panelRow + NEXUS_ROW))
+  assert.equal(side.build.state.menuHighlight, EXPLORE_ENTRY)
+  assert.ok(barOn(side, side.layout.panelRow + EXPLORE_ROW))
   const { frame, lines } = screen(side)
   assert.match(lines[side.layout.footerRow + 1] as string, /\| MENU {2}up\/down choose {2}enter\/space select {2}tab grid/)
   const cursor = cellForTile(side.layout, side.build.state.camera, side.build.state.cursor)
   assert.notEqual(cellAt(frame, cursor.x, cursor.y).style.inverse, true, "a cursor is drawn with the menu focused")
 })
 
-test("Tab and [e] go to the Grid exploring: no menu row marked, the bare cursor drawn", () => {
-  for (const key of [TAB, "e"]) {
+test("[e] and Enter on the first entry arrive in Explore Map: its row turns active, a separator, then the card", () => {
+  for (const sequence of [["e"], [ENTER]]) {
     const side = session()
-    keys(side, key)
+    keys(side, ...sequence)
     assert.equal(side.build.state.focus, "grid")
     assert.equal(side.build.state.armed, null)
+    assert.equal(side.build.state.exploreMap, true, `${JSON.stringify(sequence)} did not open Explore Map`)
+    assert.equal(side.build.state.origin, "menu")
     const { frame, lines } = screen(side)
-    assert.match(lines[side.layout.footerRow + 1] as string, /\| EXPLORE {2}arrows move/)
-    for (const row of [NEXUS_ROW, EXPLORE_ROW]) assert.ok(!barOn(side, side.layout.panelRow + row))
-    assert.ok(!barOn(side, barracksRow(side)))
+    assert.match(lines[side.layout.footerRow + 1] as string, /\| EXPLORE MAP {2}arrows move {2}e\/esc back {2}shift/)
+    // Its own row is its header, in the active style every row shares (feedback F32): `>`, the
+    // hotkey's colour, the name underlined, no bar — and no "[esc]" of its own.
+    const header = lines[side.layout.panelRow] as string
+    assert.match(header, /^\s*\| > \[e\] Explore Map +[|+]/)
+    assert.doesNotMatch(header, /\[esc\]/)
+    assert.equal(cellAt(frame, side.layout.panelColumn + 6, side.layout.panelRow).style.underline, true)
+    assert.notEqual(cellAt(frame, side.layout.panelColumn + side.layout.panelLimit - 1, side.layout.panelRow).style.inverse, true)
+    // A separator across the panel, then the card.
+    assert.equal((lines[side.layout.panelRow + 1] as string).slice(side.layout.panelColumn, side.layout.dividerColumn), "-".repeat(side.layout.panelLimit))
+    assert.doesNotMatch(screen(side).text, /\[1\] Barracks/, "the menu is still drawn beside Explore Map")
     const cursor = cellForTile(side.layout, side.build.state.camera, side.build.state.cursor)
     assert.equal(cellAt(frame, cursor.x, cursor.y).style.inverse, true, "the exploring cursor is not drawn")
   }
+  // No Enter needed: the card follows the cursor as it moves.
+  const side = session()
+  keys(side, "e")
+  assert.match(screen(side).text, /Open ground/)
+  side.build.run([{ kind: "move-cursor", dx: 0, dy: -2 }]) // onto the Grid Nexus
+  assert.match(screen(side).text, /Citizen Nexus/)
+  keys(side, ESC)
+  assert.equal(side.build.state.focus, "menu", "Esc did not give the menu back")
+  assert.equal(side.build.state.exploreMap, false)
+  assert.equal(side.build.state.status.text, "", "Explore Map's own status outlived it")
+  assert.match(screen(side).text, /\[1\] Barracks/)
 })
 
-test("placing: the armed row carries the bar and the cursor carries the ghost; leaving the Grid disarms", () => {
+test("the separator under Explore Map's row is the glyph pack's own line", () => {
+  const side = session()
+  keys(side, "e")
+  const frame = composeBuildFrame({ context: side.context, state: side.build.state, layout: side.layout, glyphPack: "unicode" }, "monochrome")
+  const line = frameToText(frame).split("\n")[side.layout.panelRow + 1] as string
+  assert.equal(line.slice(side.layout.panelColumn, side.layout.dividerColumn), "─".repeat(side.layout.panelLimit))
+})
+
+test("[e] is a toggle, and Esc and a click on its row are the same 'back': to where Explore Map was opened from", () => {
+  for (const close of [["e"], [ESC], ["x"], ["click"]]) {
+    // Opened from the menu: back to the menu.
+    const fromMenu = session()
+    keys(fromMenu, "e")
+    if (close[0] === "click") clickEntry(fromMenu, fromMenu.layout.panelRow + EXPLORE_ROW)
+    else keys(fromMenu, ...close)
+    assert.equal(fromMenu.build.state.exploreMap, false, `${close[0]} did not close Explore Map`)
+    assert.equal(fromMenu.build.state.focus, "menu")
+    // Opened on the map, in plain navigation: back to plain navigation.
+    const fromMap = session()
+    keys(fromMap, TAB, "e")
+    assert.equal(fromMap.build.state.origin, "grid")
+    if (close[0] === "click") clickEntry(fromMap, fromMap.layout.panelRow + EXPLORE_ROW)
+    else keys(fromMap, ...close)
+    assert.equal(fromMap.build.state.exploreMap, false)
+    assert.equal(fromMap.build.state.focus, "grid", `${close[0]} from the map left the map`)
+    assert.match(screen(fromMap).lines[fromMap.layout.footerRow + 1] as string, /\| MAP {2}arrows move/)
+  }
+  // Enter or Space with Explore Map already open does nothing more.
+  const side = session()
+  keys(side, TAB, ENTER)
+  assert.equal(side.build.state.exploreMap, true)
+  keys(side, SPACE)
+  assert.equal(side.build.state.exploreMap, true)
+})
+
+test("Tab and a second Right arrive in plain navigation: the bare cursor, the menu still drawn beside it", () => {
+  for (const sequence of [[TAB], [RIGHT, RIGHT]]) {
+    const side = session()
+    keys(side, ...sequence)
+    assert.equal(side.build.state.focus, "grid")
+    assert.equal(side.build.state.armed, null)
+    assert.equal(side.build.state.exploreMap, false, `${JSON.stringify(sequence)} opened Explore Map`)
+    const { frame, lines, text } = screen(side)
+    assert.match(lines[side.layout.footerRow + 1] as string, /\| MAP {2}arrows move {2}enter\/space explore {2}tab\/esc menu/)
+    assert.match(text, /\[1\] Barracks/)
+    const cursor = cellForTile(side.layout, side.build.state.camera, side.build.state.cursor)
+    assert.equal(cellAt(frame, cursor.x, cursor.y).style.inverse, true, "the cursor is not drawn")
+    // Enter there opens Explore Map, begun on the map; Esc from plain navigation is the menu.
+    keys(side, ENTER)
+    assert.equal(side.build.state.exploreMap, true)
+    assert.equal(side.build.state.origin, "grid")
+    keys(side, ESC, ESC)
+    assert.equal(side.build.state.focus, "menu")
+  }
+})
+
+test("placing: the armed row is marked armed, not with the keyboard's bar; leaving the Grid disarms", () => {
   const side = session()
   keys(side, "1")
   assert.equal(side.build.state.focus, "grid")
-  assert.ok(barOn(side, barracksRow(side)), "the armed row is not marked")
-  assert.match(screen(side).lines[side.layout.footerRow + 1] as string, /\| PLACE {2}arrows move/)
+  // Armed is `>` and the name underlined in the hotkey's colour — never the bar, which means "the
+  // keyboard is here, not chosen yet" (feedback F22).
+  const { frame, lines } = screen(side)
+  assert.match(lines[barracksRow(side)] as string, /^\s*\| > \[1\] Barracks +40\|/)
+  assert.ok(!barOn(side, barracksRow(side)), "the armed row is drawn with the keyboard's bar")
+  const name = cellAt(frame, side.layout.panelColumn + 6, barracksRow(side)).style
+  assert.equal(name.underline, true)
+  assert.equal(name.bold, true)
+  assert.match(lines[side.layout.footerRow + 1] as string, /\| PLACE {2}arrows move/)
   keys(side, TAB)
   assert.equal(side.build.state.focus, "menu")
   assert.equal(side.build.state.armed, null, "a structure stayed armed with the keyboard on the menu")
 })
 
-test("Up/Down walk the whole menu — Nexus, Explore, the construct rows — and wrap", () => {
+test("Up/Down walk the whole menu — Explore Map, Nexus, the construct rows — and wrap", () => {
   const side = session()
   const entries = 2 + SPIKE_CATALOG.length
   keys(side, UP)
@@ -183,15 +283,16 @@ test("Up/Down walk the whole menu — Nexus, Explore, the construct rows — and
   assert.ok(barOn(side, barracksRow(side)))
 })
 
-test("Enter on Nexus opens its popup; on Explore goes exploring; on a construct row arms it", () => {
-  const nexus = session()
-  keys(nexus, SPACE)
-  assert.equal(nexus.build.state.overlay, "nexus-powers")
-
+test("Enter on Explore Map explores; on Nexus opens its popup; on a construct row arms it", () => {
   const explore = session()
-  keys(explore, DOWN, ENTER)
+  keys(explore, ENTER)
   assert.equal(explore.build.state.focus, "grid")
   assert.equal(explore.build.state.armed, null)
+  assert.equal(explore.build.state.exploreMap, true)
+
+  const nexus = session()
+  keys(nexus, DOWN, SPACE)
+  assert.equal(nexus.build.state.overlay, "nexus-powers")
 
   const arm = session()
   keys(arm, DOWN, DOWN, ENTER)
@@ -199,7 +300,7 @@ test("Enter on Nexus opens its popup; on Explore goes exploring; on a construct 
   assert.equal(arm.build.state.focus, "grid")
 })
 
-test("a digit arms its row from either focus and leaves the cursor where it is", () => {
+test("a digit arms its row from either focus, where the cursor is when it fits there, and remembers which focus", () => {
   for (const start of ["menu", "grid"] as const) {
     const side = session()
     side.build.dispatch({ kind: "focus", target: start })
@@ -207,36 +308,38 @@ test("a digit arms its row from either focus and leaves the cursor where it is",
     keys(side, "3")
     assert.equal(side.build.state.armed, 2)
     assert.equal(side.build.state.focus, "grid")
-    assert.deepEqual(side.build.state.cursor, cursor, "a digit moved the cursor — only a menu arm may")
+    assert.equal(side.build.state.origin, start)
+    assert.deepEqual(side.build.state.cursor, cursor, "the Turret fits where the cursor is, and the cursor moved")
     assert.equal(side.build.state.menuHighlight, entryOfConstruct(2))
   }
 })
 
-test("Esc walks back a stack: popup, the information panel, the Grid, then the exit question", () => {
+test("Esc walks back a stack: popup, Explore Map to the menu, then the game menu", () => {
   const side = session()
-  keys(side, TAB, ENTER) // exploring, then inspect what is under the cursor
-  assert.equal(side.build.state.inspecting, true)
-  keys(side, "n") // a popup on top of all of it
+  keys(side, "e") // Explore Map, from the menu
+  assert.equal(side.build.state.exploreMap, true)
+  keys(side, "n") // a popup on top of it
   assert.equal(side.build.state.overlay, "nexus-powers")
   keys(side, ESC)
   assert.equal(side.build.state.overlay, null)
-  keys(side, "x") // x is Esc
-  assert.equal(side.build.state.inspecting, false)
-  assert.equal(side.build.state.focus, "grid")
-  keys(side, ESC)
+  assert.equal(side.build.state.exploreMap, true, "closing the popup also left Explore Map")
+  keys(side, "x") // x is Esc; Explore Map goes back to the menu it was opened from (feedback F23, F32)
+  assert.equal(side.build.state.exploreMap, false)
   assert.equal(side.build.state.focus, "menu")
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, "exit")
-  assert.match(screen(side).text, /EXIT THE GAME\?/)
+  assert.equal(side.build.state.overlay, "menu")
+  assert.match(screen(side).text, /MENU/)
+  assert.match(screen(side).text, /\[s\] Settings/)
+  assert.match(screen(side).text, /\[q\] Quit/)
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, null, "Esc on the exit question keeps playing")
+  assert.equal(side.build.state.overlay, null, "Esc on the game menu goes back to the game")
   assert.equal(side.quits(), 0)
 })
 
-test("the exit question: q asks, its own [q] quits, Ctrl+C always quits outright", () => {
+test("the game menu: q opens it, its own [q] quits, Ctrl+C always quits outright", () => {
   const side = session()
   keys(side, "q")
-  assert.equal(side.build.state.overlay, "exit")
+  assert.equal(side.build.state.overlay, "menu")
   assert.equal(side.quits(), 0)
   keys(side, "q")
   assert.equal(side.quits(), 1)
@@ -268,7 +371,7 @@ test("Backspace on the menu flickers the row and removes nothing under the hidde
   // It removes what is under the map cursor, which the menu hides (feedback F17): a flicker says the
   // key arrived, like Left does.
   const side = session()
-  keys(side, "1", ENTER) // a Barracks, placed where the smart cursor put it; the keyboard is back on the menu
+  keys(side, "1", ENTER) // a Barracks, armed from the menu and placed at the cursor; back on the menu
   assert.equal(side.build.state.planned.length, 1)
   assert.equal(side.build.state.focus, "menu")
   keys(side, "\u007f")
@@ -291,63 +394,156 @@ test("a popup's shadow is a dim shade, visible on the dark theme's near-black gr
 
 test("a menu row is drawn in four states: plain, selected, pressed and refused", () => {
   const side = session()
-  const row = side.layout.panelRow + NEXUS_ROW
+  const row = side.layout.panelRow + EXPLORE_ROW
   const last = side.layout.panelColumn + side.layout.panelLimit - 1
   const style = (flash?: BuildFlash) => cellAt(screen(side, flash).frame, last, row).style
   assert.equal(style().inverse, true, "selected")
   // Pressed: stronger than selected — bold and underlined, at every tier including monochrome.
-  const pressed = style({ kind: "pressed", entry: 0 })
+  const pressed = style({ kind: "pressed", entry: EXPLORE_ENTRY })
   assert.equal(pressed.inverse, true)
   assert.equal(pressed.underline, true)
   assert.equal(pressed.bold, true)
   // Refused: the bar dimmed for a moment against the bar it goes back to.
-  assert.equal(style({ kind: "refused", entry: 0 }).dim, true)
+  assert.equal(style({ kind: "refused", entry: EXPLORE_ENTRY }).dim, true)
   // Plain: another row.
-  assert.notEqual(cellAt(screen(side).frame, last, side.layout.panelRow + EXPLORE_ROW).style.inverse, true)
+  assert.notEqual(cellAt(screen(side).frame, last, side.layout.panelRow + NEXUS_ROW).style.inverse, true)
 })
 
 test("every activation asks for a pressed flash, however it arrived: Enter, a hotkey, or a click", () => {
-  for (const drive of [
-    (side: Side) => keys(side, ENTER),
-    (side: Side) => keys(side, "n"),
-    (side: Side) => clickEntry(side, side.layout.panelRow + NEXUS_ROW),
-  ]) {
+  for (const [drive, entry] of [
+    [(side: Side) => keys(side, ENTER), EXPLORE_ENTRY],
+    [(side: Side) => keys(side, "e"), EXPLORE_ENTRY],
+    [(side: Side) => clickEntry(side, side.layout.panelRow + EXPLORE_ROW), EXPLORE_ENTRY],
+    [(side: Side) => keys(side, "n"), NEXUS_ENTRY],
+    [(side: Side) => clickEntry(side, side.layout.panelRow + NEXUS_ROW), NEXUS_ENTRY],
+    [(side: Side) => clickEntry(side, barracksRow(side)), entryOfConstruct(0)],
+  ] as const) {
     const side = session()
     drive(side)
-    assert.deepEqual(side.build.state.ack, { seq: 1, kind: "pressed", entry: 0 })
+    assert.deepEqual(side.build.state.ack, { seq: 1, kind: "pressed", entry })
   }
 })
 
-// --- Clicks ---------------------------------------------------------------------------------------
+// --- Clicks (feedback F22: a click activates what it lands on) ------------------------------------
 
-test("a first click on the menu from elsewhere only highlights; a click with the menu focused activates", () => {
-  const side = session()
-  keys(side, TAB)
-  clickEntry(side, barracksRow(side))
-  assert.equal(side.build.state.focus, "menu")
-  assert.equal(side.build.state.armed, null, "the first click activated the row")
-  assert.equal(side.build.state.menuHighlight, entryOfConstruct(0))
-  clickEntry(side, barracksRow(side))
-  assert.equal(side.build.state.armed, 0)
-  // The Nexus entry highlights like every other row (owner, 2026-09-27).
-  keys(side, TAB)
-  clickEntry(side, side.layout.panelRow + NEXUS_ROW)
-  assert.ok(barOn(side, side.layout.panelRow + NEXUS_ROW))
-})
-
-test("a click on the Grid takes focus there; exploring, a click on a building opens its information", () => {
+test("a click on a building's row arms it at once, whatever had focus, and its ghost is at the cursor", () => {
+  // From the map a click opened: the menu is still drawn, and the ghost goes where the player was
+  // looking — the cursor stays put, since the building fits there.
   const side = session()
   clickTile(side, { x: 30, y: 14 })
   assert.equal(side.build.state.focus, "grid")
-  assert.equal(side.build.state.inspecting, false)
+  assert.equal(side.build.state.exploreMap, false, "a click on the map from the menu hid the menu")
+  assert.match(screen(side).text, /\[1\] Barracks/)
+  assert.match(screen(side).lines[side.layout.footerRow + 1] as string, /\| MAP {2}arrows move {2}enter\/space explore/)
+  clickEntry(side, barracksRow(side))
+  assert.equal(side.build.state.armed, 0, "the click only highlighted the row")
+  assert.equal(side.build.state.focus, "grid")
+  assert.deepEqual(side.build.state.cursor, { x: 30, y: 14 }, "arming by click moved the cursor off the map spot")
+  assert.match(screen(side).lines[barracksRow(side)] as string, /> \[1\] Barracks/)
+  assert.match(screen(side).lines[side.layout.footerRow + 1] as string, /\| PLACE/)
+
+  // Another row while placing: re-armed at once, still where the player is pointing.
+  clickEntry(side, menuEntryRow(side.layout, SPIKE_CATALOG, { kind: "construct", index: 2 }) as number)
+  assert.equal(side.build.state.armed, 2)
+  assert.deepEqual(side.build.state.cursor, { x: 30, y: 14 })
+
+  // With the menu in hand, a click is Enter's twin: the same spot, the same way back.
+  const fromMenu = session()
+  const byEnter = session()
+  clickEntry(fromMenu, barracksRow(fromMenu))
+  keys(byEnter, DOWN, DOWN, ENTER)
+  assert.equal(fromMenu.build.state.armed, 0)
+  assert.deepEqual(fromMenu.build.state.cursor, byEnter.build.state.cursor)
+  assert.equal(fromMenu.build.state.origin, "menu")
+  assert.equal(side.build.state.origin, "menu", "a click on a row is the menu's, whatever had focus")
+})
+
+test("a second click on the same tile places, and the menu comes back with nothing looking chosen", () => {
+  const side = session()
+  clickTile(side, { x: 30, y: 14 })
+  clickEntry(side, barracksRow(side))
+  clickTile(side, { x: 30, y: 15 }) // moves the ghost
+  assert.equal(side.build.state.planned.length, 0)
+  clickTile(side, { x: 30, y: 15 }) // the same tile: places
+  assert.equal(side.build.state.planned.length, 1)
+  assert.equal(side.build.state.focus, "menu")
+  assert.equal(side.build.state.armed, null)
+  assert.equal(side.build.state.highlightHidden, true)
+  for (const entry of menuEntries(side.context).keys()) {
+    const row = menuEntryRow(side.layout, SPIKE_CATALOG, menuEntries(side.context)[entry]!) as number
+    assert.ok(!barOn(side, row), `row ${entry} looks chosen after a mouse placement`)
+  }
+  assert.doesNotMatch(screen(side).lines[barracksRow(side)] as string, />/)
+
+  // The first menu key only shows where the keyboard is — Down does not move, Enter does not act.
+  const highlight = side.build.state.menuHighlight
+  keys(side, DOWN)
+  assert.equal(side.build.state.highlightHidden, false)
+  assert.equal(side.build.state.menuHighlight, highlight)
+  assert.ok(barOn(side, barracksRow(side)))
+  keys(side, DOWN)
+  assert.equal(side.build.state.menuHighlight, highlight + 1, "the second key did nothing")
+
+  const enter = session()
+  clickEntry(enter, barracksRow(enter))
+  clickTile(enter, enter.build.state.cursor) // the arming spot's tile: the confirming click
+  assert.equal(enter.build.state.planned.length, 1)
+  keys(enter, ENTER)
+  assert.equal(enter.build.state.armed, null, "Enter acted on a row the player could not see")
+  assert.equal(enter.build.state.highlightHidden, false)
+  keys(enter, ENTER)
+  assert.equal(enter.build.state.armed, 0)
+})
+
+test("a click on Nexus opens its popup and a click on Explore Map explores, from any focus", () => {
+  const side = session()
+  keys(side, "1") // placing
+  clickEntry(side, side.layout.panelRow + NEXUS_ROW)
+  assert.equal(side.build.state.overlay, "nexus-powers")
+  assert.equal(side.build.state.armed, null, "the click on Nexus left a building armed behind the popup")
+  assert.equal(side.build.state.focus, "menu")
+  // The popup's own row is drawn active behind it — `>`, not the keyboard's bar (feedback F32).
+  assert.match(screen(side).lines[side.layout.panelRow + NEXUS_ROW] as string, /^\s*\| > \[n\] Nexus/)
+  assert.ok(!barOn(side, side.layout.panelRow + NEXUS_ROW), "the popup's row is drawn with the keyboard's bar")
+  keys(side, "1") // pick: the popup closes, back on the menu with nothing looking chosen
+  assert.equal(side.build.state.overlay, null)
+  assert.ok(!barOn(side, side.layout.panelRow + NEXUS_ROW))
+  assert.doesNotMatch(screen(side).lines[side.layout.panelRow + NEXUS_ROW] as string, />/)
+
+  keys(side, "2") // placing again
+  clickEntry(side, side.layout.panelRow + EXPLORE_ROW)
+  assert.equal(side.build.state.exploreMap, true)
+  assert.equal(side.build.state.armed, null)
+  assert.match(screen(side).lines[side.layout.panelRow] as string, /> \[e\] Explore Map/)
+})
+
+test("in Explore Map a click on the map moves the card; a click on its panel closes it and chooses nothing", () => {
+  const side = session()
+  keys(side, "e")
   clickTile(side, { x: 18, y: 11 }) // the Grid Nexus
-  assert.equal(side.build.state.inspecting, true)
+  assert.equal(side.build.state.exploreMap, true)
   const { text } = screen(side)
   assert.match(text, /Citizen Nexus/)
   assert.match(text, /HEALTH {2,}400/)
   assert.match(text, /SIZE {2,}3x2/)
-  assert.match(text, /\| INFO {2}arrows move {2}esc close/)
-  assert.match(text, /\[esc\]/)
+  // Any click on the panel — here where the Barracks row would be, were the menu drawn.
+  clickEntry(side, barracksRow(side))
+  assert.equal(side.build.state.focus, "menu")
+  assert.equal(side.build.state.armed, null, "a click on a row nobody could see armed it")
+  // Its own row, and a line of the card with no menu row under it, do the same.
+  for (const cell of [
+    { column: side.layout.panelColumn + side.layout.panelLimit - 2, row: side.layout.panelRow },
+    { column: side.layout.panelColumn + 2, row: side.layout.panelRow + 2 },
+  ]) {
+    keys(side, "e")
+    clickCell(side, cell.column, cell.row)
+    assert.equal(side.build.state.focus, "menu", `a click at ${cell.column},${cell.row} did not give the menu back`)
+  }
+  // Enter in the plain navigation a click opened is Explore Map too.
+  const map = session()
+  clickTile(map, { x: 30, y: 14 })
+  keys(map, ENTER)
+  assert.equal(map.build.state.exploreMap, true)
 })
 
 test("the information panel names what a planned building costs, and bare ground says what it is", () => {
@@ -370,7 +566,7 @@ test("the information panel names what a planned building costs, and bare ground
 
 // --- Placing --------------------------------------------------------------------------------------
 
-test("after a placement the keyboard is back on the menu, disarmed, and the status line says what is left", () => {
+test("after a placement armed from the menu the keyboard is back on the menu, disarmed, and the status line says what is left", () => {
   const side = session()
   keys(side, DOWN, DOWN, DOWN, SPACE, SPACE) // highlight the Hatchery, arm, place
   assert.equal(side.build.state.planned.length, 1)
@@ -384,25 +580,28 @@ test("the owner's flow — highlight, then space, space, space, space — lays t
   const side = session()
   keys(side, DOWN, DOWN, DOWN) // Nexus -> Explore -> Barracks -> Hatchery
   keys(side, SPACE, SPACE, SPACE, SPACE) // arm, place, arm again, place
+  // The first where the cursor is; the second, with the cursor on the first, one free tile east of it.
   assert.deepEqual(
     side.build.state.planned.map((placement) => placement.anchor),
     [
-      { x: 21, y: 10 },
+      { x: 18, y: 13 },
       { x: 21, y: 13 },
     ],
   )
   assert.equal(side.build.state.focus, "menu")
 })
 
-test("a run from the menu lays out a tidy row: aligned, one free tile between, never touching", () => {
+test("a run of the same building lays each one a free tile from the last, never touching", () => {
   const context: BuildContext = { ...spikeContext(), allotment: 1000 }
   const side = session(context)
   keys(side, DOWN, DOWN)
   for (let run = 0; run < 6; run += 1) keys(side, SPACE, SPACE)
   assert.deepEqual(
     side.build.state.planned.map((placement) => placement.anchor),
+    // A row to the right (owner, 2026-09-29: "in most cases this should move the cursor only a few
+    // tiles to the right"): a tile down costs twice a tile across.
     [
-      { x: 21, y: 10 },
+      { x: 17, y: 13 },
       { x: 21, y: 13 },
       { x: 25, y: 13 },
       { x: 29, y: 13 },
@@ -426,58 +625,263 @@ test("a run from the menu lays out a tidy row: aligned, one free tile between, n
   }
 })
 
-// --- The smart cursor (Q55) -----------------------------------------------------------------------
+// --- Where arming puts the cursor (feedback F30) ------------------------------------------------------
 
-test("the smart cursor always lands on a legal tile, and the same plan always gets the same answer", () => {
+test("arming puts the preview where the cursor is whenever the building fits there", () => {
   const context = spikeContext()
   for (const item of SPIKE_CATALOG) {
-    const footprint = FIXTURE_REGISTRY.get(item.contentId).footprint
-    const tile = smartCursorTile(context, [], item.contentId, { x: 0, y: 0 })
-    assert.ok(tile !== null, `${item.label}: no tile`)
-    assert.ok(legalityAt(context, [], item.contentId, anchorForCursor(tile, footprint)).ok, `${item.label}: illegal`)
-    assert.deepEqual(smartCursorTile(context, [], item.contentId, { x: 50, y: 30 }), tile, "the answer depended on the cursor")
+    assert.deepEqual(armingSpot(context, [], item.contentId, { x: 40, y: 20 }), { tile: { x: 40, y: 20 }, found: true })
+  }
+  // By every way of arming: a digit, Enter on the row, a click on it.
+  for (const arm of [
+    (side: Side) => keys(side, "1"),
+    (side: Side) => keys(side, DOWN, DOWN, ENTER),
+    (side: Side) => clickEntry(side, barracksRow(side)),
+  ]) {
+    const side = session()
+    arm(side)
+    assert.equal(side.build.state.armed, 0)
+    assert.deepEqual(side.build.state.cursor, { x: 18, y: 13 })
   }
 })
 
-test("the smart cursor falls back to the nearest free spot, and to none at all without moving", () => {
-  const width = 12
-  const height = 6
+test("where it does not fit, the nearest spot within reach that leaves a free tile, then one that touches", () => {
+  const context = spikeContext()
+  const side = session()
+  // The owner's flow: place a Barracks, press its key again — the cursor is on the new one.
+  keys(side, TAB, "1", ENTER, "1")
+  assert.deepEqual(side.build.state.planned[0]?.anchor, { x: 17, y: 13 })
+  const spot = side.build.state.cursor
+  assert.notDeepEqual(spot, { x: 18, y: 13 })
+  const footprint = FIXTURE_REGISTRY.get("structure.citizen.barracks").footprint
+  const anchor = anchorForCursor(spot, footprint)
+  assert.ok(legalityAt(context, side.build.state.planned, "structure.citizen.barracks", anchor).ok)
+  // A free tile between it and every other structure.
+  const others = [...context.standing, ...side.build.state.planned].flatMap((s) => tilesOf(s.anchor, FIXTURE_REGISTRY.get(s.contentId).footprint))
+  for (const t of tilesOf(anchor, footprint)) {
+    for (const u of others) assert.ok(Math.max(Math.abs(t.x - u.x), Math.abs(t.y - u.y)) >= 2, "it touches a structure")
+  }
+  // Nearest: a free column to the right of the first — sideways is cheaper than down.
+  assert.deepEqual(spot, { x: 22, y: 13 })
+
+  // Touching is the fallback when nothing gapped is in reach: a corridor one Turret wide.
+  const width = 8
+  const height = 3
   const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.rock")
-  for (let y = 2; y <= 4; y += 1) for (let x = 8; x <= 10; x += 1) tiles[y * width + x] = "terrain.plain"
-  const pocket: BuildContext = { ...spikeContext(), grid: { width, height, tiles }, standing: [] }
-  assert.deepEqual(smartCursorTile(pocket, [], "structure.bench.beamturret", { x: 1, y: 1 }), { x: 8, y: 2 })
-
-  const solid: BuildContext = { ...pocket, grid: { width, height, tiles: new Array<TerrainId>(72).fill("terrain.rock") } }
-  assert.equal(smartCursorTile(solid, [], "structure.bench.beamturret", { x: 1, y: 1 }), null)
-  const side = session(solid)
-  const cursor = side.build.state.cursor
-  side.build.run([{ kind: "highlight", delta: 1 }, { kind: "highlight", delta: 1 }, { kind: "activate" }])
-  assert.equal(side.build.state.armed, 0)
-  assert.deepEqual(side.build.state.cursor, cursor, "with nowhere to go the cursor should stay put")
+  for (let x = 0; x < width; x += 1) tiles[1 * width + x] = "terrain.plain"
+  const corridor: BuildContext = { ...spikeContext(), grid: { width, height, tiles }, standing: [] }
+  const planned = [{ ordinal: 1, contentId: "structure.bench.beamturret", anchor: { x: 3, y: 1 } }]
+  assert.deepEqual(armingSpot(corridor, planned, "structure.bench.beamturret", { x: 3, y: 1 }), { tile: { x: 5, y: 1 }, found: true })
+  const full = [0, 1, 2, 4, 5, 6, 7].map((x, index) => ({ ordinal: index + 2, contentId: "structure.bench.beamturret", anchor: { x, y: 1 } }))
+  const crowded = [...planned, ...full.filter((p) => p.anchor.x !== 4)]
+  assert.deepEqual(armingSpot(corridor, crowded, "structure.bench.beamturret", { x: 3, y: 1 }), { tile: { x: 4, y: 1 }, found: true })
 })
 
-test("with the smart cursor off, a menu arm leaves the cursor where it is", () => {
-  const side = session({ ...spikeContext(), smartCursor: false })
-  const cursor = side.build.state.cursor
-  keys(side, DOWN, DOWN, SPACE)
-  assert.equal(side.build.state.armed, 0)
-  assert.deepEqual(side.build.state.cursor, cursor)
+test("sideways is cheaper than up or down, and ties go the same way every time: more horizontal, then east, then south", () => {
+  // An open field with one Turret planned where the cursor is: four spots two tiles away tie on
+  // distance; east wins.
+  const width = 11
+  const height = 11
+  const open: BuildContext = {
+    ...spikeContext(),
+    grid: { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") },
+    standing: [],
+  }
+  const planned = [{ ordinal: 1, contentId: "structure.bench.beamturret", anchor: { x: 5, y: 5 } }]
+  assert.deepEqual(armingSpot(open, planned, "structure.bench.beamturret", { x: 5, y: 5 }).tile, { x: 7, y: 5 })
+  // With east blocked by rock, west; with both blocked, south before north.
+  const rocky = (blocked: readonly { x: number; y: number }[]): BuildContext => {
+    const tiles = new Array<TerrainId>(width * height).fill("terrain.plain")
+    for (const tile of blocked) tiles[tile.y * width + tile.x] = "terrain.rock"
+    return { ...open, grid: { width, height, tiles } }
+  }
+  const eastRock = rocky([{ x: 7, y: 5 }, { x: 7, y: 4 }, { x: 7, y: 6 }, { x: 8, y: 5 }, { x: 8, y: 4 }, { x: 8, y: 6 }])
+  assert.deepEqual(armingSpot(eastRock, planned, "structure.bench.beamturret", { x: 5, y: 5 }).tile, { x: 3, y: 5 })
+  // Rock two and three tiles east and west: four tiles east and two tiles south both cost 4 (a tile
+  // down costs two across), and the tie goes to the more horizontal move. In the open field two east
+  // (cost 2) always beats two south (cost 4).
+  const walls = rocky([
+    ...[4, 5, 6].flatMap((y) => [{ x: 7, y }, { x: 3, y }]),
+    { x: 8, y: 5 },
+    { x: 2, y: 5 },
+  ])
+  assert.deepEqual(armingSpot(walls, planned, "structure.bench.beamturret", { x: 5, y: 5 }).tile, { x: 9, y: 5 })
+  assert.deepEqual(armingSpot(open, planned, "structure.bench.beamturret", { x: 5, y: 5 }).tile, { x: 7, y: 5 })
+  // The answer is a function of the plan and the cursor alone: the same call, the same answer.
+  assert.deepEqual(
+    armingSpot(open, planned, "structure.bench.beamturret", { x: 5, y: 5 }),
+    armingSpot(open, planned, "structure.bench.beamturret", { x: 5, y: 5 }),
+  )
 })
 
-// --- Same plan, every adapter ---------------------------------------------------------------------
+test("never chosen from the last building placed: the spot is nearest the cursor, wherever the last one went", () => {
+  const side = session({ ...spikeContext(), allotment: 1000 })
+  keys(side, TAB, "3", ENTER) // a Turret at 18,13, the cursor stays on it
+  side.build.run([{ kind: "move-cursor", dx: 30, dy: 12 }]) // far away, on open ground
+  keys(side, "3")
+  assert.deepEqual(side.build.state.cursor, { x: 48, y: 25 }, "arming went back to the last building placed")
+})
+
+test(`nothing within ${ARM_SEARCH_TILES} tiles: one tile right and down, drawn as the building, not x, until moved or tried`, () => {
+  // Solid rock with the cursor in a one-tile hole: nothing but a Turret fits anywhere, and a Barracks
+  // fits nowhere.
+  const width = 40
+  const height = 30
+  const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.rock")
+  tiles[10 * width + 10] = "terrain.plain"
+  const solid: BuildContext = { ...spikeContext(), grid: { width, height, tiles }, standing: [] }
+  assert.deepEqual(armingSpot(solid, [], "structure.citizen.barracks", { x: 10, y: 10 }), { tile: { x: 11, y: 11 }, found: false })
+  // Room further than twelve tiles away does not count.
+  const far = [...tiles]
+  for (let y = 0; y < 3; y += 1) for (let x = 25; x < 30; x += 1) far[y * width + x] = "terrain.plain"
+  const beyond: BuildContext = { ...solid, grid: { width, height, tiles: far } }
+  assert.equal(armingSpot(beyond, [], "structure.citizen.barracks", { x: 10, y: 10 }).found, false)
+  assert.equal(armingSpot(beyond, [], "structure.citizen.barracks", { x: 14, y: 10 }).found, true, "13-ish tiles is within reach from here")
+
+  const layout = buildLayout(MINIMUM, solid.grid)
+  const build = new BuildSession({ context: solid, cursor: { x: 10, y: 10 }, viewport: layout.viewport })
+  const side: Side = { build, layout, context: solid, quits: () => 0 }
+  keys(side, TAB, "1")
+  assert.equal(build.state.armed, 0)
+  assert.deepEqual(build.state.cursor, { x: 11, y: 11 })
+  assert.equal(build.state.armGhost, true)
+  assert.match(build.state.status.text, /no room within 12 tiles/)
+  const ghostTile = cellForTile(layout, build.state.camera, build.state.cursor)
+  const drawn = () => cellAt(screen(side).frame, ghostTile.x, ghostTile.y).glyph
+  assert.notEqual(drawn(), "x", "the ghost was drawn as the refusal's x")
+  assert.match(screen(side).lines[layout.footerRow + 2] as string, /no room within 12 tiles/)
+  // Moving: the normal refusal drawing.
+  keys(side, RIGHT, LEFT)
+  assert.equal(build.state.armGhost, false)
+  assert.equal(drawn(), "x")
+  // Trying to place clears it too, with the refusal said loudly.
+  const tried: Side = { ...side, build: new BuildSession({ context: solid, cursor: { x: 10, y: 10 }, viewport: layout.viewport }) }
+  keys(tried, TAB, "1")
+  assert.equal(tried.build.state.armGhost, true)
+  keys(tried, ENTER)
+  assert.equal(tried.build.state.armGhost, false)
+  assert.equal(tried.build.state.planned.length, 0)
+  assert.equal(tried.build.state.status.tone, "danger")
+  // And Esc disarms: nothing left to draw as a ghost.
+  keys(tried, ESC)
+  assert.equal(tried.build.state.armGhost, false)
+})
+
+test("the cursor opens on the Grid Nexus, and the first building armed finds the nearest good spot around it", () => {
+  const context = spikeContext()
+  assert.deepEqual(nexusTile(context), SPIKE_START_CURSOR)
+  const run = runBuildPlaytest({ steps: parseKeyScript("1") })
+  assert.deepEqual(run.frames[0]?.state.cursor, SPIKE_START_CURSOR)
+  const armed = run.frames[1]?.state
+  assert.ok(armed !== undefined)
+  assert.equal(armed.armed, 0)
+  assert.notDeepEqual(armed.cursor, SPIKE_START_CURSOR, "the Barracks was left on top of the Nexus")
+  const footprint = FIXTURE_REGISTRY.get("structure.citizen.barracks").footprint
+  assert.ok(legalityAt(context, [], "structure.citizen.barracks", anchorForCursor(armed.cursor, footprint)).ok)
+  assert.deepEqual(armed.cursor, { x: 22, y: 10 }, "one free column east of the Nexus")
+  // A map with no Nexus has no default of its own.
+  assert.equal(nexusTile({ ...context, standing: [] }), null)
+})
+
+// --- Where the keyboard goes back to (feedback F30) ------------------------------------------------------
+
+test("a building armed on the map goes back to the map after a placement: plain navigation, the menu beside it", () => {
+  const side = session()
+  keys(side, TAB, "1", ENTER)
+  assert.equal(side.build.state.planned.length, 1)
+  assert.equal(side.build.state.focus, "grid")
+  assert.equal(side.build.state.armed, null)
+  assert.equal(side.build.state.exploreMap, false)
+  assert.deepEqual(side.build.state.cursor, { x: 18, y: 13 }, "the cursor left the building just placed")
+  assert.match(screen(side).lines[side.layout.footerRow + 1] as string, /\| MAP {2}arrows move/)
+  assert.match(screen(side).text, /\[1\] Barracks/)
+  // From Explore Map too: a digit there is the map's.
+  const exploring = session()
+  keys(exploring, TAB, "e", "3", ENTER)
+  assert.equal(exploring.build.state.focus, "grid")
+  assert.equal(exploring.build.state.exploreMap, false)
+})
+
+test("Esc while placing disarms and goes back one level, to where the arming came from", () => {
+  const onMap = session()
+  keys(onMap, TAB, "1", ESC)
+  assert.equal(onMap.build.state.armed, null)
+  assert.equal(onMap.build.state.focus, "grid", "Esc from a map arming left the map")
+  assert.equal(onMap.build.state.status.text, "Cancelled.")
+  keys(onMap, ESC)
+  assert.equal(onMap.build.state.focus, "menu")
+  keys(onMap, ESC)
+  assert.equal(onMap.build.state.overlay, "menu")
+
+  for (const arm of [[DOWN, DOWN, ENTER], ["1"]]) {
+    const fromMenu = session()
+    keys(fromMenu, ...arm, ESC)
+    assert.equal(fromMenu.build.state.armed, null)
+    assert.equal(fromMenu.build.state.focus, "menu", `${JSON.stringify(arm)} then Esc did not go back to the menu`)
+  }
+  const byClick = session()
+  clickTile(byClick, { x: 30, y: 14 })
+  clickEntry(byClick, barracksRow(byClick))
+  keys(byClick, ESC)
+  assert.equal(byClick.build.state.focus, "menu", "a click on a row is the menu's")
+})
+
+test("a mouse placement goes back to the menu, focused but unselected", () => {
+  const side = session()
+  clickTile(side, { x: 30, y: 14 }) // plain navigation, by the mouse
+  clickEntry(side, barracksRow(side))
+  const cell = cellForTile(side.layout, side.build.state.camera, side.build.state.cursor)
+  clickCell(side, cell.x, cell.y)
+  assert.equal(side.build.state.planned.length, 1)
+  assert.equal(side.build.state.focus, "menu")
+  assert.equal(side.build.state.highlightHidden, true)
+  // A building armed on the map and placed by a click goes back to the map.
+  const map = session()
+  keys(map, TAB, "1")
+  const at = cellForTile(map.layout, map.build.state.camera, map.build.state.cursor)
+  clickCell(map, at.x, at.y)
+  assert.equal(map.build.state.planned.length, 1)
+  assert.equal(map.build.state.focus, "grid")
+})
+
+// --- One active style (feedback F32) ---------------------------------------------------------------
+
+test("one active style for every row: a building armed, Explore Map open, the Nexus popup open", () => {
+  const cases: readonly [string, (side: Side) => void, number][] = [
+    ["building", (side) => keys(side, "1"), 0],
+    ["explore", (side) => keys(side, "e"), -1],
+    ["nexus", (side) => keys(side, "n"), -2],
+  ]
+  const looks: string[] = []
+  for (const [name, drive, which] of cases) {
+    const side = session()
+    drive(side)
+    const row = which === -1 ? side.layout.panelRow + EXPLORE_ROW : which === -2 ? side.layout.panelRow + NEXUS_ROW : barracksRow(side)
+    const { frame, lines } = screen(side)
+    assert.match((lines[row] as string).slice(side.layout.panelColumn), /^> \[/, `${name}: no marker`)
+    assert.ok(!barOn(side, row), `${name}: drawn with the keyboard's bar`)
+    const marker = cellAt(frame, side.layout.panelColumn, row).style
+    const hotkey = cellAt(frame, side.layout.panelColumn + 2, row).style
+    const label = cellAt(frame, side.layout.panelColumn + 6, row).style
+    looks.push(JSON.stringify([marker, hotkey, label]))
+    assert.equal(label.underline, true, `${name}: the name is not underlined`)
+    assert.equal(label.fgRole, "chrome.hotkey", `${name}: not in the hotkey's colour`)
+  }
+  assert.equal(new Set(looks).size, 1, "the three active rows are drawn differently")
+})// --- Same plan, every adapter ---------------------------------------------------------------------
 
 test("the focus flow by keyboard bytes and the same commands from a driver are the same state and frame", () => {
   const byKeyboard = session()
-  keys(byKeyboard, SPACE, DOWN, SPACE) // open Nexus, pick the second, which closes it
-  keys(byKeyboard, DOWN, DOWN, SPACE, SPACE) // highlight Barracks, arm, place
+  keys(byKeyboard, DOWN, SPACE, DOWN, SPACE) // highlight Nexus, open it, pick the second, which closes it
+  keys(byKeyboard, DOWN, SPACE, SPACE) // highlight Barracks, arm, place
   keys(byKeyboard, DOWN, DOWN, SPACE, SPACE) // highlight Turret, arm, place
   keys(byKeyboard, "p", "y")
 
   const script: readonly BuildCommand[] = [
-    { kind: "activate" },
     { kind: "highlight", delta: 1 },
     { kind: "activate" },
     { kind: "highlight", delta: 1 },
+    { kind: "activate" },
     { kind: "highlight", delta: 1 },
     { kind: "activate" },
     { kind: "place" },
@@ -516,6 +920,34 @@ test("the focus flow by keyboard bytes and the same commands from a driver are t
   assert.equal(byMouse.build.state.committed, true)
 })
 
+test("clicks as a terminal sends them and the driver's click commands are the same state and frame (feedback F22, F23)", () => {
+  const byMouse = session()
+  clickTile(byMouse, { x: 30, y: 14 }) // the map, the menu still drawn
+  clickEntry(byMouse, barracksRow(byMouse)) // armed at once
+  clickTile(byMouse, { x: 30, y: 15 })
+  clickTile(byMouse, { x: 30, y: 15 }) // placed; the menu is back
+  clickEntry(byMouse, byMouse.layout.panelRow + EXPLORE_ROW) // Explore Map
+  clickTile(byMouse, { x: 18, y: 11 }) // the card shows the Grid Nexus
+  clickCell(byMouse, byMouse.layout.panelColumn + 2, byMouse.layout.panelRow + 2) // the panel: closes it
+  clickEntry(byMouse, byMouse.layout.panelRow + NEXUS_ROW) // the Nexus popup
+
+  const byDriver = session()
+  byDriver.build.run([
+    { kind: "click-tile", x: 30, y: 14 },
+    { kind: "click-menu", entry: entryOfConstruct(0) },
+    { kind: "click-tile", x: 30, y: 15 },
+    { kind: "click-tile", x: 30, y: 15 },
+    { kind: "click-menu", entry: EXPLORE_ENTRY },
+    { kind: "click-tile", x: 18, y: 11 },
+    { kind: "click-menu", entry: EXPLORE_ENTRY },
+    { kind: "click-menu", entry: NEXUS_ENTRY },
+  ])
+  assert.equal(byMouse.build.state.planned.length, 1)
+  assert.equal(byMouse.build.state.overlay, "nexus-powers")
+  assert.deepEqual(byDriver.build.state, byMouse.build.state)
+  assert.equal(screen(byDriver).text, screen(byMouse).text)
+})
+
 test("every construct row the menu draws is reachable by Up/Down", () => {
   const base = session()
   for (const line of constructLines(base.layout, SPIKE_CATALOG)) {
@@ -524,4 +956,14 @@ test("every construct row the menu draws is reachable by Up/Down", () => {
     for (let step = 0; step < entryOfConstruct(line.index); step += 1) keys(side, DOWN)
     assert.ok(barOn(side, line.row), `row ${line.index} is never highlighted`)
   }
+})
+
+test("undo and remove name the building the way the menu does", () => {
+  const run = runBuildPlaytest({ steps: parseKeyScript("Tab 1 Enter u") })
+  const last = run.frames.at(-1)
+  assert.ok(last !== undefined)
+  assert.match(last.state.status.text, /^Barracks undone, 40 back\.$/)
+  const removed = runBuildPlaytest({ steps: parseKeyScript("Tab 1 Enter Bksp") }).frames.at(-1)
+  assert.ok(removed !== undefined)
+  assert.match(removed.state.status.text, /^Barracks removed, 40 back\.$/)
 })

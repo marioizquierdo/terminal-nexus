@@ -2,7 +2,7 @@
 
 **Document role:** The effect system: contract, starter vocabulary, and the craft rules behind it
 **Status:** Canonical direction; the vocabulary is proven or discarded by Milestone 1 Gate 1B
-**Canon version:** 2.22
+**Canon version:** 2.26
 **Updated:** 2026-09-10
 **License:** Apache-2.0 for the contract and schemas; CC BY-SA 4.0 for the authored vocabulary
 
@@ -90,6 +90,42 @@ would replace an entity glyph**, and permits exactly one kind of write onto an o
 **glyphless** cell that keeps the glyph beneath it and applies only its attributes. That is the
 mechanism `fx.damage.flash` uses, and it is why that effect is allowed to touch a unit's own cell at
 all. Recipes are not asked to remember this; they cannot break it.
+
+### 1.2 The presentation toolkit — RULE, canon 2.25
+
+Owner, 2026-09-28: "we are getting a really [good] combination of effects here: particles, shaders and
+animations … please pick the right name for them." Everything that moves or glows without changing
+state belongs to one of **four families**, and every one of them is a pure function of absolute
+presentation time:
+
+- **Animations** — a short run of footprint-sized frames drawn on an entity's own cells (a building
+  rising, later a unit's attack pose), with a little metadata: each frame's share of the time, and
+  whether the last frame clears, holds, or loops (`src/view/animation.ts`). The only family that may
+  change the glyph an entity stands on, because it *is* that entity's drawing.
+- **Particles** — short-lived glyphs thrown around something (`src/view/effects/particles.ts` and the
+  older Pulse recipes). The compositor drops any that would land on an occupied tile (1.1).
+- **Shading** — glyphless colour or attribute changes (a light, a tint, a rainbow, the damage flash)
+  over characters already drawn (`src/view/effects/shading.ts`). The only kind of effect cell allowed
+  onto an occupied tile. The name keeps the owner's "shader" and admits that a rainbow sweep is not a
+  light.
+- **Tweens** — a number or point moving between two values over a window of time, along an easing
+  curve (`src/view/tween.ts`): the camera's slide and the cursor's glide ([`engine.md`](engine.md)
+  3.3), and the expansions inside recipes.
+
+**Each entity animates on a track: the list of timestamped requests made of it**, and what it draws
+at time *t* is a pure function of that list. The requests are *play* (with a stacking policy: replace
+what is playing, queue after it, or ignore the request), *cancel*, *speed change*, and *finish*. A
+request made at time *a* never changes a frame before *a*. Only *play* is used live today; the others
+exist, tested, so the next use needs no new shape.
+
+**Completion is scheduled data, never a callback.** A play may carry follow-ups — effects, or further
+plays — scheduled at the moment it completes, by playing out or being finished. A play that is
+cancelled or replaced never completes, so its follow-ups never happen. Nothing fires from the
+renderer, and nothing reaches state: the effects library exists so the project can "experiment with
+different effects without causing any side-effect on the gameplay".
+
+Light and sparks are generic recipes (`fx.light.flash`, `fx.sparks.burst`), parameterised by origin,
+footprint and size, usable by anything — a placement today, a death or an impact later.
 
 ## 2. The shape of a good effect — GUIDANCE
 
@@ -186,6 +222,8 @@ the theme maps them.
 | `fx.death.collapse` | actor died | `effects` | impact, decay, settle | Expanding then thinning debris over the actor's footprint. Must be visibly heavier than `fx.impact.burst` — dying and being hit are the two events players confuse most |
 | `fx.structure.collapse` | structure destroyed | `effects` | slow, ~600 ms | Footprint-sized, slower, settling downward. Scale with footprint area, not a constant. Settles into salvage, which is state |
 | `fx.nexus.critical` | Nexus below threshold | `effects` | sustained, looping | A slow pulse across the Nexus footprint, phase-locked to absolute time so it is identical on every client. The one sustained effect, and the one allowed real visual weight |
+| `fx.sparks.burst` | something happened to a thing standing there (a placement today) | `effects` | impact + decay (~400 ms) | **Added at gate 5I as `fx.structure.place`, made general at gate 5J.** Sparks launched from the ring one tile outside the footprint, flying outward and thinning to dust; never on a building. Randomness hashes a `key`/`id` identity when given (a player action: plan ordinal, structure, anchor), otherwise the start time. Reduced motion: a still mark at the four corners |
+| `fx.light.flash` | the same moment, on the thing itself | `highlights` | impact + decay (~400 ms) | **Gate 5J.** Shading: a glyphless tint over the footprint toward the theme's strongest ink, or a rainbow sweep, falling off. Reduced motion: a steady half-strength light. Monochrome: nothing, so the caller keeps its own cue (a placement draws its scaffold plain and the finished building bold) |
 | `fx.blast.detonation` | an entity detonated | `effects` | impact, expansion, thinning | **Added at Milestone 1B**, because the vocabulary predates volatile munitions and a death that damages a radius is not a death. A ring that reaches its radius and thins, sparser than it is dense from the first frame. The second effect allowed real weight, because it is the one event that can end an army in a single tick |
 
 **Simultaneous instances of the same effect are staggered in presentation** (Milestone 1B). A
@@ -236,6 +274,9 @@ An effect is a pure function, so it is **directly testable without a terminal**:
 - every glyph it emits has terminal width one;
 - the full, reduced-motion, and monochrome forms all exist and all emit something at the impact beat.
 
+An effect for something the **player** does (a placement) hashes that action's identity
+(`fx.sparks.burst`'s `key`) rather than its start time, so the same plan throws the same sparks however fast it was typed (gate 5I).
+
 Snapshot the composed frame at fixed timestamps and diff it. **Do not test effects by watching them**
 — watch them to judge them, test them to keep them.
 
@@ -252,7 +293,8 @@ seam actually is, not the first one that would find it convenient.
 Not authorized, not designed, not to be built:
 
 - an effect DSL or scripting language — effects are typed TypeScript functions;
-- an ECS, particle pool, or physics integrator;
+- an ECS, particle pool, or physics integrator (an animation track, 1.2, is none of these: it is a pure
+  fold over a list of requests, holding nothing between frames);
 - simulated projectiles that can be intercepted;
 - sound. **TBD, dedicated pass required.** The cue subscription points here are a clean future
   attachment surface, and that is the only claim being made;

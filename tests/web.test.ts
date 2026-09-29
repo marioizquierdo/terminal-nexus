@@ -138,7 +138,8 @@ test("the canvas paints every glyph the terminal shows, where it shows it", () =
 })
 
 test("the canvas takes its colours from the terminal's role table, inverse and dim included", () => {
-  const frame = buildFrame(["n", "1", "Tab", "S-Left", "S-Left", "S-Left", "S-Left", "S-Up", "S-Up"])
+  // Scrolled to the map's corner, then back on the menu, whose highlight is an inverse bar.
+  const frame = buildFrame(["n", "1", "Tab", "S-Left", "S-Left", "S-Left", "S-Left", "S-Up", "S-Up", "Tab"])
   const ops = paintOps(frame, "truecolor", "dark")
   const css = (rgb: readonly number[]): string => `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`
   let inverse = 0
@@ -161,7 +162,7 @@ test("the canvas takes its colours from the terminal's role table, inverse and d
     }
     assert.equal(op.bold, cell.style.bold === true)
   })
-  assert.ok(inverse > 10, "the scrolled-to-the-edge frame drew no solid edge to check")
+  assert.ok(inverse > 10, "the frame drew no inverse cells to check")
   assert.ok(dim > 0)
 })
 

@@ -10,8 +10,7 @@
 import { SPIKE_START_CURSOR } from "../build/catalog.ts"
 import { isGated } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
-import { buildLayout, cellForTile, tileAtCell } from "../build/layout.ts"
-import { formatMouseEvent } from "../build/mouse.ts"
+import { buildLayout } from "../build/layout.ts"
 import { BuildSession } from "../build/session.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
 import { spikeContext } from "../cli/spike.ts"
@@ -19,8 +18,13 @@ import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import type { ReadonlyCellFrame } from "../view/frame.ts"
 import type { CapabilityMode } from "../view/roles.ts"
+import type { DebugFlags } from "../build/debug.ts"
+import { DEFAULT_SETTINGS } from "../settings/types.ts"
+import type { Settings } from "../settings/types.ts"
 import type { GlyphPack } from "../view/theme.ts"
+import type { MoveKind } from "../build/motion.ts"
 import type { PlaytestStep } from "./keys.ts"
+import { UNTIMED_GAP_MS, deliverStep } from "./deliver.ts"
 
 export type BuildPlaytestOptions = Readonly<{
   steps: readonly PlaytestStep[]
@@ -29,6 +33,11 @@ export type BuildPlaytestOptions = Readonly<{
   rows?: number
   capability?: CapabilityMode
   glyphPack?: GlyphPack
+  /** The player's settings to open with — an imported export's (`--settings`). `capability` and
+   *  `glyphPack`, when given, win over these, as a command-line flag does. */
+  settings?: Settings
+  /** Experiments to open with instead of this build's defaults — an imported export's. */
+  experiments?: Partial<DebugFlags>
   context?: BuildContext
   cursor?: Coord
 }>
@@ -42,6 +51,9 @@ export type PlaytestFrame = Readonly<{
   bytes: string
   state: BuildState
   frame: ReadonlyCellFrame
+  /** The kind of move the last timed cursor key made — tap, hold, fast or jump — or `null` before
+   *  any. */
+  moveKind: MoveKind | null
 }>
 
 export type BuildPlaytest = Readonly<{
@@ -53,10 +65,21 @@ export type BuildPlaytest = Readonly<{
   ended: Readonly<{ by: "quit"; atStep: number; skipped: number }> | null
 }>
 
+export { UNTIMED_GAP_MS } from "./deliver.ts"
+
 export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
-  const context = options.context ?? spikeContext()
-  const capability = options.capability ?? "truecolor"
-  const glyphPack = options.glyphPack ?? "ascii"
+  const base = options.settings ?? { ...DEFAULT_SETTINGS, capability: "truecolor" as const }
+  const settings: Settings = {
+    ...base,
+    ...(options.capability === undefined ? {} : { capability: options.capability }),
+    ...(options.glyphPack === undefined ? {} : { glyphPack: options.glyphPack }),
+  }
+  const context: BuildContext = {
+    ...(options.context ?? spikeContext()),
+    settings,
+    exportDestination: "Not copied anywhere: this is a scripted playtest.",
+    ...(options.experiments === undefined ? {} : { experiments: options.experiments }),
+  }
   const terminal = { columns: options.columns ?? 80, rows: options.rows ?? 24 }
   // Below the floor the live screen shows its "terminal too small" notice instead of this one, so
   // a playtest there would be of a different screen.
@@ -75,15 +98,25 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     },
   })
 
+  // Drawn with the settings the script has reached: a step that changes the colour depth or the
+  // symbols in Settings shows the change, as the live screen does.
   const compose = (): ReadonlyCellFrame =>
-    composeBuildFrame({ context, state: build.state, layout, glyphPack }, capability)
+    composeBuildFrame(
+      { context, state: build.state, layout, glyphPack: build.state.settings.glyphPack },
+      build.state.settings.capability,
+    )
 
-  const frames: PlaytestFrame[] = [{ index: 0, label: "start", bytes: "", state: build.state, frame: compose() }]
+  const frames: PlaytestFrame[] = [{ index: 0, label: "start", bytes: "", state: build.state, frame: compose(), moveKind: null }]
   let ended: BuildPlaytest["ended"] = null
 
+  // A clock of the script's own: each step arrives `afterMs` after the one before, or a second after it
+  // when the script does not say — long enough that every untimed key is a press of its own, so the
+  // held-key ramp (gate 5H) only ever runs where a script asks for it (`Right~30*12`).
+  let clock = 0
   for (const [position, step] of options.steps.entries()) {
-    const bytes = deliver(build, layout, step)
-    frames.push({ index: position + 1, label: step.label, bytes, state: build.state, frame: compose() })
+    clock += step.afterMs ?? UNTIMED_GAP_MS
+    const bytes = deliverStep(build, layout, step, clock)
+    frames.push({ index: position + 1, label: step.label, bytes, state: build.state, frame: compose(), moveKind: build.moveKind })
     if (leftBy !== null) {
       ended = { by: leftBy, atStep: position + 1, skipped: options.steps.length - position - 1 }
       break
@@ -91,39 +124,4 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   }
 
   return { context, layout, frames, ended }
-}
-
-/** One step into the real adapters, on its own — never concatenated with the next one. Returns the
- *  bytes it sent. */
-function deliver(build: BuildSession, layout: BuildLayout, step: PlaytestStep): string {
-  if (step.kind === "key") {
-    build.handleData(step.bytes, layout)
-    return step.bytes
-  }
-  const cell = mouseCell(build.state, layout, step)
-  // A terminal reports a press and then a release. The release does nothing today, but sending it is
-  // what makes this the real sequence rather than half of it.
-  const press = formatMouseEvent(step.button, cell.x + 1, cell.y + 1)
-  const release = `${press.slice(0, -1)}m`
-  build.handleData(press, layout)
-  if (step.button < 64) build.handleData(release, layout)
-  return step.button < 64 ? press + release : press
-}
-
-function mouseCell(state: BuildState, layout: BuildLayout, step: Extract<PlaytestStep, { kind: "mouse" }>): Coord {
-  const { target } = step
-  if (target.kind === "cell") {
-    if (target.column >= layout.frame.width || target.row >= layout.frame.height) {
-      throw new Error(`"${step.label}": cell ${target.column},${target.row} is off a ${layout.frame.width}x${layout.frame.height} screen`)
-    }
-    return { x: target.column, y: target.row }
-  }
-  const cell = cellForTile(layout, state.camera, target.tile)
-  const back = tileAtCell(layout, state.camera, cell.x, cell.y)
-  if (back === null || back.x !== target.tile.x || back.y !== target.tile.y) {
-    throw new Error(
-      `"${step.label}": tile ${target.tile.x},${target.tile.y} is not on screen (the view starts at ${state.camera.x},${state.camera.y}); move the cursor there first`,
-    )
-  }
-  return cell
 }

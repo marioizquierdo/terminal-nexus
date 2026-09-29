@@ -11,7 +11,7 @@ import type { BuildSessionOptions } from "../src/build/session.ts"
 import { SPIKE_ALLOTMENT, SPIKE_CATALOG } from "../src/build/catalog.ts"
 import { remaining } from "../src/build/state.ts"
 import { spikeContext } from "../src/cli/spike.ts"
-import { PLACE_KEY_HELP, EXPLORE_KEY_HELP, MENU_KEY_HELP, bindingLines, composeBuildFrame } from "../src/view/build.ts"
+import { PLACE_KEY_HELP, EXPLORE_KEY_HELP, MAP_KEY_HELP, MENU_KEY_HELP, bindingLines, composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText, offendingGlyph } from "../src/view/frame.ts"
 import { CAPABILITY_MODES } from "../src/view/roles.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
@@ -68,10 +68,17 @@ test("the frame is exactly the terminal's size, at the minimum and at the maximu
   assert.equal(screenAt(MAXIMUM).frame.width, 104)
   assert.equal(screenAt(MAXIMUM).frame.height, 32)
   // 1 border + 48 tiles + 1 border + 30 panel = 80, and the same arithmetic at two columns per tile
-  // is 128 — engine.md 3.1's "the two compositions fall out of one number".
+  // is 128 — engine.md 3.1's "the two compositions fall out of one number" — is where the floor and
+  // the switch to wide tiles still are. Since the menu's divider became the Grid's west side
+  // (2026-09-29) the panel takes 29 of those columns: 49 tiles at 80, and at 128 the 48 wide tiles
+  // fill 127 of them, centred.
+  assert.equal(screenAt(MINIMUM).layout.viewport.width, 49)
+  assert.equal(screenAt(MINIMUM).layout.composition.width, 80)
   const wide = screenAt(WIDE)
   assert.equal(wide.layout.tileWidth, 2)
-  assert.equal(wide.layout.composition.width, 128)
+  assert.equal(wide.layout.viewport.width, 48)
+  assert.equal(wide.layout.composition.width, 127)
+  assert.equal(wide.frame.width, 128)
 })
 
 test("a terminal larger than the maximum viewport spends the difference on centring", () => {
@@ -117,12 +124,14 @@ test("the Grid pane is a closed rectangle: a line directly above, below, and bes
     // The rules meet the frame and the divider in a real junction, not a line running past them. The
     // divider starts at the top rule rather than crossing it (gate 5F: the top bar runs the whole
     // width), so its top end is a tee, not a crossing.
-    // Here the view touches the map's west edge, so the west side and its corners are the solid bar;
-    // the east corners, where no heavy side meets, are real junctions.
+    // Here the view touches the map's west edge, so the west side and its corners are the map's edge,
+    // in its own style and the quiet edge colour; the east corners, where no heavy side meets, are
+    // real junctions.
     const junctions = glyphPack === "ascii" ? ["+", "+"] : ["┤", "┤"]
     assert.equal(cellAt(frame, gridBox.right, gridBox.top).glyph, junctions[0])
     assert.equal(cellAt(frame, gridBox.right, gridBox.bottom).glyph, junctions[1])
-    assert.equal(cellAt(frame, gridBox.left, gridBox.top).style.inverse, true)
+    assert.equal(cellAt(frame, gridBox.left, gridBox.top).style.fgRole, "chrome.edge")
+    assert.notEqual(cellAt(frame, gridBox.left, gridBox.top).style.dim, true)
   }
 })
 
@@ -144,12 +153,10 @@ test("engine-3.3-markers: a Grid side goes soft where there is more Grid, and he
     false,
     "nothing west of the Grid's own left edge",
   )
-  // The map's west edge is a solid bar in its own column, and the menu's divider beside it stays a
-  // plain line (owner, 2026-09-27): shared, the bar read as a heavy menu border.
-  assert.equal(cellAt(corner.frame, gridBox.left, midGridRow).style.inverse, true, "the west edge is solid")
-  assert.equal(cellAt(corner.frame, corner.layout.dividerColumn, midGridRow).glyph, "|")
-  assert.notEqual(cellAt(corner.frame, corner.layout.dividerColumn, midGridRow).style.inverse, true)
-  assert.notEqual(cellAt(corner.frame, corner.layout.dividerColumn, midGridRow).style.dim, true)
+  // The map's west edge is drawn on the menu's divider, which is the Grid's west side (owner,
+  // 2026-09-29): in the map's own edge style and the quiet edge colour, never soft.
+  assert.equal(gridBox.left, corner.layout.dividerColumn, "the divider is the Grid's west side")
+  assert.equal(cellAt(corner.frame, gridBox.left, midGridRow).style.fgRole, "chrome.edge", "the west edge is the map's edge")
   assert.ok(isSoftEdge(corner.frame, midGridColumn, gridBox.bottom), "more Grid to the south")
   assert.ok(isSoftEdge(corner.frame, gridBox.right, midGridRow), "more Grid to the east")
 
@@ -162,10 +169,9 @@ test("engine-3.3-markers: a Grid side goes soft where there is more Grid, and he
   const midRow = middle.layout.origin.row + 5
   assert.ok(isSoftEdge(middle.frame, midColumn, box.top), "north, from the middle")
   assert.ok(isSoftEdge(middle.frame, midColumn, box.bottom), "south, from the middle")
-  // West, the light side is the divider itself; the Grid's own west column is a blank gutter until
-  // the map's edge comes into view and it turns solid.
+  // West, the light side is the divider itself, which is the Grid's west side.
+  assert.equal(box.left, middle.layout.dividerColumn)
   assert.ok(isSoftEdge(middle.frame, middle.layout.dividerColumn, midRow), "west, from the middle")
-  assert.equal(cellAt(middle.frame, box.left, midRow).glyph, " ")
   assert.ok(isSoftEdge(middle.frame, box.right, midRow), "east, from the middle")
   // Soft is the frame's own line, drawn dim — not the ground lattice's dot, which is what made the
   // earlier dotted edge read as "arbitrary" beside a field of the same dots.
@@ -180,7 +186,8 @@ test("engine-3.3-markers: a Grid side goes soft where there is more Grid, and he
 
 test("engine-3.3-readout: the footer names the visible tile range and the Grid's own size", () => {
   const opening = screenAt(MINIMUM)
-  assert.match(opening.text, /view x 0-47 y 1-16 of 96x40/)
+  // 49 tiles across at 80 columns, and the owner's 25% margin keeps the cursor 4 rows off the bottom.
+  assert.match(opening.text, /view x 0-48 y 2-17 of 96x40/)
   assert.match(opening.text, /cursor 18,13/)
 
   const scrolled = screenAt(MINIMUM, (build) => {
@@ -265,7 +272,9 @@ test("right after a placement the tile reads as built, and the status line says 
   assert.notEqual(cellAt(justPlaced.frame, cell.x, cell.y).glyph, "x", "no illegal block over the built structure")
   // Owner, 2026-09-27: "hatch placed (resources: 30) - [u] undo" — what is left, and the way back.
   assert.match(justPlaced.text, /Barracks placed \(resources: 60\) - \[u\] undo/, "the footer reports the success")
-  assert.equal(justPlaced.build.state.focus, "menu", "and the keyboard is back on the menu")
+  // Armed by its digit on the map, so the keyboard stays on the map, where the arming began (F30).
+  assert.equal(justPlaced.build.state.focus, "grid", "and the keyboard is back where the arming began")
+  assert.equal(justPlaced.build.state.armed, null)
 })
 
 test("undoing the placement just made lets the same tile be built on again at once", () => {
@@ -430,6 +439,8 @@ test("the budget on screen is the budget the reducer is enforcing", () => {
   const show = (): string =>
     frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
 
+  // The Grid arrives in Explore Map, whose panel covers the menu; the budget is the menu's.
+  build.dispatch({ kind: "focus", target: "menu" })
   assert.match(show(), new RegExp(`${SPIKE_ALLOTMENT} of ${SPIKE_ALLOTMENT}`))
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
@@ -484,6 +495,7 @@ test("the footer never advertises a key the keyboard adapter does not bind", () 
     [MENU_KEY_HELP, { itemCount: 3, armed: false, focus: "menu" as const }],
     [PLACE_KEY_HELP, { itemCount: 3, armed: true, focus: "grid" as const }],
     [EXPLORE_KEY_HELP, { itemCount: 3, armed: false, focus: "grid" as const }],
+    [MAP_KEY_HELP, { itemCount: 3, armed: false, focus: "grid" as const }],
   ] as const
   for (const [help, context] of lists) {
     for (const binding of help.bindings) {
@@ -496,25 +508,32 @@ test("the footer never advertises a key the keyboard adapter does not bind", () 
 })
 
 test("no header or footer line is cut off at the 80-column floor", () => {
-  // 80x24 is the acceptance target, and the Grid pane is only 46 usable columns of it. Every line
+  // 80x24 is the acceptance target, and the Grid pane is only 49 columns of it. Every line
   // below has been truncated mid-word at some point in this gate's own history and only a
   // screenshot showed it, so each one is now asserted whole at the narrowest size that must work.
   const { text } = screenAt(MINIMUM)
   assert.match(text, /TERMINAL NEXUS build phase/)
-  assert.match(text, /view x 0-47 y 1-16 of 96x40 {3}cursor 18,13/)
-  assert.match(text, /EXPLORE {2}arrows move {2}enter\/space inspect {2}tab\/esc menu/)
-  assert.match(text, /RESOURCE {9}100 of 100/, "the panel's budget line, whole")
+  assert.match(text, /view x 0-48 y 2-17 of 96x40 {3}cursor 18,13/)
+  assert.match(text, /MAP {2}arrows move {2}enter\/space explore {2}tab\/esc menu {2}shift\+arrow fast move/)
+  const explore = screenAt(MINIMUM, (build) => build.dispatch({ kind: "explore" })).text
+  assert.match(explore, /EXPLORE MAP {2}arrows move {2}e\/esc back {2}shift\+arrow fast move {2}bksp remove/)
+  // Against the divider, which here is the map's own west edge (the spike map's fence: a rail or a post).
+  assert.match(explore, /> \[e\] Explore Map {10}[|+]/, "the Explore Map row, whole")
+  const menu = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" })).text
+  assert.match(menu, /RESOURCE {9}100 of 100/, "the panel's budget line, whole")
+  assert.match(menu, /\[e\] Explore Map {12}[|+]/, "the first menu entry, whole")
 })
 
 test("the scroll margin the screen prints is the one it is actually using", () => {
   // Mario deferred confirming the three-tile default and will judge it against another number, so
   // a header that printed one margin while the camera used another would waste exactly that check.
-  for (const margin of [2, 5]) {
-    const context = { ...neutralContext(), scrollMargin: margin }
+  // A share of the view since gate 5H: 49 tiles wide at 80 columns, so 5% is 2 tiles and 10% is 5.
+  for (const [percent, margin] of [[5, 2], [10, 5]] as const) {
+    const context = { ...neutralContext(), scrollMargin: percent }
     const layout = buildLayout(MINIMUM, context.grid)
     const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
     const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
-    assert.match(text, new RegExp(`margin ${margin}`))
+    assert.match(text, new RegExp(`margin ${percent}%`))
     // And the camera really follows at that distance, not at the default.
     build.dispatch({ kind: "move-cursor", dx: 0, dy: 0 })
     let steps = 0
@@ -599,6 +618,7 @@ test("on a small Grid the panel's bindings never draw over the Nexus Powers entr
   const context = { ...neutralContext(), grid: small, standing: [] }
   const layout = buildLayout(MINIMUM, small)
   const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
+  build.dispatch({ kind: "focus", target: "menu" }) // Explore Map's panel would cover the menu
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
   // Against the divider — or against the junction where this short Grid's own bottom edge meets it.
   // Against the divider — or, where this small Grid is the solid bar of a map edge, against nothing.
@@ -611,10 +631,11 @@ test("every binding survives the split whole, at every width the screen can have
   // two lines end up being, a binding must never be cut in half — a player reading "esc dis" learns
   // nothing and one who cannot find "q quit" is stuck in an alternate screen. And nothing may be
   // lost between the two surfaces: what leaves the footer arrives in the panel.
-  for (const help of [PLACE_KEY_HELP, MENU_KEY_HELP, EXPLORE_KEY_HELP]) {
+  for (const help of [PLACE_KEY_HELP, MENU_KEY_HELP, EXPLORE_KEY_HELP, MAP_KEY_HELP]) {
     const all = bindingLines(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, help).footer.split("  ")
     assert.deepEqual(all, help.bindings)
-    for (let footerLimit = 10; footerLimit <= all.join("  ").length + 5; footerLimit += 1) {
+    // From the narrowest footer that still holds the focus label and its gap.
+    for (let footerLimit = help.label.length + 2; footerLimit <= all.join("  ").length + 5; footerLimit += 1) {
       for (const panelLimit of [26, 28, 40]) {
         const { footer, panel } = bindingLines(footerLimit, panelLimit, help)
         // The focus label and its gap come out of the same line.
@@ -659,13 +680,31 @@ test("every key the adapters bind is named on screen at the 80-column floor", ()
       ],
     },
     {
-      label: "EXPLORE",
-      drive: () => {},
+      // Explore Map: its panel covers the menu, so only the way back is named — the menu's own
+      // hotkeys are named on the menu (feedback F23), and `e`, which opened it, closes it (F32).
+      label: "EXPLORE MAP",
+      drive: (build: BuildSession) => build.dispatch({ kind: "explore" }),
       context: { itemCount: 3, armed: false, focus: "grid" as const },
       bound: [
-        ["\r", "enter", /enter\/space inspect/],
+        ["\u001b[A", "arrows", /arrows move/],
+        ["e", "e", /e\/esc back/],
+        ["\u001b", "esc", /e\/esc back/],
+        ["\u007f", "backspace", /bksp remove/],
+      ],
+    },
+    {
+      // The map a mouse click opened from the menu: the menu still drawn beside it.
+      label: "MAP",
+      drive: (build: BuildSession) =>
+        build.run([
+          { kind: "focus", target: "menu" },
+          { kind: "click-tile", x: 30, y: 14 },
+        ]),
+      context: { itemCount: 3, armed: false, focus: "grid" as const },
+      bound: [
+        ["\r", "enter", /enter\/space explore/],
         ["\t", "tab", /tab\/esc menu/],
-        ["e", "explore", /\[e\] Explore/],
+        ["e", "explore", /\[e\] Explore Map/],
       ],
     },
     {
@@ -756,7 +795,7 @@ test("engine-3.3-markers: the side border is soft on every row, not a broken col
   const { frame, layout } = screenAt(MINIMUM, (build) => {
     build.run([{ kind: "move-cursor", dx: 40, dy: 20 }])
   })
-  assert.equal(layout.gridBox.left, layout.dividerColumn + 1, "the Grid's west side is next to the divider")
+  assert.equal(layout.gridBox.left, layout.dividerColumn, "the divider is the Grid's west side")
   for (let row = layout.origin.row; row < layout.origin.row + layout.viewport.height; row += 1) {
     assert.equal(
       cellAt(frame, layout.gridBox.right, row).style.dim,
@@ -785,6 +824,11 @@ test("the bindings block gives way to the construct menu, never draws over it", 
   const context = { ...neutralContext(), grid: tiny, standing: [] }
   const layout = buildLayout(MINIMUM, tiny)
   const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
+  // The map with the menu beside it (a click from the menu): Explore Map's panel would cover the menu.
+  build.run([
+    { kind: "focus", target: "menu" },
+    { kind: "click-tile", x: 2, y: 2 },
+  ])
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
 
   for (const line of constructLines(layout, context.catalog)) {
@@ -836,13 +880,20 @@ test("the cursor shows only while the Grid has the keyboard", () => {
   assert.equal(cellAt(onGrid.frame, gridCell.x, gridCell.y).style.inverse, true)
 })
 
-test("engine-3.3-markers: a side that has reached the map's edge is a solid bar, on all four sides alike", () => {
+test("engine-3.3-markers: a map that names no edge style ends in a solid bar, on all four sides alike", () => {
   // Owner, 2026-09-27: the heavy edge must read the same horizontally and vertically — "the rectangle
   // needs to be a rectangle". A solid (reverse-video) bar is the same weight in both directions, in
-  // every glyph pack, and needs no colour.
-  const corner = screenAt(MINIMUM, (build) => {
-    build.run([{ kind: "move-cursor", dx: -999, dy: -999 }])
-  })
+  // every glyph pack, and needs no colour. Since 2026-09-29 a map may name its own edge style (the
+  // spike map's fence; every style is checked in `tests/build-edge.test.ts`); the solid bar is what a
+  // map that names none gets.
+  const { edgeStyle: _fence, ...unnamed } = neutralContext()
+  const cornerLayout = buildLayout(MINIMUM, unnamed.grid)
+  const cornerBuild = readyBuildSession({ context: unnamed, cursor: { x: 18, y: 13 }, viewport: cornerLayout.viewport })
+  cornerBuild.run([{ kind: "move-cursor", dx: -999, dy: -999 }])
+  const corner = {
+    layout: cornerLayout,
+    frame: composeBuildFrame({ context: unnamed, state: cornerBuild.state, layout: cornerLayout }, "monochrome"),
+  }
   const { gridBox } = corner.layout
   const solid = (frame: typeof corner.frame, x: number, y: number): boolean =>
     cellAt(frame, x, y).glyph === " " && cellAt(frame, x, y).style.inverse === true
@@ -855,7 +906,7 @@ test("engine-3.3-markers: a side that has reached the map's edge is a solid bar,
 
   // A Grid that fits the viewport whole is solid all round.
   const small: GridTerrain = { width: 20, height: 10, tiles: new Array<TerrainId>(200).fill("terrain.plain") }
-  const context = { ...neutralContext(), grid: small, standing: [] }
+  const context = { ...unnamed, grid: small, standing: [] }
   const layout = buildLayout(MINIMUM, small)
   const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
   const frame = composeBuildFrame({ context, state: build.state, layout }, "monochrome")
@@ -874,7 +925,7 @@ test("engine-3.3-markers: a side that has reached the map's edge is a solid bar,
 })
 
 test("the normal panel says how many Nexus powers are active, and names the empty Special slot", () => {
-  const built = screenAt(MINIMUM)
+  const built = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" }))
   assert.match(built.text, /\[n\] Nexus {2,}1 active/)
   assert.match(built.text, /SPECIAL {2,}none available/)
 })
@@ -900,6 +951,6 @@ test("the committed screen names the pick and the count, and the footer carries 
   assert.match(built.text, /BUILD COMMITTED/)
   assert.match(built.text, /Nexus: Test Pick/)
   assert.match(built.text, /1 structure planned/)
-  assert.match(built.text, /\[esc\] to exit/)
+  assert.match(built.text, /\[esc\] menu/)
   assert.match(built.text, /Build committed - 1 planned, Nexus Pulse would begin here \(Milestone 6\)\./)
 })
