@@ -717,7 +717,12 @@ function drawMenuRow(cells: BandCell[], layout: BuildLayout, row: number, entry:
 function rowState(input: BuildCompositionInput, entry: number): Readonly<{ state: RowState; refused: boolean }> {
   const { state, flash } = input
   const own = flash !== undefined && flash.entry === entry ? flash.kind : null
-  if (own === "pressed") return { state: "pressed", refused: false }
+  // The row a card reveal from the menu carries up to the header is drawn active throughout, never
+  // pressed: turning active and sliding up is its acknowledgement (owner, 2026-09-30, feedback F68: "the
+  // currently selected menu item that changed to the active state, then quickly interpolates (moves) the
+  // item to the top"). The pressed flash outlasts the reveal's fade and slide, and would cover both.
+  const carried = input.cardReveal?.fromMenu === true && cardEntry(state) === entry
+  if (own === "pressed" && !carried) return { state: "pressed", refused: false }
   const refused = own === "refused"
   if (menuRowActive(input.context, state, entry)) return { state: "plain", refused }
   // The Battle Round confirmation belongs to the menu, which stays lit behind it; the game menu,

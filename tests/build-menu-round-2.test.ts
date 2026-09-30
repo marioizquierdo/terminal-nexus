@@ -476,6 +476,36 @@ test("Explore Map's card reveals the same way, its row already on the header lin
   assert.equal(lines.filter((line) => line.trim() !== "").length, 1)
 })
 
+test("the row a reveal from the menu carries up is drawn active all the way, never with the pressed bar (F68)", () => {
+  const side = session()
+  keys(side, "n", "1") // a Nexus power picked: the highlight stays on the Nexus row
+  const animation = new BuildAnimation()
+  animation.frame(side.build.state, 0)
+  keys(side, DOWN, DOWN, ENTER) // the Hatchery, armed from the menu: its row is pressed, and the card reveals
+  const home = menuEntryRow(side.layout, SPIKE_CATALOG, { kind: "construct", index: 1 }) as number
+  const rows = new Set<number>()
+  // Every instant the pressed flash is still lit — through the fade, the slide and into the card's beat.
+  for (let elapsed = 0; elapsed < Math.min(TUNING.pressedFlashMs, FLAGS.cardRevealMs); elapsed += 5) {
+    const live = animation.frame(side.build.state, 1000 + elapsed)
+    assert.equal(live.flash?.kind, "pressed", `${elapsed} ms: the pressed flash is over`)
+    assert.ok(live.cardReveal !== undefined, `${elapsed} ms: the reveal is over`)
+    for (const capability of CAPABILITY_MODES) {
+      const frame = compose(side, livePresentation(live), capability)
+      const row = panelLines(side, frame).findIndex((line) => /^\[2\] Hatchery +>$/.test(line))
+      assert.ok(row >= 0, `${elapsed} ms, ${capability}: the Hatchery's row is not drawn active`)
+      const y = side.layout.panelRow + row
+      rows.add(y)
+      for (const cell of rowCells(side, frame, y).filter((drawn) => drawn.glyph !== " ")) {
+        assert.equal(cell.style.inverse, undefined, `${elapsed} ms, ${capability}: the pressed bar is drawn`)
+        assert.equal(cell.style.underline, undefined, `${elapsed} ms, ${capability}: the pressed underline is drawn`)
+        assert.equal(cell.style.fgRole, "chrome.hotkey")
+        assert.equal(cell.style.bold, true)
+      }
+    }
+  }
+  assert.ok(rows.has(home) && rows.has(at(side, CARD_HEADER_ROW)), "the row did not travel from its place to the header")
+})
+
 // --- The card reveal (F68): the live loop -----------------------------------------------------------
 
 test("the live loop plays the reveal from the frame the panel becomes a card, keeps the timer running, and stops at its end", () => {
