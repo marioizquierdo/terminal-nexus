@@ -17,9 +17,10 @@ export type CellStyle = Readonly<{
    * A continuous decay/stacking scalar for `fgRole`, `0` (the role's own colour) to `1` (the theme's
    * background) — Q25's transparency half, engine.md 9.1's RULE amendment, canon 2.8. Resolved only
    * at `color256` and `truecolor` (`roles.ts`'s `sgrFor`); has no representable effect at `color16` or
-   * `monochrome`, which stay exactly as bold/dim/inverse already describe them. Never set outside
-   * `fx.damage.flash` — ascii-effects.md craft rule 7's departure is narrow and deliberate, not a
-   * general fade-out license for glyph-bearing effects.
+   * `monochrome`, which stay exactly as bold/dim/inverse already describe them. Set by
+   * `fx.damage.flash`, and in chrome by the card reveal and the Battle Round screen's breathing border —
+   * ascii-effects.md craft rule 7's departures are narrow and deliberate, not a general fade-out
+   * license for glyph-bearing effects.
    */
   fade?: number
   /**

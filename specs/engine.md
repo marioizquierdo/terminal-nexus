@@ -1093,7 +1093,7 @@ that has one, and live numbers wait for the Nexus Pulse view.
 **The card opens with a short transition — GUIDANCE, canon 2.28** (F68: "all the menu disappears except
 for the currently selected menu item ... interpolates (moves) the item to the top, and then the detail
 card appears"). Whenever the panel turns into a card — Explore Map opened, or a building armed from the
-menu or by a digit on the map — it plays over the "Card reveal" Experiment's length (150 ms; off to 800)
+menu or by a digit on the map — it plays over the card reveal's length (400 ms, the owner's tuned value since his third round)
 in three beats: the other rows fade out (a quarter); the chosen row, drawn active, slides a row at a time
 to the header line (under a third); the separator and the card fade in, its name, subtitle and
 description typed and a building's icon playing its own placement frames (the rest). From one card
@@ -1127,8 +1127,9 @@ had stopped working): centred over the Grid pane, bordered in a solid bar, the t
 and a one-cell shadow that blanks what is behind it. **No popup carries `[esc]`** since gate 5K: the
 top bar's right end names what Esc does — `close [esc]` while a popup is open — and is its click
 target (9.7, feedback F37). While its scrolling rows overflow, **the right border beside them is a
-scroll bar**: an up symbol, a track with a thumb showing the share in view, and a down symbol, in every
-glyph pack; a click on its upper half scrolls up and on its lower half down, and the wheel and Up/Down
+scroll bar**: an up symbol, a track that is the plain border, a thumb showing the share in view in a
+texture of its own (never the shadow's: `#` in ASCII, `╬` in Unicode — the owner's third round, F78),
+and a down symbol, in every glyph pack; a click on its upper half scrolls up and on its lower half down, and the wheel and Up/Down
 walk the highlight as before (F36). **A message is the shape with nothing to choose**: a title and
 wrapped text, closed by Esc (or `x`, or a right click) or a click outside, and by nothing else (F34:
 "This popup does not have an action, it's just a warning message"). A popup holds the keyboard and

@@ -114,7 +114,7 @@ bun bin/grid.ts scenarios/citizen-mirror-skirmish --headless
 ./bin/terminal-nexus.ts --spike
 ./bin/terminal-nexus.ts --spike --scroll-margin 30 --capability monochrome   # margin: % of the view
 ./bin/terminal-nexus.ts --spike --settings "$(pbpaste)"   # start from an exported settings text
-./bin/terminal-nexus.ts --spike --settings "focusArrowMs=400 raid=probe"
+./bin/terminal-nexus.ts --spike --settings "battleRoundPulseMs=3000 raid=probe"
 ./bin/terminal-nexus.ts --spike --keys "n 1 1 Enter"         # open already in a state: a power picked, a Barracks placed
 ./bin/terminal-nexus.ts --spike --keys "n 2 s s"             # open already in a Nexus Pulse, with nothing built (gate 6A)
 ```
@@ -179,8 +179,7 @@ it). Arming a building (its digit, Enter on its row, or a click on it) keeps the
 when the building fits there, and otherwise moves it to the nearest spot within reach that leaves a
 free tile around it, and the panel becomes that building's card under `[1] Barracks  >`; begun on the
 menu, a **focus arrow** flies from that row's own place to the cursor, which blinks twice when it
-lands, and the card is revealed over about 150 ms (the arrow's length and the reveal's are the two
-look Experiments, `d`). Enter or Space places it, and **the keyboard goes back to where the arming came
+lands, and the card is revealed over about 400 ms (both lengths are the owner's tuned values). Enter or Space places it, and **the keyboard goes back to where the arming came
 from, disarmed** — the map, in plain navigation, for a digit pressed on the map; the menu for anything
 started on the menu. **A building being placed holds the keyboard**: its own digit, `x` or Esc cancels
 it, another building's digit is refused with a line saying so, and `p` waits. A row whose action is

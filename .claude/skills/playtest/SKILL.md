@@ -17,7 +17,7 @@ node scripts/playtest.mjs --keys "Down Down Space*4" --print all     # every ste
 node scripts/playtest.mjs --keys "n 1 Tab S-Left*5" --png final    # one PNG
 node scripts/playtest.mjs --keys "Down Down Space*4" --gif --name hatchery-run
 node scripts/playtest.mjs --file flow.keys --size 104x32 --capability monochrome --png all
-node scripts/playtest.mjs --settings "focusArrowMs=400 raid=probe" --keys "1 Enter"  # start from an export
+node scripts/playtest.mjs --settings "battleRoundPulseMs=3000 raid=probe" --keys "1 Enter"  # start from an export
 node scripts/playtest.mjs --help
 ```
 
@@ -70,12 +70,12 @@ playtest flags, which `d` opens straight at (Up/Down choose, Left/Right change, 
 closes) — and last, **Export settings**. No popup has an `[esc] Back` row. The title shows the
 highlight's place, `SETTINGS (5/10)`; the right border beside the list is its scroll bar when the list
 is longer than the popup (a click on its lower half scrolls down). There are five Experiments: the
-focus arrow (`d Left` shortens it to 120 ms), the card reveal (`d Down Right` lengthens it to 250 ms),
-the hold window, and the placeholder Pulse's raid and crew; `--settings "focusArrowMs=0
-cardRevealMs=0"` switches both looks off. Every other number the owner settled is a tuned value in
-`src/build/tuning.ts`, not a setting. Closing Settings with a changed Experiment that only applies
-after a restart shows a **RESTART NEEDED** message (Esc closes it, back on the game menu's Restart; `r`
-then restarts) — no Experiment needs a restart today. `src/build/experiments.ts`'s `EXPERIMENT_FIELDS` is the
+hold window (`d Left` shortens it to 150 ms), key releases (auto / off), the Battle Round pulse
+(`d Down Down Right` lengthens a breath to 3000 ms; `--settings "battleRoundPulseMs=0"` stills it), and
+the placeholder Pulse's raid and crew. Every other number the owner settled is a tuned value in
+`src/build/tuning.ts`, not a setting — the focus arrow and the card reveal among them since his third
+round. Closing Settings with a changed Experiment that only applies after a restart (key releases)
+shows a **RESTART NEEDED** message (Esc closes it, back on the game menu's Restart; `r` then restarts). `src/build/experiments.ts`'s `EXPERIMENT_FIELDS` is the
 order. The map's edge is not an Experiment: it is the map's own style (the spike
 map's fence; `--glyphs unicode` shows the Unicode forms), and the menu's divider is its west side.
 
@@ -100,7 +100,7 @@ and shows each ending as a still.
 
 **Reproducing what the owner played**: he exports his settings (Settings, `e`) and pastes the text
 into the pull request; `--settings "<that text>"` starts the script from exactly those settings and
-experiments (the whole export, or just pairs: `--settings "focusArrowMs=400 raid=probe"`; a name that is
+experiments (the whole export, or just pairs: `--settings "battleRoundPulseMs=3000 raid=probe"`; a name that is
 no longer an Experiment is skipped with a note). The
 same key script can open the **live game** in a state: `./bin/terminal-nexus.ts --spike --keys "n 1 1
 Enter"` (and `#keys=` in the browser page's address) plays those keys through the real adapters

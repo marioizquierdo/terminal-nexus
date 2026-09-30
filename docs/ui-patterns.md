@@ -234,13 +234,17 @@ loop times the rest.
   drawn, so a move mid-way continues smoothly. These are **tweens** (`src/view/tween.ts`): the state
   holds the destination, the tween is how the screen gets there. The cursor glides across the *view*, so
   it rides along when only the map scrolls; clicks hit-test the drawn camera.
-- **The card reveal**, about 150 ms in three beats: the other rows fade out; the chosen row, now active,
+- **The card reveal**, about 400 ms in three beats (a tuned value, the owner's): the other rows fade out; the chosen row, now active,
   slides up to the header line; the card fades in, its name, subtitle and description typed out, a
   building's icon playing its going-up frames. Explore Map's card opens the same way, and a card opened
   from the map by a digit too; from one card straight to another only the last beat plays, so the menu
-  never flashes back between them. The length is an Experiment. Going back is plain: the menu returns
+  never flashes back between them. Going back is plain: the menu returns
   with its row lit. The live loop starts it by watching the state become a card (`cardRevealAt` in
   `src/view/build-live.ts`); the reducer never hears of it.
+- **An ambient effect breathes slowly and draws less often.** The Battle Round breath is the one
+  animation that never settles, so while it is the only thing moving the screen redraws 20 times a
+  second instead of 60, and stops the moment its popup closes. It starts at rest on the first frame that
+  shows it, and every still frame draws it at rest.
 - **Reduced motion snaps** — camera, cursor, card, flight — keeping only what is not movement, such as a
   blink.
 
@@ -279,6 +283,10 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 - **A confirmation is a screen, not a question**: its title says what is about to happen (`Battle
   Round 1`), its body announces it — data a mission can write per round (`BuildContext.roundText`), one
   sentence to a line — and its one row is the action, highlighted: `[s] Start`. Going back is Esc.
+- **The Battle Round screen breathes**: while it is open its border slowly turns a little lighter and a
+  little darker, a smooth breath whose length is the "Battle Round pulse" Experiment. Only that popup's
+  border moves, never its title, text or shadow. It is still under reduced motion, with the Experiment
+  off, and at 16 colours and in monochrome, where it cannot show smoothly.
 - **A message is a popup with nothing to choose**: a title and wrapped text, closed only by Esc, `x`, a
   right click or a click outside, over whatever was open. For a warning to read once and act on later
   (`BuildState.message`, `messageSpec`).
@@ -287,10 +295,12 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 
 - **The window follows the highlight**, in the middle while it can, derived and never stored
   (`scrollWindow`), so the reducer knows nothing of the popup's height.
-- **The scroll bar is the right border beside the list**, only while rows are hidden: an up symbol, a
-  textured track with a solid thumb (its length the share in view), a down symbol — `^ : v` or `▲ ░ ▼`,
-  inverse like the border. A click on its upper half scrolls up, on its lower half down
-  (`PlacedPopup.scrollBar`).
+- **The scroll bar is the right border beside the list**, only while rows are hidden: an up symbol, then
+  the track — the plain border itself — with a textured **thumb** where the part in view sits (its
+  length the share in view), then a down symbol: `^ # v` or `▲ ╬ ▼`, inverse like the border. The
+  thumb's texture is its own, never the shadow's: a track in the shadow's texture read as more shadow
+  (the owner, third round: "keep the same background as the regular border, but add different texture
+  for the bar"). A click on its upper half scrolls up, on its lower half down (`PlacedPopup.scrollBar`).
 - **A long list shows where the highlight is beside its title**: `SETTINGS (6/28)`.
 - **Section headings stay in the list**, scroll with it, and are skipped. **A long text is a list too**
   (the export), a line a row.

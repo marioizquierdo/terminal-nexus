@@ -493,7 +493,7 @@ deleted, and the renderer must be replaceable without one simulation test changi
   (`src/build/experiments.ts` is the list); `d` jumps straight to them. When a session has a fork the owner
   should feel rather than read about — a timing, a look, a movement rule, or whether a new feature
   should exist at all — add an Experiment defaulting to the recommended answer and **ask him in plain
-  words to flip it**: "press `d`, set Card reveal to 400 ms, and tell me which you prefer." Then
+  words to flip it**: "press `d`, set Battle Round pulse to 3000 ms, and tell me which you prefer." Then
   **ask him to paste the export into the pull request**: Settings' **Export settings** (`e`) copies
   every setting and experiment as `name = value` text, changed experiments first; reproduce what he
   had with `--settings "<pasted text>"` (`terminal-nexus --spike` or `scripts/playtest.mjs`) or
