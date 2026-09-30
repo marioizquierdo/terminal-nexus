@@ -6,20 +6,26 @@
 // No stdin, no ANSI, no backend, no `src/view` import: composing the frame is `src/view/build.ts`'s
 // job and wiring it to a terminal is `src/cli/spike.ts`'s.
 
+import { decodeKeyEvent } from "../view/key-events.ts"
+import type { KeyPhase } from "../view/key-events.ts"
 import { keysFromChunk } from "../view/playback.ts"
 import { PulsePresenter } from "../view/pulse-live.ts"
 import type { ResolvedPulse } from "../view/pulse-live.ts"
 import type { PulseFrame } from "../view/pulse-scene.ts"
 import type { BuildLayout } from "./layout.ts"
 import { escLabel } from "./layout.ts"
-import { overlaySpec, placeOverlay } from "./overlay.ts"
+import { popupSpec, placePopup } from "./popup.ts"
 import type { Camera, Viewport } from "./camera.ts"
-import { buildKeyboardCommand, cursorKeyOf } from "./keyboard.ts"
-import type { MoveKind } from "./motion.ts"
-import { SpeedRamp } from "./motion.ts"
+import type { CursorKey } from "../menu/list-keys.ts"
+import { cursorKeyOf } from "../menu/list-keys.ts"
+import { buildKeyboardCommand } from "./keyboard.ts"
+import type { Move } from "./motion.ts"
+import { KeyMotion, moveTuning, pressTiles } from "./motion.ts"
+import type { MouseEvent } from "./mouse.ts"
 import { buildMouseCommand, parseMouseEvent } from "./mouse.ts"
 import type { BuildContext, BuildState } from "./state.ts"
-import { applyBuildCommand, createBuildState, exploring, exportText, nexusPowers, withViewport } from "./state.ts"
+import { applyBuildCommand, cardEntry, createBuildState, exportText, withViewport } from "./state.ts"
+import { TUNING } from "./tuning.ts"
 import type { BuildCommand } from "./types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { Settings } from "../settings/types.ts"
@@ -49,9 +55,11 @@ export type BuildSessionOptions = Readonly<{
 
 /**
  * What a live input path knows about a key that a driver script does not have to: when it arrived
- * (milliseconds on any steady clock — the live loop's own, a test's injected number), which
- * drives the held-key ramp and how often a held Shift+arrow jumps; and the camera the screen is drawing right now, which differs from
- * the state's while the view slides (gate 5H), so a click lands where the player saw it.
+ * (milliseconds on any steady clock — the live loop's own, a test's injected number), which decides
+ * how far a cursor key moves (taps counted, holds on the game's cadence, `src/build/motion.ts`) and how
+ * often a held Shift+arrow jumps; and the camera the screen is drawing right now, which differs from
+ * the state's while the view slides (gate 5H), so a click lands where the player saw it. Whether a key
+ * was a press, a repeat or a release travels in its own bytes (`src/view/key-events.ts`).
  */
 export type KeyTiming = Readonly<{ now?: number; camera?: Camera }>
 
@@ -61,11 +69,19 @@ export class BuildSession {
   private readonly onQuit: () => void
   private readonly onExport: (text: string) => void
   private readonly onSettingsChange: (settings: Settings) => void
-  /** The held-key ramp: input-path state, beside the reducer and never in it. */
-  private readonly ramp = new SpeedRamp()
+  /** How far cursor keys move — taps counted, holds on the game's cadence: input-path state, beside the
+   *  reducer and never in it. */
+  private readonly motion = new KeyMotion()
+  /** Whether the terminal is marking presses, repeats and releases right now (the kitty keyboard
+   *  protocol, pushed by the live loop): then a plain press is known to be a press, not guessed. */
+  private keyReleases = false
   /** The last left click on a Grid tile with a building armed: where on screen, when, and the tile it
    *  pointed at — so a double click places there even if the first click scrolled the view (F22). */
   private lastArmedClick: Readonly<{ column: number; row: number; at: number; tile: Coord }> | null = null
+  /** The last left click that placed a building: where on screen and when — so the second half of a
+   *  double click on the ghost's own tile, which the first half already placed by the second-click
+   *  rule, is swallowed rather than read as a fresh click on the map. */
+  private lastPlacingClick: Readonly<{ column: number; row: number; at: number }> | null = null
   private readonly startPulse: (context: BuildContext, state: BuildState) => ResolvedPulse | null
   /** The Nexus Pulse on screen, from the moment the plan is committed until the Build Phase starts over. */
   private presenter: PulsePresenter | null = null
@@ -101,16 +117,15 @@ export class BuildSession {
     this.now = now
     if (this.presenter === null) return
     this.presenter.advance(now, hold)
-    for (const command of this.presenter.due(this.buildState.debug)) this.dispatch(command)
+    for (const command of this.presenter.due()) this.dispatch(command)
   }
 
   /** What the Pulse on screen is showing right now, for the composer — or `undefined` when there is
    *  none. */
   pulseFrame(layout: BuildLayout): PulseFrame | undefined {
     if (this.presenter === null) return undefined
-    const { settings, debug } = this.buildState
+    const { settings } = this.buildState
     return this.presenter.frame({
-      flags: debug,
       capability: settings.capability,
       tileWidth: layout.tileWidth,
       reducedMotion: settings.reducedMotion,
@@ -126,7 +141,7 @@ export class BuildSession {
     // A playback control belongs to the Pulse's clock, not to the state: handed on like a quit. Pause has
     // nothing to pause once the result stands — and no row is drawn for it there — so it is not handed on.
     if (command.kind === "pulse") {
-      const over = this.presenter?.phase(this.buildState.debug) === "home"
+      const over = this.presenter?.phase() === "home"
       if (!(over && command.control === "toggle")) this.presenter?.apply(command.control)
       return
     }
@@ -134,7 +149,7 @@ export class BuildSession {
     this.buildState = applyBuildCommand(this.context, before, command)
     // Side effects the reducer only records, handed to the adapter that owns them.
     if (this.buildState.settings !== before.settings) this.onSettingsChange(this.buildState.settings)
-    if (this.buildState.overlay === "export" && before.overlay !== "export") {
+    if (this.buildState.popup === "export" && before.popup !== "export") {
       this.onExport(exportText(this.context, this.buildState))
     }
     // The plan was just committed: the Nexus Pulse starts. Or the Build Phase started over: it is gone.
@@ -173,83 +188,135 @@ export class BuildSession {
   handleKey(key: string, layout: BuildLayout, timing: KeyTiming = {}): void {
     // Time passes before the key does: a pause pressed a second into a Pulse pauses it a second in.
     if (timing.now !== undefined) this.advance(timing.now)
-    const mouse = parseMouseEvent(key)
-    const state = this.buildState
-    const spec = overlaySpec(this.context, state)
-    let command =
-      mouse !== null
-        ? // A click lands on the tile drawn under the pointer: while the view is still sliding, that
-          // is the drawn camera's tile, not the target's (gate 5H).
-          buildMouseCommand(mouse, timing.camera ?? state.camera, layout, this.context.catalog, {
-            ...(spec === null ? {} : { overlay: placeOverlay(layout, spec) }),
-            explorePanel: exploring(state),
-            escLabel: escLabel(state),
-            pulse: this.presenter !== null,
-          })
-        : buildKeyboardCommand(key, {
-            itemCount: this.context.catalog.length,
-            armed: state.armed !== null,
-            focus: state.focus,
-            overlay: state.overlay,
-            overlayPendingCount: nexusPowers(this.context, state).pending.length,
-            overlayHighlight: state.overlayHighlight,
-            jumpStep: state.debug.jumpStep,
-            pulse: this.presenter !== null,
-          })
-    if (mouse !== null && mouse.press && command?.kind === "click-tile") {
-      // A double click places where its first click pointed. The reducer places on a second click of
-      // the tile the cursor is on, so the second half of a quick double click on the same screen cell
-      // is sent as a click on the first one's tile — exactly what a driver would send for "click it
-      // again" — whatever the view did in between.
-      const last = this.lastArmedClick
-      const window = state.debug.doubleClickMs
-      const double =
-        state.armed !== null &&
-        timing.now !== undefined &&
-        window > 0 &&
-        last !== null &&
-        last.column === mouse.column &&
-        last.row === mouse.row &&
-        timing.now - last.at <= window
-      if (double) {
-        command = { kind: "click-tile", x: last.tile.x, y: last.tile.y }
-        this.lastArmedClick = null
-      } else {
-        this.lastArmedClick =
-          state.armed !== null && timing.now !== undefined
-            ? { column: mouse.column, row: mouse.row, at: timing.now, tile: { x: command.x, y: command.y } }
-            : null
-      }
-    } else if (mouse !== null && mouse.press) {
-      this.lastArmedClick = null
+    // The kitty keyboard protocol's forms become the keys the adapters read, with the phase they carry;
+    // a terminal's answer to the live loop's question is not a key at all.
+    const event = decodeKeyEvent(key)
+    if (event === null) return
+    const mouse = parseMouseEvent(event.key)
+    if (mouse === null) {
+      this.handleKeyEvent(event.key, event.phase ?? (this.reportsReleases() ? "press" : null), timing.now)
+      return
     }
-    const cursorKey = mouse === null && command?.kind === "move-cursor" ? cursorKeyOf(key) : null
-    if (cursorKey !== null) {
-      // A cursor key on the Grid: how far is the ramp's call when the key's arrival time is known — a
-      // live terminal — and otherwise a tap's (or a jump's), so a driver script and every test that
-      // sends keys without a clock sees each key as its own press. A held jump's repeat that came too
-      // soon moves nothing, and nothing is sent for it.
-      const tiles =
-        timing.now !== undefined
-          ? this.ramp.step(cursorKey, timing.now, state.debug)
-          : cursorKey.fast
-            ? state.debug.jumpStep
-            : state.debug.tapStep
-      command =
-        tiles === 0
-          ? null
-          : {
-              kind: "move-cursor",
-              dx: cursorKey.dx * tiles,
-              dy: cursorKey.dy * tiles,
-              ...(cursorKey.fast ? { fast: true } : {}),
-            }
-    } else if (command !== null) {
-      // Anything else pressed: the next arrow starts from scratch (the owner's "doing anything else
-      // returns to normal").
-      this.ramp.reset()
+    const clicked = this.mouseCommand(mouse, layout, timing.camera)
+    // Anything but a cursor key: the next arrow starts from scratch (the owner's "doing anything else
+    // returns to normal").
+    if (clicked !== null) this.motion.reset()
+    const command = mouse.press ? this.resolveDoubleClick(mouse, clicked, timing.now) : clicked
+    if (command === null) return
+    const before = this.buildState
+    this.dispatch(command)
+    if (mouse.press && timing.now !== undefined && this.buildState.planned.length > before.planned.length) {
+      this.lastPlacingClick = { column: mouse.column, row: mouse.row, at: timing.now }
     }
+  }
+
+  /**
+   * The host says whether the terminal is marking presses, repeats and releases right now — the live
+   * loop, once the kitty keyboard protocol's flags are pushed (or popped again). It counts only while
+   * the Key releases Experiment is on `auto`: `off` means timing decides, whatever the terminal does.
+   */
+  setKeyReleases(reported: boolean): void {
+    this.keyReleases = reported
+  }
+
+  /** Whether a plain press is known to be a press: the terminal marks key events, and the player has
+   *  not switched that off. */
+  private reportsReleases(): boolean {
+    return this.keyReleases && this.buildState.experiments.keyReleases === "auto"
+  }
+
+  /**
+   * One key, and the phase the terminal gave it (or `null`: timing decides). **A release sends no
+   * command**: it only ends the hold of the key it names (`src/build/motion.ts`), and a release of any
+   * other key is nothing at all — never a second press. A repeat of anything but a cursor key is a press
+   * again, as a classic terminal's auto-repeat always was.
+   */
+  private handleKeyEvent(key: string, phase: KeyPhase | null, now: number | undefined): void {
+    if (phase === "release") {
+      const cursor = cursorKeyOf(key)
+      if (cursor !== null && now !== undefined) this.motion.step(cursor, now, phase, moveTuning(this.buildState))
+      return
+    }
+    const command = this.keyCommand(key, now, phase)
     if (command !== null) this.dispatch(command)
+  }
+
+  /**
+   * A key through the keyboard adapter. **How far a cursor key moves, and how many rows Up or Down
+   * move a list, is the motion rules' call** when the key's arrival time is known — a live terminal
+   * (`src/build/motion.ts`: taps counted, holds on the game's own cadence); otherwise every key is a
+   * press on its own, so a driver script and every test that sends keys without a clock sees each as its
+   * own press. Up and Down in a list follow the map cursor's own rules, with the same numbers (owner,
+   * 2026-09-30, feedback F75: "Use the same timings, consistency here will be very useful"; F79: "The
+   * same is happening with the menu now") — so a first tap is always one row and every row stays
+   * reachable. Any other key starts the rules over.
+   */
+  private keyCommand(key: string, now: number | undefined, phase: KeyPhase | null): BuildCommand | null {
+    const state = this.buildState
+    const tuning = moveTuning(state)
+    let moved = false
+    const move = (cursor: CursorKey): number => {
+      moved = true
+      return this.motion.step(cursor, now as number, phase, tuning)
+    }
+    const command = buildKeyboardCommand(key, {
+      itemCount: this.context.catalog.length,
+      armed: state.armed !== null,
+      focus: state.focus,
+      popup: state.popup,
+      popupSpec: popupSpec(this.context, state),
+      pulse: this.presenter !== null,
+      // Without a clock every key is a press on its own — a tap, or the fast move's jump as far as the
+      // setting says now.
+      ...(now === undefined
+        ? { moveTiles: (cursor: CursorKey) => pressTiles(cursor, tuning) }
+        : {
+            moveTiles: move,
+            listRows: (direction: -1 | 1) => move({ dx: 0, dy: direction, jump: false }),
+          }),
+    })
+    if (command !== null && !moved) this.motion.reset()
+    return command
+  }
+
+  /** A mouse report through the mouse adapter, against what is on screen: the open popup, placed;
+   *  the card, if one shows; the top bar's Esc label; and the camera as drawn — while the view is still
+   *  sliding, a click lands on the tile drawn under the pointer, not the target's (gate 5H). */
+  private mouseCommand(mouse: MouseEvent, layout: BuildLayout, camera: Camera | undefined): BuildCommand | null {
+    const state = this.buildState
+    const spec = popupSpec(this.context, state)
+    return buildMouseCommand(mouse, camera ?? state.camera, layout, this.context.catalog, {
+      ...(spec === null ? {} : { popup: placePopup(layout, spec) }),
+      card: cardEntry(state),
+      escLabel: escLabel(state),
+      pulse: this.presenter !== null,
+    })
+  }
+
+  /**
+   * A double click, resolved from when the presses came — the input path's call, since only it knows
+   * (F22). The reducer places on a second click of the tile the cursor is on, so for a click on the map:
+   *
+   * - the second half of a double click whose first half already placed — a double click on the ghost's
+   *   own tile, where one click is enough — is swallowed: read as a fresh click it would take the
+   *   keyboard to the map and lapse the placement's answer;
+   * - the second half of a quick double click on the same screen cell with a building armed is sent as
+   *   a click on the first one's tile — exactly what a driver would send for "click it again" —
+   *   whatever the view did in between.
+   */
+  private resolveDoubleClick(mouse: MouseEvent, command: BuildCommand | null, now: number | undefined): BuildCommand | null {
+    const placing = this.lastPlacingClick
+    const armedClick = this.lastArmedClick
+    this.lastPlacingClick = null
+    this.lastArmedClick = null
+    if (command?.kind !== "click-tile" || now === undefined) return command
+    const again = (last: Readonly<{ column: number; row: number; at: number }> | null): boolean =>
+      last !== null && last.column === mouse.column && last.row === mouse.row && now - last.at <= TUNING.doubleClickMs
+    if (again(placing)) return null
+    if (this.buildState.armed === null) return command
+    if (armedClick !== null && again(armedClick)) return { kind: "click-tile", x: armedClick.tile.x, y: armedClick.tile.y }
+    this.lastArmedClick = { column: mouse.column, row: mouse.row, at: now, tile: { x: command.x, y: command.y } }
+    return command
   }
 
   /** The driver's raw-bytes path — "a scripted list of... raw key and mouse events" — and what a
@@ -258,10 +325,10 @@ export class BuildSession {
     for (const key of keysFromChunk(rawChunk)) this.handleKey(key, layout, timing)
   }
 
-  /** The kind of move the last timed cursor key made — tap, hold, fast or jump — or `null` before
-   *  any. */
-  get moveKind(): MoveKind | null {
-    return this.ramp.kind
+  /** The move the last timed cursor key made — a tap at its run's speed, a hold's move, a jump, a
+   *  release — and how many tiles or rows; `null` before any, and once anything else was pressed. */
+  get lastMove(): Move | null {
+    return this.motion.move
   }
 
   /** A new terminal size. Not a command: nobody pressed anything. */

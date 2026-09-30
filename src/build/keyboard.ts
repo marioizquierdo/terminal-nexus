@@ -1,101 +1,24 @@
-// The keyboard adapter — engine.md 9.7's keymap, and the one part of it a terminal can silently
-// break. Shift+Arrow is neither universal nor single-valued (measured by
-// `scripts/probe-modified-keys.mjs`; the table is in `evidence/gate-5a-report.md`):
-//
-//   - xterm and tmux send `ESC [ 1 ; 2 A` and its siblings;
-//   - rxvt sends a shorter, unrelated form: `ESC [ a b c d`;
-//   - screen, the Linux console, vt100, vt220 and ansi define no shifted arrow at all.
-//
-// So both families are accepted, and the fast move (five tiles until gate 5H; since the owner's
-// 2026-09-28 playtest a jump of the "Shift jump" Experiment, twelve tiles) also has a modifier-free
-// fallback —
-// PageUp/PageDown and Home/End — plus the Option/Meta forms a Mac sends. The screen names the fast
-// move once, as "shift+arrow fast move"; the others are the same move under other keys, left off the
-// key help on the owner's own call (2026-09-26: "leave pgup/home keys out, people will figure that
-// out just fine").
+// The keyboard adapter — engine.md 9.7's keymap: one already-split raw key to one command. The cursor
+// keys' byte spellings — measured, because a terminal can silently break Shift+Arrow — are one table
+// shared with every list (`src/menu/list-keys.ts`): the fast move has a modifier-free fallback,
+// PageUp/PageDown and Home/End, and the Option/Meta forms a Mac sends. The Controls and hotkeys page
+// (`src/build/help.ts`, feedback F60) lists every one of them; the bottom line never did, on the
+// owner's own call (2026-09-26: "leave pgup/home keys out, people will figure that out just fine").
 
+import type { CursorKey } from "../menu/list-keys.ts"
+import { cursorKeyOf, listKeyOf } from "../menu/list-keys.ts"
 import type { PlaybackControl } from "../view/playback.ts"
 import { START_KEY } from "./layout.ts"
-import { GAME_MENU_ROWS } from "./settings.ts"
-import type { BuildCommand, Focus, Overlay } from "./types.ts"
+import { DEFAULT_MOVE_TUNING, pressTiles } from "./motion.ts"
+import type { PopupRow, PopupSpec } from "./popup.ts"
+import type { BuildCommand, Focus, Popup } from "./types.ts"
+
+export { cursorKeyOf } from "../menu/list-keys.ts"
+export type { CursorKey } from "../menu/list-keys.ts"
 
 const ESC = String.fromCharCode(27)
 const PLACE_KEYS = new Set(["\r", "\n", " "])
 const REMOVE_KEYS = new Set([String.fromCharCode(127), String.fromCharCode(8), `${ESC}[3~`])
-
-/** `ESC [ A` and the application-cursor-mode `ESC O A` a terminal may switch to at any moment. */
-const PLAIN_ARROWS: Readonly<Record<string, Readonly<{ dx: number; dy: number }>>> = {
-  [`${ESC}[A`]: { dx: 0, dy: -1 },
-  [`${ESC}[B`]: { dx: 0, dy: 1 },
-  [`${ESC}[C`]: { dx: 1, dy: 0 },
-  [`${ESC}[D`]: { dx: -1, dy: 0 },
-  [`${ESC}OA`]: { dx: 0, dy: -1 },
-  [`${ESC}OB`]: { dx: 0, dy: 1 },
-  [`${ESC}OC`]: { dx: 1, dy: 0 },
-  [`${ESC}OD`]: { dx: -1, dy: 0 },
-}
-
-/** rxvt's own shifted arrows, which share nothing with xterm's but the leading `ESC [`. */
-const RXVT_SHIFTED_ARROWS: Readonly<Record<string, Readonly<{ dx: number; dy: number }>>> = {
-  [`${ESC}[a`]: { dx: 0, dy: -1 },
-  [`${ESC}[b`]: { dx: 0, dy: 1 },
-  [`${ESC}[c`]: { dx: 1, dy: 0 },
-  [`${ESC}[d`]: { dx: -1, dy: 0 },
-}
-
-/**
- * xterm's modified arrows: `ESC [ 1 ; <modifier> <letter>`. Any modifier >= 2 counts, not Shift
- * alone — nothing else here binds a modified arrow, so a terminal that eats Shift but passes Alt or
- * Ctrl still gives its player the fast pan.
- */
-const XTERM_MODIFIED_ARROW = /^\u001b\[1;(\d+)([ABCD])$/
-const ARROW_LETTERS: Readonly<Record<string, Readonly<{ dx: number; dy: number }>>> = {
-  A: { dx: 0, dy: -1 },
-  B: { dx: 0, dy: 1 },
-  C: { dx: 1, dy: 0 },
-  D: { dx: -1, dy: 0 },
-}
-
-/**
- * Option+Arrow the way macOS terminals send it by default, which is not xterm's `CSI 1;3` form (that
- * one is already covered above, since any modifier counts): Option+Left/Right arrive as the readline
- * word-movement keys `ESC b`/`ESC f`, and a terminal set to treat Option as Meta prefixes the ordinary
- * arrow with a second ESC. Both mean the fast move — "move word by word" is what Option means on a
- * Mac (owner, 2026-09-26: "we should also allow option"). Bound from the terminals' documented
- * defaults, not yet measured on the owner's own iTerm2 profile: `node scripts/lib/key-echo.mjs` in
- * that terminal is how to check. `keysFromChunk` keeps each of these whole; before it did, Option+Left
- * split into a bare Escape and left the screen.
- */
-const META_JUMPS: Readonly<Record<string, Readonly<{ dx: number; dy: number }>>> = {
-  [`${ESC}b`]: { dx: -1, dy: 0 },
-  [`${ESC}f`]: { dx: 1, dy: 0 },
-  [`${ESC}${ESC}[A`]: { dx: 0, dy: -1 },
-  [`${ESC}${ESC}[B`]: { dx: 0, dy: 1 },
-  [`${ESC}${ESC}[C`]: { dx: 1, dy: 0 },
-  [`${ESC}${ESC}[D`]: { dx: -1, dy: 0 },
-}
-
-/**
- * The modifier-free fallback, in every encoding the survey turned up. PageUp/PageDown are `ESC [ 5 ~`
- * and `ESC [ 6 ~` wherever they exist, but Home and End have three live spellings between xterm
- * (`ESC O H`), screen/tmux/linux (`ESC [ 1 ~`) and rxvt (`ESC [ 7 ~`), hence the table.
- */
-const FALLBACK_JUMPS: Readonly<Record<string, Readonly<{ dx: number; dy: number }>>> = {
-  [`${ESC}[5~`]: { dx: 0, dy: -1 },
-  [`${ESC}[6~`]: { dx: 0, dy: 1 },
-  [`${ESC}[H`]: { dx: -1, dy: 0 },
-  [`${ESC}OH`]: { dx: -1, dy: 0 },
-  [`${ESC}[1~`]: { dx: -1, dy: 0 },
-  [`${ESC}[7~`]: { dx: -1, dy: 0 },
-  [`${ESC}[F`]: { dx: 1, dy: 0 },
-  [`${ESC}OF`]: { dx: 1, dy: 0 },
-  [`${ESC}[4~`]: { dx: 1, dy: 0 },
-  [`${ESC}[8~`]: { dx: 1, dy: 0 },
-}
-
-/** How far the fast move jumps when nothing says otherwise: the owner's twelve tiles (2026-09-28).
- *  The live screen passes the "Shift jump" Experiment instead. */
-export const DEFAULT_JUMP_STEP = 12
 
 /** `grid watch`'s keymap, kept for the Nexus Pulse (engine.md 9.7: one keymap across `grid` and
  *  `terminal-nexus`) — Space pauses, `[` and `]` change the speed, `.` and `,` step a frame and a tick,
@@ -110,10 +33,30 @@ const PULSE_KEYS: Readonly<Record<string, PlaybackControl>> = {
 }
 
 const TAB = "\t"
-const MENU_UP = new Set([`${ESC}[A`, `${ESC}OA`])
-const MENU_DOWN = new Set([`${ESC}[B`, `${ESC}OB`])
-const MENU_LEFT = new Set([`${ESC}[D`, `${ESC}OD`])
-const MENU_RIGHT = new Set([`${ESC}[C`, `${ESC}OC`])
+
+/** A plain Left (`-1`) or Right (`+1`) — what changes a setting's value, and what the menu refuses — or
+ *  `0` for any other key, a modified arrow included. */
+function sideways(key: string): -1 | 0 | 1 {
+  const cursor = cursorKeyOf(key)
+  if (cursor === null || cursor.jump || cursor.dy !== 0) return 0
+  return cursor.dx < 0 ? -1 : 1
+}
+
+/**
+ * Up/Down in a list — the menu, or any popup's — as the command it is, or `null`: a plain arrow's rows
+ * (one, or the input path's motion rules — `KeyboardContext.listRows`: taps counted, a hold on the
+ * game's cadence), and the fast move — Shift, Option, PageUp/PageDown, Home/End — as a jump to that
+ * end. Every list stops at its ends (owner, 2026-09-30, feedback F75); the keys are the title menu's too
+ * (`src/menu/list-keys.ts`). A held key's repeat that came before its cadence allows a move is no rows,
+ * and no command: Up and Down mean nothing else here, so `null` is exactly "nothing".
+ */
+function listCommand(key: string, context: KeyboardContext): BuildCommand | null {
+  const list = listKeyOf(key)
+  if (list === null) return null
+  if (list.jump) return { kind: "highlight", delta: list.direction, jump: true }
+  const rows = context.listRows?.(list.direction) ?? 1
+  return rows === 0 ? null : { kind: "highlight", delta: list.direction * rows }
+}
 
 export type KeyboardContext = Readonly<{
   /** How many construct-menu rows there are, so a digit past the end of the list means nothing
@@ -126,16 +69,24 @@ export type KeyboardContext = Readonly<{
   focus?: Focus
   /** The popup that is open, if any. A popup holds the keyboard: only its own keys reach it, and
    *  nothing underneath answers a key until it closes. */
-  overlay?: Overlay | null
-  /** While the Nexus popup is open: how many powers are waiting to be picked, so a digit past them
-   *  means nothing. */
-  overlayPendingCount?: number
-  /** The open popup's highlight — which of the game menu's rows Enter means. */
-  overlayHighlight?: number
-  /** How many tiles the fast move jumps — the "Shift jump" Experiment. `DEFAULT_JUMP_STEP` if absent. */
-  jumpStep?: number
+  popup?: Popup | null
+  /** The open popup as data (`popupSpec`) — its rows, each option naming its hotkey and the command a
+   *  click on it sends, each setting its `decrease` and `increase`. The keyboard sends those same
+   *  commands, so a key and a click on a popup's row cannot disagree. */
+  popupSpec?: PopupSpec | null
   /** A Nexus Pulse is on screen (gate 6A): its playback keys are the screen's, ahead of the Grid's. */
   pulse?: boolean
+  /**
+   * How many tiles a cursor key moves, when the input path knows when keys arrive: its motion rules
+   * (`src/build/motion.ts` — taps counted, a hold on the game's own cadence, the fast move's jump), which
+   * answer 0 for a held key's repeat that came before the cadence allows a move, or a held jump's that
+   * came too soon — nothing is sent for it. Absent — a driver, a test — every key is a press on its own
+   * (`pressTiles`).
+   */
+  moveTiles?: (key: CursorKey) => number
+  /** How many rows a plain Up or Down moves a list, the same way: the motion rules when timed (0 sends
+   *  nothing), else one. */
+  listRows?: (direction: -1 | 1) => number
 }>
 
 function digitIndex(key: string): number | null {
@@ -143,126 +94,126 @@ function digitIndex(key: string): number | null {
   return key === "0" ? 9 : Number(key) - 1
 }
 
-/** `x` is Esc, everywhere (owner, 2026-09-27: "it should be equivalent to do [esc], and x"). */
-const CANCEL_KEYS = new Set([ESC, "x"])
+/**
+ * Esc and `x` walk back the same way, one level at a time — with one difference, on the menu with
+ * nothing open: Esc opens the game menu, and `x` does nothing (owner, 2026-09-30, feedback F62: "Menu
+ * should only open with 'esc', but not with 'x'. I think this is the only exception to the rule of esc
+ * and x are the same"). So `x x x` always lands on the menu and stays there.
+ */
+function backCommand(key: string): BuildCommand | null {
+  if (key === ESC) return { kind: "cancel" }
+  if (key === "x") return { kind: "back" }
+  return null
+}
 
-/** A popup's own keys. Everything else is swallowed: a popup that let `u` reach the plan underneath
- *  it would be one the player cannot trust to be modal. */
-function overlayCommand(key: string, overlay: Overlay, pendingCount: number, highlight: number): BuildCommand | null {
-  if (CANCEL_KEYS.has(key)) return { kind: "cancel" }
-  switch (overlay) {
-    case "menu": {
-      // The game menu (owner, 2026-09-28): its own hotkeys, or Up/Down and Enter on its rows. Enter
-      // on `[q] Quit` is the quit itself — the reducer never sees a quit it would have to pass on.
-      if (key === "q") return { kind: "quit" }
-      if (key === "s") return { kind: "open-settings", section: "settings" }
-      if (key === "r") return { kind: "debug-restart" }
+/** `?` opens the Controls and hotkeys page — from the game, and from the game menu (feedback F60). */
+const HELP_KEY = "?"
+
+/**
+ * A popup's hand-written keys: those that close it besides Esc and `x` (the key that opened it, and
+ * Enter where there is nothing to press), and the shortcuts that are no row of its own. Everything a
+ * row does, its hotkey and Enter on it send from the popup's own data (`popupCommand`).
+ */
+function popupOwnKey(key: string, popup: Popup): BuildCommand | null {
+  const close: BuildCommand = { kind: "cancel" }
+  switch (popup) {
+    case "game-menu":
+      // `d` and `?` reach the Experiments and the Controls page from here, as they do from the game.
       if (key === "d") return { kind: "open-settings", section: "experiments" }
-      if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
-      if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
-      if (PLACE_KEYS.has(key)) return GAME_MENU_ROWS[highlight] === "quit" ? { kind: "quit" } : { kind: "activate" }
-      return null
-    }
-    case "confirm-commit":
-      // Enter, Space and `s` again start the Pulse (owner, 2026-09-29, feedback F42) — `s` is the key
-      // that asked, so pressing it twice is "yes"; `y` still works, unlisted, for older scripts. Going
-      // back is Esc's, above: there is no second row to press (feedback F50).
-      if (key === START_KEY || key === "y" || PLACE_KEYS.has(key)) return { kind: "confirm-commit" }
-      return key === "q" ? { kind: "open-menu" } : null
-    case "nexus-powers": {
-      if (key === "n") return { kind: "cancel" }
-      if (key === "q") return { kind: "open-menu" }
-      if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
-      if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
-      if (PLACE_KEYS.has(key)) return { kind: "activate" }
-      const index = digitIndex(key)
-      if (index !== null && index < pendingCount) return { kind: "pick-nexus", index }
-      return null
-    }
-    case "settings": {
+      return key === HELP_KEY ? { kind: "open-controls" } : null
+    case "battle-round":
+      // `y` still starts it, unlisted, for older scripts; `s`, Enter and Space are its one row's.
+      return key === "y" ? { kind: "start-pulse" } : null
+    case "nexus-powers":
+      return key === "n" ? close : null
+    case "settings":
       // `d` closes what `d` opened, the way `n` closes the Nexus popup.
-      if (key === "d") return { kind: "cancel" }
-      if (key === "q") return { kind: "open-menu" }
-      // Export settings is the list's last row; `e` still reaches it from anywhere in the list. The
-      // restart is the game menu's `[r]` now (feedback F34).
-      if (key === "e") return { kind: "export-settings" }
-      if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
-      if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
-      // Left and Right change the highlighted setting's value — the one popup whose rows have one.
-      if (MENU_LEFT.has(key)) return { kind: "nudge", direction: "left" }
-      if (MENU_RIGHT.has(key)) return { kind: "nudge", direction: "right" }
-      if (PLACE_KEYS.has(key)) return { kind: "activate" }
-      return null
-    }
-    case "export": {
-      // `e` closes what `e` opened; Up/Down scroll the text.
-      if (key === "e" || PLACE_KEYS.has(key)) return { kind: "cancel" }
-      if (key === "q") return { kind: "open-menu" }
-      if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
-      if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
-      return null
-    }
-    case "message":
-      // Nothing to choose: only the cancel above closes it (feedback F34, "clicking outside or pressing
-      // esc should close it").
-      return null
+      return key === "d" ? close : null
+    case "export":
+      // `e` closes what `e` opened, and so do Enter and Space: the text has nothing to press.
+      return key === "e" || PLACE_KEYS.has(key) ? close : null
+    case "controls":
+      // `c` and `?` close what they opened, and so do Enter and Space (feedback F60).
+      return key === "c" || key === HELP_KEY || PLACE_KEYS.has(key) ? close : null
     default:
       return null
   }
 }
 
-/** A cursor key's direction, one tile long, and whether it is the fast move. */
-export type CursorKey = Readonly<{ dx: number; dy: number; fast: boolean }>
-
-/**
- * Any of the Grid's cursor keys, classified — or `null`. The plain arrows are what a held key's ramp
- * applies to (`src/build/motion.ts`); every other form is the fast move, a jump whose size is a Debug
- * Mode flag rather than anything timing decides (timing only decides how often a held one repeats).
- */
-export function cursorKeyOf(key: string): CursorKey | null {
-  const plain = PLAIN_ARROWS[key]
-  if (plain !== undefined) return { ...plain, fast: false }
-
-  const rxvt = RXVT_SHIFTED_ARROWS[key]
-  if (rxvt !== undefined) return { ...rxvt, fast: true }
-
-  const modified = XTERM_MODIFIED_ARROW.exec(key)
-  if (modified !== null) {
-    const direction = ARROW_LETTERS[modified[2] as string]
-    if (direction !== undefined && Number(modified[1]) >= 2) return { ...direction, fast: true }
-  }
-
-  const meta = META_JUMPS[key]
-  if (meta !== undefined) return { ...meta, fast: true }
-
-  const fallback = FALLBACK_JUMPS[key]
-  if (fallback !== undefined) return { ...fallback, fast: true }
-  return null
+/** The row the keyboard is on in a popup, when it is one that does something: an option or a setting. */
+function highlightedChoice(rows: readonly PopupRow[]): PopupRow | undefined {
+  return rows.find((row) => (row.kind === "option" || row.kind === "setting") && row.highlighted === true)
 }
 
-/** Any of the Grid's cursor keys, as the move it is — one tile for a plain arrow (the input path may
- *  scale it for a held key), `jumpStep` tiles for the fast move — or `null`. */
-function cursorMove(key: string, jumpStep: number): BuildCommand | null {
+/**
+ * A key in an open popup. Everything else is swallowed: a popup that let `u` reach the plan underneath
+ * it would be one the player cannot trust to be modal. Esc and `x` close any popup, back to the one it
+ * was opened from (feedback F73: no popup needs an `[esc] Back` row of its own). Then the popup's own
+ * keys (`popupOwnKey`), and then **its rows, as the popup's data names them** — "every popup is one
+ * shape ... options naming the command a click sends":
+ *
+ * - an option's hotkey sends its command;
+ * - Up/Down walk its list, when it has one to walk;
+ * - Enter/Space send the highlighted option's command, or the highlighted setting's `increase`;
+ * - Left/Right send the highlighted setting's `decrease` or `increase`.
+ */
+function popupCommand(key: string, popup: Popup, context: KeyboardContext): BuildCommand | null {
+  const back = backCommand(key)
+  if (back !== null) return back
+  // A message has nothing to choose: only the cancel above closes it (feedback F34, "clicking outside
+  // or pressing esc should close it").
+  if (popup === "message") return null
+  const own = popupOwnKey(key, popup)
+  if (own !== null) return own
+  const spec = context.popupSpec ?? null
+  const rows = spec?.rows ?? []
+  const option = rows.find((row) => row.kind === "option" && row.hotkey === key)
+  if (option?.kind === "option") return option.command
+  // `q` opens the game menu from any popup without a `[q]` row of its own (the game menu's is Quit).
+  if (key === "q") return popup === "game-menu" ? null : { kind: "open-game-menu" }
+  const choices = rows.filter((row) => row.kind === "option" || row.kind === "setting").length
+  if (spec?.scroll !== undefined || choices > 1) {
+    const list = listCommand(key, context)
+    if (list !== null) return list
+  }
+  const on = highlightedChoice(rows)
+  if (PLACE_KEYS.has(key)) {
+    if (on?.kind === "option") return on.command
+    // On a setting, Enter/Space is Right: a choice comes round, a number steps up.
+    if (on?.kind === "setting") return on.increase
+    // Nothing to press — the Nexus powers once the pick is made: the reducer says so.
+    return { kind: "activate" }
+  }
+  const side = sideways(key)
+  if (on?.kind !== "setting" || side === 0) return null
+  return side < 0 ? on.decrease : on.increase
+}
+
+/** Any of the Grid's cursor keys, as the move it is — **the one place a move is sized**: the input
+ *  path's motion rules when it times keys (`KeyboardContext.moveTiles`), and otherwise a press on its
+ *  own, a tap or the fast move's jump (`pressTiles`) — or `null`, for another key or a move of none. */
+function cursorMove(key: string, context: KeyboardContext): BuildCommand | null {
   const move = cursorKeyOf(key)
   if (move === null) return null
-  if (!move.fast) return { kind: "move-cursor", dx: move.dx, dy: move.dy }
-  return { kind: "move-cursor", dx: move.dx * jumpStep, dy: move.dy * jumpStep, fast: true }
+  const tiles = context.moveTiles?.(move) ?? pressTiles(move, DEFAULT_MOVE_TUNING)
+  return tiles === 0 ? null : { kind: "move-cursor", dx: move.dx * tiles, dy: move.dy * tiles }
 }
 
 /**
  * One already-split raw key to one command, or `null` when the key means nothing here.
  *
- * **Focus is the one mode this screen has, and it is the one engine.md 9.7's first convention
- * allows**: "if a panel genuinely needs arrow keys of its own... Tab moves focus and the footer says
- * where focus is." Arrows and Enter/Space follow focus; nothing else does — a digit arms its row, `n`
- * opens the Nexus Powers, `u`, Backspace and `p` do what they always did, whichever half has focus.
+ * **A key means one thing per screen** (engine.md 9.7's first convention): arrows and Enter/Space
+ * follow focus — the menu, or the map in its modes (`mapMode`), where Enter places, or opens Explore
+ * Map in plain navigation — while digits always address their row, and letters always name their
+ * command, whichever half has focus. Backspace always sends `remove`, which the menu refuses with a
+ * flicker, since the map cursor it would remove under is hidden there.
  */
 export function buildKeyboardCommand(key: string, context: KeyboardContext): BuildCommand | null {
   // Ctrl+C always quits outright; `q` opens the game menu first, so a stray press cannot lose a plan.
   if (key === String.fromCharCode(3)) return { kind: "quit" }
-  const overlay = context.overlay ?? null
-  if (overlay !== null) {
-    return overlayCommand(key, overlay, context.overlayPendingCount ?? 0, context.overlayHighlight ?? 0)
+  const popup = context.popup ?? null
+  if (popup !== null) {
+    return popupCommand(key, popup, context)
   }
   const focus = context.focus ?? "grid"
 
@@ -274,39 +225,38 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
     if (control !== undefined) return { kind: "pulse", control }
   }
 
-  // One "back" for Esc and `x`, walking a stack the reducer knows: the Grid — placing or Explore Map —
-  // to the menu, disarming, then the menu (the game menu: Settings, Quit).
-  if (CANCEL_KEYS.has(key)) return { kind: "cancel" }
-  if (key === "q") return { kind: "open-menu" }
+  // Esc and `x` walk back a stack the reducer knows: placing or Explore Map to where it began, the map
+  // to the menu, disarming — and then, on the menu, Esc opens the game menu while `x` stops (F62).
+  const back = backCommand(key)
+  if (back !== null) return back
+  if (key === "q") return { kind: "open-game-menu" }
   if (key === TAB) return { kind: "focus", target: focus === "grid" ? "menu" : "grid" }
   if (key === "u") return { kind: "undo" }
   if (key === "n") return { kind: "open-nexus-powers" }
   if (key === "e") return { kind: "explore" }
-  // `d` is Debug Mode's old key, kept as a shortcut: Settings, at its Experiments.
+  // `d`: Settings, opened at its Experiments.
   if (key === "d") return { kind: "open-settings", section: "experiments" }
+  // `?` opens the Controls and hotkeys page from the game — a shortcut the page itself names.
+  if (key === HELP_KEY) return { kind: "open-controls" }
   // `s` is the Start Pulse row's key (feedback F41, F47); `p`, its first key, is kept as another way to press it.
-  if (key === START_KEY || key === "p") return { kind: "commit" }
-  // `y` only ever means something while the Battle Round confirmation is open; outside it is inert.
-  if (key === "y") return null
+  if (key === START_KEY || key === "p") return { kind: "open-battle-round" }
 
   if (focus === "menu") {
-    if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
-    if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
+    // Up and Down walk the menu and stop at its ends; the fast move jumps to its first or last row.
+    const list = listCommand(key, context)
+    if (list !== null) return list
     // Left/Right have nothing to do on the menu: the row flickers so the player sees where the keys
-    // went, and a second Right moves focus to the Grid (owner, 2026-09-27).
-    if (MENU_LEFT.has(key)) return { kind: "nudge", direction: "left" }
-    if (MENU_RIGHT.has(key)) return { kind: "nudge", direction: "right" }
+    // went, and the keyboard stays on the menu (owner, 2026-09-30, feedback F55).
+    if (sideways(key) !== 0) return { kind: "refuse-row" }
     if (PLACE_KEYS.has(key)) return { kind: "activate" }
-    // Backspace removes what is under the map cursor, which is hidden while the menu has the
-    // keyboard: the row flickers, like Left, to say the key arrived and has nothing to do here
-    // (feedback F17).
-    if (REMOVE_KEYS.has(key)) return { kind: "nudge", direction: "left" }
   } else {
-    if (PLACE_KEYS.has(key)) return context.armed ? { kind: "place" } : { kind: "inspect" }
-    if (REMOVE_KEYS.has(key)) return { kind: "remove" }
-    const move = cursorMove(key, context.jumpStep ?? DEFAULT_JUMP_STEP)
+    if (PLACE_KEYS.has(key)) return context.armed ? { kind: "place" } : { kind: "open-explore" }
+    const move = cursorMove(key, context)
     if (move !== null) return move
   }
+  // Backspace removes what is planned under the map cursor — from the menu too, where the reducer
+  // refuses it with the row's flicker, since the cursor is hidden there (feedback F17).
+  if (REMOVE_KEYS.has(key)) return { kind: "remove" }
 
   // Digits always address the list, and never mean anything else on this screen — engine.md 9.7's
   // first convention, "no modes". `0` is the tenth row, not the zeroth. A digit arms its row from

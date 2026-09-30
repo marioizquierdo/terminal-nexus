@@ -21,7 +21,7 @@ import { dirname, join, relative, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { parseArgs } from "node:util"
 import { parseKeyScript } from "../src/playtest/keys.ts"
-import { defaultExperiments, parseSettingsExport } from "../src/build/settings-export.ts"
+import { importSettings } from "../src/build/settings-export.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { frameToText } from "../src/view/frame.ts"
@@ -40,7 +40,7 @@ const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <pat
   --theme <theme>      dark (default) or light
   --glyphs <pack>      ascii (default) or unicode
   --settings "<text>"  start from an exported settings text (Settings > Export settings): paste the
-                       whole export, or pairs like "placeLight=rainbow scrollMargin=25"; the three
+                       whole export, or pairs like "raid=probe crew=some"; the three
                        flags above still win for their own setting
   --out <dir>          where files go (default .playtest/, ignored by git)
   --name <name>        file name prefix (default playtest)
@@ -85,13 +85,9 @@ if (values.help || (values.keys === undefined && values.file === undefined)) {
 const size = /^(\d+)x(\d+)$/u.exec(values.size)
 if (size === null) throw new Error(`--size wants COLSxROWS, like 80x24, not "${values.size}"`)
 // An exported settings text first, then the flags over it; truecolor, dark and ascii otherwise.
-const base = { ...DEFAULT_SETTINGS, capability: "truecolor" }
-const imported =
-  values.settings === undefined
-    ? null
-    : parseSettingsExport(values.settings, { settings: base, experiments: defaultExperiments() })
-if (imported !== null && imported.ignored.length > 0) process.stderr.write(`--settings ignored ${imported.ignored.join(", ")}\n`)
-const startSettings = imported?.snapshot.settings ?? base
+const imported = importSettings(values.settings, { ...DEFAULT_SETTINGS, capability: "truecolor" })
+if (imported.ignored.length > 0) process.stderr.write(`--settings ignored ${imported.ignored.join(", ")}\n`)
+const startSettings = imported.settings
 const capability = parseCapability(values.capability ?? startSettings.capability)
 const theme = parseTheme(values.theme ?? startSettings.theme)
 const glyphPack = parseGlyphPack(values.glyphs ?? startSettings.glyphPack)
@@ -103,7 +99,7 @@ const run = runBuildPlaytest({
   columns: Number(size[1]),
   rows: Number(size[2]),
   settings: { ...startSettings, capability, theme, glyphPack },
-  ...(imported === null ? {} : { experiments: imported.snapshot.experiments }),
+  experiments: imported.experiments,
 })
 const last = run.frames.length - 1
 
@@ -117,7 +113,12 @@ const heading = (frame) =>
   frame.index === 0
     ? `--- step 0: the screen as it opens`
     : `--- step ${frame.index}: ${frame.label}  ${JSON.stringify(frame.bytes)}`
-const statusOf = (frame) => frame.state.status.text || "(status line empty)"
+// What the bottom line reads after the step — the last key's answer, or the hint for where the keyboard
+// is (feedback F59), or the Pulse's own line: read off the frame itself, so it is what a player sees.
+const statusOf = (frame) => {
+  const line = frameToText(frame.frame).split("\n")[run.layout.footerRow] ?? ""
+  return line.replace(/^\s*\|\s?/u, "").replace(/\s*\|\s*$/u, "").trim() || "(bottom line empty)"
+}
 
 const transcript = run.frames.map((frame) => `${heading(frame)}\n${frameToText(frame.frame)}\n`).join("\n")
 const textPath = join(outDir, `${values.name}.txt`)

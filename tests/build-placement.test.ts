@@ -1,7 +1,7 @@
 // Gate 5I: placement juice (feedback F9). A building plays its own frames as it goes up, is lit as it
 // finishes, and throws off a few sparks — all of it presentation, a pure function of the plan and the
-// time since the placement, every number an Experiment. The claims here are made against an
-// injected time, a number: nothing waits.
+// time since the placement, every number a tuned value the owner settled (2026-09-30; Experiments until
+// then). The claims here are made against an injected time, a number: nothing waits.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -9,8 +9,7 @@ import { CONTENT_ART, PLACEMENT_ART, artExtent } from "../src/content/art.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { footprintExtent, tilesOf } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
-import { initialDebugFlags } from "../src/build/debug.ts"
-import type { DebugFlags } from "../src/build/debug.ts"
+import { TUNING } from "../src/build/tuning.ts"
 import { cellForTile } from "../src/build/layout.ts"
 import { visibleRange } from "../src/build/camera.ts"
 import type { BuildState } from "../src/build/state.ts"
@@ -19,16 +18,17 @@ import { runBuildPlaytest } from "../src/playtest/build.ts"
 import type { BuildPlaytest } from "../src/playtest/build.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import type { BuildCompositionInput } from "../src/view/build.ts"
-import { BuildAnimation } from "../src/view/build-live.ts"
+import { BuildAnimation, livePresentation } from "../src/view/build-live.ts"
 import { cellAt, frameToAnsi, frameToText } from "../src/view/frame.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
 import { paintOps } from "../src/view/backends/canvas.ts"
-import { placementCell, placementRequest, placementRun, placementSchedule, placementTiming, removalSchedule } from "../src/view/placement.ts"
+import { placementCell, placementEffectContext, placementRequest, placementRun, placementSchedule, placementTiming, removalSchedule } from "../src/view/placement.ts"
 import type { PlacementClock, RemovalClock } from "../src/view/placement.ts"
+import { EFFECT_RECIPES } from "../src/view/effects/recipes.ts"
 import { CAPABILITY_MODES, RAINBOW_ROLES, rgbFor, sgrFor } from "../src/view/roles.ts"
-import { entityGlyph } from "../src/view/theme.ts"
 
-const FLAGS: DebugFlags = initialDebugFlags({})
+/** The placement's numbers as the game plays them. */
+const FLAGS = TUNING
 const BARRACKS = "structure.citizen.barracks"
 /** Arm the Barracks from the menu (the cursor opens on the Grid Nexus, so arming finds the nearest good
  *  spot beside it) and place it with Space. */
@@ -54,10 +54,6 @@ function compose(
   capability: (typeof CAPABILITY_MODES)[number] = "truecolor",
 ): ReadonlyCellFrame {
   return composeBuildFrame({ context: run.context, state, layout: run.layout, ...extra }, capability)
-}
-
-function withFlags(state: BuildState, flags: Partial<DebugFlags>): BuildState {
-  return { ...state, debug: { ...state.debug, ...flags } }
 }
 
 /** The screen cells a placement's footprint is drawn on. */
@@ -135,34 +131,49 @@ test("a placed Barracks plays footings, walls, roof beam, then stands finished, 
   const half = cellAt(settling, corner.x, corner.y).style.tint
   assert.ok(half !== undefined && half.amount > 0 && half.amount < 1, "the light does not settle")
   // Once it is over it is exactly the still frame every test and playtest has always drawn.
-  const over = compose(run, state, { placing: [{ ordinal: placement.ordinal, elapsedMs: placementTiming(FLAGS, false).totalMs }] })
+  const over = compose(run, state, { placing: [{ ordinal: placement.ordinal, elapsedMs: placementTiming(false).totalMs }] })
   assert.equal(frameToAnsi(over, "truecolor"), frameToAnsi(compose(run, state), "truecolor"))
 })
 
-test("the rainbow walks the theme's own hues across the building and fades back to its colour", () => {
-  const rainbow = { ...FLAGS, placeLight: "rainbow" as const }
+test("the light recipe's rainbow walks the theme's own hues across a footprint and fades", () => {
+  // A placement lights with the plain flash since the owner settled "Lighting" (2026-09-30); the rainbow
+  // stays the recipe's own palette, for anything that asks for it.
   const footprint = FIXTURE_REGISTRY.get(BARRACKS).footprint
+  const { width, height } = footprintExtent(footprint)
+  const recipe = EFFECT_RECIPES["fx.light.flash"]
+  assert.ok(recipe !== undefined)
+  const durationMs = 400
+  const instance = {
+    recipe: "fx.light.flash",
+    band: "highlights" as const,
+    startMs: 0,
+    durationMs,
+    origin: { x: 0, y: 0 },
+    family: "neutral" as const,
+    params: { width, height, palette: "rainbow" },
+  }
+  const tintAt = (t: number, offset: Coord) =>
+    recipe(instance, placementEffectContext(t, false)).find((cell) => cell.tile.x === offset.x && cell.tile.y === offset.y)?.tint
   const seen = new Set<string>()
-  for (let t = rainbow.placeFramesMs; t < rainbow.placeFramesMs + rainbow.placeGlowMs; t += 20) {
+  for (let t = 0; t < durationMs; t += 20) {
     for (const offset of footprint) {
-      const cell = placementCell(BARRACKS, footprint, offset, t, rainbow, false)
-      assert.equal(cell.glyph, entityGlyph(BARRACKS, "A", offset))
-      assert.ok(cell.tint !== undefined)
-      assert.ok((RAINBOW_ROLES as readonly string[]).includes(cell.tint.role))
-      seen.add(cell.tint.role)
+      const tint = tintAt(t, offset)
+      assert.ok(tint !== undefined)
+      assert.ok((RAINBOW_ROLES as readonly string[]).includes(tint.role))
+      seen.add(tint.role)
     }
   }
   assert.equal(seen.size, RAINBOW_ROLES.length, "the rainbow skipped hues")
-  const early = placementCell(BARRACKS, footprint, { x: 0, y: 0 }, rainbow.placeFramesMs + 10, rainbow, false).tint
-  const late = placementCell(BARRACKS, footprint, { x: 0, y: 0 }, rainbow.placeFramesMs + rainbow.placeGlowMs - 10, rainbow, false).tint
+  const early = tintAt(10, { x: 0, y: 0 })
+  const late = tintAt(durationMs - 10, { x: 0, y: 0 })
   assert.ok(early !== undefined && late !== undefined && early.amount > late.amount)
 })
 
-test("lighting off, build animation off: the building is finished at once and unlit", () => {
+test("with no glow (the card's rising icon) the building plays its frames, then stands finished and unlit", () => {
   const footprint = FIXTURE_REGISTRY.get(BARRACKS).footprint
-  const flags = { ...FLAGS, placeFramesMs: 0, placeLight: "off" as const }
-  for (const t of [0, 50, 200]) {
-    assert.deepEqual(placementCell(BARRACKS, footprint, { x: 1, y: 0 }, t, flags, false), { glyph: "b", bold: true })
+  const tuning = { ...FLAGS, placeGlowMs: 0 }
+  for (const t of [FLAGS.placeFramesMs, FLAGS.placeFramesMs + 50, FLAGS.placeFramesMs + 200]) {
+    assert.deepEqual(placementCell(BARRACKS, footprint, { x: 1, y: 0 }, t, false, tuning), { glyph: "b", bold: true })
   }
 })
 
@@ -171,7 +182,7 @@ test("reduced motion: the finished building at once, no light, and the sparks a 
   const placement = lastPlacement(state)
   const at = (elapsedMs: number): ReadonlyCellFrame =>
     compose(run, state, { placing: [{ ordinal: placement.ordinal, elapsedMs }], reducedMotion: true })
-  const timing = placementTiming(FLAGS, true)
+  const timing = placementTiming(true)
   assert.equal(timing.framesMs, 0)
   const cells = footprintCells(run, state, BARRACKS, placement.anchor)
   for (const t of [0, 100, 300]) {
@@ -191,13 +202,11 @@ test("reduced motion: the finished building at once, no light, and the sparks a 
 // --- Sparks --------------------------------------------------------------------------------------
 
 test("sparks fly in the effects band and never land on a building: the corruption law holds", () => {
-  const flags = { ...FLAGS, placeParticles: "many" as const }
-  const { run, state: plain } = placed()
-  const state = withFlags(plain, flags)
+  const { run, state } = placed()
   const placement = lastPlacement(state)
   const structures = [...run.context.standing, ...state.planned].flatMap((s) => footprintCells(run, state, s.contentId, s.anchor))
   let sparks = 0
-  const timing = placementTiming(flags, false)
+  const timing = placementTiming(false)
   for (let t = 0; t < timing.totalMs; t += 10) {
     const frame = compose(run, state, { placing: [{ ordinal: placement.ordinal, elapsedMs: t }] })
     const still = compose(run, state)
@@ -242,12 +251,12 @@ test("a placement's sparks are a hash of which placement it is, never of when it
 test("a placement is one play on its track: its frames, then light and sparks as follow-ups at their end", () => {
   const footprint = FIXTURE_REGISTRY.get(BARRACKS).footprint
   const placement = { ordinal: 3, contentId: BARRACKS, anchor: { x: 10, y: 4 } }
-  const request = placementRequest(placement, footprint, FLAGS, false)
+  const request = placementRequest(placement, footprint, false)
   assert.equal(request.policy, "replace")
   assert.equal(request.animation.durationMs, FLAGS.placeFramesMs)
   assert.deepEqual(request.animation.frames.map((frame) => frame.rows), PLACEMENT_ART[BARRACKS])
-  const schedule = placementSchedule(placement, footprint, FLAGS, false)
-  const timing = placementTiming(FLAGS, false)
+  const schedule = placementSchedule(placement, footprint, false)
+  const timing = placementTiming(false)
   assert.deepEqual(
     schedule.effects.map((effect) => [effect.recipe, effect.band, effect.startMs, effect.durationMs]),
     [
@@ -257,12 +266,13 @@ test("a placement is one play on its track: its frames, then light and sparks as
   )
   assert.equal(schedule.settlesAtMs, timing.totalMs)
   // Reduced motion: no frames, no light — the sparks' still marks from the moment it is placed.
-  const reduced = placementSchedule(placement, footprint, FLAGS, true)
+  const reduced = placementSchedule(placement, footprint, true)
   assert.deepEqual(reduced.effects.map((effect) => [effect.recipe, effect.startMs]), [["fx.sparks.burst", 0]])
-  assert.equal(reduced.settlesAtMs, placementTiming(FLAGS, true).totalMs)
-  // Everything off: nothing to schedule, settled at once.
-  const off = { ...FLAGS, placeFramesMs: 0, placeLight: "off" as const, placeParticles: "off" as const }
-  assert.equal(placementSchedule(placement, footprint, off, false).settlesAtMs, 0)
+  assert.equal(reduced.settlesAtMs, placementTiming(true).totalMs)
+  // No glow (the card's rising icon): the frames alone, settled the moment they end.
+  const icon = placementSchedule(placement, footprint, false, { ...FLAGS, placeGlowMs: 0 })
+  assert.deepEqual(icon.effects, [])
+  assert.equal(icon.settlesAtMs, FLAGS.placeFramesMs)
 })
 
 test("the live loop stops when the track settles, whether or not it knows the footprint", () => {
@@ -273,7 +283,7 @@ test("the live loop stops when the track settles, whether or not it knows the fo
     const animation = new BuildAnimation()
     animation.frame(before, 0, options)
     const first = animation.frame(after, 1_000, options)
-    assert.equal(first.busyUntil, 1_000 + placementTiming(FLAGS, false).totalMs)
+    assert.equal(first.busyUntil, 1_000 + placementTiming(false).totalMs)
   }
 })
 
@@ -287,12 +297,33 @@ test("the live loop times each placement from the frame that first drew it, and 
   assert.equal(animation.frame(before, 0).placing, undefined)
   const first = animation.frame(after, 1_000)
   assert.deepEqual(first.placing, [{ ordinal: placement.ordinal, elapsedMs: 0 }])
-  const total = placementTiming(FLAGS, false).totalMs
+  const total = placementTiming(false).totalMs
   assert.equal(first.busyUntil !== null && first.busyUntil >= 1_000 + total, true)
   assert.deepEqual(animation.frame(after, 1_300).placing, [{ ordinal: placement.ordinal, elapsedMs: 300 }])
   const done = animation.frame(after, 1_000 + total)
   assert.equal(done.placing, undefined)
   assert.equal(done.busyUntil, null)
+})
+
+test("a live loop given other timings hands them to the view, which draws the placement as the loop timed it", () => {
+  const { state: before } = placed("n 1 Down Space")
+  const { run, state: after } = placed()
+  const placement = lastPlacement(after)
+  const slow = { ...TUNING, placeFramesMs: TUNING.placeFramesMs * 4 }
+  const animation = new BuildAnimation(slow)
+  animation.frame(before, 0)
+  animation.frame(after, 1_000)
+  // The owner's frames would be over by now; these are not.
+  const live = livePresentation(animation.frame(after, 1_000 + TUNING.placeFramesMs + 10))
+  const { placementTuning, ...untimed } = live
+  assert.deepEqual(placementTuning, { placeFramesMs: slow.placeFramesMs, placeGlowMs: slow.placeGlowMs, placeSparks: slow.placeSparks })
+  const drawn = compose(run, after, live)
+  const asOwner = compose(run, after, untimed)
+  const cells = footprintCells(run, { ...after, camera: live.camera ?? after.camera }, BARRACKS, placement.anchor)
+  assert.ok(
+    cells.some((c) => cellAt(drawn, c.x, c.y).glyph !== cellAt(asOwner, c.x, c.y).glyph),
+    "the view drew the owner's timings rather than the loop's",
+  )
 })
 
 test("whatever is already planned when the screen first draws is not animated", () => {
@@ -352,7 +383,7 @@ function sparkCells(frame: ReadonlyCellFrame): number {
 test("undo and Backspace both throw the placement's sparks where the building stood, timed from the first frame without it", () => {
   const { run, state: one } = placed()
   const placement = lastPlacement(one)
-  const glow = placementTiming(FLAGS, false).glowMs
+  const glow = placementTiming(false).glowMs
   for (const [how, keys] of [
     ["undo", `${PLACE_BARRACKS} u`],
     // Tab gives the map back in plain navigation, the cursor still on the building just placed.
@@ -380,59 +411,43 @@ test("undo and Backspace both throw the placement's sparks where the building st
   // The same recipe and timing as a placement's sparks — "Particles" and "Glow time" — from the moment
   // it went, with a scatter of its own.
   const footprint = FIXTURE_REGISTRY.get(BARRACKS).footprint
-  const schedule = removalSchedule(placement, footprint, FLAGS, false)
+  const schedule = removalSchedule(placement, footprint, false)
   assert.deepEqual(
     schedule.effects.map((effect) => [effect.recipe, effect.band, effect.startMs, effect.durationMs]),
     [["fx.sparks.burst", "effects", 0, glow]],
   )
   assert.equal(schedule.settlesAtMs, glow)
-  const placing = placementSchedule(placement, footprint, FLAGS, false).effects.find((e) => e.recipe === "fx.sparks.burst")
+  const placing = placementSchedule(placement, footprint, false).effects.find((e) => e.recipe === "fx.sparks.burst")
   assert.equal(schedule.effects[0]?.params?.count, placing?.params?.count)
   assert.notEqual(schedule.effects[0]?.params?.key, placing?.params?.key)
 })
 
-test("removal sparks follow the Experiments: off when Particles is, a still mark under reduced motion", () => {
+test("removal sparks under reduced motion are a still mark", () => {
   const { run, state: one } = placed()
   const placement = lastPlacement(one)
-  const footprint = FIXTURE_REGISTRY.get(BARRACKS).footprint
-  const off = { ...FLAGS, placeParticles: "off" as const }
-  assert.deepEqual(removalSchedule(placement, footprint, off, false).effects, [])
   const { state: gone } = placed(`${PLACE_BARRACKS} u`)
-  const animation = new BuildAnimation()
-  animation.frame(withFlags(one, off), 0)
-  const live = animation.frame(withFlags(gone, off), 1_000)
-  assert.equal(live.removing, undefined)
-  assert.equal(live.busyUntil, null)
   // Reduced motion: the burst's own still form, the same at every instant of the glow.
-  const glow = placementTiming(FLAGS, true).glowMs
+  const glow = placementTiming(true).glowMs
   const at = (elapsedMs: number): string =>
     frameToText(compose(run, gone, { removing: [{ ...placement, elapsedMs }], reducedMotion: true }))
   assert.equal(at(0), at(glow - 1))
   assert.notEqual(at(0), frameToText(compose(run, gone)), "no mark at all under reduced motion")
 })
 
-test("removal sparks are presentation only: the plan is the same with them on or off", () => {
-  const many = placed(`n 1 d Down*2 Right Esc Down Space Space u`)
-  const none = placed(`n 1 d Down*2 Left Esc Down Space Space u`)
-  assert.equal(many.state.debug.placeParticles, "many")
-  assert.equal(none.state.debug.placeParticles, "off")
-  assert.deepEqual(many.state.planned, none.state.planned)
-  assert.deepEqual({ ...many.state, debug: none.state.debug, status: none.state.status }, none.state)
-})
-
 // --- Presentation only ---------------------------------------------------------------------------
 
-test("the plan is identical with every placement effect on or off", () => {
-  // Build animation to 900, lighting to rainbow, particles to many, glow off — by an Experiment's own keys.
-  const tuned = placed("n 1 d Right*3 Down Right Down Right Down Left*3 Esc Down Space Space")
+test("the plan is identical with the placement effects played or reduced, the removal's sparks included", () => {
+  // Reduced motion on — the player's own setting, the fourth in Settings — then the same Barracks placed
+  // and undone.
+  const reduced = placed("n 1 Esc s Down*3 Right Esc Esc Down Space Space")
   const plain = placed()
-  assert.deepEqual(tuned.state.debug.placeFramesMs, 900)
-  assert.deepEqual(tuned.state.debug.placeLight, "rainbow")
-  assert.deepEqual(tuned.state.debug.placeParticles, "many")
-  assert.deepEqual(tuned.state.debug.placeGlowMs, 0)
-  assert.deepEqual(tuned.state.planned, plain.state.planned)
-  assert.equal(tuned.state.cursor.x, plain.state.cursor.x)
-  assert.equal(tuned.state.cursor.y, plain.state.cursor.y)
+  assert.equal(reduced.state.settings.reducedMotion, true)
+  assert.deepEqual(reduced.state.planned, plain.state.planned)
+  assert.equal(reduced.state.cursor.x, plain.state.cursor.x)
+  assert.equal(reduced.state.cursor.y, plain.state.cursor.y)
+  const reducedUndone = placed("n 1 Esc s Down*3 Right Esc Esc Down Space Space u")
+  const plainUndone = placed(`${PLACE_BARRACKS} u`)
+  assert.deepEqual(reducedUndone.state.planned, plainUndone.state.planned)
 })
 
 test("every capability tier draws the same glyphs and styles mid-animation; only the resolution differs", () => {
@@ -440,7 +455,7 @@ test("every capability tier draws the same glyphs and styles mid-animation; only
   const placement = lastPlacement(state)
   for (const t of [0, 200, 460, 600]) {
     const frames = CAPABILITY_MODES.map((capability) =>
-      compose(run, withFlags(state, { placeLight: "rainbow" }), { placing: [{ ordinal: placement.ordinal, elapsedMs: t }] }, capability),
+      compose(run, state, { placing: [{ ordinal: placement.ordinal, elapsedMs: t }] }, capability),
     )
     for (const frame of frames.slice(1)) assert.deepEqual(frame, frames[0])
   }
@@ -513,18 +528,19 @@ test("the browser page's canvas paints the light the terminal shows", () => {
 
 // --- Frame budget ----------------------------------------------------------------------------------
 
-test("with every effect at its heaviest, the Build Phase still draws well inside a frame", () => {
-  // Three buildings going up at once, many sparks, the rainbow, at the largest view, through the
-  // truecolor encoder — the live loop's whole per-frame cost. The live loop asks for a frame every
-  // 16 ms; the budget asserted is that p95 stays under it, and the measurement is what the gate
-  // report records.
+test("with three buildings going up at once, the Build Phase still draws well inside a frame", () => {
+  // Three buildings going up at once, their light and sparks, at the largest view, through the
+  // truecolor encoder — the live loop's whole per-frame cost. (The many sparks and the rainbow this once
+  // measured were settled away, 2026-09-30.) The live loop asks for a frame every 16 ms; the budget
+  // asserted is that p95 stays under it, and the measurement is what the gate report records.
   const run = runBuildPlaytest({ steps: parseKeyScript(`${PLACE_BARRACKS} Down Space Space Down Space Space`), columns: 104, rows: 32 })
-  const state = withFlags(run.frames[run.frames.length - 1]!.state, { placeParticles: "many", placeLight: "rainbow" })
+  const state = run.frames[run.frames.length - 1]!.state
   assert.equal(state.planned.length, 3)
+  const total = placementTiming(false).totalMs
   const samples: number[] = []
   for (let frame = 0; frame < 200; frame += 1) {
-    const t = (frame * 5) % 850
-    const placing = state.planned.map((p, index) => ({ ordinal: p.ordinal, elapsedMs: (t + index * 120) % 850 }))
+    const t = (frame * 5) % total
+    const placing = state.planned.map((p, index) => ({ ordinal: p.ordinal, elapsedMs: (t + index * 120) % total }))
     const start = performance.now()
     frameToAnsi(composeBuildFrame({ context: run.context, state, layout: run.layout, placing }, "truecolor"), "truecolor")
     samples.push(performance.now() - start)

@@ -2,8 +2,8 @@
 
 **Document role:** The effect system: contract, starter vocabulary, and the craft rules behind it
 **Status:** Canonical direction; the vocabulary is proven or discarded by Milestone 1 Gate 1B
-**Canon version:** 2.26
-**Updated:** 2026-09-10
+**Canon version:** 2.30
+**Updated:** 2026-09-30
 **License:** Apache-2.0 for the contract and schemas; CC BY-SA 4.0 for the authored vocabulary
 
 ## 0. Why this document exists
@@ -110,7 +110,8 @@ presentation time:
   light.
 - **Tweens** — a number or point moving between two values over a window of time, along an easing
   curve (`src/view/tween.ts`): the camera's slide and the cursor's glide ([`engine.md`](engine.md)
-  3.3), and the expansions inside recipes.
+  3.3), the Build Phase's focus arrow (canon 2.27, below), its see-through cursor and the card reveal's
+  slide (canon 2.28, below), and the expansions inside recipes.
 
 **Each entity animates on a track: the list of timestamped requests made of it**, and what it draws
 at time *t* is a pure function of that list. The requests are *play* (with a stacking policy: replace
@@ -187,6 +188,11 @@ to discover. See [`ascii-art-references.md`](ascii-art-references.md) for source
    vocabulary still decays the way this rule describes, by thinning, not by fading. Do not reach for
    `fade` to make a glyph-bearing effect (debris, a blast ring, a death collapse) dissolve instead of
    thin; that is exactly the shortcut this rule exists to close off.
+
+   **Two interface departures, canon 2.28:** the card reveal fades the Build Phase panel's own text
+   with `fade` (chrome, never an effect's glyph), and the see-through cursor is a real alpha — the
+   `seeThrough` field (`engine.md` 9.1) — because it is a cursor passing over the map, not an effect
+   decaying on it. Both are the interface's, and neither licenses fading a glyph-bearing effect.
 8. **Fresh eyes are the only real test.** The author of an effect cannot see it any more after twenty
    minutes.
 
@@ -224,6 +230,11 @@ the theme maps them.
 | `fx.nexus.critical` | Nexus below threshold | `effects` | sustained, looping | A slow pulse across the Nexus footprint, phase-locked to absolute time so it is identical on every client. The one sustained effect, and the one allowed real visual weight |
 | `fx.sparks.burst` | something happened to a thing standing there (a placement today) | `effects` | impact + decay (~400 ms) | **Added at gate 5I as `fx.structure.place`, made general at gate 5J.** Sparks launched from the ring one tile outside the footprint, flying outward and thinning to dust; never on a building. Randomness hashes a `key`/`id` identity when given (a player action: plan ordinal, structure, anchor), otherwise the start time. Reduced motion: a still mark at the four corners |
 | `fx.light.flash` | the same moment, on the thing itself | `highlights` | impact + decay (~400 ms) | **Gate 5J.** Shading: a glyphless tint over the footprint toward the theme's strongest ink, or a rainbow sweep, falling off. Reduced motion: a steady half-strength light. Monochrome: nothing, so the caller keeps its own cue (a placement draws its scaffold plain and the finished building bold) |
+| focus arrow (interface) | a building armed from the menu (Explore Map sends the see-through cursor instead, canon 2.28) | `chrome`, under every popup | action, eased out (~250 ms) | **Canon 2.27, feedback F54**; its length the owner's tuned value since his third round (250 ms, shared with the see-through cursor). The owner: "it almost seems like the energy of the building is transfered from the menu to the grid". A tween from the cell just right of the building's own row on the menu (canon 2.28, F63: "start from the actual location of the menu item") toward the cursor as drawn that frame, so it homes on a cursor that moves meanwhile, stopping one cell short of the cursor's tile; the head points the way it flies (`> < v ^`; Unicode `▶ ◀ ▼ ▲`, a row counting as two columns when the slope is read) and a four-cell trail follows, each cell the step that reached it (`- | \ /`; `━ ┃ ╲ ╱`), the older two dim. Hotkey colour, bold. On a building's tile or the ghost being placed only the style changes. Never during a Pulse — the shot glyphs are the Pulse's language, and in the Build Phase nothing shoots. Keys work throughout. Reduced motion: dropped, since it is travel, and the blink after it keeps the cue. Monochrome: the glyphs carry it |
+| cursor blink (interface) | the focus arrow or the see-through cursor landed | `highlights` | impact, `n` pulses | **Canon 2.27, feedback F54**, an Experiment (settled at 2 by the owner at canon 2.28). The cursor drawn in a menu row's pressed look — hotkey colour, inverse, bold, underlined — for the pressed flash's own duration (90 ms, a tuned value), with a gap of the same length between pulses: the menu's acknowledgement, moved to where the eye should go. At once under reduced motion or with the arrow off. The arrow and the blink stop for good when the keyboard leaves the map, a popup opens or the plan is committed. Monochrome: inverse and underline carry it |
+| see-through cursor (interface) | Explore Map opened from the menu | `chrome`, under every popup | action, eased out, on the focus arrow's timeline | **Canon 2.28, feedback F64-F65.** "Exploring is just moving the focus to the map. Use a cursor that is the same as the blank cursor, with about 80% transparency." A copy of the map cursor, one tile wide, from Explore Map's row to the cursor as drawn, homing on it; glyphless writes carrying `seeThrough` (engine.md 9.1: the cursor's role at an alpha, mixed with the cell's background and glyph colour as the owner defined it) — 0.8 at the head, 0.45 and 0.2 one and two tile-steps behind; never on the real cursor's own cells, into which it settles. The glyph beneath always survives. Truecolor exact, 256 nearest, 16 and monochrome the plain cursor from alpha one half. Reduced motion: dropped with the arrow; the blink keeps the cue |
+| card reveal (interface) | the side panel becomes a card (Explore Map opened, a building armed) | `chrome` | anticipation, action, settle (~400 ms) | **Canon 2.28, feedback F68**; its length the owner's tuned value since his third round (400 ms). Three beats, 25% / 30% / 45%: the other rows fade (`fade` where colour blends, dim for the nearer-gone half at 16 colours and monochrome); the chosen row, drawn active, slides whole rows up to the header line; the separator and the card fade in, the name, subtitle and description typed, a building's icon playing its own placement frames. From one card to another only the last beat plays; closing is instant; a still frame is the finished card. Timed by the live loop from the state becoming a card. Reduced motion: none |
+| Popup border: opening, then breath (interface) | any popup is open | `chrome` | an opening played once (the Battle Round screen: two flashes, 530 ms), then sustained and looping (one breath per "Popup pulse", 2000 ms) | **Feedback F80 and F83**, Experiments ("Popup pulse", "Battle Round flash", "Flash strength"). "This subtle version works well for all popups because it is very unobtrusive… for the battle round popup, add an additional opening effect… an initial double flash pulse, with more contrast range, that works as a highlight, then it stays on the default pulse animation." Every popup's border, and only the border (never its title, text or shadow), plays an optional opening and then breathes; which popup has which opening is a table in the view. The breath follows a sine: a tint toward `chrome.title` on the lighter half (up to 0.4) and a fade toward the background on the darker half (up to 0.25), both below the 16-colour half-way step. The Battle Round screen's double flash is two 220 ms pulses 90 ms apart, each lit fast and faded slowly, up to 0.8 of the way to `chrome.title`; it ends at rest and the breath starts from rest, so there is no jump. Both are timed from the frame that first showed the popup and restart when another popup replaces it; every still frame draws the border at rest. The flash is drawn every frame; while only the breath moves the live loop redraws 20 times a second, and it stops when the last popup closes. Reduced motion and monochrome: still. 16 colours: the flash only, as two steps onto the title's colour, then still. The screen's words carry the cue |
 | `fx.blast.detonation` | an entity detonated | `effects` | impact, expansion, thinning | **Added at Milestone 1B**, because the vocabulary predates volatile munitions and a death that damages a radius is not a death. A ring that reaches its radius and thins, sparser than it is dense from the first frame. The second effect allowed real weight, because it is the one event that can end an army in a single tick |
 
 **Simultaneous instances of the same effect are staggered in presentation** (Milestone 1B). A

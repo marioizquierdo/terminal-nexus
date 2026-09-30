@@ -2,7 +2,7 @@
 
 **Document role:** Durable queue of decisions that block or shape work, with owner answers
 **Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.26
+**Canon version:** 2.30
 **Updated:** 2026-09-27
 **License:** Apache-2.0
 
@@ -1085,48 +1085,6 @@ ink setting.
 **Recommendation: A** until Mario has played the light theme: switch to it in Settings, place a
 building, and say whether it should glow instead.
 
-### Q66 — Should the Build Phase read key releases where the terminal reports them?
-
-**Status:** OPEN — blocks nothing; registered by gate 5K (owner, 2026-09-29, feedback F29). Waiting on
-`node scripts/probe-key-release.mjs` in the owner's iTerm2.
-
-A classic terminal sends bytes only when a key goes down, and while it is held the operating system
-repeats it at its own delay and rate; nothing says when it is let go. So "held" is guessed from the
-gaps between presses (`src/build/motion.ts`, tuned by the "Hold window" Experiment), and a quick run
-of taps can read as a hold. The owner: "I really hope we can reliably manage key-press vs key-hold on
-all platforms, instead of relying on the OS settings … when tapping, I wish we could move the cursor at
-regular 1 block intervals. The scroll acceleration makes a lot of sense when holding, but when tapping …
-the combination of keep-pressing, releasing, and tapping to adjust would work perfectly well." The
-kitty keyboard protocol (kitty, WezTerm, Ghostty, foot, Alacritty, and — unmeasured — recent iTerm2)
-reports press, repeat and release; Windows Terminal has win32-input-mode; the browser page has
-`keyup`. `node scripts/probe-key-release.mjs` says which kind a terminal is.
-
-**The shape that keeps both worlds working is progressive enhancement, in three tiers**, chosen at
-start from what the host says it reports (`docs/next-steps.md` has the detail):
-
-1. **Floor — no holding needed.** Every move is also a single key (a tap is a tile, Shift or
-   PageUp/PageDown jumps 12), so a hold is a convenience and never a requirement. True today.
-2. **Timing, when a host reports only presses** (the terminal today): infer a hold from the gaps
-   (today's ramp), *learn* the OS repeat interval from the first held run instead of asking the owner
-   to tune "Hold window", and read "no event for a while" as a release.
-3. **Releases, when a host reports them**: a press moves exactly one tile and nothing else; a hold is
-   press … release, run on the game's own repeat cadence with the acceleration curve, ignoring the OS
-   repeat rate entirely. That is his "regular 1 block intervals".
-
-Only the input path changes; the reducer still sees ordinary `move-cursor` commands, so keyboard, mouse
-and driver stay one plan. A test feeds the same intent as timed presses and as press/release events and
-expects the same positions.
-
-| Option | Cost |
-| --- | --- |
-| A. **The three tiers**: ask for the kitty protocol on start (query, then push flags; pop them on *every* exit path through the one disposer), use the browser's `keydown`/`keyup`, and fall back to timing where a host answers nothing. A bonus: with the protocol on, a lone Esc no longer needs its 100 ms wait | An input event with a `phase` in place of raw bytes (`docs/portability.md`), a second decoder to keep in step, and terminal-state cleanup that must be right; tmux, SSH and `screen` may not pass the protocol through |
-| B. Timing only, everywhere | Nothing new; taps and holds stay a guess shaped by the OS repeat settings |
-
-**Recommendation: A**, behind an Experiment ("Key releases": auto or off) so the owner can compare, after
-the probe has been run in his iTerm2 — if it reports releases there, the next gate builds it; if not,
-tier 2's learned repeat interval alone is worth building, and tier 3 serves the terminals and the page
-that can.
-
 ### Q67 — Do buildings get letter hotkeys, or stay on digits?
 
 **Status:** OPEN — blocks nothing; registered 2026-09-29 (the owner's feedback wrote "press 'b' to build a
@@ -1163,7 +1121,7 @@ for one thing on one screen.
 
 **Recommendation: B**, decided together with the menu reorganisation the owner has announced (F51),
 because the menu row is one of the places the word lives and he will be rewriting the menu anyway.
-Until then A stands, and the popup's title and body are data (`overlaySpec`), so B is a change of words.
+Until then A stands, and the popup's title and body are data (`popupSpec`), so B is a change of words.
 
 ## 5. Answered
 
@@ -1174,8 +1132,9 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q30 | 2026-09-21 | **A, built.** The Build Phase panel is the construct menu, what is left to spend, the selected item's cost and effect, and the reason a placement was refused — and **no radius preview**, because nothing in the content that exists has a radius. Gate 5B built exactly the recommendation and the panel came out shorter than gate 5A's, not longer: the blocks it replaced were reporting things already visible on the Grid | [`engine.md`](engine.md) Section 9.2; [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md) |
 | Q50 | 2026-09-21 | **A click places the armed structure — no second click to confirm.** Mario, shown both behaviours side by side: "Click to place looks good to me too. We can always implement undo or destroy later, for now this is good." (Undo and remove already exist: `u` and Backspace.) The toggle is deleted rather than kept as a setting. **Revisited 2026-09-26, see Q52** | [`engine.md`](engine.md) Section 9.7, whose own recommendation this confirms; [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md) |
 | Q52 | 2026-09-26 | **Reversed: a second click on the same tile places it, not the first.** Owner, after living with gate 5D's build: "the building is placed right away, but there should be a confirmation... the default should require a second click." A future `Shift+click` is planned as a one-click escape hatch, not built now. Q50's own asymmetry finding (a first click can scroll the camera, so a second click at the same *screen position* lands on a different *tile*) is what makes this safe to re-adopt: the check is on tile identity, not screen position | [`engine.md`](engine.md) Section 9.7 |
+| Q66 | 2026-09-30 | **A — the three tiers, behind the Key releases Experiment (auto / off), built before the probe ran in his iTerm2** because the owner asked to compare the two himself (third round on the menu spike, F79: "We should enable/disable reading key-press in the settings, so I can test how it feels when the system provides it vs when it does not"). On auto the Build Phase asks for the kitty keyboard protocol and switches it on if the terminal answers, and the one disposer switches it off on every exit path; a press is then a tap, a repeat belongs to a hold and a release ends it. A classic terminal, or off, falls back to timing: a press within the hold window of the one before is a repeat. The browser page does the same from its key-down and key-up events. Only how a repeat is recognised differs, never where the cursor goes; a test holds that. Left for the navigation session: whether iTerm2 answers (the probe), a learned hold window, and a hold timer of the game's own | [`engine.md`](engine.md) 3.3, 9.7, 10.1 (canon 2.29); `../src/view/key-events.ts`, `../src/build/motion.ts` |
 | Q60 | 2026-09-27 | **B — the popup closes on the pick.** The owner, asked directly ("does the Nexus Powers popup close itself after you pick a power? My recommendation is that it closes"), agreed. Open, pick, and the player is back on the menu; the status line and the entry's "1 active" confirm it, and reopening the popup shows the pick listed as active. Esc still closes it without a pick. The register's own written recommendation was A (stay open); the question was put to him with B recommended, on the grounds that the pick is confirmed in two other places and the open popup cost a key on every Build Phase | [`engine.md`](engine.md) 9.7 (canon 2.21); `../src/build/state.ts` (`pickNexus`) |
-| Q56 | 2026-09-27 | **A solid bar, on all four sides.** Owner, after playing gate 5F: "The grid borders need to also use the 'thick' version horizontally... it should use something that is more clear... The rectangle needs to be a rectangle." A side that has reached the map's edge is drawn as an inverse-video cell — the same weight horizontally and vertically, in every glyph pack and in monochrome — and a corner is solid where a solid side runs into it. Replaces the `=` / bold `|` pair gate 5E built | [`engine.md`](engine.md) 3.3 (canon 2.21); `../src/view/build.ts` (`drawChrome`) |
+| Q56 | 2026-09-27 | **A solid bar, on all four sides.** Owner, after playing gate 5F: "The grid borders need to also use the 'thick' version horizontally... it should use something that is more clear... The rectangle needs to be a rectangle." A side that has reached the map's edge is drawn as an inverse-video cell — the same weight horizontally and vertically, in every glyph pack and in monochrome — and a corner is solid where a solid side runs into it. Replaces the `=` / bold `|` pair gate 5E built | [`engine.md`](engine.md) 3.3 (canon 2.21); `../src/view/build-frame.ts` (`drawChrome`) |
 | Q57 | 2026-09-27 | **A — always back to the menu**, reversing the recommendation gate 5F built. Owner: "I like keeping that as the main orchestrator, so when a building is placed, the focus should always come back to the menu." A placement also disarms: a building is armed only while the map has focus. Esc returns focus to the menu (and on the menu asks "Exit the game?"); Backspace stays "remove". The digit path is now "digit, arrows, Enter" per building **Refined 2026-09-29 (F30): finishing returns to where it began** — the map in plain navigation when the arming began there, the menu when it began on the menu | [`engine.md`](engine.md) 9.7 (canon 2.21, 2.26); `../src/build/state.ts` (`place`) |
 | Q58 | 2026-09-28 | **Yes — an armed click scrolls like any other, and a quick double click places where its first click pointed**, reversing option B, which gate 5H built. Owner, after playing the demo page (feedback F22): "then I can keep clicking on the grid with the ghost building placement cursor to keep scrolling, and double click will place the building." A double click is two left clicks on the same screen cell within 400 ms (an Experiment); the input path sends the second as a click on the first one's tile, so the reducer's compare-by-tile rule (Q52) still holds and a slow second click on a moved view still never places on a tile nobody pointed at. The still view stays one Experiment away ("Armed click scrolls") | [`engine.md`](engine.md) 3.3 and 9.7 (canon 2.25); `../src/build/session.ts` (`lastArmedClick`) |
 | Q55 | 2026-09-29 | **Both halves built; the smart cursor replaced.** Interpolation: the view slides and the cursor glides (gates 5H and 5J). Placement: the owner (feedback F30) — "selecting a building should always try the 'recommended nearest empty space' for the building, but that should be based on the previous cursor location (or on top of the nexus by default), not on the last placed building." Arming now keeps the building where the cursor is when it fits, else the cheapest spot within 12 tiles (sideways cheaper than up or down) leaving a free tile around it, else one step right and down drawn as the building rather than refused; the cursor opens on the Grid Nexus. The "Smart cursor" Experiment is deleted | [`engine.md`](engine.md) 9.7 (canon 2.26) |
@@ -1834,3 +1793,47 @@ focus, and speed-tier mechanics first — they are what the owner actually asked
 — then revisit interpolation as the natural way to make the speed tiers *look* smooth once they exist,
 and scope the smart-cursor heuristic as its own small follow-up once there is a real focus-toggle mode
 for it to trigger from.
+
+### Q66 — answered
+
+**Question:** Q66 — Should the Build Phase read key releases where the terminal reports them?
+
+**Status:** ANSWERED 2026-09-30 — A, the three tiers, behind the Key releases Experiment (the Answered
+table has the decision). The original entry follows.
+
+A classic terminal sends bytes only when a key goes down, and while it is held the operating system
+repeats it at its own delay and rate; nothing says when it is let go. So "held" is guessed from the
+gaps between presses (`src/build/motion.ts`, tuned by the "Hold window" Experiment), and a quick run
+of taps can read as a hold. The owner: "I really hope we can reliably manage key-press vs key-hold on
+all platforms, instead of relying on the OS settings … when tapping, I wish we could move the cursor at
+regular 1 block intervals. The scroll acceleration makes a lot of sense when holding, but when tapping …
+the combination of keep-pressing, releasing, and tapping to adjust would work perfectly well." The
+kitty keyboard protocol (kitty, WezTerm, Ghostty, foot, Alacritty, and — unmeasured — recent iTerm2)
+reports press, repeat and release; Windows Terminal has win32-input-mode; the browser page has
+`keyup`. `node scripts/probe-key-release.mjs` says which kind a terminal is.
+
+**The shape that keeps both worlds working is progressive enhancement, in three tiers**, chosen at
+start from what the host says it reports (`docs/next-steps.md` has the detail):
+
+1. **Floor — no holding needed.** Every move is also a single key (a tap is a tile, Shift or
+   PageUp/PageDown jumps 12), so a hold is a convenience and never a requirement. True today.
+2. **Timing, when a host reports only presses** (the terminal today): infer a hold from the gaps
+   (today's ramp), *learn* the OS repeat interval from the first held run instead of asking the owner
+   to tune "Hold window", and read "no event for a while" as a release.
+3. **Releases, when a host reports them**: a press moves exactly one tile and nothing else; a hold is
+   press … release, run on the game's own repeat cadence with the acceleration curve, ignoring the OS
+   repeat rate entirely. That is his "regular 1 block intervals".
+
+Only the input path changes; the reducer still sees ordinary `move-cursor` commands, so keyboard, mouse
+and driver stay one plan. A test feeds the same intent as timed presses and as press/release events and
+expects the same positions.
+
+| Option | Cost |
+| --- | --- |
+| A. **The three tiers**: ask for the kitty protocol on start (query, then push flags; pop them on *every* exit path through the one disposer), use the browser's `keydown`/`keyup`, and fall back to timing where a host answers nothing. A bonus: with the protocol on, a lone Esc no longer needs its 100 ms wait | An input event with a `phase` in place of raw bytes (`docs/portability.md`), a second decoder to keep in step, and terminal-state cleanup that must be right; tmux, SSH and `screen` may not pass the protocol through |
+| B. Timing only, everywhere | Nothing new; taps and holds stay a guess shaped by the OS repeat settings |
+
+**Recommendation: A**, behind an Experiment ("Key releases": auto or off) so the owner can compare, after
+the probe has been run in his iTerm2 — if it reports releases there, the next gate builds it; if not,
+tier 2's learned repeat interval alone is worth building, and tier 3 serves the terminals and the page
+that can.

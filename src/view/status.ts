@@ -1,5 +1,5 @@
-// Resolves a status line's tone onto the style attributes the renderer already has — the only place
-// `src/status.ts`'s view-agnostic vocabulary meets a `StyleRole`. Reuses two existing roles
+// Resolves the tone of a message on the bottom line onto the style attributes the renderer already
+// has — the only place `src/status.ts`'s view-agnostic vocabulary meets a `StyleRole`. Reuses two existing roles
 // (`chrome.value`, `notice.gate`) rather than adding new palette entries for two tones nobody has a
 // concrete look for yet (`ascii-effects.md`'s own preference: extract a framework after two real uses,
 // not before one).
@@ -17,6 +17,9 @@ export function statusStyle(tone: StatusTone = "neutral"): StatusStyle {
       return { role: "notice.gate" }
     case "danger":
       return { role: "notice.gate", bold: true }
+    // A hint is not an answer: it reads quieter than anything a command said (feedback F59).
+    case "hint":
+      return { role: "chrome.muted" }
     case "neutral":
     default:
       return { role: "chrome.value" }

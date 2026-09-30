@@ -6,6 +6,11 @@
 // not the degraded mode** (milestone-1-spike-battle.md 4.2), and the higher tiers buy fidelity, not
 // facts. Colour never carries ownership, target, danger, or health alone — sides are told apart by
 // letter case, factions by glyph family, terrain by shape, salvage by its own character.
+//
+// `resolveCell`, at the bottom, is where a cell's roles become what a renderer draws — for the ANSI
+// writer, the browser page's canvas and OpenTUI alike, so the three cannot disagree about a cell.
+
+import type { Cell } from "./frame.ts"
 
 export const STYLE_ROLES = [
   "chrome.frame",
@@ -51,6 +56,9 @@ export const STYLE_ROLES = [
 ] as const
 
 export type StyleRole = (typeof STYLE_ROLES)[number]
+
+/** A colour as red, green and blue, 0 to 255 — only ever what a role resolves to, never what a cell carries. */
+export type Rgb = readonly [number, number, number]
 
 /** The rainbow, in order round the wheel — what a "rainbow" light walks through (gate 5I). */
 export const RAINBOW_ROLES: readonly StyleRole[] = [
@@ -103,9 +111,9 @@ export function parseTheme(value: string): Theme {
   return found
 }
 
-/** The frame's own background, for a backend that paints one explicitly (OpenTUI) rather than
- * leaving the terminal's ambient background to show through (direct ANSI). */
-export const BACKGROUND_RGB: Readonly<Record<Theme, readonly [number, number, number]>> = {
+/** The frame's own background, for a renderer that paints one explicitly (OpenTUI, the canvas) rather
+ * than leaving the terminal's ambient background to show through (direct ANSI). */
+export const BACKGROUND_RGB: Readonly<Record<Theme, Rgb>> = {
   dark: [10, 10, 12],
   light: [242, 240, 234],
 }
@@ -116,7 +124,7 @@ type Swatch = Readonly<{
   ansi: number
   /** Exact colour, for truecolor — the single source of truth every other tier derives from
    *  (`sgrFor`'s `color256` case; `color16` stays independent, see below). */
-  rgb: readonly [number, number, number]
+  rgb: Rgb
 }>
 
 /**
@@ -256,15 +264,15 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Swatch>>> = {
   },
 }
 
-/**
- * The xterm 256-colour palette above the 16 system colours: a 6x6x6 colour cube (indices 16-231),
- * then a 24-step greyscale ramp (232-255). The same construction `scripts/lib/terminal-capture.mjs`
- * and `scripts/measure-palette-derivation.mjs` already use to turn an index back into RGB — production
- * code duplicates rather than imports it, since `src/` does not depend on `scripts/`.
- */
 const XTERM_CUBE_STEPS: readonly number[] = [0, 95, 135, 175, 215, 255]
 
-function xterm256Rgb(index: number): readonly [number, number, number] {
+/**
+ * What xterm shows for a 256-colour index above the 16 system colours (whose look is each terminal's
+ * own): a 6x6x6 colour cube (indices 16-231), then a 24-step greyscale ramp (232-255). Exported for the
+ * evidence scripts, which read the ANSI writer's indices back into pixels with it
+ * (`scripts/lib/terminal-capture.mjs`).
+ */
+export function xterm256Rgb(index: number): Rgb {
   if (index < 232) {
     const offset = index - 16
     const r = XTERM_CUBE_STEPS[Math.floor(offset / 36)] ?? 0
@@ -283,7 +291,7 @@ function xterm256Rgb(index: number): readonly [number, number, number] {
  * job, not this one's. Cheap enough to call once per role per theme at module load (18 x 2 x 240
  * candidates) rather than needing its own cache beyond `DERIVED_256` below.
  */
-function nearestIndexed(rgb: readonly [number, number, number]): number {
+function nearestIndexed(rgb: Rgb): number {
   let best = 16
   let bestDistance = Infinity
   for (let index = 16; index <= 255; index += 1) {
@@ -319,28 +327,6 @@ const DERIVED_256: Readonly<Record<Theme, Record<StyleRole, number>>> = (() => {
 })()
 
 /**
- * Blends a role's own rgb toward this theme's background by `fade` — Q25's recommended shape
- * (specs/open-questions.md), the one place a fade scalar actually touches an RGB triple; `roles.ts`
- * stays "never a colour" everywhere else, a role plus a number. Clamped again here even though every
- * producer (`CellStyle.fade`'s own doc comment, frame.ts) is already supposed to hand this in as
- * `[0,1]`, so a caller that skips that contract still lands on a legal colour rather than one that
- * overshoots the background.
- */
-function fadeRgb(
-  rgb: readonly [number, number, number],
-  theme: Theme,
-  fade: number,
-): readonly [number, number, number] {
-  const bg = BACKGROUND_RGB[theme]
-  const t = Math.max(0, Math.min(1, fade))
-  return [
-    Math.round(rgb[0] + (bg[0] - rgb[0]) * t),
-    Math.round(rgb[1] + (bg[1] - rgb[1]) * t),
-    Math.round(rgb[2] + (bg[2] - rgb[2]) * t),
-  ]
-}
-
-/**
  * A foreground role pulled part of the way toward another role — gate 5I's style-role operation for
  * light on a placed building's characters (feedback F9). `amount` is `0` (the cell's own role) to `1`
  * (entirely `role`). Like `fade`, the cell still carries only roles and a number, never a colour: the
@@ -357,11 +343,22 @@ function fadeRgb(
  */
 export type RoleTint = Readonly<{ role: StyleRole; amount: number }>
 
-function mixRgb(
-  from: readonly [number, number, number],
-  to: readonly [number, number, number],
-  amount: number,
-): readonly [number, number, number] {
+/**
+ * A see-through cursor laid over a cell (the menu spike's round 2, feedback F64-F65): `role`'s colour at
+ * `alpha` (0 to 1) over whatever is drawn there. The cell's background becomes `alpha` of the role's
+ * colour and `1 - alpha` of what was there — itself 80% the cell's own background and 20% its glyph's
+ * colour, the glyph being taken to cover about a fifth of the cell — and the glyph, which stays, is
+ * drawn `alpha` of the way toward the colour the real cursor draws glyphs in (the theme's background,
+ * since the cursor is inverse video). A role and a number, never a colour, like `RoleTint`: an exact mix
+ * at truecolor, the nearest colour at 256, and at 16 colours and in monochrome the plain inverse
+ * cursor (from an alpha of one half up; below it, nothing). Where it shows, the cell's own `dim` is not
+ * applied (`resolveCell`). `seeThroughColours`, below, is the one place it becomes colour. Set only by
+ * the Explore Map hand-off's travelling cursor so far.
+ */
+export type SeeThrough = Readonly<{ role: StyleRole; alpha: number }>
+
+/** `amount` (clamped to 0-1) of the way from one colour to another, each channel rounded. */
+function mixRgb(from: Rgb, to: Rgb, amount: number): Rgb {
   const t = Math.max(0, Math.min(1, amount))
   return [
     Math.round(from[0] + (to[0] - from[0]) * t),
@@ -370,12 +367,12 @@ function mixRgb(
   ]
 }
 
-/** `nearestIndexed` walks 240 candidates; a tinted or faded cell asks again every frame, and a
+/** `nearestIndexed` walks 240 candidates; a tinted, faded or mixed cell asks again every frame, and a
  *  placement's light passes through the same few dozen blends, so the answers are kept. Bounded: an
- *  animation is a handful of roles times a few dozen steps. */
+ *  animation is a handful of roles times a few dozen steps, and the cache starts over past 4096. */
 const NEAREST_CACHE = new Map<number, number>()
 
-function nearestIndexedCached(rgb: readonly [number, number, number]): number {
+function nearestIndexedCached(rgb: Rgb): number {
   const key = (rgb[0] << 16) | (rgb[1] << 8) | rgb[2]
   const cached = NEAREST_CACHE.get(key)
   if (cached !== undefined) return cached
@@ -385,11 +382,16 @@ function nearestIndexedCached(rgb: readonly [number, number, number]): number {
   return found
 }
 
-/** The truecolor RGB of a role after its tint and fade — the one place both blends meet. */
-function blendedRgb(swatch: Swatch, theme: Theme, fade: number, tint: RoleTint | undefined): readonly [number, number, number] {
+/**
+ * The truecolor RGB of a role after its tint and fade — the one place both blends meet, and the only
+ * place a fade scalar touches a colour (Q25's recommended shape): the tinted colour taken `fade` of the
+ * way toward the theme's background. `mixRgb` clamps the amount, so a caller that hands in more than 1
+ * still lands on the background rather than past it.
+ */
+function blendedRgb(swatch: Swatch, theme: Theme, fade: number, tint: RoleTint | undefined): Rgb {
   const target = tint === undefined || tint.amount <= 0 ? undefined : PALETTE[theme][tint.role]
   const tinted = target === undefined ? swatch.rgb : mixRgb(swatch.rgb, target.rgb, tint?.amount ?? 0)
-  return fade > 0 ? fadeRgb(tinted, theme, fade) : tinted
+  return fade > 0 ? mixRgb(tinted, BACKGROUND_RGB[theme], fade) : tinted
 }
 
 /** Whether a tint shows at `color16`, where there is no blend: from one half up it is the other role. */
@@ -445,15 +447,18 @@ export function sgrBackgroundFor(
   const foreground = sgrFor(role, capability, theme)
   if (foreground.length === 0) return []
   if (capability === "color16") return [(foreground[0] ?? 37) + 10]
-  return [foreground[0] === 38 ? 48 : 48, ...foreground.slice(1)]
+  return [48, ...foreground.slice(1)]
 }
 
+/** What an RGB backend draws for a cell with no role, and for every cell in monochrome. */
+const NEUTRAL_RGB: Rgb = [214, 218, 224]
+
 /**
- * The same roles as RGB, for a backend that takes colours rather than SGR parameters (OpenTUI).
- * `fade` mirrors `sgrFor`'s tier gating even though OpenTUI is truecolor-capable regardless of the
- * requested `capability`: ignoring it at `color16` keeps that tier's simulated look identical to the
- * direct-ANSI backend's, the cross-backend snapshot invariant `tests/backend-opentui.test.ts` checks.
- * `monochrome` was already a fixed neutral grey regardless of role, so fade has nothing to add there.
+ * The same roles as RGB, for the renderers that take colours rather than SGR parameters (the canvas
+ * and OpenTUI, through `resolveCell`). `fade` mirrors `sgrFor`'s tier gating even though both can
+ * show any colour whatever the requested `capability`: ignoring it at `color16` keeps that tier's
+ * simulated look the direct-ANSI backend's. `monochrome` is a fixed neutral grey regardless of role,
+ * so fade has nothing to add there.
  */
 export function rgbFor(
   role: StyleRole | undefined,
@@ -461,12 +466,191 @@ export function rgbFor(
   theme: Theme = DEFAULT_THEME,
   fade = 0,
   tint?: RoleTint,
-): readonly [number, number, number] {
-  if (capability === "monochrome" || role === undefined) return [214, 218, 224]
+): Rgb {
+  if (capability === "monochrome" || role === undefined) return NEUTRAL_RGB
   const swatch = PALETTE[theme][role]
-  if (swatch === undefined) return [214, 218, 224]
+  if (swatch === undefined) return NEUTRAL_RGB
   // At 16 colours a tint is a step onto the other role's own colour, exactly as `sgrFor` steps onto
   // its ANSI hue, so the simulated tier matches the direct-ANSI one.
   if (capability === "color16") return tintStepsAt16(tint) ? PALETTE[theme][(tint as RoleTint).role].rgb : swatch.rgb
   return blendedRgb(swatch, theme, fade, tint)
+}
+
+/**
+ * How much of a cell its glyph is taken to cover when a see-through style mixes what lies beneath it — the
+ * owner's "assuming that the icon is about 20% of the surface" (feedback F65).
+ */
+export const GLYPH_COVER = 0.2
+
+/**
+ * From this alpha up a see-through style shows at 16 colours and in monochrome, as the plain cursor; below it,
+ * it shows nothing there. The same half-way step a tint takes at 16 colours (`tintStepsAt16`).
+ */
+export const SEE_THROUGH_STEP = 0.5
+
+/**
+ * The owner's mix (feedback F65), as plain arithmetic on three colours and the cursor's own glyph
+ * colour. "If the background is black, the icon on the background is yellow, and the cursor is white,
+ * then the cursor at 80% ... would be 80% white, and the other 20% split between black (80%) and
+ * yellow (20%)":
+ *
+ * - the cell's fill becomes `alpha` of `cursor` and `1 - alpha` of what was there — itself
+ *   `1 - GLYPH_COVER` of `background` and `GLYPH_COVER` of `glyph`;
+ * - the glyph, which stays, is drawn `alpha` of the way from `glyph` toward `cursorGlyph` (the colour
+ *   the real cursor draws its glyph in), so it stays readable on the lighter cell.
+ *
+ * Each channel is rounded once, at the end. Exported so a test can hold it to the owner's own numbers.
+ */
+export function mixSeeThrough(
+  background: Rgb,
+  glyph: Rgb,
+  cursor: Rgb,
+  cursorGlyph: Rgb,
+  alpha: number,
+): Readonly<{ foreground: Rgb; background: Rgb }> {
+  const a = Math.max(0, Math.min(1, alpha))
+  const fill = (channel: 0 | 1 | 2): number =>
+    Math.round(
+      (1 - a) * ((1 - GLYPH_COVER) * background[channel] + GLYPH_COVER * glyph[channel]) +
+        a * cursor[channel],
+    )
+  const ink = (channel: 0 | 1 | 2): number => Math.round((1 - a) * glyph[channel] + a * cursorGlyph[channel])
+  return { background: [fill(0), fill(1), fill(2)], foreground: [ink(0), ink(1), ink(2)] }
+}
+
+/** A cell's colours once its see-through style is resolved, in both forms `ResolvedCell` has. */
+export type SeeThroughColours = Readonly<{
+  /** The glyph's colour. */
+  foreground: Rgb
+  /** The cell's fill. */
+  background: Rgb
+  /**
+   * SGR colour parameters for the ANSI writer. They replace the cell's own foreground, background
+   * and inverse codes (the cell's inverse is already resolved into these).
+   */
+  sgr: readonly number[]
+}>
+
+/**
+ * The see-through cursor (`SeeThrough`, feedback F64-F65) resolved at a tier, or `null` where it
+ * changes nothing — no see-through style, an alpha of 0, or a low alpha at a tier with no blend. The one
+ * place a see-through style becomes colour; `resolveCell` calls it for every renderer.
+ *
+ * The cell's own colours are worked out first, as the renderers already draw them: its glyph colour
+ * `G` is its `fgRole` after tint and fade, its background `B` is its `bgRole` or the theme's
+ * background, an `inverse` cell swaps the two (so the see-through style mixes what is actually seen), and a
+ * blank cell has no glyph, so `G` is `B` and the cell becomes simply `B` mixed toward the cursor. Then
+ * `mixSeeThrough`, with the see-through style's role as the cursor colour `C` and the theme's background as the
+ * cursor's glyph colour — the real cursor is inverse video, so its glyph is drawn in the ground.
+ *
+ * - `truecolor`: that exact mix;
+ * - `color256`: the nearest palette entry to each of the two mixed colours (the RGB returned is that
+ *   entry's own, so an RGB backend shows what a 256-colour terminal shows);
+ * - `color16`: no continuum, so a step — from `SEE_THROUGH_STEP` up, the plain cursor (inverse video in
+ *   the see-through style's role: its hand-authored ANSI hue as the fill, the ground as the glyph), below it
+ *   nothing;
+ * - `monochrome`: the same step, as inverse video alone. Never a colour code.
+ *
+ * Wherever it shows, the cell's own `dim` goes with it (`resolveCell`).
+ */
+export function seeThroughColours(
+  cell: Cell,
+  capability: CapabilityMode,
+  theme: Theme = DEFAULT_THEME,
+): SeeThroughColours | null {
+  const seeThrough = cell.style.seeThrough
+  if (seeThrough === undefined || !(seeThrough.alpha > 0)) return null
+  const cursor = PALETTE[theme][seeThrough.role]
+  if (cursor === undefined) return null
+  const ground = BACKGROUND_RGB[theme]
+  const alpha = Math.min(1, seeThrough.alpha)
+  if (capability === "monochrome") {
+    return alpha < SEE_THROUGH_STEP ? null : { foreground: ground, background: NEUTRAL_RGB, sgr: [7] }
+  }
+  if (capability === "color16") {
+    return alpha < SEE_THROUGH_STEP ? null : { foreground: ground, background: cursor.rgb, sgr: [cursor.ansi, 7] }
+  }
+  const style = cell.style
+  const own = style.fgRole === undefined ? undefined : PALETTE[theme][style.fgRole]
+  const ink = own === undefined ? NEUTRAL_RGB : blendedRgb(own, theme, style.fade ?? 0, style.tint)
+  const fill = (style.bgRole === undefined ? undefined : PALETTE[theme][style.bgRole]?.rgb) ?? ground
+  const [beneath, glyph] = style.inverse === true ? [ink, fill] : [fill, ink]
+  const blank = cell.glyph === " " || cell.glyph === ""
+  const mixed = mixSeeThrough(beneath, blank ? beneath : glyph, cursor.rgb, ground, alpha)
+  if (capability === "truecolor") {
+    return { ...mixed, sgr: [38, 2, ...mixed.foreground, 48, 2, ...mixed.background] }
+  }
+  const foreground = nearestIndexedCached(mixed.foreground)
+  const background = nearestIndexedCached(mixed.background)
+  return {
+    foreground: xterm256Rgb(foreground),
+    background: xterm256Rgb(background),
+    sgr: [38, 5, foreground, 48, 5, background],
+  }
+}
+
+/**
+ * A cell's style resolved at a tier, in both forms the renderers take. `resolveCell` is the one place
+ * a cell's own colours, its inverse video, its dim and its see-through style meet, so the ANSI writer,
+ * the browser page's canvas and OpenTUI only draw what it says and cannot disagree about a cell.
+ */
+export type ResolvedCell = Readonly<{
+  /**
+   * The ANSI writer's SGR parameters, whole: the colours (the foreground's, then the background's — or
+   * the see-through style's mix in their place), then bold 1, faint 2, underline 4 and reverse video 7
+   * as the cell has them. Empty for a plain cell, so a blank never costs an escape. Here, unlike in the
+   * RGB form, reverse video is left to the terminal.
+   */
+  sgr: readonly number[]
+  /** The glyph's colour for an RGB renderer, with inverse video and the see-through style applied. */
+  foreground: Rgb
+  /** The cell's fill for an RGB renderer, likewise, or `null` where the theme's own background shows. */
+  background: Rgb | null
+  bold: boolean
+  /**
+   * Faint: the cell's `dim`, except where a see-through style shows. The mix already says exactly how
+   * bright the glyph is, and faint on top would fade it back toward the now lighter fill — the very loss
+   * the real cursor avoids by clearing `dim` on bare ground (`src/view/build.ts`).
+   */
+  dim: boolean
+  underline: boolean
+}>
+
+/**
+ * What a renderer draws for `cell` at `capability` on `theme`. Its colours are its `fgRole` after tint
+ * and fade and its `bgRole` (none in monochrome, which has no colour to paint); inverse video swaps
+ * the two in the RGB form, the way a terminal does, with the theme's background standing in for a cell
+ * that has no fill of its own (the map's solid edge is exactly that). A see-through style that shows
+ * at this tier (`seeThroughColours`) replaces all of that, and the cell's dim with it; bold and
+ * underline always stay the cell's own.
+ */
+export function resolveCell(cell: Cell, capability: CapabilityMode, theme: Theme = DEFAULT_THEME): ResolvedCell {
+  const style = cell.style
+  const bold = style.bold === true
+  const underline = style.underline === true
+  const seen = seeThroughColours(cell, capability, theme)
+  if (seen !== null) {
+    const sgr = [...seen.sgr]
+    if (bold) sgr.push(1)
+    if (underline) sgr.push(4)
+    return { sgr, foreground: seen.foreground, background: seen.background, bold, dim: false, underline }
+  }
+  const dim = style.dim === true
+  const inverse = style.inverse === true
+  const fade = style.fade ?? 0
+  const sgr = [...sgrFor(style.fgRole, capability, theme, fade, style.tint), ...sgrBackgroundFor(style.bgRole, capability, theme)]
+  if (bold) sgr.push(1)
+  if (dim) sgr.push(2)
+  if (underline) sgr.push(4)
+  if (inverse) sgr.push(7)
+  const ink = rgbFor(style.fgRole, capability, theme, fade, style.tint)
+  const fill = style.bgRole === undefined || capability === "monochrome" ? null : rgbFor(style.bgRole, capability, theme)
+  return {
+    sgr,
+    foreground: inverse ? (fill ?? BACKGROUND_RGB[theme]) : ink,
+    background: inverse ? ink : fill,
+    bold,
+    dim,
+    underline,
+  }
 }

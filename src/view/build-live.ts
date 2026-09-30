@@ -5,27 +5,55 @@
 //
 //   - **the view slides** (engine.md 3.3's "camera moves eased over a few frames"): whenever the
 //     state's camera changes — a click, an arrow at the margin, a Shift jump, arming that moved the
-//     cursor, anything — the drawn camera eases from wherever it was drawn toward it over Debug
-//     Mode's "View slide" milliseconds, whole tiles at a time, fast at first and settling at the end.
-//     Only a resize snaps (`snap`);
+//     cursor, anything — the drawn camera eases from wherever it was drawn toward it over `easeMs`
+//     milliseconds, whole tiles at a time, fast at first and settling at the end. Only a resize snaps
+//     (`snap`);
 //   - **the cursor glides** (owner, 2026-09-28: "interpolations are easy and powerful"): whenever the
 //     state's cursor changes, the drawn cursor eases from the tile it was drawn on to the new one over
-//     the "Cursor glide" Experiment milliseconds, so a Shift jump or a far click reads as motion rather
-//     than a teleport. The glide is of the cursor's place **in the view** (its tile less the
-//     camera's), added to the drawn camera: when only the camera moves — the cursor dragging it at the
-//     margin — the cursor rides along with the slide, and a gliding cursor can never be drawn outside
-//     the view it is gliding across. The armed preview and the refused flash move with it;
-//   - **a menu row flashes** "pressed" or flickers "refused" (gate 5F), for the Experiments' durations;
-//   - **the cursor flashes** where a placement was just tried and refused (gate 5H);
+//     `cursorGlideMs`, so a Shift jump or a far click reads as motion rather than a teleport. The glide
+//     is of the cursor's place **in the view** (its tile less the camera's), added to the drawn camera:
+//     when only the camera moves — the cursor dragging it at the margin — the cursor rides along with
+//     the slide, and a gliding cursor can never be drawn outside the view it is gliding across. The
+//     armed preview and the refused flash move with it;
+//   - **a menu row flashes** "pressed" or flickers "refused" (gate 5F), for `pressedFlashMs` or
+//     `refusedFlashMs`;
+//   - **the cursor flashes** where a placement was just tried and refused (gate 5H), for
+//     `refusedCursorMs`;
 //   - **a building goes up** (gate 5I): each planned placement plays its frames, light and sparks
-//     for the "Build animation" Experiment and "Glow time", timed from the frame that first drew it;
+//     for `placeFramesMs` and `placeGlowMs`, timed from the frame that first drew it;
 //   - **a building comes down** (feedback F33): one that leaves the plan — undone, or removed with
-//     Backspace/Delete — throws the same sparks where it stood, timed from the first frame without it.
+//     Backspace/Delete — throws the same sparks where it stood, timed from the first frame without it;
+//   - **a hand-off flies, and the cursor blinks** (feedback F54): when a menu row hands the keyboard
+//     to the map (`BuildState.handoff`), the focus arrow — or, from Explore Map's row, the see-through
+//     cursor (F64) — flies from the row to the cursor for the "Focus arrow" Experiment's milliseconds,
+//     and when it lands the cursor blinks `cursorBlinks` times in the pressed flash's look and at its
+//     speed. Keys work throughout; it all stops the moment the keyboard leaves the map, a popup opens or
+//     the plan is committed. One flight, two travellers: which one flies is the view's to draw;
+//   - **the menu turns into a card** (feedback F68): whenever the panel goes from the menu to a card —
+//     Explore Map opened, a building armed from the menu or with a digit on the map — or from one card
+//     to another armed building, the view plays the "Card reveal" Experiment's transition (the other
+//     rows fade, the chosen row slides up to the header, the card types in). The reducer never hears
+//     of it: this loop watches the state turn into a card the way it watches the plan grow. Closing a
+//     card is instant;
+//   - **a popup's border moves** (feedback F80, F83): timed from the frame that first showed the popup
+//     — any popup, and again whenever another replaces it — its border plays the popup's **opening**
+//     if it has one (`POPUP_OPENINGS`: the Battle Round screen's double flash, `popupFlash`), drawn
+//     every frame, and then **breathes**, slowly a little lighter and a little darker, one breath every
+//     "Popup pulse" Experiment milliseconds, from rest. The breath is the one thing here that
+//     never settles, so while it is the only thing moving the frame timer runs at `BREATH_FRAME_MS`
+//     rather than every frame (`frameMs`), and it stops the frame the last popup closes. Reduced motion
+//     and monochrome keep the border still; 16 colours, whose tint is a step rather than a blend, shows
+//     the flash (two steps onto the title's colour) but not the breath; the Experiment at 0 stops only
+//     the breath.
+//
+// The numbers in backticks are the owner's tuned values (`src/build/tuning.ts`), which a `BuildAnimation`
+// is handed when it is made (a test hands it others).
 //
 // `busyUntil` says whether anything is still moving, and until when: the live loop runs its frame
 // timer only while it is not `null`, and otherwise draws once per input, as the screen always has.
+// `frameMs`, when present, says the timer may wait that long between frames (the breath alone).
 //
-// Under reduced motion both snap: the view jumps and the cursor jumps, as they did before gate 5H.
+// Under reduced motion both snap: the view jumps and the cursor jumps.
 //
 // Presentation only (engine.md Section 1: "presentation may interpolate... without changing
 // simulation"): state, commands and a scripted playtest all use the state's own camera and cursor —
@@ -37,36 +65,153 @@
 import type { Camera } from "../build/camera.ts"
 import type { Coord } from "../grid/types.ts"
 import type { BuildState } from "../build/state.ts"
-import { flashDuration } from "../build/debug.ts"
-import type { BuildFlash } from "./build.ts"
+import { cardEntry } from "../build/state.ts"
+import type { Tuning } from "../build/tuning.ts"
+import { TUNING } from "../build/tuning.ts"
+import type { BuildCompositionInput, CardReveal, RowAck } from "./build.ts"
+import type { PopupBorder, PopupFlash } from "./build-popup.ts"
+import { POPUP_FLASH, POPUP_OPENINGS, openingLengthMs } from "./build-popup.ts"
+import type { CapabilityMode } from "./roles.ts"
 import type { Footprint } from "../grid/types.ts"
-import type { PlacedStructure, PlacementClock, RemovalClock } from "./placement.ts"
+import type { PlacedStructure, PlacementClock, PlacementTuning, RemovalClock } from "./placement.ts"
 import { placementRequest, removalSchedule } from "./placement.ts"
 import { scheduleTrack, trackBusyAt } from "./animation.ts"
 import type { Point, Tween } from "./tween.ts"
 import { retarget, samePoint, still, tileAt, tweenActive, tweenEnd } from "./tween.ts"
 
-export type LiveFrame = Readonly<{
-  /** The camera to draw through. */
-  camera: Camera
-  /** The tile to draw the cursor on — the state's own once it has finished gliding. */
-  cursor: Coord
-  flash?: BuildFlash
-  refusedFlash?: boolean
-  /** Planned placements still going up, and how long ago each was placed (gate 5I). */
-  placing?: readonly PlacementClock[]
-  /** Buildings that just left the plan, still throwing sparks, and how long ago each went (F33). */
-  removing?: readonly RemovalClock[]
-  /** When the last thing still animating ends, or `null` when nothing is. */
-  busyUntil: number | null
-}>
+/**
+ * What a live frame hands the composer — the fields of `BuildCompositionInput` that depend on time, and
+ * only those (each documented there), so the live screen, the browser page and the capture scripts turn
+ * a `LiveFrame` into a frame the same way and a new field reaches all of them at once.
+ */
+export type LivePresentation = Pick<
+  BuildCompositionInput,
+  | "camera"
+  | "cursor"
+  | "ack"
+  | "refusedTry"
+  | "placing"
+  | "removing"
+  | "placementTuning"
+  | "handoffFlight"
+  | "cursorBlink"
+  | "cardReveal"
+  | "popupBorder"
+>
 
-/** What the live screen knows that the reducer does not: the player's reduced-motion setting. */
+/** Everything time-dependent the frame at one instant shows — always a camera and a cursor, the state's
+ *  own once they have finished moving — and when the last thing still moving ends, or `null` when
+ *  nothing is. `frameMs` is present only when the one thing moving is slow enough to be drawn less often
+ *  than every frame — a popup border's breath — and says how often: `busyUntil` is then that long from
+ *  now, the next frame the breath needs. */
+export type LiveFrame = LivePresentation &
+  Readonly<{ camera: Camera; cursor: Coord; busyUntil: number | null; frameMs?: number }>
+
+export function livePresentation(live: LiveFrame): LivePresentation {
+  const { busyUntil: _busyUntil, frameMs: _frameMs, ...presentation } = live
+  return presentation
+}
+
+/** Whether a colour depth can show a breath at all: its tint and fade are continuous blends, which only
+ *  256 colours and millions have (16 colours would step, and the breath is kept under the step). */
+const breathShows = (capability: CapabilityMode | undefined): boolean =>
+  capability === undefined || capability === "truecolor" || capability === "color256"
+
+/** Whether a colour depth can show a flash: a blend at 256 colours and millions, and at 16 colours a step
+ *  onto the title's colour from half the flash's height up — two short steps, a highlight rather than a
+ *  blink, since it plays once. Monochrome has no colour to move. */
+const flashShows = (capability: CapabilityMode | undefined): boolean => capability !== "monochrome"
+
+/** The opening flash as the "Battle Round flash" and "Flash strength" Experiments set it, over the
+ *  view's own table for the rest (`POPUP_FLASH`: how many, the gap). */
+export const openingFlash = (state: BuildState): PopupFlash => ({
+  ...POPUP_FLASH,
+  flashMs: state.experiments.popupFlashMs,
+  peak: state.experiments.popupFlashPeak / 100,
+})
+
+/**
+ * What the open popup's border plays in this frame (feedback F80, F83) — its opening, from
+ * `POPUP_OPENINGS` and timed by `flash`, and the length of one breath — with `null` for a part this frame
+ * does not show; `null` altogether when the border is still: no popup, reduced motion, or neither part
+ * showing. The breath's length is the "Popup pulse" Experiment's, for every popup; at 0 it stops.
+ */
+export function popupBorderEffect(
+  state: BuildState,
+  reducedMotion: boolean,
+  capability?: CapabilityMode,
+  flash: PopupFlash = openingFlash(state),
+): Pick<PopupBorder, "opening" | "breathMs"> | null {
+  if (state.popup === null || reducedMotion) return null
+  const opening = POPUP_OPENINGS[state.popup] === "double-flash" && flash.flashMs > 0 && flashShows(capability) ? flash : null
+  const lengthMs = state.experiments.popupPulseMs
+  const breathMs = lengthMs > 0 && breathShows(capability) ? lengthMs : null
+  const effect = { opening, breathMs }
+  return breathMs === null && openingLengthMs(effect) === 0 ? null : effect
+}
+
+/**
+ * The card reveal `elapsedMs` after the panel turned into a card, or `null` once it is over (or never
+ * plays: its tuned length 0, or reduced motion). `fromMenu` says what the panel showed before: the menu,
+ * whose rows fade and whose chosen row slides up, or another card, which gives way at once.
+ */
+export function cardRevealAt(
+  tuning: Pick<Tuning, "cardRevealMs">,
+  reducedMotion: boolean,
+  elapsedMs: number,
+  fromMenu: boolean,
+): CardReveal | null {
+  const lengthMs = reducedMotion ? 0 : Math.max(0, tuning.cardRevealMs)
+  if (lengthMs <= 0 || elapsedMs < 0 || elapsedMs >= lengthMs) return null
+  return { elapsedMs, lengthMs, fromMenu }
+}
+
+/**
+ * When a menu row hands the keyboard to the map (feedback F54): its flight — the focus arrow, or the
+ * see-through cursor — lasts `flightMs`, then the cursor blinks `blinks` times — each blink "on" for
+ * `pulseMs` (the pressed flash's own duration, so it has the menu's speed), with an "off" gap of
+ * `pulseMs` between two — and everything is over at `endMs`, counted from the hand-off. Under reduced
+ * motion nothing flies and the blink plays at once; with the flight off it plays at once too; with no
+ * blinks, or a pressed flash of 0, there is none.
+ */
+export type HandoffSchedule = Readonly<{ flightMs: number; pulseMs: number; blinks: number; endMs: number }>
+
+/** What the hand-off is timed from: the "Focus arrow" Experiment (which times both travellers' flight),
+ *  and the pressed flash and the blink count, which are tuned values. */
+export type HandoffTiming = Readonly<{ focusArrowMs: number; pressedFlashMs: number; cursorBlinks: number }>
+
+export function handoffSchedule(timing: HandoffTiming, reducedMotion: boolean): HandoffSchedule {
+  const flightMs = reducedMotion ? 0 : Math.max(0, timing.focusArrowMs)
+  const pulseMs = Math.max(0, timing.pressedFlashMs)
+  const blinks = pulseMs > 0 ? Math.max(0, timing.cursorBlinks) : 0
+  return { flightMs, pulseMs, blinks, endMs: flightMs + (blinks > 0 ? (2 * blinks - 1) * pulseMs : 0) }
+}
+
+/** What the hand-off shows `elapsedMs` after it: the flight's progress while it flies, and whether the
+ *  cursor is in a blink's "on" half. A pure function of the time, like every effect. */
+export function handoffAt(
+  schedule: HandoffSchedule,
+  elapsedMs: number,
+): Readonly<{ flight: number | null; blink: boolean }> {
+  if (elapsedMs < 0 || elapsedMs >= schedule.endMs) return { flight: null, blink: false }
+  if (elapsedMs < schedule.flightMs) return { flight: elapsedMs / schedule.flightMs, blink: false }
+  const phase = Math.floor((elapsedMs - schedule.flightMs) / schedule.pulseMs)
+  return { flight: null, blink: phase % 2 === 0 }
+}
+
+/** How to time a frame beyond what the state says: whether motion is reduced — the live screen passes
+ *  the player's setting (`state.settings.reducedMotion`), a test whatever it tests — and each
+ *  structure's footprint. */
 export type LiveOptions = Readonly<{
   reducedMotion?: boolean
+  /** The colour depth the frame is drawn at — the player's setting on the live screen. At 16 colours and
+   *  in monochrome a popup border's breath cannot show, nor in monochrome its opening flash, so what
+   *  cannot show neither ticks the frame timer nor is handed to the view. Absent (a test), a depth that
+   *  shows everything. */
+  capability?: CapabilityMode
   /** A structure's footprint, for the placement tracks. Only their shape depends on it — when each
-   *  one settles, all this loop reads, depends on the Experiment timings alone — so without it (a
-   *  test) every structure is scheduled as one tile. */
+   *  one settles, all this loop reads, depends on the timings alone — so without it (a test) every
+   *  structure is scheduled as one tile. */
   footprintOf?: (contentId: string) => Footprint
 }>
 
@@ -76,17 +221,53 @@ const cameraAtTime = (tween: Tween<Camera>, now: number): Camera => tileAt(tween
 
 const offsetOf = (tile: Coord, camera: Camera): Point => ({ x: tile.x - camera.x, y: tile.y - camera.y })
 
+/** The tuned values the live loop times things by — and the popup opening's flash (F83), the view's own
+ *  first guess (`POPUP_FLASH`) set by the "Battle Round flash" and "Flash strength" Experiments (`openingFlash`), unless a test hands in another. */
+export type LiveTuning = Pick<
+  Tuning,
+  | "easeMs"
+  | "cursorGlideMs"
+  | "focusArrowMs"
+  | "cardRevealMs"
+  | "pressedFlashMs"
+  | "refusedFlashMs"
+  | "refusedCursorMs"
+  | "cursorBlinks"
+  | "placeFramesMs"
+  | "placeGlowMs"
+  | "placeSparks"
+> &
+  Readonly<{ popupFlash?: PopupFlash }>
+
 export class BuildAnimation {
+  /** The tuned timings — the owner's (`TUNING`), unless a test hands in others. */
+  private readonly tuning: LiveTuning
+  /** The part of them a placement's track is timed by, handed to the view with the tracks it times. */
+  private readonly placementTuning: PlacementTuning
+  /** The flash a popup that opens with one plays (F83). */
+  private readonly popupFlash: PopupFlash | null
   private ease: Tween<Camera> | null = null
   /** The cursor's place in the view — its tile less the camera's — on its way somewhere. */
   private glide: Tween<Point> | null = null
   private seenAck: Readonly<{ seq: number; at: number }> | null = null
   private seenRefusal: Readonly<{ seq: number; at: number }> | null = null
+  /** The last hand-off seen (F54), when it was first seen, and whether it has been cut short — the
+   *  keyboard left the map, a popup opened, the plan was committed — after which it never resumes. */
+  private seenHandoff: Readonly<{ seq: number; at: number; stopped: boolean }> | null = null
+  /** The menu entry whose card the panel showed at the last frame (`cardEntry`, `null` for the menu),
+   *  when it turned into it, and whether the menu was there before it (F68). `at` is `null` for a card
+   *  already showing when the screen first drew, which never plays a reveal — like a placement already
+   *  planned then. */
+  private seenCard: Readonly<{ entry: number | null; at: number | null; fromMenu: boolean }> | null = null
+  /** The popup open at the last frame and the first frame that showed it — what its border's opening and
+   *  breath are timed from (F80, F83) — or `null` with none open, so a popup opened again, or another
+   *  replacing it, starts again from its opening. Watched, not recorded: the reducer never hears of it. */
+  private seenPopup: Readonly<{ popup: NonNullable<BuildState["popup"]>; at: number }> | null = null
   /**
    * Each planned ordinal's animation track (`animation.ts`), by the one thing about it that varies:
    * when its `play` was requested — the first frame that drew it — or `null` for what was already
    * planned when the screen first drew, which never animates. The request itself is rebuilt every
-   * frame from the current Experiment timings (`placementRequest`). A different structure or anchor
+   * frame from the timings (`placementRequest`). A different structure or anchor
    * under the same ordinal (a restart numbers the plan from 1 again) is a new target, with
    * a new track.
    */
@@ -96,6 +277,12 @@ export class BuildAnimation {
   private removals: Readonly<{ placement: PlacedStructure; removedAt: number }>[] = []
   /** False until the first frame: whatever is already planned then was not placed just now. */
   private primed = false
+
+  constructor(tuning: LiveTuning = TUNING) {
+    this.tuning = tuning
+    this.placementTuning = { placeFramesMs: tuning.placeFramesMs, placeGlowMs: tuning.placeGlowMs, placeSparks: tuning.placeSparks }
+    this.popupFlash = tuning.popupFlash ?? null
+  }
 
   /**
    * The camera drawn at `now`. A new target starts a slide from wherever the view is drawn at that
@@ -107,7 +294,7 @@ export class BuildAnimation {
       this.ease = still(target, now)
       return target
     }
-    const duration = options.reducedMotion === true ? 0 : state.debug.easeMs
+    const duration = options.reducedMotion === true ? 0 : this.tuning.easeMs
     this.ease = retarget(this.ease, target, now, duration, cameraAtTime, samePoint)
     return tileAt(this.ease, now)
   }
@@ -121,7 +308,7 @@ export class BuildAnimation {
     const target = offsetOf(state.cursor, state.camera)
     if (this.glide === null) this.glide = still(target, now)
     else {
-      const duration = options.reducedMotion === true ? 0 : state.debug.cursorGlideMs
+      const duration = options.reducedMotion === true ? 0 : this.tuning.cursorGlideMs
       this.glide = retarget(this.glide, target, now, duration, tileAt, samePoint)
     }
     const offset = tileAt(this.glide, now)
@@ -166,13 +353,14 @@ export class BuildAnimation {
     this.primed = true
 
     const reducedMotion = options.reducedMotion === true
+    const timing = this.placementTuning
     const placing: PlacementClock[] = []
     let until: number | null = null
     for (const [ordinal, track] of this.tracks) {
       const placement = planned.get(ordinal)
       if (track.playedAt === null || placement === undefined) continue
       const footprint = options.footprintOf?.(placement.contentId) ?? ONE_TILE
-      const schedule = scheduleTrack([placementRequest(placement, footprint, state.debug, reducedMotion, track.playedAt)])
+      const schedule = scheduleTrack([placementRequest(placement, footprint, reducedMotion, track.playedAt, timing)])
       if (!trackBusyAt(schedule, now)) continue
       placing.push({ ordinal, elapsedMs: now - track.playedAt })
       until = Math.max(until ?? 0, schedule.settlesAtMs)
@@ -181,7 +369,7 @@ export class BuildAnimation {
     const removing: RemovalClock[] = []
     this.removals = this.removals.filter(({ placement, removedAt }) => {
       const footprint = options.footprintOf?.(placement.contentId) ?? ONE_TILE
-      const schedule = removalSchedule(placement, footprint, state.debug, reducedMotion)
+      const schedule = removalSchedule(placement, footprint, reducedMotion, timing)
       const elapsedMs = now - removedAt
       if (!trackBusyAt(schedule, elapsedMs)) return false
       removing.push({ ...placement, elapsedMs })
@@ -200,25 +388,25 @@ export class BuildAnimation {
       if (tween !== null && tweenActive(tween, now)) ends.push(tweenEnd(tween))
     }
 
-    let flash: BuildFlash | undefined
-    const ack = state.ack
-    if (ack !== null) {
-      if (this.seenAck?.seq !== ack.seq) this.seenAck = { seq: ack.seq, at: now }
-      const end = this.seenAck.at + flashDuration(state.debug, ack.kind)
+    let ack: RowAck | undefined
+    if (state.ack !== null) {
+      const { seq, kind, entry } = state.ack
+      if (this.seenAck?.seq !== seq) this.seenAck = { seq, at: now }
+      const end = this.seenAck.at + (kind === "pressed" ? this.tuning.pressedFlashMs : this.tuning.refusedFlashMs)
       if (now < end) {
-        flash = { kind: ack.kind, entry: ack.entry }
+        ack = { kind, entry }
         ends.push(end)
       }
     }
 
-    let refusedFlash = false
+    let refusedTry = false
     const refused = state.refusedTry
     if (refused !== null) {
       if (this.seenRefusal?.seq !== refused.seq) this.seenRefusal = { seq: refused.seq, at: now }
-      const end = this.seenRefusal.at + state.debug.refusedCursorMs
+      const end = this.seenRefusal.at + this.tuning.refusedCursorMs
       // Only while the cursor is still on the tile that was refused: moving off it ends the flash.
       if (now < end && refused.tile.x === state.cursor.x && refused.tile.y === state.cursor.y) {
-        refusedFlash = true
+        refusedTry = true
         ends.push(end)
       }
     }
@@ -226,14 +414,76 @@ export class BuildAnimation {
     const { placing, removing, until } = this.placementsAt(state, now, options)
     if (until !== null) ends.push(until)
 
+    let handoffFlight: Readonly<{ progress: number }> | undefined
+    let cursorBlink = false
+    const handoff = state.handoff
+    if (handoff !== null) {
+      if (this.seenHandoff?.seq !== handoff.seq) this.seenHandoff = { seq: handoff.seq, at: now, stopped: false }
+      const onMap = state.focus === "grid" && state.popup === null && !state.committed
+      if (!onMap) this.seenHandoff = { ...this.seenHandoff, stopped: true }
+      if (!this.seenHandoff.stopped) {
+        const { focusArrowMs, pressedFlashMs, cursorBlinks } = this.tuning
+        const timing = { focusArrowMs, pressedFlashMs, cursorBlinks }
+        const schedule = handoffSchedule(timing, options.reducedMotion === true)
+        const look = handoffAt(schedule, now - this.seenHandoff.at)
+        if (look.flight !== null) handoffFlight = { progress: look.flight }
+        cursorBlink = look.blink
+        const end = this.seenHandoff.at + schedule.endMs
+        if (now < end) ends.push(end)
+      }
+    }
+
+    // The menu turning into a card (F68). Watched, not recorded: the card's entry changes the frame the
+    // state first shows a new card, and the reveal plays from that frame. Closing a card is instant.
+    const entry = cardEntry(state)
+    if (this.seenCard === null) this.seenCard = { entry, at: null, fromMenu: entry === null }
+    else if (this.seenCard.entry !== entry) this.seenCard = { entry, at: now, fromMenu: this.seenCard.entry === null }
+    let cardReveal: CardReveal | undefined
+    const card = this.seenCard
+    if (card.entry !== null && card.at !== null) {
+      const reveal = cardRevealAt(this.tuning, options.reducedMotion === true, now - card.at, card.fromMenu)
+      if (reveal !== null) {
+        cardReveal = reveal
+        ends.push(card.at + reveal.lengthMs)
+      }
+    }
+
+    // The open popup's border (F80, F83): timed from the first frame that showed the popup. Its opening
+    // is drawn every frame until it ends; the breath after it never settles, so it asks for a frame only
+    // every `BREATH_FRAME_MS` — and only when nothing faster is moving, whose own ends keep the timer at
+    // every frame until they pass.
+    if (state.popup === null) this.seenPopup = null
+    else if (this.seenPopup?.popup !== state.popup) this.seenPopup = { popup: state.popup, at: now }
+    let popupBorder: PopupBorder | undefined
+    let breathing = false
+    const effect = popupBorderEffect(state, options.reducedMotion === true, options.capability, this.popupFlash ?? undefined)
+    if (effect !== null && this.seenPopup !== null) {
+      const elapsedMs = now - this.seenPopup.at
+      const openingMs = openingLengthMs(effect)
+      if (elapsedMs < openingMs) {
+        popupBorder = { elapsedMs, ...effect }
+        ends.push(this.seenPopup.at + openingMs)
+      } else if (effect.breathMs !== null) {
+        popupBorder = { elapsedMs, ...effect }
+        breathing = true
+      }
+    }
+    const breathOnly = breathing && ends.length === 0
+
     return {
       camera,
       cursor,
-      ...(flash === undefined ? {} : { flash }),
-      ...(refusedFlash ? { refusedFlash } : {}),
+      ...(ack === undefined ? {} : { ack }),
+      ...(refusedTry ? { refusedTry } : {}),
       ...(placing.length === 0 ? {} : { placing }),
       ...(removing.length === 0 ? {} : { removing }),
-      busyUntil: ends.length === 0 ? null : Math.max(...ends),
+      ...(placing.length === 0 && removing.length === 0 ? {} : { placementTuning: this.placementTuning }),
+      ...(handoffFlight === undefined ? {} : { handoffFlight }),
+      ...(cursorBlink ? { cursorBlink } : {}),
+      ...(cardReveal === undefined ? {} : { cardReveal }),
+      ...(popupBorder === undefined ? {} : { popupBorder }),
+      busyUntil: breathOnly ? now + BREATH_FRAME_MS : ends.length === 0 ? null : Math.max(...ends),
+      ...(breathOnly ? { frameMs: BREATH_FRAME_MS } : {}),
     }
   }
 }
@@ -241,9 +491,19 @@ export class BuildAnimation {
 /** A terminal redraws at about 60 frames a second; the frame timer never asks for more. */
 export const FRAME_MS = 16
 
-/** How long the frame timer waits before the next frame: a frame's length, or less when the last
- *  animation ends sooner — so the frame that shows it over is drawn on time. `null`: stop. */
-export function nextFrameDelay(busyUntil: number | null, now: number): number | null {
+/**
+ * How often the frame timer draws while a popup border's breath is the only thing moving: 20
+ * frames a second, a third of the fast rate. One breath lasts seconds and moves the border's colour by a
+ * few dozen steps of 255, so that is still smooth, and it is the one animation that runs for as long as
+ * the popup stays open — the ANSI writer sends the whole screen every frame, so a breath at 60 frames a
+ * second would triple what the terminal receives for nothing the eye can see.
+ */
+export const BREATH_FRAME_MS = 50
+
+/** How long the frame timer waits before the next frame: a frame's length (`frameMs`, every frame
+ *  unless the live frame said otherwise), or less when the last animation ends sooner — so the frame
+ *  that shows it over is drawn on time. `null`: stop. */
+export function nextFrameDelay(busyUntil: number | null, now: number, frameMs: number = FRAME_MS): number | null {
   if (busyUntil === null) return null
-  return Math.max(1, Math.min(FRAME_MS, busyUntil - now))
+  return Math.max(1, Math.min(frameMs, busyUntil - now))
 }

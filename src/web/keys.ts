@@ -7,7 +7,10 @@
 // data and functions, tested under Node like the rest.
 
 import { formatMouseEvent } from "../build/mouse.ts"
+import { cursorKeyOf } from "../menu/list-keys.ts"
 import { keyBytes } from "../playtest/keys.ts"
+import { encodeKeyEvent } from "../view/key-events.ts"
+import type { KeyPhase } from "../view/key-events.ts"
 
 /** The parts of a browser `KeyboardEvent` this page reads. */
 export type KeyPress = Readonly<{
@@ -63,10 +66,66 @@ export function bytesForKeyPress(press: KeyPress): string | null {
   return name === null ? null : keyBytes(name)
 }
 
+const ESC = String.fromCharCode(27)
+/** What a screen loop writes to ask about, switch on and switch off the kitty keyboard protocol
+ *  (`src/view/key-events.ts`), and Device Attributes — as a terminal reads them. */
+const PROTOCOL_WRITES = /\u001b\[(?:>(\d*)u|<(\d*)u|(\?)u|(c))/gu
+/** Flag 1: Esc, Ctrl and Alt keys as their own sequences. Flag 2: presses, repeats and releases marked. */
+const DISAMBIGUATE = 1
+const EVENT_TYPES = 2
+
+/**
+ * **The page plays a terminal that speaks the kitty keyboard protocol** — the browser has real
+ * `keydown`, `keyup` and `repeat`, so it can say what a classic terminal cannot. The Build Phase's
+ * loop asks and pushes exactly as it does in a terminal (the Key releases Experiment, `auto` by
+ * default); this answers, keeps the stack of modes, and turns each key event into the bytes such a
+ * terminal sends: a press as ever, a repeat or a release of a cursor key marked (`ESC [ 1 ; 1 : 2 C`),
+ * Esc as `ESC [ 27 u`. With the Experiment `off` nothing is pushed, and the page sends a classic
+ * terminal's bytes and no releases. No DOM here: the host hands in what the loop wrote and each key
+ * event, and delivers what comes back as input.
+ */
+export class StandInKeyboard {
+  private readonly stack: number[] = []
+
+  /** The protocol's flags in force: the top of the stack, or none. */
+  get flags(): number {
+    return this.stack.at(-1) ?? 0
+  }
+
+  /** What a loop wrote, read as a terminal reads it: a push or a pop changes the flags, and the
+   *  question and Device Attributes are answered — returned, for the host to deliver as input. */
+  written(text: string): string {
+    let replies = ""
+    for (const match of text.matchAll(PROTOCOL_WRITES)) {
+      const [, push, pop, query, attributes] = match
+      if (push !== undefined) this.stack.push(Number(push || "0"))
+      else if (pop !== undefined) this.stack.splice(Math.max(0, this.stack.length - Number(pop || "1")))
+      else if (query !== undefined) replies += `${ESC}[?${this.flags}u`
+      else if (attributes !== undefined) replies += `${ESC}[?62;22c`
+    }
+    return replies
+  }
+
+  /** The bytes for one key event, or `null` when there are none to send: a key the page leaves to the
+   *  browser, or a release no terminal would report (every release, with the protocol off). */
+  bytesFor(press: KeyPress, phase: KeyPhase): string | null {
+    const name = keyNameFor(press)
+    if (name === null) return null
+    const legacy = keyBytes(name)
+    const flags = this.flags
+    if ((flags & EVENT_TYPES) === 0) return phase === "release" ? null : legacy
+    if (legacy === ESC && (flags & DISAMBIGUATE) !== 0) return phase === "release" ? null : encodeKeyEvent(ESC, phase)
+    // A cursor key says which of the three it is; any other key repeats as itself and its release, which
+    // the game has no use for, is not sent.
+    if (cursorKeyOf(legacy) !== null) return phase === "press" ? legacy : encodeKeyEvent(legacy, phase)
+    return phase === "release" ? null : legacy
+  }
+}
+
 /** One on-screen key: the key name it sends, and what it is labelled. */
 export type KeyBarKey = Readonly<{ name: string; label: string }>
 
-/** The keys an iPhone's own keyboard lacks, plus the letters each screen's key help names, so a
+/** The keys an iPhone's own keyboard lacks, plus the letters each screen's rows and hints name, so a
  *  whole Build Phase plays from the bar alone. Shift is the bar's one toggle: it turns the next arrow
  *  into Shift+Arrow, the fast move. */
 export const KEY_BAR: Readonly<Record<"common" | "menu" | "build" | "pulse", readonly KeyBarKey[]>> = {
@@ -105,6 +164,8 @@ export const KEY_BAR: Readonly<Record<"common" | "menu" | "build" | "pulse", rea
     { name: "]", label: "] faster" },
     // Settings is Esc then s; its Experiments are d; e exports inside it; r restarts from the game menu.
     { name: "d", label: "d experiments" },
+    // Every key and click, by situation (the game menu's Controls and hotkeys page).
+    { name: "?", label: "? controls" },
     { name: "r", label: "r" },
     { name: "q", label: "q" },
   ],

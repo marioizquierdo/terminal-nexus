@@ -8,7 +8,7 @@
 stop / finish-in-flight / Recall sequence, and a result a viewer can read unprompted. The kernel is
 Milestone 1's and did not change. 6B and 6C wait for the owner's word.
 **Depends on:** Milestone 5 (Build Phase produces what this Pulse resolves — accepted 2026-09-29)
-**Updated:** 2026-09-29
+**Updated:** 2026-09-30
 **License:** Apache-2.0
 
 > **Promoted to CURRENT, 2026-09-29**, when Mario accepted Milestone 5 and gave his word to start this
@@ -55,7 +55,87 @@ Milestone 1's and did not change. 6B and 6C wait for the owner's word.
 > - [x] the start confirmation is a screen titled `Battle Round 1` whose text is "Activate Nexus. Collect
 >       Resources. Spawn Units." unless a mission supplies its own (F49);
 > - [x] its one row is `[s] Start`; Esc goes back and `n` is no longer a key (F50);
-> - [ ] the menu reorganisation is his to start, on a spike of its own (F51 — scheduled, nothing built).
+> - [x] the menu reorganisation is his to start, on a spike of its own (F51 — he started it on
+>       2026-09-30; built as the menu spike below, awaiting his playtest).
+
+> **The menu spike — the owner's reorganisation of the Build Phase menu, 2026-09-30**
+> ([`../docs/feedback/2026-09-30-menu-spike.md`](../docs/feedback/2026-09-30-menu-spike.md), F52-F60).
+> Gate 6A's round 3 left this for a spike of its own (F51); it is Build Phase interface work, built on
+> its own pull request while 6A waits for his playtest, and it does not start 6B. Definition of done:
+>
+> - [x] a row whose action is under way reads `[x] Label  >>` — `[x]` the key that ends it, `>>` in
+>       place of its value — for every row alike (F53);
+> - [x] a menu row that hands the keyboard to the map sends an arrow from its `>>` to the cursor, which
+>       blinks twice when it lands; an Experiment switches it off and sets its speed (F54);
+> - [x] Left and Right on the menu only flicker the row; a placement begun on the menu comes back to it
+>       with the row flashing once (F55);
+> - [x] no group headings: one list, a blank line between Explore Map, Nexus and the buildings (F56);
+> - [x] `$ 100`, no maximum, top right of the panel, in the cost column (F57);
+> - [x] no key help or description lines in the panel; an armed building's panel is its card under
+>       `[x] Name  >>` (F58);
+> - [x] the bottom bar is one row: the last key's answer, else a contextual hint from one place in the
+>       code; no position readout (F59);
+> - [x] the game menu has `[c] Controls and hotkeys`, a scrolling page of keys and clicks (F60);
+> - [x] tests, canon, `docs/ui-patterns.md`, the gate report's section on it, pictures, and a pull
+>       request.
+
+> **The menu spike, round 2 — the owner's play of it, 2026-09-30**
+> ([`../docs/feedback/2026-09-30-menu-spike-round-2.md`](../docs/feedback/2026-09-30-menu-spike-round-2.md),
+> F61-F76, with his settings export). Definition of done:
+>
+> - [x] the Left/Right flicker greys the row's words and leaves its background (F61);
+> - [x] an active row is the hotkey colour and one `>`, no underline; a card's header keeps the row's
+>       own hotkey, which cancels (F67, F70);
+> - [x] the menu reads Explore Map, Nexus, the credits line (`◆ 130`, the map's resource symbol, on the
+>       blank line above the buildings), the buildings, Start Pulse; no credits on the cards (F71, F72);
+> - [x] the arrow leaves from the row's own place; the row slides up to be the card's title and the card
+>       fades and types in, in about 150 ms, with an Experiment for the length (F63, F68);
+> - [x] Explore Map sends a see-through cursor (80% opacity, blended with what it crosses) instead of the
+>       arrow, and, opened from the menu, first moves the cursor to clear ground by the arming rule (F64-F66);
+> - [x] while a building is armed, other buildings, Explore Map and Start Pulse are refused until it is
+>       placed or cancelled (its own digit cancels) (F69);
+> - [x] `x` never opens the game menu, and a right click behaves like `x`; no "[esc] Back" rows in popups
+>       (F62, F73);
+> - [x] every list stops at its ends, a held arrow ramps like the map cursor, Shift/PageUp/Home jump to
+>       the ends (F75);
+> - [x] `docs/ui-patterns.md` reorganised, and pointed to from `AGENTS.md` and `CLAUDE.md` (F74);
+> - [x] his settings export is the default; the settled Experiments are gone into one table of tuned
+>       values; the focus arrow, the card animation, the hold window, the raid and your units remain (F76);
+> - [x] tests, canon, pictures, the playable page and the pull request — and, at his request the same
+>       day, a general review of the whole pull request: names after the design, three bugs fixed, the
+>       view split by concept, the tests grouped by concept.
+
+> **The menu spike, round 3 — the owner's play of round 2 and the review, 2026-09-30**
+> ([`../docs/feedback/2026-09-30-menu-spike-round-3.md`](../docs/feedback/2026-09-30-menu-spike-round-3.md),
+> F77-F81, with his third settings export). Definition of done:
+>
+> - [x] his export: the focus arrow (250 ms) and the card reveal (400 ms) settled into the tuned values,
+>       "your units: some" the placeholder Pulse's default, the hold window 200 ms as he asked (F81, F79);
+> - [x] the popup's scroll bar: the track is the plain border, the thumb has a texture of its own (F78);
+> - [x] taps accelerate by counting (a double tap within 400 ms, a fast one within 300 ms; 2 tiles on the
+>       third tap after a fast gap, 4 after three more), a held key moves on the game's own capped cadence,
+>       on the map and in every list (F79);
+> - [x] "Key releases" (auto / off): the kitty keyboard protocol asked for, read where the terminal
+>       answers, and always popped on exit (F79);
+> - [x] the Battle Round screen's border breathes, lighter and darker, with an Experiment for its length
+>       (F80);
+> - [x] a dedicated navigation session queued in `docs/next-steps.md` (F79);
+> - [x] tests, canon, pictures, the playable page and the pull request.
+
+> **The menu spike's follow-up — the owner's notes at its end, 2026-09-30**
+> ([`../docs/feedback/2026-09-30-menu-spike-followup.md`](../docs/feedback/2026-09-30-menu-spike-followup.md),
+> F82-F86, on the same pull request). Definition of done:
+>
+> - [x] every popup's border breathes gently; the Battle Round screen opens with a double flash of wider
+>       contrast, then breathes like the rest — one popup-border effect with an opening and a steady
+>       part (F83);
+> - [x] a card is a title, a subtitle, a description and its stats; no "planned" or "to build" line;
+>       every building's subtitle and a longer description (F84);
+> - [x] Settings in titled sections with a blank line between them, a Keyboard navigation section with
+>       a few navigation numbers back as Experiments, and one ladder every setting sits on — a player's
+>       setting, an Experiment, or a tuned constant in code — so moving one is a one-word change (F85);
+> - [x] a prompt to start the next gate in a new session (F86);
+> - [x] tests, canon, pictures and the pull request.
 
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
 > how the Pulse resolves — that stays the deterministic kernel, unmodified. What is new is the

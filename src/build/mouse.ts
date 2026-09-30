@@ -6,20 +6,19 @@
 // gestures a flat menu has no use for: the wheel, and the right button.
 
 import type { BuildLayout } from "./layout.ts"
-import { ESC_KEY, escHintAt, inPanelColumns, menuEntryAt, pulseControlAt, tileAtCell } from "./layout.ts"
-import type { PlacedOverlay } from "./overlay.ts"
-import { overlayHitAt } from "./overlay.ts"
+import { ESC_KEY, escLabelAt, inPanelColumns, menuEntryAt, pulseControlAt, tileAtCell } from "./layout.ts"
+import type { PlacedPopup } from "./popup.ts"
+import { popupHitAt } from "./popup.ts"
 import type { Camera } from "./camera.ts"
-import { EXPLORE_ENTRY, JUMP_TILES } from "./state.ts"
 import type { BuildCommand, ConstructItem } from "./types.ts"
 
-/** What is on screen beyond the layout: the open popup, placed, since it holds the mouse; whether the
- *  Explore Map panel is drawn where the menu usually is; and the top bar's Esc label as drawn
- *  (`escLabel`), whose width is its click target — "close [esc]" with a popup open, "menu [esc]"
- *  otherwise, when not given. */
+/** What is on screen beyond the layout: the open popup, placed, since it holds the mouse; the menu
+ *  entry whose card — Explore Map's, or the building being placed (`cardEntry`) — is drawn where the
+ *  menu usually is, if one is; and the top bar's Esc label as drawn (`escLabel`), whose width is its
+ *  click target — "close [esc]" with a popup open, "menu [esc]" otherwise, when not given. */
 export type MouseUiState = Readonly<{
-  overlay?: PlacedOverlay
-  explorePanel?: boolean
+  popup?: PlacedPopup
+  card?: number | null
   escLabel?: string
   /** A Nexus Pulse is on screen (gate 6A): its panel's control rows are click targets, and nothing else
    *  on the panel is. */
@@ -60,14 +59,19 @@ export const MOUSE_RIGHT = 2
 export const MOUSE_WHEEL_UP = 64
 export const MOUSE_WHEEL_DOWN = 65
 
+/** How far one notch of the wheel moves the map cursor, in tiles. GUIDANCE (engine.md 9.7's bindings
+ *  table), not RULE. The keyboard's fast move jumped this far too until gate 5H; it jumps the tuned
+ *  `TUNING.jumpStep` now, and the wheel alone keeps five. */
+export const WHEEL_TILES = 5
+
 /**
  * **The wheel moves the cursor, not a second camera.** Engine.md 9.7's table says "Mouse: wheel —
  * scroll the camera; the mouse's Shift+Arrow", while 3.3 says the camera is driven by the cursor and
  * there is "no separate pan mode, no modifier keys, no second cursor". Taken literally together, the
  * only reading that keeps both true is the one the table's own gloss already points at: the wheel is
- * the mouse's Shift+Arrow, so it jumps the *cursor* five tiles and the camera follows it, exactly as
- * the keyboard's fast pan does. A wheel that moved the camera on its own would be the separate pan
- * mode 3.3 forbids, and would leave the cursor stranded off screen.
+ * the mouse's fast move, so it moves the *cursor* `WHEEL_TILES` and the camera follows it, as it
+ * follows every cursor move. A wheel that moved the camera on its own would be the separate pan mode
+ * 3.3 forbids, and would leave the cursor stranded off screen. Inside a popup it walks the list.
  */
 export function buildMouseCommand(
   event: MouseEvent,
@@ -77,12 +81,21 @@ export function buildMouseCommand(
   ui: MouseUiState = {},
 ): BuildCommand | null {
   if (!event.press) return null
-  // "Mouse: right click — Esc. The RTS convention for cancel." One cancel, whatever is open.
-  if (event.button === MOUSE_RIGHT) return { kind: "cancel" }
+  // "Mouse: right click — Esc. The RTS convention for cancel." It walks back as `x` does: one level,
+  // whatever is open — and on the menu it does nothing, since a stray right click should never open a
+  // menu (owner, 2026-09-30, feedback F62, where `x` stopped opening the game menu). The top bar's
+  // `menu [esc]` is Esc itself, and opens it.
+  if (event.button === MOUSE_RIGHT) return { kind: "back" }
 
   // What the click lands on underneath any popup — a menu row or a tile — named as the reducer's own
   // click commands, which decide what a click means from what is on screen.
   const underneath = (): BuildCommand | null => {
+    // A card — Explore Map's, or the building being placed (feedback F58) — covers the menu below its
+    // header row, so the whole panel is one target: a click on the card's own row, its header. Sent as
+    // the menu click it is, so a driver's `click-menu` while a card shows means exactly the same.
+    if (ui.card !== undefined && ui.card !== null && inPanel(layout, event.column, event.row)) {
+      return { kind: "click-menu", entry: ui.card }
+    }
     // The Pulse's panel has no menu: a click there is not a menu row.
     const entry = ui.pulse === true ? null : menuEntryAt(layout, catalog, event.column, event.row)
     if (entry !== null) return { kind: "click-menu", entry }
@@ -94,26 +107,26 @@ export function buildMouseCommand(
   // The top bar's Esc label — "menu [esc]", "back [esc]", "close [esc]" — is Esc itself, whatever is
   // open (feedback F37): one level back, exactly as the key goes, never the click-outside that closes
   // every popup at once.
-  const escText = ui.escLabel ?? `${ui.overlay === undefined ? "menu" : "close"} ${ESC_KEY}`
-  if (event.button === MOUSE_LEFT && escHintAt(layout, escText, event.column, event.row)) return { kind: "cancel" }
+  const escText = ui.escLabel ?? `${ui.popup === undefined ? "menu" : "close"} ${ESC_KEY}`
+  if (event.button === MOUSE_LEFT && escLabelAt(layout, escText, event.column, event.row)) return { kind: "cancel" }
 
   // An open popup holds the mouse. Inside it, a click is one of its options or its scroll bar; outside
   // it, the click closes it and brings focus to wherever it landed, and does nothing more (owner,
   // 2026-09-27 — he clicked Nexus, missed the popup in the middle, and thought the mouse was broken).
-  if (ui.overlay !== undefined) {
+  if (ui.popup !== undefined) {
     // The wheel walks a popup's list, which scrolls Settings' and the export's (gate 5H) — Up and
     // Down's own job.
     if (event.button === MOUSE_WHEEL_UP) return { kind: "highlight", delta: -1 }
     if (event.button === MOUSE_WHEEL_DOWN) return { kind: "highlight", delta: 1 }
     if (event.button !== MOUSE_LEFT) return null
-    const hit = overlayHitAt(ui.overlay, event.column, event.row)
+    const hit = popupHitAt(ui.popup, event.column, event.row)
     if (hit.kind === "command") return hit.command
     if (hit.kind === "outside") return underneath() ?? { kind: "cancel" }
     return null
   }
 
-  if (event.button === MOUSE_WHEEL_UP) return { kind: "move-cursor", dx: 0, dy: -JUMP_TILES }
-  if (event.button === MOUSE_WHEEL_DOWN) return { kind: "move-cursor", dx: 0, dy: JUMP_TILES }
+  if (event.button === MOUSE_WHEEL_UP) return { kind: "move-cursor", dx: 0, dy: -WHEEL_TILES }
+  if (event.button === MOUSE_WHEEL_DOWN) return { kind: "move-cursor", dx: 0, dy: WHEEL_TILES }
   if (event.button !== MOUSE_LEFT) return null
   // The Pulse's panel has control rows where the menu was; a click on one is that control, exactly as
   // its hotkey is, and any other click on the panel does nothing (there is no menu underneath it).
@@ -122,16 +135,11 @@ export function buildMouseCommand(
     if (control !== null) return { kind: "pulse", control }
     if (inPanel(layout, event.column, event.row)) return null
   }
-  // Explore Map covers the menu below its own row, so the whole panel is one target — its own row,
-  // drawn active, and the card under it — and what it does is close Explore Map, as Esc does. Sent as
-  // the menu click it is, so a driver's `click-menu` in Explore Map means exactly the same.
-  if (ui.explorePanel === true && inPanel(layout, event.column, event.row)) {
-    return { kind: "click-menu", entry: menuEntryAt(layout, catalog, event.column, event.row) ?? EXPLORE_ENTRY }
-  }
+  // A click on a card goes back, as Esc does (`underneath`).
   return underneath()
 }
 
 /** Whether a frame cell is on the side panel — its full width, from its first row to its last. */
 function inPanel(layout: BuildLayout, column: number, row: number): boolean {
-  return inPanelColumns(layout, column) && row >= layout.panelRow && row <= layout.panelBindingsRow
+  return inPanelColumns(layout, column) && row >= layout.panelRow && row <= layout.panelLastRow
 }

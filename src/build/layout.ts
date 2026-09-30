@@ -5,8 +5,8 @@
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import type { PlaybackControl } from "../view/playback.ts"
 import type { BuildState } from "./state.ts"
-import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct, startEntry } from "./state.ts"
-import type { ConstructGroup, ConstructItem, MenuEntry } from "./types.ts"
+import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct, mapMode, startEntry } from "./state.ts"
+import type { ConstructItem, MenuEntry } from "./types.ts"
 import type { Camera, TerminalSize, TileWidth, Viewport } from "./camera.ts"
 import {
   BORDER_COLUMNS,
@@ -60,34 +60,54 @@ export type BuildLayout = Readonly<{
   headerLimit: number
   /** Where the top bar's Esc label ends, right-aligned — "menu [esc]", "back [esc]" or "close [esc]",
    *  saying what Esc does right now (feedback F37): drawn there, and its click target, which sends
-   *  exactly what Esc sends. `escHint` gives the columns a given label covers. It replaced gate 5G's
+   *  exactly what Esc sends. `escLabelEnd` gives the columns a given label covers. It replaced gate 5G's
    *  `[d] debug`, then 5J's fixed `[esc] menu`. */
-  escHint: Readonly<{ row: number; to: number }>
-  /** How many glyphs fit on one footer row, which runs the full width beneath both panes. */
+  escLabelEnd: Readonly<{ row: number; to: number }>
+  /** How many glyphs fit on the bottom bar's line, which runs the full width beneath both panes. */
   footerLimit: number
-  /** Frame row the bottom bar's three lines start at — the first row below the Grid's own bottom
-   *  rule: the position readout, then the key help, then the status line. */
+  /** Frame row of the bottom bar's one line — the first row below the Grid's own bottom rule: the
+   *  contextual line, the last command's answer or a hint for where the keyboard is (feedback F59,
+   *  `src/build/help.ts`). Three lines until then: a position readout, the key help, the status line. */
   footerRow: number
   /** Frame row the panel's first line is drawn on — the first row under the rule that closes the
    *  Grid's top, so the panel and the Grid start together. */
   panelRow: number
-  /** Frame row the panel's last binding sits on — its last usable line, so the bindings do not move
-   *  as the rest of the panel grows and shrinks with what the player is doing. */
-  panelBindingsRow: number
+  /** Frame row of the panel's last usable line: the Start Pulse row is pinned there (`startRow`), and
+   *  the Nexus Pulse panel's last control row. (Named for the key help that used to overflow into the
+   *  panel's bottom lines; the panel carries no help text since feedback F58. Renaming it is a pure
+   *  rename for a change of its own.) */
+  panelLastRow: number
 }>
 
-/** The panel's own rows, counted from its first. Rows 0 and 1 are the Explore Map and Nexus entries —
- *  the owner asked for both at the top of the menu, and for Explore Map first (2026-09-28, feedback
- *  F23); row 3 is what the player has to spend, directly above the costs it is measured against; the
- *  construct groups start on row 4. */
+/**
+ * The panel's own rows, counted from its first (owner, 2026-09-30, feedback F71 and F72, after F56 and
+ * F57): Explore Map on row 0 and Nexus straight under it on row 1 ("Do not leave a space between
+ * Explore and Nexus items"); row 2 is the **credits line** — blank on the left, and on the right, in
+ * the column the costs are in, the map's own resource symbol and what there is to spend, `◆ 130` ("they
+ * should be on the empty line right before the build/construction list ... the same as the symbol used
+ * on the map to represent resources"); and from row 3 the buildings, one list in catalog order with no
+ * group headings. The credits are on the menu alone, never on a card.
+ */
 export const EXPLORE_ROW = 0
 export const NEXUS_ROW = 1
-export const RESOURCE_ROW = 3
-const CONSTRUCT_FIRST_ROW = 4
+export const CREDITS_ROW = 2
+const CONSTRUCT_FIRST_ROW = 3
+
+/**
+ * A **card** — the panel that replaces the menu while something has the map's attention: Explore Map,
+ * or a building being placed (feedback F32, F58). Its header is the row that opened it, drawn active on
+ * the panel's first line (row 0, Explore Map's own); a separator runs across the panel on row 1; the
+ * card itself starts on row 2. With the credits off the top line (F71) nothing sits above the header.
+ * The row moves up to become the header when the card opens (F68, `src/view/build.ts`), and the focus
+ * arrow leaves from where the row was on the menu (F63), not from the header.
+ */
+export const CARD_HEADER_ROW = EXPLORE_ROW
+export const CARD_SEPARATOR_ROW = CARD_HEADER_ROW + 1
+export const CARD_FIRST_ROW = CARD_HEADER_ROW + 2
 
 /**
  * The Nexus Pulse panel's clickable rows (gate 6A): the playback controls with their hotkeys, pinned to
- * the bottom of the panel where the Build Phase's overflow key help sits. The composer draws them and
+ * the bottom of the panel, where the Build Phase's Start Pulse row sits. The composer draws them and
  * the mouse adapter hit-tests them from this one place, as it does every other row. `[` and `]` (speed)
  * and `.` and `,` (step) are keys only: the panel has room for two rows and these are the two a player
  * reaches for.
@@ -96,8 +116,8 @@ export type PulseControlRow = Readonly<{ row: number; hotkey: string; control: P
 
 export function pulseControlRows(layout: BuildLayout): readonly PulseControlRow[] {
   return [
-    { row: layout.panelBindingsRow - 1, hotkey: "space", control: "toggle" },
-    { row: layout.panelBindingsRow, hotkey: "r", control: "restart" },
+    { row: layout.panelLastRow - 1, hotkey: "space", control: "toggle" },
+    { row: layout.panelLastRow, hotkey: "r", control: "restart" },
   ]
 }
 
@@ -116,15 +136,14 @@ export function pulseControlAt(layout: BuildLayout, column: number, row: number)
 /**
  * The Start Pulse entry (owner, 2026-09-29, feedback F41, then F47: "a regular menu item, at the
  * bottom"): the menu's last row, drawn and hit-tested like every other. It is pinned to the panel's
- * bottom line rather than placed after the last group, so it does not move as the menu above it grows,
- * and the rest of the menu — and the key help that grows up from the bottom — ends on the row above it.
- * `s` is its hotkey.
+ * bottom line rather than placed after the last building, so it does not move as the menu above it
+ * grows, and the rest of the menu ends on the row above it. `s` is its hotkey.
  */
 export const START_KEY = "s"
 export const START_LABEL = "Start Pulse"
 
 export function startRow(layout: BuildLayout): number {
-  return layout.panelBindingsRow
+  return layout.panelLastRow
 }
 
 /** The last panel row the menu's other text may use: the rows above the Start Pulse entry. */
@@ -138,93 +157,47 @@ export const ESC_KEY = "[esc]"
 /**
  * What Esc does right now, as the top bar's right end says it (owner, 2026-09-29, feedback F37: "The
  * '[esc] menu' at the top right should be dynamic"): **close** while a popup is open, **back** while
- * the map has the keyboard — placing, Explore Map, or the map a click opened — and **menu** on the
- * menu (and on a committed Build Phase), where Esc opens the game menu. The label comes first and the
- * key after it — "menu [esc]" — the way a way-back is read, hotkey on the right.
+ * the map has the keyboard — placing, Explore Map, or plain navigation — and **menu** on the menu (and
+ * on a committed Build Phase), where Esc opens the game menu. The label comes first and the key after
+ * it — "menu [esc]" — the way a way-back is read, hotkey on the right.
  */
-export function escLabel(state: Pick<BuildState, "overlay" | "focus" | "committed">): string {
-  const action = state.overlay !== null ? "close" : state.committed || state.focus !== "grid" ? "menu" : "back"
+export function escLabel(state: Pick<BuildState, "popup" | "focus" | "committed" | "armed" | "exploreMap">): string {
+  const action = state.popup !== null ? "close" : state.committed || mapMode(state) === "menu" ? "menu" : "back"
   return `${action} ${ESC_KEY}`
 }
 
 /** The columns the top bar's Esc label covers, right-aligned — where it is drawn and clicked. */
-export function escHintSpan(layout: BuildLayout, label: string): Readonly<{ row: number; from: number; to: number }> {
-  return { row: layout.escHint.row, from: layout.escHint.to - label.length + 1, to: layout.escHint.to }
+export function escLabelSpan(layout: BuildLayout, label: string): Readonly<{ row: number; from: number; to: number }> {
+  return { row: layout.escLabelEnd.row, from: layout.escLabelEnd.to - label.length + 1, to: layout.escLabelEnd.to }
 }
 
 /** Whether a frame cell is on the top bar's Esc label. */
-export function escHintAt(layout: BuildLayout, label: string, column: number, row: number): boolean {
-  const hint = escHintSpan(layout, label)
+export function escLabelAt(layout: BuildLayout, label: string, column: number, row: number): boolean {
+  const hint = escLabelSpan(layout, label)
   return row === hint.row && column >= hint.from && column <= hint.to
 }
 
-/** The order the construct groups are drawn in — `commander-armies.md` Section 2.1's own order: the
- *  faction's common structures first, then what makes one Commander's package its own. */
-export const CONSTRUCT_GROUPS: readonly ConstructGroup[] = ["common", "army"]
-
 /**
- * One line of the construct block, computed once and read by both the composer and the mouse
- * adapter. A list split into labelled groups has no uniform row step, so the rows are enumerated
- * rather than multiplied out.
- *
- * An empty group is **drawn, not skipped** (engine.md 9.2's RULE: a group that vanishes reflows the
- * panel and moves every row below it the first time it fills) — as one line, its label with "none
- * available" beside it, the same one-line form the SPECIAL row already has. The panel lost two rows
- * when the top bar became the whole width (gate 5F), and a one-line fact needs no line of its own for
- * a heading.
+ * One building's row of the menu, computed once and read by both the composer and the mouse adapter:
+ * its frame row and its index in the catalog. The buildings are one list, in catalog order, one row
+ * each (feedback F56 — the COMMON, ARMY and SPECIAL headings, and the "none available" lines, went with
+ * the groups). A row that would fall below `menuFloor` — on a panel too short for the whole list — is
+ * left out, so it is neither drawn nor a click target: a click can never land on a row nobody sees.
  */
-export type ConstructLine =
-  | Readonly<{ kind: "group"; row: number; group: ConstructGroup }>
-  | Readonly<{ kind: "item"; row: number; index: number }>
-  | Readonly<{ kind: "empty"; row: number; group: ConstructGroup }>
-
-/** The construct lines, and the row just past them — where the SPECIAL row goes. A group with rows
- *  is a list, and gets a blank line after it; an empty group is a one-line fact, and stacks directly
- *  on whatever follows, the way SPECIAL stacks under it. */
-function constructBlock(
-  layout: BuildLayout,
-  catalog: readonly ConstructItem[],
-): Readonly<{ lines: readonly ConstructLine[]; next: number }> {
-  const lines: ConstructLine[] = []
-  let row = layout.panelRow + CONSTRUCT_FIRST_ROW
-  for (const group of CONSTRUCT_GROUPS) {
-    const members = catalog
-      .map((item, index) => ({ item, index }))
-      .filter(({ item }) => item.group === group)
-    if (members.length === 0) {
-      lines.push({ kind: "empty", row, group })
-      row += 1
-      continue
-    }
-    lines.push({ kind: "group", row, group })
-    row += 1
-    for (const { index } of members) {
-      lines.push({ kind: "item", row, index })
-      row += 1
-    }
-    row += 1
-  }
-  return { lines, next: row }
-}
+export type ConstructLine = Readonly<{ row: number; index: number }>
 
 export function constructLines(
   layout: BuildLayout,
   catalog: readonly ConstructItem[],
 ): readonly ConstructLine[] {
-  return constructBlock(layout, catalog).lines
-}
-
-/**
- * The panel's SPECIAL row, directly under the construct block — the last of `commander-armies.md`
- * Section 2.1's four Build Phase places to be drawn (the Nexus powers have the menu's top entry since
- * gate 5F, so the NEXUS summary row gate 5D drew here is gone). Read by the composer, and by the
- * bindings block that grows up from the panel's bottom, which must stop short of it.
- */
-export function summaryRows(
-  layout: BuildLayout,
-  catalog: readonly ConstructItem[],
-): Readonly<{ special: number }> {
-  return { special: constructBlock(layout, catalog).next }
+  const lines: ConstructLine[] = []
+  const first = layout.panelRow + CONSTRUCT_FIRST_ROW
+  for (let index = 0; index < catalog.length; index += 1) {
+    const row = first + index
+    if (row > menuFloor(layout)) break
+    lines.push({ row, index })
+  }
+  return lines
 }
 
 /** The frame row a menu entry is drawn on. */
@@ -236,10 +209,7 @@ export function menuEntryRow(
   if (entry.kind === "nexus") return layout.panelRow + NEXUS_ROW
   if (entry.kind === "explore") return layout.panelRow + EXPLORE_ROW
   if (entry.kind === "start") return startRow(layout)
-  for (const line of constructLines(layout, catalog)) {
-    if (line.kind === "item" && line.index === entry.index) return line.row
-  }
-  return null
+  return constructLines(layout, catalog).find((line) => line.index === entry.index)?.row ?? null
 }
 
 /**
@@ -260,10 +230,8 @@ export function menuEntryAt(
   if (row === startRow(layout)) return startEntry(catalog.length)
   if (row === layout.panelRow + EXPLORE_ROW) return EXPLORE_ENTRY
   if (row === layout.panelRow + NEXUS_ROW) return NEXUS_ENTRY
-  for (const line of constructLines(layout, catalog)) {
-    if (line.kind === "item" && line.row === row) return entryOfConstruct(line.index)
-  }
-  return null
+  const line = constructLines(layout, catalog).find((candidate) => candidate.row === row)
+  return line === undefined ? null : entryOfConstruct(line.index)
 }
 
 export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLayout {
@@ -317,11 +285,11 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLay
     panelColumn,
     panelLimit: dividerColumn - panelColumn,
     headerLimit,
-    escHint: { row: offset.row + 1, to: hintTo },
+    escLabelEnd: { row: offset.row + 1, to: hintTo },
     footerLimit: composition.width - 4,
     footerRow: paneBottom + 1,
     panelRow: gridBox.top + 1,
-    panelBindingsRow: paneBottom - 1,
+    panelLastRow: paneBottom - 1,
   }
 }
 

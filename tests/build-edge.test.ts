@@ -7,8 +7,8 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { isGated } from "../src/build/camera.ts"
-import { DEBUG_FIELDS } from "../src/build/debug.ts"
-import { buildLayout, cellForTile, menuEntryAt, tileAtCell } from "../src/build/layout.ts"
+import { EXPERIMENT_FIELDS } from "../src/build/experiments.ts"
+import { EXPLORE_ROW, buildLayout, cellForTile, menuEntryAt, tileAtCell } from "../src/build/layout.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildContext, BuildState } from "../src/build/state.ts"
@@ -25,8 +25,8 @@ import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { sgrFor } from "../src/view/roles.ts"
 import type { GlyphPack } from "../src/view/theme.ts"
 import { chromeGlyph, terrainGlyph } from "../src/view/theme.ts"
+import { MINIMUM } from "./build-helpers.ts"
 
-const MINIMUM = { columns: 80, rows: 24 }
 const PACKS: readonly GlyphPack[] = ["ascii", "unicode"]
 
 /** A Grid exactly the minimum viewport: the whole map on screen, so all four sides are its edge. */
@@ -167,7 +167,7 @@ test("the map's own edge is the style the map names, and the solid bar for a map
 })
 
 test("the map edge is the rule now, not an Experiment: none of the three settled flags is left in the list", () => {
-  const fields = new Set<string>(DEBUG_FIELDS.map((spec) => spec.field))
+  const fields = new Set<string>(EXPERIMENT_FIELDS.map((spec) => spec.field))
   for (const field of ["mapEdge", "mapEdgeColour", "sharedWestBorder"]) {
     assert.equal(fields.has(field), false, `${field} was settled by the owner's playtest and deleted`)
   }
@@ -226,8 +226,8 @@ test("the shared west side: the divider is the Grid's west side, the Grid gets i
     }
   }
   // The menu's click targets are on the panel, left of the divider.
-  assert.equal(menuEntryAt(layout, context.catalog, layout.panelColumn, layout.panelRow), 0)
-  assert.equal(menuEntryAt(layout, context.catalog, layout.dividerColumn, layout.panelRow), null)
+  assert.equal(menuEntryAt(layout, context.catalog, layout.panelColumn, layout.panelRow + EXPLORE_ROW), 0)
+  assert.equal(menuEntryAt(layout, context.catalog, layout.dividerColumn, layout.panelRow + EXPLORE_ROW), null)
   // Wide tiles and the largest view keep the arithmetic.
   for (const terminal of [{ columns: 104, rows: 32 }, { columns: 128, rows: 24 }, { columns: 200, rows: 44 }]) {
     const wide = buildLayout(terminal, context.grid)

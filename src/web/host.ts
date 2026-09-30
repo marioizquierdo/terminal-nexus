@@ -24,15 +24,14 @@ import { loadScenario } from "../scenario/load.ts"
 import type { ScenarioDefinition } from "../scenario/types.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
 import { DEFAULT_SETTINGS, parseSettings } from "../settings/types.ts"
-import type { DebugFlags } from "../build/debug.ts"
-import { defaultExperiments, parseSettingsExport } from "../build/settings-export.ts"
+import { importSettings } from "../build/settings-export.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
 import { DEFAULT_PRESENTATION } from "../view/snapshot.ts"
 import { CanvasBackend } from "../view/backends/canvas.ts"
 import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, MOUSE_WHEEL_DOWN, MOUSE_WHEEL_UP } from "../build/mouse.ts"
 import { keyBytes, parseKeyScript } from "../playtest/keys.ts"
-import { KEY_BAR, bytesForKeyPress, mouseBytes, withShift } from "./keys.ts"
+import { KEY_BAR, StandInKeyboard, mouseBytes, withShift } from "./keys.ts"
 import grandBattle from "../../scenarios/grand-battle.map.json" with { type: "json" }
 import citizensVersusRavels from "../../scenarios/citizens-versus-ravels.map.json" with { type: "json" }
 
@@ -70,14 +69,22 @@ function listeners<E extends string>(): {
 
 const outputEvents = listeners<"resize">()
 const inputEvents = listeners<"data">()
+/** The page's side of the kitty keyboard protocol: it answers the Build Phase's question, keeps the
+ *  flags it pushes, and marks key repeats and releases the way such a terminal does (`src/web/keys.ts`). */
+const standIn = new StandInKeyboard()
 const terminal: TerminalOutput & { columns: number; rows: number } = {
   isTTY: true,
   columns: 80,
   rows: 24,
   // Everything a loop writes besides frames is terminal housekeeping — the alternate screen, mouse
   // reporting, a clear before a resized frame. The canvas repaints whole frames, so none of it
-  // applies here.
-  write: () => true,
+  // applies here — except the keyboard protocol's question, answered as input a moment later, as a
+  // terminal would.
+  write: (text: string) => {
+    const reply = standIn.written(text)
+    if (reply !== "") setTimeout(() => send(reply), 0)
+    return true
+  },
   on: (event, listener) => outputEvents.on(event, listener),
   off: (event, listener) => outputEvents.off(event, listener),
 }
@@ -193,11 +200,9 @@ async function start(next: Mode): Promise<void> {
   status.textContent = ""
 
   const saved: Settings = (await settingsStore.load()) ?? { ...DEFAULT_SETTINGS, capability: "truecolor" }
-  const importing =
-    next === "build" && imported !== null
-      ? parseSettingsExport(imported, { settings: saved, experiments: defaultExperiments() })
-      : null
-  if (importing !== null && importing.ignored.length > 0) status.textContent = `Settings text: ignored ${importing.ignored.join(", ")}`
+  // The settings text reaches the Build Phase only; the menu opens on what is saved.
+  const importing = importSettings(next === "build" ? (imported ?? undefined) : undefined, saved)
+  if (importing.ignored.length > 0) status.textContent = `Settings text: ignored ${importing.ignored.join(", ")}`
   const startScript = next === "build" ? keysFromAddress() : null
   let startKeys: PlaytestStep[] | null = null
   if (startScript !== null) {
@@ -207,8 +212,7 @@ async function start(next: Mode): Promise<void> {
       status.textContent = `#keys: ${error instanceof Error ? error.message : String(error)}`
     }
   }
-  const settings: Settings = importing?.snapshot.settings ?? saved
-  const experiments: DebugFlags | null = importing?.snapshot.experiments ?? null
+  const { settings, experiments } = importing
   backend = new CanvasBackend({
     canvas,
     capability: settings.capability,
@@ -224,7 +228,7 @@ async function start(next: Mode): Promise<void> {
       settings,
       settingsStore,
       buildId: __TN_BUILD__.commit,
-      ...(experiments === null ? {} : { experiments }),
+      experiments,
       ...(startKeys === null ? {} : { startKeys }),
       exporter: {
         destination: "Copied to the clipboard, and shown in the settings text box under the screen.",
@@ -297,15 +301,22 @@ keyBar.addEventListener("click", (event) => {
   send(keyBytes(withShift(name, shift)))
 })
 
-// A hardware keyboard: an iPad's, or a laptop's.
+// A hardware keyboard: an iPad's, or a laptop's. Its presses, the browser's own repeats, and its
+// releases, marked as a terminal speaking the kitty keyboard protocol marks them once the Build Phase
+// has asked for that (`StandInKeyboard`); otherwise a classic terminal's presses only.
+const ownsKey = (event: KeyboardEvent): boolean =>
+  !(event.target === typing || event.target instanceof HTMLSelectElement || event.target instanceof HTMLTextAreaElement)
 window.addEventListener("keydown", (event) => {
-  if (event.target === typing || event.target instanceof HTMLSelectElement || event.target instanceof HTMLTextAreaElement) {
-    return
-  }
-  const bytes = bytesForKeyPress(event)
+  if (!ownsKey(event)) return
+  const bytes = standIn.bytesFor(event, event.repeat ? "repeat" : "press")
   if (bytes === null) return
   event.preventDefault()
   send(bytes)
+})
+window.addEventListener("keyup", (event) => {
+  if (!ownsKey(event)) return
+  const bytes = standIn.bytesFor(event, "release")
+  if (bytes !== null) send(bytes)
 })
 
 // A phone's own keyboard, for letters: a hidden field collects what is typed and passes it on.
@@ -316,7 +327,7 @@ typing.addEventListener("input", () => {
 })
 typing.addEventListener("keydown", (event) => {
   if (event.key.length === 1) return
-  const bytes = bytesForKeyPress(event)
+  const bytes = standIn.bytesFor(event, event.repeat ? "repeat" : "press")
   if (bytes === null) return
   event.preventDefault()
   send(bytes)

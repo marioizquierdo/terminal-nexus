@@ -2,10 +2,13 @@
 // to be watched and retuned, and every moment of it a pure function of presentation time:
 //
 //   the fight is shown as it happened ............................ "fighting"
-//   the last seconds: the timer flashes, a light sweeps the border  "final"       (Experiment: Final warning)
+//   the last seconds: the timer flashes, a light sweeps the border  "final"       (`endWarnMs`)
 //   the last tick is shown and nothing shoots any more ........... "halted"      (effects in flight land)
-//   the survivors walk home ...................................... "walking"     (Walk-back delay, time)
+//   the survivors walk home ...................................... "walking"     (`endWalkPauseMs`, `endWalkMs`)
 //   everyone is home; the result stands .......................... "home"
+//
+// The three timings are the owner's tuned values (`src/build/tuning.ts`); `endingTimes` takes them as a
+// parameter so a test can try any.
 //
 // **The kernel decided the ending long before any of this plays**: the timeline is resolved whole before
 // the first frame, so presentation knows when the last tick is and can count down to it. That is what
@@ -22,7 +25,8 @@
 // is drawn here is the walk home on top of it: presentation only, from where the fight left each survivor
 // to the tile Recall gave it. Nothing in this file can change a state, an event or a hash.
 
-import type { DebugFlags } from "../build/debug.ts"
+import type { Tuning } from "../build/tuning.ts"
+import { TUNING } from "../build/tuning.ts"
 import type { Coord } from "../grid/types.ts"
 import type { RecallMove } from "../match/types.ts"
 import type { Outcome, PlayerId } from "../state/types.ts"
@@ -36,7 +40,7 @@ export type EndingTimes = Readonly<{
   /** The last tick is shown: the fight has stopped, and nothing shoots after it. */
   stopMs: number
   /** When the last seconds begin — the timer starts to flash and the light to sweep — or `null` for
-   *  none ("Final warning" at off). Never before the Pulse starts. */
+   *  none (a warning of 0). Never before the Pulse starts. */
   warnMs: number | null
   /** When the survivors start walking home: the pause after the stop, or later, once every effect in
    *  flight has landed ("then Recall plays"). */
@@ -45,20 +49,18 @@ export type EndingTimes = Readonly<{
   homeMs: number
 }>
 
-export type EndingFlags = Pick<DebugFlags, "endWarnMs" | "endWalkPauseMs" | "endWalkMs">
+/** The ending's three timings, in milliseconds: how long the warning lasts before the stop, the pause
+ *  before the walk home, and the walk. The game plays the owner's (`TUNING`); a test may hand in others. */
+export type EndingTuning = Pick<Tuning, "endWarnMs" | "endWalkPauseMs" | "endWalkMs">
 
-export function endingTimes(
-  lastTickMs: number,
-  effectsEndMs: number,
-  flags: EndingFlags,
-): EndingTimes {
+export function endingTimes(lastTickMs: number, effectsEndMs: number, tuning: EndingTuning = TUNING): EndingTimes {
   const stopMs = lastTickMs
-  const walkMs = Math.max(stopMs + flags.endWalkPauseMs, effectsEndMs)
+  const walkMs = Math.max(stopMs + tuning.endWalkPauseMs, effectsEndMs)
   return {
     stopMs,
-    warnMs: flags.endWarnMs > 0 ? Math.max(0, stopMs - flags.endWarnMs) : null,
+    warnMs: tuning.endWarnMs > 0 ? Math.max(0, stopMs - tuning.endWarnMs) : null,
     walkMs,
-    homeMs: walkMs + flags.endWalkMs,
+    homeMs: walkMs + tuning.endWalkMs,
   }
 }
 

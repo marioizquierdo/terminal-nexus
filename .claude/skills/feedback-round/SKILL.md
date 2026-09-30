@@ -36,7 +36,7 @@ top bar), and the export adoption (defaults and deletions). Tell each agent, in 
 - Read `AGENTS.md`, `CLAUDE.md`, `docs/ui-patterns.md` and the feedback items, whose quoted words are
   the spec.
 - **Which files are its own and which belong to the other agents.** Ask for new Experiments as a block
-  of their own at the end of `DEBUG_FIELDS`, and never to reorder or reformat existing entries.
+  of their own at the end of `EXPERIMENT_FIELDS`, and never to reorder or reformat existing entries.
 - **Do not edit `specs/`, `milestones/`, `AGENTS.md`, `evidence/` and do not bump the canon.** It returns
   *proposed canon text*, plain English, ready to paste. You apply it (one voice, one version bump).
 - Commit on the worktree branch with the attribution lines; do not push.

@@ -8,7 +8,7 @@
 
 import type { GridTerrain, TerrainId } from "../grid/types.ts"
 import type { Force, PulseSetup } from "../match/types.ts"
-import type { CrewSize, RaidSize } from "./debug.ts"
+import type { CrewSize, RaidSize } from "./experiments.ts"
 import type { ConstructItem, MapEdgeStyle, NexusPowerOption, StandingStructure } from "./types.ts"
 
 /**
@@ -116,14 +116,16 @@ export const SPIKE_STANDING: readonly StandingStructure[] = [
 ]
 
 /**
- * What the Build Phase can spend its allotment on. Three footprints, three costs, three one-line
- * reasons to pick one over another.
+ * What the Build Phase can spend its allotment on. Three footprints, three costs; what each one is
+ * for — the title, subtitle and description its card shows, and the bottom line's hint quotes — is
+ * written with the content, in `src/content/cards.ts` (feedback F84), since a building says the same
+ * about itself wherever a card shows it.
  *
  * The costs are round numbers chosen so the allotment buys a few things and not everything — a
  * budget that affords the whole menu is not a budget. They are not balance; `AGENTS.md` Section 2
  * reserves real costs for Milestone 12.
  *
- * The army group is empty, which is PERIMETER's answer rather than an omission: its menu draws
+ * Nothing here is army-specific, which is PERIMETER's answer rather than an omission: its menu draws
  * entirely from the Citizen common tier, and the Nexus draft holds the army-specific choice
  * (milestone-02-campaign-design.md Section 4.2).
  */
@@ -132,25 +134,19 @@ export const SPIKE_CATALOG: readonly ConstructItem[] = [
     hotkey: "1",
     contentId: "structure.citizen.barracks",
     label: "Barracks",
-    group: "common",
     cost: 40,
-    effect: "Trains troopers each Pulse",
   },
   {
     hotkey: "2",
     contentId: "structure.bench.hatchery",
     label: "Hatchery",
-    group: "common",
     cost: 30,
-    effect: "Spawns swarmers, slowly",
   },
   {
     hotkey: "3",
     contentId: "structure.bench.beamturret",
     label: "Turret",
-    group: "common",
     cost: 15,
-    effect: "Shoots what comes close",
   },
 ]
 

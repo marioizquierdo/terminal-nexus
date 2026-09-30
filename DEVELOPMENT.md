@@ -114,7 +114,7 @@ bun bin/grid.ts scenarios/citizen-mirror-skirmish --headless
 ./bin/terminal-nexus.ts --spike
 ./bin/terminal-nexus.ts --spike --scroll-margin 30 --capability monochrome   # margin: % of the view
 ./bin/terminal-nexus.ts --spike --settings "$(pbpaste)"   # start from an exported settings text
-./bin/terminal-nexus.ts --spike --settings "placeLight=rainbow scrollMargin=25"
+./bin/terminal-nexus.ts --spike --settings "popupPulseMs=3000 raid=probe"
 ./bin/terminal-nexus.ts --spike --keys "n 1 1 Enter"         # open already in a state: a power picked, a Barracks placed
 ./bin/terminal-nexus.ts --spike --keys "n 2 s s"             # open already in a Nexus Pulse, with nothing built (gate 6A)
 ```
@@ -152,66 +152,90 @@ in its own way (below). `terminal-nexus` flags: `--capability`, `--theme`, `--gl
 `--reduced-motion`, `--backend`.
 
 **The Build Phase** (`--spike`, Milestone 5) is the first screen in the project that
-shows a **window onto a Grid larger than itself**: a 96 x 40 map in a viewport that is 49 x 16 tiles
-at 80 columns and 72 x 24 at 104. The screen is a full-width top bar, the **menu on the left**, the
-Grid in **a rectangle of its own** beside it, and a full-width bottom bar of three lines: the position
-readout, the key help for whatever has the keyboard, and the **status line**. Each side of the Grid's
+shows a **window onto a Grid larger than itself**: a 96 x 40 map in a viewport that is 49 x 18 tiles
+at 80 x 24 and 72 x 24 at 104 x 30. The screen is a full-width top bar, the **menu on the left**, the
+Grid in **a rectangle of its own** beside it, and a full-width bottom bar of **one line**: the last
+key's answer, or else a hint for where the keyboard is (`src/build/help.ts`; the menu spike, feedback
+F59). Every key and click is on the **Controls and hotkeys** page — the game menu's `[c]`, or `?`
+from anywhere. Each side of the Grid's
 rectangle is a dim line where there is more map that way and **the map's own edge** where the map
 ends — a style the map names for itself (this map's is a fence), the solid bar for a map that names
 none — in a quieter colour than the frame; the menu's divider is the map's west side (the owner's
-picks from his 2026-09-29 playtest). The readout names the visible range, because there is no minimap.
+picks from his 2026-09-29 playtest). There is no minimap: the sides' weight says there is more map.
 
 **The menu runs the screen** (the owner's round-2 direction; `docs/ui-patterns.md` has the rules).
 The keyboard starts on the menu, on its first entry, and the map cursor on the Grid Nexus: Up/Down
-and Enter/Space work the menu. Tab (or a second Right) moves the keyboard to the map in **plain
-navigation** — nothing armed, the menu still drawn beside it; the arrows move the cursor, and the map
-scrolls once the cursor comes within a quarter of the view of an edge. `[e] Explore Map` (or Enter in
-plain navigation) turns its row active — `> [e] Explore Map` — and swaps the rest of the menu for a
-panel that describes whatever is under the cursor as it moves; `e` again, Esc or a click on the panel
-goes back. `[n] Nexus` opens the Nexus Powers popup (a pick closes it). Arming a building (its digit,
-Enter on its row, or a click on it) keeps the cursor where it is when the building fits there, and
-otherwise moves it to the nearest spot within 12 tiles that leaves a free tile around it; Enter or
-Space places it, and **the keyboard goes back to where the arming came from, disarmed** — the map, in
-plain navigation, for a digit pressed on the map; the menu for anything started on the menu. A row
-whose action is under way — a building armed, Explore Map open, the Nexus popup open — is drawn
-**active**: `>` before it, in the hotkey's colour. **A mouse click activates what it lands on**: a
-click on a building's row arms it at once, its ghost at the cursor; on the map a **second click on
-the same tile** places (Q52); a click on the map from the menu keeps the menu beside it, so the next
-click can arm from it. Only the keyboard shows a "highlighted, not yet chosen" bar. Esc, `x` and a
-right click go back one level — popup, then placing or Explore Map to where it was started, then the
-map to the menu — and on the menu open the **game menu**: `[s] Settings`, `[r] Restart`, `[q] Quit`,
-and Esc back to the game; `q` opens it too, and only Ctrl+C quits at once. The top bar's right end
-always says what Esc does right now — `menu [esc]`, `back [esc]` or `close [esc]` — and a click on it
-is Esc. Every row shows its cost, a row that no
-longer fits is dimmed, and **why a placement would be refused is the status line's job** — "rock in
-the way at 8,5", "costs 40, 20 left" (affordability first) — quietly while the grey `x` preview sits on
-the tile, in red once a placement is tried. `[u]` undoes and Backspace (on the map) removes the one
-under the cursor, both refunding (and throwing the placement's sparks where it stood), which keeps a
-plan revisable until `p` starts the Pulse.
+and Enter/Space work the menu, stopping at its first and last rows (Left and Right only grey the row's
+words for a moment). Tab moves the keyboard to the map in **plain navigation** — nothing armed, the
+menu still drawn beside it; the arrows move the cursor, and the map scrolls once the cursor comes
+within 30% of the view of an edge. `[e] Explore Map` (or Enter in plain navigation) turns its row
+active — `[e] Explore Map  >` — and swaps the rest of the menu for a card that describes whatever is
+under the cursor as it moves; opened from the menu, it first moves the cursor to clear ground near
+where it was and sends a see-through copy of the cursor from the row to it. `e` again, `x`, Esc or a
+click on the panel goes back. The menu is one list: Explore Map, Nexus, a line with what is left to
+spend on its right (`◆ 130`, the map's resource symbol — `* 130` in ASCII), the buildings with their
+costs, and `[s] Start Pulse` on its last line. `[n] Nexus` opens the Nexus Powers popup (a pick closes
+it). Arming a building (its digit, Enter on its row, or a click on it) keeps the cursor where it is
+when the building fits there, and otherwise moves it to the nearest spot within reach that leaves a
+free tile around it, and the panel becomes that building's card under `[1] Barracks  >`; begun on the
+menu, a **focus arrow** flies from that row's own place to the cursor, which blinks twice when it
+lands, and the card is revealed over about 400 ms (both lengths are the owner's tuned values). Enter or Space places it, and **the keyboard goes back to where the arming came
+from, disarmed** — the map, in plain navigation, for a digit pressed on the map; the menu for anything
+started on the menu. **A building being placed holds the keyboard**: its own digit, `x` or Esc cancels
+it, another building's digit is refused with a line saying so, and `p` waits. A row whose action is
+under way — a building armed, Explore Map open, the Nexus popup open — is drawn **active**:
+`[1] Barracks  >`, in the hotkey's colour; a placement back on the menu flashes its row once. **A mouse
+click activates what it lands on**: a click on a building's row arms it at once, its ghost at the
+cursor; on the map a **second click on the same tile** places (Q52); a click on the map from the menu
+keeps the menu beside it, so the next click can arm from it. Only the keyboard shows a "highlighted,
+not yet chosen" bar. Esc, `x` and a right click go back one level — popup, then placing or Explore Map
+to where it was started, then the map to the menu — and **only Esc**, on the menu, opens the **game
+menu**: `[s] Settings`, `[c] Controls and hotkeys`, `[r] Restart`, `[q] Quit`; Esc closes it again, and
+`x` or a right click on the menu does nothing, so pressing `x` a few times always lands on the menu.
+`q` opens the game menu too, and only Ctrl+C quits at once. No popup has an `[esc] Back` row — the top
+bar's right end always says what Esc does right now — `menu [esc]`, `back [esc]` or `close [esc]` — and
+a click on it is Esc. Every row shows its cost, a row that no longer fits is dimmed, and **why a
+placement would be refused is the bottom line's job** — "rock in the way at 8,5", "costs 40, 20 left"
+(affordability first) — quietly while the grey `x` preview sits on the tile, in red once a placement is
+tried. `[u]` undoes and Backspace (on the map) removes the one under the cursor, both refunding (and
+throwing the placement's sparks where it stood), which keeps a plan revisable until `p` starts the
+Pulse.
 
-**Moving ramps up, and Shift jumps** (gate 5H, reworked after the owner's 2026-09-28 playtest): a
-single press moves one tile; the same arrow again within 150 ms — a held key's repeats, or quick
-tapping — moves two a press at once, and four once that run has lasted 300 ms; any other key starts
-again at one. Shift+Arrow is not a speed but a **jump of twelve tiles**; held, it jumps
-again at most every 150 ms, so each jump is seen to land. Terminals send no key-up, so "held" is read
-from how close together the presses arrive (`src/build/motion.ts`); the reducer only ever sees a move
-of the size chosen. **Everything that moves is interpolated** (`src/view/tween.ts`): the view
-**slides** to wherever it scrolled, by any means, and the cursor **glides** to its new tile, over a
-few frames — the screen's frame timer runs only while something moves (`src/view/build-live.ts`),
-and reduced motion snaps both. A jump re-centres the view on the cursor. **A click with a building armed never scrolls the view**, so the
-confirming second click lands where the first did (Q58); **exploring, a click near an edge scrolls
-further the nearer the edge**. A placement tried and refused flashes its footprint. A lone Esc at the
-end of a read waits 100 ms for the rest of a key sequence before it counts as Esc — so anything sending
-keys programmatically leaves a pause after an Esc. **Every one of these numbers is an Experiment**
-(`d`, below); the list scrolls, since there are twenty-nine.
+**Taps are counted, a hold has a pace, and Shift jumps** (gate 5H, reworked after the owner's playtests
+of 2026-09-28 and, for the counting, his third round on the menu spike, 2026-09-30): a tap moves one
+tile; taps of one arrow each within 400 ms of the one before keep their speed, and the third since the
+speed last changed doubles it if it came within 300 ms of the one before — 1, 1, 2, then 2, 2, 4; a
+longer gap, another arrow or any other key starts over at one. A held arrow moves at the game's own
+pace, at most one move every 60 ms whatever the keyboard's repeat rate, one tile a move and two after
+600 ms. Shift+Arrow is not a speed but a **jump of ten tiles**; held, it jumps again at most every 100
+ms, so each jump is seen to land. Where the terminal reports key events (the kitty keyboard protocol,
+the Key releases Experiment — `src/view/key-events.ts`), it says which presses are repeats and when a
+key is let go, and the screen switches the protocol off again on every way out; elsewhere a press within
+the hold window (200 ms) of the one before counts as a repeat (`src/build/motion.ts`). The reducer only
+ever sees a move of the size chosen. **Every list moves the same way** — the Build Phase menu, the
+Nexus powers, the game menu, Settings, the Controls page: one row a tap, taps counted and holds at the
+same pace, stopping at the ends, and Shift+Up/Down, PageUp/PageDown or Home/End go straight to the first or last row
+(`src/menu/list-keys.ts`). **Everything that moves is interpolated** (`src/view/tween.ts`): the view
+**slides** to wherever it scrolled, by any means, and the cursor **glides** to its new tile, over a few
+frames — the screen's frame timer runs only while something moves (`src/view/build-live.ts`), and
+reduced motion snaps both. A jump does not re-centre the view; it scrolls like any other move. **A
+click near an edge scrolls further the nearer the edge**, armed or not. A placement tried and refused
+flashes its footprint. A lone Esc at the end of a read waits 50 ms for the rest of a key sequence
+before it counts as Esc — so anything sending keys programmatically leaves a pause after an Esc. **These
+numbers are the owner's own, picked in Experiments and now settled** in one table of tuned values,
+each saying who chose it and when (`src/build/tuning.ts`); only a few are still Experiments (`d`,
+below).
 
 **Settings, Experiments and the export** (owner, 2026-09-28). The game menu's `[s] Settings` is one
 scrolling popup: first the player's own settings — background, colour depth, symbols, reduced motion —
 changed live with Left/Right and saved to the same `~/.terminal-nexus/settings.json` the title menu's
-Settings writes; then, apart at the bottom, **Experiments**: gate 5G's Debug Mode flags, each naming
-the question it serves, never saved (`src/build/debug.ts` is the list; `src/build/settings.ts` the
-popup's rows). `d` opens Settings straight at the Experiments. The title says where the highlight is
-in the list (`SETTINGS (6/28)`), a scroll bar in the popup's right border shows and scrolls the rest
+Settings writes; then, apart at the bottom, **Experiments**: the few questions still being felt, each
+naming the question it serves, never saved (`src/build/experiments.ts` is the list; `src/build/settings.ts`
+the popup's rows). Today there are five — the focus arrow's length and the card reveal's (both looks
+still being judged), the hold window (it depends on each keyboard's repeat delay), and the placeholder
+Pulse's raid and crew; every value the owner settled is in `src/build/tuning.ts` instead. `d` opens
+Settings straight at the Experiments. The title says where the highlight is in the list
+(`SETTINGS (5/10)`), a scroll bar in the popup's right border shows and scrolls the rest
 (click its upper or lower half, or use the wheel), and what the highlighted row is for is written under
 a line below the list. The game menu's `[r] Restart` starts the Build Phase over keeping everything; a
 changed setting that only applies after a restart is announced in a message popup when Settings
@@ -230,9 +254,9 @@ where and how it should.
 `src/content/art.ts`'s `PLACEMENT_ART`, with a generic fallback for anything not drawn yet), then
 stands finished with a brief light on its characters and a few sparks around it — all of it timed by
 the live loop and drawn by `src/view/placement.ts` as a pure function of the time since the
-placement, and none of it in the plan. The first four Experiments tune it (Build animation,
-Lighting — including a rainbow — Particles, Glow time); reduced motion shows the finished building at
-once. Scripted playtests draw buildings finished; `scripts/capture-spike-screenshots.mjs`'s
+placement, and none of it in the plan. Its four numbers — the build animation's length, the
+lighting, the particles and the glow time — are tuned values (`src/build/tuning.ts`; the lighting still
+knows a rainbow); reduced motion shows the finished building at once. Scripted playtests draw buildings finished; `scripts/capture-spike-screenshots.mjs`'s
 `placementGif` and `placementSheet` step the animation with a fake clock.
 
 It is built from **the presentation toolkit's four families**, each a pure function of absolute
@@ -249,20 +273,15 @@ deliver no shifted arrows at all — `node scripts/probe-modified-keys.mjs` prin
 `evidence/gate-5a-report.md` has the table. So does Option+Arrow as macOS terminals send it (`ESC b`,
 `ESC f`, or `ESC` before an arrow), bound from their documented defaults; **`node
 scripts/lib/key-echo.mjs` prints exactly what each key sends in the terminal it runs in** (press `q`
-to leave), which is how to check a terminal nobody has measured yet. **The footer and the panel share
-one list of bindings**: the bottom bar takes as many as its width holds, trimmed to the essentials —
-arrows, place, disarm, quit, the fast move, remove, undo — and the panel shows the rest, so a wide
-terminal has them all on one line and an 80-column one loses none of them (the other fast-move keys
-stay bound but unlisted). `--scroll-margin <percent>` starts the scroll margin at another share of the
-view than 25% (its Experiment changes it live). Nothing it plans reaches the simulation, and the plan is not
-saved.
+to leave), which is how to check a terminal nobody has measured yet. Every binding is on the
+**Controls and hotkeys** page; the bottom bar names only what matters where the keyboard is.
+`--scroll-margin <percent>` starts the scroll margin at another share of the view than 30%. Nothing it
+plans reaches the simulation, and the plan is not saved.
 
-Before any of that, the Build Phase opens on a **Nexus power draft** (gate 5D): two placeholder
-powers — a plain bump to the starting allotment, not real Milestone-8 content — that must be picked
-with a digit or a click before anything else can happen, because a dealt Nexus power may not be
-skipped. Once picked, the screen becomes the construct menu described above, and the panel's own
-NEXUS and SPECIAL rows name what was picked and hold the Special slot's own reserved space, empty for
-now. `[s] Start Pulse` — the menu's last row, reached by Up and Down like every other — opens, once,
+The Build Phase deals a **Nexus power draft** (gate 5D): two placeholder powers — a plain bump to the
+starting allotment, not real Milestone-8 content — one of which must be picked before the Pulse can
+start, because a dealt Nexus power may not be skipped. `[n] Nexus` opens the pick as a popup over the
+Grid, and a pick closes it; a waiting pick refuses only the start of the Pulse. `[s] Start Pulse` — the menu's last row, reached by Up and Down like every other — opens, once,
 the **Battle Round 1** screen: what the round announces ("Activate Nexus. Collect Resources. Spawn
 Units.", or a mission's own text) and one row, `[s] Start`, to end the Build Phase and start the Nexus
 Pulse (`s`, or its unlisted alias `p`, or a click, opens the screen from anywhere). Enter, Space or
@@ -273,7 +292,8 @@ showing is the one a digit or a click addresses, so a hotkey and a click always 
 command, whichever adapter sent it.
 
 **Accepting starts the Nexus Pulse** (gate 6A). The committed plan plus a placeholder crew and raid
-(`spikePulse` in `src/build/catalog.ts`, the two sizes are the Raid and Your units Experiments) become
+(`spikePulse` in `src/build/catalog.ts`; the two sizes are the Raid and Your units Experiments, a
+heavy raid and no units of your own by default) become
 the kernel's opening state (`src/match/opening.ts`), the unmodified kernel resolves the whole Pulse once
 (`src/cli/pulse-run.ts`, about 60 ms), and Recall — the end-of-Pulse regroup `engine.md` Section 5
 describes, built for the first time here in `src/match/recall.ts` as a pure function beside the
@@ -284,15 +304,16 @@ watches it again. The Pulse's title carries a countdown to the last shot; the en
 flashing and a light sweeping round the map's border in the last three seconds, a cease fire, the
 survivors walking home and a result (`src/view/ending.ts`, every moment a function of presentation
 time). Red is kept for the player's own Nexus being hurt — its first hit, very low health, a lost
-Pulse — faint and brief. Five timings and switches are Experiments: Final warning, Red alerts,
-Walk-back delay, Walk-back time and Centre on Nexus. The Build Phase's reducer knows none
+Pulse — faint and brief. Its five timings and switches — the final warning, the red alerts, the
+walk-back's delay and length, centring on the Nexus — are tuned values (`src/build/tuning.ts`). The Build Phase's reducer knows none
 of it except two commands — `look-at`, which the Pulse sends to centre the view, and `pulse-failed`,
 which takes the commit back if the kernel cannot start from the plan. A context that carries no
 `startPulse` still just freezes the plan, as before. Restart, from the game menu, is the way back to
 a fresh Build Phase until the loop into the next one is built (gate 6B).
 
 Its own code: `src/build/` holds the camera arithmetic, the pure reducer, the three adapters and the
-driver; `src/view/build.ts` composes the frame; `src/cli/spike.ts` runs it on the same backend and the
+driver; `src/view/build.ts` composes the frame from its parts (`build-frame`, `build-grid`, `build-menu`,
+`build-card`, `build-handoff`, `build-popup`); `src/cli/spike.ts` runs it on the same backend and the
 same idempotent disposer as the menu. `src/view/draw.ts` is where the `put`/`text` band-writing
 helpers moved once a third screen wanted them. `src/match/` (gate 6A) is the rules layer between the
 Build Phase and the kernel — a plan into the kernel's opening state, and Recall — and the view and the
@@ -563,11 +584,12 @@ Corrections from Mario after the 2.2 pass, plus the shape of the first spike.
   is the floor below which the renderer gates; the maximum exists so a huge display cannot show
   meaningfully more Grid than a laptop, and so every layout calculation has a bound. Space beyond the
   maximum goes to centring and a larger inspection panel, never to more Grid.
-- Terminal sizes fall out: **80 x 24** for the minimum viewport at one column per tile, 104 x 28 for
-  the maximum; 128 x 24 and 176 x 28 at two columns. 80 x 24 stays the acceptance target.
+- Terminal sizes fall out: **80 x 24** for the minimum viewport at one column per tile, 104 x 30 for
+  the maximum; 128 x 24 and 176 x 30 at two columns. 80 x 24 stays the acceptance target.
 - **Scrolling is cursor-driven.** Move the cursor within 3 tiles of a viewport edge and the camera
   follows. No pan mode, no modifiers, no second cursor, and no minimap. The UI must show there is more
-  Grid, so edge markers on the frame and a footer position readout are both required.
+  Grid: the weight of the frame's sides says so (a footer position readout was also required until
+  the owner's menu spike, canon 2.27).
 - Small and medium presets fit the minimum viewport entirely, so tutorials and opening missions can
   introduce the game without a player ever learning to scroll.
 

@@ -2,8 +2,8 @@
 
 **Document role:** Playable faction packages: Commanders, units, structures, upgrades, and Nexus powers
 **Status:** Canonical identity direction; rosters intentionally undefined
-**Canon version:** 2.26
-**Updated:** 2026-09-12
+**Canon version:** 2.30
+**Updated:** 2026-09-30
 **License:** Creative identity is CC BY-SA 4.0; mechanical definitions and schemas are Apache-2.0
 
 ## 1. Purpose
@@ -211,16 +211,16 @@ interface CommanderArmyDefinition {
 }
 ```
 
-Where this shows on screen: the Build Phase construct menu lists the common tier and the army tier
-(the tech tree, greyed out past what is unlocked) as two groups under one digit sequence, the Nexus
-draft is its own panel, and the Special is a single slot the player arms and fires when ready —
-four tiers, four places, so a player learns the split by looking at it
-([`engine.md`](engine.md) Section 9.2, [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md)).
-
-**An empty group is drawn, not skipped** — RULE, built at gate 5B. PERIMETER's army group has nothing
-in it, and a group that disappears when empty reflows the panel and moves every hotkey below it the
-first time content arrives. Hotkeys have to be stable for muscle memory to transfer
-([`engine.md`](engine.md) Section 9.7), so the heading stays and says the group is empty.
+Where this shows on screen: the Build Phase construct menu lists the buildings the army can place —
+the common tier and the army tier — as **one list under one digit sequence** since the owner's menu
+spike (canon 2.27, 2026-09-30: "Remove the categories for now. We don't know how many items will be on
+a real game"); the Nexus powers have their own popup, and the Special will be a single slot the player
+arms and fires when ready ([`engine.md`](engine.md) Section 9.2). Gate 5B drew the two tiers as two
+labelled groups, and an empty group as its heading with "none available" so no hotkey moved when
+content arrived (a RULE then); both went with the headings, and come back if a real game's list is too
+long to read without them. Hotkeys still have to be stable for muscle memory to transfer
+([`engine.md`](engine.md) Section 9.7): a building added to the catalog goes after the ones already
+there.
 
 ### 2.1a Terminology glossary — analysis and alternatives — GUIDANCE, except the loose-word/exact-name principle below, which is RULE
 

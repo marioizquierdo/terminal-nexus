@@ -7,14 +7,11 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { START_LABEL, menuEntryAt, startRow } from "../src/build/layout.ts"
-import { DEFAULT_ROUND_TEXT, overlaySpec, placeOverlay } from "../src/build/overlay.ts"
+import { DEFAULT_ROUND_TEXT, popupSpec, placePopup } from "../src/build/popup.ts"
 import { menuEntries, startEntry } from "../src/build/state.ts"
 import { cellAt } from "../src/view/frame.ts"
+import { DOWN, ESC } from "./build-helpers.ts"
 import { MINIMUM, click, frameOf, newSession, screenText } from "./pulse-helpers.ts"
-
-const ESC = String.fromCharCode(27)
-const UP = `${ESC}[A`
-const DOWN = `${ESC}[B`
 
 type Session = ReturnType<typeof newSession>
 
@@ -36,7 +33,7 @@ test("Start Pulse is the menu's last entry, one plain row on the panel's bottom 
   const entries = menuEntries(session.context)
   assert.equal(entries[entries.length - 1]?.kind, "start")
   assert.equal(entries.length - 1, startEntry(session.context.catalog.length))
-  assert.equal(startRow(session.layout), session.layout.panelBindingsRow)
+  assert.equal(startRow(session.layout), session.layout.panelLastRow)
   assert.equal(startLine(session).trimEnd(), `[s] ${START_LABEL}`)
   assert.equal(START_LABEL, "Start Pulse")
   // No box: the rows around it in the panel are plain text, not a button's border.
@@ -45,7 +42,7 @@ test("Start Pulse is the menu's last entry, one plain row on the panel's bottom 
   assert.doesNotMatch(rows[startRow(layout) - 1]!.slice(layout.panelColumn, layout.panelColumn + layout.panelLimit), /[+-]{3}/, "a box's top edge")
 })
 
-test("Up and Down reach Start Pulse and Enter presses it — no hotkey and no mouse needed (feedback F48)", () => {
+test("Down reaches Start Pulse, and Enter, Enter starts the Pulse — no hotkey and no mouse needed (feedback F48)", () => {
   const session = ready()
   const last = menuEntries(session.context).length - 1
   // Only Down and Enter are pressed: the highlight walks the whole menu and arrives on its last entry.
@@ -56,15 +53,10 @@ test("Up and Down reach Start Pulse and Enter presses it — no hotkey and no mo
   }
   assert.equal(session.build.state.menuHighlight, last, "Down never reached Start Pulse")
   session.build.handleData("\r", session.layout)
-  assert.equal(session.build.state.overlay, "confirm-commit")
+  assert.equal(session.build.state.popup, "battle-round")
   session.build.handleData("\r", session.layout)
   assert.equal(session.build.state.committed, true, "Enter, Enter did not start the Pulse")
   assert.ok(session.build.pulse !== null)
-
-  // And Up from the top wraps round to it.
-  const wrapped = ready()
-  wrapped.build.handleData(UP, wrapped.layout)
-  assert.equal(wrapped.build.state.menuHighlight, last)
 })
 
 test("the rule: every entry of the menu is reached by Down and done by Enter alone (docs/ui-patterns.md section 4)", () => {
@@ -79,13 +71,13 @@ test("the rule: every entry of the menu is reached by Down and done by Enter alo
         assert.equal(state.exploreMap, true, "Enter on Explore Map did not open it")
         break
       case "nexus":
-        assert.equal(state.overlay, "nexus-powers", "Enter on Nexus did not open its popup")
+        assert.equal(state.popup, "nexus-powers", "Enter on Nexus did not open its popup")
         break
       case "construct":
         assert.equal(state.armed, entry.index, `Enter on construct row ${entry.index} did not arm it`)
         break
       case "start":
-        assert.equal(state.overlay, "confirm-commit", "Enter on Start Pulse did not open its screen")
+        assert.equal(state.popup, "battle-round", "Enter on Start Pulse did not open its screen")
         break
       default: {
         const unhandled: never = entry
@@ -106,7 +98,7 @@ test("Start Pulse is dim while a Nexus power waits to be picked, and bright once
 
 test("s, p, a click and Enter on the highlighted row all ask the same, and refuse the same way while a pick waits", () => {
   const onRow = (session: Session): void => {
-    session.build.dispatch({ kind: "highlight", delta: -1 })
+    session.build.dispatch({ kind: "highlight", delta: 1, jump: true }) // the last row
     session.build.handleData("\r", session.layout)
   }
   const presses: readonly (readonly [string, (session: Session) => void])[] = [
@@ -119,14 +111,14 @@ test("s, p, a click and Enter on the highlighted row all ask the same, and refus
   for (const [name, press] of presses) {
     const session = ready()
     press(session)
-    assert.equal(session.build.state.overlay, "confirm-commit", `${name} did not open the Battle Round screen`)
+    assert.equal(session.build.state.popup, "battle-round", `${name} did not open the Battle Round screen`)
     assert.match(session.build.state.status.text, /^Battle Round 1:/, name)
   }
   // With the pick still waiting, each is refused with its reason and no screen opens.
   for (const [name, press] of presses) {
     const session = newSession()
     press(session)
-    assert.equal(session.build.state.overlay, null, `${name} opened the screen with a pick waiting`)
+    assert.equal(session.build.state.popup, null, `${name} opened the screen with a pick waiting`)
     assert.match(session.build.state.status.text, /Pick a Nexus power first/, name)
   }
 })
@@ -137,13 +129,12 @@ test("a click on the row hits the Start Pulse entry, and the row above it hits i
   assert.notEqual(menuEntryAt(layout, context.catalog, layout.panelColumn + 2, startRow(layout) - 1), startEntry(context.catalog.length))
 })
 
-test("the row is active while its screen is open, back on the menu with the row highlighted after Esc", () => {
+test("Esc on the Battle Round screen goes back to the menu, the highlight on Start Pulse", () => {
   const session = ready()
   session.build.handleData("s", session.layout)
-  const text = screenText(session).split("\n")[startRow(session.layout)]!
-  assert.match(text.slice(session.layout.panelColumn), /^> \[s\] Start Pulse/)
+  assert.equal(session.build.state.popup, "battle-round")
   session.build.handleData(ESC, session.layout)
-  assert.equal(session.build.state.overlay, null)
+  assert.equal(session.build.state.popup, null)
   assert.equal(session.build.state.focus, "menu")
   const entries = menuEntries(session.context)
   assert.equal(session.build.state.menuHighlight, entries.length - 1, "Esc did not leave the highlight on Start Pulse")
@@ -154,7 +145,7 @@ test("the menu gives way to Explore Map, Start Pulse with the rest of it — and
   session.build.dispatch({ kind: "explore" })
   assert.doesNotMatch(startLine(session), /Start Pulse/)
   click(session, session.layout.panelColumn + 3, startRow(session.layout))
-  assert.equal(session.build.state.overlay, null, "a click on the hidden row opened the confirmation")
+  assert.equal(session.build.state.popup, null, "a click on the hidden row opened the confirmation")
   assert.equal(session.build.state.exploreMap, false)
   assert.match(startLine(session), /Start Pulse/)
 })
@@ -162,7 +153,7 @@ test("the menu gives way to Explore Map, Start Pulse with the rest of it — and
 test("the Battle Round screen: its title, what it announces, and one highlighted row, [s] Start", () => {
   const session = ready()
   session.build.handleData("s", session.layout)
-  const spec = overlaySpec(session.context, session.build.state)
+  const spec = popupSpec(session.context, session.build.state)
   assert.ok(spec !== null)
   assert.equal(spec.title, "Battle Round 1")
   const notes = spec.rows.flatMap((row) => (row.kind === "note" ? [row.text] : []))
@@ -183,19 +174,19 @@ test("a mission can say its own words for a round, and every other round says th
   const session = ready()
   const context = { ...session.context, roundText: { 1: "Hold the line until the Nexus is charged." } }
   session.build.handleData("s", session.layout)
-  const own = overlaySpec(context, session.build.state)!
+  const own = popupSpec(context, session.build.state)!
   assert.deepEqual(
     own.rows.flatMap((row) => (row.kind === "note" ? [row.text] : [])),
     ["Hold the line until the Nexus is charged."],
   )
-  const other = overlaySpec({ ...context, roundText: { 2: "A second wave." } }, session.build.state)!
+  const other = popupSpec({ ...context, roundText: { 2: "A second wave." } }, session.build.state)!
   assert.deepEqual(
     other.rows.flatMap((row) => (row.kind === "note" ? [row.text] : [])),
     ["Activate Nexus.", "Collect Resources.", "Spawn Units."],
   )
 })
 
-test("Enter, Space, s and y start the Pulse; Esc and x go back; n is not a key there any more", () => {
+test("Enter, Space, s and y start the Pulse; Esc and x go back; n does nothing there", () => {
   for (const key of ["\r", " ", "s", "y"]) {
     const session = ready()
     session.build.handleData("s", session.layout)
@@ -208,20 +199,20 @@ test("Enter, Space, s and y start the Pulse; Esc and x go back; n is not a key t
     session.build.handleData("s", session.layout)
     session.build.handleData(key, session.layout)
     assert.equal(session.build.state.committed, false, `${JSON.stringify(key)} started the Pulse`)
-    assert.equal(session.build.state.overlay, null, `${JSON.stringify(key)} left the screen open`)
+    assert.equal(session.build.state.popup, null, `${JSON.stringify(key)} left the screen open`)
     assert.equal(session.build.pulse, null)
   }
   const stays = ready()
   stays.build.handleData("s", stays.layout)
   stays.build.handleData("n", stays.layout)
-  assert.equal(stays.build.state.overlay, "confirm-commit", "n closed the screen, or opened the Nexus popup over it")
+  assert.equal(stays.build.state.popup, "battle-round", "n closed the screen, or opened the Nexus popup over it")
   assert.equal(stays.build.state.committed, false)
 })
 
 test("a click on [s] Start starts it; a click outside the screen goes back", () => {
   const start = ready()
   start.build.handleData("s", start.layout)
-  const placed = placeOverlay(start.layout, overlaySpec(start.context, start.build.state)!)
+  const placed = placePopup(start.layout, popupSpec(start.context, start.build.state)!)
   const row = placed.rows.find((entry) => entry.spec.kind === "option" && entry.spec.hotkey === "s")
   assert.ok(row !== undefined, "no [s] row on the screen")
   click(start, placed.textColumn + 2, row.row)
@@ -232,32 +223,37 @@ test("a click on [s] Start starts it; a click outside the screen goes back", () 
   outside.build.handleData("s", outside.layout)
   click(outside, outside.layout.gridBox.right - 2, outside.layout.gridBox.bottom - 1)
   assert.equal(outside.build.state.committed, false)
-  assert.equal(outside.build.state.overlay, null)
+  assert.equal(outside.build.state.popup, null)
 })
 
 test("s is still Settings inside the game menu, and pressing Start during a Pulse only says it is committed", () => {
   const menu = ready()
   menu.build.handleData(ESC, menu.layout) // on the menu, Esc opens the game menu
-  assert.equal(menu.build.state.overlay, "menu")
+  assert.equal(menu.build.state.popup, "game-menu")
   menu.build.handleData("s", menu.layout)
-  assert.equal(menu.build.state.overlay, "settings")
+  assert.equal(menu.build.state.popup, "settings")
 
   const playing = ready()
   playing.build.handleData("s", playing.layout)
   playing.build.handleData("s", playing.layout)
   assert.ok(playing.build.pulse !== null)
   playing.build.handleData("s", playing.layout)
-  assert.equal(playing.build.state.overlay, null)
+  assert.equal(playing.build.state.popup, null)
   assert.match(playing.build.state.status.text, /committed/)
 })
 
-test("at the floor the row, the effect line and the overflow key help all fit, the help directly above the row", () => {
+test("at the floor the menu and Start Pulse fit with no help text between them, and the armed building's card has room", () => {
+  // The key help that overflowed into the panel used to stack directly above Start Pulse; the panel
+  // carries no help text since feedback F58.
   const session = ready()
-  session.build.handleData("1", session.layout) // arm the Barracks, on the map
-  const rows = screenText(session).split("\n")
+  session.build.dispatch({ kind: "focus", target: "menu" })
   const { layout } = session
-  const panel = (row: number): string => rows[row]!.slice(layout.panelColumn, layout.panelColumn + layout.panelLimit).trimEnd()
-  assert.match(rows.join("\n"), /Trains troopers each Pulse/, "the armed row's line was pushed out by the Start Pulse row")
-  assert.equal(panel(startRow(layout)), "[s] Start Pulse")
-  assert.equal(panel(startRow(layout) - 1), "bksp remove  u undo")
+  const panel = (rows: string[], row: number): string => rows[row]!.slice(layout.panelColumn, layout.panelColumn + layout.panelLimit).trimEnd()
+  const menu = screenText(session).split("\n")
+  assert.equal(panel(menu, startRow(layout)), "[s] Start Pulse")
+  assert.equal(panel(menu, startRow(layout) - 1), "")
+  session.build.handleData("1", session.layout) // arm the Barracks: its card replaces the menu
+  const card = screenText(session).split("\n")
+  assert.match(card.join("\n"), /Big and tough\./, "the card has no room for what the building does")
+  assert.equal(panel(card, startRow(layout)), "", "Start Pulse is the menu's, and hides with it")
 })

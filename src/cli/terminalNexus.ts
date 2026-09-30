@@ -19,8 +19,8 @@ import { parseKeyScript } from "../playtest/keys.ts"
 import { runSpike } from "./spike.ts"
 import { DEFAULT_SETTINGS, createSettingsStore, defaultSettingsPath } from "../settings/index.ts"
 import type { Settings } from "../settings/index.ts"
-import type { DebugFlags } from "../build/debug.ts"
-import { defaultExperiments, parseSettingsExport } from "../build/settings-export.ts"
+import { importSettings } from "../build/settings-export.ts"
+import { TUNING } from "../build/tuning.ts"
 import type { TerminalOutput } from "../view/backends/ports.ts"
 
 const USAGE = `terminal-nexus — the Terminal Nexus game
@@ -36,12 +36,13 @@ const USAGE = `terminal-nexus — the Terminal Nexus game
       keyboard, by mouse, or from a script. It answers a question rather than shipping a
       screen - nothing it plans reaches the simulation, and the plan is not saved.
       --scroll-margin <percent> changes how close to the edge of the view the cursor gets
-      before the map starts scrolling, as a share of the view's width and height (25 unless
-      given; "25" and "25%" are the same). Esc opens the game menu: Settings (saved, like the
-      title menu's) and, at their bottom, Experiments - every movement and effect number, live,
-      never saved; d jumps straight to them. "Export settings" copies them all as text.
+      before the map starts scrolling, as a share of the view's width and height
+      (${TUNING.scrollMargin} unless given; "${TUNING.scrollMargin}" and "${TUNING.scrollMargin}%" are the same). Esc opens the game menu: Settings,
+      in sections - the display settings (saved, like the title menu's) and Experiments, the
+      choices still being tried, live, never saved; d jumps straight to the first of them.
+      "Export settings" copies them all as text.
       --settings "<text>" starts with an exported text's settings and experiments, for this
-      run only: paste the whole export, or just pairs like "placeLight=rainbow scrollMargin=25".
+      run only: paste the whole export, or just pairs like "raid=probe crew=some".
       --keys "<key script>" opens it already in the state those keys reach, in the scripted
       playtest's key names: --keys "n 1 1 Enter" picks the first power and places a Barracks.
       For demos and for reproducing a report; the keyboard is yours after the last key.
@@ -66,8 +67,12 @@ export async function main(argv: readonly string[]): Promise<number> {
   const base: Settings = saved ?? { ...DEFAULT_SETTINGS, capability: detectCapability() }
 
   // An exported text (`--settings`) sits between what is saved and a flag of its own: it is how an
-  // agent starts from exactly what the owner had, and a flag still overrides one setting of it.
+  // agent starts from exactly what the owner had, and a flag still overrides one setting of it. What
+  // it could not read is said once, before the screen starts.
   const imported = importSettings(args.options.get("settings"), base)
+  if (imported.ignored.length > 0) {
+    process.stderr.write(`terminal-nexus: --settings ignored ${imported.ignored.join(", ")}\n`)
+  }
   const settings: Settings = {
     capability: parseCapability(args.options.get("capability") ?? imported.settings.capability),
     theme: parseTheme(args.options.get("theme") ?? imported.settings.theme),
@@ -88,7 +93,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       ...(margin === undefined
         ? {}
         : { scrollMargin: parseInteger(margin.endsWith("%") ? margin.slice(0, -1) : margin, "--scroll-margin") }),
-      ...(imported.experiments === undefined ? {} : { experiments: imported.experiments }),
+      experiments: imported.experiments,
       ...(buildId === undefined ? {} : { buildId }),
       ...(startKeys === undefined ? {} : { startKeys: parseKeyScript(startKeys) }),
       exporter: terminalExporter(process.stdout, exportPath()),
@@ -102,20 +107,6 @@ export async function main(argv: readonly string[]): Promise<number> {
     stdout: process.stdout,
     stdin: process.stdin,
   })
-}
-
-/** `--settings "<text>"` read onto what is saved: the settings it names, and its experiments. What it
- *  could not read is said once, before the screen starts. */
-export function importSettings(
-  text: string | undefined,
-  base: Settings,
-): Readonly<{ settings: Settings; experiments?: DebugFlags }> {
-  if (text === undefined) return { settings: base }
-  const result = parseSettingsExport(text, { settings: base, experiments: defaultExperiments() })
-  if (result.ignored.length > 0) {
-    process.stderr.write(`terminal-nexus: --settings ignored ${result.ignored.join(", ")}\n`)
-  }
-  return { settings: result.snapshot.settings, experiments: result.snapshot.experiments }
 }
 
 /** Where an export is written: beside the settings file, so it is found where settings already are. */

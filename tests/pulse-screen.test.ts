@@ -8,8 +8,8 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
 import { centreOn } from "../src/build/camera.ts"
-import { rowOfField } from "../src/build/debug.ts"
-import { escHintSpan, escLabel, pulseControlRows } from "../src/build/layout.ts"
+import { FIRST_EXPERIMENT_ROW, settingRow } from "../src/build/settings.ts"
+import { escLabelSpan, escLabel, pulseControlRows } from "../src/build/layout.ts"
 import { MOUSE_RIGHT } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
 import { nexusTile } from "../src/build/state.ts"
@@ -21,11 +21,11 @@ import type { CellStyle, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { CAPABILITY_MODES } from "../src/view/index.ts"
 import { BEAM_PERIOD_MS, TIMER_HALF_PERIOD_MS } from "../src/view/ending.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
+import { ESC } from "./build-helpers.ts"
 import { isColourCode, sgrCodes } from "./helpers.ts"
 import { DEFENCE, MINIMUM, at, atHome, click, frameOf, newSession, play, prepare, screenText } from "./pulse-helpers.ts"
 import type { Played } from "./pulse-helpers.ts"
 
-const ESC = String.fromCharCode(27)
 
 /** A Pulse the defence wins, with the screen's clock started at zero. */
 function victorious(): Played {
@@ -37,7 +37,7 @@ function victorious(): Played {
 const times = (played: Pick<Played, "build">) => {
   const pulse = played.build.pulse
   assert.ok(pulse !== null, "there is no Pulse on screen")
-  return pulse.times(played.build.state.debug)
+  return pulse.times
 }
 
 /** The frame's cells that satisfy `test`, each with the screen position it is drawn at. */
@@ -65,17 +65,17 @@ test("answering yes turns the screen into the Nexus Pulse, with the keyboard on 
   assert.equal(state.armed, null)
   const text = screenText(played)
   assert.match(text, /TERMINAL NEXUS nexus pulse/)
-  assert.match(text, /^\| NEXUS PULSE 1 +\d:\d\d +\|/m)
+  assert.match(text, /^\| NEXUS PULSE 1 +\d:\d\d +[|+]/m)
   assert.match(text, /^\| time left {2}1x/m)
   assert.match(text, /YOU {3}5 \[#+\]/)
   assert.match(text, /RAID {2}7 \[#+\]/)
   assert.match(text, /\[space\] Pause/)
   assert.match(text, /\[r\] Watch again/)
-  assert.match(text, /PULSE {2}space pause {2}\[ \] speed {2}r watch again {2}arrows look around/)
-  assert.match(text, /Nexus Pulse - 5 of yours against 7 of the raid\./)
+  // The bottom bar's one line is the Pulse's own (feedback F59); its keys are on the Controls page.
+  assert.match(text, /\| Nexus Pulse - 5 of yours against 7 of the raid\. +\|/)
   assert.match(text, /menu \[esc\]/)
-  // The Build Phase's menu is gone: nothing left to build, nothing to pick.
-  assert.doesNotMatch(text, /\[1\] Barracks|RESOURCE|\[e\] Explore Map/)
+  // The Build Phase's menu is gone: nothing left to build, nothing to pick, no credits.
+  assert.doesNotMatch(text, /\[1\] Barracks|\* \d|\[e\] Explore Map/)
 })
 
 test("the view is centred on the player's Nexus when the Pulse starts, wherever they had scrolled", () => {
@@ -83,18 +83,18 @@ test("the view is centred on the player's Nexus when the Pulse starts, wherever 
   prepare(session.build)
   session.build.run([
     { kind: "focus", target: "grid" },
-    { kind: "move-cursor", dx: 40, dy: 14, fast: true },
-    { kind: "move-cursor", dx: 20, dy: 10, fast: true },
+    { kind: "move-cursor", dx: 40, dy: 14 },
+    { kind: "move-cursor", dx: 20, dy: 10 },
   ])
   assert.ok(session.build.state.camera.x > 0, "the player did not scroll away")
-  session.build.run([{ kind: "commit" }, { kind: "confirm-commit" }])
+  session.build.run([{ kind: "open-battle-round" }, { kind: "start-pulse" }])
   session.build.advance(0)
   const nexus = nexusTile(session.context)
   assert.ok(nexus !== null)
   assert.deepEqual(session.build.state.cursor, nexus, "the cursor did not come to the Nexus")
   assert.deepEqual(
     session.build.state.camera,
-    centreOn({ x: 0, y: 0 }, nexus, session.build.state.viewport, session.context.grid),
+    centreOn(nexus, session.build.state.viewport, session.context.grid),
     "the view is not centred on the Nexus",
   )
 })
@@ -112,7 +112,7 @@ test("the ending says what is happening in words at every moment: the last secon
   at(played, moments.warnMs + 40)
   const final = screenText(played)
   assert.match(final, /TERMINAL NEXUS nexus pulse\b/)
-  assert.match(final, /^\| NEXUS PULSE 1 +0:0[123] +\|/m)
+  assert.match(final, /^\| NEXUS PULSE 1 +0:0[123] +[|+]/m)
   assert.match(final, /The Pulse is about to end\./)
   assert.doesNotMatch(final, /PULSE ENDING|hold your fire/)
 
@@ -150,7 +150,7 @@ test("the timer counts down the seconds left to the last shot, and its last seco
   const stop = Math.ceil(moments.stopMs / 1000)
   const clock = (ms: number): string => {
     at(played, ms)
-    return /^\| NEXUS PULSE 1 +(\d:\d\d) +\|/m.exec(screenText(played))?.[1] ?? "none"
+    return /^\| NEXUS PULSE 1 +(\d:\d\d) +[|+]/m.exec(screenText(played))?.[1] ?? "none"
   }
   const m = (seconds: number): string => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`
   assert.equal(clock(0), m(stop))
@@ -198,7 +198,7 @@ test("at 80x24 the result's words are never cut off, whichever way the Pulse end
     const statusRows = lines.filter((line) => /^\| (VICTORY|DEFEAT|DRAW|TIME'S UP) - /.test(line))
     assert.equal(statusRows.length, 1, `${name}: the status line is missing`)
     assert.match(statusRows[0]!, /came home\. +\|$/, `${name}: the status line is cut off: ${statusRows[0]}`)
-    const first = lines.findIndex((line) => /^\| (VICTORY|DEFEAT|DRAW|TIME'S UP) +[|]/.test(line))
+    const first = lines.findIndex((line) => /^\| (VICTORY|DEFEAT|DRAW|TIME'S UP) +[|+]/.test(line))
     const last = lines.findIndex((line) => line.includes("[r] Watch again"))
     assert.ok(first >= 0 && last > first, `${name}: the result panel is not on screen`)
     for (const row of lines.slice(first, last + 1)) {
@@ -335,7 +335,7 @@ test("the ending is plain to see at every colour depth: monochrome uses bold and
   }
 })
 
-test("red is for the player's Nexus being hurt: faint, brief, off with the Experiment, and never under reduced motion", () => {
+test("red is for the player's Nexus being hurt: faint, brief, and never under reduced motion", () => {
   // A Nexus that falls: the raid gets through an undefended base.
   const redLevels = (played: Played, mutate: (played: Played) => void = () => {}): number[] => {
     at(played, 0)
@@ -358,10 +358,8 @@ test("red is for the player's Nexus being hurt: faint, brief, off with the Exper
   const safe = redLevels(play({ plan: DEFENCE }))
   assert.equal(Math.max(...safe), 0, "the border went red in a Pulse that was won cleanly")
 
-  // The red is an Experiment, and off it is gone; under reduced motion it is gone too, every flash of it
-  // being said again in words.
-  const off = redLevels(play({ crew: 1 }), (played) => played.build.dispatch({ kind: "debug-adjust", field: "redAlerts", step: 1 }))
-  assert.equal(Math.max(...off), 0, "red with the Experiment off")
+  // Under reduced motion it is gone, every flash of it being said again in words. (It was an Experiment
+  // that could switch it off until the owner kept it, 2026-09-30.)
   const still = redLevels(play({ crew: 1 }), (played) => played.build.dispatch({ kind: "setting-adjust", field: "reducedMotion", step: 1 }))
   assert.equal(Math.max(...still), 0, "red under reduced motion")
 })
@@ -410,13 +408,13 @@ test("the playback keys pause, slow, speed, step and replay the Pulse — and on
   key(" ", 11_000) // resume, so a stray Space would now pause
   assert.equal(pulse.paused, false)
   key(ESC, 11_000)
-  assert.equal(played.build.state.overlay, "menu")
+  assert.equal(played.build.state.popup, "game-menu")
   for (const bytes of ["]", "[", ",", "."]) key(bytes, 11_000)
   assert.equal(pulse.speed, 0.5, "a speed key reached the Pulse through a popup")
   key(" ", 11_000)
   assert.equal(pulse.paused, false, "Space under a popup paused the Pulse")
-  for (let step = 0; step < 3 && played.build.state.overlay !== null; step += 1) key(ESC, 11_000)
-  assert.equal(played.build.state.overlay, null)
+  for (let step = 0; step < 3 && played.build.state.popup !== null; step += 1) key(ESC, 11_000)
+  assert.equal(played.build.state.popup, null)
 })
 
 test("nothing that edits the plan works once the Pulse is on screen, and q still asks", () => {
@@ -426,9 +424,9 @@ test("nothing that edits the plan works once the Pulse is on screen, and q still
   for (const bytes of ["1", "2", "3", "u", "\u007f", "p", "e", "n", "\t"]) key(bytes)
   assert.deepEqual(played.build.state.planned, planned)
   assert.equal(played.build.state.committed, true)
-  assert.equal(played.build.state.overlay, null, "a key opened a popup over the Pulse")
+  assert.equal(played.build.state.popup, null, "a key opened a popup over the Pulse")
   key("q")
-  assert.equal(played.build.state.overlay, "menu", "q did not open the game menu")
+  assert.equal(played.build.state.popup, "game-menu", "q did not open the game menu")
 })
 
 test("the panel's rows are clickable: Pause and Resume, Watch again — and nothing else on the panel is", () => {
@@ -473,16 +471,22 @@ test("once the result stands there is nothing to pause: Space and a click on the
   assert.equal(pulse.timeMs, 0)
 })
 
-test("the top bar's Esc label, a right click and Esc are one way to the game menu, over a Pulse too", () => {
+test("the top bar's Esc label and Esc open the game menu over a Pulse too; x and a right click never do", () => {
   const played = victorious()
   assert.equal(escLabel(played.build.state), "menu [esc]")
-  const hint = escHintSpan(played.layout, "menu [esc]")
+  const hint = escLabelSpan(played.layout, "menu [esc]")
   click(played, hint.from + 2, hint.row)
-  assert.equal(played.build.state.overlay, "menu")
-  played.build.handleData(ESC, played.layout)
-  assert.equal(played.build.state.overlay, null)
+  assert.equal(played.build.state.popup, "game-menu")
+  // A right click walks back as x does: it closes the game menu...
   click(played, 40, 12, MOUSE_RIGHT)
-  assert.equal(played.build.state.overlay, "menu")
+  assert.equal(played.build.state.popup, null)
+  // ...and with nothing open it does nothing, nor does x — only Esc (and q, and the label) open the menu
+  // (owner, 2026-09-30, feedback F62: a right click was one of the ways in until then).
+  click(played, 40, 12, MOUSE_RIGHT)
+  played.build.handleData("x", played.layout)
+  assert.equal(played.build.state.popup, null)
+  played.build.handleData(ESC, played.layout)
+  assert.equal(played.build.state.popup, "game-menu")
 })
 
 test("a click on the map looks around it — the cursor moves, the view follows, and nothing is placed", () => {
@@ -500,28 +504,22 @@ test("a click on the map looks around it — the cursor moves, the view follows,
   assert.equal(played.build.state.cursor.x, before.x + 1)
 })
 
-test("the view looks at the Nexus again when the last seconds start — unless Centre on Nexus is off", () => {
-  for (const centre of [true, false]) {
-    const played = victorious()
-    if (!centre) played.build.dispatch({ kind: "debug-adjust", field: "endCentre", step: 1 })
-    assert.equal(played.build.state.debug.endCentre, centre)
-    const moments = times(played)
-    at(played, moments.warnMs! - 200)
-    // The player looks around: far to the east, then south.
-    played.build.run([{ kind: "move-cursor", dx: 30, dy: 12, fast: true }])
-    const wandered = played.build.state.cursor
-    at(played, moments.warnMs! + 50)
-    const nexus = nexusTile(played.context)!
-    if (centre) assert.deepEqual(played.build.state.cursor, nexus, "the last seconds did not bring the view back to the Nexus")
-    else assert.deepEqual(played.build.state.cursor, wandered, "the view moved with Centre on Nexus off")
-  }
+test("the view looks at the Nexus again when the last seconds start", () => {
+  const played = victorious()
+  const moments = times(played)
+  at(played, moments.warnMs! - 200)
+  // The player looks around: far to the east, then south.
+  played.build.run([{ kind: "move-cursor", dx: 30, dy: 12 }])
+  assert.notDeepEqual(played.build.state.cursor, nexusTile(played.context), "the player did not look away")
+  at(played, moments.warnMs! + 50)
+  assert.deepEqual(played.build.state.cursor, nexusTile(played.context), "the last seconds did not bring the view back to the Nexus")
 })
 
 test("Watch again replays from the top and frames the view again", () => {
   const played = victorious()
   const moments = times(played)
   at(played, moments.homeMs + 500)
-  played.build.run([{ kind: "move-cursor", dx: 30, dy: 12, fast: true }])
+  played.build.run([{ kind: "move-cursor", dx: 30, dy: 12 }])
   assert.match(screenText(played), /^\| VICTORY /m)
   played.build.dispatch({ kind: "pulse", control: "restart" })
   at(played, moments.homeMs + 600)
@@ -529,38 +527,33 @@ test("Watch again replays from the top and frames the view again", () => {
   assert.deepEqual(played.build.state.cursor, nexusTile(played.context), "the view was not framed again")
 })
 
-test("changing an ending Experiment is felt at once, and `d` opens Settings at the first of them", () => {
+test("the last three seconds warn, and `d` over a Pulse opens Settings at the placeholder Pulse's raid", () => {
   const played = victorious()
   const moments = times(played)
   at(played, moments.stopMs - 1500)
-  assert.match(screenText(played), /about to end/, "the default warning of three seconds")
-  // The warning to off: the same instant is now plain fighting, and the timer's flash and the light with it.
-  for (let step = 0; step < 4; step += 1) played.build.dispatch({ kind: "debug-adjust", field: "endWarnMs", step: -1 })
-  assert.equal(played.build.state.debug.endWarnMs, 0)
-  assert.doesNotMatch(screenText(played), /about to end/)
+  assert.match(screenText(played), /about to end/, "the warning of three seconds")
   const frame = frameOf(played, "truecolor")
-  assert.equal(timerCells(frame, played.layout).length + lightCells(frame, played.layout).length, 0, "the warning was still on")
+  assert.ok(timerCells(frame, played.layout).length + lightCells(frame, played.layout).length > 0, "the warning shows nothing")
 
   played.build.handleData("d", played.layout)
-  assert.equal(played.build.state.overlay, "settings")
-  assert.equal(played.build.state.overlayHighlight, rowOfField("endWarnMs"), "d did not open at the ending's Experiments")
-  assert.match(screenText(played), /Final warning/)
+  assert.equal(played.build.state.popup, "settings")
+  assert.equal(played.build.state.popupHighlight, settingRow("raid"), "d did not open at the placeholder Pulse's Experiments")
+  assert.match(screenText(played), /Raid\s+<\s+probe\s+>/)
   // Before a Pulse it is still the first Experiment.
   const before = newSession()
   before.build.handleData("d", before.layout)
-  assert.equal(before.build.state.overlayHighlight, rowOfField("placeFramesMs"))
+  assert.equal(before.build.state.popupHighlight, FIRST_EXPERIMENT_ROW)
 })
 
 test("the frame timer runs while the Pulse plays, and stops when it is paused or the result stands", () => {
   const played = victorious()
   const pulse = played.build.pulse!
-  const flags = played.build.state.debug
-  assert.ok(pulse.busyUntil(1000, flags) !== null, "nothing to draw while it plays")
+  assert.ok(pulse.busyUntil(1000) !== null, "nothing to draw while it plays")
   played.build.dispatch({ kind: "pulse", control: "toggle" })
-  assert.equal(pulse.busyUntil(1000, flags), null, "a paused Pulse kept the timer running")
+  assert.equal(pulse.busyUntil(1000), null, "a paused Pulse kept the timer running")
   played.build.dispatch({ kind: "pulse", control: "toggle" })
   at(played, times(played).homeMs + 10)
-  assert.equal(pulse.busyUntil(1000, flags), null, "the timer ran on over a standing result")
+  assert.equal(pulse.busyUntil(1000), null, "the timer ran on over a standing result")
 })
 
 test("time holds while the terminal is too small to draw it, and the clock starts when the Pulse does", () => {
@@ -579,17 +572,17 @@ test("time holds while the terminal is too small to draw it, and the clock start
 
 test("starting over from the game menu is a fresh Build Phase with the Experiments kept; committing again plays a new Pulse", () => {
   const played = play({ plan: DEFENCE, raid: 1 })
-  assert.equal(played.build.state.debug.raid, "none")
+  assert.equal(played.build.state.experiments.raid, "none")
   const first = played.build.pulse
   played.build.handleData(ESC, played.layout)
   played.build.handleData("r", played.layout)
   assert.equal(played.build.state.committed, false)
   assert.equal(played.build.pulse, null, "the Pulse outlived the Build Phase it came from")
   assert.deepEqual(played.build.state.planned, [])
-  assert.equal(played.build.state.debug.raid, "none", "restarting lost an Experiment")
+  assert.equal(played.build.state.experiments.raid, "none", "restarting lost an Experiment")
   assert.match(screenText(played), /\[1\] Barracks/, "the Build Phase's menu is not back")
   prepare(played.build)
-  played.build.run([{ kind: "commit" }, { kind: "confirm-commit" }])
+  played.build.run([{ kind: "open-battle-round" }, { kind: "start-pulse" }])
   assert.ok(played.build.pulse !== null && played.build.pulse !== first, "a new Pulse did not start")
 })
 
@@ -604,7 +597,7 @@ test("a Pulse the kernel cannot start from undoes the commit and says why, rathe
       throw new Error("no room for the units")
     },
   })
-  build.run([{ kind: "pick-nexus", index: 0 }, { kind: "commit" }, { kind: "confirm-commit" }])
+  build.run([{ kind: "pick-nexus", index: 0 }, { kind: "open-battle-round" }, { kind: "start-pulse" }])
   assert.equal(build.state.committed, false, "the commit stood with no Pulse behind it")
   assert.equal(build.pulse, null)
   assert.equal(build.state.status.tone, "danger")
@@ -618,7 +611,7 @@ test("a session with nothing to start a Pulse still freezes the plan and draws t
   const context = spikeContext()
   const layout = buildLayout(MINIMUM, context.grid)
   const build = new BuildSession({ context, cursor: SPIKE_START_CURSOR, viewport: layout.viewport })
-  build.run([{ kind: "pick-nexus", index: 0 }, { kind: "commit" }, { kind: "confirm-commit" }])
+  build.run([{ kind: "pick-nexus", index: 0 }, { kind: "open-battle-round" }, { kind: "start-pulse" }])
   assert.equal(build.state.committed, true)
   assert.equal(build.pulse, null)
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))

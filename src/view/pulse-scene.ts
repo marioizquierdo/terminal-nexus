@@ -10,7 +10,7 @@ import type { Camera, Viewport } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import { cellForTile, pulseControlRows } from "../build/layout.ts"
-import { wrapWords } from "../build/overlay.ts"
+import { wrapWords } from "../build/popup.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { inBounds, tileIndex } from "../grid/coords.ts"
@@ -22,6 +22,7 @@ import { status } from "../status.ts"
 import type { EndingPhase, EndingTimes, PulseResult } from "./ending.ts"
 import { BEAM_BOLD, beamFrame, beamLight, formatTimer, timerLit, timerSeconds } from "./ending.ts"
 import { forceBar } from "./compose.ts"
+import { inView } from "./build-grid.ts"
 import { paintEffectCells } from "./effects/composite.ts"
 import type { EffectCellSource } from "./effects/composite.ts"
 import type { BandCell, CellStyle } from "./frame.ts"
@@ -79,7 +80,7 @@ export function drawPulseEntities(cells: BandCell[], view: SceneView, pulse: Pul
     for (const offset of definition.footprint) {
       const tile = { x: at.x + offset.x, y: at.y + offset.y }
       if (!inBounds(view.grid, tile)) continue
-      if (tile.x < range.firstX || tile.x > range.lastX || tile.y < range.firstY || tile.y > range.lastY) continue
+      if (!inView(range, tile)) continue
       occupied.add(tileIndex(view.grid, tile))
       const cell = cellForTile(view.layout, view.camera, tile)
       put(cells, band, cell.x, cell.y, entityGlyph(entity.contentId, entity.player, offset), playerRole(entity.player), {
@@ -114,7 +115,7 @@ export function drawPulseEffects(
     for (const cell of painted.cells) {
       const { tile } = cell
       if (!inBounds(view.grid, tile)) continue
-      if (tile.x < range.firstX || tile.x > range.lastX || tile.y < range.firstY || tile.y > range.lastY) continue
+      if (!inView(range, tile)) continue
       sources.push({ band: painted.instance.band, cell })
     }
   }
@@ -174,7 +175,7 @@ export function drawFrameLight(cells: BandCell[], layout: BuildLayout, pulse: Pu
 }
 
 // ---------------------------------------------------------------------------------------------
-// The panel, the top bar, the key help and the status line
+// The panel, the top bar and the bottom line (the Pulse's keys are on the Controls page, feedback F60)
 // ---------------------------------------------------------------------------------------------
 
 /** The top bar's second word: where the player is. */
@@ -188,19 +189,6 @@ export function pulseSubtitle(pulse: PulseFrame): string {
       return `nexus pulse - ${pulse.result.headline.toLowerCase()}`
     default:
       return "nexus pulse"
-  }
-}
-
-/** The key help while a Pulse is on screen: where the keyboard is, and what it does there. */
-export function pulseKeyHelp(pulse: PulseFrame): Readonly<{ label: string; bindings: readonly string[] }> {
-  const running = pulse.phase !== "home"
-  return {
-    label: "PULSE",
-    bindings: [
-      ...(running ? [pulse.paused ? "space resume" : "space pause", "[ ] speed"] : []),
-      "r watch again",
-      "arrows look around",
-    ],
   }
 }
 

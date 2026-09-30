@@ -1,8 +1,8 @@
 // The terminal boundary — engine.md 9.1. An engine-owned structured cell frame, and an excellent
 // snapshot surface. No backend object ever appears inside a frame.
 
-import type { CapabilityMode, RoleTint, StyleRole, Theme } from "./roles.ts"
-import { DEFAULT_THEME, sgrBackgroundFor, sgrFor } from "./roles.ts"
+import type { CapabilityMode, SeeThrough, RoleTint, StyleRole, Theme } from "./roles.ts"
+import { DEFAULT_THEME, resolveCell } from "./roles.ts"
 
 const ESC = "\u001b"
 
@@ -17,9 +17,10 @@ export type CellStyle = Readonly<{
    * A continuous decay/stacking scalar for `fgRole`, `0` (the role's own colour) to `1` (the theme's
    * background) — Q25's transparency half, engine.md 9.1's RULE amendment, canon 2.8. Resolved only
    * at `color256` and `truecolor` (`roles.ts`'s `sgrFor`); has no representable effect at `color16` or
-   * `monochrome`, which stay exactly as bold/dim/inverse already describe them. Never set outside
-   * `fx.damage.flash` — ascii-effects.md craft rule 7's departure is narrow and deliberate, not a
-   * general fade-out license for glyph-bearing effects.
+   * `monochrome`, which stay exactly as bold/dim/inverse already describe them. Set by
+   * `fx.damage.flash`, and in chrome by the card reveal and a popup's breathing border —
+   * ascii-effects.md craft rule 7's departures are narrow and deliberate, not a general fade-out
+   * license for glyph-bearing effects.
    */
   fade?: number
   /**
@@ -30,6 +31,14 @@ export type CellStyle = Readonly<{
    * (`src/view/effects/shading.ts`), a placed building's light today.
    */
   tint?: RoleTint
+  /**
+   * A see-through cursor over the cell (feedback F64-F65) — `roles.ts`'s `SeeThrough` says how it
+   * mixes, and `seeThroughColours` (which `resolveCell` calls for every renderer) how each tier resolves it. Presentation's
+   * own, like `tint`: set by a glyphless write, so the glyph beneath always survives (the corruption
+   * law). A later glyphless write that carries its own `seeThrough` replaces this one; the two are not
+   * stacked.
+   */
+  seeThrough?: SeeThrough
 }>
 
 export type Cell = Readonly<{ glyph: string; style: CellStyle }>
@@ -122,14 +131,10 @@ export function frameToText(frame: ReadonlyCellFrame): string {
   return rows.join("\n")
 }
 
-function sgrOf(style: CellStyle, capability: CapabilityMode, theme: Theme): string {
-  const parts: number[] = [...sgrFor(style.fgRole, capability, theme, style.fade ?? 0, style.tint)]
-  for (const code of sgrBackgroundFor(style.bgRole, capability, theme)) parts.push(code)
-  if (style.bold === true) parts.push(1)
-  if (style.dim === true) parts.push(2)
-  if (style.underline === true) parts.push(4)
-  if (style.inverse === true) parts.push(7)
-  return parts.length === 0 ? "" : `${ESC}[${parts.join(";")}m`
+/** One cell's SGR sequence, as `resolveCell` resolves it — empty for a plain cell. */
+function sgrOf(cell: Cell, capability: CapabilityMode, theme: Theme): string {
+  const { sgr } = resolveCell(cell, capability, theme)
+  return sgr.length === 0 ? "" : `${ESC}[${sgr.join(";")}m`
 }
 
 /** ANSI text for a whole frame. One reset per styled run, and never a stray escape on a blank. */
@@ -145,7 +150,7 @@ export function frameToAnsi(
     let openStyle = ""
     for (let x = 0; x < frame.width; x += 1) {
       const cell = cellAt(frame, x, y)
-      const sgr = sgrOf(cell.style, capability, theme)
+      const sgr = sgrOf(cell, capability, theme)
       if (sgr !== openStyle) {
         if (openStyle !== "") row += reset
         row += sgr

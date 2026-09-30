@@ -9,7 +9,6 @@ import assert from "node:assert/strict"
 import {
   MAX_VIEWPORT,
   MIN_VIEWPORT,
-  SCROLL_MARGIN,
   availableTiles,
   clampCamera,
   clampToGrid,
@@ -25,23 +24,30 @@ import { spikeGrid } from "../src/build/catalog.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
 
 const GRID = spikeGrid()
+/** The canon's first margin, three tiles each way: a fixture for the follow rule, which the game now
+ *  feeds a share of the view (`marginForView`). */
+const SCROLL_MARGIN = 3
+const MARGIN = { x: SCROLL_MARGIN, y: SCROLL_MARGIN }
 
 function plainGrid(width: number, height: number): GridTerrain {
   return { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") }
 }
 
-test("engine-3.3-clamp: the minimum viewport fits 80x24 and the maximum exactly 104x32", () => {
+test("engine-3.3-clamp: the minimum viewport fits 80x24 and the maximum is reached at 104x30", () => {
   // The two rows of engine.md 3.3's own terminal-size table, at one column per tile. Since the menu's
   // divider became the Grid's west side (owner, 2026-09-29), the column that saves is the Grid's: 80
-  // columns show one tile more than the minimum, and 80 x 24 is still the floor (the gate test below).
+  // columns show one tile more than the minimum; and since the bottom bar became one line (owner,
+  // 2026-09-30, feedback F59) the two rows that saves are the Grid's too: 18 rows at 24, and the
+  // maximum's 24 rows two terminal rows sooner. 80 x 24 is still the floor (the gate test below).
   assert.deepEqual(fitViewport({ columns: 80, rows: 24 }, GRID, 1), {
     width: MIN_VIEWPORT.width + 1,
-    height: MIN_VIEWPORT.height,
+    height: MIN_VIEWPORT.height + 2,
   })
-  assert.deepEqual(fitViewport({ columns: 104, rows: 32 }, GRID, 1), {
+  assert.deepEqual(fitViewport({ columns: 104, rows: 30 }, GRID, 1), {
     width: MAX_VIEWPORT.width,
     height: MAX_VIEWPORT.height,
   })
+  assert.equal(fitViewport({ columns: 104, rows: 29 }, GRID, 1).height, MAX_VIEWPORT.height - 1)
 })
 
 test("engine-3.3-clamp: a huge terminal is spent on centring, never on more Grid", () => {
@@ -62,7 +68,7 @@ test("engine-9.3-tile-width: one column per tile at 80, two at 128", () => {
   assert.equal(tileWidthFor({ columns: 128, rows: 24 }, GRID), 2)
   // 128 columns at two per tile is exactly the 48-tile minimum viewport — the arithmetic engine.md
   // 3.1 says is "not a coincidence".
-  assert.deepEqual(fitViewport({ columns: 128, rows: 24 }, GRID, 2), { width: 48, height: 16 })
+  assert.deepEqual(fitViewport({ columns: 128, rows: 24 }, GRID, 2), { width: 48, height: 18 })
   assert.equal(availableTiles({ columns: 128, rows: 24 }, 2).width, MIN_VIEWPORT.width)
 })
 
@@ -70,6 +76,10 @@ test("engine-3.3-gate: below 80x24 the screen gates; a small Grid is never gated
   assert.equal(isGated({ columns: 80, rows: 24 }, GRID), false)
   assert.equal(isGated({ columns: 79, rows: 24 }, GRID), true)
   assert.equal(isGated({ columns: 80, rows: 23 }, GRID), true)
+  // Measured against the floor's own 8 rows of chrome, not the 6 the frame takes since the bottom bar
+  // became one line (feedback F59): 80 x 22 would lay out 16 rows of Grid, and is still below the floor.
+  assert.equal(availableTiles({ columns: 80, rows: 22 }, 1).height, MIN_VIEWPORT.height)
+  assert.equal(isGated({ columns: 80, rows: 22 }, GRID), true)
   // "A Grid smaller than the minimum viewport needs only its own size" — fitting step 4.
   const tutorial = plainGrid(24, 12)
   assert.equal(isGated({ columns: 60, rows: 22 }, tutorial), false)
@@ -80,15 +90,15 @@ test("engine-3.3-scroll: the cursor drives the camera, and only within the margi
   const still: Camera = { x: 10, y: 10 }
   // Comfortably inside the viewport: nothing moves. A camera that twitched on every cursor step
   // would be the "fighting the cursor" failure this gate is asking Mario about.
-  assert.deepEqual(followCursor(still, { x: 30, y: 18 }, viewport, GRID), still)
+  assert.deepEqual(followCursor(still, { x: 30, y: 18 }, viewport, GRID, MARGIN), still)
 
   // Exactly `SCROLL_MARGIN` from the east edge: still inside, still nothing.
   const atMargin = { x: still.x + viewport.width - 1 - SCROLL_MARGIN, y: 18 }
-  assert.deepEqual(followCursor(still, atMargin, viewport, GRID), still)
+  assert.deepEqual(followCursor(still, atMargin, viewport, GRID, MARGIN), still)
 
   // One tile further and the camera follows by exactly one tile — not by a jump, not by centring.
   const past = { x: atMargin.x + 1, y: 18 }
-  assert.deepEqual(followCursor(still, past, viewport, GRID), { x: still.x + 1, y: still.y })
+  assert.deepEqual(followCursor(still, past, viewport, GRID, MARGIN), { x: still.x + 1, y: still.y })
 })
 
 test("engine-3.3-scroll: the margin holds at every cursor position the Grid can produce", () => {
@@ -98,7 +108,7 @@ test("engine-3.3-scroll: the margin holds at every cursor position the Grid can 
   // and check the invariant after every single step rather than at a few hand-picked places.
   for (let y = 0; y < GRID.height; y += 1) {
     for (let x = 0; x < GRID.width; x += 1) {
-      camera = followCursor(camera, { x, y }, viewport, GRID)
+      camera = followCursor(camera, { x, y }, viewport, GRID, MARGIN)
       // The viewport never leaves the Grid.
       assert.ok(camera.x >= 0 && camera.x <= GRID.width - viewport.width, `camera x at ${x},${y}`)
       assert.ok(camera.y >= 0 && camera.y <= GRID.height - viewport.height, `camera y at ${x},${y}`)
@@ -132,7 +142,7 @@ test("engine-3.3-scroll: the margin holds at every viewport size in the clamped 
     let camera: Camera = { x: 0, y: 0 }
     const step = (position: number): void => {
       const cursor = axis === "x" ? { x: position, y: fixed } : { x: fixed, y: position }
-      camera = followCursor(camera, cursor, viewport, GRID)
+      camera = followCursor(camera, cursor, viewport, GRID, MARGIN)
       const range = visibleRange(camera, viewport)
       const [first, last, at] =
         axis === "x"

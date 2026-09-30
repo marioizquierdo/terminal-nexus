@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.26
+**Canon version:** 2.30
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -44,7 +44,10 @@ Read in this order:
 4. [`specs/project-governance.md`](specs/project-governance.md), especially the execution ledger and
    bounded autonomy;
 5. only the supporting canon sections named by the current gate;
-6. existing source, tests, evidence, and recent changes.
+6. for interface work — a screen, a menu, a popup, an effect, a key —
+   [`docs/ui-patterns.md`](docs/ui-patterns.md): its goals and its checklist for a new screen, then
+   the patterns the change touches;
+7. existing source, tests, evidence, and recent changes.
 
 The canon controls product truth. The current gate controls implementation. Future milestones are
 context, not authorization.
@@ -223,10 +226,37 @@ walking home and a plain result (won, lost, drawn or timed out, and why). **Red 
 own Nexus being hurt** — its first hit, very low health, a lost Pulse — faint and brief. Recall, which
 the rules described and no code ran, is built for the first time in `src/match/`, beside the kernel;
 the kernel is untouched. The ending's timings, the red's switch, and the raid's and the crew's size are
-Experiments (`d`); the interface rules are `docs/ui-patterns.md` sections 6 and 7c. **Do not start 6B** (the loop back into
+Experiments (`d`); the interface rules are `docs/ui-patterns.md` (the side panel, and the Nexus Pulse on screen). **Do not start 6B** (the loop back into
 the next Build Phase and the trigger runner) or 6C (automatic production) without Mario's word. **Mario
 asked on 2026-09-28 to keep going without waiting to look at each gate first**: he tests several merged
 changes together, then plays, exports his Experiments, and pastes them into the pull request.
+
+**The menu spike is built and reported, awaiting Mario's playtest** (2026-09-30,
+`evidence/menu-spike-report.md`; feedback
+[`docs/feedback/2026-09-30-menu-spike.md`](docs/feedback/2026-09-30-menu-spike.md), F52-F60, on a pull
+request of its own): the reorganisation of the Build Phase menu that 6A's round 3 left for a spike
+(F51). Every row either opens a popup or gives the map something to do, and an active row reads
+`[x] Name  >>`; a focus arrow flies from the row to the cursor, which blinks when it lands (both
+Experiments); Left and Right stay on the menu; the menu is one list with `$ 100` on its top line; a
+building being placed shows its card in the panel; the bottom bar is one line of contextual help; and
+the game menu has a Controls and hotkeys page. **Round 2** (2026-09-30,
+[`docs/feedback/2026-09-30-menu-spike-round-2.md`](docs/feedback/2026-09-30-menu-spike-round-2.md),
+F61-F76, with his settings export) polished it: the credits line with the map's resource symbol, the
+active row as `[1] Barracks  >`, a subtler refused flicker, a card reveal, the arrow from the row's own
+place and a see-through cursor for Explore Map, a building that holds the menu until placed or
+cancelled, `x` that never opens the game menu, lists that stop at their ends, `docs/ui-patterns.md`
+rewritten, and his settled Experiments moved into `src/build/tuning.ts`. **Round 3** (2026-09-30,
+[`docs/feedback/2026-09-30-menu-spike-round-3.md`](docs/feedback/2026-09-30-menu-spike-round-3.md),
+F77-F81, with his third export) reworked navigation — taps speed up only by counting, a held key keeps
+the game's own pace, and key presses, repeats and releases are read where the terminal reports them
+(the Key releases Experiment; Q66 answered) — gave the popup scroll bar a textured thumb, and made the
+Battle Round screen breathe; a dedicated navigation session is queued. **Mario sent notes at its end**
+for a small follow-up, on the same pull request (2026-09-30,
+[`docs/feedback/2026-09-30-menu-spike-followup.md`](docs/feedback/2026-09-30-menu-spike-followup.md),
+F82-F86, canon 2.30): every popup breathes and the Battle Round screen opens with a double flash; a card
+is a title, a subtitle, a description and its numbers; Settings is in titled sections, and every setting
+is declared once with its tier — player, experiment or tuned (`src/build/all-settings.ts`). It does not
+start 6B; the prompt that does is in `docs/next-steps.md`.
 
 So the authorised work for a new session is, in order:
 
@@ -236,7 +266,7 @@ So the authorised work for a new session is, in order:
    with it (`--settings`), and settle each Experiment it answers — adopt the value as the default,
    delete the Experiment, record the answer;
 2. **the current milestone's active gate** — gate 6A has nothing left to build until he has played
-   it (and Q66 waits on his key-release probe); the next gate waits for his word, and when it comes it
+   it (Q66 is answered; his key-release probe still says whether his iTerm2 reports releases); the next gate waits for his word, and when it comes it
    is the next gate in the build order
    [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
    order — read that table's build-order column, and take one gate per session unless the owner's own
@@ -299,8 +329,10 @@ deleted, and the renderer must be replaceable without one simulation test changi
   several tiles**, and that matters strategically. A mover tests its whole footprint against its
   mask. Range measures to the nearest occupied tile.
 - The viewport is clamped to between 48 × 16 and 72 × 24 tiles; the cursor drives scrolling at a
-  margin (a share of the view, 25% — the owner's pick; the number is GUIDANCE);
-  there is no minimap. 80 × 24 is the floor and the acceptance target. **The margin is a follow rule,
+  margin (a share of the view, 30% — the owner's pick; the number is GUIDANCE);
+  there is no minimap — the weight of the Grid pane's sides is the "more Grid" signal (the footer's
+  position readout was retired at canon 2.27). 80 × 24 is the floor and the acceptance target; since
+  the bottom bar became one line it shows 49 × 18 tiles. **The margin is a follow rule,
   not an invariant**: at the Grid's own edge the camera has nowhere to go and the cursor reaches the
   edge of the screen, which is correct — there is no more Grid to reveal.
 - Grid orientation is a rendering choice. Portrait and landscape change no coordinate.
@@ -358,32 +390,56 @@ deleted, and the renderer must be replaceable without one simulation test changi
   armed only while the Grid has focus, and **finishing goes back to where it started** (Q57, refined
   2026-09-29): placing or Explore Map begun on the map returns to plain navigation there; begun on the
   menu, to the menu, disarmed. **Arming puts the building where the cursor is** when it fits, else the
-  cheapest spot within 12 tiles (sideways cheaper than up or down) leaving a free tile around it —
+  cheapest spot within reach (sideways cheaper than up or down; both tuned values) leaving a free tile around it —
   never beside the last building placed; the cursor opens on the Grid Nexus. **Esc, `x` and a right
   click are one cancel** that goes back one level — popup, then placing or Explore Map to where it
-  began, then the map to the menu — and on the menu opens the **game menu** (`[s] Settings`,
-  `[r] Restart`, `[q] Quit`); `q` opens it too, and only Ctrl+C quits at once. Leaving always asks.
+  began, then the map to the menu — and on the menu **Esc** opens the **game menu** (`[s] Settings`,
+  `[c] Controls and hotkeys`, `[r] Restart`, `[q] Quit`) while **`x` and a right click do nothing**, so
+  `x x x` always lands on the menu (canon 2.28: two commands, `cancel` and `back`); `q` opens it too,
+  `?` opens the Controls page directly, and only Ctrl+C quits at once. Leaving always asks. No popup
+  has a row that only goes back. **Left and Right on the menu only flicker the row**; the keyboard
+  stays there (canon 2.27). **Every list stops at its ends** — a first tap one row, taps counted and
+  holds at the map cursor's pace, the fast move to the first or last row. **A menu row that hands the
+  keyboard to the map** sends a **focus arrow** (a building, from its row's own place) or a
+  **see-through cursor** (Explore Map, which first moves the cursor to clear ground) to the cursor,
+  which blinks when it lands — presentation, timed in the live loop from a sequence number the reducer
+  records (`BuildState.handoff`); a placement back on the menu flashes its row once. **A building being
+  placed holds the menu**: other buildings, Explore Map and Start Pulse wait until it is placed or
+  cancelled, and its own digit cancels it.
   **The top bar's right end says what Esc does** — `menu [esc]`, `back [esc]`, `close [esc]` — and a
   click on it is Esc; no popup carries its own `[esc]`. A click scrolls
-  the view near its edges, armed or not (gate 5J, reversing Q58). How far a key moves the cursor is
+  the view near its edges, armed or not (gate 5J, reversing Q58). **Taps speed up by counting and a
+  hold has the game's own pace** (owner, 2026-09-30, F79): the third quick tap of a run doubles its
+  speed (1, 1, 2, then 2, 2, 4); a held key moves at most once per step of the pace whatever the
+  keyboard's repeat rate; a hold ends a run. **Key events are progressive enhancement**: where the
+  terminal speaks the kitty keyboard protocol (the Key releases Experiment, auto by default) it says
+  which presses are repeats and when a key is let go, and the one disposer switches the protocol off on
+  every exit path; elsewhere the hold window decides. How far a key moves the cursor is
   timed in the input path, and every animation — including the camera's slide and the cursor's
   glide, which interpolate every move — in the view; never the reducer.
-- **The Build Phase panel is the construct menu, what is left to spend, and the selected item's cost
-  and effect**, under `[e] Explore Map` and `[n] Nexus` entries at its top, Explore Map first — no
-  radius preview until something has a radius (Q30). **Explore Map** keeps its row at the top of the panel,
-  drawn active, with a separator under it and the details of whatever is under the cursor below; `e`,
-  Esc or a click on the panel goes back. **A menu row has two states**: highlighted (the keyboard's
-  bar, only while the menu has focus) and **active** (`>`, the hotkey colour, underlined) while its
-  action is under way — a building armed, Explore Map open, the Nexus popup open — one style for all. **Every popup is one shape** — a title and rows as data,
+- **The Build Phase panel is one list** (canon 2.27, reordered at 2.28): `[e] Explore Map`, `[n] Nexus`,
+  the credits line (the map's resource-deposit symbol and what is left to spend, `* 130`, in the cost
+  column), every building in catalog order with its cost (no group headings), and `[s] Start Pulse` on
+  its last line — no help text, no radius preview until something has a radius (Q30). **A card
+  replaces the menu** while Explore Map is open (what is under the cursor) or a building is being
+  placed (that building), opening with a short **card reveal**: its header is the row that opened it,
+  drawn active on the first line, with a separator under it; the header's own hotkey, `x`, Esc or a
+  click on the panel goes back. **A menu row has two states**: highlighted (the keyboard's bar, only
+  while the menu has focus) and **active** — `[1] Barracks  >`, its own hotkey, the hotkey colour, one
+  `>`, no underline — while its action is under way: a building armed, Explore Map open, the Nexus popup
+  or the Battle Round screen open — one style for all. A refused key only greys the row's words. **Every popup is one shape** — a title and rows as data,
   options naming the command a click sends, at most one scrolling list with a scroll bar in its right
   border, drawn and hit-tested from the same placement; a **message** is the shape with nothing to
   choose, closed by Esc or a click outside — and is
   drawn last in the `chrome` band, never in a band of its own. **A refused placement is
-  answered on the status line, and names its tile**; **affordability is reported before any tile
-  problem**. A menu split into groups still shares **one digit sequence**, and an **empty group is
-  drawn, not skipped**, so no hotkey moves when content arrives.
-- **The status line is a typed message** — text, a tone, and the tile it is about, if any — never a
-  bare string, and a tone resolves onto style roles in one place (`src/view/status.ts`). **The Grid
+  answered on the bottom line, and names its tile**; **affordability is reported before any tile
+  problem**. Should the menu grow groups again, they share **one digit sequence**.
+- **The bottom bar is one line, the contextual line** (canon 2.27): the last command's answer while
+  it has one, otherwise a hint for where the keyboard is, from one list of situations
+  (`src/build/help.ts`); an answer lapses at the next command that says nothing. Every key is on the
+  **Controls and hotkeys** page. A message is typed — text, a tone (`hint` among them), and the tile it
+  is about, if any — never a bare string, and a tone resolves onto style roles in one place
+  (`src/view/status.ts`). **The Grid
   pane is a closed rectangle** whose sides carry the "more Grid this way" signal as weight: a light
   line where the view can scroll further, and **the map's own edge** where the map ends — a style the
   map names for itself (a solid inverse-video bar when it names none), in the quieter edge colour, the
@@ -429,6 +485,11 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - **Prefer the missing connection over the missing polish.** A gate that is honest, connected, and
   ugly is worth more than one that is beautiful and dead-ends — playing the whole thing is what says
   which part deserved the polish, and it usually is not the part you expected.
+- **Build every interface from [`docs/ui-patterns.md`](docs/ui-patterns.md).** Before changing a
+  screen, a menu, a popup, an effect or a key, read its goals (section 0) and its checklist for a new
+  screen, then the patterns the change touches; when two rules disagree, the goals decide. A change
+  that adds, bends or retires a pattern updates that document in the same pull request, and a new
+  pattern gets a name there so the next screen reuses it rather than re-deriving it.
 - Preserve unrelated work; never use destructive Git commands to clear an incidental problem.
 - Pin runtime and dependency versions used as evidence. Re-check official sources; never copy a
   remembered version.
@@ -444,20 +505,26 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - **Ask Mario to feel a choice through an Experiment** (owner direction, 2026-09-26 and 2026-09-28:
   "The agent should feel free to add experimental flags anytime they need particular feedback from
   me, so I can try with and without them, adjust speed settings, etc until it feels right").
-  **Settings** (Esc, then `s`, in the Build Phase) holds the player's own saved settings and, at its
-  bottom, **Experiments**: live-editable flags, some applied at once, some on restart
-  (`src/build/debug.ts` is the list); `d` jumps straight to them. When a session has a fork the owner
+  **Settings** (Esc on the menu, then `s`, in the Build Phase) lists every shown setting in titled
+  sections — the player's own saved settings under Display, and the **Experiments**, live-editable and
+  never saved, under Keyboard navigation, Effects and the placeholder Pulse; `d` jumps to the first
+  Experiment. **Every setting is declared once, with its tier, in `src/build/all-settings.ts`**:
+  *player* (shown and saved), *experiment* (shown for Mario's playtests, exported), or *tuned* (a
+  constant in code) — plus its section, label, question, values and default; moving one between tiers
+  or sections is a one-word edit (F85). When a session has a fork the owner
   should feel rather than read about — a timing, a look, a movement rule, or whether a new feature
   should exist at all — add an Experiment defaulting to the recommended answer and **ask him in plain
-  words to flip it**: "press `d`, set Armed click scrolls to off, and tell me which you prefer." Then
+  words to flip it**: "press `d`, set Battle Round flash to 300 ms, and tell me which you prefer." Then
   **ask him to paste the export into the pull request**: Settings' **Export settings** (`e`) copies
   every setting and experiment as `name = value` text, changed experiments first; reproduce what he
   had with `--settings "<pasted text>"` (`terminal-nexus --spike` or `scripts/playtest.mjs`) or
   `#settings=` on the browser page. A new behaviour whose worth is in doubt ships with an on/off
   Experiment, so he can switch it off without a rebuild. This is Section 6's "make it observable" in
   its preferred form, ahead of a command-line flag or a registered question. Every Experiment names
-  the question it serves and is **normally deleted before its pull request is accepted**; a few stay
-  longer or graduate into real Settings. Settings is only in the Build Phase today; a screen without
+  the question it serves and is **normally deleted before its pull request is accepted**: his value
+  becomes its default and its tier becomes *tuned*, with who chose it and when (canon 2.28, F76; one list since F85); a
+  few stay longer — a number that depends on the player's keyboard, placeholder data — or graduate
+  into real Settings. Settings is only in the Build Phase today; a screen without
   it falls back to a command-line flag.
 - **Size the pull request's Demo to the change** (owner, 2026-09-28: "we have to be a little more
   smart about how many tokens we spend building a playable demo"): a code block or nothing for a

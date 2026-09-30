@@ -2,7 +2,7 @@
 
 **Document role:** The queue: what waits on Mario, what comes next, and the small work that has piled up beside the milestones
 **Status:** WORKING — keep it short; delete an item when it is done, and move a decision into `specs/open-questions.md` when it becomes one
-**Updated:** 2026-09-29 (after Milestone 5 was accepted and gate 6A, the Nexus Pulse from `[s] Start` to a result, was built and reworked once)
+**Updated:** 2026-09-30 (the menu spike's follow-up, F82-F86, and the 6B prompt; earlier: its third round, feedback F77-F81 and his third export, on the same pull request; earlier: its second round and a general review, the menu spike, Milestone 5 accepted and gate 6A)
 **License:** Apache-2.0
 
 Milestones say what the game must become (`milestones/`); this says what is waiting *right now*, and
@@ -10,25 +10,23 @@ the cleanup that does not belong to any gate.
 
 ## 1. Waiting on Mario
 
-- **Play gate 6A's Nexus Pulse and send an export.** Plan something and choose `[s] Start Pulse` (the
-  menu's last row, or `s`), then Enter on the Battle Round 1 screen, and watch it to the result. Then press `d`: the first Experiments now are the ending's own —
-  Final warning (3000 ms; 0 turns off the timer's flash and the light), Red alerts (on or off),
-  Walk-back delay, Walk-back time, Centre on Nexus — and the last two are the raid and your units
-  (Raid: none is a Pulse nobody comes to, TIME'S UP; Your units: none loses the Nexus). Settings, `e`
-  (Export), paste it as a comment; an agent starts the game with `--settings "<text>"` and settles each
-  Experiment it answers (`AGENTS.md` Section 2, item 1). The questions for him: does the timer and the
-  light read as anticipation without being an alarm, is the red now rare and faint enough (does he
-  read "when losing" as a lost Pulse's result, or does he want something during the fight?), is the
-  result clear without being told, and do the timings feel right?
+- **Gate 6A's ending, in words.** His 2026-09-30 export settled its timings (the walk home waits
+  500 ms and takes a second, a heavy raid, no units of his own), and they are the defaults now; what
+  he has not said is whether the flashing timer and the light round the border read as anticipation
+  rather than an alarm, whether the red is rare and faint enough, and whether the result is clear
+  without being told.
 - **Run the key-release probe in iTerm2.** `node scripts/probe-key-release.mjs`, hold an arrow, let it
-  go, tap it, `q`. If the lines say `release`, Q66's tier 3 is buildable there (section 4).
+  go, tap it, `q`. If the lines say `release`, the Key releases Experiment's `auto` reads them there;
+  if they say `legacy`, `auto` and `off` feel the same in iTerm2 (section 4).
 - **One question:** was "press `b`" an example of a key or a request for letter hotkeys? (Q67.)
 - **One more:** should the player ever read the word "Pulse"? The start screen says Battle Round; the menu
-  row and the running screen still say Pulse (Q68 — recommended to settle in the menu spike he
-  announced).
-- **The menu reorganisation spike** (F51 of the round-3 feedback): his to start. It has the rule "a menu can
-  always be walked with Up, Down and Enter" (`docs/ui-patterns.md` section 4) and one list of the menu's
-  entries (`menuEntries`) to work from.
+  row and the running screen still say Pulse (Q68). The menu spike did not change the words, since he
+  did not ask; his list of actions said "Start next battle round".
+- **Play the menu spike's follow-up** (the same pull request; feedback F82-F86): the Battle Round screen
+  opening with a double flash and every popup breathing; a card as title, subtitle, description and
+  numbers; Settings in sections. Press `d`: **Battle Round flash** (220 ms; off turns it off) and **Flash
+  strength** (80%) under Effects, beside **Popup pulse** (2000 ms); the navigation numbers are under
+  Keyboard navigation for the dedicated navigation session (section 4).
 
 ## 2. The next gate: 6B — the loop back into the next Build Phase
 
@@ -38,24 +36,28 @@ runner's simulation band; **6C** minimal automatic production. **6B waits for hi
 tested several merged gates together before, so it is likely to come with the 6A export. Take one gate
 per session.
 
-**A prompt to start 6B in a fresh session** (edit the first paragraph to match what he said):
+**A prompt to start 6B in a fresh session** (the owner asked for one at the menu spike's merge, F86;
+edit the first paragraph if anything changed):
 
 ```text
 Read CLAUDE.md and follow AGENTS.md.
 
-Mario has played gate 6A (the Nexus Pulse from p, y to a result) and merged it. Treat this message as
-his word that 6A is accepted and that 6B is the Active gate. Record that first, as its own commit.
-If he pasted a settings export, settle each Experiment it answers before anything else.
+I have played gate 6A (Start Pulse, the Battle Round screen, the Pulse, its ending and Recall) and the
+menu spike with its follow-up (pull request 49), and merged them. Treat this message as my word that gate 6A is accepted
+and that gate 6B is the Active gate. Record that first, as its own commit (the governance ledger, the
+Milestone 6 tracker, AGENTS.md Section 2, docs/next-steps.md). If I paste a settings export, settle
+each Experiment it answers before anything else.
 
 Then orient: run ./scripts/check-repository.sh; read milestones/milestone-06-pulse-phase.md,
-docs/next-steps.md, docs/ui-patterns.md (sections 0 and 7c) and evidence/gate-6a-report.md (its
-sections 7 and 9 are the carry-over).
+docs/next-steps.md, docs/ui-patterns.md (sections 0, 14 and 15) and evidence/gate-6a-report.md
+(its sections 7 and 9 are the carry-over).
 
 Take gate 6B only — the loop: after Recall, the next Build Phase, until the mission's triggers end it;
 the trigger runner's simulation band (spawn, order, commitPlan, win, lose) as validated data;
-PERIMETER's three waves as the fixture; Q36 resolved or deferred with a reason. The kernel is
-Milestone 1's; a change to it is a finding, not an assumption. End with a gate report and a pull
-request written with the pr-description skill. Do not start 6C.
+PERIMETER's three waves as the fixture, replacing the placeholder Pulse and its Raid and Your units
+Experiments; Q36 resolved or deferred with a reason. The kernel is Milestone 1's; a change to it is a
+finding, not an assumption. Anything I should feel goes behind an Experiment in Settings. End with a
+gate report and a pull request written with the pr-description skill. Do not start 6C.
 ```
 
 ## 3. Carry-over (small, none blocking)
@@ -74,8 +76,6 @@ request written with the pr-description skill. Do not start 6C.
   question once there are several.
 - **The walk home is a straight glide** over whole tiles, with no routing; it may cross rock, which a
   two-second flourish can afford.
-- **The status line under a popup mid-Pulse still says "Build committed - N planned."** True, but stale;
-  the Pulse's own message returns when the popup closes.
 - **No live numbers on the map cursor during a Pulse** (Explore Map's card is the Build Phase's), and
   the enemy's opening force is visible in the Build Phase — hiding it (player projection) is later work.
 - **Watch again** replays a Pulse that was already resolved; it cannot, and must not, resolve a new one.
@@ -87,14 +87,81 @@ request written with the pr-description skill. Do not start 6C.
   would not show it.
 - **The restart-needed message has no live trigger**: no Experiment needs a restart today. The
   detection is tested with a test-only list; when the first restart-only Experiment appears, play it.
-- **Explore Map's key help** is `arrows move · e/esc back · shift+arrow fast move · bksp remove`; "tab
-  menu" no longer fits at 80 columns. Tab still works.
 - **Q62, Q63, Q64** are still open and observable (the exploring click, the wheel step, the light
   theme's light). Ask him when he has an export.
 - **A Settings restart with buildings planned throws removal sparks** over each; harmless, and arguably
   right, but the live loop cannot tell a restart from an undo.
 
-## 4. Q66 — key releases, as progressive enhancement
+**From the menu spike** (`evidence/menu-spike-report.md` section 7 has the reasons):
+
+- **The Controls page is written by hand** (`controlsPage` in `src/build/help.ts`). A new key needs a
+  line there as well as in `src/build/keyboard.ts`; a test holds every bracketed key a *hint* names to a
+  real binding, but the page's own lines are checked by eye.
+- **The focus arrow on a shallow diagonal** steps a row every few columns, a comet of `-` with a `\` at
+  each step; in Unicode `━` and `╲`. Worth his eye along with the Experiment.
+- **The card while placing shows what is being built, never what is under the cursor**; a player who
+  wants to read a building on the map while placing presses Esc, then `e`.
+
+**From the menu spike's second round** (`evidence/menu-spike-report.md` section 7 has the reasons):
+
+- **Three same-state tests click tiles chosen outside the click's edge zones** (build-spike,
+  build-nexus, build-experiments): if the owner changes the click edge zone, those tiles need moving.
+- **The committed plan's fallback panel still prints `[esc] menu`**, key first, beside the top bar's
+  own `menu [esc]`; it only shows when no Pulse can start. Removing the line is one edit.
+- **The title screen's menu does not speed up when held** — it stops at its ends and jumps, but has no
+  clock of its own to time a held key by, and only four rows.
+
+## 4. Navigation and key releases
+
+### Polish navigation in a session of its own
+
+The owner asked for this note (third round, 2026-09-30, F79: "Just do some changes here, and add a note
+that we need to come back to polish navigation again on another dedicated session").
+
+**Built in the third round**, on the map cursor and in every Build Phase list alike (`src/build/motion.ts`;
+the reducer still sees only ordinary `move-cursor` and `highlight` commands):
+
+- **Taps speed up by counting.** Taps of one arrow each within `doubleTapMs` of the one before are a run
+  that keeps its speed; the third tap since the speed last changed (or the run began), if it came within
+  `fastTapMs`, doubles it: 1, 1, 2 — then 2, 2, 4 — and 4 is the top. A slower gap, another arrow or any
+  other key starts over at 1. *Reading taken:* the second doubling uses the first one's rule (three taps,
+  the last quick); his words could also mean three double taps of any pace — one line in `moveStep` if so.
+- **A hold runs at the game's own cadence**: at most one move per `holdMoveMs` (on average exactly that
+  when the keyboard repeats faster), `holdFirstStep` a move, `holdLongStep` once it has repeated for
+  `holdLongMs`. A hold breaks a run of taps, so the tap after it is one tile. The fast move is unchanged.
+- **How a repeat is told from a tap**: with key events the terminal says so; without, a press within the
+  hold window (the Experiment, 200 ms by default) of the one before is a repeat.
+- **Key releases (auto / off)**, applied at once: on `auto` the Build Phase asks the terminal for the kitty
+  keyboard protocol, pushes its flags if it answers and pops them on every way out through the one
+  disposer (tested: `q q`, Ctrl+C in both forms, Esc then `q`, SIGINT, SIGTERM, a render failure, a
+  setup failure). With it on, Esc arrives whole and needs no wait. The browser page plays such a
+  terminal from `keydown`/`keyup`. Scripts can send `Right/repeat`, `Right/release`; the playtest
+  summary prints each move (`tap 2`, `hold 0`).
+
+**First guesses** (`src/build/tuning.ts`): his own numbers — `doubleTapMs`, `fastTapMs`,
+`tapsToSpeedUp`, `tapTopStep` — and the hold cadence, which is ours: `holdMoveMs`, `holdFirstStep`,
+`holdLongStep`, `holdLongMs`. The hold window's 200 is his "I would try".
+
+**Measure first**, in his iTerm2: `node scripts/probe-key-release.mjs`. Does it answer the kitty query,
+and do held keys say `repeat` then `release`? What are his keyboard's repeat delay and interval (the
+`+N ms` column while holding)? Then play with Key releases `auto` and `off` and compare. tmux and SSH may
+not pass the protocol through — measure, do not assume.
+
+**Left for that session:**
+
+- Tune the hold cadence to his feel — make its four numbers Experiments for the session if he wants to
+  turn them live.
+- A learned hold window (tier 2 below): measure the first held run's repeat gap and set the window from
+  it, rather than a fixed 200 ms.
+- With key events, a hold still waits for the operating system's first repeat before moving on the
+  cadence. A timer of the game's own in the live loop could start it sooner and stop at the release —
+  with a safety stop for a release that never comes.
+- Without the protocol a lone Esc still waits a moment (`escTimeoutMs`); Windows Terminal's win32-input-mode is not read;
+  the title screen's menu has no timing at all; the page's hidden typing field sends no releases.
+- A terminal that answers the question after a very quick quit would print its answer into the shell —
+  not seen, not guarded.
+
+### The design
 
 The decision is `specs/open-questions.md` Q66; this is the working design. Principle: **the plain path
 always works; a host that offers more makes it better.**
@@ -127,7 +194,6 @@ always works; a host that offers more makes it better.**
 
 | Item | Why | Size |
 | --- | --- | --- |
-| Rename `debug.ts` / `DebugFlags` / `BuildState.debug` / `debug-*` to say "experiments" | Debug Mode became Settings; the code still says debug | ~200 mechanical lines; a pull request of its own so the diff is pure rename |
 | Compact `AGENTS.md` Section 2's per-gate paragraphs into two lines each plus a link | It is ~130 lines every session reads first; the detail lives in the tracker and the gate reports | **due now — Milestone 5 was accepted 2026-09-29**; its own small pull request, since a docs-only diff is easy to review |
 | Screenshot flows set Experiments with `--settings`, not "Down*6" | Every added or removed Experiment shifts a count (three recounts this round) | a morning; only the flows that set a value, not the ones that show the popup |
 | A `ScreenHost` interface and an `InputEvent` with `phase` | Fewer TTY fakes, real key releases, gamepad and touch-hold | see `docs/portability.md` section 4 |

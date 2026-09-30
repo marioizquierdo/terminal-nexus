@@ -129,7 +129,7 @@ test("a context with no Pulse starts none: committing only freezes the plan, as 
   delete (context as { pulse?: unknown }).pulse
   const layout = buildLayout(MINIMUM, context.grid)
   const build = new BuildSession({ context, cursor: SPIKE_START_CURSOR, viewport: layout.viewport, startPulse })
-  build.run([{ kind: "pick-nexus", index: 0 }, { kind: "commit" }, { kind: "confirm-commit" }])
+  build.run([{ kind: "pick-nexus", index: 0 }, { kind: "open-battle-round" }, { kind: "start-pulse" }])
   assert.equal(build.state.committed, true)
   assert.equal(build.pulse, null)
 })

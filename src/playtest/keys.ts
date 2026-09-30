@@ -17,7 +17,11 @@
 //   a  1  ?                     any single printable character, sent as itself
 //   Space*4                     any step repeated N times
 //   Right~30*12                 a step arriving 30 ms after the one before (a held key's auto-repeat,
-//                               for the held-key ramp); untimed steps are a second apart
+//                               or quick taps, for the motion rules); untimed steps are a second apart
+//   Right/repeat Right/release  the key as a terminal that reports key events sends it (the kitty
+//   Right/press                 keyboard protocol): ESC [ 1 ; 1 : 2 C, ESC [ 1 ; 1 : 3 C. Any key name
+//                               takes one; a script with one plays such a terminal, so its plain
+//                               presses are known presses too. `Right/repeat~30*10` times them
 //   wait  wait~4000             nothing is pressed and time passes: a second by default, or the given
 //                               milliseconds — how a scripted playtest of a Nexus Pulse lets it play on
 //   click:20,13                 left click on Grid tile x=20, y=13, wherever it is drawn right now
@@ -31,6 +35,8 @@
 // terminal's behaviour and exactly the trap a script must not fall into by accident.
 
 import type { Coord } from "../grid/types.ts"
+import { encodeKeyEvent } from "../view/key-events.ts"
+import type { KeyPhase } from "../view/key-events.ts"
 import { keysFromChunk } from "../view/playback.ts"
 
 const ESC = String.fromCharCode(27)
@@ -77,10 +83,11 @@ const MOUSE_BUTTONS: Readonly<Record<string, number>> = {
 /** One thing the player does. A key is its bytes; a mouse action keeps its target unresolved,
  *  because a tile's position on screen depends on where the camera is at the moment of the click.
  *  `afterMs`, when a script gives one (`Right~30`), is how long after the previous step it arrives —
- *  what the held-key ramp reads (gate 5H); without it, steps are a second apart, so every key
- *  is a press of its own. */
+ *  what the motion rules read (taps counted, holds on a cadence); without it, steps are a second
+ *  apart, so every key is a tap that starts over. `phase`, when a script gives one (`Right/repeat`), is
+ *  what a terminal reporting key events would mark the key as; `bytes` already say it. */
 export type PlaytestStep =
-  | Readonly<{ kind: "key"; label: string; bytes: string; afterMs?: number }>
+  | Readonly<{ kind: "key"; label: string; bytes: string; afterMs?: number; phase?: KeyPhase }>
   /** Nothing is pressed: the script's clock moves on, and with it a Nexus Pulse playing on screen. */
   | Readonly<{ kind: "wait"; label: string; afterMs?: number }>
   | Readonly<{ kind: "mouse"; label: string; button: number; target: MouseTarget; afterMs?: number }>
@@ -120,6 +127,12 @@ function parseStep(token: string): PlaytestStep {
     const target: MouseTarget =
       mouse[2] === ":" ? { kind: "tile", tile: { x: first, y: second } } : { kind: "cell", column: first, row: second }
     return { kind: "mouse", label: token, button, target }
+  }
+  // `Right/repeat`: the key as a terminal reporting key events marks it.
+  const phased = /^(.+)\/(press|repeat|release)$/iu.exec(token)
+  if (phased !== null) {
+    const phase = (phased[2] as string).toLowerCase() as KeyPhase
+    return { kind: "key", label: token, bytes: encodeKeyEvent(keyBytes(phased[1] as string), phase), phase }
   }
 
   return { kind: "key", label: token, bytes: keyBytes(token) }

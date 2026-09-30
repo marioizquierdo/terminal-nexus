@@ -6,8 +6,12 @@
 
 import type { Coord } from "./grid/types.ts"
 
-/** How a status message reads, not what colour it is — the renderer decides that. */
-export type StatusTone = "neutral" | "success" | "warning" | "danger"
+/**
+ * How a status message reads, not what colour it is — the renderer decides that. `hint` is the
+ * quietest: not an answer to anything the player did, but what can be done where the keyboard is,
+ * shown on the bottom line while no command has anything to say (feedback F59, `src/build/help.ts`).
+ */
+export type StatusTone = "neutral" | "success" | "warning" | "danger" | "hint"
 
 export type StatusMessage = Readonly<{
   text: string
@@ -16,8 +20,9 @@ export type StatusMessage = Readonly<{
   tone?: StatusTone
   /** The tile this message is about, when it is about one — a refused placement, so far. Such a
    *  message lapses the moment the cursor leaves that tile, because the screen above it has already
-   *  moved on; every other message is about the last action and stays until the next one. Carried on
-   *  the message itself rather than beside it, so the two can never disagree about which is which. */
+   *  moved on; every other message is the answer of the command that set it and lapses at the next
+   *  command that says nothing (feedback F59, `applyBuildCommand`). Carried on the message itself
+   *  rather than beside it, so the two can never disagree about which is which. */
   tile?: Coord
 }>
 

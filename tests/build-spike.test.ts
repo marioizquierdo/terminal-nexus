@@ -11,23 +11,28 @@ import { SPIKE_ALLOTMENT, SPIKE_CATALOG, SPIKE_NEXUS_DRAFT, spikeGrid } from "..
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
 import { buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
-import { DEFAULT_JUMP_STEP, buildKeyboardCommand } from "../src/build/keyboard.ts"
+import { buildKeyboardCommand } from "../src/build/keyboard.ts"
+import { TUNING } from "../src/build/tuning.ts"
+import { defaultValue } from "../src/build/all-settings.ts"
 import {
   MOUSE_LEFT,
   MOUSE_RIGHT,
   MOUSE_WHEEL_DOWN,
   MOUSE_WHEEL_UP,
+  WHEEL_TILES,
   formatMouseEvent,
   parseMouseEvent,
 } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildSessionOptions } from "../src/build/session.ts"
-import { JUMP_TILES, anchorForCursor, legalityAt, remaining, spent } from "../src/build/state.ts"
+import { anchorForCursor, applyBuildCommand, armedPreview, createBuildState, entryOfConstruct, legalityAt, remaining, spent } from "../src/build/state.ts"
+import { popupSpec } from "../src/build/popup.ts"
+import { cardText } from "../src/build/card.ts"
+import { bottomLine } from "../src/build/help.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { spikeContext } from "../src/cli/spike.ts"
-import { composeBuildFrame } from "../src/view/build.ts"
-import { frameToText } from "../src/view/frame.ts"
-import { fitViewport } from "../src/build/camera.ts"
+import { fitViewport, marginForView } from "../src/build/camera.ts"
+import { DOWN, ENTER, ESC, LEFT, MAXIMUM, MINIMUM, PAGE_DOWN, PAGE_UP, RIGHT, SHIFT_LEFT, SHIFT_RIGHT, UP, screenText } from "./build-helpers.ts"
 
 /**
  * Every test here is about placement, scrolling, or the adapters — not about the Nexus draft gate
@@ -52,18 +57,7 @@ function readyBuildSession(options: BuildSessionOptions): BuildSession {
   return build
 }
 
-const ESC = String.fromCharCode(27)
-const UP = `${ESC}[A`
-const DOWN = `${ESC}[B`
-const RIGHT = `${ESC}[C`
-const LEFT = `${ESC}[D`
-const SHIFT_RIGHT = `${ESC}[1;2C`
 const RXVT_SHIFT_RIGHT = `${ESC}[c`
-const PAGE_DOWN = `${ESC}[6~`
-const ENTER = "\r"
-
-const MINIMUM = { columns: 80, rows: 24 }
-const MAXIMUM = { columns: 104, rows: 32 }
 
 function session(
   terminal = MINIMUM,
@@ -84,15 +78,6 @@ function moveTo(build: BuildSession, tile: { x: number; y: number }): void {
   build.dispatch({ kind: "move-cursor", dx: tile.x - build.state.cursor.x, dy: tile.y - build.state.cursor.y })
 }
 
-/** The frame as text, which is what "the same screen" means for an assertion. */
-function screen(
-  build: BuildSession,
-  layout: ReturnType<typeof buildLayout>,
-  context: ReturnType<typeof spikeContext>,
-): string {
-  return frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
-}
-
 /** The raw bytes a left click on this Grid tile sends, derived from the composer's own geometry —
  *  1-based, like a terminal's own coordinates. A hand-picked number here could quietly stop matching
  *  the screen; this cannot. */
@@ -106,12 +91,10 @@ function clickTileBytes(
 }
 
 /** Likewise for a construct row, from `constructLines` — the same function the panel draws with,
- *  which is what makes a click that lands on a group heading's row impossible to mistake for a
- *  click on an item. */
+ *  which is what makes a click that lands on a row nobody drew impossible to mistake for a click on
+ *  an item. */
 function clickRowBytes(layout: ReturnType<typeof buildLayout>, index: number): string {
-  const line = constructLines(layout, SPIKE_CATALOG).find(
-    (candidate) => candidate.kind === "item" && candidate.index === index,
-  )
+  const line = constructLines(layout, SPIKE_CATALOG).find((candidate) => candidate.index === index)
   assert.ok(line !== undefined, `no construct row is drawn for item ${index}`)
   const item = SPIKE_CATALOG[index]!
   // Anywhere inside the row's own drawn text; the middle proves the whole row is live, not just its
@@ -126,12 +109,10 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   // began); 1 arms it again, which moves the cursor off the new one to the nearest spot with a free
   // tile around it — a free column to its right, 34,14 (feedback F30) — and one more Enter places the
   // second there.
-  // An armed click scrolls the view near its edges (F22) and an arrow does not, so with that on the
-  // same plan has a different camera by mouse; the parity asserted here is the plan and the screen,
-  // so the Experiment is switched to a still view for all three players alike.
-  const stillClicks: BuildCommand = { kind: "debug-adjust", field: "armedClickScrolls", step: 1 }
+  // An armed click scrolls the view inside its edge zones (F22) and an arrow scrolls at the margin; the
+  // parity asserted here is the whole state, camera included, so the tiles are ones where the two
+  // come to the same view.
   const byKeyboard = session()
-  byKeyboard.build.dispatch(stillClicks)
   byKeyboard.build.handleData("1", byKeyboard.layout)
   for (let step = 0; step < 12; step += 1) byKeyboard.build.handleData(RIGHT, byKeyboard.layout)
   byKeyboard.build.handleData(DOWN, byKeyboard.layout)
@@ -141,7 +122,6 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   byKeyboard.build.handleData(ENTER, byKeyboard.layout)
 
   const byMouse = session()
-  byMouse.build.dispatch(stillClicks)
   // Digits are the path both players share, so both armings began on the map and both placements
   // leave the keyboard there (a click on a row is the menu's, and goes back to it — the focus tests
   // hold that); the rest is clicks.
@@ -169,7 +149,7 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
     { kind: "place" },
   ]
   const byDriver = session()
-  byDriver.build.run([stillClicks, ...script])
+  byDriver.build.run(script)
 
   assert.equal(byKeyboard.build.state.planned.length, 2, "two structures were actually planned")
   assert.deepEqual(byMouse.build.state.planned, byKeyboard.build.state.planned)
@@ -178,12 +158,12 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   assert.deepEqual(byMouse.build.state, byKeyboard.build.state)
   assert.deepEqual(byDriver.build.state, byKeyboard.build.state)
   assert.equal(
-    screen(byMouse.build, byMouse.layout, byMouse.context),
-    screen(byKeyboard.build, byKeyboard.layout, byKeyboard.context),
+    screenText(byMouse),
+    screenText(byKeyboard),
   )
   assert.equal(
-    screen(byDriver.build, byDriver.layout, byDriver.context),
-    screen(byKeyboard.build, byKeyboard.layout, byKeyboard.context),
+    screenText(byDriver),
+    screenText(byKeyboard),
   )
 })
 
@@ -202,7 +182,7 @@ test("after a placement the keyboard goes back to where the arming came from, di
     assert.equal(build.state.armed, null, "a placement disarms")
     assert.equal(build.state.focus, start)
     assert.equal(build.state.exploreMap, false)
-    assert.equal(build.state.menuHighlight, 2, "the highlight stays on the row just built from")
+    assert.equal(build.state.menuHighlight, entryOfConstruct(0), "the highlight stays on the row just built from")
     assert.match(build.state.status.text, /Barracks placed \(resources: 60\) - \[u\] undo/)
   }
 })
@@ -249,25 +229,18 @@ test("a second Enter after a placement never places a second building", () => {
 
 test("keyboard: Shift+Arrow and its modifier-free fallback are both the fast move, a jump of the Shift jump", () => {
   // Measured, not assumed — scripts/probe-modified-keys.mjs found three live encodings for a
-  // shifted arrow and none at all on several terminals, which is why all of these are bound. Five
-  // tiles until gate 5H, then 8; a jump of 12 since the owner's 2026-09-28 playtest — an Experiment
-  // flag (`jumpStep` here).
+  // shifted arrow and none at all on several terminals, which is why all of these are bound. How far
+  // it jumps is the "Jump distance" setting (`jumpStep`), at its default here.
   const context = { itemCount: 3, armed: false }
-  const fast = DEFAULT_JUMP_STEP
+  const fast = defaultValue("jumpStep")
   assert.deepEqual(buildKeyboardCommand(RIGHT, context), { kind: "move-cursor", dx: 1, dy: 0 })
-  assert.deepEqual(buildKeyboardCommand(SHIFT_RIGHT, context), { kind: "move-cursor", dx: fast, dy: 0, fast: true })
-  assert.deepEqual(buildKeyboardCommand(RXVT_SHIFT_RIGHT, context), { kind: "move-cursor", dx: fast, dy: 0, fast: true })
-  assert.deepEqual(buildKeyboardCommand(PAGE_DOWN, context), { kind: "move-cursor", dx: 0, dy: fast, fast: true })
-  assert.deepEqual(buildKeyboardCommand(SHIFT_RIGHT, { ...context, jumpStep: 6 }), {
-    kind: "move-cursor",
-    dx: 6,
-    dy: 0,
-    fast: true,
-  })
+  assert.deepEqual(buildKeyboardCommand(SHIFT_RIGHT, context), { kind: "move-cursor", dx: fast, dy: 0 })
+  assert.deepEqual(buildKeyboardCommand(RXVT_SHIFT_RIGHT, context), { kind: "move-cursor", dx: fast, dy: 0 })
+  assert.deepEqual(buildKeyboardCommand(PAGE_DOWN, context), { kind: "move-cursor", dx: 0, dy: fast })
   // Home and End have three live spellings between xterm, screen/tmux/linux and rxvt; all of them
   // mean the same move.
   for (const home of [`${ESC}OH`, `${ESC}[1~`, `${ESC}[7~`, `${ESC}[H`]) {
-    assert.deepEqual(buildKeyboardCommand(home, context), { kind: "move-cursor", dx: -fast, dy: 0, fast: true })
+    assert.deepEqual(buildKeyboardCommand(home, context), { kind: "move-cursor", dx: -fast, dy: 0 })
   }
   // A terminal that switched to application cursor mode sends `ESC O A`, not `ESC [ A`. Both are
   // plain arrows, and both move one tile.
@@ -279,18 +252,18 @@ test("keyboard: Option+Arrow as macOS terminals send it is the fast move, never 
   // as Meta prefixes the arrow with ESC instead. Before `keysFromChunk` kept these whole, Option+Left
   // arrived as a bare Escape plus a stray "b" - which, with nothing armed, left the screen.
   const context = { itemCount: 3, armed: false }
-  const fast = DEFAULT_JUMP_STEP
-  assert.deepEqual(buildKeyboardCommand(`${ESC}b`, context), { kind: "move-cursor", dx: -fast, dy: 0, fast: true })
-  assert.deepEqual(buildKeyboardCommand(`${ESC}f`, context), { kind: "move-cursor", dx: fast, dy: 0, fast: true })
-  assert.deepEqual(buildKeyboardCommand(`${ESC}${ESC}[A`, context), { kind: "move-cursor", dx: 0, dy: -fast, fast: true })
+  const fast = defaultValue("jumpStep")
+  assert.deepEqual(buildKeyboardCommand(`${ESC}b`, context), { kind: "move-cursor", dx: -fast, dy: 0 })
+  assert.deepEqual(buildKeyboardCommand(`${ESC}f`, context), { kind: "move-cursor", dx: fast, dy: 0 })
+  assert.deepEqual(buildKeyboardCommand(`${ESC}${ESC}[A`, context), { kind: "move-cursor", dx: 0, dy: -fast })
   // End to end, through the real splitter: nothing is armed, and the screen is not left.
   const context2 = spikeContext()
   const layout = buildLayout(MINIMUM, context2.grid)
   const build = readyBuildSession({ context: context2, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   build.handleData(`${ESC}f`, layout)
   assert.equal(build.state.focus, "grid", "Option+Right was read as an Esc")
-  assert.equal(build.state.overlay, null, "Option+Right was read as an Esc")
-  assert.equal(build.state.cursor.x, 18 + DEFAULT_JUMP_STEP)
+  assert.equal(build.state.popup, null, "Option+Right was read as an Esc")
+  assert.equal(build.state.cursor.x, 18 + defaultValue("jumpStep"))
 })
 
 test("keyboard: digits always address the list, and a digit past its end means nothing", () => {
@@ -300,16 +273,19 @@ test("keyboard: digits always address the list, and a digit past its end means n
   assert.equal(buildKeyboardCommand("0", context), null)
 })
 
-test("keyboard: Esc and x are one cancel in every focus, and q opens the game menu rather than quits", () => {
+test("keyboard: Esc is cancel and x is back in every focus, and q opens the game menu rather than quits", () => {
+  // `x` walks back like Esc but never opens the game menu (tests/build-cancel.test.ts has what each does).
   for (const focus of ["menu", "grid"] as const) {
     for (const armed of [true, false]) {
       assert.deepEqual(buildKeyboardCommand(ESC, { itemCount: 3, armed, focus }), { kind: "cancel" })
-      assert.deepEqual(buildKeyboardCommand("x", { itemCount: 3, armed, focus }), { kind: "cancel" })
-      assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed, focus }), { kind: "open-menu" })
+      assert.deepEqual(buildKeyboardCommand("x", { itemCount: 3, armed, focus }), { kind: "back" })
+      assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed, focus }), { kind: "open-game-menu" })
     }
   }
-  // Inside the game menu, q is Quit; Ctrl+C always quits outright.
-  assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed: false, overlay: "menu" }), { kind: "quit" })
+  // Inside the game menu, q is its Quit row's key; Ctrl+C always quits outright.
+  const context = spikeContext()
+  const menu = applyBuildCommand(context, createBuildState(context, { x: 18, y: 13 }, { width: 48, height: 16 }), { kind: "open-game-menu" })
+  assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed: false, popup: "game-menu", popupSpec: popupSpec(context, menu) }), { kind: "quit" })
   assert.deepEqual(buildKeyboardCommand(String.fromCharCode(3), { itemCount: 3, armed: false }), { kind: "quit" })
 })
 
@@ -327,18 +303,18 @@ test("mouse: the wheel moves the cursor five tiles and drags the camera with it"
   const before = { ...build.state.camera }
   const startY = build.state.cursor.y
   build.handleData(formatMouseEvent(MOUSE_WHEEL_DOWN, 10, 10), layout)
-  assert.equal(build.state.cursor.y, startY + JUMP_TILES)
+  assert.equal(build.state.cursor.y, startY + WHEEL_TILES)
   assert.ok(build.state.camera.y > before.y, "the camera followed the cursor south")
   build.handleData(formatMouseEvent(MOUSE_WHEEL_UP, 10, 10), layout)
   assert.equal(build.state.cursor.y, startY)
 })
 
-test("mouse: right click is Esc; a click on a menu row arms it at once (feedback F22)", () => {
+test("mouse: a click on a menu row arms it at once (feedback F22), and a right click goes back, disarming", () => {
   const { build, layout } = session()
   // The session starts in plain navigation, with the menu drawn beside the map: one click arms.
   build.handleData(clickRowBytes(layout, 1), layout)
   assert.equal(build.state.armed, 1)
-  assert.equal(build.state.menuHighlight, 3)
+  assert.equal(build.state.menuHighlight, entryOfConstruct(1))
   build.handleData(formatMouseEvent(MOUSE_RIGHT, 10, 10), layout)
   assert.equal(build.state.armed, null)
 })
@@ -384,9 +360,9 @@ test("a click on a tile only arms the preview there - a second click on the same
   byKeyboard.build.handleData("1", byKeyboard.layout)
   byKeyboard.build.run([{ kind: "move-cursor", dx: 12, dy: 1 }])
   byKeyboard.build.handleData(ENTER, byKeyboard.layout)
-  // The same plan, cursor and everything else. Only the camera may differ: an armed click never
-  // scrolls the view (Q58, gate 5H), where the keyboard's move lets the camera follow its margin; and
-  // a placement by the mouse leaves no highlight bar on the menu (feedback F22).
+  // The same plan, cursor and everything else. Only the camera may differ — a click scrolls the view
+  // by its edge zones, the keyboard's move by the scroll margin — and a placement by the mouse leaves
+  // no highlight bar on the menu (feedback F22).
   assert.deepEqual(
     { ...byClick.build.state, camera: null, highlightHidden: false },
     { ...byKeyboard.build.state, camera: null },
@@ -395,38 +371,17 @@ test("a click on a tile only arms the preview there - a second click on the same
   assert.equal(byClick.build.state.focus, "grid")
 })
 
-test("with Armed click scrolls off, an armed click never scrolls the view, so the same screen spot clicked twice places there (Q58)", () => {
-  // x=46 is inside the scroll margin of the opening view's right edge (0-47). Before gate 5H the
-  // first click scrolled the Grid under the pointer and the second landed on another tile.
-  const { build, layout } = session()
-  build.dispatch({ kind: "debug-adjust", field: "armedClickScrolls", step: 1 })
-  assert.equal(build.state.debug.armedClickScrolls, false)
-  build.handleData("1", layout)
-  const cameraBefore = { ...build.state.camera }
-  const bytes = clickTileBytes(layout, build, { x: 46, y: 13 })
-  build.handleData(bytes, layout)
-  assert.deepEqual(build.state.cursor, { x: 46, y: 13 })
-  assert.deepEqual(build.state.camera, cameraBefore, "an armed click scrolled the view")
-  build.handleData(bytes, layout)
-  assert.equal(build.state.planned.length, 1, "the second click on the same spot did not place")
-  // The next keyboard move lets the margin follow again: the rule bends for the click alone.
-  build.handleData("1", layout)
-  build.handleData(RIGHT, layout)
-  assert.notDeepEqual(build.state.camera, cameraBefore, "the margin did not follow the next arrow")
-})
-
 test("a click that scrolled the camera is a fresh first click, not a mis-place on the wrong tile", () => {
   // Q50's own finding, deliberately re-tested rather than assumed fixed: a first click within the
   // scroll margin can slide the Grid under the pointer, so replaying the same *screen position*
   // resolves to a different *tile* the second time. Comparing tile identity (what the mouse adapter
-  // already resolves screen cells to) rather than screen position is what keeps this safe. Since
-  // gate 5H an armed click scrolls only with the Experiment "Armed click scrolls" on — the default
-  // since the owner's F22. Without key timing (a driver script) there is no double click either.
+  // already resolves screen cells to) rather than screen position is what keeps this safe. An armed
+  // click scrolls like any other since the owner's F22 (an Experiment until he kept it, 2026-09-30).
+  // Without key timing (a driver script) there is no double click either.
   const { build, layout } = session()
-  assert.equal(build.state.debug.armedClickScrolls, true)
   build.handleData("1", layout)
-  // x=46 is within the 3-tile margin of the opening viewport's own right edge (0-47), so landing the
-  // cursor here forces the camera to scroll east to keep the margin.
+  // x=46 is near the east edge of the opening view (it shows 0-48), in the click's edge zone, so a click
+  // there scrolls the camera east.
   const cameraBefore = { ...build.state.camera }
   const bytes = clickTileBytes(layout, build, { x: 46, y: 13 })
   build.handleData(bytes, layout)
@@ -531,9 +486,12 @@ test("every construct row names content that exists, costs something, and says w
   for (const item of SPIKE_CATALOG) {
     assert.ok(context.registry.has(item.contentId), `${item.contentId} is not real content`)
     assert.ok(item.cost > 0, `${item.label} costs nothing`)
-    assert.ok(item.effect.length > 0, `${item.label} does not say what it does`)
-    // The effect line has to fit the panel it is drawn in, or it says what it does only halfway.
-    assert.ok(item.effect.length <= 28, `"${item.effect}" is wider than the panel`)
+    // What it does is its card's words, written with the content (feedback F84); whether they fit the
+    // panel is tests/build-card.test.ts's, which draws every card at 80 x 24.
+    const words = cardText(context, item.contentId)
+    assert.equal(words.title, item.label, `${item.label}'s card calls it something else`)
+    assert.ok(words.subtitle.length > 0, `${item.label} does not say what it does`)
+    assert.ok(words.description.length > 0, `${item.label} has no description`)
   }
 })
 
@@ -605,7 +563,6 @@ test("a placement that cannot be afforded is refused, and changes nothing at all
 
 test("affordability is reported before a tile problem, because it is true wherever the cursor is", () => {
   const context = spikeContext()
-  const { build } = session()
   // Onto rock, with a budget that cannot pay for it either. Reporting the rock would send the
   // player to move the cursor, which would not help.
   const anchor = anchorForCursor({ x: 8, y: 5 }, context.registry.get(SPIKE_CATALOG[0]!.contentId).footprint)
@@ -617,13 +574,12 @@ test("affordability is reported before a tile problem, because it is true wherev
   assert.equal(rich.ok, false)
   assert.match(rich.ok === false ? rich.reason : "", /rock in the way/)
   assert.deepEqual(rich.ok === false ? rich.tile : null, { x: 8, y: 5 })
-  void build
 })
 
-test("the two groups share one digit sequence, with no mode to tell them apart", () => {
+test("the buildings' digits run straight through the one list, with no mode to tell them apart", () => {
   // engine.md 9.7's first convention: "digits always address the list; they never mean anything
-  // else". Two groups each counting from 1 would need a focus concept to disambiguate, which is the
-  // thing that convention exists to forbid — so a hotkey addresses the whole menu.
+  // else". Groups each counting from 1 would need a focus concept to disambiguate, which is the thing
+  // that convention exists to forbid — so a hotkey addresses the whole menu.
   const hotkeys = SPIKE_CATALOG.map((item) => item.hotkey)
   assert.deepEqual(hotkeys, [...new Set(hotkeys)], "two rows share a hotkey")
   assert.deepEqual(hotkeys, ["1", "2", "3"], "the digits do not run straight through the menu")
@@ -632,30 +588,23 @@ test("the two groups share one digit sequence, with no mode to tell them apart",
   assert.equal(build.state.armed, 2, "the third digit armed the third row of the whole menu")
 })
 
-test("the empty army group is drawn, not skipped, so no hotkey moves when it fills", () => {
+test("the buildings are one list in catalog order, one row each, with no group headings (feedback F56)", () => {
   const context = spikeContext()
   const layout = buildLayout(MINIMUM, context.grid)
   const lines = constructLines(layout, context.catalog)
-  // The common group is a list with a heading; the empty army group is still drawn — as the one-line
-  // "ARMY  none available" fact gate 5F made it, the same form the SPECIAL row has.
+  // Every building has its row, in catalog order, on consecutive rows — which is what a click relies on.
   assert.deepEqual(
-    lines.filter((line) => line.kind === "group").map((line) => line.kind === "group" && line.group),
-    ["common"],
+    lines.map((line) => line.index),
+    context.catalog.map((_, index) => index),
   )
-  assert.ok(
-    lines.some((line) => line.kind === "empty" && line.group === "army"),
-    "the empty army group is drawn as empty rather than vanishing",
-  )
-  // Every item row is distinct and ordered, which is what a click relies on.
-  const itemRows = lines.filter((line) => line.kind === "item").map((line) => line.row)
-  assert.deepEqual(itemRows, [...itemRows].sort((a, b) => a - b))
-  assert.deepEqual(itemRows, [...new Set(itemRows)])
+  const itemRows = lines.map((line) => line.row)
+  assert.deepEqual(itemRows, itemRows.map((_, index) => (itemRows[0] as number) + index))
 })
 
 test("scrolling: the whole Grid is reachable, at the smallest terminal and the largest", () => {
   for (const terminal of [MINIMUM, MAXIMUM]) {
     const { build, layout } = session(terminal)
-    // Walk into the far south-east corner with the five-tile jump, the way a player would.
+    // Walk into the far south-east corner with the fast move, the way a player would.
     for (let step = 0; step < 40; step += 1) {
       build.handleData(SHIFT_RIGHT, layout)
       build.handleData(PAGE_DOWN, layout)
@@ -668,21 +617,21 @@ test("scrolling: the whole Grid is reachable, at the smallest terminal and the l
     })
     // And back out again, to the opposite corner.
     for (let step = 0; step < 40; step += 1) {
-      build.handleData(`${ESC}[1;2D`, layout)
-      build.handleData(`${ESC}[5~`, layout)
+      build.handleData(SHIFT_LEFT, layout)
+      build.handleData(PAGE_UP, layout)
     }
     assert.deepEqual(build.state.cursor, { x: 0, y: 0 })
     assert.deepEqual(build.state.camera, { x: 0, y: 0 })
   }
 })
 
-test("the scroll margin is a share of the view, so the owner's 25% can be felt against another number", () => {
-  // project-governance.md Section 7: the 3-tile margin is "locked direction, and Milestone 5 may
-  // retune [it] on evidence from the first person who actually scrolls a Grid". Gate 5H made it a
-  // share of the view's width and height (the owner: "about 20% of the height or width", then 25%
-  // after playing it). 49 tiles wide at 80 columns: 10% is 5 tiles, 20% is 10, 25% is 12, 30% is 15.
-  for (const [percent, margin] of [[10, 5], [20, 10], [25, 12], [30, 15]] as const) {
-    const context = { ...spikeContext(), scrollMargin: percent }
+test("the scroll margin is a share of the view: the tuned one, or another from --scroll-margin", () => {
+  // Gate 5H made it a share of the view's width and height; the owner settled the share (a tuned value),
+  // and `--scroll-margin` sets another for one run. 49 tiles wide at 80 columns: 5% is 2 tiles, 10% is 5,
+  // 20% is 10, 25% is 12, 30% is 15. No --scroll-margin: the tuned value.
+  const tuned = marginForView(TUNING.scrollMargin, buildLayout(MINIMUM, spikeContext().grid).viewport).x
+  for (const [percent, margin] of [[5, 2], [10, 5], [20, 10], [25, 12], [30, 15], [undefined, tuned]] as const) {
+    const context = percent === undefined ? spikeContext() : { ...spikeContext(), scrollMargin: percent }
     const layout = buildLayout(MINIMUM, context.grid)
     const build = readyBuildSession({ context, cursor: { x: 0, y: 0 }, viewport: layout.viewport })
     // Walk east until the camera first moves: it should be exactly at the margin from the east edge.
@@ -727,12 +676,12 @@ test("Esc walks back to the game menu; only its q quits, and neither touches the
   build.handleData(ESC, layout) // Grid -> menu
   assert.equal(build.state.focus, "menu")
   build.handleData(ESC, layout) // menu -> the game menu
-  assert.equal(build.state.overlay, "menu")
+  assert.equal(build.state.popup, "game-menu")
   build.handleData(ESC, layout) // Esc again keeps playing
-  assert.equal(build.state.overlay, null)
+  assert.equal(build.state.popup, null)
   assert.equal(quits, 0)
   build.handleData("q", layout) // q opens the game menu
-  assert.equal(build.state.overlay, "menu")
+  assert.equal(build.state.popup, "game-menu")
   assert.equal(quits, 0, "a bare q quit without asking")
   build.handleData("q", layout) // q in the game menu quits
   assert.equal(quits, 1)
@@ -782,18 +731,20 @@ test("a refusal's message clears once the cursor leaves the tile it was about", 
   build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
   assert.doesNotMatch(build.state.status.text, /Cannot build here/)
 
-  // A message about the last action, rather than about a tile, is not stale just because the
-  // cursor moved — it stays until the next one.
+  // A message about the last action, rather than about a tile, is the answer of that action: since
+  // the bottom bar became one contextual line (owner, 2026-09-30, feedback F59) it lapses at the next
+  // command that says nothing — a cursor move included — and the hint takes its place.
   build.dispatch({ kind: "place" })
   assert.match(build.state.status.text, /Turret placed/)
   build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
-  assert.match(build.state.status.text, /Turret placed/, "an action message should survive a cursor move")
+  assert.equal(build.state.status.text, "", "an answer outlived the next command, which said nothing")
 })
 
-test("a refusal's message survives a move that is clamped back to the same tile", () => {
+test("a move clamped back to the same tile keeps the refusal on screen, read quietly once the attempt has lapsed", () => {
   // Pressing further into the Grid's own edge does not move the cursor at all — clampToGrid leaves
-  // it exactly where it was. That is not "the cursor left the tile the refusal was about," so the
-  // refusal has not gone stale and must not be cleared.
+  // it exactly where it was. That is not "the cursor left the tile the refusal was about", so the
+  // bottom line still says why Enter is refused there. But the move is a command that said nothing, so
+  // the attempt's own red answer lapses (feedback F59): the same sentence reads as looking, not trying.
   const width = 10
   const height = 10
   const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.plain")
@@ -813,7 +764,11 @@ test("a refusal's message survives a move that is clamped back to the same tile"
   build.dispatch({ kind: "place" })
   assert.match(build.state.status.text, /Cannot build here/)
 
+  assert.equal(bottomLine(context, build.state, armedPreview(context, build.state)).tone, "danger")
+
   build.dispatch({ kind: "move-cursor", dx: 1, dy: 1 })
   assert.deepEqual(build.state.cursor, { x: 9, y: 9 }, "the move should have been clamped to a no-op")
-  assert.match(build.state.status.text, /Cannot build here/, "the cursor never left the tile the refusal named")
+  const line = bottomLine(context, build.state, armedPreview(context, build.state))
+  assert.match(line.text, /Cannot build here/, "the cursor never left the tile the refusal named")
+  assert.equal(line.tone, undefined, "the lapsed attempt still reads as an attempt")
 })

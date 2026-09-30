@@ -8,9 +8,9 @@ import assert from "node:assert/strict"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { frameToText } from "../src/view/frame.ts"
-import { DEFENCE_KEYS } from "./pulse-helpers.ts"
+import { ESC } from "./build-helpers.ts"
+import { DEFENCE_KEYS, PROBE_PULSE } from "./pulse-helpers.ts"
 
-const ESC = String.fromCharCode(27)
 
 test("key names map to the bytes a real terminal sends", () => {
   const steps = parseKeyScript("Up S-Left M-Right Tab Esc Enter Space Bksp PgDn q 1")
@@ -47,7 +47,7 @@ test("the owner's menu flow — Down three times, then Space four times — plan
   )
   const final = frameToText(run.frames[7]!.frame)
   assert.match(final, /Hatchery placed \(resources: 40\) - \[u\] undo/)
-  assert.match(final, /RESOURCE\s+40 of 100/)
+  assert.match(final, /\* 40[|+]/)
   assert.equal(run.ended, null)
 })
 
@@ -89,13 +89,16 @@ test("wait is a step where nothing is pressed and time passes: a second by defau
 test("a scripted playtest plays a Nexus Pulse on the script's own clock and shows every phase of its ending", () => {
   // A Nexus power, two Turrets and a Hatchery, the commit and its confirmation; then the script lets it play.
   const plan = `${DEFENCE_KEYS} s s`
-  const run = runBuildPlaytest({ steps: parseKeyScript(`${plan} wait~1000*20`) })
+  const run = runBuildPlaytest({ steps: parseKeyScript(`${plan} wait~1000*20`), experiments: PROBE_PULSE })
   const texts = run.frames.map((frame) => frameToText(frame.frame))
   const started = texts.findIndex((text) => text.includes("nexus pulse"))
   assert.ok(started > 0, "the script never reached the Pulse")
   // The frame right after the second `s` is the Pulse's own first moment, already looking at the Nexus.
   assert.match(texts[started]!, /^\| NEXUS PULSE 1 +0:15 /m)
-  assert.match(texts[started]!, /view x 0-48 y 3-18/)
+  // Centred on the Nexus's own tile (said by the position readout until feedback F59 took it out).
+  const first = run.frames[started]!.state
+  assert.deepEqual(first.cursor, { x: 18, y: 10 })
+  assert.equal(first.camera.y, first.cursor.y - Math.floor((first.viewport.height - 1) / 2))
   const seen = [/^\| NEXUS PULSE /m, /The Pulse is about to end\./, /^\| CEASE FIRE /m, /^\| RECALL /m, /^\| VICTORY /m].map((phase) =>
     texts.findIndex((text) => phase.test(text)),
   )

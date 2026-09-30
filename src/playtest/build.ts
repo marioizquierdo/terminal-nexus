@@ -19,11 +19,11 @@ import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import type { ReadonlyCellFrame } from "../view/frame.ts"
 import type { CapabilityMode } from "../view/roles.ts"
-import type { DebugFlags } from "../build/debug.ts"
+import type { Experiments } from "../build/experiments.ts"
 import { DEFAULT_SETTINGS } from "../settings/types.ts"
 import type { Settings } from "../settings/types.ts"
 import type { GlyphPack } from "../view/theme.ts"
-import type { MoveKind } from "../build/motion.ts"
+import type { Move } from "../build/motion.ts"
 import type { PlaytestStep } from "./keys.ts"
 import { UNTIMED_GAP_MS, deliverStep } from "./deliver.ts"
 
@@ -38,9 +38,16 @@ export type BuildPlaytestOptions = Readonly<{
    *  `glyphPack`, when given, win over these, as a command-line flag does. */
   settings?: Settings
   /** Experiments to open with instead of this build's defaults — an imported export's. */
-  experiments?: Partial<DebugFlags>
+  experiments?: Partial<Experiments>
   context?: BuildContext
   cursor?: Coord
+  /**
+   * Play a terminal that reports key presses, repeats and releases (the kitty keyboard protocol, which
+   * the live loop asks for when the Key releases Experiment is on `auto`): a plain press is then known
+   * to be a press, not guessed from timing. Defaults to on when the script has a phased step
+   * (`Right/repeat`), and off otherwise — a classic terminal.
+   */
+  keyReleases?: boolean
 }>
 
 export type PlaytestFrame = Readonly<{
@@ -52,9 +59,10 @@ export type PlaytestFrame = Readonly<{
   bytes: string
   state: BuildState
   frame: ReadonlyCellFrame
-  /** The kind of move the last timed cursor key made — tap, hold, fast or jump — or `null` before
-   *  any. */
-  moveKind: MoveKind | null
+  /** What this step's cursor key did, as its kind and tiles (or rows) — `tap 1`, `tap 2`, `hold 1`,
+   *  `hold 0` for a repeat the cadence dropped, `jump 10`, `release 0` — or `null` when the step was
+   *  no cursor key. The playtest summary prints it. */
+  moveKind: string | null
 }>
 
 export type BuildPlaytest = Readonly<{
@@ -67,6 +75,13 @@ export type BuildPlaytest = Readonly<{
 }>
 
 export { UNTIMED_GAP_MS } from "./deliver.ts"
+
+/** This step's cursor key's move as the summary prints it, `tap 2` — `null` when the step made none:
+ *  another key, a click or a wait (every cursor key's move is a new record, so an unchanged one is the
+ *  last step's). */
+function moveLabel(move: Move | null, before: Move | null): string | null {
+  return move === null || move === before ? null : `${move.kind} ${move.tiles}`
+}
 
 export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   const base = options.settings ?? { ...DEFAULT_SETTINGS, capability: "truecolor" as const }
@@ -99,6 +114,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     },
     startPulse,
   })
+  build.setKeyReleases(options.keyReleases ?? options.steps.some((step) => step.kind === "key" && step.phase !== undefined))
 
   // Drawn with the settings the script has reached: a step that changes the colour depth or the
   // symbols in Settings shows the change, as the live screen does.
@@ -123,16 +139,17 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   let ended: BuildPlaytest["ended"] = null
 
   // A clock of the script's own: each step arrives `afterMs` after the one before, or a second after it
-  // when the script does not say — long enough that every untimed key is a press of its own, so the
-  // held-key ramp (gate 5H) only ever runs where a script asks for it (`Right~30*12`).
+  // when the script does not say — long enough that every untimed key is a tap that starts over, so taps
+  // only speed up, and a key only reads as held, where a script times its steps (`Right~250*3`).
   let clock = 0
   for (const [position, step] of options.steps.entries()) {
     clock += step.afterMs ?? UNTIMED_GAP_MS
+    const moveBefore = build.lastMove
     const bytes = deliverStep(build, layout, step, clock)
     // What the live loop's next render would do first: let a Nexus Pulse on screen catch up with the clock
     // (and, the moment it starts, look at the player's Nexus), so the frame is the one a player sees.
     build.advance(clock)
-    frames.push({ index: position + 1, label: step.label, bytes, state: build.state, frame: compose(), moveKind: build.moveKind })
+    frames.push({ index: position + 1, label: step.label, bytes, state: build.state, frame: compose(), moveKind: moveLabel(build.lastMove, moveBefore) })
     if (leftBy !== null) {
       ended = { by: leftBy, atStep: position + 1, skipped: options.steps.length - position - 1 }
       break

@@ -22,8 +22,10 @@ import { isGated } from "../build/camera.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
 import { composeBuildFrame } from "../view/build.ts"
-import { BuildAnimation, FRAME_MS, nextFrameDelay } from "../view/build-live.ts"
+import { BuildAnimation, livePresentation, nextFrameDelay } from "../view/build-live.ts"
 import { KeyReader } from "../view/key-reader.ts"
+import { KeyboardProtocol, terminalReplyOf } from "../view/key-events.ts"
+import type { TerminalReply } from "../view/key-events.ts"
 import { gateFrame } from "../view/index.ts"
 import { selectBackend } from "../view/backends/index.ts"
 import type { NamedBackend } from "../view/backends/index.ts"
@@ -35,7 +37,8 @@ import { startPulse } from "./pulse-run.ts"
 import type { PlaytestStep } from "../playtest/keys.ts"
 import { UNTIMED_GAP_MS, deliverStep } from "../playtest/deliver.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
-import type { DebugFlags } from "../build/debug.ts"
+import type { Experiments } from "../build/experiments.ts"
+import { TUNING } from "../build/tuning.ts"
 
 const ESC = "\u001b"
 /** Written before a frame whose size just changed: the backend draws from the cursor home position
@@ -57,7 +60,7 @@ export type SpikeOptions = Readonly<{
   host?: Host
   exit?: (code: number) => void
   /** `--scroll-margin`, so the margin can be felt against another number: a percentage of the view
-   *  since gate 5H. Omitted means the owner's 25%. */
+   *  since gate 5H. Omitted means the owner's tuned margin (`TUNING.scrollMargin`). */
   scrollMargin?: number
   /** The screen's clock, in milliseconds. `Date.now` unless a test injects one. */
   now?: () => number
@@ -66,7 +69,7 @@ export type SpikeOptions = Readonly<{
    *  apply for this run only. */
   settingsStore?: SettingsStore
   /** Experiments to open with instead of this build's defaults: an imported export (`--settings`). */
-  experiments?: Partial<DebugFlags>
+  experiments?: Partial<Experiments>
   /** The commit this build is, named at the top of an export. */
   buildId?: string
   /**
@@ -213,11 +216,13 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
 
   // **The screen's clock lives here, never in the reducer** (gate 5H). Everything that moves between
   // commands — the view sliding to a new position, the cursor gliding to a new tile, a menu row's
-  // flash, the cursor's flash on a refused placement, a building going up (gate 5I) — is
+  // flash, the cursor's flash on a refused placement, a building going up (gate 5I), the focus arrow
+  // and the cursor's blink (feedback F54), the menu turning into a card (F68), a popup's
+  // border flashing and breathing (F80, F83) — is
   // `BuildAnimation`'s pure function of the state and the time read here, and the frame timer below
   // runs only while one of them is still moving; an idle screen draws once per input, as it always
-  // has. The same clock times the held-key ramp (passed with each key) and the lone-Esc timeout
-  // (`KeyReader`).
+  // has. The same clock times how far a cursor key moves — taps counted, holds on the game's cadence —
+  // (passed with each key) and the lone-Esc timeout (`KeyReader`).
   const clock = options.now ?? ((): number => Date.now())
   // A Nexus Pulse the start keys began was timed on the script's clock, a few seconds from nothing; from
   // here it runs on the live one. Rebase without letting any time pass: it opens at zero.
@@ -227,10 +232,10 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
   let frameTimer: ReturnType<typeof setTimeout> | null = null
   let escapeTimer: ReturnType<typeof setTimeout> | null = null
 
-  function scheduleFrame(busyUntil: number | null, now: number): void {
+  function scheduleFrame(busyUntil: number | null, now: number, frameMs?: number): void {
     if (frameTimer !== null) clearTimeout(frameTimer)
     frameTimer = null
-    const delay = nextFrameDelay(busyUntil, now)
+    const delay = nextFrameDelay(busyUntil, now, frameMs)
     if (delay === null) return
     frameTimer = setTimeout(() => {
       frameTimer = null
@@ -252,6 +257,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
       ? null
       : animation.frame(build.state, now, {
           reducedMotion: settings.reducedMotion,
+          capability: settings.capability,
           footprintOf: (contentId) => context.registry.get(contentId).footprint,
         })
     const pulse = gated ? undefined : build.pulseFrame(layout)
@@ -264,21 +270,19 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
               state: build.state,
               layout,
               glyphPack: settings.glyphPack,
-              camera: live.camera,
-              cursor: live.cursor,
-              ...(live.flash === undefined ? {} : { flash: live.flash }),
-              ...(live.refusedFlash === true ? { refusedFlash: true } : {}),
-              ...(live.placing === undefined ? {} : { placing: live.placing }),
-              ...(live.removing === undefined ? {} : { removing: live.removing }),
+              // Everything time-dependent this frame shows — the slide, the glide, the flashes, the
+              // buildings going up, the hand-off, the card reveal — through the one converter.
+              ...livePresentation(live),
               reducedMotion: settings.reducedMotion,
               ...(pulse === undefined ? {} : { pulse }),
             },
             settings.capability,
           )
     // The frame timer runs while anything is still moving: an animation, or a Pulse that is playing (which
-    // wants the very next frame, so its frame is a frame's length away whatever an animation says).
-    const pulseBusy = !gated && build.pulse?.busyUntil(now, build.state.debug) != null
-    scheduleFrame(pulseBusy ? now + FRAME_MS : (live?.busyUntil ?? null), now)
+    // wants the very next frame, a frame's length away, whatever an animation says). A popup
+    // border's breath alone asks for fewer frames (`frameMs`).
+    const pulseBusyUntil = gated ? null : (build.pulse?.busyUntil(now) ?? null)
+    scheduleFrame(pulseBusyUntil ?? live?.busyUntil ?? null, now, pulseBusyUntil === null ? live?.frameMs : undefined)
     if (frame.width !== lastFrame.width || frame.height !== lastFrame.height) {
       stdout.write(CLEAR)
       lastFrame = { width: frame.width, height: frame.height }
@@ -307,18 +311,49 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     render()
   }
 
+  // **Key releases, where the terminal reports them** (the Key releases Experiment; the owner's third
+  // round, 2026-09-30, F79). On `auto` the screen asks the terminal whether it speaks the kitty keyboard
+  // protocol and, if it answers, pushes the flags that make it mark every key as a press, a repeat or a
+  // release — so a tap is known to be a tap and a hold a hold (`src/build/motion.ts`). On `off`, or with
+  // no answer, nothing is pushed and timing decides, as before. Changed in Settings, it applies at once.
+  // **The flags are popped on every way out**, through the one disposer below — a terminal left in this
+  // mode would send the shell `ESC [ 99 ; 5 u` for Ctrl+C.
+  const protocol = new KeyboardProtocol()
+  function syncKeyProtocol(): void {
+    if (leaving) return
+    const bytes = protocol.want(build.state.experiments.keyReleases === "auto")
+    if (bytes !== "") stdout.write(bytes)
+    build.setKeyReleases(protocol.active)
+  }
+  function hearReply(reply: TerminalReply): void {
+    if (leaving) return
+    const bytes = protocol.hear(reply)
+    if (bytes !== "") stdout.write(bytes)
+    build.setKeyReleases(protocol.active)
+  }
+
   function handleKeys(keys: readonly string[], now: number): void {
     for (const key of keys) {
       if (leaving) break
+      // The terminal's answers to the question above arrive as input; they are not keys, and they are
+      // heard even behind the resize gate, where keys are not.
+      const reply = terminalReplyOf(key)
+      if (reply !== null) {
+        hearReply(reply)
+        continue
+      }
+      if (gated) continue
       const camera = animation.cameraAt(build.state, now, { reducedMotion: build.state.settings.reducedMotion })
       build.handleKey(key, layout, { now, camera })
     }
+    // A key may have changed the Key releases Experiment.
+    syncKeyProtocol()
   }
 
   function onData(data: string | Uint8Array): void {
-    if (gated || leaving) return
+    if (leaving) return
     const now = clock()
-    const timeout = build.state.debug.escTimeoutMs
+    const timeout = TUNING.escTimeoutMs
     if (escapeTimer !== null) clearTimeout(escapeTimer)
     escapeTimer = null
     handleKeys(reader.feed(chunkText(data), now, timeout), now)
@@ -328,7 +363,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     if (deadline !== null) {
       escapeTimer = setTimeout(() => {
         escapeTimer = null
-        if (gated || leaving) return
+        if (leaving) return
         handleKeys(reader.flush(), clock())
         render()
       }, Math.max(0, deadline - now))
@@ -348,15 +383,23 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
   session.onDispose(() => {
     stdout.write(MOUSE_REPORTING_OFF)
   })
+  // Before the backend leaves the alternate screen: the protocol keeps a stack of modes per screen.
+  session.onDispose(() => {
+    const pop = protocol.release()
+    if (pop !== "") stdout.write(pop)
+  })
   session.onDispose(() => pendingSave)
   session.onDispose(() => backend.stop())
 
   try {
     await backend.start()
     stdout.write(MOUSE_REPORTING_ON)
-    onResize()
     stdin.on("data", onData)
     stdout.on("resize", onResize)
+    // Asked once the answer has somewhere to arrive, and before the first frame, so the frame is the
+    // last thing written while the screen waits for the player.
+    syncKeyProtocol()
+    onResize()
     await new Promise<void>((settle) => {
       settleSession = settle
     })

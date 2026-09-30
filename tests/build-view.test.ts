@@ -1,21 +1,23 @@
 // The Build Phase spike's frame, at both ends of the supported terminal size range. What is being
-// checked is the two things engine.md 3.3 requires *in place of a minimap* — edge markers on the
-// sides with more Grid, and a position readout naming the visible range — plus the placement
-// preview, which is the only thing on screen that says whether Enter will work before it is pressed.
+// checked is what engine.md 3.3 requires *in place of a minimap* — the weight of the Grid pane's sides
+// where there is more Grid — plus the placement preview, which is the only thing on screen that says
+// whether Enter will work before it is pressed, and the bottom bar's one contextual line.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
+import { buildLayout, cellForTile, constructLines, startRow } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildSessionOptions } from "../src/build/session.ts"
 import { SPIKE_ALLOTMENT, SPIKE_CATALOG } from "../src/build/catalog.ts"
-import { remaining } from "../src/build/state.ts"
+import { armedPreview, remaining } from "../src/build/state.ts"
 import { spikeContext } from "../src/cli/spike.ts"
-import { PLACE_KEY_HELP, EXPLORE_KEY_HELP, MAP_KEY_HELP, MENU_KEY_HELP, bindingLines, composeBuildFrame } from "../src/view/build.ts"
+import { bottomLine, hint } from "../src/build/help.ts"
+import { composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText, offendingGlyph } from "../src/view/frame.ts"
 import { CAPABILITY_MODES } from "../src/view/roles.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
+import { MAXIMUM, MINIMUM, WIDE } from "./build-helpers.ts"
 
 /**
  * Every test here is about rendering — not about the Nexus draft gate 5D adds in front of
@@ -46,9 +48,6 @@ function neutralContext(): ReturnType<typeof spikeContext> {
   return { ...spikeContext(), nexusDraft: NEUTRAL_NEXUS_DRAFT }
 }
 
-const MINIMUM = { columns: 80, rows: 24 }
-const MAXIMUM = { columns: 104, rows: 32 }
-const WIDE = { columns: 128, rows: 24 }
 
 function screenAt(
   terminal: { columns: number; rows: number },
@@ -184,20 +183,19 @@ test("engine-3.3-markers: a Grid side goes soft where there is more Grid, and he
   assert.equal(isSoftEdge(middle.frame, midColumn, middle.layout.offset.row), false, "the outer top border")
 })
 
-test("engine-3.3-readout: the footer names the visible tile range and the Grid's own size", () => {
-  const opening = screenAt(MINIMUM)
-  // 49 tiles across at 80 columns, and the owner's 25% margin keeps the cursor 4 rows off the bottom.
-  assert.match(opening.text, /view x 0-48 y 2-17 of 96x40/)
-  assert.match(opening.text, /cursor 18,13/)
-
-  const scrolled = screenAt(MINIMUM, (build) => {
-    build.run([{ kind: "move-cursor", dx: 40, dy: 10 }])
-  })
-  assert.match(scrolled.text, /view x \d+-\d+ y \d+-\d+ of 96x40/)
-  assert.match(scrolled.text, /cursor 58,23/)
-  // The maximum viewport genuinely shows more Grid than the minimum: 72 tiles across, not 48.
-  const large = screenAt(MAXIMUM)
-  assert.match(large.text, /view x 0-71 y \d+-\d+ of 96x40/)
+test("engine-3.3-readout: the bottom bar is one contextual line, and the largest view shows more Grid than the floor's", () => {
+  // The owner, 2026-09-30 (feedback F59): "The 'view x y' position is not needed." The weight of the
+  // Grid rectangle's sides is the signal that there is more Grid (the markers tests above and below),
+  // and the bottom bar's one row says what can be done.
+  for (const terminal of [MINIMUM, MAXIMUM]) {
+    const opening = screenAt(terminal)
+    const lines = opening.text.split("\n")
+    assert.match(lines[opening.layout.footerRow] as string, /Arrows move the cursor, \[enter\] explores here/)
+    assert.equal(opening.layout.footerRow + 1, opening.layout.offset.row + opening.layout.composition.height - 1, "one row, then the border")
+  }
+  // The maximum viewport genuinely shows more Grid than the minimum: 72 tiles across, not 49.
+  assert.equal(screenAt(MAXIMUM).layout.viewport.width, 72)
+  assert.equal(screenAt(MINIMUM).layout.viewport.width, 49)
 })
 
 test("the Grid drawn is the Grid under the camera, not the Grid's north-west corner", () => {
@@ -325,27 +323,6 @@ test("every glyph on the frame is one cell wide, at both sizes and in both packs
   }
 })
 
-test("the construct rows and the armed item's own line are all on screen", () => {
-  const armed = screenAt(MINIMUM, (build, layout) => {
-    build.handleData("2", layout)
-  })
-  assert.match(armed.text, /\[1\] Barracks/)
-  assert.match(armed.text, /\[2\] Hatchery/)
-  assert.match(armed.text, /\[3\] Turret/)
-  // Both groups are labelled, and the empty one says so rather than vanishing.
-  assert.match(armed.text, /COMMON/)
-  assert.match(armed.text, /ARMY {2,}none available/)
-  // Every item's cost is on its own row, and the budget is on the panel's first line.
-  assert.match(armed.text, /RESOURCE/)
-  for (const item of SPIKE_CATALOG) assert.match(armed.text, new RegExp(String(item.cost)))
-  // The selected item says what it does — the thing a player is actually choosing between.
-  assert.match(armed.text, /Spawns swarmers, slowly/)
-  // Every binding the footer has no room for at 80 columns is on the panel instead, because a
-  // binding that is displayed nowhere does not exist (engine.md 9.7).
-  assert.match(armed.text, /u undo/)
-  assert.match(armed.text, /bksp remove/)
-})
-
 test("the panel says nothing about an item until one is selected", () => {
   // "Simple and direct" (Mario, accepting gate 5A) taken literally: a panel that is always full is
   // a panel nobody reads, so the item's effect line appears only while something is armed.
@@ -353,15 +330,14 @@ test("the panel says nothing about an item until one is selected", () => {
   assert.doesNotMatch(idle.text, /Spawns swarmers/)
   assert.doesNotMatch(idle.text, /Trains troopers/)
   assert.doesNotMatch(idle.text, /Cannot build here/i)
-  // But the menu, the budget and the revision keys are always there.
-  assert.match(idle.text, /RESOURCE/)
+  // But the menu and the credits are always there.
+  assert.match(idle.text, /\* 100/)
   assert.match(idle.text, /\[1\] Barracks/)
-  assert.match(idle.text, /u undo/)
 })
 
-/** The status line — the bottom bar's last row, where the Build Phase answers "why not". */
+/** The bottom bar's one line, where the Build Phase answers "why not" (and otherwise hints). */
 function statusRow(screen: ReturnType<typeof screenAt>): string {
-  return (screen.text.split("\n")[screen.layout.footerRow + 2] as string).replace(/^\|\s*|\s*\|$/g, "")
+  return (screen.text.split("\n")[screen.layout.footerRow] as string).replace(/^\|\s*|\s*\|$/g, "")
 }
 
 test("the status line says why a placement would be refused, and which tile it means", () => {
@@ -374,7 +350,7 @@ test("the status line says why a placement would be refused, and which tile it m
   })
   assert.equal(statusRow(onRock), "Cannot build here: rock in the way at 8,5.")
   assert.doesNotMatch(onRock.text, /CANNOT BUILD HERE/, "not shouted, and not on the panel as well")
-  assert.match(onRock.text, /Trains troopers each Pulse/, "the panel still says what the armed row does")
+  assert.match(onRock.text, /Trains troopers/, "the panel still says what the armed building does")
 
   const onNexus = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
@@ -406,7 +382,7 @@ test("looking at an illegal tile reads quietly, trying to build there reads in r
   assert.equal(ghostCell.style.fgRole, "chrome.muted", "the illegal ghost is grey, not red")
   assert.notEqual(ghostCell.style.bold, true)
   const statusColumn = looking.layout.offset.column + 2
-  const quiet = cellAt(looking.frame, statusColumn, looking.layout.footerRow + 2).style
+  const quiet = cellAt(looking.frame, statusColumn, looking.layout.footerRow).style
   assert.equal(quiet.fgRole, "chrome.value", "a refusal nobody has tried yet is not an alarm")
 
   const tried = screenAt(MINIMUM, (build, layout) => {
@@ -414,7 +390,7 @@ test("looking at an illegal tile reads quietly, trying to build there reads in r
     build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "place" }])
   })
   assert.equal(statusRow(tried), "Cannot build here: rock in the way at 8,5.", "the same sentence")
-  const loud = cellAt(tried.frame, statusColumn, tried.layout.footerRow + 2).style
+  const loud = cellAt(tried.frame, statusColumn, tried.layout.footerRow).style
   assert.equal(loud.fgRole, "notice.gate", "an attempt that was refused is")
   assert.equal(loud.bold, true)
   assert.equal(tried.build.state.planned.length, 0)
@@ -423,9 +399,18 @@ test("looking at an illegal tile reads quietly, trying to build there reads in r
 test("while the commit question is open, the status line asks it, whatever the ghost would say", () => {
   // A refusal is about what Enter would do right now; with the confirmation open, Enter does
   // nothing to the Grid, so the ghost and its refusal both step aside for the question.
+  // Since the owner's feedback F69 the question does not open over an armed building at all: `s` is
+  // refused, and the bottom line says so rather than what the ghost on rock would say — a command's
+  // answer comes first. Cancelled, the question opens.
+  const armed = screenAt(MINIMUM, (build, layout) => {
+    build.handleData("1", layout)
+    build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "open-battle-round" }])
+  })
+  assert.equal(armed.build.state.popup, null)
+  assert.match(statusRow(armed), /^Place the Barracks or cancel it first: \[1\] or \[esc\]\.$/)
   const asking = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
-    build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "commit" }])
+    build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "cancel" }, { kind: "open-battle-round" }])
   })
   assert.match(statusRow(asking), /^Battle Round 1: Enter starts it, Esc goes back\.$/)
   const ghost = cellForTile(asking.layout, asking.build.state.camera, { x: 8, y: 5 })
@@ -441,21 +426,20 @@ test("the budget on screen is the budget the reducer is enforcing", () => {
 
   // The Grid arrives in Explore Map, whose panel covers the menu; the budget is the menu's.
   build.dispatch({ kind: "focus", target: "menu" })
-  assert.match(show(), new RegExp(`${SPIKE_ALLOTMENT} of ${SPIKE_ALLOTMENT}`))
+  assert.match(show(), new RegExp(`\\* ${SPIKE_ALLOTMENT}[|+]`))
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
-  assert.match(show(), new RegExp(`${remaining(context, build.state)} of ${SPIKE_ALLOTMENT}`))
+  assert.match(show(), new RegExp(`\\* ${remaining(context, build.state)}[|+]`))
   build.handleData("1", layout) // placing disarms; the digit arms again, in place
   // A row that can no longer be afforded is dimmed — an attribute, not a colour, so it survives
   // monochrome. Checked on an *unselected* row: the selected one is inverse video, which is what
   // "selected" means everywhere in this game, and its unaffordability is the status line's to say.
   build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
-  build.handleData("3", layout) // select the cheap turret, leaving the barracks row unselected
+  // Back on the menu: move the highlight to the cheap turret, leaving the barracks row unselected.
+  build.run([{ kind: "highlight", delta: 1 }, { kind: "highlight", delta: 1 }])
   assert.ok(remaining(context, build.state) < SPIKE_CATALOG[0]!.cost, "not actually unaffordable")
   const frame = composeBuildFrame({ context, state: build.state, layout }, "monochrome")
-  const barracksLine = constructLines(layout, context.catalog).find(
-    (line) => line.kind === "item" && line.index === 0,
-  )
+  const barracksLine = constructLines(layout, context.catalog).find((line) => line.index === 0)
   assert.ok(barracksLine !== undefined)
   assert.equal(
     cellAt(frame, layout.panelColumn, barracksLine.row).style.dim,
@@ -463,9 +447,7 @@ test("the budget on screen is the budget the reducer is enforcing", () => {
     "a row the player can no longer afford still looks affordable",
   )
   // The turret, which they can still afford, does not.
-  const turretLine = constructLines(layout, context.catalog).find(
-    (line) => line.kind === "item" && line.index === 2,
-  )
+  const turretLine = constructLines(layout, context.catalog).find((line) => line.index === 2)
   assert.ok(turretLine !== undefined)
   assert.notEqual(cellAt(frame, layout.panelColumn, turretLine.row).style.dim, true)
 })
@@ -483,27 +465,30 @@ test("selecting something unaffordable says so before the player tries it", () =
   build.handleData("1", layout)
   assert.equal(build.state.armed, null, "an unaffordable row was armed")
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
-  const status = (text.split("\n")[layout.footerRow + 2] as string).replace(/^\|\s*|\s*\|$/g, "")
+  const status = (text.split("\n")[layout.footerRow] as string).replace(/^\|\s*|\s*\|$/g, "")
   // Affordability first, before any tile problem — and it is not about a tile, so none is named.
   assert.equal(status, "Cannot build here: costs 40, 20 left.")
 })
 
-test("the footer never advertises a key the keyboard adapter does not bind", () => {
-  // A retired binding that is still printed is worse than one that never existed. Every key help
-  // list, checked against the real adapter in the focus it is shown in.
-  const lists = [
-    [MENU_KEY_HELP, { itemCount: 3, armed: false, focus: "menu" as const }],
-    [PLACE_KEY_HELP, { itemCount: 3, armed: true, focus: "grid" as const }],
-    [EXPLORE_KEY_HELP, { itemCount: 3, armed: false, focus: "grid" as const }],
-    [MAP_KEY_HELP, { itemCount: 3, armed: false, focus: "grid" as const }],
+test("the bottom line never names a key the keyboard adapter does not bind", () => {
+  // A retired binding that is still printed is worse than one that never existed. Every key a hint
+  // names in brackets, checked against the real adapter in the focus it is shown in.
+  const named: Readonly<Record<string, string>> = { enter: "\r", esc: "\u001b", tab: "\t", bksp: "\u007f" }
+  const modes = [
+    { drive: (build: BuildSession) => build.dispatch({ kind: "focus", target: "menu" }), context: { itemCount: 3, armed: false, focus: "menu" as const } },
+    { drive: (build: BuildSession) => build.run([{ kind: "focus", target: "menu" }, { kind: "highlight", delta: 1 }, { kind: "highlight", delta: 1 }]), context: { itemCount: 3, armed: false, focus: "menu" as const } },
+    { drive: (build: BuildSession) => build.run([{ kind: "focus", target: "menu" }, { kind: "highlight", delta: -1 }]), context: { itemCount: 3, armed: false, focus: "menu" as const } },
+    { drive: (build: BuildSession, layout: ReturnType<typeof buildLayout>) => build.handleData("1", layout), context: { itemCount: 3, armed: true, focus: "grid" as const } },
+    { drive: (build: BuildSession) => build.dispatch({ kind: "explore" }), context: { itemCount: 3, armed: false, focus: "grid" as const } },
+    { drive: () => {}, context: { itemCount: 3, armed: false, focus: "grid" as const } },
   ] as const
-  for (const [help, context] of lists) {
-    for (const binding of help.bindings) {
-      for (const key of binding.match(/\b[a-z]\b/g) ?? []) {
-        assert.notEqual(buildKeyboardCommand(key, context), null, `${help.label} offers "${key}", which is not bound`)
-      }
+  for (const mode of modes) {
+    const shown = screenAt(MINIMUM, mode.drive)
+    const text = hint(shown.context, shown.build.state).text
+    for (const [, key] of text.matchAll(/\[([^\]]+)\]/g)) {
+      const bytes = named[key as string] ?? (key as string)
+      assert.notEqual(buildKeyboardCommand(bytes, mode.context), null, `"${text}" names [${key}], which is not bound`)
     }
-    assert.ok(!help.bindings.some((binding) => /q quit/.test(binding)), `${help.label} still lists q quit`)
   }
 })
 
@@ -513,36 +498,16 @@ test("no header or footer line is cut off at the 80-column floor", () => {
   // screenshot showed it, so each one is now asserted whole at the narrowest size that must work.
   const { text } = screenAt(MINIMUM)
   assert.match(text, /TERMINAL NEXUS build phase/)
-  assert.match(text, /view x 0-48 y 2-17 of 96x40 {3}cursor 18,13/)
-  assert.match(text, /MAP {2}arrows move {2}enter\/space explore {2}tab\/esc menu {2}shift\+arrow fast move/)
-  const explore = screenAt(MINIMUM, (build) => build.dispatch({ kind: "explore" })).text
-  assert.match(explore, /EXPLORE MAP {2}arrows move {2}e\/esc back {2}shift\+arrow fast move {2}bksp remove/)
+  assert.match(text, /\| Arrows move the cursor, \[enter\] explores here, a number arms a building\. +\|/)
+  const exploring = screenAt(MINIMUM, (build) => build.dispatch({ kind: "explore" }))
+  const exploreLine = bottomLine(exploring.context, exploring.build.state, null).text
+  assert.ok(exploring.text.split("\n")[exploring.layout.footerRow]?.includes(exploreLine), `"${exploreLine}" is cut`)
+  const explore = exploring.text
   // Against the divider, which here is the map's own west edge (the spike map's fence: a rail or a post).
-  assert.match(explore, /> \[e\] Explore Map {10}[|+]/, "the Explore Map row, whole")
+  assert.match(explore, /\[e\] Explore Map {11}>[|+]/, "the Explore Map row, whole")
   const menu = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" })).text
-  assert.match(menu, /RESOURCE {9}100 of 100/, "the panel's budget line, whole")
+  assert.match(menu, /\| {23}\* 100[|+]/, "the panel's credits line, whole")
   assert.match(menu, /\[e\] Explore Map {12}[|+]/, "the first menu entry, whole")
-})
-
-test("the scroll margin the screen prints is the one it is actually using", () => {
-  // Mario deferred confirming the three-tile default and will judge it against another number, so
-  // a header that printed one margin while the camera used another would waste exactly that check.
-  // A share of the view since gate 5H: 49 tiles wide at 80 columns, so 5% is 2 tiles and 10% is 5.
-  for (const [percent, margin] of [[5, 2], [10, 5]] as const) {
-    const context = { ...neutralContext(), scrollMargin: percent }
-    const layout = buildLayout(MINIMUM, context.grid)
-    const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
-    const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
-    assert.match(text, new RegExp(`margin ${percent}%`))
-    // And the camera really follows at that distance, not at the default.
-    build.dispatch({ kind: "move-cursor", dx: 0, dy: 0 })
-    let steps = 0
-    while (build.state.camera.x === 0 && steps < context.grid.width) {
-      build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
-      steps += 1
-    }
-    assert.equal(layout.viewport.width - 1 - (build.state.cursor.x - build.state.camera.x), margin)
-  }
 })
 
 test("a row that costs more than is left cannot be armed: it flickers and says why", () => {
@@ -564,7 +529,7 @@ test("a row that costs more than is left cannot be armed: it flickers and says w
   assert.match(build.state.status.text, /costs 40, 20 left/)
   // Drawn: the row is dim, the unaffordable cost with it.
   const frame = composeBuildFrame({ context, state: build.state, layout }, "monochrome")
-  const barracksLine = constructLines(layout, context.catalog).find((line) => line.kind === "item" && line.index === 0)
+  const barracksLine = constructLines(layout, context.catalog).find((line) => line.index === 0)
   assert.ok(barracksLine !== undefined)
   const costColumn = layout.panelColumn + layout.panelLimit - 2
   assert.equal(cellAt(frame, costColumn, barracksLine.row).style.dim, true)
@@ -587,158 +552,51 @@ test("on a Grid short enough to shrink the panel, the detail block is dropped ra
   build.handleData("1", layout) // a 3x2 barracks at 2,2 hangs off the Grid, so it is refused
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
 
-  // The furniture that must survive, whole. A panel this short has no row left for the optional
-  // bindings the footer could not hold (fast move, remove, undo): they are dropped rather than drawn
-  // over the menu or the NEXUS/SPECIAL rows — the menu's rows are click targets, and a Grid this
-  // small exists nowhere yet. The side panel moving left (the next gate) is where to revisit it.
-  assert.match(text, /view x 0-19 y 0-9 of 20x10/)
-  assert.match(text, /arrows move {2}enter\/space place/, "the essential keys fell off a narrower footer")
-  // And the menu itself is still there — it is the block below it that gave way.
-  assert.match(text, /\[1\] Barracks/)
-  assert.match(text, /RESOURCE/)
+  // The furniture that must survive, whole: the bottom bar's one line, narrower here, keeps whole
+  // words (it held a position readout and the key help until feedback F59).
+  const full = bottomLine(context, build.state, armedPreview(context, build.state)).text
+  const shown = (text.split("\n")[layout.footerRow] as string).replace(/^\s*\|\s*|\s*\|\s*$/g, "")
+  assert.ok(shown.length > 0 && full.startsWith(shown), `"${shown}" is not the start of "${full}"`)
+  assert.ok(shown.length === full.length || full[shown.length] === " ", `"${shown}" cuts a word of "${full}"`)
+  // And the building's card is still there, under its own active row.
+  assert.match(text, /\[1\] Barracks +>/)
 
   // Every line is still exactly the width it should be: nothing was written over anything.
   for (const row of text.split("\n")) assert.ok(row.length <= 80, `a row ran past 80: "${row}"`)
 })
 
-test("a panel with room for the effect line still draws it", () => {
+test("a panel with room for the card's words still draws them", () => {
   // The other half of the clamp: it must give way only when it genuinely has to.
   const roomy = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }])
   })
-  assert.match(roomy.text, /Trains troopers each Pulse/)
+  assert.match(roomy.text, /Trains troopers/)
+  assert.match(roomy.text, /Big and tough\./, "the description is cut short")
 })
 
-test("on a small Grid the panel's bindings never draw over the Nexus Powers entry or the SPECIAL row", () => {
-  // The bindings block grows up from the panel's bottom and was bounded by the construct menu alone,
-  // so the NEXUS/SPECIAL rows gate 5D added below the menu were written over on a Grid short enough
-  // to shrink the panel. Found by rendering the screen, not by a test.
-  const small: GridTerrain = { width: 20, height: 10, tiles: new Array<TerrainId>(200).fill("terrain.plain") }
-  const context = { ...neutralContext(), grid: small, standing: [] }
-  const layout = buildLayout(MINIMUM, small)
-  const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
-  build.dispatch({ kind: "focus", target: "menu" }) // Explore Map's panel would cover the menu
-  const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
-  // Against the divider — or against the junction where this short Grid's own bottom edge meets it.
-  // Against the divider — or, where this small Grid is the solid bar of a map edge, against nothing.
-  assert.match(text, /\[n\] Nexus {2,}1 active(?:[|+ ]|$)/m)
-  assert.match(text, /SPECIAL {2,}none available(?:[|+ ]|$)/m)
-})
-
-test("every binding survives the split whole, at every width the screen can have", () => {
-  // The footer shrinks with the composition and the composition shrinks with the Grid. Whatever the
-  // two lines end up being, a binding must never be cut in half — a player reading "esc dis" learns
-  // nothing and one who cannot find "q quit" is stuck in an alternate screen. And nothing may be
-  // lost between the two surfaces: what leaves the footer arrives in the panel.
-  for (const help of [PLACE_KEY_HELP, MENU_KEY_HELP, EXPLORE_KEY_HELP, MAP_KEY_HELP]) {
-    const all = bindingLines(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, help).footer.split("  ")
-    assert.deepEqual(all, help.bindings)
-    // From the narrowest footer that still holds the focus label and its gap.
-    for (let footerLimit = help.label.length + 2; footerLimit <= all.join("  ").length + 5; footerLimit += 1) {
-      for (const panelLimit of [26, 28, 40]) {
-        const { footer, panel } = bindingLines(footerLimit, panelLimit, help)
-        // The focus label and its gap come out of the same line.
-        const room = footerLimit - help.label.length - 2
-        assert.ok(footer.length <= room, `footer "${footer}" is wider than ${room}`)
-        for (const line of panel) {
-          assert.ok(line.length <= panelLimit, `panel "${line}" is wider than ${panelLimit}`)
-        }
-        const shown = [footer, ...panel].flatMap((line) => (line === "" ? [] : line.split("  ")))
-        assert.deepEqual(shown, all, `a binding was lost or cut at ${footerLimit}/${panelLimit}`)
-      }
+test("on a small Grid the panel's rows are drawn whole, however few fit: the Nexus entry, the buildings it has room for, and Start Pulse", () => {
+  // The panel's height is the viewport's, and the viewport shrinks to fit a Grid smaller than the
+  // screen (`isGated` deliberately passes one that fits entirely); every row the panel draws must still
+  // be drawn whole, and a building it has no room for is not drawn at all.
+  for (const [width, height] of [[20, 10], [8, 6]] as const) {
+    const small: GridTerrain = { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") }
+    const context = { ...neutralContext(), grid: small, standing: [] }
+    const layout = buildLayout(MINIMUM, small)
+    const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
+    build.dispatch({ kind: "focus", target: "menu" })
+    const rows = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome")).split("\n")
+    // Against the divider — or, where this small Grid is the solid bar of a map edge, against nothing.
+    assert.match(rows.join("\n"), /\[n\] Nexus {2,}1 active(?:[|+ ]|$)/m, `${width}x${height}`)
+    const lines = constructLines(layout, context.catalog)
+    assert.ok(lines.length > 0, `${width}x${height}: no building has room`)
+    for (const line of lines) {
+      const item = context.catalog[line.index]
+      assert.ok(item !== undefined)
+      assert.match(rows[line.row] as string, new RegExp(`\\[${item.hotkey}\\] ${item.label} +${item.cost}(?:[|+ ]|$)`), `${width}x${height}: ${item.label}`)
     }
+    assert.match(rows[startRow(layout)] as string, /\[s\] Start Pulse/, `${width}x${height}`)
   }
-  // The four a player cannot work the Grid without come first, so they are the last to leave the
-  // footer.
-  assert.deepEqual(PLACE_KEY_HELP.bindings.slice(0, 3), ["arrows move", "enter/space place", "esc cancel"])
-})
-
-test("every key the adapters bind is named on screen at the 80-column floor", () => {
-  // The converse of the test above, and the one that matters at the acceptance size: a key nobody
-  // can find is a key that does not exist (engine.md 9.7). The footer alone cannot hold them at 80
-  // columns, which is why the overflow goes in the panel — so the check is against the whole
-  // screen, not one line. PageUp/PageDown and Home/End are a deliberate, owner-directed exception
-  // (2026-09-26): still bound (`tests/build-keyboard.test.ts` covers that), but no longer displayed
-  // anywhere, since they are a redundant alternate path to the same fast-move Shift+Arrow already
-  // shows, not a unique undiscoverable action.
-  // Once per focus: arrows and Enter/Space mean different things on the menu and on the Grid, so
-  // each screen has to name what they mean there, and say which focus it is (engine.md 9.7).
-  const modes = [
-    {
-      label: "PLACE",
-      drive: (build: BuildSession, layout: ReturnType<typeof buildLayout>) => build.handleData("1", layout),
-      context: { itemCount: 3, armed: true, focus: "grid" as const },
-      bound: [
-        ["\u001b[A", "arrows", /arrows move/],
-        ["\r", "enter", /enter\/space place/],
-        ["\u001b", "esc", /esc cancel/],
-        ["\u001b[1;2A", "shift+arrow", /shift\+arrow fast move/],
-        ["\u007f", "backspace", /bksp remove/],
-        ["u", "undo", /u undo/],
-        ["n", "nexus", /\[n\] Nexus/],
-      ],
-    },
-    {
-      // Explore Map: its panel covers the menu, so only the way back is named — the menu's own
-      // hotkeys are named on the menu (feedback F23), and `e`, which opened it, closes it (F32).
-      label: "EXPLORE MAP",
-      drive: (build: BuildSession) => build.dispatch({ kind: "explore" }),
-      context: { itemCount: 3, armed: false, focus: "grid" as const },
-      bound: [
-        ["\u001b[A", "arrows", /arrows move/],
-        ["e", "e", /e\/esc back/],
-        ["\u001b", "esc", /e\/esc back/],
-        ["\u007f", "backspace", /bksp remove/],
-      ],
-    },
-    {
-      // The map a mouse click opened from the menu: the menu still drawn beside it.
-      label: "MAP",
-      drive: (build: BuildSession) =>
-        build.run([
-          { kind: "focus", target: "menu" },
-          { kind: "click-tile", x: 30, y: 14 },
-        ]),
-      context: { itemCount: 3, armed: false, focus: "grid" as const },
-      bound: [
-        ["\r", "enter", /enter\/space explore/],
-        ["\t", "tab", /tab\/esc menu/],
-        ["e", "explore", /\[e\] Explore Map/],
-      ],
-    },
-    {
-      label: "MENU",
-      drive: (build: BuildSession) => build.dispatch({ kind: "focus", target: "menu" }),
-      context: { itemCount: 3, armed: false, focus: "menu" as const },
-      bound: [
-        ["\u001b[B", "down", /up\/down choose/],
-        ["\r", "enter", /enter\/space select/],
-        ["\t", "tab", /tab grid/],
-        ["s", "commit", /\[s\] Start Pulse/],
-        ["u", "undo", /u undo/],
-        ["1", "a digit", /\[1\] Barracks/],
-      ],
-    },
-  ] as const
-  for (const mode of modes) {
-    const { text } = screenAt(MINIMUM, mode.drive)
-    assert.match(text, new RegExp(`\\| ${mode.label} {2}`), `the key help does not say ${mode.label}`)
-    for (const [key, name, shown] of mode.bound) {
-      assert.notEqual(buildKeyboardCommand(key, mode.context), null, `${mode.label}: ${name} is not bound`)
-      assert.match(text, shown, `${mode.label}: ${name} is bound but named nowhere on an 80x24 screen`)
-    }
-  }
-})
-
-test("a terminal wide enough puts every binding in the footer and leaves the panel alone", () => {
-  // The whole of the layout's adaptation to width, in one assertion: the footer takes what it can
-  // hold and the panel shows the remainder, so a wide terminal simply has no remainder.
-  const wide = screenAt({ columns: 160, rows: 40 }, (build, layout) => build.handleData("1", layout))
-  const footer = wide.text.split("\n").find((row) => row.includes("arrows move"))
-  assert.ok(footer !== undefined)
-  assert.match(footer, /u undo/, "a wide footer holds the last binding too")
-  assert.equal(bindingLines(wide.layout.footerLimit, wide.layout.panelLimit, PLACE_KEY_HELP).panel.length, 0)
 })
 
 test("engine-3.3-markers: the soft border runs the whole Grid-pane segment, at both tile widths", () => {
@@ -762,7 +620,8 @@ test("engine-3.3-markers: the soft border runs the whole Grid-pane segment, at b
 test("no line is drawn over another, at every terminal size in the supported range", () => {
   // The range is 48x16 to 72x24 tiles, and the screenshots only ever catch the sizes somebody
   // thought to capture. Every size in between is swept here instead: the frame stays the terminal's
-  // own size, the footer keeps all three of its lines, and the panel never reaches them.
+  // own size, the bottom bar keeps its one line (three until feedback F59), and the panel never
+  // reaches it.
   for (let columns = 80; columns <= 106; columns += 1) {
     for (let rows = 24; rows <= 32; rows += 1) {
       const { text, layout, frame } = screenAt({ columns, rows }, (build, l) => {
@@ -772,17 +631,17 @@ test("no line is drawn over another, at every terminal size in the supported ran
       assert.equal(frame.width, columns, `frame width at ${columns}x${rows}`)
       assert.equal(frame.height, rows, `frame height at ${columns}x${rows}`)
       const lines = text.split("\n")
-      assert.match(lines[layout.footerRow] as string, /view x /, `readout at ${columns}x${rows}`)
-      assert.match(lines[layout.footerRow + 1] as string, /arrows move/, `keys at ${columns}x${rows}`)
-      // The status line reads the live refusal, tile and all, rather than the stale "Barracks
-      // selected" from arming a moment ago — and it stays whole through the whole range.
+      // The bottom line reads the live refusal, tile and all, rather than whatever arming said a
+      // moment ago — and it stays whole through the whole range.
       assert.match(
-        lines[layout.footerRow + 2] as string,
+        lines[layout.footerRow] as string,
         /Cannot build here: rock in the way at 8,5\./,
         `status at ${columns}x${rows}`,
       )
-      // The rule under the Grid is its own row: the Grid's last row never touches the readout.
+      // The rule under the Grid is its own row: the Grid's last row never touches the bottom line,
+      // and the frame's border closes directly under it.
       assert.equal(layout.gridBox.bottom, layout.footerRow - 1, `bottom rule at ${columns}x${rows}`)
+      assert.equal(layout.footerRow + 1, layout.offset.row + layout.composition.height - 1, `bottom border at ${columns}x${rows}`)
     }
   }
 })
@@ -808,57 +667,6 @@ test("engine-3.3-markers: the side border is soft on every row, not a broken col
       `the west edge is not soft on row ${row}`,
     )
   }
-})
-
-test("the bindings block gives way to the construct menu, never draws over it", () => {
-  // The panel's height is the viewport's, and the viewport shrinks to fit a Grid smaller than the
-  // screen — `isGated` deliberately passes one that fits entirely. The bindings are pinned to the
-  // panel's last line and grow upward, so on a short enough panel they reach the menu. The menu
-  // wins: a hidden construct row is still a live click target, which is worse than a binding the
-  // player has to find elsewhere.
-  const tiny: GridTerrain = {
-    width: 8,
-    height: 6,
-    tiles: new Array<TerrainId>(48).fill("terrain.plain"),
-  }
-  const context = { ...neutralContext(), grid: tiny, standing: [] }
-  const layout = buildLayout(MINIMUM, tiny)
-  const build = readyBuildSession({ context, cursor: { x: 2, y: 2 }, viewport: layout.viewport })
-  // The map with the menu beside it (a click from the menu): Explore Map's panel would cover the menu.
-  build.run([
-    { kind: "focus", target: "menu" },
-    { kind: "click-tile", x: 2, y: 2 },
-  ])
-  const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
-
-  for (const line of constructLines(layout, context.catalog)) {
-    if (line.kind === "item") {
-      const item = context.catalog[line.index]
-      assert.ok(item !== undefined)
-      assert.match(
-        text.split("\n")[line.row] as string,
-        new RegExp(`\\[${item.hotkey}\\] ${item.label}`),
-        `the menu row for ${item.label} was drawn over`,
-      )
-    }
-    if (line.kind === "empty") {
-      assert.match(text.split("\n")[line.row] as string, /ARMY {2,}none available/)
-    }
-  }
-})
-
-test("the armed row carries an explicit marker, not only inverse video", () => {
-  // Inverse video alone survives every capability tier, but it is a video attribute, not a symbol —
-  // the owner asked for something a player can point to and name. It rides alongside the bar, not
-  // instead of it, and it is unambiguous now that the border no longer prints its own `>` beside
-  // every panel row.
-  const armed = screenAt(MINIMUM, (build, layout) => {
-    build.handleData("2", layout)
-  })
-  assert.match(armed.text, /> \[2\] Hatchery/)
-  const unselected = armed.text.split("\n").find((row) => row.includes("[1] Barracks"))
-  assert.ok(unselected !== undefined)
-  assert.doesNotMatch(unselected, />/, "an unarmed row carries no marker")
 })
 
 test("the cursor is bold and undimmed over bare ground, so it reads over a dim ground glyph", () => {
@@ -924,30 +732,31 @@ test("engine-3.3-markers: a map that names no edge style ends in a solid bar, on
   assert.ok(!solid(frame, layout.offset.column, layout.offset.row))
 })
 
-test("the normal panel says how many Nexus powers are active, and names the empty Special slot", () => {
+test("after the pick, the Nexus row says how many powers are active", () => {
   const built = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" }))
   assert.match(built.text, /\[n\] Nexus {2,}1 active/)
-  assert.match(built.text, /SPECIAL {2,}none available/)
 })
 
 test("the commit confirmation is a screen over the Grid: Battle Round 1, what it announces, and [s] Start", () => {
   const built = screenAt(MINIMUM, (build) => {
-    build.dispatch({ kind: "commit" })
+    build.dispatch({ kind: "open-battle-round" })
   })
   assert.match(built.text, /Battle Round 1/)
   for (const order of ["Activate Nexus.", "Collect Resources.", "Spawn Units."]) assert.match(built.text, new RegExp(order.replace(".", "\\.")))
   assert.match(built.text, /\[s\] Start\b/)
   assert.doesNotMatch(built.text, /Keep building|\?\s*\|/, "one row, and no question")
   assert.match(built.text, /close \[esc\]/)
-  assert.match(built.text, /BATTLE ROUND {2}enter\/s\/space start {2}esc back/)
+  // The bottom line answers the key that opened it; once that lapses, the hint says the same keys.
+  assert.match(built.text, /Battle Round 1: Enter starts it, Esc goes back\./)
+  assert.equal(hint(built.context, built.build.state).text, "Battle round 1: [enter] or [s] starts it, [esc] goes back to the plan.")
 })
 
 test("the committed screen names the pick and the count, and the footer carries the full sentence", () => {
   const built = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
-    build.dispatch({ kind: "commit" })
-    build.dispatch({ kind: "confirm-commit" })
+    build.dispatch({ kind: "open-battle-round" })
+    build.dispatch({ kind: "start-pulse" })
   })
   assert.match(built.text, /BUILD COMMITTED/)
   assert.match(built.text, /Nexus: Test Pick/)

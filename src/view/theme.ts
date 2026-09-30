@@ -44,8 +44,9 @@ const TERRAIN_GLYPHS: Readonly<
   },
 }
 
-/** Frame furniture, the other half of what a pack changes. */
-export const CHROME_GLYPHS: Readonly<Record<GlyphPack, Readonly<Record<string, string>>>> = {
+/** Frame furniture, the other half of what a pack changes. Every pack draws every part the ASCII pack
+ *  names (`ChromePart`): `chromeGlyph` refuses to compile otherwise. */
+export const CHROME_GLYPHS = {
   ascii: {
     horizontal: "-",
     vertical: "|",
@@ -63,24 +64,30 @@ export const CHROME_GLYPHS: Readonly<Record<GlyphPack, Readonly<Record<string, s
     edgeHorizontal: "-",
     edgeVertical: "|",
     edgeCorner: "+",
-    // The three weights of the Build Phase frame beside the Grid pane (canon 2.19, the owner's own
-    // "'---' UI, and '===' for the map edge"). Soft — more Grid beyond this side — is the frame's own
-    // line, drawn dim by the caller: one unbroken rectangle, never the ground lattice's `.`, which is
-    // what made the dotted edge of gate 5C read as "arbitrary". Heavy — the Grid's own edge — is a
-    // heavier glyph, drawn bold. ASCII has no heavier vertical bar, so `heavyVertical` is the plain
-    // `|` and bold alone carries it (`open-questions.md` Q56).
+    // A side of the Build Phase's Grid pane with more Grid beyond it: the frame's own line, drawn dim
+    // by the caller — one unbroken rectangle, never the ground lattice's `.`, whose dotted edge read as
+    // "arbitrary" (gate 5C). A side where the map ends is the map's own edge style (`edge.ts`).
     softHorizontal: "-",
     softVertical: "|",
-    heavyHorizontal: "=",
-    heavyVertical: "|",
     // A popup's shadow, drawn dim: a blank cell vanished against the dark theme's near-black ground
     // (feedback F17), so the shadow is a shade, which reads on either theme and in monochrome.
     shadow: ":",
-    // A popup's scroll bar, in its right border (feedback F36): the two ends, and the track the solid
-    // thumb sits in. Drawn inverse, as the border is.
+    // A popup's scroll bar, in its right border (feedback F36): the two ends, and the thumb — the part
+    // of the list in view — textured on the plain border that is its track (F78). Drawn inverse, as the
+    // border is. Never the shadow's glyph: a track in the shadow's texture read as more shadow.
     scrollUp: "^",
     scrollDown: "v",
-    scrollTrack: ":",
+    scrollThumb: "#",
+    // The focus arrow (feedback F54): its head, pointing the way it flies, and the trail behind it,
+    // along the line it flies — level, upright, falling to the right (`\`) or rising to it (`/`).
+    arrowRight: ">",
+    arrowLeft: "<",
+    arrowDown: "v",
+    arrowUp: "^",
+    trailLevel: "-",
+    trailUpright: "|",
+    trailFall: "\\",
+    trailRise: "/",
   },
   unicode: {
     horizontal: "─",
@@ -99,17 +106,26 @@ export const CHROME_GLYPHS: Readonly<Record<GlyphPack, Readonly<Record<string, s
     edgeCorner: "·",
     softHorizontal: "─",
     softVertical: "│",
-    heavyHorizontal: "━",
-    heavyVertical: "┃",
     shadow: "░",
     scrollUp: "▲",
     scrollDown: "▼",
-    scrollTrack: "░",
+    scrollThumb: "╬",
+    arrowRight: "▶",
+    arrowLeft: "◀",
+    arrowDown: "▼",
+    arrowUp: "▲",
+    trailLevel: "━",
+    trailUpright: "┃",
+    trailFall: "╲",
+    trailRise: "╱",
   },
-}
+} as const satisfies Readonly<Record<GlyphPack, Readonly<Record<string, string>>>>
 
-export function chromeGlyph(pack: GlyphPack, part: string): string {
-  return CHROME_GLYPHS[pack][part] ?? "?"
+/** A part of the frame furniture, by the name every glyph pack draws it under. */
+export type ChromePart = keyof (typeof CHROME_GLYPHS)["ascii"]
+
+export function chromeGlyph(pack: GlyphPack, part: ChromePart): string {
+  return CHROME_GLYPHS[pack][part]
 }
 
 export function terrainGlyph(
