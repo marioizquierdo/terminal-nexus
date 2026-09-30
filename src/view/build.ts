@@ -45,7 +45,7 @@ import {
   startEntry,
   structureAtTile,
 } from "../build/state.ts"
-import type { Ack, PlannedPlacement } from "../build/types.ts"
+import type { Ack, PlannedPlacement, Popup } from "../build/types.ts"
 import { CONTENT_ART } from "../content/art.ts"
 import type { BandCell, CellStyle, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
@@ -629,10 +629,28 @@ export const ACTIVE_VALUE = ">"
  */
 export function menuRowActive(context: BuildContext, state: BuildState, entry: number): boolean {
   if (state.committed) return false
-  if (entry === NEXUS_ENTRY) return state.popup === "nexus-powers"
+  const popupRow = state.popup === null ? null : POPUP_ROW[state.popup]
+  if (entry === NEXUS_ENTRY) return popupRow === "nexus"
   if (entry === EXPLORE_ENTRY) return exploring(state)
-  if (entry === startEntry(context.catalog.length)) return state.popup === "battle-round"
+  if (entry === startEntry(context.catalog.length)) return popupRow === "start"
   return state.armed !== null && entryOfConstruct(state.armed) === entry
+}
+
+/**
+ * Which menu row each popup belongs to, or `null` for one that belongs to none — said once, so every
+ * new popup has to choose. A popup that belongs to a row keeps that row active behind it (the Nexus
+ * powers, the Battle Round screen); one that belongs to none (the game menu, Settings, the export, the
+ * Controls page, a message) leaves the menu unlit while it has the keyboard, so its own highlight (or
+ * none) is the only one on screen.
+ */
+const POPUP_ROW: Readonly<Record<Popup, "nexus" | "start" | null>> = {
+  "nexus-powers": "nexus",
+  "battle-round": "start",
+  "game-menu": null,
+  settings: null,
+  export: null,
+  controls: null,
+  message: null,
 }
 
 /**
@@ -728,15 +746,8 @@ function rowState(input: BuildCompositionInput, entry: number, active: boolean):
   // item to the top"). The pressed flash outlasts the reveal's fade and slide, and would cover both.
   const carried = input.cardReveal?.fromMenu === true && cardEntry(state) === entry
   const ack = own === "pressed" && carried ? null : own
-  // The Battle Round confirmation belongs to the menu, which stays lit behind it; the game menu,
-  // Settings, the export, the Controls page and a message belong to none, so while one has the
-  // keyboard its own highlight (or none) is the only one on screen.
-  const popupOfNoRow =
-    state.popup === "game-menu" ||
-    state.popup === "settings" ||
-    state.popup === "export" ||
-    state.popup === "controls" ||
-    state.popup === "message"
+  // A popup that belongs to no row holds the keyboard with its own highlight: the menu's goes dark.
+  const popupOfNoRow = state.popup !== null && POPUP_ROW[state.popup] === null
   const highlighted =
     !active && !popupOfNoRow && state.focus === "menu" && !state.highlightHidden && state.menuHighlight === entry
   return { highlighted, ack }
