@@ -12,10 +12,13 @@ import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { defaultExperiments } from "../src/build/experiments.ts"
 import { TUNING } from "../src/build/tuning.ts"
+import { PROCESS_HOST } from "../src/cli/lifecycle.ts"
 import { runSpike } from "../src/cli/spike.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../src/menu/mouse.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
+import { AnsiBackend } from "../src/view/backends/ansi.ts"
+import { KEYBOARD_POP, KEYBOARD_PUSH, KEYBOARD_QUERY } from "../src/view/key-events.ts"
 import type { Settings } from "../src/settings/index.ts"
 import { ESC } from "./build-helpers.ts"
 import { DEFENCE_KEYS, PROBE_PULSE } from "./pulse-helpers.ts"
@@ -355,5 +358,179 @@ test("a Nexus Pulse holds still behind the resize gate and resumes from the same
   await sleep(60)
   assert.equal(timerAt(stdout.lastWrite), "0:12", "the Pulse ran on behind the gate")
   stdin.emit("data", Buffer.from([3]))
+  await sleep(30)
+})
+
+// ---------------------------------------------------------------------------------------------
+// Key releases, where the terminal reports them (the owner's third round, F79; Q66)
+// ---------------------------------------------------------------------------------------------
+
+/** A terminal that answers the keyboard question the way one speaking the kitty protocol does (its
+ *  flags, then Device Attributes), or one that only answers Device Attributes, or one that says nothing. */
+type Answers = "kitty" | "attributes-only" | "silent"
+
+class AnsweringStdout extends FakeStdout {
+  private readonly input: FakeStdin
+  private readonly answers: Answers
+  constructor(input: FakeStdin, answers: Answers) {
+    super()
+    this.input = input
+    this.answers = answers
+  }
+  override write(text: string): boolean {
+    super.write(text)
+    if (text.includes(KEYBOARD_QUERY) && this.answers !== "silent") {
+      const reply = this.answers === "kitty" ? `${ESC}[?0u${ESC}[?62;22c` : `${ESC}[?62;22c`
+      setImmediate(() => this.input.emit("data", Buffer.from(reply)))
+    }
+    return true
+  }
+}
+
+const count = (text: string, part: string): number => text.split(part).length - 1
+
+type KeyboardRun = Readonly<{ stdout: AnsweringStdout; stdin: FakeStdin; exits: number[]; session: Promise<number>; failure: { now: boolean } }>
+
+/** The Build Phase on a terminal that answers as told. The ANSI backend is wrapped so a frame can be
+ *  made to throw on demand (`failure.now`), and `startFails` makes its start throw. */
+async function keyboardRun(answers: Answers, options: { keyReleases?: "auto" | "off"; startFails?: boolean } = {}): Promise<KeyboardRun> {
+  const stdin = new FakeStdin()
+  const stdout = new AnsweringStdout(stdin, answers)
+  const exits: number[] = []
+  const failure = { now: false }
+  const inner = new AnsiBackend({
+    stdout: stdout as unknown as NodeJS.WriteStream,
+    stdin: stdin as unknown as NodeJS.ReadStream,
+    capability: "monochrome",
+  })
+  const session = runSpike({
+    settings: TEST_SETTINGS,
+    backend: {
+      name: "flaky",
+      start: async () => {
+        await inner.start()
+        if (options.startFails === true) throw new Error("no terminal after all")
+      },
+      present: (frame) => {
+        if (failure.now) throw new Error("a frame failed")
+        inner.present(frame)
+      },
+      stop: () => inner.stop(),
+    },
+    stdout: stdout as unknown as NodeJS.WriteStream,
+    stdin: stdin as unknown as NodeJS.ReadStream,
+    host: {
+      onInterrupt: PROCESS_HOST.onInterrupt,
+      exit: (code) => {
+        exits.push(code)
+      },
+      reportError: () => {},
+    },
+    ...(options.keyReleases === undefined ? {} : { experiments: { keyReleases: options.keyReleases } }),
+  })
+  await sleep(30)
+  return { stdout, stdin, exits, session, failure }
+}
+
+/** The flags were pushed, and popped as often as pushed, the last pop after the last push and before
+ *  the alternate screen was left. */
+function assertPoppedAfterPush(written: string, path: string): void {
+  assert.ok(written.includes(KEYBOARD_PUSH), `${path}: the flags were never pushed`)
+  assert.equal(count(written, KEYBOARD_POP), count(written, KEYBOARD_PUSH), `${path}: pushed and popped a different number of times`)
+  assert.ok(written.lastIndexOf(KEYBOARD_POP) > written.lastIndexOf(KEYBOARD_PUSH), `${path}: the last push was never popped`)
+  assert.ok(written.lastIndexOf(KEYBOARD_POP) < written.lastIndexOf(`${ESC}[?1049l`), `${path}: popped after leaving the alternate screen`)
+}
+
+test("on auto the screen asks, pushes the key-event flags when the terminal answers, and pops them on every way out", async () => {
+  const paths: readonly (readonly [string, (run: KeyboardRun) => void])[] = [
+    [
+      "q q",
+      (run) => {
+        run.stdin.emit("data", Buffer.from("q"))
+        run.stdin.emit("data", Buffer.from("q"))
+      },
+    ],
+    ["Ctrl+C in the protocol's form", (run) => run.stdin.emit("data", Buffer.from(`${ESC}[99;5u`))],
+    ["a classic Ctrl+C byte", (run) => run.stdin.emit("data", Buffer.from([3]))],
+    [
+      "Esc in the protocol's form, then q",
+      (run) => {
+        run.stdin.emit("data", Buffer.from(`${ESC}[27u`))
+        run.stdin.emit("data", Buffer.from("q"))
+      },
+    ],
+    ["SIGINT", () => process.emit("SIGINT")],
+    ["SIGTERM", () => process.emit("SIGTERM")],
+    [
+      "a caught render failure",
+      (run) => {
+        run.failure.now = true
+        run.stdin.emit("data", Buffer.from("n"))
+      },
+    ],
+  ]
+  for (const [path, end] of paths) {
+    const run = await keyboardRun("kitty")
+    assert.ok(run.stdout.written.includes(KEYBOARD_QUERY), `${path}: the screen never asked`)
+    assert.ok(run.stdout.written.includes(KEYBOARD_PUSH), `${path}: the answer did not push the flags`)
+    end(run)
+    await sleep(30)
+    assert.deepEqual(run.exits, [0], `${path} did not end the session`)
+    assert.equal(run.stdin.raw, false, `${path} left raw mode on`)
+    assertPoppedAfterPush(run.stdout.written, path)
+  }
+})
+
+test("a terminal that answers only Device Attributes, or nothing at all, is never pushed, and nothing is popped", async () => {
+  for (const answers of ["attributes-only", "silent"] as const) {
+    const run = await keyboardRun(answers)
+    assert.ok(run.stdout.written.includes(KEYBOARD_QUERY), `${answers}: the screen never asked`)
+    run.stdin.emit("data", Buffer.from([3]))
+    await sleep(30)
+    assert.deepEqual(run.exits, [0])
+    assert.ok(!run.stdout.written.includes(KEYBOARD_PUSH), `${answers}: pushed flags nobody offered`)
+    assert.ok(!run.stdout.written.includes(KEYBOARD_POP), `${answers}: popped flags it never pushed`)
+  }
+})
+
+test("with Key releases off nothing is asked; switched in Settings, the flags are pushed and popped at once", async () => {
+  const off = await keyboardRun("kitty", { keyReleases: "off" })
+  assert.ok(!off.stdout.written.includes(KEYBOARD_QUERY), "asked with the Experiment off")
+  // `d` opens the Experiments at the hold window; Key releases is the row below. Right steps it to auto.
+  off.stdin.emit("data", Buffer.from("d"))
+  off.stdin.emit("data", Buffer.from(`${ESC}[B`))
+  off.stdin.emit("data", Buffer.from(`${ESC}[C`))
+  await sleep(10)
+  assert.ok(off.stdout.written.includes(KEYBOARD_PUSH), "switching to auto did not ask and push")
+  // And back off: popped at once, before anything else happens.
+  const before = count(off.stdout.written, KEYBOARD_POP)
+  off.stdin.emit("data", Buffer.from(`${ESC}[C`))
+  assert.equal(count(off.stdout.written, KEYBOARD_POP), before + 1, "switching off did not pop the flags")
+  off.stdin.emit("data", Buffer.from([3]))
+  await sleep(30)
+  assert.deepEqual(off.exits, [0])
+  assert.equal(count(off.stdout.written, KEYBOARD_POP), count(off.stdout.written, KEYBOARD_PUSH), "left with the flags pushed")
+})
+
+test("a setup failure asks nothing and pops nothing, and still restores the terminal", async () => {
+  const run = await keyboardRun("kitty", { startFails: true })
+  assert.equal(await run.session, 1)
+  assert.ok(!run.stdout.written.includes(KEYBOARD_PUSH))
+  assert.ok(!run.stdout.written.includes(KEYBOARD_POP))
+  assert.equal(run.stdin.raw, false)
+  assert.ok(run.stdout.written.includes(`${ESC}[?1049l`), "the alternate screen was not left")
+})
+
+test("with the protocol on, Esc arrives whole: the game menu opens at once, with no wait for the rest of a key", async () => {
+  const run = await keyboardRun("kitty")
+  run.stdin.emit("data", Buffer.from(`${ESC}[27u`))
+  assert.ok(run.stdout.lastWrite.includes("Controls and hotkeys"), "Esc waited for the rest of a sequence")
+  // A classic Esc, by contrast, waits a moment: it could still be the start of an arrow.
+  const classic = await keyboardRun("silent")
+  classic.stdin.emit("data", Buffer.from(ESC))
+  assert.ok(!classic.stdout.lastWrite.includes("Controls and hotkeys"), "a classic Esc did not wait")
+  await sleep(AFTER_ESC_TIMEOUT_MS)
+  assert.ok(classic.stdout.lastWrite.includes("Controls and hotkeys"), "a classic Esc never counted")
+  for (const each of [run, classic]) each.stdin.emit("data", Buffer.from([3]))
   await sleep(30)
 })

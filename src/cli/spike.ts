@@ -24,6 +24,8 @@ import type { BuildContext } from "../build/state.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import { BuildAnimation, livePresentation, nextFrameDelay } from "../view/build-live.ts"
 import { KeyReader } from "../view/key-reader.ts"
+import { KeyboardProtocol, terminalReplyOf } from "../view/key-events.ts"
+import type { TerminalReply } from "../view/key-events.ts"
 import { gateFrame } from "../view/index.ts"
 import { selectBackend } from "../view/backends/index.ts"
 import type { NamedBackend } from "../view/backends/index.ts"
@@ -219,8 +221,8 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
   // breathing border (F80) — is
   // `BuildAnimation`'s pure function of the state and the time read here, and the frame timer below
   // runs only while one of them is still moving; an idle screen draws once per input, as it always
-  // has. The same clock times the held-key ramp (passed with each key) and the lone-Esc timeout
-  // (`KeyReader`).
+  // has. The same clock times how far a cursor key moves — taps counted, holds on the game's cadence —
+  // (passed with each key) and the lone-Esc timeout (`KeyReader`).
   const clock = options.now ?? ((): number => Date.now())
   // A Nexus Pulse the start keys began was timed on the script's clock, a few seconds from nothing; from
   // here it runs on the live one. Rebase without letting any time pass: it opens at zero.
@@ -309,16 +311,47 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     render()
   }
 
+  // **Key releases, where the terminal reports them** (the Key releases Experiment; the owner's third
+  // round, 2026-09-30, F79). On `auto` the screen asks the terminal whether it speaks the kitty keyboard
+  // protocol and, if it answers, pushes the flags that make it mark every key as a press, a repeat or a
+  // release — so a tap is known to be a tap and a hold a hold (`src/build/motion.ts`). On `off`, or with
+  // no answer, nothing is pushed and timing decides, as before. Changed in Settings, it applies at once.
+  // **The flags are popped on every way out**, through the one disposer below — a terminal left in this
+  // mode would send the shell `ESC [ 99 ; 5 u` for Ctrl+C.
+  const protocol = new KeyboardProtocol()
+  function syncKeyProtocol(): void {
+    if (leaving) return
+    const bytes = protocol.want(build.state.experiments.keyReleases === "auto")
+    if (bytes !== "") stdout.write(bytes)
+    build.setKeyReleases(protocol.active)
+  }
+  function hearReply(reply: TerminalReply): void {
+    if (leaving) return
+    const bytes = protocol.hear(reply)
+    if (bytes !== "") stdout.write(bytes)
+    build.setKeyReleases(protocol.active)
+  }
+
   function handleKeys(keys: readonly string[], now: number): void {
     for (const key of keys) {
       if (leaving) break
+      // The terminal's answers to the question above arrive as input; they are not keys, and they are
+      // heard even behind the resize gate, where keys are not.
+      const reply = terminalReplyOf(key)
+      if (reply !== null) {
+        hearReply(reply)
+        continue
+      }
+      if (gated) continue
       const camera = animation.cameraAt(build.state, now, { reducedMotion: build.state.settings.reducedMotion })
       build.handleKey(key, layout, { now, camera })
     }
+    // A key may have changed the Key releases Experiment.
+    syncKeyProtocol()
   }
 
   function onData(data: string | Uint8Array): void {
-    if (gated || leaving) return
+    if (leaving) return
     const now = clock()
     const timeout = TUNING.escTimeoutMs
     if (escapeTimer !== null) clearTimeout(escapeTimer)
@@ -330,7 +363,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     if (deadline !== null) {
       escapeTimer = setTimeout(() => {
         escapeTimer = null
-        if (gated || leaving) return
+        if (leaving) return
         handleKeys(reader.flush(), clock())
         render()
       }, Math.max(0, deadline - now))
@@ -350,15 +383,23 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
   session.onDispose(() => {
     stdout.write(MOUSE_REPORTING_OFF)
   })
+  // Before the backend leaves the alternate screen: the protocol keeps a stack of modes per screen.
+  session.onDispose(() => {
+    const pop = protocol.release()
+    if (pop !== "") stdout.write(pop)
+  })
   session.onDispose(() => pendingSave)
   session.onDispose(() => backend.stop())
 
   try {
     await backend.start()
     stdout.write(MOUSE_REPORTING_ON)
-    onResize()
     stdin.on("data", onData)
     stdout.on("resize", onResize)
+    // Asked once the answer has somewhere to arrive, and before the first frame, so the frame is the
+    // last thing written while the screen waits for the player.
+    syncKeyProtocol()
+    onResize()
     await new Promise<void>((settle) => {
       settleSession = settle
     })

@@ -16,7 +16,10 @@ import { dirname, relative, resolve } from "node:path"
 import test from "node:test"
 import { runInNewContext } from "node:vm"
 
-import { spikeContext } from "../src/cli/spike.ts"
+import { EventEmitter } from "node:events"
+import { runSpike, spikeContext } from "../src/cli/spike.ts"
+import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
+import { KEYBOARD_POP, KEYBOARD_PUSH, KEYBOARD_QUERY, encodeKeyEvent } from "../src/view/key-events.ts"
 import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
 import { BuildSession } from "../src/build/session.ts"
 import { buildLayout } from "../src/build/layout.ts"
@@ -28,7 +31,7 @@ import { frameToText } from "../src/view/frame.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
 import { keysFromChunk } from "../src/view/playback.ts"
 import { BACKGROUND_RGB, rgbFor } from "../src/view/roles.ts"
-import { KEY_BAR, bytesForKeyPress, keyNameFor, mouseBytes, withShift } from "../src/web/keys.ts"
+import { KEY_BAR, StandInKeyboard, bytesForKeyPress, keyNameFor, mouseBytes, withShift } from "../src/web/keys.ts"
 import { RUNTIME_IS_BUN, loadScenarioFile } from "./helpers.ts"
 import { sameness } from "./fixtures/web-sameness.ts"
 
@@ -219,3 +222,62 @@ test("a tap is the press and release a terminal reports, at the same cell", () =
 })
 
 
+
+test("the page plays a terminal that reports key events: it answers, keeps the flags, and marks repeats and releases", async () => {
+  const key = (name: string, modifiers: Partial<Record<"shiftKey" | "altKey" | "ctrlKey" | "metaKey", boolean>> = {}) => ({
+    key: name,
+    shiftKey: false,
+    altKey: false,
+    ctrlKey: false,
+    metaKey: false,
+    ...modifiers,
+  })
+  const standIn = new StandInKeyboard()
+  // Before anything is pushed: a classic terminal's presses, repeats as presses, no releases.
+  assert.equal(standIn.bytesFor(key("ArrowRight"), "press"), keyBytes("Right"))
+  assert.equal(standIn.bytesFor(key("ArrowRight"), "repeat"), keyBytes("Right"))
+  assert.equal(standIn.bytesFor(key("ArrowRight"), "release"), null)
+  assert.equal(standIn.bytesFor(key("Escape"), "press"), keyBytes("Esc"))
+  // Asked, it answers as a terminal speaking the protocol; pushed, it marks what it can.
+  assert.equal(standIn.written(KEYBOARD_QUERY), "\u001b[?0u\u001b[?62;22c")
+  assert.equal(standIn.written(`\u001b[2J${KEYBOARD_PUSH}\u001b[0m`), "")
+  assert.equal(standIn.flags, 3)
+  assert.equal(standIn.bytesFor(key("ArrowRight"), "press"), keyBytes("Right"))
+  assert.equal(standIn.bytesFor(key("ArrowRight"), "repeat"), encodeKeyEvent(keyBytes("Right"), "repeat"))
+  assert.equal(standIn.bytesFor(key("ArrowRight"), "release"), encodeKeyEvent(keyBytes("Right"), "release"))
+  assert.equal(standIn.bytesFor(key("ArrowLeft", { shiftKey: true }), "release"), encodeKeyEvent(keyBytes("S-Left"), "release"))
+  assert.equal(standIn.bytesFor(key("Escape"), "press"), "\u001b[27;1:1u")
+  assert.equal(standIn.bytesFor(key("n"), "repeat"), "n")
+  assert.equal(standIn.bytesFor(key("n"), "release"), null)
+  // Popped: a classic terminal again.
+  standIn.written(KEYBOARD_POP)
+  assert.equal(standIn.flags, 0)
+  assert.equal(standIn.bytesFor(key("ArrowRight"), "release"), null)
+
+  // The Build Phase's own loop against it, as the page runs it: asked and pushed on start, popped on the way out.
+  const page = new StandInKeyboard()
+  const input = new EventEmitter()
+  const output = Object.assign(new EventEmitter(), {
+    isTTY: true,
+    columns: 80,
+    rows: 24,
+    write(text: string): boolean {
+      const reply = page.written(text)
+      if (reply !== "") setTimeout(() => input.emit("data", reply), 0)
+      return true
+    },
+  })
+  const keyboard = Object.assign(input, { isTTY: true })
+  const running = runSpike({
+    settings: { ...DEFAULT_SETTINGS, capability: "monochrome" },
+    backend: { name: "page", start: async () => {}, present: () => {}, stop: async () => {} },
+    stdout: output,
+    stdin: keyboard,
+    host: { onInterrupt: () => () => {}, exit: () => {}, reportError: () => {} },
+  })
+  await new Promise((resolve) => setTimeout(resolve, 30))
+  assert.equal(page.flags, 3, "the Build Phase did not switch the page's key events on")
+  input.emit("data", keyBytes("C-c"))
+  assert.equal(await running, 0)
+  assert.equal(page.flags, 0, "the Build Phase left the page's key events on")
+})
