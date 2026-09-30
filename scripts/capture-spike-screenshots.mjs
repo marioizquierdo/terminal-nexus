@@ -37,6 +37,8 @@ import { frameToText } from "../src/view/frame.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { BuildAnimation, FRAME_MS, livePresentation } from "../src/view/build-live.ts"
 import { cellForTile } from "../src/build/layout.ts"
+import { SETTINGS_ORDER } from "../src/build/settings.ts"
+import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import { renderFramePng, renderFramesGif } from "./lib/frame-capture.mjs"
 import {
   ESC,
@@ -70,14 +72,16 @@ const PICK_FIRST_POWER = "n 1"
 /** `present`: what the live screen adds between keys (gate 5H) — a refused-placement flash, say —
  *  composed onto the last frame, since a key script alone never shows a moment in time.
  *  `experiments`: Experiments to open with instead of the defaults (gate 6A's raid and crew sizes).
- *  A `wait~MS` step in `keys` lets a Nexus Pulse on screen run that long on the script's own clock. */
+ *  A `wait~MS` step in `keys` lets a Nexus Pulse on screen run that long on the script's own clock.
+ *  `capability` and `theme` are the player's settings in the playtest as well as the picture's, so a
+ *  screen that shows them (Settings) says what the picture is. */
 function scripted(name, caption, { keys, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", present, experiments }) {
   if (only !== null && only !== name) return
   const run = runBuildPlaytest({
     steps: parseKeyScript(keys),
     columns: cols,
     rows,
-    capability,
+    settings: { ...DEFAULT_SETTINGS, capability, theme },
     ...(experiments === undefined ? {} : { experiments }),
   })
   const last = run.frames[run.frames.length - 1]
@@ -161,6 +165,17 @@ function pulseGif(name, { plan, fromMs, toMs, stepMs = 250, expect, experiments,
 }
 
 /**
+ * A `BuildAnimation` that drew `state` long enough ago for everything on it to have finished — the
+ * scene before a key as a player who has been looking at it sees it. A fresh one would take a hand-off
+ * or a flash already in `state` for one that just began, and play it again over the key's own frames.
+ */
+function settledAnimation(state, options = {}) {
+  const animation = new BuildAnimation()
+  animation.frame(state, -60_000, options)
+  return animation
+}
+
+/**
  * The view sliding and the cursor gliding (gate 5H, and the owner's 2026-09-28 playtest), frame by
  * frame as the live screen draws them: `before` sets the scene, `move` is one more key, and the GIF
  * is every frame `BuildAnimation` gives between the two cameras and cursors
@@ -171,15 +186,12 @@ function slideGif(name, { before, move, cols = 80, rows = 24, capability = "true
   const run = runBuildPlaytest({ steps: parseKeyScript(`${before} ${move}`), columns: cols, rows, capability })
   const from = run.frames[run.frames.length - 2]
   const to = run.frames[run.frames.length - 1]
-  const animation = new BuildAnimation()
+  const animation = settledAnimation(from.state)
   animation.frame(from.state, 0)
   const shots = [{ frame: from.frame, caption: "before", delayMs: 900 }]
   for (let now = 1; ; now += FRAME_MS) {
     const live = animation.frame(to.state, now)
-    const frame = composeBuildFrame(
-      { context: run.context, state: to.state, layout: run.layout, camera: live.camera, cursor: live.cursor },
-      capability,
-    )
+    const frame = composeBuildFrame({ context: run.context, state: to.state, layout: run.layout, ...livePresentation(live) }, capability)
     const done = live.busyUntil === null
     shots.push({ frame, caption: `${move}: ${now - 1} ms`, delayMs: done ? 2500 : 250 })
     if (done) break
@@ -199,7 +211,12 @@ function placementGif(
   { before, place, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", reducedMotion = false, stepMs = 50, showMs = 100, stillAtMs, caption },
 ) {
   if (only !== null && only !== name) return
-  const run = runBuildPlaytest({ steps: parseKeyScript(`${before} ${place}`), columns: cols, rows, capability })
+  const run = runBuildPlaytest({
+    steps: parseKeyScript(`${before} ${place}`),
+    columns: cols,
+    rows,
+    settings: { ...DEFAULT_SETTINGS, capability, theme, reducedMotion },
+  })
   const from = run.frames[run.frames.length - 2]
   const to = run.frames[run.frames.length - 1]
   if (!frameToText(to.frame).includes(expect)) {
@@ -207,20 +224,8 @@ function placementGif(
   }
   const options = { reducedMotion }
   const compose = (state, live) =>
-    composeBuildFrame(
-      {
-        context: run.context,
-        state,
-        layout: run.layout,
-        camera: live.camera,
-        cursor: live.cursor,
-        reducedMotion,
-        ...(live.placing === undefined ? {} : { placing: live.placing }),
-        ...(live.flash === undefined ? {} : { flash: live.flash }),
-      },
-      capability,
-    )
-  const animation = new BuildAnimation()
+    composeBuildFrame({ context: run.context, state, layout: run.layout, reducedMotion, ...livePresentation(live) }, capability)
+  const animation = settledAnimation(from.state, options)
   const opening = animation.frame(from.state, 0, options)
   const shots = [{ frame: compose(from.state, opening), caption: `before: ${before}`, delayMs: 1000 }]
   const speed = showMs === stepMs ? "" : ` (shown at ${Math.round((stepMs / showMs) * 100)}% speed)`
@@ -247,7 +252,12 @@ function placementGif(
  */
 function handoffGif(name, { before, hand, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", glyphPack = "ascii", stepMs = 20, showMs = 100 }) {
   if (only !== null && only !== name) return
-  const run = runBuildPlaytest({ steps: parseKeyScript(`${before} ${hand}`), columns: cols, rows, capability, glyphPack })
+  const run = runBuildPlaytest({
+    steps: parseKeyScript(`${before} ${hand}`),
+    columns: cols,
+    rows,
+    settings: { ...DEFAULT_SETTINGS, capability, theme, glyphPack },
+  })
   const from = run.frames[run.frames.length - 2]
   const to = run.frames[run.frames.length - 1]
   if (!frameToText(to.frame).includes(expect)) {
@@ -264,7 +274,7 @@ function handoffGif(name, { before, hand, expect, cols = 80, rows = 24, capabili
       },
       capability,
     )
-  const animation = new BuildAnimation()
+  const animation = settledAnimation(from.state)
   const opening = animation.frame(from.state, 0)
   const shots = [{ frame: compose(from.state, opening), caption: `before: ${before}`, delayMs: 1200 }]
   const speed = Math.round((stepMs / showMs) * 100)
@@ -288,7 +298,7 @@ function handoffGif(name, { before, hand, expect, cols = 80, rows = 24, capabili
  */
 function placementSheet(name, { before, place, expect, timesMs, capability = "truecolor", theme = "dark", caption, span = { x: 5, y: 3 } }) {
   if (only !== null && only !== name) return
-  const run = runBuildPlaytest({ steps: parseKeyScript(`${before} ${place}`), capability })
+  const run = runBuildPlaytest({ steps: parseKeyScript(`${before} ${place}`), settings: { ...DEFAULT_SETTINGS, capability, theme } })
   const to = run.frames[run.frames.length - 1]
   if (!frameToText(to.frame).includes(expect)) throw new Error(`${name}: expected "${expect}" after "${before} ${place}"`)
   const placement = to.state.planned[to.state.planned.length - 1]
@@ -461,8 +471,8 @@ scripted(
 
 scripted(
   "build-info-panel",
-  "[e] Explore Map with the cursor on the Grid Nexus, where the screen opens: the row turns active - [e] Explore Map > - with a line under it, then the building's own glyphs, its name, what it is for and its numbers. x, e or Esc goes back",
-  { keys: `${PICK_FIRST_POWER} e`, expect: "Citizen Nexus" },
+  "[e] Explore Map (which first steps the cursor off the Grid Nexus onto clear ground), then Left back onto the Nexus: the row turns active - [e] Explore Map > - with a line under it, then the building's own glyphs, its name, what it is for and its numbers. x, e or Esc goes back",
+  { keys: `${PICK_FIRST_POWER} e Left*3`, expect: "Citizen Nexus" },
 )
 
 scripted(
@@ -665,8 +675,8 @@ pulseGif("pulse-ending", {
   experiments: PROBE,
 })
 
-// Settings (owner, 2026-09-28): the game menu's [s], the player's own settings first, then the
-// The Experiments, which [d] opens straight at.
+// Settings (owner, 2026-09-28): the game menu's [s] — the player's own settings first, then the
+// Experiments, which [d] opens straight at.
 
 scripted(
   "build-settings",
@@ -676,8 +686,8 @@ scripted(
 
 scripted(
   "build-settings-export",
-  "[e] Export settings: every setting and experiment as text, changed experiments first with the default each replaced - copied to the clipboard and a file, to paste into a pull request",
-  { keys: "d Right Down Right e", expect: "# Changed experiments" },
+  "[e] Export settings: every setting and experiment as text, changed experiments first with the default each replaced (here the focus arrow and the card reveal) - copied to the clipboard and a file, to paste into a pull request",
+  { keys: "d e", expect: "focusArrowMs = 250", experiments: { focusArrowMs: 250, cardRevealMs: 400 } },
 )
 
 scripted(
@@ -714,10 +724,12 @@ scriptedGif("build-arm-at-cursor", {
 
 // Gate 5H: movement feel.
 
+const SETTINGS_AT_END = `SETTINGS (${SETTINGS_ORDER.length}/${SETTINGS_ORDER.length})`
+
 scripted(
   "build-debug-scrolled",
-  "Settings scroll: the settings and the experiments do not quite fit at 80x24, so the list moves with the highlight, the title says where it is - SETTINGS (10/10), Export settings - and the right border is a scroll bar with a thumb. A click on its upper or lower half, or the wheel, scrolls it too",
-  { keys: "d Down*5", expect: "SETTINGS (10/10)" },
+  `Settings scroll: the settings and the experiments do not quite fit at 80x24, so the list moves with the highlight, the title says where it is - ${SETTINGS_AT_END}, Export settings - and the right border is a scroll bar with a thumb. A click on its upper or lower half, or the wheel, scrolls it too`,
+  { keys: "d End", expect: SETTINGS_AT_END },
 )
 
 scripted(
