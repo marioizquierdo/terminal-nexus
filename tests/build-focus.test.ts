@@ -21,9 +21,9 @@ import {
 } from "../src/build/layout.ts"
 import { MOUSE_LEFT, formatMouseEvent } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
+import { TUNING } from "../src/build/tuning.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import {
-  ARM_SEARCH_TILES,
   EXPLORE_ENTRY,
   NEXUS_ENTRY,
   anchorForCursor,
@@ -767,7 +767,7 @@ test("never chosen from the last building placed: the spot is nearest the cursor
   assert.deepEqual(side.build.state.cursor, { x: 48, y: 25 }, "arming went back to the last building placed")
 })
 
-test(`nothing within ${ARM_SEARCH_TILES} tiles: one tile right and down, drawn as the building, not x, until moved or tried`, () => {
+test(`nothing within ${TUNING.armSearchTiles} tiles: one tile right and down, drawn as the building, not x, until moved or tried`, () => {
   // Solid rock with the cursor in a one-tile hole: nothing but a Turret fits anywhere, and a Barracks
   // fits nowhere.
   const width = 40

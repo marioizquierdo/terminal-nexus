@@ -25,6 +25,13 @@
 // may all read it.
 
 const TUNED = {
+  // --- Where arming puts a building ----------------------------------------------------------------
+
+  /** How far arming looks for a spot when the building cannot go where the cursor is, in tiles from the cursor along each axis; the owner's "if there's no empty space in 12 tiles around, it should stay" (feedback F30, 2026-09-29). */
+  armSearchTiles: 12,
+  /** What one tile up or down costs against one tile sideways when arming ranks the spots it found, so a run of the same building grows into a row; for the owner's "in most cases this should move the cursor only a few tiles to the right" (feedback F30, 2026-09-29). */
+  armVerticalCost: 2,
+
   // --- Moving the cursor and the view ---------------------------------------------------------------
 
   /** How near the view's edge the cursor gets before the map scrolls, as a percentage of the view's width (sides) and height (top and bottom); the owner's settings export, 2026-09-30 (25% before; `--scroll-margin` overrides it for one run). */

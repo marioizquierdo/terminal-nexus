@@ -134,7 +134,7 @@ export type BuildState = Readonly<{
    */
   returnTo: Focus
   /**
-   * Arming found no spot for the building within reach of the cursor (`ARM_SEARCH_TILES`), so the
+   * Arming found no spot for the building within reach of the cursor (`TUNING.armSearchTiles`), so the
    * cursor stepped one tile right and one down and the preview is drawn as the building itself rather
    * than the refusal's block of `x` (owner, 2026-09-29, feedback F30) — until the player moves the
    * cursor or tries to place, after which the refusal is drawn as usual. Pure: set by arming, cleared
@@ -246,18 +246,6 @@ export type BuildState = Readonly<{
    *  later (feedback F34). Empty after a restart. */
   restartWarned: readonly string[]
 }>
-
-/** What a tile of vertical cursor movement costs, against one of horizontal, when arming ranks spots:
- *  "in most cases this should move the cursor only a few tiles to the right" (owner, 2026-09-29), so
- *  a run of the same building grows into a row rather than a column. */
-export const ARM_VERTICAL_COST = 2
-
-/**
- * How far arming looks for a spot when the building cannot go where the cursor is: up to this many
- * tiles from the cursor along each axis (owner, 2026-09-29, feedback F30: "if there's no empty space
- * in 12 tiles around, it should stay").
- */
-export const ARM_SEARCH_TILES = 12
 
 /**
  * The tile the cursor opens on when nothing has been pointed at yet: the player's Grid Nexus — its
@@ -591,7 +579,7 @@ export function legalityAt(
  * Where arming puts the cursor (owner, 2026-09-29, feedback F30 — replacing gate 5F's smart cursor,
  * which put it beside the last thing planned): **where the cursor already is**, whenever the building
  * can go there, so a player who found a good spot and pressed the building's key places it there.
- * Otherwise the nearest spot within `ARM_SEARCH_TILES` of the cursor along each axis where it can:
+ * Otherwise the nearest spot within `TUNING.armSearchTiles` of the cursor along each axis where it can:
  *
  * 1. first among spots that leave **one free tile** between it and every other structure — "leaving
  *    1 space with the previous building if possible" (rock and the map's edge may touch it; only
@@ -599,7 +587,7 @@ export function legalityAt(
  * 2. then, when no such spot is in reach, among spots that merely fit, touching or not.
  *
  * "Nearest" is the cheapest cursor move, where a tile sideways costs 1 and a tile up or down costs
- * `ARM_VERTICAL_COST` (2) — the owner expects the cursor to move "only a few tiles to the right" in
+ * `TUNING.armVerticalCost` — the owner expects the cursor to move "only a few tiles to the right" in
  * most cases; ties go to the more horizontal move, then east before west, then south before north — a
  * total order, so there is exactly one answer, and a pure function of the plan and the cursor, so the
  * reducer owns it and a driver can assert it. **Never chosen from the last building placed**: the
@@ -660,7 +648,7 @@ export function armingSpot(
   // The order candidates are ranked in: cost (sideways tiles plus twice the vertical ones), then the
   // more horizontal move, then east, then south. Written as a comparison of the move (dx, dy) alone,
   // so the answer cannot depend on the order the square is scanned in.
-  const cost = (move: Coord): number => Math.abs(move.x) + ARM_VERTICAL_COST * Math.abs(move.y)
+  const cost = (move: Coord): number => Math.abs(move.x) + TUNING.armVerticalCost * Math.abs(move.y)
   const better = (a: Coord, b: Coord): boolean => {
     const da = cost(a)
     const db = cost(b)
@@ -671,8 +659,9 @@ export function armingSpot(
   }
   for (const needSpace of [true, false]) {
     let best: Coord | null = null
-    for (let dy = -ARM_SEARCH_TILES; dy <= ARM_SEARCH_TILES; dy += 1) {
-      for (let dx = -ARM_SEARCH_TILES; dx <= ARM_SEARCH_TILES; dx += 1) {
+    const reach = TUNING.armSearchTiles
+    for (let dy = -reach; dy <= reach; dy += 1) {
+      for (let dx = -reach; dx <= reach; dx += 1) {
         const anchor = anchorOf({ x: cursor.x + dx, y: cursor.y + dy })
         if (!fits(anchor) || (needSpace && !spaced(anchor))) continue
         const move = { x: dx, y: dy }
@@ -866,7 +855,7 @@ function armItem(context: BuildContext, state: BuildState, index: number, from: 
     return {
       ...moved,
       noSpotFound: true,
-      status: status(`${item.label} selected - no room within ${ARM_SEARCH_TILES} tiles, move to find one.`, "warning"),
+      status: status(`${item.label} selected - no room within ${TUNING.armSearchTiles} tiles, move to find one.`, "warning"),
     }
   }
   return { ...moved, noSpotFound: false, status: NO_STATUS }
