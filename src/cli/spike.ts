@@ -217,8 +217,8 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
   // **The screen's clock lives here, never in the reducer** (gate 5H). Everything that moves between
   // commands — the view sliding to a new position, the cursor gliding to a new tile, a menu row's
   // flash, the cursor's flash on a refused placement, a building going up (gate 5I), the focus arrow
-  // and the cursor's blink (feedback F54), the menu turning into a card (F68), the Battle Round screen's
-  // breathing border (F80) — is
+  // and the cursor's blink (feedback F54), the menu turning into a card (F68), a popup's
+  // border flashing and breathing (F80, F83) — is
   // `BuildAnimation`'s pure function of the state and the time read here, and the frame timer below
   // runs only while one of them is still moving; an idle screen draws once per input, as it always
   // has. The same clock times how far a cursor key moves — taps counted, holds on the game's cadence —
@@ -279,8 +279,8 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
             settings.capability,
           )
     // The frame timer runs while anything is still moving: an animation, or a Pulse that is playing (which
-    // wants the very next frame, a frame's length away, whatever an animation says). The Battle Round
-    // screen's breath alone asks for fewer frames (`frameMs`).
+    // wants the very next frame, a frame's length away, whatever an animation says). A popup
+    // border's breath alone asks for fewer frames (`frameMs`).
     const pulseBusyUntil = gated ? null : (build.pulse?.busyUntil(now) ?? null)
     scheduleFrame(pulseBusyUntil ?? live?.busyUntil ?? null, now, pulseBusyUntil === null ? live?.frameMs : undefined)
     if (frame.width !== lastFrame.width || frame.height !== lastFrame.height) {

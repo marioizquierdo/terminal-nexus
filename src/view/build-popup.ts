@@ -3,6 +3,7 @@
 
 import { CONTROLS_KEYS_WIDTH } from "../build/help.ts"
 import { popupSpec, placePopup, settingColumns } from "../build/popup.ts"
+import type { Popup } from "../build/types.ts"
 import type { BandCell, CellStyle } from "./frame.ts"
 import { BANDS } from "./frame.ts"
 import { put, text } from "./draw.ts"
@@ -12,12 +13,26 @@ import type { GlyphPack } from "./theme.ts"
 import type { BuildCompositionInput } from "./build.ts"
 import { HIGHLIGHT_BAR, drawHighlightBar, rowParts } from "./build-menu.ts"
 
+// --- The popup border's effect ------------------------------------------------------------------------
+//
+// Every popup's border is alive (owner, 2026-09-30, feedback F83: "This subtle version works well for all
+// popups because it is very unobtrusive"), in two parts:
+//
+//   - an optional **opening**, played once from the moment the popup opened, which overrides the rest
+//     while it plays — today only the Battle Round screen's **double flash** ("an initial double flash
+//     pulse, with more contrast range, that works as a highlight"). Which popup has which is the table
+//     `POPUP_OPENINGS`, never a test in the drawing;
+//   - the **breath**, the steady part (F80): slowly a little lighter and a little darker for as long as
+//     the popup stays open, starting at rest the moment the opening ends — and the flash ends at rest, so
+//     the handover has no jump.
+//
+// Both are shading — a glyphless tint or fade of the border's own role — and both are pure functions of
+// the time since the popup opened, which the live loop hands the view (`PopupBorder`). Absent — every
+// still frame, every test, every scripted playtest — the border is at rest.
+
 /**
- * A popup's border **breathing** (owner, 2026-09-30, feedback F80, of the Battle Round screen: "a pulse
- * effect on the border, it doesn't need to be intense, just relaxing turning a bit lighter and darker to
- * create dynamism"): the live loop's clock on it, from the frame the popup first showed, and how long one
- * breath lasts (the "Battle Round pulse" Experiment). The live loop supplies it for the Battle Round
- * screen alone; absent — every still frame, every test, every scripted playtest — the border is at rest.
+ * One breath's clock: how far into it, and how long one lasts — the breath's part of `PopupBorder`, as
+ * its own shape for `breathLevel` and `breathStyle`.
  */
 export type PopupBreath = Readonly<{ elapsedMs: number; lengthMs: number }>
 
@@ -40,15 +55,89 @@ export function breathLevel(breath: PopupBreath): number {
   return Math.sin(2 * Math.PI * phase)
 }
 
+/** Tints and fades are rounded to a thousandth, so an effect's very ends are exactly at rest. */
+const thousandth = (value: number): number => Math.round(value * 1000) / 1000
+
 /** The style a breathing border adds at this instant: a tint toward the title's colour on the lighter
- *  half, a fade toward the background on the darker, rounded to a thousandth so the very ends of a breath
- *  are exactly at rest. Nothing without a breath. */
+ *  half, a fade toward the background on the darker. Nothing without a breath. */
 export function breathStyle(breath: PopupBreath | undefined): Pick<CellStyle, "tint" | "fade"> {
   if (breath === undefined) return {}
   const level = breathLevel(breath)
-  const amount = Math.round(Math.abs(level) * (level > 0 ? BREATH_DEPTH.lighter : BREATH_DEPTH.darker) * 1000) / 1000
+  const amount = thousandth(Math.abs(level) * (level > 0 ? BREATH_DEPTH.lighter : BREATH_DEPTH.darker))
   if (amount <= 0) return {}
   return level > 0 ? { tint: { role: "chrome.title", amount } } : { fade: amount }
+}
+
+/**
+ * The **double flash** a popup can open with (F83): `count` quick pulses of the border toward the title's
+ * colour, each `flashMs` long — struck up to `peak` (0 to 1; 1 is the title's colour itself) and fading
+ * back to rest — with `gapMs` at rest between two. Far past the breath's depth on purpose, so it reads as
+ * a highlight; short and only twice, so it never reads as an alarm. A first guess, meant to become an
+ * Experiment: the live loop is handed it with its other timings (`LiveTuning.popupFlash`).
+ */
+export type PopupFlash = Readonly<{ count: number; flashMs: number; gapMs: number; peak: number }>
+
+export const POPUP_FLASH: PopupFlash = { count: 2, flashMs: 220, gapMs: 90, peak: 0.8 }
+
+/** The openings a popup can have, by name. One today. */
+export type PopupOpening = "double-flash"
+
+/**
+ * Which popup opens with what (F83) — data, so a new popup or a new opening is a line here. A popup not
+ * named opens straight into the breath.
+ */
+export const POPUP_OPENINGS: Readonly<Partial<Record<Popup, PopupOpening>>> = { "battle-round": "double-flash" }
+
+/** How long a flash opening lasts, from the popup opening to its last pulse back at rest. */
+export function flashLengthMs(flash: PopupFlash): number {
+  const count = Math.max(0, Math.floor(flash.count))
+  const flashMs = Math.max(0, flash.flashMs)
+  return count === 0 || flashMs === 0 ? 0 : count * flashMs + (count - 1) * Math.max(0, flash.gapMs)
+}
+
+/** How far into a pulse its height comes: struck fast, faded slower. */
+const FLASH_RISE = 0.25
+
+/** Where a flash opening is at `elapsedMs` after the popup opened: 0 at rest, 1 at a pulse's height. Each
+ *  pulse is struck fast (a quarter sine over its first quarter) and fades slower (a half cosine over the
+ *  rest), the way a light is struck and dies away; 0 between pulses, and before and after the whole. */
+export function flashLevel(flash: PopupFlash, elapsedMs: number): number {
+  const length = flashLengthMs(flash)
+  if (!(elapsedMs >= 0 && elapsedMs < length)) return 0
+  const into = elapsedMs % (flash.flashMs + Math.max(0, flash.gapMs))
+  if (into >= flash.flashMs) return 0
+  const u = into / flash.flashMs
+  return u < FLASH_RISE
+    ? Math.sin((Math.PI / 2) * (u / FLASH_RISE))
+    : (1 + Math.cos(Math.PI * ((u - FLASH_RISE) / (1 - FLASH_RISE)))) / 2
+}
+
+/**
+ * A popup border's clock, handed to the view by the live loop while a popup is open and its border moves:
+ * how long ago the popup opened, the opening it plays (`null`: none, or one this frame cannot show), and
+ * how long one breath lasts (`null`: still once any opening is over).
+ */
+export type PopupBorder = Readonly<{ elapsedMs: number; opening: PopupFlash | null; breathMs: number | null }>
+
+/** How long a border's opening lasts: 0 without one. */
+export function openingLengthMs(border: Pick<PopupBorder, "opening">): number {
+  return border.opening === null ? 0 : flashLengthMs(border.opening)
+}
+
+/**
+ * The style a popup's border adds at this instant: the opening's while it plays — a tint toward the title's
+ * colour, `peak` at a pulse's height — and then the breath, begun at rest the moment the opening ended. A
+ * pure function of the border's clock, like every effect.
+ */
+export function popupBorderStyle(border: PopupBorder | undefined): Pick<CellStyle, "tint" | "fade"> {
+  if (border === undefined) return {}
+  const openingMs = openingLengthMs(border)
+  if (border.opening !== null && border.elapsedMs < openingMs) {
+    const amount = thousandth(flashLevel(border.opening, border.elapsedMs) * border.opening.peak)
+    return amount <= 0 ? {} : { tint: { role: "chrome.title", amount } }
+  }
+  if (border.breathMs === null) return {}
+  return breathStyle({ elapsedMs: border.elapsedMs - openingMs, lengthMs: border.breathMs })
 }
 
 /**
@@ -57,8 +146,8 @@ export function breathStyle(breath: PopupBreath | undefined): Pick<CellStyle, "t
  * with the title in it, and a one-cell shadow that blanks what is behind it, so it cannot be missed
  * (owner, 2026-09-27: he clicked Nexus, did not notice the popup, and thought the mouse had stopped
  * working). No `[esc]` in the border since feedback F37: the top bar's "close [esc]" says it. Beside a
- * list that overflows, the right border is its scroll bar (F36). Given a breath (`popupBreath`, the
- * Battle Round screen's, F80), the border turns slowly a little lighter and a little darker.
+ * list that overflows, the right border is its scroll bar (F36). Given the border's clock
+ * (`popupBorder`), the border plays its opening, if it has one, then breathes (F80, F83).
  *
  * Drawn last in the chrome band: bands are fixed (engine.md 9.4, RULE), and within one band a later
  * write replaces an earlier one, so a popup needs no band of its own to sit on top.
@@ -75,9 +164,9 @@ export function drawPopup(cells: BandCell[], input: BuildCompositionInput, pack:
   for (let y = box.top + 1; y <= box.bottom + 1; y += 1) put(cells, band, box.right + 1, y, shade, "chrome.frame", { dim: true })
   for (let x = box.left + 1; x <= box.right + 1; x += 1) put(cells, band, x, box.bottom + 1, shade, "chrome.frame", { dim: true })
 
-  // The border's own style: inverse, so the frame role is its fill — and, while the popup breathes, that
-  // fill a little lighter or darker (F80). The shadow and the title stay as they are.
-  const border: CellStyle = { fgRole: "chrome.frame", inverse: true, ...breathStyle(input.popupBreath) }
+  // The border's own style: inverse, so the frame role is its fill — and, while the border moves, that
+  // fill flashed or breathed lighter or darker (F80, F83). The shadow and the title stay as they are.
+  const border: CellStyle = { fgRole: "chrome.frame", inverse: true, ...popupBorderStyle(input.popupBorder) }
   const borderCell = (x: number, y: number, glyph: string, extra: Pick<CellStyle, "bold"> = {}): void => {
     cells.push({ band, x, y, cell: { glyph, style: { ...border, ...extra } } })
   }

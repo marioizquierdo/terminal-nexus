@@ -35,13 +35,16 @@
 //     rows fade, the chosen row slides up to the header, the card types in). The reducer never hears
 //     of it: this loop watches the state turn into a card the way it watches the plan grow. Closing a
 //     card is instant;
-//   - **the Battle Round screen breathes** (feedback F80): while its popup is open, its border turns
-//     slowly a little lighter and a little darker, one breath every "Battle Round pulse" Experiment
-//     milliseconds, timed from the frame that first showed the popup. It is the one thing here that
+//   - **a popup's border moves** (feedback F80, F83): timed from the frame that first showed the popup
+//     — any popup, and again whenever another replaces it — its border plays the popup's **opening**
+//     if it has one (`POPUP_OPENINGS`: the Battle Round screen's double flash, `popupFlash`), drawn
+//     every frame, and then **breathes**, slowly a little lighter and a little darker, one breath every
+//     "Battle Round pulse" Experiment milliseconds, from rest. The breath is the one thing here that
 //     never settles, so while it is the only thing moving the frame timer runs at `BREATH_FRAME_MS`
-//     rather than every frame (`frameMs`), and it stops the frame the popup closes. The Experiment at 0,
-//     reduced motion, or a colour depth with no blend to show it (16 colours, monochrome) keep the
-//     border still and the timer quiet.
+//     rather than every frame (`frameMs`), and it stops the frame the last popup closes. Reduced motion
+//     and monochrome keep the border still; 16 colours, whose tint is a step rather than a blend, shows
+//     the flash (two steps onto the title's colour) but not the breath; the Experiment at 0 stops only
+//     the breath.
 //
 // The numbers in backticks are the owner's tuned values (`src/build/tuning.ts`), which a `BuildAnimation`
 // is handed when it is made (a test hands it others).
@@ -65,7 +68,9 @@ import type { BuildState } from "../build/state.ts"
 import { cardEntry } from "../build/state.ts"
 import type { Tuning } from "../build/tuning.ts"
 import { TUNING } from "../build/tuning.ts"
-import type { BuildCompositionInput, CardReveal, PopupBreath, RowAck } from "./build.ts"
+import type { BuildCompositionInput, CardReveal, RowAck } from "./build.ts"
+import type { PopupBorder, PopupFlash } from "./build-popup.ts"
+import { POPUP_FLASH, POPUP_OPENINGS, openingLengthMs } from "./build-popup.ts"
 import type { CapabilityMode } from "./roles.ts"
 import type { Footprint } from "../grid/types.ts"
 import type { PlacedStructure, PlacementClock, PlacementTuning, RemovalClock } from "./placement.ts"
@@ -91,14 +96,14 @@ export type LivePresentation = Pick<
   | "handoffFlight"
   | "cursorBlink"
   | "cardReveal"
-  | "popupBreath"
+  | "popupBorder"
 >
 
 /** Everything time-dependent the frame at one instant shows — always a camera and a cursor, the state's
  *  own once they have finished moving — and when the last thing still moving ends, or `null` when
  *  nothing is. `frameMs` is present only when the one thing moving is slow enough to be drawn less often
- *  than every frame — the Battle Round screen's breath — and says how often: `busyUntil` is then that
- *  long from now, the next frame the breath needs. */
+ *  than every frame — a popup border's breath — and says how often: `busyUntil` is then that long from
+ *  now, the next frame the breath needs. */
 export type LiveFrame = LivePresentation &
   Readonly<{ camera: Camera; cursor: Coord; busyUntil: number | null; frameMs?: number }>
 
@@ -112,15 +117,29 @@ export function livePresentation(live: LiveFrame): LivePresentation {
 const breathShows = (capability: CapabilityMode | undefined): boolean =>
   capability === undefined || capability === "truecolor" || capability === "color256"
 
+/** Whether a colour depth can show a flash: a blend at 256 colours and millions, and at 16 colours a step
+ *  onto the title's colour from half the flash's height up — two short steps, a highlight rather than a
+ *  blink, since it plays once. Monochrome has no colour to move. */
+const flashShows = (capability: CapabilityMode | undefined): boolean => capability !== "monochrome"
+
 /**
- * How long one breath of the Battle Round screen's border lasts in this frame, or `null` when the border
- * is still: another popup or none, the "Battle Round pulse" Experiment at 0, reduced motion, or a colour
- * depth that cannot show it (feedback F80).
+ * What the open popup's border plays in this frame (feedback F80, F83) — its opening, from
+ * `POPUP_OPENINGS` and timed by `flash`, and the length of one breath — with `null` for a part this frame
+ * does not show; `null` altogether when the border is still: no popup, reduced motion, or neither part
+ * showing. The breath's length is the "Battle Round pulse" Experiment's, for every popup; at 0 it stops.
  */
-export function breathLengthMs(state: BuildState, reducedMotion: boolean, capability?: CapabilityMode): number | null {
-  if (state.popup !== "battle-round" || reducedMotion || !breathShows(capability)) return null
+export function popupBorderEffect(
+  state: BuildState,
+  reducedMotion: boolean,
+  capability?: CapabilityMode,
+  flash: PopupFlash = POPUP_FLASH,
+): Pick<PopupBorder, "opening" | "breathMs"> | null {
+  if (state.popup === null || reducedMotion) return null
+  const opening = POPUP_OPENINGS[state.popup] === "double-flash" && flashShows(capability) ? flash : null
   const lengthMs = state.experiments.battleRoundPulseMs
-  return lengthMs > 0 ? lengthMs : null
+  const breathMs = lengthMs > 0 && breathShows(capability) ? lengthMs : null
+  const effect = { opening, breathMs }
+  return breathMs === null && openingLengthMs(effect) === 0 ? null : effect
 }
 
 /**
@@ -178,8 +197,9 @@ export function handoffAt(
 export type LiveOptions = Readonly<{
   reducedMotion?: boolean
   /** The colour depth the frame is drawn at — the player's setting on the live screen. At 16 colours and
-   *  in monochrome the Battle Round breath cannot show, so it neither ticks the frame timer nor is handed
-   *  to the view. Absent (a test), a depth that shows it. */
+   *  in monochrome a popup border's breath cannot show, nor in monochrome its opening flash, so what
+   *  cannot show neither ticks the frame timer nor is handed to the view. Absent (a test), a depth that
+   *  shows everything. */
   capability?: CapabilityMode
   /** A structure's footprint, for the placement tracks. Only their shape depends on it — when each
    *  one settles, all this loop reads, depends on the timings alone — so without it (a test) every
@@ -193,7 +213,8 @@ const cameraAtTime = (tween: Tween<Camera>, now: number): Camera => tileAt(tween
 
 const offsetOf = (tile: Coord, camera: Camera): Point => ({ x: tile.x - camera.x, y: tile.y - camera.y })
 
-/** The tuned values the live loop times things by. */
+/** The tuned values the live loop times things by — and the popup opening's flash (F83), the view's own
+ *  first guess (`POPUP_FLASH`) unless a test or, later, an Experiment hands in another. */
 export type LiveTuning = Pick<
   Tuning,
   | "easeMs"
@@ -207,13 +228,16 @@ export type LiveTuning = Pick<
   | "placeFramesMs"
   | "placeGlowMs"
   | "placeSparks"
->
+> &
+  Readonly<{ popupFlash?: PopupFlash }>
 
 export class BuildAnimation {
   /** The tuned timings — the owner's (`TUNING`), unless a test hands in others. */
   private readonly tuning: LiveTuning
   /** The part of them a placement's track is timed by, handed to the view with the tracks it times. */
   private readonly placementTuning: PlacementTuning
+  /** The flash a popup that opens with one plays (F83). */
+  private readonly popupFlash: PopupFlash
   private ease: Tween<Camera> | null = null
   /** The cursor's place in the view — its tile less the camera's — on its way somewhere. */
   private glide: Tween<Point> | null = null
@@ -227,9 +251,10 @@ export class BuildAnimation {
    *  already showing when the screen first drew, which never plays a reveal — like a placement already
    *  planned then. */
   private seenCard: Readonly<{ entry: number | null; at: number | null; fromMenu: boolean }> | null = null
-  /** When the Battle Round screen's breath started — the first frame that showed its popup breathing —
-   *  or `null` while it is not breathing, so a popup opened again starts again at rest (F80). */
-  private breathSince: number | null = null
+  /** The popup open at the last frame and the first frame that showed it — what its border's opening and
+   *  breath are timed from (F80, F83) — or `null` with none open, so a popup opened again, or another
+   *  replacing it, starts again from its opening. Watched, not recorded: the reducer never hears of it. */
+  private seenPopup: Readonly<{ popup: NonNullable<BuildState["popup"]>; at: number }> | null = null
   /**
    * Each planned ordinal's animation track (`animation.ts`), by the one thing about it that varies:
    * when its `play` was requested — the first frame that drew it — or `null` for what was already
@@ -248,6 +273,7 @@ export class BuildAnimation {
   constructor(tuning: LiveTuning = TUNING) {
     this.tuning = tuning
     this.placementTuning = { placeFramesMs: tuning.placeFramesMs, placeGlowMs: tuning.placeGlowMs, placeSparks: tuning.placeSparks }
+    this.popupFlash = tuning.popupFlash ?? POPUP_FLASH
   }
 
   /**
@@ -414,15 +440,27 @@ export class BuildAnimation {
       }
     }
 
-    // The Battle Round screen breathing (F80): timed from the first frame that showed it, and never
-    // settling, so it asks for a frame only every `BREATH_FRAME_MS` — and only when nothing faster is
-    // moving, whose own ends keep the timer at every frame until they pass.
-    const breathMs = breathLengthMs(state, options.reducedMotion === true, options.capability)
-    if (breathMs === null) this.breathSince = null
-    else if (this.breathSince === null) this.breathSince = now
-    const popupBreath: PopupBreath | undefined =
-      breathMs === null || this.breathSince === null ? undefined : { elapsedMs: now - this.breathSince, lengthMs: breathMs }
-    const breathOnly = popupBreath !== undefined && ends.length === 0
+    // The open popup's border (F80, F83): timed from the first frame that showed the popup. Its opening
+    // is drawn every frame until it ends; the breath after it never settles, so it asks for a frame only
+    // every `BREATH_FRAME_MS` — and only when nothing faster is moving, whose own ends keep the timer at
+    // every frame until they pass.
+    if (state.popup === null) this.seenPopup = null
+    else if (this.seenPopup?.popup !== state.popup) this.seenPopup = { popup: state.popup, at: now }
+    let popupBorder: PopupBorder | undefined
+    let breathing = false
+    const effect = popupBorderEffect(state, options.reducedMotion === true, options.capability, this.popupFlash)
+    if (effect !== null && this.seenPopup !== null) {
+      const elapsedMs = now - this.seenPopup.at
+      const openingMs = openingLengthMs(effect)
+      if (elapsedMs < openingMs) {
+        popupBorder = { elapsedMs, ...effect }
+        ends.push(this.seenPopup.at + openingMs)
+      } else if (effect.breathMs !== null) {
+        popupBorder = { elapsedMs, ...effect }
+        breathing = true
+      }
+    }
+    const breathOnly = breathing && ends.length === 0
 
     return {
       camera,
@@ -435,7 +473,7 @@ export class BuildAnimation {
       ...(handoffFlight === undefined ? {} : { handoffFlight }),
       ...(cursorBlink ? { cursorBlink } : {}),
       ...(cardReveal === undefined ? {} : { cardReveal }),
-      ...(popupBreath === undefined ? {} : { popupBreath }),
+      ...(popupBorder === undefined ? {} : { popupBorder }),
       busyUntil: breathOnly ? now + BREATH_FRAME_MS : ends.length === 0 ? null : Math.max(...ends),
       ...(breathOnly ? { frameMs: BREATH_FRAME_MS } : {}),
     }
@@ -446,7 +484,7 @@ export class BuildAnimation {
 export const FRAME_MS = 16
 
 /**
- * How often the frame timer draws while the Battle Round screen's breath is the only thing moving: 20
+ * How often the frame timer draws while a popup border's breath is the only thing moving: 20
  * frames a second, a third of the fast rate. One breath lasts seconds and moves the border's colour by a
  * few dozen steps of 255, so that is still smooth, and it is the one animation that runs for as long as
  * the popup stays open — the ANSI writer sends the whole screen every frame, so a breath at 60 frames a
