@@ -1,475 +1,413 @@
 # Terminal Nexus — interface patterns
 
-**Document role:** The interaction and drawing patterns every interactive screen follows
-**Status:** WORKING — built on the Build Phase first; not canon yet (promoted into `specs/engine.md`
-Section 9 when the owner accepts them)
-**Updated:** 2026-09-30 (the menu spike, F52-F60: an active row reads `[x] Name  >>`, a focus arrow and cursor blink when a menu row hands the keyboard to the map, Left/Right only flicker, one list with `$` on top, a building's card while placing, the bottom line of contextual help, the Controls and hotkeys page — sections 0, 1, 2, 4, 5, 6, 8, 9); 2026-09-29 (gate 6A round 3: section 4's first rule — a menu can always be walked with Up, Down and Enter — and the Start button becoming the menu's last row and its question a "Battle Round 1" screen, sections 5 and 6; earlier the same day: section 6, the Start button, and section 7c, the Nexus Pulse on screen — gate 6A, and its second round: the timer, the light, and red kept for the Nexus being hurt; section 0, the UX goals read out of four rounds of feedback; round-4 feedback F30-F33: arming where the cursor is, focus that goes back to
-where it came from, one "active" style for every menu row, Explore Map as that style, removal sparks;
-F34-F37: the top bar names what Esc does; popups lose their `[esc]`, gain a message form and a scroll
-bar; Settings' layout; Restart in the game menu); 2026-09-28 (a click activates; Explore Map —
-round-3 feedback F22, F23; Settings, Experiments and the export, replacing Debug Mode's popup)
+**Document role:** The working guide to how every interactive screen looks and behaves
+**Status:** WORKING — built on the Build Phase; not canon until the owner accepts it and it is promoted into `specs/engine.md` Section 9
+**Updated:** 2026-09-30 (rewritten by pattern rather than by history, F74; the screen as the menu spike's second round leaves it, F61-F76)
 **License:** Apache-2.0
 
-These came out of the owner's playtests of the Build Phase (2026-09-26 and 2026-09-27; the item-by-item
-log is [`feedback/2026-09-27-build-phase-playtest.md`](feedback/2026-09-27-build-phase-playtest.md)).
-They are written as rules so the next screens — the Nexus Pulse view, the campaign menu —
-behave the same way without anyone re-deriving them. Where the Build Phase implements one, the file is
-named. When a new screen needs to break one, change this document in the same pull request and say
-why.
+## How to use this document
 
-## 0. What the interface is for — the UX goals
+For any agent or person about to build or change a screen, a menu, a popup, an effect or a key. Read
+**section 0, the goals, and the checklist below first**, then the sections you touch.
 
-The rules below are the letter; these are the spirit, read out of four rounds of the owner's feedback
-(2026-09-26 to 2026-09-29). When a screen needs something no rule covers, ask which of these it
-serves, and when two rules disagree, the goal decides. Each names where it showed up.
+- **When two rules disagree, or none covers the case, the goals decide.**
+- **A change that breaks a rule or adds a pattern updates this document in the same pull request**, and
+  says why. A new pattern gets a name here — a *hand-off*, a *card reveal*, a *see-through overlay* — so
+  the next screen reuses it; use the names in code comments and pull requests too.
+- **Numbers live in the code, not here**: the table of tuned values and the Experiments list
+  (`src/build/debug.ts`). This document says what a number is for.
+- The canon's interface rules are `specs/engine.md` 3.3, 9.2 and 9.7 and `specs/ascii-effects.md` 1.2;
+  where they speak, they win. `scripts/playtest.mjs` (the `playtest` skill) presses the keys for you.
+
+### Checklist for a new screen
+
+- [ ] It can be walked with Up, Down and Enter alone; every action is a row with a visible `[key]`.
+- [ ] A click on a row does what its key does.
+- [ ] Esc and `x` go back one level; only the game menu's Quit leaves.
+- [ ] The top bar's right end names what Esc does there.
+- [ ] The bottom line has a hint for every situation the screen can be in.
+- [ ] Lists stop at their ends; a held arrow ramps; Shift, PageUp/PageDown and Home/End jump to the ends.
+- [ ] Motion explains a change, then the screen is still.
+- [ ] It works under reduced motion, in monochrome, in ASCII, and at 80 × 24.
+- [ ] Anything the owner should feel rather than read about is an Experiment.
+
+## 0. The goals
+
+The rules are the letter; these are the spirit, read out of the owner's playtests.
 
 1. **Point at it or press it, and the same thing happens.** Keyboard, mouse, a finger and a script are
-   equal doors onto one set of commands. Every row shows its key and is clickable, and a click does
-   what its key does ("mobile tap, which for our code is the same as a mouse click, so we just call it
-   mouse click", F22). The keyboard is the floor, never the only way — and the floor of a menu is Up,
-   Down and Enter: hotkeys and clicks are shortcuts onto rows that can always be walked (F48).
-2. **Tell me where I am and what happens next.** Every situation has its own hint on the bottom line,
-   whatever is under way is marked, and a label says what a key will *do*, not what state we are in:
-   the top bar reads `menu [esc]`, `back [esc]`, `close [esc]` (F32, F37). Say the result and the way
-   back on the bottom line; when there is no result to say, say what can be done here (F59).
-3. **Don't move things under the player.** A picked building appears where the cursor already is;
-   finishing goes back to where you began; a popup keeps its height as the highlight moves; a list
-   scrolls instead of jumping; a double click places where you pointed even if the view moved (F22,
-   F30, F35). Whatever the player was looking at should still be there afterwards.
-4. **Suggest, never insist.** The game proposes — the nearest good spot, the building's own ghost
-   instead of a red `x`, "restart later" as a warning rather than a wall — and one key overrules it.
-   Recommend early and nearby; refuse late and in words (F30, F34).
-5. **One pattern, said once.** One active style for every menu row, one popup shape, one Esc, one scroll
-   bar. When he spots a pattern he asks for it to be the same everywhere, "so if we decide to change or
-   style it later, it will be consistent to all menu items" (F32). Before drawing something new, find
-   the pattern that already exists; if you need a variant, change the pattern.
-6. **Every cell earns its place.** Take away what restates the obvious: "^ 9 more" (the scrolling says
-   so), a "now" column (say "restart" only when it matters), `[esc]` in every popup (the top bar has
-   it), a separate divider column (F25, F34-F37). The freed space goes to what he is looking at.
-7. **Motion explains change, and nothing else moves.** Every camera and cursor move is interpolated;
-   what just happened is animated briefly (a building rising, sparks) and then the screen is still;
-   reduced motion snaps. Effects are presentation and never touch the plan (F20, F26, F27). "Interpolation
-   is easy and powerful" — reach for it before a jump cut.
-8. **Taps are precise, holds are fast.** One press is one tile; holding accelerates; a long move is also
-   a single key (Shift jumps 12), so speed is never required to get anywhere (F21, F29). Feel numbers
-   are Experiments until he has felt them.
-9. **The world may style its own frame.** A map names its own edge, and the rugged edge "even in ascii
-   mode" is what he loved most (F38). Content brings personality to the chrome, and the chrome stays
-   legible in monochrome and ASCII first.
+   equal doors onto one set of commands. The floor of a menu is Up, Down and Enter; "the hotkeys and
+   mouse clicks are the additional enhanced functionality."
+2. **Tell me where I am and what happens next.** What is under way is marked, every situation has a hint,
+   and a label says what a key will *do* (`back [esc]`), not what state we are in.
+3. **Don't move things under the player.** A picked building appears where the cursor is; finishing goes
+   back to where you began; a popup keeps its height; a double click places where you pointed.
+4. **Suggest, never insist.** The game proposes — the nearest good spot, "restart later" as a warning —
+   and one key overrules it. Recommend early and nearby; refuse late and in words.
+5. **One pattern, said once.** One active style, one popup shape, one back, one way to move in a list,
+   "so if we decide to change or style it later, it will be consistent to all menu items". Need a
+   variant? Change the pattern.
+6. **Every cell earns its place.** Remove what restates the obvious — "^ 9 more", `[esc]` in every popup,
+   a position readout, a Back row — and give the space to what the player looks at.
+7. **Motion explains change, then the screen is still.** "Interpolations are easy and powerful": reach
+   for one before a jump cut. Done well, motion makes the game "look a LOT more legit, while also
+   helping with usability".
+8. **Taps are precise, holds are fast.** One press is one step, holding accelerates, and a long move is
+   one key, so speed is never required — on the map and in every list alike.
+9. **The world may style its own frame.** A map names its own edge ("even in ascii mode"); the chrome
+   stays legible in monochrome and ASCII first.
 10. **Give him something to feel, not something to judge.** A fork ships as an Experiment he can flip,
-    and his exported settings are the answer (F19). Agents add Experiments freely and remove them when
-    answered.
-11. **Degrade gracefully, enhance progressively.** It works on a bare terminal — ASCII, monochrome, no
-    mouse, no key-up — and gets better where the host offers more: Unicode, truecolour, a pointer, key
-    releases (Q66). Never require the enhanced path, and always keep the plain one working.
-12. **Keep what the player made safe.** Leaving asks, a stray key never loses a plan, undo exists, a
-    restart is a choice and not a surprise (F13, F34).
-13. **Portable by construction.** The screen is a grid of styled cells plus a fixed set of commands; any
-    host that can draw cells and deliver keys and a pointer can run the game. The one capability a host
-    must do *well* is map navigation
+    and his exported settings are the answer.
+11. **Degrade gracefully, enhance progressively.** A bare terminal — ASCII, monochrome, no mouse, no
+    key-up — works; Unicode, truecolour, a pointer and key releases make it better, never required.
+12. **Keep what the player made safe.** Leaving asks, a stray key never loses a plan, undo exists.
+13. **Portable by construction.** Styled cells plus a fixed set of commands; any host that draws cells
+    and delivers keys and a pointer can run the game, and must do map navigation well
     ([`portability.md`](portability.md)).
 
-## 1. Focus
+## 1. The screen and the keyboard
 
-- **One place has the keyboard at a time**, and the screen shows exactly one "you are here" for it:
-  the menu's highlight bar, or the map cursor — never both. (`BuildState.focus`; the cursor is drawn
-  only while the Grid has focus.)
-- **The highlight bar means "the keyboard is here, not chosen yet"** — and only that (feedback F22).
-  It is a keyboard idea: after the mouse works the menu it is not drawn, and the first menu key only
-  shows it again, on the row it remembers, and does nothing else (`BuildState.highlightHidden`).
-  Something chosen — an armed building — is marked as chosen (section 4), never with the bar.
-- **The bottom line starts from where the keyboard is** (feedback F59): with no answer to give, it says
-  what can be done there — the highlighted menu row, placing, Explore Map, the map, or the open popup.
-  (`HINTS` in `src/build/help.ts`; section 8.)
-- **Focus is state, not adapter memory**, so a script can set it and a test can read it.
-- **Finishing goes back to where it started** (owner, 2026-09-29, feedback F30). Placing and Explore
-  Map remember where they were begun (`BuildState.origin`): begun on the map — a digit pressed there,
-  Enter/Space or `e` in plain navigation — a placement or Esc leaves the keyboard on the map in plain
-  navigation, the cursor where it was; begun on the menu — Enter/Space or a click on a row, or a digit
-  while the menu had the keyboard — they go back to the menu, on the same row (with nothing looking
-  chosen after the mouse). A placement begun on the menu comes back with the building's row flashing
-  once, to bring the eye back to it (F55). The menu still orchestrates; the map is a place to work from
-  too.
-- **A mode has one meaning per key.** Arrows and Enter/Space follow focus; nothing else does. Digits
-  always arm their row; letters always name commands, from any focus.
-- **Several ways in, all shown**: Tab toggles, and a click on the area moves the keyboard there.
-  **Left and Right on the menu only flicker the highlighted row**; the keyboard stays on the menu
-  (owner, 2026-09-30, feedback F55: "it's better that the focus stays on the menu, but it is good that
-  the menu item blinks when pressing left or right" — reversing Right twice).
-- **A hand-off is shown** (feedback F54): when a menu row gives the keyboard to the map — a building
-  armed, or Explore Map opened, from the menu — a **focus arrow** flies from the row's `>>` to the
-  cursor and the cursor **blinks twice** in the pressed look when it lands, to bring the eye there. Keys
-  work at once. Never on the way back (the row lit again says where you are) and never for Tab. Both
-  are Experiments (`d`: Focus arrow, Cursor blink).
-- **The map has three modes, each with its own hint**: placing (a building armed, its ghost at the
-  cursor, its card in the panel — section 6), Explore Map (nothing armed; the panel describes what is
-  under the cursor), and **plain navigation**: the bare cursor with the menu left beside it, so the
-  next click can arm a building from it. Tab, a click on the map and finishing something begun on the
-  map all arrive in plain navigation; Explore Map is reached only by `e`, its menu row,
-  and Enter/Space in plain navigation.
-- **The screen opens on the menu, at Explore Map** (owner, 2026-09-29, feedback F31), and the map
-  cursor, not yet drawn, **on the player's Grid Nexus** — where nothing has been pointed at yet.
-- **Arming puts the building where the cursor is** (feedback F30): a digit, Enter on a row or a click
-  on it keeps the cursor where it is when the building fits there. Otherwise the cursor moves to the
-  nearest spot within 12 tiles of it that leaves one free tile between the building and every other
-  structure, or, with none in reach, the nearest that fits at all — nearest by the cursor's move, a
-  tile across costing 1 and a tile up or down 2, so a run grows to the right ("in most cases this
-  should move the cursor only a few tiles to the right", owner, 2026-09-29); ties to the more
-  horizontal move, then east, then south (`armingSpot` in `src/build/state.ts`).
-  With nothing in reach the cursor steps one tile right and one down and the building is drawn as
-  itself, not as the refusal's `x`, until the player moves or tries to place. **Never from the last
-  building placed**: press a building's key again right after placing one and the cursor, still on the
-  new one, moves a gap away from it.
+- **Four regions.** The **top bar** (whole width): the title, where the player is, and at its right end
+  what Esc does. The **side panel**, on the left because building comes first: the menu, a card, or the
+  Nexus Pulse's panel. The **map**, a closed rectangle whose west side is the panel's divider. The
+  **bottom line** (whole width): one line of contextual help. Popups open over the map. At 80 × 24 the
+  map shows 49 × 18 tiles.
+- **One place has the keyboard**, shown by exactly one "you are here": the menu's highlight bar or the
+  map cursor, never both. Focus is state (`BuildState.focus`), so a script sets it and a test reads it.
+- **The highlight bar means "the keyboard is here, not chosen yet"** and nothing else. After the mouse
+  works the menu it is hidden, and the next menu key only shows it again (`BuildState.highlightHidden`).
+- **A key means one thing per screen.** Arrows and Enter/Space follow focus; digits always address their
+  row; letters always name commands. Tab toggles focus; Left and Right on the menu only flicker the row.
+- **The map has three modes, each with its own hint**: **placing** (a building armed, its ghost at the
+  cursor, its card in the panel), **Explore Map** (the panel describes what is under the cursor) and
+  **plain navigation** (the bare cursor, the menu beside it). Tab and a click on the map arrive in plain
+  navigation; Explore Map is `e`, its row, or Enter/Space in plain navigation.
+- **Finishing goes back to where it began** (`BuildState.origin`): begun on the map, it ends in plain
+  navigation with the cursor where it was; begun on the menu, it ends on the same row, and a placement
+  flashes that row once to bring the eye back.
+- **The Build Phase opens on the menu at Explore Map**, the cursor (not yet drawn) on the player's Grid
+  Nexus.
 
-## 2. Back, cancel and close
+## 2. Keys and clicks
 
-- **Esc, `x` and a right click are one command** (`cancel`) and always mean the same thing.
-- **Esc walks back one level at a time**: a popup (to the popup it was opened from, if any — Settings
-  to the game menu, the export to Settings), then placing or Explore Map to where it was begun (plain
-  navigation on the map, or the menu), then plain navigation to the menu, then on the menu it opens
-  the **game menu**. Esc never leaves the game by itself. A key that opened something closes it the
-  same way (`e` for Explore Map, `n` for the Nexus popup, `d` for Settings).
-- **The game menu is the way out, the way to Settings and the controls, and the way to start over**
-  (owner, 2026-09-28; Restart since 2026-09-29, F34; Controls since 2026-09-30, F60): `[s] Settings`,
-  `[c] Controls and hotkeys`, `[r] Restart` (the Build Phase over, every setting and experiment kept,
-  the plan lost), `[q] Quit`, `[esc] Back to the game`. Esc on the menu and `q` anywhere open it. The
-  Controls page opened from it goes back to it on its own row; opened with `?` from the game, Esc
-  closes it.
-- **The top bar's right end says what Esc does right now** (owner, 2026-09-29, F37): `menu [esc]` on
-  the menu (and on a committed Build Phase), `back [esc]` while the map has the keyboard (placing,
-  Explore Map, or plain navigation), `close [esc]` while a popup is open. The action first and
-  the key after it, as a way back reads; the name quiet, the key in the hotkey colour. **A click on it
-  sends exactly what Esc sends** — one level back, so over Settings opened from the game menu it goes
-  back to the game menu, where a click outside would close both. It is the one place Esc is named:
-  popups do not carry their own. (`escLabel` and `escHintSpan` in `src/build/layout.ts`.)
-- **Leaving always asks**: only the game menu's own `[q]` (or Enter or a click on its Quit row) quits.
-  Ctrl+C is the one immediate way out.
-- **A building is armed only while the map has focus.** Anything that takes the keyboard off the map
-  disarms, so a stale ghost can never sit on the map while you work the menu.
+- **Every action is a named command**; keyboard, mouse and a script are adapters onto one vocabulary
+  (`specs/engine.md` 9.7), and tests drive the real adapters with raw keys and clicks.
+- **A click activates what it lands on**, from any focus: a building's row arms it, `[n] Nexus` opens its
+  popup, `[e] Explore Map` opens it. What a row click starts comes back to the menu.
+- **A click can only choose what it could see**: while a card covers the menu, a click on the panel goes
+  back and chooses nothing. **A click outside a popup** closes it and moves focus there, nothing more.
+- **Whole rows are targets**, as wide as the highlight bar, and **drawing and hit-testing read one
+  geometry** (`buildLayout` in `src/build/layout.ts`, the placed popup in `src/build/overlay.ts`).
+- **A right click is `x`.** **The wheel** moves the map cursor five tiles (never a second camera) and
+  walks a popup's list.
 
-## 3. Mouse
+## 3. Back, cancel and close
 
-- **A click activates what it lands on** (owner, 2026-09-28, feedback F22 — reversing the 2026-09-27
-  rule that a first click on the menu only highlighted). A click on a building's row arms it at once,
-  whatever had focus: the map takes the mouse with the ghost at the cursor when it fits there — where
-  the player was pointing — and otherwise at the nearest good spot, exactly as a key would. A click on
-  `[n] Nexus` opens its popup; on `[e] Explore Map`, Explore Map. A click on a row is the menu's, so
-  what it starts comes back to the menu. Only the keyboard has a "highlighted, not yet chosen" state.
-- **A click can only choose what it could see.** While Explore Map covers the menu, a click anywhere
-  on the panel — its own active row included — closes it, as Esc does, and chooses nothing.
-- **A second click on the same tile confirms**, compared by tile, never by screen cell. A placement
-  armed from the menu returns the menu with nothing looking chosen ("focused but unselected").
-- **A click outside a popup closes it** and moves focus to where it landed — and does nothing else, so
-  a dismissing click never also places or picks.
-- **Whole rows are click targets**, the same width the highlight bar is drawn.
-- **Hit-testing and drawing read one geometry** (`src/build/layout.ts`, `src/build/overlay.ts`), so a
-  click can never land on something the frame drew elsewhere.
+**Esc or `x` closes any popup, or cancels what is under way on the map, one level at a time.** A right
+click is `x`.
+
+- **One level per press**: a popup goes back to the one it was opened from (Settings to the game menu,
+  the export to Settings, the restart message to the game menu's Restart row) or closes; placing or Explore Map goes back to
+  where it began; plain navigation goes to the menu.
+- **Only Esc opens the game menu.** On the menu nothing is left to cancel: Esc opens the game menu, and
+  `x` and a right click stop there — `x x x` always lands on the menu with the keyboard on it. `q` opens
+  the game menu from anywhere.
+- **The key that opened something closes it**: `e`, `n`, `d`, and a building's own digit while it is
+  being placed. (On the Battle Round screen `s` confirms instead: starting takes two deliberate presses.)
+- **No popup carries its own way back** — no `[esc] Back` row, no `[esc]` in its border. **The top bar's
+  right end says what Esc does now**: `menu [esc]` on the menu and while a Pulse plays, `back [esc]` on
+  the map, `close [esc]` over a popup — the action quiet, the key in the hotkey colour. A click on it is
+  exactly Esc (`escLabel` in `src/build/layout.ts`).
+- **The game menu** is `[s] Settings`, `[c] Controls and hotkeys`, `[r] Restart` (the plan lost, settings
+  and Experiments kept) and `[q] Quit`. **Leaving always asks**; Ctrl+C is the one immediate way out.
 
 ## 4. Menu rows
 
-- **A menu can always be walked with Up, Down and Enter alone** (owner, 2026-09-29, feedback F48: "It
-  is important that the menu can always be navigated with up/down/enter. The hotkeys and mouse clicks
-  are the additional enhanced functionality."). Every action a menu offers is a row in it, in the
-  order Up and Down walk, and Enter (or Space) on the highlighted row does what the row's hotkey and a
-  click on it do. A hotkey or a click is a shortcut to a row, never the only way to an action: an
-  action with a key or a button and no row makes the menu incomplete. (The boxed `[s] Start` button of
-  gate 6A was that — `s` and a click reached it, Up and Down did not — and became the menu's last
-  row.) The same holds for a popup's options. A test walks the whole menu with those three keys.
-- **Every row shows its hotkey** as `[x]` in the hotkey colour; the bracket survives monochrome.
-- **Two states, and only two** (owner, 2026-09-29, feedback F32), legible without colour:
-  - **highlighted** — an inverse bar across the whole row, one colour: where the keyboard is, not
-    chosen yet; drawn only while the menu has the keyboard;
-  - **active** — the row's action is under way. It reads **`[x] Barracks  >>`** (owner, 2026-09-30,
-    feedback F53): the hotkey shows as `[x]`, the key that ends it (Esc's other key), and `>>`
-    replaces the value at the right end, pointing at the map; the whole row in the hotkey's colour and
-    bold, its name underlined, and **no bar**. A building while it is armed, `[e] Explore Map` while
-    Explore Map is open, `[n] Nexus` while its popup is, `[s] Start Pulse` while its screen is — every
-    row either opens a popup or gives the map something to do (F52), and both kinds share the look.
-    One test says which rows are active (`menuRowActive`) and one function describes and draws every
-    row (`menuRowSpec`, `drawMenuRow`, in `src/view/build.ts`), so a later change to the style reaches
-    all of them. Legible in monochrome by the `[x]`, the `>>` and the underline.
-- **One list, no headings** (F56: "Remove the categories for now"): Explore Map, a blank line,
-  Nexus, a blank line, then every building in catalog order, one row each, and Start Pulse on the
-  panel's last line. A row the panel has no room for is neither drawn nor clickable. Headings come
-  back only when a real game shows a list too long to read.
-- **What there is to spend is the panel's top line** (F57): `$ 100`, right-aligned in the cost column
-  so it reads against the prices, no label, no maximum, on every panel (the menu and both cards).
-- Two brief flashes of the bar acknowledge a key: **pressed** — for a few frames after activation, a
-  stronger bar, bold and underlined, in the hotkey's colour; **refused** — for a few frames when a key
-  reached the row but had nothing to do (Left/Right, an unaffordable row): the bar dims and comes back.
-  A row that cannot be used now — an unaffordable one — is **disabled** (dimmed) in any of them.
-- **Timing lives in the live loop, not the reducer.** The reducer records an acknowledgement with a
-  sequence number (`BuildState.ack`); the terminal loop shows it for its duration from when it first
-  sees it (`src/cli/spike.ts`). Still frames — tests, screenshots — never carry one unless asked.
+- **A menu can always be walked with Up, Down and Enter alone.** Every action is a row in walking order,
+  and Enter (or Space) does what its hotkey and a click do; an action with only a key or a button makes
+  the menu incomplete. The same holds for a popup's options; a test walks the whole menu
+  (`tests/build-start.test.ts`).
+- **Every row shows its hotkey** as `[x]` in the hotkey colour; the bracket carries it in monochrome.
+- **Two states, and only two**:
+  - **highlighted** — an inverse bar across the row, in one colour, only while the menu has the keyboard;
+  - **active** — its action is under way: it keeps its own hotkey, turns the hotkey colour, and a single
+    **`>`** replaces its value at the right end, pointing at the map — `[1] Barracks  >`. No bar, no
+    underline. A building being placed, Explore Map open, the Nexus popup or the Battle Round screen
+    open: every row either opens a popup or gives the map something to do, and all share the look
+    (`menuRowActive`, `menuRowSpec`, `drawMenuRow` in `src/view/build.ts`).
+- **Two brief acknowledgements**: **pressed** — a stronger bar in the hotkey colour for a few frames
+  after activation, the look the cursor's blink borrows; and **refused** — when a key reached the row but
+  had nothing to do, **the words turn grey for a moment and the background stays**, reading "nothing
+  here" rather than a press (dim in monochrome).
+- **Disabled** rows (unaffordable, or Start Pulse before the Nexus pick) are dimmed, and pressing one is
+  refused with its reason on the bottom line.
+- **Timing lives in the live loop, never the reducer**: the reducer records an acknowledgement with a
+  sequence number (`BuildState.ack`) and `src/view/build-live.ts` shows it from the frame that first
+  sees it. Still frames carry none.
 
-## 5. Popups
+## 5. Moving in lists
 
-- **One shape for every popup** (`src/build/overlay.ts`): a title and rows as data; options name the
-  command a click on them sends.
-- **Drawn to be unmissable**: a solid border in the same weight as a map edge, the title in the top
-  border, and a one-cell shadow that blanks what is behind it. Centred over the map. **No `[esc]` in
-  the border** (F37): the top bar's `close [esc]` says it and is its click target.
-- **A popup holds the keyboard and the mouse** until closed; keys it does not use do nothing.
-- **Questions, confirmations and menus are popups** — the Battle Round screen, the game menu, Settings
-  and the export use the same shape.
-- **A confirmation is a screen, not a question** (owner, 2026-09-29, feedback F49-F50). Its title says
-  what is about to happen — `Battle Round 1`, not `START PULSE 1?` — its body announces it, and it has
-  one row, the action, highlighted: `[s] Start`. Going back is Esc (the top bar's `close [esc]`), never a
-  second row to press. The body is data: a mission may write its own text for round *n*
-  (`BuildContext.roundText`), and the default is "Activate Nexus. Collect Resources. Spawn Units.", one
-  sentence to a line so a sentence never wraps at the 80-column floor. (`overlaySpec` in
-  `src/build/overlay.ts`.)
-- **Nothing opens a popup but the player** — a message only as the answer to what the player just
-  did (below).
-- **A message is a popup with nothing to choose** (F34, "a good case example to improve the popup
-  implementation"): a title and its text, wrapped at words in as many lines as it needs. Esc (or `x`,
-  or a right click) and a click outside close it, and nothing else does — no Enter, no hotkeys, no
-  wheel. It sits over whatever was open, and Esc goes back to that. It is for a warning the player
-  should read once and may act on later, not for an answer to a question. (`BuildState.message`,
-  `messageSpec` in `src/build/overlay.ts`.)
-- **A choice closes its popup** (Q60, owner 2026-09-27): picking a Nexus power, like answering a
-  question, returns the player to where they were. What the pick did is on the bottom line and on the
-  menu; reopening the popup shows it listed as active.
-- **A setting is a row whose value Left and Right change** (Settings, since gate 5G): its name, and
-  the value between `<` and `>` (the arrows say which keys change it) against the row's right end —
-  nothing else (F34 removed the `now`/`restart` column). Enter/Space is Right. A choice of two comes round at either end; a number
-  stops at its ends and the bottom line says so. **By mouse, the left half of the value box is Left
-  and the right half is Right** — two targets six cells wide each, big enough for a finger on the
-  browser playtest page; a click anywhere else on the row highlights it. Every change is said on the
-  bottom line. (`settingColumns` in `src/build/overlay.ts`.)
-- **What a highlighted row is for is written under the list, below a line across the popup** (F35:
-  "closer to the selection"), wrapped at words, in a fixed number of lines so the popup does not
-  change height as the highlight moves — the popup's version of the menu's effect line. (A `rule` row,
-  then a `note` row.)
-- **A popup has at most one list that scrolls** (F36), so a scroll bar has one place to be. A list
-  longer than the popup can hold keeps the highlighted row in view (in the middle while it can); the
-  window is derived from the highlight, never stored, so the reducer needs to know nothing about the
-  popup's height. (`OverlayScroll` and `scrollWindow` in `src/build/overlay.ts`.)
-- **The scroll bar is the popup's right border beside the list**, drawn only while rows are hidden:
-  an up symbol on the list's first row, a down symbol on its last, and between them a textured track
-  with a solid thumb whose length is the share in view and whose place is the share above (`^ v :` in
-  ASCII, `▲ ▼ ░` in Unicode, all inverse like the border). **A click on its upper half scrolls up, on
-  its lower half down**, bringing the next hidden rows into view; the wheel and Up/Down still walk the
-  highlight a row at a time. Drawn and hit-tested from the one placement (`PlacedOverlay.scrollBar`).
-  It replaced the `^ 4 more` / `v 11 more` lines (F35: "There's no need to say ...").
-- **A long list says where the highlight is beside its title** (Settings: `SETTINGS (6/28)`), moving
-  with it.
-- **A list in sections keeps each section's heading in the list** (Settings: "YOUR SETTINGS - saved",
-  then "EXPERIMENTS - for playtests, not saved"): the headings scroll with the rows and are never
-  highlighted; Up/Down skip them.
-- **A text too long for its popup is a list too** (the export): each line a row, with a highlight
-  Up/Down move, so it scrolls exactly as every other list does.
-- **The Controls and hotkeys page** (owner, 2026-09-30, feedback F60: "This will be enough for
-  offering help"): the game menu's `[c]` (Enter on its row, a click) or `?` from the game. Every key
-  and click, grouped by where the player is — the menu, the map, placing a building, Explore Map,
-  popups, the mouse, the Nexus Pulse, anywhere — from one table (`controlsPage` in
-  `src/build/help.ts`), so a new key is one line there. One scrolling list the export's way: the keys
-  in the hotkey colour in a column of their own and what they do beside them, a highlight Up/Down and
-  the wheel move, headings that scroll with the rows and are skipped, the scroll bar in the border.
-  Nothing to choose; Esc goes back. It replaced the key help the bottom bar used to carry.
-- **A popup that belongs to a menu row keeps that row active behind it** (the Nexus popup:
-  `[x] Nexus  >>`; the Battle Round screen, `[x] Start Pulse  >>`); **one that belongs to no row** (the
-  game menu, Settings, the export, the Controls page) **leaves the menu unlit**, so its own highlight is the only one on
-  screen.
+**List movement** is the map cursor's movement applied to rows, in every list — the Build Phase menu,
+the Nexus powers, the game menu, Settings, the export, the Controls page, the title screen's menu.
 
-## 5a. Settings, Experiments and the export
+- **No wrapping**: a list stops at its first and last row; holding Down arrives at the bottom and stays.
+- **A tap is one row; holding ramps** with the map cursor's own steps and timings (section 12).
+- **Shift+Up/Down, PageUp/PageDown and Home/End go to the first or last row.**
+- **Rows that are not choices are skipped**: blank lines, the credits line, section headings.
 
-- **Settings are found, not hidden**: the game menu's `[s] Settings` (Esc, then `s`), and `menu [esc]`
-  at the right of the top bar for a pointer.
-- **Settings is one scrolling list**: the player's settings, the Experiments, and **Export settings**
-  as its last row (`e` still exports from anywhere in it) — no fixed rows under it (F35).
-- **The player's settings come first, the Experiments last** (owner, 2026-09-28: "At the bottom of
-  those settings, we can include 'Experiments'"). Player settings — background, colour depth, symbols,
-  reduced motion — apply at once and are **saved**, through the same store as the title menu's
-  Settings. Experiments are the playtest flags (gate 5G's Debug Mode) and are **never saved**:
-  defaults change from build to build. `d` opens Settings straight at the Experiments.
-- **Agents ask the owner to flip experiments.** A choice that is his to feel ships behind an
-  experiment, defaulting to the recommended answer, and the pull request tells him which one to flip
-  (Esc, `s`, or `d` for the Experiments) and asks him to **paste the export back** (his own request,
-  2026-09-28). A new behaviour whose worth is in doubt gets an on/off experiment. Most experiments
-  are deleted before the pull request is accepted; a few stay longer, or become real settings.
-- **Every experiment names the question it serves.** One that only takes effect when the Build Phase
-  starts over says so on the bottom line when changed ("applies after a restart") and, **when Settings
-  closes with such a change pending, in a message popup** — once per change, not when a value is put
-  back, and not again on the next visit, since the player may keep playing and restart later (F34).
-  The game menu's `[r] Restart` is how it takes effect. (`pendingRestart` in `src/build/settings.ts`.)
-- **The export is text a person can paste and a program can read back**: `name = value` lines, `#`
-  comments, the experiments that differ from this build's defaults first (each with the default it
-  replaced), then the settings, then the other experiments, and the build's commit near the top. It
-  is shown in a popup, and also copied to the clipboard and written to a file by the adapter — never
-  by the reducer. `--settings "<text>"`, and `#settings=` on the browser page, read it back; reading
-  skips an unknown name or a bad value one at a time rather than refusing the text.
+## 6. The side panel
 
-## 6. Panels
+### 6.1 The Build Phase menu
 
-- **The side panel shows one thing at a time**: the menu, or a **card** — Explore Map's, for what is
-  under the cursor, following it as it moves with no key to press (feedback F23); or, while a building
-  is being placed, that building's (owner, 2026-09-30, feedback F58: "visual consistency for anything
-  that gains focus on the map").
-- **A card keeps the row that opened it as its header** (feedback F32, F58): on Explore Map's line,
-  under the `$` line, drawn active (`[x] Explore Map  >>`, `[x] Barracks  >>`), a separator across the
-  panel under it (`-` in ASCII, `─` in Unicode), and the card fills the rest. No `[esc]` of its own:
-  what Esc does is the top bar's to say. The row's "pressed" flash plays on the header, and the focus
-  arrow leaves from its `>>`.
-- **The card**: the thing's own glyphs as its icon, its name with a word on where it stands (planned,
-  standing, to build), what it does wrapped at words (never cut), then cost, health, size and attack as
-  label/value rows. On bare ground, the terrain and the tile. A click anywhere on the panel while a
-  card shows goes back, as Esc does; a digit while placing arms another building and the card changes.
-  Later: a larger ASCII art version, and live numbers during a Pulse.
-- **No help text in the panel** (F58): the key help that overflowed from the bottom bar and the line
-  saying what the highlighted row does both left it; the bottom line says what a row does
-  (section 8), and the Controls page lists every key.
-- **Text in the panel never cuts a word**; a line that does not fit wraps or is dropped.
-- **The action that finishes the phase is the menu's last row** (owner, 2026-09-29, feedback F41, then
-  F47: "It just needs to be the last option on the menu... a regular menu item, at the bottom"):
-  `[s] Start Pulse`, on the panel's bottom line, drawn and highlighted like every other row and reached
-  by Up and Down (section 4's first rule). A boxed "end turn" button was tried first and was too large,
-  and Up and Down could not reach it. It is dim, and refused with its reason, until the dealt Nexus power
-  is picked; Enter on it, `s` or a click opens the Battle Round screen (section 5). It belongs to the menu,
-  so a card, which replaces the menu, hides it with the rest. (`startRow` in `src/build/layout.ts`, drawn in `drawPanel` in `src/view/build.ts`.)
+- **One list**: `[e] Explore Map`, `[n] Nexus` (picks waiting as `(1)` in the hotkey colour), then **the
+  credits line** — the blank line before the buildings, what is left to spend right-aligned in the cost
+  column after the map's own resource symbol in the deposit's colour (`◆ 130`; `* 130` in ASCII) — every
+  building in catalog order with its cost, and `[s] Start Pulse` on the panel's last line.
+- **Letters above the buildings, digits for them**, so no digit moves when an entry is added. No group
+  headings until a real game needs them; if they return, one digit sequence runs through them. A row the
+  panel has no room for is neither drawn nor clickable. The order lives in `menuEntries`
+  (`src/build/state.ts`).
+- **No help text in the panel**: what a row does is the bottom line's to say.
+- **The action that ends the phase is the last row** (`startRow`), dim and refused with its reason until
+  the Nexus power is picked; it opens the Battle Round screen.
 
-## 7. The map rectangle
+### 6.2 Cards
 
-- **The map is a closed rectangle.** A side with more map beyond it is a thin, dim line; a side that
-  has reached the map's edge is **the map's own edge** — the same weight horizontally and vertically,
-  in every glyph pack. A corner is the edge where an edge side runs into it.
-- **A map shorter than the panel** closes directly under its own last row; the panel keeps its height.
-- **A map names its own edge style** (feedback F25; settled by the owner's playtest of 2026-09-29:
-  "using map-specific borders looks a lot better!"): the solid bar (an inverse-video cell, and what a
-  map that names none gets), a half block on the map's side of the cell, a heavy or a double line
-  (joined to the frame's light rules in mixed-weight junctions), a light shade, or a dashed "fence"
-  (the Build Phase map's). Every style keeps the one rule — the same weight on every side. Where ASCII
-  has no glyph for a style, it falls back to the solid bar; a shade is `:` and the fence `+---+`,
-  its posts fixed to the map so they scroll with it. (`BuildContext.edgeStyle`, drawn by
-  `src/view/edge.ts`.)
-- **The edge is drawn quietly**: a grey of its own between the frame and the ground (the
-  `chrome.edge` role), so it reads as a wall while the menu and the bars stay the loudest lines.
-- **The menu's divider is the map's west side**: one column, a plain line beside the menu's own rows
-  and rules, a light or map-edge side beside the map's rows — and the map has the column a separate
-  west side took (49 tiles at 80 columns). Layout, drawing and hit-testing read it from one place
-  (`buildLayout` in `src/build/layout.ts`).
+- **A card replaces the menu while something has the map's attention**: Explore Map's describes what is
+  under the cursor as it moves; a building's describes the building being placed.
+- **Its header is the row that opened it**, moved to the panel's top line and drawn active with its own
+  hotkey — `[e] Explore Map  >`, `[1] Barracks  >` — over a separator (`-` or `─`). **That hotkey
+  cancels**, as Esc, `x` and a click on the panel do. No credits line on a card.
+- **Its contents**: the thing's glyphs as its icon; its name and where it stands (planned, standing, to
+  build); what it does; cost, health, size and attack as label/value rows. On bare ground, the terrain
+  and the tile. **Panel text never cuts a word**; it wraps or is dropped.
+- It appears with the **card reveal** (section 8).
 
-## 7a. Moving around the map (gate 5H, reworked 2026-09-28)
+### 6.3 A selection holds the menu
 
-- **A tap is one tile, always.** Precise placement is the common case; speed comes from holding.
-- **Holding (or tapping quickly) speeds up at once, and a different key starts over**: the same arrow
-  again within the hold window moves 2 a press straight away, then 4 once the run is 300 ms old;
-  another arrow, or anything else, is a tap again. There is no slow tier. Terminals send no key-up,
-  so "held" is read from the gaps between presses — in the input path, never the reducer.
-- **Shift is a jump, not a speed**: 12 tiles a press, and a held one jumps again no faster than the
-  eye can follow it land (every 150 ms). Option+Arrow, PageUp/PageDown and Home/End are the same jump.
-- **Everything that moves is interpolated; nothing teleports**: every camera change slides and every
-  cursor move glides, over a few frames, from wherever it is drawn at that moment — a second move
-  mid-way continues smoothly. The state already holds the destination; a tween (`src/view/tween.ts`)
-  is how the screen gets there. The cursor glides across the *view* (its tile less the camera's), so
-  it rides along when only the map scrolls and is never drawn outside the view. Hit-testing uses the
-  drawn camera, so a click lands on what the player saw. Reduced motion snaps everything. Nothing
-  animates unless something moved — an idle screen draws once per input.
-- **A click near an edge brings that part of the map in** — further the nearer the edge — whether or
-  not a building is armed (owner, 2026-09-28, F22: "keep clicking on the grid with the ghost building
-  placement cursor to keep scrolling"), and a fast move re-centres the view on the cursor. **Because
-  the view can move under a click, a double click places where its first click pointed**: two clicks on
-  one screen cell within 400 ms are one "here", timed in the input path (`BuildSession`), while a slow
-  second click on a spot the view has left is a fresh first click, never a placement on a tile nobody
-  pointed at.
-- **Every number is an Experiment** until the owner has felt it.
-- **A refused try is seen where the eye is**: the footprint flashes in the "danger" colour for a moment
-  as the bottom line says why.
+While a building is being placed it stays the selection until placed or cancelled: another building's
+digit, `e` and `s` are refused — the header flickers and the bottom line says to place it or cancel it
+first. Its own digit, Esc and `x` cancel it. Popups (the Nexus powers, the game menu, Settings,
+Controls) still open over it and hand it back, still armed. So the menu is never workable with a ghost
+on the map, and never loses track of what is armed.
 
-## 7b. A building going up (gate 5I)
+## 7. Hand-offs to the map
 
-- **A placement is felt, then settles into the plain plan.** The building plays a few frames of its
-  own as it goes up (drawn plain — a scaffold), then stands finished (bold, as every building is),
-  lit for a moment, with a few sparks thrown off its edge. After under a second it is exactly the
-  still picture every other frame shows.
-- **Juice is presentation, never plan**: nothing about it reaches the reducer; the live loop times it
-  from the frame that first drew the placement, and the view draws "this placement, this long ago".
-  Undo or Backspace mid-animation removes the building at once — no ghost frames.
-- **An effect never covers a building**: sparks are dropped on any tile a building stands on.
-- **Light is a role pulled toward another role, never a colour** (`CellStyle.tint`): a real blend at
-  256 colours and truecolor, a step at 16, nothing in monochrome, where the plain-to-bold change of the
-  frames carries it.
-- **Reduced motion shows the finished building at once**, unlit; the sparks become a still mark at
-  its corners.
-- **Removing is felt too** (owner, 2026-09-29, feedback F33): undo and Backspace/Delete take a planned
-  building away at once and throw the same burst of sparks where it stood, for the same "Particles"
-  and "Glow time". The live loop notes what left the plan and when (`removing`, beside `placing`); the
-  plan never hears of it.
-- **Every duration and intensity is an Experiment with an off value** (Build animation, Lighting,
-  Particles, Glow time).
+A **hand-off** is a menu row giving the keyboard to the map — a building armed, or Explore Map opened,
+from the menu. It is shown so the eye travels with the keyboard: something flies from the row's own
+place to the cursor, and **the cursor blinks twice** (the pressed look, at its speed) when it lands.
+Keys work at once. Never on the way back, and never for Tab or a click on the map. Reduced motion drops
+the flight and keeps the blink. The reducer records a sequence number (`BuildState.handoff`); the live
+loop times the rest.
 
-## 7c. The Nexus Pulse on screen (gate 6A)
+- **A building sends the focus arrow** — the owner's "energy ray", in a cool blue: from the right end of
+  the row, where the row stood in the menu (it then slides up to be the card's header), straight to the
+  cursor, eased to arrive fast, homing if the cursor moves, its head (`>` or `▶`) pointing the way it
+  flies over a short trail.
+- **Explore Map sends the see-through cursor** — a copy of the map cursor at 80% opacity, gliding from
+  its row to the cursor over whatever it crosses (section 9). Exploring only moves the focus, so it sends
+  the cursor itself rather than a ray.
+- **Where the cursor lands** (`armingSpot` in `src/build/state.ts`): where it is, if the footprint fits;
+  else the nearest spot within 12 tiles leaving a free tile around it, else the nearest that fits —
+  nearest by the cursor's move, sideways costing one and up or down two, so a run grows to the right.
+  With none in reach, arming steps one right and one down and draws the building as itself rather than
+  as a refusal, until the player moves or tries. **Explore Map opened from the menu uses the same rule
+  for one tile**, landing on clear ground that is easy to follow (or staying put); opened from the map,
+  the cursor stays where the player put it.
 
-- **The Pulse plays on the Build Phase's own screen, not a screen of its own.** The same top bar,
-  the same closed map rectangle, the same bottom bar and popups; only the panel's contents and the
-  bottom line change. A 96 x 40 map does not fit a fixed pane, so the Pulse uses the Build Phase's
-  camera: it opens looking at the player's Nexus, the arrow keys look around while it plays, and the
-  Pulse never waits for the player.
-- **The panel says what is happening, in this order**: a headline (`NEXUS PULSE 1` with the **time
-  left until the last shot** at its right end, and later the ending's beats), what the timer counts
-  and how fast it runs (`time left  1x`), one line per side (how many units, a bar of the
-  health left of what it began with, and the number), the last five events in plain words — `3.5s
-  trooper > raider`, `3.8s raider dies` — each in the colour of the side it is about, and the two
-  controls at the bottom.
-- **Two controls have rows and everything else is a key**: `[space] Pause` (`Resume` while paused) and
-  `[r] Watch again`, each clickable and doing what its key does. `[` and `]` change the speed, `.`
-  and `,` step a frame and a tick — keys only, listed on the Controls page, since a row for each would
-  crowd the panel at 80 columns. Popups and the game menu keep every one of these keys for themselves while they are open.
-- **The ending is four beats, always in this order**: the **last seconds** (the title's timer flashes,
-  slowly, like a racing game's clock, and a soft light sweeps once every two seconds round the map's
-  border like a lighthouse calling — a colour pulled toward the light and never a glyph, so it cannot
-  hide anything on the map; in monochrome the timer is reversed video and the border goes bold as
-  the light passes), **cease fire**, **Recall** (the survivors walk home) and the **result**
-  (`VICTORY`, `DEFEAT`, `DRAW` or `TIME'S UP`, why, and how many of yours came home). Each is a pure
-  function of the presentation time, so pause, speed, a step or "Watch again" all keep it whole.
-  Reduced motion holds the timer lit and the light steady, and puts everyone home the moment the
-  walk would begin.
-- **The timer is the only thing on the screen that flashes, and red is kept for one thing** (owner,
-  2026-09-29): the player's own Nexus being hurt — its first hit, its health very low (a short blip
-  every second and a half until it falls), and the result of a lost Pulse. Each is a faint, brief
-  tint of the border (a fifth of a second, at most about half the way to the danger colour), never a
-  banner, an inverse frame or a word in capitals, and every one is said again in words on the panel,
-  so nothing depends on seeing it. Reduced motion has no red at all. A new warning goes to the timer
-  or the light, never to a bigger red.
-- **The result is words first, colour second.** The headline, the reason and the count are on the
-  panel and again, as one sentence, on the bottom line (green for a win, red for a loss, plain for a
-  draw or a time-out) — the words carry the cue where colour cannot.
-- **Nothing the player does can change what the Pulse did.** Pause, speed, stepping and looking around
-  are presentation; "Watch again" only starts the clock over, because the kernel resolved the whole
-  Pulse before the first frame. What the presentation asks of the Build Phase — centre the view on
-  the Nexus at the start and when the ending begins — goes through the same named command a player's
-  key does (`look-at`), so a script, the terminal and the browser page see the same thing.
-- **The ending's timings are Experiments** (`d`, Final warning, Red alerts, Walk-back delay, Walk-back
-  time, Centre on Nexus) and so are the raid and the crew the spike starts a Pulse with (Raid, Your
-  units), so every way a Pulse can end can be watched without editing code.
+## 8. Motion and transitions
 
-## 8. The bottom line
+- **Motion explains a change, then the screen is still.** Nothing moves unless something changed, and
+  an idle screen draws once per input. Keys never wait: they act on the destination at once, and the
+  animation catches up or stops.
+- **Nothing teleports**: every camera change slides and every cursor move glides from wherever it is
+  drawn, so a move mid-way continues smoothly. These are **tweens** (`src/view/tween.ts`): the state
+  holds the destination, the tween is how the screen gets there. The cursor glides across the *view*, so
+  it rides along when only the map scrolls; clicks hit-test the drawn camera.
+- **The card reveal**, about 150 ms in three beats: the other rows fade out; the chosen row, now active,
+  slides up to the header line; the card fades in, its name, subtitle and description typed out, a
+  building's icon playing its going-up frames. Explore Map's card opens the same way; the length is an
+  Experiment. Going back is plain: the menu returns with its row lit.
+- **Reduced motion snaps** — camera, cursor, card, flight — keeping only what is not movement, such as a
+  blink.
 
-- **One line at the bottom of the screen** (owner, 2026-09-30, feedback F59: "The only thing that is
-  useful is having a single row that offers contextual help"). It answers "what just happened, or why
-  not" — and when nothing did, "what can I do here". The position readout and the key help that used
-  to share the bottom bar are gone; the map's sides say there is more map, and the Controls page has
-  every key.
-- **The last command's answer first, then a hint**: while the last command said something, the line
-  says it; after a command that says nothing, it shows the hint for where the keyboard is, from one
-  list with a line per situation (`HINTS` in `src/build/help.ts` — every popup, a committed plan, the
-  menu by its highlighted row, placing, Explore Map over a planned building or not, the map). **An
-  answer lapses at the next command that says nothing** (`lapseStatus` in `src/build/state.ts`); a
-  message about a tile also lapses when the cursor leaves it.
-- **A typed message**: text, a tone, and the tile it is about — never a bare string. A hint has the
-  `hint` tone, quieter than any answer.
-- **Say the result and the way back**: `Hatchery placed (resources: 70) - [u] undo`.
-- **Looking reads quietly; trying reads loudly**: a refusal is neutral while the player only hovers,
-  red and bold once they press Enter, and quiet again once that answer lapses while the preview still
-  sits on the refused tile.
-- **During a Nexus Pulse** the line says what the Pulse is doing, unless a popup over it holds the
-  keyboard.
+## 9. See-through overlays
 
-## 9. Words
+A **see-through overlay** lays a colour over cells without hiding them. Its **alpha** (0 to 1) mixes the
+overlay's colour, the cell's background and its glyph's colour, **the glyph taken as a fifth of the
+cell**, as the owner defined it:
 
-- Plain words on screen; no internal ids or code names. Each Nexus is named for its faction
-  ("Citizen Nexus"). What the player calls a Pulse is open (Q68): the start screen says **Battle
-  Round**; the menu row and the running screen still say Pulse until it is settled.
-- Keys in hints are written as the rows write them — `[enter]`, `[esc]`, `[e]` — with arrows,
-  up/down and left/right as plain words, since they are directions. Every hint fits the bottom bar at
-  the 80-column floor; a narrower bar drops whole words, never half of one.
+- **the background** becomes alpha of the overlay's colour plus (1 − alpha) of what was there — itself
+  80% background and 20% glyph colour. His example: a white cursor at 80% over a yellow glyph on black is
+  80% white, the other 20% split 80% black and 20% yellow;
+- **the glyph stays**, drawn alpha of the way toward the colour the real element draws glyphs in (the
+  theme's background, for the inverse-video cursor), so it stays readable as the overlay passes;
+- **a role and a number, never a colour** (`CellStyle.overlay`, `RoleOverlay` in `src/view/roles.ts`):
+  exact at millions of colours, the nearest at 256, the element's plain look at 16 and in monochrome;
+- **a glyphless write**, so the corruption law holds.
+
+Any future see-through element — a travelling highlight, a ghost — uses it rather than a new blend.
+
+## 10. Popups
+
+### 10.1 One shape
+
+- **Every popup is one shape** (`src/build/overlay.ts`): a title and rows as data, options naming the
+  command a click sends, at most one scrolling list, drawn and hit-tested from one placement.
+- **Unmissable**: a solid border in the map edge's weight, the title in it, a one-cell shadow (`:` or
+  `░`), centred over the map, drawn last in the chrome band.
+- **It holds the keyboard and the mouse** until it closes; keys it does not use do nothing. **Nothing
+  opens a popup but the player.**
+- **A choice closes its popup**: a Nexus pick returns the player to where they were; the bottom line
+  and the menu say what it did.
+- **A popup that belongs to a menu row keeps that row active behind it** (Nexus, Battle Round); one that
+  belongs to none (game menu, Settings, export, Controls) leaves the menu unlit.
+- **A confirmation is a screen, not a question**: its title says what is about to happen (`Battle
+  Round 1`), its body announces it — data a mission can write per round (`BuildContext.roundText`), one
+  sentence to a line — and its one row is the action, highlighted: `[s] Start`. Going back is Esc.
+- **A message is a popup with nothing to choose**: a title and wrapped text, closed only by Esc, `x`, a
+  right click or a click outside, over whatever was open. For a warning to read once and act on later
+  (`BuildState.message`, `messageSpec`).
+
+### 10.2 Scrolling lists and rows
+
+- **The window follows the highlight**, in the middle while it can, derived and never stored
+  (`scrollWindow`), so the reducer knows nothing of the popup's height.
+- **The scroll bar is the right border beside the list**, only while rows are hidden: an up symbol, a
+  textured track with a solid thumb (its length the share in view), a down symbol — `^ : v` or `▲ ░ ▼`,
+  inverse like the border. A click on its upper half scrolls up, on its lower half down
+  (`PlacedOverlay.scrollBar`).
+- **A long list shows where the highlight is beside its title**: `SETTINGS (6/28)`.
+- **Section headings stay in the list**, scroll with it, and are skipped. **A long text is a list too**
+  (the export), a line a row.
+- **What the highlighted row is for sits under the list**, below a rule, in a fixed number of lines so
+  the popup keeps its height (a `rule` row, then a `note` row).
+- **A setting row** is its name and its value between `<` and `>` at the right. Left and Right change it
+  (Enter/Space is Right); a choice comes round, a number stops at its ends, and the bottom line says
+  every change. By mouse the value box's left half is Left and its right half Right, wide enough for a
+  finger (`settingColumns`).
+
+### 10.3 Settings, the export and the Controls page
+
+- **Settings**: the game menu's `[s]`, or `d` straight to the Experiments. One list: the player's own
+  settings (background, colour depth, symbols, reduced motion — applied at once and saved), then the
+  Experiments (never saved), then **Export settings** (`e` from anywhere in it). A change that needs a
+  restart says so on the bottom line and, once, in a message when Settings closes with it still pending
+  (`pendingRestart` in `src/build/settings.ts`).
+- **The export** is text a person pastes and a program reads back: `name = value` lines, changed
+  Experiments first with the defaults they replaced, and the build's commit. The adapter, never the
+  reducer, copies it out; `--settings "<text>"` and `#settings=` read it back, skipping bad lines.
+- **The Controls and hotkeys page** (`[c]` in the game menu, or `?`): every key and click grouped by where
+  the player is, from one table (`controlsPage` in `src/build/help.ts`), so a new key is one line there.
+
+## 11. The bottom line
+
+- **One line: what just happened or why not — and when nothing did, what can be done here.** The last
+  command's answer while it has one; otherwise the hint for where the keyboard is, from one list of
+  situations (`HINTS` in `src/build/help.ts`), so a new situation is one line there.
+- **An answer lapses at the next command that says nothing** (`lapseStatus`), and one about a tile when
+  the cursor leaves it.
+- **A message is typed** — text, a tone and its tile, never a bare string; hints have the quieter `hint`
+  tone, and tones resolve onto style roles in one place (`src/view/status.ts`).
+- **Say the result and the way back**: `Hatchery placed (resources: 70) - [u] undo`. **A refusal names
+  its tile**, and affordability comes before any tile problem.
+- **Looking reads quietly, trying loudly**: a ghost on a tile it cannot use shows a grey block of `x` and
+  a plain-toned reason; once the player tries, the same words turn red and bold until the answer lapses.
+- **During a Pulse** it says what the Pulse is doing, unless a popup holds the keyboard. **It fits 80
+  columns**; a narrower bar drops whole words, never half of one.
+
+## 12. The map
+
+- **A closed rectangle whose sides say whether there is more**: a thin dim line where the view can
+  scroll further, **the map's own edge** where the map ends — the same weight on every side, corners
+  included, in every glyph pack. No minimap, no position readout.
+- **A map names its own edge style** (`BuildContext.edgeStyle`, `src/view/edge.ts`): the solid bar (the
+  default), half block, heavy or double line, shade, or a fence whose posts scroll with the map; ASCII
+  falls back to the solid bar (a shade is `:`, the fence `+---+`). The edge is drawn in its own quiet
+  grey (`chrome.edge`) so the menu and bars stay the loudest lines.
+- **The menu's divider is the map's west side**, and a map shorter than the panel closes directly under
+  its own last row.
+- **Moving the cursor**: a tap is one tile, always. The same arrow again within the hold window is a run —
+  2 tiles a press at once, 4 once it is old enough; any other key starts over. **Shift is a jump, not a
+  speed**, repeating no faster than the eye can see it land; Option+Arrow, PageUp/PageDown and Home/End
+  are the same jump, because many terminals send no shifted arrow. "Held" is read from the gaps between
+  presses in the input path (`src/build/motion.ts`), since a terminal sends no key-up (Q66 asks about
+  reading releases where one does). The cursor drives the camera at a scroll margin, a share of the view.
+- **Clicks**: a click moves focus and the cursor to the tile, the ghost with it. **A second click on the
+  same tile places** (by tile, never screen cell), and **a quick double click places where its first
+  click pointed**, even if the view moved (`BuildSession`). A click near an edge scrolls further the
+  nearer the edge, armed or not, so clicking with the ghost keeps scrolling.
+- **Placing**: a planned building is drawn at full strength; undo and remove keep the plan revisable
+  until the Pulse. A refused try flashes the footprint in the danger colour as the bottom line says why.
+
+## 13. Effects
+
+- **Four families** (`specs/ascii-effects.md` 1.2), each a pure function of absolute presentation time:
+  **animations** (an entity's own frames — the only family that may change its glyph), **particles**,
+  **shading** (glyphless colour) and **tweens**. An animation's completion is scheduled data, never a
+  callback.
+- **Effects never touch the plan**: the live loop times them from the frame that first drew their cause;
+  undo mid-animation removes the building at once.
+- **The corruption law**: an effect may recolour something on the map but never replace its glyph —
+  sparks are dropped on a building's tiles.
+- **An effect never carries a cue alone**: the settled screen or the bottom line says it too. **Every
+  effect owes three forms**, authored together — full, reduced motion (keep the cause and the impact,
+  drop the travel) and monochrome (`specs/ascii-effects.md` 4).
+- **Light is a role pulled toward another role** (`CellStyle.tint`): a blend at 256 colours and up, a
+  step at 16, nothing in monochrome, where a change of weight carries it.
+- **A placement is felt, then settles**: a few frames going up, a moment lit with sparks, then the still
+  picture. A removal throws the same sparks. Reduced motion shows the finished building at once, unlit,
+  with a still mark for the sparks.
+- **A reserved colour means one thing.** Red is kept for the player's own Nexus being hurt — first hit,
+  very low health, a lost Pulse — as a faint, brief tint of the border, always said again in words, and
+  absent under reduced motion. A new warning goes to the timer or the light, never to more red.
+
+## 14. The Nexus Pulse on screen
+
+- **The Pulse plays on the Build Phase's screen**; only the panel changes. It opens on the player's
+  Nexus, the arrows look around, and the Pulse never waits for the player.
+- **The panel, in order**: `NEXUS PULSE 1` with the time left until the last shot; what the timer counts
+  and its speed; a line per side (units, a health bar, the number); the last five events in plain words,
+  coloured by side; then `[space] Pause` and `[r] Watch again`. Speed (`[`, `]`) and stepping (`.`, `,`)
+  are keys, on the Controls page.
+- **The ending is four beats, in order**: the **last seconds** — only the title's timer flashes, slowly,
+  and a soft light sweeps the border like a lighthouse (colour, never a glyph; in monochrome the timer
+  reverses and the border goes bold) — then **cease fire**, **Recall** (survivors walk home) and the
+  **result** (`VICTORY`, `DEFEAT`, `DRAW` or `TIME'S UP`, why, and how many came home) — words first, on
+  the panel and again on the bottom line, colour second. Reduced motion holds the timer lit and the light
+  steady, and puts everyone home at once.
+- **Nothing the player does changes what the Pulse did**: it was resolved before the first frame, so
+  Watch again only restarts the clock; centring on the Nexus is the same named command a key sends.
+
+## 15. Experiments and tuned values
+
+- **A choice the owner should feel ships as an Experiment**, defaulting to the recommended answer — a
+  timing, a look, a movement rule, or an on/off for a feature whose worth is in doubt. The pull request
+  asks him in plain words to flip it (the game menu's Settings, or `d`) and paste the export; `--settings`
+  shows what he saw. Every Experiment names its question (`src/build/debug.ts`).
+- **Once he settles one it leaves Settings**: his value becomes the default in the code's table of tuned
+  values, with who chose it and when, and the Experiment is deleted, so a new one stands out. Some stay on
+  purpose: a number that depends on the player's keyboard (the hold window), or placeholder data (the
+  Pulse's raid and crew).
+- **Never copy a tuned number into prose**; point at the table.
+
+## 16. Words
+
+- **Plain words on screen**, no internal ids; each Nexus named for its faction ("Citizen Nexus").
+- **Keys as the rows write them** — `[enter]`, `[esc]`, `[e]` — and arrows, up/down and left/right as
+  plain words. For a way back, the action first, then the key (`back [esc]`).
+- **Names**: the menu's acknowledgement is the *pressed flash* in code and a *blink* on screen; the
+  building hand-off's traveller is the *focus arrow*; Explore Map's is the *see-through cursor*.
+- **Battle Round or Pulse is still open** (Q68): the start screen says Battle Round; the menu row and the
+  running screen say Pulse until it is settled.
+
+## Where the rules came from
+
+The owner's words, item by item, with what was done about each, newest first:
+[`2026-09-30-menu-spike-round-2`](feedback/2026-09-30-menu-spike-round-2.md) (F61-F76),
+[`2026-09-30-menu-spike`](feedback/2026-09-30-menu-spike.md) (F52-F60),
+[`2026-09-29-pr48-round-3`](feedback/2026-09-29-pr48-round-3.md) (F47-F51),
+[`2026-09-29-pr48-pulse`](feedback/2026-09-29-pr48-pulse.md) (F41-F46),
+[`2026-09-29-pr46-round-4`](feedback/2026-09-29-pr46-round-4.md) (F28-F40),
+[`2026-09-28-pr46-playtest`](feedback/2026-09-28-pr46-playtest.md) (F18-F27) and
+[`2026-09-27-build-phase-playtest`](feedback/2026-09-27-build-phase-playtest.md) (F1-F17).
