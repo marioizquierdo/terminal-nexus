@@ -308,7 +308,8 @@ which takes the commit back if the kernel cannot start from the plan. A context 
 a fresh Build Phase until the loop into the next one is built (gate 6B).
 
 Its own code: `src/build/` holds the camera arithmetic, the pure reducer, the three adapters and the
-driver; `src/view/build.ts` composes the frame; `src/cli/spike.ts` runs it on the same backend and the
+driver; `src/view/build.ts` composes the frame from its parts (`build-frame`, `build-grid`, `build-menu`,
+`build-card`, `build-handoff`, `build-popup`); `src/cli/spike.ts` runs it on the same backend and the
 same idempotent disposer as the menu. `src/view/draw.ts` is where the `put`/`text` band-writing
 helpers moved once a third screen wanted them. `src/match/` (gate 6A) is the rules layer between the
 Build Phase and the kernel — a plan into the kernel's opening state, and Recall — and the view and the

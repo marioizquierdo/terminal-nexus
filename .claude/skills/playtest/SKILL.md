@@ -111,7 +111,7 @@ Unknown names and bad values are skipped and named on stderr.
 What a script cannot show is time between keys on the live screen — the view sliding, a flash, a
 building going up (script frames always draw buildings finished; a Nexus Pulse is the exception, since
 a `wait` moves its clock). For those, compose a frame with
-`camera` / `refusedFlash` / `flash` / `placing: [{ ordinal, elapsedMs }]` / `removing: [{ ordinal,
+`camera` / `refusedTry` / `ack` / `placing: [{ ordinal, elapsedMs }]` / `removing: [{ ordinal,
 contentId, anchor, elapsedMs }]` yourself, or step
 `BuildAnimation` (`src/view/build-live.ts`) with a fake clock: `slideGif`, `placementGif` and
 `placementSheet` in `scripts/capture-spike-screenshots.mjs` do exactly that.

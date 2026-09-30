@@ -136,9 +136,10 @@ click is `x`.
     **`>`** replaces its value at the right end, pointing at the map — `[1] Barracks  >`. No bar, no
     underline. A building being placed, Explore Map open, the Nexus popup or the Battle Round screen
     open: every row either opens a popup or gives the map something to do, and all share the look
-    (`menuRowActive`, `menuRowSpec`, `drawMenuRow` in `src/view/build.ts`).
+    (`menuRowActive`, `menuRowSpec`, `drawMenuRow` in `src/view/build-menu.ts`).
 - **Two brief acknowledgements**: **pressed** — a stronger bar in the hotkey colour for a few frames
-  after activation, the look the cursor's blink borrows; and **refused** — when a key reached the row but
+  after activation, the look the cursor's blink borrows (not on the row a card reveal carries up from
+  the menu, which stays active as it travels); and **refused** — when a key reached the row but
   had nothing to do, **the words turn grey for a moment and the background stays**, reading "nothing
   here" rather than a press (dim in monochrome).
 - **Disabled** rows (unaffordable, or Start Pulse before the Nexus pick) are dimmed, and pressing one is
@@ -289,7 +290,7 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 - **The scroll bar is the right border beside the list**, only while rows are hidden: an up symbol, a
   textured track with a solid thumb (its length the share in view), a down symbol — `^ : v` or `▲ ░ ▼`,
   inverse like the border. A click on its upper half scrolls up, on its lower half down
-  (`PlacedOverlay.scrollBar`).
+  (`PlacedPopup.scrollBar`).
 - **A long list shows where the highlight is beside its title**: `SETTINGS (6/28)`.
 - **Section headings stay in the list**, scroll with it, and are skipped. **A long text is a list too**
   (the export), a line a row.
@@ -411,7 +412,7 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 - **Plain words on screen**, no internal ids; each Nexus named for its faction ("Citizen Nexus").
 - **Keys as the rows write them** — `[enter]`, `[esc]`, `[e]` — and arrows, up/down and left/right as
   plain words. For a way back, the action first, then the key (`back [esc]`).
-- **Names**: the menu's acknowledgement is the *pressed flash* in code and a *blink* on screen; the
+- **Names**: the menu's acknowledgement is *pressed* in code (`ack`, `PRESSED_LOOK`) and a *blink* on screen; the
   building hand-off's traveller is the *focus arrow*; Explore Map's is the *see-through cursor*.
 - **Battle Round or Pulse is still open** (Q68): the start screen says Battle Round; the menu row and the
   running screen say Pulse until it is settled.

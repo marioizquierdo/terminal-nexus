@@ -110,8 +110,6 @@ request written with the pr-description skill. Do not start 6C.
   becomes the renderer a player uses.
 - **The title screen's menu does not speed up when held** — it stops at its ends and jumps, but has no
   clock of its own to time a held key by, and only four rows.
-- **The pressed flash still shows during the card reveal's slide** (the row underlined for a moment as
-  it travels). It reads as the press, so it stays unless he says otherwise.
 
 ## 4. Q66 — key releases, as progressive enhancement
 

@@ -987,7 +987,7 @@ right. The owner, after playing it: "The build menu should definitely be on the 
 build games like sim-city. My eyes were on the left and I didn't notice that I needed to select the
 things to build on the right... since build goes first, it seems better to keep the GUI on the left."
 The frame's lines are derived from where the panel is rather than drawn around a fixed side
-(`src/view/build.ts`'s `drawChrome`), so the move is a layout change, not a redraw of every line.
+(`src/view/build-frame.ts`'s `drawChrome`), so the move is a layout change, not a redraw of every line.
 
 What differs between the phases is what the side panel holds:
 
@@ -1109,7 +1109,8 @@ row reads **`[1] Barracks  >`** (F53, then F67 and F70 at canon 2.28): its own h
 it started (with Esc and `x`), and one `>` in place of its value, pointing at the map ("This will help
 with the visual aid about the selected item having an effect on the grid"); the whole row in the hotkey
 colour and bold, no underline, no bar — legible in monochrome by the `>` and the bold. A pressed flash
-still wins, drawn as the bar. **A refused flicker changes only the words** (F61): they turn grey — the
+still wins, drawn as the bar — except on the row a card reveal carries up from the menu, which is
+drawn active all the way (F68). **A refused flicker changes only the words** (F61): they turn grey — the
 muted role, dim — and the row's background stays exactly as it was, the highlight bar included, so it
 reads "nothing here" rather than a press. Every menu row either opens a popup or gives the map something to do (F52), and both kinds
 share the one look. One function decides and draws it for every row, so a change of style reaches them

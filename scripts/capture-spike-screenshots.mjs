@@ -760,7 +760,7 @@ scriptedGif("build-explore-edge-click", {
 scripted(
   "build-refused-flash",
   "Enter on rock: the whole footprint flashes solid for 150 ms as the status line says why, so an eye on the map sees it did not build",
-  { keys: `${PICK_FIRST_POWER} 1 Up*5 Left*14 Enter`, expect: "Cannot build here", present: { refusedFlash: true } },
+  { keys: `${PICK_FIRST_POWER} 1 Up*5 Left*14 Enter`, expect: "Cannot build here", present: { refusedTry: true } },
 )
 
 slideGif("build-view-slide", {
