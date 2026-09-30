@@ -970,9 +970,10 @@ function openPopup(state: BuildState, popup: Popup): BuildState {
 
 function pickNexus(context: BuildContext, state: BuildState, index: number): BuildState {
   // Defensively guarded like every other command: a driver script is free to send one anywhere, and
-  // the answer must be the same refusal a player pressing an unavailable key gets. An open Nexus popup
-  // is where a pick is normally made, so it is not a reason to refuse one.
-  if (state.committed || state.popup === "battle-round" || state.popup === "game-menu") {
+  // the answer must be the same refusal a player pressing an unavailable key gets. A pick is made in
+  // the Nexus popup, or by a driver with no popup open; any other popup holds the keyboard, and a
+  // committed plan is past picking.
+  if (state.committed || (state.popup !== null && state.popup !== "nexus-powers")) {
     return { ...state, status: editLock(state) ?? state.status }
   }
   if (state.nexusPick !== null) return { ...state, status: status("Already picked.", "warning") }
@@ -1248,6 +1249,15 @@ function lapseStatus(before: BuildState, after: BuildState): BuildState {
   return after.status === before.status && after.status.text !== "" ? { ...after, status: NO_STATUS } : after
 }
 
+/**
+ * A click outside the open popup, wherever it lands: the popup closes (the ones under it with it), and
+ * the Battle Round screen says it was cancelled, as Esc there does. What else the click does — only
+ * focus, never a placement or a pick — is the caller's (owner, 2026-09-27).
+ */
+function dismissPopup(state: BuildState): BuildState {
+  return { ...state, popup: null, ...(state.popup === "battle-round" ? { status: status("Cancelled.") } : {}) }
+}
+
 function applyCommand(context: BuildContext, state: BuildState, command: BuildCommand): BuildState {
   switch (command.kind) {
     case "move-cursor":
@@ -1260,9 +1270,9 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // A click outside an open popup closes it and brings focus to where it landed — and does
       // nothing else, so a click meant to dismiss never also places or picks (owner, 2026-09-27).
       if (state.popup !== null) {
-        if (state.popup === "battle-round" || state.committed) return { ...state, popup: null }
-        const dismissed: BuildState = { ...state, popup: null, focus: "grid", armed: state.armed }
-        return withCursor(context, dismissed, target, clickCameraMove(context, dismissed))
+        const dismissed = dismissPopup(state)
+        if (state.popup === "battle-round" || state.committed) return dismissed
+        return withCursor(context, { ...dismissed, focus: "grid" }, target, clickCameraMove(context, dismissed))
       }
       // A committed plan locks every edit but not looking: a click on the map moves the cursor there and
       // scrolls the view as it does while exploring (gate 6A — the Pulse's map is a map to look around).
@@ -1289,12 +1299,12 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       if (state.committed) return state
       // A click anywhere outside a popup dismisses it first — and only that, plus focus.
       if (state.popup !== null) {
-        if (state.popup === "battle-round") return { ...state, popup: null, status: status("Cancelled.") }
+        const dismissed = dismissPopup(state)
         // Over a card the menu is not drawn, so the click chooses nothing (a click can only choose what
         // it could see): it closes the popup and hands the card back — the building still armed, the
         // menu's highlight where it was.
-        if (cardShowing(state)) return { ...state, popup: null }
-        return { ...toMenu({ ...state, popup: null }), menuHighlight: command.entry, highlightHidden: true }
+        if (state.popup === "battle-round" || cardShowing(state)) return dismissed
+        return { ...toMenu(dismissed), menuHighlight: command.entry, highlightHidden: true }
       }
       // A card — Explore Map's, or the armed building's (feedback F58) — covers the menu below its
       // header row: a click on that row, drawn active, goes back, as Esc (and `e` for Explore Map) does

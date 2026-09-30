@@ -348,6 +348,36 @@ test("mouse: inside a popup a click picks or closes; outside it, a click closes 
   assert.equal(side.build.state.popup, null)
 })
 
+test("a Nexus power is picked only in its own popup, or with none open: every other popup refuses a driver's pick", () => {
+  for (const open of [["q"], ["d"], ["d", "e"], ["?"], ["q", "c"]]) {
+    const side = session()
+    for (const key of open) side.build.handleData(key, side.layout)
+    const popup = side.build.state.popup
+    assert.notEqual(popup, null)
+    side.build.dispatch({ kind: "pick-nexus", index: 0 })
+    assert.equal(side.build.state.nexusPick, null, `${open.join(" ")}: a pick went through with ${popup} open`)
+    assert.equal(side.build.state.popup, popup)
+    assert.equal(side.build.state.status.text, "Close the popup first: [esc].")
+  }
+  const bare = session()
+  bare.build.dispatch({ kind: "pick-nexus", index: 0 })
+  assert.equal(bare.build.state.nexusPick, 0)
+})
+
+test("a click outside the Battle Round screen says Cancelled, on the map as on the menu", () => {
+  for (const where of ["map", "menu"] as const) {
+    const side = session()
+    side.build.dispatch({ kind: "pick-nexus", index: 0 })
+    side.build.handleData("s", side.layout)
+    assert.equal(side.build.state.popup, "battle-round")
+    const cell = cellForTile(side.layout, side.build.state.camera, { x: side.build.state.camera.x + 2, y: side.build.state.camera.y + 1 })
+    side.build.handleData(where === "map" ? formatMouseEvent(MOUSE_LEFT, cell.x + 1, cell.y + 1) : clickNexusEntryBytes(side.layout), side.layout)
+    assert.equal(side.build.state.popup, null, where)
+    assert.equal(side.build.state.committed, false)
+    assert.equal(side.build.state.status.text, "Cancelled.", where)
+  }
+})
+
 test("mouse: the Battle Round confirmation starts by click on [s] Start, and a click outside it cancels", () => {
   const yes = session()
   yes.build.dispatch({ kind: "pick-nexus", index: 0 })
