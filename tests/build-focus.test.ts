@@ -932,8 +932,9 @@ test("the focus flow by keyboard bytes and the same commands from a driver are t
   const script: readonly BuildCommand[] = [
     { kind: "highlight", delta: 1 },
     { kind: "activate" },
+    // In the popup Space sends what its highlighted row names: the second power's pick.
     { kind: "highlight", delta: 1 },
-    { kind: "activate" },
+    { kind: "pick-nexus", index: 1 },
     { kind: "highlight", delta: 1 },
     { kind: "activate" },
     { kind: "place" },

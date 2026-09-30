@@ -267,11 +267,15 @@ test("a stray y or n outside the confirmation is exactly as inert as a stray dig
 })
 
 test("keyboard: a digit picks from the Nexus popup while it is open, and arms the construct menu otherwise", () => {
-  const popupContext = { itemCount: 3, armed: false, popup: "nexus-powers" as const, popupPendingCount: 2 }
+  const side = session()
+  side.build.dispatch({ kind: "open-nexus-powers" })
+  const popupContext = { itemCount: 3, armed: false, popup: "nexus-powers" as const, popupSpec: popupSpec(spikeContext(), side.build.state) }
   assert.deepEqual(buildKeyboardCommand("1", popupContext), { kind: "pick-nexus", index: 0 })
   assert.deepEqual(buildKeyboardCommand("2", popupContext), { kind: "pick-nexus", index: 1 })
   assert.equal(buildKeyboardCommand("3", popupContext), null, "a third popup digit picks nothing")
-  assert.equal(buildKeyboardCommand("1", { ...popupContext, popupPendingCount: 0 }), null)
+  side.build.dispatch({ kind: "pick-nexus", index: 0 })
+  side.build.dispatch({ kind: "open-nexus-powers" })
+  assert.equal(buildKeyboardCommand("1", { ...popupContext, popupSpec: popupSpec(spikeContext(), side.build.state) }), null)
 
   const builtContext = { itemCount: 3, armed: false }
   assert.deepEqual(buildKeyboardCommand("1", builtContext), { kind: "arm", index: 0 })

@@ -15,7 +15,7 @@
 import { listKeyOf } from "../menu/list-keys.ts"
 import type { PlaybackControl } from "../view/playback.ts"
 import { START_KEY } from "./layout.ts"
-import { GAME_MENU_ROWS } from "./settings.ts"
+import type { PopupRow, PopupSpec } from "./popup.ts"
 import { TUNING } from "./tuning.ts"
 import type { BuildCommand, Focus, Popup } from "./types.ts"
 
@@ -133,11 +133,10 @@ export type KeyboardContext = Readonly<{
   /** The popup that is open, if any. A popup holds the keyboard: only its own keys reach it, and
    *  nothing underneath answers a key until it closes. */
   popup?: Popup | null
-  /** While the Nexus popup is open: how many powers are waiting to be picked, so a digit past them
-   *  means nothing. */
-  popupPendingCount?: number
-  /** The open popup's highlight — which of the game menu's rows Enter means. */
-  popupHighlight?: number
+  /** The open popup as data (`popupSpec`) — its rows, each option naming its hotkey and the command a
+   *  click on it sends, each setting its `decrease` and `increase`. The keyboard sends those same
+   *  commands, so a key and a click on a popup's row cannot disagree. */
+  popupSpec?: PopupSpec | null
   /** A Nexus Pulse is on screen (gate 6A): its playback keys are the screen's, ahead of the Grid's. */
   pulse?: boolean
 }>
@@ -162,78 +161,83 @@ function backCommand(key: string): BuildCommand | null {
 /** `?` opens the Controls and hotkeys page — from the game, and from the game menu (feedback F60). */
 const HELP_KEY = "?"
 
-/** A popup's own keys. Everything else is swallowed: a popup that let `u` reach the plan underneath
- *  it would be one the player cannot trust to be modal. Esc and `x` close any popup, back to the one it
- *  was opened from (feedback F73: no popup needs an `[esc] Back` row of its own). */
-function popupCommand(key: string, popup: Popup, pendingCount: number, highlight: number): BuildCommand | null {
-  const back = backCommand(key)
-  if (back !== null) return back
+/**
+ * A popup's hand-written keys: those that close it besides Esc and `x` (the key that opened it, and
+ * Enter where there is nothing to press), and the shortcuts that are no row of its own. Everything a
+ * row does, its hotkey and Enter on it send from the popup's own data (`popupCommand`).
+ */
+function popupOwnKey(key: string, popup: Popup): BuildCommand | null {
+  const close: BuildCommand = { kind: "cancel" }
   switch (popup) {
-    case "game-menu": {
-      // The game menu (owner, 2026-09-28): its own hotkeys, or Up/Down and Enter on its rows. Enter
-      // on `[q] Quit` is the quit itself — the reducer never sees a quit it would have to pass on.
-      if (key === "q") return { kind: "quit" }
-      if (key === "s") return { kind: "open-settings", section: "settings" }
-      // `[c] Controls and hotkeys` (feedback F60); `?` is the page's own shortcut, here as in the game.
-      if (key === "c" || key === HELP_KEY) return { kind: "open-controls" }
-      if (key === "r") return { kind: "restart" }
+    case "game-menu":
+      // `d` and `?` reach the Experiments and the Controls page from here, as they do from the game.
       if (key === "d") return { kind: "open-settings", section: "experiments" }
-      const list = listCommand(key)
-      if (list !== null) return list
-      if (PLACE_KEYS.has(key)) return GAME_MENU_ROWS[highlight] === "quit" ? { kind: "quit" } : { kind: "activate" }
-      return null
-    }
+      return key === HELP_KEY ? { kind: "open-controls" } : null
     case "battle-round":
-      // Enter, Space and `s` again start the Pulse (owner, 2026-09-29, feedback F42) — `s` is the key
-      // that asked, so pressing it twice is "yes"; `y` still works, unlisted, for older scripts. Going
-      // back is Esc's, above: there is no second row to press (feedback F50).
-      if (key === START_KEY || key === "y" || PLACE_KEYS.has(key)) return { kind: "start-pulse" }
-      return key === "q" ? { kind: "open-game-menu" } : null
-    case "nexus-powers": {
-      if (key === "n") return { kind: "cancel" }
-      if (key === "q") return { kind: "open-game-menu" }
-      const list = listCommand(key)
-      if (list !== null) return list
-      if (PLACE_KEYS.has(key)) return { kind: "activate" }
-      const index = digitIndex(key)
-      if (index !== null && index < pendingCount) return { kind: "pick-nexus", index }
-      return null
-    }
-    case "settings": {
+      // `y` still starts it, unlisted, for older scripts; `s`, Enter and Space are its one row's.
+      return key === "y" ? { kind: "start-pulse" } : null
+    case "nexus-powers":
+      return key === "n" ? close : null
+    case "settings":
       // `d` closes what `d` opened, the way `n` closes the Nexus popup.
-      if (key === "d") return { kind: "cancel" }
-      if (key === "q") return { kind: "open-game-menu" }
-      // Export settings is the list's last row; `e` still reaches it from anywhere in the list. The
-      // restart is the game menu's `[r]` now (feedback F34).
-      if (key === "e") return { kind: "export-settings" }
-      const list = listCommand(key)
-      if (list !== null) return list
-      // Left and Right change the highlighted setting's value — the one popup whose rows have one.
-      if (MENU_LEFT.has(key)) return { kind: "nudge", direction: "left" }
-      if (MENU_RIGHT.has(key)) return { kind: "nudge", direction: "right" }
-      if (PLACE_KEYS.has(key)) return { kind: "activate" }
-      return null
-    }
-    case "export": {
-      // `e` closes what `e` opened; Up/Down scroll the text.
-      if (key === "e" || PLACE_KEYS.has(key)) return { kind: "cancel" }
-      if (key === "q") return { kind: "open-game-menu" }
-      return listCommand(key)
-    }
-    case "message":
-      // Nothing to choose: only the cancel above closes it (feedback F34, "clicking outside or pressing
-      // esc should close it").
-      return null
-    case "controls": {
-      // The Controls page (feedback F60) scrolls like the export: Up/Down walk it; `c` and `?` close
-      // what they opened, and so do Enter and Space — there is nothing on it to press.
-      if (key === "c" || key === HELP_KEY || PLACE_KEYS.has(key)) return { kind: "cancel" }
-      if (key === "q") return { kind: "open-game-menu" }
-      return listCommand(key)
-    }
+      return key === "d" ? close : null
+    case "export":
+      // `e` closes what `e` opened, and so do Enter and Space: the text has nothing to press.
+      return key === "e" || PLACE_KEYS.has(key) ? close : null
+    case "controls":
+      // `c` and `?` close what they opened, and so do Enter and Space (feedback F60).
+      return key === "c" || key === HELP_KEY || PLACE_KEYS.has(key) ? close : null
     default:
       return null
   }
+}
+
+/** The row the keyboard is on in a popup, when it is one that does something: an option or a setting. */
+function highlightedChoice(rows: readonly PopupRow[]): PopupRow | undefined {
+  return rows.find((row) => (row.kind === "option" || row.kind === "setting") && row.highlighted === true)
+}
+
+/**
+ * A key in an open popup. Everything else is swallowed: a popup that let `u` reach the plan underneath
+ * it would be one the player cannot trust to be modal. Esc and `x` close any popup, back to the one it
+ * was opened from (feedback F73: no popup needs an `[esc] Back` row of its own). Then the popup's own
+ * keys (`popupOwnKey`), and then **its rows, as the popup's data names them** — "every popup is one
+ * shape ... options naming the command a click sends":
+ *
+ * - an option's hotkey sends its command;
+ * - Up/Down walk its list, when it has one to walk;
+ * - Enter/Space send the highlighted option's command, or the highlighted setting's `increase`;
+ * - Left/Right send the highlighted setting's `decrease` or `increase`.
+ */
+function popupCommand(key: string, popup: Popup, spec: PopupSpec | null): BuildCommand | null {
+  const back = backCommand(key)
+  if (back !== null) return back
+  // A message has nothing to choose: only the cancel above closes it (feedback F34, "clicking outside
+  // or pressing esc should close it").
+  if (popup === "message") return null
+  const own = popupOwnKey(key, popup)
+  if (own !== null) return own
+  const rows = spec?.rows ?? []
+  const option = rows.find((row) => row.kind === "option" && row.hotkey === key)
+  if (option?.kind === "option") return option.command
+  // `q` opens the game menu from any popup without a `[q]` row of its own (the game menu's is Quit).
+  if (key === "q") return popup === "game-menu" ? null : { kind: "open-game-menu" }
+  const choices = rows.filter((row) => row.kind === "option" || row.kind === "setting").length
+  if (spec?.scroll !== undefined || choices > 1) {
+    const list = listCommand(key)
+    if (list !== null) return list
+  }
+  const on = highlightedChoice(rows)
+  if (PLACE_KEYS.has(key)) {
+    if (on?.kind === "option") return on.command
+    // On a setting, Enter/Space is Right: a choice comes round, a number steps up.
+    if (on?.kind === "setting") return on.increase
+    // Nothing to press — the Nexus powers once the pick is made: the reducer says so.
+    return { kind: "activate" }
+  }
+  if (on?.kind === "setting" && MENU_LEFT.has(key)) return on.decrease
+  if (on?.kind === "setting" && MENU_RIGHT.has(key)) return on.increase
+  return null
 }
 
 /** A cursor key's direction, one tile long, and whether it is the fast move. */
@@ -287,7 +291,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (key === String.fromCharCode(3)) return { kind: "quit" }
   const popup = context.popup ?? null
   if (popup !== null) {
-    return popupCommand(key, popup, context.popupPendingCount ?? 0, context.popupHighlight ?? 0)
+    return popupCommand(key, popup, context.popupSpec ?? null)
   }
   const focus = context.focus ?? "grid"
 

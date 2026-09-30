@@ -23,7 +23,8 @@ import {
 } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildSessionOptions } from "../src/build/session.ts"
-import { WHEEL_TILES, anchorForCursor, armedPreview, legalityAt, remaining, spent } from "../src/build/state.ts"
+import { WHEEL_TILES, anchorForCursor, applyBuildCommand, armedPreview, createBuildState, legalityAt, remaining, spent } from "../src/build/state.ts"
+import { popupSpec } from "../src/build/popup.ts"
 import { bottomLine } from "../src/build/help.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { spikeContext } from "../src/cli/spike.ts"
@@ -302,8 +303,10 @@ test("keyboard: Esc is cancel and x is back in every focus, and q opens the game
       assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed, focus }), { kind: "open-game-menu" })
     }
   }
-  // Inside the game menu, q is Quit; Ctrl+C always quits outright.
-  assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed: false, popup: "game-menu" }), { kind: "quit" })
+  // Inside the game menu, q is its Quit row's key; Ctrl+C always quits outright.
+  const context = spikeContext()
+  const menu = applyBuildCommand(context, createBuildState(context, { x: 18, y: 13 }, { width: 48, height: 16 }), { kind: "open-game-menu" })
+  assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed: false, popup: "game-menu", popupSpec: popupSpec(context, menu) }), { kind: "quit" })
   assert.deepEqual(buildKeyboardCommand(String.fromCharCode(3), { itemCount: 3, armed: false }), { kind: "quit" })
 })
 

@@ -19,7 +19,7 @@ import type { MoveKind } from "./motion.ts"
 import { SpeedRamp, rampTuning } from "./motion.ts"
 import { buildMouseCommand, parseMouseEvent } from "./mouse.ts"
 import type { BuildContext, BuildState } from "./state.ts"
-import { applyBuildCommand, cardShowing, createBuildState, exportText, nexusPowers, withViewport } from "./state.ts"
+import { applyBuildCommand, cardShowing, createBuildState, exportText, withViewport } from "./state.ts"
 import { TUNING } from "./tuning.ts"
 import type { BuildCommand } from "./types.ts"
 import type { Coord } from "../grid/types.ts"
@@ -195,8 +195,7 @@ export class BuildSession {
             armed: state.armed !== null,
             focus: state.focus,
             popup: state.popup,
-            popupPendingCount: nexusPowers(this.context, state).pending.length,
-            popupHighlight: state.popupHighlight,
+            popupSpec: spec,
             pulse: this.presenter !== null,
           })
     const placing = this.lastPlacingClick

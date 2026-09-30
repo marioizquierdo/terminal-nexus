@@ -1170,15 +1170,6 @@ function exportLineCount(context: BuildContext, state: BuildState): number {
   return exportText(context, state).trimEnd().split("\n").length
 }
 
-/** Enter/Space, or Right/Left, on the Settings popup's highlighted row. */
-function stepHighlighted(state: BuildState, step: -1 | 1, activate: boolean): BuildState {
-  const row = settingsRowAt(state.popupHighlight)
-  if (row === null) return state
-  if (row.kind === "experiment") return adjustExperiment(state, row.field, step)
-  if (row.kind === "player") return adjustPlayerSetting(state, row.field, step)
-  return activate ? exportSettings(state) : state
-}
-
 /** Settings, or the export opened from it, is showing. */
 function inSettings(popup: Popup | null): boolean {
   return popup === "settings" || popup === "export"
@@ -1427,21 +1418,10 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     }
 
     case "activate": {
-      // On a setting, Enter/Space is Right: a choice of two flips, a number steps up.
-      if (state.popup === "settings") return stepHighlighted(state, 1, true)
-      if (state.popup === "game-menu") {
-        // `[q] Quit` is not the reducer's to act on: the keyboard sends `quit` for Enter on it, and a
-        // click on it sends `quit` too (`src/build/keyboard.ts`, the popup's own rows).
-        const row = GAME_MENU_ROWS[state.popupHighlight]
-        if (row === "settings") return openSettings(state, "settings")
-        if (row === "controls") return openControls(state)
-        if (row === "restart") return restartBuildPhase(context, state)
-        return state
-      }
-      if (state.popup === "nexus-powers") {
-        const pending = nexusPowers(context, state).pending[state.popupHighlight]
-        if (pending === undefined) return { ...state, status: status("No Nexus power waiting.", "warning") }
-        return pickNexus(context, state, pending.index)
+      // In a popup, Enter/Space send what the highlighted row names (`src/build/keyboard.ts`); this is
+      // what is left when there is no row to press — the Nexus powers once the pick is made.
+      if (state.popup === "nexus-powers" && nexusPowers(context, state).pending.length === 0) {
+        return { ...state, status: status("No Nexus power waiting.", "warning") }
       }
       if (state.popup !== null || state.focus !== "menu" || state.committed) return state
       if (state.highlightHidden) return revealHighlight(state)
@@ -1449,8 +1429,6 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     }
 
     case "nudge": {
-      // In Settings, Left and Right are what a row is for: they change its value.
-      if (state.popup === "settings") return stepHighlighted(state, command.direction === "right" ? 1 : -1, false)
       if (state.focus !== "menu" || state.popup !== null || state.committed) return state
       if (state.highlightHidden) return revealHighlight(state)
       // Left and Right have nothing to do on the menu: the row flickers to say the key arrived, and the
