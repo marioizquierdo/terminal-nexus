@@ -45,7 +45,7 @@ import {
   startEntry,
   structureAtTile,
 } from "../build/state.ts"
-import type { PlannedPlacement } from "../build/types.ts"
+import type { Ack, PlannedPlacement } from "../build/types.ts"
 import { CONTENT_ART } from "../content/art.ts"
 import type { BandCell, CellStyle, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
@@ -78,9 +78,9 @@ export type BuildCompositionInput = Readonly<{
   state: BuildState
   layout: BuildLayout
   glyphPack?: GlyphPack
-  /** A menu row's brief acknowledgement, while the live loop is showing one — a "pressed" flash or a
-   *  "refused" flicker. Presentation only; absent in every still frame. */
-  flash?: BuildFlash
+  /** A menu row's brief acknowledgement (`BuildState.ack`), while the live loop is showing it — the
+   *  "pressed" flash or the "refused" flicker. Presentation only; absent in every still frame. */
+  ack?: RowAck
   /**
    * The camera the Grid is drawn through, while the live loop is sliding the view toward the state's
    * own camera (gate 5H). Presentation only: absent, the state's camera is drawn — every still frame,
@@ -89,14 +89,15 @@ export type BuildCompositionInput = Readonly<{
   camera?: Camera
   /**
    * The tile the cursor is drawn on, while the live loop glides it toward the state's own cursor
-   * (after the owner's 2026-09-28 playtest). Presentation only: the armed preview and the refused
+   * (after the owner's 2026-09-28 playtest). Presentation only: the armed preview and a refused try's
    * flash are drawn shifted along with it, but what they say — legal or not, and why — is about the
    * state's cursor, where Enter would act. Absent, the state's cursor is drawn.
    */
   cursor?: Coord
-  /** The cursor flashes where a placement was just tried and refused, while the live loop shows it
-   *  (gate 5H; for the tuned `refusedCursorMs`). Presentation only. */
-  refusedFlash?: boolean
+  /** A **refused try** (`BuildState.refusedTry`): the footprint flashes where a placement was just tried
+   *  and refused, while the live loop shows it (gate 5H; for the tuned `refusedCursorMs`). Presentation
+   *  only. */
+  refusedTry?: boolean
   /**
    * A **hand-off's flight** (owner, 2026-09-30, feedback F54): a menu row has just handed the keyboard
    * to the map, and something flies from where the row is on the menu to the cursor (F63) — the focus
@@ -138,7 +139,9 @@ export type BuildCompositionInput = Readonly<{
   pulse?: PulseFrame
 }>
 
-export type BuildFlash = Readonly<{ kind: "pressed" | "refused"; entry: number }>
+/** A menu row's acknowledgement as the live loop shows it: the state's `ack` without its sequence
+ *  number — which row, and whether it was **pressed** or **refused**. */
+export type RowAck = Readonly<Pick<Ack, "kind" | "entry">>
 
 /** Which of a frame cell's four neighbours a line continues into. */
 type Joins = { n: boolean; s: boolean; e: boolean; w: boolean }
@@ -437,8 +440,8 @@ function drawPreview(cells: BandCell[], input: BuildCompositionInput, preview: A
   }
 }
 
-/** How far the drawn cursor still is from the state's own, mid-glide: what the preview and the
- *  refused flash are shifted by so they travel with it. */
+/** How far the drawn cursor still is from the state's own, mid-glide: what the preview and a refused
+ *  try's flash are shifted by so they travel with it. */
 function glideShift(input: BuildCompositionInput): Coord {
   const drawn = input.cursor
   if (drawn === undefined) return { x: 0, y: 0 }
@@ -506,9 +509,9 @@ function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
  * did not build without reading the bottom bar. A style-only write, like the cursor, so the `x` block
  * and whatever it covers keep their glyphs; inverse video carries it in monochrome.
  */
-function drawRefusedFlash(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
+function drawRefusedTry(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
   const { state, layout } = input
-  if (input.refusedFlash !== true || state.focus !== "grid" || state.popup !== null) return
+  if (input.refusedTry !== true || state.focus !== "grid" || state.popup !== null) return
   const range = visibleRange(state.camera, state.viewport)
   const shift = glideShift(input)
   const tiles =
@@ -584,14 +587,12 @@ function rightAlign(
   text(cells, BANDS.chrome, column, row, value, role, extra)
 }
 
-/** How a menu row's bar is drawn: `plain`; `selected` — the inverse bar, where the keyboard is;
- *  `pressed` — a brief, stronger bar the moment a row is activated. A row that costs more than is left
- *  is `disabled` (dim) in any of them, a row whose action is under way is drawn *active*
- *  (`menuRowActive`), and a row a key reached with nothing to do is *refused* for a moment on top of
- *  whichever it is (`MenuRowSpec.refused`). */
-type RowState = "plain" | "selected" | "pressed"
-
-/** One menu row, as it is drawn: what `drawMenuRow` needs, and all it needs. */
+/**
+ * One menu row, as it is drawn: what `drawMenuRow` needs, and all it needs. A menu row has **two
+ * states** — *highlighted* (the keyboard is on it, not yet chosen) and *active* (its action is under
+ * way, `menuRowActive`) — and **two brief acknowledgements**, *pressed* and *refused*, played on top of
+ * whichever it is. A row that costs more than is left is also *disabled* (dim).
+ */
 type MenuRowSpec = Readonly<{
   hotkey: string
   label: string
@@ -600,14 +601,16 @@ type MenuRowSpec = Readonly<{
   /** Right-aligned against the divider: a cost, or how many powers are active. */
   value?: string
   active: boolean
-  state: RowState
+  /** The keyboard's bar: only while the menu has the keyboard, and never on an active row. */
+  highlighted: boolean
   /**
-   * The "refused" flicker (owner, 2026-09-30, feedback F61: "it should probably just grey out the
+   * The acknowledgement playing on the row, if any. **Pressed**: a brief, stronger bar the moment a row
+   * is activated. **Refused** (owner, 2026-09-30, feedback F61: "it should probably just grey out the
    * text and not change the background"): for its few frames the row's words turn grey and nothing
-   * else changes — the highlight bar stays the bar, a plain row stays plain — so it reads as "nothing
-   * here" rather than as a press. It replaced the bar dimming away, which read as something happening.
+   * else changes — the highlight stays the highlight, a plain row stays plain — so it reads as "nothing
+   * here" rather than as a press.
    */
-  refused: boolean
+  ack: RowAck["kind"] | null
   disabled?: boolean
 }>
 
@@ -658,14 +661,15 @@ function drawMenuRow(cells: BandCell[], layout: BuildLayout, row: number, entry:
   const band = BANDS.chrome
   const column = layout.panelColumn
   const limit = layout.panelLimit
-  const bar = entry.state !== "plain"
-  // Pressed: the bar in the hotkey's colour, bold and underlined — stronger than "selected" at every
+  const pressed = entry.ack === "pressed"
+  // Pressed: the bar in the hotkey's colour, bold and underlined — stronger than the highlight at every
   // tier, monochrome included.
-  const barRole: StyleRole = entry.state === "pressed" ? "chrome.hotkey" : "chrome.title"
+  const bar = entry.highlighted || pressed
+  const barRole: StyleRole = pressed ? "chrome.hotkey" : "chrome.title"
   const extra = {
     inverse: bar,
-    bold: entry.state === "pressed" || entry.active,
-    underline: entry.state === "pressed",
+    bold: pressed || entry.active,
+    underline: pressed,
     dim: entry.disabled === true && !bar,
   }
   if (bar) text(cells, band, column, row, " ".repeat(limit), barRole, { ...extra, limit })
@@ -674,7 +678,7 @@ function drawMenuRow(cells: BandCell[], layout: BuildLayout, row: number, entry:
   // chosen yet", and an active row is chosen. It reads `[1] Barracks  >` (feedback F67, F70): its own
   // hotkey — which ends it — the whole row in the hotkey's colour and bold, and one `>` at its right
   // end pointing at the map where it is under way; no underline. Legible in monochrome by the `>` and
-  // the bold. A flash on it still wins, drawn as the bar.
+  // the bold. A pressed acknowledgement on it still wins, drawn as the bar.
   const activeRole: StyleRole = "chrome.hotkey"
   let at = column
   const hotkey = `[${entry.hotkey}]`
@@ -698,7 +702,7 @@ function drawMenuRow(cells: BandCell[], layout: BuildLayout, row: number, entry:
       dim: !entry.active && entry.disabled === true,
     })
   }
-  if (entry.refused) {
+  if (entry.ack === "refused") {
     const style = refusedWords(bar, capability)
     for (let index = words; index < cells.length; index += 1) {
       const drawn = cells[index]
@@ -708,38 +712,34 @@ function drawMenuRow(cells: BandCell[], layout: BuildLayout, row: number, entry:
 }
 
 /**
- * How the bar on the row for menu entry `entry` is drawn right now, and whether it is flickering
- * "refused". **The bar means one thing: the keyboard is on this row and has not chosen it yet**
- * (feedback F22). So it is drawn only while the menu has focus, and not after the mouse worked the
- * menu (`highlightHidden` — a click chooses, it does not highlight); an active row is drawn as active
- * (`menuRowActive`), never with the bar — the Nexus row behind its own popup included (F32). A pressed
- * flash is drawn as a bar on any row; a refused flicker greys the row's words over whatever it is.
+ * Whether the row for menu entry `entry` is highlighted right now, and which acknowledgement is playing
+ * on it. **The highlight means one thing: the keyboard is on this row and has not chosen it yet**
+ * (feedback F22). So it is drawn only while the menu has focus, and not after the mouse worked the menu
+ * (`highlightHidden` — a click chooses, it does not highlight); an active row is never highlighted — the
+ * Nexus row behind its own popup included (F32). A pressed acknowledgement is drawn as a stronger bar on
+ * any row; a refused one greys the row's words over whatever it is.
  */
-function rowState(input: BuildCompositionInput, entry: number): Readonly<{ state: RowState; refused: boolean }> {
-  const { state, flash } = input
-  const own = flash !== undefined && flash.entry === entry ? flash.kind : null
+function rowState(input: BuildCompositionInput, entry: number, active: boolean): Readonly<{ highlighted: boolean; ack: RowAck["kind"] | null }> {
+  const { state } = input
+  const own = input.ack !== undefined && input.ack.entry === entry ? input.ack.kind : null
   // The row a card reveal from the menu carries up to the header is drawn active throughout, never
   // pressed: turning active and sliding up is its acknowledgement (owner, 2026-09-30, feedback F68: "the
   // currently selected menu item that changed to the active state, then quickly interpolates (moves) the
   // item to the top"). The pressed flash outlasts the reveal's fade and slide, and would cover both.
   const carried = input.cardReveal?.fromMenu === true && cardEntry(state) === entry
-  if (own === "pressed" && !carried) return { state: "pressed", refused: false }
-  const refused = own === "refused"
-  if (menuRowActive(input.context, state, entry)) return { state: "plain", refused }
+  const ack = own === "pressed" && carried ? null : own
   // The Battle Round confirmation belongs to the menu, which stays lit behind it; the game menu,
   // Settings, the export, the Controls page and a message belong to none, so while one has the
   // keyboard its own highlight (or none) is the only one on screen.
-  if (
+  const popupOfNoRow =
     state.popup === "game-menu" ||
     state.popup === "settings" ||
     state.popup === "export" ||
     state.popup === "controls" ||
     state.popup === "message"
-  ) {
-    return { state: "plain", refused }
-  }
-  if (state.focus !== "menu" || state.highlightHidden) return { state: "plain", refused }
-  return { state: state.menuHighlight === entry ? "selected" : "plain", refused }
+  const highlighted =
+    !active && !popupOfNoRow && state.focus === "menu" && !state.highlightHidden && state.menuHighlight === entry
+  return { highlighted, ack }
 }
 
 /**
@@ -751,7 +751,8 @@ function menuRowSpec(input: BuildCompositionInput, entry: number): MenuRowSpec |
   const { context, state } = input
   const target = menuEntries(context)[entry]
   if (target === undefined) return null
-  const look = { active: menuRowActive(context, state, entry), ...rowState(input, entry) }
+  const active = menuRowActive(context, state, entry)
+  const look = { active, ...rowState(input, entry, active) }
   switch (target.kind) {
     case "explore":
       return { hotkey: "e", label: "Explore Map", ...look }
@@ -1479,7 +1480,7 @@ export function composeBuildFrame(
   drawEffects(cells, input, animating, capability)
   drawPreview(cells, input, preview)
   drawCursor(cells, input)
-  drawRefusedFlash(cells, input, preview)
+  drawRefusedTry(cells, input, preview)
   drawChrome(cells, input, pack)
   drawTopBarAndBottomLine(cells, input, preview)
 

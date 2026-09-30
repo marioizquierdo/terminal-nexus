@@ -59,7 +59,7 @@ import { cardEntry } from "../build/state.ts"
 import type { Experiments } from "../build/experiments.ts"
 import type { Tuning } from "../build/tuning.ts"
 import { TUNING } from "../build/tuning.ts"
-import type { BuildCompositionInput, BuildFlash, CardReveal } from "./build.ts"
+import type { BuildCompositionInput, CardReveal, RowAck } from "./build.ts"
 import type { Footprint } from "../grid/types.ts"
 import type { PlacedStructure, PlacementClock, PlacementTuning, RemovalClock } from "./placement.ts"
 import { placementRequest, removalSchedule } from "./placement.ts"
@@ -72,8 +72,8 @@ export type LiveFrame = Readonly<{
   camera: Camera
   /** The tile to draw the cursor on — the state's own once it has finished gliding. */
   cursor: Coord
-  flash?: BuildFlash
-  refusedFlash?: boolean
+  ack?: RowAck
+  refusedTry?: boolean
   /** Planned placements still going up, and how long ago each was placed (gate 5I). */
   placing?: readonly PlacementClock[]
   /** Buildings that just left the plan, still throwing sparks, and how long ago each went (F33). */
@@ -99,8 +99,8 @@ export type LivePresentation = Pick<
   BuildCompositionInput,
   | "camera"
   | "cursor"
-  | "flash"
-  | "refusedFlash"
+  | "ack"
+  | "refusedTry"
   | "placing"
   | "removing"
   | "placementTuning"
@@ -113,8 +113,8 @@ export function livePresentation(live: LiveFrame): LivePresentation {
   return {
     camera: live.camera,
     cursor: live.cursor,
-    ...(live.flash === undefined ? {} : { flash: live.flash }),
-    ...(live.refusedFlash === true ? { refusedFlash: true } : {}),
+    ...(live.ack === undefined ? {} : { ack: live.ack }),
+    ...(live.refusedTry === true ? { refusedTry: true } : {}),
     ...(live.placing === undefined ? {} : { placing: live.placing }),
     ...(live.removing === undefined ? {} : { removing: live.removing }),
     ...(live.placementTuning === undefined ? {} : { placementTuning: live.placementTuning }),
@@ -344,25 +344,25 @@ export class BuildAnimation {
       if (tween !== null && tweenActive(tween, now)) ends.push(tweenEnd(tween))
     }
 
-    let flash: BuildFlash | undefined
-    const ack = state.ack
-    if (ack !== null) {
-      if (this.seenAck?.seq !== ack.seq) this.seenAck = { seq: ack.seq, at: now }
-      const end = this.seenAck.at + (ack.kind === "pressed" ? this.tuning.pressedFlashMs : this.tuning.refusedFlashMs)
+    let ack: RowAck | undefined
+    if (state.ack !== null) {
+      const { seq, kind, entry } = state.ack
+      if (this.seenAck?.seq !== seq) this.seenAck = { seq, at: now }
+      const end = this.seenAck.at + (kind === "pressed" ? this.tuning.pressedFlashMs : this.tuning.refusedFlashMs)
       if (now < end) {
-        flash = { kind: ack.kind, entry: ack.entry }
+        ack = { kind, entry }
         ends.push(end)
       }
     }
 
-    let refusedFlash = false
+    let refusedTry = false
     const refused = state.refusedTry
     if (refused !== null) {
       if (this.seenRefusal?.seq !== refused.seq) this.seenRefusal = { seq: refused.seq, at: now }
       const end = this.seenRefusal.at + this.tuning.refusedCursorMs
       // Only while the cursor is still on the tile that was refused: moving off it ends the flash.
       if (now < end && refused.tile.x === state.cursor.x && refused.tile.y === state.cursor.y) {
-        refusedFlash = true
+        refusedTry = true
         ends.push(end)
       }
     }
@@ -407,8 +407,8 @@ export class BuildAnimation {
     return {
       camera,
       cursor,
-      ...(flash === undefined ? {} : { flash }),
-      ...(refusedFlash ? { refusedFlash } : {}),
+      ...(ack === undefined ? {} : { ack }),
+      ...(refusedTry ? { refusedTry } : {}),
       ...(placing.length === 0 ? {} : { placing }),
       ...(removing.length === 0 ? {} : { removing }),
       ...(placing.length === 0 && removing.length === 0 ? {} : { placementTuning: this.placementTuning }),

@@ -32,7 +32,7 @@ import { formatSettingsExport, parseSettingsExport } from "../src/build/settings
 import { spikeContext } from "../src/cli/spike.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import { ACTIVE_VALUE, CARD_BEATS, SEE_THROUGH_TRAIL, composeBuildFrame } from "../src/view/build.ts"
-import type { BuildCompositionInput, BuildFlash, CardReveal } from "../src/view/build.ts"
+import type { BuildCompositionInput, RowAck, CardReveal } from "../src/view/build.ts"
 import { BuildAnimation, livePresentation } from "../src/view/build-live.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
@@ -219,7 +219,7 @@ test("an active row keeps its own hotkey, ends in one >, is the hotkey's colour 
 test("a refused flicker on the highlighted row keeps the bar and greys only the words, at every tier", () => {
   const side = session()
   const row = at(side, EXPLORE_ROW)
-  const refused: BuildFlash = { kind: "refused", entry: EXPLORE_ENTRY }
+  const refused: RowAck = { kind: "refused", entry: EXPLORE_ENTRY }
   const expected: Readonly<Record<CapabilityMode, Readonly<{ bgRole?: string; dim?: boolean }>>> = {
     monochrome: { dim: true },
     color16: { bgRole: "chrome.edge" },
@@ -228,7 +228,7 @@ test("a refused flicker on the highlighted row keeps the bar and greys only the 
   }
   for (const capability of CAPABILITY_MODES) {
     const selected = rowCells(side, compose(side, {}, capability), row)
-    const flicker = rowCells(side, compose(side, { flash: refused }, capability), row)
+    const flicker = rowCells(side, compose(side, { ack: refused }, capability), row)
     assert.deepEqual(flicker.map((cell) => cell.glyph), selected.map((cell) => cell.glyph), "the flicker changed the row's words")
     flicker.forEach((cell, index) => {
       const was = selected[index] as Cell
@@ -252,7 +252,7 @@ test("a refused flicker on a plain row leaves it plain and greys its words; on a
   for (const capability of CAPABILITY_MODES) {
     const side = session() // the highlight on Explore Map; Nexus is plain
     const row = at(side, NEXUS_ROW)
-    const flicker = rowCells(side, compose(side, { flash: { kind: "refused", entry: NEXUS_ENTRY } }, capability), row)
+    const flicker = rowCells(side, compose(side, { ack: { kind: "refused", entry: NEXUS_ENTRY } }, capability), row)
     for (const cell of flicker) {
       assert.notEqual(cell.style.inverse, true, `${capability}: a bar appeared`)
       if (cell.glyph === " ") continue
@@ -267,7 +267,7 @@ test("a refused flicker on a plain row leaves it plain and greys its words; on a
     assert.equal(armed.build.state.armed, 0)
     const ack = armed.build.state.ack
     assert.deepEqual(ack === null ? null : { kind: ack.kind, entry: ack.entry }, { kind: "refused", entry: entryOfConstruct(0) })
-    const header = rowCells(armed, compose(armed, { flash: { kind: "refused", entry: entryOfConstruct(0) } }, capability), at(armed, CARD_HEADER_ROW))
+    const header = rowCells(armed, compose(armed, { ack: { kind: "refused", entry: entryOfConstruct(0) } }, capability), at(armed, CARD_HEADER_ROW))
     assert.match(header.map((cell) => cell.glyph).join(""), /^\[1\] Barracks +>$/)
     for (const cell of header) {
       assert.notEqual(cell.style.inverse, true)
@@ -280,8 +280,8 @@ test("the refused flicker is always weaker than the pressed flash", () => {
   const side = session()
   const row = at(side, EXPLORE_ROW)
   for (const capability of CAPABILITY_MODES) {
-    const pressed = rowCells(side, compose(side, { flash: { kind: "pressed", entry: EXPLORE_ENTRY } }, capability), row)
-    const refused = rowCells(side, compose(side, { flash: { kind: "refused", entry: EXPLORE_ENTRY } }, capability), row)
+    const pressed = rowCells(side, compose(side, { ack: { kind: "pressed", entry: EXPLORE_ENTRY } }, capability), row)
+    const refused = rowCells(side, compose(side, { ack: { kind: "refused", entry: EXPLORE_ENTRY } }, capability), row)
     const selected = rowCells(side, compose(side, {}, capability), row)
     // Pressed changes the whole bar: the hotkey's colour, bold, underlined.
     assert.ok(pressed.every((cell) => cell.style.fgRole === "chrome.hotkey" && cell.style.bold === true && cell.style.underline === true))
@@ -487,7 +487,7 @@ test("the row a reveal from the menu carries up is drawn active all the way, nev
   // Every instant the pressed flash is still lit — through the fade, the slide and into the card's beat.
   for (let elapsed = 0; elapsed < Math.min(TUNING.pressedFlashMs, FLAGS.cardRevealMs); elapsed += 5) {
     const live = animation.frame(side.build.state, 1000 + elapsed)
-    assert.equal(live.flash?.kind, "pressed", `${elapsed} ms: the pressed flash is over`)
+    assert.equal(live.ack?.kind, "pressed", `${elapsed} ms: the pressed flash is over`)
     assert.ok(live.cardReveal !== undefined, `${elapsed} ms: the reveal is over`)
     for (const capability of CAPABILITY_MODES) {
       const frame = compose(side, livePresentation(live), capability)

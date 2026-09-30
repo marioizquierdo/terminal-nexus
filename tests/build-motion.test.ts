@@ -480,12 +480,12 @@ test("a refused placement flashes the footprint for its tuned time, and moving o
   assert.equal(side.build.state.refusedTry?.seq, 1)
   const animation = new BuildAnimation()
   const first = animation.frame(side.build.state, 0)
-  assert.equal(first.refusedFlash, true)
+  assert.equal(first.refusedTry, true)
   assert.equal(first.busyUntil, TUNING.refusedCursorMs)
-  assert.equal(animation.frame(side.build.state, TUNING.refusedCursorMs).refusedFlash, undefined)
+  assert.equal(animation.frame(side.build.state, TUNING.refusedCursorMs).refusedTry, undefined)
   // Drawn as a solid block, in monochrome too.
   const frame = composeBuildFrame(
-    { context: side.context, state: side.build.state, layout: side.layout, refusedFlash: true },
+    { context: side.context, state: side.build.state, layout: side.layout, refusedTry: true },
     "monochrome",
   )
   const plain = composeBuildFrame({ context: side.context, state: side.build.state, layout: side.layout }, "monochrome")
@@ -494,9 +494,9 @@ test("a refused placement flashes the footprint for its tuned time, and moving o
   assert.notEqual(cellAt(plain, cell.x, cell.y).style.inverse, true)
   // A second refusal flashes again; moving away ends it at once.
   side.build.handleData("\r", side.layout)
-  assert.equal(animation.frame(side.build.state, 1000).refusedFlash, true)
+  assert.equal(animation.frame(side.build.state, 1000).refusedTry, true)
   side.build.handleData(RIGHT, side.layout)
-  assert.equal(animation.frame(side.build.state, 1001).refusedFlash, undefined)
+  assert.equal(animation.frame(side.build.state, 1001).refusedTry, undefined)
 })
 
 // --- Esc --------------------------------------------------------------------------------------------

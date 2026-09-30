@@ -30,7 +30,7 @@ import { EXPLORE_ENTRY, NEXUS_ENTRY, cardEntry, cardShowing, entryOfConstruct, m
 import type { ConstructItem } from "../src/build/types.ts"
 import { spikeContext } from "../src/cli/spike.ts"
 import { ACTIVE_VALUE, composeBuildFrame } from "../src/view/build.ts"
-import type { BuildFlash } from "../src/view/build.ts"
+import type { RowAck } from "../src/view/build.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 
 const ESC = String.fromCharCode(27)
@@ -59,15 +59,15 @@ function clickCell(side: Side, column: number, row: number): void {
   keys(side, formatMouseEvent(MOUSE_LEFT, column + 1, row + 1))
 }
 
-function frameOf(side: Side, flash?: BuildFlash) {
+function frameOf(side: Side, flash?: RowAck) {
   return composeBuildFrame(
-    { context: side.context, state: side.build.state, layout: side.layout, ...(flash === undefined ? {} : { flash }) },
+    { context: side.context, state: side.build.state, layout: side.layout, ...(flash === undefined ? {} : { ack: flash }) },
     "monochrome",
   )
 }
 
 /** One panel row's text, from the panel's first column to the divider. */
-function panelLine(side: Side, row: number, flash?: BuildFlash): string {
+function panelLine(side: Side, row: number, flash?: RowAck): string {
   const line = frameToText(frameOf(side, flash)).split("\n")[row] ?? ""
   return line.padEnd(side.layout.frame.width).slice(side.layout.panelColumn, side.layout.dividerColumn)
 }
@@ -166,7 +166,7 @@ test("an active row keeps its own hotkey and ends in one >, and a flash on it st
   assert.notEqual(plain.inverse, true, "an active row is drawn with the bar")
   assert.equal(plain.bold, true)
   // The pressed flash plays on it: the bar, over the same words.
-  const flash: BuildFlash = { kind: "pressed", entry: NEXUS_ENTRY }
+  const flash: RowAck = { kind: "pressed", entry: NEXUS_ENTRY }
   assert.equal(panelLine(side, row, flash), panelLine(side, row))
   const pressed = cellAt(frameOf(side, flash), side.layout.dividerColumn - 1, row).style
   assert.equal(pressed.inverse, true)
@@ -237,7 +237,7 @@ test("a turret's card shows its attack", () => {
 test("the card's header plays the building's own pressed flash", () => {
   const side = session()
   keys(side, "2")
-  const flash: BuildFlash = { kind: "pressed", entry: entryOfConstruct(1) }
+  const flash: RowAck = { kind: "pressed", entry: entryOfConstruct(1) }
   const header = at(side, CARD_HEADER_ROW)
   assert.deepEqual(side.build.state.ack, { seq: 1, kind: "pressed", entry: entryOfConstruct(1) })
   const style = cellAt(frameOf(side, flash), side.layout.dividerColumn - 1, header).style

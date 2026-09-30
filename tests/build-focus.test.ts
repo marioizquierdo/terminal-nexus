@@ -39,7 +39,7 @@ import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
-import type { BuildFlash } from "../src/view/build.ts"
+import type { RowAck } from "../src/view/build.ts"
 import { hint } from "../src/build/help.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 import { tilesOf } from "../src/grid/coords.ts"
@@ -80,9 +80,9 @@ function keys(side: Side, ...sequence: string[]): void {
   for (const key of sequence) side.build.handleData(key, side.layout)
 }
 
-function screen(side: Side, flash?: BuildFlash) {
+function screen(side: Side, flash?: RowAck) {
   const frame = composeBuildFrame(
-    { context: side.context, state: side.build.state, layout: side.layout, ...(flash === undefined ? {} : { flash }) },
+    { context: side.context, state: side.build.state, layout: side.layout, ...(flash === undefined ? {} : { ack: flash }) },
     "monochrome",
   )
   const text = frameToText(frame)
@@ -90,7 +90,7 @@ function screen(side: Side, flash?: BuildFlash) {
 }
 
 /** Whether the panel row is drawn as the inverse bar — "the keyboard is here". */
-function barOn(side: Side, row: number, flash?: BuildFlash): boolean {
+function barOn(side: Side, row: number, flash?: RowAck): boolean {
   const { frame } = screen(side, flash)
   return cellAt(frame, side.layout.panelColumn + side.layout.panelLimit - 1, row).style.inverse === true
 }
@@ -431,7 +431,7 @@ test("a menu row is drawn in four states: plain, selected, pressed and refused",
   const side = session()
   const row = side.layout.panelRow + EXPLORE_ROW
   const last = side.layout.panelColumn + side.layout.panelLimit - 1
-  const style = (flash?: BuildFlash) => cellAt(screen(side, flash).frame, last, row).style
+  const style = (flash?: RowAck) => cellAt(screen(side, flash).frame, last, row).style
   assert.equal(style().inverse, true, "selected")
   // Pressed: stronger than selected — bold and underlined, at every tier including monochrome.
   const pressed = style({ kind: "pressed", entry: EXPLORE_ENTRY })
