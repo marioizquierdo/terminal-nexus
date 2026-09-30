@@ -34,6 +34,7 @@ import {
   EXPLORE_ENTRY,
   NEXUS_ENTRY,
   armedPreview,
+  cardEntry,
   cardShowing,
   entryOfConstruct,
   exploring,
@@ -64,8 +65,8 @@ import { paintEffectCells } from "./effects/composite.ts"
 import type { TrackSchedule } from "./animation.ts"
 import { trackEffectsAt } from "./animation.ts"
 import type { PlacementClock, RemovalClock } from "./placement.ts"
+import type { PlacementTuning } from "./placement.ts"
 import { placementEffectContext, placementLook, placementSchedule, removalSchedule } from "./placement.ts"
-import { TUNING } from "../build/tuning.ts"
 
 /** A structure the player is about to place, and whether they may. Drawn in the highlights band, so
  *  it is presentation and can never change occupancy (engine.md 9.4). */
@@ -122,6 +123,9 @@ export type BuildCompositionInput = Readonly<{
   /** Buildings that just left the plan, with how long ago each went (feedback F33): their sparks. The
    *  live loop supplies it; absent — every still frame — nothing is drawn for a removal. */
   removing?: readonly RemovalClock[]
+  /** The numbers the live loop timed `placing` and `removing` by, so their tracks are drawn as the loop
+   *  scheduled them. Absent, the owner's tuned ones (`TUNING`). */
+  placementTuning?: PlacementTuning
   /** The player's reduced-motion setting: a placement then shows its finished building at once. */
   reducedMotion?: boolean
   /**
@@ -300,7 +304,7 @@ function animatingPlacements(input: BuildCompositionInput): Map<number, Animatin
     const placement = state.planned.find((planned) => planned.ordinal === clock.ordinal)
     if (placement === undefined) continue
     const footprint = context.registry.get(placement.contentId).footprint
-    const schedule = placementSchedule(placement, footprint, reducedMotion)
+    const schedule = placementSchedule(placement, footprint, reducedMotion, input.placementTuning)
     animating.set(clock.ordinal, { placement, schedule, elapsedMs: clock.elapsedMs })
   }
   return animating
@@ -373,7 +377,7 @@ function drawEffects(
   const tracks: Readonly<{ schedule: TrackSchedule; elapsedMs: number }>[] = [...animating.values()]
   for (const removal of input.removing ?? []) {
     const footprint = context.registry.get(removal.contentId).footprint
-    tracks.push({ schedule: removalSchedule(removal, footprint, reducedMotion), elapsedMs: removal.elapsedMs })
+    tracks.push({ schedule: removalSchedule(removal, footprint, reducedMotion, input.placementTuning), elapsedMs: removal.elapsedMs })
   }
   if (tracks.length === 0) return
   const range = visibleRange(state.camera, state.viewport)
@@ -827,12 +831,15 @@ function displayName(context: BuildContext, contentId: string): string {
 }
 
 /**
- * The menu turning into a card (owner, 2026-09-30, feedback F68), as the live loop times it: `progress`
- * runs 0 to 1, linear in time, over the "Card reveal" Experiment's length; `menu` says the menu was on
+ * The menu turning into a card (owner, 2026-09-30, feedback F68), as the live loop times it: `elapsedMs`
+ * into a reveal `lengthMs` long (the "Card reveal" Experiment's length); `fromMenu` says the menu was on
  * the panel before (its rows fade and the chosen row slides up), rather than another card (which gives
  * way at once, and only the card's own beat plays). Absent — every still frame — the finished card.
  */
-export type CardReveal = Readonly<{ progress: number; menu: boolean }>
+export type CardReveal = Readonly<{ elapsedMs: number; lengthMs: number; fromMenu: boolean }>
+
+/** How far through its reveal the card is, 0 to 1 and linear in time; a reveal of no length is over. */
+const revealProgress = (reveal: CardReveal): number => (reveal.lengthMs <= 0 ? 1 : reveal.elapsedMs / reveal.lengthMs)
 
 /**
  * The card reveal's three beats, as shares of its length (F68: "all the menu disappears except for the
@@ -893,11 +900,6 @@ function easeInOutCubic(t: number): number {
   return x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2
 }
 
-/** The menu entry a card belongs to: the armed building's, or Explore Map's. */
-function cardEntry(state: BuildState): number {
-  return state.armed === null ? EXPLORE_ENTRY : entryOfConstruct(state.armed)
-}
-
 /**
  * The side panel while a card shows: finished, or — while the live loop says the card is being
  * revealed (F68) — partway through its three beats (`CARD_BEATS`). Presentation only: the state is the
@@ -905,18 +907,18 @@ function cardEntry(state: BuildState): number {
  */
 function drawCard(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, capability: CapabilityMode): void {
   const reveal = input.cardReveal
-  if (reveal === undefined || reveal.progress >= 1) {
+  const entry = cardEntry(input.state)
+  if (reveal === undefined || entry === null || revealProgress(reveal) >= 1) {
     drawCardPanel(cells, input, pack, finishedCard(capability))
     return
   }
-  const { context, state, layout } = input
-  const t = Math.max(0, reveal.progress)
-  const entry = cardEntry(state)
+  const { context, layout } = input
+  const t = Math.max(0, revealProgress(reveal))
   const header = layout.panelRow + CARD_HEADER_ROW
   const target = menuEntries(context)[entry]
   const home = (target === undefined ? null : menuEntryRow(layout, context.catalog, target)) ?? header
-  const menuEnds = reveal.menu ? CARD_BEATS.fade + CARD_BEATS.slide : 0
-  if (reveal.menu && t < CARD_BEATS.fade) {
+  const menuEnds = reveal.fromMenu ? CARD_BEATS.fade + CARD_BEATS.slide : 0
+  if (reveal.fromMenu && t < CARD_BEATS.fade) {
     // Beat 1: the menu as it stands — its chosen row already active — with every other row fading out.
     const menu: BandCell[] = []
     drawPanel(menu, input, pack, capability)
@@ -928,7 +930,7 @@ function drawCard(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPa
     return
   }
   const spec = menuRowSpec(input, entry)
-  if (reveal.menu && t < menuEnds) {
+  if (reveal.fromMenu && t < menuEnds) {
     // Beat 2: the chosen row alone, sliding a whole row at a time from its place to the header line.
     if (spec === null) return
     const along = easeInOutCubic((t - CARD_BEATS.fade) / CARD_BEATS.slide)
@@ -937,7 +939,7 @@ function drawCard(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPa
   }
   // Beat 3 (the whole reveal, from another card): the card itself.
   const shown = (t - menuEnds) / (1 - menuEnds)
-  const lengthMs = Math.max(0, state.experiments.cardRevealMs) * (1 - menuEnds)
+  const lengthMs = Math.max(0, reveal.lengthMs) * (1 - menuEnds)
   let total = 0
   drawCardPanel([], input, pack, {
     typed: (value) => {
@@ -975,7 +977,8 @@ function drawCardPanel(cells: BandCell[], input: BuildCompositionInput, pack: Gl
   const { context, state, layout } = input
   const column = layout.panelColumn
   const limit = layout.panelLimit
-  const header = menuRowSpec(input, cardEntry(state))
+  const entry = cardEntry(state)
+  const header = entry === null ? null : menuRowSpec(input, entry)
   if (header !== null) drawMenuRow(cells, layout, layout.panelRow + CARD_HEADER_ROW, header, look.capability)
   const separator = cells.length
   text(cells, BANDS.chrome, column, layout.panelRow + CARD_SEPARATOR_ROW, chromeGlyph(pack, "horizontal").repeat(limit), "chrome.frame", { limit })
@@ -1046,7 +1049,7 @@ function drawBuildingCard(
           { ordinal: 0, contentId, anchor: { x: 0, y: 0 } },
           definition.footprint,
           false,
-          { ...TUNING, placeFramesMs: look.icon.framesMs, placeGlowMs: 0 },
+          { placeFramesMs: look.icon.framesMs, placeGlowMs: 0, placeSparks: 0 },
         )
   art.forEach((line, index) => {
     ;[...line].forEach((character, offset) => {

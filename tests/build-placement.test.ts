@@ -18,7 +18,7 @@ import { runBuildPlaytest } from "../src/playtest/build.ts"
 import type { BuildPlaytest } from "../src/playtest/build.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import type { BuildCompositionInput } from "../src/view/build.ts"
-import { BuildAnimation } from "../src/view/build-live.ts"
+import { BuildAnimation, livePresentation } from "../src/view/build-live.ts"
 import { cellAt, frameToAnsi, frameToText } from "../src/view/frame.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
 import { paintOps } from "../src/view/backends/canvas.ts"
@@ -303,6 +303,27 @@ test("the live loop times each placement from the frame that first drew it, and 
   const done = animation.frame(after, 1_000 + total)
   assert.equal(done.placing, undefined)
   assert.equal(done.busyUntil, null)
+})
+
+test("a live loop given other timings hands them to the view, which draws the placement as the loop timed it", () => {
+  const { state: before } = placed("n 1 Down Space")
+  const { run, state: after } = placed()
+  const placement = lastPlacement(after)
+  const slow = { ...TUNING, placeFramesMs: TUNING.placeFramesMs * 4 }
+  const animation = new BuildAnimation(slow)
+  animation.frame(before, 0)
+  animation.frame(after, 1_000)
+  // The owner's frames would be over by now; these are not.
+  const live = livePresentation(animation.frame(after, 1_000 + TUNING.placeFramesMs + 10))
+  const { placementTuning, ...untimed } = live
+  assert.deepEqual(placementTuning, { placeFramesMs: slow.placeFramesMs, placeGlowMs: slow.placeGlowMs, placeSparks: slow.placeSparks })
+  const drawn = compose(run, after, live)
+  const asOwner = compose(run, after, untimed)
+  const cells = footprintCells(run, { ...after, camera: live.camera ?? after.camera }, BARRACKS, placement.anchor)
+  assert.ok(
+    cells.some((c) => cellAt(drawn, c.x, c.y).glyph !== cellAt(asOwner, c.x, c.y).glyph),
+    "the view drew the owner's timings rather than the loop's",
+  )
 })
 
 test("whatever is already planned when the screen first draws is not animated", () => {

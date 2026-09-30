@@ -55,13 +55,13 @@
 import type { Camera } from "../build/camera.ts"
 import type { Coord } from "../grid/types.ts"
 import type { BuildState } from "../build/state.ts"
-import { cardShowing } from "../build/state.ts"
+import { cardEntry } from "../build/state.ts"
 import type { Experiments } from "../build/experiments.ts"
 import type { Tuning } from "../build/tuning.ts"
 import { TUNING } from "../build/tuning.ts"
 import type { BuildCompositionInput, BuildFlash, CardReveal } from "./build.ts"
 import type { Footprint } from "../grid/types.ts"
-import type { PlacedStructure, PlacementClock, RemovalClock } from "./placement.ts"
+import type { PlacedStructure, PlacementClock, PlacementTuning, RemovalClock } from "./placement.ts"
 import { placementRequest, removalSchedule } from "./placement.ts"
 import { scheduleTrack, trackBusyAt } from "./animation.ts"
 import type { Point, Tween } from "./tween.ts"
@@ -78,11 +78,13 @@ export type LiveFrame = Readonly<{
   placing?: readonly PlacementClock[]
   /** Buildings that just left the plan, still throwing sparks, and how long ago each went (F33). */
   removing?: readonly RemovalClock[]
+  /** The numbers `placing` and `removing` were timed by, while either has anything in it. */
+  placementTuning?: PlacementTuning
   /** A hand-off's flight, 0 to 1 and linear in time (F54); the view eases it. */
   handoffFlight?: Readonly<{ progress: number }>
   /** The cursor is in the "on" half of a blink (F54). */
   cursorBlink?: boolean
-  /** The menu turning into a card (F68), 0 to 1 and linear in time; the view sets the beats. */
+  /** The menu turning into a card (F68): how far into it, and how long it is; the view sets the beats. */
   cardReveal?: CardReveal
   /** When the last thing still animating ends, or `null` when nothing is. */
   busyUntil: number | null
@@ -95,7 +97,16 @@ export type LiveFrame = Readonly<{
  */
 export type LivePresentation = Pick<
   BuildCompositionInput,
-  "camera" | "cursor" | "flash" | "refusedFlash" | "placing" | "removing" | "handoffFlight" | "cursorBlink" | "cardReveal"
+  | "camera"
+  | "cursor"
+  | "flash"
+  | "refusedFlash"
+  | "placing"
+  | "removing"
+  | "placementTuning"
+  | "handoffFlight"
+  | "cursorBlink"
+  | "cardReveal"
 >
 
 export function livePresentation(live: LiveFrame): LivePresentation {
@@ -106,6 +117,7 @@ export function livePresentation(live: LiveFrame): LivePresentation {
     ...(live.refusedFlash === true ? { refusedFlash: true } : {}),
     ...(live.placing === undefined ? {} : { placing: live.placing }),
     ...(live.removing === undefined ? {} : { removing: live.removing }),
+    ...(live.placementTuning === undefined ? {} : { placementTuning: live.placementTuning }),
     ...(live.handoffFlight === undefined ? {} : { handoffFlight: live.handoffFlight }),
     ...(live.cursorBlink === true ? { cursorBlink: true } : {}),
     ...(live.cardReveal === undefined ? {} : { cardReveal: live.cardReveal }),
@@ -113,29 +125,19 @@ export function livePresentation(live: LiveFrame): LivePresentation {
 }
 
 /**
- * Which card the panel shows, as a key the live loop compares frame to frame (F68): `null` for the
- * menu (or the committed summary), `explore` for Explore Map's, `armed:<index>` for a building's. A
- * change to a card that is not `null` starts the card reveal.
- */
-export function cardKey(state: BuildState): string | null {
-  if (!cardShowing(state)) return null
-  return state.armed === null ? "explore" : `armed:${state.armed}`
-}
-
-/**
  * The card reveal `elapsedMs` after the panel turned into a card, or `null` once it is over (or never
- * plays: the Experiment off, or reduced motion). `menu` says what the panel showed before: the menu,
+ * plays: the Experiment off, or reduced motion). `fromMenu` says what the panel showed before: the menu,
  * whose rows fade and whose chosen row slides up, or another card, which gives way at once.
  */
 export function cardRevealAt(
-  flags: Pick<Experiments, "cardRevealMs">,
+  experiments: Pick<Experiments, "cardRevealMs">,
   reducedMotion: boolean,
   elapsedMs: number,
-  menu: boolean,
+  fromMenu: boolean,
 ): CardReveal | null {
-  const duration = reducedMotion ? 0 : Math.max(0, flags.cardRevealMs)
-  if (duration <= 0 || elapsedMs < 0 || elapsedMs >= duration) return null
-  return { progress: elapsedMs / duration, menu }
+  const lengthMs = reducedMotion ? 0 : Math.max(0, experiments.cardRevealMs)
+  if (lengthMs <= 0 || elapsedMs < 0 || elapsedMs >= lengthMs) return null
+  return { elapsedMs, lengthMs, fromMenu }
 }
 
 /**
@@ -203,6 +205,8 @@ export type LiveTuning = Pick<
 export class BuildAnimation {
   /** The tuned timings — the owner's (`TUNING`), unless a test hands in others. */
   private readonly tuning: LiveTuning
+  /** The part of them a placement's track is timed by, handed to the view with the tracks it times. */
+  private readonly placementTuning: PlacementTuning
   private ease: Tween<Camera> | null = null
   /** The cursor's place in the view — its tile less the camera's — on its way somewhere. */
   private glide: Tween<Point> | null = null
@@ -211,10 +215,11 @@ export class BuildAnimation {
   /** The last hand-off seen (F54), when it was first seen, and whether it has been cut short — the
    *  keyboard left the map, a popup opened, the plan was committed — after which it never resumes. */
   private seenHandoff: Readonly<{ seq: number; at: number; stopped: boolean }> | null = null
-  /** The card the panel showed at the last frame (`cardKey`), when it turned into it, and whether the
-   *  menu was there before it (F68). `at` is `null` for a card already showing when the screen first
-   *  drew, which never plays a reveal — like a placement already planned then. */
-  private seenCard: Readonly<{ key: string | null; at: number | null; menu: boolean }> | null = null
+  /** The menu entry whose card the panel showed at the last frame (`cardEntry`, `null` for the menu),
+   *  when it turned into it, and whether the menu was there before it (F68). `at` is `null` for a card
+   *  already showing when the screen first drew, which never plays a reveal — like a placement already
+   *  planned then. */
+  private seenCard: Readonly<{ entry: number | null; at: number | null; fromMenu: boolean }> | null = null
   /**
    * Each planned ordinal's animation track (`animation.ts`), by the one thing about it that varies:
    * when its `play` was requested — the first frame that drew it — or `null` for what was already
@@ -232,6 +237,7 @@ export class BuildAnimation {
 
   constructor(tuning: LiveTuning = TUNING) {
     this.tuning = tuning
+    this.placementTuning = { placeFramesMs: tuning.placeFramesMs, placeGlowMs: tuning.placeGlowMs, placeSparks: tuning.placeSparks }
   }
 
   /**
@@ -303,7 +309,7 @@ export class BuildAnimation {
     this.primed = true
 
     const reducedMotion = options.reducedMotion === true
-    const timing = this.tuning
+    const timing = this.placementTuning
     const placing: PlacementClock[] = []
     let until: number | null = null
     for (const [ordinal, track] of this.tracks) {
@@ -383,18 +389,18 @@ export class BuildAnimation {
       }
     }
 
-    // The menu turning into a card (F68). Watched, not recorded: the key changes the frame the state
-    // first shows a new card, and the reveal plays from that frame. Closing a card is instant.
-    const key = cardKey(state)
-    if (this.seenCard === null) this.seenCard = { key, at: null, menu: key === null }
-    else if (this.seenCard.key !== key) this.seenCard = { key, at: now, menu: this.seenCard.key === null }
+    // The menu turning into a card (F68). Watched, not recorded: the card's entry changes the frame the
+    // state first shows a new card, and the reveal plays from that frame. Closing a card is instant.
+    const entry = cardEntry(state)
+    if (this.seenCard === null) this.seenCard = { entry, at: null, fromMenu: entry === null }
+    else if (this.seenCard.entry !== entry) this.seenCard = { entry, at: now, fromMenu: this.seenCard.entry === null }
     let cardReveal: CardReveal | undefined
     const card = this.seenCard
-    if (card.key !== null && card.at !== null) {
-      const reveal = cardRevealAt(state.experiments, options.reducedMotion === true, now - card.at, card.menu)
+    if (card.entry !== null && card.at !== null) {
+      const reveal = cardRevealAt(state.experiments, options.reducedMotion === true, now - card.at, card.fromMenu)
       if (reveal !== null) {
         cardReveal = reveal
-        ends.push(card.at + state.experiments.cardRevealMs)
+        ends.push(card.at + reveal.lengthMs)
       }
     }
 
@@ -405,6 +411,7 @@ export class BuildAnimation {
       ...(refusedFlash ? { refusedFlash } : {}),
       ...(placing.length === 0 ? {} : { placing }),
       ...(removing.length === 0 ? {} : { removing }),
+      ...(placing.length === 0 && removing.length === 0 ? {} : { placementTuning: this.placementTuning }),
       ...(handoffFlight === undefined ? {} : { handoffFlight }),
       ...(cursorBlink ? { cursorBlink } : {}),
       ...(cardReveal === undefined ? {} : { cardReveal }),

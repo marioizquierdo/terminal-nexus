@@ -27,13 +27,13 @@ import {
 } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildContext, BuildState } from "../src/build/state.ts"
-import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct, menuEntries, remaining, startEntry } from "../src/build/state.ts"
+import { EXPLORE_ENTRY, NEXUS_ENTRY, cardEntry, entryOfConstruct, menuEntries, remaining, startEntry } from "../src/build/state.ts"
 import { formatSettingsExport, parseSettingsExport } from "../src/build/settings-export.ts"
 import { spikeContext } from "../src/cli/spike.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import { ACTIVE_VALUE, CARD_BEATS, SEE_THROUGH_TRAIL, composeBuildFrame } from "../src/view/build.ts"
-import type { BuildCompositionInput, BuildFlash } from "../src/view/build.ts"
-import { BuildAnimation, cardKey, livePresentation } from "../src/view/build-live.ts"
+import type { BuildCompositionInput, BuildFlash, CardReveal } from "../src/view/build.ts"
+import { BuildAnimation, livePresentation } from "../src/view/build-live.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { placementLook, placementSchedule } from "../src/view/placement.ts"
@@ -49,6 +49,13 @@ const ENTER = "\r"
 const MINIMUM = { columns: 80, rows: 24 }
 const ROOMY = { columns: 120, rows: 40 }
 const FLAGS: Experiments = defaultExperiments()
+
+/** The card reveal `progress` of the way through its default length, from the menu or another card. */
+const reveal = (progress: number, fromMenu = true): CardReveal => ({
+  elapsedMs: progress * FLAGS.cardRevealMs,
+  lengthMs: FLAGS.cardRevealMs,
+  fromMenu,
+})
 
 type Side = { build: BuildSession; layout: BuildLayout; context: BuildContext }
 
@@ -375,7 +382,7 @@ test("beat 1: the chosen row, active, stays where it is on the menu while every 
   const home = menuEntryRow(side.layout, SPIKE_CATALOG, { kind: "construct", index: 2 }) as number
   const progress = CARD_BEATS.fade * 0.4
   for (const capability of CAPABILITY_MODES) {
-    const frame = compose(side, { cardReveal: { progress, menu: true } }, capability)
+    const frame = compose(side, { cardReveal: reveal(progress) }, capability)
     assert.match(panelLine(side, frame, home), /^\[3\] Turret +>$/)
     assert.match(panelLine(side, frame, at(side, EXPLORE_ROW)), /^\[e\] Explore Map/, "the other rows are already gone")
     assert.match(panelLine(side, frame, startRow(side.layout)), /^\[s\] Start Pulse/)
@@ -386,7 +393,7 @@ test("beat 1: the chosen row, active, stays where it is on the menu while every 
     if (capability === "truecolor" || capability === "color256") assert.ok((other.fade ?? 0) > 0, `${capability}: the other rows do not fade`)
   }
   // Where colour cannot blend, the fading rows are dim for the half nearer gone.
-  const late = compose(side, { cardReveal: { progress: CARD_BEATS.fade * 0.8, menu: true } }, "color16")
+  const late = compose(side, { cardReveal: reveal(CARD_BEATS.fade * 0.8) }, "color16")
   assert.equal(cellAt(late, side.layout.panelColumn + 1, at(side, EXPLORE_ROW)).style.dim, true)
 })
 
@@ -397,7 +404,7 @@ test("beat 2: the chosen row alone slides up a whole row at a time to the header
   const rows: number[] = []
   for (let step = 0; step < 10; step += 1) {
     const progress = CARD_BEATS.fade + (CARD_BEATS.slide * step) / 10
-    const lines = panelLines(side, compose(side, { cardReveal: { progress, menu: true } }))
+    const lines = panelLines(side, compose(side, { cardReveal: reveal(progress) }))
     const drawn = lines.map((line, index) => [line, index] as const).filter(([line]) => line.trim() !== "")
     assert.equal(drawn.length, 1, `at ${progress} the panel shows ${drawn.length} lines`)
     assert.match(drawn[0]?.[0] as string, /^\[3\] Turret +>$/)
@@ -413,7 +420,7 @@ test("beat 3: the header in place, the card fading in, its words typed, the icon
   keys(side, "1") // the Barracks, whose placement frames are authored
   const still = compose(side, {}, "truecolor")
   const start = CARD_BEATS.fade + CARD_BEATS.slide
-  const early = compose(side, { cardReveal: { progress: start + 0.02, menu: true } }, "truecolor")
+  const early = compose(side, { cardReveal: reveal(start + 0.02) }, "truecolor")
   const lines = panelLines(side, early)
   assert.match(lines[CARD_HEADER_ROW] as string, /^\[1\] Barracks +>$/)
   // The separator is there, fading in.
@@ -439,21 +446,21 @@ test("beat 3: the header in place, the card fading in, its words typed, the icon
   }
   assert.notEqual(panelLines(side, early).slice(CARD_FIRST_ROW, CARD_FIRST_ROW + 2).join("|"), panelLines(side, still).slice(CARD_FIRST_ROW, CARD_FIRST_ROW + 2).join("|"), "the icon is already finished")
   // Halfway through the beat: more typed, the numbers fading in.
-  const half = panelLines(side, compose(side, { cardReveal: { progress: start + CARD_BEATS.card / 2, menu: true } }, "truecolor"))
+  const half = panelLines(side, compose(side, { cardReveal: reveal(start + CARD_BEATS.card / 2) }, "truecolor"))
   const typed = half.join("\n").replace(/\s+/gu, "").length
   const early_ = lines.join("\n").replace(/\s+/gu, "").length
   assert.ok(typed > early_, "nothing more was typed halfway")
   // At its end and after it, the finished card exactly as a still frame draws it.
-  assert.deepEqual(compose(side, { cardReveal: { progress: 1, menu: true } }, "truecolor"), still)
+  assert.deepEqual(compose(side, { cardReveal: reveal(1) }, "truecolor"), still)
 })
 
 test("a still frame is the finished card; from another card only the card's own beat plays", () => {
   const side = session()
   keys(side, "2")
   // A reveal at its end, from either start, is exactly the still frame's card.
-  assert.deepEqual(compose(side, { cardReveal: { progress: 1, menu: false } }, "truecolor"), compose(side, {}, "truecolor"))
+  assert.deepEqual(compose(side, { cardReveal: reveal(1, false) }, "truecolor"), compose(side, {}, "truecolor"))
   // From another card: the header already in place and the separator drawn, from the first instant.
-  const from = compose(side, { cardReveal: { progress: 0.05, menu: false } }, "monochrome")
+  const from = compose(side, { cardReveal: reveal(0.05, false) }, "monochrome")
   const lines = panelLines(side, from)
   assert.match(lines[CARD_HEADER_ROW] as string, /^\[2\] Hatchery +>$/)
   assert.equal(lines[CARD_SEPARATOR_ROW], "-".repeat(side.layout.panelLimit))
@@ -464,7 +471,7 @@ test("Explore Map's card reveals the same way, its row already on the header lin
   const side = session()
   keys(side, "e")
   const slide = CARD_BEATS.fade + CARD_BEATS.slide / 2
-  const lines = panelLines(side, compose(side, { cardReveal: { progress: slide, menu: true } }))
+  const lines = panelLines(side, compose(side, { cardReveal: reveal(slide) }))
   assert.match(lines[CARD_HEADER_ROW] as string, /^\[e\] Explore Map +>$/)
   assert.equal(lines.filter((line) => line.trim() !== "").length, 1)
 })
@@ -477,16 +484,16 @@ test("the live loop plays the reveal from the frame the panel becomes a card, ke
   assert.equal(animation.frame(side.build.state, 0).cardReveal, undefined, "a reveal on the first frame")
   keys(side, "1")
   const first = animation.frame(side.build.state, 1000)
-  assert.deepEqual(first.cardReveal, { progress: 0, menu: true })
+  assert.deepEqual(first.cardReveal, reveal(0))
   assert.ok((first.busyUntil ?? 0) >= 1000 + FLAGS.cardRevealMs)
-  assert.deepEqual(animation.frame(side.build.state, 1075).cardReveal, { progress: 0.5, menu: true })
-  assert.deepEqual(livePresentation(animation.frame(side.build.state, 1075)).cardReveal, { progress: 0.5, menu: true })
+  assert.deepEqual(animation.frame(side.build.state, 1075).cardReveal, reveal(0.5))
+  assert.deepEqual(livePresentation(animation.frame(side.build.state, 1075)).cardReveal, reveal(0.5))
   assert.equal(animation.frame(side.build.state, 1000 + FLAGS.cardRevealMs).cardReveal, undefined)
   // Closing is instant; opening again plays it again.
   keys(side, ESC)
   assert.equal(animation.frame(side.build.state, 2000).cardReveal, undefined)
   keys(side, "e")
-  assert.deepEqual(animation.frame(side.build.state, 3000).cardReveal, { progress: 0, menu: true })
+  assert.deepEqual(animation.frame(side.build.state, 3000).cardReveal, reveal(0))
 })
 
 test("a change from one card to another armed building reveals only the card; the same card never replays", () => {
@@ -497,15 +504,15 @@ test("a change from one card to another armed building reveals only the card; th
   const exploring: BuildState = { ...base, focus: "grid", exploreMap: true, armed: null }
   const barracks: BuildState = { ...exploring, exploreMap: false, armed: 0 }
   const turretState: BuildState = { ...barracks, armed: 2 }
-  assert.equal(cardKey(exploring), "explore")
-  assert.equal(cardKey(barracks), "armed:0")
-  assert.equal(cardKey(base), null)
-  assert.deepEqual(animation.frame(exploring, 1000).cardReveal, { progress: 0, menu: true })
-  assert.deepEqual(animation.frame(barracks, 2000).cardReveal, { progress: 0, menu: false })
+  assert.equal(cardEntry(exploring), EXPLORE_ENTRY)
+  assert.equal(cardEntry(barracks), entryOfConstruct(0))
+  assert.equal(cardEntry(base), null)
+  assert.deepEqual(animation.frame(exploring, 1000).cardReveal, reveal(0))
+  assert.deepEqual(animation.frame(barracks, 2000).cardReveal, reveal(0, false))
   assert.equal(animation.frame(barracks, 2000 + FLAGS.cardRevealMs + 1).cardReveal, undefined)
   // The same card, frame after frame (the cursor moving under Explore Map's, a popup over it): nothing.
   assert.equal(animation.frame({ ...barracks, cursor: { x: 3, y: 3 } }, 3000).cardReveal, undefined)
-  assert.deepEqual(animation.frame(turretState, 4000).cardReveal, { progress: 0, menu: false })
+  assert.deepEqual(animation.frame(turretState, 4000).cardReveal, reveal(0, false))
 })
 
 test("no reveal under reduced motion or with the Experiment off", () => {
@@ -529,7 +536,7 @@ test("the reveal and the hand-off start together: neither waits for the other", 
   animation.frame(side.build.state, 0)
   keys(side, DOWN, DOWN, ENTER) // the Barracks, from the menu
   const frame = animation.frame(side.build.state, 1000)
-  assert.deepEqual(frame.cardReveal, { progress: 0, menu: true })
+  assert.deepEqual(frame.cardReveal, reveal(0))
   assert.deepEqual(frame.handoffFlight, { progress: 0 })
   // A digit on the map arms without a hand-off, and the card still reveals.
   const map = session()
@@ -538,7 +545,7 @@ test("the reveal and the hand-off start together: neither waits for the other", 
   keys(map, TAB, "2")
   const armed = loop.frame(map.build.state, 1000)
   assert.equal(armed.handoffFlight, undefined)
-  assert.deepEqual(armed.cardReveal, { progress: 0, menu: true })
+  assert.deepEqual(armed.cardReveal, reveal(0))
 })
 
 // --- The Experiment ---------------------------------------------------------------------------------
