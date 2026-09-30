@@ -39,7 +39,8 @@ import { SETTLED_EXPERIMENTS } from "./tuning.ts"
 
 export type SettingsSnapshot = Readonly<{ settings: Settings; experiments: Experiments }>
 
-/** A value as the export writes it: a number bare, a yes/no as `on`/`off`, a choice by its own name. */
+/** A value as the export writes it: a number bare, a yes/no (reduced motion) as `on`/`off`, a choice by
+ *  its own name. */
 function raw(value: unknown): string {
   if (typeof value === "boolean") return value ? "on" : "off"
   return String(value)
@@ -106,11 +107,7 @@ function experimentValue(field: ExperimentField, text: string): Experiments[Expe
   for (const value of values) {
     if (raw(value).toLowerCase() === lower || format(value).toLowerCase() === lower) return value
   }
-  const first: unknown = values[0]
-  // No Experiment is an on/off switch today, but the next one may be (AGENTS.md: "a new behaviour whose
-  // worth is in doubt ships with an on/off Experiment"), so the reading stays.
-  if (typeof first === "boolean") return asBoolean(text) as Experiments[ExperimentField] | null
-  if (typeof first === "number") {
+  if (typeof values[0] === "number") {
     // Digits first: a bare unit ("ms") is not a number, though `Number("")` would call it 0.
     const digits = /^(\d+)(?:ms|%|tiles?)?$/u.exec(lower)?.[1]
     const number = Number(digits)
