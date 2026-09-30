@@ -55,7 +55,29 @@ Milestone 1's and did not change. 6B and 6C wait for the owner's word.
 > - [x] the start confirmation is a screen titled `Battle Round 1` whose text is "Activate Nexus. Collect
 >       Resources. Spawn Units." unless a mission supplies its own (F49);
 > - [x] its one row is `[s] Start`; Esc goes back and `n` is no longer a key (F50);
-> - [ ] the menu reorganisation is his to start, on a spike of its own (F51 — scheduled, nothing built).
+> - [ ] the menu reorganisation is his to start, on a spike of its own (F51 — started 2026-09-30, the
+>       menu spike below).
+
+> **The menu spike — the owner's reorganisation of the Build Phase menu, 2026-09-30**
+> ([`../docs/feedback/2026-09-30-menu-spike.md`](../docs/feedback/2026-09-30-menu-spike.md), F52-F60).
+> Gate 6A's round 3 left this for a spike of its own (F51); it is Build Phase interface work, built on
+> its own pull request while 6A waits for his playtest, and it does not start 6B. Definition of done:
+>
+> - [ ] a row whose action is under way reads `[x] Label  >>` — `[x]` the key that ends it, `>>` in
+>       place of its value — for every row alike (F53);
+> - [ ] a menu row that hands the keyboard to the map sends an arrow from its `>>` to the cursor, which
+>       blinks twice when it lands; an Experiment switches it off and sets its speed (F54);
+> - [ ] Left and Right on the menu only flicker the row; a placement begun on the menu comes back to it
+>       with the row flashing once (F55);
+> - [ ] no group headings: one list, a blank line between Explore Map, Nexus and the buildings (F56);
+> - [ ] `$ 100`, no maximum, top right of the panel, in the cost column (F57);
+> - [ ] no key help or description lines in the panel; an armed building's panel is its card under
+>       `[x] Name  >>` (F58);
+> - [ ] the bottom bar is one row: the last key's answer, else a contextual hint from one place in the
+>       code; no position readout (F59);
+> - [ ] the game menu has `[c] Controls and hotkeys`, a scrolling page of keys and clicks (F60);
+> - [ ] tests, canon, `docs/ui-patterns.md`, the gate report's section on it, pictures, and a pull
+>       request.
 
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
 > how the Pulse resolves — that stays the deterministic kernel, unmodified. What is new is the
