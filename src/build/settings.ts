@@ -7,15 +7,13 @@
 // This file holds the player half and the popup's row order. The flags themselves stay in
 // `experiments.ts`, whose spec list the Experiments section wraps unchanged.
 //
-// **Row ids.** `BuildState.popupHighlight` names the highlighted row by an id, and the ids are
-// chosen so that an experiment's id is its index in `EXPERIMENT_FIELDS` — `experimentRow(field)`. The export
-// row and the player settings come after them in id space. What Up/Down walk is the *display* order,
-// `SETTINGS_ORDER`: player settings, experiments, export — the export the list's last row (feedback
-// F35). Starting over is not a Settings row any more: it is the game menu's `[r] Restart` (F34), and a
+// **Rows.** `BuildState.popupHighlight` is an index into `SETTINGS_ROWS`, the rows in the order the
+// popup draws them and Up/Down walk them, as it is an index into every other popup's list: the
+// player's settings, then the experiments, then Export settings, the list's last row (feedback F35).
+// Starting over is not a Settings row any more: it is the game menu's `[r] Restart` (F34), and a
 // setting that only takes effect then is announced by a message popup when Settings closes
 // (`pendingRestart`, `restartMessage`).
 
-import { stepListIndex } from "../menu/list-keys.ts"
 import type { Settings } from "../settings/types.ts"
 import { CAPABILITY_MODES, THEMES } from "../view/roles.ts"
 import type { CapabilityMode, Theme } from "../view/roles.ts"
@@ -150,46 +148,35 @@ export function restartMessage(labels: readonly string[]): PopupMessage {
 
 // --- The popup's rows -------------------------------------------------------------------------------
 
-/** "Export settings", the list's last row, after the experiments. */
-export const SETTINGS_EXPORT_ROW = EXPERIMENT_FIELDS.length
-const FIRST_PLAYER_ROW = EXPERIMENT_FIELDS.length + 1
-
-/** The id of player setting `field`'s row. */
-export function playerRow(field: PlayerField): number {
-  return FIRST_PLAYER_ROW + PLAYER_FIELDS.findIndex((spec) => spec.field === field)
-}
-
-/** The id of the first row of each section: where `[s] Settings` and `d` open the popup. */
-export const FIRST_SETTING_ROW = FIRST_PLAYER_ROW
-export const FIRST_EXPERIMENT_ROW = 0
-
-/** The rows in the order Up/Down walk them and the popup draws them. */
-export const SETTINGS_ORDER: readonly number[] = [
-  ...PLAYER_FIELDS.map((_, index) => FIRST_PLAYER_ROW + index),
-  ...EXPERIMENT_FIELDS.map((_, index) => index),
-  SETTINGS_EXPORT_ROW,
-]
-
 export type SettingsRow =
   | Readonly<{ kind: "player"; field: PlayerField }>
   | Readonly<{ kind: "experiment"; field: ExperimentField }>
   | Readonly<{ kind: "export" }>
 
-/** What row id `row` is, or `null` for an id no row has. */
-export function settingsRowAt(row: number): SettingsRow | null {
-  if (row >= 0 && row < EXPERIMENT_FIELDS.length) return { kind: "experiment", field: (EXPERIMENT_FIELDS[row] as { field: ExperimentField }).field }
-  if (row === SETTINGS_EXPORT_ROW) return { kind: "export" }
-  const player = PLAYER_FIELDS[row - FIRST_PLAYER_ROW]
-  return player === undefined ? null : { kind: "player", field: player.field }
+/** Settings' rows, in the order the popup draws them and Up/Down walk them: the player's own settings,
+ *  the Experiments, and "Export settings" last. `popupHighlight` indexes this list. */
+export const SETTINGS_ROWS: readonly SettingsRow[] = [
+  ...PLAYER_FIELDS.map((spec): SettingsRow => ({ kind: "player", field: spec.field })),
+  ...EXPERIMENT_FIELDS.map((spec): SettingsRow => ({ kind: "experiment", field: spec.field })),
+  { kind: "export" },
+]
+
+/** The row of player setting `field`. */
+export function playerRow(field: PlayerField): number {
+  return SETTINGS_ROWS.findIndex((row) => row.kind === "player" && row.field === field)
 }
 
-/**
- * `delta` rows up (negative) or down from row id `row`, in display order, **stopping at either end**
- * (owner, 2026-09-30, feedback F75 — Up on the first setting no longer comes round to Export); with
- * `jump`, the first row or the last (Export settings).
- */
-export function stepSettingsRow(row: number, delta: number, jump = false): number {
-  const position = SETTINGS_ORDER.indexOf(row)
-  const next = position < 0 ? 0 : stepListIndex(position, SETTINGS_ORDER.length, delta, jump)
-  return SETTINGS_ORDER[next] as number
+/** The row of Experiment `field`. */
+export function experimentRow(field: ExperimentField): number {
+  return SETTINGS_ROWS.findIndex((row) => row.kind === "experiment" && row.field === field)
 }
+
+/** The first row of each section — where the game menu's `[s] Settings` and `d` open the popup — and
+ *  "Export settings", the last. */
+export const FIRST_SETTING_ROW = 0
+export const FIRST_EXPERIMENT_ROW = PLAYER_FIELDS.length
+export const SETTINGS_EXPORT_ROW = SETTINGS_ROWS.length - 1
+
+/** Where `d` opens Settings while a Nexus Pulse is on screen: the placeholder Pulse's own Experiments,
+ *  which are what someone watching it wants to change, rather than the Build Phase's first. */
+export const FIRST_PULSE_EXPERIMENT_ROW = experimentRow("raid")

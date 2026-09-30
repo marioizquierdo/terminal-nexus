@@ -7,7 +7,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SPIKE_CATALOG } from "../src/build/catalog.ts"
-import { EXPERIMENT_FIELDS, stepExperiment, defaultExperiments, experimentRow } from "../src/build/experiments.ts"
+import { EXPERIMENT_FIELDS, stepExperiment, defaultExperiments, experimentSpec } from "../src/build/experiments.ts"
 import type { ExperimentField } from "../src/build/experiments.ts"
 import { SETTLED_EXPERIMENTS } from "../src/build/tuning.ts"
 import { buildLayout, cellForTile, escLabelSpan, escLabel, menuEntryRow } from "../src/build/layout.ts"
@@ -20,7 +20,7 @@ import {
   settingColumns,
   wrapWords,
 } from "../src/build/popup.ts"
-import { GAME_MENU_ROWS, PLAYER_FIELDS, SETTINGS_ORDER } from "../src/build/settings.ts"
+import { GAME_MENU_ROWS, PLAYER_FIELDS, SETTINGS_ROWS, experimentRow } from "../src/build/settings.ts"
 import type { PlacedPopup } from "../src/build/popup.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildContext } from "../src/build/state.ts"
@@ -73,7 +73,7 @@ function placed(side: Side): PlacedPopup {
 
 /** The frame row the popup draws flag `field` on. */
 function settingRow(side: Side, field: ExperimentField): number {
-  const label = EXPERIMENT_FIELDS[experimentRow(field)]?.label
+  const label = experimentSpec(field).label
   const hit = placed(side).rows.find((row) => row.spec.kind === "setting" && row.spec.label === label)
   assert.ok(hit !== undefined, `no row for ${field}`)
   return hit.row
@@ -81,15 +81,15 @@ function settingRow(side: Side, field: ExperimentField): number {
 
 /** Whether flag `field`'s row is on screen — the popup scrolls since gate 5H. */
 function onScreen(side: Side, field: ExperimentField): boolean {
-  const label = EXPERIMENT_FIELDS[experimentRow(field)]?.label
+  const label = experimentSpec(field).label
   return placed(side).rows.some((row) => row.spec.kind === "setting" && row.spec.label === label)
 }
 
 /** The mouse's way to a flag that is scrolled out of view: the wheel, over the popup, until it shows. */
 function wheelTo(side: Side, field: ExperimentField): void {
   const box = placed(side).box
-  const down = SETTINGS_ORDER.indexOf(experimentRow(field)) > SETTINGS_ORDER.indexOf(side.build.state.popupHighlight)
-  for (let turns = 0; turns < SETTINGS_ORDER.length && !onScreen(side, field); turns += 1) {
+  const down = experimentRow(field) > side.build.state.popupHighlight
+  for (let turns = 0; turns < SETTINGS_ROWS.length && !onScreen(side, field); turns += 1) {
     click(side, box.left + 2, box.top + 2, down ? MOUSE_WHEEL_DOWN : MOUSE_WHEEL_UP)
   }
 }

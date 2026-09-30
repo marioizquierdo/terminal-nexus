@@ -362,7 +362,7 @@ test("it scrolls the export's way: Up/Down, the wheel and the scroll bar, stoppi
   assert.ok(wheel.build.state.popupHighlight > 1, "the scroll bar's lower half did not scroll down")
   assert.ok((placed(wheel).window?.offset ?? 0) > 0)
   // A driver selects a line directly, clamped to the page.
-  wheel.build.dispatch({ kind: "controls-select", line: 999 })
+  wheel.build.dispatch({ kind: "select-row", row: 999 })
   assert.equal(wheel.build.state.popupHighlight, last)
 })
 

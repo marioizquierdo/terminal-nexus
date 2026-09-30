@@ -15,21 +15,19 @@
 // while a popup is open — and is its click target, so a popup's own border carries only its title and,
 // beside a list that overflows, its scroll bar.
 
-import { EXPERIMENT_FIELDS, experimentSpec, formatExperimentValue } from "./experiments.ts"
+import { experimentSpec, formatExperimentValue } from "./experiments.ts"
 import type { BuildLayout } from "./layout.ts"
 import { START_KEY } from "./layout.ts"
 import { CONTROLS_TITLE, controlsPage } from "./help.ts"
 import {
   CONTROLS_DESCRIPTION,
+  FIRST_EXPERIMENT_ROW,
+  FIRST_SETTING_ROW,
   GAME_MENU_ROWS,
-  PLAYER_FIELDS,
   RESTART_DESCRIPTION,
-  SETTINGS_EXPORT_ROW,
-  SETTINGS_ORDER,
+  SETTINGS_ROWS,
   formatPlayerValue,
-  playerRow,
   playerSpec,
-  settingsRowAt,
 } from "./settings.ts"
 import type { BuildContext, BuildState } from "./state.ts"
 import { exportText, nexusPowers } from "./state.ts"
@@ -117,71 +115,58 @@ export const EXPORT_QUESTION =
  */
 function settingsSpec(state: BuildState): PopupSpec {
   const rows: PopupRow[] = []
-  const from = rows.length
-  /** Where each row id sits in `rows`, so the window can follow the highlight. */
-  const lineOf = new Map<number, number>()
-  const select = (row: number): BuildCommand => ({ kind: "settings-select", row })
-  rows.push({ kind: "heading", text: SETTINGS_HEADING })
-  for (const spec of PLAYER_FIELDS) {
-    const row = playerRow(spec.field)
-    lineOf.set(row, rows.length)
-    rows.push({
-      kind: "setting",
-      label: spec.label,
-      value: formatPlayerValue(state.settings, spec.field),
-      highlighted: row === state.popupHighlight,
-      decrease: { kind: "setting-adjust", field: spec.field, step: -1 },
-      increase: { kind: "setting-adjust", field: spec.field, step: 1 },
-      select: select(row),
-    })
-  }
-  rows.push({ kind: "heading", text: EXPERIMENTS_HEADING })
-  EXPERIMENT_FIELDS.forEach((spec, row) => {
-    lineOf.set(row, rows.length)
-    rows.push({
-      kind: "setting",
-      label: spec.label,
-      value: formatExperimentValue(state.experiments, spec.field),
-      highlighted: row === state.popupHighlight,
-      decrease: { kind: "experiment-adjust", field: spec.field, step: -1 },
-      increase: { kind: "experiment-adjust", field: spec.field, step: 1 },
-      select: select(row),
-    })
-  })
-  lineOf.set(SETTINGS_EXPORT_ROW, rows.length)
-  rows.push({
-    kind: "option",
-    hotkey: "e",
-    label: "Export settings",
-    command: { kind: "export-settings" },
-    highlighted: state.popupHighlight === SETTINGS_EXPORT_ROW,
+  /** The popup row each Settings row is drawn on, so the window can follow the highlight and a click on
+   *  the scroll bar can name the row it brings into view. */
+  const lineOf: number[] = []
+  const select = (row: number): BuildCommand => ({ kind: "select-row", row })
+  SETTINGS_ROWS.forEach((entry, row) => {
+    if (row === FIRST_SETTING_ROW) rows.push({ kind: "heading", text: SETTINGS_HEADING })
+    if (row === FIRST_EXPERIMENT_ROW) rows.push({ kind: "heading", text: EXPERIMENTS_HEADING })
+    lineOf.push(rows.length)
+    const highlighted = row === state.popupHighlight
+    if (entry.kind === "export") {
+      rows.push({ kind: "option", hotkey: "e", label: "Export settings", command: { kind: "export-settings" }, highlighted })
+      return
+    }
+    const setting =
+      entry.kind === "player"
+        ? {
+            label: playerSpec(entry.field).label,
+            value: formatPlayerValue(state.settings, entry.field),
+            decrease: { kind: "setting-adjust", field: entry.field, step: -1 } as const,
+            increase: { kind: "setting-adjust", field: entry.field, step: 1 } as const,
+          }
+        : {
+            label: experimentSpec(entry.field).label,
+            value: formatExperimentValue(state.experiments, entry.field),
+            decrease: { kind: "experiment-adjust", field: entry.field, step: -1 } as const,
+            increase: { kind: "experiment-adjust", field: entry.field, step: 1 } as const,
+          }
+    rows.push({ kind: "setting", ...setting, highlighted, select: select(row) })
   })
   const to = rows.length
-  const highlighted = settingsRowAt(state.popupHighlight)
+  const highlighted = SETTINGS_ROWS[state.popupHighlight]
   const note =
-    highlighted === null || highlighted.kind === "export"
+    highlighted === undefined || highlighted.kind === "export"
       ? EXPORT_QUESTION
       : highlighted.kind === "player"
         ? playerSpec(highlighted.field).question
         : experimentSpec(highlighted.field).question
   rows.push({ kind: "rule" }, { kind: "note", text: note, lines: SETTINGS_NOTE_LINES })
-  const line = lineOf.get(state.popupHighlight) ?? to - 1
+  const line = lineOf[state.popupHighlight] ?? to - 1
   // A heading directly above the highlighted row is kept in view with it where the window allows: the
   // first setting of each section opens with its heading showing.
   const highlight = rows[line - 1]?.kind === "heading" ? line - 1 : line
   // A click on the scroll bar highlights the row it brings into view; a heading there selects the row
   // under it.
   const selectLine = (index: number): BuildCommand => {
-    const at = from + index
-    const entry = rows[at]?.kind === "heading" ? rows[at + 1] : rows[at]
-    if (entry?.kind === "setting") return entry.select
-    return entry?.kind === "option" ? select(SETTINGS_EXPORT_ROW) : select(state.popupHighlight)
+    const row = lineOf.findIndex((drawn) => drawn >= index)
+    return select(row < 0 ? state.popupHighlight : row)
   }
-  const position = Math.max(0, SETTINGS_ORDER.indexOf(state.popupHighlight)) + 1
   return {
-    title: `SETTINGS (${position}/${SETTINGS_ORDER.length})`,
+    title: `SETTINGS (${state.popupHighlight + 1}/${SETTINGS_ROWS.length})`,
     rows,
-    scroll: { from, to, highlight, select: selectLine },
+    scroll: { from: 0, to, highlight, select: selectLine },
   }
 }
 
@@ -248,7 +233,7 @@ function exportSpec(context: BuildContext, state: BuildState): PopupSpec {
   return {
     title: "EXPORT SETTINGS",
     rows,
-    scroll: { from, to, highlight: from + state.popupHighlight, select: (line) => ({ kind: "export-select", line }) },
+    scroll: { from, to, highlight: from + state.popupHighlight, select: (line) => ({ kind: "select-row", row: line }) },
   }
 }
 
@@ -282,7 +267,7 @@ function controlsSpec(state: BuildState): PopupSpec {
     lineRows.forEach((row, candidate) => {
       if (row <= index) position = candidate
     })
-    return { kind: "controls-select", line: position }
+    return { kind: "select-row", row: position }
   }
   return { title: CONTROLS_TITLE, rows, scroll: { from: 0, to: rows.length, highlight, select } }
 }

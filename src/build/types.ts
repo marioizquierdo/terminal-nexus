@@ -165,9 +165,13 @@ export type BuildCommand =
    * highlight there.
    */
   | Readonly<{ kind: "experiment-adjust"; field: ExperimentField; step: -1 | 1 }>
-  /** A click on a Settings row away from its value, or on the popup's scroll bar: highlight it, so
-   *  what it is for shows and the list scrolls to it. `row` is the row's id (`src/build/settings.ts`). */
-  | Readonly<{ kind: "settings-select"; row: number }>
+  /**
+   * A click on a popup's row away from what the row does (a setting's name rather than its value), or
+   * on the popup's scroll bar: highlight row `row` of its list, clamped to the list, so what the row is
+   * for shows and the list scrolls to it. `row` counts the list as `popupHighlight` does — Settings'
+   * rows, the export's lines, the Controls page's key lines.
+   */
+  | Readonly<{ kind: "select-row"; row: number }>
   /** `r` in the game menu, or its `[r] Restart` row (feedback F34 moved it there from Settings): start
    *  the Build Phase over, keeping every setting and experiment — how one that applies only after a
    *  restart takes effect. */
@@ -178,9 +182,6 @@ export type BuildCommand =
    * the clipboard and a file is the session's side effect (`BuildSession`'s `onExport`).
    */
   | Readonly<{ kind: "export-settings" }>
-  /** A click on the export popup's scroll bar: highlight line `line` of the text, bringing it into
-   *  view. Up/Down and the wheel move the highlight a line at a time. */
-  | Readonly<{ kind: "export-select"; line: number }>
   /**
    * The Controls and hotkeys page (owner, 2026-09-30, feedback F60: "an option for 'Controls and
    * hotkeys' that opens a section that explains how to use the keyboard, hotkeys and mouse clicks"):
@@ -188,9 +189,6 @@ export type BuildCommand =
    * closes. Opens over nothing but the game menu.
    */
   | Readonly<{ kind: "open-controls" }>
-  /** A click on the Controls page's scroll bar: highlight line `line` of the page (an index over its
-   *  key lines, headings left out), bringing it into view — the export's `export-select` for it. */
-  | Readonly<{ kind: "controls-select"; line: number }>
   /**
    * A Nexus Pulse playback control — Space, `[`, `]`, `.`, `,` and `r` while a Pulse is on screen, or a
    * click on the panel's control rows (gate 6A): the same vocabulary `grid watch` has, one keymap across

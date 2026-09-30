@@ -156,14 +156,6 @@ export function experimentSpec(field: ExperimentField): AnyExperimentSpec {
   return EXPERIMENT_FIELDS.find((spec) => spec.field === field) as AnyExperimentSpec
 }
 
-export function experimentRow(field: ExperimentField): number {
-  return EXPERIMENT_FIELDS.findIndex((spec) => spec.field === field)
-}
-
-/** Where `d` opens Settings while a Nexus Pulse is on screen: the placeholder Pulse's own Experiments,
- *  which are what someone watching it wants to change, rather than the Build Phase's first. */
-export const FIRST_PULSE_EXPERIMENT_ROW = experimentRow("raid")
-
 /** A flag's current value, as the popup shows it. */
 export function formatExperimentValue(flags: Experiments, field: ExperimentField): string {
   const spec = experimentSpec(field) as ExperimentSpec<ExperimentField>

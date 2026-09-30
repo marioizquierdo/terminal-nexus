@@ -14,7 +14,7 @@ import { buildLayout, cellForTile, escLabelSpan, escLabel, menuEntryRow } from "
 import { MOUSE_LEFT, MOUSE_RIGHT, formatMouseEvent } from "../src/build/mouse.ts"
 import { popupSpec } from "../src/build/popup.ts"
 import { BuildSession } from "../src/build/session.ts"
-import { GAME_MENU_ROWS, SETTINGS_EXPORT_ROW, SETTINGS_ORDER, restartMessage } from "../src/build/settings.ts"
+import { GAME_MENU_ROWS, SETTINGS_EXPORT_ROW, SETTINGS_ROWS, restartMessage } from "../src/build/settings.ts"
 import type { BuildContext, BuildState } from "../src/build/state.ts"
 import {
   EXPLORE_ENTRY,
@@ -570,7 +570,7 @@ test("every popup's list stops at both ends and jumps with the fast move", () =>
   const settings = session()
   keys(settings, ESC, "s")
   const firstSetting = settings.build.state.popupHighlight
-  assert.equal(firstSetting, SETTINGS_ORDER[0])
+  assert.equal(firstSetting, 0)
   keys(settings, UP)
   assert.equal(settings.build.state.popupHighlight, firstSetting, "Up on the first setting came round to Export")
   keys(settings, END)
@@ -596,24 +596,24 @@ test("a held Up or Down in a list ramps exactly as the map cursor does, with the
   const presses = Array.from({ length: 4 }, (_, index) => [DOWN, 10_000 + index * 30] as const)
   const list = session()
   keys(list, ESC, "s")
-  const top = SETTINGS_ORDER.indexOf(list.build.state.popupHighlight)
+  const top = list.build.state.popupHighlight
   timed(list, presses)
-  const rows = SETTINGS_ORDER.indexOf(list.build.state.popupHighlight) - top
+  const rows = list.build.state.popupHighlight - top
   const map = session(spikeContext(), { x: 30, y: 2 })
   keys(map, TAB)
   timed(map, presses)
   const tiles = map.build.state.cursor.y - 2
-  assert.ok(rows < SETTINGS_ORDER.length - 1 - top, "the list reached its end; the comparison needs room")
+  assert.ok(rows < SETTINGS_ROWS.length - 1 - top, "the list reached its end; the comparison needs room")
   assert.ok(tiles > presses.length, "the held key did not speed up at all")
   assert.equal(rows, tiles, "a held key moves a list by other numbers than the map cursor")
   // A tap is one row, so Up and Down reach every row.
   const tap = session()
   keys(tap, ESC, "s")
-  const start = SETTINGS_ORDER.indexOf(tap.build.state.popupHighlight)
+  const start = tap.build.state.popupHighlight
   timed(tap, [[DOWN, 5_000]])
-  assert.equal(SETTINGS_ORDER.indexOf(tap.build.state.popupHighlight), start + 1, "a timed tap moved more than one row")
+  assert.equal(tap.build.state.popupHighlight, start + 1, "a timed tap moved more than one row")
   keys(tap, DOWN)
-  assert.equal(SETTINGS_ORDER.indexOf(tap.build.state.popupHighlight), start + 2, "an untimed tap moved more than one row")
+  assert.equal(tap.build.state.popupHighlight, start + 2, "an untimed tap moved more than one row")
 })
 
 test("holding Down on the Build Phase menu reaches its last row quickly and stays there", () => {

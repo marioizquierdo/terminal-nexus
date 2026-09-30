@@ -16,7 +16,7 @@ import { MOUSE_LEFT, formatMouseEvent } from "../src/build/mouse.ts"
 import { popupSpec, placePopup, settingColumns } from "../src/build/popup.ts"
 import type { PlacedPopup } from "../src/build/popup.ts"
 import { BuildSession } from "../src/build/session.ts"
-import { GAME_MENU_ROWS, PLAYER_FIELDS, SETTINGS_EXPORT_ROW, playerRow } from "../src/build/settings.ts"
+import { FIRST_EXPERIMENT_ROW, GAME_MENU_ROWS, PLAYER_FIELDS, SETTINGS_EXPORT_ROW, playerRow } from "../src/build/settings.ts"
 import { formatSettingsExport, importSettings, parseSettingsExport } from "../src/build/settings-export.ts"
 import type { SettingsSnapshot } from "../src/build/settings-export.ts"
 import type { BuildContext } from "../src/build/state.ts"
@@ -178,7 +178,7 @@ test("[s] opens Settings at the player's settings; Esc goes back to the game men
   assert.equal(side.build.state.popup, null)
   // `d` still opens Settings straight at the experiments, and Esc then goes back to the game.
   keys(side, "d")
-  assert.equal(side.build.state.popupHighlight, 0)
+  assert.equal(side.build.state.popupHighlight, FIRST_EXPERIMENT_ROW)
   keys(side, ESC)
   assert.equal(side.build.state.popup, null)
   // q inside Settings is the way out: the game menu, not a quit.

@@ -13,24 +13,25 @@ import { NO_STATUS, status } from "../status.ts"
 import type { Camera, Margin, Viewport } from "./camera.ts"
 import { centreOn, clampToGrid, edgeClickCamera, followCursor, marginForView } from "./camera.ts"
 import type { ExperimentField, Experiments } from "./experiments.ts"
-import { FIRST_PULSE_EXPERIMENT_ROW, stepExperiment, experimentSpec, formatExperimentValue, defaultExperiments, experimentRow } from "./experiments.ts"
+import { stepExperiment, experimentSpec, formatExperimentValue, defaultExperiments } from "./experiments.ts"
 import { TUNING } from "./tuning.ts"
 import type { Settings } from "../settings/types.ts"
 import { DEFAULT_SETTINGS } from "../settings/types.ts"
 import type { PlayerField } from "./settings.ts"
 import {
   FIRST_EXPERIMENT_ROW,
-  GAME_MENU_ROWS,
+  FIRST_PULSE_EXPERIMENT_ROW,
   FIRST_SETTING_ROW,
+  GAME_MENU_ROWS,
   SETTINGS_EXPORT_ROW,
+  SETTINGS_ROWS,
   adjustSetting,
+  experimentRow,
   formatPlayerValue,
   playerRow,
   playerSpec,
   pendingRestart,
   restartMessage,
-  settingsRowAt,
-  stepSettingsRow,
 } from "./settings.ts"
 import { formatSettingsExport } from "./settings-export.ts"
 // A cycle, and a harmless one: help.ts reads this module's helpers only when a hint is asked for, and
@@ -1170,6 +1171,28 @@ function exportLineCount(context: BuildContext, state: BuildState): number {
   return exportText(context, state).trimEnd().split("\n").length
 }
 
+/** How many rows the open popup's list has — what `popupHighlight` indexes, and where Up/Down stop:
+ *  the Nexus powers waiting, the game menu's rows, Settings' rows, the export's lines, the Controls
+ *  page's key lines, the Battle Round screen's one row, and none in a message. */
+function popupRowCount(context: BuildContext, state: BuildState): number {
+  switch (state.popup) {
+    case "nexus-powers":
+      return nexusPowers(context, state).pending.length
+    case "game-menu":
+      return GAME_MENU_ROWS.length
+    case "settings":
+      return SETTINGS_ROWS.length
+    case "export":
+      return exportLineCount(context, state)
+    case "controls":
+      return controlsLineCount()
+    case "battle-round":
+      return 1
+    default:
+      return 0
+  }
+}
+
 /** Settings, or the export opened from it, is showing. */
 function inSettings(popup: Popup | null): boolean {
   return popup === "settings" || popup === "export"
@@ -1398,21 +1421,11 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // Every list stops at its ends — no list comes round — and the fast move goes all the way to one
       // (owner, 2026-09-30, feedback F75). Up at the top and Down at the bottom do nothing at all, not
       // even a flicker: holding a key down "should quickly move to the bottom and stay there", and a
-      // flicker at every auto-repeat would read as something happening.
-      const jump = command.jump === true
-      const step = (index: number, count: number): number => stepListIndex(index, count, command.delta, jump)
-      if (state.popup === "settings") {
-        return { ...state, popupHighlight: stepSettingsRow(state.popupHighlight, command.delta, jump) }
-      }
-      if (state.popup === "game-menu") return { ...state, popupHighlight: step(state.popupHighlight, GAME_MENU_ROWS.length) }
-      // The export and the Controls page walk their lines; each popup's window follows the highlight
-      // (`src/build/popup.ts`).
-      if (state.popup === "export") return { ...state, popupHighlight: step(state.popupHighlight, exportLineCount(context, state)) }
-      if (state.popup === "controls") return { ...state, popupHighlight: step(state.popupHighlight, controlsLineCount()) }
-      if (state.popup === "nexus-powers") {
-        return { ...state, popupHighlight: step(state.popupHighlight, nexusPowers(context, state).pending.length) }
-      }
-      if (state.popup !== null || state.focus !== "menu") return state
+      // flicker at every auto-repeat would read as something happening. A popup's window follows its
+      // highlight (`src/build/popup.ts`).
+      const step = (index: number, count: number): number => stepListIndex(index, count, command.delta, command.jump === true)
+      if (state.popup !== null) return { ...state, popupHighlight: step(state.popupHighlight, popupRowCount(context, state)) }
+      if (state.focus !== "menu") return state
       if (state.highlightHidden) return revealHighlight(state)
       return { ...state, menuHighlight: step(state.menuHighlight, menuEntries(context).length) }
     }
@@ -1453,9 +1466,9 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     case "setting-adjust":
       return adjustPlayerSetting(state, command.field, command.step)
 
-    case "settings-select":
-      if (state.popup !== "settings" || settingsRowAt(command.row) === null) return state
-      return { ...state, popupHighlight: command.row }
+    case "select-row":
+      if (state.popup === null) return state
+      return { ...state, popupHighlight: stepListIndex(command.row, popupRowCount(context, state), 0) }
 
     case "restart":
       return restartBuildPhase(context, state)
@@ -1463,16 +1476,8 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     case "export-settings":
       return exportSettings(state)
 
-    case "export-select":
-      if (state.popup !== "export") return state
-      return { ...state, popupHighlight: Math.max(0, Math.min(exportLineCount(context, state) - 1, command.line)) }
-
     case "open-controls":
       return openControls(state)
-
-    case "controls-select":
-      if (state.popup !== "controls") return state
-      return { ...state, popupHighlight: Math.max(0, Math.min(controlsLineCount() - 1, command.line)) }
 
     case "quit":
       return state

@@ -19,7 +19,7 @@ import {
   GAME_MENU_ROWS,
   PLAYER_FIELDS,
   SETTINGS_EXPORT_ROW,
-  SETTINGS_ORDER,
+  SETTINGS_ROWS,
   pendingRestart,
   playerRow,
   restartMessage,
@@ -105,7 +105,7 @@ test("a setting row is its name and its value, with no 'now' or 'restart' beside
 test("the title says where the highlight is in the list, (k/N), and follows it", () => {
   const side = session()
   keys(side, ESC, "s")
-  const count = SETTINGS_ORDER.length
+  const count = SETTINGS_ROWS.length
   assert.equal(count, PLAYER_FIELDS.length + EXPERIMENT_FIELDS.length + 1, "every setting, every experiment, and Export")
   assert.match(screen(side), new RegExp(`SETTINGS \\(1/${count}\\)`))
   keys(side, DOWN, DOWN)
