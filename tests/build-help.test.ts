@@ -80,7 +80,7 @@ test("the bottom line shows a command's answer, and after a command that says no
   assert.equal(line(side).tone, "success")
   keys(side, DOWN) // says nothing: the answer lapses
   assert.equal(side.build.state.status.text, "")
-  assert.equal(bottomLineText(side), "Hatchery - Spawns swarmers, slowly. Costs 30. [enter] to place one.")
+  assert.equal(bottomLineText(side), "Hatchery - Spawns swarmers. Costs 30. [enter] to place one.")
   assert.equal(line(side).tone, "hint")
   // The hint reads quieter than any answer.
   assert.equal(statusStyle("hint").role, "chrome.muted")
@@ -167,8 +167,8 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
     [(side) => keys(side, "n", "1", DOWN, UP), /^Nexus powers: read the powers you have\. \[enter\] opens them\.$/],
   ],
   "menu-building": [
-    [(side) => keys(side, DOWN, DOWN), /^Barracks - Trains troopers each Pulse\. Costs 40\. \[enter\] to place one\.$/],
-    [(side) => keys(side, "1", ENTER, "1", ENTER, UP, DOWN), /^Barracks - Trains troopers each Pulse\. Costs 40, only 20 left\.$/],
+    [(side) => keys(side, DOWN, DOWN), /^Barracks - Trains troopers\. Costs 40\. \[enter\] to place one\.$/],
+    [(side) => keys(side, "1", ENTER, "1", ENTER, UP, DOWN), /^Barracks - Trains troopers\. Costs 40, only 20 left\.$/],
   ],
   "menu-start": [
     [(side) => keys(side, PAGE_DOWN), /^Start Pulse: pick a Nexus power first - \[n\] opens them\.$/],

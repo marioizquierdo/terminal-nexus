@@ -116,8 +116,10 @@ export const SPIKE_STANDING: readonly StandingStructure[] = [
 ]
 
 /**
- * What the Build Phase can spend its allotment on. Three footprints, three costs, three one-line
- * reasons to pick one over another.
+ * What the Build Phase can spend its allotment on. Three footprints, three costs; what each one is
+ * for — the title, subtitle and description its card shows, and the bottom line's hint quotes — is
+ * written with the content, in `src/content/cards.ts` (feedback F84), since a building says the same
+ * about itself wherever a card shows it.
  *
  * The costs are round numbers chosen so the allotment buys a few things and not everything — a
  * budget that affords the whole menu is not a budget. They are not balance; `AGENTS.md` Section 2
@@ -133,21 +135,18 @@ export const SPIKE_CATALOG: readonly ConstructItem[] = [
     contentId: "structure.citizen.barracks",
     label: "Barracks",
     cost: 40,
-    effect: "Trains troopers each Pulse",
   },
   {
     hotkey: "2",
     contentId: "structure.bench.hatchery",
     label: "Hatchery",
     cost: 30,
-    effect: "Spawns swarmers, slowly",
   },
   {
     hotkey: "3",
     contentId: "structure.bench.beamturret",
     label: "Turret",
     cost: 15,
-    effect: "Shoots what comes close",
   },
 ]
 

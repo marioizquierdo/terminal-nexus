@@ -1,12 +1,14 @@
 // Cards: what replaces the menu while something has the map's attention — Explore Map's (what is under
 // the cursor) or a building's (the one being placed) — and the card reveal that turns the menu into one.
+// What a card says is data built elsewhere (`src/build/card.ts`, from `src/content/cards.ts`); this file
+// only draws it.
 
-import { footprintExtent } from "../grid/coords.ts"
+import type { Card, CardIcon } from "../build/card.ts"
+import { currentCard } from "../build/card.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import { CARD_FIRST_ROW, CARD_HEADER_ROW, CARD_SEPARATOR_ROW, menuEntryRow, menuFloor } from "../build/layout.ts"
 import { wrapWords } from "../build/popup.ts"
-import type { BuildContext } from "../build/state.ts"
-import { cardEntry, menuEntries, structureAtTile } from "../build/state.ts"
+import { cardEntry, menuEntries } from "../build/state.ts"
 import { CONTENT_ART } from "../content/art.ts"
 import type { BandCell } from "./frame.ts"
 import { BANDS } from "./frame.ts"
@@ -21,19 +23,6 @@ import { rightAlign, drawMenuRow, menuRowSpec, drawPanel } from "./build-menu.ts
 
 /** The screen row a card's header is drawn on: the panel's first line. */
 export const cardHeaderRow = (layout: BuildLayout): number => layout.panelRow + CARD_HEADER_ROW
-
-/** A plain name for what is under the cursor — the catalog's own label where there is one. */
-function displayName(context: BuildContext, contentId: string): string {
-  const item = context.catalog.find((row) => row.contentId === contentId)
-  if (item !== undefined) return item.label
-  const definition = context.registry.get(contentId)
-  if (definition.nexus === true) {
-    // Each Nexus is named for its faction (AGENTS.md): "structure.citizen.nexus" is the Citizen Nexus.
-    const faction = contentId.split(".")[1] ?? ""
-    return `${faction.charAt(0).toUpperCase()}${faction.slice(1)} Nexus`
-  }
-  return definition.short.charAt(0).toUpperCase() + definition.short.slice(1)
-}
 
 /**
  * The menu turning into a card (owner, 2026-09-30, feedback F68), as the live loop times it: `elapsedMs`
@@ -168,10 +157,10 @@ export function drawCard(cells: BandCell[], input: BuildCompositionInput, pack: 
  * the row that opened it as its header on the panel's first line, drawn active — `[e] Explore Map  >`,
  * or `[1] Barracks  >` while a building is being placed, its own hotkey, which ends it — its flashes
  * playing there; a separator across the panel (`-` in ASCII, `─` in Unicode); and under it the card
- * itself — in Explore Map whatever is under the cursor, following it as it moves; while placing, the
- * building about to be placed ("This will create visual consistency for anything that gains focus on
- * the map"). No credits (F71) and no Start Pulse: both belong to the menu. A click anywhere on the
- * panel goes back, as Esc does.
+ * itself (`currentCard`) — in Explore Map whatever is under the cursor, following it as it moves; while
+ * placing, the building about to be placed ("This will create visual consistency for anything that
+ * gains focus on the map"). No credits (F71) and no Start Pulse: both belong to the menu. A click
+ * anywhere on the panel goes back, as Esc does.
  */
 function drawCardPanel(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, look: CardLook): void {
   const { context, state, layout } = input
@@ -183,65 +172,95 @@ function drawCardPanel(cells: BandCell[], input: BuildCompositionInput, pack: Gl
   const separator = cells.length
   text(cells, BANDS.chrome, column, layout.panelRow + CARD_SEPARATOR_ROW, chromeGlyph(pack, "horizontal").repeat(limit), "chrome.frame", { limit })
   fadeFrom(cells, separator, look.hidden, look.capability)
-  const top = layout.panelRow + CARD_FIRST_ROW
-
-  if (state.armed !== null) {
-    const item = context.catalog[state.armed]
-    if (item !== undefined) drawBuildingCard(cells, input, top, item.contentId, "to build", look)
-    return
-  }
-  const structure = structureAtTile(context, state.planned, state.cursor)
-  if (structure === null) drawGroundCard(cells, input, pack, top, look)
-  else drawBuildingCard(cells, input, top, structure.contentId, structure.planned ? "planned" : "standing", look)
-}
-
-/** A bare tile's card: its own glyph, what it is, what it means, and where it is. */
-function drawGroundCard(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, top: number, look: CardLook): void {
-  const { context, state, layout } = input
-  const band = BANDS.chrome
-  const column = layout.panelColumn
-  const limit = layout.panelLimit
-  const terrainId = context.grid.tiles[state.cursor.y * context.grid.width + state.cursor.x] ?? "terrain.plain"
-  const { glyph, role } = terrainGlyph(terrainId, pack)
-  const icon = cells.length
-  put(cells, band, column, top, glyph === " " ? "." : glyph, role, {})
-  fadeFrom(cells, icon, look.hidden, look.capability)
-  const terrain = TERRAIN_INFO[terrainId] ?? { name: "Ground", line: "" }
-  text(cells, band, column + 3, top, look.typed(terrain.name), "chrome.title", { bold: true, limit: limit - 3 })
-  text(cells, band, column, top + 2, look.typed(terrain.line), "chrome.value", { limit })
-  const tile = cells.length
-  text(cells, band, column, top + 4, "TILE", "chrome.label", { limit })
-  rightAlign(cells, layout, top + 4, `${state.cursor.x},${state.cursor.y}`, "chrome.value")
-  fadeFrom(cells, tile, look.hidden, look.capability)
+  const card = currentCard(context, state)
+  if (card !== null) drawCardBody(cells, input, pack, layout.panelRow + CARD_FIRST_ROW, card, look)
 }
 
 /**
- * One building's card — the same for the building under the cursor in Explore Map and for the one being
- * placed (feedback F58): its own glyphs as its icon, its name with a word under it on where it stands
- * ("planned", "standing", "to build"), what it does, wrapped at words and never cut, then its numbers
- * as label/value rows — cost, health, size, attack — as many as the panel has room for. A first version
- * of the presentation card the owner described; the larger art and live stats during a Pulse come later.
- * While the card is being revealed (F68) its icon plays the building's placement frames — the very
- * frames a building going up on the map plays (`placementSchedule`, `placementLook`) — squeezed into the
- * card's beat, and its words are typed.
+ * One card, drawn one way (feedback F84: "title, subtitle, description, stats"): its icon — a building's
+ * own glyphs, or a bare tile's — with its title beside it and its subtitle under the title, wrapped
+ * there should it ever be wider than the room beside the icon; then its description, wrapped between
+ * words and never cut; then its numbers as label/value rows, as many as the panel has room for. The
+ * same for every card: a building being placed, a planned or standing one, open ground, rock, a deposit.
+ *
+ * **The one place a card's look would change with where it shows** — placing a building (whose title
+ * the header row above already says: "the title may not be needed when building"), exploring in the
+ * Build Phase, exploring during a Pulse (live health, say). The owner left those for later polish
+ * rounds; a later round passes that setting here and changes only this function, never the card's data.
+ *
+ * While the card is being revealed (F68) its words are typed in reading order — title, subtitle,
+ * description — its numbers and a tile's icon fade in, and a building's icon plays the building's
+ * placement frames, the very frames a building going up on the map plays (`placementSchedule`,
+ * `placementLook`), squeezed into the card's beat.
  */
-function drawBuildingCard(
+function drawCardBody(
   cells: BandCell[],
   input: BuildCompositionInput,
+  pack: GlyphPack,
   top: number,
-  contentId: string,
-  subtitle: string,
+  card: Card,
   look: CardLook,
 ): void {
-  const { context, layout } = input
+  const { layout } = input
   const band = BANDS.chrome
   const column = layout.panelColumn
   const limit = layout.panelLimit
-  let row = top
+  const floor = menuFloor(layout)
 
-  const definition = context.registry.get(contentId)
+  const icon = drawCardIcon(cells, input, top, card.icon, pack, look)
+  const textColumn = column + icon.width + 2
+  const textLimit = column + limit - textColumn
+  text(cells, band, textColumn, top, look.typed(card.title), "chrome.title", { bold: true, limit: textLimit })
+  const subtitle = wrapWords(card.subtitle, textLimit)
+  subtitle.forEach((line, index) => {
+    text(cells, band, textColumn, top + 1 + index, look.typed(line), "chrome.muted", { limit: textLimit })
+  })
+  let row = top + Math.max(icon.height, 1 + subtitle.length) + 1
+
+  // Wrapped at word boundaries: the panel is 27 glyphs wide at the floor, and a description cut
+  // mid-sentence was the first thing the screenshots of this panel showed (2026-09-27). The words are
+  // written to fit (`src/content/cards.ts`, and a test draws every card at 80 x 24); the floor is only
+  // a guard.
+  const description = wrapWords(card.description, limit)
+  for (const line of description) {
+    if (row > floor) return
+    text(cells, band, column, row, look.typed(line), "chrome.value", { limit })
+    row += 1
+  }
+  if (description.length > 0) row += 1
+
+  const numbers = cells.length
+  for (const stat of card.stats) {
+    if (row > floor) break
+    text(cells, band, column, row, stat.label, "chrome.label", { limit })
+    rightAlign(cells, layout, row, stat.value, "chrome.value")
+    row += 1
+  }
+  fadeFrom(cells, numbers, look.hidden, look.capability)
+}
+
+/** A card's icon at `top`: a building's own glyphs as player A draws them — or, while the card is
+ *  revealed, its placement frames — or a bare tile's glyph, fading in. Returns the room it took. */
+function drawCardIcon(
+  cells: BandCell[],
+  input: BuildCompositionInput,
+  top: number,
+  icon: CardIcon,
+  pack: GlyphPack,
+  look: CardLook,
+): Readonly<{ width: number; height: number }> {
+  const band = BANDS.chrome
+  const column = input.layout.panelColumn
+  if (icon.kind === "terrain") {
+    const { glyph, role } = terrainGlyph(icon.terrainId, pack)
+    const from = cells.length
+    put(cells, band, column, top, glyph === " " ? "." : glyph, role, {})
+    fadeFrom(cells, from, look.hidden, look.capability)
+    return { width: 1, height: 1 }
+  }
+  const { contentId } = icon
+  const definition = input.context.registry.get(contentId)
   const art = CONTENT_ART[contentId] ?? [definition.short.charAt(0)]
-  const artWidth = Math.max(...art.map((line) => line.length))
   const rising =
     look.icon === null
       ? null
@@ -255,50 +274,11 @@ function drawBuildingCard(
     ;[...line].forEach((_drawn, offset) => {
       if (rising !== null && look.icon !== null) {
         const frame = placementLook(rising, contentId, { x: offset, y: index }, look.icon.elapsedMs)
-        if (frame.glyph !== null) put(cells, band, column + offset, row + index, frame.glyph, playerRole("A"), frame.bold ? { bold: true } : {})
+        if (frame.glyph !== null) put(cells, band, column + offset, top + index, frame.glyph, playerRole("A"), frame.bold ? { bold: true } : {})
         return
       }
-      put(cells, band, column + offset, row + index, entityGlyph(contentId, "A", { x: offset, y: index }), playerRole("A"), { bold: true })
+      put(cells, band, column + offset, top + index, entityGlyph(contentId, "A", { x: offset, y: index }), playerRole("A"), { bold: true })
     })
   })
-  const nameColumn = column + artWidth + 2
-  text(cells, band, nameColumn, row, look.typed(displayName(context, contentId)), "chrome.title", {
-    bold: true,
-    limit: column + limit - nameColumn,
-  })
-  text(cells, band, nameColumn, row + 1, look.typed(subtitle), "chrome.muted", { limit: column + limit - nameColumn })
-  row += Math.max(art.length, 2) + 1
-
-  const item = context.catalog.find((candidate) => candidate.contentId === contentId)
-  const line = item?.effect ?? (definition.nexus === true ? "Your base. Lose it, lose the Pulse." : "")
-  // Wrapped at word boundaries: the panel is 28 glyphs wide at the floor, and a description cut
-  // mid-sentence was the first thing the screenshots of this panel showed (2026-09-27).
-  for (const wrapped of wrapWords(line, limit)) {
-    if (row > menuFloor(layout)) return
-    text(cells, band, column, row, look.typed(wrapped), "chrome.value", { limit })
-    row += 1
-  }
-  if (line !== "") row += 1
-  const size = footprintExtent(definition.footprint)
-  const stats: [string, string][] = []
-  if (item !== undefined) stats.push(["COST", String(item.cost)])
-  stats.push(["HEALTH", String(definition.maxHp)], ["SIZE", `${size.width}x${size.height}`])
-  if (definition.attack !== undefined) {
-    stats.push(["ATTACK", `${definition.attack.damage} at range ${definition.attack.range}`])
-  }
-  const numbers = cells.length
-  for (const [label, value] of stats) {
-    if (row > menuFloor(layout)) break
-    text(cells, band, column, row, label, "chrome.label", { limit })
-    rightAlign(cells, layout, row, value, "chrome.value")
-    row += 1
-  }
-  fadeFrom(cells, numbers, look.hidden, look.capability)
-}
-
-/** What a bare tile is, for the information panel. */
-const TERRAIN_INFO: Readonly<Record<string, Readonly<{ name: string; line: string }>>> = {
-  "terrain.plain": { name: "Open ground", line: "You can build here." },
-  "terrain.rock": { name: "Rock", line: "Blocks building and movement." },
-  "terrain.deposit": { name: "Deposit", line: "Resources lie here." },
+  return { width: Math.max(...art.map((line) => line.length)), height: art.length }
 }

@@ -20,6 +20,7 @@
 
 import type { StatusMessage } from "../status.ts"
 import { status } from "../status.ts"
+import { cardText } from "./card.ts"
 import type { ArmedPreview, BuildContext, BuildState } from "./state.ts"
 import {
   displayName,
@@ -146,7 +147,7 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
     const item = highlightedItem(context, state)
     if (item === undefined) return "Pick a building to place."
     const left = remaining(context, state)
-    const effect = item.effect.replace(/\.$/u, "")
+    const effect = cardText(context, item.contentId).subtitle.replace(/\.$/u, "")
     return item.cost > left
       ? `${item.label} - ${effect}. Costs ${item.cost}, only ${left} left.`
       : `${item.label} - ${effect}. Costs ${item.cost}. [enter] to place one.`

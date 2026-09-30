@@ -26,6 +26,7 @@ import { BuildSession } from "../src/build/session.ts"
 import type { BuildSessionOptions } from "../src/build/session.ts"
 import { anchorForCursor, applyBuildCommand, armedPreview, createBuildState, entryOfConstruct, legalityAt, remaining, spent } from "../src/build/state.ts"
 import { popupSpec } from "../src/build/popup.ts"
+import { cardText } from "../src/build/card.ts"
 import { bottomLine } from "../src/build/help.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { spikeContext } from "../src/cli/spike.ts"
@@ -484,9 +485,12 @@ test("every construct row names content that exists, costs something, and says w
   for (const item of SPIKE_CATALOG) {
     assert.ok(context.registry.has(item.contentId), `${item.contentId} is not real content`)
     assert.ok(item.cost > 0, `${item.label} costs nothing`)
-    assert.ok(item.effect.length > 0, `${item.label} does not say what it does`)
-    // The effect line has to fit the panel it is drawn in, or it says what it does only halfway.
-    assert.ok(item.effect.length <= 28, `"${item.effect}" is wider than the panel`)
+    // What it does is its card's words, written with the content (feedback F84); whether they fit the
+    // panel is tests/build-card.test.ts's, which draws every card at 80 x 24.
+    const words = cardText(context, item.contentId)
+    assert.equal(words.title, item.label, `${item.label}'s card calls it something else`)
+    assert.ok(words.subtitle.length > 0, `${item.label} does not say what it does`)
+    assert.ok(words.description.length > 0, `${item.label} has no description`)
   }
 })
 

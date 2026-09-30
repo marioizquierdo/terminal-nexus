@@ -12,7 +12,9 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { defaultExperiments } from "../src/build/experiments.ts"
 import { hint } from "../src/build/help.ts"
-import { CARD_FIRST_ROW, CARD_HEADER_ROW, CARD_SEPARATOR_ROW, EXPLORE_ROW, NEXUS_ROW, menuEntryRow, startRow } from "../src/build/layout.ts"
+import { currentCard } from "../src/build/card.ts"
+import { SPIKE_CATALOG } from "../src/build/catalog.ts"
+import { CARD_FIRST_ROW, CARD_HEADER_ROW, CARD_SEPARATOR_ROW, EXPLORE_ROW, NEXUS_ROW, menuEntryRow, menuFloor, startRow } from "../src/build/layout.ts"
 import { MOUSE_LEFT, buildMouseCommand, formatMouseEvent, parseMouseEvent } from "../src/build/mouse.ts"
 import { cardEntry, cardShowing, entryOfConstruct, remaining } from "../src/build/state.ts"
 import { TUNING } from "../src/build/tuning.ts"
@@ -27,7 +29,9 @@ import {
   DOWN,
   ENTER,
   ESC,
+  MAXIMUM,
   MINIMUM,
+  OPEN_GROUND,
   ROOMY,
   SPACE,
   TAB,
@@ -88,15 +92,16 @@ test("no credits on a card — a building's or Explore Map's, in either glyph pa
   }
 })
 
-test("a building's card: its glyphs, its name and where it stands, what it does, its numbers with the cost first — and nothing of the menu", () => {
+test("a building's card: its glyphs, its title and subtitle, its description, its numbers with the cost first — and nothing of the menu", () => {
   for (const terminal of [MINIMUM, ROOMY]) {
     const side = buildSide({ terminal })
     keys(side, DOWN, DOWN, ENTER) // the Barracks, from the menu
     const lines = panelLines(side, compose(side))
     const card = lines.slice(CARD_FIRST_ROW).join("\n")
     assert.match(lines[CARD_FIRST_ROW] as string, /^\[b\] +Barracks/)
-    assert.match(lines[CARD_FIRST_ROW + 1] as string, /^\|_\| +to build/)
-    assert.match(card, /Trains troopers each Pulse/)
+    // The subtitle sits where "to build" was (feedback F84: "use that subtitle space for the subtitle").
+    assert.match(lines[CARD_FIRST_ROW + 1] as string, /^\|_\| +Trains troopers +$/)
+    assert.match(card, /Where your troopers come/)
     assert.match(card, /^COST +40$/m)
     assert.match(card, /^HEALTH +120$/m)
     assert.match(card, /^SIZE +3x2$/m)
@@ -134,11 +139,87 @@ test("Explore Map's card says what is under the cursor as it moves: open ground,
   planned.build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }, { kind: "focus", target: "grid" }, { kind: "open-explore" }])
   const text = screenText(planned)
   assert.match(text, /Barracks/)
-  assert.match(text, /planned/)
   assert.match(text, /COST {2,}40/)
-  assert.match(text, /Trains troopers each Pulse/)
+  assert.match(text, /Trains troopers/)
   planned.build.run([{ kind: "move-cursor", dx: 0, dy: 4 }])
   assert.match(screenText(planned), /Open ground/)
+})
+
+/** Move the map cursor onto `tile`, wherever it is now. */
+function moveTo(side: Side, tile: Readonly<{ x: number; y: number }>): void {
+  const { cursor } = side.build.state
+  side.build.run([{ kind: "move-cursor", dx: tile.x - cursor.x, dy: tile.y - cursor.y }])
+  assert.deepEqual(side.build.state.cursor, tile, "the cursor did not reach the tile")
+}
+
+/** Every card the Build Phase can show: each building being placed, and Explore Map over open ground,
+ *  rock, a deposit, the Grid Nexus, a standing building and a planned one. */
+const EVERY_CARD: readonly (readonly [string, (side: Side) => void])[] = [
+  ...SPIKE_CATALOG.map((item) => [`placing the ${item.label}`, (side: Side) => keys(side, item.hotkey)] as const),
+  ...(
+    [
+      ["open ground", { x: 21, y: 13 }],
+      ["rock", { x: 8, y: 10 }],
+      ["a deposit", { x: 14, y: 12 }],
+      ["the Grid Nexus", { x: 18, y: 10 }],
+      ["the standing Barracks", { x: 26, y: 10 }],
+    ] as const
+  ).map(([name, tile]) => [`exploring ${name}`, (side: Side) => {
+    keys(side, "e")
+    moveTo(side, tile)
+  }] as const),
+  ["exploring a planned Turret", (side: Side) => {
+    keys(side, "3", ENTER, "e")
+    moveTo(side, OPEN_GROUND)
+  }],
+]
+
+test("every card is a title, a subtitle, a description and its numbers — and says nothing about planned, standing or to build", () => {
+  // Feedback F84: "no need to show the 'planned' or 'to build' state. That is obvious from the rest of
+  // the UI ... So the cards have title, subtitle, description, stats."
+  const kinds = new Set<string>()
+  for (const [name, open] of EVERY_CARD) {
+    const side = buildSide()
+    open(side)
+    const card = currentCard(side.context, side.build.state)
+    assert.ok(card !== null, `${name}: no card`)
+    kinds.add(card.icon.kind === "terrain" ? card.icon.terrainId : card.icon.contentId)
+    assert.ok(card.title !== "" && card.subtitle !== "" && card.description !== "", `${name}: a part of the card is missing`)
+    assert.ok(card.stats.length > 0, `${name}: no numbers`)
+    const text = panelLines(side, compose(side)).slice(CARD_FIRST_ROW).join("\n")
+    assert.doesNotMatch(text, /\b(planned|standing|to build)\b/i, `${name}: the card still says where the building stands`)
+  }
+  // Every kind of thing Explore Map can land on in the Build Phase has a card of its own.
+  for (const kind of ["terrain.plain", "terrain.rock", "terrain.deposit", "structure.citizen.nexus", ...SPIKE_CATALOG.map((item) => item.contentId)]) {
+    assert.ok(kinds.has(kind), `no card was drawn for ${kind}`)
+  }
+})
+
+test("every card fits the panel whole — its subtitle on one line beside the icon, its description never cut, every number above the floor — at 80x24 and 104x32, in ASCII and Unicode", () => {
+  for (const terminal of [MINIMUM, MAXIMUM]) {
+    for (const pack of ["ascii", "unicode"] as const) {
+      for (const [name, open] of EVERY_CARD) {
+        const where = `${name}, ${terminal.columns}x${terminal.rows}, ${pack}`
+        const side = buildSide({ terminal })
+        open(side)
+        const card = currentCard(side.context, side.build.state)
+        assert.ok(card !== null, `${where}: no card`)
+        const lines = panelLines(side, compose(side, { glyphPack: pack }))
+        const top = side.layout.panelRow
+        assert.equal(lines[CARD_FIRST_ROW + 1]?.trim().endsWith(card.subtitle), true, `${where}: the subtitle is not on one line under the title`)
+        // The description, read back off the panel, is all there, word for word.
+        const body = lines.slice(CARD_FIRST_ROW + 2).map((line) => line.trim()).filter((line) => line !== "")
+        assert.ok(body.join(" ").startsWith(card.description), `${where}: the description is cut`)
+        for (const stat of card.stats) {
+          assert.ok(body.some((line) => line.startsWith(stat.label) && line.endsWith(stat.value)), `${where}: ${stat.label} is missing`)
+        }
+        // Nothing runs past the last row the card may use, into the Start Pulse row or the bottom bar.
+        for (let row = menuFloor(side.layout) + 1; row <= side.layout.panelLastRow; row += 1) {
+          assert.equal(lines[row - top]?.trim(), "", `${where}: the card runs into row ${row}`)
+        }
+      }
+    }
+  }
 })
 
 test("Explore Map's header key, Esc, x and a click on its header go back to where it was opened from", () => {

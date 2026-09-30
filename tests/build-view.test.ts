@@ -350,7 +350,7 @@ test("the status line says why a placement would be refused, and which tile it m
   })
   assert.equal(statusRow(onRock), "Cannot build here: rock in the way at 8,5.")
   assert.doesNotMatch(onRock.text, /CANNOT BUILD HERE/, "not shouted, and not on the panel as well")
-  assert.match(onRock.text, /Trains troopers each Pulse/, "the panel still says what the armed row does")
+  assert.match(onRock.text, /Trains troopers/, "the panel still says what the armed building does")
 
   const onNexus = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
@@ -565,13 +565,14 @@ test("on a Grid short enough to shrink the panel, the detail block is dropped ra
   for (const row of text.split("\n")) assert.ok(row.length <= 80, `a row ran past 80: "${row}"`)
 })
 
-test("a panel with room for the effect line still draws it", () => {
+test("a panel with room for the card's words still draws them", () => {
   // The other half of the clamp: it must give way only when it genuinely has to.
   const roomy = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }])
   })
-  assert.match(roomy.text, /Trains troopers each Pulse/)
+  assert.match(roomy.text, /Trains troopers/)
+  assert.match(roomy.text, /Big and tough\./, "the description is cut short")
 })
 
 test("on a small Grid the panel's rows are drawn whole, however few fit: the Nexus entry, the buildings it has room for, and Start Pulse", () => {

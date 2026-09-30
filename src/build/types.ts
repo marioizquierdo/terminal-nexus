@@ -22,12 +22,8 @@ export type ConstructItem = Readonly<{
   label: string
   /** What it costs out of the Build Phase's starting allotment. */
   cost: number
-  /**
-   * One short authored line saying what this structure is *for*. Authored rather than derived from
-   * the content definition on purpose: "120 hp, 3x2" is a fact about a structure, and what a player
-   * is choosing between is what it does.
-   */
-  effect: string
+  // What it is *for* is not here: a building's card words — title, subtitle, description — are written
+  // with the content (`src/content/cards.ts`, feedback F84) and read through `cardText` (`card.ts`).
 }>
 
 export type BuildCommand =
