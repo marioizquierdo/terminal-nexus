@@ -113,6 +113,56 @@ request written with the pr-description skill. Do not start 6C.
 
 ## 4. Q66 — key releases, as progressive enhancement
 
+### Polish navigation in a session of its own
+
+The owner asked for this note (third round, 2026-09-30, F79: "Just do some changes here, and add a note
+that we need to come back to polish navigation again on another dedicated session").
+
+**Built in the third round**, on the map cursor and in every Build Phase list alike (`src/build/motion.ts`;
+the reducer still sees only ordinary `move-cursor` and `highlight` commands):
+
+- **Taps speed up by counting.** Taps of one arrow each within `doubleTapMs` of the one before are a run
+  that keeps its speed; the third tap since the speed last changed (or the run began), if it came within
+  `fastTapMs`, doubles it: 1, 1, 2 — then 2, 2, 4 — and 4 is the top. A slower gap, another arrow or any
+  other key starts over at 1. *Reading taken:* the second doubling uses the first one's rule (three taps,
+  the last quick); his words could also mean three double taps of any pace — one line in `moveStep` if so.
+- **A hold runs at the game's own cadence**: at most one move per `holdMoveMs` (on average exactly that
+  when the keyboard repeats faster), `holdFirstStep` a move, `holdLongStep` once it has repeated for
+  `holdLongMs`. A hold breaks a run of taps, so the tap after it is one tile. The fast move is unchanged.
+- **How a repeat is told from a tap**: with key events the terminal says so; without, a press within the
+  hold window (the Experiment, 200 ms by default) of the one before is a repeat.
+- **Key releases (auto / off)**, applied at once: on `auto` the Build Phase asks the terminal for the kitty
+  keyboard protocol, pushes its flags if it answers and pops them on every way out through the one
+  disposer (tested: `q q`, Ctrl+C in both forms, Esc then `q`, SIGINT, SIGTERM, a render failure, a
+  setup failure). With it on, Esc arrives whole and needs no wait. The browser page plays such a
+  terminal from `keydown`/`keyup`. Scripts can send `Right/repeat`, `Right/release`; the playtest
+  summary prints each move (`tap 2`, `hold 0`).
+
+**First guesses** (`src/build/tuning.ts`): his own numbers — `doubleTapMs`, `fastTapMs`,
+`tapsToSpeedUp`, `tapTopStep` — and the hold cadence, which is ours: `holdMoveMs`, `holdFirstStep`,
+`holdLongStep`, `holdLongMs`. The hold window's 200 is his "I would try".
+
+**Measure first**, in his iTerm2: `node scripts/probe-key-release.mjs`. Does it answer the kitty query,
+and do held keys say `repeat` then `release`? What are his keyboard's repeat delay and interval (the
+`+N ms` column while holding)? Then play with Key releases `auto` and `off` and compare. tmux and SSH may
+not pass the protocol through — measure, do not assume.
+
+**Left for that session:**
+
+- Tune the hold cadence to his feel — make its four numbers Experiments for the session if he wants to
+  turn them live.
+- A learned hold window (tier 2 below): measure the first held run's repeat gap and set the window from
+  it, rather than a fixed 200 ms.
+- With key events, a hold still waits for the operating system's first repeat before moving on the
+  cadence. A timer of the game's own in the live loop could start it sooner and stop at the release —
+  with a safety stop for a release that never comes.
+- Without the protocol a lone Esc still waits a moment (`escTimeoutMs`); Windows Terminal's win32-input-mode is not read;
+  the title screen's menu has no timing at all; the page's hidden typing field sends no releases.
+- A terminal that answers the question after a very quick quit would print its answer into the shell —
+  not seen, not guarded.
+
+### The design
+
 The decision is `specs/open-questions.md` Q66; this is the working design. Principle: **the plain path
 always works; a host that offers more makes it better.**
 
