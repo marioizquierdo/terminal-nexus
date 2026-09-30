@@ -28,10 +28,10 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
    what its key does ("mobile tap, which for our code is the same as a mouse click, so we just call it
    mouse click", F22). The keyboard is the floor, never the only way — and the floor of a menu is Up,
    Down and Enter: hotkeys and clicks are shortcuts onto rows that can always be walked (F48).
-2. **Tell me where I am and what happens next.** Every mode has a name in the key help, whatever is
-   under way is marked (`>`), and a label says what a key will *do*, not what state we are in: the top
-   bar reads `menu [esc]`, `back [esc]`, `close [esc]` (F32, F37). Say the result and the way back on
-   the status line.
+2. **Tell me where I am and what happens next.** Every situation has its own hint on the bottom line,
+   whatever is under way is marked, and a label says what a key will *do*, not what state we are in:
+   the top bar reads `menu [esc]`, `back [esc]`, `close [esc]` (F32, F37). Say the result and the way
+   back on the bottom line; when there is no result to say, say what can be done here (F59).
 3. **Don't move things under the player.** A picked building appears where the cursor already is;
    finishing goes back to where you began; a popup keeps its height as the highlight moves; a list
    scrolls instead of jumping; a double click places where you pointed even if the view moved (F22,
@@ -78,8 +78,9 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   It is a keyboard idea: after the mouse works the menu it is not drawn, and the first menu key only
   shows it again, on the row it remembers, and does nothing else (`BuildState.highlightHidden`).
   Something chosen — an armed building — is marked as chosen (section 4), never with the bar.
-- **The key help starts with where the keyboard is**, in capitals, then the keys that work there:
-  `MENU`, `PLACE`, `EXPLORE MAP`, `MAP`, or the open popup's name. (`keyHelp` in `src/view/build.ts`.)
+- **The bottom line starts from where the keyboard is** (feedback F59): with no answer to give, it says
+  what can be done there — the highlighted menu row, placing, Explore Map, the map, or the open popup.
+  (`HINTS` in `src/build/help.ts`; section 8.)
 - **Focus is state, not adapter memory**, so a script can set it and a test can read it.
 - **Finishing goes back to where it started** (owner, 2026-09-29, feedback F30). Placing and Explore
   Map remember where they were begun (`BuildState.origin`): begun on the map — a digit pressed there,
@@ -119,10 +120,12 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   navigation on the map, or the menu), then plain navigation to the menu, then on the menu it opens
   the **game menu**. Esc never leaves the game by itself. A key that opened something closes it the
   same way (`e` for Explore Map, `n` for the Nexus popup, `d` for Settings).
-- **The game menu is the way out, the way to Settings, and the way to start over** (owner,
-  2026-09-28; Restart since 2026-09-29, F34): `[s] Settings`, `[r] Restart` (the Build Phase over,
-  every setting and experiment kept, the plan lost), `[q] Quit`, `[esc] Back to the game`. Esc on the
-  menu and `q` anywhere open it.
+- **The game menu is the way out, the way to Settings and the controls, and the way to start over**
+  (owner, 2026-09-28; Restart since 2026-09-29, F34; Controls since 2026-09-30, F60): `[s] Settings`,
+  `[c] Controls and hotkeys`, `[r] Restart` (the Build Phase over, every setting and experiment kept,
+  the plan lost), `[q] Quit`, `[esc] Back to the game`. Esc on the menu and `q` anywhere open it. The
+  Controls page opened from it goes back to it on its own row; opened with `?` from the game, Esc
+  closes it.
 - **The top bar's right end says what Esc does right now** (owner, 2026-09-29, F37): `menu [esc]` on
   the menu (and on a committed Build Phase), `back [esc]` while the map has the keyboard (placing,
   Explore Map, or plain navigation), `close [esc]` while a popup is open. The action first and
@@ -239,9 +242,17 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   highlighted; Up/Down skip them.
 - **A text too long for its popup is a list too** (the export): each line a row, with a highlight
   Up/Down move, so it scrolls exactly as every other list does.
+- **The Controls and hotkeys page** (owner, 2026-09-30, feedback F60: "This will be enough for
+  offering help"): the game menu's `[c]` (Enter on its row, a click) or `?` from the game. Every key
+  and click, grouped by where the player is — the menu, the map, placing a building, Explore Map,
+  popups, the mouse, the Nexus Pulse, anywhere — from one table (`controlsPage` in
+  `src/build/help.ts`), so a new key is one line there. One scrolling list the export's way: the keys
+  in the hotkey colour in a column of their own and what they do beside them, a highlight Up/Down and
+  the wheel move, headings that scroll with the rows and are skipped, the scroll bar in the border.
+  Nothing to choose; Esc goes back. It replaced the key help the bottom bar used to carry.
 - **A popup that belongs to a menu row keeps that row active behind it** (the Nexus popup: `> [n]
   Nexus`; the Battle Round screen, `> [s] Start Pulse`); **one that belongs to no row** (the
-  game menu, Settings, the export) **leaves the menu unlit**, so its own highlight is the only one on
+  game menu, Settings, the export, the Controls page) **leaves the menu unlit**, so its own highlight is the only one on
   screen.
 
 ## 5a. Settings, Experiments and the export
@@ -367,7 +378,7 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
 
 - **The Pulse plays on the Build Phase's own screen, not a screen of its own.** The same top bar,
   the same closed map rectangle, the same bottom bar and popups; only the panel's contents and the
-  key help change. A 96 x 40 map does not fit a fixed pane, so the Pulse uses the Build Phase's
+  bottom line change. A 96 x 40 map does not fit a fixed pane, so the Pulse uses the Build Phase's
   camera: it opens looking at the player's Nexus, the arrow keys look around while it plays, and the
   Pulse never waits for the player.
 - **The panel says what is happening, in this order**: a headline (`NEXUS PULSE 1` with the **time
@@ -378,8 +389,8 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   controls at the bottom.
 - **Two controls have rows and everything else is a key**: `[space] Pause` (`Resume` while paused) and
   `[r] Watch again`, each clickable and doing what its key does. `[` and `]` change the speed, `.`
-  and `,` step a frame and a tick — key help only, since a row for each would crowd the panel at 80
-  columns. Popups and the game menu keep every one of these keys for themselves while they are open.
+  and `,` step a frame and a tick — keys only, listed on the Controls page, since a row for each would
+  crowd the panel at 80 columns. Popups and the game menu keep every one of these keys for themselves while they are open.
 - **The ending is four beats, always in this order**: the **last seconds** (the title's timer flashes,
   slowly, like a racing game's clock, and a soft light sweeps once every two seconds round the map's
   border like a lighthouse calling — a colour pulled toward the light and never a glyph, so it cannot
@@ -408,18 +419,33 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   time, Centre on Nexus) and so are the raid and the crew the spike starts a Pulse with (Raid, Your
   units), so every way a Pulse can end can be watched without editing code.
 
-## 8. The status line
+## 8. The bottom line
 
-- **One line answers "what just happened, or why not"**: a typed message (text, a tone, and the tile
-  it is about), never a bare string. A message about a tile lapses when the cursor leaves it.
-- **Say the result and the way back**: `Hatchery placed (resources: 70) - [u] undo`,
-  `Explore Map - arrows look around, e or esc to go back.`
+- **One line at the bottom of the screen** (owner, 2026-09-30, feedback F59: "The only thing that is
+  useful is having a single row that offers contextual help"). It answers "what just happened, or why
+  not" — and when nothing did, "what can I do here". The position readout and the key help that used
+  to share the bottom bar are gone; the map's sides say there is more map, and the Controls page has
+  every key.
+- **The last command's answer first, then a hint**: while the last command said something, the line
+  says it; after a command that says nothing, it shows the hint for where the keyboard is, from one
+  list with a line per situation (`HINTS` in `src/build/help.ts` — every popup, a committed plan, the
+  menu by its highlighted row, placing, Explore Map over a planned building or not, the map). **An
+  answer lapses at the next command that says nothing** (`lapseStatus` in `src/build/state.ts`); a
+  message about a tile also lapses when the cursor leaves it.
+- **A typed message**: text, a tone, and the tile it is about — never a bare string. A hint has the
+  `hint` tone, quieter than any answer.
+- **Say the result and the way back**: `Hatchery placed (resources: 70) - [u] undo`.
 - **Looking reads quietly; trying reads loudly**: a refusal is neutral while the player only hovers,
-  red and bold once they press Enter.
+  red and bold once they press Enter, and quiet again once that answer lapses while the preview still
+  sits on the refused tile.
+- **During a Nexus Pulse** the line says what the Pulse is doing, unless a popup over it holds the
+  keyboard.
 
 ## 9. Words
 
 - Plain words on screen; no internal ids or code names. Each Nexus is named for its faction
   ("Citizen Nexus"). What the player calls a Pulse is open (Q68): the start screen says **Battle
   Round**; the menu row and the running screen still say Pulse until it is settled.
-- Short labels in the key help: `arrows move`, `enter/space place`, `esc cancel`.
+- Keys in hints are written as the rows write them — `[enter]`, `[esc]`, `[e]` — with arrows,
+  up/down and left/right as plain words, since they are directions. Every hint fits the bottom bar at
+  the 80-column floor; a narrower bar drops whole words, never half of one.
