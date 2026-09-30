@@ -17,9 +17,10 @@
 //   ordinary `move-cursor` of the size it chose. Key releases also tells the live loop whether to ask
 //   the terminal for key events at all (`src/cli/spike.ts`), switched on and off as it changes;
 // - the popup pulse (`popupPulseMs`) is presentation alone: the view breathes a popup's border;
-// - `raid` and `crew` pick which placeholder Nexus Pulse the next commit starts (`src/build/catalog.ts`)
-//   — they change what the kernel is handed, never how it resolves it — until gate 6B's real mission
-//   replaces them.
+// - the mission's two (gate 6B): `nextRound` — whether a round's result waits for the player or the next
+//   Build Phase begins on its own (read by the Pulse's presenter, `src/view/pulse-live.ts`) — and
+//   `incoming` — whether the Build Phase draws the next round's arrivals (the view). Neither changes what
+//   the kernel is handed.
 //
 // None of them reaches the simulation kernel (`src/pulse`, `src/state`): a Build Phase plan is a plan
 // on a screen until the Pulse, and nothing here is part of it.
@@ -31,11 +32,8 @@ export type { Experiments } from "./all-settings.ts"
 
 export type ExperimentField = NamesOn<"experiment">
 
-/** How big a raid the placeholder Nexus Pulse brings (gate 6A). */
-export type RaidSize = SettingValue<"raid">
-
-/** Whether the player starts the placeholder Pulse with units of their own (gate 6A). */
-export type CrewSize = SettingValue<"crew">
+/** What starts the next Build Phase once a round's result is on screen (gate 6B). */
+export type NextRound = SettingValue<"nextRound">
 
 /** Whether the game reads key presses, repeats and releases where the terminal reports them. */
 export type KeyReleases = SettingValue<"keyReleases">

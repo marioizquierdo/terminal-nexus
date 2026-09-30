@@ -6,7 +6,7 @@
 // gestures a flat menu has no use for: the wheel, and the right button.
 
 import type { BuildLayout } from "./layout.ts"
-import { ESC_KEY, escLabelAt, inPanelColumns, menuEntryAt, pulseControlAt, tileAtCell } from "./layout.ts"
+import { ESC_KEY, escLabelAt, inPanelColumns, menuEntryAt, nextRoundRow, pulseControlAt, tileAtCell } from "./layout.ts"
 import type { PlacedPopup } from "./popup.ts"
 import { popupHitAt } from "./popup.ts"
 import type { Camera } from "./camera.ts"
@@ -23,6 +23,8 @@ export type MouseUiState = Readonly<{
   /** A Nexus Pulse is on screen (gate 6A): its panel's control rows are click targets, and nothing else
    *  on the panel is. */
   pulse?: boolean
+  /** The Pulse on screen has ended and its result stands: its "go on" row answers a click (gate 6B). */
+  pulseOver?: boolean
 }>
 
 const SGR_MOUSE = /^\u001b\[<(\d+);(\d+);(\d+)([Mm])$/
@@ -131,6 +133,9 @@ export function buildMouseCommand(
   // The Pulse's panel has control rows where the menu was; a click on one is that control, exactly as
   // its hotkey is, and any other click on the panel does nothing (there is no menu underneath it).
   if (ui.pulse === true) {
+    if (ui.pulseOver === true && inPanelColumns(layout, event.column) && event.row === nextRoundRow(layout)) {
+      return { kind: "next-round" }
+    }
     const control = pulseControlAt(layout, event.column, event.row)
     if (control !== null) return { kind: "pulse", control }
     if (inPanel(layout, event.column, event.row)) return null

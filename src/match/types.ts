@@ -11,9 +11,11 @@ import type { MatchState, PlayerId } from "../state/types.ts"
 
 /** A structure standing on the Grid when the Pulse starts: the player's own standing buildings and the
  *  ones the Build Phase committed, which "reveal together and become operational" at Pulse start
- *  (engine.md Section 5). Always the player's own, side A. */
+ *  (engine.md Section 5), and a scripted side's own plan (a mission's `commitPlan`, gate 6B). */
 export type StructurePlacement = Readonly<{
   contentId: string
+  /** Whose it is; the player's own, side A, when absent. */
+  player?: PlayerId
   /** The footprint's anchor — its north-west tile, the way the Build Phase stores a placement. */
   anchor: Coord
 }>

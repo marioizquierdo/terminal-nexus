@@ -121,6 +121,12 @@ export function pulseControlRows(layout: BuildLayout): readonly PulseControlRow[
   ]
 }
 
+/** The row a round's result offers to go on from — `[enter] Next round`, or `[enter] Play again` once the
+ *  mission is over (gate 6B) — where the Pause row was, which the result no longer needs. */
+export function nextRoundRow(layout: BuildLayout): number {
+  return layout.panelLastRow - 1
+}
+
 /** Whether a frame column is one of the side panel's — the width a highlight bar or a click target spans. */
 export function inPanelColumns(layout: BuildLayout, column: number): boolean {
   return column >= layout.panelColumn && column < layout.panelColumn + layout.panelLimit

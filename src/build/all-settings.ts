@@ -43,13 +43,13 @@ import { GLYPH_PACKS } from "../view/theme.ts"
 export type Tier = "player" | "experiment" | "tuned"
 
 /** The titled groups Settings lists its rows under, in order, with a blank line between them. */
-export type Section = "display" | "keyboard" | "effects" | "pulse"
+export type Section = "display" | "keyboard" | "effects" | "mission"
 
 export const SECTIONS: readonly Readonly<{ section: Section; title: string }>[] = [
   { section: "display", title: "DISPLAY" },
   { section: "keyboard", title: "KEYBOARD NAVIGATION" },
   { section: "effects", title: "EFFECTS" },
-  { section: "pulse", title: "PLACEHOLDER PULSE" },
+  { section: "mission", title: "THE MISSION" },
 ]
 
 /** When a change is seen: at once, or only once the Build Phase starts over. */
@@ -79,8 +79,8 @@ type Description = Readonly<{
 type SettingSpec = Readonly<{ default: Value; unit?: Unit }> &
   (Readonly<{ tier: "tuned" } & Partial<Description>> | (Readonly<{ tier: "player" | "experiment" }> & Description))
 
-const RAIDS = ["heavy", "probe", "none"] as const
-const CREWS = ["some", "none"] as const
+const NEXT_ROUND = ["key", "auto"] as const
+const INCOMING = ["shown", "hidden"] as const
 
 export const ALL_SETTINGS = {
   // --- Display: the player's own, saved with the title menu's Settings -----------------------------
@@ -358,29 +358,35 @@ export const ALL_SETTINGS = {
    *  2026-09-30. */
   endWalkMs: { tier: "tuned", default: 1000 },
 
-  // --- The placeholder Nexus Pulse (gate 6A), until gate 6B's real mission --------------------------
-  // They pick what the kernel is handed (`src/build/catalog.ts`), never how it resolves it. While a
-  // Pulse is on screen, `d` opens Settings at the first of them. The defaults are the owner's exports.
+  // --- The mission's loop (gate 6B) ------------------------------------------------------------------
+  // Settings opens at the first of them while a Pulse is on screen (`d`). The placeholder Pulse's Raid
+  // and Your units went with it: PERIMETER's waves are the mission's data now (`src/mission/perimeter.ts`).
 
-  /** How big a raid the placeholder Pulse brings: none — nobody comes, so the time runs out; the probe the
-   *  Build Phase was first tuned against; or a heavy raid that needs a real defence. */
-  raid: {
+  /** What starts the next Build Phase once a round's result is on screen: the player (Enter, Space, `n`
+   *  or a click on its row), or the game itself a moment later — the owner's 2026-09-17 sketch had the
+   *  Build Phase begin on its own ("no need to wait for units to be back"). First guess: the key, so the
+   *  result is read before it goes. */
+  nextRound: {
     tier: "experiment",
-    section: "pulse",
-    label: "Raid",
-    question: "Which raid the next Pulse faces: none (the time runs out), the probe, or a heavy one. Restart to build again.",
-    values: RAIDS,
-    default: "heavy",
+    section: "mission",
+    label: "Next round",
+    question: "After a round's result: wait for Enter, or begin the next Build Phase on its own a few seconds later.",
+    values: NEXT_ROUND,
+    default: "key",
   },
-  /** Whether the player starts the placeholder Pulse with units of their own. None means the Nexus and
-   *  what was built are all that stand between the raid and a lost Pulse. */
-  crew: {
+  /** How long a round's result stays before the next Build Phase begins on its own, when Next round is
+   *  auto; first guess (gate 6B). */
+  autoNextRoundMs: { tier: "tuned", default: 3000 },
+  /** Whether the Build Phase shows the next round's arrivals on the map, see-through, with their line of
+   *  intention on the Explore Map card (the owner's direction at gate 6A's acceptance, 2026-09-30: "so
+   *  the user can Explore map and see what is coming"). First guess: shown. */
+  incoming: {
     tier: "experiment",
-    section: "pulse",
-    label: "Your units",
-    question: "Whether you start the next Pulse with units of your own. None: only the Nexus and what you built stand against the raid.",
-    values: CREWS,
-    default: "some",
+    section: "mission",
+    label: "Incoming wave",
+    question: "Whether the Build Phase shows the next round's raid on the map, see-through, with what it means to do.",
+    values: INCOMING,
+    default: "shown",
   },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 

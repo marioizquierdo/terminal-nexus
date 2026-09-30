@@ -13,7 +13,7 @@ import type { BuildLayout } from "../build/layout.ts"
 import { buildLayout } from "../build/layout.ts"
 import { BuildSession } from "../build/session.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
-import { startPulse } from "../cli/pulse-run.ts"
+import { nextRound, startPulse } from "../cli/pulse-run.ts"
 import { spikeContext } from "../cli/spike.ts"
 import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
@@ -113,6 +113,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
       leftBy = "quit"
     },
     startPulse,
+    nextRound,
   })
   build.setKeyReleases(options.keyReleases ?? options.steps.some((step) => step.kind === "key" && step.phase !== undefined))
 
@@ -124,7 +125,8 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     const pulse = build.pulseFrame(layout)
     return composeBuildFrame(
       {
-        context,
+        // This round's: what stands on the map changes from round to round (gate 6B).
+        context: build.round,
         state: build.state,
         layout,
         glyphPack: build.state.settings.glyphPack,
@@ -156,5 +158,5 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     }
   }
 
-  return { context, layout, frames, ended }
+  return { context: build.round, layout, frames, ended }
 }

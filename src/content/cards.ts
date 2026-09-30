@@ -41,6 +41,43 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
     description: "The heart of everything you build. If it falls, the Pulse is lost: put your defences in front of it.",
   },
 
+  // --- On the map between rounds (gate 6B): survivors of both sides, the raid's camp, what is coming ---
+  "unit.citizen.trooper": {
+    title: "Trooper",
+    subtitle: "Your foot soldier",
+    description: "Fights at close range and holds the line. One of the squads you start the mission with.",
+  },
+  "unit.citizen.marksman": {
+    title: "Marksman",
+    subtitle: "Shoots from far back",
+    description: "Hits from further away than a trooper, but falls quickly if the raid reaches it.",
+  },
+  "unit.bench.spawnling": {
+    title: "Swarmer",
+    subtitle: "From your Hatchery",
+    description: "Small and quick. It rushes the enemy, and the Hatchery breeds another.",
+  },
+  "unit.ravel.runner": {
+    title: "Runner",
+    subtitle: "Fast raid biter",
+    description: "Quick and light. It runs at the nearest thing of yours and bites, and bursts when it dies.",
+  },
+  "unit.ravel.raider": {
+    title: "Raider",
+    subtitle: "Heavy raid brawler",
+    description: "Long and tough. It crashes into whatever of yours is nearest and hits hard up close.",
+  },
+  "unit.ravel.slinger": {
+    title: "Slinger",
+    subtitle: "Raid's ranged thrower",
+    description: "Throws from a few tiles away, so it can hurt a building from behind the others.",
+  },
+  "structure.ravel.den": {
+    title: "Den",
+    subtitle: "Raid's forward camp",
+    description: "Scrap welded into a shelter. Cheaper to knock down than a barracks.",
+  },
+
   // --- Bare ground ----------------------------------------------------------------------------------
   "terrain.plain": {
     title: "Open ground",
