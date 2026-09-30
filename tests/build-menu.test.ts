@@ -26,7 +26,7 @@ import {
 import { MOUSE_LEFT, buildMouseCommand, formatMouseEvent, parseMouseEvent } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildContext } from "../src/build/state.ts"
-import { EXPLORE_ENTRY, NEXUS_ENTRY, cardShowing, entryOfConstruct, menuEntries, remaining, startEntry } from "../src/build/state.ts"
+import { EXPLORE_ENTRY, NEXUS_ENTRY, cardEntry, cardShowing, entryOfConstruct, menuEntries, remaining, startEntry } from "../src/build/state.ts"
 import type { ConstructItem } from "../src/build/types.ts"
 import { spikeContext } from "../src/cli/spike.ts"
 import { ACTIVE_VALUE, composeBuildFrame } from "../src/view/build.ts"
@@ -269,8 +269,8 @@ test("a click anywhere on the panel while a card shows goes back to where it beg
   keys(side, "1")
   const click = parseMouseEvent(formatMouseEvent(MOUSE_LEFT, side.layout.panelColumn + 3, at(side, CARD_FIRST_ROW) + 3))
   assert.ok(click !== null)
-  const command = buildMouseCommand(click, side.build.state.camera, side.layout, SPIKE_CATALOG, { cardPanel: true })
-  assert.equal(command?.kind, "click-menu")
+  const command = buildMouseCommand(click, side.build.state.camera, side.layout, SPIKE_CATALOG, { card: cardEntry(side.build.state) })
+  assert.deepEqual(command, { kind: "click-menu", entry: entryOfConstruct(0) })
 })
 
 // --- The status line says less (F58) ----------------------------------------------------------------

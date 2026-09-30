@@ -398,28 +398,45 @@ export function menuEntries(context: BuildContext): readonly MenuEntry[] {
 export const EXPLORE_ENTRY = 0
 export const NEXUS_ENTRY = 1
 
-/** Whether the screen is in **Explore Map** (`BuildState.exploreMap`): the side panel shows what is
- *  under the cursor in place of the menu. */
+/**
+ * **Where the keyboard is** — the menu, or the map in one of its three modes (docs/ui-patterns.md, "The
+ * screen and the keyboard"): **placing** a building (its ghost at the cursor, its card in the panel),
+ * **Explore Map** (the panel describes what is under the cursor), or **plain navigation** (the bare
+ * cursor, the menu beside it). Derived from the stored fields — `focus`, `armed`, `exploreMap` — in
+ * this one place, so every reader agrees. A committed plan's map is only looked at: plain navigation.
+ */
+export type MapMode = "menu" | "placing" | "explore" | "plain"
+
+export function mapMode(state: Pick<BuildState, "focus" | "committed" | "armed" | "exploreMap">): MapMode {
+  if (state.focus === "menu") return "menu"
+  if (state.committed) return "plain"
+  if (state.armed !== null) return "placing"
+  return state.exploreMap ? "explore" : "plain"
+}
+
+/** Whether the screen is in **Explore Map**: the side panel shows what is under the cursor in place
+ *  of the menu. */
 export function exploring(state: BuildState): boolean {
-  return state.exploreMap && state.focus === "grid" && state.armed === null && !state.committed
+  return mapMode(state) === "explore"
 }
 
 /**
  * Whether the side panel is a **card** rather than the menu (owner, 2026-09-30, feedback F58): Explore
- * Map's, for what is under the cursor, or — while a building is armed and the map has the keyboard —
- * that building's own, "to allow players to read more details about the thing that is going to be
- * placed". Either way the row that opened it heads the card, drawn active, and a click anywhere on the
- * panel goes back, as Esc does.
+ * Map's, for what is under the cursor, or — while a building is being placed — that building's own,
+ * "to allow players to read more details about the thing that is going to be placed". Either way the
+ * row that opened it heads the card, drawn active, and a click anywhere on the panel goes back, as Esc
+ * does.
  */
 export function cardShowing(state: BuildState): boolean {
-  return !state.committed && state.focus === "grid" && (state.armed !== null || state.exploreMap)
+  return cardEntry(state) !== null
 }
 
-/** The menu entry the showing card belongs to — the armed building's, or Explore Map's — or `null`
+/** The menu entry the showing card belongs to — the building being placed, or Explore Map — or `null`
  *  while the panel shows the menu. The card's header is that row, drawn active. */
 export function cardEntry(state: BuildState): number | null {
-  if (!cardShowing(state)) return null
-  return state.armed === null ? EXPLORE_ENTRY : entryOfConstruct(state.armed)
+  const mode = mapMode(state)
+  if (mode === "placing" && state.armed !== null) return entryOfConstruct(state.armed)
+  return mode === "explore" ? EXPLORE_ENTRY : null
 }
 
 /** How many entries sit above the construct rows. */
@@ -1066,14 +1083,17 @@ function cancel(context: BuildContext, state: BuildState): BuildState {
   if (state.popup === "battle-round") return { ...closePopups(state), status: status("Cancelled.") }
   if (state.popup !== null) return popPopup(state)
   if (state.committed) return openPopup(state, "game-menu")
-  if (state.focus === "grid") {
-    // Placing or exploring: back one level, to where it was started from. Plain navigation: to the
-    // menu.
-    if (state.armed !== null) return { ...backToOrigin(state), status: status("Cancelled.") }
-    return state.exploreMap ? backToOrigin(state) : toMenu(state)
+  switch (mapMode(state)) {
+    // Placing or exploring: back one level, to where it was started from.
+    case "placing":
+      return { ...backToOrigin(state), status: status("Cancelled.") }
+    case "explore":
+      return backToOrigin(state)
+    case "plain":
+      return toMenu(state)
+    case "menu":
+      return openPopup(state, "game-menu")
   }
-  void context
-  return openPopup(state, "game-menu")
 }
 
 /**
@@ -1083,7 +1103,7 @@ function cancel(context: BuildContext, state: BuildState): BuildState {
  * keyboard there and stays, and a stray right click never opens a menu.
  */
 function goBack(context: BuildContext, state: BuildState): BuildState {
-  if (state.popup === null && (state.committed || state.focus === "menu")) return state
+  if (state.popup === null && (state.committed || mapMode(state) === "menu")) return state
   return cancel(context, state)
 }
 
@@ -1350,7 +1370,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
 
     case "open-explore":
       // Enter/Space in plain navigation: Explore Map, begun on the map. Already open, nothing more.
-      if (state.focus !== "grid" || state.armed !== null || state.exploreMap) return state
+      if (mapMode(state) !== "plain") return state
       return openExplore(context, state, "grid")
 
     case "remove": {

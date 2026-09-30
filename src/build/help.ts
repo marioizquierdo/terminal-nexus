@@ -23,7 +23,7 @@ import { status } from "../status.ts"
 import type { ArmedPreview, BuildContext, BuildState } from "./state.ts"
 import {
   WHEEL_TILES,
-  exploring,
+  mapMode,
   menuEntries,
   nexusPowers,
   pendingPicks,
@@ -76,18 +76,23 @@ export function hintSituation(context: BuildContext, state: BuildState): HintSit
       break
   }
   if (state.committed) return "committed"
-  if (state.focus === "menu") {
-    // After the mouse worked the menu no row is highlighted, so there is no row to describe.
-    if (state.highlightHidden) return "menu-mouse"
-    const entry = menuEntries(context)[state.menuHighlight]
-    if (entry === undefined || entry.kind === "explore") return "menu-explore"
-    if (entry.kind === "nexus") return "menu-nexus"
-    if (entry.kind === "start") return "menu-start"
-    return "menu-building"
+  switch (mapMode(state)) {
+    case "menu": {
+      // After the mouse worked the menu no row is highlighted, so there is no row to describe.
+      if (state.highlightHidden) return "menu-mouse"
+      const entry = menuEntries(context)[state.menuHighlight]
+      if (entry === undefined || entry.kind === "explore") return "menu-explore"
+      if (entry.kind === "nexus") return "menu-nexus"
+      if (entry.kind === "start") return "menu-start"
+      return "menu-building"
+    }
+    case "placing":
+      return "placing"
+    case "explore":
+      return structureAtTile(context, state.planned, state.cursor)?.planned === true ? "explore-planned" : "explore"
+    case "plain":
+      return "map"
   }
-  if (state.armed !== null) return "placing"
-  if (!exploring(state)) return "map"
-  return structureAtTile(context, state.planned, state.cursor)?.planned === true ? "explore-planned" : "explore"
 }
 
 /** Esc's own words in a popup: back to the popup this one was opened from, or closed. */

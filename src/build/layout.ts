@@ -5,7 +5,7 @@
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import type { PlaybackControl } from "../view/playback.ts"
 import type { BuildState } from "./state.ts"
-import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct, startEntry } from "./state.ts"
+import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct, mapMode, startEntry } from "./state.ts"
 import type { ConstructItem, MenuEntry } from "./types.ts"
 import type { Camera, TerminalSize, TileWidth, Viewport } from "./camera.ts"
 import {
@@ -157,12 +157,12 @@ export const ESC_KEY = "[esc]"
 /**
  * What Esc does right now, as the top bar's right end says it (owner, 2026-09-29, feedback F37: "The
  * '[esc] menu' at the top right should be dynamic"): **close** while a popup is open, **back** while
- * the map has the keyboard — placing, Explore Map, or the map a click opened — and **menu** on the
- * menu (and on a committed Build Phase), where Esc opens the game menu. The label comes first and the
- * key after it — "menu [esc]" — the way a way-back is read, hotkey on the right.
+ * the map has the keyboard — placing, Explore Map, or plain navigation — and **menu** on the menu (and
+ * on a committed Build Phase), where Esc opens the game menu. The label comes first and the key after
+ * it — "menu [esc]" — the way a way-back is read, hotkey on the right.
  */
-export function escLabel(state: Pick<BuildState, "popup" | "focus" | "committed">): string {
-  const action = state.popup !== null ? "close" : state.committed || state.focus !== "grid" ? "menu" : "back"
+export function escLabel(state: Pick<BuildState, "popup" | "focus" | "committed" | "armed" | "exploreMap">): string {
+  const action = state.popup !== null ? "close" : state.committed || mapMode(state) === "menu" ? "menu" : "back"
   return `${action} ${ESC_KEY}`
 }
 

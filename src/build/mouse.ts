@@ -10,16 +10,16 @@ import { ESC_KEY, escLabelAt, inPanelColumns, menuEntryAt, pulseControlAt, tileA
 import type { PlacedPopup } from "./popup.ts"
 import { popupHitAt } from "./popup.ts"
 import type { Camera } from "./camera.ts"
-import { EXPLORE_ENTRY, WHEEL_TILES } from "./state.ts"
+import { WHEEL_TILES } from "./state.ts"
 import type { BuildCommand, ConstructItem } from "./types.ts"
 
-/** What is on screen beyond the layout: the open popup, placed, since it holds the mouse; whether a
- *  card — Explore Map's, or the armed building's (`cardShowing`) — is drawn where the menu usually is;
- *  and the top bar's Esc label as drawn (`escLabel`), whose width is its click target — "close [esc]"
- *  with a popup open, "menu [esc]" otherwise, when not given. */
+/** What is on screen beyond the layout: the open popup, placed, since it holds the mouse; the menu
+ *  entry whose card — Explore Map's, or the building being placed (`cardEntry`) — is drawn where the
+ *  menu usually is, if one is; and the top bar's Esc label as drawn (`escLabel`), whose width is its
+ *  click target — "close [esc]" with a popup open, "menu [esc]" otherwise, when not given. */
 export type MouseUiState = Readonly<{
   popup?: PlacedPopup
-  cardPanel?: boolean
+  card?: number | null
   escLabel?: string
   /** A Nexus Pulse is on screen (gate 6A): its panel's control rows are click targets, and nothing else
    *  on the panel is. */
@@ -86,12 +86,11 @@ export function buildMouseCommand(
   // What the click lands on underneath any popup — a menu row or a tile — named as the reducer's own
   // click commands, which decide what a click means from what is on screen.
   const underneath = (): BuildCommand | null => {
-    // A card — Explore Map's, or the armed building's (feedback F58) — covers the menu below its header
-    // row, so the whole panel is one target — the header, drawn active, and the card under it. Sent as
-    // the menu click it is, so a driver's `click-menu` while a card shows means exactly the same; the
-    // reducer does not read which row it names.
-    if (ui.cardPanel === true && inPanel(layout, event.column, event.row)) {
-      return { kind: "click-menu", entry: menuEntryAt(layout, catalog, event.column, event.row) ?? EXPLORE_ENTRY }
+    // A card — Explore Map's, or the building being placed (feedback F58) — covers the menu below its
+    // header row, so the whole panel is one target: a click on the card's own row, its header. Sent as
+    // the menu click it is, so a driver's `click-menu` while a card shows means exactly the same.
+    if (ui.card !== undefined && ui.card !== null && inPanel(layout, event.column, event.row)) {
+      return { kind: "click-menu", entry: ui.card }
     }
     // The Pulse's panel has no menu: a click there is not a menu row.
     const entry = ui.pulse === true ? null : menuEntryAt(layout, catalog, event.column, event.row)
