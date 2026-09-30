@@ -2,7 +2,7 @@
 
 **Document role:** Gate report for the owner's menu reorganisation (feedback F52-F60)
 **Status:** IN PROGRESS
-**Canon version:** 2.26
+**Canon version:** 2.27
 **Updated:** 2026-09-30
 **License:** Apache-2.0
 

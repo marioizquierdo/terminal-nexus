@@ -1,7 +1,7 @@
 # Owner feedback — the Build Phase menu spike
 
 **Document role:** Owner feedback log, one item per row, each with what happened to it
-**Status:** OPEN — logged 2026-09-30, being built on its own pull request
+**Status:** BUILT — F52-F60 are built on the menu spike's own pull request, awaiting Mario's playtest
 **Updated:** 2026-09-30
 **License:** Apache-2.0
 
@@ -35,9 +35,10 @@ merged. It continues that log's numbering and is built on a dedicated pull reque
 > clicking on the right building or unit, which will show a different menu; let's worry about that
 > later. Right now, we will improve the regular menu.
 
-**Open.** The principle for the items below. `[n] Nexus` already toggles its popup and shows how many
-picks are waiting (`(1)`); nothing else changes there. Menus reached by clicking a building or a unit
-on the map are later work, not this spike.
+**Built** as the principle the others follow, and written into the interface rules: both kinds of row
+share one active look (F53). `[n] Nexus` already toggled its popup and showed how many picks are
+waiting (`(1)`); nothing changed there. Menus reached by clicking a building or a unit on the map are
+later work, not this spike.
 
 ## The menu itself
 
@@ -48,11 +49,11 @@ on the map are later work, not this spike.
 > the visual aid about the selected item having an effect on the grid. Specially important for
 > buildings.
 
-**Open.** Read as: while a row's action is under way its hotkey shows as `[x]` — the key that ends it —
-and `>>` replaces its right-hand value (a building's cost), pointing at the map. The `>` in front goes.
-One active style for every row, so the Nexus row behind its popup and Start Pulse behind the Battle
-Round screen take it too (both popups sit over the map, to the right). `e` still opens and closes
-Explore Map; only the active row shows `[x]`.
+**Built.** While a row's action is under way its hotkey shows as `[x]` — the key that ends it — and
+`>>` replaces its right-hand value (a building's cost), pointing at the map; the `>` in front is gone.
+It is the one active style for every row, so the Nexus row behind its popup and Start Pulse behind the
+Battle Round screen take it too (both popups sit over the map, to the right). `e` still opens and
+closes Explore Map; only the active row shows `[x]`. A pressed flash still plays over the same words.
 
 ### F54 — An arrow flies from the menu row to the cursor, and the cursor blinks when it lands
 
@@ -70,13 +71,15 @@ Explore Map; only the active row shows `[x]`.
 > is selected again, so no need for back effect. Let's see how this looks and whether this helps with
 > clarity of focus.
 
-**Open.** Built as an Experiment he can switch off. The arrow leaves the active row's `>>` and flies in
-a straight line to wherever the cursor is drawn, eased, homing on the cursor if it moves meanwhile;
-keys work at once. When it lands the cursor blinks twice in the look of a menu row's "pressed" flash,
-at the same speed. Only when a menu row hands the keyboard to the map (a building armed, or Explore Map
-opened, from the menu); never on the way back, and not for Tab. The name he asked for: in the code the
-menu's effect is the **pressed flash**; on screen it is a **blink** (twice, a double blink); the moving
-arrow is the **focus arrow**.
+**Built, as two Experiments he can flip** (`d`: **Focus arrow**, 180 ms, off to 500; **Cursor blink**,
+2, 0 to 3). The arrow leaves the active row's `>>` and flies in a straight line to wherever the cursor
+is drawn, eased so it arrives fast and settles, homing on the cursor if it moves meanwhile; keys work
+at once. Its head points the way it flies (`>` or `▶`) and a short trail follows, each cell the step
+that reached it. When it lands the cursor blinks twice in the look of a menu row's "pressed" flash, at
+the same speed. Only when a menu row hands the keyboard to the map (a building armed, or Explore Map
+opened, from the menu); never on the way back, and not for Tab. Reduced motion drops the flight and
+keeps the blink. The name he asked for: in the code the menu's effect is the **pressed flash**; on
+screen it is a **blink** (twice, a double blink); the moving arrow is the **focus arrow**.
 
 ### F55 — Left and Right only blink the row; a placement back on the menu blinks it once
 
@@ -85,8 +88,9 @@ arrow is the **focus arrow**.
 > or right. When placing a building and the focus comes back to the menu, it should blink once to help
 > bring the eye back to the building selection.
 
-**Open.** Left and Right on the menu keep their flicker and never move the keyboard; Tab and a click on
-the map still do. A placement begun on the menu comes back to it with the building's row flashing once.
+**Built.** Left and Right on the menu keep their flicker and never move the keyboard; Tab and a click
+on the map still do. A placement begun on the menu — by key or by click — comes back to it with the
+building's row flashing once.
 
 ### F56 — No categories; one blank line between Explore Map, Nexus and the buildings
 
@@ -95,9 +99,10 @@ the map still do. A placement begun on the menu comes back to it with the buildi
 > worry about that and have all options on the same menu. Just keep a space (1 empty line) between
 > Explore, Nexus, and the Buildings.
 
-**Open.** The COMMON, ARMY and SPECIAL headings and their "none available" lines go; the buildings are
-one list, numbered in order. The rule that an empty group is drawn so no hotkey moves when content
-arrives goes with the groups, until headings come back.
+**Built.** The COMMON, ARMY and SPECIAL headings and their "none available" lines are gone; the
+menu reads Explore Map, a blank line, Nexus, a blank line, the buildings in order, and Start Pulse on
+the panel's last line. The rule that an empty group is drawn so no hotkey moves when content arrives
+went with the groups, until headings come back.
 
 ### F57 — Resources as `$ 100`, top right, no maximum
 
@@ -106,10 +111,10 @@ arrives goes with the groups, until headings come back.
 > but there's a limit, we will implement that later. For now, just add "$ xx". Having the credits
 > aligned on the right looks good, because that is the cost of buildings, nice.
 
-**Open.** Read as: the panel's top line holds `$ 100` against its right edge, the same column as the
+**Built**, read as: the panel's top line holds `$ 100` against its right edge, the same column as the
 costs, with nothing else on that line — so it stays in view on every panel, a building's card and
-Explore Map included. (The other reading, `$ 100` directly above the building list where RESOURCE was,
-is one line of layout to swap if he prefers it.)
+Explore Map included. No maximum. (The other reading, `$ 100` directly above the building list where
+RESOURCE was, is one line of layout to swap if he prefers it; asked on the pull request.)
 
 ### F58 — No help text in the menu; a building being placed shows its full card
 
@@ -121,11 +126,12 @@ is one line of layout to swap if he prefers it.)
 > will work well to allow players to read more details about the thing that is going to be placed. This
 > will give us a lot more real state to show more details.
 
-**Open.** The key help that overflowed into the panel and the line describing the highlighted row both
-leave the panel (what a row does moves to the bottom line, F59). While a building is armed the panel is
-its card, under `[x] Barracks >>` at the top and a separator, the same card Explore Map shows for a
-building: its glyphs, name, what it does, cost, health, size, attack. `x`, Esc or a click on the panel
-close it, back to where the placing began.
+**Built.** The key help that overflowed into the panel and the line describing the highlighted row
+have left it (what a row does is the bottom line's to say, F59). While a building is armed the panel
+is its card, under `$ 100`, `[x] Barracks >>` and a separator — the same card Explore Map shows for a
+building: its glyphs, its name and "to build", what it does, cost, health, size, attack. `x`, Esc or a
+click on the panel close it, back to where the placing began; a digit arms another building and the
+card changes.
 
 ## The bottom of the screen
 
@@ -137,17 +143,21 @@ close it, back to where the placing began.
 > last row, we just need to make that one better in code with an easy-to-use interface to show help as
 > needed. This will also give the game more screen real state.
 
-**Open.** The position readout and the key help go; the map gets the two rows (18 rows of map at
-80 × 24 instead of 16). The one row says what the last key did when it said something, and otherwise
-what can be done where the keyboard is — the highlighted row's description, the keys for placing, and
-so on — from one place in the code that lists a line per situation. The map's edge weight stays the
-"more map this way" signal. This reverses the rule that the footer carries a position readout.
+**Built.** The position readout and the key help are gone; the map has the two rows (18 rows of map
+at 80 × 24 instead of 16), and 80 × 24 stays the floor. The one row says what the last key did when it
+said something, and otherwise what can be done where the keyboard is — the highlighted row's
+description and cost, the keys for placing, what an open popup's keys do — from one list in the code
+with a line per situation (`src/build/help.ts`); a new situation is one line there. An answer lapses
+at the next key that says nothing, so the hint comes back on its own, and hints read quieter than
+answers. The map's edge weight is the "more map this way" signal alone. This reversed the rule that
+the footer carries a position readout (canon 2.27).
 
 ### F60 — The game menu explains the controls
 
 > The "menu [esc]" can also have an option for "Controls and hotkeys" that opens a section that explains
 > how to use the keyboard, hotkeys and mouse clicks. This will be enough for offering help.
 
-**Open.** The game menu gains `[c] Controls and hotkeys`: a scrolling page of the keys and clicks, by
-situation — the menu, the map, placing, Explore Map, popups, the mouse, the Nexus Pulse. Esc goes back
-to the game menu.
+**Built.** The game menu has `[c] Controls and hotkeys`: a scrolling page of the keys and clicks, by
+situation — the menu, the map, placing a building, Explore Map, popups, the mouse, the Nexus Pulse,
+anywhere — from one table. Esc goes back to the game menu. `?` opens it straight from the game, and
+the phone key bar on the browser page has a `?` key.

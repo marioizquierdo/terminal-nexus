@@ -152,38 +152,43 @@ in its own way (below). `terminal-nexus` flags: `--capability`, `--theme`, `--gl
 `--reduced-motion`, `--backend`.
 
 **The Build Phase** (`--spike`, Milestone 5) is the first screen in the project that
-shows a **window onto a Grid larger than itself**: a 96 x 40 map in a viewport that is 49 x 16 tiles
-at 80 columns and 72 x 24 at 104. The screen is a full-width top bar, the **menu on the left**, the
-Grid in **a rectangle of its own** beside it, and a full-width bottom bar of three lines: the position
-readout, the key help for whatever has the keyboard, and the **status line**. Each side of the Grid's
+shows a **window onto a Grid larger than itself**: a 96 x 40 map in a viewport that is 49 x 18 tiles
+at 80 x 24 and 72 x 24 at 104 x 30. The screen is a full-width top bar, the **menu on the left**, the
+Grid in **a rectangle of its own** beside it, and a full-width bottom bar of **one line**: the last
+key's answer, or else a hint for where the keyboard is (`src/build/help.ts`; the menu spike, feedback
+F59). Every key and click is on the **Controls and hotkeys** page — the game menu's `[c]`, or `?`
+from anywhere. Each side of the Grid's
 rectangle is a dim line where there is more map that way and **the map's own edge** where the map
 ends — a style the map names for itself (this map's is a fence), the solid bar for a map that names
 none — in a quieter colour than the frame; the menu's divider is the map's west side (the owner's
-picks from his 2026-09-29 playtest). The readout names the visible range, because there is no minimap.
+picks from his 2026-09-29 playtest). There is no minimap: the sides' weight says there is more map.
 
 **The menu runs the screen** (the owner's round-2 direction; `docs/ui-patterns.md` has the rules).
 The keyboard starts on the menu, on its first entry, and the map cursor on the Grid Nexus: Up/Down
-and Enter/Space work the menu. Tab (or a second Right) moves the keyboard to the map in **plain
+and Enter/Space work the menu (Left and Right only flicker the row). Tab moves the keyboard to the map in **plain
 navigation** — nothing armed, the menu still drawn beside it; the arrows move the cursor, and the map
 scrolls once the cursor comes within a quarter of the view of an edge. `[e] Explore Map` (or Enter in
-plain navigation) turns its row active — `> [e] Explore Map` — and swaps the rest of the menu for a
-panel that describes whatever is under the cursor as it moves; `e` again, Esc or a click on the panel
-goes back. `[n] Nexus` opens the Nexus Powers popup (a pick closes it). Arming a building (its digit,
+plain navigation) turns its row active — `[x] Explore Map  >>` — and swaps the rest of the menu for a
+card that describes whatever is under the cursor as it moves; `e` again, `x`, Esc or a click on the
+panel goes back. The menu is one list: `$ 100` (what is left to spend) on its top line, Explore Map,
+Nexus, the buildings with their costs, and `[s] Start Pulse` on its last line. `[n] Nexus` opens the Nexus Powers popup (a pick closes it). Arming a building (its digit,
 Enter on its row, or a click on it) keeps the cursor where it is when the building fits there, and
-otherwise moves it to the nearest spot within 12 tiles that leaves a free tile around it; Enter or
+otherwise moves it to the nearest spot within 12 tiles that leaves a free tile around it, and the
+panel becomes that building's card under `[x] Barracks  >>`; begun on the menu, a **focus arrow**
+flies from that `>>` to the cursor, which blinks twice when it lands (two Experiments, `d`). Enter or
 Space places it, and **the keyboard goes back to where the arming came from, disarmed** — the map, in
 plain navigation, for a digit pressed on the map; the menu for anything started on the menu. A row
 whose action is under way — a building armed, Explore Map open, the Nexus popup open — is drawn
-**active**: `>` before it, in the hotkey's colour. **A mouse click activates what it lands on**: a
+**active**: `[x] Name  >>`, in the hotkey's colour; a placement back on the menu flashes its row once. **A mouse click activates what it lands on**: a
 click on a building's row arms it at once, its ghost at the cursor; on the map a **second click on
 the same tile** places (Q52); a click on the map from the menu keeps the menu beside it, so the next
 click can arm from it. Only the keyboard shows a "highlighted, not yet chosen" bar. Esc, `x` and a
 right click go back one level — popup, then placing or Explore Map to where it was started, then the
-map to the menu — and on the menu open the **game menu**: `[s] Settings`, `[r] Restart`, `[q] Quit`,
-and Esc back to the game; `q` opens it too, and only Ctrl+C quits at once. The top bar's right end
+map to the menu — and on the menu open the **game menu**: `[s] Settings`, `[c] Controls and hotkeys`,
+`[r] Restart`, `[q] Quit`, and Esc back to the game; `q` opens it too, and only Ctrl+C quits at once. The top bar's right end
 always says what Esc does right now — `menu [esc]`, `back [esc]` or `close [esc]` — and a click on it
 is Esc. Every row shows its cost, a row that no
-longer fits is dimmed, and **why a placement would be refused is the status line's job** — "rock in
+longer fits is dimmed, and **why a placement would be refused is the bottom line's job** — "rock in
 the way at 8,5", "costs 40, 20 left" (affordability first) — quietly while the grey `x` preview sits on
 the tile, in red once a placement is tried. `[u]` undoes and Backspace (on the map) removes the one
 under the cursor, both refunding (and throwing the placement's sparks where it stood), which keeps a
@@ -563,11 +568,12 @@ Corrections from Mario after the 2.2 pass, plus the shape of the first spike.
   is the floor below which the renderer gates; the maximum exists so a huge display cannot show
   meaningfully more Grid than a laptop, and so every layout calculation has a bound. Space beyond the
   maximum goes to centring and a larger inspection panel, never to more Grid.
-- Terminal sizes fall out: **80 x 24** for the minimum viewport at one column per tile, 104 x 28 for
-  the maximum; 128 x 24 and 176 x 28 at two columns. 80 x 24 stays the acceptance target.
+- Terminal sizes fall out: **80 x 24** for the minimum viewport at one column per tile, 104 x 30 for
+  the maximum; 128 x 24 and 176 x 30 at two columns. 80 x 24 stays the acceptance target.
 - **Scrolling is cursor-driven.** Move the cursor within 3 tiles of a viewport edge and the camera
   follows. No pan mode, no modifiers, no second cursor, and no minimap. The UI must show there is more
-  Grid, so edge markers on the frame and a footer position readout are both required.
+  Grid: the weight of the frame's sides says so (a footer position readout was also required until
+  the owner's menu spike, canon 2.27).
 - Small and medium presets fit the minimum viewport entirely, so tutorials and opening missions can
   introduce the game without a player ever learning to scroll.
 

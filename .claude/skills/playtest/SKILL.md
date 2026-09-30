@@ -40,26 +40,33 @@ it is off screen), `click@COL,ROW` clicks a 0-based screen cell; `rclick`, `whee
 the same targets. `#` starts a comment in a `--file`. The table with bytes is at the top of
 `src/playtest/keys.ts`. An unknown name is an error, never a guess.
 
-Useful openings on the `--spike` screen: focus starts on the menu's first row, Explore Map (`e`, or
-Enter there, opens it; `e` or Esc goes back), and the map cursor on the Grid Nexus (18,10); `n 1`
-picks the first Nexus power, which closes the popup (budget becomes 130) and leaves the highlight on
-the Nexus row, so `n 1 Down Down Space` arms the Hatchery from the menu (`n 2` is the War Chest: 2000
+Useful openings on the `--spike` screen: the menu is one list — `$ 100` on the panel's top line,
+`[e] Explore Map`, `[n] Nexus`, the buildings, `[s] Start Pulse` on the last line — and the one bottom
+line says the last key's answer or a hint for where the keyboard is. Focus starts on the menu's first
+row, Explore Map (`e`, or Enter there, opens it as a card under `[x] Explore Map  >>`; `e`, `x` or Esc
+goes back), and the map cursor on the Grid Nexus (18,10); `n 1` picks the first Nexus power, which
+closes the popup (the top line becomes `$ 130`) and leaves the highlight on the Nexus row, so
+`n 1 Down Down Space` arms the Hatchery from the menu and the panel becomes its card (`n 2` is the War Chest: 2000
 more to spend). Arming — a digit, Enter on a row, a click on it — keeps the cursor where it is when the
 building fits there, and otherwise moves it to the nearest spot a free tile from everything (from the
 Nexus, that is 22,10 for a Barracks, a free column to its right; a tile down counts as two across). A digit pressed on the map comes back to the map after the
-placement (plain navigation, `MAP` in the key help); anything started on the menu comes back to the
-menu. `Tab` switches focus, arriving on the map in plain navigation. A click on a building's row arms it at once
+placement (plain navigation); anything started on the menu comes back to the menu, the row flashing
+once. `Tab` switches focus, arriving on the map in plain navigation; Left and Right on the menu only
+flicker the row. A script's frames are still frames: the focus arrow and the cursor blink that follow
+a hand-off from the menu are live-loop timing, drawn by `handoffGif` in
+`scripts/capture-spike-screenshots.mjs`. A click on a building's row arms it at once
 (`click@3,9` is the Hatchery at 80x24), and a second click on the same tile places. `Esc` on the menu
-(or `q` anywhere) opens the game menu: `s` Settings, `r` Restart (the Build Phase over, every setting
-kept), `q` quits. The top bar's right end says what Esc does now — `menu [esc]`, `back [esc]`,
+(or `q` anywhere) opens the game menu: `s` Settings, `c` Controls and hotkeys (`?` opens it from
+anywhere), `r` Restart (the Build Phase over, every setting kept), `q` quits. The top bar's right end says what Esc does now — `menu [esc]`, `back [esc]`,
 `close [esc]` — and clicking it is Esc (`click@70,1` at 80x24). **Settings** lists the player's own
 settings first (`Esc s Right` switches the background to light), then the **Experiments** — the
 playtest flags, which `d` opens straight at (Up/Down choose, Left/Right change, `e` exports, `Esc`
-closes) — and last, **Export settings**. The title shows the highlight's place, `SETTINGS (6/28)`;
+closes) — and last, **Export settings**. The title shows the highlight's place, `SETTINGS (6/37)`;
 the right border beside the list is its scroll bar (a click on its lower half scrolls down). The
-Experiments start on gate 5I's placement juice (`d Right` lengthens the build animation, `d Down
-Right` sets Lighting to rainbow), then gate 5H's movement numbers (`d Down*4 Right` widens the scroll
-margin). From the first setting, Up comes round to Export, then the last experiments. Closing
+Experiments start on the menu spike's focus arrow and cursor blink (`d Left` shortens the arrow to 120 ms,
+`d Down Left` blinks once), then gate 5I's placement juice (`d Down*2 Right` lengthens the build
+animation, `d Down*3 Right` sets Lighting to rainbow), then gate 5H's movement numbers
+(`d Down*6 Right` widens the scroll margin); `--settings "focusArrowMs=0"` switches the arrow off. From the first setting, Up comes round to Export, then the last experiments. Closing
 Settings with a changed Experiment that only applies after a restart shows a **RESTART NEEDED**
 message (Esc closes it, back on the game menu's Restart; `r` then restarts) — no Experiment needs a
 restart today, since "Opens on" was deleted. `src/build/debug.ts`'s
@@ -104,7 +111,7 @@ contentId, anchor, elapsedMs }]` yourself, or step
 ## Workflow
 
 1. Iterate in text: run with the default `--print final` (or `all`) until the screen says what you
-   expect. The per-step summary prints focus and the status line for each key.
+   expect. The per-step summary prints focus and the bottom line for each key.
 2. Then pictures: `--png final` or `--gif`. **Read the image before using it** — the text being right
    does not mean the picture is.
 3. For a pull request: re-run with `--out evidence/screenshots --name <descriptive-name>`, commit the

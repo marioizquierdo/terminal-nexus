@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.26
+**Canon version:** 2.27
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -228,6 +228,16 @@ the next Build Phase and the trigger runner) or 6C (automatic production) withou
 asked on 2026-09-28 to keep going without waiting to look at each gate first**: he tests several merged
 changes together, then plays, exports his Experiments, and pastes them into the pull request.
 
+**The menu spike is built and reported, awaiting Mario's playtest** (2026-09-30,
+`evidence/menu-spike-report.md`; feedback
+[`docs/feedback/2026-09-30-menu-spike.md`](docs/feedback/2026-09-30-menu-spike.md), F52-F60, on a pull
+request of its own): the reorganisation of the Build Phase menu that 6A's round 3 left for a spike
+(F51). Every row either opens a popup or gives the map something to do, and an active row reads
+`[x] Name  >>`; a focus arrow flies from the row to the cursor, which blinks when it lands (both
+Experiments); Left and Right stay on the menu; the menu is one list with `$ 100` on its top line; a
+building being placed shows its card in the panel; the bottom bar is one line of contextual help; and
+the game menu has a Controls and hotkeys page. It does not start 6B.
+
 So the authorised work for a new session is, in order:
 
 1. **whatever the owner's most recent feedback asks for**, if any exists since
@@ -300,7 +310,9 @@ deleted, and the renderer must be replaceable without one simulation test changi
   mask. Range measures to the nearest occupied tile.
 - The viewport is clamped to between 48 × 16 and 72 × 24 tiles; the cursor drives scrolling at a
   margin (a share of the view, 25% — the owner's pick; the number is GUIDANCE);
-  there is no minimap. 80 × 24 is the floor and the acceptance target. **The margin is a follow rule,
+  there is no minimap — the weight of the Grid pane's sides is the "more Grid" signal (the footer's
+  position readout was retired at canon 2.27). 80 × 24 is the floor and the acceptance target; since
+  the bottom bar became one line it shows 49 × 18 tiles. **The margin is a follow rule,
   not an invariant**: at the Grid's own edge the camera has nowhere to go and the cursor reaches the
   edge of the screen, which is correct — there is no more Grid to reveal.
 - Grid orientation is a rendering choice. Portrait and landscape change no coordinate.
@@ -362,28 +374,39 @@ deleted, and the renderer must be replaceable without one simulation test changi
   never beside the last building placed; the cursor opens on the Grid Nexus. **Esc, `x` and a right
   click are one cancel** that goes back one level — popup, then placing or Explore Map to where it
   began, then the map to the menu — and on the menu opens the **game menu** (`[s] Settings`,
-  `[r] Restart`, `[q] Quit`); `q` opens it too, and only Ctrl+C quits at once. Leaving always asks.
+  `[c] Controls and hotkeys`, `[r] Restart`, `[q] Quit`); `q` opens it too, `?` opens the Controls
+  page directly, and only Ctrl+C quits at once. Leaving always asks. **Left and Right on the menu
+  only flicker the row**; the keyboard stays there (canon 2.27). **A menu row that hands the keyboard
+  to the map** (a building armed, Explore Map opened) sends a **focus arrow** to the cursor, which
+  blinks when it lands — presentation, timed in the live loop from a sequence number the reducer
+  records (`BuildState.handoff`); a placement back on the menu flashes its row once.
   **The top bar's right end says what Esc does** — `menu [esc]`, `back [esc]`, `close [esc]` — and a
   click on it is Esc; no popup carries its own `[esc]`. A click scrolls
   the view near its edges, armed or not (gate 5J, reversing Q58). How far a key moves the cursor is
   timed in the input path, and every animation — including the camera's slide and the cursor's
   glide, which interpolate every move — in the view; never the reducer.
-- **The Build Phase panel is the construct menu, what is left to spend, and the selected item's cost
-  and effect**, under `[e] Explore Map` and `[n] Nexus` entries at its top, Explore Map first — no
-  radius preview until something has a radius (Q30). **Explore Map** keeps its row at the top of the panel,
-  drawn active, with a separator under it and the details of whatever is under the cursor below; `e`,
-  Esc or a click on the panel goes back. **A menu row has two states**: highlighted (the keyboard's
-  bar, only while the menu has focus) and **active** (`>`, the hotkey colour, underlined) while its
-  action is under way — a building armed, Explore Map open, the Nexus popup open — one style for all. **Every popup is one shape** — a title and rows as data,
+- **The Build Phase panel is one list** (canon 2.27): what is left to spend as `$ 100` on its top
+  line, in the cost column; `[e] Explore Map`, a blank line, `[n] Nexus`, a blank line, every building
+  in catalog order with its cost (no group headings), and `[s] Start Pulse` on its last line — no help
+  text, no radius preview until something has a radius (Q30). **A card replaces the menu** while
+  Explore Map is open (what is under the cursor) or a building is being placed (that building): its
+  header is the row that opened it, drawn active, with a separator under it; `x`, Esc or a click on
+  the panel goes back. **A menu row has two states**: highlighted (the keyboard's bar, only while the
+  menu has focus) and **active** — `[x] Name  >>`, the hotkey colour, underlined — while its action is
+  under way: a building armed, Explore Map open, the Nexus popup or the Battle Round screen open — one
+  style for all. **Every popup is one shape** — a title and rows as data,
   options naming the command a click sends, at most one scrolling list with a scroll bar in its right
   border, drawn and hit-tested from the same placement; a **message** is the shape with nothing to
   choose, closed by Esc or a click outside — and is
   drawn last in the `chrome` band, never in a band of its own. **A refused placement is
-  answered on the status line, and names its tile**; **affordability is reported before any tile
-  problem**. A menu split into groups still shares **one digit sequence**, and an **empty group is
-  drawn, not skipped**, so no hotkey moves when content arrives.
-- **The status line is a typed message** — text, a tone, and the tile it is about, if any — never a
-  bare string, and a tone resolves onto style roles in one place (`src/view/status.ts`). **The Grid
+  answered on the bottom line, and names its tile**; **affordability is reported before any tile
+  problem**. Should the menu grow groups again, they share **one digit sequence**.
+- **The bottom bar is one line, the contextual line** (canon 2.27): the last command's answer while
+  it has one, otherwise a hint for where the keyboard is, from one list of situations
+  (`src/build/help.ts`); an answer lapses at the next command that says nothing. Every key is on the
+  **Controls and hotkeys** page. A message is typed — text, a tone (`hint` among them), and the tile it
+  is about, if any — never a bare string, and a tone resolves onto style roles in one place
+  (`src/view/status.ts`). **The Grid
   pane is a closed rectangle** whose sides carry the "more Grid this way" signal as weight: a light
   line where the view can scroll further, and **the map's own edge** where the map ends — a style the
   map names for itself (a solid inverse-video bar when it names none), in the quieter edge colour, the

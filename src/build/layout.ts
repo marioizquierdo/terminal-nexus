@@ -74,7 +74,8 @@ export type BuildLayout = Readonly<{
   panelRow: number
   /** Frame row of the panel's last usable line: the Start Pulse row is pinned there (`startRow`), and
    *  the Nexus Pulse panel's last control row. (Named for the key help that used to overflow into the
-   *  panel's bottom lines; the panel carries no help text since feedback F58.) */
+   *  panel's bottom lines; the panel carries no help text since feedback F58. Renaming it is a pure
+   *  rename for a change of its own.) */
   panelBindingsRow: number
 }>
 

@@ -2,7 +2,7 @@
 
 **Document role:** Gate evidence report for Gate 6A
 **Status:** PASS — built and evidenced; awaiting Mario's playtest (acceptance is his). Reworked once from his first look at the pull request: Section 11 is that round, and where it disagrees with Sections 3-6 (the alarm), it wins
-**Canon version:** 2.26
+**Canon version:** 2.27
 **Updated:** 2026-09-29
 **License:** Apache-2.0
 

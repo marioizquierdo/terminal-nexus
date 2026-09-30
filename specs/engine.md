@@ -2,8 +2,8 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.26
-**Updated:** 2026-09-27
+**Canon version:** 2.27
+**Updated:** 2026-09-30
 **License:** Apache-2.0
 
 ## 0. How to read this document

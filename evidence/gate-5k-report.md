@@ -2,7 +2,7 @@
 
 **Document role:** Gate evidence report for Gate 5K
 **Status:** COMPLETE — PASS, awaiting the owner's playtest
-**Canon version:** 2.26
+**Canon version:** 2.27
 **Updated:** 2026-09-29
 **License:** Apache-2.0
 

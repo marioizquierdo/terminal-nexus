@@ -2,7 +2,7 @@
 
 **Document role:** The queue: what waits on Mario, what comes next, and the small work that has piled up beside the milestones
 **Status:** WORKING — keep it short; delete an item when it is done, and move a decision into `specs/open-questions.md` when it becomes one
-**Updated:** 2026-09-29 (after Milestone 5 was accepted and gate 6A, the Nexus Pulse from `[s] Start` to a result, was built and reworked once)
+**Updated:** 2026-09-30 (the menu spike, feedback F52-F60, built on its own pull request; earlier: Milestone 5 accepted and gate 6A, the Nexus Pulse from `[s] Start` to a result, built and reworked twice)
 **License:** Apache-2.0
 
 Milestones say what the game must become (`milestones/`); this says what is waiting *right now*, and
@@ -24,11 +24,15 @@ the cleanup that does not belong to any gate.
   go, tap it, `q`. If the lines say `release`, Q66's tier 3 is buildable there (section 4).
 - **One question:** was "press `b`" an example of a key or a request for letter hotkeys? (Q67.)
 - **One more:** should the player ever read the word "Pulse"? The start screen says Battle Round; the menu
-  row and the running screen still say Pulse (Q68 — recommended to settle in the menu spike he
-  announced).
-- **The menu reorganisation spike** (F51 of the round-3 feedback): his to start. It has the rule "a menu can
-  always be walked with Up, Down and Enter" (`docs/ui-patterns.md` section 4) and one list of the menu's
-  entries (`menuEntries`) to work from.
+  row and the running screen still say Pulse (Q68). The menu spike did not change the words, since he
+  did not ask; his list of actions said "Start next battle round".
+- **Play the menu spike** (its own pull request; `evidence/menu-spike-report.md`): the menu as one list
+  with `$ 100` on top, an active row as `[x] Name  >>`, a building's card while placing, one bottom line
+  of help, the Controls page (Esc then `c`, or `?`). Press `d`: the first two Experiments are the
+  **Focus arrow** (180 ms; off to 500) and the **Cursor blink** (2; 0 to 3) — does the arrow help him
+  see where the keyboard went, or is the blink alone enough? Also: is `$ 100` where he meant ("top right
+  of the menu" was read as the panel's own top line; the other reading, directly above the buildings,
+  is one line to swap)?
 
 ## 2. The next gate: 6B — the loop back into the next Build Phase
 
@@ -74,8 +78,6 @@ request written with the pr-description skill. Do not start 6C.
   question once there are several.
 - **The walk home is a straight glide** over whole tiles, with no routing; it may cross rock, which a
   two-second flourish can afford.
-- **The status line under a popup mid-Pulse still says "Build committed - N planned."** True, but stale;
-  the Pulse's own message returns when the popup closes.
 - **No live numbers on the map cursor during a Pulse** (Explore Map's card is the Build Phase's), and
   the enemy's opening force is visible in the Build Phase — hiding it (player projection) is later work.
 - **Watch again** replays a Pulse that was already resolved; it cannot, and must not, resolve a new one.
@@ -87,12 +89,24 @@ request written with the pr-description skill. Do not start 6C.
   would not show it.
 - **The restart-needed message has no live trigger**: no Experiment needs a restart today. The
   detection is tested with a test-only list; when the first restart-only Experiment appears, play it.
-- **Explore Map's key help** is `arrows move · e/esc back · shift+arrow fast move · bksp remove`; "tab
-  menu" no longer fits at 80 columns. Tab still works.
 - **Q62, Q63, Q64** are still open and observable (the exploring click, the wheel step, the light
   theme's light). Ask him when he has an export.
 - **A Settings restart with buildings planned throws removal sparks** over each; harmless, and arguably
   right, but the live loop cannot tell a restart from an undo.
+
+**From the menu spike** (`evidence/menu-spike-report.md` section 7 has the reasons):
+
+- **The Controls page is written by hand** (`controlsPage` in `src/build/help.ts`). A new key needs a
+  line there as well as in `src/build/keyboard.ts`; a test holds every bracketed key a *hint* names to a
+  real binding, but the page's own lines are checked by eye.
+- **`BuildLayout.panelBindingsRow`** is named for the key help that used to sit in the panel's last
+  rows; it is now just the panel's last row. A pure rename for a change of its own.
+- **The focus arrow on a shallow diagonal** steps a row every few columns, a comet of `-` with a `\` at
+  each step; in Unicode `━` and `╲`. Worth his eye along with the Experiment.
+- **Settings is taller** now that the map has 18 rows at 80 x 24, and shows a few blank rows under the
+  highlighted row's description. Harmless.
+- **The card while placing shows what is being built, never what is under the cursor**; a player who
+  wants to read a building on the map while placing presses Esc, then `e`.
 
 ## 4. Q66 — key releases, as progressive enhancement
 

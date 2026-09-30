@@ -136,7 +136,7 @@ export type BuildState = Readonly<{
    */
   armGhost: boolean
   /** Which half of the screen the arrow keys and Enter/Space belong to (engine.md 9.7, gate 5F).
-   *  Reducer state, not adapter state, so a driver can assert it and the key help can say it. */
+   *  Reducer state, not adapter state, so a driver can assert it and the bottom line's hint can say it. */
   focus: Focus
   /**
    * **Explore Map** (feedback F23, owner 2026-09-28; its look since F32 and F53): the panel's Explore
