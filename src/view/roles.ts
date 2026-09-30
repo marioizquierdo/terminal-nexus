@@ -57,6 +57,9 @@ export const STYLE_ROLES = [
 
 export type StyleRole = (typeof STYLE_ROLES)[number]
 
+/** A colour as red, green and blue, 0 to 255 — only ever what a role resolves to, never what a cell carries. */
+export type Rgb = readonly [number, number, number]
+
 /** The rainbow, in order round the wheel — what a "rainbow" light walks through (gate 5I). */
 export const RAINBOW_ROLES: readonly StyleRole[] = [
   "fx.hue.red",
@@ -110,7 +113,7 @@ export function parseTheme(value: string): Theme {
 
 /** The frame's own background, for a renderer that paints one explicitly (OpenTUI, the canvas) rather
  * than leaving the terminal's ambient background to show through (direct ANSI). */
-export const BACKGROUND_RGB: Readonly<Record<Theme, readonly [number, number, number]>> = {
+export const BACKGROUND_RGB: Readonly<Record<Theme, Rgb>> = {
   dark: [10, 10, 12],
   light: [242, 240, 234],
 }
@@ -121,7 +124,7 @@ type Swatch = Readonly<{
   ansi: number
   /** Exact colour, for truecolor — the single source of truth every other tier derives from
    *  (`sgrFor`'s `color256` case; `color16` stays independent, see below). */
-  rgb: readonly [number, number, number]
+  rgb: Rgb
 }>
 
 /**
@@ -269,7 +272,7 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Swatch>>> = {
  */
 const XTERM_CUBE_STEPS: readonly number[] = [0, 95, 135, 175, 215, 255]
 
-function xterm256Rgb(index: number): readonly [number, number, number] {
+function xterm256Rgb(index: number): Rgb {
   if (index < 232) {
     const offset = index - 16
     const r = XTERM_CUBE_STEPS[Math.floor(offset / 36)] ?? 0
@@ -288,7 +291,7 @@ function xterm256Rgb(index: number): readonly [number, number, number] {
  * job, not this one's. Cheap enough to call once per role per theme at module load (18 x 2 x 240
  * candidates) rather than needing its own cache beyond `DERIVED_256` below.
  */
-function nearestIndexed(rgb: readonly [number, number, number]): number {
+function nearestIndexed(rgb: Rgb): number {
   let best = 16
   let bestDistance = Infinity
   for (let index = 16; index <= 255; index += 1) {
@@ -324,28 +327,6 @@ const DERIVED_256: Readonly<Record<Theme, Record<StyleRole, number>>> = (() => {
 })()
 
 /**
- * Blends a role's own rgb toward this theme's background by `fade` — Q25's recommended shape
- * (specs/open-questions.md), the one place a fade scalar actually touches an RGB triple; `roles.ts`
- * stays "never a colour" everywhere else, a role plus a number. Clamped again here even though every
- * producer (`CellStyle.fade`'s own doc comment, frame.ts) is already supposed to hand this in as
- * `[0,1]`, so a caller that skips that contract still lands on a legal colour rather than one that
- * overshoots the background.
- */
-function fadeRgb(
-  rgb: readonly [number, number, number],
-  theme: Theme,
-  fade: number,
-): readonly [number, number, number] {
-  const bg = BACKGROUND_RGB[theme]
-  const t = Math.max(0, Math.min(1, fade))
-  return [
-    Math.round(rgb[0] + (bg[0] - rgb[0]) * t),
-    Math.round(rgb[1] + (bg[1] - rgb[1]) * t),
-    Math.round(rgb[2] + (bg[2] - rgb[2]) * t),
-  ]
-}
-
-/**
  * A foreground role pulled part of the way toward another role — gate 5I's style-role operation for
  * light on a placed building's characters (feedback F9). `amount` is `0` (the cell's own role) to `1`
  * (entirely `role`). Like `fade`, the cell still carries only roles and a number, never a colour: the
@@ -376,11 +357,8 @@ export type RoleTint = Readonly<{ role: StyleRole; amount: number }>
  */
 export type SeeThrough = Readonly<{ role: StyleRole; alpha: number }>
 
-function mixRgb(
-  from: readonly [number, number, number],
-  to: readonly [number, number, number],
-  amount: number,
-): readonly [number, number, number] {
+/** `amount` (clamped to 0-1) of the way from one colour to another, each channel rounded. */
+function mixRgb(from: Rgb, to: Rgb, amount: number): Rgb {
   const t = Math.max(0, Math.min(1, amount))
   return [
     Math.round(from[0] + (to[0] - from[0]) * t),
@@ -394,7 +372,7 @@ function mixRgb(
  *  animation is a handful of roles times a few dozen steps, and the cache starts over past 4096. */
 const NEAREST_CACHE = new Map<number, number>()
 
-function nearestIndexedCached(rgb: readonly [number, number, number]): number {
+function nearestIndexedCached(rgb: Rgb): number {
   const key = (rgb[0] << 16) | (rgb[1] << 8) | rgb[2]
   const cached = NEAREST_CACHE.get(key)
   if (cached !== undefined) return cached
@@ -404,11 +382,16 @@ function nearestIndexedCached(rgb: readonly [number, number, number]): number {
   return found
 }
 
-/** The truecolor RGB of a role after its tint and fade — the one place both blends meet. */
-function blendedRgb(swatch: Swatch, theme: Theme, fade: number, tint: RoleTint | undefined): readonly [number, number, number] {
+/**
+ * The truecolor RGB of a role after its tint and fade — the one place both blends meet, and the only
+ * place a fade scalar touches a colour (Q25's recommended shape): the tinted colour taken `fade` of the
+ * way toward the theme's background. `mixRgb` clamps the amount, so a caller that hands in more than 1
+ * still lands on the background rather than past it.
+ */
+function blendedRgb(swatch: Swatch, theme: Theme, fade: number, tint: RoleTint | undefined): Rgb {
   const target = tint === undefined || tint.amount <= 0 ? undefined : PALETTE[theme][tint.role]
   const tinted = target === undefined ? swatch.rgb : mixRgb(swatch.rgb, target.rgb, tint?.amount ?? 0)
-  return fade > 0 ? fadeRgb(tinted, theme, fade) : tinted
+  return fade > 0 ? mixRgb(tinted, BACKGROUND_RGB[theme], fade) : tinted
 }
 
 /** Whether a tint shows at `color16`, where there is no blend: from one half up it is the other role. */
@@ -464,11 +447,11 @@ export function sgrBackgroundFor(
   const foreground = sgrFor(role, capability, theme)
   if (foreground.length === 0) return []
   if (capability === "color16") return [(foreground[0] ?? 37) + 10]
-  return [foreground[0] === 38 ? 48 : 48, ...foreground.slice(1)]
+  return [48, ...foreground.slice(1)]
 }
 
 /** What an RGB backend draws for a cell with no role, and for every cell in monochrome. */
-const NEUTRAL_RGB: readonly [number, number, number] = [214, 218, 224]
+const NEUTRAL_RGB: Rgb = [214, 218, 224]
 
 /**
  * The same roles as RGB, for the renderers that take colours rather than SGR parameters (the canvas
@@ -483,7 +466,7 @@ export function rgbFor(
   theme: Theme = DEFAULT_THEME,
   fade = 0,
   tint?: RoleTint,
-): readonly [number, number, number] {
+): Rgb {
   if (capability === "monochrome" || role === undefined) return NEUTRAL_RGB
   const swatch = PALETTE[theme][role]
   if (swatch === undefined) return NEUTRAL_RGB
@@ -492,9 +475,6 @@ export function rgbFor(
   if (capability === "color16") return tintStepsAt16(tint) ? PALETTE[theme][(tint as RoleTint).role].rgb : swatch.rgb
   return blendedRgb(swatch, theme, fade, tint)
 }
-
-/** A colour as red, green and blue, 0 to 255 — only ever what a role resolves to, never what a cell carries. */
-export type Rgb = readonly [number, number, number]
 
 /**
  * How much of a cell its glyph is taken to cover when a see-through style mixes what lies beneath it — the
