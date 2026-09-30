@@ -23,7 +23,17 @@ numbering. Status values: **Built**, **Scheduled**, **Open**, **Contested**.
 > pulse, with more contrast range, that works as a highlight, then it stays on the default pulse
 > animation. Refactor code to account for new abstraction.
 
-**Open.**
+**Built.** Every popup's border now breathes with the same subtle breath — the Nexus powers, the game
+menu, Settings, Controls, the export, a message and the Battle Round screen — restarting from rest when
+one popup replaces another. The Battle Round screen opens with a **double flash**: two quick pulses of the
+border most of the way to the title's colour, each lit fast and fading slowly (220 ms each, 90 ms apart),
+then it breathes like the rest, from rest, with no jump. A popup's border effect is now one small idea —
+an optional *opening* that plays once and overrides, then the steady *breath* — and which popup has which
+opening is a one-line table in the view. The Experiment is now **Popup pulse** (every popup; an old
+export's "Battle Round pulse" still reads), and two new ones let him feel the flash: **Battle Round
+flash** (how long each flash lasts; off turns it off) and **Flash strength** (how far it brightens, 80%;
+the breath goes 40%). Reduced motion and monochrome keep every border still; at 16 colours the flash shows
+as two steps and the breath does not.
 
 ### F84 — A building's card: title, subtitle, description, stats
 
@@ -37,7 +47,15 @@ numbering. Status values: **Built**, **Scheduled**, **Open**, **Contested**.
 > subtitle for now and cleanup/prepare the code for possible changes later, keep it simple whenever
 > possible and directly linked to the abstraction.
 
-**Open.**
+**Built.** No card says "planned", "standing" or "to build" any more. A card is four parts: a **title**
+beside the icon, a **subtitle** under it (one line on what the thing is for — "Trains troopers", "Spawns
+swarmers", "Shoots what comes close", "Your base: guard it", and for bare ground "Buildings can go here",
+"Blocks everything", "Resources lie here"), a **description** of two or three plain sentences, and the
+**numbers**. The words live with the content (`src/content/cards.ts`), not in the drawing, and are written
+to fit the narrow panel at 80 × 24 (a test holds every card to it). One function builds a card and one
+draws it; the drawing function is named as the place where placing, exploring in the Build Phase and
+exploring during a Pulse could later look different — nothing of that is built yet, as he said. The menu
+hint for a building now quotes its subtitle.
 
 ### F85 — Settings in sections, and one ladder from experiment to constant
 
@@ -53,10 +71,24 @@ numbering. Status values: **Built**, **Scheduled**, **Open**, **Contested**.
 > their code module because they no longer need tuning. This system is very powerful and it is allowing
 > communication between you and me, thanks!
 
-**Open.**
+**Built.** Settings is in titled sections with a blank line before each: **Display** (saved: background,
+colour depth, symbols, reduced motion), **Keyboard navigation** (Experiments: the hold window, key
+releases, and back for the navigation polish round the tap run window, the quick tap, taps to speed up,
+the fastest tap, the hold pace, when a hold goes faster and by how much, and the jump distance — all at
+today's values, and changing any of them changes the very next key), **Effects** (the popup pulse and the
+Battle Round flash), and the **placeholder Pulse** (raid, your units); Export settings stands apart at the
+end. Headings and blank lines are never rows: Up and Down step over them, and the title's count counts
+only real rows. Underneath, **every setting is declared once, in one list, with its tier** — *player*
+(shown and saved), *experiment* (shown for him, not saved, exported) or *tuned* (a constant in code) — and
+its section, label, question, values and default (`src/build/all-settings.ts`). Moving a setting between
+tiers or sections is a one-word edit; code reads any setting through one lookup that does not care which
+tier it is on, and promoting one away from *tuned* makes the compiler point at every place that still
+reads it as a constant. Old exports still read: a renamed setting maps to its new name, a settled one is
+skipped quietly. When a constant no longer needs tuning it can later move next to the code that uses it.
 
 ### F86 — A prompt for the next milestone
 
 > Then, give me a prompt to copy-paste into a new session to start working on the next milestone :)
 
-**Open.**
+**Built.** The prompt is in `docs/next-steps.md` section 2, and in the reply: the next step is gate 6B,
+the loop back into the next Build Phase (Milestone 6 has three steps — 6A, 6B, 6C — before Milestone 7).

@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.29
+**Canon version:** 2.30
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -250,7 +250,13 @@ rewritten, and his settled Experiments moved into `src/build/tuning.ts`. **Round
 F77-F81, with his third export) reworked navigation — taps speed up only by counting, a held key keeps
 the game's own pace, and key presses, repeats and releases are read where the terminal reports them
 (the Key releases Experiment; Q66 answered) — gave the popup scroll bar a textured thumb, and made the
-Battle Round screen breathe; a dedicated navigation session is queued. It does not start 6B.
+Battle Round screen breathe; a dedicated navigation session is queued. **Mario merged it** and sent
+notes for a small follow-up (2026-09-30,
+[`docs/feedback/2026-09-30-menu-spike-followup.md`](docs/feedback/2026-09-30-menu-spike-followup.md),
+F82-F86, canon 2.30): every popup breathes and the Battle Round screen opens with a double flash; a card
+is a title, a subtitle, a description and its numbers; Settings is in titled sections, and every setting
+is declared once with its tier — player, experiment or tuned (`src/build/all-settings.ts`). It does not
+start 6B; the prompt that does is in `docs/next-steps.md`.
 
 So the authorised work for a new session is, in order:
 
@@ -499,12 +505,16 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - **Ask Mario to feel a choice through an Experiment** (owner direction, 2026-09-26 and 2026-09-28:
   "The agent should feel free to add experimental flags anytime they need particular feedback from
   me, so I can try with and without them, adjust speed settings, etc until it feels right").
-  **Settings** (Esc on the menu, then `s`, in the Build Phase) holds the player's own saved settings and, at its
-  bottom, **Experiments**: live-editable flags, some applied at once, some on restart
-  (`src/build/experiments.ts` is the list); `d` jumps straight to them. When a session has a fork the owner
+  **Settings** (Esc on the menu, then `s`, in the Build Phase) lists every shown setting in titled
+  sections — the player's own saved settings under Display, and the **Experiments**, live-editable and
+  never saved, under Keyboard navigation, Effects and the placeholder Pulse; `d` jumps to the first
+  Experiment. **Every setting is declared once, with its tier, in `src/build/all-settings.ts`**:
+  *player* (shown and saved), *experiment* (shown for Mario's playtests, exported), or *tuned* (a
+  constant in code) — plus its section, label, question, values and default; moving one between tiers
+  or sections is a one-word edit (F85). When a session has a fork the owner
   should feel rather than read about — a timing, a look, a movement rule, or whether a new feature
   should exist at all — add an Experiment defaulting to the recommended answer and **ask him in plain
-  words to flip it**: "press `d`, set Battle Round pulse to 3000 ms, and tell me which you prefer." Then
+  words to flip it**: "press `d`, set Battle Round flash to 300 ms, and tell me which you prefer." Then
   **ask him to paste the export into the pull request**: Settings' **Export settings** (`e`) copies
   every setting and experiment as `name = value` text, changed experiments first; reproduce what he
   had with `--settings "<pasted text>"` (`terminal-nexus --spike` or `scripts/playtest.mjs`) or
@@ -512,7 +522,7 @@ deleted, and the renderer must be replaceable without one simulation test changi
   Experiment, so he can switch it off without a rebuild. This is Section 6's "make it observable" in
   its preferred form, ahead of a command-line flag or a registered question. Every Experiment names
   the question it serves and is **normally deleted before its pull request is accepted**: his value
-  becomes a **tuned value** in `src/build/tuning.ts`, with who chose it and when (canon 2.28, F76); a
+  becomes its default and its tier becomes *tuned*, with who chose it and when (canon 2.28, F76; one list since F85); a
   few stay longer — a number that depends on the player's keyboard, placeholder data — or graduate
   into real Settings. Settings is only in the Build Phase today; a screen without
   it falls back to a command-line flag.

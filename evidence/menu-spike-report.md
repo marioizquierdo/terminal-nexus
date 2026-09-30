@@ -504,3 +504,54 @@ Applied at canon 2.29:
 
 Wait for Mario's playtest and export; then the dedicated navigation session he asked for. Gate 6B still
 waits for his word.
+
+---
+
+# The follow-up — the owner's notes at the merge (2026-09-30, feedback F82-F86)
+
+## U1. Question, artifact, exclusions
+
+**Question:** do the three notes Mario sent when he merged the spike read as he asked — every popup
+breathing and the Battle Round screen opening with a highlight; a card as title, subtitle, description
+and numbers; Settings in sections over one list of settings with a tier each? **Artifact:** the same
+Build Phase, on a pull request of its own. **Excluded:** card variants by context (he said later), a
+collapsible section, gate 6B.
+
+## U2. What was built
+
+| Note | Built |
+| --- | --- |
+| F83 | Every popup's border breathes; a popup's border effect is an optional opening plus the breath, which popup has which is a table in the view (`POPUP_OPENINGS`); the Battle Round screen's opening is a double flash (two 220 ms pulses 90 ms apart, 80% toward the title's colour), handing over from rest. Experiments: Popup pulse (renamed), Battle Round flash, Flash strength |
+| F84 | `Card = { icon, title, subtitle, description, stats }` built in one place (`src/build/card.ts`), words with the content (`src/content/cards.ts`), drawn by one function (`drawCardBody`); no status line; the menu hint quotes the subtitle |
+| F85 | `src/build/all-settings.ts`: every setting once, with its tier (player, experiment, tuned), section, label, question, values, default; `setting(state, name)` reads any tier; Settings in titled sections with a blank line before each; eight navigation numbers back as Experiments, read live by the motion rules; old names mapped (`RENAMED_SETTINGS`) |
+| F86 | The 6B prompt in `docs/next-steps.md` section 2 |
+
+## U3. Evidence
+
+- `npm run typecheck` — clean (both configurations).
+- `npm test` — 791/791. `npm run test:bun` — all files pass. `./scripts/check-repository.sh` — pass, canon 2.30.
+- New tests: `tests/build-all-settings.test.ts` (tiers, sections, the lookup, the on-screen walk), the
+  card-fit and four-parts tests in `tests/build-card.test.ts`, the rewritten `tests/build-breath.test.ts`
+  (purity, two peaks stronger than the breath, a continuous handover, every popup, the still cases).
+- Pictures: `node scripts/capture-spike-screenshots.mjs` — `build-battle-round-opening.gif` (the flash,
+  then one breath; replaces the breath GIF), `build-settings.png`, `build-card.png` and the rest.
+
+## U4. Failures and surprises
+
+- **The rename crossed two agents.** The Settings agent renamed the pulse Experiment while the popup
+  agent rewrote the code that reads it; the merge conflicted in exactly the two files predicted and was
+  resolved by keeping the new effect code and applying the rename.
+- **Promoting `jumpStep` back to an Experiment changed the round-2 export test's meaning**: his old
+  export's jump distance now applies instead of being skipped (settled count 29 → 28). That is the
+  ladder working as intended.
+- **"Trains troopers" is still ahead of the game**: the Barracks trains nothing until automatic
+  production (gate 6C); its description says what it is for.
+- **A capture run with an empty output path wrote eight pictures into the container's root**; the
+  safety check would not let the session delete them. Harmless in an ephemeral container; a capture
+  script should refuse an empty path.
+- **The worktree tool refuses heredoc Python**, so an agent made every edit with the editor tools.
+
+## U5. Decision
+
+**PASS** — awaiting Mario's look: the flash (Battle Round flash, Flash strength), and whether the
+sections are where he would look for things.

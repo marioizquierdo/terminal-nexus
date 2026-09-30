@@ -126,16 +126,16 @@ Milestone 1's and did not change. 6B and 6C wait for the owner's word.
 > ([`../docs/feedback/2026-09-30-menu-spike-followup.md`](../docs/feedback/2026-09-30-menu-spike-followup.md),
 > F82-F86, a pull request of its own). Definition of done:
 >
-> - [ ] every popup's border breathes gently; the Battle Round screen opens with a double flash of wider
+> - [x] every popup's border breathes gently; the Battle Round screen opens with a double flash of wider
 >       contrast, then breathes like the rest — one popup-border effect with an opening and a steady
 >       part (F83);
-> - [ ] a card is a title, a subtitle, a description and its stats; no "planned" or "to build" line;
+> - [x] a card is a title, a subtitle, a description and its stats; no "planned" or "to build" line;
 >       every building's subtitle and a longer description (F84);
-> - [ ] Settings in titled sections with a blank line between them, a Keyboard navigation section with
+> - [x] Settings in titled sections with a blank line between them, a Keyboard navigation section with
 >       a few navigation numbers back as Experiments, and one ladder every setting sits on — a player's
 >       setting, an Experiment, or a tuned constant in code — so moving one is a one-word change (F85);
-> - [ ] a prompt to start the next gate in a new session (F86);
-> - [ ] tests, canon, pictures and the pull request.
+> - [x] a prompt to start the next gate in a new session (F86);
+> - [x] tests, canon, pictures and the pull request.
 
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
 > how the Pulse resolves — that stays the deterministic kernel, unmodified. What is new is the

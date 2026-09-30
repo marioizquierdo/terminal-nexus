@@ -2,7 +2,7 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.29
+**Canon version:** 2.30
 **Updated:** 2026-09-30
 **License:** Apache-2.0
 
@@ -1079,10 +1079,15 @@ does the same for the building being placed (F58: "the menu should change to the
 details about that building ... This will create visual consistency for anything that gains focus on
 the map"). Either way the card's header is **the row that opened it, drawn active on the panel's first
 line** — `[e] Explore Map  >` or `[1] Barracks  >` — a separator runs under it, and
-the card follows: the building's own glyphs as its icon, its name, a word on where it stands (planned,
-standing, to build), what it is for wrapped between words (never cut mid-word), then its numbers as
-label/value rows — cost where the menu sells it, health, size, attack where it has one. On bare ground
-the card names the terrain in one line and gives the tile. Start Pulse hides with the rest of the menu.
+the card follows, in four parts (owner, 2026-09-30, F84): a **title** beside its icon (the thing's own
+glyphs); a **subtitle** under the title, one short line on what the thing is for; a **description**, a
+few plain sentences wrapped between words and never cut mid-word; and its **numbers** as label/value
+rows — cost where the menu sells it, health, size, attack where it has one, or a bare tile's position.
+The same four parts describe a building being placed, a planned or standing building, the Grid Nexus,
+and bare ground (open ground, rock, a deposit). A card carries no status line — planned, standing or to
+build is plain from the rest of the screen — and its words are written with the content, not in the
+view. How it looks may later differ between placing a building, exploring in the Build Phase and
+exploring during a Pulse; that stays a drawing choice over the same card. Start Pulse hides with the rest of the menu.
 **The header's own hotkey cancels** (F70: "cancelation is "esc", "x" or the same hotkey ... that is
 already on the title"): `e` closes Explore Map and a building's digit cancels it, as `x`, Esc or a click
 anywhere on the panel do, back to where the card was opened from (9.7). **A building being placed holds
@@ -1407,21 +1412,25 @@ only ever redrawn once per input event (`src/cli/spike.ts`'s `render()`) (gate 5
 
 **Settings and Experiments — GUIDANCE, gate 5G as Debug Mode, gate 5J as Settings** (owner
 direction, 2026-09-26 and 2026-09-28: "Let's solidify this as Settings"). The game menu's
-`[s] Settings` is one scrolling popup, the same shape as every other. First come **the player's own
-settings** — background (dark or light), colour depth, symbols, reduced motion — which apply at once
-and are saved through the same store as the title menu's Settings. Then, clearly apart at the bottom,
-**Experiments**: live-editable playtest flags — a border glyph, a colour, a scroll-margin share, a
-step size, an easing time — so the owner can try an idea during a playtest instead of asking for a
-new command-line flag and a rebuild. A row is a name and a value; one that only takes effect when the
+`[s] Settings` is one scrolling popup, the same shape as every other, **in titled sections with a blank
+line before each** (F85): Display — **the player's own settings**, background (dark or light), colour
+depth, symbols, reduced motion, which apply at once and are saved through the same store as the title
+menu's Settings — then Keyboard navigation, Effects and the placeholder Pulse, whose rows are
+**Experiments**: live-editable playtest settings — a step size, a timing, a look — so the owner can try
+an idea during a playtest instead of asking for a new command-line flag and a rebuild. **Every setting is
+declared once with its tier** — player, experiment, or tuned (a constant in code, not shown) — and its
+section, label, question, values and default (`src/build/all-settings.ts`); moving one between tiers or
+sections is a one-word edit, and code reads any setting through one lookup that does not care which tier
+it is on. A row is a name and a value; one that only takes effect when the
 Build Phase starts over says so on the status line when changed and, when Settings closes with such a
 change pending, once in a message popup (F34). **Every Experiment names the question it serves and is normally deleted before its pull
 request is accepted**, a few staying longer or graduating into real settings; they are Build Phase
 state, per session, **never saved**, because their defaults change from build to build. The reducer
 reads those that change what a command does, the input path and the live loop read the timing ones,
 and the game menu's `[r] Restart` starts the Build Phase over keeping every setting and experiment. `d` opens
-Settings straight at the Experiments. A row shows its value between `<` and `>`, Left/Right change it,
+Settings at the first Experiment (Keyboard navigation's). A row shows its value between `<` and `>`, Left/Right change it,
 and each half of the value box is a click target; the title says where the highlight is
-(`SETTINGS (6/28)`), the list keeps it in view with a scroll bar in the right border, and what the
+(`SETTINGS (5/20)`, counting only rows the keyboard can be on; headings and blank lines are never rows), the list keeps it in view with a scroll bar in the right border, and what the
 highlighted row is for is written under a line below the list (F35). **Export settings** — the list's
 last row, and `[e]` from anywhere in it — shows every setting and
 experiment as `name = value` text — the experiments that differ from this build's defaults first,
@@ -1430,7 +1439,8 @@ top — so the owner can paste what felt right into a pull request comment. The 
 reducer, also copies it to the clipboard (OSC 52 in a terminal, the clipboard API on the browser page)
 and saves it to a file beside the settings. `--settings "<text>"` (the terminal game and the scripted
 playtest) and `#settings=` (the browser page) read it back, skipping an unknown name or a bad value
-one at a time, so an agent sees exactly what the owner saw. It replaced the one-flag-at-a-time
+one at a time, so an agent sees exactly what the owner saw. An old export's names are read by the tier
+each setting is on now: a settled one is skipped quietly, a renamed one is read as its new name. It replaced the one-flag-at-a-time
 `--scroll-margin`/`--edge-style` pattern of gates 5A-5C, and gate 5G's `[d] debug` popup, as the way
 this project shows the owner two answers side by side. The title menu's Settings screen has the
 player settings only.

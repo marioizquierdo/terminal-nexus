@@ -185,9 +185,16 @@ the Nexus powers, the game menu, Settings, the export, the Controls page, the ti
 - **Its header is the row that opened it**, moved to the panel's top line and drawn active with its own
   hotkey — `[e] Explore Map  >`, `[1] Barracks  >` — over a separator (`-` or `─`). **That hotkey
   cancels**, as Esc, `x` and a click on the panel do. No credits line on a card.
-- **Its contents**: the thing's glyphs as its icon; its name and where it stands (planned, standing, to
-  build); what it does; cost, health, size and attack as label/value rows. On bare ground, the terrain
-  and the tile. **Panel text never cuts a word**; it wraps or is dropped.
+- **A card is four parts, as data: a title, a subtitle, a description and its numbers** (owner, F84).
+  The icon is the thing's own glyphs, or a bare tile's; the title sits beside it with the subtitle under
+  it — one short line on what the thing is for; the description is two or three plain sentences with a
+  little more detail, wrapped under the icon; then the numbers as label/value rows — cost where the menu
+  sells it, health, size and attack, or a bare tile's position. **No status line**: planned, standing or
+  about to be placed is plain from the rest of the screen. The words are written with the content
+  (`src/content/cards.ts`), not in the view, and sized to the panel at 80 × 24. **Panel text never cuts a
+  word**; if the words are too long, shorten them. One function draws every card (`drawCardBody`): that is
+  where a later round would change the look for placing a building (where the title repeats the header),
+  for exploring in the Build Phase, or for exploring during a Pulse.
 - It appears with the **card reveal** (section 8).
 
 ### 6.3 A selection holds the menu
@@ -235,16 +242,21 @@ loop times the rest.
   holds the destination, the tween is how the screen gets there. The cursor glides across the *view*, so
   it rides along when only the map scrolls; clicks hit-test the drawn camera.
 - **The card reveal**, about 400 ms in three beats (a tuned value, the owner's): the other rows fade out; the chosen row, now active,
-  slides up to the header line; the card fades in, its name, subtitle and description typed out, a
+  slides up to the header line; the card fades in, its title, subtitle and description typed out in that order, a
   building's icon playing its going-up frames. Explore Map's card opens the same way, and a card opened
   from the map by a digit too; from one card straight to another only the last beat plays, so the menu
   never flashes back between them. Going back is plain: the menu returns
   with its row lit. The live loop starts it by watching the state become a card (`cardRevealAt` in
   `src/view/build-live.ts`); the reducer never hears of it.
-- **An ambient effect breathes slowly and draws less often.** The Battle Round breath is the one
+- **An ambient effect breathes slowly and draws less often.** A popup's border breath is the one
   animation that never settles, so while it is the only thing moving the screen redraws 20 times a
-  second instead of 60, and stops the moment its popup closes. It starts at rest on the first frame that
-  shows it, and every still frame draws it at rest.
+  second instead of 60, and stops the moment the last popup closes. It starts at rest on the first frame
+  that shows the popup, and every still frame draws it at rest.
+- **An opening plays once, then gives way** (F83). An element can open with a short, stronger effect
+  that overrides its ambient one: the **popup opening**, today the Battle Round screen's **double
+  flash**. It is drawn at the full frame rate, ends at rest, and hands over to the breath from rest, so
+  there is no jump. A highlight, not an alarm: brief, twice, toward the title's colour. Reduced motion
+  drops it; 16 colours keeps it as two steps.
 - **Reduced motion snaps** — camera, cursor, card, flight — keeping only what is not movement, such as a
   blink.
 
@@ -283,10 +295,15 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 - **A confirmation is a screen, not a question**: its title says what is about to happen (`Battle
   Round 1`), its body announces it — data a mission can write per round (`BuildContext.roundText`), one
   sentence to a line — and its one row is the action, highlighted: `[s] Start`. Going back is Esc.
-- **The Battle Round screen breathes**: while it is open its border slowly turns a little lighter and a
-  little darker, a smooth breath whose length is the "Battle Round pulse" Experiment. Only that popup's
-  border moves, never its title, text or shadow. It is still under reduced motion, with the Experiment
-  off, and at 16 colours and in monochrome, where it cannot show smoothly.
+- **Every popup's border breathes** (F83): while a popup is open its border slowly turns a little lighter
+  and a little darker, a smooth breath whose length is the "Popup pulse" Experiment. Only the border
+  moves, never the title, text or shadow.
+- **A popup can have an opening** that plays once from the moment it opens, then gives way to the breath.
+  Which popup has which is a table in the view (`POPUP_OPENINGS`), not code in the drawing. Today only the
+  Battle Round screen has one, a **double flash**: two quick pulses well past the breath's range (the
+  "Battle Round flash" and "Flash strength" Experiments), then the breath from rest. Everything is still
+  under reduced motion and in monochrome; at 16 colours the flash shows as two steps and the breath does
+  not; the Popup pulse at 0 stops the breath only.
 - **A message is a popup with nothing to choose**: a title and wrapped text, closed only by Esc, `x`, a
   right click or a click outside, over whatever was open. For a warning to read once and act on later
   (`BuildState.message`, `messageSpec`).
@@ -313,11 +330,16 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 
 ### 10.3 Settings, the export and the Controls page
 
-- **Settings**: the game menu's `[s]`, or `d` straight to the Experiments. One list: the player's own
-  settings (background, colour depth, symbols, reduced motion — applied at once and saved), then the
-  Experiments (never saved), then **Export settings** (`e` from anywhere in it). A change that needs a
-  restart says so on the bottom line and, once, in a message when Settings closes with it still pending
-  (`pendingRestart` in `src/build/settings.ts`).
+- **Settings**: the game menu's `[s]`, or `d` straight to the first Experiment. One scrolling list in
+  **titled sections with a blank line before each** (F85) — Display (the player's own: background, colour
+  depth, symbols, reduced motion — applied at once and saved), Keyboard navigation, Effects, the
+  placeholder Pulse — and then, apart, **Export settings** (`e` from anywhere in it). A heading names the
+  section and what its rows are ("saved", "experiments", or "saved and experiments"); headings and blank
+  lines scroll with the list and are never rows, so Up and Down step over them and the title's count
+  counts only rows the keyboard can be on. A new setting goes in the section a player would look for it
+  in; a new section is one line in the list of sections. A change that needs a restart says so on the
+  bottom line and, once, in a message when Settings closes with it still pending (`pendingRestart` in
+  `src/build/settings.ts`).
 - **The export** is text a person pastes and a program reads back: `name = value` lines, changed
   Experiments first with the defaults they replaced, and the build's commit. The adapter, never the
   reducer, copies it out; `--settings "<text>"` and `#settings=` read it back, skipping bad lines.
@@ -415,16 +437,26 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 
 ## 15. Experiments and tuned values
 
+- **Every setting is declared once, with its tier** (F85, `src/build/all-settings.ts`): **player** —
+  shown in Settings and saved; **experiment** — shown for the owner's playtests, never saved, written
+  into the export; **tuned** — a constant in code, not shown. A shown setting also names its section,
+  label, the question it answers, its values and its default. Moving a setting between tiers or sections
+  is a one-word edit plus, at most, its default; code reads a value with `setting(state, name)` and never
+  cares which tier it is on. (Promoting one to *player* also needs a field in the saved settings; a type
+  check says so.) A tuned constant that no longer needs tuning can later move next to the code that uses
+  it.
 - **A choice the owner should feel ships as an Experiment**, defaulting to the recommended answer — a
   timing, a look, a movement rule, or an on/off for a feature whose worth is in doubt. The pull request
-  asks him in plain words to flip it (the game menu's Settings, or `d`) and paste the export; `--settings`
-  shows what he saw. Every Experiment names its question (`src/build/experiments.ts`).
-- **Once he settles one it leaves Settings**: his value becomes the default in the code's table of tuned
-  values (`TUNING` in `src/build/tuning.ts`), with who chose it and when, and the Experiment is deleted, so a new one stands out. Some stay on
-  purpose: a number that depends on the player's keyboard (the hold window), a comparison he asked to
-  make himself (whether to read key releases), a look still being felt (the Battle Round pulse), or
-  placeholder data (the Pulse's raid and crew).
-- **Never copy a tuned number into prose**; point at the table.
+  asks him in plain words to flip it (Settings, or `d`) and paste the export; `--settings` shows what he
+  saw.
+- **Once he settles one it moves to the tuned tier**: his value becomes its default, with who chose it
+  and when, and it leaves Settings, so a new one stands out. It can come back the same way when a later
+  round wants to feel it again — as keyboard navigation's numbers did for the navigation polish round.
+  Some stay on purpose: a number that depends on the player's keyboard (the hold window), a comparison he
+  asked to make (key releases), a look still being felt (the popup pulse and the Battle Round flash), or
+  placeholder data (the Pulse's raid and crew). A renamed setting keeps its old name readable in old
+  exports.
+- **Never copy a tuned number into prose**; point at the setting.
 
 ## 16. Words
 

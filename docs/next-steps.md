@@ -2,7 +2,7 @@
 
 **Document role:** The queue: what waits on Mario, what comes next, and the small work that has piled up beside the milestones
 **Status:** WORKING — keep it short; delete an item when it is done, and move a decision into `specs/open-questions.md` when it becomes one
-**Updated:** 2026-09-30 (the menu spike's third round, feedback F77-F81 and his third export, on the same pull request; earlier: its second round and a general review, the menu spike, Milestone 5 accepted and gate 6A)
+**Updated:** 2026-09-30 (the menu spike's follow-up, F82-F86, and the 6B prompt; earlier: its third round, feedback F77-F81 and his third export, on the same pull request; earlier: its second round and a general review, the menu spike, Milestone 5 accepted and gate 6A)
 **License:** Apache-2.0
 
 Milestones say what the game must become (`milestones/`); this says what is waiting *right now*, and
@@ -22,13 +22,11 @@ the cleanup that does not belong to any gate.
 - **One more:** should the player ever read the word "Pulse"? The start screen says Battle Round; the menu
   row and the running screen still say Pulse (Q68). The menu spike did not change the words, since he
   did not ask; his list of actions said "Start next battle round".
-- **Play the menu spike's third round** (the same pull request; `evidence/menu-spike-report.md`):
-  taps that speed up only when asked (the third quick tap moves 2, three more move 4), a held arrow at
-  a steady pace, the scroll bar's textured thumb, and the Battle Round screen breathing. Press `d`:
-  **Hold window** (200 ms), **Key releases** (auto / off — the comparison he asked for; the probe below
-  says whether his iTerm2 answers at all), **Battle Round pulse** (2000 ms), and the placeholder
-  Pulse's **Raid** and **Your units**. The breath shows only at 256 colours or millions (his settings
-  have millions). Then the dedicated navigation session (section 4).
+- **Play the menu spike's follow-up** (its own pull request; feedback F82-F86): the Battle Round screen
+  opening with a double flash and every popup breathing; a card as title, subtitle, description and
+  numbers; Settings in sections. Press `d`: **Battle Round flash** (220 ms; off turns it off) and **Flash
+  strength** (80%) under Effects, beside **Popup pulse** (2000 ms); the navigation numbers are under
+  Keyboard navigation for the dedicated navigation session (section 4).
 
 ## 2. The next gate: 6B — the loop back into the next Build Phase
 
@@ -38,24 +36,28 @@ runner's simulation band; **6C** minimal automatic production. **6B waits for hi
 tested several merged gates together before, so it is likely to come with the 6A export. Take one gate
 per session.
 
-**A prompt to start 6B in a fresh session** (edit the first paragraph to match what he said):
+**A prompt to start 6B in a fresh session** (the owner asked for one at the menu spike's merge, F86;
+edit the first paragraph if anything changed):
 
 ```text
 Read CLAUDE.md and follow AGENTS.md.
 
-Mario has played gate 6A (the Nexus Pulse from p, y to a result) and merged it. Treat this message as
-his word that 6A is accepted and that 6B is the Active gate. Record that first, as its own commit.
-If he pasted a settings export, settle each Experiment it answers before anything else.
+I have played gate 6A (Start Pulse, the Battle Round screen, the Pulse, its ending and Recall) and the
+menu spike with its follow-up, and merged them. Treat this message as my word that gate 6A is accepted
+and that gate 6B is the Active gate. Record that first, as its own commit (the governance ledger, the
+Milestone 6 tracker, AGENTS.md Section 2, docs/next-steps.md). If I paste a settings export, settle
+each Experiment it answers before anything else.
 
 Then orient: run ./scripts/check-repository.sh; read milestones/milestone-06-pulse-phase.md,
-docs/next-steps.md, docs/ui-patterns.md (sections 0 and 14) and evidence/gate-6a-report.md (its
-sections 7 and 9 are the carry-over).
+docs/next-steps.md, docs/ui-patterns.md (sections 0, 14 and 15) and evidence/gate-6a-report.md
+(its sections 7 and 9 are the carry-over).
 
 Take gate 6B only — the loop: after Recall, the next Build Phase, until the mission's triggers end it;
 the trigger runner's simulation band (spawn, order, commitPlan, win, lose) as validated data;
-PERIMETER's three waves as the fixture; Q36 resolved or deferred with a reason. The kernel is
-Milestone 1's; a change to it is a finding, not an assumption. End with a gate report and a pull
-request written with the pr-description skill. Do not start 6C.
+PERIMETER's three waves as the fixture, replacing the placeholder Pulse and its Raid and Your units
+Experiments; Q36 resolved or deferred with a reason. The kernel is Milestone 1's; a change to it is a
+finding, not an assumption. Anything I should feel goes behind an Experiment in Settings. End with a
+gate report and a pull request written with the pr-description skill. Do not start 6C.
 ```
 
 ## 3. Carry-over (small, none blocking)
