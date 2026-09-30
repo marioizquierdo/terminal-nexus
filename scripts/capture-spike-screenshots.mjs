@@ -729,8 +729,8 @@ scripted(
 
 scripted(
   "build-debug-104x32",
-  "Right twice on Hold window: 350 ms becomes 700 ms, and the bottom line says so",
-  { keys: "d Down*2 Right Right", cols: 104, rows: 32, expect: "Hold window: 700 ms" },
+  "Right twice on Hold window, the first Experiment: 200 ms becomes 350 ms, and the bottom line says so",
+  { keys: "d Right Right", cols: 104, rows: 32, expect: "Hold window: 350 ms" },
 )
 
 scripted(
@@ -764,13 +764,20 @@ scripted(
 )
 
 scriptedGif("build-held-arrow", {
-  // A tap, the terminal's repeat delay (150 ms here, inside the owner's 350 ms hold window; a longer
-  // delay loses only the first repeat), then auto-repeats 30 ms apart: one tile, then two a press from
-  // the first repeat, then four once the run is 200 ms old. Then Left, straight after: a different
-  // arrow starts again at one, then two. Shift+Down: a jump of ten. (Explore Map, from the menu, first
-  // moves the cursor to clear ground beside the Nexus.)
+  // A tap, the terminal's repeat delay (150 ms here, inside the 200 ms hold window), then auto-repeats
+  // 30 ms apart: a held key moves at the game's own pace, one tile every 60 ms, so every other repeat
+  // moves nothing (the owner's third round, F79). Then Left, straight after: a hold of its own. Shift+Down:
+  // a jump of ten. (Explore Map, from the menu, first moves the cursor to clear ground by the Nexus.)
   keys: "e Right Right~150 Right~30*14 Left~30 Left~30*3 S-Down",
-  expect: "61,20",
+  expect: "27,20",
+  delayMs: 450,
+})
+
+scriptedGif("build-tap-count", {
+  // Taps speed up only by counting (F79): two slow taps, one tile each; a third within 300 ms moves two;
+  // taps within 400 ms keep it; three more, the last quick, move four. A pause starts over at one.
+  keys: "e Right~500 Right~350 Right~250 Right~350 Right~250 Right~250 Right~250 Right~900",
+  expect: "Explore Map",
   delayMs: 450,
 })
 
