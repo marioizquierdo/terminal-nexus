@@ -25,8 +25,8 @@ import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { sgrFor } from "../src/view/roles.ts"
 import type { GlyphPack } from "../src/view/theme.ts"
 import { chromeGlyph, terrainGlyph } from "../src/view/theme.ts"
+import { MINIMUM } from "./build-helpers.ts"
 
-const MINIMUM = { columns: 80, rows: 24 }
 const PACKS: readonly GlyphPack[] = ["ascii", "unicode"]
 
 /** A Grid exactly the minimum viewport: the whole map on screen, so all four sides are its edge. */

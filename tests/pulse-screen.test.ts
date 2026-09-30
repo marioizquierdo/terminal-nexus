@@ -21,11 +21,11 @@ import type { CellStyle, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { CAPABILITY_MODES } from "../src/view/index.ts"
 import { BEAM_PERIOD_MS, TIMER_HALF_PERIOD_MS } from "../src/view/ending.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
+import { ESC } from "./build-helpers.ts"
 import { isColourCode, sgrCodes } from "./helpers.ts"
 import { DEFENCE, MINIMUM, at, atHome, click, frameOf, newSession, play, prepare, screenText } from "./pulse-helpers.ts"
 import type { Played } from "./pulse-helpers.ts"
 
-const ESC = String.fromCharCode(27)
 
 /** A Pulse the defence wins, with the screen's clock started at zero. */
 function victorious(): Played {

@@ -8,9 +8,9 @@ import assert from "node:assert/strict"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { frameToText } from "../src/view/frame.ts"
+import { ESC } from "./build-helpers.ts"
 import { DEFENCE_KEYS, PROBE_PULSE } from "./pulse-helpers.ts"
 
-const ESC = String.fromCharCode(27)
 
 test("key names map to the bytes a real terminal sends", () => {
   const steps = parseKeyScript("Up S-Left M-Right Tab Esc Enter Space Bksp PgDn q 1")

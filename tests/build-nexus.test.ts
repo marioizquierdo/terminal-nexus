@@ -6,8 +6,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { NEXUS_ROW, buildLayout, cellForTile, escLabelSpan, escLabel } from "../src/build/layout.ts"
-import { popupSpec, placePopup } from "../src/build/popup.ts"
-import type { PlacedPopup } from "../src/build/popup.ts"
+import { popupSpec } from "../src/build/popup.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, formatMouseEvent } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
@@ -16,7 +15,7 @@ import { startPulse } from "../src/cli/pulse-run.ts"
 import { spikeContext } from "../src/cli/spike.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { frameToText } from "../src/view/frame.ts"
-import { ESC, buildSide } from "./build-helpers.ts"
+import { ESC, buildSide, placed } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
 
 
@@ -295,16 +294,9 @@ test("keyboard: n opens the Nexus popup, and means nothing on the Battle Round c
   assert.equal(buildKeyboardCommand(`${ESC}[C`, confirming), null)
 })
 
-/** The open popup, placed exactly as the composer and the mouse adapter place it. */
-function placedPopup(side: BuildSide): PlacedPopup {
-  const spec = popupSpec(spikeContext(), side.build.state)
-  assert.ok(spec !== null, "no popup is open")
-  return placePopup(side.layout, spec)
-}
-
 /** The click bytes for the popup option whose command matches, or for the top bar's "close [esc]". */
 function clickPopupBytes(side: BuildSide, match: (command: BuildCommand) => boolean): string {
-  const popup = placedPopup(side)
+  const popup = placed(side)
   const row = popup.rows.find((candidate) => candidate.spec.kind === "option" && match(candidate.spec.command))
   assert.ok(row !== undefined, "no such option in the popup")
   return formatMouseEvent(MOUSE_LEFT, popup.textColumn + 2, row.row + 1)
@@ -321,7 +313,7 @@ function clickNexusEntryBytes(layout: ReturnType<typeof buildLayout>): string {
 test("mouse: inside a popup a click picks or closes; outside it, a click closes it and brings focus there", () => {
   const side = session()
   side.build.handleData("n", side.layout)
-  const popup = placedPopup(side)
+  const popup = placed(side)
   // Either row of an option — its name or its description — picks it.
   const second = popup.rows.filter((row) => row.spec.kind === "option")[2]!
   side.build.handleData(formatMouseEvent(MOUSE_LEFT, popup.textColumn + 6, second.row + 1), side.layout)

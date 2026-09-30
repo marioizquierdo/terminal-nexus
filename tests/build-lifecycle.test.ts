@@ -16,9 +16,9 @@ import { parseKeyScript } from "../src/playtest/keys.ts"
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../src/menu/mouse.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import type { Settings } from "../src/settings/index.ts"
+import { ESC } from "./build-helpers.ts"
 import { DEFENCE_KEYS, PROBE_PULSE } from "./pulse-helpers.ts"
 
-const ESC = String.fromCharCode(27)
 
 /** The title row's clock, whatever styling sits between the words and the time. */
 const timerAt = (write: string): string | undefined => new RegExp(`NEXUS PULSE 1(?:${ESC}\\[[0-9;]*m)* +(\\d:\\d\\d)`).exec(write)?.[1]

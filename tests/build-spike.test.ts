@@ -29,10 +29,8 @@ import { popupSpec } from "../src/build/popup.ts"
 import { bottomLine } from "../src/build/help.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { spikeContext } from "../src/cli/spike.ts"
-import { composeBuildFrame } from "../src/view/build.ts"
-import { frameToText } from "../src/view/frame.ts"
 import { fitViewport, marginForView } from "../src/build/camera.ts"
-import { DOWN, ENTER, ESC, LEFT, MAXIMUM, MINIMUM, PAGE_DOWN, PAGE_UP, RIGHT, SHIFT_LEFT, SHIFT_RIGHT, UP } from "./build-helpers.ts"
+import { DOWN, ENTER, ESC, LEFT, MAXIMUM, MINIMUM, PAGE_DOWN, PAGE_UP, RIGHT, SHIFT_LEFT, SHIFT_RIGHT, UP, screenText } from "./build-helpers.ts"
 
 /**
  * Every test here is about placement, scrolling, or the adapters — not about the Nexus draft gate
@@ -76,15 +74,6 @@ function session(
  *  so a test that means a tile says the tile rather than a distance from a spot it cannot predict. */
 function moveTo(build: BuildSession, tile: { x: number; y: number }): void {
   build.dispatch({ kind: "move-cursor", dx: tile.x - build.state.cursor.x, dy: tile.y - build.state.cursor.y })
-}
-
-/** The frame as text, which is what "the same screen" means for an assertion. */
-function screen(
-  build: BuildSession,
-  layout: ReturnType<typeof buildLayout>,
-  context: ReturnType<typeof spikeContext>,
-): string {
-  return frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
 }
 
 /** The raw bytes a left click on this Grid tile sends, derived from the composer's own geometry —
@@ -167,12 +156,12 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   assert.deepEqual(byMouse.build.state, byKeyboard.build.state)
   assert.deepEqual(byDriver.build.state, byKeyboard.build.state)
   assert.equal(
-    screen(byMouse.build, byMouse.layout, byMouse.context),
-    screen(byKeyboard.build, byKeyboard.layout, byKeyboard.context),
+    screenText(byMouse),
+    screenText(byKeyboard),
   )
   assert.equal(
-    screen(byDriver.build, byDriver.layout, byDriver.context),
-    screen(byKeyboard.build, byKeyboard.layout, byKeyboard.context),
+    screenText(byDriver),
+    screenText(byKeyboard),
   )
 })
 
