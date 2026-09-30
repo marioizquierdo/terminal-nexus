@@ -17,9 +17,8 @@
 // still frame, a test, or a scripted playtest draws any instant of the animation by naming it, and the
 // plan is identical with every effect on or off (the three worlds: presentation never touches state).
 //
-// Timeline of one placement, its two lengths the owner's tuned values (`src/build/tuning.ts`: they were
-// the "Build animation" and "Glow time" Experiments, with "Lighting" and "Particles" beside them, until he
-// settled them — a flash that settles and a few sparks — on 2026-09-30):
+// Timeline of one placement, its two lengths — and the sparks' count — the owner's tuned values
+// (`src/build/tuning.ts`; a flash that settles and a few sparks, 2026-09-30):
 //
 //   0 ............ framesMs ................ framesMs + glowMs
 //   | placement frames: foundation -> ... |  finished, lit, sparks  |  settled (state alone)

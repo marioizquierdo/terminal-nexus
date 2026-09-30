@@ -111,8 +111,7 @@ type MenuRowSpec = Readonly<{
 
 /** What an active row shows at its right end in place of its value: an arrow pointing at the map, where
  *  the row's action is under way (owner, 2026-09-30, feedback F67: "change the 'active in grid' arrow to
- *  just one '>'"; `>>` until then, F53). It keeps its own hotkey (F70), so the key that chose it is the
- *  key that ends it. */
+ *  just one '>'"). It keeps its own hotkey (F70), so the key that chose it is the key that ends it. */
 export const ACTIVE_VALUE = ">"
 
 /**
@@ -297,8 +296,8 @@ function drawCredits(cells: BandCell[], input: BuildCompositionInput, pack: Glyp
 /**
  * The side panel as the menu (owner, 2026-09-30, feedback F56-F58, F71-F72): `[e] Explore Map`,
  * `[n] Nexus` under it, the credits line, the buildings one to a row in catalog order, and
- * `[s] Start Pulse` on its last line. No headings, no help text: what a row does is the bottom line's
- * to say, why a placement is refused the status line's, and there is no radius preview, because
+ * `[s] Start Pulse` on its last line. No headings, no help text: what a row does, and why a placement
+ * is refused, are the bottom line's to say, and there is no radius preview, because
  * nothing placed here has a radius. A row the panel is too short for is not drawn (`menuEntryRow` says
  * so, and the mouse reads the same answer).
  */

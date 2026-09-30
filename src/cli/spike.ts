@@ -22,7 +22,7 @@ import { isGated } from "../build/camera.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
 import { composeBuildFrame } from "../view/build.ts"
-import { BuildAnimation, FRAME_MS, livePresentation, nextFrameDelay } from "../view/build-live.ts"
+import { BuildAnimation, livePresentation, nextFrameDelay } from "../view/build-live.ts"
 import { KeyReader } from "../view/key-reader.ts"
 import { gateFrame } from "../view/index.ts"
 import { selectBackend } from "../view/backends/index.ts"
@@ -275,9 +275,9 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
             settings.capability,
           )
     // The frame timer runs while anything is still moving: an animation, or a Pulse that is playing (which
-    // wants the very next frame, so its frame is a frame's length away whatever an animation says).
-    const pulseBusy = !gated && build.pulse?.busyUntil(now) != null
-    scheduleFrame(pulseBusy ? now + FRAME_MS : (live?.busyUntil ?? null), now)
+    // wants the very next frame, a frame's length away, whatever an animation says).
+    const pulseBusyUntil = gated ? null : (build.pulse?.busyUntil(now) ?? null)
+    scheduleFrame(pulseBusyUntil ?? live?.busyUntil ?? null, now)
     if (frame.width !== lastFrame.width || frame.height !== lastFrame.height) {
       stdout.write(CLEAR)
       lastFrame = { width: frame.width, height: frame.height }

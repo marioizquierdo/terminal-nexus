@@ -3,9 +3,8 @@
 //
 // The Grid pane is a **window onto a Grid larger than itself**: every tile is drawn at
 // `tile - camera` and clipped to the viewport, and the signal engine.md 3.3 requires in place of a
-// minimap — the weight of the lines around the Grid pane — comes from the same camera the cursor moved.
-// (A position readout naming the visible range was the second signal until the owner took it out,
-// 2026-09-30, feedback F59.)
+// minimap — the weight of the lines around the Grid pane — comes from the same camera the cursor moved
+// (the only signal: no position readout, feedback F59).
 //
 // This file puts the frame together; each part the design names is drawn in a file of its own: the
 // frame and the two bars (`build-frame.ts`), the Grid pane (`build-grid.ts`), the menu and its rows
@@ -111,7 +110,8 @@ export type BuildCompositionInput = Readonly<{
  *  number — which row, and whether it was **pressed** or **refused**. */
 export type RowAck = Readonly<Pick<Ack, "kind" | "entry">>
 
-/** The Build Phase is done. Nothing here reaches a Nexus Pulse — Milestone 6 builds that. */
+/** The panel once the plan is committed with no Nexus Pulse to show (the session was given no way to
+ *  start one, as in a test): what was committed. */
 function drawCommittedPanel(cells: BandCell[], input: BuildCompositionInput): void {
   const { context, state, layout } = input
   const band = BANDS.chrome
@@ -157,7 +157,7 @@ export function composeBuildFrame(
     return composeBands(input.layout.frame.width, input.layout.frame.height, cells)
   }
 
-  // What Enter would do at the cursor, derived once and read by the ghost, the status line and the
+  // What Enter would do at the cursor, derived once and read by the ghost, the bottom line and the
   // panel alike — the reducer's `place()` acts on the very same derivation.
   const preview = armedPreview(input.context, input.state)
   const animating = animatingPlacements(input)

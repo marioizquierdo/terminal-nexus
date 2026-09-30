@@ -252,14 +252,13 @@ function drawBuildingCard(
           { placeFramesMs: look.icon.framesMs, placeGlowMs: 0, placeSparks: 0 },
         )
   art.forEach((line, index) => {
-    ;[...line].forEach((character, offset) => {
+    ;[...line].forEach((_drawn, offset) => {
       if (rising !== null && look.icon !== null) {
         const frame = placementLook(rising, contentId, { x: offset, y: index }, look.icon.elapsedMs)
         if (frame.glyph !== null) put(cells, band, column + offset, row + index, frame.glyph, playerRole("A"), frame.bold ? { bold: true } : {})
         return
       }
-      const glyph = entityGlyph(contentId, "A", { x: offset, y: index })
-      put(cells, band, column + offset, row + index, glyph === "?" ? character : glyph, playerRole("A"), { bold: true })
+      put(cells, band, column + offset, row + index, entityGlyph(contentId, "A", { x: offset, y: index }), playerRole("A"), { bold: true })
     })
   })
   const nameColumn = column + artWidth + 2

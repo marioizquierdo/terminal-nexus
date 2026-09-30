@@ -43,7 +43,7 @@
 // `busyUntil` says whether anything is still moving, and until when: the live loop runs its frame
 // timer only while it is not `null`, and otherwise draws once per input, as the screen always has.
 //
-// Under reduced motion both snap: the view jumps and the cursor jumps, as they did before gate 5H.
+// Under reduced motion both snap: the view jumps and the cursor jumps.
 //
 // Presentation only (engine.md Section 1: "presentation may interpolate... without changing
 // simulation"): state, commands and a scripted playtest all use the state's own camera and cursor —
@@ -145,7 +145,9 @@ export function handoffAt(
   return { flight: null, blink: phase % 2 === 0 }
 }
 
-/** What the live screen knows that the reducer does not: the player's reduced-motion setting. */
+/** How to time a frame beyond what the state says: whether motion is reduced — the live screen passes
+ *  the player's setting (`state.settings.reducedMotion`), a test whatever it tests — and each
+ *  structure's footprint. */
 export type LiveOptions = Readonly<{
   reducedMotion?: boolean
   /** A structure's footprint, for the placement tracks. Only their shape depends on it — when each

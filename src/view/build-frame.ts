@@ -22,8 +22,8 @@ import type { BuildCompositionInput } from "./build.ts"
 type Joins = { n: boolean; s: boolean; e: boolean; w: boolean }
 
 /** The glyph for a frame cell, from which way its lines run — a straight run, a corner, a tee, or a
- *  crossing. Every junction is derived rather than placed by hand, so moving a line (the side panel
- *  moving to the left is the next one, canon 2.19) moves its junctions with it. */
+ *  crossing. Every junction is derived rather than placed by hand, so moving a line moves its
+ *  junctions with it. */
 function lineGlyph(pack: GlyphPack, { n, s, e, w }: Joins): string {
   if (n && s && !e && !w) return chromeGlyph(pack, "vertical")
   if (e && w && !n && !s) return chromeGlyph(pack, "horizontal")
@@ -44,14 +44,12 @@ function lineGlyph(pack: GlyphPack, { n, s, e, w }: Joins): string {
  *
  * engine.md 3.3's required "there is more Grid" signal is drawn as the weight of that rectangle's
  * four sides, not overlaid on them: a side with more Grid to scroll to is the frame's own line drawn
- * dim, and a side that has actually reached the Grid's own edge is a **solid bar** — an inverse-video
- * cell, a wall rather than merely a border, the same weight in every glyph pack and in monochrome
- * (canon 2.21, replacing 2.19's `=` and bold `|`, which ASCII could not make equal; Q56).
- * Since the owner's playtest of 2026-09-29 (feedback F25) that edge is drawn in **the map's own
- * style** — the solid bar only when the map names none — in the quieter edge colour, each style the
- * same weight on all four sides (`src/view/edge.ts` draws them); and the menu's divider **is** the
- * Grid's west side, one shared column, plain beside the menu's rules and a light or map-edge side
- * beside the Grid's rows.
+ * dim, and a side that has actually reached the Grid's own edge is drawn in **the map's own style**
+ * (feedback F25) — a **solid bar** when the map names none: an inverse-video cell, a wall rather than
+ * merely a border, the same weight in every glyph pack and in monochrome (Q56) — in the quieter edge
+ * colour, each style the same weight on all four sides (`src/view/edge.ts` draws them). The menu's
+ * divider **is** the Grid's west side (F25), one shared column, plain beside the menu's rules and a
+ * light or map-edge side beside the Grid's rows.
  * Everything else — the outer border, the rules where they cross the side panel — never scrolls and
  * is drawn plain.
  */
@@ -98,7 +96,7 @@ export function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack
   const markers = edgeMarkers(state.camera, state.viewport, context.grid)
   const heavy = { north: !markers.north, south: !markers.south, west: !markers.west, east: !markers.east }
   // The rectangle the four sides run along. Its west side is the menu's divider (`box.left` is
-  // `layout.dividerColumn`): the owner's choice of 2026-09-29 (F25), replacing a column of its own.
+  // `layout.dividerColumn`; the owner's choice, F25).
   const rect = { left: box.left, right: box.right, top: box.top, bottom: box.bottom }
 
   // Whether the line from a cell to its neighbour runs along a side that has reached the map's own
@@ -173,8 +171,8 @@ export function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack
  * The top bar — the game's title, where the player is, and what Esc does — and the bottom bar's one
  * line (feedback F59): **the contextual line**, the last command's answer while it has one and
  * otherwise a hint for where the keyboard is (`bottomLine`, `src/build/help.ts`), or, while a Nexus
- * Pulse plays with no popup over it, what the Pulse is doing. It replaced a position readout, the key
- * help and the status line — three lines — and every key is on the Controls and hotkeys page instead.
+ * Pulse plays with no popup over it, what the Pulse is doing. Every key is on the Controls and hotkeys
+ * page, not here.
  */
 export function drawTopBarAndBottomLine(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
   const { context, state, layout } = input

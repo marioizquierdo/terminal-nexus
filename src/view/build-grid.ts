@@ -26,8 +26,7 @@ import { placementEffectContext, placementLook, placementSchedule, removalSchedu
 import type { BuildCompositionInput } from "./build.ts"
 import { HIGHLIGHT_BAR, PRESSED_LOOK } from "./build-menu.ts"
 
-/** A structure the player is about to place, and whether they may. Drawn in the highlights band, so
- *  it is presentation and can never change occupancy (engine.md 9.4). */
+/** Every tile of a preview that would be refused: a block of `x`, so shape carries the refusal. */
 const ILLEGAL_PREVIEW_GLYPH = "x"
 
 /** Whether `tile` is in the view's range of tiles — what the Grid pane draws, and all it draws. */
@@ -148,13 +147,14 @@ export function drawEffects(
 }
 
 /**
- * The armed structure's footprint under the cursor, and whether it would be refused there. Shape
- * carries the answer, not colour: a legal preview is the structure's own glyphs, an illegal one is a
- * block of `x`. Both read identically in monochrome, which is the point.
+ * The armed structure's footprint under the cursor — its ghost — and whether it would be refused there.
+ * Drawn in the highlights band, so it is presentation and can never change occupancy (engine.md 9.4).
+ * Shape carries the answer, not colour: a legal preview is the structure's own glyphs, an illegal one
+ * is a block of `x`. Both read identically in monochrome, which is the point.
  *
  * The illegal block is grey, not red (owner, 2026-09-26: "the red color seems a bit too intense, we
  * should try grey instead"). Red is kept for the moment a placement is actually *attempted* and
- * refused — the status line's job, not the ghost's — so looking and trying read differently.
+ * refused — the bottom line's job, not the ghost's — so looking and trying read differently.
  *
  * One exception (feedback F30): when arming found no spot within reach (`BuildState.noSpotFound`), the
  * building is drawn as itself — in the same grey, since it would still be refused — rather than as a
@@ -208,10 +208,10 @@ export const CURSOR_ROLE: StyleRole = HIGHLIGHT_BAR.role
  * still a dim one, so `bold` and an explicit `dim: false` are added — `composeBands` merges a
  * style-only write onto whatever is beneath rather than replacing it, so without clearing it the
  * ground's own `dim: true` would survive underneath and fight the cursor's `bold` for intensity. A
- * structure does not get this: its own dim means something else — "this one is still only planned"
- * — and the cursor must not blur that distinction away.
+ * structure does not need it: planned or standing, it is drawn bold at full strength, so inverse video
+ * alone marks it, in the building's own colour.
  *
- * When the focus arrow lands the cursor **blinks** (feedback F54: "the same exact effect as the one we
+ * When a hand-off's flight lands the cursor **blinks** (feedback F54: "the same exact effect as the one we
  * use when selecting menu items"): in its "on" phases it is drawn in a menu row's pressed look — the
  * hotkey's colour, inverse, bold, underlined — and between them as usual. The live loop times it
  * (`cursorBlink`); every still frame draws the plain cursor.
@@ -245,10 +245,10 @@ export function drawCursor(cells: BandCell[], input: BuildCompositionInput): voi
 }
 
 /**
- * A placement was just tried and refused: the whole footprint under the cursor flashes solid in the
- * status line's own "danger" colour for a moment (gate 5H), so the eye that was on the map learns it
- * did not build without reading the bottom bar. A style-only write, like the cursor, so the `x` block
- * and whatever it covers keep their glyphs; inverse video carries it in monochrome.
+ * A **refused try**: a placement was just tried and refused, and the whole footprint under the cursor
+ * flashes solid in the bottom line's own "danger" colour for a moment (gate 5H), so the eye that was on
+ * the map learns it did not build without reading the bottom line. A style-only write, like the cursor,
+ * so the `x` block and whatever it covers keep their glyphs; inverse video carries it in monochrome.
  */
 export function drawRefusedTry(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
   const { state, layout } = input
