@@ -44,7 +44,10 @@ Read in this order:
 4. [`specs/project-governance.md`](specs/project-governance.md), especially the execution ledger and
    bounded autonomy;
 5. only the supporting canon sections named by the current gate;
-6. existing source, tests, evidence, and recent changes.
+6. for interface work — a screen, a menu, a popup, an effect, a key —
+   [`docs/ui-patterns.md`](docs/ui-patterns.md): its goals and its checklist for a new screen, then
+   the patterns the change touches;
+7. existing source, tests, evidence, and recent changes.
 
 The canon controls product truth. The current gate controls implementation. Future milestones are
 context, not authorization.
@@ -223,7 +226,7 @@ walking home and a plain result (won, lost, drawn or timed out, and why). **Red 
 own Nexus being hurt** — its first hit, very low health, a lost Pulse — faint and brief. Recall, which
 the rules described and no code ran, is built for the first time in `src/match/`, beside the kernel;
 the kernel is untouched. The ending's timings, the red's switch, and the raid's and the crew's size are
-Experiments (`d`); the interface rules are `docs/ui-patterns.md` sections 6 and 7c. **Do not start 6B** (the loop back into
+Experiments (`d`); the interface rules are `docs/ui-patterns.md` (the side panel, and the Nexus Pulse on screen). **Do not start 6B** (the loop back into
 the next Build Phase and the trigger runner) or 6C (automatic production) without Mario's word. **Mario
 asked on 2026-09-28 to keep going without waiting to look at each gate first**: he tests several merged
 changes together, then plays, exports his Experiments, and pastes them into the pull request.
@@ -452,6 +455,11 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - **Prefer the missing connection over the missing polish.** A gate that is honest, connected, and
   ugly is worth more than one that is beautiful and dead-ends — playing the whole thing is what says
   which part deserved the polish, and it usually is not the part you expected.
+- **Build every interface from [`docs/ui-patterns.md`](docs/ui-patterns.md).** Before changing a
+  screen, a menu, a popup, an effect or a key, read its goals (section 0) and its checklist for a new
+  screen, then the patterns the change touches; when two rules disagree, the goals decide. A change
+  that adds, bends or retires a pattern updates that document in the same pull request, and a new
+  pattern gets a name there so the next screen reuses it rather than re-deriving it.
 - Preserve unrelated work; never use destructive Git commands to clear an incidental problem.
 - Pin runtime and dependency versions used as evidence. Re-check official sources; never copy a
   remembered version.

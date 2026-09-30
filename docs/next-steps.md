@@ -52,7 +52,7 @@ his word that 6A is accepted and that 6B is the Active gate. Record that first, 
 If he pasted a settings export, settle each Experiment it answers before anything else.
 
 Then orient: run ./scripts/check-repository.sh; read milestones/milestone-06-pulse-phase.md,
-docs/next-steps.md, docs/ui-patterns.md (sections 0 and 7c) and evidence/gate-6a-report.md (its
+docs/next-steps.md, docs/ui-patterns.md (sections 0 and 14) and evidence/gate-6a-report.md (its
 sections 7 and 9 are the carry-over).
 
 Take gate 6B only — the loop: after Recall, the next Build Phase, until the mission's triggers end it;
