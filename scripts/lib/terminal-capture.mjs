@@ -207,11 +207,14 @@ export function ansiToHtml(text, cols, rows, theme = "dark") {
     const openSpan = () => {
       const foreground = style.fg ?? defaultForeground
       const background = style.bg
-      const parts = [`color:${style.inverse ? (background ?? defaultBackground) : foreground}`]
+      const text = style.inverse ? (background ?? defaultBackground) : foreground
+      const behind = style.inverse ? foreground : (background ?? defaultBackground)
+      // Faint fades the glyph toward what is behind it, as a terminal does — never the cell's
+      // background, which a whole-span opacity also faded, drawing every dim inverse cell too pale.
+      const parts = [`color:${style.dim ? `color-mix(in srgb, ${text} 55%, ${behind})` : text}`]
       if (style.inverse) parts.push(`background:${foreground}`)
       else if (background !== null) parts.push(`background:${background}`)
       if (style.bold) parts.push("font-weight:700")
-      if (style.dim) parts.push("opacity:.55")
       if (style.underline) parts.push("text-decoration:underline")
       html += `<span style="${parts.join(";")}">`
       open = true
