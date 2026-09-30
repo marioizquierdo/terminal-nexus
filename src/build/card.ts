@@ -19,7 +19,9 @@ import type { BuildContext, BuildState } from "./state.ts"
 import { structureAtTile } from "./state.ts"
 
 /** What a card's icon is: a thing's own glyphs, or a bare tile's. The view resolves either to glyphs. */
-export type CardIcon = Readonly<{ kind: "entity"; contentId: string }> | Readonly<{ kind: "terrain"; terrainId: TerrainId }>
+export type CardIcon =
+  | Readonly<{ kind: "entity"; contentId: string; player?: "A" | "B" }>
+  | Readonly<{ kind: "terrain"; terrainId: TerrainId }>
 
 /** One of a card's numbers, as a label/value row. */
 export type CardStat = Readonly<{ label: string; value: string }>
@@ -79,7 +81,7 @@ function fightStats(context: Pick<BuildContext, "registry">, contentId: string, 
  *  words, whose it is, and its health as it stands now. */
 export function fieldCard(context: Pick<BuildContext, "registry">, entity: FieldEntity): Card {
   return {
-    icon: { kind: "entity", contentId: entity.contentId },
+    icon: { kind: "entity", contentId: entity.contentId, player: entity.player },
     ...cardText(context, entity.contentId),
     stats: [{ label: "SIDE", value: entity.player === "A" ? "yours" : "the raid" }, ...fightStats(context, entity.contentId, entity.hp)],
   }
@@ -91,7 +93,7 @@ export function incomingCard(context: Pick<BuildContext, "registry">, entity: In
   const text = cardText(context, entity.contentId)
   const seconds = Math.round(entity.tick / TICKS_PER_SECOND)
   return {
-    icon: { kind: "entity", contentId: entity.contentId },
+    icon: { kind: "entity", contentId: entity.contentId, player: entity.player },
     title: text.title,
     subtitle: entity.player === "A" ? "Yours, next round" : "Incoming",
     description: entity.intent ?? text.description,
