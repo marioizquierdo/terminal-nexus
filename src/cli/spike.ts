@@ -215,7 +215,8 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
   // **The screen's clock lives here, never in the reducer** (gate 5H). Everything that moves between
   // commands — the view sliding to a new position, the cursor gliding to a new tile, a menu row's
   // flash, the cursor's flash on a refused placement, a building going up (gate 5I), the focus arrow
-  // and the cursor's blink (feedback F54), the menu turning into a card (F68) — is
+  // and the cursor's blink (feedback F54), the menu turning into a card (F68), the Battle Round screen's
+  // breathing border (F80) — is
   // `BuildAnimation`'s pure function of the state and the time read here, and the frame timer below
   // runs only while one of them is still moving; an idle screen draws once per input, as it always
   // has. The same clock times the held-key ramp (passed with each key) and the lone-Esc timeout
@@ -229,10 +230,10 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
   let frameTimer: ReturnType<typeof setTimeout> | null = null
   let escapeTimer: ReturnType<typeof setTimeout> | null = null
 
-  function scheduleFrame(busyUntil: number | null, now: number): void {
+  function scheduleFrame(busyUntil: number | null, now: number, frameMs?: number): void {
     if (frameTimer !== null) clearTimeout(frameTimer)
     frameTimer = null
-    const delay = nextFrameDelay(busyUntil, now)
+    const delay = nextFrameDelay(busyUntil, now, frameMs)
     if (delay === null) return
     frameTimer = setTimeout(() => {
       frameTimer = null
@@ -254,6 +255,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
       ? null
       : animation.frame(build.state, now, {
           reducedMotion: settings.reducedMotion,
+          capability: settings.capability,
           footprintOf: (contentId) => context.registry.get(contentId).footprint,
         })
     const pulse = gated ? undefined : build.pulseFrame(layout)
@@ -275,9 +277,10 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
             settings.capability,
           )
     // The frame timer runs while anything is still moving: an animation, or a Pulse that is playing (which
-    // wants the very next frame, a frame's length away, whatever an animation says).
+    // wants the very next frame, a frame's length away, whatever an animation says). The Battle Round
+    // screen's breath alone asks for fewer frames (`frameMs`).
     const pulseBusyUntil = gated ? null : (build.pulse?.busyUntil(now) ?? null)
-    scheduleFrame(pulseBusyUntil ?? live?.busyUntil ?? null, now)
+    scheduleFrame(pulseBusyUntil ?? live?.busyUntil ?? null, now, pulseBusyUntil === null ? live?.frameMs : undefined)
     if (frame.width !== lastFrame.width || frame.height !== lastFrame.height) {
       stdout.write(CLEAR)
       lastFrame = { width: frame.width, height: frame.height }

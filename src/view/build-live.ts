@@ -34,13 +34,21 @@
 //     to another armed building, the view plays the "Card reveal" Experiment's transition (the other
 //     rows fade, the chosen row slides up to the header, the card types in). The reducer never hears
 //     of it: this loop watches the state turn into a card the way it watches the plan grow. Closing a
-//     card is instant.
+//     card is instant;
+//   - **the Battle Round screen breathes** (feedback F80): while its popup is open, its border turns
+//     slowly a little lighter and a little darker, one breath every "Battle Round pulse" Experiment
+//     milliseconds, timed from the frame that first showed the popup. It is the one thing here that
+//     never settles, so while it is the only thing moving the frame timer runs at `BREATH_FRAME_MS`
+//     rather than every frame (`frameMs`), and it stops the frame the popup closes. The Experiment at 0,
+//     reduced motion, or a colour depth with no blend to show it (16 colours, monochrome) keep the
+//     border still and the timer quiet.
 //
 // The numbers in backticks are the owner's tuned values (`src/build/tuning.ts`), which a `BuildAnimation`
 // is handed when it is made (a test hands it others).
 //
 // `busyUntil` says whether anything is still moving, and until when: the live loop runs its frame
 // timer only while it is not `null`, and otherwise draws once per input, as the screen always has.
+// `frameMs`, when present, says the timer may wait that long between frames (the breath alone).
 //
 // Under reduced motion both snap: the view jumps and the cursor jumps.
 //
@@ -57,7 +65,8 @@ import type { BuildState } from "../build/state.ts"
 import { cardEntry } from "../build/state.ts"
 import type { Tuning } from "../build/tuning.ts"
 import { TUNING } from "../build/tuning.ts"
-import type { BuildCompositionInput, CardReveal, RowAck } from "./build.ts"
+import type { BuildCompositionInput, CardReveal, PopupBreath, RowAck } from "./build.ts"
+import type { CapabilityMode } from "./roles.ts"
 import type { Footprint } from "../grid/types.ts"
 import type { PlacedStructure, PlacementClock, PlacementTuning, RemovalClock } from "./placement.ts"
 import { placementRequest, removalSchedule } from "./placement.ts"
@@ -82,16 +91,36 @@ export type LivePresentation = Pick<
   | "handoffFlight"
   | "cursorBlink"
   | "cardReveal"
+  | "popupBreath"
 >
 
 /** Everything time-dependent the frame at one instant shows — always a camera and a cursor, the state's
  *  own once they have finished moving — and when the last thing still moving ends, or `null` when
- *  nothing is. */
-export type LiveFrame = LivePresentation & Readonly<{ camera: Camera; cursor: Coord; busyUntil: number | null }>
+ *  nothing is. `frameMs` is present only when the one thing moving is slow enough to be drawn less often
+ *  than every frame — the Battle Round screen's breath — and says how often: `busyUntil` is then that
+ *  long from now, the next frame the breath needs. */
+export type LiveFrame = LivePresentation &
+  Readonly<{ camera: Camera; cursor: Coord; busyUntil: number | null; frameMs?: number }>
 
 export function livePresentation(live: LiveFrame): LivePresentation {
-  const { busyUntil: _busyUntil, ...presentation } = live
+  const { busyUntil: _busyUntil, frameMs: _frameMs, ...presentation } = live
   return presentation
+}
+
+/** Whether a colour depth can show a breath at all: its tint and fade are continuous blends, which only
+ *  256 colours and millions have (16 colours would step, and the breath is kept under the step). */
+const breathShows = (capability: CapabilityMode | undefined): boolean =>
+  capability === undefined || capability === "truecolor" || capability === "color256"
+
+/**
+ * How long one breath of the Battle Round screen's border lasts in this frame, or `null` when the border
+ * is still: another popup or none, the "Battle Round pulse" Experiment at 0, reduced motion, or a colour
+ * depth that cannot show it (feedback F80).
+ */
+export function breathLengthMs(state: BuildState, reducedMotion: boolean, capability?: CapabilityMode): number | null {
+  if (state.popup !== "battle-round" || reducedMotion || !breathShows(capability)) return null
+  const lengthMs = state.experiments.battleRoundPulseMs
+  return lengthMs > 0 ? lengthMs : null
 }
 
 /**
@@ -148,6 +177,10 @@ export function handoffAt(
  *  structure's footprint. */
 export type LiveOptions = Readonly<{
   reducedMotion?: boolean
+  /** The colour depth the frame is drawn at — the player's setting on the live screen. At 16 colours and
+   *  in monochrome the Battle Round breath cannot show, so it neither ticks the frame timer nor is handed
+   *  to the view. Absent (a test), a depth that shows it. */
+  capability?: CapabilityMode
   /** A structure's footprint, for the placement tracks. Only their shape depends on it — when each
    *  one settles, all this loop reads, depends on the timings alone — so without it (a test) every
    *  structure is scheduled as one tile. */
@@ -194,6 +227,9 @@ export class BuildAnimation {
    *  already showing when the screen first drew, which never plays a reveal — like a placement already
    *  planned then. */
   private seenCard: Readonly<{ entry: number | null; at: number | null; fromMenu: boolean }> | null = null
+  /** When the Battle Round screen's breath started — the first frame that showed its popup breathing —
+   *  or `null` while it is not breathing, so a popup opened again starts again at rest (F80). */
+  private breathSince: number | null = null
   /**
    * Each planned ordinal's animation track (`animation.ts`), by the one thing about it that varies:
    * when its `play` was requested — the first frame that drew it — or `null` for what was already
@@ -378,6 +414,16 @@ export class BuildAnimation {
       }
     }
 
+    // The Battle Round screen breathing (F80): timed from the first frame that showed it, and never
+    // settling, so it asks for a frame only every `BREATH_FRAME_MS` — and only when nothing faster is
+    // moving, whose own ends keep the timer at every frame until they pass.
+    const breathMs = breathLengthMs(state, options.reducedMotion === true, options.capability)
+    if (breathMs === null) this.breathSince = null
+    else if (this.breathSince === null) this.breathSince = now
+    const popupBreath: PopupBreath | undefined =
+      breathMs === null || this.breathSince === null ? undefined : { elapsedMs: now - this.breathSince, lengthMs: breathMs }
+    const breathOnly = popupBreath !== undefined && ends.length === 0
+
     return {
       camera,
       cursor,
@@ -389,7 +435,9 @@ export class BuildAnimation {
       ...(handoffFlight === undefined ? {} : { handoffFlight }),
       ...(cursorBlink ? { cursorBlink } : {}),
       ...(cardReveal === undefined ? {} : { cardReveal }),
-      busyUntil: ends.length === 0 ? null : Math.max(...ends),
+      ...(popupBreath === undefined ? {} : { popupBreath }),
+      busyUntil: breathOnly ? now + BREATH_FRAME_MS : ends.length === 0 ? null : Math.max(...ends),
+      ...(breathOnly ? { frameMs: BREATH_FRAME_MS } : {}),
     }
   }
 }
@@ -397,9 +445,19 @@ export class BuildAnimation {
 /** A terminal redraws at about 60 frames a second; the frame timer never asks for more. */
 export const FRAME_MS = 16
 
-/** How long the frame timer waits before the next frame: a frame's length, or less when the last
- *  animation ends sooner — so the frame that shows it over is drawn on time. `null`: stop. */
-export function nextFrameDelay(busyUntil: number | null, now: number): number | null {
+/**
+ * How often the frame timer draws while the Battle Round screen's breath is the only thing moving: 20
+ * frames a second, a third of the fast rate. One breath lasts seconds and moves the border's colour by a
+ * few dozen steps of 255, so that is still smooth, and it is the one animation that runs for as long as
+ * the popup stays open — the ANSI writer sends the whole screen every frame, so a breath at 60 frames a
+ * second would triple what the terminal receives for nothing the eye can see.
+ */
+export const BREATH_FRAME_MS = 50
+
+/** How long the frame timer waits before the next frame: a frame's length (`frameMs`, every frame
+ *  unless the live frame said otherwise), or less when the last animation ends sooner — so the frame
+ *  that shows it over is drawn on time. `null`: stop. */
+export function nextFrameDelay(busyUntil: number | null, now: number, frameMs: number = FRAME_MS): number | null {
   if (busyUntil === null) return null
-  return Math.max(1, Math.min(FRAME_MS, busyUntil - now))
+  return Math.max(1, Math.min(frameMs, busyUntil - now))
 }

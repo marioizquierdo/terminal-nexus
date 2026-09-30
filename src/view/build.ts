@@ -32,12 +32,14 @@ import { drawPanel } from "./build-menu.ts"
 import type { CardReveal } from "./build-card.ts"
 import { drawCard } from "./build-card.ts"
 import { drawHandoff } from "./build-handoff.ts"
+import type { PopupBreath } from "./build-popup.ts"
 import { drawPopup } from "./build-popup.ts"
 
 // What tests and scripts import from here, wherever it now lives.
 export { ACTIVE_VALUE } from "./build-menu.ts"
 export { CARD_BEATS } from "./build-card.ts"
 export type { CardReveal } from "./build-card.ts"
+export type { PopupBreath } from "./build-popup.ts"
 export { SEE_THROUGH_TRAIL } from "./build-handoff.ts"
 
 export type BuildCompositionInput = Readonly<{
@@ -82,6 +84,13 @@ export type BuildCompositionInput = Readonly<{
    * the finished card, exactly as it stands.
    */
   cardReveal?: CardReveal
+  /**
+   * The open popup's border breathing (owner, 2026-09-30, feedback F80): the live loop's clock on it and
+   * the length of one breath. The live loop supplies it for the Battle Round screen alone, while the
+   * "Battle Round pulse" Experiment is on and motion is not reduced; absent — every still frame — the
+   * border is at rest.
+   */
+  popupBreath?: PopupBreath
   /**
    * Planned placements still animating, by ordinal, with how long ago each was placed (gate 5I). The
    * live loop supplies it; a still frame names whatever instant it wants to draw. Absent — every

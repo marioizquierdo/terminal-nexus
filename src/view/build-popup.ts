@@ -3,7 +3,7 @@
 
 import { CONTROLS_KEYS_WIDTH } from "../build/help.ts"
 import { popupSpec, placePopup, settingColumns } from "../build/popup.ts"
-import type { BandCell } from "./frame.ts"
+import type { BandCell, CellStyle } from "./frame.ts"
 import { BANDS } from "./frame.ts"
 import { put, text } from "./draw.ts"
 import type { StyleRole } from "./roles.ts"
@@ -13,12 +13,52 @@ import type { BuildCompositionInput } from "./build.ts"
 import { HIGHLIGHT_BAR, drawHighlightBar, rowParts } from "./build-menu.ts"
 
 /**
+ * A popup's border **breathing** (owner, 2026-09-30, feedback F80, of the Battle Round screen: "a pulse
+ * effect on the border, it doesn't need to be intense, just relaxing turning a bit lighter and darker to
+ * create dynamism"): the live loop's clock on it, from the frame the popup first showed, and how long one
+ * breath lasts (the "Battle Round pulse" Experiment). The live loop supplies it for the Battle Round
+ * screen alone; absent — every still frame, every test, every scripted playtest — the border is at rest.
+ */
+export type PopupBreath = Readonly<{ elapsedMs: number; lengthMs: number }>
+
+/**
+ * How far one breath goes each way. The lighter half pulls the border's colour toward the title's
+ * (`chrome.title`, the brightest chrome role on a dark background and the darkest on a light one — so
+ * "lighter" is "stronger against the ground" on either theme); the darker half fades it toward the
+ * background. Both stay under one half on purpose: at 16 colours a tint steps onto the other role only
+ * from one half up, and a fade is ignored, so there the border simply stays still rather than blinking
+ * once a breath; monochrome has no colour to move at all.
+ */
+export const BREATH_DEPTH = { lighter: 0.4, darker: 0.25 } as const
+
+/** Where a breath is at: 0 at rest, rising to 1 (lightest) a quarter of the way in, back through 0 at
+ *  half way, down to -1 (darkest) at three quarters, and at rest again at the end — a sine, so it never
+ *  starts or stops with a jolt. A pure function of the time, like every effect. */
+export function breathLevel(breath: PopupBreath): number {
+  if (!(breath.lengthMs > 0)) return 0
+  const phase = (((breath.elapsedMs % breath.lengthMs) + breath.lengthMs) % breath.lengthMs) / breath.lengthMs
+  return Math.sin(2 * Math.PI * phase)
+}
+
+/** The style a breathing border adds at this instant: a tint toward the title's colour on the lighter
+ *  half, a fade toward the background on the darker, rounded to a thousandth so the very ends of a breath
+ *  are exactly at rest. Nothing without a breath. */
+export function breathStyle(breath: PopupBreath | undefined): Pick<CellStyle, "tint" | "fade"> {
+  if (breath === undefined) return {}
+  const level = breathLevel(breath)
+  const amount = Math.round(Math.abs(level) * (level > 0 ? BREATH_DEPTH.lighter : BREATH_DEPTH.darker) * 1000) / 1000
+  if (amount <= 0) return {}
+  return level > 0 ? { tint: { role: "chrome.title", amount } } : { fade: amount }
+}
+
+/**
  * A popup — the Nexus powers, the start-the-Pulse question, the game menu, Settings, the export, a
  * message — drawn from its spec (`src/build/popup.ts`), over everything on the Grid. A solid border
  * with the title in it, and a one-cell shadow that blanks what is behind it, so it cannot be missed
  * (owner, 2026-09-27: he clicked Nexus, did not notice the popup, and thought the mouse had stopped
  * working). No `[esc]` in the border since feedback F37: the top bar's "close [esc]" says it. Beside a
- * list that overflows, the right border is its scroll bar (F36).
+ * list that overflows, the right border is its scroll bar (F36). Given a breath (`popupBreath`, the
+ * Battle Round screen's, F80), the border turns slowly a little lighter and a little darker.
  *
  * Drawn last in the chrome band: bands are fixed (engine.md 9.4, RULE), and within one band a later
  * write replaces an earlier one, so a popup needs no band of its own to sit on top.
@@ -35,10 +75,17 @@ export function drawPopup(cells: BandCell[], input: BuildCompositionInput, pack:
   for (let y = box.top + 1; y <= box.bottom + 1; y += 1) put(cells, band, box.right + 1, y, shade, "chrome.frame", { dim: true })
   for (let x = box.left + 1; x <= box.right + 1; x += 1) put(cells, band, x, box.bottom + 1, shade, "chrome.frame", { dim: true })
 
+  // The border's own style: inverse, so the frame role is its fill — and, while the popup breathes, that
+  // fill a little lighter or darker (F80). The shadow and the title stay as they are.
+  const border: CellStyle = { fgRole: "chrome.frame", inverse: true, ...breathStyle(input.popupBreath) }
+  const borderCell = (x: number, y: number, glyph: string, extra: Pick<CellStyle, "bold"> = {}): void => {
+    cells.push({ band, x, y, cell: { glyph, style: { ...border, ...extra } } })
+  }
   for (let y = box.top; y <= box.bottom; y += 1) {
     for (let x = box.left; x <= box.right; x += 1) {
       const edge = y === box.top || y === box.bottom || x === box.left || x === box.right
-      put(cells, band, x, y, " ", "chrome.frame", edge ? { inverse: true } : {})
+      if (edge) borderCell(x, y, " ")
+      else put(cells, band, x, y, " ", "chrome.frame")
     }
   }
   // The title sits in the top border, drawn in reverse so it reads as part of it.
@@ -63,7 +110,7 @@ export function drawPopup(cells: BandCell[], input: BuildCompositionInput, pack:
             : y >= bar.thumbTop && y <= bar.thumbBottom
               ? chromeGlyph(pack, "scrollThumb")
               : " "
-      put(cells, band, bar.column, y, glyph, "chrome.frame", { inverse: true, bold: y === bar.top || y === bar.bottom })
+      borderCell(bar.column, y, glyph, y === bar.top || y === bar.bottom ? { bold: true } : {})
     }
   }
 
