@@ -261,7 +261,17 @@ merged; the canon was written beside them.
 
 ## R4. Automated results
 
-@@RESULTS@@
+| Check | Result | Evidence |
+| --- | --- | --- |
+| `npm run typecheck` (Node and web configs) | clean | run 2026-09-30, head after the review |
+| `npm test` (Node) | 749 of 749 pass (707 after round 1; 767-769 during round 2 and the review, before duplicates were deleted) | run twice, 2026-09-30 |
+| `npm run test:bun` | every file passes | run 2026-09-30 |
+| `./scripts/check-repository.sh` | passes, canon 2.28 | run 2026-09-30 |
+| `node scripts/capture-spike-screenshots.mjs` | every shot's expectation met; 62 pictures regenerated | `evidence/screenshots/` |
+| `bun scripts/build-web.mjs` | built, 206 KB; published to the playtest page | run 2026-09-30 |
+| Scripted flows | `1 x x x` ends on the menu; `n 1 1 2 1` refuses `2` with the lock line and cancels on `1`; `e 1 Esc Esc` returns step by step; `End` stops on Start Pulse; `d End Up Right` changes Your units; `n 1 click@3,7` arms the Hatchery; a plan wins and nothing built loses about 27 s in under the new defaults | `node scripts/playtest.mjs`, 2026-09-30 |
+
+Tests by concept after the review: `build-menu` (the menu's rows, order, credits line and looks), `build-card` (cards and the card reveal), `build-handoff` (the focus arrow, the see-through cursor, where the cursor lands), `build-placing` (a building being placed holds the menu), `build-cancel` (Esc, `x`, right click), `build-lists` (every list stops, jumps and ramps), `see-through` (the mix at every colour depth and in every renderer), `build-experiments` and `build-settings` (Experiments, Settings and the export), with the scaffolding in `tests/build-helpers.ts`. Changing the two looks' Experiment defaults now fails only the test that pins the owner's export — checked by changing them and reverting.
 
 ## R5. Human observations
 
@@ -296,7 +306,16 @@ which is where the next person tuning a feel will look.
   nothing there, like on the menu.
 - **OpenTUI ignores a role background on an ordinary cell**, so the grey words on the bar do not show
   under Bun's OpenTUI renderer. The other three renderers show it; recorded in `docs/next-steps.md`.
-- **Removing Experiments shifted every `Down*N` in the capture flows and tests again** @@DOWN@@
+- **Removing Experiments shifted every `Down*N` in the capture flows and tests again** — the fourth
+  recount. The review ended it: tests walk to a row by name (`goToExperiment`, `goToGameMenuRow`),
+  capture shots pass the Experiments they need or press End, and Settings counts its rows in the order
+  they are shown.
+- **Worktree agents started from `main`, not from the branch**; each fast-forwarded because its prompt
+  named the commit to start from.
+- **Two agents' changes met only after merging**: the capture script read a Settings list another agent
+  had just deleted; nothing typechecks the script, so only running it after the merge found it.
+- **The frame-budget test failed once in three runs** while two agents tested at once (load 8 on 4
+  cores); it passed alone and in every later run.
 
 ## R8. The general review (the owner's request, 2026-09-30)
 
@@ -326,7 +345,11 @@ the tests) and returned about seventy-five findings; three were real bugs.
   the three renderers draws; the view is split by concept (`build-frame`, `build-grid`, `build-menu`,
   `build-card`, `build-handoff`, `build-popup`); the live frame is the composition input plus one number;
   the scripts read settings and palette from `src` rather than keeping copies.
-- **The tests** reorganised by concept: @@TESTS@@
+- **The tests** reorganised by concept: the two files named after round 2 split into `build-cancel`, `build-placing`, `build-lists` and
+  `build-card` beside the existing concept files, one `tests/build-helpers.ts` for the scaffolding eleven
+  files had each re-declared, duplicates deleted (every deleted test mapped to one that still holds its
+  behaviour), the Experiments' defaults read rather than copied, and the three gaps filled (Explore Map's
+  "nearest that fits", both axes of "in view", a held Up in lists); 769 tests became 749.
 - **Kept on purpose**: the restart machinery for Experiments (no Experiment needs a restart today, but
   the next one that does would have to rebuild it; it is small and tested); the stored mode fields as
   they are (one `mapMode` derives the four places; folding them into one union was judged too risky for

@@ -99,9 +99,11 @@ Milestone 1's and did not change. 6B and 6C wait for the owner's word.
 > - [x] every list stops at its ends, a held arrow ramps like the map cursor, Shift/PageUp/Home jump to
 >       the ends (F75);
 > - [x] `docs/ui-patterns.md` reorganised, and pointed to from `AGENTS.md` and `CLAUDE.md` (F74);
-> - [ ] his settings export is the default; the settled Experiments are gone into one table of tuned
+> - [x] his settings export is the default; the settled Experiments are gone into one table of tuned
 >       values; the focus arrow, the card animation, the hold window, the raid and your units remain (F76);
-> - [ ] tests, canon, pictures, the playable page and the pull request.
+> - [x] tests, canon, pictures, the playable page and the pull request — and, at his request the same
+>       day, a general review of the whole pull request: names after the design, three bugs fixed, the
+>       view split by concept, the tests grouped by concept.
 
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
 > how the Pulse resolves — that stays the deterministic kernel, unmodified. What is new is the

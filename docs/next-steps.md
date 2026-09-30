@@ -104,10 +104,10 @@ request written with the pr-description skill. Do not start 6C.
 
 **From the menu spike's second round** (`evidence/menu-spike-report.md` section 7 has the reasons):
 
-- **OpenTUI draws no background on a cell that asks for one by role** unless it is a see-through
-  cell, so under Bun's OpenTUI renderer a refused key's grey words on the highlight bar do not show;
-  the ANSI writer, the playtest pictures and the browser page all show it. Only matters if OpenTUI
-  becomes the renderer a player uses.
+- **Three same-state tests click tiles chosen outside the click's edge zones** (build-spike,
+  build-nexus, build-experiments): if the owner changes the click edge zone, those tiles need moving.
+- **The committed plan's fallback panel still prints `[esc] menu`**, key first, beside the top bar's
+  own `menu [esc]`; it only shows when no Pulse can start. Removing the line is one edit.
 - **The title screen's menu does not speed up when held** — it stops at its ends and jumps, but has no
   clock of its own to time a held key by, and only four rows.
 
