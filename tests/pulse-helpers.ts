@@ -1,24 +1,22 @@
 // Shared scaffolding for the Nexus Pulse tests — not a test file itself: the runners only pick up
-// `*.test.ts`. A Build Phase played through the driver's commands, into a Pulse.
+// `*.test.ts`. A Build Phase played through the driver's commands, into a Pulse — on the Build Phase's own
+// scaffolding (`tests/build-helpers.ts`).
 
 import { strict as assert } from "node:assert"
 import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
 import type { ExperimentField } from "../src/build/experiments.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
-import { buildLayout } from "../src/build/layout.ts"
-import { BuildSession } from "../src/build/session.ts"
+import type { BuildSession } from "../src/build/session.ts"
 import type { BuildContext } from "../src/build/state.ts"
-import { MOUSE_LEFT, formatMouseEvent } from "../src/build/mouse.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { startPulse } from "../src/cli/pulse-run.ts"
 import { spikeContext } from "../src/cli/spike.ts"
-import { composeBuildFrame } from "../src/view/build.ts"
-import { frameToText } from "../src/view/frame.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
 import type { ResolvedPulse } from "../src/view/pulse-live.ts"
 import type { CapabilityMode } from "../src/view/roles.ts"
+import { MINIMUM, buildSide, clickCell, compose, screenText } from "./build-helpers.ts"
 
-export const MINIMUM = { columns: 80, rows: 24 }
+export { MINIMUM }
 
 /** The construct menu's rows, by index. */
 export const BARRACKS = 0
@@ -60,18 +58,16 @@ export type Played = Readonly<{
   layout: BuildLayout
 }>
 
-/** A session on the spike map, with the shell's `startPulse` wired in — the game as it is played, from
- *  the probe (`PROBE_PULSE`). */
+/** A session on the spike map, opening on the Grid Nexus as the game does, with the shell's `startPulse`
+ *  wired in — the game as it is played, from the probe (`PROBE_PULSE`). */
 export function newSession(
   size: Readonly<{ columns: number; rows: number }> = MINIMUM,
   onQuit?: () => void,
 ): Omit<Played, "pulse"> {
-  const context = spikeContext(undefined, { experiments: PROBE_PULSE })
-  const layout = buildLayout(size, context.grid)
-  const build = new BuildSession({
-    context,
+  const { build, context, layout } = buildSide({
+    context: spikeContext(undefined, { experiments: PROBE_PULSE }),
     cursor: SPIKE_START_CURSOR,
-    viewport: layout.viewport,
+    terminal: size,
     startPulse,
     ...(onQuit === undefined ? {} : { onQuit }),
   })
@@ -103,38 +99,16 @@ export function play(scenario: Scenario = {}, size: Readonly<{ columns: number; 
   return { ...session, pulse: session.build.pulse.resolved }
 }
 
-/** The screen as text — the frame the live loop would draw at the Pulse's current time. */
-export function screenText(played: Pick<Played, "build" | "context" | "layout">, capability: CapabilityMode = "monochrome"): string {
-  return frameToText(frameOf(played, capability))
-}
+/** The screen as text, and as cells — what the live loop would draw at the Pulse's current time. */
+export { screenText }
 
 export function frameOf(played: Pick<Played, "build" | "context" | "layout">, capability: CapabilityMode = "monochrome"): ReadonlyCellFrame {
-  const { build, context, layout } = played
-  const pulse = build.pulseFrame(layout)
-  return composeBuildFrame(
-    {
-      context,
-      state: build.state,
-      layout,
-      glyphPack: build.state.settings.glyphPack,
-      reducedMotion: build.state.settings.reducedMotion,
-      ...(pulse === undefined ? {} : { pulse }),
-    },
-    capability,
-  )
+  return compose(played, {}, capability)
 }
 
 /** A mouse click at a frame cell (0-based column and row), through the real mouse adapter; `now` is the screen's
  *  clock when the click arrived, for anything that times it. */
-export function click(
-  played: Pick<Played, "build" | "layout">,
-  column: number,
-  row: number,
-  button: number = MOUSE_LEFT,
-  now?: number,
-): void {
-  played.build.handleData(formatMouseEvent(button, column + 1, row + 1), played.layout, now === undefined ? {} : { now })
-}
+export { clickCell as click }
 
 /** Time passes for the Pulse on screen: the session's clock starts at zero when this is first called
  *  right after the commit, and `ms` is then milliseconds since. */
