@@ -476,6 +476,9 @@ function structureAt(context: BuildContext, planned: readonly PlannedPlacement[]
   )
 }
 
+/** The map cursor's role: the highlight bar's, since both say "you are here". */
+const CURSOR_ROLE: StyleRole = HIGHLIGHT_BAR.role
+
 /** One cursor, drawn as a style-only write so it keeps whatever glyph is beneath it — the mechanism
  *  `src/view/frame.ts` already provides, and the only honest way to mark a tile without deleting
  *  what is standing on it. Inverse video carries "here" at every capability tier.
@@ -492,9 +495,6 @@ function structureAt(context: BuildContext, planned: readonly PlannedPlacement[]
  * hotkey's colour, inverse, bold, underlined — and between them as usual. The live loop times it
  * (`cursorBlink`); every still frame draws the plain cursor.
  */
-/** The map cursor's role: the highlight bar's, since both say "you are here". */
-const CURSOR_ROLE: StyleRole = HIGHLIGHT_BAR.role
-
 function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
   const { context, state, layout } = input
   // The cursor is the Grid's own focus mark: drawn only while the Grid has the keyboard, so the
