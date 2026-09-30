@@ -110,8 +110,9 @@ click is `x`.
   the export to Settings, the restart message to the game menu's Restart row) or closes; placing or Explore Map goes back to
   where it began; plain navigation goes to the menu.
 - **Only Esc opens the game menu.** On the menu nothing is left to cancel: Esc opens the game menu, and
-  `x` and a right click stop there — `x x x` always lands on the menu with the keyboard on it. `q` opens
-  the game menu from anywhere.
+  `x` and a right click do nothing there — no message, no flicker — so `x x x` always lands on the menu
+  with the keyboard on it; the same on a committed plan and during a Pulse. `q` opens the game menu from
+  anywhere. Two commands carry this: `cancel` (Esc, the top bar's label) and `back` (`x`, a right click).
 - **The key that opened something closes it**: `e`, `n`, `d`, and a building's own digit while it is
   being placed. (On the Battle Round screen `s` confirms instead: starting takes two deliberate presses.)
 - **No popup carries its own way back** — no `[esc] Back` row, no `[esc]` in its border. **The top bar's
@@ -151,7 +152,11 @@ click is `x`.
 the Nexus powers, the game menu, Settings, the export, the Controls page, the title screen's menu.
 
 - **No wrapping**: a list stops at its first and last row; holding Down arrives at the bottom and stays.
-- **A tap is one row; holding ramps** with the map cursor's own steps and timings (section 12).
+  Up on the first row and Down on the last do nothing, without a flicker — a held key would otherwise
+  flicker at every repeat.
+- **A tap is always one row; holding ramps** with the map cursor's own steps and timings (section 12),
+  clamped at the ends. The title screen's menu stops and jumps but does not ramp: its few rows need none
+  and its loop reads no clock. One key classifier serves every list (`src/menu/list-keys.ts`).
 - **Shift+Up/Down, PageUp/PageDown and Home/End go to the first or last row.**
 - **Rows that are not choices are skipped**: blank lines, the credits line, section headings.
 
@@ -186,10 +191,12 @@ the Nexus powers, the game menu, Settings, the export, the Controls page, the ti
 ### 6.3 A selection holds the menu
 
 While a building is being placed it stays the selection until placed or cancelled: another building's
-digit, `e` and `s` are refused — the header flickers and the bottom line says to place it or cancel it
-first. Its own digit, Esc and `x` cancel it. Popups (the Nexus powers, the game menu, Settings,
-Controls) still open over it and hand it back, still armed. So the menu is never workable with a ghost
-on the map, and never loses track of what is armed.
+digit, `e` and `s` (and `p`) are refused — the header flickers and the bottom line says to place it or
+cancel it first, naming the keys. Its own digit, Esc and `x` cancel it. Popups (the Nexus powers, the
+game menu, Settings, Controls) still open over it and hand it back, still armed, and a popup over a card
+never moves the menu's highlight. So the menu is never workable with a ghost on the map, and never loses
+track of what is armed (`refuseWhileArmed` in `src/build/state.ts`). Explore Map holds nothing: a digit
+while exploring arms from the map, and `n` opens the Nexus powers.
 
 ## 7. Hand-offs to the map
 
@@ -200,7 +207,7 @@ Keys work at once. Never on the way back, and never for Tab or a click on the ma
 the flight and keeps the blink. The reducer records a sequence number (`BuildState.handoff`); the live
 loop times the rest.
 
-- **A building sends the focus arrow** — the owner's "energy ray", in a cool blue: from the right end of
+- **A building sends the focus arrow** — the owner's "energy ray", in the hotkey colour: from the right end of
   the row, where the row stood in the menu (it then slides up to be the card's header), straight to the
   cursor, eased to arrive fast, homing if the cursor moves, its head (`>` or `▶`) pointing the way it
   flies over a short trail.
@@ -226,8 +233,11 @@ loop times the rest.
   it rides along when only the map scrolls; clicks hit-test the drawn camera.
 - **The card reveal**, about 150 ms in three beats: the other rows fade out; the chosen row, now active,
   slides up to the header line; the card fades in, its name, subtitle and description typed out, a
-  building's icon playing its going-up frames. Explore Map's card opens the same way; the length is an
-  Experiment. Going back is plain: the menu returns with its row lit.
+  building's icon playing its going-up frames. Explore Map's card opens the same way, and a card opened
+  from the map by a digit too; from one card straight to another only the last beat plays, so the menu
+  never flashes back between them. The length is an Experiment. Going back is plain: the menu returns
+  with its row lit. The live loop starts it by watching the state become a card (`cardRevealAt` in
+  `src/view/build-live.ts`); the reducer never hears of it.
 - **Reduced motion snaps** — camera, cursor, card, flight — keeping only what is not movement, such as a
   blink.
 
@@ -313,6 +323,8 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
   its tile**, and affordability comes before any tile problem.
 - **Looking reads quietly, trying loudly**: a ghost on a tile it cannot use shows a grey block of `x` and
   a plain-toned reason; once the player tries, the same words turn red and bold until the answer lapses.
+  **A command's own answer comes first**, a refusal included; the ghost's reason is what the line says
+  when the last command said nothing.
 - **During a Pulse** it says what the Pulse is doing, unless a popup holds the keyboard. **It fits 80
   columns**; a narrower bar drops whole words, never half of one.
 
@@ -386,7 +398,7 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
   asks him in plain words to flip it (the game menu's Settings, or `d`) and paste the export; `--settings`
   shows what he saw. Every Experiment names its question (`src/build/debug.ts`).
 - **Once he settles one it leaves Settings**: his value becomes the default in the code's table of tuned
-  values, with who chose it and when, and the Experiment is deleted, so a new one stands out. Some stay on
+  values (`TUNING` in `src/build/tuning.ts`), with who chose it and when, and the Experiment is deleted, so a new one stands out. Some stay on
   purpose: a number that depends on the player's keyboard (the hold window), or placeholder data (the
   Pulse's raid and crew).
 - **Never copy a tuned number into prose**; point at the table.
