@@ -67,6 +67,7 @@ import { trackEffectsAt } from "./animation.ts"
 import type { PlacementClock, RemovalClock } from "./placement.ts"
 import type { PlacementTuning } from "./placement.ts"
 import { placementEffectContext, placementLook, placementSchedule, removalSchedule } from "./placement.ts"
+import { EASINGS } from "./tween.ts"
 
 /** A structure the player is about to place, and whether they may. Drawn in the highlights band, so
  *  it is presentation and can never change occupancy (engine.md 9.4). */
@@ -899,12 +900,6 @@ function fadeFrom(cells: BandCell[], from: number, hidden: number, capability: C
   }
 }
 
-/** Slow at both ends: the header's slide into place. */
-function easeInOutCubic(t: number): number {
-  const x = Math.min(1, Math.max(0, t))
-  return x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2
-}
-
 /**
  * The side panel while a card shows: finished, or — while the live loop says the card is being
  * revealed (F68) — partway through its three beats (`CARD_BEATS`). Presentation only: the state is the
@@ -938,7 +933,8 @@ function drawCard(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPa
   if (reveal.fromMenu && t < menuEnds) {
     // Beat 2: the chosen row alone, sliding a whole row at a time from its place to the header line.
     if (spec === null) return
-    const along = easeInOutCubic((t - CARD_BEATS.fade) / CARD_BEATS.slide)
+    // Slow at both ends: a row that starts from rest and comes to rest on the header line.
+    const along = EASINGS.easeInOut((t - CARD_BEATS.fade) / CARD_BEATS.slide)
     drawMenuRow(cells, layout, Math.round(home + (header - home) * along), spec, capability)
     return
   }
@@ -1117,12 +1113,6 @@ const ARROW_TRAIL_BRIGHT = 2
 /** tan(22.5 degrees): within this slope of an axis, a line reads as running along it. */
 const AXIS_SLOPE = 0.4142
 
-/** Fast at first, settling on the cursor: the focus arrow's own easing. */
-function easeOutCubic(t: number): number {
-  const rest = 1 - Math.min(1, Math.max(0, t))
-  return 1 - rest * rest * rest
-}
-
 /**
  * The focus arrow's head and trail glyphs for a line running `dx` columns and `dy` rows. A terminal
  * cell is about twice as tall as it is wide, so a row counts as two columns when the slope is read:
@@ -1176,7 +1166,8 @@ function handoffFlight(input: BuildCompositionInput): Flight | null {
   const range = visibleRange(state.camera, state.viewport)
   const cursor = input.cursor ?? state.cursor
   if (cursor.x < range.firstX || cursor.x > range.lastX || cursor.y < range.firstY || cursor.y > range.lastY) return null
-  return { from: flightStart(input), to: cellForTile(layout, state.camera, cursor), along: easeOutCubic(flight.progress) }
+  // Fast at first, settling on the cursor.
+  return { from: flightStart(input), to: cellForTile(layout, state.camera, cursor), along: EASINGS.easeOut(flight.progress) }
 }
 
 /**
