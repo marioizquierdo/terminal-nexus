@@ -292,7 +292,7 @@ test("the refused flicker is always weaker than the pressed flash", () => {
 
 /** The arrow's cells: what a frame with a flight has that the same frame without one does not. */
 function flightCells(side: Side, progress: number, capability: CapabilityMode = "monochrome") {
-  return changed(compose(side, { focusArrow: { progress } }, capability), compose(side, {}, capability))
+  return changed(compose(side, { handoffFlight: { progress } }, capability), compose(side, {}, capability))
 }
 
 test("a building's arrow leaves from the cell right of its row on the menu, not from the card's header", () => {
@@ -530,14 +530,14 @@ test("the reveal and the hand-off start together: neither waits for the other", 
   keys(side, DOWN, DOWN, ENTER) // the Barracks, from the menu
   const frame = animation.frame(side.build.state, 1000)
   assert.deepEqual(frame.cardReveal, { progress: 0, menu: true })
-  assert.deepEqual(frame.focusArrow, { progress: 0 })
+  assert.deepEqual(frame.handoffFlight, { progress: 0 })
   // A digit on the map arms without a hand-off, and the card still reveals.
   const map = session()
   const loop = new BuildAnimation()
   loop.frame(map.build.state, 0)
   keys(map, TAB, "2")
   const armed = loop.frame(map.build.state, 1000)
-  assert.equal(armed.focusArrow, undefined)
+  assert.equal(armed.handoffFlight, undefined)
   assert.deepEqual(armed.cardReveal, { progress: 0, menu: true })
 })
 

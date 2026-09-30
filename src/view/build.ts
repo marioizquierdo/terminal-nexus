@@ -96,14 +96,14 @@ export type BuildCompositionInput = Readonly<{
    *  (gate 5H; for the tuned `refusedCursorMs`). Presentation only. */
   refusedFlash?: boolean
   /**
-   * The **focus arrow** in flight (owner, 2026-09-30, feedback F54): a menu row has just handed the
-   * keyboard to the map, and an arrow flies from where the row is on the menu to the cursor (F63) — or,
-   * from Explore Map's row, a see-through copy of the cursor (F64). `progress` runs 0 to 1, linear in
-   * time; the view eases it. The live loop supplies it (the "Focus arrow" Experiment); absent — every
-   * still frame — nothing flies.
+   * A **hand-off's flight** (owner, 2026-09-30, feedback F54): a menu row has just handed the keyboard
+   * to the map, and something flies from where the row is on the menu to the cursor (F63) — the focus
+   * arrow from a building's row, the see-through cursor from Explore Map's (F64). `progress` runs 0 to
+   * 1, linear in time; the view eases it. The live loop supplies it (the "Focus arrow" Experiment times
+   * both); absent — every still frame — nothing flies.
    */
-  focusArrow?: Readonly<{ progress: number }>
-  /** The cursor is in the "on" half of its blink, after the focus arrow lands (F54; the tuned
+  handoffFlight?: Readonly<{ progress: number }>
+  /** The cursor is in the "on" half of its blink, after the flight lands (F54; the tuned
    *  `cursorBlinks`): drawn in a menu row's pressed look. Absent — every still frame — the plain cursor. */
   cursorBlink?: boolean
   /**
@@ -1143,44 +1143,59 @@ function arrowGlyphs(pack: GlyphPack, dx: number, dy: number): Readonly<{ head: 
  * the divider's cell on that row — whatever the panel shows now. A row the menu has no room for (a
  * catalog longer than the panel) leaves from the card's header line.
  */
-function handoffOrigin(input: BuildCompositionInput): Coord {
+function flightStart(input: BuildCompositionInput): Coord {
   const { context, state, layout } = input
   const entry = state.handoff === null ? undefined : menuEntries(context)[state.handoff.entry]
   const row = entry === undefined ? null : menuEntryRow(layout, context.catalog, entry)
   return { x: layout.dividerColumn, y: row ?? layout.panelRow + CARD_HEADER_ROW }
 }
 
-/** Whether the hand-off in flight came from Explore Map's row, which sends a see-through cursor rather
- *  than the arrow (F64). */
-function handoffFromExplore(state: BuildState): boolean {
-  return state.handoff !== null && state.handoff.entry === EXPLORE_ENTRY
+/** A hand-off's flight at this frame: the cell it leaves from, the cursor's cell it flies to, and how
+ *  far along it is, eased. */
+type Flight = Readonly<{ from: Coord; to: Coord; along: number }>
+
+/**
+ * The hand-off's flight this frame, or `null` when nothing flies: only while the live loop says one is
+ * in flight, the map has the keyboard, no popup is open and the plan is not committed, and only toward a
+ * cursor in view. It flies toward the cursor **as it is drawn this frame**, so it homes on a cursor that
+ * moves meanwhile, eased to arrive fast and settle.
+ */
+function handoffFlight(input: BuildCompositionInput): Flight | null {
+  const { state, layout } = input
+  const flight = input.handoffFlight
+  if (flight === undefined || state.committed) return null
+  if (state.focus !== "grid" || state.popup !== null) return null
+  const range = visibleRange(state.camera, state.viewport)
+  const cursor = input.cursor ?? state.cursor
+  if (cursor.x < range.firstX || cursor.x > range.lastX || cursor.y < range.firstY || cursor.y > range.lastY) return null
+  return { from: flightStart(input), to: cellForTile(layout, state.camera, cursor), along: easeOutCubic(flight.progress) }
+}
+
+/**
+ * The hand-off crossing from the menu to the map: the focus arrow from a building's row, the see-through
+ * cursor from Explore Map's (F64) — one flight, two travellers.
+ */
+function drawHandoff(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, preview: ArmedPreview | null): void {
+  const flight = handoffFlight(input)
+  if (flight === null) return
+  if (input.state.handoff?.entry === EXPLORE_ENTRY) drawSeeThroughCursor(cells, input, flight)
+  else drawFocusArrow(cells, input, pack, preview, flight)
 }
 
 /**
  * The **focus arrow** (owner, 2026-09-30, feedback F54: "an animation that sends an arrow from the menu
- * item to the cursor ... fast and use interpolation"): a tween, drawn while the live loop says one is in
- * flight, for a building's row (Explore Map's sends the see-through cursor, `drawSeeThroughCursor`). It leaves
- * from the cell just right of the building's row on the menu (`handoffOrigin`, F63) and flies in a
- * straight line toward the cursor as it is drawn this frame (so it homes on a cursor that moves
- * meanwhile), eased to arrive fast and settle; its head points the way it flies and a short trail follows
- * it, the older cells dim. It stops one cell short of the cursor's tile, which stays whole for the blink
- * that follows.
+ * item to the cursor ... fast and use interpolation"): a building's row's hand-off. It leaves from the
+ * cell just right of the building's row on the menu (`flightStart`, F63) and flies in a straight line
+ * toward the cursor; its head points the way it flies and a short trail follows it, the older cells dim.
+ * It stops one cell short of the cursor's tile, which stays whole for the blink that follows.
  *
  * Drawn over the chrome, so it crosses the divider, and under every popup. On the map it keeps the
  * corruption law as every effect does: on a building's tile — standing, planned, or the ghost of the one
- * being placed — only the style changes, never the glyph. Never during a Pulse, and only while the map
- * has the keyboard and no popup is open.
+ * being placed — only the style changes, never the glyph.
  */
-function drawFocusArrow(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, preview: ArmedPreview | null): void {
+function drawFocusArrow(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, preview: ArmedPreview | null, flight: Flight): void {
   const { context, state, layout } = input
-  const flight = input.focusArrow
-  if (flight === undefined || input.pulse !== undefined || state.committed) return
-  if (state.focus !== "grid" || state.popup !== null) return
-  const range = visibleRange(state.camera, state.viewport)
-  const cursor = input.cursor ?? state.cursor
-  if (cursor.x < range.firstX || cursor.x > range.lastX || cursor.y < range.firstY || cursor.y > range.lastY) return
-  const target = cellForTile(layout, state.camera, cursor)
-  const from = handoffOrigin(input)
+  const { from, to: target } = flight
   // Aimed at the middle of the cursor's tile: its one cell, or between its two when tiles are two wide.
   const dx = target.x + (layout.tileWidth - 1) / 2 - from.x
   const dy = target.y - from.y
@@ -1207,7 +1222,7 @@ function drawFocusArrow(cells: BandCell[], input: BuildCompositionInput, pack: G
     return tile !== null && (ghost.has(`${tile.x},${tile.y}`) || structureAt(context, state.planned, tile))
   }
 
-  const head = Math.min(path.length - 1, Math.floor(easeOutCubic(flight.progress) * path.length))
+  const head = Math.min(path.length - 1, Math.floor(flight.along * path.length))
   const glyphs = arrowGlyphs(pack, dx, dy)
   for (let back = Math.min(ARROW_TRAIL, head); back >= 0; back -= 1) {
     const index = head - back
@@ -1249,31 +1264,23 @@ const SEE_THROUGH_ROLE: StyleRole = "chrome.title"
  * **Explore Map's hand-off** (owner, 2026-09-30, feedback F64-F65: "exploring is just moving the focus to
  * the map. Use a cursor that is the same as the blank cursor, with about 80% 'transparency'"): instead of
  * the focus arrow, a copy of the map cursor — one tile wide — travels from Explore Map's row on the menu
- * to the cursor, on the arrow's own timeline and easing, homing on the cursor as it is drawn, with a
- * short, fainter trail (`SEE_THROUGH_TRAIL`). Every cell it covers is a **glyphless** write carrying
- * `CellStyle.seeThrough` — the cursor's role at an opacity — so whatever is beneath, the menu's words, the
- * divider, the ground, a building, keeps its glyph (the corruption law) and the renderer mixes the
- * colour (`SeeThrough`, `src/view/roles.ts`). Drawn over the panel, the divider and the map, under
- * every popup, never during a Pulse, and never on the real cursor's own cells, into which it settles.
+ * to the cursor, on the arrow's own flight, with a short, fainter trail (`SEE_THROUGH_TRAIL`). Every cell
+ * it covers is a **glyphless** write carrying `CellStyle.seeThrough` — the cursor's role at an opacity —
+ * so whatever is beneath, the menu's words, the divider, the ground, a building, keeps its glyph (the
+ * corruption law) and the renderer mixes the colour (`SeeThrough`, `src/view/roles.ts`). Drawn over the
+ * panel, the divider and the map, under every popup, and never on the real cursor's own cells, into
+ * which it settles.
  */
-function drawSeeThroughCursor(cells: BandCell[], input: BuildCompositionInput): void {
-  const { state, layout } = input
-  const flight = input.focusArrow
-  if (flight === undefined || input.pulse !== undefined || state.committed) return
-  if (state.focus !== "grid" || state.popup !== null) return
-  const range = visibleRange(state.camera, state.viewport)
-  const cursor = input.cursor ?? state.cursor
-  if (cursor.x < range.firstX || cursor.x > range.lastX || cursor.y < range.firstY || cursor.y > range.lastY) return
-  const target = cellForTile(layout, state.camera, cursor)
-  const from = handoffOrigin(input)
+function drawSeeThroughCursor(cells: BandCell[], input: BuildCompositionInput, flight: Flight): void {
+  const { layout } = input
+  const { from, to: target } = flight
   const dx = target.x - from.x
   const dy = target.y - from.y
   // One step of the flight is a tile across or a row down, whichever the flight has more of.
   const steps = Math.max(1, Math.abs(dx) / layout.tileWidth, Math.abs(dy))
-  const head = easeOutCubic(flight.progress)
   const alphas = new Map<number, Readonly<{ x: number; y: number; alpha: number }>>()
   for (const copy of SEE_THROUGH_TRAIL) {
-    const along = head - copy.back / steps
+    const along = flight.along - copy.back / steps
     if (along < 0) continue
     const x = Math.round(from.x + dx * along)
     const y = Math.round(from.y + dy * along)
@@ -1485,10 +1492,8 @@ export function composeBuildFrame(
   else if (cardShowing(input.state)) drawCard(panel, input, pack, capability)
   else drawPanel(panel, input, pack, capability)
   for (const cell of panel) if (cell.y <= input.layout.panelLastRow) cells.push(cell)
-  // The hand-off crosses from the panel into the map, so it is drawn over both — and under any popup:
-  // the focus arrow from a building's row, the see-through cursor from Explore Map's (F64).
-  if (handoffFromExplore(input.state)) drawSeeThroughCursor(cells, input)
-  else drawFocusArrow(cells, input, pack, preview)
+  // The hand-off crosses from the panel into the map, so it is drawn over both — and under any popup.
+  drawHandoff(cells, input, pack, preview)
   drawPopup(cells, input, pack)
 
   return composeBands(input.layout.frame.width, input.layout.frame.height, cells)

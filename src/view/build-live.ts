@@ -23,12 +23,12 @@
 //     for `placeFramesMs` and `placeGlowMs`, timed from the frame that first drew it;
 //   - **a building comes down** (feedback F33): one that leaves the plan — undone, or removed with
 //     Backspace/Delete — throws the same sparks where it stood, timed from the first frame without it;
-//   - **the focus arrow flies, and the cursor blinks** (feedback F54): when a menu row hands the
-//     keyboard to the map (`BuildState.handoff`), an arrow flies from the row to the cursor for the
-//     "Focus arrow" Experiment's milliseconds, and when it lands the cursor blinks `cursorBlinks` times
-//     in the pressed flash's look and at its speed. Keys work throughout; it all stops the moment the
-//     keyboard leaves the map, a popup opens or the plan is committed. From Explore Map's row the arrow
-//     is a see-through copy of the cursor instead (F64) — the same timeline, drawn by the view;
+//   - **a hand-off flies, and the cursor blinks** (feedback F54): when a menu row hands the keyboard
+//     to the map (`BuildState.handoff`), the focus arrow — or, from Explore Map's row, the see-through
+//     cursor (F64) — flies from the row to the cursor for the "Focus arrow" Experiment's milliseconds,
+//     and when it lands the cursor blinks `cursorBlinks` times in the pressed flash's look and at its
+//     speed. Keys work throughout; it all stops the moment the keyboard leaves the map, a popup opens or
+//     the plan is committed. One flight, two travellers: which one flies is the view's to draw;
 //   - **the menu turns into a card** (feedback F68): whenever the panel goes from the menu to a card —
 //     Explore Map opened, a building armed from the menu or with a digit on the map — or from one card
 //     to another armed building, the view plays the "Card reveal" Experiment's transition (the other
@@ -78,8 +78,8 @@ export type LiveFrame = Readonly<{
   placing?: readonly PlacementClock[]
   /** Buildings that just left the plan, still throwing sparks, and how long ago each went (F33). */
   removing?: readonly RemovalClock[]
-  /** The focus arrow in flight, 0 to 1 and linear in time (F54); the view eases it. */
-  focusArrow?: Readonly<{ progress: number }>
+  /** A hand-off's flight, 0 to 1 and linear in time (F54); the view eases it. */
+  handoffFlight?: Readonly<{ progress: number }>
   /** The cursor is in the "on" half of a blink (F54). */
   cursorBlink?: boolean
   /** The menu turning into a card (F68), 0 to 1 and linear in time; the view sets the beats. */
@@ -95,7 +95,7 @@ export type LiveFrame = Readonly<{
  */
 export type LivePresentation = Pick<
   BuildCompositionInput,
-  "camera" | "cursor" | "flash" | "refusedFlash" | "placing" | "removing" | "focusArrow" | "cursorBlink" | "cardReveal"
+  "camera" | "cursor" | "flash" | "refusedFlash" | "placing" | "removing" | "handoffFlight" | "cursorBlink" | "cardReveal"
 >
 
 export function livePresentation(live: LiveFrame): LivePresentation {
@@ -106,7 +106,7 @@ export function livePresentation(live: LiveFrame): LivePresentation {
     ...(live.refusedFlash === true ? { refusedFlash: true } : {}),
     ...(live.placing === undefined ? {} : { placing: live.placing }),
     ...(live.removing === undefined ? {} : { removing: live.removing }),
-    ...(live.focusArrow === undefined ? {} : { focusArrow: live.focusArrow }),
+    ...(live.handoffFlight === undefined ? {} : { handoffFlight: live.handoffFlight }),
     ...(live.cursorBlink === true ? { cursorBlink: true } : {}),
     ...(live.cardReveal === undefined ? {} : { cardReveal: live.cardReveal }),
   }
@@ -139,36 +139,36 @@ export function cardRevealAt(
 }
 
 /**
- * When a menu row hands the keyboard to the map (feedback F54): the focus arrow flies for `arrowMs`,
- * then the cursor blinks `blinks` times — each blink "on" for `pulseMs` (the pressed flash's own
- * duration, so it has the menu's speed), with an "off" gap of `pulseMs` between two — and everything is
- * over at `endMs`, counted from the hand-off. Under reduced motion there is no arrow and the blink plays
- * at once; with the arrow off it plays at once too; with no blinks, or a pressed flash of 0, there is
- * none.
+ * When a menu row hands the keyboard to the map (feedback F54): its flight — the focus arrow, or the
+ * see-through cursor — lasts `flightMs`, then the cursor blinks `blinks` times — each blink "on" for
+ * `pulseMs` (the pressed flash's own duration, so it has the menu's speed), with an "off" gap of
+ * `pulseMs` between two — and everything is over at `endMs`, counted from the hand-off. Under reduced
+ * motion nothing flies and the blink plays at once; with the flight off it plays at once too; with no
+ * blinks, or a pressed flash of 0, there is none.
  */
-export type HandoffSchedule = Readonly<{ arrowMs: number; pulseMs: number; blinks: number; endMs: number }>
+export type HandoffSchedule = Readonly<{ flightMs: number; pulseMs: number; blinks: number; endMs: number }>
 
-/** What the hand-off is timed from: the focus arrow's Experiment, and the pressed flash and the blink
- *  count, which are tuned values. */
+/** What the hand-off is timed from: the "Focus arrow" Experiment (which times both travellers' flight),
+ *  and the pressed flash and the blink count, which are tuned values. */
 export type HandoffTiming = Readonly<{ focusArrowMs: number; pressedFlashMs: number; cursorBlinks: number }>
 
 export function handoffSchedule(timing: HandoffTiming, reducedMotion: boolean): HandoffSchedule {
-  const arrowMs = reducedMotion ? 0 : Math.max(0, timing.focusArrowMs)
+  const flightMs = reducedMotion ? 0 : Math.max(0, timing.focusArrowMs)
   const pulseMs = Math.max(0, timing.pressedFlashMs)
   const blinks = pulseMs > 0 ? Math.max(0, timing.cursorBlinks) : 0
-  return { arrowMs, pulseMs, blinks, endMs: arrowMs + (blinks > 0 ? (2 * blinks - 1) * pulseMs : 0) }
+  return { flightMs, pulseMs, blinks, endMs: flightMs + (blinks > 0 ? (2 * blinks - 1) * pulseMs : 0) }
 }
 
-/** What the hand-off shows `elapsedMs` after it: the arrow's progress while it flies, and whether the
+/** What the hand-off shows `elapsedMs` after it: the flight's progress while it flies, and whether the
  *  cursor is in a blink's "on" half. A pure function of the time, like every effect. */
 export function handoffAt(
   schedule: HandoffSchedule,
   elapsedMs: number,
-): Readonly<{ arrow: number | null; blink: boolean }> {
-  if (elapsedMs < 0 || elapsedMs >= schedule.endMs) return { arrow: null, blink: false }
-  if (elapsedMs < schedule.arrowMs) return { arrow: elapsedMs / schedule.arrowMs, blink: false }
-  const phase = Math.floor((elapsedMs - schedule.arrowMs) / schedule.pulseMs)
-  return { arrow: null, blink: phase % 2 === 0 }
+): Readonly<{ flight: number | null; blink: boolean }> {
+  if (elapsedMs < 0 || elapsedMs >= schedule.endMs) return { flight: null, blink: false }
+  if (elapsedMs < schedule.flightMs) return { flight: elapsedMs / schedule.flightMs, blink: false }
+  const phase = Math.floor((elapsedMs - schedule.flightMs) / schedule.pulseMs)
+  return { flight: null, blink: phase % 2 === 0 }
 }
 
 /** What the live screen knows that the reducer does not: the player's reduced-motion setting. */
@@ -364,7 +364,7 @@ export class BuildAnimation {
     const { placing, removing, until } = this.placementsAt(state, now, options)
     if (until !== null) ends.push(until)
 
-    let focusArrow: Readonly<{ progress: number }> | undefined
+    let handoffFlight: Readonly<{ progress: number }> | undefined
     let cursorBlink = false
     const handoff = state.handoff
     if (handoff !== null) {
@@ -376,7 +376,7 @@ export class BuildAnimation {
         const timing = { focusArrowMs: state.experiments.focusArrowMs, pressedFlashMs, cursorBlinks }
         const schedule = handoffSchedule(timing, options.reducedMotion === true)
         const look = handoffAt(schedule, now - this.seenHandoff.at)
-        if (look.arrow !== null) focusArrow = { progress: look.arrow }
+        if (look.flight !== null) handoffFlight = { progress: look.flight }
         cursorBlink = look.blink
         const end = this.seenHandoff.at + schedule.endMs
         if (now < end) ends.push(end)
@@ -405,7 +405,7 @@ export class BuildAnimation {
       ...(refusedFlash ? { refusedFlash } : {}),
       ...(placing.length === 0 ? {} : { placing }),
       ...(removing.length === 0 ? {} : { removing }),
-      ...(focusArrow === undefined ? {} : { focusArrow }),
+      ...(handoffFlight === undefined ? {} : { handoffFlight }),
       ...(cursorBlink ? { cursorBlink } : {}),
       ...(cardReveal === undefined ? {} : { cardReveal }),
       busyUntil: ends.length === 0 ? null : Math.max(...ends),

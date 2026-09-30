@@ -71,7 +71,7 @@ function compose(side: Side, extra: Partial<BuildCompositionInput> = {}, glyphPa
 function arrowCells(side: Side, progress: number, glyphPack: "ascii" | "unicode" = "ascii", cursor?: { x: number; y: number }) {
   const extra = cursor === undefined ? {} : { cursor }
   const plain = compose(side, extra, glyphPack)
-  const flying = compose(side, { ...extra, focusArrow: { progress } }, glyphPack)
+  const flying = compose(side, { ...extra, handoffFlight: { progress } }, glyphPack)
   const changed: { x: number; y: number; glyph: string; plainGlyph: string; bold: boolean; dim: boolean }[] = []
   for (let y = 0; y < flying.height; y += 1) {
     for (let x = 0; x < flying.width; x += 1) {
@@ -92,32 +92,32 @@ test("the arrow flies for its time, then the cursor blinks on and off at the pre
   assert.equal(FLAGS.cursorBlinks, 2)
   const schedule = handoffSchedule(FLAGS, false)
   const pulse = FLAGS.pressedFlashMs
-  assert.deepEqual(schedule, { arrowMs: 180, pulseMs: pulse, blinks: 2, endMs: 180 + 3 * pulse })
-  assert.deepEqual(handoffAt(schedule, 0), { arrow: 0, blink: false })
-  assert.deepEqual(handoffAt(schedule, 90), { arrow: 0.5, blink: false })
-  assert.deepEqual(handoffAt(schedule, 180), { arrow: null, blink: true }, "the first blink starts as the arrow lands")
-  assert.deepEqual(handoffAt(schedule, 180 + pulse - 1), { arrow: null, blink: true })
-  assert.deepEqual(handoffAt(schedule, 180 + pulse), { arrow: null, blink: false }, "no gap between blinks")
-  assert.deepEqual(handoffAt(schedule, 180 + 2 * pulse), { arrow: null, blink: true }, "no second blink")
-  assert.deepEqual(handoffAt(schedule, schedule.endMs - 1), { arrow: null, blink: true })
-  assert.deepEqual(handoffAt(schedule, schedule.endMs), { arrow: null, blink: false })
-  assert.deepEqual(handoffAt(schedule, -1), { arrow: null, blink: false })
+  assert.deepEqual(schedule, { flightMs: 180, pulseMs: pulse, blinks: 2, endMs: 180 + 3 * pulse })
+  assert.deepEqual(handoffAt(schedule, 0), { flight: 0, blink: false })
+  assert.deepEqual(handoffAt(schedule, 90), { flight: 0.5, blink: false })
+  assert.deepEqual(handoffAt(schedule, 180), { flight: null, blink: true }, "the first blink starts as the arrow lands")
+  assert.deepEqual(handoffAt(schedule, 180 + pulse - 1), { flight: null, blink: true })
+  assert.deepEqual(handoffAt(schedule, 180 + pulse), { flight: null, blink: false }, "no gap between blinks")
+  assert.deepEqual(handoffAt(schedule, 180 + 2 * pulse), { flight: null, blink: true }, "no second blink")
+  assert.deepEqual(handoffAt(schedule, schedule.endMs - 1), { flight: null, blink: true })
+  assert.deepEqual(handoffAt(schedule, schedule.endMs), { flight: null, blink: false })
+  assert.deepEqual(handoffAt(schedule, -1), { flight: null, blink: false })
 })
 
 test("reduced motion, the arrow off, no blinks, or a pressed flash of zero each drop their part", () => {
   const pulse = FLAGS.pressedFlashMs
   // Reduced motion: no arrow, and the blink plays at once.
   const reduced = handoffSchedule(FLAGS, true)
-  assert.equal(reduced.arrowMs, 0)
-  assert.deepEqual(handoffAt(reduced, 0), { arrow: null, blink: true })
+  assert.equal(reduced.flightMs, 0)
+  assert.deepEqual(handoffAt(reduced, 0), { flight: null, blink: true })
   // The arrow off: the blink at once.
   const noArrow = handoffSchedule({ ...FLAGS, focusArrowMs: 0 }, false)
-  assert.deepEqual(handoffAt(noArrow, 0), { arrow: null, blink: true })
+  assert.deepEqual(handoffAt(noArrow, 0), { flight: null, blink: true })
   assert.equal(noArrow.endMs, 3 * pulse)
   // No blinks: the arrow, then nothing.
   const noBlink = handoffSchedule({ ...FLAGS, cursorBlinks: 0 }, false)
   assert.equal(noBlink.endMs, 180)
-  assert.deepEqual(handoffAt(noBlink, 180), { arrow: null, blink: false })
+  assert.deepEqual(handoffAt(noBlink, 180), { flight: null, blink: false })
   // Three blinks: five phases after the arrow.
   assert.equal(handoffSchedule({ ...FLAGS, cursorBlinks: 3 }, false).endMs, 180 + 5 * pulse)
   // A pressed flash of zero has no speed to blink at.
@@ -134,18 +134,18 @@ test("the live loop plays it from the frame that first sees the hand-off, and ke
   const end = 1000 + handoffSchedule({ ...FLAGS, focusArrowMs: side.build.state.experiments.focusArrowMs }, false).endMs
   const at = (now: number) => animation.frame(side.build.state, now)
   const first = at(1000)
-  assert.deepEqual(first.focusArrow, { progress: 0 })
+  assert.deepEqual(first.handoffFlight, { progress: 0 })
   assert.equal(first.cursorBlink, undefined)
   assert.equal(first.busyUntil, end)
-  assert.deepEqual(at(1090).focusArrow, { progress: 0.5 })
+  assert.deepEqual(at(1090).handoffFlight, { progress: 0.5 })
   const landed = at(1200)
-  assert.equal(landed.focusArrow, undefined)
+  assert.equal(landed.handoffFlight, undefined)
   assert.equal(landed.cursorBlink, true)
   const gap = at(1180 + FLAGS.pressedFlashMs + 10)
   assert.equal(gap.cursorBlink, undefined)
   assert.equal(gap.busyUntil, end)
   const over = at(end)
-  assert.equal(over.focusArrow, undefined)
+  assert.equal(over.handoffFlight, undefined)
   assert.equal(over.cursorBlink, undefined)
   assert.equal(over.busyUntil, null, "the frame timer kept running after the blink")
 })
@@ -158,7 +158,7 @@ test("the keys work while it plays: the arrow keeps flying toward wherever the c
   animation.frame(side.build.state, 1000)
   side.build.dispatch({ kind: "move-cursor", dx: 3, dy: 1 })
   const moving = animation.frame(side.build.state, 1060)
-  assert.ok(moving.focusArrow !== undefined, "moving the cursor stopped the arrow")
+  assert.ok(moving.handoffFlight !== undefined, "moving the cursor stopped the arrow")
   // The arrow aims at the cursor as it is drawn: moved, the arrow's last cells move with it.
   const before = arrowCells(side, 0.9, "ascii", { x: side.build.state.cursor.x - 3, y: side.build.state.cursor.y - 1 })
   const after = arrowCells(side, 0.9)
@@ -175,16 +175,16 @@ test("it stops for good when the keyboard leaves the map, a popup opens, or the 
     const animation = new BuildAnimation()
     animation.frame(side.build.state, 0)
     keys(side, "e")
-    assert.ok(animation.frame(side.build.state, 1000).focusArrow !== undefined)
+    assert.ok(animation.frame(side.build.state, 1000).handoffFlight !== undefined)
     interrupt(side)
     const stopped = animation.frame(side.build.state, 1050)
-    assert.equal(stopped.focusArrow, undefined, `${name}: the arrow kept flying`)
+    assert.equal(stopped.handoffFlight, undefined, `${name}: the arrow kept flying`)
     assert.equal(stopped.cursorBlink, undefined, `${name}: the cursor blinked`)
     // Back on the map without a new hand-off (Tab, closing the popup): it does not pick up again.
     if (side.build.state.popup !== null) keys(side, ESC)
     if (side.build.state.focus === "menu") keys(side, TAB)
     const resumed = animation.frame(side.build.state, 1200)
-    assert.equal(resumed.focusArrow, undefined, `${name}: the arrow came back`)
+    assert.equal(resumed.handoffFlight, undefined, `${name}: the arrow came back`)
     assert.equal(resumed.cursorBlink, undefined, `${name}: the blink came back`)
   }
   // Committed: no arrow over a Pulse.
@@ -197,7 +197,7 @@ test("it stops for good when the keyboard leaves the map, a popup opens, or the 
   side.build.dispatch({ kind: "start-pulse" })
   assert.equal(side.build.state.committed, true)
   const committed = animation.frame(side.build.state, 1050)
-  assert.equal(committed.focusArrow, undefined)
+  assert.equal(committed.handoffFlight, undefined)
   assert.equal(committed.cursorBlink, undefined)
 })
 
@@ -207,7 +207,7 @@ test("under reduced motion, or with the arrow off, the blink plays at once; Tab 
   animation.frame(side.build.state, 0, { reducedMotion: true })
   keys(side, "e")
   const reduced = animation.frame(side.build.state, 1000, { reducedMotion: true })
-  assert.equal(reduced.focusArrow, undefined)
+  assert.equal(reduced.handoffFlight, undefined)
   assert.equal(reduced.cursorBlink, true)
 
   const off = session()
@@ -222,7 +222,7 @@ test("under reduced motion, or with the arrow off, the blink plays at once; Tab 
   quiet.frame(tab.build.state, 0)
   keys(tab, TAB)
   const frame = quiet.frame(tab.build.state, 1000)
-  assert.equal(frame.focusArrow, undefined)
+  assert.equal(frame.handoffFlight, undefined)
   assert.equal(frame.cursorBlink, undefined)
 })
 
