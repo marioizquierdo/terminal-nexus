@@ -248,7 +248,14 @@ merged; the canon was written beside them.
 - **Lists** (F75; `src/menu/list-keys.ts`): one step function for every list, stopping at the ends,
   `jump` for Shift, PageUp/PageDown and Home/End; the Build Phase's lists take the map cursor's ramp
   through `src/build/motion.ts`.
-- **The settings export as defaults** (F76; `src/build/tuning.ts`, `src/build/debug.ts`): @@TUNING@@
+- **The settings export as defaults** (F76; `src/build/tuning.ts`, `src/build/experiments.ts`): every value
+  in his export is the default. Twenty-two settled numbers live in one table of tuned values, each
+  saying who chose it and when (two more, where arming looks for a spot and how much a step up or down
+  costs, joined it in the review below); seven settled choices became simply how the code works (clicks
+  scroll at the edges armed or not, a jump drags the view rather than re-centring it, a placement lights
+  with a plain flash and a few sparks, the ending centres on the Nexus and blushes red when it is hurt);
+  five Experiments remain — the focus arrow, the card reveal, the hold window, and the placeholder
+  Pulse's raid and crew. An old export's settled names are skipped quietly.
 - **The interface rules rewritten** (F74; `docs/ui-patterns.md`), pointed to from `AGENTS.md` and
   `CLAUDE.md`.
 
@@ -291,14 +298,54 @@ which is where the next person tuning a feel will look.
   under Bun's OpenTUI renderer. The other three renderers show it; recorded in `docs/next-steps.md`.
 - **Removing Experiments shifted every `Down*N` in the capture flows and tests again** @@DOWN@@
 
-## R8. Decision
+## R8. The general review (the owner's request, 2026-09-30)
+
+Mario asked, before playing round 2, for "a general review ... opportunities to simplify and to make the
+code more expressive and related with the actual functionality it implements, more in line with the
+concepts and vocabulary we use in the design docs". Four read-only reviewers read the pull request
+against `main` by area (the reducer and input, the view and live loop, the renderers and Experiments,
+the tests) and returned about seventy-five findings; three were real bugs.
+
+- **Names, as the design says them** (done by hand first, so every agent after built on them): the
+  open popup was `overlay` in the code while the rules say popup everywhere — now `popup`
+  (`src/build/popup.ts`); round 2 had also given "overlay" to the see-through cursor's cell style, now
+  `seeThrough`; the Experiments were still `debug` from Debug Mode — now `src/build/experiments.ts`,
+  `Experiments`, `BuildState.experiments`, `experiment-adjust`; the game menu's popup is `game-menu`, the
+  start question is the `battle-round` popup opened by `open-battle-round` and answered by
+  `start-pulse`; `returnTo` (where finishing goes back to), `noSpotFound`, `jump`, `CREDITS_ROW`,
+  `panelLastRow`, `refuse-row`, `RowAck`, `refusedTry`, `handoffFlight`.
+- **Bugs fixed**: a double click on the armed building's own tile placed and then undid the return to
+  the menu; a click outside a popup that sat over a card dropped the building and moved the highlight to
+  a hidden row; under OpenTUI a refused row's grey words never showed (it ignored a role background).
+  Also: `--settings "focusArrowMs=ms"` set the arrow to 0; a driver could pick a Nexus power with
+  Settings open; the row sliding up in the card reveal was drawn pressed rather than active.
+- **Simpler shapes**: every popup's keys come from the same rows its clicks read; Settings counts its
+  rows in the order they are shown, like every other list, with one `select-row` command; the popup
+  stack keeps each level's return row; one table of arrow-key bytes serves the map and every list; one
+  `mapMode` says where the keyboard is; one `resolveCell` is where a cell's style becomes what each of
+  the three renderers draws; the view is split by concept (`build-frame`, `build-grid`, `build-menu`,
+  `build-card`, `build-handoff`, `build-popup`); the live frame is the composition input plus one number;
+  the scripts read settings and palette from `src` rather than keeping copies.
+- **The tests** reorganised by concept: @@TESTS@@
+- **Kept on purpose**: the restart machinery for Experiments (no Experiment needs a restart today, but
+  the next one that does would have to rebuild it; it is small and tested); the stored mode fields as
+  they are (one `mapMode` derives the four places; folding them into one union was judged too risky for
+  the gain); the menu rows' labels in the view rather than in the menu entries (it crosses two layers for
+  little).
+
+Every step was checked the same way: the type check for Node and the browser page, the Node and Bun
+test runs, the repository check, and scripted playtests of the flows each change touched; the view's
+split was checked frame by frame against the code before it (tens of thousands of frames, the only
+differences being the card reveal fix).
+
+## R9. Decision
 
 > **PASS**
 
 Every item of F61-F76 is built, tested and in the canon; the 80 × 24 floor holds; the kernel is
 untouched; the two looks only Mario can judge ship behind Experiments.
 
-## R9. Canon impact
+## R10. Canon impact
 
 Applied at canon 2.28:
 
@@ -314,7 +361,7 @@ Applied at canon 2.28:
 
 No new question.
 
-## R10. Next authorized action
+## R11. Next authorized action
 
 Wait for Mario's playtest of round 2 and his settings export; settle the two looks' Experiments from
 it. Gate 6B still waits for his word.

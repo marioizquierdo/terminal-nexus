@@ -2,7 +2,7 @@
 
 **Document role:** What working this way taught us, dated, for the next session and for Mario
 **Status:** WORKING — add a dated section after each stretch of work; move a lesson into the canon or a skill once it has proved itself twice
-**Updated:** 2026-09-29 (the Build Phase rounds, gates 5G-5K, 2026-09-27 to 2026-09-29)
+**Updated:** 2026-09-30 (the menu spike's second round and a general review; earlier the Build Phase rounds, gates 5G-5K)
 **License:** Apache-2.0
 
 Four rounds of Mario's playtest feedback on the Build Phase, each one built, merged and put back in
@@ -63,7 +63,8 @@ it says where.
    key-up; that guess is the reason for Q66.
 8. **Naming debt.** Debug Mode became Settings with Experiments, but `debug.ts`, `DebugFlags` and
    `BuildState.debug` kept the old name, and dozens of comments said "Debug Mode" until this cleanup.
-   A rename is mechanical but touches ~200 lines; do it in a pull request of its own.
+   A rename is mechanical but touches ~200 lines; do it in a pull request of its own. (Paid on
+   2026-09-30, below: `experiments.ts`, and `popup` for what the code called an overlay.)
 9. **The gate history in `AGENTS.md` grows a paragraph per gate.** Section 2 is now ~120 lines every
    session reads first. Compact it after Mario accepts a milestone (`docs/next-steps.md`).
 10. **Tooling wrinkles, none serious.** The GitHub connector adds a second footer to a pull request body
@@ -81,6 +82,34 @@ it says where.
 13. **A colour cue is tuned by looking at it in four places.** The light read well in the dark theme and
     needed checking in the light theme (where "toward white" is dark ink), in monochrome (bold) and at
     16 colours (a step, not a blend) before the pull request could call it done.
+
+## The menu spike's second round and the general review (2026-09-30)
+
+1. **Renames first, by one hand, then parallel agents.** The review wanted about a dozen renames that
+   touch every layer (popup, see-through, experiments, the game menu, the Battle Round). Doing them
+   sequentially, by hand, before starting the three fix agents meant the agents all built on the new
+   names, and their merges met one conflict (an import line in a test). The reverse order would have
+   put the same rename into three branches.
+2. **Let the compiler find a renamed string literal.** Changing a union member (`"menu"` to
+   `"game-menu"`) and reading the type errors found every comparison, `case` and assignment in the
+   source; only runtime assertions in tests (`assert.equal(x, "menu")`) escaped it, and one failing test
+   named each of those.
+3. **A worktree agent may start from `main`, not from the branch.** All three fix agents found their
+   worktree at `main`'s commit and fast-forwarded to the branch tip because the prompt named the commit
+   to start from. Always name it, and say what to do if the worktree is elsewhere.
+4. **Two agents' changes can meet only when merged.** The renderers agent's capture script read
+   `SETTINGS_ORDER`; the reducer agent deleted it in the same hour. Both passed their own tests; the
+   capture script (plain JavaScript, not typechecked) failed only when run after the merge. Run the
+   evidence script after merging, not only each agent's checks.
+5. **A review agent that only reads is cheap and finds real bugs.** Four read-only reviewers (by
+   area) returned about seventy-five findings, three of them bugs confirmed by running the code. Asking
+   each to say which findings it had verified, and to mark mechanical versus behavioural, made triage
+   quick.
+6. **Keep the tests for last when the code under them moves.** Reorganising the tests while three
+   agents changed the code they test would have conflicted everywhere; one test agent afterwards, on the
+   merged code, had a stable target.
+7. **Timing tests flake while agents build.** The frame-budget test failed once in three runs with two
+   agents testing at the same time (load 8 on 4 cores) and passed alone. Re-run before believing it.
 
 ## Habits to keep
 
