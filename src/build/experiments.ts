@@ -58,80 +58,85 @@ export type ExperimentField = keyof Experiments
 /** When a change is seen: at once, or only once the Build Phase starts over. */
 export type ExperimentApplies = "now" | "restart"
 
-type ExperimentSpec<F extends ExperimentField> = Readonly<{
-  field: F
+/** Any Experiment's value: a number (milliseconds, 0 for off) or the name of a choice. */
+export type ExperimentValue = Experiments[ExperimentField]
+
+/**
+ * An Experiment, as the popup and the export read it. Written as five things — which flag, its name on
+ * the row, the question it serves, the values Left/Right walk, and when a change is seen — and two
+ * that follow from its values (`experiment`): whether it comes round, and how a value reads.
+ */
+export type ExperimentSpec = Readonly<{
+  field: ExperimentField
   /** The row's name, short enough for the narrowest popup. */
   label: string
-  applies: ExperimentApplies
-  /** The question the flag exists to answer, in plain words. Shown under the list for the
-   *  highlighted row; the open-questions id, where there is one, in parentheses at the end. */
+  /** The question the flag exists to answer, in plain words the owner reads under the list while the
+   *  row is highlighted — so no feedback or question numbers in it. */
   question: string
   /** The values Left/Right walk, in order. A number the list does not hold (from a settings text)
    *  steps to its nearest neighbour in the direction asked. */
-  values: readonly Experiments[F][]
-  /** Whether stepping past either end comes round to the other. True for a choice, where "the next
-   *  one" is the only thing either arrow can mean; false for a number, where the ends are real
-   *  limits. */
+  values: readonly ExperimentValue[]
+  applies: ExperimentApplies
+  /** Whether stepping past either end comes round to the other: a choice comes round, a number stops
+   *  at its ends (docs/ui-patterns.md, "a setting row"). */
   cycles: boolean
-  format: (value: Experiments[F]) => string
+  /** A value as the row shows it: a number in milliseconds, 0 as "off"; a choice by its name. */
+  format: (value: ExperimentValue) => string
 }>
 
-type AnyExperimentSpec = { [F in ExperimentField]: ExperimentSpec<F> }[ExperimentField]
+const millis = (value: ExperimentValue): string => (value === 0 ? "off" : `${value} ms`)
 
-const millis = (value: number): string => (value === 0 ? "off" : `${value} ms`)
-const duration = (value: number): string => `${value} ms`
+/** An Experiment from what is written about it, its values checked against its field's own type, and
+ *  what follows from them derived: a number's list stops at its ends and reads in milliseconds, a
+ *  choice comes round and reads as its name. */
+function experiment<F extends ExperimentField>(
+  written: Readonly<{ field: F; label: string; question: string; values: readonly Experiments[F][]; applies: ExperimentApplies }>,
+): ExperimentSpec {
+  const numeric = typeof written.values[0] === "number"
+  return { ...written, cycles: !numeric, format: numeric ? millis : String }
+}
 
 /** The flags, in the order the popup lists them: the two still being felt first — the focus arrow
  *  (feedback F54), where `d` opens, and the card reveal (F68) — then the hold window, then the
  *  placeholder Pulse's raid and crew, where `d` opens while a Pulse is on screen. */
-export const EXPERIMENT_FIELDS: readonly AnyExperimentSpec[] = [
-  {
+export const EXPERIMENT_FIELDS: readonly ExperimentSpec[] = [
+  experiment({
     field: "focusArrowMs",
     label: "Focus arrow",
-    applies: "now",
-    question: "When a menu row hands the keyboard to the map, an arrow flies from it to the cursor, taking this long. Off: no arrow. (F54)",
+    question: "When a menu row hands the keyboard to the map, an arrow flies from it to the cursor, taking this long. Off: no arrow.",
     values: [0, 120, 180, 250, 350, 500],
-    cycles: false,
-    format: millis,
-  },
-  {
+    applies: "now",
+  }),
+  experiment({
     field: "cardRevealMs",
     label: "Card reveal",
-    applies: "now",
-    question: "How long the menu takes to turn into a card: the other rows fade, the row slides up, the card types in. Off: at once. (F68)",
+    question: "How long the menu takes to turn into a card: the other rows fade, the row slides up, the card types in. Off: at once.",
     values: [0, 100, 150, 250, 400, 800],
-    cycles: false,
-    format: millis,
-  },
-  {
+    applies: "now",
+  }),
+  experiment({
     field: "holdWindowMs",
     label: "Hold window",
-    applies: "now",
     question: "Arrow presses closer than this count as holding. It depends on your keyboard's repeat delay: retune it on a new machine.",
     values: [150, 250, 350, 500, 700, 900],
-    cycles: false,
-    format: duration,
-  },
+    applies: "now",
+  }),
   // The placeholder Nexus Pulse (gate 6A), until gate 6B's real mission. While a Pulse is on screen, `d`
   // opens Settings straight at the first of these.
-  {
+  experiment({
     field: "raid",
     label: "Raid",
-    applies: "now",
     question: "Which raid the next Pulse faces: none (the time runs out), the probe, or a heavy one. Restart to build again.",
     values: ["heavy", "probe", "none"],
-    cycles: true,
-    format: (value: RaidSize) => value,
-  },
-  {
+    applies: "now",
+  }),
+  experiment({
     field: "crew",
     label: "Your units",
-    applies: "now",
     question: "Whether you start the next Pulse with units of your own. None: only the Nexus and what you built stand against the raid.",
     values: ["none", "some"],
-    cycles: true,
-    format: (value: CrewSize) => value,
-  },
+    applies: "now",
+  }),
 ]
 
 /** The defaults: the focus arrow fast ("This animation should be fast", feedback F54), a first guess
@@ -152,29 +157,28 @@ export function defaultExperiments(): Experiments {
   return { ...DEFAULT_EXPERIMENTS }
 }
 
-export function experimentSpec(field: ExperimentField): AnyExperimentSpec {
-  return EXPERIMENT_FIELDS.find((spec) => spec.field === field) as AnyExperimentSpec
+export function experimentSpec(field: ExperimentField): ExperimentSpec {
+  return EXPERIMENT_FIELDS.find((spec) => spec.field === field) as ExperimentSpec
 }
 
 /** A flag's current value, as the popup shows it. */
 export function formatExperimentValue(flags: Experiments, field: ExperimentField): string {
-  const spec = experimentSpec(field) as ExperimentSpec<ExperimentField>
-  return (spec.format as (value: Experiments[ExperimentField]) => string)(flags[field])
+  return experimentSpec(field).format(flags[field])
 }
 
 /** The value one step from `current`, or `null` at the end of a list that does not cycle. */
-function stepValue<T>(values: readonly T[], current: T, step: -1 | 1, cycles: boolean): T | null {
+function stepValue(values: readonly ExperimentValue[], current: ExperimentValue, step: -1 | 1, cycles: boolean): ExperimentValue | null {
   const index = values.indexOf(current)
   if (index >= 0) {
     const next = index + step
-    if (next >= 0 && next < values.length) return values[next] as T
-    return cycles ? (values[(next + values.length) % values.length] as T) : null
+    if (next >= 0 && next < values.length) return values[next] ?? null
+    return cycles ? (values[(next + values.length) % values.length] ?? null) : null
   }
   // A number the list does not hold: its nearest neighbour in the direction asked.
   if (typeof current !== "number") return values[0] ?? null
-  const numbers = values as readonly number[]
+  const numbers = values.filter((value): value is number => typeof value === "number")
   const found = step > 0 ? numbers.find((value) => value > current) : [...numbers].reverse().find((value) => value < current)
-  return (found ?? null) as T | null
+  return found ?? null
 }
 
 export type ExperimentAdjustment = Readonly<{ flags: Experiments; changed: boolean }>
@@ -182,8 +186,8 @@ export type ExperimentAdjustment = Readonly<{ flags: Experiments; changed: boole
 /** One Left (`-1`) or Right (`+1`) on a flag. A number at the end of its range stays put and says
  *  so (`changed: false`); a choice comes round. */
 export function stepExperiment(flags: Experiments, field: ExperimentField, step: -1 | 1): ExperimentAdjustment {
-  const spec = experimentSpec(field) as ExperimentSpec<ExperimentField>
-  const next = stepValue<Experiments[ExperimentField]>(spec.values, flags[field], step, spec.cycles)
+  const spec = experimentSpec(field)
+  const next = stepValue(spec.values, flags[field], step, spec.cycles)
   if (next === null || next === flags[field]) return { flags, changed: false }
   return { flags: { ...flags, [field]: next }, changed: true }
 }

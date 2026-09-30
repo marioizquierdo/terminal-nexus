@@ -337,7 +337,7 @@ test("the cursor blinks in the menu row's pressed look, and is the plain cursor 
 
 test("Focus arrow is the first Experiment, and round-trips through the export; the settled blink count is skipped quietly", () => {
   assert.equal(EXPERIMENT_FIELDS[0]?.field, "focusArrowMs")
-  assert.match(EXPERIMENT_FIELDS[0]?.question ?? "", /\(F54\)$/)
+  assert.match(EXPERIMENT_FIELDS[0]?.question ?? "", /an arrow flies/)
   const experiments: Experiments = { ...defaultExperiments(), focusArrowMs: 350 }
   const text = formatSettingsExport({ settings: DEFAULT_SETTINGS, experiments })
   assert.match(text, /focusArrowMs = 350 {2}# Focus arrow, default 180 ms/)

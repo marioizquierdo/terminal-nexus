@@ -549,7 +549,7 @@ test("Card reveal is an Experiment beside the focus arrow, 150 ms by default, an
   const spec = EXPERIMENT_FIELDS[1]
   assert.equal(spec?.label, "Card reveal")
   assert.deepEqual(spec?.values, [0, 100, 150, 250, 400, 800])
-  assert.match(spec?.question ?? "", /\(F68\)$/)
+  assert.match(spec?.question ?? "", /turn into a card/)
   assert.equal(FLAGS.cardRevealMs, 150)
   const experiments: Experiments = { ...defaultExperiments(), cardRevealMs: 400 }
   const text = formatSettingsExport({ settings: DEFAULT_SETTINGS, experiments })

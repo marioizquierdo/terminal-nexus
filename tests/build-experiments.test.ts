@@ -132,7 +132,9 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   // The bottom line says what the keys do there (feedback F59), and the highlighted row's question is
   // shown. Opened by `d` from the game, Esc closes it.
   assert.match(text, /Left\/right change a value, \[e\] exports them all\. \[esc\] closes\./)
-  assert.ok(text.includes("(F54)"), "the focus arrow's question is not shown")
+  assert.ok(text.includes("an arrow flies from it to the cursor"), "the focus arrow's question is not shown")
+  // The owner reads the questions on screen: no feedback or question numbers to look up.
+  for (const spec of EXPERIMENT_FIELDS) assert.doesNotMatch(spec.question, /\((F|Q)\d+\)/, spec.field)
   const hold = session()
   keys(hold, "d")
   goTo(hold, "holdWindowMs")
