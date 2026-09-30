@@ -111,9 +111,11 @@ function experimentValue(field: ExperimentField, text: string): Experiments[Expe
   // worth is in doubt ships with an on/off Experiment"), so the reading stays.
   if (typeof first === "boolean") return asBoolean(text) as Experiments[ExperimentField] | null
   if (typeof first === "number") {
-    const number = Number(lower.replace(/(ms|%|tiles?)$/u, ""))
+    // Digits first: a bare unit ("ms") is not a number, though `Number("")` would call it 0.
+    const digits = /^(\d+)(?:ms|%|tiles?)?$/u.exec(lower)?.[1]
+    const number = Number(digits)
     const numbers = values as readonly number[]
-    if (Number.isInteger(number) && number >= Math.min(...numbers) && number <= Math.max(...numbers)) return number
+    if (digits !== undefined && number >= Math.min(...numbers) && number <= Math.max(...numbers)) return number
   }
   return null
 }

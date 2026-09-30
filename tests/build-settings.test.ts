@@ -345,6 +345,16 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
   assert.deepEqual(parseSettingsExport("= = # nothing", base).snapshot, base)
 })
 
+test("a number is digits first: a bare unit is a bad value, skipped and reported, never zero", () => {
+  const base: SettingsSnapshot = { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() }
+  // `Number("")` is 0, which once turned the focus arrow and the card reveal off.
+  const result = parseSettingsExport("focusArrowMs=ms cardRevealMs=% holdWindowMs=-350 raid=probe", base)
+  assert.deepEqual(result.snapshot.experiments, { ...defaultExperiments(), raid: "probe" })
+  assert.deepEqual(result.ignored, ["focusArrowMs=ms", "cardRevealMs=%", "holdWindowMs=-350"])
+  // With digits in front, a unit still reads.
+  assert.equal(parseSettingsExport("focusArrowMs=250ms", base).snapshot.experiments.focusArrowMs, 250)
+})
+
 /** The owner's settings export of 2026-09-30, word for word (feedback F76): "Many of those settings can
  *  be cleaned now, I feel good about them." */
 const OWNER_EXPORT_2026_09_30 = [
