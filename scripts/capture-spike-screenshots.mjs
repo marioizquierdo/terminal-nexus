@@ -35,7 +35,8 @@ import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
-import { BuildAnimation, FRAME_MS, livePresentation } from "../src/view/build-live.ts"
+import { BuildAnimation, FRAME_MS, livePresentation, popupBorderEffect } from "../src/view/build-live.ts"
+import { openingLengthMs } from "../src/view/build-popup.ts"
 import { cellForTile } from "../src/build/layout.ts"
 import { SETTINGS_ROWS } from "../src/build/settings.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
@@ -292,25 +293,30 @@ function handoffGif(name, { before, hand, expect, cols = 80, rows = 24, capabili
 }
 
 /**
- * The Battle Round screen breathing (the menu spike's round 3, feedback F80): `keys` opens it, and the
- * GIF is one breath — the "Battle Round pulse" Experiment's length — every `stepMs`, in real time and
- * looping, as `BuildAnimation` hands it to the view. Primed long before, so Start Pulse's pressed flash
- * is over and only the border moves.
+ * A popup opening (feedback F80, F83): `keys` ends with the key that opens it, and the GIF is what
+ * `BuildAnimation` gives from that moment — its opening, if the popup has one (the Battle Round screen's
+ * double flash, every `flashStepMs`), then one whole breath of its border (the "Popup pulse"
+ * Experiment's length, every `stepMs`), in real time and looping.
  */
-function breathGif(name, { keys, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", glyphPack = "ascii", stepMs = 100 }) {
+function popupGif(name, { keys, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", glyphPack = "ascii", stepMs = 100, flashStepMs = 30 }) {
   if (only !== null && only !== name) return
   const run = runBuildPlaytest({ steps: parseKeyScript(keys), columns: cols, rows, settings: { ...DEFAULT_SETTINGS, capability, theme, glyphPack } })
+  const from = run.frames[run.frames.length - 2]
   const to = run.frames[run.frames.length - 1]
   if (!frameToText(to.frame).includes(expect)) throw new Error(`${name}: expected "${expect}" after "${keys}", got:\n${frameToText(to.frame)}`)
   const options = { capability }
-  const animation = settledAnimation(to.state, options)
-  const lengthMs = to.state.experiments.battleRoundPulseMs
+  const animation = settledAnimation(from.state, options)
+  const effect = popupBorderEffect(to.state, false, capability)
+  const openingMs = effect === null ? 0 : openingLengthMs(effect)
+  const breathMs = to.state.experiments.popupPulseMs
   const shots = []
-  for (let now = 0; now < lengthMs; now += stepMs) {
+  const shoot = (now, caption, delayMs) => {
     const live = animation.frame(to.state, now, options)
     const frame = composeBuildFrame({ context: run.context, state: to.state, layout: run.layout, glyphPack, ...livePresentation(live) }, capability)
-    shots.push({ frame, caption: `Battle Round pulse: ${now} ms of a ${lengthMs} ms breath`, delayMs: stepMs })
+    shots.push({ frame, caption, delayMs })
   }
+  for (let now = 0; now < openingMs; now += flashStepMs) shoot(now, `opening flash: ${now} ms of ${openingMs} ms`, flashStepMs)
+  for (let at = 0; at < breathMs; at += stepMs) shoot(openingMs + at, `then the breath: ${at} ms of ${breathMs} ms`, stepMs)
   report(renderFramesGif({ shots, capability, theme, targetPath: join(outputDirectory, `${name}.gif`), scratchDir: scratch, scale: 1 }))
 }
 
@@ -581,8 +587,8 @@ scripted(
 
 scripted(
   "build-card",
-  "[1] arms the Barracks: the menu gives way to its card - [1] Barracks > on top, its own row moved up to be the title, then what it does, its cost, health and size. The bottom line says how to place it",
-  { keys: `${PICK_FIRST_POWER} 1`, expect: "to build" },
+  "[1] arms the Barracks: the menu gives way to its card - [1] Barracks > on top, its own row moved up to be the title, then the card: its title and subtitle beside the icon, a few words more, its cost, health and size. The bottom line says how to place it",
+  { keys: `${PICK_FIRST_POWER} 1`, expect: "Trains troopers" },
 )
 
 scripted(
@@ -603,7 +609,7 @@ handoffGif("build-focus-arrow", {
   // the cursor blinks twice where it lands.
   before: PICK_FIRST_POWER,
   hand: "1",
-  expect: "to build",
+  expect: "Trains troopers",
 })
 
 handoffGif("build-focus-arrow-far", {
@@ -628,7 +634,7 @@ scripted(
   { keys: `${PICK_FIRST_POWER} s`, expect: "Battle Round 1" },
 )
 
-breathGif("build-battle-round-breath", { keys: `${PICK_FIRST_POWER} s`, expect: "Battle Round 1", glyphPack: "unicode" })
+popupGif("build-battle-round-opening", { keys: `${PICK_FIRST_POWER} s`, expect: "Battle Round 1", glyphPack: "unicode" })
 
 // Gate 6A: the Nexus Pulse on the Build Phase's own screen. Accepting the question no longer stops at
 // "committed" - it starts the Pulse - so the committed panel gate 5D drew (`build-nexus-committed.png`,
@@ -705,27 +711,25 @@ pulseGif("pulse-ending", {
 
 scripted(
   "build-settings",
-  "Settings from the game menu: the player's own settings, saved, then - apart - the Experiments, not saved, and Export settings last. The title says where the highlight is in the list, the right border is the list's scroll bar, and what the highlighted row is for is written under a line below it",
-  { keys: "Esc s", expect: "YOUR SETTINGS - saved" },
+  "Settings from the game menu: sections with a blank line before each - Display (the player's own, saved), then Keyboard navigation, Effects and the placeholder Pulse (Experiments, not saved) - and Export settings apart at the end. The title says where the highlight is in the list, the right border is the list's scroll bar, and what the highlighted row is for is written under a line below it",
+  { keys: "Esc s", expect: "DISPLAY - saved" },
 )
 
 scripted(
   "build-settings-export",
   "[e] Export settings: every setting and experiment as text, changed experiments first with the default each replaced (here the focus arrow and the card reveal) - copied to the clipboard and a file, to paste into a pull request",
-  { keys: "d e", expect: "holdWindowMs = 250", experiments: { holdWindowMs: 250, battleRoundPulseMs: 1200 } },
+  { keys: "d e", expect: "holdWindowMs = 250", experiments: { holdWindowMs: 250, popupPulseMs: 1200 } },
 )
 
 scripted(
   "build-debug-80x24",
   "[d] opens Settings at its Experiments: each with its value between < and >, and nothing else on the row. The question the highlighted one serves is written under the list",
-  { keys: "d", expect: "EXPERIMENTS - for playtests, not saved" },
+  { keys: "d", expect: "KEYBOARD NAVIGATION - experiments" },
 )
 
-// The experiments' order, since the owner settled all but five on 2026-09-30 (the rest are tuned values,
-// src/build/tuning.ts): the focus arrow and the card reveal, still being felt; the hold window (two
-// Downs in), which depends on the keyboard; then the placeholder Pulse's raid and your units. Export
-// settings is the list's last row. (The map-edge Experiments, "Opens on" and "Smart cursor" were
-// settled by the owner's playtest of 2026-09-29; the restart is the game menu's [r] since feedback F34.)
+// Settings is in sections (feedback F85): Display (saved), Keyboard navigation (the hold window first,
+// where [d] opens), Effects (the popup pulse and the Battle Round flash), the placeholder Pulse, then
+// Export settings apart at the end. Headings and blank lines are never rows.
 
 scripted(
   "build-debug-104x32",
@@ -736,7 +740,7 @@ scripted(
 scripted(
   "build-debug-light",
   "The light theme: [d] opens Settings at its Experiments, each with its value between < and >, the question the highlighted one serves written underneath",
-  { keys: "d", theme: "light", expect: "EXPERIMENTS" },
+  { keys: "d", theme: "light", expect: "KEYBOARD NAVIGATION" },
 )
 
 scriptedGif("build-arm-at-cursor", {
