@@ -67,33 +67,10 @@ import { scheduleTrack, trackBusyAt } from "./animation.ts"
 import type { Point, Tween } from "./tween.ts"
 import { retarget, samePoint, still, tileAt, tweenActive, tweenEnd } from "./tween.ts"
 
-export type LiveFrame = Readonly<{
-  /** The camera to draw through. */
-  camera: Camera
-  /** The tile to draw the cursor on — the state's own once it has finished gliding. */
-  cursor: Coord
-  ack?: RowAck
-  refusedTry?: boolean
-  /** Planned placements still going up, and how long ago each was placed (gate 5I). */
-  placing?: readonly PlacementClock[]
-  /** Buildings that just left the plan, still throwing sparks, and how long ago each went (F33). */
-  removing?: readonly RemovalClock[]
-  /** The numbers `placing` and `removing` were timed by, while either has anything in it. */
-  placementTuning?: PlacementTuning
-  /** A hand-off's flight, 0 to 1 and linear in time (F54); the view eases it. */
-  handoffFlight?: Readonly<{ progress: number }>
-  /** The cursor is in the "on" half of a blink (F54). */
-  cursorBlink?: boolean
-  /** The menu turning into a card (F68): how far into it, and how long it is; the view sets the beats. */
-  cardReveal?: CardReveal
-  /** When the last thing still animating ends, or `null` when nothing is. */
-  busyUntil: number | null
-}>
-
 /**
- * What a live frame hands the composer — every field of it that `BuildCompositionInput` has, and only
- * those, so the live screen, the browser page and the capture scripts turn a `LiveFrame` into a frame
- * the same way and a new field reaches all of them at once.
+ * What a live frame hands the composer — the fields of `BuildCompositionInput` that depend on time, and
+ * only those (each documented there), so the live screen, the browser page and the capture scripts turn
+ * a `LiveFrame` into a frame the same way and a new field reaches all of them at once.
  */
 export type LivePresentation = Pick<
   BuildCompositionInput,
@@ -109,19 +86,14 @@ export type LivePresentation = Pick<
   | "cardReveal"
 >
 
+/** Everything time-dependent the frame at one instant shows — always a camera and a cursor, the state's
+ *  own once they have finished moving — and when the last thing still moving ends, or `null` when
+ *  nothing is. */
+export type LiveFrame = LivePresentation & Readonly<{ camera: Camera; cursor: Coord; busyUntil: number | null }>
+
 export function livePresentation(live: LiveFrame): LivePresentation {
-  return {
-    camera: live.camera,
-    cursor: live.cursor,
-    ...(live.ack === undefined ? {} : { ack: live.ack }),
-    ...(live.refusedTry === true ? { refusedTry: true } : {}),
-    ...(live.placing === undefined ? {} : { placing: live.placing }),
-    ...(live.removing === undefined ? {} : { removing: live.removing }),
-    ...(live.placementTuning === undefined ? {} : { placementTuning: live.placementTuning }),
-    ...(live.handoffFlight === undefined ? {} : { handoffFlight: live.handoffFlight }),
-    ...(live.cursorBlink === true ? { cursorBlink: true } : {}),
-    ...(live.cardReveal === undefined ? {} : { cardReveal: live.cardReveal }),
-  }
+  const { busyUntil: _busyUntil, ...presentation } = live
+  return presentation
 }
 
 /**
