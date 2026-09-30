@@ -223,7 +223,15 @@ the kernel is untouched. **Its active gate is now 6B — the loop and the trigge
 band**: after Recall, the next Build Phase, until the mission's triggers end it; `spawn`, `order`,
 `commitPlan`, `win` and `lose` as validated data; PERIMETER's three waves as the fixture in place of the
 placeholder Pulse and its Raid and Your units Experiments; Q36 resolved or deferred with a reason.
-**Do not start 6C** (automatic production) without Mario's word. **Mario asked on 2026-09-28 to keep
+**Gate 6B is built and reported (PASS), awaiting Mario's playtest** (2026-09-30,
+`evidence/gate-6b-report.md`): the screen plays PERIMETER — three rounds, the raid in three waves — and
+after a round's result `[enter] Next round` opens the next Build Phase on what the last one left, with the
+next wave shown on the map, see-through, its intention on the Explore Map card. A mission is data
+(`src/mission/`), validated when loaded; the trigger runner (`src/match/mission.ts`) resolves each round
+on the unmodified kernel. Q36 is resolved with no rule change; Q69 (an order primitive: every unit still
+engages the nearest enemy) and Q70 (a defender's wiped-out units end a round early) wait on him; the
+Campaign's opponent is thought through in `docs/scripted-opponent.md`. Next round and Incoming wave are
+Experiments (`d`). **Do not start 6C** (automatic production) without Mario's word. **Mario asked on 2026-09-28 to keep
 going without waiting to look at each gate first**: he tests several merged changes together, then
 plays, exports his Experiments, and pastes them into the pull request. He added, with 6A's acceptance,
 a direction for later: the Campaign should eventually define a Pulse's whole opening state so the
@@ -263,9 +271,9 @@ So the authorised work for a new session is, in order:
    outstanding or that everything still is; **a pasted settings export is feedback**: start the game
    with it (`--settings`), and settle each Experiment it answers — adopt the value as the default,
    delete the Experiment, record the answer;
-2. **the current milestone's active gate** — gate 6B (Q66 is answered; his key-release probe still
-   says whether his iTerm2 reports releases); the gate after it waits for his word, and when it comes it
-   is the next gate in the build order
+2. **the current milestone's active gate** — gate 6B has nothing left to build until he has played it
+   (his key-release probe still says whether his iTerm2 reports releases); the gate after it waits for
+   his word, and when it comes it is the next gate in the build order
    [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
    order — read that table's build-order column, and take one gate per session unless the owner's own
    prompt asks for more.

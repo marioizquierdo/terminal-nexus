@@ -17,7 +17,7 @@ node scripts/playtest.mjs --keys "Down Down Space*4" --print all     # every ste
 node scripts/playtest.mjs --keys "n 1 Tab S-Left*5" --png final    # one PNG
 node scripts/playtest.mjs --keys "Down Down Space*4" --gif --name hatchery-run
 node scripts/playtest.mjs --file flow.keys --size 104x32 --capability monochrome --png all
-node scripts/playtest.mjs --settings "popupPulseMs=3000 raid=probe" --keys "1 Enter"  # start from an export
+node scripts/playtest.mjs --settings "popupPulseMs=3000 incoming=hidden" --keys "1 Enter"  # start from an export
 node scripts/playtest.mjs --help
 ```
 
@@ -77,8 +77,9 @@ is its scroll bar when the list is longer than the popup (a click on its lower h
 Experiments: the hold window (`d Left` shortens it to 150 ms), key releases (auto / off), the tap run
 window, quick tap, taps to speed up, fastest tap, hold pace, when a hold goes faster and how far, and the
 jump distance; the popup pulse (`d Down*10 Right` lengthens a breath to 3000 ms; `--settings
-"popupPulseMs=0"` stills it; the old name `battleRoundPulseMs` still reads); and the placeholder Pulse's
-raid and crew. Every setting — its tier (player, experiment or tuned), section, label, question, values
+"popupPulseMs=0"` stills it; the old name `battleRoundPulseMs` still reads); and the mission's Next round
+(key / auto) and Incoming wave (shown / hidden). Old exports' `raid` and `crew` read back quietly: gate 6B
+retired them for PERIMETER's waves. Every setting — its tier (player, experiment or tuned), section, label, question, values
 and default — is declared in `src/build/all-settings.ts`; the tuned ones are not shown. Closing Settings
 with a changed Experiment that only applies after a restart shows a **RESTART NEEDED** message (Esc
 closes it, back on the game menu's Restart; `r` then restarts). The map's edge is not an Experiment: it is the map's own style (the spike
@@ -90,14 +91,18 @@ reaches; `p` is an unlisted alias) and opens the Battle Round 1 screen, a second
 at the script's own clock — the frame after the second `s` is 0.0 s (the title's timer at its full
 countdown), the frame after `wait~7000` is 7.0 s. A whole plan and its Pulse: `n 2 3 click:22,9
 click:22,9 3 click:22,12 click:22,12 2 click:20,14 click:20,14 s s wait~1000*20` (the War Chest, two
-Turrets across the muster point, a Hatchery behind them — a win); `n 2 s s wait~40000` is nothing
-built, and a loss. Its ending is the last three seconds (about 11.6 s in for that first plan: the
-title's timer flashes and a light sweeps the map's border), a cease fire, the survivors walking home
-and a result; red on the border is only the player's own Nexus being hurt. `--settings "raid=none"`
-(nobody comes: TIME'S UP), `"crew=none"` (no units of your own: the Nexus falls, and the border
-blushes red at its first hit) and `"raid=probe crew=some"` (the gate-6A defaults) reach the rest; the
-ending's timings are tuned values now (`src/build/tuning.ts`). The defaults are a heavy raid and no
-units of your own: the plan above still wins, and `n 2 s s` with nothing built loses about 27 s in. During a Pulse
+Turrets across the muster point, a Hatchery behind them — round 1 won); `n 2 s s wait~40000` is nothing
+built, which the starting squads still win in round 1. Its ending is the last three seconds (about 5.3 s
+in for that first plan: the title's timer flashes and a light sweeps the map's border), a cease fire, the
+survivors walking home
+and a result; red on the border is only the player's own Nexus being hurt. **The screen plays PERIMETER**
+(gate 6B): three rounds, so a result offers `[enter] Next round` — `Enter`, `Space`, `n` or a click — and
+the next Build Phase opens on what survived, with the credits not spent; the third round's result is
+MISSION COMPLETE or MISSION FAILED and `Enter` plays again. A whole mission by keys:
+`n 1 3 click:24,8 click:24,8 3 click:22,7 click:22,7 2 click:21,13 click:21,13 s s wait~20000 wait~20000
+Enter n 1 3 click:27,8 click:27,8 s s wait~20000 wait~20000 Enter n 1 3 click:20,8 click:20,8 s s
+wait~20000 wait~20000` holds it; `n 1 s s wait~20000 wait~20000 Enter` three times loses it in round 3.
+The ending's timings are tuned values (`src/build/tuning.ts`). During a Pulse
 Space pauses, `[` and `]` change the speed, `.` and `,` step, `r` watches it again, and `d` still
 opens the Experiments; `Esc` opens the game menu and its Restart is the way back to a fresh Build
 Phase. `scripts/capture-spike-screenshots.mjs` has `pulseGif` (an ending frame by frame, in real time)
@@ -105,7 +110,7 @@ and shows each ending as a still.
 
 **Reproducing what the owner played**: he exports his settings (Settings, `e`) and pastes the text
 into the pull request; `--settings "<that text>"` starts the script from exactly those settings and
-experiments (the whole export, or just pairs: `--settings "popupPulseMs=3000 raid=probe"`; a name that is
+experiments (the whole export, or just pairs: `--settings "popupPulseMs=3000 incoming=hidden"`; a name that is
 no longer an Experiment is skipped with a note). The
 same key script can open the **live game** in a state: `./bin/terminal-nexus.ts --spike --keys "n 1 1
 Enter"` (and `#keys=` in the browser page's address) plays those keys through the real adapters
