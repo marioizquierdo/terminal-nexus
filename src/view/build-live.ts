@@ -122,6 +122,14 @@ const breathShows = (capability: CapabilityMode | undefined): boolean =>
  *  blink, since it plays once. Monochrome has no colour to move. */
 const flashShows = (capability: CapabilityMode | undefined): boolean => capability !== "monochrome"
 
+/** The opening flash as the "Battle Round flash" and "Flash strength" Experiments set it, over the
+ *  view's own table for the rest (`POPUP_FLASH`: how many, the gap). */
+export const openingFlash = (state: BuildState): PopupFlash => ({
+  ...POPUP_FLASH,
+  flashMs: state.experiments.popupFlashMs,
+  peak: state.experiments.popupFlashPeak / 100,
+})
+
 /**
  * What the open popup's border plays in this frame (feedback F80, F83) — its opening, from
  * `POPUP_OPENINGS` and timed by `flash`, and the length of one breath — with `null` for a part this frame
@@ -132,10 +140,10 @@ export function popupBorderEffect(
   state: BuildState,
   reducedMotion: boolean,
   capability?: CapabilityMode,
-  flash: PopupFlash = POPUP_FLASH,
+  flash: PopupFlash = openingFlash(state),
 ): Pick<PopupBorder, "opening" | "breathMs"> | null {
   if (state.popup === null || reducedMotion) return null
-  const opening = POPUP_OPENINGS[state.popup] === "double-flash" && flashShows(capability) ? flash : null
+  const opening = POPUP_OPENINGS[state.popup] === "double-flash" && flash.flashMs > 0 && flashShows(capability) ? flash : null
   const lengthMs = state.experiments.popupPulseMs
   const breathMs = lengthMs > 0 && breathShows(capability) ? lengthMs : null
   const effect = { opening, breathMs }
@@ -214,7 +222,7 @@ const cameraAtTime = (tween: Tween<Camera>, now: number): Camera => tileAt(tween
 const offsetOf = (tile: Coord, camera: Camera): Point => ({ x: tile.x - camera.x, y: tile.y - camera.y })
 
 /** The tuned values the live loop times things by — and the popup opening's flash (F83), the view's own
- *  first guess (`POPUP_FLASH`) unless a test or, later, an Experiment hands in another. */
+ *  first guess (`POPUP_FLASH`) set by the "Battle Round flash" and "Flash strength" Experiments (`openingFlash`), unless a test hands in another. */
 export type LiveTuning = Pick<
   Tuning,
   | "easeMs"
@@ -237,7 +245,7 @@ export class BuildAnimation {
   /** The part of them a placement's track is timed by, handed to the view with the tracks it times. */
   private readonly placementTuning: PlacementTuning
   /** The flash a popup that opens with one plays (F83). */
-  private readonly popupFlash: PopupFlash
+  private readonly popupFlash: PopupFlash | null
   private ease: Tween<Camera> | null = null
   /** The cursor's place in the view — its tile less the camera's — on its way somewhere. */
   private glide: Tween<Point> | null = null
@@ -273,7 +281,7 @@ export class BuildAnimation {
   constructor(tuning: LiveTuning = TUNING) {
     this.tuning = tuning
     this.placementTuning = { placeFramesMs: tuning.placeFramesMs, placeGlowMs: tuning.placeGlowMs, placeSparks: tuning.placeSparks }
-    this.popupFlash = tuning.popupFlash ?? POPUP_FLASH
+    this.popupFlash = tuning.popupFlash ?? null
   }
 
   /**
@@ -448,7 +456,7 @@ export class BuildAnimation {
     else if (this.seenPopup?.popup !== state.popup) this.seenPopup = { popup: state.popup, at: now }
     let popupBorder: PopupBorder | undefined
     let breathing = false
-    const effect = popupBorderEffect(state, options.reducedMotion === true, options.capability, this.popupFlash)
+    const effect = popupBorderEffect(state, options.reducedMotion === true, options.capability, this.popupFlash ?? undefined)
     if (effect !== null && this.seenPopup !== null) {
       const elapsedMs = now - this.seenPopup.at
       const openingMs = openingLengthMs(effect)

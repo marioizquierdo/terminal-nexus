@@ -296,6 +296,28 @@ export const ALL_SETTINGS = {
     values: [0, 1200, 2000, 3000, 4000],
     default: 2000,
   },
+  /** How long each of the Battle Round screen's two opening flashes lasts; 0 is no flash. A first
+   *  guess (2026-09-30, the owner's notes at the merge, F83: "an initial double flash pulse, with more
+   *  contrast range, that works as a highlight"). */
+  popupFlashMs: {
+    tier: "experiment",
+    section: "effects",
+    label: "Battle Round flash",
+    question: "How long each of the two flashes lasts as the Battle Round screen opens, before it breathes. Off: no flash.",
+    values: [0, 150, 220, 300, 400],
+    default: 220,
+  },
+  /** How far each opening flash goes toward the title's colour, where the breath goes 40%. A first guess
+   *  (F83: "with more contrast range"). */
+  popupFlashPeak: {
+    tier: "experiment",
+    section: "effects",
+    label: "Flash strength",
+    question: "How far the Battle Round flash brightens the border; the everyday breath goes to 40%.",
+    unit: "percent",
+    values: [50, 65, 80, 95],
+    default: 80,
+  },
 
   // --- Acknowledgements ----------------------------------------------------------------------------
 

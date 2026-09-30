@@ -258,7 +258,7 @@ test("which popup opens with what is a table: the Battle Round screen's double f
     const effect = popupBorderEffect(showing(side.build.state, popup), false)
     assert.ok(effect !== null, `${popup}: still`)
     assert.equal(effect.breathMs, LENGTH, `${popup}: does not breathe`)
-    assert.equal(effect.opening, popup === "battle-round" ? POPUP_FLASH : null, `${popup}: the wrong opening`)
+    assert.deepEqual(effect.opening, popup === "battle-round" ? POPUP_FLASH : null, `${popup}: the wrong opening`)
   }
   assert.equal(popupBorderEffect(side.build.state, false), null, "a border without a popup")
 })
