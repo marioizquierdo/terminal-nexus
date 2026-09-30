@@ -37,8 +37,7 @@
 //     card is instant.
 //
 // The numbers in backticks are the owner's tuned values (`src/build/tuning.ts`), which a `BuildAnimation`
-// is handed when it is made (a test hands it others); the focus arrow and the card reveal are still
-// Experiments, read from the state each frame.
+// is handed when it is made (a test hands it others).
 //
 // `busyUntil` says whether anything is still moving, and until when: the live loop runs its frame
 // timer only while it is not `null`, and otherwise draws once per input, as the screen always has.
@@ -56,7 +55,6 @@ import type { Camera } from "../build/camera.ts"
 import type { Coord } from "../grid/types.ts"
 import type { BuildState } from "../build/state.ts"
 import { cardEntry } from "../build/state.ts"
-import type { Experiments } from "../build/experiments.ts"
 import type { Tuning } from "../build/tuning.ts"
 import { TUNING } from "../build/tuning.ts"
 import type { BuildCompositionInput, CardReveal, RowAck } from "./build.ts"
@@ -98,16 +96,16 @@ export function livePresentation(live: LiveFrame): LivePresentation {
 
 /**
  * The card reveal `elapsedMs` after the panel turned into a card, or `null` once it is over (or never
- * plays: the Experiment off, or reduced motion). `fromMenu` says what the panel showed before: the menu,
+ * plays: its tuned length 0, or reduced motion). `fromMenu` says what the panel showed before: the menu,
  * whose rows fade and whose chosen row slides up, or another card, which gives way at once.
  */
 export function cardRevealAt(
-  experiments: Pick<Experiments, "cardRevealMs">,
+  tuning: Pick<Tuning, "cardRevealMs">,
   reducedMotion: boolean,
   elapsedMs: number,
   fromMenu: boolean,
 ): CardReveal | null {
-  const lengthMs = reducedMotion ? 0 : Math.max(0, experiments.cardRevealMs)
+  const lengthMs = reducedMotion ? 0 : Math.max(0, tuning.cardRevealMs)
   if (lengthMs <= 0 || elapsedMs < 0 || elapsedMs >= lengthMs) return null
   return { elapsedMs, lengthMs, fromMenu }
 }
@@ -167,6 +165,8 @@ export type LiveTuning = Pick<
   Tuning,
   | "easeMs"
   | "cursorGlideMs"
+  | "focusArrowMs"
+  | "cardRevealMs"
   | "pressedFlashMs"
   | "refusedFlashMs"
   | "refusedCursorMs"
@@ -352,8 +352,8 @@ export class BuildAnimation {
       const onMap = state.focus === "grid" && state.popup === null && !state.committed
       if (!onMap) this.seenHandoff = { ...this.seenHandoff, stopped: true }
       if (!this.seenHandoff.stopped) {
-        const { pressedFlashMs, cursorBlinks } = this.tuning
-        const timing = { focusArrowMs: state.experiments.focusArrowMs, pressedFlashMs, cursorBlinks }
+        const { focusArrowMs, pressedFlashMs, cursorBlinks } = this.tuning
+        const timing = { focusArrowMs, pressedFlashMs, cursorBlinks }
         const schedule = handoffSchedule(timing, options.reducedMotion === true)
         const look = handoffAt(schedule, now - this.seenHandoff.at)
         if (look.flight !== null) handoffFlight = { progress: look.flight }
@@ -371,7 +371,7 @@ export class BuildAnimation {
     let cardReveal: CardReveal | undefined
     const card = this.seenCard
     if (card.entry !== null && card.at !== null) {
-      const reveal = cardRevealAt(state.experiments, options.reducedMotion === true, now - card.at, card.fromMenu)
+      const reveal = cardRevealAt(this.tuning, options.reducedMotion === true, now - card.at, card.fromMenu)
       if (reveal !== null) {
         cardReveal = reveal
         ends.push(card.at + reveal.lengthMs)

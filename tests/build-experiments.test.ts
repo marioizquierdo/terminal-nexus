@@ -86,16 +86,16 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   const text = screenText(side)
   assert.match(text, /SETTINGS/)
   assert.match(text, /EXPERIMENTS - for playtests, not saved/)
-  // The five left after the owner settled the rest (2026-09-30), in order: the two still being felt, the
-  // hold window, and the placeholder Pulse's raid and crew.
+  // The five after the owner's third round (2026-09-30), in order: navigation (the hold window, key
+  // releases), the Battle Round's pulse, and the placeholder Pulse's raid and crew.
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.field),
-    ["focusArrowMs", "cardRevealMs", "holdWindowMs", "raid", "crew"],
+    ["holdWindowMs", "keyReleases", "battleRoundPulseMs", "raid", "crew"],
   )
   // The bottom line says what the keys do there (feedback F59), and the highlighted row's question is
   // shown. Opened by `d` from the game, Esc closes it.
   assert.match(text, /Left\/right change a value, \[e\] exports them all\. \[esc\] closes\./)
-  assert.ok(text.includes("an arrow flies from it to the cursor"), "the focus arrow's question is not shown")
+  assert.ok(text.includes("Arrow presses closer than this"), "the hold window's question is not shown")
   // The owner reads the questions on screen: no feedback or question numbers to look up.
   for (const spec of EXPERIMENT_FIELDS) assert.doesNotMatch(spec.question, /\((F|Q)\d+\)/, spec.field)
   const hold = buildSide()
@@ -255,13 +255,13 @@ test("the browser playtest page's Build Phase key bar has d", () => {
 // --- Same flow, every adapter ----------------------------------------------------------------------
 
 test("setting an Experiment by keys, by clicks, and from a driver script is the same state and the same frame", () => {
-  // The hold window up two, the focus arrow down one; restart; then arm the Barracks from the menu and
+  // The hold window up two, the Battle Round pulse down one; restart; then arm the Barracks from the menu and
   // place it where the cursor is, since it fits there.
   const byKeyboard = buildSide()
   keys(byKeyboard, "d")
   goToExperiment(byKeyboard, "holdWindowMs")
   keys(byKeyboard, RIGHT, RIGHT)
-  goToExperiment(byKeyboard, "focusArrowMs")
+  goToExperiment(byKeyboard, "battleRoundPulseMs")
   // `q` leaves Settings for the game menu (nothing here waits for a restart, so no message); its [r]
   // restarts. The keyboard is then on the menu.
   keys(byKeyboard, LEFT, "q", "r")
@@ -273,7 +273,7 @@ test("setting an Experiment by keys, by clicks, and from a driver script is the 
   clickPopupOption(byMouse, "s")
   clickValue(byMouse, "holdWindowMs", "right")
   clickValue(byMouse, "holdWindowMs", "right")
-  clickValue(byMouse, "focusArrowMs", "left")
+  clickValue(byMouse, "battleRoundPulseMs", "left")
   // "close [esc]" in the top bar is Esc: back to the game menu (no message — nothing changed waits for
   // a restart); then the game menu's Restart.
   clickEscLabel(byMouse)
@@ -297,7 +297,7 @@ test("setting an Experiment by keys, by clicks, and from a driver script is the 
     { kind: "open-settings", section: "experiments" },
     { kind: "experiment-adjust", field: "holdWindowMs", step: 1 },
     { kind: "experiment-adjust", field: "holdWindowMs", step: 1 },
-    { kind: "experiment-adjust", field: "focusArrowMs", step: -1 },
+    { kind: "experiment-adjust", field: "battleRoundPulseMs", step: -1 },
     { kind: "restart" },
     { kind: "highlight", delta: 1 },
     { kind: "highlight", delta: 1 },
@@ -311,7 +311,7 @@ test("setting an Experiment by keys, by clicks, and from a driver script is the 
 
   const expected = byKeyboard.build.state
   let experiments = defaultExperiments()
-  for (const [field, step] of [["holdWindowMs", 1], ["holdWindowMs", 1], ["focusArrowMs", -1]] as const) {
+  for (const [field, step] of [["holdWindowMs", 1], ["holdWindowMs", 1], ["battleRoundPulseMs", -1]] as const) {
     experiments = stepExperiment(experiments, field, step).flags
   }
   assert.notDeepEqual(experiments, defaultExperiments(), "no step changed anything: the test proves nothing")

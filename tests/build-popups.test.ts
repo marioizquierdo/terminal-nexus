@@ -160,14 +160,14 @@ test("under the list, a line across the popup, then what the highlighted row is 
 test("pendingRestart names the changed settings marked restart, and nothing else", () => {
   const started = defaultExperiments()
   const fields: readonly RestartFieldSpec[] = [
-    { field: "focusArrowMs", label: "Focus arrow", applies: "restart" },
-    { field: "cardRevealMs", label: "Card reveal", applies: "restart" },
+    { field: "holdWindowMs", label: "Hold window", applies: "restart" },
+    { field: "battleRoundPulseMs", label: "Battle Round pulse", applies: "restart" },
     { field: "raid", label: "Raid", applies: "now" },
   ]
   assert.deepEqual(pendingRestart(started, started, fields), [])
   assert.deepEqual(pendingRestart(started, { ...started, raid: "probe" }, fields), [], "a setting that applies now")
-  assert.deepEqual(pendingRestart(started, { ...started, focusArrowMs: 0 }, fields), ["Focus arrow"])
-  assert.deepEqual(pendingRestart(started, { ...started, focusArrowMs: 0, cardRevealMs: 0 }, fields), ["Focus arrow", "Card reveal"])
+  assert.deepEqual(pendingRestart(started, { ...started, holdWindowMs: 500 }, fields), ["Hold window"])
+  assert.deepEqual(pendingRestart(started, { ...started, holdWindowMs: 500, battleRoundPulseMs: 0 }, fields), ["Hold window", "Battle Round pulse"])
   // Put back, it is not pending any more.
   assert.deepEqual(pendingRestart(started, { ...started }, fields), [])
   // The build's own list: exactly its restart fields, whichever they are today.

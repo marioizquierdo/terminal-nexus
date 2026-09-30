@@ -46,9 +46,9 @@ import {
 } from "./build-helpers.ts"
 import type { ChangedCell, Side } from "./build-helpers.ts"
 
-/** The hand-off as the game times it: the focus arrow's default, the tuned pressed flash and blinks. */
+/** The hand-off as the game times it: the tuned flight, pressed flash and blinks. */
 const TIMING: HandoffTiming = {
-  focusArrowMs: defaultExperiments().focusArrowMs,
+  focusArrowMs: TUNING.focusArrowMs,
   pressedFlashMs: TUNING.pressedFlashMs,
   cursorBlinks: TUNING.cursorBlinks,
 }
@@ -190,11 +190,7 @@ test("under reduced motion, or with the flight off, the blink plays at once; Tab
   assert.equal(reduced.cursorBlink, true)
 
   const off = buildSide()
-  for (let step = 0; step < 10 && off.build.state.experiments.focusArrowMs > 0; step += 1) {
-    off.build.dispatch({ kind: "experiment-adjust", field: "focusArrowMs", step: -1 })
-  }
-  assert.equal(off.build.state.experiments.focusArrowMs, 0, "the flight does not go off")
-  const still = new BuildAnimation()
+  const still = new BuildAnimation({ ...TUNING, focusArrowMs: 0 })
   still.frame(off.build.state, 0)
   keys(off, "e")
   assert.equal(still.frame(off.build.state, 1000).cursorBlink, true)

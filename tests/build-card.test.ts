@@ -47,7 +47,7 @@ import type { Side } from "./build-helpers.ts"
 
 /** The card reveal `progress` of the way through its default length, from the menu or another card. */
 function reveal(progress: number, fromMenu = true): CardReveal {
-  const lengthMs = defaultExperiments().cardRevealMs
+  const lengthMs = TUNING.cardRevealMs
   return { elapsedMs: progress * lengthMs, lengthMs, fromMenu }
 }
 
@@ -290,7 +290,7 @@ test("beat 3: the header in place, the card fading in, its words typed, the icon
   const name = (lines[CARD_FIRST_ROW] as string).slice(5).trim()
   assert.ok("Barracks".startsWith(name) && name.length < "Barracks".length, `the name reads "${name}"`)
   // The icon plays the Barracks' own placement frames — the very ones a building going up plays.
-  const framesMs = defaultExperiments().cardRevealMs * CARD_BEATS.card
+  const framesMs = TUNING.cardRevealMs * CARD_BEATS.card
   const schedule = placementSchedule(
     { ordinal: 0, contentId: "structure.citizen.barracks", anchor: { x: 0, y: 0 } },
     side.context.registry.get("structure.citizen.barracks").footprint,
@@ -334,7 +334,7 @@ test("the row a reveal from the menu carries up is drawn active all the way, nev
   let pressed = 0
   // Every instant of the reveal — the fade, the slide, the card's beat — with the pressed flash lit
   // for the first of them.
-  for (let elapsed = 0; elapsed < defaultExperiments().cardRevealMs; elapsed += 5) {
+  for (let elapsed = 0; elapsed < TUNING.cardRevealMs; elapsed += 5) {
     const live = animation.frame(side.build.state, 1000 + elapsed)
     assert.ok(live.cardReveal !== undefined, `${elapsed} ms: the reveal is over`)
     if (live.ack?.kind === "pressed") pressed += 1
@@ -359,7 +359,7 @@ test("the row a reveal from the menu carries up is drawn active all the way, nev
 // --- The card reveal: the live loop --------------------------------------------------------------------
 
 test("the live loop plays the reveal from the frame the panel becomes a card, keeps the timer running, and stops at its end; closing is instant, and opening again plays it again", () => {
-  const length = defaultExperiments().cardRevealMs
+  const length = TUNING.cardRevealMs
   const side = buildSide()
   const animation = new BuildAnimation()
   assert.equal(animation.frame(side.build.state, 0).cardReveal, undefined, "a reveal on the first frame")
@@ -377,7 +377,7 @@ test("the live loop plays the reveal from the frame the panel becomes a card, ke
 })
 
 test("from one card straight to another only the card's own beat plays, and the same card never replays", () => {
-  const length = defaultExperiments().cardRevealMs
+  const length = TUNING.cardRevealMs
   const side = buildSide()
   const animation = new BuildAnimation()
   animation.frame(side.build.state, 0)
@@ -404,7 +404,7 @@ test("from one card straight to another only the card's own beat plays, and the 
   assert.equal(animation.frame(side.build.state, 3200).cardReveal, undefined)
 })
 
-test("no reveal under reduced motion, or with the Experiment off", () => {
+test("no reveal under reduced motion, or with a length of 0", () => {
   const reduced = buildSide()
   const animation = new BuildAnimation()
   animation.frame(reduced.build.state, 0, { reducedMotion: true })
@@ -412,11 +412,7 @@ test("no reveal under reduced motion, or with the Experiment off", () => {
   assert.equal(animation.frame(reduced.build.state, 1000, { reducedMotion: true }).cardReveal, undefined)
 
   const off = buildSide()
-  for (let step = 0; step < 10 && off.build.state.experiments.cardRevealMs > 0; step += 1) {
-    off.build.dispatch({ kind: "experiment-adjust", field: "cardRevealMs", step: -1 })
-  }
-  assert.equal(off.build.state.experiments.cardRevealMs, 0, "the card reveal does not go off")
-  const quiet = new BuildAnimation()
+  const quiet = new BuildAnimation({ ...TUNING, cardRevealMs: 0 })
   quiet.frame(off.build.state, 0)
   keys(off, "1")
   assert.equal(quiet.frame(off.build.state, 1000).cardReveal, undefined)

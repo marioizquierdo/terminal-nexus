@@ -13,13 +13,11 @@
 //
 // Where each flag is read:
 //
-// - the focus arrow (`focusArrowMs`, feedback F54) and the card reveal (`cardRevealMs`, F68) are
-//   presentation alone: the reducer records when a menu row hands the keyboard to the map
-//   (`BuildState.handoff`), the live loop times the arrow from it and watches the panel turn into a
-//   card (`src/view/build-live.ts`), and the view draws both;
-// - the hold window (`holdWindowMs`) decides how big a move the input path sends: the session's
-//   held-key ramp reads it beside the tuned steps (`src/build/motion.ts`), and the reducer only ever
-//   sees an ordinary `move-cursor` of the size it chose;
+// - the hold window (`holdWindowMs`) and key releases (`keyReleases`) decide how big a move the input
+//   path sends: the session's ramp reads them beside the tuned steps (`src/build/motion.ts`), and the
+//   reducer only ever sees an ordinary `move-cursor` of the size it chose;
+// - the Battle Round pulse (`battleRoundPulseMs`) is presentation alone: the live loop keeps drawing
+//   while the Battle Round screen is open and the view breathes its border;
 // - `raid` and `crew` pick which placeholder Nexus Pulse the next commit starts (`src/build/catalog.ts`)
 //   — they change what the kernel is handed, never how it resolves it — until gate 6B's real mission
 //   replaces them.
@@ -35,18 +33,22 @@ export type RaidSize = "none" | "probe" | "heavy"
  *  Nexus and what was built are all that stand between the raid and a lost Pulse. */
 export type CrewSize = "some" | "none"
 
+/** Whether the game reads key presses, repeats and releases where the terminal reports them (the kitty
+ *  keyboard protocol): `auto` asks for them and uses them if they come, `off` never asks, and a held key
+ *  is guessed from the timing of the presses as before. */
+export type KeyReleases = "auto" | "off"
+
 export type Experiments = Readonly<{
-  /** F54: how long the focus arrow takes to fly from a menu row to the cursor when the row hands the
-   *  keyboard to the map, in milliseconds; 0 is no arrow. */
-  focusArrowMs: number
-  /** F68: how long the menu takes to turn into a card when a building is armed or Explore Map opens —
-   *  the other rows fade, the chosen row slides up to the header, the card types in — in
-   *  milliseconds; 0 is at once. */
-  cardRevealMs: number
-  /** Terminals send no key-up: a press of the same arrow at most this long after the one before is
-   *  part of a run — the terminal's first repeat of a held key, or a quick tap. It depends on each
-   *  keyboard's own repeat delay, so it stays live to retune on another machine. */
+  /** Terminals that report no key-up: a press of the same arrow at most this long after the one before
+   *  is a held key's repeat rather than a tap. It depends on each keyboard's own repeat delay, so it
+   *  stays live to retune on another machine. */
   holdWindowMs: number
+  /** Whether to read key releases where the terminal reports them, or guess a hold from timing — the
+   *  owner's comparison of the two (2026-09-30, third round). */
+  keyReleases: KeyReleases
+  /** How long one breath of the Battle Round screen's border takes, lighter then darker, in
+   *  milliseconds; 0 is a still border (2026-09-30, third round: "a pulse effect on the border"). */
+  battleRoundPulseMs: number
   /** Which raid the next Nexus Pulse faces. */
   raid: RaidSize
   /** Whether the player starts the next Nexus Pulse with units of their own. */
@@ -96,29 +98,29 @@ function experiment<F extends ExperimentField>(
   return { ...written, cycles: !numeric, format: numeric ? millis : String }
 }
 
-/** The flags, in the order the popup lists them: the two still being felt first — the focus arrow
- *  (feedback F54), where `d` opens, and the card reveal (F68) — then the hold window, then the
- *  placeholder Pulse's raid and crew, where `d` opens while a Pulse is on screen. */
+/** The flags, in the order the popup lists them: navigation first — the hold window, where `d` opens,
+ *  and whether key releases are read — then the Battle Round's pulse, then the placeholder Pulse's raid
+ *  and crew, where `d` opens while a Pulse is on screen. */
 export const EXPERIMENT_FIELDS: readonly ExperimentSpec[] = [
-  experiment({
-    field: "focusArrowMs",
-    label: "Focus arrow",
-    question: "When a menu row hands the keyboard to the map, an arrow flies from it to the cursor, taking this long. Off: no arrow.",
-    values: [0, 120, 180, 250, 350, 500],
-    applies: "now",
-  }),
-  experiment({
-    field: "cardRevealMs",
-    label: "Card reveal",
-    question: "How long the menu takes to turn into a card: the other rows fade, the row slides up, the card types in. Off: at once.",
-    values: [0, 100, 150, 250, 400, 800],
-    applies: "now",
-  }),
   experiment({
     field: "holdWindowMs",
     label: "Hold window",
     question: "Arrow presses closer than this count as holding. It depends on your keyboard's repeat delay: retune it on a new machine.",
-    values: [150, 250, 350, 500, 700, 900],
+    values: [150, 200, 250, 350, 500],
+    applies: "now",
+  }),
+  experiment({
+    field: "keyReleases",
+    label: "Key releases",
+    question: "Auto: where your terminal reports when a key is let go, a tap is one tap and a hold is a hold. Off: guessed from timing.",
+    values: ["auto", "off"],
+    applies: "restart",
+  }),
+  experiment({
+    field: "battleRoundPulseMs",
+    label: "Battle Round pulse",
+    question: "How long one slow breath of the Battle Round screen's border takes, lighter then darker. Off: a still border.",
+    values: [0, 1200, 2000, 3000, 4000],
     applies: "now",
   }),
   // The placeholder Nexus Pulse (gate 6A), until gate 6B's real mission. While a Pulse is on screen, `d`
@@ -134,25 +136,27 @@ export const EXPERIMENT_FIELDS: readonly ExperimentSpec[] = [
     field: "crew",
     label: "Your units",
     question: "Whether you start the next Pulse with units of your own. None: only the Nexus and what you built stand against the raid.",
-    values: ["none", "some"],
+    values: ["some", "none"],
     applies: "now",
   }),
 ]
 
-/** The defaults: the focus arrow fast ("This animation should be fast", feedback F54), a first guess
- *  for him to feel; the card reveal within his "100 or 150 ms" (F68); the hold window and the placeholder
- *  Pulse from his settings export of 2026-09-30 — a heavy raid, and no units of his own. */
+/** The defaults: the hold window the owner asked to try with the tap-counting ramp (2026-09-30, third
+ *  round: "I would try holdWindowMs = 200ms"; his export had 250 with the old ramp); key releases read
+ *  where the terminal offers them; a two-second breath on the Battle Round screen, a first guess; and
+ *  the placeholder Pulse from his exports — a heavy raid, with units of his own. */
 export const DEFAULT_EXPERIMENTS = {
-  focusArrowMs: 180,
-  cardRevealMs: 150,
-  holdWindowMs: 350,
+  holdWindowMs: 200,
+  keyReleases: "auto",
+  battleRoundPulseMs: 2000,
   raid: "heavy",
-  crew: "none",
+  crew: "some",
 } as const satisfies Experiments
 
 /** The flags a screen opens with: this build's defaults. (The owner settled every other Experiment —
  *  the smart cursor's and "Opens on"'s on 2026-09-29, feedback F30 and F31; twenty-eight more on
- *  2026-09-30, `src/build/tuning.ts` — and they were deleted.) */
+ *  2026-09-30, and the focus arrow and the card reveal later that day, `src/build/tuning.ts` — and they
+ *  were deleted.) */
 export function defaultExperiments(): Experiments {
   return { ...DEFAULT_EXPERIMENTS }
 }

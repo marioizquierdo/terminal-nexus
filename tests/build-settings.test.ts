@@ -286,9 +286,10 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
   const result = parseSettingsExport(
     [
       "some chatter from a pull request comment",
-      "raid=probe, holdWindowMs=500ms; cardRevealMs=100ms",
+      "raid=probe, holdWindowMs=500ms; battleRoundPulseMs=1200ms",
       "retiredFlag = 3  # a flag an older build had",
-      "focusArrowMs = 99999  # out of range: keeps its default",
+      "battleRoundPulseMs = 99999  # out of range: keeps what it had",
+      "focusArrowMs=250 cardRevealMs=400  # settled in the third round: skipped without a word",
       "crew = sideways",
       "startFocus = map  # as the popup shows it",
       "colours=256 background=light glyphs=unicode reducedMotion=yes",
@@ -300,18 +301,17 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
   const { experiments, settings } = result.snapshot
   assert.equal(experiments.raid, "probe")
   assert.equal(experiments.holdWindowMs, 500)
-  assert.equal(experiments.cardRevealMs, 100)
-  assert.equal(experiments.focusArrowMs, defaultExperiments().focusArrowMs)
+  assert.equal(experiments.battleRoundPulseMs, 1200)
   assert.equal(experiments.crew, defaultExperiments().crew)
   assert.deepEqual(settings, { capability: "color256", theme: "light", glyphPack: "unicode", reducedMotion: true })
   // "Opens on" and "Smart cursor" were settled and deleted (feedback F30, F31) before the list of
   // settled names existed: an older export's lines for them are reported like any retired name.
-  assert.deepEqual(result.ignored, ["retiredFlag=3", "focusArrowMs=99999", "crew=sideways", "startFocus=map", "smartCursor=off"])
-  // The twenty-eight the owner settled on 2026-09-30 are known: skipped quietly, never reported.
-  assert.deepEqual(result.settled, ["placeLight", "scrollMargin"])
+  assert.deepEqual(result.ignored, ["retiredFlag=3", "battleRoundPulseMs=99999", "crew=sideways", "startFocus=map", "smartCursor=off"])
+  // The names the owner has settled are known: skipped quietly, never reported.
+  assert.deepEqual(result.settled, ["focusArrowMs", "cardRevealMs", "placeLight", "scrollMargin"])
   // The popup's own words read back too, and a settled name from an older export is skipped without a word.
-  const shown = parseSettingsExport("focusArrowMs=off cursorBlinks=3", base)
-  assert.equal(shown.snapshot.experiments.focusArrowMs, 0)
+  const shown = parseSettingsExport("battleRoundPulseMs=off cursorBlinks=3", base)
+  assert.equal(shown.snapshot.experiments.battleRoundPulseMs, 0)
   assert.deepEqual(shown.ignored, [])
   assert.deepEqual(shown.settled, ["cursorBlinks"])
   // Nothing readable at all is the base, unchanged.
@@ -322,11 +322,11 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
 test("a number is digits first: a bare unit is a bad value, skipped and reported, never zero", () => {
   const base: SettingsSnapshot = { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() }
   // `Number("")` is 0, which once turned the focus arrow and the card reveal off.
-  const result = parseSettingsExport("focusArrowMs=ms cardRevealMs=% holdWindowMs=-350 raid=probe", base)
+  const result = parseSettingsExport("battleRoundPulseMs=ms holdWindowMs=% holdWindowMs=-350 raid=probe", base)
   assert.deepEqual(result.snapshot.experiments, { ...defaultExperiments(), raid: "probe" })
-  assert.deepEqual(result.ignored, ["focusArrowMs=ms", "cardRevealMs=%", "holdWindowMs=-350"])
+  assert.deepEqual(result.ignored, ["battleRoundPulseMs=ms", "holdWindowMs=%", "holdWindowMs=-350"])
   // With digits in front, a unit still reads.
-  assert.equal(parseSettingsExport("focusArrowMs=250ms", base).snapshot.experiments.focusArrowMs, 250)
+  assert.equal(parseSettingsExport("battleRoundPulseMs=1200ms", base).snapshot.experiments.battleRoundPulseMs, 1200)
 })
 
 /** The owner's settings export of 2026-09-30, word for word (feedback F76): "Many of those settings can
@@ -375,22 +375,55 @@ const OWNER_EXPORT_2026_09_30 = [
   "redAlerts = on  # Red alerts",
 ].join("\n")
 
-test("the owner's export of 2026-09-30 is this build: its Experiments are the defaults, its settled numbers the tuned values", () => {
+/** His third-round export, the same day, word for word: "Preferred settings". */
+const OWNER_EXPORT_2026_09_30_THIRD = [
+  "Terminal Nexus settings",
+  "# build 546de47",
+  "# Changed experiments",
+  "focusArrowMs = 250  # Focus arrow, default 180 ms",
+  "cardRevealMs = 400  # Card reveal, default 150 ms",
+  "holdWindowMs = 250  # Hold window, default 350 ms",
+  "crew = some  # Your units, default none",
+  "# Settings",
+  "theme = dark  # Background",
+  "capability = truecolor  # Colour depth",
+  "glyphPack = unicode  # Symbols",
+  "reducedMotion = off  # Reduced motion",
+  "# Experiments at their defaults",
+  "raid = heavy  # Raid",
+].join("\n")
+
+test("the owner's third export is this build: the focus arrow and card reveal are tuned values, the Pulse his defaults", () => {
+  const base: SettingsSnapshot = { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() }
+  const result = parseSettingsExport(OWNER_EXPORT_2026_09_30_THIRD, base)
+  assert.deepEqual(result.ignored, [])
+  assert.deepEqual(result.settled, ["focusArrowMs", "cardRevealMs"])
+  assert.equal(TUNING.focusArrowMs, 250)
+  assert.equal(TUNING.cardRevealMs, 400)
+  assert.equal(defaultExperiments().raid, "heavy")
+  assert.equal(defaultExperiments().crew, "some")
+  // The hold window is the one value that differs on purpose: his words that day asked to try 200 with
+  // the tap-counting ramp ("I would try holdWindowMs = 200ms"); his export still had 250 from the old one.
+  assert.equal(result.snapshot.experiments.holdWindowMs, 250)
+  assert.equal(defaultExperiments().holdWindowMs, 200)
+})
+
+test("the owner's export of 2026-09-30 is this build: its settled numbers are the tuned values", () => {
   const base: SettingsSnapshot = { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() }
   const result = parseSettingsExport(OWNER_EXPORT_2026_09_30, base)
   // Every line is known: nothing is reported as a name the game does not know.
   assert.deepEqual(result.ignored, [])
-  assert.deepEqual(result.applied, ["holdWindowMs", "raid", "crew", "theme", "capability", "glyphPack", "reducedMotion", "focusArrowMs"])
-  assert.deepEqual(result.snapshot.experiments, defaultExperiments(), "every Experiment he kept is at his value by default")
-  // The rest were settled: each of the twenty-eight skipped quietly, and each number is the tuned value,
-  // read not copied. (The settled names are derived from the table, so they also hold tuned numbers his
-  // export never named.)
-  assert.equal(result.settled.length, 28)
+  assert.deepEqual(result.applied, ["holdWindowMs", "raid", "crew", "theme", "capability", "glyphPack", "reducedMotion"])
+  // The rest were settled: the twenty-eight of that export, and the focus arrow he settled again later
+  // that day, each skipped quietly; each number of the twenty-eight is the tuned value, read not copied.
+  // (The settled names are derived from the table, so they also hold tuned numbers his export never named.)
+  assert.equal(result.settled.length, 29)
   assert.ok(result.settled.every((name) => SETTLED_EXPERIMENTS.has(name)))
+  const settledLater = new Set(["focusArrowMs", "cardRevealMs"])
   const numbers = [...OWNER_EXPORT_2026_09_30.matchAll(/^(\w+) = (\d+) /gmu)]
   let checked = 0
   for (const [, name, value] of numbers) {
-    if (name === undefined || !(name in TUNING)) continue
+    if (name === undefined || !(name in TUNING) || settledLater.has(name)) continue
     assert.equal(TUNING[name as keyof typeof TUNING], Number(value), `${name} is not his ${value}`)
     checked += 1
   }

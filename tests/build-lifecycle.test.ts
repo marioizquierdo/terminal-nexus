@@ -145,7 +145,7 @@ test("a lone Esc waits a moment for the rest of a key: Esc then [A in the next r
     input.emit("data", Buffer.from("e")) // explore, so the arrow moves the map cursor
     input.emit("data", Buffer.from(ESC))
     input.emit("data", Buffer.from("[A"))
-  }, AFTER_ESC_TIMEOUT_MS + defaultExperiments().cardRevealMs) // and the card's reveal, typed out
+  }, AFTER_ESC_TIMEOUT_MS + TUNING.cardRevealMs) // and the card's reveal, typed out
   assert.deepEqual(exits, [])
   // Explore Map put the cursor on clear ground, a free column right of the Nexus (21,10 — feedback
   // F66), and the arrow moved it up one tile: the Explore Map card names the tile. Read from everything

@@ -687,7 +687,7 @@ scripted(
 scripted(
   "build-settings-export",
   "[e] Export settings: every setting and experiment as text, changed experiments first with the default each replaced (here the focus arrow and the card reveal) - copied to the clipboard and a file, to paste into a pull request",
-  { keys: "d e", expect: "focusArrowMs = 250", experiments: { focusArrowMs: 250, cardRevealMs: 400 } },
+  { keys: "d e", expect: "holdWindowMs = 250", experiments: { holdWindowMs: 250, battleRoundPulseMs: 1200 } },
 )
 
 scripted(

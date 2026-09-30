@@ -59,6 +59,13 @@ const TUNED = {
   /** How long a lone Esc at the end of a read waits for the rest of a key sequence before it counts as Esc (ms); the owner's settings export, 2026-09-30. */
   escTimeoutMs: 50,
 
+  // --- Hand-offs and cards ---------------------------------------------------------------------------
+
+  /** How long the focus arrow (a building) or the see-through cursor (Explore Map) takes to fly from a menu row to the map cursor (ms); the owner's settings export, 2026-09-30, third round (180 before). */
+  focusArrowMs: 250,
+  /** How long the menu takes to turn into a card: the other rows fade, the chosen row slides up, the card types in (ms); the owner's settings export, 2026-09-30, third round (150 before). */
+  cardRevealMs: 400,
+
   // --- Acknowledgements --------------------------------------------------------------------------
 
   /** How long a menu row flashes when it is chosen, and each "on" of the cursor's blink (ms); gate 5F's number, kept by the owner, 2026-09-30. */

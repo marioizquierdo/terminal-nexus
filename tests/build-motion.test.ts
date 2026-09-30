@@ -158,9 +158,9 @@ test("a different arrow, or anything else pressed, starts again at one tile", ()
 })
 
 test("the hold window is live: retuned, the same presses are a run, or taps", () => {
-  // Presses 250 ms apart, inside the hold window: a tap, then a run from t = 250 at the hold step, sped
+  // Presses 180 ms apart, inside the hold window: a tap, then a run from t = 180 at the hold step, sped
   // up to the fast step once it is the ramp time old.
-  const gap = 250
+  const gap = 180
   assert.ok(gap < FLAGS.holdWindowMs, "the presses are not a run in the default hold window")
   const presses = [0, 1, 2, 3].map((index) => [RIGHT, index * gap] as const)
   const run = exploring()
@@ -583,7 +583,7 @@ test("the live screen redraws on a timer while the view slides, and not at all o
   // arrow or cursor blink, which only a menu row handing the keyboard to the map plays (feedback F54).
   stdin.emit("data", Buffer.from(TAB))
   stdin.emit("data", Buffer.from("e"))
-  await wait(Math.max(TUNING.pressedFlashMs, defaultExperiments().cardRevealMs) + 100) // both have come and gone
+  await wait(Math.max(TUNING.pressedFlashMs, TUNING.cardRevealMs) + 100) // both have come and gone
   const idle = stdout.frames
   await wait(120)
   assert.equal(stdout.frames, idle, "an idle screen kept redrawing")
