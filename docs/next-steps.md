@@ -207,3 +207,15 @@ always works; a host that offers more makes it better.**
 - Any terminal but iTerm2 and tmux: WezTerm, Ghostty, kitty, Alacritty, Windows Terminal, GNOME/VTE.
 - The playtest page on a real phone and on an iPad with a hardware keyboard (Esc, Option).
 - The thin map-edge glyphs on a terminal font that lacks box-drawing weights.
+
+## 7. Proposed: the feedback loop
+
+Mario asked (2026-09-30) for notes made inside the game — point at something, say why, collect a few,
+send them to the pull request, an issue or a file — and an agent on GitHub that sorts them against the
+canon, for him first, then friends, then players. The deep dive is
+[`feedback-pipeline.md`](feedback-pipeline.md); the plan is
+[`../milestones/milestone-13-feedback-loop.md`](../milestones/milestone-13-feedback-loop.md), GATED and
+not placed in the build order until he places it. Its section 7 lists five things any session can keep
+true today at no cost: every input writable in the playtest key notation, one hit-test for clicks and
+notes, no clock in the Build Phase's state, a build stamp on every build, and stable names for what is on
+screen.

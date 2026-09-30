@@ -2,7 +2,7 @@
 
 **Document role:** What working this way taught us, dated, for the next session and for Mario
 **Status:** WORKING — add a dated section after each stretch of work; move a lesson into the canon or a skill once it has proved itself twice
-**Updated:** 2026-09-30 (the menu spike's second round and a general review; earlier the Build Phase rounds, gates 5G-5K)
+**Updated:** 2026-09-30 (the loop at the end of the menu spike; its second round and a general review; earlier the Build Phase rounds, gates 5G-5K)
 **License:** Apache-2.0
 
 Four rounds of Mario's playtest feedback on the Build Phase, each one built, merged and put back in
@@ -114,6 +114,35 @@ it says where.
    export's retirements and adding both new Experiments' fields by hand first meant neither agent had to
    touch the Experiments list, the one file every round's agents had collided in; the two merges met no
    conflict at all.
+
+## The loop itself, at the end of the menu spike (2026-09-30)
+
+Round 3 and the notes at the end of pull request 49 were the smoothest stretch yet. Mario played on a
+laptop and on a phone, sent notes, and each round was built, evidenced and back in front of him within
+hours. What made the loop itself work, rather than any one feature:
+
+1. **The settings became the channel, so they got a structure.** Experiments began as a debug popup.
+   By the end, every setting is declared once with its tier — the player's own, an Experiment for
+   Mario, or a tuned constant — so an agent asking a question, Mario answering it, and the answer
+   becoming a constant are each a one-word edit (`src/build/all-settings.ts`). When a way of talking
+   to the owner works, give it a real place in the code.
+2. **An export is a message, and old messages must still read.** A renamed setting maps to its new
+   name and a settled one is skipped quietly, so a paste from last week still reproduces what he saw.
+3. **Recorded timing made feel reproducible.** The playtest notation learned timing (`Right~250`), so
+   "the third quick tap should speed up" became a script, a test and a GIF. This is the seed of the
+   feedback pipeline ([`feedback-pipeline.md`](feedback-pipeline.md)).
+4. **Rounds grow opportunistic fixes; name them.** A round of feedback always turns up small
+   refactors and bugs beside what was asked. The pull request's **Additional changes** section (now in
+   the pr-description skill) says so openly instead of burying them.
+5. **Check "merged" against the remote before acting on it.** Mario said the pull request was merged;
+   `main` did not contain it. Checking before resetting the branch kept the follow-up on the right pull
+   request. A claim about GitHub's state costs one fetch to verify.
+6. **Tell an agent where to write.** One agent saved its captures into the filesystem root, and the
+   cleanup was then refused by the safety check. Name the output folder in the prompt (the scratchpad).
+7. **The prompt for the next session lives in the repository.** The 6B prompt is in `docs/next-steps.md`
+   as well as in the chat, so a new session, or Mario on another machine, finds it without scrollback.
+8. **Say what a device cannot test.** The phone's key bar only taps; holds need a laptop. Each
+   pull request says which checks need which device, so a phone review is not mistaken for a full one.
 
 ## Habits to keep
 
