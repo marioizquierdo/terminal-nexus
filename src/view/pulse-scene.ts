@@ -22,6 +22,7 @@ import { status } from "../status.ts"
 import type { EndingPhase, EndingTimes, PulseResult } from "./ending.ts"
 import { BEAM_BOLD, beamFrame, beamLight, formatTimer, timerLit, timerSeconds } from "./ending.ts"
 import { forceBar } from "./compose.ts"
+import { inView } from "./build-grid.ts"
 import { paintEffectCells } from "./effects/composite.ts"
 import type { EffectCellSource } from "./effects/composite.ts"
 import type { BandCell, CellStyle } from "./frame.ts"
@@ -79,7 +80,7 @@ export function drawPulseEntities(cells: BandCell[], view: SceneView, pulse: Pul
     for (const offset of definition.footprint) {
       const tile = { x: at.x + offset.x, y: at.y + offset.y }
       if (!inBounds(view.grid, tile)) continue
-      if (tile.x < range.firstX || tile.x > range.lastX || tile.y < range.firstY || tile.y > range.lastY) continue
+      if (!inView(range, tile)) continue
       occupied.add(tileIndex(view.grid, tile))
       const cell = cellForTile(view.layout, view.camera, tile)
       put(cells, band, cell.x, cell.y, entityGlyph(entity.contentId, entity.player, offset), playerRole(entity.player), {
@@ -114,7 +115,7 @@ export function drawPulseEffects(
     for (const cell of painted.cells) {
       const { tile } = cell
       if (!inBounds(view.grid, tile)) continue
-      if (tile.x < range.firstX || tile.x > range.lastX || tile.y < range.firstY || tile.y > range.lastY) continue
+      if (!inView(range, tile)) continue
       sources.push({ band: painted.instance.band, cell })
     }
   }

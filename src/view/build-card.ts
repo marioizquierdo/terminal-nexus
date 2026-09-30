@@ -2,6 +2,7 @@
 // the cursor) or a building's (the one being placed) — and the card reveal that turns the menu into one.
 
 import { footprintExtent } from "../grid/coords.ts"
+import type { BuildLayout } from "../build/layout.ts"
 import { CARD_FIRST_ROW, CARD_HEADER_ROW, CARD_SEPARATOR_ROW, menuEntryRow, menuFloor } from "../build/layout.ts"
 import { wrapWords } from "../build/popup.ts"
 import type { BuildContext } from "../build/state.ts"
@@ -17,6 +18,9 @@ import { placementLook, placementSchedule } from "./placement.ts"
 import { EASINGS } from "./tween.ts"
 import type { BuildCompositionInput } from "./build.ts"
 import { rightAlign, drawMenuRow, menuRowSpec, drawPanel } from "./build-menu.ts"
+
+/** The screen row a card's header is drawn on: the panel's first line. */
+export const cardHeaderRow = (layout: BuildLayout): number => layout.panelRow + CARD_HEADER_ROW
 
 /** A plain name for what is under the cursor — the catalog's own label where there is one. */
 function displayName(context: BuildContext, contentId: string): string {
@@ -109,7 +113,7 @@ export function drawCard(cells: BandCell[], input: BuildCompositionInput, pack: 
   }
   const { context, layout } = input
   const t = Math.max(0, revealProgress(reveal))
-  const header = layout.panelRow + CARD_HEADER_ROW
+  const header = cardHeaderRow(layout)
   const target = menuEntries(context)[entry]
   const home = (target === undefined ? null : menuEntryRow(layout, context.catalog, target)) ?? header
   const menuEnds = reveal.fromMenu ? CARD_BEATS.fade + CARD_BEATS.slide : 0
@@ -175,7 +179,7 @@ function drawCardPanel(cells: BandCell[], input: BuildCompositionInput, pack: Gl
   const limit = layout.panelLimit
   const entry = cardEntry(state)
   const header = entry === null ? null : menuRowSpec(input, entry)
-  if (header !== null) drawMenuRow(cells, layout, layout.panelRow + CARD_HEADER_ROW, header, look.capability)
+  if (header !== null) drawMenuRow(cells, layout, cardHeaderRow(layout), header, look.capability)
   const separator = cells.length
   text(cells, BANDS.chrome, column, layout.panelRow + CARD_SEPARATOR_ROW, chromeGlyph(pack, "horizontal").repeat(limit), "chrome.frame", { limit })
   fadeFrom(cells, separator, look.hidden, look.capability)

@@ -4,6 +4,7 @@
 
 import { tilesOf } from "../grid/coords.ts"
 import type { Coord } from "../grid/types.ts"
+import type { VisibleRange } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
 import { cellForTile } from "../build/layout.ts"
 import type { ArmedPreview, BuildContext } from "../build/state.ts"
@@ -28,6 +29,11 @@ import { HIGHLIGHT_BAR, PRESSED_LOOK } from "./build-menu.ts"
 /** A structure the player is about to place, and whether they may. Drawn in the highlights band, so
  *  it is presentation and can never change occupancy (engine.md 9.4). */
 const ILLEGAL_PREVIEW_GLYPH = "x"
+
+/** Whether `tile` is in the view's range of tiles — what the Grid pane draws, and all it draws. */
+export function inView(range: VisibleRange, tile: Coord): boolean {
+  return tile.x >= range.firstX && tile.x <= range.lastX && tile.y >= range.firstY && tile.y <= range.lastY
+}
 
 /** A planned placement still animating: its track on its own clock, and how far along it is. */
 type Animating = Readonly<{ placement: PlannedPlacement; schedule: TrackSchedule; elapsedMs: number }>
@@ -60,8 +66,7 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
     const definition = context.registry.get(contentId)
     for (const offset of definition.footprint) {
       const tile = { x: anchor.x + offset.x, y: anchor.y + offset.y }
-      if (tile.x < range.firstX || tile.x > range.lastX) continue
-      if (tile.y < range.firstY || tile.y > range.lastY) continue
+      if (!inView(range, tile)) continue
       const cell = cellForTile(layout, state.camera, tile)
       // Drawn at full strength, planned or standing (owner, 2026-09-27: "it will look better if
       // they are fully built"). A plan stays revisable — undo, remove — until the Pulse starts. While
@@ -128,7 +133,7 @@ export function drawEffects(
       if (recipe === undefined) continue
       for (const cell of recipe(instance, effectContext)) {
         const { tile } = cell
-        if (tile.x < range.firstX || tile.x > range.lastX || tile.y < range.firstY || tile.y > range.lastY) continue
+        if (!inView(range, tile)) continue
         if (tile.x >= context.grid.width || tile.y >= context.grid.height) continue
         sources.push({ band: instance.band, cell })
       }
@@ -165,8 +170,7 @@ export function drawPreview(cells: BandCell[], input: BuildCompositionInput, pre
 
   for (const offset of preview.footprint) {
     const tile = { x: preview.anchor.x + offset.x + shift.x, y: preview.anchor.y + offset.y + shift.y }
-    if (tile.x < range.firstX || tile.x > range.lastX) continue
-    if (tile.y < range.firstY || tile.y > range.lastY) continue
+    if (!inView(range, tile)) continue
     const cell = cellForTile(layout, state.camera, tile)
     const glyph = shape
       ? entityGlyph(preview.item.contentId, "A", { x: offset.x, y: offset.y })
@@ -222,8 +226,7 @@ export function drawCursor(cells: BandCell[], input: BuildCompositionInput): voi
   const range = visibleRange(state.camera, state.viewport)
   // Where the cursor is drawn: mid-glide, a tile on its way (and what stands there decides its style).
   const cursor = input.cursor ?? state.cursor
-  if (cursor.x < range.firstX || cursor.x > range.lastX) return
-  if (cursor.y < range.firstY || cursor.y > range.lastY) return
+  if (!inView(range, cursor)) return
   const cell = cellForTile(layout, state.camera, cursor)
   const onStructure = structureAt(context, state.planned, cursor)
   // Its own role rather than the ground's: bold survives monochrome but changes nothing about which
@@ -262,7 +265,7 @@ export function drawRefusedTry(cells: BandCell[], input: BuildCompositionInput, 
   const danger = statusStyle("danger")
   const style = { inverse: true, bold: true, dim: false, fgRole: danger.role }
   for (const tile of tiles) {
-    if (tile.x < range.firstX || tile.x > range.lastX || tile.y < range.firstY || tile.y > range.lastY) continue
+    if (!inView(range, tile)) continue
     const cell = cellForTile(layout, state.camera, tile)
     for (let extra = 0; extra < layout.tileWidth; extra += 1) {
       cells.push({ band: BANDS.highlights, x: cell.x + extra, y: cell.y, style })

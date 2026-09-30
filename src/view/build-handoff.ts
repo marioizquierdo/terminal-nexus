@@ -4,7 +4,7 @@
 
 import type { Coord } from "../grid/types.ts"
 import { visibleRange } from "../build/camera.ts"
-import { CARD_HEADER_ROW, cellForTile, menuEntryRow, tileAtCell } from "../build/layout.ts"
+import { cellForTile, menuEntryRow, tileAtCell } from "../build/layout.ts"
 import type { ArmedPreview } from "../build/state.ts"
 import { EXPLORE_ENTRY, menuEntries } from "../build/state.ts"
 import type { BandCell } from "./frame.ts"
@@ -14,7 +14,8 @@ import { chromeGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 import { EASINGS } from "./tween.ts"
 import type { BuildCompositionInput } from "./build.ts"
-import { glideShift, structureAt, CURSOR_ROLE } from "./build-grid.ts"
+import { CURSOR_ROLE, glideShift, inView, structureAt } from "./build-grid.ts"
+import { cardHeaderRow } from "./build-card.ts"
 
 /** How many cells of trail follow the focus arrow's head, and how many of them, nearest the head, are
  *  drawn at full strength; the older ones are dim. */
@@ -56,7 +57,7 @@ function flightStart(input: BuildCompositionInput): Coord {
   const { context, state, layout } = input
   const entry = state.handoff === null ? undefined : menuEntries(context)[state.handoff.entry]
   const row = entry === undefined ? null : menuEntryRow(layout, context.catalog, entry)
-  return { x: layout.dividerColumn, y: row ?? layout.panelRow + CARD_HEADER_ROW }
+  return { x: layout.dividerColumn, y: row ?? cardHeaderRow(layout) }
 }
 
 /** A hand-off's flight at this frame: the cell it leaves from, the cursor's cell it flies to, and how
@@ -76,7 +77,7 @@ function handoffFlight(input: BuildCompositionInput): Flight | null {
   if (state.focus !== "grid" || state.popup !== null) return null
   const range = visibleRange(state.camera, state.viewport)
   const cursor = input.cursor ?? state.cursor
-  if (cursor.x < range.firstX || cursor.x > range.lastX || cursor.y < range.firstY || cursor.y > range.lastY) return null
+  if (!inView(range, cursor)) return null
   // Fast at first, settling on the cursor.
   return { from: flightStart(input), to: cellForTile(layout, state.camera, cursor), along: EASINGS.easeOut(flight.progress) }
 }
