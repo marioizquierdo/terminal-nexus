@@ -17,7 +17,7 @@ import type { PlaybackControl } from "../view/playback.ts"
 import { START_KEY } from "./layout.ts"
 import { GAME_MENU_ROWS } from "./settings.ts"
 import { TUNING } from "./tuning.ts"
-import type { BuildCommand, Focus, Overlay } from "./types.ts"
+import type { BuildCommand, Focus, Popup } from "./types.ts"
 
 const ESC = String.fromCharCode(27)
 const PLACE_KEYS = new Set(["\r", "\n", " "])
@@ -132,12 +132,12 @@ export type KeyboardContext = Readonly<{
   focus?: Focus
   /** The popup that is open, if any. A popup holds the keyboard: only its own keys reach it, and
    *  nothing underneath answers a key until it closes. */
-  overlay?: Overlay | null
+  popup?: Popup | null
   /** While the Nexus popup is open: how many powers are waiting to be picked, so a digit past them
    *  means nothing. */
-  overlayPendingCount?: number
+  popupPendingCount?: number
   /** The open popup's highlight — which of the game menu's rows Enter means. */
-  overlayHighlight?: number
+  popupHighlight?: number
   /** A Nexus Pulse is on screen (gate 6A): its playback keys are the screen's, ahead of the Grid's. */
   pulse?: boolean
 }>
@@ -165,10 +165,10 @@ const HELP_KEY = "?"
 /** A popup's own keys. Everything else is swallowed: a popup that let `u` reach the plan underneath
  *  it would be one the player cannot trust to be modal. Esc and `x` close any popup, back to the one it
  *  was opened from (feedback F73: no popup needs an `[esc] Back` row of its own). */
-function overlayCommand(key: string, overlay: Overlay, pendingCount: number, highlight: number): BuildCommand | null {
+function popupCommand(key: string, popup: Popup, pendingCount: number, highlight: number): BuildCommand | null {
   const back = backCommand(key)
   if (back !== null) return back
-  switch (overlay) {
+  switch (popup) {
     case "menu": {
       // The game menu (owner, 2026-09-28): its own hotkeys, or Up/Down and Enter on its rows. Enter
       // on `[q] Quit` is the quit itself — the reducer never sees a quit it would have to pass on.
@@ -176,7 +176,7 @@ function overlayCommand(key: string, overlay: Overlay, pendingCount: number, hig
       if (key === "s") return { kind: "open-settings", section: "settings" }
       // `[c] Controls and hotkeys` (feedback F60); `?` is the page's own shortcut, here as in the game.
       if (key === "c" || key === HELP_KEY) return { kind: "open-controls" }
-      if (key === "r") return { kind: "debug-restart" }
+      if (key === "r") return { kind: "restart" }
       if (key === "d") return { kind: "open-settings", section: "experiments" }
       const list = listCommand(key)
       if (list !== null) return list
@@ -241,8 +241,8 @@ export type CursorKey = Readonly<{ dx: number; dy: number; fast: boolean }>
 
 /**
  * Any of the Grid's cursor keys, classified — or `null`. The plain arrows are what a held key's ramp
- * applies to (`src/build/motion.ts`); every other form is the fast move, a jump whose size is a Debug
- * Mode flag rather than anything timing decides (timing only decides how often a held one repeats).
+ * applies to (`src/build/motion.ts`); every other form is the fast move, a jump whose size is a tuned value
+ * (`TUNING.jumpStep`) rather than anything timing decides (timing only decides how often a held one repeats).
  */
 export function cursorKeyOf(key: string): CursorKey | null {
   const plain = PLAIN_ARROWS[key]
@@ -285,9 +285,9 @@ function cursorMove(key: string): BuildCommand | null {
 export function buildKeyboardCommand(key: string, context: KeyboardContext): BuildCommand | null {
   // Ctrl+C always quits outright; `q` opens the game menu first, so a stray press cannot lose a plan.
   if (key === String.fromCharCode(3)) return { kind: "quit" }
-  const overlay = context.overlay ?? null
-  if (overlay !== null) {
-    return overlayCommand(key, overlay, context.overlayPendingCount ?? 0, context.overlayHighlight ?? 0)
+  const popup = context.popup ?? null
+  if (popup !== null) {
+    return popupCommand(key, popup, context.popupPendingCount ?? 0, context.popupHighlight ?? 0)
   }
   const focus = context.focus ?? "grid"
 
@@ -308,7 +308,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (key === "u") return { kind: "undo" }
   if (key === "n") return { kind: "open-nexus-powers" }
   if (key === "e") return { kind: "explore" }
-  // `d` is Debug Mode's old key, kept as a shortcut: Settings, at its Experiments.
+  // `d`: Settings, opened at its Experiments.
   if (key === "d") return { kind: "open-settings", section: "experiments" }
   // `?` opens the Controls and hotkeys page from the game — a shortcut the page itself names.
   if (key === HELP_KEY) return { kind: "open-controls" }

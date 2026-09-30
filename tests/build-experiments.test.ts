@@ -1,28 +1,27 @@
-// Gate 5G: Debug Mode — a popup of live-editable development flags; since the owner's 2026-09-28
-// direction, the Experiments section at the bottom of Settings (`tests/build-settings.test.ts` has the
-// player's half, the game menu and the export). Driven through raw bytes into
+// The Experiments: live-editable flags for the owner's playtests (gate 5G), the section at the bottom
+// of Settings (`tests/build-settings.test.ts` has the player's half, the game menu and the export). Driven through raw bytes into
 // the real adapters where an adapter is what is being claimed, and through commands where the reducer
 // is; and one flow three ways (keys, clicks, a driver script) to hold "the same plan is the same
-// state and the same frame" for the debug flow too.
+// state and the same frame" for the Experiments too.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SPIKE_CATALOG } from "../src/build/catalog.ts"
-import { DEBUG_FIELDS, adjustDebug, initialDebugFlags, rowOfField } from "../src/build/debug.ts"
-import type { DebugField } from "../src/build/debug.ts"
+import { EXPERIMENT_FIELDS, stepExperiment, defaultExperiments, experimentRow } from "../src/build/experiments.ts"
+import type { ExperimentField } from "../src/build/experiments.ts"
 import { SETTLED_EXPERIMENTS } from "../src/build/tuning.ts"
 import { buildLayout, cellForTile, escHintSpan, escLabel, menuEntryRow } from "../src/build/layout.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, MOUSE_WHEEL_DOWN, MOUSE_WHEEL_UP, formatMouseEvent } from "../src/build/mouse.ts"
 import {
-  DEBUG_NOTE_LINES,
+  SETTINGS_NOTE_LINES,
   EXPORT_QUESTION,
-  overlaySpec,
-  placeOverlay,
+  popupSpec,
+  placePopup,
   settingColumns,
   wrapWords,
-} from "../src/build/overlay.ts"
+} from "../src/build/popup.ts"
 import { GAME_MENU_ROWS, PLAYER_FIELDS, SETTINGS_ORDER } from "../src/build/settings.ts"
-import type { PlacedOverlay } from "../src/build/overlay.ts"
+import type { PlacedPopup } from "../src/build/popup.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { entryOfConstruct } from "../src/build/state.ts"
@@ -66,36 +65,36 @@ function click(side: Side, column: number, row: number, button = MOUSE_LEFT): vo
   keys(side, formatMouseEvent(button, column + 1, row + 1))
 }
 
-function placed(side: Side): PlacedOverlay {
-  const spec = overlaySpec(side.context, side.build.state)
+function placed(side: Side): PlacedPopup {
+  const spec = popupSpec(side.context, side.build.state)
   assert.ok(spec !== null, "no popup is open")
-  return placeOverlay(side.layout, spec)
+  return placePopup(side.layout, spec)
 }
 
 /** The frame row the popup draws flag `field` on. */
-function settingRow(side: Side, field: DebugField): number {
-  const label = DEBUG_FIELDS[rowOfField(field)]?.label
+function settingRow(side: Side, field: ExperimentField): number {
+  const label = EXPERIMENT_FIELDS[experimentRow(field)]?.label
   const hit = placed(side).rows.find((row) => row.spec.kind === "setting" && row.spec.label === label)
   assert.ok(hit !== undefined, `no row for ${field}`)
   return hit.row
 }
 
 /** Whether flag `field`'s row is on screen — the popup scrolls since gate 5H. */
-function onScreen(side: Side, field: DebugField): boolean {
-  const label = DEBUG_FIELDS[rowOfField(field)]?.label
+function onScreen(side: Side, field: ExperimentField): boolean {
+  const label = EXPERIMENT_FIELDS[experimentRow(field)]?.label
   return placed(side).rows.some((row) => row.spec.kind === "setting" && row.spec.label === label)
 }
 
 /** The mouse's way to a flag that is scrolled out of view: the wheel, over the popup, until it shows. */
-function wheelTo(side: Side, field: DebugField): void {
+function wheelTo(side: Side, field: ExperimentField): void {
   const box = placed(side).box
-  const down = SETTINGS_ORDER.indexOf(rowOfField(field)) > SETTINGS_ORDER.indexOf(side.build.state.overlayHighlight)
+  const down = SETTINGS_ORDER.indexOf(experimentRow(field)) > SETTINGS_ORDER.indexOf(side.build.state.popupHighlight)
   for (let turns = 0; turns < SETTINGS_ORDER.length && !onScreen(side, field); turns += 1) {
     click(side, box.left + 2, box.top + 2, down ? MOUSE_WHEEL_DOWN : MOUSE_WHEEL_UP)
   }
 }
 
-function clickValue(side: Side, field: DebugField, half: "left" | "right"): void {
+function clickValue(side: Side, field: ExperimentField, half: "left" | "right"): void {
   wheelTo(side, field)
   const columns = settingColumns(placed(side))
   click(side, half === "left" ? columns.valueFrom : columns.valueTo, settingRow(side, field))
@@ -103,9 +102,9 @@ function clickValue(side: Side, field: DebugField, half: "left" | "right"): void
 
 /** The keyboard's way to a flag: Up or Down from wherever the highlight is, never by a count that
  *  breaks when a flag is added. */
-function goTo(side: Side, field: DebugField): void {
-  const target = rowOfField(field)
-  const from = side.build.state.overlayHighlight
+function goTo(side: Side, field: ExperimentField): void {
+  const target = experimentRow(field)
+  const from = side.build.state.popupHighlight
   keys(side, ...Array.from({ length: Math.abs(target - from) }, () => (target > from ? DOWN : UP)))
 }
 
@@ -114,8 +113,8 @@ function goTo(side: Side, field: DebugField): void {
 test("d opens Settings at its Experiments: every flag and its value", () => {
   const side = session()
   keys(side, "d")
-  assert.equal(side.build.state.overlay, "settings")
-  assert.equal(side.build.state.overlayHighlight, rowOfField(DEBUG_FIELDS[0]?.field as DebugField))
+  assert.equal(side.build.state.popup, "settings")
+  assert.equal(side.build.state.popupHighlight, experimentRow(EXPERIMENT_FIELDS[0]?.field as ExperimentField))
   const text = screen(side)
   assert.match(text, /SETTINGS/)
   assert.match(text, /EXPERIMENTS - for playtests, not saved/)
@@ -123,7 +122,7 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   // hold window, and the placeholder Pulse's raid and crew. No "now" or "restart" beside a value any
   // more (feedback F34).
   assert.deepEqual(
-    DEBUG_FIELDS.map((spec) => spec.field),
+    EXPERIMENT_FIELDS.map((spec) => spec.field),
     ["focusArrowMs", "cardRevealMs", "holdWindowMs", "raid", "crew"],
   )
   assert.match(text, /Focus arrow\s+<\s+180 ms\s+>/)
@@ -140,20 +139,20 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   assert.match(screen(hold), /repeat delay/, "the hold window's question does not say why it stays")
   // Every flag is listed — scrolled into view by walking down the list.
   const seen = new Set<string>()
-  for (let row = 0; row < DEBUG_FIELDS.length; row += 1) {
+  for (let row = 0; row < EXPERIMENT_FIELDS.length; row += 1) {
     const now = screen(side)
-    for (const spec of DEBUG_FIELDS) if (now.includes(spec.label)) seen.add(spec.label)
+    for (const spec of EXPERIMENT_FIELDS) if (now.includes(spec.label)) seen.add(spec.label)
     keys(side, DOWN)
   }
-  for (const spec of DEBUG_FIELDS) assert.ok(seen.has(spec.label), `${spec.label} is never listed`)
+  for (const spec of EXPERIMENT_FIELDS) assert.ok(seen.has(spec.label), `${spec.label} is never listed`)
   assert.match(screen(side), /Raid\s+<\s+heavy\s+>/)
   assert.match(screen(side), /Your units\s+<\s+none\s+>/)
   // Settled by the owner on 2026-09-29 (feedback F30, F31) and 2026-09-30 (F76), and deleted.
   for (const gone of ["Smart cursor", "Opens on", "Cursor blink", "Build animation", "Scroll margin", "Shift jump"]) {
-    assert.ok(!DEBUG_FIELDS.some((spec) => spec.label === gone), `${gone} is still an Experiment`)
+    assert.ok(!EXPERIMENT_FIELDS.some((spec) => spec.label === gone), `${gone} is still an Experiment`)
   }
   for (const gone of SETTLED_EXPERIMENTS) {
-    assert.ok(!DEBUG_FIELDS.some((spec) => spec.field === gone), `${gone} is still an Experiment`)
+    assert.ok(!EXPERIMENT_FIELDS.some((spec) => spec.field === gone), `${gone} is still an Experiment`)
   }
 })
 
@@ -161,17 +160,17 @@ test("Esc, x, d, a right click and a click outside all close it, and it holds th
   for (const close of [[ESC], ["x"], ["d"]]) {
     const side = session()
     keys(side, "d", ...close)
-    assert.equal(side.build.state.overlay, null, `${JSON.stringify(close)} did not close it`)
+    assert.equal(side.build.state.popup, null, `${JSON.stringify(close)} did not close it`)
   }
   const right = session()
   keys(right, "d")
   click(right, 0, 0, MOUSE_RIGHT)
-  assert.equal(right.build.state.overlay, null)
+  assert.equal(right.build.state.popup, null)
 
   // Keys the popup has no use for do nothing underneath it: no arm, no undo, no Nexus popup.
   const held = session()
   keys(held, "d", "1", "u", "n", "p", TAB)
-  assert.equal(held.build.state.overlay, "settings")
+  assert.equal(held.build.state.popup, "settings")
   assert.equal(held.build.state.armed, null)
   assert.equal(held.build.state.focus, "menu")
 })
@@ -192,11 +191,11 @@ test("the popup fits inside the Grid pane at every size, and every question fits
     assert.ok(popup.box.top > side.layout.gridBox.top, `the popup covers the top rule at ${size.columns}x${size.rows}`)
     assert.ok(popup.box.bottom + 1 < side.layout.paneBottom, `the popup covers the bottom rule at ${size.columns}x${size.rows}`)
     const columns = settingColumns(popup)
-    for (const spec of [...DEBUG_FIELDS, ...PLAYER_FIELDS]) assert.ok(spec.label.length <= columns.labelLimit, `${spec.label} is cut`)
-    const questions = [...DEBUG_FIELDS, ...PLAYER_FIELDS].map((spec) => spec.question)
+    for (const spec of [...EXPERIMENT_FIELDS, ...PLAYER_FIELDS]) assert.ok(spec.label.length <= columns.labelLimit, `${spec.label} is cut`)
+    const questions = [...EXPERIMENT_FIELDS, ...PLAYER_FIELDS].map((spec) => spec.question)
     for (const question of [...questions, EXPORT_QUESTION]) {
       const lines = wrapWords(question, popup.textLimit)
-      assert.ok(lines.length <= DEBUG_NOTE_LINES, `"${question}" needs ${lines.length} lines at ${size.columns}x${size.rows}`)
+      assert.ok(lines.length <= SETTINGS_NOTE_LINES, `"${question}" needs ${lines.length} lines at ${size.columns}x${size.rows}`)
     }
   }
 })
@@ -204,23 +203,23 @@ test("the popup fits inside the Grid pane at every size, and every question fits
 // --- What each flag changes ------------------------------------------------------------------------
 
 test("a number stops at its ends and says so; a choice comes round", () => {
-  const flags = initialDebugFlags()
-  const smallest = adjustDebug({ ...flags, holdWindowMs: 150 }, "holdWindowMs", -1)
+  const flags = defaultExperiments()
+  const smallest = stepExperiment({ ...flags, holdWindowMs: 150 }, "holdWindowMs", -1)
   assert.equal(smallest.changed, false)
-  assert.equal(adjustDebug({ ...flags, holdWindowMs: 900 }, "holdWindowMs", 1).changed, false)
+  assert.equal(stepExperiment({ ...flags, holdWindowMs: 900 }, "holdWindowMs", 1).changed, false)
   // A number the list does not hold (from a settings text) steps to its nearest neighbour.
-  assert.equal(adjustDebug({ ...flags, holdWindowMs: 300 }, "holdWindowMs", -1).flags.holdWindowMs, 250)
-  assert.equal(adjustDebug({ ...flags, holdWindowMs: 300 }, "holdWindowMs", 1).flags.holdWindowMs, 350)
-  assert.equal(adjustDebug(flags, "crew", 1).flags.crew, "some")
-  assert.equal(adjustDebug(adjustDebug(flags, "crew", 1).flags, "crew", 1).flags.crew, "none")
-  assert.equal(adjustDebug(flags, "raid", 1).flags.raid, "probe")
-  assert.equal(adjustDebug(flags, "raid", -1).flags.raid, "none")
+  assert.equal(stepExperiment({ ...flags, holdWindowMs: 300 }, "holdWindowMs", -1).flags.holdWindowMs, 250)
+  assert.equal(stepExperiment({ ...flags, holdWindowMs: 300 }, "holdWindowMs", 1).flags.holdWindowMs, 350)
+  assert.equal(stepExperiment(flags, "crew", 1).flags.crew, "some")
+  assert.equal(stepExperiment(stepExperiment(flags, "crew", 1).flags, "crew", 1).flags.crew, "none")
+  assert.equal(stepExperiment(flags, "raid", 1).flags.raid, "probe")
+  assert.equal(stepExperiment(flags, "raid", -1).flags.raid, "none")
 
   const side = session()
   keys(side, "d")
   goTo(side, "holdWindowMs")
   keys(side, ...Array.from({ length: 8 }, () => LEFT))
-  assert.equal(side.build.state.debug.holdWindowMs, 150)
+  assert.equal(side.build.state.experiments.holdWindowMs, 150)
   assert.equal(side.build.state.status.tone, "warning")
   assert.match(side.build.state.status.text, /already 150 ms, the smallest/)
 })
@@ -232,19 +231,19 @@ test("the restart keeps every flag and starts the plan over, on the menu at Expl
   keys(side, "d")
   goTo(side, "crew")
   keys(side, RIGHT)
-  assert.equal(side.build.state.debug.crew, "some")
+  assert.equal(side.build.state.experiments.crew, "some")
   // A flag that applies at once needs no restart message; the game menu's [r] is the restart.
   keys(side, "q")
-  assert.equal(side.build.state.overlay, "menu")
+  assert.equal(side.build.state.popup, "menu")
   keys(side, "r")
   const state = side.build.state
-  assert.equal(state.overlay, null)
+  assert.equal(state.popup, null)
   assert.equal(state.focus, "menu")
   assert.equal(state.menuHighlight, 0)
   assert.equal(state.planned.length, 0)
   assert.equal(state.nexusPick, null)
   assert.deepEqual(state.cursor, { x: 18, y: 13 })
-  assert.equal(state.debug.crew, "some")
+  assert.equal(state.experiments.crew, "some")
   // The restart answers on the bottom line; the next key that says nothing brings back the hint for the
   // highlighted row (feedback F59).
   assert.match(screen(side), /Build Phase restarted with these settings\./)
@@ -254,7 +253,7 @@ test("the restart keeps every flag and starts the plan over, on the menu at Expl
   // The game menu's Restart row does the same by Enter — past Settings and Controls.
   const byEnter = session()
   keys(byEnter, ESC, DOWN, DOWN)
-  assert.equal(GAME_MENU_ROWS[byEnter.build.state.overlayHighlight], "restart")
+  assert.equal(GAME_MENU_ROWS[byEnter.build.state.popupHighlight], "restart")
   keys(byEnter, ENTER)
   assert.equal(byEnter.build.state.status.text, "Build Phase restarted with these settings.")
 })
@@ -264,7 +263,7 @@ test("Settings open on a committed Build Phase too, so a playtest can start over
   keys(side, "n", "1", "p", "y")
   assert.equal(side.build.state.committed, true)
   keys(side, "d")
-  assert.equal(side.build.state.overlay, "settings")
+  assert.equal(side.build.state.popup, "settings")
   keys(side, "q", "r")
   assert.equal(side.build.state.committed, false)
 })
@@ -275,7 +274,7 @@ test("the browser playtest page's Build Phase key bar has d", () => {
 
 // --- Same flow, every adapter ----------------------------------------------------------------------
 
-test("the debug flow by keys, by clicks, and from a driver script is the same state and the same frame", () => {
+test("setting an Experiment by keys, by clicks, and from a driver script is the same state and the same frame", () => {
   // The hold window up two, a shorter focus arrow; restart; then arm the Barracks from the menu and place
   // it where the cursor is, since it fits there.
   const byKeyboard = session()
@@ -303,7 +302,7 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
   // a restart); then the game menu's Restart.
   const closeHint = escHintSpan(byMouse.layout, escLabel(byMouse.build.state))
   click(byMouse, closeHint.from, closeHint.row)
-  assert.equal(byMouse.build.state.overlay, "menu")
+  assert.equal(byMouse.build.state.popup, "menu")
   const restart = placed(byMouse).rows.find((row) => row.spec.kind === "option" && row.spec.hotkey === "r")
   assert.ok(restart !== undefined)
   click(byMouse, placed(byMouse).textColumn + 4, restart.row)
@@ -325,10 +324,10 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
 
   const script: readonly BuildCommand[] = [
     { kind: "open-settings", section: "experiments" },
-    { kind: "debug-adjust", field: "holdWindowMs", step: 1 },
-    { kind: "debug-adjust", field: "holdWindowMs", step: 1 },
-    { kind: "debug-adjust", field: "focusArrowMs", step: -1 },
-    { kind: "debug-restart" },
+    { kind: "experiment-adjust", field: "holdWindowMs", step: 1 },
+    { kind: "experiment-adjust", field: "holdWindowMs", step: 1 },
+    { kind: "experiment-adjust", field: "focusArrowMs", step: -1 },
+    { kind: "restart" },
     { kind: "highlight", delta: 1 },
     { kind: "highlight", delta: 1 },
     { kind: "activate" },
@@ -340,7 +339,7 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
   byDriver.build.run(script)
 
   const expected = byKeyboard.build.state
-  assert.deepEqual(expected.debug, { ...initialDebugFlags(), holdWindowMs: 700, focusArrowMs: 120 })
+  assert.deepEqual(expected.experiments, { ...defaultExperiments(), holdWindowMs: 700, focusArrowMs: 120 })
   assert.equal(expected.planned.length, 1)
   assert.equal(expected.menuHighlight, entryOfConstruct(0))
   assert.deepEqual(byMouse.build.state, expected)

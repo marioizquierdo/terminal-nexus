@@ -366,10 +366,10 @@ export type RoleTint = Readonly<{ role: StyleRole; amount: number }>
  * since the cursor is inverse video). A role and a number, never a colour, like `RoleTint`: an exact mix
  * at truecolor, the nearest colour at 256, and at 16 colours and in monochrome the plain inverse
  * cursor (from an alpha of one half up; below it, nothing). Where it shows, the cell's own `dim` is not
- * applied (`keepsDim`). `overlayColours`, below, is the one place it becomes colour. Set only by the
+ * applied (`keepsDim`). `seeThroughColours`, below, is the one place it becomes colour. Set only by the
  * Explore Map hand-off's travelling cursor so far.
  */
-export type RoleOverlay = Readonly<{ role: StyleRole; alpha: number }>
+export type SeeThrough = Readonly<{ role: StyleRole; alpha: number }>
 
 function mixRgb(
   from: readonly [number, number, number],
@@ -384,7 +384,7 @@ function mixRgb(
   ]
 }
 
-/** `nearestIndexed` walks 240 candidates; a tinted, faded or overlaid cell asks again every frame, and a
+/** `nearestIndexed` walks 240 candidates; a tinted, faded or mixed cell asks again every frame, and a
  *  placement's light passes through the same few dozen blends, so the answers are kept. Bounded: an
  *  animation is a handful of roles times a few dozen steps, and the cache starts over past 4096. */
 const NEAREST_CACHE = new Map<number, number>()
@@ -491,16 +491,16 @@ export function rgbFor(
 type Rgb = readonly [number, number, number]
 
 /**
- * How much of a cell its glyph is taken to cover when an overlay mixes what lies beneath it — the
+ * How much of a cell its glyph is taken to cover when a see-through style mixes what lies beneath it — the
  * owner's "assuming that the icon is about 20% of the surface" (feedback F65).
  */
-export const OVERLAY_GLYPH_COVER = 0.2
+export const GLYPH_COVER = 0.2
 
 /**
- * From this alpha up an overlay shows at 16 colours and in monochrome, as the plain cursor; below it,
+ * From this alpha up a see-through style shows at 16 colours and in monochrome, as the plain cursor; below it,
  * it shows nothing there. The same half-way step a tint takes at 16 colours (`tintStepsAt16`).
  */
-export const OVERLAY_STEP = 0.5
+export const SEE_THROUGH_STEP = 0.5
 
 /**
  * The owner's mix (feedback F65), as plain arithmetic on three colours and the cursor's own glyph
@@ -509,13 +509,13 @@ export const OVERLAY_STEP = 0.5
  * yellow (20%)":
  *
  * - the cell's fill becomes `alpha` of `cursor` and `1 - alpha` of what was there — itself
- *   `1 - OVERLAY_GLYPH_COVER` of `background` and `OVERLAY_GLYPH_COVER` of `glyph`;
+ *   `1 - GLYPH_COVER` of `background` and `GLYPH_COVER` of `glyph`;
  * - the glyph, which stays, is drawn `alpha` of the way from `glyph` toward `cursorGlyph` (the colour
  *   the real cursor draws its glyph in), so it stays readable on the lighter cell.
  *
  * Each channel is rounded once, at the end. Exported so a test can hold it to the owner's own numbers.
  */
-export function mixOverlay(
+export function mixSeeThrough(
   background: Rgb,
   glyph: Rgb,
   cursor: Rgb,
@@ -525,15 +525,15 @@ export function mixOverlay(
   const a = Math.max(0, Math.min(1, alpha))
   const fill = (channel: 0 | 1 | 2): number =>
     Math.round(
-      (1 - a) * ((1 - OVERLAY_GLYPH_COVER) * background[channel] + OVERLAY_GLYPH_COVER * glyph[channel]) +
+      (1 - a) * ((1 - GLYPH_COVER) * background[channel] + GLYPH_COVER * glyph[channel]) +
         a * cursor[channel],
     )
   const ink = (channel: 0 | 1 | 2): number => Math.round((1 - a) * glyph[channel] + a * cursorGlyph[channel])
   return { background: [fill(0), fill(1), fill(2)], foreground: [ink(0), ink(1), ink(2)] }
 }
 
-/** What `overlayColours` reads: a cell, structurally (`frame.ts`'s `Cell` is one). */
-export type OverlaidCell = Readonly<{
+/** What `seeThroughColours` reads: a cell, structurally (`frame.ts`'s `Cell` is one). */
+export type SeeThroughCell = Readonly<{
   glyph: string
   style: Readonly<{
     fgRole?: StyleRole
@@ -541,15 +541,15 @@ export type OverlaidCell = Readonly<{
     inverse?: boolean
     fade?: number
     tint?: RoleTint
-    overlay?: RoleOverlay
+    seeThrough?: SeeThrough
   }>
 }>
 
 /**
- * A cell's colours once its overlay is resolved, in both forms the renderers take — so the ANSI
+ * A cell's colours once its see-through style is resolved, in both forms the renderers take — so the ANSI
  * writer, the browser page's canvas and OpenTUI cannot disagree about one cell.
  */
-export type OverlayColours = Readonly<{
+export type SeeThroughColours = Readonly<{
   /** The glyph's colour. */
   foreground: Rgb
   /** The cell's fill. */
@@ -562,54 +562,54 @@ export type OverlayColours = Readonly<{
 }>
 
 /**
- * Whether a renderer still applies a cell's `dim` — not while an overlay shows on it. The mix already
- * says how bright the glyph is (`mixOverlay`'s foreground, exactly), and faint on top would fade it
+ * Whether a renderer still applies a cell's `dim` — not while a see-through style shows on it. The mix already
+ * says how bright the glyph is (`mixSeeThrough`'s foreground, exactly), and faint on top would fade it
  * back toward the now lighter fill: the very loss the real cursor avoids by clearing `dim` on bare
  * ground (`src/view/build.ts`). A picture that fades the whole cell for `dim` (the evidence PNGs do)
- * would also halve the overlay's fill. Bold and underline stay the cell's own.
+ * would also halve the see-through style's fill. Bold and underline stay the cell's own.
  */
-export function keepsDim(style: Readonly<{ dim?: boolean }>, overlaid: OverlayColours | null): boolean {
-  return style.dim === true && overlaid === null
+export function keepsDim(style: Readonly<{ dim?: boolean }>, mixed: SeeThroughColours | null): boolean {
+  return style.dim === true && mixed === null
 }
 
 /**
- * The see-through cursor (`RoleOverlay`, feedback F64-F65) resolved at a tier, or `null` where it
- * changes nothing — no overlay, an alpha of 0, or a low alpha at a tier with no blend. The one place an
- * overlay becomes colour; every renderer calls it.
+ * The see-through cursor (`SeeThrough`, feedback F64-F65) resolved at a tier, or `null` where it
+ * changes nothing — no see-through style, an alpha of 0, or a low alpha at a tier with no blend. The one place an
+ * see-through style becomes colour; every renderer calls it.
  *
  * The cell's own colours are worked out first, as the renderers already draw them: its glyph colour
  * `G` is its `fgRole` after tint and fade, its background `B` is its `bgRole` or the theme's
- * background, an `inverse` cell swaps the two (so the overlay mixes what is actually seen), and a
+ * background, an `inverse` cell swaps the two (so the see-through style mixes what is actually seen), and a
  * blank cell has no glyph, so `G` is `B` and the cell becomes simply `B` mixed toward the cursor. Then
- * `mixOverlay`, with the overlay's role as the cursor colour `C` and the theme's background as the
+ * `mixSeeThrough`, with the see-through style's role as the cursor colour `C` and the theme's background as the
  * cursor's glyph colour — the real cursor is inverse video, so its glyph is drawn in the ground.
  *
  * - `truecolor`: that exact mix;
  * - `color256`: the nearest palette entry to each of the two mixed colours (the RGB returned is that
  *   entry's own, so an RGB backend shows what a 256-colour terminal shows);
- * - `color16`: no continuum, so a step — from `OVERLAY_STEP` up, the plain cursor (inverse video in
- *   the overlay's role: its hand-authored ANSI hue as the fill, the ground as the glyph), below it
+ * - `color16`: no continuum, so a step — from `SEE_THROUGH_STEP` up, the plain cursor (inverse video in
+ *   the see-through style's role: its hand-authored ANSI hue as the fill, the ground as the glyph), below it
  *   nothing;
  * - `monochrome`: the same step, as inverse video alone. Never a colour code.
  *
  * Wherever it shows, the cell's own `dim` goes with it (`keepsDim`).
  */
-export function overlayColours(
-  cell: OverlaidCell,
+export function seeThroughColours(
+  cell: SeeThroughCell,
   capability: CapabilityMode,
   theme: Theme = DEFAULT_THEME,
-): OverlayColours | null {
-  const overlay = cell.style.overlay
-  if (overlay === undefined || !(overlay.alpha > 0)) return null
-  const cursor = PALETTE[theme][overlay.role]
+): SeeThroughColours | null {
+  const seeThrough = cell.style.seeThrough
+  if (seeThrough === undefined || !(seeThrough.alpha > 0)) return null
+  const cursor = PALETTE[theme][seeThrough.role]
   if (cursor === undefined) return null
   const ground = BACKGROUND_RGB[theme]
-  const alpha = Math.min(1, overlay.alpha)
+  const alpha = Math.min(1, seeThrough.alpha)
   if (capability === "monochrome") {
-    return alpha < OVERLAY_STEP ? null : { foreground: ground, background: NEUTRAL_RGB, sgr: [7] }
+    return alpha < SEE_THROUGH_STEP ? null : { foreground: ground, background: NEUTRAL_RGB, sgr: [7] }
   }
   if (capability === "color16") {
-    return alpha < OVERLAY_STEP ? null : { foreground: ground, background: cursor.rgb, sgr: [cursor.ansi, 7] }
+    return alpha < SEE_THROUGH_STEP ? null : { foreground: ground, background: cursor.rgb, sgr: [cursor.ansi, 7] }
   }
   const style = cell.style
   const own = style.fgRole === undefined ? undefined : PALETTE[theme][style.fgRole]
@@ -617,7 +617,7 @@ export function overlayColours(
   const fill = (style.bgRole === undefined ? undefined : PALETTE[theme][style.bgRole]?.rgb) ?? ground
   const [beneath, glyph] = style.inverse === true ? [ink, fill] : [fill, ink]
   const blank = cell.glyph === " " || cell.glyph === ""
-  const mixed = mixOverlay(beneath, blank ? beneath : glyph, cursor.rgb, ground, alpha)
+  const mixed = mixSeeThrough(beneath, blank ? beneath : glyph, cursor.rgb, ground, alpha)
   if (capability === "truecolor") {
     return { ...mixed, sgr: [38, 2, ...mixed.foreground, 48, 2, ...mixed.background] }
   }

@@ -19,8 +19,9 @@ import { parseKeyScript } from "../playtest/keys.ts"
 import { runSpike } from "./spike.ts"
 import { DEFAULT_SETTINGS, createSettingsStore, defaultSettingsPath } from "../settings/index.ts"
 import type { Settings } from "../settings/index.ts"
-import type { DebugFlags } from "../build/debug.ts"
-import { defaultExperiments, parseSettingsExport } from "../build/settings-export.ts"
+import type { Experiments } from "../build/experiments.ts"
+import { defaultExperiments } from "../build/experiments.ts"
+import { parseSettingsExport } from "../build/settings-export.ts"
 import { TUNING } from "../build/tuning.ts"
 import type { TerminalOutput } from "../view/backends/ports.ts"
 
@@ -111,7 +112,7 @@ export async function main(argv: readonly string[]): Promise<number> {
 export function importSettings(
   text: string | undefined,
   base: Settings,
-): Readonly<{ settings: Settings; experiments?: DebugFlags }> {
+): Readonly<{ settings: Settings; experiments?: Experiments }> {
   if (text === undefined) return { settings: base }
   const result = parseSettingsExport(text, { settings: base, experiments: defaultExperiments() })
   if (result.ignored.length > 0) {

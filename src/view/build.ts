@@ -28,7 +28,7 @@ import {
   menuFloor,
   tileAtCell,
 } from "../build/layout.ts"
-import { overlaySpec, placeOverlay, settingColumns, wrapWords } from "../build/overlay.ts"
+import { popupSpec, placePopup, settingColumns, wrapWords } from "../build/popup.ts"
 import type { ArmedPreview, BuildContext, BuildState } from "../build/state.ts"
 import {
   EXPLORE_ENTRY,
@@ -472,7 +472,7 @@ function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
   // screen never shows two "you are here"s at once (owner, 2026-09-27).
   // A committed plan hides the cursor, except while a Pulse is on screen: there it is how the player looks
   // around the map, the arrows moving it and the view following (gate 6A).
-  if (state.focus !== "grid" || state.overlay !== null || (state.committed && input.pulse === undefined)) return
+  if (state.focus !== "grid" || state.popup !== null || (state.committed && input.pulse === undefined)) return
   const range = visibleRange(state.camera, state.viewport)
   // Where the cursor is drawn: mid-glide, a tile on its way (and what stands there decides its style).
   const cursor = input.cursor ?? state.cursor
@@ -503,7 +503,7 @@ function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
  */
 function drawRefusedFlash(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
   const { state, layout } = input
-  if (input.refusedFlash !== true || state.focus !== "grid" || state.overlay !== null) return
+  if (input.refusedFlash !== true || state.focus !== "grid" || state.popup !== null) return
   const range = visibleRange(state.camera, state.viewport)
   const shift = glideShift(input)
   const tiles =
@@ -553,7 +553,7 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
 
   // The contextual line. A popup over a Pulse holds the keyboard, so its answer or hint is what the
   // line says; otherwise the Pulse says what it is doing.
-  const pulse = state.overlay !== null ? undefined : input.pulse
+  const pulse = state.popup !== null ? undefined : input.pulse
   const shown = pulse === undefined ? bottomLine(context, state, preview) : pulseStatus(pulse)
   const style = statusStyle(shown.tone)
   // Whole words only: on a bar narrower than the line (a Grid smaller than the view) the words that do
@@ -621,9 +621,9 @@ export const ACTIVE_VALUE = ">"
  */
 export function menuRowActive(context: BuildContext, state: BuildState, entry: number): boolean {
   if (state.committed) return false
-  if (entry === NEXUS_ENTRY) return state.overlay === "nexus-powers"
+  if (entry === NEXUS_ENTRY) return state.popup === "nexus-powers"
   if (entry === EXPLORE_ENTRY) return exploring(state)
-  if (entry === startEntry(context.catalog.length)) return state.overlay === "confirm-commit"
+  if (entry === startEntry(context.catalog.length)) return state.popup === "confirm-commit"
   return state.armed !== null && entryOfConstruct(state.armed) === entry
 }
 
@@ -720,11 +720,11 @@ function rowState(input: BuildCompositionInput, entry: number): Readonly<{ state
   // Settings, the export, the Controls page and a message belong to none, so while one has the
   // keyboard its own highlight (or none) is the only one on screen.
   if (
-    state.overlay === "menu" ||
-    state.overlay === "settings" ||
-    state.overlay === "export" ||
-    state.overlay === "controls" ||
-    state.overlay === "message"
+    state.popup === "menu" ||
+    state.popup === "settings" ||
+    state.popup === "export" ||
+    state.popup === "controls" ||
+    state.popup === "message"
   ) {
     return { state: "plain", refused }
   }
@@ -937,7 +937,7 @@ function drawCard(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPa
   }
   // Beat 3 (the whole reveal, from another card): the card itself.
   const shown = (t - menuEnds) / (1 - menuEnds)
-  const lengthMs = Math.max(0, state.debug.cardRevealMs) * (1 - menuEnds)
+  const lengthMs = Math.max(0, state.experiments.cardRevealMs) * (1 - menuEnds)
   let total = 0
   drawCardPanel([], input, pack, {
     typed: (value) => {
@@ -1159,7 +1159,7 @@ function handoffFromExplore(state: BuildState): boolean {
 /**
  * The **focus arrow** (owner, 2026-09-30, feedback F54: "an animation that sends an arrow from the menu
  * item to the cursor ... fast and use interpolation"): a tween, drawn while the live loop says one is in
- * flight, for a building's row (Explore Map's sends the see-through cursor, `drawGhostCursor`). It leaves
+ * flight, for a building's row (Explore Map's sends the see-through cursor, `drawSeeThroughCursor`). It leaves
  * from the cell just right of the building's row on the menu (`handoffOrigin`, F63) and flies in a
  * straight line toward the cursor as it is drawn this frame (so it homes on a cursor that moves
  * meanwhile), eased to arrive fast and settle; its head points the way it flies and a short trail follows
@@ -1175,7 +1175,7 @@ function drawFocusArrow(cells: BandCell[], input: BuildCompositionInput, pack: G
   const { context, state, layout } = input
   const flight = input.focusArrow
   if (flight === undefined || input.pulse !== undefined || state.committed) return
-  if (state.focus !== "grid" || state.overlay !== null) return
+  if (state.focus !== "grid" || state.popup !== null) return
   const range = visibleRange(state.camera, state.viewport)
   const cursor = input.cursor ?? state.cursor
   if (cursor.x < range.firstX || cursor.x > range.lastX || cursor.y < range.firstY || cursor.y > range.lastY) return
@@ -1236,31 +1236,31 @@ function stepGlyph(pack: GlyphPack, dx: number, dy: number): string {
  * 'transparency'"). The head is at 0.8; two fainter copies trail it one and two steps behind, so a fast
  * flight reads as a short smear that settles into the cursor.
  */
-export const GHOST_TRAIL: readonly Readonly<{ back: number; alpha: number }>[] = [
+export const SEE_THROUGH_TRAIL: readonly Readonly<{ back: number; alpha: number }>[] = [
   { back: 0, alpha: 0.8 },
   { back: 1, alpha: 0.45 },
   { back: 2, alpha: 0.2 },
 ]
 
 /** The role the see-through cursor is mixed from: the map cursor's own (`drawCursor`). */
-const GHOST_ROLE: StyleRole = "chrome.title"
+const SEE_THROUGH_ROLE: StyleRole = "chrome.title"
 
 /**
  * **Explore Map's hand-off** (owner, 2026-09-30, feedback F64-F65: "exploring is just moving the focus to
  * the map. Use a cursor that is the same as the blank cursor, with about 80% 'transparency'"): instead of
  * the focus arrow, a copy of the map cursor — one tile wide — travels from Explore Map's row on the menu
  * to the cursor, on the arrow's own timeline and easing, homing on the cursor as it is drawn, with a
- * short, fainter trail (`GHOST_TRAIL`). Every cell it covers is a **glyphless** write carrying
- * `CellStyle.overlay` — the cursor's role at an opacity — so whatever is beneath, the menu's words, the
+ * short, fainter trail (`SEE_THROUGH_TRAIL`). Every cell it covers is a **glyphless** write carrying
+ * `CellStyle.seeThrough` — the cursor's role at an opacity — so whatever is beneath, the menu's words, the
  * divider, the ground, a building, keeps its glyph (the corruption law) and the renderer mixes the
- * colour (`RoleOverlay`, `src/view/roles.ts`). Drawn over the panel, the divider and the map, under
+ * colour (`SeeThrough`, `src/view/roles.ts`). Drawn over the panel, the divider and the map, under
  * every popup, never during a Pulse, and never on the real cursor's own cells, into which it settles.
  */
-function drawGhostCursor(cells: BandCell[], input: BuildCompositionInput): void {
+function drawSeeThroughCursor(cells: BandCell[], input: BuildCompositionInput): void {
   const { state, layout } = input
   const flight = input.focusArrow
   if (flight === undefined || input.pulse !== undefined || state.committed) return
-  if (state.focus !== "grid" || state.overlay !== null) return
+  if (state.focus !== "grid" || state.popup !== null) return
   const range = visibleRange(state.camera, state.viewport)
   const cursor = input.cursor ?? state.cursor
   if (cursor.x < range.firstX || cursor.x > range.lastX || cursor.y < range.firstY || cursor.y > range.lastY) return
@@ -1272,7 +1272,7 @@ function drawGhostCursor(cells: BandCell[], input: BuildCompositionInput): void 
   const steps = Math.max(1, Math.abs(dx) / layout.tileWidth, Math.abs(dy))
   const head = easeOutCubic(flight.progress)
   const alphas = new Map<number, Readonly<{ x: number; y: number; alpha: number }>>()
-  for (const copy of GHOST_TRAIL) {
+  for (const copy of SEE_THROUGH_TRAIL) {
     const along = head - copy.back / steps
     if (along < 0) continue
     const x = Math.round(from.x + dx * along)
@@ -1286,13 +1286,13 @@ function drawGhostCursor(cells: BandCell[], input: BuildCompositionInput): void 
     }
   }
   for (const { x, y, alpha } of alphas.values()) {
-    cells.push({ band: BANDS.chrome, x, y, style: { overlay: { role: GHOST_ROLE, alpha } } })
+    cells.push({ band: BANDS.chrome, x, y, style: { seeThrough: { role: SEE_THROUGH_ROLE, alpha } } })
   }
 }
 
 /**
  * A popup — the Nexus powers, the start-the-Pulse question, the game menu, Settings, the export, a
- * message — drawn from its spec (`src/build/overlay.ts`), over everything on the Grid. A solid border
+ * message — drawn from its spec (`src/build/popup.ts`), over everything on the Grid. A solid border
  * with the title in it, and a one-cell shadow that blanks what is behind it, so it cannot be missed
  * (owner, 2026-09-27: he clicked Nexus, did not notice the popup, and thought the mouse had stopped
  * working). No `[esc]` in the border since feedback F37: the top bar's "close [esc]" says it. Beside a
@@ -1301,10 +1301,10 @@ function drawGhostCursor(cells: BandCell[], input: BuildCompositionInput): void 
  * Drawn last in the chrome band: bands are fixed (engine.md 9.4, RULE), and within one band a later
  * write replaces an earlier one, so a popup needs no band of its own to sit on top.
  */
-function drawOverlay(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
-  const spec = overlaySpec(input.context, input.state)
+function drawPopup(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
+  const spec = popupSpec(input.context, input.state)
   if (spec === null) return
-  const placed = placeOverlay(input.layout, spec)
+  const placed = placePopup(input.layout, spec)
   const band = BANDS.chrome
   const { box, textColumn, textLimit } = placed
 
@@ -1461,7 +1461,7 @@ export function composeBuildFrame(
     const panel: BandCell[] = []
     drawPulsePanel(panel, input.layout, input.pulse, input.state.pulseNumber)
     for (const cell of panel) if (cell.y <= input.layout.panelBindingsRow) cells.push(cell)
-    drawOverlay(cells, input, pack)
+    drawPopup(cells, input, pack)
     return composeBands(input.layout.frame.width, input.layout.frame.height, cells)
   }
 
@@ -1487,9 +1487,9 @@ export function composeBuildFrame(
   for (const cell of panel) if (cell.y <= input.layout.panelBindingsRow) cells.push(cell)
   // The hand-off crosses from the panel into the map, so it is drawn over both — and under any popup:
   // the focus arrow from a building's row, the see-through cursor from Explore Map's (F64).
-  if (handoffFromExplore(input.state)) drawGhostCursor(cells, input)
+  if (handoffFromExplore(input.state)) drawSeeThroughCursor(cells, input)
   else drawFocusArrow(cells, input, pack, preview)
-  drawOverlay(cells, input, pack)
+  drawPopup(cells, input, pack)
 
   return composeBands(input.layout.frame.width, input.layout.frame.height, cells)
 }

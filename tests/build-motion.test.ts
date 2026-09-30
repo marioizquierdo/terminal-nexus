@@ -9,7 +9,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { edgeClickCamera, marginForView, shareOfSpan } from "../src/build/camera.ts"
-import { DEBUG_FIELDS, initialDebugFlags } from "../src/build/debug.ts"
+import { EXPERIMENT_FIELDS, defaultExperiments } from "../src/build/experiments.ts"
 import { buildLayout, cellForTile } from "../src/build/layout.ts"
 import { rampStep, rampTuning } from "../src/build/motion.ts"
 import type { RampMemory, RampTuning } from "../src/build/motion.ts"
@@ -36,7 +36,7 @@ const SHIFT_RIGHT = `${ESC}[1;2C`
 const TAB = "\t"
 const MINIMUM = { columns: 80, rows: 24 }
 /** The ramp the game runs: the tuned steps and timings, and the hold window's default. */
-const FLAGS: RampTuning = rampTuning(initialDebugFlags().holdWindowMs)
+const FLAGS: RampTuning = rampTuning(defaultExperiments().holdWindowMs)
 
 type Side = { build: BuildSession; layout: ReturnType<typeof buildLayout>; context: BuildContext }
 
@@ -84,7 +84,7 @@ test("the ramp's numbers are the owner's — tap 1, hold 2, fast 4 after 200 ms,
   assert.equal(FLAGS.holdWindowMs, 350, "the hold window of his settings export, 2026-09-30")
   // Only the hold window is still felt (it depends on each keyboard's repeat delay); the rest are settled.
   const ramp = ["tapStep", "holdStep", "fastStep", "rampMs", "holdWindowMs", "jumpStep", "jumpRepeatMs", "cursorGlideMs"]
-  assert.deepEqual(DEBUG_FIELDS.map((spec) => spec.field).filter((field) => ramp.includes(field)), ["holdWindowMs"])
+  assert.deepEqual(EXPERIMENT_FIELDS.map((spec) => spec.field).filter((field) => ramp.includes(field)), ["holdWindowMs"])
   // The slow tier and slow-after-a-turn are gone, not merely hidden.
   for (const gone of ["slowStep", "normalStep", "fasterStep", "slowAfterTurn", "repeatGapMs", "repeatDelayMs"]) {
     assert.ok(!(gone in FLAGS), `${gone} is still a flag`)
@@ -155,9 +155,9 @@ test("the hold window is live: retuned, the same presses are a run, or taps", ()
   assert.equal(run.build.state.cursor.x, 18 + 1 + 2 + 4 + 4)
   // The window narrowed to 150 ms — a keyboard with a quick repeat — and the same presses are four taps.
   const tuned = exploring()
-  tuned.build.dispatch({ kind: "debug-adjust", field: "holdWindowMs", step: -1 }) // 250
-  tuned.build.dispatch({ kind: "debug-adjust", field: "holdWindowMs", step: -1 }) // 150
-  assert.equal(tuned.build.state.debug.holdWindowMs, 150)
+  tuned.build.dispatch({ kind: "experiment-adjust", field: "holdWindowMs", step: -1 }) // 250
+  tuned.build.dispatch({ kind: "experiment-adjust", field: "holdWindowMs", step: -1 }) // 150
+  assert.equal(tuned.build.state.experiments.holdWindowMs, 150)
   timed(tuned, presses)
   assert.equal(tuned.build.state.cursor.x, 18 + 4)
 })
@@ -509,7 +509,7 @@ test("Esc and a digit or letter in one read are two keys; only the Meta keys som
   const side = exploring()
   side.build.handleData("d", side.layout)
   side.build.handleData(`${ESC}1`, side.layout)
-  assert.equal(side.build.state.overlay, null, "Esc did not close Settings")
+  assert.equal(side.build.state.popup, null, "Esc did not close Settings")
   assert.equal(side.build.state.armed, 0, "the 1 after it was lost")
 })
 

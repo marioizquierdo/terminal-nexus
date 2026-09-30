@@ -328,7 +328,7 @@ test("Enter on Explore Map explores; on Nexus opens its popup; on a construct ro
 
   const nexus = session()
   keys(nexus, DOWN, SPACE)
-  assert.equal(nexus.build.state.overlay, "nexus-powers")
+  assert.equal(nexus.build.state.popup, "nexus-powers")
 
   const arm = session()
   keys(arm, DOWN, DOWN, ENTER)
@@ -355,27 +355,27 @@ test("Esc walks back a stack: popup, Explore Map to the menu, then the game menu
   keys(side, "e") // Explore Map, from the menu
   assert.equal(side.build.state.exploreMap, true)
   keys(side, "n") // a popup on top of it
-  assert.equal(side.build.state.overlay, "nexus-powers")
+  assert.equal(side.build.state.popup, "nexus-powers")
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, null)
+  assert.equal(side.build.state.popup, null)
   assert.equal(side.build.state.exploreMap, true, "closing the popup also left Explore Map")
   keys(side, "x") // x is Esc; Explore Map goes back to the menu it was opened from (feedback F23, F32)
   assert.equal(side.build.state.exploreMap, false)
   assert.equal(side.build.state.focus, "menu")
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, "menu")
+  assert.equal(side.build.state.popup, "menu")
   assert.match(screen(side).text, /MENU/)
   assert.match(screen(side).text, /\[s\] Settings/)
   assert.match(screen(side).text, /\[q\] Quit/)
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, null, "Esc on the game menu goes back to the game")
+  assert.equal(side.build.state.popup, null, "Esc on the game menu goes back to the game")
   assert.equal(side.quits(), 0)
 })
 
 test("the game menu: q opens it, its own [q] quits, Ctrl+C always quits outright", () => {
   const side = session()
   keys(side, "q")
-  assert.equal(side.build.state.overlay, "menu")
+  assert.equal(side.build.state.popup, "menu")
   assert.equal(side.quits(), 0)
   keys(side, "q")
   assert.equal(side.quits(), 1)
@@ -538,7 +538,7 @@ test("a click on Nexus opens its popup and a click on Explore Map explores, from
   const side = session()
   keys(side, TAB)
   clickEntry(side, side.layout.panelRow + NEXUS_ROW)
-  assert.equal(side.build.state.overlay, "nexus-powers")
+  assert.equal(side.build.state.popup, "nexus-powers")
   assert.equal(side.build.state.armed, null)
   assert.equal(side.build.state.focus, "menu")
   // The popup's own row is drawn active behind it — its own hotkey and one `>`, not the keyboard's bar
@@ -546,7 +546,7 @@ test("a click on Nexus opens its popup and a click on Explore Map explores, from
   assert.match(screen(side).lines[side.layout.panelRow + NEXUS_ROW] as string, /^\s*\| \[n\] Nexus \(1\) +>[|+]/)
   assert.ok(!barOn(side, side.layout.panelRow + NEXUS_ROW), "the popup's row is drawn with the keyboard's bar")
   keys(side, "1") // pick: the popup closes, back on the menu with nothing looking chosen
-  assert.equal(side.build.state.overlay, null)
+  assert.equal(side.build.state.popup, null)
   assert.ok(!barOn(side, side.layout.panelRow + NEXUS_ROW))
   assert.doesNotMatch(screen(side).lines[side.layout.panelRow + NEXUS_ROW] as string, />[|+]/)
 
@@ -854,7 +854,7 @@ test("Esc while placing disarms and goes back one level, to where the arming cam
   keys(onMap, ESC)
   assert.equal(onMap.build.state.focus, "menu")
   keys(onMap, ESC)
-  assert.equal(onMap.build.state.overlay, "menu")
+  assert.equal(onMap.build.state.popup, "menu")
 
   for (const arm of [[DOWN, DOWN, ENTER], ["1"]]) {
     const fromMenu = session()
@@ -995,7 +995,7 @@ test("clicks as a terminal sends them and the driver's click commands are the sa
     { kind: "click-menu", entry: NEXUS_ENTRY },
   ])
   assert.equal(byMouse.build.state.planned.length, 1)
-  assert.equal(byMouse.build.state.overlay, "nexus-powers")
+  assert.equal(byMouse.build.state.popup, "nexus-powers")
   assert.deepEqual(byDriver.build.state, byMouse.build.state)
   assert.equal(screen(byDriver).text, screen(byMouse).text)
 })

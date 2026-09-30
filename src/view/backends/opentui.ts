@@ -17,7 +17,7 @@
 
 import type { ReadonlyCellFrame } from "../frame.ts"
 import type { CapabilityMode, Theme } from "../roles.ts"
-import { BACKGROUND_RGB, DEFAULT_THEME, keepsDim, overlayColours, rgbFor } from "../roles.ts"
+import { BACKGROUND_RGB, DEFAULT_THEME, keepsDim, seeThroughColours, rgbFor } from "../roles.ts"
 import type { BackendOptions, NamedBackend } from "./index.ts"
 
 type OpenTuiCore = Awaited<typeof import("@opentui/core")>
@@ -57,19 +57,19 @@ export function drawFrameInto(
       if (cell === undefined) continue
       // A see-through cursor over the cell: the same resolved colours the ANSI writer sends, drawn
       // with its own fill, no reverse attribute (the cell's inverse is already folded in) and no dim.
-      const overlaid = overlayColours(cell, capability, theme)
+      const mixed = seeThroughColours(cell, capability, theme)
       const [red, green, blue] =
-        overlaid?.foreground ?? rgbFor(cell.style.fgRole, capability, theme, cell.style.fade ?? 0, cell.style.tint)
+        mixed?.foreground ?? rgbFor(cell.style.fgRole, capability, theme, cell.style.fade ?? 0, cell.style.tint)
       const attributes = core.createTextAttributes({
         bold: cell.style.bold === true,
-        dim: keepsDim(cell.style, overlaid),
+        dim: keepsDim(cell.style, mixed),
         underline: cell.style.underline === true,
-        reverse: cell.style.inverse === true && overlaid === null,
+        reverse: cell.style.inverse === true && mixed === null,
       })
       const fill =
-        overlaid === null
+        mixed === null
           ? background
-          : core.RGBA.fromValues(overlaid.background[0] / 255, overlaid.background[1] / 255, overlaid.background[2] / 255, 1)
+          : core.RGBA.fromValues(mixed.background[0] / 255, mixed.background[1] / 255, mixed.background[2] / 255, 1)
       buffer.setCell(
         x,
         y,

@@ -1,5 +1,5 @@
 // **Tuned values** — the numbers the owner has settled (docs/ui-patterns.md, "Experiments and tuned
-// values"). Each one began as an Experiment (`src/build/debug.ts`): a live flag in Settings he could
+// values"). Each one began as an Experiment (`src/build/experiments.ts`): a live flag in Settings he could
 // feel two answers to. Once he settles it, his value becomes the default here, with who chose it and
 // when, and the Experiment is deleted — so Settings shows only what is still being felt, and a new
 // Experiment stands out.

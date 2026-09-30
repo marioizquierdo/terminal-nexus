@@ -7,12 +7,12 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { DEBUG_FIELDS, initialDebugFlags } from "../src/build/debug.ts"
+import { EXPERIMENT_FIELDS, defaultExperiments } from "../src/build/experiments.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import { buildLayout, cellForTile, escHintSpan, escLabel } from "../src/build/layout.ts"
 import { MOUSE_LEFT, MOUSE_WHEEL_DOWN, buildMouseCommand, formatMouseEvent, parseMouseEvent } from "../src/build/mouse.ts"
-import { DEBUG_NOTE_LINES, EXPORT_QUESTION, messageSpec, overlaySpec, placeOverlay } from "../src/build/overlay.ts"
-import type { OverlaySpec, PlacedOverlay } from "../src/build/overlay.ts"
+import { SETTINGS_NOTE_LINES, EXPORT_QUESTION, messageSpec, popupSpec, placePopup } from "../src/build/popup.ts"
+import type { PopupSpec, PlacedPopup } from "../src/build/popup.ts"
 import { BuildSession } from "../src/build/session.ts"
 import { controlsLineCount } from "../src/build/help.ts"
 import {
@@ -77,10 +77,10 @@ function screen(side: Side): string {
   return frameToText(frameOf(side))
 }
 
-function placed(side: Side): PlacedOverlay {
-  const spec = overlaySpec(side.context, side.build.state)
+function placed(side: Side): PlacedPopup {
+  const spec = popupSpec(side.context, side.build.state)
   assert.ok(spec !== null, "no popup is open")
-  return placeOverlay(side.layout, spec)
+  return placePopup(side.layout, spec)
 }
 
 /** The top bar's Esc label as drawn now, and where. */
@@ -106,14 +106,14 @@ test("the title says where the highlight is in the list, (k/N), and follows it",
   const side = session()
   keys(side, ESC, "s")
   const count = SETTINGS_ORDER.length
-  assert.equal(count, PLAYER_FIELDS.length + DEBUG_FIELDS.length + 1, "every setting, every experiment, and Export")
+  assert.equal(count, PLAYER_FIELDS.length + EXPERIMENT_FIELDS.length + 1, "every setting, every experiment, and Export")
   assert.match(screen(side), new RegExp(`SETTINGS \\(1/${count}\\)`))
   keys(side, DOWN, DOWN)
   assert.match(screen(side), new RegExp(`SETTINGS \\(3/${count}\\)`))
   keys(side, UP, UP, UP) // Up stops on the first row; it came round to Export until feedback F75
   assert.match(screen(side), new RegExp(`SETTINGS \\(1/${count}\\)`))
   keys(side, END) // the fast move goes to the last row: Export
-  assert.equal(side.build.state.overlayHighlight, SETTINGS_EXPORT_ROW)
+  assert.equal(side.build.state.popupHighlight, SETTINGS_EXPORT_ROW)
   assert.match(screen(side), new RegExp(`SETTINGS \\(${count}/${count}\\)`))
   // `d` opens at the experiments, which the count says too.
   const experiments = session()
@@ -124,7 +124,7 @@ test("the title says where the highlight is in the list, (k/N), and follows it",
 test("Export settings is the scrolling list's last row: no fixed rows, no 'more' lines, and e still exports", () => {
   const side = session()
   keys(side, ESC, "s")
-  const spec = overlaySpec(side.context, side.build.state)
+  const spec = popupSpec(side.context, side.build.state)
   assert.ok(spec !== null && spec.scroll !== undefined)
   const last = spec.rows[spec.scroll.to - 1]
   assert.ok(last !== undefined && last.kind === "option" && last.hotkey === "e" && last.label === "Export settings")
@@ -132,10 +132,10 @@ test("Export settings is the scrolling list's last row: no fixed rows, no 'more'
   assert.doesNotMatch(screen(side), /more|Restart with these settings/)
   // Its hotkey works from anywhere in the list, and Enter on the row does the same.
   keys(side, "e")
-  assert.equal(side.build.state.overlay, "export")
+  assert.equal(side.build.state.popup, "export")
   const byEnter = session()
   keys(byEnter, ESC, "s", END, ENTER)
-  assert.equal(byEnter.build.state.overlay, "export")
+  assert.equal(byEnter.build.state.popup, "export")
   // Highlighted, it is drawn as the keyboard's bar and what it is for is written underneath.
   const shown = session()
   keys(shown, ESC, "s", END)
@@ -155,7 +155,7 @@ test("under the list, a line across the popup, then what the highlighted row is 
     // Directly under the list's last shown row, and directly over the description's lines.
     assert.equal(popup.rows[ruleAt - 1]?.spec.kind, "setting")
     const notes = popup.rows.slice(ruleAt + 1)
-    assert.equal(notes.length, DEBUG_NOTE_LINES)
+    assert.equal(notes.length, SETTINGS_NOTE_LINES)
     assert.ok(notes.every((row) => row.spec.kind === "note"))
     assert.match(notes[0]?.text ?? "", /^Dark or light/)
     // Drawn border to border inside the frame.
@@ -172,7 +172,7 @@ test("under the list, a line across the popup, then what the highlighted row is 
 // --- A restart that is needed, and the game menu's Restart ----------------------------------------
 
 test("pendingRestart names the changed settings marked restart, and nothing else", () => {
-  const started = initialDebugFlags()
+  const started = defaultExperiments()
   const fields: readonly RestartFieldSpec[] = [
     { field: "focusArrowMs", label: "Focus arrow", applies: "restart" },
     { field: "cardRevealMs", label: "Card reveal", applies: "restart" },
@@ -185,7 +185,7 @@ test("pendingRestart names the changed settings marked restart, and nothing else
   // Put back, it is not pending any more.
   assert.deepEqual(pendingRestart(started, { ...started }, fields), [])
   // The build's own list: exactly its restart fields, whichever they are today.
-  const restartFields = DEBUG_FIELDS.filter((spec) => spec.applies === "restart")
+  const restartFields = EXPERIMENT_FIELDS.filter((spec) => spec.applies === "restart")
   assert.deepEqual(pendingRestart(started, started), [])
   for (const spec of restartFields) {
     const other = (spec.values as readonly unknown[]).find((value) => value !== started[spec.field])
@@ -197,7 +197,7 @@ test("pendingRestart names the changed settings marked restart, and nothing else
 })
 
 test("closing Settings with a restart setting changed raises the message once; Esc gives the game menu back on Restart", (t) => {
-  const field = DEBUG_FIELDS.find((spec) => spec.applies === "restart")
+  const field = EXPERIMENT_FIELDS.find((spec) => spec.applies === "restart")
   if (field === undefined) {
     // No experiment needs a restart in this build: the pure function above holds the mechanism.
     t.diagnostic("no restart experiment in this build")
@@ -205,30 +205,30 @@ test("closing Settings with a restart setting changed raises the message once; E
   }
   const side = session()
   keys(side, ESC, "s")
-  side.build.dispatch({ kind: "debug-adjust", field: field.field, step: 1 })
+  side.build.dispatch({ kind: "experiment-adjust", field: field.field, step: 1 })
   assert.match(side.build.state.status.text, /applies after a restart/)
-  assert.equal(side.build.state.overlay, "settings", "no message while Settings is open")
+  assert.equal(side.build.state.popup, "settings", "no message while Settings is open")
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, "message")
-  assert.deepEqual(side.build.state.overlayUnder, ["menu"])
+  assert.equal(side.build.state.popup, "message")
+  assert.deepEqual(side.build.state.popupUnder, ["menu"])
   assert.ok(screen(side).includes("RESTART NEEDED"))
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, "menu")
-  assert.equal(GAME_MENU_ROWS[side.build.state.overlayHighlight], "restart")
+  assert.equal(side.build.state.popup, "menu")
+  assert.equal(GAME_MENU_ROWS[side.build.state.popupHighlight], "restart")
   // Once: Settings opened and closed again says nothing more.
   keys(side, "s", ESC)
-  assert.equal(side.build.state.overlay, "menu")
+  assert.equal(side.build.state.popup, "menu")
   // A change put back says nothing at all.
   const back = session()
   keys(back, "d")
-  back.build.dispatch({ kind: "debug-adjust", field: field.field, step: 1 })
-  back.build.dispatch({ kind: "debug-adjust", field: field.field, step: -1 })
+  back.build.dispatch({ kind: "experiment-adjust", field: field.field, step: 1 })
+  back.build.dispatch({ kind: "experiment-adjust", field: field.field, step: -1 })
   keys(back, ESC)
-  assert.equal(back.build.state.overlay, null)
+  assert.equal(back.build.state.popup, null)
   // The restart itself leaves nothing pending.
   keys(side, "r")
-  assert.equal(side.build.state.overlay, null)
-  assert.deepEqual(pendingRestart(side.build.state.startFlags, side.build.state.debug), [])
+  assert.equal(side.build.state.popup, null)
+  assert.deepEqual(pendingRestart(side.build.state.startExperiments, side.build.state.experiments), [])
 })
 
 /** A state with a message popup open over `under`, as the reducer raises one. */
@@ -236,9 +236,9 @@ function withMessage(context: BuildContext, under: "menu" | null): BuildState {
   const base = createBuildState(context, { x: 18, y: 13 }, buildLayout({ columns: 80, rows: 24 }, context.grid).viewport)
   return {
     ...base,
-    overlay: "message",
+    popup: "message",
     message: restartMessage(["Opens on"]),
-    overlayUnder: under === null ? [] : [under],
+    popupUnder: under === null ? [] : [under],
   }
 }
 
@@ -247,10 +247,10 @@ test("a message popup: a title and its text, nothing to choose, closed by Esc or
   const layout = buildLayout({ columns: 80, rows: 24 }, context.grid)
   const state = withMessage(context, null)
   // Its shape: a title, and text wrapped in as many lines as it needs — no option anywhere.
-  const spec = overlaySpec(context, state) as OverlaySpec
+  const spec = popupSpec(context, state) as PopupSpec
   assert.deepEqual(spec, messageSpec(restartMessage(["Opens on"])))
   assert.equal(spec.rows.some((row) => row.kind === "option"), false)
-  const popup = placeOverlay(layout, spec)
+  const popup = placePopup(layout, spec)
   const text = popup.rows.filter((row) => row.spec.kind === "note").map((row) => row.text).join(" ")
   assert.equal(text, restartMessage(["Opens on"]).text, "the whole text, wrapped at words, nothing dropped")
   const drawn = frameToText(composeBuildFrame({ context, state, layout }, "monochrome"))
@@ -258,24 +258,24 @@ test("a message popup: a title and its text, nothing to choose, closed by Esc or
 
   // The keyboard: Esc and x close it (x as `back`, which is Esc's walk back in a popup — feedback
   // F62); nothing else reaches it or anything under it.
-  const keyboard = { itemCount: 3, armed: false, focus: "menu" as const, overlay: "message" as const }
+  const keyboard = { itemCount: 3, armed: false, focus: "menu" as const, popup: "message" as const }
   assert.deepEqual(buildKeyboardCommand(ESC, keyboard), { kind: "cancel" })
   assert.deepEqual(buildKeyboardCommand("x", keyboard), { kind: "back" })
-  assert.equal(applyBuildCommand(context, state, { kind: "back" }).overlay, null)
+  assert.equal(applyBuildCommand(context, state, { kind: "back" }).popup, null)
   for (const key of [ENTER, " ", "q", "r", "s", "e", "1", "n", "p", UP, DOWN]) {
     assert.equal(buildKeyboardCommand(key, keyboard), null, JSON.stringify(key))
   }
   const closed = applyBuildCommand(context, state, { kind: "cancel" })
-  assert.equal(closed.overlay, null)
+  assert.equal(closed.popup, null)
   assert.equal(closed.message, null)
   // Over the game menu, Esc goes back to it, on its Restart row.
   const overMenu = applyBuildCommand(context, withMessage(context, "menu"), { kind: "cancel" })
-  assert.equal(overMenu.overlay, "menu")
-  assert.equal(GAME_MENU_ROWS[overMenu.overlayHighlight], "restart")
+  assert.equal(overMenu.popup, "menu")
+  assert.equal(GAME_MENU_ROWS[overMenu.popupHighlight], "restart")
 
   // The mouse: a click inside does nothing; the wheel does nothing; a click outside closes it and moves
   // focus where it landed, and nothing more.
-  const ui = { overlay: popup, escLabel: escLabel(state) }
+  const ui = { popup: popup, escLabel: escLabel(state) }
   const inside = parseMouseEvent(formatMouseEvent(MOUSE_LEFT, popup.textColumn + 3, (popup.rows[1]?.row ?? 0) + 1))
   assert.ok(inside !== null)
   assert.equal(buildMouseCommand(inside, state.camera, layout, context.catalog, ui), null)
@@ -290,7 +290,7 @@ test("a message popup: a title and its text, nothing to choose, closed by Esc or
   const command = buildMouseCommand(outside, state.camera, layout, context.catalog, ui)
   assert.deepEqual(command, { kind: "click-tile", x: 20, y: 17 })
   const dismissed = applyBuildCommand(context, state, command as BuildCommand)
-  assert.equal(dismissed.overlay, null)
+  assert.equal(dismissed.popup, null)
   assert.equal(dismissed.message, null)
   assert.equal(dismissed.focus, "grid")
   assert.equal(dismissed.planned.length, 0)
@@ -299,19 +299,19 @@ test("a message popup: a title and its text, nothing to choose, closed by Esc or
 test("the game menu's Restart: r, Enter on its row, and a click on it start the Build Phase over, keeping every setting", () => {
   const plan = (side: Side): void => {
     keys(side, "n", "1", "1", ENTER) // pick a power, plan a Barracks
-    side.build.dispatch({ kind: "debug-adjust", field: "raid", step: 1 })
+    side.build.dispatch({ kind: "experiment-adjust", field: "raid", step: 1 })
     side.build.dispatch({ kind: "setting-adjust", field: "theme", step: 1 })
     assert.equal(side.build.state.planned.length, 1)
   }
   const byKey = session()
   plan(byKey)
   keys(byKey, ESC)
-  assert.equal(byKey.build.state.overlay, "menu")
+  assert.equal(byKey.build.state.popup, "menu")
   keys(byKey, "r")
   const byEnter = session()
   plan(byEnter)
   keys(byEnter, "q", DOWN, DOWN) // past Settings and Controls
-  assert.equal(GAME_MENU_ROWS[byEnter.build.state.overlayHighlight], "restart")
+  assert.equal(GAME_MENU_ROWS[byEnter.build.state.popupHighlight], "restart")
   keys(byEnter, ENTER)
   const byClick = session()
   plan(byClick)
@@ -322,13 +322,13 @@ test("the game menu's Restart: r, Enter on its row, and a click on it start the 
   click(byClick, placed(byClick).textColumn + 1, row.row)
   const byDriver = session()
   plan(byDriver)
-  byDriver.build.run([{ kind: "open-menu" }, { kind: "debug-restart" }])
+  byDriver.build.run([{ kind: "open-menu" }, { kind: "restart" }])
 
   const expected = byKey.build.state
-  assert.equal(expected.overlay, null)
+  assert.equal(expected.popup, null)
   assert.equal(expected.planned.length, 0)
   assert.equal(expected.nexusPick, null)
-  assert.equal(expected.debug.raid, "probe")
+  assert.equal(expected.experiments.raid, "probe")
   assert.equal(expected.settings.theme, "light")
   assert.equal(expected.status.text, "Build Phase restarted with these settings.")
   const comparable = (side: Side) => ({ ...side.build.state, ack: null, highlightHidden: false })
@@ -337,7 +337,7 @@ test("the game menu's Restart: r, Enter on its row, and a click on it start the 
   // Settings has no restart of its own any more.
   const settings = session()
   keys(settings, "d", "r")
-  assert.equal(settings.build.state.overlay, "settings")
+  assert.equal(settings.build.state.popup, "settings")
 })
 
 // --- The scroll bar ---------------------------------------------------------------------------------
@@ -380,7 +380,7 @@ test("a list that overflows has a scroll bar in the popup's right border, drawn 
 
 test("no scroll bar where nothing is hidden: a short list, and a popup without one", () => {
   const side = session()
-  const shortList: OverlaySpec = {
+  const shortList: PopupSpec = {
     title: "SHORT",
     rows: [
       { kind: "text", text: "one" },
@@ -389,7 +389,7 @@ test("no scroll bar where nothing is hidden: a short list, and a popup without o
     ],
     scroll: { from: 0, to: 3, highlight: 0, select: () => ({ kind: "cancel" }) },
   }
-  assert.equal(placeOverlay(side.layout, shortList).scrollBar, null)
+  assert.equal(placePopup(side.layout, shortList).scrollBar, null)
   keys(side, "n")
   assert.equal(placed(side).scrollBar, null)
   const frame = frameOf(side)
@@ -407,7 +407,7 @@ test("a click on the scroll bar's upper half scrolls up, on its lower half down;
   // At the top, the upper half has nowhere to go.
   click(side, start.scrollBar.column, start.scrollBar.top)
   assert.equal(placed(side).window?.offset, 0)
-  assert.equal(side.build.state.overlayHighlight, 0)
+  assert.equal(side.build.state.popupHighlight, 0)
   // The lower half — its down symbol, or any cell below the middle — brings the next hidden rows in.
   click(side, start.scrollBar.column, start.scrollBar.bottom)
   const down = placed(side)
@@ -435,7 +435,7 @@ test("a click on the scroll bar's upper half scrolls up, on its lower half down;
   const wheel = session()
   keys(wheel, ESC, "s")
   click(wheel, placed(wheel).box.left + 3, placed(wheel).box.top + 3, MOUSE_WHEEL_DOWN)
-  assert.equal(wheel.build.state.overlayHighlight, playerRow("capability"))
+  assert.equal(wheel.build.state.popupHighlight, playerRow("capability"))
 })
 
 test("hit-testing the scroll bar reads the same placement the frame draws: every bar cell answers, the cell beside it does not", () => {
@@ -531,7 +531,7 @@ test("a click on the top bar's Esc label is Esc: the same state, whatever is ope
     }
     // With no popup open, just left of the label is the plain top bar: nothing happens. (With one
     // open, it is a click outside the popup, which closes it like any other.)
-    if (byClick.build.state.overlay !== null) continue
+    if (byClick.build.state.popup !== null) continue
     const beside = session()
     keys(beside, ...steps)
     const before = beside.build.state
@@ -557,7 +557,7 @@ test("no popup carries [esc] in its border any more", () => {
   const context = spikeContext()
   const layout = buildLayout({ columns: 80, rows: 24 }, context.grid)
   const state = withMessage(context, null)
-  const popup = placeOverlay(layout, overlaySpec(context, state) as OverlaySpec)
+  const popup = placePopup(layout, popupSpec(context, state) as PopupSpec)
   const drawn = frameToText(composeBuildFrame({ context, state, layout }, "monochrome")).split("\n")
   assert.doesNotMatch((drawn[popup.box.top] ?? "").slice(popup.box.left, popup.box.right + 1), /\[esc\]/)
   assert.match(drawn[layout.escHint.row] ?? "", /close \[esc\] /)

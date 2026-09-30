@@ -445,7 +445,7 @@ test("while the commit question is open, the status line asks it, whatever the g
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "commit" }])
   })
-  assert.equal(armed.build.state.overlay, null)
+  assert.equal(armed.build.state.popup, null)
   assert.match(statusRow(armed), /^Place the Barracks or cancel it first: \[1\] or \[esc\]\.$/)
   const asking = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)

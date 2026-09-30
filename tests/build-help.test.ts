@@ -14,8 +14,8 @@ import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import { buildLayout, escHintSpan, escLabel } from "../src/build/layout.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import { MOUSE_LEFT, MOUSE_WHEEL_DOWN, formatMouseEvent } from "../src/build/mouse.ts"
-import { overlaySpec, placeOverlay } from "../src/build/overlay.ts"
-import type { PlacedOverlay } from "../src/build/overlay.ts"
+import { popupSpec, placePopup } from "../src/build/popup.ts"
+import type { PlacedPopup } from "../src/build/popup.ts"
 import { BuildSession } from "../src/build/session.ts"
 import { CONTROLS_DESCRIPTION, GAME_MENU_ROWS, restartMessage } from "../src/build/settings.ts"
 import type { BuildContext, BuildState } from "../src/build/state.ts"
@@ -77,10 +77,10 @@ function line(side: Side) {
   return bottomLine(side.context, side.build.state, armedPreview(side.context, side.build.state))
 }
 
-function placed(side: Side): PlacedOverlay {
-  const spec = overlaySpec(side.context, side.build.state)
+function placed(side: Side): PlacedPopup {
+  const spec = popupSpec(side.context, side.build.state)
   assert.ok(spec !== null, "no popup is open")
-  return placeOverlay(side.layout, spec)
+  return placePopup(side.layout, spec)
 }
 
 /** A command that says nothing and changes nothing: whatever the last command answered lapses. */
@@ -187,7 +187,7 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
   message: [
     [
       // No Experiment needs a restart today, so the message is put up by hand, as the popups tests do.
-      (side) => ({ ...side.build.state, overlay: "message", message: restartMessage(["Opens on"]) }),
+      (side) => ({ ...side.build.state, popup: "message", message: restartMessage(["Opens on"]) }),
       /^Read it, then \[esc\] or a click outside closes it\.$/,
     ],
   ],
@@ -265,9 +265,9 @@ test("the Controls page opens from the game menu by c, by Enter on its row and b
   const inMenu = session()
   keys(inMenu, ESC, "?")
   for (const [name, side] of [["c", byKey], ["enter", byEnter], ["a click", byClick], ["a driver", byDriver], ["? in the game menu", inMenu]] as const) {
-    assert.equal(side.build.state.overlay, "controls", `${name} did not open it`)
-    assert.deepEqual(side.build.state.overlayUnder, ["menu"], `${name}: not over the game menu`)
-    assert.equal(side.build.state.overlayHighlight, 0)
+    assert.equal(side.build.state.popup, "controls", `${name} did not open it`)
+    assert.deepEqual(side.build.state.popupUnder, ["menu"], `${name}: not over the game menu`)
+    assert.equal(side.build.state.popupHighlight, 0)
   }
   const text = frameToText(frame(byKey))
   assert.match(text, new RegExp(CONTROLS_TITLE))
@@ -278,52 +278,52 @@ test("the Controls page opens from the game menu by c, by Enter on its row and b
   for (const before of [[], [TAB], ["1"], ["n", "1", "s", "s"]]) {
     const side = session()
     keys(side, ...before, "?")
-    assert.equal(side.build.state.overlay, "controls", `${JSON.stringify(before)} then ? did not open it`)
-    assert.deepEqual(side.build.state.overlayUnder, [])
+    assert.equal(side.build.state.popup, "controls", `${JSON.stringify(before)} then ? did not open it`)
+    assert.deepEqual(side.build.state.popupUnder, [])
   }
   for (const popup of [["n"], ["d"], ["n", "1", "s"], ["d", "e"]]) {
     const side = session()
     keys(side, ...popup)
-    const open = side.build.state.overlay
+    const open = side.build.state.popup
     keys(side, "?")
-    assert.equal(side.build.state.overlay, open, `? reached past the ${open} popup`)
+    assert.equal(side.build.state.popup, open, `? reached past the ${open} popup`)
   }
 })
 
 test("Esc goes back to the game menu on its Controls row, or to the game after ?; c, ? and Enter close it too", () => {
   const fromMenu = session()
   keys(fromMenu, ESC, "c", DOWN, DOWN, ESC)
-  assert.equal(fromMenu.build.state.overlay, "menu")
-  assert.equal(GAME_MENU_ROWS[fromMenu.build.state.overlayHighlight], "controls")
+  assert.equal(fromMenu.build.state.popup, "menu")
+  assert.equal(GAME_MENU_ROWS[fromMenu.build.state.popupHighlight], "controls")
   keys(fromMenu, ESC)
-  assert.equal(fromMenu.build.state.overlay, null)
+  assert.equal(fromMenu.build.state.popup, null)
 
   const fromGame = session()
   keys(fromGame, "?", ESC)
-  assert.equal(fromGame.build.state.overlay, null)
+  assert.equal(fromGame.build.state.popup, null)
   assert.equal(fromGame.build.state.focus, "menu")
 
   for (const close of ["c", "?", ENTER, " ", "x"]) {
     const side = session()
     keys(side, ESC, "c", close)
-    assert.equal(side.build.state.overlay, "menu", `${JSON.stringify(close)} did not go back`)
+    assert.equal(side.build.state.popup, "menu", `${JSON.stringify(close)} did not go back`)
   }
   // The top bar's "close [esc]" is Esc: one level back.
   const byLabel = session()
   keys(byLabel, ESC, "c")
   const label = escHintSpan(byLabel.layout, escLabel(byLabel.build.state))
   click(byLabel, label.from, label.row)
-  assert.equal(byLabel.build.state.overlay, "menu")
+  assert.equal(byLabel.build.state.popup, "menu")
   // A click outside closes it, as every popup does, and nothing more.
   const outside = session()
   keys(outside, "?")
   click(outside, outside.layout.panelColumn + 3, outside.layout.panelRow + 5)
-  assert.equal(outside.build.state.overlay, null)
+  assert.equal(outside.build.state.popup, null)
   assert.equal(outside.build.state.armed, null)
   // Keys it has no use for do nothing underneath it.
   const held = session()
   keys(held, "?", "1", "u", "n", "e", TAB)
-  assert.equal(held.build.state.overlay, "controls")
+  assert.equal(held.build.state.popup, "controls")
   assert.equal(held.build.state.armed, null)
   assert.equal(held.quits(), 0)
 })
@@ -337,14 +337,14 @@ test("it scrolls the export's way: Up/Down, the wheel and the scroll bar, stoppi
   assert.ok(opening.window.visible < opening.window.count)
   // Up at the top stays at the top.
   keys(side, UP)
-  assert.equal(side.build.state.overlayHighlight, 0)
+  assert.equal(side.build.state.popupHighlight, 0)
   keys(side, ...Array.from({ length: 10 }, () => DOWN))
-  assert.equal(side.build.state.overlayHighlight, 10)
+  assert.equal(side.build.state.popupHighlight, 10)
   assert.ok((placed(side).window?.offset ?? 0) > 0, "ten lines down, the page has not scrolled")
   // Past the end it stops on the last line, which is then in view.
   const last = controlsLineCount() - 1
   keys(side, ...Array.from({ length: last + 5 }, () => DOWN))
-  assert.equal(side.build.state.overlayHighlight, last)
+  assert.equal(side.build.state.popupHighlight, last)
   const end = placed(side)
   assert.equal((end.window?.offset ?? 0) + (end.window?.visible ?? 0), end.window?.count)
   assert.match(frameToText(frame(side)), /ctrl\+c +quit at once/)
@@ -354,16 +354,16 @@ test("it scrolls the export's way: Up/Down, the wheel and the scroll bar, stoppi
   keys(wheel, "?")
   const box = placed(wheel).box
   click(wheel, box.left + 3, box.top + 3, MOUSE_WHEEL_DOWN)
-  assert.equal(wheel.build.state.overlayHighlight, 1)
+  assert.equal(wheel.build.state.popupHighlight, 1)
   // A click on the scroll bar's lower half brings later lines into view.
   const bar = placed(wheel).scrollBar
   assert.ok(bar !== null)
   click(wheel, bar.column, bar.bottom)
-  assert.ok(wheel.build.state.overlayHighlight > 1, "the scroll bar's lower half did not scroll down")
+  assert.ok(wheel.build.state.popupHighlight > 1, "the scroll bar's lower half did not scroll down")
   assert.ok((placed(wheel).window?.offset ?? 0) > 0)
   // A driver selects a line directly, clamped to the page.
   wheel.build.dispatch({ kind: "controls-select", line: 999 })
-  assert.equal(wheel.build.state.overlayHighlight, last)
+  assert.equal(wheel.build.state.popupHighlight, last)
 })
 
 test("the page is one table: every situation, every line fits at the floor, and the popup fits the Grid pane at every size", () => {
@@ -434,9 +434,9 @@ test("during a Nexus Pulse the one row is the Pulse's own line, and a popup over
   assert.match(text(), /\| Nexus Pulse - 5 of yours against 7 of the raid\. +\|/)
   assert.equal(played.layout.viewport.height, 18)
   played.build.handleData("?", played.layout)
-  assert.equal(played.build.state.overlay, "controls")
+  assert.equal(played.build.state.popup, "controls")
   assert.match(text(), /\| Every key and click, by where you are\. Up\/down scroll\. \[esc\] closes\. +\|/)
   played.build.handleData(ESC, played.layout, { now: 10 })
-  assert.equal(played.build.state.overlay, null)
+  assert.equal(played.build.state.popup, null)
   assert.match(text(), /Nexus Pulse - /)
 })

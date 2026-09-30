@@ -1,7 +1,7 @@
 // Settings, the game menu and the export (owner, 2026-09-28): "When pressing [esc] or explicitly
 // opening the main menu, there should be an option for '[s] Settings' along with '[q] Quit' ... At the
 // bottom of those settings, we can include 'Experiments' ... Then, we need a way to export the
-// settings." The Experiments' own tests are `tests/build-debug.test.ts`; this file is everything around
+// settings." The Experiments' own tests are `tests/build-experiments.test.ts`; this file is everything around
 // them — the menu that leads to Settings, the player's half, the export and its way back in.
 
 import { test } from "node:test"
@@ -10,14 +10,14 @@ import { EventEmitter } from "node:events"
 import { mkdtempSync, readFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { DEBUG_FIELDS, initialDebugFlags } from "../src/build/debug.ts"
+import { EXPERIMENT_FIELDS, defaultExperiments } from "../src/build/experiments.ts"
 import { buildLayout, escHintSpan, escLabel } from "../src/build/layout.ts"
 import { MOUSE_LEFT, formatMouseEvent } from "../src/build/mouse.ts"
-import { overlaySpec, placeOverlay, settingColumns } from "../src/build/overlay.ts"
-import type { PlacedOverlay } from "../src/build/overlay.ts"
+import { popupSpec, placePopup, settingColumns } from "../src/build/popup.ts"
+import type { PlacedPopup } from "../src/build/popup.ts"
 import { BuildSession } from "../src/build/session.ts"
 import { GAME_MENU_ROWS, PLAYER_FIELDS, SETTINGS_EXPORT_ROW, playerRow } from "../src/build/settings.ts"
-import { defaultExperiments, formatSettingsExport, parseSettingsExport } from "../src/build/settings-export.ts"
+import { formatSettingsExport, parseSettingsExport } from "../src/build/settings-export.ts"
 import type { SettingsSnapshot } from "../src/build/settings-export.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { exportText } from "../src/build/state.ts"
@@ -77,10 +77,10 @@ function screen(side: Side): string {
   )
 }
 
-function placed(side: Side): PlacedOverlay {
-  const spec = overlaySpec(side.context, side.build.state)
+function placed(side: Side): PlacedPopup {
+  const spec = popupSpec(side.context, side.build.state)
   assert.ok(spec !== null, "no popup is open")
-  return placeOverlay(side.layout, spec)
+  return placePopup(side.layout, spec)
 }
 
 function click(side: Side, column: number, row: number): void {
@@ -100,7 +100,7 @@ test("Esc on the menu, q anywhere, and the top bar's menu [esc] all open the gam
   for (const open of [[ESC], ["q"]]) {
     const side = session()
     keys(side, ...open)
-    assert.equal(side.build.state.overlay, "menu")
+    assert.equal(side.build.state.popup, "menu")
     const text = screen(side)
     assert.match(text, /MENU/)
     assert.match(text, /\[s\] Settings/)
@@ -115,16 +115,16 @@ test("Esc on the menu, q anywhere, and the top bar's menu [esc] all open the gam
   const clicked = session()
   const hint = escHintSpan(clicked.layout, "menu [esc]")
   click(clicked, hint.from + 1, hint.row)
-  assert.equal(clicked.build.state.overlay, "menu")
+  assert.equal(clicked.build.state.popup, "menu")
   // From the map, Esc walks back to the menu first; a committed Build Phase opens the game menu too.
   const grid = session()
   keys(grid, "e", ESC)
-  assert.equal(grid.build.state.overlay, null)
+  assert.equal(grid.build.state.popup, null)
   keys(grid, ESC)
-  assert.equal(grid.build.state.overlay, "menu")
+  assert.equal(grid.build.state.popup, "menu")
   const committed = session()
   keys(committed, "n", "1", "p", "y", ESC)
-  assert.equal(committed.build.state.overlay, "menu")
+  assert.equal(committed.build.state.popup, "menu")
 })
 
 test("leaving always goes through the game menu: its q, Enter on Quit, or a click on Quit; only Ctrl+C quits at once", () => {
@@ -136,7 +136,7 @@ test("leaving always goes through the game menu: its q, Enter on Quit, or a clic
 
   const byEnter = session()
   keys(byEnter, ESC, DOWN, DOWN, DOWN) // past Settings, Controls and Restart
-  assert.equal(GAME_MENU_ROWS[byEnter.build.state.overlayHighlight], "quit")
+  assert.equal(GAME_MENU_ROWS[byEnter.build.state.popupHighlight], "quit")
   keys(byEnter, ENTER)
   assert.equal(byEnter.quits, 1)
 
@@ -149,11 +149,11 @@ test("leaving always goes through the game menu: its q, Enter on Quit, or a clic
   // Back row to press (F73) — Esc closes the menu.
   const walk = session()
   keys(walk, ESC, UP)
-  assert.equal(GAME_MENU_ROWS[walk.build.state.overlayHighlight], "settings")
+  assert.equal(GAME_MENU_ROWS[walk.build.state.popupHighlight], "settings")
   keys(walk, DOWN, DOWN, DOWN, DOWN, DOWN)
-  assert.equal(GAME_MENU_ROWS[walk.build.state.overlayHighlight], "quit")
+  assert.equal(GAME_MENU_ROWS[walk.build.state.popupHighlight], "quit")
   keys(walk, ESC)
-  assert.equal(walk.build.state.overlay, null)
+  assert.equal(walk.build.state.popup, null)
   assert.equal(walk.quits, 0)
 
   const interrupt = session()
@@ -164,26 +164,26 @@ test("leaving always goes through the game menu: its q, Enter on Quit, or a clic
 test("[s] opens Settings at the player's settings; Esc goes back to the game menu, then to the game", () => {
   const side = session()
   keys(side, ESC, "s")
-  assert.equal(side.build.state.overlay, "settings")
-  assert.equal(side.build.state.overlayHighlight, playerRow("theme"))
-  assert.deepEqual(side.build.state.overlayUnder, ["menu"])
+  assert.equal(side.build.state.popup, "settings")
+  assert.equal(side.build.state.popupHighlight, playerRow("theme"))
+  assert.deepEqual(side.build.state.popupUnder, ["menu"])
   const text = screen(side)
   assert.match(text, /YOUR SETTINGS - saved/)
   assert.match(text, /Background\s+<\s+dark\s+>/)
   assert.match(text, /match your terminal's own/, "the highlighted setting does not say what it is for")
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, "menu")
-  assert.equal(GAME_MENU_ROWS[side.build.state.overlayHighlight], "settings", "back on the row that opened Settings")
+  assert.equal(side.build.state.popup, "menu")
+  assert.equal(GAME_MENU_ROWS[side.build.state.popupHighlight], "settings", "back on the row that opened Settings")
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, null)
+  assert.equal(side.build.state.popup, null)
   // `d` still opens Settings straight at the experiments, and Esc then goes back to the game.
   keys(side, "d")
-  assert.equal(side.build.state.overlayHighlight, 0)
+  assert.equal(side.build.state.popupHighlight, 0)
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, null)
+  assert.equal(side.build.state.popup, null)
   // q inside Settings is the way out: the game menu, not a quit.
   keys(side, "d", "q")
-  assert.equal(side.build.state.overlay, "menu")
+  assert.equal(side.build.state.popup, "menu")
   assert.equal(side.quits, 0)
 })
 
@@ -220,7 +220,7 @@ test("every player setting's value box is a click target, the same as Left and R
   for (const spec of PLAYER_FIELDS) {
     const byKey = session()
     keys(byKey, ESC, "s")
-    while (byKey.build.state.overlayHighlight !== playerRow(spec.field)) keys(byKey, DOWN)
+    while (byKey.build.state.popupHighlight !== playerRow(spec.field)) keys(byKey, DOWN)
     keys(byKey, RIGHT)
     const byClick = session()
     keys(byClick, ESC, "s")
@@ -238,7 +238,7 @@ test("[e] shows the export in a popup, hands the same text to the adapter, and E
   const side = session(context)
   keys(side, "d", DOWN, DOWN, RIGHT) // at the experiments, past the focus arrow and the card reveal: a longer hold window
   keys(side, "q", "s", "e")
-  assert.equal(side.build.state.overlay, "export")
+  assert.equal(side.build.state.popup, "export")
   assert.equal(side.exports.length, 1)
   assert.equal(side.exports[0], exportText(side.context, side.build.state))
   const text = screen(side)
@@ -252,20 +252,20 @@ test("[e] shows the export in a popup, hands the same text to the adapter, and E
   for (let line = 0; line < 40; line += 1) keys(side, DOWN)
   assert.match(screen(side), /crew = none/)
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, "settings")
-  assert.equal(side.build.state.overlayHighlight, SETTINGS_EXPORT_ROW)
+  assert.equal(side.build.state.popup, "settings")
+  assert.equal(side.build.state.popupHighlight, SETTINGS_EXPORT_ROW)
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, "menu")
+  assert.equal(side.build.state.popup, "menu")
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, null)
+  assert.equal(side.build.state.popup, null)
   // The Export row by Enter, and by a click, does the same.
   const byEnter = session()
   keys(byEnter, ESC, "s", END, ENTER) // End goes to the last row: Export (Up came round to it until F75)
-  assert.equal(byEnter.build.state.overlay, "export")
+  assert.equal(byEnter.build.state.popup, "export")
   const byClick = session()
   keys(byClick, ESC, "s", END) // the list's last row, in view
   clickOption(byClick, "e")
-  assert.equal(byClick.build.state.overlay, "export")
+  assert.equal(byClick.build.state.popup, "export")
   assert.equal(byClick.exports.length, 1)
 })
 
@@ -283,14 +283,14 @@ test("the export lists changed experiments first with their defaults, then the s
   const changed = lines.slice(3, changedEnd)
   assert.deepEqual(
     changed.map((line) => line.split(" ")[0]),
-    DEBUG_FIELDS.map((spec) => spec.field).filter((field) => ["crew", "raid", "holdWindowMs"].includes(field)),
+    EXPERIMENT_FIELDS.map((spec) => spec.field).filter((field) => ["crew", "raid", "holdWindowMs"].includes(field)),
   )
   assert.ok(changed.some((line) => line.startsWith("raid = probe  # Raid, default heavy")))
   assert.ok(changed.some((line) => line.startsWith("crew = some  # Your units, default none")))
   assert.ok(changed.some((line) => line.startsWith("holdWindowMs = 250  # Hold window, default 350 ms")))
   assert.ok(lines.includes("theme = light  # Background"))
   assert.ok(lines.includes("# Experiments at their defaults"))
-  assert.equal(lines.length, 2 + 1 + 3 + 1 + PLAYER_FIELDS.length + 1 + (DEBUG_FIELDS.length - 3))
+  assert.equal(lines.length, 2 + 1 + 3 + 1 + PLAYER_FIELDS.length + 1 + (EXPERIMENT_FIELDS.length - 3))
   // With nothing changed it says so, and a build without a commit id says nothing about one.
   const plain = formatSettingsExport({ settings: DEFAULT_SETTINGS, experiments: defaultExperiments() })
   assert.match(plain, /^Terminal Nexus settings\n# Changed experiments: none\n/)
@@ -308,7 +308,7 @@ test("an export read back gives exactly the settings and experiments it was made
     const result = parseSettingsExport(formatSettingsExport(snapshot, "x"), base)
     assert.deepEqual(result.snapshot, snapshot)
     assert.deepEqual(result.ignored, [])
-    assert.equal(result.applied.length, DEBUG_FIELDS.length + PLAYER_FIELDS.length)
+    assert.equal(result.applied.length, EXPERIMENT_FIELDS.length + PLAYER_FIELDS.length)
   }
 })
 
@@ -409,7 +409,7 @@ test("the owner's export of 2026-09-30 is this build: its Experiments are the de
   }
   assert.equal(checked, 21, "every settled number of his was compared")
   // And each default is a value its Experiment's list holds, so Left/Right step from it exactly.
-  for (const spec of DEBUG_FIELDS) {
+  for (const spec of EXPERIMENT_FIELDS) {
     const value = defaultExperiments()[spec.field]
     assert.ok((spec.values as readonly unknown[]).includes(value), `${spec.field}'s default ${String(value)} is in its list`)
   }
@@ -425,8 +425,8 @@ test("--settings on the command line: settings over what is saved, and every exp
 
 test("a Build Phase opened with imported experiments has them, and the playtest script's runner takes both halves", () => {
   const side = session({ ...spikeContext(), experiments: { raid: "probe", holdWindowMs: 500 } })
-  assert.equal(side.build.state.debug.raid, "probe")
-  assert.equal(side.build.state.debug.holdWindowMs, 500)
+  assert.equal(side.build.state.experiments.raid, "probe")
+  assert.equal(side.build.state.experiments.holdWindowMs, 500)
   const run = runBuildPlaytest({
     steps: parseKeyScript("d"),
     settings: { ...DEFAULT_SETTINGS, glyphPack: "unicode" },
@@ -434,7 +434,7 @@ test("a Build Phase opened with imported experiments has them, and the playtest 
   })
   const last = run.frames[run.frames.length - 1]
   assert.ok(last !== undefined)
-  assert.equal(last.state.debug.crew, "some")
+  assert.equal(last.state.experiments.crew, "some")
   assert.equal(last.state.settings.glyphPack, "unicode")
   assert.match(frameToText(last.frame), /│/u)
 })
@@ -474,23 +474,23 @@ test("the settings flow by keys, by clicks, and from a driver script is the same
     { kind: "open-menu" },
     { kind: "open-settings", section: "settings" },
     { kind: "setting-adjust", field: "theme", step: 1 },
-    { kind: "debug-adjust", field: "raid", step: 1 },
+    { kind: "experiment-adjust", field: "raid", step: 1 },
     { kind: "export-settings" },
   ]
   const byDriver = session()
   byDriver.build.run(script)
 
   for (const side of [byKeyboard, byMouse, byDriver]) {
-    assert.equal(side.build.state.overlay, "export")
+    assert.equal(side.build.state.popup, "export")
     assert.equal(side.build.state.settings.theme, "light")
-    assert.equal(side.build.state.debug.raid, "probe")
+    assert.equal(side.build.state.experiments.raid, "probe")
     assert.equal(side.exports.length, 1)
     assert.match(side.exports[0] as string, /raid = probe/)
   }
   assert.equal(byMouse.exports[0], byKeyboard.exports[0])
   assert.equal(byDriver.exports[0], byKeyboard.exports[0])
   // The way back differs by how Settings was reached — so compare what the player has, not the stack.
-  const comparable = (side: Side) => ({ ...side.build.state, overlayUnder: [], overlayHighlight: 0, status: null, ack: null })
+  const comparable = (side: Side) => ({ ...side.build.state, popupUnder: [], popupHighlight: 0, status: null, ack: null })
   assert.deepEqual(comparable(byMouse), comparable(byKeyboard))
   assert.deepEqual(comparable(byDriver), comparable(byKeyboard))
 })
@@ -566,7 +566,7 @@ test("the terminal's export: OSC 52 to the clipboard and a file beside the setti
 })
 
 test("the experiments' defaults are this build's: a fresh Build Phase exports no changed experiment", () => {
-  assert.deepEqual(defaultExperiments(), initialDebugFlags())
+  assert.deepEqual(defaultExperiments(), defaultExperiments())
   const side = session()
   keys(side, "d", "e")
   assert.match(side.exports[0] as string, /# Changed experiments: none/)

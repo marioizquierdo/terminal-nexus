@@ -56,7 +56,7 @@ import type { Camera } from "../build/camera.ts"
 import type { Coord } from "../grid/types.ts"
 import type { BuildState } from "../build/state.ts"
 import { cardShowing } from "../build/state.ts"
-import type { DebugFlags } from "../build/debug.ts"
+import type { Experiments } from "../build/experiments.ts"
 import type { Tuning } from "../build/tuning.ts"
 import { TUNING } from "../build/tuning.ts"
 import type { BuildCompositionInput, BuildFlash, CardReveal } from "./build.ts"
@@ -128,7 +128,7 @@ export function cardKey(state: BuildState): string | null {
  * whose rows fade and whose chosen row slides up, or another card, which gives way at once.
  */
 export function cardRevealAt(
-  flags: Pick<DebugFlags, "cardRevealMs">,
+  flags: Pick<Experiments, "cardRevealMs">,
   reducedMotion: boolean,
   elapsedMs: number,
   menu: boolean,
@@ -369,11 +369,11 @@ export class BuildAnimation {
     const handoff = state.handoff
     if (handoff !== null) {
       if (this.seenHandoff?.seq !== handoff.seq) this.seenHandoff = { seq: handoff.seq, at: now, stopped: false }
-      const onMap = state.focus === "grid" && state.overlay === null && !state.committed
+      const onMap = state.focus === "grid" && state.popup === null && !state.committed
       if (!onMap) this.seenHandoff = { ...this.seenHandoff, stopped: true }
       if (!this.seenHandoff.stopped) {
         const { pressedFlashMs, cursorBlinks } = this.tuning
-        const timing = { focusArrowMs: state.debug.focusArrowMs, pressedFlashMs, cursorBlinks }
+        const timing = { focusArrowMs: state.experiments.focusArrowMs, pressedFlashMs, cursorBlinks }
         const schedule = handoffSchedule(timing, options.reducedMotion === true)
         const look = handoffAt(schedule, now - this.seenHandoff.at)
         if (look.arrow !== null) focusArrow = { progress: look.arrow }
@@ -391,10 +391,10 @@ export class BuildAnimation {
     let cardReveal: CardReveal | undefined
     const card = this.seenCard
     if (card.key !== null && card.at !== null) {
-      const reveal = cardRevealAt(state.debug, options.reducedMotion === true, now - card.at, card.menu)
+      const reveal = cardRevealAt(state.experiments, options.reducedMotion === true, now - card.at, card.menu)
       if (reveal !== null) {
         cardReveal = reveal
-        ends.push(card.at + state.debug.cardRevealMs)
+        ends.push(card.at + state.experiments.cardRevealMs)
       }
     }
 

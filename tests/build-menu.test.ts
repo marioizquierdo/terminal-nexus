@@ -173,7 +173,7 @@ test("an active row keeps its own hotkey and ends in one >, and a flash on it st
   assert.equal(pressed.underline, true)
   // `n` (the key that opened it) and `x` both close it; the row is back to `[n]` with its own value.
   keys(side, "x")
-  assert.equal(side.build.state.overlay, null)
+  assert.equal(side.build.state.popup, null)
   assert.match(panelLine(side, row), /^\[n\] Nexus \(1\) +$/)
 })
 
@@ -181,11 +181,11 @@ test("a popup that belongs to no row — the game menu, Settings, the Controls p
   for (const open of [[ESC], [ESC, "s"], [ESC, "c"]]) {
     const side = session()
     keys(side, ...open)
-    assert.notEqual(side.build.state.overlay, null, `${JSON.stringify(open)} opened nothing`)
+    assert.notEqual(side.build.state.popup, null, `${JSON.stringify(open)} opened nothing`)
     for (const target of menuEntries(side.context)) {
       const row = menuEntryRow(side.layout, SPIKE_CATALOG, target) as number
       const style = cellAt(frameOf(side), side.layout.dividerColumn - 2, row).style
-      assert.notEqual(style.inverse, true, `${side.build.state.overlay}: the menu's bar is lit on row ${row}`)
+      assert.notEqual(style.inverse, true, `${side.build.state.popup}: the menu's bar is lit on row ${row}`)
     }
   }
 })
@@ -260,7 +260,7 @@ test("a click anywhere on the panel while a card shows goes back to where it beg
       assert.equal(cardShowing(side.build.state), false, `${name}: a click on row ${row} did not close the card`)
       assert.equal(side.build.state.focus, back, `${name}: went back to the wrong place`)
       assert.equal(side.build.state.armed, null, `${name}: a click on row ${row} armed something`)
-      assert.equal(side.build.state.overlay, null, `${name}: a click on row ${row} opened a popup`)
+      assert.equal(side.build.state.popup, null, `${name}: a click on row ${row} opened a popup`)
       assert.equal(side.build.state.planned.length, 0)
     }
   }
@@ -394,7 +394,7 @@ test("the way back records no hand-off, a second one counts on, and a restart ke
   keys(side, ENTER) // placed: back on the menu
   keys(side, "e", ESC) // Explore Map from the menu, and back
   assert.deepEqual(side.build.state.handoff, { seq: 2, entry: EXPLORE_ENTRY }, "the way back was recorded")
-  side.build.dispatch({ kind: "debug-restart" })
+  side.build.dispatch({ kind: "restart" })
   assert.deepEqual(side.build.state.handoff, { seq: 2, entry: EXPLORE_ENTRY }, "a restart lost the count")
   assert.equal(side.build.state.planned.length, 0)
   keys(side, "2")

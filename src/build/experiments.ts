@@ -1,16 +1,14 @@
 // The **Experiments** (gate 5G's Debug Mode; the lower half of Settings since gate 5J): the Build
 // Phase's live-editable development flags — an experiment harness that lets the owner feel two
 // answers to an open question during a playtest, instead of reading a paragraph about them or asking
-// for a new command-line flag (AGENTS.md Section 5, engine.md 9.7). The names `debug.ts`, `DebugFlags`
-// and `BuildState.debug` are the harness's first ones and still stand; renaming them to say
-// "experiments" is a pure-rename job for a pull request of its own (docs/next-steps.md).
+// for a new command-line flag (AGENTS.md Section 5, engine.md 9.7).
 //
 // **Every flag names the question it serves, and is deleted once that question is answered**: its
 // value becomes a tuned value (`src/build/tuning.ts`), with who chose it and when. The owner settled
 // twenty-eight of them at once on 2026-09-30 ("Many of those settings can be cleaned now, I feel good
 // about them. Keep only the few that you think may be useful later"). What is left is still being felt,
 // depends on the machine, or is placeholder data. A few may graduate into real settings; none of them is
-// one yet, so nothing here is saved: the flags live in `BuildState.debug` for as long as the screen is
+// one yet, so nothing here is saved: the flags live in `BuildState.experiments` for as long as the screen is
 // open.
 //
 // Where each flag is read:
@@ -37,7 +35,7 @@ export type RaidSize = "none" | "probe" | "heavy"
  *  Nexus and what was built are all that stand between the raid and a lost Pulse. */
 export type CrewSize = "some" | "none"
 
-export type DebugFlags = Readonly<{
+export type Experiments = Readonly<{
   /** F54: how long the focus arrow takes to fly from a menu row to the cursor when the row hands the
    *  keyboard to the map, in milliseconds; 0 is no arrow. */
   focusArrowMs: number
@@ -55,30 +53,30 @@ export type DebugFlags = Readonly<{
   crew: CrewSize
 }>
 
-export type DebugField = keyof DebugFlags
+export type ExperimentField = keyof Experiments
 
 /** When a change is seen: at once, or only once the Build Phase starts over. */
-export type DebugApplies = "now" | "restart"
+export type ExperimentApplies = "now" | "restart"
 
-type FieldSpec<F extends DebugField> = Readonly<{
+type ExperimentSpec<F extends ExperimentField> = Readonly<{
   field: F
   /** The row's name, short enough for the narrowest popup. */
   label: string
-  applies: DebugApplies
+  applies: ExperimentApplies
   /** The question the flag exists to answer, in plain words. Shown under the list for the
    *  highlighted row; the open-questions id, where there is one, in parentheses at the end. */
   question: string
   /** The values Left/Right walk, in order. A number the list does not hold (from a settings text)
    *  steps to its nearest neighbour in the direction asked. */
-  values: readonly DebugFlags[F][]
+  values: readonly Experiments[F][]
   /** Whether stepping past either end comes round to the other. True for a choice, where "the next
    *  one" is the only thing either arrow can mean; false for a number, where the ends are real
    *  limits. */
   cycles: boolean
-  format: (value: DebugFlags[F]) => string
+  format: (value: Experiments[F]) => string
 }>
 
-type AnyFieldSpec = { [F in DebugField]: FieldSpec<F> }[DebugField]
+type AnyExperimentSpec = { [F in ExperimentField]: ExperimentSpec<F> }[ExperimentField]
 
 const millis = (value: number): string => (value === 0 ? "off" : `${value} ms`)
 const duration = (value: number): string => `${value} ms`
@@ -86,7 +84,7 @@ const duration = (value: number): string => `${value} ms`
 /** The flags, in the order the popup lists them: the two still being felt first — the focus arrow
  *  (feedback F54), where `d` opens, and the card reveal (F68) — then the hold window, then the
  *  placeholder Pulse's raid and crew, where `d` opens while a Pulse is on screen. */
-export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
+export const EXPERIMENT_FIELDS: readonly AnyExperimentSpec[] = [
   {
     field: "focusArrowMs",
     label: "Focus arrow",
@@ -145,31 +143,31 @@ export const DEFAULT_EXPERIMENTS = {
   holdWindowMs: 350,
   raid: "heavy",
   crew: "none",
-} as const satisfies DebugFlags
+} as const satisfies Experiments
 
 /** The flags a screen opens with: this build's defaults. (The owner settled every other Experiment —
  *  the smart cursor's and "Opens on"'s on 2026-09-29, feedback F30 and F31; twenty-eight more on
  *  2026-09-30, `src/build/tuning.ts` — and they were deleted.) */
-export function initialDebugFlags(): DebugFlags {
+export function defaultExperiments(): Experiments {
   return { ...DEFAULT_EXPERIMENTS }
 }
 
-export function fieldSpec(field: DebugField): AnyFieldSpec {
-  return DEBUG_FIELDS.find((spec) => spec.field === field) as AnyFieldSpec
+export function experimentSpec(field: ExperimentField): AnyExperimentSpec {
+  return EXPERIMENT_FIELDS.find((spec) => spec.field === field) as AnyExperimentSpec
 }
 
-export function rowOfField(field: DebugField): number {
-  return DEBUG_FIELDS.findIndex((spec) => spec.field === field)
+export function experimentRow(field: ExperimentField): number {
+  return EXPERIMENT_FIELDS.findIndex((spec) => spec.field === field)
 }
 
 /** Where `d` opens Settings while a Nexus Pulse is on screen: the placeholder Pulse's own Experiments,
  *  which are what someone watching it wants to change, rather than the Build Phase's first. */
-export const FIRST_PULSE_EXPERIMENT_ROW = rowOfField("raid")
+export const FIRST_PULSE_EXPERIMENT_ROW = experimentRow("raid")
 
 /** A flag's current value, as the popup shows it. */
-export function formatDebugValue(flags: DebugFlags, field: DebugField): string {
-  const spec = fieldSpec(field) as FieldSpec<DebugField>
-  return (spec.format as (value: DebugFlags[DebugField]) => string)(flags[field])
+export function formatExperimentValue(flags: Experiments, field: ExperimentField): string {
+  const spec = experimentSpec(field) as ExperimentSpec<ExperimentField>
+  return (spec.format as (value: Experiments[ExperimentField]) => string)(flags[field])
 }
 
 /** The value one step from `current`, or `null` at the end of a list that does not cycle. */
@@ -187,13 +185,13 @@ function stepValue<T>(values: readonly T[], current: T, step: -1 | 1, cycles: bo
   return (found ?? null) as T | null
 }
 
-export type DebugAdjustment = Readonly<{ flags: DebugFlags; changed: boolean }>
+export type ExperimentAdjustment = Readonly<{ flags: Experiments; changed: boolean }>
 
 /** One Left (`-1`) or Right (`+1`) on a flag. A number at the end of its range stays put and says
  *  so (`changed: false`); a choice comes round. */
-export function adjustDebug(flags: DebugFlags, field: DebugField, step: -1 | 1): DebugAdjustment {
-  const spec = fieldSpec(field) as FieldSpec<DebugField>
-  const next = stepValue<DebugFlags[DebugField]>(spec.values, flags[field], step, spec.cycles)
+export function stepExperiment(flags: Experiments, field: ExperimentField, step: -1 | 1): ExperimentAdjustment {
+  const spec = experimentSpec(field) as ExperimentSpec<ExperimentField>
+  const next = stepValue<Experiments[ExperimentField]>(spec.values, flags[field], step, spec.cycles)
   if (next === null || next === flags[field]) return { flags, changed: false }
   return { flags: { ...flags, [field]: next }, changed: true }
 }

@@ -8,8 +8,8 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SPIKE_CATALOG } from "../src/build/catalog.ts"
-import { DEBUG_FIELDS, initialDebugFlags } from "../src/build/debug.ts"
-import type { DebugFlags } from "../src/build/debug.ts"
+import { EXPERIMENT_FIELDS, defaultExperiments } from "../src/build/experiments.ts"
+import type { Experiments } from "../src/build/experiments.ts"
 import { TUNING } from "../src/build/tuning.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import {
@@ -28,10 +28,10 @@ import {
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildContext, BuildState } from "../src/build/state.ts"
 import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct, menuEntries, remaining, startEntry } from "../src/build/state.ts"
-import { defaultExperiments, formatSettingsExport, parseSettingsExport } from "../src/build/settings-export.ts"
+import { formatSettingsExport, parseSettingsExport } from "../src/build/settings-export.ts"
 import { spikeContext } from "../src/cli/spike.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
-import { ACTIVE_VALUE, CARD_BEATS, GHOST_TRAIL, composeBuildFrame } from "../src/view/build.ts"
+import { ACTIVE_VALUE, CARD_BEATS, SEE_THROUGH_TRAIL, composeBuildFrame } from "../src/view/build.ts"
 import type { BuildCompositionInput, BuildFlash } from "../src/view/build.ts"
 import { BuildAnimation, cardKey, livePresentation } from "../src/view/build-live.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
@@ -48,7 +48,7 @@ const TAB = "\t"
 const ENTER = "\r"
 const MINIMUM = { columns: 80, rows: 24 }
 const ROOMY = { columns: 120, rows: 40 }
-const FLAGS: DebugFlags = initialDebugFlags()
+const FLAGS: Experiments = defaultExperiments()
 
 type Side = { build: BuildSession; layout: BuildLayout; context: BuildContext }
 
@@ -307,42 +307,42 @@ test("a building's arrow leaves from the cell right of its row on the menu, not 
     // Still an arrow: glyphs, no see-through cursor.
     const mid = flightCells(side, 0.5)
     assert.ok(mid.some((cell) => cell.cell.glyph !== cell.was.glyph), `${key}: no arrow glyphs`)
-    assert.ok(!mid.some((cell) => cell.cell.style.overlay !== undefined), `${key}: a building's hand-off drew the see-through cursor`)
+    assert.ok(!mid.some((cell) => cell.cell.style.seeThrough !== undefined), `${key}: a building's hand-off drew the see-through cursor`)
   }
 })
 
 // --- Explore Map's see-through cursor (F64) --------------------------------------------------------
 
-test("Explore Map's hand-off is a see-through copy of the cursor: glyphless overlay writes, no arrow glyphs", () => {
+test("Explore Map's hand-off is a see-through copy of the cursor: glyphless see-through writes, no arrow glyphs", () => {
   for (const terminal of [MINIMUM, ROOMY]) {
     const side = session(terminal)
     keys(side, "e")
     const { layout } = side
     const cursor = cellForTile(layout, side.build.state.camera, side.build.state.cursor)
-    const alphas = new Set(GHOST_TRAIL.map((copy) => copy.alpha))
+    const alphas = new Set(SEE_THROUGH_TRAIL.map((copy) => copy.alpha))
     assert.deepEqual([...alphas], [0.8, 0.45, 0.2])
     for (const progress of [0, 0.1, 0.3, 0.6, 0.9]) {
       const cells = flightCells(side, progress, "truecolor")
       assert.ok(cells.length > 0, `nothing drawn at ${progress}`)
       for (const { x, y, cell, was } of cells) {
         assert.equal(cell.glyph, was.glyph, `a glyph changed at ${x},${y}: the see-through cursor must keep what is beneath`)
-        const { overlay, ...rest } = cell.style
+        const { seeThrough, ...rest } = cell.style
         assert.deepEqual(rest, was.style, `the style beneath changed at ${x},${y}`)
-        assert.equal(overlay?.role, "chrome.title")
-        assert.ok(alphas.has(overlay?.alpha as number), `alpha ${overlay?.alpha}`)
+        assert.equal(seeThrough?.role, "chrome.title")
+        assert.ok(alphas.has(seeThrough?.alpha as number), `alpha ${seeThrough?.alpha}`)
         // Never on the real cursor's own cells, into which it settles.
         assert.ok(!(y === cursor.y && x >= cursor.x && x < cursor.x + layout.tileWidth), `drawn on the cursor at ${x},${y}`)
       }
     }
     // At the start, the head: one tile wide, full strength, leaving from Explore Map's row at the divider.
     const start = flightCells(side, 0, "truecolor")
-    const head = start.filter((cell) => cell.cell.style.overlay?.alpha === 0.8)
+    const head = start.filter((cell) => cell.cell.style.seeThrough?.alpha === 0.8)
     assert.deepEqual(
       head.map((cell) => [cell.x, cell.y]),
       Array.from({ length: layout.tileWidth }, (_, extra) => [layout.dividerColumn + extra, at(side, EXPLORE_ROW)]),
     )
     // Later, the head and a fainter trail behind it.
-    const mid = flightCells(side, 0.3, "truecolor").map((cell) => cell.cell.style.overlay?.alpha)
+    const mid = flightCells(side, 0.3, "truecolor").map((cell) => cell.cell.style.seeThrough?.alpha)
     assert.ok(mid.includes(0.8) && mid.includes(0.45), `no trail at 0.3: ${mid.join(" ")}`)
   }
 })
@@ -358,7 +358,7 @@ test("no see-through cursor with a popup open, on the menu, or in a still frame"
   const still = session()
   keys(still, "e")
   const frame = compose(still)
-  assert.ok(!frame.cells.some((cell) => cell.style.overlay !== undefined), "a still frame carries an overlay")
+  assert.ok(!frame.cells.some((cell) => cell.style.seeThrough !== undefined), "a still frame carries a see-through cell")
 })
 
 // --- The card reveal (F68): the drawing -------------------------------------------------------------
@@ -519,7 +519,7 @@ test("no reveal under reduced motion or with the Experiment off", () => {
   const off = session()
   const quiet = new BuildAnimation()
   quiet.frame(off.build.state, 0)
-  const state: BuildState = { ...off.build.state, debug: { ...off.build.state.debug, cardRevealMs: 0 }, focus: "grid", armed: 0 }
+  const state: BuildState = { ...off.build.state, experiments: { ...off.build.state.experiments, cardRevealMs: 0 }, focus: "grid", armed: 0 }
   assert.equal(quiet.frame(state, 1000).cardReveal, undefined)
 })
 
@@ -544,14 +544,14 @@ test("the reveal and the hand-off start together: neither waits for the other", 
 // --- The Experiment ---------------------------------------------------------------------------------
 
 test("Card reveal is an Experiment beside the focus arrow, 150 ms by default, and round-trips through the export", () => {
-  const fields = DEBUG_FIELDS.map((spec) => spec.field)
+  const fields = EXPERIMENT_FIELDS.map((spec) => spec.field)
   assert.deepEqual(fields.slice(0, 2), ["focusArrowMs", "cardRevealMs"])
-  const spec = DEBUG_FIELDS[1]
+  const spec = EXPERIMENT_FIELDS[1]
   assert.equal(spec?.label, "Card reveal")
   assert.deepEqual(spec?.values, [0, 100, 150, 250, 400, 800])
   assert.match(spec?.question ?? "", /\(F68\)$/)
   assert.equal(FLAGS.cardRevealMs, 150)
-  const experiments: DebugFlags = { ...defaultExperiments(), cardRevealMs: 400 }
+  const experiments: Experiments = { ...defaultExperiments(), cardRevealMs: 400 }
   const text = formatSettingsExport({ settings: DEFAULT_SETTINGS, experiments })
   assert.match(text, /cardRevealMs = 400 {2}# Card reveal, default 150 ms/)
   const back = parseSettingsExport(text, { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() })

@@ -3,7 +3,7 @@
 
 import { strict as assert } from "node:assert"
 import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
-import type { DebugField } from "../src/build/debug.ts"
+import type { ExperimentField } from "../src/build/experiments.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import { buildLayout } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
@@ -81,8 +81,8 @@ export function newSession(
 /** The Build Phase's commands up to (not including) the commit: the Experiments, a Nexus power, and
  *  the plan, each building placed by two clicks on its tile. */
 export function prepare(build: BuildSession, scenario: Scenario = {}): void {
-  const press = (field: DebugField, times: number): BuildCommand[] =>
-    Array.from({ length: times }, () => ({ kind: "debug-adjust", field, step: 1 }))
+  const press = (field: ExperimentField, times: number): BuildCommand[] =>
+    Array.from({ length: times }, () => ({ kind: "experiment-adjust", field, step: 1 }))
   build.run([...press("raid", scenario.raid ?? 0), ...press("crew", scenario.crew ?? 0)])
   build.dispatch({ kind: "pick-nexus", index: 1 }) // War Chest: 2000 to spend
   for (const [index, x, y] of scenario.plan ?? []) {

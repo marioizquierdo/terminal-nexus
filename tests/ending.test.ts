@@ -6,8 +6,8 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { DEBUG_FIELDS } from "../src/build/debug.ts"
-import type { DebugFlags } from "../src/build/debug.ts"
+import { EXPERIMENT_FIELDS } from "../src/build/experiments.ts"
+import type { Experiments } from "../src/build/experiments.ts"
 import type { RecallMove } from "../src/match/index.ts"
 import type { Outcome } from "../src/state/types.ts"
 import {
@@ -282,8 +282,8 @@ test("the result says what happened in words: won, lost, drawn or timed out — 
 })
 
 test("the placeholder Pulse's Experiments need no restart, and each names the question it serves", () => {
-  for (const field of ["raid", "crew"] as const satisfies readonly (keyof DebugFlags)[]) {
-    const spec = DEBUG_FIELDS.find((candidate) => candidate.field === field)
+  for (const field of ["raid", "crew"] as const satisfies readonly (keyof Experiments)[]) {
+    const spec = EXPERIMENT_FIELDS.find((candidate) => candidate.field === field)
     assert.ok(spec !== undefined, `${field} is not an Experiment`)
     assert.equal(spec.applies, "now")
     assert.ok(spec.question.length > 30, `${field} does not say what it is for`)

@@ -1,8 +1,8 @@
 // The terminal boundary — engine.md 9.1. An engine-owned structured cell frame, and an excellent
 // snapshot surface. No backend object ever appears inside a frame.
 
-import type { CapabilityMode, RoleOverlay, RoleTint, StyleRole, Theme } from "./roles.ts"
-import { DEFAULT_THEME, keepsDim, overlayColours, sgrBackgroundFor, sgrFor } from "./roles.ts"
+import type { CapabilityMode, SeeThrough, RoleTint, StyleRole, Theme } from "./roles.ts"
+import { DEFAULT_THEME, keepsDim, seeThroughColours, sgrBackgroundFor, sgrFor } from "./roles.ts"
 
 const ESC = "\u001b"
 
@@ -31,13 +31,13 @@ export type CellStyle = Readonly<{
    */
   tint?: RoleTint
   /**
-   * A see-through cursor over the cell (feedback F64-F65) — `roles.ts`'s `RoleOverlay` says how it
-   * mixes, and `overlayColours` (which every renderer calls) how each tier resolves it. Presentation's
+   * A see-through cursor over the cell (feedback F64-F65) — `roles.ts`'s `SeeThrough` says how it
+   * mixes, and `seeThroughColours` (which every renderer calls) how each tier resolves it. Presentation's
    * own, like `tint`: set by a glyphless write, so the glyph beneath always survives (the corruption
-   * law). A later glyphless write that carries its own `overlay` replaces this one; the two are not
+   * law). A later glyphless write that carries its own `seeThrough` replaces this one; the two are not
    * stacked.
    */
-  overlay?: RoleOverlay
+  seeThrough?: SeeThrough
 }>
 
 export type Cell = Readonly<{ glyph: string; style: CellStyle }>
@@ -131,24 +131,24 @@ export function frameToText(frame: ReadonlyCellFrame): string {
 }
 
 /**
- * One cell's SGR sequence. An overlay that shows at this tier (`overlayColours`) replaces the cell's own
+ * One cell's SGR sequence. A see-through style that shows at this tier (`seeThroughColours`) replaces the cell's own
  * colour and inverse codes with the mixed ones — the inverse is already folded into them — and its dim
  * (`keepsDim`); bold and underline stay as the cell has them.
  */
 function sgrOf(cell: Cell, capability: CapabilityMode, theme: Theme): string {
   const style = cell.style
-  const overlaid = overlayColours(cell, capability, theme)
+  const mixed = seeThroughColours(cell, capability, theme)
   const parts: number[] = []
-  if (overlaid === null) {
+  if (mixed === null) {
     parts.push(...sgrFor(style.fgRole, capability, theme, style.fade ?? 0, style.tint))
     parts.push(...sgrBackgroundFor(style.bgRole, capability, theme))
   } else {
-    parts.push(...overlaid.sgr)
+    parts.push(...mixed.sgr)
   }
   if (style.bold === true) parts.push(1)
-  if (keepsDim(style, overlaid)) parts.push(2)
+  if (keepsDim(style, mixed)) parts.push(2)
   if (style.underline === true) parts.push(4)
-  if (style.inverse === true && overlaid === null) parts.push(7)
+  if (style.inverse === true && mixed === null) parts.push(7)
   return parts.length === 0 ? "" : `${ESC}[${parts.join(";")}m`
 }
 

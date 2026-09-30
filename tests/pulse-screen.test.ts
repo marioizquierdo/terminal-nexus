@@ -8,7 +8,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
 import { centreOn } from "../src/build/camera.ts"
-import { DEBUG_FIELDS, rowOfField } from "../src/build/debug.ts"
+import { EXPERIMENT_FIELDS, experimentRow } from "../src/build/experiments.ts"
 import { escHintSpan, escLabel, pulseControlRows } from "../src/build/layout.ts"
 import { MOUSE_RIGHT } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
@@ -409,13 +409,13 @@ test("the playback keys pause, slow, speed, step and replay the Pulse — and on
   key(" ", 11_000) // resume, so a stray Space would now pause
   assert.equal(pulse.paused, false)
   key(ESC, 11_000)
-  assert.equal(played.build.state.overlay, "menu")
+  assert.equal(played.build.state.popup, "menu")
   for (const bytes of ["]", "[", ",", "."]) key(bytes, 11_000)
   assert.equal(pulse.speed, 0.5, "a speed key reached the Pulse through a popup")
   key(" ", 11_000)
   assert.equal(pulse.paused, false, "Space under a popup paused the Pulse")
-  for (let step = 0; step < 3 && played.build.state.overlay !== null; step += 1) key(ESC, 11_000)
-  assert.equal(played.build.state.overlay, null)
+  for (let step = 0; step < 3 && played.build.state.popup !== null; step += 1) key(ESC, 11_000)
+  assert.equal(played.build.state.popup, null)
 })
 
 test("nothing that edits the plan works once the Pulse is on screen, and q still asks", () => {
@@ -425,9 +425,9 @@ test("nothing that edits the plan works once the Pulse is on screen, and q still
   for (const bytes of ["1", "2", "3", "u", "\u007f", "p", "e", "n", "\t"]) key(bytes)
   assert.deepEqual(played.build.state.planned, planned)
   assert.equal(played.build.state.committed, true)
-  assert.equal(played.build.state.overlay, null, "a key opened a popup over the Pulse")
+  assert.equal(played.build.state.popup, null, "a key opened a popup over the Pulse")
   key("q")
-  assert.equal(played.build.state.overlay, "menu", "q did not open the game menu")
+  assert.equal(played.build.state.popup, "menu", "q did not open the game menu")
 })
 
 test("the panel's rows are clickable: Pause and Resume, Watch again — and nothing else on the panel is", () => {
@@ -477,17 +477,17 @@ test("the top bar's Esc label and Esc open the game menu over a Pulse too; x and
   assert.equal(escLabel(played.build.state), "menu [esc]")
   const hint = escHintSpan(played.layout, "menu [esc]")
   click(played, hint.from + 2, hint.row)
-  assert.equal(played.build.state.overlay, "menu")
+  assert.equal(played.build.state.popup, "menu")
   // A right click walks back as x does: it closes the game menu...
   click(played, 40, 12, MOUSE_RIGHT)
-  assert.equal(played.build.state.overlay, null)
+  assert.equal(played.build.state.popup, null)
   // ...and with nothing open it does nothing, nor does x — only Esc (and q, and the label) open the menu
   // (owner, 2026-09-30, feedback F62: a right click was one of the ways in until then).
   click(played, 40, 12, MOUSE_RIGHT)
   played.build.handleData("x", played.layout)
-  assert.equal(played.build.state.overlay, null)
+  assert.equal(played.build.state.popup, null)
   played.build.handleData(ESC, played.layout)
-  assert.equal(played.build.state.overlay, "menu")
+  assert.equal(played.build.state.popup, "menu")
 })
 
 test("a click on the map looks around it — the cursor moves, the view follows, and nothing is placed", () => {
@@ -537,13 +537,13 @@ test("the last three seconds warn, and `d` over a Pulse opens Settings at the pl
   assert.ok(timerCells(frame, played.layout).length + lightCells(frame, played.layout).length > 0, "the warning shows nothing")
 
   played.build.handleData("d", played.layout)
-  assert.equal(played.build.state.overlay, "settings")
-  assert.equal(played.build.state.overlayHighlight, rowOfField("raid"), "d did not open at the placeholder Pulse's Experiments")
+  assert.equal(played.build.state.popup, "settings")
+  assert.equal(played.build.state.popupHighlight, experimentRow("raid"), "d did not open at the placeholder Pulse's Experiments")
   assert.match(screenText(played), /Raid\s+<\s+probe\s+>/)
   // Before a Pulse it is still the first Experiment.
   const before = newSession()
   before.build.handleData("d", before.layout)
-  assert.equal(before.build.state.overlayHighlight, rowOfField(DEBUG_FIELDS[0]!.field))
+  assert.equal(before.build.state.popupHighlight, experimentRow(EXPERIMENT_FIELDS[0]!.field))
 })
 
 test("the frame timer runs while the Pulse plays, and stops when it is paused or the result stands", () => {
@@ -573,14 +573,14 @@ test("time holds while the terminal is too small to draw it, and the clock start
 
 test("starting over from the game menu is a fresh Build Phase with the Experiments kept; committing again plays a new Pulse", () => {
   const played = play({ plan: DEFENCE, raid: 1 })
-  assert.equal(played.build.state.debug.raid, "none")
+  assert.equal(played.build.state.experiments.raid, "none")
   const first = played.build.pulse
   played.build.handleData(ESC, played.layout)
   played.build.handleData("r", played.layout)
   assert.equal(played.build.state.committed, false)
   assert.equal(played.build.pulse, null, "the Pulse outlived the Build Phase it came from")
   assert.deepEqual(played.build.state.planned, [])
-  assert.equal(played.build.state.debug.raid, "none", "restarting lost an Experiment")
+  assert.equal(played.build.state.experiments.raid, "none", "restarting lost an Experiment")
   assert.match(screenText(played), /\[1\] Barracks/, "the Build Phase's menu is not back")
   prepare(played.build)
   played.build.run([{ kind: "commit" }, { kind: "confirm-commit" }])

@@ -1,6 +1,6 @@
 // The see-through cursor — feedback F64 and F65 (docs/feedback/2026-09-30-menu-spike-round-2.md).
 //
-// A cell's `overlay` is a role and an alpha, never a colour: the cursor drawn in that role at that
+// A cell's `seeThrough` is a role and an alpha, never a colour: the cursor drawn in that role at that
 // opacity over whatever the cell shows. The owner defined the mix himself — "if the background is
 // black, the icon on the background is yellow, and the cursor is white, then the cursor at 80% ... would
 // be 80% white, and the other 20% split between black (80%) and yellow (20%)" — and these tests hold
@@ -14,13 +14,13 @@ import type { CellSink } from "../src/view/backends/opentui.ts"
 import { drawFrameInto } from "../src/view/backends/opentui.ts"
 import type { Cell, CellStyle, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { BANDS, composeBands, frameToAnsi, frameToText } from "../src/view/frame.ts"
-import type { CapabilityMode, RoleOverlay, StyleRole, Theme } from "../src/view/roles.ts"
+import type { CapabilityMode, SeeThrough, StyleRole, Theme } from "../src/view/roles.ts"
 import {
   BACKGROUND_RGB,
   CAPABILITY_MODES,
-  OVERLAY_STEP,
-  mixOverlay,
-  overlayColours,
+  SEE_THROUGH_STEP,
+  mixSeeThrough,
+  seeThroughColours,
   rgbFor,
   sgrFor,
 } from "../src/view/roles.ts"
@@ -30,7 +30,7 @@ type Rgb = readonly [number, number, number]
 
 const GROUND = BACKGROUND_RGB.dark
 const truecolour = (role: StyleRole, theme: Theme = "dark"): Rgb => rgbFor(role, "truecolor", theme)
-const at = (role: StyleRole, alpha: number): RoleOverlay => ({ role, alpha })
+const at = (role: StyleRole, alpha: number): SeeThrough => ({ role, alpha })
 const cell = (glyph: string, style: CellStyle): Cell => ({ glyph, style })
 const frameOf = (...cells: Cell[]): ReadonlyCellFrame => ({ width: cells.length, height: 1, cells })
 
@@ -40,9 +40,9 @@ function ansiParams(target: Cell, capability: CapabilityMode, theme: Theme = "da
   return first === null ? [] : (first[1] ?? "").split(";").filter(Boolean).map(Number)
 }
 
-/** The same cell with its overlay taken away. */
-function withoutOverlay(target: Cell): Cell {
-  const { overlay: _overlay, ...style } = target.style
+/** The same cell with its see-through style taken away. */
+function withoutSeeThrough(target: Cell): Cell {
+  const { seeThrough: _seeThrough, ...style } = target.style
   return cell(target.glyph, style)
 }
 
@@ -102,7 +102,7 @@ test("the owner's worked example: a white cursor at 80% over a yellow glyph on b
   const yellow: Rgb = [255, 255, 0]
   const white: Rgb = [255, 255, 255]
   // The real cursor is inverse video, so its glyph is drawn in the ground: black here.
-  const mixed = mixOverlay(black, yellow, white, black, 0.8)
+  const mixed = mixSeeThrough(black, yellow, white, black, 0.8)
   // 80% white (204), plus 20% of [80% black + 20% yellow (51, 51, 0)] = 10.2 more red and green.
   assert.deepEqual(mixed.background, [214, 214, 204])
   // The glyph stays, drawn 80% of the way toward the cursor's own glyph colour.
@@ -111,8 +111,8 @@ test("the owner's worked example: a white cursor at 80% over a yellow glyph on b
 
 test("the same example through the dark theme's own roles, at truecolor", () => {
   // Ground (10,10,12), fx.hue.yellow (240,212,72), fx.flash (255,255,255).
-  const target = cell("$", { fgRole: "fx.hue.yellow", overlay: at("fx.flash", 0.8) })
-  const resolved = overlayColours(target, "truecolor", "dark")
+  const target = cell("$", { fgRole: "fx.hue.yellow", seeThrough: at("fx.flash", 0.8) })
+  const resolved = seeThroughColours(target, "truecolor", "dark")
   assert.ok(resolved !== null)
   assert.deepEqual(resolved.background, [215, 214, 209])
   assert.deepEqual(resolved.foreground, [56, 50, 24])
@@ -126,31 +126,31 @@ test("the glyph's colour is its role after tint and fade, as the renderers alrea
   for (const style of [tinted, faded]) {
     const glyph = rgbFor(style.fgRole, "truecolor", "dark", style.fade ?? 0, style.tint)
     assert.notDeepEqual(glyph, truecolour("player.a"))
-    const resolved = overlayColours(cell("A", { ...style, overlay: at("chrome.title", 0.8) }), "truecolor", "dark")
-    const expected = mixOverlay(GROUND, glyph, truecolour("chrome.title"), GROUND, 0.8)
+    const resolved = seeThroughColours(cell("A", { ...style, seeThrough: at("chrome.title", 0.8) }), "truecolor", "dark")
+    const expected = mixSeeThrough(GROUND, glyph, truecolour("chrome.title"), GROUND, 0.8)
     assert.deepEqual(resolved?.foreground, expected.foreground)
     assert.deepEqual(resolved?.background, expected.background)
   }
 })
 
 test("a cell with a background role mixes that background rather than the theme's", () => {
-  const target = cell("x", { fgRole: "chrome.title", bgRole: "player.b", overlay: at("chrome.title", 0.6) })
-  const expected = mixOverlay(truecolour("player.b"), truecolour("chrome.title"), truecolour("chrome.title"), GROUND, 0.6)
-  assert.deepEqual(overlayColours(target, "truecolor")?.background, expected.background)
-  assert.deepEqual(overlayColours(target, "truecolor")?.foreground, expected.foreground)
+  const target = cell("x", { fgRole: "chrome.title", bgRole: "player.b", seeThrough: at("chrome.title", 0.6) })
+  const expected = mixSeeThrough(truecolour("player.b"), truecolour("chrome.title"), truecolour("chrome.title"), GROUND, 0.6)
+  assert.deepEqual(seeThroughColours(target, "truecolor")?.background, expected.background)
+  assert.deepEqual(seeThroughColours(target, "truecolor")?.foreground, expected.foreground)
 })
 
 // --- Blank, inverse, and the ends of the alpha range ----------------------------------------------
 
 test("a blank cell has no glyph to mix: its ground goes straight toward the cursor", () => {
   const cursor = truecolour("chrome.title") // (236, 240, 245)
-  const bare = overlayColours(cell(" ", { overlay: at("chrome.title", 0.8) }), "truecolor", "dark")
+  const bare = seeThroughColours(cell(" ", { seeThrough: at("chrome.title", 0.8) }), "truecolor", "dark")
   assert.ok(bare !== null)
   // 20% of the ground (10,10,12) and 80% of the cursor.
   assert.deepEqual(bare.background, [191, 194, 198])
-  assert.deepEqual(bare.background, mixOverlay(GROUND, GROUND, cursor, GROUND, 0.8).background)
+  assert.deepEqual(bare.background, mixSeeThrough(GROUND, GROUND, cursor, GROUND, 0.8).background)
   // A role on a blank cell colours nothing, so it cannot tint the mix either.
-  const roled = overlayColours(cell(" ", { fgRole: "player.a", dim: true, overlay: at("chrome.title", 0.8) }), "truecolor")
+  const roled = seeThroughColours(cell(" ", { fgRole: "player.a", dim: true, seeThrough: at("chrome.title", 0.8) }), "truecolor")
   assert.deepEqual(roled?.background, bare.background)
 })
 
@@ -158,13 +158,13 @@ test("an inverse cell is resolved first, then the cursor goes over what it shows
   const edge = truecolour("chrome.edge")
   const cursor = truecolour("chrome.title")
   // A glyph on an inverse cell: its role is the fill, the ground its ink.
-  const lettered = cell("#", { fgRole: "chrome.edge", inverse: true, overlay: at("chrome.title", 0.8) })
-  const expected = mixOverlay(edge, GROUND, cursor, GROUND, 0.8)
-  assert.deepEqual(overlayColours(lettered, "truecolor")?.background, expected.background)
-  assert.deepEqual(overlayColours(lettered, "truecolor")?.foreground, expected.foreground)
+  const lettered = cell("#", { fgRole: "chrome.edge", inverse: true, seeThrough: at("chrome.title", 0.8) })
+  const expected = mixSeeThrough(edge, GROUND, cursor, GROUND, 0.8)
+  assert.deepEqual(seeThroughColours(lettered, "truecolor")?.background, expected.background)
+  assert.deepEqual(seeThroughColours(lettered, "truecolor")?.foreground, expected.foreground)
   // The map's solid edge: a blank inverse cell, simply its fill mixed toward the cursor.
-  const solid = cell(" ", { fgRole: "chrome.edge", inverse: true, overlay: at("chrome.title", 0.8) })
-  assert.deepEqual(overlayColours(solid, "truecolor")?.background, mixOverlay(edge, edge, cursor, GROUND, 0.8).background)
+  const solid = cell(" ", { fgRole: "chrome.edge", inverse: true, seeThrough: at("chrome.title", 0.8) })
+  assert.deepEqual(seeThroughColours(solid, "truecolor")?.background, mixSeeThrough(edge, edge, cursor, GROUND, 0.8).background)
   // The writer sends the resolved colours and no reversed video on top of them.
   assert.ok(!ansiParams(lettered, "truecolor").includes(7))
   assert.ok(!ansiParams(lettered, "color256").includes(7))
@@ -173,11 +173,11 @@ test("an inverse cell is resolved first, then the cursor goes over what it shows
 test("alpha 0 (or less, or not a number) changes nothing, at every tier and in every renderer", () => {
   const plain = cell("$", { fgRole: "fx.hue.yellow", bold: true })
   for (const alpha of [0, -0.3, Number.NaN]) {
-    const overlaid = cell("$", { ...plain.style, overlay: at("chrome.title", alpha) })
+    const mixed = cell("$", { ...plain.style, seeThrough: at("chrome.title", alpha) })
     for (const capability of CAPABILITY_MODES) {
-      assert.equal(overlayColours(overlaid, capability), null)
-      assert.equal(frameToAnsi(frameOf(overlaid), capability), frameToAnsi(frameOf(plain), capability))
-      assert.deepEqual(paintOps(frameOf(overlaid), capability), paintOps(frameOf(plain), capability))
+      assert.equal(seeThroughColours(mixed, capability), null)
+      assert.equal(frameToAnsi(frameOf(mixed), capability), frameToAnsi(frameOf(plain), capability))
+      assert.deepEqual(paintOps(frameOf(mixed), capability), paintOps(frameOf(plain), capability))
     }
   }
 })
@@ -185,12 +185,12 @@ test("alpha 0 (or less, or not a number) changes nothing, at every tier and in e
 test("alpha 1 is the plain cursor look: the fill is the cursor's colour, the glyph the ground", () => {
   // The real map cursor on bare ground is inverse video in chrome.title (src/view/build.ts).
   const cursorLook = cell("$", { fgRole: "chrome.title", inverse: true })
-  const full = cell("$", { fgRole: "fx.hue.yellow", overlay: at("chrome.title", 1) })
-  const resolved = overlayColours(full, "truecolor")
+  const full = cell("$", { fgRole: "fx.hue.yellow", seeThrough: at("chrome.title", 1) })
+  const resolved = seeThroughColours(full, "truecolor")
   assert.deepEqual(resolved?.background, truecolour("chrome.title"))
   assert.deepEqual(resolved?.foreground, GROUND)
   // The canvas paints both the same at every tier but 256 (where the real cursor keeps its exact role
-  // colour and the overlay, like any mix, lands on a palette entry).
+  // colour and the see-through style, like any mix, lands on a palette entry).
   for (const capability of ["truecolor", "color16", "monochrome"] as const) {
     const [look] = paintOps(frameOf(cursorLook), capability)
     const [over] = paintOps(frameOf(full), capability)
@@ -201,7 +201,7 @@ test("alpha 1 is the plain cursor look: the fill is the cursor's colour, the gly
   const params = ansiParams(full, "color256")
   assert.equal(params[params.indexOf(48) + 2], sgrFor("chrome.title", "color256")[2])
   // Alpha above 1 is 1.
-  assert.deepEqual(overlayColours(cell("$", { fgRole: "fx.hue.yellow", overlay: at("chrome.title", 3) }), "truecolor"), resolved)
+  assert.deepEqual(seeThroughColours(cell("$", { fgRole: "fx.hue.yellow", seeThrough: at("chrome.title", 3) }), "truecolor"), resolved)
 })
 
 // --- The tiers ------------------------------------------------------------------------------------
@@ -209,12 +209,12 @@ test("alpha 1 is the plain cursor look: the fill is the cursor's colour, the gly
 test("256 colours: the nearest palette entry to each exact mix", () => {
   for (const alpha of [0.2, 0.45, 0.8]) {
     for (const target of [
-      cell("$", { fgRole: "fx.hue.yellow", overlay: at("chrome.title", alpha) }),
-      cell(" ", { overlay: at("chrome.title", alpha) }),
-      cell("A", { fgRole: "player.a", inverse: true, overlay: at("fx.hue.cyan", alpha) }),
+      cell("$", { fgRole: "fx.hue.yellow", seeThrough: at("chrome.title", alpha) }),
+      cell(" ", { seeThrough: at("chrome.title", alpha) }),
+      cell("A", { fgRole: "player.a", inverse: true, seeThrough: at("fx.hue.cyan", alpha) }),
     ]) {
-      const exact = overlayColours(target, "truecolor")
-      const indexed = overlayColours(target, "color256")
+      const exact = seeThroughColours(target, "truecolor")
+      const indexed = seeThroughColours(target, "color256")
       assert.ok(exact !== null && indexed !== null)
       const foreground = nearest256(exact.foreground)
       const background = nearest256(exact.background)
@@ -227,52 +227,52 @@ test("256 colours: the nearest palette entry to each exact mix", () => {
   }
 })
 
-test("16 colours: from one half up the plain cursor in the overlay's hue, below it nothing", () => {
+test("16 colours: from one half up the plain cursor in the seeThrough's hue, below it nothing", () => {
   const plain = cell("$", { fgRole: "fx.hue.yellow", bgRole: "player.b" })
   const hue = sgrFor("chrome.title", "color16")[0]
-  for (const alpha of [OVERLAY_STEP, 0.8, 1]) {
-    const target = cell("$", { ...plain.style, overlay: at("chrome.title", alpha) })
+  for (const alpha of [SEE_THROUGH_STEP, 0.8, 1]) {
+    const target = cell("$", { ...plain.style, seeThrough: at("chrome.title", alpha) })
     // The cell's own foreground and background codes give way to the cursor's.
     assert.deepEqual(ansiParams(target, "color16"), [hue, 7], `alpha ${alpha}`)
-    assert.deepEqual(overlayColours(target, "color16")?.background, rgbFor("chrome.title", "color16"))
-    assert.deepEqual(overlayColours(target, "color16")?.foreground, GROUND)
+    assert.deepEqual(seeThroughColours(target, "color16")?.background, rgbFor("chrome.title", "color16"))
+    assert.deepEqual(seeThroughColours(target, "color16")?.foreground, GROUND)
   }
   for (const alpha of [0.2, 0.45]) {
-    const target = cell("$", { ...plain.style, overlay: at("chrome.title", alpha) })
-    assert.equal(overlayColours(target, "color16"), null)
+    const target = cell("$", { ...plain.style, seeThrough: at("chrome.title", alpha) })
+    assert.equal(seeThroughColours(target, "color16"), null)
     assert.equal(frameToAnsi(frameOf(target), "color16"), frameToAnsi(frameOf(plain), "color16"), `alpha ${alpha}`)
   }
 })
 
 test("monochrome: from one half up reversed video, below it nothing, and never a colour code", () => {
   const cells = [0.2, 0.45, 0.5, 0.8, 1].flatMap((alpha) => [
-    cell("$", { fgRole: "fx.hue.yellow", overlay: at("chrome.title", alpha) }),
-    cell(" ", { overlay: at("chrome.title", alpha) }),
-    cell("#", { fgRole: "chrome.edge", bgRole: "player.a", inverse: true, overlay: at("fx.hue.red", alpha) }),
+    cell("$", { fgRole: "fx.hue.yellow", seeThrough: at("chrome.title", alpha) }),
+    cell(" ", { seeThrough: at("chrome.title", alpha) }),
+    cell("#", { fgRole: "chrome.edge", bgRole: "player.a", inverse: true, seeThrough: at("fx.hue.red", alpha) }),
   ])
   for (const theme of ["dark", "light"] as const) {
     const ansi = frameToAnsi(frameOf(...cells), "monochrome", theme)
     assert.ok(!sgrCodes(ansi).some(isColourCode), `${theme}: monochrome emitted a colour code`)
   }
-  assert.deepEqual(ansiParams(cell("$", { fgRole: "fx.hue.yellow", bold: true, overlay: at("chrome.title", 0.8) }), "monochrome"), [7, 1])
-  assert.deepEqual(ansiParams(cell("$", { fgRole: "fx.hue.yellow", overlay: at("chrome.title", 0.45) }), "monochrome"), [])
-  assert.equal(overlayColours(cell("$", { overlay: at("chrome.title", 0.2) }), "monochrome"), null)
+  assert.deepEqual(ansiParams(cell("$", { fgRole: "fx.hue.yellow", bold: true, seeThrough: at("chrome.title", 0.8) }), "monochrome"), [7, 1])
+  assert.deepEqual(ansiParams(cell("$", { fgRole: "fx.hue.yellow", seeThrough: at("chrome.title", 0.45) }), "monochrome"), [])
+  assert.equal(seeThroughColours(cell("$", { seeThrough: at("chrome.title", 0.2) }), "monochrome"), null)
 })
 
 test("the light theme's cursor draws its glyph in the light ground", () => {
-  const resolved = overlayColours(cell("$", { fgRole: "fx.hue.yellow", overlay: at("chrome.title", 1) }), "truecolor", "light")
+  const resolved = seeThroughColours(cell("$", { fgRole: "fx.hue.yellow", seeThrough: at("chrome.title", 1) }), "truecolor", "light")
   assert.deepEqual(resolved?.foreground, BACKGROUND_RGB.light)
   assert.deepEqual(resolved?.background, truecolour("chrome.title", "light"))
 })
 
-test("an overlay that shows replaces the cell's colours, inverse and dim; bold and underline stay", () => {
+test("an seeThrough that shows replaces the cell's colours, inverse and dim; bold and underline stay", () => {
   const style: CellStyle = { fgRole: "terrain.plain", bold: true, dim: true, underline: true, inverse: true }
-  const target = cell(".", { ...style, overlay: at("chrome.title", 0.8) })
-  const faint = cell(".", { ...style, overlay: at("chrome.title", 0.2) })
+  const target = cell(".", { ...style, seeThrough: at("chrome.title", 0.8) })
+  const faint = cell(".", { ...style, seeThrough: at("chrome.title", 0.2) })
   for (const capability of CAPABILITY_MODES) {
-    const resolved = overlayColours(target, capability)
+    const resolved = seeThroughColours(target, capability)
     assert.ok(resolved !== null)
-    // The overlay's colours (reversed video included, at the two tiers that use it), then the cell's
+    // The see-through style's colours (reversed video included, at the two tiers that use it), then the cell's
     // bold and underline — no dim, and no second reversed video for the cell's own inverse.
     assert.deepEqual(ansiParams(target, capability), [...resolved.sgr, 1, 4], capability)
     const [op] = paintOps(frameOf(target), capability)
@@ -280,7 +280,7 @@ test("an overlay that shows replaces the cell's colours, inverse and dim; bold a
     assert.equal(op?.bold, true, capability)
     assert.equal(op?.underline, true, capability)
     // Where it shows nothing, the dim is the cell's again.
-    if (overlayColours(faint, capability) === null) {
+    if (seeThroughColours(faint, capability) === null) {
       assert.ok(ansiParams(faint, capability).includes(2), capability)
       assert.equal(paintOps(frameOf(faint), capability)[0]?.alpha, DIM_ALPHA, capability)
     }
@@ -289,30 +289,30 @@ test("an overlay that shows replaces the cell's colours, inverse and dim; bold a
 
 // --- Composition and text -------------------------------------------------------------------------
 
-test("composeBands lays a glyphless overlay write onto the cell beneath, keeping its glyph and style", () => {
+test("composeBands lays a glyphless seeThrough write onto the cell beneath, keeping its glyph and style", () => {
   const ground: Cell = cell(".", { fgRole: "terrain.plain", dim: true })
   const frame = composeBands(3, 1, [
     { band: BANDS.terrain, x: 0, y: 0, cell: ground },
     { band: BANDS.terrain, x: 1, y: 0, cell: ground },
     { band: BANDS.terrain, x: 2, y: 0, cell: ground },
     // Written out of band order on purpose: the compositor sorts.
-    { band: BANDS.highlights, x: 0, y: 0, style: { overlay: at("chrome.title", 0.8) } },
-    { band: BANDS.highlights, x: 1, y: 0, style: { overlay: at("chrome.title", 0.45) } },
+    { band: BANDS.highlights, x: 0, y: 0, style: { seeThrough: at("chrome.title", 0.8) } },
+    { band: BANDS.highlights, x: 1, y: 0, style: { seeThrough: at("chrome.title", 0.45) } },
     { band: BANDS.chrome, x: 1, y: 0, cell: cell("|", { fgRole: "chrome.frame" }) },
     { band: BANDS.effects, x: 2, y: 0, style: { tint: { role: "fx.flash", amount: 0.3 } } },
-    { band: BANDS.highlights, x: 2, y: 0, style: { overlay: at("chrome.title", 0.2) } },
+    { band: BANDS.highlights, x: 2, y: 0, style: { seeThrough: at("chrome.title", 0.2) } },
   ])
-  assert.deepEqual(frame.cells[0], cell(".", { fgRole: "terrain.plain", dim: true, overlay: at("chrome.title", 0.8) }))
-  // A whole cell drawn above it (chrome, a popup) replaces the overlay with everything else.
+  assert.deepEqual(frame.cells[0], cell(".", { fgRole: "terrain.plain", dim: true, seeThrough: at("chrome.title", 0.8) }))
+  // A whole cell drawn above it (chrome, a popup) replaces the see-through style with everything else.
   assert.deepEqual(frame.cells[1], cell("|", { fgRole: "chrome.frame" }))
   // It merges with other glyphless writes, like a tint.
   assert.deepEqual(frame.cells[2], cell(".", {
     fgRole: "terrain.plain",
     dim: true,
     tint: { role: "fx.flash", amount: 0.3 },
-    overlay: at("chrome.title", 0.2),
+    seeThrough: at("chrome.title", 0.2),
   }))
-  // Text frames show glyphs only: the overlay is not in them.
+  // Text frames show glyphs only: the see-through style is not in them.
   assert.equal(frameToText(frame), ".|.")
 })
 
@@ -342,14 +342,14 @@ async function drawnByOpenTui(frame: ReadonlyCellFrame, capability: CapabilityMo
   return drawn
 }
 
-test("the ANSI writer, the canvas and OpenTUI resolve one overlaid cell to the same colours", async () => {
+test("the ANSI writer, the canvas and OpenTUI resolve one mixed cell to the same colours", async () => {
   const cells = [
-    cell("$", { fgRole: "fx.hue.yellow", overlay: at("chrome.title", 0.8) }),
-    cell(" ", { overlay: at("chrome.title", 0.45) }),
-    cell("A", { fgRole: "player.a", inverse: true, overlay: at("fx.hue.cyan", 0.2) }),
-    cell("#", { fgRole: "chrome.edge", bgRole: "player.b", overlay: at("chrome.title", 0.6) }),
-    cell(".", { fgRole: "terrain.plain", dim: true, overlay: at("chrome.title", 0.8) }),
-    cell(".", { fgRole: "terrain.plain", dim: true, overlay: at("chrome.title", 0.3) }),
+    cell("$", { fgRole: "fx.hue.yellow", seeThrough: at("chrome.title", 0.8) }),
+    cell(" ", { seeThrough: at("chrome.title", 0.45) }),
+    cell("A", { fgRole: "player.a", inverse: true, seeThrough: at("fx.hue.cyan", 0.2) }),
+    cell("#", { fgRole: "chrome.edge", bgRole: "player.b", seeThrough: at("chrome.title", 0.6) }),
+    cell(".", { fgRole: "terrain.plain", dim: true, seeThrough: at("chrome.title", 0.8) }),
+    cell(".", { fgRole: "terrain.plain", dim: true, seeThrough: at("chrome.title", 0.3) }),
   ]
   for (const theme of ["dark", "light"] as const) {
     for (const capability of CAPABILITY_MODES) {
@@ -358,13 +358,13 @@ test("the ANSI writer, the canvas and OpenTUI resolve one overlaid cell to the s
       const opentui = await drawnByOpenTui(frame, capability, theme)
       cells.forEach((target, index) => {
         const label = `${theme} ${capability} cell ${index}`
-        const resolved = overlayColours(target, capability, theme)
+        const resolved = seeThroughColours(target, capability, theme)
         const op = ops[index]
         const tui = opentui[index]
         assert.ok(op !== undefined && tui !== undefined)
         if (resolved === null) {
-          // Nothing to agree about: every renderer drew the cell as it would without the overlay.
-          const plain = frameOf(withoutOverlay(target))
+          // Nothing to agree about: every renderer drew the cell as it would without the see-through style.
+          const plain = frameOf(withoutSeeThrough(target))
           assert.deepEqual(op, { ...paintOps(plain, capability, theme)[0], x: index }, label)
           assert.equal(frameToAnsi(frameOf(target), capability, theme), frameToAnsi(plain, capability, theme), label)
           assert.equal(tui.dim, target.style.dim === true, label)

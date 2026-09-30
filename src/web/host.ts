@@ -24,8 +24,9 @@ import { loadScenario } from "../scenario/load.ts"
 import type { ScenarioDefinition } from "../scenario/types.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
 import { DEFAULT_SETTINGS, parseSettings } from "../settings/types.ts"
-import type { DebugFlags } from "../build/debug.ts"
-import { defaultExperiments, parseSettingsExport } from "../build/settings-export.ts"
+import type { Experiments } from "../build/experiments.ts"
+import { defaultExperiments } from "../build/experiments.ts"
+import { parseSettingsExport } from "../build/settings-export.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
 import { DEFAULT_PRESENTATION } from "../view/snapshot.ts"
 import { CanvasBackend } from "../view/backends/canvas.ts"
@@ -208,7 +209,7 @@ async function start(next: Mode): Promise<void> {
     }
   }
   const settings: Settings = importing?.snapshot.settings ?? saved
-  const experiments: DebugFlags | null = importing?.snapshot.experiments ?? null
+  const experiments: Experiments | null = importing?.snapshot.experiments ?? null
   backend = new CanvasBackend({
     canvas,
     capability: settings.capability,

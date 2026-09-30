@@ -161,8 +161,8 @@ export const ESC_KEY = "[esc]"
  * menu (and on a committed Build Phase), where Esc opens the game menu. The label comes first and the
  * key after it — "menu [esc]" — the way a way-back is read, hotkey on the right.
  */
-export function escLabel(state: Pick<BuildState, "overlay" | "focus" | "committed">): string {
-  const action = state.overlay !== null ? "close" : state.committed || state.focus !== "grid" ? "menu" : "back"
+export function escLabel(state: Pick<BuildState, "popup" | "focus" | "committed">): string {
+  const action = state.popup !== null ? "close" : state.committed || state.focus !== "grid" ? "menu" : "back"
   return `${action} ${ESC_KEY}`
 }
 

@@ -7,7 +7,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { isGated } from "../src/build/camera.ts"
-import { DEBUG_FIELDS } from "../src/build/debug.ts"
+import { EXPERIMENT_FIELDS } from "../src/build/experiments.ts"
 import { EXPLORE_ROW, buildLayout, cellForTile, menuEntryAt, tileAtCell } from "../src/build/layout.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
@@ -167,7 +167,7 @@ test("the map's own edge is the style the map names, and the solid bar for a map
 })
 
 test("the map edge is the rule now, not an Experiment: none of the three settled flags is left in the list", () => {
-  const fields = new Set<string>(DEBUG_FIELDS.map((spec) => spec.field))
+  const fields = new Set<string>(EXPERIMENT_FIELDS.map((spec) => spec.field))
   for (const field of ["mapEdge", "mapEdgeColour", "sharedWestBorder"]) {
     assert.equal(fields.has(field), false, `${field} was settled by the owner's playtest and deleted`)
   }

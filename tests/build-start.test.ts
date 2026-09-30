@@ -7,7 +7,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { START_LABEL, menuEntryAt, startRow } from "../src/build/layout.ts"
-import { DEFAULT_ROUND_TEXT, overlaySpec, placeOverlay } from "../src/build/overlay.ts"
+import { DEFAULT_ROUND_TEXT, popupSpec, placePopup } from "../src/build/popup.ts"
 import { menuEntries, startEntry } from "../src/build/state.ts"
 import { cellAt } from "../src/view/frame.ts"
 import { MINIMUM, click, frameOf, newSession, screenText } from "./pulse-helpers.ts"
@@ -58,7 +58,7 @@ test("Up and Down reach Start Pulse and Enter presses it — no hotkey and no mo
   }
   assert.equal(session.build.state.menuHighlight, last, "Down never reached Start Pulse")
   session.build.handleData("\r", session.layout)
-  assert.equal(session.build.state.overlay, "confirm-commit")
+  assert.equal(session.build.state.popup, "confirm-commit")
   session.build.handleData("\r", session.layout)
   assert.equal(session.build.state.committed, true, "Enter, Enter did not start the Pulse")
   assert.ok(session.build.pulse !== null)
@@ -84,13 +84,13 @@ test("the rule: every entry of the menu is reached by Down and done by Enter alo
         assert.equal(state.exploreMap, true, "Enter on Explore Map did not open it")
         break
       case "nexus":
-        assert.equal(state.overlay, "nexus-powers", "Enter on Nexus did not open its popup")
+        assert.equal(state.popup, "nexus-powers", "Enter on Nexus did not open its popup")
         break
       case "construct":
         assert.equal(state.armed, entry.index, `Enter on construct row ${entry.index} did not arm it`)
         break
       case "start":
-        assert.equal(state.overlay, "confirm-commit", "Enter on Start Pulse did not open its screen")
+        assert.equal(state.popup, "confirm-commit", "Enter on Start Pulse did not open its screen")
         break
       default: {
         const unhandled: never = entry
@@ -124,14 +124,14 @@ test("s, p, a click and Enter on the highlighted row all ask the same, and refus
   for (const [name, press] of presses) {
     const session = ready()
     press(session)
-    assert.equal(session.build.state.overlay, "confirm-commit", `${name} did not open the Battle Round screen`)
+    assert.equal(session.build.state.popup, "confirm-commit", `${name} did not open the Battle Round screen`)
     assert.match(session.build.state.status.text, /^Battle Round 1:/, name)
   }
   // With the pick still waiting, each is refused with its reason and no screen opens.
   for (const [name, press] of presses) {
     const session = newSession()
     press(session)
-    assert.equal(session.build.state.overlay, null, `${name} opened the screen with a pick waiting`)
+    assert.equal(session.build.state.popup, null, `${name} opened the screen with a pick waiting`)
     assert.match(session.build.state.status.text, /Pick a Nexus power first/, name)
   }
 })
@@ -149,7 +149,7 @@ test("the row is active while its screen is open, back on the menu with the row 
   // Drawn active (feedback F67, F70): its own hotkey, and one `>` pointing at the screen it opened.
   assert.match(text.slice(session.layout.panelColumn), /^\[s\] Start Pulse +>[|+]/)
   session.build.handleData(ESC, session.layout)
-  assert.equal(session.build.state.overlay, null)
+  assert.equal(session.build.state.popup, null)
   assert.equal(session.build.state.focus, "menu")
   const entries = menuEntries(session.context)
   assert.equal(session.build.state.menuHighlight, entries.length - 1, "Esc did not leave the highlight on Start Pulse")
@@ -160,7 +160,7 @@ test("the menu gives way to Explore Map, Start Pulse with the rest of it — and
   session.build.dispatch({ kind: "explore" })
   assert.doesNotMatch(startLine(session), /Start Pulse/)
   click(session, session.layout.panelColumn + 3, startRow(session.layout))
-  assert.equal(session.build.state.overlay, null, "a click on the hidden row opened the confirmation")
+  assert.equal(session.build.state.popup, null, "a click on the hidden row opened the confirmation")
   assert.equal(session.build.state.exploreMap, false)
   assert.match(startLine(session), /Start Pulse/)
 })
@@ -168,7 +168,7 @@ test("the menu gives way to Explore Map, Start Pulse with the rest of it — and
 test("the Battle Round screen: its title, what it announces, and one highlighted row, [s] Start", () => {
   const session = ready()
   session.build.handleData("s", session.layout)
-  const spec = overlaySpec(session.context, session.build.state)
+  const spec = popupSpec(session.context, session.build.state)
   assert.ok(spec !== null)
   assert.equal(spec.title, "Battle Round 1")
   const notes = spec.rows.flatMap((row) => (row.kind === "note" ? [row.text] : []))
@@ -189,12 +189,12 @@ test("a mission can say its own words for a round, and every other round says th
   const session = ready()
   const context = { ...session.context, roundText: { 1: "Hold the line until the Nexus is charged." } }
   session.build.handleData("s", session.layout)
-  const own = overlaySpec(context, session.build.state)!
+  const own = popupSpec(context, session.build.state)!
   assert.deepEqual(
     own.rows.flatMap((row) => (row.kind === "note" ? [row.text] : [])),
     ["Hold the line until the Nexus is charged."],
   )
-  const other = overlaySpec({ ...context, roundText: { 2: "A second wave." } }, session.build.state)!
+  const other = popupSpec({ ...context, roundText: { 2: "A second wave." } }, session.build.state)!
   assert.deepEqual(
     other.rows.flatMap((row) => (row.kind === "note" ? [row.text] : [])),
     ["Activate Nexus.", "Collect Resources.", "Spawn Units."],
@@ -214,20 +214,20 @@ test("Enter, Space, s and y start the Pulse; Esc and x go back; n is not a key t
     session.build.handleData("s", session.layout)
     session.build.handleData(key, session.layout)
     assert.equal(session.build.state.committed, false, `${JSON.stringify(key)} started the Pulse`)
-    assert.equal(session.build.state.overlay, null, `${JSON.stringify(key)} left the screen open`)
+    assert.equal(session.build.state.popup, null, `${JSON.stringify(key)} left the screen open`)
     assert.equal(session.build.pulse, null)
   }
   const stays = ready()
   stays.build.handleData("s", stays.layout)
   stays.build.handleData("n", stays.layout)
-  assert.equal(stays.build.state.overlay, "confirm-commit", "n closed the screen, or opened the Nexus popup over it")
+  assert.equal(stays.build.state.popup, "confirm-commit", "n closed the screen, or opened the Nexus popup over it")
   assert.equal(stays.build.state.committed, false)
 })
 
 test("a click on [s] Start starts it; a click outside the screen goes back", () => {
   const start = ready()
   start.build.handleData("s", start.layout)
-  const placed = placeOverlay(start.layout, overlaySpec(start.context, start.build.state)!)
+  const placed = placePopup(start.layout, popupSpec(start.context, start.build.state)!)
   const row = placed.rows.find((entry) => entry.spec.kind === "option" && entry.spec.hotkey === "s")
   assert.ok(row !== undefined, "no [s] row on the screen")
   click(start, placed.textColumn + 2, row.row)
@@ -238,22 +238,22 @@ test("a click on [s] Start starts it; a click outside the screen goes back", () 
   outside.build.handleData("s", outside.layout)
   click(outside, outside.layout.gridBox.right - 2, outside.layout.gridBox.bottom - 1)
   assert.equal(outside.build.state.committed, false)
-  assert.equal(outside.build.state.overlay, null)
+  assert.equal(outside.build.state.popup, null)
 })
 
 test("s is still Settings inside the game menu, and pressing Start during a Pulse only says it is committed", () => {
   const menu = ready()
   menu.build.handleData(ESC, menu.layout) // on the menu, Esc opens the game menu
-  assert.equal(menu.build.state.overlay, "menu")
+  assert.equal(menu.build.state.popup, "menu")
   menu.build.handleData("s", menu.layout)
-  assert.equal(menu.build.state.overlay, "settings")
+  assert.equal(menu.build.state.popup, "settings")
 
   const playing = ready()
   playing.build.handleData("s", playing.layout)
   playing.build.handleData("s", playing.layout)
   assert.ok(playing.build.pulse !== null)
   playing.build.handleData("s", playing.layout)
-  assert.equal(playing.build.state.overlay, null)
+  assert.equal(playing.build.state.popup, null)
   assert.match(playing.build.state.status.text, /committed/)
 })
 

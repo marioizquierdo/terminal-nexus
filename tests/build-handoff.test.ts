@@ -10,15 +10,15 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
-import { DEBUG_FIELDS, initialDebugFlags } from "../src/build/debug.ts"
-import type { DebugFlags } from "../src/build/debug.ts"
+import { EXPERIMENT_FIELDS, defaultExperiments } from "../src/build/experiments.ts"
+import type { Experiments } from "../src/build/experiments.ts"
 import { TUNING } from "../src/build/tuning.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import { buildLayout, cellForTile, menuEntryRow, tileAtCell } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { structureAtTile } from "../src/build/state.ts"
-import { defaultExperiments, formatSettingsExport, parseSettingsExport } from "../src/build/settings-export.ts"
+import { formatSettingsExport, parseSettingsExport } from "../src/build/settings-export.ts"
 import { runSpike, spikeContext } from "../src/cli/spike.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
@@ -35,7 +35,7 @@ const ENTER = "\r"
 const MINIMUM = { columns: 80, rows: 24 }
 /** The hand-off as the game times it: the focus arrow's default, the tuned pressed flash and blinks. */
 const FLAGS: HandoffTiming = {
-  focusArrowMs: initialDebugFlags().focusArrowMs,
+  focusArrowMs: defaultExperiments().focusArrowMs,
   pressedFlashMs: TUNING.pressedFlashMs,
   cursorBlinks: TUNING.cursorBlinks,
 }
@@ -57,10 +57,10 @@ function keys(side: Side, ...sequence: string[]): void {
 }
 
 function setFlag<F extends "focusArrowMs">(side: Side, field: F, value: number): void {
-  for (let guard = 0; guard < 20 && side.build.state.debug[field] !== value; guard += 1) {
-    side.build.dispatch({ kind: "debug-adjust", field, step: side.build.state.debug[field] > value ? -1 : 1 })
+  for (let guard = 0; guard < 20 && side.build.state.experiments[field] !== value; guard += 1) {
+    side.build.dispatch({ kind: "experiment-adjust", field, step: side.build.state.experiments[field] > value ? -1 : 1 })
   }
-  assert.equal(side.build.state.debug[field], value)
+  assert.equal(side.build.state.experiments[field], value)
 }
 
 function compose(side: Side, extra: Partial<BuildCompositionInput> = {}, glyphPack: "ascii" | "unicode" = "ascii"): ReadonlyCellFrame {
@@ -131,7 +131,7 @@ test("the live loop plays it from the frame that first sees the hand-off, and ke
   const animation = new BuildAnimation()
   animation.frame(side.build.state, 0)
   keys(side, "e") // Explore Map, from the menu
-  const end = 1000 + handoffSchedule({ ...FLAGS, focusArrowMs: side.build.state.debug.focusArrowMs }, false).endMs
+  const end = 1000 + handoffSchedule({ ...FLAGS, focusArrowMs: side.build.state.experiments.focusArrowMs }, false).endMs
   const at = (now: number) => animation.frame(side.build.state, now)
   const first = at(1000)
   assert.deepEqual(first.focusArrow, { progress: 0 })
@@ -181,7 +181,7 @@ test("it stops for good when the keyboard leaves the map, a popup opens, or the 
     assert.equal(stopped.focusArrow, undefined, `${name}: the arrow kept flying`)
     assert.equal(stopped.cursorBlink, undefined, `${name}: the cursor blinked`)
     // Back on the map without a new hand-off (Tab, closing the popup): it does not pick up again.
-    if (side.build.state.overlay !== null) keys(side, ESC)
+    if (side.build.state.popup !== null) keys(side, ESC)
     if (side.build.state.focus === "menu") keys(side, TAB)
     const resumed = animation.frame(side.build.state, 1200)
     assert.equal(resumed.focusArrow, undefined, `${name}: the arrow came back`)
@@ -336,9 +336,9 @@ test("the cursor blinks in the menu row's pressed look, and is the plain cursor 
 // --- The Experiments --------------------------------------------------------------------------------
 
 test("Focus arrow is the first Experiment, and round-trips through the export; the settled blink count is skipped quietly", () => {
-  assert.equal(DEBUG_FIELDS[0]?.field, "focusArrowMs")
-  assert.match(DEBUG_FIELDS[0]?.question ?? "", /\(F54\)$/)
-  const experiments: DebugFlags = { ...defaultExperiments(), focusArrowMs: 350 }
+  assert.equal(EXPERIMENT_FIELDS[0]?.field, "focusArrowMs")
+  assert.match(EXPERIMENT_FIELDS[0]?.question ?? "", /\(F54\)$/)
+  const experiments: Experiments = { ...defaultExperiments(), focusArrowMs: 350 }
   const text = formatSettingsExport({ settings: DEFAULT_SETTINGS, experiments })
   assert.match(text, /focusArrowMs = 350 {2}# Focus arrow, default 180 ms/)
   assert.doesNotMatch(text, /cursorBlinks/)

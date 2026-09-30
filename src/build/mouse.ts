@@ -7,8 +7,8 @@
 
 import type { BuildLayout } from "./layout.ts"
 import { ESC_KEY, escHintAt, inPanelColumns, menuEntryAt, pulseControlAt, tileAtCell } from "./layout.ts"
-import type { PlacedOverlay } from "./overlay.ts"
-import { overlayHitAt } from "./overlay.ts"
+import type { PlacedPopup } from "./popup.ts"
+import { popupHitAt } from "./popup.ts"
 import type { Camera } from "./camera.ts"
 import { EXPLORE_ENTRY, JUMP_TILES } from "./state.ts"
 import type { BuildCommand, ConstructItem } from "./types.ts"
@@ -18,7 +18,7 @@ import type { BuildCommand, ConstructItem } from "./types.ts"
  *  and the top bar's Esc label as drawn (`escLabel`), whose width is its click target — "close [esc]"
  *  with a popup open, "menu [esc]" otherwise, when not given. */
 export type MouseUiState = Readonly<{
-  overlay?: PlacedOverlay
+  popup?: PlacedPopup
   cardPanel?: boolean
   escLabel?: string
   /** A Nexus Pulse is on screen (gate 6A): its panel's control rows are click targets, and nothing else
@@ -97,19 +97,19 @@ export function buildMouseCommand(
   // The top bar's Esc label — "menu [esc]", "back [esc]", "close [esc]" — is Esc itself, whatever is
   // open (feedback F37): one level back, exactly as the key goes, never the click-outside that closes
   // every popup at once.
-  const escText = ui.escLabel ?? `${ui.overlay === undefined ? "menu" : "close"} ${ESC_KEY}`
+  const escText = ui.escLabel ?? `${ui.popup === undefined ? "menu" : "close"} ${ESC_KEY}`
   if (event.button === MOUSE_LEFT && escHintAt(layout, escText, event.column, event.row)) return { kind: "cancel" }
 
   // An open popup holds the mouse. Inside it, a click is one of its options or its scroll bar; outside
   // it, the click closes it and brings focus to wherever it landed, and does nothing more (owner,
   // 2026-09-27 — he clicked Nexus, missed the popup in the middle, and thought the mouse was broken).
-  if (ui.overlay !== undefined) {
+  if (ui.popup !== undefined) {
     // The wheel walks a popup's list, which scrolls Settings' and the export's (gate 5H) — Up and
     // Down's own job.
     if (event.button === MOUSE_WHEEL_UP) return { kind: "highlight", delta: -1 }
     if (event.button === MOUSE_WHEEL_DOWN) return { kind: "highlight", delta: 1 }
     if (event.button !== MOUSE_LEFT) return null
-    const hit = overlayHitAt(ui.overlay, event.column, event.row)
+    const hit = popupHitAt(ui.popup, event.column, event.row)
     if (hit.kind === "command") return hit.command
     if (hit.kind === "outside") return underneath() ?? { kind: "cancel" }
     return null

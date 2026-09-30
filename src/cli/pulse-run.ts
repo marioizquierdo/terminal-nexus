@@ -26,7 +26,7 @@ const PULSE_ID = "nexus-pulse"
  */
 export function startPulse(context: BuildContext, state: BuildState): ResolvedPulse | null {
   if (context.pulse === undefined) return null
-  const setup = context.pulse(state.debug)
+  const setup = context.pulse(state.experiments)
   // Everything standing when the Pulse starts: what was already there, and what the plan built.
   const structures = [
     ...context.standing.map((structure) => ({ contentId: structure.contentId, anchor: structure.anchor })),

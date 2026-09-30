@@ -12,8 +12,8 @@ import type { StatusMessage } from "../status.ts"
 import { NO_STATUS, status } from "../status.ts"
 import type { Camera, Margin, Viewport } from "./camera.ts"
 import { centreOn, clampToGrid, edgeClickCamera, followCursor, marginForView } from "./camera.ts"
-import type { DebugField, DebugFlags } from "./debug.ts"
-import { FIRST_PULSE_EXPERIMENT_ROW, adjustDebug, fieldSpec, formatDebugValue, initialDebugFlags, rowOfField } from "./debug.ts"
+import type { ExperimentField, Experiments } from "./experiments.ts"
+import { FIRST_PULSE_EXPERIMENT_ROW, stepExperiment, experimentSpec, formatExperimentValue, defaultExperiments, experimentRow } from "./experiments.ts"
 import { TUNING } from "./tuning.ts"
 import type { Settings } from "../settings/types.ts"
 import { DEFAULT_SETTINGS } from "../settings/types.ts"
@@ -44,7 +44,7 @@ import type {
   MapEdgeStyle,
   MenuEntry,
   NexusPowerOption,
-  Overlay,
+  Popup,
   PlannedPlacement,
   PopupMessage,
   StandingStructure,
@@ -87,7 +87,7 @@ export type BuildContext = Readonly<{
   settings?: Settings
   /** Experiments to open with instead of this build's defaults — an imported export
    *  (`settings-export.ts`), so an agent can start from exactly what the owner had. */
-  experiments?: Partial<DebugFlags>
+  experiments?: Partial<Experiments>
   /** The commit this build is, when the adapter knows it: the first line of an export names it. */
   buildId?: string
   /**
@@ -95,11 +95,11 @@ export type BuildContext = Readonly<{
    * "Raid" and "Your units" flags pick which placeholder Pulse). Absent: committing only freezes the
    * plan — every context the tests build by hand.
    */
-  pulse?: (experiments: DebugFlags) => PulseSetup
+  pulse?: (experiments: Experiments) => PulseSetup
   /**
    * What the Battle Round confirmation announces for round *n*, keyed by its number (owner, 2026-09-29,
    * feedback F49: "campaign missions may inject pulse-n text here"). A round with no entry says
-   * `DEFAULT_ROUND_TEXT` (`overlay.ts`). Nothing supplies one yet; a mission's own data will.
+   * `DEFAULT_ROUND_TEXT` (`popup.ts`). Nothing supplies one yet; a mission's own data will.
    */
   roundText?: Readonly<Record<number, string>>
   /** Where the adapter puts an export besides the screen, said in the export popup — "Copied to the
@@ -186,15 +186,15 @@ export type BuildState = Readonly<{
    *  9.7), the game menu, Settings, the export, or a message. Never opened by anything but the player —
    *  a message only as the answer to something the player did (closing Settings with a change that
    *  needs a restart). */
-  overlay: Overlay | null
+  popup: Popup | null
   /** The popup's own highlight, reset whenever one opens: an index into the Nexus popup's pending
    *  powers or the game menu's rows, a row id in Settings (`src/build/settings.ts`), and the first
    *  line shown in the export. */
-  overlayHighlight: number
+  popupHighlight: number
   /** The popups under the open one, nearest last — what Esc goes back to, one at a time: the game menu
    *  under Settings opened from it, Settings under the export. Empty: Esc goes back to the game. */
-  overlayUnder: readonly Overlay[]
-  /** What the message popup says while `overlay` is `"message"`, and `null` otherwise (feedback F34):
+  popupUnder: readonly Popup[]
+  /** What the message popup says while `popup` is `"message"`, and `null` otherwise (feedback F34):
    *  a title and text, nothing to choose. */
   message: PopupMessage | null
   planned: readonly PlannedPlacement[]
@@ -218,12 +218,12 @@ export type BuildState = Readonly<{
    *  into a next Build Phase exists (Milestone 6's second gate), which is what will count it up. */
   pulseNumber: number
   /**
-   * the Experiments (gate 5G, `src/build/debug.ts`). State rather than context because they change
+   * the Experiments (gate 5G, `src/build/experiments.ts`). State rather than context because they change
    * while the screen is open; the input path reads the hold window, the live loop the focus arrow and
    * the card reveal, and a commit the placeholder Pulse's raid and crew. Survive a restart; not saved
    * anywhere else.
    */
-  debug: DebugFlags
+  experiments: Experiments
   /**
    * The player's own settings — background, colour depth, symbols, reduced motion — as the Settings
    * popup last left them. The reducer only records them; the live loop draws with them and saves them
@@ -234,7 +234,7 @@ export type BuildState = Readonly<{
   startCursor: Coord
   /** The flags this Build Phase started with: an experiment that applies only after a restart is
    *  pending while its value differs from its value here (`pendingRestart`). */
-  startFlags: DebugFlags
+  startExperiments: Experiments
   /** The names of the pending restart settings the message popup last announced, so closing Settings
    *  again without changing them does not say it again — the player may keep playing and restart
    *  later (feedback F34). Empty after a restart. */
@@ -298,14 +298,14 @@ function marginOf(context: BuildContext, viewport: Viewport): Margin {
 }
 
 /**
- * A fresh Build Phase. `debug` carries a restart's flags over; otherwise they are this build's
- * defaults, under whatever the context imports (`initialDebugFlags`, `BuildContext.experiments`).
+ * A fresh Build Phase. `experiments` carries a restart's over; otherwise they are this build's
+ * defaults, under whatever the context imports (`defaultExperiments`, `BuildContext.experiments`).
  */
 export function createBuildState(
   context: BuildContext,
   cursor: Coord,
   viewport: Viewport,
-  debug: DebugFlags = { ...initialDebugFlags(), ...context.experiments },
+  experiments: Experiments = { ...defaultExperiments(), ...context.experiments },
   settings: Settings = context.settings ?? DEFAULT_SETTINGS,
 ): BuildState {
   const start = clampToGrid(cursor, context.grid)
@@ -325,9 +325,9 @@ export function createBuildState(
     focus: "menu",
     menuHighlight: EXPLORE_ENTRY,
     highlightHidden: false,
-    overlay: null,
-    overlayHighlight: 0,
-    overlayUnder: [],
+    popup: null,
+    popupHighlight: 0,
+    popupUnder: [],
     message: null,
     planned: [],
     status: NO_STATUS,
@@ -336,10 +336,10 @@ export function createBuildState(
     bonusAllotment: 0,
     committed: false,
     pulseNumber: 1,
-    debug,
+    experiments,
     settings,
     startCursor: cursor,
-    startFlags: debug,
+    startExperiments: experiments,
     restartWarned: [],
   }
 }
@@ -355,12 +355,12 @@ export function createBuildState(
  * player opens when they choose, it would make every other action nag just as hard. The invariant
  * only has to hold where the Build Phase ends, so that is the only place it is checked —
  * `commitLock`, below. Split rather than loosened, so `armedPreview` still draws no ghost behind an
- * overlay or the commit question.
+ * popup or the commit question.
  */
 function editLock(state: BuildState): StatusMessage | null {
   if (state.committed) return status("The Build Phase is committed.", "warning")
-  if (state.overlay === "confirm-commit") return status("Start or go back first: [s] start, [esc] back.", "warning")
-  if (state.overlay !== null) return status("Close the popup first: [esc].", "warning")
+  if (state.popup === "confirm-commit") return status("Start or go back first: [s] start, [esc] back.", "warning")
+  if (state.popup !== null) return status("Close the popup first: [esc].", "warning")
   return null
 }
 
@@ -668,7 +668,7 @@ export type ArmedPreview = Readonly<{
 }>
 
 /** `null` when there is nothing to place: nothing armed, or the plan cannot be edited right now (an
- *  open overlay, the commit confirmation, a committed Build Phase), where no ghost should be drawn
+ *  open popup, the commit confirmation, a committed Build Phase), where no ghost should be drawn
  *  either. */
 export function armedPreview(context: BuildContext, state: BuildState): ArmedPreview | null {
   if (state.armed === null || editLock(state) !== null) return null
@@ -851,7 +851,7 @@ function armItem(context: BuildContext, state: BuildState, index: number, from: 
  * building and give it back when they close.
  */
 function refuseWhileArmed(context: BuildContext, state: BuildState): BuildState | null {
-  if (state.armed === null || state.overlay !== null || state.committed) return null
+  if (state.armed === null || state.popup !== null || state.committed) return null
   const item = context.catalog[state.armed]
   if (item === undefined) return null
   return {
@@ -888,7 +888,7 @@ function startPulse(context: BuildContext, state: BuildState): BuildState {
   return {
     ...toMenu(state),
     menuHighlight: entry,
-    overlay: "confirm-commit",
+    popup: "confirm-commit",
     ack: acknowledge(state, "pressed", entry),
     status: status(`Battle Round ${state.pulseNumber}: Enter starts it, Esc goes back.`),
   }
@@ -900,8 +900,8 @@ function startPulse(context: BuildContext, state: BuildState): BuildState {
  *  card came from: closing the popup gives the building (or Explore Map) back, and going back from
  *  that lands on its row (feedback F69). */
 function openNexus(state: BuildState): BuildState {
-  const opened = openOverlay(state, "nexus-powers")
-  if (opened.overlay !== "nexus-powers") return opened
+  const opened = openPopup(state, "nexus-powers")
+  if (opened.popup !== "nexus-powers") return opened
   if (cardShowing(state)) return opened
   return { ...opened, menuHighlight: NEXUS_ENTRY, ack: acknowledge(state, "pressed", NEXUS_ENTRY) }
 }
@@ -923,7 +923,7 @@ function openNexus(state: BuildState): BuildState {
  * building and pressing Enter is how a player reads it. Refused while a building is armed (F69).
  */
 function openExplore(context: BuildContext, state: BuildState, from: Focus): BuildState {
-  if (state.overlay !== null || state.committed) return state
+  if (state.popup !== null || state.committed) return state
   const refused = refuseWhileArmed(context, state)
   if (refused !== null) return refused
   const opened: BuildState = {
@@ -946,26 +946,26 @@ function openExplore(context: BuildContext, state: BuildState, from: Focus): Bui
  *  exactly as Esc does (owner, 2026-09-29, feedback F32: "Pressing [e] again, or [esc], should be
  *  equivalent"). */
 function toggleExplore(context: BuildContext, state: BuildState): BuildState {
-  if (exploring(state) && state.overlay === null) return cancel(context, state)
+  if (exploring(state) && state.popup === null) return cancel(context, state)
   return openExplore(context, state, state.focus)
 }
 
-function openOverlay(state: BuildState, overlay: Overlay): BuildState {
+function openPopup(state: BuildState, popup: Popup): BuildState {
   // The start-the-Pulse question and a committed Build Phase each own the whole screen; a popup over
   // either would be a second question on top of one. The game menu is the one exception: leaving can
   // always be asked about.
-  if (overlay !== "menu") {
-    const lock = state.committed || state.overlay === "confirm-commit" ? editLock(state) : null
+  if (popup !== "menu") {
+    const lock = state.committed || state.popup === "confirm-commit" ? editLock(state) : null
     if (lock !== null) return { ...state, status: lock }
   }
-  return { ...state, overlay, overlayHighlight: 0, overlayUnder: [] }
+  return { ...state, popup, popupHighlight: 0, popupUnder: [] }
 }
 
 function pickNexus(context: BuildContext, state: BuildState, index: number): BuildState {
   // Defensively guarded like every other command: a driver script is free to send one anywhere, and
   // the answer must be the same refusal a player pressing an unavailable key gets. An open Nexus popup
   // is where a pick is normally made, so it is not a reason to refuse one.
-  if (state.committed || state.overlay === "confirm-commit" || state.overlay === "menu") {
+  if (state.committed || state.popup === "confirm-commit" || state.popup === "menu") {
     return { ...state, status: editLock(state) ?? state.status }
   }
   if (state.nexusPick !== null) return { ...state, status: status("Already picked.", "warning") }
@@ -977,8 +977,8 @@ function pickNexus(context: BuildContext, state: BuildState, index: number): Bui
     ...state,
     nexusPick: index,
     bonusAllotment: option.bonusAllotment,
-    overlay: state.overlay === "nexus-powers" ? null : state.overlay,
-    overlayHighlight: 0,
+    popup: state.popup === "nexus-powers" ? null : state.popup,
+    popupHighlight: 0,
     status: status(`${option.name} picked.`, "success"),
   }
 }
@@ -1026,17 +1026,17 @@ function place(context: BuildContext, state: BuildState): BuildState {
  *  Settings), or closes; placing or Explore Map goes back to where it began; the map to the menu; and
  *  on the menu, the game menu opens. */
 function cancel(context: BuildContext, state: BuildState): BuildState {
-  if (state.overlay === "confirm-commit") return { ...state, overlay: null, status: status("Cancelled.") }
-  const under = state.overlayUnder[state.overlayUnder.length - 1]
-  if (state.overlay !== null && under !== undefined) {
+  if (state.popup === "confirm-commit") return { ...state, popup: null, status: status("Cancelled.") }
+  const under = state.popupUnder[state.popupUnder.length - 1]
+  if (state.popup !== null && under !== undefined) {
     // Back to the popup this one was opened from, on the row that opened it — or, from the message
     // that a restart is needed, on the game menu's Restart, the row it points at.
-    const menuRow = state.overlay === "message" ? "restart" : state.overlay === "controls" ? "controls" : "settings"
+    const menuRow = state.popup === "message" ? "restart" : state.popup === "controls" ? "controls" : "settings"
     const highlight = under === "menu" ? GAME_MENU_ROWS.indexOf(menuRow) : under === "settings" ? SETTINGS_EXPORT_ROW : 0
-    return { ...state, overlay: under, overlayHighlight: highlight, overlayUnder: state.overlayUnder.slice(0, -1) }
+    return { ...state, popup: under, popupHighlight: highlight, popupUnder: state.popupUnder.slice(0, -1) }
   }
-  if (state.overlay !== null) return { ...state, overlay: null, overlayUnder: [] }
-  if (state.committed) return openOverlay(state, "menu")
+  if (state.popup !== null) return { ...state, popup: null, popupUnder: [] }
+  if (state.committed) return openPopup(state, "menu")
   if (state.focus === "grid") {
     // Placing or exploring: back one level, to where it was started from. Plain navigation: to the
     // menu.
@@ -1044,7 +1044,7 @@ function cancel(context: BuildContext, state: BuildState): BuildState {
     return state.exploreMap ? backToOrigin(state) : toMenu(state)
   }
   void context
-  return openOverlay(state, "menu")
+  return openPopup(state, "menu")
 }
 
 /**
@@ -1054,7 +1054,7 @@ function cancel(context: BuildContext, state: BuildState): BuildState {
  * keyboard there and stays, and a stray right click never opens a menu.
  */
 function goBack(context: BuildContext, state: BuildState): BuildState {
-  if (state.overlay === null && (state.committed || state.focus === "menu")) return state
+  if (state.popup === null && (state.committed || state.focus === "menu")) return state
   return cancel(context, state)
 }
 
@@ -1064,16 +1064,16 @@ function goBack(context: BuildContext, state: BuildState): BuildState {
  * committed Build Phase, since starting over from there is exactly what a playtest wants.
  */
 function openSettings(state: BuildState, section: "settings" | "experiments"): BuildState {
-  if (state.overlay !== null && state.overlay !== "menu") return state
+  if (state.popup !== null && state.popup !== "menu") return state
   // While the Nexus Pulse is on screen, `d` opens the Experiments already at the placeholder Pulse's —
   // the raid and the crew, which someone watching it wants to change (gate 6A) — rather than at the
   // Build Phase's first.
   const experiments = state.committed ? FIRST_PULSE_EXPERIMENT_ROW : FIRST_EXPERIMENT_ROW
   return {
     ...state,
-    overlay: "settings",
-    overlayHighlight: section === "settings" ? FIRST_SETTING_ROW : experiments,
-    overlayUnder: state.overlay === "menu" ? ["menu"] : [],
+    popup: "settings",
+    popupHighlight: section === "settings" ? FIRST_SETTING_ROW : experiments,
+    popupUnder: state.popup === "menu" ? ["menu"] : [],
   }
 }
 
@@ -1083,34 +1083,34 @@ function openSettings(state: BuildState, section: "settings" | "experiments"): B
  * is watched with keys as well. Opens over no popup but the game menu.
  */
 function openControls(state: BuildState): BuildState {
-  if (state.overlay !== null && state.overlay !== "menu") return state
+  if (state.popup !== null && state.popup !== "menu") return state
   return {
     ...state,
-    overlay: "controls",
-    overlayHighlight: 0,
-    overlayUnder: state.overlay === "menu" ? ["menu"] : [],
+    popup: "controls",
+    popupHighlight: 0,
+    popupUnder: state.popup === "menu" ? ["menu"] : [],
   }
 }
 
 /** One step of an experiment, said on the status line. */
-function adjustFlag(state: BuildState, field: DebugField, step: -1 | 1): BuildState {
-  const spec = fieldSpec(field)
-  const highlight = state.overlay === "settings" ? { overlayHighlight: rowOfField(field) } : {}
-  const { flags, changed } = adjustDebug(state.debug, field, step)
+function adjustExperiment(state: BuildState, field: ExperimentField, step: -1 | 1): BuildState {
+  const spec = experimentSpec(field)
+  const highlight = state.popup === "settings" ? { popupHighlight: experimentRow(field) } : {}
+  const { flags, changed } = stepExperiment(state.experiments, field, step)
   if (!changed) {
     const end = step > 0 ? "largest" : "smallest"
     return {
       ...state,
       ...highlight,
-      status: status(`Experiment - ${spec.label} is already ${formatDebugValue(state.debug, field)}, the ${end} value.`, "warning"),
+      status: status(`Experiment - ${spec.label} is already ${formatExperimentValue(state.experiments, field)}, the ${end} value.`, "warning"),
     }
   }
   const later = spec.applies === "restart" ? " - applies after a restart" : ""
   return {
     ...state,
     ...highlight,
-    debug: flags,
-    status: status(`Experiment - ${spec.label}: ${formatDebugValue(flags, field)}${later}.`),
+    experiments: flags,
+    status: status(`Experiment - ${spec.label}: ${formatExperimentValue(flags, field)}${later}.`),
   }
 }
 
@@ -1118,7 +1118,7 @@ function adjustFlag(state: BuildState, field: DebugField, step: -1 | 1): BuildSt
  *  draws with it and saves it. */
 function adjustPlayerSetting(state: BuildState, field: PlayerField, step: -1 | 1): BuildState {
   const settings = adjustSetting(state.settings, field, step)
-  const highlight = state.overlay === "settings" ? { overlayHighlight: playerRow(field) } : {}
+  const highlight = state.popup === "settings" ? { popupHighlight: playerRow(field) } : {}
   return {
     ...state,
     ...highlight,
@@ -1130,8 +1130,8 @@ function adjustPlayerSetting(state: BuildState, field: PlayerField, step: -1 | 1
 /** Starts the Build Phase over, keeping the settings and the experiments — how an experiment marked
  *  "restart" takes effect. The last acknowledgement is carried over so its sequence keeps counting up
  *  and the live loop never mistakes a new one for one it has already shown. */
-function restartWithFlags(context: BuildContext, state: BuildState): BuildState {
-  const fresh = createBuildState(context, state.startCursor, state.viewport, state.debug, state.settings)
+function restartBuildPhase(context: BuildContext, state: BuildState): BuildState {
+  const fresh = createBuildState(context, state.startCursor, state.viewport, state.experiments, state.settings)
   return {
     ...fresh,
     ack: state.ack,
@@ -1143,19 +1143,19 @@ function restartWithFlags(context: BuildContext, state: BuildState): BuildState 
 
 /** The export popup: the settings as text, from Settings (which Esc goes back to) or a driver. */
 function exportSettings(state: BuildState): BuildState {
-  if (state.overlay !== null && state.overlay !== "settings") return state
+  if (state.popup !== null && state.popup !== "settings") return state
   return {
     ...state,
-    overlay: "export",
-    overlayHighlight: 0,
-    overlayUnder: state.overlay === "settings" ? [...state.overlayUnder, "settings"] : [],
+    popup: "export",
+    popupHighlight: 0,
+    popupUnder: state.popup === "settings" ? [...state.popupUnder, "settings"] : [],
     status: status("Settings exported - paste them into the pull request.", "success"),
   }
 }
 
 /** The export's text for this state — what the popup shows and what the session copies. */
 export function exportText(context: BuildContext, state: BuildState): string {
-  return formatSettingsExport({ settings: state.settings, experiments: state.debug }, context.buildId)
+  return formatSettingsExport({ settings: state.settings, experiments: state.experiments }, context.buildId)
 }
 
 function exportLineCount(context: BuildContext, state: BuildState): number {
@@ -1164,16 +1164,16 @@ function exportLineCount(context: BuildContext, state: BuildState): number {
 
 /** Enter/Space, or Right/Left, on the Settings popup's highlighted row. */
 function stepHighlighted(state: BuildState, step: -1 | 1, activate: boolean): BuildState {
-  const row = settingsRowAt(state.overlayHighlight)
+  const row = settingsRowAt(state.popupHighlight)
   if (row === null) return state
-  if (row.kind === "experiment") return adjustFlag(state, row.field, step)
+  if (row.kind === "experiment") return adjustExperiment(state, row.field, step)
   if (row.kind === "player") return adjustPlayerSetting(state, row.field, step)
   return activate ? exportSettings(state) : state
 }
 
 /** Settings, or the export opened from it, is showing. */
-function inSettings(overlay: Overlay | null): boolean {
-  return overlay === "settings" || overlay === "export"
+function inSettings(popup: Popup | null): boolean {
+  return popup === "settings" || popup === "export"
 }
 
 /**
@@ -1183,10 +1183,10 @@ function inSettings(overlay: Overlay | null): boolean {
 function showMessage(state: BuildState, message: PopupMessage): BuildState {
   return {
     ...state,
-    overlay: "message",
+    popup: "message",
     message,
-    overlayHighlight: 0,
-    overlayUnder: state.overlay === null ? [] : [...state.overlayUnder, state.overlay],
+    popupHighlight: 0,
+    popupUnder: state.popup === null ? [] : [...state.popupUnder, state.popup],
   }
 }
 
@@ -1200,8 +1200,8 @@ function showMessage(state: BuildState, message: PopupMessage): BuildState {
  * restart" at the change itself.
  */
 function warnIfRestartNeeded(before: BuildState, next: BuildState): BuildState {
-  if (!inSettings(before.overlay) || inSettings(next.overlay)) return next
-  const pending = pendingRestart(next.startFlags, next.debug)
+  if (!inSettings(before.popup) || inSettings(next.popup)) return next
+  const pending = pendingRestart(next.startExperiments, next.experiments)
   if (pending.length === 0 || pending.join("\n") === next.restartWarned.join("\n")) return next
   return { ...showMessage(next, restartMessage(pending)), restartWarned: pending }
 }
@@ -1224,8 +1224,8 @@ export function applyBuildCommand(
   const unghosted = applied.armed === null && applied.armGhost ? { ...applied, armGhost: false } : applied
   // Whatever closed the popup — a click outside it, a pick, an answer — closed the ones under it too;
   // and a message's words go with it.
-  const closed = unghosted.overlay === null && unghosted.overlayUnder.length > 0 ? { ...unghosted, overlayUnder: [] } : unghosted
-  const next = closed.overlay !== "message" && closed.message !== null ? { ...closed, message: null } : closed
+  const closed = unghosted.popup === null && unghosted.popupUnder.length > 0 ? { ...unghosted, popupUnder: [] } : unghosted
+  const next = closed.popup !== "message" && closed.message !== null ? { ...closed, message: null } : closed
   return lapseStatus(state, warnIfRestartNeeded(base, next))
 }
 
@@ -1252,9 +1252,9 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       const target = clampToGrid({ x: command.x, y: command.y }, context.grid)
       // A click outside an open popup closes it and brings focus to where it landed — and does
       // nothing else, so a click meant to dismiss never also places or picks (owner, 2026-09-27).
-      if (state.overlay !== null) {
-        if (state.overlay === "confirm-commit" || state.committed) return { ...state, overlay: null }
-        const dismissed: BuildState = { ...state, overlay: null, focus: "grid", armed: state.armed }
+      if (state.popup !== null) {
+        if (state.popup === "confirm-commit" || state.committed) return { ...state, popup: null }
+        const dismissed: BuildState = { ...state, popup: null, focus: "grid", armed: state.armed }
         return withCursor(context, dismissed, target, clickCameraMove(context, dismissed))
       }
       // A committed plan locks every edit but not looking: a click on the map moves the cursor there and
@@ -1281,9 +1281,9 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     case "click-menu": {
       if (state.committed) return state
       // A click anywhere outside a popup dismisses it first — and only that, plus focus.
-      if (state.overlay !== null) {
-        if (state.overlay === "confirm-commit") return { ...state, overlay: null, status: status("Cancelled.") }
-        return { ...toMenu({ ...state, overlay: null }), menuHighlight: command.entry, highlightHidden: true }
+      if (state.popup !== null) {
+        if (state.popup === "confirm-commit") return { ...state, popup: null, status: status("Cancelled.") }
+        return { ...toMenu({ ...state, popup: null }), menuHighlight: command.entry, highlightHidden: true }
       }
       // A card — Explore Map's, or the armed building's (feedback F58) — covers the menu below its
       // header row: a click on that row, drawn active, goes back, as Esc (and `e` for Explore Map) does
@@ -1342,7 +1342,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return goBack(context, state)
 
     case "open-menu":
-      return openOverlay(state, "menu")
+      return openPopup(state, "menu")
 
     case "pick-nexus":
       return pickNexus(context, state, command.index)
@@ -1353,12 +1353,12 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     case "confirm-commit": {
       // Meaningless outside the one moment it answers — a stray "y" is not a command here any more
       // than a stray "3" is one before anything is armed.
-      if (state.overlay !== "confirm-commit") return state
+      if (state.popup !== "confirm-commit") return state
       // The Nexus Pulse starts (gate 6A). The keyboard goes to the Grid, where the arrows look around it
       // — a committed plan locks every edit but not the cursor — and nothing is armed or being explored.
       return {
         ...toMap(state),
-        overlay: null,
+        popup: null,
         committed: true,
         status: status(`Build committed - ${state.planned.length} planned.`, "success"),
       }
@@ -1373,12 +1373,12 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return {
         ...state,
         committed: false,
-        overlay: null,
+        popup: null,
         status: status(`The Nexus Pulse could not start: ${command.reason}`, "danger"),
       }
 
     case "focus":
-      if (state.overlay !== null || state.committed || state.focus === command.target) return state
+      if (state.popup !== null || state.committed || state.focus === command.target) return state
       // To the Grid, Tab arrives in plain navigation (feedback F30) — Explore Map is `e`'s.
       return command.target === "menu" ? { ...toMenu(state), highlightHidden: false } : toMap(state)
 
@@ -1389,48 +1389,48 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // flicker at every auto-repeat would read as something happening.
       const jump = command.jump === true
       const step = (index: number, count: number): number => stepListIndex(index, count, command.delta, jump)
-      if (state.overlay === "settings") {
-        return { ...state, overlayHighlight: stepSettingsRow(state.overlayHighlight, command.delta, jump) }
+      if (state.popup === "settings") {
+        return { ...state, popupHighlight: stepSettingsRow(state.popupHighlight, command.delta, jump) }
       }
-      if (state.overlay === "menu") return { ...state, overlayHighlight: step(state.overlayHighlight, GAME_MENU_ROWS.length) }
+      if (state.popup === "menu") return { ...state, popupHighlight: step(state.popupHighlight, GAME_MENU_ROWS.length) }
       // The export and the Controls page walk their lines; each popup's window follows the highlight
-      // (`src/build/overlay.ts`).
-      if (state.overlay === "export") return { ...state, overlayHighlight: step(state.overlayHighlight, exportLineCount(context, state)) }
-      if (state.overlay === "controls") return { ...state, overlayHighlight: step(state.overlayHighlight, controlsLineCount()) }
-      if (state.overlay === "nexus-powers") {
-        return { ...state, overlayHighlight: step(state.overlayHighlight, nexusPowers(context, state).pending.length) }
+      // (`src/build/popup.ts`).
+      if (state.popup === "export") return { ...state, popupHighlight: step(state.popupHighlight, exportLineCount(context, state)) }
+      if (state.popup === "controls") return { ...state, popupHighlight: step(state.popupHighlight, controlsLineCount()) }
+      if (state.popup === "nexus-powers") {
+        return { ...state, popupHighlight: step(state.popupHighlight, nexusPowers(context, state).pending.length) }
       }
-      if (state.overlay !== null || state.focus !== "menu") return state
+      if (state.popup !== null || state.focus !== "menu") return state
       if (state.highlightHidden) return revealHighlight(state)
       return { ...state, menuHighlight: step(state.menuHighlight, menuEntries(context).length) }
     }
 
     case "activate": {
       // On a setting, Enter/Space is Right: a choice of two flips, a number steps up.
-      if (state.overlay === "settings") return stepHighlighted(state, 1, true)
-      if (state.overlay === "menu") {
+      if (state.popup === "settings") return stepHighlighted(state, 1, true)
+      if (state.popup === "menu") {
         // `[q] Quit` is not the reducer's to act on: the keyboard sends `quit` for Enter on it, and a
         // click on it sends `quit` too (`src/build/keyboard.ts`, the popup's own rows).
-        const row = GAME_MENU_ROWS[state.overlayHighlight]
+        const row = GAME_MENU_ROWS[state.popupHighlight]
         if (row === "settings") return openSettings(state, "settings")
         if (row === "controls") return openControls(state)
-        if (row === "restart") return restartWithFlags(context, state)
+        if (row === "restart") return restartBuildPhase(context, state)
         return state
       }
-      if (state.overlay === "nexus-powers") {
-        const pending = nexusPowers(context, state).pending[state.overlayHighlight]
+      if (state.popup === "nexus-powers") {
+        const pending = nexusPowers(context, state).pending[state.popupHighlight]
         if (pending === undefined) return { ...state, status: status("No Nexus power waiting.", "warning") }
         return pickNexus(context, state, pending.index)
       }
-      if (state.overlay !== null || state.focus !== "menu" || state.committed) return state
+      if (state.popup !== null || state.focus !== "menu" || state.committed) return state
       if (state.highlightHidden) return revealHighlight(state)
       return activateEntry(context, state, state.menuHighlight, "key")
     }
 
     case "nudge": {
       // In Settings, Left and Right are what a row is for: they change its value.
-      if (state.overlay === "settings") return stepHighlighted(state, command.direction === "right" ? 1 : -1, false)
-      if (state.focus !== "menu" || state.overlay !== null || state.committed) return state
+      if (state.popup === "settings") return stepHighlighted(state, command.direction === "right" ? 1 : -1, false)
+      if (state.focus !== "menu" || state.popup !== null || state.committed) return state
       if (state.highlightHidden) return revealHighlight(state)
       // Left and Right have nothing to do on the menu: the row flickers to say the key arrived, and the
       // keyboard stays on the menu, however many come (owner, 2026-09-30, feedback F55 - reversing
@@ -1448,32 +1448,32 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return openSettings(state, command.section)
 
     // A driver may change a setting with the popup closed; a player reaches these only through it.
-    case "debug-adjust":
-      return adjustFlag(state, command.field, command.step)
+    case "experiment-adjust":
+      return adjustExperiment(state, command.field, command.step)
 
     case "setting-adjust":
       return adjustPlayerSetting(state, command.field, command.step)
 
     case "settings-select":
-      if (state.overlay !== "settings" || settingsRowAt(command.row) === null) return state
-      return { ...state, overlayHighlight: command.row }
+      if (state.popup !== "settings" || settingsRowAt(command.row) === null) return state
+      return { ...state, popupHighlight: command.row }
 
-    case "debug-restart":
-      return restartWithFlags(context, state)
+    case "restart":
+      return restartBuildPhase(context, state)
 
     case "export-settings":
       return exportSettings(state)
 
     case "export-select":
-      if (state.overlay !== "export") return state
-      return { ...state, overlayHighlight: Math.max(0, Math.min(exportLineCount(context, state) - 1, command.line)) }
+      if (state.popup !== "export") return state
+      return { ...state, popupHighlight: Math.max(0, Math.min(exportLineCount(context, state) - 1, command.line)) }
 
     case "open-controls":
       return openControls(state)
 
     case "controls-select":
-      if (state.overlay !== "controls") return state
-      return { ...state, overlayHighlight: Math.max(0, Math.min(controlsLineCount() - 1, command.line)) }
+      if (state.popup !== "controls") return state
+      return { ...state, popupHighlight: Math.max(0, Math.min(controlsLineCount() - 1, command.line)) }
 
     case "quit":
       return state

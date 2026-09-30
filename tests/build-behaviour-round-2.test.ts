@@ -12,7 +12,7 @@ import { bottomLine, controlsLineCount, controlsPage, hint } from "../src/build/
 import { buildKeyboardCommand, cursorKeyOf } from "../src/build/keyboard.ts"
 import { buildLayout, cellForTile, escHintSpan, escLabel, menuEntryRow } from "../src/build/layout.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, formatMouseEvent } from "../src/build/mouse.ts"
-import { overlaySpec } from "../src/build/overlay.ts"
+import { popupSpec } from "../src/build/popup.ts"
 import { BuildSession } from "../src/build/session.ts"
 import { GAME_MENU_ROWS, SETTINGS_EXPORT_ROW, SETTINGS_ORDER, restartMessage } from "../src/build/settings.ts"
 import type { BuildContext, BuildState } from "../src/build/state.ts"
@@ -94,7 +94,7 @@ const barracksEntry = entryOfConstruct(0)
 
 /** On the menu with nothing open — the "regular state" `x x x` must always reach (F62). */
 function onMenu(state: BuildState): boolean {
-  return state.focus === "menu" && state.overlay === null && state.armed === null && !state.exploreMap
+  return state.focus === "menu" && state.popup === null && state.armed === null && !state.exploreMap
 }
 
 /** Presses `x` until the screen is on the menu, at most `limit` times, then twice more, and says how
@@ -105,10 +105,10 @@ function xToMenu(side: Side, limit = 6): number {
     keys(side, "x")
     presses += 1
   }
-  assert.ok(onMenu(side.build.state), `x x x did not reach the menu: ${JSON.stringify({ focus: side.build.state.focus, overlay: side.build.state.overlay })}`)
+  assert.ok(onMenu(side.build.state), `x x x did not reach the menu: ${JSON.stringify({ focus: side.build.state.focus, popup: side.build.state.popup })}`)
   const settled = side.build.state
   keys(side, "x", "x")
-  assert.equal(side.build.state.overlay, null, "x on the menu opened something")
+  assert.equal(side.build.state.popup, null, "x on the menu opened something")
   assert.equal(side.build.state.focus, "menu")
   assert.deepEqual(side.build.state.ack, settled.ack, "x on the menu flickered a row")
   assert.equal(side.build.state.menuHighlight, settled.menuHighlight)
@@ -123,7 +123,7 @@ test("x on the menu does nothing at all — no popup, no status, no flicker — 
   // The reducer returns the very same state: nothing happened.
   assert.equal(applyBuildCommand(side.context, before, { kind: "back" }), before)
   keys(side, "x")
-  assert.equal(side.build.state.overlay, null)
+  assert.equal(side.build.state.popup, null)
   assert.equal(side.build.state.status.text, "")
   assert.equal(side.build.state.ack, before.ack)
   // With a row just flickered and a status showing, x says nothing and flickers nothing of its own.
@@ -134,14 +134,14 @@ test("x on the menu does nothing at all — no popup, no status, no flicker — 
   // Esc, the top bar's label and q are the ways in; the label says so on the menu.
   assert.equal(escLabel(side.build.state), "menu [esc]")
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, "menu")
+  assert.equal(side.build.state.popup, "menu")
   const byLabel = session()
   const label = escHintSpan(byLabel.layout, escLabel(byLabel.build.state))
   clickCell(byLabel, label.from + 1, label.row)
-  assert.equal(byLabel.build.state.overlay, "menu")
+  assert.equal(byLabel.build.state.popup, "menu")
   const byQ = session()
   keys(byQ, "q")
-  assert.equal(byQ.build.state.overlay, "menu")
+  assert.equal(byQ.build.state.popup, "menu")
 })
 
 test("x x x from anywhere lands on the menu with the keyboard there, and stays", () => {
@@ -179,13 +179,13 @@ test("Esc walks back the same levels, and on the menu opens the game menu", () =
   keys(side, ESC)
   assert.ok(onMenu(side.build.state))
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, "menu")
+  assert.equal(side.build.state.popup, "menu")
 })
 
 test("a right click walks back as x does, and never opens a menu", () => {
   const side = session()
   rightClickMap(side)
-  assert.equal(side.build.state.overlay, null, "a right click on the menu opened the game menu")
+  assert.equal(side.build.state.popup, null, "a right click on the menu opened the game menu")
   // Placing: back to where it began; a popup: closed.
   keys(side, TAB, "1")
   rightClickMap(side)
@@ -194,14 +194,14 @@ test("a right click walks back as x does, and never opens a menu", () => {
   rightClickMap(side)
   assert.ok(onMenu(side.build.state))
   rightClickMap(side)
-  assert.equal(side.build.state.overlay, null)
+  assert.equal(side.build.state.popup, null)
   keys(side, ESC, "s")
   rightClickMap(side)
-  assert.equal(side.build.state.overlay, "menu", "a right click in Settings did not go back one popup")
+  assert.equal(side.build.state.popup, "menu", "a right click in Settings did not go back one popup")
   rightClickMap(side)
-  assert.equal(side.build.state.overlay, null)
+  assert.equal(side.build.state.popup, null)
   rightClickMap(side)
-  assert.equal(side.build.state.overlay, null)
+  assert.equal(side.build.state.popup, null)
 })
 
 test("on a committed plan x and a right click do nothing; Esc, q and the top bar's label open the game menu", () => {
@@ -216,17 +216,17 @@ test("on a committed plan x and a right click do nothing; Esc, q and the top bar
   assert.equal(after.status.text, "")
   keys(side, "x")
   rightClickMap(side)
-  assert.equal(side.build.state.overlay, null)
+  assert.equal(side.build.state.popup, null)
   keys(side, ESC)
-  assert.equal(side.build.state.overlay, "menu")
+  assert.equal(side.build.state.popup, "menu")
   keys(side, "x")
-  assert.equal(side.build.state.overlay, null, "x did not close the game menu over a committed plan")
+  assert.equal(side.build.state.popup, null, "x did not close the game menu over a committed plan")
   keys(side, "q")
-  assert.equal(side.build.state.overlay, "menu")
+  assert.equal(side.build.state.popup, "menu")
   keys(side, ESC)
   const label = escHintSpan(side.layout, escLabel(side.build.state))
   clickCell(side, label.from + 1, label.row)
-  assert.equal(side.build.state.overlay, "menu")
+  assert.equal(side.build.state.popup, "menu")
 })
 
 test("x closes every popup as Esc does, back to the one it was opened from", () => {
@@ -242,13 +242,13 @@ test("x closes every popup as Esc does, back to the one it was opened from", () 
     keys(byX, ...begin, "x")
     const byEsc = session()
     keys(byEsc, ...begin, ESC)
-    assert.equal(byX.build.state.overlay, after, JSON.stringify(begin))
+    assert.equal(byX.build.state.popup, after, JSON.stringify(begin))
     assert.deepEqual(byX.build.state, byEsc.build.state, `${JSON.stringify(begin)}: x and Esc differ inside a popup`)
   }
   // A message popup too.
   const side = session()
-  const state: BuildState = { ...side.build.state, overlay: "message", message: restartMessage(["Opens on"]) }
-  assert.equal(applyBuildCommand(side.context, state, { kind: "back" }).overlay, null)
+  const state: BuildState = { ...side.build.state, popup: "message", message: restartMessage(["Opens on"]) }
+  assert.equal(applyBuildCommand(side.context, state, { kind: "back" }).popup, null)
 })
 
 // --- F69, F70: while a building is armed, the menu stays on it ---------------------------------------
@@ -263,7 +263,7 @@ test("while a building is armed, another building's key, e and s are refused: no
       keys(side, key)
       const after = side.build.state
       assert.equal(after.armed, 0, `${key}: the Barracks was dropped`)
-      assert.equal(after.overlay, null, `${key}: something opened`)
+      assert.equal(after.popup, null, `${key}: something opened`)
       assert.equal(after.exploreMap, false)
       assert.equal(after.focus, "grid")
       assert.deepEqual(after.cursor, armed.cursor, `${key}: the cursor moved`)
@@ -327,10 +327,10 @@ test("the Nexus powers, the game menu, Controls and Settings open over an armed 
     keys(side, "1")
     const cursor = side.build.state.cursor
     keys(side, ...open)
-    assert.notEqual(side.build.state.overlay, null, `${name} did not open over the building`)
+    assert.notEqual(side.build.state.popup, null, `${name} did not open over the building`)
     assert.equal(side.build.state.menuHighlight, barracksEntry, `${name} moved the menu's highlight off the Barracks`)
     keys(side, ...close)
-    assert.equal(side.build.state.overlay, null, `${name} did not close`)
+    assert.equal(side.build.state.popup, null, `${name} did not close`)
     assert.equal(side.build.state.armed, 0, `${name} did not give the Barracks back`)
     assert.equal(side.build.state.focus, "grid")
     assert.deepEqual(side.build.state.cursor, cursor)
@@ -348,7 +348,7 @@ test("Explore Map is not locked: a digit arms from the map, n opens the Nexus po
   assert.equal(arms.build.state.origin, "grid")
   const nexus = session()
   keys(nexus, "e", "n")
-  assert.equal(nexus.build.state.overlay, "nexus-powers")
+  assert.equal(nexus.build.state.popup, "nexus-powers")
   keys(nexus, ESC)
   assert.equal(nexus.build.state.exploreMap, true)
   assert.equal(nexus.build.state.focus, "grid")
@@ -451,7 +451,7 @@ test("the game menu and the export have no Back row; Esc, x and the top bar stil
   assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "restart", "quit"])
   const menu = session()
   keys(menu, ESC)
-  const spec = overlaySpec(menu.context, menu.build.state)
+  const spec = popupSpec(menu.context, menu.build.state)
   assert.ok(spec !== null)
   assert.deepEqual(
     spec.rows.flatMap((row) => (row.kind === "option" ? [row.hotkey] : [])),
@@ -463,7 +463,7 @@ test("the game menu and the export have no Back row; Esc, x and the top bar stil
   // Enter on each row does that row's thing; the last row is Quit, and Down stops there.
   const walked = session()
   keys(walked, ESC, DOWN, DOWN, DOWN, DOWN, DOWN, DOWN)
-  assert.equal(GAME_MENU_ROWS[walked.build.state.overlayHighlight], "quit")
+  assert.equal(GAME_MENU_ROWS[walked.build.state.popupHighlight], "quit")
   keys(walked, ENTER)
   assert.equal(walked.quits(), 1)
   const restart = session()
@@ -472,18 +472,18 @@ test("the game menu and the export have no Back row; Esc, x and the top bar stil
   // The export: its text and nothing to press; Esc goes back to Settings on its Export row.
   const exported = session()
   keys(exported, "d", "e")
-  const exportSpec = overlaySpec(exported.context, exported.build.state)
+  const exportSpec = popupSpec(exported.context, exported.build.state)
   assert.ok(exportSpec !== null)
   assert.equal(exportSpec.rows.some((row) => row.kind === "option"), false)
   assert.equal(exportSpec.scroll?.to, exportSpec.rows.length, "the text is the popup's last rows")
   keys(exported, "x")
-  assert.equal(exported.build.state.overlay, "settings")
-  assert.equal(exported.build.state.overlayHighlight, SETTINGS_EXPORT_ROW)
+  assert.equal(exported.build.state.popup, "settings")
+  assert.equal(exported.build.state.popupHighlight, SETTINGS_EXPORT_ROW)
   // The message over the game menu still goes back to its Restart row.
   const message = session()
   keys(message, ESC)
-  const over: BuildState = { ...message.build.state, overlay: "message", message: restartMessage(["x"]), overlayUnder: ["menu"] }
-  assert.equal(GAME_MENU_ROWS[applyBuildCommand(message.context, over, { kind: "cancel" }).overlayHighlight], "restart")
+  const over: BuildState = { ...message.build.state, popup: "message", message: restartMessage(["x"]), popupUnder: ["menu"] }
+  assert.equal(GAME_MENU_ROWS[applyBuildCommand(message.context, over, { kind: "cancel" }).popupHighlight], "restart")
 })
 
 // --- F75: lists stop at their ends, ramp when held, and jump -----------------------------------------
@@ -535,39 +535,39 @@ test("every popup's list stops at both ends and jumps with the fast move", () =>
   for (const [name, open, first, last] of cases) {
     const side = session()
     keys(side, ...open, UP)
-    assert.equal(side.build.state.overlayHighlight, first, `${name}: Up on the first row came round`)
+    assert.equal(side.build.state.popupHighlight, first, `${name}: Up on the first row came round`)
     keys(side, PAGE_DOWN)
-    assert.equal(side.build.state.overlayHighlight, last, `${name}: PageDown`)
+    assert.equal(side.build.state.popupHighlight, last, `${name}: PageDown`)
     keys(side, DOWN)
-    assert.equal(side.build.state.overlayHighlight, last, `${name}: Down on the last row came round`)
+    assert.equal(side.build.state.popupHighlight, last, `${name}: Down on the last row came round`)
     keys(side, SHIFT_UP)
-    assert.equal(side.build.state.overlayHighlight, first, `${name}: Shift+Up`)
+    assert.equal(side.build.state.popupHighlight, first, `${name}: Shift+Up`)
     keys(side, END)
-    assert.equal(side.build.state.overlayHighlight, last, `${name}: End`)
+    assert.equal(side.build.state.popupHighlight, last, `${name}: End`)
     keys(side, HOME)
-    assert.equal(side.build.state.overlayHighlight, first, `${name}: Home`)
+    assert.equal(side.build.state.popupHighlight, first, `${name}: Home`)
   }
   // Settings walks its rows in their drawn order: from the first setting, Up stays; End is Export.
   const settings = session()
   keys(settings, ESC, "s")
-  const firstSetting = settings.build.state.overlayHighlight
+  const firstSetting = settings.build.state.popupHighlight
   assert.equal(firstSetting, SETTINGS_ORDER[0])
   keys(settings, UP)
-  assert.equal(settings.build.state.overlayHighlight, firstSetting, "Up on the first setting came round to Export")
+  assert.equal(settings.build.state.popupHighlight, firstSetting, "Up on the first setting came round to Export")
   keys(settings, END)
-  assert.equal(settings.build.state.overlayHighlight, SETTINGS_EXPORT_ROW)
+  assert.equal(settings.build.state.popupHighlight, SETTINGS_EXPORT_ROW)
   keys(settings, DOWN)
-  assert.equal(settings.build.state.overlayHighlight, SETTINGS_EXPORT_ROW)
+  assert.equal(settings.build.state.popupHighlight, SETTINGS_EXPORT_ROW)
   keys(settings, PAGE_UP)
-  assert.equal(settings.build.state.overlayHighlight, firstSetting)
+  assert.equal(settings.build.state.popupHighlight, firstSetting)
   // The export's lines, too.
   const exported = session()
   keys(exported, "d", "e", UP)
-  assert.equal(exported.build.state.overlayHighlight, 0)
+  assert.equal(exported.build.state.popupHighlight, 0)
   keys(exported, END)
-  const lines = overlaySpec(exported.context, exported.build.state)?.scroll
+  const lines = popupSpec(exported.context, exported.build.state)?.scroll
   assert.ok(lines !== undefined)
-  assert.equal(exported.build.state.overlayHighlight, lines.to - lines.from - 1)
+  assert.equal(exported.build.state.popupHighlight, lines.to - lines.from - 1)
 })
 
 test("a held Up or Down in a list ramps exactly as the map cursor does, with the same numbers, and a tap is one row", () => {
@@ -577,9 +577,9 @@ test("a held Up or Down in a list ramps exactly as the map cursor does, with the
   const presses = Array.from({ length: 4 }, (_, index) => [DOWN, 10_000 + index * 30] as const)
   const list = session()
   keys(list, ESC, "s")
-  const top = SETTINGS_ORDER.indexOf(list.build.state.overlayHighlight)
+  const top = SETTINGS_ORDER.indexOf(list.build.state.popupHighlight)
   timed(list, presses)
-  const rows = SETTINGS_ORDER.indexOf(list.build.state.overlayHighlight) - top
+  const rows = SETTINGS_ORDER.indexOf(list.build.state.popupHighlight) - top
   const map = session(spikeContext(), { x: 30, y: 2 })
   keys(map, TAB)
   timed(map, presses)
@@ -590,11 +590,11 @@ test("a held Up or Down in a list ramps exactly as the map cursor does, with the
   // A tap is one row, so Up and Down reach every row.
   const tap = session()
   keys(tap, ESC, "s")
-  const start = SETTINGS_ORDER.indexOf(tap.build.state.overlayHighlight)
+  const start = SETTINGS_ORDER.indexOf(tap.build.state.popupHighlight)
   timed(tap, [[DOWN, 5_000]])
-  assert.equal(SETTINGS_ORDER.indexOf(tap.build.state.overlayHighlight), start + 1, "a timed tap moved more than one row")
+  assert.equal(SETTINGS_ORDER.indexOf(tap.build.state.popupHighlight), start + 1, "a timed tap moved more than one row")
   keys(tap, DOWN)
-  assert.equal(SETTINGS_ORDER.indexOf(tap.build.state.overlayHighlight), start + 2, "an untimed tap moved more than one row")
+  assert.equal(SETTINGS_ORDER.indexOf(tap.build.state.popupHighlight), start + 2, "an untimed tap moved more than one row")
 })
 
 test("holding Down on the Build Phase menu reaches its last row quickly and stays there", () => {

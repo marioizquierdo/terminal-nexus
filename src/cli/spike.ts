@@ -35,7 +35,7 @@ import { startPulse } from "./pulse-run.ts"
 import type { PlaytestStep } from "../playtest/keys.ts"
 import { UNTIMED_GAP_MS, deliverStep } from "../playtest/deliver.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
-import type { DebugFlags } from "../build/debug.ts"
+import type { Experiments } from "../build/experiments.ts"
 import { TUNING } from "../build/tuning.ts"
 
 const ESC = "\u001b"
@@ -67,7 +67,7 @@ export type SpikeOptions = Readonly<{
    *  apply for this run only. */
   settingsStore?: SettingsStore
   /** Experiments to open with instead of this build's defaults: an imported export (`--settings`). */
-  experiments?: Partial<DebugFlags>
+  experiments?: Partial<Experiments>
   /** The commit this build is, named at the top of an export. */
   buildId?: string
   /**

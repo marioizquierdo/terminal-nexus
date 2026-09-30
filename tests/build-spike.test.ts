@@ -281,7 +281,7 @@ test("keyboard: Option+Arrow as macOS terminals send it is the fast move, never 
   const build = readyBuildSession({ context: context2, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   build.handleData(`${ESC}f`, layout)
   assert.equal(build.state.focus, "grid", "Option+Right was read as an Esc")
-  assert.equal(build.state.overlay, null, "Option+Right was read as an Esc")
+  assert.equal(build.state.popup, null, "Option+Right was read as an Esc")
   assert.equal(build.state.cursor.x, 18 + TUNING.jumpStep)
 })
 
@@ -303,7 +303,7 @@ test("keyboard: Esc is cancel and x is back in every focus, and q opens the game
     }
   }
   // Inside the game menu, q is Quit; Ctrl+C always quits outright.
-  assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed: false, overlay: "menu" }), { kind: "quit" })
+  assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed: false, popup: "menu" }), { kind: "quit" })
   assert.deepEqual(buildKeyboardCommand(String.fromCharCode(3), { itemCount: 3, armed: false }), { kind: "quit" })
 })
 
@@ -695,12 +695,12 @@ test("Esc walks back to the game menu; only its q quits, and neither touches the
   build.handleData(ESC, layout) // Grid -> menu
   assert.equal(build.state.focus, "menu")
   build.handleData(ESC, layout) // menu -> the game menu
-  assert.equal(build.state.overlay, "menu")
+  assert.equal(build.state.popup, "menu")
   build.handleData(ESC, layout) // Esc again keeps playing
-  assert.equal(build.state.overlay, null)
+  assert.equal(build.state.popup, null)
   assert.equal(quits, 0)
   build.handleData("q", layout) // q opens the game menu
-  assert.equal(build.state.overlay, "menu")
+  assert.equal(build.state.popup, "menu")
   assert.equal(quits, 0, "a bare q quit without asking")
   build.handleData("q", layout) // q in the game menu quits
   assert.equal(quits, 1)

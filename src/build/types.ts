@@ -7,7 +7,7 @@
 
 import type { Coord } from "../grid/types.ts"
 import type { PlaybackControl } from "../view/playback.ts"
-import type { DebugField } from "./debug.ts"
+import type { ExperimentField } from "./experiments.ts"
 import type { PlayerField } from "./settings.ts"
 
 /**
@@ -151,27 +151,27 @@ export type BuildCommand =
   | Readonly<{ kind: "explore" }>
   /**
    * The Settings popup: the player's own settings, then Experiments (owner, 2026-09-28). `[s]` in the
-   * game menu opens it at the settings; `d` — the old Debug Mode key, kept as a shortcut — opens it at
-   * the experiments.
+   * game menu opens it at the settings; `d` opens it at the
+   * experiments.
    */
   | Readonly<{ kind: "open-settings"; section: "settings" | "experiments" }>
   /** One step of a player setting (background, colour depth, symbols, reduced motion): Left or Right
-   *  on its row, or a click on either half of its value. Named by field, like `debug-adjust`. */
+   *  on its row, or a click on either half of its value. Named by field, like `experiment-adjust`. */
   | Readonly<{ kind: "setting-adjust"; field: PlayerField; step: -1 | 1 }>
   /**
-   * One step of an experiment (a Debug Mode flag): Left (`-1`) or Right (`+1`) on its row, or a click
+   * One step of an Experiment: Left (`-1`) or Right (`+1`) on its row, or a click
    * on the left or right half of its value. Named by field rather than by the popup's highlight, so a
    * driver script can set a flag without walking the list; with the popup open it also moves the
    * highlight there.
    */
-  | Readonly<{ kind: "debug-adjust"; field: DebugField; step: -1 | 1 }>
+  | Readonly<{ kind: "experiment-adjust"; field: ExperimentField; step: -1 | 1 }>
   /** A click on a Settings row away from its value, or on the popup's scroll bar: highlight it, so
    *  what it is for shows and the list scrolls to it. `row` is the row's id (`src/build/settings.ts`). */
   | Readonly<{ kind: "settings-select"; row: number }>
   /** `r` in the game menu, or its `[r] Restart` row (feedback F34 moved it there from Settings): start
    *  the Build Phase over, keeping every setting and experiment — how one that applies only after a
    *  restart takes effect. */
-  | Readonly<{ kind: "debug-restart" }>
+  | Readonly<{ kind: "restart" }>
   /**
    * `e` in the Settings popup, or its export row: show the settings and experiments as text to paste
    * into a pull request comment. The reducer only opens the popup that shows it; copying the text to
@@ -244,11 +244,11 @@ export type MenuEntry =
   | Readonly<{ kind: "construct"; index: number }>
   | Readonly<{ kind: "start" }>
 
-/** The popups this screen has — one overlay shape for all of them (`src/build/overlay.ts`): the Nexus
+/** The popups this screen has — one popup shape for all of them (`src/build/popup.ts`): the Nexus
  *  powers, the Battle Round confirmation, the game menu (Settings, Controls, Restart, Quit), Settings,
  *  the export, a message — `BuildState.message`, a title and text with nothing to choose — and the
  *  Controls and hotkeys page (feedback F60). */
-export type Overlay = "nexus-powers" | "confirm-commit" | "menu" | "settings" | "export" | "message" | "controls"
+export type Popup = "nexus-powers" | "confirm-commit" | "menu" | "settings" | "export" | "message" | "controls"
 
 /**
  * A message popup's words (feedback F34, owner 2026-09-29: "This popup does not have an action, it's

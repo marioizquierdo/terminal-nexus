@@ -63,14 +63,14 @@ export type HintSituation =
   | "map"
 
 export function hintSituation(context: BuildContext, state: BuildState): HintSituation {
-  switch (state.overlay) {
+  switch (state.popup) {
     case "nexus-powers":
     case "confirm-commit":
     case "settings":
     case "export":
     case "message":
     case "controls":
-      return state.overlay
+      return state.popup
     case "menu":
       return "game-menu"
     default:
@@ -93,7 +93,7 @@ export function hintSituation(context: BuildContext, state: BuildState): HintSit
 
 /** Esc's own words in a popup: back to the popup this one was opened from, or closed. */
 function escBack(state: BuildState): string {
-  return state.overlayUnder.length > 0 ? "[esc] goes back." : "[esc] closes."
+  return state.popupUnder.length > 0 ? "[esc] goes back." : "[esc] closes."
 }
 
 /** The menu row the keyboard is on, as a catalog item, when it is one. */

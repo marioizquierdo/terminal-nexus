@@ -31,19 +31,13 @@
 
 import type { Settings } from "../settings/types.ts"
 import { parseSettings } from "../settings/types.ts"
-import type { DebugField, DebugFlags } from "./debug.ts"
-import { DEBUG_FIELDS, fieldSpec, formatDebugValue, initialDebugFlags } from "./debug.ts"
+import type { ExperimentField, Experiments } from "./experiments.ts"
+import { EXPERIMENT_FIELDS, experimentSpec, formatExperimentValue, defaultExperiments } from "./experiments.ts"
 import type { PlayerField } from "./settings.ts"
 import { PLAYER_FIELDS, playerSpec } from "./settings.ts"
 import { SETTLED_EXPERIMENTS } from "./tuning.ts"
 
-export type SettingsSnapshot = Readonly<{ settings: Settings; experiments: DebugFlags }>
-
-/** The experiments' defaults in this build: what a fresh Build Phase opens with when nothing is
- *  passed. "Changed" in an export means "not this". */
-export function defaultExperiments(): DebugFlags {
-  return initialDebugFlags()
-}
+export type SettingsSnapshot = Readonly<{ settings: Settings; experiments: Experiments }>
 
 /** A value as the export writes it: a number bare, a yes/no as `on`/`off`, a choice by its own name. */
 function raw(value: unknown): string {
@@ -57,18 +51,18 @@ export const EXPORT_TITLE = "Terminal Nexus settings"
 export function formatSettingsExport(snapshot: SettingsSnapshot, build?: string): string {
   const defaults = defaultExperiments()
   const lines: string[] = build === undefined ? [EXPORT_TITLE] : [EXPORT_TITLE, `# build ${build}`]
-  const changed = DEBUG_FIELDS.filter((spec) => snapshot.experiments[spec.field] !== defaults[spec.field])
+  const changed = EXPERIMENT_FIELDS.filter((spec) => snapshot.experiments[spec.field] !== defaults[spec.field])
   if (changed.length === 0) lines.push("# Changed experiments: none")
   else {
     lines.push("# Changed experiments")
     for (const spec of changed) {
-      const was = formatDebugValue(defaults, spec.field)
+      const was = formatExperimentValue(defaults, spec.field)
       lines.push(`${spec.field} = ${raw(snapshot.experiments[spec.field])}  # ${spec.label}, default ${was}`)
     }
   }
   lines.push("# Settings")
   for (const spec of PLAYER_FIELDS) lines.push(`${spec.field} = ${raw(snapshot.settings[spec.field])}  # ${spec.label}`)
-  const unchanged = DEBUG_FIELDS.filter((spec) => snapshot.experiments[spec.field] === defaults[spec.field])
+  const unchanged = EXPERIMENT_FIELDS.filter((spec) => snapshot.experiments[spec.field] === defaults[spec.field])
   if (unchanged.length > 0) {
     lines.push("# Experiments at their defaults")
     for (const spec of unchanged) lines.push(`${spec.field} = ${raw(snapshot.experiments[spec.field])}  # ${spec.label}`)
@@ -104,10 +98,10 @@ function asBoolean(text: string): boolean | null {
  * the flag's smallest and largest listed values, with a unit or not ("200", "200ms"), since a number the
  * list does not hold is a legal starting value.
  */
-function experimentValue(field: DebugField, text: string): DebugFlags[DebugField] | null {
-  const spec = fieldSpec(field)
-  const values = spec.values as readonly DebugFlags[DebugField][]
-  const format = spec.format as (value: DebugFlags[DebugField]) => string
+function experimentValue(field: ExperimentField, text: string): Experiments[ExperimentField] | null {
+  const spec = experimentSpec(field)
+  const values = spec.values as readonly Experiments[ExperimentField][]
+  const format = spec.format as (value: Experiments[ExperimentField]) => string
   const lower = text.toLowerCase()
   for (const value of values) {
     if (raw(value).toLowerCase() === lower || format(value).toLowerCase() === lower) return value
@@ -115,7 +109,7 @@ function experimentValue(field: DebugField, text: string): DebugFlags[DebugField
   const first: unknown = values[0]
   // No Experiment is an on/off switch today, but the next one may be (AGENTS.md: "a new behaviour whose
   // worth is in doubt ships with an on/off Experiment"), so the reading stays.
-  if (typeof first === "boolean") return asBoolean(text) as DebugFlags[DebugField] | null
+  if (typeof first === "boolean") return asBoolean(text) as Experiments[ExperimentField] | null
   if (typeof first === "number") {
     const number = Number(lower.replace(/(ms|%|tiles?)$/u, ""))
     const numbers = values as readonly number[]
@@ -146,7 +140,7 @@ export function parseSettingsExport(text: string, base: SettingsSnapshot): Impor
   const applied: string[] = []
   const ignored: string[] = []
   const settled: string[] = []
-  const fields = new Set<string>(DEBUG_FIELDS.map((spec) => spec.field))
+  const fields = new Set<string>(EXPERIMENT_FIELDS.map((spec) => spec.field))
   const retired = new Set<string>(SETTLED_EXPERIMENTS)
   for (const line of text.split(/\r?\n/u)) {
     // A comment runs to the end of its line; a URL-encoded or one-line form has none to strip.
@@ -159,7 +153,7 @@ export function parseSettingsExport(text: string, base: SettingsSnapshot): Impor
         continue
       }
       if (fields.has(name)) {
-        const parsed = experimentValue(name as DebugField, value)
+        const parsed = experimentValue(name as ExperimentField, value)
         if (parsed === null) ignored.push(`${name}=${value}`)
         else {
           experiments[name] = parsed
@@ -185,7 +179,7 @@ export function parseSettingsExport(text: string, base: SettingsSnapshot): Impor
   }
   // The settings file's own forgiving parse has the last word on the player's half.
   const settings = parseSettings({ ...base.settings, ...settingsRecord })
-  return { snapshot: { settings, experiments: experiments as DebugFlags }, applied, ignored, settled }
+  return { snapshot: { settings, experiments: experiments as Experiments }, applied, ignored, settled }
 }
 
 /** A player setting's value from text — its own name, or the name the popup shows ("16", "none"). */

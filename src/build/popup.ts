@@ -6,8 +6,8 @@
 // change. The message (feedback F34, 2026-09-29) is the shape with nothing to choose: a title and text.
 //
 // A popup is **data**: a title and a list of rows, some of them options that name the command a click
-// on them sends, and at most one run of rows that scrolls. `overlaySpec` derives it from the state;
-// `placeOverlay` puts it on the frame; `overlayHitAt` answers what a click at a frame cell means. The
+// on them sends, and at most one run of rows that scrolls. `popupSpec` derives it from the state;
+// `placePopup` puts it on the frame; `popupHitAt` answers what a click at a frame cell means. The
 // composer draws from the same placed spec the mouse adapter hit-tests against, so a click can never
 // land on a row the frame did not draw there — the same guarantee `layout.ts` gives the side panel.
 //
@@ -15,7 +15,7 @@
 // while a popup is open — and is its click target, so a popup's own border carries only its title and,
 // beside a list that overflows, its scroll bar.
 
-import { DEBUG_FIELDS, fieldSpec, formatDebugValue } from "./debug.ts"
+import { EXPERIMENT_FIELDS, experimentSpec, formatExperimentValue } from "./experiments.ts"
 import type { BuildLayout } from "./layout.ts"
 import { START_KEY } from "./layout.ts"
 import { CONTROLS_TITLE, controlsPage } from "./help.ts"
@@ -35,7 +35,7 @@ import type { BuildContext, BuildState } from "./state.ts"
 import { exportText, nexusPowers } from "./state.ts"
 import type { BuildCommand, PopupMessage } from "./types.ts"
 
-export type OverlayRow =
+export type PopupRow =
   | Readonly<{ kind: "blank" }>
   | Readonly<{ kind: "heading"; text: string }>
   /** A line of text. `code` marks a line of the settings export: drawn as it is, except that a
@@ -87,20 +87,20 @@ export type OverlayRow =
  * is the row the keyboard is on, which is always kept in view; `select` is the command that highlights
  * the scrolling row at `index` (0 is `rows[from]`) — what a click on the scroll bar sends.
  */
-export type OverlayScroll = Readonly<{
+export type PopupScroll = Readonly<{
   from: number
   to: number
   highlight: number
   select: (index: number) => BuildCommand
 }>
 
-export type OverlaySpec = Readonly<{ title: string; rows: readonly OverlayRow[]; scroll?: OverlayScroll }>
+export type PopupSpec = Readonly<{ title: string; rows: readonly PopupRow[]; scroll?: PopupScroll }>
 
 /** How many lines the Settings popup keeps under its list, below a line across the popup, for what
  *  the highlighted row is for. Every question fits in this many at the narrowest popup (a test holds
  *  them to it); the rows the list's "more" lines and its two fixed rows took went to the list itself
  *  (feedback F35). */
-export const DEBUG_NOTE_LINES = 3
+export const SETTINGS_NOTE_LINES = 3
 
 /** The Settings popup's two section headings, drawn in its list. */
 export const SETTINGS_HEADING = "YOUR SETTINGS - saved"
@@ -115,8 +115,8 @@ export const EXPORT_QUESTION =
  * row; then a line across the popup, and under it what the highlighted row is for. The list scrolls;
  * its two headings scroll with it.
  */
-function settingsSpec(state: BuildState): OverlaySpec {
-  const rows: OverlayRow[] = []
+function settingsSpec(state: BuildState): PopupSpec {
+  const rows: PopupRow[] = []
   const from = rows.length
   /** Where each row id sits in `rows`, so the window can follow the highlight. */
   const lineOf = new Map<number, number>()
@@ -129,22 +129,22 @@ function settingsSpec(state: BuildState): OverlaySpec {
       kind: "setting",
       label: spec.label,
       value: formatPlayerValue(state.settings, spec.field),
-      highlighted: row === state.overlayHighlight,
+      highlighted: row === state.popupHighlight,
       decrease: { kind: "setting-adjust", field: spec.field, step: -1 },
       increase: { kind: "setting-adjust", field: spec.field, step: 1 },
       select: select(row),
     })
   }
   rows.push({ kind: "heading", text: EXPERIMENTS_HEADING })
-  DEBUG_FIELDS.forEach((spec, row) => {
+  EXPERIMENT_FIELDS.forEach((spec, row) => {
     lineOf.set(row, rows.length)
     rows.push({
       kind: "setting",
       label: spec.label,
-      value: formatDebugValue(state.debug, spec.field),
-      highlighted: row === state.overlayHighlight,
-      decrease: { kind: "debug-adjust", field: spec.field, step: -1 },
-      increase: { kind: "debug-adjust", field: spec.field, step: 1 },
+      value: formatExperimentValue(state.experiments, spec.field),
+      highlighted: row === state.popupHighlight,
+      decrease: { kind: "experiment-adjust", field: spec.field, step: -1 },
+      increase: { kind: "experiment-adjust", field: spec.field, step: 1 },
       select: select(row),
     })
   })
@@ -154,18 +154,18 @@ function settingsSpec(state: BuildState): OverlaySpec {
     hotkey: "e",
     label: "Export settings",
     command: { kind: "export-settings" },
-    highlighted: state.overlayHighlight === SETTINGS_EXPORT_ROW,
+    highlighted: state.popupHighlight === SETTINGS_EXPORT_ROW,
   })
   const to = rows.length
-  const highlighted = settingsRowAt(state.overlayHighlight)
+  const highlighted = settingsRowAt(state.popupHighlight)
   const note =
     highlighted === null || highlighted.kind === "export"
       ? EXPORT_QUESTION
       : highlighted.kind === "player"
         ? playerSpec(highlighted.field).question
-        : fieldSpec(highlighted.field).question
-  rows.push({ kind: "rule" }, { kind: "note", text: note, lines: DEBUG_NOTE_LINES })
-  const line = lineOf.get(state.overlayHighlight) ?? to - 1
+        : experimentSpec(highlighted.field).question
+  rows.push({ kind: "rule" }, { kind: "note", text: note, lines: SETTINGS_NOTE_LINES })
+  const line = lineOf.get(state.popupHighlight) ?? to - 1
   // A heading directly above the highlighted row is kept in view with it where the window allows: the
   // first setting of each section opens with its heading showing.
   const highlight = rows[line - 1]?.kind === "heading" ? line - 1 : line
@@ -175,9 +175,9 @@ function settingsSpec(state: BuildState): OverlaySpec {
     const at = from + index
     const entry = rows[at]?.kind === "heading" ? rows[at + 1] : rows[at]
     if (entry?.kind === "setting") return entry.select
-    return entry?.kind === "option" ? select(SETTINGS_EXPORT_ROW) : select(state.overlayHighlight)
+    return entry?.kind === "option" ? select(SETTINGS_EXPORT_ROW) : select(state.popupHighlight)
   }
-  const position = Math.max(0, SETTINGS_ORDER.indexOf(state.overlayHighlight)) + 1
+  const position = Math.max(0, SETTINGS_ORDER.indexOf(state.popupHighlight)) + 1
   return {
     title: `SETTINGS (${position}/${SETTINGS_ORDER.length})`,
     rows,
@@ -189,8 +189,8 @@ function settingsSpec(state: BuildState): OverlaySpec {
  *  feedback F34, Controls since F60). Every row is an option, and the highlight is `GAME_MENU_ROWS`'s
  *  index. No row goes back to the game (F73): Esc, `x`, the top bar's `close [esc]` and a click outside
  *  do, as for every popup. */
-function menuSpec(state: BuildState): OverlaySpec {
-  const on = (row: (typeof GAME_MENU_ROWS)[number]): boolean => GAME_MENU_ROWS[state.overlayHighlight] === row
+function menuSpec(state: BuildState): PopupSpec {
+  const on = (row: (typeof GAME_MENU_ROWS)[number]): boolean => GAME_MENU_ROWS[state.popupHighlight] === row
   return {
     title: "MENU",
     rows: [
@@ -215,7 +215,7 @@ function menuSpec(state: BuildState): OverlaySpec {
         kind: "option",
         hotkey: "r",
         label: "Restart",
-        command: { kind: "debug-restart" },
+        command: { kind: "restart" },
         highlighted: on("restart"),
         description: RESTART_DESCRIPTION,
       },
@@ -234,21 +234,21 @@ function menuSpec(state: BuildState): OverlaySpec {
 /** The export: where the text also went, then the text itself — a list of its lines with a highlight
  *  Up/Down move, like every other list here, so it scrolls the same way. No `[esc] Back to Settings`
  *  row (feedback F73): Esc and `x` go back, as the top bar's `close [esc]` says. */
-function exportSpec(context: BuildContext, state: BuildState): OverlaySpec {
-  const rows: OverlayRow[] = []
+function exportSpec(context: BuildContext, state: BuildState): PopupSpec {
+  const rows: PopupRow[] = []
   if (context.exportDestination !== undefined) rows.push({ kind: "note", text: context.exportDestination, lines: 3 })
   const from = rows.length
   exportText(context, state)
     .trimEnd()
     .split("\n")
     .forEach((line, index) => {
-      rows.push({ kind: "text", text: line, code: true, ...(index === state.overlayHighlight ? { highlighted: true } : {}) })
+      rows.push({ kind: "text", text: line, code: true, ...(index === state.popupHighlight ? { highlighted: true } : {}) })
     })
   const to = rows.length
   return {
     title: "EXPORT SETTINGS",
     rows,
-    scroll: { from, to, highlight: from + state.overlayHighlight, select: (line) => ({ kind: "export-select", line }) },
+    scroll: { from, to, highlight: from + state.popupHighlight, select: (line) => ({ kind: "export-select", line }) },
   }
 }
 
@@ -259,20 +259,20 @@ function exportSpec(context: BuildContext, state: BuildState): OverlaySpec {
  * with them and never highlighted, the scroll bar in the right border. Nothing to choose, so no option
  * rows: Esc goes back, as the top bar's `close [esc]` says.
  */
-function controlsSpec(state: BuildState): OverlaySpec {
-  const rows: OverlayRow[] = []
-  /** Where each key line sits in `rows` — what `overlayHighlight` indexes. */
+function controlsSpec(state: BuildState): PopupSpec {
+  const rows: PopupRow[] = []
+  /** Where each key line sits in `rows` — what `popupHighlight` indexes. */
   const lineRows: number[] = []
   controlsPage().forEach((section, index) => {
     if (index > 0) rows.push({ kind: "blank" })
     rows.push({ kind: "heading", text: section.heading })
     for (const line of section.lines) {
-      const highlighted = lineRows.length === state.overlayHighlight
+      const highlighted = lineRows.length === state.popupHighlight
       lineRows.push(rows.length)
       rows.push({ kind: "keys", keys: line.keys, text: line.text, ...(highlighted ? { highlighted: true } : {}) })
     }
   })
-  const line = lineRows[state.overlayHighlight] ?? lineRows[0] ?? 0
+  const line = lineRows[state.popupHighlight] ?? lineRows[0] ?? 0
   // A section's heading is kept in view with its first line, as Settings keeps its headings.
   const highlight = rows[line - 1]?.kind === "heading" ? line - 1 : line
   // A click on the scroll bar highlights the key line at the row it brings into view, or the one above
@@ -292,7 +292,7 @@ function controlsSpec(state: BuildState): OverlaySpec {
  * and nothing to choose. It holds the keyboard like any popup; Esc (or `x`, or a right click) and a
  * click outside it close it, and nothing else does (feedback F34).
  */
-export function messageSpec(message: PopupMessage): OverlaySpec {
+export function messageSpec(message: PopupMessage): PopupSpec {
   return { title: message.title, rows: [{ kind: "blank" }, { kind: "note", text: message.text }] }
 }
 
@@ -311,11 +311,11 @@ function sentences(text: string): readonly string[] {
 }
 
 /** The popup the state has open, as data, or `null`. */
-export function overlaySpec(context: BuildContext, state: BuildState): OverlaySpec | null {
-  switch (state.overlay) {
+export function popupSpec(context: BuildContext, state: BuildState): PopupSpec | null {
+  switch (state.popup) {
     case "nexus-powers": {
       const powers = nexusPowers(context, state)
-      const rows: OverlayRow[] = [{ kind: "blank" }]
+      const rows: PopupRow[] = [{ kind: "blank" }]
       if (powers.pending.length > 0) {
         rows.push({ kind: "heading", text: "PICK ONE - needed before the Pulse" })
         powers.pending.forEach(({ index, option }, position) => {
@@ -324,7 +324,7 @@ export function overlaySpec(context: BuildContext, state: BuildState): OverlaySp
             hotkey: option.hotkey,
             label: option.name,
             command: { kind: "pick-nexus", index },
-            highlighted: position === state.overlayHighlight,
+            highlighted: position === state.popupHighlight,
             description: option.description,
           })
         })
@@ -347,7 +347,7 @@ export function overlaySpec(context: BuildContext, state: BuildState): OverlaySp
         title: `Battle Round ${state.pulseNumber}`,
         rows: [
           { kind: "blank" },
-          ...sentences(roundAnnouncement(context, state.pulseNumber)).map((text): OverlayRow => ({ kind: "note", text })),
+          ...sentences(roundAnnouncement(context, state.pulseNumber)).map((text): PopupRow => ({ kind: "note", text })),
           { kind: "blank" },
           { kind: "option", hotkey: START_KEY, label: "Start", command: { kind: "confirm-commit" }, highlighted: true },
         ],
@@ -369,7 +369,7 @@ export function overlaySpec(context: BuildContext, state: BuildState): OverlaySp
 
 /** One row of a placed popup: its frame row, and the spec row it draws. A note's rows each carry
  *  their own wrapped line of it in `text`. */
-export type PlacedRow = Readonly<{ row: number; spec: OverlayRow; secondLine: boolean; text?: string }>
+export type PlacedRow = Readonly<{ row: number; spec: PopupRow; secondLine: boolean; text?: string }>
 
 /**
  * The scroll bar in a popup's right border, beside its scrolling rows, while they overflow (feedback
@@ -380,8 +380,8 @@ export type PlacedRow = Readonly<{ row: number; spec: OverlayRow; secondLine: bo
  */
 export type ScrollBar = Readonly<{ column: number; top: number; bottom: number; thumbTop: number; thumbBottom: number }>
 
-export type PlacedOverlay = Readonly<{
-  spec: OverlaySpec
+export type PlacedPopup = Readonly<{
+  spec: PopupSpec
   /** The border's own rectangle, inclusive. The shadow falls one cell right of it and one below. */
   box: Readonly<{ left: number; top: number; right: number; bottom: number }>
   textColumn: number
@@ -415,7 +415,7 @@ export function wrapWords(value: string, limit: number): readonly string[] {
 }
 
 /** The rows one spec row takes, as the text each of them draws (a note's wrapped lines). */
-function linesOf(entry: OverlayRow, textLimit: number): readonly (string | undefined)[] {
+function linesOf(entry: PopupRow, textLimit: number): readonly (string | undefined)[] {
   if (entry.kind === "option" && entry.description !== undefined) return [undefined, undefined]
   if (entry.kind === "note") {
     const wrapped = wrapWords(entry.text, textLimit)
@@ -450,7 +450,7 @@ function scrollBarFor(column: number, top: number, bottom: number, window: Scrol
   return { column, top, bottom, thumbTop: top + 1 + start, thumbBottom: top + start + size }
 }
 
-export function placeOverlay(layout: BuildLayout, spec: OverlaySpec): PlacedOverlay {
+export function placePopup(layout: BuildLayout, spec: PopupSpec): PlacedPopup {
   const paneWidth = layout.gridBox.right - layout.gridBox.left - 1
   const paneHeight = layout.paneBottom - layout.gridBox.top - 1
   const width = Math.min(POPUP_WIDTH, Math.max(24, paneWidth - 3))
@@ -503,7 +503,7 @@ export function placeOverlay(layout: BuildLayout, spec: OverlaySpec): PlacedOver
 
 /** What a click at a frame cell means with this popup open. `outside` is the caller's to act on: a
  *  click outside a popup closes it and moves focus to where it landed (owner, 2026-09-27). */
-export type OverlayHit =
+export type PopupHit =
   | Readonly<{ kind: "outside" }>
   | Readonly<{ kind: "command"; command: BuildCommand }>
   | Readonly<{ kind: "none" }>
@@ -514,7 +514,7 @@ export type OverlayHit =
  * brings it into view, as the wheel would a line at a time. Nothing when the list already shows its
  * own end that way.
  */
-function scrollBarCommand(placed: PlacedOverlay, row: number): BuildCommand | null {
+function scrollBarCommand(placed: PlacedPopup, row: number): BuildCommand | null {
   const { scrollBar: bar, window } = placed
   const scroll = placed.spec.scroll
   if (bar === null || window === null || scroll === undefined) return null
@@ -524,7 +524,7 @@ function scrollBarCommand(placed: PlacedOverlay, row: number): BuildCommand | nu
   return below >= window.count ? null : scroll.select(below)
 }
 
-export function overlayHitAt(placed: PlacedOverlay, column: number, row: number): OverlayHit {
+export function popupHitAt(placed: PlacedPopup, column: number, row: number): PopupHit {
   const { box, scrollBar: bar } = placed
   if (column < box.left || column > box.right || row < box.top || row > box.bottom) return { kind: "outside" }
   if (bar !== null && column === bar.column && row >= bar.top && row <= bar.bottom) {
@@ -549,11 +549,11 @@ const VALUE_WIDTH = 12
 /**
  * Where a setting row's parts sit — its name and its `< value >` box, the box against the row's right
  * end — as frame columns, the same for every setting row in a popup. Read by the composer to draw them
- * and by `overlayHitAt` to hit-test them. The value box is split down the middle: the left half is the
+ * and by `popupHitAt` to hit-test them. The value box is split down the middle: the left half is the
  * decrease target and the right half the increase one, each six columns wide, so a finger on a phone
  * can hit it (the browser playtest page).
  */
-export function settingColumns(placed: PlacedOverlay): Readonly<{
+export function settingColumns(placed: PlacedPopup): Readonly<{
   labelLimit: number
   valueFrom: number
   valueMiddle: number

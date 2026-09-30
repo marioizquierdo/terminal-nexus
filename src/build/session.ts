@@ -12,7 +12,7 @@ import type { ResolvedPulse } from "../view/pulse-live.ts"
 import type { PulseFrame } from "../view/pulse-scene.ts"
 import type { BuildLayout } from "./layout.ts"
 import { escLabel } from "./layout.ts"
-import { overlaySpec, placeOverlay } from "./overlay.ts"
+import { popupSpec, placePopup } from "./popup.ts"
 import type { Camera, Viewport } from "./camera.ts"
 import { buildKeyboardCommand, cursorKeyOf } from "./keyboard.ts"
 import type { MoveKind } from "./motion.ts"
@@ -134,7 +134,7 @@ export class BuildSession {
     this.buildState = applyBuildCommand(this.context, before, command)
     // Side effects the reducer only records, handed to the adapter that owns them.
     if (this.buildState.settings !== before.settings) this.onSettingsChange(this.buildState.settings)
-    if (this.buildState.overlay === "export" && before.overlay !== "export") {
+    if (this.buildState.popup === "export" && before.popup !== "export") {
       this.onExport(exportText(this.context, this.buildState))
     }
     // The plan was just committed: the Nexus Pulse starts. Or the Build Phase started over: it is gone.
@@ -175,13 +175,13 @@ export class BuildSession {
     if (timing.now !== undefined) this.advance(timing.now)
     const mouse = parseMouseEvent(key)
     const state = this.buildState
-    const spec = overlaySpec(this.context, state)
+    const spec = popupSpec(this.context, state)
     let command =
       mouse !== null
         ? // A click lands on the tile drawn under the pointer: while the view is still sliding, that
           // is the drawn camera's tile, not the target's (gate 5H).
           buildMouseCommand(mouse, timing.camera ?? state.camera, layout, this.context.catalog, {
-            ...(spec === null ? {} : { overlay: placeOverlay(layout, spec) }),
+            ...(spec === null ? {} : { popup: placePopup(layout, spec) }),
             cardPanel: cardShowing(state),
             escLabel: escLabel(state),
             pulse: this.presenter !== null,
@@ -190,9 +190,9 @@ export class BuildSession {
             itemCount: this.context.catalog.length,
             armed: state.armed !== null,
             focus: state.focus,
-            overlay: state.overlay,
-            overlayPendingCount: nexusPowers(this.context, state).pending.length,
-            overlayHighlight: state.overlayHighlight,
+            popup: state.popup,
+            popupPendingCount: nexusPowers(this.context, state).pending.length,
+            popupHighlight: state.popupHighlight,
             pulse: this.presenter !== null,
           })
     if (mouse !== null && mouse.press && command?.kind === "click-tile") {
@@ -228,7 +228,7 @@ export class BuildSession {
       // it at the list's end, so holding Down reaches the last row quickly and stays there. **A tap is
       // always one row**, whatever the map's tap step, so every row stays reachable by Up and Down.
       const direction = command.delta < 0 ? -1 : 1
-      const rows = this.ramp.step({ dx: 0, dy: direction, fast: false }, timing.now, { ...rampTuning(state.debug.holdWindowMs), tapStep: 1 })
+      const rows = this.ramp.step({ dx: 0, dy: direction, fast: false }, timing.now, { ...rampTuning(state.experiments.holdWindowMs), tapStep: 1 })
       command = { kind: "highlight", delta: direction * rows }
     } else if (cursorKey !== null) {
       // A cursor key on the Grid: how far is the ramp's call when the key's arrival time is known — a
@@ -237,7 +237,7 @@ export class BuildSession {
       // soon moves nothing, and nothing is sent for it.
       const tiles =
         timing.now !== undefined
-          ? this.ramp.step(cursorKey, timing.now, rampTuning(state.debug.holdWindowMs))
+          ? this.ramp.step(cursorKey, timing.now, rampTuning(state.experiments.holdWindowMs))
           : cursorKey.fast
             ? TUNING.jumpStep
             : TUNING.tapStep

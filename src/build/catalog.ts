@@ -8,7 +8,7 @@
 
 import type { GridTerrain, TerrainId } from "../grid/types.ts"
 import type { Force, PulseSetup } from "../match/types.ts"
-import type { CrewSize, RaidSize } from "./debug.ts"
+import type { CrewSize, RaidSize } from "./experiments.ts"
 import type { ConstructItem, MapEdgeStyle, NexusPowerOption, StandingStructure } from "./types.ts"
 
 /**

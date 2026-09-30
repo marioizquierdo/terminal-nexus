@@ -19,7 +19,7 @@ import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import type { ReadonlyCellFrame } from "../view/frame.ts"
 import type { CapabilityMode } from "../view/roles.ts"
-import type { DebugFlags } from "../build/debug.ts"
+import type { Experiments } from "../build/experiments.ts"
 import { DEFAULT_SETTINGS } from "../settings/types.ts"
 import type { Settings } from "../settings/types.ts"
 import type { GlyphPack } from "../view/theme.ts"
@@ -38,7 +38,7 @@ export type BuildPlaytestOptions = Readonly<{
    *  `glyphPack`, when given, win over these, as a command-line flag does. */
   settings?: Settings
   /** Experiments to open with instead of this build's defaults — an imported export's. */
-  experiments?: Partial<DebugFlags>
+  experiments?: Partial<Experiments>
   context?: BuildContext
   cursor?: Coord
 }>
