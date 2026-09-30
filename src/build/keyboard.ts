@@ -197,10 +197,11 @@ function cursorMove(key: string, context: KeyboardContext): BuildCommand | null 
 /**
  * One already-split raw key to one command, or `null` when the key means nothing here.
  *
- * **Focus is the one mode this screen has, and it is the one engine.md 9.7's first convention
- * allows**: "if a panel genuinely needs arrow keys of its own... Tab moves focus and the footer says
- * where focus is." Arrows and Enter/Space follow focus; nothing else does — a digit arms its row, `n`
- * opens the Nexus Powers, `u`, Backspace and `p` do what they always did, whichever half has focus.
+ * **A key means one thing per screen** (engine.md 9.7's first convention): arrows and Enter/Space
+ * follow focus — the menu, or the map in its modes (`mapMode`), where Enter places, or opens Explore
+ * Map in plain navigation — while digits always address their row, and letters always name their
+ * command, whichever half has focus. Backspace always sends `remove`, which the menu refuses with a
+ * flicker, since the map cursor it would remove under is hidden there.
  */
 export function buildKeyboardCommand(key: string, context: KeyboardContext): BuildCommand | null {
   // Ctrl+C always quits outright; `q` opens the game menu first, so a stray press cannot lose a plan.

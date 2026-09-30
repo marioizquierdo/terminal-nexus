@@ -18,12 +18,13 @@ import {
   MOUSE_RIGHT,
   MOUSE_WHEEL_DOWN,
   MOUSE_WHEEL_UP,
+  WHEEL_TILES,
   formatMouseEvent,
   parseMouseEvent,
 } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildSessionOptions } from "../src/build/session.ts"
-import { WHEEL_TILES, anchorForCursor, applyBuildCommand, armedPreview, createBuildState, legalityAt, remaining, spent } from "../src/build/state.ts"
+import { anchorForCursor, applyBuildCommand, armedPreview, createBuildState, legalityAt, remaining, spent } from "../src/build/state.ts"
 import { popupSpec } from "../src/build/popup.ts"
 import { bottomLine } from "../src/build/help.ts"
 import type { BuildCommand } from "../src/build/types.ts"

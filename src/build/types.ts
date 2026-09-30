@@ -56,10 +56,11 @@ export type BuildCommand =
    * (owner, 2026-09-28, feedback F22 — reversing the 2026-09-27 rule that a first click only
    * highlighted): a construct row arms at once and hands the mouse to the Grid with the ghost at the
    * cursor, or the nearest spot that takes it; the Nexus entry opens its popup; Explore Map opens the
-   * map; Start Pulse opens its confirmation. All four are the menu's, so finishing them comes back to the menu. Only the keyboard has a
-   * "highlighted, not yet chosen" state. Two exceptions, both about what the click could see: with a
-   * popup open it only closes the popup and brings focus to the menu; and while Explore Map covers the
-   * menu, a click on its own row or anywhere else on the panel closes it, as Esc does — the row it
+   * map; Start Pulse opens its confirmation. All four are the menu's, so finishing them comes back to
+   * the menu. Only the keyboard has a "highlighted, not yet chosen" state. Two exceptions, both about
+   * what the click could see: with a popup open it only closes the popup (and brings focus to the menu,
+   * unless a card covers it); and while a card covers the menu — Explore Map's, or the building being
+   * placed — a click on its header or anywhere else on the panel goes back, as Esc does: the row it
    * landed on was not drawn, so it chooses nothing.
    */
   | Readonly<{ kind: "click-menu"; entry: number }>
@@ -190,7 +191,7 @@ export type BuildCommand =
    */
   | Readonly<{ kind: "look-at"; x: number; y: number }>
   /** The shell could not start the Pulse the player just committed: the commit is undone, so they can fix
-   *  the plan, and the reason is said on the status line. */
+   *  the plan, and the reason is said on the bottom line. */
   | Readonly<{ kind: "pulse-failed"; reason: string }>
 
 /**
@@ -237,7 +238,7 @@ export type Popup = "nexus-powers" | "battle-round" | "game-menu" | "settings" |
 /**
  * A message popup's words (feedback F34, owner 2026-09-29: "This popup does not have an action, it's
  * just a warning message ... clicking outside or pressing esc should close it"). Any warning the screen
- * needs to give once, and out of the way of the status line, is one of these.
+ * needs to give once, and out of the way of the bottom line, is one of these.
  */
 export type PopupMessage = Readonly<{ title: string; text: string }>
 

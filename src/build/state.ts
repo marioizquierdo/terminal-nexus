@@ -145,12 +145,12 @@ export type BuildState = Readonly<{
    *  Reducer state, not adapter state, so a driver can assert it and the bottom line's hint can say it. */
   focus: Focus
   /**
-   * **Explore Map** (feedback F23, owner 2026-09-28; its look since F32 and F53): the panel's Explore
-   * Map row reads `[x] Explore Map  >>` in the active style, and under a separator the rest of the
-   * panel is a card for what is under the cursor, following it as it moves. Reached only by `e`, the menu's first entry,
-   * and Enter/Space in plain navigation; `e` again, Esc, or a click on its row go back to where it was
-   * opened from (`returnTo`). Only ever true while the Grid has focus and nothing is armed (read it
-   * through `exploring`).
+   * **Explore Map** (feedback F23, owner 2026-09-28; its look since F32, F53 and F61): the panel is a
+   * card for what is under the cursor, following it as it moves, headed by the Explore Map row in the
+   * active style, `[e] Explore Map  >`, over a separator. Reached only by `e`, the menu's first entry,
+   * and Enter/Space in plain navigation; `e` again, Esc, `x` or a click on the panel go back to where
+   * it was opened from (`returnTo`). Only ever true while the Grid has focus and nothing is armed (read
+   * it through `mapMode` or `exploring`).
    *
    * **Tab and a click on the map do not open it** (feedback F30): they arrive in plain navigation,
    * with the menu still drawn beside the map, so a player who clicks around the map with the mouse can
@@ -204,8 +204,9 @@ export type BuildState = Readonly<{
    *  a title and text, nothing to choose. */
   message: PopupMessage | null
   planned: readonly PlannedPlacement[]
-  /** The one line of feedback the status line shows: what just happened, or why it did not. A
-   *  message about a tile (`status.tile`, a refused placement) lapses once the cursor leaves it. */
+  /** The last command's answer, which the bottom line shows: what just happened, or why it did not.
+   *  It lapses at the next command that says nothing (`lapseStatus`); a refused placement names its
+   *  tile (`status.tile`). */
   status: StatusMessage
   nextOrdinal: number
   /** Index into `context.nexusDraft`, or `null` before a pick. A Nexus power, once dealt, may not be
@@ -274,11 +275,6 @@ export function spent(context: BuildContext, state: BuildState): number {
 export function remaining(context: BuildContext, state: BuildState): number {
   return context.allotment + state.bonusAllotment - spent(context, state)
 }
-
-/** The mouse wheel's five-tile step. GUIDANCE (engine.md 9.7's bindings table), not RULE. Until gate
- *  5H Shift+Arrow and its modifier-free fallbacks moved this far too; since then they jump the tuned
- *  `TUNING.jumpStep` (`src/build/tuning.ts`), and the wheel alone keeps five. */
-export const WHEEL_TILES = 5
 
 /** The scroll margin in force, in tiles along each axis: a percentage of the view (gate 5H) — the
  *  context's (`--scroll-margin`), or the owner's tuned one. */
@@ -487,7 +483,7 @@ export type Refusal = Readonly<{ reason: string; tile?: Coord }>
 
 /**
  * The one sentence a refused placement is reported in — the reducer's own status after a refused
- * Enter, and the status line's live reading of the armed preview, word for word. Names the tile when
+ * Enter, and the bottom line's live reading of the armed preview, word for word. Names the tile when
  * the reason is about one (engine.md 9.2's RULE: the player can fix it rather than guess).
  */
 export function refusalText(refusal: Refusal): string {
@@ -675,7 +671,7 @@ export function armingSpot(
 
 /**
  * What Enter would do right now with the armed structure, derived in one place: `place()` acts on
- * it, and the view draws it — the ghost under the cursor, the status line's live refusal. "What you
+ * it, and the view draws it — the ghost under the cursor, the bottom line's live refusal. "What you
  * see is what Enter does" is then one function rather than several copies that have to agree (they
  * once disagreed about the budget).
  */
@@ -812,7 +808,7 @@ function handOff(state: BuildState, from: Focus, entry: number): BuildState["han
  * spot that can take it (`armingSpot`, feedback F30). A row that costs more than is left is refused
  * here, with the reason, rather than armed to be refused later.
  *
- * Armed, the status line says nothing (feedback F58): the panel is the building's card, which says
+ * Armed, the bottom line says nothing (feedback F58): the panel is the building's card, which says
  * what it is and what it costs. Only when no spot was in reach does it warn. Armed from the menu, the
  * row hands the keyboard to the map (`BuildState.handoff`, F54).
  *
@@ -898,7 +894,7 @@ function activateEntry(context: BuildContext, state: BuildState, entry: number):
 
 /** `s`, or the Start Pulse entry: open the Battle Round confirmation over the Grid, the menu lit behind
  *  it. Its row flashes "pressed" however it was reached — or, refused (a Nexus power still waiting), a
- *  flicker beside the status line's reason. With a building armed, the building comes first
+ *  flicker beside the bottom line's reason. With a building armed, the building comes first
  *  (`refuseWhileArmed`, feedback F69). */
 function openBattleRound(context: BuildContext, state: BuildState): BuildState {
   const entry = startEntry(context.catalog.length)
@@ -929,7 +925,7 @@ function openNexus(state: BuildState): BuildState {
 /**
  * `e`, the Explore Map entry, or Enter/Space in plain navigation: the Grid with nothing armed, and
  * the side panel showing what is under the cursor (feedback F23). `from` is where Esc, `e` again or
- * a click on its row go back to. The status line says nothing: the card and its active header say
+ * a click on its row go back to. The bottom line says nothing: the card and its active header say
  * where the player is (feedback F58). Opened from the menu, the row hands the keyboard to the map
  * (`BuildState.handoff`, F54).
  *
@@ -1019,7 +1015,7 @@ function pickNexus(context: BuildContext, state: BuildState, index: number): Bui
   const option = context.nexusDraft[index]
   if (option === undefined) return state
   // The popup closes on the pick (owner, 2026-09-27 — answering Q60): open, pick, and the player is
-  // back on the menu. The confirmation is the status line and the entry's "1 active".
+  // back where they were. The confirmation is the bottom line, and the menu's "(1)" going out.
   return {
     ...closePopups(state),
     nexusPick: index,
@@ -1037,9 +1033,8 @@ function place(context: BuildContext, state: BuildState): BuildState {
   }
   if (preview.refusal !== null) {
     // Refused, and nothing moved. Silently sliding a structure to the nearest legal tile is the one
-    // failure this check exists to prevent. The message is about this tile, so it lapses when the
-    // cursor leaves it — and its "danger" tone is how the status line tells an attempt apart from
-    // merely looking.
+    // failure this check exists to prevent. The message names this tile, and its "danger" tone is how
+    // the bottom line tells an attempt apart from merely looking.
     return {
       ...state,
       status: status(refusalText(preview.refusal), "danger", state.cursor),
@@ -1130,7 +1125,7 @@ function openControls(state: BuildState): BuildState {
   return openFromGameMenu(state, "controls", "controls", 0)
 }
 
-/** One step of an experiment, said on the status line. */
+/** One step of an experiment, said on the bottom line. */
 function adjustExperiment(state: BuildState, field: ExperimentField, step: -1 | 1): BuildState {
   const spec = experimentSpec(field)
   const highlight = state.popup === "settings" ? { popupHighlight: experimentRow(field) } : {}
@@ -1238,7 +1233,7 @@ function showMessage(state: BuildState, message: PopupMessage, returnTo = state.
  * message popup (feedback F34). **When Settings closes rather than as the value changes**, so a player
  * stepping through a setting's values is not interrupted at every press, and one who puts it back
  * hears nothing; and **once per change**, so closing Settings again later does not repeat it — the
- * player may keep playing and restart when they choose. The status line says "applies after a
+ * player may keep playing and restart when they choose. The bottom line says "applies after a
  * restart" at the change itself.
  */
 function warnIfRestartNeeded(before: BuildState, next: BuildState): BuildState {
@@ -1274,8 +1269,7 @@ export function applyBuildCommand(
  * line "offers contextual help"): a command that answers sets a new message, so one that leaves the
  * incoming message in place said nothing, and the old answer lapses — the bottom line then shows the
  * hint for where the keyboard is (`src/build/help.ts`). Compared by identity, which is exactly "did this
- * command set a status". A message about a tile also lapses the moment the cursor leaves it
- * (`withCursor`).
+ * command set a status". A refusal about a tile lapses with the next move like any answer.
  */
 function lapseStatus(before: BuildState, after: BuildState): BuildState {
   return after.status === before.status && after.status.text !== "" ? { ...after, status: NO_STATUS } : after
@@ -1500,7 +1494,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
   }
 }
 
-/** The structure covering a tile, standing or planned, or `null` — what the information panel shows. */
+/** The structure covering a tile, standing or planned, or `null` — what Explore Map's card shows. */
 export function structureAtTile(
   context: BuildContext,
   planned: readonly PlannedPlacement[],

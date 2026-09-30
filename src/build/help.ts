@@ -22,7 +22,6 @@ import type { StatusMessage } from "../status.ts"
 import { status } from "../status.ts"
 import type { ArmedPreview, BuildContext, BuildState } from "./state.ts"
 import {
-  WHEEL_TILES,
   displayName,
   mapMode,
   menuEntries,
@@ -32,6 +31,7 @@ import {
   remaining,
   structureAtTile,
 } from "./state.ts"
+import { WHEEL_TILES } from "./mouse.ts"
 import { TUNING } from "./tuning.ts"
 import type { ConstructItem } from "./types.ts"
 

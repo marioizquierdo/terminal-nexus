@@ -10,7 +10,6 @@ import { ESC_KEY, escLabelAt, inPanelColumns, menuEntryAt, pulseControlAt, tileA
 import type { PlacedPopup } from "./popup.ts"
 import { popupHitAt } from "./popup.ts"
 import type { Camera } from "./camera.ts"
-import { WHEEL_TILES } from "./state.ts"
 import type { BuildCommand, ConstructItem } from "./types.ts"
 
 /** What is on screen beyond the layout: the open popup, placed, since it holds the mouse; the menu
@@ -60,14 +59,19 @@ export const MOUSE_RIGHT = 2
 export const MOUSE_WHEEL_UP = 64
 export const MOUSE_WHEEL_DOWN = 65
 
+/** How far one notch of the wheel moves the map cursor, in tiles. GUIDANCE (engine.md 9.7's bindings
+ *  table), not RULE. The keyboard's fast move jumped this far too until gate 5H; it jumps the tuned
+ *  `TUNING.jumpStep` now, and the wheel alone keeps five. */
+export const WHEEL_TILES = 5
+
 /**
  * **The wheel moves the cursor, not a second camera.** Engine.md 9.7's table says "Mouse: wheel —
  * scroll the camera; the mouse's Shift+Arrow", while 3.3 says the camera is driven by the cursor and
  * there is "no separate pan mode, no modifier keys, no second cursor". Taken literally together, the
  * only reading that keeps both true is the one the table's own gloss already points at: the wheel is
- * the mouse's Shift+Arrow, so it jumps the *cursor* five tiles and the camera follows it, exactly as
- * the keyboard's fast pan does. A wheel that moved the camera on its own would be the separate pan
- * mode 3.3 forbids, and would leave the cursor stranded off screen.
+ * the mouse's fast move, so it moves the *cursor* `WHEEL_TILES` and the camera follows it, as it
+ * follows every cursor move. A wheel that moved the camera on its own would be the separate pan mode
+ * 3.3 forbids, and would leave the cursor stranded off screen. Inside a popup it walks the list.
  */
 export function buildMouseCommand(
   event: MouseEvent,

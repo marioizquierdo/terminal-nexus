@@ -215,8 +215,8 @@ function edgeAxis(camera: number, tile: number, span: number, zone: number): num
   return camera
 }
 
-/** Where an exploring click inside an edge zone moves the camera (feedback F6): see `edgeAxis`. The
- *  zone is a percentage of the view along each axis. Clamped to the Grid. */
+/** Where a click on the map inside an edge zone moves the camera (feedback F6), a building armed or
+ *  not: see `edgeAxis`. The zone is a percentage of the view along each axis. Clamped to the Grid. */
 export function edgeClickCamera(
   camera: Camera,
   tile: Coord,
