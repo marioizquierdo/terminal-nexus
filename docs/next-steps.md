@@ -2,7 +2,7 @@
 
 **Document role:** The queue: what waits on Mario, what comes next, and the small work that has piled up beside the milestones
 **Status:** WORKING — keep it short; delete an item when it is done, and move a decision into `specs/open-questions.md` when it becomes one
-**Updated:** 2026-09-30 (the menu spike's follow-up, F82-F86, and the 6B prompt; earlier: its third round, feedback F77-F81 and his third export, on the same pull request; earlier: its second round and a general review, the menu spike, Milestone 5 accepted and gate 6A)
+**Updated:** 2026-09-30 (gate 6A accepted and gate 6B active; earlier: the menu spike's follow-up, F82-F86, and the 6B prompt; earlier: its third round, feedback F77-F81 and his third export, on the same pull request; earlier: its second round and a general review, the menu spike, Milestone 5 accepted and gate 6A)
 **License:** Apache-2.0
 
 Milestones say what the game must become (`milestones/`); this says what is waiting *right now*, and
@@ -10,55 +10,24 @@ the cleanup that does not belong to any gate.
 
 ## 1. Waiting on Mario
 
-- **Gate 6A's ending, in words.** His 2026-09-30 export settled its timings (the walk home waits
-  500 ms and takes a second, a heavy raid, no units of his own), and they are the defaults now; what
-  he has not said is whether the flashing timer and the light round the border read as anticipation
-  rather than an alarm, whether the red is rare and faint enough, and whether the result is clear
-  without being told.
+- **Gate 6A's ending, in words** (accepted 2026-09-30, but not yet described): whether the flashing timer
+  and the light round the border read as anticipation rather than an alarm, whether the red is rare and
+  faint enough, and whether the result is clear without being told.
 - **Run the key-release probe in iTerm2.** `node scripts/probe-key-release.mjs`, hold an arrow, let it
   go, tap it, `q`. If the lines say `release`, the Key releases Experiment's `auto` reads them there;
   if they say `legacy`, `auto` and `off` feel the same in iTerm2 (section 4).
 - **One question:** was "press `b`" an example of a key or a request for letter hotkeys? (Q67.)
 - **One more:** should the player ever read the word "Pulse"? The start screen says Battle Round; the menu
-  row and the running screen still say Pulse (Q68). The menu spike did not change the words, since he
-  did not ask; his list of actions said "Start next battle round".
-- **Play the menu spike's follow-up** (the same pull request; feedback F82-F86): the Battle Round screen
-  opening with a double flash and every popup breathing; a card as title, subtitle, description and
-  numbers; Settings in sections. Press `d`: **Battle Round flash** (220 ms; off turns it off) and **Flash
-  strength** (80%) under Effects, beside **Popup pulse** (2000 ms); the navigation numbers are under
-  Keyboard navigation for the dedicated navigation session (section 4).
+  row and the running screen still say Pulse (Q68).
+- **The menu spike's follow-up's Experiments** (Battle Round flash, Flash strength, Popup pulse, and the
+  keyboard navigation numbers) came back without an export; they stay until he sends one.
 
-## 2. The next gate: 6B — the loop back into the next Build Phase
+## 2. The current gate: 6B — the loop back into the next Build Phase
 
 Milestone 6 (`milestones/milestone-06-pulse-phase.md`) has three gates: **6A** start, end, Recall
-(built, awaiting his playtest); **6B** the loop back into the next Build Phase, and the trigger
-runner's simulation band; **6C** minimal automatic production. **6B waits for his word** — he has
-tested several merged gates together before, so it is likely to come with the 6A export. Take one gate
-per session.
-
-**A prompt to start 6B in a fresh session** (the owner asked for one at the menu spike's merge, F86;
-edit the first paragraph if anything changed):
-
-```text
-Read CLAUDE.md and follow AGENTS.md.
-
-I have played gate 6A (Start Pulse, the Battle Round screen, the Pulse, its ending and Recall) and the
-menu spike with its follow-up (pull request 49), and merged them. Treat this message as my word that gate 6A is accepted
-and that gate 6B is the Active gate. Record that first, as its own commit (the governance ledger, the
-Milestone 6 tracker, AGENTS.md Section 2, docs/next-steps.md). If I paste a settings export, settle
-each Experiment it answers before anything else.
-
-Then orient: run ./scripts/check-repository.sh; read milestones/milestone-06-pulse-phase.md,
-docs/next-steps.md, docs/ui-patterns.md (sections 0, 14 and 15) and evidence/gate-6a-report.md
-(its sections 7 and 9 are the carry-over).
-
-Take gate 6B only — the loop: after Recall, the next Build Phase, until the mission's triggers end it;
-the trigger runner's simulation band (spawn, order, commitPlan, win, lose) as validated data;
-PERIMETER's three waves as the fixture, replacing the placeholder Pulse and its Raid and Your units
-Experiments; Q36 resolved or deferred with a reason. The kernel is Milestone 1's; a change to it is a
-finding, not an assumption. Anything I should feel goes behind an Experiment in Settings. End with a
-gate report and a pull request written with the pr-description skill. Do not start 6C.
-```
+(accepted 2026-09-30); **6B** the loop back into the next Build Phase, and the trigger runner's
+simulation band — **the Active gate**; **6C** minimal automatic production, which waits for his word.
+Take one gate per session.
 
 ## 3. Carry-over (small, none blocking)
 
