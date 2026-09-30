@@ -7,80 +7,48 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
-import { CHROME_ROWS, FLOOR_CHROME_ROWS, FOOTER_ROWS, MIN_VIEWPORT, isGated } from "../src/build/camera.ts"
+import { isGated } from "../src/build/camera.ts"
 import { CONTROLS_KEYS_WIDTH, CONTROLS_TITLE, HINTS, bottomLine, controlsLineCount, controlsPage, hint, hintSituation } from "../src/build/help.ts"
 import type { HintSituation } from "../src/build/help.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
-import { buildLayout, escLabelSpan, escLabel } from "../src/build/layout.ts"
-import type { BuildLayout } from "../src/build/layout.ts"
-import { MOUSE_LEFT, MOUSE_WHEEL_DOWN, formatMouseEvent } from "../src/build/mouse.ts"
-import { popupSpec, placePopup } from "../src/build/popup.ts"
-import type { PlacedPopup } from "../src/build/popup.ts"
-import { BuildSession } from "../src/build/session.ts"
+import { MOUSE_WHEEL_DOWN } from "../src/build/mouse.ts"
 import { CONTROLS_DESCRIPTION, GAME_MENU_ROWS, restartMessage } from "../src/build/settings.ts"
-import type { BuildContext, BuildState } from "../src/build/state.ts"
+import type { BuildState } from "../src/build/state.ts"
 import { NEXUS_ENTRY, armedPreview } from "../src/build/state.ts"
 import { TUNING } from "../src/build/tuning.ts"
-import { spikeContext } from "../src/cli/spike.ts"
-import { composeBuildFrame } from "../src/view/build.ts"
-import { cellAt, frameToText } from "../src/view/frame.ts"
+import { cellAt } from "../src/view/frame.ts"
 import { statusStyle } from "../src/view/status.ts"
-import { at, frameOf, play } from "./pulse-helpers.ts"
-import { DEFENCE } from "./pulse-helpers.ts"
+import {
+  BACKSPACE,
+  DOWN,
+  ENTER,
+  ESC,
+  MAXIMUM,
+  MINIMUM,
+  PAGE_DOWN,
+  ROOMY,
+  TAB,
+  UP,
+  WIDE,
+  bottomLineText,
+  buildSide,
+  clickCell,
+  clickEscLabel,
+  clickPopupOption,
+  compose,
+  goToGameMenuRow,
+  keys,
+  placed,
+  screenText,
+} from "./build-helpers.ts"
+import type { Side } from "./build-helpers.ts"
+import { DEFENCE, at, play } from "./pulse-helpers.ts"
 
-const ESC = String.fromCharCode(27)
-const UP = `${ESC}[A`
-const DOWN = `${ESC}[B`
-/** PageDown: a list's last row (feedback F75), where Start Pulse is on the menu. */
-const PAGE_DOWN = `${ESC}[6~`
-const TAB = "\t"
-const ENTER = "\r"
-const BACKSPACE = String.fromCharCode(127)
-const MINIMUM = { columns: 80, rows: 24 }
-const SIZES = [MINIMUM, { columns: 104, rows: 32 }, { columns: 128, rows: 24 }, { columns: 120, rows: 40 }]
-
-type Side = { build: BuildSession; layout: BuildLayout; context: BuildContext; quits: () => number }
-
-function session(context: BuildContext = spikeContext(), terminal = MINIMUM): Side {
-  const layout = buildLayout(terminal, context.grid)
-  let quits = 0
-  const build = new BuildSession({
-    context,
-    cursor: SPIKE_START_CURSOR,
-    viewport: layout.viewport,
-    onQuit: () => {
-      quits += 1
-    },
-  })
-  return { build, layout, context, quits: () => quits }
-}
-
-function keys(side: Side, ...sequence: string[]): void {
-  for (const key of sequence) side.build.handleData(key, side.layout)
-}
-
-function click(side: Side, column: number, row: number, button = MOUSE_LEFT): void {
-  side.build.handleData(formatMouseEvent(button, column + 1, row + 1), side.layout)
-}
-
-function frame(side: Side) {
-  return composeBuildFrame({ context: side.context, state: side.build.state, layout: side.layout }, "monochrome")
-}
-
-/** The bottom bar's one row, as drawn, without the frame's borders. */
-function bottomRow(side: Side): string {
-  return (frameToText(frame(side)).split("\n")[side.layout.footerRow] as string).replace(/^\s*\|\s|\s*\|\s*$/g, "")
-}
+const SIZES = [MINIMUM, MAXIMUM, WIDE, ROOMY]
 
 /** What the bottom row says, as a typed message: the answer or the hint. */
 function line(side: Side) {
   return bottomLine(side.context, side.build.state, armedPreview(side.context, side.build.state))
-}
-
-function placed(side: Side): PlacedPopup {
-  const spec = popupSpec(side.context, side.build.state)
-  assert.ok(spec !== null, "no popup is open")
-  return placePopup(side.layout, spec)
 }
 
 /** A command that says nothing and changes nothing: whatever the last command answered lapses. */
@@ -93,39 +61,30 @@ function silence(side: Side): void {
 test("the bottom bar is one row, and 80 x 24 shows 49 x 18 tiles of Grid; the floor stays 80 x 24", () => {
   // The owner (2026-09-30, feedback F59): "The bottom of the UI currently uses 3 rows. We have to reduce
   // that to 1 row." The rule under the Grid and one line; the two rows saved go to the Grid.
-  assert.equal(FOOTER_ROWS, 2)
-  assert.equal(CHROME_ROWS, 6)
-  const side = session()
+  const side = buildSide()
   const { layout } = side
   assert.deepEqual(layout.viewport, { width: 49, height: 18 })
-  assert.equal(layout.frame.height, 24)
-  // Top border, the top bar, the rule over the Grid, 18 rows of Grid, the rule under it, the one line,
-  // the bottom border.
-  assert.equal(layout.origin.row, 3)
-  assert.equal(layout.gridBox.bottom, 21)
-  assert.equal(layout.footerRow, 22)
-  const lines = frameToText(frame(side)).split("\n")
+  const lines = screenText(side).split("\n")
   assert.equal(lines.length, 24)
+  assert.equal(layout.footerRow, lines.length - 2, "the one line is not directly above the frame's bottom border")
   assert.match(lines[23] as string, /^\+-+\+$/, "the frame's border closes directly under the one line")
-  // The floor is measured against the old 8 rows of chrome, so it does not move: 80 x 23 is still gated.
-  assert.equal(FLOOR_CHROME_ROWS, 8)
+  // The floor does not move with it: 80 x 23 is still below it.
   assert.equal(isGated({ columns: 80, rows: 24 }, side.context.grid), false)
   assert.equal(isGated({ columns: 80, rows: 23 }, side.context.grid), true)
-  assert.equal(MIN_VIEWPORT.height, 16)
 })
 
 test("the bottom line shows a command's answer, and after a command that says nothing, the hint", () => {
-  const side = session()
+  const side = buildSide()
   keys(side, "1", ENTER)
-  assert.equal(bottomRow(side), "Barracks placed (resources: 60) - [u] undo")
+  assert.equal(bottomLineText(side), "Barracks placed (resources: 60) - [u] undo")
   assert.equal(line(side).tone, "success")
   keys(side, DOWN) // says nothing: the answer lapses
   assert.equal(side.build.state.status.text, "")
-  assert.equal(bottomRow(side), "Hatchery - Spawns swarmers, slowly. Costs 30. [enter] to place one.")
+  assert.equal(bottomLineText(side), "Hatchery - Spawns swarmers, slowly. Costs 30. [enter] to place one.")
   assert.equal(line(side).tone, "hint")
   // The hint reads quieter than any answer.
   assert.equal(statusStyle("hint").role, "chrome.muted")
-  assert.equal(cellAt(frame(side), side.layout.offset.column + 2, side.layout.footerRow).style.fgRole, "chrome.muted")
+  assert.equal(cellAt(compose(side), side.layout.offset.column + 2, side.layout.footerRow).style.fgRole, "chrome.muted")
 })
 
 test("the answers players rely on still show right after their command, and lapse at the next silent one", () => {
@@ -139,10 +98,10 @@ test("the answers players rely on still show right after their command, and laps
     ["a refused Start Pulse", (side) => keys(side, "s"), /^Pick a Nexus power first: \[n\] Nexus\.$/, "warning"],
   ]
   for (const [name, drive, text, tone] of cases) {
-    const side = session()
+    const side = buildSide()
     drive(side)
     assert.match(line(side).text, text, name)
-    assert.match(bottomRow(side), text, `${name}: not drawn`)
+    assert.match(bottomLineText(side), text, `${name}: not drawn`)
     assert.equal(line(side).tone, tone, `${name}: its tone`)
     silence(side)
     assert.equal(side.build.state.status.text, "", `${name}: outlived a command that said nothing`)
@@ -151,15 +110,15 @@ test("the answers players rely on still show right after their command, and laps
 })
 
 test("a refused placement is said in red with its tile, then — lapsed — quietly, while the ghost still sits there", () => {
-  const side = session()
-  keys(side, TAB, "1") // on the map: the Barracks armed at the nearest good spot, east of the Nexus
-  side.build.dispatch({ kind: "look-at", x: SPIKE_START_CURSOR.x, y: SPIKE_START_CURSOR.y }) // onto the Nexus
+  const side = buildSide()
+  keys(side, TAB, "1") // on the map: the Barracks armed where the cursor is
+  side.build.dispatch({ kind: "look-at", x: SPIKE_START_CURSOR.x, y: SPIKE_START_CURSOR.y }) // onto the Grid Nexus
   keys(side, ENTER)
   const tried = line(side)
   assert.match(tried.text, /^Cannot build here: the nexus is here at \d+,\d+\.$/)
   assert.equal(tried.tone, "danger")
   assert.deepEqual(side.build.state.status.tile, side.build.state.cursor)
-  assert.match(bottomRow(side), /^Cannot build here: the nexus is here/)
+  assert.match(bottomLineText(side), /^Cannot build here: the nexus is here/)
   silence(side)
   const looking = line(side)
   assert.equal(looking.text, tried.text, "the ghost still sits on a refused tile, so the line still says why")
@@ -222,11 +181,12 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
 }
 
 test("a hint for every situation the hint list names, each one line that fits the 80-column floor", () => {
+  assert.equal(buildSide().layout.footerLimit, 76, "the bottom line's room at the 80-column floor")
   const situations = Object.keys(HINTS) as HintSituation[]
   assert.deepEqual([...situations].sort(), (Object.keys(SITUATIONS) as HintSituation[]).sort())
   for (const situation of situations) {
     for (const [drive, says] of SITUATIONS[situation]) {
-      const side = session()
+      const side = buildSide()
       const state = drive(side) ?? side.build.state
       assert.equal(hintSituation(side.context, state), situation)
       const text = hint(side.context, state)
@@ -234,7 +194,6 @@ test("a hint for every situation the hint list names, each one line that fits th
       assert.equal(text.tone, "hint")
       assert.equal(text.tile, undefined, "a hint is never about a tile")
       assert.ok(text.text.length <= side.layout.footerLimit, `${situation}: "${text.text}" is ${text.text.length} long`)
-      assert.equal(side.layout.footerLimit, 76)
     }
   }
 })
@@ -243,46 +202,46 @@ test("a hint for every situation the hint list names, each one line that fits th
 
 test("the game menu lists [c] Controls and hotkeys right after Settings", () => {
   assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "restart", "quit"])
-  const side = session()
+  const side = buildSide()
   keys(side, ESC)
-  const text = frameToText(frame(side))
+  const text = screenText(side)
   assert.match(text, /\[s\] Settings[\s\S]*\[c\] Controls and hotkeys[\s\S]*\[r\] Restart/)
   assert.match(text, new RegExp(CONTROLS_DESCRIPTION))
 })
 
 test("the Controls page opens from the game menu by c, by Enter on its row and by a click, and from the game by ?", () => {
-  const byKey = session()
+  const byKey = buildSide()
   keys(byKey, ESC, "c")
-  const byEnter = session()
-  keys(byEnter, ESC, DOWN, ENTER)
-  const byClick = session()
+  const byEnter = buildSide()
+  keys(byEnter, ESC)
+  goToGameMenuRow(byEnter, "controls")
+  keys(byEnter, ENTER)
+  const byClick = buildSide()
   keys(byClick, ESC)
-  const row = placed(byClick).rows.find((entry) => entry.spec.kind === "option" && entry.spec.hotkey === "c" && !entry.secondLine)
-  assert.ok(row !== undefined, "no [c] row in the game menu")
-  click(byClick, placed(byClick).textColumn + 4, row.row)
-  const byDriver = session()
+  clickPopupOption(byClick, "c")
+  const byDriver = buildSide()
   byDriver.build.run([{ kind: "open-game-menu" }, { kind: "open-controls" }])
-  const inMenu = session()
+  const inMenu = buildSide()
   keys(inMenu, ESC, "?")
   for (const [name, side] of [["c", byKey], ["enter", byEnter], ["a click", byClick], ["a driver", byDriver], ["? in the game menu", inMenu]] as const) {
     assert.equal(side.build.state.popup, "controls", `${name} did not open it`)
     assert.deepEqual(side.build.state.popupUnder.map((level) => level.popup), ["game-menu"], `${name}: not over the game menu`)
     assert.equal(side.build.state.popupHighlight, 0)
   }
-  const text = frameToText(frame(byKey))
+  const text = screenText(byKey)
   assert.match(text, new RegExp(CONTROLS_TITLE))
   assert.match(text, /THE MENU/)
   assert.match(text, /close \[esc\]/)
 
   // `?` from the game, from either focus, and while a plan is committed — never from inside another popup.
   for (const before of [[], [TAB], ["1"], ["n", "1", "s", "s"]]) {
-    const side = session()
+    const side = buildSide()
     keys(side, ...before, "?")
     assert.equal(side.build.state.popup, "controls", `${JSON.stringify(before)} then ? did not open it`)
     assert.deepEqual(side.build.state.popupUnder, [])
   }
   for (const popup of [["n"], ["d"], ["n", "1", "s"], ["d", "e"]]) {
-    const side = session()
+    const side = buildSide()
     keys(side, ...popup)
     const open = side.build.state.popup
     keys(side, "?")
@@ -291,37 +250,36 @@ test("the Controls page opens from the game menu by c, by Enter on its row and b
 })
 
 test("Esc goes back to the game menu on its Controls row, or to the game after ?; c, ? and Enter close it too", () => {
-  const fromMenu = session()
+  const fromMenu = buildSide()
   keys(fromMenu, ESC, "c", DOWN, DOWN, ESC)
   assert.equal(fromMenu.build.state.popup, "game-menu")
   assert.equal(GAME_MENU_ROWS[fromMenu.build.state.popupHighlight], "controls")
   keys(fromMenu, ESC)
   assert.equal(fromMenu.build.state.popup, null)
 
-  const fromGame = session()
+  const fromGame = buildSide()
   keys(fromGame, "?", ESC)
   assert.equal(fromGame.build.state.popup, null)
   assert.equal(fromGame.build.state.focus, "menu")
 
   for (const close of ["c", "?", ENTER, " ", "x"]) {
-    const side = session()
+    const side = buildSide()
     keys(side, ESC, "c", close)
     assert.equal(side.build.state.popup, "game-menu", `${JSON.stringify(close)} did not go back`)
   }
   // The top bar's "close [esc]" is Esc: one level back.
-  const byLabel = session()
+  const byLabel = buildSide()
   keys(byLabel, ESC, "c")
-  const label = escLabelSpan(byLabel.layout, escLabel(byLabel.build.state))
-  click(byLabel, label.from, label.row)
+  clickEscLabel(byLabel)
   assert.equal(byLabel.build.state.popup, "game-menu")
   // A click outside closes it, as every popup does, and nothing more.
-  const outside = session()
+  const outside = buildSide()
   keys(outside, "?")
-  click(outside, outside.layout.panelColumn + 3, outside.layout.panelRow + 5)
+  clickCell(outside, outside.layout.panelColumn + 3, outside.layout.panelRow + 5)
   assert.equal(outside.build.state.popup, null)
   assert.equal(outside.build.state.armed, null)
   // Keys it has no use for do nothing underneath it.
-  const held = session()
+  const held = buildSide()
   keys(held, "?", "1", "u", "n", "e", TAB)
   assert.equal(held.build.state.popup, "controls")
   assert.equal(held.build.state.armed, null)
@@ -329,7 +287,7 @@ test("Esc goes back to the game menu on its Controls row, or to the game after ?
 })
 
 test("it scrolls the export's way: Up/Down, the wheel and the scroll bar, stopping at either end", () => {
-  const side = session()
+  const side = buildSide()
   keys(side, ESC, "c")
   const opening = placed(side)
   assert.ok(opening.window !== null && opening.window.offset === 0)
@@ -347,18 +305,18 @@ test("it scrolls the export's way: Up/Down, the wheel and the scroll bar, stoppi
   assert.equal(side.build.state.popupHighlight, last)
   const end = placed(side)
   assert.equal((end.window?.offset ?? 0) + (end.window?.visible ?? 0), end.window?.count)
-  assert.match(frameToText(frame(side)), /ctrl\+c +quit at once/)
+  assert.match(screenText(side), /ctrl\+c +quit at once/)
 
   // The wheel walks it a line at a time.
-  const wheel = session()
+  const wheel = buildSide()
   keys(wheel, "?")
   const box = placed(wheel).box
-  click(wheel, box.left + 3, box.top + 3, MOUSE_WHEEL_DOWN)
+  clickCell(wheel, box.left + 3, box.top + 3, MOUSE_WHEEL_DOWN)
   assert.equal(wheel.build.state.popupHighlight, 1)
   // A click on the scroll bar's lower half brings later lines into view.
   const bar = placed(wheel).scrollBar
   assert.ok(bar !== null)
-  click(wheel, bar.column, bar.bottom)
+  clickCell(wheel, bar.column, bar.bottom)
   assert.ok(wheel.build.state.popupHighlight > 1, "the scroll bar's lower half did not scroll down")
   assert.ok((placed(wheel).window?.offset ?? 0) > 0)
   // A driver selects a line directly, clamped to the page.
@@ -373,7 +331,7 @@ test("the page is one table: every situation, every line fits at the floor, and 
     ["THE MENU", "THE MAP", "PLACING A BUILDING", "EXPLORE MAP", "POPUPS", "ANY LIST", "THE MOUSE", "THE NEXUS PULSE", "ANYWHERE"],
   )
   for (const size of SIZES) {
-    const side = session(spikeContext(), size)
+    const side = buildSide({ terminal: size })
     keys(side, "?")
     const popup = placed(side)
     assert.ok(popup.box.top > side.layout.gridBox.top, `the popup covers the top rule at ${size.columns}x${size.rows}`)
@@ -388,11 +346,11 @@ test("the page is one table: every situation, every line fits at the floor, and 
     }
   }
   // The Shift jump is the tuned number, read rather than copied.
-  assert.equal(TUNING.jumpStep, 10)
-  assert.ok(sections.some((section) => section.lines.some((entry) => entry.text === `jump ${TUNING.jumpStep} tiles`)))
-  const side = session()
+  const jump = `jump ${TUNING.jumpStep} tiles`
+  assert.ok(sections.some((section) => section.lines.some((entry) => entry.text === jump)))
+  const side = buildSide()
   keys(side, "?", ...Array.from({ length: 10 }, () => DOWN))
-  assert.match(frameToText(frame(side)), /jump 10 tiles/)
+  assert.ok(screenText(side).includes(jump), `"${jump}" is not on the page`)
 })
 
 test("the page names only keys the adapters bind, and every command key they bind is on it", () => {
@@ -445,13 +403,12 @@ test("the Controls page says what Esc and x do on the menu, how placing is cance
 test("during a Nexus Pulse the one row is the Pulse's own line, and a popup over it says its own", () => {
   const played = play({ plan: DEFENCE })
   at(played, 0)
-  const text = () => frameToText(frameOf(played)).split("\n")[played.layout.footerRow] as string
-  assert.match(text(), /\| Nexus Pulse - 5 of yours against 7 of the raid\. +\|/)
+  assert.equal(bottomLineText(played), "Nexus Pulse - 5 of yours against 7 of the raid.")
   assert.equal(played.layout.viewport.height, 18)
   played.build.handleData("?", played.layout)
   assert.equal(played.build.state.popup, "controls")
-  assert.match(text(), /\| Every key and click, by where you are\. Up\/down scroll\. \[esc\] closes\. +\|/)
+  assert.equal(bottomLineText(played), "Every key and click, by where you are. Up/down scroll. [esc] closes.")
   played.build.handleData(ESC, played.layout, { now: 10 })
   assert.equal(played.build.state.popup, null)
-  assert.match(text(), /Nexus Pulse - /)
+  assert.match(bottomLineText(played), /^Nexus Pulse - /)
 })

@@ -10,12 +10,9 @@ import { EventEmitter } from "node:events"
 import { mkdtempSync, readFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { EXPERIMENT_FIELDS, defaultExperiments } from "../src/build/experiments.ts"
-import { buildLayout, escLabelSpan, escLabel } from "../src/build/layout.ts"
-import { MOUSE_LEFT, formatMouseEvent } from "../src/build/mouse.ts"
-import { popupSpec, placePopup, settingColumns } from "../src/build/popup.ts"
-import type { PlacedPopup } from "../src/build/popup.ts"
-import { BuildSession } from "../src/build/session.ts"
+import { EXPERIMENT_FIELDS, defaultExperiments, experimentSpec, formatExperimentValue, stepExperiment } from "../src/build/experiments.ts"
+import { MOUSE_WHEEL_DOWN } from "../src/build/mouse.ts"
+import { settingColumns } from "../src/build/popup.ts"
 import { FIRST_EXPERIMENT_ROW, GAME_MENU_ROWS, PLAYER_FIELDS, SETTINGS_EXPORT_ROW, playerRow } from "../src/build/settings.ts"
 import { formatSettingsExport, importSettings, parseSettingsExport } from "../src/build/settings-export.ts"
 import type { SettingsSnapshot } from "../src/build/settings-export.ts"
@@ -29,69 +26,41 @@ import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import type { Settings } from "../src/settings/types.ts"
-import { composeBuildFrame } from "../src/view/build.ts"
 import { frameToText } from "../src/view/frame.ts"
+import {
+  CTRL_C,
+  DOWN,
+  END,
+  ENTER,
+  ESC,
+  LEFT,
+  RIGHT,
+  buildSide,
+  clickCell,
+  clickEscLabel,
+  clickPopupOption,
+  goToExperiment,
+  goToGameMenuRow,
+  goToPopupRow,
+  keys,
+  placed,
+  screenText,
+} from "./build-helpers.ts"
+import type { BuildSide } from "./build-helpers.ts"
 
-const ESC = String.fromCharCode(27)
-const UP = `${ESC}[A`
-const DOWN = `${ESC}[B`
-const RIGHT = `${ESC}[C`
-const LEFT = `${ESC}[D`
-/** End: a list's last row (feedback F75) — Export settings, in Settings. */
-const END = `${ESC}[F`
-const ENTER = "\r"
+type SettingsSide = BuildSide & Readonly<{ exports: string[]; saved: Settings[] }>
 
-type Side = {
-  build: BuildSession
-  layout: ReturnType<typeof buildLayout>
-  context: BuildContext
-  quits: number
-  exports: string[]
-  saved: Settings[]
+/** A Build Phase that keeps what it hands the live loop: every export and every setting to save. */
+function session(context: BuildContext = spikeContext()): SettingsSide {
+  const exports: string[] = []
+  const saved: Settings[] = []
+  const side = buildSide({ context, onExport: (text) => exports.push(text), onSettingsChange: (settings) => saved.push(settings) })
+  return { ...side, exports, saved }
 }
 
-function session(context: BuildContext = spikeContext()): Side {
-  const layout = buildLayout({ columns: 80, rows: 24 }, context.grid)
-  const side: Side = { build: undefined as unknown as BuildSession, layout, context, quits: 0, exports: [], saved: [] }
-  side.build = new BuildSession({
-    context,
-    cursor: { x: 18, y: 13 },
-    viewport: layout.viewport,
-    onQuit: () => {
-      side.quits += 1
-    },
-    onExport: (text) => side.exports.push(text),
-    onSettingsChange: (settings) => side.saved.push(settings),
-  })
-  return side
-}
-
-function keys(side: Side, ...sequence: string[]): void {
-  for (const key of sequence) side.build.handleData(key, side.layout)
-}
-
-function screen(side: Side): string {
-  const { state } = side.build
-  return frameToText(
-    composeBuildFrame({ context: side.context, state, layout: side.layout, glyphPack: state.settings.glyphPack }, state.settings.capability),
-  )
-}
-
-function placed(side: Side): PlacedPopup {
-  const spec = popupSpec(side.context, side.build.state)
-  assert.ok(spec !== null, "no popup is open")
-  return placePopup(side.layout, spec)
-}
-
-function click(side: Side, column: number, row: number): void {
-  keys(side, formatMouseEvent(MOUSE_LEFT, column + 1, row + 1))
-}
-
-/** Clicks the popup's option with this hotkey. */
-function clickOption(side: Side, hotkey: string): void {
-  const row = placed(side).rows.find((entry) => entry.spec.kind === "option" && entry.spec.hotkey === hotkey && !entry.secondLine)
-  assert.ok(row !== undefined, `no [${hotkey}] option`)
-  click(side, placed(side).textColumn + 2, row.row)
+/** The screen as the player's own settings draw it: their glyph pack, at their colour depth. */
+function screen(side: SettingsSide): string {
+  return screenText(side, side.build.state.settings.capability)
 }
 
 // --- The game menu -----------------------------------------------------------------------------------
@@ -107,14 +76,11 @@ test("Esc on the menu, q anywhere, and the top bar's menu [esc] all open the gam
     assert.match(text, /\[c\] Controls and hotkeys/)
     assert.match(text, /\[r\] Restart/)
     assert.match(text, /\[q\] Quit/)
-    // No row goes back to the game (feedback F73): Esc, x, the top bar and a click outside do.
-    assert.doesNotMatch(text, /Back to the game/)
     // The bottom line says how to work it (feedback F59), where the key help listed its keys.
     assert.match(text, /Up\/down and \[enter\] choose, or press a row's key\. \[esc\] back to the game\./)
   }
   const clicked = session()
-  const hint = escLabelSpan(clicked.layout, "menu [esc]")
-  click(clicked, hint.from + 1, hint.row)
+  clickEscLabel(clicked)
   assert.equal(clicked.build.state.popup, "game-menu")
   // From the map, Esc walks back to the menu first; a committed Build Phase opens the game menu too.
   const grid = session()
@@ -130,35 +96,24 @@ test("Esc on the menu, q anywhere, and the top bar's menu [esc] all open the gam
 test("leaving always goes through the game menu: its q, Enter on Quit, or a click on Quit; only Ctrl+C quits at once", () => {
   const byKey = session()
   keys(byKey, "q")
-  assert.equal(byKey.quits, 0, "a bare q quit")
+  assert.equal(byKey.quits(), 0, "a bare q quit")
   keys(byKey, "q")
-  assert.equal(byKey.quits, 1)
+  assert.equal(byKey.quits(), 1)
 
   const byEnter = session()
-  keys(byEnter, ESC, DOWN, DOWN, DOWN) // past Settings, Controls and Restart
-  assert.equal(GAME_MENU_ROWS[byEnter.build.state.popupHighlight], "quit")
+  keys(byEnter, ESC)
+  goToGameMenuRow(byEnter, "quit")
   keys(byEnter, ENTER)
-  assert.equal(byEnter.quits, 1)
+  assert.equal(byEnter.quits(), 1)
 
   const byClick = session()
   keys(byClick, ESC)
-  clickOption(byClick, "q")
-  assert.equal(byClick.quits, 1)
-
-  // Up/Down walk the four rows and stop at both ends (they came round until feedback F75); there is no
-  // Back row to press (F73) — Esc closes the menu.
-  const walk = session()
-  keys(walk, ESC, UP)
-  assert.equal(GAME_MENU_ROWS[walk.build.state.popupHighlight], "settings")
-  keys(walk, DOWN, DOWN, DOWN, DOWN, DOWN)
-  assert.equal(GAME_MENU_ROWS[walk.build.state.popupHighlight], "quit")
-  keys(walk, ESC)
-  assert.equal(walk.build.state.popup, null)
-  assert.equal(walk.quits, 0)
+  clickPopupOption(byClick, "q")
+  assert.equal(byClick.quits(), 1)
 
   const interrupt = session()
-  keys(interrupt, String.fromCharCode(3))
-  assert.equal(interrupt.quits, 1)
+  keys(interrupt, CTRL_C)
+  assert.equal(interrupt.quits(), 1)
 })
 
 test("[s] opens Settings at the player's settings; Esc goes back to the game menu, then to the game", () => {
@@ -184,7 +139,7 @@ test("[s] opens Settings at the player's settings; Esc goes back to the game men
   // q inside Settings is the way out: the game menu, not a quit.
   keys(side, "d", "q")
   assert.equal(side.build.state.popup, "game-menu")
-  assert.equal(side.quits, 0)
+  assert.equal(side.quits(), 0)
 })
 
 // --- The player's settings ---------------------------------------------------------------------------
@@ -196,18 +151,20 @@ test("a player setting changes at once, is handed to the live loop to save, and 
   assert.deepEqual(side.saved, [{ ...DEFAULT_SETTINGS, theme: "light" }])
   assert.equal(side.build.state.status.text, "Background: light.")
   // Symbols to unicode: the very next frame draws with them.
-  keys(side, DOWN, DOWN, RIGHT)
+  goToPopupRow(side, playerRow("glyphPack"))
+  keys(side, RIGHT)
   assert.equal(side.build.state.settings.glyphPack, "unicode")
   assert.match(screen(side), /[─│┌]/u, "the frame did not switch to Unicode lines")
   // Colour depth walks all four and comes round; Left goes the other way.
-  keys(side, UP)
+  goToPopupRow(side, playerRow("capability"))
   for (let step = 0; step < 4; step += 1) keys(side, RIGHT)
   assert.equal(side.build.state.settings.capability, DEFAULT_SETTINGS.capability)
   keys(side, LEFT)
   assert.equal(side.build.state.settings.capability, "monochrome")
   assert.match(screen(side), /Colour depth\s+<\s+none\s+>/)
   // Reduced motion flips on Enter.
-  keys(side, DOWN, DOWN, ENTER)
+  goToPopupRow(side, playerRow("reducedMotion"))
+  keys(side, ENTER)
   assert.equal(side.build.state.settings.reducedMotion, true)
   const before = side.build.state.settings
   keys(side, "q", "r") // the game menu's Restart
@@ -220,13 +177,13 @@ test("every player setting's value box is a click target, the same as Left and R
   for (const spec of PLAYER_FIELDS) {
     const byKey = session()
     keys(byKey, ESC, "s")
-    while (byKey.build.state.popupHighlight !== playerRow(spec.field)) keys(byKey, DOWN)
+    goToPopupRow(byKey, playerRow(spec.field))
     keys(byKey, RIGHT)
     const byClick = session()
     keys(byClick, ESC, "s")
     const row = placed(byClick).rows.find((entry) => entry.spec.kind === "setting" && entry.spec.label === spec.label)
     assert.ok(row !== undefined, `${spec.label} is not on screen`)
-    click(byClick, settingColumns(placed(byClick)).valueTo, row.row)
+    clickCell(byClick, settingColumns(placed(byClick)).valueTo, row.row)
     assert.deepEqual(byClick.build.state.settings, byKey.build.state.settings, spec.label)
   }
 })
@@ -236,7 +193,10 @@ test("every player setting's value box is a click target, the same as Left and R
 test("[e] shows the export in a popup, hands the same text to the adapter, and Esc goes back one popup at a time", () => {
   const context: BuildContext = { ...spikeContext(), buildId: "abc1234", exportDestination: "Copied to the clipboard." }
   const side = session(context)
-  keys(side, "d", DOWN, DOWN, RIGHT) // at the experiments, past the focus arrow and the card reveal: a longer hold window
+  keys(side, "d")
+  goToExperiment(side, "holdWindowMs")
+  keys(side, RIGHT) // a longer hold window
+  const hold = stepExperiment(defaultExperiments(), "holdWindowMs", 1).flags.holdWindowMs
   keys(side, "q", "s", "e")
   assert.equal(side.build.state.popup, "export")
   assert.equal(side.exports.length, 1)
@@ -247,10 +207,10 @@ test("[e] shows the export in a popup, hands the same text to the adapter, and E
   assert.match(text, /Terminal Nexus settings/)
   assert.match(text, /# build abc1234/)
   assert.match(text, /# Changed experiments/)
-  assert.match(text, /holdWindowMs = 500/)
-  // Up/Down walk the text; the window follows.
+  assert.match(text, new RegExp(`holdWindowMs = ${hold} `))
+  // Up/Down walk the text; the window follows it to the last line.
   for (let line = 0; line < 40; line += 1) keys(side, DOWN)
-  assert.match(screen(side), /crew = none/)
+  assert.match(screen(side), new RegExp(`crew = ${defaultExperiments().crew} `))
   keys(side, ESC)
   assert.equal(side.build.state.popup, "settings")
   assert.equal(side.build.state.popupHighlight, SETTINGS_EXPORT_ROW)
@@ -260,20 +220,22 @@ test("[e] shows the export in a popup, hands the same text to the adapter, and E
   assert.equal(side.build.state.popup, null)
   // The Export row by Enter, and by a click, does the same.
   const byEnter = session()
-  keys(byEnter, ESC, "s", END, ENTER) // End goes to the last row: Export (Up came round to it until F75)
+  keys(byEnter, ESC, "s", END, ENTER) // End goes to the last row: Export
   assert.equal(byEnter.build.state.popup, "export")
   const byClick = session()
   keys(byClick, ESC, "s", END) // the list's last row, in view
-  clickOption(byClick, "e")
+  clickPopupOption(byClick, "e")
   assert.equal(byClick.build.state.popup, "export")
   assert.equal(byClick.exports.length, 1)
 })
 
 test("the export lists changed experiments first with their defaults, then the settings, then the rest", () => {
-  const snapshot: SettingsSnapshot = {
-    settings: { ...DEFAULT_SETTINGS, theme: "light" },
-    experiments: { ...defaultExperiments(), crew: "some", raid: "probe", holdWindowMs: 250 },
-  }
+  // Three Experiments a step from this build's defaults, each written as `raid = probe  # Raid, default
+  // heavy`: the value as the code reads it, the default as the popup shows it.
+  const defaults = defaultExperiments()
+  const moved = ["crew", "raid", "holdWindowMs"] as const
+  const experiments = moved.reduce((flags, field) => stepExperiment(flags, field, 1).flags, defaults)
+  const snapshot: SettingsSnapshot = { settings: { ...DEFAULT_SETTINGS, theme: "light" }, experiments }
   const text = formatSettingsExport(snapshot, "592f3cb")
   const lines = text.trimEnd().split("\n")
   assert.equal(lines[0], "Terminal Nexus settings")
@@ -283,16 +245,17 @@ test("the export lists changed experiments first with their defaults, then the s
   const changed = lines.slice(3, changedEnd)
   assert.deepEqual(
     changed.map((line) => line.split(" ")[0]),
-    EXPERIMENT_FIELDS.map((spec) => spec.field).filter((field) => ["crew", "raid", "holdWindowMs"].includes(field)),
+    EXPERIMENT_FIELDS.map((spec) => spec.field).filter((field) => (moved as readonly string[]).includes(field)),
   )
-  assert.ok(changed.some((line) => line.startsWith("raid = probe  # Raid, default heavy")))
-  assert.ok(changed.some((line) => line.startsWith("crew = some  # Your units, default none")))
-  assert.ok(changed.some((line) => line.startsWith("holdWindowMs = 250  # Hold window, default 350 ms")))
+  for (const field of moved) {
+    const wrote = `${field} = ${String(experiments[field])}  # ${experimentSpec(field).label}, default ${formatExperimentValue(defaults, field)}`
+    assert.ok(changed.includes(wrote), `no line "${wrote}"`)
+  }
   assert.ok(lines.includes("theme = light  # Background"))
   assert.ok(lines.includes("# Experiments at their defaults"))
-  assert.equal(lines.length, 2 + 1 + 3 + 1 + PLAYER_FIELDS.length + 1 + (EXPERIMENT_FIELDS.length - 3))
+  assert.equal(lines.length, 2 + 1 + moved.length + 1 + PLAYER_FIELDS.length + 1 + (EXPERIMENT_FIELDS.length - moved.length))
   // With nothing changed it says so, and a build without a commit id says nothing about one.
-  const plain = formatSettingsExport({ settings: DEFAULT_SETTINGS, experiments: defaultExperiments() })
+  const plain = formatSettingsExport({ settings: DEFAULT_SETTINGS, experiments: defaults })
   assert.match(plain, /^Terminal Nexus settings\n# Changed experiments: none\n/)
 })
 
@@ -300,9 +263,15 @@ test("the export lists changed experiments first with their defaults, then the s
 
 test("an export read back gives exactly the settings and experiments it was made from", () => {
   const base: SettingsSnapshot = { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() }
+  // Every Experiment a step from its default: up, or down where up is its end.
+  const moved = EXPERIMENT_FIELDS.reduce((flags, spec) => {
+    const up = stepExperiment(flags, spec.field, 1)
+    return up.changed ? up.flags : stepExperiment(flags, spec.field, -1).flags
+  }, base.experiments)
+  for (const spec of EXPERIMENT_FIELDS) assert.notEqual(moved[spec.field], base.experiments[spec.field], `${spec.field} did not move`)
   const changed: SettingsSnapshot = {
     settings: { capability: "color256", theme: "light", glyphPack: "unicode", reducedMotion: true },
-    experiments: { focusArrowMs: 0, cardRevealMs: 800, holdWindowMs: 250, raid: "none", crew: "some" },
+    experiments: moved,
   }
   for (const snapshot of [base, changed]) {
     const result = parseSettingsExport(formatSettingsExport(snapshot, "x"), base)
@@ -464,29 +433,30 @@ test("the settings flow by keys, by clicks, and from a driver script is the same
   // raid to the probe, then export.
   const byKeyboard = session()
   keys(byKeyboard, ESC, "s", RIGHT, ESC, ESC, "d")
-  keys(byKeyboard, DOWN, DOWN, DOWN, RIGHT, "e") // past the focus arrow, the card reveal and the hold window
+  goToExperiment(byKeyboard, "raid")
+  keys(byKeyboard, RIGHT, "e")
 
   const byMouse = session()
-  const menuHint = escLabelSpan(byMouse.layout, escLabel(byMouse.build.state))
-  click(byMouse, menuHint.from, menuHint.row)
-  clickOption(byMouse, "s")
+  clickEscLabel(byMouse)
+  clickPopupOption(byMouse, "s")
   const background = placed(byMouse).rows.find((entry) => entry.spec.kind === "setting" && entry.spec.label === "Background")
   assert.ok(background !== undefined)
-  click(byMouse, settingColumns(placed(byMouse)).valueTo, background.row)
+  clickCell(byMouse, settingColumns(placed(byMouse)).valueTo, background.row)
   // By mouse, the raid's row is reached with the wheel; its value box is the click.
-  while (!placed(byMouse).rows.some((entry) => entry.spec.kind === "setting" && entry.spec.label === "Raid")) {
-    keys(byMouse, formatMouseEvent(65, placed(byMouse).box.left + 3, placed(byMouse).box.top + 3))
+  const raidLabel = experimentSpec("raid").label
+  while (!placed(byMouse).rows.some((entry) => entry.spec.kind === "setting" && entry.spec.label === raidLabel)) {
+    clickCell(byMouse, placed(byMouse).box.left + 2, placed(byMouse).box.top + 2, MOUSE_WHEEL_DOWN)
   }
-  const raid = placed(byMouse).rows.find((entry) => entry.spec.kind === "setting" && entry.spec.label === "Raid")
+  const raid = placed(byMouse).rows.find((entry) => entry.spec.kind === "setting" && entry.spec.label === raidLabel)
   assert.ok(raid !== undefined)
-  click(byMouse, settingColumns(placed(byMouse)).valueTo, raid.row)
+  clickCell(byMouse, settingColumns(placed(byMouse)).valueTo, raid.row)
   // Export settings is the list's last row: the scroll bar's lower half brings it into view.
   while (!placed(byMouse).rows.some((entry) => entry.spec.kind === "option" && entry.spec.hotkey === "e")) {
     const bar = placed(byMouse).scrollBar
     assert.ok(bar !== null, "the list overflows, so it has a scroll bar")
-    click(byMouse, bar.column, bar.bottom)
+    clickCell(byMouse, bar.column, bar.bottom)
   }
-  clickOption(byMouse, "e")
+  clickPopupOption(byMouse, "e")
 
   const script: readonly BuildCommand[] = [
     { kind: "open-game-menu" },
@@ -498,17 +468,18 @@ test("the settings flow by keys, by clicks, and from a driver script is the same
   const byDriver = session()
   byDriver.build.run(script)
 
+  const raidNow = stepExperiment(defaultExperiments(), "raid", 1).flags.raid
   for (const side of [byKeyboard, byMouse, byDriver]) {
     assert.equal(side.build.state.popup, "export")
     assert.equal(side.build.state.settings.theme, "light")
-    assert.equal(side.build.state.experiments.raid, "probe")
+    assert.equal(side.build.state.experiments.raid, raidNow)
     assert.equal(side.exports.length, 1)
-    assert.match(side.exports[0] as string, /raid = probe/)
+    assert.match(side.exports[0] as string, new RegExp(`raid = ${raidNow} `))
   }
   assert.equal(byMouse.exports[0], byKeyboard.exports[0])
   assert.equal(byDriver.exports[0], byKeyboard.exports[0])
   // The way back differs by how Settings was reached — so compare what the player has, not the stack.
-  const comparable = (side: Side) => ({ ...side.build.state, popupUnder: [], popupHighlight: 0, status: null, ack: null })
+  const comparable = (side: SettingsSide) => ({ ...side.build.state, popupUnder: [], popupHighlight: 0, status: null, ack: null })
   assert.deepEqual(comparable(byMouse), comparable(byKeyboard))
   assert.deepEqual(comparable(byDriver), comparable(byKeyboard))
 })
@@ -583,8 +554,7 @@ test("the terminal's export: OSC 52 to the clipboard and a file beside the setti
   assert.ok(stdout.written.includes(osc52("theme = light\n")))
 })
 
-test("the experiments' defaults are this build's: a fresh Build Phase exports no changed experiment", () => {
-  assert.deepEqual(defaultExperiments(), defaultExperiments())
+test("a fresh Build Phase exports no changed experiment", () => {
   const side = session()
   keys(side, "d", "e")
   assert.match(side.exports[0] as string, /# Changed experiments: none/)

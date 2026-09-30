@@ -8,7 +8,6 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { escLabel, menuEntryRow } from "../src/build/layout.ts"
 import { popupSpec } from "../src/build/popup.ts"
-import { GAME_MENU_ROWS } from "../src/build/settings.ts"
 import type { BuildState } from "../src/build/state.ts"
 import { hint } from "../src/build/help.ts"
 import {
@@ -227,7 +226,6 @@ test("no popup has a row that only goes back: the game menu's rows are its four 
     assert.ok(spec !== null, `${JSON.stringify(begin)} opened nothing`)
     return spec.rows.flatMap((row) => (row.kind === "option" ? [row] : []))
   }
-  assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "restart", "quit"])
   assert.deepEqual(optionsOf([ESC]).map((option) => option.hotkey), ["s", "c", "r", "q"])
   for (const begin of [["d", "e"], ["?"]]) assert.deepEqual(optionsOf(begin), [], JSON.stringify(begin))
   // The export is its text, to its last row.
