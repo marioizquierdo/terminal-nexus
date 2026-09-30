@@ -19,9 +19,7 @@ import { parseKeyScript } from "../playtest/keys.ts"
 import { runSpike } from "./spike.ts"
 import { DEFAULT_SETTINGS, createSettingsStore, defaultSettingsPath } from "../settings/index.ts"
 import type { Settings } from "../settings/index.ts"
-import type { Experiments } from "../build/experiments.ts"
-import { defaultExperiments } from "../build/experiments.ts"
-import { parseSettingsExport } from "../build/settings-export.ts"
+import { importSettings } from "../build/settings-export.ts"
 import { TUNING } from "../build/tuning.ts"
 import type { TerminalOutput } from "../view/backends/ports.ts"
 
@@ -69,8 +67,12 @@ export async function main(argv: readonly string[]): Promise<number> {
   const base: Settings = saved ?? { ...DEFAULT_SETTINGS, capability: detectCapability() }
 
   // An exported text (`--settings`) sits between what is saved and a flag of its own: it is how an
-  // agent starts from exactly what the owner had, and a flag still overrides one setting of it.
+  // agent starts from exactly what the owner had, and a flag still overrides one setting of it. What
+  // it could not read is said once, before the screen starts.
   const imported = importSettings(args.options.get("settings"), base)
+  if (imported.ignored.length > 0) {
+    process.stderr.write(`terminal-nexus: --settings ignored ${imported.ignored.join(", ")}\n`)
+  }
   const settings: Settings = {
     capability: parseCapability(args.options.get("capability") ?? imported.settings.capability),
     theme: parseTheme(args.options.get("theme") ?? imported.settings.theme),
@@ -91,7 +93,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       ...(margin === undefined
         ? {}
         : { scrollMargin: parseInteger(margin.endsWith("%") ? margin.slice(0, -1) : margin, "--scroll-margin") }),
-      ...(imported.experiments === undefined ? {} : { experiments: imported.experiments }),
+      experiments: imported.experiments,
       ...(buildId === undefined ? {} : { buildId }),
       ...(startKeys === undefined ? {} : { startKeys: parseKeyScript(startKeys) }),
       exporter: terminalExporter(process.stdout, exportPath()),
@@ -105,20 +107,6 @@ export async function main(argv: readonly string[]): Promise<number> {
     stdout: process.stdout,
     stdin: process.stdin,
   })
-}
-
-/** `--settings "<text>"` read onto what is saved: the settings it names, and its experiments. What it
- *  could not read is said once, before the screen starts. */
-export function importSettings(
-  text: string | undefined,
-  base: Settings,
-): Readonly<{ settings: Settings; experiments?: Experiments }> {
-  if (text === undefined) return { settings: base }
-  const result = parseSettingsExport(text, { settings: base, experiments: defaultExperiments() })
-  if (result.ignored.length > 0) {
-    process.stderr.write(`terminal-nexus: --settings ignored ${result.ignored.join(", ")}\n`)
-  }
-  return { settings: result.snapshot.settings, experiments: result.snapshot.experiments }
 }
 
 /** Where an export is written: beside the settings file, so it is found where settings already are. */

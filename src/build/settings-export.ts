@@ -183,6 +183,22 @@ export function parseSettingsExport(text: string, base: SettingsSnapshot): Impor
   return { snapshot: { settings, experiments: experiments as Experiments }, applied, ignored, settled }
 }
 
+/** What a session opens with from an exported text: its settings, its Experiments, and what it could not
+ *  read. */
+export type ImportedSettings = Readonly<{ settings: Settings; experiments: Experiments; ignored: readonly string[] }>
+
+/**
+ * An exported text read onto the player's saved settings and this build's default Experiments — what
+ * `--settings` (the game's and the scripted playtest's) and the browser page's `#settings=` all start
+ * from. No text is the saved settings and the defaults as they are. What could not be read is in
+ * `ignored`, for each adapter to say in its own way.
+ */
+export function importSettings(text: string | undefined, saved: Settings): ImportedSettings {
+  if (text === undefined) return { settings: saved, experiments: defaultExperiments(), ignored: [] }
+  const { snapshot, ignored } = parseSettingsExport(text, { settings: saved, experiments: defaultExperiments() })
+  return { settings: snapshot.settings, experiments: snapshot.experiments, ignored }
+}
+
 /** A player setting's value from text — its own name, or the name the popup shows ("16", "none"). */
 function playerValue(field: Exclude<PlayerField, "reducedMotion">, text: string): string | null {
   const spec = playerSpec(field)

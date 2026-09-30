@@ -18,11 +18,14 @@ import { createHash } from "node:crypto"
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import pngjs from "pngjs"
+import { DIM_ALPHA } from "../../src/view/backends/canvas.ts"
+import { xterm256Rgb } from "../../src/view/roles.ts"
 
 export const CHROMIUM = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
 export const ESC = String.fromCharCode(27)
 
-/** xterm's usual renderings of the 16 ANSI colours, matching the roles in src/view/roles.ts. */
+/** xterm's usual renderings of the 16 ANSI colours, by SGR foreground code (30-37, then the bright
+ *  90-97) — the one copy of this table (`scripts/measure-palette-derivation.mjs` reads it too). */
 export const PALETTE = {
   30: "#000000", 31: "#cd0000", 32: "#00cd00", 33: "#cdcd00",
   34: "#0000ee", 35: "#cd00cd", 36: "#00cdcd", 37: "#e5e5e5",
@@ -35,25 +38,12 @@ export const FOREGROUND = "#d0d0d0"
 const LIGHT_BACKGROUND = "#f2f0ea"
 const LIGHT_FOREGROUND = "#1c1a18"
 
-/** The xterm 256-colour palette: sixteen system colours, a 6x6x6 cube, then twenty-four greys. */
+/** The xterm 256-colour palette as CSS: the sixteen system colours (`PALETTE`, indices 0-7 and 8-15),
+ *  then the cube and the greys as the game's own colour table reads them (`xterm256Rgb`). */
 export function xterm256(index) {
-  if (index < 16) {
-    const base = [
-      "#000000", "#cd0000", "#00cd00", "#cdcd00", "#0000ee", "#cd00cd", "#00cdcd", "#e5e5e5",
-      "#7f7f7f", "#ff0000", "#00ff00", "#ffff00", "#5c5cff", "#ff00ff", "#00ffff", "#ffffff",
-    ]
-    return base[index] ?? "#d0d0d0"
-  }
-  if (index < 232) {
-    const step = [0, 95, 135, 175, 215, 255]
-    const offset = index - 16
-    const r = step[Math.floor(offset / 36)] ?? 0
-    const g = step[Math.floor((offset % 36) / 6)] ?? 0
-    const b = step[offset % 6] ?? 0
-    return `rgb(${r},${g},${b})`
-  }
-  const grey = 8 + (index - 232) * 10
-  return `rgb(${grey},${grey},${grey})`
+  if (index < 16) return PALETTE[index < 8 ? 30 + index : 82 + index] ?? FOREGROUND
+  const [r, g, b] = xterm256Rgb(index)
+  return `rgb(${r},${g},${b})`
 }
 
 export function tmux(repoRoot, args) {
@@ -185,6 +175,9 @@ export function stepPastEnd(repoRoot, session, lastResolvedTick, tick) {
   pause(0.2)
 }
 
+/** How much of a faint glyph's own colour is left, as a whole percentage for CSS. */
+const FAINT_PERCENT = Math.round(DIM_ALPHA * 100)
+
 /** Turn one captured pane into HTML: a span per styled run, nothing else. `theme` is the terminal's
  *  own background: reverse video swaps a cell's colour with it, so on a light terminal a reversed
  *  cell's text is light, not the dark default (it was drawn dark-on-dark before 2026-09-27). */
@@ -211,7 +204,8 @@ export function ansiToHtml(text, cols, rows, theme = "dark") {
       const behind = style.inverse ? foreground : (background ?? defaultBackground)
       // Faint fades the glyph toward what is behind it, as a terminal does — never the cell's
       // background, which a whole-span opacity also faded, drawing every dim inverse cell too pale.
-      const parts = [`color:${style.dim ? `color-mix(in srgb, ${text} 55%, ${behind})` : text}`]
+      // By as much as the browser page's canvas fades it (`DIM_ALPHA`).
+      const parts = [`color:${style.dim ? `color-mix(in srgb, ${text} ${FAINT_PERCENT}%, ${behind})` : text}`]
       if (style.inverse) parts.push(`background:${foreground}`)
       else if (background !== null) parts.push(`background:${background}`)
       if (style.bold) parts.push("font-weight:700")

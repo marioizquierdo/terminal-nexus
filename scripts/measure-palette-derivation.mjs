@@ -27,26 +27,14 @@
 // authored (see `roles.ts`'s own comment for why), and this script is still the reproducible check
 // that deriving it would be wrong.
 
-import { STYLE_ROLES, rgbFor, sgrFor } from "../src/view/roles.ts"
+import { STYLE_ROLES, rgbFor, sgrFor, xterm256Rgb as xterm256 } from "../src/view/roles.ts"
+import { PALETTE } from "./lib/terminal-capture.mjs"
 
-/** xterm's usual renderings of the 16 ANSI colours — the same table scripts/lib/terminal-capture.mjs uses. */
-const XTERM16 = {
-  30: [0, 0, 0], 31: [205, 0, 0], 32: [0, 205, 0], 33: [205, 205, 0],
-  34: [0, 0, 238], 35: [205, 0, 205], 36: [0, 205, 205], 37: [229, 229, 229],
-  90: [127, 127, 127], 91: [255, 0, 0], 92: [0, 255, 0], 93: [255, 255, 0],
-  94: [92, 92, 255], 95: [255, 0, 255], 96: [0, 255, 255], 97: [255, 255, 255],
-}
-
-/** The xterm 256 palette above the system colours: a 6x6x6 cube, then 24 greys. */
-const CUBE = [0, 95, 135, 175, 215, 255]
-function xterm256(index) {
-  if (index < 232) {
-    const offset = index - 16
-    return [CUBE[Math.floor(offset / 36)], CUBE[Math.floor((offset % 36) / 6)], CUBE[offset % 6]]
-  }
-  const grey = 8 + (index - 232) * 10
-  return [grey, grey, grey]
-}
+/** xterm's usual renderings of the 16 ANSI colours, by SGR code, as RGB — read off the evidence
+ *  pictures' own table rather than typed again. */
+const XTERM16 = Object.fromEntries(
+  Object.entries(PALETTE).map(([code, hex]) => [code, [1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16))]),
+)
 
 const srgbToLinear = (u) => (u / 255 <= 0.04045 ? u / 255 / 12.92 : ((u / 255 + 0.055) / 1.055) ** 2.4)
 

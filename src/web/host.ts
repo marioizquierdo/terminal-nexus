@@ -24,9 +24,7 @@ import { loadScenario } from "../scenario/load.ts"
 import type { ScenarioDefinition } from "../scenario/types.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
 import { DEFAULT_SETTINGS, parseSettings } from "../settings/types.ts"
-import type { Experiments } from "../build/experiments.ts"
-import { defaultExperiments } from "../build/experiments.ts"
-import { parseSettingsExport } from "../build/settings-export.ts"
+import { importSettings } from "../build/settings-export.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
 import { DEFAULT_PRESENTATION } from "../view/snapshot.ts"
 import { CanvasBackend } from "../view/backends/canvas.ts"
@@ -194,11 +192,9 @@ async function start(next: Mode): Promise<void> {
   status.textContent = ""
 
   const saved: Settings = (await settingsStore.load()) ?? { ...DEFAULT_SETTINGS, capability: "truecolor" }
-  const importing =
-    next === "build" && imported !== null
-      ? parseSettingsExport(imported, { settings: saved, experiments: defaultExperiments() })
-      : null
-  if (importing !== null && importing.ignored.length > 0) status.textContent = `Settings text: ignored ${importing.ignored.join(", ")}`
+  // The settings text reaches the Build Phase only; the menu opens on what is saved.
+  const importing = importSettings(next === "build" ? (imported ?? undefined) : undefined, saved)
+  if (importing.ignored.length > 0) status.textContent = `Settings text: ignored ${importing.ignored.join(", ")}`
   const startScript = next === "build" ? keysFromAddress() : null
   let startKeys: PlaytestStep[] | null = null
   if (startScript !== null) {
@@ -208,8 +204,7 @@ async function start(next: Mode): Promise<void> {
       status.textContent = `#keys: ${error instanceof Error ? error.message : String(error)}`
     }
   }
-  const settings: Settings = importing?.snapshot.settings ?? saved
-  const experiments: Experiments | null = importing?.snapshot.experiments ?? null
+  const { settings, experiments } = importing
   backend = new CanvasBackend({
     canvas,
     capability: settings.capability,
@@ -225,7 +220,7 @@ async function start(next: Mode): Promise<void> {
       settings,
       settingsStore,
       buildId: __TN_BUILD__.commit,
-      ...(experiments === null ? {} : { experiments }),
+      experiments,
       ...(startKeys === null ? {} : { startKeys }),
       exporter: {
         destination: "Copied to the clipboard, and shown in the settings text box under the screen.",

@@ -17,14 +17,14 @@ import { popupSpec, placePopup, settingColumns } from "../src/build/popup.ts"
 import type { PlacedPopup } from "../src/build/popup.ts"
 import { BuildSession } from "../src/build/session.ts"
 import { GAME_MENU_ROWS, PLAYER_FIELDS, SETTINGS_EXPORT_ROW, playerRow } from "../src/build/settings.ts"
-import { formatSettingsExport, parseSettingsExport } from "../src/build/settings-export.ts"
+import { formatSettingsExport, importSettings, parseSettingsExport } from "../src/build/settings-export.ts"
 import type { SettingsSnapshot } from "../src/build/settings-export.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { exportText } from "../src/build/state.ts"
 import { SETTLED_EXPERIMENTS, TUNING } from "../src/build/tuning.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { runSpike, spikeContext } from "../src/cli/spike.ts"
-import { importSettings, osc52, terminalExporter } from "../src/cli/terminalNexus.ts"
+import { osc52, terminalExporter } from "../src/cli/terminalNexus.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
@@ -430,7 +430,7 @@ test("the owner's export of 2026-09-30 is this build: its Experiments are the de
 
 test("--settings on the command line: settings over what is saved, and every experiment from the text", () => {
   const saved: Settings = { ...DEFAULT_SETTINGS, capability: "truecolor" }
-  assert.deepEqual(importSettings(undefined, saved), { settings: saved })
+  assert.deepEqual(importSettings(undefined, saved), { settings: saved, experiments: defaultExperiments(), ignored: [] })
   const imported = importSettings("theme=light raid=probe", saved)
   assert.deepEqual(imported.settings, { ...saved, theme: "light" })
   assert.deepEqual(imported.experiments, { ...defaultExperiments(), raid: "probe" })

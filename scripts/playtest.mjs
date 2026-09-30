@@ -21,8 +21,7 @@ import { dirname, join, relative, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { parseArgs } from "node:util"
 import { parseKeyScript } from "../src/playtest/keys.ts"
-import { defaultExperiments } from "../src/build/experiments.ts"
-import { parseSettingsExport } from "../src/build/settings-export.ts"
+import { importSettings } from "../src/build/settings-export.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { frameToText } from "../src/view/frame.ts"
@@ -86,13 +85,9 @@ if (values.help || (values.keys === undefined && values.file === undefined)) {
 const size = /^(\d+)x(\d+)$/u.exec(values.size)
 if (size === null) throw new Error(`--size wants COLSxROWS, like 80x24, not "${values.size}"`)
 // An exported settings text first, then the flags over it; truecolor, dark and ascii otherwise.
-const base = { ...DEFAULT_SETTINGS, capability: "truecolor" }
-const imported =
-  values.settings === undefined
-    ? null
-    : parseSettingsExport(values.settings, { settings: base, experiments: defaultExperiments() })
-if (imported !== null && imported.ignored.length > 0) process.stderr.write(`--settings ignored ${imported.ignored.join(", ")}\n`)
-const startSettings = imported?.snapshot.settings ?? base
+const imported = importSettings(values.settings, { ...DEFAULT_SETTINGS, capability: "truecolor" })
+if (imported.ignored.length > 0) process.stderr.write(`--settings ignored ${imported.ignored.join(", ")}\n`)
+const startSettings = imported.settings
 const capability = parseCapability(values.capability ?? startSettings.capability)
 const theme = parseTheme(values.theme ?? startSettings.theme)
 const glyphPack = parseGlyphPack(values.glyphs ?? startSettings.glyphPack)
@@ -104,7 +99,7 @@ const run = runBuildPlaytest({
   columns: Number(size[1]),
   rows: Number(size[2]),
   settings: { ...startSettings, capability, theme, glyphPack },
-  ...(imported === null ? {} : { experiments: imported.snapshot.experiments }),
+  experiments: imported.experiments,
 })
 const last = run.frames.length - 1
 

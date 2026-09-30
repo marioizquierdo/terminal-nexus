@@ -264,15 +264,15 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Swatch>>> = {
   },
 }
 
-/**
- * The xterm 256-colour palette above the 16 system colours: a 6x6x6 colour cube (indices 16-231),
- * then a 24-step greyscale ramp (232-255). The same construction `scripts/lib/terminal-capture.mjs`
- * and `scripts/measure-palette-derivation.mjs` already use to turn an index back into RGB — production
- * code duplicates rather than imports it, since `src/` does not depend on `scripts/`.
- */
 const XTERM_CUBE_STEPS: readonly number[] = [0, 95, 135, 175, 215, 255]
 
-function xterm256Rgb(index: number): Rgb {
+/**
+ * What xterm shows for a 256-colour index above the 16 system colours (whose look is each terminal's
+ * own): a 6x6x6 colour cube (indices 16-231), then a 24-step greyscale ramp (232-255). Exported for the
+ * evidence scripts, which read the ANSI writer's indices back into pixels with it
+ * (`scripts/lib/terminal-capture.mjs`).
+ */
+export function xterm256Rgb(index: number): Rgb {
   if (index < 232) {
     const offset = index - 16
     const r = XTERM_CUBE_STEPS[Math.floor(offset / 36)] ?? 0
