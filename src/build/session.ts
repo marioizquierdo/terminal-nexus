@@ -19,7 +19,7 @@ import type { MoveKind } from "./motion.ts"
 import { SpeedRamp } from "./motion.ts"
 import { buildMouseCommand, parseMouseEvent } from "./mouse.ts"
 import type { BuildContext, BuildState } from "./state.ts"
-import { applyBuildCommand, createBuildState, exploring, exportText, nexusPowers, withViewport } from "./state.ts"
+import { applyBuildCommand, cardShowing, createBuildState, exportText, nexusPowers, withViewport } from "./state.ts"
 import type { BuildCommand } from "./types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { Settings } from "../settings/types.ts"
@@ -182,7 +182,7 @@ export class BuildSession {
           // is the drawn camera's tile, not the target's (gate 5H).
           buildMouseCommand(mouse, timing.camera ?? state.camera, layout, this.context.catalog, {
             ...(spec === null ? {} : { overlay: placeOverlay(layout, spec) }),
-            explorePanel: exploring(state),
+            cardPanel: cardShowing(state),
             escLabel: escLabel(state),
             pulse: this.presenter !== null,
           })

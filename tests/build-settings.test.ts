@@ -229,7 +229,7 @@ test("every player setting's value box is a click target, the same as Left and R
 test("[e] shows the export in a popup, hands the same text to the adapter, and Esc goes back one popup at a time", () => {
   const context: BuildContext = { ...spikeContext(), buildId: "abc1234", exportDestination: "Copied to the clipboard." }
   const side = session(context)
-  keys(side, "d", RIGHT) // at the experiments: a longer build animation
+  keys(side, "d", DOWN, DOWN, RIGHT) // at the experiments, past the focus arrow and the blink: a longer build animation
   keys(side, "q", "s", "e")
   assert.equal(side.build.state.overlay, "export")
   assert.equal(side.exports.length, 1)
@@ -411,7 +411,7 @@ test("the settings flow by keys, by clicks, and from a driver script is the same
   // lighting to rainbow, then export.
   const byKeyboard = session()
   keys(byKeyboard, ESC, "s", RIGHT, ESC, ESC, "d")
-  keys(byKeyboard, DOWN, RIGHT, "e")
+  keys(byKeyboard, DOWN, DOWN, DOWN, RIGHT, "e") // past the focus arrow, the blink and the build animation
 
   const byMouse = session()
   const menuHint = escHintSpan(byMouse.layout, escLabel(byMouse.build.state))

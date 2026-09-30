@@ -597,6 +597,9 @@ test("the live screen redraws on a timer while the view slides, and not at all o
     exit: () => {},
   })
   await wait(40)
+  // Explore Map begun on the map (Tab, then `e`): the row's flash, and no focus arrow or cursor blink,
+  // which only a menu row handing the keyboard to the map plays (feedback F54).
+  stdin.emit("data", Buffer.from("\t"))
   stdin.emit("data", Buffer.from("e"))
   await wait(250) // the Explore row's flash has come and gone
   const idle = stdout.frames

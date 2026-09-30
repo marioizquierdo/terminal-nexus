@@ -107,12 +107,10 @@ function clickTileBytes(
 }
 
 /** Likewise for a construct row, from `constructLines` — the same function the panel draws with,
- *  which is what makes a click that lands on a group heading's row impossible to mistake for a
- *  click on an item. */
+ *  which is what makes a click that lands on a row nobody drew impossible to mistake for a click on
+ *  an item. */
 function clickRowBytes(layout: ReturnType<typeof buildLayout>, index: number): string {
-  const line = constructLines(layout, SPIKE_CATALOG).find(
-    (candidate) => candidate.kind === "item" && candidate.index === index,
-  )
+  const line = constructLines(layout, SPIKE_CATALOG).find((candidate) => candidate.index === index)
   assert.ok(line !== undefined, `no construct row is drawn for item ${index}`)
   const item = SPIKE_CATALOG[index]!
   // Anywhere inside the row's own drawn text; the middle proves the whole row is live, not just its
@@ -633,24 +631,17 @@ test("the two groups share one digit sequence, with no mode to tell them apart",
   assert.equal(build.state.armed, 2, "the third digit armed the third row of the whole menu")
 })
 
-test("the empty army group is drawn, not skipped, so no hotkey moves when it fills", () => {
+test("the buildings are one list in catalog order, one row each, with no group headings (feedback F56)", () => {
   const context = spikeContext()
   const layout = buildLayout(MINIMUM, context.grid)
   const lines = constructLines(layout, context.catalog)
-  // The common group is a list with a heading; the empty army group is still drawn — as the one-line
-  // "ARMY  none available" fact gate 5F made it, the same form the SPECIAL row has.
+  // Every building has its row, in catalog order, on consecutive rows — which is what a click relies on.
   assert.deepEqual(
-    lines.filter((line) => line.kind === "group").map((line) => line.kind === "group" && line.group),
-    ["common"],
+    lines.map((line) => line.index),
+    context.catalog.map((_, index) => index),
   )
-  assert.ok(
-    lines.some((line) => line.kind === "empty" && line.group === "army"),
-    "the empty army group is drawn as empty rather than vanishing",
-  )
-  // Every item row is distinct and ordered, which is what a click relies on.
-  const itemRows = lines.filter((line) => line.kind === "item").map((line) => line.row)
-  assert.deepEqual(itemRows, [...itemRows].sort((a, b) => a - b))
-  assert.deepEqual(itemRows, [...new Set(itemRows)])
+  const itemRows = lines.map((line) => line.row)
+  assert.deepEqual(itemRows, itemRows.map((_, index) => (itemRows[0] as number) + index))
 })
 
 test("scrolling: the whole Grid is reachable, at the smallest terminal and the largest", () => {

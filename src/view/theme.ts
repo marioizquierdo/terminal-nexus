@@ -81,6 +81,16 @@ export const CHROME_GLYPHS: Readonly<Record<GlyphPack, Readonly<Record<string, s
     scrollUp: "^",
     scrollDown: "v",
     scrollTrack: ":",
+    // The focus arrow (feedback F54): its head, pointing the way it flies, and the trail behind it,
+    // along the line it flies — level, upright, falling to the right (`\`) or rising to it (`/`).
+    arrowRight: ">",
+    arrowLeft: "<",
+    arrowDown: "v",
+    arrowUp: "^",
+    trailLevel: "-",
+    trailUpright: "|",
+    trailFall: "\\",
+    trailRise: "/",
   },
   unicode: {
     horizontal: "─",
@@ -105,6 +115,14 @@ export const CHROME_GLYPHS: Readonly<Record<GlyphPack, Readonly<Record<string, s
     scrollUp: "▲",
     scrollDown: "▼",
     scrollTrack: "░",
+    arrowRight: "▶",
+    arrowLeft: "◀",
+    arrowDown: "▼",
+    arrowUp: "▲",
+    trailLevel: "━",
+    trailUpright: "┃",
+    trailFall: "╲",
+    trailRise: "╱",
   },
 }
 

@@ -141,7 +141,8 @@ test("the row is active while its screen is open, back on the menu with the row 
   const session = ready()
   session.build.handleData("s", session.layout)
   const text = screenText(session).split("\n")[startRow(session.layout)]!
-  assert.match(text.slice(session.layout.panelColumn), /^> \[s\] Start Pulse/)
+  // Drawn active (feedback F53): `[x]`, the key that ends it, and `>>` pointing at the screen it opened.
+  assert.match(text.slice(session.layout.panelColumn), /^\[x\] Start Pulse +>>[|+]/)
   session.build.handleData(ESC, session.layout)
   assert.equal(session.build.state.overlay, null)
   assert.equal(session.build.state.focus, "menu")
@@ -251,16 +252,18 @@ test("s is still Settings inside the game menu, and pressing Start during a Puls
   assert.match(playing.build.state.status.text, /committed/)
 })
 
-test("at the floor the row and the effect line fit, and no key help overflows into the panel any more", () => {
+test("at the floor the menu and Start Pulse fit with no help text between them, and the armed building's card has room", () => {
+  // The key help that overflowed into the panel used to stack directly above Start Pulse; the panel
+  // carries no help text since feedback F58.
   const session = ready()
-  session.build.handleData("1", session.layout) // arm the Barracks, on the map
-  const rows = screenText(session).split("\n")
+  session.build.dispatch({ kind: "focus", target: "menu" })
   const { layout } = session
-  const panel = (row: number): string => rows[row]!.slice(layout.panelColumn, layout.panelColumn + layout.panelLimit).trimEnd()
-  assert.match(rows.join("\n"), /Trains troopers each Pulse/, "the armed row's line was pushed out by the Start Pulse row")
-  assert.equal(panel(startRow(layout)), "[s] Start Pulse")
-  // The key help that did not fit the footer stacked here until the bottom bar became one contextual
-  // line (feedback F59); every key is on the Controls and hotkeys page now (F60).
-  assert.equal(panel(startRow(layout) - 1), "")
-  assert.doesNotMatch(rows.join("\n"), /bksp remove|u undo/)
+  const panel = (rows: string[], row: number): string => rows[row]!.slice(layout.panelColumn, layout.panelColumn + layout.panelLimit).trimEnd()
+  const menu = screenText(session).split("\n")
+  assert.equal(panel(menu, startRow(layout)), "[s] Start Pulse")
+  assert.equal(panel(menu, startRow(layout) - 1), "")
+  session.build.handleData("1", session.layout) // arm the Barracks: its card replaces the menu
+  const card = screenText(session).split("\n")
+  assert.match(card.join("\n"), /Trains troopers each Pulse/, "the card has no room for what the building does")
+  assert.equal(panel(card, startRow(layout)), "", "Start Pulse is the menu's, and hides with it")
 })

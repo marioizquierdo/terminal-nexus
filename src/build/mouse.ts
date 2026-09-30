@@ -13,13 +13,13 @@ import type { Camera } from "./camera.ts"
 import { EXPLORE_ENTRY, JUMP_TILES } from "./state.ts"
 import type { BuildCommand, ConstructItem } from "./types.ts"
 
-/** What is on screen beyond the layout: the open popup, placed, since it holds the mouse; whether the
- *  Explore Map panel is drawn where the menu usually is; and the top bar's Esc label as drawn
- *  (`escLabel`), whose width is its click target — "close [esc]" with a popup open, "menu [esc]"
- *  otherwise, when not given. */
+/** What is on screen beyond the layout: the open popup, placed, since it holds the mouse; whether a
+ *  card — Explore Map's, or the armed building's (`cardShowing`) — is drawn where the menu usually is;
+ *  and the top bar's Esc label as drawn (`escLabel`), whose width is its click target — "close [esc]"
+ *  with a popup open, "menu [esc]" otherwise, when not given. */
 export type MouseUiState = Readonly<{
   overlay?: PlacedOverlay
-  explorePanel?: boolean
+  cardPanel?: boolean
   escLabel?: string
   /** A Nexus Pulse is on screen (gate 6A): its panel's control rows are click targets, and nothing else
    *  on the panel is. */
@@ -122,10 +122,11 @@ export function buildMouseCommand(
     if (control !== null) return { kind: "pulse", control }
     if (inPanel(layout, event.column, event.row)) return null
   }
-  // Explore Map covers the menu below its own row, so the whole panel is one target — its own row,
-  // drawn active, and the card under it — and what it does is close Explore Map, as Esc does. Sent as
-  // the menu click it is, so a driver's `click-menu` in Explore Map means exactly the same.
-  if (ui.explorePanel === true && inPanel(layout, event.column, event.row)) {
+  // A card — Explore Map's, or the armed building's (feedback F58) — covers the menu below its header
+  // row, so the whole panel is one target — the header, drawn active, and the card under it — and what
+  // it does is go back, as Esc does. Sent as the menu click it is, so a driver's `click-menu` while a
+  // card shows means exactly the same; the reducer does not read which row it names.
+  if (ui.cardPanel === true && inPanel(layout, event.column, event.row)) {
     return { kind: "click-menu", entry: menuEntryAt(layout, catalog, event.column, event.row) ?? EXPLORE_ENTRY }
   }
   return underneath()

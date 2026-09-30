@@ -146,9 +146,9 @@ export type BuildState = Readonly<{
    * opened from (`origin`). Only ever true while the Grid has focus and nothing is armed (read it
    * through `exploring`).
    *
-   * **Tab, a second Right and a click on the map do not open it** (feedback F30): they arrive in plain
-   * navigation, with the menu still drawn beside the map, so a player who clicks around the map with
-   * the mouse can still click a building on the menu and have it armed at once (feedback F22).
+   * **Tab and a click on the map do not open it** (feedback F30): they arrive in plain navigation,
+   * with the menu still drawn beside the map, so a player who clicks around the map with the mouse can
+   * still click a building on the menu and have it armed at once (feedback F22).
    */
   exploreMap: boolean
   /** The last thing a command asked to have acknowledged on screen — see `Ack`. */
@@ -159,9 +159,14 @@ export type BuildState = Readonly<{
    * (gate 5H; how long is the "Refused cursor" Experiment). Counts up across a restart.
    */
   refusedTry: Readonly<{ seq: number; tile: Coord }> | null
-  /** The previous command was a Right on the menu that only flickered: a second one in a row moves
-   *  focus to the Grid. Cleared by any other command. */
-  nudged: boolean
+  /**
+   * The last time a menu row handed the keyboard to the map — a building armed, or Explore Map opened,
+   * from the menu (owner, 2026-09-30, feedback F54) — with a sequence number and no clock, the way
+   * `ack` is: the live loop flies the **focus arrow** from that row to the cursor and then blinks the
+   * cursor, from when it first sees a new `seq`. Not bumped by Tab, a click on the map, a digit or `e`
+   * while the map already has the keyboard, or anything on the way back. Counts up across a restart.
+   */
+  handoff: Readonly<{ seq: number; entry: number }> | null
   /** Index into `menuEntries(context)` — the side panel's highlighted entry. Drawn only while the
    *  menu has focus; kept while it does not, so Tab returns to the same row. */
   menuHighlight: number
@@ -311,7 +316,7 @@ export function createBuildState(
     exploreMap: false,
     ack: null,
     refusedTry: null,
-    nudged: false,
+    handoff: null,
     // The menu, on its first entry, Explore Map (owner, 2026-09-29, feedback F31: "When the build mode
     // is launched, the focus should be on the Menu, at the Explore Map option").
     focus: "menu",
@@ -388,6 +393,17 @@ export const NEXUS_ENTRY = 1
  *  under the cursor in place of the menu. */
 export function exploring(state: BuildState): boolean {
   return state.exploreMap && state.focus === "grid" && state.armed === null && !state.committed
+}
+
+/**
+ * Whether the side panel is a **card** rather than the menu (owner, 2026-09-30, feedback F58): Explore
+ * Map's, for what is under the cursor, or — while a building is armed and the map has the keyboard —
+ * that building's own, "to allow players to read more details about the thing that is going to be
+ * placed". Either way the row that opened it heads the card, drawn active, and a click anywhere on the
+ * panel goes back, as Esc does.
+ */
+export function cardShowing(state: BuildState): boolean {
+  return !state.committed && state.focus === "grid" && (state.armed !== null || state.exploreMap)
 }
 
 /** How many entries sit above the construct rows. */
@@ -761,8 +777,8 @@ function revealHighlight(state: BuildState): BuildState {
 }
 
 /** Gives the keyboard to the Grid in **plain navigation**: nothing armed, no Explore Map — the bare
- *  cursor with the menu drawn beside it. Where Tab, a second Right, a click on the map and finishing
- *  something begun on the map all arrive (owner, 2026-09-29, feedback F30). */
+ *  cursor with the menu drawn beside it. Where Tab, a click on the map and finishing something begun
+ *  on the map all arrive (owner, 2026-09-29, feedback F30). */
 function toMap(state: BuildState): BuildState {
   return { ...state, focus: "grid", armed: null, exploreMap: false }
 }
@@ -773,6 +789,13 @@ function backToOrigin(state: BuildState): BuildState {
   return state.origin === "grid" ? toMap(state) : toMenu(state)
 }
 
+/** The next hand-off of the keyboard from menu row `entry` to the map (`BuildState.handoff`), when
+ *  what was started began on the menu; otherwise the last one, unchanged. */
+function handOff(state: BuildState, from: Focus, entry: number): BuildState["handoff"] {
+  if (from !== "menu") return state.handoff
+  return { seq: (state.handoff?.seq ?? 0) + 1, entry }
+}
+
 /**
  * Arms catalog row `index`: the one path a digit, the menu's own Enter/Space and a click on the row
  * share. Focus moves to the Grid, where the placing happens, and the menu highlight follows the row.
@@ -781,6 +804,10 @@ function backToOrigin(state: BuildState): BuildState {
  * The cursor stays where it is when the building can go there, and otherwise moves to the nearest
  * spot that can take it (`armingSpot`, feedback F30). A row that costs more than is left is refused
  * here, with the reason, rather than armed to be refused later.
+ *
+ * Armed, the status line says nothing (feedback F58): the panel is the building's card, which says
+ * what it is and what it costs. Only when no spot was in reach does it warn. Armed from the menu, the
+ * row hands the keyboard to the map (`BuildState.handoff`, F54).
  */
 function armItem(context: BuildContext, state: BuildState, index: number, from: Focus): BuildState {
   const lock = editLock(state)
@@ -807,6 +834,7 @@ function armItem(context: BuildContext, state: BuildState, index: number, from: 
     exploreMap: false,
     menuHighlight: entry,
     ack: acknowledge(state, "pressed", entry),
+    handoff: handOff(state, from, entry),
   }
   const spot = armingSpot(context, state.planned, item.contentId, state.cursor)
   const moved = withCursor(context, armed, spot.tile)
@@ -817,7 +845,7 @@ function armItem(context: BuildContext, state: BuildState, index: number, from: 
       status: status(`${item.label} selected - no room within ${ARM_SEARCH_TILES} tiles, move to find one.`, "warning"),
     }
   }
-  return { ...moved, armGhost: false, status: status(`${item.label} selected - ${item.cost} to build.`) }
+  return { ...moved, armGhost: false, status: NO_STATUS }
 }
 
 /** Enter/Space (or a click) on menu entry `entry`: whatever it is for. Both are the menu's own, so
@@ -860,7 +888,9 @@ function openNexus(state: BuildState): BuildState {
 
 /** `e`, the Explore Map entry, or Enter/Space in plain navigation: the Grid with nothing armed, and
  *  the side panel showing what is under the cursor (feedback F23). `from` is where Esc, `e` again or
- *  a click on its row go back to. */
+ *  a click on its row go back to. The status line says nothing: the card and its active header say
+ *  where the player is (feedback F58). Opened from the menu, the row hands the keyboard to the map
+ *  (`BuildState.handoff`, F54). */
 function openExplore(state: BuildState, from: Focus): BuildState {
   if (state.overlay !== null || state.committed) return state
   return {
@@ -871,12 +901,10 @@ function openExplore(state: BuildState, from: Focus): BuildState {
     origin: from,
     menuHighlight: EXPLORE_ENTRY,
     ack: acknowledge(state, "pressed", EXPLORE_ENTRY),
-    status: EXPLORE_STATUS,
+    handoff: handOff(state, from, EXPLORE_ENTRY),
+    status: NO_STATUS,
   }
 }
-
-/** What the status line says while Explore Map is open — and stops saying when it closes. */
-const EXPLORE_STATUS = status("Explore Map - arrows look around, e or esc to go back.")
 
 /** `e`: Explore Map is a toggle — open it from wherever the keyboard is, or, open, go back one level
  *  exactly as Esc does (owner, 2026-09-29, feedback F32: "Pressing [e] again, or [esc], should be
@@ -945,9 +973,14 @@ function place(context: BuildContext, state: BuildState): BuildState {
   }
   // Back to where the arming came from, disarmed (owner, 2026-09-29, feedback F30, refining Q57's
   // "always the menu"): a building armed on the map leaves the keyboard on the map in plain
-  // navigation, the cursor on what was just placed; one armed from the menu goes back to the menu.
+  // navigation, the cursor on what was just placed; one armed from the menu goes back to the menu,
+  // with the building's row flashing once, "to help bring the eye back to the building selection"
+  // (owner, 2026-09-30, feedback F55).
+  const back = backToOrigin(placed)
+  const entry = entryOfConstruct(state.armed as number)
   return {
-    ...backToOrigin(placed),
+    ...back,
+    ...(back.focus === "menu" ? { ack: acknowledge(state, "pressed", entry) } : {}),
     status: status(`${item.label} placed (resources: ${remaining(context, placed)}) - [u] undo`, "success"),
   }
 }
@@ -970,9 +1003,7 @@ function cancel(context: BuildContext, state: BuildState): BuildState {
     // Placing or exploring: back one level, to where it was started from. Plain navigation: to the
     // menu.
     if (state.armed !== null) return { ...backToOrigin(state), status: status("Cancelled.") }
-    if (!state.exploreMap) return toMenu(state)
-    const back = backToOrigin(state)
-    return state.status === EXPLORE_STATUS ? { ...back, status: NO_STATUS } : back
+    return state.exploreMap ? backToOrigin(state) : toMenu(state)
   }
   void context
   return openOverlay(state, "menu")
@@ -1060,6 +1091,7 @@ function restartWithFlags(context: BuildContext, state: BuildState): BuildState 
     ...fresh,
     ack: state.ack,
     refusedTry: state.refusedTry,
+    handoff: state.handoff,
     status: status("Build Phase restarted with these settings."),
   }
 }
@@ -1139,13 +1171,9 @@ export function applyBuildCommand(
   state: BuildState,
   command: BuildCommand,
 ): BuildState {
-  // A Right on the menu that only flickered arms the next Right to move focus; anything else between
-  // the two cancels that.
-  const unnudged: BuildState =
-    state.nudged && !(command.kind === "nudge" && command.direction === "right") ? { ...state, nudged: false } : state
   // The arming ghost (feedback F30) lasts until the player moves the cursor or tries to place.
   const moves = command.kind === "move-cursor" || command.kind === "click-tile" || command.kind === "place"
-  const base: BuildState = moves && unnudged.armGhost ? { ...unnudged, armGhost: false } : unnudged
+  const base: BuildState = moves && state.armGhost ? { ...state, armGhost: false } : state
   const applied = applyCommand(context, base, command)
   // Nothing armed, nothing to draw as a ghost.
   const unghosted = applied.armed === null && applied.armGhost ? { ...applied, armGhost: false } : applied
@@ -1215,10 +1243,11 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
         if (state.overlay === "confirm-commit") return { ...state, overlay: null, status: status("Cancelled.") }
         return { ...toMenu({ ...state, overlay: null }), menuHighlight: command.entry, highlightHidden: true }
       }
-      // Explore Map covers the menu below its own row: a click on that row — drawn active — closes it,
-      // as Esc and `e` do (feedback F32), and so does a click anywhere else on the panel, where the
-      // row under the click was not drawn: it chooses nothing. Either way the menu is drawn again.
-      if (exploring(state)) return { ...cancel(context, state), highlightHidden: true }
+      // A card — Explore Map's, or the armed building's (feedback F58) — covers the menu below its
+      // header row: a click on that row, drawn active, goes back, as Esc (and `e` for Explore Map) does
+      // (feedback F32), and so does a click anywhere else on the panel, where the row under the click
+      // was not drawn: it chooses nothing, whatever `entry` says. Either way the menu is drawn again.
+      if (cardShowing(state)) return { ...cancel(context, state), highlightHidden: true }
       // Otherwise a click activates what it lands on, whatever had focus (feedback F22): a building
       // arms at once, its ghost at the cursor; Nexus opens its popup; Explore Map opens the map.
       return { ...activateEntry(context, state, command.entry, "click"), highlightHidden: true }
@@ -1361,12 +1390,10 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       if (state.overlay === "settings") return stepHighlighted(context, state, command.direction === "right" ? 1 : -1, false)
       if (state.focus !== "menu" || state.overlay !== null || state.committed) return state
       if (state.highlightHidden) return revealHighlight(state)
-      if (command.direction === "right" && state.nudged) return { ...toMap(state), nudged: false }
-      return {
-        ...state,
-        nudged: command.direction === "right",
-        ack: acknowledge(state, "refused", state.menuHighlight),
-      }
+      // Left and Right have nothing to do on the menu: the row flickers to say the key arrived, and the
+      // keyboard stays on the menu, however many come (owner, 2026-09-30, feedback F55 - reversing
+      // 2026-09-27's "a second Right moves focus to the Grid"). Tab and a click on the map still do.
+      return { ...state, ack: acknowledge(state, "refused", state.menuHighlight) }
     }
 
     case "open-nexus-powers":

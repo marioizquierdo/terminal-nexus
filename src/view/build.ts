@@ -14,19 +14,19 @@ import { edgeMarkers, visibleRange } from "../build/camera.ts"
 import { CONTROLS_KEYS_WIDTH, bottomLine } from "../build/help.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import {
+  CARD_FIRST_ROW,
+  CARD_HEADER_ROW,
+  CARD_SEPARATOR_ROW,
   ESC_KEY,
-  EXPLORE_ROW,
-  NEXUS_ROW,
   RESOURCE_ROW,
   START_KEY,
   START_LABEL,
   cellForTile,
-  constructLines,
   escHintSpan,
   escLabel,
+  menuEntryRow,
   menuFloor,
-  startRow,
-  summaryRows,
+  tileAtCell,
 } from "../build/layout.ts"
 import { overlaySpec, placeOverlay, settingColumns, wrapWords } from "../build/overlay.ts"
 import type { ArmedPreview, BuildContext, BuildState } from "../build/state.ts"
@@ -34,6 +34,7 @@ import {
   EXPLORE_ENTRY,
   NEXUS_ENTRY,
   armedPreview,
+  cardShowing,
   entryOfConstruct,
   exploring,
   menuEntries,
@@ -43,7 +44,7 @@ import {
   startEntry,
   structureAtTile,
 } from "../build/state.ts"
-import type { ConstructGroup, PlannedPlacement } from "../build/types.ts"
+import type { PlannedPlacement } from "../build/types.ts"
 import { CONTENT_ART } from "../content/art.ts"
 import type { BandCell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
@@ -93,6 +94,16 @@ export type BuildCompositionInput = Readonly<{
   /** The cursor flashes where a placement was just tried and refused, while the live loop shows it
    *  (gate 5H; the "Refused cursor" Experiment). Presentation only. */
   refusedFlash?: boolean
+  /**
+   * The **focus arrow** in flight (owner, 2026-09-30, feedback F54): a menu row has just handed the
+   * keyboard to the map, and an arrow flies from the row's `>>` to the cursor. `progress` runs 0 to 1,
+   * linear in time; the view eases it. The live loop supplies it (the "Focus arrow" Experiment);
+   * absent — every still frame — no arrow.
+   */
+  focusArrow?: Readonly<{ progress: number }>
+  /** The cursor is in the "on" half of its blink, after the focus arrow lands (F54; the "Cursor blink"
+   *  Experiment): drawn in a menu row's pressed look. Absent — every still frame — the plain cursor. */
+  cursorBlink?: boolean
   /**
    * Planned placements still animating, by ordinal, with how long ago each was placed (gate 5I). The
    * live loop supplies it; a still frame names whatever instant it wants to draw. Absent — every
@@ -441,6 +452,11 @@ function structureAt(context: BuildContext, planned: readonly PlannedPlacement[]
  * ground's own `dim: true` would survive underneath and fight the cursor's `bold` for intensity. A
  * structure does not get this: its own dim means something else — "this one is still only planned"
  * — and the cursor must not blur that distinction away.
+ *
+ * When the focus arrow lands the cursor **blinks** (feedback F54: "the same exact effect as the one we
+ * use when selecting menu items"): in its "on" phases it is drawn in a menu row's pressed look — the
+ * hotkey's colour, inverse, bold, underlined — and between them as usual. The live loop times it
+ * (`cursorBlink`); every still frame draws the plain cursor.
  */
 function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
   const { context, state, layout } = input
@@ -460,9 +476,12 @@ function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
   // about which colour a terminal picks for it, so a coloured screen still needs an explicit,
   // reliably bright role to get the same lift monochrome gets from the attribute alone. The same
   // role and weight the armed construct row already uses, so "here" and "active" read as one idea.
-  const style = onStructure
-    ? { inverse: true }
-    : { inverse: true, bold: true, dim: false, fgRole: "chrome.title" as const }
+  const style =
+    input.cursorBlink === true
+      ? { inverse: true, bold: true, underline: true, dim: false, fgRole: "chrome.hotkey" as const }
+      : onStructure
+        ? { inverse: true }
+        : { inverse: true, bold: true, dim: false, fgRole: "chrome.title" as const }
   for (let extra = 0; extra < layout.tileWidth; extra += 1) {
     cells.push({ band: BANDS.highlights, x: cell.x + extra, y: cell.y, style })
   }
@@ -552,16 +571,33 @@ function rightAlign(
   text(cells, BANDS.chrome, column, row, value, role, extra)
 }
 
-const GROUP_LABELS: Readonly<Record<ConstructGroup, string>> = {
-  common: "COMMON",
-  army: "ARMY",
-}
-
 /** How a menu row's bar is drawn: `plain`; `selected` — the inverse bar, where the keyboard is;
  *  `pressed` — a brief, stronger bar the moment a row is activated; `refused` — a brief flicker when a
  *  key reached the row but had nothing to do. A row that costs more than is left is `disabled` (dim)
  *  in any of them, and a row whose action is under way is drawn *active* (`menuRowActive`). */
 type RowState = "plain" | "selected" | "pressed" | "refused"
+
+/** One menu row, as it is drawn: what `drawMenuRow` needs, and all it needs. */
+type MenuRowSpec = Readonly<{
+  hotkey: string
+  label: string
+  /** Drawn straight after the label in the hotkey's colour — the pending count on "Nexus". */
+  badge?: string
+  /** Right-aligned against the divider: a cost, or how many powers are active. */
+  value?: string
+  active: boolean
+  state: RowState
+  disabled?: boolean
+}>
+
+/** What an active row shows in place of its own hotkey: the key that ends what it started — `x`,
+ *  Esc's other key (owner, 2026-09-30, feedback F53: "the hotkey updated to 'x' (which is the
+ *  alternative to esc)"). */
+export const ACTIVE_HOTKEY = "x"
+
+/** What an active row shows at its right end in place of its value: an arrow pointing at the map,
+ *  where the row's action is under way (F53) — and where the focus arrow leaves from (F54). */
+export const ACTIVE_VALUE = ">>"
 
 /**
  * Whether menu entry `entry`'s action is under way right now — **the one test for the "active" style**
@@ -579,26 +615,12 @@ export function menuRowActive(context: BuildContext, state: BuildState, entry: n
 }
 
 /**
- * One entry of the side panel's menu. `>` before the row says *active* — its action under way — and
- * the bar says *where the keyboard is, not yet chosen* (owner, 2026-09-27, 2026-09-28 and 2026-09-29).
- * Every row is drawn here, so a change to either style reaches every row that has it.
+ * One entry of the side panel's menu. `[x] Barracks  >>` says *active* — its action under way — and
+ * the bar says *where the keyboard is, not yet chosen* (owner, 2026-09-27, 2026-09-28, 2026-09-29 and
+ * 2026-09-30). Every row is drawn here, the menu's and a card's header alike, so a change to either
+ * style reaches every row that has it.
  */
-function drawMenuRow(
-  cells: BandCell[],
-  layout: BuildLayout,
-  row: number,
-  entry: Readonly<{
-    hotkey: string
-    label: string
-    /** Drawn straight after the label in the hotkey's colour — the pending count on "Nexus". */
-    badge?: string
-    /** Right-aligned against the divider: a cost, or how many powers are active. */
-    value?: string
-    active: boolean
-    state: RowState
-    disabled?: boolean
-  }>,
-): void {
+function drawMenuRow(cells: BandCell[], layout: BuildLayout, row: number, entry: MenuRowSpec): void {
   const band = BANDS.chrome
   const column = layout.panelColumn
   const limit = layout.panelLimit
@@ -616,15 +638,13 @@ function drawMenuRow(
   }
   if (bar) text(cells, band, column, row, " ".repeat(limit), barRole, { ...extra, limit })
   // Active is not the keyboard's bar (feedback F22, F32): the bar says "the keyboard is here, not
-  // chosen yet", and an active row is chosen. It is `>`, and the whole row in the hotkey's colour,
-  // bold, its name underlined — legible in monochrome by the marker and the underline alone.
+  // chosen yet", and an active row is chosen. It reads `[x] Barracks  >>` (feedback F53): its hotkey
+  // is the key that ends it, `>>` at its right end points at the map where it is under way, and the
+  // whole row is in the hotkey's colour, bold, its name underlined — legible in monochrome by the
+  // `[x]`, the `>>` and the underline alone. A flash on it still wins, drawn as the bar.
   const activeRole: StyleRole = "chrome.hotkey"
   let at = column
-  if (entry.active) {
-    text(cells, band, at, row, ">", bar ? barRole : activeRole, { ...extra, bold: true, limit })
-    at += 2
-  }
-  const hotkey = `[${entry.hotkey}]`
+  const hotkey = `[${entry.active ? ACTIVE_HOTKEY : entry.hotkey}]`
   // Inside the bar every part takes the bar's own role, so it reads as one bar rather than a teal
   // block, a white block and a grey one side by side.
   text(cells, band, at, row, hotkey, bar ? barRole : "chrome.hotkey", { ...extra, bold: true, limit: column + limit - at })
@@ -638,36 +658,15 @@ function drawMenuRow(
   if (entry.badge !== undefined) {
     text(cells, band, at, row, entry.badge, bar ? barRole : "chrome.hotkey", { ...extra, bold: true, limit: column + limit - at })
   }
-  if (entry.value !== undefined) {
+  const value = entry.active ? ACTIVE_VALUE : entry.value
+  if (value !== undefined) {
     // In the bar the cost keeps only its dimness, the one fact it adds there: this row no longer fits.
-    rightAlign(cells, layout, row, entry.value, bar ? barRole : entry.active ? activeRole : "chrome.value", {
+    rightAlign(cells, layout, row, value, bar ? barRole : entry.active ? activeRole : "chrome.value", {
       ...extra,
-      dim: entry.disabled === true || entry.state === "refused",
+      ...(entry.active ? { bold: true } : {}),
+      dim: entry.state === "refused" || (!entry.active && entry.disabled === true),
     })
   }
-}
-
-/**
- * The one line under the menu that says what a row is for — the highlighted row's while the menu has
- * focus (so a player reads what they are choosing before they choose it), the armed structure's while
- * placing. `null` when there is nothing to say.
- */
-function effectLine(context: BuildContext, state: BuildState, preview: ArmedPreview | null): string | null {
-  if (state.focus === "menu") {
-    // No bar, no line: it describes the row the keyboard is on, and after a click nothing is.
-    if (state.highlightHidden) return null
-    const entry = menuEntries(context)[state.menuHighlight]
-    if (entry === undefined) return null
-    if (entry.kind === "nexus") {
-      return pendingPicks(context, state) > 0 ? "Pick one before the Pulse" : "Read the active powers"
-    }
-    if (entry.kind === "explore") return "See what is on every tile"
-    if (entry.kind === "start") {
-      return pendingPicks(context, state) > 0 ? "Pick a Nexus power first" : "Lock the plan and fight"
-    }
-    return context.catalog[entry.index]?.effect ?? null
-  }
-  return preview?.item.effect ?? null
 }
 
 /**
@@ -682,110 +681,94 @@ function rowState(input: BuildCompositionInput, entry: number): RowState {
   if (flash !== undefined && flash.entry === entry) return flash.kind
   if (menuRowActive(input.context, state, entry)) return "plain"
   // The Battle Round confirmation belongs to the menu, which stays lit behind it; the game menu,
-  // Settings, the export and a message belong to none, so while one has the keyboard its own
-  // highlight (or none) is the only one on screen.
-  if (state.overlay === "menu" || state.overlay === "settings" || state.overlay === "export" || state.overlay === "message") {
+  // Settings, the export, the Controls page and a message belong to none, so while one has the
+  // keyboard its own highlight (or none) is the only one on screen.
+  if (
+    state.overlay === "menu" ||
+    state.overlay === "settings" ||
+    state.overlay === "export" ||
+    state.overlay === "controls" ||
+    state.overlay === "message"
+  ) {
     return "plain"
   }
   if (state.focus !== "menu" || state.highlightHidden) return "plain"
   return state.menuHighlight === entry ? "selected" : "plain"
 }
 
-/** The Explore Map row — the menu's first — as it is drawn on the menu and at the top of Explore Map
- *  alike, so the one row is the same wherever it shows. */
-function drawExploreRow(cells: BandCell[], input: BuildCompositionInput): void {
-  drawMenuRow(cells, input.layout, input.layout.panelRow + EXPLORE_ROW, {
-    hotkey: "e",
-    label: "Explore Map",
-    active: menuRowActive(input.context, input.state, EXPLORE_ENTRY),
-    state: rowState(input, EXPLORE_ENTRY),
-  })
+/**
+ * Menu entry `entry` as a row: its hotkey, its label, what it shows at its right end, and how it is
+ * drawn right now — the one description of every row, read by the menu and by a card's header alike,
+ * so a row is the same wherever it shows. `null` for an entry the menu does not have.
+ */
+function menuRowSpec(input: BuildCompositionInput, entry: number): MenuRowSpec | null {
+  const { context, state } = input
+  const target = menuEntries(context)[entry]
+  if (target === undefined) return null
+  const look = { active: menuRowActive(context, state, entry), state: rowState(input, entry) }
+  switch (target.kind) {
+    case "explore":
+      return { hotkey: "e", label: "Explore Map", ...look }
+    case "nexus": {
+      // Its "(1)" is the number of picks waiting — the one thing that will stop the commit — drawn in
+      // the hotkey's colour so it catches the eye without a popup forcing it.
+      const pending = pendingPicks(context, state)
+      const active = nexusPowers(context, state).active.length
+      return {
+        hotkey: "n",
+        label: "Nexus",
+        ...(pending > 0 ? { badge: ` (${pending})` } : {}),
+        ...(active > 0 ? { value: `${active} active` } : {}),
+        ...look,
+      }
+    }
+    case "start":
+      // Dim while a Nexus power still waits to be picked, because pressing it would only be refused —
+      // it still answers, with the reason.
+      return { hotkey: START_KEY, label: START_LABEL, ...look, disabled: pendingPicks(context, state) > 0 }
+    case "construct": {
+      const item = context.catalog[target.index]
+      if (item === undefined) return null
+      return {
+        hotkey: item.hotkey,
+        label: item.label,
+        value: String(item.cost),
+        ...look,
+        disabled: item.cost > remaining(context, state),
+      }
+    }
+  }
 }
 
 /**
- * The side panel — engine.md 9.2's Build Phase list: the Nexus and Explore entries at the top, what
- * is left to spend, the construct menu, the Special slot, and one line saying what the row in
- * question does. Why a placement is refused is the status line's to say, and there is no radius
- * preview, because nothing placed here has a radius.
+ * What there is to spend, `$ 100`, on the panel's top line against its right edge — the column the
+ * costs are in (owner, 2026-09-30, feedback F57: "Having the credits aligned on the right looks good,
+ * because that is the cost of buildings"). No label and no maximum ("we can show that on demand when
+ * the player tries to add more resources but there's a limit"), and on every Build Phase panel — the
+ * menu and both cards — so it is always in view.
  */
-function drawPanel(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
+function drawResources(cells: BandCell[], input: BuildCompositionInput): void {
   const { context, state, layout } = input
-  const band = BANDS.chrome
-  const column = layout.panelColumn
-  const limit = layout.panelLimit
-  const left = remaining(context, state)
+  rightAlign(cells, layout, layout.panelRow + RESOURCE_ROW, `$ ${remaining(context, state)}`, "chrome.title", { bold: true })
+}
 
-  // Explore Map, first (owner, 2026-09-28, feedback F23).
-  drawExploreRow(cells, input)
-  // Nexus. Its "(1)" is the number of picks waiting — the one thing that will stop the commit —
-  // drawn in the hotkey's colour so it catches the eye without a popup forcing it.
-  const pending = pendingPicks(context, state)
-  const active = nexusPowers(context, state).active.length
-  drawMenuRow(cells, layout, layout.panelRow + NEXUS_ROW, {
-    hotkey: "n",
-    label: "Nexus",
-    ...(pending > 0 ? { badge: ` (${pending})` } : {}),
-    ...(active > 0 ? { value: `${active} active` } : {}),
-    active: menuRowActive(context, state, NEXUS_ENTRY),
-    state: rowState(input, NEXUS_ENTRY),
+/**
+ * The side panel as the menu (owner, 2026-09-30, feedback F56-F58): what is left to spend on its top
+ * line, `[e] Explore Map`, a blank line, `[n] Nexus`, a blank line, the buildings one to a row in
+ * catalog order, and `[s] Start Pulse` on its last line. No headings, no help text: what a row does
+ * is the bottom line's to say, why a placement is refused the status line's, and there is no radius
+ * preview, because nothing placed here has a radius. A row the panel is too short for is not drawn
+ * (`menuEntryRow` says so, and the mouse reads the same answer).
+ */
+function drawPanel(cells: BandCell[], input: BuildCompositionInput): void {
+  const { context, layout } = input
+  drawResources(cells, input)
+  menuEntries(context).forEach((target, entry) => {
+    const row = menuEntryRow(layout, context.catalog, target)
+    const spec = menuRowSpec(input, entry)
+    if (row === null || spec === null) return
+    drawMenuRow(cells, layout, row, spec)
   })
-
-  // What there is to spend, directly above the costs it is measured against.
-  text(cells, band, column, layout.panelRow + RESOURCE_ROW, "RESOURCE", "chrome.label", { limit })
-  rightAlign(
-    cells,
-    layout,
-    layout.panelRow + RESOURCE_ROW,
-    `${left} of ${context.allotment + state.bonusAllotment}`,
-    "chrome.title",
-    { bold: true },
-  )
-
-  for (const line of constructLines(layout, context.catalog)) {
-    if (line.kind === "group") {
-      text(cells, band, column, line.row, GROUP_LABELS[line.group], "chrome.label", { limit })
-      continue
-    }
-    if (line.kind === "empty") {
-      text(cells, band, column, line.row, GROUP_LABELS[line.group], "chrome.label", { limit })
-      rightAlign(cells, layout, line.row, "none available", "chrome.muted", { dim: true })
-      continue
-    }
-    const item = context.catalog[line.index]
-    if (item === undefined) continue
-    const entry = entryOfConstruct(line.index)
-    drawMenuRow(cells, layout, line.row, {
-      hotkey: item.hotkey,
-      label: item.label,
-      value: String(item.cost),
-      active: menuRowActive(context, state, entry),
-      state: rowState(input, entry),
-      disabled: item.cost > left,
-    })
-  }
-
-  // The Special slot: PERIMETER has none to arm — honest about the empty slot rather than hiding it.
-  const { special: specialRow } = summaryRows(layout, context.catalog)
-  text(cells, band, column, specialRow, "SPECIAL", "chrome.label", { limit })
-  rightAlign(cells, layout, specialRow, "none available", "chrome.muted", { dim: true })
-
-  // Start Pulse, the menu's last row, on the panel's bottom line. Dim while a Nexus power still waits
-  // to be picked, because pressing it would only be refused — it still answers, with the reason.
-  const start = startEntry(context.catalog.length)
-  drawMenuRow(cells, layout, startRow(layout), {
-    hotkey: START_KEY,
-    label: START_LABEL,
-    active: menuRowActive(context, state, start),
-    state: rowState(input, start),
-    disabled: pending > 0,
-  })
-
-  const effect = effectLine(context, state, preview)
-  if (effect === null) return
-  const row = specialRow + 2
-  // Dropped rather than drawn over the Start Pulse row when a short panel has no room.
-  if (row > menuFloor(layout)) return
-  text(cells, band, column, row, effect, "chrome.value", { limit })
 }
 
 /** A plain name for what is under the cursor — the catalog's own label where there is one. */
@@ -801,73 +784,97 @@ function displayName(context: BuildContext, contentId: string): string {
   return definition.short.charAt(0).toUpperCase() + definition.short.slice(1)
 }
 
-/** How far below the Explore Map row the card starts: the row itself, then the separator. */
-const EXPLORE_CARD_ROW = EXPLORE_ROW + 2
-
 /**
- * Explore Map (owner, 2026-09-27, 2026-09-28 and 2026-09-29): while it is open, the menu's first row
- * stays where it is, drawn active — `> [e] Explore Map`, its own header (feedback F32) — and under a
- * separator across the panel the rest of the menu gives way to what is under the cursor, following it
- * as it moves: its own glyphs as its icon, its name and one line of what it is for, and its numbers. A
- * click anywhere on the panel closes it, as Esc does. A first version of the
- * presentation card he described; the larger art and live stats during a Pulse come later.
+ * A **card** in place of the menu (owner, 2026-09-27 to 2026-09-30, feedback F23, F32, F58): what there
+ * is to spend on the top line; the row that opened it as its header, drawn active where Explore Map's
+ * row is — `[x] Explore Map  >>`, or `[x] Barracks  >>` while a building is being placed, its pressed
+ * flash playing there; a separator across the panel (`-` in ASCII, `─` in Unicode); and under it the
+ * card itself — in Explore Map whatever is under the cursor, following it as it moves; while placing,
+ * the building about to be placed ("This will create visual consistency for anything that gains focus
+ * on the map"). Start Pulse belongs to the menu and is hidden with it. A click anywhere on the panel
+ * goes back, as Esc does.
  */
-function drawInfoPanel(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
+function drawCardPanel(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
+  const { context, state, layout } = input
+  const column = layout.panelColumn
+  const limit = layout.panelLimit
+  drawResources(cells, input)
+  const header = menuRowSpec(input, state.armed === null ? EXPLORE_ENTRY : entryOfConstruct(state.armed))
+  if (header !== null) drawMenuRow(cells, layout, layout.panelRow + CARD_HEADER_ROW, header)
+  text(cells, BANDS.chrome, column, layout.panelRow + CARD_SEPARATOR_ROW, chromeGlyph(pack, "horizontal").repeat(limit), "chrome.frame", { limit })
+  const top = layout.panelRow + CARD_FIRST_ROW
+
+  if (state.armed !== null) {
+    const item = context.catalog[state.armed]
+    if (item !== undefined) drawBuildingCard(cells, input, top, item.contentId, "to build")
+    return
+  }
+  const structure = structureAtTile(context, state.planned, state.cursor)
+  if (structure === null) drawGroundCard(cells, input, pack, top)
+  else drawBuildingCard(cells, input, top, structure.contentId, structure.planned ? "planned" : "standing")
+}
+
+/** A bare tile's card: its own glyph, what it is, what it means, and where it is. */
+function drawGroundCard(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, top: number): void {
   const { context, state, layout } = input
   const band = BANDS.chrome
   const column = layout.panelColumn
   const limit = layout.panelLimit
-  drawExploreRow(cells, input)
-  text(cells, band, column, layout.panelRow + EXPLORE_ROW + 1, chromeGlyph(pack, "horizontal").repeat(limit), "chrome.frame", { limit })
-  let row = layout.panelRow + EXPLORE_CARD_ROW
+  const terrainId = context.grid.tiles[state.cursor.y * context.grid.width + state.cursor.x] ?? "terrain.plain"
+  const { glyph, role } = terrainGlyph(terrainId, pack)
+  put(cells, band, column, top, glyph === " " ? "." : glyph, role, {})
+  const terrain = TERRAIN_INFO[terrainId] ?? { name: "Ground", line: "" }
+  text(cells, band, column + 3, top, terrain.name, "chrome.title", { bold: true, limit: limit - 3 })
+  text(cells, band, column, top + 2, terrain.line, "chrome.value", { limit })
+  text(cells, band, column, top + 4, "TILE", "chrome.label", { limit })
+  rightAlign(cells, layout, top + 4, `${state.cursor.x},${state.cursor.y}`, "chrome.value")
+}
 
-  const structure = structureAtTile(context, state.planned, state.cursor)
-  if (structure === null) {
-    const terrainId = context.grid.tiles[state.cursor.y * context.grid.width + state.cursor.x] ?? "terrain.plain"
-    const { glyph, role } = terrainGlyph(terrainId, pack)
-    put(cells, band, column, row, glyph === " " ? "." : glyph, role, {})
-    const terrain = TERRAIN_INFO[terrainId] ?? { name: "Ground", line: "" }
-    text(cells, band, column + 3, row, terrain.name, "chrome.title", { bold: true, limit: limit - 3 })
-    text(cells, band, column, row + 2, terrain.line, "chrome.value", { limit })
-    text(cells, band, column, row + 4, "TILE", "chrome.label", { limit })
-    rightAlign(cells, layout, row + 4, `${state.cursor.x},${state.cursor.y}`, "chrome.value")
-    return
-  }
+/**
+ * One building's card — the same for the building under the cursor in Explore Map and for the one being
+ * placed (feedback F58): its own glyphs as its icon, its name with a word under it on where it stands
+ * ("planned", "standing", "to build"), what it does, wrapped at words and never cut, then its numbers
+ * as label/value rows — cost, health, size, attack — as many as the panel has room for. A first version
+ * of the presentation card the owner described; the larger art and live stats during a Pulse come later.
+ */
+function drawBuildingCard(cells: BandCell[], input: BuildCompositionInput, top: number, contentId: string, subtitle: string): void {
+  const { context, layout } = input
+  const band = BANDS.chrome
+  const column = layout.panelColumn
+  const limit = layout.panelLimit
+  let row = top
 
-  const definition = context.registry.get(structure.contentId)
-  const art = CONTENT_ART[structure.contentId] ?? [definition.short.charAt(0)]
+  const definition = context.registry.get(contentId)
+  const art = CONTENT_ART[contentId] ?? [definition.short.charAt(0)]
   const artWidth = Math.max(...art.map((line) => line.length))
   art.forEach((line, index) => {
     ;[...line].forEach((character, offset) => {
-      const glyph = entityGlyph(structure.contentId, "A", { x: offset, y: index })
+      const glyph = entityGlyph(contentId, "A", { x: offset, y: index })
       put(cells, band, column + offset, row + index, glyph === "?" ? character : glyph, playerRole("A"), { bold: true })
     })
   })
   const nameColumn = column + artWidth + 2
-  text(cells, band, nameColumn, row, displayName(context, structure.contentId), "chrome.title", {
+  text(cells, band, nameColumn, row, displayName(context, contentId), "chrome.title", {
     bold: true,
     limit: column + limit - nameColumn,
   })
-  text(cells, band, nameColumn, row + 1, structure.planned ? "planned" : "standing", "chrome.muted", {
-    limit: column + limit - nameColumn,
-  })
+  text(cells, band, nameColumn, row + 1, subtitle, "chrome.muted", { limit: column + limit - nameColumn })
   row += Math.max(art.length, 2) + 1
 
-  const item = context.catalog.find((candidate) => candidate.contentId === structure.contentId)
+  const item = context.catalog.find((candidate) => candidate.contentId === contentId)
   const line = item?.effect ?? (definition.nexus === true ? "Your base. Lose it, lose the Pulse." : "")
   // Wrapped at word boundaries: the panel is 28 glyphs wide at the floor, and a description cut
   // mid-sentence was the first thing the screenshots of this panel showed (2026-09-27).
   for (const wrapped of wrapWords(line, limit)) {
+    if (row > menuFloor(layout)) return
     text(cells, band, column, row, wrapped, "chrome.value", { limit })
     row += 1
   }
   if (line !== "") row += 1
   const size = footprintExtent(definition.footprint)
-  const stats: [string, string][] = [
-    ["HEALTH", String(definition.maxHp)],
-    ["SIZE", `${size.width}x${size.height}`],
-  ]
+  const stats: [string, string][] = []
   if (item !== undefined) stats.push(["COST", String(item.cost)])
+  stats.push(["HEALTH", String(definition.maxHp)], ["SIZE", `${size.width}x${size.height}`])
   if (definition.attack !== undefined) {
     stats.push(["ATTACK", `${definition.attack.damage} at range ${definition.attack.range}`])
   }
@@ -877,9 +884,6 @@ function drawInfoPanel(cells: BandCell[], input: BuildCompositionInput, pack: Gl
     rightAlign(cells, layout, row, value, "chrome.value")
     row += 1
   }
-  if (structure.planned && row + 1 <= menuFloor(layout)) {
-    text(cells, band, column, row + 1, "[bksp] remove  [u] undo", "chrome.muted", { limit })
-  }
 }
 
 /** What a bare tile is, for the information panel. */
@@ -887,6 +891,102 @@ const TERRAIN_INFO: Readonly<Record<string, Readonly<{ name: string; line: strin
   "terrain.plain": { name: "Open ground", line: "You can build here." },
   "terrain.rock": { name: "Rock", line: "Blocks building and movement." },
   "terrain.deposit": { name: "Deposit", line: "Resources lie here." },
+}
+
+/** How many cells of trail follow the focus arrow's head, and how many of them, nearest the head, are
+ *  drawn at full strength; the older ones are dim. */
+const ARROW_TRAIL = 4
+const ARROW_TRAIL_BRIGHT = 2
+
+/** tan(22.5 degrees): within this slope of an axis, a line reads as running along it. */
+const AXIS_SLOPE = 0.4142
+
+/** Fast at first, settling on the cursor: the focus arrow's own easing. */
+function easeOutCubic(t: number): number {
+  const rest = 1 - Math.min(1, Math.max(0, t))
+  return 1 - rest * rest * rest
+}
+
+/**
+ * The focus arrow's head and trail glyphs for a line running `dx` columns and `dy` rows. A terminal
+ * cell is about twice as tall as it is wide, so a row counts as two columns when the slope is read:
+ * within 22.5 degrees of level the head points left or right and the trail is level; within 22.5
+ * degrees of upright it points up or down and the trail is upright; between them the trail is a
+ * diagonal and the head points along whichever way the line runs further on screen.
+ */
+function arrowGlyphs(pack: GlyphPack, dx: number, dy: number): Readonly<{ head: string; trail: string }> {
+  const across = dx
+  const down = 2 * dy
+  const horizontal = chromeGlyph(pack, across >= 0 ? "arrowRight" : "arrowLeft")
+  const vertical = chromeGlyph(pack, down >= 0 ? "arrowDown" : "arrowUp")
+  if (Math.abs(down) <= Math.abs(across) * AXIS_SLOPE) return { head: horizontal, trail: chromeGlyph(pack, "trailLevel") }
+  if (Math.abs(across) <= Math.abs(down) * AXIS_SLOPE) return { head: vertical, trail: chromeGlyph(pack, "trailUpright") }
+  const falling = across >= 0 === down >= 0
+  return {
+    head: Math.abs(across) >= Math.abs(down) ? horizontal : vertical,
+    trail: chromeGlyph(pack, falling ? "trailFall" : "trailRise"),
+  }
+}
+
+/**
+ * The **focus arrow** (owner, 2026-09-30, feedback F54: "an animation that sends an arrow from the menu
+ * item to the cursor ... fast and use interpolation"): a tween, drawn while the live loop says one is in
+ * flight. It leaves from the cell just right of the card header's `>>` — the divider's cell on that row
+ * — and flies in a straight line toward the cursor as it is drawn this frame (so it homes on a cursor
+ * that moves meanwhile), eased to arrive fast and settle; its head points the way it flies and a short
+ * trail follows it, the older cells dim. It stops one cell short of the cursor's tile, which stays whole
+ * for the blink that follows.
+ *
+ * Drawn over the chrome, so it crosses the divider, and under every popup. On the map it keeps the
+ * corruption law as every effect does: on a building's tile — standing, planned, or the ghost of the one
+ * being placed — only the style changes, never the glyph. Never during a Pulse, and only while the map
+ * has the keyboard and no popup is open.
+ */
+function drawFocusArrow(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, preview: ArmedPreview | null): void {
+  const { context, state, layout } = input
+  const flight = input.focusArrow
+  if (flight === undefined || input.pulse !== undefined || state.committed) return
+  if (state.focus !== "grid" || state.overlay !== null) return
+  const range = visibleRange(state.camera, state.viewport)
+  const cursor = input.cursor ?? state.cursor
+  if (cursor.x < range.firstX || cursor.x > range.lastX || cursor.y < range.firstY || cursor.y > range.lastY) return
+  const target = cellForTile(layout, state.camera, cursor)
+  const from = { x: layout.dividerColumn, y: layout.panelRow + CARD_HEADER_ROW }
+  // Aimed at the middle of the cursor's tile: its one cell, or between its two when tiles are two wide.
+  const dx = target.x + (layout.tileWidth - 1) / 2 - from.x
+  const dy = target.y - from.y
+  const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy))))
+  const path: Coord[] = []
+  for (let step = 0; step <= steps; step += 1) {
+    const x = Math.round(from.x + (dx * step) / steps)
+    const y = Math.round(from.y + (dy * step) / steps)
+    if (y === target.y && x >= target.x && x < target.x + layout.tileWidth) break
+    const last = path[path.length - 1]
+    if (last === undefined || last.x !== x || last.y !== y) path.push({ x, y })
+  }
+  if (path.length === 0) return
+
+  // What a glyph may not replace: a building's tile, and the ghost of the one being placed.
+  const shift = glideShift(input)
+  const ghost = new Set<string>(
+    preview === null
+      ? []
+      : preview.footprint.map((offset) => `${preview.anchor.x + offset.x + shift.x},${preview.anchor.y + offset.y + shift.y}`),
+  )
+  const covered = (x: number, y: number): boolean => {
+    const tile = tileAtCell(layout, state.camera, x, y)
+    return tile !== null && (ghost.has(`${tile.x},${tile.y}`) || structureAt(context, state.planned, tile))
+  }
+
+  const head = Math.min(path.length - 1, Math.floor(easeOutCubic(flight.progress) * path.length))
+  const glyphs = arrowGlyphs(pack, dx, dy)
+  for (let back = Math.min(ARROW_TRAIL, head); back >= 0; back -= 1) {
+    const at = path[head - back] as Coord
+    const dim = back > ARROW_TRAIL_BRIGHT
+    const style = { fgRole: "chrome.hotkey" as const, bold: !dim, dim }
+    if (covered(at.x, at.y)) cells.push({ band: BANDS.chrome, x: at.x, y: at.y, style })
+    else cells.push({ band: BANDS.chrome, x: at.x, y: at.y, cell: { glyph: back === 0 ? glyphs.head : glyphs.trail, style } })
+  }
 }
 
 /**
@@ -1076,14 +1176,16 @@ export function composeBuildFrame(
   drawChrome(cells, input, pack)
   drawHeaderAndFooter(cells, input, preview)
 
-  // The panel shows the menu, or — exploring — what is under the cursor, or the committed summary.
-  // Clipped to the panel's own rows: on a terminal too short for the whole menu, a row that does not
-  // fit is left off rather than drawn over the rule and the bottom bar.
+  // The panel shows the menu, or a card — Explore Map's, or the armed building's — or the committed
+  // summary. Clipped to the panel's own rows: on a terminal too short for the whole menu, a row that
+  // does not fit is left off rather than drawn over the rule and the bottom bar.
   const panel: BandCell[] = []
   if (input.state.committed) drawCommittedPanel(panel, input)
-  else if (exploring(input.state)) drawInfoPanel(panel, input, pack)
-  else drawPanel(panel, input, preview)
+  else if (cardShowing(input.state)) drawCardPanel(panel, input, pack)
+  else drawPanel(panel, input)
   for (const cell of panel) if (cell.y <= input.layout.panelBindingsRow) cells.push(cell)
+  // The focus arrow crosses from the panel into the map, so it is drawn over both — and under any popup.
+  drawFocusArrow(cells, input, pack, preview)
   drawOverlay(cells, input, pack)
 
   return composeBands(input.layout.frame.width, input.layout.frame.height, cells)

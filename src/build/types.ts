@@ -112,16 +112,15 @@ export type BuildCommand =
   /** `[s] Start` — the confirmation's one row, by Enter, Space, `s` or a click: the Nexus Pulse starts.
    *  Going back is the cancel every popup has (owner, 2026-09-29, feedback F50). */
   | Readonly<{ kind: "confirm-commit" }>
-  /** Tab, and a second Right on the menu: move keyboard focus. To the Grid it arrives in plain
-   *  navigation (feedback F30); to the menu it disarms (a building is armed only while the Grid has
-   *  focus). */
+  /** Tab: move keyboard focus. To the Grid it arrives in plain navigation (feedback F30); to the menu
+   *  it disarms (a building is armed only while the Grid has focus). */
   | Readonly<{ kind: "focus"; target: Focus }>
   /** Up/Down on the menu or inside a popup's list: move its highlight, wrapping at both ends. */
   | Readonly<{ kind: "highlight"; delta: -1 | 1 }>
   /** Enter/Space on the menu or inside a popup's list: do what the highlighted entry is for. */
   | Readonly<{ kind: "activate" }>
-  /** Left/Right on the menu: nothing to do there, so the row flickers to say the key arrived; a second
-   *  Right in a row moves focus to the Grid (owner, 2026-09-27). */
+  /** Left/Right on the menu: nothing to do there, so the row flickers to say the key arrived, and the
+   *  keyboard stays on the menu (owner, 2026-09-30, feedback F55). */
   | Readonly<{ kind: "nudge"; direction: "left" | "right" }>
   /** `n`, or activating the Nexus entry: open the Nexus popup. */
   | Readonly<{ kind: "open-nexus-powers" }>

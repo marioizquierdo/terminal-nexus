@@ -308,7 +308,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
     if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
     if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
     // Left/Right have nothing to do on the menu: the row flickers so the player sees where the keys
-    // went, and a second Right moves focus to the Grid (owner, 2026-09-27).
+    // went, and the keyboard stays on the menu (owner, 2026-09-30, feedback F55).
     if (MENU_LEFT.has(key)) return { kind: "nudge", direction: "left" }
     if (MENU_RIGHT.has(key)) return { kind: "nudge", direction: "right" }
     if (PLACE_KEYS.has(key)) return { kind: "activate" }

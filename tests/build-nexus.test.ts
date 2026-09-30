@@ -138,7 +138,7 @@ test("picking applies its own effect exactly once, and cannot be changed afterwa
   // The owner's number (2026-09-28, feedback F24): enough to place buildings freely in a playtest.
   assert.equal(build.state.bonusAllotment, 2000)
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
-  assert.match(text, /RESOURCE {7}2100 of 2100[|+]/, "the panel's budget line, whole, with the War Chest")
+  assert.match(text, /\| {22}\$ 2100[|+]/, "the panel's budget line, whole, with the War Chest")
   assert.match(build.state.status.text, /War Chest picked/)
 
   const after = build.state
@@ -148,14 +148,15 @@ test("picking applies its own effect exactly once, and cannot be changed afterwa
   assert.match(build.state.status.text, /Already picked/)
 })
 
-test("the budget on screen counts the picked power's share in its total, not only in what is left", () => {
-  // Reserve Fund adds 30 to a 100-point allotment. The panel used to read "130 of 100" — more left
-  // than there ever was — which looks exactly like a bug to anyone who has not read the reducer.
+test("the budget on screen counts the picked power's share in what is left", () => {
+  // Reserve Fund adds 30 to a 100-point allotment. The panel once read "130 of 100" — more left than
+  // there ever was; since feedback F57 it shows no maximum at all, only what is left: `$ 130`.
   const context = spikeContext()
   const { build, layout } = session()
   build.dispatch({ kind: "pick-nexus", index: 0 })
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
-  assert.match(text, /RESOURCE {2,}130 of 130/)
+  assert.match(text, /\$ 130[|+]/)
+  assert.doesNotMatch(text, / of 1[03]0/)
 })
 
 test("an out-of-range pick is ignored, not a crash and not a partial pick", () => {
@@ -362,11 +363,9 @@ test("mouse: the Battle Round confirmation starts by click on [s] Start, and a c
 })
 
 /** A click on a construct row, from `constructLines` — the same geometry the panel itself draws
- *  with, so a click that lands on a group heading is structurally impossible here. */
+ *  with, so a click that lands on a row nobody drew is structurally impossible here. */
 function clickRowBytes(layout: ReturnType<typeof buildLayout>, index: number): string {
-  const line = constructLines(layout, SPIKE_CATALOG).find(
-    (candidate) => candidate.kind === "item" && candidate.index === index,
-  )
+  const line = constructLines(layout, SPIKE_CATALOG).find((candidate) => candidate.index === index)
   assert.ok(line !== undefined, `no construct row is drawn for item ${index}`)
   const item = SPIKE_CATALOG[index]!
   const column = layout.panelColumn + Math.floor(`[${item.hotkey}] ${item.label}`.length / 2)

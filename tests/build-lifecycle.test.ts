@@ -94,7 +94,7 @@ test("launching enters the alternate screen, raw mode, and turns mouse reporting
   assert.ok(stdout.written.includes(`${ESC}[?25l`), "never hid the cursor")
   assert.equal(stdin.raw, true, "never entered raw mode")
   assert.ok(stdout.written.includes(MOUSE_REPORTING_ON), "never turned mouse reporting on")
-  assert.ok(stdout.written.includes("RESOURCE"), "never drew a first frame")
+  assert.ok(stdout.written.includes("Explore Map"), "never drew a first frame")
 })
 
 test("q then q, an interrupt byte, and Esc then q all reach the one disposer", async () => {
@@ -176,7 +176,7 @@ test("below the floor the screen gates, and resizing back above it restores the 
     output.emit("resize")
     assert.ok(output.lastWrite.includes("TERMINAL TOO SMALL"), "79 columns did not gate")
     assert.ok(
-      !output.lastWrite.includes("RESOURCE"),
+      !output.lastWrite.includes("Explore Map"),
       "the gated frame still drew the Build Phase behind it",
     )
     // Keys do nothing while gated — there is no screen to act on.
@@ -185,7 +185,7 @@ test("below the floor the screen gates, and resizing back above it restores the 
     output.columns = 80
     output.emit("resize")
   })
-  assert.ok(stdout.lastWrite.includes("RESOURCE"), "resizing back did not restore the screen")
+  assert.ok(stdout.lastWrite.includes("Explore Map"), "resizing back did not restore the screen")
   // The frame's top border is as wide as the composition, 31 columns plus the viewport's 49 tiles.
   assert.ok(stdout.lastWrite.includes(BORDER_AT_80), "the viewport did not come back")
 })
@@ -250,7 +250,7 @@ test("--keys that cannot be delivered stops there and says why when the screen c
   })
   await new Promise((resolve) => setTimeout(resolve, 30))
   assert.ok(!stdout.written.includes("1 active"), "a step after the failed one ran")
-  assert.ok(stdout.written.includes("RESOURCE"), "the screen did not open")
+  assert.ok(stdout.written.includes("Explore Map"), "the screen did not open")
   stdin.emit("data", Buffer.from([3]))
   await session
   assert.ok(reported.some((text) => text.includes("--keys stopped early") && text.includes("95,39")), reported.join(""))
@@ -312,7 +312,7 @@ test("the live loop plays a Nexus Pulse on its own clock: timer, last seconds, r
   await sleep(AFTER_ESC_TIMEOUT_MS)
   stdin.emit("data", Buffer.from("r"))
   await sleep(80)
-  assert.match(stdout.lastWrite, /RESOURCE/, "restarting did not bring the Build Phase back")
+  assert.match(stdout.lastWrite, /Explore Map/, "restarting did not bring the Build Phase back")
   assert.doesNotMatch(stdout.lastWrite, /VICTORY/)
 
   stdin.emit("data", Buffer.from([3]))

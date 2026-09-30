@@ -125,14 +125,16 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   const text = screen(side)
   assert.match(text, /SETTINGS/)
   assert.match(text, /EXPERIMENTS - for playtests, not saved/)
-  // Gate 5I's placement juice leads the list: the newest thing waiting to be felt. No "now" or
-  // "restart" beside a value any more (feedback F34).
+  // The focus arrow and the cursor's blink lead the list (feedback F54): the newest thing waiting to be
+  // felt. No "now" or "restart" beside a value any more (feedback F34).
+  assert.match(text, /Focus arrow\s+<\s+180 ms\s+>/)
+  assert.match(text, /Cursor blink\s+<\s+2 blinks\s+>/)
   assert.match(text, /Build animation\s+<\s+300 ms\s+>/)
   assert.doesNotMatch(text, /> +(now|restart)\b/)
   // The bottom line says what the keys do there (feedback F59), and the highlighted row's question is
   // shown. Opened by `d` from the game, Esc closes it.
   assert.match(text, /Left\/right change a value, \[e\] exports them all\. \[esc\] closes\./)
-  assert.ok(text.includes("(F9)"), "the build animation's question is not shown")
+  assert.ok(text.includes("(F54)"), "the focus arrow's question is not shown")
   const margin = session()
   keys(margin, "d")
   goTo(margin, "scrollMargin")

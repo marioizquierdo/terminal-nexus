@@ -8,7 +8,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
 import { centreOn } from "../src/build/camera.ts"
-import { rowOfField } from "../src/build/debug.ts"
+import { DEBUG_FIELDS, rowOfField } from "../src/build/debug.ts"
 import { escHintSpan, escLabel, pulseControlRows } from "../src/build/layout.ts"
 import { MOUSE_RIGHT } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
@@ -76,7 +76,7 @@ test("answering yes turns the screen into the Nexus Pulse, with the keyboard on 
   assert.match(text, /Nexus Pulse - 5 of yours against 7 of the raid\./)
   assert.match(text, /menu \[esc\]/)
   // The Build Phase's menu is gone: nothing left to build, nothing to pick.
-  assert.doesNotMatch(text, /\[1\] Barracks|RESOURCE|\[e\] Explore Map/)
+  assert.doesNotMatch(text, /\[1\] Barracks|\$ \d|\[e\] Explore Map/)
 })
 
 test("the view is centred on the player's Nexus when the Pulse starts, wherever they had scrolled", () => {
@@ -549,7 +549,7 @@ test("changing an ending Experiment is felt at once, and `d` opens Settings at t
   // Before a Pulse it is still the first Experiment.
   const before = newSession()
   before.build.handleData("d", before.layout)
-  assert.equal(before.build.state.overlayHighlight, rowOfField("placeFramesMs"))
+  assert.equal(before.build.state.overlayHighlight, rowOfField(DEBUG_FIELDS[0]!.field))
 })
 
 test("the frame timer runs while the Pulse plays, and stops when it is paused or the result stands", () => {

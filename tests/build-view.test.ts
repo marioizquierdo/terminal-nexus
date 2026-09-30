@@ -6,7 +6,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
+import { buildLayout, cellForTile, constructLines, startRow } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildSessionOptions } from "../src/build/session.ts"
 import { SPIKE_ALLOTMENT, SPIKE_CATALOG } from "../src/build/catalog.ts"
@@ -327,24 +327,36 @@ test("every glyph on the frame is one cell wide, at both sizes and in both packs
   }
 })
 
-test("the construct rows and the armed item's own line are all on screen", () => {
+/** The side panel's own text, row by row, from its first line to its last. */
+function panelText(screen: ReturnType<typeof screenAt>): string {
+  const { layout } = screen
+  return screen.text
+    .split("\n")
+    .slice(layout.panelRow, layout.panelBindingsRow + 1)
+    .map((row) => row.slice(layout.panelColumn, layout.dividerColumn))
+    .join("\n")
+}
+
+test("the menu lists every building with its cost under the budget, and the armed building's card says what it does", () => {
+  const menu = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" }))
+  const panel = panelText(menu)
+  // One list, each building's cost on its own row against the divider (feedback F56), under the budget
+  // as `$ 100` on the panel's first line, in the same column (F57).
+  assert.match(panel.split("\n")[0] as string, / {22}\$ 100$/)
+  for (const item of SPIKE_CATALOG) assert.match(panel, new RegExp(`\\[${item.hotkey}\\] ${item.label} +${item.cost}$`, "m"))
+  assert.doesNotMatch(panel, /COMMON|ARMY|SPECIAL|none available|RESOURCE/)
+  // No help text on the panel (feedback F58): what a row does is the bottom line's to say.
+  assert.doesNotMatch(panel, /undo|remove|choose|select|arrows/)
+  // Armed, the panel is the building's card: its row drawn active, what it does, what it costs.
   const armed = screenAt(MINIMUM, (build, layout) => {
     build.handleData("2", layout)
   })
-  assert.match(armed.text, /\[1\] Barracks/)
-  assert.match(armed.text, /\[2\] Hatchery/)
-  assert.match(armed.text, /\[3\] Turret/)
-  // Both groups are labelled, and the empty one says so rather than vanishing.
-  assert.match(armed.text, /COMMON/)
-  assert.match(armed.text, /ARMY {2,}none available/)
-  // Every item's cost is on its own row, and the budget is on the panel's first line.
-  assert.match(armed.text, /RESOURCE/)
-  for (const item of SPIKE_CATALOG) assert.match(armed.text, new RegExp(String(item.cost)))
-  // The selected item says what it does — the thing a player is actually choosing between.
-  assert.match(armed.text, /Spawns swarmers, slowly/)
-  // The keys that were listed here — undo, remove — are on the Controls and hotkeys page since the key
-  // help went (feedback F59, F60; `tests/build-help.test.ts`), and the panel carries none of them.
-  assert.doesNotMatch(armed.text, /u undo|bksp remove/)
+  const card = panelText(armed)
+  assert.match(card, /^\[x\] Hatchery +>>$/m)
+  assert.match(card, /Spawns swarmers, slowly/)
+  assert.match(card, /^COST +30$/m)
+  assert.match(card.split("\n")[0] as string, /\$ 100$/)
+  assert.doesNotMatch(card, /\[1\] Barracks|undo|bksp/)
 })
 
 test("the panel says nothing about an item until one is selected", () => {
@@ -355,7 +367,7 @@ test("the panel says nothing about an item until one is selected", () => {
   assert.doesNotMatch(idle.text, /Trains troopers/)
   assert.doesNotMatch(idle.text, /Cannot build here/i)
   // But the menu and the budget are always there.
-  assert.match(idle.text, /RESOURCE/)
+  assert.match(idle.text, /\$ 100/)
   assert.match(idle.text, /\[1\] Barracks/)
 })
 
@@ -441,21 +453,20 @@ test("the budget on screen is the budget the reducer is enforcing", () => {
 
   // The Grid arrives in Explore Map, whose panel covers the menu; the budget is the menu's.
   build.dispatch({ kind: "focus", target: "menu" })
-  assert.match(show(), new RegExp(`${SPIKE_ALLOTMENT} of ${SPIKE_ALLOTMENT}`))
+  assert.match(show(), new RegExp(`\\$ ${SPIKE_ALLOTMENT}[|+]`))
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
-  assert.match(show(), new RegExp(`${remaining(context, build.state)} of ${SPIKE_ALLOTMENT}`))
+  assert.match(show(), new RegExp(`\\$ ${remaining(context, build.state)}[|+]`))
   build.handleData("1", layout) // placing disarms; the digit arms again, in place
   // A row that can no longer be afforded is dimmed — an attribute, not a colour, so it survives
   // monochrome. Checked on an *unselected* row: the selected one is inverse video, which is what
   // "selected" means everywhere in this game, and its unaffordability is the status line's to say.
   build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
-  build.handleData("3", layout) // select the cheap turret, leaving the barracks row unselected
+  // Back on the menu: move the highlight to the cheap turret, leaving the barracks row unselected.
+  build.run([{ kind: "highlight", delta: 1 }, { kind: "highlight", delta: 1 }])
   assert.ok(remaining(context, build.state) < SPIKE_CATALOG[0]!.cost, "not actually unaffordable")
   const frame = composeBuildFrame({ context, state: build.state, layout }, "monochrome")
-  const barracksLine = constructLines(layout, context.catalog).find(
-    (line) => line.kind === "item" && line.index === 0,
-  )
+  const barracksLine = constructLines(layout, context.catalog).find((line) => line.index === 0)
   assert.ok(barracksLine !== undefined)
   assert.equal(
     cellAt(frame, layout.panelColumn, barracksLine.row).style.dim,
@@ -463,9 +474,7 @@ test("the budget on screen is the budget the reducer is enforcing", () => {
     "a row the player can no longer afford still looks affordable",
   )
   // The turret, which they can still afford, does not.
-  const turretLine = constructLines(layout, context.catalog).find(
-    (line) => line.kind === "item" && line.index === 2,
-  )
+  const turretLine = constructLines(layout, context.catalog).find((line) => line.index === 2)
   assert.ok(turretLine !== undefined)
   assert.notEqual(cellAt(frame, layout.panelColumn, turretLine.row).style.dim, true)
 })
@@ -522,9 +531,9 @@ test("no header or footer line is cut off at the 80-column floor", () => {
   assert.ok(exploring.text.split("\n")[exploring.layout.footerRow]?.includes(exploreLine), `"${exploreLine}" is cut`)
   const explore = exploring.text
   // Against the divider, which here is the map's own west edge (the spike map's fence: a rail or a post).
-  assert.match(explore, /> \[e\] Explore Map {10}[|+]/, "the Explore Map row, whole")
+  assert.match(explore, /\[x\] Explore Map {10}>>[|+]/, "the Explore Map row, whole")
   const menu = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" })).text
-  assert.match(menu, /RESOURCE {9}100 of 100/, "the panel's budget line, whole")
+  assert.match(menu, /\| {23}\$ 100[|+]/, "the panel's budget line, whole")
   assert.match(menu, /\[e\] Explore Map {12}[|+]/, "the first menu entry, whole")
 })
 
@@ -568,7 +577,7 @@ test("a row that costs more than is left cannot be armed: it flickers and says w
   assert.match(build.state.status.text, /costs 40, 20 left/)
   // Drawn: the row is dim, the unaffordable cost with it.
   const frame = composeBuildFrame({ context, state: build.state, layout }, "monochrome")
-  const barracksLine = constructLines(layout, context.catalog).find((line) => line.kind === "item" && line.index === 0)
+  const barracksLine = constructLines(layout, context.catalog).find((line) => line.index === 0)
   assert.ok(barracksLine !== undefined)
   const costColumn = layout.panelColumn + layout.panelLimit - 2
   assert.equal(cellAt(frame, costColumn, barracksLine.row).style.dim, true)
@@ -597,9 +606,9 @@ test("on a Grid short enough to shrink the panel, the detail block is dropped ra
   const shown = (text.split("\n")[layout.footerRow] as string).replace(/^\s*\|\s*|\s*\|\s*$/g, "")
   assert.ok(shown.length > 0 && full.startsWith(shown), `"${shown}" is not the start of "${full}"`)
   assert.ok(shown.length === full.length || full[shown.length] === " ", `"${shown}" cuts a word of "${full}"`)
-  // And the menu itself is still there — it is the block below it that gave way.
-  assert.match(text, /\[1\] Barracks/)
-  assert.match(text, /RESOURCE/)
+  // And the building's card is still there, under its budget line and its own active row.
+  assert.match(text, /\[x\] Barracks +>>/)
+  assert.match(text, /\$ 100/)
 
   // Every line is still exactly the width it should be: nothing was written over anything.
   for (const row of text.split("\n")) assert.ok(row.length <= 80, `a row ran past 80: "${row}"`)
@@ -614,10 +623,10 @@ test("a panel with room for the effect line still draws it", () => {
   assert.match(roomy.text, /Trains troopers each Pulse/)
 })
 
-test("on a small Grid the panel's bindings never draw over the Nexus Powers entry or the SPECIAL row", () => {
-  // The bindings block grows up from the panel's bottom and was bounded by the construct menu alone,
-  // so the NEXUS/SPECIAL rows gate 5D added below the menu were written over on a Grid short enough
-  // to shrink the panel. Found by rendering the screen, not by a test.
+test("on a small Grid the panel's rows are all drawn whole: the Nexus entry, every building and Start Pulse", () => {
+  // The key help that once grew up from the panel's bottom wrote over the rows above it on a Grid
+  // short enough to shrink the panel. It has left the panel (feedback F58), and there is no SPECIAL row
+  // any more (F56); every row that is drawn must still be drawn whole.
   const small: GridTerrain = { width: 20, height: 10, tiles: new Array<TerrainId>(200).fill("terrain.plain") }
   const context = { ...neutralContext(), grid: small, standing: [] }
   const layout = buildLayout(MINIMUM, small)
@@ -627,7 +636,8 @@ test("on a small Grid the panel's bindings never draw over the Nexus Powers entr
   // Against the divider — or against the junction where this short Grid's own bottom edge meets it.
   // Against the divider — or, where this small Grid is the solid bar of a map edge, against nothing.
   assert.match(text, /\[n\] Nexus {2,}1 active(?:[|+ ]|$)/m)
-  assert.match(text, /SPECIAL {2,}none available(?:[|+ ]|$)/m)
+  for (const item of SPIKE_CATALOG) assert.match(text, new RegExp(`\\[${item.hotkey}\\] ${item.label} +${item.cost}(?:[|+ ]|$)`, "m"))
+  assert.match(text.split("\n")[startRow(layout)] as string, /\[s\] Start Pulse/)
 })
 
 test("engine-3.3-markers: the soft border runs the whole Grid-pane segment, at both tile widths", () => {
@@ -722,33 +732,27 @@ test("the bindings block gives way to the construct menu, never draws over it", 
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
 
   for (const line of constructLines(layout, context.catalog)) {
-    if (line.kind === "item") {
-      const item = context.catalog[line.index]
-      assert.ok(item !== undefined)
-      assert.match(
-        text.split("\n")[line.row] as string,
-        new RegExp(`\\[${item.hotkey}\\] ${item.label}`),
-        `the menu row for ${item.label} was drawn over`,
-      )
-    }
-    if (line.kind === "empty") {
-      assert.match(text.split("\n")[line.row] as string, /ARMY {2,}none available/)
-    }
+    const item = context.catalog[line.index]
+    assert.ok(item !== undefined)
+    assert.match(
+      text.split("\n")[line.row] as string,
+      new RegExp(`\\[${item.hotkey}\\] ${item.label}`),
+      `the menu row for ${item.label} was drawn over`,
+    )
   }
 })
 
 test("the armed row carries an explicit marker, not only inverse video", () => {
   // Inverse video alone survives every capability tier, but it is a video attribute, not a symbol —
-  // the owner asked for something a player can point to and name. It rides alongside the bar, not
-  // instead of it, and it is unambiguous now that the border no longer prints its own `>` beside
-  // every panel row.
+  // the owner asked for something a player can point to and name: `[x] Hatchery  >>` (feedback F53),
+  // at the head of the building's card (F58).
   const armed = screenAt(MINIMUM, (build, layout) => {
     build.handleData("2", layout)
   })
-  assert.match(armed.text, /> \[2\] Hatchery/)
-  const unselected = armed.text.split("\n").find((row) => row.includes("[1] Barracks"))
-  assert.ok(unselected !== undefined)
-  assert.doesNotMatch(unselected, />/, "an unarmed row carries no marker")
+  assert.match(panelText(armed), /^\[x\] Hatchery +>>$/m)
+  // On the menu, with nothing under way, no row carries it.
+  const menu = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" }))
+  assert.doesNotMatch(panelText(menu), /\[x\]|>>/, "a row with nothing under way carries the marker")
 })
 
 test("the cursor is bold and undimmed over bare ground, so it reads over a dim ground glyph", () => {
@@ -814,10 +818,11 @@ test("engine-3.3-markers: a map that names no edge style ends in a solid bar, on
   assert.ok(!solid(frame, layout.offset.column, layout.offset.row))
 })
 
-test("the normal panel says how many Nexus powers are active, and names the empty Special slot", () => {
+test("the normal panel says how many Nexus powers are active, and draws no Special slot or group headings", () => {
   const built = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" }))
   assert.match(built.text, /\[n\] Nexus {2,}1 active/)
-  assert.match(built.text, /SPECIAL {2,}none available/)
+  // The COMMON, ARMY and SPECIAL headings went with the groups (feedback F56).
+  assert.doesNotMatch(panelText(built), /SPECIAL|COMMON|ARMY|none available/)
 })
 
 test("the commit confirmation is a screen over the Grid: Battle Round 1, what it announces, and [s] Start", () => {

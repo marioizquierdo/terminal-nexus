@@ -24,6 +24,10 @@
 // - the placement juice (`placeFramesMs`, `placeGlowMs`, `placeParticles`, `placeLight`, gate 5I) is
 //   presentation alone: the reducer stores it, the live loop times it, and the Build Phase view draws
 //   it (`src/view/placement.ts`). A plan is identical with every one of them on or off.
+// - the focus arrow and the cursor's blink (`focusArrowMs`, `cursorBlinks`, feedback F54) are
+//   presentation alone: the reducer records when a menu row hands the keyboard to the map
+//   (`BuildState.handoff`), the live loop times the arrow and the blink from it
+//   (`src/view/build-live.ts`), and the view draws them.
 //
 // - the Nexus Pulse's ending (`endWarnMs` through `redAlerts`, gate 6A) is presentation alone: the
 //   view times it from the Pulse's own clock (`src/view/ending.ts`) and the reducer stores the numbers.
@@ -64,6 +68,12 @@ export type RaidSize = "none" | "probe" | "heavy"
 export type CrewSize = "some" | "none"
 
 export type DebugFlags = Readonly<{
+  /** F54: how long the focus arrow takes to fly from a menu row to the cursor when the row hands the
+   *  keyboard to the map, in milliseconds; 0 is no arrow. */
+  focusArrowMs: number
+  /** F54: how many times the cursor blinks when the focus arrow lands (or at once, with no arrow), in
+   *  the look and at the speed of a menu row's pressed flash; 0 is none. */
+  cursorBlinks: number
   /** F9: how long a placed building takes to rise through its placement frames, in milliseconds; 0
    *  shows it finished at once. */
   placeFramesMs: number
@@ -167,6 +177,7 @@ type FieldSpec<F extends DebugField> = Readonly<{
 type AnyFieldSpec = { [F in DebugField]: FieldSpec<F> }[DebugField]
 
 const tiles = (value: number): string => `${value} tile${value === 1 ? "" : "s"}`
+const blinks = (value: number): string => (value === 0 ? "off" : `${value} blink${value === 1 ? "" : "s"}`)
 const millis = (value: number): string => (value === 0 ? "off" : `${value} ms`)
 const duration = (value: number): string => `${value} ms`
 const percent = (value: number): string => `${value}%`
@@ -180,9 +191,28 @@ const FLASH_VALUES = [0, 50, 90, 140, 250, 400] as const
  *  playing it (his settings export, 2026-09-29). */
 export const DEFAULT_SCROLL_MARGIN_PERCENT = 25
 
-/** The flags, in the order the popup lists them: gate 5I's placement juice first, since it is the
- *  newest thing waiting to be felt, then gate 5H's movement numbers, then gate 5G's. */
+/** The flags, in the order the popup lists them: the newest thing waiting to be felt first — the focus
+ *  arrow and the cursor's blink (feedback F54), where `d` opens — then gate 5I's placement juice, gate
+ *  5H's movement numbers, gate 5G's, and gate 6A's ending. */
 export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
+  {
+    field: "focusArrowMs",
+    label: "Focus arrow",
+    applies: "now",
+    question: "When a menu row hands the keyboard to the map, an arrow flies from it to the cursor, taking this long. Off: no arrow. (F54)",
+    values: [0, 120, 180, 250, 350, 500],
+    cycles: false,
+    format: millis,
+  },
+  {
+    field: "cursorBlinks",
+    label: "Cursor blink",
+    applies: "now",
+    question: "How many times the cursor blinks when the arrow lands, in a menu row's pressed-flash look and speed. 0: none. (F54)",
+    values: [0, 1, 2, 3],
+    cycles: false,
+    format: blinks,
+  },
   {
     field: "placeFramesMs",
     label: "Build animation",
@@ -506,11 +536,16 @@ export const DEFAULT_ENDING = {
 /** The placeholder Pulse the spike starts: the probe, against a player with units of their own. */
 export const DEFAULT_PULSE = { raid: "probe", crew: "some" } as const satisfies Partial<DebugFlags>
 
+/** Feedback F54's focus arrow and cursor blink: a fast arrow ("This animation should be fast") and the
+ *  menu's own double blink ("blank twice in quick succession"). First guesses, for him to feel. */
+export const DEFAULT_FOCUS = { focusArrowMs: 180, cursorBlinks: 2 } as const satisfies Partial<DebugFlags>
+
 /** The flags a screen opens with: what the context asks for (`--scroll-margin`), and otherwise what
  *  gates 5F-6A built. (The smart cursor's and "Opens on"'s flags were settled by the owner on
  *  2026-09-29, feedback F30 and F31, and deleted.) */
 export function initialDebugFlags(context: Readonly<{ scrollMargin?: number }>): DebugFlags {
   return {
+    ...DEFAULT_FOCUS,
     ...DEFAULT_PLACEMENT,
     ...DEFAULT_MOVEMENT,
     ...DEFAULT_ENDING,

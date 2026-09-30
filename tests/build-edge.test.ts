@@ -8,7 +8,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { isGated } from "../src/build/camera.ts"
 import { DEBUG_FIELDS } from "../src/build/debug.ts"
-import { buildLayout, cellForTile, menuEntryAt, tileAtCell } from "../src/build/layout.ts"
+import { EXPLORE_ROW, buildLayout, cellForTile, menuEntryAt, tileAtCell } from "../src/build/layout.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildContext, BuildState } from "../src/build/state.ts"
@@ -226,8 +226,8 @@ test("the shared west side: the divider is the Grid's west side, the Grid gets i
     }
   }
   // The menu's click targets are on the panel, left of the divider.
-  assert.equal(menuEntryAt(layout, context.catalog, layout.panelColumn, layout.panelRow), 0)
-  assert.equal(menuEntryAt(layout, context.catalog, layout.dividerColumn, layout.panelRow), null)
+  assert.equal(menuEntryAt(layout, context.catalog, layout.panelColumn, layout.panelRow + EXPLORE_ROW), 0)
+  assert.equal(menuEntryAt(layout, context.catalog, layout.dividerColumn, layout.panelRow + EXPLORE_ROW), null)
   // Wide tiles and the largest view keep the arithmetic.
   for (const terminal of [{ columns: 104, rows: 32 }, { columns: 128, rows: 24 }, { columns: 200, rows: 44 }]) {
     const wide = buildLayout(terminal, context.grid)

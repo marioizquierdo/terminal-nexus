@@ -213,7 +213,8 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
 
   // **The screen's clock lives here, never in the reducer** (gate 5H). Everything that moves between
   // commands — the view sliding to a new position, the cursor gliding to a new tile, a menu row's
-  // flash, the cursor's flash on a refused placement, a building going up (gate 5I) — is
+  // flash, the cursor's flash on a refused placement, a building going up (gate 5I), the focus arrow
+  // and the cursor's blink (feedback F54) — is
   // `BuildAnimation`'s pure function of the state and the time read here, and the frame timer below
   // runs only while one of them is still moving; an idle screen draws once per input, as it always
   // has. The same clock times the held-key ramp (passed with each key) and the lone-Esc timeout
@@ -270,6 +271,8 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
               ...(live.refusedFlash === true ? { refusedFlash: true } : {}),
               ...(live.placing === undefined ? {} : { placing: live.placing }),
               ...(live.removing === undefined ? {} : { removing: live.removing }),
+              ...(live.focusArrow === undefined ? {} : { focusArrow: live.focusArrow }),
+              ...(live.cursorBlink === true ? { cursorBlink: true } : {}),
               reducedMotion: settings.reducedMotion,
               ...(pulse === undefined ? {} : { pulse }),
             },
