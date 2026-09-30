@@ -166,7 +166,7 @@ test("[s] opens Settings at the player's settings; Esc goes back to the game men
   keys(side, ESC, "s")
   assert.equal(side.build.state.popup, "settings")
   assert.equal(side.build.state.popupHighlight, playerRow("theme"))
-  assert.deepEqual(side.build.state.popupUnder, ["game-menu"])
+  assert.deepEqual(side.build.state.popupUnder.map((level) => level.popup), ["game-menu"])
   const text = screen(side)
   assert.match(text, /YOUR SETTINGS - saved/)
   assert.match(text, /Background\s+<\s+dark\s+>/)

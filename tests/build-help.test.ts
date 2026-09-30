@@ -266,7 +266,7 @@ test("the Controls page opens from the game menu by c, by Enter on its row and b
   keys(inMenu, ESC, "?")
   for (const [name, side] of [["c", byKey], ["enter", byEnter], ["a click", byClick], ["a driver", byDriver], ["? in the game menu", inMenu]] as const) {
     assert.equal(side.build.state.popup, "controls", `${name} did not open it`)
-    assert.deepEqual(side.build.state.popupUnder, ["game-menu"], `${name}: not over the game menu`)
+    assert.deepEqual(side.build.state.popupUnder.map((level) => level.popup), ["game-menu"], `${name}: not over the game menu`)
     assert.equal(side.build.state.popupHighlight, 0)
   }
   const text = frameToText(frame(byKey))

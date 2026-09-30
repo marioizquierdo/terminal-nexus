@@ -501,7 +501,7 @@ test("the game menu and the export have no Back row; Esc, x and the top bar stil
   // The message over the game menu still goes back to its Restart row.
   const message = session()
   keys(message, ESC)
-  const over: BuildState = { ...message.build.state, popup: "message", message: restartMessage(["x"]), popupUnder: ["game-menu"] }
+  const over: BuildState = { ...message.build.state, popup: "message", message: restartMessage(["x"]), popupUnder: [{ popup: "game-menu", highlight: GAME_MENU_ROWS.indexOf("restart") }] }
   assert.equal(GAME_MENU_ROWS[applyBuildCommand(message.context, over, { kind: "cancel" }).popupHighlight], "restart")
 })
 

@@ -210,7 +210,7 @@ test("closing Settings with a restart setting changed raises the message once; E
   assert.equal(side.build.state.popup, "settings", "no message while Settings is open")
   keys(side, ESC)
   assert.equal(side.build.state.popup, "message")
-  assert.deepEqual(side.build.state.popupUnder, ["game-menu"])
+  assert.deepEqual(side.build.state.popupUnder.map((level) => level.popup), ["game-menu"])
   assert.ok(screen(side).includes("RESTART NEEDED"))
   keys(side, ESC)
   assert.equal(side.build.state.popup, "game-menu")
@@ -238,7 +238,7 @@ function withMessage(context: BuildContext, under: "game-menu" | null): BuildSta
     ...base,
     popup: "message",
     message: restartMessage(["Opens on"]),
-    popupUnder: under === null ? [] : [under],
+    popupUnder: under === null ? [] : [{ popup: under, highlight: GAME_MENU_ROWS.indexOf("restart") }],
   }
 }
 

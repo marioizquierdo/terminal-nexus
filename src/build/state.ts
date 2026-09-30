@@ -17,7 +17,7 @@ import { stepExperiment, experimentSpec, formatExperimentValue, defaultExperimen
 import { TUNING } from "./tuning.ts"
 import type { Settings } from "../settings/types.ts"
 import { DEFAULT_SETTINGS } from "../settings/types.ts"
-import type { PlayerField } from "./settings.ts"
+import type { GameMenuRow, PlayerField } from "./settings.ts"
 import {
   FIRST_EXPERIMENT_ROW,
   FIRST_PULSE_EXPERIMENT_ROW,
@@ -108,6 +108,9 @@ export type BuildContext = Readonly<{
   exportDestination?: string
 }>
 
+/** A popup under the open one, and the row of it to come back to (`BuildState.popupUnder`). */
+export type PopupLevel = Readonly<{ popup: Popup; highlight: number }>
+
 export type BuildState = Readonly<{
   cursor: Coord
   camera: Camera
@@ -188,13 +191,15 @@ export type BuildState = Readonly<{
    *  a message only as the answer to something the player did (closing Settings with a change that
    *  needs a restart). */
   popup: Popup | null
-  /** The popup's own highlight, reset whenever one opens: an index into the Nexus popup's pending
-   *  powers or the game menu's rows, a row id in Settings (`src/build/settings.ts`), and the first
-   *  line shown in the export. */
+  /** The open popup's highlight, an index into its list (`popupRowCount`), set whenever one opens: the
+   *  Nexus popup's pending powers, the game menu's rows, Settings' rows (`SETTINGS_ROWS`), the export's
+   *  lines, the Controls page's key lines. */
   popupHighlight: number
-  /** The popups under the open one, nearest last — what Esc goes back to, one at a time: the game menu
-   *  under Settings opened from it, Settings under the export. Empty: Esc goes back to the game. */
-  popupUnder: readonly Popup[]
+  /** The popups under the open one, nearest last, each with the row to come back to — the row that
+   *  opened the popup above it: what Esc goes back to, one at a time (the game menu under Settings or
+   *  Controls opened from it, Settings under the export, the game menu's Restart under the message that
+   *  a restart is needed). Empty: Esc closes the popup. `pushPopup`, `popPopup`, `closePopups`. */
+  popupUnder: readonly PopupLevel[]
   /** What the message popup says while `popup` is `"message"`, and `null` otherwise (feedback F34):
    *  a title and text, nothing to choose. */
   message: PopupMessage | null
@@ -894,9 +899,8 @@ function openBattleRound(context: BuildContext, state: BuildState): BuildState {
   const lock = commitLock(state)
   if (lock !== null) return { ...state, status: lock, ack: acknowledge(state, "refused", entry) }
   return {
-    ...toMenu(state),
+    ...pushPopup(toMenu(state), "battle-round", 0),
     menuHighlight: entry,
-    popup: "battle-round",
     ack: acknowledge(state, "pressed", entry),
     status: status(`Battle Round ${state.pulseNumber}: Enter starts it, Esc goes back.`),
   }
@@ -958,6 +962,32 @@ function toggleExplore(context: BuildContext, state: BuildState): BuildState {
   return openExplore(context, state, state.focus)
 }
 
+/**
+ * Opens `popup` over the open one, on row `highlight`; Esc then comes back to the open one on row
+ * `returnTo` — the row that opened the new one (its current highlight unless the opener says). With no
+ * popup open it opens alone, and Esc closes it.
+ */
+function pushPopup(state: BuildState, popup: Popup, highlight: number, returnTo = state.popupHighlight): BuildState {
+  const under = state.popup === null ? [] : [...state.popupUnder, { popup: state.popup, highlight: returnTo }]
+  return { ...state, popup, popupHighlight: highlight, popupUnder: under }
+}
+
+/** Esc in a popup: back to the one under it, on the row that opened this one — or, with none under,
+ *  closed. A message's words go with it. */
+function popPopup(state: BuildState): BuildState {
+  const under = state.popupUnder[state.popupUnder.length - 1]
+  if (under === undefined) return closePopups(state)
+  return { ...state, popup: under.popup, popupHighlight: under.highlight, popupUnder: state.popupUnder.slice(0, -1), message: null }
+}
+
+/** Every popup closed at once — a click outside, a pick, the Pulse starting — and a message's words
+ *  with them. */
+function closePopups(state: BuildState): BuildState {
+  return { ...state, popup: null, popupHighlight: 0, popupUnder: [], message: null }
+}
+
+/** A popup that belongs to no other — the Nexus powers, the game menu — opened alone, over whatever
+ *  was open. */
 function openPopup(state: BuildState, popup: Popup): BuildState {
   // The start-the-Pulse question and a committed Build Phase each own the whole screen; a popup over
   // either would be a second question on top of one. The game menu is the one exception: leaving can
@@ -966,7 +996,7 @@ function openPopup(state: BuildState, popup: Popup): BuildState {
     const lock = state.committed || state.popup === "battle-round" ? editLock(state) : null
     if (lock !== null) return { ...state, status: lock }
   }
-  return { ...state, popup, popupHighlight: 0, popupUnder: [] }
+  return pushPopup(closePopups(state), popup, 0)
 }
 
 function pickNexus(context: BuildContext, state: BuildState, index: number): BuildState {
@@ -983,11 +1013,9 @@ function pickNexus(context: BuildContext, state: BuildState, index: number): Bui
   // The popup closes on the pick (owner, 2026-09-27 — answering Q60): open, pick, and the player is
   // back on the menu. The confirmation is the status line and the entry's "1 active".
   return {
-    ...state,
+    ...closePopups(state),
     nexusPick: index,
     bonusAllotment: option.bonusAllotment,
-    popup: state.popup === "nexus-powers" ? null : state.popup,
-    popupHighlight: 0,
     status: status(`${option.name} picked.`, "success"),
   }
 }
@@ -1035,16 +1063,8 @@ function place(context: BuildContext, state: BuildState): BuildState {
  *  Settings), or closes; placing or Explore Map goes back to where it began; the map to the menu; and
  *  on the menu, the game menu opens. */
 function cancel(context: BuildContext, state: BuildState): BuildState {
-  if (state.popup === "battle-round") return { ...state, popup: null, status: status("Cancelled.") }
-  const under = state.popupUnder[state.popupUnder.length - 1]
-  if (state.popup !== null && under !== undefined) {
-    // Back to the popup this one was opened from, on the row that opened it — or, from the message
-    // that a restart is needed, on the game menu's Restart, the row it points at.
-    const menuRow = state.popup === "message" ? "restart" : state.popup === "controls" ? "controls" : "settings"
-    const highlight = under === "game-menu" ? GAME_MENU_ROWS.indexOf(menuRow) : under === "settings" ? SETTINGS_EXPORT_ROW : 0
-    return { ...state, popup: under, popupHighlight: highlight, popupUnder: state.popupUnder.slice(0, -1) }
-  }
-  if (state.popup !== null) return { ...state, popup: null, popupUnder: [] }
+  if (state.popup === "battle-round") return { ...closePopups(state), status: status("Cancelled.") }
+  if (state.popup !== null) return popPopup(state)
   if (state.committed) return openPopup(state, "game-menu")
   if (state.focus === "grid") {
     // Placing or exploring: back one level, to where it was started from. Plain navigation: to the
@@ -1073,17 +1093,21 @@ function goBack(context: BuildContext, state: BuildState): BuildState {
  * committed Build Phase, since starting over from there is exactly what a playtest wants.
  */
 function openSettings(state: BuildState, section: "settings" | "experiments"): BuildState {
-  if (state.popup !== null && state.popup !== "game-menu") return state
   // While the Nexus Pulse is on screen, `d` opens the Experiments already at the placeholder Pulse's —
   // the raid and the crew, which someone watching it wants to change (gate 6A) — rather than at the
   // Build Phase's first.
   const experiments = state.committed ? FIRST_PULSE_EXPERIMENT_ROW : FIRST_EXPERIMENT_ROW
-  return {
-    ...state,
-    popup: "settings",
-    popupHighlight: section === "settings" ? FIRST_SETTING_ROW : experiments,
-    popupUnder: state.popup === "game-menu" ? ["game-menu"] : [],
-  }
+  return openFromGameMenu(state, "settings", "settings", section === "settings" ? FIRST_SETTING_ROW : experiments)
+}
+
+/**
+ * A popup the game menu has a row for — Settings, Controls — opened from the game menu, which Esc then
+ * goes back to on that row; or from the game by its shortcut (`d`, `?`), which Esc closes. Over no
+ * other popup.
+ */
+function openFromGameMenu(state: BuildState, popup: Popup, row: GameMenuRow, highlight: number): BuildState {
+  if (state.popup !== null && state.popup !== "game-menu") return state
+  return pushPopup(state, popup, highlight, GAME_MENU_ROWS.indexOf(row))
 }
 
 /**
@@ -1092,13 +1116,7 @@ function openSettings(state: BuildState, section: "settings" | "experiments"): B
  * is watched with keys as well. Opens over no popup but the game menu.
  */
 function openControls(state: BuildState): BuildState {
-  if (state.popup !== null && state.popup !== "game-menu") return state
-  return {
-    ...state,
-    popup: "controls",
-    popupHighlight: 0,
-    popupUnder: state.popup === "game-menu" ? ["game-menu"] : [],
-  }
+  return openFromGameMenu(state, "controls", "controls", 0)
 }
 
 /** One step of an experiment, said on the status line. */
@@ -1154,10 +1172,7 @@ function restartBuildPhase(context: BuildContext, state: BuildState): BuildState
 function exportSettings(state: BuildState): BuildState {
   if (state.popup !== null && state.popup !== "settings") return state
   return {
-    ...state,
-    popup: "export",
-    popupHighlight: 0,
-    popupUnder: state.popup === "settings" ? [...state.popupUnder, "settings"] : [],
+    ...pushPopup(state, "export", 0, SETTINGS_EXPORT_ROW),
     status: status("Settings exported - paste them into the pull request.", "success"),
   }
 }
@@ -1199,17 +1214,11 @@ function inSettings(popup: Popup | null): boolean {
 }
 
 /**
- * The message popup over whatever is open — which Esc then goes back to — or over the game. Any
- * warning the screen needs to give once is one of these (feedback F34).
+ * The message popup over whatever is open — which Esc then goes back to, on row `returnTo` — or over
+ * the game. Any warning the screen needs to give once is one of these (feedback F34).
  */
-function showMessage(state: BuildState, message: PopupMessage): BuildState {
-  return {
-    ...state,
-    popup: "message",
-    message,
-    popupHighlight: 0,
-    popupUnder: state.popup === null ? [] : [...state.popupUnder, state.popup],
-  }
+function showMessage(state: BuildState, message: PopupMessage, returnTo = state.popupHighlight): BuildState {
+  return { ...pushPopup(state, "message", 0, returnTo), message }
 }
 
 /**
@@ -1225,7 +1234,9 @@ function warnIfRestartNeeded(before: BuildState, next: BuildState): BuildState {
   if (!inSettings(before.popup) || inSettings(next.popup)) return next
   const pending = pendingRestart(next.startExperiments, next.experiments)
   if (pending.length === 0 || pending.join("\n") === next.restartWarned.join("\n")) return next
-  return { ...showMessage(next, restartMessage(pending)), restartWarned: pending }
+  // Over the game menu, going back from it lands on Restart, the row it points at.
+  const restartRow = next.popup === "game-menu" ? GAME_MENU_ROWS.indexOf("restart") : next.popupHighlight
+  return { ...showMessage(next, restartMessage(pending), restartRow), restartWarned: pending }
 }
 
 /**
@@ -1243,11 +1254,7 @@ export function applyBuildCommand(
   const base: BuildState = moves && state.noSpotFound ? { ...state, noSpotFound: false } : state
   const applied = applyCommand(context, base, command)
   // Nothing armed, nothing to draw as a ghost.
-  const unghosted = applied.armed === null && applied.noSpotFound ? { ...applied, noSpotFound: false } : applied
-  // Whatever closed the popup — a click outside it, a pick, an answer — closed the ones under it too;
-  // and a message's words go with it.
-  const closed = unghosted.popup === null && unghosted.popupUnder.length > 0 ? { ...unghosted, popupUnder: [] } : unghosted
-  const next = closed.popup !== "message" && closed.message !== null ? { ...closed, message: null } : closed
+  const next = applied.armed === null && applied.noSpotFound ? { ...applied, noSpotFound: false } : applied
   return lapseStatus(state, warnIfRestartNeeded(base, next))
 }
 
@@ -1269,7 +1276,7 @@ function lapseStatus(before: BuildState, after: BuildState): BuildState {
  * focus, never a placement or a pick — is the caller's (owner, 2026-09-27).
  */
 function dismissPopup(state: BuildState): BuildState {
-  return { ...state, popup: null, ...(state.popup === "battle-round" ? { status: status("Cancelled.") } : {}) }
+  return { ...closePopups(state), ...(state.popup === "battle-round" ? { status: status("Cancelled.") } : {}) }
 }
 
 function applyCommand(context: BuildContext, state: BuildState, command: BuildCommand): BuildState {
@@ -1392,8 +1399,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // The Nexus Pulse starts (gate 6A). The keyboard goes to the Grid, where the arrows look around it
       // — a committed plan locks every edit but not the cursor — and nothing is armed or being explored.
       return {
-        ...toMap(state),
-        popup: null,
+        ...closePopups(toMap(state)),
         committed: true,
         status: status(`Build committed - ${state.planned.length} planned.`, "success"),
       }
@@ -1406,9 +1412,8 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
 
     case "pulse-failed":
       return {
-        ...state,
+        ...closePopups(state),
         committed: false,
-        popup: null,
         status: status(`The Nexus Pulse could not start: ${command.reason}`, "danger"),
       }
 
