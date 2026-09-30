@@ -22,8 +22,9 @@
 // - In a list, Up and Down move one row and **stop at either end**: nothing comes round. The fast move
 //   goes all the way — a modified Up/Down, and PageUp/PageDown and Home/End (left and right on the map)
 //   to the first or the last row (`listKeyOf`). Left and Right move nothing in a list.
-// - A held arrow's ramp is the input path's (`src/build/motion.ts`, run by the Build Phase session);
-//   what reaches a list is an ordinary number of rows, clamped here.
+// - How far a timed Up or Down goes — taps counted, a hold on the game's own cadence — is the input
+//   path's (`src/build/motion.ts`, run by the Build Phase session); what reaches a list is an ordinary
+//   number of rows, clamped here.
 
 const ESC = String.fromCharCode(27)
 
@@ -112,8 +113,8 @@ const DIRECTIONS: Readonly<Record<NamedKey["name"], Readonly<{ dx: number; dy: n
 export type CursorKey = Readonly<{ dx: number; dy: number; jump: boolean }>
 
 /**
- * Any of the map's cursor keys, classified — or `null`. The plain arrows are what a held key's ramp
- * applies to (`src/build/motion.ts`); every other form is the fast move, a jump whose size is a tuned
+ * Any of the map's cursor keys, classified — or `null`. The plain arrows are what the tap-counting and
+ * hold rules apply to (`src/build/motion.ts`); every other form is the fast move, a jump whose size is a tuned
  * value (`TUNING.jumpStep`) rather than anything timing decides (timing only decides how often a held
  * one repeats).
  */

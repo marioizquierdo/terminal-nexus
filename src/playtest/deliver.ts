@@ -12,8 +12,9 @@ import type { BuildState } from "../build/state.ts"
 import type { Coord } from "../grid/types.ts"
 import type { PlaytestStep } from "./keys.ts"
 
-/** How far apart a script's untimed steps arrive: far enough that every one is a press of its own, so
- *  the held-key ramp only runs where a script times its steps (`Right~30*12`). */
+/** How far apart a script's untimed steps arrive: far enough that every one is a tap that starts over,
+ *  so taps only speed up, and a key only reads as held, where a script times its steps
+ *  (`Right~250*3`, `Right~30*12`). */
 export const UNTIMED_GAP_MS = 1000
 
 /** One step into the real adapters, on its own — never concatenated with the next one. Returns the

@@ -14,8 +14,10 @@
 // Where each flag is read:
 //
 // - the hold window (`holdWindowMs`) and key releases (`keyReleases`) decide how big a move the input
-//   path sends: the session's ramp reads them beside the tuned steps (`src/build/motion.ts`), and the
-//   reducer only ever sees an ordinary `move-cursor` of the size it chose;
+//   path sends: the session's motion rules read them beside the tuned steps (`src/build/motion.ts`), and
+//   the reducer only ever sees an ordinary `move-cursor` of the size it chose. Key releases also tells
+//   the live loop whether to ask the terminal for key events at all (`src/cli/spike.ts`), switched on
+//   and off as the flag changes;
 // - the Battle Round pulse (`battleRoundPulseMs`) is presentation alone: the live loop keeps drawing
 //   while the Battle Round screen is open and the view breathes its border;
 // - `raid` and `crew` pick which placeholder Nexus Pulse the next commit starts (`src/build/catalog.ts`)
@@ -39,12 +41,14 @@ export type CrewSize = "some" | "none"
 export type KeyReleases = "auto" | "off"
 
 export type Experiments = Readonly<{
-  /** Terminals that report no key-up: a press of the same arrow at most this long after the one before
-   *  is a held key's repeat rather than a tap. It depends on each keyboard's own repeat delay, so it
-   *  stays live to retune on another machine. */
+  /** Where the terminal does not say which key events are repeats: a press of the same arrow at most
+   *  this long after the one before is a held key's repeat, and anything slower a tap, which counts
+   *  toward speeding up. It depends on each keyboard's own repeat delay, so it stays live to retune on
+   *  another machine. */
   holdWindowMs: number
-  /** Whether to read key releases where the terminal reports them, or guess a hold from timing — the
-   *  owner's comparison of the two (2026-09-30, third round). */
+  /** Whether to read key presses, repeats and releases where the terminal reports them, or guess a hold
+   *  from timing — the owner's comparison of the two (2026-09-30, third round). Applied at once: the
+   *  live loop asks for them, or stops, as it changes. */
   keyReleases: KeyReleases
   /** How long one breath of the Battle Round screen's border takes, lighter then darker, in
    *  milliseconds; 0 is a still border (2026-09-30, third round: "a pulse effect on the border"). */
@@ -105,16 +109,16 @@ export const EXPERIMENT_FIELDS: readonly ExperimentSpec[] = [
   experiment({
     field: "holdWindowMs",
     label: "Hold window",
-    question: "Arrow presses closer than this count as holding. It depends on your keyboard's repeat delay: retune it on a new machine.",
+    question: "Arrow presses closer than this are a hold when the terminal can't tell; slower are taps. Keep it above your repeat delay.",
     values: [150, 200, 250, 350, 500],
     applies: "now",
   }),
   experiment({
     field: "keyReleases",
     label: "Key releases",
-    question: "Auto: where your terminal reports when a key is let go, a tap is one tap and a hold is a hold. Off: guessed from timing.",
+    question: "Auto: if your terminal reports when a key is let go, a tap is always a tap and a hold a hold. Off: guessed from the timing.",
     values: ["auto", "off"],
-    applies: "restart",
+    applies: "now",
   }),
   experiment({
     field: "battleRoundPulseMs",
@@ -141,8 +145,8 @@ export const EXPERIMENT_FIELDS: readonly ExperimentSpec[] = [
   }),
 ]
 
-/** The defaults: the hold window the owner asked to try with the tap-counting ramp (2026-09-30, third
- *  round: "I would try holdWindowMs = 200ms"; his export had 250 with the old ramp); key releases read
+/** The defaults: the hold window the owner asked to try with counted taps (2026-09-30, third
+ *  round: "I would try holdWindowMs = 200ms"; his export had 250 with the old held-key ramp); key releases read
  *  where the terminal offers them; a two-second breath on the Battle Round screen, a first guess; and
  *  the placeholder Pulse from his exports — a heavy raid, with units of his own. */
 export const DEFAULT_EXPERIMENTS = {

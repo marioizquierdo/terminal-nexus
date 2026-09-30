@@ -1,7 +1,8 @@
 // Moving in lists (docs/ui-patterns.md, "Moving in lists"): every list in the Build Phase — its menu, the
 // Nexus powers, the game menu, Settings, the export, the Controls page — stops at its first and last
 // row without a flicker; Shift+Up/Down, PageUp/PageDown and Home/End go to either end; a tap is one row,
-// and a held arrow ramps with the map cursor's own steps and timings. Driven through raw bytes into the
+// and taps and holds move a list by the map cursor's own rules and numbers (taps counted, a hold on the
+// game's cadence). Driven through raw bytes into the
 // real adapters, with the key times handed in as numbers. The keys' own table is
 // `tests/menu-list.test.ts`'s.
 
@@ -111,29 +112,40 @@ test("every popup's list stops at both ends and jumps with the fast move", () =>
   assert.equal(exported.build.state.popupHighlight, lines.to - lines.from - 1)
 })
 
-/** A held arrow as a terminal repeats it: four presses 30 ms apart — enough to speed up, and fewer than
- *  any list here has rows to spare. */
-const held = (key: string): (readonly [string, number])[] => Array.from({ length: 4 }, (_, index) => [key, 10_000 + index * 30] as const)
+/** Up or Down the way a player moves: three taps, the last quick (the run speeds up to 2), then a
+ *  pause, and a key held a moment — a press, the keyboard's repeat delay, and repeats 30 ms apart, which
+ *  move on the game's cadence. Fewer rows than any list here has to spare. */
+const moving = (key: string): (readonly [string, number])[] => [
+  [key, 10_000],
+  [key, 10_350],
+  [key, 10_600],
+  [key, 12_000],
+  ...Array.from({ length: 5 }, (_, index) => [key, 12_180 + index * 30] as const),
+]
 
-test("a held Up or Down in a list ramps exactly as the map cursor does, with the same numbers, and a tap is one row", () => {
-  // The owner (feedback F75): "Use the same timings." The same presses at the same times move a list as
-  // many rows as they move the map cursor tiles, as long as neither reaches an end.
+test("Up or Down in a list moves exactly as the map cursor does — taps counted, a hold on the cadence — and a tap is one row", () => {
+  // The owner (feedback F75): "Use the same timings." (F79: "The same is happening with the menu now.")
+  // The same presses at the same times move a list as many rows as they move the map cursor tiles, as long
+  // as neither reaches an end.
   const tiles = (key: string): number => {
     const map = buildSide({ cursor: { x: 30, y: 15 } })
     keys(map, TAB)
-    timed(map, held(key))
+    timed(map, moving(key))
     return Math.abs(map.build.state.cursor.y - 15)
   }
-  assert.ok(tiles(DOWN) > held(DOWN).length, "the held key did not speed up at all")
+  // Taps 1, 1, 2; a fresh press 1; its hold's repeats one row each on the cadence (every other repeat).
+  assert.equal(tiles(DOWN), 1 + 1 + 2 + 1 + 3, "the taps or the hold moved by other rules than counting and the cadence")
   assert.equal(tiles(UP), tiles(DOWN))
   for (const [name, open] of [["Settings", [ESC, "s"]], ["the Controls page", ["?"]]] as const) {
     for (const [key, from, word] of [[DOWN, HOME, "Down"], [UP, END, "Up"]] as const) {
       const list = buildSide()
       keys(list, ...open, from)
       const start = list.build.state.popupHighlight
-      timed(list, held(key))
+      timed(list, moving(key))
       const rows = Math.abs(list.build.state.popupHighlight - start)
-      assert.equal(rows, tiles(key), `${name}: a held ${word} moves by other numbers than the map cursor`)
+      // Settings is shorter than the moves: it stops at its end.
+      const room = name === "Settings" ? Math.min(tiles(key), SETTINGS_EXPORT_ROW) : tiles(key)
+      assert.equal(rows, room, `${name}: ${word} moves by other numbers than the map cursor`)
     }
   }
   // A tap is one row, so Up and Down reach every row.
@@ -146,15 +158,16 @@ test("a held Up or Down in a list ramps exactly as the map cursor does, with the
   assert.equal(tap.build.state.popupHighlight, start + 2, "an untimed tap moved more than one row")
 })
 
-test("holding Down on the Build Phase menu reaches its last row quickly and stays there", () => {
-  // `Down Down~150 Down~30*6`, the playtest's held key: a tap, the terminal's repeat delay, repeats.
+test("holding Down on the Build Phase menu reaches its last row in well under a second and stays there", () => {
+  // `Down Down~180 Down~30*20`, the playtest's held key: a tap, the keyboard's repeat delay, repeats —
+  // one row per step of the game's cadence, whatever the repeat rate.
   const side = buildSide()
   const last = menuEntries(side.context).length - 1
-  const sequence: [string, number][] = [[DOWN, 1_000], [DOWN, 1_150]]
-  for (let index = 1; index <= 6; index += 1) sequence.push([DOWN, 1_150 + index * 30])
+  const sequence: [string, number][] = [[DOWN, 1_000], [DOWN, 1_180]]
+  for (let index = 1; index <= 20; index += 1) sequence.push([DOWN, 1_180 + index * 30])
   timed(side, sequence)
   assert.equal(side.build.state.menuHighlight, last)
-  timed(side, Array.from({ length: 10 }, (_, index) => [DOWN, 1_400 + index * 30] as const))
+  timed(side, Array.from({ length: 10 }, (_, index) => [DOWN, 1_800 + index * 30] as const))
   assert.equal(side.build.state.menuHighlight, last)
   assert.equal(side.build.state.focus, "menu")
   // A jump, or any other key, starts the ramp over: the next Down is a tap again.

@@ -6,6 +6,8 @@
 // No stdin, no ANSI, no backend, no `src/view` import: composing the frame is `src/view/build.ts`'s
 // job and wiring it to a terminal is `src/cli/spike.ts`'s.
 
+import { decodeKeyEvent } from "../view/key-events.ts"
+import type { KeyPhase } from "../view/key-events.ts"
 import { keysFromChunk } from "../view/playback.ts"
 import { PulsePresenter } from "../view/pulse-live.ts"
 import type { ResolvedPulse } from "../view/pulse-live.ts"
@@ -15,9 +17,10 @@ import { escLabel } from "./layout.ts"
 import { popupSpec, placePopup } from "./popup.ts"
 import type { Camera, Viewport } from "./camera.ts"
 import type { CursorKey } from "../menu/list-keys.ts"
+import { cursorKeyOf } from "../menu/list-keys.ts"
 import { buildKeyboardCommand } from "./keyboard.ts"
-import type { MoveKind, RampTuning } from "./motion.ts"
-import { SpeedRamp, rampTuning } from "./motion.ts"
+import type { Move } from "./motion.ts"
+import { KeyMotion, moveTuning } from "./motion.ts"
 import type { MouseEvent } from "./mouse.ts"
 import { buildMouseCommand, parseMouseEvent } from "./mouse.ts"
 import type { BuildContext, BuildState } from "./state.ts"
@@ -52,9 +55,11 @@ export type BuildSessionOptions = Readonly<{
 
 /**
  * What a live input path knows about a key that a driver script does not have to: when it arrived
- * (milliseconds on any steady clock — the live loop's own, a test's injected number), which
- * drives the held-key ramp and how often a held Shift+arrow jumps; and the camera the screen is drawing right now, which differs from
- * the state's while the view slides (gate 5H), so a click lands where the player saw it.
+ * (milliseconds on any steady clock — the live loop's own, a test's injected number), which decides
+ * how far a cursor key moves (taps counted, holds on the game's cadence, `src/build/motion.ts`) and how
+ * often a held Shift+arrow jumps; and the camera the screen is drawing right now, which differs from
+ * the state's while the view slides (gate 5H), so a click lands where the player saw it. Whether a key
+ * was a press, a repeat or a release travels in its own bytes (`src/view/key-events.ts`).
  */
 export type KeyTiming = Readonly<{ now?: number; camera?: Camera }>
 
@@ -64,8 +69,12 @@ export class BuildSession {
   private readonly onQuit: () => void
   private readonly onExport: (text: string) => void
   private readonly onSettingsChange: (settings: Settings) => void
-  /** The held-key ramp: input-path state, beside the reducer and never in it. */
-  private readonly ramp = new SpeedRamp()
+  /** How far cursor keys move — taps counted, holds on the game's cadence: input-path state, beside the
+   *  reducer and never in it. */
+  private readonly motion = new KeyMotion()
+  /** Whether the terminal is marking presses, repeats and releases right now (the kitty keyboard
+   *  protocol, pushed by the live loop): then a plain press is known to be a press, not guessed. */
+  private keyReleases = false
   /** The last left click on a Grid tile with a building armed: where on screen, when, and the tile it
    *  pointed at — so a double click places there even if the first click scrolled the view (F22). */
   private lastArmedClick: Readonly<{ column: number; row: number; at: number; tile: Coord }> | null = null
@@ -179,16 +188,19 @@ export class BuildSession {
   handleKey(key: string, layout: BuildLayout, timing: KeyTiming = {}): void {
     // Time passes before the key does: a pause pressed a second into a Pulse pauses it a second in.
     if (timing.now !== undefined) this.advance(timing.now)
-    const mouse = parseMouseEvent(key)
+    // The kitty keyboard protocol's forms become the keys the adapters read, with the phase they carry;
+    // a terminal's answer to the live loop's question is not a key at all.
+    const event = decodeKeyEvent(key)
+    if (event === null) return
+    const mouse = parseMouseEvent(event.key)
     if (mouse === null) {
-      const command = this.keyCommand(key, timing.now)
-      if (command !== null) this.dispatch(command)
+      this.handleKeyEvent(event.key, event.phase ?? (this.reportsReleases() ? "press" : null), timing.now)
       return
     }
     const clicked = this.mouseCommand(mouse, layout, timing.camera)
     // Anything but a cursor key: the next arrow starts from scratch (the owner's "doing anything else
     // returns to normal").
-    if (clicked !== null) this.ramp.reset()
+    if (clicked !== null) this.motion.reset()
     const command = mouse.press ? this.resolveDoubleClick(mouse, clicked, timing.now) : clicked
     if (command === null) return
     const before = this.buildState
@@ -199,21 +211,53 @@ export class BuildSession {
   }
 
   /**
-   * A key through the keyboard adapter. **How far a cursor key moves, and how many rows Up or Down
-   * move a list, is the held-key ramp's call** when the key's arrival time is known — a live terminal
-   * (`src/build/motion.ts`); otherwise every key is a press on its own, so a driver script and every
-   * test that sends keys without a clock sees each as its own press. Up and Down in a list ride the map
-   * cursor's own ramp, with the same numbers (owner, 2026-09-30, feedback F75: "Use the same timings,
-   * consistency here will be very useful") — except that **a tap is always one row**, whatever the
-   * map's tap step, so every row stays reachable. Any other key resets the ramp.
+   * The host says whether the terminal is marking presses, repeats and releases right now — the live
+   * loop, once the kitty keyboard protocol's flags are pushed (or popped again). It counts only while
+   * the Key releases Experiment is on `auto`: `off` means timing decides, whatever the terminal does.
    */
-  private keyCommand(key: string, now: number | undefined): BuildCommand | null {
+  setKeyReleases(reported: boolean): void {
+    this.keyReleases = reported
+  }
+
+  /** Whether a plain press is known to be a press: the terminal marks key events, and the player has
+   *  not switched that off. */
+  private reportsReleases(): boolean {
+    return this.keyReleases && this.buildState.experiments.keyReleases === "auto"
+  }
+
+  /**
+   * One key, and the phase the terminal gave it (or `null`: timing decides). **A release sends no
+   * command**: it only ends the hold of the key it names (`src/build/motion.ts`), and a release of any
+   * other key is nothing at all — never a second press. A repeat of anything but a cursor key is a press
+   * again, as a classic terminal's auto-repeat always was.
+   */
+  private handleKeyEvent(key: string, phase: KeyPhase | null, now: number | undefined): void {
+    if (phase === "release") {
+      const cursor = cursorKeyOf(key)
+      if (cursor !== null && now !== undefined) this.motion.step(cursor, now, phase, moveTuning(this.buildState.experiments.holdWindowMs))
+      return
+    }
+    const command = this.keyCommand(key, now, phase)
+    if (command !== null) this.dispatch(command)
+  }
+
+  /**
+   * A key through the keyboard adapter. **How far a cursor key moves, and how many rows Up or Down
+   * move a list, is the motion rules' call** when the key's arrival time is known — a live terminal
+   * (`src/build/motion.ts`: taps counted, holds on the game's own cadence); otherwise every key is a
+   * press on its own, so a driver script and every test that sends keys without a clock sees each as its
+   * own press. Up and Down in a list follow the map cursor's own rules, with the same numbers (owner,
+   * 2026-09-30, feedback F75: "Use the same timings, consistency here will be very useful"; F79: "The
+   * same is happening with the menu now") — so a first tap is always one row and every row stays
+   * reachable. Any other key starts the rules over.
+   */
+  private keyCommand(key: string, now: number | undefined, phase: KeyPhase | null): BuildCommand | null {
     const state = this.buildState
-    const tuning = rampTuning(state.experiments.holdWindowMs)
-    let ramped = false
-    const ramp = (cursor: CursorKey, steps: RampTuning): number => {
-      ramped = true
-      return this.ramp.step(cursor, now as number, steps)
+    const tuning = moveTuning(state.experiments.holdWindowMs)
+    let moved = false
+    const move = (cursor: CursorKey): number => {
+      moved = true
+      return this.motion.step(cursor, now as number, phase, tuning)
     }
     const command = buildKeyboardCommand(key, {
       itemCount: this.context.catalog.length,
@@ -225,11 +269,11 @@ export class BuildSession {
       ...(now === undefined
         ? {}
         : {
-            moveTiles: (cursor: CursorKey) => ramp(cursor, tuning),
-            listRows: (direction: -1 | 1) => ramp({ dx: 0, dy: direction, jump: false }, { ...tuning, tapStep: 1 }),
+            moveTiles: move,
+            listRows: (direction: -1 | 1) => move({ dx: 0, dy: direction, jump: false }),
           }),
     })
-    if (command !== null && !ramped) this.ramp.reset()
+    if (command !== null && !moved) this.motion.reset()
     return command
   }
 
@@ -279,10 +323,10 @@ export class BuildSession {
     for (const key of keysFromChunk(rawChunk)) this.handleKey(key, layout, timing)
   }
 
-  /** The kind of move the last timed cursor key made — tap, hold, fast or jump — or `null` before
-   *  any. */
-  get moveKind(): MoveKind | null {
-    return this.ramp.kind
+  /** The move the last timed cursor key made — a tap at its run's speed, a hold's move, a jump, a
+   *  release — and how many tiles or rows; `null` before any, and once anything else was pressed. */
+  get lastMove(): Move | null {
+    return this.motion.move
   }
 
   /** A new terminal size. Not a command: nobody pressed anything. */

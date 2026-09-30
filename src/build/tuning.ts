@@ -44,14 +44,28 @@ const TUNED = {
   easeMs: 100,
   /** How long the drawn cursor glides to its new tile (ms); the owner's settings export, 2026-09-30. */
   cursorGlideMs: 100,
-  /** How far one press of an arrow moves (tiles); the owner's 2026-09-28 playtest. */
+  // Taps speed up by counting and a hold runs at the game's own cadence (the owner's third round,
+  // 2026-09-30, feedback F79; the rules are `src/build/motion.ts`). The hold window — how a repeat is
+  // told from a tap where the terminal does not say — is still an Experiment (`holdWindowMs`).
+
+  /** How far a tap of an arrow moves, and every run of taps starts from (tiles); the owner's 2026-09-28 playtest. */
   tapStep: 1,
-  /** How far each press of a run moves — a held arrow's repeats, or quick taps (tiles); the owner's 2026-09-28 playtest. */
-  holdStep: 2,
-  /** How far each press moves once a run has lasted `rampMs` (tiles); the owner's 2026-09-28 playtest. */
-  fastStep: 4,
-  /** How long a run moves at the hold step before the fast step (ms); the owner's settings export, 2026-09-30 (300 from his 2026-09-28 playtest before). */
-  rampMs: 200,
+  /** Taps of one arrow at most this far apart are a run, which keeps its speed; a longer gap starts over at one (ms); first guess, 2026-09-30, from the owner's third round — his own number, "a double-tap (400ms)". */
+  doubleTapMs: 400,
+  /** A tap at most this soon after the one before is a quick one, which may double the run's speed (ms); first guess, 2026-09-30, from the owner's third round — his own number, "a fast-double-tap (300ms)". */
+  fastTapMs: 300,
+  /** Every this many taps since the speed last changed, the last one quick, doubles it: the third tap moves 2, three more reach 4; first guess, 2026-09-30, from the owner's third round — his own "tap 3 times at least before activating speed". */
+  tapsToSpeedUp: 3,
+  /** The fastest a run of taps goes (tiles); first guess, 2026-09-30, from the owner's third round — his "4-tiles speed (fast)". */
+  tapTopStep: 4,
+  /** A held arrow moves the cursor at most once this often, whatever the keyboard's repeat rate — about 16 moves a second, half as often as a fast keyboard repeats, and close enough to the cursor's glide that the drawn cursor keeps up (ms); first guess, 2026-09-30, from the owner's third round ("limit the scroll speed"). */
+  holdMoveMs: 60,
+  /** How far each of a held arrow's moves goes at first (tiles); first guess, 2026-09-30, from the owner's third round (the retired `holdStep` moved 2 at every repeat, the owner's 2026-09-28 playtest). */
+  holdFirstStep: 1,
+  /** How far each of a held arrow's moves goes once it has been repeating for `holdLongMs` (tiles); first guess, 2026-09-30, from the owner's third round. */
+  holdLongStep: 2,
+  /** How long an arrow repeats before its moves go `holdLongStep` — about ten tiles at the first step, more than "a position a few tiles away" (ms); first guess, 2026-09-30, from the owner's third round. */
+  holdLongMs: 600,
   /** How far the fast move jumps — Shift or Option with an arrow, PageUp/PageDown, Home/End (tiles); the owner's settings export, 2026-09-30 (12 before). */
   jumpStep: 10,
   /** A held fast move jumps again at most this often, so each jump is seen to land (ms); the owner's settings export, 2026-09-30. */
@@ -113,11 +127,18 @@ const SETTLED_CHOICES = [
   "redAlerts",
 ] as const
 
+/** Tuned values since retired, because the rule they tuned is gone: the held-key ramp's hold step,
+ *  fast step and ramp time (2 tiles a repeat, then 4), replaced by counting taps and a hold cadence (the
+ *  owner's third round, 2026-09-30, feedback F79). An old export still names them (they were
+ *  Experiments once). */
+const RETIRED_TUNING = ["holdStep", "fastStep", "rampMs"] as const
+
 /**
  * The names the settled Experiments had in a settings export: every tuned number's — the table's own
- * names, so an Experiment that settles into it is covered as it lands — and every settled choice's. An
- * old export still names them; reading one skips these quietly (`settings-export.ts`), since the value
- * they held is now the code's own, rather than reporting them as names it does not know. (A tuned
- * number that never was an Experiment, like `placeSparks`, is here too, harmlessly: no export names it.)
+ * names, so an Experiment that settles into it is covered as it lands — every settled choice's, and
+ * every retired tuned value's. An old export still names them; reading one skips these quietly
+ * (`settings-export.ts`), since the value they held is now the code's own (or means nothing any more),
+ * rather than reporting them as names it does not know. (A tuned number that never was an Experiment,
+ * like `placeSparks`, is here too, harmlessly: no export names it.)
  */
-export const SETTLED_EXPERIMENTS: ReadonlySet<string> = new Set([...Object.keys(TUNED), ...SETTLED_CHOICES])
+export const SETTLED_EXPERIMENTS: ReadonlySet<string> = new Set([...Object.keys(TUNED), ...SETTLED_CHOICES, ...RETIRED_TUNING])

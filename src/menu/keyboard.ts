@@ -27,8 +27,8 @@ export function keyboardCommand(key: string, state: MenuListState): MenuCommand 
   if (QUIT_KEYS.has(key)) return { kind: "quit" }
   if (key === BACK_KEY) return { kind: "back" }
   // Up and Down stop at the list's ends; Shift, Option, PageUp/PageDown and Home/End go all the way
-  // (owner, 2026-09-30, feedback F75; `list-keys.ts`). No held-key ramp here: the title screen's loop
-  // reads no clock, and its lists are a handful of rows.
+  // (owner, 2026-09-30, feedback F75; `list-keys.ts`). No tap counting or hold cadence here: the title
+  // screen's loop reads no clock, and its lists are a handful of rows — one row a press.
   const list = listKeyOf(key)
   if (list !== null) return { kind: "highlight", index: moveHighlight(state, list.direction, list.jump) }
   if (ACTIVATE_KEYS.has(key)) return { kind: "activate", index: state.highlighted }

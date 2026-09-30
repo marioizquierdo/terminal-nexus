@@ -45,15 +45,18 @@ function sideways(key: string): -1 | 0 | 1 {
 
 /**
  * Up/Down in a list — the menu, or any popup's — as the command it is, or `null`: a plain arrow's rows
- * (one, or the input path's held-key ramp — `KeyboardContext.listRows`), and the fast move — Shift,
- * Option, PageUp/PageDown, Home/End — as a jump to that end. Every list stops at its ends (owner,
- * 2026-09-30, feedback F75); the keys are the title menu's too (`src/menu/list-keys.ts`).
+ * (one, or the input path's motion rules — `KeyboardContext.listRows`: taps counted, a hold on the
+ * game's cadence), and the fast move — Shift, Option, PageUp/PageDown, Home/End — as a jump to that
+ * end. Every list stops at its ends (owner, 2026-09-30, feedback F75); the keys are the title menu's too
+ * (`src/menu/list-keys.ts`). A held key's repeat that came before its cadence allows a move is no rows,
+ * and no command: Up and Down mean nothing else here, so `null` is exactly "nothing".
  */
 function listCommand(key: string, context: KeyboardContext): BuildCommand | null {
   const list = listKeyOf(key)
   if (list === null) return null
   if (list.jump) return { kind: "highlight", delta: list.direction, jump: true }
-  return { kind: "highlight", delta: list.direction * (context.listRows?.(list.direction) ?? 1) }
+  const rows = context.listRows?.(list.direction) ?? 1
+  return rows === 0 ? null : { kind: "highlight", delta: list.direction * rows }
 }
 
 export type KeyboardContext = Readonly<{
@@ -75,12 +78,15 @@ export type KeyboardContext = Readonly<{
   /** A Nexus Pulse is on screen (gate 6A): its playback keys are the screen's, ahead of the Grid's. */
   pulse?: boolean
   /**
-   * How many tiles a cursor key moves, when the input path knows when keys arrive: its held-key ramp
-   * (`src/build/motion.ts`), which may answer 0 for a held jump's repeat that came too soon — nothing is
-   * sent for it. Absent — a driver, a test — every key is a press on its own (`pressTiles`).
+   * How many tiles a cursor key moves, when the input path knows when keys arrive: its motion rules
+   * (`src/build/motion.ts` — taps counted, a hold on the game's own cadence, the fast move's jump), which
+   * answer 0 for a held key's repeat that came before the cadence allows a move, or a held jump's that
+   * came too soon — nothing is sent for it. Absent — a driver, a test — every key is a press on its own
+   * (`pressTiles`).
    */
   moveTiles?: (key: CursorKey) => number
-  /** How many rows a plain Up or Down moves a list, the same way: the ramp when timed, else one. */
+  /** How many rows a plain Up or Down moves a list, the same way: the motion rules when timed (0 sends
+   *  nothing), else one. */
   listRows?: (direction: -1 | 1) => number
 }>
 
@@ -185,7 +191,7 @@ function popupCommand(key: string, popup: Popup, context: KeyboardContext): Buil
 }
 
 /** Any of the Grid's cursor keys, as the move it is — **the one place a move is sized**: the input
- *  path's held-key ramp when it times keys (`KeyboardContext.moveTiles`), and otherwise a press on its
+ *  path's motion rules when it times keys (`KeyboardContext.moveTiles`), and otherwise a press on its
  *  own, a tap or the fast move's jump (`pressTiles`) — or `null`, for another key or a move of none. */
 function cursorMove(key: string, context: KeyboardContext): BuildCommand | null {
   const move = cursorKeyOf(key)

@@ -415,7 +415,9 @@ test("the owner's export of 2026-09-30 is this build: its settled numbers are th
   assert.deepEqual(result.ignored, [])
   assert.deepEqual(result.applied, ["holdWindowMs", "raid", "crew", "theme", "capability", "glyphPack", "reducedMotion"])
   // The rest were settled: the twenty-eight of that export, and the focus arrow he settled again later
-  // that day, each skipped quietly; each number of the twenty-eight is the tuned value, read not copied.
+  // that day, each skipped quietly; each number of the twenty-eight is the tuned value, read not copied —
+  // except the held-key ramp's three (`holdStep`, `fastStep`, `rampMs`), which his third round the same day
+  // retired along with the rule they tuned (F79: taps counted, a hold on a cadence), still skipped quietly.
   // (The settled names are derived from the table, so they also hold tuned numbers his export never named.)
   assert.equal(result.settled.length, 29)
   assert.ok(result.settled.every((name) => SETTLED_EXPERIMENTS.has(name)))
@@ -427,7 +429,8 @@ test("the owner's export of 2026-09-30 is this build: its settled numbers are th
     assert.equal(TUNING[name as keyof typeof TUNING], Number(value), `${name} is not his ${value}`)
     checked += 1
   }
-  assert.equal(checked, 21, "every settled number of his was compared")
+  assert.equal(checked, 18, "every settled number of his still in the table was compared")
+  for (const retired of ["holdStep", "fastStep", "rampMs"]) assert.ok(!(retired in TUNING) && SETTLED_EXPERIMENTS.has(retired), retired)
   // And each default is a value its Experiment's list holds, so Left/Right step from it exactly.
   for (const spec of EXPERIMENT_FIELDS) {
     const value = defaultExperiments()[spec.field]
