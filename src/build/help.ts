@@ -31,6 +31,7 @@ import {
   remaining,
   structureAtTile,
 } from "./state.ts"
+import { TUNING } from "./tuning.ts"
 import type { ConstructItem } from "./types.ts"
 
 // ---------------------------------------------------------------------------------------------
@@ -215,11 +216,11 @@ export const CONTROLS_KEYS_WIDTH = 14
 /**
  * **The Controls and hotkeys page, as one table** — every key and click the Build Phase and its Nexus
  * Pulse answer, grouped by where the player is, in the words the rows and the top bar use. Accurate to
- * the adapters (`src/build/keyboard.ts`, `src/build/mouse.ts`); `jumpStep` is the Shift jump
- * Experiment, so the page says what Shift does in this build. `?` opens it from the game — a shortcut
- * named only here, under ANYWHERE.
+ * the adapters (`src/build/keyboard.ts`, `src/build/mouse.ts`); the Shift jump is read from the tuned
+ * values (`TUNING.jumpStep`), so the page says what Shift does in this build. `?` opens it from the game
+ * — a shortcut named only here, under ANYWHERE.
  */
-export function controlsPage(jumpStep: number): readonly ControlsSection[] {
+export function controlsPage(): readonly ControlsSection[] {
   return [
     {
       heading: "THE MENU",
@@ -240,7 +241,7 @@ export function controlsPage(jumpStep: number): readonly ControlsSection[] {
       heading: "THE MAP",
       lines: [
         { keys: "arrows", text: "move; hold one to go faster" },
-        { keys: "shift+arrow", text: `jump ${jumpStep} tiles` },
+        { keys: "shift+arrow", text: `jump ${TUNING.jumpStep} tiles` },
         { keys: "option+arrow", text: "the same jump" },
         { keys: "pgup/pgdn", text: "jump up or down" },
         { keys: "home/end", text: "jump left or right" },
@@ -325,8 +326,7 @@ export function controlsPage(jumpStep: number): readonly ControlsSection[] {
   ]
 }
 
-/** How many key lines the page has — what Up/Down walk, headings left out. The same in every build:
- *  only the jump's number changes with the Experiment. */
+/** How many key lines the page has — what Up/Down walk, headings left out. */
 export function controlsLineCount(): number {
-  return controlsPage(0).reduce((count, section) => count + section.lines.length, 0)
+  return controlsPage().reduce((count, section) => count + section.lines.length, 0)
 }

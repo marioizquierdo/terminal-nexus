@@ -36,6 +36,7 @@ import type { PlaytestStep } from "../playtest/keys.ts"
 import { UNTIMED_GAP_MS, deliverStep } from "../playtest/deliver.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
 import type { DebugFlags } from "../build/debug.ts"
+import { TUNING } from "../build/tuning.ts"
 
 const ESC = "\u001b"
 /** Written before a frame whose size just changed: the backend draws from the cursor home position
@@ -57,7 +58,7 @@ export type SpikeOptions = Readonly<{
   host?: Host
   exit?: (code: number) => void
   /** `--scroll-margin`, so the margin can be felt against another number: a percentage of the view
-   *  since gate 5H. Omitted means the owner's 25%. */
+   *  since gate 5H. Omitted means the owner's tuned margin (`TUNING.scrollMargin`). */
   scrollMargin?: number
   /** The screen's clock, in milliseconds. `Date.now` unless a test injects one. */
   now?: () => number
@@ -275,7 +276,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
           )
     // The frame timer runs while anything is still moving: an animation, or a Pulse that is playing (which
     // wants the very next frame, so its frame is a frame's length away whatever an animation says).
-    const pulseBusy = !gated && build.pulse?.busyUntil(now, build.state.debug) != null
+    const pulseBusy = !gated && build.pulse?.busyUntil(now) != null
     scheduleFrame(pulseBusy ? now + FRAME_MS : (live?.busyUntil ?? null), now)
     if (frame.width !== lastFrame.width || frame.height !== lastFrame.height) {
       stdout.write(CLEAR)
@@ -316,7 +317,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
   function onData(data: string | Uint8Array): void {
     if (gated || leaving) return
     const now = clock()
-    const timeout = build.state.debug.escTimeoutMs
+    const timeout = TUNING.escTimeoutMs
     if (escapeTimer !== null) clearTimeout(escapeTimer)
     escapeTimer = null
     handleKeys(reader.feed(chunkText(data), now, timeout), now)

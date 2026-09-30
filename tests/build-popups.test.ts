@@ -14,6 +14,7 @@ import { MOUSE_LEFT, MOUSE_WHEEL_DOWN, buildMouseCommand, formatMouseEvent, pars
 import { DEBUG_NOTE_LINES, EXPORT_QUESTION, messageSpec, overlaySpec, placeOverlay } from "../src/build/overlay.ts"
 import type { OverlaySpec, PlacedOverlay } from "../src/build/overlay.ts"
 import { BuildSession } from "../src/build/session.ts"
+import { controlsLineCount } from "../src/build/help.ts"
 import {
   GAME_MENU_ROWS,
   PLAYER_FIELDS,
@@ -171,16 +172,16 @@ test("under the list, a line across the popup, then what the highlighted row is 
 // --- A restart that is needed, and the game menu's Restart ----------------------------------------
 
 test("pendingRestart names the changed settings marked restart, and nothing else", () => {
-  const started = initialDebugFlags({})
+  const started = initialDebugFlags()
   const fields: readonly RestartFieldSpec[] = [
-    { field: "easeMs", label: "View slide", applies: "restart" },
-    { field: "cursorGlideMs", label: "Cursor glide", applies: "restart" },
-    { field: "placeLight", label: "Lighting", applies: "now" },
+    { field: "focusArrowMs", label: "Focus arrow", applies: "restart" },
+    { field: "cardRevealMs", label: "Card reveal", applies: "restart" },
+    { field: "raid", label: "Raid", applies: "now" },
   ]
   assert.deepEqual(pendingRestart(started, started, fields), [])
-  assert.deepEqual(pendingRestart(started, { ...started, placeLight: "rainbow" }, fields), [], "a setting that applies now")
-  assert.deepEqual(pendingRestart(started, { ...started, easeMs: 0 }, fields), ["View slide"])
-  assert.deepEqual(pendingRestart(started, { ...started, easeMs: 0, cursorGlideMs: 0 }, fields), ["View slide", "Cursor glide"])
+  assert.deepEqual(pendingRestart(started, { ...started, raid: "probe" }, fields), [], "a setting that applies now")
+  assert.deepEqual(pendingRestart(started, { ...started, focusArrowMs: 0 }, fields), ["Focus arrow"])
+  assert.deepEqual(pendingRestart(started, { ...started, focusArrowMs: 0, cardRevealMs: 0 }, fields), ["Focus arrow", "Card reveal"])
   // Put back, it is not pending any more.
   assert.deepEqual(pendingRestart(started, { ...started }, fields), [])
   // The build's own list: exactly its restart fields, whichever they are today.
@@ -190,9 +191,9 @@ test("pendingRestart names the changed settings marked restart, and nothing else
     const other = (spec.values as readonly unknown[]).find((value) => value !== started[spec.field])
     assert.deepEqual(pendingRestart(started, { ...started, [spec.field]: other }), [spec.label])
   }
-  const message = restartMessage(["View slide", "Cursor glide"])
+  const message = restartMessage(["Focus arrow", "Card reveal"])
   assert.equal(message.title, "RESTART NEEDED")
-  assert.match(message.text, /apply only after a restart: View slide, Cursor glide\. Choose \[r\] Restart in the menu/)
+  assert.match(message.text, /apply only after a restart: Focus arrow, Card reveal\. Choose \[r\] Restart in the menu/)
 })
 
 test("closing Settings with a restart setting changed raises the message once; Esc gives the game menu back on Restart", (t) => {
@@ -298,7 +299,7 @@ test("a message popup: a title and its text, nothing to choose, closed by Esc or
 test("the game menu's Restart: r, Enter on its row, and a click on it start the Build Phase over, keeping every setting", () => {
   const plan = (side: Side): void => {
     keys(side, "n", "1", "1", ENTER) // pick a power, plan a Barracks
-    side.build.dispatch({ kind: "debug-adjust", field: "placeLight", step: 1 })
+    side.build.dispatch({ kind: "debug-adjust", field: "raid", step: 1 })
     side.build.dispatch({ kind: "setting-adjust", field: "theme", step: 1 })
     assert.equal(side.build.state.planned.length, 1)
   }
@@ -327,7 +328,7 @@ test("the game menu's Restart: r, Enter on its row, and a click on it start the 
   assert.equal(expected.overlay, null)
   assert.equal(expected.planned.length, 0)
   assert.equal(expected.nexusPick, null)
-  assert.equal(expected.debug.placeLight, "rainbow")
+  assert.equal(expected.debug.raid, "probe")
   assert.equal(expected.settings.theme, "light")
   assert.equal(expected.status.text, "Build Phase restarted with these settings.")
   const comparable = (side: Side) => ({ ...side.build.state, ack: null, highlightHidden: false })
@@ -342,13 +343,20 @@ test("the game menu's Restart: r, Enter on its row, and a click on it start the 
 // --- The scroll bar ---------------------------------------------------------------------------------
 
 test("a list that overflows has a scroll bar in the popup's right border, drawn from the placed shape, in every glyph pack", () => {
+  // Settings is short since most Experiments were settled (2026-09-30): it overflows at the 24-row floor,
+  // and fits whole on a taller terminal, where it has no bar.
   for (const size of SIZES) {
     for (const pack of ["ascii", "unicode"] as const) {
       const side = session(spikeContext(), size)
       keys(side, ESC, "s")
       const popup = placed(side)
       const bar = popup.scrollBar
-      assert.ok(popup.window !== null && popup.window.visible < popup.window.count, "Settings overflows")
+      assert.ok(popup.window !== null)
+      if (size.rows === 24) assert.ok(popup.window.visible < popup.window.count, `Settings fits whole at ${size.columns}x${size.rows}`)
+      if (popup.window.visible === popup.window.count) {
+        assert.equal(bar, null, `a scroll bar over a list that fits at ${size.columns}x${size.rows}`)
+        continue
+      }
       assert.ok(bar !== null, `no scroll bar at ${size.columns}x${size.rows}`)
       assert.equal(bar.column, popup.box.right, "the bar is the right border")
       const section = popup.rows.filter((row) => row.spec.kind === "setting" || row.spec.kind === "heading")
@@ -390,15 +398,16 @@ test("no scroll bar where nothing is hidden: a short list, and a popup without o
 })
 
 test("a click on the scroll bar's upper half scrolls up, on its lower half down; its ends do nothing past the list's ends", () => {
+  // On the Controls page, the longest list: Settings is too short since most Experiments were settled.
   const side = session()
-  keys(side, ESC, "s")
+  keys(side, "?")
   const start = placed(side)
   assert.ok(start.scrollBar !== null && start.window !== null)
   assert.equal(start.window.offset, 0)
   // At the top, the upper half has nowhere to go.
   click(side, start.scrollBar.column, start.scrollBar.top)
   assert.equal(placed(side).window?.offset, 0)
-  assert.equal(side.build.state.overlayHighlight, playerRow("theme"))
+  assert.equal(side.build.state.overlayHighlight, 0)
   // The lower half — its down symbol, or any cell below the middle — brings the next hidden rows in.
   click(side, start.scrollBar.column, start.scrollBar.bottom)
   const down = placed(side)
@@ -412,7 +421,7 @@ test("a click on the scroll bar's upper half scrolls up, on its lower half down;
   click(side, further.scrollBar?.column ?? 0, (further.scrollBar?.top ?? 0) + 1)
   assert.ok((placed(side).window?.offset ?? 0) < further.window.offset, "a click high on the track did not scroll up")
   // All the way down: the lower half then does nothing more.
-  for (let turn = 0; turn < SETTINGS_ORDER.length; turn += 1) {
+  for (let turn = 0; turn < controlsLineCount(); turn += 1) {
     const bar = placed(side).scrollBar
     if (bar === null) break
     click(side, bar.column, bar.bottom)
@@ -430,9 +439,11 @@ test("a click on the scroll bar's upper half scrolls up, on its lower half down;
 })
 
 test("hit-testing the scroll bar reads the same placement the frame draws: every bar cell answers, the cell beside it does not", () => {
+  // On the Controls page, long enough to scroll at every size (Settings fits whole on a tall terminal).
+  const middle = ["?", ...Array.from({ length: 20 }, () => DOWN)] // somewhere in the middle
   for (const size of SIZES) {
     const side = session(spikeContext(), size)
-    keys(side, ESC, "s", DOWN, DOWN, DOWN, DOWN, DOWN, DOWN) // somewhere in the middle
+    keys(side, ...middle)
     const popup = placed(side)
     const bar = popup.scrollBar
     assert.ok(bar !== null && popup.window !== null)
@@ -440,7 +451,7 @@ test("hit-testing the scroll bar reads the same placement the frame draws: every
     for (let y = bar.top; y <= bar.bottom; y += 1) {
       assert.equal(cellAt(frame, bar.column, y).style.inverse, true)
       const probe = session(spikeContext(), size)
-      keys(probe, ESC, "s", DOWN, DOWN, DOWN, DOWN, DOWN, DOWN)
+      keys(probe, ...middle)
       const before = placed(probe).window?.offset ?? 0
       click(probe, bar.column, y)
       const after = placed(probe).window?.offset ?? 0
@@ -448,13 +459,13 @@ test("hit-testing the scroll bar reads the same placement the frame draws: every
       if (upper) assert.ok(after < before || before === 0, `row ${y} is the upper half`)
       else assert.ok(after > before, `row ${y} is the lower half`)
     }
-    // The export scrolls the same way, by its own lines.
+    // The export scrolled the same way while it was longer than the popup; with five Experiments left
+    // (2026-09-30) it fits whole at every size, and has no bar.
     const exported = session(spikeContext(), size)
     keys(exported, "d", "e")
     const text = placed(exported)
-    assert.ok(text.scrollBar !== null, "the export overflows too")
-    click(exported, text.scrollBar.column, text.scrollBar.bottom)
-    assert.ok((placed(exported).window?.offset ?? 0) > 0)
+    assert.ok(text.window !== null && text.window.visible === text.window.count, "the export no longer fits")
+    assert.equal(text.scrollBar, null)
   }
 })
 

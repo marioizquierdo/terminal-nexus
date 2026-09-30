@@ -20,6 +20,7 @@ import { BuildSession } from "../src/build/session.ts"
 import { CONTROLS_DESCRIPTION, GAME_MENU_ROWS, restartMessage } from "../src/build/settings.ts"
 import type { BuildContext, BuildState } from "../src/build/state.ts"
 import { NEXUS_ENTRY, armedPreview } from "../src/build/state.ts"
+import { TUNING } from "../src/build/tuning.ts"
 import { spikeContext } from "../src/cli/spike.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
@@ -366,7 +367,7 @@ test("it scrolls the export's way: Up/Down, the wheel and the scroll bar, stoppi
 })
 
 test("the page is one table: every situation, every line fits at the floor, and the popup fits the Grid pane at every size", () => {
-  const sections = controlsPage(12)
+  const sections = controlsPage()
   assert.deepEqual(
     sections.map((section) => section.heading),
     ["THE MENU", "THE MAP", "PLACING A BUILDING", "EXPLORE MAP", "POPUPS", "ANY LIST", "THE MOUSE", "THE NEXUS PULSE", "ANYWHERE"],
@@ -386,16 +387,16 @@ test("the page is one table: every situation, every line fits at the floor, and 
       }
     }
   }
-  // The Shift jump is the Experiment's number.
-  assert.ok(controlsPage(7).some((section) => section.lines.some((entry) => entry.text === "jump 7 tiles")))
+  // The Shift jump is the tuned number, read rather than copied.
+  assert.equal(TUNING.jumpStep, 10)
+  assert.ok(sections.some((section) => section.lines.some((entry) => entry.text === `jump ${TUNING.jumpStep} tiles`)))
   const side = session()
-  side.build.dispatch({ kind: "debug-adjust", field: "jumpStep", step: 1 })
   keys(side, "?", ...Array.from({ length: 10 }, () => DOWN))
-  assert.match(frameToText(frame(side)), new RegExp(`jump ${side.build.state.debug.jumpStep} tiles`))
+  assert.match(frameToText(frame(side)), /jump 10 tiles/)
 })
 
 test("the page names only keys the adapters bind, and every command key they bind is on it", () => {
-  const page = controlsPage(12)
+  const page = controlsPage()
   const keysOf = (heading: string): string[] => page.find((section) => section.heading === heading)?.lines.map((entry) => entry.keys) ?? []
   const text = page.flatMap((section) => section.lines.map((entry) => `${entry.keys} ${entry.text}`)).join("\n")
   // The letters the menu and "anywhere" name are commands from the menu, and from the map.

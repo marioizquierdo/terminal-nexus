@@ -572,8 +572,9 @@ test("every popup's list stops at both ends and jumps with the fast move", () =>
 
 test("a held Up or Down in a list ramps exactly as the map cursor does, with the same numbers, and a tap is one row", () => {
   // The same keys at the same times: the Settings list moves as many rows as the map cursor moves
-  // tiles, as long as neither reaches an end (feedback F75: "Use the same timings").
-  const presses = Array.from({ length: 10 }, (_, index) => [DOWN, 10_000 + index * 30] as const)
+  // tiles, as long as neither reaches an end (feedback F75: "Use the same timings"). Four presses: the
+  // list is ten rows long since most Experiments were settled (2026-09-30).
+  const presses = Array.from({ length: 4 }, (_, index) => [DOWN, 10_000 + index * 30] as const)
   const list = session()
   keys(list, ESC, "s")
   const top = SETTINGS_ORDER.indexOf(list.build.state.overlayHighlight)
@@ -586,10 +587,8 @@ test("a held Up or Down in a list ramps exactly as the map cursor does, with the
   assert.ok(rows < SETTINGS_ORDER.length - 1 - top, "the list reached its end; the comparison needs room")
   assert.ok(tiles > presses.length, "the held key did not speed up at all")
   assert.equal(rows, tiles, "a held key moves a list by other numbers than the map cursor")
-  // A tap is one row, even with the map's tap step set to two, so Up and Down reach every row.
+  // A tap is one row, so Up and Down reach every row.
   const tap = session()
-  tap.build.dispatch({ kind: "debug-adjust", field: "tapStep", step: 1 })
-  assert.equal(tap.build.state.debug.tapStep, 2)
   keys(tap, ESC, "s")
   const start = SETTINGS_ORDER.indexOf(tap.build.state.overlayHighlight)
   timed(tap, [[DOWN, 5_000]])
@@ -675,7 +674,7 @@ test("the title screen's menu stops at both ends and jumps with the fast move", 
 // --- The words -----------------------------------------------------------------------------------------
 
 test("the Controls page says what Esc and x do on the menu, how placing is cancelled, and how lists move", () => {
-  const page = controlsPage(12)
+  const page = controlsPage()
   const section = (heading: string) => page.find((entry) => entry.heading === heading)?.lines ?? []
   assert.deepEqual(section("THE MENU").find((line) => line.keys === "esc"), { keys: "esc", text: "the game menu" })
   assert.match(section("THE MENU").find((line) => line.keys === "x")?.text ?? "", /^nothing/)

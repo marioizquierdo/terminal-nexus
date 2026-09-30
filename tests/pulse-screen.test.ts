@@ -37,7 +37,7 @@ function victorious(): Played {
 const times = (played: Pick<Played, "build">) => {
   const pulse = played.build.pulse
   assert.ok(pulse !== null, "there is no Pulse on screen")
-  return pulse.times(played.build.state.debug)
+  return pulse.times()
 }
 
 /** The frame's cells that satisfy `test`, each with the screen position it is drawn at. */
@@ -84,8 +84,8 @@ test("the view is centred on the player's Nexus when the Pulse starts, wherever 
   prepare(session.build)
   session.build.run([
     { kind: "focus", target: "grid" },
-    { kind: "move-cursor", dx: 40, dy: 14, fast: true },
-    { kind: "move-cursor", dx: 20, dy: 10, fast: true },
+    { kind: "move-cursor", dx: 40, dy: 14 },
+    { kind: "move-cursor", dx: 20, dy: 10 },
   ])
   assert.ok(session.build.state.camera.x > 0, "the player did not scroll away")
   session.build.run([{ kind: "commit" }, { kind: "confirm-commit" }])
@@ -95,7 +95,7 @@ test("the view is centred on the player's Nexus when the Pulse starts, wherever 
   assert.deepEqual(session.build.state.cursor, nexus, "the cursor did not come to the Nexus")
   assert.deepEqual(
     session.build.state.camera,
-    centreOn({ x: 0, y: 0 }, nexus, session.build.state.viewport, session.context.grid),
+    centreOn(nexus, session.build.state.viewport, session.context.grid),
     "the view is not centred on the Nexus",
   )
 })
@@ -336,7 +336,7 @@ test("the ending is plain to see at every colour depth: monochrome uses bold and
   }
 })
 
-test("red is for the player's Nexus being hurt: faint, brief, off with the Experiment, and never under reduced motion", () => {
+test("red is for the player's Nexus being hurt: faint, brief, and never under reduced motion", () => {
   // A Nexus that falls: the raid gets through an undefended base.
   const redLevels = (played: Played, mutate: (played: Played) => void = () => {}): number[] => {
     at(played, 0)
@@ -359,10 +359,8 @@ test("red is for the player's Nexus being hurt: faint, brief, off with the Exper
   const safe = redLevels(play({ plan: DEFENCE }))
   assert.equal(Math.max(...safe), 0, "the border went red in a Pulse that was won cleanly")
 
-  // The red is an Experiment, and off it is gone; under reduced motion it is gone too, every flash of it
-  // being said again in words.
-  const off = redLevels(play({ crew: 1 }), (played) => played.build.dispatch({ kind: "debug-adjust", field: "redAlerts", step: 1 }))
-  assert.equal(Math.max(...off), 0, "red with the Experiment off")
+  // Under reduced motion it is gone, every flash of it being said again in words. (It was an Experiment
+  // that could switch it off until the owner kept it, 2026-09-30.)
   const still = redLevels(play({ crew: 1 }), (played) => played.build.dispatch({ kind: "setting-adjust", field: "reducedMotion", step: 1 }))
   assert.equal(Math.max(...still), 0, "red under reduced motion")
 })
@@ -507,28 +505,22 @@ test("a click on the map looks around it — the cursor moves, the view follows,
   assert.equal(played.build.state.cursor.x, before.x + 1)
 })
 
-test("the view looks at the Nexus again when the last seconds start — unless Centre on Nexus is off", () => {
-  for (const centre of [true, false]) {
-    const played = victorious()
-    if (!centre) played.build.dispatch({ kind: "debug-adjust", field: "endCentre", step: 1 })
-    assert.equal(played.build.state.debug.endCentre, centre)
-    const moments = times(played)
-    at(played, moments.warnMs! - 200)
-    // The player looks around: far to the east, then south.
-    played.build.run([{ kind: "move-cursor", dx: 30, dy: 12, fast: true }])
-    const wandered = played.build.state.cursor
-    at(played, moments.warnMs! + 50)
-    const nexus = nexusTile(played.context)!
-    if (centre) assert.deepEqual(played.build.state.cursor, nexus, "the last seconds did not bring the view back to the Nexus")
-    else assert.deepEqual(played.build.state.cursor, wandered, "the view moved with Centre on Nexus off")
-  }
+test("the view looks at the Nexus again when the last seconds start", () => {
+  const played = victorious()
+  const moments = times(played)
+  at(played, moments.warnMs! - 200)
+  // The player looks around: far to the east, then south.
+  played.build.run([{ kind: "move-cursor", dx: 30, dy: 12 }])
+  assert.notDeepEqual(played.build.state.cursor, nexusTile(played.context), "the player did not look away")
+  at(played, moments.warnMs! + 50)
+  assert.deepEqual(played.build.state.cursor, nexusTile(played.context), "the last seconds did not bring the view back to the Nexus")
 })
 
 test("Watch again replays from the top and frames the view again", () => {
   const played = victorious()
   const moments = times(played)
   at(played, moments.homeMs + 500)
-  played.build.run([{ kind: "move-cursor", dx: 30, dy: 12, fast: true }])
+  played.build.run([{ kind: "move-cursor", dx: 30, dy: 12 }])
   assert.match(screenText(played), /^\| VICTORY /m)
   played.build.dispatch({ kind: "pulse", control: "restart" })
   at(played, moments.homeMs + 600)
@@ -536,22 +528,18 @@ test("Watch again replays from the top and frames the view again", () => {
   assert.deepEqual(played.build.state.cursor, nexusTile(played.context), "the view was not framed again")
 })
 
-test("changing an ending Experiment is felt at once, and `d` opens Settings at the first of them", () => {
+test("the last three seconds warn, and `d` over a Pulse opens Settings at the placeholder Pulse's raid", () => {
   const played = victorious()
   const moments = times(played)
   at(played, moments.stopMs - 1500)
-  assert.match(screenText(played), /about to end/, "the default warning of three seconds")
-  // The warning to off: the same instant is now plain fighting, and the timer's flash and the light with it.
-  for (let step = 0; step < 4; step += 1) played.build.dispatch({ kind: "debug-adjust", field: "endWarnMs", step: -1 })
-  assert.equal(played.build.state.debug.endWarnMs, 0)
-  assert.doesNotMatch(screenText(played), /about to end/)
+  assert.match(screenText(played), /about to end/, "the warning of three seconds")
   const frame = frameOf(played, "truecolor")
-  assert.equal(timerCells(frame, played.layout).length + lightCells(frame, played.layout).length, 0, "the warning was still on")
+  assert.ok(timerCells(frame, played.layout).length + lightCells(frame, played.layout).length > 0, "the warning shows nothing")
 
   played.build.handleData("d", played.layout)
   assert.equal(played.build.state.overlay, "settings")
-  assert.equal(played.build.state.overlayHighlight, rowOfField("endWarnMs"), "d did not open at the ending's Experiments")
-  assert.match(screenText(played), /Final warning/)
+  assert.equal(played.build.state.overlayHighlight, rowOfField("raid"), "d did not open at the placeholder Pulse's Experiments")
+  assert.match(screenText(played), /Raid\s+<\s+probe\s+>/)
   // Before a Pulse it is still the first Experiment.
   const before = newSession()
   before.build.handleData("d", before.layout)
@@ -561,13 +549,12 @@ test("changing an ending Experiment is felt at once, and `d` opens Settings at t
 test("the frame timer runs while the Pulse plays, and stops when it is paused or the result stands", () => {
   const played = victorious()
   const pulse = played.build.pulse!
-  const flags = played.build.state.debug
-  assert.ok(pulse.busyUntil(1000, flags) !== null, "nothing to draw while it plays")
+  assert.ok(pulse.busyUntil(1000) !== null, "nothing to draw while it plays")
   played.build.dispatch({ kind: "pulse", control: "toggle" })
-  assert.equal(pulse.busyUntil(1000, flags), null, "a paused Pulse kept the timer running")
+  assert.equal(pulse.busyUntil(1000), null, "a paused Pulse kept the timer running")
   played.build.dispatch({ kind: "pulse", control: "toggle" })
   at(played, times(played).homeMs + 10)
-  assert.equal(pulse.busyUntil(1000, flags), null, "the timer ran on over a standing result")
+  assert.equal(pulse.busyUntil(1000), null, "the timer ran on over a standing result")
 })
 
 test("time holds while the terminal is too small to draw it, and the clock starts when the Pulse does", () => {

@@ -8,12 +8,12 @@
 //     Terminal Nexus settings
 //     # build 592f3cb
 //     # Changed experiments
-//     placeLight = rainbow  # Lighting, default light
+//     raid = probe  # Raid, default heavy
 //     # Settings
 //     theme = dark  # Background
 //     ...
 //     # Experiments at their defaults
-//     placeFramesMs = 450  # Build animation
+//     focusArrowMs = 180  # Focus arrow
 //
 // Experiments that differ from this build's defaults come first, each with the default it replaced;
 // then the player's own settings; then every other experiment, so the text pins the whole state even
@@ -22,9 +22,12 @@
 //
 // **Parsing is forgiving**, in the style of `parseSettings`: any `name = value` pair anywhere is read
 // (lines, spaces, commas, semicolons or `&` all separate them, so a one-line `--settings
-// "placeLight=rainbow scrollMargin=25"` works too); an unknown name is ignored; a value that is not one
-// the setting can take leaves that one setting as it was. Nothing here touches a clock, a file or a
-// clipboard — the adapters do that (`src/cli/terminalNexus.ts`, `src/web/host.ts`).
+// "raid=probe crew=some"` works too); an unknown name is ignored and reported; a value that is not one
+// the setting can take leaves that one setting as it was. **A settled Experiment's name is skipped
+// quietly** (`SETTLED_EXPERIMENTS`): an export from before the owner settled it still names it, and its
+// value is the code's own now (`src/build/tuning.ts`), so it is neither applied nor reported as a name
+// the game does not know. Nothing here touches a clock, a file or a clipboard — the adapters do that
+// (`src/cli/terminalNexus.ts`, `src/web/host.ts`).
 
 import type { Settings } from "../settings/types.ts"
 import { parseSettings } from "../settings/types.ts"
@@ -32,13 +35,14 @@ import type { DebugField, DebugFlags } from "./debug.ts"
 import { DEBUG_FIELDS, fieldSpec, formatDebugValue, initialDebugFlags } from "./debug.ts"
 import type { PlayerField } from "./settings.ts"
 import { PLAYER_FIELDS, playerSpec } from "./settings.ts"
+import { SETTLED_EXPERIMENTS } from "./tuning.ts"
 
 export type SettingsSnapshot = Readonly<{ settings: Settings; experiments: DebugFlags }>
 
 /** The experiments' defaults in this build: what a fresh Build Phase opens with when nothing is
  *  passed. "Changed" in an export means "not this". */
 export function defaultExperiments(): DebugFlags {
-  return initialDebugFlags({})
+  return initialDebugFlags()
 }
 
 /** A value as the export writes it: a number bare, a yes/no as `on`/`off`, a choice by its own name. */
@@ -96,9 +100,9 @@ function asBoolean(text: string): boolean | null {
 
 /**
  * One experiment's value from text, or `null` when it is not one the flag can take. Accepted: the
- * value as the export writes it, as the popup shows it ("centres", "map"), or — for a number — any
- * number between the flag's smallest and largest listed values, with a unit or not ("450", "450ms",
- * "25%"), since a number the list does not hold is a legal starting value (`--scroll-margin 12`).
+ * value as the export writes it, as the popup shows it ("off"), or — for a number — any number between
+ * the flag's smallest and largest listed values, with a unit or not ("200", "200ms"), since a number the
+ * list does not hold is a legal starting value.
  */
 function experimentValue(field: DebugField, text: string): DebugFlags[DebugField] | null {
   const spec = fieldSpec(field)
@@ -108,8 +112,10 @@ function experimentValue(field: DebugField, text: string): DebugFlags[DebugField
   for (const value of values) {
     if (raw(value).toLowerCase() === lower || format(value).toLowerCase() === lower) return value
   }
-  const first = values[0]
-  if (typeof first === "boolean") return asBoolean(text)
+  const first: unknown = values[0]
+  // No Experiment is an on/off switch today, but the next one may be (AGENTS.md: "a new behaviour whose
+  // worth is in doubt ships with an on/off Experiment"), so the reading stays.
+  if (typeof first === "boolean") return asBoolean(text) as DebugFlags[DebugField] | null
   if (typeof first === "number") {
     const number = Number(lower.replace(/(ms|%|tiles?)$/u, ""))
     const numbers = values as readonly number[]
@@ -124,6 +130,8 @@ export type ImportResult = Readonly<{
   applied: readonly string[]
   /** What was not: an unknown name, or a value the setting cannot take — each as it was written. */
   ignored: readonly string[]
+  /** The settled Experiments' names it skipped quietly, in the order they were read. */
+  settled: readonly string[]
 }>
 
 const PAIR = /([A-Za-z][A-Za-z0-9_]*)\s*=\s*([^\s,;&#]+)/gu
@@ -137,13 +145,19 @@ export function parseSettingsExport(text: string, base: SettingsSnapshot): Impor
   const experiments: Record<string, unknown> = { ...base.experiments }
   const applied: string[] = []
   const ignored: string[] = []
+  const settled: string[] = []
   const fields = new Set<string>(DEBUG_FIELDS.map((spec) => spec.field))
+  const retired = new Set<string>(SETTLED_EXPERIMENTS)
   for (const line of text.split(/\r?\n/u)) {
     // A comment runs to the end of its line; a URL-encoded or one-line form has none to strip.
     const body = line.replace(/#.*$/u, "")
     for (const match of body.matchAll(PAIR)) {
       const name = match[1] as string
       const value = match[2] as string
+      if (retired.has(name)) {
+        settled.push(name)
+        continue
+      }
       if (fields.has(name)) {
         const parsed = experimentValue(name as DebugField, value)
         if (parsed === null) ignored.push(`${name}=${value}`)
@@ -171,7 +185,7 @@ export function parseSettingsExport(text: string, base: SettingsSnapshot): Impor
   }
   // The settings file's own forgiving parse has the last word on the player's half.
   const settings = parseSettings({ ...base.settings, ...settingsRecord })
-  return { snapshot: { settings, experiments: experiments as DebugFlags }, applied, ignored }
+  return { snapshot: { settings, experiments: experiments as DebugFlags }, applied, ignored, settled }
 }
 
 /** A player setting's value from text — its own name, or the name the popup shows ("16", "none"). */

@@ -189,7 +189,7 @@ function slideGif(name, { before, move, cols = 80, rows = 24, capability = "true
 
 /**
  * A building going up (gate 5I), frame by frame as the live screen draws it: `before` sets the scene
- * (and any Experiments, by keys), `place` is the key that places, and the GIF is every `stepMs`
+ * (by keys), `place` is the key that places, and the GIF is every `stepMs`
  * of what `BuildAnimation` gives from that moment until nothing is moving — the same function the live
  * loop calls, fed a clock that steps instead of waits. Each frame is shown for `showMs`, so a GIF can
  * run slower than life and say so in its caption. `stillAtMs` makes one PNG of that instant instead.
@@ -335,8 +335,8 @@ function placementSheet(name, { before, place, expect, timesMs, capability = "tr
 // Nexus, where nothing fits, so arming moves it to the nearest spot with a free tile around it, a
 // free column to its right (gate 5K) — and placed with Space.
 
-// The owner's defaults (2026-09-29): 300 ms of frames, then 250 ms of light and sparks.
-const SHEET_TIMES = [0, 100, 200, 300, 400, 500, 600]
+// The owner's numbers (his settings export, 2026-09-30): 300 ms of frames, then 400 ms of light and sparks.
+const SHEET_TIMES = [0, 100, 200, 300, 450, 600, 700]
 
 placementSheet("build-place-sheet-barracks", {
   before: `${PICK_FIRST_POWER} Down Space`,
@@ -360,14 +360,6 @@ placementSheet("build-place-sheet-turret", {
   expect: "Turret placed",
   timesMs: SHEET_TIMES,
   caption: "A one-tile Turret rises in place - dot, stack, mast - then the alarm mark, lit",
-})
-
-placementSheet("build-place-sheet-rainbow", {
-  before: `${PICK_FIRST_POWER} d Down Right Down Right Esc Down Space`,
-  place: "Space",
-  expect: "Barracks placed",
-  timesMs: SHEET_TIMES,
-  caption: "Lighting: rainbow, Particles: many - the theme's own hues sweep across it and fade",
 })
 
 placementSheet("build-place-sheet-light", {
@@ -434,13 +426,6 @@ placementGif("build-place-barracks-monochrome", {
   place: "Space",
   expect: "Barracks placed",
   capability: "monochrome",
-})
-
-placementGif("build-place-rainbow", {
-  // The Lighting Experiment set to rainbow and Particles to many, then a Barracks.
-  before: `${PICK_FIRST_POWER} d Down Right Down Right Esc Down Space`,
-  place: "Space",
-  expect: "Barracks placed",
 })
 
 placementGif("build-place-reduced-motion", {
@@ -617,53 +602,57 @@ scripted(
 const PULSE_PLAN = "n 2 3 click:22,9 click:22,9 3 click:22,12 click:22,12 2 click:20,14 click:20,14 s s"
 // The same commit with nothing built: the War Chest picked (a pick cannot be skipped), then [s] twice.
 const NOTHING_BUILT = "n 2 s s"
+// The placeholder Pulse these pictures were first made against: the probe raid, against units of your
+// own. The game defaults to a heavy raid and none of yours since the owner's settings export of
+// 2026-09-30, so every Pulse shot asks for the probe explicitly and shows what it always showed.
+const PROBE = { raid: "probe", crew: "some" }
 
 scripted(
   "pulse-start",
   "The second [s] starts the Pulse on this screen: the view goes to your Nexus, the title has a timer",
-  { keys: PULSE_PLAN, expect: "NEXUS PULSE 1" },
+  { keys: PULSE_PLAN, expect: "NEXUS PULSE 1", experiments: PROBE },
 )
 
 scripted(
   "pulse-fight",
   "Seven seconds in: the raid meets the Turrets. Score on the left, the last five events under it",
-  { keys: `${PULSE_PLAN} wait~7000`, expect: "0:08" },
+  { keys: `${PULSE_PLAN} wait~7000`, expect: "0:08", experiments: PROBE },
 )
 
 scripted(
   "pulse-last-seconds",
   "The last three seconds: the timer flashes, a light sweeps the map's border like a lighthouse",
-  { keys: `${PULSE_PLAN} wait~12400`, expect: "The Pulse is about to end." },
+  { keys: `${PULSE_PLAN} wait~12400`, expect: "The Pulse is about to end.", experiments: PROBE },
 )
 
 scripted(
   "pulse-nexus-hit",
   "Your Nexus is hit for the first time: the border goes a faint red for a fifth of a second",
-  { keys: `${NOTHING_BUILT} wait~11600`, expect: "NEXUS PULSE 1", experiments: { crew: "none" } },
+  { keys: `${NOTHING_BUILT} wait~11600`, expect: "NEXUS PULSE 1", experiments: { raid: "probe", crew: "none" } },
 )
 
 scripted(
   "pulse-result-victory",
   "A Pulse won: VICTORY and why, the survivors walked home by Recall, and how to go on",
-  { keys: `${PULSE_PLAN} wait~19000`, expect: "VICTORY" },
+  { keys: `${PULSE_PLAN} wait~19000`, expect: "VICTORY", experiments: PROBE },
 )
 
 scripted(
   "pulse-result-defeat",
   "Nothing built, five units against seven: DEFEAT, said as plainly as a win",
-  { keys: `${NOTHING_BUILT} wait~40000`, expect: "DEFEAT" },
+  { keys: `${NOTHING_BUILT} wait~40000`, expect: "DEFEAT", experiments: PROBE },
 )
 
 scripted(
   "pulse-result-timeup",
   "No raid (an Experiment): the Pulse runs out its 30 seconds and says TIME'S UP",
-  { keys: `${NOTHING_BUILT} wait~40000`, expect: "TIME'S UP", experiments: { raid: "none" } },
+  { keys: `${NOTHING_BUILT} wait~40000`, expect: "TIME'S UP", experiments: { raid: "none", crew: "some" } },
 )
 
 scripted(
   "pulse-experiments",
-  "d opens the Experiments mid-Pulse: the ending's first (Final warning, Red alerts, Walk-back)",
-  { keys: `${PULSE_PLAN} wait~3000 d`, expect: "Final warning" },
+  "d opens the Experiments mid-Pulse at the placeholder Pulse's own: the raid and your units",
+  { keys: `${PULSE_PLAN} wait~3000 d`, expect: "Your units", experiments: PROBE },
 )
 
 pulseGif("pulse-ending", {
@@ -673,6 +662,7 @@ pulseGif("pulse-ending", {
   fromMs: 10500,
   toMs: 19000,
   expect: "VICTORY",
+  experiments: PROBE,
 })
 
 // Settings (owner, 2026-09-28): the game menu's [s], the player's own settings first, then the
@@ -696,16 +686,16 @@ scripted(
   { keys: "d", expect: "EXPERIMENTS - for playtests, not saved" },
 )
 
-// The experiments' order: the menu spike's focus arrow and cursor blink first, then gate 5I's placement
-// juice, then gate 5H's movement numbers (Scroll margin is six Downs in), then gate 5G's flash timings. From the player's first setting (Esc s), Up
-// comes round to Export, the list's last row, then the last experiments: Up*2 is "Refused flicker",
-// Up*3 "Pressed flash". (The map-edge Experiments, "Opens on" and "Smart cursor" were settled by the
-// owner's playtest of 2026-09-29 and deleted; the restart is the game menu's [r] since feedback F34.)
+// The experiments' order, since the owner settled all but five on 2026-09-30 (the rest are tuned values,
+// src/build/tuning.ts): the focus arrow and the card reveal, still being felt; the hold window (two
+// Downs in), which depends on the keyboard; then the placeholder Pulse's raid and your units. Export
+// settings is the list's last row. (The map-edge Experiments, "Opens on" and "Smart cursor" were
+// settled by the owner's playtest of 2026-09-29; the restart is the game menu's [r] since feedback F34.)
 
 scripted(
   "build-debug-104x32",
-  "Right twice on Scroll margin: 25% of the view becomes 35%, and the bottom line says so",
-  { keys: "d Down*6 Right Right", cols: 104, rows: 32, expect: "Scroll margin: 35%" },
+  "Right twice on Hold window: 350 ms becomes 700 ms, and the bottom line says so",
+  { keys: "d Down*2 Right Right", cols: 104, rows: 32, expect: "Hold window: 700 ms" },
 )
 
 scripted(
@@ -726,8 +716,8 @@ scriptedGif("build-arm-at-cursor", {
 
 scripted(
   "build-debug-scrolled",
-  "Settings scroll: the settings and the experiments do not fit at 80x24, so the list moves with the highlight, the title says where it is - SETTINGS (11/37) - and the right border is a scroll bar with a thumb. A click on its upper or lower half, or the wheel, scrolls it too",
-  { keys: "d Down*6", expect: "SETTINGS (11/" },
+  "Settings scroll: the settings and the experiments do not quite fit at 80x24, so the list moves with the highlight, the title says where it is - SETTINGS (10/10), Export settings - and the right border is a scroll bar with a thumb. A click on its upper or lower half, or the wheel, scrolls it too",
+  { keys: "d Down*5", expect: "SETTINGS (10/10)" },
 )
 
 scripted(
@@ -737,20 +727,14 @@ scripted(
 )
 
 scriptedGif("build-held-arrow", {
-  // A tap, the terminal's repeat delay (150 ms here, inside the owner's 150 ms hold window; a longer
+  // A tap, the terminal's repeat delay (150 ms here, inside the owner's 350 ms hold window; a longer
   // delay loses only the first repeat), then auto-repeats 30 ms apart: one tile, then two a press from
-  // the first repeat, then four once the run is 300 ms old. Then Left, straight after: a different
-  // arrow starts again at one, then two. Shift+Down: a jump of twelve.
+  // the first repeat, then four once the run is 200 ms old. Then Left, straight after: a different
+  // arrow starts again at one, then two. Shift+Down: a jump of ten. (Explore Map, from the menu, first
+  // moves the cursor to clear ground beside the Nexus.)
   keys: "e Right Right~150 Right~30*14 Left~30 Left~30*3 S-Down",
-  expect: "52,22",
+  expect: "61,20",
   delayMs: 450,
-})
-
-scriptedGif("build-armed-click-still", {
-  // Armed, a click near the edge moves the cursor and the preview there and does not scroll the view,
-  // so the second click on the same spot lands on the same tile and places (Q58).
-  keys: `${PICK_FIRST_POWER} 1 click:43,10 click:43,10`,
-  expect: "Barracks placed",
 })
 
 scriptedGif("build-explore-edge-click", {
@@ -768,8 +752,9 @@ scripted(
 )
 
 slideGif("build-view-slide", {
-  // Shift+Right: the view slides to put the cursor in the middle, over 150 ms and a few frames, fast
-  // at first and settling at the end — every frame the live screen draws, as it draws them.
+  // Shift+Right: the cursor jumps and drags the view at the scroll margin; the view slides there over
+  // the tuned view slide, a few frames, fast at first and settling at the end, and the cursor glides —
+  // every frame the live screen draws, as it draws them.
   before: `${PICK_FIRST_POWER} e S-Right*2`,
   move: "S-Right",
 })
@@ -837,9 +822,9 @@ live(
     drive: () => {
       pickFirstPower()
       key("Tab")
-      // A twelve-tile jump since gate 5J (five until 5H, then eight): two east and one south, from
-      // 18,10 on the Grid Nexus, still leave more Grid on every side. tmux's pause between keys is
-      // longer than the jump repeat limit, so no jump is dropped.
+      // A ten-tile jump since the owner's settings export of 2026-09-30 (five until 5H, then eight, then
+      // twelve): two east and one south, from 18,10 on the Grid Nexus, still leave more Grid on every
+      // side. tmux's pause between keys is longer than the jump repeat limit, so no jump is dropped.
       key("S-Right")
       key("NPage")
       key("S-Right")
@@ -878,7 +863,7 @@ live(
     drive: () => {
       pickFirstPower()
       literal("1") // arm Barracks
-      // Two twelve-tile jumps (gate 5J), with a key between them so the second is not a held
+      // Two ten-tile jumps (the tuned jump), with a key between them so the second is not a held
       // Shift's repeat inside the jump limit.
       key("S-Right")
       key("Down")

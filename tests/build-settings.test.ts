@@ -21,6 +21,7 @@ import { defaultExperiments, formatSettingsExport, parseSettingsExport } from ".
 import type { SettingsSnapshot } from "../src/build/settings-export.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { exportText } from "../src/build/state.ts"
+import { SETTLED_EXPERIMENTS, TUNING } from "../src/build/tuning.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { runSpike, spikeContext } from "../src/cli/spike.ts"
 import { importSettings, osc52, terminalExporter } from "../src/cli/terminalNexus.ts"
@@ -235,7 +236,7 @@ test("every player setting's value box is a click target, the same as Left and R
 test("[e] shows the export in a popup, hands the same text to the adapter, and Esc goes back one popup at a time", () => {
   const context: BuildContext = { ...spikeContext(), buildId: "abc1234", exportDestination: "Copied to the clipboard." }
   const side = session(context)
-  keys(side, "d", DOWN, DOWN, DOWN, RIGHT) // at the experiments, past the focus arrow, the blink and the card reveal: a longer build animation
+  keys(side, "d", DOWN, DOWN, RIGHT) // at the experiments, past the focus arrow and the card reveal: a longer hold window
   keys(side, "q", "s", "e")
   assert.equal(side.build.state.overlay, "export")
   assert.equal(side.exports.length, 1)
@@ -246,10 +247,10 @@ test("[e] shows the export in a popup, hands the same text to the adapter, and E
   assert.match(text, /Terminal Nexus settings/)
   assert.match(text, /# build abc1234/)
   assert.match(text, /# Changed experiments/)
-  assert.match(text, /placeFramesMs = 450/)
+  assert.match(text, /holdWindowMs = 500/)
   // Up/Down walk the text; the window follows.
   for (let line = 0; line < 40; line += 1) keys(side, DOWN)
-  assert.match(screen(side), /refusedFlashMs = 140/)
+  assert.match(screen(side), /crew = none/)
   keys(side, ESC)
   assert.equal(side.build.state.overlay, "settings")
   assert.equal(side.build.state.overlayHighlight, SETTINGS_EXPORT_ROW)
@@ -271,7 +272,7 @@ test("[e] shows the export in a popup, hands the same text to the adapter, and E
 test("the export lists changed experiments first with their defaults, then the settings, then the rest", () => {
   const snapshot: SettingsSnapshot = {
     settings: { ...DEFAULT_SETTINGS, theme: "light" },
-    experiments: { ...defaultExperiments(), placeLight: "rainbow", scrollMargin: 30, armedClickScrolls: false },
+    experiments: { ...defaultExperiments(), crew: "some", raid: "probe", holdWindowMs: 250 },
   }
   const text = formatSettingsExport(snapshot, "592f3cb")
   const lines = text.trimEnd().split("\n")
@@ -282,10 +283,11 @@ test("the export lists changed experiments first with their defaults, then the s
   const changed = lines.slice(3, changedEnd)
   assert.deepEqual(
     changed.map((line) => line.split(" ")[0]),
-    DEBUG_FIELDS.map((spec) => spec.field).filter((field) => ["placeLight", "scrollMargin", "armedClickScrolls"].includes(field)),
+    DEBUG_FIELDS.map((spec) => spec.field).filter((field) => ["crew", "raid", "holdWindowMs"].includes(field)),
   )
-  assert.ok(changed.some((line) => line.startsWith("placeLight = rainbow  # Lighting, default light")))
-  assert.ok(changed.some((line) => line.startsWith("armedClickScrolls = off  # Armed click scrolls, default on")))
+  assert.ok(changed.some((line) => line.startsWith("raid = probe  # Raid, default heavy")))
+  assert.ok(changed.some((line) => line.startsWith("crew = some  # Your units, default none")))
+  assert.ok(changed.some((line) => line.startsWith("holdWindowMs = 250  # Hold window, default 350 ms")))
   assert.ok(lines.includes("theme = light  # Background"))
   assert.ok(lines.includes("# Experiments at their defaults"))
   assert.equal(lines.length, 2 + 1 + 3 + 1 + PLAYER_FIELDS.length + 1 + (DEBUG_FIELDS.length - 3))
@@ -300,15 +302,7 @@ test("an export read back gives exactly the settings and experiments it was made
   const base: SettingsSnapshot = { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() }
   const changed: SettingsSnapshot = {
     settings: { capability: "color256", theme: "light", glyphPack: "unicode", reducedMotion: true },
-    experiments: {
-      ...defaultExperiments(),
-      placeLight: "rainbow",
-      placeParticles: "many",
-      scrollMargin: 12,
-      clickScroll: "centre",
-      armedClickScrolls: false,
-      easeMs: 0,
-    },
+    experiments: { focusArrowMs: 0, cardRevealMs: 800, holdWindowMs: 250, raid: "none", crew: "some" },
   }
   for (const snapshot of [base, changed]) {
     const result = parseSettingsExport(formatSettingsExport(snapshot, "x"), base)
@@ -323,63 +317,98 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
   const result = parseSettingsExport(
     [
       "some chatter from a pull request comment",
-      "placeLight=rainbow, scrollMargin=30%; placeFramesMs=600ms",
+      "raid=probe, holdWindowMs=500ms; cardRevealMs=100ms",
       "retiredFlag = 3  # a flag an older build had",
-      "easeMs = 99999  # out of range: keeps its default",
-      "clickScroll = sideways",
+      "focusArrowMs = 99999  # out of range: keeps its default",
+      "crew = sideways",
       "startFocus = map  # as the popup shows it",
       "colours=256 background=light glyphs=unicode reducedMotion=yes",
       "smartCursor = off",
+      "placeLight=rainbow scrollMargin=30%  # settled since: skipped without a word",
     ].join("\n"),
     base,
   )
   const { experiments, settings } = result.snapshot
-  assert.equal(experiments.placeLight, "rainbow")
-  assert.equal(experiments.scrollMargin, 30)
-  assert.equal(experiments.placeFramesMs, 600)
-  assert.equal(experiments.easeMs, defaultExperiments().easeMs)
-  assert.equal(experiments.clickScroll, defaultExperiments().clickScroll)
+  assert.equal(experiments.raid, "probe")
+  assert.equal(experiments.holdWindowMs, 500)
+  assert.equal(experiments.cardRevealMs, 100)
+  assert.equal(experiments.focusArrowMs, defaultExperiments().focusArrowMs)
+  assert.equal(experiments.crew, defaultExperiments().crew)
   assert.deepEqual(settings, { capability: "color256", theme: "light", glyphPack: "unicode", reducedMotion: true })
-  // "Opens on" and "Smart cursor" were settled and deleted (feedback F30, F31): an older export's
-  // lines for them are skipped like any retired name.
-  assert.deepEqual(result.ignored, ["retiredFlag=3", "easeMs=99999", "clickScroll=sideways", "startFocus=map", "smartCursor=off"])
+  // "Opens on" and "Smart cursor" were settled and deleted (feedback F30, F31) before the list of
+  // settled names existed: an older export's lines for them are reported like any retired name.
+  assert.deepEqual(result.ignored, ["retiredFlag=3", "focusArrowMs=99999", "crew=sideways", "startFocus=map", "smartCursor=off"])
+  // The twenty-eight the owner settled on 2026-09-30 are known: skipped quietly, never reported.
+  assert.deepEqual(result.settled, ["placeLight", "scrollMargin"])
   // Nothing readable at all is the base, unchanged.
   assert.deepEqual(parseSettingsExport("", base).snapshot, base)
   assert.deepEqual(parseSettingsExport("= = # nothing", base).snapshot, base)
 })
 
-test("the owner's export of 2026-09-29 is this build's defaults, and the map-edge names it carried are skipped", () => {
-  // His favourite settings, as the export writes them (the three map-edge Experiments he settled were
-  // deleted, so a build after them skips those names rather than failing on them).
+/** The owner's settings export of 2026-09-30, word for word (feedback F76): "Many of those settings can
+ *  be cleaned now, I feel good about them." */
+const OWNER_EXPORT_2026_09_30 = [
+  "Terminal Nexus settings",
+  "# build 02fd8ee",
+  "# Changed experiments",
+  "placeGlowMs = 400  # Glow time, default 250 ms",
+  "scrollMargin = 30  # Scroll margin, default 25%",
+  "clickZone = 25  # Click edge zone, default 33%",
+  "easeMs = 100  # View slide, default 150 ms",
+  "cursorGlideMs = 100  # Cursor glide, default 80 ms",
+  "fastRecentres = off  # Shift centres, default on",
+  "rampMs = 200  # Held to go fast, default 300 ms",
+  "holdWindowMs = 350  # Hold window, default 150 ms",
+  "jumpStep = 10  # Shift jump, default 12 tiles",
+  "jumpRepeatMs = 100  # Jump repeat, default 150 ms",
+  "escTimeoutMs = 50  # Esc timeout, default 100 ms",
+  "refusedFlashMs = 90  # Refused flicker, default 140 ms",
+  "endWalkPauseMs = 500  # Walk-back delay, default 1000 ms",
+  "endWalkMs = 1000  # Walk-back time, default 2000 ms",
+  "raid = heavy  # Raid, default probe",
+  "crew = none  # Your units, default some",
+  "# Settings",
+  "theme = dark  # Background",
+  "capability = truecolor  # Colour depth",
+  "glyphPack = unicode  # Symbols",
+  "reducedMotion = off  # Reduced motion",
+  "# Experiments at their defaults",
+  "focusArrowMs = 180  # Focus arrow",
+  "cursorBlinks = 2  # Cursor blink",
+  "placeFramesMs = 300  # Build animation",
+  "placeLight = light  # Lighting",
+  "placeParticles = few  # Particles",
+  "clickScroll = edges  # Explore click",
+  "armedClickScrolls = on  # Armed click scrolls",
+  "doubleClickMs = 400  # Double click",
+  "tapStep = 1  # Tap step",
+  "holdStep = 2  # Hold step",
+  "fastStep = 4  # Fast step",
+  "refusedCursorMs = 150  # Refused cursor",
+  "pressedFlashMs = 90  # Pressed flash",
+  "endWarnMs = 3000  # Final warning",
+  "endCentre = on  # Centre on Nexus",
+  "redAlerts = on  # Red alerts",
+].join("\n")
+
+test("the owner's export of 2026-09-30 is this build: its Experiments are the defaults, its settled numbers the tuned values", () => {
   const base: SettingsSnapshot = { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() }
-  const result = parseSettingsExport(
-    [
-      "Terminal Nexus settings",
-      "# Changed experiments",
-      "placeFramesMs = 300  # Build animation, default 450",
-      "placeGlowMs = 250  # Glow time, default 400",
-      "scrollMargin = 25  # Scroll margin, default 20",
-      "cursorGlideMs = 80  # Cursor glide, default 100",
-      "holdWindowMs = 150  # Hold window, default 500",
-      "refusedCursorMs = 150  # Refused cursor, default 250",
-      "escTimeoutMs = 100  # Esc timeout, default 50",
-      "mapEdge = map  # Map edge, default solid",
-      "sharedWestBorder = on  # Shared west side, default off",
-      "# Experiments at their defaults",
-      "mapEdgeColour = quiet  # Map edge colour",
-    ].join("\n"),
-    base,
-  )
-  const picked = ["placeFramesMs", "placeGlowMs", "scrollMargin", "cursorGlideMs", "holdWindowMs", "refusedCursorMs", "escTimeoutMs"]
-  assert.deepEqual(result.applied, picked, "every value he picked was read")
-  assert.deepEqual(result.snapshot.experiments, defaultExperiments(), "and every one of them is now the default")
-  assert.deepEqual(result.ignored, ["mapEdge=map", "sharedWestBorder=on", "mapEdgeColour=quiet"])
-  const defaults = defaultExperiments()
-  assert.deepEqual(
-    Object.fromEntries(picked.map((field) => [field, defaults[field as keyof typeof defaults]])),
-    { placeFramesMs: 300, placeGlowMs: 250, scrollMargin: 25, cursorGlideMs: 80, holdWindowMs: 150, refusedCursorMs: 150, escTimeoutMs: 100 },
-  )
-  // And each new default is a value its Experiment's list holds, so Left/Right step from it exactly.
+  const result = parseSettingsExport(OWNER_EXPORT_2026_09_30, base)
+  // Every line is known: nothing is reported as a name the game does not know.
+  assert.deepEqual(result.ignored, [])
+  assert.deepEqual(result.applied, ["holdWindowMs", "raid", "crew", "theme", "capability", "glyphPack", "reducedMotion", "focusArrowMs"])
+  assert.deepEqual(result.snapshot.experiments, defaultExperiments(), "every Experiment he kept is at his value by default")
+  // The rest were settled: each skipped quietly, and each number is the tuned value, read not copied.
+  assert.deepEqual([...result.settled].sort(), [...SETTLED_EXPERIMENTS].sort())
+  const numbers = [...OWNER_EXPORT_2026_09_30.matchAll(/^(\w+) = (\d+) /gmu)]
+  let checked = 0
+  for (const [, name, value] of numbers) {
+    if (name === undefined || !(name in TUNING)) continue
+    assert.equal(TUNING[name as keyof typeof TUNING], Number(value), `${name} is not his ${value}`)
+    checked += 1
+  }
+  assert.equal(checked, 21, "every settled number of his was compared")
+  // And each default is a value its Experiment's list holds, so Left/Right step from it exactly.
   for (const spec of DEBUG_FIELDS) {
     const value = defaultExperiments()[spec.field]
     assert.ok((spec.values as readonly unknown[]).includes(value), `${spec.field}'s default ${String(value)} is in its list`)
@@ -389,23 +418,23 @@ test("the owner's export of 2026-09-29 is this build's defaults, and the map-edg
 test("--settings on the command line: settings over what is saved, and every experiment from the text", () => {
   const saved: Settings = { ...DEFAULT_SETTINGS, capability: "truecolor" }
   assert.deepEqual(importSettings(undefined, saved), { settings: saved })
-  const imported = importSettings("theme=light placeLight=off", saved)
+  const imported = importSettings("theme=light raid=probe", saved)
   assert.deepEqual(imported.settings, { ...saved, theme: "light" })
-  assert.deepEqual(imported.experiments, { ...defaultExperiments(), placeLight: "off" })
+  assert.deepEqual(imported.experiments, { ...defaultExperiments(), raid: "probe" })
 })
 
 test("a Build Phase opened with imported experiments has them, and the playtest script's runner takes both halves", () => {
-  const side = session({ ...spikeContext(), experiments: { placeLight: "rainbow", armedClickScrolls: false } })
-  assert.equal(side.build.state.debug.placeLight, "rainbow")
-  assert.equal(side.build.state.debug.armedClickScrolls, false)
+  const side = session({ ...spikeContext(), experiments: { raid: "probe", holdWindowMs: 500 } })
+  assert.equal(side.build.state.debug.raid, "probe")
+  assert.equal(side.build.state.debug.holdWindowMs, 500)
   const run = runBuildPlaytest({
     steps: parseKeyScript("d"),
     settings: { ...DEFAULT_SETTINGS, glyphPack: "unicode" },
-    experiments: { scrollMargin: 30 },
+    experiments: { crew: "some" },
   })
   const last = run.frames[run.frames.length - 1]
   assert.ok(last !== undefined)
-  assert.equal(last.state.debug.scrollMargin, 30)
+  assert.equal(last.state.debug.crew, "some")
   assert.equal(last.state.settings.glyphPack, "unicode")
   assert.match(frameToText(last.frame), /│/u)
 })
@@ -414,10 +443,10 @@ test("a Build Phase opened with imported experiments has them, and the playtest 
 
 test("the settings flow by keys, by clicks, and from a driver script is the same state, frame and export", () => {
   // Open the game menu, open Settings, set the background to light, go to the experiments and turn the
-  // lighting to rainbow, then export.
+  // raid to the probe, then export.
   const byKeyboard = session()
   keys(byKeyboard, ESC, "s", RIGHT, ESC, ESC, "d")
-  keys(byKeyboard, DOWN, DOWN, DOWN, DOWN, RIGHT, "e") // past the focus arrow, the blink, the card reveal and the build animation
+  keys(byKeyboard, DOWN, DOWN, DOWN, RIGHT, "e") // past the focus arrow, the card reveal and the hold window
 
   const byMouse = session()
   const menuHint = escHintSpan(byMouse.layout, escLabel(byMouse.build.state))
@@ -426,13 +455,13 @@ test("the settings flow by keys, by clicks, and from a driver script is the same
   const background = placed(byMouse).rows.find((entry) => entry.spec.kind === "setting" && entry.spec.label === "Background")
   assert.ok(background !== undefined)
   click(byMouse, settingColumns(placed(byMouse)).valueTo, background.row)
-  // By mouse, the lighting row is reached with the wheel; its value box is the click.
-  while (!placed(byMouse).rows.some((entry) => entry.spec.kind === "setting" && entry.spec.label === "Lighting")) {
+  // By mouse, the raid's row is reached with the wheel; its value box is the click.
+  while (!placed(byMouse).rows.some((entry) => entry.spec.kind === "setting" && entry.spec.label === "Raid")) {
     keys(byMouse, formatMouseEvent(65, placed(byMouse).box.left + 3, placed(byMouse).box.top + 3))
   }
-  const lighting = placed(byMouse).rows.find((entry) => entry.spec.kind === "setting" && entry.spec.label === "Lighting")
-  assert.ok(lighting !== undefined)
-  click(byMouse, settingColumns(placed(byMouse)).valueTo, lighting.row)
+  const raid = placed(byMouse).rows.find((entry) => entry.spec.kind === "setting" && entry.spec.label === "Raid")
+  assert.ok(raid !== undefined)
+  click(byMouse, settingColumns(placed(byMouse)).valueTo, raid.row)
   // Export settings is the list's last row: the scroll bar's lower half brings it into view.
   while (!placed(byMouse).rows.some((entry) => entry.spec.kind === "option" && entry.spec.hotkey === "e")) {
     const bar = placed(byMouse).scrollBar
@@ -445,7 +474,7 @@ test("the settings flow by keys, by clicks, and from a driver script is the same
     { kind: "open-menu" },
     { kind: "open-settings", section: "settings" },
     { kind: "setting-adjust", field: "theme", step: 1 },
-    { kind: "debug-adjust", field: "placeLight", step: 1 },
+    { kind: "debug-adjust", field: "raid", step: 1 },
     { kind: "export-settings" },
   ]
   const byDriver = session()
@@ -454,9 +483,9 @@ test("the settings flow by keys, by clicks, and from a driver script is the same
   for (const side of [byKeyboard, byMouse, byDriver]) {
     assert.equal(side.build.state.overlay, "export")
     assert.equal(side.build.state.settings.theme, "light")
-    assert.equal(side.build.state.debug.placeLight, "rainbow")
+    assert.equal(side.build.state.debug.raid, "probe")
     assert.equal(side.exports.length, 1)
-    assert.match(side.exports[0] as string, /placeLight = rainbow/)
+    assert.match(side.exports[0] as string, /raid = probe/)
   }
   assert.equal(byMouse.exports[0], byKeyboard.exports[0])
   assert.equal(byDriver.exports[0], byKeyboard.exports[0])
@@ -537,7 +566,7 @@ test("the terminal's export: OSC 52 to the clipboard and a file beside the setti
 })
 
 test("the experiments' defaults are this build's: a fresh Build Phase exports no changed experiment", () => {
-  assert.deepEqual(defaultExperiments(), initialDebugFlags({}))
+  assert.deepEqual(defaultExperiments(), initialDebugFlags())
   const side = session()
   keys(side, "d", "e")
   assert.match(side.exports[0] as string, /# Changed experiments: none/)

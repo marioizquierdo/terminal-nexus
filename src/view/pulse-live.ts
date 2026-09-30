@@ -12,13 +12,12 @@
 // here can change what the Pulse did — presentation never can (engine.md Section 1).
 
 import type { BuildCommand } from "../build/types.ts"
-import type { DebugFlags } from "../build/debug.ts"
 import type { TileWidth } from "../build/camera.ts"
 import type { Coord } from "../grid/types.ts"
 import type { RecallResult } from "../match/types.ts"
 import type { Outcome } from "../state/types.ts"
-import { endingTimes, nexusStrain, phaseAt, redAlert, resultOf, walkPositions } from "./ending.ts"
-import type { EndingFlags, EndingPhase, EndingTimes, NexusStrain, PulseResult } from "./ending.ts"
+import { ENDING_TUNING, endingTimes, nexusStrain, phaseAt, redAlert, resultOf, walkPositions } from "./ending.ts"
+import type { EndingPhase, EndingTimes, EndingTimings, NexusStrain, PulseResult } from "./ending.ts"
 import type { CapabilityMode } from "./roles.ts"
 import { FRAME_MS } from "./build-live.ts"
 import { Playback } from "./playback.ts"
@@ -62,15 +61,22 @@ export class PulsePresenter {
   private readonly strain: NexusStrain
   /** How many mobile units the player has once Recall is done. It never changes, so it is counted once. */
   private readonly home: number
-  /** The ending's moments under the Experiments last asked for, so a frame works them out once. */
-  private endingCache: Readonly<{ flags: EndingFlags; times: EndingTimes }> | null = null
+  /** The ending's moments: when the warning starts, the fight stops, the walk home starts and ends. The
+   *  timings are fixed for a Pulse (the owner's tuned ones, unless a test hands in others), so they are
+   *  worked out once. */
+  private readonly ending: EndingTimes
   private lastNow: number | null = null
   /** The camera moves already made this run, so each is sent once: `start` and `end`. */
   private fired = new Set<"start" | "end">()
 
-  constructor(resolved: ResolvedPulse, presentation: PresentationOptions = DEFAULT_PRESENTATION) {
+  constructor(
+    resolved: ResolvedPulse,
+    presentation: PresentationOptions = DEFAULT_PRESENTATION,
+    timings: EndingTimings = ENDING_TUNING,
+  ) {
     this.resolved = resolved
     this.view = createView(resolved.timeline, presentation)
+    this.ending = endingTimes(this.view.lastTick * this.view.tickDurationMs, this.view.effectsEndMs, timings)
     this.result = resultOf(outcomeOf(resolved.timeline))
     this.strain = nexusStrain(resolved.timeline)
     this.home = resolved.recall.state.entities.filter(
@@ -118,26 +124,18 @@ export class PulsePresenter {
     if (control === "restart") this.fired.clear()
   }
 
-  /** The ending's moments under the Experiments as they are set right now — so changing one is felt at
-   *  once, and "Watch again" plays the new numbers from the top. */
-  times(flags: DebugFlags): EndingTimes {
-    const { endWarnMs, endWalkPauseMs, endWalkMs } = flags
-    const cached = this.endingCache
-    if (cached !== null && cached.flags.endWarnMs === endWarnMs && cached.flags.endWalkPauseMs === endWalkPauseMs && cached.flags.endWalkMs === endWalkMs) {
-      return cached.times
-    }
-    const ending = { endWarnMs, endWalkPauseMs, endWalkMs }
-    const times = endingTimes(this.view.lastTick * this.view.tickDurationMs, this.view.effectsEndMs, ending)
-    this.endingCache = { flags: ending, times }
-    return times
+  /** The ending's moments. */
+  times(): EndingTimes {
+    return this.ending
   }
 
   /**
    * What the Pulse asks of the screen now: to centre on the player's Nexus when it starts, and again when
-   * its last seconds begin (or the stop, when there is no warning) unless "Centre on Nexus" is off — "the
-   * camera is centred at the nexus", so the next Build Phase starts where the base is. Each once per run.
+   * its last seconds begin (or the stop, when there is no warning) — "the camera is centred at the nexus",
+   * so the next Build Phase starts where the base is. Each once per run. (Whether to centre at the end was
+   * the "Centre on Nexus" Experiment until the owner kept it on, 2026-09-30.)
    */
-  due(flags: DebugFlags): BuildCommand[] {
+  due(): BuildCommand[] {
     const { nexus } = this.resolved
     if (nexus === null) return []
     const commands: BuildCommand[] = []
@@ -146,33 +144,31 @@ export class PulsePresenter {
       this.fired.add("start")
       commands.push(look)
     }
-    if (flags.endCentre && !this.fired.has("end")) {
-      const times = this.times(flags)
-      if (this.timeMs >= (times.warnMs ?? times.stopMs)) {
-        this.fired.add("end")
-        commands.push(look)
-      }
+    if (!this.fired.has("end") && this.timeMs >= (this.ending.warnMs ?? this.ending.stopMs)) {
+      this.fired.add("end")
+      commands.push(look)
     }
     return commands
   }
 
-  /** Where the Pulse is in its ending right now, under the Experiments as they are set. */
-  phase(flags: DebugFlags): EndingPhase {
-    return phaseAt(this.times(flags), this.timeMs)
+  /** Where the Pulse is in its ending right now. */
+  phase(): EndingPhase {
+    return phaseAt(this.ending, this.timeMs)
   }
 
   /** When the last thing still moving finishes, or `null` when nothing is: the frame timer runs until
    *  then. While it runs the picture changes every frame — a fight, a timer's flash, a walk home. */
-  busyUntil(now: number, flags: DebugFlags): number | null {
+  busyUntil(now: number): number | null {
     if (this.playback.paused) return null
-    return this.phase(flags) === "home" ? null : now + FRAME_MS
+    return this.phase() === "home" ? null : now + FRAME_MS
   }
 
-  /** What the scene draws at the Pulse's current time. */
-  frame(options: Readonly<{ flags: DebugFlags; capability: CapabilityMode; tileWidth: TileWidth; reducedMotion: boolean }>): PulseFrame {
-    const { flags, capability, tileWidth, reducedMotion } = options
+  /** What the scene draws at the Pulse's current time. The red flashes on the border when the player's
+   *  Nexus is hurt were the "Red alerts" Experiment until the owner kept them on (2026-09-30). */
+  frame(options: Readonly<{ capability: CapabilityMode; tileWidth: TileWidth; reducedMotion: boolean }>): PulseFrame {
+    const { capability, tileWidth, reducedMotion } = options
     const timeMs = this.timeMs
-    const times = this.times(flags)
+    const times = this.ending
     const sample = this.view.sampleAt(timeMs, capability, tileWidth, reducedMotion)
     const walk = walkPositions(this.resolved.recall.moves, times, timeMs, reducedMotion)
     const positions = walk.size === 0 ? sample.positions : new Map([...sample.positions, ...walk])
@@ -193,7 +189,7 @@ export class PulsePresenter {
       timeMs,
       times,
       reducedMotion,
-      redAlert: flags.redAlerts ? redAlert(this.strain, times, this.result.tone === "danger", timeMs, reducedMotion) : 0,
+      redAlert: redAlert(this.strain, times, this.result.tone === "danger", timeMs, reducedMotion),
       positions,
       result: this.result,
       forces,

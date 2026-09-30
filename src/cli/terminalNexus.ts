@@ -21,6 +21,7 @@ import { DEFAULT_SETTINGS, createSettingsStore, defaultSettingsPath } from "../s
 import type { Settings } from "../settings/index.ts"
 import type { DebugFlags } from "../build/debug.ts"
 import { defaultExperiments, parseSettingsExport } from "../build/settings-export.ts"
+import { TUNING } from "../build/tuning.ts"
 import type { TerminalOutput } from "../view/backends/ports.ts"
 
 const USAGE = `terminal-nexus — the Terminal Nexus game
@@ -36,12 +37,13 @@ const USAGE = `terminal-nexus — the Terminal Nexus game
       keyboard, by mouse, or from a script. It answers a question rather than shipping a
       screen - nothing it plans reaches the simulation, and the plan is not saved.
       --scroll-margin <percent> changes how close to the edge of the view the cursor gets
-      before the map starts scrolling, as a share of the view's width and height (25 unless
-      given; "25" and "25%" are the same). Esc opens the game menu: Settings (saved, like the
-      title menu's) and, at their bottom, Experiments - every movement and effect number, live,
-      never saved; d jumps straight to them. "Export settings" copies them all as text.
+      before the map starts scrolling, as a share of the view's width and height
+      (${TUNING.scrollMargin} unless given; "${TUNING.scrollMargin}" and "${TUNING.scrollMargin}%" are the same). Esc opens the game menu: Settings
+      (saved, like the title menu's) and, at their bottom, Experiments - the few choices still
+      being tried, live, never saved; d jumps straight to them. "Export settings" copies them all
+      as text.
       --settings "<text>" starts with an exported text's settings and experiments, for this
-      run only: paste the whole export, or just pairs like "placeLight=rainbow scrollMargin=25".
+      run only: paste the whole export, or just pairs like "raid=probe crew=some".
       --keys "<key script>" opens it already in the state those keys reach, in the scripted
       playtest's key names: --keys "n 1 1 Enter" picks the first power and places a Barracks.
       For demos and for reproducing a report; the keyboard is yours after the last key.

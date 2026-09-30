@@ -49,11 +49,11 @@ export type BuildCommand =
   /**
    * Arrows, and the fast move: one command, a different distance. **How far is the input path's
    * decision, never the reducer's** (gate 5H): how far a held arrow goes comes from key timing the
-   * reducer never sees, and arrives here as an ordinary distance. `fast` marks the fast move (Shift,
-   * Option, PageUp/Home and the like, a jump) — not a distance but what it is for, so the reducer can
-   * recentre the view on it when the "Shift centres" Experiment says so.
+   * reducer never sees, and arrives here as an ordinary distance. The fast move (Shift, Option,
+   * PageUp/Home and the like, a jump) is just a longer one: it carried a `fast` mark so the reducer could
+   * re-centre the view on it, until the owner turned "Shift centres" off (2026-09-30).
    */
-  | Readonly<{ kind: "move-cursor"; dx: number; dy: number; fast?: boolean }>
+  | Readonly<{ kind: "move-cursor"; dx: number; dy: number }>
   /**
    * A click on a Grid tile. What it does is the reducer's to decide, from what is on screen — so the
    * driver reproduces a click exactly (engine.md 9.7):

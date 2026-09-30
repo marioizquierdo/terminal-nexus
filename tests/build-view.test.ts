@@ -550,15 +550,15 @@ test("no header or footer line is cut off at the 80-column floor", () => {
 })
 
 test("a scroll margin given on the command line is the one the camera actually uses", () => {
-  // Mario deferred confirming the three-tile default and will judge it against another number. The
-  // footer printed a margin that was not the default until the position readout went (feedback F59);
-  // Settings' own row is where it is read now. A share of the view since gate 5H: 49 tiles wide at 80
-  // columns, so 5% is 2 tiles and 10% is 5.
+  // Mario deferred confirming the three-tile default and would judge it against another number. The
+  // footer printed a margin that was not the default until the position readout went (feedback F59),
+  // and no screen names it any more: it is a tuned value since he settled it (2026-09-30). A share of
+  // the view since gate 5H: 49 tiles wide at 80 columns, so 5% is 2 tiles and 10% is 5.
   for (const [percent, margin] of [[5, 2], [10, 5]] as const) {
     const context = { ...neutralContext(), scrollMargin: percent }
     const layout = buildLayout(MINIMUM, context.grid)
     const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
-    assert.equal(build.state.debug.scrollMargin, percent)
+    assert.doesNotMatch(frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome")), /margin \d+%/)
     // The camera really follows at that distance, not at the default.
     build.dispatch({ kind: "move-cursor", dx: 0, dy: 0 })
     let steps = 0

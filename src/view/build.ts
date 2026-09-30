@@ -65,6 +65,7 @@ import type { TrackSchedule } from "./animation.ts"
 import { trackEffectsAt } from "./animation.ts"
 import type { PlacementClock, RemovalClock } from "./placement.ts"
 import { placementEffectContext, placementLook, placementSchedule, removalSchedule } from "./placement.ts"
+import { TUNING } from "../build/tuning.ts"
 
 /** A structure the player is about to place, and whether they may. Drawn in the highlights band, so
  *  it is presentation and can never change occupancy (engine.md 9.4). */
@@ -92,7 +93,7 @@ export type BuildCompositionInput = Readonly<{
    */
   cursor?: Coord
   /** The cursor flashes where a placement was just tried and refused, while the live loop shows it
-   *  (gate 5H; the "Refused cursor" Experiment). Presentation only. */
+   *  (gate 5H; for the tuned `refusedCursorMs`). Presentation only. */
   refusedFlash?: boolean
   /**
    * The **focus arrow** in flight (owner, 2026-09-30, feedback F54): a menu row has just handed the
@@ -102,8 +103,8 @@ export type BuildCompositionInput = Readonly<{
    * still frame — nothing flies.
    */
   focusArrow?: Readonly<{ progress: number }>
-  /** The cursor is in the "on" half of its blink, after the focus arrow lands (F54; the "Cursor blink"
-   *  Experiment): drawn in a menu row's pressed look. Absent — every still frame — the plain cursor. */
+  /** The cursor is in the "on" half of its blink, after the focus arrow lands (F54; the tuned
+   *  `cursorBlinks`): drawn in a menu row's pressed look. Absent — every still frame — the plain cursor. */
   cursorBlink?: boolean
   /**
    * The menu turning into a card (owner, 2026-09-30, feedback F68; the "Card reveal" Experiment): the
@@ -299,7 +300,7 @@ function animatingPlacements(input: BuildCompositionInput): Map<number, Animatin
     const placement = state.planned.find((planned) => planned.ordinal === clock.ordinal)
     if (placement === undefined) continue
     const footprint = context.registry.get(placement.contentId).footprint
-    const schedule = placementSchedule(placement, footprint, state.debug, reducedMotion)
+    const schedule = placementSchedule(placement, footprint, reducedMotion)
     animating.set(clock.ordinal, { placement, schedule, elapsedMs: clock.elapsedMs })
   }
   return animating
@@ -372,7 +373,7 @@ function drawEffects(
   const tracks: Readonly<{ schedule: TrackSchedule; elapsedMs: number }>[] = [...animating.values()]
   for (const removal of input.removing ?? []) {
     const footprint = context.registry.get(removal.contentId).footprint
-    tracks.push({ schedule: removalSchedule(removal, footprint, state.debug, reducedMotion), elapsedMs: removal.elapsedMs })
+    tracks.push({ schedule: removalSchedule(removal, footprint, reducedMotion), elapsedMs: removal.elapsedMs })
   }
   if (tracks.length === 0) return
   const range = visibleRange(state.camera, state.viewport)
@@ -1044,8 +1045,8 @@ function drawBuildingCard(
       : placementSchedule(
           { ordinal: 0, contentId, anchor: { x: 0, y: 0 } },
           definition.footprint,
-          { ...input.state.debug, placeFramesMs: look.icon.framesMs, placeGlowMs: 0 },
           false,
+          { ...TUNING, placeFramesMs: look.icon.framesMs, placeGlowMs: 0 },
         )
   art.forEach((line, index) => {
     ;[...line].forEach((character, offset) => {

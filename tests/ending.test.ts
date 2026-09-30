@@ -1,17 +1,19 @@
 // The Nexus Pulse's ending — gate 6A, the owner's sketch (milestone 6, Section 2.2) and his answer to its
 // first build (feedback F43-F45). Every moment of it is a pure function of presentation time, so the tests
-// are arithmetic: the moments, their order at every Experiment value, the timer and its flash, the light
-// that sweeps the border, the red that means the Nexus is hurt, the walk home, and the words of the result.
+// are arithmetic: the moments, their order at every timing they could be given, the timer and its flash,
+// the light that sweeps the border, the red that means the Nexus is hurt, the walk home, and the words of
+// the result.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { DEBUG_FIELDS, DEFAULT_ENDING } from "../src/build/debug.ts"
+import { DEBUG_FIELDS } from "../src/build/debug.ts"
 import type { DebugFlags } from "../src/build/debug.ts"
 import type { RecallMove } from "../src/match/index.ts"
 import type { Outcome } from "../src/state/types.ts"
 import {
   BEAM_FADE_MS,
   BEAM_GLOW,
+  ENDING_TUNING,
   BEAM_PEAK,
   BEAM_PERIOD_MS,
   BEAM_STEADY,
@@ -33,25 +35,23 @@ import {
   timerSeconds,
   walkPositions,
 } from "../src/view/ending.ts"
-import type { EndingFlags, EndingPhase, NexusStrain } from "../src/view/ending.ts"
+import type { EndingPhase, EndingTimings, NexusStrain } from "../src/view/ending.ts"
 import { DEFENCE, play } from "./pulse-helpers.ts"
 
-const SKETCH: EndingFlags = {
-  endWarnMs: DEFAULT_ENDING.endWarnMs,
-  endWalkPauseMs: DEFAULT_ENDING.endWalkPauseMs,
-  endWalkMs: DEFAULT_ENDING.endWalkMs,
-}
+/** The owner's first sketch of the ending (2026-09-17): a fixture for the arithmetic below, with round
+ *  numbers. The game plays his tuned timings (`ENDING_TUNING`), the next test's. */
+const SKETCH: EndingTimings = { endWarnMs: 3000, endWalkPauseMs: 1000, endWalkMs: 2000 }
 
-test("the defaults are the owner's: a warning in the last 3 s, one second to the walk, two of walking", () => {
+test("the ending is the owner's: a warning in the last 3 s, half a second to the walk, one second of walking", () => {
   // "some visual warning ... then after 3-5 seconds, the units stop shooting, 1 second later they start
-  // walking back, 2 seconds later the build phase begins" (owner, 2026-09-17), and "the last 3 seconds"
-  // (2026-09-29).
-  assert.deepEqual(SKETCH, { endWarnMs: 3000, endWalkPauseMs: 1000, endWalkMs: 2000 })
-  const times = endingTimes(20_000, 20_400, SKETCH)
+  // walking back, 2 seconds later the build phase begins" (owner, 2026-09-17), "the last 3 seconds"
+  // (2026-09-29), and the pause and the walk halved in his settings export (2026-09-30).
+  assert.deepEqual(ENDING_TUNING, { endWarnMs: 3000, endWalkPauseMs: 500, endWalkMs: 1000 })
+  const times = endingTimes(20_000, 20_400, ENDING_TUNING)
   assert.equal(times.stopMs, 20_000)
   assert.equal(times.warnMs, 17_000, "the warning starts three seconds before the shooting stops")
-  assert.equal(times.walkMs, 21_000, "the walk starts one second after it stops")
-  assert.equal(times.homeMs, 23_000, "and takes two seconds")
+  assert.equal(times.walkMs, 20_500, "the walk starts half a second after it stops")
+  assert.equal(times.homeMs, 21_500, "and takes one second")
 })
 
 test("the walk waits for every effect in flight to land, and never starts before the pause is up", () => {
@@ -67,12 +67,14 @@ test("no warning means none, and a short Pulse's warning cannot start before the
   assert.equal(endingTimes(20_000, 20_000, { ...SKETCH, endWalkMs: 0 }).homeMs, 21_000, "no walk: home the moment it starts")
 })
 
-test("the phases come in order and never go backwards, at every value of every ending Experiment", () => {
-  const values = (field: keyof EndingFlags): readonly number[] => {
-    const spec = DEBUG_FIELDS.find((candidate) => candidate.field === field)
-    assert.ok(spec !== undefined, `${field} is not an Experiment`)
-    return spec.values as readonly number[]
+test("the phases come in order and never go backwards, at every value the ending's timings were tried at", () => {
+  // The values each timing's Experiment offered until the owner settled them (2026-09-30).
+  const tried: Readonly<Record<keyof EndingTimings, readonly number[]>> = {
+    endWarnMs: [0, 1000, 2000, 3000, 4000, 5000, 6000, 8000],
+    endWalkPauseMs: [0, 500, 1000, 1500, 2000, 3000],
+    endWalkMs: [0, 1000, 2000, 3000, 4000, 6000],
   }
+  const values = (field: keyof EndingTimings): readonly number[] => tried[field]
   const order: readonly EndingPhase[] = ["fighting", "final", "halted", "walking", "home"]
   let combinations = 0
   for (const endWarnMs of values("endWarnMs")) {
@@ -97,7 +99,7 @@ test("the phases come in order and never go backwards, at every value of every e
       }
     }
   }
-  assert.ok(combinations > 500, "the sweep did not cover the Experiments")
+  assert.ok(combinations > 500, "the sweep did not cover the timings")
 })
 
 test("the timer counts down to the stop in whole seconds, and reads 0:00 once it has", () => {
@@ -279,8 +281,8 @@ test("the result says what happened in words: won, lost, drawn or timed out — 
   assert.equal(resultOf(outcome("B", "annihilation"), "B").headline, "VICTORY")
 })
 
-test("no ending Experiment needs a restart, and each names the question it serves", () => {
-  for (const field of ["endWarnMs", "endWalkPauseMs", "endWalkMs", "endCentre", "redAlerts", "raid", "crew"] as const satisfies readonly (keyof DebugFlags)[]) {
+test("the placeholder Pulse's Experiments need no restart, and each names the question it serves", () => {
+  for (const field of ["raid", "crew"] as const satisfies readonly (keyof DebugFlags)[]) {
     const spec = DEBUG_FIELDS.find((candidate) => candidate.field === field)
     assert.ok(spec !== undefined, `${field} is not an Experiment`)
     assert.equal(spec.applies, "now")

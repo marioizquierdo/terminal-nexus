@@ -2,23 +2,24 @@
 // ramp (gate 5H, simplified after the owner's playtest of 2026-09-28: "one keypress should move 1,
 // then holding the key (or tapping repeatedly fast) should start scrolling already at speed 2, and
 // 300ms later increase speed to 4. Holding shift should behave fundamentally different... it should
-// move the cursor 12 tiles").
+// move the cursor 12 tiles" — numbers he has retuned since, in `src/build/tuning.ts`).
 //
 // **Terminals send no key-up.** A held key is a stream of auto-repeated presses: the first one, a
 // pause (the terminal's repeat delay — a few hundred milliseconds on a Mac, set by the user), then
-// presses a few tens of milliseconds apart. So "held" is read from the gaps, and every number is a
-// Experiment:
+// presses a few tens of milliseconds apart. So "held" is read from the gaps. Every number is the
+// owner's, settled from Experiments into the tuned values (`src/build/tuning.ts`) — except the hold
+// window, which stays an Experiment because it depends on each keyboard's own repeat delay:
 //
-//   - a press is a **tap**, and moves the tap step (one tile) — a single press stays precise;
+//   - a press is a **tap**, and moves the tap step — a single press stays precise;
 //   - a press of the **same arrow** within `holdWindowMs` of the one before it is part of a **run** —
-//     the terminal's first repeat of a held key, or fast tapping, alike — and moves the hold step (two
-//     tiles) at once; once the run has been moving for `rampMs`, the fast step (four);
+//     the terminal's first repeat of a held key, or fast tapping, alike — and moves the hold step at
+//     once; once the run has been moving for `rampMs`, the fast step;
 //   - a different arrow, anything else pressed (`reset`), or a pause longer than the window, starts
 //     over at a tap. A terminal whose repeat delay is longer than the window only loses its first
 //     repeat to it: that one is a tap, and the repeats after it, tens of milliseconds apart, a run;
 //   - the **fast move** (Shift, Option, PageUp/PageDown, Home/End) is not a speed at all but a
 //     **jump** of `jumpStep` tiles. Held, it jumps again at most once every `jumpRepeatMs`: the
-//     terminal repeats far faster than an eye can follow a twelve-tile jump, so the repeats in between
+//     terminal repeats far faster than an eye can follow a ten-tile jump, so the repeats in between
 //     are dropped, and each jump is seen to land (the view's slide and the cursor's glide take about
 //     that long) before the next one starts.
 //
@@ -26,17 +27,29 @@
 // `src/build` to that). The session keeps one of these beside the reducer, never inside it — the
 // reducer only ever sees an ordinary `move-cursor` of the size chosen here.
 
-import type { DebugFlags } from "./debug.ts"
 import type { CursorKey } from "./keyboard.ts"
+import { TUNING } from "./tuning.ts"
 
 /** What kind of move a cursor key made: a tap, a run at the hold step, a run at the fast step, or
  *  the fast move's jump. The playtest summary prints it. */
 export type MoveKind = "tap" | "hold" | "fast" | "jump"
 
-export type RampFlags = Pick<
-  DebugFlags,
-  "tapStep" | "holdStep" | "fastStep" | "jumpStep" | "rampMs" | "holdWindowMs" | "jumpRepeatMs"
->
+/** The ramp's numbers, handed in so the ramp stays a pure function a test can drive with any of them. */
+export type RampTuning = Readonly<{
+  tapStep: number
+  holdStep: number
+  fastStep: number
+  jumpStep: number
+  rampMs: number
+  holdWindowMs: number
+  jumpRepeatMs: number
+}>
+
+/** The ramp the game runs: the tuned steps and timings, and the hold window the Experiment has now. */
+export function rampTuning(holdWindowMs: number): RampTuning {
+  const { tapStep, holdStep, fastStep, jumpStep, rampMs, jumpRepeatMs } = TUNING
+  return { tapStep, holdStep, fastStep, jumpStep, rampMs, holdWindowMs, jumpRepeatMs }
+}
 
 /** What the ramp remembers about the last cursor key that moved: its direction, whether it was a
  *  jump, when it came, and when the run it belongs to started moving at the hold step (`null` for a
@@ -54,7 +67,7 @@ export type RampMemory = Readonly<{
 export type RampStep = Readonly<{ kind: MoveKind; tiles: number; memory: RampMemory }>
 
 /** One cursor key through the ramp: what kind of move it is, how many tiles, and what to remember. */
-export function rampStep(previous: RampMemory | null, key: CursorKey, now: number, flags: RampFlags): RampStep {
+export function rampStep(previous: RampMemory | null, key: CursorKey, now: number, flags: RampTuning): RampStep {
   const same = previous !== null && previous.dx === key.dx && previous.dy === key.dy && previous.jump === key.fast
   const gap = previous === null ? Number.POSITIVE_INFINITY : now - previous.at
   const remember = (runStart: number | null): RampMemory => ({ dx: key.dx, dy: key.dy, jump: key.fast, at: now, runStart })
@@ -79,7 +92,7 @@ export class SpeedRamp {
   private lastKind: MoveKind | null = null
 
   /** How many tiles this cursor key moves, arriving at `now` milliseconds; 0 means send nothing. */
-  step(key: CursorKey, now: number, flags: RampFlags): number {
+  step(key: CursorKey, now: number, flags: RampTuning): number {
     const next = rampStep(this.memory, key, now, flags)
     this.memory = next.memory
     this.lastKind = next.kind

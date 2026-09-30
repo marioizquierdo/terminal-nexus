@@ -10,6 +10,7 @@ import assert from "node:assert/strict"
 import { SPIKE_CATALOG } from "../src/build/catalog.ts"
 import { DEBUG_FIELDS, initialDebugFlags } from "../src/build/debug.ts"
 import type { DebugFlags } from "../src/build/debug.ts"
+import { TUNING } from "../src/build/tuning.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import {
   CARD_FIRST_ROW,
@@ -47,7 +48,7 @@ const TAB = "\t"
 const ENTER = "\r"
 const MINIMUM = { columns: 80, rows: 24 }
 const ROOMY = { columns: 120, rows: 40 }
-const FLAGS: DebugFlags = initialDebugFlags({})
+const FLAGS: DebugFlags = initialDebugFlags()
 
 type Side = { build: BuildSession; layout: BuildLayout; context: BuildContext }
 
@@ -426,8 +427,8 @@ test("beat 3: the header in place, the card fading in, its words typed, the icon
   const schedule = placementSchedule(
     { ordinal: 0, contentId: "structure.citizen.barracks", anchor: { x: 0, y: 0 } },
     side.context.registry.get("structure.citizen.barracks").footprint,
-    { ...FLAGS, placeFramesMs: framesMs, placeGlowMs: 0 },
     false,
+    { ...TUNING, placeFramesMs: framesMs, placeGlowMs: 0 },
   )
   const elapsed = (0.02 / CARD_BEATS.card) * framesMs
   for (let y = 0; y < 2; y += 1) {
@@ -544,8 +545,8 @@ test("the reveal and the hand-off start together: neither waits for the other", 
 
 test("Card reveal is an Experiment beside the focus arrow, 150 ms by default, and round-trips through the export", () => {
   const fields = DEBUG_FIELDS.map((spec) => spec.field)
-  assert.deepEqual(fields.slice(0, 3), ["focusArrowMs", "cursorBlinks", "cardRevealMs"])
-  const spec = DEBUG_FIELDS[2]
+  assert.deepEqual(fields.slice(0, 2), ["focusArrowMs", "cardRevealMs"])
+  const spec = DEBUG_FIELDS[1]
   assert.equal(spec?.label, "Card reveal")
   assert.deepEqual(spec?.values, [0, 100, 150, 250, 400, 800])
   assert.match(spec?.question ?? "", /\(F68\)$/)

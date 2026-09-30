@@ -8,15 +8,9 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SPIKE_CATALOG } from "../src/build/catalog.ts"
-import {
-  DEBUG_FIELDS,
-  adjustDebug,
-  flashDuration,
-  DEFAULT_SCROLL_MARGIN_PERCENT,
-  initialDebugFlags,
-  rowOfField,
-} from "../src/build/debug.ts"
+import { DEBUG_FIELDS, adjustDebug, initialDebugFlags, rowOfField } from "../src/build/debug.ts"
 import type { DebugField } from "../src/build/debug.ts"
+import { SETTLED_EXPERIMENTS } from "../src/build/tuning.ts"
 import { buildLayout, cellForTile, escHintSpan, escLabel, menuEntryRow } from "../src/build/layout.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, MOUSE_WHEEL_DOWN, MOUSE_WHEEL_UP, formatMouseEvent } from "../src/build/mouse.ts"
 import {
@@ -125,23 +119,26 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   const text = screen(side)
   assert.match(text, /SETTINGS/)
   assert.match(text, /EXPERIMENTS - for playtests, not saved/)
-  // The focus arrow and the cursor's blink lead the list (feedback F54): the newest thing waiting to be
-  // felt. No "now" or "restart" beside a value any more (feedback F34).
+  // The five left after the owner settled the rest (2026-09-30), in order: the two still being felt, the
+  // hold window, and the placeholder Pulse's raid and crew. No "now" or "restart" beside a value any
+  // more (feedback F34).
+  assert.deepEqual(
+    DEBUG_FIELDS.map((spec) => spec.field),
+    ["focusArrowMs", "cardRevealMs", "holdWindowMs", "raid", "crew"],
+  )
   assert.match(text, /Focus arrow\s+<\s+180 ms\s+>/)
-  assert.match(text, /Cursor blink\s+<\s+2 blinks\s+>/)
-  assert.match(text, /Build animation\s+<\s+300 ms\s+>/)
+  assert.match(text, /Card reveal\s+<\s+150 ms\s+>/)
+  assert.match(text, /Hold window\s+<\s+350 ms\s+>/)
   assert.doesNotMatch(text, /> +(now|restart)\b/)
   // The bottom line says what the keys do there (feedback F59), and the highlighted row's question is
   // shown. Opened by `d` from the game, Esc closes it.
   assert.match(text, /Left\/right change a value, \[e\] exports them all\. \[esc\] closes\./)
   assert.ok(text.includes("(F54)"), "the focus arrow's question is not shown")
-  const margin = session()
-  keys(margin, "d")
-  goTo(margin, "scrollMargin")
-  assert.ok(screen(margin).includes("(Q54)"), "the scroll margin's question is not shown")
-  assert.match(screen(margin), /Scroll margin\s+<\s+25%\s+>/)
-  // Every flag is listed — scrolled into view by walking down the list (gate 5H: at 80x24 they do not
-  // all fit at once).
+  const hold = session()
+  keys(hold, "d")
+  goTo(hold, "holdWindowMs")
+  assert.match(screen(hold), /repeat delay/, "the hold window's question does not say why it stays")
+  // Every flag is listed — scrolled into view by walking down the list.
   const seen = new Set<string>()
   for (let row = 0; row < DEBUG_FIELDS.length; row += 1) {
     const now = screen(side)
@@ -149,9 +146,14 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
     keys(side, DOWN)
   }
   for (const spec of DEBUG_FIELDS) assert.ok(seen.has(spec.label), `${spec.label} is never listed`)
-  // Settled by the owner on 2026-09-29 (feedback F30, F31), and deleted.
-  for (const gone of ["Smart cursor", "Opens on"]) {
+  assert.match(screen(side), /Raid\s+<\s+heavy\s+>/)
+  assert.match(screen(side), /Your units\s+<\s+none\s+>/)
+  // Settled by the owner on 2026-09-29 (feedback F30, F31) and 2026-09-30 (F76), and deleted.
+  for (const gone of ["Smart cursor", "Opens on", "Cursor blink", "Build animation", "Scroll margin", "Shift jump"]) {
     assert.ok(!DEBUG_FIELDS.some((spec) => spec.label === gone), `${gone} is still an Experiment`)
+  }
+  for (const gone of SETTLED_EXPERIMENTS) {
+    assert.ok(!DEBUG_FIELDS.some((spec) => spec.field === gone), `${gone} is still an Experiment`)
   }
 })
 
@@ -201,53 +203,26 @@ test("the popup fits inside the Grid pane at every size, and every question fits
 
 // --- What each flag changes ------------------------------------------------------------------------
 
-test("scroll margin: the camera follows exactly as a screen opened with that margin does, from the moment it changes", () => {
-  const moves = [RIGHT, RIGHT, DOWN, ...Array.from({ length: 30 }, () => RIGHT), ...Array.from({ length: 6 }, () => DOWN)]
-  const values = [0, 5, 10, 15, 20, 25, 30, 35, 40]
-  for (const target of [0, 10, 30, 40]) {
-    const reference = session({ ...spikeContext(), scrollMargin: target })
-    keys(reference, TAB, ...moves)
-    const tuned = session()
-    const steps = values.indexOf(target) - values.indexOf(DEFAULT_SCROLL_MARGIN_PERCENT)
-    keys(tuned, "d")
-    goTo(tuned, "scrollMargin")
-    keys(tuned, ...Array.from({ length: Math.abs(steps) }, () => (steps > 0 ? RIGHT : LEFT)), ESC, TAB, ...moves)
-    assert.equal(tuned.build.state.debug.scrollMargin, target)
-    assert.deepEqual(tuned.build.state.camera, reference.build.state.camera, `margin ${target}%`)
-    // The footer's position readout named a margin that was not the owner's 25% until it went (feedback
-    // F59); Settings' own row is where the margin is read now.
-    assert.doesNotMatch(screen(tuned), /margin \d+%/)
-  }
-  // Widening the margin is felt at once: the camera settles under the new rule before any key moves.
-  const side = session()
-  keys(side, TAB, ...Array.from({ length: 16 }, () => RIGHT))
-  const before = side.build.state.camera
-  keys(side, "d")
-  goTo(side, "scrollMargin")
-  keys(side, RIGHT, RIGHT, RIGHT, RIGHT)
-  assert.notDeepEqual(side.build.state.camera, before, "a wider margin did not move the camera")
-})
-
-test("a number stops at its ends and says so; a choice of two comes round", () => {
-  const flags = initialDebugFlags({})
-  const smallest = adjustDebug({ ...flags, scrollMargin: 0 }, "scrollMargin", -1)
+test("a number stops at its ends and says so; a choice comes round", () => {
+  const flags = initialDebugFlags()
+  const smallest = adjustDebug({ ...flags, holdWindowMs: 150 }, "holdWindowMs", -1)
   assert.equal(smallest.changed, false)
-  assert.equal(adjustDebug({ ...flags, scrollMargin: 40 }, "scrollMargin", 1).changed, false)
-  // A `--scroll-margin` the list does not hold steps to its nearest neighbour.
-  assert.equal(adjustDebug({ ...flags, scrollMargin: 12 }, "scrollMargin", -1).flags.scrollMargin, 10)
-  assert.equal(adjustDebug({ ...flags, scrollMargin: 12 }, "scrollMargin", 1).flags.scrollMargin, 15)
-  assert.equal(adjustDebug(flags, "armedClickScrolls", 1).flags.armedClickScrolls, false)
-  assert.equal(adjustDebug(adjustDebug(flags, "armedClickScrolls", 1).flags, "armedClickScrolls", 1).flags.armedClickScrolls, true)
-  assert.equal(adjustDebug(flags, "clickScroll", 1).flags.clickScroll, "centre")
-  assert.equal(adjustDebug(flags, "clickScroll", -1).flags.clickScroll, "margin")
+  assert.equal(adjustDebug({ ...flags, holdWindowMs: 900 }, "holdWindowMs", 1).changed, false)
+  // A number the list does not hold (from a settings text) steps to its nearest neighbour.
+  assert.equal(adjustDebug({ ...flags, holdWindowMs: 300 }, "holdWindowMs", -1).flags.holdWindowMs, 250)
+  assert.equal(adjustDebug({ ...flags, holdWindowMs: 300 }, "holdWindowMs", 1).flags.holdWindowMs, 350)
+  assert.equal(adjustDebug(flags, "crew", 1).flags.crew, "some")
+  assert.equal(adjustDebug(adjustDebug(flags, "crew", 1).flags, "crew", 1).flags.crew, "none")
+  assert.equal(adjustDebug(flags, "raid", 1).flags.raid, "probe")
+  assert.equal(adjustDebug(flags, "raid", -1).flags.raid, "none")
 
   const side = session()
   keys(side, "d")
-  goTo(side, "scrollMargin")
-  keys(side, ...Array.from({ length: 12 }, () => LEFT))
-  assert.equal(side.build.state.debug.scrollMargin, 0)
+  goTo(side, "holdWindowMs")
+  keys(side, ...Array.from({ length: 8 }, () => LEFT))
+  assert.equal(side.build.state.debug.holdWindowMs, 150)
   assert.equal(side.build.state.status.tone, "warning")
-  assert.match(side.build.state.status.text, /already 0%, the smallest/)
+  assert.match(side.build.state.status.text, /already 150 ms, the smallest/)
 })
 
 test("the restart keeps every flag and starts the plan over, on the menu at Explore Map", () => {
@@ -255,9 +230,9 @@ test("the restart keeps every flag and starts the plan over, on the menu at Expl
   keys(side, "n", "1", "1", RIGHT, ENTER) // pick a power, plan a Barracks
   assert.equal(side.build.state.planned.length, 1)
   keys(side, "d")
-  goTo(side, "armedClickScrolls")
+  goTo(side, "crew")
   keys(side, RIGHT)
-  assert.equal(side.build.state.debug.armedClickScrolls, false)
+  assert.equal(side.build.state.debug.crew, "some")
   // A flag that applies at once needs no restart message; the game menu's [r] is the restart.
   keys(side, "q")
   assert.equal(side.build.state.overlay, "menu")
@@ -269,7 +244,7 @@ test("the restart keeps every flag and starts the plan over, on the menu at Expl
   assert.equal(state.planned.length, 0)
   assert.equal(state.nexusPick, null)
   assert.deepEqual(state.cursor, { x: 18, y: 13 })
-  assert.equal(state.debug.armedClickScrolls, false)
+  assert.equal(state.debug.crew, "some")
   // The restart answers on the bottom line; the next key that says nothing brings back the hint for the
   // highlighted row (feedback F59).
   assert.match(screen(side), /Build Phase restarted with these settings\./)
@@ -282,18 +257,6 @@ test("the restart keeps every flag and starts the plan over, on the menu at Expl
   assert.equal(GAME_MENU_ROWS[byEnter.build.state.overlayHighlight], "restart")
   keys(byEnter, ENTER)
   assert.equal(byEnter.build.state.status.text, "Build Phase restarted with these settings.")
-})
-
-test("the flash timings are what the live loop reads, and zero means no flash at all", () => {
-  const side = session()
-  keys(side, "d")
-  goTo(side, "pressedFlashMs")
-  keys(side, LEFT, LEFT)
-  goTo(side, "refusedFlashMs")
-  keys(side, RIGHT)
-  assert.equal(flashDuration(side.build.state.debug, "pressed"), 0)
-  assert.equal(flashDuration(side.build.state.debug, "refused"), 250)
-  assert.match(screen(side), /Pressed flash\s+<\s+off\s+>/)
 })
 
 test("Settings open on a committed Build Phase too, so a playtest can start over from there", () => {
@@ -313,13 +276,13 @@ test("the browser playtest page's Build Phase key bar has d", () => {
 // --- Same flow, every adapter ----------------------------------------------------------------------
 
 test("the debug flow by keys, by clicks, and from a driver script is the same state and the same frame", () => {
-  // Margin up two, a shorter pressed flash; restart; then arm the Barracks from the menu and place it
-  // where the cursor is, since it fits there.
+  // The hold window up two, a shorter focus arrow; restart; then arm the Barracks from the menu and place
+  // it where the cursor is, since it fits there.
   const byKeyboard = session()
   keys(byKeyboard, "d")
-  goTo(byKeyboard, "scrollMargin")
+  goTo(byKeyboard, "holdWindowMs")
   keys(byKeyboard, RIGHT, RIGHT)
-  goTo(byKeyboard, "pressedFlashMs")
+  goTo(byKeyboard, "focusArrowMs")
   // `q` leaves Settings for the game menu (nothing here waits for a restart, so no message); its [r]
   // restarts. The keyboard is then on the menu.
   keys(byKeyboard, LEFT, "q", "r")
@@ -333,9 +296,9 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
   assert.ok(settingsOption !== undefined)
   assert.equal(GAME_MENU_ROWS[0], "settings")
   click(byMouse, placed(byMouse).textColumn + 2, settingsOption.row)
-  clickValue(byMouse, "scrollMargin", "right")
-  clickValue(byMouse, "scrollMargin", "right")
-  clickValue(byMouse, "pressedFlashMs", "left")
+  clickValue(byMouse, "holdWindowMs", "right")
+  clickValue(byMouse, "holdWindowMs", "right")
+  clickValue(byMouse, "focusArrowMs", "left")
   // "close [esc]" in the top bar is Esc: back to the game menu (no message — nothing changed waits for
   // a restart); then the game menu's Restart.
   const closeHint = escHintSpan(byMouse.layout, escLabel(byMouse.build.state))
@@ -362,9 +325,9 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
 
   const script: readonly BuildCommand[] = [
     { kind: "open-settings", section: "experiments" },
-    { kind: "debug-adjust", field: "scrollMargin", step: 1 },
-    { kind: "debug-adjust", field: "scrollMargin", step: 1 },
-    { kind: "debug-adjust", field: "pressedFlashMs", step: -1 },
+    { kind: "debug-adjust", field: "holdWindowMs", step: 1 },
+    { kind: "debug-adjust", field: "holdWindowMs", step: 1 },
+    { kind: "debug-adjust", field: "focusArrowMs", step: -1 },
     { kind: "debug-restart" },
     { kind: "highlight", delta: 1 },
     { kind: "highlight", delta: 1 },
@@ -377,11 +340,7 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
   byDriver.build.run(script)
 
   const expected = byKeyboard.build.state
-  assert.deepEqual(expected.debug, {
-    ...initialDebugFlags({}),
-    scrollMargin: DEFAULT_SCROLL_MARGIN_PERCENT + 10,
-    pressedFlashMs: 50,
-  })
+  assert.deepEqual(expected.debug, { ...initialDebugFlags(), holdWindowMs: 700, focusArrowMs: 120 })
   assert.equal(expected.planned.length, 1)
   assert.equal(expected.menuHighlight, entryOfConstruct(0))
   assert.deepEqual(byMouse.build.state, expected)

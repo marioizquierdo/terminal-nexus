@@ -3,13 +3,16 @@
 // cursor then blinks in the menu's pressed look. The arrow is a building's; Explore Map's row sends a
 // see-through cursor on the same timeline instead (F64, `tests/build-menu-round-2.test.ts`). The timeline is the live loop's (`BuildAnimation`, driven here with a clock
 // the test holds); the drawing is the view's (`composeBuildFrame`, given an instant); the reducer only
-// records the hand-off. Both Experiments round-trip through the settings export.
+// records the hand-off. The arrow's length is an Experiment and round-trips through the settings export;
+// the blink count and its speed (the pressed flash's) are tuned values since the owner settled them
+// (2026-09-30).
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { DEBUG_FIELDS, initialDebugFlags } from "../src/build/debug.ts"
 import type { DebugFlags } from "../src/build/debug.ts"
+import { TUNING } from "../src/build/tuning.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import { buildLayout, cellForTile, menuEntryRow, tileAtCell } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
@@ -21,6 +24,7 @@ import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import type { BuildCompositionInput } from "../src/view/build.ts"
 import { BuildAnimation, handoffAt, handoffSchedule } from "../src/view/build-live.ts"
+import type { HandoffTiming } from "../src/view/build-live.ts"
 import { cellAt } from "../src/view/frame.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
 
@@ -29,7 +33,12 @@ const DOWN = `${ESC}[B`
 const TAB = "\t"
 const ENTER = "\r"
 const MINIMUM = { columns: 80, rows: 24 }
-const FLAGS: DebugFlags = initialDebugFlags({})
+/** The hand-off as the game times it: the focus arrow's default, the tuned pressed flash and blinks. */
+const FLAGS: HandoffTiming = {
+  focusArrowMs: initialDebugFlags().focusArrowMs,
+  pressedFlashMs: TUNING.pressedFlashMs,
+  cursorBlinks: TUNING.cursorBlinks,
+}
 /** The Turret: one tile, so arming it keeps the cursor where each test puts it, and its row on the
  *  menu is where its arrow leaves from (F63). */
 const TURRET = "3"
@@ -47,7 +56,7 @@ function keys(side: Side, ...sequence: string[]): void {
   for (const key of sequence) side.build.handleData(key, side.layout)
 }
 
-function setFlag<F extends "focusArrowMs" | "cursorBlinks" | "pressedFlashMs">(side: Side, field: F, value: number): void {
+function setFlag<F extends "focusArrowMs">(side: Side, field: F, value: number): void {
   for (let guard = 0; guard < 20 && side.build.state.debug[field] !== value; guard += 1) {
     side.build.dispatch({ kind: "debug-adjust", field, step: side.build.state.debug[field] > value ? -1 : 1 })
   }
@@ -122,7 +131,7 @@ test("the live loop plays it from the frame that first sees the hand-off, and ke
   const animation = new BuildAnimation()
   animation.frame(side.build.state, 0)
   keys(side, "e") // Explore Map, from the menu
-  const end = 1000 + handoffSchedule(side.build.state.debug, false).endMs
+  const end = 1000 + handoffSchedule({ ...FLAGS, focusArrowMs: side.build.state.debug.focusArrowMs }, false).endMs
   const at = (now: number) => animation.frame(side.build.state, now)
   const first = at(1000)
   assert.deepEqual(first.focusArrow, { progress: 0 })
@@ -326,21 +335,22 @@ test("the cursor blinks in the menu row's pressed look, and is the plain cursor 
 
 // --- The Experiments --------------------------------------------------------------------------------
 
-test("Focus arrow and Cursor blink are the first Experiments, and round-trip through the export", () => {
-  assert.deepEqual(DEBUG_FIELDS.slice(0, 2).map((spec) => spec.field), ["focusArrowMs", "cursorBlinks"])
-  for (const spec of DEBUG_FIELDS.slice(0, 2)) assert.match(spec.question, /\(F54\)$/)
-  const experiments: DebugFlags = { ...defaultExperiments(), focusArrowMs: 350, cursorBlinks: 0 }
+test("Focus arrow is the first Experiment, and round-trips through the export; the settled blink count is skipped quietly", () => {
+  assert.equal(DEBUG_FIELDS[0]?.field, "focusArrowMs")
+  assert.match(DEBUG_FIELDS[0]?.question ?? "", /\(F54\)$/)
+  const experiments: DebugFlags = { ...defaultExperiments(), focusArrowMs: 350 }
   const text = formatSettingsExport({ settings: DEFAULT_SETTINGS, experiments })
   assert.match(text, /focusArrowMs = 350 {2}# Focus arrow, default 180 ms/)
-  assert.match(text, /cursorBlinks = 0 {2}# Cursor blink, default 2 blinks/)
+  assert.doesNotMatch(text, /cursorBlinks/)
   const back = parseSettingsExport(text, { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() })
   assert.equal(back.snapshot.experiments.focusArrowMs, 350)
-  assert.equal(back.snapshot.experiments.cursorBlinks, 0)
   assert.deepEqual(back.ignored, [])
-  // The popup's own words read back too.
+  // The popup's own words read back too; an export from before the blink count was settled names it,
+  // and it is skipped without a word.
   const shown = parseSettingsExport("focusArrowMs=off cursorBlinks=3", { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() })
   assert.equal(shown.snapshot.experiments.focusArrowMs, 0)
-  assert.equal(shown.snapshot.experiments.cursorBlinks, 3)
+  assert.deepEqual(shown.ignored, [])
+  assert.deepEqual(shown.settled, ["cursorBlinks"])
 })
 
 // --- The live screen --------------------------------------------------------------------------------

@@ -17,7 +17,9 @@
 // still frame, a test, or a scripted playtest draws any instant of the animation by naming it, and the
 // plan is identical with every effect on or off (the three worlds: presentation never touches state).
 //
-// Timeline of one placement, all of it Experiments:
+// Timeline of one placement, its two lengths the owner's tuned values (`src/build/tuning.ts`: they were
+// the "Build animation" and "Glow time" Experiments, with "Lighting" and "Particles" beside them, until he
+// settled them — a flash that settles and a few sparks — on 2026-09-30):
 //
 //   0 ............ framesMs ................ framesMs + glowMs
 //   | placement frames: foundation -> ... |  finished, lit, sparks  |  settled (state alone)
@@ -26,11 +28,13 @@
 //
 // Reduced motion drops the frames and the light — the finished building is there at once — and the
 // sparks become a still mark at the footprint's four corners for the glow (`fx.sparks.burst`'s own
-// reduced form).
+// reduced form). The recipes' other palettes — the rainbow among them — are theirs to keep; a
+// placement uses the plain flash and sparks.
 
 import type { UnitArt } from "../content/art.ts"
 import { placementFramesFor } from "../content/art.ts"
-import type { DebugFlags } from "../build/debug.ts"
+import type { Tuning } from "../build/tuning.ts"
+import { TUNING } from "../build/tuning.ts"
 import type { Coord, Footprint } from "../grid/types.ts"
 import { footprintExtent } from "../grid/coords.ts"
 import type { Animation, FollowUp, PlayRequest, TrackSchedule } from "./animation.ts"
@@ -56,14 +60,19 @@ export type PlacementTiming = Readonly<{
   totalMs: number
 }>
 
-/** Sparks for `few` and `many` — the two non-zero values of the "Particles" Experiment. */
-export const PLACE_PARTICLE_COUNTS = { few: 6, many: 14 } as const
+/** A placement's numbers: how long its frames run, how long its light and sparks take to settle, and how
+ *  many sparks it throws. The game hands in the owner's tuned ones (the default); a test, or the card's
+ *  rising icon, may hand in others. */
+export type PlacementTuning = Pick<Tuning, "placeFramesMs" | "placeGlowMs" | "placeSparks">
 
-export function placementTiming(flags: DebugFlags, reducedMotion: boolean): PlacementTiming {
-  const framesMs = reducedMotion ? 0 : Math.max(0, flags.placeFramesMs)
-  const lit = !reducedMotion && flags.placeLight !== "off"
-  const sparks = flags.placeParticles !== "off"
-  const glowMs = (lit || sparks) && flags.placeGlowMs > 0 ? flags.placeGlowMs : 0
+/** How far the sparks fly from the footprint, in tiles — the reach the "few" sparks were drawn with. */
+const SPARK_REACH = 2
+
+export function placementTiming(reducedMotion: boolean, tuning: PlacementTuning = TUNING): PlacementTiming {
+  const framesMs = reducedMotion ? 0 : Math.max(0, tuning.placeFramesMs)
+  const lit = !reducedMotion
+  const sparks = tuning.placeSparks > 0
+  const glowMs = (lit || sparks) && tuning.placeGlowMs > 0 ? tuning.placeGlowMs : 0
   return { framesMs, glowMs, totalMs: framesMs + glowMs }
 }
 
@@ -96,12 +105,12 @@ export function placementRun(contentId: string, footprint: Footprint): readonly 
 export type PlacedStructure = Readonly<{ ordinal: number; contentId: string; anchor: Coord }>
 
 /**
- * The structure's placement frames as an Animation: played once over the "Build animation" Experiment
- * time, then cleared, so the structure's own finished art shows. Frames are drawn plain — a scaffold,
- * lighter than the bold building it becomes, which is all of the light that survives monochrome.
+ * The structure's placement frames as an Animation: played once over `placeFramesMs`, then cleared, so
+ * the structure's own finished art shows. Frames are drawn plain — a scaffold, lighter than the bold
+ * building it becomes, which is all of the light that survives monochrome.
  */
-export function placementAnimation(contentId: string, footprint: Footprint, flags: DebugFlags, reducedMotion: boolean): Animation {
-  return animationOf(`place:${contentId}`, placementRun(contentId, footprint), placementTiming(flags, reducedMotion).framesMs)
+export function placementAnimation(contentId: string, footprint: Footprint, reducedMotion: boolean, tuning: PlacementTuning = TUNING): Animation {
+  return animationOf(`place:${contentId}`, placementRun(contentId, footprint), placementTiming(reducedMotion, tuning).framesMs)
 }
 
 /**
@@ -109,13 +118,12 @@ export function placementAnimation(contentId: string, footprint: Footprint, flag
  * each lasting the glow. The sparks' randomness hashes the placement's identity — ordinal, structure,
  * anchor — never the moment it happened.
  */
-export function placementFollowUps(placement: PlacedStructure, footprint: Footprint, flags: DebugFlags, reducedMotion: boolean): FollowUp[] {
-  const { glowMs } = placementTiming(flags, reducedMotion)
+export function placementFollowUps(placement: PlacedStructure, footprint: Footprint, reducedMotion: boolean, tuning: PlacementTuning = TUNING): FollowUp[] {
+  const { glowMs } = placementTiming(reducedMotion, tuning)
   if (glowMs <= 0) return []
   const { width, height } = footprintExtent(footprint)
-  const rainbow = flags.placeLight === "rainbow"
   const followUps: FollowUp[] = []
-  if (!reducedMotion && flags.placeLight !== "off") {
+  if (!reducedMotion) {
     followUps.push({
       kind: "effect",
       effect: {
@@ -124,24 +132,23 @@ export function placementFollowUps(placement: PlacedStructure, footprint: Footpr
         durationMs: glowMs,
         origin: placement.anchor,
         family: "neutral",
-        params: { width, height, palette: rainbow ? "rainbow" : "flash" },
+        params: { width, height, palette: "flash" },
       },
     })
   }
-  const sparks = sparksFollowUp(placement, footprint, flags, glowMs, placement.contentId)
+  const sparks = sparksFollowUp(placement, footprint, glowMs, placement.contentId, tuning)
   if (sparks !== null) followUps.push(sparks)
   return followUps
 }
 
 /**
  * The burst of sparks around a footprint, `glowMs` long — a placement's, and a removal's (feedback
- * F33) — or `null` when the "Particles" Experiment is off. `key` is the identity its scatter hashes, with
- * the placement's ordinal: a placement and the removal of the same building throw different sparks.
+ * F33) — or `null` when there are none to throw. `key` is the identity its scatter hashes, with the
+ * placement's ordinal: a placement and the removal of the same building throw different sparks.
  */
-function sparksFollowUp(placement: PlacedStructure, footprint: Footprint, flags: DebugFlags, glowMs: number, key: string): FollowUp | null {
-  if (flags.placeParticles === "off" || glowMs <= 0) return null
+function sparksFollowUp(placement: PlacedStructure, footprint: Footprint, glowMs: number, key: string, tuning: PlacementTuning): FollowUp | null {
+  if (tuning.placeSparks <= 0 || glowMs <= 0) return null
   const { width, height } = footprintExtent(footprint)
-  const count = PLACE_PARTICLE_COUNTS[flags.placeParticles]
   return {
     kind: "effect",
     effect: {
@@ -153,9 +160,9 @@ function sparksFollowUp(placement: PlacedStructure, footprint: Footprint, flags:
       params: {
         width,
         height,
-        count,
-        reach: count > PLACE_PARTICLE_COUNTS.few ? 3 : 2,
-        palette: flags.placeLight === "rainbow" ? "rainbow" : "sparks",
+        count: tuning.placeSparks,
+        reach: SPARK_REACH,
+        palette: "sparks",
         key,
         id: placement.ordinal,
       },
@@ -166,14 +173,14 @@ function sparksFollowUp(placement: PlacedStructure, footprint: Footprint, flags:
 /**
  * **A planned building removed** — by undo, or Backspace/Delete (owner, 2026-09-29, feedback F33:
  * "Canceling a placed building should also have spark effect"): no frames, the building is gone at
- * once, and the same burst of sparks a placement throws flies off where it stood, for the same "Glow
- * time" and "Particles". Reduced motion keeps the burst's own still form, as a placement's does. Like
- * a placement, it is presentation alone: the live loop notes when an ordinal left the plan and hands
- * the view "this one, removed this long ago"; the plan never learns it.
+ * once, and the same burst of sparks a placement throws flies off where it stood, for the same glow and
+ * as many sparks. Reduced motion keeps the burst's own still form, as a placement's does. Like a
+ * placement, it is presentation alone: the live loop notes when an ordinal left the plan and hands the
+ * view "this one, removed this long ago"; the plan never learns it.
  */
-export function removalSchedule(placement: PlacedStructure, footprint: Footprint, flags: DebugFlags, reducedMotion: boolean): TrackSchedule {
-  const glowMs = placementTiming(flags, reducedMotion).glowMs
-  const sparks = sparksFollowUp(placement, footprint, flags, glowMs, `remove:${placement.contentId}`)
+export function removalSchedule(placement: PlacedStructure, footprint: Footprint, reducedMotion: boolean, tuning: PlacementTuning = TUNING): TrackSchedule {
+  const glowMs = placementTiming(reducedMotion, tuning).glowMs
+  const sparks = sparksFollowUp(placement, footprint, glowMs, `remove:${placement.contentId}`, tuning)
   // An animation with no frames completes the moment it plays, so its follow-up starts at once.
   return scheduleTrack([
     play(animationOf(`remove:${placement.contentId}`, [], 0), 0, { then: sparks === null ? [] : [sparks] }),
@@ -184,19 +191,19 @@ export function removalSchedule(placement: PlacedStructure, footprint: Footprint
 export function placementRequest(
   placement: PlacedStructure,
   footprint: Footprint,
-  flags: DebugFlags,
   reducedMotion: boolean,
   atMs = 0,
+  tuning: PlacementTuning = TUNING,
 ): PlayRequest {
-  return play(placementAnimation(placement.contentId, footprint, flags, reducedMotion), atMs, {
+  return play(placementAnimation(placement.contentId, footprint, reducedMotion, tuning), atMs, {
     policy: "replace",
-    then: placementFollowUps(placement, footprint, flags, reducedMotion),
+    then: placementFollowUps(placement, footprint, reducedMotion, tuning),
   })
 }
 
 /** A placement's track on its own clock — time 0 is the moment it was placed. */
-export function placementSchedule(placement: PlacedStructure, footprint: Footprint, flags: DebugFlags, reducedMotion: boolean): TrackSchedule {
-  return scheduleTrack([placementRequest(placement, footprint, flags, reducedMotion)])
+export function placementSchedule(placement: PlacedStructure, footprint: Footprint, reducedMotion: boolean, tuning: PlacementTuning = TUNING): TrackSchedule {
+  return scheduleTrack([placementRequest(placement, footprint, reducedMotion, 0, tuning)])
 }
 
 /** How one tile of an animating building is drawn right now. `glyph: null` is nothing standing
@@ -235,10 +242,10 @@ export function placementCell(
   footprint: Footprint,
   offset: Coord,
   elapsedMs: number,
-  flags: DebugFlags,
   reducedMotion: boolean,
+  tuning: PlacementTuning = TUNING,
 ): PlacementCell {
-  const schedule = placementSchedule({ ordinal: 0, contentId, anchor: { x: 0, y: 0 } }, footprint, flags, reducedMotion)
+  const schedule = placementSchedule({ ordinal: 0, contentId, anchor: { x: 0, y: 0 } }, footprint, reducedMotion, tuning)
   const look = placementLook(schedule, contentId, offset, elapsedMs)
   const context = placementEffectContext(elapsedMs, reducedMotion)
   let tint: RoleTint | undefined

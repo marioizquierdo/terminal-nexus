@@ -5,25 +5,27 @@
 //
 //   - **the view slides** (engine.md 3.3's "camera moves eased over a few frames"): whenever the
 //     state's camera changes — a click, an arrow at the margin, a Shift jump, arming that moved the
-//     cursor, anything — the drawn camera eases from wherever it was drawn toward it over Debug
-//     Mode's "View slide" milliseconds, whole tiles at a time, fast at first and settling at the end.
-//     Only a resize snaps (`snap`);
+//     cursor, anything — the drawn camera eases from wherever it was drawn toward it over `easeMs`
+//     milliseconds, whole tiles at a time, fast at first and settling at the end. Only a resize snaps
+//     (`snap`);
 //   - **the cursor glides** (owner, 2026-09-28: "interpolations are easy and powerful"): whenever the
 //     state's cursor changes, the drawn cursor eases from the tile it was drawn on to the new one over
-//     the "Cursor glide" Experiment milliseconds, so a Shift jump or a far click reads as motion rather
-//     than a teleport. The glide is of the cursor's place **in the view** (its tile less the
-//     camera's), added to the drawn camera: when only the camera moves — the cursor dragging it at the
-//     margin — the cursor rides along with the slide, and a gliding cursor can never be drawn outside
-//     the view it is gliding across. The armed preview and the refused flash move with it;
-//   - **a menu row flashes** "pressed" or flickers "refused" (gate 5F), for the Experiments' durations;
-//   - **the cursor flashes** where a placement was just tried and refused (gate 5H);
+//     `cursorGlideMs`, so a Shift jump or a far click reads as motion rather than a teleport. The glide
+//     is of the cursor's place **in the view** (its tile less the camera's), added to the drawn camera:
+//     when only the camera moves — the cursor dragging it at the margin — the cursor rides along with
+//     the slide, and a gliding cursor can never be drawn outside the view it is gliding across. The
+//     armed preview and the refused flash move with it;
+//   - **a menu row flashes** "pressed" or flickers "refused" (gate 5F), for `pressedFlashMs` or
+//     `refusedFlashMs`;
+//   - **the cursor flashes** where a placement was just tried and refused (gate 5H), for
+//     `refusedCursorMs`;
 //   - **a building goes up** (gate 5I): each planned placement plays its frames, light and sparks
-//     for the "Build animation" Experiment and "Glow time", timed from the frame that first drew it;
+//     for `placeFramesMs` and `placeGlowMs`, timed from the frame that first drew it;
 //   - **a building comes down** (feedback F33): one that leaves the plan — undone, or removed with
 //     Backspace/Delete — throws the same sparks where it stood, timed from the first frame without it;
 //   - **the focus arrow flies, and the cursor blinks** (feedback F54): when a menu row hands the
 //     keyboard to the map (`BuildState.handoff`), an arrow flies from the row to the cursor for the
-//     "Focus arrow" Experiment's milliseconds, and when it lands the cursor blinks "Cursor blink" times
+//     "Focus arrow" Experiment's milliseconds, and when it lands the cursor blinks `cursorBlinks` times
 //     in the pressed flash's look and at its speed. Keys work throughout; it all stops the moment the
 //     keyboard leaves the map, a popup opens or the plan is committed. From Explore Map's row the arrow
 //     is a see-through copy of the cursor instead (F64) — the same timeline, drawn by the view;
@@ -33,6 +35,10 @@
 //     rows fade, the chosen row slides up to the header, the card types in). The reducer never hears
 //     of it: this loop watches the state turn into a card the way it watches the plan grow. Closing a
 //     card is instant.
+//
+// The numbers in backticks are the owner's tuned values (`src/build/tuning.ts`), which a `BuildAnimation`
+// is handed when it is made (a test hands it others); the focus arrow and the card reveal are still
+// Experiments, read from the state each frame.
 //
 // `busyUntil` says whether anything is still moving, and until when: the live loop runs its frame
 // timer only while it is not `null`, and otherwise draws once per input, as the screen always has.
@@ -51,7 +57,8 @@ import type { Coord } from "../grid/types.ts"
 import type { BuildState } from "../build/state.ts"
 import { cardShowing } from "../build/state.ts"
 import type { DebugFlags } from "../build/debug.ts"
-import { flashDuration } from "../build/debug.ts"
+import type { Tuning } from "../build/tuning.ts"
+import { TUNING } from "../build/tuning.ts"
 import type { BuildCompositionInput, BuildFlash, CardReveal } from "./build.ts"
 import type { Footprint } from "../grid/types.ts"
 import type { PlacedStructure, PlacementClock, RemovalClock } from "./placement.ts"
@@ -121,7 +128,7 @@ export function cardKey(state: BuildState): string | null {
  * whose rows fade and whose chosen row slides up, or another card, which gives way at once.
  */
 export function cardRevealAt(
-  flags: DebugFlags,
+  flags: Pick<DebugFlags, "cardRevealMs">,
   reducedMotion: boolean,
   elapsedMs: number,
   menu: boolean,
@@ -141,10 +148,14 @@ export function cardRevealAt(
  */
 export type HandoffSchedule = Readonly<{ arrowMs: number; pulseMs: number; blinks: number; endMs: number }>
 
-export function handoffSchedule(flags: DebugFlags, reducedMotion: boolean): HandoffSchedule {
-  const arrowMs = reducedMotion ? 0 : Math.max(0, flags.focusArrowMs)
-  const pulseMs = Math.max(0, flags.pressedFlashMs)
-  const blinks = pulseMs > 0 ? Math.max(0, flags.cursorBlinks) : 0
+/** What the hand-off is timed from: the focus arrow's Experiment, and the pressed flash and the blink
+ *  count, which are tuned values. */
+export type HandoffTiming = Readonly<{ focusArrowMs: number; pressedFlashMs: number; cursorBlinks: number }>
+
+export function handoffSchedule(timing: HandoffTiming, reducedMotion: boolean): HandoffSchedule {
+  const arrowMs = reducedMotion ? 0 : Math.max(0, timing.focusArrowMs)
+  const pulseMs = Math.max(0, timing.pressedFlashMs)
+  const blinks = pulseMs > 0 ? Math.max(0, timing.cursorBlinks) : 0
   return { arrowMs, pulseMs, blinks, endMs: arrowMs + (blinks > 0 ? (2 * blinks - 1) * pulseMs : 0) }
 }
 
@@ -164,8 +175,8 @@ export function handoffAt(
 export type LiveOptions = Readonly<{
   reducedMotion?: boolean
   /** A structure's footprint, for the placement tracks. Only their shape depends on it — when each
-   *  one settles, all this loop reads, depends on the Experiment timings alone — so without it (a
-   *  test) every structure is scheduled as one tile. */
+   *  one settles, all this loop reads, depends on the timings alone — so without it (a test) every
+   *  structure is scheduled as one tile. */
   footprintOf?: (contentId: string) => Footprint
 }>
 
@@ -175,7 +186,23 @@ const cameraAtTime = (tween: Tween<Camera>, now: number): Camera => tileAt(tween
 
 const offsetOf = (tile: Coord, camera: Camera): Point => ({ x: tile.x - camera.x, y: tile.y - camera.y })
 
+/** The tuned values the live loop times things by. */
+export type LiveTuning = Pick<
+  Tuning,
+  | "easeMs"
+  | "cursorGlideMs"
+  | "pressedFlashMs"
+  | "refusedFlashMs"
+  | "refusedCursorMs"
+  | "cursorBlinks"
+  | "placeFramesMs"
+  | "placeGlowMs"
+  | "placeSparks"
+>
+
 export class BuildAnimation {
+  /** The tuned timings — the owner's (`TUNING`), unless a test hands in others. */
+  private readonly tuning: LiveTuning
   private ease: Tween<Camera> | null = null
   /** The cursor's place in the view — its tile less the camera's — on its way somewhere. */
   private glide: Tween<Point> | null = null
@@ -192,7 +219,7 @@ export class BuildAnimation {
    * Each planned ordinal's animation track (`animation.ts`), by the one thing about it that varies:
    * when its `play` was requested — the first frame that drew it — or `null` for what was already
    * planned when the screen first drew, which never animates. The request itself is rebuilt every
-   * frame from the current Experiment timings (`placementRequest`). A different structure or anchor
+   * frame from the timings (`placementRequest`). A different structure or anchor
    * under the same ordinal (a restart numbers the plan from 1 again) is a new target, with
    * a new track.
    */
@@ -202,6 +229,10 @@ export class BuildAnimation {
   private removals: Readonly<{ placement: PlacedStructure; removedAt: number }>[] = []
   /** False until the first frame: whatever is already planned then was not placed just now. */
   private primed = false
+
+  constructor(tuning: LiveTuning = TUNING) {
+    this.tuning = tuning
+  }
 
   /**
    * The camera drawn at `now`. A new target starts a slide from wherever the view is drawn at that
@@ -213,7 +244,7 @@ export class BuildAnimation {
       this.ease = still(target, now)
       return target
     }
-    const duration = options.reducedMotion === true ? 0 : state.debug.easeMs
+    const duration = options.reducedMotion === true ? 0 : this.tuning.easeMs
     this.ease = retarget(this.ease, target, now, duration, cameraAtTime, samePoint)
     return tileAt(this.ease, now)
   }
@@ -227,7 +258,7 @@ export class BuildAnimation {
     const target = offsetOf(state.cursor, state.camera)
     if (this.glide === null) this.glide = still(target, now)
     else {
-      const duration = options.reducedMotion === true ? 0 : state.debug.cursorGlideMs
+      const duration = options.reducedMotion === true ? 0 : this.tuning.cursorGlideMs
       this.glide = retarget(this.glide, target, now, duration, tileAt, samePoint)
     }
     const offset = tileAt(this.glide, now)
@@ -272,13 +303,14 @@ export class BuildAnimation {
     this.primed = true
 
     const reducedMotion = options.reducedMotion === true
+    const timing = this.tuning
     const placing: PlacementClock[] = []
     let until: number | null = null
     for (const [ordinal, track] of this.tracks) {
       const placement = planned.get(ordinal)
       if (track.playedAt === null || placement === undefined) continue
       const footprint = options.footprintOf?.(placement.contentId) ?? ONE_TILE
-      const schedule = scheduleTrack([placementRequest(placement, footprint, state.debug, reducedMotion, track.playedAt)])
+      const schedule = scheduleTrack([placementRequest(placement, footprint, reducedMotion, track.playedAt, timing)])
       if (!trackBusyAt(schedule, now)) continue
       placing.push({ ordinal, elapsedMs: now - track.playedAt })
       until = Math.max(until ?? 0, schedule.settlesAtMs)
@@ -287,7 +319,7 @@ export class BuildAnimation {
     const removing: RemovalClock[] = []
     this.removals = this.removals.filter(({ placement, removedAt }) => {
       const footprint = options.footprintOf?.(placement.contentId) ?? ONE_TILE
-      const schedule = removalSchedule(placement, footprint, state.debug, reducedMotion)
+      const schedule = removalSchedule(placement, footprint, reducedMotion, timing)
       const elapsedMs = now - removedAt
       if (!trackBusyAt(schedule, elapsedMs)) return false
       removing.push({ ...placement, elapsedMs })
@@ -310,7 +342,7 @@ export class BuildAnimation {
     const ack = state.ack
     if (ack !== null) {
       if (this.seenAck?.seq !== ack.seq) this.seenAck = { seq: ack.seq, at: now }
-      const end = this.seenAck.at + flashDuration(state.debug, ack.kind)
+      const end = this.seenAck.at + (ack.kind === "pressed" ? this.tuning.pressedFlashMs : this.tuning.refusedFlashMs)
       if (now < end) {
         flash = { kind: ack.kind, entry: ack.entry }
         ends.push(end)
@@ -321,7 +353,7 @@ export class BuildAnimation {
     const refused = state.refusedTry
     if (refused !== null) {
       if (this.seenRefusal?.seq !== refused.seq) this.seenRefusal = { seq: refused.seq, at: now }
-      const end = this.seenRefusal.at + state.debug.refusedCursorMs
+      const end = this.seenRefusal.at + this.tuning.refusedCursorMs
       // Only while the cursor is still on the tile that was refused: moving off it ends the flash.
       if (now < end && refused.tile.x === state.cursor.x && refused.tile.y === state.cursor.y) {
         refusedFlash = true
@@ -340,7 +372,9 @@ export class BuildAnimation {
       const onMap = state.focus === "grid" && state.overlay === null && !state.committed
       if (!onMap) this.seenHandoff = { ...this.seenHandoff, stopped: true }
       if (!this.seenHandoff.stopped) {
-        const schedule = handoffSchedule(state.debug, options.reducedMotion === true)
+        const { pressedFlashMs, cursorBlinks } = this.tuning
+        const timing = { focusArrowMs: state.debug.focusArrowMs, pressedFlashMs, cursorBlinks }
+        const schedule = handoffSchedule(timing, options.reducedMotion === true)
         const look = handoffAt(schedule, now - this.seenHandoff.at)
         if (look.arrow !== null) focusArrow = { progress: look.arrow }
         cursorBlink = look.blink

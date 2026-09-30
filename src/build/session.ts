@@ -16,10 +16,11 @@ import { overlaySpec, placeOverlay } from "./overlay.ts"
 import type { Camera, Viewport } from "./camera.ts"
 import { buildKeyboardCommand, cursorKeyOf } from "./keyboard.ts"
 import type { MoveKind } from "./motion.ts"
-import { SpeedRamp } from "./motion.ts"
+import { SpeedRamp, rampTuning } from "./motion.ts"
 import { buildMouseCommand, parseMouseEvent } from "./mouse.ts"
 import type { BuildContext, BuildState } from "./state.ts"
 import { applyBuildCommand, cardShowing, createBuildState, exportText, nexusPowers, withViewport } from "./state.ts"
+import { TUNING } from "./tuning.ts"
 import type { BuildCommand } from "./types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { Settings } from "../settings/types.ts"
@@ -101,16 +102,15 @@ export class BuildSession {
     this.now = now
     if (this.presenter === null) return
     this.presenter.advance(now, hold)
-    for (const command of this.presenter.due(this.buildState.debug)) this.dispatch(command)
+    for (const command of this.presenter.due()) this.dispatch(command)
   }
 
   /** What the Pulse on screen is showing right now, for the composer — or `undefined` when there is
    *  none. */
   pulseFrame(layout: BuildLayout): PulseFrame | undefined {
     if (this.presenter === null) return undefined
-    const { settings, debug } = this.buildState
+    const { settings } = this.buildState
     return this.presenter.frame({
-      flags: debug,
       capability: settings.capability,
       tileWidth: layout.tileWidth,
       reducedMotion: settings.reducedMotion,
@@ -126,7 +126,7 @@ export class BuildSession {
     // A playback control belongs to the Pulse's clock, not to the state: handed on like a quit. Pause has
     // nothing to pause once the result stands — and no row is drawn for it there — so it is not handed on.
     if (command.kind === "pulse") {
-      const over = this.presenter?.phase(this.buildState.debug) === "home"
+      const over = this.presenter?.phase() === "home"
       if (!(over && command.control === "toggle")) this.presenter?.apply(command.control)
       return
     }
@@ -193,7 +193,6 @@ export class BuildSession {
             overlay: state.overlay,
             overlayPendingCount: nexusPowers(this.context, state).pending.length,
             overlayHighlight: state.overlayHighlight,
-            jumpStep: state.debug.jumpStep,
             pulse: this.presenter !== null,
           })
     if (mouse !== null && mouse.press && command?.kind === "click-tile") {
@@ -202,15 +201,13 @@ export class BuildSession {
       // is sent as a click on the first one's tile — exactly what a driver would send for "click it
       // again" — whatever the view did in between.
       const last = this.lastArmedClick
-      const window = state.debug.doubleClickMs
       const double =
         state.armed !== null &&
         timing.now !== undefined &&
-        window > 0 &&
         last !== null &&
         last.column === mouse.column &&
         last.row === mouse.row &&
-        timing.now - last.at <= window
+        timing.now - last.at <= TUNING.doubleClickMs
       if (double) {
         command = { kind: "click-tile", x: last.tile.x, y: last.tile.y }
         this.lastArmedClick = null
@@ -231,7 +228,7 @@ export class BuildSession {
       // it at the list's end, so holding Down reaches the last row quickly and stays there. **A tap is
       // always one row**, whatever the map's tap step, so every row stays reachable by Up and Down.
       const direction = command.delta < 0 ? -1 : 1
-      const rows = this.ramp.step({ dx: 0, dy: direction, fast: false }, timing.now, { ...state.debug, tapStep: 1 })
+      const rows = this.ramp.step({ dx: 0, dy: direction, fast: false }, timing.now, { ...rampTuning(state.debug.holdWindowMs), tapStep: 1 })
       command = { kind: "highlight", delta: direction * rows }
     } else if (cursorKey !== null) {
       // A cursor key on the Grid: how far is the ramp's call when the key's arrival time is known — a
@@ -240,19 +237,11 @@ export class BuildSession {
       // soon moves nothing, and nothing is sent for it.
       const tiles =
         timing.now !== undefined
-          ? this.ramp.step(cursorKey, timing.now, state.debug)
+          ? this.ramp.step(cursorKey, timing.now, rampTuning(state.debug.holdWindowMs))
           : cursorKey.fast
-            ? state.debug.jumpStep
-            : state.debug.tapStep
-      command =
-        tiles === 0
-          ? null
-          : {
-              kind: "move-cursor",
-              dx: cursorKey.dx * tiles,
-              dy: cursorKey.dy * tiles,
-              ...(cursorKey.fast ? { fast: true } : {}),
-            }
+            ? TUNING.jumpStep
+            : TUNING.tapStep
+      command = tiles === 0 ? null : { kind: "move-cursor", dx: cursorKey.dx * tiles, dy: cursorKey.dy * tiles }
     } else if (command !== null) {
       // Anything else pressed: the next arrow starts from scratch (the owner's "doing anything else
       // returns to normal").

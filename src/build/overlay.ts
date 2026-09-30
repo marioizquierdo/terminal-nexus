@@ -263,7 +263,7 @@ function controlsSpec(state: BuildState): OverlaySpec {
   const rows: OverlayRow[] = []
   /** Where each key line sits in `rows` — what `overlayHighlight` indexes. */
   const lineRows: number[] = []
-  controlsPage(state.debug.jumpStep).forEach((section, index) => {
+  controlsPage().forEach((section, index) => {
     if (index > 0) rows.push({ kind: "blank" })
     rows.push({ kind: "heading", text: section.heading })
     for (const line of section.lines) {

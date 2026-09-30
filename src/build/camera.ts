@@ -175,8 +175,8 @@ export function shareOfSpan(percent: number, span: number): number {
   return Math.max(0, Math.min(tiles, Math.floor((span - 1) / 2)))
 }
 
-/** The scroll margin in tiles along each axis for a margin given as a percentage of the view: the
- *  owner's 25% of the 49 x 18 view at 80 x 24 is 12 tiles to either side and 5 above and below. */
+/** The scroll margin in tiles along each axis for a margin given as a percentage of the view: 20% of a
+ *  48 x 16 view, say, is 10 tiles to either side and 3 above and below. */
 export function marginForView(percent: number, viewport: Viewport): Readonly<{ x: number; y: number }> {
   return { x: shareOfSpan(percent, viewport.width), y: shareOfSpan(percent, viewport.height) }
 }
@@ -187,25 +187,13 @@ function centredAxis(tile: number, span: number): number {
 }
 
 /**
- * **Recentring** (engine.md 3.3, gate 5H): the camera moved so `tile` sits in the middle of the view
- * along the axes asked for, clamped to the Grid like every other camera. The fast modifier recentres
- * along the axis it moved; an exploring click can recentre on both.
+ * **Recentring** (engine.md 3.3, gate 5H): the camera moved so `tile` sits in the middle of the view,
+ * clamped to the Grid like every other camera — how a Nexus Pulse looks at the player's Nexus. (The
+ * fast move re-centred along the axis it moved, and an exploring click could re-centre too, until the
+ * owner settled both Experiments the other way, 2026-09-30.)
  */
-export function centreOn(
-  camera: Camera,
-  tile: Coord,
-  viewport: Viewport,
-  grid: GridTerrain,
-  axes: Readonly<{ x: boolean; y: boolean }> = { x: true, y: true },
-): Camera {
-  return clampCamera(
-    {
-      x: axes.x ? centredAxis(tile.x, viewport.width) : camera.x,
-      y: axes.y ? centredAxis(tile.y, viewport.height) : camera.y,
-    },
-    viewport,
-    grid,
-  )
+export function centreOn(tile: Coord, viewport: Viewport, grid: GridTerrain): Camera {
+  return clampCamera({ x: centredAxis(tile.x, viewport.width), y: centredAxis(tile.y, viewport.height) }, viewport, grid)
 }
 
 /**

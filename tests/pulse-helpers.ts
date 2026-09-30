@@ -40,11 +40,18 @@ export const DEFENCE_KEYS = ["n 2", ...DEFENCE.map(([index, x, y]) => `${index +
 
 export type Scenario = Readonly<{
   plan?: readonly Spot[]
-  /** Steps to press on the "Raid" Experiment: the probe, none, heavy. */
+  /** Steps to press on the "Raid" Experiment from the probe (`PROBE_PULSE`): 1 is none, 2 heavy. */
   raid?: number
-  /** Steps to press on the "Your units" Experiment: some, none. */
+  /** Steps to press on the "Your units" Experiment from some: 1 is none. */
   crew?: number
 }>
+
+/**
+ * The placeholder Pulse these tests were written against: the probe raid, against a player with units of
+ * their own. The game defaults to a heavy raid and none of yours since the owner's settings export of
+ * 2026-09-30; every Pulse test starts from the probe explicitly, so what each one shows stays the same.
+ */
+export const PROBE_PULSE = { raid: "probe", crew: "some" } as const
 
 export type Played = Readonly<{
   build: BuildSession
@@ -53,12 +60,13 @@ export type Played = Readonly<{
   layout: BuildLayout
 }>
 
-/** A session on the spike map, with the shell's `startPulse` wired in — the game as it is played. */
+/** A session on the spike map, with the shell's `startPulse` wired in — the game as it is played, from
+ *  the probe (`PROBE_PULSE`). */
 export function newSession(
   size: Readonly<{ columns: number; rows: number }> = MINIMUM,
   onQuit?: () => void,
 ): Omit<Played, "pulse"> {
-  const context = spikeContext()
+  const context = spikeContext(undefined, { experiments: PROBE_PULSE })
   const layout = buildLayout(size, context.grid)
   const build = new BuildSession({
     context,
@@ -140,5 +148,5 @@ export function atHome(played: Pick<Played, "build">): void {
   const pulse = played.build.pulse
   assert.ok(pulse !== null, "there is no Pulse on screen")
   played.build.advance(0)
-  played.build.advance(pulse.times(played.build.state.debug).homeMs + 100)
+  played.build.advance(pulse.times().homeMs + 100)
 }

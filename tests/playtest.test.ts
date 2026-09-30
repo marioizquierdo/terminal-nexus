@@ -8,7 +8,7 @@ import assert from "node:assert/strict"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { frameToText } from "../src/view/frame.ts"
-import { DEFENCE_KEYS } from "./pulse-helpers.ts"
+import { DEFENCE_KEYS, PROBE_PULSE } from "./pulse-helpers.ts"
 
 const ESC = String.fromCharCode(27)
 
@@ -89,7 +89,7 @@ test("wait is a step where nothing is pressed and time passes: a second by defau
 test("a scripted playtest plays a Nexus Pulse on the script's own clock and shows every phase of its ending", () => {
   // A Nexus power, two Turrets and a Hatchery, the commit and its confirmation; then the script lets it play.
   const plan = `${DEFENCE_KEYS} s s`
-  const run = runBuildPlaytest({ steps: parseKeyScript(`${plan} wait~1000*20`) })
+  const run = runBuildPlaytest({ steps: parseKeyScript(`${plan} wait~1000*20`), experiments: PROBE_PULSE })
   const texts = run.frames.map((frame) => frameToText(frame.frame))
   const started = texts.findIndex((text) => text.includes("nexus pulse"))
   assert.ok(started > 0, "the script never reached the Pulse")

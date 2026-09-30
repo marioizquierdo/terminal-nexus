@@ -7,8 +7,7 @@
 //   - screen, the Linux console, vt100, vt220 and ansi define no shifted arrow at all.
 //
 // So both families are accepted, and the fast move (five tiles until gate 5H; since the owner's
-// 2026-09-28 playtest a jump of the "Shift jump" Experiment, twelve tiles) also has a modifier-free
-// fallback —
+// 2026-09-28 playtest a jump, now of the tuned `TUNING.jumpStep`) also has a modifier-free fallback —
 // PageUp/PageDown and Home/End — plus the Option/Meta forms a Mac sends. The Controls and hotkeys page
 // (`src/build/help.ts`, feedback F60) lists every one of them; the bottom line never did, on the
 // owner's own call (2026-09-26: "leave pgup/home keys out, people will figure that out just fine").
@@ -17,6 +16,7 @@ import { listKeyOf } from "../menu/list-keys.ts"
 import type { PlaybackControl } from "../view/playback.ts"
 import { START_KEY } from "./layout.ts"
 import { GAME_MENU_ROWS } from "./settings.ts"
+import { TUNING } from "./tuning.ts"
 import type { BuildCommand, Focus, Overlay } from "./types.ts"
 
 const ESC = String.fromCharCode(27)
@@ -93,10 +93,6 @@ const FALLBACK_JUMPS: Readonly<Record<string, Readonly<{ dx: number; dy: number 
   [`${ESC}[8~`]: { dx: 1, dy: 0 },
 }
 
-/** How far the fast move jumps when nothing says otherwise: the owner's twelve tiles (2026-09-28).
- *  The live screen passes the "Shift jump" Experiment instead. */
-export const DEFAULT_JUMP_STEP = 12
-
 /** `grid watch`'s keymap, kept for the Nexus Pulse (engine.md 9.7: one keymap across `grid` and
  *  `terminal-nexus`) — Space pauses, `[` and `]` change the speed, `.` and `,` step a frame and a tick,
  *  `r` watches it again. Only while a Pulse is on screen, and never inside a popup. */
@@ -142,8 +138,6 @@ export type KeyboardContext = Readonly<{
   overlayPendingCount?: number
   /** The open popup's highlight — which of the game menu's rows Enter means. */
   overlayHighlight?: number
-  /** How many tiles the fast move jumps — the "Shift jump" Experiment. `DEFAULT_JUMP_STEP` if absent. */
-  jumpStep?: number
   /** A Nexus Pulse is on screen (gate 6A): its playback keys are the screen's, ahead of the Grid's. */
   pulse?: boolean
 }>
@@ -272,12 +266,12 @@ export function cursorKeyOf(key: string): CursorKey | null {
 }
 
 /** Any of the Grid's cursor keys, as the move it is — one tile for a plain arrow (the input path may
- *  scale it for a held key), `jumpStep` tiles for the fast move — or `null`. */
-function cursorMove(key: string, jumpStep: number): BuildCommand | null {
+ *  scale it for a held key), the tuned jump (`TUNING.jumpStep`) for the fast move — or `null`. */
+function cursorMove(key: string): BuildCommand | null {
   const move = cursorKeyOf(key)
   if (move === null) return null
-  if (!move.fast) return { kind: "move-cursor", dx: move.dx, dy: move.dy }
-  return { kind: "move-cursor", dx: move.dx * jumpStep, dy: move.dy * jumpStep, fast: true }
+  const tiles = move.fast ? TUNING.jumpStep : 1
+  return { kind: "move-cursor", dx: move.dx * tiles, dy: move.dy * tiles }
 }
 
 /**
@@ -339,7 +333,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   } else {
     if (PLACE_KEYS.has(key)) return context.armed ? { kind: "place" } : { kind: "inspect" }
     if (REMOVE_KEYS.has(key)) return { kind: "remove" }
-    const move = cursorMove(key, context.jumpStep ?? DEFAULT_JUMP_STEP)
+    const move = cursorMove(key)
     if (move !== null) return move
   }
 

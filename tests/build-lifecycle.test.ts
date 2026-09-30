@@ -15,7 +15,7 @@ import { parseKeyScript } from "../src/playtest/keys.ts"
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../src/menu/mouse.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import type { Settings } from "../src/settings/index.ts"
-import { DEFENCE_KEYS } from "./pulse-helpers.ts"
+import { DEFENCE_KEYS, PROBE_PULSE } from "./pulse-helpers.ts"
 
 const ESC = String.fromCharCode(27)
 
@@ -263,7 +263,8 @@ test("--keys that cannot be delivered stops there and says why when the screen c
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
-/** A plan that wins: a Nexus power, two Turrets and a Hatchery, the commit and its yes. */
+/** A plan that wins against the probe (`PROBE_PULSE`, which each run below asks for — the game defaults
+ *  to a heavy raid): a Nexus power, two Turrets and a Hatchery, the commit and its yes. */
 const WINNING_PLAN = `${DEFENCE_KEYS} s s`
 
 test("the live loop plays a Nexus Pulse on its own clock: timer, last seconds, result, then idle — and starts over on Restart", async () => {
@@ -281,6 +282,7 @@ test("the live loop plays a Nexus Pulse on its own clock: timer, last seconds, r
     },
     now: () => t,
     startKeys: parseKeyScript(WINNING_PLAN),
+    experiments: PROBE_PULSE,
   })
   await sleep(80)
   // Opened already in the Pulse the start keys committed, at its very beginning — however many seconds of
@@ -334,6 +336,7 @@ test("a Nexus Pulse holds still behind the resize gate and resumes from the same
     exit: () => {},
     now: () => t,
     startKeys: parseKeyScript(WINNING_PLAN),
+    experiments: PROBE_PULSE,
   })
   await sleep(60)
   t += 3_000

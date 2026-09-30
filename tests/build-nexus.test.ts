@@ -384,16 +384,13 @@ function clickTileBytes(
 }
 
 test("the same pick-build-commit script produces an identical state by hotkeys, by clicks, and from a driver script", () => {
-  // An armed click scrolls near the view's edges (F22) and an arrow does not: the parity here is the
-  // plan, so all three players switch that Experiment to a still view alike.
-  const stillClicks: BuildCommand = { kind: "debug-adjust", field: "armedClickScrolls", step: 1 }
+  // An armed click scrolls inside the view's edge zones (F22) and an arrow scrolls at the margin: the
+  // parity here is the plan and the camera, so every tile clicked is clear of both, and neither scrolls.
   const byKeyboard = session()
-  byKeyboard.build.dispatch(stillClicks)
   byKeyboard.build.handleData("n", byKeyboard.layout) // open the Nexus Powers
   byKeyboard.build.handleData("1", byKeyboard.layout) // pick Reserve Fund, which closes the popup
   byKeyboard.build.handleData("1", byKeyboard.layout) // arm Barracks
-  // Row 13, clear of the scroll margin: an armed click never scrolls the view (Q58) and an arrow
-  // does, so a plan laid inside the margin is the same plan by both, but not the same camera.
+  // Row 13, clear of the scroll margin and of the click's edge zones.
   for (let step = 0; step < 12; step += 1) byKeyboard.build.handleData(`${ESC}[C`, byKeyboard.layout)
   byKeyboard.build.handleData("\r", byKeyboard.layout)
   // Placing handed the keyboard back to the menu, where the arming came from. The cursor is on the
@@ -406,7 +403,6 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   byKeyboard.build.handleData("y", byKeyboard.layout)
 
   const byMouse = session()
-  byMouse.build.dispatch(stillClicks)
   // The screen opens with the keyboard on the menu, so one click on Nexus opens it.
   byMouse.build.handleData(clickNexusEntryBytes(byMouse.layout), byMouse.layout)
   byMouse.build.handleData(clickPopupBytes(byMouse, (c) => c.kind === "pick-nexus" && c.index === 0), byMouse.layout)
@@ -437,7 +433,7 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
     { kind: "confirm-commit" },
   ]
   const byDriver = session()
-  byDriver.build.run([stillClicks, ...script])
+  byDriver.build.run(script)
 
   assert.equal(byKeyboard.build.state.committed, true, "the test did not actually reach committed")
   assert.equal(byKeyboard.build.state.planned.length, 2)
