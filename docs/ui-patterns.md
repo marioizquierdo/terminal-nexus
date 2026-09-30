@@ -3,7 +3,7 @@
 **Document role:** The interaction and drawing patterns every interactive screen follows
 **Status:** WORKING — built on the Build Phase first; not canon yet (promoted into `specs/engine.md`
 Section 9 when the owner accepts them)
-**Updated:** 2026-09-29 (gate 6A round 3: section 4's first rule — a menu can always be walked with Up, Down and Enter — and the Start button becoming the menu's last row and its question a "Battle Round 1" screen, sections 5 and 6; earlier the same day: section 6, the Start button, and section 7c, the Nexus Pulse on screen — gate 6A, and its second round: the timer, the light, and red kept for the Nexus being hurt; section 0, the UX goals read out of four rounds of feedback; round-4 feedback F30-F33: arming where the cursor is, focus that goes back to
+**Updated:** 2026-09-30 (the menu spike, F52-F60: an active row reads `[x] Name  >>`, a focus arrow and cursor blink when a menu row hands the keyboard to the map, Left/Right only flicker, one list with `$` on top, a building's card while placing, the bottom line of contextual help, the Controls and hotkeys page — sections 0, 1, 2, 4, 5, 6, 8, 9); 2026-09-29 (gate 6A round 3: section 4's first rule — a menu can always be walked with Up, Down and Enter — and the Start button becoming the menu's last row and its question a "Battle Round 1" screen, sections 5 and 6; earlier the same day: section 6, the Start button, and section 7c, the Nexus Pulse on screen — gate 6A, and its second round: the timer, the light, and red kept for the Nexus being hurt; section 0, the UX goals read out of four rounds of feedback; round-4 feedback F30-F33: arming where the cursor is, focus that goes back to
 where it came from, one "active" style for every menu row, Explore Map as that style, removal sparks;
 F34-F37: the top bar names what Esc does; popups lose their `[esc]`, gain a message form and a scroll
 bar; Settings' layout; Restart in the game menu); 2026-09-28 (a click activates; Explore Map —
@@ -87,16 +87,25 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   Enter/Space or `e` in plain navigation — a placement or Esc leaves the keyboard on the map in plain
   navigation, the cursor where it was; begun on the menu — Enter/Space or a click on a row, or a digit
   while the menu had the keyboard — they go back to the menu, on the same row (with nothing looking
-  chosen after the mouse). The menu still orchestrates; the map is a place to work from too.
+  chosen after the mouse). A placement begun on the menu comes back with the building's row flashing
+  once, to bring the eye back to it (F55). The menu still orchestrates; the map is a place to work from
+  too.
 - **A mode has one meaning per key.** Arrows and Enter/Space follow focus; nothing else does. Digits
   always arm their row; letters always name commands, from any focus.
-- **Several ways in, all shown**: Tab toggles; a click on the area; and on the menu, Right twice (the
-  first flickers to say "you are on the menu").
-- **The map has three modes, each named in the key help**: `PLACE` (a building armed, its ghost at
-  the cursor), `EXPLORE MAP` (nothing armed; the side panel describes what is under the cursor —
-  section 6), and `MAP` — **plain navigation**: the bare cursor with the menu left beside it, so the
-  next click can arm a building from it. Tab, Right twice, a click on the map and finishing something
-  begun on the map all arrive in plain navigation; Explore Map is reached only by `e`, its menu row,
+- **Several ways in, all shown**: Tab toggles, and a click on the area moves the keyboard there.
+  **Left and Right on the menu only flicker the highlighted row**; the keyboard stays on the menu
+  (owner, 2026-09-30, feedback F55: "it's better that the focus stays on the menu, but it is good that
+  the menu item blinks when pressing left or right" — reversing Right twice).
+- **A hand-off is shown** (feedback F54): when a menu row gives the keyboard to the map — a building
+  armed, or Explore Map opened, from the menu — a **focus arrow** flies from the row's `>>` to the
+  cursor and the cursor **blinks twice** in the pressed look when it lands, to bring the eye there. Keys
+  work at once. Never on the way back (the row lit again says where you are) and never for Tab. Both
+  are Experiments (`d`: Focus arrow, Cursor blink).
+- **The map has three modes, each with its own hint**: placing (a building armed, its ghost at the
+  cursor, its card in the panel — section 6), Explore Map (nothing armed; the panel describes what is
+  under the cursor), and **plain navigation**: the bare cursor with the menu left beside it, so the
+  next click can arm a building from it. Tab, a click on the map and finishing something begun on the
+  map all arrive in plain navigation; Explore Map is reached only by `e`, its menu row,
   and Enter/Space in plain navigation.
 - **The screen opens on the menu, at Explore Map** (owner, 2026-09-29, feedback F31), and the map
   cursor, not yet drawn, **on the player's Grid Nexus** — where nothing has been pointed at yet.
@@ -170,13 +179,21 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
 - **Two states, and only two** (owner, 2026-09-29, feedback F32), legible without colour:
   - **highlighted** — an inverse bar across the whole row, one colour: where the keyboard is, not
     chosen yet; drawn only while the menu has the keyboard;
-  - **active** — the row's action is under way: `>` before it, the whole row in the hotkey's colour
-    and bold, its name underlined, and **no bar**. A building while it is armed, `[e] Explore Map`
-    while Explore Map is open, `[n] Nexus` while its popup is, `[s] Start Pulse` while its screen is.
-    One test says which rows are active
-    (`menuRowActive`) and one function draws every row (`drawMenuRow`, both in `src/view/build.ts`),
-    so a later change to the style reaches all of them. Legible in monochrome by the marker and the
-    underline.
+  - **active** — the row's action is under way. It reads **`[x] Barracks  >>`** (owner, 2026-09-30,
+    feedback F53): the hotkey shows as `[x]`, the key that ends it (Esc's other key), and `>>`
+    replaces the value at the right end, pointing at the map; the whole row in the hotkey's colour and
+    bold, its name underlined, and **no bar**. A building while it is armed, `[e] Explore Map` while
+    Explore Map is open, `[n] Nexus` while its popup is, `[s] Start Pulse` while its screen is — every
+    row either opens a popup or gives the map something to do (F52), and both kinds share the look.
+    One test says which rows are active (`menuRowActive`) and one function describes and draws every
+    row (`menuRowSpec`, `drawMenuRow`, in `src/view/build.ts`), so a later change to the style reaches
+    all of them. Legible in monochrome by the `[x]`, the `>>` and the underline.
+- **One list, no headings** (F56: "Remove the categories for now"): Explore Map, a blank line,
+  Nexus, a blank line, then every building in catalog order, one row each, and Start Pulse on the
+  panel's last line. A row the panel has no room for is neither drawn nor clickable. Headings come
+  back only when a real game shows a list too long to read.
+- **What there is to spend is the panel's top line** (F57): `$ 100`, right-aligned in the cost column
+  so it reads against the prices, no label, no maximum, on every panel (the menu and both cards).
 - Two brief flashes of the bar acknowledge a key: **pressed** — for a few frames after activation, a
   stronger bar, bold and underlined, in the hotkey's colour; **refused** — for a few frames when a key
   reached the row but had nothing to do (Left/Right, an unaffordable row): the bar dims and comes back.
@@ -211,15 +228,15 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   should read once and may act on later, not for an answer to a question. (`BuildState.message`,
   `messageSpec` in `src/build/overlay.ts`.)
 - **A choice closes its popup** (Q60, owner 2026-09-27): picking a Nexus power, like answering a
-  question, returns the player to where they were. What the pick did is on the status line and on the
+  question, returns the player to where they were. What the pick did is on the bottom line and on the
   menu; reopening the popup shows it listed as active.
 - **A setting is a row whose value Left and Right change** (Settings, since gate 5G): its name, and
   the value between `<` and `>` (the arrows say which keys change it) against the row's right end —
   nothing else (F34 removed the `now`/`restart` column). Enter/Space is Right. A choice of two comes round at either end; a number
-  stops at its ends and the status line says so. **By mouse, the left half of the value box is Left
+  stops at its ends and the bottom line says so. **By mouse, the left half of the value box is Left
   and the right half is Right** — two targets six cells wide each, big enough for a finger on the
   browser playtest page; a click anywhere else on the row highlights it. Every change is said on the
-  status line. (`settingColumns` in `src/build/overlay.ts`.)
+  bottom line. (`settingColumns` in `src/build/overlay.ts`.)
 - **What a highlighted row is for is written under the list, below a line across the popup** (F35:
   "closer to the selection"), wrapped at words, in a fixed number of lines so the popup does not
   change height as the highlight moves — the popup's version of the menu's effect line. (A `rule` row,
@@ -250,8 +267,8 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   in the hotkey colour in a column of their own and what they do beside them, a highlight Up/Down and
   the wheel move, headings that scroll with the rows and are skipped, the scroll bar in the border.
   Nothing to choose; Esc goes back. It replaced the key help the bottom bar used to carry.
-- **A popup that belongs to a menu row keeps that row active behind it** (the Nexus popup: `> [n]
-  Nexus`; the Battle Round screen, `> [s] Start Pulse`); **one that belongs to no row** (the
+- **A popup that belongs to a menu row keeps that row active behind it** (the Nexus popup:
+  `[x] Nexus  >>`; the Battle Round screen, `[x] Start Pulse  >>`); **one that belongs to no row** (the
   game menu, Settings, the export, the Controls page) **leaves the menu unlit**, so its own highlight is the only one on
   screen.
 
@@ -272,7 +289,7 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   2026-09-28). A new behaviour whose worth is in doubt gets an on/off experiment. Most experiments
   are deleted before the pull request is accepted; a few stay longer, or become real settings.
 - **Every experiment names the question it serves.** One that only takes effect when the Build Phase
-  starts over says so on the status line when changed ("applies after a restart") and, **when Settings
+  starts over says so on the bottom line when changed ("applies after a restart") and, **when Settings
   closes with such a change pending, in a message popup** — once per change, not when a value is put
   back, and not again on the next visit, since the player may keep playing and restart later (F34).
   The game menu's `[r] Restart` is how it takes effect. (`pendingRestart` in `src/build/settings.ts`.)
@@ -285,15 +302,23 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
 
 ## 6. Panels
 
-- **The side panel shows one thing at a time**: the menu, or — in Explore Map — the **Explore Map
-  panel** for what is under the cursor, following it as it moves with no key to press (feedback F23).
-- **A panel that replaces the menu keeps the row that opened it as its header** (feedback F32): the
-  row stays where it is, drawn active (`> [e] Explore Map`), a separator runs across the panel under it
-  (`-` in ASCII, `─` in Unicode), and the panel's own content fills the rest. No `[esc]` of its own:
-  what Esc does is the top bar's to say. The row's "pressed" flash plays on the row itself.
-- **The Explore Map card**: the thing's own glyphs as its icon, its name, what it is for in one line
-  (wrapped at words, never cut), then its numbers as label/value rows. Later: a larger ASCII art
-  version, and live numbers during a Pulse.
+- **The side panel shows one thing at a time**: the menu, or a **card** — Explore Map's, for what is
+  under the cursor, following it as it moves with no key to press (feedback F23); or, while a building
+  is being placed, that building's (owner, 2026-09-30, feedback F58: "visual consistency for anything
+  that gains focus on the map").
+- **A card keeps the row that opened it as its header** (feedback F32, F58): on Explore Map's line,
+  under the `$` line, drawn active (`[x] Explore Map  >>`, `[x] Barracks  >>`), a separator across the
+  panel under it (`-` in ASCII, `─` in Unicode), and the card fills the rest. No `[esc]` of its own:
+  what Esc does is the top bar's to say. The row's "pressed" flash plays on the header, and the focus
+  arrow leaves from its `>>`.
+- **The card**: the thing's own glyphs as its icon, its name with a word on where it stands (planned,
+  standing, to build), what it does wrapped at words (never cut), then cost, health, size and attack as
+  label/value rows. On bare ground, the terrain and the tile. A click anywhere on the panel while a
+  card shows goes back, as Esc does; a digit while placing arms another building and the card changes.
+  Later: a larger ASCII art version, and live numbers during a Pulse.
+- **No help text in the panel** (F58): the key help that overflowed from the bottom bar and the line
+  saying what the highlighted row does both left it; the bottom line says what a row does
+  (section 8), and the Controls page lists every key.
 - **Text in the panel never cuts a word**; a line that does not fit wraps or is dropped.
 - **The action that finishes the phase is the menu's last row** (owner, 2026-09-29, feedback F41, then
   F47: "It just needs to be the last option on the menu... a regular menu item, at the bottom"):
@@ -301,8 +326,7 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   by Up and Down (section 4's first rule). A boxed "end turn" button was tried first and was too large,
   and Up and Down could not reach it. It is dim, and refused with its reason, until the dealt Nexus power
   is picked; Enter on it, `s` or a click opens the Battle Round screen (section 5). It belongs to the menu,
-  so Explore Map, which replaces the menu, hides it with the rest, and the panel's key help stacks
-  directly above it. (`startRow` in `src/build/layout.ts`, drawn in `drawPanel` in `src/view/build.ts`.)
+  so a card, which replaces the menu, hides it with the rest. (`startRow` in `src/build/layout.ts`, drawn in `drawPanel` in `src/view/build.ts`.)
 
 ## 7. The map rectangle
 
@@ -350,7 +374,7 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   pointed at.
 - **Every number is an Experiment** until the owner has felt it.
 - **A refused try is seen where the eye is**: the footprint flashes in the "danger" colour for a moment
-  as the status line says why.
+  as the bottom line says why.
 
 ## 7b. A building going up (gate 5I)
 
@@ -408,7 +432,7 @@ serves, and when two rules disagree, the goal decides. Each names where it showe
   so nothing depends on seeing it. Reduced motion has no red at all. A new warning goes to the timer
   or the light, never to a bigger red.
 - **The result is words first, colour second.** The headline, the reason and the count are on the
-  panel and again, as one sentence, on the status line (green for a win, red for a loss, plain for a
+  panel and again, as one sentence, on the bottom line (green for a win, red for a loss, plain for a
   draw or a time-out) — the words carry the cue where colour cannot.
 - **Nothing the player does can change what the Pulse did.** Pause, speed, stepping and looking around
   are presentation; "Watch again" only starts the clock over, because the kernel resolved the whole
