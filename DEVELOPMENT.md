@@ -176,7 +176,7 @@ click on the panel goes back. The menu is one list: Explore Map, Nexus, a line w
 spend on its right (`◆ 130`, the map's resource symbol — `* 130` in ASCII), the buildings with their
 costs, and `[s] Start Pulse` on its last line. `[n] Nexus` opens the Nexus Powers popup (a pick closes
 it). Arming a building (its digit, Enter on its row, or a click on it) keeps the cursor where it is
-when the building fits there, and otherwise moves it to the nearest spot within 12 tiles that leaves a
+when the building fits there, and otherwise moves it to the nearest spot within reach that leaves a
 free tile around it, and the panel becomes that building's card under `[1] Barracks  >`; begun on the
 menu, a **focus arrow** flies from that row's own place to the cursor, which blinks twice when it
 lands, and the card is revealed over about 150 ms (the arrow's length and the reveal's are the two

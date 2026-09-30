@@ -379,7 +379,7 @@ deleted, and the renderer must be replaceable without one simulation test changi
   armed only while the Grid has focus, and **finishing goes back to where it started** (Q57, refined
   2026-09-29): placing or Explore Map begun on the map returns to plain navigation there; begun on the
   menu, to the menu, disarmed. **Arming puts the building where the cursor is** when it fits, else the
-  cheapest spot within 12 tiles (sideways cheaper than up or down) leaving a free tile around it —
+  cheapest spot within reach (sideways cheaper than up or down; both tuned values) leaving a free tile around it —
   never beside the last building placed; the cursor opens on the Grid Nexus. **Esc, `x` and a right
   click are one cancel** that goes back one level — popup, then placing or Explore Map to where it
   began, then the map to the menu — and on the menu **Esc** opens the **game menu** (`[s] Settings`,

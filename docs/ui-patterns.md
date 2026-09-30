@@ -95,7 +95,8 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
 - **A click activates what it lands on**, from any focus: a building's row arms it, `[n] Nexus` opens its
   popup, `[e] Explore Map` opens it. What a row click starts comes back to the menu.
 - **A click can only choose what it could see**: while a card covers the menu, a click on the panel goes
-  back and chooses nothing. **A click outside a popup** closes it and moves focus there, nothing more.
+  back and chooses nothing. **A click outside a popup** closes it and moves focus there, nothing more; over a card it only closes
+  the popup, and the card and its building come back.
 - **Whole rows are targets**, as wide as the highlight bar, and **drawing and hit-testing read one
   geometry** (`buildLayout` in `src/build/layout.ts`, the placed popup in `src/build/popup.ts`).
 - **A right click is `x`.** **The wheel** moves the map cursor five tiles (never a second camera) and
@@ -215,8 +216,9 @@ loop times the rest.
   its row to the cursor over whatever it crosses (section 9). Exploring only moves the focus, so it sends
   the cursor itself rather than a ray.
 - **Where the cursor lands** (`armingSpot` in `src/build/state.ts`): where it is, if the footprint fits;
-  else the nearest spot within 12 tiles leaving a free tile around it, else the nearest that fits —
-  nearest by the cursor's move, sideways costing one and up or down two, so a run grows to the right.
+  else the nearest spot within reach leaving a free tile around it, else the nearest that fits —
+  nearest by the cursor's move, a step up or down costing more than a step sideways, so a run grows to
+  the right (the reach and the cost are tuned values, `armSearchTiles` and `armVerticalCost`).
   With none in reach, arming steps one right and one down and draws the building as itself rather than
   as a refusal, until the player moves or tries. **Explore Map opened from the menu uses the same rule
   for one tile**, landing on clear ground that is easy to follow (or staying put); opened from the map,
@@ -263,7 +265,8 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 ### 10.1 One shape
 
 - **Every popup is one shape** (`src/build/popup.ts`): a title and rows as data, options naming the
-  command a click sends, at most one scrolling list, drawn and hit-tested from one placement.
+  command a click, their hotkey and Enter on them all send (a setting's Left/Right and its value's two
+  halves send the same decrease and increase), at most one scrolling list, drawn and hit-tested from one placement.
 - **Unmissable**: a solid border in the map edge's weight, the title in it, a one-cell shadow (`:` or
   `░`), centred over the map, drawn last in the chrome band.
 - **It holds the keyboard and the mouse** until it closes; keys it does not use do nothing. **Nothing
@@ -315,8 +318,8 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 - **One line: what just happened or why not — and when nothing did, what can be done here.** The last
   command's answer while it has one; otherwise the hint for where the keyboard is, from one list of
   situations (`HINTS` in `src/build/help.ts`), so a new situation is one line there.
-- **An answer lapses at the next command that says nothing** (`lapseStatus`), and one about a tile when
-  the cursor leaves it.
+- **An answer lapses at the next command that says nothing** (`lapseStatus`); a move is one, so a
+  refusal about a tile goes when the cursor leaves it.
 - **A message is typed** — text, a tone and its tile, never a bare string; hints have the quieter `hint`
   tone, and tones resolve onto style roles in one place (`src/view/status.ts`).
 - **Say the result and the way back**: `Hatchery placed (resources: 70) - [u] undo`. **A refusal names

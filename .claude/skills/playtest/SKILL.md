@@ -60,7 +60,7 @@ switches focus, arriving on the map in plain navigation; Left and Right on the m
 row's words for a moment. A script's frames are still frames: the focus arrow, the see-through cursor
 Explore Map sends, the cursor blink and the card reveal are live-loop timing, drawn by `handoffGif` in
 `scripts/capture-spike-screenshots.mjs`. A click on a building's row arms it at once
-(`click@3,9` is the Hatchery at 80x24), and a second click on the same tile places. `x` and a right
+(`click@3,7` is the Hatchery at 80x24), and a second click on the same tile places. `x` and a right
 click go back one level and do nothing on the menu, so `x x x` always lands there; only `Esc` on the
 menu (or `q` anywhere) opens the game menu: `s` Settings, `c` Controls and hotkeys (`?` opens it from
 anywhere), `r` Restart (the Build Phase over, every setting kept), `q` quits. The top bar's right end says what Esc does now — `menu [esc]`, `back [esc]`,
