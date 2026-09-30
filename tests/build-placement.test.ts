@@ -412,8 +412,8 @@ test("removal sparks follow the Experiments: off when Particles is, a still mark
 })
 
 test("removal sparks are presentation only: the plan is the same with them on or off", () => {
-  const many = placed(`n 1 d Down*4 Right Esc Down Space Space u`)
-  const none = placed(`n 1 d Down*4 Left Esc Down Space Space u`)
+  const many = placed(`n 1 d Down*5 Right Esc Down Space Space u`)
+  const none = placed(`n 1 d Down*5 Left Esc Down Space Space u`)
   assert.equal(many.state.debug.placeParticles, "many")
   assert.equal(none.state.debug.placeParticles, "off")
   assert.deepEqual(many.state.planned, none.state.planned)
@@ -424,8 +424,8 @@ test("removal sparks are presentation only: the plan is the same with them on or
 
 test("the plan is identical with every placement effect on or off", () => {
   // Build animation to 900, lighting to rainbow, particles to many, glow off — by an Experiment's own keys,
-  // past the focus arrow and the cursor blink at the top of the list.
-  const tuned = placed("n 1 d Down*2 Right*3 Down Right Down Right Down Left*3 Esc Down Space Space")
+  // past the focus arrow, the cursor blink and the card reveal at the top of the list.
+  const tuned = placed("n 1 d Down*3 Right*3 Down Right Down Right Down Left*3 Esc Down Space Space")
   const plain = placed()
   assert.deepEqual(tuned.state.debug.placeFramesMs, 900)
   assert.deepEqual(tuned.state.debug.placeLight, "rainbow")

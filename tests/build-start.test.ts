@@ -146,8 +146,8 @@ test("the row is active while its screen is open, back on the menu with the row 
   const session = ready()
   session.build.handleData("s", session.layout)
   const text = screenText(session).split("\n")[startRow(session.layout)]!
-  // Drawn active (feedback F53): `[x]`, the key that ends it, and `>>` pointing at the screen it opened.
-  assert.match(text.slice(session.layout.panelColumn), /^\[x\] Start Pulse +>>[|+]/)
+  // Drawn active (feedback F67, F70): its own hotkey, and one `>` pointing at the screen it opened.
+  assert.match(text.slice(session.layout.panelColumn), /^\[s\] Start Pulse +>[|+]/)
   session.build.handleData(ESC, session.layout)
   assert.equal(session.build.state.overlay, null)
   assert.equal(session.build.state.focus, "menu")

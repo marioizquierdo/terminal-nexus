@@ -25,7 +25,14 @@
 //     keyboard to the map (`BuildState.handoff`), an arrow flies from the row to the cursor for the
 //     "Focus arrow" Experiment's milliseconds, and when it lands the cursor blinks "Cursor blink" times
 //     in the pressed flash's look and at its speed. Keys work throughout; it all stops the moment the
-//     keyboard leaves the map, a popup opens or the plan is committed.
+//     keyboard leaves the map, a popup opens or the plan is committed. From Explore Map's row the arrow
+//     is a see-through copy of the cursor instead (F64) — the same timeline, drawn by the view;
+//   - **the menu turns into a card** (feedback F68): whenever the panel goes from the menu to a card —
+//     Explore Map opened, a building armed from the menu or with a digit on the map — or from one card
+//     to another armed building, the view plays the "Card reveal" Experiment's transition (the other
+//     rows fade, the chosen row slides up to the header, the card types in). The reducer never hears
+//     of it: this loop watches the state turn into a card the way it watches the plan grow. Closing a
+//     card is instant.
 //
 // `busyUntil` says whether anything is still moving, and until when: the live loop runs its frame
 // timer only while it is not `null`, and otherwise draws once per input, as the screen always has.
@@ -42,9 +49,10 @@
 import type { Camera } from "../build/camera.ts"
 import type { Coord } from "../grid/types.ts"
 import type { BuildState } from "../build/state.ts"
+import { cardShowing } from "../build/state.ts"
 import type { DebugFlags } from "../build/debug.ts"
 import { flashDuration } from "../build/debug.ts"
-import type { BuildFlash } from "./build.ts"
+import type { BuildCompositionInput, BuildFlash, CardReveal } from "./build.ts"
 import type { Footprint } from "../grid/types.ts"
 import type { PlacedStructure, PlacementClock, RemovalClock } from "./placement.ts"
 import { placementRequest, removalSchedule } from "./placement.ts"
@@ -67,9 +75,61 @@ export type LiveFrame = Readonly<{
   focusArrow?: Readonly<{ progress: number }>
   /** The cursor is in the "on" half of a blink (F54). */
   cursorBlink?: boolean
+  /** The menu turning into a card (F68), 0 to 1 and linear in time; the view sets the beats. */
+  cardReveal?: CardReveal
   /** When the last thing still animating ends, or `null` when nothing is. */
   busyUntil: number | null
 }>
+
+/**
+ * What a live frame hands the composer — every field of it that `BuildCompositionInput` has, and only
+ * those, so the live screen, the browser page and the capture scripts turn a `LiveFrame` into a frame
+ * the same way and a new field reaches all of them at once.
+ */
+export type LivePresentation = Pick<
+  BuildCompositionInput,
+  "camera" | "cursor" | "flash" | "refusedFlash" | "placing" | "removing" | "focusArrow" | "cursorBlink" | "cardReveal"
+>
+
+export function livePresentation(live: LiveFrame): LivePresentation {
+  return {
+    camera: live.camera,
+    cursor: live.cursor,
+    ...(live.flash === undefined ? {} : { flash: live.flash }),
+    ...(live.refusedFlash === true ? { refusedFlash: true } : {}),
+    ...(live.placing === undefined ? {} : { placing: live.placing }),
+    ...(live.removing === undefined ? {} : { removing: live.removing }),
+    ...(live.focusArrow === undefined ? {} : { focusArrow: live.focusArrow }),
+    ...(live.cursorBlink === true ? { cursorBlink: true } : {}),
+    ...(live.cardReveal === undefined ? {} : { cardReveal: live.cardReveal }),
+  }
+}
+
+/**
+ * Which card the panel shows, as a key the live loop compares frame to frame (F68): `null` for the
+ * menu (or the committed summary), `explore` for Explore Map's, `armed:<index>` for a building's. A
+ * change to a card that is not `null` starts the card reveal.
+ */
+export function cardKey(state: BuildState): string | null {
+  if (!cardShowing(state)) return null
+  return state.armed === null ? "explore" : `armed:${state.armed}`
+}
+
+/**
+ * The card reveal `elapsedMs` after the panel turned into a card, or `null` once it is over (or never
+ * plays: the Experiment off, or reduced motion). `menu` says what the panel showed before: the menu,
+ * whose rows fade and whose chosen row slides up, or another card, which gives way at once.
+ */
+export function cardRevealAt(
+  flags: DebugFlags,
+  reducedMotion: boolean,
+  elapsedMs: number,
+  menu: boolean,
+): CardReveal | null {
+  const duration = reducedMotion ? 0 : Math.max(0, flags.cardRevealMs)
+  if (duration <= 0 || elapsedMs < 0 || elapsedMs >= duration) return null
+  return { progress: elapsedMs / duration, menu }
+}
 
 /**
  * When a menu row hands the keyboard to the map (feedback F54): the focus arrow flies for `arrowMs`,
@@ -124,6 +184,10 @@ export class BuildAnimation {
   /** The last hand-off seen (F54), when it was first seen, and whether it has been cut short — the
    *  keyboard left the map, a popup opened, the plan was committed — after which it never resumes. */
   private seenHandoff: Readonly<{ seq: number; at: number; stopped: boolean }> | null = null
+  /** The card the panel showed at the last frame (`cardKey`), when it turned into it, and whether the
+   *  menu was there before it (F68). `at` is `null` for a card already showing when the screen first
+   *  drew, which never plays a reveal — like a placement already planned then. */
+  private seenCard: Readonly<{ key: string | null; at: number | null; menu: boolean }> | null = null
   /**
    * Each planned ordinal's animation track (`animation.ts`), by the one thing about it that varies:
    * when its `play` was requested — the first frame that drew it — or `null` for what was already
@@ -285,6 +349,21 @@ export class BuildAnimation {
       }
     }
 
+    // The menu turning into a card (F68). Watched, not recorded: the key changes the frame the state
+    // first shows a new card, and the reveal plays from that frame. Closing a card is instant.
+    const key = cardKey(state)
+    if (this.seenCard === null) this.seenCard = { key, at: null, menu: key === null }
+    else if (this.seenCard.key !== key) this.seenCard = { key, at: now, menu: this.seenCard.key === null }
+    let cardReveal: CardReveal | undefined
+    const card = this.seenCard
+    if (card.key !== null && card.at !== null) {
+      const reveal = cardRevealAt(state.debug, options.reducedMotion === true, now - card.at, card.menu)
+      if (reveal !== null) {
+        cardReveal = reveal
+        ends.push(card.at + state.debug.cardRevealMs)
+      }
+    }
+
     return {
       camera,
       cursor,
@@ -294,6 +373,7 @@ export class BuildAnimation {
       ...(removing.length === 0 ? {} : { removing }),
       ...(focusArrow === undefined ? {} : { focusArrow }),
       ...(cursorBlink ? { cursorBlink } : {}),
+      ...(cardReveal === undefined ? {} : { cardReveal }),
       busyUntil: ends.length === 0 ? null : Math.max(...ends),
     }
   }

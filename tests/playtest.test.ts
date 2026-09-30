@@ -47,7 +47,7 @@ test("the owner's menu flow — Down three times, then Space four times — plan
   )
   const final = frameToText(run.frames[7]!.frame)
   assert.match(final, /Hatchery placed \(resources: 40\) - \[u\] undo/)
-  assert.match(final, /\$ 40[|+]/)
+  assert.match(final, /\* 40[|+]/)
   assert.equal(run.ended, null)
 })
 

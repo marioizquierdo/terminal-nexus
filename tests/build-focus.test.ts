@@ -125,13 +125,13 @@ test("the side panel is on the left of the Grid at every size in the supported r
     assert.equal(layout.origin.column, layout.gridBox.left + 1)
     assert.equal(layout.gridBox.right, layout.offset.column + layout.composition.width - 1)
     assert.equal(layout.panelRow, layout.origin.row)
-    // What there is to spend on the top line, against the divider where the costs are (feedback F57);
-    // then Explore Map, a blank line, and the Nexus Powers (owner, 2026-09-28, feedback F23, F56).
-    assert.deepEqual([RESOURCE_ROW, EXPLORE_ROW, NEXUS_ROW], [0, 1, 3])
-    assert.match(lines[layout.panelRow + RESOURCE_ROW] as string, /^\s*\| +\$ 100[|+]/)
+    // Explore Map on the top line and the Nexus Powers straight under it (owner, 2026-09-28 and
+    // 2026-09-30, feedback F23, F72); then the credits line, against the divider where the costs are,
+    // with the map's resource symbol (F71).
+    assert.deepEqual([EXPLORE_ROW, NEXUS_ROW, RESOURCE_ROW], [0, 1, 2])
     assert.match(lines[layout.panelRow + EXPLORE_ROW] as string, /^\s*\| \[e\] Explore Map /)
-    assert.match(lines[layout.panelRow + EXPLORE_ROW + 1] as string, /^\s*\| +[|+]/)
     assert.match(lines[layout.panelRow + NEXUS_ROW] as string, /^\s*\| \[n\] Nexus \(1\)/)
+    assert.match(lines[layout.panelRow + RESOURCE_ROW] as string, /^\s*\| +\* 100[|+]/)
     // engine.md 3.1's floor arithmetic, 1 + 30 + 48 + 1 = 80, with the shared west side's column
     // given to the Grid: 1 + 29 + 49 + 1 at 80 columns.
     assert.equal(layout.composition.width, 31 + layout.viewport.width * layout.tileWidth)
@@ -196,13 +196,15 @@ test("[e] and Enter on the first entry arrive in Explore Map: its row turns acti
     const { frame, lines } = screen(side)
     assert.match(lines[side.layout.footerRow] as string, /\| Explore Map\b/)
     assert.equal(hint(side.context, side.build.state).text, "Explore Map: arrows move, the panel shows what is here. [esc] goes back.")
-    // Its own row is its header, in the active style every row shares (feedback F32, F53): `[x]`, the
-    // name underlined, `>>` at its right end, the hotkey's colour, no bar — and no "[esc]" of its own.
+    // Its own row is its header, in the active style every row shares (feedback F32, F67, F70): its own
+    // hotkey, one `>` at its right end, the hotkey's colour and bold, no underline, no bar — and no
+    // "[esc]" of its own.
     const headerRow = side.layout.panelRow + CARD_HEADER_ROW
     const header = lines[headerRow] as string
-    assert.match(header, /^\s*\| \[x\] Explore Map +>>[|+]/)
+    assert.match(header, /^\s*\| \[e\] Explore Map +>[|+]/)
     assert.doesNotMatch(header, /\[esc\]/)
-    assert.equal(cellAt(frame, side.layout.panelColumn + 6, headerRow).style.underline, true)
+    assert.notEqual(cellAt(frame, side.layout.panelColumn + 6, headerRow).style.underline, true)
+    assert.equal(cellAt(frame, side.layout.panelColumn + 6, headerRow).style.fgRole, "chrome.hotkey")
     assert.notEqual(cellAt(frame, side.layout.panelColumn + side.layout.panelLimit - 1, headerRow).style.inverse, true)
     // A separator across the panel, then the card.
     assert.equal((lines[side.layout.panelRow + CARD_SEPARATOR_ROW] as string).slice(side.layout.panelColumn, side.layout.dividerColumn), "-".repeat(side.layout.panelLimit))
@@ -285,15 +287,15 @@ test("placing: the armed row is marked armed, not with the keyboard's bar; leavi
   const side = session()
   keys(side, "1")
   assert.equal(side.build.state.focus, "grid")
-  // Armed, the panel is the building's card under its own row, drawn active: `[x]`, `>>` and the name
-  // underlined in the hotkey's colour — never the bar, which means "the keyboard is here, not chosen
-  // yet" (feedback F22, F53, F58).
+  // Armed, the panel is the building's card under its own row, drawn active: its own hotkey, one `>`,
+  // the name bold in the hotkey's colour and not underlined — never the bar, which means "the keyboard
+  // is here, not chosen yet" (feedback F22, F58, F67, F70).
   const { frame, lines } = screen(side)
   const headerRow = side.layout.panelRow + CARD_HEADER_ROW
-  assert.match(lines[headerRow] as string, /^\s*\| \[x\] Barracks +>>[|+]/)
+  assert.match(lines[headerRow] as string, /^\s*\| \[1\] Barracks +>[|+]/)
   assert.ok(!barOn(side, headerRow), "the armed row is drawn with the keyboard's bar")
   const name = cellAt(frame, side.layout.panelColumn + 6, headerRow).style
-  assert.equal(name.underline, true)
+  assert.notEqual(name.underline, true)
   assert.equal(name.bold, true)
   // A command that says nothing lets whatever arming said lapse; the bottom line then says how to place.
   side.build.run([{ kind: "focus", target: "grid" }])
@@ -431,8 +433,12 @@ test("a menu row is drawn in four states: plain, selected, pressed and refused",
   assert.equal(pressed.inverse, true)
   assert.equal(pressed.underline, true)
   assert.equal(pressed.bold, true)
-  // Refused: the bar dimmed for a moment against the bar it goes back to.
-  assert.equal(style({ kind: "refused", entry: EXPLORE_ENTRY }).dim, true)
+  // Refused (feedback F61): the bar stays exactly the bar — only the row's words grey for a moment
+  // (dim, in monochrome, which has no grey).
+  assert.deepEqual(style({ kind: "refused", entry: EXPLORE_ENTRY }), style())
+  const word = cellAt(screen(side, { kind: "refused", entry: EXPLORE_ENTRY }).frame, side.layout.panelColumn + 1, row).style
+  assert.equal(word.inverse, true)
+  assert.equal(word.dim, true)
   // Plain: another row.
   assert.notEqual(cellAt(screen(side).frame, last, side.layout.panelRow + NEXUS_ROW).style.inverse, true)
 })
@@ -467,7 +473,7 @@ test("a click on a building's row arms it at once, whatever had focus, and its g
   assert.equal(side.build.state.armed, 0, "the click only highlighted the row")
   assert.equal(side.build.state.focus, "grid")
   assert.deepEqual(side.build.state.cursor, { x: 30, y: 14 }, "arming by click moved the cursor off the map spot")
-  assert.match(screen(side).lines[side.layout.panelRow + CARD_HEADER_ROW] as string, /\[x\] Barracks +>>/)
+  assert.match(screen(side).lines[side.layout.panelRow + CARD_HEADER_ROW] as string, /\[1\] Barracks +>/)
   assert.match(hint(side.context, side.build.state).text, /^Place the Barracks:/)
   assert.equal(side.build.state.origin, "menu", "a click on a row is the menu's, whatever had focus")
 
@@ -535,19 +541,20 @@ test("a click on Nexus opens its popup and a click on Explore Map explores, from
   assert.equal(side.build.state.overlay, "nexus-powers")
   assert.equal(side.build.state.armed, null)
   assert.equal(side.build.state.focus, "menu")
-  // The popup's own row is drawn active behind it — `[x]` and `>>`, not the keyboard's bar (F32, F53).
-  assert.match(screen(side).lines[side.layout.panelRow + NEXUS_ROW] as string, /^\s*\| \[x\] Nexus \(1\) +>>[|+]/)
+  // The popup's own row is drawn active behind it — its own hotkey and one `>`, not the keyboard's bar
+  // (F32, F67, F70).
+  assert.match(screen(side).lines[side.layout.panelRow + NEXUS_ROW] as string, /^\s*\| \[n\] Nexus \(1\) +>[|+]/)
   assert.ok(!barOn(side, side.layout.panelRow + NEXUS_ROW), "the popup's row is drawn with the keyboard's bar")
   keys(side, "1") // pick: the popup closes, back on the menu with nothing looking chosen
   assert.equal(side.build.state.overlay, null)
   assert.ok(!barOn(side, side.layout.panelRow + NEXUS_ROW))
-  assert.doesNotMatch(screen(side).lines[side.layout.panelRow + NEXUS_ROW] as string, />>|\[x\]/)
+  assert.doesNotMatch(screen(side).lines[side.layout.panelRow + NEXUS_ROW] as string, />[|+]/)
 
   // From the menu.
   clickEntry(side, side.layout.panelRow + EXPLORE_ROW)
   assert.equal(side.build.state.exploreMap, true)
   assert.equal(side.build.state.armed, null)
-  assert.match(screen(side).lines[side.layout.panelRow + CARD_HEADER_ROW] as string, /\[x\] Explore Map +>>/)
+  assert.match(screen(side).lines[side.layout.panelRow + CARD_HEADER_ROW] as string, /\[e\] Explore Map +>/)
 })
 
 test("in Explore Map a click on the map moves the card; a click on its panel closes it and chooses nothing", () => {
@@ -883,9 +890,9 @@ test("a mouse placement goes back to the menu, focused but unselected", () => {
 // --- One active style (feedback F32) ---------------------------------------------------------------
 
 test("one active style for every row: a building armed, Explore Map open, the Nexus popup open, the Battle Round screen open", () => {
-  // `[x] Barracks  >>` (owner, 2026-09-30, feedback F53): the hotkey is the key that ends it, `>>` at
-  // the row's right end points at the map. A building and Explore Map head their card; Nexus and Start
-  // Pulse stay on the menu behind their popup.
+  // `[1] Barracks  >` (owner, 2026-09-30, feedback F67, F70): the row keeps its own hotkey, which ends
+  // it, and one `>` at its right end points at the map. A building and Explore Map head their card;
+  // Nexus and Start Pulse stay on the menu behind their popup.
   const cases: readonly [string, (side: Side) => void, (side: Side) => number][] = [
     ["building", (side) => keys(side, "1"), (side) => side.layout.panelRow + CARD_HEADER_ROW],
     ["explore", (side) => keys(side, "e"), (side) => side.layout.panelRow + CARD_HEADER_ROW],
@@ -899,16 +906,18 @@ test("one active style for every row: a building armed, Explore Map open, the Ne
     const row = rowOf(side)
     const { frame, lines } = screen(side)
     const drawn = (lines[row] as string).slice(side.layout.panelColumn, side.layout.dividerColumn)
-    assert.match(drawn, /^\[x\] \S.* >>$/, `${name}: not drawn [x] ... >>`)
+    assert.match(drawn, /^\[[^\]x]\] \S.* >$/, `${name}: not drawn [key] ... >`)
+    assert.doesNotMatch(drawn, />>$/, `${name}: still the old >>`)
     assert.doesNotMatch(drawn, /^>/, `${name}: still has the old leading marker`)
     assert.ok(!barOn(side, row), `${name}: drawn with the keyboard's bar`)
     const hotkey = cellAt(frame, side.layout.panelColumn + 1, row).style
     const label = cellAt(frame, side.layout.panelColumn + 6, row).style
     const arrow = cellAt(frame, side.layout.dividerColumn - 1, row).style
     looks.push(JSON.stringify([hotkey, label, arrow]))
-    assert.equal(label.underline, true, `${name}: the name is not underlined`)
+    assert.notEqual(label.underline, true, `${name}: the name is underlined`)
+    assert.equal(label.bold, true, `${name}: the name is not bold`)
     assert.equal(label.fgRole, "chrome.hotkey", `${name}: not in the hotkey's colour`)
-    assert.equal(arrow.fgRole, "chrome.hotkey", `${name}: the >> is not in the hotkey's colour`)
+    assert.equal(arrow.fgRole, "chrome.hotkey", `${name}: the > is not in the hotkey's colour`)
   }
   assert.equal(new Set(looks).size, 1, "the active rows are drawn differently")
 })// --- Same plan, every adapter ---------------------------------------------------------------------

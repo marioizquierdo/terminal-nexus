@@ -35,7 +35,7 @@ import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
-import { BuildAnimation, FRAME_MS } from "../src/view/build-live.ts"
+import { BuildAnimation, FRAME_MS, livePresentation } from "../src/view/build-live.ts"
 import { cellForTile } from "../src/build/layout.ts"
 import { renderFramePng, renderFramesGif } from "./lib/frame-capture.mjs"
 import {
@@ -239,10 +239,11 @@ function placementGif(
 }
 
 /**
- * A menu row handing the keyboard to the map (the menu spike, feedback F54): the screen before `hand`,
- * then every `stepMs` after it until nothing moves — the row's pressed flash, the focus arrow flying
- * from its `>>` to the cursor, and the cursor's blinks when it lands — each shown for `showMs`, so the
- * GIF plays in slow motion and says so.
+ * A menu row handing the keyboard to the map (the menu spike, feedback F54, F63, F64, F68): the screen
+ * before `hand`, then every `stepMs` after it until nothing moves — the row's pressed flash, the menu
+ * turning into a card, the focus arrow flying from the row's place on the menu to the cursor (a
+ * see-through cursor from Explore Map's), and the cursor's blinks when it lands — each shown for
+ * `showMs`, so the GIF plays in slow motion and says so.
  */
 function handoffGif(name, { before, hand, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", glyphPack = "ascii", stepMs = 20, showMs = 100 }) {
   if (only !== null && only !== name) return
@@ -259,11 +260,7 @@ function handoffGif(name, { before, hand, expect, cols = 80, rows = 24, capabili
         state,
         layout: run.layout,
         glyphPack,
-        camera: live.camera,
-        cursor: live.cursor,
-        ...(live.flash === undefined ? {} : { flash: live.flash }),
-        ...(live.focusArrow === undefined ? {} : { focusArrow: live.focusArrow }),
-        ...(live.cursorBlink === undefined ? {} : { cursorBlink: live.cursorBlink }),
+        ...livePresentation(live),
       },
       capability,
     )
@@ -467,8 +464,8 @@ scriptedGif("build-hatchery-run", {
 
 scripted(
   "spike-minimum",
-  "80x24, the acceptance floor: the menu on the left - $ on its top line, one list - a 49x18 window onto a 96x40 Grid closed into its own rectangle, the map's own fence where the map ends, and one line of help at the bottom",
-  { keys: PICK_FIRST_POWER, expect: "$ 130" },
+  "80x24, the acceptance floor: the menu on the left - Explore Map, Nexus, the credits with the map's resource symbol, one list - a 49x18 window onto a 96x40 Grid closed into its own rectangle, the map's own fence where the map ends, and one line of help at the bottom",
+  { keys: PICK_FIRST_POWER, expect: "* 130" },
 )
 
 scripted(
@@ -479,20 +476,20 @@ scripted(
 
 scripted(
   "build-info-panel",
-  "[e] Explore Map with the cursor on the Grid Nexus, where the screen opens: the row turns active - [x] Explore Map >> - with a line under it, then the building's own glyphs, its name, what it is for and its numbers. x, e or Esc goes back",
+  "[e] Explore Map with the cursor on the Grid Nexus, where the screen opens: the row turns active - [e] Explore Map > - with a line under it, then the building's own glyphs, its name, what it is for and its numbers. x, e or Esc goes back",
   { keys: `${PICK_FIRST_POWER} e`, expect: "Citizen Nexus" },
 )
 
 scripted(
   "build-smart-cursor",
-  "Down twice and Space: the Hatchery is armed from the menu and the panel becomes its card, under [x] Hatchery >>. The cursor was on the Grid Nexus, where it cannot go, so it moves to the nearest spot that leaves a free tile around it - a free column to its right",
-  { keys: `${PICK_FIRST_POWER} Down*2 Space`, expect: "[x] Hatchery" },
+  "Down twice and Space: the Hatchery is armed from the menu and the panel becomes its card, under [2] Hatchery >. The cursor was on the Grid Nexus, where it cannot go, so it moves to the nearest spot that leaves a free tile around it - a free column to its right",
+  { keys: `${PICK_FIRST_POWER} Down*2 Space`, expect: "[2] Hatchery" },
 )
 
 scripted(
   "build-menu-run",
   "The owner's own flow: Space arms, Space places and returns the keyboard to the menu, again and again. Each Barracks is armed where the last one left the cursor, and moves a few tiles to the right, a free column away - three in a row",
-  { keys: `${PICK_FIRST_POWER} Down Space*6`, expect: "$ 10" },
+  { keys: `${PICK_FIRST_POWER} Down Space*6`, expect: "* 10" },
 )
 
 scripted(
@@ -503,7 +500,7 @@ scripted(
 
 scripted(
   "build-nexus-popup-picked",
-  "104x32, reopened after a pick (the pick itself closes it): nothing waiting, the pick listed as active with what it does, and the budget above the menu already counting it",
+  "104x32, reopened after a pick (the pick itself closes it): nothing waiting, the pick listed as active with what it does, and the credits above the buildings already counting it",
   { keys: "n 2 n", expect: "Nothing waiting", cols: 104, rows: 32 },
 )
 
@@ -522,13 +519,13 @@ scripted(
 scripted(
   "spike-maximum",
   "104x30, the largest viewport the game will ever show: 72x24 tiles. A bigger terminal than this buys margin, never more Grid",
-  { keys: PICK_FIRST_POWER, expect: "$ 130", cols: 104, rows: 30 },
+  { keys: PICK_FIRST_POWER, expect: "* 130", cols: 104, rows: 30 },
 )
 
 scripted(
   "spike-wide-tiles",
   "128x24: a 48x18 viewport at two terminal columns per tile, where a tile stops being squashed 2:1",
-  { keys: PICK_FIRST_POWER, expect: "$ 130", cols: 128, rows: 24 },
+  { keys: PICK_FIRST_POWER, expect: "* 130", cols: 128, rows: 24 },
 )
 
 scripted(
@@ -566,13 +563,13 @@ scripted(
 
 scripted(
   "build-card",
-  "[1] arms the Barracks: the menu gives way to its card - [x] Barracks >> on top, where the focus arrow leaves from, then what it does, its cost, health and size. The bottom line says how to place it",
+  "[1] arms the Barracks: the menu gives way to its card - [1] Barracks > on top, its own row moved up to be the title, then what it does, its cost, health and size. The bottom line says how to place it",
   { keys: `${PICK_FIRST_POWER} 1`, expect: "to build" },
 )
 
 scripted(
   "build-menu-hint",
-  "The menu, one list: $ on the top line in the cost column, Explore Map, Nexus, the buildings, Start Pulse last. With the Hatchery highlighted the bottom line says what it does and what it costs",
+  "The menu, one list: Explore Map, Nexus, the credits with the map's resource symbol in the cost column, the buildings, Start Pulse last. With the Hatchery highlighted the bottom line says what it does and what it costs",
   { keys: `${PICK_FIRST_POWER} Down*2`, expect: "Hatchery - Spawns swarmers" },
 )
 
@@ -583,19 +580,21 @@ scripted(
 )
 
 handoffGif("build-focus-arrow", {
-  // [1] from the menu arms the Barracks: the menu becomes its card, the arrow leaves the header's >>
-  // for the cursor beside the Grid Nexus, and the cursor blinks twice where it lands.
+  // [1] from the menu arms the Barracks: the other rows fade, the row slides up and the card types in,
+  // while the arrow leaves from where the row was on the menu for the cursor beside the Grid Nexus, and
+  // the cursor blinks twice where it lands.
   before: PICK_FIRST_POWER,
   hand: "1",
   expect: "to build",
 })
 
 handoffGif("build-focus-arrow-far", {
-  // The cursor far from the menu (moved on the map, then the keyboard back on the menu with Tab): the
-  // arrow crosses most of the map to reach it. Unicode glyphs.
+  // The cursor far from the menu (moved on the map, then the keyboard back on the menu with Tab):
+  // Explore Map sends a see-through copy of the cursor across most of the map to reach it (F64).
+  // Unicode glyphs.
   before: `${PICK_FIRST_POWER} Tab S-Right*2 Down*5 Tab`,
   hand: "e",
-  expect: "[x] Explore Map",
+  expect: "[e] Explore Map",
   glyphPack: "unicode",
 })
 
@@ -758,7 +757,7 @@ scriptedGif("build-explore-edge-click", {
   // Exploring, a click near an edge scrolls the view, further the nearer the edge: two columns in, a
   // long way; eight columns in, a little; in the middle, not at all (feedback F6).
   keys: `${PICK_FIRST_POWER} e click@76,10 click@70,10 click@55,10`,
-  expect: "[x] Explore Map",
+  expect: "[e] Explore Map",
   delayMs: 1200,
 })
 
@@ -827,7 +826,7 @@ const pickFirstPower = () => {
 
 live(
   "build-idle",
-  "The Build Phase opens on the menu, on the left: $ on the top line, the keyboard on [e] Explore Map, [n] Nexus under it with its (1), the one pick still waiting, and the bottom line saying what Explore Map is for. No cursor on the Grid while the menu has the keyboard",
+  "The Build Phase opens on the menu, on the left: the keyboard on [e] Explore Map, [n] Nexus under it with its (1), the one pick still waiting, then the credits, and the bottom line saying what Explore Map is for. No cursor on the Grid while the menu has the keyboard",
   { waitForText: "Explore Map" },
 )
 

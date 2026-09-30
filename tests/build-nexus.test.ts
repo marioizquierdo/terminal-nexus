@@ -138,7 +138,7 @@ test("picking applies its own effect exactly once, and cannot be changed afterwa
   // The owner's number (2026-09-28, feedback F24): enough to place buildings freely in a playtest.
   assert.equal(build.state.bonusAllotment, 2000)
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
-  assert.match(text, /\| {22}\$ 2100[|+]/, "the panel's budget line, whole, with the War Chest")
+  assert.match(text, /\| {22}\* 2100[|+]/, "the panel's credits line, whole, with the War Chest")
   assert.match(build.state.status.text, /War Chest picked/)
 
   const after = build.state
@@ -150,12 +150,13 @@ test("picking applies its own effect exactly once, and cannot be changed afterwa
 
 test("the budget on screen counts the picked power's share in what is left", () => {
   // Reserve Fund adds 30 to a 100-point allotment. The panel once read "130 of 100" — more left than
-  // there ever was; since feedback F57 it shows no maximum at all, only what is left: `$ 130`.
+  // there ever was; since feedback F57 it shows no maximum at all, only what is left — since F71 with
+  // the map's resource symbol: `* 130`.
   const context = spikeContext()
   const { build, layout } = session()
   build.dispatch({ kind: "pick-nexus", index: 0 })
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
-  assert.match(text, /\$ 130[|+]/)
+  assert.match(text, /\* 130[|+]/)
   assert.doesNotMatch(text, / of 1[03]0/)
 })
 

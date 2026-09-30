@@ -22,7 +22,7 @@ import { isGated } from "../build/camera.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
 import { composeBuildFrame } from "../view/build.ts"
-import { BuildAnimation, FRAME_MS, nextFrameDelay } from "../view/build-live.ts"
+import { BuildAnimation, FRAME_MS, livePresentation, nextFrameDelay } from "../view/build-live.ts"
 import { KeyReader } from "../view/key-reader.ts"
 import { gateFrame } from "../view/index.ts"
 import { selectBackend } from "../view/backends/index.ts"
@@ -214,7 +214,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
   // **The screen's clock lives here, never in the reducer** (gate 5H). Everything that moves between
   // commands — the view sliding to a new position, the cursor gliding to a new tile, a menu row's
   // flash, the cursor's flash on a refused placement, a building going up (gate 5I), the focus arrow
-  // and the cursor's blink (feedback F54) — is
+  // and the cursor's blink (feedback F54), the menu turning into a card (F68) — is
   // `BuildAnimation`'s pure function of the state and the time read here, and the frame timer below
   // runs only while one of them is still moving; an idle screen draws once per input, as it always
   // has. The same clock times the held-key ramp (passed with each key) and the lone-Esc timeout
@@ -265,14 +265,9 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
               state: build.state,
               layout,
               glyphPack: settings.glyphPack,
-              camera: live.camera,
-              cursor: live.cursor,
-              ...(live.flash === undefined ? {} : { flash: live.flash }),
-              ...(live.refusedFlash === true ? { refusedFlash: true } : {}),
-              ...(live.placing === undefined ? {} : { placing: live.placing }),
-              ...(live.removing === undefined ? {} : { removing: live.removing }),
-              ...(live.focusArrow === undefined ? {} : { focusArrow: live.focusArrow }),
-              ...(live.cursorBlink === true ? { cursorBlink: true } : {}),
+              // Everything time-dependent this frame shows — the slide, the glide, the flashes, the
+              // buildings going up, the hand-off, the card reveal — through the one converter.
+              ...livePresentation(live),
               reducedMotion: settings.reducedMotion,
               ...(pulse === undefined ? {} : { pulse }),
             },

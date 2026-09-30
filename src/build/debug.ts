@@ -27,7 +27,8 @@
 // - the focus arrow and the cursor's blink (`focusArrowMs`, `cursorBlinks`, feedback F54) are
 //   presentation alone: the reducer records when a menu row hands the keyboard to the map
 //   (`BuildState.handoff`), the live loop times the arrow and the blink from it
-//   (`src/view/build-live.ts`), and the view draws them.
+//   (`src/view/build-live.ts`), and the view draws them. The card reveal (`cardRevealMs`, F68) is
+//   presentation too: the live loop watches the panel turn into a card and times it, the view draws it.
 //
 // - the Nexus Pulse's ending (`endWarnMs` through `redAlerts`, gate 6A) is presentation alone: the
 //   view times it from the Pulse's own clock (`src/view/ending.ts`) and the reducer stores the numbers.
@@ -74,6 +75,10 @@ export type DebugFlags = Readonly<{
   /** F54: how many times the cursor blinks when the focus arrow lands (or at once, with no arrow), in
    *  the look and at the speed of a menu row's pressed flash; 0 is none. */
   cursorBlinks: number
+  /** F68: how long the menu takes to turn into a card when a building is armed or Explore Map opens —
+   *  the other rows fade, the chosen row slides up to the header, the card types in — in
+   *  milliseconds; 0 is at once. */
+  cardRevealMs: number
   /** F9: how long a placed building takes to rise through its placement frames, in milliseconds; 0
    *  shows it finished at once. */
   placeFramesMs: number
@@ -212,6 +217,15 @@ export const DEBUG_FIELDS: readonly AnyFieldSpec[] = [
     values: [0, 1, 2, 3],
     cycles: false,
     format: blinks,
+  },
+  {
+    field: "cardRevealMs",
+    label: "Card reveal",
+    applies: "now",
+    question: "How long the menu takes to turn into a card: the other rows fade, the row slides up, the card types in. Off: at once. (F68)",
+    values: [0, 100, 150, 250, 400, 800],
+    cycles: false,
+    format: millis,
   },
   {
     field: "placeFramesMs",
@@ -540,12 +554,16 @@ export const DEFAULT_PULSE = { raid: "probe", crew: "some" } as const satisfies 
  *  menu's own double blink ("blank twice in quick succession"). First guesses, for him to feel. */
 export const DEFAULT_FOCUS = { focusArrowMs: 180, cursorBlinks: 2 } as const satisfies Partial<DebugFlags>
 
+/** Feedback F68's card transition: "make sure it stays within 100 or 150 ms". */
+export const DEFAULT_CARD_REVEAL_MS = 150
+
 /** The flags a screen opens with: what the context asks for (`--scroll-margin`), and otherwise what
  *  gates 5F-6A built. (The smart cursor's and "Opens on"'s flags were settled by the owner on
  *  2026-09-29, feedback F30 and F31, and deleted.) */
 export function initialDebugFlags(context: Readonly<{ scrollMargin?: number }>): DebugFlags {
   return {
     ...DEFAULT_FOCUS,
+    cardRevealMs: DEFAULT_CARD_REVEAL_MS,
     ...DEFAULT_PLACEMENT,
     ...DEFAULT_MOVEMENT,
     ...DEFAULT_ENDING,

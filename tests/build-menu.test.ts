@@ -1,5 +1,6 @@
-// The Build Phase menu after the owner's menu spike (2026-09-30, feedback F53-F58): the resources line
-// and one list of buildings, the `[x] Label  >>` active style, the building's card while it is being
+// The Build Phase menu after the owner's menu spike (2026-09-30, feedback F53-F58, and its second round,
+// F67 and F70-F72): Explore Map and Nexus, the credits line and one list of buildings, the active style
+// (the row's own hotkey and one `>`), the building's card while it is being
 // placed, Left and Right that only flicker, the one flash on the way back to the menu, and the
 // reducer's record of a menu row handing the keyboard to the map. No row or height is hardcoded: every
 // place is read from the layout, because the bottom bar's height is not this file's to fix.
@@ -28,7 +29,7 @@ import type { BuildContext } from "../src/build/state.ts"
 import { EXPLORE_ENTRY, NEXUS_ENTRY, cardShowing, entryOfConstruct, menuEntries, remaining, startEntry } from "../src/build/state.ts"
 import type { ConstructItem } from "../src/build/types.ts"
 import { spikeContext } from "../src/cli/spike.ts"
-import { ACTIVE_HOTKEY, ACTIVE_VALUE, composeBuildFrame } from "../src/view/build.ts"
+import { ACTIVE_VALUE, composeBuildFrame } from "../src/view/build.ts"
 import type { BuildFlash } from "../src/view/build.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 
@@ -82,19 +83,20 @@ const at = (side: Side, row: number): number => side.layout.panelRow + row
 
 // --- The menu: resources, then one list (F56, F57) --------------------------------------------------
 
-test("the menu reads: $ left to spend, Explore Map, a blank line, Nexus, a blank line, the buildings, and Start Pulse last", () => {
+test("the menu reads: Explore Map, Nexus, the credits line, the buildings, and Start Pulse last", () => {
   for (const terminal of [MINIMUM, ROOMY]) {
     const side = session(spikeContext(), terminal)
     const { layout } = side
     const limit = layout.panelLimit
-    // Right-aligned against the divider, where the costs are, with no label and no maximum.
-    assert.equal(panelLine(side, at(side, RESOURCE_ROW)), "$ 100".padStart(limit))
+    // Explore Map and Nexus with no blank line between them (feedback F72); then the credits,
+    // right-aligned against the divider where the costs are, with the map's resource symbol (F71).
     assert.match(panelLine(side, at(side, EXPLORE_ROW)), /^\[e\] Explore Map +$/)
-    assert.equal(panelLine(side, at(side, EXPLORE_ROW) + 1).trim(), "")
+    assert.equal(at(side, NEXUS_ROW), at(side, EXPLORE_ROW) + 1)
     assert.match(panelLine(side, at(side, NEXUS_ROW)), /^\[n\] Nexus \(1\) +$/)
-    assert.equal(panelLine(side, at(side, NEXUS_ROW) + 1).trim(), "")
+    assert.equal(at(side, RESOURCE_ROW), at(side, NEXUS_ROW) + 1)
+    assert.equal(panelLine(side, at(side, RESOURCE_ROW)), "* 100".padStart(limit))
     const lines = constructLines(layout, SPIKE_CATALOG)
-    assert.equal(lines[0]?.row, at(side, NEXUS_ROW) + 2, "the buildings start after one blank line")
+    assert.equal(lines[0]?.row, at(side, RESOURCE_ROW) + 1, "the buildings start on the line after the credits")
     SPIKE_CATALOG.forEach((item, index) => {
       assert.equal(lines[index]?.row, (lines[0]?.row as number) + index, "the buildings are one row apart")
       const line = panelLine(side, lines[index]?.row as number)
@@ -111,25 +113,25 @@ test("the menu reads: $ left to spend, Explore Map, a blank line, Nexus, a blank
   }
 })
 
-test("the resources line counts down as the plan grows, and is on every panel but the committed one", () => {
+test("the credits line counts down as the plan grows, and is on the menu alone — never on a card", () => {
   const side = session()
   keys(side, "1", ENTER) // a Barracks, back on the menu
-  assert.equal(panelLine(side, at(side, RESOURCE_ROW)).trim(), `$ ${remaining(side.context, side.build.state)}`)
+  assert.equal(panelLine(side, at(side, RESOURCE_ROW)).trim(), `* ${remaining(side.context, side.build.state)}`)
   assert.equal(remaining(side.context, side.build.state), 60)
-  keys(side, "e") // Explore Map's card
-  assert.equal(panelLine(side, at(side, RESOURCE_ROW)).trim(), "$ 60")
+  keys(side, "e") // Explore Map's card (feedback F71: "specially when showing the details of a selection")
+  assert.doesNotMatch(panelLines(side).join("\n"), /\* 60/)
   keys(side, "e", "2") // the Hatchery's card
-  assert.equal(panelLine(side, at(side, RESOURCE_ROW)).trim(), "$ 60")
+  assert.doesNotMatch(panelLines(side).join("\n"), /\* 60/)
   // Committed: the summary, and no budget line.
   keys(side, ESC, "n", "1", "s", "s")
   assert.equal(side.build.state.committed, true)
-  assert.doesNotMatch(panelLines(side).join("\n"), /\$ \d/)
+  assert.doesNotMatch(panelLines(side).join("\n"), /[*$] \d/)
 })
 
 test("a building row the panel is too short for is neither drawn nor a click target", () => {
   // Three more buildings than the floor's panel holds between Nexus and Start Pulse.
   const floor = buildLayout(MINIMUM, spikeContext().grid)
-  const room = menuFloor(floor) - (floor.panelRow + NEXUS_ROW + 2) + 1
+  const room = menuFloor(floor) - (floor.panelRow + RESOURCE_ROW + 1) + 1
   const long: ConstructItem[] = Array.from({ length: room + 3 }, (_, index) => ({
     ...(SPIKE_CATALOG[index % SPIKE_CATALOG.length] as ConstructItem),
     label: `Row ${index + 1}`,
@@ -154,11 +156,12 @@ test("a building row the panel is too short for is neither drawn nor a click tar
 
 // --- The active style (F53) -------------------------------------------------------------------------
 
-test("an active row reads [x] ... >>, and a flash on it still wins, drawn as the bar", () => {
+test("an active row keeps its own hotkey and ends in one >, and a flash on it still wins, drawn as the bar", () => {
   const side = session()
   keys(side, "n") // the Nexus popup: its row active behind it
   const row = at(side, NEXUS_ROW)
-  assert.equal(panelLine(side, row), `[${ACTIVE_HOTKEY}] Nexus (1)`.padEnd(side.layout.panelLimit - 2) + ACTIVE_VALUE)
+  assert.equal(ACTIVE_VALUE, ">")
+  assert.equal(panelLine(side, row), `[n] Nexus (1)`.padEnd(side.layout.panelLimit - 1) + ACTIVE_VALUE)
   const plain = cellAt(frameOf(side), side.layout.dividerColumn - 1, row).style
   assert.notEqual(plain.inverse, true, "an active row is drawn with the bar")
   assert.equal(plain.bold, true)
@@ -169,7 +172,7 @@ test("an active row reads [x] ... >>, and a flash on it still wins, drawn as the
   assert.equal(pressed.inverse, true)
   assert.equal(pressed.underline, true)
   // `n` (the key that opened it) and `x` both close it; the row is back to `[n]` with its own value.
-  keys(side, ACTIVE_HOTKEY)
+  keys(side, "x")
   assert.equal(side.build.state.overlay, null)
   assert.match(panelLine(side, row), /^\[n\] Nexus \(1\) +$/)
 })
@@ -189,15 +192,16 @@ test("a popup that belongs to no row — the game menu, Settings, the Controls p
 
 // --- The building's card (F58) ----------------------------------------------------------------------
 
-test("armed, the panel is the building's card: $, its row active, a separator, glyphs, name, what it does, its numbers", () => {
+test("armed, the panel is the building's card: its row active, a separator, glyphs, name, what it does, its numbers", () => {
   for (const terminal of [MINIMUM, ROOMY]) {
     const side = session(spikeContext(), terminal)
     keys(side, DOWN, DOWN, ENTER) // the Barracks, from the menu
     assert.equal(cardShowing(side.build.state), true)
     const { layout } = side
     const lines = panelLines(side)
-    assert.equal(lines[RESOURCE_ROW], "$ 100".padStart(layout.panelLimit))
-    assert.equal(lines[CARD_HEADER_ROW], `[x] Barracks`.padEnd(layout.panelLimit - 2) + ">>")
+    // No credits on a card (feedback F71): the row that opened it is the panel's first line.
+    assert.equal(CARD_HEADER_ROW, 0)
+    assert.equal(lines[CARD_HEADER_ROW], `[1] Barracks`.padEnd(layout.panelLimit - 1) + ">")
     assert.equal(lines[CARD_SEPARATOR_ROW], "-".repeat(layout.panelLimit))
     const card = lines.slice(CARD_FIRST_ROW).join("\n")
     assert.match(lines[CARD_FIRST_ROW] as string, /^\[b\] +Barracks/)
@@ -225,7 +229,7 @@ test("a turret's card shows its attack", () => {
   keys(side, "3")
   assert.equal(side.build.state.armed, 2)
   const card = panelLines(side).join("\n")
-  assert.match(card, /\[x\] Turret +>>/)
+  assert.match(card, /\[3\] Turret +>/)
   assert.match(card, /^ATTACK +\d+ at range \d+$/m)
   assert.doesNotMatch(card, /Barracks/)
 })

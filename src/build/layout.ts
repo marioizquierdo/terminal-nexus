@@ -80,22 +80,26 @@ export type BuildLayout = Readonly<{
 }>
 
 /**
- * The panel's own rows, counted from its first (owner, 2026-09-30, feedback F56 and F57): what there
- * is to spend on row 0 — `$ 100`, right-aligned in the column the costs are in, and on every panel, so
- * it is always in view; Explore Map on row 1; a blank line; Nexus on row 3; a blank line; and from row
- * 5 the buildings, one list in catalog order with no group headings ("Remove the categories for now
- * ... Just keep a space (1 empty line) between Explore, Nexus, and the Buildings").
+ * The panel's own rows, counted from its first (owner, 2026-09-30, feedback F71 and F72, after F56 and
+ * F57): Explore Map on row 0 and Nexus straight under it on row 1 ("Do not leave a space between
+ * Explore and Nexus items"); row 2 is the **credits line** — blank on the left, and on the right, in
+ * the column the costs are in, the map's own resource symbol and what there is to spend, `◆ 130` ("they
+ * should be on the empty line right before the build/construction list ... the same as the symbol used
+ * on the map to represent resources"); and from row 3 the buildings, one list in catalog order with no
+ * group headings. The credits are on the menu alone, never on a card.
  */
-export const RESOURCE_ROW = 0
-export const EXPLORE_ROW = 1
-export const NEXUS_ROW = 3
-const CONSTRUCT_FIRST_ROW = 5
+export const EXPLORE_ROW = 0
+export const NEXUS_ROW = 1
+export const RESOURCE_ROW = 2
+const CONSTRUCT_FIRST_ROW = 3
 
 /**
  * A **card** — the panel that replaces the menu while something has the map's attention: Explore Map,
  * or a building being placed (feedback F32, F58). Its header is the row that opened it, drawn active on
- * the Explore Map row's line (row 1), under the resources line; a separator runs across the panel on
- * row 2; the card itself starts on row 3. The focus arrow (F54) leaves from the header's right end.
+ * the panel's first line (row 0, Explore Map's own); a separator runs across the panel on row 1; the
+ * card itself starts on row 2. With the credits off the top line (F71) nothing sits above the header.
+ * The row moves up to become the header when the card opens (F68, `src/view/build.ts`), and the focus
+ * arrow leaves from where the row was on the menu (F63), not from the header.
  */
 export const CARD_HEADER_ROW = EXPLORE_ROW
 export const CARD_SEPARATOR_ROW = CARD_HEADER_ROW + 1

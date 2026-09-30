@@ -1,6 +1,7 @@
 // The focus arrow and the cursor's blink (owner, 2026-09-30, feedback F54): when a menu row hands the
-// keyboard to the map, an arrow flies from the row's `>>` to the cursor and the cursor then blinks in
-// the menu's pressed look. The timeline is the live loop's (`BuildAnimation`, driven here with a clock
+// keyboard to the map, an arrow flies from where the row is on the menu (F63) to the cursor and the
+// cursor then blinks in the menu's pressed look. The arrow is a building's; Explore Map's row sends a
+// see-through cursor on the same timeline instead (F64, `tests/build-menu-round-2.test.ts`). The timeline is the live loop's (`BuildAnimation`, driven here with a clock
 // the test holds); the drawing is the view's (`composeBuildFrame`, given an instant); the reducer only
 // records the hand-off. Both Experiments round-trip through the settings export.
 
@@ -10,7 +11,7 @@ import { EventEmitter } from "node:events"
 import { DEBUG_FIELDS, initialDebugFlags } from "../src/build/debug.ts"
 import type { DebugFlags } from "../src/build/debug.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
-import { CARD_HEADER_ROW, buildLayout, cellForTile, tileAtCell } from "../src/build/layout.ts"
+import { buildLayout, cellForTile, menuEntryRow, tileAtCell } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { structureAtTile } from "../src/build/state.ts"
@@ -29,6 +30,10 @@ const TAB = "\t"
 const ENTER = "\r"
 const MINIMUM = { columns: 80, rows: 24 }
 const FLAGS: DebugFlags = initialDebugFlags({})
+/** The Turret: one tile, so arming it keeps the cursor where each test puts it, and its row on the
+ *  menu is where its arrow leaves from (F63). */
+const TURRET = "3"
+const turretRow = (layout: BuildLayout): number => menuEntryRow(layout, spikeContext().catalog, { kind: "construct", index: 2 }) as number
 
 type Side = { build: BuildSession; layout: BuildLayout; context: BuildContext }
 
@@ -214,11 +219,11 @@ test("under reduced motion, or with the arrow off, the blink plays at once; Tab 
 
 // --- The drawing ------------------------------------------------------------------------------------
 
-test("the arrow leaves from the header's >>, crosses the divider and stops one cell short of the cursor", () => {
+test("the arrow leaves from the cell right of its row on the menu, crosses the divider and stops one cell short of the cursor", () => {
   const side = session()
-  keys(side, "e")
+  keys(side, TURRET)
   const { layout } = side
-  const start = { x: layout.dividerColumn, y: layout.panelRow + CARD_HEADER_ROW }
+  const start = { x: layout.dividerColumn, y: turretRow(layout) }
   const launch = arrowCells(side, 0)
   assert.deepEqual(launch.map((cell) => [cell.x, cell.y]), [[start.x, start.y]], "at 0 only the head, on the divider")
   assert.ok([">", "v"].includes(launch[0]?.glyph as string), `a head pointing right or down, not ${launch[0]?.glyph}`)
@@ -242,19 +247,19 @@ test("the arrow leaves from the header's >>, crosses the divider and stops one c
 test("its glyphs follow the glyph pack and the way it flies", () => {
   // Mostly across and a little down from the header: a level trail, the head pointing right.
   const level = session(spikeContext(), { x: 40, y: 3 })
-  keys(level, "e")
+  keys(level, TURRET)
   const glyphs = new Set(arrowCells(level, 0.6).map((cell) => cell.glyph))
   assert.ok(glyphs.has(">") && glyphs.has("-"), `level flight drew ${[...glyphs].join(" ")}`)
   const unicode = new Set(arrowCells(level, 0.6, "unicode").map((cell) => cell.glyph))
   assert.ok(unicode.has("▶") && unicode.has("━"), `the Unicode pack drew ${[...unicode].join(" ")}`)
   // Steeply down, near the divider: an upright trail, the head pointing down.
   const steep = session(spikeContext(), { x: 1, y: 14 })
-  keys(steep, "e")
+  keys(steep, TURRET)
   const down = new Set(arrowCells(steep, 0.6).map((cell) => cell.glyph))
   assert.ok(down.has("v") && down.has("|"), `steep flight drew ${[...down].join(" ")}`)
   // In between: a diagonal trail.
   const diagonal = session(spikeContext(), { x: 12, y: 14 })
-  keys(diagonal, "e")
+  keys(diagonal, TURRET)
   const slant = new Set(arrowCells(diagonal, 0.7).map((cell) => cell.glyph))
   assert.ok(slant.has("\\"), `a diagonal flight drew ${[...slant].join(" ")}`)
 })
@@ -265,7 +270,7 @@ test("over a building or the ghost being placed it changes only the style, never
   for (const y of [12, 13, 14, 15]) {
     for (let x = 19; x <= 40; x += 3) {
       const side = session(spikeContext(), { x, y })
-      keys(side, "e")
+      keys(side, TURRET)
       for (const progress of [0.3, 0.6, 0.95]) {
         for (const cell of arrowCells(side, progress)) {
           const tile = tileAtCell(side.layout, side.build.state.camera, cell.x, cell.y)
@@ -296,7 +301,7 @@ test("over a building or the ghost being placed it changes only the style, never
 
 test("no arrow with a popup open, on the menu, or once committed; still frames carry none", () => {
   const side = session()
-  keys(side, "e")
+  keys(side, TURRET)
   assert.ok(arrowCells(side, 0.5).length > 0)
   keys(side, "n") // a popup over the map
   assert.equal(arrowCells(side, 0.5).length, 0)
@@ -385,9 +390,9 @@ test("the live screen draws the arrow on its own clock, then the plain divider o
   })
   await wait(40)
   const layout = buildLayout(MINIMUM, spikeContext().grid)
-  const start = { x: layout.dividerColumn, y: layout.panelRow + CARD_HEADER_ROW }
+  const start = { x: layout.dividerColumn, y: turretRow(layout) }
   const divider = rowsOf(stdout.lastWrite)[start.y]?.[start.x]
-  stdin.emit("data", Buffer.from("e"))
+  stdin.emit("data", Buffer.from(TURRET))
   await wait(40)
   assert.equal(rowsOf(stdout.lastWrite)[start.y]?.[start.x], ">", "the arrow's head is not on the divider as it leaves")
   t = 1000 // long after it landed and the cursor blinked
