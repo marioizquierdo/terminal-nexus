@@ -10,6 +10,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
+import { TUNING } from "../src/build/tuning.ts"
 import { runSpike } from "../src/cli/spike.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../src/menu/mouse.ts"
@@ -59,9 +60,9 @@ class FakeStdin extends EventEmitter {
   }
 }
 
-/** Long enough for a lone Esc's timeout (gate 5H; 50 ms unless an Experiment says otherwise) to run out,
- *  and for the frame timer's last frame after it. */
-const AFTER_ESC_TIMEOUT_MS = 150
+/** Long enough for a lone Esc's timeout (a tuned value) to run out, and for the frame timer's last frame
+ *  after it. */
+const AFTER_ESC_TIMEOUT_MS = TUNING.escTimeoutMs + 100
 
 async function spikeSession(
   end: (stdin: FakeStdin, stdout: FakeStdout) => void,

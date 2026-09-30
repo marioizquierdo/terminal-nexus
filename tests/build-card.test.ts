@@ -409,7 +409,10 @@ test("no reveal under reduced motion, or with the Experiment off", () => {
   assert.equal(animation.frame(reduced.build.state, 1000, { reducedMotion: true }).cardReveal, undefined)
 
   const off = buildSide()
-  while (off.build.state.experiments.cardRevealMs > 0) off.build.dispatch({ kind: "experiment-adjust", field: "cardRevealMs", step: -1 })
+  for (let step = 0; step < 10 && off.build.state.experiments.cardRevealMs > 0; step += 1) {
+    off.build.dispatch({ kind: "experiment-adjust", field: "cardRevealMs", step: -1 })
+  }
+  assert.equal(off.build.state.experiments.cardRevealMs, 0, "the card reveal does not go off")
   const quiet = new BuildAnimation()
   quiet.frame(off.build.state, 0)
   keys(off, "1")

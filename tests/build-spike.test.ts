@@ -24,14 +24,15 @@ import {
 } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildSessionOptions } from "../src/build/session.ts"
-import { anchorForCursor, applyBuildCommand, armedPreview, createBuildState, legalityAt, remaining, spent } from "../src/build/state.ts"
+import { anchorForCursor, applyBuildCommand, armedPreview, createBuildState, entryOfConstruct, legalityAt, remaining, spent } from "../src/build/state.ts"
 import { popupSpec } from "../src/build/popup.ts"
 import { bottomLine } from "../src/build/help.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { spikeContext } from "../src/cli/spike.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { frameToText } from "../src/view/frame.ts"
-import { fitViewport } from "../src/build/camera.ts"
+import { fitViewport, marginForView } from "../src/build/camera.ts"
+import { DOWN, ENTER, ESC, LEFT, MAXIMUM, MINIMUM, PAGE_DOWN, PAGE_UP, RIGHT, SHIFT_LEFT, SHIFT_RIGHT, UP } from "./build-helpers.ts"
 
 /**
  * Every test here is about placement, scrolling, or the adapters — not about the Nexus draft gate
@@ -56,18 +57,7 @@ function readyBuildSession(options: BuildSessionOptions): BuildSession {
   return build
 }
 
-const ESC = String.fromCharCode(27)
-const UP = `${ESC}[A`
-const DOWN = `${ESC}[B`
-const RIGHT = `${ESC}[C`
-const LEFT = `${ESC}[D`
-const SHIFT_RIGHT = `${ESC}[1;2C`
 const RXVT_SHIFT_RIGHT = `${ESC}[c`
-const PAGE_DOWN = `${ESC}[6~`
-const ENTER = "\r"
-
-const MINIMUM = { columns: 80, rows: 24 }
-const MAXIMUM = { columns: 104, rows: 32 }
 
 function session(
   terminal = MINIMUM,
@@ -201,7 +191,7 @@ test("after a placement the keyboard goes back to where the arming came from, di
     assert.equal(build.state.armed, null, "a placement disarms")
     assert.equal(build.state.focus, start)
     assert.equal(build.state.exploreMap, false)
-    assert.equal(build.state.menuHighlight, 2, "the highlight stays on the row just built from")
+    assert.equal(build.state.menuHighlight, entryOfConstruct(0), "the highlight stays on the row just built from")
     assert.match(build.state.status.text, /Barracks placed \(resources: 60\) - \[u\] undo/)
   }
 })
@@ -248,12 +238,10 @@ test("a second Enter after a placement never places a second building", () => {
 
 test("keyboard: Shift+Arrow and its modifier-free fallback are both the fast move, a jump of the Shift jump", () => {
   // Measured, not assumed — scripts/probe-modified-keys.mjs found three live encodings for a
-  // shifted arrow and none at all on several terminals, which is why all of these are bound. Five
-  // tiles until gate 5H, then 8, then 12 after the owner's 2026-09-28 playtest; the tuned
-  // `TUNING.jumpStep` since his settings export of 2026-09-30.
+  // shifted arrow and none at all on several terminals, which is why all of these are bound. How far
+  // it jumps is the tuned `TUNING.jumpStep`.
   const context = { itemCount: 3, armed: false }
   const fast = TUNING.jumpStep
-  assert.equal(fast, 10)
   assert.deepEqual(buildKeyboardCommand(RIGHT, context), { kind: "move-cursor", dx: 1, dy: 0 })
   assert.deepEqual(buildKeyboardCommand(SHIFT_RIGHT, context), { kind: "move-cursor", dx: fast, dy: 0 })
   assert.deepEqual(buildKeyboardCommand(RXVT_SHIFT_RIGHT, context), { kind: "move-cursor", dx: fast, dy: 0 })
@@ -330,12 +318,12 @@ test("mouse: the wheel moves the cursor five tiles and drags the camera with it"
   assert.equal(build.state.cursor.y, startY)
 })
 
-test("mouse: right click is Esc; a click on a menu row arms it at once (feedback F22)", () => {
+test("mouse: a click on a menu row arms it at once (feedback F22), and a right click goes back, disarming", () => {
   const { build, layout } = session()
   // The session starts in plain navigation, with the menu drawn beside the map: one click arms.
   build.handleData(clickRowBytes(layout, 1), layout)
   assert.equal(build.state.armed, 1)
-  assert.equal(build.state.menuHighlight, 3)
+  assert.equal(build.state.menuHighlight, entryOfConstruct(1))
   build.handleData(formatMouseEvent(MOUSE_RIGHT, 10, 10), layout)
   assert.equal(build.state.armed, null)
 })
@@ -381,9 +369,9 @@ test("a click on a tile only arms the preview there - a second click on the same
   byKeyboard.build.handleData("1", byKeyboard.layout)
   byKeyboard.build.run([{ kind: "move-cursor", dx: 12, dy: 1 }])
   byKeyboard.build.handleData(ENTER, byKeyboard.layout)
-  // The same plan, cursor and everything else. Only the camera may differ: an armed click never
-  // scrolls the view (Q58, gate 5H), where the keyboard's move lets the camera follow its margin; and
-  // a placement by the mouse leaves no highlight bar on the menu (feedback F22).
+  // The same plan, cursor and everything else. Only the camera may differ — a click scrolls the view
+  // by its edge zones, the keyboard's move by the scroll margin — and a placement by the mouse leaves
+  // no highlight bar on the menu (feedback F22).
   assert.deepEqual(
     { ...byClick.build.state, camera: null, highlightHidden: false },
     { ...byKeyboard.build.state, camera: null },
@@ -401,8 +389,8 @@ test("a click that scrolled the camera is a fresh first click, not a mis-place o
   // Without key timing (a driver script) there is no double click either.
   const { build, layout } = session()
   build.handleData("1", layout)
-  // x=46 is within the 3-tile margin of the opening viewport's own right edge (0-47), so landing the
-  // cursor here forces the camera to scroll east to keep the margin.
+  // x=46 is near the east edge of the opening view (it shows 0-48), in the click's edge zone, so a click
+  // there scrolls the camera east.
   const cameraBefore = { ...build.state.camera }
   const bytes = clickTileBytes(layout, build, { x: 46, y: 13 })
   build.handleData(bytes, layout)
@@ -581,7 +569,6 @@ test("a placement that cannot be afforded is refused, and changes nothing at all
 
 test("affordability is reported before a tile problem, because it is true wherever the cursor is", () => {
   const context = spikeContext()
-  const { build } = session()
   // Onto rock, with a budget that cannot pay for it either. Reporting the rock would send the
   // player to move the cursor, which would not help.
   const anchor = anchorForCursor({ x: 8, y: 5 }, context.registry.get(SPIKE_CATALOG[0]!.contentId).footprint)
@@ -593,13 +580,12 @@ test("affordability is reported before a tile problem, because it is true wherev
   assert.equal(rich.ok, false)
   assert.match(rich.ok === false ? rich.reason : "", /rock in the way/)
   assert.deepEqual(rich.ok === false ? rich.tile : null, { x: 8, y: 5 })
-  void build
 })
 
-test("the two groups share one digit sequence, with no mode to tell them apart", () => {
+test("the buildings' digits run straight through the one list, with no mode to tell them apart", () => {
   // engine.md 9.7's first convention: "digits always address the list; they never mean anything
-  // else". Two groups each counting from 1 would need a focus concept to disambiguate, which is the
-  // thing that convention exists to forbid — so a hotkey addresses the whole menu.
+  // else". Groups each counting from 1 would need a focus concept to disambiguate, which is the thing
+  // that convention exists to forbid — so a hotkey addresses the whole menu.
   const hotkeys = SPIKE_CATALOG.map((item) => item.hotkey)
   assert.deepEqual(hotkeys, [...new Set(hotkeys)], "two rows share a hotkey")
   assert.deepEqual(hotkeys, ["1", "2", "3"], "the digits do not run straight through the menu")
@@ -624,7 +610,7 @@ test("the buildings are one list in catalog order, one row each, with no group h
 test("scrolling: the whole Grid is reachable, at the smallest terminal and the largest", () => {
   for (const terminal of [MINIMUM, MAXIMUM]) {
     const { build, layout } = session(terminal)
-    // Walk into the far south-east corner with the five-tile jump, the way a player would.
+    // Walk into the far south-east corner with the fast move, the way a player would.
     for (let step = 0; step < 40; step += 1) {
       build.handleData(SHIFT_RIGHT, layout)
       build.handleData(PAGE_DOWN, layout)
@@ -637,22 +623,20 @@ test("scrolling: the whole Grid is reachable, at the smallest terminal and the l
     })
     // And back out again, to the opposite corner.
     for (let step = 0; step < 40; step += 1) {
-      build.handleData(`${ESC}[1;2D`, layout)
-      build.handleData(`${ESC}[5~`, layout)
+      build.handleData(SHIFT_LEFT, layout)
+      build.handleData(PAGE_UP, layout)
     }
     assert.deepEqual(build.state.cursor, { x: 0, y: 0 })
     assert.deepEqual(build.state.camera, { x: 0, y: 0 })
   }
 })
 
-test("the scroll margin is a share of the view: the owner's tuned one, or another from --scroll-margin", () => {
-  // project-governance.md Section 7: the 3-tile margin is "locked direction, and Milestone 5 may
-  // retune [it] on evidence from the first person who actually scrolls a Grid". Gate 5H made it a
-  // share of the view's width and height (the owner: "about 20% of the height or width", then 25%
-  // after playing it, then 30% in his settings export of 2026-09-30). 49 tiles wide at 80 columns: 10%
-  // is 5 tiles, 20% is 10, 25% is 12, 30% is 15. No --scroll-margin: the tuned value.
-  assert.equal(TUNING.scrollMargin, 30)
-  for (const [percent, margin] of [[10, 5], [20, 10], [25, 12], [30, 15], [undefined, 15]] as const) {
+test("the scroll margin is a share of the view: the tuned one, or another from --scroll-margin", () => {
+  // Gate 5H made it a share of the view's width and height; the owner settled the share (a tuned value),
+  // and `--scroll-margin` sets another for one run. 49 tiles wide at 80 columns: 5% is 2 tiles, 10% is 5,
+  // 20% is 10, 25% is 12, 30% is 15. No --scroll-margin: the tuned value.
+  const tuned = marginForView(TUNING.scrollMargin, buildLayout(MINIMUM, spikeContext().grid).viewport).x
+  for (const [percent, margin] of [[5, 2], [10, 5], [20, 10], [25, 12], [30, 15], [undefined, tuned]] as const) {
     const context = percent === undefined ? spikeContext() : { ...spikeContext(), scrollMargin: percent }
     const layout = buildLayout(MINIMUM, context.grid)
     const build = readyBuildSession({ context, cursor: { x: 0, y: 0 }, viewport: layout.viewport })

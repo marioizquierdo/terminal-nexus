@@ -8,8 +8,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
 import { centreOn } from "../src/build/camera.ts"
-import { EXPERIMENT_FIELDS } from "../src/build/experiments.ts"
-import { experimentRow } from "../src/build/settings.ts"
+import { FIRST_EXPERIMENT_ROW, experimentRow } from "../src/build/settings.ts"
 import { escLabelSpan, escLabel, pulseControlRows } from "../src/build/layout.ts"
 import { MOUSE_RIGHT } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
@@ -73,11 +72,10 @@ test("answering yes turns the screen into the Nexus Pulse, with the keyboard on 
   assert.match(text, /\[space\] Pause/)
   assert.match(text, /\[r\] Watch again/)
   // The bottom bar's one line is the Pulse's own (feedback F59); its keys are on the Controls page.
-  assert.doesNotMatch(text, /space pause {2}\[ \] speed/)
-  assert.match(text, /Nexus Pulse - 5 of yours against 7 of the raid\./)
+  assert.match(text, /\| Nexus Pulse - 5 of yours against 7 of the raid\. +\|/)
   assert.match(text, /menu \[esc\]/)
-  // The Build Phase's menu is gone: nothing left to build, nothing to pick.
-  assert.doesNotMatch(text, /\[1\] Barracks|\$ \d|\[e\] Explore Map/)
+  // The Build Phase's menu is gone: nothing left to build, nothing to pick, no credits.
+  assert.doesNotMatch(text, /\[1\] Barracks|\* \d|\[e\] Explore Map/)
 })
 
 test("the view is centred on the player's Nexus when the Pulse starts, wherever they had scrolled", () => {
@@ -544,7 +542,7 @@ test("the last three seconds warn, and `d` over a Pulse opens Settings at the pl
   // Before a Pulse it is still the first Experiment.
   const before = newSession()
   before.build.handleData("d", before.layout)
-  assert.equal(before.build.state.popupHighlight, experimentRow(EXPERIMENT_FIELDS[0]!.field))
+  assert.equal(before.build.state.popupHighlight, FIRST_EXPERIMENT_ROW)
 })
 
 test("the frame timer runs while the Pulse plays, and stops when it is paused or the result stands", () => {

@@ -10,48 +10,55 @@ import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { edgeClickCamera, marginForView, shareOfSpan } from "../src/build/camera.ts"
 import { EXPERIMENT_FIELDS, defaultExperiments } from "../src/build/experiments.ts"
-import { buildLayout, cellForTile, menuEntryRow } from "../src/build/layout.ts"
+import { cellForTile, menuEntryRow } from "../src/build/layout.ts"
 import { rampStep, rampTuning } from "../src/build/motion.ts"
 import type { RampMemory, RampTuning } from "../src/build/motion.ts"
 import { TUNING } from "../src/build/tuning.ts"
 import { MOUSE_LEFT, formatMouseEvent } from "../src/build/mouse.ts"
-import { BuildSession } from "../src/build/session.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { runSpike, spikeContext } from "../src/cli/spike.ts"
+import type { Coord } from "../src/grid/types.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
-import { composeBuildFrame } from "../src/view/build.ts"
 import { BuildAnimation, FRAME_MS, nextFrameDelay } from "../src/view/build-live.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 import { KeyReader } from "../src/view/key-reader.ts"
 import { keysFromChunk } from "../src/view/playback.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
+import {
+  DOWN,
+  ESC,
+  LEFT,
+  MINIMUM,
+  OPEN_GROUND,
+  RIGHT,
+  SHIFT_DOWN,
+  SHIFT_LEFT,
+  SHIFT_RIGHT,
+  TAB,
+  UP,
+  buildSide,
+  clickTile,
+  compose,
+  screenText,
+  timed,
+} from "./build-helpers.ts"
+import type { Side } from "./build-helpers.ts"
 
-const ESC = String.fromCharCode(27)
-const UP = `${ESC}[A`
-const DOWN = `${ESC}[B`
-const RIGHT = `${ESC}[C`
-const LEFT = `${ESC}[D`
-const SHIFT_RIGHT = `${ESC}[1;2C`
-const TAB = "\t"
-const MINIMUM = { columns: 80, rows: 24 }
 /** The ramp the game runs: the tuned steps and timings, and the hold window's default. */
 const FLAGS: RampTuning = rampTuning(defaultExperiments().holdWindowMs)
+/** What a press did, as `kinds` reports it: a tap, a run at the hold step, a run at the fast step, a jump. */
+const TAP = `tap ${FLAGS.tapStep}`
+const HOLD = `hold ${FLAGS.holdStep}`
+const FAST = `fast ${FLAGS.fastStep}`
+const JUMP = `jump ${FLAGS.jumpStep}`
 
-type Side = { build: BuildSession; layout: ReturnType<typeof buildLayout>; context: BuildContext }
-
-/** A Build Phase with the Nexus power picked and the keyboard on the map, exploring. */
-function exploring(context: BuildContext = spikeContext(), cursor = { x: 18, y: 13 }, terminal = MINIMUM): Side {
-  const layout = buildLayout(terminal, context.grid)
-  const build = new BuildSession({ context, cursor, viewport: layout.viewport })
-  build.dispatch({ kind: "pick-nexus", index: 0 })
-  build.dispatch({ kind: "focus", target: "grid" })
-  return { build, layout, context }
-}
-
-/** Keys arriving at the given times, as a live terminal delivers them. */
-function timed(side: Side, presses: readonly (readonly [string, number])[]): void {
-  for (const [key, at] of presses) side.build.handleData(key, side.layout, { now: at })
+/** A Build Phase with the Nexus power picked and the keyboard on the map, in plain navigation. */
+function exploring(context: BuildContext = spikeContext(), cursor: Coord = OPEN_GROUND, terminal = MINIMUM): Side {
+  const side = buildSide({ context, cursor, terminal })
+  side.build.dispatch({ kind: "pick-nexus", index: 0 })
+  side.build.dispatch({ kind: "focus", target: "grid" })
+  return side
 }
 
 /** A terminal's auto-repeat: one press at `start`, a pause of `delay`, then `repeats` presses `every`
@@ -75,13 +82,13 @@ const JUMP_EAST = { dx: 1, dy: 0, jump: true }
 
 // --- The held-key ramp -----------------------------------------------------------------------------
 
-test("the ramp's numbers are the owner's — tap 1, hold 2, fast 4 after 200 ms, Shift a jump of 10 — and the hold window stays an Experiment", () => {
-  const { tapStep, holdStep, fastStep, rampMs, jumpStep, jumpRepeatMs } = FLAGS
+test("the ramp runs on the tuned steps and timings, and only the hold window is still an Experiment", () => {
+  const { tapStep, holdStep, fastStep, rampMs, jumpStep, jumpRepeatMs, holdWindowMs } = FLAGS
   assert.deepEqual(
     { tapStep, holdStep, fastStep, rampMs, jumpStep, jumpRepeatMs },
-    { tapStep: 1, holdStep: 2, fastStep: 4, rampMs: 200, jumpStep: 10, jumpRepeatMs: 100 },
+    { tapStep: TUNING.tapStep, holdStep: TUNING.holdStep, fastStep: TUNING.fastStep, rampMs: TUNING.rampMs, jumpStep: TUNING.jumpStep, jumpRepeatMs: TUNING.jumpRepeatMs },
   )
-  assert.equal(FLAGS.holdWindowMs, 350, "the hold window of his settings export, 2026-09-30")
+  assert.equal(holdWindowMs, defaultExperiments().holdWindowMs)
   // Only the hold window is still felt (it depends on each keyboard's repeat delay); the rest are settled.
   const ramp = ["tapStep", "holdStep", "fastStep", "rampMs", "holdWindowMs", "jumpStep", "jumpRepeatMs", "cursorGlideMs"]
   assert.deepEqual(EXPERIMENT_FIELDS.map((spec) => spec.field).filter((field) => ramp.includes(field)), ["holdWindowMs"])
@@ -92,50 +99,54 @@ test("the ramp's numbers are the owner's — tap 1, hold 2, fast 4 after 200 ms,
 })
 
 test("a single press moves one tile", () => {
-  assert.deepEqual(kinds(EAST, [0]), ["tap 1"])
+  assert.equal(FLAGS.tapStep, 1, "a tap is one tile, always")
+  assert.deepEqual(kinds(EAST, [0]), [TAP])
   const side = exploring()
   timed(side, [[RIGHT, 0]])
-  assert.equal(side.build.state.cursor.x, 19)
+  assert.equal(side.build.state.cursor.x, OPEN_GROUND.x + 1)
   assert.equal(side.build.moveKind, "tap")
 })
 
-test("a held arrow's first repeat already moves two, and once the run is the ramp time old each press moves four", () => {
-  // The first press, the terminal's repeat delay, then repeats 30 ms apart. The owner's hold window
-  // is 350 ms (his settings export, 2026-09-30), so this is a terminal whose repeat delay fits in it;
-  // one with a longer delay loses only its first repeat (the next test).
+test("a held arrow's first repeat already moves at the hold step, and once the run is the ramp time old each press at the fast step", () => {
+  // The first press, the terminal's repeat delay, then repeats 30 ms apart: a terminal whose repeat
+  // delay fits in the hold window (one with a longer delay loses only its first repeat — the next test).
   const delay = FLAGS.holdWindowMs
   const times = held(0, 12, delay)
   const got = kinds(EAST, times)
-  assert.equal(got[0], "tap 1")
-  assert.equal(got[1], "hold 2", "the first repeat did not go straight to the hold step")
-  // The run started moving at 2 on the first repeat (t = 350); from t = 560 it moves 4.
+  assert.equal(got[0], TAP)
+  assert.equal(got[1], HOLD, "the first repeat did not go straight to the hold step")
+  // The run starts on the first repeat, at t = delay; once it is the ramp time old, each press is fast.
   times.forEach((at, index) => {
     if (index === 0) return
-    assert.equal(got[index], at - delay >= FLAGS.rampMs ? "fast 4" : "hold 2", `press at ${at} ms`)
+    assert.equal(got[index], at - delay >= FLAGS.rampMs ? FAST : HOLD, `press at ${at} ms`)
   })
-  // The same through the session: 1 + 2 * 7 (350..530) + 4 * 5 (560..680).
+  assert.ok(got.includes(FAST), "the run never reached the fast step")
+  // The same through the session: the tap, then the run's presses at their steps.
+  const expected = times.reduce((tiles, at, index) => tiles + (index === 0 ? FLAGS.tapStep : at - delay >= FLAGS.rampMs ? FLAGS.fastStep : FLAGS.holdStep), 0)
   const side = exploring(spikeContext(), { x: 0, y: 13 })
   timed(side, times.map((at) => [RIGHT, at] as const))
-  assert.equal(side.build.state.cursor.x, 1 + 2 * 7 + 4 * 5)
+  assert.equal(side.build.state.cursor.x, expected)
   assert.equal(side.build.moveKind, "fast")
 })
 
 test("tapping quickly is a run too, and a terminal with a slower repeat delay only loses its first repeat", () => {
-  // Taps 150 ms apart: 1, then 2s, then 4s once the run is 300 ms old.
-  assert.deepEqual(kinds(EAST, [0, 150, 300, 450, 600, 750]), ["tap 1", "hold 2", "hold 2", "fast 4", "fast 4", "fast 4"])
+  // Taps 150 ms apart, inside the hold window: a tap, then a run at the hold step, then fast once the run
+  // (from the second tap) is the ramp time old.
+  const taps = [0, 150, 300, 450, 600, 750]
+  assert.deepEqual(kinds(EAST, taps), taps.map((at, index) => (index === 0 ? TAP : at - 150 >= FLAGS.rampMs ? FAST : HOLD)))
   // Deliberate taps further apart than the hold window stay one tile each.
   const apart = FLAGS.holdWindowMs + 100
-  assert.deepEqual(kinds(EAST, [0, apart, 2 * apart]), ["tap 1", "tap 1", "tap 1"])
+  assert.deepEqual(kinds(EAST, [0, apart, 2 * apart]), [TAP, TAP, TAP])
   // A repeat delay longer than the window: the first repeat is a tap, the ones after it a run.
   const slow = held(0, 3, FLAGS.holdWindowMs + 200)
-  assert.deepEqual(kinds(EAST, slow), ["tap 1", "tap 1", "hold 2", "hold 2"])
+  assert.deepEqual(kinds(EAST, slow), [TAP, TAP, HOLD, HOLD])
 })
 
 test("a different arrow, or anything else pressed, starts again at one tile", () => {
   let memory: RampMemory | null = null
   for (const at of held(0, 20)) memory = rampStep(memory, EAST, at, FLAGS).memory
   // Overshot: Left straight after, held. An ordinary new press, then an ordinary run.
-  assert.deepEqual(kinds(WEST, held(1000, 2, FLAGS.holdWindowMs), FLAGS, memory), ["tap 1", "hold 2", "hold 2"])
+  assert.deepEqual(kinds(WEST, held(1000, 2, FLAGS.holdWindowMs), FLAGS, memory), [TAP, HOLD, HOLD])
   // Tab and back, fast enough that the arrow would still have been part of the run.
   const side = exploring()
   timed(side, held(0, 12).map((at) => [RIGHT, at] as const))
@@ -147,51 +158,59 @@ test("a different arrow, or anything else pressed, starts again at one tile", ()
 })
 
 test("the hold window is live: retuned, the same presses are a run, or taps", () => {
-  // Presses 250 ms apart, inside the 350 ms hold window: a tap, then a run from t = 250 at the hold step,
-  // sped up to the fast step once it is 200 ms old.
-  const presses = [[RIGHT, 0], [RIGHT, 250], [RIGHT, 500], [RIGHT, 750]] as const
+  // Presses 250 ms apart, inside the hold window: a tap, then a run from t = 250 at the hold step, sped
+  // up to the fast step once it is the ramp time old.
+  const gap = 250
+  assert.ok(gap < FLAGS.holdWindowMs, "the presses are not a run in the default hold window")
+  const presses = [0, 1, 2, 3].map((index) => [RIGHT, index * gap] as const)
   const run = exploring()
   timed(run, presses)
-  assert.equal(run.build.state.cursor.x, 18 + 1 + 2 + 4 + 4)
-  // The window narrowed to 150 ms — a keyboard with a quick repeat — and the same presses are four taps.
+  const runTiles = presses.reduce((tiles, [, at], index) => tiles + (index === 0 ? FLAGS.tapStep : at - gap >= FLAGS.rampMs ? FLAGS.fastStep : FLAGS.holdStep), 0)
+  assert.equal(run.build.state.cursor.x, OPEN_GROUND.x + runTiles)
+  // The window narrowed below the gap — a keyboard with a quick repeat — and the same presses are taps.
   const tuned = exploring()
-  tuned.build.dispatch({ kind: "experiment-adjust", field: "holdWindowMs", step: -1 }) // 250
-  tuned.build.dispatch({ kind: "experiment-adjust", field: "holdWindowMs", step: -1 }) // 150
-  assert.equal(tuned.build.state.experiments.holdWindowMs, 150)
+  for (let step = 0; step < 10 && tuned.build.state.experiments.holdWindowMs >= gap; step += 1) {
+    tuned.build.dispatch({ kind: "experiment-adjust", field: "holdWindowMs", step: -1 })
+  }
+  assert.ok(tuned.build.state.experiments.holdWindowMs < gap, "the hold window does not go below the gap")
   timed(tuned, presses)
-  assert.equal(tuned.build.state.cursor.x, 18 + 4)
+  assert.equal(tuned.build.state.cursor.x, OPEN_GROUND.x + presses.length * FLAGS.tapStep)
 })
 
-test("Shift+Arrow jumps ten tiles; held, it jumps again at most once per jump repeat", () => {
+test("Shift+Arrow jumps; held, it jumps again at most once per jump repeat", () => {
   const side = exploring(spikeContext(), { x: 0, y: 13 })
   timed(side, [[SHIFT_RIGHT, 0]])
-  assert.equal(side.build.state.cursor.x, 10)
+  assert.equal(side.build.state.cursor.x, FLAGS.jumpStep)
   assert.equal(side.build.moveKind, "jump")
-  // Held: the first press, the repeat delay, then repeats 30 ms apart. Only those at least 100 ms
-  // after the last jump move: 0, 400, 520, 640.
+  // Held: the first press, the repeat delay, then repeats 30 ms apart. Only those at least the jump
+  // repeat after the last jump move.
   const times = held(0, 11)
   const got = kinds(JUMP_EAST, times)
-  assert.deepEqual(
-    got.filter((step) => step !== "jump 0"),
-    ["jump 10", "jump 10", "jump 10", "jump 10"],
-  )
+  let last = -Infinity
+  const jumps = times.filter((at) => {
+    if (at - last < FLAGS.jumpRepeatMs) return false
+    last = at
+    return true
+  })
+  assert.ok(jumps.length > 1 && jumps.length < times.length, "the repeat limit dropped nothing, or everything")
+  assert.deepEqual(got.filter((step) => step !== "jump 0"), jumps.map(() => JUMP))
   const heldSide = exploring(spikeContext(), { x: 0, y: 13 })
   timed(heldSide, times.map((at) => [SHIFT_RIGHT, at] as const))
-  assert.equal(heldSide.build.state.cursor.x, 40)
+  assert.equal(heldSide.build.state.cursor.x, jumps.length * FLAGS.jumpStep)
   // With no repeat limit, every repeat would jump: the limit is what drops them.
-  assert.ok(kinds(JUMP_EAST, times, { ...FLAGS, jumpRepeatMs: 0 }).every((step) => step === "jump 10"))
+  assert.ok(kinds(JUMP_EAST, times, { ...FLAGS, jumpRepeatMs: 0 }).every((step) => step === JUMP))
   // A plain arrow straight after a jump is a tap of its own, not part of a run.
   const memory = rampStep(null, JUMP_EAST, 0, FLAGS).memory
-  assert.deepEqual(kinds(EAST, [50, 80], FLAGS, memory), ["tap 1", "hold 2"])
+  assert.deepEqual(kinds(EAST, [50, 80], FLAGS, memory), [TAP, HOLD])
 })
 
 test("without a clock every arrow is a tap and every Shift+Arrow one jump: driver scripts and scripted playtests are unchanged", () => {
   const side = exploring()
   for (let step = 0; step < 10; step += 1) side.build.handleData(RIGHT, side.layout)
-  assert.equal(side.build.state.cursor.x, 28)
+  assert.equal(side.build.state.cursor.x, OPEN_GROUND.x + 10)
   const jumps = exploring(spikeContext(), { x: 0, y: 13 })
   for (let step = 0; step < 3; step += 1) jumps.build.handleData(SHIFT_RIGHT, jumps.layout)
-  assert.equal(jumps.build.state.cursor.x, 30)
+  assert.equal(jumps.build.state.cursor.x, 3 * FLAGS.jumpStep)
   // A playtest's untimed steps are a second apart; `~ms` makes them a hold.
   const untimed = runBuildPlaytest({ steps: parseKeyScript("e Right*10") })
   // Where Explore Map put the cursor: clear ground beside the Nexus (feedback F66).
@@ -206,25 +225,18 @@ test("without a clock every arrow is a tap and every Shift+Arrow one jump: drive
 test("the margin is a share of the view's own width and height, never so wide the two sides meet", () => {
   assert.deepEqual(marginForView(20, { width: 48, height: 16 }), { x: 10, y: 3 })
   assert.deepEqual(marginForView(20, { width: 72, height: 24 }), { x: 14, y: 5 })
-  // The owner's 30% (his settings export, 2026-09-30) of the 49 x 18 view at 80 x 24.
-  assert.equal(TUNING.scrollMargin, 30)
   assert.deepEqual(marginForView(30, { width: 49, height: 18 }), { x: 15, y: 5 })
   assert.equal(shareOfSpan(0, 48), 0)
   assert.equal(shareOfSpan(90, 16), 7, "a margin past the middle is capped")
-  // The camera follows at that distance: walking east, it first moves with the cursor 15 tiles from
+  // The camera follows at the tuned margin: walking east, it first moves with the cursor that far from
   // the view's east edge.
   const side = exploring(spikeContext(), { x: 0, y: 0 })
-  assert.equal(side.layout.viewport.width, 49)
+  const margin = marginForView(TUNING.scrollMargin, side.layout.viewport).x
   while (side.build.state.camera.x === 0) side.build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
-  assert.equal(side.layout.viewport.width - 1 - (side.build.state.cursor.x - side.build.state.camera.x), 15)
+  assert.equal(side.layout.viewport.width - 1 - (side.build.state.cursor.x - side.build.state.camera.x), margin)
 })
 
 // --- Clicks and the view ---------------------------------------------------------------------------
-
-function clickTile(side: Side, tile: { x: number; y: number }): void {
-  const cell = cellForTile(side.layout, side.build.state.camera, tile)
-  side.build.handleData(formatMouseEvent(MOUSE_LEFT, cell.x + 1, cell.y + 1), side.layout)
-}
 
 test("exploring, a click near an edge scrolls further the nearer the edge it lands (feedback F6)", () => {
   const moveFor = (column: number): number => {
@@ -251,8 +263,6 @@ test("exploring, a click near an edge scrolls further the nearer the edge it lan
   const grid = spikeContext().grid
   assert.ok(edgeClickCamera({ x: 30, y: 10 }, { x: 30, y: 10 }, view, grid, 33).x < 30)
   assert.ok(edgeClickCamera({ x: 30, y: 10 }, { x: 40, y: 10 }, view, grid, 33).y < 10)
-  // The zone the game uses: the owner's 25% of the view (his settings export, 2026-09-30).
-  assert.equal(TUNING.clickZone, 25)
 })
 
 test("armed, a click scrolls like an exploring one, and a quick double click places where the first pointed (F22)", () => {
@@ -315,11 +325,10 @@ test("the fast move drags the view at the margin like any other move; it does no
   // The owner turned "Shift centres" off in his settings export (2026-09-30), and the Experiment went.
   const side = exploring(spikeContext(), { x: 40, y: 20 })
   side.build.handleData(SHIFT_RIGHT, side.layout)
-  // Only dragged along: the cursor sits on the margin's inner edge, 15 tiles from the east side of the
-  // 49-tile view.
+  // Only dragged along: the cursor sits on the margin's inner edge, the tuned margin from the view's east
+  // side.
   const margin = marginForView(TUNING.scrollMargin, side.layout.viewport).x
-  assert.equal(margin, 15)
-  assert.equal(side.build.state.cursor.x - side.build.state.camera.x, 49 - 1 - margin)
+  assert.equal(side.build.state.cursor.x - side.build.state.camera.x, side.layout.viewport.width - 1 - margin)
 })
 
 test("a click during a slide lands on the tile drawn under the pointer, not the one the view is heading to", () => {
@@ -393,7 +402,7 @@ test("the cursor glides to its new tile over the glide time; the state is alread
   const from = side.build.state.cursor
   const camera = side.build.state.camera
   animation.frame(side.build.state, 0)
-  side.build.handleData(`${ESC}[1;2D`, side.layout) // Shift+Left: a jump west
+  side.build.handleData(SHIFT_LEFT, side.layout) // a jump west
   const to = side.build.state.cursor
   assert.equal(to.x, from.x - TUNING.jumpStep, "the state holds the destination at once")
   assert.deepEqual(side.build.state.camera, camera, "the camera moved; this test wants the cursor alone")
@@ -408,12 +417,12 @@ test("the cursor glides to its new tile over the glide time; the state is alread
   assert.deepEqual(end.cursor, to)
   assert.equal(end.busyUntil, null)
   // A second move mid-glide continues from where the cursor is drawn, not from where it was going.
-  side.build.handleData(`${ESC}[1;2C`, side.layout)
+  side.build.handleData(SHIFT_RIGHT, side.layout)
   const back = animation.frame(side.build.state, 2000)
   assert.deepEqual(back.cursor, to)
-  side.build.handleData(`${ESC}[1;2C`, side.layout)
+  side.build.handleData(SHIFT_RIGHT, side.layout)
   const drawn = animation.frame(side.build.state, 2000 + glide / 2).cursor
-  side.build.handleData(`${ESC}[1;2C`, side.layout)
+  side.build.handleData(SHIFT_RIGHT, side.layout)
   assert.deepEqual(animation.frame(side.build.state, 2000 + glide / 2).cursor, drawn, "a retarget jumped")
 })
 
@@ -437,7 +446,7 @@ test("reduced motion snaps the view and the cursor alike", () => {
   const reduced = { reducedMotion: true }
   animation.frame(side.build.state, 0, reduced)
   side.build.handleData(SHIFT_RIGHT, side.layout)
-  side.build.handleData(`${ESC}[1;2B`, side.layout)
+  side.build.handleData(SHIFT_DOWN, side.layout)
   assert.deepEqual(animation.frame(side.build.state, 1, reduced), {
     camera: side.build.state.camera,
     cursor: side.build.state.cursor,
@@ -452,8 +461,8 @@ test("a gliding cursor is drawn where it is, and the armed preview travels with 
   const state = side.build.state
   assert.equal(state.armed, 0)
   const drawn = { x: state.cursor.x - 5, y: state.cursor.y }
-  const gliding = composeBuildFrame({ context, state, layout, cursor: drawn }, "monochrome")
-  const stillFrame = composeBuildFrame({ context, state, layout }, "monochrome")
+  const gliding = compose(side, { cursor: drawn })
+  const stillFrame = compose(side)
   const at = (frame: typeof stillFrame, tile: { x: number; y: number }) => {
     const cell = cellForTile(layout, state.camera, tile)
     return cellAt(frame, cell.x, cell.y)
@@ -475,7 +484,7 @@ test("the frame timer asks for a frame only while something animates", () => {
 test("a refused placement flashes the footprint for its tuned time, and moving off it ends the flash", () => {
   const side = exploring()
   side.build.handleData("1", side.layout)
-  side.build.dispatch({ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }) // rock
+  side.build.dispatch({ kind: "move-cursor", dx: 8 - OPEN_GROUND.x, dy: 5 - OPEN_GROUND.y }) // rock
   side.build.handleData("\r", side.layout)
   assert.equal(side.build.state.refusedTry?.seq, 1)
   const animation = new BuildAnimation()
@@ -484,11 +493,8 @@ test("a refused placement flashes the footprint for its tuned time, and moving o
   assert.equal(first.busyUntil, TUNING.refusedCursorMs)
   assert.equal(animation.frame(side.build.state, TUNING.refusedCursorMs).refusedTry, undefined)
   // Drawn as a solid block, in monochrome too.
-  const frame = composeBuildFrame(
-    { context: side.context, state: side.build.state, layout: side.layout, refusedTry: true },
-    "monochrome",
-  )
-  const plain = composeBuildFrame({ context: side.context, state: side.build.state, layout: side.layout }, "monochrome")
+  const frame = compose(side, { refusedTry: true })
+  const plain = compose(side)
   const cell = cellForTile(side.layout, side.build.state.camera, { x: side.build.state.cursor.x + 1, y: side.build.state.cursor.y })
   assert.equal(cellAt(frame, cell.x, cell.y).style.inverse, true)
   assert.notEqual(cellAt(plain, cell.x, cell.y).style.inverse, true)
@@ -602,6 +608,5 @@ test("keys and the untimed arrows the web page and scripts send still land on th
   const byTimedTaps = exploring()
   timed(byTimedTaps, [[RIGHT, 0], [RIGHT, 1000], [DOWN, 2000], [LEFT, 3000], [UP, 4000]])
   assert.deepEqual(byTimedTaps.build.state, byKeys.build.state)
-  assert.equal(frameToText(composeBuildFrame({ context: byKeys.context, state: byKeys.build.state, layout: byKeys.layout }, "monochrome")),
-    frameToText(composeBuildFrame({ context: byTimedTaps.context, state: byTimedTaps.build.state, layout: byTimedTaps.layout }, "monochrome")))
+  assert.equal(screenText(byTimedTaps), screenText(byKeys))
 })

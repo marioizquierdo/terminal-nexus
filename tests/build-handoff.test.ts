@@ -190,7 +190,10 @@ test("under reduced motion, or with the flight off, the blink plays at once; Tab
   assert.equal(reduced.cursorBlink, true)
 
   const off = buildSide()
-  while (off.build.state.experiments.focusArrowMs > 0) off.build.dispatch({ kind: "experiment-adjust", field: "focusArrowMs", step: -1 })
+  for (let step = 0; step < 10 && off.build.state.experiments.focusArrowMs > 0; step += 1) {
+    off.build.dispatch({ kind: "experiment-adjust", field: "focusArrowMs", step: -1 })
+  }
+  assert.equal(off.build.state.experiments.focusArrowMs, 0, "the flight does not go off")
   const still = new BuildAnimation()
   still.frame(off.build.state, 0)
   keys(off, "e")

@@ -5,27 +5,24 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { SPIKE_CATALOG } from "../src/build/catalog.ts"
-import { NEXUS_ROW, buildLayout, cellForTile, constructLines, escLabelSpan, escLabel } from "../src/build/layout.ts"
+import { NEXUS_ROW, buildLayout, cellForTile, escLabelSpan, escLabel } from "../src/build/layout.ts"
 import { popupSpec, placePopup } from "../src/build/popup.ts"
 import type { PlacedPopup } from "../src/build/popup.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
-import { MOUSE_LEFT, MOUSE_RIGHT, buildMouseCommand, formatMouseEvent, parseMouseEvent } from "../src/build/mouse.ts"
+import { MOUSE_LEFT, MOUSE_RIGHT, formatMouseEvent } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { startPulse } from "../src/cli/pulse-run.ts"
 import { spikeContext } from "../src/cli/spike.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { frameToText } from "../src/view/frame.ts"
+import { ESC, buildSide } from "./build-helpers.ts"
+import type { BuildSide } from "./build-helpers.ts"
 
-const ESC = String.fromCharCode(27)
-const MINIMUM = { columns: 80, rows: 24 }
 
-function session(): { build: BuildSession; layout: ReturnType<typeof buildLayout> } {
-  const context = spikeContext()
-  const layout = buildLayout(MINIMUM, context.grid)
-  const build = new BuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport, startPulse })
-  return { build, layout }
+/** A Build Phase with the shell's `startPulse`, so a commit starts a real Pulse. */
+function session(): BuildSide {
+  return buildSide({ startPulse })
 }
 
 test("a waiting Nexus power refuses the commit, and nothing else", () => {
@@ -85,7 +82,7 @@ test("the popup holds the keyboard until a pick or Esc: arrows work its list, an
   assert.equal(build.state.popup, null, "picking left the popup open")
   assert.equal(build.state.focus, "grid", "Tab moved focus from behind the popup")
   assert.equal(build.state.armed, 0, "the pick disarmed what was armed behind the popup")
-  // Esc closes it without a pick, and x is Esc, everywhere.
+  // Esc closes it without a pick, and x closes it as Esc does.
   build.handleData("n", layout)
   build.handleData(ESC, layout)
   assert.equal(build.state.popup, null)
@@ -259,7 +256,7 @@ test("accepting the confirmation commits, and locks every state-changing command
   }
 })
 
-test("a stray y or n outside the confirmation is exactly as inert as a stray digit before anything is armed", () => {
+test("starting the Pulse outside the Battle Round screen — a stray y — changes nothing", () => {
   const { build } = session()
   const before = build.state
   build.dispatch({ kind: "start-pulse" })
@@ -299,20 +296,20 @@ test("keyboard: n opens the Nexus popup, and means nothing on the Battle Round c
 })
 
 /** The open popup, placed exactly as the composer and the mouse adapter place it. */
-function placedPopup(side: ReturnType<typeof session>): PlacedPopup {
+function placedPopup(side: BuildSide): PlacedPopup {
   const spec = popupSpec(spikeContext(), side.build.state)
   assert.ok(spec !== null, "no popup is open")
   return placePopup(side.layout, spec)
 }
 
 /** The click bytes for the popup option whose command matches, or for the top bar's "close [esc]". */
-function clickPopupBytes(side: ReturnType<typeof session>, match: (command: BuildCommand) => boolean): string {
+function clickPopupBytes(side: BuildSide, match: (command: BuildCommand) => boolean): string {
   const popup = placedPopup(side)
   const row = popup.rows.find((candidate) => candidate.spec.kind === "option" && match(candidate.spec.command))
   assert.ok(row !== undefined, "no such option in the popup")
   return formatMouseEvent(MOUSE_LEFT, popup.textColumn + 2, row.row + 1)
 }
-function clickPopupCloseBytes(side: ReturnType<typeof session>): string {
+function clickPopupCloseBytes(side: BuildSide): string {
   const hint = escLabelSpan(side.layout, escLabel(side.build.state))
   assert.equal(escLabel(side.build.state), "close [esc]")
   return formatMouseEvent(MOUSE_LEFT, hint.from + 1, hint.row + 1)
@@ -346,7 +343,7 @@ test("mouse: inside a popup a click picks or closes; outside it, a click closes 
   assert.deepEqual(side.build.state.cursor, { x: 20, y: 15 })
   assert.equal(side.build.state.planned.length, 0)
 
-  // A right click is Esc.
+  // A right click closes it, as x does.
   side.build.handleData("n", side.layout)
   side.build.handleData(formatMouseEvent(MOUSE_RIGHT, 10, 10), side.layout)
   assert.equal(side.build.state.popup, null)
@@ -396,16 +393,6 @@ test("mouse: the Battle Round confirmation starts by click on [s] Start, and a c
   assert.equal(outside.build.state.popup, null)
   assert.equal(outside.build.state.committed, false)
 })
-
-/** A click on a construct row, from `constructLines` — the same geometry the panel itself draws
- *  with, so a click that lands on a row nobody drew is structurally impossible here. */
-function clickRowBytes(layout: ReturnType<typeof buildLayout>, index: number): string {
-  const line = constructLines(layout, SPIKE_CATALOG).find((candidate) => candidate.index === index)
-  assert.ok(line !== undefined, `no construct row is drawn for item ${index}`)
-  const item = SPIKE_CATALOG[index]!
-  const column = layout.panelColumn + Math.floor(`[${item.hotkey}] ${item.label}`.length / 2)
-  return formatMouseEvent(MOUSE_LEFT, column + 1, line.row + 1)
-}
 
 /** The raw bytes a left click on this Grid tile sends, from the composer's own `cellForTile`. */
 function clickTileBytes(
@@ -478,14 +465,14 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   assert.equal(byKeyboard.build.state.highlightHidden, false)
   assert.deepEqual({ ...byMouse.build.state, highlightHidden: false }, byKeyboard.build.state)
   assert.deepEqual(byDriver.build.state, byKeyboard.build.state)
-  const frame = (side: ReturnType<typeof session>): string =>
+  const frame = (side: BuildSide): string =>
     frameToText(composeBuildFrame({ context: spikeContext(), state: side.build.state, layout: side.layout }, "monochrome"))
   assert.equal(frame(byMouse), frame(byKeyboard))
   assert.equal(frame(byDriver), frame(byKeyboard))
 
   // Gate 6A: the commit starts a Nexus Pulse, and whichever adapter started it, it is the same Pulse —
   // the kernel's own two hashes, the ending's Recall, and what each of them shows at the same instant.
-  const pulseOf = (side: ReturnType<typeof session>) => {
+  const pulseOf = (side: BuildSide) => {
     assert.ok(side.build.pulse !== null, "the commit did not start a Pulse")
     return side.build.pulse.resolved
   }
