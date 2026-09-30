@@ -27,7 +27,7 @@
 // `src/build` to that). The session keeps one of these beside the reducer, never inside it — the
 // reducer only ever sees an ordinary `move-cursor` of the size chosen here.
 
-import type { CursorKey } from "./keyboard.ts"
+import type { CursorKey } from "../menu/list-keys.ts"
 import { TUNING } from "./tuning.ts"
 
 /** What kind of move a cursor key made: a tap, a run at the hold step, a run at the fast step, or

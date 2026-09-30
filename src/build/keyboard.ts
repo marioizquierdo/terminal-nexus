@@ -1,97 +1,23 @@
-// The keyboard adapter — engine.md 9.7's keymap, and the one part of it a terminal can silently
-// break. Shift+Arrow is neither universal nor single-valued (measured by
-// `scripts/probe-modified-keys.mjs`; the table is in `evidence/gate-5a-report.md`):
-//
-//   - xterm and tmux send `ESC [ 1 ; 2 A` and its siblings;
-//   - rxvt sends a shorter, unrelated form: `ESC [ a b c d`;
-//   - screen, the Linux console, vt100, vt220 and ansi define no shifted arrow at all.
-//
-// So both families are accepted, and the fast move (five tiles until gate 5H; since the owner's
-// 2026-09-28 playtest a jump, now of the tuned `TUNING.jumpStep`) also has a modifier-free fallback —
-// PageUp/PageDown and Home/End — plus the Option/Meta forms a Mac sends. The Controls and hotkeys page
+// The keyboard adapter — engine.md 9.7's keymap: one already-split raw key to one command. The cursor
+// keys' byte spellings — measured, because a terminal can silently break Shift+Arrow — are one table
+// shared with every list (`src/menu/list-keys.ts`): the fast move has a modifier-free fallback,
+// PageUp/PageDown and Home/End, and the Option/Meta forms a Mac sends. The Controls and hotkeys page
 // (`src/build/help.ts`, feedback F60) lists every one of them; the bottom line never did, on the
 // owner's own call (2026-09-26: "leave pgup/home keys out, people will figure that out just fine").
 
-import { listKeyOf } from "../menu/list-keys.ts"
+import { cursorKeyOf, listKeyOf } from "../menu/list-keys.ts"
 import type { PlaybackControl } from "../view/playback.ts"
 import { START_KEY } from "./layout.ts"
 import type { PopupRow, PopupSpec } from "./popup.ts"
 import { TUNING } from "./tuning.ts"
 import type { BuildCommand, Focus, Popup } from "./types.ts"
 
+export { cursorKeyOf } from "../menu/list-keys.ts"
+export type { CursorKey } from "../menu/list-keys.ts"
+
 const ESC = String.fromCharCode(27)
 const PLACE_KEYS = new Set(["\r", "\n", " "])
 const REMOVE_KEYS = new Set([String.fromCharCode(127), String.fromCharCode(8), `${ESC}[3~`])
-
-/** `ESC [ A` and the application-cursor-mode `ESC O A` a terminal may switch to at any moment. */
-const PLAIN_ARROWS: Readonly<Record<string, Readonly<{ dx: number; dy: number }>>> = {
-  [`${ESC}[A`]: { dx: 0, dy: -1 },
-  [`${ESC}[B`]: { dx: 0, dy: 1 },
-  [`${ESC}[C`]: { dx: 1, dy: 0 },
-  [`${ESC}[D`]: { dx: -1, dy: 0 },
-  [`${ESC}OA`]: { dx: 0, dy: -1 },
-  [`${ESC}OB`]: { dx: 0, dy: 1 },
-  [`${ESC}OC`]: { dx: 1, dy: 0 },
-  [`${ESC}OD`]: { dx: -1, dy: 0 },
-}
-
-/** rxvt's own shifted arrows, which share nothing with xterm's but the leading `ESC [`. */
-const RXVT_SHIFTED_ARROWS: Readonly<Record<string, Readonly<{ dx: number; dy: number }>>> = {
-  [`${ESC}[a`]: { dx: 0, dy: -1 },
-  [`${ESC}[b`]: { dx: 0, dy: 1 },
-  [`${ESC}[c`]: { dx: 1, dy: 0 },
-  [`${ESC}[d`]: { dx: -1, dy: 0 },
-}
-
-/**
- * xterm's modified arrows: `ESC [ 1 ; <modifier> <letter>`. Any modifier >= 2 counts, not Shift
- * alone — nothing else here binds a modified arrow, so a terminal that eats Shift but passes Alt or
- * Ctrl still gives its player the fast pan.
- */
-const XTERM_MODIFIED_ARROW = /^\u001b\[1;(\d+)([ABCD])$/
-const ARROW_LETTERS: Readonly<Record<string, Readonly<{ dx: number; dy: number }>>> = {
-  A: { dx: 0, dy: -1 },
-  B: { dx: 0, dy: 1 },
-  C: { dx: 1, dy: 0 },
-  D: { dx: -1, dy: 0 },
-}
-
-/**
- * Option+Arrow the way macOS terminals send it by default, which is not xterm's `CSI 1;3` form (that
- * one is already covered above, since any modifier counts): Option+Left/Right arrive as the readline
- * word-movement keys `ESC b`/`ESC f`, and a terminal set to treat Option as Meta prefixes the ordinary
- * arrow with a second ESC. Both mean the fast move — "move word by word" is what Option means on a
- * Mac (owner, 2026-09-26: "we should also allow option"). Bound from the terminals' documented
- * defaults, not yet measured on the owner's own iTerm2 profile: `node scripts/lib/key-echo.mjs` in
- * that terminal is how to check. `keysFromChunk` keeps each of these whole; before it did, Option+Left
- * split into a bare Escape and left the screen.
- */
-const META_JUMPS: Readonly<Record<string, Readonly<{ dx: number; dy: number }>>> = {
-  [`${ESC}b`]: { dx: -1, dy: 0 },
-  [`${ESC}f`]: { dx: 1, dy: 0 },
-  [`${ESC}${ESC}[A`]: { dx: 0, dy: -1 },
-  [`${ESC}${ESC}[B`]: { dx: 0, dy: 1 },
-  [`${ESC}${ESC}[C`]: { dx: 1, dy: 0 },
-  [`${ESC}${ESC}[D`]: { dx: -1, dy: 0 },
-}
-
-/**
- * The modifier-free fallback, in every encoding the survey turned up. PageUp/PageDown are `ESC [ 5 ~`
- * and `ESC [ 6 ~` wherever they exist, but Home and End have three live spellings between xterm
- * (`ESC O H`), screen/tmux/linux (`ESC [ 1 ~`) and rxvt (`ESC [ 7 ~`), hence the table.
- */
-const FALLBACK_JUMPS: Readonly<Record<string, Readonly<{ dx: number; dy: number }>>> = {
-  [`${ESC}[5~`]: { dx: 0, dy: -1 },
-  [`${ESC}[6~`]: { dx: 0, dy: 1 },
-  [`${ESC}[H`]: { dx: -1, dy: 0 },
-  [`${ESC}OH`]: { dx: -1, dy: 0 },
-  [`${ESC}[1~`]: { dx: -1, dy: 0 },
-  [`${ESC}[7~`]: { dx: -1, dy: 0 },
-  [`${ESC}[F`]: { dx: 1, dy: 0 },
-  [`${ESC}OF`]: { dx: 1, dy: 0 },
-  [`${ESC}[4~`]: { dx: 1, dy: 0 },
-  [`${ESC}[8~`]: { dx: 1, dy: 0 },
-}
 
 /** `grid watch`'s keymap, kept for the Nexus Pulse (engine.md 9.7: one keymap across `grid` and
  *  `terminal-nexus`) — Space pauses, `[` and `]` change the speed, `.` and `,` step a frame and a tick,
@@ -106,8 +32,14 @@ const PULSE_KEYS: Readonly<Record<string, PlaybackControl>> = {
 }
 
 const TAB = "\t"
-const MENU_LEFT = new Set([`${ESC}[D`, `${ESC}OD`])
-const MENU_RIGHT = new Set([`${ESC}[C`, `${ESC}OC`])
+
+/** A plain Left (`-1`) or Right (`+1`) — what changes a setting's value, and what the menu refuses — or
+ *  `0` for any other key, a modified arrow included. */
+function sideways(key: string): -1 | 0 | 1 {
+  const cursor = cursorKeyOf(key)
+  if (cursor === null || cursor.jump || cursor.dy !== 0) return 0
+  return cursor.dx < 0 ? -1 : 1
+}
 
 /**
  * Up/Down in a list — the menu, or any popup's — as the command it is, or `null`: one row for a plain
@@ -235,38 +167,9 @@ function popupCommand(key: string, popup: Popup, spec: PopupSpec | null): BuildC
     // Nothing to press — the Nexus powers once the pick is made: the reducer says so.
     return { kind: "activate" }
   }
-  if (on?.kind === "setting" && MENU_LEFT.has(key)) return on.decrease
-  if (on?.kind === "setting" && MENU_RIGHT.has(key)) return on.increase
-  return null
-}
-
-/** A cursor key's direction, one tile long, and whether it is the fast move. */
-export type CursorKey = Readonly<{ dx: number; dy: number; jump: boolean }>
-
-/**
- * Any of the Grid's cursor keys, classified — or `null`. The plain arrows are what a held key's ramp
- * applies to (`src/build/motion.ts`); every other form is the fast move, a jump whose size is a tuned value
- * (`TUNING.jumpStep`) rather than anything timing decides (timing only decides how often a held one repeats).
- */
-export function cursorKeyOf(key: string): CursorKey | null {
-  const plain = PLAIN_ARROWS[key]
-  if (plain !== undefined) return { ...plain, jump: false }
-
-  const rxvt = RXVT_SHIFTED_ARROWS[key]
-  if (rxvt !== undefined) return { ...rxvt, jump: true }
-
-  const modified = XTERM_MODIFIED_ARROW.exec(key)
-  if (modified !== null) {
-    const direction = ARROW_LETTERS[modified[2] as string]
-    if (direction !== undefined && Number(modified[1]) >= 2) return { ...direction, jump: true }
-  }
-
-  const meta = META_JUMPS[key]
-  if (meta !== undefined) return { ...meta, jump: true }
-
-  const fallback = FALLBACK_JUMPS[key]
-  if (fallback !== undefined) return { ...fallback, jump: true }
-  return null
+  const side = sideways(key)
+  if (on?.kind !== "setting" || side === 0) return null
+  return side < 0 ? on.decrease : on.increase
 }
 
 /** Any of the Grid's cursor keys, as the move it is — one tile for a plain arrow (the input path may
@@ -327,7 +230,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
     if (list !== null) return list
     // Left/Right have nothing to do on the menu: the row flickers so the player sees where the keys
     // went, and the keyboard stays on the menu (owner, 2026-09-30, feedback F55).
-    if (MENU_LEFT.has(key) || MENU_RIGHT.has(key)) return { kind: "refuse-row" }
+    if (sideways(key) !== 0) return { kind: "refuse-row" }
     if (PLACE_KEYS.has(key)) return { kind: "activate" }
   } else {
     if (PLACE_KEYS.has(key)) return context.armed ? { kind: "place" } : { kind: "open-explore" }
