@@ -252,9 +252,13 @@ test("a refused flicker on a plain row leaves it plain and greys its words; on a
       assert.equal(cell.style.dim, true)
       assert.notEqual(cell.style.bold, true)
     }
-    // The header of a building's card, flickering: still no bar, the words grey.
+    // The header of a building's card, flickering — another building's key while one is armed is
+    // refused on the armed row (F69): still no bar, the words grey.
     const armed = session()
-    keys(armed, "1")
+    keys(armed, "1", "2")
+    assert.equal(armed.build.state.armed, 0)
+    const ack = armed.build.state.ack
+    assert.deepEqual(ack === null ? null : { kind: ack.kind, entry: ack.entry }, { kind: "refused", entry: entryOfConstruct(0) })
     const header = rowCells(armed, compose(armed, { flash: { kind: "refused", entry: entryOfConstruct(0) } }, capability), at(armed, CARD_HEADER_ROW))
     assert.match(header.map((cell) => cell.glyph).join(""), /^\[1\] Barracks +>$/)
     for (const cell of header) {
@@ -445,8 +449,8 @@ test("beat 3: the header in place, the card fading in, its words typed, the icon
 test("a still frame is the finished card; from another card only the card's own beat plays", () => {
   const side = session()
   keys(side, "2")
-  // No reveal: exactly today's card.
-  assert.deepEqual(compose(side, {}, "truecolor"), compose(side, {}, "truecolor"))
+  // A reveal at its end, from either start, is exactly the still frame's card.
+  assert.deepEqual(compose(side, { cardReveal: { progress: 1, menu: false } }, "truecolor"), compose(side, {}, "truecolor"))
   // From another card: the header already in place and the separator drawn, from the first instant.
   const from = compose(side, { cardReveal: { progress: 0.05, menu: false } }, "monochrome")
   const lines = panelLines(side, from)
