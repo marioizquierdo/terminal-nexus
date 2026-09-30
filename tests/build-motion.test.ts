@@ -579,16 +579,16 @@ test("the live screen redraws on a timer while the view slides, and not at all o
     exit: () => {},
   })
   await wait(40)
-  // Explore Map begun on the map (Tab, then `e`): the row's flash, and no focus arrow or cursor blink,
-  // which only a menu row handing the keyboard to the map plays (feedback F54).
-  stdin.emit("data", Buffer.from("\t"))
+  // Explore Map begun on the map (Tab, then `e`): the row's flash and the card's reveal, and no focus
+  // arrow or cursor blink, which only a menu row handing the keyboard to the map plays (feedback F54).
+  stdin.emit("data", Buffer.from(TAB))
   stdin.emit("data", Buffer.from("e"))
-  await wait(250) // the Explore row's flash has come and gone
+  await wait(Math.max(TUNING.pressedFlashMs, defaultExperiments().cardRevealMs) + 100) // both have come and gone
   const idle = stdout.frames
   await wait(120)
   assert.equal(stdout.frames, idle, "an idle screen kept redrawing")
-  stdin.emit("data", Buffer.from(`${ESC}[1;2C`)) // Shift+Right twice: the view slides east
-  stdin.emit("data", Buffer.from(`${ESC}[1;2C`))
+  stdin.emit("data", Buffer.from(SHIFT_RIGHT)) // twice: the view slides east
+  stdin.emit("data", Buffer.from(SHIFT_RIGHT))
   await wait(300)
   // The two key presses redraw once each; anything beyond that was drawn by the frame timer. At
   // least one such frame is the property — how many depends on how busy the machine is, since a

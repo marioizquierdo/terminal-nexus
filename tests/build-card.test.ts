@@ -331,11 +331,13 @@ test("the row a reveal from the menu carries up is drawn active all the way, nev
   keys(side, DOWN, DOWN, ENTER) // the Hatchery, armed from the menu: its row is pressed, and the card reveals
   const home = menuEntryRow(side.layout, side.context.catalog, { kind: "construct", index: 1 }) as number
   const rows = new Set<number>()
-  // Every instant the pressed flash is still lit — through the fade, the slide and into the card's beat.
-  for (let elapsed = 0; elapsed < Math.min(TUNING.pressedFlashMs, defaultExperiments().cardRevealMs); elapsed += 5) {
+  let pressed = 0
+  // Every instant of the reveal — the fade, the slide, the card's beat — with the pressed flash lit
+  // for the first of them.
+  for (let elapsed = 0; elapsed < defaultExperiments().cardRevealMs; elapsed += 5) {
     const live = animation.frame(side.build.state, 1000 + elapsed)
-    assert.equal(live.ack?.kind, "pressed", `${elapsed} ms: the pressed flash is over`)
     assert.ok(live.cardReveal !== undefined, `${elapsed} ms: the reveal is over`)
+    if (live.ack?.kind === "pressed") pressed += 1
     for (const capability of CAPABILITY_MODES) {
       const frame = compose(side, livePresentation(live), capability)
       const row = panelLines(side, frame).findIndex((line) => /^\[2\] Hatchery +>$/.test(line))
@@ -350,6 +352,7 @@ test("the row a reveal from the menu carries up is drawn active all the way, nev
       }
     }
   }
+  assert.ok(pressed > 0, "the pressed flash never lit during the reveal: the test proves nothing")
   assert.ok(rows.has(home) && rows.has(panelRow(side, CARD_HEADER_ROW)), "the row did not travel from its place to the header")
 })
 
