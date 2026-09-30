@@ -37,7 +37,7 @@ import { frameToText } from "../src/view/frame.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { BuildAnimation, FRAME_MS, livePresentation } from "../src/view/build-live.ts"
 import { cellForTile } from "../src/build/layout.ts"
-import { SETTINGS_ORDER } from "../src/build/settings.ts"
+import { SETTINGS_ROWS } from "../src/build/settings.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import { renderFramePng, renderFramesGif } from "./lib/frame-capture.mjs"
 import {
@@ -724,7 +724,7 @@ scriptedGif("build-arm-at-cursor", {
 
 // Gate 5H: movement feel.
 
-const SETTINGS_AT_END = `SETTINGS (${SETTINGS_ORDER.length}/${SETTINGS_ORDER.length})`
+const SETTINGS_AT_END = `SETTINGS (${SETTINGS_ROWS.length}/${SETTINGS_ROWS.length})`
 
 scripted(
   "build-debug-scrolled",
