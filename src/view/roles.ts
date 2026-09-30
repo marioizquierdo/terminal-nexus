@@ -357,6 +357,18 @@ function fadeRgb(
  */
 export type RoleTint = Readonly<{ role: StyleRole; amount: number }>
 
+/**
+ * A see-through cursor laid over a cell (the menu spike's round 2, feedback F64-F65): `role`'s colour at
+ * `alpha` (0 to 1) over whatever is drawn there. The cell's background becomes `alpha` of the role's
+ * colour and `1 - alpha` of what was there — itself 80% the cell's own background and 20% its glyph's
+ * colour, the glyph being taken to cover about a fifth of the cell — and the glyph, which stays, is
+ * drawn `alpha` of the way toward the colour the real cursor draws glyphs in (the theme's background,
+ * since the cursor is inverse video). A role and a number, never a colour, like `RoleTint`: an exact mix
+ * at truecolor, the nearest colour at 256, and at 16 colours and in monochrome the plain inverse
+ * cursor. Set only by the Explore Map hand-off's travelling cursor so far.
+ */
+export type RoleOverlay = Readonly<{ role: StyleRole; alpha: number }>
+
 function mixRgb(
   from: readonly [number, number, number],
   to: readonly [number, number, number],

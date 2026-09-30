@@ -79,6 +79,30 @@ Milestone 1's and did not change. 6B and 6C wait for the owner's word.
 > - [x] tests, canon, `docs/ui-patterns.md`, the gate report's section on it, pictures, and a pull
 >       request.
 
+> **The menu spike, round 2 — the owner's play of it, 2026-09-30**
+> ([`../docs/feedback/2026-09-30-menu-spike-round-2.md`](../docs/feedback/2026-09-30-menu-spike-round-2.md),
+> F61-F76, with his settings export). Definition of done:
+>
+> - [ ] the Left/Right flicker greys the row's words and leaves its background (F61);
+> - [ ] an active row is the hotkey colour and one `>`, no underline; a card's header keeps the row's
+>       own hotkey, which cancels (F67, F70);
+> - [ ] the menu reads Explore Map, Nexus, the credits line (`◆ 130`, the map's resource symbol, on the
+>       blank line above the buildings), the buildings, Start Pulse; no credits on the cards (F71, F72);
+> - [ ] the arrow leaves from the row's own place; the row slides up to be the card's title and the card
+>       fades and types in, in about 150 ms, with an Experiment for the length (F63, F68);
+> - [ ] Explore Map sends a see-through cursor (80% opacity, blended with what it crosses) instead of the
+>       arrow, and opens with the cursor moved to clear ground by the arming rule (F64-F66);
+> - [ ] while a building is armed, other buildings, Explore Map and Start Pulse are refused until it is
+>       placed or cancelled (its own digit cancels) (F69);
+> - [ ] `x` never opens the game menu, and a right click behaves like `x`; no "[esc] Back" rows in popups
+>       (F62, F73);
+> - [ ] every list stops at its ends, a held arrow ramps like the map cursor, Shift/PageUp/Home jump to
+>       the ends (F75);
+> - [ ] `docs/ui-patterns.md` reorganised, and pointed to from `AGENTS.md` and `CLAUDE.md` (F74);
+> - [ ] his settings export is the default; the settled Experiments are gone into one table of tuned
+>       values; the focus arrow, the card animation, the hold window, the raid and your units remain (F76);
+> - [ ] tests, canon, pictures, the playable page and the pull request.
+
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
 > how the Pulse resolves — that stays the deterministic kernel, unmodified. What is new is the
 > player-facing moment around it: the explicit trigger, knowing when it is over, and what the screen

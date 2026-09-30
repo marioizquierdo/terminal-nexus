@@ -1,7 +1,7 @@
 // The terminal boundary — engine.md 9.1. An engine-owned structured cell frame, and an excellent
 // snapshot surface. No backend object ever appears inside a frame.
 
-import type { CapabilityMode, RoleTint, StyleRole, Theme } from "./roles.ts"
+import type { CapabilityMode, RoleOverlay, RoleTint, StyleRole, Theme } from "./roles.ts"
 import { DEFAULT_THEME, sgrBackgroundFor, sgrFor } from "./roles.ts"
 
 const ESC = "\u001b"
@@ -30,6 +30,12 @@ export type CellStyle = Readonly<{
    * (`src/view/effects/shading.ts`), a placed building's light today.
    */
   tint?: RoleTint
+  /**
+   * A see-through cursor over the cell (feedback F64-F65) — `roles.ts`'s `RoleOverlay` says how it
+   * mixes and how each tier resolves it. Presentation's own, like `tint`: set by a glyphless write, so
+   * the glyph beneath always survives (the corruption law).
+   */
+  overlay?: RoleOverlay
 }>
 
 export type Cell = Readonly<{ glyph: string; style: CellStyle }>
