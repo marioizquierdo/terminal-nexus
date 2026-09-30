@@ -943,7 +943,9 @@ entry, `color16` shows the plain cursor (inverse in the role's colour) from an a
 nothing below, `monochrome` the same step as inverse alone. Where it shows it replaces the cell's
 colours, inverse and dim; bold and underline stay. It is written by a glyphless write, so the glyph
 beneath always survives, and a later see-through write on a cell replaces an earlier one. One function resolves it
-(`seeThroughColours` in `src/view/roles.ts`) and every renderer calls it. Scope: the Explore Map hand-off's
+(`seeThroughColours` in `src/view/roles.ts`), and every renderer reaches it through `resolveCell` — the
+one place a cell's style becomes what the ANSI writer, the browser page's canvas and OpenTUI draw: its
+colours, its inverse video, its dim and its see-through style. Scope: the Explore Map hand-off's
 travelling cursor. **`fade` is also used on the Build Phase panel's own text** for the card reveal
 (below), chrome rather than an effect's glyph.
 
