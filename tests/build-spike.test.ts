@@ -295,8 +295,7 @@ test("keyboard: digits always address the list, and a digit past its end means n
 })
 
 test("keyboard: Esc is cancel and x is back in every focus, and q opens the game menu rather than quits", () => {
-  // x was the same command as Esc until the owner's 2026-09-30 feedback F62: it walks back like Esc but
-  // never opens the game menu (tests/build-behaviour-round-2.test.ts has what each does).
+  // `x` walks back like Esc but never opens the game menu (tests/build-cancel.test.ts has what each does).
   for (const focus of ["menu", "grid"] as const) {
     for (const armed of [true, false]) {
       assert.deepEqual(buildKeyboardCommand(ESC, { itemCount: 3, armed, focus }), { kind: "cancel" })

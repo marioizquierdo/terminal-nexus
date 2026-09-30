@@ -35,14 +35,22 @@ test("keyboardCommand: digits activate by hotkey, regardless of current highligh
   assert.deepEqual(keyboardCommand("3", { ...state, highlighted: 1 }), { kind: "activate", index: 2 })
 })
 
-test("keyboardCommand: arrows move the highlight and stop at the ends; Enter activates the highlighted item", () => {
-  // The arrows wrapped until the owner's 2026-09-30 feedback F75 ("should not rotate").
+test("keyboardCommand: arrows move the highlight and stop at the ends, the fast move jumps to either end; Enter activates the highlighted item", () => {
   const state = createMenuList(ITEMS)
   assert.deepEqual(keyboardCommand(ARROW_DOWN, state), { kind: "highlight", index: 1 })
   assert.deepEqual(keyboardCommand(ARROW_UP, state), { kind: "highlight", index: 0 }, "Up on the first row came round")
   assert.deepEqual(keyboardCommand(ARROW_DOWN, { ...state, highlighted: 2 }), { kind: "highlight", index: 2 }, "Down on the last row came round")
+  // PageDown, End, Shift+Down and Option+Down; PageUp, Home and Shift+Up.
+  for (const key of [`${ESC}[6~`, `${ESC}[F`, `${ESC}[1;2B`, `${ESC}${ESC}[B`]) {
+    assert.deepEqual(keyboardCommand(key, state), { kind: "highlight", index: 2 }, JSON.stringify(key))
+  }
+  for (const key of [`${ESC}[5~`, `${ESC}[H`, `${ESC}[1;2A`]) {
+    assert.deepEqual(keyboardCommand(key, { ...state, highlighted: 2 }), { kind: "highlight", index: 0 }, JSON.stringify(key))
+  }
   assert.deepEqual(keyboardCommand("\r", { ...state, highlighted: 2 }), { kind: "activate", index: 2 })
   assert.deepEqual(keyboardCommand("\n", { ...state, highlighted: 0 }), { kind: "activate", index: 0 })
+  // Esc is still its own key, not an arrow's start.
+  assert.deepEqual(keyboardCommand(ESC, state), { kind: "back" })
 })
 
 test("keyboardCommand: q and Ctrl+C both quit; an unbound key means nothing", () => {

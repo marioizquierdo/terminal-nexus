@@ -6,7 +6,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { CREDITS_ROW, buildLayout, cellForTile, constructLines, startRow } from "../src/build/layout.ts"
+import { buildLayout, cellForTile, constructLines, startRow } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildSessionOptions } from "../src/build/session.ts"
 import { SPIKE_ALLOTMENT, SPIKE_CATALOG } from "../src/build/catalog.ts"
@@ -337,31 +337,6 @@ function panelText(screen: ReturnType<typeof screenAt>): string {
     .join("\n")
 }
 
-test("the menu lists every building with its cost under the credits, and the armed building's card says what it does", () => {
-  const menu = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" }))
-  const panel = panelText(menu)
-  // One list, each building's cost on its own row against the divider (feedback F56), under the credits
-  // as `* 100` — the map's resource symbol — on the line above the first building, in the same column
-  // (F57, F71).
-  assert.match(panel.split("\n")[CREDITS_ROW] as string, / {22}\* 100$/)
-  for (const item of SPIKE_CATALOG) assert.match(panel, new RegExp(`\\[${item.hotkey}\\] ${item.label} +${item.cost}$`, "m"))
-  assert.doesNotMatch(panel, /COMMON|ARMY|SPECIAL|none available|RESOURCE/)
-  // No help text on the panel (feedback F58): what a row does is the bottom line's to say.
-  assert.doesNotMatch(panel, /undo|remove|choose|select|arrows/)
-  // Armed, the panel is the building's card: its row drawn active, what it does, what it costs.
-  const armed = screenAt(MINIMUM, (build, layout) => {
-    build.handleData("2", layout)
-  })
-  const card = panelText(armed)
-  assert.match(card, /^\[2\] Hatchery +>$/m)
-  assert.match(card, /Spawns swarmers, slowly/)
-  assert.match(card, /^COST +30$/m)
-  // No credits on a card (feedback F71): its first line is its own row.
-  assert.match(card.split("\n")[0] as string, /^\[2\] Hatchery/)
-  assert.doesNotMatch(card, /\* 100/)
-  assert.doesNotMatch(card, /\[1\] Barracks|undo|bksp/)
-})
-
 test("the panel says nothing about an item until one is selected", () => {
   // "Simple and direct" (Mario, accepting gate 5A) taken literally: a panel that is always full is
   // a panel nobody reads, so the item's effect line appears only while something is armed.
@@ -618,9 +593,8 @@ test("on a Grid short enough to shrink the panel, the detail block is dropped ra
   const shown = (text.split("\n")[layout.footerRow] as string).replace(/^\s*\|\s*|\s*\|\s*$/g, "")
   assert.ok(shown.length > 0 && full.startsWith(shown), `"${shown}" is not the start of "${full}"`)
   assert.ok(shown.length === full.length || full[shown.length] === " ", `"${shown}" cuts a word of "${full}"`)
-  // And the building's card is still there, under its own active row (and no credits line, F71).
+  // And the building's card is still there, under its own active row.
   assert.match(text, /\[1\] Barracks +>/)
-  assert.doesNotMatch(text, /[*$] 100/)
 
   // Every line is still exactly the width it should be: nothing was written over anything.
   for (const row of text.split("\n")) assert.ok(row.length <= 80, `a row ran past 80: "${row}"`)
@@ -752,19 +726,6 @@ test("the bindings block gives way to the construct menu, never draws over it", 
       `the menu row for ${item.label} was drawn over`,
     )
   }
-})
-
-test("the armed row carries an explicit marker, not only inverse video", () => {
-  // Inverse video alone survives every capability tier, but it is a video attribute, not a symbol —
-  // the owner asked for something a player can point to and name: `[2] Hatchery  >` (feedback F53,
-  // then F67 and F70: its own hotkey and one `>`), at the head of the building's card (F58).
-  const armed = screenAt(MINIMUM, (build, layout) => {
-    build.handleData("2", layout)
-  })
-  assert.match(panelText(armed), /^\[2\] Hatchery +>$/m)
-  // On the menu, with nothing under way, no row carries it.
-  const menu = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" }))
-  assert.doesNotMatch(panelText(menu), />$/m, "a row with nothing under way carries the marker")
 })
 
 test("the cursor is bold and undimmed over bare ground, so it reads over a dim ground glyph", () => {

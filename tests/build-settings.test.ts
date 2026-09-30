@@ -340,6 +340,11 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
   assert.deepEqual(result.ignored, ["retiredFlag=3", "focusArrowMs=99999", "crew=sideways", "startFocus=map", "smartCursor=off"])
   // The twenty-eight the owner settled on 2026-09-30 are known: skipped quietly, never reported.
   assert.deepEqual(result.settled, ["placeLight", "scrollMargin"])
+  // The popup's own words read back too, and a settled name from an older export is skipped without a word.
+  const shown = parseSettingsExport("focusArrowMs=off cursorBlinks=3", base)
+  assert.equal(shown.snapshot.experiments.focusArrowMs, 0)
+  assert.deepEqual(shown.ignored, [])
+  assert.deepEqual(shown.settled, ["cursorBlinks"])
   // Nothing readable at all is the base, unchanged.
   assert.deepEqual(parseSettingsExport("", base).snapshot, base)
   assert.deepEqual(parseSettingsExport("= = # nothing", base).snapshot, base)

@@ -1,8 +1,10 @@
-// The pure menu-list reducer — no stdin, no ANSI, no backend involved at all.
+// The pure menu-list reducer, and the one table of keys every list and the map cursor read — no stdin,
+// no ANSI, no backend involved at all.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { applyMenuCommand, createMenuList, moveHighlight } from "../src/menu/list.ts"
+import { cursorKeyOf, listKeyOf, stepListIndex } from "../src/menu/list-keys.ts"
 import type { MenuItem } from "../src/menu/types.ts"
 
 const ITEMS: readonly MenuItem[] = [
@@ -71,4 +73,43 @@ test("quit passes through the reducer untouched — leaving is not a list concer
   const state = createMenuList(ITEMS)
   const outcome = applyMenuCommand(state, { kind: "quit" })
   assert.deepEqual(outcome, { state, activated: null })
+})
+
+const ESC = String.fromCharCode(27)
+
+test("list keys: plain arrows step, every fast form the map knows jumps the same way, left and right are not list keys", () => {
+  assert.deepEqual(listKeyOf(`${ESC}[A`), { direction: -1, jump: false })
+  assert.deepEqual(listKeyOf(`${ESC}OB`), { direction: 1, jump: false })
+  const fastUpDown = [
+    ...[2, 3, 4, 5, 6, 7, 8].flatMap((modifier) => [`${ESC}[1;${modifier}A`, `${ESC}[1;${modifier}B`]),
+    `${ESC}[a`,
+    `${ESC}[b`,
+    `${ESC}${ESC}[A`,
+    `${ESC}${ESC}[B`,
+    `${ESC}[5~`,
+    `${ESC}[6~`,
+  ]
+  for (const key of fastUpDown) {
+    const map = cursorKeyOf(key)
+    assert.ok(map !== null && map.jump && map.dy !== 0, JSON.stringify(key))
+    assert.deepEqual(listKeyOf(key), { direction: map.dy, jump: true }, JSON.stringify(key))
+  }
+  // Home and End, left and right on the map, are a list's first and last row, in every spelling.
+  for (const key of [`${ESC}[H`, `${ESC}OH`, `${ESC}[1~`, `${ESC}[7~`]) {
+    assert.equal(cursorKeyOf(key)?.dx, -1)
+    assert.deepEqual(listKeyOf(key), { direction: -1, jump: true }, JSON.stringify(key))
+  }
+  for (const key of [`${ESC}[F`, `${ESC}OF`, `${ESC}[4~`, `${ESC}[8~`]) {
+    assert.equal(cursorKeyOf(key)?.dx, 1)
+    assert.deepEqual(listKeyOf(key), { direction: 1, jump: true }, JSON.stringify(key))
+  }
+  for (const key of [`${ESC}[D`, `${ESC}[1;2C`, `${ESC}b`, `${ESC}f`, `${ESC}${ESC}[D`, `${ESC}[c`, "x", ESC]) {
+    assert.equal(listKeyOf(key), null, JSON.stringify(key))
+  }
+})
+
+test("a step in a list is clamped to its rows: it stops at either end", () => {
+  assert.equal(stepListIndex(3, 5, 10), 4)
+  assert.equal(stepListIndex(3, 5, -10), 0)
+  assert.equal(stepListIndex(0, 0, 1), 0)
 })

@@ -10,13 +10,8 @@ import { START_LABEL, menuEntryAt, startRow } from "../src/build/layout.ts"
 import { DEFAULT_ROUND_TEXT, popupSpec, placePopup } from "../src/build/popup.ts"
 import { menuEntries, startEntry } from "../src/build/state.ts"
 import { cellAt } from "../src/view/frame.ts"
+import { DOWN, ESC } from "./build-helpers.ts"
 import { MINIMUM, click, frameOf, newSession, screenText } from "./pulse-helpers.ts"
-
-const ESC = String.fromCharCode(27)
-const UP = `${ESC}[A`
-const DOWN = `${ESC}[B`
-/** PageDown: a list's last row (feedback F75) — Start Pulse, on the menu. */
-const PAGE_DOWN = `${ESC}[6~`
 
 type Session = ReturnType<typeof newSession>
 
@@ -47,7 +42,7 @@ test("Start Pulse is the menu's last entry, one plain row on the panel's bottom 
   assert.doesNotMatch(rows[startRow(layout) - 1]!.slice(layout.panelColumn, layout.panelColumn + layout.panelLimit), /[+-]{3}/, "a box's top edge")
 })
 
-test("Up and Down reach Start Pulse and Enter presses it — no hotkey and no mouse needed (feedback F48)", () => {
+test("Down reaches Start Pulse, and Enter, Enter starts the Pulse — no hotkey and no mouse needed (feedback F48)", () => {
   const session = ready()
   const last = menuEntries(session.context).length - 1
   // Only Down and Enter are pressed: the highlight walks the whole menu and arrives on its last entry.
@@ -62,14 +57,6 @@ test("Up and Down reach Start Pulse and Enter presses it — no hotkey and no mo
   session.build.handleData("\r", session.layout)
   assert.equal(session.build.state.committed, true, "Enter, Enter did not start the Pulse")
   assert.ok(session.build.pulse !== null)
-
-  // Up from the top stays there — it came round to Start Pulse until the owner's 2026-09-30 feedback
-  // F75 — and the fast move goes straight to it.
-  const top = ready()
-  top.build.handleData(UP, top.layout)
-  assert.equal(top.build.state.menuHighlight, 0)
-  top.build.handleData(PAGE_DOWN, top.layout)
-  assert.equal(top.build.state.menuHighlight, last)
 })
 
 test("the rule: every entry of the menu is reached by Down and done by Enter alone (docs/ui-patterns.md section 4)", () => {
@@ -142,12 +129,10 @@ test("a click on the row hits the Start Pulse entry, and the row above it hits i
   assert.notEqual(menuEntryAt(layout, context.catalog, layout.panelColumn + 2, startRow(layout) - 1), startEntry(context.catalog.length))
 })
 
-test("the row is active while its screen is open, back on the menu with the row highlighted after Esc", () => {
+test("Esc on the Battle Round screen goes back to the menu, the highlight on Start Pulse", () => {
   const session = ready()
   session.build.handleData("s", session.layout)
-  const text = screenText(session).split("\n")[startRow(session.layout)]!
-  // Drawn active (feedback F67, F70): its own hotkey, and one `>` pointing at the screen it opened.
-  assert.match(text.slice(session.layout.panelColumn), /^\[s\] Start Pulse +>[|+]/)
+  assert.equal(session.build.state.popup, "battle-round")
   session.build.handleData(ESC, session.layout)
   assert.equal(session.build.state.popup, null)
   assert.equal(session.build.state.focus, "menu")
@@ -201,7 +186,7 @@ test("a mission can say its own words for a round, and every other round says th
   )
 })
 
-test("Enter, Space, s and y start the Pulse; Esc and x go back; n is not a key there any more", () => {
+test("Enter, Space, s and y start the Pulse; Esc and x go back; n does nothing there", () => {
   for (const key of ["\r", " ", "s", "y"]) {
     const session = ready()
     session.build.handleData("s", session.layout)

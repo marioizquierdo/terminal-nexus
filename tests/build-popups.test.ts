@@ -89,6 +89,20 @@ function escLabelEnd(side: Side): Readonly<{ label: string; row: number; from: n
   return { label, ...escLabelSpan(side.layout, label) }
 }
 
+// --- One shape ----------------------------------------------------------------------------------------
+
+test("a popup's shadow is a dim shade, visible on the dark theme's near-black ground", () => {
+  const side = session()
+  keys(side, "n")
+  const frame = frameOf(side)
+  const text = frameToText(frame).split("\n")
+  // The shade runs along the popup's bottom edge, one row below it.
+  const shadowRow = text.findIndex((line) => line.includes("::::::::::"))
+  assert.ok(shadowRow > 0, "no shadow row under the popup")
+  const column = (text[shadowRow] as string).indexOf("::::::::::")
+  assert.equal(cellAt(frame, column, shadowRow).style.dim, true)
+})
+
 // --- Settings: no column, a position, Export in the list, the description under a line ------------
 
 test("a setting row is its name and its value, with no 'now' or 'restart' beside it", () => {

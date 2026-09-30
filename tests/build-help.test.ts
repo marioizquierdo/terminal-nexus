@@ -425,6 +425,21 @@ test("the page names only keys the adapters bind, and every command key they bin
   }
 })
 
+test("the Controls page says what Esc and x do on the menu, how placing is cancelled, and how lists move", () => {
+  const page = controlsPage()
+  const section = (heading: string) => page.find((entry) => entry.heading === heading)?.lines ?? []
+  assert.deepEqual(section("THE MENU").find((line) => line.keys === "esc"), { keys: "esc", text: "the game menu" })
+  assert.match(section("THE MENU").find((line) => line.keys === "x")?.text ?? "", /^nothing/)
+  assert.ok(section("PLACING A BUILDING").some((line) => line.keys === "its own key"))
+  assert.ok(section("PLACING A BUILDING").some((line) => /place it or stop first/.test(line.text)))
+  assert.deepEqual(
+    section("ANY LIST").map((line) => line.keys),
+    ["up/down", "hold up/down", "shift+up/down", "pgup/home", "pgdn/end"],
+  )
+  assert.match(section("ANYWHERE").find((line) => line.keys === "x")?.text ?? "", /stops at the menu/)
+  assert.match(section("THE MOUSE").find((line) => line.keys === "right click")?.text ?? "", /like x/)
+})
+
 // --- The Nexus Pulse ----------------------------------------------------------------------------------
 
 test("during a Nexus Pulse the one row is the Pulse's own line, and a popup over it says its own", () => {
