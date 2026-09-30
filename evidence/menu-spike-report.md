@@ -1,7 +1,7 @@
 # The Build Phase menu spike — report
 
-**Document role:** Gate report for the owner's menu reorganisation (feedback F52-F60, and his second round F61-F76)
-**Status:** COMPLETE — PASS, round 2 built, awaiting the owner's playtest
+**Document role:** Gate report for the owner's menu reorganisation (feedback F52-F60, his second round F61-F76 and his third F77-F81)
+**Status:** COMPLETE — PASS, round 3 built, awaiting the owner's playtest
 **Canon version:** 2.29
 **Updated:** 2026-09-30
 **License:** Apache-2.0
@@ -388,3 +388,119 @@ No new question.
 
 Wait for Mario's playtest of round 2 and his settings export; settle the two looks' Experiments from
 it. Gate 6B still waits for his word.
+
+---
+
+# Round 3 — the owner's play of round 2 and the review (F77-F81), 2026-09-30
+
+## T1. Frame
+
+- **Canon version:** 2.28 at the start; 2.29 at the end.
+- **Question:** does moving feel precise when taps speed up only by counting and a held key keeps the
+  game's own pace — and does reading key presses, repeats and releases where the terminal reports them
+  feel better than guessing from timing? Do a textured scroll-bar thumb and a breathing Battle Round
+  border read as he described?
+- **Smallest artifact:** the same screen and branch: a new ramp in the input path, a key-event decoder
+  beside the ANSI writer, one Experiment to switch it; the popup's scroll bar and border.
+- **Automated evidence planned:** the counting rule and the hold's pace as pure functions; parity
+  between timed presses and reported events; the protocol switched off on every exit path; the thumb's
+  texture; the breath over one breath, still where it cannot show; the live loop idle when the popup
+  closes.
+- **Human observation planned:** Mario plays it, compares Key releases auto and off, and runs the
+  key-release probe in his iTerm2.
+- **Exclusions:** a learned hold window, a hold timer of the game's own, Windows Terminal's input mode —
+  the dedicated navigation session; gate 6B.
+- **Stop conditions:** a terminal left in the kitty protocol after any way out.
+
+## T3. What was built
+
+Two agents in parallel, split by files (the input path; the popup's looks), after his export was
+settled by hand so both built on it.
+
+- **His export** (F81): the focus arrow (250 ms) and card reveal (400 ms) into the tuned values; "your
+  units: some" the placeholder Pulse's default; the hold window 200 ms as his words asked (F79).
+- **Taps are counted** (F79; `src/build/motion.ts`): taps within 400 ms keep their speed, the third since
+  it changed doubles it if within 300 ms — 1, 1, 2, then 2, 2, 4. His numbers; the reading of the second
+  doubling is recorded in the feedback log.
+- **A hold has a pace**: at most one move per 60 ms whatever the repeat rate, one tile a move and two
+  after 600 ms (first guesses); a hold ends a run of taps. Every list moves the same way.
+- **Key events** (`src/view/key-events.ts`): with Key releases on `auto`, the kitty keyboard protocol is
+  asked for just before the first frame, switched on if the terminal answers, and off on every way out
+  through the one disposer; Ctrl+C, the keypad and Num Lock are decoded in their new forms; the browser
+  page plays a terminal that answers, from key-down and key-up. `applies: "now"` — switching it in
+  Settings turns the protocol on or off at once.
+- **The scroll bar** (F78; `src/view/build-popup.ts`, `src/view/theme.ts`): the track is the plain border,
+  the thumb `#` / `╬`.
+- **The Battle Round breath** (F80; `src/view/build-popup.ts`, `src/view/build-live.ts`): a sine over one
+  breath, a tint toward the title's colour on the lighter half, a fade on the darker, both under 16
+  colours' half-way step; the live loop redraws at 20 frames a second while it is the only thing moving,
+  and stops when the popup closes.
+- **The dedicated navigation session** is queued in `docs/next-steps.md`, as he asked.
+
+## T4. Automated results
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| `npm run typecheck` (Node and web configs) | clean | run 2026-09-30 |
+| `npm test` (Node) | 776 of 776 pass (749 before the round) | run 2026-09-30 |
+| `npm run test:bun` | every file passes | run 2026-09-30 |
+| `./scripts/check-repository.sh` | passes, canon 2.29 | run 2026-09-30 |
+| Scripted flows | four slow taps: 1 each; three taps, the last quick: 1, 1, 2, then 2, 2, 4; a held key: one tile every other 30 ms repeat, two after 600 ms; `Right/press Right/repeat~180 Right/release~30`: tap, hold, release; the menu the same | `node scripts/playtest.mjs`, 2026-09-30 |
+| New tests | `tests/key-events.test.ts` (decoder, encoder round trip for every key name, the ask/on/off state machine); the protocol switched off on seven exit paths; parity of timed presses and reported events; `tests/build-breath.test.ts` (nine tests) | |
+
+## T5. Human observations
+
+Nobody has played round 3 yet. Mario is asked to compare Key releases auto and off, to run
+`node scripts/probe-key-release.mjs` in his iTerm2, and to say whether the breath is too faint or too
+strong.
+
+## T6. Interpretation
+
+His problem — "I often try to move to a position a few tiles away and then the cursor starts jumping
+ahead" — came from two things the old ramp did at once: any press within the hold window sped up, and a
+held key moved two then four tiles on every repeat. Counting taps makes speed something asked for, and
+the pace makes a hold's speed independent of the keyboard. Key events remove the guess entirely where a
+terminal offers them; where it does not, the hold window is still the one number that depends on the
+machine, which is why it stays an Experiment.
+
+## T7. Failures, surprises, and discarded approaches
+
+- **Asking the terminal after the first frame broke the lifecycle tests** that read the last thing
+  written; the question now goes out just before the first frame.
+- **Under the protocol, Ctrl+C, the keypad and Num Lock arrive in new forms**: without decoding, Ctrl+C
+  would no longer quit and Num Lock would turn a plain arrow into the fast move. All three are decoded
+  and tested.
+- **A held key's repeat can now move nothing** (between two steps of the pace), so a list's Up/Down may
+  send no command at all; handled.
+- **At 16 colours a tint of 0.5 or more is a hard switch** to the other colour, so the breath keeps both
+  its amounts under it — that tier stays still rather than blinking once a breath.
+- **The default colour depth is 16 colours**, so the breath is invisible there; his settings use
+  millions.
+- **The thumb candidates**: `▓` is the shadow's own dither family (the confusion he named), `┃`/`║` read as
+  a slot in the border, `≡`/`=` are thin; `#` and `╬` read as texture in every tier.
+- **Both agents' worktrees started from `main`** again; both fast-forwarded to the named commit.
+
+## T8. Decision
+
+> **PASS**
+
+Every item of F77-F81 is built, tested and in the canon; the protocol is switched off on every way out;
+the one reading of his words that could go either way is recorded; the navigation session he asked for
+is queued.
+
+## T9. Canon impact
+
+Applied at canon 2.29:
+
+| Rule | Lives in | Earned by |
+| --- | --- | --- |
+| Taps are counted (400 / 300 ms, the third tap), a hold keeps its own pace; every list the same | `engine.md` 3.3, 9.7 | F79 |
+| Key events: the kitty protocol asked for and read where the terminal answers, switched off on every exit path | `engine.md` 9.7, 10.1; Q66 answered | F79 |
+| The scroll bar's track is the plain border, its thumb a texture of its own | `engine.md` 9.2 | F78 |
+| The Battle Round breath | `ascii-effects.md` 5 | F80 |
+| The focus arrow and card reveal are tuned values | `src/build/tuning.ts`; `ascii-effects.md` 5 | F81 |
+
+## T10. Next authorized action
+
+Wait for Mario's playtest and export; then the dedicated navigation session he asked for. Gate 6B still
+waits for his word.

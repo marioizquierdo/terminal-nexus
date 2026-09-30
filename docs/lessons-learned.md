@@ -110,6 +110,10 @@ it says where.
    merged code, had a stable target.
 7. **Timing tests flake while agents build.** The frame-budget test failed once in three runs with two
    agents testing at the same time (load 8 on 4 cores) and passed alone. Re-run before believing it.
+8. **Settle the export and add the round's Experiment slots before splitting** (third round). Doing the
+   export's retirements and adding both new Experiments' fields by hand first meant neither agent had to
+   touch the Experiments list, the one file every round's agents had collided in; the two merges met no
+   conflict at all.
 
 ## Habits to keep
 
