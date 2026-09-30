@@ -30,6 +30,8 @@ import { DEFENCE } from "./pulse-helpers.ts"
 const ESC = String.fromCharCode(27)
 const UP = `${ESC}[A`
 const DOWN = `${ESC}[B`
+/** PageDown: a list's last row (feedback F75), where Start Pulse is on the menu. */
+const PAGE_DOWN = `${ESC}[6~`
 const TAB = "\t"
 const ENTER = "\r"
 const BACKSPACE = String.fromCharCode(127)
@@ -209,10 +211,10 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
     [(side) => keys(side, "1", ENTER, "1", ENTER, UP, DOWN), /^Barracks - Trains troopers each Pulse\. Costs 40, only 20 left\.$/],
   ],
   "menu-start": [
-    [(side) => keys(side, UP), /^Start Pulse: pick a Nexus power first - \[n\] opens them\.$/],
-    [(side) => keys(side, "n", "1", UP, UP), /^Start Pulse: lock in your plan and fight battle round 1\. \[enter\] to begin\.$/],
+    [(side) => keys(side, PAGE_DOWN), /^Start Pulse: pick a Nexus power first - \[n\] opens them\.$/],
+    [(side) => keys(side, "n", "1", PAGE_DOWN), /^Start Pulse: lock in your plan and fight battle round 1\. \[enter\] to begin\.$/],
   ],
-  placing: [[(side) => keys(side, "2"), /^Place the Hatchery: arrows move it, \[enter\] places it, \[esc\] goes back\.$/]],
+  placing: [[(side) => keys(side, "2"), /^Place the Hatchery: arrows move, \[enter\] places, \[2\] or \[esc\] cancels\.$/]],
   explore: [[(side) => keys(side, "e"), /^Explore Map: arrows move, the panel shows what is here\. \[esc\] goes back\.$/]],
   "explore-planned": [[(side) => keys(side, TAB, "1", ENTER, "e"), /^Planned Barracks: \[bksp\] removes it, \[u\] undoes the last\. \[esc\] goes back\.$/]],
   map: [[(side) => keys(side, TAB), /^Arrows move the cursor, \[enter\] explores here, a number arms a building\.$/]],
@@ -239,7 +241,7 @@ test("a hint for every situation the hint list names, each one line that fits th
 // --- The Controls and hotkeys page -------------------------------------------------------------------
 
 test("the game menu lists [c] Controls and hotkeys right after Settings", () => {
-  assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "restart", "quit", "back"])
+  assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "restart", "quit"])
   const side = session()
   keys(side, ESC)
   const text = frameToText(frame(side))
@@ -367,7 +369,7 @@ test("the page is one table: every situation, every line fits at the floor, and 
   const sections = controlsPage(12)
   assert.deepEqual(
     sections.map((section) => section.heading),
-    ["THE MENU", "THE MAP", "PLACING A BUILDING", "EXPLORE MAP", "POPUPS", "THE MOUSE", "THE NEXUS PULSE", "ANYWHERE"],
+    ["THE MENU", "THE MAP", "PLACING A BUILDING", "EXPLORE MAP", "POPUPS", "ANY LIST", "THE MOUSE", "THE NEXUS PULSE", "ANYWHERE"],
   )
   for (const size of SIZES) {
     const side = session(spikeContext(), size)

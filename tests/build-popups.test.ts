@@ -35,6 +35,8 @@ import type { GlyphPack } from "../src/view/theme.ts"
 const ESC = String.fromCharCode(27)
 const UP = `${ESC}[A`
 const DOWN = `${ESC}[B`
+/** End: a list's last row (feedback F75) — Export settings, in Settings. */
+const END = `${ESC}[F`
 const ENTER = "\r"
 const SIZES = [
   { columns: 80, rows: 24 },
@@ -107,7 +109,9 @@ test("the title says where the highlight is in the list, (k/N), and follows it",
   assert.match(screen(side), new RegExp(`SETTINGS \\(1/${count}\\)`))
   keys(side, DOWN, DOWN)
   assert.match(screen(side), new RegExp(`SETTINGS \\(3/${count}\\)`))
-  keys(side, UP, UP, UP) // Up from the first row comes round to the last: Export
+  keys(side, UP, UP, UP) // Up stops on the first row; it came round to Export until feedback F75
+  assert.match(screen(side), new RegExp(`SETTINGS \\(1/${count}\\)`))
+  keys(side, END) // the fast move goes to the last row: Export
   assert.equal(side.build.state.overlayHighlight, SETTINGS_EXPORT_ROW)
   assert.match(screen(side), new RegExp(`SETTINGS \\(${count}/${count}\\)`))
   // `d` opens at the experiments, which the count says too.
@@ -129,11 +133,11 @@ test("Export settings is the scrolling list's last row: no fixed rows, no 'more'
   keys(side, "e")
   assert.equal(side.build.state.overlay, "export")
   const byEnter = session()
-  keys(byEnter, ESC, "s", UP, ENTER)
+  keys(byEnter, ESC, "s", END, ENTER)
   assert.equal(byEnter.build.state.overlay, "export")
   // Highlighted, it is drawn as the keyboard's bar and what it is for is written underneath.
   const shown = session()
-  keys(shown, ESC, "s", UP)
+  keys(shown, ESC, "s", END)
   const row = placed(shown).rows.find((entry) => entry.spec.kind === "option")
   assert.ok(row !== undefined && row.spec.kind === "option" && row.spec.highlighted === true)
   assert.ok(screen(shown).includes("Shows every setting and experiment as"))
@@ -251,10 +255,12 @@ test("a message popup: a title and its text, nothing to choose, closed by Esc or
   const drawn = frameToText(composeBuildFrame({ context, state, layout }, "monochrome"))
   assert.match(drawn, /Read it, then \[esc\] or a click outside closes it\./, "the bottom line names the ways to close it")
 
-  // The keyboard: Esc and x close it; nothing else reaches it or anything under it.
+  // The keyboard: Esc and x close it (x as `back`, which is Esc's walk back in a popup — feedback
+  // F62); nothing else reaches it or anything under it.
   const keyboard = { itemCount: 3, armed: false, focus: "menu" as const, overlay: "message" as const }
   assert.deepEqual(buildKeyboardCommand(ESC, keyboard), { kind: "cancel" })
-  assert.deepEqual(buildKeyboardCommand("x", keyboard), { kind: "cancel" })
+  assert.deepEqual(buildKeyboardCommand("x", keyboard), { kind: "back" })
+  assert.equal(applyBuildCommand(context, state, { kind: "back" }).overlay, null)
   for (const key of [ENTER, " ", "q", "r", "s", "e", "1", "n", "p", UP, DOWN]) {
     assert.equal(buildKeyboardCommand(key, keyboard), null, JSON.stringify(key))
   }

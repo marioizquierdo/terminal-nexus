@@ -2,6 +2,7 @@
 // whatever got activated out, so this is testable without a terminal and reusable by any future list
 // (a construct menu, a Nexus draft) that wants the same "hotkey, arrows-and-Enter, or a click" shape.
 
+import { stepListIndex } from "./list-keys.ts"
 import type { MenuCommand, MenuItem } from "./types.ts"
 
 export type MenuListState = Readonly<{
@@ -15,14 +16,13 @@ export function createMenuList(items: readonly MenuItem[]): MenuListState {
 }
 
 /**
- * The next highlighted index after moving by `delta`, wrapping around both ends. Wrapping degrades
- * correctly at the acceptance criterion's own edge case — a one-item list — since `(0 + delta) % 1`
- * is always `0`: the highlight simply never leaves the only item there is.
+ * The next highlighted index after moving by `delta`, **stopping at either end** (owner, 2026-09-30,
+ * feedback F75: menus "should not rotate", the same rule as every list in the Build Phase) — or, with
+ * `jump` (Shift+Up/Down, PageUp/PageDown, Home/End), the first row for a negative `delta` and the last
+ * for a positive one. A one-item list never leaves its only item; an empty one answers 0.
  */
-export function moveHighlight(state: MenuListState, delta: -1 | 1): number {
-  const count = state.items.length
-  if (count === 0) return 0
-  return ((state.highlighted + delta) % count + count) % count
+export function moveHighlight(state: MenuListState, delta: number, jump = false): number {
+  return stepListIndex(state.highlighted, state.items.length, delta, jump)
 }
 
 export type MenuOutcome = Readonly<{

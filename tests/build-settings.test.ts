@@ -36,6 +36,8 @@ const UP = `${ESC}[A`
 const DOWN = `${ESC}[B`
 const RIGHT = `${ESC}[C`
 const LEFT = `${ESC}[D`
+/** End: a list's last row (feedback F75) — Export settings, in Settings. */
+const END = `${ESC}[F`
 const ENTER = "\r"
 
 type Side = {
@@ -93,7 +95,7 @@ function clickOption(side: Side, hotkey: string): void {
 
 // --- The game menu -----------------------------------------------------------------------------------
 
-test("Esc on the menu, q anywhere, and the top bar's menu [esc] all open the game menu: Settings, Controls, Restart, Quit, Back", () => {
+test("Esc on the menu, q anywhere, and the top bar's menu [esc] all open the game menu: Settings, Controls, Restart, Quit", () => {
   for (const open of [[ESC], ["q"]]) {
     const side = session()
     keys(side, ...open)
@@ -104,7 +106,8 @@ test("Esc on the menu, q anywhere, and the top bar's menu [esc] all open the gam
     assert.match(text, /\[c\] Controls and hotkeys/)
     assert.match(text, /\[r\] Restart/)
     assert.match(text, /\[q\] Quit/)
-    assert.match(text, /\[esc\] Back to the game/)
+    // No row goes back to the game (feedback F73): Esc, x, the top bar and a click outside do.
+    assert.doesNotMatch(text, /Back to the game/)
     // The bottom line says how to work it (feedback F59), where the key help listed its keys.
     assert.match(text, /Up\/down and \[enter\] choose, or press a row's key\. \[esc\] back to the game\./)
   }
@@ -141,11 +144,14 @@ test("leaving always goes through the game menu: its q, Enter on Quit, or a clic
   clickOption(byClick, "q")
   assert.equal(byClick.quits, 1)
 
-  // Up/Down walk the five rows and come round; Enter on Back goes back to the game.
+  // Up/Down walk the four rows and stop at both ends (they came round until feedback F75); there is no
+  // Back row to press (F73) — Esc closes the menu.
   const walk = session()
   keys(walk, ESC, UP)
-  assert.equal(GAME_MENU_ROWS[walk.build.state.overlayHighlight], "back")
-  keys(walk, ENTER)
+  assert.equal(GAME_MENU_ROWS[walk.build.state.overlayHighlight], "settings")
+  keys(walk, DOWN, DOWN, DOWN, DOWN, DOWN)
+  assert.equal(GAME_MENU_ROWS[walk.build.state.overlayHighlight], "quit")
+  keys(walk, ESC)
   assert.equal(walk.build.state.overlay, null)
   assert.equal(walk.quits, 0)
 
@@ -253,10 +259,10 @@ test("[e] shows the export in a popup, hands the same text to the adapter, and E
   assert.equal(side.build.state.overlay, null)
   // The Export row by Enter, and by a click, does the same.
   const byEnter = session()
-  keys(byEnter, ESC, "s", UP, ENTER) // Up from the first row comes round to the last: Export
+  keys(byEnter, ESC, "s", END, ENTER) // End goes to the last row: Export (Up came round to it until F75)
   assert.equal(byEnter.build.state.overlay, "export")
   const byClick = session()
-  keys(byClick, ESC, "s", UP) // the list's last row, in view
+  keys(byClick, ESC, "s", END) // the list's last row, in view
   clickOption(byClick, "e")
   assert.equal(byClick.build.state.overlay, "export")
   assert.equal(byClick.exports.length, 1)

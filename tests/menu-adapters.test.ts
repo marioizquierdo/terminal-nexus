@@ -35,10 +35,12 @@ test("keyboardCommand: digits activate by hotkey, regardless of current highligh
   assert.deepEqual(keyboardCommand("3", { ...state, highlighted: 1 }), { kind: "activate", index: 2 })
 })
 
-test("keyboardCommand: arrows move the highlight and wrap; Enter activates the highlighted item", () => {
+test("keyboardCommand: arrows move the highlight and stop at the ends; Enter activates the highlighted item", () => {
+  // The arrows wrapped until the owner's 2026-09-30 feedback F75 ("should not rotate").
   const state = createMenuList(ITEMS)
   assert.deepEqual(keyboardCommand(ARROW_DOWN, state), { kind: "highlight", index: 1 })
-  assert.deepEqual(keyboardCommand(ARROW_UP, state), { kind: "highlight", index: 2 }, "did not wrap")
+  assert.deepEqual(keyboardCommand(ARROW_UP, state), { kind: "highlight", index: 0 }, "Up on the first row came round")
+  assert.deepEqual(keyboardCommand(ARROW_DOWN, { ...state, highlighted: 2 }), { kind: "highlight", index: 2 }, "Down on the last row came round")
   assert.deepEqual(keyboardCommand("\r", { ...state, highlighted: 2 }), { kind: "activate", index: 2 })
   assert.deepEqual(keyboardCommand("\n", { ...state, highlighted: 0 }), { kind: "activate", index: 0 })
 })

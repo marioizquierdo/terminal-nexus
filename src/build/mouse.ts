@@ -77,8 +77,11 @@ export function buildMouseCommand(
   ui: MouseUiState = {},
 ): BuildCommand | null {
   if (!event.press) return null
-  // "Mouse: right click — Esc. The RTS convention for cancel." One cancel, whatever is open.
-  if (event.button === MOUSE_RIGHT) return { kind: "cancel" }
+  // "Mouse: right click — Esc. The RTS convention for cancel." It walks back as `x` does: one level,
+  // whatever is open — and on the menu it does nothing, since a stray right click should never open a
+  // menu (owner, 2026-09-30, feedback F62, where `x` stopped opening the game menu). The top bar's
+  // `menu [esc]` is Esc itself, and opens it.
+  if (event.button === MOUSE_RIGHT) return { kind: "back" }
 
   // What the click lands on underneath any popup — a menu row or a tile — named as the reducer's own
   // click commands, which decide what a click means from what is on screen.

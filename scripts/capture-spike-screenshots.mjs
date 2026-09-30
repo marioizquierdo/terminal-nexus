@@ -509,8 +509,8 @@ scripted(
 
 scripted(
   "build-exit-question",
-  "Esc on the menu opens the game menu: [s] Settings, [c] Controls and hotkeys, [r] Restart, [q] Quit, and Esc back to the game. A stray q opens it too rather than losing a plan; menu [esc] at the right of the top bar is the click",
-  { keys: `${PICK_FIRST_POWER} Esc`, expect: "Back to the game" },
+  "Esc on the menu opens the game menu: [s] Settings, [c] Controls and hotkeys, [r] Restart, [q] Quit - no Back row: Esc, x or a click outside closes it. A stray q opens it too rather than losing a plan; menu [esc] at the right of the top bar is the click. x on the menu never opens it",
+  { keys: `${PICK_FIRST_POWER} Esc`, expect: "Controls and hotkeys" },
 )
 
 scripted(
@@ -601,8 +601,8 @@ handoffGif("build-focus-arrow-far", {
 
 scripted(
   "build-start-row",
-  "Start Pulse is the menu's last row: Up from the top reaches it, Enter presses it",
-  { keys: `${PICK_FIRST_POWER} Up Up`, expect: "[s] Start Pulse" },
+  "Start Pulse is the menu's last row: Down reaches it and stops there, PageDown (or Shift+Down, or End) jumps to it, Enter presses it",
+  { keys: `${PICK_FIRST_POWER} PgDn`, expect: "[s] Start Pulse" },
 )
 
 scripted(

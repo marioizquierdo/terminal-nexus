@@ -185,9 +185,10 @@ function settingsSpec(state: BuildState): OverlaySpec {
   }
 }
 
-/** The game menu: Settings, Controls and hotkeys, Restart, Quit, and the way back (owner, 2026-09-28;
- *  Restart since feedback F34, Controls since F60). Every row is an option, and the highlight is
- *  `GAME_MENU_ROWS`'s index. */
+/** The game menu: Settings, Controls and hotkeys, Restart, Quit (owner, 2026-09-28; Restart since
+ *  feedback F34, Controls since F60). Every row is an option, and the highlight is `GAME_MENU_ROWS`'s
+ *  index. No row goes back to the game (F73): Esc, `x`, the top bar's `close [esc]` and a click outside
+ *  do, as for every popup. */
 function menuSpec(state: BuildState): OverlaySpec {
   const on = (row: (typeof GAME_MENU_ROWS)[number]): boolean => GAME_MENU_ROWS[state.overlayHighlight] === row
   return {
@@ -226,13 +227,13 @@ function menuSpec(state: BuildState): OverlaySpec {
         highlighted: on("quit"),
         description: "The plan is not saved.",
       },
-      { kind: "option", hotkey: "esc", label: "Back to the game", command: { kind: "cancel" }, highlighted: on("back") },
     ],
   }
 }
 
 /** The export: where the text also went, then the text itself — a list of its lines with a highlight
- *  Up/Down move, like every other list here, so it scrolls the same way. */
+ *  Up/Down move, like every other list here, so it scrolls the same way. No `[esc] Back to Settings`
+ *  row (feedback F73): Esc and `x` go back, as the top bar's `close [esc]` says. */
 function exportSpec(context: BuildContext, state: BuildState): OverlaySpec {
   const rows: OverlayRow[] = []
   if (context.exportDestination !== undefined) rows.push({ kind: "note", text: context.exportDestination, lines: 3 })
@@ -244,7 +245,6 @@ function exportSpec(context: BuildContext, state: BuildState): OverlaySpec {
       rows.push({ kind: "text", text: line, code: true, ...(index === state.overlayHighlight ? { highlighted: true } : {}) })
     })
   const to = rows.length
-  rows.push({ kind: "option", hotkey: "esc", label: "Back to Settings", command: { kind: "cancel" } })
   return {
     title: "EXPORT SETTINGS",
     rows,

@@ -152,13 +152,18 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
       : `Start Pulse: lock in your plan and fight battle round ${state.pulseNumber}. [enter] to begin.`,
 
   // --- The map ---
+  // Its own key cancels it, as Esc does (feedback F70); another building waits until it is placed or
+  // cancelled, which the refusal itself says when it is tried (F69).
   placing: (context, state) => {
     const item = state.armed === null ? undefined : context.catalog[state.armed]
-    return `Place the ${item?.label ?? "building"}: arrows move it, [enter] places it, [esc] goes back.`
+    const cancelKeys = item === undefined ? "[esc]" : `[${item.hotkey}] or [esc]`
+    return `Place the ${item?.label ?? "building"}: arrows move, [enter] places, ${cancelKeys} cancels.`
   },
   explore: () => "Explore Map: arrows move, the panel shows what is here. [esc] goes back.",
   "explore-planned": (context, state) =>
     `Planned ${plannedLabel(context, state)}: [bksp] removes it, [u] undoes the last. [esc] goes back.`,
+  // Opened from the map, Explore Map leaves the cursor where it is — it only looks for clear ground on
+  // the hand-off from the menu (F66) — so Enter reads what is here.
   map: () => "Arrows move the cursor, [enter] explores here, a number arms a building.",
 }
 
@@ -169,16 +174,17 @@ export function hint(context: BuildContext, state: BuildState): StatusMessage {
 }
 
 /**
- * The last command's own answer — `state.status` — with one exception: while the armed ghost sits on a
- * tile Enter would refuse, the refusal is the answer, naming the tile — quietly while the player is only
- * looking, and in the reducer's own red once they actually try (engine.md 9.2). While arming's ghost
- * shows (`armGhost`), what arming said about why the cursor moved stands instead.
+ * The last command's own answer — `state.status` — and, when it said nothing while the armed ghost sits
+ * on a tile Enter would refuse, that refusal, naming the tile: quietly while the player is only
+ * looking, and in the reducer's own red once they actually try (engine.md 9.2), which is an answer of
+ * its own. **A command's answer comes first** (feedback F59), so a key refused while a building is
+ * armed says why ("Place the Barracks or cancel it first", F69) even with the ghost on rock; the
+ * ghost's refusal comes back at the next command that says nothing, since an answer lapses then. While
+ * arming's ghost shows (`armGhost`), what arming said about why the cursor moved stands instead.
  */
 export function commandAnswer(state: BuildState, preview: ArmedPreview | null): StatusMessage {
-  if (preview === null || preview.refusal === null || state.armGhost) return state.status
-  const tile = state.status.tile
-  const attempted = tile !== undefined && tile.x === state.cursor.x && tile.y === state.cursor.y
-  return attempted ? state.status : status(refusalText(preview.refusal))
+  if (state.status.text !== "" || preview === null || preview.refusal === null || state.armGhost) return state.status
+  return status(refusalText(preview.refusal))
 }
 
 /**
@@ -226,6 +232,8 @@ export function controlsPage(jumpStep: number): readonly ControlsSection[] {
         { keys: "s", text: "Start Pulse (p works too)" },
         { keys: "u", text: "undo the last building" },
         { keys: "tab", text: "go to the map" },
+        { keys: "esc", text: "the game menu" },
+        { keys: "x", text: "nothing (x x x ends here)" },
       ],
     },
     {
@@ -238,7 +246,7 @@ export function controlsPage(jumpStep: number): readonly ControlsSection[] {
         { keys: "home/end", text: "jump left or right" },
         { keys: "enter/space", text: "Explore Map here" },
         { keys: "bksp/delete", text: "remove what is planned here" },
-        { keys: "tab/esc", text: "back to the menu" },
+        { keys: "tab/esc/x", text: "back to the menu" },
       ],
     },
     {
@@ -246,8 +254,9 @@ export function controlsPage(jumpStep: number): readonly ControlsSection[] {
       lines: [
         { keys: "arrows", text: "move the building" },
         { keys: "enter/space", text: "place it" },
-        { keys: "1 2 3 ...", text: "pick another building" },
+        { keys: "its own key", text: "stop and go back" },
         { keys: "esc/x", text: "stop and go back" },
+        { keys: "1 2 3 ... e s", text: "wait: place it or stop first" },
       ],
     },
     {
@@ -256,7 +265,7 @@ export function controlsPage(jumpStep: number): readonly ControlsSection[] {
         { keys: "arrows", text: "look at another tile" },
         { keys: "bksp/delete", text: "remove what is planned here" },
         { keys: "u", text: "undo the last building" },
-        { keys: "e/esc", text: "go back" },
+        { keys: "e/esc/x", text: "go back" },
       ],
     },
     {
@@ -270,6 +279,16 @@ export function controlsPage(jumpStep: number): readonly ControlsSection[] {
       ],
     },
     {
+      heading: "ANY LIST",
+      lines: [
+        { keys: "up/down", text: "a row; stops at the ends" },
+        { keys: "hold up/down", text: "faster, as on the map" },
+        { keys: "shift+up/down", text: "the first or last row" },
+        { keys: "pgup/home", text: "the first row" },
+        { keys: "pgdn/end", text: "the last row" },
+      ],
+    },
+    {
       heading: "THE MOUSE",
       lines: [
         { keys: "click a row", text: "press it" },
@@ -277,7 +296,7 @@ export function controlsPage(jumpStep: number): readonly ControlsSection[] {
         { keys: "click again", text: "place it (the same tile)" },
         { keys: "double click", text: "place where you pointed" },
         { keys: "wheel", text: `move ${JUMP_TILES} tiles, or scroll` },
-        { keys: "right click", text: "go back, like esc" },
+        { keys: "right click", text: "go back, like x" },
         { keys: "top bar [esc]", text: "the same as esc" },
         { keys: "click outside", text: "close the popup" },
       ],
@@ -295,7 +314,8 @@ export function controlsPage(jumpStep: number): readonly ControlsSection[] {
     {
       heading: "ANYWHERE",
       lines: [
-        { keys: "esc/x", text: "go back one step" },
+        { keys: "esc", text: "go back one step" },
+        { keys: "x", text: "go back; stops at the menu" },
         { keys: "q", text: "the game menu" },
         { keys: "d", text: "the Experiments (playtests)" },
         { keys: "?", text: "this page" },

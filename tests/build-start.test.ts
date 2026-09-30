@@ -15,6 +15,8 @@ import { MINIMUM, click, frameOf, newSession, screenText } from "./pulse-helpers
 const ESC = String.fromCharCode(27)
 const UP = `${ESC}[A`
 const DOWN = `${ESC}[B`
+/** PageDown: a list's last row (feedback F75) — Start Pulse, on the menu. */
+const PAGE_DOWN = `${ESC}[6~`
 
 type Session = ReturnType<typeof newSession>
 
@@ -61,10 +63,13 @@ test("Up and Down reach Start Pulse and Enter presses it — no hotkey and no mo
   assert.equal(session.build.state.committed, true, "Enter, Enter did not start the Pulse")
   assert.ok(session.build.pulse !== null)
 
-  // And Up from the top wraps round to it.
-  const wrapped = ready()
-  wrapped.build.handleData(UP, wrapped.layout)
-  assert.equal(wrapped.build.state.menuHighlight, last)
+  // Up from the top stays there — it came round to Start Pulse until the owner's 2026-09-30 feedback
+  // F75 — and the fast move goes straight to it.
+  const top = ready()
+  top.build.handleData(UP, top.layout)
+  assert.equal(top.build.state.menuHighlight, 0)
+  top.build.handleData(PAGE_DOWN, top.layout)
+  assert.equal(top.build.state.menuHighlight, last)
 })
 
 test("the rule: every entry of the menu is reached by Down and done by Enter alone (docs/ui-patterns.md section 4)", () => {
@@ -106,7 +111,7 @@ test("Start Pulse is dim while a Nexus power waits to be picked, and bright once
 
 test("s, p, a click and Enter on the highlighted row all ask the same, and refuse the same way while a pick waits", () => {
   const onRow = (session: Session): void => {
-    session.build.dispatch({ kind: "highlight", delta: -1 })
+    session.build.dispatch({ kind: "highlight", delta: 1, jump: true }) // the last row
     session.build.handleData("\r", session.layout)
   }
   const presses: readonly (readonly [string, (session: Session) => void])[] = [

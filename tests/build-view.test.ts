@@ -435,9 +435,18 @@ test("looking at an illegal tile reads quietly, trying to build there reads in r
 test("while the commit question is open, the status line asks it, whatever the ghost would say", () => {
   // A refusal is about what Enter would do right now; with the confirmation open, Enter does
   // nothing to the Grid, so the ghost and its refusal both step aside for the question.
-  const asking = screenAt(MINIMUM, (build, layout) => {
+  // Since the owner's feedback F69 the question does not open over an armed building at all: `s` is
+  // refused, and the bottom line says so rather than what the ghost on rock would say — a command's
+  // answer comes first. Cancelled, the question opens.
+  const armed = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "commit" }])
+  })
+  assert.equal(armed.build.state.overlay, null)
+  assert.match(statusRow(armed), /^Place the Barracks or cancel it first: \[1\] or \[esc\]\.$/)
+  const asking = screenAt(MINIMUM, (build, layout) => {
+    build.handleData("1", layout)
+    build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "cancel" }, { kind: "commit" }])
   })
   assert.match(statusRow(asking), /^Battle Round 1: Enter starts it, Esc goes back\.$/)
   const ghost = cellForTile(asking.layout, asking.build.state.camera, { x: 8, y: 5 })

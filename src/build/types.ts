@@ -80,7 +80,10 @@ export type BuildCommand =
   | Readonly<{ kind: "click-menu"; entry: number }>
   /** Arm item *n* of the construct menu — its digit, from anywhere. Moves focus to the Grid; the cursor
    *  stays where it is when the building can go there, and otherwise moves to the nearest spot that
-   *  can take it (feedback F30). A placement or Esc goes back to whichever half had the keyboard. */
+   *  can take it (feedback F30). A placement or Esc goes back to whichever half had the keyboard.
+   *  **While a building is armed the menu stays on it** (owner, 2026-09-30, feedback F69, F70): its own
+   *  digit cancels it, exactly as Esc does, and another building's digit is refused until it is placed
+   *  or cancelled. */
   | Readonly<{ kind: "arm"; index: number }>
   /** Place the armed structure at the cursor — Enter or Space on the Grid while something is armed. */
   | Readonly<{ kind: "place" }>
@@ -92,12 +95,20 @@ export type BuildCommand =
   | Readonly<{ kind: "remove" }>
   | Readonly<{ kind: "undo" }>
   /**
-   * Esc, `x` and a right click: step back one level — close a popup (Settings opened from the game
-   * menu goes back to it), close the information panel, give the keyboard back to the menu
-   * (disarming), and on the menu open the game menu. One command for every way of saying "back", so
-   * they cannot drift apart (owner, 2026-09-27: "it should be equivalent to do [esc], and x").
+   * Esc, and a click on the top bar's `menu [esc]`: step back one level — close a popup (Settings
+   * opened from the game menu goes back to it), stop placing or close Explore Map (to where it was
+   * begun), give the keyboard back to the menu (disarming), and on the menu open the game menu.
    */
   | Readonly<{ kind: "cancel" }>
+  /**
+   * `x` and a right click: every step `cancel` takes **but the last** — on the menu, with nothing open,
+   * it does nothing at all (owner, 2026-09-30, feedback F62: "Menu should only open with 'esc', but not
+   * with 'x' ... I like to type x-x-x and I'd like that always gets back to the regular state with the
+   * focus on the menu"). So `x x x` from anywhere lands on the menu and stays, and a stray right click
+   * never opens a menu. Its own command rather than a flag on `cancel`, so a driver says which it means
+   * and the reducer has one place where the two differ.
+   */
+  | Readonly<{ kind: "back" }>
   /** Leave the screen. Only the game menu's `[q]` (or Ctrl+C) sends it; the session decides what
    *  leaving means. */
   | Readonly<{ kind: "quit" }>
@@ -107,7 +118,8 @@ export type BuildCommand =
   /** Pick Nexus power *n* — a digit or a click while the Nexus popup is open. */
   | Readonly<{ kind: "pick-nexus"; index: number }>
   /** `s` (or `p`), or the menu's last row, `[s] Start Pulse` — open the Battle Round confirmation.
-   *  Refused while a Nexus power is still waiting to be picked — the one thing that pick refuses. */
+   *  Refused while a Nexus power is still waiting to be picked — the one thing that pick refuses — and
+   *  while a building is armed (feedback F69). */
   | Readonly<{ kind: "commit" }>
   /** `[s] Start` — the confirmation's one row, by Enter, Space, `s` or a click: the Nexus Pulse starts.
    *  Going back is the cancel every popup has (owner, 2026-09-29, feedback F50). */
@@ -115,8 +127,16 @@ export type BuildCommand =
   /** Tab: move keyboard focus. To the Grid it arrives in plain navigation (feedback F30); to the menu
    *  it disarms (a building is armed only while the Grid has focus). */
   | Readonly<{ kind: "focus"; target: Focus }>
-  /** Up/Down on the menu or inside a popup's list: move its highlight, wrapping at both ends. */
-  | Readonly<{ kind: "highlight"; delta: -1 | 1 }>
+  /**
+   * Up/Down on the menu or inside a popup's list: move its highlight `delta` rows (negative is up),
+   * **stopping at either end** — no list comes round (owner, 2026-09-30, feedback F75: "should not
+   * rotate ... if I keep down pressed, it should quickly move to the bottom and stay there"). A tap is
+   * one row; how far a held arrow goes is the input path's decision, the map cursor's own ramp
+   * (`src/build/motion.ts`), and arrives here as an ordinary distance. `jump` is the fast move — Shift,
+   * Option, PageUp/PageDown, Home/End — which goes all the way: to the first row for a negative
+   * `delta`, the last for a positive one.
+   */
+  | Readonly<{ kind: "highlight"; delta: number; jump?: boolean }>
   /** Enter/Space on the menu or inside a popup's list: do what the highlighted entry is for. */
   | Readonly<{ kind: "activate" }>
   /** Left/Right on the menu: nothing to do there, so the row flickers to say the key arrived, and the
@@ -125,7 +145,9 @@ export type BuildCommand =
   /** `n`, or activating the Nexus entry: open the Nexus popup. */
   | Readonly<{ kind: "open-nexus-powers" }>
   /** `e`: Explore Map, a toggle — focus to the Grid with nothing armed, the side panel showing what is
-   *  under the cursor as it moves (feedback F23); with it open, back one level exactly as Esc (F32). */
+   *  under the cursor as it moves (feedback F23); with it open, back one level exactly as Esc (F32).
+   *  Opening it puts the cursor on clear ground by the arming rule for one tile (F66); refused while a
+   *  building is armed (F69). */
   | Readonly<{ kind: "explore" }>
   /**
    * The Settings popup: the player's own settings, then Experiments (owner, 2026-09-28). `[s]` in the

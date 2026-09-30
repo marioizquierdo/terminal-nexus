@@ -15,6 +15,7 @@
 // setting that only takes effect then is announced by a message popup when Settings closes
 // (`pendingRestart`, `restartMessage`).
 
+import { stepListIndex } from "../menu/list-keys.ts"
 import type { Settings } from "../settings/types.ts"
 import { CAPABILITY_MODES, THEMES } from "../view/roles.ts"
 import type { CapabilityMode, Theme } from "../view/roles.ts"
@@ -101,10 +102,12 @@ export function adjustSetting(settings: Settings, field: PlayerField, step: -1 |
  * The game menu's rows, in order (owner, 2026-09-28: "When pressing [esc] or explicitly opening the
  * main menu, there should be an option for '[s] Settings' along with '[q] Quit'"), `[c] Controls and
  * hotkeys` right after Settings (feedback F60), `[r] Restart` — starting the Build Phase over with
- * every setting kept, moved here from Settings (feedback F34) — and the way back to the game.
- * `overlayHighlight` indexes this list while the game menu is open.
+ * every setting kept, moved here from Settings (feedback F34) — and Quit. **No `[esc] Back to the
+ * game` row** (owner, 2026-09-30, feedback F73: "the general esc on the top right is contextual and
+ * already says 'close'"): Esc, `x`, the top bar's `close [esc]` and a click outside close it, as they
+ * close every popup. `overlayHighlight` indexes this list while the game menu is open.
  */
-export const GAME_MENU_ROWS = ["settings", "controls", "restart", "quit", "back"] as const
+export const GAME_MENU_ROWS = ["settings", "controls", "restart", "quit"] as const
 export type GameMenuRow = (typeof GAME_MENU_ROWS)[number]
 
 /** What the game menu's `[c] Controls and hotkeys` row says under its name. */
@@ -180,10 +183,13 @@ export function settingsRowAt(row: number): SettingsRow | null {
   return player === undefined ? null : { kind: "player", field: player.field }
 }
 
-/** Up (`-1`) or Down (`+1`) from row id `row`, in display order, coming round at either end. */
-export function stepSettingsRow(row: number, delta: -1 | 1): number {
+/**
+ * `delta` rows up (negative) or down from row id `row`, in display order, **stopping at either end**
+ * (owner, 2026-09-30, feedback F75 — Up on the first setting no longer comes round to Export); with
+ * `jump`, the first row or the last (Export settings).
+ */
+export function stepSettingsRow(row: number, delta: number, jump = false): number {
   const position = SETTINGS_ORDER.indexOf(row)
-  const count = SETTINGS_ORDER.length
-  const next = position < 0 ? 0 : (((position + delta) % count) + count) % count
+  const next = position < 0 ? 0 : stepListIndex(position, SETTINGS_ORDER.length, delta, jump)
   return SETTINGS_ORDER[next] as number
 }

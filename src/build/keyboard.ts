@@ -13,6 +13,7 @@
 // (`src/build/help.ts`, feedback F60) lists every one of them; the bottom line never did, on the
 // owner's own call (2026-09-26: "leave pgup/home keys out, people will figure that out just fine").
 
+import { listKeyOf } from "../menu/list-keys.ts"
 import type { PlaybackControl } from "../view/playback.ts"
 import { START_KEY } from "./layout.ts"
 import { GAME_MENU_ROWS } from "./settings.ts"
@@ -109,10 +110,20 @@ const PULSE_KEYS: Readonly<Record<string, PlaybackControl>> = {
 }
 
 const TAB = "\t"
-const MENU_UP = new Set([`${ESC}[A`, `${ESC}OA`])
-const MENU_DOWN = new Set([`${ESC}[B`, `${ESC}OB`])
 const MENU_LEFT = new Set([`${ESC}[D`, `${ESC}OD`])
 const MENU_RIGHT = new Set([`${ESC}[C`, `${ESC}OC`])
+
+/**
+ * Up/Down in a list — the menu, or any popup's — as the command it is, or `null`: one row for a plain
+ * arrow (the session scales a held one with the map cursor's ramp), and the fast move — Shift, Option,
+ * PageUp/PageDown, Home/End — as a jump to that end. Every list stops at its ends (owner, 2026-09-30,
+ * feedback F75); the keys are the title menu's too (`src/menu/list-keys.ts`).
+ */
+function listCommand(key: string): BuildCommand | null {
+  const list = listKeyOf(key)
+  if (list === null) return null
+  return list.jump ? { kind: "highlight", delta: list.direction, jump: true } : { kind: "highlight", delta: list.direction }
+}
 
 export type KeyboardContext = Readonly<{
   /** How many construct-menu rows there are, so a digit past the end of the list means nothing
@@ -142,16 +153,27 @@ function digitIndex(key: string): number | null {
   return key === "0" ? 9 : Number(key) - 1
 }
 
-/** `x` is Esc, everywhere (owner, 2026-09-27: "it should be equivalent to do [esc], and x"). */
-const CANCEL_KEYS = new Set([ESC, "x"])
+/**
+ * Esc and `x` walk back the same way, one level at a time — with one difference, on the menu with
+ * nothing open: Esc opens the game menu, and `x` does nothing (owner, 2026-09-30, feedback F62: "Menu
+ * should only open with 'esc', but not with 'x'. I think this is the only exception to the rule of esc
+ * and x are the same"). So `x x x` always lands on the menu and stays there.
+ */
+function backCommand(key: string): BuildCommand | null {
+  if (key === ESC) return { kind: "cancel" }
+  if (key === "x") return { kind: "back" }
+  return null
+}
 
 /** `?` opens the Controls and hotkeys page — from the game, and from the game menu (feedback F60). */
 const HELP_KEY = "?"
 
 /** A popup's own keys. Everything else is swallowed: a popup that let `u` reach the plan underneath
- *  it would be one the player cannot trust to be modal. */
+ *  it would be one the player cannot trust to be modal. Esc and `x` close any popup, back to the one it
+ *  was opened from (feedback F73: no popup needs an `[esc] Back` row of its own). */
 function overlayCommand(key: string, overlay: Overlay, pendingCount: number, highlight: number): BuildCommand | null {
-  if (CANCEL_KEYS.has(key)) return { kind: "cancel" }
+  const back = backCommand(key)
+  if (back !== null) return back
   switch (overlay) {
     case "menu": {
       // The game menu (owner, 2026-09-28): its own hotkeys, or Up/Down and Enter on its rows. Enter
@@ -162,8 +184,8 @@ function overlayCommand(key: string, overlay: Overlay, pendingCount: number, hig
       if (key === "c" || key === HELP_KEY) return { kind: "open-controls" }
       if (key === "r") return { kind: "debug-restart" }
       if (key === "d") return { kind: "open-settings", section: "experiments" }
-      if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
-      if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
+      const list = listCommand(key)
+      if (list !== null) return list
       if (PLACE_KEYS.has(key)) return GAME_MENU_ROWS[highlight] === "quit" ? { kind: "quit" } : { kind: "activate" }
       return null
     }
@@ -176,8 +198,8 @@ function overlayCommand(key: string, overlay: Overlay, pendingCount: number, hig
     case "nexus-powers": {
       if (key === "n") return { kind: "cancel" }
       if (key === "q") return { kind: "open-menu" }
-      if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
-      if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
+      const list = listCommand(key)
+      if (list !== null) return list
       if (PLACE_KEYS.has(key)) return { kind: "activate" }
       const index = digitIndex(key)
       if (index !== null && index < pendingCount) return { kind: "pick-nexus", index }
@@ -190,8 +212,8 @@ function overlayCommand(key: string, overlay: Overlay, pendingCount: number, hig
       // Export settings is the list's last row; `e` still reaches it from anywhere in the list. The
       // restart is the game menu's `[r]` now (feedback F34).
       if (key === "e") return { kind: "export-settings" }
-      if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
-      if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
+      const list = listCommand(key)
+      if (list !== null) return list
       // Left and Right change the highlighted setting's value — the one popup whose rows have one.
       if (MENU_LEFT.has(key)) return { kind: "nudge", direction: "left" }
       if (MENU_RIGHT.has(key)) return { kind: "nudge", direction: "right" }
@@ -202,9 +224,7 @@ function overlayCommand(key: string, overlay: Overlay, pendingCount: number, hig
       // `e` closes what `e` opened; Up/Down scroll the text.
       if (key === "e" || PLACE_KEYS.has(key)) return { kind: "cancel" }
       if (key === "q") return { kind: "open-menu" }
-      if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
-      if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
-      return null
+      return listCommand(key)
     }
     case "message":
       // Nothing to choose: only the cancel above closes it (feedback F34, "clicking outside or pressing
@@ -215,9 +235,7 @@ function overlayCommand(key: string, overlay: Overlay, pendingCount: number, hig
       // what they opened, and so do Enter and Space — there is nothing on it to press.
       if (key === "c" || key === HELP_KEY || PLACE_KEYS.has(key)) return { kind: "cancel" }
       if (key === "q") return { kind: "open-menu" }
-      if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
-      if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
-      return null
+      return listCommand(key)
     }
     default:
       return null
@@ -287,9 +305,10 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
     if (control !== undefined) return { kind: "pulse", control }
   }
 
-  // One "back" for Esc and `x`, walking a stack the reducer knows: the Grid — placing or Explore Map —
-  // to the menu, disarming, then the menu (the game menu: Settings, Quit).
-  if (CANCEL_KEYS.has(key)) return { kind: "cancel" }
+  // Esc and `x` walk back a stack the reducer knows: placing or Explore Map to where it began, the map
+  // to the menu, disarming — and then, on the menu, Esc opens the game menu while `x` stops (F62).
+  const back = backCommand(key)
+  if (back !== null) return back
   if (key === "q") return { kind: "open-menu" }
   if (key === TAB) return { kind: "focus", target: focus === "grid" ? "menu" : "grid" }
   if (key === "u") return { kind: "undo" }
@@ -305,8 +324,9 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (key === "y") return null
 
   if (focus === "menu") {
-    if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
-    if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
+    // Up and Down walk the menu and stop at its ends; the fast move jumps to its first or last row.
+    const list = listCommand(key)
+    if (list !== null) return list
     // Left/Right have nothing to do on the menu: the row flickers so the player sees where the keys
     // went, and the keyboard stays on the menu (owner, 2026-09-30, feedback F55).
     if (MENU_LEFT.has(key)) return { kind: "nudge", direction: "left" }

@@ -217,9 +217,12 @@ test("armed, the panel is the building's card: $, its row active, a separator, g
   }
 })
 
-test("a digit while placing arms another building and the card changes; a turret shows its attack", () => {
+test("a turret's card shows its attack", () => {
+  // It was reached by a digit while placing a Barracks, which armed the Turret and changed the card,
+  // until the owner's 2026-09-30 feedback F69 kept the menu on the armed building: another building's
+  // digit is refused now (tests/build-behaviour-round-2.test.ts).
   const side = session()
-  keys(side, "1", "3")
+  keys(side, "3")
   assert.equal(side.build.state.armed, 2)
   const card = panelLines(side).join("\n")
   assert.match(card, /\[x\] Turret +>>/)
@@ -298,10 +301,11 @@ test("Left and Right on any menu row only flicker it; the keyboard and the highl
 test("the menu is still walked with Up, Down and Enter alone: every row, and each does what its key does", () => {
   const side = session()
   const count = menuEntries(side.context).length
+  // Down stops on the last row and Up on the first: no list comes round (feedback F75).
   for (let step = 0; step < count; step += 1) keys(side, DOWN)
-  assert.equal(side.build.state.menuHighlight, EXPLORE_ENTRY, "Down did not come round")
-  keys(side, UP)
-  assert.equal(side.build.state.menuHighlight, startEntry(SPIKE_CATALOG.length))
+  assert.equal(side.build.state.menuHighlight, startEntry(SPIKE_CATALOG.length), "Down did not stop on the last row")
+  for (let step = 0; step < count; step += 1) keys(side, UP)
+  assert.equal(side.build.state.menuHighlight, EXPLORE_ENTRY, "Up did not stop on the first row")
 })
 
 // --- Back on the menu: one flash (F55) --------------------------------------------------------------

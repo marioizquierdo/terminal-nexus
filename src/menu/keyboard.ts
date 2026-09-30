@@ -4,6 +4,7 @@
 
 import type { MenuListState } from "./list.ts"
 import { moveHighlight } from "./list.ts"
+import { listKeyOf } from "./list-keys.ts"
 import type { MenuCommand } from "./types.ts"
 
 /** `q` and Ctrl+C — the same quit keys `controlForKey` binds during a Pulse (engine.md 9.7's own
@@ -13,8 +14,6 @@ const QUIT_KEYS = new Set(["q", String.fromCharCode(3)])
  *  "\n" for readability needs no translation layer of its own. */
 const ACTIVATE_KEYS = new Set(["\r", "\n"])
 const ESC = String.fromCharCode(27)
-const ARROW_UP = `${ESC}[A`
-const ARROW_DOWN = `${ESC}[B`
 /** Esc alone, as one whole "key" from `keysFromChunk` — not a CSI/SS3 sequence, so it never collides
  *  with an arrow key or a mouse report despite starting with the same byte. */
 const BACK_KEY = ESC
@@ -27,8 +26,11 @@ const BACK_KEY = ESC
 export function keyboardCommand(key: string, state: MenuListState): MenuCommand | null {
   if (QUIT_KEYS.has(key)) return { kind: "quit" }
   if (key === BACK_KEY) return { kind: "back" }
-  if (key === ARROW_UP) return { kind: "highlight", index: moveHighlight(state, -1) }
-  if (key === ARROW_DOWN) return { kind: "highlight", index: moveHighlight(state, 1) }
+  // Up and Down stop at the list's ends; Shift, Option, PageUp/PageDown and Home/End go all the way
+  // (owner, 2026-09-30, feedback F75; `list-keys.ts`). No held-key ramp here: the title screen's loop
+  // reads no clock, and its lists are a handful of rows.
+  const list = listKeyOf(key)
+  if (list !== null) return { kind: "highlight", index: moveHighlight(state, list.direction, list.jump) }
   if (ACTIVATE_KEYS.has(key)) return { kind: "activate", index: state.highlighted }
   const index = state.items.findIndex((item) => item.hotkey === key)
   return index === -1 ? null : { kind: "activate", index }

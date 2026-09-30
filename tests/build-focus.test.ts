@@ -58,6 +58,10 @@ const WIDE = { columns: 128, rows: 24 }
 
 type Side = { build: BuildSession; layout: ReturnType<typeof buildLayout>; context: BuildContext; quits: () => number }
 
+/** A building's footprint: what arming asks `armingSpot` about (it takes a footprint since feedback
+ *  F66, so Explore Map can ask it about one tile). */
+const footprintOf = (contentId: string) => FIXTURE_REGISTRY.get(contentId).footprint
+
 function session(context: BuildContext = spikeContext(), terminal = MINIMUM): Side {
   const layout = buildLayout(terminal, context.grid)
   let quits = 0
@@ -293,18 +297,21 @@ test("placing: the armed row is marked armed, not with the keyboard's bar; leavi
   assert.equal(name.bold, true)
   // A command that says nothing lets whatever arming said lapse; the bottom line then says how to place.
   side.build.run([{ kind: "focus", target: "grid" }])
-  assert.match(screen(side).lines[side.layout.footerRow] as string, /\| Place the Barracks: arrows move it, \[enter\] places it, \[esc\] goes back\./)
+  assert.match(screen(side).lines[side.layout.footerRow] as string, /\| Place the Barracks: arrows move, \[enter\] places, \[1\] or \[esc\] cancels\./)
   keys(side, TAB)
   assert.equal(side.build.state.focus, "menu")
   assert.equal(side.build.state.armed, null, "a structure stayed armed with the keyboard on the menu")
 })
 
-test("Up/Down walk the whole menu — Explore Map, Nexus, the construct rows, Start Pulse — and wrap", () => {
+test("Up/Down walk the whole menu — Explore Map, Nexus, the construct rows, Start Pulse — and stop at both ends", () => {
+  // They wrapped until the owner's 2026-09-30 feedback F75 ("should not rotate").
   const side = session()
   const entries = 3 + SPIKE_CATALOG.length
   keys(side, UP)
-  assert.equal(side.build.state.menuHighlight, entries - 1)
-  keys(side, DOWN)
+  assert.equal(side.build.state.menuHighlight, 0, "Up on the first row came round")
+  keys(side, ...Array.from({ length: entries + 2 }, () => DOWN))
+  assert.equal(side.build.state.menuHighlight, entries - 1, "Down did not stop on the last row")
+  keys(side, UP, UP, UP, UP, UP, UP, UP, UP)
   assert.equal(side.build.state.menuHighlight, 0)
   keys(side, DOWN, DOWN)
   assert.ok(barOn(side, barracksRow(side)))
@@ -465,9 +472,11 @@ test("a click on a building's row arms it at once, whatever had focus, and its g
   assert.equal(side.build.state.origin, "menu", "a click on a row is the menu's, whatever had focus")
 
   // Another building while placing — by its digit, since the panel is the Barracks' card now and a
-  // click on it goes back (feedback F58): re-armed at once, still where the player is pointing.
+  // click on it goes back (feedback F58): refused, the Barracks still armed where the player is
+  // pointing, until it is placed or cancelled (owner, 2026-09-30, feedback F69 — it re-armed at once
+  // until then).
   keys(side, "3")
-  assert.equal(side.build.state.armed, 2)
+  assert.equal(side.build.state.armed, 0)
   assert.deepEqual(side.build.state.cursor, { x: 30, y: 14 })
 
   // With the menu in hand, a click is Enter's twin: the same spot, the same way back.
@@ -654,7 +663,7 @@ test("a run of the same building lays each one a free tile from the last, never 
 test("arming puts the preview where the cursor is whenever the building fits there", () => {
   const context = spikeContext()
   for (const item of SPIKE_CATALOG) {
-    assert.deepEqual(armingSpot(context, [], item.contentId, { x: 40, y: 20 }), { tile: { x: 40, y: 20 }, found: true })
+    assert.deepEqual(armingSpot(context, [], footprintOf(item.contentId), { x: 40, y: 20 }), { tile: { x: 40, y: 20 }, found: true })
   }
   // By every way of arming: a digit, Enter on the row, a click on it.
   for (const arm of [
@@ -695,10 +704,10 @@ test("where it does not fit, the nearest spot within reach that leaves a free ti
   for (let x = 0; x < width; x += 1) tiles[1 * width + x] = "terrain.plain"
   const corridor: BuildContext = { ...spikeContext(), grid: { width, height, tiles }, standing: [] }
   const planned = [{ ordinal: 1, contentId: "structure.bench.beamturret", anchor: { x: 3, y: 1 } }]
-  assert.deepEqual(armingSpot(corridor, planned, "structure.bench.beamturret", { x: 3, y: 1 }), { tile: { x: 5, y: 1 }, found: true })
+  assert.deepEqual(armingSpot(corridor, planned, footprintOf("structure.bench.beamturret"), { x: 3, y: 1 }), { tile: { x: 5, y: 1 }, found: true })
   const full = [0, 1, 2, 4, 5, 6, 7].map((x, index) => ({ ordinal: index + 2, contentId: "structure.bench.beamturret", anchor: { x, y: 1 } }))
   const crowded = [...planned, ...full.filter((p) => p.anchor.x !== 4)]
-  assert.deepEqual(armingSpot(corridor, crowded, "structure.bench.beamturret", { x: 3, y: 1 }), { tile: { x: 4, y: 1 }, found: true })
+  assert.deepEqual(armingSpot(corridor, crowded, footprintOf("structure.bench.beamturret"), { x: 3, y: 1 }), { tile: { x: 4, y: 1 }, found: true })
 })
 
 test("sideways is cheaper than up or down, and ties go the same way every time: more horizontal, then east, then south", () => {
@@ -712,7 +721,7 @@ test("sideways is cheaper than up or down, and ties go the same way every time: 
     standing: [],
   }
   const planned = [{ ordinal: 1, contentId: "structure.bench.beamturret", anchor: { x: 5, y: 5 } }]
-  assert.deepEqual(armingSpot(open, planned, "structure.bench.beamturret", { x: 5, y: 5 }).tile, { x: 7, y: 5 })
+  assert.deepEqual(armingSpot(open, planned, footprintOf("structure.bench.beamturret"), { x: 5, y: 5 }).tile, { x: 7, y: 5 })
   // With east blocked by rock, west; with both blocked, south before north.
   const rocky = (blocked: readonly { x: number; y: number }[]): BuildContext => {
     const tiles = new Array<TerrainId>(width * height).fill("terrain.plain")
@@ -720,7 +729,7 @@ test("sideways is cheaper than up or down, and ties go the same way every time: 
     return { ...open, grid: { width, height, tiles } }
   }
   const eastRock = rocky([{ x: 7, y: 5 }, { x: 7, y: 4 }, { x: 7, y: 6 }, { x: 8, y: 5 }, { x: 8, y: 4 }, { x: 8, y: 6 }])
-  assert.deepEqual(armingSpot(eastRock, planned, "structure.bench.beamturret", { x: 5, y: 5 }).tile, { x: 3, y: 5 })
+  assert.deepEqual(armingSpot(eastRock, planned, footprintOf("structure.bench.beamturret"), { x: 5, y: 5 }).tile, { x: 3, y: 5 })
   // Rock two and three tiles east and west: four tiles east and two tiles south both cost 4 (a tile
   // down costs two across), and the tie goes to the more horizontal move. In the open field two east
   // (cost 2) always beats two south (cost 4).
@@ -729,12 +738,12 @@ test("sideways is cheaper than up or down, and ties go the same way every time: 
     { x: 8, y: 5 },
     { x: 2, y: 5 },
   ])
-  assert.deepEqual(armingSpot(walls, planned, "structure.bench.beamturret", { x: 5, y: 5 }).tile, { x: 9, y: 5 })
-  assert.deepEqual(armingSpot(open, planned, "structure.bench.beamturret", { x: 5, y: 5 }).tile, { x: 7, y: 5 })
+  assert.deepEqual(armingSpot(walls, planned, footprintOf("structure.bench.beamturret"), { x: 5, y: 5 }).tile, { x: 9, y: 5 })
+  assert.deepEqual(armingSpot(open, planned, footprintOf("structure.bench.beamturret"), { x: 5, y: 5 }).tile, { x: 7, y: 5 })
   // The answer is a function of the plan and the cursor alone: the same call, the same answer.
   assert.deepEqual(
-    armingSpot(open, planned, "structure.bench.beamturret", { x: 5, y: 5 }),
-    armingSpot(open, planned, "structure.bench.beamturret", { x: 5, y: 5 }),
+    armingSpot(open, planned, footprintOf("structure.bench.beamturret"), { x: 5, y: 5 }),
+    armingSpot(open, planned, footprintOf("structure.bench.beamturret"), { x: 5, y: 5 }),
   )
 })
 
@@ -754,13 +763,13 @@ test(`nothing within ${ARM_SEARCH_TILES} tiles: one tile right and down, drawn a
   const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.rock")
   tiles[10 * width + 10] = "terrain.plain"
   const solid: BuildContext = { ...spikeContext(), grid: { width, height, tiles }, standing: [] }
-  assert.deepEqual(armingSpot(solid, [], "structure.citizen.barracks", { x: 10, y: 10 }), { tile: { x: 11, y: 11 }, found: false })
+  assert.deepEqual(armingSpot(solid, [], footprintOf("structure.citizen.barracks"), { x: 10, y: 10 }), { tile: { x: 11, y: 11 }, found: false })
   // Room further than twelve tiles away does not count.
   const far = [...tiles]
   for (let y = 0; y < 3; y += 1) for (let x = 25; x < 30; x += 1) far[y * width + x] = "terrain.plain"
   const beyond: BuildContext = { ...solid, grid: { width, height, tiles: far } }
-  assert.equal(armingSpot(beyond, [], "structure.citizen.barracks", { x: 10, y: 10 }).found, false)
-  assert.equal(armingSpot(beyond, [], "structure.citizen.barracks", { x: 14, y: 10 }).found, true, "13-ish tiles is within reach from here")
+  assert.equal(armingSpot(beyond, [], footprintOf("structure.citizen.barracks"), { x: 10, y: 10 }).found, false)
+  assert.equal(armingSpot(beyond, [], footprintOf("structure.citizen.barracks"), { x: 14, y: 10 }).found, true, "13-ish tiles is within reach from here")
 
   const layout = buildLayout(MINIMUM, solid.grid)
   const build = new BuildSession({ context: solid, cursor: { x: 10, y: 10 }, viewport: layout.viewport })

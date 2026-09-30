@@ -123,7 +123,7 @@ test("a lone q or Esc only asks — it never leaves the screen by itself", async
       input.emit("data", Buffer.from(key))
     }, AFTER_ESC_TIMEOUT_MS)
     assert.deepEqual(exits, [], `${JSON.stringify(key)} left without asking`)
-    assert.ok(stdout.lastWrite.includes("Back to the game"), "the game menu was not drawn")
+    assert.ok(stdout.lastWrite.includes("Controls and hotkeys"), "the game menu was not drawn")
   }
 })
 
@@ -145,11 +145,12 @@ test("a lone Esc waits a moment for the rest of a key: Esc then [A in the next r
     input.emit("data", Buffer.from("[A"))
   }, AFTER_ESC_TIMEOUT_MS)
   assert.deepEqual(exits, [])
-  assert.ok(!stdout.lastWrite.includes("Back to the game"), "the split arrow was read as Esc")
-  // Up one tile from the Nexus, onto open ground: the Explore Map card names the tile (the footer's
+  assert.ok(!stdout.lastWrite.includes("Controls and hotkeys"), "the split arrow was read as Esc")
+  // Explore Map put the cursor on clear ground, a free column right of the Nexus (21,10 — feedback
+  // F66), and the arrow moved it up one tile: the Explore Map card names the tile (the footer's
   // position readout said it until feedback F59 took the readout out).
-  assert.match(stdout.lastWrite, /Open ground/, "the split arrow did not move the cursor off the Nexus")
-  assert.match(stdout.lastWrite, /18,9/, "the split arrow did not move the cursor up one tile")
+  assert.match(stdout.lastWrite, /Open ground/, "the cursor is not on open ground")
+  assert.match(stdout.lastWrite, /21,9/, "the split arrow did not move the cursor up one tile")
 })
 
 test("a right click never leaves the screen", async () => {

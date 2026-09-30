@@ -4,6 +4,7 @@
 
 import { footprintCentre, footprintExtent, inBounds, tilesOf } from "../grid/coords.ts"
 import type { ContentRegistry } from "../content/index.ts"
+import { stepListIndex } from "../menu/list-keys.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
 import type { PulseSetup } from "../match/types.ts"
@@ -442,11 +443,6 @@ export function pendingPicks(context: BuildContext, state: BuildState): number {
   return state.nexusPick === null && context.nexusDraft.length > 0 ? 1 : 0
 }
 
-function wrap(index: number, count: number): number {
-  if (count <= 0) return 0
-  return ((index % count) + count) % count
-}
-
 /**
  * The cursor points at a structure's **centre tile**, not its anchor — the same convention the
  * scenario format already uses for a placement symbol (`footprintCentre`, `src/grid/coords.ts`).
@@ -583,16 +579,24 @@ export function legalityAt(
  *
  * Affordability is not a tile question and is left out: an unaffordable row is refused before it is
  * armed (`armItem`).
+ *
+ * **Over a footprint, not a building** (owner, 2026-09-30, feedback F66: "Explore Map should use the
+ * same smart cursor placement as then placing a building ... it's guaranteed to have high contrast
+ * with the background"): arming passes the building's footprint; opening Explore Map from the menu
+ * passes one tile (`ONE_TILE`), so its cursor starts on clear ground by exactly the same rule — and,
+ * where nothing in reach is clear, stays where it is rather than stepping aside.
  */
 export type ArmingSpot = Readonly<{ tile: Coord; found: boolean }>
+
+/** The footprint Explore Map's cursor is placed by, opened from the menu (feedback F66): one tile. */
+export const ONE_TILE: readonly Coord[] = [{ x: 0, y: 0 }]
 
 export function armingSpot(
   context: BuildContext,
   planned: readonly PlannedPlacement[],
-  contentId: string,
+  footprint: readonly Coord[],
   cursor: Coord,
 ): ArmingSpot {
-  const footprint = context.registry.get(contentId).footprint
   const size = footprintExtent(footprint)
   const offset = footprintCentre(footprint)
   const claimed = claimedTiles(context, planned)
@@ -808,12 +812,18 @@ function handOff(state: BuildState, from: Focus, entry: number): BuildState["han
  * Armed, the status line says nothing (feedback F58): the panel is the building's card, which says
  * what it is and what it costs. Only when no spot was in reach does it warn. Armed from the menu, the
  * row hands the keyboard to the map (`BuildState.handoff`, F54).
+ *
+ * **With a building already armed, the menu stays on it** (feedback F69, F70): its own row's key
+ * cancels it, exactly as Esc does, and any other building's is refused (`refuseWhileArmed`).
  */
 function armItem(context: BuildContext, state: BuildState, index: number, from: Focus): BuildState {
   const lock = editLock(state)
   if (lock !== null) return { ...state, status: lock }
   const item = context.catalog[index]
   if (item === undefined) return state
+  if (state.armed === index) return cancel(context, state)
+  const refused = refuseWhileArmed(context, state)
+  if (refused !== null) return refused
   const entry = entryOfConstruct(index)
   const left = remaining(context, state)
   if (item.cost > left) {
@@ -836,7 +846,7 @@ function armItem(context: BuildContext, state: BuildState, index: number, from: 
     ack: acknowledge(state, "pressed", entry),
     handoff: handOff(state, from, entry),
   }
-  const spot = armingSpot(context, state.planned, item.contentId, state.cursor)
+  const spot = armingSpot(context, state.planned, context.registry.get(item.contentId).footprint, state.cursor)
   const moved = withCursor(context, armed, spot.tile)
   if (!spot.found) {
     return {
@@ -846,6 +856,26 @@ function armItem(context: BuildContext, state: BuildState, index: number, from: 
     }
   }
   return { ...moved, armGhost: false, status: NO_STATUS }
+}
+
+/**
+ * **While a building is armed, the menu stays on it** (owner, 2026-09-30, feedback F69: "the current
+ * building ghost needs to be placed, or canceled, before the menu can select another one"): another
+ * building's key, `e` and `s` answer with this — nothing changes, the armed row (the card's header)
+ * flickers "refused", and the bottom line says, as a warning, how to go on, naming the keys. `null`
+ * when nothing is armed, or a popup or a committed plan already answers the key. The popups that
+ * belong to no row choice — the Nexus powers, the game menu, Controls, Settings — still open over the
+ * building and give it back when they close.
+ */
+function refuseWhileArmed(context: BuildContext, state: BuildState): BuildState | null {
+  if (state.armed === null || state.overlay !== null || state.committed) return null
+  const item = context.catalog[state.armed]
+  if (item === undefined) return null
+  return {
+    ...state,
+    ack: acknowledge(state, "refused", entryOfConstruct(state.armed)),
+    status: status(`Place the ${item.label} or cancel it first: [${item.hotkey}] or [esc].`, "warning"),
+  }
 }
 
 /** Enter/Space (or a click) on menu entry `entry`: whatever it is for. Both are the menu's own, so
@@ -859,14 +889,17 @@ function activateEntry(context: BuildContext, state: BuildState, entry: number, 
   // keyboard — so the pick hands the player back to the menu, not to a building they had armed.
   if (target.kind === "nexus") return openNexus(by === "click" ? toMenu(highlighted) : highlighted)
   if (target.kind === "start") return startPulse(context, highlighted)
-  return openExplore(highlighted, "menu")
+  return openExplore(context, highlighted, "menu")
 }
 
 /** `s`, or the Start Pulse entry: open the Battle Round confirmation over the Grid, the menu lit behind
  *  it. Its row flashes "pressed" however it was reached — or, refused (a Nexus power still waiting), a
- *  flicker beside the status line's reason. */
+ *  flicker beside the status line's reason. With a building armed, the building comes first
+ *  (`refuseWhileArmed`, feedback F69). */
 function startPulse(context: BuildContext, state: BuildState): BuildState {
   const entry = startEntry(context.catalog.length)
+  const refused = refuseWhileArmed(context, state)
+  if (refused !== null) return refused
   const lock = commitLock(state)
   if (lock !== null) return { ...state, status: lock, ack: acknowledge(state, "refused", entry) }
   return {
@@ -879,21 +912,38 @@ function startPulse(context: BuildContext, state: BuildState): BuildState {
 }
 
 /** `n`, or the Nexus entry: open its popup. Its row flashes "pressed", however it was reached — a
- *  hotkey is the row's own activation, the same as Enter on it or a click. */
+ *  hotkey is the row's own activation, the same as Enter on it or a click. **Over a card** — a
+ *  building being placed, or Explore Map — the menu is not drawn, so its highlight stays on the row the
+ *  card came from: closing the popup gives the building (or Explore Map) back, and going back from
+ *  that lands on its row (feedback F69). */
 function openNexus(state: BuildState): BuildState {
   const opened = openOverlay(state, "nexus-powers")
   if (opened.overlay !== "nexus-powers") return opened
+  if (cardShowing(state)) return opened
   return { ...opened, menuHighlight: NEXUS_ENTRY, ack: acknowledge(state, "pressed", NEXUS_ENTRY) }
 }
 
-/** `e`, the Explore Map entry, or Enter/Space in plain navigation: the Grid with nothing armed, and
- *  the side panel showing what is under the cursor (feedback F23). `from` is where Esc, `e` again or
- *  a click on its row go back to. The status line says nothing: the card and its active header say
- *  where the player is (feedback F58). Opened from the menu, the row hands the keyboard to the map
- *  (`BuildState.handoff`, F54). */
-function openExplore(state: BuildState, from: Focus): BuildState {
+/**
+ * `e`, the Explore Map entry, or Enter/Space in plain navigation: the Grid with nothing armed, and
+ * the side panel showing what is under the cursor (feedback F23). `from` is where Esc, `e` again or
+ * a click on its row go back to. The status line says nothing: the card and its active header say
+ * where the player is (feedback F58). Opened from the menu, the row hands the keyboard to the map
+ * (`BuildState.handoff`, F54).
+ *
+ * **Opened from the menu, the cursor starts on clear ground** (owner, 2026-09-30, feedback F66: "Having
+ * the cursor on a clear background when starting the movement is easier to follow"): the arming rule
+ * for a one-tile footprint (`armingSpot` with `ONE_TILE`) — where it is when that tile is free,
+ * otherwise the nearest free tile with a free tile around it within reach, and where it is when there
+ * is none. The camera follows as it does for arming. **Only on that hand-off**, when the keyboard jumps
+ * from the menu to the map and the eye has to find the cursor: opened from the map — Enter/Space in
+ * plain navigation, or `e` while the map has the keyboard — the cursor stays put, since pointing at a
+ * building and pressing Enter is how a player reads it. Refused while a building is armed (F69).
+ */
+function openExplore(context: BuildContext, state: BuildState, from: Focus): BuildState {
   if (state.overlay !== null || state.committed) return state
-  return {
+  const refused = refuseWhileArmed(context, state)
+  if (refused !== null) return refused
+  const opened: BuildState = {
     ...state,
     focus: "grid",
     armed: null,
@@ -904,6 +954,9 @@ function openExplore(state: BuildState, from: Focus): BuildState {
     handoff: handOff(state, from, EXPLORE_ENTRY),
     status: NO_STATUS,
   }
+  if (from !== "menu") return opened
+  const spot = armingSpot(context, state.planned, ONE_TILE, state.cursor)
+  return spot.found ? withCursor(context, opened, spot.tile) : opened
 }
 
 /** `e`: Explore Map is a toggle — open it from wherever the keyboard is, or, open, go back one level
@@ -911,7 +964,7 @@ function openExplore(state: BuildState, from: Focus): BuildState {
  *  equivalent"). */
 function toggleExplore(context: BuildContext, state: BuildState): BuildState {
   if (exploring(state) && state.overlay === null) return cancel(context, state)
-  return openExplore(state, state.focus)
+  return openExplore(context, state, state.focus)
 }
 
 function openOverlay(state: BuildState, overlay: Overlay): BuildState {
@@ -985,8 +1038,10 @@ function place(context: BuildContext, state: BuildState): BuildState {
   }
 }
 
-/** The one "back" of the screen — Esc, `x`, a right click. One level per press: a popup goes back to
- *  the one it was opened from (Settings to the game menu, the export to Settings), or closes. */
+/** The screen's "back" — Esc (and `x`, a right click, until their last step: `goBack`). One level per
+ *  press: a popup goes back to the one it was opened from (Settings to the game menu, the export to
+ *  Settings), or closes; placing or Explore Map goes back to where it began; the map to the menu; and
+ *  on the menu, the game menu opens. */
 function cancel(context: BuildContext, state: BuildState): BuildState {
   if (state.overlay === "confirm-commit") return { ...state, overlay: null, status: status("Cancelled.") }
   const under = state.overlayUnder[state.overlayUnder.length - 1]
@@ -1007,6 +1062,17 @@ function cancel(context: BuildContext, state: BuildState): BuildState {
   }
   void context
   return openOverlay(state, "menu")
+}
+
+/**
+ * `x` and a right click (owner, 2026-09-30, feedback F62): Esc's walk back one level, every step of it
+ * but the last — with nothing open on the menu, or on a committed plan, where Esc would open the game
+ * menu, nothing happens at all: no status, no flicker. `x x x` from anywhere lands on the menu with the
+ * keyboard there and stays, and a stray right click never opens a menu.
+ */
+function goBack(context: BuildContext, state: BuildState): BuildState {
+  if (state.overlay === null && (state.committed || state.focus === "menu")) return state
+  return cancel(context, state)
 }
 
 /**
@@ -1267,7 +1333,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     case "inspect":
       // Enter/Space in plain navigation: Explore Map, begun on the map. Already open, nothing more.
       if (state.focus !== "grid" || state.armed !== null || state.exploreMap) return state
-      return openExplore(state, "grid")
+      return openExplore(context, state, "grid")
 
     case "remove": {
       const lock = editLock(state)
@@ -1295,6 +1361,9 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
 
     case "cancel":
       return cancel(context, state)
+
+    case "back":
+      return goBack(context, state)
 
     case "open-menu":
       return openOverlay(state, "menu")
@@ -1338,29 +1407,26 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return command.target === "menu" ? { ...toMenu(state), highlightHidden: false } : toMap(state)
 
     case "highlight": {
-      if (state.overlay === "settings") return { ...state, overlayHighlight: stepSettingsRow(state.overlayHighlight, command.delta) }
-      if (state.overlay === "menu") {
-        return { ...state, overlayHighlight: wrap(state.overlayHighlight + command.delta, GAME_MENU_ROWS.length) }
+      // Every list stops at its ends — no list comes round — and the fast move goes all the way to one
+      // (owner, 2026-09-30, feedback F75). Up at the top and Down at the bottom do nothing at all, not
+      // even a flicker: holding a key down "should quickly move to the bottom and stay there", and a
+      // flicker at every auto-repeat would read as something happening.
+      const jump = command.jump === true
+      const step = (index: number, count: number): number => stepListIndex(index, count, command.delta, jump)
+      if (state.overlay === "settings") {
+        return { ...state, overlayHighlight: stepSettingsRow(state.overlayHighlight, command.delta, jump) }
       }
-      if (state.overlay === "export") {
-        // The export's highlight walks its lines, stopping at either end; the popup's window follows
-        // it (`src/build/overlay.ts`).
-        const last = exportLineCount(context, state) - 1
-        return { ...state, overlayHighlight: Math.max(0, Math.min(last, state.overlayHighlight + command.delta)) }
-      }
-      if (state.overlay === "controls") {
-        // The Controls page scrolls the export's way: the highlight walks its key lines, stopping at
-        // either end, and the window follows it.
-        return { ...state, overlayHighlight: Math.max(0, Math.min(controlsLineCount() - 1, state.overlayHighlight + command.delta)) }
-      }
+      if (state.overlay === "menu") return { ...state, overlayHighlight: step(state.overlayHighlight, GAME_MENU_ROWS.length) }
+      // The export and the Controls page walk their lines; each popup's window follows the highlight
+      // (`src/build/overlay.ts`).
+      if (state.overlay === "export") return { ...state, overlayHighlight: step(state.overlayHighlight, exportLineCount(context, state)) }
+      if (state.overlay === "controls") return { ...state, overlayHighlight: step(state.overlayHighlight, controlsLineCount()) }
       if (state.overlay === "nexus-powers") {
-        const count = nexusPowers(context, state).pending.length
-        return { ...state, overlayHighlight: wrap(state.overlayHighlight + command.delta, count) }
+        return { ...state, overlayHighlight: step(state.overlayHighlight, nexusPowers(context, state).pending.length) }
       }
       if (state.overlay !== null || state.focus !== "menu") return state
       if (state.highlightHidden) return revealHighlight(state)
-      const count = menuEntries(context).length
-      return { ...state, menuHighlight: wrap(state.menuHighlight + command.delta, count) }
+      return { ...state, menuHighlight: step(state.menuHighlight, menuEntries(context).length) }
     }
 
     case "activate": {
@@ -1373,7 +1439,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
         if (row === "settings") return openSettings(state, "settings")
         if (row === "controls") return openControls(state)
         if (row === "restart") return restartWithFlags(context, state)
-        return row === "back" ? cancel(context, state) : state
+        return state
       }
       if (state.overlay === "nexus-powers") {
         const pending = nexusPowers(context, state).pending[state.overlayHighlight]

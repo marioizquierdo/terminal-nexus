@@ -474,15 +474,21 @@ test("once the result stands there is nothing to pause: Space and a click on the
   assert.equal(pulse.timeMs, 0)
 })
 
-test("the top bar's Esc label, a right click and Esc are one way to the game menu, over a Pulse too", () => {
+test("the top bar's Esc label and Esc open the game menu over a Pulse too; x and a right click never do", () => {
   const played = victorious()
   assert.equal(escLabel(played.build.state), "menu [esc]")
   const hint = escHintSpan(played.layout, "menu [esc]")
   click(played, hint.from + 2, hint.row)
   assert.equal(played.build.state.overlay, "menu")
-  played.build.handleData(ESC, played.layout)
-  assert.equal(played.build.state.overlay, null)
+  // A right click walks back as x does: it closes the game menu...
   click(played, 40, 12, MOUSE_RIGHT)
+  assert.equal(played.build.state.overlay, null)
+  // ...and with nothing open it does nothing, nor does x — only Esc (and q, and the label) open the menu
+  // (owner, 2026-09-30, feedback F62: a right click was one of the ways in until then).
+  click(played, 40, 12, MOUSE_RIGHT)
+  played.build.handleData("x", played.layout)
+  assert.equal(played.build.state.overlay, null)
+  played.build.handleData(ESC, played.layout)
   assert.equal(played.build.state.overlay, "menu")
 })
 

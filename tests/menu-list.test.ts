@@ -17,11 +17,16 @@ test("createMenuList starts highlighted on the first item", () => {
   assert.deepEqual(state.items, ITEMS)
 })
 
-test("moveHighlight wraps at both ends of the list", () => {
+test("moveHighlight stops at both ends of the list, and a jump goes all the way to one", () => {
+  // It wrapped until the owner's 2026-09-30 feedback F75: "should not rotate ... if I keep down pressed,
+  // it should quickly move to the bottom and stay there".
   const state = createMenuList(ITEMS)
   assert.equal(moveHighlight(state, 1), 1)
-  assert.equal(moveHighlight({ ...state, highlighted: 2 }, 1), 0, "did not wrap forward past the end")
-  assert.equal(moveHighlight(state, -1), 2, "did not wrap backward past the start")
+  assert.equal(moveHighlight({ ...state, highlighted: 2 }, 1), 2, "came round forward past the end")
+  assert.equal(moveHighlight(state, -1), 0, "came round backward past the start")
+  assert.equal(moveHighlight(state, 5), 2, "a long move is clamped at the end")
+  assert.equal(moveHighlight(state, 1, true), 2, "a jump down is the last row")
+  assert.equal(moveHighlight({ ...state, highlighted: 2 }, -1, true), 0, "a jump up is the first row")
 })
 
 test("moveHighlight on a one-item list always stays put — the acceptance criterion's own edge case", () => {

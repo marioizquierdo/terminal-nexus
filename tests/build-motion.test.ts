@@ -188,9 +188,11 @@ test("without a clock every arrow is a tap and every Shift+Arrow one jump: drive
   assert.equal(jumps.build.state.cursor.x, 36)
   // A playtest's untimed steps are a second apart; `~ms` makes them a hold.
   const untimed = runBuildPlaytest({ steps: parseKeyScript("e Right*10") })
-  assert.equal(untimed.frames.at(-1)?.state.cursor.x, 28)
+  // Where Explore Map put the cursor: clear ground beside the Nexus (feedback F66).
+  const start = untimed.frames[1]?.state.cursor.x ?? 0
+  assert.equal(untimed.frames.at(-1)?.state.cursor.x, start + 10)
   const holding = runBuildPlaytest({ steps: parseKeyScript("e Right Right~400 Right~30*10") })
-  assert.ok((holding.frames.at(-1)?.state.cursor.x ?? 0) > 28 + 10, "a timed hold in a script did not speed up")
+  assert.ok((holding.frames.at(-1)?.state.cursor.x ?? 0) > start + 10 + 10, "a timed hold in a script did not speed up")
 })
 
 // --- The scroll margin, as a share of the view -----------------------------------------------------

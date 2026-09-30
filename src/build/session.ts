@@ -224,7 +224,16 @@ export class BuildSession {
       this.lastArmedClick = null
     }
     const cursorKey = mouse === null && command?.kind === "move-cursor" ? cursorKeyOf(key) : null
-    if (cursorKey !== null) {
+    if (mouse === null && command?.kind === "highlight" && command.jump !== true && timing.now !== undefined) {
+      // Up or Down in a list, from a live terminal: the map cursor's own ramp, with the same numbers
+      // (owner, 2026-09-30, feedback F75: "Use the same timings, consistency here will be very
+      // useful") — a run moves the hold step and, after `rampMs`, the fast step, and the reducer clamps
+      // it at the list's end, so holding Down reaches the last row quickly and stays there. **A tap is
+      // always one row**, whatever the map's tap step, so every row stays reachable by Up and Down.
+      const direction = command.delta < 0 ? -1 : 1
+      const rows = this.ramp.step({ dx: 0, dy: direction, fast: false }, timing.now, { ...state.debug, tapStep: 1 })
+      command = { kind: "highlight", delta: direction * rows }
+    } else if (cursorKey !== null) {
       // A cursor key on the Grid: how far is the ramp's call when the key's arrival time is known — a
       // live terminal — and otherwise a tap's (or a jump's), so a driver script and every test that
       // sends keys without a clock sees each key as its own press. A held jump's repeat that came too
