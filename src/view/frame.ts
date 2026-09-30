@@ -2,7 +2,7 @@
 // snapshot surface. No backend object ever appears inside a frame.
 
 import type { CapabilityMode, SeeThrough, RoleTint, StyleRole, Theme } from "./roles.ts"
-import { DEFAULT_THEME, keepsDim, seeThroughColours, sgrBackgroundFor, sgrFor } from "./roles.ts"
+import { DEFAULT_THEME, resolveCell } from "./roles.ts"
 
 const ESC = "\u001b"
 
@@ -32,7 +32,7 @@ export type CellStyle = Readonly<{
   tint?: RoleTint
   /**
    * A see-through cursor over the cell (feedback F64-F65) — `roles.ts`'s `SeeThrough` says how it
-   * mixes, and `seeThroughColours` (which every renderer calls) how each tier resolves it. Presentation's
+   * mixes, and `seeThroughColours` (which `resolveCell` calls for every renderer) how each tier resolves it. Presentation's
    * own, like `tint`: set by a glyphless write, so the glyph beneath always survives (the corruption
    * law). A later glyphless write that carries its own `seeThrough` replaces this one; the two are not
    * stacked.
@@ -130,26 +130,10 @@ export function frameToText(frame: ReadonlyCellFrame): string {
   return rows.join("\n")
 }
 
-/**
- * One cell's SGR sequence. A see-through style that shows at this tier (`seeThroughColours`) replaces the cell's own
- * colour and inverse codes with the mixed ones — the inverse is already folded into them — and its dim
- * (`keepsDim`); bold and underline stay as the cell has them.
- */
+/** One cell's SGR sequence, as `resolveCell` resolves it — empty for a plain cell. */
 function sgrOf(cell: Cell, capability: CapabilityMode, theme: Theme): string {
-  const style = cell.style
-  const mixed = seeThroughColours(cell, capability, theme)
-  const parts: number[] = []
-  if (mixed === null) {
-    parts.push(...sgrFor(style.fgRole, capability, theme, style.fade ?? 0, style.tint))
-    parts.push(...sgrBackgroundFor(style.bgRole, capability, theme))
-  } else {
-    parts.push(...mixed.sgr)
-  }
-  if (style.bold === true) parts.push(1)
-  if (keepsDim(style, mixed)) parts.push(2)
-  if (style.underline === true) parts.push(4)
-  if (style.inverse === true && mixed === null) parts.push(7)
-  return parts.length === 0 ? "" : `${ESC}[${parts.join(";")}m`
+  const { sgr } = resolveCell(cell, capability, theme)
+  return sgr.length === 0 ? "" : `${ESC}[${sgr.join(";")}m`
 }
 
 /** ANSI text for a whole frame. One reset per styled run, and never a stray escape on a blank. */

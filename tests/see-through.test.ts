@@ -20,6 +20,7 @@ import {
   CAPABILITY_MODES,
   SEE_THROUGH_STEP,
   mixSeeThrough,
+  resolveCell,
   seeThroughColours,
   rgbFor,
   sgrFor,
@@ -391,6 +392,57 @@ test("the ANSI writer, the canvas and OpenTUI resolve one mixed cell to the same
           assert.deepEqual(resolved.foreground, BACKGROUND_RGB[theme], label)
         }
       })
+    }
+  }
+})
+
+test("the three renderers draw a cell's own colours alike: the refused row's grey words under the bar (F61)", async () => {
+  // `refusedWords` in src/view/build.ts: a refused key greys the highlighted row's words by giving the
+  // inverse bar a background role — chrome.muted (chrome.edge at 16 colours; in monochrome, dim).
+  // OpenTUI once drew these exactly as the plain bar, dropping the background role.
+  const cells = [
+    cell("B", { fgRole: "chrome.title", bgRole: "chrome.muted", inverse: true }),
+    cell("B", { fgRole: "chrome.title", bgRole: "chrome.edge", inverse: true }),
+    cell("B", { fgRole: "chrome.title", inverse: true, dim: true }),
+    cell("B", { fgRole: "chrome.title", inverse: true }),
+    cell(" ", { fgRole: "chrome.edge", inverse: true }),
+    cell("x", { fgRole: "player.a", bgRole: "player.b", bold: true, underline: true }),
+    cell(".", { fgRole: "terrain.plain", dim: true }),
+    cell("A", { fgRole: "player.a", tint: { role: "fx.flash", amount: 0.5 }, fade: 0.3 }),
+  ]
+  for (const theme of ["dark", "light"] as const) {
+    const ground = BACKGROUND_RGB[theme]
+    for (const capability of CAPABILITY_MODES) {
+      const frame = frameOf(...cells)
+      const ops = paintOps(frame, capability, theme)
+      const opentui = await drawnByOpenTui(frame, capability, theme)
+      cells.forEach((target, index) => {
+        const label = `${theme} ${capability} cell ${index}`
+        const resolved = resolveCell(target, capability, theme)
+        const op = ops[index]
+        const tui = opentui[index]
+        assert.ok(op !== undefined && tui !== undefined)
+        assert.equal(op.foreground, css(resolved.foreground), label)
+        assert.equal(op.background, resolved.background === null ? null : css(resolved.background), label)
+        assert.equal(op.alpha, resolved.dim ? DIM_ALPHA : 1, label)
+        assert.deepEqual(tui.foreground, resolved.foreground, label)
+        assert.deepEqual(tui.background, resolved.background ?? ground, label)
+        assert.equal(tui.reverse, false, label)
+        assert.equal(tui.dim, resolved.dim, label)
+        if (capability !== "truecolor") return
+        // At truecolor the terminal shows exact colours: read its parameters back, swapping for its
+        // reversed video, and the ANSI writer must show what the two RGB renderers draw.
+        const sent = ansiColours(ansiParams(target, capability, theme))
+        const glyph = sent.foreground ?? ground
+        const fill = sent.background ?? ground
+        assert.deepEqual(sent.inverse ? fill : glyph, resolved.foreground, label)
+        assert.deepEqual(sent.inverse ? glyph : fill, resolved.background ?? ground, label)
+      })
+      if (capability === "truecolor" || capability === "color256") {
+        // The refused words are the grey on the title-coloured bar, not the plain bar's ground-coloured words.
+        assert.deepEqual(opentui[0]?.foreground, rgbFor("chrome.muted", capability, theme), `${theme} ${capability}`)
+        assert.deepEqual(opentui[0]?.background, rgbFor("chrome.title", capability, theme), `${theme} ${capability}`)
+      }
     }
   }
 })

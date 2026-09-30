@@ -2,8 +2,8 @@
 // supported platform; iTerm2 at 80 x 24 stays the acceptance target).
 //
 // It is a third `TerminalBackend`, beside direct ANSI and OpenTUI, and like them it only presents a
-// finished cell frame — the same glyphs, the same style roles resolved through the same colour table
-// (`rgbFor`, which OpenTUI uses too). It never decides what the game shows. Painting is split in two
+// finished cell frame — the same glyphs, each cell resolved by the same `resolveCell` the ANSI writer
+// and OpenTUI use. It never decides what the game shows. Painting is split in two
 // so the part that matters can be tested without a browser: `paintOps` (pure: frame in, one paint
 // instruction per cell out) and `CanvasBackend.present` (draws those instructions, nothing else).
 //
@@ -12,7 +12,7 @@
 
 import type { ReadonlyCellFrame, TerminalBackend } from "../frame.ts"
 import type { CapabilityMode, Theme } from "../roles.ts"
-import { BACKGROUND_RGB, DEFAULT_THEME, keepsDim, seeThroughColours, rgbFor } from "../roles.ts"
+import { BACKGROUND_RGB, DEFAULT_THEME, resolveCell } from "../roles.ts"
 
 /** How a dim cell is drawn: the terminal's SGR 2 "faint", approximated as partial opacity. */
 export const DIM_ALPHA = 0.55
@@ -33,9 +33,8 @@ const css = (rgb: readonly number[]): string => `rgb(${rgb[0]},${rgb[1]},${rgb[2
 
 /**
  * What to paint for a frame — pure, and the half of this backend the tests hold to the terminal's:
- * every glyph where `frameToText` has it, every colour from the role table. Inverse video swaps
- * foreground and background the way a terminal does, with the theme's background standing in for a
- * cell that has none of its own (the map's solid edge is exactly that).
+ * every glyph where `frameToText` has it, every colour as `resolveCell` resolves it (inverse video and
+ * a see-through style already folded in), and a dim cell's glyph at `DIM_ALPHA`.
  */
 export function paintOps(
   frame: ReadonlyCellFrame,
@@ -43,39 +42,20 @@ export function paintOps(
   theme: Theme = DEFAULT_THEME,
 ): PaintOp[] {
   const ops: PaintOp[] = []
-  const base = css(BACKGROUND_RGB[theme])
   for (let y = 0; y < frame.height; y += 1) {
     for (let x = 0; x < frame.width; x += 1) {
       const cell = frame.cells[y * frame.width + x]
       if (cell === undefined) continue
-      const style = cell.style
-      // A see-through cursor over the cell: the same resolved colours the ANSI writer sends, its
-      // inverse already folded in and its dim gone.
-      const mixed = seeThroughColours(cell, capability, theme)
-      let foreground: string
-      let background: string | null
-      if (mixed !== null) {
-        foreground = css(mixed.foreground)
-        background = css(mixed.background)
-      } else {
-        foreground = css(rgbFor(style.fgRole, capability, theme, style.fade ?? 0, style.tint))
-        background =
-          style.bgRole === undefined || capability === "monochrome" ? null : css(rgbFor(style.bgRole, capability, theme))
-        if (style.inverse === true) {
-          const swapped = foreground
-          foreground = background ?? base
-          background = swapped
-        }
-      }
+      const resolved = resolveCell(cell, capability, theme)
       ops.push({
         x,
         y,
         glyph: cell.glyph,
-        foreground,
-        background,
-        bold: style.bold === true,
-        underline: style.underline === true,
-        alpha: keepsDim(style, mixed) ? DIM_ALPHA : 1,
+        foreground: css(resolved.foreground),
+        background: resolved.background === null ? null : css(resolved.background),
+        bold: resolved.bold,
+        underline: resolved.underline,
+        alpha: resolved.dim ? DIM_ALPHA : 1,
       })
     }
   }

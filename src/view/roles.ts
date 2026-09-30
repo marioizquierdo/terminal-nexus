@@ -6,6 +6,11 @@
 // not the degraded mode** (milestone-1-spike-battle.md 4.2), and the higher tiers buy fidelity, not
 // facts. Colour never carries ownership, target, danger, or health alone — sides are told apart by
 // letter case, factions by glyph family, terrain by shape, salvage by its own character.
+//
+// `resolveCell`, at the bottom, is where a cell's roles become what a renderer draws — for the ANSI
+// writer, the browser page's canvas and OpenTUI alike, so the three cannot disagree about a cell.
+
+import type { Cell } from "./frame.ts"
 
 export const STYLE_ROLES = [
   "chrome.frame",
@@ -103,8 +108,8 @@ export function parseTheme(value: string): Theme {
   return found
 }
 
-/** The frame's own background, for a backend that paints one explicitly (OpenTUI) rather than
- * leaving the terminal's ambient background to show through (direct ANSI). */
+/** The frame's own background, for a renderer that paints one explicitly (OpenTUI, the canvas) rather
+ * than leaving the terminal's ambient background to show through (direct ANSI). */
 export const BACKGROUND_RGB: Readonly<Record<Theme, readonly [number, number, number]>> = {
   dark: [10, 10, 12],
   light: [242, 240, 234],
@@ -366,8 +371,8 @@ export type RoleTint = Readonly<{ role: StyleRole; amount: number }>
  * since the cursor is inverse video). A role and a number, never a colour, like `RoleTint`: an exact mix
  * at truecolor, the nearest colour at 256, and at 16 colours and in monochrome the plain inverse
  * cursor (from an alpha of one half up; below it, nothing). Where it shows, the cell's own `dim` is not
- * applied (`keepsDim`). `seeThroughColours`, below, is the one place it becomes colour. Set only by the
- * Explore Map hand-off's travelling cursor so far.
+ * applied (`resolveCell`). `seeThroughColours`, below, is the one place it becomes colour. Set only by
+ * the Explore Map hand-off's travelling cursor so far.
  */
 export type SeeThrough = Readonly<{ role: StyleRole; alpha: number }>
 
@@ -466,11 +471,11 @@ export function sgrBackgroundFor(
 const NEUTRAL_RGB: readonly [number, number, number] = [214, 218, 224]
 
 /**
- * The same roles as RGB, for a backend that takes colours rather than SGR parameters (OpenTUI).
- * `fade` mirrors `sgrFor`'s tier gating even though OpenTUI is truecolor-capable regardless of the
- * requested `capability`: ignoring it at `color16` keeps that tier's simulated look identical to the
- * direct-ANSI backend's, the cross-backend snapshot invariant `tests/backend-opentui.test.ts` checks.
- * `monochrome` was already a fixed neutral grey regardless of role, so fade has nothing to add there.
+ * The same roles as RGB, for the renderers that take colours rather than SGR parameters (the canvas
+ * and OpenTUI, through `resolveCell`). `fade` mirrors `sgrFor`'s tier gating even though both can
+ * show any colour whatever the requested `capability`: ignoring it at `color16` keeps that tier's
+ * simulated look the direct-ANSI backend's. `monochrome` is a fixed neutral grey regardless of role,
+ * so fade has nothing to add there.
  */
 export function rgbFor(
   role: StyleRole | undefined,
@@ -488,7 +493,8 @@ export function rgbFor(
   return blendedRgb(swatch, theme, fade, tint)
 }
 
-type Rgb = readonly [number, number, number]
+/** A colour as red, green and blue, 0 to 255 — only ever what a role resolves to, never what a cell carries. */
+export type Rgb = readonly [number, number, number]
 
 /**
  * How much of a cell its glyph is taken to cover when a see-through style mixes what lies beneath it — the
@@ -532,19 +538,6 @@ export function mixSeeThrough(
   return { background: [fill(0), fill(1), fill(2)], foreground: [ink(0), ink(1), ink(2)] }
 }
 
-/** What `seeThroughColours` reads: a cell, structurally (`frame.ts`'s `Cell` is one). */
-export type SeeThroughCell = Readonly<{
-  glyph: string
-  style: Readonly<{
-    fgRole?: StyleRole
-    bgRole?: StyleRole
-    inverse?: boolean
-    fade?: number
-    tint?: RoleTint
-    seeThrough?: SeeThrough
-  }>
-}>
-
 /**
  * A cell's colours once its see-through style is resolved, in both forms the renderers take — so the ANSI
  * writer, the browser page's canvas and OpenTUI cannot disagree about one cell.
@@ -562,20 +555,9 @@ export type SeeThroughColours = Readonly<{
 }>
 
 /**
- * Whether a renderer still applies a cell's `dim` — not while a see-through style shows on it. The mix already
- * says how bright the glyph is (`mixSeeThrough`'s foreground, exactly), and faint on top would fade it
- * back toward the now lighter fill: the very loss the real cursor avoids by clearing `dim` on bare
- * ground (`src/view/build.ts`). A picture that fades the whole cell for `dim` (the evidence PNGs do)
- * would also halve the see-through style's fill. Bold and underline stay the cell's own.
- */
-export function keepsDim(style: Readonly<{ dim?: boolean }>, mixed: SeeThroughColours | null): boolean {
-  return style.dim === true && mixed === null
-}
-
-/**
  * The see-through cursor (`SeeThrough`, feedback F64-F65) resolved at a tier, or `null` where it
- * changes nothing — no see-through style, an alpha of 0, or a low alpha at a tier with no blend. The one place an
- * see-through style becomes colour; every renderer calls it.
+ * changes nothing — no see-through style, an alpha of 0, or a low alpha at a tier with no blend. The one
+ * place a see-through style becomes colour; `resolveCell` calls it for every renderer.
  *
  * The cell's own colours are worked out first, as the renderers already draw them: its glyph colour
  * `G` is its `fgRole` after tint and fade, its background `B` is its `bgRole` or the theme's
@@ -592,10 +574,10 @@ export function keepsDim(style: Readonly<{ dim?: boolean }>, mixed: SeeThroughCo
  *   nothing;
  * - `monochrome`: the same step, as inverse video alone. Never a colour code.
  *
- * Wherever it shows, the cell's own `dim` goes with it (`keepsDim`).
+ * Wherever it shows, the cell's own `dim` goes with it (`resolveCell`).
  */
 export function seeThroughColours(
-  cell: SeeThroughCell,
+  cell: Cell,
   capability: CapabilityMode,
   theme: Theme = DEFAULT_THEME,
 ): SeeThroughColours | null {
@@ -627,5 +609,71 @@ export function seeThroughColours(
     foreground: xterm256Rgb(foreground),
     background: xterm256Rgb(background),
     sgr: [38, 5, foreground, 48, 5, background],
+  }
+}
+
+/**
+ * A cell's style resolved at a tier, in both forms the renderers take. `resolveCell` is the one place
+ * a cell's own colours, its inverse video, its dim and its see-through style meet, so the ANSI writer,
+ * the browser page's canvas and OpenTUI only draw what it says and cannot disagree about a cell.
+ */
+export type ResolvedCell = Readonly<{
+  /**
+   * The ANSI writer's SGR parameters, whole: the colours (the foreground's, then the background's — or
+   * the see-through style's mix in their place), then bold 1, faint 2, underline 4 and reverse video 7
+   * as the cell has them. Empty for a plain cell, so a blank never costs an escape. Here, unlike in the
+   * RGB form, reverse video is left to the terminal.
+   */
+  sgr: readonly number[]
+  /** The glyph's colour for an RGB renderer, with inverse video and the see-through style applied. */
+  foreground: Rgb
+  /** The cell's fill for an RGB renderer, likewise, or `null` where the theme's own background shows. */
+  background: Rgb | null
+  bold: boolean
+  /**
+   * Faint: the cell's `dim`, except where a see-through style shows. The mix already says exactly how
+   * bright the glyph is, and faint on top would fade it back toward the now lighter fill — the very loss
+   * the real cursor avoids by clearing `dim` on bare ground (`src/view/build.ts`).
+   */
+  dim: boolean
+  underline: boolean
+}>
+
+/**
+ * What a renderer draws for `cell` at `capability` on `theme`. Its colours are its `fgRole` after tint
+ * and fade and its `bgRole` (none in monochrome, which has no colour to paint); inverse video swaps
+ * the two in the RGB form, the way a terminal does, with the theme's background standing in for a cell
+ * that has no fill of its own (the map's solid edge is exactly that). A see-through style that shows
+ * at this tier (`seeThroughColours`) replaces all of that, and the cell's dim with it; bold and
+ * underline always stay the cell's own.
+ */
+export function resolveCell(cell: Cell, capability: CapabilityMode, theme: Theme = DEFAULT_THEME): ResolvedCell {
+  const style = cell.style
+  const bold = style.bold === true
+  const underline = style.underline === true
+  const seen = seeThroughColours(cell, capability, theme)
+  if (seen !== null) {
+    const sgr = [...seen.sgr]
+    if (bold) sgr.push(1)
+    if (underline) sgr.push(4)
+    return { sgr, foreground: seen.foreground, background: seen.background, bold, dim: false, underline }
+  }
+  const dim = style.dim === true
+  const inverse = style.inverse === true
+  const fade = style.fade ?? 0
+  const sgr = [...sgrFor(style.fgRole, capability, theme, fade, style.tint), ...sgrBackgroundFor(style.bgRole, capability, theme)]
+  if (bold) sgr.push(1)
+  if (dim) sgr.push(2)
+  if (underline) sgr.push(4)
+  if (inverse) sgr.push(7)
+  const ink = rgbFor(style.fgRole, capability, theme, fade, style.tint)
+  const fill = style.bgRole === undefined || capability === "monochrome" ? null : rgbFor(style.bgRole, capability, theme)
+  return {
+    sgr,
+    foreground: inverse ? (fill ?? BACKGROUND_RGB[theme]) : ink,
+    background: inverse ? ink : fill,
+    bold,
+    dim,
+    underline,
   }
 }

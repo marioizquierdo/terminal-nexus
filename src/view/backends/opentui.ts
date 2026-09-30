@@ -16,8 +16,8 @@
 // neither the compositor nor the kernel knows which one presented a frame.
 
 import type { ReadonlyCellFrame } from "../frame.ts"
-import type { CapabilityMode, Theme } from "../roles.ts"
-import { BACKGROUND_RGB, DEFAULT_THEME, keepsDim, seeThroughColours, rgbFor } from "../roles.ts"
+import type { CapabilityMode, Rgb, Theme } from "../roles.ts"
+import { BACKGROUND_RGB, DEFAULT_THEME, resolveCell } from "../roles.ts"
 import type { BackendOptions, NamedBackend } from "./index.ts"
 
 type OpenTuiCore = Awaited<typeof import("@opentui/core")>
@@ -46,38 +46,24 @@ export function drawFrameInto(
   capability: CapabilityMode,
   theme: Theme = DEFAULT_THEME,
 ): void {
+  const colour = ([red, green, blue]: Rgb) => core.RGBA.fromValues(red / 255, green / 255, blue / 255, 1)
   // OpenTUI paints its own background rather than leaving the terminal's ambient colour to show
   // through (unlike the direct-ANSI backend), so the theme has to reach this fill too or a light
   // theme would still render on a forced-black background.
-  const [bgRed, bgGreen, bgBlue] = BACKGROUND_RGB[theme]
-  const background = core.RGBA.fromValues(bgRed / 255, bgGreen / 255, bgBlue / 255, 1)
+  const ground = colour(BACKGROUND_RGB[theme])
   for (let y = 0; y < frame.height; y += 1) {
     for (let x = 0; x < frame.width; x += 1) {
       const cell = frame.cells[y * frame.width + x]
       if (cell === undefined) continue
-      // A see-through cursor over the cell: the same resolved colours the ANSI writer sends, drawn
-      // with its own fill, no reverse attribute (the cell's inverse is already folded in) and no dim.
-      const mixed = seeThroughColours(cell, capability, theme)
-      const [red, green, blue] =
-        mixed?.foreground ?? rgbFor(cell.style.fgRole, capability, theme, cell.style.fade ?? 0, cell.style.tint)
+      // Inverse video is already in the colours `resolveCell` gives, so no reverse attribute is sent.
+      const resolved = resolveCell(cell, capability, theme)
       const attributes = core.createTextAttributes({
-        bold: cell.style.bold === true,
-        dim: keepsDim(cell.style, mixed),
-        underline: cell.style.underline === true,
-        reverse: cell.style.inverse === true && mixed === null,
+        bold: resolved.bold,
+        dim: resolved.dim,
+        underline: resolved.underline,
       })
-      const fill =
-        mixed === null
-          ? background
-          : core.RGBA.fromValues(mixed.background[0] / 255, mixed.background[1] / 255, mixed.background[2] / 255, 1)
-      buffer.setCell(
-        x,
-        y,
-        cell.glyph,
-        core.RGBA.fromValues(red / 255, green / 255, blue / 255, 1),
-        fill,
-        attributes,
-      )
+      const fill = resolved.background === null ? ground : colour(resolved.background)
+      buffer.setCell(x, y, cell.glyph, colour(resolved.foreground), fill, attributes)
     }
   }
 }
