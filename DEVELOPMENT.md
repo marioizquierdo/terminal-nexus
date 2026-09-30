@@ -201,15 +201,20 @@ tried. `[u]` undoes and Backspace (on the map) removes the one under the cursor,
 throwing the placement's sparks where it stood), which keeps a plan revisable until `p` starts the
 Pulse.
 
-**Moving ramps up, and Shift jumps** (gate 5H, reworked after the owner's 2026-09-28 playtest and tuned
-from his 2026-09-30 settings): a single press moves one tile; the same arrow again within 350 ms — a
-held key's repeats, or quick tapping — moves two a press at once, and four once that run has lasted
-200 ms; any other key starts again at one. Shift+Arrow is not a speed but a **jump of ten tiles**;
-held, it jumps again at most every 100 ms, so each jump is seen to land. Terminals send no key-up, so
-"held" is read from how close together the presses arrive (`src/build/motion.ts`); the reducer only
+**Taps are counted, a hold has a pace, and Shift jumps** (gate 5H, reworked after the owner's playtests
+of 2026-09-28 and, for the counting, his third round on the menu spike, 2026-09-30): a tap moves one
+tile; taps of one arrow each within 400 ms of the one before keep their speed, and the third since the
+speed last changed doubles it if it came within 300 ms of the one before — 1, 1, 2, then 2, 2, 4; a
+longer gap, another arrow or any other key starts over at one. A held arrow moves at the game's own
+pace, at most one move every 60 ms whatever the keyboard's repeat rate, one tile a move and two after
+600 ms. Shift+Arrow is not a speed but a **jump of ten tiles**; held, it jumps again at most every 100
+ms, so each jump is seen to land. Where the terminal reports key events (the kitty keyboard protocol,
+the Key releases Experiment — `src/view/key-events.ts`), it says which presses are repeats and when a
+key is let go, and the screen switches the protocol off again on every way out; elsewhere a press within
+the hold window (200 ms) of the one before counts as a repeat (`src/build/motion.ts`). The reducer only
 ever sees a move of the size chosen. **Every list moves the same way** — the Build Phase menu, the
-Nexus powers, the game menu, Settings, the Controls page: one row a tap, faster when held, stopping at
-the ends, and Shift+Up/Down, PageUp/PageDown or Home/End go straight to the first or last row
+Nexus powers, the game menu, Settings, the Controls page: one row a tap, taps counted and holds at the
+same pace, stopping at the ends, and Shift+Up/Down, PageUp/PageDown or Home/End go straight to the first or last row
 (`src/menu/list-keys.ts`). **Everything that moves is interpolated** (`src/view/tween.ts`): the view
 **slides** to wherever it scrolled, by any means, and the cursor **glides** to its new tile, over a few
 frames — the screen's frame timer runs only while something moves (`src/view/build-live.ts`), and

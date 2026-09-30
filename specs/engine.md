@@ -2,7 +2,7 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.28
+**Canon version:** 2.29
 **Updated:** 2026-09-30
 **License:** Apache-2.0
 
@@ -303,37 +303,42 @@ minimap.**
   designed at that height (9.2), and a shorter Grid sits at the top of it with its own bottom edge
   drawn across the Grid pane alone — the rectangle stays closed at the Grid's real edge, never at the
   pane's.
-- **Cursor movement ramps, and the fast move jumps — GUIDANCE, built at gate 5H, reworked at gate 5J**
-  (the owner's playtest of 2026-09-28; his numbers from the settings export of 2026-09-30). A single
-  press moves one tile. A press of the same arrow soon after the one before — within the hold window,
-  350 ms — is a run, whether it is the terminal's auto-repeat of a held key or quick tapping, and moves
-  two tiles a press at once; once the run has lasted 200 ms, four. A different arrow, or any other key, starts again at one; there is no
-  slow step (the gate 5H "slow after a turn" rule is deleted: "we don't need to implement slow
-  speed"). The fast move — Shift and its fallbacks — is not a speed but a **jump of ten tiles**, and
-  the view follows by the ordinary margin rather than re-centring; held, it jumps again at most every
-  100 ms, so each jump is seen to land. Terminals send no key-up, so "held" is read from the gaps
-  between presses. Timing lives in the input path (`src/build/motion.ts`); the reducer receives an
-  ordinary `move-cursor` of the chosen size and stays a pure function of commands. The numbers are
-  tuned values (`src/build/tuning.ts`), the owner's; the hold window stays an Experiment because it
-  depends on each keyboard's repeat delay. **Every list moves the same way** (canon 2.28, F75): no
-  wrapping, a tap one row, a held Up or Down ramping with these numbers and clamped at the ends, and the
+- **Taps are counted, a hold keeps its own pace, and the fast move jumps — GUIDANCE** (built at gate 5H,
+  reworked at 5J and again after the owner's third round on the menu spike, 2026-09-30, F79). A tap
+  moves one tile. Taps of the same arrow each within 400 ms of the one before are a run that keeps its
+  speed; the third tap since the speed last changed, or since the run began, doubles it if it came within
+  300 ms of the tap before. So a run goes 1, 1, 2, then 2, 2, 4, and four is the top ("the user tap 3
+  times at least before activating speed, and the last one needs to be a bit faster"). A longer gap,
+  another arrow or any other key starts over at one. A held key moves at the game's own pace rather than
+  the operating system's repeat rate: at most one move every 60 ms (on average exactly that when the
+  keyboard repeats faster), one tile a move, two once the key has repeated for 600 ms (first guesses). A
+  hold ends a run of taps. Where the terminal reports key events (the kitty keyboard protocol, behind the
+  Key releases Experiment, on by default), it says which presses are repeats and when a key is let go;
+  where it does not, a press of the same arrow within the hold window (an Experiment, 200 ms) of the one
+  before is a repeat, and anything slower a tap. The fast move — Shift and its fallbacks — is not a speed
+  but a **jump of ten tiles**, the view following by the ordinary margin rather than re-centring; held,
+  it jumps again at most every 100 ms, so each jump is seen to land. Timing lives in the input path
+  (`src/build/motion.ts`); the reducer receives an ordinary `move-cursor` of the chosen size and stays a
+  pure function of commands. The numbers are tuned values (`src/build/tuning.ts`); the tap windows and
+  the three taps are the owner's. **Every list moves the same way** (canon 2.28, F75; 2.29, F79): no
+  wrapping, a first tap one row, taps counted and holds at the same pace, clamped at the ends, and the
   fast move going to the first or last row.
 - **A click scrolls the view the same way, armed or not** (feedback F6, gate 5H; armed since gate 5J,
   feedback F22, reversing Q58's still view). A click inside an edge zone (a third of the view to
   start) carries the clicked tile toward the middle in proportion to its depth: all the way to the
-  middle at the very edge, not at all at the zone's inner boundary; the Experiment's alternatives are
-  "always centre" and "margin only" (Q62). With a structure armed, the preview follows the click, so
+  middle at the very edge, not at all at the zone's inner boundary (Q62; the zone's depth is a tuned
+  value, the owner's). With a structure armed, the preview follows the click, so
   the player can "keep clicking on the grid with the ghost building placement cursor to keep
   scrolling". **A double click places where its first click pointed**: two left clicks on the same
-  screen cell within 400 ms (an Experiment) are one "here", even if the first scrolled the view. The
+  screen cell within 400 ms (a tuned value) are one "here", even if the first scrolled the view. The
   input path reads the clicks' timing, as it reads keys', and sends the reducer an ordinary click on
   the first click's tile, so a driver script means the same thing. A slow second click on a spot the
   view moved away from is a fresh first click, never a placement on a tile nobody pointed at (Q50's
-  finding). The Experiment "Armed click scrolls" switches back to a still view.
+  finding).
 - **Everything that moves is interpolated — the camera slides and the cursor glides** (gate 5H; the
   glide at gate 5J, owner: "interpolations are easy and powerful"). Every change of camera, however
-  caused, eases over a few frames (150 ms to start), and every cursor move glides from the tile it
-  was drawn on (100 ms to start), whole tiles at a time, on the screen's frame timer, which runs only
+  caused, eases over a few frames (100 ms, the owner's), and every cursor move glides from the tile it
+  was drawn on (100 ms), whole tiles at a time, on the screen's frame timer, which runs only
   while something animates. Both are **tweens** (`ascii-effects.md` 1.2): pure functions of time, and
   a move in the middle of another continues from wherever things are drawn. The cursor glides across
   the view, so it rides along when only the map scrolls and is never drawn outside it; the armed
@@ -1315,7 +1320,7 @@ wherever the cursor was.
 | Key | Command | Note |
 | --- | --- | --- |
 | `1`–`9`, `0` | select item *n* of the panel's current list — construct menu, Nexus draft, or a menu screen's options. While a building is being placed its own digit cancels it and every other building's digit is refused until it is placed or cancelled (canon 2.28, F69-F70) | digits always address the list; they never mean anything else. The construct menu is one list since canon 2.27 (no groups); if groups come back, **they share one digit sequence** (gate 5B): a hotkey addresses the whole menu, never a position within a group, because per-group numbering needs a focused group and that is the mode this convention exists to forbid |
-| Arrows | on the Grid: move the cursor one tile. On the menu and in every list: Up/Down move the highlight, stopping at the first and last row (no wrapping, canon 2.28), a held Up or Down ramping with the map cursor's numbers; Left and Right have nothing to do there, so the highlighted row flickers, and **the keyboard stays on the menu** | the cursor drives the camera at the scroll margin (3.3); one press moves one tile, a held or quickly tapped arrow two a press and then four (3.3's ramp). The flicker is the owner's (2026-09-27: "pressing right/left should flicker the item so the user understands the focus is on the menu"); a second Right moved focus to the Grid until canon 2.27 (2026-09-30, F55: "on second thought, it's better that the focus stays on the menu, but it is good that the menu item blinks when pressing left or right") |
+| Arrows | on the Grid: move the cursor one tile. On the menu and in every list: Up/Down move the highlight, stopping at the first and last row (no wrapping, canon 2.28), taps counted and a hold at the map cursor's pace; Left and Right have nothing to do there, so the highlighted row flickers, and **the keyboard stays on the menu** | the cursor drives the camera at the scroll margin (3.3); a tap moves one tile, a run of taps speeds up by counting (the third quick tap moves two, three more reach four), and a held arrow moves at the game's own pace, one tile a move and later two, whatever the keyboard's repeat rate; where the terminal reports key events, a quick tap is never taken for a hold and a release stops the cursor at once (3.3). The flicker is the owner's (2026-09-27: "pressing right/left should flicker the item so the user understands the focus is on the menu"); a second Right moved focus to the Grid until canon 2.27 (2026-09-30, F55: "on second thought, it's better that the focus stays on the menu, but it is good that the menu item blinks when pressing left or right") |
 | Shift+Arrow | the fast move: a **jump of 10 tiles** (the owner's settings export, 2026-09-30; 5 until gate 5H, 8 until gate 5J, 12 until canon 2.28), the view following by the ordinary margin; held, it jumps again at most every 100 ms. **In a list, the fast move goes to the first or last row** (canon 2.28) | fast pan across a scrolling Grid (owner, 2026-09-28: "Holding shift should behave fundamentally different, instead of just speed up to 8, it should move the cursor 12 tiles"). **Two sequence families, both bound** (gate 5A): xterm's `CSI 1;<modifier>` and rxvt's `CSI a/b/c/d`. Any modifier counts, not Shift alone — nothing else on these screens binds a modified arrow, so a terminal that eats Shift but passes Alt or Ctrl still gives its player the fast pan. **Option+Arrow as a Mac sends it is the same move** (owner, 2026-09-26: "we should also allow option (it is typical to move word by word)"): macOS terminals send Option+Left/Right as `ESC b`/`ESC f`, and one set to treat Option as Meta sends `ESC` before an ordinary arrow. Before canon 2.19 the input splitter broke both into a bare Escape plus a stray key — and a bare Escape with nothing armed leaves the screen. Bound from the terminals' documented defaults; **not yet measured on the owner's own iTerm2** — `node scripts/lib/key-echo.mjs`, run in that terminal, prints exactly what each key sends |
 | PageUp / PageDown, Home / End | the fast move — the modifier-free fallback | **Required, not optional** (gate 5A): four surveyed terminal families send no shifted arrow at all, so without this they would have no fast pan. Decoded from a table, because Home and End have three live spellings between xterm, screen/tmux/linux and rxvt |
 | Enter, Space | on the menu: activate the highlighted entry — arm a structure (focus moves to the Grid), open the Nexus powers, or explore. On the Grid while placing: place the armed structure at the cursor. On the map after a click brought the keyboard there: open Explore Map (9.2). In the Nexus powers popup: pick the highlighted power (the two questions answer to their own letters) | Space added 2026-09-26 (owner: "should also work with space, that was my reflex") — an alias of Enter everywhere on this screen, never a second meaning of its own |
@@ -1451,6 +1456,18 @@ player settings only.
   on every exit path. A game that leaves mouse reporting on is rejected for the same reason as one
   that leaves raw mode on. Where no mouse arrives — a plain SSH session, the driver, a non-TTY —
   nothing is lost, because the keyboard is complete.
+- **Key events — GUIDANCE, canon 2.29** (the owner's third round on the menu spike, F79: "We should
+  enable/disable reading key-press in the settings, so I can test how it feels when the system provides
+  it vs when it does not"). With the Key releases Experiment on `auto`, the Build Phase asks the terminal
+  for the kitty keyboard protocol (`CSI ? u`, then Device Attributes, which every terminal answers) and,
+  if it answers, switches it on (flags 1 + 2: disambiguate, report event types). **10.1's one disposer
+  switches it off again on every exit path**, before leaving the alternate screen. With the protocol on,
+  a press is a tap, a repeat belongs to a hold and a release ends it at once; Esc arrives whole (no
+  wait); Ctrl+C arrives as `CSI 99;5u` and still quits at once; keypad keys are read as the keys they
+  stand for. A release sends no command. Where the terminal does not answer, or with the Experiment
+  off, a press within the hold window of the one before is a repeat (3.3). The browser page behaves the
+  same way from the browser's own key-down and key-up events. Only how a repeat is recognised differs,
+  never where the cursor goes; a test holds that (`src/view/key-events.ts`).
 - **A second click on the same tile places the armed structure — RULE, revised** (Q52, 2026-09-26,
   reversing Q50's 2026-09-21 decision — see `open-questions.md` for both). A first click on a tile
   only moves the cursor there and shows the armed preview, the same as arriving there by arrow keys;
@@ -1511,7 +1528,8 @@ it. Versions are re-checked and pinned during the active gate, and the pins live
 
 One alternate screen, **one idempotent disposer**. It restores cursor, input mode, handlers, and
 screen after normal exit, `q`, `SIGINT`, `SIGTERM`, setup failure, and caught render failure — and,
-once the mouse adapter exists (9.7), it switches terminal mouse reporting off on the same paths. It
+once the mouse adapter exists (9.7), it switches terminal mouse reporting off on the same paths —
+and, since canon 2.29, the kitty keyboard protocol too, when the Build Phase switched it on (9.7). It
 cannot promise anything after `SIGKILL`. Calling it twice is harmless.
 
 Non-TTY launch prints one readable line and no escape sequences. Diagnostics are buffered and emitted

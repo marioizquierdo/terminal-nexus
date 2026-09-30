@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.28
+**Canon version:** 2.29
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -245,7 +245,12 @@ F61-F76, with his settings export) polished it: the credits line with the map's 
 active row as `[1] Barracks  >`, a subtler refused flicker, a card reveal, the arrow from the row's own
 place and a see-through cursor for Explore Map, a building that holds the menu until placed or
 cancelled, `x` that never opens the game menu, lists that stop at their ends, `docs/ui-patterns.md`
-rewritten, and his settled Experiments moved into `src/build/tuning.ts`. It does not start 6B.
+rewritten, and his settled Experiments moved into `src/build/tuning.ts`. **Round 3** (2026-09-30,
+[`docs/feedback/2026-09-30-menu-spike-round-3.md`](docs/feedback/2026-09-30-menu-spike-round-3.md),
+F77-F81, with his third export) reworked navigation — taps speed up only by counting, a held key keeps
+the game's own pace, and key presses, repeats and releases are read where the terminal reports them
+(the Key releases Experiment; Q66 answered) — gave the popup scroll bar a textured thumb, and made the
+Battle Round screen breathe; a dedicated navigation session is queued. It does not start 6B.
 
 So the authorised work for a new session is, in order:
 
@@ -255,7 +260,7 @@ So the authorised work for a new session is, in order:
    with it (`--settings`), and settle each Experiment it answers — adopt the value as the default,
    delete the Experiment, record the answer;
 2. **the current milestone's active gate** — gate 6A has nothing left to build until he has played
-   it (and Q66 waits on his key-release probe); the next gate waits for his word, and when it comes it
+   it (Q66 is answered; his key-release probe still says whether his iTerm2 reports releases); the next gate waits for his word, and when it comes it
    is the next gate in the build order
    [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
    order — read that table's build-order column, and take one gate per session unless the owner's own
@@ -387,8 +392,8 @@ deleted, and the renderer must be replaceable without one simulation test changi
   `x x x` always lands on the menu (canon 2.28: two commands, `cancel` and `back`); `q` opens it too,
   `?` opens the Controls page directly, and only Ctrl+C quits at once. Leaving always asks. No popup
   has a row that only goes back. **Left and Right on the menu only flicker the row**; the keyboard
-  stays there (canon 2.27). **Every list stops at its ends** — a tap one row, a held arrow ramping with
-  the map cursor's numbers, the fast move to the first or last row. **A menu row that hands the
+  stays there (canon 2.27). **Every list stops at its ends** — a first tap one row, taps counted and
+  holds at the map cursor's pace, the fast move to the first or last row. **A menu row that hands the
   keyboard to the map** sends a **focus arrow** (a building, from its row's own place) or a
   **see-through cursor** (Explore Map, which first moves the cursor to clear ground) to the cursor,
   which blinks when it lands — presentation, timed in the live loop from a sequence number the reducer
@@ -397,7 +402,13 @@ deleted, and the renderer must be replaceable without one simulation test changi
   cancelled, and its own digit cancels it.
   **The top bar's right end says what Esc does** — `menu [esc]`, `back [esc]`, `close [esc]` — and a
   click on it is Esc; no popup carries its own `[esc]`. A click scrolls
-  the view near its edges, armed or not (gate 5J, reversing Q58). How far a key moves the cursor is
+  the view near its edges, armed or not (gate 5J, reversing Q58). **Taps speed up by counting and a
+  hold has the game's own pace** (owner, 2026-09-30, F79): the third quick tap of a run doubles its
+  speed (1, 1, 2, then 2, 2, 4); a held key moves at most once per step of the pace whatever the
+  keyboard's repeat rate; a hold ends a run. **Key events are progressive enhancement**: where the
+  terminal speaks the kitty keyboard protocol (the Key releases Experiment, auto by default) it says
+  which presses are repeats and when a key is let go, and the one disposer switches the protocol off on
+  every exit path; elsewhere the hold window decides. How far a key moves the cursor is
   timed in the input path, and every animation — including the camera's slide and the cursor's
   glide, which interpolate every move — in the view; never the reducer.
 - **The Build Phase panel is one list** (canon 2.27, reordered at 2.28): `[e] Explore Map`, `[n] Nexus`,

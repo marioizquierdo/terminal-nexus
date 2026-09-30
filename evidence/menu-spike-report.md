@@ -2,7 +2,7 @@
 
 **Document role:** Gate report for the owner's menu reorganisation (feedback F52-F60, and his second round F61-F76)
 **Status:** COMPLETE — PASS, round 2 built, awaiting the owner's playtest
-**Canon version:** 2.28
+**Canon version:** 2.29
 **Updated:** 2026-09-30
 **License:** Apache-2.0
 

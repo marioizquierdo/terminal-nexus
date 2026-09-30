@@ -2,7 +2,7 @@
 
 **Document role:** The queue: what waits on Mario, what comes next, and the small work that has piled up beside the milestones
 **Status:** WORKING — keep it short; delete an item when it is done, and move a decision into `specs/open-questions.md` when it becomes one
-**Updated:** 2026-09-30 (the menu spike's second round, feedback F61-F76 and his settings export, on the same pull request; earlier: the menu spike, Milestone 5 accepted and gate 6A, the Nexus Pulse from `[s] Start` to a result)
+**Updated:** 2026-09-30 (the menu spike's third round, feedback F77-F81 and his third export, on the same pull request; earlier: its second round and a general review, the menu spike, Milestone 5 accepted and gate 6A)
 **License:** Apache-2.0
 
 Milestones say what the game must become (`milestones/`); this says what is waiting *right now*, and
@@ -16,21 +16,19 @@ the cleanup that does not belong to any gate.
   rather than an alarm, whether the red is rare and faint enough, and whether the result is clear
   without being told.
 - **Run the key-release probe in iTerm2.** `node scripts/probe-key-release.mjs`, hold an arrow, let it
-  go, tap it, `q`. If the lines say `release`, Q66's tier 3 is buildable there (section 4).
+  go, tap it, `q`. If the lines say `release`, the Key releases Experiment's `auto` reads them there;
+  if they say `legacy`, `auto` and `off` feel the same in iTerm2 (section 4).
 - **One question:** was "press `b`" an example of a key or a request for letter hotkeys? (Q67.)
 - **One more:** should the player ever read the word "Pulse"? The start screen says Battle Round; the menu
   row and the running screen still say Pulse (Q68). The menu spike did not change the words, since he
   did not ask; his list of actions said "Start next battle round".
-- **Play the menu spike's second round** (the same pull request; `evidence/menu-spike-report.md`):
-  the credits on the line above the buildings with the map's resource symbol, an active row as
-  `[1] Barracks  >` whose own key cancels it, a building that holds the keyboard until it is placed or
-  cancelled, the card revealed in about 150 ms, a see-through cursor for Explore Map, lists that stop
-  at their ends, `x x x` back to the menu. Press `d`: five Experiments are left — **Focus arrow**
-  (180 ms) and **Card reveal** (150 ms; 800 is slow motion) are the two looks still being judged;
-  **Hold window** (350 ms) is his own number, kept because it depends on a keyboard's repeat delay; and
-  the placeholder Pulse's **Raid** and **Your units**. Does the reveal read as the row travelling up to
-  become the card, or is it too quick to see? Does the see-through cursor say "the keyboard went
-  there" as clearly as the arrow does for a building?
+- **Play the menu spike's third round** (the same pull request; `evidence/menu-spike-report.md`):
+  taps that speed up only when asked (the third quick tap moves 2, three more move 4), a held arrow at
+  a steady pace, the scroll bar's textured thumb, and the Battle Round screen breathing. Press `d`:
+  **Hold window** (200 ms), **Key releases** (auto / off — the comparison he asked for; the probe below
+  says whether his iTerm2 answers at all), **Battle Round pulse** (2000 ms), and the placeholder
+  Pulse's **Raid** and **Your units**. The breath shows only at 256 colours or millions (his settings
+  have millions). Then the dedicated navigation session (section 4).
 
 ## 2. The next gate: 6B — the loop back into the next Build Phase
 
@@ -111,7 +109,7 @@ request written with the pr-description skill. Do not start 6C.
 - **The title screen's menu does not speed up when held** — it stops at its ends and jumps, but has no
   clock of its own to time a held key by, and only four rows.
 
-## 4. Q66 — key releases, as progressive enhancement
+## 4. Navigation and key releases
 
 ### Polish navigation in a session of its own
 

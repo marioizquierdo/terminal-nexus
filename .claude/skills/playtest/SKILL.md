@@ -30,10 +30,13 @@ about 1 MB; six keys at 80x24 is about 200 KB).
 `Up Down Left Right`, `S-Up` etc. (Shift, xterm bytes), `M-Up` etc. (Option as Esc+), `Tab S-Tab Esc
 Enter Space Bksp Del PgUp PgDn Home End C-c`, any single character (`n`, `1`, `p`, `y`), `Name*N` to
 repeat, `Name~MS` for a key arriving MS ms after the previous step (untimed steps are 1000 ms apart,
-so each is its own press). The held-key ramp only runs on timed steps: `e Right Right~300
-Right~30*12` is a tap, the terminal's repeat delay (inside the 350 ms hold window), then
-auto-repeat — the summary line prints each
-step's cursor and the kind of move the last timed cursor key made (`tap`, `hold`, `fast`, `jump`).
+so each is its own press). Tap counting and the hold's pace only run on timed steps: `Tab Right
+Right~350 Right~250` is three taps, the last quick, so 1, 1, 2 tiles; `Tab Left Left~180 Left~30*12` is a
+press, a repeat inside the 200 ms hold window, then auto-repeat, moving one tile every 60 ms (so every
+other repeat moves nothing). `Right/press`, `Right/repeat` and `Right/release` send the key as a terminal
+that reports key events does (the kitty keyboard protocol), with the same `~MS` timing. The summary
+line prints each step's cursor and the kind and size of the last timed cursor key's move (`tap 1`,
+`tap 2`, `hold 1`, `hold 0`, `jump 10`, `release 0`).
 `wait` is a step where no key is pressed and time passes — a second, or `wait~MS`; `wait~250*40` is
 ten seconds in quarter-second frames. It is how a script watches a Nexus Pulse. Mouse: `click:X,Y` clicks Grid tile X,Y wherever the camera has it drawn right now (fails if
 it is off screen), `click@COL,ROW` clicks a 0-based screen cell; `rclick`, `wheelup`, `wheeldown` take

@@ -23,8 +23,11 @@ on the same branch and pull request. Status values: **Built**, **Scheduled**, **
 > scroll bar texture should be inverted, keep the same background as the regular border, but add
 > different texture for the bar, that will be more visible. The inverted shadow is a bit confusing.
 
-**Open.** The popup's scroll bar track becomes the plain border, like the rest of the right side, and
-the thumb (the part in view) gets its own texture, different from the shadow's, so it stands out.
+**Built.** The track is now the plain border, like the rest of the popup's right side, and the thumb (the
+part of the list in view) is a textured stretch of it: `#` in ASCII, `╬` in Unicode — chosen from a
+handful of candidates rendered side by side, because both are dense, read as texture rather than a
+letter or a gap, and look nothing like the shadow's `:` / `░` beside them. It reads in both themes, at
+every colour depth and in monochrome. Clicking the bar works as before.
 
 ### F79 — Tapping and holding to move: counting taps, a limit on holds, and key releases
 
@@ -43,32 +46,46 @@ the thumb (the part in view) gets its own texture, different from the shadow's, 
 > does not. Just do some changes here, and add a note that we need to come back to polish navigation
 > again on another dedicated session.
 
-**Open.** Read as four changes, on the map cursor and in every list alike:
+**Built.** Four changes, on the map cursor and in every list alike:
 
 - **Taps accelerate by counting, not by time.** Two taps within 400 ms of each other are a double tap,
   within 300 ms a fast one. Speed doubles to 2 tiles only on the third tap of a run whose last gap was
   fast; it stays at 2 while taps keep coming within 400 ms, and after three more it doubles to 4. A
   pause longer than 400 ms, another direction or another key starts over at 1.
-- **A held key has a speed limit.** A held key's repeats move the cursor on the game's own steady
-  cadence, whatever the operating system's repeat rate, rather than switching straight to the fastest
-  step.
+- **A held key has a speed limit.** A held key moves at most once every 60 ms, whatever the operating
+  system's repeat rate — about 16 tiles a second, one tile a move, two once it has been held for 600 ms
+  (first guesses) — instead of the old 2-then-4 tiles on every repeat, which at a terminal's 30 ms repeat
+  was 65 to 130 tiles a second. A hold ends a run of taps, so the tap after a hold is one tile again.
 - **The hold window becomes 200 ms**, as he asked to try (his export still had 250 from the old ramp;
   it stays an Experiment).
 - **Key releases, where the terminal reports them**, behind a new Experiment, "Key releases" (auto /
-  off): with it on, a terminal that supports the kitty keyboard protocol tells the game exactly when a
-  key is pressed, repeated and let go, so a tap is a tap and a hold is a hold without guessing; off, the
-  game guesses from the timing, as before.
+  off, auto by default, applied at once): with it on, a terminal that supports the kitty keyboard
+  protocol tells the game exactly when a key is pressed, repeated and let go, so a quick tap is never
+  taken for a hold, letting go stops the cursor at once, and Esc answers instantly; off, or in a
+  terminal that does not answer, the game guesses from the timing, as before. The game always switches
+  the protocol off again on the way out, however it leaves. The browser page does the same from the
+  browser's own key-down and key-up. Nobody has measured yet whether his iTerm2 answers
+  (`node scripts/probe-key-release.mjs` says).
 
-**Scheduled:** a dedicated session to polish navigation again, as he asked (`docs/next-steps.md`).
+*Reading taken:* the second doubling (2 to 4) uses the first one's rule — three taps at 2, the last
+within 300 ms — so taps at a slow double-tap pace stay at 2; his words could also mean three taps at any
+pace within 400 ms, which is one line to change.
+
+**Scheduled:** a dedicated session to polish navigation again, as he asked (`docs/next-steps.md`,
+"Polish navigation in a session of its own": the numbers that are first guesses, what to measure in his
+iTerm2, and what is left).
 
 ### F80 — The Battle Round screen breathes
 
 > Battle Round start popup. Also needs to be more "flashy", try a pulse effect on the border, it doesn't
 > need to be intense, just relaxing turning a but lighter and darker to create dynamism
 
-**Open.** The Battle Round screen's border slowly turns a little lighter and a little darker, like
-breathing. A new Experiment, "Battle Round pulse", sets how long one breath takes (off for a still
-border). Reduced motion keeps it still.
+**Built.** The Battle Round screen's border slowly turns a little lighter, back, a little darker and back,
+one smooth breath every 2 seconds (the new Experiment "Battle Round pulse": off, or 1.2 to 4 seconds).
+Only the border breathes; the title, the words and the shadow stay still, and no other popup does it.
+Reduced motion keeps it still, and so do 16 colours and monochrome, where it would blink rather than
+breathe (his settings use millions of colours, so he sees it). While it is the only thing moving, the
+screen redraws 20 times a second rather than 60, and stops when the screen closes.
 
 ### F81 — His third settings export
 

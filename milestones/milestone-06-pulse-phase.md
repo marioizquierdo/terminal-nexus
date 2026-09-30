@@ -111,15 +111,15 @@ Milestone 1's and did not change. 6B and 6C wait for the owner's word.
 >
 > - [x] his export: the focus arrow (250 ms) and the card reveal (400 ms) settled into the tuned values,
 >       "your units: some" the placeholder Pulse's default, the hold window 200 ms as he asked (F81, F79);
-> - [ ] the popup's scroll bar: the track is the plain border, the thumb has a texture of its own (F78);
-> - [ ] taps accelerate by counting (a double tap within 400 ms, a fast one within 300 ms; 2 tiles on the
+> - [x] the popup's scroll bar: the track is the plain border, the thumb has a texture of its own (F78);
+> - [x] taps accelerate by counting (a double tap within 400 ms, a fast one within 300 ms; 2 tiles on the
 >       third tap after a fast gap, 4 after three more), a held key moves on the game's own capped cadence,
 >       on the map and in every list (F79);
-> - [ ] "Key releases" (auto / off): the kitty keyboard protocol asked for, read where the terminal
+> - [x] "Key releases" (auto / off): the kitty keyboard protocol asked for, read where the terminal
 >       answers, and always popped on exit (F79);
-> - [ ] the Battle Round screen's border breathes, lighter and darker, with an Experiment for its length
+> - [x] the Battle Round screen's border breathes, lighter and darker, with an Experiment for its length
 >       (F80);
-> - [ ] a dedicated navigation session queued in `docs/next-steps.md` (F79);
+> - [x] a dedicated navigation session queued in `docs/next-steps.md` (F79);
 > - [ ] tests, canon, pictures, the playable page and the pull request.
 
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes

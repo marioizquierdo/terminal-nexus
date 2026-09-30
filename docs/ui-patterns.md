@@ -26,7 +26,7 @@ For any agent or person about to build or change a screen, a menu, a popup, an e
 - [ ] Esc and `x` go back one level; only the game menu's Quit leaves.
 - [ ] The top bar's right end names what Esc does there.
 - [ ] The bottom line has a hint for every situation the screen can be in.
-- [ ] Lists stop at their ends; a held arrow ramps; Shift, PageUp/PageDown and Home/End jump to the ends.
+- [ ] Lists stop at their ends; taps and holds move them as they move the map cursor; Shift, PageUp/PageDown and Home/End jump to the ends.
 - [ ] Motion explains a change, then the screen is still.
 - [ ] It works under reduced motion, in monochrome, in ASCII, and at 80 × 24.
 - [ ] Anything the owner should feel rather than read about is an Experiment.
@@ -156,9 +156,9 @@ the Nexus powers, the game menu, Settings, the export, the Controls page, the ti
 - **No wrapping**: a list stops at its first and last row; holding Down arrives at the bottom and stays.
   Up on the first row and Down on the last do nothing, without a flicker — a held key would otherwise
   flicker at every repeat.
-- **A tap is always one row; holding ramps** with the map cursor's own steps and timings (section 12),
-  clamped at the ends. The title screen's menu stops and jumps but does not ramp: its few rows need none
-  and its loop reads no clock. One key classifier serves every list (`src/menu/list-keys.ts`).
+- **A first tap is one row; taps and holds move a list exactly as they move the map cursor** (section
+  12): quick taps speed up by counting, a held arrow keeps the game's pace, clamped at the ends. The
+  title screen's menu stops and jumps but does not count or keep a pace: its loop reads no clock. One key classifier serves every list (`src/menu/list-keys.ts`).
 - **Shift+Up/Down, PageUp/PageDown and Home/End go to the first or last row.**
 - **Rows that are not choices are skipped**: blank lines, the credits line, section headings.
 
@@ -353,12 +353,20 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
   grey (`chrome.edge`) so the menu and bars stay the loudest lines.
 - **The menu's divider is the map's west side**, and a map shorter than the panel closes directly under
   its own last row.
-- **Moving the cursor**: a tap is one tile, always. The same arrow again within the hold window is a run —
-  2 tiles a press at once, 4 once it is old enough; any other key starts over. **Shift is a jump, not a
-  speed**, repeating no faster than the eye can see it land; Option+Arrow, PageUp/PageDown and Home/End
-  are the same jump, because many terminals send no shifted arrow. "Held" is read from the gaps between
-  presses in the input path (`src/build/motion.ts`), since a terminal sends no key-up (Q66 asks about
-  reading releases where one does). The cursor drives the camera at a scroll margin, a share of the view.
+- **Moving the cursor: taps are counted, a hold has a pace.** A tap is one tile. Taps of one arrow close
+  together are a run that keeps its speed, and the third one since the speed changed, if quick, doubles
+  it (1, 1, 2, then 2, 2, 4), so speed is asked for, never fallen into (the owner, third round: "the
+  cursor starts jumping ahead, so I have to stop and come back"). A held arrow moves at the game's own
+  steady pace, whatever the keyboard's repeat rate, one tile a move and two after a while. A hold ends a
+  run of taps, so adjusting after a hold is precise. **Shift is a jump, not a speed**, repeating no
+  faster than the eye can see it land; Option+Arrow, PageUp/PageDown and Home/End are the same jump,
+  because many terminals send no shifted arrow. The cursor drives the camera at a scroll margin, a share
+  of the view.
+- ***Key releases*** (a named pattern: progressive enhancement for input): where the terminal reports key
+  events (the kitty keyboard protocol, the Key releases Experiment), the game knows a tap from a repeat
+  and when a key is let go; where it cannot, a press within the hold window counts as holding. Asking
+  for more from a host is always undone on the way out, through the one disposer. The input path decides
+  (`src/build/motion.ts`, `src/view/key-events.ts`); the reducer sees ordinary moves.
 - **Clicks**: a click moves focus and the cursor to the tile, the ghost with it. **A second click on the
   same tile places** (by tile, never screen cell), and **a quick double click places where its first
   click pointed**, even if the view moved (`BuildSession`). A click near an edge scrolls further the
@@ -413,8 +421,9 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
   shows what he saw. Every Experiment names its question (`src/build/experiments.ts`).
 - **Once he settles one it leaves Settings**: his value becomes the default in the code's table of tuned
   values (`TUNING` in `src/build/tuning.ts`), with who chose it and when, and the Experiment is deleted, so a new one stands out. Some stay on
-  purpose: a number that depends on the player's keyboard (the hold window), or placeholder data (the
-  Pulse's raid and crew).
+  purpose: a number that depends on the player's keyboard (the hold window), a comparison he asked to
+  make himself (whether to read key releases), a look still being felt (the Battle Round pulse), or
+  placeholder data (the Pulse's raid and crew).
 - **Never copy a tuned number into prose**; point at the table.
 
 ## 16. Words
