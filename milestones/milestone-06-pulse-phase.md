@@ -120,7 +120,7 @@ Milestone 1's and did not change. 6B and 6C wait for the owner's word.
 > - [x] the Battle Round screen's border breathes, lighter and darker, with an Experiment for its length
 >       (F80);
 > - [x] a dedicated navigation session queued in `docs/next-steps.md` (F79);
-> - [ ] tests, canon, pictures, the playable page and the pull request.
+> - [x] tests, canon, pictures, the playable page and the pull request.
 
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
 > how the Pulse resolves — that stays the deterministic kernel, unmodified. What is new is the
