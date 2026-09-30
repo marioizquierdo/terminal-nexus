@@ -49,6 +49,7 @@ import type { Ack, PlannedPlacement, Popup } from "../build/types.ts"
 import { CONTENT_ART } from "../content/art.ts"
 import type { BandCell, CellStyle, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
+import type { DrawExtra } from "./draw.ts"
 import { put, text } from "./draw.ts"
 import { drawTerrain } from "./grid-layer.ts"
 import type { PulseFrame } from "./pulse-scene.ts"
@@ -142,6 +143,23 @@ export type BuildCompositionInput = Readonly<{
 /** A menu row's acknowledgement as the live loop shows it: the state's `ack` without its sequence
  *  number — which row, and whether it was **pressed** or **refused**. */
 export type RowAck = Readonly<Pick<Ack, "kind" | "entry">>
+
+/** A bar under a row: the role every part on it takes, and the weight it adds to them. */
+type Bar = Readonly<{ role: StyleRole; bold: boolean; underline: boolean }>
+
+/**
+ * The **highlight bar**: the keyboard is on this row and has not chosen it yet — the row in reverse
+ * video, in one role. The same bar on the menu and in every popup's list.
+ */
+const HIGHLIGHT_BAR: Bar = { role: "chrome.title", bold: false, underline: false }
+
+/**
+ * The **pressed** look, a menu row's acknowledgement the moment it is activated: the bar in the hotkey's
+ * colour, bold and underlined — stronger than the highlight at every tier, monochrome included. The
+ * cursor's blink borrows it (feedback F54: "the same exact effect as the one we use when selecting menu
+ * items").
+ */
+const PRESSED_LOOK: Bar = { role: "chrome.hotkey", bold: true, underline: true }
 
 /** Which of a frame cell's four neighbours a line continues into. */
 type Joins = { n: boolean; s: boolean; e: boolean; w: boolean }
@@ -474,6 +492,9 @@ function structureAt(context: BuildContext, planned: readonly PlannedPlacement[]
  * hotkey's colour, inverse, bold, underlined — and between them as usual. The live loop times it
  * (`cursorBlink`); every still frame draws the plain cursor.
  */
+/** The map cursor's role: the highlight bar's, since both say "you are here". */
+const CURSOR_ROLE: StyleRole = HIGHLIGHT_BAR.role
+
 function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
   const { context, state, layout } = input
   // The cursor is the Grid's own focus mark: drawn only while the Grid has the keyboard, so the
@@ -488,16 +509,16 @@ function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
   if (cursor.y < range.firstY || cursor.y > range.lastY) return
   const cell = cellForTile(layout, state.camera, cursor)
   const onStructure = structureAt(context, state.planned, cursor)
-  // `chrome.title` rather than the ground's own role: bold survives monochrome but changes nothing
-  // about which colour a terminal picks for it, so a coloured screen still needs an explicit,
-  // reliably bright role to get the same lift monochrome gets from the attribute alone. The same
-  // role and weight the armed construct row already uses, so "here" and "active" read as one idea.
-  const style =
+  // Its own role rather than the ground's: bold survives monochrome but changes nothing about which
+  // colour a terminal picks for it, so a coloured screen still needs an explicit, reliably bright role
+  // to get the same lift monochrome gets from the attribute alone. The highlight bar's role, so the
+  // menu's and the map's "you are here" read as one.
+  const style: CellStyle =
     input.cursorBlink === true
-      ? { inverse: true, bold: true, underline: true, dim: false, fgRole: "chrome.hotkey" as const }
+      ? { inverse: true, bold: PRESSED_LOOK.bold, underline: PRESSED_LOOK.underline, dim: false, fgRole: PRESSED_LOOK.role }
       : onStructure
         ? { inverse: true }
-        : { inverse: true, bold: true, dim: false, fgRole: "chrome.title" as const }
+        : { inverse: true, bold: true, dim: false, fgRole: CURSOR_ROLE }
   for (let extra = 0; extra < layout.tileWidth; extra += 1) {
     cells.push({ band: BANDS.highlights, x: cell.x + extra, y: cell.y, style })
   }
@@ -573,18 +594,42 @@ function drawTopBarAndBottomLine(cells: BandCell[], input: BuildCompositionInput
   })
 }
 
-/** Right-aligned against the panel's own right edge — a column of costs reads as a column only if
- *  the numbers line up. */
-function rightAlign(
-  cells: BandCell[],
-  layout: BuildLayout,
-  row: number,
-  value: string,
-  role: StyleRole,
-  extra: Readonly<{ dim?: boolean; bold?: boolean; inverse?: boolean; underline?: boolean }> = {},
-): void {
-  const column = layout.panelColumn + layout.panelLimit - value.length
-  text(cells, BANDS.chrome, column, row, value, role, extra)
+/** The column `value` starts at, right-aligned against the panel's own right edge — a column of costs
+ *  reads as a column only if the numbers line up. */
+const rightColumn = (layout: BuildLayout, value: string): number => layout.panelColumn + layout.panelLimit - value.length
+
+/** `value` right-aligned against the panel's own right edge (`rightColumn`). */
+function rightAlign(cells: BandCell[], layout: BuildLayout, row: number, value: string, role: StyleRole, extra: DrawExtra = {}): void {
+  text(cells, BANDS.chrome, rightColumn(layout, value), row, value, role, extra)
+}
+
+/** Fill `limit` cells of `row` from `column` with `bar`: the row's background, reversed. */
+function drawHighlightBar(cells: BandCell[], column: number, row: number, limit: number, bar: Bar = HIGHLIGHT_BAR): void {
+  text(cells, BANDS.chrome, column, row, " ".repeat(limit), bar.role, { inverse: true, bold: bar.bold, underline: bar.underline, limit })
+}
+
+/** Draws one part of a row — a hotkey, a label, a value — at column `x`, in its own role and weight. */
+type RowPart = (x: number, value: string, role: StyleRole, extra?: DrawExtra) => void
+
+/**
+ * How the parts of `row` are drawn on `bar` (drawn first, by `drawHighlightBar`): every part in the
+ * bar's role, reversed, with the bar's weight added to its own, so the row reads as one bar rather
+ * than a teal block, a white block and a grey one side by side (gate 5F). With no bar, each part is
+ * drawn as itself.
+ */
+function rowParts(cells: BandCell[], row: number, bar: Bar | null): RowPart {
+  return (x, value, role, extra = {}) => {
+    if (bar === null) {
+      text(cells, BANDS.chrome, x, row, value, role, extra)
+      return
+    }
+    text(cells, BANDS.chrome, x, row, value, bar.role, {
+      ...extra,
+      inverse: true,
+      bold: extra.bold === true || bar.bold,
+      underline: extra.underline === true || bar.underline,
+    })
+  }
 }
 
 /**
@@ -665,8 +710,8 @@ const POPUP_ROW: Readonly<Record<Popup, "nexus" | "start" | null>> = {
  */
 function refusedWords(bar: boolean, capability: CapabilityMode): CellStyle {
   if (!bar) return { fgRole: "chrome.muted", dim: true }
-  if (capability === "monochrome") return { fgRole: "chrome.title", inverse: true, dim: true }
-  return { fgRole: "chrome.title", bgRole: capability === "color16" ? "chrome.edge" : "chrome.muted", inverse: true }
+  if (capability === "monochrome") return { fgRole: HIGHLIGHT_BAR.role, inverse: true, dim: true }
+  return { fgRole: HIGHLIGHT_BAR.role, bgRole: capability === "color16" ? "chrome.edge" : "chrome.muted", inverse: true }
 }
 
 /**
@@ -676,52 +721,35 @@ function refusedWords(bar: boolean, capability: CapabilityMode): CellStyle {
  * has it.
  */
 function drawMenuRow(cells: BandCell[], layout: BuildLayout, row: number, entry: MenuRowSpec, capability: CapabilityMode): void {
-  const band = BANDS.chrome
   const column = layout.panelColumn
   const limit = layout.panelLimit
-  const pressed = entry.ack === "pressed"
-  // Pressed: the bar in the hotkey's colour, bold and underlined — stronger than the highlight at every
-  // tier, monochrome included.
-  const bar = entry.highlighted || pressed
-  const barRole: StyleRole = pressed ? "chrome.hotkey" : "chrome.title"
-  const extra = {
-    inverse: bar,
-    bold: pressed || entry.active,
-    underline: pressed,
-    dim: entry.disabled === true && !bar,
-  }
-  if (bar) text(cells, band, column, row, " ".repeat(limit), barRole, { ...extra, limit })
+  // A pressed acknowledgement is drawn as its own bar, over the highlight or on a row without one.
+  const bar = entry.ack === "pressed" ? PRESSED_LOOK : entry.highlighted ? HIGHLIGHT_BAR : null
+  if (bar !== null) drawHighlightBar(cells, column, row, limit, bar)
+  const part = rowParts(cells, row, bar)
   const words = cells.length
   // Active is not the keyboard's bar (feedback F22, F32): the bar says "the keyboard is here, not
   // chosen yet", and an active row is chosen. It reads `[1] Barracks  >` (feedback F67, F70): its own
   // hotkey — which ends it — the whole row in the hotkey's colour and bold, and one `>` at its right
   // end pointing at the map where it is under way; no underline. Legible in monochrome by the `>` and
   // the bold. A pressed acknowledgement on it still wins, drawn as the bar.
-  const activeRole: StyleRole = "chrome.hotkey"
+  const own: StyleRole = entry.active ? "chrome.hotkey" : "chrome.value"
+  // A row that no longer fits the budget is dim; on a bar only its cost keeps the dimness, the one fact
+  // it adds there.
+  const dim = entry.disabled === true && bar === null
   let at = column
   const hotkey = `[${entry.hotkey}]`
-  // Inside the bar every part takes the bar's own role, so it reads as one bar rather than a teal
-  // block, a white block and a grey one side by side.
-  text(cells, band, at, row, hotkey, bar ? barRole : "chrome.hotkey", { ...extra, bold: true, limit: column + limit - at })
+  part(at, hotkey, "chrome.hotkey", { bold: true, dim, limit: column + limit - at })
   at += hotkey.length + 1
-  text(cells, band, at, row, entry.label, bar ? barRole : entry.active ? activeRole : "chrome.value", {
-    ...extra,
-    limit: column + limit - at,
-  })
+  part(at, entry.label, own, { bold: entry.active, dim, limit: column + limit - at })
   at += entry.label.length
-  if (entry.badge !== undefined) {
-    text(cells, band, at, row, entry.badge, bar ? barRole : "chrome.hotkey", { ...extra, bold: true, limit: column + limit - at })
-  }
+  if (entry.badge !== undefined) part(at, entry.badge, "chrome.hotkey", { bold: true, dim, limit: column + limit - at })
   const value = entry.active ? ACTIVE_VALUE : entry.value
   if (value !== undefined) {
-    // In the bar the cost keeps only its dimness, the one fact it adds there: this row no longer fits.
-    rightAlign(cells, layout, row, value, bar ? barRole : entry.active ? activeRole : "chrome.value", {
-      ...extra,
-      dim: !entry.active && entry.disabled === true,
-    })
+    part(rightColumn(layout, value), value, own, { bold: entry.active, dim: !entry.active && entry.disabled === true })
   }
   if (entry.ack === "refused") {
-    const style = refusedWords(bar, capability)
+    const style = refusedWords(bar !== null, capability)
     for (let index = words; index < cells.length; index += 1) {
       const drawn = cells[index]
       if (drawn !== undefined && "cell" in drawn) cells[index] = { ...drawn, cell: { glyph: drawn.cell.glyph, style } }
@@ -1269,7 +1297,7 @@ export const SEE_THROUGH_TRAIL: readonly Readonly<{ back: number; alpha: number 
 ]
 
 /** The role the see-through cursor is mixed from: the map cursor's own (`drawCursor`). */
-const SEE_THROUGH_ROLE: StyleRole = "chrome.title"
+const SEE_THROUGH_ROLE: StyleRole = CURSOR_ROLE
 
 /**
  * **Explore Map's hand-off** (owner, 2026-09-30, feedback F64-F65: "exploring is just moving the focus to
@@ -1370,10 +1398,10 @@ function drawPopup(cells: BandCell[], input: BuildCompositionInput, pack: GlyphP
       case "text": {
         // A line of the export keeps its value when it is too long for the popup: its comment goes.
         const shown = entry.code === true && entry.text.length > textLimit ? entry.text.replace(/\s+#.*$/u, "") : entry.text
-        const on = entry.highlighted === true
-        if (on) text(cells, band, textColumn, row, " ".repeat(textLimit), "chrome.title", { inverse: true, limit: textLimit })
-        const role: StyleRole = on ? "chrome.title" : entry.muted === true || (entry.code === true && shown.startsWith("#")) ? "chrome.muted" : "chrome.value"
-        text(cells, band, textColumn, row, shown, role, { bold: entry.strong === true, inverse: on, limit: textLimit })
+        const bar = entry.highlighted === true ? HIGHLIGHT_BAR : null
+        if (bar !== null) drawHighlightBar(cells, textColumn, row, textLimit)
+        const role: StyleRole = entry.muted === true || (entry.code === true && shown.startsWith("#")) ? "chrome.muted" : "chrome.value"
+        rowParts(cells, row, bar)(textColumn, shown, role, { bold: entry.strong === true, limit: textLimit })
         break
       }
       case "option": {
@@ -1382,30 +1410,28 @@ function drawPopup(cells: BandCell[], input: BuildCompositionInput, pack: GlyphP
           text(cells, band, textColumn + 4, row, entry.description ?? "", "chrome.muted", { limit: textLimit - 4 })
           break
         }
-        const on = entry.highlighted === true
-        if (on) text(cells, band, textColumn, row, " ".repeat(textLimit), "chrome.title", { inverse: true, limit: textLimit })
+        const bar = entry.highlighted === true ? HIGHLIGHT_BAR : null
+        if (bar !== null) drawHighlightBar(cells, textColumn, row, textLimit)
+        const part = rowParts(cells, row, bar)
         const hotkey = `[${entry.hotkey}]`
-        text(cells, band, textColumn, row, hotkey, on ? "chrome.title" : "chrome.hotkey", { bold: true, inverse: on, limit: textLimit })
-        text(cells, band, textColumn + hotkey.length + 1, row, entry.label, on ? "chrome.title" : "chrome.value", {
-          inverse: on,
-          limit: textLimit - hotkey.length - 1,
-        })
+        part(textColumn, hotkey, "chrome.hotkey", { bold: true, limit: textLimit })
+        part(textColumn + hotkey.length + 1, entry.label, "chrome.value", { limit: textLimit - hotkey.length - 1 })
         break
       }
       case "setting": {
         // One line: the name, the value between `<` and `>` (the arrows say Left and Right change it,
         // and each half of the box is the click that does), against the row's right end.
-        const on = entry.highlighted
+        const bar = entry.highlighted ? HIGHLIGHT_BAR : null
         const columns = settingColumns(placed)
-        const role: StyleRole = on ? "chrome.title" : "chrome.value"
-        if (on) text(cells, band, textColumn, row, " ".repeat(textLimit), "chrome.title", { inverse: true, limit: textLimit })
-        text(cells, band, textColumn, row, entry.label, role, { inverse: on, limit: columns.labelLimit })
+        if (bar !== null) drawHighlightBar(cells, textColumn, row, textLimit)
+        const part = rowParts(cells, row, bar)
+        part(textColumn, entry.label, "chrome.value", { limit: columns.labelLimit })
         const inner = columns.valueTo - columns.valueFrom - 3
         const padding = Math.max(0, inner - entry.value.length)
         const value = `${" ".repeat(Math.ceil(padding / 2))}${entry.value}${" ".repeat(Math.floor(padding / 2))}`
-        text(cells, band, columns.valueFrom, row, "<", on ? "chrome.title" : "chrome.hotkey", { bold: true, inverse: on })
-        text(cells, band, columns.valueFrom + 2, row, value, role, { bold: true, inverse: on, limit: inner })
-        text(cells, band, columns.valueTo, row, ">", on ? "chrome.title" : "chrome.hotkey", { bold: true, inverse: on })
+        part(columns.valueFrom, "<", "chrome.hotkey", { bold: true })
+        part(columns.valueFrom + 2, value, "chrome.value", { bold: true, limit: inner })
+        part(columns.valueTo, ">", "chrome.hotkey", { bold: true })
         break
       }
       case "note":
@@ -1420,17 +1446,11 @@ function drawPopup(cells: BandCell[], input: BuildCompositionInput, pack: GlyphP
       case "keys": {
         // A line of the Controls page: the keys in the hotkey's colour, in their own column, and what
         // they do beside them — under the highlight bar, all in the bar's role, like an option row.
-        const on = entry.highlighted === true
-        if (on) text(cells, band, textColumn, row, " ".repeat(textLimit), "chrome.title", { inverse: true, limit: textLimit })
-        text(cells, band, textColumn, row, entry.keys, on ? "chrome.title" : "chrome.hotkey", {
-          bold: true,
-          inverse: on,
-          limit: Math.min(textLimit, CONTROLS_KEYS_WIDTH - 1),
-        })
-        text(cells, band, textColumn + CONTROLS_KEYS_WIDTH, row, entry.text, on ? "chrome.title" : "chrome.value", {
-          inverse: on,
-          limit: textLimit - CONTROLS_KEYS_WIDTH,
-        })
+        const bar = entry.highlighted === true ? HIGHLIGHT_BAR : null
+        if (bar !== null) drawHighlightBar(cells, textColumn, row, textLimit)
+        const part = rowParts(cells, row, bar)
+        part(textColumn, entry.keys, "chrome.hotkey", { bold: true, limit: Math.min(textLimit, CONTROLS_KEYS_WIDTH - 1) })
+        part(textColumn + CONTROLS_KEYS_WIDTH, entry.text, "chrome.value", { limit: textLimit - CONTROLS_KEYS_WIDTH })
         break
       }
     }
