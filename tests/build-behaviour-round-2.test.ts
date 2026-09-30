@@ -341,6 +341,25 @@ test("the Nexus powers, the game menu, Controls and Settings open over an armed 
   }
 })
 
+test("a click outside a popup over a card closes it and chooses nothing: the building stays armed, the highlight stays", () => {
+  for (const open of ["n", "q", "?"]) {
+    const side = session()
+    keys(side, "1")
+    const armed = side.build.state
+    keys(side, open)
+    assert.notEqual(side.build.state.popup, null)
+    // Where the Turret's row would be on the menu, which the card covers: nobody could see it.
+    const turretRow = menuEntryRow(side.layout, SPIKE_CATALOG, { kind: "construct", index: 2 }) as number
+    clickCell(side, side.layout.panelColumn + 2, turretRow)
+    const after = side.build.state
+    assert.equal(after.popup, null, `${open}: the popup did not close`)
+    assert.equal(after.armed, 0, `${open}: the click dropped the Barracks`)
+    assert.equal(after.focus, "grid")
+    assert.equal(after.menuHighlight, barracksEntry, `${open}: the click moved the highlight to a row nobody could see`)
+    assert.deepEqual(after.cursor, armed.cursor)
+  }
+})
+
 test("Explore Map is not locked: a digit arms from the map, n opens the Nexus powers and gives Explore Map back", () => {
   const arms = session()
   keys(arms, "e", "2")

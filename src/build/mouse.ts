@@ -86,6 +86,13 @@ export function buildMouseCommand(
   // What the click lands on underneath any popup — a menu row or a tile — named as the reducer's own
   // click commands, which decide what a click means from what is on screen.
   const underneath = (): BuildCommand | null => {
+    // A card — Explore Map's, or the armed building's (feedback F58) — covers the menu below its header
+    // row, so the whole panel is one target — the header, drawn active, and the card under it. Sent as
+    // the menu click it is, so a driver's `click-menu` while a card shows means exactly the same; the
+    // reducer does not read which row it names.
+    if (ui.cardPanel === true && inPanel(layout, event.column, event.row)) {
+      return { kind: "click-menu", entry: menuEntryAt(layout, catalog, event.column, event.row) ?? EXPLORE_ENTRY }
+    }
     // The Pulse's panel has no menu: a click there is not a menu row.
     const entry = ui.pulse === true ? null : menuEntryAt(layout, catalog, event.column, event.row)
     if (entry !== null) return { kind: "click-menu", entry }
@@ -125,13 +132,7 @@ export function buildMouseCommand(
     if (control !== null) return { kind: "pulse", control }
     if (inPanel(layout, event.column, event.row)) return null
   }
-  // A card — Explore Map's, or the armed building's (feedback F58) — covers the menu below its header
-  // row, so the whole panel is one target — the header, drawn active, and the card under it — and what
-  // it does is go back, as Esc does. Sent as the menu click it is, so a driver's `click-menu` while a
-  // card shows means exactly the same; the reducer does not read which row it names.
-  if (ui.cardPanel === true && inPanel(layout, event.column, event.row)) {
-    return { kind: "click-menu", entry: menuEntryAt(layout, catalog, event.column, event.row) ?? EXPLORE_ENTRY }
-  }
+  // A click on a card goes back, as Esc does (`underneath`).
   return underneath()
 }
 

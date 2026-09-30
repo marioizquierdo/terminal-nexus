@@ -1290,6 +1290,10 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // A click anywhere outside a popup dismisses it first — and only that, plus focus.
       if (state.popup !== null) {
         if (state.popup === "battle-round") return { ...state, popup: null, status: status("Cancelled.") }
+        // Over a card the menu is not drawn, so the click chooses nothing (a click can only choose what
+        // it could see): it closes the popup and hands the card back — the building still armed, the
+        // menu's highlight where it was.
+        if (cardShowing(state)) return { ...state, popup: null }
         return { ...toMenu({ ...state, popup: null }), menuHighlight: command.entry, highlightHidden: true }
       }
       // A card — Explore Map's, or the armed building's (feedback F58) — covers the menu below its
