@@ -9,7 +9,6 @@ import assert from "node:assert/strict"
 import {
   MAX_VIEWPORT,
   MIN_VIEWPORT,
-  SCROLL_MARGIN,
   availableTiles,
   clampCamera,
   clampToGrid,
@@ -25,6 +24,10 @@ import { spikeGrid } from "../src/build/catalog.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
 
 const GRID = spikeGrid()
+/** The canon's first margin, three tiles each way: a fixture for the follow rule, which the game now
+ *  feeds a share of the view (`marginForView`). */
+const SCROLL_MARGIN = 3
+const MARGIN = { x: SCROLL_MARGIN, y: SCROLL_MARGIN }
 
 function plainGrid(width: number, height: number): GridTerrain {
   return { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") }
@@ -87,15 +90,15 @@ test("engine-3.3-scroll: the cursor drives the camera, and only within the margi
   const still: Camera = { x: 10, y: 10 }
   // Comfortably inside the viewport: nothing moves. A camera that twitched on every cursor step
   // would be the "fighting the cursor" failure this gate is asking Mario about.
-  assert.deepEqual(followCursor(still, { x: 30, y: 18 }, viewport, GRID), still)
+  assert.deepEqual(followCursor(still, { x: 30, y: 18 }, viewport, GRID, MARGIN), still)
 
   // Exactly `SCROLL_MARGIN` from the east edge: still inside, still nothing.
   const atMargin = { x: still.x + viewport.width - 1 - SCROLL_MARGIN, y: 18 }
-  assert.deepEqual(followCursor(still, atMargin, viewport, GRID), still)
+  assert.deepEqual(followCursor(still, atMargin, viewport, GRID, MARGIN), still)
 
   // One tile further and the camera follows by exactly one tile — not by a jump, not by centring.
   const past = { x: atMargin.x + 1, y: 18 }
-  assert.deepEqual(followCursor(still, past, viewport, GRID), { x: still.x + 1, y: still.y })
+  assert.deepEqual(followCursor(still, past, viewport, GRID, MARGIN), { x: still.x + 1, y: still.y })
 })
 
 test("engine-3.3-scroll: the margin holds at every cursor position the Grid can produce", () => {
@@ -105,7 +108,7 @@ test("engine-3.3-scroll: the margin holds at every cursor position the Grid can 
   // and check the invariant after every single step rather than at a few hand-picked places.
   for (let y = 0; y < GRID.height; y += 1) {
     for (let x = 0; x < GRID.width; x += 1) {
-      camera = followCursor(camera, { x, y }, viewport, GRID)
+      camera = followCursor(camera, { x, y }, viewport, GRID, MARGIN)
       // The viewport never leaves the Grid.
       assert.ok(camera.x >= 0 && camera.x <= GRID.width - viewport.width, `camera x at ${x},${y}`)
       assert.ok(camera.y >= 0 && camera.y <= GRID.height - viewport.height, `camera y at ${x},${y}`)
@@ -139,7 +142,7 @@ test("engine-3.3-scroll: the margin holds at every viewport size in the clamped 
     let camera: Camera = { x: 0, y: 0 }
     const step = (position: number): void => {
       const cursor = axis === "x" ? { x: position, y: fixed } : { x: fixed, y: position }
-      camera = followCursor(camera, cursor, viewport, GRID)
+      camera = followCursor(camera, cursor, viewport, GRID, MARGIN)
       const range = visibleRange(camera, viewport)
       const [first, last, at] =
         axis === "x"

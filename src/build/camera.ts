@@ -11,9 +11,6 @@ export const MIN_VIEWPORT = { width: 48, height: 16 } as const
 /** RULE: nobody sees more Grid than this, however large their monitor. Fairness, and bounded
  *  arithmetic for every layout, cursor and scroll calculation downstream. */
 export const MAX_VIEWPORT = { width: 72, height: 24 } as const
-/** RULE that a margin exists; GUIDANCE on the number, which `--scroll-margin` can override. */
-export const SCROLL_MARGIN = 3
-
 /**
  * The side panel's share of the terminal floor: engine.md 3.1's own 80-column arithmetic
  * (1 + 30 + 48 + 1), which the resize gate and the choice of tile width still measure against — so
@@ -134,29 +131,25 @@ function followAxis(camera: number, cursor: number, span: number, margin: number
   return Math.min(Math.max(camera, earliest), latest)
 }
 
-/** A margin in tiles along each axis: the same number both ways (gates 5A-5G), or one per axis. */
-export type Margin = number | Readonly<{ x: number; y: number }>
+/** The scroll margin in tiles along each axis — a share of the view's width and height since gate 5H
+ *  (`marginForView`). RULE that a margin exists; GUIDANCE on its size, which `--scroll-margin` can
+ *  override. */
+export type Margin = Readonly<{ x: number; y: number }>
 
 /**
  * **The whole scrolling interaction** — engine.md 3.3: "The cursor drives it. Move the cursor within
- * a scroll margin of 3 tiles of a viewport edge and the camera follows. That is the whole
- * interaction — no separate pan mode, no modifier keys, no second cursor."
+ * a scroll margin ... of a viewport edge and the camera follows. That is the whole interaction — no
+ * separate pan mode, no modifier keys, no second cursor." (The margin was 3 tiles when that was
+ * written; it is a share of the view now.)
  */
-export function followCursor(
-  camera: Camera,
-  cursor: Coord,
-  viewport: Viewport,
-  grid: GridTerrain,
-  margin: Margin = SCROLL_MARGIN,
-): Camera {
-  const along = typeof margin === "number" ? { x: margin, y: margin } : margin
+export function followCursor(camera: Camera, cursor: Coord, viewport: Viewport, grid: GridTerrain, margin: Margin): Camera {
   // The clamp is where the margin stops being honoured, and is right to: at the Grid's own edge the
   // camera has nowhere left to go, so the cursor reaches the edge of the screen because there is no
   // more Grid to reveal.
   return clampCamera(
     {
-      x: followAxis(camera.x, cursor.x, viewport.width, along.x),
-      y: followAxis(camera.y, cursor.y, viewport.height, along.y),
+      x: followAxis(camera.x, cursor.x, viewport.width, margin.x),
+      y: followAxis(camera.y, cursor.y, viewport.height, margin.y),
     },
     viewport,
     grid,
@@ -177,7 +170,7 @@ export function shareOfSpan(percent: number, span: number): number {
 
 /** The scroll margin in tiles along each axis for a margin given as a percentage of the view: 20% of a
  *  48 x 16 view, say, is 10 tiles to either side and 3 above and below. */
-export function marginForView(percent: number, viewport: Viewport): Readonly<{ x: number; y: number }> {
+export function marginForView(percent: number, viewport: Viewport): Margin {
   return { x: shareOfSpan(percent, viewport.width), y: shareOfSpan(percent, viewport.height) }
 }
 

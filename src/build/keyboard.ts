@@ -234,8 +234,6 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (key === HELP_KEY) return { kind: "open-controls" }
   // `s` is the Start Pulse row's key (feedback F41, F47); `p`, its first key, is kept as another way to press it.
   if (key === START_KEY || key === "p") return { kind: "open-battle-round" }
-  // `y` only ever means something while the Battle Round confirmation is open; outside it is inert.
-  if (key === "y") return null
 
   if (focus === "menu") {
     // Up and Down walk the menu and stop at its ends; the fast move jumps to its first or last row.

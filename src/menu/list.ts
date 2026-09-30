@@ -1,6 +1,7 @@
-// The pure menu-list reducer. No stdin, no ANSI, no backend — a `MenuCommand` in, the next state and
-// whatever got activated out, so this is testable without a terminal and reusable by any future list
-// (a construct menu, a Nexus draft) that wants the same "hotkey, arrows-and-Enter, or a click" shape.
+// The pure menu-list reducer for the title screen's menus. No stdin, no ANSI, no backend — a
+// `MenuCommand` in, the next state and whatever got activated out, so this is testable without a
+// terminal. The Build Phase's lists keep their highlight in their own state and share only the keys
+// and the step rule (`list-keys.ts`), so every list moves the same way.
 
 import { stepListIndex } from "./list-keys.ts"
 import type { MenuCommand, MenuItem } from "./types.ts"

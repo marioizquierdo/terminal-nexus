@@ -732,32 +732,21 @@ export function plannedAt(
 }
 
 /**
- * How a cursor move treats the camera:
- *
- * - `follow` — the scroll margin's follow rule, what every key move does;
- * - a function — the camera placed first (centred on a tile, or an edge-zone click), then the follow
- *   rule on top, so the margin still holds wherever the camera can scroll.
+ * Moves the cursor and lets it drag the camera — the one place scrolling ever happens. Every move gets
+ * the scroll margin's follow rule; `placeCamera`, when given, places the camera first — centred on a
+ * tile, or brought to an edge-zone click — and the follow rule holds on top of it, so the margin still
+ * holds wherever the camera can scroll.
  */
-type CameraMove = "follow" | ((camera: Camera, cursor: Coord) => Camera)
-
-/** Moves the cursor and lets it drag the camera — the one place scrolling ever happens. */
-function withCursor(context: BuildContext, state: BuildState, tile: Coord, scroll: CameraMove = "follow"): BuildState {
+function withCursor(
+  context: BuildContext,
+  state: BuildState,
+  tile: Coord,
+  placeCamera?: (camera: Camera, cursor: Coord) => Camera,
+): BuildState {
   const cursor = clampToGrid(tile, context.grid)
-  const moved = !sameTile(cursor, state.cursor)
-  const placed = typeof scroll === "function" ? scroll(state.camera, cursor) : state.camera
+  const placed = placeCamera === undefined ? state.camera : placeCamera(state.camera, cursor)
   const camera = followCursor(placed, cursor, state.viewport, context.grid, marginOf(context, state.viewport))
-  // A refusal names a tile, and the view already recomputes its own live reading from wherever the
-  // cursor now is — so a refusal left behind after the cursor moves away disagrees with what is drawn
-  // above it. Every other message is about the last action rather than a tile, and stays until the
-  // next one — and so does a tile-scoped one when the cursor did not actually move: pressing further
-  // into the Grid's own edge is clamped back to the same tile.
-  const lapsed = moved && state.status.tile !== undefined
-  return {
-    ...state,
-    cursor,
-    camera,
-    status: lapsed ? NO_STATUS : state.status,
-  }
+  return { ...state, cursor, camera }
 }
 
 /**
@@ -771,8 +760,8 @@ function withCursor(context: BuildContext, state: BuildState, tile: Coord, scrol
  * Experiments, beside "centres every click", "margin only" and "armed clicks never scroll", until the
  * owner settled them (2026-09-30).
  */
-function clickCameraMove(context: BuildContext, state: BuildState): CameraMove {
-  return (camera, cursor) => edgeClickCamera(camera, cursor, state.viewport, context.grid, TUNING.clickZone)
+function withClickedCursor(context: BuildContext, state: BuildState, tile: Coord): BuildState {
+  return withCursor(context, state, tile, (camera, cursor) => edgeClickCamera(camera, cursor, state.viewport, context.grid, TUNING.clickZone))
 }
 
 /** The next acknowledgement: a new sequence number, so the live loop sees a fresh one even when two
@@ -845,7 +834,7 @@ function armItem(context: BuildContext, state: BuildState, index: number, from: 
   if (lock !== null) return { ...state, status: lock }
   const item = context.catalog[index]
   if (item === undefined) return state
-  if (state.armed === index) return cancel(context, state)
+  if (state.armed === index) return cancel(state)
   const refused = refuseWhileArmed(context, state)
   if (refused !== null) return refused
   const entry = entryOfConstruct(index)
@@ -902,16 +891,17 @@ function refuseWhileArmed(context: BuildContext, state: BuildState): BuildState 
   }
 }
 
-/** Enter/Space (or a click) on menu entry `entry`: whatever it is for. Both are the menu's own, so
- *  whatever they start goes back to the menu when it is done. */
-function activateEntry(context: BuildContext, state: BuildState, entry: number, by: "key" | "click"): BuildState {
+/** Enter/Space on the highlighted menu row, or a click on a row (from the menu or from plain
+ *  navigation — a card covers the menu otherwise): whatever the row is for. It is the menu's doing
+ *  either way, so whatever it starts goes back to the menu when it is done. */
+function activateEntry(context: BuildContext, state: BuildState, entry: number): BuildState {
   const target = menuEntries(context)[entry]
   if (target === undefined) return state
   const highlighted: BuildState = { ...state, menuHighlight: entry }
   if (target.kind === "construct") return armItem(context, highlighted, target.index, "menu")
-  // A click on the Nexus entry puts focus where it landed, on the menu, before the popup takes the
-  // keyboard — so the pick hands the player back to the menu, not to a building they had armed.
-  if (target.kind === "nexus") return openNexus(by === "click" ? toMenu(highlighted) : highlighted)
+  // The keyboard goes to the menu, where a click from the map landed, before the popup takes it — so
+  // the pick hands the player back to the menu.
+  if (target.kind === "nexus") return openNexus(toMenu(highlighted))
   if (target.kind === "start") return openBattleRound(context, highlighted)
   return openExplore(context, highlighted, "menu")
 }
@@ -986,7 +976,7 @@ function openExplore(context: BuildContext, state: BuildState, from: Focus): Bui
  *  exactly as Esc does (owner, 2026-09-29, feedback F32: "Pressing [e] again, or [esc], should be
  *  equivalent"). */
 function toggleExplore(context: BuildContext, state: BuildState): BuildState {
-  if (exploring(state) && state.popup === null) return cancel(context, state)
+  if (exploring(state) && state.popup === null) return cancel(state)
   return openExplore(context, state, state.focus)
 }
 
@@ -1090,7 +1080,7 @@ function place(context: BuildContext, state: BuildState): BuildState {
  *  press: a popup goes back to the one it was opened from (Settings to the game menu, the export to
  *  Settings), or closes; placing or Explore Map goes back to where it began; the map to the menu; and
  *  on the menu, the game menu opens. */
-function cancel(context: BuildContext, state: BuildState): BuildState {
+function cancel(state: BuildState): BuildState {
   if (state.popup === "battle-round") return { ...closePopups(state), status: status("Cancelled.") }
   if (state.popup !== null) return popPopup(state)
   if (state.committed) return openPopup(state, "game-menu")
@@ -1113,9 +1103,9 @@ function cancel(context: BuildContext, state: BuildState): BuildState {
  * menu, nothing happens at all: no status, no flicker. `x x x` from anywhere lands on the menu with the
  * keyboard there and stays, and a stray right click never opens a menu.
  */
-function goBack(context: BuildContext, state: BuildState): BuildState {
+function goBack(state: BuildState): BuildState {
   if (state.popup === null && (state.committed || mapMode(state) === "menu")) return state
-  return cancel(context, state)
+  return cancel(state)
 }
 
 /**
@@ -1324,7 +1314,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       if (state.popup !== null) {
         const dismissed = dismissPopup(state)
         if (state.popup === "battle-round" || state.committed) return dismissed
-        return withCursor(context, { ...dismissed, focus: "grid" }, target, clickCameraMove(context, dismissed))
+        return withClickedCursor(context, { ...dismissed, focus: "grid" }, target)
       }
       // A committed plan locks every edit but not looking: a click on the map moves the cursor there and
       // scrolls the view as it does while exploring (gate 6A — the Pulse's map is a map to look around).
@@ -1338,7 +1328,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // armed it only moves the cursor: in Explore Map the panel follows it; from the menu it arrives
       // in plain navigation with the menu still drawn, so the next click can arm a building from it
       // (feedback F22).
-      const moved = { ...withCursor(context, state, target, clickCameraMove(context, state)), focus: "grid" as const }
+      const moved = { ...withClickedCursor(context, state, target), focus: "grid" as const }
       if (!confirming) return moved
       // Placed by the mouse: back where the arming came from — for a building clicked on the menu,
       // the menu with nothing looking chosen (feedback F22, F30: "get back to the menu, focused but
@@ -1362,10 +1352,10 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // header row: a click on that row, drawn active, goes back, as Esc (and `e` for Explore Map) does
       // (feedback F32), and so does a click anywhere else on the panel, where the row under the click
       // was not drawn: it chooses nothing, whatever `entry` says. Either way the menu is drawn again.
-      if (cardShowing(state)) return { ...cancel(context, state), highlightHidden: true }
+      if (cardShowing(state)) return { ...cancel(state), highlightHidden: true }
       // Otherwise a click activates what it lands on, whatever had focus (feedback F22): a building
       // arms at once, its ghost at the cursor; Nexus opens its popup; Explore Map opens the map.
-      return { ...activateEntry(context, state, command.entry, "click"), highlightHidden: true }
+      return { ...activateEntry(context, state, command.entry), highlightHidden: true }
     }
 
     case "arm":
@@ -1411,10 +1401,10 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     }
 
     case "cancel":
-      return cancel(context, state)
+      return cancel(state)
 
     case "back":
-      return goBack(context, state)
+      return goBack(state)
 
     case "open-game-menu":
       return openPopup(state, "game-menu")
@@ -1476,7 +1466,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       }
       if (state.popup !== null || state.focus !== "menu" || state.committed) return state
       if (state.highlightHidden) return revealHighlight(state)
-      return activateEntry(context, state, state.menuHighlight, "key")
+      return activateEntry(context, state, state.menuHighlight)
     }
 
     case "refuse-row":
