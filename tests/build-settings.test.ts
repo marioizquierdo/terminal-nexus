@@ -408,8 +408,11 @@ test("the owner's export of 2026-09-30 is this build: its Experiments are the de
   assert.deepEqual(result.ignored, [])
   assert.deepEqual(result.applied, ["holdWindowMs", "raid", "crew", "theme", "capability", "glyphPack", "reducedMotion", "focusArrowMs"])
   assert.deepEqual(result.snapshot.experiments, defaultExperiments(), "every Experiment he kept is at his value by default")
-  // The rest were settled: each skipped quietly, and each number is the tuned value, read not copied.
-  assert.deepEqual([...result.settled].sort(), [...SETTLED_EXPERIMENTS].sort())
+  // The rest were settled: each of the twenty-eight skipped quietly, and each number is the tuned value,
+  // read not copied. (The settled names are derived from the table, so they also hold tuned numbers his
+  // export never named.)
+  assert.equal(result.settled.length, 28)
+  assert.ok(result.settled.every((name) => SETTLED_EXPERIMENTS.has(name)))
   const numbers = [...OWNER_EXPORT_2026_09_30.matchAll(/^(\w+) = (\d+) /gmu)]
   let checked = 0
   for (const [, name, value] of numbers) {

@@ -132,6 +132,9 @@ export type ImportResult = Readonly<{
 
 const PAIR = /([A-Za-z][A-Za-z0-9_]*)\s*=\s*([^\s,;&#]+)/gu
 
+/** The names of this build's Experiments, as an export writes them. */
+const EXPERIMENT_NAMES: ReadonlySet<string> = new Set(EXPERIMENT_FIELDS.map((spec) => spec.field))
+
 /**
  * Reads an export (or any `name = value` text) onto `base`: every pair it recognises replaces that one
  * value, everything else is left as `base` has it. Never throws.
@@ -142,25 +145,24 @@ export function parseSettingsExport(text: string, base: SettingsSnapshot): Impor
   const applied: string[] = []
   const ignored: string[] = []
   const settled: string[] = []
-  const fields = new Set<string>(EXPERIMENT_FIELDS.map((spec) => spec.field))
-  const retired = new Set<string>(SETTLED_EXPERIMENTS)
   for (const line of text.split(/\r?\n/u)) {
     // A comment runs to the end of its line; a URL-encoded or one-line form has none to strip.
     const body = line.replace(/#.*$/u, "")
     for (const match of body.matchAll(PAIR)) {
       const name = match[1] as string
       const value = match[2] as string
-      if (retired.has(name)) {
-        settled.push(name)
-        continue
-      }
-      if (fields.has(name)) {
+      // A live Experiment first, so one that takes up a tuned number's name again is read, not skipped.
+      if (EXPERIMENT_NAMES.has(name)) {
         const parsed = experimentValue(name as ExperimentField, value)
         if (parsed === null) ignored.push(`${name}=${value}`)
         else {
           experiments[name] = parsed
           applied.push(name)
         }
+        continue
+      }
+      if (SETTLED_EXPERIMENTS.has(name)) {
+        settled.push(name)
         continue
       }
       const player = PLAYER_FIELDS.some((spec) => spec.field === name)

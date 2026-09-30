@@ -87,38 +87,23 @@ export type Tuning = { readonly [K in keyof typeof TUNED]: number }
 
 export const TUNING: Tuning = TUNED
 
-/**
- * The names the settled Experiments had in a settings export — every one of them, the choices as well as
- * the numbers. An old export still names them; reading one skips these quietly (`settings-export.ts`),
- * since the value they held is now the code's own, rather than reporting them as names it does not know.
- */
-export const SETTLED_EXPERIMENTS: readonly string[] = [
-  "cursorBlinks",
-  "placeFramesMs",
-  "placeGlowMs",
+/** The names the settled *choices* had as Experiments (the list at the top of this file): they have no
+ *  row in the table, because the code simply does what the owner chose. */
+const SETTLED_CHOICES = [
   "placeParticles",
   "placeLight",
-  "scrollMargin",
   "clickScroll",
-  "clickZone",
   "armedClickScrolls",
-  "doubleClickMs",
-  "easeMs",
-  "cursorGlideMs",
   "fastRecentres",
-  "tapStep",
-  "holdStep",
-  "fastStep",
-  "rampMs",
-  "jumpStep",
-  "jumpRepeatMs",
-  "refusedCursorMs",
-  "escTimeoutMs",
-  "pressedFlashMs",
-  "refusedFlashMs",
-  "endWarnMs",
-  "endWalkPauseMs",
-  "endWalkMs",
   "endCentre",
   "redAlerts",
-]
+] as const
+
+/**
+ * The names the settled Experiments had in a settings export: every tuned number's — the table's own
+ * names, so an Experiment that settles into it is covered as it lands — and every settled choice's. An
+ * old export still names them; reading one skips these quietly (`settings-export.ts`), since the value
+ * they held is now the code's own, rather than reporting them as names it does not know. (A tuned
+ * number that never was an Experiment, like `placeSparks`, is here too, harmlessly: no export names it.)
+ */
+export const SETTLED_EXPERIMENTS: ReadonlySet<string> = new Set([...Object.keys(TUNED), ...SETTLED_CHOICES])
