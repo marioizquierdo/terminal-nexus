@@ -327,19 +327,16 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
     if (list !== null) return list
     // Left/Right have nothing to do on the menu: the row flickers so the player sees where the keys
     // went, and the keyboard stays on the menu (owner, 2026-09-30, feedback F55).
-    if (MENU_LEFT.has(key)) return { kind: "nudge", direction: "left" }
-    if (MENU_RIGHT.has(key)) return { kind: "nudge", direction: "right" }
+    if (MENU_LEFT.has(key) || MENU_RIGHT.has(key)) return { kind: "refuse-row" }
     if (PLACE_KEYS.has(key)) return { kind: "activate" }
-    // Backspace removes what is under the map cursor, which is hidden while the menu has the
-    // keyboard: the row flickers, like Left, to say the key arrived and has nothing to do here
-    // (feedback F17).
-    if (REMOVE_KEYS.has(key)) return { kind: "nudge", direction: "left" }
   } else {
     if (PLACE_KEYS.has(key)) return context.armed ? { kind: "place" } : { kind: "open-explore" }
-    if (REMOVE_KEYS.has(key)) return { kind: "remove" }
     const move = cursorMove(key)
     if (move !== null) return move
   }
+  // Backspace removes what is planned under the map cursor — from the menu too, where the reducer
+  // refuses it with the row's flicker, since the cursor is hidden there (feedback F17).
+  if (REMOVE_KEYS.has(key)) return { kind: "remove" }
 
   // Digits always address the list, and never mean anything else on this screen — engine.md 9.7's
   // first convention, "no modes". `0` is the tenth row, not the zeroth. A digit arms its row from

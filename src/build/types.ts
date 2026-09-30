@@ -91,7 +91,8 @@ export type BuildCommand =
    *  the cursor, begun on the map — so Esc comes back to the map (feedback F30). Nothing, when Explore
    *  Map is already open. */
   | Readonly<{ kind: "open-explore" }>
-  /** Remove the planned, uncommitted placement under the cursor — Backspace or Delete. */
+  /** Remove the planned, uncommitted placement under the cursor — Backspace or Delete. Refused on the
+   *  menu, where the cursor is hidden, with the flicker of a key that had nothing to do there. */
   | Readonly<{ kind: "remove" }>
   | Readonly<{ kind: "undo" }>
   /**
@@ -139,9 +140,9 @@ export type BuildCommand =
   | Readonly<{ kind: "highlight"; delta: number; jump?: boolean }>
   /** Enter/Space on the menu or inside a popup's list: do what the highlighted entry is for. */
   | Readonly<{ kind: "activate" }>
-  /** Left/Right on the menu: nothing to do there, so the row flickers to say the key arrived, and the
-   *  keyboard stays on the menu (owner, 2026-09-30, feedback F55). */
-  | Readonly<{ kind: "nudge"; direction: "left" | "right" }>
+  /** Left or Right on the menu, where they have nothing to do: the highlighted row flickers "refused"
+   *  to say the key arrived, and the keyboard stays on the menu (owner, 2026-09-30, feedback F55). */
+  | Readonly<{ kind: "refuse-row" }>
   /** `n`, or activating the Nexus entry: open the Nexus popup. */
   | Readonly<{ kind: "open-nexus-powers" }>
   /** `e`: Explore Map, a toggle — focus to the Grid with nothing armed, the side panel showing what is

@@ -408,6 +408,11 @@ test("Backspace on the menu flickers the row and removes nothing under the hidde
   assert.equal(side.build.state.planned.length, 1, "Backspace on the menu removed a building")
   assert.equal(side.build.state.ack?.kind, "refused")
   assert.equal(side.build.state.focus, "menu")
+  // The key sends `remove`, and the reducer refuses it on the menu: a driver's is refused the same way.
+  const seq = side.build.state.ack?.seq ?? 0
+  side.build.dispatch({ kind: "remove" })
+  assert.equal(side.build.state.planned.length, 1)
+  assert.deepEqual(side.build.state.ack, { seq: seq + 1, kind: "refused", entry: side.build.state.menuHighlight })
 })
 
 test("a popup's shadow is a dim shade, visible on the dark theme's near-black ground", () => {

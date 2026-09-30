@@ -793,6 +793,17 @@ function revealHighlight(state: BuildState): BuildState {
   return { ...state, highlightHidden: false }
 }
 
+/**
+ * A key that reached the menu with nothing to do there — Left, Right, Backspace: the highlighted row
+ * flickers "refused" to say the key arrived, and the keyboard stays on the menu, however many come
+ * (owner, 2026-09-30, feedback F55 - reversing 2026-09-27's "a second Right moves focus to the Grid";
+ * Tab and a click on the map still do). After the mouse, it only shows the highlight again.
+ */
+function refuseOnMenu(state: BuildState): BuildState {
+  if (state.highlightHidden) return revealHighlight(state)
+  return { ...state, ack: acknowledge(state, "refused", state.menuHighlight) }
+}
+
 /** Gives the keyboard to the Grid in **plain navigation**: nothing armed, no Explore Map — the bare
  *  cursor with the menu drawn beside it. Where Tab, a click on the map and finishing something begun
  *  on the map all arrive (owner, 2026-09-29, feedback F30). */
@@ -1376,6 +1387,8 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     case "remove": {
       const lock = editLock(state)
       if (lock !== null) return { ...state, status: lock }
+      // What the menu hides — the map cursor, and what is under it — it cannot remove (feedback F17).
+      if (mapMode(state) === "menu") return refuseOnMenu(state)
       const target = plannedAt(context, state.planned, state.cursor)
       if (target === null) return { ...state, status: status("Nothing planned under the cursor.", "warning") }
       return {
@@ -1466,14 +1479,9 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return activateEntry(context, state, state.menuHighlight, "key")
     }
 
-    case "nudge": {
-      if (state.focus !== "menu" || state.popup !== null || state.committed) return state
-      if (state.highlightHidden) return revealHighlight(state)
-      // Left and Right have nothing to do on the menu: the row flickers to say the key arrived, and the
-      // keyboard stays on the menu, however many come (owner, 2026-09-30, feedback F55 - reversing
-      // 2026-09-27's "a second Right moves focus to the Grid"). Tab and a click on the map still do.
-      return { ...state, ack: acknowledge(state, "refused", state.menuHighlight) }
-    }
+    case "refuse-row":
+      if (state.popup !== null || state.committed || mapMode(state) !== "menu") return state
+      return refuseOnMenu(state)
 
     case "open-nexus-powers":
       return openNexus(state)
