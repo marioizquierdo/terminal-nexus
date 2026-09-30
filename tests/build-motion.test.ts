@@ -10,7 +10,7 @@ import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { edgeClickCamera, marginForView, shareOfSpan } from "../src/build/camera.ts"
 import { EXPERIMENT_FIELDS, defaultExperiments } from "../src/build/experiments.ts"
-import { buildLayout, cellForTile } from "../src/build/layout.ts"
+import { buildLayout, cellForTile, menuEntryRow } from "../src/build/layout.ts"
 import { rampStep, rampTuning } from "../src/build/motion.ts"
 import type { RampMemory, RampTuning } from "../src/build/motion.ts"
 import { TUNING } from "../src/build/tuning.ts"
@@ -275,6 +275,27 @@ test("armed, a click scrolls like an exploring one, and a quick double click pla
   reference.build.handleData(click, reference.layout, { now: 1000 })
   reference.build.dispatch({ kind: "place" })
   assert.deepEqual(side.build.state.planned, reference.build.state.planned)
+})
+
+test("a double click on the ghost's own tile places once and leaves the keyboard where the arming began", () => {
+  // Armed from the menu by a click on its row; the ghost sits at the cursor, so the first half of a
+  // double click on it places by the second-click rule. The second half has nothing left to do: it must
+  // not take the keyboard to the map, nor lapse the placement's answer.
+  const side = exploring(spikeContext(), { x: 40, y: 20 })
+  side.build.dispatch({ kind: "focus", target: "menu" })
+  const row = menuEntryRow(side.layout, side.context.catalog, { kind: "construct", index: 0 }) as number
+  side.build.handleData(formatMouseEvent(MOUSE_LEFT, side.layout.panelColumn + 1, row + 1), side.layout, { now: 1000 })
+  assert.equal(side.build.state.armed, 0)
+  const cell = cellForTile(side.layout, side.build.state.camera, side.build.state.cursor)
+  const click = formatMouseEvent(MOUSE_LEFT, cell.x + 1, cell.y + 1)
+  side.build.handleData(click, side.layout, { now: 2000 })
+  side.build.handleData(click, side.layout, { now: 2150 })
+  assert.equal(side.build.state.planned.length, 1)
+  assert.equal(side.build.state.focus, "menu", "the second half of the double click took the keyboard to the map")
+  assert.match(side.build.state.status.text, /Barracks placed/)
+  // Out of the window, the same cell is a fresh click on the map again.
+  side.build.handleData(click, side.layout, { now: 2150 + TUNING.doubleClickMs + 1 })
+  assert.equal(side.build.state.focus, "grid")
 })
 
 test("a slow second click on a scrolled spot is a fresh first click, not a place on the wrong tile (F22)", () => {

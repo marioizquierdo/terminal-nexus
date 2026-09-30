@@ -67,6 +67,10 @@ export class BuildSession {
   /** The last left click on a Grid tile with a building armed: where on screen, when, and the tile it
    *  pointed at — so a double click places there even if the first click scrolled the view (F22). */
   private lastArmedClick: Readonly<{ column: number; row: number; at: number; tile: Coord }> | null = null
+  /** The last left click that placed a building: where on screen and when — so the second half of a
+   *  double click on the ghost's own tile, which the first half already placed by the second-click
+   *  rule, is swallowed rather than read as a fresh click on the map. */
+  private lastPlacingClick: Readonly<{ column: number; row: number; at: number }> | null = null
   private readonly startPulse: (context: BuildContext, state: BuildState) => ResolvedPulse | null
   /** The Nexus Pulse on screen, from the moment the plan is committed until the Build Phase starts over. */
   private presenter: PulsePresenter | null = null
@@ -195,7 +199,25 @@ export class BuildSession {
             popupHighlight: state.popupHighlight,
             pulse: this.presenter !== null,
           })
-    if (mouse !== null && mouse.press && command?.kind === "click-tile") {
+    const placing = this.lastPlacingClick
+    if (mouse !== null && mouse.press) this.lastPlacingClick = null
+    if (
+      mouse !== null &&
+      mouse.press &&
+      command?.kind === "click-tile" &&
+      placing !== null &&
+      timing.now !== undefined &&
+      placing.column === mouse.column &&
+      placing.row === mouse.row &&
+      timing.now - placing.at <= TUNING.doubleClickMs
+    ) {
+      // The second half of a double click whose first half already placed — a double click on the
+      // ghost's own tile, where one click is enough: the building is placed, so this press has nothing
+      // left to do. Read as a fresh click it would take the keyboard to the map and lapse the
+      // placement's answer.
+      command = null
+      this.lastArmedClick = null
+    } else if (mouse !== null && mouse.press && command?.kind === "click-tile") {
       // A double click places where its first click pointed. The reducer places on a second click of
       // the tile the cursor is on, so the second half of a quick double click on the same screen cell
       // is sent as a click on the first one's tile — exactly what a driver would send for "click it
@@ -247,7 +269,12 @@ export class BuildSession {
       // returns to normal").
       this.ramp.reset()
     }
-    if (command !== null) this.dispatch(command)
+    if (command === null) return
+    const before = this.buildState
+    this.dispatch(command)
+    if (mouse !== null && mouse.press && timing.now !== undefined && this.buildState.planned.length > before.planned.length) {
+      this.lastPlacingClick = { column: mouse.column, row: mouse.row, at: timing.now }
+    }
   }
 
   /** The driver's raw-bytes path — "a scripted list of... raw key and mouse events" — and what a
