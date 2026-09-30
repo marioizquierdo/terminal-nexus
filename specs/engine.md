@@ -892,7 +892,7 @@ type CellStyle = Readonly<{
   inverse?: boolean
   fade?: number            // 0-1, fgRole only: 0 the role's own colour, 1 the theme's background
   tint?: { role: string; amount: number } // 0-1, fgRole pulled toward another role (canon 2.24)
-  overlay?: { role: string; alpha: number } // 0-1, a see-through cursor over the cell (canon 2.28)
+  seeThrough?: { role: string; alpha: number } // 0-1, a see-through cursor over the cell (canon 2.28)
 }>
 
 type Cell = Readonly<{ glyph: string; style: CellStyle }>
@@ -930,7 +930,7 @@ palette colour; `color16` has no continuum and steps onto the other role's own c
 Phase. The rainbow's six hue roles (`fx.hue.red` … `fx.hue.magenta`) are ordinary roles with a colour
 per theme.
 
-**`overlay` — added at canon 2.28 (the menu spike's round 2, feedback F64-F65).** A see-through
+**`seeThrough` — added at canon 2.28 (the menu spike's round 2, feedback F64-F65).** A see-through
 cursor over the cell: `{ role, alpha }`, a role and a number from 0 to 1, never a colour — "the cursor,
 drawn in `role`, at opacity `alpha`, over what this cell shows". The cell's fill becomes `alpha` of the
 role's colour and `1 − alpha` of what was there, which is itself 80% the cell's background and 20% its
@@ -942,8 +942,8 @@ its background mixed toward the role. `truecolor` mixes exactly, `color256` take
 entry, `color16` shows the plain cursor (inverse in the role's colour) from an alpha of one half and
 nothing below, `monochrome` the same step as inverse alone. Where it shows it replaces the cell's
 colours, inverse and dim; bold and underline stay. It is written by a glyphless write, so the glyph
-beneath always survives, and a later overlay on a cell replaces an earlier one. One function resolves it
-(`overlayColours` in `src/view/roles.ts`) and every renderer calls it. Scope: the Explore Map hand-off's
+beneath always survives, and a later see-through write on a cell replaces an earlier one. One function resolves it
+(`seeThroughColours` in `src/view/roles.ts`) and every renderer calls it. Scope: the Explore Map hand-off's
 travelling cursor. **`fade` is also used on the Build Phase panel's own text** for the card reveal
 (below), chrome rather than an effect's glyph.
 
@@ -1116,7 +1116,7 @@ all.
 **Popups have one shape — RULE for the shape as data, GUIDANCE for its look, canon 2.21, grown at
 2.26.** Every popup — the Nexus powers, the start-the-Pulse question, the game menu, Settings, the
 export, and a message — is a title and a list of rows, some of them options that name the command a
-click on them sends, and **at most one run of rows that scrolls** (`src/build/overlay.ts`). The frame
+click on them sends, and **at most one run of rows that scrolls** (`src/build/popup.ts`). The frame
 draws a popup from the same placed shape the mouse adapter hit-tests, so a click can never land on
 anything the frame drew somewhere else — the guarantee `src/build/layout.ts` already gives the side
 panel. Drawn to be unmissable (the owner clicked Nexus, did not notice the popup, and thought the mouse
@@ -1364,7 +1364,7 @@ friendlier: a "Nexus (1)" entry — the count is the number of picks waiting —
 entry of the side panel's menu**, that opens a popup **in the middle of the screen** only when the
 player actively selects it, never forced open the instant the Build Phase begins; inside it they make
 a pending pick by keyboard or mouse, read what each power does, and review the ones already active.
-The popup is the game's first **overlay** — drawn over the Grid pane, holding the keyboard and the
+The popup is the first thing the game draws **over** the Grid pane, holding the keyboard and the
 mouse until it closes. The start-the-Pulse question and the exit question became popups too, so with
 three real uses the shape was extracted at gate 5F's second round (the one popup shape of 9.2); the
 Settings popup (below) is the fourth. **The popup closes on the pick — GUIDANCE, canon 2.21**

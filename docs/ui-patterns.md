@@ -12,10 +12,10 @@ For any agent or person about to build or change a screen, a menu, a popup, an e
 
 - **When two rules disagree, or none covers the case, the goals decide.**
 - **A change that breaks a rule or adds a pattern updates this document in the same pull request**, and
-  says why. A new pattern gets a name here — a *hand-off*, a *card reveal*, a *see-through overlay* — so
+  says why. A new pattern gets a name here — a *hand-off*, a *card reveal*, a *see-through style* — so
   the next screen reuses it; use the names in code comments and pull requests too.
 - **Numbers live in the code, not here**: the table of tuned values and the Experiments list
-  (`src/build/debug.ts`). This document says what a number is for.
+  (`src/build/experiments.ts`). This document says what a number is for.
 - The canon's interface rules are `specs/engine.md` 3.3, 9.2 and 9.7 and `specs/ascii-effects.md` 1.2;
   where they speak, they win. `scripts/playtest.mjs` (the `playtest` skill) presses the keys for you.
 
@@ -82,7 +82,7 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
   cursor, its card in the panel), **Explore Map** (the panel describes what is under the cursor) and
   **plain navigation** (the bare cursor, the menu beside it). Tab and a click on the map arrive in plain
   navigation; Explore Map is `e`, its row, or Enter/Space in plain navigation.
-- **Finishing goes back to where it began** (`BuildState.origin`): begun on the map, it ends in plain
+- **Finishing goes back to where it began** (`BuildState.returnTo`): begun on the map, it ends in plain
   navigation with the cursor where it was; begun on the menu, it ends on the same row, and a placement
   flashes that row once to bring the eye back.
 - **The Build Phase opens on the menu at Explore Map**, the cursor (not yet drawn) on the player's Grid
@@ -97,7 +97,7 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
 - **A click can only choose what it could see**: while a card covers the menu, a click on the panel goes
   back and chooses nothing. **A click outside a popup** closes it and moves focus there, nothing more.
 - **Whole rows are targets**, as wide as the highlight bar, and **drawing and hit-testing read one
-  geometry** (`buildLayout` in `src/build/layout.ts`, the placed popup in `src/build/overlay.ts`).
+  geometry** (`buildLayout` in `src/build/layout.ts`, the placed popup in `src/build/popup.ts`).
 - **A right click is `x`.** **The wheel** moves the map cursor five tiles (never a second camera) and
   walks a popup's list.
 
@@ -241,18 +241,18 @@ loop times the rest.
 - **Reduced motion snaps** — camera, cursor, card, flight — keeping only what is not movement, such as a
   blink.
 
-## 9. See-through overlays
+## 9. See-through styles
 
-A **see-through overlay** lays a colour over cells without hiding them. Its **alpha** (0 to 1) mixes the
-overlay's colour, the cell's background and its glyph's colour, **the glyph taken as a fifth of the
+A **see-through style** lays a colour over cells without hiding them. Its **alpha** (0 to 1) mixes the
+style's colour, the cell's background and its glyph's colour, **the glyph taken as a fifth of the
 cell**, as the owner defined it:
 
-- **the background** becomes alpha of the overlay's colour plus (1 − alpha) of what was there — itself
+- **the background** becomes alpha of the style's colour plus (1 − alpha) of what was there — itself
   80% background and 20% glyph colour. His example: a white cursor at 80% over a yellow glyph on black is
   80% white, the other 20% split 80% black and 20% yellow;
 - **the glyph stays**, drawn alpha of the way toward the colour the real element draws glyphs in (the
-  theme's background, for the inverse-video cursor), so it stays readable as the overlay passes;
-- **a role and a number, never a colour** (`CellStyle.overlay`, `RoleOverlay` in `src/view/roles.ts`):
+  theme's background, for the inverse-video cursor), so it stays readable as the style passes over it;
+- **a role and a number, never a colour** (`CellStyle.seeThrough`, `SeeThrough` in `src/view/roles.ts`):
   exact at millions of colours, the nearest at 256, the element's plain look at 16 and in monochrome;
 - **a glyphless write**, so the corruption law holds.
 
@@ -262,7 +262,7 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 
 ### 10.1 One shape
 
-- **Every popup is one shape** (`src/build/overlay.ts`): a title and rows as data, options naming the
+- **Every popup is one shape** (`src/build/popup.ts`): a title and rows as data, options naming the
   command a click sends, at most one scrolling list, drawn and hit-tested from one placement.
 - **Unmissable**: a solid border in the map edge's weight, the title in it, a one-cell shadow (`:` or
   `░`), centred over the map, drawn last in the chrome band.
@@ -396,7 +396,7 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 - **A choice the owner should feel ships as an Experiment**, defaulting to the recommended answer — a
   timing, a look, a movement rule, or an on/off for a feature whose worth is in doubt. The pull request
   asks him in plain words to flip it (the game menu's Settings, or `d`) and paste the export; `--settings`
-  shows what he saw. Every Experiment names its question (`src/build/debug.ts`).
+  shows what he saw. Every Experiment names its question (`src/build/experiments.ts`).
 - **Once he settles one it leaves Settings**: his value becomes the default in the code's table of tuned
   values (`TUNING` in `src/build/tuning.ts`), with who chose it and when, and the Experiment is deleted, so a new one stands out. Some stay on
   purpose: a number that depends on the player's keyboard (the hold window), or placeholder data (the

@@ -490,7 +490,7 @@ deleted, and the renderer must be replaceable without one simulation test changi
   me, so I can try with and without them, adjust speed settings, etc until it feels right").
   **Settings** (Esc on the menu, then `s`, in the Build Phase) holds the player's own saved settings and, at its
   bottom, **Experiments**: live-editable flags, some applied at once, some on restart
-  (`src/build/debug.ts` is the list); `d` jumps straight to them. When a session has a fork the owner
+  (`src/build/experiments.ts` is the list); `d` jumps straight to them. When a session has a fork the owner
   should feel rather than read about — a timing, a look, a movement rule, or whether a new feature
   should exist at all — add an Experiment defaulting to the recommended answer and **ask him in plain
   words to flip it**: "press `d`, set Card reveal to 400 ms, and tell me which you prefer." Then

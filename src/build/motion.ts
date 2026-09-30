@@ -68,11 +68,11 @@ export type RampStep = Readonly<{ kind: MoveKind; tiles: number; memory: RampMem
 
 /** One cursor key through the ramp: what kind of move it is, how many tiles, and what to remember. */
 export function rampStep(previous: RampMemory | null, key: CursorKey, now: number, flags: RampTuning): RampStep {
-  const same = previous !== null && previous.dx === key.dx && previous.dy === key.dy && previous.jump === key.fast
+  const same = previous !== null && previous.dx === key.dx && previous.dy === key.dy && previous.jump === key.jump
   const gap = previous === null ? Number.POSITIVE_INFINITY : now - previous.at
-  const remember = (runStart: number | null): RampMemory => ({ dx: key.dx, dy: key.dy, jump: key.fast, at: now, runStart })
+  const remember = (runStart: number | null): RampMemory => ({ dx: key.dx, dy: key.dy, jump: key.jump, at: now, runStart })
 
-  if (key.fast) {
+  if (key.jump) {
     // A held jump's repeat, too soon after the last jump: dropped, and the last jump's time kept, so
     // the next one is timed from the jump the player actually saw.
     if (same && previous !== null && gap < flags.jumpRepeatMs) return { kind: "jump", tiles: 0, memory: previous }

@@ -60,7 +60,7 @@ function held(start: number, repeats: number, delay = 400, every = 30): number[]
   return [start, ...Array.from({ length: repeats }, (_, index) => start + delay + index * every)]
 }
 
-function kinds(key: { dx: number; dy: number; fast: boolean }, times: readonly number[], flags = FLAGS, from: RampMemory | null = null): string[] {
+function kinds(key: { dx: number; dy: number; jump: boolean }, times: readonly number[], flags = FLAGS, from: RampMemory | null = null): string[] {
   let memory = from
   return times.map((at) => {
     const step = rampStep(memory, key, at, flags)
@@ -69,9 +69,9 @@ function kinds(key: { dx: number; dy: number; fast: boolean }, times: readonly n
   })
 }
 
-const EAST = { dx: 1, dy: 0, fast: false }
-const WEST = { dx: -1, dy: 0, fast: false }
-const JUMP_EAST = { dx: 1, dy: 0, fast: true }
+const EAST = { dx: 1, dy: 0, jump: false }
+const WEST = { dx: -1, dy: 0, jump: false }
+const JUMP_EAST = { dx: 1, dy: 0, jump: true }
 
 // --- The held-key ramp -----------------------------------------------------------------------------
 

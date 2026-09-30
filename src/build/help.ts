@@ -22,7 +22,7 @@ import type { StatusMessage } from "../status.ts"
 import { status } from "../status.ts"
 import type { ArmedPreview, BuildContext, BuildState } from "./state.ts"
 import {
-  JUMP_TILES,
+  WHEEL_TILES,
   exploring,
   menuEntries,
   nexusPowers,
@@ -45,7 +45,7 @@ import type { ConstructItem } from "./types.ts"
  */
 export type HintSituation =
   | "nexus-powers"
-  | "confirm-commit"
+  | "battle-round"
   | "game-menu"
   | "settings"
   | "export"
@@ -65,14 +65,13 @@ export type HintSituation =
 export function hintSituation(context: BuildContext, state: BuildState): HintSituation {
   switch (state.popup) {
     case "nexus-powers":
-    case "confirm-commit":
+    case "battle-round":
     case "settings":
     case "export":
     case "message":
     case "controls":
+    case "game-menu":
       return state.popup
-    case "menu":
-      return "game-menu"
     default:
       break
   }
@@ -120,7 +119,7 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
     nexusPowers(context, state).pending.length > 0
       ? "Pick one: up/down and [enter], or its number. [esc] closes without a pick."
       : "The Nexus powers you have. [esc] closes.",
-  "confirm-commit": (_context, state) =>
+  "battle-round": (_context, state) =>
     `Battle round ${state.pulseNumber}: [enter] or [s] starts it, [esc] goes back to the plan.`,
   "game-menu": () => "Up/down and [enter] choose, or press a row's key. [esc] back to the game.",
   settings: (_context, state) => `Left/right change a value, [e] exports them all. ${escBack(state)}`,
@@ -181,10 +180,10 @@ export function hint(context: BuildContext, state: BuildState): StatusMessage {
  * its own. **A command's answer comes first** (feedback F59), so a key refused while a building is
  * armed says why ("Place the Barracks or cancel it first", F69) even with the ghost on rock; the
  * ghost's refusal comes back at the next command that says nothing, since an answer lapses then. While
- * arming's ghost shows (`armGhost`), what arming said about why the cursor moved stands instead.
+ * arming's ghost shows (`noSpotFound`), what arming said about why the cursor moved stands instead.
  */
 export function commandAnswer(state: BuildState, preview: ArmedPreview | null): StatusMessage {
-  if (state.status.text !== "" || preview === null || preview.refusal === null || state.armGhost) return state.status
+  if (state.status.text !== "" || preview === null || preview.refusal === null || state.noSpotFound) return state.status
   return status(refusalText(preview.refusal))
 }
 
@@ -296,7 +295,7 @@ export function controlsPage(): readonly ControlsSection[] {
         { keys: "click the map", text: "move the cursor there" },
         { keys: "click again", text: "place it (the same tile)" },
         { keys: "double click", text: "place where you pointed" },
-        { keys: "wheel", text: `move ${JUMP_TILES} tiles, or scroll` },
+        { keys: "wheel", text: `move ${WHEEL_TILES} tiles, or scroll` },
         { keys: "right click", text: "go back, like x" },
         { keys: "top bar [esc]", text: "the same as esc" },
         { keys: "click outside", text: "close the popup" },

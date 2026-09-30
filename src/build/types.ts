@@ -90,7 +90,7 @@ export type BuildCommand =
   /** Enter or Space on the Grid in plain navigation: Explore Map, the side panel showing what is under
    *  the cursor, begun on the map — so Esc comes back to the map (feedback F30). Nothing, when Explore
    *  Map is already open. */
-  | Readonly<{ kind: "inspect" }>
+  | Readonly<{ kind: "open-explore" }>
   /** Remove the planned, uncommitted placement under the cursor — Backspace or Delete. */
   | Readonly<{ kind: "remove" }>
   | Readonly<{ kind: "undo" }>
@@ -114,16 +114,16 @@ export type BuildCommand =
   | Readonly<{ kind: "quit" }>
   /** `q` anywhere but the game menu: open the game menu — Settings, Restart and Quit — rather than
    *  quit outright and lose a plan (owner, 2026-09-28). */
-  | Readonly<{ kind: "open-menu" }>
+  | Readonly<{ kind: "open-game-menu" }>
   /** Pick Nexus power *n* — a digit or a click while the Nexus popup is open. */
   | Readonly<{ kind: "pick-nexus"; index: number }>
   /** `s` (or `p`), or the menu's last row, `[s] Start Pulse` — open the Battle Round confirmation.
    *  Refused while a Nexus power is still waiting to be picked — the one thing that pick refuses — and
    *  while a building is armed (feedback F69). */
-  | Readonly<{ kind: "commit" }>
+  | Readonly<{ kind: "open-battle-round" }>
   /** `[s] Start` — the confirmation's one row, by Enter, Space, `s` or a click: the Nexus Pulse starts.
    *  Going back is the cancel every popup has (owner, 2026-09-29, feedback F50). */
-  | Readonly<{ kind: "confirm-commit" }>
+  | Readonly<{ kind: "start-pulse" }>
   /** Tab: move keyboard focus. To the Grid it arrives in plain navigation (feedback F30); to the menu
    *  it disarms (a building is armed only while the Grid has focus). */
   | Readonly<{ kind: "focus"; target: Focus }>
@@ -248,7 +248,7 @@ export type MenuEntry =
  *  powers, the Battle Round confirmation, the game menu (Settings, Controls, Restart, Quit), Settings,
  *  the export, a message — `BuildState.message`, a title and text with nothing to choose — and the
  *  Controls and hotkeys page (feedback F60). */
-export type Popup = "nexus-powers" | "confirm-commit" | "menu" | "settings" | "export" | "message" | "controls"
+export type Popup = "nexus-powers" | "battle-round" | "game-menu" | "settings" | "export" | "message" | "controls"
 
 /**
  * A message popup's words (feedback F34, owner 2026-09-29: "This popup does not have an action, it's

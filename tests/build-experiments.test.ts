@@ -10,7 +10,7 @@ import { SPIKE_CATALOG } from "../src/build/catalog.ts"
 import { EXPERIMENT_FIELDS, stepExperiment, defaultExperiments, experimentRow } from "../src/build/experiments.ts"
 import type { ExperimentField } from "../src/build/experiments.ts"
 import { SETTLED_EXPERIMENTS } from "../src/build/tuning.ts"
-import { buildLayout, cellForTile, escHintSpan, escLabel, menuEntryRow } from "../src/build/layout.ts"
+import { buildLayout, cellForTile, escLabelSpan, escLabel, menuEntryRow } from "../src/build/layout.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, MOUSE_WHEEL_DOWN, MOUSE_WHEEL_UP, formatMouseEvent } from "../src/build/mouse.ts"
 import {
   SETTINGS_NOTE_LINES,
@@ -234,7 +234,7 @@ test("the restart keeps every flag and starts the plan over, on the menu at Expl
   assert.equal(side.build.state.experiments.crew, "some")
   // A flag that applies at once needs no restart message; the game menu's [r] is the restart.
   keys(side, "q")
-  assert.equal(side.build.state.popup, "menu")
+  assert.equal(side.build.state.popup, "game-menu")
   keys(side, "r")
   const state = side.build.state
   assert.equal(state.popup, null)
@@ -289,7 +289,7 @@ test("setting an Experiment by keys, by clicks, and from a driver script is the 
 
   // By mouse there is no `d`: the top bar's "menu [esc]", then the game menu's [s] Settings.
   const byMouse = session()
-  const menuHint = escHintSpan(byMouse.layout, escLabel(byMouse.build.state))
+  const menuHint = escLabelSpan(byMouse.layout, escLabel(byMouse.build.state))
   click(byMouse, menuHint.from, menuHint.row)
   const settingsOption = placed(byMouse).rows.find((row) => row.spec.kind === "option" && row.spec.hotkey === "s" && !row.secondLine)
   assert.ok(settingsOption !== undefined)
@@ -300,9 +300,9 @@ test("setting an Experiment by keys, by clicks, and from a driver script is the 
   clickValue(byMouse, "focusArrowMs", "left")
   // "close [esc]" in the top bar is Esc: back to the game menu (no message — nothing changed waits for
   // a restart); then the game menu's Restart.
-  const closeHint = escHintSpan(byMouse.layout, escLabel(byMouse.build.state))
+  const closeHint = escLabelSpan(byMouse.layout, escLabel(byMouse.build.state))
   click(byMouse, closeHint.from, closeHint.row)
-  assert.equal(byMouse.build.state.popup, "menu")
+  assert.equal(byMouse.build.state.popup, "game-menu")
   const restart = placed(byMouse).rows.find((row) => row.spec.kind === "option" && row.spec.hotkey === "r")
   assert.ok(restart !== undefined)
   click(byMouse, placed(byMouse).textColumn + 4, restart.row)

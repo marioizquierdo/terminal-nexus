@@ -6,7 +6,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SPIKE_CATALOG } from "../src/build/catalog.ts"
-import { NEXUS_ROW, buildLayout, cellForTile, constructLines, escHintSpan, escLabel } from "../src/build/layout.ts"
+import { NEXUS_ROW, buildLayout, cellForTile, constructLines, escLabelSpan, escLabel } from "../src/build/layout.ts"
 import { popupSpec, placePopup } from "../src/build/popup.ts"
 import type { PlacedPopup } from "../src/build/popup.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
@@ -44,8 +44,8 @@ test("a waiting Nexus power refuses the commit, and nothing else", () => {
   build.dispatch({ kind: "undo" })
   assert.equal(build.state.planned.length, 0, "undo was refused while a pick was waiting")
 
-  build.dispatch({ kind: "commit" })
-  assert.equal(build.state.popup === "confirm-commit", false)
+  build.dispatch({ kind: "open-battle-round" })
+  assert.equal(build.state.popup === "battle-round", false)
   assert.match(build.state.status.text, /Pick a Nexus power first: \[n\] Nexus\./)
   assert.equal(build.state.status.tone, "warning")
 })
@@ -178,13 +178,13 @@ test("once picked, the construct menu and every other command work exactly as be
 
 test("commit is refused before a pick, and opens the confirmation once one is made", () => {
   const { build } = session()
-  build.dispatch({ kind: "commit" })
-  assert.equal(build.state.popup === "confirm-commit", false, "commit opened the prompt before a pick")
+  build.dispatch({ kind: "open-battle-round" })
+  assert.equal(build.state.popup === "battle-round", false, "commit opened the prompt before a pick")
   assert.match(build.state.status.text, /Pick a Nexus power first/)
 
   build.dispatch({ kind: "pick-nexus", index: 0 })
-  build.dispatch({ kind: "commit" })
-  assert.equal(build.state.popup, "confirm-commit")
+  build.dispatch({ kind: "open-battle-round" })
+  assert.equal(build.state.popup, "battle-round")
   assert.match(build.state.status.text, /Battle Round 1/)
 })
 
@@ -194,7 +194,7 @@ test("nothing but the confirmation itself changes state while it is open", () =>
   build.dispatch({ kind: "arm", index: 0 })
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
   const beforeCommit = build.state
-  build.dispatch({ kind: "commit" })
+  build.dispatch({ kind: "open-battle-round" })
 
   for (const command of [
     { kind: "arm", index: 1 },
@@ -202,11 +202,11 @@ test("nothing but the confirmation itself changes state while it is open", () =>
     { kind: "remove" },
     { kind: "undo" },
     { kind: "pick-nexus", index: 1 },
-    { kind: "commit" },
+    { kind: "open-battle-round" },
     { kind: "open-nexus-powers" },
   ] as const) {
     build.dispatch(command)
-    assert.equal(build.state.popup, "confirm-commit", `${command.kind} closed the prompt`)
+    assert.equal(build.state.popup, "battle-round", `${command.kind} closed the prompt`)
     assert.deepEqual(build.state.planned, beforeCommit.planned, `${command.kind} changed the plan`)
   }
 })
@@ -217,10 +217,10 @@ test("going back from the confirmation (Esc) cancels it and changes nothing else
   build.dispatch({ kind: "arm", index: 0 })
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
   const beforeCommit = build.state
-  build.dispatch({ kind: "commit" })
+  build.dispatch({ kind: "open-battle-round" })
   build.dispatch({ kind: "cancel" })
 
-  assert.equal(build.state.popup === "confirm-commit", false)
+  assert.equal(build.state.popup === "battle-round", false)
   assert.equal(build.state.committed, false)
   assert.deepEqual(build.state.planned, beforeCommit.planned)
   assert.match(build.state.status.text, /Cancelled/)
@@ -235,11 +235,11 @@ test("accepting the confirmation commits, and locks every state-changing command
   build.dispatch({ kind: "pick-nexus", index: 0 })
   build.dispatch({ kind: "arm", index: 0 })
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
-  build.dispatch({ kind: "commit" })
-  build.dispatch({ kind: "confirm-commit" })
+  build.dispatch({ kind: "open-battle-round" })
+  build.dispatch({ kind: "start-pulse" })
 
   assert.equal(build.state.committed, true)
-  assert.equal(build.state.popup === "confirm-commit", false)
+  assert.equal(build.state.popup === "battle-round", false)
   assert.match(build.state.status.text, /Build committed/)
   assert.match(build.state.status.text, /1 planned/)
 
@@ -250,8 +250,8 @@ test("accepting the confirmation commits, and locks every state-changing command
     { kind: "remove" },
     { kind: "undo" },
     { kind: "pick-nexus", index: 1 },
-    { kind: "commit" },
-    { kind: "confirm-commit" },
+    { kind: "open-battle-round" },
+    { kind: "start-pulse" },
   ] as const) {
     build.dispatch(command)
     assert.deepEqual(build.state.planned, committed.planned, `${command.kind} changed the plan after commit`)
@@ -262,7 +262,7 @@ test("accepting the confirmation commits, and locks every state-changing command
 test("a stray y or n outside the confirmation is exactly as inert as a stray digit before anything is armed", () => {
   const { build } = session()
   const before = build.state
-  build.dispatch({ kind: "confirm-commit" })
+  build.dispatch({ kind: "start-pulse" })
   assert.deepEqual(build.state, before)
 })
 
@@ -282,11 +282,11 @@ test("keyboard: n opens the Nexus popup, and means nothing on the Battle Round c
   const idle = { itemCount: 3, armed: false }
   assert.equal(buildKeyboardCommand("y", idle), null)
   assert.deepEqual(buildKeyboardCommand("n", idle), { kind: "open-nexus-powers" })
-  assert.deepEqual(buildKeyboardCommand("p", idle), { kind: "commit" })
+  assert.deepEqual(buildKeyboardCommand("p", idle), { kind: "open-battle-round" })
   assert.deepEqual(buildKeyboardCommand("n", { ...idle, popup: "nexus-powers" as const }), { kind: "cancel" })
 
-  const confirming = { itemCount: 3, armed: false, popup: "confirm-commit" as const }
-  assert.deepEqual(buildKeyboardCommand("y", confirming), { kind: "confirm-commit" })
+  const confirming = { itemCount: 3, armed: false, popup: "battle-round" as const }
+  assert.deepEqual(buildKeyboardCommand("y", confirming), { kind: "start-pulse" })
   // Only [s] Start is a row there (feedback F50): `n` is not "keep building", Esc is the way back.
   assert.equal(buildKeyboardCommand("n", confirming), null)
   assert.deepEqual(buildKeyboardCommand("\u001b", confirming), { kind: "cancel" })
@@ -309,7 +309,7 @@ function clickPopupBytes(side: ReturnType<typeof session>, match: (command: Buil
   return formatMouseEvent(MOUSE_LEFT, popup.textColumn + 2, row.row + 1)
 }
 function clickPopupCloseBytes(side: ReturnType<typeof session>): string {
-  const hint = escHintSpan(side.layout, escLabel(side.build.state))
+  const hint = escLabelSpan(side.layout, escLabel(side.build.state))
   assert.equal(escLabel(side.build.state), "close [esc]")
   return formatMouseEvent(MOUSE_LEFT, hint.from + 1, hint.row + 1)
 }
@@ -352,7 +352,7 @@ test("mouse: the Battle Round confirmation starts by click on [s] Start, and a c
   const yes = session()
   yes.build.dispatch({ kind: "pick-nexus", index: 0 })
   yes.build.handleData("p", yes.layout)
-  yes.build.handleData(clickPopupBytes(yes, (c) => c.kind === "confirm-commit"), yes.layout)
+  yes.build.handleData(clickPopupBytes(yes, (c) => c.kind === "start-pulse"), yes.layout)
   assert.equal(yes.build.state.committed, true)
 
   const outside = session()
@@ -419,7 +419,7 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   // Arming already put the cursor on 34,13, so one click there is the confirming second click.
   clickTile({ x: 34, y: 13 })
   byMouse.build.handleData("p", byMouse.layout)
-  byMouse.build.handleData(clickPopupBytes(byMouse, (c) => c.kind === "confirm-commit"), byMouse.layout)
+  byMouse.build.handleData(clickPopupBytes(byMouse, (c) => c.kind === "start-pulse"), byMouse.layout)
 
   const script: readonly BuildCommand[] = [
     { kind: "open-nexus-powers" },
@@ -429,8 +429,8 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
     { kind: "place" },
     { kind: "arm", index: 0 },
     { kind: "place" },
-    { kind: "commit" },
-    { kind: "confirm-commit" },
+    { kind: "open-battle-round" },
+    { kind: "start-pulse" },
   ]
   const byDriver = session()
   byDriver.build.run(script)

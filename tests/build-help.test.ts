@@ -11,7 +11,7 @@ import { CHROME_ROWS, FLOOR_CHROME_ROWS, FOOTER_ROWS, MIN_VIEWPORT, isGated } fr
 import { CONTROLS_KEYS_WIDTH, CONTROLS_TITLE, HINTS, bottomLine, controlsLineCount, controlsPage, hint, hintSituation } from "../src/build/help.ts"
 import type { HintSituation } from "../src/build/help.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
-import { buildLayout, escHintSpan, escLabel } from "../src/build/layout.ts"
+import { buildLayout, escLabelSpan, escLabel } from "../src/build/layout.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import { MOUSE_LEFT, MOUSE_WHEEL_DOWN, formatMouseEvent } from "../src/build/mouse.ts"
 import { popupSpec, placePopup } from "../src/build/popup.ts"
@@ -177,7 +177,7 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
     [(side) => keys(side, "n"), /^Pick one: up\/down and \[enter\], or its number\. \[esc\] closes without a pick\.$/],
     [(side) => keys(side, "n", "1", "n"), /^The Nexus powers you have\. \[esc\] closes\.$/],
   ],
-  "confirm-commit": [[(side) => keys(side, "n", "1", "s"), /^Battle round 1: \[enter\] or \[s\] starts it, \[esc\] goes back to the plan\.$/]],
+  "battle-round": [[(side) => keys(side, "n", "1", "s"), /^Battle round 1: \[enter\] or \[s\] starts it, \[esc\] goes back to the plan\.$/]],
   "game-menu": [[(side) => keys(side, ESC), /^Up\/down and \[enter\] choose, or press a row's key\. \[esc\] back to the game\.$/]],
   settings: [
     [(side) => keys(side, "d"), /^Left\/right change a value, \[e\] exports them all\. \[esc\] closes\.$/],
@@ -261,12 +261,12 @@ test("the Controls page opens from the game menu by c, by Enter on its row and b
   assert.ok(row !== undefined, "no [c] row in the game menu")
   click(byClick, placed(byClick).textColumn + 4, row.row)
   const byDriver = session()
-  byDriver.build.run([{ kind: "open-menu" }, { kind: "open-controls" }])
+  byDriver.build.run([{ kind: "open-game-menu" }, { kind: "open-controls" }])
   const inMenu = session()
   keys(inMenu, ESC, "?")
   for (const [name, side] of [["c", byKey], ["enter", byEnter], ["a click", byClick], ["a driver", byDriver], ["? in the game menu", inMenu]] as const) {
     assert.equal(side.build.state.popup, "controls", `${name} did not open it`)
-    assert.deepEqual(side.build.state.popupUnder, ["menu"], `${name}: not over the game menu`)
+    assert.deepEqual(side.build.state.popupUnder, ["game-menu"], `${name}: not over the game menu`)
     assert.equal(side.build.state.popupHighlight, 0)
   }
   const text = frameToText(frame(byKey))
@@ -293,7 +293,7 @@ test("the Controls page opens from the game menu by c, by Enter on its row and b
 test("Esc goes back to the game menu on its Controls row, or to the game after ?; c, ? and Enter close it too", () => {
   const fromMenu = session()
   keys(fromMenu, ESC, "c", DOWN, DOWN, ESC)
-  assert.equal(fromMenu.build.state.popup, "menu")
+  assert.equal(fromMenu.build.state.popup, "game-menu")
   assert.equal(GAME_MENU_ROWS[fromMenu.build.state.popupHighlight], "controls")
   keys(fromMenu, ESC)
   assert.equal(fromMenu.build.state.popup, null)
@@ -306,14 +306,14 @@ test("Esc goes back to the game menu on its Controls row, or to the game after ?
   for (const close of ["c", "?", ENTER, " ", "x"]) {
     const side = session()
     keys(side, ESC, "c", close)
-    assert.equal(side.build.state.popup, "menu", `${JSON.stringify(close)} did not go back`)
+    assert.equal(side.build.state.popup, "game-menu", `${JSON.stringify(close)} did not go back`)
   }
   // The top bar's "close [esc]" is Esc: one level back.
   const byLabel = session()
   keys(byLabel, ESC, "c")
-  const label = escHintSpan(byLabel.layout, escLabel(byLabel.build.state))
+  const label = escLabelSpan(byLabel.layout, escLabel(byLabel.build.state))
   click(byLabel, label.from, label.row)
-  assert.equal(byLabel.build.state.popup, "menu")
+  assert.equal(byLabel.build.state.popup, "game-menu")
   // A click outside closes it, as every popup does, and nothing more.
   const outside = session()
   keys(outside, "?")

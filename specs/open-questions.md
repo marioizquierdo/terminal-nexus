@@ -1163,7 +1163,7 @@ for one thing on one screen.
 
 **Recommendation: B**, decided together with the menu reorganisation the owner has announced (F51),
 because the menu row is one of the places the word lives and he will be rewriting the menu anyway.
-Until then A stands, and the popup's title and body are data (`overlaySpec`), so B is a change of words.
+Until then A stands, and the popup's title and body are data (`popupSpec`), so B is a change of words.
 
 ## 5. Answered
 

@@ -18,7 +18,7 @@ import {
   CARD_SEPARATOR_ROW,
   EXPLORE_ROW,
   NEXUS_ROW,
-  RESOURCE_ROW,
+  CREDITS_ROW,
   buildLayout,
   cellForTile,
   constructLines,
@@ -82,7 +82,7 @@ function panelLine(side: Side, frame: ReadonlyCellFrame, row: number): string {
 /** Every panel row, top to bottom. */
 function panelLines(side: Side, frame: ReadonlyCellFrame): string[] {
   const rows: string[] = []
-  for (let row = side.layout.panelRow; row <= side.layout.panelBindingsRow; row += 1) rows.push(panelLine(side, frame, row))
+  for (let row = side.layout.panelRow; row <= side.layout.panelLastRow; row += 1) rows.push(panelLine(side, frame, row))
   return rows
 }
 
@@ -116,23 +116,23 @@ test("the menu reads Explore Map, Nexus, the credits line with the map's resourc
       const side = session(terminal)
       const { layout } = side
       const frame = compose(side, {}, "truecolor", pack)
-      assert.deepEqual([EXPLORE_ROW, NEXUS_ROW, RESOURCE_ROW], [0, 1, 2])
+      assert.deepEqual([EXPLORE_ROW, NEXUS_ROW, CREDITS_ROW], [0, 1, 2])
       assert.match(panelLine(side, frame, at(side, EXPLORE_ROW)), /^\[e\] Explore Map +$/)
       assert.match(panelLine(side, frame, at(side, NEXUS_ROW)), /^\[n\] Nexus \(1\) +$/, "a blank line is left between Explore Map and Nexus")
       // The credits: the map's own deposit glyph and the amount, right-aligned where the costs are.
       const deposit = terrainGlyph("terrain.deposit", pack)
       assert.equal(deposit.glyph, pack === "ascii" ? "*" : "◆")
-      const credits = panelLine(side, frame, at(side, RESOURCE_ROW))
+      const credits = panelLine(side, frame, at(side, CREDITS_ROW))
       assert.equal(credits, `${deposit.glyph} ${remaining(side.context, side.build.state)}`.padStart(layout.panelLimit))
-      const symbol = cellAt(frame, layout.dividerColumn - 5, at(side, RESOURCE_ROW))
+      const symbol = cellAt(frame, layout.dividerColumn - 5, at(side, CREDITS_ROW))
       assert.equal(symbol.glyph, deposit.glyph)
       assert.equal(symbol.style.fgRole, deposit.role, "the symbol is not in the deposit's colour")
-      const amount = cellAt(frame, layout.dividerColumn - 1, at(side, RESOURCE_ROW))
+      const amount = cellAt(frame, layout.dividerColumn - 1, at(side, CREDITS_ROW))
       assert.equal(amount.style.fgRole, "chrome.title")
       assert.equal(amount.style.bold, true)
       // The buildings start on the line after the credits, one row apart, costs in the credits' column.
       const lines = constructLines(layout, SPIKE_CATALOG)
-      assert.equal(lines[0]?.row, at(side, RESOURCE_ROW) + 1)
+      assert.equal(lines[0]?.row, at(side, CREDITS_ROW) + 1)
       SPIKE_CATALOG.forEach((item, index) => {
         assert.equal(panelLine(side, frame, lines[index]?.row as number), `[${item.hotkey}] ${item.label}`.padEnd(layout.panelLimit - String(item.cost).length) + String(item.cost))
       })
@@ -572,6 +572,6 @@ test("every menu row is drawn where the mouse finds it, and the credits line is 
     const row = menuEntryRow(side.layout, SPIKE_CATALOG, target) as number
     assert.equal(menuEntryAt(side.layout, SPIKE_CATALOG, side.layout.panelColumn + 2, row), entry)
   })
-  assert.equal(menuEntryAt(side.layout, SPIKE_CATALOG, side.layout.panelColumn + 2, at(side, RESOURCE_ROW)), null)
+  assert.equal(menuEntryAt(side.layout, SPIKE_CATALOG, side.layout.panelColumn + 2, at(side, CREDITS_ROW)), null)
   assert.equal(menuEntryAt(side.layout, SPIKE_CATALOG, side.layout.panelColumn + 2, startRow(side.layout)), startEntry(SPIKE_CATALOG.length))
 })

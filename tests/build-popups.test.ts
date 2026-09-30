@@ -9,7 +9,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EXPERIMENT_FIELDS, defaultExperiments } from "../src/build/experiments.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
-import { buildLayout, cellForTile, escHintSpan, escLabel } from "../src/build/layout.ts"
+import { buildLayout, cellForTile, escLabelSpan, escLabel } from "../src/build/layout.ts"
 import { MOUSE_LEFT, MOUSE_WHEEL_DOWN, buildMouseCommand, formatMouseEvent, parseMouseEvent } from "../src/build/mouse.ts"
 import { SETTINGS_NOTE_LINES, EXPORT_QUESTION, messageSpec, popupSpec, placePopup } from "../src/build/popup.ts"
 import type { PopupSpec, PlacedPopup } from "../src/build/popup.ts"
@@ -84,9 +84,9 @@ function placed(side: Side): PlacedPopup {
 }
 
 /** The top bar's Esc label as drawn now, and where. */
-function escHint(side: Side): Readonly<{ label: string; row: number; from: number; to: number }> {
+function escLabelEnd(side: Side): Readonly<{ label: string; row: number; from: number; to: number }> {
   const label = escLabel(side.build.state)
-  return { label, ...escHintSpan(side.layout, label) }
+  return { label, ...escLabelSpan(side.layout, label) }
 }
 
 // --- Settings: no column, a position, Export in the list, the description under a line ------------
@@ -210,14 +210,14 @@ test("closing Settings with a restart setting changed raises the message once; E
   assert.equal(side.build.state.popup, "settings", "no message while Settings is open")
   keys(side, ESC)
   assert.equal(side.build.state.popup, "message")
-  assert.deepEqual(side.build.state.popupUnder, ["menu"])
+  assert.deepEqual(side.build.state.popupUnder, ["game-menu"])
   assert.ok(screen(side).includes("RESTART NEEDED"))
   keys(side, ESC)
-  assert.equal(side.build.state.popup, "menu")
+  assert.equal(side.build.state.popup, "game-menu")
   assert.equal(GAME_MENU_ROWS[side.build.state.popupHighlight], "restart")
   // Once: Settings opened and closed again says nothing more.
   keys(side, "s", ESC)
-  assert.equal(side.build.state.popup, "menu")
+  assert.equal(side.build.state.popup, "game-menu")
   // A change put back says nothing at all.
   const back = session()
   keys(back, "d")
@@ -232,7 +232,7 @@ test("closing Settings with a restart setting changed raises the message once; E
 })
 
 /** A state with a message popup open over `under`, as the reducer raises one. */
-function withMessage(context: BuildContext, under: "menu" | null): BuildState {
+function withMessage(context: BuildContext, under: "game-menu" | null): BuildState {
   const base = createBuildState(context, { x: 18, y: 13 }, buildLayout({ columns: 80, rows: 24 }, context.grid).viewport)
   return {
     ...base,
@@ -269,8 +269,8 @@ test("a message popup: a title and its text, nothing to choose, closed by Esc or
   assert.equal(closed.popup, null)
   assert.equal(closed.message, null)
   // Over the game menu, Esc goes back to it, on its Restart row.
-  const overMenu = applyBuildCommand(context, withMessage(context, "menu"), { kind: "cancel" })
-  assert.equal(overMenu.popup, "menu")
+  const overMenu = applyBuildCommand(context, withMessage(context, "game-menu"), { kind: "cancel" })
+  assert.equal(overMenu.popup, "game-menu")
   assert.equal(GAME_MENU_ROWS[overMenu.popupHighlight], "restart")
 
   // The mouse: a click inside does nothing; the wheel does nothing; a click outside closes it and moves
@@ -306,7 +306,7 @@ test("the game menu's Restart: r, Enter on its row, and a click on it start the 
   const byKey = session()
   plan(byKey)
   keys(byKey, ESC)
-  assert.equal(byKey.build.state.popup, "menu")
+  assert.equal(byKey.build.state.popup, "game-menu")
   keys(byKey, "r")
   const byEnter = session()
   plan(byEnter)
@@ -315,14 +315,14 @@ test("the game menu's Restart: r, Enter on its row, and a click on it start the 
   keys(byEnter, ENTER)
   const byClick = session()
   plan(byClick)
-  const hint = escHint(byClick)
+  const hint = escLabelEnd(byClick)
   click(byClick, hint.from, hint.row)
   const row = placed(byClick).rows.find((entry) => entry.spec.kind === "option" && entry.spec.hotkey === "r" && !entry.secondLine)
   assert.ok(row !== undefined)
   click(byClick, placed(byClick).textColumn + 1, row.row)
   const byDriver = session()
   plan(byDriver)
-  byDriver.build.run([{ kind: "open-menu" }, { kind: "restart" }])
+  byDriver.build.run([{ kind: "open-game-menu" }, { kind: "restart" }])
 
   const expected = byKey.build.state
   assert.equal(expected.popup, null)
@@ -492,11 +492,11 @@ test("the top bar's right end says what Esc does: menu, back, close", () => {
           click(side, cell.x, cell.y)
         } else keys(side, step)
       }
-      const hint = escHint(side)
+      const hint = escLabelEnd(side)
       assert.equal(hint.label, label, name)
       const line = screen(side).split("\n")[hint.row] ?? ""
       assert.equal(line.slice(hint.from, hint.to + 1), label, `${name} at ${size.columns}x${size.rows}`)
-      assert.equal(hint.to, side.layout.escHint.to, "right-aligned")
+      assert.equal(hint.to, side.layout.escLabelEnd.to, "right-aligned")
       // The key is in the hotkey colour; the name is quiet.
       const frame = composeBuildFrame({ context: side.context, state: side.build.state, layout: side.layout }, "truecolor")
       assert.equal(cellAt(frame, hint.to - 1, hint.row).style.fgRole, "chrome.hotkey")
@@ -522,7 +522,7 @@ test("a click on the top bar's Esc label is Esc: the same state, whatever is ope
     keys(byKey, ...steps, ESC)
     const byClick = session()
     keys(byClick, ...steps)
-    const hint = escHint(byClick)
+    const hint = escLabelEnd(byClick)
     for (const column of [hint.from, hint.to]) {
       const again = session()
       keys(again, ...steps)
@@ -560,5 +560,5 @@ test("no popup carries [esc] in its border any more", () => {
   const popup = placePopup(layout, popupSpec(context, state) as PopupSpec)
   const drawn = frameToText(composeBuildFrame({ context, state, layout }, "monochrome")).split("\n")
   assert.doesNotMatch((drawn[popup.box.top] ?? "").slice(popup.box.left, popup.box.right + 1), /\[esc\]/)
-  assert.match(drawn[layout.escHint.row] ?? "", /close \[esc\] /)
+  assert.match(drawn[layout.escLabelEnd.row] ?? "", /close \[esc\] /)
 })

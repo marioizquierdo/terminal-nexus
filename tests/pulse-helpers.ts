@@ -98,7 +98,7 @@ export function prepare(build: BuildSession, scenario: Scenario = {}): void {
 export function play(scenario: Scenario = {}, size: Readonly<{ columns: number; rows: number }> = MINIMUM): Played {
   const session = newSession(size)
   prepare(session.build, scenario)
-  session.build.run([{ kind: "commit" }, { kind: "confirm-commit" }])
+  session.build.run([{ kind: "open-battle-round" }, { kind: "start-pulse" }])
   assert.ok(session.build.pulse !== null, "committing did not start a Pulse")
   return { ...session, pulse: session.build.pulse.resolved }
 }

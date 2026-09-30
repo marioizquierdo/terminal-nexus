@@ -6,11 +6,11 @@
 // gestures a flat menu has no use for: the wheel, and the right button.
 
 import type { BuildLayout } from "./layout.ts"
-import { ESC_KEY, escHintAt, inPanelColumns, menuEntryAt, pulseControlAt, tileAtCell } from "./layout.ts"
+import { ESC_KEY, escLabelAt, inPanelColumns, menuEntryAt, pulseControlAt, tileAtCell } from "./layout.ts"
 import type { PlacedPopup } from "./popup.ts"
 import { popupHitAt } from "./popup.ts"
 import type { Camera } from "./camera.ts"
-import { EXPLORE_ENTRY, JUMP_TILES } from "./state.ts"
+import { EXPLORE_ENTRY, WHEEL_TILES } from "./state.ts"
 import type { BuildCommand, ConstructItem } from "./types.ts"
 
 /** What is on screen beyond the layout: the open popup, placed, since it holds the mouse; whether a
@@ -98,7 +98,7 @@ export function buildMouseCommand(
   // open (feedback F37): one level back, exactly as the key goes, never the click-outside that closes
   // every popup at once.
   const escText = ui.escLabel ?? `${ui.popup === undefined ? "menu" : "close"} ${ESC_KEY}`
-  if (event.button === MOUSE_LEFT && escHintAt(layout, escText, event.column, event.row)) return { kind: "cancel" }
+  if (event.button === MOUSE_LEFT && escLabelAt(layout, escText, event.column, event.row)) return { kind: "cancel" }
 
   // An open popup holds the mouse. Inside it, a click is one of its options or its scroll bar; outside
   // it, the click closes it and brings focus to wherever it landed, and does nothing more (owner,
@@ -115,8 +115,8 @@ export function buildMouseCommand(
     return null
   }
 
-  if (event.button === MOUSE_WHEEL_UP) return { kind: "move-cursor", dx: 0, dy: -JUMP_TILES }
-  if (event.button === MOUSE_WHEEL_DOWN) return { kind: "move-cursor", dx: 0, dy: JUMP_TILES }
+  if (event.button === MOUSE_WHEEL_UP) return { kind: "move-cursor", dx: 0, dy: -WHEEL_TILES }
+  if (event.button === MOUSE_WHEEL_DOWN) return { kind: "move-cursor", dx: 0, dy: WHEEL_TILES }
   if (event.button !== MOUSE_LEFT) return null
   // The Pulse's panel has control rows where the menu was; a click on one is that control, exactly as
   // its hotkey is, and any other click on the panel does nothing (there is no menu underneath it).
@@ -137,5 +137,5 @@ export function buildMouseCommand(
 
 /** Whether a frame cell is on the side panel — its full width, from its first row to its last. */
 function inPanel(layout: BuildLayout, column: number, row: number): boolean {
-  return inPanelColumns(layout, column) && row >= layout.panelRow && row <= layout.panelBindingsRow
+  return inPanelColumns(layout, column) && row >= layout.panelRow && row <= layout.panelLastRow
 }

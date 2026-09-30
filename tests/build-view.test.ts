@@ -6,7 +6,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { RESOURCE_ROW, buildLayout, cellForTile, constructLines, startRow } from "../src/build/layout.ts"
+import { CREDITS_ROW, buildLayout, cellForTile, constructLines, startRow } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildSessionOptions } from "../src/build/session.ts"
 import { SPIKE_ALLOTMENT, SPIKE_CATALOG } from "../src/build/catalog.ts"
@@ -332,7 +332,7 @@ function panelText(screen: ReturnType<typeof screenAt>): string {
   const { layout } = screen
   return screen.text
     .split("\n")
-    .slice(layout.panelRow, layout.panelBindingsRow + 1)
+    .slice(layout.panelRow, layout.panelLastRow + 1)
     .map((row) => row.slice(layout.panelColumn, layout.dividerColumn))
     .join("\n")
 }
@@ -343,7 +343,7 @@ test("the menu lists every building with its cost under the credits, and the arm
   // One list, each building's cost on its own row against the divider (feedback F56), under the credits
   // as `* 100` — the map's resource symbol — on the line above the first building, in the same column
   // (F57, F71).
-  assert.match(panel.split("\n")[RESOURCE_ROW] as string, / {22}\* 100$/)
+  assert.match(panel.split("\n")[CREDITS_ROW] as string, / {22}\* 100$/)
   for (const item of SPIKE_CATALOG) assert.match(panel, new RegExp(`\\[${item.hotkey}\\] ${item.label} +${item.cost}$`, "m"))
   assert.doesNotMatch(panel, /COMMON|ARMY|SPECIAL|none available|RESOURCE/)
   // No help text on the panel (feedback F58): what a row does is the bottom line's to say.
@@ -443,13 +443,13 @@ test("while the commit question is open, the status line asks it, whatever the g
   // answer comes first. Cancelled, the question opens.
   const armed = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
-    build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "commit" }])
+    build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "open-battle-round" }])
   })
   assert.equal(armed.build.state.popup, null)
   assert.match(statusRow(armed), /^Place the Barracks or cancel it first: \[1\] or \[esc\]\.$/)
   const asking = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
-    build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "cancel" }, { kind: "commit" }])
+    build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "cancel" }, { kind: "open-battle-round" }])
   })
   assert.match(statusRow(asking), /^Battle Round 1: Enter starts it, Esc goes back\.$/)
   const ghost = cellForTile(asking.layout, asking.build.state.camera, { x: 8, y: 5 })
@@ -839,7 +839,7 @@ test("the normal panel says how many Nexus powers are active, and draws no Speci
 
 test("the commit confirmation is a screen over the Grid: Battle Round 1, what it announces, and [s] Start", () => {
   const built = screenAt(MINIMUM, (build) => {
-    build.dispatch({ kind: "commit" })
+    build.dispatch({ kind: "open-battle-round" })
   })
   assert.match(built.text, /Battle Round 1/)
   for (const order of ["Activate Nexus.", "Collect Resources.", "Spawn Units."]) assert.match(built.text, new RegExp(order.replace(".", "\\.")))
@@ -855,8 +855,8 @@ test("the committed screen names the pick and the count, and the footer carries 
   const built = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
-    build.dispatch({ kind: "commit" })
-    build.dispatch({ kind: "confirm-commit" })
+    build.dispatch({ kind: "open-battle-round" })
+    build.dispatch({ kind: "start-pulse" })
   })
   assert.match(built.text, /BUILD COMMITTED/)
   assert.match(built.text, /Nexus: Test Pick/)

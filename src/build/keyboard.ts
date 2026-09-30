@@ -169,7 +169,7 @@ function popupCommand(key: string, popup: Popup, pendingCount: number, highlight
   const back = backCommand(key)
   if (back !== null) return back
   switch (popup) {
-    case "menu": {
+    case "game-menu": {
       // The game menu (owner, 2026-09-28): its own hotkeys, or Up/Down and Enter on its rows. Enter
       // on `[q] Quit` is the quit itself — the reducer never sees a quit it would have to pass on.
       if (key === "q") return { kind: "quit" }
@@ -183,15 +183,15 @@ function popupCommand(key: string, popup: Popup, pendingCount: number, highlight
       if (PLACE_KEYS.has(key)) return GAME_MENU_ROWS[highlight] === "quit" ? { kind: "quit" } : { kind: "activate" }
       return null
     }
-    case "confirm-commit":
+    case "battle-round":
       // Enter, Space and `s` again start the Pulse (owner, 2026-09-29, feedback F42) — `s` is the key
       // that asked, so pressing it twice is "yes"; `y` still works, unlisted, for older scripts. Going
       // back is Esc's, above: there is no second row to press (feedback F50).
-      if (key === START_KEY || key === "y" || PLACE_KEYS.has(key)) return { kind: "confirm-commit" }
-      return key === "q" ? { kind: "open-menu" } : null
+      if (key === START_KEY || key === "y" || PLACE_KEYS.has(key)) return { kind: "start-pulse" }
+      return key === "q" ? { kind: "open-game-menu" } : null
     case "nexus-powers": {
       if (key === "n") return { kind: "cancel" }
-      if (key === "q") return { kind: "open-menu" }
+      if (key === "q") return { kind: "open-game-menu" }
       const list = listCommand(key)
       if (list !== null) return list
       if (PLACE_KEYS.has(key)) return { kind: "activate" }
@@ -202,7 +202,7 @@ function popupCommand(key: string, popup: Popup, pendingCount: number, highlight
     case "settings": {
       // `d` closes what `d` opened, the way `n` closes the Nexus popup.
       if (key === "d") return { kind: "cancel" }
-      if (key === "q") return { kind: "open-menu" }
+      if (key === "q") return { kind: "open-game-menu" }
       // Export settings is the list's last row; `e` still reaches it from anywhere in the list. The
       // restart is the game menu's `[r]` now (feedback F34).
       if (key === "e") return { kind: "export-settings" }
@@ -217,7 +217,7 @@ function popupCommand(key: string, popup: Popup, pendingCount: number, highlight
     case "export": {
       // `e` closes what `e` opened; Up/Down scroll the text.
       if (key === "e" || PLACE_KEYS.has(key)) return { kind: "cancel" }
-      if (key === "q") return { kind: "open-menu" }
+      if (key === "q") return { kind: "open-game-menu" }
       return listCommand(key)
     }
     case "message":
@@ -228,7 +228,7 @@ function popupCommand(key: string, popup: Popup, pendingCount: number, highlight
       // The Controls page (feedback F60) scrolls like the export: Up/Down walk it; `c` and `?` close
       // what they opened, and so do Enter and Space — there is nothing on it to press.
       if (key === "c" || key === HELP_KEY || PLACE_KEYS.has(key)) return { kind: "cancel" }
-      if (key === "q") return { kind: "open-menu" }
+      if (key === "q") return { kind: "open-game-menu" }
       return listCommand(key)
     }
     default:
@@ -237,7 +237,7 @@ function popupCommand(key: string, popup: Popup, pendingCount: number, highlight
 }
 
 /** A cursor key's direction, one tile long, and whether it is the fast move. */
-export type CursorKey = Readonly<{ dx: number; dy: number; fast: boolean }>
+export type CursorKey = Readonly<{ dx: number; dy: number; jump: boolean }>
 
 /**
  * Any of the Grid's cursor keys, classified — or `null`. The plain arrows are what a held key's ramp
@@ -246,22 +246,22 @@ export type CursorKey = Readonly<{ dx: number; dy: number; fast: boolean }>
  */
 export function cursorKeyOf(key: string): CursorKey | null {
   const plain = PLAIN_ARROWS[key]
-  if (plain !== undefined) return { ...plain, fast: false }
+  if (plain !== undefined) return { ...plain, jump: false }
 
   const rxvt = RXVT_SHIFTED_ARROWS[key]
-  if (rxvt !== undefined) return { ...rxvt, fast: true }
+  if (rxvt !== undefined) return { ...rxvt, jump: true }
 
   const modified = XTERM_MODIFIED_ARROW.exec(key)
   if (modified !== null) {
     const direction = ARROW_LETTERS[modified[2] as string]
-    if (direction !== undefined && Number(modified[1]) >= 2) return { ...direction, fast: true }
+    if (direction !== undefined && Number(modified[1]) >= 2) return { ...direction, jump: true }
   }
 
   const meta = META_JUMPS[key]
-  if (meta !== undefined) return { ...meta, fast: true }
+  if (meta !== undefined) return { ...meta, jump: true }
 
   const fallback = FALLBACK_JUMPS[key]
-  if (fallback !== undefined) return { ...fallback, fast: true }
+  if (fallback !== undefined) return { ...fallback, jump: true }
   return null
 }
 
@@ -270,7 +270,7 @@ export function cursorKeyOf(key: string): CursorKey | null {
 function cursorMove(key: string): BuildCommand | null {
   const move = cursorKeyOf(key)
   if (move === null) return null
-  const tiles = move.fast ? TUNING.jumpStep : 1
+  const tiles = move.jump ? TUNING.jumpStep : 1
   return { kind: "move-cursor", dx: move.dx * tiles, dy: move.dy * tiles }
 }
 
@@ -303,7 +303,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   // to the menu, disarming — and then, on the menu, Esc opens the game menu while `x` stops (F62).
   const back = backCommand(key)
   if (back !== null) return back
-  if (key === "q") return { kind: "open-menu" }
+  if (key === "q") return { kind: "open-game-menu" }
   if (key === TAB) return { kind: "focus", target: focus === "grid" ? "menu" : "grid" }
   if (key === "u") return { kind: "undo" }
   if (key === "n") return { kind: "open-nexus-powers" }
@@ -313,7 +313,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   // `?` opens the Controls and hotkeys page from the game — a shortcut the page itself names.
   if (key === HELP_KEY) return { kind: "open-controls" }
   // `s` is the Start Pulse row's key (feedback F41, F47); `p`, its first key, is kept as another way to press it.
-  if (key === START_KEY || key === "p") return { kind: "commit" }
+  if (key === START_KEY || key === "p") return { kind: "open-battle-round" }
   // `y` only ever means something while the Battle Round confirmation is open; outside it is inert.
   if (key === "y") return null
 
@@ -331,7 +331,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
     // (feedback F17).
     if (REMOVE_KEYS.has(key)) return { kind: "nudge", direction: "left" }
   } else {
-    if (PLACE_KEYS.has(key)) return context.armed ? { kind: "place" } : { kind: "inspect" }
+    if (PLACE_KEYS.has(key)) return context.armed ? { kind: "place" } : { kind: "open-explore" }
     if (REMOVE_KEYS.has(key)) return { kind: "remove" }
     const move = cursorMove(key)
     if (move !== null) return move

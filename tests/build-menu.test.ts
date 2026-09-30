@@ -15,7 +15,7 @@ import {
   CARD_SEPARATOR_ROW,
   EXPLORE_ROW,
   NEXUS_ROW,
-  RESOURCE_ROW,
+  CREDITS_ROW,
   buildLayout,
   constructLines,
   menuEntryAt,
@@ -75,7 +75,7 @@ function panelLine(side: Side, row: number, flash?: BuildFlash): string {
 /** The whole panel, row by row. */
 function panelLines(side: Side): string[] {
   const rows: string[] = []
-  for (let row = side.layout.panelRow; row <= side.layout.panelBindingsRow; row += 1) rows.push(panelLine(side, row))
+  for (let row = side.layout.panelRow; row <= side.layout.panelLastRow; row += 1) rows.push(panelLine(side, row))
   return rows
 }
 
@@ -93,10 +93,10 @@ test("the menu reads: Explore Map, Nexus, the credits line, the buildings, and S
     assert.match(panelLine(side, at(side, EXPLORE_ROW)), /^\[e\] Explore Map +$/)
     assert.equal(at(side, NEXUS_ROW), at(side, EXPLORE_ROW) + 1)
     assert.match(panelLine(side, at(side, NEXUS_ROW)), /^\[n\] Nexus \(1\) +$/)
-    assert.equal(at(side, RESOURCE_ROW), at(side, NEXUS_ROW) + 1)
-    assert.equal(panelLine(side, at(side, RESOURCE_ROW)), "* 100".padStart(limit))
+    assert.equal(at(side, CREDITS_ROW), at(side, NEXUS_ROW) + 1)
+    assert.equal(panelLine(side, at(side, CREDITS_ROW)), "* 100".padStart(limit))
     const lines = constructLines(layout, SPIKE_CATALOG)
-    assert.equal(lines[0]?.row, at(side, RESOURCE_ROW) + 1, "the buildings start on the line after the credits")
+    assert.equal(lines[0]?.row, at(side, CREDITS_ROW) + 1, "the buildings start on the line after the credits")
     SPIKE_CATALOG.forEach((item, index) => {
       assert.equal(lines[index]?.row, (lines[0]?.row as number) + index, "the buildings are one row apart")
       const line = panelLine(side, lines[index]?.row as number)
@@ -109,14 +109,14 @@ test("the menu reads: Explore Map, Nexus, the credits line, the buildings, and S
     assert.match(panelLine(side, startRow(layout)), /^\[s\] Start Pulse +$/)
     // The cost column and the resources line end on the same column.
     const costEnd = panelLine(side, lines[0]?.row as number).trimEnd().length
-    assert.equal(panelLine(side, at(side, RESOURCE_ROW)).trimEnd().length, costEnd)
+    assert.equal(panelLine(side, at(side, CREDITS_ROW)).trimEnd().length, costEnd)
   }
 })
 
 test("the credits line counts down as the plan grows, and is on the menu alone â€” never on a card", () => {
   const side = session()
   keys(side, "1", ENTER) // a Barracks, back on the menu
-  assert.equal(panelLine(side, at(side, RESOURCE_ROW)).trim(), `* ${remaining(side.context, side.build.state)}`)
+  assert.equal(panelLine(side, at(side, CREDITS_ROW)).trim(), `* ${remaining(side.context, side.build.state)}`)
   assert.equal(remaining(side.context, side.build.state), 60)
   keys(side, "e") // Explore Map's card (feedback F71: "specially when showing the details of a selection")
   assert.doesNotMatch(panelLines(side).join("\n"), /\* 60/)
@@ -131,7 +131,7 @@ test("the credits line counts down as the plan grows, and is on the menu alone â
 test("a building row the panel is too short for is neither drawn nor a click target", () => {
   // Three more buildings than the floor's panel holds between Nexus and Start Pulse.
   const floor = buildLayout(MINIMUM, spikeContext().grid)
-  const room = menuFloor(floor) - (floor.panelRow + RESOURCE_ROW + 1) + 1
+  const room = menuFloor(floor) - (floor.panelRow + CREDITS_ROW + 1) + 1
   const long: ConstructItem[] = Array.from({ length: room + 3 }, (_, index) => ({
     ...(SPIKE_CATALOG[index % SPIKE_CATALOG.length] as ConstructItem),
     label: `Row ${index + 1}`,
@@ -146,7 +146,7 @@ test("a building row the panel is too short for is neither drawn nor a click tar
   assert.equal(menuEntryRow(layout, long, { kind: "construct", index: hidden }), null)
   assert.doesNotMatch(panelLines(side).join("\n"), new RegExp(`Row ${hidden + 1}\\b`))
   // No row of the panel answers a click with a building nobody drew.
-  for (let row = layout.panelRow; row <= layout.panelBindingsRow; row += 1) {
+  for (let row = layout.panelRow; row <= layout.panelLastRow; row += 1) {
     const entry = menuEntryAt(layout, long, layout.panelColumn + 2, row)
     if (entry === null || entry < entryOfConstruct(0) || entry >= startEntry(long.length)) continue
     assert.ok(entry - entryOfConstruct(0) < hidden, `row ${row} is a click target for a hidden building`)

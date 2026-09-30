@@ -339,7 +339,7 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
       }
       return { title: "NEXUS POWERS", rows }
     }
-    case "confirm-commit":
+    case "battle-round":
       // A confirmation screen, not a question (owner, 2026-09-29, feedback F49-F50): the round's title,
       // what it announces, and the one row, `[s] Start`, highlighted because it is what Enter, Space and
       // `s` do. Esc goes back, as from every popup.
@@ -349,10 +349,10 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
           { kind: "blank" },
           ...sentences(roundAnnouncement(context, state.pulseNumber)).map((text): PopupRow => ({ kind: "note", text })),
           { kind: "blank" },
-          { kind: "option", hotkey: START_KEY, label: "Start", command: { kind: "confirm-commit" }, highlighted: true },
+          { kind: "option", hotkey: START_KEY, label: "Start", command: { kind: "start-pulse" }, highlighted: true },
         ],
       }
-    case "menu":
+    case "game-menu":
       return menuSpec(state)
     case "settings":
       return settingsSpec(state)

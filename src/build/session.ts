@@ -228,7 +228,7 @@ export class BuildSession {
       // it at the list's end, so holding Down reaches the last row quickly and stays there. **A tap is
       // always one row**, whatever the map's tap step, so every row stays reachable by Up and Down.
       const direction = command.delta < 0 ? -1 : 1
-      const rows = this.ramp.step({ dx: 0, dy: direction, fast: false }, timing.now, { ...rampTuning(state.experiments.holdWindowMs), tapStep: 1 })
+      const rows = this.ramp.step({ dx: 0, dy: direction, jump: false }, timing.now, { ...rampTuning(state.experiments.holdWindowMs), tapStep: 1 })
       command = { kind: "highlight", delta: direction * rows }
     } else if (cursorKey !== null) {
       // A cursor key on the Grid: how far is the ramp's call when the key's arrival time is known — a
@@ -238,7 +238,7 @@ export class BuildSession {
       const tiles =
         timing.now !== undefined
           ? this.ramp.step(cursorKey, timing.now, rampTuning(state.experiments.holdWindowMs))
-          : cursorKey.fast
+          : cursorKey.jump
             ? TUNING.jumpStep
             : TUNING.tapStep
       command = tiles === 0 ? null : { kind: "move-cursor", dx: cursorKey.dx * tiles, dy: cursorKey.dy * tiles }

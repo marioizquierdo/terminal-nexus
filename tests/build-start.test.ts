@@ -38,7 +38,7 @@ test("Start Pulse is the menu's last entry, one plain row on the panel's bottom 
   const entries = menuEntries(session.context)
   assert.equal(entries[entries.length - 1]?.kind, "start")
   assert.equal(entries.length - 1, startEntry(session.context.catalog.length))
-  assert.equal(startRow(session.layout), session.layout.panelBindingsRow)
+  assert.equal(startRow(session.layout), session.layout.panelLastRow)
   assert.equal(startLine(session).trimEnd(), `[s] ${START_LABEL}`)
   assert.equal(START_LABEL, "Start Pulse")
   // No box: the rows around it in the panel are plain text, not a button's border.
@@ -58,7 +58,7 @@ test("Up and Down reach Start Pulse and Enter presses it — no hotkey and no mo
   }
   assert.equal(session.build.state.menuHighlight, last, "Down never reached Start Pulse")
   session.build.handleData("\r", session.layout)
-  assert.equal(session.build.state.popup, "confirm-commit")
+  assert.equal(session.build.state.popup, "battle-round")
   session.build.handleData("\r", session.layout)
   assert.equal(session.build.state.committed, true, "Enter, Enter did not start the Pulse")
   assert.ok(session.build.pulse !== null)
@@ -90,7 +90,7 @@ test("the rule: every entry of the menu is reached by Down and done by Enter alo
         assert.equal(state.armed, entry.index, `Enter on construct row ${entry.index} did not arm it`)
         break
       case "start":
-        assert.equal(state.popup, "confirm-commit", "Enter on Start Pulse did not open its screen")
+        assert.equal(state.popup, "battle-round", "Enter on Start Pulse did not open its screen")
         break
       default: {
         const unhandled: never = entry
@@ -124,7 +124,7 @@ test("s, p, a click and Enter on the highlighted row all ask the same, and refus
   for (const [name, press] of presses) {
     const session = ready()
     press(session)
-    assert.equal(session.build.state.popup, "confirm-commit", `${name} did not open the Battle Round screen`)
+    assert.equal(session.build.state.popup, "battle-round", `${name} did not open the Battle Round screen`)
     assert.match(session.build.state.status.text, /^Battle Round 1:/, name)
   }
   // With the pick still waiting, each is refused with its reason and no screen opens.
@@ -220,7 +220,7 @@ test("Enter, Space, s and y start the Pulse; Esc and x go back; n is not a key t
   const stays = ready()
   stays.build.handleData("s", stays.layout)
   stays.build.handleData("n", stays.layout)
-  assert.equal(stays.build.state.popup, "confirm-commit", "n closed the screen, or opened the Nexus popup over it")
+  assert.equal(stays.build.state.popup, "battle-round", "n closed the screen, or opened the Nexus popup over it")
   assert.equal(stays.build.state.committed, false)
 })
 
@@ -244,7 +244,7 @@ test("a click on [s] Start starts it; a click outside the screen goes back", () 
 test("s is still Settings inside the game menu, and pressing Start during a Pulse only says it is committed", () => {
   const menu = ready()
   menu.build.handleData(ESC, menu.layout) // on the menu, Esc opens the game menu
-  assert.equal(menu.build.state.popup, "menu")
+  assert.equal(menu.build.state.popup, "game-menu")
   menu.build.handleData("s", menu.layout)
   assert.equal(menu.build.state.popup, "settings")
 

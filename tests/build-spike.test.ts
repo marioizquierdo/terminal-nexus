@@ -23,7 +23,7 @@ import {
 } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildSessionOptions } from "../src/build/session.ts"
-import { JUMP_TILES, anchorForCursor, armedPreview, legalityAt, remaining, spent } from "../src/build/state.ts"
+import { WHEEL_TILES, anchorForCursor, armedPreview, legalityAt, remaining, spent } from "../src/build/state.ts"
 import { bottomLine } from "../src/build/help.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { spikeContext } from "../src/cli/spike.ts"
@@ -299,11 +299,11 @@ test("keyboard: Esc is cancel and x is back in every focus, and q opens the game
     for (const armed of [true, false]) {
       assert.deepEqual(buildKeyboardCommand(ESC, { itemCount: 3, armed, focus }), { kind: "cancel" })
       assert.deepEqual(buildKeyboardCommand("x", { itemCount: 3, armed, focus }), { kind: "back" })
-      assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed, focus }), { kind: "open-menu" })
+      assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed, focus }), { kind: "open-game-menu" })
     }
   }
   // Inside the game menu, q is Quit; Ctrl+C always quits outright.
-  assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed: false, popup: "menu" }), { kind: "quit" })
+  assert.deepEqual(buildKeyboardCommand("q", { itemCount: 3, armed: false, popup: "game-menu" }), { kind: "quit" })
   assert.deepEqual(buildKeyboardCommand(String.fromCharCode(3), { itemCount: 3, armed: false }), { kind: "quit" })
 })
 
@@ -321,7 +321,7 @@ test("mouse: the wheel moves the cursor five tiles and drags the camera with it"
   const before = { ...build.state.camera }
   const startY = build.state.cursor.y
   build.handleData(formatMouseEvent(MOUSE_WHEEL_DOWN, 10, 10), layout)
-  assert.equal(build.state.cursor.y, startY + JUMP_TILES)
+  assert.equal(build.state.cursor.y, startY + WHEEL_TILES)
   assert.ok(build.state.camera.y > before.y, "the camera followed the cursor south")
   build.handleData(formatMouseEvent(MOUSE_WHEEL_UP, 10, 10), layout)
   assert.equal(build.state.cursor.y, startY)
@@ -695,12 +695,12 @@ test("Esc walks back to the game menu; only its q quits, and neither touches the
   build.handleData(ESC, layout) // Grid -> menu
   assert.equal(build.state.focus, "menu")
   build.handleData(ESC, layout) // menu -> the game menu
-  assert.equal(build.state.popup, "menu")
+  assert.equal(build.state.popup, "game-menu")
   build.handleData(ESC, layout) // Esc again keeps playing
   assert.equal(build.state.popup, null)
   assert.equal(quits, 0)
   build.handleData("q", layout) // q opens the game menu
-  assert.equal(build.state.popup, "menu")
+  assert.equal(build.state.popup, "game-menu")
   assert.equal(quits, 0, "a bare q quit without asking")
   build.handleData("q", layout) // q in the game menu quits
   assert.equal(quits, 1)

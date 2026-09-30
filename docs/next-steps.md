@@ -97,8 +97,6 @@ request written with the pr-description skill. Do not start 6C.
 - **The Controls page is written by hand** (`controlsPage` in `src/build/help.ts`). A new key needs a
   line there as well as in `src/build/keyboard.ts`; a test holds every bracketed key a *hint* names to a
   real binding, but the page's own lines are checked by eye.
-- **`BuildLayout.panelBindingsRow`** is named for the key help that used to sit in the panel's last
-  rows; it is now just the panel's last row. A pure rename for a change of its own.
 - **The focus arrow on a shallow diagonal** steps a row every few columns, a comet of `-` with a `\` at
   each step; in Unicode `━` and `╲`. Worth his eye along with the Experiment.
 - **The card while placing shows what is being built, never what is under the cursor**; a player who
@@ -148,7 +146,6 @@ always works; a host that offers more makes it better.**
 
 | Item | Why | Size |
 | --- | --- | --- |
-| Rename `debug.ts` / `DebugFlags` / `BuildState.debug` / `debug-*` to say "experiments" | Debug Mode became Settings; the code still says debug | ~200 mechanical lines; a pull request of its own so the diff is pure rename |
 | Compact `AGENTS.md` Section 2's per-gate paragraphs into two lines each plus a link | It is ~130 lines every session reads first; the detail lives in the tracker and the gate reports | **due now — Milestone 5 was accepted 2026-09-29**; its own small pull request, since a docs-only diff is easy to review |
 | Screenshot flows set Experiments with `--settings`, not "Down*6" | Every added or removed Experiment shifts a count (three recounts this round) | a morning; only the flows that set a value, not the ones that show the popup |
 | A `ScreenHost` interface and an `InputEvent` with `phase` | Fewer TTY fakes, real key releases, gamepad and touch-hold | see `docs/portability.md` section 4 |

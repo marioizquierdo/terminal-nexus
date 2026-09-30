@@ -11,7 +11,7 @@ import { mkdtempSync, readFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { EXPERIMENT_FIELDS, defaultExperiments } from "../src/build/experiments.ts"
-import { buildLayout, escHintSpan, escLabel } from "../src/build/layout.ts"
+import { buildLayout, escLabelSpan, escLabel } from "../src/build/layout.ts"
 import { MOUSE_LEFT, formatMouseEvent } from "../src/build/mouse.ts"
 import { popupSpec, placePopup, settingColumns } from "../src/build/popup.ts"
 import type { PlacedPopup } from "../src/build/popup.ts"
@@ -100,7 +100,7 @@ test("Esc on the menu, q anywhere, and the top bar's menu [esc] all open the gam
   for (const open of [[ESC], ["q"]]) {
     const side = session()
     keys(side, ...open)
-    assert.equal(side.build.state.popup, "menu")
+    assert.equal(side.build.state.popup, "game-menu")
     const text = screen(side)
     assert.match(text, /MENU/)
     assert.match(text, /\[s\] Settings/)
@@ -113,18 +113,18 @@ test("Esc on the menu, q anywhere, and the top bar's menu [esc] all open the gam
     assert.match(text, /Up\/down and \[enter\] choose, or press a row's key\. \[esc\] back to the game\./)
   }
   const clicked = session()
-  const hint = escHintSpan(clicked.layout, "menu [esc]")
+  const hint = escLabelSpan(clicked.layout, "menu [esc]")
   click(clicked, hint.from + 1, hint.row)
-  assert.equal(clicked.build.state.popup, "menu")
+  assert.equal(clicked.build.state.popup, "game-menu")
   // From the map, Esc walks back to the menu first; a committed Build Phase opens the game menu too.
   const grid = session()
   keys(grid, "e", ESC)
   assert.equal(grid.build.state.popup, null)
   keys(grid, ESC)
-  assert.equal(grid.build.state.popup, "menu")
+  assert.equal(grid.build.state.popup, "game-menu")
   const committed = session()
   keys(committed, "n", "1", "p", "y", ESC)
-  assert.equal(committed.build.state.popup, "menu")
+  assert.equal(committed.build.state.popup, "game-menu")
 })
 
 test("leaving always goes through the game menu: its q, Enter on Quit, or a click on Quit; only Ctrl+C quits at once", () => {
@@ -166,13 +166,13 @@ test("[s] opens Settings at the player's settings; Esc goes back to the game men
   keys(side, ESC, "s")
   assert.equal(side.build.state.popup, "settings")
   assert.equal(side.build.state.popupHighlight, playerRow("theme"))
-  assert.deepEqual(side.build.state.popupUnder, ["menu"])
+  assert.deepEqual(side.build.state.popupUnder, ["game-menu"])
   const text = screen(side)
   assert.match(text, /YOUR SETTINGS - saved/)
   assert.match(text, /Background\s+<\s+dark\s+>/)
   assert.match(text, /match your terminal's own/, "the highlighted setting does not say what it is for")
   keys(side, ESC)
-  assert.equal(side.build.state.popup, "menu")
+  assert.equal(side.build.state.popup, "game-menu")
   assert.equal(GAME_MENU_ROWS[side.build.state.popupHighlight], "settings", "back on the row that opened Settings")
   keys(side, ESC)
   assert.equal(side.build.state.popup, null)
@@ -183,7 +183,7 @@ test("[s] opens Settings at the player's settings; Esc goes back to the game men
   assert.equal(side.build.state.popup, null)
   // q inside Settings is the way out: the game menu, not a quit.
   keys(side, "d", "q")
-  assert.equal(side.build.state.popup, "menu")
+  assert.equal(side.build.state.popup, "game-menu")
   assert.equal(side.quits, 0)
 })
 
@@ -255,7 +255,7 @@ test("[e] shows the export in a popup, hands the same text to the adapter, and E
   assert.equal(side.build.state.popup, "settings")
   assert.equal(side.build.state.popupHighlight, SETTINGS_EXPORT_ROW)
   keys(side, ESC)
-  assert.equal(side.build.state.popup, "menu")
+  assert.equal(side.build.state.popup, "game-menu")
   keys(side, ESC)
   assert.equal(side.build.state.popup, null)
   // The Export row by Enter, and by a click, does the same.
@@ -449,7 +449,7 @@ test("the settings flow by keys, by clicks, and from a driver script is the same
   keys(byKeyboard, DOWN, DOWN, DOWN, RIGHT, "e") // past the focus arrow, the card reveal and the hold window
 
   const byMouse = session()
-  const menuHint = escHintSpan(byMouse.layout, escLabel(byMouse.build.state))
+  const menuHint = escLabelSpan(byMouse.layout, escLabel(byMouse.build.state))
   click(byMouse, menuHint.from, menuHint.row)
   clickOption(byMouse, "s")
   const background = placed(byMouse).rows.find((entry) => entry.spec.kind === "setting" && entry.spec.label === "Background")
@@ -471,7 +471,7 @@ test("the settings flow by keys, by clicks, and from a driver script is the same
   clickOption(byMouse, "e")
 
   const script: readonly BuildCommand[] = [
-    { kind: "open-menu" },
+    { kind: "open-game-menu" },
     { kind: "open-settings", section: "settings" },
     { kind: "setting-adjust", field: "theme", step: 1 },
     { kind: "experiment-adjust", field: "raid", step: 1 },

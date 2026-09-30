@@ -12,7 +12,7 @@ import {
   CARD_SEPARATOR_ROW,
   EXPLORE_ROW,
   NEXUS_ROW,
-  RESOURCE_ROW,
+  CREDITS_ROW,
   buildLayout,
   cellForTile,
   constructLines,
@@ -128,10 +128,10 @@ test("the side panel is on the left of the Grid at every size in the supported r
     // Explore Map on the top line and the Nexus Powers straight under it (owner, 2026-09-28 and
     // 2026-09-30, feedback F23, F72); then the credits line, against the divider where the costs are,
     // with the map's resource symbol (F71).
-    assert.deepEqual([EXPLORE_ROW, NEXUS_ROW, RESOURCE_ROW], [0, 1, 2])
+    assert.deepEqual([EXPLORE_ROW, NEXUS_ROW, CREDITS_ROW], [0, 1, 2])
     assert.match(lines[layout.panelRow + EXPLORE_ROW] as string, /^\s*\| \[e\] Explore Map /)
     assert.match(lines[layout.panelRow + NEXUS_ROW] as string, /^\s*\| \[n\] Nexus \(1\)/)
-    assert.match(lines[layout.panelRow + RESOURCE_ROW] as string, /^\s*\| +\* 100[|+]/)
+    assert.match(lines[layout.panelRow + CREDITS_ROW] as string, /^\s*\| +\* 100[|+]/)
     // engine.md 3.1's floor arithmetic, 1 + 30 + 48 + 1 = 80, with the shared west side's column
     // given to the Grid: 1 + 29 + 49 + 1 at 80 columns.
     assert.equal(layout.composition.width, 31 + layout.viewport.width * layout.tileWidth)
@@ -192,7 +192,7 @@ test("[e] and Enter on the first entry arrive in Explore Map: its row turns acti
     assert.equal(side.build.state.focus, "grid")
     assert.equal(side.build.state.armed, null)
     assert.equal(side.build.state.exploreMap, true, `${JSON.stringify(sequence)} did not open Explore Map`)
-    assert.equal(side.build.state.origin, "menu")
+    assert.equal(side.build.state.returnTo, "menu")
     const { frame, lines } = screen(side)
     assert.match(lines[side.layout.footerRow] as string, /\| Explore Map\b/)
     assert.equal(hint(side.context, side.build.state).text, "Explore Map: arrows move, the panel shows what is here. [esc] goes back.")
@@ -245,7 +245,7 @@ test("[e] is a toggle, and Esc and a click on its row are the same 'back': to wh
     // Opened on the map, in plain navigation: back to plain navigation.
     const fromMap = session()
     keys(fromMap, TAB, "e")
-    assert.equal(fromMap.build.state.origin, "grid")
+    assert.equal(fromMap.build.state.returnTo, "grid")
     if (close[0] === "click") clickEntry(fromMap, fromMap.layout.panelRow + EXPLORE_ROW)
     else keys(fromMap, ...close)
     assert.equal(fromMap.build.state.exploreMap, false)
@@ -277,7 +277,7 @@ test("Tab arrives in plain navigation: the bare cursor, the menu still drawn bes
     // Enter there opens Explore Map, begun on the map; Esc from plain navigation is the menu.
     keys(side, ENTER)
     assert.equal(side.build.state.exploreMap, true)
-    assert.equal(side.build.state.origin, "grid")
+    assert.equal(side.build.state.returnTo, "grid")
     keys(side, ESC, ESC)
     assert.equal(side.build.state.focus, "menu")
   }
@@ -344,7 +344,7 @@ test("a digit arms its row from either focus, where the cursor is when it fits t
     keys(side, "3")
     assert.equal(side.build.state.armed, 2)
     assert.equal(side.build.state.focus, "grid")
-    assert.equal(side.build.state.origin, start)
+    assert.equal(side.build.state.returnTo, start)
     assert.deepEqual(side.build.state.cursor, cursor, "the Turret fits where the cursor is, and the cursor moved")
     assert.equal(side.build.state.menuHighlight, entryOfConstruct(2))
   }
@@ -363,7 +363,7 @@ test("Esc walks back a stack: popup, Explore Map to the menu, then the game menu
   assert.equal(side.build.state.exploreMap, false)
   assert.equal(side.build.state.focus, "menu")
   keys(side, ESC)
-  assert.equal(side.build.state.popup, "menu")
+  assert.equal(side.build.state.popup, "game-menu")
   assert.match(screen(side).text, /MENU/)
   assert.match(screen(side).text, /\[s\] Settings/)
   assert.match(screen(side).text, /\[q\] Quit/)
@@ -375,7 +375,7 @@ test("Esc walks back a stack: popup, Explore Map to the menu, then the game menu
 test("the game menu: q opens it, its own [q] quits, Ctrl+C always quits outright", () => {
   const side = session()
   keys(side, "q")
-  assert.equal(side.build.state.popup, "menu")
+  assert.equal(side.build.state.popup, "game-menu")
   assert.equal(side.quits(), 0)
   keys(side, "q")
   assert.equal(side.quits(), 1)
@@ -475,7 +475,7 @@ test("a click on a building's row arms it at once, whatever had focus, and its g
   assert.deepEqual(side.build.state.cursor, { x: 30, y: 14 }, "arming by click moved the cursor off the map spot")
   assert.match(screen(side).lines[side.layout.panelRow + CARD_HEADER_ROW] as string, /\[1\] Barracks +>/)
   assert.match(hint(side.context, side.build.state).text, /^Place the Barracks:/)
-  assert.equal(side.build.state.origin, "menu", "a click on a row is the menu's, whatever had focus")
+  assert.equal(side.build.state.returnTo, "menu", "a click on a row is the menu's, whatever had focus")
 
   // Another building while placing — by its digit, since the panel is the Barracks' card now and a
   // click on it goes back (feedback F58): refused, the Barracks still armed where the player is
@@ -492,7 +492,7 @@ test("a click on a building's row arms it at once, whatever had focus, and its g
   keys(byEnter, DOWN, DOWN, ENTER)
   assert.equal(fromMenu.build.state.armed, 0)
   assert.deepEqual(fromMenu.build.state.cursor, byEnter.build.state.cursor)
-  assert.equal(fromMenu.build.state.origin, "menu")
+  assert.equal(fromMenu.build.state.returnTo, "menu")
 })
 
 test("a second click on the same tile places, and the menu comes back with nothing looking chosen", () => {
@@ -593,7 +593,7 @@ test("the information panel names what a planned building costs, and bare ground
     { kind: "move-cursor", dx: 12, dy: 1 },
     { kind: "place" },
     { kind: "focus", target: "grid" },
-    { kind: "inspect" },
+    { kind: "open-explore" },
   ])
   const planned = screen(side).text
   assert.match(planned, /Barracks/)
@@ -784,7 +784,7 @@ test(`nothing within ${ARM_SEARCH_TILES} tiles: one tile right and down, drawn a
   keys(side, TAB, "1")
   assert.equal(build.state.armed, 0)
   assert.deepEqual(build.state.cursor, { x: 11, y: 11 })
-  assert.equal(build.state.armGhost, true)
+  assert.equal(build.state.noSpotFound, true)
   assert.match(build.state.status.text, /no room within 12 tiles/)
   const ghostTile = cellForTile(layout, build.state.camera, build.state.cursor)
   const drawn = () => cellAt(screen(side).frame, ghostTile.x, ghostTile.y).glyph
@@ -792,19 +792,19 @@ test(`nothing within ${ARM_SEARCH_TILES} tiles: one tile right and down, drawn a
   assert.match(screen(side).lines[layout.footerRow] as string, /no room within 12 tiles/)
   // Moving: the normal refusal drawing.
   keys(side, RIGHT, LEFT)
-  assert.equal(build.state.armGhost, false)
+  assert.equal(build.state.noSpotFound, false)
   assert.equal(drawn(), "x")
   // Trying to place clears it too, with the refusal said loudly.
   const tried: Side = { ...side, build: new BuildSession({ context: solid, cursor: { x: 10, y: 10 }, viewport: layout.viewport }) }
   keys(tried, TAB, "1")
-  assert.equal(tried.build.state.armGhost, true)
+  assert.equal(tried.build.state.noSpotFound, true)
   keys(tried, ENTER)
-  assert.equal(tried.build.state.armGhost, false)
+  assert.equal(tried.build.state.noSpotFound, false)
   assert.equal(tried.build.state.planned.length, 0)
   assert.equal(tried.build.state.status.tone, "danger")
   // And Esc disarms: nothing left to draw as a ghost.
   keys(tried, ESC)
-  assert.equal(tried.build.state.armGhost, false)
+  assert.equal(tried.build.state.noSpotFound, false)
 })
 
 test("the cursor opens on the Grid Nexus, and the first building armed finds the nearest good spot around it", () => {
@@ -854,7 +854,7 @@ test("Esc while placing disarms and goes back one level, to where the arming cam
   keys(onMap, ESC)
   assert.equal(onMap.build.state.focus, "menu")
   keys(onMap, ESC)
-  assert.equal(onMap.build.state.popup, "menu")
+  assert.equal(onMap.build.state.popup, "game-menu")
 
   for (const arm of [[DOWN, DOWN, ENTER], ["1"]]) {
     const fromMenu = session()
@@ -941,8 +941,8 @@ test("the focus flow by keyboard bytes and the same commands from a driver are t
     { kind: "highlight", delta: 1 },
     { kind: "activate" },
     { kind: "place" },
-    { kind: "commit" },
-    { kind: "confirm-commit" },
+    { kind: "open-battle-round" },
+    { kind: "start-pulse" },
   ]
   const byDriver = session()
   byDriver.build.run(script)

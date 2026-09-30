@@ -10,7 +10,7 @@ import assert from "node:assert/strict"
 import { SPIKE_CATALOG } from "../src/build/catalog.ts"
 import { bottomLine, controlsLineCount, controlsPage, hint } from "../src/build/help.ts"
 import { buildKeyboardCommand, cursorKeyOf } from "../src/build/keyboard.ts"
-import { buildLayout, cellForTile, escHintSpan, escLabel, menuEntryRow } from "../src/build/layout.ts"
+import { buildLayout, cellForTile, escLabelSpan, escLabel, menuEntryRow } from "../src/build/layout.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, formatMouseEvent } from "../src/build/mouse.ts"
 import { popupSpec } from "../src/build/popup.ts"
 import { BuildSession } from "../src/build/session.ts"
@@ -134,14 +134,14 @@ test("x on the menu does nothing at all — no popup, no status, no flicker — 
   // Esc, the top bar's label and q are the ways in; the label says so on the menu.
   assert.equal(escLabel(side.build.state), "menu [esc]")
   keys(side, ESC)
-  assert.equal(side.build.state.popup, "menu")
+  assert.equal(side.build.state.popup, "game-menu")
   const byLabel = session()
-  const label = escHintSpan(byLabel.layout, escLabel(byLabel.build.state))
+  const label = escLabelSpan(byLabel.layout, escLabel(byLabel.build.state))
   clickCell(byLabel, label.from + 1, label.row)
-  assert.equal(byLabel.build.state.popup, "menu")
+  assert.equal(byLabel.build.state.popup, "game-menu")
   const byQ = session()
   keys(byQ, "q")
-  assert.equal(byQ.build.state.popup, "menu")
+  assert.equal(byQ.build.state.popup, "game-menu")
 })
 
 test("x x x from anywhere lands on the menu with the keyboard there, and stays", () => {
@@ -179,7 +179,7 @@ test("Esc walks back the same levels, and on the menu opens the game menu", () =
   keys(side, ESC)
   assert.ok(onMenu(side.build.state))
   keys(side, ESC)
-  assert.equal(side.build.state.popup, "menu")
+  assert.equal(side.build.state.popup, "game-menu")
 })
 
 test("a right click walks back as x does, and never opens a menu", () => {
@@ -197,7 +197,7 @@ test("a right click walks back as x does, and never opens a menu", () => {
   assert.equal(side.build.state.popup, null)
   keys(side, ESC, "s")
   rightClickMap(side)
-  assert.equal(side.build.state.popup, "menu", "a right click in Settings did not go back one popup")
+  assert.equal(side.build.state.popup, "game-menu", "a right click in Settings did not go back one popup")
   rightClickMap(side)
   assert.equal(side.build.state.popup, null)
   rightClickMap(side)
@@ -218,23 +218,23 @@ test("on a committed plan x and a right click do nothing; Esc, q and the top bar
   rightClickMap(side)
   assert.equal(side.build.state.popup, null)
   keys(side, ESC)
-  assert.equal(side.build.state.popup, "menu")
+  assert.equal(side.build.state.popup, "game-menu")
   keys(side, "x")
   assert.equal(side.build.state.popup, null, "x did not close the game menu over a committed plan")
   keys(side, "q")
-  assert.equal(side.build.state.popup, "menu")
+  assert.equal(side.build.state.popup, "game-menu")
   keys(side, ESC)
-  const label = escHintSpan(side.layout, escLabel(side.build.state))
+  const label = escLabelSpan(side.layout, escLabel(side.build.state))
   clickCell(side, label.from + 1, label.row)
-  assert.equal(side.build.state.popup, "menu")
+  assert.equal(side.build.state.popup, "game-menu")
 })
 
 test("x closes every popup as Esc does, back to the one it was opened from", () => {
   for (const [begin, after] of [
     [["n"], null],
     [[ESC], null],
-    [[ESC, "s"], "menu"],
-    [[ESC, "c"], "menu"],
+    [[ESC, "s"], "game-menu"],
+    [[ESC, "c"], "game-menu"],
     [["d", "e"], "settings"],
     [["?"], null],
   ] as const) {
@@ -275,7 +275,7 @@ test("while a building is armed, another building's key, e and s are refused: no
     }
   }
   // The driver's commands are refused the same way: the lock is the reducer's, not the keyboard's.
-  for (const command of [{ kind: "arm", index: 1 }, { kind: "explore" }, { kind: "commit" }] as const satisfies readonly BuildCommand[]) {
+  for (const command of [{ kind: "arm", index: 1 }, { kind: "explore" }, { kind: "open-battle-round" }] as const satisfies readonly BuildCommand[]) {
     const byKey = session()
     keys(byKey, "1")
     byKey.build.dispatch(command)
@@ -345,7 +345,7 @@ test("Explore Map is not locked: a digit arms from the map, n opens the Nexus po
   const arms = session()
   keys(arms, "e", "2")
   assert.equal(arms.build.state.armed, 1)
-  assert.equal(arms.build.state.origin, "grid")
+  assert.equal(arms.build.state.returnTo, "grid")
   const nexus = session()
   keys(nexus, "e", "n")
   assert.equal(nexus.build.state.popup, "nexus-powers")
@@ -424,7 +424,7 @@ test("Explore Map opened from the map leaves the cursor where it is — Enter re
     const side = session(context)
     keys(side, ...open)
     assert.equal(side.build.state.exploreMap, true)
-    assert.equal(side.build.state.origin, "grid")
+    assert.equal(side.build.state.returnTo, "grid")
     assert.deepEqual(side.build.state.cursor, nexus, `${JSON.stringify(open)} moved the cursor off the Nexus`)
     const text = frameToText(composeBuildFrame({ context, state: side.build.state, layout: side.layout }, "monochrome"))
     assert.match(text, /Nexus/)
@@ -482,7 +482,7 @@ test("the game menu and the export have no Back row; Esc, x and the top bar stil
   // The message over the game menu still goes back to its Restart row.
   const message = session()
   keys(message, ESC)
-  const over: BuildState = { ...message.build.state, popup: "message", message: restartMessage(["x"]), popupUnder: ["menu"] }
+  const over: BuildState = { ...message.build.state, popup: "message", message: restartMessage(["x"]), popupUnder: ["game-menu"] }
   assert.equal(GAME_MENU_ROWS[applyBuildCommand(message.context, over, { kind: "cancel" }).popupHighlight], "restart")
 })
 
@@ -628,7 +628,7 @@ test("list keys: plain arrows step, every fast form the map knows jumps the same
   ]
   for (const key of fastUpDown) {
     const map = cursorKeyOf(key)
-    assert.ok(map !== null && map.fast && map.dy !== 0, JSON.stringify(key))
+    assert.ok(map !== null && map.jump && map.dy !== 0, JSON.stringify(key))
     assert.deepEqual(listKeyOf(key), { direction: map.dy, jump: true }, JSON.stringify(key))
   }
   // Home and End, left and right on the map, are a list's first and last row, in every spelling.

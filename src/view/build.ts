@@ -18,11 +18,11 @@ import {
   CARD_HEADER_ROW,
   CARD_SEPARATOR_ROW,
   ESC_KEY,
-  RESOURCE_ROW,
+  CREDITS_ROW,
   START_KEY,
   START_LABEL,
   cellForTile,
-  escHintSpan,
+  escLabelSpan,
   escLabel,
   menuEntryRow,
   menuFloor,
@@ -408,7 +408,7 @@ function drawEffects(
  * should try grey instead"). Red is kept for the moment a placement is actually *attempted* and
  * refused — the status line's job, not the ghost's — so looking and trying read differently.
  *
- * One exception (feedback F30): when arming found no spot within reach (`BuildState.armGhost`), the
+ * One exception (feedback F30): when arming found no spot within reach (`BuildState.noSpotFound`), the
  * building is drawn as itself — in the same grey, since it would still be refused — rather than as a
  * block of `x`, until the player moves or tries to place.
  */
@@ -416,7 +416,7 @@ function drawPreview(cells: BandCell[], input: BuildCompositionInput, preview: A
   const { state, layout } = input
   if (preview === null) return
   const legal = preview.refusal === null
-  const shape = legal || state.armGhost
+  const shape = legal || state.noSpotFound
   const range = visibleRange(state.camera, state.viewport)
   const shift = glideShift(input)
 
@@ -531,7 +531,7 @@ function drawRefusedFlash(cells: BandCell[], input: BuildCompositionInput, previ
  * Pulse plays with no popup over it, what the Pulse is doing. It replaced a position readout, the key
  * help and the status line — three lines — and every key is on the Controls and hotkeys page instead.
  */
-function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
+function drawTopBarAndBottomLine(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
   const { context, state, layout } = input
   const band = BANDS.chrome
   const left = layout.offset.column + 2
@@ -546,7 +546,7 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
   // the name quiet, the key in the hotkey colour after it, findable without competing with the game's
   // own title. The same text is the click target that sends Esc.
   const escText = escLabel(state)
-  const hint = escHintSpan(layout, escText)
+  const hint = escLabelSpan(layout, escText)
   const name = escText.slice(0, escText.length - ESC_KEY.length)
   text(cells, band, hint.from, hint.row, name, "chrome.muted")
   text(cells, band, hint.from + name.length, hint.row, ESC_KEY, "chrome.hotkey", { bold: true })
@@ -623,7 +623,7 @@ export function menuRowActive(context: BuildContext, state: BuildState, entry: n
   if (state.committed) return false
   if (entry === NEXUS_ENTRY) return state.popup === "nexus-powers"
   if (entry === EXPLORE_ENTRY) return exploring(state)
-  if (entry === startEntry(context.catalog.length)) return state.popup === "confirm-commit"
+  if (entry === startEntry(context.catalog.length)) return state.popup === "battle-round"
   return state.armed !== null && entryOfConstruct(state.armed) === entry
 }
 
@@ -720,7 +720,7 @@ function rowState(input: BuildCompositionInput, entry: number): Readonly<{ state
   // Settings, the export, the Controls page and a message belong to none, so while one has the
   // keyboard its own highlight (or none) is the only one on screen.
   if (
-    state.popup === "menu" ||
+    state.popup === "game-menu" ||
     state.popup === "settings" ||
     state.popup === "export" ||
     state.popup === "controls" ||
@@ -786,7 +786,7 @@ function menuRowSpec(input: BuildCompositionInput, entry: number): MenuRowSpec |
  */
 function drawCredits(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
   const { context, state, layout } = input
-  const row = layout.panelRow + RESOURCE_ROW
+  const row = layout.panelRow + CREDITS_ROW
   const amount = String(remaining(context, state))
   const deposit = terrainGlyph("terrain.deposit", pack)
   const end = layout.panelColumn + layout.panelLimit
@@ -1457,10 +1457,10 @@ export function composeBuildFrame(
     drawCursor(cells, input)
     drawChrome(cells, input, pack)
     drawFrameLight(cells, input.layout, input.pulse)
-    drawHeaderAndFooter(cells, input, null)
+    drawTopBarAndBottomLine(cells, input, null)
     const panel: BandCell[] = []
     drawPulsePanel(panel, input.layout, input.pulse, input.state.pulseNumber)
-    for (const cell of panel) if (cell.y <= input.layout.panelBindingsRow) cells.push(cell)
+    for (const cell of panel) if (cell.y <= input.layout.panelLastRow) cells.push(cell)
     drawPopup(cells, input, pack)
     return composeBands(input.layout.frame.width, input.layout.frame.height, cells)
   }
@@ -1475,7 +1475,7 @@ export function composeBuildFrame(
   drawCursor(cells, input)
   drawRefusedFlash(cells, input, preview)
   drawChrome(cells, input, pack)
-  drawHeaderAndFooter(cells, input, preview)
+  drawTopBarAndBottomLine(cells, input, preview)
 
   // The panel shows the menu, or a card — Explore Map's, or the armed building's — or the committed
   // summary. Clipped to the panel's own rows: on a terminal too short for the whole menu, a row that
@@ -1484,7 +1484,7 @@ export function composeBuildFrame(
   if (input.state.committed) drawCommittedPanel(panel, input)
   else if (cardShowing(input.state)) drawCard(panel, input, pack, capability)
   else drawPanel(panel, input, pack, capability)
-  for (const cell of panel) if (cell.y <= input.layout.panelBindingsRow) cells.push(cell)
+  for (const cell of panel) if (cell.y <= input.layout.panelLastRow) cells.push(cell)
   // The hand-off crosses from the panel into the map, so it is drawn over both — and under any popup:
   // the focus arrow from a building's row, the see-through cursor from Explore Map's (F64).
   if (handoffFromExplore(input.state)) drawSeeThroughCursor(cells, input)

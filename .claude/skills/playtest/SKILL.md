@@ -75,7 +75,7 @@ the hold window, and the placeholder Pulse's raid and crew; `--settings "focusAr
 cardRevealMs=0"` switches both looks off. Every other number the owner settled is a tuned value in
 `src/build/tuning.ts`, not a setting. Closing Settings with a changed Experiment that only applies
 after a restart shows a **RESTART NEEDED** message (Esc closes it, back on the game menu's Restart; `r`
-then restarts) — no Experiment needs a restart today. `src/build/debug.ts`'s `DEBUG_FIELDS` is the
+then restarts) — no Experiment needs a restart today. `src/build/experiments.ts`'s `EXPERIMENT_FIELDS` is the
 order. The map's edge is not an Experiment: it is the map's own style (the spike
 map's fence; `--glyphs unicode` shows the Unicode forms), and the menu's divider is its west side.
 

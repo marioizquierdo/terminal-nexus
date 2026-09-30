@@ -21,7 +21,7 @@ On Claude Code on the web:
   retires a pattern, update that document in the same pull request;
 - when a choice is Mario's to feel — a timing, a look, whether a feature should exist — put both
   answers behind an **Experiment** (Settings → Experiments in the Build Phase, `d` jumps there;
-  `src/build/debug.ts`), ask him in the pull request to flip it and to paste the **settings export**
+  `src/build/experiments.ts`), ask him in the pull request to flip it and to paste the **settings export**
   as a comment, and start the game with `--settings "<that text>"` to see what he saw; he asked for
   exactly this (AGENTS.md Section 5). Remove an Experiment once its question is answered, normally
   before the pull request is accepted;

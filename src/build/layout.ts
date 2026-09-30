@@ -60,9 +60,9 @@ export type BuildLayout = Readonly<{
   headerLimit: number
   /** Where the top bar's Esc label ends, right-aligned — "menu [esc]", "back [esc]" or "close [esc]",
    *  saying what Esc does right now (feedback F37): drawn there, and its click target, which sends
-   *  exactly what Esc sends. `escHint` gives the columns a given label covers. It replaced gate 5G's
+   *  exactly what Esc sends. `escLabelEnd` gives the columns a given label covers. It replaced gate 5G's
    *  `[d] debug`, then 5J's fixed `[esc] menu`. */
-  escHint: Readonly<{ row: number; to: number }>
+  escLabelEnd: Readonly<{ row: number; to: number }>
   /** How many glyphs fit on the bottom bar's line, which runs the full width beneath both panes. */
   footerLimit: number
   /** Frame row of the bottom bar's one line — the first row below the Grid's own bottom rule: the
@@ -76,7 +76,7 @@ export type BuildLayout = Readonly<{
    *  the Nexus Pulse panel's last control row. (Named for the key help that used to overflow into the
    *  panel's bottom lines; the panel carries no help text since feedback F58. Renaming it is a pure
    *  rename for a change of its own.) */
-  panelBindingsRow: number
+  panelLastRow: number
 }>
 
 /**
@@ -90,7 +90,7 @@ export type BuildLayout = Readonly<{
  */
 export const EXPLORE_ROW = 0
 export const NEXUS_ROW = 1
-export const RESOURCE_ROW = 2
+export const CREDITS_ROW = 2
 const CONSTRUCT_FIRST_ROW = 3
 
 /**
@@ -116,8 +116,8 @@ export type PulseControlRow = Readonly<{ row: number; hotkey: string; control: P
 
 export function pulseControlRows(layout: BuildLayout): readonly PulseControlRow[] {
   return [
-    { row: layout.panelBindingsRow - 1, hotkey: "space", control: "toggle" },
-    { row: layout.panelBindingsRow, hotkey: "r", control: "restart" },
+    { row: layout.panelLastRow - 1, hotkey: "space", control: "toggle" },
+    { row: layout.panelLastRow, hotkey: "r", control: "restart" },
   ]
 }
 
@@ -143,7 +143,7 @@ export const START_KEY = "s"
 export const START_LABEL = "Start Pulse"
 
 export function startRow(layout: BuildLayout): number {
-  return layout.panelBindingsRow
+  return layout.panelLastRow
 }
 
 /** The last panel row the menu's other text may use: the rows above the Start Pulse entry. */
@@ -167,13 +167,13 @@ export function escLabel(state: Pick<BuildState, "popup" | "focus" | "committed"
 }
 
 /** The columns the top bar's Esc label covers, right-aligned — where it is drawn and clicked. */
-export function escHintSpan(layout: BuildLayout, label: string): Readonly<{ row: number; from: number; to: number }> {
-  return { row: layout.escHint.row, from: layout.escHint.to - label.length + 1, to: layout.escHint.to }
+export function escLabelSpan(layout: BuildLayout, label: string): Readonly<{ row: number; from: number; to: number }> {
+  return { row: layout.escLabelEnd.row, from: layout.escLabelEnd.to - label.length + 1, to: layout.escLabelEnd.to }
 }
 
 /** Whether a frame cell is on the top bar's Esc label. */
-export function escHintAt(layout: BuildLayout, label: string, column: number, row: number): boolean {
-  const hint = escHintSpan(layout, label)
+export function escLabelAt(layout: BuildLayout, label: string, column: number, row: number): boolean {
+  const hint = escLabelSpan(layout, label)
   return row === hint.row && column >= hint.from && column <= hint.to
 }
 
@@ -285,11 +285,11 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLay
     panelColumn,
     panelLimit: dividerColumn - panelColumn,
     headerLimit,
-    escHint: { row: offset.row + 1, to: hintTo },
+    escLabelEnd: { row: offset.row + 1, to: hintTo },
     footerLimit: composition.width - 4,
     footerRow: paneBottom + 1,
     panelRow: gridBox.top + 1,
-    panelBindingsRow: paneBottom - 1,
+    panelLastRow: paneBottom - 1,
   }
 }
 

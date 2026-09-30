@@ -128,7 +128,7 @@ export type BuildState = Readonly<{
    * on its row, a digit while the menu had the keyboard) — they go back to the menu. Meaningless while
    * nothing is under way.
    */
-  origin: Focus
+  returnTo: Focus
   /**
    * Arming found no spot for the building within reach of the cursor (`ARM_SEARCH_TILES`), so the
    * cursor stepped one tile right and one down and the preview is drawn as the building itself rather
@@ -136,7 +136,7 @@ export type BuildState = Readonly<{
    * cursor or tries to place, after which the refusal is drawn as usual. Pure: set by arming, cleared
    * by the next move, click or placement.
    */
-  armGhost: boolean
+  noSpotFound: boolean
   /** Which half of the screen the arrow keys and Enter/Space belong to (engine.md 9.7, gate 5F).
    *  Reducer state, not adapter state, so a driver can assert it and the bottom line's hint can say it. */
   focus: Focus
@@ -145,7 +145,7 @@ export type BuildState = Readonly<{
    * Map row reads `[x] Explore Map  >>` in the active style, and under a separator the rest of the
    * panel is a card for what is under the cursor, following it as it moves. Reached only by `e`, the menu's first entry,
    * and Enter/Space in plain navigation; `e` again, Esc, or a click on its row go back to where it was
-   * opened from (`origin`). Only ever true while the Grid has focus and nothing is armed (read it
+   * opened from (`returnTo`). Only ever true while the Grid has focus and nothing is armed (read it
    * through `exploring`).
    *
    * **Tab and a click on the map do not open it** (feedback F30): they arrive in plain navigation,
@@ -289,7 +289,7 @@ export function remaining(context: BuildContext, state: BuildState): number {
 /** The mouse wheel's five-tile step. GUIDANCE (engine.md 9.7's bindings table), not RULE. Until gate
  *  5H Shift+Arrow and its modifier-free fallbacks moved this far too; since then they jump the tuned
  *  `TUNING.jumpStep` (`src/build/tuning.ts`), and the wheel alone keeps five. */
-export const JUMP_TILES = 5
+export const WHEEL_TILES = 5
 
 /** The scroll margin in force, in tiles along each axis: a percentage of the view (gate 5H) — the
  *  context's (`--scroll-margin`), or the owner's tuned one. */
@@ -314,8 +314,8 @@ export function createBuildState(
     camera: followCursor({ x: 0, y: 0 }, start, viewport, context.grid, marginOf(context, viewport)),
     viewport,
     armed: null,
-    origin: "menu",
-    armGhost: false,
+    returnTo: "menu",
+    noSpotFound: false,
     exploreMap: false,
     ack: null,
     refusedTry: null,
@@ -359,7 +359,7 @@ export function createBuildState(
  */
 function editLock(state: BuildState): StatusMessage | null {
   if (state.committed) return status("The Build Phase is committed.", "warning")
-  if (state.popup === "confirm-commit") return status("Start or go back first: [s] start, [esc] back.", "warning")
+  if (state.popup === "battle-round") return status("Start or go back first: [s] start, [esc] back.", "warning")
   if (state.popup !== null) return status("Close the popup first: [esc].", "warning")
   return null
 }
@@ -407,6 +407,13 @@ export function exploring(state: BuildState): boolean {
  */
 export function cardShowing(state: BuildState): boolean {
   return !state.committed && state.focus === "grid" && (state.armed !== null || state.exploreMap)
+}
+
+/** The menu entry the showing card belongs to — the armed building's, or Explore Map's — or `null`
+ *  while the panel shows the menu. The card's header is that row, drawn active. */
+export function cardEntry(state: BuildState): number | null {
+  if (!cardShowing(state)) return null
+  return state.armed === null ? EXPLORE_ENTRY : entryOfConstruct(state.armed)
 }
 
 /** How many entries sit above the construct rows. */
@@ -577,7 +584,7 @@ export function legalityAt(
  *
  * `found: false` when nothing within reach fits: the cursor then steps one tile right and one down,
  * so the player sees something happened, and the preview is drawn as the building rather than the
- * refusal (`BuildState.armGhost`).
+ * refusal (`BuildState.noSpotFound`).
  *
  * Affordability is not a tile question and is left out: an unaffordable row is refused before it is
  * armed (`armItem`).
@@ -771,9 +778,9 @@ function toMap(state: BuildState): BuildState {
 }
 
 /** Finishing what the Grid was doing — a placement, or Esc while placing or exploring: back to where
- *  it was started from (`BuildState.origin`), one level. */
+ *  it was started from (`BuildState.returnTo`), one level. */
 function backToOrigin(state: BuildState): BuildState {
-  return state.origin === "grid" ? toMap(state) : toMenu(state)
+  return state.returnTo === "grid" ? toMap(state) : toMenu(state)
 }
 
 /** The next hand-off of the keyboard from menu row `entry` to the map (`BuildState.handoff`), when
@@ -822,7 +829,7 @@ function armItem(context: BuildContext, state: BuildState, index: number, from: 
   const armed: BuildState = {
     ...state,
     armed: index,
-    origin: from,
+    returnTo: from,
     focus: "grid",
     exploreMap: false,
     menuHighlight: entry,
@@ -834,11 +841,11 @@ function armItem(context: BuildContext, state: BuildState, index: number, from: 
   if (!spot.found) {
     return {
       ...moved,
-      armGhost: true,
+      noSpotFound: true,
       status: status(`${item.label} selected - no room within ${ARM_SEARCH_TILES} tiles, move to find one.`, "warning"),
     }
   }
-  return { ...moved, armGhost: false, status: NO_STATUS }
+  return { ...moved, noSpotFound: false, status: NO_STATUS }
 }
 
 /**
@@ -871,7 +878,7 @@ function activateEntry(context: BuildContext, state: BuildState, entry: number, 
   // A click on the Nexus entry puts focus where it landed, on the menu, before the popup takes the
   // keyboard — so the pick hands the player back to the menu, not to a building they had armed.
   if (target.kind === "nexus") return openNexus(by === "click" ? toMenu(highlighted) : highlighted)
-  if (target.kind === "start") return startPulse(context, highlighted)
+  if (target.kind === "start") return openBattleRound(context, highlighted)
   return openExplore(context, highlighted, "menu")
 }
 
@@ -879,7 +886,7 @@ function activateEntry(context: BuildContext, state: BuildState, entry: number, 
  *  it. Its row flashes "pressed" however it was reached — or, refused (a Nexus power still waiting), a
  *  flicker beside the status line's reason. With a building armed, the building comes first
  *  (`refuseWhileArmed`, feedback F69). */
-function startPulse(context: BuildContext, state: BuildState): BuildState {
+function openBattleRound(context: BuildContext, state: BuildState): BuildState {
   const entry = startEntry(context.catalog.length)
   const refused = refuseWhileArmed(context, state)
   if (refused !== null) return refused
@@ -888,7 +895,7 @@ function startPulse(context: BuildContext, state: BuildState): BuildState {
   return {
     ...toMenu(state),
     menuHighlight: entry,
-    popup: "confirm-commit",
+    popup: "battle-round",
     ack: acknowledge(state, "pressed", entry),
     status: status(`Battle Round ${state.pulseNumber}: Enter starts it, Esc goes back.`),
   }
@@ -931,7 +938,7 @@ function openExplore(context: BuildContext, state: BuildState, from: Focus): Bui
     focus: "grid",
     armed: null,
     exploreMap: true,
-    origin: from,
+    returnTo: from,
     menuHighlight: EXPLORE_ENTRY,
     ack: acknowledge(state, "pressed", EXPLORE_ENTRY),
     handoff: handOff(state, from, EXPLORE_ENTRY),
@@ -954,8 +961,8 @@ function openPopup(state: BuildState, popup: Popup): BuildState {
   // The start-the-Pulse question and a committed Build Phase each own the whole screen; a popup over
   // either would be a second question on top of one. The game menu is the one exception: leaving can
   // always be asked about.
-  if (popup !== "menu") {
-    const lock = state.committed || state.popup === "confirm-commit" ? editLock(state) : null
+  if (popup !== "game-menu") {
+    const lock = state.committed || state.popup === "battle-round" ? editLock(state) : null
     if (lock !== null) return { ...state, status: lock }
   }
   return { ...state, popup, popupHighlight: 0, popupUnder: [] }
@@ -965,7 +972,7 @@ function pickNexus(context: BuildContext, state: BuildState, index: number): Bui
   // Defensively guarded like every other command: a driver script is free to send one anywhere, and
   // the answer must be the same refusal a player pressing an unavailable key gets. An open Nexus popup
   // is where a pick is normally made, so it is not a reason to refuse one.
-  if (state.committed || state.popup === "confirm-commit" || state.popup === "menu") {
+  if (state.committed || state.popup === "battle-round" || state.popup === "game-menu") {
     return { ...state, status: editLock(state) ?? state.status }
   }
   if (state.nexusPick !== null) return { ...state, status: status("Already picked.", "warning") }
@@ -1026,17 +1033,17 @@ function place(context: BuildContext, state: BuildState): BuildState {
  *  Settings), or closes; placing or Explore Map goes back to where it began; the map to the menu; and
  *  on the menu, the game menu opens. */
 function cancel(context: BuildContext, state: BuildState): BuildState {
-  if (state.popup === "confirm-commit") return { ...state, popup: null, status: status("Cancelled.") }
+  if (state.popup === "battle-round") return { ...state, popup: null, status: status("Cancelled.") }
   const under = state.popupUnder[state.popupUnder.length - 1]
   if (state.popup !== null && under !== undefined) {
     // Back to the popup this one was opened from, on the row that opened it — or, from the message
     // that a restart is needed, on the game menu's Restart, the row it points at.
     const menuRow = state.popup === "message" ? "restart" : state.popup === "controls" ? "controls" : "settings"
-    const highlight = under === "menu" ? GAME_MENU_ROWS.indexOf(menuRow) : under === "settings" ? SETTINGS_EXPORT_ROW : 0
+    const highlight = under === "game-menu" ? GAME_MENU_ROWS.indexOf(menuRow) : under === "settings" ? SETTINGS_EXPORT_ROW : 0
     return { ...state, popup: under, popupHighlight: highlight, popupUnder: state.popupUnder.slice(0, -1) }
   }
   if (state.popup !== null) return { ...state, popup: null, popupUnder: [] }
-  if (state.committed) return openPopup(state, "menu")
+  if (state.committed) return openPopup(state, "game-menu")
   if (state.focus === "grid") {
     // Placing or exploring: back one level, to where it was started from. Plain navigation: to the
     // menu.
@@ -1044,7 +1051,7 @@ function cancel(context: BuildContext, state: BuildState): BuildState {
     return state.exploreMap ? backToOrigin(state) : toMenu(state)
   }
   void context
-  return openPopup(state, "menu")
+  return openPopup(state, "game-menu")
 }
 
 /**
@@ -1064,7 +1071,7 @@ function goBack(context: BuildContext, state: BuildState): BuildState {
  * committed Build Phase, since starting over from there is exactly what a playtest wants.
  */
 function openSettings(state: BuildState, section: "settings" | "experiments"): BuildState {
-  if (state.popup !== null && state.popup !== "menu") return state
+  if (state.popup !== null && state.popup !== "game-menu") return state
   // While the Nexus Pulse is on screen, `d` opens the Experiments already at the placeholder Pulse's —
   // the raid and the crew, which someone watching it wants to change (gate 6A) — rather than at the
   // Build Phase's first.
@@ -1073,7 +1080,7 @@ function openSettings(state: BuildState, section: "settings" | "experiments"): B
     ...state,
     popup: "settings",
     popupHighlight: section === "settings" ? FIRST_SETTING_ROW : experiments,
-    popupUnder: state.popup === "menu" ? ["menu"] : [],
+    popupUnder: state.popup === "game-menu" ? ["game-menu"] : [],
   }
 }
 
@@ -1083,12 +1090,12 @@ function openSettings(state: BuildState, section: "settings" | "experiments"): B
  * is watched with keys as well. Opens over no popup but the game menu.
  */
 function openControls(state: BuildState): BuildState {
-  if (state.popup !== null && state.popup !== "menu") return state
+  if (state.popup !== null && state.popup !== "game-menu") return state
   return {
     ...state,
     popup: "controls",
     popupHighlight: 0,
-    popupUnder: state.popup === "menu" ? ["menu"] : [],
+    popupUnder: state.popup === "game-menu" ? ["game-menu"] : [],
   }
 }
 
@@ -1218,10 +1225,10 @@ export function applyBuildCommand(
 ): BuildState {
   // The arming ghost (feedback F30) lasts until the player moves the cursor or tries to place.
   const moves = command.kind === "move-cursor" || command.kind === "click-tile" || command.kind === "place"
-  const base: BuildState = moves && state.armGhost ? { ...state, armGhost: false } : state
+  const base: BuildState = moves && state.noSpotFound ? { ...state, noSpotFound: false } : state
   const applied = applyCommand(context, base, command)
   // Nothing armed, nothing to draw as a ghost.
-  const unghosted = applied.armed === null && applied.armGhost ? { ...applied, armGhost: false } : applied
+  const unghosted = applied.armed === null && applied.noSpotFound ? { ...applied, noSpotFound: false } : applied
   // Whatever closed the popup — a click outside it, a pick, an answer — closed the ones under it too;
   // and a message's words go with it.
   const closed = unghosted.popup === null && unghosted.popupUnder.length > 0 ? { ...unghosted, popupUnder: [] } : unghosted
@@ -1253,7 +1260,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // A click outside an open popup closes it and brings focus to where it landed — and does
       // nothing else, so a click meant to dismiss never also places or picks (owner, 2026-09-27).
       if (state.popup !== null) {
-        if (state.popup === "confirm-commit" || state.committed) return { ...state, popup: null }
+        if (state.popup === "battle-round" || state.committed) return { ...state, popup: null }
         const dismissed: BuildState = { ...state, popup: null, focus: "grid", armed: state.armed }
         return withCursor(context, dismissed, target, clickCameraMove(context, dismissed))
       }
@@ -1282,7 +1289,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       if (state.committed) return state
       // A click anywhere outside a popup dismisses it first — and only that, plus focus.
       if (state.popup !== null) {
-        if (state.popup === "confirm-commit") return { ...state, popup: null, status: status("Cancelled.") }
+        if (state.popup === "battle-round") return { ...state, popup: null, status: status("Cancelled.") }
         return { ...toMenu({ ...state, popup: null }), menuHighlight: command.entry, highlightHidden: true }
       }
       // A card — Explore Map's, or the armed building's (feedback F58) — covers the menu below its
@@ -1306,7 +1313,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return placed.focus === "menu" ? { ...placed, highlightHidden: false } : placed
     }
 
-    case "inspect":
+    case "open-explore":
       // Enter/Space in plain navigation: Explore Map, begun on the map. Already open, nothing more.
       if (state.focus !== "grid" || state.armed !== null || state.exploreMap) return state
       return openExplore(context, state, "grid")
@@ -1341,19 +1348,19 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     case "back":
       return goBack(context, state)
 
-    case "open-menu":
-      return openPopup(state, "menu")
+    case "open-game-menu":
+      return openPopup(state, "game-menu")
 
     case "pick-nexus":
       return pickNexus(context, state, command.index)
 
-    case "commit":
-      return startPulse(context, state)
+    case "open-battle-round":
+      return openBattleRound(context, state)
 
-    case "confirm-commit": {
+    case "start-pulse": {
       // Meaningless outside the one moment it answers — a stray "y" is not a command here any more
       // than a stray "3" is one before anything is armed.
-      if (state.popup !== "confirm-commit") return state
+      if (state.popup !== "battle-round") return state
       // The Nexus Pulse starts (gate 6A). The keyboard goes to the Grid, where the arrows look around it
       // — a committed plan locks every edit but not the cursor — and nothing is armed or being explored.
       return {
@@ -1392,7 +1399,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       if (state.popup === "settings") {
         return { ...state, popupHighlight: stepSettingsRow(state.popupHighlight, command.delta, jump) }
       }
-      if (state.popup === "menu") return { ...state, popupHighlight: step(state.popupHighlight, GAME_MENU_ROWS.length) }
+      if (state.popup === "game-menu") return { ...state, popupHighlight: step(state.popupHighlight, GAME_MENU_ROWS.length) }
       // The export and the Controls page walk their lines; each popup's window follows the highlight
       // (`src/build/popup.ts`).
       if (state.popup === "export") return { ...state, popupHighlight: step(state.popupHighlight, exportLineCount(context, state)) }
@@ -1408,7 +1415,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     case "activate": {
       // On a setting, Enter/Space is Right: a choice of two flips, a number steps up.
       if (state.popup === "settings") return stepHighlighted(state, 1, true)
-      if (state.popup === "menu") {
+      if (state.popup === "game-menu") {
         // `[q] Quit` is not the reducer's to act on: the keyboard sends `quit` for Enter on it, and a
         // click on it sends `quit` too (`src/build/keyboard.ts`, the popup's own rows).
         const row = GAME_MENU_ROWS[state.popupHighlight]

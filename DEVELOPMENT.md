@@ -226,7 +226,7 @@ below).
 scrolling popup: first the player's own settings — background, colour depth, symbols, reduced motion —
 changed live with Left/Right and saved to the same `~/.terminal-nexus/settings.json` the title menu's
 Settings writes; then, apart at the bottom, **Experiments**: the few questions still being felt, each
-naming the question it serves, never saved (`src/build/debug.ts` is the list; `src/build/settings.ts`
+naming the question it serves, never saved (`src/build/experiments.ts` is the list; `src/build/settings.ts`
 the popup's rows). Today there are five — the focus arrow's length and the card reveal's (both looks
 still being judged), the hold window (it depends on each keyboard's repeat delay), and the placeholder
 Pulse's raid and crew; every value the owner settled is in `src/build/tuning.ts` instead. `d` opens

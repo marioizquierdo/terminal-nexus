@@ -9,7 +9,7 @@ import assert from "node:assert/strict"
 import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
 import { centreOn } from "../src/build/camera.ts"
 import { EXPERIMENT_FIELDS, experimentRow } from "../src/build/experiments.ts"
-import { escHintSpan, escLabel, pulseControlRows } from "../src/build/layout.ts"
+import { escLabelSpan, escLabel, pulseControlRows } from "../src/build/layout.ts"
 import { MOUSE_RIGHT } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
 import { nexusTile } from "../src/build/state.ts"
@@ -88,7 +88,7 @@ test("the view is centred on the player's Nexus when the Pulse starts, wherever 
     { kind: "move-cursor", dx: 20, dy: 10 },
   ])
   assert.ok(session.build.state.camera.x > 0, "the player did not scroll away")
-  session.build.run([{ kind: "commit" }, { kind: "confirm-commit" }])
+  session.build.run([{ kind: "open-battle-round" }, { kind: "start-pulse" }])
   session.build.advance(0)
   const nexus = nexusTile(session.context)
   assert.ok(nexus !== null)
@@ -409,7 +409,7 @@ test("the playback keys pause, slow, speed, step and replay the Pulse — and on
   key(" ", 11_000) // resume, so a stray Space would now pause
   assert.equal(pulse.paused, false)
   key(ESC, 11_000)
-  assert.equal(played.build.state.popup, "menu")
+  assert.equal(played.build.state.popup, "game-menu")
   for (const bytes of ["]", "[", ",", "."]) key(bytes, 11_000)
   assert.equal(pulse.speed, 0.5, "a speed key reached the Pulse through a popup")
   key(" ", 11_000)
@@ -427,7 +427,7 @@ test("nothing that edits the plan works once the Pulse is on screen, and q still
   assert.equal(played.build.state.committed, true)
   assert.equal(played.build.state.popup, null, "a key opened a popup over the Pulse")
   key("q")
-  assert.equal(played.build.state.popup, "menu", "q did not open the game menu")
+  assert.equal(played.build.state.popup, "game-menu", "q did not open the game menu")
 })
 
 test("the panel's rows are clickable: Pause and Resume, Watch again — and nothing else on the panel is", () => {
@@ -475,9 +475,9 @@ test("once the result stands there is nothing to pause: Space and a click on the
 test("the top bar's Esc label and Esc open the game menu over a Pulse too; x and a right click never do", () => {
   const played = victorious()
   assert.equal(escLabel(played.build.state), "menu [esc]")
-  const hint = escHintSpan(played.layout, "menu [esc]")
+  const hint = escLabelSpan(played.layout, "menu [esc]")
   click(played, hint.from + 2, hint.row)
-  assert.equal(played.build.state.popup, "menu")
+  assert.equal(played.build.state.popup, "game-menu")
   // A right click walks back as x does: it closes the game menu...
   click(played, 40, 12, MOUSE_RIGHT)
   assert.equal(played.build.state.popup, null)
@@ -487,7 +487,7 @@ test("the top bar's Esc label and Esc open the game menu over a Pulse too; x and
   played.build.handleData("x", played.layout)
   assert.equal(played.build.state.popup, null)
   played.build.handleData(ESC, played.layout)
-  assert.equal(played.build.state.popup, "menu")
+  assert.equal(played.build.state.popup, "game-menu")
 })
 
 test("a click on the map looks around it — the cursor moves, the view follows, and nothing is placed", () => {
@@ -583,7 +583,7 @@ test("starting over from the game menu is a fresh Build Phase with the Experimen
   assert.equal(played.build.state.experiments.raid, "none", "restarting lost an Experiment")
   assert.match(screenText(played), /\[1\] Barracks/, "the Build Phase's menu is not back")
   prepare(played.build)
-  played.build.run([{ kind: "commit" }, { kind: "confirm-commit" }])
+  played.build.run([{ kind: "open-battle-round" }, { kind: "start-pulse" }])
   assert.ok(played.build.pulse !== null && played.build.pulse !== first, "a new Pulse did not start")
 })
 
@@ -598,7 +598,7 @@ test("a Pulse the kernel cannot start from undoes the commit and says why, rathe
       throw new Error("no room for the units")
     },
   })
-  build.run([{ kind: "pick-nexus", index: 0 }, { kind: "commit" }, { kind: "confirm-commit" }])
+  build.run([{ kind: "pick-nexus", index: 0 }, { kind: "open-battle-round" }, { kind: "start-pulse" }])
   assert.equal(build.state.committed, false, "the commit stood with no Pulse behind it")
   assert.equal(build.pulse, null)
   assert.equal(build.state.status.tone, "danger")
@@ -612,7 +612,7 @@ test("a session with nothing to start a Pulse still freezes the plan and draws t
   const context = spikeContext()
   const layout = buildLayout(MINIMUM, context.grid)
   const build = new BuildSession({ context, cursor: SPIKE_START_CURSOR, viewport: layout.viewport })
-  build.run([{ kind: "pick-nexus", index: 0 }, { kind: "commit" }, { kind: "confirm-commit" }])
+  build.run([{ kind: "pick-nexus", index: 0 }, { kind: "open-battle-round" }, { kind: "start-pulse" }])
   assert.equal(build.state.committed, true)
   assert.equal(build.pulse, null)
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
