@@ -2,7 +2,7 @@
 
 **Document role:** The queue: what waits on Mario, what comes next, and the small work that has piled up beside the milestones
 **Status:** WORKING — keep it short; delete an item when it is done, and move a decision into `specs/open-questions.md` when it becomes one
-**Updated:** 2026-09-30 (the menu spike, feedback F52-F60, built on its own pull request; earlier: Milestone 5 accepted and gate 6A, the Nexus Pulse from `[s] Start` to a result, built and reworked twice)
+**Updated:** 2026-09-30 (the menu spike's second round, feedback F61-F76 and his settings export, on the same pull request; earlier: the menu spike, Milestone 5 accepted and gate 6A, the Nexus Pulse from `[s] Start` to a result)
 **License:** Apache-2.0
 
 Milestones say what the game must become (`milestones/`); this says what is waiting *right now*, and
@@ -10,29 +10,27 @@ the cleanup that does not belong to any gate.
 
 ## 1. Waiting on Mario
 
-- **Play gate 6A's Nexus Pulse and send an export.** Plan something and choose `[s] Start Pulse` (the
-  menu's last row, or `s`), then Enter on the Battle Round 1 screen, and watch it to the result. Then press `d`: the first Experiments now are the ending's own —
-  Final warning (3000 ms; 0 turns off the timer's flash and the light), Red alerts (on or off),
-  Walk-back delay, Walk-back time, Centre on Nexus — and the last two are the raid and your units
-  (Raid: none is a Pulse nobody comes to, TIME'S UP; Your units: none loses the Nexus). Settings, `e`
-  (Export), paste it as a comment; an agent starts the game with `--settings "<text>"` and settles each
-  Experiment it answers (`AGENTS.md` Section 2, item 1). The questions for him: does the timer and the
-  light read as anticipation without being an alarm, is the red now rare and faint enough (does he
-  read "when losing" as a lost Pulse's result, or does he want something during the fight?), is the
-  result clear without being told, and do the timings feel right?
+- **Gate 6A's ending, in words.** His 2026-09-30 export settled its timings (the walk home waits
+  500 ms and takes a second, a heavy raid, no units of his own), and they are the defaults now; what
+  he has not said is whether the flashing timer and the light round the border read as anticipation
+  rather than an alarm, whether the red is rare and faint enough, and whether the result is clear
+  without being told.
 - **Run the key-release probe in iTerm2.** `node scripts/probe-key-release.mjs`, hold an arrow, let it
   go, tap it, `q`. If the lines say `release`, Q66's tier 3 is buildable there (section 4).
 - **One question:** was "press `b`" an example of a key or a request for letter hotkeys? (Q67.)
 - **One more:** should the player ever read the word "Pulse"? The start screen says Battle Round; the menu
   row and the running screen still say Pulse (Q68). The menu spike did not change the words, since he
   did not ask; his list of actions said "Start next battle round".
-- **Play the menu spike** (its own pull request; `evidence/menu-spike-report.md`): the menu as one list
-  with `$ 100` on top, an active row as `[x] Name  >>`, a building's card while placing, one bottom line
-  of help, the Controls page (Esc then `c`, or `?`). Press `d`: the first two Experiments are the
-  **Focus arrow** (180 ms; off to 500) and the **Cursor blink** (2; 0 to 3) — does the arrow help him
-  see where the keyboard went, or is the blink alone enough? Also: is `$ 100` where he meant ("top right
-  of the menu" was read as the panel's own top line; the other reading, directly above the buildings,
-  is one line to swap)?
+- **Play the menu spike's second round** (the same pull request; `evidence/menu-spike-report.md`):
+  the credits on the line above the buildings with the map's resource symbol, an active row as
+  `[1] Barracks  >` whose own key cancels it, a building that holds the keyboard until it is placed or
+  cancelled, the card revealed in about 150 ms, a see-through cursor for Explore Map, lists that stop
+  at their ends, `x x x` back to the menu. Press `d`: five Experiments are left — **Focus arrow**
+  (180 ms) and **Card reveal** (150 ms; 800 is slow motion) are the two looks still being judged;
+  **Hold window** (350 ms) is his own number, kept because it depends on a keyboard's repeat delay; and
+  the placeholder Pulse's **Raid** and **Your units**. Does the reveal read as the row travelling up to
+  become the card, or is it too quick to see? Does the see-through cursor say "the keyboard went
+  there" as clearly as the arrow does for a building?
 
 ## 2. The next gate: 6B — the loop back into the next Build Phase
 
@@ -103,10 +101,19 @@ request written with the pr-description skill. Do not start 6C.
   rows; it is now just the panel's last row. A pure rename for a change of its own.
 - **The focus arrow on a shallow diagonal** steps a row every few columns, a comet of `-` with a `\` at
   each step; in Unicode `━` and `╲`. Worth his eye along with the Experiment.
-- **Settings is taller** now that the map has 18 rows at 80 x 24, and shows a few blank rows under the
-  highlighted row's description. Harmless.
 - **The card while placing shows what is being built, never what is under the cursor**; a player who
   wants to read a building on the map while placing presses Esc, then `e`.
+
+**From the menu spike's second round** (`evidence/menu-spike-report.md` section 7 has the reasons):
+
+- **OpenTUI draws no background on a cell that asks for one by role** unless it is a see-through
+  cell, so under Bun's OpenTUI renderer a refused key's grey words on the highlight bar do not show;
+  the ANSI writer, the playtest pictures and the browser page all show it. Only matters if OpenTUI
+  becomes the renderer a player uses.
+- **The title screen's menu does not speed up when held** — it stops at its ends and jumps, but has no
+  clock of its own to time a held key by, and only four rows.
+- **The pressed flash still shows during the card reveal's slide** (the row underlined for a moment as
+  it travels). It reads as the press, so it stays unless he says otherwise.
 
 ## 4. Q66 — key releases, as progressive enhancement
 

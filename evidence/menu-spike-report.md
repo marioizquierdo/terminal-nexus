@@ -1,15 +1,17 @@
 # The Build Phase menu spike — report
 
-**Document role:** Gate report for the owner's menu reorganisation (feedback F52-F60)
-**Status:** COMPLETE — PASS, awaiting the owner's playtest
-**Canon version:** 2.27
+**Document role:** Gate report for the owner's menu reorganisation (feedback F52-F60, and his second round F61-F76)
+**Status:** COMPLETE — PASS, round 2 built, awaiting the owner's playtest
+**Canon version:** 2.28
 **Updated:** 2026-09-30
 **License:** Apache-2.0
 
 Copied from [`../specs/templates/gate-report.md`](../specs/templates/gate-report.md). The feedback it
 answers is [`../docs/feedback/2026-09-30-menu-spike.md`](../docs/feedback/2026-09-30-menu-spike.md);
 the definition of done is in [`../milestones/milestone-06-pulse-phase.md`](../milestones/milestone-06-pulse-phase.md)
-under "The menu spike".
+under "The menu spike". Sections 1-10 are round 1, left as they were written; **the owner's second
+round** ([`../docs/feedback/2026-09-30-menu-spike-round-2.md`](../docs/feedback/2026-09-30-menu-spike-round-2.md),
+F61-F76 and his settings export) has its own report at the end, in the same order.
 
 ---
 
@@ -187,3 +189,132 @@ No new question. Q68 (what the player calls a Pulse) is still open; the spike di
 
 Wait for Mario's playtest and settings export of this pull request, and settle the Experiments it
 answers; gate 6B still waits for his word.
+
+---
+
+# Round 2 — the owner's play of the spike (F61-F76), 2026-09-30
+
+## R1. Frame
+
+- **Canon version:** 2.27 at the start; 2.28 at the end.
+- **Question:** does the menu read as calmer and more deliberate when a refused key only greys the
+  words, an active row is one colour and one `>`, a building holds the keyboard until it is placed or
+  cancelled, the chosen row travels up to become its card, Explore Map sends a see-through cursor
+  instead of the building's arrow, `x` never opens the game menu, and every list stops at its ends? And
+  are his exported numbers right as the defaults, with only the questions still being felt left as
+  Experiments?
+- **Smallest artifact:** the same screen and branch, changed in place; one new style field for the
+  see-through cursor, carried by every renderer; one table of tuned values.
+- **Automated evidence planned:** tests for each item (the grey flicker keeping the bar, the panel's
+  order and credits line, the header's own hotkey cancelling, the lock and its message, `x` stopping at
+  the menu, right click as `x`, lists stopping and jumping and ramping, the see-through mix at every
+  colour depth, the card reveal's beats and its reduced-motion snap, the arrow leaving from the row),
+  the export round-trip with five Experiments, typecheck, Node and Bun, the validator, the pictures.
+- **Human observation planned:** Mario plays it and flips the Focus arrow and Card reveal Experiments.
+- **Exclusions:** gate 6B and 6C; the kernel; menus opened from the map (still F52's "later").
+- **Stop conditions:** as round 1; and a see-through style that needs a literal colour in the frame
+  (it must stay colour roles).
+
+## R3. What was built
+
+Four agents in parallel, split by files (the renderers; the reducer and adapters; the view and live
+loop; the interface rules document), then a fifth that settled the Experiments once the others were
+merged; the canon was written beside them.
+
+- **A refused key greys the row's words and keeps the bar** (F61; `drawMenuRow` in
+  `src/view/build.ts`): the words take the bar's background role under inverse, so they read as grey on
+  the bar; `chrome.edge` at 16 colours; dim in monochrome.
+- **The active row is the hotkey colour and one `>`, no underline, and a card's header keeps the row's
+  own hotkey** (F67, F70; `menuRowSpec`, `ACTIVE_VALUE`); the row's own key cancels (`armItem` in
+  `src/build/state.ts`), and the placing hint says so.
+- **The panel's order** (F71, F72; `src/build/layout.ts`): Explore Map, Nexus, the credits line
+  (`RESOURCE_ROW`, the amount right-aligned after the map's deposit glyph, `drawCredits`), the
+  buildings, Start Pulse. No credits on a card.
+- **The focus arrow leaves from the row's own place** (F63; `handoffOrigin`), and **the card reveal**
+  (F68; `drawCard`'s transition, `CARD_BEATS`, `cardKey` and `cardRevealAt` in
+  `src/view/build-live.ts`): the other rows fade, the row slides up, the card fades in with its text
+  typed and the building's placement frames on its icon. The Card reveal Experiment (150 ms default).
+- **The see-through cursor** (F64, F65): a new `overlay: {role, alpha}` on a cell's style
+  (`src/view/frame.ts`, `src/view/roles.ts` — `mixOverlay`, `overlayColours`), drawn by the ANSI
+  writer, the canvas backend and OpenTUI, exact at truecolor, nearest at 256, the plain cursor at 16
+  colours and in monochrome from half opacity. `drawGhostCursor` sends it with a three-cell trail.
+- **Explore Map finds clear ground** (F66; `openExplore`, `armingSpot` with a one-tile footprint), only
+  when opened from the menu.
+- **The lock** (F69; `refuseWhileArmed`): another building's digit, `e`, `s` and `p` are refused while
+  one is armed, the header greying and the bottom line naming the way out.
+- **Back and cancel** (F62, F73; the `cancel` and `back` commands in `src/build/keyboard.ts`,
+  `mouse.ts`): Esc is `cancel`, `x` and a right click are `back`, which does nothing on the menu or once
+  the plan is committed; the game menu and the export lose their `[esc] Back` rows.
+- **Lists** (F75; `src/menu/list-keys.ts`): one step function for every list, stopping at the ends,
+  `jump` for Shift, PageUp/PageDown and Home/End; the Build Phase's lists take the map cursor's ramp
+  through `src/build/motion.ts`.
+- **The settings export as defaults** (F76; `src/build/tuning.ts`, `src/build/debug.ts`): @@TUNING@@
+- **The interface rules rewritten** (F74; `docs/ui-patterns.md`), pointed to from `AGENTS.md` and
+  `CLAUDE.md`.
+
+## R4. Automated results
+
+@@RESULTS@@
+
+## R5. Human observations
+
+Nobody has played round 2 yet. Mario is asked on the pull request to play it and to flip the Focus
+arrow and Card reveal Experiments.
+
+## R6. Interpretation
+
+The round's common thread is **calm**: a refused key that no longer looks like a press, one `>` instead
+of two, no underline, a building that cannot be swapped under the player's hand, `x` that can be
+pressed without fear. Each of those removes something the eye had to check. The two new motions go the
+other way — they add something to watch — and both carry the eye to where the keyboard went, which is
+the one thing motion earns its place for in this interface.
+
+Settling the Experiments changed what Settings is for: from 28 dials to five open questions. The
+numbers did not disappear; they moved to one table in the code where each says who chose it and when,
+which is where the next person tuning a feel will look.
+
+## R7. Failures, surprises, and discarded approaches
+
+- **The see-through mix had to be a style, not a colour.** Working it out in the view would have put
+  literal colours in the frame, which the frame forbids (cells carry roles). It became a field the
+  renderer resolves against its own palette, which is also why 16 colours and monochrome can fall back
+  to the plain cursor rather than to a wrong colour.
+- **The evidence pictures dimmed whole cells**, background and all, where a terminal only dims the
+  glyph; the grey flicker looked like a hole in the bar. The capture script now mixes only the text
+  colour (`scripts/lib/terminal-capture.mjs`).
+- **Opening Explore Map from the map moved the cursor away from what the player had just pointed at.**
+  The clear-ground rule is for arriving from the menu; from the map it stays put. Found by the docs
+  agent writing the rule down, not by a test.
+- **`x` on a committed plan** would have walked back into a state that no longer exists; it now does
+  nothing there, like on the menu.
+- **OpenTUI ignores a role background on an ordinary cell**, so the grey words on the bar do not show
+  under Bun's OpenTUI renderer. The other three renderers show it; recorded in `docs/next-steps.md`.
+- **Removing Experiments shifted every `Down*N` in the capture flows and tests again** @@DOWN@@
+
+## R8. Decision
+
+> **PASS**
+
+Every item of F61-F76 is built, tested and in the canon; the 80 × 24 floor holds; the kernel is
+untouched; the two looks only Mario can judge ship behind Experiments.
+
+## R9. Canon impact
+
+Applied at canon 2.28:
+
+| Rule | Lives in | Earned by |
+| --- | --- | --- |
+| A cell style may carry a see-through overlay (a role and an alpha); the mix and its fallbacks | `engine.md` 9.1 | F64, F65 |
+| The scroll margin is 30%; the hold window 350 ms, fast after 200 ms; a Shift jump is 10 tiles every 100 ms and does not re-centre; the Esc wait 50 ms | `engine.md` 3.3 | F76 |
+| Every list stops at its ends and jumps with Shift, PageUp/PageDown, Home/End | `engine.md` 3.3, 9.7 | F75 |
+| The panel order and the credits line; the active row as the hotkey colour and one `>`; a refused row greys its words | `engine.md` 9.2 | F61, F67, F71, F72 |
+| A building being placed holds the keyboard; its own key cancels | `engine.md` 9.2, 9.7 | F69, F70 |
+| Esc is cancel and opens the game menu; `x` and a right click are back and never open it; no `[esc]` rows | `engine.md` 9.7 | F62, F73 |
+| The see-through cursor and the card reveal | `ascii-effects.md` 5 | F64, F68 |
+
+No new question.
+
+## R10. Next authorized action
+
+Wait for Mario's playtest of round 2 and his settings export; settle the two looks' Experiments from
+it. Gate 6B still waits for his word.
