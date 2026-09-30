@@ -114,7 +114,7 @@ bun bin/grid.ts scenarios/citizen-mirror-skirmish --headless
 ./bin/terminal-nexus.ts --spike
 ./bin/terminal-nexus.ts --spike --scroll-margin 30 --capability monochrome   # margin: % of the view
 ./bin/terminal-nexus.ts --spike --settings "$(pbpaste)"   # start from an exported settings text
-./bin/terminal-nexus.ts --spike --settings "placeLight=rainbow scrollMargin=25"
+./bin/terminal-nexus.ts --spike --settings "focusArrowMs=400 raid=probe"
 ./bin/terminal-nexus.ts --spike --keys "n 1 1 Enter"         # open already in a state: a power picked, a Barracks placed
 ./bin/terminal-nexus.ts --spike --keys "n 2 s s"             # open already in a Nexus Pulse, with nothing built (gate 6A)
 ```
@@ -231,7 +231,7 @@ the popup's rows). Today there are five — the focus arrow's length and the car
 still being judged), the hold window (it depends on each keyboard's repeat delay), and the placeholder
 Pulse's raid and crew; every value the owner settled is in `src/build/tuning.ts` instead. `d` opens
 Settings straight at the Experiments. The title says where the highlight is in the list
-(`SETTINGS (5/11)`), a scroll bar in the popup's right border shows and scrolls the rest
+(`SETTINGS (5/10)`), a scroll bar in the popup's right border shows and scrolls the rest
 (click its upper or lower half, or use the wheel), and what the highlighted row is for is written under
 a line below the list. The game menu's `[r] Restart` starts the Build Phase over keeping everything; a
 changed setting that only applies after a restart is announced in a message popup when Settings

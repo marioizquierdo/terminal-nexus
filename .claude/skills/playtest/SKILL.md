@@ -92,7 +92,7 @@ and a result; red on the border is only the player's own Nexus being hurt. `--se
 (nobody comes: TIME'S UP), `"crew=none"` (no units of your own: the Nexus falls, and the border
 blushes red at its first hit) and `"raid=probe crew=some"` (the gate-6A defaults) reach the rest; the
 ending's timings are tuned values now (`src/build/tuning.ts`). The defaults are a heavy raid and no
-units of your own, so `n 2 s s` with nothing built is a quick loss. During a Pulse
+units of your own: the plan above still wins, and `n 2 s s` with nothing built loses about 27 s in. During a Pulse
 Space pauses, `[` and `]` change the speed, `.` and `,` step, `r` watches it again, and `d` still
 opens the Experiments; `Esc` opens the game menu and its Restart is the way back to a fresh Build
 Phase. `scripts/capture-spike-screenshots.mjs` has `pulseGif` (an ending frame by frame, in real time)
