@@ -12,7 +12,7 @@
 
 import type { ReadonlyCellFrame, TerminalBackend } from "../frame.ts"
 import type { CapabilityMode, Theme } from "../roles.ts"
-import { BACKGROUND_RGB, DEFAULT_THEME, rgbFor } from "../roles.ts"
+import { BACKGROUND_RGB, DEFAULT_THEME, keepsDim, overlayColours, rgbFor } from "../roles.ts"
 
 /** How a dim cell is drawn: the terminal's SGR 2 "faint", approximated as partial opacity. */
 export const DIM_ALPHA = 0.55
@@ -49,13 +49,23 @@ export function paintOps(
       const cell = frame.cells[y * frame.width + x]
       if (cell === undefined) continue
       const style = cell.style
-      let foreground = css(rgbFor(style.fgRole, capability, theme, style.fade ?? 0, style.tint))
-      let background =
-        style.bgRole === undefined || capability === "monochrome" ? null : css(rgbFor(style.bgRole, capability, theme))
-      if (style.inverse === true) {
-        const swapped = foreground
-        foreground = background ?? base
-        background = swapped
+      // A see-through cursor over the cell: the same resolved colours the ANSI writer sends, its
+      // inverse already folded in and its dim gone.
+      const overlaid = overlayColours(cell, capability, theme)
+      let foreground: string
+      let background: string | null
+      if (overlaid !== null) {
+        foreground = css(overlaid.foreground)
+        background = css(overlaid.background)
+      } else {
+        foreground = css(rgbFor(style.fgRole, capability, theme, style.fade ?? 0, style.tint))
+        background =
+          style.bgRole === undefined || capability === "monochrome" ? null : css(rgbFor(style.bgRole, capability, theme))
+        if (style.inverse === true) {
+          const swapped = foreground
+          foreground = background ?? base
+          background = swapped
+        }
       }
       ops.push({
         x,
@@ -65,7 +75,7 @@ export function paintOps(
         background,
         bold: style.bold === true,
         underline: style.underline === true,
-        alpha: style.dim === true ? DIM_ALPHA : 1,
+        alpha: keepsDim(style, overlaid) ? DIM_ALPHA : 1,
       })
     }
   }

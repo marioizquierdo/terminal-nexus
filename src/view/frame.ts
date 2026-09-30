@@ -2,7 +2,7 @@
 // snapshot surface. No backend object ever appears inside a frame.
 
 import type { CapabilityMode, RoleOverlay, RoleTint, StyleRole, Theme } from "./roles.ts"
-import { DEFAULT_THEME, sgrBackgroundFor, sgrFor } from "./roles.ts"
+import { DEFAULT_THEME, keepsDim, overlayColours, sgrBackgroundFor, sgrFor } from "./roles.ts"
 
 const ESC = "\u001b"
 
@@ -32,8 +32,10 @@ export type CellStyle = Readonly<{
   tint?: RoleTint
   /**
    * A see-through cursor over the cell (feedback F64-F65) — `roles.ts`'s `RoleOverlay` says how it
-   * mixes and how each tier resolves it. Presentation's own, like `tint`: set by a glyphless write, so
-   * the glyph beneath always survives (the corruption law).
+   * mixes, and `overlayColours` (which every renderer calls) how each tier resolves it. Presentation's
+   * own, like `tint`: set by a glyphless write, so the glyph beneath always survives (the corruption
+   * law). A later glyphless write that carries its own `overlay` replaces this one; the two are not
+   * stacked.
    */
   overlay?: RoleOverlay
 }>
@@ -128,13 +130,25 @@ export function frameToText(frame: ReadonlyCellFrame): string {
   return rows.join("\n")
 }
 
-function sgrOf(style: CellStyle, capability: CapabilityMode, theme: Theme): string {
-  const parts: number[] = [...sgrFor(style.fgRole, capability, theme, style.fade ?? 0, style.tint)]
-  for (const code of sgrBackgroundFor(style.bgRole, capability, theme)) parts.push(code)
+/**
+ * One cell's SGR sequence. An overlay that shows at this tier (`overlayColours`) replaces the cell's own
+ * colour and inverse codes with the mixed ones — the inverse is already folded into them — and its dim
+ * (`keepsDim`); bold and underline stay as the cell has them.
+ */
+function sgrOf(cell: Cell, capability: CapabilityMode, theme: Theme): string {
+  const style = cell.style
+  const overlaid = overlayColours(cell, capability, theme)
+  const parts: number[] = []
+  if (overlaid === null) {
+    parts.push(...sgrFor(style.fgRole, capability, theme, style.fade ?? 0, style.tint))
+    parts.push(...sgrBackgroundFor(style.bgRole, capability, theme))
+  } else {
+    parts.push(...overlaid.sgr)
+  }
   if (style.bold === true) parts.push(1)
-  if (style.dim === true) parts.push(2)
+  if (keepsDim(style, overlaid)) parts.push(2)
   if (style.underline === true) parts.push(4)
-  if (style.inverse === true) parts.push(7)
+  if (style.inverse === true && overlaid === null) parts.push(7)
   return parts.length === 0 ? "" : `${ESC}[${parts.join(";")}m`
 }
 
@@ -151,7 +165,7 @@ export function frameToAnsi(
     let openStyle = ""
     for (let x = 0; x < frame.width; x += 1) {
       const cell = cellAt(frame, x, y)
-      const sgr = sgrOf(cell.style, capability, theme)
+      const sgr = sgrOf(cell, capability, theme)
       if (sgr !== openStyle) {
         if (openStyle !== "") row += reset
         row += sgr

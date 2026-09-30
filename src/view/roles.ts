@@ -365,7 +365,9 @@ export type RoleTint = Readonly<{ role: StyleRole; amount: number }>
  * drawn `alpha` of the way toward the colour the real cursor draws glyphs in (the theme's background,
  * since the cursor is inverse video). A role and a number, never a colour, like `RoleTint`: an exact mix
  * at truecolor, the nearest colour at 256, and at 16 colours and in monochrome the plain inverse
- * cursor. Set only by the Explore Map hand-off's travelling cursor so far.
+ * cursor (from an alpha of one half up; below it, nothing). Where it shows, the cell's own `dim` is not
+ * applied (`keepsDim`). `overlayColours`, below, is the one place it becomes colour. Set only by the
+ * Explore Map hand-off's travelling cursor so far.
  */
 export type RoleOverlay = Readonly<{ role: StyleRole; alpha: number }>
 
@@ -382,9 +384,9 @@ function mixRgb(
   ]
 }
 
-/** `nearestIndexed` walks 240 candidates; a tinted or faded cell asks again every frame, and a
+/** `nearestIndexed` walks 240 candidates; a tinted, faded or overlaid cell asks again every frame, and a
  *  placement's light passes through the same few dozen blends, so the answers are kept. Bounded: an
- *  animation is a handful of roles times a few dozen steps. */
+ *  animation is a handful of roles times a few dozen steps, and the cache starts over past 4096. */
 const NEAREST_CACHE = new Map<number, number>()
 
 function nearestIndexedCached(rgb: readonly [number, number, number]): number {
@@ -460,6 +462,9 @@ export function sgrBackgroundFor(
   return [foreground[0] === 38 ? 48 : 48, ...foreground.slice(1)]
 }
 
+/** What an RGB backend draws for a cell with no role, and for every cell in monochrome. */
+const NEUTRAL_RGB: readonly [number, number, number] = [214, 218, 224]
+
 /**
  * The same roles as RGB, for a backend that takes colours rather than SGR parameters (OpenTUI).
  * `fade` mirrors `sgrFor`'s tier gating even though OpenTUI is truecolor-capable regardless of the
@@ -474,11 +479,153 @@ export function rgbFor(
   fade = 0,
   tint?: RoleTint,
 ): readonly [number, number, number] {
-  if (capability === "monochrome" || role === undefined) return [214, 218, 224]
+  if (capability === "monochrome" || role === undefined) return NEUTRAL_RGB
   const swatch = PALETTE[theme][role]
-  if (swatch === undefined) return [214, 218, 224]
+  if (swatch === undefined) return NEUTRAL_RGB
   // At 16 colours a tint is a step onto the other role's own colour, exactly as `sgrFor` steps onto
   // its ANSI hue, so the simulated tier matches the direct-ANSI one.
   if (capability === "color16") return tintStepsAt16(tint) ? PALETTE[theme][(tint as RoleTint).role].rgb : swatch.rgb
   return blendedRgb(swatch, theme, fade, tint)
+}
+
+type Rgb = readonly [number, number, number]
+
+/**
+ * How much of a cell its glyph is taken to cover when an overlay mixes what lies beneath it — the
+ * owner's "assuming that the icon is about 20% of the surface" (feedback F65).
+ */
+export const OVERLAY_GLYPH_COVER = 0.2
+
+/**
+ * From this alpha up an overlay shows at 16 colours and in monochrome, as the plain cursor; below it,
+ * it shows nothing there. The same half-way step a tint takes at 16 colours (`tintStepsAt16`).
+ */
+export const OVERLAY_STEP = 0.5
+
+/**
+ * The owner's mix (feedback F65), as plain arithmetic on three colours and the cursor's own glyph
+ * colour. "If the background is black, the icon on the background is yellow, and the cursor is white,
+ * then the cursor at 80% ... would be 80% white, and the other 20% split between black (80%) and
+ * yellow (20%)":
+ *
+ * - the cell's fill becomes `alpha` of `cursor` and `1 - alpha` of what was there — itself
+ *   `1 - OVERLAY_GLYPH_COVER` of `background` and `OVERLAY_GLYPH_COVER` of `glyph`;
+ * - the glyph, which stays, is drawn `alpha` of the way from `glyph` toward `cursorGlyph` (the colour
+ *   the real cursor draws its glyph in), so it stays readable on the lighter cell.
+ *
+ * Each channel is rounded once, at the end. Exported so a test can hold it to the owner's own numbers.
+ */
+export function mixOverlay(
+  background: Rgb,
+  glyph: Rgb,
+  cursor: Rgb,
+  cursorGlyph: Rgb,
+  alpha: number,
+): Readonly<{ foreground: Rgb; background: Rgb }> {
+  const a = Math.max(0, Math.min(1, alpha))
+  const fill = (channel: 0 | 1 | 2): number =>
+    Math.round(
+      (1 - a) * ((1 - OVERLAY_GLYPH_COVER) * background[channel] + OVERLAY_GLYPH_COVER * glyph[channel]) +
+        a * cursor[channel],
+    )
+  const ink = (channel: 0 | 1 | 2): number => Math.round((1 - a) * glyph[channel] + a * cursorGlyph[channel])
+  return { background: [fill(0), fill(1), fill(2)], foreground: [ink(0), ink(1), ink(2)] }
+}
+
+/** What `overlayColours` reads: a cell, structurally (`frame.ts`'s `Cell` is one). */
+export type OverlaidCell = Readonly<{
+  glyph: string
+  style: Readonly<{
+    fgRole?: StyleRole
+    bgRole?: StyleRole
+    inverse?: boolean
+    fade?: number
+    tint?: RoleTint
+    overlay?: RoleOverlay
+  }>
+}>
+
+/**
+ * A cell's colours once its overlay is resolved, in both forms the renderers take — so the ANSI
+ * writer, the browser page's canvas and OpenTUI cannot disagree about one cell.
+ */
+export type OverlayColours = Readonly<{
+  /** The glyph's colour. */
+  foreground: Rgb
+  /** The cell's fill. */
+  background: Rgb
+  /**
+   * SGR colour parameters for the ANSI writer. They replace the cell's own foreground, background
+   * and inverse codes (the cell's inverse is already resolved into these).
+   */
+  sgr: readonly number[]
+}>
+
+/**
+ * Whether a renderer still applies a cell's `dim` — not while an overlay shows on it. The mix already
+ * says how bright the glyph is (`mixOverlay`'s foreground, exactly), and faint on top would fade it
+ * back toward the now lighter fill: the very loss the real cursor avoids by clearing `dim` on bare
+ * ground (`src/view/build.ts`). A picture that fades the whole cell for `dim` (the evidence PNGs do)
+ * would also halve the overlay's fill. Bold and underline stay the cell's own.
+ */
+export function keepsDim(style: Readonly<{ dim?: boolean }>, overlaid: OverlayColours | null): boolean {
+  return style.dim === true && overlaid === null
+}
+
+/**
+ * The see-through cursor (`RoleOverlay`, feedback F64-F65) resolved at a tier, or `null` where it
+ * changes nothing — no overlay, an alpha of 0, or a low alpha at a tier with no blend. The one place an
+ * overlay becomes colour; every renderer calls it.
+ *
+ * The cell's own colours are worked out first, as the renderers already draw them: its glyph colour
+ * `G` is its `fgRole` after tint and fade, its background `B` is its `bgRole` or the theme's
+ * background, an `inverse` cell swaps the two (so the overlay mixes what is actually seen), and a
+ * blank cell has no glyph, so `G` is `B` and the cell becomes simply `B` mixed toward the cursor. Then
+ * `mixOverlay`, with the overlay's role as the cursor colour `C` and the theme's background as the
+ * cursor's glyph colour — the real cursor is inverse video, so its glyph is drawn in the ground.
+ *
+ * - `truecolor`: that exact mix;
+ * - `color256`: the nearest palette entry to each of the two mixed colours (the RGB returned is that
+ *   entry's own, so an RGB backend shows what a 256-colour terminal shows);
+ * - `color16`: no continuum, so a step — from `OVERLAY_STEP` up, the plain cursor (inverse video in
+ *   the overlay's role: its hand-authored ANSI hue as the fill, the ground as the glyph), below it
+ *   nothing;
+ * - `monochrome`: the same step, as inverse video alone. Never a colour code.
+ *
+ * Wherever it shows, the cell's own `dim` goes with it (`keepsDim`).
+ */
+export function overlayColours(
+  cell: OverlaidCell,
+  capability: CapabilityMode,
+  theme: Theme = DEFAULT_THEME,
+): OverlayColours | null {
+  const overlay = cell.style.overlay
+  if (overlay === undefined || !(overlay.alpha > 0)) return null
+  const cursor = PALETTE[theme][overlay.role]
+  if (cursor === undefined) return null
+  const ground = BACKGROUND_RGB[theme]
+  const alpha = Math.min(1, overlay.alpha)
+  if (capability === "monochrome") {
+    return alpha < OVERLAY_STEP ? null : { foreground: ground, background: NEUTRAL_RGB, sgr: [7] }
+  }
+  if (capability === "color16") {
+    return alpha < OVERLAY_STEP ? null : { foreground: ground, background: cursor.rgb, sgr: [cursor.ansi, 7] }
+  }
+  const style = cell.style
+  const own = style.fgRole === undefined ? undefined : PALETTE[theme][style.fgRole]
+  const ink = own === undefined ? NEUTRAL_RGB : blendedRgb(own, theme, style.fade ?? 0, style.tint)
+  const fill = (style.bgRole === undefined ? undefined : PALETTE[theme][style.bgRole]?.rgb) ?? ground
+  const [beneath, glyph] = style.inverse === true ? [ink, fill] : [fill, ink]
+  const blank = cell.glyph === " " || cell.glyph === ""
+  const mixed = mixOverlay(beneath, blank ? beneath : glyph, cursor.rgb, ground, alpha)
+  if (capability === "truecolor") {
+    return { ...mixed, sgr: [38, 2, ...mixed.foreground, 48, 2, ...mixed.background] }
+  }
+  const foreground = nearestIndexedCached(mixed.foreground)
+  const background = nearestIndexedCached(mixed.background)
+  return {
+    foreground: xterm256Rgb(foreground),
+    background: xterm256Rgb(background),
+    sgr: [38, 5, foreground, 48, 5, background],
+  }
 }

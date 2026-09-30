@@ -17,7 +17,7 @@
 
 import type { ReadonlyCellFrame } from "../frame.ts"
 import type { CapabilityMode, Theme } from "../roles.ts"
-import { BACKGROUND_RGB, DEFAULT_THEME, rgbFor } from "../roles.ts"
+import { BACKGROUND_RGB, DEFAULT_THEME, keepsDim, overlayColours, rgbFor } from "../roles.ts"
 import type { BackendOptions, NamedBackend } from "./index.ts"
 
 type OpenTuiCore = Awaited<typeof import("@opentui/core")>
@@ -55,19 +55,27 @@ export function drawFrameInto(
     for (let x = 0; x < frame.width; x += 1) {
       const cell = frame.cells[y * frame.width + x]
       if (cell === undefined) continue
-      const [red, green, blue] = rgbFor(cell.style.fgRole, capability, theme, cell.style.fade ?? 0, cell.style.tint)
+      // A see-through cursor over the cell: the same resolved colours the ANSI writer sends, drawn
+      // with its own fill, no reverse attribute (the cell's inverse is already folded in) and no dim.
+      const overlaid = overlayColours(cell, capability, theme)
+      const [red, green, blue] =
+        overlaid?.foreground ?? rgbFor(cell.style.fgRole, capability, theme, cell.style.fade ?? 0, cell.style.tint)
       const attributes = core.createTextAttributes({
         bold: cell.style.bold === true,
-        dim: cell.style.dim === true,
+        dim: keepsDim(cell.style, overlaid),
         underline: cell.style.underline === true,
-        reverse: cell.style.inverse === true,
+        reverse: cell.style.inverse === true && overlaid === null,
       })
+      const fill =
+        overlaid === null
+          ? background
+          : core.RGBA.fromValues(overlaid.background[0] / 255, overlaid.background[1] / 255, overlaid.background[2] / 255, 1)
       buffer.setCell(
         x,
         y,
         cell.glyph,
         core.RGBA.fromValues(red / 255, green / 255, blue / 255, 1),
-        background,
+        fill,
         attributes,
       )
     }
