@@ -16,8 +16,8 @@ import type { TileWidth } from "../build/camera.ts"
 import type { Coord } from "../grid/types.ts"
 import type { RecallResult } from "../match/types.ts"
 import type { Outcome } from "../state/types.ts"
-import { ENDING_TUNING, endingTimes, nexusStrain, phaseAt, redAlert, resultOf, walkPositions } from "./ending.ts"
-import type { EndingPhase, EndingTimes, EndingTimings, NexusStrain, PulseResult } from "./ending.ts"
+import { endingTimes, nexusStrain, phaseAt, redAlert, resultOf, walkPositions } from "./ending.ts"
+import type { EndingPhase, EndingTimes, NexusStrain, PulseResult } from "./ending.ts"
 import type { CapabilityMode } from "./roles.ts"
 import { FRAME_MS } from "./build-live.ts"
 import { Playback } from "./playback.ts"
@@ -62,21 +62,16 @@ export class PulsePresenter {
   /** How many mobile units the player has once Recall is done. It never changes, so it is counted once. */
   private readonly home: number
   /** The ending's moments: when the warning starts, the fight stops, the walk home starts and ends. The
-   *  timings are fixed for a Pulse (the owner's tuned ones, unless a test hands in others), so they are
-   *  worked out once. */
-  private readonly ending: EndingTimes
+   *  timings are the owner's tuned ones and fixed for a Pulse, so they are worked out once. */
+  readonly times: EndingTimes
   private lastNow: number | null = null
   /** The camera moves already made this run, so each is sent once: `start` and `end`. */
   private fired = new Set<"start" | "end">()
 
-  constructor(
-    resolved: ResolvedPulse,
-    presentation: PresentationOptions = DEFAULT_PRESENTATION,
-    timings: EndingTimings = ENDING_TUNING,
-  ) {
+  constructor(resolved: ResolvedPulse, presentation: PresentationOptions = DEFAULT_PRESENTATION) {
     this.resolved = resolved
     this.view = createView(resolved.timeline, presentation)
-    this.ending = endingTimes(this.view.lastTick * this.view.tickDurationMs, this.view.effectsEndMs, timings)
+    this.times = endingTimes(this.view.lastTick * this.view.tickDurationMs, this.view.effectsEndMs)
     this.result = resultOf(outcomeOf(resolved.timeline))
     this.strain = nexusStrain(resolved.timeline)
     this.home = resolved.recall.state.entities.filter(
@@ -124,16 +119,10 @@ export class PulsePresenter {
     if (control === "restart") this.fired.clear()
   }
 
-  /** The ending's moments. */
-  times(): EndingTimes {
-    return this.ending
-  }
-
   /**
    * What the Pulse asks of the screen now: to centre on the player's Nexus when it starts, and again when
    * its last seconds begin (or the stop, when there is no warning) — "the camera is centred at the nexus",
-   * so the next Build Phase starts where the base is. Each once per run. (Whether to centre at the end was
-   * the "Centre on Nexus" Experiment until the owner kept it on, 2026-09-30.)
+   * so the next Build Phase starts where the base is (owner, 2026-09-30). Each once per run.
    */
   due(): BuildCommand[] {
     const { nexus } = this.resolved
@@ -144,7 +133,7 @@ export class PulsePresenter {
       this.fired.add("start")
       commands.push(look)
     }
-    if (!this.fired.has("end") && this.timeMs >= (this.ending.warnMs ?? this.ending.stopMs)) {
+    if (!this.fired.has("end") && this.timeMs >= (this.times.warnMs ?? this.times.stopMs)) {
       this.fired.add("end")
       commands.push(look)
     }
@@ -153,7 +142,7 @@ export class PulsePresenter {
 
   /** Where the Pulse is in its ending right now. */
   phase(): EndingPhase {
-    return phaseAt(this.ending, this.timeMs)
+    return phaseAt(this.times, this.timeMs)
   }
 
   /** When the last thing still moving finishes, or `null` when nothing is: the frame timer runs until
@@ -163,12 +152,12 @@ export class PulsePresenter {
     return this.phase() === "home" ? null : now + FRAME_MS
   }
 
-  /** What the scene draws at the Pulse's current time. The red flashes on the border when the player's
-   *  Nexus is hurt were the "Red alerts" Experiment until the owner kept them on (2026-09-30). */
+  /** What the scene draws at the Pulse's current time, the red flashes on the border when the player's
+   *  Nexus is hurt included (the owner kept them, 2026-09-30). */
   frame(options: Readonly<{ capability: CapabilityMode; tileWidth: TileWidth; reducedMotion: boolean }>): PulseFrame {
     const { capability, tileWidth, reducedMotion } = options
     const timeMs = this.timeMs
-    const times = this.ending
+    const times = this.times
     const sample = this.view.sampleAt(timeMs, capability, tileWidth, reducedMotion)
     const walk = walkPositions(this.resolved.recall.moves, times, timeMs, reducedMotion)
     const positions = walk.size === 0 ? sample.positions : new Map([...sample.positions, ...walk])

@@ -8,12 +8,12 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EXPERIMENT_FIELDS } from "../src/build/experiments.ts"
 import type { Experiments } from "../src/build/experiments.ts"
+import { TUNING } from "../src/build/tuning.ts"
 import type { RecallMove } from "../src/match/index.ts"
 import type { Outcome } from "../src/state/types.ts"
 import {
   BEAM_FADE_MS,
   BEAM_GLOW,
-  ENDING_TUNING,
   BEAM_PEAK,
   BEAM_PERIOD_MS,
   BEAM_STEADY,
@@ -35,19 +35,20 @@ import {
   timerSeconds,
   walkPositions,
 } from "../src/view/ending.ts"
-import type { EndingPhase, EndingTimings, NexusStrain } from "../src/view/ending.ts"
+import type { EndingPhase, EndingTuning, NexusStrain } from "../src/view/ending.ts"
 import { DEFENCE, play } from "./pulse-helpers.ts"
 
 /** The owner's first sketch of the ending (2026-09-17): a fixture for the arithmetic below, with round
- *  numbers. The game plays his tuned timings (`ENDING_TUNING`), the next test's. */
-const SKETCH: EndingTimings = { endWarnMs: 3000, endWalkPauseMs: 1000, endWalkMs: 2000 }
+ *  numbers. The game plays his tuned timings (`TUNING`), the next test's. */
+const SKETCH: EndingTuning = { endWarnMs: 3000, endWalkPauseMs: 1000, endWalkMs: 2000 }
 
 test("the ending is the owner's: a warning in the last 3 s, half a second to the walk, one second of walking", () => {
   // "some visual warning ... then after 3-5 seconds, the units stop shooting, 1 second later they start
   // walking back, 2 seconds later the build phase begins" (owner, 2026-09-17), "the last 3 seconds"
   // (2026-09-29), and the pause and the walk halved in his settings export (2026-09-30).
-  assert.deepEqual(ENDING_TUNING, { endWarnMs: 3000, endWalkPauseMs: 500, endWalkMs: 1000 })
-  const times = endingTimes(20_000, 20_400, ENDING_TUNING)
+  const { endWarnMs, endWalkPauseMs, endWalkMs } = TUNING
+  assert.deepEqual({ endWarnMs, endWalkPauseMs, endWalkMs }, { endWarnMs: 3000, endWalkPauseMs: 500, endWalkMs: 1000 })
+  const times = endingTimes(20_000, 20_400)
   assert.equal(times.stopMs, 20_000)
   assert.equal(times.warnMs, 17_000, "the warning starts three seconds before the shooting stops")
   assert.equal(times.walkMs, 20_500, "the walk starts half a second after it stops")
@@ -69,12 +70,12 @@ test("no warning means none, and a short Pulse's warning cannot start before the
 
 test("the phases come in order and never go backwards, at every value the ending's timings were tried at", () => {
   // The values each timing's Experiment offered until the owner settled them (2026-09-30).
-  const tried: Readonly<Record<keyof EndingTimings, readonly number[]>> = {
+  const tried: Readonly<Record<keyof EndingTuning, readonly number[]>> = {
     endWarnMs: [0, 1000, 2000, 3000, 4000, 5000, 6000, 8000],
     endWalkPauseMs: [0, 500, 1000, 1500, 2000, 3000],
     endWalkMs: [0, 1000, 2000, 3000, 4000, 6000],
   }
-  const values = (field: keyof EndingTimings): readonly number[] => tried[field]
+  const values = (field: keyof EndingTuning): readonly number[] => tried[field]
   const order: readonly EndingPhase[] = ["fighting", "final", "halted", "walking", "home"]
   let combinations = 0
   for (const endWarnMs of values("endWarnMs")) {

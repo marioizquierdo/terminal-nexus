@@ -38,7 +38,7 @@ function victorious(): Played {
 const times = (played: Pick<Played, "build">) => {
   const pulse = played.build.pulse
   assert.ok(pulse !== null, "there is no Pulse on screen")
-  return pulse.times()
+  return pulse.times
 }
 
 /** The frame's cells that satisfy `test`, each with the screen position it is drawn at. */

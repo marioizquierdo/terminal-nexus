@@ -7,8 +7,8 @@
 //   the survivors walk home ...................................... "walking"     (`endWalkPauseMs`, `endWalkMs`)
 //   everyone is home; the result stands .......................... "home"
 //
-// The three timings were Experiments until the owner settled them (2026-09-30); they are tuned values
-// now (`src/build/tuning.ts`), and `endingTimes` takes them as a parameter so a test can try any.
+// The three timings are the owner's tuned values (`src/build/tuning.ts`); `endingTimes` takes them as a
+// parameter so a test can try any.
 //
 // **The kernel decided the ending long before any of this plays**: the timeline is resolved whole before
 // the first frame, so presentation knows when the last tick is and can count down to it. That is what
@@ -25,6 +25,7 @@
 // is drawn here is the walk home on top of it: presentation only, from where the fight left each survivor
 // to the tile Recall gave it. Nothing in this file can change a state, an event or a hash.
 
+import type { Tuning } from "../build/tuning.ts"
 import { TUNING } from "../build/tuning.ts"
 import type { Coord } from "../grid/types.ts"
 import type { RecallMove } from "../match/types.ts"
@@ -49,28 +50,17 @@ export type EndingTimes = Readonly<{
 }>
 
 /** The ending's three timings, in milliseconds: how long the warning lasts before the stop, the pause
- *  before the walk home, and the walk. */
-export type EndingTimings = Readonly<{ endWarnMs: number; endWalkPauseMs: number; endWalkMs: number }>
+ *  before the walk home, and the walk. The game plays the owner's (`TUNING`); a test may hand in others. */
+export type EndingTuning = Pick<Tuning, "endWarnMs" | "endWalkPauseMs" | "endWalkMs">
 
-/** The ending the game plays: the owner's tuned timings. */
-export const ENDING_TUNING: EndingTimings = {
-  endWarnMs: TUNING.endWarnMs,
-  endWalkPauseMs: TUNING.endWalkPauseMs,
-  endWalkMs: TUNING.endWalkMs,
-}
-
-export function endingTimes(
-  lastTickMs: number,
-  effectsEndMs: number,
-  flags: EndingTimings,
-): EndingTimes {
+export function endingTimes(lastTickMs: number, effectsEndMs: number, tuning: EndingTuning = TUNING): EndingTimes {
   const stopMs = lastTickMs
-  const walkMs = Math.max(stopMs + flags.endWalkPauseMs, effectsEndMs)
+  const walkMs = Math.max(stopMs + tuning.endWalkPauseMs, effectsEndMs)
   return {
     stopMs,
-    warnMs: flags.endWarnMs > 0 ? Math.max(0, stopMs - flags.endWarnMs) : null,
+    warnMs: tuning.endWarnMs > 0 ? Math.max(0, stopMs - tuning.endWarnMs) : null,
     walkMs,
-    homeMs: walkMs + flags.endWalkMs,
+    homeMs: walkMs + tuning.endWalkMs,
   }
 }
 
