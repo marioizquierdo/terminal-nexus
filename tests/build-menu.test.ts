@@ -127,8 +127,10 @@ test("the resources line counts down as the plan grows, and is on every panel bu
 })
 
 test("a building row the panel is too short for is neither drawn nor a click target", () => {
-  // Twelve buildings: more than the floor's panel holds above Start Pulse.
-  const long: ConstructItem[] = Array.from({ length: 12 }, (_, index) => ({
+  // Three more buildings than the floor's panel holds between Nexus and Start Pulse.
+  const floor = buildLayout(MINIMUM, spikeContext().grid)
+  const room = menuFloor(floor) - (floor.panelRow + NEXUS_ROW + 2) + 1
+  const long: ConstructItem[] = Array.from({ length: room + 3 }, (_, index) => ({
     ...(SPIKE_CATALOG[index % SPIKE_CATALOG.length] as ConstructItem),
     label: `Row ${index + 1}`,
     hotkey: String((index + 1) % 10),
@@ -170,6 +172,19 @@ test("an active row reads [x] ... >>, and a flash on it still wins, drawn as the
   keys(side, ACTIVE_HOTKEY)
   assert.equal(side.build.state.overlay, null)
   assert.match(panelLine(side, row), /^\[n\] Nexus \(1\) +$/)
+})
+
+test("a popup that belongs to no row — the game menu, Settings, the Controls page — leaves the menu unlit", () => {
+  for (const open of [[ESC], [ESC, "s"], [ESC, "c"]]) {
+    const side = session()
+    keys(side, ...open)
+    assert.notEqual(side.build.state.overlay, null, `${JSON.stringify(open)} opened nothing`)
+    for (const target of menuEntries(side.context)) {
+      const row = menuEntryRow(side.layout, SPIKE_CATALOG, target) as number
+      const style = cellAt(frameOf(side), side.layout.dividerColumn - 2, row).style
+      assert.notEqual(style.inverse, true, `${side.build.state.overlay}: the menu's bar is lit on row ${row}`)
+    }
+  }
 })
 
 // --- The building's card (F58) ----------------------------------------------------------------------

@@ -139,9 +139,9 @@ export type BuildState = Readonly<{
    *  Reducer state, not adapter state, so a driver can assert it and the key help can say it. */
   focus: Focus
   /**
-   * **Explore Map** (feedback F23, owner 2026-09-28; its look since F32): the side panel's first row
-   * reads `> [e] Explore Map` in the active style, and under a separator the rest of the panel shows
-   * what is under the cursor, following it as it moves. Reached only by `e`, the menu's first entry,
+   * **Explore Map** (feedback F23, owner 2026-09-28; its look since F32 and F53): the panel's Explore
+   * Map row reads `[x] Explore Map  >>` in the active style, and under a separator the rest of the
+   * panel is a card for what is under the cursor, following it as it moves. Reached only by `e`, the menu's first entry,
    * and Enter/Space in plain navigation; `e` again, Esc, or a click on its row go back to where it was
    * opened from (`origin`). Only ever true while the Grid has focus and nothing is armed (read it
    * through `exploring`).
@@ -649,9 +649,9 @@ export function armingSpot(
 
 /**
  * What Enter would do right now with the armed structure, derived in one place: `place()` acts on
- * it, and the view draws it — the ghost under the cursor, the status line's live refusal, the panel's
- * effect line. "What you see is what Enter does" is then one function rather than several copies
- * that have to agree (they once disagreed about the budget).
+ * it, and the view draws it — the ghost under the cursor, the status line's live refusal. "What you
+ * see is what Enter does" is then one function rather than several copies that have to agree (they
+ * once disagreed about the budget).
  */
 export type ArmedPreview = Readonly<{
   item: ConstructItem
