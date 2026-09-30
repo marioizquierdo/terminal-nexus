@@ -518,10 +518,7 @@ export function mixSeeThrough(
   return { background: [fill(0), fill(1), fill(2)], foreground: [ink(0), ink(1), ink(2)] }
 }
 
-/**
- * A cell's colours once its see-through style is resolved, in both forms the renderers take — so the ANSI
- * writer, the browser page's canvas and OpenTUI cannot disagree about one cell.
- */
+/** A cell's colours once its see-through style is resolved, in both forms `ResolvedCell` has. */
 export type SeeThroughColours = Readonly<{
   /** The glyph's colour. */
   foreground: Rgb
