@@ -72,11 +72,12 @@ export const CHROME_GLYPHS = {
     // A popup's shadow, drawn dim: a blank cell vanished against the dark theme's near-black ground
     // (feedback F17), so the shadow is a shade, which reads on either theme and in monochrome.
     shadow: ":",
-    // A popup's scroll bar, in its right border (feedback F36): the two ends, and the track the solid
-    // thumb sits in. Drawn inverse, as the border is.
+    // A popup's scroll bar, in its right border (feedback F36): the two ends, and the thumb — the part
+    // of the list in view — textured on the plain border that is its track (F78). Drawn inverse, as the
+    // border is. Never the shadow's glyph: a track in the shadow's texture read as more shadow.
     scrollUp: "^",
     scrollDown: "v",
-    scrollTrack: ":",
+    scrollThumb: "#",
     // The focus arrow (feedback F54): its head, pointing the way it flies, and the trail behind it,
     // along the line it flies — level, upright, falling to the right (`\`) or rising to it (`/`).
     arrowRight: ">",
@@ -108,7 +109,7 @@ export const CHROME_GLYPHS = {
     shadow: "░",
     scrollUp: "▲",
     scrollDown: "▼",
-    scrollTrack: "░",
+    scrollThumb: "╬",
     arrowRight: "▶",
     arrowLeft: "◀",
     arrowDown: "▼",

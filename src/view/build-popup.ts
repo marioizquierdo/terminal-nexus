@@ -47,8 +47,11 @@ export function drawPopup(cells: BandCell[], input: BuildCompositionInput, pack:
     inverse: true,
     limit: box.right - box.left - 3,
   })
-  // The scroll bar, in the right border beside the list: an up symbol, a textured track with a solid
-  // thumb where the part in view sits, a down symbol — all inverse, so they read as the border itself.
+  // The scroll bar, in the right border beside the list: an up symbol, then the track — the plain border
+  // itself — with a textured thumb where the part in view sits, then a down symbol, all inverse, so they
+  // read as the border (feedback F78: "keep the same background as the regular border, but add different
+  // texture for the bar"; a track in the shadow's texture read as more shadow). The thumb's texture is
+  // its own, never the shadow's.
   const bar = placed.scrollBar
   if (bar !== null) {
     for (let y = bar.top; y <= bar.bottom; y += 1) {
@@ -58,8 +61,8 @@ export function drawPopup(cells: BandCell[], input: BuildCompositionInput, pack:
           : y === bar.bottom
             ? chromeGlyph(pack, "scrollDown")
             : y >= bar.thumbTop && y <= bar.thumbBottom
-              ? " "
-              : chromeGlyph(pack, "scrollTrack")
+              ? chromeGlyph(pack, "scrollThumb")
+              : " "
       put(cells, band, bar.column, y, glyph, "chrome.frame", { inverse: true, bold: y === bar.top || y === bar.bottom })
     }
   }

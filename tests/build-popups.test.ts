@@ -29,6 +29,7 @@ import type { BuildCommand } from "../src/build/types.ts"
 import { spikeContext } from "../src/cli/spike.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
+import { chromeGlyph } from "../src/view/theme.ts"
 import {
   DOWN,
   END,
@@ -329,7 +330,11 @@ test("the game menu's Restart: r, Enter on its row, and a click on it start the 
 test("a list that overflows has a scroll bar in the popup's right border, drawn from the placed shape, in every glyph pack", () => {
   // Settings and the Controls page at every size: each overflows or fits whole, and only one that
   // overflows has a bar. The Controls page always overflows, so there is always a bar to check.
+  // The track is the plain border and the thumb carries its own texture (feedback F78: "keep the same
+  // background as the regular border, but add different texture for the bar") — never the shadow's.
   let bars = 0
+  let thumbs = 0
+  let tracks = 0
   for (const open of [[ESC, "s"], ["?"]]) {
     for (const size of SIZES) {
       for (const pack of ["ascii", "unicode"] as const) {
@@ -350,13 +355,19 @@ test("a list that overflows has a scroll bar in the popup's right border, drawn 
         assert.equal(bar.top, listed[0]?.row, "the bar starts beside the list's first shown row")
         assert.equal(bar.bottom, listed[listed.length - 1]?.row, "and ends beside its last")
         const frame = compose(side, { glyphPack: pack })
-        const [up, down, track] = pack === "ascii" ? ["^", "v", ":"] : ["▲", "▼", "░"]
+        const [up, down, texture] = pack === "ascii" ? ["^", "v", "#"] : ["▲", "▼", "╬"]
+        assert.notEqual(texture, chromeGlyph(pack, "shadow"), "the thumb wears the shadow's texture")
         assert.equal(cellAt(frame, bar.column, bar.top).glyph, up)
         assert.equal(cellAt(frame, bar.column, bar.bottom).glyph, down)
         assert.equal(cellAt(frame, bar.column, bar.top).style.inverse, true, "drawn as part of the border")
         for (let y = bar.top + 1; y < bar.bottom; y += 1) {
           const thumb: boolean = y >= bar.thumbTop && y <= bar.thumbBottom
-          assert.equal(cellAt(frame, bar.column, y).glyph, thumb ? " " : track, `row ${y}`)
+          const cell = cellAt(frame, bar.column, y)
+          assert.equal(cell.glyph, thumb ? texture : " ", `row ${y}: the thumb textured, the track the plain border`)
+          assert.equal(cell.style.inverse, true, `row ${y} is not drawn as the border`)
+          assert.equal(cell.style.fgRole, "chrome.frame", `row ${y} is not in the border's role`)
+          if (thumb) thumbs += 1
+          else tracks += 1
         }
         // Outside the list, the border is the plain border.
         assert.equal(cellAt(frame, bar.column, bar.bottom + 1).glyph, " ")
@@ -365,6 +376,7 @@ test("a list that overflows has a scroll bar in the popup's right border, drawn 
     }
   }
   assert.ok(bars > 0, "no list overflowed: the test proves nothing")
+  assert.ok(thumbs > 0 && tracks > 0, "never drew both a thumb and a track: the test proves nothing")
 })
 
 test("no scroll bar where nothing is hidden: a short list, and a popup without one", () => {
