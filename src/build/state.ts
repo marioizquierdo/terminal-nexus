@@ -31,6 +31,9 @@ import {
   stepSettingsRow,
 } from "./settings.ts"
 import { formatSettingsExport } from "./settings-export.ts"
+// A cycle, and a harmless one: help.ts reads this module's helpers only when a hint is asked for, and
+// this module reads help.ts's page length only when a command runs — neither at load time.
+import { controlsLineCount } from "./help.ts"
 import type {
   Ack,
   BuildCommand,
@@ -957,7 +960,7 @@ function cancel(context: BuildContext, state: BuildState): BuildState {
   if (state.overlay !== null && under !== undefined) {
     // Back to the popup this one was opened from, on the row that opened it — or, from the message
     // that a restart is needed, on the game menu's Restart, the row it points at.
-    const menuRow = state.overlay === "message" ? "restart" : "settings"
+    const menuRow = state.overlay === "message" ? "restart" : state.overlay === "controls" ? "controls" : "settings"
     const highlight = under === "menu" ? GAME_MENU_ROWS.indexOf(menuRow) : under === "settings" ? SETTINGS_EXPORT_ROW : 0
     return { ...state, overlay: under, overlayHighlight: highlight, overlayUnder: state.overlayUnder.slice(0, -1) }
   }
@@ -989,6 +992,21 @@ function openSettings(state: BuildState, section: "settings" | "experiments"): B
     ...state,
     overlay: "settings",
     overlayHighlight: section === "settings" ? FIRST_SETTING_ROW : experiments,
+    overlayUnder: state.overlay === "menu" ? ["menu"] : [],
+  }
+}
+
+/**
+ * The Controls and hotkeys page (feedback F60): from the game menu's `[c]` row, which Esc then goes back
+ * to, on that row; or from the game by `?`, which Esc closes. Over a committed Build Phase too — a Pulse
+ * is watched with keys as well. Opens over no popup but the game menu.
+ */
+function openControls(state: BuildState): BuildState {
+  if (state.overlay !== null && state.overlay !== "menu") return state
+  return {
+    ...state,
+    overlay: "controls",
+    overlayHighlight: 0,
     overlayUnder: state.overlay === "menu" ? ["menu"] : [],
   }
 }
@@ -1135,7 +1153,19 @@ export function applyBuildCommand(
   // and a message's words go with it.
   const closed = unghosted.overlay === null && unghosted.overlayUnder.length > 0 ? { ...unghosted, overlayUnder: [] } : unghosted
   const next = closed.overlay !== "message" && closed.message !== null ? { ...closed, message: null } : closed
-  return warnIfRestartNeeded(base, next)
+  return lapseStatus(state, warnIfRestartNeeded(base, next))
+}
+
+/**
+ * **A status is the answer of the command that set it** (owner, 2026-09-30, feedback F59: the bottom
+ * line "offers contextual help"): a command that answers sets a new message, so one that leaves the
+ * incoming message in place said nothing, and the old answer lapses — the bottom line then shows the
+ * hint for where the keyboard is (`src/build/help.ts`). Compared by identity, which is exactly "did this
+ * command set a status". A message about a tile also lapses the moment the cursor leaves it
+ * (`withCursor`).
+ */
+function lapseStatus(before: BuildState, after: BuildState): BuildState {
+  return after.status === before.status && after.status.text !== "" ? { ...after, status: NO_STATUS } : after
 }
 
 function applyCommand(context: BuildContext, state: BuildState, command: BuildCommand): BuildState {
@@ -1289,6 +1319,11 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
         const last = exportLineCount(context, state) - 1
         return { ...state, overlayHighlight: Math.max(0, Math.min(last, state.overlayHighlight + command.delta)) }
       }
+      if (state.overlay === "controls") {
+        // The Controls page scrolls the export's way: the highlight walks its key lines, stopping at
+        // either end, and the window follows it.
+        return { ...state, overlayHighlight: Math.max(0, Math.min(controlsLineCount() - 1, state.overlayHighlight + command.delta)) }
+      }
       if (state.overlay === "nexus-powers") {
         const count = nexusPowers(context, state).pending.length
         return { ...state, overlayHighlight: wrap(state.overlayHighlight + command.delta, count) }
@@ -1307,6 +1342,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
         // click on it sends `quit` too (`src/build/keyboard.ts`, the popup's own rows).
         const row = GAME_MENU_ROWS[state.overlayHighlight]
         if (row === "settings") return openSettings(state, "settings")
+        if (row === "controls") return openControls(state)
         if (row === "restart") return restartWithFlags(context, state)
         return row === "back" ? cancel(context, state) : state
       }
@@ -1362,6 +1398,13 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     case "export-select":
       if (state.overlay !== "export") return state
       return { ...state, overlayHighlight: Math.max(0, Math.min(exportLineCount(context, state) - 1, command.line)) }
+
+    case "open-controls":
+      return openControls(state)
+
+    case "controls-select":
+      if (state.overlay !== "controls") return state
+      return { ...state, overlayHighlight: Math.max(0, Math.min(controlsLineCount() - 1, command.line)) }
 
     case "quit":
       return state

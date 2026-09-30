@@ -249,7 +249,7 @@ test("a message popup: a title and its text, nothing to choose, closed by Esc or
   const text = popup.rows.filter((row) => row.spec.kind === "note").map((row) => row.text).join(" ")
   assert.equal(text, restartMessage(["Opens on"]).text, "the whole text, wrapped at words, nothing dropped")
   const drawn = frameToText(composeBuildFrame({ context, state, layout }, "monochrome"))
-  assert.match(drawn, /RESTART NEEDED {2}esc close/, "the key help names it and the one key that works")
+  assert.match(drawn, /Read it, then \[esc\] or a click outside closes it\./, "the bottom line names the ways to close it")
 
   // The keyboard: Esc and x close it; nothing else reaches it or anything under it.
   const keyboard = { itemCount: 3, armed: false, focus: "menu" as const, overlay: "message" as const }
@@ -303,7 +303,7 @@ test("the game menu's Restart: r, Enter on its row, and a click on it start the 
   keys(byKey, "r")
   const byEnter = session()
   plan(byEnter)
-  keys(byEnter, "q", DOWN)
+  keys(byEnter, "q", DOWN, DOWN) // past Settings and Controls
   assert.equal(GAME_MENU_ROWS[byEnter.build.state.overlayHighlight], "restart")
   keys(byEnter, ENTER)
   const byClick = session()

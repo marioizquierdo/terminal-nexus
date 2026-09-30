@@ -28,16 +28,28 @@ export const FLOOR_PANEL_COLUMNS = 30
 export const PANEL_COLUMNS = FLOOR_PANEL_COLUMNS - 1
 /** The top bar's one line, and the rule directly above the Grid that closes its rectangle. */
 export const HEADER_ROWS = 2
-/** The rule directly below the Grid, then the bottom bar's three lines: the position readout, the key
- *  help, and the status line. Canon 2.19 moved one row here from the header, whose two blank rows had
- *  left the Grid's own top edge three rows short of any line — why the cursor seemed to stop at "an
- *  arbitrary place" in the owner's playtest. */
-export const FOOTER_ROWS = 4
+/**
+ * The rule directly below the Grid, then the bottom bar's **one** line: the contextual line — what the
+ * last key did when it said something, and otherwise what can be done where the keyboard is
+ * (`src/build/help.ts`). The owner's call (2026-09-30, feedback F59: "The bottom of the UI currently
+ * uses 3 rows. We have to reduce that to 1 row"): the position readout and the key help went, and the
+ * two rows they took went to the Grid. It was four rows from canon 2.19, which moved one here from the
+ * header, whose two blank rows had left the Grid's own top edge three rows short of any line.
+ */
+export const FOOTER_ROWS = 2
 /** Left border + right border. 1 + 48 + 1 + 30 = exactly 80 (engine.md 3.1): the floor's arithmetic;
  *  since the shared west side the Grid gets one more of those columns (`PANEL_COLUMNS`). */
 export const BORDER_COLUMNS = 2
-/** Top border + header + footer + bottom border = engine.md 3.1's 8-row vertical chrome budget (Q12). */
+/** Top border + header + footer + bottom border: 6 rows since the bottom bar became one line (feedback
+ *  F59) — 18 rows of Grid at 80 × 24, where the 8-row budget of engine.md 3.1 (Q12) left 16. */
 export const CHROME_ROWS = BORDER_COLUMNS + HEADER_ROWS + FOOTER_ROWS
+/**
+ * The vertical chrome the terminal floor is measured against: engine.md 3.1's 8-row budget, which the
+ * resize gate still uses, so 80 × 24 stays the floor and the acceptance target — the same move
+ * `FLOOR_PANEL_COLUMNS` makes for the column the shared west side saved. The two rows the one-line
+ * bottom bar saves go to the Grid, never to a smaller floor.
+ */
+export const FLOOR_CHROME_ROWS = 8
 
 export type TileWidth = 1 | 2
 export type Viewport = Readonly<{ width: number; height: number }>
@@ -54,10 +66,11 @@ export function availableTiles(
   terminal: TerminalSize,
   tileWidth: TileWidth,
   panelColumns: number = PANEL_COLUMNS,
+  chromeRows: number = CHROME_ROWS,
 ): Viewport {
   return {
     width: Math.max(0, Math.floor((terminal.columns - BORDER_COLUMNS - panelColumns) / tileWidth)),
-    height: Math.max(0, terminal.rows - CHROME_ROWS),
+    height: Math.max(0, terminal.rows - chromeRows),
   }
 }
 
@@ -75,10 +88,12 @@ export function tileWidthFor(terminal: TerminalSize, grid: GridTerrain): TileWid
  * Step 4, asked as a question rather than acted on: is this terminal below the floor? A Grid smaller
  * than the minimum viewport needs only its own size, so a small tutorial Grid is never gated on a
  * terminal that could show all of it. Always asked at one column per tile — the narrow composition
- * is the acceptance target, and a terminal too small for the wide one simply uses the narrow one.
+ * is the acceptance target, and a terminal too small for the wide one simply uses the narrow one —
+ * and against the floor's own chrome (`FLOOR_PANEL_COLUMNS`, `FLOOR_CHROME_ROWS`), so the gate stays
+ * at 80 × 24 while the columns and rows the frame has since saved go to the Grid.
  */
 export function isGated(terminal: TerminalSize, grid: GridTerrain): boolean {
-  const available = availableTiles(terminal, 1, FLOOR_PANEL_COLUMNS)
+  const available = availableTiles(terminal, 1, FLOOR_PANEL_COLUMNS, FLOOR_CHROME_ROWS)
   return (
     available.width < Math.min(MIN_VIEWPORT.width, grid.width) ||
     available.height < Math.min(MIN_VIEWPORT.height, grid.height)
@@ -161,7 +176,7 @@ export function shareOfSpan(percent: number, span: number): number {
 }
 
 /** The scroll margin in tiles along each axis for a margin given as a percentage of the view: the
- *  owner's 25% of the 49 x 16 view at 80 x 24 is 12 tiles to either side and 4 above and below. */
+ *  owner's 25% of the 49 x 18 view at 80 x 24 is 12 tiles to either side and 5 above and below. */
 export function marginForView(percent: number, viewport: Viewport): Readonly<{ x: number; y: number }> {
   return { x: shareOfSpan(percent, viewport.width), y: shareOfSpan(percent, viewport.height) }
 }
@@ -246,8 +261,9 @@ export type VisibleRange = Readonly<{
   lastY: number
 }>
 
-/** The inclusive tile range on screen, which the footer's position readout names — engine.md 3.3
- *  requires it, because there is no minimap and the player has to be told there is more Grid. */
+/** The inclusive tile range on screen: what the Grid pane draws, and — with the Grid's own size — which
+ *  of its sides have more Grid beyond them (`edgeMarkers`). A position readout in the footer named it
+ *  until the owner took the readout out (2026-09-30, feedback F59); the sides' weight is the signal. */
 export function visibleRange(camera: Camera, viewport: Viewport): VisibleRange {
   return {
     firstX: camera.x,
@@ -265,7 +281,7 @@ export type EdgeMarkers = Readonly<{
 }>
 
 /**
- * Which sides have more Grid beyond them — the other half of engine.md 3.3's required signal, drawn
+ * Which sides have more Grid beyond them — engine.md 3.3's required "there is more Grid" signal, drawn
  * on the frame border. A Grid that fits entirely inside the viewport gets none of them, which is
  * exactly what that rule asks for: "Small Grids that fit entirely inside the viewport never scroll
  * and show no edge markers."

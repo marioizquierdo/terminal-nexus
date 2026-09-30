@@ -17,6 +17,9 @@ export function statusStyle(tone: StatusTone = "neutral"): StatusStyle {
       return { role: "notice.gate" }
     case "danger":
       return { role: "notice.gate", bold: true }
+    // A hint is not an answer: it reads quieter than anything a command said (feedback F59).
+    case "hint":
+      return { role: "chrome.muted" }
     case "neutral":
     default:
       return { role: "chrome.value" }

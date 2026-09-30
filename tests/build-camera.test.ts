@@ -30,18 +30,21 @@ function plainGrid(width: number, height: number): GridTerrain {
   return { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") }
 }
 
-test("engine-3.3-clamp: the minimum viewport fits 80x24 and the maximum exactly 104x32", () => {
+test("engine-3.3-clamp: the minimum viewport fits 80x24 and the maximum is reached at 104x30", () => {
   // The two rows of engine.md 3.3's own terminal-size table, at one column per tile. Since the menu's
   // divider became the Grid's west side (owner, 2026-09-29), the column that saves is the Grid's: 80
-  // columns show one tile more than the minimum, and 80 x 24 is still the floor (the gate test below).
+  // columns show one tile more than the minimum; and since the bottom bar became one line (owner,
+  // 2026-09-30, feedback F59) the two rows that saves are the Grid's too: 18 rows at 24, and the
+  // maximum's 24 rows two terminal rows sooner. 80 x 24 is still the floor (the gate test below).
   assert.deepEqual(fitViewport({ columns: 80, rows: 24 }, GRID, 1), {
     width: MIN_VIEWPORT.width + 1,
-    height: MIN_VIEWPORT.height,
+    height: MIN_VIEWPORT.height + 2,
   })
-  assert.deepEqual(fitViewport({ columns: 104, rows: 32 }, GRID, 1), {
+  assert.deepEqual(fitViewport({ columns: 104, rows: 30 }, GRID, 1), {
     width: MAX_VIEWPORT.width,
     height: MAX_VIEWPORT.height,
   })
+  assert.equal(fitViewport({ columns: 104, rows: 29 }, GRID, 1).height, MAX_VIEWPORT.height - 1)
 })
 
 test("engine-3.3-clamp: a huge terminal is spent on centring, never on more Grid", () => {
@@ -62,7 +65,7 @@ test("engine-9.3-tile-width: one column per tile at 80, two at 128", () => {
   assert.equal(tileWidthFor({ columns: 128, rows: 24 }, GRID), 2)
   // 128 columns at two per tile is exactly the 48-tile minimum viewport — the arithmetic engine.md
   // 3.1 says is "not a coincidence".
-  assert.deepEqual(fitViewport({ columns: 128, rows: 24 }, GRID, 2), { width: 48, height: 16 })
+  assert.deepEqual(fitViewport({ columns: 128, rows: 24 }, GRID, 2), { width: 48, height: 18 })
   assert.equal(availableTiles({ columns: 128, rows: 24 }, 2).width, MIN_VIEWPORT.width)
 })
 
@@ -70,6 +73,10 @@ test("engine-3.3-gate: below 80x24 the screen gates; a small Grid is never gated
   assert.equal(isGated({ columns: 80, rows: 24 }, GRID), false)
   assert.equal(isGated({ columns: 79, rows: 24 }, GRID), true)
   assert.equal(isGated({ columns: 80, rows: 23 }, GRID), true)
+  // Measured against the floor's own 8 rows of chrome, not the 6 the frame takes since the bottom bar
+  // became one line (feedback F59): 80 x 22 would lay out 16 rows of Grid, and is still below the floor.
+  assert.equal(availableTiles({ columns: 80, rows: 22 }, 1).height, MIN_VIEWPORT.height)
+  assert.equal(isGated({ columns: 80, rows: 22 }, GRID), true)
   // "A Grid smaller than the minimum viewport needs only its own size" — fitting step 4.
   const tutorial = plainGrid(24, 12)
   assert.equal(isGated({ columns: 60, rows: 22 }, tutorial), false)

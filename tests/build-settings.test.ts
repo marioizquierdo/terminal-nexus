@@ -93,7 +93,7 @@ function clickOption(side: Side, hotkey: string): void {
 
 // --- The game menu -----------------------------------------------------------------------------------
 
-test("Esc on the menu, q anywhere, and the top bar's menu [esc] all open the game menu: Settings, Restart, Quit, Back", () => {
+test("Esc on the menu, q anywhere, and the top bar's menu [esc] all open the game menu: Settings, Controls, Restart, Quit, Back", () => {
   for (const open of [[ESC], ["q"]]) {
     const side = session()
     keys(side, ...open)
@@ -101,10 +101,12 @@ test("Esc on the menu, q anywhere, and the top bar's menu [esc] all open the gam
     const text = screen(side)
     assert.match(text, /MENU/)
     assert.match(text, /\[s\] Settings/)
+    assert.match(text, /\[c\] Controls and hotkeys/)
     assert.match(text, /\[r\] Restart/)
     assert.match(text, /\[q\] Quit/)
     assert.match(text, /\[esc\] Back to the game/)
-    assert.match(text, /MENU {2}s settings {2}r restart {2}q quit {2}esc back to the game/)
+    // The bottom line says how to work it (feedback F59), where the key help listed its keys.
+    assert.match(text, /Up\/down and \[enter\] choose, or press a row's key\. \[esc\] back to the game\./)
   }
   const clicked = session()
   const hint = escHintSpan(clicked.layout, "menu [esc]")
@@ -129,7 +131,7 @@ test("leaving always goes through the game menu: its q, Enter on Quit, or a clic
   assert.equal(byKey.quits, 1)
 
   const byEnter = session()
-  keys(byEnter, ESC, DOWN, DOWN)
+  keys(byEnter, ESC, DOWN, DOWN, DOWN) // past Settings, Controls and Restart
   assert.equal(GAME_MENU_ROWS[byEnter.build.state.overlayHighlight], "quit")
   keys(byEnter, ENTER)
   assert.equal(byEnter.quits, 1)
@@ -139,7 +141,7 @@ test("leaving always goes through the game menu: its q, Enter on Quit, or a clic
   clickOption(byClick, "q")
   assert.equal(byClick.quits, 1)
 
-  // Up/Down walk the four rows and come round; Enter on Back goes back to the game.
+  // Up/Down walk the five rows and come round; Enter on Back goes back to the game.
   const walk = session()
   keys(walk, ESC, UP)
   assert.equal(GAME_MENU_ROWS[walk.build.state.overlayHighlight], "back")

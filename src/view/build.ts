@@ -2,15 +2,16 @@
 // glyph packs as the Pulse view and the menu, so monochrome and the colour tiers come free.
 //
 // The Grid pane is a **window onto a Grid larger than itself**: every tile is drawn at
-// `tile - camera` and clipped to the viewport, and the two signals engine.md 3.3 requires in place
-// of a minimap — the weight of the lines around the Grid pane, a position readout naming the visible
-// range — come from the same camera the cursor moved.
+// `tile - camera` and clipped to the viewport, and the signal engine.md 3.3 requires in place of a
+// minimap — the weight of the lines around the Grid pane — comes from the same camera the cursor moved.
+// (A position readout naming the visible range was the second signal until the owner took it out,
+// 2026-09-30, feedback F59.)
 
 import { footprintExtent, tilesOf } from "../grid/coords.ts"
 import type { Coord } from "../grid/types.ts"
 import type { Camera } from "../build/camera.ts"
 import { edgeMarkers, visibleRange } from "../build/camera.ts"
-import { DEFAULT_SCROLL_MARGIN_PERCENT } from "../build/debug.ts"
+import { CONTROLS_KEYS_WIDTH, bottomLine } from "../build/help.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import {
   ESC_KEY,
@@ -38,19 +39,18 @@ import {
   menuEntries,
   nexusPowers,
   pendingPicks,
-  refusalText,
   remaining,
   startEntry,
   structureAtTile,
 } from "../build/state.ts"
-import type { ConstructGroup, ConstructItem, PlannedPlacement } from "../build/types.ts"
+import type { ConstructGroup, PlannedPlacement } from "../build/types.ts"
 import { CONTENT_ART } from "../content/art.ts"
 import type { BandCell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import { put, text } from "./draw.ts"
 import { drawTerrain } from "./grid-layer.ts"
 import type { PulseFrame } from "./pulse-scene.ts"
-import { drawFrameLight, drawPulseEffects, drawPulseEntities, drawPulsePanel, pulseKeyHelp, pulseStatus, pulseSubtitle } from "./pulse-scene.ts"
+import { drawFrameLight, drawPulseEffects, drawPulseEntities, drawPulsePanel, pulseStatus, pulseSubtitle } from "./pulse-scene.ts"
 import type { CapabilityMode, StyleRole } from "./roles.ts"
 import { chromeGlyph, entityGlyph, playerRole, terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
@@ -64,8 +64,6 @@ import type { TrackSchedule } from "./animation.ts"
 import { trackEffectsAt } from "./animation.ts"
 import type { PlacementClock, RemovalClock } from "./placement.ts"
 import { placementEffectContext, placementLook, placementSchedule, removalSchedule } from "./placement.ts"
-import type { StatusMessage } from "../status.ts"
-import { status } from "../status.ts"
 
 /** A structure the player is about to place, and whether they may. Drawn in the highlights band, so
  *  it is presentation and can never change occupancy (engine.md 9.4). */
@@ -191,8 +189,8 @@ function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack: Glyph
   // the Grid pane alone — the panel beside it runs on down to the bottom bar.
   if (box.bottom < layout.paneBottom) horizontalLine(box.bottom, box.left, box.right)
   // The divider runs only between the two rules, so the top bar and the bottom bar each run the
-  // whole width: at 80 columns the Grid pane is 48 columns, and the key help, the position readout
-  // and the status line are all longer than that.
+  // whole width: at 80 columns the Grid pane is 49 columns, and the bottom bar's contextual line is
+  // longer than that.
   verticalLine(layout.dividerColumn, box.top, layout.paneBottom)
 
   const markers = edgeMarkers(state.camera, state.viewport, context.grid)
@@ -471,108 +469,6 @@ function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
 }
 
 /**
- * The key help: where the keyboard is, and the keys that work there, most important first — one list
- * per mode, because focus makes arrows and Enter/Space mean different things and engine.md 9.7's
- * first convention asks the footer to say which. The label is drawn ahead of the list in the title's
- * weight, so it is the first thing read on the line.
- *
- * Trimmed to what a player would not otherwise guess: PageUp/PageDown, Home/End and Option+Arrow are
- * still bound, only unlisted (owner, 2026-09-26). `q` is not listed at all (owner, 2026-09-27): Esc on
- * the menu opens the game menu, which shows `[q] Quit` itself, and the top bar says `menu [esc]`.
- */
-export type KeyHelp = Readonly<{ label: string; bindings: readonly string[] }>
-
-export const MENU_KEY_HELP: KeyHelp = {
-  label: "MENU",
-  bindings: ["up/down choose", "enter/space select", "tab grid", "u undo"],
-}
-
-/** The Grid, with a building armed. */
-export const PLACE_KEY_HELP: KeyHelp = {
-  label: "PLACE",
-  bindings: ["arrows move", "enter/space place", "esc cancel", "shift+arrow fast move", "bksp remove", "u undo"],
-}
-
-/** Explore Map: the Grid with nothing armed, the panel following the cursor (feedback F23). `e` and
- *  Esc go back to where it was opened from (F32). Tab still gives the keyboard to the menu, unlisted:
- *  its panel draws no overflow lines, and at 80 columns the footer holds these four and no more. */
-export const EXPLORE_KEY_HELP: KeyHelp = {
-  label: "EXPLORE MAP",
-  bindings: ["arrows move", "e/esc back", "shift+arrow fast move", "bksp remove"],
-}
-
-/** Plain navigation: the map with nothing armed and the menu still drawn beside it — where Tab, a
- *  click on the map, and a placement begun on the map arrive (feedback F30). */
-export const MAP_KEY_HELP: KeyHelp = {
-  label: "MAP",
-  bindings: ["arrows move", "enter/space explore", "tab/esc menu", "shift+arrow fast move", "bksp remove"],
-}
-
-const NEXUS_KEY_HELP: KeyHelp = { label: "NEXUS", bindings: ["up/down choose", "enter/space pick", "esc close"] }
-const CONFIRM_KEY_HELP: KeyHelp = { label: "BATTLE ROUND", bindings: ["enter/s/space start", "esc back"] }
-const GAME_MENU_KEY_HELP: KeyHelp = { label: "MENU", bindings: ["s settings", "r restart", "q quit", "esc back to the game"] }
-const COMMITTED_KEY_HELP: KeyHelp = { label: "COMMITTED", bindings: ["esc menu"] }
-const SETTINGS_KEY_HELP: KeyHelp = {
-  label: "SETTINGS",
-  bindings: ["up/down choose", "left/right change", "e export", "esc close"],
-}
-const EXPORT_KEY_HELP: KeyHelp = { label: "EXPORT", bindings: ["up/down scroll", "esc back"] }
-
-/** Which key help is live: whatever holds the keyboard right now. */
-export function keyHelp(state: BuildState): KeyHelp {
-  if (state.overlay === "menu") return GAME_MENU_KEY_HELP
-  if (state.overlay === "settings") return SETTINGS_KEY_HELP
-  if (state.overlay === "export") return EXPORT_KEY_HELP
-  // A message is named by its own title: the one thing the keyboard can do there is close it.
-  if (state.overlay === "message") return { label: state.message?.title ?? "MESSAGE", bindings: ["esc close"] }
-  if (state.committed) return COMMITTED_KEY_HELP
-  if (state.overlay === "confirm-commit") return CONFIRM_KEY_HELP
-  if (state.overlay === "nexus-powers") return NEXUS_KEY_HELP
-  if (state.focus === "menu") return MENU_KEY_HELP
-  if (state.armed !== null) return PLACE_KEY_HELP
-  return state.exploreMap ? EXPLORE_KEY_HELP : MAP_KEY_HELP
-}
-
-/** Two glyphs between bindings, so a pair of them cannot read as one. */
-const BINDING_GAP = "  "
-
-function packed(bindings: readonly string[], limit: number): { line: string; rest: string[] } {
-  let line = ""
-  for (let index = 0; index < bindings.length; index += 1) {
-    const binding = bindings[index] as string
-    const grown = line === "" ? binding : line + BINDING_GAP + binding
-    if (grown.length > limit) return { line, rest: [...bindings.slice(index)] }
-    line = grown
-  }
-  return { line, rest: [] }
-}
-
-/**
- * How the bindings divide between the footer's one row and the side panel's last few — the screen's
- * adaptation to its own width. The footer takes them in order while they fit; whatever is left over
- * packs into panel-width rows. **Only whole bindings, anywhere**: a key cut in half is a key nobody
- * can press.
- */
-export function bindingLines(
-  footerLimit: number,
-  panelLimit: number,
-  help: KeyHelp = PLACE_KEY_HELP,
-): Readonly<{ footer: string; panel: readonly string[] }> {
-  // The focus label takes the front of the footer's line, and a gap after it.
-  const { line: footer, rest } = packed(help.bindings, footerLimit - help.label.length - BINDING_GAP.length)
-  const panel: string[] = []
-  let remainingBindings = rest
-  while (remainingBindings.length > 0) {
-    const { line, rest: next } = packed(remainingBindings, panelLimit)
-    // A binding longer than the panel is wide would otherwise loop forever producing empty rows.
-    if (line === "") break
-    panel.push(line)
-    remainingBindings = next
-  }
-  return { footer, panel }
-}
-
-/**
  * A placement was just tried and refused: the whole footprint under the cursor flashes solid in the
  * status line's own "danger" colour for a moment (gate 5H), so the eye that was on the map learns it
  * did not build without reading the bottom bar. A style-only write, like the cursor, so the `x` block
@@ -601,12 +497,18 @@ function drawRefusedFlash(cells: BandCell[], input: BuildCompositionInput, previ
   }
 }
 
+/**
+ * The top bar — the game's title, where the player is, and what Esc does — and the bottom bar's one
+ * line (feedback F59): **the contextual line**, the last command's answer while it has one and
+ * otherwise a hint for where the keyboard is (`bottomLine`, `src/build/help.ts`), or, while a Nexus
+ * Pulse plays with no popup over it, what the Pulse is doing. It replaced a position readout, the key
+ * help and the status line — three lines — and every key is on the Controls and hotkeys page instead.
+ */
 function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
   const { context, state, layout } = input
   const band = BANDS.chrome
   const left = layout.offset.column + 2
   const headerRow = layout.offset.row + 1
-  const range = visibleRange(state.camera, state.viewport)
 
   // The top bar: the game's title and where the player is (engine.md 9.2), across the whole width.
   const limit = layout.headerLimit
@@ -622,57 +524,18 @@ function drawHeaderAndFooter(cells: BandCell[], input: BuildCompositionInput, pr
   text(cells, band, hint.from, hint.row, name, "chrome.muted")
   text(cells, band, hint.from + name.length, hint.row, ESC_KEY, "chrome.hotkey", { bold: true })
 
-  const footerLimit = layout.footerLimit
-  // engine.md 3.3's second required signal: "a position readout in the footer naming the visible
-  // tile range and the Grid size." The margin is named whenever it is not the owner's 25% — set by
-  // `--scroll-margin` or by an Experiment.
-  const margin = state.debug.scrollMargin
-  text(
-    cells,
-    band,
-    left,
-    layout.footerRow,
-    `view x ${range.firstX}-${range.lastX} y ${range.firstY}-${range.lastY} ` +
-      `of ${context.grid.width}x${context.grid.height}   cursor ${state.cursor.x},${state.cursor.y}` +
-      (margin === DEFAULT_SCROLL_MARGIN_PERCENT ? "" : `   margin ${margin}%`),
-    "chrome.label",
-    { limit: footerLimit },
-  )
-  // The screen documents itself (engine.md 9.7), starting with where the keyboard is. A popup over a
-  // Pulse is what holds the keyboard, and says so; otherwise the Pulse does.
+  // The contextual line. A popup over a Pulse holds the keyboard, so its answer or hint is what the
+  // line says; otherwise the Pulse says what it is doing.
   const pulse = state.overlay !== null ? undefined : input.pulse
-  const help = pulse === undefined ? keyHelp(state) : pulseKeyHelp(pulse)
-  text(cells, band, left, layout.footerRow + 1, help.label, "chrome.title", { bold: true, limit: footerLimit })
-  const helpColumn = left + help.label.length + BINDING_GAP.length
-  text(
-    cells,
-    band,
-    helpColumn,
-    layout.footerRow + 1,
-    bindingLines(footerLimit, layout.panelLimit, help).footer,
-    "chrome.muted",
-    { limit: footerLimit - (helpColumn - left) },
-  )
-  const shown = pulse === undefined ? statusLine(state, preview) : pulseStatus(pulse)
+  const shown = pulse === undefined ? bottomLine(context, state, preview) : pulseStatus(pulse)
   const style = statusStyle(shown.tone)
-  text(cells, band, left, layout.footerRow + 2, shown.text, style.role, {
+  // Whole words only: on a bar narrower than the line (a Grid smaller than the view) the words that do
+  // not fit are left off, never cut in half.
+  const line = shown.text.length <= layout.footerLimit ? shown.text : (wrapWords(shown.text, layout.footerLimit)[0] ?? "")
+  text(cells, band, left, layout.footerRow, line, style.role, {
     ...(style.bold === undefined ? {} : { bold: style.bold }),
-    limit: footerLimit,
+    limit: layout.footerLimit,
   })
-}
-
-/**
- * The status line — the footer's last row, and the one place the Build Phase answers "what just
- * happened, or why not". It shows the reducer's own `state.status`, with one exception: while the
- * armed ghost sits on a tile Enter would refuse, the refusal is what it says, naming the tile —
- * quietly while the player is only looking, and in the reducer's own red once they actually try.
- */
-function statusLine(state: BuildState, preview: ArmedPreview | null): StatusMessage {
-  // While arming's ghost shows, the status line says why the cursor moved, not why Enter would fail.
-  if (preview === null || preview.refusal === null || state.armGhost) return state.status
-  const tile = state.status.tile
-  const attempted = tile !== undefined && tile.x === state.cursor.x && tile.y === state.cursor.y
-  return attempted ? state.status : status(refusalText(preview.refusal))
 }
 
 /** Right-aligned against the panel's own right edge — a column of costs reads as a column only if
@@ -692,25 +555,6 @@ function rightAlign(
 const GROUP_LABELS: Readonly<Record<ConstructGroup, string>> = {
   common: "COMMON",
   army: "ARMY",
-}
-
-/**
- * The bindings the footer had no room for, stacked above the Start Pulse row at the bottom of the panel
- * and growing upward. Bounded by the menu, which wins: a hidden menu row is still a live click target,
- * so the lowest-priority lines are dropped instead.
- */
-function panelBindings(layout: BuildLayout, catalog: readonly ConstructItem[], help: KeyHelp): readonly string[] {
-  const floor = summaryRows(layout, catalog).special + 2
-  const lines = bindingLines(layout.footerLimit, layout.panelLimit, help).panel
-  return lines.slice(0, Math.max(0, Math.min(lines.length, menuFloor(layout) - floor + 1)))
-}
-
-function drawPanelBindings(cells: BandCell[], input: BuildCompositionInput): void {
-  const { layout } = input
-  const lines = panelBindings(layout, input.context.catalog, keyHelp(input.state))
-  lines.forEach((line, index) => {
-    text(cells, BANDS.chrome, layout.panelColumn, menuFloor(layout) - (lines.length - 1 - index), line, "chrome.muted", { limit: layout.panelLimit })
-  })
 }
 
 /** How a menu row's bar is drawn: `plain`; `selected` — the inverse bar, where the keyboard is;
@@ -939,10 +783,8 @@ function drawPanel(cells: BandCell[], input: BuildCompositionInput, preview: Arm
   const effect = effectLine(context, state, preview)
   if (effect === null) return
   const row = specialRow + 2
-  // One row of clearance above the bindings block, so the two never touch; dropped rather than drawn
-  // over the bindings when a short panel has no room.
-  const bindingRows = panelBindings(layout, context.catalog, keyHelp(state)).length
-  if (row > menuFloor(layout) - (bindingRows === 0 ? 0 : bindingRows + 1)) return
+  // Dropped rather than drawn over the Start Pulse row when a short panel has no room.
+  if (row > menuFloor(layout)) return
   text(cells, band, column, row, effect, "chrome.value", { limit })
 }
 
@@ -1156,6 +998,22 @@ function drawOverlay(cells: BandCell[], input: BuildCompositionInput, pack: Glyp
         for (let x = box.left + 1; x < box.right; x += 1) put(cells, band, x, row, line, "chrome.frame")
         break
       }
+      case "keys": {
+        // A line of the Controls page: the keys in the hotkey's colour, in their own column, and what
+        // they do beside them — under the highlight bar, all in the bar's role, like an option row.
+        const on = entry.highlighted === true
+        if (on) text(cells, band, textColumn, row, " ".repeat(textLimit), "chrome.title", { inverse: true, limit: textLimit })
+        text(cells, band, textColumn, row, entry.keys, on ? "chrome.title" : "chrome.hotkey", {
+          bold: true,
+          inverse: on,
+          limit: Math.min(textLimit, CONTROLS_KEYS_WIDTH - 1),
+        })
+        text(cells, band, textColumn + CONTROLS_KEYS_WIDTH, row, entry.text, on ? "chrome.title" : "chrome.value", {
+          inverse: on,
+          limit: textLimit - CONTROLS_KEYS_WIDTH,
+        })
+        break
+      }
     }
   }
 }
@@ -1183,7 +1041,7 @@ export function composeBuildFrame(
   capability: CapabilityMode,
 ): ReadonlyCellFrame {
   // A sliding view is drawn through the camera it has reached, not the one it is heading for: the
-  // Grid, the preview, the cursor, the edge weights and the position readout all move together.
+  // Grid, the preview, the cursor and the edge weights all move together.
   const input: BuildCompositionInput =
     given.camera === undefined ? given : { ...given, state: { ...given.state, camera: given.camera } }
   const pack: GlyphPack = input.glyphPack ?? "ascii"
@@ -1224,10 +1082,7 @@ export function composeBuildFrame(
   const panel: BandCell[] = []
   if (input.state.committed) drawCommittedPanel(panel, input)
   else if (exploring(input.state)) drawInfoPanel(panel, input, pack)
-  else {
-    drawPanel(panel, input, preview)
-    drawPanelBindings(panel, input)
-  }
+  else drawPanel(panel, input, preview)
   for (const cell of panel) if (cell.y <= input.layout.panelBindingsRow) cells.push(cell)
   drawOverlay(cells, input, pack)
 

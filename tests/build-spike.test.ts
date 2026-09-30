@@ -22,7 +22,8 @@ import {
 } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildSessionOptions } from "../src/build/session.ts"
-import { JUMP_TILES, anchorForCursor, legalityAt, remaining, spent } from "../src/build/state.ts"
+import { JUMP_TILES, anchorForCursor, armedPreview, legalityAt, remaining, spent } from "../src/build/state.ts"
+import { bottomLine } from "../src/build/help.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { spikeContext } from "../src/cli/spike.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
@@ -782,18 +783,20 @@ test("a refusal's message clears once the cursor leaves the tile it was about", 
   build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
   assert.doesNotMatch(build.state.status.text, /Cannot build here/)
 
-  // A message about the last action, rather than about a tile, is not stale just because the
-  // cursor moved — it stays until the next one.
+  // A message about the last action, rather than about a tile, is the answer of that action: since
+  // the bottom bar became one contextual line (owner, 2026-09-30, feedback F59) it lapses at the next
+  // command that says nothing — a cursor move included — and the hint takes its place.
   build.dispatch({ kind: "place" })
   assert.match(build.state.status.text, /Turret placed/)
   build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
-  assert.match(build.state.status.text, /Turret placed/, "an action message should survive a cursor move")
+  assert.equal(build.state.status.text, "", "an answer outlived the next command, which said nothing")
 })
 
-test("a refusal's message survives a move that is clamped back to the same tile", () => {
+test("a move clamped back to the same tile keeps the refusal on screen, read quietly once the attempt has lapsed", () => {
   // Pressing further into the Grid's own edge does not move the cursor at all — clampToGrid leaves
-  // it exactly where it was. That is not "the cursor left the tile the refusal was about," so the
-  // refusal has not gone stale and must not be cleared.
+  // it exactly where it was. That is not "the cursor left the tile the refusal was about", so the
+  // bottom line still says why Enter is refused there. But the move is a command that said nothing, so
+  // the attempt's own red answer lapses (feedback F59): the same sentence reads as looking, not trying.
   const width = 10
   const height = 10
   const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.plain")
@@ -813,7 +816,11 @@ test("a refusal's message survives a move that is clamped back to the same tile"
   build.dispatch({ kind: "place" })
   assert.match(build.state.status.text, /Cannot build here/)
 
+  assert.equal(bottomLine(context, build.state, armedPreview(context, build.state)).tone, "danger")
+
   build.dispatch({ kind: "move-cursor", dx: 1, dy: 1 })
   assert.deepEqual(build.state.cursor, { x: 9, y: 9 }, "the move should have been clamped to a no-op")
-  assert.match(build.state.status.text, /Cannot build here/, "the cursor never left the tile the refusal named")
+  const line = bottomLine(context, build.state, armedPreview(context, build.state))
+  assert.match(line.text, /Cannot build here/, "the cursor never left the tile the refusal named")
+  assert.equal(line.tone, undefined, "the lapsed attempt still reads as an attempt")
 })

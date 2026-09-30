@@ -9,10 +9,9 @@
 // So both families are accepted, and the fast move (five tiles until gate 5H; since the owner's
 // 2026-09-28 playtest a jump of the "Shift jump" Experiment, twelve tiles) also has a modifier-free
 // fallback —
-// PageUp/PageDown and Home/End — plus the Option/Meta forms a Mac sends. The screen names the fast
-// move once, as "shift+arrow fast move"; the others are the same move under other keys, left off the
-// key help on the owner's own call (2026-09-26: "leave pgup/home keys out, people will figure that
-// out just fine").
+// PageUp/PageDown and Home/End — plus the Option/Meta forms a Mac sends. The Controls and hotkeys page
+// (`src/build/help.ts`, feedback F60) lists every one of them; the bottom line never did, on the
+// owner's own call (2026-09-26: "leave pgup/home keys out, people will figure that out just fine").
 
 import type { PlaybackControl } from "../view/playback.ts"
 import { START_KEY } from "./layout.ts"
@@ -146,6 +145,9 @@ function digitIndex(key: string): number | null {
 /** `x` is Esc, everywhere (owner, 2026-09-27: "it should be equivalent to do [esc], and x"). */
 const CANCEL_KEYS = new Set([ESC, "x"])
 
+/** `?` opens the Controls and hotkeys page — from the game, and from the game menu (feedback F60). */
+const HELP_KEY = "?"
+
 /** A popup's own keys. Everything else is swallowed: a popup that let `u` reach the plan underneath
  *  it would be one the player cannot trust to be modal. */
 function overlayCommand(key: string, overlay: Overlay, pendingCount: number, highlight: number): BuildCommand | null {
@@ -156,6 +158,8 @@ function overlayCommand(key: string, overlay: Overlay, pendingCount: number, hig
       // on `[q] Quit` is the quit itself — the reducer never sees a quit it would have to pass on.
       if (key === "q") return { kind: "quit" }
       if (key === "s") return { kind: "open-settings", section: "settings" }
+      // `[c] Controls and hotkeys` (feedback F60); `?` is the page's own shortcut, here as in the game.
+      if (key === "c" || key === HELP_KEY) return { kind: "open-controls" }
       if (key === "r") return { kind: "debug-restart" }
       if (key === "d") return { kind: "open-settings", section: "experiments" }
       if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
@@ -206,6 +210,15 @@ function overlayCommand(key: string, overlay: Overlay, pendingCount: number, hig
       // Nothing to choose: only the cancel above closes it (feedback F34, "clicking outside or pressing
       // esc should close it").
       return null
+    case "controls": {
+      // The Controls page (feedback F60) scrolls like the export: Up/Down walk it; `c` and `?` close
+      // what they opened, and so do Enter and Space — there is nothing on it to press.
+      if (key === "c" || key === HELP_KEY || PLACE_KEYS.has(key)) return { kind: "cancel" }
+      if (key === "q") return { kind: "open-menu" }
+      if (MENU_UP.has(key)) return { kind: "highlight", delta: -1 }
+      if (MENU_DOWN.has(key)) return { kind: "highlight", delta: 1 }
+      return null
+    }
     default:
       return null
   }
@@ -284,6 +297,8 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (key === "e") return { kind: "explore" }
   // `d` is Debug Mode's old key, kept as a shortcut: Settings, at its Experiments.
   if (key === "d") return { kind: "open-settings", section: "experiments" }
+  // `?` opens the Controls and hotkeys page from the game — a shortcut the page itself names.
+  if (key === HELP_KEY) return { kind: "open-controls" }
   // `s` is the Start Pulse row's key (feedback F41, F47); `p`, its first key, is kept as another way to press it.
   if (key === START_KEY || key === "p") return { kind: "commit" }
   // `y` only ever means something while the Battle Round confirmation is open; outside it is inert.

@@ -174,7 +174,7 @@ export function drawFrameLight(cells: BandCell[], layout: BuildLayout, pulse: Pu
 }
 
 // ---------------------------------------------------------------------------------------------
-// The panel, the top bar, the key help and the status line
+// The panel, the top bar and the bottom line (the Pulse's keys are on the Controls page, feedback F60)
 // ---------------------------------------------------------------------------------------------
 
 /** The top bar's second word: where the player is. */
@@ -188,19 +188,6 @@ export function pulseSubtitle(pulse: PulseFrame): string {
       return `nexus pulse - ${pulse.result.headline.toLowerCase()}`
     default:
       return "nexus pulse"
-  }
-}
-
-/** The key help while a Pulse is on screen: where the keyboard is, and what it does there. */
-export function pulseKeyHelp(pulse: PulseFrame): Readonly<{ label: string; bindings: readonly string[] }> {
-  const running = pulse.phase !== "home"
-  return {
-    label: "PULSE",
-    bindings: [
-      ...(running ? [pulse.paused ? "space resume" : "space pause", "[ ] speed"] : []),
-      "r watch again",
-      "arrows look around",
-    ],
   }
 }
 

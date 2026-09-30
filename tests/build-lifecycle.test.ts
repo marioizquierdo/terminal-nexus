@@ -146,7 +146,10 @@ test("a lone Esc waits a moment for the rest of a key: Esc then [A in the next r
   }, AFTER_ESC_TIMEOUT_MS)
   assert.deepEqual(exits, [])
   assert.ok(!stdout.lastWrite.includes("Back to the game"), "the split arrow was read as Esc")
-  assert.match(stdout.lastWrite, /cursor 18,9/, "the split arrow did not move the cursor up one tile") // from the Nexus
+  // Up one tile from the Nexus, onto open ground: the Explore Map card names the tile (the footer's
+  // position readout said it until feedback F59 took the readout out).
+  assert.match(stdout.lastWrite, /Open ground/, "the split arrow did not move the cursor off the Nexus")
+  assert.match(stdout.lastWrite, /18,9/, "the split arrow did not move the cursor up one tile")
 })
 
 test("a right click never leaves the screen", async () => {
@@ -183,17 +186,23 @@ test("below the floor the screen gates, and resizing back above it restores the 
     output.emit("resize")
   })
   assert.ok(stdout.lastWrite.includes("RESOURCE"), "resizing back did not restore the screen")
-  assert.ok(stdout.lastWrite.includes("view x 0-48"), "the viewport did not come back")
+  // The frame's top border is as wide as the composition, 31 columns plus the viewport's 49 tiles.
+  assert.ok(stdout.lastWrite.includes(BORDER_AT_80), "the viewport did not come back")
 })
+
+/** The top border's run of dashes at 80 columns (a 49-tile viewport) and at 104 (the maximum, 72).
+ *  The footer's position readout said the viewport until feedback F59 took the readout out. */
+const BORDER_AT_80 = `+${"-".repeat(78)}+`
+const BORDER_AT_104 = `+${"-".repeat(101)}+`
 
 test("a bigger terminal shows a bigger viewport, and the frame is cleared when its size changes", async () => {
   const { stdout } = await spikeSession((_input, output) => {
-    assert.ok(output.lastWrite.includes("view x 0-48"), "did not start at the 80-column viewport")
+    assert.ok(output.lastWrite.includes(BORDER_AT_80), "did not start at the 80-column viewport")
     output.columns = 104
     output.rows = 32
     output.emit("resize")
   })
-  assert.ok(stdout.lastWrite.includes("view x 0-71"), "growing the terminal did not grow the viewport")
+  assert.ok(stdout.lastWrite.includes(BORDER_AT_104), "growing the terminal did not grow the viewport")
   assert.ok(
     stdout.written.includes(`${ESC}[2J`),
     "a frame that changed size was drawn over the old one without clearing it",

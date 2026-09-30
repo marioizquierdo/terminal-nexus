@@ -251,7 +251,7 @@ test("s is still Settings inside the game menu, and pressing Start during a Puls
   assert.match(playing.build.state.status.text, /committed/)
 })
 
-test("at the floor the row, the effect line and the overflow key help all fit, the help directly above the row", () => {
+test("at the floor the row and the effect line fit, and no key help overflows into the panel any more", () => {
   const session = ready()
   session.build.handleData("1", session.layout) // arm the Barracks, on the map
   const rows = screenText(session).split("\n")
@@ -259,5 +259,8 @@ test("at the floor the row, the effect line and the overflow key help all fit, t
   const panel = (row: number): string => rows[row]!.slice(layout.panelColumn, layout.panelColumn + layout.panelLimit).trimEnd()
   assert.match(rows.join("\n"), /Trains troopers each Pulse/, "the armed row's line was pushed out by the Start Pulse row")
   assert.equal(panel(startRow(layout)), "[s] Start Pulse")
-  assert.equal(panel(startRow(layout) - 1), "bksp remove  u undo")
+  // The key help that did not fit the footer stacked here until the bottom bar became one contextual
+  // line (feedback F59); every key is on the Controls and hotkeys page now (F60).
+  assert.equal(panel(startRow(layout) - 1), "")
+  assert.doesNotMatch(rows.join("\n"), /bksp remove|u undo/)
 })

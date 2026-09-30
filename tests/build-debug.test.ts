@@ -129,8 +129,9 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   // "restart" beside a value any more (feedback F34).
   assert.match(text, /Build animation\s+<\s+300 ms\s+>/)
   assert.doesNotMatch(text, /> +(now|restart)\b/)
-  // The key help says where the keyboard is, and the highlighted row's question is shown.
-  assert.match(text, /SETTINGS {2}up\/down choose {2}left\/right change/)
+  // The bottom line says what the keys do there (feedback F59), and the highlighted row's question is
+  // shown. Opened by `d` from the game, Esc closes it.
+  assert.match(text, /Left\/right change a value, \[e\] exports them all\. \[esc\] closes\./)
   assert.ok(text.includes("(F9)"), "the build animation's question is not shown")
   const margin = session()
   keys(margin, "d")
@@ -211,7 +212,9 @@ test("scroll margin: the camera follows exactly as a screen opened with that mar
     keys(tuned, ...Array.from({ length: Math.abs(steps) }, () => (steps > 0 ? RIGHT : LEFT)), ESC, TAB, ...moves)
     assert.equal(tuned.build.state.debug.scrollMargin, target)
     assert.deepEqual(tuned.build.state.camera, reference.build.state.camera, `margin ${target}%`)
-    assert.match(screen(tuned), new RegExp(`margin ${target}%`))
+    // The footer's position readout named a margin that was not the owner's 25% until it went (feedback
+    // F59); Settings' own row is where the margin is read now.
+    assert.doesNotMatch(screen(tuned), /margin \d+%/)
   }
   // Widening the margin is felt at once: the camera settles under the new rule before any key moves.
   const side = session()
@@ -265,11 +268,15 @@ test("the restart keeps every flag and starts the plan over, on the menu at Expl
   assert.equal(state.nexusPick, null)
   assert.deepEqual(state.cursor, { x: 18, y: 13 })
   assert.equal(state.debug.armedClickScrolls, false)
-  assert.match(screen(side), /MENU {2}up\/down choose/)
+  // The restart answers on the bottom line; the next key that says nothing brings back the hint for the
+  // highlighted row (feedback F59).
+  assert.match(screen(side), /Build Phase restarted with these settings\./)
+  keys(side, DOWN, UP)
+  assert.match(screen(side), /Explore Map: look around and read what is on each tile\./)
 
-  // The game menu's Restart row does the same by Enter.
+  // The game menu's Restart row does the same by Enter — past Settings and Controls.
   const byEnter = session()
-  keys(byEnter, ESC, DOWN)
+  keys(byEnter, ESC, DOWN, DOWN)
   assert.equal(GAME_MENU_ROWS[byEnter.build.state.overlayHighlight], "restart")
   keys(byEnter, ENTER)
   assert.equal(byEnter.build.state.status.text, "Build Phase restarted with these settings.")
@@ -344,7 +351,12 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
   const cell = cellForTile(byMouse.layout, byMouse.build.state.camera, byMouse.build.state.cursor)
   click(byMouse, cell.x, cell.y)
   assert.equal(byMouse.build.state.highlightHidden, true)
-  keys(byMouse, DOWN)
+  // The placement's answer is the same by either door...
+  assert.deepEqual(byMouse.build.state.status, byKeyboard.build.state.status)
+  // ...and lapses at the next key that says nothing (feedback F59) — the key that only shows the
+  // highlight again here, so the keyboard and the driver below each walk Up and back Down to match.
+  keys(byMouse, DOWN, UP, DOWN)
+  keys(byKeyboard, UP, DOWN)
 
   const script: readonly BuildCommand[] = [
     { kind: "open-settings", section: "experiments" },
@@ -356,6 +368,8 @@ test("the debug flow by keys, by clicks, and from a driver script is the same st
     { kind: "highlight", delta: 1 },
     { kind: "activate" },
     { kind: "place" },
+    { kind: "highlight", delta: -1 },
+    { kind: "highlight", delta: 1 },
   ]
   const byDriver = session()
   byDriver.build.run(script)

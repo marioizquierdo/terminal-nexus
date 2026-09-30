@@ -99,12 +99,16 @@ export function adjustSetting(settings: Settings, field: PlayerField, step: -1 |
 
 /**
  * The game menu's rows, in order (owner, 2026-09-28: "When pressing [esc] or explicitly opening the
- * main menu, there should be an option for '[s] Settings' along with '[q] Quit'"), `[r] Restart` —
- * starting the Build Phase over with every setting kept, moved here from Settings (feedback F34) — and
- * the way back to the game. `overlayHighlight` indexes this list while the game menu is open.
+ * main menu, there should be an option for '[s] Settings' along with '[q] Quit'"), `[c] Controls and
+ * hotkeys` right after Settings (feedback F60), `[r] Restart` — starting the Build Phase over with
+ * every setting kept, moved here from Settings (feedback F34) — and the way back to the game.
+ * `overlayHighlight` indexes this list while the game menu is open.
  */
-export const GAME_MENU_ROWS = ["settings", "restart", "quit", "back"] as const
+export const GAME_MENU_ROWS = ["settings", "controls", "restart", "quit", "back"] as const
 export type GameMenuRow = (typeof GAME_MENU_ROWS)[number]
+
+/** What the game menu's `[c] Controls and hotkeys` row says under its name. */
+export const CONTROLS_DESCRIPTION = "Keys and mouse"
 
 /** What the game menu's `[r] Restart` row says under its name. */
 export const RESTART_DESCRIPTION = "Start over; the plan is lost."

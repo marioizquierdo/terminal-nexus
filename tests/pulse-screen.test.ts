@@ -65,13 +65,14 @@ test("answering yes turns the screen into the Nexus Pulse, with the keyboard on 
   assert.equal(state.armed, null)
   const text = screenText(played)
   assert.match(text, /TERMINAL NEXUS nexus pulse/)
-  assert.match(text, /^\| NEXUS PULSE 1 +\d:\d\d +\|/m)
+  assert.match(text, /^\| NEXUS PULSE 1 +\d:\d\d +[|+]/m)
   assert.match(text, /^\| time left {2}1x/m)
   assert.match(text, /YOU {3}5 \[#+\]/)
   assert.match(text, /RAID {2}7 \[#+\]/)
   assert.match(text, /\[space\] Pause/)
   assert.match(text, /\[r\] Watch again/)
-  assert.match(text, /PULSE {2}space pause {2}\[ \] speed {2}r watch again {2}arrows look around/)
+  // The bottom bar's one line is the Pulse's own (feedback F59); its keys are on the Controls page.
+  assert.doesNotMatch(text, /space pause {2}\[ \] speed/)
   assert.match(text, /Nexus Pulse - 5 of yours against 7 of the raid\./)
   assert.match(text, /menu \[esc\]/)
   // The Build Phase's menu is gone: nothing left to build, nothing to pick.
@@ -112,7 +113,7 @@ test("the ending says what is happening in words at every moment: the last secon
   at(played, moments.warnMs + 40)
   const final = screenText(played)
   assert.match(final, /TERMINAL NEXUS nexus pulse\b/)
-  assert.match(final, /^\| NEXUS PULSE 1 +0:0[123] +\|/m)
+  assert.match(final, /^\| NEXUS PULSE 1 +0:0[123] +[|+]/m)
   assert.match(final, /The Pulse is about to end\./)
   assert.doesNotMatch(final, /PULSE ENDING|hold your fire/)
 
@@ -150,7 +151,7 @@ test("the timer counts down the seconds left to the last shot, and its last seco
   const stop = Math.ceil(moments.stopMs / 1000)
   const clock = (ms: number): string => {
     at(played, ms)
-    return /^\| NEXUS PULSE 1 +(\d:\d\d) +\|/m.exec(screenText(played))?.[1] ?? "none"
+    return /^\| NEXUS PULSE 1 +(\d:\d\d) +[|+]/m.exec(screenText(played))?.[1] ?? "none"
   }
   const m = (seconds: number): string => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`
   assert.equal(clock(0), m(stop))
@@ -198,7 +199,7 @@ test("at 80x24 the result's words are never cut off, whichever way the Pulse end
     const statusRows = lines.filter((line) => /^\| (VICTORY|DEFEAT|DRAW|TIME'S UP) - /.test(line))
     assert.equal(statusRows.length, 1, `${name}: the status line is missing`)
     assert.match(statusRows[0]!, /came home\. +\|$/, `${name}: the status line is cut off: ${statusRows[0]}`)
-    const first = lines.findIndex((line) => /^\| (VICTORY|DEFEAT|DRAW|TIME'S UP) +[|]/.test(line))
+    const first = lines.findIndex((line) => /^\| (VICTORY|DEFEAT|DRAW|TIME'S UP) +[|+]/.test(line))
     const last = lines.findIndex((line) => line.includes("[r] Watch again"))
     assert.ok(first >= 0 && last > first, `${name}: the result panel is not on screen`)
     for (const row of lines.slice(first, last + 1)) {

@@ -161,6 +161,16 @@ export type BuildCommand =
    *  view. Up/Down and the wheel move the highlight a line at a time. */
   | Readonly<{ kind: "export-select"; line: number }>
   /**
+   * The Controls and hotkeys page (owner, 2026-09-30, feedback F60: "an option for 'Controls and
+   * hotkeys' that opens a section that explains how to use the keyboard, hotkeys and mouse clicks"):
+   * `c` or its row in the game menu, which Esc then goes back to, or `?` from the game, which Esc
+   * closes. Opens over nothing but the game menu.
+   */
+  | Readonly<{ kind: "open-controls" }>
+  /** A click on the Controls page's scroll bar: highlight line `line` of the page (an index over its
+   *  key lines, headings left out), bringing it into view — the export's `export-select` for it. */
+  | Readonly<{ kind: "controls-select"; line: number }>
+  /**
    * A Nexus Pulse playback control — Space, `[`, `]`, `.`, `,` and `r` while a Pulse is on screen, or a
    * click on the panel's control rows (gate 6A): the same vocabulary `grid watch` has, one keymap across
    * both. The reducer has nothing to change for it — the Pulse's clock is the presenter's, never the
@@ -214,9 +224,10 @@ export type MenuEntry =
   | Readonly<{ kind: "start" }>
 
 /** The popups this screen has — one overlay shape for all of them (`src/build/overlay.ts`): the Nexus
- *  powers, the Battle Round confirmation, the game menu (Settings, Restart, Quit), Settings, the export,
- *  and a message — `BuildState.message`, a title and text with nothing to choose. */
-export type Overlay = "nexus-powers" | "confirm-commit" | "menu" | "settings" | "export" | "message"
+ *  powers, the Battle Round confirmation, the game menu (Settings, Controls, Restart, Quit), Settings,
+ *  the export, a message — `BuildState.message`, a title and text with nothing to choose — and the
+ *  Controls and hotkeys page (feedback F60). */
+export type Overlay = "nexus-powers" | "confirm-commit" | "menu" | "settings" | "export" | "message" | "controls"
 
 /**
  * A message popup's words (feedback F34, owner 2026-09-29: "This popup does not have an action, it's

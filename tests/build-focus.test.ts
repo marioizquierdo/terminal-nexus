@@ -29,6 +29,7 @@ import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import type { BuildFlash } from "../src/view/build.ts"
+import { hint } from "../src/build/help.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 import { tilesOf } from "../src/grid/coords.ts"
 
@@ -129,9 +130,9 @@ test("the top bar and the bottom bar run the whole width — the divider stops a
     const line = (x: number, y: number): boolean =>
       ["|", "+", "│", "┼", "├", "┤"].includes(cellAt(frame, x, y).glyph) || cellAt(frame, x, y).style.inverse === true
     assert.ok(!line(layout.dividerColumn, headerRow), "the divider crosses the top bar")
-    for (let row = layout.footerRow; row < layout.footerRow + 3; row += 1) {
-      assert.ok(!line(layout.dividerColumn, row), `the divider crosses the bottom bar at ${row}`)
-    }
+    // The bottom bar is one row since feedback F59, directly above the frame's bottom border.
+    assert.ok(!line(layout.dividerColumn, layout.footerRow), "the divider crosses the bottom bar")
+    assert.equal(layout.footerRow, layout.offset.row + layout.composition.height - 2)
   }
 })
 
@@ -146,7 +147,10 @@ test("a Grid shorter than the panel still closes directly under its last row", (
     assert.equal(cellAt(frame, x, layout.gridBox.bottom).style.fgRole, "chrome.edge", "the whole map is visible: the map's edge")
   }
   assert.match(lines[menuEntryRow(layout, SPIKE_CATALOG, { kind: "construct", index: 2 })!] as string, /\[3\] Turret/)
-  assert.match(lines[layout.footerRow] as string, /view x 0-19 y 0-9 of 20x10/)
+  // The bottom bar is as narrow as this small Grid's composition: its line keeps whole words and
+  // leaves off the ones that do not fit (feedback F59 took the position readout that stood here).
+  assert.ok(layout.footerLimit < hint(side.context, side.build.state).text.length, "the bar is not narrower than the hint here")
+  assert.match(lines[layout.footerRow] as string, /\| Explore Map: look around and read what is on each tile\. \[enter\] +\|/)
 })
 
 // --- Focus: three plain modes ---------------------------------------------------------------------
@@ -157,7 +161,8 @@ test("the Build Phase opens on the menu, on its first entry, Explore Map, with n
   assert.equal(side.build.state.menuHighlight, EXPLORE_ENTRY)
   assert.ok(barOn(side, side.layout.panelRow + EXPLORE_ROW))
   const { frame, lines } = screen(side)
-  assert.match(lines[side.layout.footerRow + 1] as string, /\| MENU {2}up\/down choose {2}enter\/space select {2}tab grid/)
+  // The bottom line opens on what the highlighted row is for (feedback F59).
+  assert.match(lines[side.layout.footerRow] as string, /\| Explore Map: look around and read what is on each tile\. \[enter\] opens it\./)
   const cursor = cellForTile(side.layout, side.build.state.camera, side.build.state.cursor)
   assert.notEqual(cellAt(frame, cursor.x, cursor.y).style.inverse, true, "a cursor is drawn with the menu focused")
 })
@@ -171,7 +176,8 @@ test("[e] and Enter on the first entry arrive in Explore Map: its row turns acti
     assert.equal(side.build.state.exploreMap, true, `${JSON.stringify(sequence)} did not open Explore Map`)
     assert.equal(side.build.state.origin, "menu")
     const { frame, lines } = screen(side)
-    assert.match(lines[side.layout.footerRow + 1] as string, /\| EXPLORE MAP {2}arrows move {2}e\/esc back {2}shift/)
+    assert.match(lines[side.layout.footerRow] as string, /\| Explore Map\b/)
+    assert.equal(hint(side.context, side.build.state).text, "Explore Map: arrows move, the panel shows what is here. [esc] goes back.")
     // Its own row is its header, in the active style every row shares (feedback F32): `>`, the
     // hotkey's colour, the name underlined, no bar — and no "[esc]" of its own.
     const header = lines[side.layout.panelRow] as string
@@ -223,7 +229,7 @@ test("[e] is a toggle, and Esc and a click on its row are the same 'back': to wh
     else keys(fromMap, ...close)
     assert.equal(fromMap.build.state.exploreMap, false)
     assert.equal(fromMap.build.state.focus, "grid", `${close[0]} from the map left the map`)
-    assert.match(screen(fromMap).lines[fromMap.layout.footerRow + 1] as string, /\| MAP {2}arrows move/)
+    assert.match(screen(fromMap).lines[fromMap.layout.footerRow] as string, /\| Arrows move the cursor, \[enter\] explores here/)
   }
   // Enter or Space with Explore Map already open does nothing more.
   const side = session()
@@ -241,7 +247,7 @@ test("Tab and a second Right arrive in plain navigation: the bare cursor, the me
     assert.equal(side.build.state.armed, null)
     assert.equal(side.build.state.exploreMap, false, `${JSON.stringify(sequence)} opened Explore Map`)
     const { frame, lines, text } = screen(side)
-    assert.match(lines[side.layout.footerRow + 1] as string, /\| MAP {2}arrows move {2}enter\/space explore {2}tab\/esc menu/)
+    assert.match(lines[side.layout.footerRow] as string, /\| Arrows move the cursor, \[enter\] explores here, a number arms a building\./)
     assert.match(text, /\[1\] Barracks/)
     const cursor = cellForTile(side.layout, side.build.state.camera, side.build.state.cursor)
     assert.equal(cellAt(frame, cursor.x, cursor.y).style.inverse, true, "the cursor is not drawn")
@@ -261,12 +267,14 @@ test("placing: the armed row is marked armed, not with the keyboard's bar; leavi
   // Armed is `>` and the name underlined in the hotkey's colour — never the bar, which means "the
   // keyboard is here, not chosen yet" (feedback F22).
   const { frame, lines } = screen(side)
-  assert.match(lines[barracksRow(side)] as string, /^\s*\| > \[1\] Barracks +40\|/)
+  assert.match(lines[barracksRow(side)] as string, /^\s*\| > \[1\] Barracks +40[|+]/)
   assert.ok(!barOn(side, barracksRow(side)), "the armed row is drawn with the keyboard's bar")
   const name = cellAt(frame, side.layout.panelColumn + 6, barracksRow(side)).style
   assert.equal(name.underline, true)
   assert.equal(name.bold, true)
-  assert.match(lines[side.layout.footerRow + 1] as string, /\| PLACE {2}arrows move/)
+  // A command that says nothing lets whatever arming said lapse; the bottom line then says how to place.
+  side.build.run([{ kind: "focus", target: "grid" }])
+  assert.match(screen(side).lines[side.layout.footerRow] as string, /\| Place the Barracks: arrows move it, \[enter\] places it, \[esc\] goes back\./)
   keys(side, TAB)
   assert.equal(side.build.state.focus, "menu")
   assert.equal(side.build.state.armed, null, "a structure stayed armed with the keyboard on the menu")
@@ -434,13 +442,13 @@ test("a click on a building's row arms it at once, whatever had focus, and its g
   assert.equal(side.build.state.focus, "grid")
   assert.equal(side.build.state.exploreMap, false, "a click on the map from the menu hid the menu")
   assert.match(screen(side).text, /\[1\] Barracks/)
-  assert.match(screen(side).lines[side.layout.footerRow + 1] as string, /\| MAP {2}arrows move {2}enter\/space explore/)
+  assert.match(screen(side).lines[side.layout.footerRow] as string, /\| Arrows move the cursor, \[enter\] explores here/)
   clickEntry(side, barracksRow(side))
   assert.equal(side.build.state.armed, 0, "the click only highlighted the row")
   assert.equal(side.build.state.focus, "grid")
   assert.deepEqual(side.build.state.cursor, { x: 30, y: 14 }, "arming by click moved the cursor off the map spot")
   assert.match(screen(side).lines[barracksRow(side)] as string, /> \[1\] Barracks/)
-  assert.match(screen(side).lines[side.layout.footerRow + 1] as string, /\| PLACE/)
+  assert.match(hint(side.context, side.build.state).text, /^Place the Barracks:/)
 
   // Another row while placing: re-armed at once, still where the player is pointing.
   clickEntry(side, menuEntryRow(side.layout, SPIKE_CATALOG, { kind: "construct", index: 2 }) as number)
@@ -749,7 +757,7 @@ test(`nothing within ${ARM_SEARCH_TILES} tiles: one tile right and down, drawn a
   const ghostTile = cellForTile(layout, build.state.camera, build.state.cursor)
   const drawn = () => cellAt(screen(side).frame, ghostTile.x, ghostTile.y).glyph
   assert.notEqual(drawn(), "x", "the ghost was drawn as the refusal's x")
-  assert.match(screen(side).lines[layout.footerRow + 2] as string, /no room within 12 tiles/)
+  assert.match(screen(side).lines[layout.footerRow] as string, /no room within 12 tiles/)
   // Moving: the normal refusal drawing.
   keys(side, RIGHT, LEFT)
   assert.equal(build.state.armGhost, false)
@@ -793,8 +801,11 @@ test("a building armed on the map goes back to the map after a placement: plain 
   assert.equal(side.build.state.armed, null)
   assert.equal(side.build.state.exploreMap, false)
   assert.deepEqual(side.build.state.cursor, { x: 18, y: 13 }, "the cursor left the building just placed")
-  assert.match(screen(side).lines[side.layout.footerRow + 1] as string, /\| MAP {2}arrows move/)
+  // The placement's answer, then — at the next key that says nothing — the map's hint (feedback F59).
+  assert.match(screen(side).lines[side.layout.footerRow] as string, /\| Barracks placed \(resources: 60\) - \[u\] undo/)
   assert.match(screen(side).text, /\[1\] Barracks/)
+  keys(side, RIGHT)
+  assert.match(screen(side).lines[side.layout.footerRow] as string, /\| Arrows move the cursor, \[enter\] explores here/)
   // From Explore Map too: a digit there is the map's.
   const exploring = session()
   keys(exploring, TAB, "e", "3", ENTER)

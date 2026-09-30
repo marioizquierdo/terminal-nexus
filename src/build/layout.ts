@@ -63,10 +63,11 @@ export type BuildLayout = Readonly<{
    *  exactly what Esc sends. `escHint` gives the columns a given label covers. It replaced gate 5G's
    *  `[d] debug`, then 5J's fixed `[esc] menu`. */
   escHint: Readonly<{ row: number; to: number }>
-  /** How many glyphs fit on one footer row, which runs the full width beneath both panes. */
+  /** How many glyphs fit on the bottom bar's line, which runs the full width beneath both panes. */
   footerLimit: number
-  /** Frame row the bottom bar's three lines start at — the first row below the Grid's own bottom
-   *  rule: the position readout, then the key help, then the status line. */
+  /** Frame row of the bottom bar's one line — the first row below the Grid's own bottom rule: the
+   *  contextual line, the last command's answer or a hint for where the keyboard is (feedback F59,
+   *  `src/build/help.ts`). Three lines until then: a position readout, the key help, the status line. */
   footerRow: number
   /** Frame row the panel's first line is drawn on — the first row under the rule that closes the
    *  Grid's top, so the panel and the Grid start together. */

@@ -1,6 +1,6 @@
 // The Build Phase's popups — one shape for all of them: the Nexus powers, the Battle Round
-// confirmation, the game menu (Settings, Restart, Quit), Settings with its Experiments, the export, and a
-// message. Extracted when there were three real uses (AGENTS.md: "extract a framework only after two
+// confirmation, the game menu (Settings, Controls, Restart, Quit), Settings with its Experiments, the
+// export, a message, and the Controls and hotkeys page (feedback F60). Extracted when there were three real uses (AGENTS.md: "extract a framework only after two
 // real uses reveal the boundary"); Debug Mode, the fourth — Settings since the owner's 2026-09-28
 // direction — added the one row the first three had no use for: a setting whose value Left and Right
 // change. The message (feedback F34, 2026-09-29) is the shape with nothing to choose: a title and text.
@@ -18,7 +18,9 @@
 import { DEBUG_FIELDS, fieldSpec, formatDebugValue } from "./debug.ts"
 import type { BuildLayout } from "./layout.ts"
 import { START_KEY } from "./layout.ts"
+import { CONTROLS_TITLE, controlsPage } from "./help.ts"
 import {
+  CONTROLS_DESCRIPTION,
   GAME_MENU_ROWS,
   PLAYER_FIELDS,
   RESTART_DESCRIPTION,
@@ -72,6 +74,10 @@ export type OverlayRow =
   /** A line across the popup, border to border: what is above it is apart from what is below — in
    *  Settings, the list from what its highlighted row is for (feedback F35). */
   | Readonly<{ kind: "rule" }>
+  /** A line of the Controls page (feedback F60): the keys, in the hotkey's colour, in a column of their
+   *  own (`CONTROLS_KEYS_WIDTH`), and what they do beside them. One line, so it scrolls like a line of
+   *  the export, with the same highlight Up/Down move. */
+  | Readonly<{ kind: "keys"; keys: string; text: string; highlighted?: boolean }>
 
 /**
  * A popup's one run of one-line rows that scrolls when the popup is taller than the Grid pane can
@@ -179,8 +185,9 @@ function settingsSpec(state: BuildState): OverlaySpec {
   }
 }
 
-/** The game menu: Settings, Restart, Quit, and the way back (owner, 2026-09-28; Restart since
- *  feedback F34). Every row is an option, and the highlight is `GAME_MENU_ROWS`'s index. */
+/** The game menu: Settings, Controls and hotkeys, Restart, Quit, and the way back (owner, 2026-09-28;
+ *  Restart since feedback F34, Controls since F60). Every row is an option, and the highlight is
+ *  `GAME_MENU_ROWS`'s index. */
 function menuSpec(state: BuildState): OverlaySpec {
   const on = (row: (typeof GAME_MENU_ROWS)[number]): boolean => GAME_MENU_ROWS[state.overlayHighlight] === row
   return {
@@ -194,6 +201,14 @@ function menuSpec(state: BuildState): OverlaySpec {
         command: { kind: "open-settings", section: "settings" },
         highlighted: on("settings"),
         description: "Colours, experiments, export",
+      },
+      {
+        kind: "option",
+        hotkey: "c",
+        label: "Controls and hotkeys",
+        command: { kind: "open-controls" },
+        highlighted: on("controls"),
+        description: CONTROLS_DESCRIPTION,
       },
       {
         kind: "option",
@@ -235,6 +250,41 @@ function exportSpec(context: BuildContext, state: BuildState): OverlaySpec {
     rows,
     scroll: { from, to, highlight: from + state.overlayHighlight, select: (line) => ({ kind: "export-select", line }) },
   }
+}
+
+/**
+ * The Controls and hotkeys page (owner, 2026-09-30, feedback F60): the table in `src/build/help.ts`,
+ * each section's heading then its lines, a blank line between sections — one scrolling list, the
+ * export's kind: a highlight Up/Down (and the wheel) move over the key lines, the headings scrolling
+ * with them and never highlighted, the scroll bar in the right border. Nothing to choose, so no option
+ * rows: Esc goes back, as the top bar's `close [esc]` says.
+ */
+function controlsSpec(state: BuildState): OverlaySpec {
+  const rows: OverlayRow[] = []
+  /** Where each key line sits in `rows` — what `overlayHighlight` indexes. */
+  const lineRows: number[] = []
+  controlsPage(state.debug.jumpStep).forEach((section, index) => {
+    if (index > 0) rows.push({ kind: "blank" })
+    rows.push({ kind: "heading", text: section.heading })
+    for (const line of section.lines) {
+      const highlighted = lineRows.length === state.overlayHighlight
+      lineRows.push(rows.length)
+      rows.push({ kind: "keys", keys: line.keys, text: line.text, ...(highlighted ? { highlighted: true } : {}) })
+    }
+  })
+  const line = lineRows[state.overlayHighlight] ?? lineRows[0] ?? 0
+  // A section's heading is kept in view with its first line, as Settings keeps its headings.
+  const highlight = rows[line - 1]?.kind === "heading" ? line - 1 : line
+  // A click on the scroll bar highlights the key line at the row it brings into view, or the one above
+  // it when that row is a heading or a blank.
+  const select = (index: number): BuildCommand => {
+    let position = 0
+    lineRows.forEach((row, candidate) => {
+      if (row <= index) position = candidate
+    })
+    return { kind: "controls-select", line: position }
+  }
+  return { title: CONTROLS_TITLE, rows, scroll: { from: 0, to: rows.length, highlight, select } }
 }
 
 /**
@@ -310,6 +360,8 @@ export function overlaySpec(context: BuildContext, state: BuildState): OverlaySp
       return exportSpec(context, state)
     case "message":
       return state.message === null ? null : messageSpec(state.message)
+    case "controls":
+      return controlsSpec(state)
     default:
       return null
   }
