@@ -78,6 +78,13 @@ reads an exported block back starts the game with it (`./bin/terminal-nexus.ts -
 "<text>"`, or `node scripts/playtest.mjs --settings "<text>"`, or `#settings=<url-encoded text>` on
 the browser page) to see what he saw. Omit the section if there are none.
 
+**Additional changes** — what rode along that is not the main change: a small follow-up the owner asked
+for on the same pull request, an opportunistic refactor, a fix found along the way (owner, 2026-09-30: "it
+seems common to add additional opportunistic refactor and smaller fixes along the way when implementing
+feedback from a PR revision"). A few one-line bullets, each saying what a player or a developer notices,
+with "(from your notes)" where he asked for it. Keep **Changes** for the change itself so it stays short;
+put anything he should feel in **Decisions** as usual. Omit if nothing rode along.
+
 **Known issues** — omit if none.
 
 **Checks** — one line, e.g. `Type check clean · Node 414/414 · Bun 413/413 · repo checks pass`.
@@ -125,6 +132,9 @@ would bring, not the last round of work on the branch (owner, 2026-09-29: "descr
 main, which has a larger umbrella vs the last iteration"). A long-lived PR gathers several rounds;
 its description is still one "before → after" from main. Re-pin the screenshot URLs to the new head
 commit. No "Update:" sections, no changelog of the PR's own history.
+
+When a revision adds work beside the main change — a follow-up from his notes, a refactor, small
+fixes — list it under **Additional changes** rather than stretching **Changes**.
 
 Leave out what is minor and temporary — a placeholder number, a stand-in for content a later
 milestone brings (the owner, of a placeholder Nexus power's value: "that is minor and temporal").

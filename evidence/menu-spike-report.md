@@ -507,14 +507,14 @@ waits for his word.
 
 ---
 
-# The follow-up — the owner's notes at the merge (2026-09-30, feedback F82-F86)
+# The follow-up — the owner's notes at the end of the spike (2026-09-30, feedback F82-F86)
 
 ## U1. Question, artifact, exclusions
 
 **Question:** do the three notes Mario sent when he merged the spike read as he asked — every popup
 breathing and the Battle Round screen opening with a highlight; a card as title, subtitle, description
 and numbers; Settings in sections over one list of settings with a tier each? **Artifact:** the same
-Build Phase, on a pull request of its own. **Excluded:** card variants by context (he said later), a
+Build Phase, on the same pull request (he had not merged it yet). **Excluded:** card variants by context (he said later), a
 collapsible section, gate 6B.
 
 ## U2. What was built

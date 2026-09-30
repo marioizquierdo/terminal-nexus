@@ -1,19 +1,21 @@
 # The menu spike — the owner's notes at the merge (2026-09-30)
 
-**Document role:** The owner's notes when he merged the menu spike, item by item, with what became of each
+**Document role:** The owner's notes at the end of the menu spike, item by item, with what became of each
 **Status:** WORKING — every item is Built, Scheduled, Open or Contested
 **Updated:** 2026-09-30
 **License:** Apache-2.0
 
-Mario merged the menu spike (pull request 49, rounds 1-3) and sent these notes the same day "for a
-smaller follow-up PR". They continue [`2026-09-30-menu-spike-round-3.md`](2026-09-30-menu-spike-round-3.md)'s
+Mario played the menu spike (pull request 49, rounds 1-3) and sent these notes the same day "for a
+smaller follow-up PR" — then found he had not merged it yet, and asked for them on the same pull
+request, described in an "Additional changes" section. They continue [`2026-09-30-menu-spike-round-3.md`](2026-09-30-menu-spike-round-3.md)'s
 numbering. Status values: **Built**, **Scheduled**, **Open**, **Contested**.
 
 ### F82 — The merge
 
 > fucking As man! this was a really cool one. Merged.
 
-**Noted.** The menu spike's three rounds are merged; this follow-up is a pull request of its own.
+**Noted.** He had not merged it after all ("oh I thought i merged 49 but I didn't. So you can merge the last
+changes and suggestion on that one too"), so these notes are built on the same pull request.
 
 ### F83 — Every popup breathes; the Battle Round screen opens with a double flash
 

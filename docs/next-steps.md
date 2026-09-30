@@ -22,7 +22,7 @@ the cleanup that does not belong to any gate.
 - **One more:** should the player ever read the word "Pulse"? The start screen says Battle Round; the menu
   row and the running screen still say Pulse (Q68). The menu spike did not change the words, since he
   did not ask; his list of actions said "Start next battle round".
-- **Play the menu spike's follow-up** (its own pull request; feedback F82-F86): the Battle Round screen
+- **Play the menu spike's follow-up** (the same pull request; feedback F82-F86): the Battle Round screen
   opening with a double flash and every popup breathing; a card as title, subtitle, description and
   numbers; Settings in sections. Press `d`: **Battle Round flash** (220 ms; off turns it off) and **Flash
   strength** (80%) under Effects, beside **Popup pulse** (2000 ms); the navigation numbers are under
@@ -43,7 +43,7 @@ edit the first paragraph if anything changed):
 Read CLAUDE.md and follow AGENTS.md.
 
 I have played gate 6A (Start Pulse, the Battle Round screen, the Pulse, its ending and Recall) and the
-menu spike with its follow-up, and merged them. Treat this message as my word that gate 6A is accepted
+menu spike with its follow-up (pull request 49), and merged them. Treat this message as my word that gate 6A is accepted
 and that gate 6B is the Active gate. Record that first, as its own commit (the governance ledger, the
 Milestone 6 tracker, AGENTS.md Section 2, docs/next-steps.md). If I paste a settings export, settle
 each Experiment it answers before anything else.

@@ -250,8 +250,8 @@ rewritten, and his settled Experiments moved into `src/build/tuning.ts`. **Round
 F77-F81, with his third export) reworked navigation — taps speed up only by counting, a held key keeps
 the game's own pace, and key presses, repeats and releases are read where the terminal reports them
 (the Key releases Experiment; Q66 answered) — gave the popup scroll bar a textured thumb, and made the
-Battle Round screen breathe; a dedicated navigation session is queued. **Mario merged it** and sent
-notes for a small follow-up (2026-09-30,
+Battle Round screen breathe; a dedicated navigation session is queued. **Mario sent notes at its end**
+for a small follow-up, on the same pull request (2026-09-30,
 [`docs/feedback/2026-09-30-menu-spike-followup.md`](docs/feedback/2026-09-30-menu-spike-followup.md),
 F82-F86, canon 2.30): every popup breathes and the Battle Round screen opens with a double flash; a card
 is a title, a subtitle, a description and its numbers; Settings is in titled sections, and every setting

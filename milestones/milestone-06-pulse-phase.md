@@ -122,9 +122,9 @@ Milestone 1's and did not change. 6B and 6C wait for the owner's word.
 > - [x] a dedicated navigation session queued in `docs/next-steps.md` (F79);
 > - [x] tests, canon, pictures, the playable page and the pull request.
 
-> **The menu spike's follow-up — the owner's notes at the merge, 2026-09-30**
+> **The menu spike's follow-up — the owner's notes at its end, 2026-09-30**
 > ([`../docs/feedback/2026-09-30-menu-spike-followup.md`](../docs/feedback/2026-09-30-menu-spike-followup.md),
-> F82-F86, a pull request of its own). Definition of done:
+> F82-F86, on the same pull request). Definition of done:
 >
 > - [x] every popup's border breathes gently; the Battle Round screen opens with a double flash of wider
 >       contrast, then breathes like the rest — one popup-border effect with an opening and a steady
