@@ -279,12 +279,7 @@ export function nexusTile(context: Pick<BuildContext, "registry" | "standing">):
  * hide until someone counted.
  */
 export function spent(context: BuildContext, state: BuildState): number {
-  let total = 0
-  for (const placement of state.planned) {
-    const item = context.catalog.find((row) => row.contentId === placement.contentId)
-    total += item?.cost ?? 0
-  }
-  return total
+  return state.planned.reduce((total, placement) => total + costOf(context, placement.contentId), 0)
 }
 
 /** What is left to spend. Never negative, because nothing can be placed that costs more than this. */
@@ -536,15 +531,21 @@ export function shortName(context: BuildContext, contentId: string): string {
   return context.registry.get(contentId).short
 }
 
+/** The menu's row for a content id, or `undefined` for content the menu does not sell (the standing
+ *  structures). The one catalog lookup by content. */
+export function catalogItem(context: Pick<BuildContext, "catalog">, contentId: string): ConstructItem | undefined {
+  return context.catalog.find((row) => row.contentId === contentId)
+}
+
 /** A structure's name as the menu writes it ("Barracks"), for a sentence that starts with it; the
  *  content's short name for anything the menu does not sell. */
-function displayName(context: BuildContext, contentId: string): string {
-  return context.catalog.find((row) => row.contentId === contentId)?.label ?? shortName(context, contentId)
+export function displayName(context: BuildContext, contentId: string): string {
+  return catalogItem(context, contentId)?.label ?? shortName(context, contentId)
 }
 
 /** What a catalog row costs, or 0 for content the catalog does not sell (the standing structures). */
 export function costOf(context: BuildContext, contentId: string): number {
-  return context.catalog.find((row) => row.contentId === contentId)?.cost ?? 0
+  return catalogItem(context, contentId)?.cost ?? 0
 }
 
 /**
@@ -564,7 +565,7 @@ export function legalityAt(
   anchor: Coord,
   remaining?: number,
 ): Legality {
-  const item = context.catalog.find((row) => row.contentId === contentId)
+  const item = catalogItem(context, contentId)
   if (item !== undefined && remaining !== undefined && item.cost > remaining) {
     return { ok: false, reason: `costs ${item.cost}, ${remaining} left` }
   }

@@ -23,6 +23,7 @@ import { status } from "../status.ts"
 import type { ArmedPreview, BuildContext, BuildState } from "./state.ts"
 import {
   WHEEL_TILES,
+  displayName,
   mapMode,
   menuEntries,
   nexusPowers,
@@ -109,8 +110,7 @@ function highlightedItem(context: BuildContext, state: BuildState): ConstructIte
 /** The label of the building a planned placement under the cursor is. */
 function plannedLabel(context: BuildContext, state: BuildState): string {
   const structure = structureAtTile(context, state.planned, state.cursor)
-  if (structure === null) return "building"
-  return context.catalog.find((item) => item.contentId === structure.contentId)?.label ?? context.registry.get(structure.contentId).short
+  return structure === null ? "building" : displayName(context, structure.contentId)
 }
 
 /**
