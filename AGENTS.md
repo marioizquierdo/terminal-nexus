@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.27
+**Canon version:** 2.28
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -239,7 +239,13 @@ request of its own): the reorganisation of the Build Phase menu that 6A's round 
 `[x] Name  >>`; a focus arrow flies from the row to the cursor, which blinks when it lands (both
 Experiments); Left and Right stay on the menu; the menu is one list with `$ 100` on its top line; a
 building being placed shows its card in the panel; the bottom bar is one line of contextual help; and
-the game menu has a Controls and hotkeys page. It does not start 6B.
+the game menu has a Controls and hotkeys page. **Round 2** (2026-09-30,
+[`docs/feedback/2026-09-30-menu-spike-round-2.md`](docs/feedback/2026-09-30-menu-spike-round-2.md),
+F61-F76, with his settings export) polished it: the credits line with the map's resource symbol, the
+active row as `[1] Barracks  >`, a subtler refused flicker, a card reveal, the arrow from the row's own
+place and a see-through cursor for Explore Map, a building that holds the menu until placed or
+cancelled, `x` that never opens the game menu, lists that stop at their ends, `docs/ui-patterns.md`
+rewritten, and his settled Experiments moved into `src/build/tuning.ts`. It does not start 6B.
 
 So the authorised work for a new session is, in order:
 
@@ -312,7 +318,7 @@ deleted, and the renderer must be replaceable without one simulation test changi
   several tiles**, and that matters strategically. A mover tests its whole footprint against its
   mask. Range measures to the nearest occupied tile.
 - The viewport is clamped to between 48 × 16 and 72 × 24 tiles; the cursor drives scrolling at a
-  margin (a share of the view, 25% — the owner's pick; the number is GUIDANCE);
+  margin (a share of the view, 30% — the owner's pick; the number is GUIDANCE);
   there is no minimap — the weight of the Grid pane's sides is the "more Grid" signal (the footer's
   position readout was retired at canon 2.27). 80 × 24 is the floor and the acceptance target; since
   the bottom bar became one line it shows 49 × 18 tiles. **The margin is a follow rule,
@@ -376,28 +382,35 @@ deleted, and the renderer must be replaceable without one simulation test changi
   cheapest spot within 12 tiles (sideways cheaper than up or down) leaving a free tile around it —
   never beside the last building placed; the cursor opens on the Grid Nexus. **Esc, `x` and a right
   click are one cancel** that goes back one level — popup, then placing or Explore Map to where it
-  began, then the map to the menu — and on the menu opens the **game menu** (`[s] Settings`,
-  `[c] Controls and hotkeys`, `[r] Restart`, `[q] Quit`); `q` opens it too, `?` opens the Controls
-  page directly, and only Ctrl+C quits at once. Leaving always asks. **Left and Right on the menu
-  only flicker the row**; the keyboard stays there (canon 2.27). **A menu row that hands the keyboard
-  to the map** (a building armed, Explore Map opened) sends a **focus arrow** to the cursor, which
-  blinks when it lands — presentation, timed in the live loop from a sequence number the reducer
-  records (`BuildState.handoff`); a placement back on the menu flashes its row once.
+  began, then the map to the menu — and on the menu **Esc** opens the **game menu** (`[s] Settings`,
+  `[c] Controls and hotkeys`, `[r] Restart`, `[q] Quit`) while **`x` and a right click do nothing**, so
+  `x x x` always lands on the menu (canon 2.28: two commands, `cancel` and `back`); `q` opens it too,
+  `?` opens the Controls page directly, and only Ctrl+C quits at once. Leaving always asks. No popup
+  has a row that only goes back. **Left and Right on the menu only flicker the row**; the keyboard
+  stays there (canon 2.27). **Every list stops at its ends** — a tap one row, a held arrow ramping with
+  the map cursor's numbers, the fast move to the first or last row. **A menu row that hands the
+  keyboard to the map** sends a **focus arrow** (a building, from its row's own place) or a
+  **see-through cursor** (Explore Map, which first moves the cursor to clear ground) to the cursor,
+  which blinks when it lands — presentation, timed in the live loop from a sequence number the reducer
+  records (`BuildState.handoff`); a placement back on the menu flashes its row once. **A building being
+  placed holds the menu**: other buildings, Explore Map and Start Pulse wait until it is placed or
+  cancelled, and its own digit cancels it.
   **The top bar's right end says what Esc does** — `menu [esc]`, `back [esc]`, `close [esc]` — and a
   click on it is Esc; no popup carries its own `[esc]`. A click scrolls
   the view near its edges, armed or not (gate 5J, reversing Q58). How far a key moves the cursor is
   timed in the input path, and every animation — including the camera's slide and the cursor's
   glide, which interpolate every move — in the view; never the reducer.
-- **The Build Phase panel is one list** (canon 2.27): what is left to spend as `$ 100` on its top
-  line, in the cost column; `[e] Explore Map`, a blank line, `[n] Nexus`, a blank line, every building
-  in catalog order with its cost (no group headings), and `[s] Start Pulse` on its last line — no help
-  text, no radius preview until something has a radius (Q30). **A card replaces the menu** while
-  Explore Map is open (what is under the cursor) or a building is being placed (that building): its
-  header is the row that opened it, drawn active, with a separator under it; `x`, Esc or a click on
-  the panel goes back. **A menu row has two states**: highlighted (the keyboard's bar, only while the
-  menu has focus) and **active** — `[x] Name  >>`, the hotkey colour, underlined — while its action is
-  under way: a building armed, Explore Map open, the Nexus popup or the Battle Round screen open — one
-  style for all. **Every popup is one shape** — a title and rows as data,
+- **The Build Phase panel is one list** (canon 2.27, reordered at 2.28): `[e] Explore Map`, `[n] Nexus`,
+  the credits line (the map's resource-deposit symbol and what is left to spend, `* 130`, in the cost
+  column), every building in catalog order with its cost (no group headings), and `[s] Start Pulse` on
+  its last line — no help text, no radius preview until something has a radius (Q30). **A card
+  replaces the menu** while Explore Map is open (what is under the cursor) or a building is being
+  placed (that building), opening with a short **card reveal**: its header is the row that opened it,
+  drawn active on the first line, with a separator under it; the header's own hotkey, `x`, Esc or a
+  click on the panel goes back. **A menu row has two states**: highlighted (the keyboard's bar, only
+  while the menu has focus) and **active** — `[1] Barracks  >`, its own hotkey, the hotkey colour, one
+  `>`, no underline — while its action is under way: a building armed, Explore Map open, the Nexus popup
+  or the Battle Round screen open — one style for all. A refused key only greys the row's words. **Every popup is one shape** — a title and rows as data,
   options naming the command a click sends, at most one scrolling list with a scroll bar in its right
   border, drawn and hit-tested from the same placement; a **message** is the shape with nothing to
   choose, closed by Esc or a click outside — and is
@@ -475,20 +488,22 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - **Ask Mario to feel a choice through an Experiment** (owner direction, 2026-09-26 and 2026-09-28:
   "The agent should feel free to add experimental flags anytime they need particular feedback from
   me, so I can try with and without them, adjust speed settings, etc until it feels right").
-  **Settings** (Esc, then `s`, in the Build Phase) holds the player's own saved settings and, at its
+  **Settings** (Esc on the menu, then `s`, in the Build Phase) holds the player's own saved settings and, at its
   bottom, **Experiments**: live-editable flags, some applied at once, some on restart
   (`src/build/debug.ts` is the list); `d` jumps straight to them. When a session has a fork the owner
   should feel rather than read about — a timing, a look, a movement rule, or whether a new feature
   should exist at all — add an Experiment defaulting to the recommended answer and **ask him in plain
-  words to flip it**: "press `d`, set Armed click scrolls to off, and tell me which you prefer." Then
+  words to flip it**: "press `d`, set Card reveal to 400 ms, and tell me which you prefer." Then
   **ask him to paste the export into the pull request**: Settings' **Export settings** (`e`) copies
   every setting and experiment as `name = value` text, changed experiments first; reproduce what he
   had with `--settings "<pasted text>"` (`terminal-nexus --spike` or `scripts/playtest.mjs`) or
   `#settings=` on the browser page. A new behaviour whose worth is in doubt ships with an on/off
   Experiment, so he can switch it off without a rebuild. This is Section 6's "make it observable" in
   its preferred form, ahead of a command-line flag or a registered question. Every Experiment names
-  the question it serves and is **normally deleted before its pull request is accepted**; a few stay
-  longer or graduate into real Settings. Settings is only in the Build Phase today; a screen without
+  the question it serves and is **normally deleted before its pull request is accepted**: his value
+  becomes a **tuned value** in `src/build/tuning.ts`, with who chose it and when (canon 2.28, F76); a
+  few stay longer — a number that depends on the player's keyboard, placeholder data — or graduate
+  into real Settings. Settings is only in the Build Phase today; a screen without
   it falls back to a command-line flag.
 - **Size the pull request's Demo to the change** (owner, 2026-09-28: "we have to be a little more
   smart about how many tokens we spend building a playable demo"): a code block or nothing for a
