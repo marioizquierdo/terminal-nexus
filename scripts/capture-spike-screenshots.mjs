@@ -292,6 +292,29 @@ function handoffGif(name, { before, hand, expect, cols = 80, rows = 24, capabili
 }
 
 /**
+ * The Battle Round screen breathing (the menu spike's round 3, feedback F80): `keys` opens it, and the
+ * GIF is one breath — the "Battle Round pulse" Experiment's length — every `stepMs`, in real time and
+ * looping, as `BuildAnimation` hands it to the view. Primed long before, so Start Pulse's pressed flash
+ * is over and only the border moves.
+ */
+function breathGif(name, { keys, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", glyphPack = "ascii", stepMs = 100 }) {
+  if (only !== null && only !== name) return
+  const run = runBuildPlaytest({ steps: parseKeyScript(keys), columns: cols, rows, settings: { ...DEFAULT_SETTINGS, capability, theme, glyphPack } })
+  const to = run.frames[run.frames.length - 1]
+  if (!frameToText(to.frame).includes(expect)) throw new Error(`${name}: expected "${expect}" after "${keys}", got:\n${frameToText(to.frame)}`)
+  const options = { capability }
+  const animation = settledAnimation(to.state, options)
+  const lengthMs = to.state.experiments.battleRoundPulseMs
+  const shots = []
+  for (let now = 0; now < lengthMs; now += stepMs) {
+    const live = animation.frame(to.state, now, options)
+    const frame = composeBuildFrame({ context: run.context, state: to.state, layout: run.layout, glyphPack, ...livePresentation(live) }, capability)
+    shots.push({ frame, caption: `Battle Round pulse: ${now} ms of a ${lengthMs} ms breath`, delayMs: stepMs })
+  }
+  report(renderFramesGif({ shots, capability, theme, targetPath: join(outputDirectory, `${name}.gif`), scratchDir: scratch, scale: 1 }))
+}
+
+/**
  * The same placement as a contact sheet: a window of the Grid around the building at each of
  * `timesMs` after placing, side by side with the time over each — the whole run in one still, which a
  * phone shows without playing anything. The window is `span` tiles either side of the placement.
@@ -604,6 +627,8 @@ scripted(
   "Start Pulse opens Battle Round 1: what it announces, and one row, [s] Start. Esc goes back",
   { keys: `${PICK_FIRST_POWER} s`, expect: "Battle Round 1" },
 )
+
+breathGif("build-battle-round-breath", { keys: `${PICK_FIRST_POWER} s`, expect: "Battle Round 1", glyphPack: "unicode" })
 
 // Gate 6A: the Nexus Pulse on the Build Phase's own screen. Accepting the question no longer stops at
 // "committed" - it starts the Pulse - so the committed panel gate 5D drew (`build-nexus-committed.png`,
