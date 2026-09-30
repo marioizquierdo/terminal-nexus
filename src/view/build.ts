@@ -981,12 +981,24 @@ function drawFocusArrow(cells: BandCell[], input: BuildCompositionInput, pack: G
   const head = Math.min(path.length - 1, Math.floor(easeOutCubic(flight.progress) * path.length))
   const glyphs = arrowGlyphs(pack, dx, dy)
   for (let back = Math.min(ARROW_TRAIL, head); back >= 0; back -= 1) {
-    const at = path[head - back] as Coord
+    const index = head - back
+    const at = path[index] as Coord
     const dim = back > ARROW_TRAIL_BRIGHT
     const style = { fgRole: "chrome.hotkey" as const, bold: !dim, dim }
+    // Each trail cell is drawn as the step that reached it — level, upright or diagonal — so a shallow
+    // line reads as a line (`\--\--`) rather than a staircase of one slanted glyph.
+    const previous = path[index - 1]
+    const trail = previous === undefined ? glyphs.trail : stepGlyph(pack, at.x - previous.x, at.y - previous.y)
     if (covered(at.x, at.y)) cells.push({ band: BANDS.chrome, x: at.x, y: at.y, style })
-    else cells.push({ band: BANDS.chrome, x: at.x, y: at.y, cell: { glyph: back === 0 ? glyphs.head : glyphs.trail, style } })
+    else cells.push({ band: BANDS.chrome, x: at.x, y: at.y, cell: { glyph: back === 0 ? glyphs.head : trail, style } })
   }
+}
+
+/** The trail glyph for one step of the path, from the cell before to this one. */
+function stepGlyph(pack: GlyphPack, dx: number, dy: number): string {
+  if (dy === 0) return chromeGlyph(pack, "trailLevel")
+  if (dx === 0) return chromeGlyph(pack, "trailUpright")
+  return chromeGlyph(pack, dx > 0 === dy > 0 ? "trailFall" : "trailRise")
 }
 
 /**
