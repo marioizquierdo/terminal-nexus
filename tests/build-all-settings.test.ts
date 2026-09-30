@@ -75,21 +75,21 @@ test("a value reads the same wherever it is: the live Experiment, the saved sett
   assert.equal(formatValue("tapsToSpeedUp", 3), "3 taps")
   assert.equal(formatValue("reducedMotion", true), "on")
   assert.equal(formatValue("capability", "color16"), "16")
-  assert.equal(formatValue("raid", "probe"), "probe")
+  assert.equal(formatValue("incoming", "hidden"), "hidden")
 })
 
 // --- Sections in Settings ------------------------------------------------------------------------------
 
-test("Settings lists its rows section by section: Display, Keyboard navigation, Effects, the placeholder Pulse, then Export", () => {
+test("Settings lists its rows section by section: Display, Keyboard navigation, Effects, the mission, then Export", () => {
   assert.deepEqual(
     SECTIONS.map((entry) => entry.section),
-    ["display", "keyboard", "effects", "pulse"],
+    ["display", "keyboard", "effects", "mission"],
   )
   // Rows run section by section, never back to an earlier one, and Export is last, in no section.
   const order = SETTINGS_ROWS.map((_, row) => sectionOfRow(row))
   assert.equal(order.at(-1), null)
   const seen = order.slice(0, -1).filter((section, index, all) => section !== all[index - 1])
-  assert.deepEqual(seen, ["display", "keyboard", "effects", "pulse"])
+  assert.deepEqual(seen, ["display", "keyboard", "effects", "mission"])
   // Display is the player's own four; the rest are Experiments today.
   assert.deepEqual(
     SHOWN_SETTINGS.filter((spec) => spec.section === "display").map((spec) => spec.field),
@@ -100,12 +100,12 @@ test("Settings lists its rows section by section: Display, Keyboard navigation, 
   assert.equal(sectionHeading("display"), "DISPLAY - saved")
   assert.equal(sectionHeading("keyboard"), "KEYBOARD NAVIGATION - experiments")
   assert.equal(sectionHeading("effects"), "EFFECTS - experiments")
-  assert.equal(sectionHeading("pulse"), "PLACEHOLDER PULSE - experiments")
-  // `d` opens at Keyboard navigation's first row; during a Pulse, at the placeholder Pulse's first.
+  assert.equal(sectionHeading("mission"), "THE MISSION - experiments")
+  // `d` opens at Keyboard navigation's first row; during a Pulse, at the mission's first.
   assert.equal(sectionOfRow(FIRST_EXPERIMENT_ROW), "keyboard")
   assert.equal(FIRST_EXPERIMENT_ROW, settingRow((EXPERIMENT_FIELDS[0] as (typeof EXPERIMENT_FIELDS)[number]).field))
-  assert.equal(sectionOfRow(FIRST_PULSE_EXPERIMENT_ROW), "pulse")
-  assert.equal(FIRST_PULSE_EXPERIMENT_ROW, settingRow("raid"))
+  assert.equal(sectionOfRow(FIRST_PULSE_EXPERIMENT_ROW), "mission")
+  assert.equal(FIRST_PULSE_EXPERIMENT_ROW, settingRow("nextRound"))
 })
 
 test("on screen: each section under its heading, a blank line before each, and Up/Down never land on either", () => {

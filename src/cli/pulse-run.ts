@@ -106,7 +106,8 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
         round: round(1),
         carried: null,
         field: [],
-        ...(mission.roundText === undefined ? {} : { roundText: mission.roundText }),
+        // The mission's own words for its rounds, or none — so every round says the default.
+        roundText: mission.roundText ?? {},
       }
       return { ...context, incoming: forecast(context, 1) }
     },

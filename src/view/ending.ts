@@ -288,7 +288,8 @@ type Round = Readonly<{
  */
 export function missionResultOf(fight: PulseResult, round: Round | undefined): PulseResult {
   if (round === undefined) return fight
-  const last = `Round ${round.round} of ${round.of}: ${fight.headline.toLowerCase()}.`
+  // What the fight itself was, kept under a mission's verdict: the verdict says the mission, this says why.
+  const last = `Round ${round.round} of ${round.of}: ${fight.headline.toLowerCase()}. ${fight.reason}`
   switch (round.verdict.kind) {
     case "won": {
       const reason = round.endText?.won ?? "The mission's goal is met."

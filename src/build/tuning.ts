@@ -53,6 +53,10 @@ const SETTLED_CHOICES = [
  *  Experiments once). */
 const RETIRED_TUNING = ["holdStep", "fastStep", "rampMs"] as const
 
+/** Experiments retired because what they chose became a mission's data: the placeholder Pulse's Raid and
+ *  Your units, replaced by PERIMETER's waves and starting squads (gate 6B, `src/mission/perimeter.ts`). */
+const RETIRED_EXPERIMENTS = ["raid", "crew"] as const
+
 /**
  * The names the settled Experiments had in a settings export: every tuned setting's — derived from the
  * list, so an Experiment that settles onto the tuned tier is covered as it lands — every settled
@@ -61,7 +65,12 @@ const RETIRED_TUNING = ["holdStep", "fastStep", "rampMs"] as const
  * more), rather than reporting them as names it does not know. (A tuned number that never was an
  * Experiment, like `placeSparks`, is here too, harmlessly: no export names it.)
  */
-export const SETTLED_EXPERIMENTS: ReadonlySet<string> = new Set<string>([...namesOn("tuned"), ...SETTLED_CHOICES, ...RETIRED_TUNING])
+export const SETTLED_EXPERIMENTS: ReadonlySet<string> = new Set<string>([
+  ...namesOn("tuned"),
+  ...SETTLED_CHOICES,
+  ...RETIRED_TUNING,
+  ...RETIRED_EXPERIMENTS,
+])
 
 /**
  * Settings that changed their name, by the name an old export uses: read as the setting they are now,
