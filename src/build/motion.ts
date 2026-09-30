@@ -66,8 +66,14 @@ export type RampMemory = Readonly<{
  *  session sends nothing for it. */
 export type RampStep = Readonly<{ kind: MoveKind; tiles: number; memory: RampMemory }>
 
+/** How far a press on its own moves: a tap, or the fast move's jump. What every key is without a clock
+ *  (a driver, a test), and what the ramp starts every run from. */
+export function pressTiles(key: CursorKey, tuning: Pick<RampTuning, "tapStep" | "jumpStep">): number {
+  return key.jump ? tuning.jumpStep : tuning.tapStep
+}
+
 /** One cursor key through the ramp: what kind of move it is, how many tiles, and what to remember. */
-export function rampStep(previous: RampMemory | null, key: CursorKey, now: number, flags: RampTuning): RampStep {
+export function rampStep(previous: RampMemory | null, key: CursorKey, now: number, tuning: RampTuning): RampStep {
   const same = previous !== null && previous.dx === key.dx && previous.dy === key.dy && previous.jump === key.jump
   const gap = previous === null ? Number.POSITIVE_INFINITY : now - previous.at
   const remember = (runStart: number | null): RampMemory => ({ dx: key.dx, dy: key.dy, jump: key.jump, at: now, runStart })
@@ -75,15 +81,15 @@ export function rampStep(previous: RampMemory | null, key: CursorKey, now: numbe
   if (key.jump) {
     // A held jump's repeat, too soon after the last jump: dropped, and the last jump's time kept, so
     // the next one is timed from the jump the player actually saw.
-    if (same && previous !== null && gap < flags.jumpRepeatMs) return { kind: "jump", tiles: 0, memory: previous }
-    return { kind: "jump", tiles: flags.jumpStep, memory: remember(null) }
+    if (same && previous !== null && gap < tuning.jumpRepeatMs) return { kind: "jump", tiles: 0, memory: previous }
+    return { kind: "jump", tiles: pressTiles(key, tuning), memory: remember(null) }
   }
-  if (same && previous !== null && gap <= flags.holdWindowMs) {
+  if (same && previous !== null && gap <= tuning.holdWindowMs) {
     const runStart = previous.runStart ?? now
-    const fast = now - runStart >= flags.rampMs
-    return { kind: fast ? "fast" : "hold", tiles: fast ? flags.fastStep : flags.holdStep, memory: remember(runStart) }
+    const fast = now - runStart >= tuning.rampMs
+    return { kind: fast ? "fast" : "hold", tiles: fast ? tuning.fastStep : tuning.holdStep, memory: remember(runStart) }
   }
-  return { kind: "tap", tiles: flags.tapStep, memory: remember(null) }
+  return { kind: "tap", tiles: pressTiles(key, tuning), memory: remember(null) }
 }
 
 /** The ramp as the session holds it: its memory, and the kind of move the last cursor key made. */
@@ -92,8 +98,8 @@ export class SpeedRamp {
   private lastKind: MoveKind | null = null
 
   /** How many tiles this cursor key moves, arriving at `now` milliseconds; 0 means send nothing. */
-  step(key: CursorKey, now: number, flags: RampTuning): number {
-    const next = rampStep(this.memory, key, now, flags)
+  step(key: CursorKey, now: number, tuning: RampTuning): number {
+    const next = rampStep(this.memory, key, now, tuning)
     this.memory = next.memory
     this.lastKind = next.kind
     return next.tiles

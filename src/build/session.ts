@@ -14,9 +14,11 @@ import type { BuildLayout } from "./layout.ts"
 import { escLabel } from "./layout.ts"
 import { popupSpec, placePopup } from "./popup.ts"
 import type { Camera, Viewport } from "./camera.ts"
-import { buildKeyboardCommand, cursorKeyOf } from "./keyboard.ts"
-import type { MoveKind } from "./motion.ts"
+import type { CursorKey } from "../menu/list-keys.ts"
+import { buildKeyboardCommand } from "./keyboard.ts"
+import type { MoveKind, RampTuning } from "./motion.ts"
 import { SpeedRamp, rampTuning } from "./motion.ts"
+import type { MouseEvent } from "./mouse.ts"
 import { buildMouseCommand, parseMouseEvent } from "./mouse.ts"
 import type { BuildContext, BuildState } from "./state.ts"
 import { applyBuildCommand, cardEntry, createBuildState, exportText, withViewport } from "./state.ts"
@@ -178,102 +180,97 @@ export class BuildSession {
     // Time passes before the key does: a pause pressed a second into a Pulse pauses it a second in.
     if (timing.now !== undefined) this.advance(timing.now)
     const mouse = parseMouseEvent(key)
-    const state = this.buildState
-    const spec = popupSpec(this.context, state)
-    let command =
-      mouse !== null
-        ? // A click lands on the tile drawn under the pointer: while the view is still sliding, that
-          // is the drawn camera's tile, not the target's (gate 5H).
-          buildMouseCommand(mouse, timing.camera ?? state.camera, layout, this.context.catalog, {
-            ...(spec === null ? {} : { popup: placePopup(layout, spec) }),
-            card: cardEntry(state),
-            escLabel: escLabel(state),
-            pulse: this.presenter !== null,
-          })
-        : buildKeyboardCommand(key, {
-            itemCount: this.context.catalog.length,
-            armed: state.armed !== null,
-            focus: state.focus,
-            popup: state.popup,
-            popupSpec: spec,
-            pulse: this.presenter !== null,
-          })
-    const placing = this.lastPlacingClick
-    if (mouse !== null && mouse.press) this.lastPlacingClick = null
-    if (
-      mouse !== null &&
-      mouse.press &&
-      command?.kind === "click-tile" &&
-      placing !== null &&
-      timing.now !== undefined &&
-      placing.column === mouse.column &&
-      placing.row === mouse.row &&
-      timing.now - placing.at <= TUNING.doubleClickMs
-    ) {
-      // The second half of a double click whose first half already placed — a double click on the
-      // ghost's own tile, where one click is enough: the building is placed, so this press has nothing
-      // left to do. Read as a fresh click it would take the keyboard to the map and lapse the
-      // placement's answer.
-      command = null
-      this.lastArmedClick = null
-    } else if (mouse !== null && mouse.press && command?.kind === "click-tile") {
-      // A double click places where its first click pointed. The reducer places on a second click of
-      // the tile the cursor is on, so the second half of a quick double click on the same screen cell
-      // is sent as a click on the first one's tile — exactly what a driver would send for "click it
-      // again" — whatever the view did in between.
-      const last = this.lastArmedClick
-      const double =
-        state.armed !== null &&
-        timing.now !== undefined &&
-        last !== null &&
-        last.column === mouse.column &&
-        last.row === mouse.row &&
-        timing.now - last.at <= TUNING.doubleClickMs
-      if (double) {
-        command = { kind: "click-tile", x: last.tile.x, y: last.tile.y }
-        this.lastArmedClick = null
-      } else {
-        this.lastArmedClick =
-          state.armed !== null && timing.now !== undefined
-            ? { column: mouse.column, row: mouse.row, at: timing.now, tile: { x: command.x, y: command.y } }
-            : null
-      }
-    } else if (mouse !== null && mouse.press) {
-      this.lastArmedClick = null
+    if (mouse === null) {
+      const command = this.keyCommand(key, timing.now)
+      if (command !== null) this.dispatch(command)
+      return
     }
-    const cursorKey = mouse === null && command?.kind === "move-cursor" ? cursorKeyOf(key) : null
-    if (mouse === null && command?.kind === "highlight" && command.jump !== true && timing.now !== undefined) {
-      // Up or Down in a list, from a live terminal: the map cursor's own ramp, with the same numbers
-      // (owner, 2026-09-30, feedback F75: "Use the same timings, consistency here will be very
-      // useful") — a run moves the hold step and, after `rampMs`, the fast step, and the reducer clamps
-      // it at the list's end, so holding Down reaches the last row quickly and stays there. **A tap is
-      // always one row**, whatever the map's tap step, so every row stays reachable by Up and Down.
-      const direction = command.delta < 0 ? -1 : 1
-      const rows = this.ramp.step({ dx: 0, dy: direction, jump: false }, timing.now, { ...rampTuning(state.experiments.holdWindowMs), tapStep: 1 })
-      command = { kind: "highlight", delta: direction * rows }
-    } else if (cursorKey !== null) {
-      // A cursor key on the Grid: how far is the ramp's call when the key's arrival time is known — a
-      // live terminal — and otherwise a tap's (or a jump's), so a driver script and every test that
-      // sends keys without a clock sees each key as its own press. A held jump's repeat that came too
-      // soon moves nothing, and nothing is sent for it.
-      const tiles =
-        timing.now !== undefined
-          ? this.ramp.step(cursorKey, timing.now, rampTuning(state.experiments.holdWindowMs))
-          : cursorKey.jump
-            ? TUNING.jumpStep
-            : TUNING.tapStep
-      command = tiles === 0 ? null : { kind: "move-cursor", dx: cursorKey.dx * tiles, dy: cursorKey.dy * tiles }
-    } else if (command !== null) {
-      // Anything else pressed: the next arrow starts from scratch (the owner's "doing anything else
-      // returns to normal").
-      this.ramp.reset()
-    }
+    const clicked = this.mouseCommand(mouse, layout, timing.camera)
+    // Anything but a cursor key: the next arrow starts from scratch (the owner's "doing anything else
+    // returns to normal").
+    if (clicked !== null) this.ramp.reset()
+    const command = mouse.press ? this.resolveDoubleClick(mouse, clicked, timing.now) : clicked
     if (command === null) return
     const before = this.buildState
     this.dispatch(command)
-    if (mouse !== null && mouse.press && timing.now !== undefined && this.buildState.planned.length > before.planned.length) {
+    if (mouse.press && timing.now !== undefined && this.buildState.planned.length > before.planned.length) {
       this.lastPlacingClick = { column: mouse.column, row: mouse.row, at: timing.now }
     }
+  }
+
+  /**
+   * A key through the keyboard adapter. **How far a cursor key moves, and how many rows Up or Down
+   * move a list, is the held-key ramp's call** when the key's arrival time is known — a live terminal
+   * (`src/build/motion.ts`); otherwise every key is a press on its own, so a driver script and every
+   * test that sends keys without a clock sees each as its own press. Up and Down in a list ride the map
+   * cursor's own ramp, with the same numbers (owner, 2026-09-30, feedback F75: "Use the same timings,
+   * consistency here will be very useful") — except that **a tap is always one row**, whatever the
+   * map's tap step, so every row stays reachable. Any other key resets the ramp.
+   */
+  private keyCommand(key: string, now: number | undefined): BuildCommand | null {
+    const state = this.buildState
+    const tuning = rampTuning(state.experiments.holdWindowMs)
+    let ramped = false
+    const ramp = (cursor: CursorKey, steps: RampTuning): number => {
+      ramped = true
+      return this.ramp.step(cursor, now as number, steps)
+    }
+    const command = buildKeyboardCommand(key, {
+      itemCount: this.context.catalog.length,
+      armed: state.armed !== null,
+      focus: state.focus,
+      popup: state.popup,
+      popupSpec: popupSpec(this.context, state),
+      pulse: this.presenter !== null,
+      ...(now === undefined
+        ? {}
+        : {
+            moveTiles: (cursor: CursorKey) => ramp(cursor, tuning),
+            listRows: (direction: -1 | 1) => ramp({ dx: 0, dy: direction, jump: false }, { ...tuning, tapStep: 1 }),
+          }),
+    })
+    if (command !== null && !ramped) this.ramp.reset()
+    return command
+  }
+
+  /** A mouse report through the mouse adapter, against what is on screen: the open popup, placed;
+   *  the card, if one shows; the top bar's Esc label; and the camera as drawn — while the view is still
+   *  sliding, a click lands on the tile drawn under the pointer, not the target's (gate 5H). */
+  private mouseCommand(mouse: MouseEvent, layout: BuildLayout, camera: Camera | undefined): BuildCommand | null {
+    const state = this.buildState
+    const spec = popupSpec(this.context, state)
+    return buildMouseCommand(mouse, camera ?? state.camera, layout, this.context.catalog, {
+      ...(spec === null ? {} : { popup: placePopup(layout, spec) }),
+      card: cardEntry(state),
+      escLabel: escLabel(state),
+      pulse: this.presenter !== null,
+    })
+  }
+
+  /**
+   * A double click, resolved from when the presses came — the input path's call, since only it knows
+   * (F22). The reducer places on a second click of the tile the cursor is on, so for a click on the map:
+   *
+   * - the second half of a double click whose first half already placed — a double click on the ghost's
+   *   own tile, where one click is enough — is swallowed: read as a fresh click it would take the
+   *   keyboard to the map and lapse the placement's answer;
+   * - the second half of a quick double click on the same screen cell with a building armed is sent as
+   *   a click on the first one's tile — exactly what a driver would send for "click it again" —
+   *   whatever the view did in between.
+   */
+  private resolveDoubleClick(mouse: MouseEvent, command: BuildCommand | null, now: number | undefined): BuildCommand | null {
+    const placing = this.lastPlacingClick
+    const armedClick = this.lastArmedClick
+    this.lastPlacingClick = null
+    this.lastArmedClick = null
+    if (command?.kind !== "click-tile" || now === undefined) return command
+    const again = (last: Readonly<{ column: number; row: number; at: number }> | null): boolean =>
+      last !== null && last.column === mouse.column && last.row === mouse.row && now - last.at <= TUNING.doubleClickMs
+    if (again(placing)) return null
+    if (this.buildState.armed === null) return command
+    if (armedClick !== null && again(armedClick)) return { kind: "click-tile", x: armedClick.tile.x, y: armedClick.tile.y }
+    this.lastArmedClick = { column: mouse.column, row: mouse.row, at: now, tile: { x: command.x, y: command.y } }
+    return command
   }
 
   /** The driver's raw-bytes path — "a scripted list of... raw key and mouse events" — and what a

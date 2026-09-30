@@ -5,9 +5,11 @@
 // (`src/build/help.ts`, feedback F60) lists every one of them; the bottom line never did, on the
 // owner's own call (2026-09-26: "leave pgup/home keys out, people will figure that out just fine").
 
+import type { CursorKey } from "../menu/list-keys.ts"
 import { cursorKeyOf, listKeyOf } from "../menu/list-keys.ts"
 import type { PlaybackControl } from "../view/playback.ts"
 import { START_KEY } from "./layout.ts"
+import { pressTiles } from "./motion.ts"
 import type { PopupRow, PopupSpec } from "./popup.ts"
 import { TUNING } from "./tuning.ts"
 import type { BuildCommand, Focus, Popup } from "./types.ts"
@@ -42,15 +44,16 @@ function sideways(key: string): -1 | 0 | 1 {
 }
 
 /**
- * Up/Down in a list — the menu, or any popup's — as the command it is, or `null`: one row for a plain
- * arrow (the session scales a held one with the map cursor's ramp), and the fast move — Shift, Option,
- * PageUp/PageDown, Home/End — as a jump to that end. Every list stops at its ends (owner, 2026-09-30,
- * feedback F75); the keys are the title menu's too (`src/menu/list-keys.ts`).
+ * Up/Down in a list — the menu, or any popup's — as the command it is, or `null`: a plain arrow's rows
+ * (one, or the input path's held-key ramp — `KeyboardContext.listRows`), and the fast move — Shift,
+ * Option, PageUp/PageDown, Home/End — as a jump to that end. Every list stops at its ends (owner,
+ * 2026-09-30, feedback F75); the keys are the title menu's too (`src/menu/list-keys.ts`).
  */
-function listCommand(key: string): BuildCommand | null {
+function listCommand(key: string, context: KeyboardContext): BuildCommand | null {
   const list = listKeyOf(key)
   if (list === null) return null
-  return list.jump ? { kind: "highlight", delta: list.direction, jump: true } : { kind: "highlight", delta: list.direction }
+  if (list.jump) return { kind: "highlight", delta: list.direction, jump: true }
+  return { kind: "highlight", delta: list.direction * (context.listRows?.(list.direction) ?? 1) }
 }
 
 export type KeyboardContext = Readonly<{
@@ -71,6 +74,14 @@ export type KeyboardContext = Readonly<{
   popupSpec?: PopupSpec | null
   /** A Nexus Pulse is on screen (gate 6A): its playback keys are the screen's, ahead of the Grid's. */
   pulse?: boolean
+  /**
+   * How many tiles a cursor key moves, when the input path knows when keys arrive: its held-key ramp
+   * (`src/build/motion.ts`), which may answer 0 for a held jump's repeat that came too soon — nothing is
+   * sent for it. Absent — a driver, a test — every key is a press on its own (`pressTiles`).
+   */
+  moveTiles?: (key: CursorKey) => number
+  /** How many rows a plain Up or Down moves a list, the same way: the ramp when timed, else one. */
+  listRows?: (direction: -1 | 1) => number
 }>
 
 function digitIndex(key: string): number | null {
@@ -141,7 +152,7 @@ function highlightedChoice(rows: readonly PopupRow[]): PopupRow | undefined {
  * - Enter/Space send the highlighted option's command, or the highlighted setting's `increase`;
  * - Left/Right send the highlighted setting's `decrease` or `increase`.
  */
-function popupCommand(key: string, popup: Popup, spec: PopupSpec | null): BuildCommand | null {
+function popupCommand(key: string, popup: Popup, context: KeyboardContext): BuildCommand | null {
   const back = backCommand(key)
   if (back !== null) return back
   // A message has nothing to choose: only the cancel above closes it (feedback F34, "clicking outside
@@ -149,6 +160,7 @@ function popupCommand(key: string, popup: Popup, spec: PopupSpec | null): BuildC
   if (popup === "message") return null
   const own = popupOwnKey(key, popup)
   if (own !== null) return own
+  const spec = context.popupSpec ?? null
   const rows = spec?.rows ?? []
   const option = rows.find((row) => row.kind === "option" && row.hotkey === key)
   if (option?.kind === "option") return option.command
@@ -156,7 +168,7 @@ function popupCommand(key: string, popup: Popup, spec: PopupSpec | null): BuildC
   if (key === "q") return popup === "game-menu" ? null : { kind: "open-game-menu" }
   const choices = rows.filter((row) => row.kind === "option" || row.kind === "setting").length
   if (spec?.scroll !== undefined || choices > 1) {
-    const list = listCommand(key)
+    const list = listCommand(key, context)
     if (list !== null) return list
   }
   const on = highlightedChoice(rows)
@@ -172,13 +184,14 @@ function popupCommand(key: string, popup: Popup, spec: PopupSpec | null): BuildC
   return side < 0 ? on.decrease : on.increase
 }
 
-/** Any of the Grid's cursor keys, as the move it is — one tile for a plain arrow (the input path may
- *  scale it for a held key), the tuned jump (`TUNING.jumpStep`) for the fast move — or `null`. */
-function cursorMove(key: string): BuildCommand | null {
+/** Any of the Grid's cursor keys, as the move it is — **the one place a move is sized**: the input
+ *  path's held-key ramp when it times keys (`KeyboardContext.moveTiles`), and otherwise a press on its
+ *  own, a tap or the fast move's jump (`pressTiles`) — or `null`, for another key or a move of none. */
+function cursorMove(key: string, context: KeyboardContext): BuildCommand | null {
   const move = cursorKeyOf(key)
   if (move === null) return null
-  const tiles = move.jump ? TUNING.jumpStep : 1
-  return { kind: "move-cursor", dx: move.dx * tiles, dy: move.dy * tiles }
+  const tiles = context.moveTiles?.(move) ?? pressTiles(move, TUNING)
+  return tiles === 0 ? null : { kind: "move-cursor", dx: move.dx * tiles, dy: move.dy * tiles }
 }
 
 /**
@@ -194,7 +207,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (key === String.fromCharCode(3)) return { kind: "quit" }
   const popup = context.popup ?? null
   if (popup !== null) {
-    return popupCommand(key, popup, context.popupSpec ?? null)
+    return popupCommand(key, popup, context)
   }
   const focus = context.focus ?? "grid"
 
@@ -226,7 +239,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
 
   if (focus === "menu") {
     // Up and Down walk the menu and stop at its ends; the fast move jumps to its first or last row.
-    const list = listCommand(key)
+    const list = listCommand(key, context)
     if (list !== null) return list
     // Left/Right have nothing to do on the menu: the row flickers so the player sees where the keys
     // went, and the keyboard stays on the menu (owner, 2026-09-30, feedback F55).
@@ -234,7 +247,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
     if (PLACE_KEYS.has(key)) return { kind: "activate" }
   } else {
     if (PLACE_KEYS.has(key)) return context.armed ? { kind: "place" } : { kind: "open-explore" }
-    const move = cursorMove(key)
+    const move = cursorMove(key, context)
     if (move !== null) return move
   }
   // Backspace removes what is planned under the map cursor — from the menu too, where the reducer
