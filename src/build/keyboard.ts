@@ -9,9 +9,8 @@ import type { CursorKey } from "../menu/list-keys.ts"
 import { cursorKeyOf, listKeyOf } from "../menu/list-keys.ts"
 import type { PlaybackControl } from "../view/playback.ts"
 import { START_KEY } from "./layout.ts"
-import { pressTiles } from "./motion.ts"
+import { DEFAULT_MOVE_TUNING, pressTiles } from "./motion.ts"
 import type { PopupRow, PopupSpec } from "./popup.ts"
-import { TUNING } from "./tuning.ts"
 import type { BuildCommand, Focus, Popup } from "./types.ts"
 
 export { cursorKeyOf } from "../menu/list-keys.ts"
@@ -196,7 +195,7 @@ function popupCommand(key: string, popup: Popup, context: KeyboardContext): Buil
 function cursorMove(key: string, context: KeyboardContext): BuildCommand | null {
   const move = cursorKeyOf(key)
   if (move === null) return null
-  const tiles = context.moveTiles?.(move) ?? pressTiles(move, TUNING)
+  const tiles = context.moveTiles?.(move) ?? pressTiles(move, DEFAULT_MOVE_TUNING)
   return tiles === 0 ? null : { kind: "move-cursor", dx: move.dx * tiles, dy: move.dy * tiles }
 }
 

@@ -13,9 +13,11 @@ import { EventEmitter } from "node:events"
 import { edgeClickCamera, marginForView, shareOfSpan } from "../src/build/camera.ts"
 import { EXPERIMENT_FIELDS, defaultExperiments } from "../src/build/experiments.ts"
 import { cellForTile, menuEntryRow } from "../src/build/layout.ts"
-import { moveStep, moveTuning } from "../src/build/motion.ts"
+import { DEFAULT_MOVE_TUNING, moveStep, moveTuning } from "../src/build/motion.ts"
 import type { MoveMemory, MoveTuning } from "../src/build/motion.ts"
 import { SETTLED_EXPERIMENTS, TUNING } from "../src/build/tuning.ts"
+import { defaultValue } from "../src/build/all-settings.ts"
+import type { SettingName } from "../src/build/all-settings.ts"
 import type { CursorKey } from "../src/menu/list-keys.ts"
 import { encodeKeyEvent } from "../src/view/key-events.ts"
 import type { KeyPhase } from "../src/view/key-events.ts"
@@ -60,7 +62,7 @@ function exploring(context: BuildContext = spikeContext(), cursor: Coord = OPEN_
 
 
 /** The rules the game runs: the tuned values, and the hold window's default. */
-const TUNED: MoveTuning = moveTuning(defaultExperiments().holdWindowMs)
+const TUNED: MoveTuning = DEFAULT_MOVE_TUNING
 
 /** A key event as the rules see it: when it came, and what the terminal said it was (`null`: nothing). */
 type At = readonly [number, KeyPhase | null]
@@ -111,19 +113,59 @@ const hold = (tiles: number): string => `hold ${tiles}`
 
 // --- Taps and holds (the owner's third round, F79) --------------------------------------------------
 
-test("the motion rules run on the tuned values; only the hold window and key releases are Experiments", () => {
-  const { holdWindowMs, ...tuned } = TUNED
-  for (const [name, value] of Object.entries(tuned)) assert.equal(value, TUNING[name as keyof typeof TUNING], `${name} is not the tuned value`)
-  assert.equal(holdWindowMs, defaultExperiments().holdWindowMs)
-  const movement = [...Object.keys(tuned), "holdWindowMs", "keyReleases", "cursorGlideMs"]
-  assert.deepEqual(EXPERIMENT_FIELDS.map((spec) => spec.field).filter((field) => movement.includes(field)), ["holdWindowMs", "keyReleases"])
-  // The owner's own numbers: a double tap, a quick one, three taps, and four tiles at the top.
-  assert.deepEqual([TUNING.doubleTapMs, TUNING.fastTapMs, TUNING.tapsToSpeedUp, TUNING.tapStep, TUNING.tapTopStep], [400, 300, 3, 1, 4])
+test("the motion rules run on each number as it is now: the navigation Experiments, and the tuned rest", () => {
+  // Every number is its setting's value, whichever tier it stands on — at this build's defaults here.
+  for (const [name, value] of Object.entries(TUNED)) assert.equal(value, defaultValue(name as SettingName), `${name} is not its setting's value`)
+  // The navigation polish round's Experiments (feedback F85) and the third round's two; the rest tuned.
+  const movement = [...Object.keys(TUNED), "keyReleases", "cursorGlideMs"]
+  assert.deepEqual(
+    EXPERIMENT_FIELDS.map((spec) => spec.field).filter((field) => movement.includes(field)),
+    ["holdWindowMs", "keyReleases", "doubleTapMs", "fastTapMs", "tapsToSpeedUp", "tapTopStep", "holdMoveMs", "holdLongMs", "holdLongStep", "jumpStep"],
+  )
+  for (const name of ["tapStep", "holdFirstStep", "jumpRepeatMs"] as const) assert.equal(TUNED[name], TUNING[name], `${name} is not the tuned value`)
+  // The owner's own numbers, unchanged by coming back as Experiments: a double tap, a quick one, three
+  // taps, and four tiles at the top.
+  assert.deepEqual([TUNED.doubleTapMs, TUNED.fastTapMs, TUNED.tapsToSpeedUp, TUNED.tapStep, TUNED.tapTopStep], [400, 300, 3, 1, 4])
   // The held-key ramp's fast step and ramp time are gone — and an old export naming them is still read quietly.
   for (const gone of ["holdStep", "fastStep", "rampMs", "slowStep", "normalStep", "fasterStep", "slowAfterTurn"]) {
     assert.ok(!(gone in TUNING), `${gone} is still a tuned value`)
   }
   assert.ok(["holdStep", "fastStep", "rampMs"].every((name) => SETTLED_EXPERIMENTS.has(name)), "an old export's ramp names would be reported as unknown")
+})
+
+test("a navigation number changed in Settings changes the very next key", () => {
+  const start = { x: 0, y: 13 }
+  // The jump distance, one step up: a Shift jump goes that far, with a clock and without one (a driver).
+  const jump = exploring(spikeContext(), start)
+  jump.build.dispatch({ kind: "setting-adjust", field: "jumpStep", step: 1 })
+  const far = jump.build.state.experiments.jumpStep
+  assert.notEqual(far, TUNED.jumpStep)
+  timed(jump, [[SHIFT_RIGHT, 0]])
+  assert.equal(jump.build.state.cursor.x, start.x + far)
+  jump.build.handleData(SHIFT_RIGHT, jump.layout)
+  assert.equal(jump.build.state.cursor.x, start.x + 2 * far)
+  // Taps to speed up, one step down: the second quick tap already doubles the speed — 1, 2.
+  const quick = TUNED.fastTapMs - 50
+  const eager = exploring(spikeContext(), start)
+  eager.build.dispatch({ kind: "setting-adjust", field: "tapsToSpeedUp", step: -1 })
+  assert.equal(eager.build.state.experiments.tapsToSpeedUp, 2)
+  timed(eager, taps(0, 2, quick).map((at) => [RIGHT, at] as const))
+  assert.equal(eager.build.state.cursor.x, start.x + 1 + 2)
+  // The fastest tap at one tile: however quick the taps, they never speed up.
+  const steady = exploring(spikeContext(), start)
+  for (let step = 0; step < 4; step += 1) steady.build.dispatch({ kind: "setting-adjust", field: "tapTopStep", step: -1 })
+  assert.equal(steady.build.state.experiments.tapTopStep, 1)
+  timed(steady, taps(0, 6, quick).map((at) => [RIGHT, at] as const))
+  assert.equal(steady.build.state.cursor.x, start.x + 6)
+  // The hold pace and the tap run window reach the rules as the session reads them.
+  const paced = exploring(spikeContext(), start)
+  paced.build.dispatch({ kind: "setting-adjust", field: "holdMoveMs", step: 1 })
+  paced.build.dispatch({ kind: "setting-adjust", field: "doubleTapMs", step: -1 })
+  const live = moveTuning(paced.build.state)
+  assert.ok(live.holdMoveMs > TUNED.holdMoveMs && live.doubleTapMs < TUNED.doubleTapMs)
+  const holding = held(0, 60, 180, 25)
+  const movesAt = (tuning: MoveTuning): number => moves(EAST, presses(holding), tuning).filter((move) => move.startsWith("hold") && !move.endsWith(" 0")).length
+  assert.ok(movesAt(live) < movesAt(TUNED), "a slower hold pace did not move less often")
 })
 
 test("a tap moves one tile, and taps further apart than a double tap stay one tile each", () => {
@@ -272,8 +314,8 @@ test("a hold breaks a run of taps: the tap after it is one tile, with or without
  * marked, with a release), through the session's raw-bytes path.
  */
 function parityIntent(key: string): Readonly<{ timed: (readonly [string, number])[]; marked: (readonly [string, number])[] }> {
-  const quick = TUNING.fastTapMs - 50
-  const double = TUNING.doubleTapMs - 50
+  const quick = TUNED.fastTapMs - 50
+  const double = TUNED.doubleTapMs - 50
   const repeat = encodeKeyEvent(key, "repeat")
   const release = encodeKeyEvent(key, "release")
   const timedKeys: [string, number][] = []
@@ -585,7 +627,7 @@ test("the cursor glides to its new tile over the glide time; the state is alread
   animation.frame(side.build.state, 0)
   side.build.handleData(SHIFT_LEFT, side.layout) // a jump west
   const to = side.build.state.cursor
-  assert.equal(to.x, from.x - TUNING.jumpStep, "the state holds the destination at once")
+  assert.equal(to.x, from.x - TUNED.jumpStep, "the state holds the destination at once")
   assert.deepEqual(side.build.state.camera, camera, "the camera moved; this test wants the cursor alone")
   const glide = TUNING.cursorGlideMs
   const at = (now: number) => animation.frame(side.build.state, now)

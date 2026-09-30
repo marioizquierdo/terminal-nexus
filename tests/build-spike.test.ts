@@ -13,6 +13,7 @@ import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
 import { buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import { TUNING } from "../src/build/tuning.ts"
+import { defaultValue } from "../src/build/all-settings.ts"
 import {
   MOUSE_LEFT,
   MOUSE_RIGHT,
@@ -229,9 +230,9 @@ test("a second Enter after a placement never places a second building", () => {
 test("keyboard: Shift+Arrow and its modifier-free fallback are both the fast move, a jump of the Shift jump", () => {
   // Measured, not assumed — scripts/probe-modified-keys.mjs found three live encodings for a
   // shifted arrow and none at all on several terminals, which is why all of these are bound. How far
-  // it jumps is the tuned `TUNING.jumpStep`.
+  // it jumps is the "Jump distance" setting (`jumpStep`), at its default here.
   const context = { itemCount: 3, armed: false }
-  const fast = TUNING.jumpStep
+  const fast = defaultValue("jumpStep")
   assert.deepEqual(buildKeyboardCommand(RIGHT, context), { kind: "move-cursor", dx: 1, dy: 0 })
   assert.deepEqual(buildKeyboardCommand(SHIFT_RIGHT, context), { kind: "move-cursor", dx: fast, dy: 0 })
   assert.deepEqual(buildKeyboardCommand(RXVT_SHIFT_RIGHT, context), { kind: "move-cursor", dx: fast, dy: 0 })
@@ -251,7 +252,7 @@ test("keyboard: Option+Arrow as macOS terminals send it is the fast move, never 
   // as Meta prefixes the arrow with ESC instead. Before `keysFromChunk` kept these whole, Option+Left
   // arrived as a bare Escape plus a stray "b" - which, with nothing armed, left the screen.
   const context = { itemCount: 3, armed: false }
-  const fast = TUNING.jumpStep
+  const fast = defaultValue("jumpStep")
   assert.deepEqual(buildKeyboardCommand(`${ESC}b`, context), { kind: "move-cursor", dx: -fast, dy: 0 })
   assert.deepEqual(buildKeyboardCommand(`${ESC}f`, context), { kind: "move-cursor", dx: fast, dy: 0 })
   assert.deepEqual(buildKeyboardCommand(`${ESC}${ESC}[A`, context), { kind: "move-cursor", dx: 0, dy: -fast })
@@ -262,7 +263,7 @@ test("keyboard: Option+Arrow as macOS terminals send it is the fast move, never 
   build.handleData(`${ESC}f`, layout)
   assert.equal(build.state.focus, "grid", "Option+Right was read as an Esc")
   assert.equal(build.state.popup, null, "Option+Right was read as an Esc")
-  assert.equal(build.state.cursor.x, 18 + TUNING.jumpStep)
+  assert.equal(build.state.cursor.x, 18 + defaultValue("jumpStep"))
 })
 
 test("keyboard: digits always address the list, and a digit past its end means nothing", () => {

@@ -39,7 +39,7 @@
 //     — any popup, and again whenever another replaces it — its border plays the popup's **opening**
 //     if it has one (`POPUP_OPENINGS`: the Battle Round screen's double flash, `popupFlash`), drawn
 //     every frame, and then **breathes**, slowly a little lighter and a little darker, one breath every
-//     "Battle Round pulse" Experiment milliseconds, from rest. The breath is the one thing here that
+//     "Popup pulse" Experiment milliseconds, from rest. The breath is the one thing here that
 //     never settles, so while it is the only thing moving the frame timer runs at `BREATH_FRAME_MS`
 //     rather than every frame (`frameMs`), and it stops the frame the last popup closes. Reduced motion
 //     and monochrome keep the border still; 16 colours, whose tint is a step rather than a blend, shows
@@ -126,7 +126,7 @@ const flashShows = (capability: CapabilityMode | undefined): boolean => capabili
  * What the open popup's border plays in this frame (feedback F80, F83) — its opening, from
  * `POPUP_OPENINGS` and timed by `flash`, and the length of one breath — with `null` for a part this frame
  * does not show; `null` altogether when the border is still: no popup, reduced motion, or neither part
- * showing. The breath's length is the "Battle Round pulse" Experiment's, for every popup; at 0 it stops.
+ * showing. The breath's length is the "Popup pulse" Experiment's, for every popup; at 0 it stops.
  */
 export function popupBorderEffect(
   state: BuildState,
@@ -136,7 +136,7 @@ export function popupBorderEffect(
 ): Pick<PopupBorder, "opening" | "breathMs"> | null {
   if (state.popup === null || reducedMotion) return null
   const opening = POPUP_OPENINGS[state.popup] === "double-flash" && flashShows(capability) ? flash : null
-  const lengthMs = state.experiments.battleRoundPulseMs
+  const lengthMs = state.experiments.popupPulseMs
   const breathMs = lengthMs > 0 && breathShows(capability) ? lengthMs : null
   const effect = { opening, breathMs }
   return breathMs === null && openingLengthMs(effect) === 0 ? null : effect

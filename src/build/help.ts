@@ -33,7 +33,7 @@ import {
   structureAtTile,
 } from "./state.ts"
 import { WHEEL_TILES } from "./mouse.ts"
-import { TUNING } from "./tuning.ts"
+import { defaultValue } from "./all-settings.ts"
 import type { ConstructItem } from "./types.ts"
 
 // ---------------------------------------------------------------------------------------------
@@ -221,11 +221,11 @@ export const CONTROLS_KEYS_WIDTH = 14
 /**
  * **The Controls and hotkeys page, as one table** — every key and click the Build Phase and its Nexus
  * Pulse answer, grouped by where the player is, in the words the rows and the top bar use. Accurate to
- * the adapters (`src/build/keyboard.ts`, `src/build/mouse.ts`); the Shift jump is read from the tuned
- * values (`TUNING.jumpStep`), so the page says what Shift does in this build. `?` opens it from the game
+ * the adapters (`src/build/keyboard.ts`, `src/build/mouse.ts`); the Shift jump is the "Jump distance"
+ * setting as it is now (`jumpStep`; its default without one), so the page says what Shift does. `?` opens it from the game
  * — a shortcut named only here, under ANYWHERE.
  */
-export function controlsPage(): readonly ControlsSection[] {
+export function controlsPage(jumpStep: number = defaultValue("jumpStep")): readonly ControlsSection[] {
   return [
     {
       heading: "THE MENU",
@@ -246,7 +246,7 @@ export function controlsPage(): readonly ControlsSection[] {
       heading: "THE MAP",
       lines: [
         { keys: "arrows", text: "move; hold one to go faster" },
-        { keys: "shift+arrow", text: `jump ${TUNING.jumpStep} tiles` },
+        { keys: "shift+arrow", text: `jump ${jumpStep} tiles` },
         { keys: "option+arrow", text: "the same jump" },
         { keys: "pgup/pgdn", text: "jump up or down" },
         { keys: "home/end", text: "jump left or right" },

@@ -12,12 +12,14 @@ import type { StatusMessage } from "../status.ts"
 import { NO_STATUS, status } from "../status.ts"
 import type { Camera, Margin, Viewport } from "./camera.ts"
 import { centreOn, clampToGrid, edgeClickCamera, followCursor, marginForView } from "./camera.ts"
-import type { ExperimentField, Experiments } from "./experiments.ts"
-import { stepExperiment, experimentSpec, formatExperimentValue, defaultExperiments } from "./experiments.ts"
+import type { ShownName } from "./all-settings.ts"
+import { setting, shownSetting } from "./all-settings.ts"
+import type { Experiments } from "./experiments.ts"
+import { stepExperiment, defaultExperiments } from "./experiments.ts"
 import { TUNING } from "./tuning.ts"
 import type { Settings } from "../settings/types.ts"
 import { DEFAULT_SETTINGS } from "../settings/types.ts"
-import type { GameMenuRow, PlayerField } from "./settings.ts"
+import type { GameMenuRow } from "./settings.ts"
 import {
   FIRST_EXPERIMENT_ROW,
   FIRST_PULSE_EXPERIMENT_ROW,
@@ -26,10 +28,7 @@ import {
   SETTINGS_EXPORT_ROW,
   SETTINGS_ROWS,
   adjustSetting,
-  experimentRow,
-  formatPlayerValue,
-  playerRow,
-  playerSpec,
+  settingRow,
   pendingRestart,
   restartMessage,
 } from "./settings.ts"
@@ -225,9 +224,10 @@ export type BuildState = Readonly<{
    *  into a next Build Phase exists (Milestone 6's second gate), which is what will count it up. */
   pulseNumber: number
   /**
-   * the Experiments (gate 5G, `src/build/experiments.ts`). State rather than context because they change
-   * while the screen is open; the input path reads the hold window, the live loop the focus arrow and
-   * the card reveal, and a commit the placeholder Pulse's raid and crew. Survive a restart; not saved
+   * the Experiments (gate 5G; every setting on the experiment tier, `src/build/all-settings.ts`). State
+   * rather than context because they change while the screen is open; the input path reads keyboard
+   * navigation's, the view the popup pulse, and a commit the placeholder Pulse's raid and crew — each
+   * through `setting(state, name)` where it may move between tiers. Survive a restart; not saved
    * anywhere else.
    */
   experiments: Experiments
@@ -1125,17 +1125,26 @@ function openControls(state: BuildState): BuildState {
   return openFromGameMenu(state, "controls", "controls", 0)
 }
 
-/** One step of an experiment, said on the bottom line. */
-function adjustExperiment(state: BuildState, field: ExperimentField, step: -1 | 1): BuildState {
-  const spec = experimentSpec(field)
-  const highlight = state.popup === "settings" ? { popupHighlight: experimentRow(field) } : {}
-  const { flags, changed } = stepExperiment(state.experiments, field, step)
+/**
+ * One step of a setting Settings shows, said on the bottom line — whichever tier it stands on: an
+ * Experiment's is said as one ("Experiment - ..."), and a number at the end of its range stays and says
+ * so; a player setting is recorded here and nowhere else — the live loop sees the new value, draws with
+ * it and saves it.
+ */
+function adjustShownSetting(state: BuildState, field: ShownName, step: -1 | 1): BuildState {
+  const spec = shownSetting(field)
+  const highlight = state.popup === "settings" ? { popupHighlight: settingRow(field) } : {}
+  if (spec.tier === "player") {
+    const settings = adjustSetting(state.settings, field as keyof Settings, step)
+    return { ...state, ...highlight, settings, status: status(`${spec.label}: ${spec.format(setting({ ...state, settings }, field))}.`) }
+  }
+  const { flags, changed } = stepExperiment(state.experiments, field as keyof Experiments, step)
   if (!changed) {
     const end = step > 0 ? "largest" : "smallest"
     return {
       ...state,
       ...highlight,
-      status: status(`Experiment - ${spec.label} is already ${formatExperimentValue(state.experiments, field)}, the ${end} value.`, "warning"),
+      status: status(`Experiment - ${spec.label} is already ${spec.format(setting(state, field))}, the ${end} value.`, "warning"),
     }
   }
   const later = spec.applies === "restart" ? " - applies after a restart" : ""
@@ -1143,20 +1152,7 @@ function adjustExperiment(state: BuildState, field: ExperimentField, step: -1 | 
     ...state,
     ...highlight,
     experiments: flags,
-    status: status(`Experiment - ${spec.label}: ${formatExperimentValue(flags, field)}${later}.`),
-  }
-}
-
-/** One step of a player setting. Recorded here and nowhere else: the live loop sees the new value,
- *  draws with it and saves it. */
-function adjustPlayerSetting(state: BuildState, field: PlayerField, step: -1 | 1): BuildState {
-  const settings = adjustSetting(state.settings, field, step)
-  const highlight = state.popup === "settings" ? { popupHighlight: playerRow(field) } : {}
-  return {
-    ...state,
-    ...highlight,
-    settings,
-    status: status(`${playerSpec(field).label}: ${formatPlayerValue(settings, field)}.`),
+    status: status(`Experiment - ${spec.label}: ${spec.format(setting({ ...state, experiments: flags }, field))}${later}.`),
   }
 }
 
@@ -1468,10 +1464,8 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
 
     // A driver may change a setting with the popup closed; a player reaches these only through it.
     case "experiment-adjust":
-      return adjustExperiment(state, command.field, command.step)
-
     case "setting-adjust":
-      return adjustPlayerSetting(state, command.field, command.step)
+      return adjustShownSetting(state, command.field, command.step)
 
     case "select-row":
       if (state.popup === null) return state

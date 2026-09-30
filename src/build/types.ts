@@ -7,8 +7,7 @@
 
 import type { Coord } from "../grid/types.ts"
 import type { PlaybackControl } from "../view/playback.ts"
-import type { ExperimentField } from "./experiments.ts"
-import type { PlayerField } from "./settings.ts"
+import type { ShownName } from "./all-settings.ts"
 
 /**
  * One building on the Build Phase menu, in catalog order (no group headings since the owner's feedback
@@ -133,21 +132,19 @@ export type BuildCommand =
    *  building is armed (F69). */
   | Readonly<{ kind: "explore" }>
   /**
-   * The Settings popup: the player's own settings, then Experiments (owner, 2026-09-28). `[s]` in the
-   * game menu opens it at the settings; `d` opens it at the
-   * experiments.
+   * The Settings popup: every setting Settings shows, in sections (owner, 2026-09-28; F85). `[s]` in the
+   * game menu opens it at its first row; `d` opens it at its first Experiment.
    */
   | Readonly<{ kind: "open-settings"; section: "settings" | "experiments" }>
-  /** One step of a player setting (background, colour depth, symbols, reduced motion): Left or Right
-   *  on its row, or a click on either half of its value. Named by field, like `experiment-adjust`. */
-  | Readonly<{ kind: "setting-adjust"; field: PlayerField; step: -1 | 1 }>
   /**
-   * One step of an Experiment: Left (`-1`) or Right (`+1`) on its row, or a click
-   * on the left or right half of its value. Named by field rather than by the popup's highlight, so a
-   * driver script can set a flag without walking the list; with the popup open it also moves the
-   * highlight there.
+   * One step of a setting Settings shows, a player setting or an Experiment alike: Left (`-1`) or Right
+   * (`+1`) on its row, or a click on the left or right half of its value. Named by field rather than by
+   * the popup's highlight, so a driver script can set one without walking the list — and without caring
+   * which tier it stands on; with the popup open it also moves the highlight there.
    */
-  | Readonly<{ kind: "experiment-adjust"; field: ExperimentField; step: -1 | 1 }>
+  | Readonly<{ kind: "setting-adjust"; field: ShownName; step: -1 | 1 }>
+  /** The same, by its older name, which driver scripts written before the tiers met still send. */
+  | Readonly<{ kind: "experiment-adjust"; field: ShownName; step: -1 | 1 }>
   /**
    * A click on a popup's row away from what the row does (a setting's name rather than its value), or
    * on the popup's scroll bar: highlight row `row` of its list, clamped to the list, so what the row is

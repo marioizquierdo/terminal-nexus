@@ -37,10 +37,10 @@ const USAGE = `terminal-nexus — the Terminal Nexus game
       screen - nothing it plans reaches the simulation, and the plan is not saved.
       --scroll-margin <percent> changes how close to the edge of the view the cursor gets
       before the map starts scrolling, as a share of the view's width and height
-      (${TUNING.scrollMargin} unless given; "${TUNING.scrollMargin}" and "${TUNING.scrollMargin}%" are the same). Esc opens the game menu: Settings
-      (saved, like the title menu's) and, at their bottom, Experiments - the few choices still
-      being tried, live, never saved; d jumps straight to them. "Export settings" copies them all
-      as text.
+      (${TUNING.scrollMargin} unless given; "${TUNING.scrollMargin}" and "${TUNING.scrollMargin}%" are the same). Esc opens the game menu: Settings,
+      in sections - the display settings (saved, like the title menu's) and Experiments, the
+      choices still being tried, live, never saved; d jumps straight to the first of them.
+      "Export settings" copies them all as text.
       --settings "<text>" starts with an exported text's settings and experiments, for this
       run only: paste the whole export, or just pairs like "raid=probe crew=some".
       --keys "<key script>" opens it already in the state those keys reach, in the scripted

@@ -15,7 +15,7 @@ import { MOUSE_WHEEL_DOWN } from "../src/build/mouse.ts"
 import { CONTROLS_DESCRIPTION, GAME_MENU_ROWS, restartMessage } from "../src/build/settings.ts"
 import type { BuildState } from "../src/build/state.ts"
 import { NEXUS_ENTRY, armedPreview } from "../src/build/state.ts"
-import { TUNING } from "../src/build/tuning.ts"
+import { defaultValue } from "../src/build/all-settings.ts"
 import { cellAt } from "../src/view/frame.ts"
 import { statusStyle } from "../src/view/status.ts"
 import {
@@ -345,12 +345,19 @@ test("the page is one table: every situation, every line fits at the floor, and 
       }
     }
   }
-  // The Shift jump is the tuned number, read rather than copied.
-  const jump = `jump ${TUNING.jumpStep} tiles`
+  // The Shift jump is the "Jump distance" setting, read rather than copied...
+  const jump = `jump ${defaultValue("jumpStep")} tiles`
   assert.ok(sections.some((section) => section.lines.some((entry) => entry.text === jump)))
   const side = buildSide()
   keys(side, "?", ...Array.from({ length: 10 }, () => DOWN))
   assert.ok(screenText(side).includes(jump), `"${jump}" is not on the page`)
+  // ...as it is now: changed in Settings, the page says the new distance.
+  const moved = buildSide()
+  moved.build.dispatch({ kind: "setting-adjust", field: "jumpStep", step: 1 })
+  const now = moved.build.state.experiments.jumpStep
+  assert.notEqual(now, defaultValue("jumpStep"))
+  keys(moved, "?", ...Array.from({ length: 10 }, () => DOWN))
+  assert.ok(screenText(moved).includes(`jump ${now} tiles`), "the page still says the default jump")
 })
 
 test("the page names only keys the adapters bind, and every command key they bind is on it", () => {

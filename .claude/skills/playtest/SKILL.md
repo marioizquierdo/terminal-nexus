@@ -17,7 +17,7 @@ node scripts/playtest.mjs --keys "Down Down Space*4" --print all     # every ste
 node scripts/playtest.mjs --keys "n 1 Tab S-Left*5" --png final    # one PNG
 node scripts/playtest.mjs --keys "Down Down Space*4" --gif --name hatchery-run
 node scripts/playtest.mjs --file flow.keys --size 104x32 --capability monochrome --png all
-node scripts/playtest.mjs --settings "battleRoundPulseMs=3000 raid=probe" --keys "1 Enter"  # start from an export
+node scripts/playtest.mjs --settings "popupPulseMs=3000 raid=probe" --keys "1 Enter"  # start from an export
 node scripts/playtest.mjs --help
 ```
 
@@ -67,19 +67,21 @@ Explore Map sends, the cursor blink and the card reveal are live-loop timing, dr
 click go back one level and do nothing on the menu, so `x x x` always lands there; only `Esc` on the
 menu (or `q` anywhere) opens the game menu: `s` Settings, `c` Controls and hotkeys (`?` opens it from
 anywhere), `r` Restart (the Build Phase over, every setting kept), `q` quits. The top bar's right end says what Esc does now — `menu [esc]`, `back [esc]`,
-`close [esc]` — and clicking it is Esc (`click@70,1` at 80x24). **Settings** lists the player's own
-settings first (`Esc s Right` switches the background to light), then the **Experiments** — the
-playtest flags, which `d` opens straight at (Up/Down choose, Left/Right change, `e` exports, `Esc`
-closes) — and last, **Export settings**. No popup has an `[esc] Back` row. The title shows the
-highlight's place, `SETTINGS (5/10)`; the right border beside the list is its scroll bar when the list
-is longer than the popup (a click on its lower half scrolls down). There are five Experiments: the
-hold window (`d Left` shortens it to 150 ms), key releases (auto / off), the Battle Round pulse
-(`d Down Down Right` lengthens a breath to 3000 ms; `--settings "battleRoundPulseMs=0"` stills it), and
-the placeholder Pulse's raid and crew. Every other number the owner settled is a tuned value in
-`src/build/tuning.ts`, not a setting — the focus arrow and the card reveal among them since his third
-round. Closing Settings with a changed Experiment that only applies after a restart (key releases)
-shows a **RESTART NEEDED** message (Esc closes it, back on the game menu's Restart; `r` then restarts). `src/build/experiments.ts`'s `EXPERIMENT_FIELDS` is the
-order. The map's edge is not an Experiment: it is the map's own style (the spike
+`close [esc]` — and clicking it is Esc (`click@70,1` at 80x24). **Settings** lists every shown setting
+in titled sections with a blank line between them: **DISPLAY - saved**, the player's own (`Esc s Right`
+switches the background to light); **KEYBOARD NAVIGATION - experiments**, where `d` opens (Up/Down
+choose and step over headings and blank lines, Left/Right change, `e` exports, `Esc` closes); **EFFECTS**;
+the **PLACEHOLDER PULSE**; and last, apart, **Export settings**. No popup has an `[esc] Back` row. The
+title counts only the rows the keyboard can be on, `SETTINGS (5/18)`; the right border beside the list
+is its scroll bar when the list is longer than the popup (a click on its lower half scrolls down). The
+Experiments: the hold window (`d Left` shortens it to 150 ms), key releases (auto / off), the tap run
+window, quick tap, taps to speed up, fastest tap, hold pace, when a hold goes faster and how far, and the
+jump distance; the popup pulse (`d Down*10 Right` lengthens a breath to 3000 ms; `--settings
+"popupPulseMs=0"` stills it; the old name `battleRoundPulseMs` still reads); and the placeholder Pulse's
+raid and crew. Every setting — its tier (player, experiment or tuned), section, label, question, values
+and default — is declared in `src/build/all-settings.ts`; the tuned ones are not shown. Closing Settings
+with a changed Experiment that only applies after a restart shows a **RESTART NEEDED** message (Esc
+closes it, back on the game menu's Restart; `r` then restarts). The map's edge is not an Experiment: it is the map's own style (the spike
 map's fence; `--glyphs unicode` shows the Unicode forms), and the menu's divider is its west side.
 
 **A Nexus Pulse** (gate 6A): `s` asks (the menu's last row, `[s] Start Pulse`, which Up then Enter also
@@ -103,7 +105,7 @@ and shows each ending as a still.
 
 **Reproducing what the owner played**: he exports his settings (Settings, `e`) and pastes the text
 into the pull request; `--settings "<that text>"` starts the script from exactly those settings and
-experiments (the whole export, or just pairs: `--settings "battleRoundPulseMs=3000 raid=probe"`; a name that is
+experiments (the whole export, or just pairs: `--settings "popupPulseMs=3000 raid=probe"`; a name that is
 no longer an Experiment is skipped with a note). The
 same key script can open the **live game** in a state: `./bin/terminal-nexus.ts --spike --keys "n 1 1
 Enter"` (and `#keys=` in the browser page's address) plays those keys through the real adapters

@@ -24,6 +24,10 @@
 //     of `jumpStep` tiles. Held, it jumps again at most once every `jumpRepeatMs`, so each jump is seen
 //     to land.
 //
+// Every one of those numbers is a setting (`src/build/all-settings.ts`) — most of them Experiments in
+// Settings' Keyboard navigation section since the owner's F85, the rest tuned constants — and
+// `moveTuning` reads each as it is now, so a change in Settings changes the next key.
+//
 // **How a repeat is told from a tap.** Where the terminal reports key events (the kitty keyboard
 // protocol, `src/view/key-events.ts`, behind the Key releases Experiment), it says so: a press is a
 // tap, a repeat is a hold's, and a release ends the hold at once. Where it does not — a classic
@@ -39,7 +43,10 @@
 
 import type { CursorKey } from "../menu/list-keys.ts"
 import type { KeyPhase } from "../view/key-events.ts"
-import { TUNING } from "./tuning.ts"
+import { DEFAULT_SETTINGS } from "../settings/types.ts"
+import type { SettingSource } from "./all-settings.ts"
+import { setting } from "./all-settings.ts"
+import { defaultExperiments } from "./experiments.ts"
 
 /** What a cursor key did: a tap (at whatever speed its run has reached), a hold's move (0 tiles for a
  *  repeat that came before the cadence allowed one), a jump (0 for a held jump's repeat that came too
@@ -62,11 +69,29 @@ export type MoveTuning = Readonly<{
   holdWindowMs: number
 }>
 
-/** The rules as the game runs them: the tuned values, and the hold window the Experiment has now. */
-export function moveTuning(holdWindowMs: number): MoveTuning {
-  const { tapStep, doubleTapMs, fastTapMs, tapsToSpeedUp, tapTopStep, holdMoveMs, holdFirstStep, holdLongStep, holdLongMs, jumpStep, jumpRepeatMs } = TUNING
-  return { tapStep, doubleTapMs, fastTapMs, tapsToSpeedUp, tapTopStep, holdMoveMs, holdFirstStep, holdLongStep, holdLongMs, jumpStep, jumpRepeatMs, holdWindowMs }
+/** The rules as the game runs them: each number as it is now — a live Experiment's value, or the tuned
+ *  constant — read without caring which (`setting`), so a change in Settings changes the feel at once
+ *  and a number can move between tiers without this changing. */
+export function moveTuning(from: SettingSource): MoveTuning {
+  return {
+    tapStep: setting(from, "tapStep"),
+    doubleTapMs: setting(from, "doubleTapMs"),
+    fastTapMs: setting(from, "fastTapMs"),
+    tapsToSpeedUp: setting(from, "tapsToSpeedUp"),
+    tapTopStep: setting(from, "tapTopStep"),
+    holdMoveMs: setting(from, "holdMoveMs"),
+    holdFirstStep: setting(from, "holdFirstStep"),
+    holdLongStep: setting(from, "holdLongStep"),
+    holdLongMs: setting(from, "holdLongMs"),
+    jumpStep: setting(from, "jumpStep"),
+    jumpRepeatMs: setting(from, "jumpRepeatMs"),
+    holdWindowMs: setting(from, "holdWindowMs"),
+  }
 }
+
+/** The rules at this build's defaults: what a key is without a session to say otherwise (a test driving
+ *  the keyboard adapter on its own). */
+export const DEFAULT_MOVE_TUNING: MoveTuning = moveTuning({ experiments: defaultExperiments(), settings: DEFAULT_SETTINGS })
 
 /** What the rules remember about the last cursor key: which it was, when its last event came, the run
  *  of taps it is part of, and the hold it is part of, if any. */

@@ -13,12 +13,13 @@ import { join } from "node:path"
 import { EXPERIMENT_FIELDS, defaultExperiments, experimentSpec, formatExperimentValue, stepExperiment } from "../src/build/experiments.ts"
 import { MOUSE_WHEEL_DOWN } from "../src/build/mouse.ts"
 import { settingColumns } from "../src/build/popup.ts"
-import { FIRST_EXPERIMENT_ROW, GAME_MENU_ROWS, PLAYER_FIELDS, SETTINGS_EXPORT_ROW, playerRow } from "../src/build/settings.ts"
+import { FIRST_EXPERIMENT_ROW, GAME_MENU_ROWS, PLAYER_FIELDS, SETTINGS_EXPORT_ROW, settingRow } from "../src/build/settings.ts"
 import { formatSettingsExport, importSettings, parseSettingsExport } from "../src/build/settings-export.ts"
 import type { SettingsSnapshot } from "../src/build/settings-export.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { exportText } from "../src/build/state.ts"
 import { SETTLED_EXPERIMENTS, TUNING } from "../src/build/tuning.ts"
+import { defaultValue, isSettingName } from "../src/build/all-settings.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { runSpike, spikeContext } from "../src/cli/spike.ts"
 import { osc52, terminalExporter } from "../src/cli/terminalNexus.ts"
@@ -120,10 +121,10 @@ test("[s] opens Settings at the player's settings; Esc goes back to the game men
   const side = session()
   keys(side, ESC, "s")
   assert.equal(side.build.state.popup, "settings")
-  assert.equal(side.build.state.popupHighlight, playerRow("theme"))
+  assert.equal(side.build.state.popupHighlight, settingRow("theme"))
   assert.deepEqual(side.build.state.popupUnder.map((level) => level.popup), ["game-menu"])
   const text = screen(side)
-  assert.match(text, /YOUR SETTINGS - saved/)
+  assert.match(text, /DISPLAY - saved/)
   assert.match(text, /Background\s+<\s+dark\s+>/)
   assert.match(text, /match your terminal's own/, "the highlighted setting does not say what it is for")
   keys(side, ESC)
@@ -151,19 +152,19 @@ test("a player setting changes at once, is handed to the live loop to save, and 
   assert.deepEqual(side.saved, [{ ...DEFAULT_SETTINGS, theme: "light" }])
   assert.equal(side.build.state.status.text, "Background: light.")
   // Symbols to unicode: the very next frame draws with them.
-  goToPopupRow(side, playerRow("glyphPack"))
+  goToPopupRow(side, settingRow("glyphPack"))
   keys(side, RIGHT)
   assert.equal(side.build.state.settings.glyphPack, "unicode")
   assert.match(screen(side), /[─│┌]/u, "the frame did not switch to Unicode lines")
   // Colour depth walks all four and comes round; Left goes the other way.
-  goToPopupRow(side, playerRow("capability"))
+  goToPopupRow(side, settingRow("capability"))
   for (let step = 0; step < 4; step += 1) keys(side, RIGHT)
   assert.equal(side.build.state.settings.capability, DEFAULT_SETTINGS.capability)
   keys(side, LEFT)
   assert.equal(side.build.state.settings.capability, "monochrome")
   assert.match(screen(side), /Colour depth\s+<\s+none\s+>/)
   // Reduced motion flips on Enter.
-  goToPopupRow(side, playerRow("reducedMotion"))
+  goToPopupRow(side, settingRow("reducedMotion"))
   keys(side, ENTER)
   assert.equal(side.build.state.settings.reducedMotion, true)
   const before = side.build.state.settings
@@ -177,7 +178,7 @@ test("every player setting's value box is a click target, the same as Left and R
   for (const spec of PLAYER_FIELDS) {
     const byKey = session()
     keys(byKey, ESC, "s")
-    goToPopupRow(byKey, playerRow(spec.field))
+    goToPopupRow(byKey, settingRow(spec.field))
     keys(byKey, RIGHT)
     const byClick = session()
     keys(byClick, ESC, "s")
@@ -301,7 +302,7 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
   const { experiments, settings } = result.snapshot
   assert.equal(experiments.raid, "probe")
   assert.equal(experiments.holdWindowMs, 500)
-  assert.equal(experiments.battleRoundPulseMs, 1200)
+  assert.equal(experiments.popupPulseMs, 1200)
   assert.equal(experiments.crew, defaultExperiments().crew)
   assert.deepEqual(settings, { capability: "color256", theme: "light", glyphPack: "unicode", reducedMotion: true })
   // "Opens on" and "Smart cursor" were settled and deleted (feedback F30, F31) before the list of
@@ -311,9 +312,14 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
   assert.deepEqual(result.settled, ["focusArrowMs", "cardRevealMs", "placeLight", "scrollMargin"])
   // The popup's own words read back too, and a settled name from an older export is skipped without a word.
   const shown = parseSettingsExport("battleRoundPulseMs=off cursorBlinks=3", base)
-  assert.equal(shown.snapshot.experiments.battleRoundPulseMs, 0)
+  assert.equal(shown.snapshot.experiments.popupPulseMs, 0)
   assert.deepEqual(shown.ignored, [])
   assert.deepEqual(shown.settled, ["cursorBlinks"])
+  // `battleRoundPulseMs` above is the old name of the popup pulse (feedback F83): it reads as the new
+  // one, which reads too, and is reported by its name now.
+  const renamed = parseSettingsExport("battleRoundPulseMs=3000", base)
+  assert.deepEqual(renamed.applied, ["popupPulseMs"])
+  assert.equal(parseSettingsExport("popupPulseMs=3000", base).snapshot.experiments.popupPulseMs, renamed.snapshot.experiments.popupPulseMs)
   // Nothing readable at all is the base, unchanged.
   assert.deepEqual(parseSettingsExport("", base).snapshot, base)
   assert.deepEqual(parseSettingsExport("= = # nothing", base).snapshot, base)
@@ -326,7 +332,7 @@ test("a number is digits first: a bare unit is a bad value, skipped and reported
   assert.deepEqual(result.snapshot.experiments, { ...defaultExperiments(), raid: "probe" })
   assert.deepEqual(result.ignored, ["battleRoundPulseMs=ms", "holdWindowMs=%", "holdWindowMs=-350"])
   // With digits in front, a unit still reads.
-  assert.equal(parseSettingsExport("battleRoundPulseMs=1200ms", base).snapshot.experiments.battleRoundPulseMs, 1200)
+  assert.equal(parseSettingsExport("battleRoundPulseMs=1200ms", base).snapshot.experiments.popupPulseMs, 1200)
 })
 
 /** The owner's settings export of 2026-09-30, word for word (feedback F76): "Many of those settings can
@@ -413,23 +419,28 @@ test("the owner's export of 2026-09-30 is this build: its settled numbers are th
   const result = parseSettingsExport(OWNER_EXPORT_2026_09_30, base)
   // Every line is known: nothing is reported as a name the game does not know.
   assert.deepEqual(result.ignored, [])
-  assert.deepEqual(result.applied, ["holdWindowMs", "raid", "crew", "theme", "capability", "glyphPack", "reducedMotion"])
-  // The rest were settled: the twenty-eight of that export, and the focus arrow he settled again later
-  // that day, each skipped quietly; each number of the twenty-eight is the tuned value, read not copied —
-  // except the held-key ramp's three (`holdStep`, `fastStep`, `rampMs`), which his third round the same day
-  // retired along with the rule they tuned (F79: taps counted, a hold on a cadence), still skipped quietly.
-  // (The settled names are derived from the table, so they also hold tuned numbers his export never named.)
-  assert.equal(result.settled.length, 29)
+  // His jump distance reads as an Experiment again: it came back for the navigation polish round
+  // (feedback F85), at his value.
+  assert.deepEqual(result.applied, ["holdWindowMs", "jumpStep", "raid", "crew", "theme", "capability", "glyphPack", "reducedMotion"])
+  // The rest were settled: the twenty-eight of that export — less the jump distance, above — and the
+  // focus arrow he settled again later that day, each skipped quietly; each number of the twenty-eight is
+  // this build's value, read not copied, whichever tier it stands on now — except the held-key ramp's
+  // three (`holdStep`, `fastStep`, `rampMs`), which his third round the same day retired along with the
+  // rule they tuned (F79: taps counted, a hold on a cadence), still skipped quietly. (The settled names
+  // are derived from the list, so they also hold tuned numbers his export never named.)
+  assert.equal(result.settled.length, 28)
   assert.ok(result.settled.every((name) => SETTLED_EXPERIMENTS.has(name)))
-  const settledLater = new Set(["focusArrowMs", "cardRevealMs"])
+  // Not settled by that export: the hold window, an Experiment then and now (his third round retuned it),
+  // and the two he settled again later that day.
+  const notSettledThere = new Set(["holdWindowMs", "focusArrowMs", "cardRevealMs"])
   const numbers = [...OWNER_EXPORT_2026_09_30.matchAll(/^(\w+) = (\d+) /gmu)]
   let checked = 0
   for (const [, name, value] of numbers) {
-    if (name === undefined || !(name in TUNING) || settledLater.has(name)) continue
-    assert.equal(TUNING[name as keyof typeof TUNING], Number(value), `${name} is not his ${value}`)
+    if (name === undefined || !isSettingName(name) || notSettledThere.has(name)) continue
+    assert.equal(defaultValue(name), Number(value), `${name} is not his ${value}`)
     checked += 1
   }
-  assert.equal(checked, 18, "every settled number of his still in the table was compared")
+  assert.equal(checked, 18, "every number of his that is still a setting was compared")
   for (const retired of ["holdStep", "fastStep", "rampMs"]) assert.ok(!(retired in TUNING) && SETTLED_EXPERIMENTS.has(retired), retired)
   // And each default is a value its Experiment's list holds, so Left/Right step from it exactly.
   for (const spec of EXPERIMENT_FIELDS) {

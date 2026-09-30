@@ -45,7 +45,7 @@ const LENGTH = 2000
 const OPENING = flashLengthMs(POPUP_FLASH)
 
 /** A Build Phase with a Nexus power picked and the Battle Round screen open, as `n 1 s` leaves it. */
-function battleRound(experiments: Readonly<{ battleRoundPulseMs?: number }> = {}): Side {
+function battleRound(experiments: Readonly<{ popupPulseMs?: number }> = {}): Side {
   const side = buildSide({ context: { ...spikeContext(), experiments } })
   keys(side, "n", "1", "s")
   assert.equal(side.build.state.popup, "battle-round")
@@ -377,14 +377,14 @@ test("16 colours shows the flash, as two steps onto the title's colour, and then
 })
 
 test("the breath's Experiment at 0 stops the breath but not the flash; a shorter breath is a shorter breath", () => {
-  const off = battleRound({ battleRoundPulseMs: 0 })
+  const off = battleRound({ popupPulseMs: 0 })
   const animation = new BuildAnimation()
   assert.deepEqual(animation.frame(off.build.state, 0).popupBorder, { elapsedMs: 0, opening: POPUP_FLASH, breathMs: null })
   const after = animation.frame(off.build.state, OPENING + 10)
   assert.equal(after.popupBorder, undefined)
   assert.equal(after.busyUntil, null)
   assert.equal(popupBorderEffect(showing(off.build.state, "settings"), false), null, "another popup moves with the breath off")
-  const quick = battleRound({ battleRoundPulseMs: 1200 })
+  const quick = battleRound({ popupPulseMs: 1200 })
   const live = new BuildAnimation()
   live.frame(quick.build.state, 0, { capability: "color256" })
   assert.deepEqual(live.frame(quick.build.state, OPENING + 300, { capability: "color256" }).popupBorder, {

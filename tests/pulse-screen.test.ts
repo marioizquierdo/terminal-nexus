@@ -8,7 +8,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
 import { centreOn } from "../src/build/camera.ts"
-import { FIRST_EXPERIMENT_ROW, experimentRow } from "../src/build/settings.ts"
+import { FIRST_EXPERIMENT_ROW, settingRow } from "../src/build/settings.ts"
 import { escLabelSpan, escLabel, pulseControlRows } from "../src/build/layout.ts"
 import { MOUSE_RIGHT } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
@@ -537,7 +537,7 @@ test("the last three seconds warn, and `d` over a Pulse opens Settings at the pl
 
   played.build.handleData("d", played.layout)
   assert.equal(played.build.state.popup, "settings")
-  assert.equal(played.build.state.popupHighlight, experimentRow("raid"), "d did not open at the placeholder Pulse's Experiments")
+  assert.equal(played.build.state.popupHighlight, settingRow("raid"), "d did not open at the placeholder Pulse's Experiments")
   assert.match(screenText(played), /Raid\s+<\s+probe\s+>/)
   // Before a Pulse it is still the first Experiment.
   const before = newSession()

@@ -19,7 +19,7 @@ import {
   SETTINGS_EXPORT_ROW,
   SETTINGS_ROWS,
   pendingRestart,
-  playerRow,
+  settingRow,
   restartMessage,
 } from "../src/build/settings.ts"
 import type { RestartFieldSpec } from "../src/build/settings.ts"
@@ -162,13 +162,13 @@ test("pendingRestart names the changed settings marked restart, and nothing else
   const started = defaultExperiments()
   const fields: readonly RestartFieldSpec[] = [
     { field: "holdWindowMs", label: "Hold window", applies: "restart" },
-    { field: "battleRoundPulseMs", label: "Battle Round pulse", applies: "restart" },
+    { field: "popupPulseMs", label: "Popup pulse", applies: "restart" },
     { field: "raid", label: "Raid", applies: "now" },
   ]
   assert.deepEqual(pendingRestart(started, started, fields), [])
   assert.deepEqual(pendingRestart(started, { ...started, raid: "probe" }, fields), [], "a setting that applies now")
   assert.deepEqual(pendingRestart(started, { ...started, holdWindowMs: 500 }, fields), ["Hold window"])
-  assert.deepEqual(pendingRestart(started, { ...started, holdWindowMs: 500, battleRoundPulseMs: 0 }, fields), ["Hold window", "Battle Round pulse"])
+  assert.deepEqual(pendingRestart(started, { ...started, holdWindowMs: 500, popupPulseMs: 0 }, fields), ["Hold window", "Popup pulse"])
   // Put back, it is not pending any more.
   assert.deepEqual(pendingRestart(started, { ...started }, fields), [])
   // The build's own list: exactly its restart fields, whichever they are today.
@@ -436,7 +436,7 @@ test("a click on the scroll bar's upper half scrolls up, on its lower half down;
   const wheel = buildSide()
   keys(wheel, ESC, "s")
   clickCell(wheel, placed(wheel).box.left + 3, placed(wheel).box.top + 3, MOUSE_WHEEL_DOWN)
-  assert.equal(wheel.build.state.popupHighlight, playerRow("capability"))
+  assert.equal(wheel.build.state.popupHighlight, settingRow("capability"))
 })
 
 test("hit-testing the scroll bar reads the same placement the frame draws: every bar cell answers, the cell beside it does not", () => {

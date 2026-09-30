@@ -13,7 +13,7 @@ import { placePopup, popupSpec } from "../src/build/popup.ts"
 import type { BuildSessionOptions } from "../src/build/session.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { GameMenuRow } from "../src/build/settings.ts"
-import { GAME_MENU_ROWS, experimentRow } from "../src/build/settings.ts"
+import { GAME_MENU_ROWS, settingRow } from "../src/build/settings.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { spikeContext } from "../src/cli/spike.ts"
 import type { Coord } from "../src/grid/types.ts"
@@ -162,7 +162,7 @@ export function goToPopupRow(side: Side, row: number): void {
 
 /** In Settings, the keyboard's way to an Experiment's row. */
 export function goToExperiment(side: Side, field: ExperimentField): void {
-  goToPopupRow(side, experimentRow(field))
+  goToPopupRow(side, settingRow(field))
 }
 
 /** In the game menu, the keyboard's way to one of its rows. */

@@ -1,97 +1,46 @@
-// The Build Phase's Settings popup (owner, 2026-09-28: "Let's solidify this as Settings"): the
-// player's own settings first — the four the title menu's Settings screen already has, saved the same
-// way — and then **Experiments**, every Experiment (`src/build/experiments.ts`), which are for
-// playtesting and are never saved. Two lists in one popup, one row shape (a value Left and Right
-// change), and one way out of it for the owner's feedback: the export (`settings-export.ts`).
+// The Build Phase's Settings popup (owner, 2026-09-28: "Let's solidify this as Settings"; in sections
+// since feedback F85, 2026-09-30: "make more groups, and leave an extra space between sections"): every
+// setting the list shows (`src/build/all-settings.ts`) — the player's own, saved the same way as the
+// title menu's Settings screen, and the Experiments, which are for playtesting and never saved — under
+// titled sections with a blank line between them, then "Export settings". One row shape (a value Left
+// and Right change), and one way out of it for the owner's feedback: the export (`settings-export.ts`).
 //
-// This file holds the player half and the popup's row order. The flags themselves stay in
-// `experiments.ts`, whose spec list the Experiments section wraps unchanged.
-//
-// **Rows.** `BuildState.popupHighlight` is an index into `SETTINGS_ROWS`, the rows in the order the
-// popup draws them and Up/Down walk them, as it is an index into every other popup's list: the
-// player's settings, then the experiments, then Export settings, the list's last row (feedback F35).
-// Starting over is not a Settings row any more: it is the game menu's `[r] Restart` (F34), and a
-// setting that only takes effect then is announced by a message popup when Settings closes
+// **Rows.** `BuildState.popupHighlight` is an index into `SETTINGS_ROWS`, the rows the keyboard can be
+// on, in the order the popup draws them and Up/Down walk them, as it is an index into every other
+// popup's list. Section titles and the blank lines between sections are drawn by the popup
+// (`src/build/popup.ts`) and are never rows here, so Up and Down step over them and the title's count
+// counts only these. Starting over is not a Settings row: it is the game menu's `[r] Restart` (F34), and
+// a setting that only takes effect then is announced by a message popup when Settings closes
 // (`pendingRestart`, `restartMessage`).
 
 import type { Settings } from "../settings/types.ts"
-import { CAPABILITY_MODES, THEMES } from "../view/roles.ts"
-import type { CapabilityMode, Theme } from "../view/roles.ts"
-import { GLYPH_PACKS } from "../view/theme.ts"
-import type { GlyphPack } from "../view/theme.ts"
+import type { Section, ShownName, ShownSetting } from "./all-settings.ts"
+import { SHOWN_SETTINGS, shownSetting, stepValue } from "./all-settings.ts"
 import type { ExperimentApplies, ExperimentField, Experiments } from "./experiments.ts"
 import { EXPERIMENT_FIELDS } from "./experiments.ts"
 import type { PopupMessage } from "./types.ts"
 
 export type PlayerField = keyof Settings
 
-type PlayerSpec<F extends PlayerField> = Readonly<{
-  field: F
-  label: string
-  /** What the setting is for, in plain words — shown under the list while it is highlighted. */
-  question: string
-  values: readonly Settings[F][]
-  format: (value: Settings[F]) => string
-}>
+/** A player setting, as Settings reads it. */
+export type PlayerSpec = ShownSetting<PlayerField>
 
-type AnyPlayerSpec = { [F in PlayerField]: PlayerSpec<F> }[PlayerField]
+/** The player's settings, in the order Settings lists them. Every one applies at once. */
+export const PLAYER_FIELDS: readonly PlayerSpec[] = SHOWN_SETTINGS.filter((spec): spec is PlayerSpec => spec.tier === "player")
 
-const CAPABILITY_NAMES: Readonly<Record<CapabilityMode, string>> = {
-  monochrome: "none",
-  color16: "16",
-  color256: "256",
-  truecolor: "millions",
-}
-
-/** The player's settings, in the order the popup lists them. Every one applies at once. */
-export const PLAYER_FIELDS: readonly AnyPlayerSpec[] = [
-  {
-    field: "theme",
-    label: "Background",
-    question: "Dark or light: match your terminal's own background.",
-    values: THEMES,
-    format: (value: Theme) => value,
-  },
-  {
-    field: "capability",
-    label: "Colour depth",
-    question: "How many colours the screen uses. Pick fewer if colours look wrong in your terminal; none is black and white.",
-    values: CAPABILITY_MODES,
-    format: (value: CapabilityMode) => CAPABILITY_NAMES[value],
-  },
-  {
-    field: "glyphPack",
-    label: "Symbols",
-    question: "Plain keyboard characters (ascii), or Unicode lines and blocks where your font has them.",
-    values: GLYPH_PACKS,
-    format: (value: GlyphPack) => value,
-  },
-  {
-    field: "reducedMotion",
-    label: "Reduced motion",
-    question: "On: a new building appears finished at once, with no light and no sparks.",
-    values: [false, true],
-    format: (value: boolean) => (value ? "on" : "off"),
-  },
-]
-
-export function playerSpec(field: PlayerField): AnyPlayerSpec {
-  return PLAYER_FIELDS.find((spec) => spec.field === field) as AnyPlayerSpec
+export function playerSpec(field: PlayerField): PlayerSpec {
+  return shownSetting(field)
 }
 
 export function formatPlayerValue(settings: Settings, field: PlayerField): string {
-  const spec = playerSpec(field) as PlayerSpec<PlayerField>
-  return (spec.format as (value: Settings[PlayerField]) => string)(settings[field])
+  return playerSpec(field).format(settings[field])
 }
 
-/** One Left (`-1`) or Right (`+1`) on a player setting. Every one is a choice, so both ends come
- *  round. */
+/** One Left (`-1`) or Right (`+1`) on a player setting. A choice comes round at both ends. */
 export function adjustSetting(settings: Settings, field: PlayerField, step: -1 | 1): Settings {
-  const spec = playerSpec(field) as PlayerSpec<PlayerField>
-  const values = spec.values as readonly Settings[PlayerField][]
-  const index = Math.max(0, values.indexOf(settings[field]))
-  const next = values[(index + step + values.length) % values.length] as Settings[PlayerField]
-  return { ...settings, [field]: next }
+  const spec = playerSpec(field)
+  const next = stepValue(spec.values, settings[field], step, spec.cycles)
+  return next === null ? settings : { ...settings, [field]: next }
 }
 
 // --- The game menu ----------------------------------------------------------------------------------
@@ -148,35 +97,38 @@ export function restartMessage(labels: readonly string[]): PopupMessage {
 
 // --- The popup's rows -------------------------------------------------------------------------------
 
-export type SettingsRow =
-  | Readonly<{ kind: "player"; field: PlayerField }>
-  | Readonly<{ kind: "experiment"; field: ExperimentField }>
-  | Readonly<{ kind: "export" }>
+export type SettingsRow = Readonly<{ kind: "setting"; field: ShownName }> | Readonly<{ kind: "export" }>
 
-/** Settings' rows, in the order the popup draws them and Up/Down walk them: the player's own settings,
- *  the Experiments, and "Export settings" last. `popupHighlight` indexes this list. */
+/** Settings' rows, in the order the popup draws them and Up/Down walk them: every shown setting, section
+ *  by section, and "Export settings" last (feedback F35). `popupHighlight` indexes this list. */
 export const SETTINGS_ROWS: readonly SettingsRow[] = [
-  ...PLAYER_FIELDS.map((spec): SettingsRow => ({ kind: "player", field: spec.field })),
-  ...EXPERIMENT_FIELDS.map((spec): SettingsRow => ({ kind: "experiment", field: spec.field })),
+  ...SHOWN_SETTINGS.map((spec): SettingsRow => ({ kind: "setting", field: spec.field })),
   { kind: "export" },
 ]
 
-/** The row of player setting `field`. */
-export function playerRow(field: PlayerField): number {
-  return SETTINGS_ROWS.findIndex((row) => row.kind === "player" && row.field === field)
+/** The row of setting `field`, a player setting or an Experiment. */
+export function settingRow(field: ShownName): number {
+  return SETTINGS_ROWS.findIndex((row) => row.kind === "setting" && row.field === field)
 }
 
-/** The row of Experiment `field`. */
-export function experimentRow(field: ExperimentField): number {
-  return SETTINGS_ROWS.findIndex((row) => row.kind === "experiment" && row.field === field)
+/** The section row `row` is listed under, or `null` for "Export settings", which stands apart. */
+export function sectionOfRow(row: number): Section | null {
+  const entry = SETTINGS_ROWS[row]
+  return entry === undefined || entry.kind === "export" ? null : shownSetting(entry.field).section
 }
 
-/** The first row of each section — where the game menu's `[s] Settings` and `d` open the popup — and
- *  "Export settings", the last. */
+/** Where the game menu's `[s] Settings` opens the popup: its first row. */
 export const FIRST_SETTING_ROW = 0
-export const FIRST_EXPERIMENT_ROW = PLAYER_FIELDS.length
+
+/** Where `d` opens it: the first Experiment in the list — Keyboard navigation's first while that section
+ *  leads the Experiments. */
+export const FIRST_EXPERIMENT_ROW = SETTINGS_ROWS.findIndex(
+  (row) => row.kind === "setting" && shownSetting(row.field).tier === "experiment",
+)
+
+/** "Export settings", the list's last row. */
 export const SETTINGS_EXPORT_ROW = SETTINGS_ROWS.length - 1
 
-/** Where `d` opens Settings while a Nexus Pulse is on screen: the placeholder Pulse's own Experiments,
- *  which are what someone watching it wants to change, rather than the Build Phase's first. */
-export const FIRST_PULSE_EXPERIMENT_ROW = experimentRow("raid")
+/** Where `d` opens Settings while a Nexus Pulse is on screen: the placeholder Pulse's section, which is
+ *  what someone watching it wants to change, rather than the Build Phase's first Experiment. */
+export const FIRST_PULSE_EXPERIMENT_ROW = SETTINGS_ROWS.findIndex((_, row) => sectionOfRow(row) === "pulse")

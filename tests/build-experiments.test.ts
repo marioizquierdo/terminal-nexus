@@ -13,7 +13,7 @@ import type { ExperimentField } from "../src/build/experiments.ts"
 import { menuEntryRow } from "../src/build/layout.ts"
 import { MOUSE_RIGHT, MOUSE_WHEEL_DOWN, MOUSE_WHEEL_UP } from "../src/build/mouse.ts"
 import { EXPORT_QUESTION, SETTINGS_NOTE_LINES, settingColumns, wrapWords } from "../src/build/popup.ts"
-import { PLAYER_FIELDS, SETTINGS_ROWS, experimentRow } from "../src/build/settings.ts"
+import { PLAYER_FIELDS, SETTINGS_ROWS, settingRow } from "../src/build/settings.ts"
 import { entryOfConstruct } from "../src/build/state.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { SETTLED_EXPERIMENTS } from "../src/build/tuning.ts"
@@ -48,7 +48,7 @@ import {
 import type { Side } from "./build-helpers.ts"
 
 /** The frame row the popup draws Experiment `field` on. */
-function settingRow(side: Side, field: ExperimentField): number {
+function frameRowOf(side: Side, field: ExperimentField): number {
   const label = experimentSpec(field).label
   const hit = placed(side).rows.find((row) => row.spec.kind === "setting" && row.spec.label === label)
   assert.ok(hit !== undefined, `no row for ${field}`)
@@ -64,7 +64,7 @@ function onScreen(side: Side, field: ExperimentField): boolean {
 /** The mouse's way to an Experiment scrolled out of view: the wheel, over the popup, until it shows. */
 function wheelTo(side: Side, field: ExperimentField): void {
   const box = placed(side).box
-  const down = experimentRow(field) > side.build.state.popupHighlight
+  const down = settingRow(field) > side.build.state.popupHighlight
   for (let turns = 0; turns < SETTINGS_ROWS.length && !onScreen(side, field); turns += 1) {
     clickCell(side, box.left + 2, box.top + 2, down ? MOUSE_WHEEL_DOWN : MOUSE_WHEEL_UP)
   }
@@ -73,7 +73,7 @@ function wheelTo(side: Side, field: ExperimentField): void {
 function clickValue(side: Side, field: ExperimentField, half: "left" | "right"): void {
   wheelTo(side, field)
   const columns = settingColumns(placed(side))
-  clickCell(side, half === "left" ? columns.valueFrom : columns.valueTo, settingRow(side, field))
+  clickCell(side, half === "left" ? columns.valueFrom : columns.valueTo, frameRowOf(side, field))
 }
 
 // --- Opening and closing ---------------------------------------------------------------------------
@@ -82,15 +82,34 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   const side = buildSide()
   keys(side, "d")
   assert.equal(side.build.state.popup, "settings")
-  assert.equal(side.build.state.popupHighlight, experimentRow(EXPERIMENT_FIELDS[0]?.field as ExperimentField))
+  assert.equal(side.build.state.popupHighlight, settingRow(EXPERIMENT_FIELDS[0]?.field as ExperimentField))
   const text = screenText(side)
   assert.match(text, /SETTINGS/)
-  assert.match(text, /EXPERIMENTS - for playtests, not saved/)
-  // The five after the owner's third round (2026-09-30), in order: navigation (the hold window, key
-  // releases), the Battle Round's pulse, and the placeholder Pulse's raid and crew.
+  assert.match(text, /KEYBOARD NAVIGATION - experiments/)
+  // In order, section by section (feedback F85): keyboard navigation — the hold window and key releases
+  // from the third round, and the tap, hold and jump numbers back for the navigation polish round — the
+  // popup pulse (every popup's since F84), and the placeholder Pulse's raid and crew.
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.field),
-    ["holdWindowMs", "keyReleases", "battleRoundPulseMs", "raid", "crew"],
+    [
+      "holdWindowMs",
+      "keyReleases",
+      "doubleTapMs",
+      "fastTapMs",
+      "tapsToSpeedUp",
+      "tapTopStep",
+      "holdMoveMs",
+      "holdLongMs",
+      "holdLongStep",
+      "jumpStep",
+      "popupPulseMs",
+      "raid",
+      "crew",
+    ],
+  )
+  assert.deepEqual(
+    EXPERIMENT_FIELDS.map((spec) => spec.section),
+    [...Array.from({ length: 10 }, () => "keyboard"), "effects", "pulse", "pulse"],
   )
   // The bottom line says what the keys do there (feedback F59), and the highlighted row's question is
   // shown. Opened by `d` from the game, Esc closes it.
@@ -255,13 +274,13 @@ test("the browser playtest page's Build Phase key bar has d", () => {
 // --- Same flow, every adapter ----------------------------------------------------------------------
 
 test("setting an Experiment by keys, by clicks, and from a driver script is the same state and the same frame", () => {
-  // The hold window up two, the Battle Round pulse down one; restart; then arm the Barracks from the menu and
+  // The hold window up two, the popup pulse down one; restart; then arm the Barracks from the menu and
   // place it where the cursor is, since it fits there.
   const byKeyboard = buildSide()
   keys(byKeyboard, "d")
   goToExperiment(byKeyboard, "holdWindowMs")
   keys(byKeyboard, RIGHT, RIGHT)
-  goToExperiment(byKeyboard, "battleRoundPulseMs")
+  goToExperiment(byKeyboard, "popupPulseMs")
   // `q` leaves Settings for the game menu (nothing here waits for a restart, so no message); its [r]
   // restarts. The keyboard is then on the menu.
   keys(byKeyboard, LEFT, "q", "r")
@@ -273,7 +292,7 @@ test("setting an Experiment by keys, by clicks, and from a driver script is the 
   clickPopupOption(byMouse, "s")
   clickValue(byMouse, "holdWindowMs", "right")
   clickValue(byMouse, "holdWindowMs", "right")
-  clickValue(byMouse, "battleRoundPulseMs", "left")
+  clickValue(byMouse, "popupPulseMs", "left")
   // "close [esc]" in the top bar is Esc: back to the game menu (no message — nothing changed waits for
   // a restart); then the game menu's Restart.
   clickEscLabel(byMouse)
@@ -297,7 +316,7 @@ test("setting an Experiment by keys, by clicks, and from a driver script is the 
     { kind: "open-settings", section: "experiments" },
     { kind: "experiment-adjust", field: "holdWindowMs", step: 1 },
     { kind: "experiment-adjust", field: "holdWindowMs", step: 1 },
-    { kind: "experiment-adjust", field: "battleRoundPulseMs", step: -1 },
+    { kind: "experiment-adjust", field: "popupPulseMs", step: -1 },
     { kind: "restart" },
     { kind: "highlight", delta: 1 },
     { kind: "highlight", delta: 1 },
@@ -311,7 +330,7 @@ test("setting an Experiment by keys, by clicks, and from a driver script is the 
 
   const expected = byKeyboard.build.state
   let experiments = defaultExperiments()
-  for (const [field, step] of [["holdWindowMs", 1], ["holdWindowMs", 1], ["battleRoundPulseMs", -1]] as const) {
+  for (const [field, step] of [["holdWindowMs", 1], ["holdWindowMs", 1], ["popupPulseMs", -1]] as const) {
     experiments = stepExperiment(experiments, field, step).flags
   }
   assert.notDeepEqual(experiments, defaultExperiments(), "no step changed anything: the test proves nothing")

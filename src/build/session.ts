@@ -20,7 +20,7 @@ import type { CursorKey } from "../menu/list-keys.ts"
 import { cursorKeyOf } from "../menu/list-keys.ts"
 import { buildKeyboardCommand } from "./keyboard.ts"
 import type { Move } from "./motion.ts"
-import { KeyMotion, moveTuning } from "./motion.ts"
+import { KeyMotion, moveTuning, pressTiles } from "./motion.ts"
 import type { MouseEvent } from "./mouse.ts"
 import { buildMouseCommand, parseMouseEvent } from "./mouse.ts"
 import type { BuildContext, BuildState } from "./state.ts"
@@ -234,7 +234,7 @@ export class BuildSession {
   private handleKeyEvent(key: string, phase: KeyPhase | null, now: number | undefined): void {
     if (phase === "release") {
       const cursor = cursorKeyOf(key)
-      if (cursor !== null && now !== undefined) this.motion.step(cursor, now, phase, moveTuning(this.buildState.experiments.holdWindowMs))
+      if (cursor !== null && now !== undefined) this.motion.step(cursor, now, phase, moveTuning(this.buildState))
       return
     }
     const command = this.keyCommand(key, now, phase)
@@ -253,7 +253,7 @@ export class BuildSession {
    */
   private keyCommand(key: string, now: number | undefined, phase: KeyPhase | null): BuildCommand | null {
     const state = this.buildState
-    const tuning = moveTuning(state.experiments.holdWindowMs)
+    const tuning = moveTuning(state)
     let moved = false
     const move = (cursor: CursorKey): number => {
       moved = true
@@ -266,8 +266,10 @@ export class BuildSession {
       popup: state.popup,
       popupSpec: popupSpec(this.context, state),
       pulse: this.presenter !== null,
+      // Without a clock every key is a press on its own — a tap, or the fast move's jump as far as the
+      // setting says now.
       ...(now === undefined
-        ? {}
+        ? { moveTiles: (cursor: CursorKey) => pressTiles(cursor, tuning) }
         : {
             moveTiles: move,
             listRows: (direction: -1 | 1) => move({ dx: 0, dy: direction, jump: false }),

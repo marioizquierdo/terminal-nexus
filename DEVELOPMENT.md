@@ -114,7 +114,7 @@ bun bin/grid.ts scenarios/citizen-mirror-skirmish --headless
 ./bin/terminal-nexus.ts --spike
 ./bin/terminal-nexus.ts --spike --scroll-margin 30 --capability monochrome   # margin: % of the view
 ./bin/terminal-nexus.ts --spike --settings "$(pbpaste)"   # start from an exported settings text
-./bin/terminal-nexus.ts --spike --settings "battleRoundPulseMs=3000 raid=probe"
+./bin/terminal-nexus.ts --spike --settings "popupPulseMs=3000 raid=probe"
 ./bin/terminal-nexus.ts --spike --keys "n 1 1 Enter"         # open already in a state: a power picked, a Barracks placed
 ./bin/terminal-nexus.ts --spike --keys "n 2 s s"             # open already in a Nexus Pulse, with nothing built (gate 6A)
 ```

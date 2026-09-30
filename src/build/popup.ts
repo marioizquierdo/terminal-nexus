@@ -15,20 +15,12 @@
 // while a popup is open — and is its click target, so a popup's own border carries only its title and,
 // beside a list that overflows, its scroll bar.
 
-import { experimentSpec, formatExperimentValue } from "./experiments.ts"
+import type { Section } from "./all-settings.ts"
+import { SECTIONS, SHOWN_SETTINGS, setting, shownSetting } from "./all-settings.ts"
 import type { BuildLayout } from "./layout.ts"
 import { START_KEY } from "./layout.ts"
 import { CONTROLS_TITLE, controlsPage } from "./help.ts"
-import {
-  CONTROLS_DESCRIPTION,
-  FIRST_EXPERIMENT_ROW,
-  FIRST_SETTING_ROW,
-  GAME_MENU_ROWS,
-  RESTART_DESCRIPTION,
-  SETTINGS_ROWS,
-  formatPlayerValue,
-  playerSpec,
-} from "./settings.ts"
+import { CONTROLS_DESCRIPTION, GAME_MENU_ROWS, RESTART_DESCRIPTION, SETTINGS_ROWS, sectionOfRow } from "./settings.ts"
 import type { BuildContext, BuildState } from "./state.ts"
 import { exportText, nexusPowers } from "./state.ts"
 import type { BuildCommand, PopupMessage } from "./types.ts"
@@ -100,18 +92,28 @@ export type PopupSpec = Readonly<{ title: string; rows: readonly PopupRow[]; scr
  *  (feedback F35). */
 export const SETTINGS_NOTE_LINES = 3
 
-/** The Settings popup's two section headings, drawn in its list. */
-export const SETTINGS_HEADING = "YOUR SETTINGS - saved"
-export const EXPERIMENTS_HEADING = "EXPERIMENTS - for playtests, not saved"
 export const EXPORT_QUESTION =
   "Shows every setting and experiment as text, and copies it, to paste into a pull request comment."
 
 /**
- * The Settings popup (owner, 2026-09-28; laid out again from his feedback F35, 2026-09-29): its
- * position in the list beside the title — "(3/28)" — then the player's own settings, then, clearly
- * apart, the Experiments, each with the question it serves, and Export settings as the list's last
- * row; then a line across the popup, and under it what the highlighted row is for. The list scrolls;
- * its two headings scroll with it.
+ * A Settings section's heading: its title, and what its rows are — "saved" for the player's own,
+ * "experiments" for rows that are for playtests and never saved — so the owner can tell them apart when
+ * a section holds only one kind, and a section holding both says so.
+ */
+export function sectionHeading(section: Section): string {
+  const title = SECTIONS.find((entry) => entry.section === section)?.title ?? section.toUpperCase()
+  const tiers = new Set(SHOWN_SETTINGS.filter((spec) => spec.section === section).map((spec) => spec.tier))
+  const kind = tiers.size > 1 ? "saved and experiments" : tiers.has("player") ? "saved" : "experiments"
+  return `${title} - ${kind}`
+}
+
+/**
+ * The Settings popup (owner, 2026-09-28; laid out again from his feedback F35, 2026-09-29, and in
+ * sections from F85, 2026-09-30): its position among the rows the keyboard can be on beside the title —
+ * "(3/18)" — then each section under its heading, a blank line between sections (the Controls page's
+ * shape), each row with the question it serves, and Export settings apart as the list's last row; then a
+ * line across the popup, and under it what the highlighted row is for. The list scrolls; its headings
+ * and blank lines scroll with it and are never highlighted, so Up and Down step over them.
  */
 function settingsSpec(state: BuildState): PopupSpec {
   const rows: PopupRow[] = []
@@ -120,38 +122,31 @@ function settingsSpec(state: BuildState): PopupSpec {
   const lineOf: number[] = []
   const select = (row: number): BuildCommand => ({ kind: "select-row", row })
   SETTINGS_ROWS.forEach((entry, row) => {
-    if (row === FIRST_SETTING_ROW) rows.push({ kind: "heading", text: SETTINGS_HEADING })
-    if (row === FIRST_EXPERIMENT_ROW) rows.push({ kind: "heading", text: EXPERIMENTS_HEADING })
+    const section = sectionOfRow(row)
+    if (row === 0 || section !== sectionOfRow(row - 1)) {
+      if (row > 0) rows.push({ kind: "blank" })
+      if (section !== null) rows.push({ kind: "heading", text: sectionHeading(section) })
+    }
     lineOf.push(rows.length)
     const highlighted = row === state.popupHighlight
     if (entry.kind === "export") {
       rows.push({ kind: "option", hotkey: "e", label: "Export settings", command: { kind: "export-settings" }, highlighted })
       return
     }
-    const setting =
-      entry.kind === "player"
-        ? {
-            label: playerSpec(entry.field).label,
-            value: formatPlayerValue(state.settings, entry.field),
-            decrease: { kind: "setting-adjust", field: entry.field, step: -1 } as const,
-            increase: { kind: "setting-adjust", field: entry.field, step: 1 } as const,
-          }
-        : {
-            label: experimentSpec(entry.field).label,
-            value: formatExperimentValue(state.experiments, entry.field),
-            decrease: { kind: "experiment-adjust", field: entry.field, step: -1 } as const,
-            increase: { kind: "experiment-adjust", field: entry.field, step: 1 } as const,
-          }
-    rows.push({ kind: "setting", ...setting, highlighted, select: select(row) })
+    const spec = shownSetting(entry.field)
+    rows.push({
+      kind: "setting",
+      label: spec.label,
+      value: spec.format(setting(state, entry.field)),
+      decrease: { kind: "setting-adjust", field: entry.field, step: -1 },
+      increase: { kind: "setting-adjust", field: entry.field, step: 1 },
+      highlighted,
+      select: select(row),
+    })
   })
   const to = rows.length
   const highlighted = SETTINGS_ROWS[state.popupHighlight]
-  const note =
-    highlighted === undefined || highlighted.kind === "export"
-      ? EXPORT_QUESTION
-      : highlighted.kind === "player"
-        ? playerSpec(highlighted.field).question
-        : experimentSpec(highlighted.field).question
+  const note = highlighted === undefined || highlighted.kind === "export" ? EXPORT_QUESTION : shownSetting(highlighted.field).question
   rows.push({ kind: "rule" }, { kind: "note", text: note, lines: SETTINGS_NOTE_LINES })
   const line = lineOf[state.popupHighlight] ?? to - 1
   // A heading directly above the highlighted row is kept in view with it where the window allows: the
@@ -248,7 +243,7 @@ function controlsSpec(state: BuildState): PopupSpec {
   const rows: PopupRow[] = []
   /** Where each key line sits in `rows` — what `popupHighlight` indexes. */
   const lineRows: number[] = []
-  controlsPage().forEach((section, index) => {
+  controlsPage(setting(state, "jumpStep")).forEach((section, index) => {
     if (index > 0) rows.push({ kind: "blank" })
     rows.push({ kind: "heading", text: section.heading })
     for (const line of section.lines) {

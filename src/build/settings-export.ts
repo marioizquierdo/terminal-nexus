@@ -17,25 +17,30 @@
 //
 // Experiments that differ from this build's defaults come first, each with the default it replaced;
 // then the player's own settings; then every other experiment, so the text pins the whole state even
-// when a later build moves a default. Names are the code's own field names — the same ones the
-// settings file uses — because what reads them back is the game; the comment gives the name on screen.
+// when a later build moves a default. Each group is in the order Settings lists it. Names are the
+// code's own field names — the same ones the settings file uses — because what reads them back is the
+// game; the comment gives the name on screen.
 //
 // **Parsing is forgiving**, in the style of `parseSettings`: any `name = value` pair anywhere is read
 // (lines, spaces, commas, semicolons or `&` all separate them, so a one-line `--settings
 // "raid=probe crew=some"` works too); an unknown name is ignored and reported; a value that is not one
-// the setting can take leaves that one setting as it was. **A settled Experiment's name is skipped
+// the setting can take leaves that one setting as it was. **A name is read by the tier its setting
+// stands on now**, not the one it had when the text was written (`src/build/all-settings.ts`): a player
+// setting or an Experiment is applied to whichever it is; **a settled Experiment's name is skipped
 // quietly** (`SETTLED_EXPERIMENTS`): an export from before the owner settled it still names it, and its
-// value is the code's own now (`src/build/tuning.ts`), so it is neither applied nor reported as a name
-// the game does not know. Nothing here touches a clock, a file or a clipboard — the adapters do that
-// (`src/cli/terminalNexus.ts`, `src/web/host.ts`).
+// value is the code's own now, so it is neither applied nor reported as a name the game does not know;
+// and **a renamed setting's old name reads as its new one** (`RENAMED_SETTINGS`). Nothing here touches
+// a clock, a file or a clipboard — the adapters do that (`src/cli/terminalNexus.ts`, `src/web/host.ts`).
 
 import type { Settings } from "../settings/types.ts"
 import { parseSettings } from "../settings/types.ts"
-import type { ExperimentField, Experiments } from "./experiments.ts"
-import { EXPERIMENT_FIELDS, experimentSpec, formatExperimentValue, defaultExperiments } from "./experiments.ts"
+import type { ShownName } from "./all-settings.ts"
+import { SHOWN_SETTINGS, shownSetting } from "./all-settings.ts"
+import type { Experiments } from "./experiments.ts"
+import { EXPERIMENT_FIELDS, formatExperimentValue, defaultExperiments } from "./experiments.ts"
 import type { PlayerField } from "./settings.ts"
-import { PLAYER_FIELDS, playerSpec } from "./settings.ts"
-import { SETTLED_EXPERIMENTS } from "./tuning.ts"
+import { PLAYER_FIELDS } from "./settings.ts"
+import { RENAMED_SETTINGS, SETTLED_EXPERIMENTS } from "./tuning.ts"
 
 export type SettingsSnapshot = Readonly<{ settings: Settings; experiments: Experiments }>
 
@@ -86,32 +91,28 @@ const PLAYER_ALIASES: Readonly<Record<string, PlayerField>> = {
 const TRUE_WORDS = new Set(["on", "true", "yes", "1"])
 const FALSE_WORDS = new Set(["off", "false", "no", "0"])
 
-function asBoolean(text: string): boolean | null {
-  const lower = text.toLowerCase()
-  if (TRUE_WORDS.has(lower)) return true
-  if (FALSE_WORDS.has(lower)) return false
-  return null
-}
-
 /**
- * One experiment's value from text, or `null` when it is not one the flag can take. Accepted: the
- * value as the export writes it, as the popup shows it ("off"), or — for a number — any number between
- * the flag's smallest and largest listed values, with a unit or not ("200", "200ms"), since a number the
- * list does not hold is a legal starting value.
+ * A shown setting's value from text, or `null` when it is not one the setting can take. Accepted: the
+ * value as the export writes it, as the popup shows it ("off", "16", "4 tiles"); for a yes/no, any of the
+ * usual words; and for a number, any number between the setting's smallest and largest listed values,
+ * with a unit or not ("200", "200ms"), since a number the list does not hold is a legal starting value.
  */
-function experimentValue(field: ExperimentField, text: string): Experiments[ExperimentField] | null {
-  const spec = experimentSpec(field)
-  const values = spec.values as readonly Experiments[ExperimentField][]
-  const format = spec.format as (value: Experiments[ExperimentField]) => string
+function valueFromText(field: ShownName, text: string): number | string | boolean | null {
+  const spec = shownSetting(field)
   const lower = text.toLowerCase()
-  for (const value of values) {
-    if (raw(value).toLowerCase() === lower || format(value).toLowerCase() === lower) return value
+  for (const value of spec.values) {
+    if (raw(value).toLowerCase() === lower || spec.format(value).toLowerCase() === lower) return value
   }
-  if (typeof values[0] === "number") {
+  if (typeof spec.values[0] === "boolean") {
+    if (TRUE_WORDS.has(lower)) return true
+    if (FALSE_WORDS.has(lower)) return false
+    return null
+  }
+  if (typeof spec.values[0] === "number") {
     // Digits first: a bare unit ("ms") is not a number, though `Number("")` would call it 0.
-    const digits = /^(\d+)(?:ms|%|tiles?)?$/u.exec(lower)?.[1]
+    const digits = /^(\d+)(?:ms|%|tiles?|taps?)?$/u.exec(lower)?.[1]
     const number = Number(digits)
-    const numbers = values as readonly number[]
+    const numbers = spec.values as readonly number[]
     if (digits !== undefined && number >= Math.min(...numbers) && number <= Math.max(...numbers)) return number
   }
   return null
@@ -119,7 +120,7 @@ function experimentValue(field: ExperimentField, text: string): Experiments[Expe
 
 export type ImportResult = Readonly<{
   snapshot: SettingsSnapshot
-  /** The names whose values were taken, in the order they were read. */
+  /** The names whose values were taken, in the order they were read — each by its name now. */
   applied: readonly string[]
   /** What was not: an unknown name, or a value the setting cannot take — each as it was written. */
   ignored: readonly string[]
@@ -129,8 +130,16 @@ export type ImportResult = Readonly<{
 
 const PAIR = /([A-Za-z][A-Za-z0-9_]*)\s*=\s*([^\s,;&#]+)/gu
 
-/** The names of this build's Experiments, as an export writes them. */
-const EXPERIMENT_NAMES: ReadonlySet<string> = new Set(EXPERIMENT_FIELDS.map((spec) => spec.field))
+/** The settings Settings shows, by name — what a pair in the text may set. */
+const SHOWN_NAMES: ReadonlySet<string> = new Set(SHOWN_SETTINGS.map((spec) => spec.field))
+
+/** The shown setting a name in the text means: its own, its new name if it was renamed, or a player
+ *  setting's other name; `null` for any other name. */
+function shownNameOf(name: string): ShownName | null {
+  const current = RENAMED_SETTINGS[name] ?? name
+  if (SHOWN_NAMES.has(current)) return current as ShownName
+  return PLAYER_ALIASES[name.toLowerCase()] ?? null
+}
 
 /**
  * Reads an export (or any `name = value` text) onto `base`: every pair it recognises replaces that one
@@ -148,34 +157,22 @@ export function parseSettingsExport(text: string, base: SettingsSnapshot): Impor
     for (const match of body.matchAll(PAIR)) {
       const name = match[1] as string
       const value = match[2] as string
-      // A live Experiment first, so one that takes up a tuned number's name again is read, not skipped.
-      if (EXPERIMENT_NAMES.has(name)) {
-        const parsed = experimentValue(name as ExperimentField, value)
-        if (parsed === null) ignored.push(`${name}=${value}`)
-        else {
-          experiments[name] = parsed
-          applied.push(name)
-        }
+      // A shown setting first, so one that takes up a tuned number's name again is read, not skipped.
+      const field = shownNameOf(name)
+      if (field === null) {
+        const current = RENAMED_SETTINGS[name] ?? name
+        if (SETTLED_EXPERIMENTS.has(current)) settled.push(name)
+        else ignored.push(`${name}=${value}`)
         continue
       }
-      if (SETTLED_EXPERIMENTS.has(name)) {
-        settled.push(name)
-        continue
-      }
-      const player = PLAYER_FIELDS.some((spec) => spec.field === name)
-        ? (name as PlayerField)
-        : PLAYER_ALIASES[name.toLowerCase()]
-      if (player === undefined) {
+      const parsed = valueFromText(field, value)
+      if (parsed === null) {
         ignored.push(`${name}=${value}`)
         continue
       }
-      const candidate = player === "reducedMotion" ? asBoolean(value) : playerValue(player, value)
-      if (candidate === null) {
-        ignored.push(`${name}=${value}`)
-        continue
-      }
-      settingsRecord[player] = candidate
-      applied.push(player)
+      if (shownSetting(field).tier === "player") settingsRecord[field] = parsed
+      else experiments[field] = parsed
+      applied.push(field)
     }
   }
   // The settings file's own forgiving parse has the last word on the player's half.
@@ -197,15 +194,4 @@ export function importSettings(text: string | undefined, saved: Settings): Impor
   if (text === undefined) return { settings: saved, experiments: defaultExperiments(), ignored: [] }
   const { snapshot, ignored } = parseSettingsExport(text, { settings: saved, experiments: defaultExperiments() })
   return { settings: snapshot.settings, experiments: snapshot.experiments, ignored }
-}
-
-/** A player setting's value from text — its own name, or the name the popup shows ("16", "none"). */
-function playerValue(field: Exclude<PlayerField, "reducedMotion">, text: string): string | null {
-  const spec = playerSpec(field)
-  const format = spec.format as (value: string) => string
-  const lower = text.toLowerCase()
-  for (const value of spec.values as readonly string[]) {
-    if (value.toLowerCase() === lower || format(value).toLowerCase() === lower) return value
-  }
-  return null
 }
