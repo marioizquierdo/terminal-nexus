@@ -70,6 +70,12 @@
 > is now the current milestone, at its own gate 5A; [`README.md`](README.md)'s table is the authority
 > for that, as always.
 
+> **About added, 2026-10-01** (owner, feedback F93). A fifth top-level row, About, sits above Exit,
+> whose key moved from 4 to 5. It opens a screen built the way Campaign's placeholder is — a Back row and
+> words below it — saying who designed and developed the game (Mario Izquierdo), where its code lives,
+> how to contribute, and which build the player is running. It comes after acceptance and changes
+> nothing that was accepted.
+
 ## 1. Question
 
 Can a player launch `terminal-nexus` and navigate a top-level menu — **Campaign, Challenge,

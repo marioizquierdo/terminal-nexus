@@ -141,13 +141,14 @@ inconsistently defined colours). `--theme` defaults to `dark` — the palette th
 screenshot are designed against — and `light` is one flag away for a light terminal background.
 
 **`terminal-nexus`** (Milestone 3, all three gates built) launches straight to a top-level menu —
-Campaign, Challenge, Settings, Exit — on the same `TerminalBackend`/cell-frame stack `grid` uses, not
+Campaign, Challenge, Settings, About, Exit — on the same `TerminalBackend`/cell-frame stack `grid` uses, not
 a second presentation system. `src/menu/` holds the reusable menu-list shape, the keyboard and mouse
 adapters, and the driver; `src/view/menu.ts` composes the frame; `src/cli/lifecycle.ts` is the one
 idempotent disposer both `grid watch` and this menu build their lifecycle on. Every menu item shows
 its hotkey (`[1] Campaign`) and is reachable three equivalent ways — the hotkey, arrows and Enter, or
 a mouse click on its row (opt-in SGR mouse reporting, switched off by the disposer on every exit
-path). Settings and Exit are real; Campaign and Challenge are honest about not being built yet, each
+path). Settings, About and Exit are real (About: who made the game, where its code lives, how to
+contribute, and which build is running); Campaign and Challenge are honest about not being built yet, each
 in its own way (below). `terminal-nexus` flags: `--capability`, `--theme`, `--glyphs`,
 `--reduced-motion`, `--backend`.
 

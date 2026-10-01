@@ -125,6 +125,12 @@ click is `x`.
 - **The game menu** is `[s] Settings`, `[c] Controls and hotkeys`, `[r] Restart` (the plan lost, settings
   and Experiments kept) and `[q] Quit`. **Leaving always asks**; Ctrl+C is the one immediate way out.
 
+- **A title-menu screen that only has words to show** — Campaign's placeholder, About — has one row,
+  `[1] Back`, where the rows start, with its words below it: headings bold, text wrapped at words to a
+  comfortable reading width, a quiet line (the build) dimmed. Esc goes back too, and the highlight comes
+  back to the row that opened it. It keeps a Back row, unlike a Build Phase popup, because the title
+  menu has no top bar naming Esc and every action must be reachable with Up, Down and Enter alone.
+
 ## 4. Menu rows
 
 - **A menu can always be walked with Up, Down and Enter alone.** Every action is a row in walking order,
@@ -507,6 +513,9 @@ the build stamped on every export — is what makes a pasted export reproducible
 ## 16. Words
 
 - **Plain words on screen**, no internal ids; each Nexus named for its faction ("Citizen Nexus").
+- **The build is named the same way everywhere it appears** — its commit, with `+changes` for a build
+  made from uncommitted edits — on About (`Build: <commit>`), at the top of both exports, and in the
+  playtest page's header.
 - **Keys as the rows write them** — `[enter]`, `[esc]`, `[e]` — and arrows, up/down and left/right as
   plain words. For a way back, the action first, then the key (`back [esc]`).
 - **Names**: the menu's acknowledgement is *pressed* in code (`ack`, `PRESSED_LOOK`) and a *blink* on screen; the

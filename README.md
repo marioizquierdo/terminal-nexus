@@ -34,7 +34,7 @@ from a seed, with a levelled report and a minimal ASCII view. `grid` is not the 
 that builds and replays it.
 
 **`terminal-nexus`** is the game's own executable (Milestone 3, all three gates built): it launches
-straight to a top-level menu — Campaign, Challenge, Settings, Exit — every item reachable by its
+straight to a top-level menu — Campaign, Challenge, Settings, About, Exit — every item reachable by its
 displayed hotkey, by arrows and Enter, or by a mouse click, all three proven equivalent. Settings is
 real: colour depth, background, symbols, and reduced motion each cycle in place and persist across a
 relaunch. There is still no Build Phase, no economy, and no campaign content yet: Campaign opens its
@@ -106,7 +106,7 @@ tick 90 instead of playing from the start, in watch, headless and verify alike.
 npm run terminal-nexus
 ```
 
-Launches straight to the top-level menu — Campaign, Challenge, Settings, Exit — on the same terminal
+Launches straight to the top-level menu — Campaign, Challenge, Settings, About, Exit — on the same terminal
 stack as `grid`. Every item shows its hotkey (`[1] Campaign`) and works three equivalent ways: press
 the hotkey, arrow to it and press Enter, or click its row. Settings is a real second screen: colour
 depth, background, symbols, and reduced motion each cycle to their next value on the spot, take effect

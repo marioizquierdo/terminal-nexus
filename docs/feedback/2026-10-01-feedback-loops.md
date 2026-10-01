@@ -101,7 +101,11 @@ note of what was parked and why (`docs/feedback-pipeline.md`).
 > this "Terminal Nexus is an Open Source game designed to b modular, extensible and agent friendly. Feel
 > free to submit issues, PRs, fork, or develop your own mods."
 
-**Built.** _(filled in when built)_
+**Built.** The title menu has an About row above Exit (Exit's key moved from 4 to 5). It says: Terminal
+Nexus; Designed and developed by: Mario Izquierdo; the repository's address; a Contributions heading with
+his paragraph ("designed to be"); and which build is running, so a playtester can name it. Back, Esc, its
+key and a click all work; it fits at 80 × 24, and the browser page's Menu mode shows it. A community link
+is one line to add in one place (`src/menu/about.ts`) once he picks where updates go.
 
 ### F94 — Somewhere public to post updates
 
