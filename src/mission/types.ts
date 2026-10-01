@@ -97,7 +97,7 @@ export type TriggerDefinition = Readonly<{
 /**
  * One mission: who stands where when it opens, what it brings each Pulse, and how it ends. Deliberately
  * the part of campaigns.md's `MissionDefinition` PERIMETER needs — no armies, unlocks or objectives list yet;
- * the map and the construct menu are still the Build Phase's placeholder ones, named by the adapter.
+ * the map and the construct menu are still the Build Phase's starter ones, named by the adapter.
  */
 export type MissionDefinition = Readonly<{
   id: string

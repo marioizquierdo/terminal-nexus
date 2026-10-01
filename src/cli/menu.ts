@@ -12,14 +12,15 @@
 // every row picked, and a resize or a failure — so the browser page's log, shared across its screens,
 // shows how a playtester reached the Build Phase.
 
-import { aboutSections } from "../menu/about.ts"
-import { MenuSession } from "../menu/session.ts"
-import type { MenuItem } from "../menu/types.ts"
-import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../menu/mouse.ts"
+import { aboutSections } from "../title-menu/about.ts"
+import { MenuSession } from "../title-menu/session.ts"
+import type { MenuItem } from "../title-menu/types.ts"
+import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../title-menu/mouse.ts"
 import { activity } from "../log/activity.ts"
 import type { ActivityLog, HostName } from "../log/activity.ts"
 import { composeMenuFrame, MENU_LAYOUT, MENU_SIZE } from "../view/menu.ts"
-import { gateFrame, keysFromChunk } from "../view/index.ts"
+import { keysFromChunk } from "../terminal/playback.ts"
+import { gateFrame } from "../view/index.ts"
 import { AnsiBackend } from "../view/backends/ansi.ts"
 import { selectBackend } from "../view/backends/index.ts"
 import type { NamedBackend } from "../view/backends/index.ts"
@@ -97,7 +98,7 @@ function withNextValue(settings: Settings, id: string): Settings {
 
 export type MenuOptions = Readonly<{
   /** The settings this session starts showing — already resolved from the saved file plus any
-   *  command-line override, by `terminalNexus.ts`. */
+   *  command-line override, by `terminal-nexus.ts`. */
   settings: Settings
   /** Where a change made on the Settings screen is written back to. */
   settingsStore: SettingsStore
@@ -109,7 +110,7 @@ export type MenuOptions = Readonly<{
   host?: Host
   /** Injectable for the same reason `watch.ts`'s is: a test drives quit paths through real code. */
   exit?: (code: number) => void
-  /** The commit this build is — `terminalNexus.ts` reads the checkout, the browser page its build
+  /** The commit this build is — `terminal-nexus.ts` reads the checkout, the browser page its build
    *  stamp — shown on the About screen and recorded at `session.start`. Absent: not known. */
   buildId?: string
   /** Where this runs, for the Activity Logs: `web` from the browser playtest page, else `terminal`. */

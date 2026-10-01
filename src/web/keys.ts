@@ -7,10 +7,10 @@
 // data and functions, tested under Node like the rest.
 
 import { formatMouseEvent } from "../build/mouse.ts"
-import { cursorKeyOf } from "../menu/list-keys.ts"
+import { cursorKeyOf } from "../terminal/list-keys.ts"
 import { keyBytes } from "../playtest/keys.ts"
-import { encodeKeyEvent } from "../view/key-events.ts"
-import type { KeyPhase } from "../view/key-events.ts"
+import { encodeKeyEvent } from "../terminal/key-events.ts"
+import type { KeyPhase } from "../terminal/key-events.ts"
 
 /** The parts of a browser `KeyboardEvent` this page reads. */
 export type KeyPress = Readonly<{
@@ -68,7 +68,7 @@ export function bytesForKeyPress(press: KeyPress): string | null {
 
 const ESC = String.fromCharCode(27)
 /** What a screen loop writes to ask about, switch on and switch off the kitty keyboard protocol
- *  (`src/view/key-events.ts`), and Device Attributes — as a terminal reads them. */
+ *  (`src/terminal/key-events.ts`), and Device Attributes — as a terminal reads them. */
 const PROTOCOL_WRITES = /\u001b\[(?:>(\d*)u|<(\d*)u|(\?)u|(c))/gu
 /** Flag 1: Esc, Ctrl and Alt keys as their own sequences. Flag 2: presses, repeats and releases marked. */
 const DISAMBIGUATE = 1

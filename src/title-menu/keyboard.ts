@@ -1,10 +1,10 @@
 // The keyboard adapter (`input.md`): one displayed keymap, the primary way to play. Converts one
-// raw key (as `keysFromChunk`, src/view/playback.ts, splits a stdin chunk) into a `MenuCommand`,
+// raw key (as `keysFromChunk`, src/terminal/playback.ts, splits a stdin chunk) into a `MenuCommand`,
 // against the same vocabulary the mouse adapter and the driver also produce.
 
 import type { MenuListState } from "./list.ts"
 import { moveHighlight } from "./list.ts"
-import { listKeyOf } from "./list-keys.ts"
+import { listKeyOf } from "../terminal/list-keys.ts"
 import type { MenuCommand } from "./types.ts"
 
 /** `q` and Ctrl+C — the same quit keys `controlForKey` binds during a Pulse (one keymap across

@@ -1,10 +1,11 @@
 // The Build Phase's dispatch core — the state plus the one function a live terminal's stdin handler,
 // a test, and an agent playtest all call. It *is* the real adapter dispatch rather than a parallel
 // copy for tests, which is what makes the rule in docs/system-design/input.md ("the driver injects raw key and mouse
-// events into the real adapters") true. `src/menu/session.ts` is the same shape for the menu.
+// events into the real adapters") true. `src/title-menu/session.ts` is the same shape for the menu.
 //
-// No stdin, no ANSI, no backend, no `src/view` import: composing the frame is `src/view/build.ts`'s
-// job and wiring it to a terminal is `src/cli/build-phase.ts`'s.
+// No stdin, no ANSI, no backend: composing the frame is `src/view/build.ts`'s job and wiring it to a
+// terminal is `src/cli/build-phase.ts`'s. It lives in the view because it owns the Pulse's presenter
+// (`pulse-live.ts`); the reducer it drives (`src/build/`) never imports the view.
 //
 // **It records what happens into the Activity Logs**: every command and the bottom line's answer, a
 // refusal and why, a building placed or removed, a popup opening, a setting changed, an export, the Pulse
@@ -14,30 +15,30 @@
 
 import type { ActivityLog } from "../log/activity.ts"
 import { activity as globalActivity } from "../log/activity.ts"
-import { resultOf } from "../view/ending.ts"
-import { decodeKeyEvent } from "../view/key-events.ts"
-import type { KeyPhase } from "../view/key-events.ts"
-import { keysFromChunk } from "../view/playback.ts"
-import { PulsePresenter, outcomeOf } from "../view/pulse-live.ts"
-import type { ResolvedPulse } from "../view/pulse-live.ts"
-import type { PulseFrame } from "../view/pulse-scene.ts"
-import type { BuildLayout } from "./layout.ts"
-import { escLabel } from "./layout.ts"
-import { popupSpec, placePopup } from "./popup.ts"
-import type { Camera, Viewport } from "./camera.ts"
-import type { CursorKey } from "../menu/list-keys.ts"
-import { cursorKeyOf } from "../menu/list-keys.ts"
-import { buildKeyboardCommand } from "./keyboard.ts"
-import type { Move } from "./motion.ts"
-import { KeyMotion, moveTuning, pressTiles } from "./motion.ts"
-import type { MouseEvent } from "./mouse.ts"
-import { buildMouseCommand, parseMouseEvent } from "./mouse.ts"
-import type { BuildContext, BuildState } from "./state.ts"
-import { applyBuildCommand, cardEntry, createBuildState, displayName, exportText, nexusTile, remaining, withViewport } from "./state.ts"
-import { SHOWN_SETTINGS, setting } from "./all-settings.ts"
-import { activityExportText, loggedTile, shownEntries } from "./activity.ts"
-import { TUNING } from "./tuning.ts"
-import type { BuildCommand, ExportKind } from "./types.ts"
+import { resultOf } from "./ending.ts"
+import { decodeKeyEvent } from "../terminal/key-events.ts"
+import type { KeyPhase } from "../terminal/key-events.ts"
+import { keysFromChunk } from "../terminal/playback.ts"
+import { PulsePresenter, outcomeOf } from "./pulse-live.ts"
+import type { ResolvedPulse } from "./pulse-live.ts"
+import type { PulseFrame } from "./pulse-scene.ts"
+import type { BuildLayout } from "../build/layout.ts"
+import { escLabel } from "../build/layout.ts"
+import { popupSpec, placePopup } from "../build/popup.ts"
+import type { Camera, Viewport } from "../build/camera.ts"
+import type { CursorKey } from "../terminal/list-keys.ts"
+import { cursorKeyOf } from "../terminal/list-keys.ts"
+import { buildKeyboardCommand } from "../build/keyboard.ts"
+import type { Move } from "../build/motion.ts"
+import { KeyMotion, moveTuning, pressTiles } from "../build/motion.ts"
+import type { MouseEvent } from "../build/mouse.ts"
+import { buildMouseCommand, parseMouseEvent } from "../build/mouse.ts"
+import type { BuildContext, BuildState } from "../build/state.ts"
+import { applyBuildCommand, cardEntry, createBuildState, displayName, exportText, nexusTile, remaining, withViewport } from "../build/state.ts"
+import { SHOWN_SETTINGS, setting } from "../build/all-settings.ts"
+import { activityExportText, loggedTile, shownEntries } from "../build/activity.ts"
+import { TUNING } from "../build/tuning.ts"
+import type { BuildCommand, ExportKind } from "../build/types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { Settings } from "../settings/types.ts"
 
@@ -83,7 +84,7 @@ export type BuildSessionOptions = Readonly<{
  * how far a cursor key moves (taps counted, holds on the game's cadence, `src/build/motion.ts`) and how
  * often a held Shift+arrow jumps; and the camera the screen is drawing right now, which differs from
  * the state's while the view slides, so a click lands where the player saw it. Whether a key
- * was a press, a repeat or a release travels in its own bytes (`src/view/key-events.ts`).
+ * was a press, a repeat or a release travels in its own bytes (`src/terminal/key-events.ts`).
  */
 export type KeyTiming = Readonly<{ now?: number; camera?: Camera }>
 

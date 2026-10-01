@@ -122,12 +122,21 @@ test("the logs are a leaf: the kernel and the match layer never reach them, and 
   // not have.
   assertNoDependencyOn("pulse", ["log"])
   assertNoDependencyOn("match", ["log"])
-  assertNoDependencyOn("log", ["pulse", "match", "view", "cli", "build", "menu", "web"])
+  assertNoDependencyOn("log", ["pulse", "match", "view", "cli", "build", "title-menu", "terminal", "web"])
 })
 
 test("src/report never reaches the kernel or the view", () => {
   // It may read content definitions and shared state types; it may not read how a tick is resolved.
   assertNoDependencyOn("report", ["pulse", "view", "cli"])
+})
+
+test("the reducer layers never import the view: src/build, src/title-menu, src/settings and src/terminal import nothing from src/view", () => {
+  // The view reads the Build Phase, the title menu, the settings and the terminal vocabulary (key
+  // events, playback control, capability, theme and glyph pack), never the other way round. The title
+  // screen's folder is src/title-menu.
+  for (const layer of ["build", "title-menu", "settings", "terminal"]) {
+    assertNoDependencyOn(layer, ["view"])
+  }
 })
 
 test("src/view never reaches the kernel", () => {
@@ -174,7 +183,7 @@ test("the Build Phase's animation and key timing, and the Nexus Pulse's ending, 
   // these as a number — which is what lets a test drive the ease, the flashes, the held-key ramp and the
   // Esc timeout without waiting.
   const forbidden = [/\bDate\s*\.\s*now\b/, /\bnew\s+Date\b/, /\bperformance\s*\.\s*now\b/, /\bset(Timeout|Interval)\b/]
-  for (const file of [join(SRC, "view", "build-live.ts"), join(SRC, "view", "placement.ts"), join(SRC, "view", "animation.ts"), join(SRC, "view", "tween.ts"), join(SRC, "view", "key-reader.ts"), join(SRC, "build", "motion.ts"), join(SRC, "view", "ending.ts"), join(SRC, "view", "pulse-live.ts"), join(SRC, "view", "pulse-scene.ts")]) {
+  for (const file of [join(SRC, "view", "build-live.ts"), join(SRC, "view", "placement.ts"), join(SRC, "view", "animation.ts"), join(SRC, "view", "tween.ts"), join(SRC, "terminal", "key-reader.ts"), join(SRC, "view", "build-session.ts"), join(SRC, "build", "motion.ts"), join(SRC, "view", "ending.ts"), join(SRC, "view", "pulse-live.ts"), join(SRC, "view", "pulse-scene.ts")]) {
     const source = readFileSync(file, "utf8")
     for (const pattern of forbidden) {
       assert.ok(!pattern.test(source), `src/${relative(SRC, file)} mentions ${String(pattern)}; the live loop owns the clock`)

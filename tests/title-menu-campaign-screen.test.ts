@@ -74,7 +74,7 @@ const EXIT_LABEL: string = required(
 
 /** Runs a session, enters Campaign's placeholder screen by its own hotkey, drives it with raw bytes,
  *  and returns the last frame drawn. A fresh session per call, the same shape
- *  tests/menu-settings-screen.test.ts uses for the identical reason. */
+ *  tests/title-menu-settings-screen.test.ts uses for the identical reason. */
 async function campaignFrameAfter(drive: (stdin: FakeStdin) => void): Promise<string> {
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()

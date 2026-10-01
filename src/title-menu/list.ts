@@ -3,7 +3,7 @@
 // terminal. The Build Phase's lists keep their highlight in their own state and share only the keys
 // and the step rule (`list-keys.ts`), so every list moves the same way.
 
-import { stepListIndex } from "./list-keys.ts"
+import { stepListIndex } from "../terminal/list-keys.ts"
 import type { MenuCommand, MenuItem } from "./types.ts"
 
 export type MenuListState = Readonly<{

@@ -30,7 +30,7 @@
 // quietly** (`SETTLED_EXPERIMENTS`): an export from before the owner settled it still names it, and its
 // value is the code's own now, so it is neither applied nor reported as a name the game does not know;
 // and **a renamed setting's old name reads as its new one** (`RENAMED_SETTINGS`). Nothing here touches
-// a clock, a file or a clipboard — the adapters do that (`src/cli/terminalNexus.ts`, `src/web/host.ts`).
+// a clock, a file or a clipboard — the adapters do that (`src/cli/terminal-nexus.ts`, `src/web/host.ts`).
 
 import type { Settings } from "../settings/types.ts"
 import { parseSettings } from "../settings/types.ts"

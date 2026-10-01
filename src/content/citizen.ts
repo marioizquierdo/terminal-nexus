@@ -1,6 +1,6 @@
 // Fixture content for the first battles — disposable, tuned for legibility, not balance.
 //
-// Every number here is tuned for legibility. This is bench content, **not** a Commander Army and
+// Every number here is tuned for legibility. This is a bench roster, **not** a Commander Army and
 // not the designed roster: commander-armies.md forbids production rosters until the content-iteration
 // milestone, and saying they are throwaway is what keeps them throwaway.
 //

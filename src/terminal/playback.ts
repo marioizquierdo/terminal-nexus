@@ -178,7 +178,7 @@ export function incompleteEscapeAt(chunk: string): number {
  * single key silently drops every one of them. An escape sequence — an arrow key, a mouse report —
  * is the opposite case and must stay whole rather than be split mid-sequence, but **more than one
  * complete sequence can still arrive in the same chunk** (two quick arrow presses, a mouse move and
- * a click) and each must come back as its own key. A menu screen's own real-terminal evidence is
+ * a click) and each must come back as its own key. A menu screen's own real-terminal check is
  * what found this: two arrow-down presses sent close enough together arrived as one six-byte chunk,
  * and the original version of this function — which treated any ESC-prefixed chunk as one key in
  * full, correct only because no escape sequence was bound to anything yet — silently dropped the

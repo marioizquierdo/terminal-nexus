@@ -22,7 +22,7 @@ import {
 } from "../src/build/layout.ts"
 import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct, menuEntries, remaining, startEntry } from "../src/build/state.ts"
 import type { ConstructItem } from "../src/build/types.ts"
-import { starterContext } from "../src/cli/build-phase.ts"
+import { starterContext } from "../src/cli/starter.ts"
 import type { RowAck } from "../src/view/build.ts"
 import type { Cell } from "../src/view/frame.ts"
 import { cellAt } from "../src/view/frame.ts"

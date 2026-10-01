@@ -35,9 +35,9 @@
 // terminal's behaviour and exactly the trap a script must not fall into by accident.
 
 import type { Coord } from "../grid/types.ts"
-import { encodeKeyEvent } from "../view/key-events.ts"
-import type { KeyPhase } from "../view/key-events.ts"
-import { keysFromChunk } from "../view/playback.ts"
+import { encodeKeyEvent } from "../terminal/key-events.ts"
+import type { KeyPhase } from "../terminal/key-events.ts"
+import { keysFromChunk } from "../terminal/playback.ts"
 
 const ESC = String.fromCharCode(27)
 

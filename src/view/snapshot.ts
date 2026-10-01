@@ -79,7 +79,7 @@ export type PulseSample = Readonly<{
 export type PulseView = Readonly<{
   timeline: PulseTimeline
   presentation: PresentationOptions
-  /** How many effect instances the whole Pulse produced. Evidence, and a smoke test. */
+  /** How many effect instances the whole Pulse produced. What a test counts, and a smoke test. */
   effectCount: number
   lastTick: number
   durationMs: number

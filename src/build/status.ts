@@ -4,7 +4,7 @@
 // nothing here imports a style role or a colour. `src/view/status.ts` is the one place a tone
 // resolves onto how it actually looks.
 
-import type { Coord } from "./grid/types.ts"
+import type { Coord } from "../grid/types.ts"
 
 /**
  * How a status message reads, not what colour it is — the renderer decides that. `hint` is the

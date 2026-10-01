@@ -1,10 +1,10 @@
 // Resolves the tone of a message on the bottom line onto the style attributes the renderer already
-// has — the only place `src/status.ts`'s view-agnostic vocabulary meets a `StyleRole`. Reuses two existing roles
+// has — the only place `src/build/status.ts`'s view-agnostic vocabulary meets a `StyleRole`. Reuses two existing roles
 // (`chrome.value`, `notice.gate`) rather than adding new palette entries for two tones nobody has a
 // concrete look for yet (`effects.md`'s own preference: extract a framework after two real uses,
 // not before one).
 
-import type { StatusTone } from "../status.ts"
+import type { StatusTone } from "../build/status.ts"
 import type { StyleRole } from "./roles.ts"
 
 export type StatusStyle = Readonly<{ role: StyleRole; bold?: boolean }>

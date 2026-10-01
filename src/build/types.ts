@@ -6,7 +6,7 @@
 // plan" assertable.
 
 import type { Coord } from "../grid/types.ts"
-import type { PlaybackControl } from "../view/playback.ts"
+import type { PlaybackControl } from "../terminal/playback.ts"
 import type { ShownName } from "./all-settings.ts"
 
 /**

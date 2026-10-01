@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { main } from "../src/cli/index.ts"
+import { main } from "../src/cli/grid-main.ts"
 
 // A headless run's log is meant to be piped — `grid x --headless | grep death`, `| head -20` — and
 // the downstream end of that pipe is allowed to close before the log does. Without this, Node's

@@ -4,7 +4,7 @@
 // opacity over whatever the cell shows. The owner defined the mix himself — "if the background is
 // black, the icon on the background is yellow, and the cursor is white, then the cursor at 80% ... would
 // be 80% white, and the other 20% split between black (80%) and yellow (20%)" — and these tests hold
-// every tier and every renderer to it: the ANSI writer (the terminal, and the evidence pictures), the
+// every tier and every renderer to it: the ANSI writer (the terminal, and the screenshot pictures), the
 // browser page's canvas, and OpenTUI.
 
 import { test } from "node:test"

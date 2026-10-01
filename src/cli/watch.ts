@@ -9,14 +9,8 @@
 // playtest): playback holds on the final frame, forever if need be, until the viewer presses `q`
 // themselves rather than the session vanishing out from under them.
 
-import {
-  Playback,
-  compositionSize,
-  controlForKey,
-  createView,
-  gateFrame,
-  keysFromChunk,
-} from "../view/index.ts"
+import { Playback, controlForKey, keysFromChunk } from "../terminal/playback.ts"
+import { compositionSize, createView, gateFrame } from "../view/index.ts"
 import type {
   CapabilityMode,
   PresentationOptions,

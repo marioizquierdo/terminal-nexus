@@ -4,7 +4,7 @@
 // and taps and holds move a list by the map cursor's own rules and numbers (taps counted, a hold on the
 // game's cadence). Driven through raw bytes into the
 // real adapters, with the key times handed in as numbers. The keys' own table is
-// `tests/menu-list.test.ts`'s.
+// `tests/title-menu-list.test.ts`'s.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"

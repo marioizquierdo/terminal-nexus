@@ -1,20 +1,20 @@
 // The keyboard adapter — the keymap in docs/system-design/input.md: one already-split raw key to one command. The cursor
 // keys' byte spellings — measured, because a terminal can silently break Shift+Arrow — are one table
-// shared with every list (`src/menu/list-keys.ts`): the fast move has a modifier-free fallback,
+// shared with every list (`src/terminal/list-keys.ts`): the fast move has a modifier-free fallback,
 // PageUp/PageDown and Home/End, and the Option/Meta forms a Mac sends. The Controls and hotkeys page
 // (`src/build/help.ts`) lists every one of them; the bottom line never did, on the owner's own call:
 // "leave pgup/home keys out, people will figure that out just fine".
 
-import type { CursorKey } from "../menu/list-keys.ts"
-import { cursorKeyOf, listKeyOf } from "../menu/list-keys.ts"
-import type { PlaybackControl } from "../view/playback.ts"
+import type { CursorKey } from "../terminal/list-keys.ts"
+import { cursorKeyOf, listKeyOf } from "../terminal/list-keys.ts"
+import type { PlaybackControl } from "../terminal/playback.ts"
 import { START_KEY } from "./layout.ts"
 import { DEFAULT_MOVE_TUNING, pressTiles } from "./motion.ts"
 import type { PopupRow, PopupSpec } from "./popup.ts"
 import type { BuildCommand, Focus, Popup } from "./types.ts"
 
-export { cursorKeyOf } from "../menu/list-keys.ts"
-export type { CursorKey } from "../menu/list-keys.ts"
+export { cursorKeyOf } from "../terminal/list-keys.ts"
+export type { CursorKey } from "../terminal/list-keys.ts"
 
 const ESC = String.fromCharCode(27)
 const PLACE_KEYS = new Set(["\r", "\n", " "])
@@ -47,7 +47,7 @@ function sideways(key: string): -1 | 0 | 1 {
  * (one, or the input path's motion rules — `KeyboardContext.listRows`: taps counted, a hold on the
  * game's cadence), and the fast move — Shift, Option, PageUp/PageDown, Home/End — as a jump to that
  * end. Every list stops at its ends rather than wrapping, because a wrapped list hides where it ends; the keys are the title menu's too
- * (`src/menu/list-keys.ts`). A held key's repeat that came before its cadence allows a move is no rows,
+ * (`src/terminal/list-keys.ts`). A held key's repeat that came before its cadence allows a move is no rows,
  * and no command: Up and Down mean nothing else here, so `null` is exactly "nothing".
  */
 function listCommand(key: string, context: KeyboardContext): BuildCommand | null {

@@ -7,7 +7,7 @@
 //     comes back out of the test harness character for character;
 //   * **the native core runs under Bun and refuses to load under Node 22.22.2**, which reports
 //     "OpenTUI native FFI is not available for this runtime yet". The package's `node` export
-//     imports cleanly — that is what the standing evidence measured — but constructing a renderer
+//     imports cleanly — that is what the standing measurements showed — but constructing a renderer
 //     throws. So OpenTUI is a Bun-only backend today, and `selectBackend("auto")` falls back to
 //     direct ANSI on Node rather than failing.
 //
@@ -37,7 +37,7 @@ export type CellSink = Readonly<{
 /**
  * Write one engine-owned frame into an OpenTUI buffer. Exported so the headless harness draws
  * through exactly the code the live backend uses — a snapshot taken any other way would be
- * evidence about the test, not about the backend.
+ * information about the test, not about the backend.
  */
 export function drawFrameInto(
   core: OpenTuiCore,

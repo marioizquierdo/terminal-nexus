@@ -8,7 +8,7 @@
 // exactly as terminal-agnostic as `src/pulse` is renderer-agnostic. Composing what it looks like is
 // `src/view/menu.ts`'s job; wiring it to a real terminal is `src/cli/menu.ts`'s.
 
-import { keysFromChunk } from "../view/playback.ts"
+import { keysFromChunk } from "../terminal/playback.ts"
 import { applyMenuCommand, createMenuList } from "./list.ts"
 import type { MenuListState } from "./list.ts"
 import { keyboardCommand } from "./keyboard.ts"
@@ -97,7 +97,7 @@ export class MenuSession {
    * The driver's raw-bytes path — a scripted list of raw key and mouse events (`input.md`) —
    * and what a live terminal's `stdin.on("data", ...)` handler calls too, for the common case of one
    * screen handling its own whole chunk. `keysFromChunk` is the same split `grid watch` already uses
-   * (`src/view/playback.ts`).
+   * (`src/terminal/playback.ts`).
    */
   handleData(rawChunk: string, layout: MenuLayout): void {
     for (const key of keysFromChunk(rawChunk)) this.handleKey(key, layout)

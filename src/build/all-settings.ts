@@ -44,8 +44,7 @@
 // may all read it.
 
 import type { Settings } from "../settings/types.ts"
-import { CAPABILITY_MODES, THEMES } from "../view/roles.ts"
-import { GLYPH_PACKS } from "../view/theme.ts"
+import { CAPABILITY_MODES, GLYPH_PACKS, THEMES } from "../terminal/display.ts"
 
 /** Where a setting stands: shown and saved, shown for playtests, or a constant in code. */
 export type Tier = "player" | "experiment" | "tuned"

@@ -1,19 +1,19 @@
 // `runMenu`'s lifecycle — docs/system-design/runtime.md, "Terminal lifecycle": one idempotent disposer, reached from `q`, an interrupt
 // byte, SIGINT, SIGTERM, the menu's own Exit item, and a caught render failure alike, and it leaves
 // mouse reporting off (alongside raw mode and the alternate screen) on every one of those paths.
-// Follows the exact fake-stdin pattern `tests/lifecycle.test.ts` uses for `grid watch`.
+// Follows the exact fake-stdin pattern `tests/lifecycle-backend.test.ts` uses for `grid watch`.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { runMenu, TOP_LEVEL_ITEMS } from "../src/cli/menu.ts"
-import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../src/menu/mouse.ts"
+import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../src/title-menu/mouse.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import type { Settings, SettingsStore } from "../src/settings/index.ts"
 
 const ESC = String.fromCharCode(27)
 
-/** A settings screen exists (tests/menu-settings.test.ts covers it); these lifecycle tests only need
+/** A settings screen exists (tests/title-menu-settings.test.ts covers it); these lifecycle tests only need
  *  *some* legal starting settings and a store that never actually touches a disk. */
 const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, capability: "monochrome" }
 
@@ -31,7 +31,7 @@ class FakeStdout extends EventEmitter {
   written = ""
   /** Just the most recent write — `written`'s cumulative history never loses an earlier screen's
    *  text even once a later frame has genuinely replaced it, so it cannot prove something is *absent*
-   *  from what's on screen right now (menu-settings-screen.test.ts hit this first). */
+   *  from what's on screen right now (title-menu-settings-screen.test.ts hit this first). */
   lastWrite = ""
   write(text: string): boolean {
     this.written += text

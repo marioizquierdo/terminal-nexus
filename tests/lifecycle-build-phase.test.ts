@@ -1,5 +1,5 @@
 // `runBuildPhase`'s lifecycle — the terminal lifecycle RULE (docs/system-design/runtime.md), applied to the Build Phase screen. The same fake
-// stdin/stdout pattern `tests/menu-session.test.ts` and `tests/lifecycle.test.ts` already use, and
+// stdin/stdout pattern `tests/lifecycle-title-menu.test.ts` and `tests/lifecycle-backend.test.ts` already use, and
 // the same non-negotiables: one idempotent disposer reached from `q`, an interrupt byte, Esc with
 // nothing armed, SIGINT and SIGTERM alike; raw mode, the alternate screen and mouse reporting all
 // left off on every one of those paths.
@@ -15,10 +15,10 @@ import { TUNING } from "../src/build/tuning.ts"
 import { PROCESS_HOST } from "../src/cli/lifecycle.ts"
 import { runBuildPhase } from "../src/cli/build-phase.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
-import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../src/menu/mouse.ts"
+import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../src/title-menu/mouse.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import { AnsiBackend } from "../src/view/backends/ansi.ts"
-import { KEYBOARD_POP, KEYBOARD_PUSH, KEYBOARD_QUERY } from "../src/view/key-events.ts"
+import { KEYBOARD_POP, KEYBOARD_PUSH, KEYBOARD_QUERY } from "../src/terminal/key-events.ts"
 import type { Settings } from "../src/settings/index.ts"
 import { ESC } from "./build-helpers.ts"
 import { DEFENCE_KEYS } from "./pulse-helpers.ts"

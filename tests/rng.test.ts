@@ -1,3 +1,4 @@
+// The PCG32 generator: its published test vectors and the two streams that never touch.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { PRNG_NAME, Pcg32, cosmeticRng, gameplayRng } from "../src/rng/pcg32.ts"

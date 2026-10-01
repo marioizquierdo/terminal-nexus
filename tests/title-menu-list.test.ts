@@ -3,9 +3,9 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { applyMenuCommand, createMenuList, moveHighlight } from "../src/menu/list.ts"
-import { cursorKeyOf, listKeyOf, stepListIndex } from "../src/menu/list-keys.ts"
-import type { MenuItem } from "../src/menu/types.ts"
+import { applyMenuCommand, createMenuList, moveHighlight } from "../src/title-menu/list.ts"
+import { cursorKeyOf, listKeyOf, stepListIndex } from "../src/terminal/list-keys.ts"
+import type { MenuItem } from "../src/title-menu/types.ts"
 
 const ITEMS: readonly MenuItem[] = [
   { id: "a", hotkey: "1", label: "Alpha" },

@@ -7,7 +7,7 @@
 import type { BuildLayout } from "../build/layout.ts"
 import { cellForTile, tileAtCell } from "../build/layout.ts"
 import { formatMouseEvent } from "../build/mouse.ts"
-import type { BuildSession } from "../build/session.ts"
+import type { BuildSession } from "../view/build-session.ts"
 import type { BuildState } from "../build/state.ts"
 import type { Coord } from "../grid/types.ts"
 import type { PlaytestStep } from "./keys.ts"

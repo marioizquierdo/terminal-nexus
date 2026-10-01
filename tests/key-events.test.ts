@@ -1,12 +1,12 @@
 // Key presses, repeats and releases, where the terminal reports them — the kitty keyboard protocol's
-// decoder, encoder and conversation (`src/view/key-events.ts`; the owner's third round, 2026-09-30,
+// decoder, encoder and conversation (`src/terminal/key-events.ts`; the owner's third round, 2026-09-30,
 // and the design that followed). What matters most: a classic terminal's bytes come through unchanged, the
 // protocol's forms become the keys the adapters already read, and the flags are only ever popped when
 // they were pushed.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { cursorKeyOf } from "../src/menu/list-keys.ts"
+import { cursorKeyOf } from "../src/terminal/list-keys.ts"
 import { keyBytes } from "../src/playtest/keys.ts"
 import {
   KEYBOARD_POP,
@@ -16,9 +16,9 @@ import {
   decodeKeyEvent,
   encodeKeyEvent,
   terminalReplyOf,
-} from "../src/view/key-events.ts"
-import type { KeyPhase } from "../src/view/key-events.ts"
-import { keysFromChunk } from "../src/view/playback.ts"
+} from "../src/terminal/key-events.ts"
+import type { KeyPhase } from "../src/terminal/key-events.ts"
+import { keysFromChunk } from "../src/terminal/playback.ts"
 
 const ESC = "\u001b"
 const CSI = `${ESC}[`

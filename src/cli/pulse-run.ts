@@ -25,7 +25,7 @@ import type { Arrival, MissionPulseInput } from "../match/index.ts"
 import type { MissionDefinition } from "../mission/index.ts"
 import { PERIMETER, validateMission } from "../mission/index.ts"
 import type { MatchState } from "../state/types.ts"
-import { status } from "../status.ts"
+import { status } from "../build/status.ts"
 import { resultOf } from "../view/ending.ts"
 import type { ResolvedPulse } from "../view/pulse-live.ts"
 import { outcomeOf } from "../view/pulse-live.ts"
@@ -150,7 +150,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
   }
 }
 
-/** The mission the Build Phase's screen plays: PERIMETER's three waves, on the placeholder map. */
+/** The mission the Build Phase's screen plays: PERIMETER's three waves, on the starter map. */
 export const STARTER_MISSION: MissionPlay = missionPlay(PERIMETER)
 
 /** The screen's two connections to it, as `BuildSession` takes them. */

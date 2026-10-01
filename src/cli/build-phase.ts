@@ -5,26 +5,17 @@
 // What differs is that the frame's size follows the terminal's, because a bigger terminal shows more
 // Grid — up to the 72 x 24 ceiling and not one tile past it.
 
-import { FIXTURE_REGISTRY } from "../content/index.ts"
-import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../menu/mouse.ts"
-import { BuildSession } from "../build/session.ts"
-import {
-  STARTER_ALLOTMENT,
-  STARTER_CATALOG,
-  STARTER_EDGE_STYLE,
-  STARTER_NEXUS_DRAFT,
-  STARTER_STANDING,
-  STARTER_START_CURSOR,
-  starterGrid,
-} from "../build/catalog.ts"
+import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../title-menu/mouse.ts"
+import { BuildSession } from "../view/build-session.ts"
+import { STARTER_START_CURSOR } from "../build/catalog.ts"
 import { isGated } from "../build/camera.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import { BuildAnimation, livePresentation, nextFrameDelay } from "../view/build-live.ts"
-import { KeyReader } from "../view/key-reader.ts"
-import { KeyboardProtocol, terminalReplyOf } from "../view/key-events.ts"
-import type { TerminalReply } from "../view/key-events.ts"
+import { KeyReader } from "../terminal/key-reader.ts"
+import { KeyboardProtocol, terminalReplyOf } from "../terminal/key-events.ts"
+import type { TerminalReply } from "../terminal/key-events.ts"
 import { gateFrame } from "../view/index.ts"
 import { selectBackend } from "../view/backends/index.ts"
 import type { NamedBackend } from "../view/backends/index.ts"
@@ -32,7 +23,8 @@ import { chunkText } from "../view/backends/ports.ts"
 import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
-import { STARTER_MISSION, nextRound, startPulse } from "./pulse-run.ts"
+import { nextRound, startPulse } from "./pulse-run.ts"
+import { starterContext } from "./starter.ts"
 import type { PlaytestStep } from "../playtest/keys.ts"
 import { UNTIMED_GAP_MS, deliverStep } from "../playtest/deliver.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
@@ -105,21 +97,6 @@ export type BuildPhaseOptions = Readonly<{
   /** Where the screen runs, as `session.start` records it: `terminal` unless the playtest page says `web`. */
   hostName?: HostName
 }>
-
-/** Round 1 of the mission the screen plays (PERIMETER), on the placeholder map. */
-export function starterContext(scrollMargin?: number, extra: Partial<BuildContext> = {}): BuildContext {
-  return STARTER_MISSION.firstRound({
-    grid: starterGrid(),
-    registry: FIXTURE_REGISTRY,
-    catalog: STARTER_CATALOG,
-    standing: STARTER_STANDING,
-    allotment: STARTER_ALLOTMENT,
-    nexusDraft: STARTER_NEXUS_DRAFT,
-    edgeStyle: STARTER_EDGE_STYLE,
-    ...(scrollMargin === undefined ? {} : { scrollMargin }),
-    ...extra,
-  })
-}
 
 export async function runBuildPhase(options: BuildPhaseOptions): Promise<number> {
   const { stdout, stdin } = options

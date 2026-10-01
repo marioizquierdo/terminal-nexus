@@ -127,7 +127,7 @@ function legacyOfCode(code: number, modifiers: number): string | null {
     return lower >= "a" && lower <= "z" && lower.length === 1 ? String.fromCharCode(lower.charCodeAt(0) - 96) : null
   }
   const shifted = (modifiers & SHIFT) !== 0 ? character.toUpperCase() : character
-  // Alt with a key is ESC and the key — `ESC b` is Option+Left as a Mac sends it (`src/menu/list-keys.ts`).
+  // Alt with a key is ESC and the key — `ESC b` is Option+Left as a Mac sends it (`src/terminal/list-keys.ts`).
   return (modifiers & ALT) !== 0 ? `${ESC}${shifted}` : shifted
 }
 

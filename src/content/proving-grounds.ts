@@ -1,5 +1,5 @@
-// The Proving Grounds — a third fixture roster, disposable bench content exactly like the Citizen and
-// Ravel fixtures beside it (see commander-armies.md): **not a
+// The Proving Grounds — a third bench roster, disposable exactly like the Citizen and
+// Ravel rosters beside it (see commander-armies.md): **not a
 // Commander Army, not the designed roster, not faction lore**. commander-armies.md still reserves real
 // rosters for the content-iteration milestone; a design here that does not pan out is discarded from this file,
 // never reverted out of citizen.ts or ravel.ts, both of which carry tuned relationships other tests depend on.

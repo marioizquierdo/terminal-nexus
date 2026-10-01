@@ -13,8 +13,8 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { runMenu, settingsItems, TOP_LEVEL_ITEMS } from "../src/cli/menu.ts"
 import { composeMenuFrame, MENU_LAYOUT } from "../src/view/menu.ts"
-import { createMenuList } from "../src/menu/list.ts"
-import { menuItemLabel, menuItemRow } from "../src/menu/layout.ts"
+import { createMenuList } from "../src/title-menu/list.ts"
+import { menuItemLabel, menuItemRow } from "../src/title-menu/layout.ts"
 import { frameToText } from "../src/view/index.ts"
 import { createSettingsStore } from "../src/settings/store.ts"
 import { DEFAULT_SETTINGS, nextCapability, nextGlyphPack, nextTheme, toggleReducedMotion } from "../src/settings/types.ts"
@@ -115,7 +115,7 @@ async function settingsFrameAfter(
 }
 
 test("every Settings row displays its own hotkey — a hotkey that is not displayed does not exist", () => {
-  // Plain text, the same way tests/menu-view.test.ts checks the top-level menu: styling (a
+  // Plain text, the same way tests/title-menu-view.test.ts checks the top-level menu: styling (a
   // differently-coloured hotkey next to its label) is a presentation concern frameToText strips
   // away entirely, which is exactly right for asking "is this literally on screen."
   const text = frameToText(

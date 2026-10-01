@@ -12,7 +12,7 @@ import {
   sgrFor,
   THEMES,
 } from "../src/view/roles.ts"
-import { detectCapability } from "../src/cli/index.ts"
+import { detectCapability } from "../src/cli/grid-main.ts"
 
 test("parseTheme accepts dark and light, and rejects everything else", () => {
   assert.equal(parseTheme("dark"), "dark")

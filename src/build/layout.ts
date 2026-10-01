@@ -1,9 +1,9 @@
 // Where everything is on screen — the one geometry the composer (drawing) and the mouse adapter
 // (hit-testing) both read, so a click can never target a tile or a row the frame did not draw there.
-// `src/menu/layout.ts` is the same idea for the menu.
+// `src/title-menu/layout.ts` is the same idea for the menu.
 
 import type { Coord, GridTerrain } from "../grid/types.ts"
-import type { PlaybackControl } from "../view/playback.ts"
+import type { PlaybackControl } from "../terminal/playback.ts"
 import type { BuildState } from "./state.ts"
 import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct, mapMode, startEntry } from "./state.ts"
 import type { ConstructItem, MenuEntry } from "./types.ts"
