@@ -63,6 +63,10 @@ _The dated record of the project, oldest first; never required reading. The pull
 | 2026-09-30 | Milestone 6 step 6B built: the round loop and missions; PERIMETER plays as three rounds with the raid in three waves and ends in MISSION COMPLETE or MISSION FAILED | [#50](https://github.com/marioizquierdo/terminal-nexus/pull/50), [report](reports/2026-09-30-round-loop-and-missions.md) |
 | 2026-09-30 | Documentation reorganisation, pass 1: the governance document dissolved, the questions register split, the validator and skills updated for the new layout; the version ceremony dropped | [#52](https://github.com/marioizquierdo/terminal-nexus/pull/52) |
 | 2026-09-30 | Documentation reorganisation, pass 2: a short AGENTS.md and Claude note, a docs index, a rewritten development guide and README | [#53](https://github.com/marioizquierdo/terminal-nexus/pull/53) |
+| 2026-10-01 | Documentation reorganisation, pass 3: milestones as step trackers, a dated timeline, question headings in words, the two feedback skills in the new vocabulary | [#54](https://github.com/marioizquierdo/terminal-nexus/pull/54) |
+| 2026-10-01 | Documentation reorganisation, pass 4: the engine design split into grid, pulse, content, presentation, input and runtime pages under an overview; every design statement RULE, GUIDANCE or IDEA, every RULE naming its holder; the settled-decisions list dissolved | [#55](https://github.com/marioizquierdo/terminal-nexus/pull/55) |
+| 2026-10-01 | Documentation reorganisation, pass 5: code comments and test names say the rule in words; the Build Phase screen is `--build-phase`, no longer a spike | [#56](https://github.com/marioizquierdo/terminal-nexus/pull/56) |
+| 2026-10-01 | Documentation reorganisation, pass 6: the plan deleted and the validator's retired-word check armed | this pull request |
 
 ## Where the detail is
 
