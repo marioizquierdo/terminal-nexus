@@ -53,6 +53,11 @@ export const CONTENT_ART: Readonly<Record<string, UnitArt>> = {
    * as "contained" rather than "vehicle" the way the hauler's open `(h)` does.
    */
   "unit.citizen.sentinel": ["[]", "||"],
+  /**
+   * The Commander: the one glyph on the Grid that is not a letter or a bracket (pulse.md: "normally `@`"),
+   * so she reads apart from every trooper at a glance and in monochrome, and the same for either side.
+   */
+  "unit.citizen.vasse": ["@"],
 
   // --- Ravels --------------------------------------------------------------------------------
   "unit.ravel.scav": ["s"],

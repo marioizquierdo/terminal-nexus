@@ -14,14 +14,25 @@
 //   stands; Recall is worked out from the state it ended in (`src/match/recall.ts`);
 // - **the next round**: a Build Phase whose map is what Recall left — the player's buildings as standing
 //   structures, every surviving unit and the raid's structures as the field — with the credits the last
-//   one did not spend, and the next round's arrivals as incoming.
+//   one did not spend, and the next round's arrivals as incoming. A Commander who fell is carried as an
+//   absence and set down beside the Nexus again when her round out is over (`src/match/commander.ts`).
 
 import type { BuildContext, BuildState } from "../build/state.ts"
 import { nexusTile, remaining } from "../build/state.ts"
-import type { FieldEntity, IncomingEntity, StandingStructure } from "../build/types.ts"
+import type { CommanderAbsence, FieldEntity, IncomingEntity, StandingStructure } from "../build/types.ts"
 import type { ContentRegistry } from "../content/index.ts"
-import { laterArrivals, missionOpening, recall, resolveMissionPulse, trainingRegistry } from "../match/index.ts"
-import type { Arrival, MissionPulseInput, TrainingPace } from "../match/index.ts"
+import { commanderName } from "../content/cards.ts"
+import {
+  commanderRegistry,
+  fallen,
+  laterArrivals,
+  missionOpening,
+  recall,
+  resolveMissionPulse,
+  restoreCommanders,
+  trainingRegistry,
+} from "../match/index.ts"
+import type { Arrival, MissionPulseInput, Restoration, TrainingPace } from "../match/index.ts"
 import type { MissionDefinition } from "../mission/index.ts"
 import { PERIMETER, validateMission } from "../mission/index.ts"
 import type { MatchState } from "../state/types.ts"
@@ -84,6 +95,18 @@ const paceOf = (state: BuildState): TrainingPace => ({
   perPulse: setting(state, "trainPerRound"),
 })
 
+/** What the next Build Phase's first line says of the player's Commander — back beside the Nexus, or out
+ *  this round and, when the mission lasts that long, the round she is back for — or `null` when there is
+ *  nothing to say. */
+function commanderNews(restored: readonly Restoration[], absent: readonly CommanderAbsence[], round: number, of: number): string | null {
+  const back = restored.find((restoration) => restoration.player === "A")
+  if (back !== undefined) return `${commanderName(back.contentId)} is back beside the Nexus.`
+  const out = absent.find((absence) => absence.player === "A")
+  if (out === undefined) return null
+  const name = commanderName(out.contentId)
+  return out.returnsInRound > round && out.returnsInRound <= of ? `${name} is out this round, back for round ${out.returnsInRound}.` : `${name} is out this round.`
+}
+
 export function missionPlay(mission: MissionDefinition): MissionPlay {
   const inputFor = (context: BuildContext, pulse: number, structures: MissionPulseInput["structures"]): MissionPulseInput => ({
     mission,
@@ -104,6 +127,11 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
   }
 
   const round = (number: number) => ({ number, of: mission.pulses })
+
+  /** The content a round's Pulse runs on: the mission's buildings training at the Experiments' pace, and
+   *  its Commander as tough as the Experiment says. The Build Phase's own registry carries neither. */
+  const pulseRegistry = (context: BuildContext, state: BuildState): ContentRegistry =>
+    commanderRegistry(trainingRegistry(mission, context.registry, paceOf(state)), setting(state, "commanderHealth"))
 
   return {
     mission,
@@ -126,9 +154,11 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
       const pulse = context.round?.number ?? 1
       // The Pulse runs on the content with the mission's buildings training at the Experiments' pace; the
       // Build Phase's own registry never carries a recipe, so nothing it draws or refuses depends on one.
-      const registry = trainingRegistry(mission, context.registry, paceOf(state))
+      const registry = pulseRegistry(context, state)
       const run = resolveMissionPulse({ ...inputFor(context, pulse, newStructures(context, state)), registry })
       const timeline = timelineOf({ id: mission.id, name: mission.name }, run.states, run.events, mission.pulseTicks, mission.seed, registry)
+      // A Commander who fell is out for the rest of this Pulse and the whole of the next round.
+      const fell = fallen(run.events, registry, pulse)
       return {
         timeline,
         recall: recall(run.final, registry),
@@ -138,6 +168,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
           round: pulse,
           of: mission.pulses,
           ...(mission.endText === undefined ? {} : { endText: mission.endText }),
+          ...(fell.length === 0 ? {} : { fell }),
         },
       }
     },
@@ -145,18 +176,24 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
     nextRound(context, state, resolved) {
       if (resolved.mission?.verdict.kind !== "continue") return null
       const number = (context.round?.number ?? 1) + 1
-      const carried = resolved.recall.state
+      // The Commanders who fell last round join the ones already out; whoever is due is set down beside the
+      // Nexus before the Build Phase opens, at the health the Experiment says now.
+      const absent = [...(context.absent ?? []), ...(resolved.mission.fell ?? [])]
+      const back = restoreCommanders(resolved.recall.state, absent, number, commanderRegistry(context.registry, setting(state, "commanderHealth")))
+      const carried = back.state
       const { standing, field } = mapOf(context.registry, carried)
-      const last = resultOf(outcomeOf(resolved.timeline))
+      const last = `Round ${number - 1}: ${resultOf(outcomeOf(resolved.timeline)).headline.toLowerCase()}.`
+      const news = commanderNews(back.restored, back.absent, number, mission.pulses)
       const next: BuildContext = {
         ...context,
         standing,
         field,
         carried,
+        absent: back.absent,
         round: round(number),
         // Credits carry over: what the last Build Phase did not spend, the Nexus power it picked included.
         allotment: remaining(context, state),
-        openingStatus: status(`Round ${number - 1}: ${last.headline.toLowerCase()}. Build Phase ${number} - the Nexus stands.`, "hint"),
+        openingStatus: status(news === null ? `${last} Build Phase ${number} - the Nexus stands.` : `${last} ${news}`, "hint"),
       }
       return { ...next, incoming: forecast(next, number) }
     },

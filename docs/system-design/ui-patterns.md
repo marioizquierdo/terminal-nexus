@@ -523,6 +523,14 @@ uses it rather than a new blend.
   mission's own words ("The perimeter held.") — with the last round's fight and its reason under it, and
   the row is `[enter] Play again`. Restart, from the game menu, is the mission from round 1.
   (RULE — `tests/mission-loop.test.ts`)
+- ***A Commander's absence is said where the player is looking.*** On the map she is the one `@`, never a
+  letter, in her side's colour. The feed names her and says she **falls** (`5.9s Vasse falls`), not that a
+  unit dies. The result says it under Recall, with the round she is out for and the round she is back for
+  (`Vasse fell: out for round 2, back for round 3.`; only that she fell, once there is no next round to be
+  out for). The next Build Phase's bottom line says it in place of "the Nexus stands" (`Round 1: victory.
+  Vasse is out this round, back for round 3.`), and so does the Battle Round screen, under the round's own
+  words (`Vasse is out this round.`). The round she comes back, the bottom line says `Vasse is back beside
+  the Nexus.` and she stands there on the map. (RULE — `tests/commander-screen.test.ts`)
 - **A mission's round is counted in the top bar** — `build phase - round 2 of 3` — because PERIMETER's goal
   is about rounds (a round counter shows only when the goal is about rounds), and the Battle Round screen
   is that round's number, in the mission's words for it.

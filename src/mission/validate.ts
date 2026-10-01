@@ -125,6 +125,8 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
     say(`${where} has a condition this vocabulary does not know: ${JSON.stringify(when)}`)
   }
 
+  // Each side's Commander, once spawned.
+  const commanders = new Set<string>()
   const checkAction = (trigger: TriggerDefinition, action: SimulationAction, index: number): void => {
     const where = `trigger "${trigger.id}", action ${index + 1} (${actionName(action)})`
     const at = whenOf(trigger.when)
@@ -143,6 +145,14 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
           say(`${where} spawns "${entry.unit}", a structure — structures arrive by commitPlan`)
         }
         if (!isPositiveInteger(entry.count)) say(`${where} spawns ${entry.count} of "${entry.unit}"; a count is a positive integer`)
+        // A side has one Commander, and a mission brings her once: after that the rules between rounds
+        // bring her back when she falls (pulse.md), and a second arrival would be a second Commander.
+        if (registry.has(entry.unit) && registry.get(entry.unit).commander === true) {
+          const key = `${spawn.side}:${entry.unit}`
+          if (entry.count !== 1) say(`${where} spawns ${entry.count} of the Commander "${entry.unit}"; a side has one`)
+          if (commanders.has(key)) say(`${where} spawns the Commander "${entry.unit}" a second time; once she is on the Grid the rules bring her back`)
+          commanders.add(key)
+        }
       }
       if (spawn.order !== undefined) checkOrder(spawn.order, where)
       if (spawn.group !== undefined && moment !== null) {

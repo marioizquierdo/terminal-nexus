@@ -51,7 +51,12 @@ export const PERIMETER: MissionDefinition = {
         {
           spawn: {
             side: "A",
+            // "Commander Vasse holds the ground with what walked out of the annex: two squads" (the
+            // briefing). Listed first, so she takes the muster's centre with the squads around her: listed
+            // last she stood at their edge and fell in round 2 behind every Turret plan measured. She
+            // arrives once; when she falls, the rules between rounds bring her back.
             units: [
+              { unit: "unit.citizen.vasse", count: 1 },
               { unit: "unit.citizen.trooper", count: 3 },
               { unit: "unit.citizen.marksman", count: 2 },
             ],

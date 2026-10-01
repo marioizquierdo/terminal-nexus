@@ -24,6 +24,7 @@ import { START_KEY } from "./layout.ts"
 import { CONTROLS_TITLE, controlsPage } from "./help.ts"
 import { ACTIVITY_DESCRIPTION, CONTROLS_DESCRIPTION, GAME_MENU_ROWS, RESTART_DESCRIPTION, SETTINGS_ROWS, sectionOfRow } from "./settings.ts"
 import { ACTIVITY_FILTERS } from "../log/activity.ts"
+import { commanderName } from "../content/cards.ts"
 import {
   ACTIVITY_EMPTY,
   ACTIVITY_EXPORT_ROW,
@@ -400,6 +401,13 @@ export function roundAnnouncement(context: BuildContext, round: number): string 
   return context.roundText?.[round] ?? DEFAULT_ROUND_TEXT
 }
 
+/** "Vasse is out this round." for each of the player's Commanders sitting this round out. */
+function absentCommanders(context: BuildContext): string[] {
+  return (context.absent ?? [])
+    .filter((absence) => absence.player === "A")
+    .map((absence) => `${commanderName(absence.contentId)} is out this round.`)
+}
+
 /** An announcement's sentences, each its own line on the screen: short orders read as a list, and the
  *  popup is only 40 glyphs wide at the floor, where a sentence that wrapped would leave one word alone. */
 function sentences(text: string): readonly string[] {
@@ -437,13 +445,14 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
     }
     case "battle-round":
       // A confirmation screen, not a question: the round's title,
-      // what it announces, and the one row, `[s] Start`, highlighted because it is what Enter, Space and
-      // `s` do. Esc goes back, as from every popup.
+      // what it announces (and that the Commander is out, when she is), and the one row, `[s] Start`,
+      // highlighted because it is what Enter, Space and `s` do. Esc goes back, as from every popup.
       return {
         title: `Battle Round ${state.pulseNumber}`,
         rows: [
           { kind: "blank" },
           ...sentences(roundAnnouncement(context, state.pulseNumber)).map((text): PopupRow => ({ kind: "note", text })),
+          ...absentCommanders(context).map((text): PopupRow => ({ kind: "note", text })),
           { kind: "blank" },
           { kind: "option", hotkey: START_KEY, label: "Start", command: { kind: "start-pulse" }, highlighted: true },
         ],

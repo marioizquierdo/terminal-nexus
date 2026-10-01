@@ -45,7 +45,7 @@ Each faction should eventually support two or three Commanders. Commanders share
 
 The differences should be smaller than the differences between factions but large enough to produce a distinct opening and one recognizable build path.
 
-**The Commander is a prominent, persistent frontline `@`** (RULE — settled; no code holds it yet), not only a portrait or menu choice. Fictionally it is a Nexus Symbol. When it dies, one full round of absence passes before it is restored. Commander-focused builds should be viable but should compete with army, economy, science, and fortification strategies.
+**The Commander is a prominent, persistent frontline `@`** (RULE — `src/match/commander.ts`, `tests/commander.test.ts`; Vasse, at the size PERIMETER needs, is the one built), not only a portrait or menu choice. Fictionally it is a Nexus Symbol. When it dies, one full round of absence passes before it is restored. Commander-focused builds should be viable but should compete with army, economy, science, and fortification strategies.
 
 ### 2.1 Commander Army composition
 
@@ -373,6 +373,8 @@ Three Commanders open the game, and a player may keep more than one campaign in 
 - *Early Warning* — "Shows where the next wave arrives, and what is in it."
 
 **What she costs.** She cannot take ground. A player who only ever holds will stall the first time a mission asks them to attack — which is the lesson the second campaign exists to teach.
+
+**What is built of her** (the Commander milestone's first step): the `@` that walks out of the annex with PERIMETER's two squads, eighty health (an Experiment while it is tuned), a short-range shot from just behind the line, and the death, absence and restoration every Commander has ([`pulse.md`](../system-design/pulse.md)). None of her four powers is built, and her doctrine's "hold, then advance" waits on an order the kernel can keep; she engages the nearest enemy like every unit. Building her is not choosing the Citizens' roster (Q34): every other choice in PERIMETER is still the disposable bench.
 
 #### Marshal Averno — Citizen Nexus — Native, with a leak — *the mirror*
 

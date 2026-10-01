@@ -413,6 +413,20 @@ export const ALL_SETTINGS = {
     unit: "count",
     default: 3,
   },
+  /** How much Vasse, the Commander, can take (the Commander step): how often her fall, a round of absence
+   *  and her return come into play at all. First guess: 80, twice a trooper. Measured: from 60 to 100 she
+   *  comes out of PERIMETER's first two rounds in every plan tried and a plan that builds nothing still
+   *  loses; at 150 that plan wins the last round on time, and at 20 she falls in round 2 whatever is built
+   *  (docs/history/reports/2026-10-01-commander-vasse.md has the outcomes). */
+  commanderHealth: {
+    tier: "experiment",
+    section: "mission",
+    label: "Vasse's health",
+    question: "How much Vasse can take: enough to come through most rounds, or little enough that keeping her alive shapes the plan.",
+    values: [20, 40, 60, 80, 100, 150],
+    unit: "count",
+    default: 80,
+  },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 
 // --- Names, values and tiers, as types --------------------------------------------------------------

@@ -7,6 +7,9 @@
 Made current by Mario on 2026-10-01, after he played the loop across rounds: "Get ready and start working on
 the next milestone stage!"
 
+_Nothing is open for an agent right now: step 8A is built and waits for Mario's playtest. Until then the
+work is his latest feedback, or nothing._
+
 This milestone widens Level 1's scope on purpose. Earlier plans deferred the Commander mechanic to
 Mission 3 (RESTORATION) and said not to author a Commander Army before Milestone 12. The plan now puts
 a real Commander in Level 1. What does and does not change because of that is spelled out under
@@ -42,9 +45,15 @@ this becoming "author the Citizens Commander Army" ahead of Milestone 12?
 
 ### Step 8A — The Commander mechanic
 
-- [ ] Vasse is a persistent `@` on the `units` layer.
-- [ ] Death, absence for the rest of that Pulse and one full cycle, and restoration work on a named
-      scenario that hashes the same every run.
+Built; waiting for Mario's playtest.
+
+- [x] Vasse is a persistent `@` on the `units` layer. She walks out of the annex with PERIMETER's squads,
+      fights from just behind the line, comes home to the Nexus after each round, and her health is an
+      Experiment.
+- [x] Death, absence for the rest of that Pulse and one full cycle, and restoration work on a named
+      scenario that hashes the same every run (`tests/commander-fixture.ts`, on Node and Bun). The feed, the
+      result, the next Build Phase and its Battle Round say she is out, and then that she is back.
+- [x] Built first, because Vasse made it urgent: Mario's answer that only the Nexus falling loses a round.
 
 ### Step 8B — The Nexus draft, dealt from a pool
 

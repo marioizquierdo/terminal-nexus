@@ -47,6 +47,11 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
     subtitle: "Your foot soldier",
     description: "Fights at close range and holds the line. You start with a squad; a Barracks trains more.",
   },
+  "unit.citizen.vasse": {
+    title: "Vasse",
+    subtitle: "Your Commander",
+    description: "Commander Edda Vasse leads from just behind the line. If she falls, she misses the next round; then the Nexus restores her.",
+  },
   "unit.citizen.marksman": {
     title: "Marksman",
     subtitle: "Shoots from far back",
@@ -94,4 +99,10 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
     subtitle: "Resources lie here",
     description: "A seam of what your credits are counted in, under the same mark. For now you can build and walk on it.",
   },
+}
+
+/** A Commander's name as a player reads it — her card's title — for the lines that say she fell, is out
+ *  or is back. */
+export function commanderName(contentId: string): string {
+  return CARD_TEXT[contentId]?.title ?? "Your Commander"
 }

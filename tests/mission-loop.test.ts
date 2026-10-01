@@ -104,8 +104,10 @@ test("Enter, Space, n, a click on the row and the driver's command all open the 
 })
 
 test("the Barracks trains during the round: round 2 opens with its troopers at home beside it, and the log says so", () => {
+  // Nothing built, so the probe lasts past the first trooper (ten seconds in): two Turrets and Vasse end
+  // round 1 before it.
   const side = perimeter()
-  startRound(side, DEFENCE)
+  startRound(side)
   const trained = side.build.pulse!.resolved.timeline.events.filter((event) => event.kind === "entity.spawned" && event.trainedBy !== undefined)
   assert.ok(trained.length > 0, "the Barracks trained nothing in round 1")
   toResult(side)

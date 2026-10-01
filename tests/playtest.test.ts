@@ -89,12 +89,13 @@ test("wait is a step where nothing is pressed and time passes: a second by defau
 test("a scripted playtest plays a Nexus Pulse on the script's own clock and shows every phase of its ending", () => {
   // A Nexus power, two Turrets and a Hatchery, the commit and its confirmation; then the script lets it play.
   const plan = `${DEFENCE_KEYS} s s`
-  const run = runBuildPlaytest({ steps: parseKeyScript(`${plan} wait~1000*20`) })
+  // Quarter-second frames, so the half-second cease fire is never stepped over.
+  const run = runBuildPlaytest({ steps: parseKeyScript(`${plan} wait~250*80`) })
   const texts = run.frames.map((frame) => frameToText(frame.frame))
   const started = texts.findIndex((text) => text.includes("nexus pulse"))
   assert.ok(started > 0, "the script never reached the Pulse")
   // The frame right after the second `s` is the Pulse's own first moment, already looking at the Nexus.
-  assert.match(texts[started]!, /^\| NEXUS PULSE 1 +0:09 /m)
+  assert.match(texts[started]!, /^\| NEXUS PULSE 1 +0:14 /m)
   // Centred on the Nexus's own tile (the position readout that once said so is gone).
   const first = run.frames[started]!.state
   assert.deepEqual(first.cursor, { x: 18, y: 10 })

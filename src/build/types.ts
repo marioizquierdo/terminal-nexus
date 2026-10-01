@@ -322,6 +322,18 @@ export type IncomingEntity = Readonly<{
 }>
 
 /**
+ * A Commander who fell and sits a round out: whose, which, the round she fell in and the round the Nexus
+ * restores her at the start of (the rule is the match layer's, `src/match/commander.ts`). Plain data, so
+ * the Build Phase can say she is absent without reaching the rules.
+ */
+export type CommanderAbsence = Readonly<{
+  player: "A" | "B"
+  contentId: string
+  fellInRound: number
+  returnsInRound: number
+}>
+
+/**
  * One option in the Nexus draft. **Placeholder content, not the real draft** — a Nexus
  * power there is "a name and one plain line of description" applying one of six effect kinds
  * (docs/game-design/commander-armies.md); these two are plain numbers instead, on purpose, so nothing

@@ -219,8 +219,23 @@ Nexus untouched and count as held.
 A persistent frontline unit, normally `@` — fictionally a Nexus Symbol — on the `units` layer. It may
 take Nexus-specific upgrades and competes for investment with army, economy, research, and
 fortification. **On death it is absent for the rest of that round's Pulse and for one full round
-after it, then the Prime Nexus may replicate it again** (RULE — settled; no code holds it yet). **Commander death is not the victory
-condition** (RULE — `src/pulse/victory.ts`, which reads only the Grid Nexus flag and annihilation).
+after it, then the Prime Nexus may replicate it again** (RULE — `src/match/commander.ts`,
+`tests/commander.test.ts`). **Commander death is not the victory condition** (RULE —
+`src/pulse/victory.ts`, which reads only the Grid Nexus flag and annihilation).
+
+What is built is that cadence, for one Commander, Vasse (`src/content/commanders.ts`). A unit is a
+Commander by a flag on its content (`commander`), which only the rules between rounds read: the kernel
+sees a unit like any other, so she fights and dies by the ordinary rules and nothing in a Pulse brings her
+back. When she falls, the round loop carries an absence beside the state — whose, which, the round she fell
+in and the round she is due — and as that round begins, after Recall and before its Build Phase, the
+Nexus sets her down on the free tile nearest her side's Grid Nexus: a new body, at full health, standing
+there through the Build Phase like any survivor. "May replicate" is taken as "does", as the campaign's
+third mission reads it ("the next restores her"); a side with no Grid Nexus standing has nowhere to
+restore her to, so her absence goes on until it has one. At a Pulse's end Recall sends her home to the
+Grid Nexus, since no building makes her. A mission brings its Commander once (`src/mission/validate.ts`
+refuses a second arrival, or two of her). How much she can take is an Experiment while it is tuned
+(**Vasse's health**). Her doctrine's behaviour — hold, then advance — waits on an order the kernel can
+keep (Q69): today she engages the nearest enemy like every unit.
 
 ### 2.2 Structures
 

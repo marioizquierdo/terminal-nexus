@@ -5,6 +5,11 @@ it is done.*
 
 ## Waiting on Mario
 
+- **Play the Commander**: PERIMETER, round 1. Vasse is the `@` among the squads; put the Explore cursor on
+  her for her card. Press `d` during a round: **Vasse's health**, under THE MISSION. At 20 she falls in round
+  2 and round 3 opens without her (the feed, the result, the bottom line and the Battle Round screen say so).
+  Her return cannot happen inside PERIMETER's three rounds; the pull request's pictures show it from the
+  Commander's own test map. Then paste the settings export.
 - **Play the Activity logs** (pull request 51): on the playtest page open the "Activity logs" demo, press
   Esc then `a`, change the filter, press `e`, and paste the export into the pull request. Also look at the
   About screen (Menu, then `4`).
@@ -39,6 +44,17 @@ Small, none blocking.
   tile moves it when the round starts.
 - The walk home is a straight glide over whole tiles, with no routing. Watch again replays a Pulse
   already resolved; it must never resolve a new one.
+
+**From step 8A** ([the Commander report](../history/reports/2026-10-01-commander-vasse.md) has the outcomes):
+
+- Vasse's return is never seen in PERIMETER: she cannot fall before round 2 there, and a fall in round 2 is
+  back in a round 4 that does not exist. The named scenario (`tests/commander-fixture.ts`) proves it.
+- Her doctrine's "hold, then advance" waits on an order the kernel can keep (Q69); she engages the nearest
+  enemy like every unit, from just behind the line.
+- In round 1 she is incoming with the squads, so her card is the incoming one ("Yours, next round"), not her
+  own ("Your Commander"); from round 2 on it is hers.
+- With her in the squads, a round 1 with Turrets built ends near 9.8 seconds, before the Barracks's first
+  trooper at the default pace; with nothing built it ends near 11 seconds and the Barracks trains one.
 
 **From step 6C** ([the Barracks report](../history/reports/2026-10-01-barracks-trains.md) has the outcomes):
 

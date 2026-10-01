@@ -110,11 +110,12 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
       "incoming",
       "trainEvery",
       "trainPerRound",
+      "commanderHealth",
     ],
   )
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.section),
-    [...Array.from({ length: 10 }, () => "keyboard"), "effects", "effects", "effects", "mission", "mission", "mission", "mission"],
+    [...Array.from({ length: 10 }, () => "keyboard"), "effects", "effects", "effects", "mission", "mission", "mission", "mission", "mission"],
   )
   // The bottom line says what the keys do there, and the highlighted row's question is
   // shown. Opened by `d` from the game, Esc closes it.

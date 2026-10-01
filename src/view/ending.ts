@@ -31,6 +31,8 @@ import type { Coord } from "../grid/types.ts"
 import type { RecallMove } from "../match/types.ts"
 import type { Outcome, PlayerId } from "../state/types.ts"
 import type { StatusTone } from "../build/status.ts"
+import type { CommanderAbsence } from "../build/types.ts"
+import { commanderName } from "../content/cards.ts"
 import { buildFlightHoldTicks, flightHoldTicks } from "./effects/derive.ts"
 import type { PulseTimeline } from "./snapshot.ts"
 import { tileAt } from "./tween.ts"
@@ -268,6 +270,9 @@ export type PulseResult = Readonly<{
   goOn?: string
   /** The one line under the map once the result stands. */
   line?: string
+  /** What happened to the player's Commander, when she fell this round: that she fell, and while the
+   *  mission goes on, which round she is out for and which she is back for. */
+  commander?: string
 }>
 
 /** A mission's round, as the result reads it — `pulse-live.ts`'s `MissionRound`, restated here so this
@@ -277,27 +282,50 @@ type Round = Readonly<{
   round: number
   of: number
   endText?: Readonly<{ won: string; lost: string }>
+  fell?: readonly CommanderAbsence[]
 }>
+
+/**
+ * The result's line for the player's Commanders who fell this round — "Vasse fell: out for round 2, back
+ * for round 3." — or `undefined` when none did. Once the mission is over, or in its last round, only that
+ * she fell: there is no next round to be out for.
+ */
+export function commanderLine(round: Round): string | undefined {
+  const fell = (round.fell ?? []).filter((absence) => absence.player === "A")
+  if (fell.length === 0) return undefined
+  return fell
+    .map((absence) => {
+      const name = commanderName(absence.contentId)
+      if (round.verdict.kind !== "continue" || round.round >= round.of) return `${name} fell.`
+      const first = round.round + 1
+      const last = Math.min(absence.returnsInRound - 1, round.of)
+      const out = first === last ? `round ${first}` : `rounds ${first} to ${last}`
+      return absence.returnsInRound <= round.of ? `${name} fell: out for ${out}, back for round ${absence.returnsInRound}.` : `${name} fell: out for ${out}, the last.`
+    })
+    .join(" ")
+}
 
 /**
  * The result in a mission. A round the mission goes on from keeps the kernel's own headline —
  * the fight was won, lost or ran out of time, and that is true — and says under it which round this was
  * and that the Nexus stands. A mission a trigger ended says so instead, in the mission's own words: the
  * hold's "The perimeter held." is not a draw, whatever the kernel's tick limit calls the last Pulse
- * (the mission's goal is read one level above the victory check, which never changes).
+ * (the mission's goal is read one level above the victory check, which a mission never changes).
  */
 export function missionResultOf(fight: PulseResult, round: Round | undefined): PulseResult {
   if (round === undefined) return fight
   // What the fight itself was, kept under a mission's verdict: the verdict says the mission, this says why.
   const last = `Round ${round.round} of ${round.of}: ${fight.headline.toLowerCase()}. ${fight.reason}`
+  const line = commanderLine(round)
+  const commander = line === undefined ? {} : { commander: line }
   switch (round.verdict.kind) {
     case "won": {
       const reason = round.endText?.won ?? "The mission's goal is met."
-      return { headline: "MISSION COMPLETE", reason, tone: "success", mission: last, goOn: "Play again", line: `MISSION COMPLETE - ${reason}` }
+      return { headline: "MISSION COMPLETE", reason, tone: "success", mission: last, goOn: "Play again", line: `MISSION COMPLETE - ${reason}`, ...commander }
     }
     case "lost": {
       const reason = round.endText?.lost ?? "The mission is lost."
-      return { headline: "MISSION FAILED", reason, tone: "danger", mission: last, goOn: "Play again", line: `MISSION FAILED - ${reason}` }
+      return { headline: "MISSION FAILED", reason, tone: "danger", mission: last, goOn: "Play again", line: `MISSION FAILED - ${reason}`, ...commander }
     }
     default:
       return {
@@ -305,6 +333,7 @@ export function missionResultOf(fight: PulseResult, round: Round | undefined): P
         mission: `Round ${round.round} of ${round.of} is over. The Nexus stands.`,
         goOn: "Next round",
         line: `Round ${round.round} of ${round.of} over - ${fight.headline.toLowerCase()}. Enter: Build Phase ${round.round + 1}.`,
+        ...commander,
       }
   }
 }

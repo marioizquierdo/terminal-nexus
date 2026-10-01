@@ -12,6 +12,7 @@ import type { BuildLayout } from "../build/layout.ts"
 import { cellForTile, nextRoundRow, pulseControlRows } from "../build/layout.ts"
 import { wrapWords } from "./draw.ts"
 import type { ContentRegistry } from "../content/index.ts"
+import { commanderName } from "../content/cards.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { inBounds, tileIndex } from "../grid/coords.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
@@ -243,8 +244,11 @@ function feedLine(pulse: PulseFrame, event: DomainEvent): Readonly<{ text: strin
       const by = whoIs(event.attacker)
       return { text: `${at} ${by.name} > ${whoIs(event.target).name}`, role: sideRole(by.player) }
     }
+    // A Commander falls rather than dies, by name: her absence is news the result spells out.
     case "entity.died":
-      return { text: `${at} ${whoIs(event.entity).name} dies`, role: sideRole(event.player) }
+      return pulse.registry.get(event.contentId).commander === true
+        ? { text: `${at} ${commanderName(event.contentId)} falls`, role: sideRole(event.player) }
+        : { text: `${at} ${whoIs(event.entity).name} dies`, role: sideRole(event.player) }
     // Only what a building trained: an arrival or a spawner's brood is not news the feed has room for.
     case "entity.spawned":
       return event.trainedBy === undefined ? null : { text: `${at} ${whoIs(event.entity).name} trained`, role: sideRole(event.player) }
@@ -333,6 +337,7 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
   if (pulse.phase === "home") {
     line("RECALL", "chrome.label")
     line(cameHome(pulse.home), "chrome.value")
+    for (const words of wrapWords(pulse.result.commander ?? "", limit - 1)) line(words, "chrome.value")
     // A Pulse with no mission goes nowhere: the game menu's Restart is the way back.
     if (pulse.result.goOn === undefined) {
       gap()

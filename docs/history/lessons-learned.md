@@ -187,6 +187,21 @@ than any one feature:
    the filters by position; a new first filter broke them all. The question's filter went last instead,
    one Left from where the window opens.
 
+## The Commander (2026-10-01)
+
+1. **A new unit on a fixture side moves every outcome, so measure the mission before and after.** Adding
+   Vasse to PERIMETER's squads let a plan that built nothing win (through the old annihilation rule), ended
+   round 1 before the Barracks's first trooper, and, listed last rather than first, moved every squad
+   member's starting tile and had her fall behind every Turret plan. Each was found by playing the mission
+   round by round across a few plans and her numbers, not by the tests that failed.
+2. **A decided rule a new feature leans on goes first, in its own commit.** Mario had just answered that only
+   the Nexus falling loses a round, and asked for it later. The Commander made the old rule decide the
+   mission, so the rule was built first, alone, green on its own, and the Commander built on top of it: the
+   history says which change moved which outcome.
+3. **A test that samples a Pulse in steps can step over a short phase.** One-second steps happened to land in
+   the half-second cease fire until round 1's length moved. Sample at a fraction of the shortest phase you
+   assert on.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".
