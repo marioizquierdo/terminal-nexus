@@ -1,7 +1,11 @@
 # Milestone 8 — Commander
 
-**Status:** PLANNED
-**Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives), Milestone 6 (the Pulse is where the Commander acts)
+**Status:** CURRENT
+**Current step:** 8A — The Commander mechanic: Vasse is a persistent `@` who dies, is absent for the rest of that Pulse and one full round, and comes back.
+**Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives; complete), Milestone 6 (the Pulse is where the Commander acts; complete)
+
+Made current by Mario on 2026-10-01, after he played the loop across rounds: "Get ready and start working on
+the next milestone stage!"
 
 This milestone widens Level 1's scope on purpose. Earlier plans deferred the Commander mechanic to
 Mission 3 (RESTORATION) and said not to author a Commander Army before Milestone 12. The plan now puts

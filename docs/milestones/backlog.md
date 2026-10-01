@@ -83,6 +83,23 @@ then measures an orbit rather than a route.
   corridor.
 - Answers to Q5 and Q7 in [`open-questions.md`](open-questions.md), earned rather than assumed.
 
+## The Pulse screen (Mario, 2026-10-01)
+
+After playing PERIMETER across three rounds Mario named what the Pulse screen lacks, and said it can wait for
+the right time ([his words](../history/feedback/2026-10-01-multi-pulse.md)). It is interface work, which he
+puts before any level's balance:
+
+- **Look at units during a Pulse.** "I should be able to hover over units and see their details, same as with
+  the Explore feature": pointing at a unit while a Pulse plays (the mouse, or a cursor the keyboard moves)
+  shows the card Explore Map shows in the Build Phase. Playback stays read-only.
+- **Fewer numbers.** "The pulse doesn't need to track that many stats": today the panel shows, for each side,
+  a count of units, a health bar and a health total, and a feed line for every shot and death. Keep what a
+  player reads in a fight; drop the rest.
+- **How many are coming.** "A spawner where the player can check how many enemies are coming. Or directly see
+  them on the map with intentions": a count for each arriving group, in one place, seen without exploring the
+  map (round 1's raid stands at the ridge, off the view the round opens on). How much of this is free rather
+  than a Nexus power is an open question (Q71) to settle first.
+
 ## Decisions fine to leave open for now
 
 Decisions that **block or shape current work** live in [`open-questions.md`](open-questions.md), with

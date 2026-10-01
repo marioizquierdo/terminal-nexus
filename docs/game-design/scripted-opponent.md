@@ -71,5 +71,5 @@ The same thing has had several names (Pulse, Battle step, round), and what the p
 
 1. **`hold` and "advance to a region"** (Q69) — the smallest kernel change that makes an intention something the kernel keeps rather than a coincidence. It needs its own named scenarios.
 2. **Derived intentions** from the plan, and an Experiment for drawing the plan on the map.
-3. **A defender's wiped-out units ending a round early** (Q70) — decided by playing the first mission's rounds.
+3. **A defender's wiped-out units ending a round early** — decided by Mario after playing the first mission's rounds: they do not; only the Nexus falling, or a mission's own condition, loses ([`pulse.md`](../system-design/pulse.md), the victory rule). Not built yet.
 4. **The planner** — only once two missions exist to plan for (PERIMETER and RIGHT OF SALVAGE), so the vocabulary is judged on two real uses before anything generates plans in it.

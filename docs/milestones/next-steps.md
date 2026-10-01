@@ -5,13 +5,6 @@ it is done.*
 
 ## Waiting on Mario
 
-- **Play step 6B**: PERIMETER, three rounds, Enter between them. Press `d` during a round: **Next round**
-  (the result waits for Enter, or the next Build Phase begins on its own) and **Incoming wave** (shown or
-  hidden), under THE MISSION. Then paste the export.
-- **Play the Barracks that trains**: PERIMETER round 1 into round 2; watch for "trooper trained" in the
-  feed and the trooper by the Barracks when round 2 opens. Press `d` during a round: **Barracks trains**
-  (how often) and **Troopers a round** (how many), under THE MISSION. Then paste the settings export, and the
-  Activity logs export with the **Barracks** filter (Esc, `a`, Left once, `e`).
 - **Play the Activity logs** (pull request 51): on the playtest page open the "Activity logs" demo, press
   Esc then `a`, change the filter, press `e`, and paste the export into the pull request. Also look at the
   About screen (Menu, then `4`).
@@ -21,13 +14,16 @@ it is done.*
 - **Run the key-release probe in iTerm2**: `node scripts/probe-key-release.mjs`, hold an arrow, let it go,
   tap it, `q`. Lines saying `release` mean the Key releases Experiment's `auto` works there; `legacy`
   means `auto` and `off` feel the same.
-- **Open questions** (each has a recommendation in the register): whether a side whose Nexus stands loses when its
-  units die (Q70), an order primitive as its own step (Q69; the thinking is in
-  [`scripted-opponent.md`](../game-design/scripted-opponent.md)), letter hotkeys for buildings (Q67), whether
-  the player ever reads "Pulse" (Q68), and the exploring click, the wheel step and the light theme's light
-  (Q63; Q62 and Q64 are answered).
-- **The menu spike's Experiments** (Battle Round flash, Flash strength, Popup pulse, the keyboard
-  navigation numbers) came back without an export; they stay until he sends one.
+- **Open questions** (each has a recommendation in the register): building Vasse without authoring the whole
+  Citizens army, which the Commander milestone does under the recommendation (Q34); how much of what is coming a
+  player sees without spending a Nexus power, before the Nexus draft step picks PERIMETER's two (Q71); an order
+  primitive as its own step (Q69; the thinking is in [`scripted-opponent.md`](../game-design/scripted-opponent.md)),
+  letter hotkeys for buildings (Q67), whether the player ever reads "Pulse" (Q68), and the exploring click, the
+  wheel step and the light theme's light (Q63; Q62 and Q64 are answered).
+- **Experiments that came back without an export** stay at their first guesses until he sends one: the menu
+  spike's (Battle Round flash, Flash strength, Popup pulse, the keyboard navigation numbers), and the round
+  loop's and the Barracks's under THE MISSION (Next round, Incoming wave, Barracks trains, Troopers a round),
+  with the Activity logs' **Barracks** filter beside them.
 
 ## Carry-over
 
@@ -37,7 +33,11 @@ Small, none blocking.
 
 - PERIMETER is played on the Build Phase's starter map, with regions named for its landmarks; its own map is Q38's.
 - Every unit engages the nearest enemy: `order` has one verb, `advance` (Q69).
-- A round ends when the player's units are all dead, even with the Nexus standing (Q70).
+- **Decided, not built: a side whose Nexus stands is never wiped out** (Mario, 2026-10-01: "the player should
+  only lose when the nexus is destroyed or if there's a specific losing condition on the campaign level"). Today
+  a round still ends when the player's units are all dead with the Nexus standing. Building it is a small step
+  of its own: the victory rule in `src/pulse/victory.ts` with a named scenario, the mission runner's widening of
+  the roster retired with it, and PERIMETER's hashes updated on purpose.
 - A new Nexus power is dealt every round (the placeholder draft adds 30 or 2000 credits) on top of the
   credits carried over. Real Nexus powers are Milestone 8's.
 - The incoming wave is a forecast placed against the map without the plan; a building on an arrival's
@@ -51,7 +51,7 @@ Small, none blocking.
   cost and supply in the worker economy.
 - Only a mission's listed buildings train: a barracks in a `grid` scenario still trains nothing.
 - A trooper trained after a round opens counts toward "your force was wiped out" only if it was standing when a
-  later raid group arrived; the open question on a side with a standing Nexus losing now says so.
+  later raid group arrived; this goes away with the decided rule above.
 
 **From the Build Phase and the menu spike** ([report](../history/reports/2026-09-30-menu-spike.md)):
 

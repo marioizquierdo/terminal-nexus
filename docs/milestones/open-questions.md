@@ -36,7 +36,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q27](#q27--should-ground-cannot-target-air-be-the-schemas-default-not-an-opt-in-field) | Should "ground cannot target air" be the default? | OPEN | Milestone 12 (first played air roster) |
 | [Q28](#q28--can-a-spawner-only-side-become-permanently-un-annihilatable) | Can a spawner-only side become un-annihilatable? | OPEN | Milestone 12 (first spawner roster) |
 | [Q31](#q31--what-shape-does-an-unlock-record-take-with-no-save-system-yet) | What shape does an unlock record take? | OPEN | Milestone 4 (campaign menu) |
-| [Q34](#q34--does-building-commander-vasse-in-level-1-mean-authoring-the-citizens-commander-army-early) | Does building Vasse mean authoring the whole Commander Army? | OPEN | Milestone 8 (Commander) |
+| [Q34](#q34--does-building-commander-vasse-in-level-1-mean-authoring-the-citizens-commander-army-early) | Does building Vasse mean authoring the whole Commander Army? | OPEN | Mario, now: Milestone 8 builds under the recommendation |
 | [Q35](#q35--what-counts-as-discovered-enemy-intel-and-when-is-it-recorded) | What counts as "discovered" enemy intel? | OPEN | Milestone 4 (campaign menu) |
 | [Q38](#q38--does-perimeters-own-map-need-real-scrolling-or-does-milestone-5-prove-scrolling-on-different-content) | Does PERIMETER's own map need real scrolling? | OPEN | Mario, now |
 | [Q40](#q40--within-a-run-what-persists-from-one-battle-to-the-next) | Within a run, what persists from one battle to the next? | OPEN | Milestone 11 (Challenge runs) |
@@ -47,7 +47,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q67](#q67--do-buildings-get-letter-hotkeys-or-stay-on-digits) | Do buildings get letter hotkeys, or stay on digits? | OPEN | Mario, now |
 | [Q68](#q68--what-does-the-player-call-a-nexus-pulse) | What does the player call a Nexus Pulse? | OPEN | Mario, now |
 | [Q69](#q69--should-units-be-able-to-hold-withdraw-or-head-for-a-place-so-a-scripted-group-can-follow-an-order) | Should units be able to hold, withdraw or head for a place? | OPEN | Mario, now |
-| [Q70](#q70--should-a-side-whose-grid-nexus-still-stands-lose-a-pulse-because-its-units-died) | Should a side with a standing Nexus lose because its units died? | OPEN | Mario, now |
+| [Q71](#q71--how-much-of-what-is-coming-does-a-player-see-without-spending-a-pick) | How much of what is coming does a player see without spending a pick? | OPEN | Milestone 8 (the Nexus draft step) |
 
 ## Open
 
@@ -354,7 +354,7 @@ designed rather than discovered.
 
 ### Q34 — Does building Commander Vasse in Level 1 mean authoring the Citizens Commander Army early?
 
-**Status:** OPEN — parked until Milestone 8 starts; the recommendation is already assumed by [`milestone-08-commander.md`](milestone-08-commander.md).
+**Status:** OPEN — Milestone 8 started on 2026-10-01 and builds under the recommendation, as [`milestone-08-commander.md`](milestone-08-commander.md) assumed; the Commander step's pull request says so for Mario to confirm or overturn.
 
 Mario's milestone list puts a real Commander in Level 1: "focus on the first Citizen commander. Develop the
 initial draft of Nexus upgrades." Every earlier framing deferred both: `commander-armies.md` ("Do not invent
@@ -563,30 +563,28 @@ by. `hold` and `withdraw` are refused when a mission is loaded, with this questi
 **Recommendation: B, as its own small step**, scoped to `hold` and "head for a region, then engage", because
 that is what a readable intention needs and what the Campaign's scripted opponent will be made of.
 
-### Q70 — Should a side whose Grid Nexus still stands lose a Pulse because its units died?
+### Q71 — How much of what is coming does a player see without spending a pick?
 
-**Status:** OPEN — decision-ready; registered 2026-09-30 from PERIMETER's fixture.
+**Status:** OPEN — registered 2026-10-01 from Mario's playtest; waits on Milestone 8's Nexus draft step, which
+picks PERIMETER's two powers.
 
-The kernel ends a Pulse the moment one side's mobile units are all dead (annihilation), even when that side's
-Grid Nexus stands. In a defence mission this reads oddly: when the player's squads fall in round 2, the round
-simply stops, with the raid at the gate, and the flank that was due seven seconds in never comes. The raid's
-survivors then carry into round 3 (which is at least consistent: the player sees them in the Build Phase). In an
-earlier tuning of the waves, a strong defence's round 3 ended the moment its last swarmer died, the Nexus
-untouched, and the mission counted it held.
+Mario, after playing the loop across rounds: "I would like, for example, that the enemies would have a spawner
+where the player can check how many enemies are coming. Or directly see them on the map with intentions." The
+design says the opposite in one place: in [`commander-armies.md`](../game-design/commander-armies.md) the `reveal`
+effect kind "keeps information something a player spends a pick on rather than something the HUD gives away",
+and Vasse's card offers *Early Warning*, "Shows where the next wave arrives, and what is in it". Step 6B already
+sides with Mario by default: the Build Phase draws the next round's arrivals on the map, see-through, with their
+intention on the Explore Map card (the Incoming wave Experiment, shown). If the screen gives the waves away,
+Early Warning has nothing left to show, and the Nexus draft step chooses PERIMETER's two powers knowing which it
+is.
 
 | Option | Cost |
 | --- | --- |
-| A. **Keep the rule**: annihilation ends a Pulse whatever stands | No change; a defence round can end before its waves have all come |
-| B. **A side with a standing Grid Nexus is never annihilated**: its Pulse goes on until the Nexus falls or the time runs out | A RULE change ([`pulse.md`](../system-design/pulse.md), victory), a named scenario, and the full determinism bar; it also changes Skirmish, where it is arguably right too: "Destroying the enemy Grid Nexus wins" |
-| C. **A mission flag**: the runner tells the kernel the defender fields no mobile units, so only its Nexus can lose | No kernel file changes, but it misstates the roster to the kernel to get a different rule — the kind of hidden rule the project refuses |
+| A. **The screen shows the round's raid for free**: where each group arrives, how many and of what, and what it means to do, in one place as well as on the map; a `reveal` power shows what that view cannot (the round after next, a group that arrives unannounced, exact timings) | What Mario asked for, and the scripted opponent's deal with the player ("the Nexus is ahead of you", [`scripted-opponent.md`](../game-design/scripted-opponent.md)). Early Warning's line changes to show something beyond the free view, or another power takes its slot. Challenge, where both sides plan hidden, still shows only what is public |
+| B. **Where for free, what for a pick**: arrival points and intentions show; the numbers and kinds need Early Warning | Keeps the design's line as written, but the count Mario asked for sits behind a pick in the first mission, where a player has two powers to choose between |
+| C. **Nothing for free**: every forecast is a power | Reverses what step 6B built and Mario liked; the first mission is played blind unless the player picks the right card |
 
-**Recommendation: B**, decided by playing it: play PERIMETER as it is first (the Next round Experiment and the
-waves as built), and if a round ending with the raid at the gate reads wrong to the owner, B is the honest fix.
-Until then A stands and the pull request says what it does.
-
-The Barracks that trains makes the rule's edges sharper. A round can now begin with none of the player's units
-alive and still field some, trained during it. The kernel counts a side as having fielded units from the round's
-opening, and the mission runner widens that each time a raid group arrives; so whether a trooper trained after
-the opening ends the round by dying depends on whether it happened to be standing when a later group arrived. In
-PERIMETER at a trooper every eight seconds, a plan that builds nothing wins round 3 this way. Option B removes
-the timing as well.
+**Recommendation: A.** In the Campaign the raid's plan is public by design, and the player's own Nexus telling
+them what is coming is the mission's fiction; a pick is better spent on what is genuinely hidden. Decide it
+before the Nexus draft step chooses PERIMETER's two powers. The display itself (a count in one place, seen
+without exploring the map) waits in [`backlog.md`](backlog.md), under the Pulse screen.

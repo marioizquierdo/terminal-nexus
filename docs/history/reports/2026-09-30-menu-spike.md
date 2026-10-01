@@ -2,7 +2,7 @@
 
 Copied from `.github/pull_request_template.md` (the old gate-report template, since retired). The feedback it
 answers is [`docs/history/feedback/2026-09-30-menu-spike.md`](../feedback/2026-09-30-menu-spike.md);
-the definition of done is in [`docs/milestones/milestone-06-pulse-phase.md`](../../milestones/milestone-06-pulse-phase.md)
+the definition of done is in [`docs/history/milestones/milestone-06-pulse-phase.md`](../milestones/milestone-06-pulse-phase.md)
 under "The menu spike". Sections 1-10 are round 1, left as they were written; **the owner's second
 round** ([`docs/history/feedback/2026-09-30-menu-spike-round-2.md`](../feedback/2026-09-30-menu-spike-round-2.md),
 F61-F76 and his settings export) has its own report at the end, in the same order.
