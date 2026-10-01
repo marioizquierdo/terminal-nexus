@@ -25,8 +25,7 @@ import type { Settings } from "../settings/types.ts"
 import type { GlyphPack } from "../view/theme.ts"
 import type { Move } from "../build/motion.ts"
 import type { ActivityLog } from "../log/activity.ts"
-import { ACTIVITY_CAPACITY, ACTIVITY_EVENTS } from "../log/activity.ts"
-import { createLogger } from "../log/logger.ts"
+import { createActivityLog } from "../log/activity.ts"
 import type { PlaytestStep } from "./keys.ts"
 import { UNTIMED_GAP_MS, deliverStep } from "./deliver.ts"
 
@@ -105,7 +104,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   // only speed up, and a key only reads as held, where a script times its steps (`Right~250*3`). The
   // run's Activity Logs read it too, so a line's time is its step's.
   let clock = 0
-  const activity = createLogger({ name: "activity", events: ACTIVITY_EVENTS, capacity: ACTIVITY_CAPACITY, now: () => clock })
+  const activity = createActivityLog(() => clock)
   const context: BuildContext = {
     ...(options.context ?? spikeContext()),
     settings,

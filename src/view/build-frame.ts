@@ -5,7 +5,7 @@
 import { edgeMarkers } from "../build/camera.ts"
 import { bottomLine } from "../build/help.ts"
 import { ESC_KEY, escLabelSpan, escLabel } from "../build/layout.ts"
-import { wrapWords } from "../build/popup.ts"
+import { wrapWords } from "./draw.ts"
 import type { ArmedPreview } from "../build/state.ts"
 import type { BandCell } from "./frame.ts"
 import { BANDS } from "./frame.ts"

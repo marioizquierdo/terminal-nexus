@@ -23,8 +23,7 @@ import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 import type { CapabilityMode } from "../src/view/roles.ts"
 import type { ActivityLog } from "../src/log/activity.ts"
-import { ACTIVITY_CAPACITY, ACTIVITY_EVENTS } from "../src/log/activity.ts"
-import { createLogger } from "../src/log/logger.ts"
+import { createActivityLog } from "../src/log/activity.ts"
 
 // --- Keys, as a terminal sends them ----------------------------------------------------------------
 
@@ -82,7 +81,7 @@ export type SideOptions = Readonly<{
 /** An Activity Logs of a test's own (feedback F90-F91), on `now` — a clock standing still at 0 unless
  *  the test passes one — so nothing a test logs reaches the game's global log, or another test's. */
 export function activityLog(now: () => number = () => 0): ActivityLog {
-  return createLogger({ name: "activity", events: ACTIVITY_EVENTS, capacity: ACTIVITY_CAPACITY, now })
+  return createActivityLog(now)
 }
 
 /** A Build Phase session laid out for `terminal` (the 80 x 24 floor), on the spike map unless told

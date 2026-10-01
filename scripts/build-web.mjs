@@ -19,6 +19,7 @@ import { execFileSync } from "node:child_process"
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join, relative } from "node:path"
 import { bundleForBrowser, repoRoot } from "./lib/web-bundle.mjs"
+import { parseKeyScript } from "../src/playtest/keys.ts"
 
 const argument = (name) => {
   const index = process.argv.indexOf(name)
@@ -51,6 +52,15 @@ for (const [index, demo] of demos.entries()) {
   }
   for (const field of ["keys", "settings"]) {
     if (demo[field] !== undefined && typeof demo[field] !== "string") throw new Error(`${demosPath}: demo ${index + 1}'s "${field}" must be text`)
+  }
+  // A key script the page cannot read would start the Build Phase at its beginning and say nothing:
+  // refuse it here, with the page's own reader.
+  if (demo.keys !== undefined) {
+    try {
+      parseKeyScript(demo.keys)
+    } catch (error) {
+      throw new Error(`${demosPath}: demo ${index + 1}'s keys: ${error instanceof Error ? error.message : String(error)}`)
+    }
   }
 }
 

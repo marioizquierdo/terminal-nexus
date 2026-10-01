@@ -225,7 +225,7 @@ export class BuildSession {
       }
       if (after.popup === "export" && before.popup !== "export") log.log("export", { kind: "settings" })
       if (after.activityExports > before.activityExports) {
-        log.log("export", { kind: "activity", events: shownEntries(this.context, after).length })
+        log.log("export", { kind: "activity", events: shownEntries(after).length })
       }
     } catch {
       // A log that could break the game would not be worth having.
@@ -443,7 +443,9 @@ export class BuildSession {
    *  far it moved the map cursor or a list's highlight, and why — tap, hold, jump or release. */
   private logMove(key: CursorKey): void {
     const move = this.motion.move
-    if (move === null) return
+    // A held key repeats faster than the game's pace, and most repeats move nothing: logging those would
+    // fill the log's memory in a couple of minutes of holding an arrow.
+    if (move === null || (move.kind === "hold" && move.tiles === 0)) return
     this.log.log("move.step", { key: directionOf(key), move: move.kind, tiles: move.tiles })
   }
 

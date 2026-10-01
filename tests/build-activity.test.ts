@@ -24,7 +24,7 @@ import type { BuildState } from "../src/build/state.ts"
 import type { BuildCommand, ExportKind } from "../src/build/types.ts"
 import { startPulse } from "../src/cli/pulse-run.ts"
 import { runSpike, spikeContext } from "../src/cli/spike.ts"
-import { ACTIVITY_EVENTS, ACTIVITY_FILTERS, entryProblems, formatActivityExport, parseLogLine } from "../src/log/index.ts"
+import { ACTIVITY_EVENTS, ACTIVITY_FILTERS, createLogger, entryProblems, formatActivityExport, parseLogLine } from "../src/log/index.ts"
 import type { LogEntry } from "../src/log/index.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
@@ -149,7 +149,7 @@ test("it opens over a committed plan too, so what a Pulse logged can be exported
 
 test("the list is what the filter shows, newest first, one line each as an export writes it", () => {
   const side = opened()
-  const shown = shownEntries(side.context, side.build.state)
+  const shown = shownEntries(side.build.state)
   // The first filter, Interactions: info and above.
   assert.equal(side.build.state.activityFilter, 0)
   assert.deepEqual(
@@ -170,26 +170,44 @@ test("the list is what the filter shows, newest first, one line each as an expor
   assert.match(lines[1] as string, /^\d\d:\d\d\.\d{3} info {2}build\.placed building=Turret x=\d+ y=\d+ credits=\d+$/)
 })
 
+test("a full log keeps the open list whole: keys pressed in the window drop the log's oldest entries, never the list's rows", () => {
+  let now = 0
+  const small = createLogger({ name: "activity", events: ACTIVITY_EVENTS, capacity: 12, now: () => (now += 100) })
+  const side = buildSide({ terminal: MINIMUM, activity: small })
+  keys(side, ...BUILT, "a")
+  assert.equal(side.build.state.popup, "activity-logs")
+  keys(side, RIGHT, RIGHT) // Everything: every entry the log kept when the window opened
+  const before = listTexts(side)
+  const count = ACTIVITY_FIRST_ENTRY_ROW + shownEntries(side.build.state).length
+  for (let index = 0; index < 30; index += 1) keys(side, DOWN)
+  assert.ok(small.dropped > 0, "the log never filled")
+  assert.deepEqual(listTexts(side).slice(0, 3), before.slice(0, 3), "the newest rows moved")
+  assert.equal(shownEntries(side.build.state).length + ACTIVITY_FIRST_ENTRY_ROW, count, "the list lost rows")
+  assert.equal(side.build.state.popupHighlight, count - 1, "the highlight is not on the last row")
+  assert.match(placed(side).spec.title, new RegExp(`\\(${count}/${count}\\)$`))
+})
+
 test("the list holds still while it is read: what is logged after the window opened waits for the next opening", () => {
   const side = opened()
   const before = listTexts(side)
-  const upTo = side.build.state.activityUpTo
-  assert.equal(upTo, (side.context.activity?.lastSeq ?? 0) - 2, "opening logged its command and its popup after the cut-off")
+  const frozen = side.build.state.activityFrozen
+  const upTo = frozen[frozen.length - 1]?.seq ?? 0
+  assert.equal(upTo, (side.context.activity?.lastSeq ?? 0) - 2, "opening logged its command and its popup after the copy")
   keys(side, DOWN, DOWN, UP, RIGHT, LEFT)
   assert.ok((side.context.activity?.lastSeq ?? 0) > upTo + 2, "the keys pressed in the window were logged")
   assert.deepEqual(listTexts(side), before, "the rows moved while the list was read")
-  assert.equal(side.build.state.activityUpTo, upTo)
+  assert.equal(side.build.state.activityFrozen, frozen)
   // Opened again, it shows what came since — newest, the window's own first opening (going back to the
   // game menu is not an opening).
   keys(side, ESC, "a")
-  const again = shownEntries(side.context, side.build.state)
+  const again = shownEntries(side.build.state)
   assert.deepEqual([again[0]?.event, about(again[0] as LogEntry)], ["popup.open", "activity-logs"])
   assert.equal(again.length, before.length + 1)
 })
 
 test("Up and Down walk the filter, the export and the entries, stopping at the ends; the title counts every row", () => {
   const side = opened()
-  const count = ACTIVITY_FIRST_ENTRY_ROW + shownEntries(side.context, side.build.state).length
+  const count = ACTIVITY_FIRST_ENTRY_ROW + shownEntries(side.build.state).length
   assert.match(screenText(side), new RegExp(`ACTIVITY LOGS \\(1/${count}\\)`))
   keys(side, UP)
   assert.equal(side.build.state.popupHighlight, ACTIVITY_FILTER_ROW, "Up on the first row moved")
@@ -209,7 +227,7 @@ test("a long list scrolls with the highlight, its scroll bar in the right border
   const side = session()
   keys(side, ...BUILT, "a", RIGHT, RIGHT) // Everything: every command too
   assert.equal(ACTIVITY_FILTERS[side.build.state.activityFilter]?.name, "Everything")
-  const total = shownEntries(side.context, side.build.state).length
+  const total = shownEntries(side.build.state).length
   assert.ok(placed(side).scrollBar !== null, "the list does not overflow at 80x24")
   keys(side, END)
   const shown = placed(side).rows.filter((row) => row.spec.kind === "text" && row.spec.highlighted === true)
@@ -234,7 +252,7 @@ test("Left and Right step the filter through the list, coming round at both ends
   const filter = ACTIVITY_FILTERS[names.length - 1]
   assert.ok(filter !== undefined)
   assert.match(screenText(side), new RegExp(`<\\s+${filter.name}\\s+>`))
-  const count = shownEntries(side.context, side.build.state).length
+  const count = shownEntries(side.build.state).length
   assert.equal(side.build.state.status.text, `Filter: ${filter.name} - ${count} events.`)
   // Enter on the Filter row steps it as Right does, as on every setting row.
   keys(side, ENTER)
@@ -271,19 +289,19 @@ test("the filter is kept when the window closes and across a restart", () => {
 
 // --- What the highlighted row is for --------------------------------------------------------------
 
-test("under the list: the filter's question, what the export holds, or an entry's whole line and what its event means", () => {
+test("under the list: the filter's question, what the export holds, or what an entry's event means and all its details", () => {
   const side = opened()
   assert.equal(noteText(side), ACTIVITY_FILTERS[0]?.question)
   keys(side, DOWN)
-  const count = shownEntries(side.context, side.build.state).length
+  const count = shownEntries(side.build.state).length
   assert.match(noteText(side), new RegExp(`^Copies the ${count} events this filter shows`))
   keys(side, DOWN, DOWN) // the second entry: the Turret placed
-  const entry = shownEntries(side.context, side.build.state)[1] as LogEntry
-  const [line, description] = noteText(side).split("\n")
-  assert.equal(parseLogLine(line as string)?.event, "build.placed")
-  assert.deepEqual(parseLogLine(line as string)?.props, entry.props, "the note's line is not the entry's whole line")
+  const entry = shownEntries(side.build.state)[1] as LogEntry
+  const [description, details] = noteText(side).split("\n")
   assert.equal(description, ACTIVITY_EVENTS["build.placed"].description)
-  // The whole line is there even where the list cut it short, and the event's meaning on lines of its own.
+  // Every property, read back as a log line reads them: the part a list row cuts short.
+  assert.deepEqual(parseLogLine(`00:00.000 info  build.placed ${details as string}`)?.props, entry.props, "the note does not hold every detail")
+  // The details are there even where the list cut the row short, and the event's meaning above them.
   const text = screenText(side)
   assert.ok(text.includes(`credits=${String(entry.props["credits"])}`), "the note does not show the line's end")
   assert.ok(text.includes("A building was placed on the plan."))
@@ -322,7 +340,7 @@ test("long lines are cut at the popup's edge at 80x24 and at the largest view, n
 test("export hands the shell the filter's frozen entries, oldest first, and says so in a message that goes back to the window", () => {
   const side = opened()
   const state = side.build.state
-  const shown = shownEntries(side.context, state)
+  const shown = shownEntries(state)
   keys(side, "e")
   assert.equal(side.exports.length, 1)
   const [exported] = side.exports
@@ -331,7 +349,7 @@ test("export hands the shell the filter's frozen entries, oldest first, and says
   assert.equal(
     exported?.text,
     formatActivityExport({
-      entries: (side.context.activity?.entries() ?? []).filter((entry) => entry.seq <= state.activityUpTo),
+      entries: state.activityFrozen,
       filter: ACTIVITY_FILTERS[0] as (typeof ACTIVITY_FILTERS)[number],
       startedAt: side.activity.startedAt,
       dropped: side.activity.dropped,

@@ -2,6 +2,7 @@
 // clock — the same separation `src/menu/list.ts` draws for the menu, so every claim about scrolling
 // and placement is checkable without a TTY.
 
+import type { LogEntry } from "../log/logger.ts"
 import { footprintCentre, footprintExtent, inBounds, tilesOf } from "../grid/coords.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { stepListIndex } from "../menu/list-keys.ts"
@@ -273,11 +274,13 @@ export type BuildState = Readonly<{
    *  filter an agent put first for the pull request that asks — until then. */
   activityFilter: number
   /**
-   * The newest log entry the Activity logs window lists: the log's last sequence number when the window
-   * opened (`BuildContext.activity`). Everything logged after it — every key pressed in the window
-   * among it — is left out until the window opens again, so the list holds still while it is read.
+   * What the Activity logs window lists: a copy of the log's entries taken when the window opened
+   * (`BuildContext.activity`). A copy, not a cut-off: the log keeps a bounded memory, so once it is full
+   * every key pressed in the window would drop its oldest entry from under the list. Everything logged
+   * after the copy waits until the window opens again, so the list holds still while it is read. The
+   * entries are shared, never cloned, so carrying them costs one array.
    */
-  activityUpTo: number
+  activityFrozen: readonly LogEntry[]
   /** How many times the Activity logs have been exported, counting up across a restart: the session
    *  hands the text to the shell each time it goes up — a side effect the reducer only records, the way
    *  `ack` records a flash. */
@@ -363,7 +366,7 @@ export function createBuildState(
     startExperiments: experiments,
     restartWarned: [],
     activityFilter: 0,
-    activityUpTo: 0,
+    activityFrozen: [],
     activityExports: 0,
   }
 }
@@ -1167,13 +1170,13 @@ function openControls(state: BuildState): BuildState {
 /**
  * The Activity logs window (owner, 2026-10-01, feedback F91): from the game menu's `[a]` row, which Esc
  * then goes back to, on that row; over a committed Build Phase too, so a playtester can export what a
- * Pulse logged. It opens on the filter, and **freezes the list** at the log's newest entry: what the
+ * Pulse logged. It opens on the filter, and **freezes the list** — a copy of the log's entries: what the
  * window shows holds still while it is read, though every key pressed in it is logged as well.
  */
 function openActivityLogs(context: BuildContext, state: BuildState): BuildState {
   const opened = openFromGameMenu(state, "activity-logs", "activity", ACTIVITY_FILTER_ROW)
   if (opened.popup !== "activity-logs") return opened
-  return { ...opened, activityUpTo: context.activity?.lastSeq ?? 0 }
+  return { ...opened, activityFrozen: context.activity?.entries() ?? [] }
 }
 
 /** One step of the window's filter, said on the bottom line with how many events it shows. With the
@@ -1185,7 +1188,7 @@ function stepActivity(context: BuildContext, state: BuildState, step: -1 | 1): B
     activityFilter: stepActivityFilter(state.activityFilter, step),
     ...(state.popup === "activity-logs" ? { popupHighlight: ACTIVITY_FILTER_ROW } : {}),
   }
-  return { ...next, status: status(activityFilterStatus(activityFilter(next), shownEntries(context, next).length)) }
+  return { ...next, status: status(activityFilterStatus(activityFilter(next), shownEntries(next).length)) }
 }
 
 /**
@@ -1195,7 +1198,7 @@ function stepActivity(context: BuildContext, state: BuildState, step: -1 | 1): B
  */
 function exportActivity(context: BuildContext, state: BuildState): BuildState {
   if (state.popup !== "activity-logs") return state
-  const count = shownEntries(context, state).length
+  const count = shownEntries(state).length
   return {
     ...showMessage(state, activityExportMessage(count, activityFilter(state), context.activityExportDestination), ACTIVITY_EXPORT_ROW),
     activityExports: state.activityExports + 1,
@@ -1285,7 +1288,7 @@ function popupRowCount(context: BuildContext, state: BuildState): number {
     case "controls":
       return controlsLineCount()
     case "activity-logs":
-      return activityRowCount(context, state)
+      return activityRowCount(state)
     case "battle-round":
       return 1
     default:

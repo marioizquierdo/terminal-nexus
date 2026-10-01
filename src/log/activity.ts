@@ -20,7 +20,7 @@
 // The global `activity` logger lives as long as the program; the Build Phase, the title menu and the
 // shells log into it, and the browser playtest page shares it across screens.
 
-import type { EventSchema, LogEntry, LogFilter } from "./logger.ts"
+import type { EventSchema, LogEntry, LogFilter, Logger } from "./logger.ts"
 import { createLogger, matchesFilter } from "./logger.ts"
 import { formatLogLine } from "./text.ts"
 
@@ -50,7 +50,7 @@ export const ACTIVITY_EVENTS = {
     defaultLevel: "error",
     description: "Something failed that the player may have seen, or that stopped something working.",
     props: {
-      where: { type: "string", description: "What was being done: render, save, export, start-keys, page." },
+      where: { type: "string", description: "What was being done: render, save, export, start-keys (a --keys script), pulse (starting one), page (the browser playtest page)." },
       message: { type: "string", description: "The error's own message." },
     },
   },
@@ -146,7 +146,7 @@ export const ACTIVITY_EVENTS = {
     props: {
       key: { type: "string", description: "The direction: up, down, left, right." },
       move: { type: "string", description: "The motion rule's call: tap, hold, jump or release." },
-      tiles: { type: "number", description: "How many tiles (or rows) it moved." },
+      tiles: { type: "number", description: "How many tiles (or rows) the motion rule moved it — at a list's end, what it would have moved. A held key's repeats that move nothing are not logged." },
     },
   },
 } as const satisfies EventSchema
@@ -160,8 +160,14 @@ export type HostName = "terminal" | "web"
  *  info and debug, a megabyte or so. */
 export const ACTIVITY_CAPACITY = 5000
 
+/** An Activity Logs of its own — a scripted playtest's on the script's clock, a test's — shaped exactly
+ *  like the game's. */
+export function createActivityLog(now?: () => number, capacity = ACTIVITY_CAPACITY): Logger<typeof ACTIVITY_EVENTS> {
+  return createLogger({ name: "activity", events: ACTIVITY_EVENTS, capacity, ...(now === undefined ? {} : { now }) })
+}
+
 /** The game's activity log. */
-export const activity = createLogger({ name: "activity", events: ACTIVITY_EVENTS, capacity: ACTIVITY_CAPACITY })
+export const activity = createActivityLog()
 
 export type ActivityLog = typeof activity
 

@@ -363,9 +363,9 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
   newest first (F91): a Filter row whose value Left and Right step through the filters (it comes round),
   `[e] Export logs`, then the list — one line per entry exactly as an export writes it, detail quieter,
   warnings and errors bold — and under a rule what the highlighted row is for: the filter's question,
-  what an export holds, or the entry's whole line and what its event means. **The list holds still while
-  it is read**: frozen when the window opens, so new events never shift its rows; opening it again shows
-  what came since. **Export** sends the filter's entries, oldest first, through the same adapter as the
+  what an export holds, or what the entry's event means and every detail of it. **The list holds still
+  while it is read**: a copy taken when the window opens, so new events never shift its rows and a full
+  log never drops them; opening it again shows what came since. **Export** sends the filter's entries, oldest first, through the same adapter as the
   settings export (the clipboard and `activity-export.txt`; on the playtest page, its box), and a message
   says how many went where. How an agent uses it for a demo is section 15.2.
 
@@ -507,7 +507,7 @@ the build stamped on every export — is what makes a pasted export reproducible
   meaning — so the schema in `src/log/activity.ts` is the documentation, and `activity.log(event, props)`
   accepts only what it declares. Entries are kept in memory, the oldest dropped past a limit.
 - **The Activity logs window** — the game menu's `[a]` (section 10.3) — lists them newest first under a
-  filter, shows the highlighted one in full, and exports what the filter shows (oldest first) to paste
+  filter, shows the highlighted one's every detail, and exports what the filter shows (oldest first) to paste
   into a pull request. It is deliberately plain. `node scripts/playtest.mjs … --activity [filter]` prints
   what a scripted run recorded.
 - **An agent asking about an interaction** adds the event where it happens (never in the kernel), and a

@@ -171,14 +171,14 @@ function importFromAddress(): void {
   settingsText.value = imported
 }
 
+/** The demo a button just started, until the Build Phase it starts has read its keys. */
+let demo: Demo | null = null
+
 /**
  * A key script to open the Build Phase in a particular state — `#keys=<script>` in the address, in
  * the scripted playtest's key names (`#keys=n%201%201%20Enter` picks a power and places a Barracks):
  * how a demo link opens already where it should, as `--keys` does in a terminal.
  */
-/** The demo a button just started, until the Build Phase it starts has read its keys. */
-let demo: Demo | null = null
-
 function keysFromAddress(): string | null {
   const match = /(?:^#|&)keys=([^&]*)/u.exec(window.location.hash)
   if (match === null) return null
@@ -232,7 +232,8 @@ async function start(next: Mode): Promise<void> {
     }
   }
   const { settings, experiments } = importing
-  if (chosen !== null) status.textContent = `Try: ${chosen.try}`
+  // What to try, after anything the demo's keys or settings could not use, never over it.
+  if (chosen !== null) status.textContent = `${status.textContent === "" ? "" : `${status.textContent} · `}Try: ${chosen.try}`
   backend = new CanvasBackend({
     canvas,
     capability: settings.capability,

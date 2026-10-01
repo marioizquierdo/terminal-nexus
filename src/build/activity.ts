@@ -5,10 +5,11 @@
 // it; nothing here ever writes to one.
 //
 // **The reducer reads the log for this window only**, through a read-only source in its context
-// (`BuildContext.activity`), and for two things: when the window opens it notes the newest sequence
-// number (`BuildState.activityUpTo`), so the list holds still while it is read — every key pressed in the
-// window is logged too, and would otherwise push the rows down under the player ("don't move things under
-// the player"); and it counts the list's rows, so Up and Down stop at its ends. What a filter shows is
+// (`BuildContext.activity`), and for two things: when the window opens it keeps a copy of the entries
+// (`BuildState.activityFrozen`), so the list holds still while it is read — every key pressed in the
+// window is logged too, and would otherwise push the rows down under the player, or, once the log is full,
+// drop its oldest rows from under them ("don't move things under the player"); and it counts the list's
+// rows, so Up and Down stop at its ends. What a filter shows is
 // the frozen entries, newest first; an export is the same entries, oldest first, so it reads as a story.
 //
 // **For an agent preparing a demo**: the events and the filters are data in `src/log/activity.ts` — add
@@ -18,7 +19,7 @@ import { footprintCentre } from "../grid/coords.ts"
 import type { LogEntry, LogFilter } from "../log/logger.ts"
 import type { LogLevel } from "../log/levels.ts"
 import { ACTIVITY_EVENTS, ACTIVITY_FILTERS, filteredEntries, formatActivityExport } from "../log/activity.ts"
-import { formatLogLine } from "../log/text.ts"
+import { formatLogLine, formatProps } from "../log/text.ts"
 import type { Coord } from "../grid/types.ts"
 import type { BuildContext, BuildState } from "./state.ts"
 import type { PopupMessage } from "./types.ts"
@@ -39,9 +40,9 @@ export const ACTIVITY_FILTER_ROW = 0
 export const ACTIVITY_EXPORT_ROW = 1
 export const ACTIVITY_FIRST_ENTRY_ROW = 2
 
-/** How many lines the window keeps under its list for what the highlighted row is for — an entry's full
- *  line and what its event means — so the popup keeps its height whichever row is highlighted. */
-export const ACTIVITY_NOTE_LINES = 4
+/** How many lines the window keeps under its list for what the highlighted row is for — what an entry's
+ *  event means and every detail of it — so the popup keeps its height whichever row is highlighted. */
+export const ACTIVITY_NOTE_LINES = 5
 
 /** What the list says when the filter shows nothing. */
 export const ACTIVITY_EMPTY = "Nothing recorded for this filter yet."
@@ -57,25 +58,36 @@ export function stepActivityFilter(index: number, step: -1 | 1): number {
   return (((index + step) % count) + count) % count
 }
 
-/** Every entry the log kept, up to where the window froze it when it opened. */
-export function frozenEntries(context: Pick<BuildContext, "activity">, state: Pick<BuildState, "activityUpTo">): readonly LogEntry[] {
-  return (context.activity?.entries() ?? []).filter((entry) => entry.seq <= state.activityUpTo)
+/** The entries the window copied from the log when it opened. */
+export function frozenEntries(state: Pick<BuildState, "activityFrozen">): readonly LogEntry[] {
+  return state.activityFrozen
 }
 
 /** The entries the window lists: the frozen ones the filter shows, newest first. */
-export function shownEntries(
-  context: Pick<BuildContext, "activity">,
-  state: Pick<BuildState, "activityUpTo" | "activityFilter">,
-): readonly LogEntry[] {
-  return filteredEntries(frozenEntries(context, state), activityFilter(state))
+export function shownEntries(state: Pick<BuildState, "activityFrozen" | "activityFilter">): readonly LogEntry[] {
+  const frozen = frozenEntries(state)
+  let byFilter = SHOWN.get(frozen)
+  if (byFilter === undefined) {
+    byFilter = new Map()
+    SHOWN.set(frozen, byFilter)
+  }
+  const filter = activityFilter(state)
+  let shown = byFilter.get(filter)
+  if (shown === undefined) {
+    shown = filteredEntries(frozen, filter)
+    byFilter.set(filter, shown)
+  }
+  return shown
 }
 
+/** What each frozen copy shows through each filter, worked out once: the window is redrawn every frame
+ *  while its border breathes, and a full log is thousands of entries. Keyed by the copy itself, so a
+ *  window opened again starts fresh and an old copy is forgotten with it. */
+const SHOWN = new WeakMap<readonly LogEntry[], Map<LogFilter, readonly LogEntry[]>>()
+
 /** How many rows the keyboard can be on in the window: the filter, the export, and every entry shown. */
-export function activityRowCount(
-  context: Pick<BuildContext, "activity">,
-  state: Pick<BuildState, "activityUpTo" | "activityFilter">,
-): number {
-  return ACTIVITY_FIRST_ENTRY_ROW + shownEntries(context, state).length
+export function activityRowCount(state: Pick<BuildState, "activityFrozen" | "activityFilter">): number {
+  return ACTIVITY_FIRST_ENTRY_ROW + shownEntries(state).length
 }
 
 /** When the log started, on its own clock — what every line's time counts from. */
@@ -83,10 +95,18 @@ export function activityStartedAt(context: Pick<BuildContext, "activity">): numb
   return context.activity?.startedAt ?? 0
 }
 
-/** One entry as the window and the export write it (`src/log/text.ts`): the same line in both. */
+/** One entry as the window and the export write it (`src/log/text.ts`): the same line in both. Each
+ *  entry's line is written once and remembered — entries never change. */
 export function activityLine(context: Pick<BuildContext, "activity">, entry: LogEntry): string {
-  return formatLogLine(entry, activityStartedAt(context))
+  let line = LINES.get(entry)
+  if (line === undefined) {
+    line = formatLogLine(entry, activityStartedAt(context))
+    LINES.set(entry, line)
+  }
+  return line
 }
+
+const LINES = new WeakMap<LogEntry, string>()
 
 /** Whether an entry is detail rather than story — drawn quieter, so what happened stands out. */
 export function isDetail(level: LogLevel): boolean {
@@ -96,6 +116,16 @@ export function isDetail(level: LogLevel): boolean {
 /** What an entry's event means, from the schema — the window's detail view says it under the line. */
 export function eventDescription(event: string): string {
   return (ACTIVITY_EVENTS as Readonly<Record<string, Readonly<{ description: string }>>>)[event]?.description ?? ""
+}
+
+/**
+ * The detail under the list for a highlighted entry: what its event means, then every property in full —
+ * the part a list row cuts short. Its time, level and name are already at the start of its row, which
+ * stays in view while highlighted, so the note spends its lines on what the row cannot show.
+ */
+export function activityDetail(entry: LogEntry): string {
+  const props = formatProps(entry.props)
+  return props === "" ? eventDescription(entry.event) : `${eventDescription(entry.event)}\n${props}`
 }
 
 /** What the export row is for, with how many events it would hold now. */
@@ -109,9 +139,9 @@ function eventsWord(count: number): string {
 
 /** The export's text: the filter's frozen entries, oldest first, under a header naming the build, the
  *  filter and how many the log dropped (`formatActivityExport`). What the session hands the shell. */
-export function activityExportText(context: Pick<BuildContext, "activity" | "buildId">, state: Pick<BuildState, "activityUpTo" | "activityFilter">): string {
+export function activityExportText(context: Pick<BuildContext, "activity" | "buildId">, state: Pick<BuildState, "activityFrozen" | "activityFilter">): string {
   return formatActivityExport({
-    entries: frozenEntries(context, state),
+    entries: frozenEntries(state),
     filter: activityFilter(state),
     startedAt: activityStartedAt(context),
     dropped: context.activity?.dropped ?? 0,

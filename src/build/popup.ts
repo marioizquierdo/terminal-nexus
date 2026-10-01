@@ -16,6 +16,7 @@
 // while a popup is open — and is its click target, so a popup's own border carries only its title and,
 // beside a list that overflows, its scroll bar.
 
+import { wrapWords } from "../view/draw.ts"
 import type { Section } from "./all-settings.ts"
 import { SECTIONS, SHOWN_SETTINGS, setting, shownSetting } from "./all-settings.ts"
 import type { BuildLayout } from "./layout.ts"
@@ -29,9 +30,9 @@ import {
   ACTIVITY_FILTER_ROW,
   ACTIVITY_FIRST_ENTRY_ROW,
   ACTIVITY_NOTE_LINES,
+  activityDetail,
   activityFilter,
   activityLine,
-  eventDescription,
   exportNote,
   isDetail,
   shownEntries,
@@ -322,7 +323,7 @@ function controlsSpec(state: BuildState): PopupSpec {
  */
 function activitySpec(context: BuildContext, state: BuildState): PopupSpec {
   const filter = activityFilter(state)
-  const entries = shownEntries(context, state)
+  const entries = shownEntries(state)
   const highlight = state.popupHighlight
   const select = (row: number): BuildCommand => ({ kind: "select-row", row })
   const rows: PopupRow[] = [
@@ -366,7 +367,7 @@ function activitySpec(context: BuildContext, state: BuildState): PopupSpec {
         ? exportNote(entries.length)
         : entry === undefined
           ? ""
-          : `${activityLine(context, entry)}\n${eventDescription(entry.event)}`
+          : activityDetail(entry)
   rows.push({ kind: "rule" }, { kind: "note", text: note, lines: ACTIVITY_NOTE_LINES })
   return {
     title: `ACTIVITY LOGS (${highlight + 1}/${ACTIVITY_FIRST_ENTRY_ROW + entries.length})`,
@@ -498,22 +499,9 @@ export type PlacedPopup = Readonly<{
  *  the Grid pane it sits over, less a column for its shadow. */
 const POPUP_WIDTH = 52
 
-/** Splits text into lines of at most `limit` glyphs, breaking between words — never inside one, unless
- *  a single word is longer than the whole line. */
-export function wrapWords(value: string, limit: number): readonly string[] {
-  const lines: string[] = []
-  let current = ""
-  for (const word of value.split(" ").filter((part) => part !== "")) {
-    const grown = current === "" ? word : `${current} ${word}`
-    if (grown.length <= limit || current === "") current = grown
-    else {
-      lines.push(current)
-      current = word
-    }
-  }
-  if (current !== "") lines.push(current)
-  return lines
-}
+// Splitting text at words lives with the drawing helpers (`src/view/draw.ts`), where the title menu and
+// the Pulse read it without reaching the Build Phase; it is re-exported here for the popups' own callers.
+export { wrapWords } from "../view/draw.ts"
 
 /** The rows one spec row takes, as the text each of them draws (a note's wrapped lines). */
 function linesOf(entry: PopupRow, textLimit: number): readonly (string | undefined)[] {

@@ -172,8 +172,8 @@ export type BuildCommand =
   /**
    * The Activity logs window (owner, 2026-10-01, feedback F91: "The menu should have a new option for
    * 'activity logs' that opens a scrolling window with logs in reverse chronological order"): `a` or its
-   * row in the game menu, which Esc then goes back to. Opening it freezes the list at the newest entry
-   * (`BuildState.activityUpTo`), so what it shows holds still while it is read.
+   * row in the game menu, which Esc then goes back to. Opening it freezes a copy of the list
+   * (`BuildState.activityFrozen`), so what it shows holds still while it is read.
    */
   | Readonly<{ kind: "open-activity-logs" }>
   /**
