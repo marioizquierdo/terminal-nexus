@@ -14,7 +14,7 @@
 //   node scripts/capture-engagement.mjs --scenario grand-battle --lead-ticks 2 --frames 12
 //   node scripts/capture-engagement.mjs --scenario ravel-cascade --around-tick 48 --frames 20
 //
-// Output lands in evidence/screenshots/engagement-<scenario>/frame-NN.png, oldest first, plus an
+// Output lands in docs/screenshots/engagement-<scenario>/frame-NN.png, oldest first, plus an
 // index.md naming the presentation-ms each one landed on.
 
 import { mkdirSync, rmSync, writeFileSync } from "node:fs"

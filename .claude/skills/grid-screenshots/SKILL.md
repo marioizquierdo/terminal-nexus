@@ -41,7 +41,7 @@ node scripts/capture-screenshots.mjs                      # every shot in the li
 node scripts/capture-screenshots.mjs --only mirror-melee  # one of them
 ```
 
-Output lands in `evidence/screenshots/`. The pipeline is tmux (a real PTY, so the ANSI backend takes
+Output lands in `docs/screenshots/`. The pipeline is tmux (a real PTY, so the ANSI backend takes
 the same path a person gets) → `capture-pane -e` (keeps the escape sequences, so colour survives) →
 HTML → headless Chromium at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 

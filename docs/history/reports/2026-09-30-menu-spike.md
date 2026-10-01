@@ -6,11 +6,11 @@
 **Updated:** 2026-09-30
 **License:** Apache-2.0
 
-Copied from [`../specs/templates/gate-report.md`](../specs/templates/gate-report.md). The feedback it
-answers is [`../docs/feedback/2026-09-30-menu-spike.md`](../docs/feedback/2026-09-30-menu-spike.md);
-the definition of done is in [`../milestones/milestone-06-pulse-phase.md`](../milestones/milestone-06-pulse-phase.md)
+Copied from [`.github/pull_request_template.md`](../../../.github/pull_request_template.md). The feedback it
+answers is [`docs/history/feedback/2026-09-30-menu-spike.md`](../feedback/2026-09-30-menu-spike.md);
+the definition of done is in [`docs/milestones/milestone-06-pulse-phase.md`](../../milestones/milestone-06-pulse-phase.md)
 under "The menu spike". Sections 1-10 are round 1, left as they were written; **the owner's second
-round** ([`../docs/feedback/2026-09-30-menu-spike-round-2.md`](../docs/feedback/2026-09-30-menu-spike-round-2.md),
+round** ([`docs/history/feedback/2026-09-30-menu-spike-round-2.md`](../feedback/2026-09-30-menu-spike-round-2.md),
 F61-F76 and his settings export) has its own report at the end, in the same order.
 
 ---
@@ -109,7 +109,7 @@ parallel, split by files, and the second rebased onto the first before handing b
 | New: `tests/build-menu.test.ts` | 15 tests: the panel's rows, `$`, no headings, the active look, the card, Left/Right, the one flash, the hand-off | |
 | New: `tests/build-handoff.test.ts` | 13 tests: the arrow and blink timeline, reduced motion, stopping, a live `runSpike` with a fake clock, the export round-trip | |
 | New: `tests/build-help.test.ts` | 12 tests: one bottom row, 49 × 18, answer then hint, a hint for every situation within 76 columns, the Controls page by `c`, Enter, a click and `?`, back, scrolling | |
-| `node scripts/capture-spike-screenshots.mjs` | every shot's expectation met; all pictures regenerated | `evidence/screenshots/` |
+| `node scripts/capture-spike-screenshots.mjs` | every shot's expectation met; all pictures regenerated | `docs/screenshots/` |
 
 New pictures: `build-card.png` (the Barracks' card while placing), `build-menu-hint.png` (the menu
 with the Hatchery's hint), `build-controls.png` (the Controls page), `build-focus-arrow.gif` and
@@ -256,7 +256,7 @@ merged; the canon was written beside them.
   with a plain flash and a few sparks, the ending centres on the Nexus and blushes red when it is hurt);
   five Experiments remain — the focus arrow, the card reveal, the hold window, and the placeholder
   Pulse's raid and crew. An old export's settled names are skipped quietly.
-- **The interface rules rewritten** (F74; `docs/ui-patterns.md`), pointed to from `AGENTS.md` and
+- **The interface rules rewritten** (F74; `docs/system-design/ui-patterns.md`), pointed to from `AGENTS.md` and
   `CLAUDE.md`.
 
 ## R4. Automated results
@@ -267,7 +267,7 @@ merged; the canon was written beside them.
 | `npm test` (Node) | 749 of 749 pass (707 after round 1; 767-769 during round 2 and the review, before duplicates were deleted) | run twice, 2026-09-30 |
 | `npm run test:bun` | every file passes | run 2026-09-30 |
 | `./scripts/check-repository.sh` | passes, canon 2.28 | run 2026-09-30 |
-| `node scripts/capture-spike-screenshots.mjs` | every shot's expectation met; 62 pictures regenerated | `evidence/screenshots/` |
+| `node scripts/capture-spike-screenshots.mjs` | every shot's expectation met; 62 pictures regenerated | `docs/screenshots/` |
 | `bun scripts/build-web.mjs` | built, 206 KB; published to the playtest page | run 2026-09-30 |
 | Scripted flows | `1 x x x` ends on the menu; `n 1 1 2 1` refuses `2` with the lock line and cancels on `1`; `e 1 Esc Esc` returns step by step; `End` stops on Start Pulse; `d End Up Right` changes Your units; `n 1 click@3,7` arms the Hatchery; a plan wins and nothing built loses about 27 s in under the new defaults | `node scripts/playtest.mjs`, 2026-09-30 |
 
@@ -305,7 +305,7 @@ which is where the next person tuning a feel will look.
 - **`x` on a committed plan** would have walked back into a state that no longer exists; it now does
   nothing there, like on the menu.
 - **OpenTUI ignores a role background on an ordinary cell**, so the grey words on the bar do not show
-  under Bun's OpenTUI renderer. The other three renderers show it; recorded in `docs/next-steps.md`.
+  under Bun's OpenTUI renderer. The other three renderers show it; recorded in `docs/milestones/next-steps.md`.
 - **Removing Experiments shifted every `Down*N` in the capture flows and tests again** — the fourth
   recount. The review ended it: tests walk to a row by name (`goToExperiment`, `goToGameMenuRow`),
   capture shots pass the Experiments they need or press End, and Settings counts its rows in the order
@@ -435,7 +435,7 @@ settled by hand so both built on it.
   breath, a tint toward the title's colour on the lighter half, a fade on the darker, both under 16
   colours' half-way step; the live loop redraws at 20 frames a second while it is the only thing moving,
   and stops when the popup closes.
-- **The dedicated navigation session** is queued in `docs/next-steps.md`, as he asked.
+- **The dedicated navigation session** is queued in `docs/milestones/next-steps.md`, as he asked.
 
 ## T4. Automated results
 
@@ -524,7 +524,7 @@ collapsible section, gate 6B.
 | F83 | Every popup's border breathes; a popup's border effect is an optional opening plus the breath, which popup has which is a table in the view (`POPUP_OPENINGS`); the Battle Round screen's opening is a double flash (two 220 ms pulses 90 ms apart, 80% toward the title's colour), handing over from rest. Experiments: Popup pulse (renamed), Battle Round flash, Flash strength |
 | F84 | `Card = { icon, title, subtitle, description, stats }` built in one place (`src/build/card.ts`), words with the content (`src/content/cards.ts`), drawn by one function (`drawCardBody`); no status line; the menu hint quotes the subtitle |
 | F85 | `src/build/all-settings.ts`: every setting once, with its tier (player, experiment, tuned), section, label, question, values, default; `setting(state, name)` reads any tier; Settings in titled sections with a blank line before each; eight navigation numbers back as Experiments, read live by the motion rules; old names mapped (`RENAMED_SETTINGS`) |
-| F86 | The 6B prompt in `docs/next-steps.md` section 2 |
+| F86 | The 6B prompt in `docs/milestones/next-steps.md` section 2 |
 
 ## U3. Evidence
 

@@ -8,13 +8,13 @@
 **License:** Apache-2.0; the mission decisions below touch CC BY-SA 4.0 narrative material already written in `campaigns.md`
 
 > **Design work, not code.** This milestone's own artifact is a decision, written down precisely
-> enough that milestones 3 through 10 can build against it without re-deriving it — the same
-> discipline [`../AGENTS.md`](../AGENTS.md) Section 1 asks of every gate ("state the current
+> enough that docs/milestones 3 through 10 can build against it without re-deriving it — the same
+> discipline [`../AGENTS.md`](../../../AGENTS.md) Section 1 asks of every gate ("state the current
 > question, the smallest artifact, required evidence, exclusions") applied to design itself. Nothing
 > here is source code, and nothing here is a story beyond what
-> [`../specs/campaigns.md`](../specs/campaigns.md) Section 4.2 already wrote for PERIMETER. If a
+> [`docs/game-design/campaigns.md`](../../game-design/campaigns.md) Section 4.2 already wrote for PERIMETER. If a
 > decision below turns out wrong once milestone 5 or 6 actually plays it, that milestone's own report
-> is where it gets revised — this document is a starting position, not something later milestones
+> is where it gets revised — this document is a starting position, not something later docs/milestones
 > must contort themselves to preserve.
 
 ## 1. Question
@@ -24,7 +24,7 @@ orientation, but not strictly trying to define how campaigns work." The question
 
 **What vocabulary and structure do the single-player modes need — Campaign as the first-time player
 experience and the world's canon, Challenge as seeded runs with a draft between battles — and what
-few PERIMETER decisions does the UX build need, so that milestones 3 through 6 can build the game's
+few PERIMETER decisions does the UX build need, so that docs/milestones 3 through 6 can build the game's
 experience without first deciding how campaigns work?**
 
 The earlier question — which units, which map, what Build Phase budget, what the scripted opponent
@@ -33,50 +33,50 @@ definition of the campaign. Its answers (Section 4) stand.
 
 ### 1.1 Gates
 
-- **2A — Mode vocabulary. Drafted.** [`../specs/game-modes.md`](../specs/game-modes.md): the names
+- **2A — Mode vocabulary. Drafted.** [`docs/game-design/game-modes.md`](../../game-design/game-modes.md): the names
   (match, battle, mission, run, act, card, draft, rarity, tier, unlock, seed), what each mode is for,
   the run's starting shape, the rules of thumb for authoring content that serves both modes, and the
   reference games and writing each claim rests on. Q40 (what persists within a run) and Q41 (what
   persists between runs) registered with recommendations.
 - **2B — PERIMETER fixture decisions. Drafted.** Section 4 below: units reused, a structures-only
   construct menu, a map that scrolls a little, a three-Pulse raid as a trigger list. These are the
-  decisions the Build Phase and Pulse milestones need a concrete mission for — nothing more is
+  decisions the Build Phase and Pulse docs/milestones need a concrete mission for — nothing more is
   decided about the campaign here.
 - **2C — The first Nexus, the first Commanders, and the opening campaigns. Closed (canon 2.12,
   revised 2.13 on owner feedback, Q45/Q46 answered and the Commander Army composition list added at
-  2.16).** [`../specs/terminal-nexus-lore.md`](../specs/terminal-nexus-lore.md)
+  2.16).** [`docs/game-design/lore.md`](../../game-design/lore.md)
   Section 3.1 fixes the naming (each Nexus is named for its faction — Citizen Nexus, Ravel Nexus, …)
   and 3.2 gives the Citizen Nexus its character: an administrator, not a weapon.
-  [`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1 carries the full
+  [`docs/game-design/commander-armies.md`](../../game-design/commander-armies.md) Section 2.1 carries the full
   composition list (Nexus and faction, Commander, starting units and structures, blueprints and the
   tech tree, upgrades, Nexus powers, Specials), 2.2 the affinity model, 4.5 what a power does (a
   name and a plain line; effect kinds live in code), and 4.6 the three starting Commanders — Vasse,
-  Averno, Dob Hunter — with four later candidates kept. [`../specs/campaigns.md`](../specs/campaigns.md)
+  Averno, Dob Hunter — with four later candidates kept. [`docs/game-design/campaigns.md`](../../game-design/campaigns.md)
   Section 4.3 gives the two openings, mission goals, and bonus goals. Q42, Q43, Q44, Q45, Q46, Q47 and
   Q48 all answered. Marshal Avern Teag was removed from canon at 2.15 — Averno supersedes her.
 - **2D — Owner confirmation. Closed 2026-09-12.** Mario read `game-modes.md`, the build order in
-  [`README.md`](README.md), Sections 4 and 4.6 here, and the canon 2.12–2.15 design, and confirmed it
+  [`README.md`](../README.md), Sections 4 and 4.6 here, and the canon 2.12–2.15 design, and confirmed it
   directly: "All the canon revisions look good." He answered Q45 and Q46 outright, and asked for one
-  correction — the "army is a deck" framing retracted, not merely demoted (`../specs/commander-armies.md`
+  correction — the "army is a deck" framing retracted, not merely demoted (`docs/game-design/commander-armies.md`
   Section 2.1) — then supplied the Commander Army's own composition list himself, folded into the same
   section at canon 2.16. **Milestone 3 opens.**
 
 ### 1.2 What this milestone no longer does
 
 Define the campaign's length or every mission's mechanics (the belief ramp in
-[`../specs/campaigns.md`](../specs/campaigns.md) Section 4.1 stays direction, not a contract); select
+[`docs/game-design/campaigns.md`](../../game-design/campaigns.md) Section 4.1 stays direction, not a contract); select
 a roster (Milestone 12); fix the run's numbers (Milestone 11 retunes `game-modes.md` Section 3.2 on
 play); design multiplayer.
 
 ## 2. Why this is its own milestone
 
 Mario, describing the pivot: "we can formalize this a bit better... the first step will be to build
-the first level of the campaign... this initial task actually involves doing all the milestones: UI,
-menus, pulse phases, build, upgrade nexus abilities, etc." Eight milestones' worth of code (3 through
+the first level of the campaign... this initial task actually involves doing all the docs/milestones: UI,
+menus, pulse phases, build, upgrade nexus abilities, etc." Eight docs/milestones' worth of code (3 through
 10) all point at one mission. Every one of them will make a cheaper, better decision if the mission's
 own shape is fixed first, in one place, rather than re-guessed independently by whichever milestone
 gets there first. This is exactly the "smallest artifact that answers the question" move
-([`../AGENTS.md`](../AGENTS.md) Section 1) applied one level up: the artifact here is a specification,
+([`../AGENTS.md`](../../../AGENTS.md) Section 1) applied one level up: the artifact here is a specification,
 not a build.
 
 A pre-merge review of the whole milestone sequence (2026-08-26) already settled two process-level
@@ -86,27 +86,27 @@ the development process," and these are exactly that: **Q37**, that milestone 5 
 before building the real Build Phase GUI, rather than this milestone trying to design that GUI ahead
 of time (answered at canon 2.10 — an interactive scrolling-and-placement spike, gate 5A); and
 **Q38**, whether PERIMETER's own map needs to actually scroll (4.3 below), still `OPEN` in
-[`../specs/open-questions.md`](../specs/open-questions.md) — this document proceeds under its
+[`docs/milestones/open-questions.md`](../open-questions.md) — this document proceeds under its
 recommendation rather than treating it as answered.
 
 ## 3. Read before deciding
 
-1. [`../specs/campaigns.md`](../specs/campaigns.md) Section 4.1 (the belief ramp) and 4.2 — PERIMETER's
+1. [`docs/game-design/campaigns.md`](../../game-design/campaigns.md) Section 4.1 (the belief ramp) and 4.2 — PERIMETER's
    briefing, pre-battle exchange, barks, mid-mission interruption, debrief, and artifact entry are
    **already written**. Nothing here should contradict them; where a mechanical decision below
    constrains what could be shown, the text wins and the mechanism bends.
-2. [`../specs/commander-armies.md`](../specs/commander-armies.md) Section 4.1 (Citizens' mechanical
+2. [`docs/game-design/commander-armies.md`](../../game-design/commander-armies.md) Section 4.1 (Citizens' mechanical
    identity: standards propagate, alignment bonus, shared cadence) and 4.4 (Commander Edda Vasse:
    "fortify, verify, then advance").
-3. [`../specs/engine.md`](../specs/engine.md) Section 5 (Build Phase, Commander, structures, automatic
-   production) and Section 6 (economy) — GUIDANCE, mostly unbuilt, and what milestones 5-8 build from.
+3. [`docs/system-design/grid-engine.md`](../../system-design/grid-engine.md) Section 5 (Build Phase, Commander, structures, automatic
+   production) and Section 6 (economy) — GUIDANCE, mostly unbuilt, and what docs/milestones 5-8 build from.
 4. The existing fixture content: `src/content/citizen.ts` (`unit.citizen.worker`, `.trooper`,
    `.marksman`, `structure.citizen.nexus`, `structure.citizen.barracks`) and `src/content/ravel.ts`
    (`unit.ravel.raider`, `.runner`, `.slinger`, `structure.ravel.den`, `structure.ravel.nexus`) — built
    for Milestone 1, disposable, but already close to what PERIMETER's own fiction describes.
-5. [`../specs/open-questions.md`](../specs/open-questions.md) Q15 (routing dead end), Q29 (Recall),
+5. [`docs/milestones/open-questions.md`](../open-questions.md) Q15 (routing dead end), Q29 (Recall),
    Q32, Q33 — this milestone finalizes the last two.
-6. [`../specs/open-questions.md`](../specs/open-questions.md) Q37 (the Build Phase GUI spike — why
+6. [`docs/milestones/open-questions.md`](../open-questions.md) Q37 (the Build Phase GUI spike — why
    it belongs to milestone 5's own opening, not a design step here) and Q38 (whether PERIMETER's map
    needs real scrolling — 4.3 below proceeds under its recommendation).
 
@@ -141,13 +141,13 @@ opens). During Build Phase, the player may spend a small starting resource amoun
   defence if the bench content grows one — and nothing else purchasable for PERIMETER specifically.
   (An earlier draft of this line sold "one or two additional troopers"; that contradicts the locked
   decision that production is fixed recipes from buildings, never direct unit purchases —
-  `../specs/project-governance.md` Section 7 — and is corrected here. See 4.6.) Milestone 7's worker
+  `docs/game-design/decisions.md` Section 7 — and is corrected here. See 4.6.) Milestone 7's worker
   economy determines how that resource is actually earned during the Pulse itself (harvesting from a
   deposit), but Build Phase's own opening allotment should be small enough that the interesting
   decisions are placement and composition, not a spreadsheet.
 
 The menu draws entirely from the Citizen **common tier** in the sense of
-[`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1: nothing PERIMETER offers
+[`docs/game-design/commander-armies.md`](../../game-design/commander-armies.md) Section 2.1: nothing PERIMETER offers
 is army-specific, and the Nexus draft (milestone 8) is where the one army-specific choice lives.
 
 This is intentionally the smallest version of Build Phase that milestone 5 can build against — richer
@@ -158,7 +158,7 @@ menus are a later mission's decision, not this one's.
 A Grid with Nexus and barracks near one edge, open ground toward the approach the raid comes from.
 
 **Q38 is OPEN; this section proceeds under its recommended answer.**
-[`../specs/campaigns.md`](../specs/campaigns.md) Section 4.1's belief-ramp text describes PERIMETER as
+[`docs/game-design/campaigns.md`](../../game-design/campaigns.md) Section 4.1's belief-ramp text describes PERIMETER as
 "a small Grid that never scrolls" — written before milestone 5's own charter (build and test real
 scrolling) existed. A map sized to strictly fit the viewport would leave milestone 5's scrolling work
 either untested against the actual campaign or tested against a second, throwaway fixture instead of
@@ -168,7 +168,7 @@ geometry, is the invariant. If Mario answers Q38 differently, only this section 
 Section 4.1's own wording need to change; nothing else here depends on it.
 
 **Q33, decided:** author the approach lane off-axis from the Nexus, not fixed by a routing patch. Q15
-(`../specs/backlog-pulse-completion.md`) is real and still unowned by any single milestone; PERIMETER
+(`docs/milestones/backlog.md`) is real and still unowned by any single milestone; PERIMETER
 does not need to be the mission that fixes it.
 
 **Written layout, concrete enough for milestone 5/6 to author a real `.map.json` against —
@@ -184,7 +184,7 @@ along a single row or column that would walk straight into Q15's dead end.
 ### 4.4 The scripted opponent
 
 **Q32, decided:** a tick-gated trigger list, not a policy module — `{ atTick, action }` entries
-authored and validated the same way a `.map.json` file already is (`../specs/campaigns.md` Section 6's
+authored and validated the same way a `.map.json` file already is (`docs/game-design/campaigns.md` Section 6's
 "scripted tutorial" tier). PERIMETER's own raid: an initial group already visible at Pulse start
 (from `structure.ravel.den`, if it earns a place on the map, or pre-placed if not), reinforcements
 arriving on a fixed schedule from the northwest, advancing toward the Nexus. No reaction to what the
@@ -192,7 +192,7 @@ player does — that is a later mission's opponent, once one genuinely needs to 
 
 **Widened at canon 2.10, and the trigger shape now has a home.** Mario's design notes make every
 mission a sequence of Pulses driven by triggers, and
-[`../specs/campaigns.md`](../specs/campaigns.md) Section 2.1 records the model: a trigger is a
+[`docs/game-design/campaigns.md`](../../game-design/campaigns.md) Section 2.1 records the model: a trigger is a
 condition and a list of actions, conditions are addressed as `{ pulse, tick }` or by mission event,
 and actions split into a simulation band (run inside the kernel) and a presentation band (never
 touch state). `{ atTick, action }` is that model with one condition kind. This document therefore
@@ -218,14 +218,14 @@ milestone proceeds under its recommendation (declarative).
 
 ### 4.5 What PERIMETER teaches, and what it deliberately does not yet
 
-Per the belief ramp (`../specs/campaigns.md` Section 4.1, row 1): **the Build Phase / Nexus Pulse loop
+Per the belief ramp (`docs/game-design/campaigns.md` Section 4.1, row 1): **the Build Phase / Nexus Pulse loop
 on a small Grid that never scrolls.** The belief the player holds going in ("Operator is my job
 title") is allowed to feel true — nothing in Level 1 needs to unsettle it yet. (Q38, still open,
 questions whether "never scrolls" survives contact with milestone 5's own charter to build and test
 real scrolling; see 4.3.) *The loop*, across three Pulses (4.4): a player who has only ever committed
 one plan has not been taught to adapt, and adaptation is the whole mechanic.
 
-Deliberately not this mission's job, even though the milestones that follow build the mechanism:
+Deliberately not this mission's job, even though the docs/milestones that follow build the mechanism:
 
 - the Commander's death/absence/restoration cadence (Mission 3, RESTORATION's own teaching moment —
   see milestone 8's own note and Q34);
@@ -239,8 +239,8 @@ Recording Mario's design notes (2026-09-01) against this document surfaced three
 cannot settle alone. Each is stated with what this document proceeds under.
 
 1. **The construct menu sold units.** 4.2 said "one or two additional troopers/marksmen." Production
-   is fixed recipes from buildings and there is no shop (`../specs/project-governance.md` Section 7;
-   `../specs/engine.md` 5.3). Corrected in 4.2 to structures. Proceeding under: the menu sells a
+   is fixed recipes from buildings and there is no shop (`docs/game-design/decisions.md` Section 7;
+   `docs/system-design/grid-engine.md` 5.3). Corrected in 4.2 to structures. Proceeding under: the menu sells a
    second barracks and, if the bench grows one, a common-tier defence.
 2. **Automatic production has no owning milestone.** With three Pulses (4.4), a barracks that
    produces nothing across them is a wall with a name. `engine.md` 5.3's recipes are GUIDANCE and
@@ -248,7 +248,7 @@ cannot settle alone. Each is stated with what this document proceeds under.
    producer spawns its recipe during the Pulse. The unit-design spike's `spawn` primitive
    (`src/pulse/spawn.ts`, an interval, a content id, a cap — Q26) is most of the mechanism already.
    **Recommendation:** milestone 6 pulls `ProductionRecipe` in from
-   [`../specs/backlog-pulse-completion.md`](../specs/backlog-pulse-completion.md), minimally — the
+   [`docs/milestones/backlog.md`](../backlog.md), minimally — the
    fixture barracks producing troopers on an interval while resources last — since that is the
    milestone whose Pulses would otherwise show nothing new happening. Not built here; named so it is
    not discovered in milestone 6's third week.
@@ -260,9 +260,9 @@ cannot settle alone. Each is stated with what this document proceeds under.
 
 Mario's own description of milestone 6 ("Nexus Pulse") settles Q29 outright: "instantly recall all
 units back to their proper location next to their home buildings." That is precisely
-[`../specs/engine.md`](../specs/engine.md) Section 5's existing end-of-Pulse regroup rule, named
+[`docs/system-design/grid-engine.md`](../../system-design/grid-engine.md) Section 5's existing end-of-Pulse regroup rule, named
 **Recall**, confirmed to mean exactly what Q29's Option A recommended — not a new mid-Pulse mechanic.
-Moved to Answered in [`../specs/open-questions.md`](../specs/open-questions.md).
+Moved to Answered in [`docs/milestones/open-questions.md`](../open-questions.md).
 
 ## 6. Definition of done
 
@@ -271,8 +271,8 @@ Moved to Answered in [`../specs/open-questions.md`](../specs/open-questions.md).
 - [x] gate 2C: the Nexus naming convention, the Citizen Nexus's character, the affinity model, what a
       power does, the three starting Commanders, and the two openings with mission and bonus goals are
       written; Q42, Q43, Q44, Q45, Q46, Q47 and Q48 all answered, and the objective taxonomy
-      (`../specs/campaigns.md` Section 2.2) is in place for Milestone 6 to build against;
-- [x] gate 2D: Mario has confirmed the mode vocabulary, the build order in [`README.md`](README.md),
+      (`docs/game-design/campaigns.md` Section 2.2) is in place for Milestone 6 to build against;
+- [x] gate 2D: Mario has confirmed the mode vocabulary, the build order in [`README.md`](../README.md),
       Q45 and Q46, and has himself supplied the Commander Army's composition list (canon 2.16);
 - [x] the unit list above is confirmed against the actual fixture content — `unit.citizen.worker`,
       `.trooper`, `.marksman`, `structure.citizen.nexus`, `.barracks`, `unit.ravel.raider`, `.runner`,
@@ -282,7 +282,7 @@ Moved to Answered in [`../specs/open-questions.md`](../specs/open-questions.md).
       approximate coordinates; not the final `.map.json`, but concrete enough for milestone 5/6 to
       author against;
 - [x] the trigger-list shape for the scripted raid is written down precisely enough that milestone 6
-      can implement it without a second design pass — [`../specs/campaigns.md`](../specs/campaigns.md)
+      can implement it without a second design pass — [`docs/game-design/campaigns.md`](../../game-design/campaigns.md)
       Section 2.1, canon 2.10, with PERIMETER's own list sketched there (4.4 above);
 - [x] Mario has confirmed the three findings in 4.6, alongside the rest of Sections 4 and 4.6, as part
       of closing gate 2D above;

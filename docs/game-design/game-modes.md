@@ -18,13 +18,13 @@ duration should be. It helps it define more as 'first-time player experience'. I
 be thinking about 'campaign' (tutorial) and 'challenge' (run) modes simultaneously."
 
 This document gives those modes names, a shared vocabulary, and a structure precise enough that the
-milestones building the game's experience and UX can build against it — without first deciding how
+docs/milestones building the game's experience and UX can build against it — without first deciding how
 long a campaign is, what every mission teaches, or what a run's exact numbers are. Those are
 decisions for playtesting once the UX exists, and the point of writing this down now is to make sure
 nothing built before then forecloses either mode.
 
 The one architectural claim here is small and load-bearing: **a mode is data over one match loop and
-one army shape.** The match loop is [`engine.md`](engine.md) Section 5 (Build Phase, Nexus Pulse,
+one army shape.** The match loop is [`engine.md`](../system-design/grid-engine.md) Section 5 (Build Phase, Nexus Pulse,
 repeat, until a result). The army shape is [`commander-armies.md`](commander-armies.md) Section 2.1
 (a deck drawn from a faction's pool). A mode decides which matches are played, in what order,
 against whom, and what happens to the army between them. Nothing below the mode — the kernel, the
@@ -34,7 +34,7 @@ Pulse, the Build Phase screen, the renderer — knows which mode it is serving.
 
 | Term | Means |
 | --- | --- |
-| **Match** | One Grid, one or more Build Phase / Nexus Pulse cycles, one result. The unit of play; 5–12 minutes ([`terminal-nexus-concept.md`](terminal-nexus-concept.md)). Nothing above a match is visible to the kernel |
+| **Match** | One Grid, one or more Build Phase / Nexus Pulse cycles, one result. The unit of play; 5–12 minutes ([`terminal-nexus-concept.md`](concept.md)). Nothing above a match is visible to the kernel |
 | **Battle** | A match played inside a mode. "Battle" is the player-facing word; "match" is the engine's |
 | **Mission** | A battle with authored triggers, text, and a teaching goal — the Campaign's unit ([`campaigns.md`](campaigns.md) Section 2.1) |
 | **Run** | An ordered series of battles in which the army changes between them — the Challenge mode's unit. One attempt, start to finish, win or lose |
@@ -146,7 +146,7 @@ useful long before then as the fixture every UX milestone actually plays. Not de
 ### 3.4 Multiplayer — later, and more intuitive once the rest exists — sketch
 
 Hidden simultaneous plans and deterministic resolution already fit asynchronous and live play
-([`project-governance.md`](project-governance.md) Section 10). Mario: "Multi-player seems more
+([`project-governance.md`](decisions.md) Section 10). Mario: "Multi-player seems more
 intuitive and I believe we can come out with it later." Nothing here is designed; the seam it needs is
 that a match takes two committed plans from anywhere, which the kernel already does.
 
@@ -175,7 +175,7 @@ Three rules of thumb, borrowed from where they were proven:
    the single largest quality-of-run lever a small catalogue has.
 
 Balance in both modes is **measured, then judged**: pick rate and win rate per card, per tier, per
-act, from runs played by the driver ([`engine.md`](engine.md) Section 9.7) as much as by people —
+act, from runs played by the driver ([`engine.md`](../system-design/grid-engine.md) Section 9.7) as much as by people —
 the metrics-driven loop Slay the Spire's team described, with the same warning they gave: metrics
 diagnose, they do not define fun (`project-governance.md` Section 9 already says so).
 

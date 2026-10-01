@@ -90,9 +90,9 @@ npm run test:bun           # the same suite under Bun, one file at a time
 
 # evidence artifacts in this directory
 node scripts/capture-frames.mjs citizen-mirror-skirmish 0 112 160 240
-node scripts/capture-screenshots.mjs           # drives a real PTY and writes evidence/screenshots
+node scripts/capture-screenshots.mjs           # drives a real PTY and writes docs/screenshots
 ./bin/playground.ts run scenarios/citizen-mirror-skirmish.ts \
-  > evidence/citizen-mirror-skirmish-summary.txt 2> evidence/citizen-mirror-skirmish-info.txt
+  > docs/history/reports/pulse-playground-fixtures/citizen-mirror-skirmish-summary.txt 2> docs/history/reports/pulse-playground-fixtures/citizen-mirror-skirmish-info.txt
 ```
 
 ## 3. What was built
@@ -196,7 +196,7 @@ passes.
 | Controls: pause, resume, step one frame, step one tick, speed, restart, quit | PASS | `tests/playback.test.ts`, including the key map |
 | One idempotent disposer on every lifecycle path | PASS | `tests/lifecycle.test.ts` drives `q`, the raw-mode interrupt byte, SIGINT, SIGTERM and a thrown render through `watchPulse` itself; each restores the alternate screen, the cursor and raw mode, and a second stop writes nothing |
 | **The ANSI backend runs on a real terminal** | PASS | `scripts/capture-screenshots.mjs` drives the binary inside a tmux PTY: the alternate screen, raw-mode input, pause, step-a-tick, `q`, and the restore on exit all behave, on eight captures across three scenarios |
-| **The resize gate appears on a real terminal below the composition** | PASS | `evidence/screenshots/resize-gate.png`, captured at 64x18 |
+| **The resize gate appears on a real terminal below the composition** | PASS | `docs/screenshots/resize-gate.png`, captured at 64x18 |
 | `run`, `watch` and `verify` work from a clean checkout | PASS | All three run with `node_modules` deleted: the kernel, the report and the view have no runtime dependency, and the OpenTUI backend is imported lazily behind a fallback |
 | Non-TTY prints one line and no escapes | PASS | `tests/cli.test.ts`, `tests/lifecycle.test.ts` |
 | Structured-cell snapshots identical across backends | PASS | `tests/backend-opentui.test.ts` under Bun: OpenTUI's captured characters equal the compositor's |
@@ -212,7 +212,7 @@ Measurements:
 | Frames over the 33.33 ms budget | **0** | same | 1800 per runtime |
 | Output bytes per frame | 3,433 | same, 16-colour, 80x24 | 1800 |
 | Resolve 240 ticks, 14 entities | 15.9–37.7 ms (Node), 51 ms (Bun, cold) | `tests/performance.test.ts` | repeated |
-| Mirror skirmish event count | 397 events, 82 `INFO` lines | `--json`, `evidence/citizen-mirror-skirmish-info.txt` | 1 |
+| Mirror skirmish event count | 397 events, 82 `INFO` lines | `--json`, `docs/history/reports/pulse-playground-fixtures/citizen-mirror-skirmish-info.txt` | 1 |
 | `node_modules` after `npm install` | 103 MB (OpenTUI's prebuilt native core dominates) | `du -sh` | 1 |
 
 Scenario outcomes, all reproducible from the seed in each file:
@@ -247,7 +247,7 @@ contentLock sha256:5384b38dbf7e5f021ef94cddbfd213b0a094360d2335d7b303fb76d8f1946
 
 **Nobody has watched it in motion.** That claim is unchanged, and it is still the gate's remaining
 work. What now exists is one step short of it: **eight screenshots of the real thing running in a
-real terminal**, in `evidence/screenshots/`, captured by driving the binary inside a tmux
+real terminal**, in `docs/screenshots/`, captured by driving the binary inside a tmux
 pseudo-terminal, pausing it, and stepping to an exact tick so each frame lands where it was meant
 to rather than wherever the wall clock reached.
 
@@ -262,8 +262,8 @@ to rather than wherever the wall clock reached.
 | `hauler-gap.png` | The 3x1 hauler one row past its three-tile opening |
 | `resize-gate.png` | A 64x18 terminal, gated |
 
-Also in this directory: four plain-text frames in `evidence/frames/`, and the full `INFO` log of the
-mirror run in `evidence/citizen-mirror-skirmish-info.txt`.
+Also in this directory: four plain-text frames in `docs/history/reports/pulse-playground-fixtures/frames/`, and the full `INFO` log of the
+mirror run in `docs/history/reports/pulse-playground-fixtures/citizen-mirror-skirmish-info.txt`.
 
 What the stills show, offered as observations rather than as the experiential claim they cannot make:
 
@@ -470,7 +470,7 @@ since the adapter boundary already carries it and the ANSI fallback passes the f
 | The sample victory line in the log grammar should pad its subject like every other line | `milestone-1-spike-battle.md` 3.3 | Section 7 above |
 | Toolchain: no build step; Node 22.18+ and Bun 1.3+ run the sources directly; relative imports carry `.ts`; erasable-syntax TypeScript only | `DEVELOPMENT.md`, already updated | Both runtimes run the same files and agree on every hash |
 
-Questions raised, each already added to [`../specs/open-questions.md`](../specs/open-questions.md)
+Questions raised, each already added to [`docs/milestones/open-questions.md`](../../milestones/open-questions.md)
 with a recommendation:
 
 | ID | Question | Recommendation |
@@ -486,7 +486,7 @@ predicted.
 
 ## 10. The owner's viewing — kernel changes
 
-Both gates were watched together, and the feedback landed on both. `evidence/gate-1b-report.md`
+Both gates were watched together, and the feedback landed on both. `docs/history/reports/2026-08-26-quality-and-effects.md`
 Section 10 has the full account; this section is the kernel-level subset — the part that is this
 report's to own, since it changes what Gate 1A's own claims mean.
 
@@ -496,7 +496,7 @@ single biggest legibility problem: a unit that can cut a corner is a unit whose 
 cannot predict. Two consequences worth stating plainly against this report's own Section 4 and 6:
 
 - The routing floor's failure mode changed shape. Section 7 of `gate-1b-report.md` and
-  `specs/open-questions.md` Q15 have the detail: an eight-way mover with no route paces between two
+  `docs/milestones/open-questions.md` Q15 have the detail: an eight-way mover with no route paces between two
   tiles forever; a four-way mover on an exactly on-axis approach has no fallback direction at all and
   simply stops. Both are still greedy-step limitations Milestone 2's real pathfinding owns, not
   determinism failures — the kernel still reports the stall (`WARN stuck`, unchanged) rather than

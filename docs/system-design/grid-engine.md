@@ -485,7 +485,7 @@ Manhattan, every legal step changes distance by exactly ±1 — there is no step
 distance level, the way a diagonal sidestep once could. An actor approaching an obstacle off-axis
 still has two improving directions and can slide along the obstacle's face; an actor approaching
 exactly on-axis with its goal has exactly one, and if a wall takes it there is no fallback at all.
-[`open-questions.md`](open-questions.md) Q15 has the measurement and the recommendation — real
+[`open-questions.md`](../milestones/open-questions.md) Q15 has the measurement and the recommendation — real
 pathfinding, Milestone 2's, is what actually closes this; the greedy floor was never meant to.
 
 Terrain may modify movement cost. Immutable terrain cannot be attacked; only blockers explicitly
@@ -670,11 +670,11 @@ A match alternates:
 
 It alternates **as many times as the match needs** — a campaign mission is a sequence of these
 cycles, not one Pulse, and a mission's triggers decide how many and what happens between them
-([`campaigns.md`](campaigns.md) Section 2.1). A Pulse may be scripted (no player plan; the player
+([`campaigns.md`](../game-design/campaigns.md) Section 2.1). A Pulse may be scripted (no player plan; the player
 watches) and it is still a Pulse: seeded, deterministic, replayed the same way.
 
 **This section's own victory condition never learns about a mission's goal.** A mission's objective
-([`campaigns.md`](campaigns.md) Section 2.2) is resolved one level up, by the scenario/trigger layer,
+([`campaigns.md`](../game-design/campaigns.md) Section 2.2) is resolved one level up, by the scenario/trigger layer,
 which fires an ordinary `win`/`lose` action when its own condition holds. What follows — Grid Nexus
 destroyed, one side annihilated, tick limit reached — stays the unchanged fallback a battle with no
 declared objective lands on: every Skirmish match, and every Challenge battle.
@@ -722,7 +722,7 @@ Players shape composition by building, protecting, upgrading, pausing, or losing
 ### 5.4 Research, the tech tree, and Nexus powers — GUIDANCE
 
 **A Commander Army's buildable structures form a real, inspectable tech tree — canon 2.16**
-([`commander-armies.md`](commander-armies.md) Section 2.1), mostly shared across a faction's
+([`commander-armies.md`](../game-design/commander-armies.md) Section 2.1), mostly shared across a faction's
 Commanders with a few Commander-specific branches. This corrects this section's own earlier framing:
 research facilities are not an alternative to a "linear tech menu," they are tree nodes like any
 other structure, and completing one can unlock its dependents the same way a Nexus power's
@@ -736,13 +736,13 @@ content-defined legal actions or passive rules that execute through validated ke
 **What the draft is dealt from is settled at canon 2.10, even though the draft itself is not
 designed:** the Commander Army's own Nexus power pool — a subset of the faction's — dealt as a small
 hand at the start of every Build Phase, from which the player keeps one
-([`commander-armies.md`](commander-armies.md) Section 2.1). The draft's tier, size, and redraw rules
+([`commander-armies.md`](../game-design/commander-armies.md) Section 2.1). The draft's tier, size, and redraw rules
 are still undesigned; recorded so the shape of the draft is not accidentally foreclosed.
 
 **What a power may *do* is settled at canon 2.13** (Q42): to a player, a power is a name and a plain
 description of what it does — no classification to learn — and in code the effect is one of a small
 bounded union: `unlockStructure`, `spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`,
-`reveal` ([`commander-armies.md`](commander-armies.md) Section 4.5). That union is what a Build Phase
+`reveal` ([`commander-armies.md`](../game-design/commander-armies.md) Section 4.5). That union is what a Build Phase
 panel actually renders, so it is worth reading before building one.
 
 ---
@@ -860,11 +860,11 @@ interface ProductionRecipe {
 ```
 
 Upgrades, Nexus powers, Commanders, and Commander Armies follow the same pattern and are described in
-[`commander-armies.md`](commander-armies.md). A **Commander Army** is the playable content boundary:
+[`commander-armies.md`](../game-design/commander-armies.md). A **Commander Army** is the playable content boundary:
 the complete set of choices legally available to one player in one match — a Nexus and faction, a
 Commander, starting units and structures, blueprints and a tech tree, upgrades, Nexus powers, and
 Specials, bounded against its faction's pools
-([`commander-armies.md`](commander-armies.md) Section 2.1). The match, the Pulse, and every renderer
+([`commander-armies.md`](../game-design/commander-armies.md) Section 2.1). The match, the Pulse, and every renderer
 see an army; none of them ever sees a faction.
 
 Prefer composable capabilities — health, movement, attack, production, storage, supply, worker slots,
@@ -882,7 +882,7 @@ composition details.
 
 The working list of interaction and drawing patterns every interactive screen follows — focus, back
 and cancel, the mouse, menu row states, popups, panels — is
-[`../docs/ui-patterns.md`](../docs/ui-patterns.md); it is not canon until the owner accepts it and it
+[`docs/system-design/ui-patterns.md`](ui-patterns.md); it is not canon until the owner accepts it and it
 is promoted here.
 
 ### 9.1 The cell frame — RULE
@@ -1215,7 +1215,7 @@ every earlier frame rendered or most were skipped. Cosmetic randomness never tou
 stream.
 
 The particle system, its contract, its starter vocabulary, and the craft rules that make ASCII motion
-read as weight are specified in **[`ascii-effects.md`](ascii-effects.md)**.
+read as weight are specified in **[`ascii-effects.md`](effects.md)**.
 
 **Placement juice — GUIDANCE, gate 5I.** A structure may carry **placement frames**: a short list of
 footprint-sized frames played before its finished art as it is placed (a space is empty ground). Only
@@ -1227,7 +1227,7 @@ frames on that building's animation track, and the light (`fx.light.flash`, shad
 and the sparks (`fx.sparks.burst`, particles) are that play's follow-ups, scheduled when its last frame
 ends** (gate 5J). Reduced motion shows it finished at once. Every duration and intensity is an
 Experiment. The four families of presentation — animations, particles, shading and tweens — and the
-animation track are defined in [`ascii-effects.md`](ascii-effects.md) Section 1.2.
+animation track are defined in [`ascii-effects.md`](effects.md) Section 1.2.
 
 ### 9.6 Accessibility and input — RULE
 
@@ -1240,7 +1240,7 @@ animation track are defined in [`ascii-effects.md`](ascii-effects.md) Section 1.
 - Reduced motion keeps anticipation, impact, and settled state; it removes decorative movement only.
 - Structured snapshots include glyph, foreground and background roles, and attributes.
 - Below minimum size, playback pauses behind a resize gate and resumes from the same presentation
-  time. Early milestones do not scroll or crop.
+  time. Early docs/milestones do not scroll or crop.
 
 The simulation knows semantic ids such as `unit.worker` and `structure.nexus`. **It never knows a
 glyph.**
@@ -1446,7 +1446,7 @@ this project shows the owner two answers side by side. The title menu's Settings
 player settings only.
 
 **Terminal caveats, verified rather than assumed** (Q37; measured by gate 5A on 2026-09-21,
-`evidence/gate-5a-report.md` Section 4.1 has the table and the ten terminals it could *not* test):
+`docs/history/reports/2026-09-21-scrolling-and-placement.md` Section 4.1 has the table and the ten terminals it could *not* test):
 
 - **Modified arrows are not universal, and not single-valued.** Measured: xterm, xterm-256color,
   tmux and tmux-256color send `CSI 1;2A` and its siblings; rxvt and rxvt-unicode send a completely
@@ -1591,10 +1591,10 @@ run's **levelled log** (default `WARN`) carries the story in fixed, greppable co
 without parsing prose and a designer can read what happened without a second stream to catch.
 `--save-log <file>` writes the same lines to a file in any action, and `--turn <tick>` seeks straight
 to a tick instead of playing from the start, in `watch`, `--headless`, and `--verify` alike. See
-[`../milestones/milestone-01-grid-battles.md`](../milestones/milestone-01-grid-battles.md) Section 3.3.
+[`docs/milestones/completed/milestone-01-grid-battles.md`](../milestones/completed/milestone-01-grid-battles.md) Section 3.3.
 
 This is **modding-first architecture, not mod-loader-first development.** No public SDK, remote
-loader, marketplace, permission system, or compatibility promise belongs in early milestones. Themes
+loader, marketplace, permission system, or compatibility promise belongs in early docs/milestones. Themes
 may recommend fonts, but a terminal application cannot reliably change the host font, so every pack
 keeps an ASCII-safe fallback.
 
@@ -1647,7 +1647,7 @@ this table from scratch.
    fix — and it is a design decision, not an engineering one.** Capping "nearest enemy anywhere" to
    "nearest enemy within R" is cheap once Rule 3 exists; deciding what a unit with nothing in R does
    instead changes emergent behavior and, like Q17, is expensive to reconsider once a fixture is
-   pinned to a specific contract. [`open-questions.md`](open-questions.md) Q20 has the options and a
+   pinned to a specific contract. [`open-questions.md`](../milestones/open-questions.md) Q20 has the options and a
    recommendation. Land it inert and off by default until a scenario actually needs it.
 
 **What this section is not.** It is not a commitment to build real pathfinding, a spatial index, or

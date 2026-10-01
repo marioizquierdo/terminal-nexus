@@ -7,12 +7,12 @@
 
 Four rounds of Mario's playtest feedback on the Build Phase, each one built, merged and put back in
 front of him within hours. Nothing here is a rule; the procedure is the
-[`feedback-round`](../.claude/skills/feedback-round/SKILL.md) skill, and where a lesson became a rule
+[`feedback-round`](../../.claude/skills/feedback-round/SKILL.md) skill, and where a lesson became a rule
 it says where.
 
 ## What worked, and why it is worth keeping
 
-1. **His words, logged verbatim, item by item, with a status.** `docs/feedback/` turned four long
+1. **His words, logged verbatim, item by item, with a status.** `docs/history/feedback/` turned four long
    messages into 40 numbered items, none dropped, each ending in "Built" and a plain paragraph. He
    can check his own words against what was built, and the next agent starts from what he said rather
    than from what a summary remembers.
@@ -46,7 +46,7 @@ it says where.
    was to send it back to the agent that wrote it, not to resolve it blind.
 2. **Scripts that count rows break with every Experiment.** "`d Down*6`" and "v 18 more" were recounted
    three times. Fix: set an Experiment by name (`--settings`) wherever a flow only needs the value
-   (pending: `docs/next-steps.md`).
+   (pending: `docs/milestones/next-steps.md`).
 3. **One fact, five homes.** The armed-click rule lived in AGENTS.md, `engine.md`, `ui-patterns.md`, a
    test name and a feedback log; after Mario reversed it, one copy stayed stale for a whole round. On a
    reversal, grep the old sentence.
@@ -66,7 +66,7 @@ it says where.
    A rename is mechanical but touches ~200 lines; do it in a pull request of its own. (Paid on
    2026-09-30, below: `experiments.ts`, and `popup` for what the code called an overlay.)
 9. **The gate history in `AGENTS.md` grows a paragraph per gate.** Section 2 is now ~120 lines every
-   session reads first. Compact it after Mario accepts a milestone (`docs/next-steps.md`).
+   session reads first. Compact it after Mario accepts a milestone (`docs/milestones/next-steps.md`).
 10. **Tooling wrinkles, none serious.** The GitHub connector adds a second footer to a pull request body
     (read it back). The Artifact tool refuses a republish until you have read the live version. The
     connector and the check-in trigger disconnected or failed a few times: retry, and keep no state

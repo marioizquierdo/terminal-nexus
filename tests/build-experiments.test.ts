@@ -1,4 +1,4 @@
-// The Experiments (docs/ui-patterns.md, "Experiments and tuned values"): live-editable flags for the
+// The Experiments (docs/system-design/ui-patterns.md, "Experiments and tuned values"): live-editable flags for the
 // owner's playtests, the section at the bottom of Settings (`tests/build-settings.test.ts` has the
 // player's half, the game menu and the export). Driven through raw bytes into the real adapters where an
 // adapter is what is being claimed, and through commands where the reducer is; and one flow three ways

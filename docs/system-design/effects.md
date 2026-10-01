@@ -20,7 +20,7 @@ its own vocabulary and its own consistency problems.
 So it gets a document, and it gets tested **early** — Gate 1B of Milestone 1 exists for exactly this,
 and `grid` (the Pulse Playground's tool, engine.md 11) is where it gets played with.
 
-**Authority markers** are as defined in [`engine.md`](engine.md) Section 0: **RULE** and
+**Authority markers** are as defined in [`engine.md`](grid-engine.md) Section 0: **RULE** and
 **GUIDANCE**.
 
 ## 1. What an effect is, and is not — RULE
@@ -81,7 +81,7 @@ Five rules, all load-bearing:
 
 Effects may only paint in `ground-items`, `projectiles`, `effects`, or `highlights`. They may never
 paint in `terrain`, `structures`, `units`, or `air` — those belong to the simulation, and the
-corruption law in [`engine.md`](engine.md) Section 9.4 depends on that separation holding absolutely.
+corruption law in [`engine.md`](grid-engine.md) Section 9.4 depends on that separation holding absolutely.
 
 **Band separation is not enough on its own, and the compositor closes the gap** (Milestone 1B). A
 legal band still draws *over* the Grid, so an effect cell landing on an occupied tile replaces the
@@ -109,7 +109,7 @@ presentation time:
   onto an occupied tile. The name keeps the owner's "shader" and admits that a rainbow sweep is not a
   light.
 - **Tweens** — a number or point moving between two values over a window of time, along an easing
-  curve (`src/view/tween.ts`): the camera's slide and the cursor's glide ([`engine.md`](engine.md)
+  curve (`src/view/tween.ts`): the camera's slide and the cursor's glide ([`engine.md`](grid-engine.md)
   3.3), the Build Phase's focus arrow (canon 2.27, below), its see-through cursor and the card reveal's
   slide (canon 2.28, below), and the expansions inside recipes.
 
@@ -159,7 +159,7 @@ notice.
 ## 3. Craft rules — GUIDANCE
 
 These are the rules the roguelike tradition already paid for. They are cheap to follow and expensive
-to discover. See [`ascii-art-references.md`](ascii-art-references.md) for sources.
+to discover. See [`ascii-art-references.md`](../game-design/ascii-art-references.md) for sources.
 
 1. **Author the worst frame first.** Late Pulse, both armies engaged, three effects overlapping. If
    that reads, the calm frames will. Designing the calm frame first guarantees a beautiful opening and
@@ -293,7 +293,7 @@ Snapshot the composed frame at fixed timestamps and diff it. **Do not test effec
 
 ## 7. What this system is not — GUIDANCE
 
-[`engine.md`](engine.md) Section 0 requires every section to carry an authority marker, and this one
+[`engine.md`](grid-engine.md) Section 0 requires every section to carry an authority marker, and this one
 went without one until 2026-08-24. It is **GUIDANCE**, by that same section's own default for a
 section describing something not designed yet: "that is still GUIDANCE, and it still means *do not
 build this today*." So the list below is not a lock only Mario may open — but departing from it is

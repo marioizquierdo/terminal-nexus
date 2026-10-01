@@ -24,7 +24,7 @@
 - **A second question the owner added:** does a second army, built to contrast rather than to
   balance, make the Playground show two different *styles* of fight rather than one fight twice?
 - **Smallest artifact that can answer it:**
-  - the pure `EffectRecipe` contract of [`ascii-effects.md`](../specs/ascii-effects.md) Section 1,
+  - the pure `EffectRecipe` contract of [`ascii-effects.md`](../../system-design/effects.md) Section 1,
     driven by the cosmetic stream, with effect instances derived from the ordered event stream and
     nothing else;
   - the ten effects of its Section 5, each in all three required forms;
@@ -43,12 +43,12 @@
 - **Explicit exclusions:** the Build Phase, economy, production, supply, visibility filtering,
   upgrades, drafts, the Commander, campaigns, packaging, multiplayer, sound. Ravel **jackpot drafts**
   and **scrap doctrine** need an economy and a draft, so neither is built here. No Commander Army is
-  authored: [`commander-armies.md`](../specs/commander-armies.md) Section 1 forbids production stats
+  authored: [`commander-armies.md`](../../game-design/commander-armies.md) Section 1 forbids production stats
   before Milestone 4, and the Ravel content here is fixture content of exactly the same disposable
   status as the Citizen fixture in milestone 3.6.
 - **One rule is added, and it is named here rather than buried:** Ravel **volatile munitions** —
   things that detonate when they die. A stats-only Ravel army fails the canon's own alignment test
-  ([`terminal-nexus-lore.md`](../specs/terminal-nexus-lore.md) Section 8.6: a themed reskin of a
+  ([`terminal-nexus-lore.md`](../../game-design/lore.md) Section 8.6: a themed reskin of a
   generic ability fails; a rule that *is* the characterisation passes), so the army would not be
   worth authoring without it. It is a **fixture rule for the Playground bench**, deterministic and
   bounded, that Milestone 4 must confirm or discard when it selects the real microgame.
@@ -61,7 +61,7 @@
 
 ## 2. Environment — pinned, not remembered
 
-Unchanged from [`report.md`](report.md) Section 2: Node 22.22.2 and Bun 1.3.11, no build step,
+Unchanged from [`report.md`](2026-08-21-pulse-playground.md) Section 2: Node 22.22.2 and Bun 1.3.11, no build step,
 `@opentui/core` 0.5.6, `typescript` 7.0.2, `@types/node` 22.20.1, on Linux x86_64.
 
 ## 3. What was built
@@ -69,7 +69,7 @@ Unchanged from [`report.md`](report.md) Section 2: Node 22.22.2 and Bun 1.3.11, 
 About 1,700 lines of source and 900 of tests on top of Gate 1A, in three pieces.
 
 **The effect system** — `src/view/effects/`. The pure `EffectRecipe` contract of
-[`ascii-effects.md`](../specs/ascii-effects.md) Section 1, a derivation step that turns the ordered
+[`ascii-effects.md`](../../system-design/effects.md) Section 1, a derivation step that turns the ordered
 event stream into instances, and eleven recipes: the ten of its starter vocabulary plus
 `fx.blast.detonation`, which the Ravel rule earned and which the vocabulary predates. Every recipe
 has all three required forms.
@@ -157,7 +157,7 @@ Measurements:
 too — and this gate's *is* the real one: show the same scenario with effects on and off and ask
 which they would watch again.
 
-What exists is five screenshots in `evidence/screenshots/`, captured from a real terminal at exact
+What exists is five screenshots in `docs/screenshots/`, captured from a real terminal at exact
 ticks: `ravels-clash` and `ravels-clash-no-effects` are the same instant with the effect system on
 and off, which is the comparison the gate is judged on; `cascade-blast` is the worst frame in the
 game — nine fuel wagons and five troopers in one tick — and `cascade-monochrome` is that same frame
@@ -265,7 +265,7 @@ on and off, and they are the two pictures that decide it.
 | A Grid Nexus is a **flag on a content definition**, not a content id the kernel knows | `engine.md` Section 5 | The second faction broke the hardcoded id within an hour |
 | **Volatile munitions** as a fixture rule: things detonate when they die, friend and foe alike, chains bounded by one death each | `commander-armies.md` 4.1 records the shape; the rule itself waits for Milestone 4 to confirm or discard | `scenarios/ravel-cascade.ts` and `tests/ravel.test.ts` |
 
-Questions raised, each in [`../specs/open-questions.md`](../specs/open-questions.md) with a
+Questions raised, each in [`docs/milestones/open-questions.md`](../../milestones/open-questions.md) with a
 recommendation:
 
 | ID | Question | Recommendation |
@@ -310,7 +310,7 @@ Paraphrased from the owner's own message, kept close to his wording:
 | --- | --- | --- |
 | Diagonal movement is the main legibility problem | Movement and targeting are four-way (N/E/S/W), Manhattan distance, everywhere | `e7d632f`; `src/grid/coords.ts`, `src/pulse/movement.ts` |
 | ...which exposed a real routing bug (goal was a target's anchor, not its nearest tile) | Fixed generally (`nearestFootprintTile`/`movementGoal`), not worked around per scenario | `e7d632f` |
-| ...and a harder on-axis dead end under Manhattan distance that diagonal movement used to paper over | Diagnosed, reproduced, documented as a real kernel limitation rather than patched blind; **Q15** sharpened with the finding and a recommendation | `e7d632f`; `specs/open-questions.md` Q15 |
+| ...and a harder on-axis dead end under Manhattan distance that diagonal movement used to paper over | Diagnosed, reproduced, documented as a real kernel limitation rather than patched blind; **Q15** sharpened with the finding and a recommendation | `e7d632f`; `docs/milestones/open-questions.md` Q15 |
 | Shooting should lean on timing, not a large glyph | Ranged tracer cut from a two-cell streak to one; impact-burst shards and melee-clash debris cut and time-boxed, guided by a real multi-unit capture rather than guessed at | `a8b49b5`; before/after count in the same commit: 10.10 → 9.22 effect cells/frame on `grand-battle`'s opening exchange |
 | A settle delay after death, and a beat after a step before attacking, would read more clearly | Both implemented as real kernel rules — `DEATH_SETTLE_TICKS`, a `VacatedOverlay`; an actor that moved this tick cannot also attack on it — each with a dedicated scenario and test, not just a presentation trick | `e7d632f`; `scenarios/settle-delay.ts`, `tests/rules.test.ts` |
 | Pathfinding needs to get smarter; default-movement vs. engaged states | Registered, not built — real pathfinding and a state machine are Milestone 2 scope, and building ahead of that gate is exactly what the canon says not to do | `7d4e80f`; `specs/milestone-2-deterministic-pulse.md`, new bullets |
@@ -321,13 +321,13 @@ Paraphrased from the owner's own message, kept close to his wording:
 | ...which surfaced a real reporting bug: a crowded multi-tile mover was reported "blocked by edge" | The report checked only the mover's anchor tile, not its full footprint; fixed at both `move.blocked` report sites, pinned with a test | `f808ebd`; `tests/rules.test.ts` |
 | A large, populous scenario to watch | `grand-battle.ts`: 56 entities on the 48x16 default preset (density, not Grid area — see the note below) | `ecc808e`, `a8b49b5` |
 | Sub-tick, multi-frame capture around a real engagement, on request | `scripts/capture-engagement.mjs`: finds the engagement from the headless log, steps frame by frame (not tick by tick), captures the run. Shared its tmux/ANSI/PNG pipeline with the existing screenshot script (`scripts/lib/terminal-capture.mjs`) rather than duplicating it | `a8b49b5` |
-| A strong 256-colour palette as the design reference | `scripts/render-palette.mjs` renders every `StyleRole`, both themes, straight from the live `PALETTE` table — swatch, ANSI code, 256 index, RGB — so the reference can never drift from what the game draws | `43d5102`; `evidence/screenshots/palette-reference.png` |
+| A strong 256-colour palette as the design reference | `scripts/render-palette.mjs` renders every `StyleRole`, both themes, straight from the live `PALETTE` table — swatch, ANSI code, 256 index, RGB — so the reference can never drift from what the game draws | `43d5102`; `docs/screenshots/palette-reference.png` |
 | Nearly invisible help text on a dark terminal; "how do other tools handle this?" | Traced to three compounding causes and fixed: `--capability` defaulted to `color16` unconditionally (now detects `COLORTERM`/`TERM`, the standard simple method); `chrome.muted`/`chrome.label` sat on ANSI 90 while every use of `chrome.muted` *also* applies the `dim` attribute on top, and ANSI 90 is the least consistently themed of the sixteen codes across real terminals; `player.a`/`player.b`'s ANSI-16 codes did not match the hue the rest of the table already committed to (96/93, bright cyan and bright yellow, for rust orange and Ravel green) | `9ea57fe` |
-| A themes system, started simple | `--theme dark|light`: a second full `PALETTE` table, threaded only as far as it has to go (the three functions that finally turn a role into a colour), no background probe (unreliable across terminals, real complexity for a gate asked to start simple) | `9ea57fe`; `evidence/screenshots/mirror-light-theme.png` |
+| A themes system, started simple | `--theme dark|light`: a second full `PALETTE` table, threaded only as far as it has to go (the three functions that finally turn a role into a colour), no background probe (unreliable across terminals, real complexity for a gate asked to start simple) | `9ea57fe`; `docs/screenshots/mirror-light-theme.png` |
 | "Draw a Nexus!" | Both factions now render real 3x2 multi-cell art instead of a tiled single letter — Citizen a domed core over a bracketed base (`.n.`/`[=]`), Ravel a jagged canopy over arrows radiating from a spark (`/n\`/`<*>`) — a first pass, explicitly meant for iteration | `427cef3` |
 | Mirror-match colour (citizen-vs-citizen, ravel-vs-ravel) | Made observable (`ravel-mirror-skirmish.ts`, the Ravel counterpart to the existing citizen fixture) rather than changed: the RULE already in `engine.md` ("ownership keeps the colour") does keep the two sides apart, at the cost of one side of a same-faction mirror wearing the other faction's signature hue. Registered as **Q18** with options and a recommendation rather than overridden, since it is a stated RULE and changing it needs the owner and a canon bump | `51e0d9c` |
 | A future skins system, a 3rd player-chosen colour | Folded into Q18 as one of its options, not built | `51e0d9c` |
-| Sandbox placement, rewind/fast-forward, a replay engine for feedback | Registered as **Q19**, exactly as asked ("keep this in mind... not needed for now"): a full replay format is already Milestone 2's; rewind/fast-forward is presentation on top of it, with one real design consequence now (keep per-tick state cheaply addressable); sandbox placement reads as an early, lighter form of Milestone 3's battle editor. Recommendation: nothing until Milestone 2 is accepted | `7d4e80f`; `specs/open-questions.md` Q19 |
+| Sandbox placement, rewind/fast-forward, a replay engine for feedback | Registered as **Q19**, exactly as asked ("keep this in mind... not needed for now"): a full replay format is already Milestone 2's; rewind/fast-forward is presentation on top of it, with one real design consequence now (keep per-tick state cheaply addressable); sandbox placement reads as an early, lighter form of Milestone 3's battle editor. Recommendation: nothing until Milestone 2 is accepted | `7d4e80f`; `docs/milestones/open-questions.md` Q19 |
 
 A note on `grand-battle.ts`'s size: the first draft used the 72x24 preset — the ceiling `engine.md`
 3.3 allows — and it resolved fine headless but overlapped its own side panel once actually watched.
@@ -397,16 +397,16 @@ Paraphrased from the owner's own message, kept close to his wording:
 
 | Owner's finding | Response | Evidence |
 | --- | --- | --- |
-| "Two units... got stuck: `t▓▓X`. The pathfinding algorithm is failing" | Reproduced exactly (`citizens-versus-ravels`, tick 179: `A:trooper#3` and `B:runner#2` deadlocked nose to nose across a two-tile rock, each one's only distance-closing direction pointed straight into it) — this is Q15's on-axis dead end, already diagnosed and registered last round, now confirmed on the real fixture rather than only the abstract case. Isolated to `on-axis-deadlock.ts`, a two-entity regression the previous fix could not have caught | `e1e677f`, `4355dcc`; `scenarios/on-axis-deadlock.ts`; `specs/open-questions.md` Q15 |
+| "Two units... got stuck: `t▓▓X`. The pathfinding algorithm is failing" | Reproduced exactly (`citizens-versus-ravels`, tick 179: `A:trooper#3` and `B:runner#2` deadlocked nose to nose across a two-tile rock, each one's only distance-closing direction pointed straight into it) — this is Q15's on-axis dead end, already diagnosed and registered last round, now confirmed on the real fixture rather than only the abstract case. Isolated to `on-axis-deadlock.ts`, a two-entity regression the previous fix could not have caught | `e1e677f`, `4355dcc`; `scenarios/on-axis-deadlock.ts`; `docs/milestones/open-questions.md` Q15 |
 | ...while chasing that down, the `WARN stuck` line itself was found to name the wrong tile — the one the actor could not enter, reported as though it were the actor's own position, which is exactly why "notice" needed a stare rather than a glance at the log | Fixed at the source (`src/report/log.ts` tracks each actor's own tile from `entity.spawned`/`entity.moved` and reports it separately from the tile it wants); found the same misdirection was masking a second, worse bug | `e1e677f` |
 | ...the second bug: any scenario with a placement on impassable terrain silently entombs that entity, unable to ever move | Both baseline mirror fixtures (`citizen-mirror-skirmish.ts`, `ravel-mirror-skirmish.ts`) had it — their "mirrored" rock pairs were not actually mirrored, so four of `citizen-mirror-skirmish`'s seven B units (three of the Ravel fixture's) have stood in rock since Gate 1A, not fighting. The loader now refuses the placement outright, naming the row/column/terrain id; both fixtures corrected | `e1e677f` |
 | Units still move too slow, a second time (trooper/marksman already went `3/4` → `1/1` last round) | Every `movementRate` in both rosters × 1.5, preserving every ratio the content was tuned against. First attack in `citizens-versus-ravels` now lands at tick 91 (7.6s), down from tick 144 (12s) | `ddaa5f7`; `src/content/citizen.ts`, `src/content/ravel.ts` |
 | ...which shifted two fixtures' pinned combat arithmetic in `milestone-1-spike-battle.md` 3.6 | Both re-measured and corrected rather than left to silently drift, with the trooper-vs-two-marksmen fixture's changed *story* (no longer a clean ranged kill) disclosed explicitly rather than papered over or re-balanced without being asked | `ddaa5f7`; `specs/milestone-1-spike-battle.md` 3.6, `tests/scenario.test.ts` |
-| "Maybe outposts regroup units... so next pulses resolve faster" | Registered as **Q23**, not built: outposts, production, and multi-Pulse regrouping are Milestone 2/3 scope, unauthorized regardless of how reasonable the idea is | `4302e2e`; `specs/open-questions.md` Q23 |
-| "Perhaps we have to work on the colors to ensure more contrast" | Measured rather than guessed at: WCAG contrast ratios computed against the real truecolor swatches. Each side already clears 3:1 against the background in both themes; `player.a` vs `player.b` directly does not — 2.08:1 dark, **1.08:1 light** (almost identical brightness, separated only by hue). Registered as **Q21** with the measurement and a recommendation (retune lightness, not hue, in the light theme specifically) rather than repainted on a hunch | `4302e2e`; `specs/open-questions.md` Q21 |
+| "Maybe outposts regroup units... so next pulses resolve faster" | Registered as **Q23**, not built: outposts, production, and multi-Pulse regrouping are Milestone 2/3 scope, unauthorized regardless of how reasonable the idea is | `4302e2e`; `docs/milestones/open-questions.md` Q23 |
+| "Perhaps we have to work on the colors to ensure more contrast" | Measured rather than guessed at: WCAG contrast ratios computed against the real truecolor swatches. Each side already clears 3:1 against the background in both themes; `player.a` vs `player.b` directly does not — 2.08:1 dark, **1.08:1 light** (almost identical brightness, separated only by hue). Registered as **Q21** with the measurement and a recommendation (retune lightness, not hue, in the light theme specifically) rather than repainted on a hunch | `4302e2e`; `docs/milestones/open-questions.md` Q21 |
 | "Show bigger explosions when the units die vs when they take damage" | `ascii-effects.md` Section 5 already states this as a requirement for `fx.death.collapse` and nothing had ever tested it. For the common 1x1 footprint the death ring only touched four cardinal neighbours (5 cells at peak against the hit's 2); widened to a full eight-cell ring (9 cells at peak, ~4.5x rather than ~2.5x). New test pins "visibly heavier" as a number and was checked to fail against the pre-fix ring before it was checked to pass | `77c8895`; `tests/effects.test.ts` |
 | "The timings for shooting and taking damage are much better now... look for more opportunities to do that, specially when the effect is resolved within the same turn" | Found exactly that gap: a same-tick ranged kill (`attack.launched`, `damage.applied`, `entity.died`, and any `entity.detonated` it triggers all resolve within one tick) already held the impact burst for its flight window, but the death collapse, structure collapse, and blast did not — a unit could visibly explode before its own tracer arrived. All three now wait for the same impact beat the burst already waits for. Reproduced and pinned: `citizens-versus-ravels` tick 169, a marksman's shot kills a runner whose volatile munitions catch a trooper, all fixed to land in the right order | `51c1467`; `tests/effects.test.ts` |
-| "moving units at slight different speeds also helps... movement jitter based on terrain" | Distinguished what the speed pass above already delivers (rate varies *across* unit types) from what was actually asked (identical units of the *same* type still step in lockstep with each other). Registered as **Q22**, framed against the engine's existing seeded-gameplay/free-cosmetic split — the same deterministic-hash shape every `fx.*` recipe already uses — with a recommended first cut (pure interpolation jitter, no kernel change) rather than built directly, since it touches the state/presentation boundary closely enough to be worth a real answer | `4302e2e`; `specs/open-questions.md` Q22 |
+| "moving units at slight different speeds also helps... movement jitter based on terrain" | Distinguished what the speed pass above already delivers (rate varies *across* unit types) from what was actually asked (identical units of the *same* type still step in lockstep with each other). Registered as **Q22**, framed against the engine's existing seeded-gameplay/free-cosmetic split — the same deterministic-hash shape every `fx.*` recipe already uses — with a recommended first cut (pure interpolation jitter, no kernel change) rather than built directly, since it touches the state/presentation boundary closely enough to be worth a real answer | `4302e2e`; `docs/milestones/open-questions.md` Q22 |
 
 Everything that touched behaviour or presentation timing shipped with a new or updated test proving
 the specific claim, not just a scenario to look at — including two tests written to fail against the
@@ -488,7 +488,7 @@ this branch, already moved once.
 | "if there are other units with the same attack type, they need the same delay" | Verified rather than assumed: `flightWindowTicks()` (`arbitration.ts`) is one shared, pure function of `(distance, projectileTilesPerTick)`, used identically for every ranged attacker with no per-unit special-casing anywhere in the flight-window or corpse-hold code — the slinger gets the same fix as the marksman automatically |  |
 | "still too slow... 2 or 2.5 times faster" | A second, larger speed pass — 2x the *original* rate, not a further multiple on the branch's already-shipped 1.5x, since the owner was judging the original baseline both playtests actually watched. First attack in `citizens-versus-ravels` now lands at tick 72 (6s), down from 144 (12s) before either pass — exactly 2x | `13d5832`; `src/content/citizen.ts`, `src/content/ravel.ts` |
 | "wait a full movement cooldown before starting to move again" | Built as a kernel rule, same shape as the existing `DEATH_SETTLE_TICKS`: a killer's `moveCredit` is zeroed the instant its kill lands, the same mechanism `accrueCredit` already applies to a step actually taken, so it needs a full cadence's worth of credit again before its next move. New fixture (`kill-then-hold.ts`) isolates it; broke `settle-delay.ts`'s own test in a real way (that fixture used to let the killer be both the killer *and* the tile-tester, which stopped proving anything once a kill could hold a mover longer than the settle window) — redesigned with an independent tester rather than patched around | `051d57a`; `src/pulse/attacks.ts`, `scenarios/kill-then-hold.ts`, `scenarios/settle-delay.ts` |
-| The terminal cell's own aspect ratio | Registered as **Q24**, exactly as asked ("take note... explore later") — connected to `engine.md` 9.3's existing RULE and mitigation (adaptive tile width) rather than treated as unrelated, with the owner's own three ideas laid out as options and none recommended, since he asked for this to wait | `af02fda`; `specs/open-questions.md` Q24 |
+| The terminal cell's own aspect ratio | Registered as **Q24**, exactly as asked ("take note... explore later") — connected to `engine.md` 9.3's existing RULE and mitigation (adaptive tile width) rather than treated as unrelated, with the owner's own three ideas laid out as options and none recommended, since he asked for this to wait | `af02fda`; `docs/milestones/open-questions.md` Q24 |
 
 Every behavioural change shipped with a new or updated test proving the specific claim, including two
 written to fail against the pre-fix code first (the corpse hold, the movement hold) before confirming
@@ -568,8 +568,8 @@ formation) are real fixture roster entries, not test-only fixtures, each escorte
 that used to be the whole roster in a new showcase, `scenarios/heavies-clash.map.json`. A rules test
 pins that the two actually fight at footprint distance rather than anchor distance and that at least
 one dies, so the large-footprint death-collapse path is exercised by the suite and not only by
-watching. It was watched: `evidence/screenshots/heavies-open.png` (tick 0, both bodies at scale next
-to their escorts) and `evidence/screenshots/heavies-death.png` (tick 400, the leviathan's collapse
+watching. It was watched: `docs/screenshots/heavies-open.png` (tick 0, both bodies at scale next
+to their escorts) and `docs/screenshots/heavies-death.png` (tick 400, the leviathan's collapse
 filling its full 5×2 footprint while the colossus stands intact nearby) are the visual confirmation the
 owner asked for directly, captured through the same tmux-to-PNG pipeline every other screenshot in this
 repository uses, not a hand-picked frame.
@@ -691,7 +691,7 @@ pass: `stateHash`/`eventsHash` identical across all 25 scenarios before and afte
 **The large-unit pathfinding audit** found no kernel bug — the invariants (no overlap, bounded
 arbitration, correct blocker attribution) all held at every footprint size tested, including the
 widest thing on the bench — but it found real, useful evidence and one genuinely new (if narrow)
-observation, both folded into `specs/open-questions.md` Q15 rather than left in an agent transcript:
+observation, both folded into `docs/milestones/open-questions.md` Q15 rather than left in an agent transcript:
 Q15's on-axis dead end reproduces exactly on a genuinely large body for the first time, but in its
 **hard-stop** form rather than the pacing form the existing 3x1 hauler fixture shows — a body three
 tiles wide has nowhere left to slide once it is flush against a gap it cannot fit through, where a
@@ -794,7 +794,7 @@ the hauler, not a scaled-down colossus. `scenarios/small-multicell-skirmish.map.
 real fight, each with a two-unit escort (`heavies-clash`'s own pattern, one size down): the sentinel
 melees the corsair down, the corsair's own detonation catches it back, and its slinger escort dies the
 same tick — cross-layer combat, a footprint-scaled death ring, and a unit-specific dead animation all
-exercised together in one run. `evidence/screenshots/multicell-open.png` and `multicell-death.png` are
+exercised together in one run. `docs/screenshots/multicell-open.png` and `multicell-death.png` are
 the visual confirmation, sent to the owner directly; the second is deliberately the worst frame (two
 simultaneous deaths, per ascii-effects.md craft rule 1) rather than a cleaner, cherry-picked one.
 
@@ -934,7 +934,7 @@ an oversight: state has nothing further to interpolate, but a cosmetic effect is
 absolute time and needs none. `heavies-clash`'s own leviathan dies on the exact tick that also ends
 the Pulse by annihilation, so its full ~12-tick choreography plays entirely *after* the last tick the
 simulation ever resolved — and does, correctly, confirmed by six screenshots spanning the sequence
-(`evidence/screenshots/heavies-death-*.png`). The capture tooling did not already know how to reach a
+(`docs/screenshots/heavies-death-*.png`). The capture tooling did not already know how to reach a
 presentation instant the footer can never display again; `stepPastEnd`
 (`scripts/lib/terminal-capture.mjs`) steps to the last resolved tick the verified way, then sends the
 remaining ticks directly, which is exact rather than a guess because `Playback.apply`'s `step-tick`
@@ -1021,7 +1021,7 @@ reaching the full radius by the end); `bigDeathScatter`'s shockwave reaching its
 midpoint of its own short window, which the old linear formula could not do for any outset above 1.
 All of round six's existing shockwave/flying-debris/reduced-motion tests still pass unmodified.
 
-**Screenshot, before and after, at the identical tick**: `evidence/screenshots/
+**Screenshot, before and after, at the identical tick**: `docs/screenshots/
 easing-blast-ring-before.png` and `-after.png` — `citizens-versus-ravels`, tick 206, two ticks into
 `B:wagon#20`'s radius-2 detonation (a clean, isolated blast — no cascade, no ranged-flight hold to
 reason about). At progress 0.44 into the blast's own window the old linear formula gives reach 1; the
@@ -1032,7 +1032,7 @@ after pair this round.
 
 ### 2. Colour pipeline — Q25 and Q21
 
-Read before writing any code, per the instructions: `specs/open-questions.md` Q25 (already registered,
+Read before writing any code, per the instructions: `docs/milestones/open-questions.md` Q25 (already registered,
 with the measurement) and Q21 (contrast). Q25's own text already narrowed this to option A plus a
 separate, owner-gated transparency decision — nothing here was decided fresh; it was executed and
 evidenced.
@@ -1055,13 +1055,13 @@ asymmetry reads as a reasoned choice, not an oversight. Dark theme's pair is unt
 recommendation scoped it.
 
 **Made observable rather than only asserted**, per AGENTS.md Section 6 and the instructions' own
-emphasis: `evidence/screenshots/palette-derivation-256-hand-authored.png` and `-derived.png` are the
+emphasis: `docs/screenshots/palette-derivation-256-hand-authored.png` and `-derived.png` are the
 identical real fight frame (`citizens-versus-ravels`, tick 178) at the 256-colour tier, once per
 formula — close to indistinguishable at a glance, the result the measurement predicted rather than a
-surprise. `evidence/screenshots/mirror-light-theme-before-q21.png` and `-after-q21.png` are the same
+surprise. `docs/screenshots/mirror-light-theme-before-q21.png` and `-after-q21.png` are the same
 real mirror-skirmish frame at `--theme light`, and the difference there is not subtle: Ravel green goes
 from a washed pale tone that reads close to Citizen rust in brightness, to a clearly darker, distinct
-forest green. `evidence/screenshots/palette-reference.png` was regenerated from the live table (the
+forest green. `docs/screenshots/palette-reference.png` was regenerated from the live table (the
 script that builds it already reads through `sgrFor`/`rgbFor`, so it could not go stale even if it
 tried).
 
@@ -1079,7 +1079,7 @@ from `ascii-effects.md` craft rule 7, and both need Mario and a canon bump, whic
 grant itself. `scripts/prototype-fade-resolver.mjs` drives the real `fx.damage.flash` recipe and the
 real `mergeEffectCells` for "today," and a small resolver that lives only in the script — one scalar
 `fade` (0–1) blended toward `BACKGROUND_RGB[theme]`, quantized only for the swatch, exactly Q25's
-recommended shape — for "prototype." `evidence/screenshots/prototype-fade-resolver.png`, sent directly
+recommended shape — for "prototype." `docs/screenshots/prototype-fade-resolver.png`, sent directly
 to the owner, shows two concrete things rather than arguing for them in prose: stacking (today's real
 compositor reaches exactly two distinguishable states for a stack of simultaneous flashes — bold, then
 inverse, saturating immediately — where a fade continuum keeps six sampled stack sizes visibly
@@ -1140,11 +1140,11 @@ recipe-agnostic tests (purity, band legality, glyph width, three-forms) already 
 without needing their own copies.
 
 **Two screenshots, since the real content's own radius (2) makes the effect subtle by design** (craft
-rule 4, reserve visual weight — a small blast should look small): `evidence/screenshots/
+rule 4, reserve visual weight — a small blast should look small): `docs/screenshots/
 blast-sub-explosions-before.png` / `-after.png` is the real, unmodified `citizens-versus-ravels` tick
 207, sub-bursts off and on (the "before" half produced by temporarily commenting out one call site,
 capturing, then restoring — real code, not a mock); the difference is present but modest, honestly
-shown rather than cropped to flatter it. `evidence/screenshots/sub-explosions-illustration.png` drives
+shown rather than cropped to flatter it. `docs/screenshots/sub-explosions-illustration.png` drives
 the same, unmodified recipe at radius 5 — a size nothing on the bench actually detonates at — purely so
 the mechanism's shape is unambiguous, coloured (illustration-only; the real cells carry no such tag) to
 separate the main ring from the sub-burst clusters visually. Both screenshots say plainly, in their own
@@ -1152,7 +1152,7 @@ caption or on-page text, which is real content and which is illustration.
 
 ### Verification
 
-Diff confined to `src/view/**`, `tests/**`, `scripts/**`, and `evidence/screenshots/**` — nothing under
+Diff confined to `src/view/**`, `tests/**`, `scripts/**`, and `docs/screenshots/**` — nothing under
 `src/pulse`, `src/state`, `src/events`, or `src/scenario`, checked by `git diff --stat` against this
 round's start, not assumed. `npx tsc --noEmit` clean. `npm test`: **185 tests, 185 passing** (176
 before this round); `npm run test:bun`: every file passing. `./scripts/check-repository.sh` clean.
@@ -1191,7 +1191,7 @@ gated on acceptance, not on this session running out of things to fix.
 
 Both of Section 23's open decisions, answered directly by Mario, 2026-08-26, rather than inferred:
 256-colour derivation, "Keep it derived (recommended)"; the transparency prototype, "Yes, build it for
-real." Full mechanism in [`../specs/open-questions.md`](../specs/open-questions.md) Q25's closing
+real." Full mechanism in [`docs/milestones/open-questions.md`](../../milestones/open-questions.md) Q25's closing
 paragraph, not repeated here — summary only:
 
 - `CellStyle.fade` shipped (`src/view/frame.ts`), a `fgRole`-only 0-1 scalar resolved at
@@ -1207,7 +1207,7 @@ paragraph, not repeated here — summary only:
   canon bumped 2.7 -> 2.8;
 - `scripts/prototype-fade-resolver.mjs` deleted; its evidence PNG kept for the historical record.
   `scripts/capture-damage-flash-fade.mjs` supersedes it, driving the real, shipped pipeline end to end
-  (no resolver of its own) — `evidence/screenshots/damage-flash-fade.png`.
+  (no resolver of its own) — `docs/screenshots/damage-flash-fade.png`.
 
 New tests (`tests/effects.test.ts`, `tests/roles.test.ts`, `tests/view.test.ts`): the real recipe's
 own decay curve; stacking through the real compositor reading less faded than any one flash alone; a
@@ -1221,19 +1221,19 @@ identical (presentation-only change, no gameplay hash moved, as expected); `./sc
 clean at canon 2.8.
 
 Mario then, asked directly, formally accepted Milestone 1 in full: "Yes, formally accept it." Both
-gates' automated PASS (this report; [`../evidence/report.md`](../evidence/report.md)) now carry owner
+gates' automated PASS (this report; [`docs/history/reports/2026-08-21-pulse-playground.md`](2026-08-21-pulse-playground.md)) now carry owner
 acceptance alongside them — the distinction this report drew at Section 8 and every round since,
 between an automated PASS and the owner's own separate sign-off, is exactly what this closes.
 
 ### Final decision
 
 > **ACCEPTED.** Gate 1B, and Gate 1A alongside it, are both closed. Milestone 1 is complete
-> ([`../specs/project-governance.md`](../specs/project-governance.md) Section 5). No further round is
+> ([`docs/game-design/decisions.md`](../../game-design/decisions.md) Section 5). No further round is
 > expected against this report; a new finding against shipped Milestone 1 content is a fresh issue
 > against whichever gate now owns that code, not a reopening of this one.
 
-Next authorized action: [`../milestones/README.md`](../milestones/README.md) — the campaign's first
-level, built as ten focused milestones rather than one. Not the horizontal "completing the Pulse"
+Next authorized action: [`docs/milestones/README.md`](../../milestones/README.md) — the campaign's first
+level, built as ten focused docs/milestones rather than one. Not the horizontal "completing the Pulse"
 contract this report's own Section 23 pointed to; the roadmap went campaign-first in the same round
-that accepted this gate, and the milestones were formalized into their own folder shortly after. See
+that accepted this gate, and the docs/milestones were formalized into their own folder shortly after. See
 that index's own opening note for why.

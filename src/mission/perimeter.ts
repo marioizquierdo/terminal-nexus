@@ -10,7 +10,7 @@
 // **The wave sizes are a first tuning, not balance**: chosen against this map and the placeholder
 // construct menu so that the first Pulse is a probe the starting squads can meet, the second needs
 // something built, and the third needs most of what the mission's credits buy
-// (evidence/gate-6b-report.md Section 4 has the outcomes measured against scripted plans).
+// (docs/history/reports/2026-09-30-round-loop-and-missions.md Section 4 has the outcomes measured against scripted plans).
 //
 // The round texts are placeholder writing in PERIMETER's register ("plain, military, correct"), inside
 // the lore budget; the briefing and debrief in campaigns.md Section 4.2 stay canon and are Milestone 9's

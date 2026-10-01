@@ -159,7 +159,7 @@ for Section 6.
 | The confirmation screen asks only y/n, with none of the construct menu's own content | one screen | `tests/build-view.test.ts` |
 | The committed screen names the pick and the plan count; the footer carries the full sentence | one screen | `tests/build-view.test.ts` |
 | No existing budget, legality, scrolling, or adapter-equivalence test's numbers shifted | all four pre-existing Build Phase suites | full suite, unchanged pass count plus the new tests |
-| Real-terminal screenshots | 16 (13 regenerated with a leading pick, 3 new: the draft, the confirmation, the committed screen) | `evidence/screenshots/`, tmux -> `capture-pane -e` -> headless Chromium |
+| Real-terminal screenshots | 16 (13 regenerated with a leading pick, 3 new: the draft, the confirmation, the committed screen) | `docs/screenshots/`, tmux -> `capture-pane -e` -> headless Chromium |
 
 Measurements:
 
@@ -286,11 +286,11 @@ accepts the gate.**
 
 | Proposed rule | Would live in | Earned by |
 | --- | --- | --- |
-| A dealt Nexus power draft blocks every other Build Phase action until one is picked, and a pick cannot be changed afterward | `specs/engine.md` (Build Phase input section) | `lockReason`'s drafting gate, and the pick-cannot-repeat test |
-| Committing the Build Phase is a single `y`/`n` confirmation behind one key, and accepting it locks every other action | `specs/engine.md` (Build Phase input section) | the confirm/commit reducer cases and their tests |
-| A Build Phase panel with an empty decision channel (Special, and already Army from gate 5B) draws that channel's own row rather than hiding it | `specs/engine.md` Section 9.2 | the SPECIAL row and the precedent it follows |
+| A dealt Nexus power draft blocks every other Build Phase action until one is picked, and a pick cannot be changed afterward | `docs/system-design/grid-engine.md` (Build Phase input section) | `lockReason`'s drafting gate, and the pick-cannot-repeat test |
+| Committing the Build Phase is a single `y`/`n` confirmation behind one key, and accepting it locks every other action | `docs/system-design/grid-engine.md` (Build Phase input section) | the confirm/commit reducer cases and their tests |
+| A Build Phase panel with an empty decision channel (Special, and already Army from gate 5B) draws that channel's own row rather than hiding it | `docs/system-design/grid-engine.md` Section 9.2 | the SPECIAL row and the precedent it follows |
 
-Questions raised, each already added to [`../specs/open-questions.md`](../specs/open-questions.md) with a
+Questions raised, each already added to [`docs/milestones/open-questions.md`](../../milestones/open-questions.md) with a
 recommendation:
 
 None. This gate's own exclusions (Section 1) already named the two forks it touches without settling
@@ -302,5 +302,5 @@ open questions, already registered there, not new ones this gate raises.
 Mario runs the manual test described in the accompanying check-in message — the two still-open gate
 5C comparisons, plus the new draft/commit flow — and either accepts gate 5D or sends back what to
 change; 5D is the last gate this milestone's own tracker lists, so accepting it closes Milestone 5 and
-the next session's authorized work becomes whichever milestone `milestones/README.md`'s build order
+the next session's authorized work becomes whichever milestone `docs/milestones/README.md`'s build order
 names next.

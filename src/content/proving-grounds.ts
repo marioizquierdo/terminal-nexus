@@ -11,7 +11,7 @@
 // reason: no faction owns any of this.
 //
 // Per-design provenance (what each one needed from the kernel, if anything) is in
-// `evidence/unit-architecture-spike.md`. The short version: most of this roster is `ContentDef` data
+// `docs/history/reports/2026-09-10-unit-architecture-spike.md`. The short version: most of this roster is `ContentDef` data
 // and nothing else. Five designs needed one new, small, reusable kernel capability each — a hard
 // targeting restriction (`targetLayers`), a soft targeting bias (`targetPreference`), a one-time
 // windup before a first shot, an AOE attack (`splash`, the same `{radius,damage}` shape `detonation`
@@ -283,7 +283,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     // `spawning()` phase is scoped deliberately narrow - no cost, no resource, nothing the empty
     // `economyAndProduction` phase would recognise as its own - specifically so it reads as a combat
     // ability (a Clash Royale Graveyard, a StarCraft Broodmother) rather than the production system
-    // Milestone 2 still owns. `specs/open-questions.md` Q26 registers exactly that boundary for Mario.
+    // Milestone 2 still owns. `docs/milestones/open-questions.md` Q26 registers exactly that boundary for Mario.
     id: "structure.bench.hatchery",
     short: "hatch",
     layer: "obstacles",

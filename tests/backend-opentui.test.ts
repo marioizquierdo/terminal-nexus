@@ -57,7 +57,7 @@ if (RUNTIME_IS_BUN) {
     await assert.rejects(
       async () => harness.createTestRenderer({ width: 80, height: 24 }),
       /native FFI is not available|not available for this runtime/i,
-      "OpenTUI now builds a renderer on Node; evidence/report.md Section 4 needs re-measuring",
+      "OpenTUI now builds a renderer on Node; docs/history/reports/2026-08-21-pulse-playground.md Section 4 needs re-measuring",
     )
   })
 }

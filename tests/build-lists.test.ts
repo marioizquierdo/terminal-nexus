@@ -1,4 +1,4 @@
-// Moving in lists (docs/ui-patterns.md, "Moving in lists"): every list in the Build Phase — its menu, the
+// Moving in lists (docs/system-design/ui-patterns.md, "Moving in lists"): every list in the Build Phase — its menu, the
 // Nexus powers, the game menu, Settings, the export, the Controls page — stops at its first and last
 // row without a flicker; Shift+Up/Down, PageUp/PageDown and Home/End go to either end; a tap is one row,
 // and taps and holds move a list by the map cursor's own rules and numbers (taps counted, a hold on the

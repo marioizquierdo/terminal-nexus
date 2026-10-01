@@ -8,7 +8,7 @@
 
 > **Renamed and relocated, canon 2.9.** This is the document formerly called
 > `specs/milestone-1-spike-battle.md`, "Milestone 1 — the Pulse Playground" — moved into
-> [`milestones/`](README.md) as milestone trackers were split out from versioned canon (they are
+> [`docs/milestones/`](../README.md) as milestone trackers were split out from versioned canon (they are
 > notes for upcoming work, task trackers during work, and historical reference after, which is a
 > different job than a specs/ document that only changes at a named canon version). Nothing below is
 > rewritten; only this note, the header above, and internal links to sibling milestone files are new.
@@ -17,7 +17,7 @@
 > much the tool's own working name (`grid`, née `playground`) as the milestone's.
 >
 > **Formally accepted, 2026-08-26 (canon 2.8).** Both gates are built, merged, and now **owner
-> accepted** — [`../specs/project-governance.md`](../specs/project-governance.md) Section 5 has the
+> accepted** — [`docs/game-design/decisions.md`](../../game-design/decisions.md) Section 5 has the
 > acceptance entry, and this is no longer the milestone a new session opens. Mario watched a
 > legibility pass and responded well — "This looks really amazing. Great job" — gave a large, explicit
 > list of follow-up work (the unit-architecture spike, the transparency amendment, this acceptance
@@ -28,7 +28,7 @@
 >
 > **The current work is [`milestone-02-campaign-design.md`](milestone-02-campaign-design.md) and the
 > sequence after it** — building the campaign's first level, one focused milestone at a time, rather
-> than completing the Pulse kernel horizontally. See [`README.md`](README.md) for the full sequence
+> than completing the Pulse kernel horizontally. See [`README.md`](../README.md) for the full sequence
 > and why it looks the way it does now; the single "Level 1: Perimeter" milestone this document
 > pointed to immediately after acceptance has itself been split into ten narrower ones.
 
@@ -54,8 +54,8 @@ Building them together is deliberate. Each one catches what the other hides.
 
 | Gate | Question | Status |
 | --- | --- | --- |
-| **1A — the Pulse Playground** | Do units move around obstacles, fight, and die — identically from a seed, legibly on screen? | **BUILT** — [`evidence/report.md`](../evidence/report.md) concludes PASS; owner viewing outstanding |
-| **1B — quality and effects** | Do render tiers and an effect vocabulary turn a legible Pulse into one worth watching? | **BUILT** — [`evidence/gate-1b-report.md`](../evidence/gate-1b-report.md) concludes PASS on everything a test can answer; owner viewing outstanding |
+| **1A — the Pulse Playground** | Do units move around obstacles, fight, and die — identically from a seed, legibly on screen? | **BUILT** — [`docs/history/reports/2026-08-21-pulse-playground.md`](../../history/reports/2026-08-21-pulse-playground.md) concludes PASS; owner viewing outstanding |
+| **1B — quality and effects** | Do render tiers and an effect vocabulary turn a legible Pulse into one worth watching? | **BUILT** — [`docs/history/reports/2026-08-26-quality-and-effects.md`](../../history/reports/2026-08-26-quality-and-effects.md) concludes PASS on everything a test can answer; owner viewing outstanding |
 
 **What "outstanding" means here.** Both gates pass every automated check they set themselves, and
 both reports refuse to claim the experiential half. Section 3.10 asks that Mario watch a mirror
@@ -74,16 +74,16 @@ that fits the viewport entirely**, so none of that is needed yet. They arrive wi
 
 ## 2. Read before coding
 
-1. [`terminal-nexus-concept.md`](../specs/terminal-nexus-concept.md)
-2. [`engine.md`](../specs/engine.md) **Section 0 first** — the authority markers, and take them literally.
+1. [`terminal-nexus-concept.md`](../../game-design/concept.md)
+2. [`engine.md`](../../system-design/grid-engine.md) **Section 0 first** — the authority markers, and take them literally.
    Then Sections 1, 3, and 4: the three worlds, the Grid, and the Pulse.
 3. this document
-4. [`open-questions.md`](../specs/open-questions.md) Section 4
-5. For the view: [`engine.md`](../specs/engine.md) Section 9. For Gate 1B:
-   [`ascii-effects.md`](../specs/ascii-effects.md)
+4. [`open-questions.md`](../open-questions.md) Section 4
+5. For the view: [`engine.md`](../../system-design/grid-engine.md) Section 9. For Gate 1B:
+   [`ascii-effects.md`](../../system-design/effects.md)
 6. `AGENTS.md`, then existing source, tests, and evidence
 
-Copy [`templates/gate-report.md`](../specs/templates/gate-report.md) into the spike and fill in its first
+Copy [`templates/gate-report.md`](../../../.github/pull_request_template.md) into the spike and fill in its first
 section before writing code.
 
 Most of `engine.md` is **GUIDANCE**. You are not building the content interfaces in its Section 8.
@@ -126,7 +126,7 @@ every other check in Section 3.9 would still pass. The same rule makes the log a
 guaranteed to be describing the same fight.
 
 **Agree these five things before splitting work across sessions**, because they are what the modules
-meet through: the coordinate convention ([`engine.md`](../specs/engine.md) 3.5), the `DomainEvent` union and
+meet through: the coordinate convention ([`engine.md`](../../system-design/grid-engine.md) 3.5), the `DomainEvent` union and
 its serialization, the scenario module API, the log line grammar of 3.3, and the `CellStyle` role
 vocabulary. The first four are written down; the role list is not, and whoever opens the gate should
 commit it — even if it is eight strings — before a second session starts.
@@ -199,7 +199,7 @@ grid <map.map.json> --verify --runs 20
 
 A `.map.json` file — plain JSON, and the project's most important tool — is how humans *and* agents
 pose questions to the simulation from here on. Same shape a checked-in test fixture, a campaign
-level, and a map-editor-authored map will all eventually share (`specs/replay-format.md`'s
+level, and a map-editor-authored map will all eventually share (`docs/system-design/replay-format.md`'s
 `ReplaySetup.map` is the same idea one layer up, for a whole replay).
 
 ```json
@@ -292,7 +292,7 @@ Rules for the format:
 
 ### 3.6 Fixture content — disposable, tuned for legibility not balance
 
-Not a Commander Army, not canon. [`commander-armies.md`](../specs/commander-armies.md) forbids production
+Not a Commander Army, not canon. [`commander-armies.md`](../../game-design/commander-armies.md) forbids production
 rosters before Milestone 12; saying these are throwaway is what keeps them throwaway. Change them
 freely if the fight is boring — that is what `grid` is for.
 
@@ -354,13 +354,13 @@ costs a week.
 ### 3.7 Rules in scope
 
 - the Grid, its five layers, and **collision masks composed from layers**
-  ([`engine.md`](../specs/engine.md) 3.4.1) — not a per-layer occupancy rule;
+  ([`engine.md`](../../system-design/grid-engine.md) 3.4.1) — not a per-layer occupancy rule;
 - placement with anchor, footprint, and facing; multi-tile movers testing their **whole footprint**
   against their mask; facing derived from movement or target, and read by no rule;
 - eight-way movement, uniform step cost, Chebyshev distance;
-- the integer movement credit of [`engine.md`](../specs/engine.md) 4.2, including the cap and the
+- the integer movement credit of [`engine.md`](../../system-design/grid-engine.md) 4.2, including the cap and the
   keep-credit-when-blocked rule;
-- the tick order of [`engine.md`](../specs/engine.md) 4.3, with economy and production as **empty phases that
+- the tick order of [`engine.md`](../../system-design/grid-engine.md) 4.3, with economy and production as **empty phases that
   exist and do nothing** — the slot matters, the content does not;
 - target selection: nearest enemy by Chebyshev distance across every hostile layer, ties broken by
   entity id. That is the whole scoring function, and resisting the urge to improve it is part of the
@@ -386,7 +386,7 @@ filtering, the Build Phase, selection, inspection, scrolling.
 ### 3.8 The view
 
 The smallest thing that shows a Pulse honestly. It is the real presentation stack from
-[`engine.md`](../specs/engine.md) Section 9, just barely populated — not a debug printer that will be thrown
+[`engine.md`](../../system-design/grid-engine.md) Section 9, just barely populated — not a debug printer that will be thrown
 away.
 
 - `ReadonlyCellFrame`, roles rather than colours, and the band compositor with the Grid layers mapped
@@ -397,7 +397,7 @@ away.
 - 12 logical ticks per second, 30 frames per second;
 - `snapshotAt(timeMs, capability, tileWidth)` is pure — same arguments, same frame;
 - controls: pause, resume, step one frame, step one tick, speed, restart, quit;
-- **the resize gate**, because [`engine.md`](../specs/engine.md) 9.6 makes it a RULE and a terminal is a thing
+- **the resize gate**, because [`engine.md`](../../system-design/grid-engine.md) 9.6 makes it a RULE and a terminal is a thing
   people drag: below the composition size, show the gate and freeze presentation time; resizing back
   resumes **from the same presentation time**. Scrolling stays out of scope — the Grid fits — so this
   is the gate and nothing more;
@@ -438,7 +438,7 @@ still for the gate — that is a REVISE with the criterion named, not a re-plan.
 
 **Rules**
 
-- movement credit reproduces the cadence table in [`engine.md`](../specs/engine.md) 4.1 exactly, at every rate;
+- movement credit reproduces the cadence table in [`engine.md`](../../system-design/grid-engine.md) 4.1 exactly, at every rate;
 - a blocked actor keeps its credit and steps the tick the tile frees; credit never exceeds one step;
 - two equal-speed actors that kill each other on the same tick **both die**;
 - a named scenario file exercises each of: melee kill, ranged kill, mutual kill, worker flight,
@@ -477,12 +477,12 @@ documentation at the same time.
 - [ ] `./scripts/check-repository.sh` passes;
 - [ ] install, test, and run commands recorded verbatim in the gate report and promoted into
       `DEVELOPMENT.md`;
-- [ ] `evidence/report.md` ends with **PASS / REVISE / STOP / BLOCKED**;
+- [ ] `docs/history/reports/2026-08-21-pulse-playground.md` ends with **PASS / REVISE / STOP / BLOCKED**;
 - [ ] Mario has watched a mirror skirmish run;
 - [ ] **Mario has watched one in monochrome and could follow it** — who moved, who shot whom, who
       died. This is a human check on purpose: legibility is an experiential claim, and governance
       Section 2 forbids treating an automated test as proof of one;
-- [ ] new questions are rows in [`open-questions.md`](../specs/open-questions.md), each with a recommendation.
+- [ ] new questions are rows in [`open-questions.md`](../open-questions.md), each with a recommendation.
 
 Then stop. Gate 1B is where it gets to look good.
 
@@ -502,7 +502,7 @@ truecolor, and an optional Unicode glyph pack. Selectable at runtime and snapsho
 other. Monochrome is the floor, not the degraded mode.
 
 **The effect system.** The pure `EffectRecipe` contract, the cosmetic random stream, and the ten
-effects of [`ascii-effects.md`](../specs/ascii-effects.md), each in all three required forms — full,
+effects of [`ascii-effects.md`](../../system-design/effects.md), each in all three required forms — full,
 reduced-motion, monochrome.
 
 Author them in order of diminishing returns: `fx.move.trail`, `fx.ranged.telegraph`,
@@ -557,11 +557,11 @@ Milestone 1 passes when both gates are accepted. Durable outputs — and note th
 - a pinned backend behind the `TerminalBackend` interface;
 - a composition that works at 80 × 24 in monochrome;
 - an effect vocabulary earned from watching people watch it;
-- an answer to Q9 in [`open-questions.md`](../specs/open-questions.md), plus any new questions the gates
+- an answer to Q9 in [`open-questions.md`](../open-questions.md), plus any new questions the gates
   raised, each registered with a recommendation. **Not Q7** — workers-carry-versus-produce-in-place
   needs an economy, and this milestone deliberately has none;
 - the confirmed or corrected 12 Hz hypothesis and movement-credit rules, promoted into
-  [`engine.md`](../specs/engine.md) Section 4 as RULE;
+  [`engine.md`](../../system-design/grid-engine.md) Section 4 as RULE;
 - explicit authorization — or refusal — to begin the Build Phase.
 
 ## 7. Working notes from this session — personal, not canon
@@ -595,7 +595,7 @@ the old name, not just the file the change happened to touch.
 
 **Most of what this session produced is words, not capability, and that is the correct shape of it —
 but it is worth saying plainly.** Section 11.1's scaling assessment, Q20, and
-[`replay-format.md`](../specs/replay-format.md) are design, not code; the only behavior changes this session
+[`replay-format.md`](../../system-design/replay-format.md) are design, not code; the only behavior changes this session
 made were two hash-neutral optimizations and one new load-time validation. That is exactly what "we
 don't have to implement everything now" asked for, but a reader skimming the diff stats later should
 not mistake a lot of careful prose for a lot of shipped simulation.

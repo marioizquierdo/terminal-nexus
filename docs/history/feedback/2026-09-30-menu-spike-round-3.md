@@ -71,7 +71,7 @@ every colour depth and in monochrome. Clicking the bar works as before.
 within 300 ms — so taps at a slow double-tap pace stay at 2; his words could also mean three taps at any
 pace within 400 ms, which is one line to change.
 
-**Scheduled:** a dedicated session to polish navigation again, as he asked (`docs/next-steps.md`,
+**Scheduled:** a dedicated session to polish navigation again, as he asked (`docs/milestones/next-steps.md`,
 "Polish navigation in a session of its own": the numbers that are first guesses, what to measure in his
 iTerm2, and what is left).
 

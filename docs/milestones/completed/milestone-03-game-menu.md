@@ -9,18 +9,18 @@
 **License:** Apache-2.0
 
 > **Start simple, with the minimum.** Mario's own words. This is the first time anything under the
-> name `terminal-nexus` actually launches — [`../specs/engine.md`](../specs/engine.md) Section 11
+> name `terminal-nexus` actually launches — [`docs/system-design/grid-engine.md`](../../system-design/grid-engine.md) Section 11
 > already names the split: "`grid` is the editor and replay tool, not the game; a future
 > `terminal-nexus` executable is what launches a campaign built on it." This milestone is that
 > executable's first real screen, and nothing more than that.
 
-> **Gate 3A: BUILT, 2026-09-13** — [`../evidence/gate-3a-report.md`](../evidence/gate-3a-report.md)
+> **Gate 3A: BUILT, 2026-09-13** — [`docs/history/reports/2026-09-13-menu.md`](../../history/reports/2026-09-13-menu.md)
 > concludes PASS on every automated check it set for itself; owner viewing is outstanding (the same
 > "built, not yet accepted" state Milestone 1's own gates passed through). `bin/terminal-nexus.ts`
 > launches a real top-level menu on the existing terminal stack; the menu-list shape, the keyboard and
 > mouse adapters, and the driver all live in `src/menu/`; the shared disposer is now
 > `src/cli/lifecycle.ts`, used by `grid watch` and this menu alike, not reinvented. Real-terminal
-> evidence (`evidence/screenshots/menu-*.png`, `scripts/capture-menu-screenshot.mjs`) caught and fixed
+> evidence (`docs/screenshots/menu-*.png`, `scripts/capture-menu-screenshot.mjs`) caught and fixed
 > a genuine bug no fake-stdin test had ever exercised: `keysFromChunk` (`src/view/playback.ts`) treated
 > *any* number of escape sequences arriving in one stdin chunk as a single key, which silently dropped
 > the second of two quick arrow presses. Fixed to split every complete sequence on its own, with
@@ -28,7 +28,7 @@
 > to anything. **3B and 3C are next**, in the build order this file's own Section 1.1 already gives —
 > not authorized by this note, only unblocked by it.
 
-> **Gate 3B: BUILT, 2026-09-18** — [`../evidence/gate-3b-report.md`](../evidence/gate-3b-report.md)
+> **Gate 3B: BUILT, 2026-09-18** — [`docs/history/reports/2026-09-21-settings-screen.md`](../../history/reports/2026-09-21-settings-screen.md)
 > concludes PASS on every automated check it set for itself; owner viewing is outstanding, the same
 > "built, not yet accepted" state Gate 3A passed through. Settings is now a real second screen, reached
 > from the top-level menu by its own hotkey: four rows — colour depth, background, symbols, reduced
@@ -47,7 +47,7 @@
 > keystroke. **3C is next**, in the build order this file's own Section 1.1 already gives — not
 > authorized by this note, only unblocked by it.
 
-> **Gate 3C: BUILT, 2026-09-21** — [`../evidence/gate-3c-report.md`](../evidence/gate-3c-report.md)
+> **Gate 3C: BUILT, 2026-09-21** — [`docs/history/reports/2026-09-21-mode-select.md`](../../history/reports/2026-09-21-mode-select.md)
 > concludes PASS on every automated check it set for itself; owner viewing is outstanding, the same
 > "built, not yet accepted" state Gates 3A and 3B passed through. This is the last gate the milestone
 > names. Neither Milestone 4 nor Milestone 11 is built yet, so Campaign and Challenge each say so in
@@ -67,7 +67,7 @@
 > game menu is done: `terminal-nexus` launches, the four top-level options behave, Settings is real
 > and remembered between runs, and Campaign and Challenge are each honest about the milestone that
 > will fill them in. Nothing in this file is open work for a new session. Milestone 5 — Build Phase
-> is now the current milestone, at its own gate 5A; [`README.md`](README.md)'s table is the authority
+> is now the current milestone, at its own gate 5A; [`README.md`](../README.md)'s table is the authority
 > for that, as always.
 
 ## 1. Question
@@ -75,21 +75,21 @@
 Can a player launch `terminal-nexus` and navigate a top-level menu — **Campaign, Challenge,
 Settings, Exit** — built on the same terminal stack `grid` already proved, rather than a second
 rendering system invented for menus? (Canon 2.11 renamed the options: the two single-player modes of
-[`../specs/game-modes.md`](../specs/game-modes.md) are the menu, and "Load Game" lives inside
+[`docs/game-design/game-modes.md`](../../game-design/game-modes.md) are the menu, and "Load Game" lives inside
 Campaign once there is anything to load.)
 
 ### 1.1 Gates
 
 - **3A — The menu and the three adapters. BUILT**, see the note above and
-  [`../evidence/gate-3a-report.md`](../evidence/gate-3a-report.md). `bin/terminal-nexus.ts`, the list
+  [`docs/history/reports/2026-09-13-menu.md`](../../history/reports/2026-09-13-menu.md). `bin/terminal-nexus.ts`, the list
   shape with displayed hotkeys, the keyboard and mouse adapters, the driver, and the shared disposer —
   with the hotkey/arrow/click equivalence test. The smallest possible screen that exercises the whole
-  input model of [`../specs/engine.md`](../specs/engine.md) 9.7.
+  input model of [`docs/system-design/grid-engine.md`](../../system-design/grid-engine.md) 9.7.
 - **3B — Settings. BUILT**, see the note above and
-  [`../evidence/gate-3b-report.md`](../evidence/gate-3b-report.md). Capability tier, theme, glyph
+  [`docs/history/reports/2026-09-21-settings-screen.md`](../../history/reports/2026-09-21-settings-screen.md). Capability tier, theme, glyph
   pack, and reduced motion as a menu, each cycling in place and persisted to a small settings file.
 - **3C — Mode select and honest handoffs. BUILT**, see the note above and
-  [`../evidence/gate-3c-report.md`](../evidence/gate-3c-report.md). Campaign hands off to its own
+  [`docs/history/reports/2026-09-21-mode-select.md`](../../history/reports/2026-09-21-mode-select.md). Campaign hands off to its own
   placeholder screen since Milestone 4 isn't built yet; Challenge shows dimmed on the top-level menu,
   its own label naming Milestone 11; nothing is silently broken.
 
@@ -101,7 +101,7 @@ Campaign once there is anything to load.)
 - **A menu is its own small, reusable shape**: a vertical list of options, each showing its hotkey
   before its label (`[1] Start New Game`), selected by that key, by up/down and Enter, or by a click
   — all three producing the same named command, per
-  [`../specs/engine.md`](../specs/engine.md) Section 9.7 (canon 2.10: "a hotkey that is not displayed
+  [`docs/system-design/grid-engine.md`](../../system-design/grid-engine.md) Section 9.7 (canon 2.10: "a hotkey that is not displayed
   does not exist"). Rendered through the existing cell frame so monochrome, every colour tier, and
   reduced motion all already work without new accessibility code.
 - **The three input adapters, built here at their smallest.** This is the first screen with a
@@ -118,7 +118,7 @@ Campaign once there is anything to load.)
   Milestone 4's campaign menu once Vasse's mission 1 is complete — nothing for this milestone to
   build.
   Loading a campaign in progress lives behind this option, and depends on there being a save to load.
-  There is no real save/progression system yet (`../specs/open-questions.md` Q31 recommends a flat,
+  There is no real save/progression system yet (`docs/milestones/open-questions.md` Q31 recommends a flat,
   checked-in unlock list for Level 1, not a save format) — until one exists, say so plainly rather
   than pretend. Do not build a save system to make this feel complete; that is its own future
   decision, not this milestone's.
@@ -166,10 +166,10 @@ Mario's own acceptance before it counts as done, the same way Milestone 1's gate
       through the driver;
 - [x] the disposer leaves mouse reporting off on every exit path, alongside raw mode;
 - [x] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED** —
-      [`../evidence/gate-3a-report.md`](../evidence/gate-3a-report.md) for 3A,
-      [`../evidence/gate-3b-report.md`](../evidence/gate-3b-report.md) for 3B,
-      [`../evidence/gate-3c-report.md`](../evidence/gate-3c-report.md) for 3C;
+      [`docs/history/reports/2026-09-13-menu.md`](../../history/reports/2026-09-13-menu.md) for 3A,
+      [`docs/history/reports/2026-09-21-settings-screen.md`](../../history/reports/2026-09-21-settings-screen.md) for 3B,
+      [`docs/history/reports/2026-09-21-mode-select.md`](../../history/reports/2026-09-21-mode-select.md) for 3C;
 - [x] `./scripts/check-repository.sh` passes;
-- [x] new questions this raises are rows in [`../specs/open-questions.md`](../specs/open-questions.md)
+- [x] new questions this raises are rows in [`docs/milestones/open-questions.md`](../open-questions.md)
       — none needed registering for any of the three gates; see each gate report's own Section 6 for
       why.

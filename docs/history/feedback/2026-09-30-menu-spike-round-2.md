@@ -205,7 +205,7 @@ only a few rows and no clock of its own to time a held key by.
 > patterns, please take note on the ui design doc, and make sure to keep polishing and improving the ui
 > design doc so it becomes easier and easier to develop new UI.
 
-**Built.** `docs/ui-patterns.md` rewritten around its patterns rather than its history: how to use it
+**Built.** `docs/system-design/ui-patterns.md` rewritten around its patterns rather than its history: how to use it
 and a checklist for a new screen first, then one section per pattern — the three worlds, focus and
 modes, back and cancel, lists, menus and rows, popups, cards, hand-offs, the bottom line, colour and
 see-through styles, animation timing, Experiments and tuned values — with this round's new patterns in

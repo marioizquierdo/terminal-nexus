@@ -92,5 +92,5 @@ skipped quietly. When a constant no longer needs tuning it can later move next t
 
 > Then, give me a prompt to copy-paste into a new session to start working on the next milestone :)
 
-**Built.** The prompt is in `docs/next-steps.md` section 2, and in the reply: the next step is gate 6B,
+**Built.** The prompt is in `docs/milestones/next-steps.md` section 2, and in the reply: the next step is gate 6B,
 the loop back into the next Build Phase (Milestone 6 has three steps — 6A, 6B, 6C — before Milestone 7).

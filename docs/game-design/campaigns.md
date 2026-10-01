@@ -1,7 +1,7 @@
 # Terminal Nexus — campaigns
 
 **Document role:** Single-player structure, mission definitions, progression, cutscenes, and initial narrative direction
-**Status:** Canonical direction; PERIMETER (Mission 1) is in active implementation across `milestones/`
+**Status:** Canonical direction; PERIMETER (Mission 1) is in active implementation across `docs/milestones/`
 **Canon version:** 2.30
 **Updated:** 2026-09-12
 **License:** Narrative material is CC BY-SA 4.0; technical schemas are Apache-2.0
@@ -13,7 +13,7 @@ presentation, deterministic Nexus Pulses, base construction, and a two-faction m
 first — written when the roadmap was horizontal, one whole system at a time. Mario redirected the
 roadmap directly: build the campaign one level at a time, and let each level pull in exactly the
 systems it needs rather than waiting for all of them.
-[`../milestones/README.md`](../milestones/README.md)'s ten-milestone sequence is PERIMETER (Mission 1,
+[`docs/milestones/README.md`](../milestones/README.md)'s ten-milestone sequence is PERIMETER (Mission 1,
 Section 4.2 below), in implementation now, using the existing disposable Citizen and Ravel fixture
 content rather than a real Commander Army roster — `AGENTS.md` Section 2's ban on authoring the full
 Commander Army before Milestone 12 is unchanged by this (Milestone 8 of that sequence draws the exact
@@ -92,7 +92,7 @@ a string is something only a human can.
 just one pulse, and have a way to declare 'triggers' and 'actions' same as the original StarCraft
 editor." A mission is **a sequence of Build Phase / Nexus Pulse cycles** — as many as its design
 wants — and **triggers** decide what happens during and between them. The engine's own loop already
-alternates without limit ([`engine.md`](engine.md) Section 5); this section is how a mission drives
+alternates without limit ([`engine.md`](../system-design/grid-engine.md) Section 5); this section is how a mission drives
 it.
 
 **Mission time.** A simulation moment is addressed as `{ pulse, tick }`. Phase boundaries are
@@ -115,7 +115,7 @@ Actions come in **two bands, and the band is the most important thing on this pa
 | **Simulation** | `spawn` (units at a region, with an initial order), `order` (a group advances, holds, or withdraws toward a region), `commitPlan` (the scripted opponent's Build Phase plan for a given pulse), `objective` (set or change one), `win`, `lose`, `endPulse`, `startBuild`, `reveal` | inside the kernel, as scripted intents at the tick the condition holds, validated like any player command, emitted as ordinary events | part of the hashed inputs — a replay re-derives them from mission, seed, and plans |
 | **Presentation** | `focus` (camera to an entity or a tile, through the ordinary scroll), `card` (a character's portrait card), `say` (speaker and line, advanced by the player or a timeout), `bark`, `effect`, `pause` / `resume` | in presentation; they never write state | re-derived from the event stream and the trigger list; skipping or replaying them changes nothing |
 
-The two bands keep the three-worlds law ([`engine.md`](engine.md) Section 1) intact under scripting:
+The two bands keep the three-worlds law ([`engine.md`](../system-design/grid-engine.md) Section 1) intact under scripting:
 only the Pulse mutates state, and the presentation half of a trigger rides on the events the
 simulation half emits. A `spawn` at `{ pulse: 1, tick: 0 }` shows up in the log as a spawn event like
 any other; the `card` and `say` that introduce the spawned raid are drawn off that event, and a viewer
@@ -124,7 +124,7 @@ Grid**, because the state half ran whether or not the presentation half was watc
 
 **The vocabulary grows in code, not in missions.** When a mission needs a condition or action the
 vocabulary lacks, it is added as a typed kind with a named scenario, exactly the way a kernel rule
-is. A mission never contains a function. The narrow-hook door ([`engine.md`](engine.md) Section 8 —
+is. A mission never contains a function. The narrow-hook door ([`engine.md`](../system-design/grid-engine.md) Section 8 —
 read-only context in, intents out, validated by the kernel) is the escape hatch for a shape too odd
 for the vocabulary, and a hook used by two missions becomes a vocabulary entry. Whether this
 declarative model or a scripting API is the right *authored* surface is **Q39**; this section
@@ -195,7 +195,7 @@ existing ones. Milestone 6 decides that on the fixture it actually builds.
 ## 3. Teaching and progression
 
 **Before authoring anything in this document, read
-[`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 10.6.** Missions are where a canon grows
+[`terminal-nexus-lore.md`](lore.md) Section 10.6.** Missions are where a canon grows
 fastest and where over-authoring costs most: a new character here becomes a name to maintain forever,
 and a plot thread becomes something every later mission must carry. Complexity in Terminal Nexus grows
 through units and powers, not through story. A mission's fiction exists to make its *mechanic*
@@ -235,7 +235,7 @@ The five faction campaigns may eventually show parallel perspectives on one war 
 
 ### 4.1 The belief ramp
 
-Good campaigns teach cosmology from the chair: the player starts with something small and concrete — a machine that will not explain itself — and only much later understands they are inside something enormous. Terminal Nexus has an unusual instrument for this. The interface addresses the player as **Operator**, and what the Operator is belongs to the deliberate mysteries ([`terminal-nexus-lore.md`](terminal-nexus-lore.md) Sections 5.1 and 7). The campaign's job is to promote that title from a decoration the player ignores into a question they carry.
+Good campaigns teach cosmology from the chair: the player starts with something small and concrete — a machine that will not explain itself — and only much later understands they are inside something enormous. Terminal Nexus has an unusual instrument for this. The interface addresses the player as **Operator**, and what the Operator is belongs to the deliberate mysteries ([`terminal-nexus-lore.md`](lore.md) Sections 5.1 and 7). The campaign's job is to promote that title from a decoration the player ignores into a question they carry.
 
 Three rules govern the ramp:
 
@@ -437,7 +437,7 @@ they talk. Then spawn enemies, get them to move, and start a new pulse." An intr
 simulation:
 
 - **`focus`** — the camera moves to an entity or a tile, through the same cursor-driven scroll the
-  player uses ([`engine.md`](engine.md) Section 3.3). No second camera, no cinematic mode: the
+  player uses ([`engine.md`](../system-design/grid-engine.md) Section 3.3). No second camera, no cinematic mode: the
   viewer's eye is taken where the player's cursor could go.
 - **`card`** — a character's portrait card: a hand-authored ASCII tableau of the face, the name, the
   faction's glyph role, drawn in the side panel or as an overlay in the `chrome` band. The same card
@@ -472,7 +472,7 @@ Campaign tools should allow humans and agents to:
 - define missions as diffable text;
 - preview maps, starting states, unlocks, and cutscenes;
 - jump directly to a trigger or Nexus Pulse;
-- play a mission end to end through the driver ([`engine.md`](engine.md) Section 9.7) — the same
+- play a mission end to end through the driver ([`engine.md`](../system-design/grid-engine.md) Section 9.7) — the same
   command stream an agent uses to playtest, so a mission's script is checked by running it, not by
   reading it;
 - run opponent policies across seeds;

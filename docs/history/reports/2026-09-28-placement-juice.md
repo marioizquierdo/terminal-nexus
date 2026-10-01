@@ -11,7 +11,7 @@
 ## 1. Frame — written before coding
 
 - **Canon version:** 2.23 when the work started. The building session did not edit `specs/`,
-  `AGENTS.md`, `milestones/` or `docs/feedback/`; it proposed their text in Section 9, and the
+  `AGENTS.md`, `docs/milestones/` or `docs/history/feedback/`; it proposed their text in Section 9, and the
   orchestrating session applied it at canon 2.24 (the placement-frames note went into `engine.md`
   9.5, beside the effects, rather than 9.6).
 - **Milestone and gate:** Milestone 5 — Build Phase, gate 5I, placement juice (feedback F9).
@@ -105,7 +105,7 @@ node scripts/capture-spike-screenshots.mjs
 - **Evidence tooling** — `placementGif` and `placementSheet` in `scripts/capture-spike-screenshots.mjs`
   step `BuildAnimation` with a fake clock (like 5H's `slideGif`); the sheet puts a window of the Grid
   at seven instants side by side, readable on a phone without playing anything.
-- **Docs** — `docs/ui-patterns.md` Section 7b, `DEVELOPMENT.md`, and the playtest skill (new Debug
+- **Docs** — `docs/system-design/ui-patterns.md` Section 7b, `DEVELOPMENT.md`, and the playtest skill (new Debug
   Mode order, how to draw an instant of a placement).
 
 ## 4. Automated results
@@ -143,7 +143,7 @@ Measurements:
 | Build Phase frame, compose + truecolor encode, 104x32, three buildings animating, many sparks, rainbow | p50 3.5 ms, p95 6.4–8.1 ms (two runs) | `tests/build-placement.test.ts`, last test; `performance.now()` | 200 frames per run |
 | The live loop's frame interval | 16 ms | `FRAME_MS` | — |
 | Default placement run | 850 ms (450 frames + 400 glow) | `placementTiming` | — |
-| New GIFs | 181–194 KB each (budget ~1 MB) | `ls -la evidence/screenshots/build-place*` | 7 files |
+| New GIFs | 181–194 KB each (budget ~1 MB) | `ls -la docs/screenshots/build-place*` | 7 files |
 
 ## 5. Human observations
 

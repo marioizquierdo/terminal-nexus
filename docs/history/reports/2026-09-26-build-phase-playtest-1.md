@@ -112,7 +112,7 @@ node scripts/lib/key-echo.mjs      # what each key actually sends, in the termin
 | The same plan by keyboard, mouse and driver is the same state and the same frame | pass | `tests/build-spike.test.ts`, `tests/build-nexus.test.ts` (unchanged tests, still green) |
 | Every glyph one cell wide, both packs, three sizes | pass | "every glyph on the frame is one cell wide…" |
 
-Screenshots, regenerated through tmux (`evidence/screenshots/`): `spike-minimum`, `spike-maximum`,
+Screenshots, regenerated through tmux (`docs/screenshots/`): `spike-minimum`, `spike-maximum`,
 `spike-wide-tiles`, `spike-armed-preview`, `spike-illegal`, `spike-scrolled`, `spike-crater`,
 `spike-mouse-place`, `build-just-placed`, `build-spent-down`, `build-idle`, `spike-monochrome`,
 `spike-resize-gate`, `build-nexus-draft`, `build-nexus-confirm`, `build-nexus-committed`, and a new

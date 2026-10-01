@@ -5,7 +5,7 @@
 **Active gate:** 6B — The loop and the trigger runner's simulation band: back into the next Build Phase after Recall, until the mission's triggers end it.
 **Gate 6A is accepted** (2026-09-30): Mario played gate 6A and the menu spike with its follow-up (pull
 request 49), merged them, and gave his word that 6A is accepted and 6B is the Active gate. **Gate 6B is built and reported (PASS),
-awaiting Mario's playtest** (2026-09-30, `../evidence/gate-6b-report.md`). 6C waits for his word.
+awaiting Mario's playtest** (2026-09-30, `docs/history/reports/2026-09-30-round-loop-and-missions.md`). 6C waits for his word.
 **Depends on:** Milestone 5 (Build Phase produces what this Pulse resolves — accepted 2026-09-29)
 **Updated:** 2026-09-30
 **License:** Apache-2.0
@@ -17,7 +17,7 @@ awaiting Mario's playtest** (2026-09-30, `../evidence/gate-6b-report.md`). 6C wa
 > result. Gate 6A is that step and nothing more — no loop back into a second Build Phase, no trigger
 > runner, no automatic production (6B and 6C).
 
-> **Gate 6A is built, 2026-09-29** (`../evidence/gate-6a-report.md`, PASS; awaiting Mario's playtest).
+> **Gate 6A is built, 2026-09-29** (`docs/history/reports/2026-09-29-pulse-start-end-recall.md`, PASS; awaiting Mario's playtest).
 > `[s] Start Pulse` (the menu's last row), then Enter on the Battle Round 1 screen, starts the Nexus Pulse on the Build Phase's own screen: the plan he committed, plus a
 > placeholder crew and raid, becomes the kernel's opening state, the unmodified kernel resolves it, and
 > the Pulse plays with a running score, a feed of what is happening, pause, speed, step and watch-again.
@@ -29,7 +29,7 @@ awaiting Mario's playtest** (2026-09-30, `../evidence/gate-6b-report.md`). 6C wa
 > back until 6B builds the loop.
 
 > **Gate 6A, round 2 — the owner's look at the pull request, 2026-09-29**
-> ([`../docs/feedback/2026-09-29-pr48-pulse.md`](../docs/feedback/2026-09-29-pr48-pulse.md), F41-F46).
+> ([`docs/history/feedback/2026-09-29-pr48-pulse.md`](../history/feedback/2026-09-29-pr48-pulse.md), F41-F46).
 > Definition of done:
 >
 > - [x] the Build Phase menu advertises the action that finishes it: a boxed `[s] Start` button, clickable,
@@ -44,13 +44,13 @@ awaiting Mario's playtest** (2026-09-30, `../evidence/gate-6b-report.md`). 6C wa
 > - [x] the branch's changed code has been reviewed for simplification and the findings applied (F46).
 
 > **Gate 6A, round 3 — the owner's second look at the pull request, 2026-09-29**
-> ([`../docs/feedback/2026-09-29-pr48-round-3.md`](../docs/feedback/2026-09-29-pr48-round-3.md), F47-F51).
+> ([`docs/history/feedback/2026-09-29-pr48-round-3.md`](../history/feedback/2026-09-29-pr48-round-3.md), F47-F51).
 > Definition of done:
 >
 > - [x] `[s] Start Pulse` is a regular row at the bottom of the menu, reached by Up/Down and pressed by
 >       Enter like every other row, and by a click or `s` (F47);
 > - [x] the rule "a menu can always be walked with Up, Down and Enter; hotkeys and clicks are extras" is
->       in `docs/ui-patterns.md` (F48);
+>       in `docs/system-design/ui-patterns.md` (F48);
 > - [x] the start confirmation is a screen titled `Battle Round 1` whose text is "Activate Nexus. Collect
 >       Resources. Spawn Units." unless a mission supplies its own (F49);
 > - [x] its one row is `[s] Start`; Esc goes back and `n` is no longer a key (F50);
@@ -58,7 +58,7 @@ awaiting Mario's playtest** (2026-09-30, `../evidence/gate-6b-report.md`). 6C wa
 >       2026-09-30; built as the menu spike below, awaiting his playtest).
 
 > **The menu spike — the owner's reorganisation of the Build Phase menu, 2026-09-30**
-> ([`../docs/feedback/2026-09-30-menu-spike.md`](../docs/feedback/2026-09-30-menu-spike.md), F52-F60).
+> ([`docs/history/feedback/2026-09-30-menu-spike.md`](../history/feedback/2026-09-30-menu-spike.md), F52-F60).
 > Gate 6A's round 3 left this for a spike of its own (F51); it is Build Phase interface work, built on
 > its own pull request while 6A waits for his playtest, and it does not start 6B. Definition of done:
 >
@@ -75,11 +75,11 @@ awaiting Mario's playtest** (2026-09-30, `../evidence/gate-6b-report.md`). 6C wa
 > - [x] the bottom bar is one row: the last key's answer, else a contextual hint from one place in the
 >       code; no position readout (F59);
 > - [x] the game menu has `[c] Controls and hotkeys`, a scrolling page of keys and clicks (F60);
-> - [x] tests, canon, `docs/ui-patterns.md`, the gate report's section on it, pictures, and a pull
+> - [x] tests, canon, `docs/system-design/ui-patterns.md`, the gate report's section on it, pictures, and a pull
 >       request.
 
 > **The menu spike, round 2 — the owner's play of it, 2026-09-30**
-> ([`../docs/feedback/2026-09-30-menu-spike-round-2.md`](../docs/feedback/2026-09-30-menu-spike-round-2.md),
+> ([`docs/history/feedback/2026-09-30-menu-spike-round-2.md`](../history/feedback/2026-09-30-menu-spike-round-2.md),
 > F61-F76, with his settings export). Definition of done:
 >
 > - [x] the Left/Right flicker greys the row's words and leaves its background (F61);
@@ -97,7 +97,7 @@ awaiting Mario's playtest** (2026-09-30, `../evidence/gate-6b-report.md`). 6C wa
 >       (F62, F73);
 > - [x] every list stops at its ends, a held arrow ramps like the map cursor, Shift/PageUp/Home jump to
 >       the ends (F75);
-> - [x] `docs/ui-patterns.md` reorganised, and pointed to from `AGENTS.md` and `CLAUDE.md` (F74);
+> - [x] `docs/system-design/ui-patterns.md` reorganised, and pointed to from `AGENTS.md` and `CLAUDE.md` (F74);
 > - [x] his settings export is the default; the settled Experiments are gone into one table of tuned
 >       values; the focus arrow, the card animation, the hold window, the raid and your units remain (F76);
 > - [x] tests, canon, pictures, the playable page and the pull request — and, at his request the same
@@ -105,7 +105,7 @@ awaiting Mario's playtest** (2026-09-30, `../evidence/gate-6b-report.md`). 6C wa
 >       view split by concept, the tests grouped by concept.
 
 > **The menu spike, round 3 — the owner's play of round 2 and the review, 2026-09-30**
-> ([`../docs/feedback/2026-09-30-menu-spike-round-3.md`](../docs/feedback/2026-09-30-menu-spike-round-3.md),
+> ([`docs/history/feedback/2026-09-30-menu-spike-round-3.md`](../history/feedback/2026-09-30-menu-spike-round-3.md),
 > F77-F81, with his third settings export). Definition of done:
 >
 > - [x] his export: the focus arrow (250 ms) and the card reveal (400 ms) settled into the tuned values,
@@ -118,11 +118,11 @@ awaiting Mario's playtest** (2026-09-30, `../evidence/gate-6b-report.md`). 6C wa
 >       answers, and always popped on exit (F79);
 > - [x] the Battle Round screen's border breathes, lighter and darker, with an Experiment for its length
 >       (F80);
-> - [x] a dedicated navigation session queued in `docs/next-steps.md` (F79);
+> - [x] a dedicated navigation session queued in `docs/milestones/next-steps.md` (F79);
 > - [x] tests, canon, pictures, the playable page and the pull request.
 
 > **The menu spike's follow-up — the owner's notes at its end, 2026-09-30**
-> ([`../docs/feedback/2026-09-30-menu-spike-followup.md`](../docs/feedback/2026-09-30-menu-spike-followup.md),
+> ([`docs/history/feedback/2026-09-30-menu-spike-followup.md`](../history/feedback/2026-09-30-menu-spike-followup.md),
 > F82-F86, on the same pull request). Definition of done:
 >
 > - [x] every popup's border breathes gently; the Battle Round screen opens with a double flash of wider
@@ -148,7 +148,7 @@ awaiting Mario's playtest** (2026-09-30, `../evidence/gate-6b-report.md`). 6C wa
 > is coming, and incoming units should be able to show their intention — the start of how the Campaign's
 > scripted opponent is designed.
 
-> **Gate 6B is built, 2026-09-30** (`../evidence/gate-6b-report.md`, PASS; awaiting Mario's playtest).
+> **Gate 6B is built, 2026-09-30** (`docs/history/reports/2026-09-30-round-loop-and-missions.md`, PASS; awaiting Mario's playtest).
 > The screen plays PERIMETER: three rounds, the raid in three waves, won by holding the Nexus to the end
 > of round 3. After a round's result, `[enter] Next round` opens the next Build Phase on what the last one
 > left — the buildings standing, the survivors home, the credits not spent — with the next wave shown
@@ -165,9 +165,9 @@ awaiting Mario's playtest** (2026-09-30, `../evidence/gate-6b-report.md`). 6C wa
 > - [x] PERIMETER's three waves as the fixture, a later arrival in rounds 2 and 3, the raid's own camp in
 >       round 3; the placeholder Pulse and its Raid and Your units Experiments deleted;
 > - [x] Q36 resolved (a mission's goal read above the kernel's unchanged victory check);
-> - [x] the Campaign's scripted opponent thought through, at the owner's request (`../docs/scripted-opponent.md`);
+> - [x] the Campaign's scripted opponent thought through, at the owner's request (`docs/game-design/scripted-opponent.md`);
 > - [x] Experiments for what he should feel: Next round (key / auto) and Incoming wave (shown / hidden);
-> - [x] tests, pictures, `docs/ui-patterns.md`, the gate report and a pull request.
+> - [x] tests, pictures, `docs/system-design/ui-patterns.md`, the gate report and a pull request.
 
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
 > how the Pulse resolves — that stays the deterministic kernel, unmodified. What is new is the
@@ -180,19 +180,19 @@ Can a player explicitly start the Nexus Pulse from a completed Build Phase, watc
 kernel resolve it, and see a clear, legible ending — battle stopping, survivors heading back, Recall
 completing — regardless of whether they won, lost, or reached the mission's own tick limit — **and
 then land in the next Build Phase**, since a mission is several of these cycles
-([`../specs/campaigns.md`](../specs/campaigns.md) Section 2.1, canon 2.10; PERIMETER is proposed as
-three, [`milestone-02-campaign-design.md`](milestone-02-campaign-design.md) Section 4.4)?
+([`docs/game-design/campaigns.md`](../game-design/campaigns.md) Section 2.1, canon 2.10; PERIMETER is proposed as
+three, [`milestone-02-campaign-design.md`](completed/milestone-02-campaign-design.md) Section 4.4)?
 
 ## 2. What gets built
 
 - **"Start Nexus Pulse"** is an explicit player action, not automatic — the moment Build Phase's
   hidden plans reveal and become operational
-  ([`../specs/engine.md`](../specs/engine.md) Section 5, already RULE, unbuilt as a real UI trigger).
+  ([`docs/system-design/grid-engine.md`](../system-design/grid-engine.md) Section 5, already RULE, unbuilt as a real UI trigger).
 - **Activation and movement** reuse the existing deterministic kernel exactly as Milestone 1 shipped
   it, running against whatever Milestone 5's Build Phase produced and Milestone 2's scripted trigger
   list for the raid. No kernel change is expected here; if one turns out to be needed, that is a
   finding for this milestone's own gate report, not an assumption going in.
-- **Recall, confirmed** ([`../specs/open-questions.md`](../specs/open-questions.md) Q29, answered by
+- **Recall, confirmed** ([`docs/milestones/open-questions.md`](open-questions.md) Q29, answered by
   this pivot): at Pulse end, survivors regroup near home producers — already RULE
   (`engine.md` Section 5), already correct, unbuilt as a presentation beat. The state change is
   instant, per the existing rule; a short regroup animation on top of it is presentation only,
@@ -208,14 +208,14 @@ three, [`milestone-02-campaign-design.md`](milestone-02-campaign-design.md) Sect
   `spawn` and `order` for the waves, `commitPlan` for the raid's own later Pulses, `win` on the final
   `pulse.end` — as data validated at load time, under Q39's recommendation. Conditions are evaluated
   on state and events only. Milestone 9 adds the presentation band on top.
-  [`../specs/campaigns.md`](../specs/campaigns.md) Section 2.2 has the `ObjectiveDefinition` shape
+  [`docs/game-design/campaigns.md`](../game-design/campaigns.md) Section 2.2 has the `ObjectiveDefinition` shape
   and the architecture this milestone builds to: the kernel's own victory check (`engine.md` Section
   4.3) is unchanged and stays the fallback for Skirmish and Challenge battles with no scripted
   objective; a mission's own goal is resolved entirely here, one level up, by its own `win`/`lose`
   trigger.
 - **Automatic production, minimally, if Milestone 2's finding 4.6.2 stands**: the fixture barracks
   producing its recipe on an interval during the Pulse, pulled from
-  [`../specs/backlog-pulse-completion.md`](../specs/backlog-pulse-completion.md) — otherwise a
+  [`docs/milestones/backlog.md`](backlog.md) — otherwise a
   three-Pulse mission has nothing new to show in its second and third. Mario decides in Milestone 2;
   named here so the dependency is visible.
 
@@ -286,7 +286,7 @@ not a win for either side. A mission whose whole objective is "survive the raid"
 (a small, explicit flag content or the scenario file can set — "defender wins on time-out" — rather
 than a bespoke new condition per mission) **and confirm on PERIMETER's own fixture whether the plain
 tick-limit draw already reads correctly before building anything new.** Register as Q36 in
-[`../specs/open-questions.md`](../specs/open-questions.md); this is a RULE-level change
+[`docs/milestones/open-questions.md`](open-questions.md); this is a RULE-level change
 (`engine.md` Section 5's own authority marker), so it needs a named scenario and the same kernel-change
 discipline every prior rule change in this project has followed — determinism preserved, no new
 `Math.random`, a test named for the rule.

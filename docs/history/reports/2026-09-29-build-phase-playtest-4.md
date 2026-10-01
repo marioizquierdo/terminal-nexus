@@ -12,7 +12,7 @@
 
 - **Canon version:** 2.25 when the work started; 2.26 at the end.
 - **Milestone and gate:** Milestone 5 — Build Phase, gate 5K, the owner's fourth round of feedback
-  (`docs/feedback/2026-09-29-pr46-round-4.md`, F28-F40) and his pasted settings export.
+  (`docs/history/feedback/2026-09-29-pr46-round-4.md`, F28-F40) and his pasted settings export.
 - **Question this gate answers:** with his exported numbers as the defaults and his map-edge choice as
   the rule, does the Build Phase now behave the way he described it — a building armed where he is
   looking, focus that goes back where it came from, one "active" look for every menu row, a Settings
@@ -50,7 +50,7 @@ npm run typecheck && npm test && npm run test:bun && ./scripts/check-repository.
 ./bin/terminal-nexus.ts --spike
 ./bin/terminal-nexus.ts --spike --keys "n 1 1 Enter"           # open in a state
 node scripts/probe-key-release.mjs                              # does this terminal report releases?
-node scripts/capture-spike-screenshots.mjs                      # regenerate evidence/screenshots
+node scripts/capture-spike-screenshots.mjs                      # regenerate docs/screenshots
 ```
 
 ## 3. What was built

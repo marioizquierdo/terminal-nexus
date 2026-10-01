@@ -1,4 +1,4 @@
-// A building being placed holds the menu (docs/ui-patterns.md, "A selection holds the menu"): it stays
+// A building being placed holds the menu (docs/system-design/ui-patterns.md, "A selection holds the menu"): it stays
 // the selection until it is placed or cancelled — another building's key, Explore Map and Start Pulse
 // are refused, with the header flickering and the bottom line naming the ways out; its own key cancels it
 // as Esc does; and popups still open over it and hand it back, still armed. Explore Map holds nothing.

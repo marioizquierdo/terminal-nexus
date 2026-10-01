@@ -12,7 +12,7 @@
 
 - **Canon version:** 2.24 when the work started; 2.25 at the end.
 - **Milestone and gate:** Milestone 5 — Build Phase, gate 5J, the owner's third round of feedback
-  (`docs/feedback/2026-09-28-pr46-playtest.md`, F18-F27), from his play of the 5G-5I browser page.
+  (`docs/history/feedback/2026-09-28-pr46-playtest.md`, F18-F27), from his play of the 5G-5I browser page.
 - **Question this gate answers:** with everything he asked for built, does the Build Phase become
   something he can tune himself — Settings with Experiments he can flip and export back to us — and
   do moving, clicking and exploring feel right by keyboard and mouse alike?

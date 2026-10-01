@@ -59,7 +59,7 @@ test("Down reaches Start Pulse, and Enter, Enter starts the Pulse — no hotkey 
   assert.ok(session.build.pulse !== null)
 })
 
-test("the rule: every entry of the menu is reached by Down and done by Enter alone (docs/ui-patterns.md section 4)", () => {
+test("the rule: every entry of the menu is reached by Down and done by Enter alone (docs/system-design/ui-patterns.md section 4)", () => {
   const entries = menuEntries(ready().context)
   entries.forEach((entry, index) => {
     const session = ready()

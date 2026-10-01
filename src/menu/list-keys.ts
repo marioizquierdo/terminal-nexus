@@ -8,7 +8,7 @@
 // cannot drift apart.
 //
 // **The spellings are measured** (`scripts/probe-modified-keys.mjs`; the table is in
-// `evidence/gate-5a-report.md`). Shift+Arrow is neither universal nor single-valued:
+// `docs/history/reports/2026-09-21-scrolling-and-placement.md`). Shift+Arrow is neither universal nor single-valued:
 //
 //   - xterm and tmux send `ESC [ 1 ; 2 A` and its siblings;
 //   - rxvt sends a shorter, unrelated form: `ESC [ a b c d`;

@@ -6,7 +6,7 @@
 **Updated:** 2026-09-09
 **License:** Apache-2.0
 
-> **Pulled forward from backlog, on purpose.** `../specs/backlog-pulse-completion.md` deferred a full
+> **Pulled forward from backlog, on purpose.** `docs/milestones/backlog.md` deferred a full
 > economy until some level actually needed one; this is that level. Scope stays narrow: enough worker
 > behaviour for PERIMETER's own small deposit, not the full economy backlog document still holds
 > (storage/warehouses, a second resource, target scoring for combat).
@@ -20,14 +20,14 @@ content, for the first time?
 ## 2. What gets built
 
 - **Worker production**: `unit.citizen.worker` becomes something the player can add to the construct
-  menu Milestone 5 already built (`../milestones/milestone-02-campaign-design.md` Section 4.2's
+  menu Milestone 5 already built (`docs/milestones/completed/milestone-02-campaign-design.md` Section 4.2's
   construct-menu list is amended here to include it — worker production is exactly what this
   milestone is about, and it did not need its own line item until this milestone made it concrete).
 - **Job assignment**: workers pick the closest available job by deterministic path distance
-  ([`../specs/engine.md`](../specs/engine.md) Section 6, GUIDANCE, unbuilt) — for PERIMETER, the only
+  ([`docs/system-design/grid-engine.md`](../system-design/grid-engine.md) Section 6, GUIDANCE, unbuilt) — for PERIMETER, the only
   job available is harvesting the mission's own deposit tile(s).
 - **Harvesting**: produce in place, continuously, no carrying bundles home
-  ([`../specs/open-questions.md`](../specs/open-questions.md) Q7's own recommendation, adopted here).
+  ([`docs/milestones/open-questions.md`](open-questions.md) Q7's own recommendation, adopted here).
   A deposit is finite and permanently depletes; up to five workers may share one (the tile itself plus
   its four orthogonal neighbours).
 - **What this milestone does *not* need from Q7**: the "stall when storage is full" half of Q7's
@@ -44,7 +44,7 @@ content, for the first time?
   because of a worker.
 - **7C — Income across battles.** Until this milestone, both modes run on a per-battle allotment
   (Mechabellum's rounds do, and it is enough for a run to play —
-  [`../specs/game-modes.md`](../specs/game-modes.md) Section 5). This gate decides how gathered
+  [`docs/game-design/game-modes.md`](../game-design/game-modes.md) Section 5). This gate decides how gathered
   resource and the allotment combine within a match, and records whether anything about it should
   persist between a run's battles (Q40's option C).
 

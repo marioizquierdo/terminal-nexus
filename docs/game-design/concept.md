@@ -60,7 +60,7 @@ mode knows which one it is serving.
 - **It plays at typing speed.** Every menu item shows its hotkey, every hotkey is also a click, and the whole game can be driven from a command stream — by a proficient player, by a mouse, or by an agent playtesting it.
 - **Faction identity is mechanical and symbolic.** Strategy, geometry, glyphs, motion, color, prose, portraits, and effects all express the same civilization.
 - **The simulation is deterministic.** A seed and complete committed plans reproduce the same outcome. Playback speed, animation frames, palette, and renderer never alter play.
-- **The architecture invites creation.** First-party maps, armies, campaigns, effects, and themes use inspectable definitions that may become a future modding surface. This is deliberate and it is why the foundation is being built so carefully: the game is designed for a world where players extend games **with their own agents** — missions, Commander Armies, cards, short stories — which is also how this project builds itself. Content is data with small named vocabularies, and the setting under-specifies on purpose, so there is room to add ([`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 10.6).
+- **The architecture invites creation.** First-party maps, armies, campaigns, effects, and themes use inspectable definitions that may become a future modding surface. This is deliberate and it is why the foundation is being built so carefully: the game is designed for a world where players extend games **with their own agents** — missions, Commander Armies, cards, short stories — which is also how this project builds itself. Content is data with small named vocabularies, and the setting under-specifies on purpose, so there is room to add ([`terminal-nexus-lore.md`](lore.md) Section 10.6).
 
 ## The fantasy
 
@@ -70,7 +70,7 @@ The civilizations controlling these machines cannot agree whether the network is
 
 The five long-term factions are Citizens, Ravels, Glitch, Feudals, and Alder. Initial integrated development begins with Citizens and Ravels.
 
-See [`terminal-nexus-lore.md`](terminal-nexus-lore.md) for the canonical universe and [`commander-armies.md`](commander-armies.md) for future playable rosters.
+See [`terminal-nexus-lore.md`](lore.md) for the canonical universe and [`commander-armies.md`](commander-armies.md) for future playable rosters.
 
 ## Product promise
 
@@ -95,7 +95,7 @@ Each question is worthless without the one before it. A battle that looks great 
 
 The Build Phase, base construction, economy, campaigns, packaging and remote delivery, public mod loading, multiplayer, sound, and model-driven opponents all remain gated behind those proofs.
 
-Start with the milestone marked CURRENT in [`../milestones/README.md`](../milestones/README.md) — Milestone 1, [Grid Battles](../milestones/milestone-01-grid-battles.md), is complete and accepted, and the campaign's first level is being built across the milestones after it. Before deciding anything the canon leaves open, check [`open-questions.md`](open-questions.md). For the visual direction these proofs are chasing, see [`../concept/README.md`](../concept/README.md).
+Start with the milestone marked CURRENT in [`docs/milestones/README.md`](../milestones/README.md) — Milestone 1, [Grid Battles](../milestones/completed/milestone-01-grid-battles.md), is complete and accepted, and the campaign's first level is being built across the docs/milestones after it. Before deciding anything the canon leaves open, check [`open-questions.md`](../milestones/open-questions.md). For the visual direction these proofs are chasing, see [`docs/game-design/concept-art/README.md`](concept-art/README.md).
 
 ## Design statement
 

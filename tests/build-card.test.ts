@@ -1,4 +1,4 @@
-// Cards and the card reveal (docs/ui-patterns.md, "Cards" and "Motion and transitions"). While something
+// Cards and the card reveal (docs/system-design/ui-patterns.md, "Cards" and "Motion and transitions"). While something
 // has the map's attention a card replaces the menu: Explore Map's describes what is under the cursor, a
 // building's the building being placed. Its header is the row that opened it, drawn active on the
 // panel's first line over a separator; its hotkey, Esc, `x` and a click on the panel go back; it carries

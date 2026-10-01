@@ -36,11 +36,11 @@ start using it as familiar.
   decide, rather than building the whole milestone at once. Milestone 1 was cut into Gate 1A and
   Gate 1B. Borrowed from "stage-gate"/"phase-gate," a real (if not universal) engineering term.
 - **Gate report** — the document that closes a gate: a filled-in copy of
-  [`../../../specs/templates/gate-report.md`](../../../specs/templates/gate-report.md) recording the
+  [`.github/pull_request_template.md`](../../../.github/pull_request_template.md) recording the
   question, exact commands, automated results, human observations kept separate from those, and one
   of four terminal decisions (PASS/REVISE/STOP/BLOCKED — see below).
 - **Governance** (in this context) — not open-source contribution governance, but specifically what
-  [`../../../specs/project-governance.md`](../../../specs/project-governance.md) is: a decision-rights
+  [`docs/game-design/decisions.md`](../../../docs/game-design/decisions.md) is: a decision-rights
   framework for a project that runs on semi-autonomous sessions between owner check-ins. It answers
   "what can a session just decide" and "what has to wait for Mario" in writing, so work doesn't
   either grind to a halt asking permission for everything or silently lock in a decision that was
@@ -48,7 +48,7 @@ start using it as familiar.
 
 ## Deciding alone versus asking
 
-[`project-governance.md`](../../../specs/project-governance.md) Section 2 draws the line. Within the
+[`project-governance.md`](../../../docs/game-design/decisions.md) Section 2 draws the line. Within the
 active gate, decide alone and move on:
 
 - reversible module boundaries, names, local data shapes, test organization;
@@ -76,7 +76,7 @@ irreversible architecture — and ask in the register below, never in a PR comme
 
 ## Registering an open question
 
-[`open-questions.md`](../../../specs/open-questions.md) Section 4 is the queue. A row needs: the
+[`open-questions.md`](../../../docs/milestones/open-questions.md) Section 4 is the queue. A row needs: the
 question, why it blocks (or doesn't — most rows block nothing before some future milestone), options
 with their costs, and **a mandatory recommendation** — `check-repository.sh` fails the build if an
 `OPEN` row has no `**Recommendation`. Shape:
@@ -113,7 +113,7 @@ Q17. It asked how to break a targeting tie when every enemy in a rank-deployed f
 same distance away. Nobody picked among its three options: Q15's unrelated four-way-movement fix
 changed the distance metric from Chebyshev (`max(|dx|,|dy|)`, which discards the axis a horizontal
 rank shares) to Manhattan (`|dx|+|dy|`, which never discards either axis), and that alone dissolved
-the tie. The close, in [`open-questions.md`](../../../specs/open-questions.md) Section 5: "**Resolved
+the tie. The close, in [`open-questions.md`](../../../docs/milestones/open-questions.md) Section 5: "**Resolved
 by an unrelated fix, not decided among its options**... Verified, not assumed:
 `citizen-mirror-skirmish.ts` (rank-deployed) now pairs each attacker with a distinct nearest opponent
 from tick 1, no stampede." The lesson: check whether a later change already answered an open row
@@ -153,14 +153,14 @@ question turns out mis-scoped rather than answered, close it `DROPPED` with the 
 ## Filling a gate report
 
 Every gate follows one loop
-([`project-governance.md`](../../../specs/project-governance.md) Section 3):
+([`project-governance.md`](../../../docs/game-design/decisions.md) Section 3):
 
 > **Question → smallest artifact → automated evidence → human observation → decision → canon
 > update**
 
-Copy [`../../../specs/templates/gate-report.md`](../../../specs/templates/gate-report.md) — do not
-edit the template in place — to `evidence/report.md` or `evidence/gate-<gate>-report.md` (Milestone 1
-used both: `evidence/report.md` for Gate 1A, `evidence/gate-1b-report.md` for Gate 1B). Fill Sections
+Copy [`.github/pull_request_template.md`](../../../.github/pull_request_template.md) — do not
+edit the template in place — to `docs/history/reports/2026-08-21-pulse-playground.md` or `evidence/gate-<gate>-report.md` (Milestone 1
+used both: `docs/history/reports/2026-08-21-pulse-playground.md` for Gate 1A, `docs/history/reports/2026-08-26-quality-and-effects.md` for Gate 1B). Fill Sections
 1–2 **before writing code**: question, smallest artifact, planned automated and human evidence,
 explicit exclusions, and stop conditions that would make you halt rather than push through — a report
 reconstructed from memory at the end quietly turns into a summary of whatever got built instead of an
@@ -174,7 +174,7 @@ skipped — an empty one usually means it wasn't filled in honestly, not that no
 - **PASS** — automated evidence and (when planned) human observation both hold. PASS does **not**
   mean the gate is accepted: Gate 1A's report concludes PASS while stating plainly that "the two
   human checks in its Section 3.10 remain unobserved, and nothing in canon claims them"
-  ([`project-governance.md`](../../../specs/project-governance.md) Section 5, ledger row for
+  ([`project-governance.md`](../../../docs/game-design/decisions.md) Section 5, ledger row for
   Milestone 1A). Automated PASS and owner acceptance are tracked separately on purpose.
 - **REVISE** — name the single comparator or change required and the criterion it must satisfy, then
   go around the loop narrowly rather than restart it. Gate 1B's report shows this happening for real,
@@ -197,7 +197,7 @@ answer is the intended outcome (`AGENTS.md` Section 2), not a shortfall.
 Ordered checklist (`AGENTS.md` Section 9, `project-governance.md` Section 4) — **nothing in a gate
 report's Section 9 "Canon impact" table applies until Mario accepts the gate**:
 
-1. update the [`project-governance.md`](../../../specs/project-governance.md) execution ledger (the
+1. update the [`project-governance.md`](../../../docs/game-design/decisions.md) execution ledger (the
    workstream row's `State`, `Basis`, `Next action`);
 2. add one concise progress-history entry (Section 6's dated table);
 3. promote only evidence-backed conclusions into the narrowest owning document — not the gate report
@@ -215,24 +215,24 @@ report's Section 9 "Canon impact" table applies until Mario accepts the gate**:
 Read the script (`scripts/check-repository.sh`) rather than assume; here is its current shape,
 section by section:
 
-1. **Required files exist** — every canonical `specs/*.md`, `concept/README.md`, `milestones/README.md` and
+1. **Required files exist** — every canonical `specs/*.md`, `docs/game-design/concept-art/README.md`, `docs/milestones/README.md` and
    every milestone tracker, `templates/gate-report.md`, plus `README.md`, `DEVELOPMENT.md`, `AGENTS.md`, `CLAUDE.md`,
    `CONTRIBUTING.md`, `LICENSE`, `LICENSE-CREATIVE`, `NOTICE`, the devcontainer config, and the CI
    workflow file.
 2. **Canon version agreement** — every document under `specs/` and `concept/` declares the same
-   `**Canon version:**` as `specs/README.md`; `AGENTS.md` must declare that same version too, because
+   `**Canon version:**` as `docs/README.md`; `AGENTS.md` must declare that same version too, because
    it restates canon invariants as a summary and would otherwise drift silently (this is the exact
    check `AGENTS.md`'s own header warns about).
-3. **Required metadata header** — every canon document (except `specs/README.md` itself) carries
+3. **Required metadata header** — every canon document (except `docs/README.md` itself) carries
    `Document role`, `Status`, `Canon version`, `Updated`, and `License`.
-4. **Exactly one CURRENT milestone** — exactly one `milestones/milestone-*.md` declares `**Status:**
+4. **Exactly one CURRENT milestone** — exactly one `docs/milestones/milestone-*.md` declares `**Status:**
    CURRENT`, and it must declare an `**Active gate:**`. The cross-check is against
-   `milestones/README.md`'s own table, which must mark that same file `CURRENT` and have exactly one
+   `docs/milestones/README.md`'s own table, which must mark that same file `CURRENT` and have exactly one
    `CURRENT` row — **not** against `project-governance.md`'s ledger, which is the slower-moving
    governance record. Keeping the ledger roughly in step is good practice; the table is what fails
    the build.
 5. **Open-question references resolve** — every `Q<n>` mentioned anywhere under `specs/`,
-   `concept/`, or `milestones/` must be defined as a `### Q<n>` heading in `open-questions.md`; every row whose
+   `concept/`, or `docs/milestones/` must be defined as a `### Q<n>` heading in `open-questions.md`; every row whose
    `**Status:**` is `OPEN` must contain `**Recommendation` somewhere in its body.
 6. **Authority markers** — only `RULE` and `GUIDANCE` may appear as authority markers; the retired
    markers `LAW` and `UNPROVEN` fail the build unless the line is marked `<!-- stale-ok -->`.
@@ -256,8 +256,8 @@ oriented correctly, not just that nothing is broken.
 
 ## RULE versus GUIDANCE
 
-Every section of [`engine.md`](../../../specs/engine.md) — and, where it matters, other canon
-documents — declares one of two authority markers (`specs/README.md`'s table):
+Every section of [`engine.md`](../../../docs/system-design/grid-engine.md) — and, where it matters, other canon
+documents — declares one of two authority markers (`docs/README.md`'s table):
 
 | Marker | Means | Licenses you to |
 | --- | --- | --- |
@@ -274,19 +274,19 @@ than because the active gate's Section 3 requires it, stop and check the marker.
 
 | Document | Owns |
 | --- | --- |
-| [`terminal-nexus-concept.md`](../../../specs/terminal-nexus-concept.md) | The one-page game definition: audience, match, promise, differentiators, current scope |
-| [`terminal-nexus-lore.md`](../../../specs/terminal-nexus-lore.md) | Universe, Prime Nexuses, Nexus Symbols, Ancients, Originals, faction identity, ASCII semiotics, voice |
-| [`engine.md`](../../../specs/engine.md) | The three worlds (state/Pulse/presentation), the Grid and its layers, logical time, determinism, events, content sketches, rendering, runtime direction — this is where RULE/GUIDANCE markers live |
-| [`ascii-effects.md`](../../../specs/ascii-effects.md) | The particle/effect system: the pure-function contract, starter vocabulary, craft rules |
-| [`replay-format.md`](../../../specs/replay-format.md) | The `.replay.json` design — schema, log levels, soundness. GUIDANCE, unbuilt; no milestone owns building it yet |
-| [`commander-armies.md`](../../../specs/commander-armies.md) | Playable Commander Army packages — Commander, units, structures, upgrades, Nexus powers. Rosters intentionally undefined until Milestone 12 |
-| [`campaigns.md`](../../../specs/campaigns.md) | Mission and campaign structure, teaching, the Citizen opening, cutscenes, opponent policies, authoring tools |
-| [`game-modes.md`](../../../specs/game-modes.md) | The single-player modes and their vocabulary — Campaign (first-time experience, canon) and Challenge (seeded runs with a draft between battles), the run's starting shape, content rules for both, and the reference games behind each claim |
-| `milestones/milestone-<n>-*.md` | The one narrow implementation contract — only the milestone marked **CURRENT** is authority, and only through its **Active gate** |
-| [`project-governance.md`](../../../specs/project-governance.md) | Canon maintenance protocol, bounded autonomy, the evidence loop, the execution ledger, locked product decisions, test/playtest strategy, deferred systems |
-| [`open-questions.md`](../../../specs/open-questions.md) | The durable queue of decisions genuinely waiting on Mario, each with a recommendation |
-| [`templates/gate-report.md`](../../../specs/templates/gate-report.md) | The fill-in template that closes a gate — copy it, never edit it in place |
-| [`specs/README.md`](../../../specs/README.md) | The canon index and reading order; the source of truth `check-repository.sh` diffs every other document's version against |
+| [`terminal-nexus-concept.md`](../../../docs/game-design/concept.md) | The one-page game definition: audience, match, promise, differentiators, current scope |
+| [`terminal-nexus-lore.md`](../../../docs/game-design/lore.md) | Universe, Prime Nexuses, Nexus Symbols, Ancients, Originals, faction identity, ASCII semiotics, voice |
+| [`engine.md`](../../../docs/system-design/grid-engine.md) | The three worlds (state/Pulse/presentation), the Grid and its layers, logical time, determinism, events, content sketches, rendering, runtime direction — this is where RULE/GUIDANCE markers live |
+| [`ascii-effects.md`](../../../docs/system-design/effects.md) | The particle/effect system: the pure-function contract, starter vocabulary, craft rules |
+| [`replay-format.md`](../../../docs/system-design/replay-format.md) | The `.replay.json` design — schema, log levels, soundness. GUIDANCE, unbuilt; no milestone owns building it yet |
+| [`commander-armies.md`](../../../docs/game-design/commander-armies.md) | Playable Commander Army packages — Commander, units, structures, upgrades, Nexus powers. Rosters intentionally undefined until Milestone 12 |
+| [`campaigns.md`](../../../docs/game-design/campaigns.md) | Mission and campaign structure, teaching, the Citizen opening, cutscenes, opponent policies, authoring tools |
+| [`game-modes.md`](../../../docs/game-design/game-modes.md) | The single-player modes and their vocabulary — Campaign (first-time experience, canon) and Challenge (seeded runs with a draft between battles), the run's starting shape, content rules for both, and the reference games behind each claim |
+| `docs/milestones/milestone-<n>-*.md` | The one narrow implementation contract — only the milestone marked **CURRENT** is authority, and only through its **Active gate** |
+| [`project-governance.md`](../../../docs/game-design/decisions.md) | Canon maintenance protocol, bounded autonomy, the evidence loop, the execution ledger, locked product decisions, test/playtest strategy, deferred systems |
+| [`open-questions.md`](../../../docs/milestones/open-questions.md) | The durable queue of decisions genuinely waiting on Mario, each with a recommendation |
+| [`templates/gate-report.md`](../../../.github/pull_request_template.md) | The fill-in template that closes a gate — copy it, never edit it in place |
+| [`docs/README.md`](../../../docs/README.md) | The canon index and reading order; the source of truth `check-repository.sh` diffs every other document's version against |
 | [`AGENTS.md`](../../../AGENTS.md) | The operating contract every session reads first — Section 4 is a summary of `engine.md`'s RULEs, not a second authority |
 
 When in doubt: lore facts go in the lore document, implementation contracts in the engine, playable
@@ -324,11 +324,11 @@ true now, not recording what was true once.
 
 - [`../../../AGENTS.md`](../../../AGENTS.md) — the full operating contract this skill is a companion
   to; Sections 2, 6, and 9 are what this skill expands.
-- [`../../../specs/project-governance.md`](../../../specs/project-governance.md) — canon authority,
+- [`docs/game-design/decisions.md`](../../../docs/game-design/decisions.md) — canon authority,
   the evidence loop, bounded autonomy, the execution ledger, locked decisions.
-- [`../../../specs/open-questions.md`](../../../specs/open-questions.md) — the live register; read
+- [`docs/milestones/open-questions.md`](../../../docs/milestones/open-questions.md) — the live register; read
   Section 4 before registering a new row, so you don't duplicate one.
-- [`../../../specs/templates/gate-report.md`](../../../specs/templates/gate-report.md) — copy this to
+- [`.github/pull_request_template.md`](../../../.github/pull_request_template.md) — copy this to
   close a gate.
 - [`../grid/SKILL.md`](../grid/SKILL.md) — running `grid` itself: scenarios, the report, determinism
   verification. What the gate-report evidence in this skill is usually evidence *of*.

@@ -1,7 +1,7 @@
 # Terminal Nexus — interface patterns
 
 **Document role:** The working guide to how every interactive screen looks and behaves
-**Status:** WORKING — built on the Build Phase; not canon until the owner accepts it and it is promoted into `specs/engine.md` Section 9
+**Status:** WORKING — built on the Build Phase; not canon until the owner accepts it and it is promoted into `docs/system-design/grid-engine.md` Section 9
 **Updated:** 2026-09-30 (gate 6B: the loop into the next round, what else is on the map, the incoming wave; earlier: rewritten by pattern rather than by history, F74; the screen as the menu spike's second round leaves it, F61-F76)
 **License:** Apache-2.0
 
@@ -16,7 +16,7 @@ For any agent or person about to build or change a screen, a menu, a popup, an e
   the next screen reuses it; use the names in code comments and pull requests too.
 - **Numbers live in the code, not here**: the table of tuned values and the Experiments list
   (`src/build/experiments.ts`). This document says what a number is for.
-- The canon's interface rules are `specs/engine.md` 3.3, 9.2 and 9.7 and `specs/ascii-effects.md` 1.2;
+- The canon's interface rules are `docs/system-design/grid-engine.md` 3.3, 9.2 and 9.7 and `docs/system-design/effects.md` 1.2;
   where they speak, they win. `scripts/playtest.mjs` (the `playtest` skill) presses the keys for you.
 
 ### Checklist for a new screen
@@ -91,7 +91,7 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
 ## 2. Keys and clicks
 
 - **Every action is a named command**; keyboard, mouse and a script are adapters onto one vocabulary
-  (`specs/engine.md` 9.7), and tests drive the real adapters with raw keys and clicks.
+  (`docs/system-design/grid-engine.md` 9.7), and tests drive the real adapters with raw keys and clicks.
 - **A click activates what it lands on**, from any focus: a building's row arms it, `[n] Nexus` opens its
   popup, `[e] Explore Map` opens it. What a row click starts comes back to the menu.
 - **A click can only choose what it could see**: while a card covers the menu, a click on the panel goes
@@ -411,7 +411,7 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 
 ## 13. Effects
 
-- **Four families** (`specs/ascii-effects.md` 1.2), each a pure function of absolute presentation time:
+- **Four families** (`docs/system-design/effects.md` 1.2), each a pure function of absolute presentation time:
   **animations** (an entity's own frames — the only family that may change its glyph), **particles**,
   **shading** (glyphless colour) and **tweens**. An animation's completion is scheduled data, never a
   callback.
@@ -421,7 +421,7 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
   sparks are dropped on a building's tiles.
 - **An effect never carries a cue alone**: the settled screen or the bottom line says it too. **Every
   effect owes three forms**, authored together — full, reduced motion (keep the cause and the impact,
-  drop the travel) and monochrome (`specs/ascii-effects.md` 4).
+  drop the travel) and monochrome (`docs/system-design/effects.md` 4).
 - **Light is a role pulled toward another role** (`CellStyle.tint`): a blend at 256 colours and up, a
   step at 16, nothing in monochrome, where a change of weight carries it.
 - **A placement is felt, then settles**: a few frames going up, a moment lit with sparks, then the still
@@ -499,10 +499,10 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 ## Where the rules came from
 
 The owner's words, item by item, with what was done about each, newest first:
-[`2026-09-30-menu-spike-round-2`](feedback/2026-09-30-menu-spike-round-2.md) (F61-F76),
-[`2026-09-30-menu-spike`](feedback/2026-09-30-menu-spike.md) (F52-F60),
-[`2026-09-29-pr48-round-3`](feedback/2026-09-29-pr48-round-3.md) (F47-F51),
-[`2026-09-29-pr48-pulse`](feedback/2026-09-29-pr48-pulse.md) (F41-F46),
-[`2026-09-29-pr46-round-4`](feedback/2026-09-29-pr46-round-4.md) (F28-F40),
-[`2026-09-28-pr46-playtest`](feedback/2026-09-28-pr46-playtest.md) (F18-F27) and
-[`2026-09-27-build-phase-playtest`](feedback/2026-09-27-build-phase-playtest.md) (F1-F17).
+[`2026-09-30-menu-spike-round-2`](../history/feedback/2026-09-30-menu-spike-round-2.md) (F61-F76),
+[`2026-09-30-menu-spike`](../history/feedback/2026-09-30-menu-spike.md) (F52-F60),
+[`2026-09-29-pr48-round-3`](../history/feedback/2026-09-29-pr48-round-3.md) (F47-F51),
+[`2026-09-29-pr48-pulse`](../history/feedback/2026-09-29-pr48-pulse.md) (F41-F46),
+[`2026-09-29-pr46-round-4`](../history/feedback/2026-09-29-pr46-round-4.md) (F28-F40),
+[`2026-09-28-pr46-playtest`](../history/feedback/2026-09-28-pr46-playtest.md) (F18-F27) and
+[`2026-09-27-build-phase-playtest`](../history/feedback/2026-09-27-build-phase-playtest.md) (F1-F17).

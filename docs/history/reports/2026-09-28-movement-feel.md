@@ -11,7 +11,7 @@
 ## 1. Frame — written before coding
 
 - **Canon version:** 2.22 when the work started. The building session did not edit `specs/`,
-  `AGENTS.md`, `milestones/` or `docs/feedback/`; it proposed their text in Section 9, and the
+  `AGENTS.md`, `docs/milestones/` or `docs/history/feedback/`; it proposed their text in Section 9, and the
   orchestrating session applied it at canon 2.23.
 - **Milestone and gate:** Milestone 5 — Build Phase, gate 5H, movement feel.
 - **Question this gate answers:** once the Build Phase screen has a clock of its own, can moving
@@ -166,7 +166,7 @@ Where the code is:
 - `scripts/capture-spike-screenshots.mjs`: six new shots, a `slideGif` that steps `BuildAnimation`
   with a fake clock, and the old shots moved to the new flag order and step sizes.
 - `scripts/lib/terminal-capture.mjs`: tmux capture keeps trailing spaces (Section 7).
-- `docs/ui-patterns.md` (scrolling popups; a new "moving around the map" section), `DEVELOPMENT.md`,
+- `docs/system-design/ui-patterns.md` (scrolling popups; a new "moving around the map" section), `DEVELOPMENT.md`,
   `.claude/skills/playtest/SKILL.md`.
 
 ## 4. Automated results
@@ -294,7 +294,7 @@ is a Debug Mode flag with his own numbers or a stated guess as its starting valu
 
 Proposed by the building session and applied by the orchestrating session at canon 2.23, all as
 GUIDANCE (the owner asked to keep going before looking; each number stays a Debug Mode flag he can
-change). The popup-scrolling rule is in `docs/ui-patterns.md`, not yet in `engine.md` 9.2.
+change). The popup-scrolling rule is in `docs/system-design/ui-patterns.md`, not yet in `engine.md` 9.2.
 
 | Proposed rule | Would live in | Earned by |
 | --- | --- | --- |

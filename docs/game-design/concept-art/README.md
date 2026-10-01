@@ -19,7 +19,7 @@ Two different kinds of material, both kept for reference rather than authority:
   and now some of it has.
 
 When a piece and a specification disagree, the specification wins. If the disagreement looks like a
-real decision, it becomes a row in [`../specs/open-questions.md`](../specs/open-questions.md).
+real decision, it becomes a row in [`docs/milestones/open-questions.md`](../../milestones/open-questions.md).
 
 ## Files
 
@@ -45,7 +45,7 @@ These descriptions are provisional, written from filenames rather than a full cu
 art here, but is future work, not done in this pass.
 
 For genuine documentation of what `grid` looks like and why, prefer
-[`../evidence/screenshots/`](../evidence/screenshots/) — captured by
+[`docs/screenshots/`](../../screenshots) — captured by
 `.claude/skills/grid-screenshots`, current, and reproducible on demand — over the dated snapshots
 here, which age the moment the tool's presentation changes again.
 

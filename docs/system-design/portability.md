@@ -1,7 +1,7 @@
 # Terminal Nexus — portability notes
 
 **Document role:** Where the game can run, what a host must provide, and the refactors that would make it cheaper
-**Status:** WORKING — ideas and measurements, not canon. The rule that holds today (the browser page is a development tool, never a platform) is `specs/engine.md` 10.2
+**Status:** WORKING — ideas and measurements, not canon. The rule that holds today (the browser page is a development tool, never a platform) is `docs/system-design/grid-engine.md` 10.2
 **Updated:** 2026-09-29
 **License:** Apache-2.0
 
@@ -78,7 +78,7 @@ Ordered by payoff over cost. None is urgent; each is a candidate for a small gat
    `InputEvent` (`{ kind: "key", key, modifiers, phase: "press" | "repeat" | "release" }` and a pointer
    one), with the terminal byte decoder as *one producer* and the browser's `keydown`/`keyup` as
    another, would let the movement ramp use real releases where a host reports them and fall back to
-   timing where it does not (`docs/next-steps.md`, Q66's design). Highest payoff.
+   timing where it does not (`docs/milestones/next-steps.md`, Q66's design). Highest payoff.
 2. **A host interface for the live loop.** `runSpike` takes `stdout`- and `stdin`-shaped objects
    (`TerminalOutput` / `TerminalInput`, `src/view/backends/ports.ts`) and the browser fakes a TTY to
    satisfy them. A named `ScreenHost` — `present(frame)`, `onInput(cb)`, `size()`, `now()`,

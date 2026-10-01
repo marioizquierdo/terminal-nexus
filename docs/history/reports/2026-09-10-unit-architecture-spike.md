@@ -9,7 +9,7 @@ status as the Citizen and Ravel fixtures beside it. `commander-armies.md` still 
 for Milestone 4; nothing here is authorized as canon and nothing here should be read as one.
 
 Format follows `commander-armies.md` Section 1's own audit ("what they proved is worth carrying
-forward") rather than `specs/templates/gate-report.md` — this isn't a gate, so that template's shape
+forward") rather than `.github/pull_request_template.md` — this isn't a gate, so that template's shape
 doesn't fit.
 
 ## Fourteen designs, in order
@@ -42,7 +42,7 @@ the counter-play costs nothing new either.
 
 Scenario: `bench-sky-ground-asymmetry.map.json`. The grunt never emits a single `target.selected`
 event — it isn't stuck, it isn't bugged, it simply never perceives an enemy it could reach — while the
-flak trooper engages normally. Screenshot: `evidence/screenshots/bench-sky-ground-asymmetry.png`.
+flak trooper engages normally. Screenshot: `docs/screenshots/bench-sky-ground-asymmetry.png`.
 
 ### 2. Spitter — contact detonation, the baneling rule shape
 
@@ -86,7 +86,7 @@ The medic is a flyer on purpose (Clash of Clans' own Healer is), so its scenario
 integration check for design 1: does ally-seeking compose with the ground-air asymmetry, or does it
 need its own version of the same fix? It didn't — `bench-medic-support.map.json` fields a grunt
 (cannot touch the medic) and a flak trooper (can) against it, unchanged from design 1's own pairing.
-Screenshot: `evidence/screenshots/bench-medic-support.png`.
+Screenshot: `docs/screenshots/bench-medic-support.png`.
 
 ### 4. Hatchery / Spawnling — a combat-only spawn primitive
 
@@ -131,7 +131,7 @@ seam" (engine.md 0's own words) this session produced honestly, not by design up
 
 Scenario: `bench-shardgiant-split.map.json`, tuned with a starting-hp placement override (18 of 90) so
 the fixture actually reaches the death rather than the giant winning first — noted in the scenario's
-own `notes` field. Screenshot: `evidence/screenshots/bench-shardgiant-split.png` shows the giant's
+own `notes` field. Screenshot: `docs/screenshots/bench-shardgiant-split.png` shows the giant's
 death collapse still animating beside its own two, already-spawned children in the same frame.
 
 ### 6. Siege crawler — windup, then splash
@@ -150,7 +150,7 @@ is the *same* `{radius, damage}` shape `Detonation` already was, pulled out unde
 second trigger moment (a landed hit, not a death) wanted it. `death.ts`'s `detonate()` and
 `attacks()`'s splash handling now both call a shared `areaDamage`/`actorsWithin` pair in `shared.ts`.
 
-Scenario: `bench-siegecrawler-windup.map.json`. Screenshot: `evidence/screenshots/
+Scenario: `bench-siegecrawler-windup.map.json`. Screenshot: `docs/screenshots/
 bench-siegecrawler-windup.png`, tick 58 — the crawler's first shot, landing on both clustered troopers
 at once. See "Failures and discarded approaches" below for a real bug this fixture caught.
 
@@ -399,13 +399,13 @@ tick, focus-ramp damage is monotonically non-decreasing and capped, the wall seg
 `content.test.ts`'s existing generic footprint/art-agreement tests cover every new content id with no
 changes of their own.
 
-Screenshots (`evidence/screenshots/`, `node scripts/capture-screenshots.mjs --only <name>`):
+Screenshots (`docs/screenshots/`, `node scripts/capture-screenshots.mjs --only <name>`):
 `bench-sky-ground-asymmetry`, `bench-siegecrawler-windup`, `bench-medic-support`,
 `bench-shardgiant-split`, `bench-hog-saboteur-bomber` — sent directly to Mario during the session.
 
 ## Open questions registered
 
-Three, all in `specs/open-questions.md` Section 4 with recommendations: **Q26** (is the spawn
+Three, all in `docs/milestones/open-questions.md` Section 4 with recommendations: **Q26** (is the spawn
 primitive's "combat ability, not production" framing one Mario needs to bless before real content uses
 it), **Q27** (should ground-cannot-target-air become the schema's default rather than opt-in, once air
 is real roster content rather than a bench experiment), **Q28** (Q13's roster snapshot can make a

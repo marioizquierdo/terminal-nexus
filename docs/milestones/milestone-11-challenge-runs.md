@@ -9,12 +9,12 @@
 > **The replayable mode, and the one that needs no writing.** Mario, canon 2.11: "implementing
 > 'runs', where each battle ends on a new draft upgrade or removals that further polish the build
 > for the next battle. This could have huge replayability value." A run exercises the Commander Army
-> composition model ([`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1 —
+> composition model ([`docs/game-design/commander-armies.md`](../game-design/commander-armies.md) Section 2.1 —
 > the "deck" framing itself is retracted at canon 2.16, but the army's structures, upgrades, Nexus
 > powers, and Specials are all still real pools a run draft can touch) harder than any mission,
 > needs no authored text, and is where the game's long-term value lives. It is built as soon as the
 > match UX can carry it, before the Campaign's own second mission, for exactly those reasons.
-> [`../specs/game-modes.md`](../specs/game-modes.md) Section 3.2 is the design this builds against;
+> [`docs/game-design/game-modes.md`](../game-design/game-modes.md) Section 3.2 is the design this builds against;
 > its numbers are starting values this milestone retunes.
 
 ## 1. Question
@@ -31,7 +31,7 @@ remove one, or upgrade one — and finish, win or lose, with a summary they can 
   Challenge itself — acts, the battle list generated from the seed);
   three battles on existing fixture maps against the Ravel fixture army under a static or simple
   heuristic policy; a plain "next battle" screen between them; a run summary at the end. The driver
-  ([`../specs/engine.md`](../specs/engine.md) 9.7) plays it end to end. Seed determinism asserted:
+  ([`docs/system-design/grid-engine.md`](../system-design/grid-engine.md) 9.7) plays it end to end. Seed determinism asserted:
   same seed and same driver script, same battles, same outcomes, same summary.
 - **11B — The run draft.** The between-battle screen offers **add one of three**, **remove one**, or
   **upgrade one** (structure levels 1–3, `engine.md` 5.2). The dealer implements `game-modes.md`

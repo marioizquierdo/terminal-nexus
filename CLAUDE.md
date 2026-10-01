@@ -13,10 +13,10 @@ On Claude Code on the web:
   the current milestone's own active gate, so orient from its output rather than a hardcoded filename
   here (AGENTS.md Section 1 has the full reading order; that stays the one place it is written down);
 - implement only the gate the current milestone marks as its **Active gate**;
-- register an undecided fork in `specs/open-questions.md` with a recommendation, then keep working on
+- register an undecided fork in `docs/milestones/open-questions.md` with a recommendation, then keep working on
   everything the answer does not touch;
 - before any interface work — a screen, a menu, a popup, an effect, a key — read
-  `docs/ui-patterns.md`: its goals (section 0) and its checklist for a new screen first, then the
+  `docs/system-design/ui-patterns.md`: its goals (section 0) and its checklist for a new screen first, then the
   patterns you touch. When two rules disagree the goals decide, and when your change adds, bends or
   retires a pattern, update that document in the same pull request;
 - when a choice is Mario's to feel — a timing, a look, whether a feature should exist — put both

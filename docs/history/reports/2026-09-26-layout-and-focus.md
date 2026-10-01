@@ -137,7 +137,7 @@ of the menu, "[n] Nexus Powers (1)", that opens a box over the map only when ask
 | The same pick-build-commit plan by keyboard bytes, mouse bytes and driver: identical state **and** frame | pass | `tests/build-nexus.test.ts`, last test |
 | The focus flow by keyboard bytes and the same commands by driver: identical state and frame; by mouse: the identical plan | pass | `tests/build-focus.test.ts`, last test |
 
-Screenshots, regenerated through tmux (`evidence/screenshots/`), each looked at: new — `build-idle`
+Screenshots, regenerated through tmux (`docs/screenshots/`), each looked at: new — `build-idle`
 (the opening screen), `build-focus-grid`, `build-smart-cursor`, `build-menu-run`,
 `build-nexus-popup`, `build-nexus-popup-picked` (104x32); updated — `spike-minimum` (80x24),
 `spike-maximum` (104x32), `spike-wide-tiles` (128x24), `build-grid-edge`, `spike-armed-preview`,

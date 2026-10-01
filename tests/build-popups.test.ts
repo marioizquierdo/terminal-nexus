@@ -1,4 +1,4 @@
-// Popups (docs/ui-patterns.md, "Popups"): one shape with a shadow; Settings' rows, its position beside
+// Popups (docs/system-design/ui-patterns.md, "Popups"): one shape with a shadow; Settings' rows, its position beside
 // the title, Export as the list's last row and what the highlighted row is for under a line; a message
 // popup for "a restart is needed" and the game menu's Restart; a scroll bar in a popup's right border;
 // and the top bar's right end saying what Esc does, in place of every popup's own `[esc]`. Driven through raw bytes into the

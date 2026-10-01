@@ -23,11 +23,11 @@ mission reports) — and launch the current mission from it?
 ## 2. What gets built
 
 - **Campaign state**: which campaign, which mission is current, and what the unlock record
-  ([`../specs/open-questions.md`](../specs/open-questions.md) Q31 — a flat, checked-in list, not a
+  ([`docs/milestones/open-questions.md`](open-questions.md) Q31 — a flat, checked-in list, not a
   real save format yet) says is available. For Level 1's own first playthrough this is nearly empty
   by construction: nothing is unlocked before Mission 1 is completed.
 - **Army panel**: unlocked units, buildings, Nexus powers, and generals (Commanders — the term
-  "generals" here means exactly [`../specs/commander-armies.md`](../specs/commander-armies.md)'s
+  "generals" here means exactly [`docs/game-design/commander-armies.md`](../game-design/commander-armies.md)'s
   Commander/Nexus Symbol, not a new roster concept). Reads the unlock record; does not compute
   anything new.
 - **Enemy intel panel**: discovered enemy units, buildings, Nexus powers, generals, and mission
@@ -37,7 +37,7 @@ mission reports) — and launch the current mission from it?
   exact discovery rule (does seeing a unit once during a Pulse mark it "discovered" forever after?)
   as a new open question before building this panel — see Section 4 below.
 - **Mission reports**: the existing headless report already produces a per-mission outcome (ticks,
-  losses, victory reason, hashes — `../milestones/milestone-01-grid-battles.md` Section 3.3). Reusing
+  losses, victory reason, hashes — `docs/milestones/completed/milestone-01-grid-battles.md` Section 3.3). Reusing
   that as the persisted "mission report" this screen shows is cheaper than inventing a second summary
   format, and keeps the report module's existing job (derive everything from the event stream and
   final state) intact.
@@ -49,7 +49,7 @@ mission reports) — and launch the current mission from it?
 - **4A — Campaign state and launch.** The flat unlock record (Q31), the current mission, and
   launching it into Milestone 5's Build Phase with that mission's map and trigger list.
 - **4B — Army and intel panels.** The army panel showing the composition laid out
-  ([`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1 — common tier, army
+  ([`docs/game-design/commander-armies.md`](../game-design/commander-armies.md) Section 2.1 — common tier, army
   tier/tech tree, Nexus power pool, Special); the enemy intel panel under Q35's recommendation;
   both correct when empty.
 - **4C — Mission reports.** The existing report module's output persisted and shown per completed
@@ -75,7 +75,7 @@ only (a mission's own script decides what the player "learns," independent of wh
 **Recommendation: (a), the simplest rule that needs no new authoring per mission** — logged
 automatically off the existing `PlayerView`/event stream, the same "derive it from what already
 exists" discipline the report module already follows. Register as Q35 in
-[`../specs/open-questions.md`](../specs/open-questions.md) before this milestone's own gate closes.
+[`docs/milestones/open-questions.md`](open-questions.md) before this milestone's own gate closes.
 
 ## 5. Definition of done
 

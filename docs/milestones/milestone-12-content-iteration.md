@@ -12,7 +12,7 @@
 > units and upgrades, iterating on the game modes as we do more playtesting." Everything before this
 > milestone runs on disposable bench content. This is where the real Citizens and Ravels rosters —
 > the "Commander Army selection" workstream
-> [`../specs/project-governance.md`](../specs/project-governance.md) Section 5 has kept gated since
+> [`docs/game-design/decisions.md`](../game-design/decisions.md) Section 5 has kept gated since
 > canon 2.0 — finally get authored, one card at a time, each judged in a run and in a mission.
 
 ## 1. Question
@@ -23,7 +23,7 @@ a mission teach it — measured, not asserted, by runs the driver plays and runs
 ## 2. Gates — a loop, not a line
 
 - **12A — The first real rosters.** The smallest Citizens and Ravels Commander Armies per
-  [`../specs/commander-armies.md`](../specs/commander-armies.md) Sections 5 and 6: common tier,
+  [`docs/game-design/commander-armies.md`](../game-design/commander-armies.md) Sections 5 and 6: common tier,
   army tier, Nexus power pool, one Commander each (Vasse and Corvane), every card tagged with
   `rarity`/`tier`/`role`, and the faction rule shapes of Section 4.1 that Milestone 1 already proved
   cheap (volatile munitions, shared cadence). Bench content retires or is promoted card by card;
@@ -34,7 +34,7 @@ a mission teach it — measured, not asserted, by runs the driver plays and runs
 - **12B — Measure.** Pick rate and win rate per card, per tier, per act, from driver-played runs
   under a few simple policies and from human sessions, into a small report the way `grid`'s report
   already derives everything from events. The Slay the Spire discipline
-  ([`../specs/game-modes.md`](../specs/game-modes.md) Section 5): weekly-sized changes, metrics read
+  ([`docs/game-design/game-modes.md`](../game-design/game-modes.md) Section 5): weekly-sized changes, metrics read
   with suspicion, fun judged by people.
 - **12C — Tune and add.** Retune rarity, tier, and cost from 12B; add the next few cards; return to
   12B. A second Commander per faction only once the first plays distinctly
@@ -44,7 +44,7 @@ a mission teach it — measured, not asserted, by runs the driver plays and runs
 
 Glitch, Feudals, or Alder content (lore and art direction until Citizens and Ravels prove the loop,
 `commander-armies.md` Section 6); new modes; multiplayer; a public mod loader — content contracts are
-kept mod-shaped ([`../specs/engine.md`](../specs/engine.md) Section 11) without building the loader.
+kept mod-shaped ([`docs/system-design/grid-engine.md`](../system-design/grid-engine.md) Section 11) without building the loader.
 
 ## 4. Acceptance
 
@@ -53,7 +53,7 @@ convention), determinism holds across runs and runtimes after every content chan
 regenerates from logs alone.
 
 Human: a player who has never read the lore can state each faction's philosophy from a run
-([`../specs/terminal-nexus-lore.md`](../specs/terminal-nexus-lore.md) Section 8.6 — the alignment
+([`docs/game-design/lore.md`](../game-design/lore.md) Section 8.6 — the alignment
 test, now applied to real rosters rather than bench fixtures).
 
 ## 5. Definition of done — per pass

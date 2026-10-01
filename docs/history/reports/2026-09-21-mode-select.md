@@ -46,7 +46,7 @@
     green unmodified, since neither one's own input behaviour changes;
   - the whole existing suite (`npm test`, `npm run test:bun`) staying green.
 - **Human observation planned:** none required to close this gate, same reasoning as 3A and 3B — every
-  criterion above is mechanically checkable. Screenshots go in `evidence/screenshots/` regardless.
+  criterion above is mechanically checkable. Screenshots go in `docs/screenshots/` regardless.
 - **Explicit exclusions:** any real Campaign or Challenge content (Milestones 4 and 11 own that); a
   generic reusable "disabled item" *input* behaviour beyond rendering (nothing today needs one, and
   the one place this gate does need dimming does not need it either, per the RULE reasoning above); a
@@ -136,7 +136,7 @@ and leaving the same word, "top-level menu," is on screen before any key is sent
 existing shots regenerated against current code, all of which now show Challenge's dimmed label
 wherever the top-level menu appears in them.
 
-**Docs**: `README.md`, `DEVELOPMENT.md`, and `milestones/milestone-03-game-menu.md` updated together
+**Docs**: `README.md`, `DEVELOPMENT.md`, and `docs/milestones/completed/milestone-03-game-menu.md` updated together
 (AGENTS.md Section 5); the milestone's own Active gate field now reads "none," with every Definition
 of Done item checked, since this is the last gate it names.
 
@@ -156,11 +156,11 @@ of Done item checked, since this is the last gate it names.
 | The Back row's hotkey, and Esc, both return to the top-level menu | PASS | `tests/menu-campaign-screen.test.ts` |
 | A hotkey crossing into Campaign and a second key in the same chunk both land correctly (the third-screen case) | PASS | `tests/menu-campaign-screen.test.ts` |
 | The existing Gate 3A/3B suites stay green: isolated adapter equivalence, Settings' own sharp-edge test, the settings-save ordering test | PASS | `tests/menu-adapters.test.ts`, `tests/menu-list.test.ts`, `tests/menu-settings-screen.test.ts`, unmodified assertions |
-| Real terminal (tmux/PTY): the top-level menu shows Challenge dimmed at launch | PASS | `evidence/screenshots/menu-top-level.png` |
-| Real terminal: highlighting the dimmed Challenge row is plain inverse video, same as any other item | PASS | `evidence/screenshots/menu-challenge-dimmed.png` |
-| Real terminal: Campaign's placeholder screen shows its message and Back | PASS | `evidence/screenshots/campaign-screen.png` |
-| Real terminal: Back returns to the top-level menu, still highlighting Campaign | PASS | `evidence/screenshots/campaign-back-to-top.png` |
-| Real terminal: Gate 3A/3B's five affected screenshots still look correct against current code | PASS | `evidence/screenshots/{menu-top-level,menu-monochrome,menu-highlight-moved,menu-stub-notice,settings-back-to-top}.png`, regenerated |
+| Real terminal (tmux/PTY): the top-level menu shows Challenge dimmed at launch | PASS | `docs/screenshots/menu-top-level.png` |
+| Real terminal: highlighting the dimmed Challenge row is plain inverse video, same as any other item | PASS | `docs/screenshots/menu-challenge-dimmed.png` |
+| Real terminal: Campaign's placeholder screen shows its message and Back | PASS | `docs/screenshots/campaign-screen.png` |
+| Real terminal: Back returns to the top-level menu, still highlighting Campaign | PASS | `docs/screenshots/campaign-back-to-top.png` |
+| Real terminal: Gate 3A/3B's five affected screenshots still look correct against current code | PASS | `docs/screenshots/{menu-top-level,menu-monochrome,menu-highlight-moved,menu-stub-notice,settings-back-to-top}.png`, regenerated |
 
 Measurements: not applicable — this gate has no performance or balance claim.
 
@@ -267,7 +267,7 @@ assertion had quietly become true for the wrong reason was caught and split into
 rather than left as a passing coincidence. Explicit exclusions (real Campaign/Challenge content, a
 generic disabled-input mechanism, save/progression, sound) are named, not silently missing. No new
 open question needed registering; the one candidate fork is recorded in Section 6 as a reversible
-assumption. This is the last gate `milestones/milestone-03-game-menu.md` names — every Definition of
+assumption. This is the last gate `docs/milestones/completed/milestone-03-game-menu.md` names — every Definition of
 Done item is now checked, and the milestone itself awaits Mario's review and acceptance rather than
 further building.
 
@@ -275,7 +275,7 @@ further building.
 
 | Proposed rule | Would live in | Earned by |
 | --- | --- | --- |
-| None | — | This gate builds Campaign and Challenge's handoffs exactly as `milestones/milestone-03-game-menu.md` Section 2 already describes them, and reads `engine.md` 9.7's existing RULE more carefully rather than proposing to change it; nothing here contradicts or extends any RULE, so no amendment is proposed. |
+| None | — | This gate builds Campaign and Challenge's handoffs exactly as `docs/milestones/completed/milestone-03-game-menu.md` Section 2 already describes them, and reads `engine.md` 9.7's existing RULE more carefully rather than proposing to change it; nothing here contradicts or extends any RULE, so no amendment is proposed. |
 
 Questions raised: none. Section 6 explains why the one candidate fork (whether Challenge's activation
 should keep showing a notice or become a silent no-op) is recorded as a reversible assumption rather
@@ -285,8 +285,8 @@ options for, and it is cheap to revisit if evidence later says otherwise.
 ## 10. Next authorized action
 
 None within Milestone 3 — this was its last gate. The next authorized action is Mario reviewing the
-three gate reports and the screenshots in `evidence/screenshots/` and formally accepting the
+three gate reports and the screenshots in `docs/screenshots/` and formally accepting the
 milestone, the same act that closed Milestone 1; once that happens, a future session updates
-`specs/project-governance.md`'s ledger and opens Milestone 5 (Build Phase) per
-[`../milestones/README.md`](../milestones/README.md)'s own build order — not before, per `AGENTS.md`
+`docs/game-design/decisions.md`'s ledger and opens Milestone 5 (Build Phase) per
+[`docs/milestones/README.md`](../../milestones/README.md)'s own build order — not before, per `AGENTS.md`
 Section 9's "revise the next milestone only after owner acceptance."

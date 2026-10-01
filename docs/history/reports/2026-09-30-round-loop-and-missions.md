@@ -12,7 +12,7 @@
 
 - **Canon version:** 2.30 (no change planned; canon proposals go to Section 9 and wait for acceptance).
 - **Milestone and gate:** Milestone 6 — Nexus Pulse Phase, gate 6B, "The loop and the trigger runner's
-  simulation band" (`milestones/milestone-06-pulse-phase.md`). Active since 2026-09-30, when Mario
+  simulation band" (`docs/milestones/milestone-06-pulse-phase.md`). Active since 2026-09-30, when Mario
   accepted gate 6A.
 - **Question this gate answers:** after Recall, does the player land in the next Build Phase with what
   survived — and does a mission, written as data, decide what each Pulse brings and when the whole
@@ -156,7 +156,7 @@ again`. Restart, from the game menu, is the mission from round 1.
   that names them reads back quietly as retired names.
 - **Tooling.** Six 6B stills and a GIF (`scripts/capture-spike-screenshots.mjs`); the 6A Pulse shots stay
   as that gate's evidence. `DEVELOPMENT.md` and the playtest skill describe the mission and its key
-  scripts. `docs/scripted-opponent.md` — the owner's "start thinking about it": waves, intentions, and
+  scripts. `docs/game-design/scripted-opponent.md` — the owner's "start thinking about it": waves, intentions, and
   where the Campaign's opponent AI grows from.
 
 ## 4. Automated results
@@ -199,7 +199,7 @@ incoming wave's card and the Experiment hiding it.
 
 ## 5. Human observations
 
-**No human has played this build.** What an agent saw, reading the pictures in `evidence/screenshots/`
+**No human has played this build.** What an agent saw, reading the pictures in `docs/screenshots/`
 (`mission-round-1`, `mission-incoming-card`, `mission-round-1-result`, `mission-round-2`,
 `mission-battle-round-2`, `mission-complete`, `mission-failed`, `mission-experiments`, and the GIF
 `mission-next-round`) and running `scripts/playtest.mjs` flows through all three rounds:
@@ -231,7 +231,7 @@ makes the second round short and the third decisive, which might even be good pa
 "hold until their schedule ends" promised. It is Mario's to feel first (Q70).
 
 **Intentions are words today.** Every unit engages the nearest enemy; "Break through at the ridge" comes
-true because the nearest enemy is that way. The design note (`docs/scripted-opponent.md`) argues the
+true because the nearest enemy is that way. The design note (`docs/game-design/scripted-opponent.md`) argues the
 order primitive (Q69) is the smallest kernel change that makes an intention something the kernel keeps,
 and the seam the Campaign's opponent AI will be built on.
 
@@ -308,7 +308,7 @@ kernel-level questions are registered (Q69, Q70) with recommendations. Acceptanc
   Recall left — survivors keep identity and health, a unit steps aside for a planned building — and the
   Recall text gate 6A proposed (a pure function beside the kernel) with it.
 - `open-questions.md`: Q36 to Answered (no rule change); Q69 and Q70 stay open.
-- `docs/ui-patterns.md` sections 12 and 14 (already written in this pull request, working document): what
+- `docs/system-design/ui-patterns.md` sections 12 and 14 (already written in this pull request, working document): what
   else is on the map, *the incoming wave*, *the loop*, the round in the top bar.
 - `AGENTS.md` Section 4: "A mission is a sequence of Build Phase / Nexus Pulse cycles driven by triggers" —
   add that the trigger runner lives beside the kernel and that `order` is `advance` only until Q69.

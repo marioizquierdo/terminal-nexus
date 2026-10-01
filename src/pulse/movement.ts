@@ -56,7 +56,7 @@ export type StepOptions = Readonly<{
  * time until it clears. An actor whose approach is exactly on-axis (same row or column as the goal)
  * has exactly one improving direction, and if that is blocked there is no fallback at all: it holds
  * and the tick reports it blocked, for as long as the obstacle stands. This is a known, accepted gap
- * in the Gate 1A routing floor — specs/open-questions.md Q15 — and real pathfinding is Milestone 2's
+ * in the Gate 1A routing floor — docs/milestones/open-questions.md Q15 — and real pathfinding is Milestone 2's
  * job to close, not this greedy step's.
  */
 export function rankedSteps(

@@ -219,7 +219,7 @@ const shots = [
     glyphs: "unicode",
   },
   {
-    // Q25 (specs/open-questions.md), option A: the 256-colour tier is now derived from rgb rather
+    // Q25 (docs/milestones/open-questions.md), option A: the 256-colour tier is now derived from rgb rather
     // than a fourth hand-authored column. Same real fight frame as "ravels-clash" above, at the
     // 256-colour tier specifically, captured once per formula (see the gate report for how the
     // "hand-authored" half was produced) so the owner can judge whether derived reads worse before

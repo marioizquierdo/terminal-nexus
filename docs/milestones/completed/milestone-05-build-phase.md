@@ -19,20 +19,20 @@ mission's own budget/units decided — accepted 2026-09-12)
 > active-row style and the ghost preview. The per-gate notes further down say "awaiting Mario's look";
 > they are the record of what was true when each gate was written, not open work. **Milestone 6 — the
 > Nexus Pulse Phase is now the current milestone, at its own gate 6A**;
-> [`README.md`](README.md)'s table is the authority for that, as always. Still queued beside it, not part
-> of it: [`../docs/next-steps.md`](../docs/next-steps.md) (Q66's key releases, and a rename of the
+> [`README.md`](../README.md)'s table is the authority for that, as always. Still queued beside it, not part
+> of it: [`docs/milestones/next-steps.md`](../next-steps.md) (Q66's key releases, and a rename of the
 > old Debug Mode code to "experiments").
 
 > **Milestone 4 has not landed, and this milestone does not wait for it.** An earlier draft of the
 > header above named Milestone 4 as a dependency, from back when the campaign menu was expected to be
 > built before the Build Phase. The re-cut build order (canon 2.11,
-> [`README.md`](README.md)'s own table) puts this milestone third — straight after the game menu — and
+> [`README.md`](../README.md)'s own table) puts this milestone third — straight after the game menu — and
 > the campaign menu seventh, so anything below that reads as "the player arrives here from the
 > campaign menu" describes where the Build Phase will eventually be reached from, not a prerequisite
 > for building it. Gate 5A in particular is a self-contained spike: it needs a Grid, a cursor, and a
 > terminal, none of which Milestone 4 supplies.
 
-> **Gate 5A: ACCEPTED, 2026-09-21** — [`../evidence/gate-5a-report.md`](../evidence/gate-5a-report.md)
+> **Gate 5A: ACCEPTED, 2026-09-21** — [`docs/history/reports/2026-09-21-scrolling-and-placement.md`](../../history/reports/2026-09-21-scrolling-and-placement.md)
 > concludes PASS; Mario ran it, answered both questions it was built to ask, and accepted the gate.
 > The viewport rule finally executes: a 96 x 40 Grid in a viewport of 48 x 16 tiles at 80 columns and
 > 72 x 24 at 104, the camera following the cursor at three tiles, edge markers and a position readout
@@ -47,7 +47,7 @@ mission's own budget/units decided — accepted 2026-09-12)
 > has too much text focused on demo instead of trying to be as simple and direct as possible)."*
 > **Gate 5B owns acting on it**, since 5B rebuilds that panel anyway — see its own line below.
 
-> **Gate 5B: ACCEPTED, 2026-09-21** — [`../evidence/gate-5b-report.md`](../evidence/gate-5b-report.md)
+> **Gate 5B: ACCEPTED, 2026-09-21** — [`docs/history/reports/2026-09-21-construct-menu.md`](../../history/reports/2026-09-21-construct-menu.md)
 > concludes PASS; merged, and accepted by Mario: *"We are finally implementing functionality and I
 > love it... I think we are already going the right direction."* A larger manual test is deferred, the
 > same way the scroll margin's fuller judgement was. The construct menu lists both groups under one
@@ -57,7 +57,7 @@ mission's own budget/units decided — accepted 2026-09-12)
 > showed. Four rules earned by building them are in canon 2.18; Q30 is answered.
 
 > **Gate 5C: code merged across two rounds; not yet formally accepted.** Round 1
-> ([`../evidence/gate-5c-report.md`](../evidence/gate-5c-report.md), PASS) walked cursor-driven
+> ([`docs/history/reports/2026-09-21-adaptive-layout.md`](../../history/reports/2026-09-21-adaptive-layout.md), PASS) walked cursor-driven
 > scrolling across the whole supported viewport range — it needed no change — and put the footer and
 > the side panel on one shared list of key bindings. Round 2 acted on Mario's own live feedback:
 > replaced the arrow edge markers with a border that goes solid where the map ends and dim where it
@@ -80,7 +80,7 @@ mission's own budget/units decided — accepted 2026-09-12)
 > comes due.
 
 > **Gate 5D: built and reported, awaiting Mario's review** —
-> [`../evidence/gate-5d-report.md`](../evidence/gate-5d-report.md) concludes PASS. The Build Phase now
+> [`docs/history/reports/2026-09-22-nexus-draft-and-commit.md`](../../history/reports/2026-09-22-nexus-draft-and-commit.md) concludes PASS. The Build Phase now
 > opens on a Nexus power draft (two placeholder powers, not real Milestone-8 content) that may not be
 > skipped; `p` asks once, in plain yes/no terms, whether to end the Build Phase and start the Nexus
 > Pulse, and accepting locks every other action. The panel gained the NEXUS and SPECIAL rows
@@ -95,7 +95,7 @@ mission's own budget/units decided — accepted 2026-09-12)
 > resolved (see 5C's own line above), the second is still open for Mario's manual test.
 
 > **Gate 5E: built and reported (PASS), awaiting Mario's look** —
-> [`../evidence/gate-5e-report.md`](../evidence/gate-5e-report.md). Mario ran the merged Build Phase
+> [`docs/history/reports/2026-09-26-build-phase-playtest-1.md`](../../history/reports/2026-09-26-build-phase-playtest-1.md). Mario ran the merged Build Phase
 > in iTerm2 and gave two rounds of direct feedback (2026-09-26). Everything in it that was small and
 > local is built; everything that reshapes the screen or needs a clock became gates 5F-5H below, with
 > the decisions it settled in `engine.md` (Sections 3.1, 3.3, 9.2 and 9.7, canon 2.19) and the ones it
@@ -121,7 +121,7 @@ mission's own budget/units decided — accepted 2026-09-12)
 >   was cut mid-word at 80 columns.
 
 > **Gate 5F: built and reported (PASS), awaiting Mario's look** —
-> [`../evidence/gate-5f-report.md`](../evidence/gate-5f-report.md). The menu is on the left and the
+> [`docs/history/reports/2026-09-26-layout-and-focus.md`](../../history/reports/2026-09-26-layout-and-focus.md). The menu is on the left and the
 > screen opens with the keyboard on it: Tab moves between the menu and the Grid, Up/Down and Space
 > work the menu, and arming from it puts the cursor one tile beside the last thing planned, so the
 > owner's "down, down, space, place, space, place" is a passing test. Focus after a placement goes
@@ -149,10 +149,10 @@ mission's own budget/units decided — accepted 2026-09-12)
 >   9.7). Its hotkey is a letter, never a digit.
 
 > **Gate 5F, round 2: built and reported (PASS), awaiting Mario's look** —
-> [`../evidence/gate-5f-round-2-report.md`](../evidence/gate-5f-round-2-report.md), from his playtest of
+> [`docs/history/reports/2026-09-27-build-phase-playtest-2.md`](../../history/reports/2026-09-27-build-phase-playtest-2.md), from his playtest of
 > 5F (2026-09-27). Every item he sent, and what happened to it, is logged in
-> [`../docs/feedback/2026-09-27-build-phase-playtest.md`](../docs/feedback/2026-09-27-build-phase-playtest.md);
-> the patterns behind them in [`../docs/ui-patterns.md`](../docs/ui-patterns.md). In short: three plain
+> [`docs/history/feedback/2026-09-27-build-phase-playtest.md`](../../history/feedback/2026-09-27-build-phase-playtest.md);
+> the patterns behind them in [`docs/system-design/ui-patterns.md`](../../system-design/ui-patterns.md). In short: three plain
 > modes (menu, placing, exploring) with one "you are here" each; placing always returns to the menu
 > (Q57 answered); Esc, `x` and right click are one cancel ending in an "Exit the game?" question; a
 > first click highlights, a second activates, a click outside a popup dismisses it; one popup shape for
@@ -167,7 +167,7 @@ mission's own budget/units decided — accepted 2026-09-12)
 > (`bun scripts/build-web.mjs`; a development tool, `engine.md` 10.2).
 
 > **Gate 5G: Debug Mode — built and reported (PASS), awaiting Mario's look**
-> (`../evidence/gate-5g-report.md`). `d`, or `[d] debug` at the right of the top bar, opens a popup of
+> (`docs/history/reports/2026-09-27-debug-mode.md`). `d`, or `[d] debug` at the right of the top bar, opens a popup of
 > experiments, each with its value, whether it applies now or on restart, and the question it serves:
 > the smart cursor on/off (Q55), the scroll margin in tiles (Q54), whether the screen opens on the menu
 > or the map (Q61), and the pressed-flash and refused-flicker durations. Left/Right change a value;
@@ -177,7 +177,7 @@ mission's own budget/units decided — accepted 2026-09-12)
 > solid bar) and have none either.
 
 > **Gate 5H: movement feel — built and reported (PASS), awaiting Mario's feel**
-> (`../evidence/gate-5h-report.md`). The Build Phase screen has its first frame timer, running only
+> (`docs/history/reports/2026-09-28-movement-feel.md`). The Build Phase screen has its first frame timer, running only
 > while something moves. A tap moves one tile; a held arrow moves 2 a step, then 4 once held 300 ms;
 > Shift (and Option, PageUp, Home) moves 8; a change of direction drops a held arrow to 1 a step until
 > it is let go (Q54, the owner's own tiers). Terminals send no key-up, so "held" is read from the gaps
@@ -191,7 +191,7 @@ mission's own budget/units decided — accepted 2026-09-12)
 > (what an exploring click does to the view) and Q63 (the wheel's step).
 
 > **Gate 5I: placement juice — built and reported (PASS), awaiting Mario's look**
-> (`../evidence/gate-5i-report.md`). A placed building plays a few frames of its own as it goes up —
+> (`docs/history/reports/2026-09-28-placement-juice.md`). A placed building plays a few frames of its own as it goes up —
 > footings, walls, roof beam for the Barracks; seeds, a swelling sac, a splitting peak for the
 > Hatchery; a rising mark for the Turret — authored beside its art, with a generic bottom-up fallback
 > for anything undrawn. It then stands finished with a brief light on its characters (a style-role
@@ -211,7 +211,7 @@ map scrolling — before handing off into Milestone 6's Pulse?
 
 - **Placement and spending**, per Milestone 2's own decision (Section 4.2 there): a short, fixed
   construct menu, cost/effect shown per item, a legality panel that says *why* an illegal placement
-  failed — exactly [`../specs/engine.md`](../specs/engine.md) Section 9.2's already-specified side
+  failed — exactly [`docs/system-design/grid-engine.md`](../../system-design/grid-engine.md) Section 9.2's already-specified side
   panel shape, built for the first time, at the smallest scope PERIMETER actually needs (no radius
   preview unless something placed has a radius worth previewing).
 - **One Nexus upgrade slot**, picked during Build Phase. Milestone 8 is what populates this with a
@@ -219,7 +219,7 @@ map scrolling — before handing off into Milestone 6's Pulse?
   accept a pick, apply its effect) against a placeholder option if Milestone 8 has not landed yet, so
   neither milestone blocks on the other's exact sequencing.
 - **The Special slot — keep the space, and report whether the channel earns it.**
-  [`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1 names *four* places in a
+  [`docs/game-design/commander-armies.md`](../../game-design/commander-armies.md) Section 2.1 names *four* places in a
   Build Phase, not three: the construct menu's two groups, the Nexus draft panel, and a Special the
   player arms and fires once per match. It is also flagged provisional there — a third decision
   channel beside placement and the draft, with nothing yet showing that a Build Phase wants one.
@@ -234,10 +234,10 @@ map scrolling — before handing off into Milestone 6's Pulse?
 - **A GUI that adapts to terminal size** across that same clamped range — not just the tile-width
   adaptation `engine.md` 9.3 already covers (one column per tile at 80 wide, two at 128+), but the
   side panel's own layout across the viewport's minimum-to-maximum span. This is a reversible UI-layout
-  decision a session may make alone (`../specs/project-governance.md` Section 2) — pick something,
+  decision a session may make alone (`docs/game-design/decisions.md` Section 2) — pick something,
   ship it, and record why in the gate report rather than treating it as a blocker.
 - **All three input adapters, on the screen that needs them most** — per
-  [`../specs/engine.md`](../specs/engine.md) Section 9.7 (canon 2.10), which supersedes an earlier
+  [`docs/system-design/grid-engine.md`](../../system-design/grid-engine.md) Section 9.7 (canon 2.10), which supersedes an earlier
   draft of this line that left the mouse optional. Keyboard: digits arm a construct-menu item, arrows
   move the cursor one tile and Shift+Arrow five, Enter places, Esc disarms, `p` commits after one
   confirmation, and the armed item stays armed so a run of placements is one digit then arrows and
@@ -247,7 +247,7 @@ map scrolling — before handing off into Milestone 6's Pulse?
   command stream — the agent-playtest path — with raw key and mouse events injectable so the
   mappings themselves are under test. The construct menu shows the common tier and the army tier as
   two groups under one digit sequence, and the Nexus draft is its own panel
-  ([`../specs/commander-armies.md`](../specs/commander-armies.md) Section 2.1) — for PERIMETER the
+  ([`docs/game-design/commander-armies.md`](../../game-design/commander-armies.md) Section 2.1) — for PERIMETER the
   army group is empty, and the layout should not assume it always is.
 - **Opens with the scrolling-and-placement spike — Q37, answered.** Before the real build: an
   interactive spike of exactly the two interactions Mario named as needing the most attention —
@@ -305,7 +305,7 @@ map scrolling — before handing off into Milestone 6's Pulse?
 ## 3. Grounded in already-locked contracts
 
 The old Milestone 3 (`specs/milestone-3-builder-editor.md`, now retired — its content lives here and
-in `../specs/backlog-pulse-completion.md`) named the exact things to lock before this could be called
+in `docs/milestones/backlog.md`) named the exact things to lock before this could be called
 solid: radius metric and footprint measurement, same-plan construction chaining, simultaneous
 same-cell conflicts, path-sealing legality, and refunds for an invalid revealed plan
 (`engine.md` Section 6 restates the same list). Lock only the ones PERIMETER's own small budget
@@ -352,14 +352,14 @@ looking around, not like fighting the cursor.
       5D**: two placeholder powers, offered once, picked by digit or click, applying their effect
       exactly once;
 - [x] the report says whether the Build Phase felt short of a third decision channel, so the
-      provisional Special slot (`../specs/commander-armies.md` Section 2.1) gains evidence either way
+      provisional Special slot (`docs/game-design/commander-armies.md` Section 2.1) gains evidence either way
       — **done, gate 5D**: the slot fits in the layout without strain, which is the only question this
       gate could actually answer; whether a Build Phase genuinely wants a third channel is the
       canon's own Milestone 6 question, per `commander-armies.md` Section 2.1 itself;
 - [x] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED** — gates 5A-5D each have one,
       all four concluding **PASS**;
 - [x] `./scripts/check-repository.sh` passes;
-- [x] new questions this raises are rows in [`../specs/open-questions.md`](../specs/open-questions.md)
+- [x] new questions this raises are rows in [`docs/milestones/open-questions.md`](../open-questions.md)
       — gate 5D raised none of its own; the two still open are gate 5C's, already registered there.
 
 Gate 5E's own definition of done, added 2026-09-26:

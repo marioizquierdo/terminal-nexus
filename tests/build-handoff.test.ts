@@ -1,4 +1,4 @@
-// Hand-offs to the map (docs/ui-patterns.md, "Hand-offs to the map"): when a menu row gives the keyboard
+// Hand-offs to the map (docs/system-design/ui-patterns.md, "Hand-offs to the map"): when a menu row gives the keyboard
 // to the map, something flies from where the row is on the menu to the cursor — a building sends the
 // focus arrow, Explore Map the see-through cursor — and the cursor then blinks in the menu's pressed look.
 // Where the cursor lands is the reducer's (Explore Map opened from the menu moves it onto clear ground);

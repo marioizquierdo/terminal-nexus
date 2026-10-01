@@ -33,7 +33,7 @@ No complete roster has been earned yet. Do not invent production-ready stats bef
 - **jackpot drafts** and **scrap doctrine** were not built, because both need an economy and a draft. They remain the two Ravel shapes with no evidence behind them;
 - building the second army was also an audit: it found a Citizens-only assumption inside the kernel within an hour. That is an argument for authoring the second of anything early.
 
-For faction philosophy, conflicts, colors, and glyph vocabulary, read [`terminal-nexus-lore.md`](terminal-nexus-lore.md). For mechanical interfaces, read [`engine.md`](engine.md).
+For faction philosophy, conflicts, colors, and glyph vocabulary, read [`terminal-nexus-lore.md`](lore.md). For mechanical interfaces, read [`engine.md`](../system-design/grid-engine.md).
 
 ## 2. Relationship between faction and Commander
 
@@ -74,7 +74,7 @@ is:
 
 1. **A Nexus and a faction.** The army belongs to one faction (two, for a Dual-bound Commander,
    Section 2.2 below), anchored on the Grid by a **Grid Nexus** — not "Nexus Proxy": the validator
-   already rejects the retired synonym for this concept ([`engine.md`](engine.md) Section 3, and
+   already rejects the retired synonym for this concept ([`engine.md`](../system-design/grid-engine.md) Section 3, and
    AGENTS.md Section 4), so this document keeps the one name rather than adding a second.
 2. **A Commander** — the persistent `@`, Section 2 above.
 3. **Starting units**, including workers, placed when the match begins.
@@ -86,16 +86,16 @@ is:
    dependents. **This needs no new effect kind**: it is the same `unlockStructure` effect a Nexus
    power already produces (Section 4.5), now triggered by construction finishing as well as by a
    power pick — one mechanism, two triggers. Gated by which structures exist, never by a second
-   resource ([`engine.md`](engine.md) Section 6's one-resource rule is untouched).
+   resource ([`engine.md`](../system-design/grid-engine.md) Section 6's one-resource rule is untouched).
 
-   **This corrects [`engine.md`](engine.md) Section 5.2**, which currently says research facilities
+   **This corrects [`engine.md`](../system-design/grid-engine.md) Section 5.2**, which currently says research facilities
    "improve the Nexus draft rather than exposing a linear tech menu." That line predates this
    decision and is superseded by it: the tree is real, and a player should be able to inspect it
    during play, exactly as a traditional strategy game's tech tree is inspectable. Research
    facilities still exist and still matter — they are tree nodes like any other structure, not a
    parallel mechanism the tree bypasses.
 6. **Upgrades.** Units and structures both carry an upgrade path (levels 1–3,
-   [`engine.md`](engine.md) Section 5.2); a Commander may start with some already unlocked, the same
+   [`engine.md`](../system-design/grid-engine.md) Section 5.2); a Commander may start with some already unlocked, the same
    way a few blueprints can.
 7. **Nexus powers** — a small hand dealt from the army's own pool at each Build Phase, one kept,
    never skipped (Section 4.5, Q45 answered). A power's `unlockStructure`/`modifyContent` effects are
@@ -176,7 +176,7 @@ starting package, the faction's rules (Section 4.1) and the Commander's exceptio
 - **Alder fits without an exception.** Their refusal (Q11) is a near-empty Nexus power pool and a
   larger structure pool — expressed by the numbers, not by a special case in the model.
 
-The sketch, in the same spirit as [`engine.md`](engine.md) Section 8 — names will move the first
+The sketch, in the same spirit as [`engine.md`](../system-design/grid-engine.md) Section 8 — names will move the first
 time real content touches them:
 
 ```ts
@@ -215,11 +215,11 @@ Where this shows on screen: the Build Phase construct menu lists the buildings t
 the common tier and the army tier — as **one list under one digit sequence** since the owner's menu
 spike (canon 2.27, 2026-09-30: "Remove the categories for now. We don't know how many items will be on
 a real game"); the Nexus powers have their own popup, and the Special will be a single slot the player
-arms and fires when ready ([`engine.md`](engine.md) Section 9.2). Gate 5B drew the two tiers as two
+arms and fires when ready ([`engine.md`](../system-design/grid-engine.md) Section 9.2). Gate 5B drew the two tiers as two
 labelled groups, and an empty group as its heading with "none available" so no hotkey moved when
 content arrived (a RULE then); both went with the headings, and come back if a real game's list is too
 long to read without them. Hotkeys still have to be stable for muscle memory to transfer
-([`engine.md`](engine.md) Section 9.7): a building added to the catalog goes after the ones already
+([`engine.md`](../system-design/grid-engine.md) Section 9.7): a building added to the catalog goes after the ones already
 there.
 
 ### 2.1a Terminology glossary — analysis and alternatives — GUIDANCE, except the loose-word/exact-name principle below, which is RULE
@@ -275,7 +275,7 @@ upgrades, tech tree research, building blueprints, special abilities, one time b
 > exactly one thing, always.
 
 This is the same split the engine already enforces one layer down, where cells carry style **roles**
-and never literal colors ([`engine.md`](engine.md) Section 9.1): the interface is allowed a loose,
+and never literal colors ([`engine.md`](../system-design/grid-engine.md) Section 9.1): the interface is allowed a loose,
 human word; the thing underneath it is not. So `game-modes.md` Section 2 keeps "Card" as it stands,
 `modifyContent` may say "upgrade" in card text without apology, and neither needs a rename — what
 needs care is only that the player can always tell *which mechanism* a given card belongs to.
@@ -290,7 +290,7 @@ cheap to decide when Milestone 8 needs it.
 
 ### 2.2 Nexus, faction, and Commander — the affinity model — GUIDANCE
 
-There are **five Prime Nexuses, one per faction** ([`terminal-nexus-lore.md`](terminal-nexus-lore.md)
+There are **five Prime Nexuses, one per faction** ([`terminal-nexus-lore.md`](lore.md)
 Sections 3–5). A Prime is rooted and never travels; it replicates a Grid Nexus and sends one
 psychically connected Commander with it. Many people claim a connection. Few receive an answer.
 
@@ -309,7 +309,7 @@ two things is design space, and it is wider than "which faction am I playing":
 **None of these needs a special case in the model**, which is the reason to write them down before a
 roster exists: an army is already a bounded composition validated against named pools (Section 2.1),
 so *dual-bound* is an army whose legality check names two factions, and *proxy* is an army whose
-powers lean on the death/absence/restoration cadence [`engine.md`](engine.md) Section 5.1 already
+powers lean on the death/absence/restoration cadence [`engine.md`](../system-design/grid-engine.md) Section 5.1 already
 specifies. Affinity is fiction plus data. It is not new machinery.
 
 Two constraints keep it from turning to mush:
@@ -349,10 +349,10 @@ This section records each faction's **mechanical identity**: the rule-shapes tha
 playable, the signature moment those shapes exist to produce, and the smallest engine capability each
 one needs. It contains no stats, no rosters, and no authorization — Milestone 12 still selects the
 deliberately tiny Citizens-versus-Ravels microgame, and everything here competes for a place in it or
-in later milestones.
+in later docs/milestones.
 
 The standard every entry must meet is the alignment test from
-[`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 8.6: **a player who has never read a word
+[`terminal-nexus-lore.md`](lore.md) Section 8.6: **a player who has never read a word
 of lore should be able to state the faction's philosophy from play alone.** A themed reskin of a
 generic ability fails that test. A rule that *is* the characterisation passes it.
 
@@ -423,20 +423,20 @@ player can feel without reading a word:
 | Feudals | Variance conditional on formation | Obedience converts chance into certainty; disorder is punished |
 | Alder | Variance in phase, never in outcome | Inevitability: the *when* breathes, the *whether* does not |
 
-All of it draws from the seeded gameplay stream ([`engine.md`](engine.md) Section 4.4). A "lucky"
+All of it draws from the seeded gameplay stream ([`engine.md`](../system-design/grid-engine.md) Section 4.4). A "lucky"
 faction is still deterministic per seed, replay-exact, and testable — volatility is a shape of the
 distribution, not an exemption from determinism. The player-facing consequence differs anyway: a
 Citizens replay teaches the plan; a Ravels replay retells the story.
 
 ### 4.3 Signature moments and the capabilities they need
 
-Each faction's signature moment (defined in [`terminal-nexus-lore.md`](terminal-nexus-lore.md)
+Each faction's signature moment (defined in [`terminal-nexus-lore.md`](lore.md)
 Section 8) implies a smallest engine capability. Where the current engine cannot express the moment,
 that is recorded here as roadmap input, not worked around in fiction:
 
 | Signature moment | Faction | Smallest capability that unlocks it |
 | --- | --- | --- |
-| The line holds | Citizens | Derived per-tick modifiers: bonuses computed as a pure function of the state at tick start (adjacency, alignment, overlapping arcs). Fits the narrow-hook sketch in [`engine.md`](engine.md) Section 8 |
+| The line holds | Citizens | Derived per-tick modifiers: bonuses computed as a pure function of the state at tick start (adjacency, alignment, overlapping arcs). Fits the narrow-hook sketch in [`engine.md`](../system-design/grid-engine.md) Section 8 |
 | The cascade | Ravels | Event-triggered effects: on-death area damage resolving inside the tick's Resolution step, with cascades bounded by a decreasing progress measure — the same discipline arbitration already has |
 | The second wave is larger | Glitch | Production recipes with Grid-state inputs: a producer consuming salvage tiles within a radius. A small extension of `ProductionRecipe` |
 | The shield dies standing | Feudals | Damage interception: a Resolution-step rule redirecting damage between adjacent units, deterministic under the existing tick order |
@@ -555,7 +555,7 @@ Milestone 12 is where the pool earns breadth.
 
 **`unlockStructure` has two triggers, not two mechanisms — canon 2.16.** A Nexus power can grant a
 structure outright; completing a prerequisite structure can grant its dependents the same way,
-through the tech tree ([`engine.md`](engine.md) Section 5.4, Section 2.1 above). A power that
+through the tech tree ([`engine.md`](../system-design/grid-engine.md) Section 5.4, Section 2.1 above). A power that
 unlocks a structure is simply fast-forwarding past a prerequisite the tree would otherwise require —
 one effect kind, reached two ways. A **Special** (Section 2.1) is a separate, smaller pool from
 Nexus powers: prepared once and triggered once per match, rather than dealt every Build Phase.
@@ -658,7 +658,7 @@ dice, and the campaign should let that happen and then hand him the redraw.
 
 Not starters; recorded so the work is not lost, and so a later unlock has somewhere to begin.
 **The bar for promoting one, or adding a new one, is a mechanic that needs a face** — not a gap in
-the story ([`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 10.6). A Commander who plays
+the story ([`terminal-nexus-lore.md`](lore.md) Section 10.6). A Commander who plays
 the same as an existing one is a name to maintain forever; three starters plus a short bench is
 already more cast than the first release needs.
 

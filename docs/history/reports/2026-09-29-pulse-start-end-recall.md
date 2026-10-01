@@ -12,7 +12,7 @@
 
 - **Canon version:** 2.26 (no change planned; canon proposals go to Section 9 and wait for acceptance).
 - **Milestone and gate:** Milestone 6 — Nexus Pulse Phase, gate 6A, "Start, end, Recall"
-  (`milestones/milestone-06-pulse-phase.md`). Promoted to CURRENT on 2026-09-29 when Mario accepted
+  (`docs/milestones/milestone-06-pulse-phase.md`). Promoted to CURRENT on 2026-09-29 when Mario accepted
   Milestone 5.
 - **Question this gate answers:** can a player press `p`, answer yes, watch the Build Phase's plan
   become a Nexus Pulse that the unmodified kernel resolves, and then tell — unprompted — that the Pulse
@@ -144,7 +144,7 @@ is the way to a fresh Build Phase until 6B builds the loop.
 - **Tooling.** The scripted playtest has a `wait` / `wait~MS` step and composes the Pulse at its own
   clock; `scripts/capture-spike-screenshots.mjs` has `pulseGif` and the ending's stills (the retired
   committed-panel shot is replaced by the Pulse's first moment); the playtest skill, `DEVELOPMENT.md` and
-  `docs/ui-patterns.md` section 7c say how it works.
+  `docs/system-design/ui-patterns.md` section 7c say how it works.
 
 ## 4. Automated results
 
@@ -191,7 +191,7 @@ the Build Phase's animation, the Pulse's ending and the presenter take time as a
 
 *(First build — the alarm described here was replaced in round 2; `pulse-alarm.png` is retired and `pulse-last-seconds.png` is its successor. See Section 11.)*
 
-**No human has played this build.** What an agent saw, reading the pictures in `evidence/screenshots/`
+**No human has played this build.** What an agent saw, reading the pictures in `docs/screenshots/`
 (`pulse-start`, `-fight`, `-alarm`, `-result-victory`, `-result-defeat`, `-result-timeup`,
 `-experiments`, and the GIF `pulse-ending`), running `scripts/playtest.mjs` flows, and loading the browser
 page in headless Chromium:
@@ -266,10 +266,10 @@ on), through code that changes nothing about how it resolves.
   raid at all ("both sides still standing"), `0 of yours came home` where "None of yours" reads better,
   panel prose touching the divider, and internal tags ("Milestone 6") in the Experiments' questions.
   All fixed, and one test now pins that no ending's words run off an 80 × 24 screen. The same lesson as
-  `docs/lessons-learned.md` says: read the picture before calling it done.
+  `docs/history/lessons-learned.md` says: read the picture before calling it done.
 - **A shot that could no longer be taken.** Regenerating the evidence failed on `build-nexus-committed`:
   accepting the question no longer stops at the committed panel, it starts the Pulse. The shot is
-  replaced by the Pulse's first moment; the old picture stays in `evidence/screenshots/` as gate 5D's
+  replaced by the Pulse's first moment; the old picture stays in `docs/screenshots/` as gate 5D's
   evidence, as `build-nexus-draft.png` was left before it. The committed panel remains what a build with
   no Pulse to start draws.
 - **In a scripted Pulse, time only moves forward.** A test (or a screenshot flow) that jumps to the
@@ -319,7 +319,7 @@ playtest — no human has yet watched the ending, which is what the milestone's 
   the Pulse's start: the Build Phase's plan becomes the kernel's opening state by the scenario loader's
   own conventions (`src/match/opening.ts`).
 - `engine.md` Section 9 (the interface) and Section 10: the Nexus Pulse is a mode of the Build Phase's
-  own screen — `docs/ui-patterns.md` section 7c, promoted: the ending is four beats in a fixed order,
+  own screen — `docs/system-design/ui-patterns.md` section 7c, promoted: the ending is four beats in a fixed order,
   every one a function of presentation time; a result is words first and colour second; nothing the
   player does while watching changes the Pulse.
 - `milestone-06-pulse-phase.md` Section 2.2: record what was built and the finding about the alarm — that
@@ -327,7 +327,7 @@ playtest — no human has yet watched the ending, which is what the milestone's 
 - `open-questions.md`: Q36 already carries a note of what the screen now shows for a time-out (done, not
   versioned). **No new question was registered**: every choice was reversible or is an Experiment.
 - Already done in this pull request, not canon: the governance ledger and history, `AGENTS.md` Section 2,
-  the Milestone 6 tracker, `docs/next-steps.md`, `docs/ui-patterns.md`, `DEVELOPMENT.md` and the playtest
+  the Milestone 6 tracker, `docs/milestones/next-steps.md`, `docs/system-design/ui-patterns.md`, `DEVELOPMENT.md` and the playtest
   skill.
 
 ## 10. Next authorized action
@@ -336,11 +336,11 @@ Mario plays the Pulse — plan, `[s] Start Pulse` (the menu's last row), Enter o
 and pastes his settings export into the pull request; an agent settles each Experiment it answers
 (adopt the value, delete the Experiment, record the answer). Gate 6B (the loop into the next Build
 Phase, the trigger runner's simulation band, PERIMETER's three waves, Q36) waits for his word;
-`docs/next-steps.md` has the prompt to start it. Nothing else is authorized.
+`docs/milestones/next-steps.md` has the prompt to start it. Nothing else is authorized.
 
 ## 11. Round 2 — the owner's first look at the pull request (2026-09-29)
 
-Mario's feedback, in the log at `docs/feedback/2026-09-29-pr48-pulse.md` (F41-F46): the Build Phase needs a
+Mario's feedback, in the log at `docs/history/feedback/2026-09-29-pr48-pulse.md` (F41-F46): the Build Phase needs a
 visible way to end the phase, like a strategy game's "end turn" button; the alarm's red was far too
 intense ("a nuclear boom"), though the anticipation was right; the Pulse title should show a timer and only
 that timer should flash in the last three seconds; the border of the screen should light up like a
@@ -446,7 +446,7 @@ what it answers. Gate 6B waits for his word.
 
 ## 12. Round 3 — the owner's second look at the pull request (2026-09-29)
 
-Mario's feedback, in the log at `docs/feedback/2026-09-29-pr48-round-3.md` (F47-F51): the Start button is too
+Mario's feedback, in the log at `docs/history/feedback/2026-09-29-pr48-round-3.md` (F47-F51): the Start button is too
 large — it should be the last option of the menu, a regular row called `[s] Start Pulse`; the menu must
 always be navigable with Up, Down and Enter, with hotkeys and clicks only extras, and that goes in the UI
 spec; the start popup should be a confirmation screen, not a question, titled "Battle Round 1", its body
@@ -471,7 +471,7 @@ the menu will be reorganised later, on a spike of its own.
   `s` (and unlisted `y`) start the Pulse; Esc, `x`, `close [esc]` and a click outside go back; `n` is no
   longer a key there. The command no longer carries a yes or no (`{ kind: "confirm-commit" }`): going
   back is the cancel every popup has. The key help reads `BATTLE ROUND  enter/s/space start  esc back`.
-- **The rule.** `docs/ui-patterns.md` section 4 opens with "a menu can always be walked with Up, Down and
+- **The rule.** `docs/system-design/ui-patterns.md` section 4 opens with "a menu can always be walked with Up, Down and
   Enter alone", section 0's first goal says it too, and sections 5 (a confirmation is a screen, not a
   question) and 6 (the last row) are rewritten. A test presses Down and Enter on every menu entry in turn and
   fails to compile if a new kind of entry has no case.

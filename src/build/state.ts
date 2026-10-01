@@ -392,7 +392,7 @@ export const EXPLORE_ENTRY = 0
 export const NEXUS_ENTRY = 1
 
 /**
- * **Where the keyboard is** — the menu, or the map in one of its three modes (docs/ui-patterns.md, "The
+ * **Where the keyboard is** — the menu, or the map in one of its three modes (docs/system-design/ui-patterns.md, "The
  * screen and the keyboard"): **placing** a building (its ghost at the cursor, its card in the panel),
  * **Explore Map** (the panel describes what is under the cursor), or **plain navigation** (the bare
  * cursor, the menu beside it). Derived from the stored fields — `focus`, `armed`, `exploreMap` — in

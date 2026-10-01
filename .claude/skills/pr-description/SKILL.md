@@ -95,7 +95,7 @@ Then the collapsed footer:
 <details><summary>Project bookkeeping</summary>
 
 - Gate: 5F — PASS (or: not a gate)
-- Report: `evidence/gate-5f-report.md`
+- Report: `docs/history/reports/2026-09-26-layout-and-focus.md`
 - Canon changes: None (or what changed, and the new version)
 - Questions: opened Q60; answered Q57
 
@@ -119,11 +119,11 @@ The repository is public, so an image committed on the branch displays inline fr
 - **After** images: pin to the pushed head commit (`git rev-parse HEAD` after pushing), never to the
   branch name — the branch moves and old descriptions would silently show new pictures.
 - **Before** images: pin to `origin/main`'s commit, and only if the file exists there
-  (`git cat-file -e origin/main:evidence/screenshots/<name>.png`).
+  (`git cat-file -e origin/main:docs/screenshots/<name>.png`).
 - **Look at every image yourself before linking it** (open the PNG with the Read tool). An image
   captured one key early is worse than none.
 - Make them with the `playtest` skill (`node scripts/playtest.mjs ... --png final` or `--gif`, with
-  `--out evidence/screenshots`); keep a GIF under about 1 MB.
+  `--out docs/screenshots`); keep a GIF under about 1 MB.
 
 ## Pushing more commits to an open PR
 

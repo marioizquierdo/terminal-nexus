@@ -1,4 +1,4 @@
-// Back and cancel (docs/ui-patterns.md, "Back, cancel and close"): Esc and `x` go back one level at a
+// Back and cancel (docs/system-design/ui-patterns.md, "Back, cancel and close"): Esc and `x` go back one level at a
 // time — a popup to the one it was opened from, placing or Explore Map to where it began, the map to the
 // menu — and there `x` and a right click stop, while Esc opens the game menu. Two commands carry it:
 // `cancel` (Esc, the top bar's label) and `back` (`x`, a right click). Driven through raw bytes into the

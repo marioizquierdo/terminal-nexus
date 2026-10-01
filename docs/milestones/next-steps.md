@@ -1,11 +1,11 @@
 # Terminal Nexus — next steps and carry-over
 
-**Document role:** The queue: what waits on Mario, what comes next, and the small work that has piled up beside the milestones
-**Status:** WORKING — keep it short; delete an item when it is done, and move a decision into `specs/open-questions.md` when it becomes one
+**Document role:** The queue: what waits on Mario, what comes next, and the small work that has piled up beside the docs/milestones
+**Status:** WORKING — keep it short; delete an item when it is done, and move a decision into `docs/milestones/open-questions.md` when it becomes one
 **Updated:** 2026-09-30 (gate 6B built: the loop and PERIMETER's waves; earlier: gate 6A accepted and gate 6B active; earlier: the menu spike's follow-up, F82-F86, and the 6B prompt; earlier: its third round, feedback F77-F81 and his third export, on the same pull request; earlier: its second round and a general review, the menu spike, Milestone 5 accepted and gate 6A)
 **License:** Apache-2.0
 
-Milestones say what the game must become (`milestones/`); this says what is waiting *right now*, and
+Milestones say what the game must become (`docs/milestones/`); this says what is waiting *right now*, and
 the cleanup that does not belong to any gate.
 
 ## 1. Waiting on Mario
@@ -17,7 +17,7 @@ the cleanup that does not belong to any gate.
 - **Q70**: when his squads fall in round 2, the round stops with the raid at the gate. Does that read
   right, or should a side whose Nexus stands only lose when it falls?
 - **Q69**: an order primitive (hold, head for a place) as its own gate — the smallest kernel change that
-  makes an intention something the kernel keeps. `docs/scripted-opponent.md` has the thinking he asked for.
+  makes an intention something the kernel keeps. `docs/game-design/scripted-opponent.md` has the thinking he asked for.
 - **Gate 6A's ending, in words** (accepted 2026-09-30, but not yet described): whether the flashing timer
   and the light round the border read as anticipation rather than an alarm, whether the red is rare and
   faint enough, and whether the result is clear without being told.
@@ -32,15 +32,15 @@ the cleanup that does not belong to any gate.
 
 ## 2. The current gate: 6B — the loop back into the next Build Phase
 
-Milestone 6 (`milestones/milestone-06-pulse-phase.md`) has three gates: **6A** start, end, Recall
+Milestone 6 (`docs/milestones/milestone-06-pulse-phase.md`) has three gates: **6A** start, end, Recall
 (accepted 2026-09-30); **6B** the loop back into the next Build Phase, and the trigger runner's
 simulation band — **the Active gate, built and reported (PASS), awaiting his playtest**
-(`evidence/gate-6b-report.md`); **6C** minimal automatic production, which waits for his word. Take one
+(`docs/history/reports/2026-09-30-round-loop-and-missions.md`); **6C** minimal automatic production, which waits for his word. Take one
 gate per session.
 
 ## 3. Carry-over (small, none blocking)
 
-**From gate 6B** (the loop; `evidence/gate-6b-report.md` sections 6 and 7 have the reasons):
+**From gate 6B** (the loop; `docs/history/reports/2026-09-30-round-loop-and-missions.md` sections 6 and 7 have the reasons):
 
 - **PERIMETER is played on the Build Phase's placeholder map**, with regions named for its landmarks
   (the ridge's gap, the east flats). PERIMETER's own map is Q38's.
@@ -70,7 +70,7 @@ gate per session.
 - **A Settings restart with buildings planned throws removal sparks** over each; harmless, and arguably
   right, but the live loop cannot tell a restart from an undo.
 
-**From the menu spike** (`evidence/menu-spike-report.md` section 7 has the reasons):
+**From the menu spike** (`docs/history/reports/2026-09-30-menu-spike.md` section 7 has the reasons):
 
 - **The Controls page is written by hand** (`controlsPage` in `src/build/help.ts`). A new key needs a
   line there as well as in `src/build/keyboard.ts`; a test holds every bracketed key a *hint* names to a
@@ -80,7 +80,7 @@ gate per session.
 - **The card while placing shows what is being built, never what is under the cursor**; a player who
   wants to read a building on the map while placing presses Esc, then `e`.
 
-**From the menu spike's second round** (`evidence/menu-spike-report.md` section 7 has the reasons):
+**From the menu spike's second round** (`docs/history/reports/2026-09-30-menu-spike.md` section 7 has the reasons):
 
 - **Three same-state tests click tiles chosen outside the click's edge zones** (build-spike,
   build-nexus, build-experiments): if the owner changes the click edge zone, those tiles need moving.
@@ -141,7 +141,7 @@ not pass the protocol through — measure, do not assume.
 
 ### The design
 
-The decision is `specs/open-questions.md` Q66; this is the working design. Principle: **the plain path
+The decision is `docs/milestones/open-questions.md` Q66; this is the working design. Principle: **the plain path
 always works; a host that offers more makes it better.**
 
 - **Tier 1 (floor).** Every move is also one key (tap = 1 tile, Shift/PageUp/PageDown = 12), so no hold
@@ -166,7 +166,7 @@ always works; a host that offers more makes it better.**
 - **Parity.** The reducer still gets `move-cursor` commands; only the input path changes. A test feeds
   the same intent as timed presses and as press/release events and asserts the same positions.
 - **Ship it behind an Experiment** ("Key releases": auto | off) so Mario can compare, and after the
-  input event with a `phase` exists (`docs/portability.md`, item 1) — that seam is the real work.
+  input event with a `phase` exists (`docs/system-design/portability.md`, item 1) — that seam is the real work.
 
 ## 5. Cleanup and refactor queue
 
@@ -174,7 +174,7 @@ always works; a host that offers more makes it better.**
 | --- | --- | --- |
 | Compact `AGENTS.md` Section 2's per-gate paragraphs into two lines each plus a link | It is ~130 lines every session reads first; the detail lives in the tracker and the gate reports | **due now — Milestone 5 was accepted 2026-09-29**; its own small pull request, since a docs-only diff is easy to review |
 | Screenshot flows set Experiments with `--settings`, not "Down*6" | Every added or removed Experiment shifts a count (three recounts this round) | a morning; only the flows that set a value, not the ones that show the popup |
-| A `ScreenHost` interface and an `InputEvent` with `phase` | Fewer TTY fakes, real key releases, gamepad and touch-hold | see `docs/portability.md` section 4 |
+| A `ScreenHost` interface and an `InputEvent` with `phase` | Fewer TTY fakes, real key releases, gamepad and touch-hold | see `docs/system-design/portability.md` section 4 |
 | One launch-options module for the command line and `#settings=` / `#keys=` | A new option can reach one and not the other | small |
 | A host-conformance test: run a key script through the terminal path and the page (headless Chromium) and compare frames | Turns the by-hand check we did into a test | small to medium |
 

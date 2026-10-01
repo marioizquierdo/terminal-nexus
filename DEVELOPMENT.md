@@ -7,16 +7,16 @@ bounded terminal renderer experiment, not a vertical slice of the whole game.
 
 1. Run `./scripts/check-repository.sh`. It prints the canon version and the active gate.
 2. Read `AGENTS.md`.
-3. Read `specs/terminal-nexus-concept.md`.
-4. Open `specs/README.md` and follow its current-gate reading order.
-5. Skim `specs/open-questions.md` Section 4 so you know what is undecided before you decide it.
+3. Read `docs/game-design/concept.md`.
+4. Open `docs/README.md` and follow its current-gate reading order.
+5. Skim `docs/milestones/open-questions.md` Section 4 so you know what is undecided before you decide it.
 6. Inspect existing code, tests, and evidence before proposing changes.
-7. Copy `specs/templates/gate-report.md` and fill in its first section: question, artifact, evidence,
+7. Copy `.github/pull_request_template.md` and fill in its first section: question, artifact, evidence,
    exclusions, stop conditions.
 
-The current implementation contract is whichever file `milestones/README.md` marks **CURRENT**, through
+The current implementation contract is whichever file `docs/milestones/README.md` marks **CURRENT**, through
 its own **Active gate**. Milestone 1 (Grid Battles) is complete and accepted; the campaign's first
-level is being built across the milestones after it. `./scripts/check-repository.sh` prints the
+level is being built across the docs/milestones after it. `./scripts/check-repository.sh` prints the
 current gate, so it is faster than reading for it.
 
 ## Current commands
@@ -32,7 +32,7 @@ invariants, not literals — canon version and current gate are derived from the
 correct canon work never breaks it. What it enforces:
 
 - required files exist;
-- every document under `specs/` and `concept/` declares the same canon version as `specs/README.md`,
+- every document under `specs/` and `concept/` declares the same canon version as `docs/README.md`,
   and so does `AGENTS.md`;
 - every such document carries `Document role`, `Status`, `Canon version`, `Updated`, `License` —
   **except a document named in `check-repository.sh`'s `historical_archives` list**, a frozen record
@@ -40,7 +40,7 @@ correct canon work never breaks it. What it enforces:
   and it is exempt from the terminology scan below, because an archive edited to use today's words
   stops being a record of what was actually said;
 - exactly one milestone is `CURRENT`, declares an `Active gate`, and matches the governance ledger;
-- every `Q<n>` referenced anywhere is defined in `specs/open-questions.md`, and every `OPEN` question
+- every `Q<n>` referenced anywhere is defined in `docs/milestones/open-questions.md`, and every `OPEN` question
   carries a recommendation;
 - retired terminology stays retired — mark a line `<!-- stale-ok -->` to quote it deliberately;
 - `.devcontainer/devcontainer.json` parses, local Markdown links resolve, code fences balance, and
@@ -59,7 +59,7 @@ One self-contained HTML file with the real menu, Build Phase and two Pulse repla
 canvas, with an on-screen key bar for the keys a phone keyboard lacks and taps as mouse clicks. It
 opens straight from disk; for a phone, a session publishes it as a private claude.ai page for the pull
 request, with the commit printed at the top of the page. It is **a development tool, not a platform**
-(`specs/engine.md` 10.2): the browser runs the terminal's own three screen loops through a stand-in
+(`docs/system-design/grid-engine.md` 10.2): the browser runs the terminal's own three screen loops through a stand-in
 terminal (`src/view/backends/ports.ts`), and adds only a canvas backend
 (`src/view/backends/canvas.ts`), key and tap translation (`src/web/keys.ts`, through the scripted
 playtest's own key names) and browser-stored settings (`src/web/host.ts`, the one file that touches the
@@ -163,7 +163,7 @@ ends — a style the map names for itself (this map's is a fence), the solid bar
 none — in a quieter colour than the frame; the menu's divider is the map's west side (the owner's
 picks from his 2026-09-29 playtest). There is no minimap: the sides' weight says there is more map.
 
-**The menu runs the screen** (the owner's round-2 direction; `docs/ui-patterns.md` has the rules).
+**The menu runs the screen** (the owner's round-2 direction; `docs/system-design/ui-patterns.md` has the rules).
 The keyboard starts on the menu, on its first entry, and the map cursor on the Grid Nexus: Up/Down
 and Enter/Space work the menu, stopping at its first and last rows (Left and Right only grey the row's
 words for a moment). Tab moves the keyboard to the map in **plain navigation** — nothing armed, the
@@ -270,7 +270,7 @@ light and the sparks as its follow-ups; `tests/animation.test.ts` holds the trac
 
 Shift+Arrow is the fast move, and so are PageUp/PageDown and Home/End, because several terminals
 deliver no shifted arrows at all — `node scripts/probe-modified-keys.mjs` prints the survey, and
-`evidence/gate-5a-report.md` has the table. So does Option+Arrow as macOS terminals send it (`ESC b`,
+`docs/history/reports/2026-09-21-scrolling-and-placement.md` has the table. So does Option+Arrow as macOS terminals send it (`ESC b`,
 `ESC f`, or `ESC` before an arrow), bound from their documented defaults; **`node
 scripts/lib/key-echo.mjs` prints exactly what each key sends in the terminal it runs in** (press `q`
 to leave), which is how to check a terminal nobody has measured yet. Every binding is on the
@@ -369,7 +369,7 @@ node scripts/playtest.mjs --file flow.keys --size 104x32 --capability monochrome
 Presses keys on the Build Phase screen (`--spike`) without a terminal and keeps what the screen
 showed after every key: the text of every step in `.playtest/<name>.txt`, and on request PNGs
 (`--png final`, `--png all`, `--png 0,3,6`) and an animated GIF of the whole sequence (`--gif`).
-Output goes to `.playtest/`, which git ignores; pass `--out evidence/screenshots` only for an image
+Output goes to `.playtest/`, which git ignores; pass `--out docs/screenshots` only for an image
 that is going into a pull request. `--help` lists everything, including `--size`, `--capability`,
 `--theme`, `--glyphs`, `--delay` and `--hold` — and `--settings "<text>"`, which starts the script from
 an exported settings text, the way to reproduce what the owner pasted into a pull request.
@@ -408,7 +408,7 @@ node scripts/capture-screenshots.mjs --only mirror-melee
 
 It drives `grid` (watch, the default action) inside a tmux pseudo-terminal — a real PTY, so the ANSI backend takes
 the same path a person gets — pauses it, steps to an exact tick, captures the pane with its escape
-sequences, and renders it to a PNG in `evidence/screenshots/` through the Chromium already present
+sequences, and renders it to a PNG in `docs/screenshots/` through the Chromium already present
 for Playwright. Use it when a change touches the composition: a frame's *text* is what the tests
 assert on, and it says nothing about spacing, density, or where the eye goes.
 
@@ -416,7 +416,7 @@ assert on, and it says nothing about spacing, density, or where the eye goes.
 that actually mean something: 80 x 24 (the floor and the minimum viewport), 104 x 32 (the maximum
 viewport), 128 x 24 (two columns per tile), and 79 x 24 (one column below the floor, so the resize
 gate). `--only <name>` captures a single shot; `--out <dir>` writes somewhere other than
-`evidence/screenshots/`. **Most of its shots are composed in-process**, through the scripted playtest
+`docs/screenshots/`. **Most of its shots are composed in-process**, through the scripted playtest
 above, because a shot about layout or a flow must not be able to come out one key early — one did,
 with a popup still open, because the text it waited for was drawn before the key that closed it. Each
 names text its frame must contain and fails if it does not. **A few stay on tmux on purpose**, because
@@ -500,7 +500,7 @@ A Deno probe therefore costs an install step in every session, which is why Mile
 
 ## Evidence reports
 
-Copy `specs/templates/gate-report.md` into the spike's `evidence/report.md` and fill it in **while you
+Copy `.github/pull_request_template.md` into the spike's `docs/history/reports/2026-08-21-pulse-playground.md` and fill it in **while you
 work**. A report reconstructed at the end is how a gate quietly turns into a summary of whatever got
 built.
 
@@ -509,16 +509,16 @@ Reports and large evidence belong beside the implementation spike, not inside th
 ## Canon changes
 
 The canon is split by responsibility under `specs/`. Change the narrowest authoritative document and
-follow the protocol in `specs/project-governance.md`. Increment the shared canon version for semantic
+follow the protocol in `docs/game-design/decisions.md`. Increment the shared canon version for semantic
 changes — the validator names the documents you forgot.
 
-Undecided things go in `specs/open-questions.md` with a recommendation, not into a hedge inside a
+Undecided things go in `docs/milestones/open-questions.md` with a recommendation, not into a hedge inside a
 specification.
 
 ## Change log
 
 Human-readable history of the development setup. Product and canon history lives in
-`specs/project-governance.md` Section 6.
+`docs/game-design/decisions.md` Section 6.
 
 ### 2026-08-21 — Milestone 1 built: the Pulse Playground (canon 2.6)
 
@@ -562,11 +562,11 @@ Things worth knowing before touching this:
 
 The canon read as a contract an isolated session has to execute, rather than as a design document.
 Full findings, including the ones deliberately *not* acted on, are in
-`docs/spec-audit-2026-08-21.md`.
+`docs/history/spec-audit-2026-08-21.md`.
 
 **Tooling**
 
-- The validator now checks `AGENTS.md`'s canon version against `specs/README.md`. `AGENTS.md`
+- The validator now checks `AGENTS.md`'s canon version against `docs/README.md`. `AGENTS.md`
   Section 4 restates ~20 canon invariants as a summary; it carried no version, so a canon bump could
   leave it stale with nothing to notice. It now has one, and forgetting it fails the build.
 - The fix that suggested itself and was **not** taken: teaching the validator to verify `engine.md`
@@ -669,7 +669,7 @@ A second pass after Mario clarified the shape of the engine and refocused the fi
 **Authority markers**
 
 Every section of `engine.md` now declares **LAW**, **GUIDANCE**, or **UNPROVEN**, with a legend in
-`specs/README.md`. Most of the design canon is GUIDANCE — a recommendation written before the thing
+`docs/README.md`. Most of the design canon is GUIDANCE — a recommendation written before the thing
 existed, so a session facing a fork has better than a coin flip. The rule that makes it work:
 *descriptive completeness is not authorization.*
 
@@ -690,7 +690,7 @@ each producing something runnable:
 **Packaging, standalone binaries, SSH, PTY, and browser delivery are deferred out of the milestone
 entirely.** They answer no question the game currently has.
 
-**New: `specs/ascii-effects.md`**
+**New: `docs/system-design/effects.md`**
 
 The particle system, formalised: the pure `EffectRecipe` contract (absolute time in, sparse cells
 out, `f(t)` never depending on `f(t-1)`), the beat structure, the craft rules, and a ten-effect
@@ -700,7 +700,7 @@ together, never in a later accessibility pass. Gate 1C is the spike that proves 
 **Tooling**
 
 - The retired-terminology guard now covers the Grid rename.
-- `specs/ascii-effects.md` is a required file.
+- `docs/system-design/effects.md` is a required file.
 
 
 ### 2026-08-20 — canon audit and autonomy pass (canon 2.1)
@@ -714,13 +714,13 @@ An audit of the canon against itself, against the concept art, and against curre
   while `engine.md` Section 11.2 simultaneously called remote and browser surfaces "not Milestone 1
   product commitments." Gate 1A is now cell frame and lifecycle only. Packaging and remote delivery
   moved to **Gate 1C**, which is authorized independently and does not block the battle reel.
-- **`specs/open-questions.md` added** — the durable register for decisions that need Mario. Seeded
+- **`docs/milestones/open-questions.md` added** — the durable register for decisions that need Mario. Seeded
   with seven questions found during the audit. The register is what lets a session get blocked on one
   fork without stalling on all of them.
-- **`specs/templates/gate-report.md` added** — the fill-in template that closes a gate.
-- **`specs/ascii-art-references.md` added** — researched sources for producing terminal art, with what
+- **`.github/pull_request_template.md` added** — the fill-in template that closes a gate.
+- **`docs/game-design/ascii-art-references.md` added** — researched sources for producing terminal art, with what
   each one is actually good for.
-- **`concept/README.md` added** — index of the concept folder: the early art, the real screenshots
+- **`docs/game-design/concept-art/README.md` added** — index of the concept folder: the early art, the real screenshots
   that replaced it, and the archived original specification.
 - **`engine.md` Section 11 corrected against measurement** (see below). Sections 6.1, 6.4, 10.2, and
   10.4 now point at the questions they leave open instead of reading as settled.

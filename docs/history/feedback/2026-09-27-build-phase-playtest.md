@@ -16,7 +16,7 @@ Status values: **Built** (in the round-2 PR, with a test where behaviour changed
 decision first; the question is named) · **Contested** (we think it should not be done as asked; the
 reason is written here for him to answer).
 
-The patterns he asked to keep consistent are collected in [`../ui-patterns.md`](../ui-patterns.md).
+The patterns he asked to keep consistent are collected in [`../ui-patterns.md`](../../system-design/ui-patterns.md).
 
 ## Items
 
@@ -168,7 +168,7 @@ returns there instead.
 
 ### F14 — A `ui-patterns.md` so the interface stays consistent
 
-**Built:** [`../ui-patterns.md`](../ui-patterns.md), a short list of the interaction patterns above,
+**Built:** [`../ui-patterns.md`](../../system-design/ui-patterns.md), a short list of the interaction patterns above,
 written as rules the next screen (the Pulse view, Debug Mode, the campaign menu) follows too. Not
 canon yet; promoted into `engine.md` when he accepts it.
 
@@ -217,7 +217,7 @@ confirmations to fade after a few seconds, it rides 5H.
 ## Design documents owed an update (for the orchestrator)
 
 **Done at canon 2.21 (2026-09-27).** The design documents now describe what the code does:
-`specs/engine.md` 3.3 (the solid-bar map edge on all four sides, Q56; the map's west side as its own
+`docs/system-design/grid-engine.md` 3.3 (the solid-bar map edge on all four sides, Q56; the map's west side as its own
 column beside the menu's plain divider, F17; a short map closing on its own edge), 9.2 (planned
 buildings at full strength, F5; the information panel, F12; the one popup shape, F11; the one-line
 empty group; the per-mode key help), 9.4 (a popup drawn last in the chrome band, with no band of its
@@ -225,7 +225,7 @@ own) and 9.7 (the menu orchestrates and every placement returns to it, disarmed,
 bindings table — Esc and `x` as one back, `q` asks, Tab, `[e] Explore`, a second Right, Enter/Space
 inspecting while exploring, a click that focuses before it activates, a click outside a popup; the
 Nexus popup closing on the pick, Q60); and `AGENTS.md` Section 4's input-model and Build Phase panel
-summaries. `docs/ui-patterns.md` is pointed to from `engine.md` Section 9 as the working list, and
+summaries. `docs/system-design/ui-patterns.md` is pointed to from `engine.md` Section 9 as the working list, and
 stays unpromoted until the owner accepts it.
 
-The browser playtest page's own rule is already in `specs/engine.md` 10.2 (canon 2.20).
+The browser playtest page's own rule is already in `docs/system-design/grid-engine.md` 10.2 (canon 2.20).

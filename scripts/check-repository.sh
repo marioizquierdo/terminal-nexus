@@ -24,7 +24,7 @@ fail() {
 # them, would falsify the record rather than fix a bug. List them explicitly; every check below that
 # cares about canon versioning, the metadata header, or retired terminology skips a listed path.
 historical_archives=(
-  "concept/2026-08-19 - original spec.md"
+  "docs/history/original-spec-2026-08-19.md"
 )
 
 is_historical_archive() {
@@ -58,33 +58,33 @@ required_files=(
   "LICENSE"
   "LICENSE-CREATIVE"
   "NOTICE"
-  "concept/README.md"
-  "specs/README.md"
-  "specs/terminal-nexus-concept.md"
-  "specs/terminal-nexus-lore.md"
-  "specs/engine.md"
-  "specs/commander-armies.md"
-  "specs/campaigns.md"
-  "specs/game-modes.md"
-  "specs/project-governance.md"
-  "specs/open-questions.md"
-  "specs/ascii-art-references.md"
-  "specs/ascii-effects.md"
-  "specs/templates/gate-report.md"
-  "specs/backlog-pulse-completion.md"
-  "milestones/README.md"
-  "milestones/milestone-01-grid-battles.md"
-  "milestones/milestone-02-campaign-design.md"
-  "milestones/milestone-03-game-menu.md"
-  "milestones/milestone-04-campaign-menu.md"
-  "milestones/milestone-05-build-phase.md"
-  "milestones/milestone-06-pulse-phase.md"
-  "milestones/milestone-07-worker-economy.md"
-  "milestones/milestone-08-commander.md"
-  "milestones/milestone-09-mission-cutscenes.md"
-  "milestones/milestone-10-first-and-second-missions.md"
-  "milestones/milestone-11-challenge-runs.md"
-  "milestones/milestone-12-content-iteration.md"
+  "docs/game-design/concept-art/README.md"
+  "docs/README.md"
+  "docs/game-design/concept.md"
+  "docs/game-design/lore.md"
+  "docs/system-design/grid-engine.md"
+  "docs/game-design/commander-armies.md"
+  "docs/game-design/campaigns.md"
+  "docs/game-design/game-modes.md"
+  "docs/game-design/decisions.md"
+  "docs/milestones/open-questions.md"
+  "docs/game-design/ascii-art-references.md"
+  "docs/system-design/effects.md"
+  ".github/pull_request_template.md"
+  "docs/milestones/backlog.md"
+  "docs/milestones/README.md"
+  "docs/milestones/completed/milestone-01-grid-battles.md"
+  "docs/milestones/completed/milestone-02-campaign-design.md"
+  "docs/milestones/completed/milestone-03-game-menu.md"
+  "docs/milestones/milestone-04-campaign-menu.md"
+  "docs/milestones/completed/milestone-05-build-phase.md"
+  "docs/milestones/milestone-06-pulse-phase.md"
+  "docs/milestones/milestone-07-worker-economy.md"
+  "docs/milestones/milestone-08-commander.md"
+  "docs/milestones/milestone-09-mission-cutscenes.md"
+  "docs/milestones/milestone-10-first-and-second-missions.md"
+  "docs/milestones/milestone-11-challenge-runs.md"
+  "docs/milestones/milestone-12-content-iteration.md"
   ".devcontainer/devcontainer.json"
   ".github/workflows/ci.yml"
 )
@@ -94,13 +94,13 @@ for required_file in "${required_files[@]}"; do
 done
 
 # ---------------------------------------------------------------------------
-# 2. Canon version agreement (derived from specs/README.md)
+# 2. Canon version agreement (derived from docs/README.md)
 # ---------------------------------------------------------------------------
 
-canon_version="$(sed -n 's/^\*\*Canon version:\*\* \(.*\)$/\1/p' specs/README.md | head -1)"
+canon_version="$(sed -n 's/^\*\*Canon version:\*\* \(.*\)$/\1/p' docs/README.md | head -1)"
 
 if [[ -z "$canon_version" ]]; then
-  fail "specs/README.md does not declare a canon version"
+  fail "docs/README.md does not declare a canon version"
 else
   while IFS= read -r doc; do
     is_historical_archive "$doc" && continue
@@ -108,7 +108,7 @@ else
     if [[ -z "$declared" ]]; then
       fail "$doc does not declare a canon version"
     elif [[ "$declared" != "$canon_version" ]]; then
-      fail "$doc declares canon version '$declared'; specs/README.md declares '$canon_version'"
+      fail "$doc declares canon version '$declared'; docs/README.md declares '$canon_version'"
     fi
   done < <(find specs concept -type f -name '*.md' -print | sort)
 
@@ -118,7 +118,7 @@ else
   if [[ -z "$agents_version" ]]; then
     fail "AGENTS.md does not declare a canon version"
   elif [[ "$agents_version" != "$canon_version" ]]; then
-    fail "AGENTS.md declares canon version '$agents_version'; specs/README.md declares '$canon_version'"
+    fail "AGENTS.md declares canon version '$agents_version'; docs/README.md declares '$canon_version'"
   fi
 fi
 
@@ -127,7 +127,7 @@ fi
 # ---------------------------------------------------------------------------
 
 while IFS= read -r doc; do
-  [[ "$doc" == "specs/README.md" ]] && continue
+  [[ "$doc" == "docs/README.md" ]] && continue
   is_historical_archive "$doc" && continue
   for field in "Document role" "Status" "Canon version" "Updated" "License"; do
     grep -Fq "**${field}:**" "$doc" || fail "$doc is missing the '${field}' metadata field"
@@ -135,16 +135,16 @@ while IFS= read -r doc; do
 done < <(find specs concept -type f -name '*.md' -print | sort)
 
 # Milestones are trackers, not versioned canon (AGENTS.md Section 1): they carry their own
-# lighter header and are not required to agree with specs/README.md's canon version, since a
+# lighter header and are not required to agree with docs/README.md's canon version, since a
 # session checks tasks off mid-milestone independently of any canon-version bump.
 while IFS= read -r doc; do
   for field in "Document role" "Status" "Updated" "License"; do
     grep -Fq "**${field}:**" "$doc" || fail "$doc is missing the '${field}' metadata field"
   done
-done < <(find milestones -maxdepth 1 -type f -name 'milestone-*.md' -print | sort)
+done < <(find docs/milestones -maxdepth 1 -type f -name 'milestone-*.md' -print | sort)
 
 # ---------------------------------------------------------------------------
-# 4. Exactly one CURRENT milestone, agreeing with milestones/README.md
+# 4. Exactly one CURRENT milestone, agreeing with docs/milestones/README.md
 # ---------------------------------------------------------------------------
 
 current_milestones=()
@@ -155,7 +155,7 @@ while IFS= read -r doc; do
     GATED | COMPLETE | REVISE | BLOCKED | STOPPED) ;;
     *) fail "$doc declares status '$status'; expected one of CURRENT, GATED, COMPLETE, REVISE, BLOCKED, STOPPED" ;;
   esac
-done < <(find milestones -maxdepth 1 -type f -name 'milestone-*.md' -print | sort)
+done < <(find docs/milestones -maxdepth 1 -type f -name 'milestone-*.md' -print | sort)
 
 current_gate=""
 if (( ${#current_milestones[@]} != 1 )); then
@@ -170,13 +170,13 @@ else
 
   current_gate="$(sed -n 's/^\*\*Active gate:\*\* \(.*\)$/\1/p' "$current_milestone" | head -1)"
 
-  if ! grep -Eq "^\|[^|]*${current_basename}[^|]*\| CURRENT \|" milestones/README.md; then
-    fail "milestones/README.md does not mark $current_basename as CURRENT"
+  if ! grep -Eq "^\|[^|]*${current_basename}[^|]*\| CURRENT \|" docs/milestones/README.md; then
+    fail "docs/milestones/README.md does not mark $current_basename as CURRENT"
   fi
 
-  readme_current_rows="$(grep -cE '^\|[^|]*\| CURRENT \|' milestones/README.md || true)"
+  readme_current_rows="$(grep -cE '^\|[^|]*\| CURRENT \|' docs/milestones/README.md || true)"
   if [[ "$readme_current_rows" != "1" ]]; then
-    fail "milestones/README.md has ${readme_current_rows} CURRENT rows; exactly one is allowed"
+    fail "docs/milestones/README.md has ${readme_current_rows} CURRENT rows; exactly one is allowed"
   fi
 fi
 
@@ -184,14 +184,14 @@ fi
 # 5. Open-question references resolve
 # ---------------------------------------------------------------------------
 
-defined_questions="$(sed -n 's/^### \(Q[0-9]\+\) .*$/\1/p' specs/open-questions.md | sort -u)"
+defined_questions="$(sed -n 's/^### \(Q[0-9]\+\) .*$/\1/p' docs/milestones/open-questions.md | sort -u)"
 
-referenced_questions="$(grep -rhoE '\bQ[0-9]+\b' specs concept milestones --include='*.md' 2>/dev/null | sort -u || true)"
+referenced_questions="$(grep -rhoE '\bQ[0-9]+\b' specs concept docs/milestones --include='*.md' 2>/dev/null | sort -u || true)"
 
 while IFS= read -r question; do
   [[ -z "$question" ]] && continue
   if ! grep -Fxq "$question" <<< "$defined_questions"; then
-    fail "$question is referenced but not defined in specs/open-questions.md"
+    fail "$question is referenced but not defined in docs/milestones/open-questions.md"
   fi
 done <<< "$referenced_questions"
 
@@ -202,7 +202,7 @@ while IFS= read -r question; do
     index($0, q) == 1 { capture = 1; next }
     /^### / { capture = 0 }
     capture { print }
-  ' specs/open-questions.md)"
+  ' docs/milestones/open-questions.md)"
   if grep -q '^\*\*Status:\*\* OPEN' <<< "$block" && ! grep -q '\*\*Recommendation' <<< "$block"; then
     fail "$question is OPEN but offers no recommendation"
   fi
@@ -304,4 +304,4 @@ echo
 echo "  Canon version : ${canon_version}"
 echo "  Current gate  : ${current_gate:-unknown}"
 echo
-echo "Read specs/README.md for the reading order, then the gate above."
+echo "Read docs/README.md for the reading order, then the gate above."

@@ -30,7 +30,7 @@
 <details><summary>Project bookkeeping</summary>
 
 - Gate and decision: <!-- e.g. 5F — PASS / REVISE / STOP / BLOCKED, or "not a gate" -->
-- Report: <!-- e.g. evidence/gate-5f-report.md, or none -->
+- Report: <!-- e.g. docs/history/reports/2026-09-26-layout-and-focus.md, or none -->
 - Canon changes: None
 - Questions: <!-- opened / answered, or none -->
 

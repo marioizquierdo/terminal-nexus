@@ -11,7 +11,7 @@
 ## 1. Frame — written before coding
 
 - **Canon version:** 2.20 when the work started. The building session did not edit `specs/`,
-  `AGENTS.md` or `milestones/` (another session was editing the design documents at the time); it
+  `AGENTS.md` or `docs/milestones/` (another session was editing the design documents at the time); it
   proposed their text in Section 9, and the orchestrating session applied it at canon 2.22.
 - **Milestone and gate:** Milestone 5 — Build Phase, gate 5G, Debug Mode.
 - **Question this gate answers:** can the owner try two answers to an open question during a
@@ -106,7 +106,7 @@ Where the code is:
 - `src/cli/spike.ts`: the flash durations come from the flags instead of a constant; the live loop is
   still the only place that reads a clock.
 - `src/web/keys.ts`: `d debug` on the browser page's Build Phase key bar.
-- `docs/ui-patterns.md`: the setting-row pattern, the note row, when a popup keeps a menu row lit, and
+- `docs/system-design/ui-patterns.md`: the setting-row pattern, the note row, when a popup keeps a menu row lit, and
   where development tools live.
 - `scripts/lib/terminal-capture.mjs`: a screenshot-tool fix (Section 7) so light-theme pictures show
   inverse bars correctly.
@@ -132,11 +132,11 @@ Measurements: not applicable — this gate adds no timing-sensitive path; the on
 Screenshots (regenerated; every Build Phase picture changed because the top bar now carries
 `[d] debug`):
 
-- `evidence/screenshots/build-debug-80x24.png` — the popup as it opens, at the floor size;
-- `evidence/screenshots/build-debug-104x32.png` — the scroll margin moved to 5, the readout naming it;
-- `evidence/screenshots/build-debug-light.png` — the light theme, "Opens on" highlighted;
-- `evidence/screenshots/build-debug-restarted-on-map.png` — after `[r]` with "Opens on: map";
-- `evidence/screenshots/build-debug-smart-cursor.gif` — smart cursor off, then the menu flow.
+- `docs/screenshots/build-debug-80x24.png` — the popup as it opens, at the floor size;
+- `docs/screenshots/build-debug-104x32.png` — the scroll margin moved to 5, the readout naming it;
+- `docs/screenshots/build-debug-light.png` — the light theme, "Opens on" highlighted;
+- `docs/screenshots/build-debug-restarted-on-map.png` — after `[r]` with "Opens on: map";
+- `docs/screenshots/build-debug-smart-cursor.gif` — smart cursor off, then the menu flow.
 
 ## 5. Human observations
 
@@ -173,7 +173,7 @@ feeling any of them settle its question?
 ## 7. Failures, surprises, and discarded approaches
 
 - **Light-theme screenshots showed every inverse bar black on black** — the menu highlight, popup
-  titles, the settings screen's own picture (`evidence/screenshots/settings-light-theme.png`, made
+  titles, the settings screen's own picture (`docs/screenshots/settings-light-theme.png`, made
   before this gate). It was the screenshot tool, not the game: the ANSI-to-HTML converter swapped
   inverse text to the *dark* background whatever the theme. A real terminal and the browser canvas
   both use their own background. Fixed in `scripts/lib/terminal-capture.mjs` (`ansiToHtml` takes the
@@ -212,8 +212,8 @@ Proposed by the building session, applied by the orchestrating session at canon 
 
 | Proposed rule | Would live in | Earned by |
 | --- | --- | --- |
-| Debug Mode's flags are Build Phase state, per session and never saved; the reducer reads the rule-changing ones, the live loop reads the timing ones; `[r]` restarts keeping them | `specs/engine.md` 9.7, the Debug Mode paragraph | this gate |
-| A setting row: value between `<` `>`, Left/Right change it, each half of the value box is its click target, a choice of two comes round, a number stops at its ends | `docs/ui-patterns.md` (done), later `engine.md` 9 | this gate |
+| Debug Mode's flags are Build Phase state, per session and never saved; the reducer reads the rule-changing ones, the live loop reads the timing ones; `[r]` restarts keeping them | `docs/system-design/grid-engine.md` 9.7, the Debug Mode paragraph | this gate |
+| A setting row: value between `<` `>`, Left/Right change it, each half of the value box is its click target, a choice of two comes round, a number stops at its ends | `docs/system-design/ui-patterns.md` (done), later `engine.md` 9 | this gate |
 
 Questions raised: Q61, where the Build Phase opens (the menu or the map). It was a guess gate 5F made
 with no register entry; the "Opens on" flag is its observable form, and the recommendation is the menu

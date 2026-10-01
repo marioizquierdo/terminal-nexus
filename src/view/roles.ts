@@ -130,7 +130,7 @@ type Swatch = Readonly<{
 /**
  * One table per theme, two tiers hand-authored each — `ansi` and `rgb`. The 256-colour tier is no
  * longer a third hand-authored column: it is *derived* from `rgb` (`nearestIndexed`, below), Q25's
- * option A (`specs/open-questions.md`). `rgb` is where the factions' own palettes get to show up —
+ * option A (`docs/milestones/open-questions.md`). `rgb` is where the factions' own palettes get to show up —
  * Citizen rust and gunmetal against Ravel neon and acid, from `terminal-nexus-lore.md` Section 8 —
  * while the 16-colour tier keeps the two sides as far apart as eight colours allow. This `dark` table
  * is the reference: the one the lore and every screenshot so far were designed against, and the one
@@ -167,7 +167,7 @@ type Swatch = Readonly<{
  *     orange Citizens are everywhere else, and 93 is bright yellow, not Ravel green. Corrected to 33
  *     (the closest base-16 approximation of an amber/rust) and 92 (bright green).
  *
- * A third fix, 2026-08-24 (Q21, `specs/open-questions.md`): `player.a`/`player.b`'s **light-theme**
+ * A third fix, 2026-08-24 (Q21, `docs/milestones/open-questions.md`): `player.a`/`player.b`'s **light-theme**
  * `rgb` retuned by lightness only — hue and saturation unchanged, rust stays rust, green stays green.
  * Measured WCAG contrast against each other was 1.08:1 (dark theme's 2.08:1 is a smaller gap, left
  * alone per the recommendation): both sides clear the 3:1 floor against the background individually,

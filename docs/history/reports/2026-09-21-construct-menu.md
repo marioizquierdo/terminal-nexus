@@ -170,7 +170,7 @@ true the moment a heading sits between two rows.
 | …and still draws when there is room for it | holds | same file |
 | The footer's bindings line is whole bindings at every width, with the four essentials last to go | holds, checked at every width from 10 | same file |
 
-Twelve real-terminal screenshots in `evidence/screenshots/`. The two worth looking at side by side
+Twelve real-terminal screenshots in `docs/screenshots/`. The two worth looking at side by side
 are `build-idle.png` (nothing selected — the panel is the menu, the budget and two keys) and
 `build-spent-down.png` (two barracks placed, 20 left, the rows that no longer fit dimmed and the
 selected one saying why it cannot be built).
@@ -181,7 +181,7 @@ _Awaiting Mario._ One question, and it is his own criterion: **does the screen n
 you use rather than something being demonstrated to you?** Everything else in this gate is
 mechanically checkable and checked.
 
-The comparison is lookable rather than described: `evidence/screenshots/build-idle.png` against gate
+The comparison is lookable rather than described: `docs/screenshots/build-idle.png` against gate
 5A's own shots in the same directory. What came off the screen, line by line — the gate number in the
 header, the viewport diagnostics beside it, "Nothing here reaches the simulation", the panel's
 "scrolling + placement spike" subtitle, "ARMED / nothing - press 1, 2 or 3", "PLANNED / nothing

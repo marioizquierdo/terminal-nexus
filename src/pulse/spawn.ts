@@ -10,7 +10,7 @@
 // rather than writing "find a free adjacent tile and build an Actor" twice.
 //
 // This is a **combat ability**, not production: no cost, no resource, nothing the empty
-// `economyAndProduction` phase (tick.ts) would recognise as its own — `specs/open-questions.md` Q26
+// `economyAndProduction` phase (tick.ts) would recognise as its own — `docs/milestones/open-questions.md` Q26
 // registers the scope line this still has to answer before a real roster could rely on it.
 
 import { footprintExtent, footprintRing } from "../grid/coords.ts"

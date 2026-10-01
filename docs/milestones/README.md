@@ -1,11 +1,11 @@
-# Terminal Nexus milestones
+# Terminal Nexus docs/milestones
 
 **Document role:** Milestone index — the sequence, current status, and how this folder differs from `specs/`
 **Status:** Canonical index (not a versioned canon document — see below)
 **Updated:** 2026-09-29
 **License:** Apache-2.0
 
-## Why milestones live here, not in `specs/`
+## Why docs/milestones live here, not in `specs/`
 
 Through canon 2.8, milestone contracts lived in `specs/milestone-N-*.md`, versioned in lockstep with
 the rest of the canon. Mario asked for a cleaner split: "they are a bit different than specs, because
@@ -13,22 +13,22 @@ they work both as notes for upcoming work, but also task trackers during work an
 references after work." A `specs/` document changes at a named canon version, deliberately, as part
 of a ceremony (`../AGENTS.md` Section 9). A milestone gets its checkboxes ticked mid-week, independent
 of any canon bump — forcing it to carry a matching `**Canon version:**` would either freeze it between
-bumps or force a bump for every checked box. So milestones get their own folder and their own lighter
+bumps or force a bump for every checked box. So docs/milestones get their own folder and their own lighter
 header contract:
 
 - `**Document role:**`, `**Status:**`, `**Updated:**`, `**License:**` are required
   (`./scripts/check-repository.sh` checks it, the same as any `specs/` document, minus the
   canon-version field);
 - `**Status:**` is one of `COMPLETE`, `CURRENT`, `GATED`, `REVISE`, `BLOCKED`, `STOPPED` — the same
-  vocabulary `../specs/project-governance.md` Section 5 already uses, so the meaning does not need
+  vocabulary `docs/game-design/decisions.md` Section 5 already uses, so the meaning does not need
   relearning;
-- exactly one `milestones/milestone-*.md` file may be `CURRENT` at a time, and it must declare an
+- exactly one `docs/milestones/milestone-*.md` file may be `CURRENT` at a time, and it must declare an
   `**Active gate:**` — the validator enforces both, cross-checked against the table below rather than
   against `project-governance.md`'s own execution ledger (which stays the slower-moving governance
   record; keeping it *roughly* in sync is good practice, but this table is the fast, checked
   source of truth for "what is a session authorized to work on right now");
-- a milestone may still cite canon (`../specs/engine.md`, `../specs/campaigns.md`,
-  `../specs/commander-armies.md`, and so on) freely — those documents are unchanged, still versioned,
+- a milestone may still cite canon (`docs/system-design/grid-engine.md`, `docs/game-design/campaigns.md`,
+  `docs/game-design/commander-armies.md`, and so on) freely — those documents are unchanged, still versioned,
   still the authority a milestone builds against. A milestone is where that authority gets turned into
   a specific, scoped, checkable plan, not a second copy of it.
 
@@ -38,11 +38,11 @@ header contract:
 ## The sequence
 
 **Milestone numbers are identities, not an order** — the same convention as `Q<n>` ids in
-[`../specs/open-questions.md`](../specs/open-questions.md): a number is never renumbered or reused,
+[`docs/milestones/open-questions.md`](open-questions.md): a number is never renumbered or reused,
 because prose across the canon cites it. The **build order** is the column below, and it changed at
 canon 2.11 when Mario re-scoped Milestone 2 to design and orientation and asked for the game's
 experience and UX to be built next, with content and modes iterated on top once it works
-([`../specs/game-modes.md`](../specs/game-modes.md) Section 1 has the direction in his words).
+([`docs/game-design/game-modes.md`](../game-design/game-modes.md) Section 1 has the direction in his words).
 
 Building the campaign's first level had already turned out to need most of the systems the game has
 never had at once — a menu, a real Build Phase, the Pulse loop's own player-facing moment, an
@@ -62,10 +62,10 @@ needed the quality.
 
 | Milestone | Status | Build order | Question |
 | --- | --- | --- | --- |
-| [1 — Grid Battles](milestone-01-grid-battles.md) | COMPLETE | done | Do units move, fight, and die deterministically from a seed, legibly on screen? |
-| [2 — Design and Orientation](milestone-02-campaign-design.md) | COMPLETE | done | What vocabulary and structure do the single-player modes need, and what few PERIMETER decisions does the UX build need, before milestones 3-6 build the game's experience? |
-| [3 — Game Menu](milestone-03-game-menu.md) | COMPLETE | done | Can a player launch `terminal-nexus` into a menu with displayed hotkeys, mouse parity, and a driver, and pick a mode? |
-| [5 — Build Phase](milestone-05-build-phase.md) | COMPLETE | done | Can a player place buildings, pick a Nexus upgrade, and scroll a real map during Build Phase — by keyboard, mouse, and driver? |
+| [1 — Grid Battles](completed/milestone-01-grid-battles.md) | COMPLETE | done | Do units move, fight, and die deterministically from a seed, legibly on screen? |
+| [2 — Design and Orientation](completed/milestone-02-campaign-design.md) | COMPLETE | done | What vocabulary and structure do the single-player modes need, and what few PERIMETER decisions does the UX build need, before docs/milestones 3-6 build the game's experience? |
+| [3 — Game Menu](completed/milestone-03-game-menu.md) | COMPLETE | done | Can a player launch `terminal-nexus` into a menu with displayed hotkeys, mouse parity, and a driver, and pick a mode? |
+| [5 — Build Phase](completed/milestone-05-build-phase.md) | COMPLETE | done | Can a player place buildings, pick a Nexus upgrade, and scroll a real map during Build Phase — by keyboard, mouse, and driver? |
 | [6 — Nexus Pulse Phase](milestone-06-pulse-phase.md) | CURRENT | 4 | Can a player start the Pulse, watch it resolve, see a legible ending with Recall, and land in the next Build Phase? |
 | [8 — Commander](milestone-08-commander.md) | GATED | 5 | Can Commander Vasse and a Nexus draft dealt from an army's pool exist without becoming a full Commander Army? |
 | [11 — Challenge Mode: Runs](milestone-11-challenge-runs.md) | GATED | 6 | Can a player play a seeded run of battles with a run draft between them, and does the same seed give the same run? |
@@ -95,22 +95,22 @@ than what makes it playable.
 ## After the build order
 
 Milestone 12 repeats: each pass adds cards and retunes both modes on what the last pass measured.
-Beyond it, what comes next is not detailed here on purpose — naming further milestones ahead of a
+Beyond it, what comes next is not detailed here on purpose — naming further docs/milestones ahead of a
 playable run and a played campaign opening would be guessing at what those two will teach.
 
 Two shapes look likely enough to name lightly, so a later session doesn't have to reconstruct them
 from nothing — without pretending either is decided:
 
-- **one milestone per remaining belief-ramp mission.** [`../specs/campaigns.md`](../specs/campaigns.md)
+- **one milestone per remaining belief-ramp mission.** [`docs/game-design/campaigns.md`](../game-design/campaigns.md)
   Section 4.1 names four missions after RIGHT OF SALVAGE — RESTORATION, PRECOMMITTED, TWELVE OF TWELVE,
   ANNEX ZERO — each teaching something the prior ones didn't. If the pattern that got the systems built
-  (milestones 3-9, one per system) followed by proving them on a mission (milestone 10) holds up in
+  (docs/milestones 3-9, one per system) followed by proving them on a mission (milestone 10) holds up in
   practice, it likely repeats: a later milestone authoring RESTORATION the way Milestone 10 authored
   RIGHT OF SALVAGE, and so on through ANNEX ZERO — interleaved with Milestone 12's content passes,
   since each mission teaches cards a run then deals.
 - **a distinct release-readiness pass**, once all six missions exist, that no per-mission milestone
   covers on its own: packaging, a title/credits sequence, whatever playtesting the finished belief ramp
-  surfaces as missing, and anything [`../specs/project-governance.md`](../specs/project-governance.md)'s
+  surfaces as missing, and anything [`docs/game-design/decisions.md`](../game-design/decisions.md)'s
   deferred-systems list still owes before the campaign is called a first release.
 
 Neither is a milestone file yet, and no number is reserved for either — this section is a note about
@@ -125,9 +125,9 @@ is superseded by the ten-milestone breakdown above — formalized at Mario's own
 kept as a rougher first cut. Its content is redistributed above with citation, not deleted:
 Q29 through Q33 (recall, GUI scope, unlock-record shape, scripted-opponent format, the Q15 workaround)
 are answered or reassigned to the milestone that now owns each decision — see
-[`../specs/open-questions.md`](../specs/open-questions.md). The old `specs/milestone-2-deterministic-
+[`docs/milestones/open-questions.md`](open-questions.md). The old `specs/milestone-2-deterministic-
 pulse.md`, `-3-builder-editor.md`, `-4-citizens-ravels.md`, and `-5-campaign-fragment.md` are retired
 the same way: their genuinely unique content is cited from whichever milestone above now owns it, and
-`../specs/backlog-pulse-completion.md` still holds the horizontal kernel-completion work none of these
-ten milestones needs yet (real routing, a second resource, the full replay format, visibility
+`docs/milestones/backlog.md` still holds the horizontal kernel-completion work none of these
+ten docs/milestones needs yet (real routing, a second resource, the full replay format, visibility
 filtering).

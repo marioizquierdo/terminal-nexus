@@ -1,6 +1,6 @@
 // Occupancy and collision masks — engine.md 3.4.1.
 //
-// DESIGN DECISION (recorded in evidence/report.md, Section 3):
+// DESIGN DECISION (recorded in docs/history/reports/2026-08-21-pulse-playground.md, Section 3):
 //
 // engine.md 3.4.1 deliberately leaves mask caching to the spike, because arbitration mutates
 // claimed tiles part-way through a tick, so a mask materialised once per tick is stale exactly

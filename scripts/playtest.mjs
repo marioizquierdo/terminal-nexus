@@ -14,7 +14,7 @@
 // `src/playtest/build.ts` is the shape another screen would copy.
 //
 // Output goes to `.playtest/` (ignored by git) unless `--out` says otherwise. Point `--out` at
-// `evidence/screenshots` only for an image that is going into a pull request.
+// `docs/screenshots` only for an image that is going into a pull request.
 
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { dirname, join, relative, resolve } from "node:path"

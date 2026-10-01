@@ -19,7 +19,7 @@ Mario redirected the roadmap instead: **campaign-first, one level at a time.** E
 vertical slice — a Build Phase, a Pulse, a story wrapper, one map — and a level pulls in only the
 piece of this backlog it actually needs, when it needs it, rather than waiting for all of it to land
 first. That single-milestone "Level 1: Perimeter" contract was itself formalized at canon 2.9 into
-[`../milestones/`](../milestones/)'s ten-milestone sequence, at Mario's own request, once it became
+[`docs/milestones/`](README.md)'s ten-milestone sequence, at Mario's own request, once it became
 clear the first level needed most of the game's unbuilt systems at once; this document is where the
 original horizontal contract still lives, verbatim, so none of that design work is lost and a future
 level can still cite it directly.
@@ -38,7 +38,7 @@ level's own contract cites it, and not before.
   owner's Gate 1B viewing** (four-way movement): under Manhattan distance every legal step changes
   distance by exactly ±1, so an actor whose approach is exactly on-axis with its goal and meets an
   obstacle has no fallback direction at all — not a stall to route around, a hard dead end.
-  `specs/open-questions.md` Q15 has the measurement; whichever level first needs real routing is where
+  `docs/milestones/open-questions.md` Q15 has the measurement; whichever level first needs real routing is where
   it gets an actual fix.
 - **Behaviour states.** The owner's viewing: "units should have a default movement direction
   (towards the enemy Nexus, closest resources, etc) and then activate a different pathfinding mode
@@ -59,8 +59,8 @@ level's own contract cites it, and not before.
   behaviour-states item above rather than standing alone.
 - **Economy and production.** The empty tick phases get their content: worker jobs, deposits, storage,
   salvage, supply cap, and the seeded production-contention process from
-  [`engine.md`](engine.md) Section 5.3. **Level 1 pulls in a slice of this directly** — see
-  [`../milestones/milestone-07-worker-economy.md`](../milestones/milestone-07-worker-economy.md) — so
+  [`engine.md`](../system-design/grid-engine.md) Section 5.3. **Level 1 pulls in a slice of this directly** — see
+  [`docs/milestones/milestone-07-worker-economy.md`](milestone-07-worker-economy.md) — so
   this item is already partially in motion; what stays here is the parts that milestone does not need:
   multiple resource-yielding structures, storage/warehouse capacity, and a full deposit/salvage economy.
 - **Target scoring.** Something better than nearest-enemy, with the score and reason carried on the
@@ -69,8 +69,8 @@ level's own contract cites it, and not before.
   Untested until something is hidden. A scripted single-player opponent (campaigns.md Section 6) may
   not need this at all — a level only pulls this in once a mission actually hides something from the
   player, which none of the belief-ramp's early missions currently need to teach.
-- **Replay format.** The full game log of [`engine.md`](engine.md) Section 4.4: content locks, hashes,
-  versions, and a `verify` path that re-simulates recorded inputs. [`replay-format.md`](replay-format.md)
+- **Replay format.** The full game log of [`engine.md`](../system-design/grid-engine.md) Section 4.4: content locks, hashes,
+  versions, and a `verify` path that re-simulates recorded inputs. [`replay-format.md`](../system-design/replay-format.md)
   is the starting design.
 
 ## Contracts locked by Milestone 1
@@ -82,26 +82,26 @@ restated here only because it lived in this document before the pivot, and nothi
 
 | Contract | Locked as | Evidence |
 | --- | --- | --- |
-| **The named PRNG and its published vectors** | PCG32, the `pcg_setseq_64_xsh_rr_32` variant. Streams separated by `initseq` | [`engine.md`](engine.md) 4.4; `tests/rng.test.ts` checks it against `imneme/pcg-c`'s own expected output, seeded 42/54 |
-| **Stable entity ordering and every tie-break** | An entity's ordinal is assigned at scenario load, scanning north to south then west to east, and never reused. All iteration and every tie-break uses it. Contested claims resolve by speed tier, then by **one** draw from the seeded stream. Ordinals order event emission, never outcomes | [`engine.md`](engine.md) 4.3; `tests/rules.test.ts`, `tests/determinism.test.ts` |
-| **Canonical serialization and hashing** | Keys sorted at every depth, integers only — a non-integer is refused rather than rounded — then sha256. Events are one canonical JSON object per line | [`engine.md`](engine.md) 4.4; `parse(serialize(state))` hashes identically for every scenario, and Bun and Node agree on every hash |
-| **The exact normative tick and event order** | The nine phases of [`engine.md`](engine.md) 4.3, now RULE. Economy and production are phases 2 and 3; a level fills them the way it needs them, without moving them | [`engine.md`](engine.md) 4.3 |
-| **The recalculation progress measure and its bound** | The number of unresolved movers, which strictly decreases every pass because each conflict group yields exactly one winner. The bound is the intent count plus one, and reaching it emits a `WARN` | [`engine.md`](engine.md) 4.3; `tests/rules.test.ts` drives a jammed corridor and asserts the bound is never reached |
-| **12 Hz and the movement-credit rules** | **Confirmed and promoted to RULE.** The cadence table reproduces exactly at all eight rates; credit is capped at one step's cost; a blocked step keeps its credit and moves the tick the tile frees | [`engine.md`](engine.md) 4.1 and 4.2; `tests/rules.test.ts` |
-| **Mutual destruction and victory ordering** | Attacks resolve by speed tier, lowest first; within a tier every attack is computed against the state at tier start and applied together, so two actors that kill each other both die. Victory is checked in phase 9 in this order: Grid Nexus destroyed, annihilation, tick limit. A side is only eligible to lose a condition it could have lost — a side that never had a mobile entity is not "annihilated" at tick one | [`engine.md`](engine.md) 4.3 and 5; `tests/rules.test.ts`, `tests/scenario.test.ts` |
-| **Death is a queue, and it can cascade** | Where content detonates on death, the blast damages friend and foe and anything reduced to zero joins the queue. Bounded because an entity can only die once, so the cascade settles inside its own tick | [`engine.md`](engine.md) 4.3; `tests/ravel.test.ts` |
-| **Collision masks** | Lazy views over one incrementally maintained occupancy index, with an overlay so arbitration sees tiles claimed earlier in the same tick. Never a materialised boolean grid | [`engine.md`](engine.md) 3.4.1 |
+| **The named PRNG and its published vectors** | PCG32, the `pcg_setseq_64_xsh_rr_32` variant. Streams separated by `initseq` | [`engine.md`](../system-design/grid-engine.md) 4.4; `tests/rng.test.ts` checks it against `imneme/pcg-c`'s own expected output, seeded 42/54 |
+| **Stable entity ordering and every tie-break** | An entity's ordinal is assigned at scenario load, scanning north to south then west to east, and never reused. All iteration and every tie-break uses it. Contested claims resolve by speed tier, then by **one** draw from the seeded stream. Ordinals order event emission, never outcomes | [`engine.md`](../system-design/grid-engine.md) 4.3; `tests/rules.test.ts`, `tests/determinism.test.ts` |
+| **Canonical serialization and hashing** | Keys sorted at every depth, integers only — a non-integer is refused rather than rounded — then sha256. Events are one canonical JSON object per line | [`engine.md`](../system-design/grid-engine.md) 4.4; `parse(serialize(state))` hashes identically for every scenario, and Bun and Node agree on every hash |
+| **The exact normative tick and event order** | The nine phases of [`engine.md`](../system-design/grid-engine.md) 4.3, now RULE. Economy and production are phases 2 and 3; a level fills them the way it needs them, without moving them | [`engine.md`](../system-design/grid-engine.md) 4.3 |
+| **The recalculation progress measure and its bound** | The number of unresolved movers, which strictly decreases every pass because each conflict group yields exactly one winner. The bound is the intent count plus one, and reaching it emits a `WARN` | [`engine.md`](../system-design/grid-engine.md) 4.3; `tests/rules.test.ts` drives a jammed corridor and asserts the bound is never reached |
+| **12 Hz and the movement-credit rules** | **Confirmed and promoted to RULE.** The cadence table reproduces exactly at all eight rates; credit is capped at one step's cost; a blocked step keeps its credit and moves the tick the tile frees | [`engine.md`](../system-design/grid-engine.md) 4.1 and 4.2; `tests/rules.test.ts` |
+| **Mutual destruction and victory ordering** | Attacks resolve by speed tier, lowest first; within a tier every attack is computed against the state at tier start and applied together, so two actors that kill each other both die. Victory is checked in phase 9 in this order: Grid Nexus destroyed, annihilation, tick limit. A side is only eligible to lose a condition it could have lost — a side that never had a mobile entity is not "annihilated" at tick one | [`engine.md`](../system-design/grid-engine.md) 4.3 and 5; `tests/rules.test.ts`, `tests/scenario.test.ts` |
+| **Death is a queue, and it can cascade** | Where content detonates on death, the blast damages friend and foe and anything reduced to zero joins the queue. Bounded because an entity can only die once, so the cascade settles inside its own tick | [`engine.md`](../system-design/grid-engine.md) 4.3; `tests/ravel.test.ts` |
+| **Collision masks** | Lazy views over one incrementally maintained occupancy index, with an overlay so arbitration sees tiles claimed earlier in the same tick. Never a materialised boolean grid | [`engine.md`](../system-design/grid-engine.md) 3.4.1 |
 
 ### The one contract Milestone 1 did **not** lock
 
 **Replay input, authority, and verification.** `grid` hashes final state and the ordered event
 stream, and `grid --verify` re-resolves a scenario and compares — which proves the kernel is
 deterministic, not that a *recording* can be replayed. The full game log of
-[`engine.md`](engine.md) 4.4 — content locks, versions, committed plans per Build Phase, and a
+[`engine.md`](../system-design/grid-engine.md) 4.4 — content locks, versions, committed plans per Build Phase, and a
 `verify` path that re-simulates recorded inputs rather than re-running a scenario file — is still
 unowned by any single gate. It is the first thing worth doing once a level's own save/replay needs
 force the question, because everything else here is easier to trust once a run can be replayed from
-its record. [`replay-format.md`](replay-format.md) is a first concrete schema for it, written up
+its record. [`replay-format.md`](../system-design/replay-format.md) is a first concrete schema for it, written up
 ahead of any level needing it rather than from nothing — GUIDANCE, not a locked contract, meant to be
 a starting point whichever level first needs it accepts, amends, or replaces.
 
@@ -113,7 +113,7 @@ starting; each wants an answer before a level's contract that touches it is call
 | Question | What Milestone 1 measured | Where it bites |
 | --- | --- | --- |
 | **Q14** — should the movement tie-break be mirror-fair? | A fixed compass order makes both sides prefer *their own left*, so formations meet at an angle. Symmetric between sides, and seed variance dominates it | Real routing replaces the greedy step this question is about; answer it as part of that |
-| **Q15** — what should a mover with no route do? | Greedy routing with a sidestep leaves an actor pacing between two tiles forever. The report detects it from net progress; the kernel does not | Pathfinding makes it moot, or makes it a deliberate choice. A level authored to avoid the on-axis dead end (map layout, not a kernel fix) may ship without either — see `../milestones/milestone-02-campaign-design.md` Section 4.3's own note on this for PERIMETER specifically |
+| **Q15** — what should a mover with no route do? | Greedy routing with a sidestep leaves an actor pacing between two tiles forever. The report detects it from net progress; the kernel does not | Pathfinding makes it moot, or makes it a deliberate choice. A level authored to avoid the on-axis dead end (map layout, not a kernel fix) may ship without either — see `docs/milestones/completed/milestone-02-campaign-design.md` Section 4.3's own note on this for PERIMETER specifically |
 | **Q13** — where do workers flee, and what counts as annihilation? | Workers move at `1/1` and every fixture attacker at `3/4` or slower, so a fleeing worker on open ground is **never caught**. The mirror never reaches annihilation and always runs its full tick count | Real routing gives fleeing a danger cost, and an economy gives workers somewhere to be. Both change the shape of this question |
 
 **Q17 dropped off this table, resolved, since it was written**: the Gate 1B session that shipped
@@ -131,7 +131,7 @@ orbit rather than a route.
 ## Evidence a future pull-in should still produce
 
 Replaying a complete recorded input produces identical final-state and ordered-event hashes —
-[`replay-format.md`](replay-format.md) Section 4 is where the soundness of that claim is worked
+[`replay-format.md`](../system-design/replay-format.md) Section 4 is where the soundness of that claim is worked
 through for a persisted, levelled recording rather than an in-memory `PulseRun`.
 
 Property tests over generated Grids and seeds find no duplicate occupancy within a layer, no illegal

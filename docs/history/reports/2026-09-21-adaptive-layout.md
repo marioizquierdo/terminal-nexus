@@ -150,7 +150,7 @@ question first:
 | A refusal's message clears when the cursor leaves the tile, an action message survives a cursor move | a hand-built 10x10 grid with one rock tile | `tests/build-spike.test.ts` |
 | `scrollThumb` never exceeds its own track, and sits flush at either end | every track length 1-48, every position 0-48 | `tests/build-camera.test.ts` |
 | `--edge-style scrollbar`: bottom and west carry a thumb, north and east stay a plain yes/no | scrolled to the middle | `tests/build-view.test.ts`, checked against `scrollThumb`'s own arithmetic |
-| Real-terminal screenshots | 13 (12 regenerated, 1 new: the scrollbar option), regenerated again after the two bugs below were fixed | `evidence/screenshots/`, tmux -> `capture-pane -e` -> headless Chromium |
+| Real-terminal screenshots | 13 (12 regenerated, 1 new: the scrollbar option), regenerated again after the two bugs below were fixed | `docs/screenshots/`, tmux -> `capture-pane -e` -> headless Chromium |
 
 Measurements:
 
@@ -164,11 +164,11 @@ Measurements:
 ## 5. Human observations
 
 **None yet.** Mario has said he wants to run a larger manual test, and this gate is built for exactly
-that: the two questions in Section 1 are his, and the screenshots in `evidence/screenshots/` are the
+that: the two questions in Section 1 are his, and the screenshots in `docs/screenshots/` are the
 starting point rather than the answer.
 
 One observation of my own, since it changed the code and a person should be able to disagree with it:
-the old edge markers were wrong in a way no test could see. `evidence/screenshots/spike-scrolled.png`
+the old edge markers were wrong in a way no test could see. `docs/screenshots/spike-scrolled.png`
 as it stood before this gate showed `> [1] Barracks`, `> ARMY` and `> home end jump 5` — an arrow on
 the rule between the Grid and the panel, beside a panel row, reading as a caret pointing at that row.
 Three rows looked selected. The frame's *text* was correct and every assertion about it passed.
@@ -178,7 +178,7 @@ liked the fixed-width panel and the idea of an explicit selection marker, and pr
 alternatives to the arrow markers (a hard/soft border, and a scrollbar). Both got built; his read on
 which one to keep — or whether to keep both, one per situation — is the open question this round
 leaves for him, alongside the two from round 1 (does scrolling read as looking around, and is the
-signal enough without a minimap). `evidence/screenshots/spike-scrollbar.png` sits next to
+signal enough without a minimap). `docs/screenshots/spike-scrollbar.png` sits next to
 `spike-scrolled.png` (the default hard/soft treatment, same scrolled position) for exactly that
 comparison.
 
@@ -330,7 +330,7 @@ accepts the gate.**
 | **The armed construct row carries an explicit marker glyph**, not only inverse video | `engine.md` 9.7, beside the digit/hotkey conventions | Built, and specifically requested: an attribute alone is not "a symbol a player can point to and name" |
 | **Not proposed as a rule**: `--edge-style scrollbar`. Built and screenshotted as a real alternative, per Q37's own precedent for exactly this kind of choice, but which one (or whether both stay, for different situations) is Mario's call, not a conclusion this report reaches | would live in `engine.md` 3.3 if kept | Section 5 |
 
-Questions raised, each already added to [`../specs/open-questions.md`](../specs/open-questions.md) with a
+Questions raised, each already added to [`docs/milestones/open-questions.md`](../../milestones/open-questions.md) with a
 recommendation:
 
 | ID | Question | Recommendation |

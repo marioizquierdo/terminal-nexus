@@ -45,7 +45,7 @@ export type TriggerCondition =
  * What a group does once it is on the Grid. **Only `advance` exists, and today it means what the kernel's
  * one movement rule does — engage the nearest enemy**: the kernel has no order primitive, so the region it
  * names is the stated destination, shown to the player as intention, not a path the kernel steers by
- * (evidence/gate-6b-report.md Section 7; Q69). `hold` and `withdraw` wait for that primitive.
+ * (docs/history/reports/2026-09-30-round-loop-and-missions.md Section 7; Q69). `hold` and `withdraw` wait for that primitive.
  */
 export type Order = Readonly<{ advance: string }>
 

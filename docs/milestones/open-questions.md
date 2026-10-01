@@ -21,7 +21,7 @@ When an agent hits an underdetermined fork:
 
 1. Check whether the fork is genuinely the owner's. Reversible module boundaries, names, local data
    shapes, and test organization are **not** — decide those and move on
-   ([`project-governance.md`](project-governance.md) Section 2).
+   ([`project-governance.md`](../game-design/decisions.md) Section 2).
 2. Prefer making the fork **observable** rather than asking. A parameter, toggle, fixture, or side
    by side comparison that lets Mario look at both answers is worth more than a paragraph of
    speculation, and costs less than a stalled session. In the Build Phase the toggle is an
@@ -52,7 +52,7 @@ Question IDs are permanent. Never renumber, never reuse.
 
 **Status:** OPEN — trivial to answer; blocks nothing before Milestone 3.
 
-[`engine.md`](engine.md) Section 6 says two tiles. The builder concept art shows `RADIUS +4`. One
+[`engine.md`](../system-design/grid-engine.md) Section 6 says two tiles. The builder concept art shows `RADIUS +4`. One
 of the two is stale. The distance metric is separately unlocked and belongs to Milestone 3.
 
 **Recommendation:** keep two as the default in canon and treat `+4` as an outpost value, which is
@@ -62,7 +62,7 @@ what the art is actually showing — it is drawn on an Outpost.
 
 **Status:** OPEN — blocks nothing before Milestone 12.
 
-[`engine.md`](engine.md) Section 6 says workers do not carry bundles home and produce continuously
+[`engine.md`](../system-design/grid-engine.md) Section 6 says workers do not carry bundles home and produce continuously
 at a job, then says they return toward the Nexus when storage fills and resume "immediately" when
 capacity opens. Returning-when-full is carry-shaped behaviour inside a no-carry model, and
 "immediately" ignores travel time.
@@ -76,7 +76,7 @@ contradiction. Decide with the Milestone 12 microgame.
 
 **Status:** OPEN — blocks nothing; answer before content authoring starts.
 
-[`engine.md`](engine.md) Section 3.4 gives the Grid an `air` layer, because a five-layer occupancy
+[`engine.md`](../system-design/grid-engine.md) Section 3.4 gives the Grid an `air` layer, because a five-layer occupancy
 model costs nothing more than a four-layer one and retrofitting a layer later is expensive. No air
 unit is authored, and none of the five factions currently has one in its identity.
 
@@ -97,7 +97,7 @@ content was authored. The layer costs nothing and works.
 
 **Status:** OPEN — Milestone 1 proceeds under the recommendation; confirm before Milestone 3.
 
-[`engine.md`](engine.md) Section 3.5 puts `facing` in every placement. It is currently read by nothing
+[`engine.md`](../system-design/grid-engine.md) Section 3.5 puts `facing` in every placement. It is currently read by nothing
 in the rules — it exists so the renderer does not have to guess a direction and produce jitter.
 
 | Option | Cost |
@@ -123,7 +123,7 @@ would make every state hash slightly smaller and one field less load-bearing.
 ### Q12 — What is the vertical chrome budget, and is 80 × 24 a literal floor?
 
 **Status:** OPEN — Gate 1A proceeds under the recommendation, which is already written into
-[`engine.md`](engine.md) Sections 3.1 and 3.3.
+[`engine.md`](../system-design/grid-engine.md) Sections 3.1 and 3.3.
 
 The canon stated two incompatible arithmetics. Section 3.1 derived the composition as
 16 + 2 border + header + footer = **20 rows**, implying a 4-row chrome budget; Section 3.3's table
@@ -150,7 +150,7 @@ at 80 columns and at 128.
 ### Q13 — Where do workers flee, and what counts as annihilation, on a Grid with no Nexus?
 
 **Status:** OPEN — Gate 1A proceeds under the recommendation, which is already written into
-[`../milestones/milestone-01-grid-battles.md`](../milestones/milestone-01-grid-battles.md) Section 3.7.
+[`docs/milestones/completed/milestone-01-grid-battles.md`](completed/milestone-01-grid-battles.md) Section 3.7.
 
 The Gate 1A flee rule sends a threatened worker "away from it toward the friendly Nexus", but the
 mirror skirmish — the scenario the whole gate is named after — places no structures at all. The same
@@ -291,11 +291,11 @@ the large-unit case confirmed rather than only inferred from the 3x1 evidence ab
 
 **Status:** OPEN — Gate 1A proceeds under the recommendation; the answer changes only presentation.
 
-[`engine.md`](engine.md) Section 3.3 says terminal space beyond the *maximum* viewport is spent on
+[`engine.md`](../system-design/grid-engine.md) Section 3.3 says terminal space beyond the *maximum* viewport is spent on
 centring and on a larger inspection panel, never on more Grid. It does not say what happens below
 the *minimum*: a `small-wide` Grid is 24 × 12 inside a 48 × 16 pane, so Gate 1A centres it and
 leaves twelve blank columns on each side. Screenshots of the real terminal are in
-`evidence/screenshots/`; at 80 columns roughly a third of the frame is empty.
+`docs/screenshots/`; at 80 columns roughly a third of the frame is empty.
 
 | Option | Cost |
 | --- | --- |
@@ -346,7 +346,7 @@ as a rider on a mirror-colour question.
 ### Q19 — Where does sandbox placement, rewind/fast-forward, and a feedback replay engine live?
 
 **Status:** OPEN — not needed for Gate 1B or any milestone in the current campaign-first sequence
-(`../milestones/README.md`); the owner asked for it to be kept in mind and registered, explicitly not
+(`docs/milestones/README.md`); the owner asked for it to be kept in mind and registered, explicitly not
 built now.
 
 The owner's own words, after playing the Pulse Playground (now `grid`): "I will want to start
@@ -363,12 +363,12 @@ milestone:
 
 - **A full replay format** — content locks, hashes, versions, a `verify` path that re-simulates
   *recorded input* rather than a scenario file — is already backlog territory, explicitly: "the one
-  contract Milestone 1 did **not** lock" ([`backlog-pulse-completion.md`](backlog-pulse-completion.md)).
+  contract Milestone 1 did **not** lock" ([`backlog-pulse-completion.md`](backlog.md)).
   Nothing new to register here; the owner's ask is confirmation this direction is wanted, not a new
-  requirement. [`replay-format.md`](replay-format.md), written at the owner's direct request, is a
+  requirement. [`replay-format.md`](../system-design/replay-format.md), written at the owner's direct request, is a
   first concrete schema and log-level design for it — still GUIDANCE, still unbuilt, but no longer a
   blank page for whichever milestone first needs a real save/replay format
-  (`../milestones/milestone-04-campaign-menu.md`'s own unlock record, Q31, is deliberately *not* this
+  (`docs/milestones/milestone-04-campaign-menu.md`'s own unlock record, Q31, is deliberately *not* this
   — a flat list, not a replay format — until a milestone actually needs the fuller thing).
 - **Rewind/fast-forward at named granularities (1/5/10/20 ticks)** is presentation on top of that
   format: once a Pulse's states are addressable by tick, jumping to `tick - 20` is arithmetic, not a
@@ -382,7 +382,7 @@ milestone:
   running** — reads as an early, reduced form of a future battle editor (backlog territory: the old
   Milestone 3's "a text/CLI-accessible battle editor... build-radius preview, connectivity, outpost,
   defense, producer, cost, undo, validation" is folded into
-  [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md) only to the
+  [`docs/milestones/completed/milestone-05-build-phase.md`](completed/milestone-05-build-phase.md) only to the
   narrow extent PERIMETER's own Build Phase needs it — a full standalone editor is still unbuilt), but
   the owner's framing is lighter and different in purpose: a fast unit-matchup sandbox for *exploring
   the kernel*, not the competitive Build Phase with cost, validation, and a hidden simultaneous-reveal
@@ -443,7 +443,7 @@ not manufactured to serve this cap.
 **Status:** OPEN — presentation only; blocks nothing.
 
 Owner playtest, 2026-08-22, after otherwise positive feedback: "Perhaps we have to work on the
-colors to ensure more contrast." Both gate reports (`evidence/report.md`, `evidence/gate-1b-report.md`)
+colors to ensure more contrast." Both gate reports (`docs/history/reports/2026-08-21-pulse-playground.md`, `docs/history/reports/2026-08-26-quality-and-effects.md`)
 say the same thing about colour: the human half of the gate — someone actually watching — never
 happened before now, so this is new information, not confirmation of something already checked. Two
 earlier contrast bugs did already get fixed from an owner playtest this same session cycle
@@ -494,9 +494,9 @@ background and the other role at once) far more than lightening one (which immed
 against the background to gain it against the other role), which is why `player.b` moved much further
 than `player.a`; recorded in `roles.ts`'s own PALETTE comment so the asymmetry doesn't read as an
 oversight later. Dark theme's pair is untouched, exactly as recommended. Evidence, sent directly to the
-owner rather than only described: `evidence/screenshots/mirror-light-theme-before-q21.png` and
+owner rather than only described: `docs/screenshots/mirror-light-theme-before-q21.png` and
 `-after-q21.png`, the same real mirror-skirmish frame at `--theme light`, and
-`evidence/screenshots/palette-reference.png` (regenerated) showing every role at every tier side by
+`docs/screenshots/palette-reference.png` (regenerated) showing every role at every tier side by
 side. `tests/roles.test.ts` pins the new mutual-contrast floor (`>= 3.0`) and that dark stayed
 untouched, computing WCAG contrast independently rather than importing a shared helper, so the test
 would actually fail if the retune regressed. **Still OPEN**: this is the recommendation applied and
@@ -551,7 +551,7 @@ Owner playtest, 2026-08-22, immediately after asking for faster movement (alread
 session's speed pass): "we should probably think about how to reach the initial conflict faster. Maybe
 outposts regroup units next to them so next pulses resolve faster." This describes a **multi-Pulse
 match** (units regrouping *between* Pulses) — none of the current campaign-first sequence's ten
-milestones (`../milestones/README.md`) builds a mission with more than one Pulse, so nothing in this
+docs/milestones (`docs/milestones/README.md`) builds a mission with more than one Pulse, so nothing in this
 note is built there regardless of how reasonable it sounds. This row exists so the idea is on record
 rather than re-derived from a chat transcript whenever a mission's own design needs more than one
 Pulse.
@@ -575,7 +575,7 @@ place to design it is alongside Milestone 2's routing work and Milestone 3's Bui
 speculative addition to a milestone still officially unauthorized.
 
 **Closer than it was, canon 2.10:** missions are now multi-Pulse by owner direction
-([`campaigns.md`](campaigns.md) Section 2.1), and Milestone 2 proposes PERIMETER itself as three
+([`campaigns.md`](../game-design/campaigns.md) Section 2.1), and Milestone 2 proposes PERIMETER itself as three
 Pulses — so "regroup between Pulses" stops being hypothetical the moment that mission plays. The
 outpost idea itself is still unowned; the precondition this row was waiting on is no longer missing.
 
@@ -625,7 +625,7 @@ units.
 
 AGENTS.md Section 2 is explicit: "Do not build economy, production, supply, visibility, the Build
 Phase... unless an accepted gate result authorizes it." The unit-design-architecture spike
-(`evidence/unit-architecture-spike.md`) built `ContentDef.spawn` and `pulse/spawn.ts` anyway, at
+(`docs/history/reports/2026-09-10-unit-architecture-spike.md`) built `ContentDef.spawn` and `pulse/spawn.ts` anyway, at
 Mario's own direct request for "spawner, large unit that creates smaller units" as one of seven named
 designs — reasoning that a unit periodically creating a small combat minion (a Clash Royale Graveyard,
 a StarCraft Broodmother) is a *combat ability* a living unit performs, not the economy Milestone 2
@@ -701,7 +701,7 @@ whose opening force is entirely non-mobile.
 ### Q31 — What shape does an "unlock record" take, with no save system yet?
 
 **Status:** OPEN — blocks nothing before Milestone 4 needs to write one; the recommendation is already
-assumed by [`../milestones/milestone-04-campaign-menu.md`](../milestones/milestone-04-campaign-menu.md).
+assumed by [`docs/milestones/milestone-04-campaign-menu.md`](milestone-04-campaign-menu.md).
 
 Mario: "after each level, we unlock new units and powers." `campaigns.md` Section 2's own
 `MissionDefinition` sketch has an `unlocks: readonly string[]` field already — architectural
@@ -711,7 +711,7 @@ does not exist yet.
 
 | Option | Cost |
 | --- | --- |
-| A. **A flat, checked-in list — JSON or a small TypeScript module — naming what completing PERIMETER makes available.** No persistence, no player-facing menu, no progression UI: a fact the next level's own contract reads and cites, the same way `../milestones/milestone-10-first-and-second-missions.md` already does for RIGHT OF SALVAGE | Cheapest possible answer, and it is genuinely enough for "the next level's contract may assume these exist" — which is the only consumer that exists today |
+| A. **A flat, checked-in list — JSON or a small TypeScript module — naming what completing PERIMETER makes available.** No persistence, no player-facing menu, no progression UI: a fact the next level's own contract reads and cites, the same way `docs/milestones/milestone-10-first-and-second-missions.md` already does for RIGHT OF SALVAGE | Cheapest possible answer, and it is genuinely enough for "the next level's contract may assume these exist" — which is the only consumer that exists today |
 | B. **Build a minimal save/progression system now**, so a player's own unlock state persists across sessions | Real infrastructure (a file format, a load path, a schema) for a feature with exactly one campaign and one mission today. `replay-format.md`'s own design is the more natural foundation for this once it is built, and building progression storage ahead of the replay format it should probably share a schema with risks a second incompatible persistence format later |
 
 **Recommendation: A.** A checked-in list is enough for one level unlocking content the next level's
@@ -720,7 +720,7 @@ whichever level first needs a unlock state that outlives one authoring session, 
 
 **Widened at canon 2.13, and A is now the floor rather than the answer.** The Campaign opens with a
 choice of Commander and a player may keep several campaigns in progress
-([`campaigns.md`](campaigns.md) Section 4.3), so progress is **per save slot, each slot naming its
+([`campaigns.md`](../game-design/campaigns.md) Section 4.3), so progress is **per save slot, each slot naming its
 Commander** — and bonus goals unlock content for Challenge mode, which means the record outlives a
 single campaign. A flat checked-in list still serves the first playable mission; it does not serve
 that shape, and Milestone 4 is where the difference gets designed rather than discovered.
@@ -728,7 +728,7 @@ that shape, and Milestone 4 is where the difference gets designed rather than di
 ### Q34 — Does building Commander Vasse in Level 1 mean authoring the Citizens Commander Army early?
 
 **Status:** OPEN — blocks nothing before Milestone 8 starts; the recommendation is already assumed by
-[`../milestones/milestone-08-commander.md`](../milestones/milestone-08-commander.md).
+[`docs/milestones/milestone-08-commander.md`](milestone-08-commander.md).
 
 Mario's own milestone list puts a real Commander in Level 1: "focus on the first Citizen commander.
 Develop the initial draft of Nexus upgrades." Every earlier framing in this repository deferred both —
@@ -756,11 +756,11 @@ RESTORATION's narrative beat two missions early — that costs nothing and keeps
 ### Q35 — What counts as "discovered" enemy intel, and when is it recorded?
 
 **Status:** OPEN — blocks nothing before Milestone 4 builds the enemy-intel panel; the recommendation
-is already assumed by [`../milestones/milestone-04-campaign-menu.md`](../milestones/milestone-04-campaign-menu.md).
+is already assumed by [`docs/milestones/milestone-04-campaign-menu.md`](milestone-04-campaign-menu.md).
 
 Mario's campaign-menu description asks for "enemy intel (discovered enemy units, buildings, nexus
 powers, enemy generals, and mission reports)." Nothing in canon currently specifies a persistent,
-cross-mission record of what the player has seen. `PlayerView` ([`engine.md`](engine.md) Section 7) is
+cross-mission record of what the player has seen. `PlayerView` ([`engine.md`](../system-design/grid-engine.md) Section 7) is
 a **live, per-Pulse visibility filter** — it decides what a player may be shown *this instant*, and
 remembers nothing between missions. So "discovered" needs a definition before the panel can be built.
 
@@ -778,7 +778,7 @@ not build C's authoring surface before a mission actually uses it.
 ### Q36 — Does a defensive mission need a victory condition the kernel does not have?
 
 **Status:** OPEN — **resolved in practice by gate 6B, without a kernel change** (below); it moves to
-Answered when Mario accepts the gate. It was a **RULE-level** question ([`engine.md`](engine.md)
+Answered when Mario accepts the gate. It was a **RULE-level** question ([`engine.md`](../system-design/grid-engine.md)
 Section 5's victory condition is RULE), and the answer changes no RULE.
 
 PERIMETER's objective, in its own briefing: "Hold the perimeter. Keep the workers alive." The kernel's
@@ -799,12 +799,12 @@ mostly the canon ceremony a RULE change requires, not the code.
 
 **Narrowed at canon 2.13 by Q44's answer.** Missions now declare goals — "survive N Pulses,"
 "capture X by Pulse N," "destroy the enemy Grid Nexus" — which is the general form this row's Option B
-was reaching for ([`campaigns.md`](campaigns.md) Section 4.3). What is left of Q36 is only the kernel
+was reaching for ([`campaigns.md`](../game-design/campaigns.md) Section 4.3). What is left of Q36 is only the kernel
 half: does `engine.md` Section 4.3's victory check accept a mission-supplied objective, or does the
 scenario layer resolve goals above it and hand the kernel an ordinary outcome? The second costs no
 RULE change and is worth trying first.
 
-**B has a natural home since canon 2.10.** The trigger model in [`campaigns.md`](campaigns.md)
+**B has a natural home since canon 2.10.** The trigger model in [`campaigns.md`](../game-design/campaigns.md)
 Section 2.1 carries `win` and `lose` as simulation actions — "the Nexus still stands when Pulse 3
 ends" is a trigger (`when: { event: "pulse.end", pulse: 3 }`, `do: [{ win: true }]`), not a bespoke
 flag on the kernel's own victory check. If A shows the plain tick-limit draw does not read as
@@ -815,7 +815,7 @@ objective layered above it. Still a RULE-adjacent change the day it lands; still
 **Gate 6A (2026-09-29) can now show the plain draw, on placeholder content.** A Pulse that runs to its
 tick limit with both sides untouched ends on the Nexus Pulse screen as **TIME'S UP — "The time ran
 out before either side won."**, neutral in tone, with how many of the player's units came home
-([`../evidence/screenshots/pulse-result-timeup.png`](../evidence/screenshots/pulse-result-timeup.png);
+([`docs/screenshots/pulse-result-timeup.png`](../screenshots/pulse-result-timeup.png);
 the spike's "Raid: none" Experiment reaches it). That is option A's cheapest possible evidence
 for the *screen*, but not for the *question*: whether a defensive mission's player reads it as success
 depends on PERIMETER's own briefing and debrief text around it, which arrives with 6B's fixture.
@@ -829,7 +829,7 @@ a `lose` on the player's Nexus destroyed listed before it, so a fallen Nexus in 
 not a hold. On screen, a round the mission goes on from keeps the fight's own words (a time-out still
 reads TIME'S UP, and under it "Round 1 of 3 is over. The Nexus stands."), and the last round's result is
 the mission's verdict in the mission's words — **MISSION COMPLETE — The perimeter held.** — with the
-fight's TIME'S UP under it, never instead of it (`evidence/screenshots/mission-complete.png`). So the
+fight's TIME'S UP under it, never instead of it (`docs/screenshots/mission-complete.png`). So the
 plain draw did not read as success on its own, and needed no new victory branch to: the mission says
 what the draw means. **Recommendation: accept this answer**; a kernel "defender wins on time-out" flag is
 not needed for PERIMETER, and Skirmish and Challenge keep the plain rule. What the build found instead is
@@ -839,11 +839,11 @@ Q70 below: the kernel's *annihilation* rule, not its time-out, is what bends a d
 
 **Status:** OPEN — blocks nothing before Milestone 2 locks the map's final dimensions; the
 recommendation is already assumed by
-[`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md)
+[`docs/milestones/completed/milestone-02-campaign-design.md`](completed/milestone-02-campaign-design.md)
 Section 4.3.
 
 A real tension, found on review rather than during Milestone 2 or 5's own drafting:
-[`../campaigns.md`](campaigns.md) Section 4.1's belief ramp describes PERIMETER's own teaching goal as
+[`../campaigns.md`](../game-design/campaigns.md) Section 4.1's belief ramp describes PERIMETER's own teaching goal as
 "Build Phase / Nexus Pulse loop on **a small Grid that never scrolls**" — written as GUIDANCE before
 the campaign-first pivot, and never revisited since. Milestone 5's own charter says real map scrolling
 "is built here, for real, against a Grid sized to actually need it," with Milestone 2 only softening
@@ -876,7 +876,7 @@ intro; both proceed under the recommendation. Mario raised it directly with the 
 became canon 2.10: "we should decide if this is better than providing a scripting API/DSL to just
 write some JS code on top of it, which may be easier."
 
-[`campaigns.md`](campaigns.md) Section 2.1 records the *shape* Mario asked for — StarCraft-editor
+[`campaigns.md`](../game-design/campaigns.md) Section 2.1 records the *shape* Mario asked for — StarCraft-editor
 style triggers, a condition and a list of actions, over a mission of many Pulses — and the split that
 makes it safe: simulation actions run inside the kernel as validated intents, presentation actions
 never touch state. What it does not settle is the **authored surface**: whether a mission author
@@ -885,7 +885,7 @@ writes typed data, or code.
 | Option | Cost |
 | --- | --- |
 | A. **Declarative triggers** — a mission is TypeScript object literals of typed conditions and actions; the vocabulary grows in engine code, each new kind with a named scenario, and a mission never contains a function | Every shape a mission wants that the vocabulary lacks is an engine change, not a mission edit — slower on the first mission, and authors learn a vocabulary rather than a language. TypeScript literals already give autocomplete and type errors, so most of what a "DSL" promises ergonomically is there for free |
-| B. **A scripting API** — a mission is a TypeScript module exporting functions called at mission events, handed an API object (`spawn`, `order`, `say`, …) | Easiest first mission, and the ceiling is the language. But arbitrary code can read a clock, call `Math.random`, close over mutable state, and run in an order nothing pins down — determinism becomes author discipline instead of structure, the exact thing [`engine.md`](engine.md) Section 1 exists to make structural. Nothing can be validated statically (dangling references, unreachable objectives, a `win` nobody can trigger); a preview tool cannot "jump to a trigger" it cannot see; a replay must ship the script; and a user-authored campaign is arbitrary local code with no sandbox (`engine.md` Section 8 says so of hooks in as many words) |
+| B. **A scripting API** — a mission is a TypeScript module exporting functions called at mission events, handed an API object (`spawn`, `order`, `say`, …) | Easiest first mission, and the ceiling is the language. But arbitrary code can read a clock, call `Math.random`, close over mutable state, and run in an order nothing pins down — determinism becomes author discipline instead of structure, the exact thing [`engine.md`](../system-design/grid-engine.md) Section 1 exists to make structural. Nothing can be validated statically (dangling references, unreachable objectives, a `win` nobody can trigger); a preview tool cannot "jump to a trigger" it cannot see; a replay must ship the script; and a user-authored campaign is arbitrary local code with no sandbox (`engine.md` Section 8 says so of hooks in as many words) |
 | C. **A with the narrow-hook door** — declarative by default; where a mission's shape is genuinely too odd for the vocabulary, it registers a typed hook that receives read-only context and returns intents the kernel validates, exactly the mechanism `engine.md` Section 8 already sketches for exceptional content; a hook used by two missions becomes a vocabulary entry | Everything A costs, plus one more thing to review carefully — a hook is code, and the review-time rule "intents out, never mutation" is what keeps it honest |
 
 **Recommendation: C, which is A in practice.** The reasons are the project's own invariants, not
@@ -902,7 +902,7 @@ that evidence in hand.
 
 **Status:** OPEN — blocks nothing before Milestone 11's gate 11A; it proceeds under the
 recommendation. Registered at canon 2.11 with the Challenge mode itself
-([`game-modes.md`](game-modes.md) Section 3.2).
+([`game-modes.md`](../game-design/game-modes.md) Section 3.2).
 
 A run is a series of battles with the army changing between them. The army composition — its
 structures and Nexus power pool — obviously persists; that is what the run draft edits. What is not obvious is
@@ -933,7 +933,7 @@ telegraphed, turn order is inspectable, and the developers' stated goal was that
 like your own fault"
 ([Subset Games](https://subsetgames.com/itb.html);
 [postmortem](https://www.gamedeveloper.com/game-platforms/road-to-the-igf-subset-games-i-into-the-breach-i-);
-the GDC talk is already cited in [`game-modes.md`](game-modes.md) Section 6).
+the GDC talk is already cited in [`game-modes.md`](../game-design/game-modes.md) Section 6).
 
 Terminal Nexus currently has nothing equivalent. A mission's scripted arrivals are authored data
 (Q32, answered — a tick-gated trigger list in the map file), so showing them costs no simulation
@@ -1152,7 +1152,7 @@ loaded, with this question's number in the message.
 | Option | Cost |
 | --- | --- |
 | A. **Keep `advance` only**; intentions stay words the mission writes | Free; but a raid can never feint, wait at the ridge, or pull back, and "Break through at the ridge" is a promise the kernel keeps only because the nearest enemy happens to be that way |
-| B. **An order field on an entity and a goal in the intents phase** — a group holds (never moves, still fires), withdraws (moves away from the region), or heads for a region before it engages | A kernel change: a new `EntityState` field (a schema bump), a rule in the intents phase with its own named scenario, the determinism suite — the same bar as every rule since Milestone 1. It is also the seam the Campaign's opponent AI needs (`docs/scripted-opponent.md`) |
+| B. **An order field on an entity and a goal in the intents phase** — a group holds (never moves, still fires), withdraws (moves away from the region), or heads for a region before it engages | A kernel change: a new `EntityState` field (a schema bump), a rule in the intents phase with its own named scenario, the determinism suite — the same bar as every rule since Milestone 1. It is also the seam the Campaign's opponent AI needs (`docs/game-design/scripted-opponent.md`) |
 | C. **Orders as scripted content swaps** (a "holding" variant of a unit with a static behaviour) | No kernel change, but a unit's identity would change under it, and every unit needs variants: content bloat to avoid a rule |
 
 **Recommendation: B, as its own small gate after 6B**, scoped to `hold` and "head for a region, then
@@ -1187,43 +1187,43 @@ Rows move here with the date, the decision, and the document that now owns it.
 
 | ID | Answered | Decision | Now owned by |
 | --- | --- | --- | --- |
-| Q30 | 2026-09-21 | **A, built.** The Build Phase panel is the construct menu, what is left to spend, the selected item's cost and effect, and the reason a placement was refused — and **no radius preview**, because nothing in the content that exists has a radius. Gate 5B built exactly the recommendation and the panel came out shorter than gate 5A's, not longer: the blocks it replaced were reporting things already visible on the Grid | [`engine.md`](engine.md) Section 9.2; [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md) |
-| Q50 | 2026-09-21 | **A click places the armed structure — no second click to confirm.** Mario, shown both behaviours side by side: "Click to place looks good to me too. We can always implement undo or destroy later, for now this is good." (Undo and remove already exist: `u` and Backspace.) The toggle is deleted rather than kept as a setting. **Revisited 2026-09-26, see Q52** | [`engine.md`](engine.md) Section 9.7, whose own recommendation this confirms; [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md) |
-| Q52 | 2026-09-26 | **Reversed: a second click on the same tile places it, not the first.** Owner, after living with gate 5D's build: "the building is placed right away, but there should be a confirmation... the default should require a second click." A future `Shift+click` is planned as a one-click escape hatch, not built now. Q50's own asymmetry finding (a first click can scroll the camera, so a second click at the same *screen position* lands on a different *tile*) is what makes this safe to re-adopt: the check is on tile identity, not screen position | [`engine.md`](engine.md) Section 9.7 |
-| Q66 | 2026-09-30 | **A — the three tiers, behind the Key releases Experiment (auto / off), built before the probe ran in his iTerm2** because the owner asked to compare the two himself (third round on the menu spike, F79: "We should enable/disable reading key-press in the settings, so I can test how it feels when the system provides it vs when it does not"). On auto the Build Phase asks for the kitty keyboard protocol and switches it on if the terminal answers, and the one disposer switches it off on every exit path; a press is then a tap, a repeat belongs to a hold and a release ends it. A classic terminal, or off, falls back to timing: a press within the hold window of the one before is a repeat. The browser page does the same from its key-down and key-up events. Only how a repeat is recognised differs, never where the cursor goes; a test holds that. Left for the navigation session: whether iTerm2 answers (the probe), a learned hold window, and a hold timer of the game's own | [`engine.md`](engine.md) 3.3, 9.7, 10.1 (canon 2.29); `../src/view/key-events.ts`, `../src/build/motion.ts` |
-| Q60 | 2026-09-27 | **B — the popup closes on the pick.** The owner, asked directly ("does the Nexus Powers popup close itself after you pick a power? My recommendation is that it closes"), agreed. Open, pick, and the player is back on the menu; the status line and the entry's "1 active" confirm it, and reopening the popup shows the pick listed as active. Esc still closes it without a pick. The register's own written recommendation was A (stay open); the question was put to him with B recommended, on the grounds that the pick is confirmed in two other places and the open popup cost a key on every Build Phase | [`engine.md`](engine.md) 9.7 (canon 2.21); `../src/build/state.ts` (`pickNexus`) |
-| Q56 | 2026-09-27 | **A solid bar, on all four sides.** Owner, after playing gate 5F: "The grid borders need to also use the 'thick' version horizontally... it should use something that is more clear... The rectangle needs to be a rectangle." A side that has reached the map's edge is drawn as an inverse-video cell — the same weight horizontally and vertically, in every glyph pack and in monochrome — and a corner is solid where a solid side runs into it. Replaces the `=` / bold `|` pair gate 5E built | [`engine.md`](engine.md) 3.3 (canon 2.21); `../src/view/build-frame.ts` (`drawChrome`) |
-| Q57 | 2026-09-27 | **A — always back to the menu**, reversing the recommendation gate 5F built. Owner: "I like keeping that as the main orchestrator, so when a building is placed, the focus should always come back to the menu." A placement also disarms: a building is armed only while the map has focus. Esc returns focus to the menu (and on the menu asks "Exit the game?"); Backspace stays "remove". The digit path is now "digit, arrows, Enter" per building **Refined 2026-09-29 (F30): finishing returns to where it began** — the map in plain navigation when the arming began there, the menu when it began on the menu | [`engine.md`](engine.md) 9.7 (canon 2.21, 2.26); `../src/build/state.ts` (`place`) |
-| Q58 | 2026-09-28 | **Yes — an armed click scrolls like any other, and a quick double click places where its first click pointed**, reversing option B, which gate 5H built. Owner, after playing the demo page (feedback F22): "then I can keep clicking on the grid with the ghost building placement cursor to keep scrolling, and double click will place the building." A double click is two left clicks on the same screen cell within 400 ms (an Experiment); the input path sends the second as a click on the first one's tile, so the reducer's compare-by-tile rule (Q52) still holds and a slow second click on a moved view still never places on a tile nobody pointed at. The still view stays one Experiment away ("Armed click scrolls") | [`engine.md`](engine.md) 3.3 and 9.7 (canon 2.25); `../src/build/session.ts` (`lastArmedClick`) |
-| Q55 | 2026-09-29 | **Both halves built; the smart cursor replaced.** Interpolation: the view slides and the cursor glides (gates 5H and 5J). Placement: the owner (feedback F30) — "selecting a building should always try the 'recommended nearest empty space' for the building, but that should be based on the previous cursor location (or on top of the nexus by default), not on the last placed building." Arming now keeps the building where the cursor is when it fits, else the cheapest spot within 12 tiles (sideways cheaper than up or down) leaving a free tile around it, else one step right and down drawn as the building rather than refused; the cursor opens on the Grid Nexus. The "Smart cursor" Experiment is deleted | [`engine.md`](engine.md) 9.7 (canon 2.26) |
-| Q65 | 2026-09-29 | **Yes — removing a planned building throws the same sparks a placement does.** Owner (feedback F33): "Canceling a placed building should also have spark effect, it's easy to do :)". The building still leaves the plan at once; the sparks are presentation over the ground it stood on | [`ascii-effects.md`](ascii-effects.md) Section 5 (`fx.sparks.burst`) (canon 2.26) |
-| Q61 | 2026-09-29 | **A — the menu, with the highlight on Explore Map.** Owner (feedback F31): "When the build mode is launched, the focus should be on the Menu, at the Explore Map option. No need to have a experiment setting for this. This allows the user to press 'Enter' or 'e' to move the cursor into the map, but also allows them to press 'down' to see more options." The "Opens on" Experiment is deleted | [`engine.md`](engine.md) 9.7 (canon 2.26) |
-| Q1 | 2026-08-20 | **Tile width is adaptive presentation capability**: one column per tile in the 80x24 composition, two columns per tile at 128 columns or wider. Same tiles, same actors, same revealed information — only the composition changes. The 80x24 floor is preserved and the concept art's look is reachable on a wide terminal | [`engine.md`](engine.md) Section 9.3 |
-| Q2 | 2026-08-20 | **One resource.** Salvage recovers the same resource rather than a second one. Nexus energy is a state readout, not a currency. A second resource is an addition a later microgame may earn; it is not assumed | [`engine.md`](engine.md) Section 6 |
-| Q3 | 2026-08-20 | **Units may span multiple tiles.** Large units are a normal, strategically important case, not a later extension — a Ravel raider drawn `>x<` is one unit occupying three tiles. The collision system tests a mover's whole footprint against its mask; damage and destruction apply to the entity, not the tile | [`engine.md`](engine.md) Section 3.5 |
-| Q4 | 2026-08-21 | **The corruption law.** Corruption is drawn in the `effects` band and above, never in `units` or `structures`; it may add, overdraw, and unsettle, but never remove or replace the only cell carrying a required semantic cue. Recorded as decided because the rule was already RULE in the engine, restated in the lore, and listed among the locked product decisions — the register was the only document still calling it open | [`engine.md`](engine.md) Section 9.4 |
-| Q6 | 2026-08-20 | **Packaging and remote delivery leave Milestone 1.** First split into an independent gate, then deferred out of the milestone entirely when it was refocused onto the Pulse — they answer no question the game currently has | [`../milestones/milestone-01-grid-battles.md`](../milestones/milestone-01-grid-battles.md) |
-| Q10 | 2026-08-21 | **DROPPED as mis-scoped.** Engine determinism was never in question: the kernel, its event log, and replay stay exact, and the features that depend on them are untouched. Whether a mission's *interface* misreports a total for narrative effect is campaign writing, decided when campaigns are designed | [`campaigns.md`](campaigns.md), at Milestone 5 |
-| Q11 | 2026-08-21 | **Alder refuse artificial Nexus power — conceptual.** Simplicity and growth instead: little or no Nexus draft, and more complexity in the structures they can build. Direction, not a locked mechanic | [`terminal-nexus-lore.md`](terminal-nexus-lore.md) Section 8.5 and [`commander-armies.md`](commander-armies.md) Section 4 |
-| Q17 | 2026-08-21 | **Resolved by an unrelated fix, not decided among its options.** Four-way movement and Manhattan distance (Q15's fix, shipped for legibility) removed the degenerate tie itself: under Chebyshev a rank-deployed army had every enemy at the same distance; under Manhattan the same layout does not, because the axis the old metric ignored (`min(|dx|,|dy|)`) is exactly the one Manhattan keeps. Verified, not assumed: `citizen-mirror-skirmish.ts` (rank-deployed) now pairs each attacker with a distinct nearest opponent from tick 1, no stampede | [`grid/coords.ts`](../src/grid/coords.ts) `gridDistance`; `specs/open-questions.md` Q15 |
-| Q25 | 2026-08-26 | **A confirmed (256-colour tier stays derived from `rgb`; 16-colour stays hand-authored) and C shipped**: `CellStyle.fade`, a `fgRole`-only 0–1 scalar resolved only at `color256`/`truecolor`, narrowly scoped to `fx.damage.flash` per a recorded departure from craft rule 7. B and D not done, per the recommendation | [`engine.md`](engine.md) Section 9.1; [`ascii-effects.md`](ascii-effects.md) craft rule 7; `src/view/roles.ts`, `src/view/frame.ts`, `src/view/effects/composite.ts`, `src/view/effects/recipes.ts` |
-| Q29 | 2026-08-26 | **Recall is the existing end-of-Pulse regroup rule, named, not a new mechanic.** Confirmed directly by Mario's own description of the Pulse phase: "instantly recall all units back to their proper location next to their home buildings" — exactly `engine.md` Section 5's existing rule, Option A | [`../milestones/milestone-06-pulse-phase.md`](../milestones/milestone-06-pulse-phase.md) |
-| Q42 | 2026-09-09 | **No player-facing taxonomy; a bounded union in code.** A power is a name and one plain line saying what it does (*"Factory Permit — Unlocks building: Factory"*). The effect kinds — `unlockStructure`, `spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`, `reveal` — are engineering names the player never sees | [`commander-armies.md`](commander-armies.md) Section 4.5; [`engine.md`](engine.md) Section 5.4 |
-| Q43 | 2026-09-10 | **No upfront Commander choice.** A new player starts Vasse's mission 1 directly; completing it unlocks Averno and Dob Hunter as two new campaign-menu rows, each their own opening on the same maps. Save slots are per Commander (`campaigns.md` Section 4.3) | [`campaigns.md`](campaigns.md) Section 4.3; [`../milestones/milestone-03-game-menu.md`](../milestones/milestone-03-game-menu.md) |
-| Q44 | 2026-09-09 | **Missions have goals, not fixed lengths.** A main goal (usually "destroy the enemy Grid Nexus"; also survive/capture/accumulate shapes) plus an optional bonus goal that unlocks Challenge content. A Pulse counter shows only when the goal is about Pulses. Canon 2.12's fixed 3/4/5-Pulse contract survives as a pacing estimate only | [`campaigns.md`](campaigns.md) Section 4.3 |
-| Q47 | 2026-09-10 | **One map file, roles swapped — no second map authored.** The Ravel opening's mission 1 reuses PERIMETER's literal Grid: the raid's staging area becomes Dob's starting camp, the Citizen base becomes the scripted defender, and his objective is `destroyNexus` targeting the fabricator. Only `playerArmy`, `opponentArmies`, `objective`, and the trigger list's perspective change | [`campaigns.md`](campaigns.md) Section 4.3 |
-| Q48 | 2026-09-10 | **Bonus goals are shown in the briefing, not revealed as a surprise.** A player decides whether to play toward one from the start, the same way the main goal is already stated (Q44) | [`campaigns.md`](campaigns.md) Section 4.3 |
-| Q41 | 2026-09-12 | **Unlocks only, confirmed — and Challenge's own progression is the primary source.** Playing Challenge unlocks more of the faction's pool directly; the Campaign's bonus goals add a few more, only if Challenge has not already unlocked them. No permanent stat buffs, ever | [`game-modes.md`](game-modes.md) Section 3.2 |
-| Q45 | 2026-09-12 | **No skip, in general.** A dealt Nexus power is close to strictly advantageous, unlike a typical deckbuilder's rares, so there is no dilution to protect against and no reason to decline one. Alder alone may convert a power into "honor," their own faction mechanic — and even that may be locked out at tutorial difficulty | [`commander-armies.md`](commander-armies.md) Section 4.5 |
-| Q46 | 2026-09-12 | **Challenge keeps its own progression, uncorrelated with the Campaign.** A run starts from a basic Commander package unlocked from the beginning; playing Challenge itself unlocks more. The Campaign's bonus goals add a few more, only for things not already unlocked. Playing Challenge without ever touching the Campaign is always allowed — a dismissible "we recommend the Campaign first" message is the only nudge | [`game-modes.md`](game-modes.md) Section 3.2 |
-| Q37 | 2026-09-01 | **Yes — a spike, and wider than the row's Option A.** Mario: "Scrolling in the map and placing selected bases is the part that needs more attention and will need a spike to verify assumptions." Not only static mockups: an interactive spike of cursor scrolling and placement, driven through keyboard, mouse, and the driver alike, that also verifies which target terminals deliver Shift+Arrow | [`../milestones/milestone-05-build-phase.md`](../milestones/milestone-05-build-phase.md); [`engine.md`](engine.md) Section 9.7 |
-| Q32 | 2026-09-12 | **A tick-gated trigger list (Option A).** PERIMETER's raid is a second, one-sided placement block with tick-gated triggers (`{ atTick, action }`), authored and validated the same way a `.map.json` file already is — not a policy module. Generalised at canon 2.10 into the trigger model every mission now uses | [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md) Section 4.4; [`campaigns.md`](campaigns.md) Section 2.1 |
-| Q33 | 2026-09-12 | **Author around Q15's dead end (Option A).** PERIMETER's approach lane is off-axis from the Nexus by design, not a kernel routing fix. Q15 stays open and unowned until a mission's own design genuinely cannot be authored around it | [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md) Section 4.3 |
+| Q30 | 2026-09-21 | **A, built.** The Build Phase panel is the construct menu, what is left to spend, the selected item's cost and effect, and the reason a placement was refused — and **no radius preview**, because nothing in the content that exists has a radius. Gate 5B built exactly the recommendation and the panel came out shorter than gate 5A's, not longer: the blocks it replaced were reporting things already visible on the Grid | [`engine.md`](../system-design/grid-engine.md) Section 9.2; [`docs/milestones/completed/milestone-05-build-phase.md`](completed/milestone-05-build-phase.md) |
+| Q50 | 2026-09-21 | **A click places the armed structure — no second click to confirm.** Mario, shown both behaviours side by side: "Click to place looks good to me too. We can always implement undo or destroy later, for now this is good." (Undo and remove already exist: `u` and Backspace.) The toggle is deleted rather than kept as a setting. **Revisited 2026-09-26, see Q52** | [`engine.md`](../system-design/grid-engine.md) Section 9.7, whose own recommendation this confirms; [`docs/milestones/completed/milestone-05-build-phase.md`](completed/milestone-05-build-phase.md) |
+| Q52 | 2026-09-26 | **Reversed: a second click on the same tile places it, not the first.** Owner, after living with gate 5D's build: "the building is placed right away, but there should be a confirmation... the default should require a second click." A future `Shift+click` is planned as a one-click escape hatch, not built now. Q50's own asymmetry finding (a first click can scroll the camera, so a second click at the same *screen position* lands on a different *tile*) is what makes this safe to re-adopt: the check is on tile identity, not screen position | [`engine.md`](../system-design/grid-engine.md) Section 9.7 |
+| Q66 | 2026-09-30 | **A — the three tiers, behind the Key releases Experiment (auto / off), built before the probe ran in his iTerm2** because the owner asked to compare the two himself (third round on the menu spike, F79: "We should enable/disable reading key-press in the settings, so I can test how it feels when the system provides it vs when it does not"). On auto the Build Phase asks for the kitty keyboard protocol and switches it on if the terminal answers, and the one disposer switches it off on every exit path; a press is then a tap, a repeat belongs to a hold and a release ends it. A classic terminal, or off, falls back to timing: a press within the hold window of the one before is a repeat. The browser page does the same from its key-down and key-up events. Only how a repeat is recognised differs, never where the cursor goes; a test holds that. Left for the navigation session: whether iTerm2 answers (the probe), a learned hold window, and a hold timer of the game's own | [`engine.md`](../system-design/grid-engine.md) 3.3, 9.7, 10.1 (canon 2.29); `../src/view/key-events.ts`, `../src/build/motion.ts` |
+| Q60 | 2026-09-27 | **B — the popup closes on the pick.** The owner, asked directly ("does the Nexus Powers popup close itself after you pick a power? My recommendation is that it closes"), agreed. Open, pick, and the player is back on the menu; the status line and the entry's "1 active" confirm it, and reopening the popup shows the pick listed as active. Esc still closes it without a pick. The register's own written recommendation was A (stay open); the question was put to him with B recommended, on the grounds that the pick is confirmed in two other places and the open popup cost a key on every Build Phase | [`engine.md`](../system-design/grid-engine.md) 9.7 (canon 2.21); `../src/build/state.ts` (`pickNexus`) |
+| Q56 | 2026-09-27 | **A solid bar, on all four sides.** Owner, after playing gate 5F: "The grid borders need to also use the 'thick' version horizontally... it should use something that is more clear... The rectangle needs to be a rectangle." A side that has reached the map's edge is drawn as an inverse-video cell — the same weight horizontally and vertically, in every glyph pack and in monochrome — and a corner is solid where a solid side runs into it. Replaces the `=` / bold `|` pair gate 5E built | [`engine.md`](../system-design/grid-engine.md) 3.3 (canon 2.21); `../src/view/build-frame.ts` (`drawChrome`) |
+| Q57 | 2026-09-27 | **A — always back to the menu**, reversing the recommendation gate 5F built. Owner: "I like keeping that as the main orchestrator, so when a building is placed, the focus should always come back to the menu." A placement also disarms: a building is armed only while the map has focus. Esc returns focus to the menu (and on the menu asks "Exit the game?"); Backspace stays "remove". The digit path is now "digit, arrows, Enter" per building **Refined 2026-09-29 (F30): finishing returns to where it began** — the map in plain navigation when the arming began there, the menu when it began on the menu | [`engine.md`](../system-design/grid-engine.md) 9.7 (canon 2.21, 2.26); `../src/build/state.ts` (`place`) |
+| Q58 | 2026-09-28 | **Yes — an armed click scrolls like any other, and a quick double click places where its first click pointed**, reversing option B, which gate 5H built. Owner, after playing the demo page (feedback F22): "then I can keep clicking on the grid with the ghost building placement cursor to keep scrolling, and double click will place the building." A double click is two left clicks on the same screen cell within 400 ms (an Experiment); the input path sends the second as a click on the first one's tile, so the reducer's compare-by-tile rule (Q52) still holds and a slow second click on a moved view still never places on a tile nobody pointed at. The still view stays one Experiment away ("Armed click scrolls") | [`engine.md`](../system-design/grid-engine.md) 3.3 and 9.7 (canon 2.25); `../src/build/session.ts` (`lastArmedClick`) |
+| Q55 | 2026-09-29 | **Both halves built; the smart cursor replaced.** Interpolation: the view slides and the cursor glides (gates 5H and 5J). Placement: the owner (feedback F30) — "selecting a building should always try the 'recommended nearest empty space' for the building, but that should be based on the previous cursor location (or on top of the nexus by default), not on the last placed building." Arming now keeps the building where the cursor is when it fits, else the cheapest spot within 12 tiles (sideways cheaper than up or down) leaving a free tile around it, else one step right and down drawn as the building rather than refused; the cursor opens on the Grid Nexus. The "Smart cursor" Experiment is deleted | [`engine.md`](../system-design/grid-engine.md) 9.7 (canon 2.26) |
+| Q65 | 2026-09-29 | **Yes — removing a planned building throws the same sparks a placement does.** Owner (feedback F33): "Canceling a placed building should also have spark effect, it's easy to do :)". The building still leaves the plan at once; the sparks are presentation over the ground it stood on | [`ascii-effects.md`](../system-design/effects.md) Section 5 (`fx.sparks.burst`) (canon 2.26) |
+| Q61 | 2026-09-29 | **A — the menu, with the highlight on Explore Map.** Owner (feedback F31): "When the build mode is launched, the focus should be on the Menu, at the Explore Map option. No need to have a experiment setting for this. This allows the user to press 'Enter' or 'e' to move the cursor into the map, but also allows them to press 'down' to see more options." The "Opens on" Experiment is deleted | [`engine.md`](../system-design/grid-engine.md) 9.7 (canon 2.26) |
+| Q1 | 2026-08-20 | **Tile width is adaptive presentation capability**: one column per tile in the 80x24 composition, two columns per tile at 128 columns or wider. Same tiles, same actors, same revealed information — only the composition changes. The 80x24 floor is preserved and the concept art's look is reachable on a wide terminal | [`engine.md`](../system-design/grid-engine.md) Section 9.3 |
+| Q2 | 2026-08-20 | **One resource.** Salvage recovers the same resource rather than a second one. Nexus energy is a state readout, not a currency. A second resource is an addition a later microgame may earn; it is not assumed | [`engine.md`](../system-design/grid-engine.md) Section 6 |
+| Q3 | 2026-08-20 | **Units may span multiple tiles.** Large units are a normal, strategically important case, not a later extension — a Ravel raider drawn `>x<` is one unit occupying three tiles. The collision system tests a mover's whole footprint against its mask; damage and destruction apply to the entity, not the tile | [`engine.md`](../system-design/grid-engine.md) Section 3.5 |
+| Q4 | 2026-08-21 | **The corruption law.** Corruption is drawn in the `effects` band and above, never in `units` or `structures`; it may add, overdraw, and unsettle, but never remove or replace the only cell carrying a required semantic cue. Recorded as decided because the rule was already RULE in the engine, restated in the lore, and listed among the locked product decisions — the register was the only document still calling it open | [`engine.md`](../system-design/grid-engine.md) Section 9.4 |
+| Q6 | 2026-08-20 | **Packaging and remote delivery leave Milestone 1.** First split into an independent gate, then deferred out of the milestone entirely when it was refocused onto the Pulse — they answer no question the game currently has | [`docs/milestones/completed/milestone-01-grid-battles.md`](completed/milestone-01-grid-battles.md) |
+| Q10 | 2026-08-21 | **DROPPED as mis-scoped.** Engine determinism was never in question: the kernel, its event log, and replay stay exact, and the features that depend on them are untouched. Whether a mission's *interface* misreports a total for narrative effect is campaign writing, decided when campaigns are designed | [`campaigns.md`](../game-design/campaigns.md), at Milestone 5 |
+| Q11 | 2026-08-21 | **Alder refuse artificial Nexus power — conceptual.** Simplicity and growth instead: little or no Nexus draft, and more complexity in the structures they can build. Direction, not a locked mechanic | [`terminal-nexus-lore.md`](../game-design/lore.md) Section 8.5 and [`commander-armies.md`](../game-design/commander-armies.md) Section 4 |
+| Q17 | 2026-08-21 | **Resolved by an unrelated fix, not decided among its options.** Four-way movement and Manhattan distance (Q15's fix, shipped for legibility) removed the degenerate tie itself: under Chebyshev a rank-deployed army had every enemy at the same distance; under Manhattan the same layout does not, because the axis the old metric ignored (`min(|dx|,|dy|)`) is exactly the one Manhattan keeps. Verified, not assumed: `citizen-mirror-skirmish.ts` (rank-deployed) now pairs each attacker with a distinct nearest opponent from tick 1, no stampede | [`grid/coords.ts`](../../src/grid/coords.ts) `gridDistance`; `docs/milestones/open-questions.md` Q15 |
+| Q25 | 2026-08-26 | **A confirmed (256-colour tier stays derived from `rgb`; 16-colour stays hand-authored) and C shipped**: `CellStyle.fade`, a `fgRole`-only 0–1 scalar resolved only at `color256`/`truecolor`, narrowly scoped to `fx.damage.flash` per a recorded departure from craft rule 7. B and D not done, per the recommendation | [`engine.md`](../system-design/grid-engine.md) Section 9.1; [`ascii-effects.md`](../system-design/effects.md) craft rule 7; `src/view/roles.ts`, `src/view/frame.ts`, `src/view/effects/composite.ts`, `src/view/effects/recipes.ts` |
+| Q29 | 2026-08-26 | **Recall is the existing end-of-Pulse regroup rule, named, not a new mechanic.** Confirmed directly by Mario's own description of the Pulse phase: "instantly recall all units back to their proper location next to their home buildings" — exactly `engine.md` Section 5's existing rule, Option A | [`docs/milestones/milestone-06-pulse-phase.md`](milestone-06-pulse-phase.md) |
+| Q42 | 2026-09-09 | **No player-facing taxonomy; a bounded union in code.** A power is a name and one plain line saying what it does (*"Factory Permit — Unlocks building: Factory"*). The effect kinds — `unlockStructure`, `spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`, `reveal` — are engineering names the player never sees | [`commander-armies.md`](../game-design/commander-armies.md) Section 4.5; [`engine.md`](../system-design/grid-engine.md) Section 5.4 |
+| Q43 | 2026-09-10 | **No upfront Commander choice.** A new player starts Vasse's mission 1 directly; completing it unlocks Averno and Dob Hunter as two new campaign-menu rows, each their own opening on the same maps. Save slots are per Commander (`campaigns.md` Section 4.3) | [`campaigns.md`](../game-design/campaigns.md) Section 4.3; [`docs/milestones/completed/milestone-03-game-menu.md`](completed/milestone-03-game-menu.md) |
+| Q44 | 2026-09-09 | **Missions have goals, not fixed lengths.** A main goal (usually "destroy the enemy Grid Nexus"; also survive/capture/accumulate shapes) plus an optional bonus goal that unlocks Challenge content. A Pulse counter shows only when the goal is about Pulses. Canon 2.12's fixed 3/4/5-Pulse contract survives as a pacing estimate only | [`campaigns.md`](../game-design/campaigns.md) Section 4.3 |
+| Q47 | 2026-09-10 | **One map file, roles swapped — no second map authored.** The Ravel opening's mission 1 reuses PERIMETER's literal Grid: the raid's staging area becomes Dob's starting camp, the Citizen base becomes the scripted defender, and his objective is `destroyNexus` targeting the fabricator. Only `playerArmy`, `opponentArmies`, `objective`, and the trigger list's perspective change | [`campaigns.md`](../game-design/campaigns.md) Section 4.3 |
+| Q48 | 2026-09-10 | **Bonus goals are shown in the briefing, not revealed as a surprise.** A player decides whether to play toward one from the start, the same way the main goal is already stated (Q44) | [`campaigns.md`](../game-design/campaigns.md) Section 4.3 |
+| Q41 | 2026-09-12 | **Unlocks only, confirmed — and Challenge's own progression is the primary source.** Playing Challenge unlocks more of the faction's pool directly; the Campaign's bonus goals add a few more, only if Challenge has not already unlocked them. No permanent stat buffs, ever | [`game-modes.md`](../game-design/game-modes.md) Section 3.2 |
+| Q45 | 2026-09-12 | **No skip, in general.** A dealt Nexus power is close to strictly advantageous, unlike a typical deckbuilder's rares, so there is no dilution to protect against and no reason to decline one. Alder alone may convert a power into "honor," their own faction mechanic — and even that may be locked out at tutorial difficulty | [`commander-armies.md`](../game-design/commander-armies.md) Section 4.5 |
+| Q46 | 2026-09-12 | **Challenge keeps its own progression, uncorrelated with the Campaign.** A run starts from a basic Commander package unlocked from the beginning; playing Challenge itself unlocks more. The Campaign's bonus goals add a few more, only for things not already unlocked. Playing Challenge without ever touching the Campaign is always allowed — a dismissible "we recommend the Campaign first" message is the only nudge | [`game-modes.md`](../game-design/game-modes.md) Section 3.2 |
+| Q37 | 2026-09-01 | **Yes — a spike, and wider than the row's Option A.** Mario: "Scrolling in the map and placing selected bases is the part that needs more attention and will need a spike to verify assumptions." Not only static mockups: an interactive spike of cursor scrolling and placement, driven through keyboard, mouse, and the driver alike, that also verifies which target terminals deliver Shift+Arrow | [`docs/milestones/completed/milestone-05-build-phase.md`](completed/milestone-05-build-phase.md); [`engine.md`](../system-design/grid-engine.md) Section 9.7 |
+| Q32 | 2026-09-12 | **A tick-gated trigger list (Option A).** PERIMETER's raid is a second, one-sided placement block with tick-gated triggers (`{ atTick, action }`), authored and validated the same way a `.map.json` file already is — not a policy module. Generalised at canon 2.10 into the trigger model every mission now uses | [`docs/milestones/completed/milestone-02-campaign-design.md`](completed/milestone-02-campaign-design.md) Section 4.4; [`campaigns.md`](../game-design/campaigns.md) Section 2.1 |
+| Q33 | 2026-09-12 | **Author around Q15's dead end (Option A).** PERIMETER's approach lane is off-axis from the Nexus by design, not a kernel routing fix. Q15 stays open and unowned until a mission's own design genuinely cannot be authored around it | [`docs/milestones/completed/milestone-02-campaign-design.md`](completed/milestone-02-campaign-design.md) Section 4.3 |
 
 ### Q50 — answered
 
 Registered 2026-09-21 by gate 5A, which built both click behaviours behind a toggle because
-[`engine.md`](engine.md) Section 9.7 called the choice "a feel decision the spike makes observable as
+[`engine.md`](../system-design/grid-engine.md) Section 9.7 called the choice "a feel decision the spike makes observable as
 a toggle rather than argues about". **Decided: a click places it** — Mario, having tried both.
 
 Worth recording for whoever revisits it, because the toggle turned up something an argument would
@@ -1267,7 +1267,7 @@ the wrong one; it just means the player's "second click" needs one more click to
 which is a milder cost than Q50's original bug (a silent wrong placement) rather than the same one
 recurring.
 
-`engine.md` 9.7 carries the reversal; `../milestones/milestone-05-build-phase.md` gate 5E is where it
+`engine.md` 9.7 carries the reversal; `docs/milestones/completed/milestone-05-build-phase.md` gate 5E is where it
 gets built.
 
 ### Q46 — answered
@@ -1332,7 +1332,7 @@ exchange for nothing they could act on.
 
 So: to a player, a power is a **name and one plain line**. In code the kinds are `unlockStructure`,
 `spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`, and `reveal`
-([`commander-armies.md`](commander-armies.md) Section 4.5). One design point is kept from the
+([`commander-armies.md`](../game-design/commander-armies.md) Section 4.5). One design point is kept from the
 original proposal: `reveal` exists so that information is a card a player spends a pick on rather
 than something the HUD gives away.
 
@@ -1350,7 +1350,7 @@ resolves the original tension without a rule, since the mission that wants the d
 gets one and the rest do not.
 
 Missions also gain **bonus goals**: harder, optional, achievement-shaped, and the thing that unlocks
-content for Challenge mode ([`campaigns.md`](campaigns.md) Section 4.3). That is now the coupling
+content for Challenge mode ([`campaigns.md`](../game-design/campaigns.md) Section 4.3). That is now the coupling
 between the two modes.
 
 **This narrows Q36 rather than answering it.** Q36 asks whether a defensive mission needs a victory
@@ -1364,14 +1364,14 @@ Mario, 2026-09-10: "Campaign levels could have a main mission, and a bonus goal 
 achievement)... I want to see what you are able to imagine" — asked as part of a wider design pass,
 not as a fork with named options. Resolved here as GUIDANCE rather than put to Mario as a question:
 bonus goals are stated in the briefing alongside the main goal (Q44), never revealed only at debrief.
-See [`campaigns.md`](campaigns.md) Section 4.3.
+See [`campaigns.md`](../game-design/campaigns.md) Section 4.3.
 
 ### Q47 — answered
 
 Resolved as GUIDANCE while writing up the two openings Q43 settled: does the Ravel opening need its
 own map, or does it reuse PERIMETER's? One map, roles swapped — the raid's staging area becomes Dob
 Hunter's camp, the Citizen base becomes the scripted defender. See
-[`campaigns.md`](campaigns.md) Section 4.3.
+[`campaigns.md`](../game-design/campaigns.md) Section 4.3.
 
 ### Q43 — answered
 
@@ -1379,7 +1379,7 @@ Mario, 2026-09-10: "Perhaps we can just start with Vasse, so we have a more cont
 after that first level is completed, the Averno and Dob Hunter campaigns become unlocked." No
 Commander-choice screen at the top level — a new player starts Vasse's mission 1 directly, and
 completing it unlocks the other two openings as campaign-menu rows. See
-[`campaigns.md`](campaigns.md) Section 4.3; withdraws the "selection screen for three" instruction an
+[`campaigns.md`](../game-design/campaigns.md) Section 4.3; withdraws the "selection screen for three" instruction an
 earlier draft gave Milestone 3.
 
 ### Q37 — answered
@@ -1394,7 +1394,7 @@ by Shift+Arrow five tiles at a time, and all of it drivable by an agent for play
 
 So the answer is Option A's *timing* (a short, explicit step opening Milestone 5, before the real
 build) with a different *artifact*: an interactive spike, not a static one, scoped to scrolling and
-placement, run through all three input adapters of [`engine.md`](engine.md) Section 9.7, and
+placement, run through all three input adapters of [`engine.md`](../system-design/grid-engine.md) Section 9.7, and
 recording which of the project's target terminals actually deliver modified arrow keys — the one
 assumption in the keymap that a terminal can silently break. The static mockups at the viewport
 range's extremes remain a cheap thing to produce along the way; they are no longer the deliverable.
@@ -1405,7 +1405,7 @@ Registered 2026-08-26 as whether PERIMETER's map needs a real fix for Q15's on-a
 **Decided: author around it (Option A).** The approach lane is off-axis from the Nexus by
 construction — free, and it ships Level 1 without depending on a kernel fix this milestone does not
 own. Q15 itself stays open and unowned by any single milestone until a mission's own design genuinely
-cannot be authored around it. [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md)
+cannot be authored around it. [`docs/milestones/completed/milestone-02-campaign-design.md`](completed/milestone-02-campaign-design.md)
 Section 4.3.
 
 ### Q32 — answered
@@ -1415,7 +1415,7 @@ Registered 2026-08-26 as how a scripted, non-adaptive mission opponent is author
 one-sided placement block with `{ atTick, action }` triggers, authored and validated the same way a
 `.map.json` file already is. Generalised at canon 2.10 into the full trigger model every mission now
 uses — a condition and a list of simulation/presentation-band actions
-([`campaigns.md`](campaigns.md) Section 2.1). [`../milestones/milestone-02-campaign-design.md`](../milestones/milestone-02-campaign-design.md)
+([`campaigns.md`](../game-design/campaigns.md) Section 2.1). [`docs/milestones/completed/milestone-02-campaign-design.md`](completed/milestone-02-campaign-design.md)
 Section 4.4.
 
 ### Q29 — answered
@@ -1424,7 +1424,7 @@ Registered 2026-08-26 and answered the same day, by the owner's own next message
 separate decision. The question was whether "Recall" — a word Mario used alongside "the nexus pulse"
 that appears nowhere in canon — named a new mid-Pulse withdrawal mechanic (the more common genre
 meaning) or the existing, automatic end-of-Pulse regroup rule in
-[`engine.md`](engine.md) Section 5: "At Pulse end survivors regroup near home producers. Orphans are
+[`engine.md`](../system-design/grid-engine.md) Section 5: "At Pulse end survivors regroup near home producers. Orphans are
 adopted by the nearest compatible producer or regroup near the Grid Nexus."
 
 Mario's own description of what the Pulse-phase milestone should do settles it in his own words:
@@ -1434,7 +1434,7 @@ rule exactly — automatic, at Pulse end, no player action, units returning to t
 which is Option A, adopted without needing anything new built.
 
 The consequence is small and entirely presentational: the rule already runs, so what
-[`../milestones/milestone-06-pulse-phase.md`](../milestones/milestone-06-pulse-phase.md) owes is one
+[`docs/milestones/milestone-06-pulse-phase.md`](milestone-06-pulse-phase.md) owes is one
 clear beat on screen when it fires, not a kernel change. Option B (a player-triggered Nexus power that
 withdraws units mid-Pulse) stays available for a later mission whose design actually needs it — it
 would be real new kernel surface, decided on that mission's own evidence, not inherited from this row.
@@ -1448,7 +1448,7 @@ approximation. If we are not doing this already, make sure this architecture is 
 and the effects."
 
 **Half of this is already the architecture.** A cell carries `fgRole`, never a colour
-([`engine.md`](engine.md) Section 9.1, RULE), and roles are resolved to colour at the very last pass —
+([`engine.md`](../system-design/grid-engine.md) Section 9.1, RULE), and roles are resolved to colour at the very last pass —
 `frameToAnsi` → `sgrOf` → `sgrFor` (`src/view/frame.ts`, `src/view/roles.ts`). Nothing composes in
 colour and nothing stores one. So "process the colour, then a final pass turns it into the tier" is
 the shape that already runs. What is *not* derived is the table: `PALETTE[theme][role]` hand-authors
@@ -1480,9 +1480,9 @@ approximating the RGB badly; it is answering a different question — *which of 
 things apart* — which is exactly what the file's own comment claims it is for.
 
 The transparency half is a separate decision with a separate gate. `CellStyle`'s shape is printed
-inside a **RULE** block in [`engine.md`](engine.md) Section 9.1; adding a field to it needs owner
-acceptance and a canon bump ([`AGENTS.md`](../AGENTS.md) Section 3). It also brushes craft rule 7 in
-[`ascii-effects.md`](ascii-effects.md) Section 3 — "Terminals have no alpha. Decay is not fade-out" —
+inside a **RULE** block in [`engine.md`](../system-design/grid-engine.md) Section 9.1; adding a field to it needs owner
+acceptance and a canon bump ([`AGENTS.md`](../../AGENTS.md) Section 3). It also brushes craft rule 7 in
+[`ascii-effects.md`](../system-design/effects.md) Section 3 — "Terminals have no alpha. Decay is not fade-out" —
 which is GUIDANCE, and would need an explicit, recorded departure rather than a quiet one. What it
 buys is real and already wanted: the compositor's lighting stack
 (`src/view/effects/composite.ts`, built for the owner's "the white color can stack... then dim
@@ -1519,12 +1519,12 @@ change" for 256 (there is no longer a separate hand column to disagree with) and
 6/18 (light) for 16, confirming the 16-tier finding that justified *not* deriving it is still live; the
 script's own header now says so. Monochrome unchanged (still emits nothing, still asserted by a test).
 
-Made observable per the gate instructions, not just built: `evidence/screenshots/
+Made observable per the gate instructions, not just built: `docs/screenshots/
 palette-derivation-256-hand-authored.png` and `-derived.png` are the identical real fight frame
 (`citizens-versus-ravels`, tick 178) at the 256-colour tier, once per formula, sent directly to the
 owner — the two read as close to indistinguishable at a glance, which is the expected result the
 measurement predicted (11/18 roles already landed within 12 RGB units) rather than a surprise.
-`evidence/screenshots/palette-reference.png` (regenerated from the live table) is the full role-by-role
+`docs/screenshots/palette-reference.png` (regenerated from the live table) is the full role-by-role
 reference. **Still OPEN**: A is applied, not yet accepted — if the owner judges derived reads worse on
 a frame he looks at himself, that is exactly the finding this staged approach exists to surface before
 anything else is built on it.
@@ -1536,7 +1536,7 @@ judgement — so nothing here ships one. What exists instead: `scripts/prototype
 throwaway script that drives the *real* `fx.damage.flash` recipe and the *real* `mergeEffectCells`
 for "today," and a small local (script-only) resolver — one scalar `fade` (0–1) blended toward
 `BACKGROUND_RGB[theme]`, exactly C's recommended shape — for "prototype," rendered side by side as
-`evidence/screenshots/prototype-fade-resolver.png` and sent directly to the owner. It shows two things
+`docs/screenshots/prototype-fade-resolver.png` and sent directly to the owner. It shows two things
 concretely rather than arguing for them: (1) stacking — today's real compositor reaches only 2
 distinguishable states for a stack of simultaneous flashes (bold, then inverse, saturating
 immediately), where a continuous fade keeps six sampled stack sizes visibly distinct; (2) decay — a
@@ -1559,7 +1559,7 @@ Unrelated to the fade prototype's own conclusion, but found *while* building it,
 here rather than only in the gate report since it changes what "today" actually shows.
 
 **Decided, 2026-08-26.** Mario confirmed both forks in the same round of feedback that formally
-accepted Milestone 1 ([`project-governance.md`](project-governance.md) Section 5): "Keep it derived
+accepted Milestone 1 ([`project-governance.md`](../game-design/decisions.md) Section 5): "Keep it derived
 (recommended)" for A, and "Yes, build it for real" for C — decided from the standing evidence already
 in front of him (the hand-authored/derived 256-colour screenshots and the transparency prototype's own
 screenshot, both sent in round seven), not from a fresh artifact shown in this pass.
@@ -1567,7 +1567,7 @@ screenshot, both sent in round seven), not from a fresh artifact shown in this p
 A stands exactly as built above: the 256-colour tier derives from `rgb`, the 16-colour tier stays
 hand-authored, and nothing about that changes.
 
-C shipped for real. `CellStyle.fade` ([`engine.md`](engine.md) Section 9.1, now RULE) is a
+C shipped for real. `CellStyle.fade` ([`engine.md`](../system-design/grid-engine.md) Section 9.1, now RULE) is a
 `fgRole`-only scalar, `0` (the role's own colour) to `1` (the theme's background), resolved only at
 `color256`/`truecolor` — `color16` and `monochrome` ignore it entirely, unchanged from before it
 existed. `fx.damage.flash` (`src/view/effects/recipes.ts`) now decays across its own window instead of
@@ -1575,14 +1575,14 @@ a flat pulse (`fade: progressOf(instance, context)`, held off under reduced moti
 byte-identical there to the recipe's whole pre-amendment behaviour); `resolveLighting`
 (`src/view/effects/composite.ts`) sums a continuous version of the same scalar across a stack
 (brightness `1 − fade` summed and clamped, converted back to a fade) alongside the existing four-step
-`dim`/plain/`bold`/`inverse` ladder, not replacing it. [`ascii-effects.md`](ascii-effects.md) craft
+`dim`/plain/`bold`/`inverse` ladder, not replacing it. [`ascii-effects.md`](../system-design/effects.md) craft
 rule 7 now records the departure by name, narrowly scoped to this one recipe — every other effect in
 the vocabulary still decays by thinning, exactly as the rule describes. `scripts/
 prototype-fade-resolver.mjs` is deleted; its evidence screenshot
-(`evidence/screenshots/prototype-fade-resolver.png`) is kept, since it is now part of the historical
+(`docs/screenshots/prototype-fade-resolver.png`) is kept, since it is now part of the historical
 record of how this question was decided, not a preview of shipped behaviour. `scripts/
 capture-damage-flash-fade.mjs` supersedes it, driving the real, shipped recipe, compositor, and
-`sgrFor` end to end — no resolver of its own — producing `evidence/screenshots/damage-flash-fade.png`.
+`sgrFor` end to end — no resolver of its own — producing `docs/screenshots/damage-flash-fade.png`.
 Canon bumped 2.7 → 2.8 for the RULE amendment and the recorded GUIDANCE departure, across every
 document under `specs/` and `concept/` plus `AGENTS.md`.
 
@@ -1627,7 +1627,7 @@ second progression system.
 
 Closed as bookkeeping on 2026-08-21, during the canon-consistency audit, rather than by a fresh
 decision. The recommendation the row carried had already been promoted everywhere it mattered:
-[`engine.md`](engine.md) Section 9.4 carries it as **RULE**, `terminal-nexus-lore.md` Section 9
+[`engine.md`](../system-design/grid-engine.md) Section 9.4 carries it as **RULE**, `terminal-nexus-lore.md` Section 9
 restates it, `project-governance.md` Section 7 lists it among the locked product decisions, and
 `AGENTS.md` repeats it as an architectural invariant. The register was the last document still
 describing it as waiting on Mario, and a register that contradicts the canon is worse than no
@@ -1643,32 +1643,32 @@ the other, and campaigns are designed later.
 
 Nothing in the belief ramp asks the kernel, the event log, or a replay to be anything but exact; the
 device only concerned what a mission's *interface* displays. That is a writing decision belonging to
-the mission that wants it, so it needs no canon fork. [`campaigns.md`](campaigns.md) Section 4.1
+the mission that wants it, so it needs no canon fork. [`campaigns.md`](../game-design/campaigns.md) Section 4.1
 keeps one line of guidance — the engine's record is never part of a narrative device — and the rest
 waits for Milestone 5.
 
 ### Q3 — answered
 
 Recorded in full in the Git history of this file at canon 2.2. Mario settled it directly: large units
-exist and matter. [`engine.md`](engine.md) Section 3.5 carries the placement rule and Section 3.4.1
+exist and matter. [`engine.md`](../system-design/grid-engine.md) Section 3.5 carries the placement rule and Section 3.4.1
 carries the collision consequence.
 
 ### Q1 — answered
 
 Recorded in full in the Git history of this file at canon 2.1. The decision above is the durable
-part; [`engine.md`](engine.md) Section 9.3 now carries the rule.
+part; [`engine.md`](../system-design/grid-engine.md) Section 9.3 now carries the rule.
 
 ### Q2 — answered
 
-Recorded in full in the Git history of this file at canon 2.1. [`engine.md`](engine.md) Section 6
+Recorded in full in the Git history of this file at canon 2.1. [`engine.md`](../system-design/grid-engine.md) Section 6
 now carries the rule.
 
 ### Q6 — answered
 
 Recorded in full in the Git history of this file at canon 2.1. Superseded in scope at canon 2.2 when
 Milestone 1 was refocused onto the Pulse and delivery left the milestone altogether.
-[`../milestones/milestone-01-grid-battles.md`](../milestones/milestone-01-grid-battles.md) carries the gate structure;
-[`project-governance.md`](project-governance.md) Section 5 carries delivery as its own gated
+[`docs/milestones/completed/milestone-01-grid-battles.md`](completed/milestone-01-grid-battles.md) carries the gate structure;
+[`project-governance.md`](../game-design/decisions.md) Section 5 carries delivery as its own gated
 workstream.
 
 ### Q56 — answered
@@ -1739,7 +1739,7 @@ budget, the selected item's cost and effect, the reason a refusal happened, and 
 and the result is worth one sentence for whoever reopens the scope question: **the smaller panel came
 out shorter *and* more useful than the one it replaced**, because four of gate 5A's six blocks were
 reporting things the Grid already showed. A panel that narrates state grows; a panel that answers
-questions does not. [`engine.md`](engine.md) Section 9.2 now carries the contents.
+questions does not. [`engine.md`](../system-design/grid-engine.md) Section 9.2 now carries the contents.
 
 ### Q58 — answered
 
@@ -1871,7 +1871,7 @@ reports press, repeat and release; Windows Terminal has win32-input-mode; the br
 `keyup`. `node scripts/probe-key-release.mjs` says which kind a terminal is.
 
 **The shape that keeps both worlds working is progressive enhancement, in three tiers**, chosen at
-start from what the host says it reports (`docs/next-steps.md` has the detail):
+start from what the host says it reports (`docs/milestones/next-steps.md` has the detail):
 
 1. **Floor — no holding needed.** Every move is also a single key (a tap is a tile, Shift or
    PageUp/PageDown jumps 12), so a hold is a convenience and never a requirement. True today.
@@ -1888,7 +1888,7 @@ expects the same positions.
 
 | Option | Cost |
 | --- | --- |
-| A. **The three tiers**: ask for the kitty protocol on start (query, then push flags; pop them on *every* exit path through the one disposer), use the browser's `keydown`/`keyup`, and fall back to timing where a host answers nothing. A bonus: with the protocol on, a lone Esc no longer needs its 100 ms wait | An input event with a `phase` in place of raw bytes (`docs/portability.md`), a second decoder to keep in step, and terminal-state cleanup that must be right; tmux, SSH and `screen` may not pass the protocol through |
+| A. **The three tiers**: ask for the kitty protocol on start (query, then push flags; pop them on *every* exit path through the one disposer), use the browser's `keydown`/`keyup`, and fall back to timing where a host answers nothing. A bonus: with the protocol on, a lone Esc no longer needs its 100 ms wait | An input event with a `phase` in place of raw bytes (`docs/system-design/portability.md`), a second decoder to keep in step, and terminal-state cleanup that must be right; tmux, SSH and `screen` may not pass the protocol through |
 | B. Timing only, everywhere | Nothing new; taps and holds stay a guess shaped by the OS repeat settings |
 
 **Recommendation: A**, behind an Experiment ("Key releases": auto or off) so the owner can compare, after

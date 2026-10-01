@@ -39,7 +39,7 @@
     screen, not replace it.
 - **Human observation planned:** none required to close this gate, for the same reason as 3A — every
   criterion above is something a test or a screenshot can check on its own. Screenshots go in
-  `evidence/screenshots/` regardless, for whenever Mario wants to look.
+  `docs/screenshots/` regardless, for whenever Mario wants to look.
 - **Explicit exclusions:** anything about Campaign or Challenge (that is Gate 3C's job); a real
   save file for campaign progress (still not built, still a later decision); sound (nothing plays
   sound yet); any new game-play setting beyond the four the milestone names (colour depth, light or
@@ -160,7 +160,7 @@ background to be legible — the same thing `capture-screenshots.mjs` already do
 light-theme shots). Three new PNGs — `settings-screen`, `settings-light-theme`,
 `settings-back-to-top` — alongside the five from Gate 3A, regenerated against current code.
 
-**Docs**: `README.md`, `DEVELOPMENT.md`, and `milestones/milestone-03-game-menu.md` updated together
+**Docs**: `README.md`, `DEVELOPMENT.md`, and `docs/milestones/completed/milestone-03-game-menu.md` updated together
 (AGENTS.md Section 5); the milestone file's Active gate moved to 3C.
 
 ## 4. Automated results
@@ -187,10 +187,10 @@ light-theme shots). Three new PNGs — `settings-screen`, `settings-light-theme`
 | Each of `nextCapability`/`nextTheme`/`nextGlyphPack`/`toggleReducedMotion` cycles/wraps correctly | PASS | `tests/settings-types.test.ts` |
 | The full Gate 3A suite stays green | PASS | `tests/menu-adapters.test.ts`, `tests/menu-list.test.ts`, `tests/menu-view.test.ts`, `tests/lifecycle.test.ts`, `tests/terminal-nexus-cli.test.ts`, unmodified assertions except the one regex fix in `menu-view.test.ts` (Section 7) |
 | Repo-wide raw-byte scan comes back clean | PASS | `grep -rlP '\x1b'` limited to expected files (`.mjs`/`.ts` sources that intentionally hold escape-sequence constants as `` text) after the fixes in Section 7 |
-| Real terminal (tmux/PTY): Settings reached by its own hotkey, four rows and Back all visible | PASS | `evidence/screenshots/settings-screen.png` |
-| Real terminal: cycling Background to light takes effect with no restart, no flicker | PASS | `evidence/screenshots/settings-light-theme.png` |
-| Real terminal: Back returns to the top-level menu, still highlighting Settings | PASS | `evidence/screenshots/settings-back-to-top.png`, re-captured after the pre-merge review found its wait condition was not actually synchronizing on anything (Section 7) |
-| Real terminal: Gate 3A's five screenshots still look correct against current code | PASS | `evidence/screenshots/menu-{top-level,monochrome,highlight-moved,stub-notice,mouse-click}.png`, regenerated |
+| Real terminal (tmux/PTY): Settings reached by its own hotkey, four rows and Back all visible | PASS | `docs/screenshots/settings-screen.png` |
+| Real terminal: cycling Background to light takes effect with no restart, no flicker | PASS | `docs/screenshots/settings-light-theme.png` |
+| Real terminal: Back returns to the top-level menu, still highlighting Settings | PASS | `docs/screenshots/settings-back-to-top.png`, re-captured after the pre-merge review found its wait condition was not actually synchronizing on anything (Section 7) |
+| Real terminal: Gate 3A's five screenshots still look correct against current code | PASS | `docs/screenshots/menu-{top-level,monochrome,highlight-moved,stub-notice,mouse-click}.png`, regenerated |
 
 Measurements: not applicable — this gate has no performance or balance claim.
 
@@ -198,7 +198,7 @@ Measurements: not applicable — this gate has no performance or balance claim.
 
 None yet — nobody but this session has looked at the screen. As with Gate 3A, this was not planned
 as a blocking requirement (every acceptance criterion in Section 1 is mechanically checkable), but
-eight screenshots now exist in `evidence/screenshots/` (five from Gate 3A regenerated, three new:
+eight screenshots now exist in `docs/screenshots/` (five from Gate 3A regenerated, three new:
 `settings-screen`, `settings-light-theme`, `settings-back-to-top`) and `npm run terminal-nexus` runs
 the real thing, for whenever Mario looks.
 
@@ -418,7 +418,7 @@ as reversible assumptions.
 
 | Proposed rule | Would live in | Earned by |
 | --- | --- | --- |
-| None | — | This gate implements Settings exactly as `milestones/milestone-03-game-menu.md` Section 2 already describes it; nothing here contradicts or extends any RULE, so no amendment is proposed. |
+| None | — | This gate implements Settings exactly as `docs/milestones/completed/milestone-03-game-menu.md` Section 2 already describes it; nothing here contradicts or extends any RULE, so no amendment is proposed. |
 
 Questions raised: none. Section 6 explains why the settings file's location/format and the
 flag-versus-saved-choice precedence are recorded as reversible assumptions rather than registered as
@@ -429,6 +429,6 @@ are cheap to revisit if evidence later says otherwise.
 
 Gate 3C (Mode select and honest handoffs: Campaign hands off to Milestone 4 or an explicit
 placeholder, Challenge hands off to Milestone 11 or is disabled with the reason shown) — after Mario
-has looked at `evidence/screenshots/settings-*.png` and this report, per
-`milestones/milestone-03-game-menu.md` Section 1.1's own build order. Gate 3C is also the last gate
+has looked at `docs/screenshots/settings-*.png` and this report, per
+`docs/milestones/completed/milestone-03-game-menu.md` Section 1.1's own build order. Gate 3C is also the last gate
 this milestone names; nothing beyond it is authorized by this report.

@@ -58,7 +58,7 @@
   looking around the map, or like fighting the cursor? Second: which click behaviour does he want —
   place on the first click, or confirm on a second? Both are feel questions no test can answer, which
   is why the second one ships as a toggle rather than a decision. Screenshots at both terminal sizes
-  go in `evidence/screenshots/` either way.
+  go in `docs/screenshots/` either way.
 - **Explicit exclusions:**
   - the real Build Phase. No costs or spending, no two-group construct menu, no legality *panel*, no
     Nexus upgrade draft, no Special slot, no commit key and no confirmation — those are gates 5B, 5C
@@ -240,7 +240,7 @@ name and read back off a raw-mode echo:
 | Home / End | `ESC [ 1 ~` / `ESC [ 4 ~` |
 | Ctrl+Up | `ESC [ 1 ; 5 A` |
 
-And end to end, in the real screen rather than in a test: `evidence/screenshots/spike-scrolled.png`
+And end to end, in the real screen rather than in a test: `docs/screenshots/spike-scrolled.png`
 was produced by sending four Shift+Rights and four PageDowns through tmux into the running program,
 and its footer reads `cursor 38,33` — twenty tiles east and twenty south of where it started, which
 is four five-tile jumps on each axis.
@@ -268,7 +268,7 @@ optional here.
 yet — no costs, no upgrade pick, no commit. Whether the whole thing hangs together as a phase is
 Milestone 6's question, not this one's.
 
-Ten screenshots are in `evidence/screenshots/spike-*.png`, each captured from a real terminal at the
+Ten screenshots are in `docs/screenshots/spike-*.png`, each captured from a real terminal at the
 size it is about. An eleventh showed the click-then-confirm mode and was deleted with it.
 
 ## 6. Interpretation
@@ -442,7 +442,7 @@ which is the thing a canon document does not carry.
 | The Build Phase's **footer may run the full width**, under both panes, rather than stopping at the map pane | `engine.md` 9.2, which is GUIDANCE on composition | At 80 columns the map pane is 46 usable columns and all three footer lines are longer than that |
 | **A click places the armed structure**; there is no confirm-on-second-click mode. The sentence calling this "a feel decision the spike makes observable as a toggle" describes a spike that has now run | `engine.md` 9.7's mouse rows and its click-to-place caveat | Q50, answered by Mario on 2026-09-21 after trying both. Held here rather than applied on its own, so this gate's canon changes land in one version bump instead of two |
 
-Questions raised, each already added to [`../specs/open-questions.md`](../specs/open-questions.md)
+Questions raised, each already added to [`docs/milestones/open-questions.md`](../../milestones/open-questions.md)
 with a recommendation:
 
 | ID | Question | Recommendation, and what happened |

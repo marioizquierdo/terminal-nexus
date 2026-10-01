@@ -202,4 +202,4 @@ See [NOTICE](NOTICE) and [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## Contributing
 
-Terminal Nexus begins with evidence-driven milestones, not a general feature backlog. Read [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md), the [specification index](specs/README.md), and the current gate before proposing implementation.
+Terminal Nexus begins with evidence-driven docs/milestones, not a general feature backlog. Read [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md), the [specification index](docs/README.md), and the current gate before proposing implementation.

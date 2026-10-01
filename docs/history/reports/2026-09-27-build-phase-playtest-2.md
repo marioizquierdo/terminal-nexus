@@ -11,7 +11,7 @@
 ## 1. Frame — written before coding
 
 - **Canon version:** 2.19, unchanged; the design-document edits this feedback owes are listed for the
-  orchestrator (`docs/feedback/2026-09-27-build-phase-playtest.md`, "Design documents owed an update").
+  orchestrator (`docs/history/feedback/2026-09-27-build-phase-playtest.md`, "Design documents owed an update").
 - **Milestone and gate:** Milestone 5 — Build Phase, gate 5F, second round, opened by Mario's playtest
   of the merged gate 5F (2026-09-27) — the same shape as gate 5C's second round.
 - **Question this round answers:** can the Build Phase's keyboard and mouse follow one small set of
@@ -19,7 +19,7 @@
   missed — as the owner described them, and can those patterns be written down so the next screens
   follow them too?
 - **Smallest artifact:** the Build Phase spike with the focus model reworked, one popup shape for
-  every question, an information panel, and `docs/ui-patterns.md`; each feedback item logged with what
+  every question, an information panel, and `docs/system-design/ui-patterns.md`; each feedback item logged with what
   happened to it.
 - **Automated evidence planned:** tests for every changed behaviour; the full suite on Node and Bun;
   `tsc`; the validator; screenshots regenerated in-process (gate 5F's tooling) and looked at.
@@ -89,8 +89,8 @@ Placing always hands the keyboard back to the menu.
 - **Removed**: the "just-placed tile absorbs a repeated Enter" rule — a placement now disarms, so it
   could never trigger; the `back` command and `onBack` (only the exit question leaves);
   `focusAfterPlace`/`armedFrom` (Q57 is answered).
-- **Docs**: `docs/ui-patterns.md` (new) — the patterns as rules for the next screens;
-  `docs/feedback/2026-09-27-build-phase-playtest.md` (new) — each item and what happened to it.
+- **Docs**: `docs/system-design/ui-patterns.md` (new) — the patterns as rules for the next screens;
+  `docs/history/feedback/2026-09-27-build-phase-playtest.md` (new) — each item and what happened to it.
 
 ## 4. Automated results
 
@@ -113,7 +113,7 @@ Placing always hands the keyboard back to the menu.
 | Same plan by keyboard, mouse and driver: identical state and frames | pass | `tests/build-spike.test.ts`, `tests/build-nexus.test.ts`, `tests/build-focus.test.ts` |
 | The playtest tool's own flow test, updated for the Explore row | pass | `tests/playtest.test.ts` |
 
-Screenshots (`evidence/screenshots/`), each looked at: new `build-info-panel`, `build-exit-question`;
+Screenshots (`docs/screenshots/`), each looked at: new `build-info-panel`, `build-exit-question`;
 updated `build-hatchery-run.gif`, `build-idle`, `spike-minimum`, `build-focus-grid`,
 `build-smart-cursor`, `build-menu-run`, `build-nexus-popup`, `build-nexus-popup-picked`,
 `build-grid-edge`, `spike-maximum`, `spike-wide-tiles`, `spike-armed-preview`, `spike-illegal`,
@@ -151,7 +151,7 @@ in the reducer beside the keyboard's.
   the smart cursor had already put the cursor on exactly that tile, so the first click placed and the
   second opened the information panel. Kept as an assertion: arming from the menu predicted the tile.
 - **The information panel cut its own description mid-sentence** ("Lose it, lose the") — found only
-  in the screenshot. Word-wrapping added; the rule is now in `docs/ui-patterns.md`.
+  in the screenshot. Word-wrapping added; the rule is now in `docs/system-design/ui-patterns.md`.
 - **Opening the Nexus popup could replace the start-the-Pulse question** — the old code cleared any
   open overlay first. Caught by the modal test, fixed by letting the popup rules alone decide.
 - **Every test that assumed "stays armed after placing" broke** (about 35), as expected: that was the
@@ -170,7 +170,7 @@ in the reducer beside the keyboard's.
 ## 9. Canon impact
 
 Q56 and Q57 are answered in the register (owner direction). The design-document edits this owes are
-listed in `docs/feedback/2026-09-27-build-phase-playtest.md` for the orchestrator. No canon version
+listed in `docs/history/feedback/2026-09-27-build-phase-playtest.md` for the orchestrator. No canon version
 change.
 
 ## 10. Next authorized action

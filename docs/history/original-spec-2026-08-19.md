@@ -8,7 +8,7 @@
 > `.claude/skills/canon`'s historical-record convention, and `scripts/check-repository.sh`'s
 > `historical_archives` list, which exempts this file from the canon-version, metadata-header, and
 > retired-terminology checks that apply to every other document under `specs/` and `concept/`.
-> **Not canon, not current, not a source of decisions** — `specs/README.md` is the current index.
+> **Not canon, not current, not a source of decisions** — `docs/README.md` is the current index.
 
 # Terminal Nexus
 
@@ -24,7 +24,7 @@
 **Next owner decision:** Accept the pinned OpenTUI path, revise the runtime/backend choice, or stop before building the impact reel
 
 > **Read this as history.** Everything below is the state of the project on 2026-08-19, before the
-> canon was split into [`../specs/`](../specs/README.md). It is kept for provenance — to show where a
+> canon was split into [`../specs/`](../README.md). It is kept for provenance — to show where a
 > decision came from — and it is deliberately **not** edited to match today's vocabulary or today's
 > decisions. It still says *Veil*, *planning phase*, and *battlefield*; the current names are **Build
 > Phase**, **Nexus Pulse**, and the **Grid**. Where it disagrees with `specs/`, `specs/` is right and
@@ -64,7 +64,7 @@ A fresh coding agent should begin in this order:
 3. read only the product, system, presentation, or architecture sections referenced by that milestone;
 4. inspect existing code and the latest evidence report before proposing work;
 5. restate the spike question, smallest artifact, pass evidence, and stop conditions;
-6. implement and evaluate that spike without absorbing adjacent milestones.
+6. implement and evaluate that spike without absorbing adjacent docs/milestones.
 
 Descriptive completeness is not implementation authorization. The existence of campaign, modding, sound, economy, or multiplayer sections does not place them in scope for an earlier spike.
 
@@ -141,7 +141,7 @@ Allowed states are **COMPLETE**, **CURRENT**, **GATED**, **REVISE**, **BLOCKED**
 
 | Date | Version | Result | Next gate |
 | --- | --- | --- | --- |
-| 2026-08-19 | 1.1 | Consolidated Terminal Nexus as the standalone product canon, including lore, factions, mechanics, architecture, tools, testing, and gated milestones | Operational review |
+| 2026-08-19 | 1.1 | Consolidated Terminal Nexus as the standalone product canon, including lore, factions, mechanics, architecture, tools, testing, and gated docs/milestones | Operational review |
 | 2026-08-19 | 1.2 | Added the coding-agent reading order, autonomy boundary, evidence loop, canon update protocol, and execution ledger; no game-design decisions changed | Spike 0 — toolchain preflight |
 
 ## 1. Vision
@@ -1240,7 +1240,7 @@ The D handoff must choose the exact mechanics included. The full product accepta
 
 ### 19.8 Production milestone gate
 
-Only after A–E succeed should the project define production milestones for:
+Only after A–E succeed should the project define production docs/milestones for:
 
 - full Citizens and Ravels rosters;
 - broader campaign authoring;

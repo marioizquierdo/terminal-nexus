@@ -21,7 +21,7 @@ through the existing presentation framework — no new rendering system, no seco
 
 ## 2. What gets built
 
-Per [`../specs/campaigns.md`](../specs/campaigns.md) Section 5, built for the first time against
+Per [`docs/game-design/campaigns.md`](../game-design/campaigns.md) Section 5, built for the first time against
 PERIMETER's own already-written material (Section 4.2 there — nothing new to write, only to display):
 
 - **A cutscene content definition**: a hand-authored ASCII tableau, two to four meaningful poses or
@@ -31,7 +31,7 @@ PERIMETER's own already-written material (Section 4.2 there — nothing new to w
   and agents generating or validating scenes" (`campaigns.md` Section 5) — build the definition and
   in-game playback first; a dedicated preview/validation tool is worth adding only once it is cheap,
   not a blocker for this gate.
-- **The presentation band of the trigger model** ([`../specs/campaigns.md`](../specs/campaigns.md)
+- **The presentation band of the trigger model** ([`docs/game-design/campaigns.md`](../game-design/campaigns.md)
   Sections 2.1 and 5, canon 2.10): a cutscene is a trigger's `focus`, `card`, and `say` actions
   riding on the events milestone 6's simulation band emits. `focus` moves the camera through the
   ordinary cursor-driven scroll; `card` is the character's portrait card — face tableau, name,
@@ -83,7 +83,7 @@ fiction wrapped around the mechanism — not a mechanism with captions bolted on
 - [ ] all six pieces of PERIMETER's own written material play at the correct moment;
 - [ ] playback controls (advance, skip, replay) work correctly, through keyboard, mouse, and the
       driver, and a skipped intro provably leaves the Grid identical to a watched one;
-- [ ] every cutscene passes the same three-forms bar (`../specs/ascii-effects.md` Section 4) as any
+- [ ] every cutscene passes the same three-forms bar (`docs/system-design/effects.md` Section 4) as any
       other piece of presentation in this project;
 - [ ] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED**;
 - [ ] `./scripts/check-repository.sh` passes.
