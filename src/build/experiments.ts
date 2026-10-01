@@ -1,7 +1,7 @@
-// The **Experiments** (gate 5G's Debug Mode; rows of Settings since gate 5J): the settings on the
+// The **Experiments** (rows of Settings): the settings on the
 // experiment tier — live-editable rows that let the owner feel two answers to an open question during a
-// playtest, instead of reading a paragraph about them or asking for a new command-line flag (AGENTS.md
-// Section 5, engine.md 9.7). They are declared with every other setting, each with its section, label,
+// playtest, instead of reading a paragraph about them or asking for a new command-line flag (the Experiments rule in
+// AGENTS.md; docs/system-design/input.md). They are declared with every other setting, each with its section, label,
 // question and values, in `src/build/all-settings.ts`; this file is what the reducer and the export need
 // of that tier: its defaults, one step of a value, and how a value reads.
 //
@@ -17,7 +17,7 @@
 //   ordinary `move-cursor` of the size it chose. Key releases also tells the live loop whether to ask
 //   the terminal for key events at all (`src/cli/build-phase.ts`), switched on and off as it changes;
 // - the popup pulse (`popupPulseMs`) is presentation alone: the view breathes a popup's border;
-// - the mission's two (gate 6B): `nextRound` — whether a round's result waits for the player or the next
+// - the mission's two: `nextRound` — whether a round's result waits for the player or the next
 //   Build Phase begins on its own (read by the Pulse's presenter, `src/view/pulse-live.ts`) — and
 //   `incoming` — whether the Build Phase draws the next round's arrivals (the view). Neither changes what
 //   the kernel is handed.
@@ -32,7 +32,7 @@ export type { Experiments } from "./all-settings.ts"
 
 export type ExperimentField = NamesOn<"experiment">
 
-/** What starts the next Build Phase once a round's result is on screen (gate 6B). */
+/** What starts the next Build Phase once a round's result is on screen. */
 export type NextRound = SettingValue<"nextRound">
 
 /** Whether the game reads key presses, repeats and releases where the terminal reports them. */
@@ -56,9 +56,8 @@ export const EXPERIMENT_FIELDS: readonly ExperimentSpec[] = SHOWN_SETTINGS.filte
 export const DEFAULT_EXPERIMENTS: Experiments = defaultsOn("experiment")
 
 /** The values a screen opens with: this build's defaults. (The owner settled every other Experiment —
- *  the smart cursor's and "Opens on"'s on 2026-09-29, feedback F30 and F31; twenty-eight more on
- *  2026-09-30, and the focus arrow and the card reveal later that day — and they moved onto the tuned
- *  tier, or were deleted.) */
+ *  the smart cursor's and "Opens on"'s first; twenty-eight more later, then the focus arrow and the
+ *  card reveal — and they moved onto the tuned tier, or were deleted.) */
 export function defaultExperiments(): Experiments {
   return { ...DEFAULT_EXPERIMENTS }
 }

@@ -1,10 +1,10 @@
 // The Build Phase's placeholder content: a Grid big enough that scrolling is unavoidable, two
 // structures already standing on it, and three things to build.
 //
-// **None of this is Commander Army authoring** — `AGENTS.md` Section 2 reserves that for Milestone
-// 12. The three rows differ in footprint (3x2, 2x2, 1x1) so that placement exercises three anchor
-// calculations, three legality shapes and three ways to straddle a rock, and they are drawn from
-// the existing fixture rosters rather than invented.
+// **None of this is Commander Army authoring** — `AGENTS.md` rules out building a full Commander Army
+// before its milestone. The three rows differ in footprint (3x2, 2x2, 1x1) so that placement
+// exercises three anchor calculations, three legality shapes and three ways to straddle a rock, and
+// they are drawn from the existing fixture rosters rather than invented.
 
 import type { GridTerrain, TerrainId } from "../grid/types.ts"
 import type { ConstructItem, MapEdgeStyle, NexusPowerOption, StandingStructure } from "./types.ts"
@@ -12,11 +12,11 @@ import type { ConstructItem, MapEdgeStyle, NexusPowerOption, StandingStructure }
 /**
  * 96 x 40 tiles — larger than the **maximum** viewport (72 x 24) on both axes, deliberately. A Grid
  * merely larger than the minimum viewport would stop scrolling the moment somebody opened a big
- * terminal, and the whole question this gate asks is what scrolling feels like.
+ * terminal, and the whole question this map asks is what scrolling feels like.
  */
 export const STARTER_GRID_SIZE = { width: 96, height: 40 } as const
 
-/** Where the cursor opens: on the Grid Nexus, its centre tile (owner, 2026-09-29, feedback F30: "on
+/** Where the cursor opens: on the Grid Nexus, its centre tile (the owner: "on
  *  top of the nexus by default"), so the first thing a player sees is their own base, everything else
  *  is somewhere to scroll to, and the first building armed lands on the nearest good spot beside it.
  *  `nexusTile(starterContext())` says the same; a test holds the two together. */
@@ -99,7 +99,7 @@ export function starterGrid(): GridTerrain {
 }
 
 /**
- * This map's own border (feedback F25: "I wonder if the map can define different borders to give it
+ * This map's own border (the owner: "I wonder if the map can define different borders to give it
  * personality"): a dashed heavy line, a wire fence round a military perimeter — PERIMETER's register
  * is "plain, military, correct". Drawn wherever the Grid reaches the map's edge. A proof of the hook,
  * not map design: a real map would carry this in its own definition, beside its tiles.
@@ -116,16 +116,16 @@ export const STARTER_STANDING: readonly StandingStructure[] = [
 /**
  * What the Build Phase can spend its allotment on. Three footprints, three costs; what each one is
  * for — the title, subtitle and description its card shows, and the bottom line's hint quotes — is
- * written with the content, in `src/content/cards.ts` (feedback F84), since a building says the same
+ * written with the content, in `src/content/cards.ts`, since a building says the same
  * about itself wherever a card shows it.
  *
  * The costs are round numbers chosen so the allotment buys a few things and not everything — a
- * budget that affords the whole menu is not a budget. They are not balance; `AGENTS.md` Section 2
- * reserves real costs for Milestone 12.
+ * budget that affords the whole menu is not a budget. They are not balance; real costs wait for the
+ * content-iteration milestone.
  *
  * Nothing here is army-specific, which is PERIMETER's answer rather than an omission: its menu draws
  * entirely from the Citizen common tier, and the Nexus draft holds the army-specific choice
- * (milestone-02-campaign-design.md Section 4.2).
+ * (see the campaign design in docs/game-design/campaigns.md).
  */
 export const STARTER_CATALOG: readonly ConstructItem[] = [
   {
@@ -150,15 +150,15 @@ export const STARTER_CATALOG: readonly ConstructItem[] = [
 
 /**
  * What the player has to spend. The whole catalog costs 85 and a second barracks takes the total
- * past this, so the menu is a choice. How a resource is *earned* is Milestone 7's; this is an
+ * past this, so the menu is a choice. How a resource is *earned* is the worker-economy milestone's; this is an
  * opening allotment and nothing more.
  */
 export const STARTER_ALLOTMENT = 100
 
 /**
- * The Nexus draft this gate proves the mechanism against. Two placeholder options, not a real
+ * The Nexus draft that proves the mechanism. Two placeholder options, not a real
  * choice: each is a plain number, so the difference a pick makes is checkable without needing
- * Milestone 8's actual Commander Vasse content to exist first.
+ * the Commander milestone's actual Commander Vasse content to exist first.
  */
 export const STARTER_NEXUS_DRAFT: readonly NexusPowerOption[] = [
   // Each description fits the 28 glyphs a panel row has at the 80-column floor — the longer
@@ -172,7 +172,7 @@ export const STARTER_NEXUS_DRAFT: readonly NexusPowerOption[] = [
   {
     hotkey: "2",
     name: "War Chest",
-    // 2000, not a balanced number (owner, 2026-09-28, feedback F24): enough to place buildings freely
+    // 2000, not a balanced number (the owner's choice): enough to place buildings freely
     // while playtesting placement. Placeholder content, like the whole draft.
     description: "Adds 2000 resource to spend.",
     bonusAllotment: 2000,

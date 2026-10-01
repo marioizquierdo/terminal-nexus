@@ -1,7 +1,7 @@
 // The Build Phase's dispatch core — the state plus the one function a live terminal's stdin handler,
 // a test, and an agent playtest all call. It *is* the real adapter dispatch rather than a parallel
-// copy for tests, which is what makes engine.md 9.7's "the driver injects raw key and mouse events
-// into the real adapters" true. `src/menu/session.ts` is the same shape for the menu.
+// copy for tests, which is what makes the rule in docs/system-design/input.md ("the driver injects raw key and mouse
+// events into the real adapters") true. `src/menu/session.ts` is the same shape for the menu.
 //
 // No stdin, no ANSI, no backend, no `src/view` import: composing the frame is `src/view/build.ts`'s
 // job and wiring it to a terminal is `src/cli/build-phase.ts`'s.
@@ -38,14 +38,14 @@ export type BuildSessionOptions = Readonly<{
   onQuit?: () => void
   /**
    * The export's side effects — copying the text to the clipboard, writing it to a file — which the
-   * reducer never has (owner, 2026-09-28: "export settings, and copy-paste them into a PR comment").
+   * reducer never has (the owner: "export settings, and copy-paste them into a PR comment").
    * Called with the text each time the export popup is opened.
    */
   onExport?: (text: string) => void
   /** The player changed a setting in the Settings popup: the live loop redraws with it and saves it. */
   onSettingsChange?: (settings: Settings) => void
   /**
-   * Resolves the Nexus Pulse the player has just committed to (gate 6A), or `null` when there is none to
+   * Resolves the Nexus Pulse the player has just committed to, or `null` when there is none to
    * start. **Injected, because `src/build` may never reach the kernel** (`tests/architecture.test.ts`):
    * the application shell owns that connection (`src/cli/pulse-run.ts`), and the session only hands it the
    * plan and plays what comes back. Absent — a hand-built session in a test — committing freezes the plan
@@ -53,7 +53,7 @@ export type BuildSessionOptions = Readonly<{
    */
   startPulse?: (context: BuildContext, state: BuildState) => ResolvedPulse | null
   /**
-   * The Build Phase that follows a round the mission goes on from (gate 6B): the map Recall left, the
+   * The Build Phase that follows a round the mission goes on from: the map Recall left, the
    * credits not spent, the next round's arrivals — or `null` when the mission is over. Injected for the
    * same reason as `startPulse`. Absent: a round's result is where the screen stops.
    */
@@ -65,7 +65,7 @@ export type BuildSessionOptions = Readonly<{
  * (milliseconds on any steady clock — the live loop's own, a test's injected number), which decides
  * how far a cursor key moves (taps counted, holds on the game's cadence, `src/build/motion.ts`) and how
  * often a held Shift+arrow jumps; and the camera the screen is drawing right now, which differs from
- * the state's while the view slides (gate 5H), so a click lands where the player saw it. Whether a key
+ * the state's while the view slides, so a click lands where the player saw it. Whether a key
  * was a press, a repeat or a release travels in its own bytes (`src/view/key-events.ts`).
  */
 export type KeyTiming = Readonly<{ now?: number; camera?: Camera }>
@@ -86,7 +86,7 @@ export class BuildSession {
    *  protocol, pushed by the live loop): then a plain press is known to be a press, not guessed. */
   private keyReleases = false
   /** The last left click on a Grid tile with a building armed: where on screen, when, and the tile it
-   *  pointed at — so a double click places there even if the first click scrolled the view (F22). */
+   *  pointed at — so a double click places there even if the first click scrolled the view. */
   private lastArmedClick: Readonly<{ column: number; row: number; at: number; tile: Coord }> | null = null
   /** The last left click that placed a building: where on screen and when — so the second half of a
    *  double click on the ghost's own tile, which the first half already placed by the second-click
@@ -115,7 +115,7 @@ export class BuildSession {
     return this.buildState
   }
 
-  /** This round's context: what stands on the map, the credits, the round's number (gate 6B). */
+  /** This round's context: what stands on the map, the credits, the round's number. */
   get round(): BuildContext {
     return this.context
   }
@@ -150,7 +150,7 @@ export class BuildSession {
     })
   }
 
-  /** The driver's direct-command path — "a scripted list of commands" (engine.md 9.7). */
+  /** The driver's direct-command path — "a scripted list of commands" (docs/system-design/input.md). */
   dispatch(command: BuildCommand): void {
     if (command.kind === "quit") {
       this.onQuit()
@@ -229,7 +229,7 @@ export class BuildSession {
    * One already-split raw key or mouse report through both real adapters: tried first as an SGR
    * mouse report, then as a key, and whichever recognises it produces the command. Exposed
    * separately from `handleData` so a caller juggling more than one screen can re-check which screen
-   * is current between keys of the same chunk — the bug Gate 3B found and fixed for the menu, which
+   * is current between keys of the same chunk — a bug once found and fixed for the menu, which
    * would be exactly as easy to reintroduce here.
    */
   handleKey(key: string, layout: BuildLayout, timing: KeyTiming = {}): void {
@@ -293,9 +293,9 @@ export class BuildSession {
    * move a list, is the motion rules' call** when the key's arrival time is known — a live terminal
    * (`src/build/motion.ts`: taps counted, holds on the game's own cadence); otherwise every key is a
    * press on its own, so a driver script and every test that sends keys without a clock sees each as its
-   * own press. Up and Down in a list follow the map cursor's own rules, with the same numbers (owner,
-   * 2026-09-30, feedback F75: "Use the same timings, consistency here will be very useful"; F79: "The
-   * same is happening with the menu now") — so a first tap is always one row and every row stays
+   * own press. Up and Down in a list follow the map cursor's own rules, with the same numbers (the owner:
+   * "Use the same timings, consistency here will be very useful"; "The same is happening with the menu
+   * now") — so a first tap is always one row and every row stays
    * reachable. Any other key starts the rules over.
    */
   private keyCommand(key: string, now: number | undefined, phase: KeyPhase | null): BuildCommand | null {
@@ -329,7 +329,7 @@ export class BuildSession {
 
   /** A mouse report through the mouse adapter, against what is on screen: the open popup, placed;
    *  the card, if one shows; the top bar's Esc label; and the camera as drawn — while the view is still
-   *  sliding, a click lands on the tile drawn under the pointer, not the target's (gate 5H). */
+   *  sliding, a click lands on the tile drawn under the pointer, not the target's. */
   private mouseCommand(mouse: MouseEvent, layout: BuildLayout, camera: Camera | undefined): BuildCommand | null {
     const state = this.buildState
     const spec = popupSpec(this.context, state)
@@ -343,8 +343,8 @@ export class BuildSession {
   }
 
   /**
-   * A double click, resolved from when the presses came — the input path's call, since only it knows
-   * (F22). The reducer places on a second click of the tile the cursor is on, so for a click on the map:
+   * A double click, resolved from when the presses came — the input path's call, since only it knows.
+   * The reducer places on a second click of the tile the cursor is on, so for a click on the map:
    *
    * - the second half of a double click whose first half already placed — a double click on the ghost's
    *   own tile, where one click is enough — is swallowed: read as a fresh click it would take the

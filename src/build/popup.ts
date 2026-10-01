@@ -1,9 +1,9 @@
 // The Build Phase's popups — one shape for all of them: the Nexus powers, the Battle Round
 // confirmation, the game menu (Settings, Controls, Restart, Quit), Settings with its Experiments, the
-// export, a message, and the Controls and hotkeys page (feedback F60). Extracted when there were three real uses (AGENTS.md: "extract a framework only after two
-// real uses reveal the boundary"); Debug Mode, the fourth — Settings since the owner's 2026-09-28
-// direction — added the one row the first three had no use for: a setting whose value Left and Right
-// change. The message (feedback F34, 2026-09-29) is the shape with nothing to choose: a title and text.
+// export, a message, and the Controls and hotkeys page. Extracted when there were three real uses
+// (AGENTS.md: "extract a framework only after two real uses reveal the boundary"); Settings, the
+// fourth, added the one row the first three had no use for: a setting whose value Left and Right
+// change. The message is the shape with nothing to choose: a title and text.
 //
 // A popup is **data**: a title and a list of rows, some of them options that name the command a click
 // on them sends, and at most one run of rows that scrolls. `popupSpec` derives it from the state;
@@ -11,7 +11,7 @@
 // composer draws from the same placed spec the mouse adapter hit-tests against, so a click can never
 // land on a row the frame did not draw there — the same guarantee `layout.ts` gives the side panel.
 //
-// **Esc is not in a popup** (feedback F37): the top bar's right end says what Esc does — "close [esc]"
+// **Esc is not in a popup**: the top bar's right end says what Esc does — "close [esc]"
 // while a popup is open — and is its click target, so a popup's own border carries only its title and,
 // beside a list that overflows, its scroll bar.
 
@@ -43,7 +43,7 @@ export type PopupRow =
       description?: string
     }>
   /**
-   * A setting: its name and its value between `<` and `>` (feedback F34: no "now"/"restart" column —
+   * A setting: its name and its value between `<` and `>` (no "now"/"restart" column —
    * a setting that only applies after a restart says so in a message when Settings closes). Left and
    * Right change the value; a click on the left half of the value is Left, on the right half is Right,
    * and anywhere else on the row highlights it.
@@ -62,17 +62,17 @@ export type PopupRow =
    *  without, in as many as the text needs (a message). */
   | Readonly<{ kind: "note"; text: string; lines?: number }>
   /** A line across the popup, border to border: what is above it is apart from what is below — in
-   *  Settings, the list from what its highlighted row is for (feedback F35). */
+   *  Settings, the list from what its highlighted row is for. */
   | Readonly<{ kind: "rule" }>
-  /** A line of the Controls page (feedback F60): the keys, in the hotkey's colour, in a column of their
+  /** A line of the Controls page: the keys, in the hotkey's colour, in a column of their
    *  own (`CONTROLS_KEYS_WIDTH`), and what they do beside them. One line, so it scrolls like a line of
    *  the export, with the same highlight Up/Down move. */
   | Readonly<{ kind: "keys"; keys: string; text: string; highlighted?: boolean }>
 
 /**
  * A popup's one run of one-line rows that scrolls when the popup is taller than the Grid pane can
- * hold (gate 5H — Settings and the export). **A popup has at most one** (owner, 2026-09-29, feedback
- * F36: "We can safely allow only one scrolling section on the whole popup"), so the scroll bar has
+ * hold (Settings and the export). **A popup has at most one** (the owner: "We can safely allow only
+ * one scrolling section on the whole popup"), so the scroll bar has
  * one place to be: the right border beside it. `from` and `to` (exclusive) index `rows`; `highlight`
  * is the row the keyboard is on, which is always kept in view; `select` is the command that highlights
  * the scrolling row at `index` (0 is `rows[from]`) — what a click on the scroll bar sends.
@@ -89,7 +89,7 @@ export type PopupSpec = Readonly<{ title: string; rows: readonly PopupRow[]; scr
 /** How many lines the Settings popup keeps under its list, below a line across the popup, for what
  *  the highlighted row is for. Every question fits in this many at the narrowest popup (a test holds
  *  them to it); the rows the list's "more" lines and its two fixed rows took went to the list itself
- *  (feedback F35). */
+ *  itself. */
 export const SETTINGS_NOTE_LINES = 3
 
 export const EXPORT_QUESTION =
@@ -108,8 +108,7 @@ export function sectionHeading(section: Section): string {
 }
 
 /**
- * The Settings popup (owner, 2026-09-28; laid out again from his feedback F35, 2026-09-29, and in
- * sections from F85, 2026-09-30): its position among the rows the keyboard can be on beside the title —
+ * The Settings popup: its position among the rows the keyboard can be on beside the title —
  * "(3/18)" — then each section under its heading, a blank line between sections (the Controls page's
  * shape), each row with the question it serves, and Export settings apart as the list's last row; then a
  * line across the popup, and under it what the highlighted row is for. The list scrolls; its headings
@@ -165,9 +164,8 @@ function settingsSpec(state: BuildState): PopupSpec {
   }
 }
 
-/** The game menu: Settings, Controls and hotkeys, Restart, Quit (owner, 2026-09-28; Restart since
- *  feedback F34, Controls since F60). Every row is an option, and the highlight is `GAME_MENU_ROWS`'s
- *  index. No row goes back to the game (F73): Esc, `x`, the top bar's `close [esc]` and a click outside
+/** The game menu: Settings, Controls and hotkeys, Restart, Quit. Every row is an option, and the highlight is `GAME_MENU_ROWS`'s
+ *  index. No row goes back to the game: Esc, `x`, the top bar's `close [esc]` and a click outside
  *  do, as for every popup. */
 function menuSpec(state: BuildState): PopupSpec {
   const on = (row: (typeof GAME_MENU_ROWS)[number]): boolean => GAME_MENU_ROWS[state.popupHighlight] === row
@@ -213,7 +211,7 @@ function menuSpec(state: BuildState): PopupSpec {
 
 /** The export: where the text also went, then the text itself — a list of its lines with a highlight
  *  Up/Down move, like every other list here, so it scrolls the same way. No `[esc] Back to Settings`
- *  row (feedback F73): Esc and `x` go back, as the top bar's `close [esc]` says. */
+ *  row: Esc and `x` go back, as the top bar's `close [esc]` says. */
 function exportSpec(context: BuildContext, state: BuildState): PopupSpec {
   const rows: PopupRow[] = []
   if (context.exportDestination !== undefined) rows.push({ kind: "note", text: context.exportDestination, lines: 3 })
@@ -233,7 +231,7 @@ function exportSpec(context: BuildContext, state: BuildState): PopupSpec {
 }
 
 /**
- * The Controls and hotkeys page (owner, 2026-09-30, feedback F60): the table in `src/build/help.ts`,
+ * The Controls and hotkeys page: the table in `src/build/help.ts`,
  * each section's heading then its lines, a blank line between sections — one scrolling list, the
  * export's kind: a highlight Up/Down (and the wheel) move over the key lines, the headings scrolling
  * with them and never highlighted, the scroll bar in the right border. Nothing to choose, so no option
@@ -270,7 +268,7 @@ function controlsSpec(state: BuildState): PopupSpec {
 /**
  * A message popup: a title and its text, wrapped to the popup's width in as many lines as it needs,
  * and nothing to choose. It holds the keyboard like any popup; Esc (or `x`, or a right click) and a
- * click outside it close it, and nothing else does (feedback F34).
+ * click outside it close it, and nothing else does.
  */
 export function messageSpec(message: PopupMessage): PopupSpec {
   return { title: message.title, rows: [{ kind: "blank" }, { kind: "note", text: message.text }] }
@@ -320,7 +318,7 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
       return { title: "NEXUS POWERS", rows }
     }
     case "battle-round":
-      // A confirmation screen, not a question (owner, 2026-09-29, feedback F49-F50): the round's title,
+      // A confirmation screen, not a question: the round's title,
       // what it announces, and the one row, `[s] Start`, highlighted because it is what Enter, Space and
       // `s` do. Esc goes back, as from every popup.
       return {
@@ -352,8 +350,8 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
 export type PlacedRow = Readonly<{ row: number; spec: PopupRow; secondLine: boolean; text?: string }>
 
 /**
- * The scroll bar in a popup's right border, beside its scrolling rows, while they overflow (feedback
- * F36): an up symbol on the first of those rows, a down symbol on the last, and between them a track
+ * The scroll bar in a popup's right border, beside its scrolling rows, while they overflow:
+ * an up symbol on the first of those rows, a down symbol on the last, and between them a track
  * with a thumb showing which part of the list is in view. A click on its upper half scrolls up, on its
  * lower half down. `thumbTop`..`thumbBottom` (inclusive) is empty (`thumbTop > thumbBottom`) when the
  * bar has no room between its two symbols.
@@ -373,7 +371,7 @@ export type PlacedPopup = Readonly<{
   scrollBar: ScrollBar | null
 }>
 
-/** Wider than the gate 5F popup (owner, 2026-09-27: "the popup probably larger too"), never wider than
+/** Wider than the first popup was (the owner: "the popup probably larger too"), never wider than
  *  the Grid pane it sits over, less a column for its shadow. */
 const POPUP_WIDTH = 52
 
@@ -437,7 +435,7 @@ export function placePopup(layout: BuildLayout, spec: PopupSpec): PlacedPopup {
   const textLimit = width - 4
   const allLines = spec.rows.reduce((count, row) => count + linesOf(row, textLimit).length, 0)
   // The border, the rows, a blank row of padding, the border, and a row of shadow must fit the Grid
-  // pane; a list that would not is scrolled to fit (gate 5H).
+  // pane; a list that would not is scrolled to fit.
   const room = paneHeight - 4
   const scroll = spec.scroll
   const window =
@@ -482,7 +480,7 @@ export function placePopup(layout: BuildLayout, spec: PopupSpec): PlacedPopup {
 }
 
 /** What a click at a frame cell means with this popup open. `outside` is the caller's to act on: a
- *  click outside a popup closes it and moves focus to where it landed (owner, 2026-09-27). */
+ *  click outside a popup closes it and moves focus to where it landed. */
 export type PopupHit =
   | Readonly<{ kind: "outside" }>
   | Readonly<{ kind: "command"; command: BuildCommand }>

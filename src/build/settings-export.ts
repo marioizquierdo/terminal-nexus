@@ -1,4 +1,4 @@
-// Settings as text (owner, 2026-09-28): "we need a way to export the settings, so I can report back
+// Settings as text. The owner: "we need a way to export the settings, so I can report back
 // here which settings are working better ... Ideally I would play, export settings, and copy-paste
 // them into a PR comment." And the other direction, so an agent can start from exactly what he had.
 //
