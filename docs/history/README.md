@@ -66,7 +66,8 @@ _The dated record of the project, oldest first; never required reading. The pull
 | 2026-10-01 | Documentation reorganisation, pass 3: milestones as step trackers, a dated timeline, question headings in words, the two feedback skills in the new vocabulary | [#54](https://github.com/marioizquierdo/terminal-nexus/pull/54) |
 | 2026-10-01 | Documentation reorganisation, pass 4: the engine design split into grid, pulse, content, presentation, input and runtime pages under an overview; every design statement RULE, GUIDANCE or IDEA, every RULE naming its holder; the settled-decisions list dissolved | [#55](https://github.com/marioizquierdo/terminal-nexus/pull/55) |
 | 2026-10-01 | Documentation reorganisation, pass 5: code comments and test names say the rule in words; the Build Phase screen is `--build-phase`, no longer a spike | [#56](https://github.com/marioizquierdo/terminal-nexus/pull/56) |
-| 2026-10-01 | Documentation reorganisation, pass 6: the plan deleted and the validator's retired-word check armed | this pull request |
+| 2026-10-01 | Documentation reorganisation, pass 6: the plan deleted and the validator's retired-word check armed | [#57](https://github.com/marioizquierdo/terminal-nexus/pull/57) |
+| 2026-10-01 | Fresh-eyes follow-ups: an honest reading path, the questions register triaged to 26 with an index, one vocabulary for Pulse, round, mission and wave, one-way imports with `src/terminal/`, five relic scripts gone, 120 screenshots replaced by a fifteen-picture visual record | [#58](https://github.com/marioizquierdo/terminal-nexus/pull/58) |
 
 ## Where the detail is
 
