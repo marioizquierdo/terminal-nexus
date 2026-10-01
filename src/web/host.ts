@@ -221,7 +221,7 @@ async function start(next: Mode): Promise<void> {
     pixelRatio: () => window.devicePixelRatio || 1,
   })
   const common = { backend, stdout: terminal, stdin: keyboard, host } as const
-  if (next === "menu") running = runMenu({ ...common, settings, settingsStore })
+  if (next === "menu") running = runMenu({ ...common, settings, settingsStore, buildId: __TN_BUILD__.commit, hostName: "web" })
   else if (next === "build") {
     running = runSpike({
       ...common,

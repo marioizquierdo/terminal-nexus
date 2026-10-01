@@ -8,14 +8,12 @@ import { MENU_LAYOUT, MENU_SIZE, composeMenuFrame } from "../src/view/menu.ts"
 import { menuItemLabel, menuItemRow } from "../src/menu/layout.ts"
 import { createMenuList } from "../src/menu/list.ts"
 import type { MenuItem } from "../src/menu/types.ts"
+import { TOP_LEVEL_ITEMS } from "../src/cli/menu.ts"
 import { isColourCode, sgrCodes } from "./helpers.ts"
 
-const ITEMS: readonly MenuItem[] = [
-  { id: "campaign", hotkey: "1", label: "Campaign" },
-  { id: "challenge", hotkey: "2", label: "Challenge" },
-  { id: "settings", hotkey: "3", label: "Settings" },
-  { id: "exit", hotkey: "4", label: "Exit" },
-]
+/** The real top-level menu — five rows since About (feedback F93) — so these checks cover what a
+ *  player sees rather than a copy of it that can fall behind. */
+const ITEMS: readonly MenuItem[] = TOP_LEVEL_ITEMS
 
 test("the frame is the RULE floor, 80x24, at every capability tier", () => {
   for (const capability of CAPABILITY_MODES) {
@@ -106,4 +104,26 @@ test("a disabled item renders dimmed when not highlighted, and exactly like any 
 test("an empty item list renders a legal, complete frame rather than throwing", () => {
   const frame = composeMenuFrame({ state: createMenuList([]), notice: null }, "truecolor")
   assert.equal(offendingGlyph(frame), null)
+})
+
+test("a body starts a row below the last row, wraps at words, and stops before the controls line however long it is", () => {
+  const items: readonly MenuItem[] = [{ id: "back", hotkey: "1", label: "Back" }]
+  const long = Array.from({ length: 60 }, (_unused, index) => `word${index}`).join(" ")
+  const frame = composeMenuFrame(
+    { state: createMenuList(items), notice: null, showBack: true, body: [{ heading: "Heading", text: [long, long] }] },
+    "color16",
+  )
+  const lines = frameToText(frame).split("\n")
+  const headingRow = menuItemRow(MENU_LAYOUT, items.length)
+  assert.equal((lines[headingRow] ?? "").slice(1, -1).trim(), "Heading")
+  assert.equal((lines[headingRow] ?? "").indexOf("Heading"), MENU_LAYOUT.column, "the body is not at the rows' own column")
+  assert.equal(cellAt(frame, MENU_LAYOUT.column, headingRow).style.bold, true, "the heading is not drawn as one")
+  // Wrapped between words: no line of the body ends inside a word.
+  for (let row = headingRow + 1; row < MENU_SIZE.height - 4; row += 1) {
+    const words = (lines[row] ?? "").slice(1, -1).trim()
+    assert.match(words, /^(word\d+ ?)+$/u, `row ${row} is not whole words: "${words}"`)
+  }
+  // Too long to fit: cut off a blank row above the controls line, which still reads whole.
+  assert.equal((lines[MENU_SIZE.height - 4] ?? "").slice(1, -1).trim(), "", "the body ran up against the controls line")
+  assert.match(lines[MENU_SIZE.height - 3] ?? "", /esc back {2}- {2}q quit/u)
 })

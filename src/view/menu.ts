@@ -7,9 +7,11 @@
 // is trivially true of a screen with no presentation time to lose: showing `gateFrame` below the
 // minimum size and the menu frame otherwise is the whole of it.
 
+import type { TextSection } from "../menu/about.ts"
 import type { MenuLayout } from "../menu/layout.ts"
 import { menuItemRow } from "../menu/layout.ts"
 import type { MenuListState } from "../menu/list.ts"
+import { wrapWords } from "../build/popup.ts"
 import type { BandCell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import { put, text } from "./draw.ts"
@@ -21,7 +23,7 @@ import type { GlyphPack } from "./theme.ts"
  *  at `tileWidth` 1, so the terminal never resizes when the game moves from the menu into a match. */
 export const MENU_SIZE = { width: 80, height: 24 } as const
 
-/** Where the four top-level items are drawn — the one layout the composer and the mouse adapter both
+/** Where every menu screen's rows are drawn — the one layout the composer and the mouse adapter both
  *  read, so a click can never target a row this screen did not actually draw there. */
 export const MENU_LAYOUT: MenuLayout = { column: 4, row: 6, rowStep: 2 }
 
@@ -37,6 +39,10 @@ export type MenuCompositionInput = Readonly<{
   /** Whether this screen has somewhere to go back to — adds "esc back" to the footer's controls
    *  line. Advertising a control that does nothing would be the opposite of honest. */
   showBack?: boolean
+  /** Words drawn under the rows — the About screen's (owner, 2026-10-01, feedback F93;
+   *  `src/menu/about.ts`): each section's heading, then its text wrapped at words, a blank row
+   *  between sections. */
+  body?: readonly TextSection[]
 }>
 
 /** The border only — no inner divider, unlike the Grid screen's Grid/panel split, because a menu has
@@ -64,6 +70,42 @@ function drawBorder(cells: BandCell[], size: { width: number; height: number }, 
 const TAGLINE = "Build. Commit. Pulse. Understand. Adapt."
 
 const BASE_CONTROLS = "arrows + enter, or a digit, or click a row"
+
+/** A comfortable line for reading — about the 66 characters typesetters aim for — narrower than the
+ *  72 columns between the screen's margins, so a paragraph reads as a paragraph, not a wall. */
+const BODY_MEASURE = 66
+
+/**
+ * Draws `sections` from `firstRow` down, at the rows' own column: a heading in the title style, text in
+ * the value style (a quiet section dimmed), every entry wrapped at words to `BODY_MEASURE`. Text that
+ * would not fit is cut off with a blank row left above the controls line, never drawn over it; the
+ * About screen is held to fitting whole at 80 x 24 by `tests/menu-about-screen.test.ts`.
+ */
+function drawBody(
+  cells: BandCell[],
+  sections: readonly TextSection[],
+  firstRow: number,
+  size: { width: number; height: number },
+): void {
+  const band = BANDS.chrome
+  const measure = Math.min(BODY_MEASURE, size.width - 2 * MENU_LAYOUT.column)
+  const lastRow = size.height - 5
+  let row = firstRow
+  const line = (value: string, role: StyleRole, extra: Readonly<{ bold?: boolean; dim?: boolean }>): void => {
+    if (row <= lastRow) text(cells, band, MENU_LAYOUT.column, row, value, role, { ...extra, limit: measure })
+    row += 1
+  }
+  sections.forEach((section, index) => {
+    if (index > 0) row += 1
+    if (section.heading !== undefined) line(section.heading, "chrome.title", { bold: true })
+    const quiet = section.quiet === true
+    for (const entry of section.text) {
+      for (const wrapped of wrapWords(entry, measure)) {
+        line(wrapped, quiet ? "chrome.muted" : "chrome.value", quiet ? { dim: true } : {})
+      }
+    }
+  })
+}
 
 export function composeMenuFrame(
   input: MenuCompositionInput,
@@ -109,6 +151,9 @@ export function composeMenuFrame(
     text(cells, band, MENU_LAYOUT.column, row, hotkeyPart, "chrome.hotkey", { bold: true })
     text(cells, band, MENU_LAYOUT.column + hotkeyPart.length, row, labelPart, "chrome.value")
   })
+
+  // The body starts where one more row would have been drawn, so the rows and the words never touch.
+  if (input.body !== undefined) drawBody(cells, input.body, menuItemRow(MENU_LAYOUT, input.state.items.length), size)
 
   if (input.notice !== null) {
     text(cells, band, 2, size.height - 6, input.notice, "chrome.value")

@@ -64,6 +64,14 @@ const CAMPAIGN_HOTKEY: string = required(
   "no item named campaign exists on the top-level menu",
 )
 
+/** Exit's own word, read from the menu. Not its whole row: in the terminal's bytes a colour change
+ *  sits between `[5]` and `Exit`, so a check for the whole row — the "[4] Exit" this used to be —
+ *  can never find it and passes whatever is on screen. */
+const EXIT_LABEL: string = required(
+  TOP_LEVEL_ITEMS.find((item) => item.id === "exit"),
+  "no item named exit exists on the top-level menu",
+).label
+
 /** Runs a session, enters Campaign's placeholder screen by its own hotkey, drives it with raw bytes,
  *  and returns the last frame drawn. A fresh session per call, the same shape
  *  tests/menu-settings-screen.test.ts uses for the identical reason. */
@@ -94,7 +102,7 @@ test("Campaign's placeholder screen shows its own message and a way back, not th
   const text = await campaignFrameAfter(() => {})
   assert.ok(text.includes("Campaign is not built yet"), "the placeholder message is not on screen")
   assert.ok(text.includes("[1] Back"), "Back's own hotkey is not displayed - it would not exist")
-  assert.ok(!text.includes("[4] Exit"), "the top-level menu's own items are still on screen")
+  assert.ok(!text.includes(EXIT_LABEL), "the top-level menu's own items are still on screen")
 })
 
 test("the Back row's hotkey returns to the top-level menu", async () => {

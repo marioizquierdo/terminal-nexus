@@ -28,7 +28,7 @@ const USAGE = `terminal-nexus — the Terminal Nexus game
   terminal-nexus [--capability monochrome|color16|color256|truecolor]
                   [--theme dark|light] [--glyphs ascii|unicode] [--reduced-motion]
                   [--backend auto|ansi|opentui]
-      launches the top-level menu: Campaign, Challenge, Settings, Exit
+      launches the top-level menu: Campaign, Challenge, Settings, About, Exit
 
   terminal-nexus --spike [the same presentation flags]
       opens the Build Phase scrolling-and-placement spike (Milestone 5, gate 5A): a Grid
@@ -100,12 +100,16 @@ export async function main(argv: readonly string[]): Promise<number> {
     })
   }
 
+  // The About screen names the build, so a playtester can say which one they played (feedback F93).
+  const commit = currentCommit()
   return runMenu({
     settings,
     settingsStore,
     backend: args.options.get("backend") ?? "auto",
     stdout: process.stdout,
     stdin: process.stdin,
+    ...(commit === undefined ? {} : { buildId: commit }),
+    hostName: "terminal",
   })
 }
 
