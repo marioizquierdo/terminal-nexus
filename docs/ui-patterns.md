@@ -122,8 +122,8 @@ click is `x`.
   right end says what Esc does now**: `menu [esc]` on the menu and while a Pulse plays, `back [esc]` on
   the map, `close [esc]` over a popup — the action quiet, the key in the hotkey colour. A click on it is
   exactly Esc (`escLabel` in `src/build/layout.ts`).
-- **The game menu** is `[s] Settings`, `[c] Controls and hotkeys`, `[r] Restart` (the plan lost, settings
-  and Experiments kept) and `[q] Quit`. **Leaving always asks**; Ctrl+C is the one immediate way out.
+- **The game menu** is `[s] Settings`, `[c] Controls and hotkeys`, `[a] Activity logs`, `[r] Restart`
+  (the plan lost, settings and Experiments kept) and `[q] Quit`. **Leaving always asks**; Ctrl+C is the one immediate way out.
 
 - **A title-menu screen that only has words to show** — Campaign's placeholder, About — has one row,
   `[1] Back`, where the rows start, with its words below it: headings bold, text wrapped at words to a
@@ -159,7 +159,8 @@ click is `x`.
 ## 5. Moving in lists
 
 **List movement** is the map cursor's movement applied to rows, in every list — the Build Phase menu,
-the Nexus powers, the game menu, Settings, the export, the Controls page, the title screen's menu.
+the Nexus powers, the game menu, Settings, the export, the Controls page, the Activity logs window, the
+title screen's menu.
 
 - **No wrapping**: a list stops at its first and last row; holding Down arrives at the bottom and stays.
   Up on the first row and Down on the last do nothing, without a flicker — a held key would otherwise
@@ -299,7 +300,7 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 - **A choice closes its popup**: a Nexus pick returns the player to where they were; the bottom line
   and the menu say what it did.
 - **A popup that belongs to a menu row keeps that row active behind it** (Nexus, Battle Round); one that
-  belongs to none (game menu, Settings, export, Controls) leaves the menu unlit.
+  belongs to none (game menu, Settings, export, Controls, Activity logs) leaves the menu unlit.
 - **A confirmation is a screen, not a question**: its title says what is about to happen (`Battle
   Round 1`), its body announces it — data a mission can write per round (`BuildContext.roundText`), one
   sentence to a line — and its one row is the action, highlighted: `[s] Start`. Going back is Esc.
@@ -334,9 +335,14 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 - **A setting row** is its name and its value between `<` and `>` at the right. Left and Right change it
   (Enter/Space is Right); a choice comes round, a number stops at its ends, and the bottom line says
   every change. By mouse the value box's left half is Left and its right half Right, wide enough for a
-  finger (`settingColumns`).
+  finger (`settingColumns`). A popup with long values may widen the box, never so far that a name loses
+  its first eight columns.
+- **A list whose length changes fills the room** (`PopupScroll.fill`): blank below its last row, so the
+  popup's height and every row above the list stay put when the list grows or shrinks.
+- **A line of a list can be clicked to highlight it**, so a phone can read in the note what the list
+  cuts short. A note may hold paragraphs, each on its own line.
 
-### 10.3 Settings, the export and the Controls page
+### 10.3 Settings, the export, the Controls page and the Activity logs
 
 - **Settings**: the game menu's `[s]`, or `d` straight to the first Experiment. One scrolling list in
   **titled sections with a blank line before each** (F85) — Display (the player's own: background, colour
@@ -353,6 +359,15 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
   reducer, copies it out; `--settings "<text>"` and `#settings=` read it back, skipping bad lines.
 - **The Controls and hotkeys page** (`[c]` in the game menu, or `?`): every key and click grouped by where
   the player is, from one table (`controlsPage` in `src/build/help.ts`), so a new key is one line there.
+- **The Activity logs window** (`[a]` in the game menu; `a` closes it again) shows what the game recorded,
+  newest first (F91): a Filter row whose value Left and Right step through the filters (it comes round),
+  `[e] Export logs`, then the list — one line per entry exactly as an export writes it, detail quieter,
+  warnings and errors bold — and under a rule what the highlighted row is for: the filter's question,
+  what an export holds, or the entry's whole line and what its event means. **The list holds still while
+  it is read**: frozen when the window opens, so new events never shift its rows; opening it again shows
+  what came since. **Export** sends the filter's entries, oldest first, through the same adapter as the
+  settings export (the clipboard and `activity-export.txt`; on the playtest page, its box), and a message
+  says how many went where. How an agent uses it for a demo is section 15.2.
 
 ## 11. The bottom line
 
@@ -491,9 +506,10 @@ the build stamped on every export — is what makes a pasted export reproducible
   default level (error, warn, info, debug), a sentence on what it means, and each property's type and
   meaning — so the schema in `src/log/activity.ts` is the documentation, and `activity.log(event, props)`
   accepts only what it declares. Entries are kept in memory, the oldest dropped past a limit.
-- **The Activity logs window** — the game menu's `[a]` — lists them newest first under a filter, shows
-  the highlighted one in full, and exports what the filter shows (oldest first) to paste into a pull
-  request. It is deliberately plain.
+- **The Activity logs window** — the game menu's `[a]` (section 10.3) — lists them newest first under a
+  filter, shows the highlighted one in full, and exports what the filter shows (oldest first) to paste
+  into a pull request. It is deliberately plain. `node scripts/playtest.mjs … --activity [filter]` prints
+  what a scripted run recorded.
 - **An agent asking about an interaction** adds the event where it happens (never in the kernel), and a
   filter for its question at the top of `ACTIVITY_FILTERS` (the window opens on the first), then asks in
   the pull request: "play it, open Esc → Activity logs, export, paste it here". Remove both once

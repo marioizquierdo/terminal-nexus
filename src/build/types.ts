@@ -94,7 +94,7 @@ export type BuildCommand =
   /** Leave the screen. Only the game menu's `[q]` (or Ctrl+C) sends it; the session decides what
    *  leaving means. */
   | Readonly<{ kind: "quit" }>
-  /** `q` anywhere but the game menu: open the game menu — Settings, Restart and Quit — rather than
+  /** `q` anywhere but the game menu: open the game menu — Settings, Controls, Activity logs, Restart and Quit — rather than
    *  quit outright and lose a plan (owner, 2026-09-28). */
   | Readonly<{ kind: "open-game-menu" }>
   /** Pick Nexus power *n* — a digit or a click while the Nexus popup is open. */

@@ -401,7 +401,7 @@ deleted, and the renderer must be replaceable without one simulation test changi
   never beside the last building placed; the cursor opens on the Grid Nexus. **Esc, `x` and a right
   click are one cancel** that goes back one level — popup, then placing or Explore Map to where it
   began, then the map to the menu — and on the menu **Esc** opens the **game menu** (`[s] Settings`,
-  `[c] Controls and hotkeys`, `[r] Restart`, `[q] Quit`) while **`x` and a right click do nothing**, so
+  `[c] Controls and hotkeys`, `[a] Activity logs`, `[r] Restart`, `[q] Quit`) while **`x` and a right click do nothing**, so
   `x x x` always lands on the menu (canon 2.28: two commands, `cancel` and `back`); `q` opens it too,
   `?` opens the Controls page directly, and only Ctrl+C quits at once. Leaving always asks. No popup
   has a row that only goes back. **Left and Right on the menu only flicker the row**; the keyboard

@@ -38,7 +38,12 @@ note of what was parked and why (`docs/feedback-pipeline.md`).
 > already has a lot of this, and the technology we are using enables a lot of it as well. Don't be
 > verbose, but make sure that feedback loops are part of our core design and cleanly explained.
 
-**Built.** _(filled in when built)_
+**Built.** The design document's section 15 is now **Feedback loops**: the game is built to be judged by
+playing it, feedback travels the ordinary way, and three tools make it precise — Experiments (which feels
+right?), the Activity Logs (what happened?) and the claude.ai page (both exports, and demo buttons). Goal
+10 and the new-screen checklist point at it. `AGENTS.md` lost its long Experiments paragraph for one
+compact item covering all three, `CLAUDE.md` says the same in five lines, and the pull request,
+feedback-round and playtest skills each say how they use it.
 
 ### F89 — Settings as the agent's way to ask during a demo
 
@@ -47,7 +52,10 @@ note of what was parked and why (`docs/feedback-pipeline.md`).
 > the code comments around the settings area, and used as example on design docs of how game builds can
 > incorporate feedback loops.
 
-**Built.** _(filled in when built)_
+**Built.** The settings module's header (`src/build/all-settings.ts`) now opens with it: the experiment tier
+is how an agent asks the owner a question during a demo, with the worked example ("press `d`, set Battle
+Round flash to 300 ms, tell me which you prefer, and paste the export"); the design document's section
+15.1 and `AGENTS.md` use the same example.
 
 ### F90 — Activity Logs: a structured logger
 
@@ -67,7 +75,16 @@ note of what was parked and why (`docs/feedback-pipeline.md`).
 > different levels, etc. This design is flexible, this is just my suggestion, but it is best that all
 > logging system is coherent and standard.
 
-**Built.** _(filled in when built)_
+**Built.** `src/log/` is one structured logger. Every event is declared in a schema — its name, default
+level, a sentence on what it means, and each property's type and meaning — and `activity.log(event,
+props)` accepts only what is declared, with `level` in the props to log at another level. Entries carry a
+sequence number, a timestamp, the level, the event and plain JSON values, in memory, the oldest dropped
+past 5,000. The clock is passed in, so tests read exact times; logging never throws. `grid`'s battle
+report turned out to be a report written after a battle from its events, not a logger, so it now shares
+the same level vocabulary (and still prints them in capitals in its columns) rather than the same
+interface; turning its lines into schema events is the next step if anyone needs them structured. The
+kernel and the match layer may never reach the logs (an architecture test). One global `activity` logger
+records the title menu, the Build Phase and the shells.
 
 ### F91 — The Activity logs window, and agents preparing events and filters
 
@@ -83,7 +100,16 @@ note of what was parked and why (`docs/feedback-pipeline.md`).
 > are creating a demo, just like with settings, they can prepare events and filters so I or my tester
 > friends can do something, go to the activity logs on the menu, and export the relevant logs.
 
-**Built.** _(filled in when built)_
+**Built.** The game menu has **`[a] Activity logs`**. The window lists what was recorded, newest first, under
+a Filter row (Left and Right: Interactions, Problems, Everything), with `[e] Export logs`; the highlighted
+entry is shown whole underneath with what its event means. The list holds still while it is read.
+Export copies what the filter shows, oldest first, with the build and the filter at its top (the
+clipboard and `~/.terminal-nexus/activity-export.txt`; on the page, a box under the screen) and a message
+says how many went where. The game logs commands, refusals, placements and removals, popups, settings
+changes, the Pulse's start and result, each key's move, errors, and each screen's start. For a demo, an
+agent adds its event and a filter at the top of the list — the window opens on it — and asks for the
+export; the pull request skill says how, and `scripts/playtest.mjs --activity` shows what a run
+recorded.
 
 ### F92 — The claude.ai page: exports and quick links
 
@@ -91,7 +117,11 @@ note of what was parked and why (`docs/feedback-pipeline.md`).
 > other part of the coin. This should also be explicit on our feedback loop documentation, so coding
 > agents can take advantage of this structure.
 
-**Built.** _(filled in when built)_
+**Built.** The playtest page holds both exports in boxes under the screen, each with a Copy button, and a
+row of **demo buttons**: `bun scripts/build-web.mjs --demos <file>` stamps in a pull request's demos — a
+label, what to try, keys and settings — and a button starts the Build Phase there and says what to try.
+The design document's section 15.3 and the pull request skill tell agents to use them; `#keys=` and
+`#settings=` still work.
 
 ### F93 — An About screen on the main menu
 
@@ -114,7 +144,12 @@ is one line to add in one place (`src/menu/about.ts`) once he picks where update
 > a way to create a developer feed? Just investigate a little bit here, eventually we should add the main
 > community page link on the About section.
 
-**Open.** _(filled in after the research)_
+**Open — recommendation made.** **GitHub Discussions with an Announcements category**: only maintainers can
+start a post there and anyone can comment, people follow it by watching the repository, and each
+category has an Atom feed; "Ideas" and "Show and tell" categories can come later for the community.
+Releases (with their own feed) suit playable milestones, and an itch.io devlog suits players outside
+GitHub later. Enabling Discussions is a repository setting only he can switch on; once it exists, its
+link is one line on the About screen. The details are in `docs/feedback-pipeline.md`.
 
 ### F95 — A richer playtest system, one day, from someone else
 
@@ -136,4 +171,9 @@ that such a system could plug into.
 > without being too verbose or distracting (those agents will already have plenty of context to worry
 > about so we don't want to saturate them).
 
-**Built.** _(filled in when built)_
+**Built.** Every document an agent reads on the way in now leads to the loop in a line or two: `CLAUDE.md`
+(close the loop by playing), `AGENTS.md` Sections 2, 4 and 5, the design document's goals, checklist and
+section 15, the pull request, feedback-round and playtest skills, and the headers of the two code files
+an agent edits to ask (`all-settings.ts`, `activity.ts`). `AGENTS.md` got shorter, not longer. Every place
+that listed the game menu or the title menu was found and updated. Typecheck, both test suites, the
+repository checks and a run of the built page in a headless browser all pass.

@@ -66,7 +66,7 @@ function screen(side: SettingsSide): string {
 
 // --- The game menu -----------------------------------------------------------------------------------
 
-test("Esc on the menu, q anywhere, and the top bar's menu [esc] all open the game menu: Settings, Controls, Restart, Quit", () => {
+test("Esc on the menu, q anywhere, and the top bar's menu [esc] all open the game menu: Settings, Controls, Activity logs, Restart, Quit", () => {
   for (const open of [[ESC], ["q"]]) {
     const side = session()
     keys(side, ...open)

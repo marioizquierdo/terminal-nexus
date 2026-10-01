@@ -66,7 +66,10 @@ playtest's own key names) and browser-stored settings (`src/web/host.ts`, the on
 DOM). A **settings text box** under the screen is the page's end of the export: "Export settings" in the
 game's Settings fills it and copies it to the clipboard, and pasting an export into it ("Start the
 Build Phase with these") — or opening the page with `#settings=<text>` in its address — starts the
-Build Phase with those settings and experiments. The build needs Bun and **fails if anything the page reaches imports a Node-only module**;
+Build Phase with those settings and experiments. An **activity logs box** beside it receives the game's
+Activity logs export. `bun scripts/build-web.mjs --demos <file>` adds a button per demo above the screen
+— a label, what to try, a key script and settings text (`scripts/build-web.mjs` describes the file) — so
+a pull request's page opens the Build Phase where its question is. The build needs Bun and **fails if anything the page reaches imports a Node-only module**;
 `tests/web.test.ts` holds the page to the terminal's characters, colours and keys, and (in the Bun pass)
 runs the bundle in a sandbox with no Node features and requires the same fingerprints Node computes.
 
@@ -191,7 +194,7 @@ cursor; on the map a **second click on the same tile** places (Q52); a click on 
 keeps the menu beside it, so the next click can arm from it. Only the keyboard shows a "highlighted,
 not yet chosen" bar. Esc, `x` and a right click go back one level — popup, then placing or Explore Map
 to where it was started, then the map to the menu — and **only Esc**, on the menu, opens the **game
-menu**: `[s] Settings`, `[c] Controls and hotkeys`, `[r] Restart`, `[q] Quit`; Esc closes it again, and
+menu**: `[s] Settings`, `[c] Controls and hotkeys`, `[a] Activity logs`, `[r] Restart`, `[q] Quit`; Esc closes it again, and
 `x` or a right click on the menu does nothing, so pressing `x` a few times always lands on the menu.
 `q` opens the game menu too, and only Ctrl+C quits at once. No popup has an `[esc] Back` row — the top
 bar's right end always says what Esc does right now — `menu [esc]`, `back [esc]` or `close [esc]` — and
@@ -250,6 +253,15 @@ text or just some pairs, unknown names and bad values skipped one at a time — 
 the scripted playtest's key names, through the same adapters a player's keys go through — and `#keys=`
 does the same on the browser page (`#keys=n%201%201%20Enter`); with `--settings` a demo opens exactly
 where and how it should.
+
+**Activity Logs** (owner, 2026-10-01). `src/log/` is one structured logger: every event is declared in a
+schema before it is logged (`src/log/activity.ts`: name, default level, meaning, typed properties), and
+`activity.log(event, props)` keeps entries in memory, the oldest dropped past a limit. The Build Phase,
+the title menu and the shells log into the global `activity` logger — commands, refusals, placements,
+popups, settings, the Pulse's start and result, errors. The game menu's `[a] Activity logs` lists them
+newest first under a filter; `[e] Export logs` copies what the filter shows (OSC 52) and writes
+`~/.terminal-nexus/activity-export.txt`. `node scripts/playtest.mjs … --activity [filter]` prints what a
+scripted run recorded.
 
 **A placed building goes up** (gate 5I): it plays a few frames of its own (authored beside its art in
 `src/content/art.ts`'s `PLACEMENT_ART`, with a generic fallback for anything not drawn yet), then

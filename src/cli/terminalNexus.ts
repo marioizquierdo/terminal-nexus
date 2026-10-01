@@ -42,7 +42,8 @@ const USAGE = `terminal-nexus — the Terminal Nexus game
       (${TUNING.scrollMargin} unless given; "${TUNING.scrollMargin}" and "${TUNING.scrollMargin}%" are the same). Esc opens the game menu: Settings,
       in sections - the display settings (saved, like the title menu's) and Experiments, the
       choices still being tried, live, never saved; d jumps straight to the first of them.
-      "Export settings" copies them all as text.
+      "Export settings" copies them all as text. The game menu's Activity logs shows what
+      happened, through a filter; "Export logs" copies it and saves activity-export.txt.
       --settings "<text>" starts with an exported text's settings and experiments, for this
       run only: paste the whole export, or just pairs like "raid=probe crew=some".
       --keys "<key script>" opens it already in the state those keys reach, in the scripted

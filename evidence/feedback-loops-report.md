@@ -1,7 +1,7 @@
 # Feedback loops — report
 
 **Document role:** Evidence report for the owner's feedback-loop direction (Activity Logs, the About screen, the loop in the design)
-**Status:** WORKING — filled in as the work goes
+**Status:** PASS — awaiting Mario's playtest
 **Updated:** 2026-10-01
 **License:** Apache-2.0
 
@@ -45,10 +45,88 @@ npm install
 npm run typecheck
 npm test && npm run test:bun
 ./scripts/check-repository.sh
-node scripts/playtest.mjs --keys "1 Enter Esc a" --text final   # the Activity logs window
-bun scripts/build-web.mjs --demos <demos.json>                   # the playtest page with demo buttons
+node scripts/playtest.mjs --keys "n 1 1 Enter Esc a" --activity Interactions   # the Activity logs window, and what the run recorded
+bun scripts/build-web.mjs --demos evidence/demos/feedback-loops.json   # the playtest page with this round's demo
 ```
 
 ## 3. What was built
 
-_(filled in after the merge)_
+- **`src/log/`** — the structured logger: `levels.ts` (one vocabulary, shared with `grid`'s battle report),
+  `logger.ts` (schema types, `Logger` with a ring buffer, injected clock, listeners, `entryProblems`,
+  filters), `text.ts` (one line per entry, and its parser), `activity.ts` (the Activity Logs' events,
+  filters, the global logger and the export format).
+- **The Activity logs window** — `src/build/activity.ts`, `activitySpec` in `src/build/popup.ts`, three
+  commands and three state fields in the reducer, `[a]` in the game menu; logging from `BuildSession`,
+  `src/cli/spike.ts`, `src/cli/menu.ts` and the page; the exporter told which export it is.
+- **The About screen** — `src/menu/about.ts`, a body for title-menu screens in `src/view/menu.ts`, Exit
+  moved to `[5]`.
+- **The playtest page** — an activity logs box and demo buttons (`--demos` in `scripts/build-web.mjs`).
+- **Agent tooling** — `scripts/playtest.mjs --activity [filter]`.
+- **Documents** — `docs/ui-patterns.md` section 15 (the feedback loop), 10.2-10.3 (the window's
+  patterns), the title-menu screen shape; `AGENTS.md`, `CLAUDE.md`, three skills, the settings module's
+  header; `specs/engine.md` 7.1 and 10.2 (canon 2.31); `docs/feedback-pipeline.md` cut to a parked note;
+  Milestone 13 withdrawn.
+
+## 4. Automated results
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Type check (Node and web) | clean | `npm run typecheck` |
+| Node tests | 838 / 838 | `npm test` |
+| Bun tests | all files pass | `npm run test:bun` |
+| Repository checks, Markdown links | pass | `./scripts/check-repository.sh`, `node scripts/check-markdown-links.mjs` |
+| Every entry a scripted run logs matches the schema | pass | `tests/build-activity.test.ts`, `tests/menu-about-screen.test.ts` |
+| The reducer behaves the same whether anything is logged | pass | `tests/build-activity.test.ts` |
+| The kernel and the match layer never reach the logs | pass | `tests/architecture.test.ts` |
+| The built page in headless Chromium: demo button → Esc, a, e → the export box filled; Menu → 4 → About | pass, no page errors | `evidence/screenshots/page-activity-export.png`, `page-about.png` |
+
+## 5. Human observations
+
+Nobody has played this build yet. Mario is asked to open the page, try the demo button, export the
+Activity logs into the pull request, and read the About screen.
+
+## 6. Interpretation
+
+The logger is small because the schema carries the weight: the types refuse an undeclared event at
+compile time and `entryProblems` refuses one at test time, so the schema stays the truth about what the
+game records. The window reuses the one popup shape; the only new popup abilities are a list that fills
+the room (so rows above it never move), a clickable text row and a wider value box. Keeping the log out
+of the reducer — read only to freeze and count the window's list — kept the Build Phase replayable.
+
+## 7. Failures, surprises, and discarded approaches
+
+- **`grid`'s "logger" was a report, not a logger.** It narrates a finished battle from its events, so
+  sharing the level vocabulary was the coherent step; forcing its lines through the new interface would
+  have changed its fixed-column grammar, which agents grep.
+- **Two agents wrote the same table** turning a colour depth into other words for the logs; both now log
+  the setting's own name. When two agents need the same small helper in a folder neither owns, say in
+  the prompts which one writes it.
+- **A popup sized to its list moved its Filter row under the mouse** each time the filter changed the
+  list's length; the window now fills the pane, at the cost of blank space when few entries match.
+- **The `hidden` attribute does nothing on an element whose class sets `display: flex`**; the demo row
+  needed its own `[hidden]` rule.
+- **The proposed feedback pipeline was parked** after an hour's design: cheap to write, cheap to drop.
+
+## 8. Decision
+
+> **PASS**
+
+Each item of his direction is built or answered (F94 with a recommendation only he can act on), every
+check passes, and an agent reading `AGENTS.md` meets the loop in Sections 4 and 5 and is pointed to one
+section of the design document. What remains is his playtest.
+
+## 9. Canon impact
+
+Applied at canon 2.31, on his direction:
+
+| Rule | Lives in | Earned by |
+| --- | --- | --- |
+| One structured shape for every log; the kernel and match layer never log; nothing the rules decide reads a log | `specs/engine.md` 7.1 | F90, the architecture test |
+| The playtest page may add tools around the screen (export boxes, demo buttons) | `specs/engine.md` 10.2 | F92 |
+
+No questions opened or answered.
+
+## 10. Next authorized action
+
+Mario plays the page and pastes an Activity Logs export into the pull request; gate 6B still waits for
+his word.
