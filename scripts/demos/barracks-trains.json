@@ -1,0 +1,13 @@
+[
+  {
+    "label": "Round 2",
+    "try": "Round 1 was played with nothing built. A trooper the Barracks trained came home and stands beside it. Press e and move onto the Barracks to read its card, then s s to play round 2 and watch the feed for 'trooper trained'.",
+    "keys": "n 1 s s wait~1000*20 Enter"
+  },
+  {
+    "label": "A fast Barracks",
+    "try": "Round 1 with the Barracks training a trooper every 4 seconds, up to 6. Watch troopers step out of it and join the fight. Press d to change the pace.",
+    "keys": "n 1 s s",
+    "settings": "trainEvery=4 trainPerRound=6"
+  }
+]
