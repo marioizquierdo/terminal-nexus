@@ -8,7 +8,7 @@ structure for the single player modes, we should jump right away into building t
 experience and UX. And later, when we have the UI/UX working, we can start adding new units and
 upgrades, iterating on the game modes as we do more playtesting." Everything before this milestone runs
 on disposable bench content. Here the real Citizens and Ravels rosters, the "Commander Army selection"
-workstream that [`docs/game-design/decisions.md`](../game-design/decisions.md) has held back, finally
+workstream that [`commander-armies.md`](../game-design/commander-armies.md) holds back, finally
 get authored, one card at a time, each judged in a run and in a mission.
 
 ## Question

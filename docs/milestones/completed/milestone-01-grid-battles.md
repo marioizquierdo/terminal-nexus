@@ -14,7 +14,7 @@
 > much the tool's own working name (`grid`, née `playground`) as the milestone's.
 >
 > **Formally accepted, 2026-08-26 (canon 2.8).** Both gates are built, merged, and now **owner
-> accepted** — [`docs/game-design/decisions.md`](../../game-design/decisions.md) Section 5 has the
+> accepted** — [`docs/history/README.md`](../../history/README.md) Section 5 has the
 > acceptance entry, and this is no longer the milestone a new session opens. Mario watched a
 > legibility pass and responded well — "This looks really amazing. Great job" — gave a large, explicit
 > list of follow-up work (the unit-architecture spike, the transparency amendment, this acceptance

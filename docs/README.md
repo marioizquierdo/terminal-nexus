@@ -13,7 +13,6 @@ version of the design beyond git.
 - [`commander-armies.md`](game-design/commander-armies.md) — factions, Commanders and the shape of a playable army.
 - [`campaigns.md`](game-design/campaigns.md) — missions, the Citizen opening, PERIMETER, cutscenes.
 - [`scripted-opponent.md`](game-design/scripted-opponent.md) — waves, intentions and the Campaign's opponent (working design).
-- [`decisions.md`](game-design/decisions.md) — settled product decisions, a flat list that shrinks as each becomes a RULE in its home.
 - [`ascii-art-references.md`](game-design/ascii-art-references.md) — where to learn terminal art and what to take from each source.
 - [`concept-art/`](game-design/concept-art/README.md) — early concept art and the first prototype captures.
 

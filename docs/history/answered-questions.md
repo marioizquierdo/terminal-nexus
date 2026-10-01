@@ -378,7 +378,7 @@ Unrelated to the fade prototype's own conclusion, but found *while* building it,
 here rather than only in the gate report since it changes what "today" actually shows.
 
 **Decided, 2026-08-26.** Mario confirmed both forks in the same round of feedback that formally
-accepted Milestone 1 ([`project-governance.md`](../game-design/decisions.md) Section 5): "Keep it derived
+accepted Milestone 1 ([`project-governance.md`](README.md) Section 5): "Keep it derived
 (recommended)" for A, and "Yes, build it for real" for C — decided from the standing evidence already
 in front of him (the hand-authored/derived 256-colour screenshots and the transparency prototype's own
 screenshot, both sent in round seven), not from a fresh artifact shown in this pass.
@@ -487,7 +487,7 @@ now carries the rule.
 Recorded in full in the Git history of this file at canon 2.1. Superseded in scope at canon 2.2 when
 Milestone 1 was refocused onto the Pulse and delivery left the milestone altogether.
 [`docs/milestones/completed/milestone-01-grid-battles.md`](../milestones/completed/milestone-01-grid-battles.md) carries the gate structure;
-[`project-governance.md`](../game-design/decisions.md) Section 5 carries delivery as its own gated
+[`project-governance.md`](README.md) Section 5 carries delivery as its own gated
 workstream.
 
 ### Q56 — answered
