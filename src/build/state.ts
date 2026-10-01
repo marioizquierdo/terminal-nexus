@@ -2,6 +2,7 @@
 // clock — the same separation `src/menu/list.ts` draws for the menu, so every claim about scrolling
 // and placement is checkable without a TTY.
 
+import type { LogEntry } from "../log/logger.ts"
 import { footprintCentre, footprintExtent, inBounds, tilesOf } from "../grid/coords.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { stepListIndex } from "../menu/list-keys.ts"
@@ -33,6 +34,18 @@ import {
   restartMessage,
 } from "./settings.ts"
 import { formatSettingsExport } from "./settings-export.ts"
+import type { ActivitySource } from "./activity.ts"
+import {
+  ACTIVITY_EXPORT_ROW,
+  ACTIVITY_FILTER_ROW,
+  activityExportMessage,
+  activityExportStatus,
+  activityFilter,
+  activityFilterStatus,
+  activityRowCount,
+  shownEntries,
+  stepActivityFilter,
+} from "./activity.ts"
 // A cycle, and a harmless one: help.ts reads this module's helpers only when a hint is asked for, and
 // this module reads help.ts's page length only when a command runs — neither at load time.
 import { controlsLineCount } from "./help.ts"
@@ -118,6 +131,16 @@ export type BuildContext = Readonly<{
   /** Where the adapter puts an export besides the screen, said in the export popup — "Copied to the
    *  clipboard and saved to ...". Absent: the popup says nothing about a copy. */
   exportDestination?: string
+  /**
+   * The log the Activity logs window shows — read-only, and read by
+   * the reducer for that window alone: the newest sequence number when it opens, and how many rows it
+   * lists (`src/build/activity.ts`). The source never changes while the screen is open; what it holds
+   * grows, which is why the window freezes its list when it opens. Absent: the window lists nothing.
+   */
+  activity?: ActivitySource
+  /** Where the adapter puts an Activity logs export, said in the message that confirms it — "Copied to
+   *  the clipboard and saved to ...". Absent: the message says nothing was copied. */
+  activityExportDestination?: string
 }>
 
 /** A popup under the open one, and the row of it to come back to (`BuildState.popupUnder`). */
@@ -205,7 +228,7 @@ export type BuildState = Readonly<{
   popup: Popup | null
   /** The open popup's highlight, an index into its list (`popupRowCount`), set whenever one opens: the
    *  Nexus popup's pending powers, the game menu's rows, Settings' rows (`SETTINGS_ROWS`), the export's
-   *  lines, the Controls page's key lines. */
+   *  lines, the Controls page's key lines, the Activity logs window's filter, export and entries. */
   popupHighlight: number
   /** The popups under the open one, nearest last, each with the row to come back to — the row that
    *  opened the popup above it: what Esc goes back to, one at a time (the game menu under Settings or
@@ -259,6 +282,22 @@ export type BuildState = Readonly<{
    *  again without changing them does not say it again — the player may keep playing and restart
    *  later. Empty after a restart. */
   restartWarned: readonly string[]
+  /** The Activity logs window's filter, an index into `ACTIVITY_FILTERS`. Kept while the
+   *  window is closed, and across a restart, so a playtester who picked one finds it again; 0 — the
+   *  filter an agent put first for the pull request that asks — until then. */
+  activityFilter: number
+  /**
+   * What the Activity logs window lists: a copy of the log's entries taken when the window opened
+   * (`BuildContext.activity`). A copy, not a cut-off: the log keeps a bounded memory, so once it is full
+   * every key pressed in the window would drop its oldest entry from under the list. Everything logged
+   * after the copy waits until the window opens again, so the list holds still while it is read. The
+   * entries are shared, never cloned, so carrying them costs one array.
+   */
+  activityFrozen: readonly LogEntry[]
+  /** How many times the Activity logs have been exported, counting up across a restart: the session
+   *  hands the text to the shell each time it goes up — a side effect the reducer only records, the way
+   *  `ack` records a flash. */
+  activityExports: number
 }>
 
 /**
@@ -339,6 +378,9 @@ export function createBuildState(
     startCursor: cursor,
     startExperiments: experiments,
     restartWarned: [],
+    activityFilter: 0,
+    activityFrozen: [],
+    activityExports: 0,
   }
 }
 
@@ -1141,6 +1183,45 @@ function openControls(state: BuildState): BuildState {
 }
 
 /**
+ * The Activity logs window: from the game menu's `[a]` row, which Esc
+ * then goes back to, on that row; over a committed Build Phase too, so a playtester can export what a
+ * Pulse logged. It opens on the filter, and **freezes the list** — a copy of the log's entries: what the
+ * window shows holds still while it is read, though every key pressed in it is logged as well.
+ */
+function openActivityLogs(context: BuildContext, state: BuildState): BuildState {
+  const opened = openFromGameMenu(state, "activity-logs", "activity", ACTIVITY_FILTER_ROW)
+  if (opened.popup !== "activity-logs") return opened
+  return { ...opened, activityFrozen: context.activity?.entries() ?? [] }
+}
+
+/** One step of the window's filter, said on the bottom line with how many events it shows. With the
+ *  window open the highlight goes to the Filter row, as a setting's step goes to its row; a driver may
+ *  step it with the window closed. */
+function stepActivity(context: BuildContext, state: BuildState, step: -1 | 1): BuildState {
+  const next: BuildState = {
+    ...state,
+    activityFilter: stepActivityFilter(state.activityFilter, step),
+    ...(state.popup === "activity-logs" ? { popupHighlight: ACTIVITY_FILTER_ROW } : {}),
+  }
+  return { ...next, status: status(activityFilterStatus(activityFilter(next), shownEntries(next).length)) }
+}
+
+/**
+ * The window's export: counted (`activityExports`), so the session hands the text to the shell, and
+ * confirmed in a message over the window — how many events, from which filter, and where they went —
+ * which Esc closes back to the export row. Only from the window, where the player can see what it holds.
+ */
+function exportActivity(context: BuildContext, state: BuildState): BuildState {
+  if (state.popup !== "activity-logs") return state
+  const count = shownEntries(state).length
+  return {
+    ...showMessage(state, activityExportMessage(count, activityFilter(state), context.activityExportDestination), ACTIVITY_EXPORT_ROW),
+    activityExports: state.activityExports + 1,
+    status: status(activityExportStatus(count), "success"),
+  }
+}
+
+/**
  * One step of a setting Settings shows, said on the bottom line — whichever tier it stands on: an
  * Experiment's is said as one ("Experiment - ..."), and a number at the end of its range stays and says
  * so; a player setting is recorded here and nowhere else — the live loop sees the new value, draws with
@@ -1181,6 +1262,8 @@ function restartBuildPhase(context: BuildContext, state: BuildState): BuildState
     ack: state.ack,
     refusedTry: state.refusedTry,
     handoff: state.handoff,
+    activityFilter: state.activityFilter,
+    activityExports: state.activityExports,
     status: status("Build Phase restarted with these settings."),
   }
 }
@@ -1205,7 +1288,8 @@ function exportLineCount(context: BuildContext, state: BuildState): number {
 
 /** How many rows the open popup's list has — what `popupHighlight` indexes, and where Up/Down stop:
  *  the Nexus powers waiting, the game menu's rows, Settings' rows, the export's lines, the Controls
- *  page's key lines, the Battle Round screen's one row, and none in a message. */
+ *  page's key lines, the Activity logs window's filter, export and the entries it froze, the Battle
+ *  Round screen's one row, and none in a message. */
 function popupRowCount(context: BuildContext, state: BuildState): number {
   switch (state.popup) {
     case "nexus-powers":
@@ -1218,6 +1302,8 @@ function popupRowCount(context: BuildContext, state: BuildState): number {
       return exportLineCount(context, state)
     case "controls":
       return controlsLineCount()
+    case "activity-logs":
+      return activityRowCount(state)
     case "battle-round":
       return 1
     default:
@@ -1493,6 +1579,15 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
 
     case "open-controls":
       return openControls(state)
+
+    case "open-activity-logs":
+      return openActivityLogs(context, state)
+
+    case "activity-filter":
+      return stepActivity(context, state, command.step)
+
+    case "export-activity":
+      return exportActivity(context, state)
 
     case "quit":
       return state

@@ -177,3 +177,15 @@ An LLM may later return a constrained legal plan, provide dialogue, answer conte
 ### Sound
 
 **TBD — dedicated research and design pass required.** Stable semantic presentation cues should leave a clean future subscription point for movement, attacks, destruction, restoration, and Nexus states. No sound dependency belongs in Milestone 1.
+
+### Feedback from players beyond the playtest page
+
+Notes made inside the game (point at something, say why, collect a few), reports routed to a pull
+request, an issue or a file with enough to replay exactly what the player saw, and an agent that sorts
+reports against the design documents. Mario parked it for now: the loop he uses is Experiments, the
+Activity Logs and the claude.ai playtest page, with feedback in words, screenshots and voice the
+ordinary way. What was considered, why it is parked, and what this game already has that would make it
+cheap (exact replays, screens as text, a hit-test, state fingerprints) is in
+[`docs/history/reports/2026-10-01-feedback-pipeline-parked.md`](../history/reports/2026-10-01-feedback-pipeline-parked.md).
+Mario also asked to keep an eye out for a richer playtest tool someone else builds (pause, talk, point,
+replay in slow motion) and to look for easy ways to plug into it.

@@ -116,6 +116,15 @@ test("the simulation never reaches a glyph", () => {
   assert.ok(view.has(art), "src/view no longer reaches the art table; nothing would be drawn")
 })
 
+test("the logs are a leaf: the kernel and the match layer never reach them, and they reach nothing of the game's", () => {
+  // A log records what happened and is only ever shown or exported:
+  // the rules may not depend on one, and a logger takes its clock as an argument, which the kernel may
+  // not have.
+  assertNoDependencyOn("pulse", ["log"])
+  assertNoDependencyOn("match", ["log"])
+  assertNoDependencyOn("log", ["pulse", "match", "view", "cli", "build", "menu", "web"])
+})
+
 test("src/report never reaches the kernel or the view", () => {
   // It may read content definitions and shared state types; it may not read how a tick is resolved.
   assertNoDependencyOn("report", ["pulse", "view", "cli"])

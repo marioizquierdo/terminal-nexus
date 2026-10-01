@@ -5,11 +5,20 @@
 //
 // No stdin, no ANSI, no backend, no `src/view` import: composing the frame is `src/view/build.ts`'s
 // job and wiring it to a terminal is `src/cli/build-phase.ts`'s.
+//
+// **It records what happens into the Activity Logs**: every command and the bottom line's answer, a
+// refusal and why, a building placed or removed, a popup opening, a setting changed, an export, the Pulse
+// starting and its result, and how far each timed cursor key moved. All of it is read off the states
+// before and after a command, never fed back in, so a log can never change what the reducer does; and a
+// logger never throws.
 
+import type { ActivityLog } from "../log/activity.ts"
+import { activity as globalActivity } from "../log/activity.ts"
+import { resultOf } from "../view/ending.ts"
 import { decodeKeyEvent } from "../view/key-events.ts"
 import type { KeyPhase } from "../view/key-events.ts"
 import { keysFromChunk } from "../view/playback.ts"
-import { PulsePresenter } from "../view/pulse-live.ts"
+import { PulsePresenter, outcomeOf } from "../view/pulse-live.ts"
 import type { ResolvedPulse } from "../view/pulse-live.ts"
 import type { PulseFrame } from "../view/pulse-scene.ts"
 import type { BuildLayout } from "./layout.ts"
@@ -24,10 +33,11 @@ import { KeyMotion, moveTuning, pressTiles } from "./motion.ts"
 import type { MouseEvent } from "./mouse.ts"
 import { buildMouseCommand, parseMouseEvent } from "./mouse.ts"
 import type { BuildContext, BuildState } from "./state.ts"
-import { applyBuildCommand, cardEntry, createBuildState, exportText, nexusTile, withViewport } from "./state.ts"
-import { setting } from "./all-settings.ts"
+import { applyBuildCommand, cardEntry, createBuildState, displayName, exportText, nexusTile, remaining, withViewport } from "./state.ts"
+import { SHOWN_SETTINGS, setting } from "./all-settings.ts"
+import { activityExportText, loggedTile, shownEntries } from "./activity.ts"
 import { TUNING } from "./tuning.ts"
-import type { BuildCommand } from "./types.ts"
+import type { BuildCommand, ExportKind } from "./types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { Settings } from "../settings/types.ts"
 
@@ -39,9 +49,16 @@ export type BuildSessionOptions = Readonly<{
   /**
    * The export's side effects — copying the text to the clipboard, writing it to a file — which the
    * reducer never has (the owner: "export settings, and copy-paste them into a PR comment").
-   * Called with the text each time the export popup is opened.
+   * Called with the text and which export it is: the settings' each time their export popup opens, the
+   * Activity Logs' each time the Activity logs window exports.
    */
-  onExport?: (text: string) => void
+  onExport?: (text: string, kind: ExportKind) => void
+  /**
+   * The log the session records what happens into: the game's global `activity`
+   * unless a test, or a scripted playtest on its own clock, passes its own. What the Activity logs window
+   * *shows* is the context's `activity`, which the live loop points at this same log.
+   */
+  activity?: ActivityLog
   /** The player changed a setting in the Settings popup: the live loop redraws with it and saves it. */
   onSettingsChange?: (settings: Settings) => void
   /**
@@ -77,8 +94,12 @@ export class BuildSession {
   /** Round 1's, which Restart and "Play again" go back to. */
   private readonly firstContext: BuildContext
   private readonly onQuit: () => void
-  private readonly onExport: (text: string) => void
+  private readonly onExport: (text: string, kind: ExportKind) => void
   private readonly onSettingsChange: (settings: Settings) => void
+  /** Where what happens is recorded (`BuildSessionOptions.activity`). */
+  private readonly log: ActivityLog
+  /** The Pulse on screen has had its result recorded, so watching it again does not record it twice. */
+  private resultLogged = false
   /** How far cursor keys move — taps counted, holds on the game's cadence: input-path state, beside the
    *  reducer and never in it. */
   private readonly motion = new KeyMotion()
@@ -108,6 +129,7 @@ export class BuildSession {
     this.onExport = options.onExport ?? ((): void => {})
     this.onSettingsChange = options.onSettingsChange ?? ((): void => {})
     this.startPulse = options.startPulse ?? ((): null => null)
+    this.log = options.activity ?? globalActivity
     this.nextRound = options.nextRound ?? ((): null => null)
   }
 
@@ -136,6 +158,7 @@ export class BuildSession {
     if (this.presenter === null) return
     this.presenter.advance(now, hold)
     for (const command of this.presenter.due()) this.dispatch(command)
+    this.noteResult()
   }
 
   /** What the Pulse on screen is showing right now, for the composer — or `undefined` when there is
@@ -153,6 +176,7 @@ export class BuildSession {
   /** The driver's direct-command path — "a scripted list of commands" (docs/system-design/input.md). */
   dispatch(command: BuildCommand): void {
     if (command.kind === "quit") {
+      this.log.log("build.command", { command: command.kind })
       this.onQuit()
       return
     }
@@ -161,6 +185,9 @@ export class BuildSession {
     if (command.kind === "pulse") {
       const over = this.presenter?.phase() === "home"
       if (!(over && command.control === "toggle")) this.presenter?.apply(command.control)
+      this.log.log("build.command", { command: command.kind })
+      // A step can be what reaches the result.
+      this.noteResult()
       return
     }
     if (command.kind === "next-round") {
@@ -175,11 +202,83 @@ export class BuildSession {
     // Side effects the reducer only records, handed to the adapter that owns them.
     if (this.buildState.settings !== before.settings) this.onSettingsChange(this.buildState.settings)
     if (this.buildState.popup === "export" && before.popup !== "export") {
-      this.onExport(exportText(this.context, this.buildState))
+      this.onExport(exportText(this.context, this.buildState), "settings")
     }
+    if (this.buildState.activityExports > before.activityExports) {
+      this.onExport(activityExportText(this.context, this.buildState), "activity")
+    }
+    // Before the Pulse starts, so the log reads in the order it happened: the command, then the Pulse.
+    this.record(before, command)
     // The plan was just committed: the Nexus Pulse starts. Or the Build Phase started over: it is gone.
     if (!before.committed && this.buildState.committed) this.beginPulse()
     else if (before.committed && !this.buildState.committed) this.presenter = null
+  }
+
+  /**
+   * What a command did, into the Activity Logs — read off the states before and after
+   * it, never off how the reducer got there, so recording can never change what the reducer does:
+   *
+   * - `build.command` always, with the bottom line's answer when the command gave a new one;
+   * - `build.refused` when that answer is a refusal (`isRefusal`), with its tile when it names one;
+   * - `build.placed` and `build.removed` from the plan's difference — a restart's emptied plan is the
+   *   restart's own line, not one removal per building;
+   * - `popup.open` when a popup opens — not when going back reveals the one under it;
+   * - `setting.change` for every shown setting whose value changed, by the name an export writes;
+   * - `export` for either export, and `session.error` when the Pulse could not start.
+   */
+  private record(before: BuildState, command: BuildCommand): void {
+    try {
+      const after = this.buildState
+      const log = this.log
+      const answer = after.status !== before.status && after.status.text !== "" ? after.status.text : null
+      log.log("build.command", answer === null ? { command: command.kind } : { command: command.kind, answer })
+      if (answer !== null && isRefusal(before, after, command)) {
+        const tile = after.status.tile
+        log.log("build.refused", { command: command.kind, reason: answer, ...(tile === undefined ? {} : { x: tile.x, y: tile.y }) })
+      }
+      if (command.kind === "pulse-failed") log.log("session.error", { where: "pulse", message: command.reason })
+      if (command.kind !== "restart" && after.planned !== before.planned) this.recordPlan(before, after)
+      if (after.popup !== null && opened(before, after)) log.log("popup.open", { popup: after.popup })
+      if (after.settings !== before.settings || after.experiments !== before.experiments) {
+        for (const spec of SHOWN_SETTINGS) {
+          const value = setting(after, spec.field)
+          if (value === setting(before, spec.field)) continue
+          log.log("setting.change", { setting: spec.field, value: spec.format(value), tier: spec.tier })
+        }
+      }
+      if (after.popup === "export" && before.popup !== "export") log.log("export", { kind: "settings" })
+      if (after.activityExports > before.activityExports) {
+        log.log("export", { kind: "activity", events: shownEntries(after).length })
+      }
+    } catch {
+      // A log that could break the game would not be worth having.
+    }
+  }
+
+  /** The plan's difference, as buildings placed and taken off it, each with its tile and what is left. */
+  private recordPlan(before: BuildState, after: BuildState): void {
+    const now = new Set(after.planned.map((placement) => placement.ordinal))
+    const was = new Set(before.planned.map((placement) => placement.ordinal))
+    const credits = remaining(this.context, after)
+    const entry = (placement: BuildState["planned"][number]) => {
+      const tile = loggedTile(placement.anchor, this.context.registry.get(placement.contentId).footprint)
+      return { building: displayName(this.context, placement.contentId), x: tile.x, y: tile.y, credits }
+    }
+    for (const placement of before.planned) if (!now.has(placement.ordinal)) this.log.log("build.removed", entry(placement))
+    for (const placement of after.planned) if (!was.has(placement.ordinal)) this.log.log("build.placed", entry(placement))
+  }
+
+  /** The Pulse on screen has reached its result, the first time: recorded once (`pulse.end`). */
+  private noteResult(): void {
+    const presenter = this.presenter
+    if (presenter === null || this.resultLogged || presenter.phase() !== "home") return
+    this.resultLogged = true
+    try {
+      const result = resultOf(outcomeOf(presenter.resolved.timeline))
+      this.log.log("pulse.end", { result: RESULT_WORDS[result.headline] ?? result.headline.toLowerCase(), reason: result.reason })
+    } catch {
+      // Never let a log line stop a Pulse.
+    }
   }
 
   /**
@@ -216,6 +315,8 @@ export class BuildSession {
     this.presenter = new PulsePresenter(resolved, undefined, {
       autoNextMs: setting(this.buildState, "nextRound") === "auto" ? TUNING.autoNextRoundMs : null,
     })
+    this.resultLogged = false
+    this.log.log("pulse.start", { round: this.buildState.pulseNumber, buildings: this.buildState.planned.length })
     // Started by a key that arrived at a known time: the Pulse is at zero from that moment.
     if (this.now !== undefined) this.presenter.advance(this.now)
   }
@@ -281,7 +382,10 @@ export class BuildSession {
   private handleKeyEvent(key: string, phase: KeyPhase | null, now: number | undefined): void {
     if (phase === "release") {
       const cursor = cursorKeyOf(key)
-      if (cursor !== null && now !== undefined) this.motion.step(cursor, now, phase, moveTuning(this.buildState))
+      if (cursor !== null && now !== undefined) {
+        this.motion.step(cursor, now, phase, moveTuning(this.buildState))
+        this.logMove(cursor)
+      }
       return
     }
     const command = this.keyCommand(key, now, phase)
@@ -304,7 +408,9 @@ export class BuildSession {
     let moved = false
     const move = (cursor: CursorKey): number => {
       moved = true
-      return this.motion.step(cursor, now as number, phase, tuning)
+      const tiles = this.motion.step(cursor, now as number, phase, tuning)
+      this.logMove(cursor)
+      return tiles
     }
     const command = buildKeyboardCommand(key, {
       itemCount: this.context.catalog.length,
@@ -380,8 +486,53 @@ export class BuildSession {
     return this.motion.move
   }
 
+  /** The motion rules' call on the timed cursor key just read, into the Activity Logs (`move.step`): how
+   *  far it moved the map cursor or a list's highlight, and why — tap, hold, jump or release. */
+  private logMove(key: CursorKey): void {
+    const move = this.motion.move
+    // A held key repeats faster than the game's pace, and most repeats move nothing: logging those would
+    // fill the log's memory in a couple of minutes of holding an arrow.
+    if (move === null || (move.kind === "hold" && move.tiles === 0)) return
+    this.log.log("move.step", { key: directionOf(key), move: move.kind, tiles: move.tiles })
+  }
+
   /** A new terminal size. Not a command: nobody pressed anything. */
   resize(viewport: Viewport): void {
     this.buildState = withViewport(this.context, this.buildState, viewport)
   }
+}
+
+/**
+ * Whether a command's answer is a refusal, for `build.refused`: an answer in a warning or danger tone —
+ * the tones the reducer refuses in (`editLock`, an unaffordable row, a refused placement, "already
+ * picked") — except arming that found no room nearby, which warns but did arm, and the Pulse failing to
+ * start, which is the shell's failure rather than the player's refusal (`session.error` says it).
+ */
+function isRefusal(before: BuildState, after: BuildState, command: BuildCommand): boolean {
+  const tone = after.status.tone
+  if (tone !== "warning" && tone !== "danger") return false
+  if (command.kind === "pulse-failed") return false
+  return !(after.armed !== null && after.armed !== before.armed)
+}
+
+/** Whether a popup opened — over nothing, over another, or in place of one — rather than coming back into
+ *  view because the one over it closed. */
+function opened(before: BuildState, after: BuildState): boolean {
+  if (after.popup === null || after.popup === before.popup) return false
+  const wentBack = before.popupUnder.length === after.popupUnder.length + 1 && before.popupUnder.at(-1)?.popup === after.popup
+  return !wentBack
+}
+
+/** A Pulse's result as `pulse.end` names it, by the headline the player read. */
+const RESULT_WORDS: Readonly<Record<string, string>> = {
+  VICTORY: "won",
+  DEFEAT: "lost",
+  DRAW: "drawn",
+  "TIME'S UP": "timed out",
+}
+
+/** A cursor key's direction, as `move.step` names it. */
+function directionOf(key: CursorKey): string {
+  if (key.dy !== 0) return key.dy < 0 ? "up" : "down"
+  return key.dx < 0 ? "left" : "right"
 }

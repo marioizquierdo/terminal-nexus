@@ -91,7 +91,10 @@ test("Enter, Space, n, a click on the row and the driver's command all open the 
     toResult(side)
     go(side)
     assert.equal(side.build.state.pulseNumber, 2, `${name} did not open round 2`)
-    return { name, round: side.build.round, state: { ...side.build.state, ack: null, highlightHidden: false } }
+    // The Activity Logs ride along in the context and rightly differ by which key was pressed; the round
+    // itself must not.
+    const { activity: _log, ...round } = side.build.round
+    return { name, round, state: { ...side.build.state, ack: null, highlightHidden: false } }
   })
   const [first] = reached
   for (const other of reached.slice(1)) {

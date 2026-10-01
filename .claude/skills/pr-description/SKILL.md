@@ -1,6 +1,6 @@
 ---
 name: pr-description
-description: Write or update a pull request description for Terminal Nexus. Use whenever opening a PR, pushing commits to an open PR, or rewriting a PR body. Produces a phone-readable description that leads with what the player will see, a Demo section sized to the change (a code block, screenshots, a GIF, or a playable page — the cheapest one that shows it), the decisions waiting on Mario as Experiments to flip, and keeps the project bookkeeping in a collapsed footer.
+description: Write or update a pull request description for Terminal Nexus. Use whenever opening a PR, pushing commits to an open PR, or rewriting a PR body. Produces a phone-readable description that leads with what the player will see, a Demo section sized to the change (a code block, screenshots, a GIF, or a playable page — the cheapest one that shows it), the decisions waiting on Mario as Experiments to flip and Activity Logs to export, and keeps the project bookkeeping in a collapsed footer.
 ---
 
 # Writing a pull request description
@@ -14,12 +14,20 @@ changed on screen, how to try it, and what he needs to decide**.
 The pull request description is the report; a long-form report goes in `docs/history/reports/` only
 when a change needs more than a page — link it from the footer and do not repeat it.
 
+## The loop it starts
+
+A pull request is a question asked by playing (the feedback loop in `docs/system-design/ui-patterns.md`).
+The **Demo** lets him — or friends he shares the page with — play it; **Decisions** asks him to feel an
+Experiment and paste the settings export; when you need to know *what happened*, it asks for an
+**Activity Logs** export too. His answers come back as two blocks of text you can replay. Plan both
+before you build, so the build carries the Experiment, the event and the filter it needs.
+
 ## Rules
 
 - **Lead with behaviour.** "Tab now moves between the menu and the map", not "focus is reducer
   state". Internal refactors get at most one bullet.
-- **Plain English.** No section numbers, no question ids like Q57, no RULE or GUIDANCE, no step
-  numbers in the body. Game words are fine (Grid, Build Phase, Nexus Pulse, Nexus power); process
+- **Plain English.** No section numbers, no question ids like Q57, no feedback item numbers like F87,
+  no RULE or GUIDANCE, no step numbers in the body. Game words are fine (Grid, Build Phase, Nexus Pulse, Nexus power); process
   words (milestone, step) belong only in the footer.
 - **No "Mario said X".** At most "(from your playtest)" after the change it prompted.
 - **Short.** 150-400 words above the footer. Bullets of one or two lines. No table wider than two
@@ -60,7 +68,9 @@ nothing to host. When there is a playable page, give it two sub-headings:
 - **On Claude Web Artifact** — the private page link first (it works from his phone, his laptop, any
   device signed in to claude.ai), then 3-6 numbered steps with exact keys, each ending in what should
   happen: "3. Press Space — the Barracks rises next to the Nexus." Say which keys a phone's key bar
-  cannot send (a held key's repeat, for instance).
+  cannot send (a held key's repeat, for instance). A step that needs a particular state starts from a
+  **demo button** on the page (`bun scripts/build-web.mjs --demos <file>`: a label, keys, settings and
+  what to try) rather than ten keys of setup.
 - **On MacOS** — copy-paste commands for his own terminal, in one code block: e.g.
   `git fetch && git checkout <branch> && git pull && ./bin/terminal-nexus.ts`, and any flag the demo
   needs (`--settings "..."` to start with particular Experiments).
@@ -76,7 +86,15 @@ End the section with the export line, so his answer comes back as data rather th
 saved to `~/.terminal-nexus/settings-export.txt` — and paste it as a comment here." An agent that
 reads an exported block back starts the game with it (`./bin/terminal-nexus.ts --build-phase --settings
 "<text>"`, or `node scripts/playtest.mjs --settings "<text>"`, or `#settings=<url-encoded text>` on
-the browser page) to see what he saw. Omit the section if there are none.
+the browser page) to see what he saw.
+
+**When the question is what happened** — a feel that depends on timing, an interaction that misbehaves
+only sometimes — prepare an **Activity Logs** event and a filter for it (`src/log/activity.ts`; its
+header says how), and ask: "play it, then Esc, `a` (**Activity logs**), the filter *Tap speed-up* is
+already selected — press `e` to export and paste it here." The export names its build and filter and
+lists one event per line, oldest first; read it as text, or with `parseLogLine` (`src/log/text.ts`).
+Remove the event and the filter once answered, as you would an Experiment. Omit the section if there
+are no decisions and nothing to log.
 
 **Additional changes** — what rode along that is not the main change: a small follow-up the owner asked
 for on the same pull request, an opportunistic refactor, a fix found along the way (owner, 2026-09-30: "it
@@ -147,7 +165,8 @@ instructions — give it its own short section after **Changes**, **Workflow and
 - [ ] The title says what the player (or developer) can now see or do, under 70 characters.
 - [ ] Every image was opened and checked; URLs are pinned to commit SHAs.
 - [ ] The Demo is the cheapest layer that shows the change, and its steps were run exactly as written.
-- [ ] No section numbers, question ids or step numbers above the footer.
+- [ ] No section numbers, question ids, feedback item numbers or step numbers above the footer.
+- [ ] Each decision says how to flip it and asks for the export; an Activity Logs ask names its filter.
 - [ ] 150-400 words above the footer.
 - [ ] The attribution lines appear exactly once, at the end.
 

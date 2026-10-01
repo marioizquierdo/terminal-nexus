@@ -1,6 +1,6 @@
 ---
 name: feedback-round
-description: Run one round of owner (Mario) feedback end to end — log his words item by item, add the round as a step on the current milestone, split the work across parallel agents in worktrees, merge and reconcile it, update the design documents, regenerate the screenshots, republish the playable page, and rewrite the pull request. Use whenever Mario sends playtest feedback or a pasted settings export, or when a change is big enough to split across several agents. Read it before spawning your first worktree agent.
+description: Run one round of owner (Mario) feedback end to end — log his words item by item, add the round as a step on the current milestone, split the work across parallel agents in worktrees, merge and reconcile it, update the design documents, regenerate the screenshots, republish the playable page, and rewrite the pull request. Use whenever Mario sends playtest feedback, a pasted settings export or an Activity Logs export, or when a change is big enough to split across several agents. Read it before spawning your first worktree agent.
 ---
 
 # A feedback round, start to finish
@@ -15,8 +15,12 @@ The second reading finds what the first skipped. Look for: an item that contradi
 design documents (say so, and reverse it by his words, not yours); an item that *sounds* built but
 only half is (round 3's "keep scrolling while armed" — the agent built "a click activates" and missed
 the scrolling half); a **pasted settings export** (that is answers, not description — start the game
-with it, as the feedback loop in `DEVELOPMENT.md` says); and an ambiguity to register rather than
-guess ("press `b`" — a letter, or the building's digit?).
+with it, as the feedback loop in `DEVELOPMENT.md` says); a **pasted Activity Logs export** (evidence of
+what happened: its header names the build and the filter, each line is one event, oldest first — replay
+the moment with his settings and the keys it implies, and read it against the event's description in
+`src/log/activity.ts`); and an ambiguity to register rather than guess ("press `b`" — a letter, or the
+building's digit?). Screenshots and voice notes arrive as ordinary text and pictures: log them the same
+way.
 
 ## 1. Log it before building it
 
@@ -25,6 +29,11 @@ words in a blockquote, verbatim; under it a status — **Built**, **Scheduled**,
 and, once done, one plain paragraph of what now happens. Nothing may be dropped silently. Add the
 round as a step on the current milestone (`docs/milestones/`), with its definition of done as
 checkboxes, and run `./scripts/check-repository.sh`.
+
+**The numbers are for agents, never for Mario** ("I don't understand references like F87, they are not
+very useful to me"). They let a code comment or a tracker point back at his words. In anything he reads
+— a chat reply, a pull request, a document written for him — name the request in a few words instead
+("your notes on the Activity logs") and, if the source matters, link the log.
 
 ## 2. Split the work by files, not by feature
 
@@ -100,5 +109,11 @@ step**. Stop the check-in when it merges, delete the trigger, and reset the bran
 - **A default that suits one input device can fail on another.** A 150 ms hold window is right for a
   fast OS key repeat and turns a slow one's first repeat into a tap. Say which device a number was
   tuned on (`docs/milestones/next-steps.md`, Q66).
+- **Two agents will each write the helper neither owns.** Both agents of the Activity Logs round needed
+  a colour-depth name for the logs and each wrote the same table in its own file. When agents share a
+  need in a folder neither owns, write the helper yourself before splitting, or name in the prompts which
+  agent writes it.
+- **Tell an agent where its scratch output goes** (a `tmp/` in its worktree, never `/`), or it may write
+  captures into the filesystem root.
 - **Agents cannot run a script that writes `docs/screenshots/`** if they were told not to touch it — leave
   the regeneration to yourself and name which captions changed.

@@ -2,14 +2,22 @@
 // a real second screen that reuses the same list shape rather than inventing anything new. Campaign
 // has its own placeholder screen (the same reuse again) because the campaign menu isn't built yet,
 // and Challenge is dimmed in place on the top-level menu because the run screen isn't either;
-// Settings and Exit are real.
+// Settings and Exit are real. About is the same reuse once more: who made the game, where its code
+// lives, how to contribute, and which build this is.
 //
 // The event loop here is deliberately unlike `watch.ts`'s: a menu has no ticks and nothing animates,
 // so there is no per-frame timer — a redraw happens only in response to input or a resize.
+//
+// It records into the Activity Logs (`src/log/activity.ts`): `session.start` once, `menu.select` for
+// every row picked, and a resize or a failure — so the browser page's log, shared across its screens,
+// shows how a playtester reached the Build Phase.
 
+import { aboutSections } from "../menu/about.ts"
 import { MenuSession } from "../menu/session.ts"
 import type { MenuItem } from "../menu/types.ts"
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../menu/mouse.ts"
+import { activity } from "../log/activity.ts"
+import type { ActivityLog, HostName } from "../log/activity.ts"
 import { composeMenuFrame, MENU_LAYOUT, MENU_SIZE } from "../view/menu.ts"
 import { gateFrame, keysFromChunk } from "../view/index.ts"
 import { AnsiBackend } from "../view/backends/ansi.ts"
@@ -22,19 +30,22 @@ import type { Host } from "./lifecycle.ts"
 import { nextCapability, nextGlyphPack, nextTheme, toggleReducedMotion } from "../settings/types.ts"
 import type { Settings, SettingsStore } from "../settings/index.ts"
 
-/** Four rows; a fifth, choosing a Commander upfront, was considered and rejected: a new player starts the first mission directly. */
+/** Five rows; a sixth, choosing a Commander upfront, was considered and rejected: a new player starts the
+ *  first mission directly. About sits above Exit, so Exit's digit is 5 — the digits stay one sequence in
+ *  walking order, and `q` still leaves from every title screen. */
 export const TOP_LEVEL_ITEMS: readonly MenuItem[] = [
   { id: "campaign", hotkey: "1", label: "Campaign" },
   // Dimmed and already saying why: the run screen hasn't landed, and a disabled item shows its
   // reason in the label a player sees before ever pressing anything, not only after.
   { id: "challenge", hotkey: "2", label: "Challenge (Milestone 11)", disabled: true },
   { id: "settings", hotkey: "3", label: "Settings" },
-  { id: "exit", hotkey: "4", label: "Exit" },
+  { id: "about", hotkey: "4", label: "About" },
+  { id: "exit", hotkey: "5", label: "Exit" },
 ]
 
-/** Campaign's own placeholder screen has exactly one row - there is nothing to configure
- *  yet, only somewhere honest to land instead of a notice on the screen the player just left. */
-const CAMPAIGN_ITEMS: readonly MenuItem[] = [{ id: "back", hotkey: "1", label: "Back" }]
+/** A screen with only words to show — Campaign's placeholder and About — has exactly one row, the way
+ *  back, so Up, Down and Enter alone still leave it, as every menu must allow. */
+const BACK_ONLY_ITEMS: readonly MenuItem[] = [{ id: "back", hotkey: "1", label: "Back" }]
 
 const CAMPAIGN_PLACEHOLDER = "Campaign is not built yet - Milestone 4 adds the campaign menu."
 
@@ -98,9 +109,16 @@ export type MenuOptions = Readonly<{
   host?: Host
   /** Injectable for the same reason `watch.ts`'s is: a test drives quit paths through real code. */
   exit?: (code: number) => void
+  /** The commit this build is — `terminalNexus.ts` reads the checkout, the browser page its build
+   *  stamp — shown on the About screen and recorded at `session.start`. Absent: not known. */
+  buildId?: string
+  /** Where this runs, for the Activity Logs: `web` from the browser playtest page, else `terminal`. */
+  hostName?: HostName
+  /** The Activity Logs this session records into: the program's own unless a test passes another. */
+  activity?: ActivityLog
 }>
 
-type Screen = "top" | "settings" | "campaign"
+type Screen = "top" | "settings" | "campaign" | "about"
 
 /** What each screen's frame says about itself — the one place that grows when a screen is added,
  *  instead of a `screen === "x" ? ... : screen === "y" ? ...` chain repeated at every call site. */
@@ -108,7 +126,9 @@ const SCREEN_INFO: Readonly<Record<Screen, Readonly<{ subtitle: string; showBack
   top: { subtitle: "top-level menu", showBack: false },
   settings: { subtitle: "settings", showBack: true },
   campaign: { subtitle: "campaign", showBack: true },
+  about: { subtitle: "about", showBack: true },
 }
+
 
 export async function runMenu(options: MenuOptions): Promise<number> {
   const { stdout, stdin } = options
@@ -154,6 +174,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
   const session = createTerminalSession(host)
   const dispose = session.dispose
   const exit = options.exit ?? host.exit
+  const record = options.activity ?? activity
 
   const leave = (): void => {
     if (leaving) return
@@ -177,6 +198,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
             glyphPack: settings.glyphPack,
             subtitle: info.subtitle,
             showBack: info.showBack,
+            ...(screen === "about" ? { body: about } : {}),
           },
           settings.capability,
         )
@@ -184,6 +206,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
       backend.present(frame)
     } catch (error) {
       failure = error
+      record.log("session.error", { where: "render", message: messageOf(error) })
       leave()
     }
   }
@@ -194,28 +217,33 @@ export async function runMenu(options: MenuOptions): Promise<number> {
   }
 
   /** Which session is listening on the current screen — the one place this switches, so a caller
-   *  juggling more than one screen (`onData` below) never repeats the same three-way branch. */
+   *  juggling more than one screen (`onData` below) never repeats the same branch. */
   function sessionFor(current: Screen): MenuSession {
     if (current === "top") return topMenu
     if (current === "settings") return settingsMenu
+    if (current === "about") return aboutMenu
     return campaignMenu
   }
 
+  /** A screen's own row handler, with the pick recorded first (`menu.select`) — first, so a row that
+   *  leaves the program (Exit) is in the log too. Esc is not a pick and is not recorded as one. */
+  const picked =
+    (on: Screen, act: (item: MenuItem) => void) =>
+    (item: MenuItem): void => {
+      record.log("menu.select", { screen: on, item: item.id })
+      act(item)
+    }
+
   const topMenu = new MenuSession({
     items: TOP_LEVEL_ITEMS,
-    onActivate: (item: MenuItem) => {
+    onActivate: picked("top", (item) => {
       if (item.id === "exit") {
         leave()
         return
       }
-      if (item.id === "settings") {
+      if (item.id === "settings" || item.id === "campaign" || item.id === "about") {
         notice = null
-        goTo("settings")
-        return
-      }
-      if (item.id === "campaign") {
-        notice = null
-        goTo("campaign")
+        goTo(item.id)
         return
       }
       // Only Challenge reaches here now — a dimmed, disabled row that already says why in its own
@@ -223,22 +251,33 @@ export async function runMenu(options: MenuOptions): Promise<number> {
       // fuller notice.
       notice = STUB_NOTICES[item.id] ?? null
       render()
-    },
+    }),
     onQuit: leave,
   })
 
   const campaignMenu = new MenuSession({
-    items: CAMPAIGN_ITEMS,
-    onActivate: (item: MenuItem) => {
+    items: BACK_ONLY_ITEMS,
+    onActivate: picked("campaign", (item) => {
       if (item.id === "back") goTo("top")
-    },
+    }),
+    onQuit: leave,
+    onBack: () => goTo("top"),
+  })
+
+  // The About screen's words never change while it runs; only the build it names comes from outside.
+  const about = aboutSections(options.buildId)
+  const aboutMenu = new MenuSession({
+    items: BACK_ONLY_ITEMS,
+    onActivate: picked("about", (item) => {
+      if (item.id === "back") goTo("top")
+    }),
     onQuit: leave,
     onBack: () => goTo("top"),
   })
 
   const settingsMenu = new MenuSession({
     items: settingsItems(settings),
-    onActivate: (item: MenuItem) => {
+    onActivate: picked("settings", (item) => {
       if (item.id === "back") {
         goTo("top")
         return
@@ -253,17 +292,31 @@ export async function runMenu(options: MenuOptions): Promise<number> {
           // A failed write is not a reason to crash or block the exit path, but it should not vanish
           // without a trace either — recorded here, reported once the session actually ends.
           settingsSaveError = error
+          record.log("session.error", { where: "save", message: messageOf(error) })
         }),
       )
       render()
-    },
+    }),
     onQuit: leave,
     onBack: () => goTo("top"),
   })
 
-  function onResize(): void {
+  /** Below the 80 x 24 floor the too-small frame stands in for the menu. */
+  function fitToTerminal(): void {
     gated = (stdout.columns ?? 0) < MENU_SIZE.width || (stdout.rows ?? 0) < MENU_SIZE.height
     render()
+  }
+
+  /** The size last recorded: the browser page signals a resize whenever its window changes shape,
+   *  though the terminal it stands in for may not have, and a log should say only what happened. */
+  let loggedSize = `${stdout.columns ?? "?"}x${stdout.rows ?? "?"}`
+  function onResize(): void {
+    const size = `${stdout.columns ?? "?"}x${stdout.rows ?? "?"}`
+    if (size !== loggedSize) {
+      loggedSize = size
+      record.log("session.resize", { columns: stdout.columns ?? null, rows: stdout.rows ?? null })
+    }
+    fitToTerminal()
   }
 
   function onData(data: string | Uint8Array): void {
@@ -296,10 +349,19 @@ export async function runMenu(options: MenuOptions): Promise<number> {
   session.onDispose(() => pendingSave)
   session.onDispose(() => backend.stop())
 
+  record.log("session.start", {
+    screen: "menu",
+    ...(options.buildId === undefined ? {} : { build: options.buildId }),
+    host: options.hostName ?? "terminal",
+    columns: stdout.columns ?? null,
+    rows: stdout.rows ?? null,
+    colours: settings.capability,
+  })
+
   try {
     await backend.start()
     stdout.write(MOUSE_REPORTING_ON)
-    onResize()
+    fitToTerminal()
     stdin.on("data", onData)
     stdout.on("resize", onResize)
     await new Promise<void>((settle) => {
@@ -324,6 +386,11 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     return 1
   }
   return 0
+}
+
+/** An error's own message, for a log entry. */
+function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
 }
 
 export { AnsiBackend }

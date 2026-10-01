@@ -341,4 +341,3 @@ export function laterArrivals(input: MissionPulseInput, openingState: MatchState
   }
   return found
 }
-

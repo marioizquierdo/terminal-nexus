@@ -162,7 +162,13 @@ test("activating Campaign leaves the top-level menu for its own placeholder scre
   // The top-level menu's own other items are gone from the *current* frame - this is a different
   // screen, not a notice pinned to the one the player was already looking at. (`written`'s full
   // history still has them, from the very first frame drawn before any key was pressed at all.)
-  assert.ok(!stdout.lastWrite.includes("[4] Exit"), "the top-level menu's own items are still on screen")
+  // Exit's own word, read from the menu, and first shown to be drawn at all: the hard-coded "[4] Exit"
+  // this used to look for could never be found in the terminal's bytes — a colour change sits between
+  // the hotkey and the label — so its absence proved nothing, and About taking the 4 made that plain.
+  const exitItem = TOP_LEVEL_ITEMS.find((item) => item.id === "exit")
+  assert.ok(exitItem)
+  assert.ok(stdout.written.includes(exitItem!.label), "Exit was never drawn, so its absence proves nothing")
+  assert.ok(!stdout.lastWrite.includes(exitItem!.label), "the top-level menu's own items are still on screen")
 })
 
 test("a non-TTY launch prints one line and no escape sequences, and needs no signal to end", async () => {

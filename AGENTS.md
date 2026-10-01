@@ -52,10 +52,12 @@ change, how milestones and spikes work, the feedback loop with Mario, how a desi
 - **A fork you cannot settle becomes an Experiment or a question.** A choice Mario should feel (a
   timing, a look, whether a feature should exist) goes behind an Experiment he can flip in Settings;
   a choice he must decide goes in the open-questions register with a recommendation. Then keep
-  working on everything the answer does not touch.
+  working on everything the answer does not touch. When the question is *what happened* rather than
+  *which feels right*, declare an Activity Logs event and a filter for it (`src/log/activity.ts`);
+  he exports it from the game menu and pastes it in the pull request. Both are removed once answered.
 - **Write for a person.** Everything Mario reads — pull requests, commit messages, chat — says what
-  the thing is, not where it is filed. No section numbers, no question ids, no project shorthand
-  without a definition.
+  the thing is, not where it is filed. No section numbers, question ids or feedback item numbers, no
+  project shorthand without a definition.
 - **End with a pull request** written with the `pr-description` skill, sized to the change: a code
   block when nothing shows on screen, screenshots for a look, a GIF for motion, a playable page only
   when it must be played.
@@ -76,6 +78,8 @@ IDEA (a sketch). The ones every session needs:
 - **Effects are pure functions of presentation time**, and an effect never replaces an entity's glyph.
 - **Every interactive action is a named command**; keyboard, mouse and a driver are three adapters
   onto one vocabulary, every menu item shows its hotkey and a click activates what it lands on.
+- **A log is a record, never an input.** Events are declared before they are logged (`src/log/`); the
+  kernel and the match layer never log, and nothing the rules decide reads a log.
 - **Cells carry style roles, never colours.** Monochrome ASCII is the floor; 80 × 24 is the
   acceptance target.
 - **Lore is a platform, not a plot.** When clearer ASCII and richer story compete, the Grid wins.
@@ -91,6 +95,7 @@ IDEA (a sketch). The ones every session needs:
 | `src/content/`, `src/scenario/`, `scenarios/` | Content definitions, the map format and the checked-in maps. |
 | `src/match/`, `src/mission/` | The rules layer between the Build Phase and the kernel: openings, Recall, missions and their trigger runner. |
 | `src/build/`, `src/menu/`, `src/settings/` | The Build Phase reducer and adapters, the menu list shape, saved settings; `src/build/all-settings.ts` declares every setting and Experiment once. |
+| `src/log/` | The structured logger and the Activity Logs' declared events and filters. |
 | `src/view/`, `src/cli/`, `src/web/`, `src/playtest/` | Composition, backends, the screen loops, the browser page, the scripted playtest. |
 | `bin/grid.ts`, `bin/terminal-nexus.ts` | The engine tool and the game's entry point. |
 | `tests/` | The suite, run by Node and by Bun. |

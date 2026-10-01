@@ -21,13 +21,13 @@ import { reportInputOf, resolveScenario, scenarioFiles } from "./helpers.ts"
 /** The exact lines printed in docs/milestones/completed/milestone-01-grid-battles.md. */
 const SPEC_LINES: ReadonlyArray<readonly [Parameters<typeof formatLine>[0], string]> = [
   [
-    { tick: 0, level: "INFO", kind: "spawn", subject: "A:trooper#1", detail: "at (2,1)" },
+    { tick: 0, level: "info", kind: "spawn", subject: "A:trooper#1", detail: "at (2,1)" },
     "[0000] INFO  spawn    A:trooper#1   at (2,1)",
   ],
   [
     {
       tick: 18,
-      level: "INFO",
+      level: "info",
       kind: "engage",
       subject: "A:trooper#1",
       object: "B:marksman#9",
@@ -38,7 +38,7 @@ const SPEC_LINES: ReadonlyArray<readonly [Parameters<typeof formatLine>[0], stri
   [
     {
       tick: 21,
-      level: "INFO",
+      level: "info",
       kind: "attack",
       subject: "B:marksman#9",
       object: "A:trooper#1",
@@ -49,7 +49,7 @@ const SPEC_LINES: ReadonlyArray<readonly [Parameters<typeof formatLine>[0], stri
   [
     {
       tick: 56,
-      level: "INFO",
+      level: "info",
       kind: "death",
       subject: "B:marksman#9",
       detail: "at (13,7)  by A:trooper#1",
@@ -59,7 +59,7 @@ const SPEC_LINES: ReadonlyArray<readonly [Parameters<typeof formatLine>[0], stri
   [
     {
       tick: 71,
-      level: "WARN",
+      level: "warn",
       kind: "stuck",
       subject: "A:worker#4",
       detail: "at (3,9)  no legal step for 24 ticks  wants (4,9)",
@@ -76,7 +76,7 @@ test("the line grammar reproduces the documented sample lines", () => {
 
 test("the columns are fixed, so a grep written today keeps working", async () => {
   const resolved = await resolveScenario("citizen-mirror-skirmish.map.json")
-  const lines = buildLog(reportInputOf(resolved), "DEBUG")
+  const lines = buildLog(reportInputOf(resolved), "debug")
   assert.ok(lines.length > 50)
   for (const line of lines) {
     assert.match(line.slice(0, 7), /^\[\d{4}\] $/, `bad tick column: ${line}`)
@@ -101,24 +101,24 @@ test("levels filter as documented, and INFO is the default story", async () => {
   const resolved = await resolveScenario("melee-kill.map.json")
   const input = reportInputOf(resolved)
   const counts = new Map<string, number>()
-  for (const level of ["ERROR", "WARN", "INFO", "DEBUG", "TRACE"] as const) {
+  for (const level of ["error", "warn", "info", "debug", "trace"] as const) {
     counts.set(level, buildLog(input, level).length)
   }
-  const error = counts.get("ERROR") ?? 0
-  const warn = counts.get("WARN") ?? 0
-  const info = counts.get("INFO") ?? 0
-  const debug = counts.get("DEBUG") ?? 0
-  const trace = counts.get("TRACE") ?? 0
+  const error = counts.get("error") ?? 0
+  const warn = counts.get("warn") ?? 0
+  const info = counts.get("info") ?? 0
+  const debug = counts.get("debug") ?? 0
+  const trace = counts.get("trace") ?? 0
   assert.ok(error <= warn && warn <= info && info < debug && debug < trace)
   assert.equal(error, 0, "a clean run produced ERROR lines")
 
-  const infoKinds = new Set(buildLog(input, "INFO").map((line) => line.slice(13, 21).trim()))
+  const infoKinds = new Set(buildLog(input, "info").map((line) => line.slice(13, 21).trim()))
   assert.deepEqual([...infoKinds].sort(), ["attack", "death", "engage", "report", "spawn", "victory"])
 })
 
 test("the INFO log tells the story an agent can assert on", async () => {
   const resolved = await resolveScenario("melee-kill.map.json")
-  const lines = buildLog(reportInputOf(resolved), "INFO")
+  const lines = buildLog(reportInputOf(resolved), "info")
   assert.equal(lines.filter((line) => line.includes(" spawn ")).length, 3)
   assert.ok(lines.some((line) => /INFO  engage +A:trooper#1 +-> B:trooper#2/.test(line)))
   assert.ok(lines.some((line) => /INFO  attack +A:trooper#1 +-> B:trooper#2 +melee  dmg 7/.test(line)))
@@ -162,12 +162,12 @@ test("the summary reports what the documented example reports", async () => {
 
 test("an unknown log level is refused rather than guessed at", () => {
   assert.throws(() => parseLevel("chatty"), /unknown log level/)
-  assert.equal(parseLevel("debug"), "DEBUG")
+  assert.equal(parseLevel("DEBUG"), "debug")
 })
 
 test("the stuck warning fires for an actor that cannot make progress", async () => {
   const resolved = await resolveScenario("hauler-two-tile-gap.map.json")
-  const lines = buildLog(reportInputOf(resolved), "WARN")
+  const lines = buildLog(reportInputOf(resolved), "warn")
   assert.ok(
     lines.some((line) => /WARN  stuck    A:hauler#1/.test(line)),
     "the hauler circling in front of a wall it cannot pass was never reported",
@@ -181,7 +181,7 @@ test("the same gap that stalls a 3x1 hauler hard-stops a 3x3 colossus, not just 
   // it is flush against the gap, so it hard-stops rather than pacing between two tiles the way the
   // hauler fixture's own name implies "gap" fixtures generally do.
   const resolved = await resolveScenario("colossus-two-tile-gap.map.json")
-  const lines = buildLog(reportInputOf(resolved), "WARN")
+  const lines = buildLog(reportInputOf(resolved), "warn")
   assert.ok(
     lines.some((line) => /WARN  stuck    A:colossus#1/.test(line)),
     "the colossus parked in front of a gap it cannot fit through was never reported",
@@ -194,7 +194,7 @@ test("the stuck warning names the actor's own tile, not the one it cannot enter"
   // tile is exactly the one tile the actor is guaranteed *not* to be standing on, so reporting it as
   // a position sent a reader to look at the wrong cell.
   const resolved = await resolveScenario("on-axis-deadlock.map.json")
-  const lines = buildLog(reportInputOf(resolved), "WARN").filter((line) => /no legal step/.test(line))
+  const lines = buildLog(reportInputOf(resolved), "warn").filter((line) => /no legal step/.test(line))
 
   const trooper = lines.find((line) => /A:trooper#1/.test(line))
   assert.ok(trooper !== undefined, "the trooper no longer stalls in front of the rock")
@@ -211,7 +211,7 @@ test("no stuck warning in any scenario reports an impassable tile as a position"
   for (const name of scenarioFiles()) {
     const resolved = await resolveScenario(name)
     const rows = resolved.scenario.terrain
-    for (const line of buildLog(reportInputOf(resolved), "WARN")) {
+    for (const line of buildLog(reportInputOf(resolved), "warn")) {
       const position = /  stuck +\S+ +at \((\d+),(\d+)\)/.exec(line)
       if (position === null) continue
       const x = Number(position[1])

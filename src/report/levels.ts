@@ -1,26 +1,5 @@
-// Log levels. `grid`'s CLI defaults to WARN.
+// Log levels. `grid`'s CLI defaults to warn. One vocabulary for every log in the project
+// (`src/log/levels.ts`); the battle report prints a level in capitals, in its own fixed column.
 
-export type LogLevel = "ERROR" | "WARN" | "INFO" | "DEBUG" | "TRACE"
-
-export const LOG_LEVELS: readonly LogLevel[] = ["ERROR", "WARN", "INFO", "DEBUG", "TRACE"]
-
-const RANK: Readonly<Record<LogLevel, number>> = {
-  ERROR: 0,
-  WARN: 1,
-  INFO: 2,
-  DEBUG: 3,
-  TRACE: 4,
-}
-
-export function includesLevel(configured: LogLevel, line: LogLevel): boolean {
-  return RANK[line] <= RANK[configured]
-}
-
-export function parseLevel(value: string): LogLevel {
-  const upper = value.toUpperCase()
-  const found = LOG_LEVELS.find((level) => level === upper)
-  if (found === undefined) {
-    throw new Error(`unknown log level "${value}"; expected one of ${LOG_LEVELS.join(", ")}`)
-  }
-  return found
-}
+export type { LogLevel } from "../log/levels.ts"
+export { LOG_LEVELS, includesLevel, parseLevel } from "../log/levels.ts"

@@ -196,7 +196,7 @@ async function commandVerify(path: string, args: ParsedArgs): Promise<number> {
         stateHash: run.stateHash,
         eventsHash: run.eventsHash,
       },
-      "INFO",
+      "info",
     ).join("\n")
 
     if (stateHash === null) {

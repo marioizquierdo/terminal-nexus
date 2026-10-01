@@ -1,23 +1,34 @@
 ## What
 
-<!-- Two or three sentences: what the player will notice. Plain English, no section numbers or question ids. -->
-
-## Try it
-
-<!-- The exact command, e.g. `git pull && ./bin/terminal-nexus.ts --spike`, then 3-6 numbered steps
-     with exact keys, each ending in what should happen. -->
+<!-- Two or three sentences: what the player will notice. Plain English: no section numbers, question
+     ids or feedback item numbers. The pr-description skill (.claude/skills/pr-description) has the rules. -->
 
 ## Changes
 
 <!-- Player-visible bullets, "before -> after" where it helps. At most one bullet for internal work. -->
 
-## Screenshots
+## Workflow and tools
 
-<!-- 2-4 images or a GIF, one-line caption each; before above after. Raw URLs pinned to a commit SHA. -->
+<!-- Only when the PR changes skills, scripts or agent instructions: what an agent or Mario can now do.
+     Delete this section if none. -->
+
+## Demo
+
+<!-- Sized to the change: a code block, 1-4 screenshots (before above after), a GIF, or a playable page.
+     Raw image URLs pinned to a commit SHA. With a playable page, two sub-headings:
+     ### On Claude Web Artifact — the page link, then 3-6 numbered steps with exact keys, each ending in
+     what should happen (a demo button can start a step where it needs to be);
+     ### On MacOS — copy-paste commands for a terminal, e.g. `git pull && ./bin/terminal-nexus.ts --build-phase`. -->
 
 ## Decisions
 
-<!-- Each open choice: the question, the default picked, how to flip it. Delete this section if none. -->
+<!-- Each open choice: the question, the default picked, how to flip it (an Experiment in Settings), and
+     the ask to paste the settings export — or an Activity Logs export when the question is what
+     happened. Delete this section if none. -->
+
+## Additional changes
+
+<!-- What rode along: a small follow-up, an opportunistic refactor, a fix found on the way. Delete if none. -->
 
 ## Known issues
 

@@ -28,7 +28,8 @@ For any agent or person about to build or change a screen, a menu, a popup, an e
 - [ ] Lists stop at their ends; taps and holds move them as they move the map cursor; Shift, PageUp/PageDown and Home/End jump to the ends.
 - [ ] Motion explains a change, then the screen is still.
 - [ ] It works under reduced motion, in monochrome, in ASCII, and at 80 × 24.
-- [ ] Anything the owner should feel rather than read about is an Experiment.
+- [ ] Anything the owner should feel rather than read about is an Experiment; an interaction you want
+      reports on logs an event (section 15).
 
 ## 0. The goals
 
@@ -55,8 +56,9 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
    one key, so speed is never required — on the map and in every list alike.
 9. **The world may style its own frame.** A map names its own edge ("even in ascii mode"); the chrome
    stays legible in monochrome and ASCII first.
-10. **Give him something to feel, not something to judge.** A fork ships as an Experiment he can flip,
-    and his exported settings are the answer.
+10. **Give him something to feel, not something to judge — and a way to say what happened.** A fork
+    ships as an Experiment he can flip; an interaction in doubt records what it did; his exports are the
+    answer, and every build can be played from a link (section 15).
 11. **Degrade gracefully, enhance progressively.** A bare terminal — ASCII, monochrome, no mouse, no
     key-up — works; Unicode, truecolour, a pointer and key releases make it better, never required.
 12. **Keep what the player made safe.** Leaving asks, a stray key never loses a plan, undo exists.
@@ -128,8 +130,8 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   right end says what Esc does now**: `menu [esc]` on the menu and while a Pulse plays, `back [esc]` on
   the map, `close [esc]` over a popup — the action quiet, the key in the hotkey colour. A click on it is
   exactly Esc (`escLabel` in `src/build/layout.ts`). (RULE — `tests/build-popups.test.ts`, `tests/build-cancel.test.ts`)
-- **The game menu** is `[s] Settings`, `[c] Controls and hotkeys`, `[r] Restart` (the plan lost, settings
-  and Experiments kept) and `[q] Quit`. **Leaving always asks**; Ctrl+C is the one immediate way out.
+- **The game menu** is `[s] Settings`, `[c] Controls and hotkeys`, `[a] Activity logs`, `[r] Restart` (the
+  plan lost, settings and Experiments kept) and `[q] Quit`. **Leaving always asks**; Ctrl+C is the one immediate way out.
   (RULE — `tests/build-settings.test.ts`, `tests/build-popups.test.ts`, `tests/build-lifecycle.test.ts`)
 
 ## 4. Menu rows
@@ -140,6 +142,12 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   (RULE — `tests/build-start.test.ts`)
 - **Every row shows its hotkey** as `[x]` in the hotkey colour; the bracket carries it in monochrome.
   (RULE — `tests/menu-view.test.ts`, `tests/build-menu.test.ts`)
+- **A title-menu screen that only has words to show** — Campaign's placeholder, About — has one row,
+  `[1] Back`, where the rows start, with its words below it: headings bold, text wrapped at words to a
+  comfortable reading width, a quiet line (the build) dimmed. Esc goes back too, and the highlight comes
+  back to the row that opened it. It keeps a Back row, unlike a Build Phase popup, because the title menu
+  has no top bar naming Esc and every action must be reachable with Up, Down and Enter alone.
+  (RULE — `tests/menu-about-screen.test.ts`, `tests/menu-campaign-screen.test.ts`)
 - **Two states, and only two**:
   - **highlighted** — an inverse bar across the row, in one colour, only while the menu has the keyboard;
   - **active** — its action is under way: it keeps its own hotkey, turns the hotkey colour, and a single
@@ -162,7 +170,8 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
 ## 5. Moving in lists
 
 **List movement** is the map cursor's movement applied to rows, in every list — the Build Phase menu,
-the Nexus powers, the game menu, Settings, the export, the Controls page, the title screen's menu.
+the Nexus powers, the game menu, Settings, the export, the Controls page, the Activity logs window, the
+title screen's menu.
 
 - **No wrapping**: a list stops at its first and last row; holding Down arrives at the bottom and stays.
   Up on the first row and Down on the last do nothing, without a flicker — a held key would otherwise
@@ -315,7 +324,7 @@ uses it rather than a new blend.
 - **A choice closes its popup**: a Nexus pick returns the player to where they were; the bottom line
   and the menu say what it did. (RULE — `tests/build-nexus.test.ts`)
 - **A popup that belongs to a menu row keeps that row active behind it** (Nexus, Battle Round); one that
-  belongs to none (game menu, Settings, export, Controls) leaves the menu unlit.
+  belongs to none (game menu, Settings, export, Controls, Activity logs) leaves the menu unlit.
   (RULE — `tests/build-menu.test.ts`)
 - **A confirmation is a screen, not a question**: its title says what is about to happen (`Battle
   Round 1`), its body announces it — data a mission can write per round (`BuildContext.roundText`), one
@@ -355,9 +364,16 @@ uses it rather than a new blend.
 - **A setting row** is its name and its value between `<` and `>` at the right. Left and Right change it
   (Enter/Space is Right); a choice comes round, a number stops at its ends, and the bottom line says
   every change. By mouse the value box's left half is Left and its right half Right, wide enough for a
-  finger (`settingColumns`). (RULE — `tests/build-popups.test.ts`, `tests/build-settings.test.ts`)
+  finger (`settingColumns`). A popup with long values may widen the box, never so far that a name loses
+  its first eight columns. (RULE — `tests/build-popups.test.ts`, `tests/build-settings.test.ts`,
+  `tests/build-activity.test.ts`)
+- **A list whose length changes fills the room** (`PopupScroll.fill`): blank below its last row, so the
+  popup's height and every row above the list stay put when the list grows or shrinks. (RULE —
+  `tests/build-activity.test.ts`)
+- **A line of a list can be clicked to highlight it**, so a phone can read in the note what the list
+  cuts short. A note may hold paragraphs, each on its own line. (RULE — `tests/build-activity.test.ts`)
 
-### 10.3 Settings, the export and the Controls page
+### 10.3 Settings, the export, the Controls page and the Activity logs
 
 - **Settings**: the game menu's `[s]`, or `d` straight to the first Experiment. One scrolling list in
   **titled sections with a blank line before each** — Display (the player's own: background, colour
@@ -376,6 +392,16 @@ uses it rather than a new blend.
 - **The Controls and hotkeys page** (`[c]` in the game menu, or `?`): every key and click grouped by where
   the player is, from one table (`controlsPage` in `src/build/help.ts`), so a new key is one line there.
   (RULE — `tests/build-help.test.ts`)
+- **The Activity logs window** (`[a]` in the game menu; `a` closes it again) shows what the game
+  recorded, newest first: a Filter row whose value Left and Right step through the filters (it comes
+  round), `[e] Export logs`, then the list — one line per entry exactly as an export writes it, detail
+  quieter, warnings and errors bold — and under a rule what the highlighted row is for: the filter's
+  question, what an export holds, or what the entry's event means and every detail of it. **The list
+  holds still while it is read**: a copy taken when the window opens, so new events never shift its rows
+  and a full log never drops them; opening it again shows what came since. **Export** sends the filter's
+  entries, oldest first, through the same adapter as the settings export (the clipboard and
+  `activity-export.txt`; on the playtest page, its own box), and a message says how many went where.
+  (RULE — `tests/build-activity.test.ts`)
 
 ## 11. The bottom line
 
@@ -503,7 +529,26 @@ uses it rather than a new blend.
   is that round's number, in the mission's words for it.
   (RULE — `tests/mission-loop.test.ts`, `tests/build-start.test.ts`)
 
-## 15. Experiments and tuned values
+## 15. Feedback loops
+
+**The game is built to be judged by playing it.** Every pull request ends with a build the owner — and,
+later, friends he shares a link with — can play on a laptop or a phone, and the game carries the tools
+for the answer to come back precise: what to feel, what happened, which build. Feedback itself travels
+the ordinary way — words, screenshots and voice in the pull request or the session. Three tools, all
+sized per pull request by the agent asking:
+
+- **Experiments** ask *which feels right?* — a setting he flips (15.1), returned by the settings export.
+- **Activity Logs** answer *what happened?* — events the game records, filtered and exported from the
+  game menu (15.2).
+- **The claude.ai playtest page** is where both meet: the build is a link, both exports land in text
+  boxes under the screen, and a demo button opens the game exactly where the question is (15.3).
+
+The determinism underneath — a seeded kernel, a Build Phase with no clock, every input a named command,
+the build stamped on every export — is what makes a pasted export reproducible with `--settings` and
+`--keys`. Keep it that way.
+
+### 15.1 Experiments and tuned values
+
 
 - **Every setting is declared once, with its tier** (`src/build/all-settings.ts`): **player** —
   shown in Settings and saved; **experiment** — shown for the owner's playtests, never saved, written
@@ -526,9 +571,41 @@ uses it rather than a new blend.
   exports. (RULE for the old names — `tests/build-all-settings.test.ts`)
 - **Never copy a tuned number into prose**; point at the setting.
 
+### 15.2 Activity Logs
+
+- **One structured logger** (`src/log/`): every event is declared before it is logged — its name, its
+  default level (error, warn, info, debug), a sentence on what it means, and each property's type and
+  meaning — so the schema in `src/log/activity.ts` is the documentation, and `activity.log(event, props)`
+  accepts only what it declares. Entries are kept in memory, the oldest dropped past a limit.
+  (RULE — `tests/log.test.ts`)
+- **A log is a record, never an input**: the kernel and the match layer never reach it, and nothing the
+  rules decide reads one. (RULE — `tests/architecture.test.ts`)
+- **The Activity logs window** — the game menu's `[a]` (10.3) — lists them newest first under a filter,
+  shows the highlighted one's every detail, and exports what the filter shows (oldest first) to paste
+  into a pull request. It is deliberately plain. `node scripts/playtest.mjs … --activity [filter]`
+  prints what a scripted run recorded.
+- **An agent asking about an interaction** adds the event where it happens (never in the kernel), and a
+  filter for its question at the top of `ACTIVITY_FILTERS` (the window opens on the first), then asks in
+  the pull request: "play it, open Esc → Activity logs, export, paste it here". Remove both once
+  answered, as an Experiment is removed.
+
+### 15.3 The playtest page
+
+- **The build is a link**: the browser playtest page published as a private claude.ai page, the same
+  screen loops as the terminal. Tools *around* the screen are fair game there; the game's own screen
+  never changes for it.
+- **Exports land beside the screen**: the settings and the activity logs each fill a text box with a Copy
+  button, so a phone can paste them. (RULE — `tests/build-activity.test.ts`, `tests/web.test.ts`)
+- **Demo buttons open the game where the question is**: `#keys=` and `#settings=` in the address, and
+  buttons for the pull request's demos (`bun scripts/build-web.mjs --demos <file>`; a bad key script
+  fails the build). Each demo names what to try.
+
 ## 16. Words
 
 - **Plain words on screen**, no internal ids; each Nexus named for its faction ("Citizen Nexus").
+- **The build is named the same way everywhere it appears** — its commit, with `+changes` for a build
+  made from uncommitted edits — on About (`Build: <commit>`), at the top of both exports, and in the
+  playtest page's header.
 - **Keys as the rows write them** — `[enter]`, `[esc]`, `[e]` — and arrows, up/down and left/right as
   plain words. For a way back, the action first, then the key (`back [esc]`).
 - **Names**: the menu's acknowledgement is *pressed* in code (`ack`, `PRESSED_LOOK`) and a *blink* on screen; the
@@ -540,6 +617,7 @@ uses it rather than a new blend.
 ## Where the rules came from
 
 The owner's words, item by item, with what was done about each, newest first:
+[`2026-10-01-feedback-loops`](../history/feedback/2026-10-01-feedback-loops.md),
 [`2026-09-30-menu-spike-round-2`](../history/feedback/2026-09-30-menu-spike-round-2.md),
 [`2026-09-30-menu-spike`](../history/feedback/2026-09-30-menu-spike.md),
 [`2026-09-29-pr48-round-3`](../history/feedback/2026-09-29-pr48-round-3.md),

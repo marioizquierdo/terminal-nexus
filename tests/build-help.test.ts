@@ -154,6 +154,10 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
     [(side) => keys(side, "?"), /^Every key and click, by where you are\. Up\/down scroll\. \[esc\] closes\.$/],
     [(side) => keys(side, ESC, "c"), /^Every key and click, by where you are\. Up\/down scroll\. \[esc\] goes back\.$/],
   ],
+  "activity-logs": [
+    [(side) => keys(side, ESC, "a"), /^Left\/right change the filter, \[e\] exports, up\/down read\. \[esc\] goes back\.$/],
+    [(side) => side.build.run([{ kind: "open-activity-logs" }]), /^Left\/right change the filter, \[e\] exports, up\/down read\. \[esc\] closes\.$/],
+  ],
   committed: [[(side) => keys(side, "n", "1", "s", "s"), /^The plan is locked in\. \[esc\] opens the menu\.$/]],
   "menu-mouse": [
     [
@@ -201,11 +205,12 @@ test("a hint for every situation the hint list names, each one line that fits th
 // --- The Controls and hotkeys page -------------------------------------------------------------------
 
 test("the game menu lists [c] Controls and hotkeys right after Settings", () => {
-  assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "restart", "quit"])
+  // Activity logs sits between Controls and Restart.
+  assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "activity", "restart", "quit"])
   const side = buildSide()
   keys(side, ESC)
   const text = screenText(side)
-  assert.match(text, /\[s\] Settings[\s\S]*\[c\] Controls and hotkeys[\s\S]*\[r\] Restart/)
+  assert.match(text, /\[s\] Settings[\s\S]*\[c\] Controls and hotkeys[\s\S]*\[a\] Activity logs[\s\S]*\[r\] Restart/)
   assert.match(text, new RegExp(CONTROLS_DESCRIPTION))
 })
 

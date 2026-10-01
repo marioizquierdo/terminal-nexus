@@ -5,6 +5,13 @@ it is done.*
 
 ## Waiting on Mario
 
+- **Play the Activity logs** (pull request 51): on the playtest page tap the "Activity logs" demo, press
+  Esc then `a`, change the filter, press `e`, and paste the export into the pull request, so a real
+  session's export can be checked. Also look at the About screen (Menu, then `4`).
+- **Turn on GitHub Discussions** (repository Settings → General → Features) with an Announcements
+  category, as the place for public updates; the About screen then links to it (`src/menu/about.ts` has
+  the slot). Why this and not Discord is in
+  [`../history/reports/2026-10-01-feedback-pipeline-parked.md`](../history/reports/2026-10-01-feedback-pipeline-parked.md).
 - **Play step 6B**: PERIMETER, three rounds, Enter between them. Press `d` during a round: **Next round**
   (key / auto — whether the result waits for Enter or the next Build Phase begins on its own) and
   **Incoming wave** (shown / hidden — whether the Build Phase shows the next wave, see-through, with its

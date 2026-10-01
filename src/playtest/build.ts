@@ -24,6 +24,8 @@ import { DEFAULT_SETTINGS } from "../settings/types.ts"
 import type { Settings } from "../settings/types.ts"
 import type { GlyphPack } from "../view/theme.ts"
 import type { Move } from "../build/motion.ts"
+import type { ActivityLog } from "../log/activity.ts"
+import { createActivityLog } from "../log/activity.ts"
 import type { PlaytestStep } from "./keys.ts"
 import { UNTIMED_GAP_MS, deliverStep } from "./deliver.ts"
 
@@ -69,6 +71,13 @@ export type BuildPlaytest = Readonly<{
   context: BuildContext
   layout: BuildLayout
   frames: readonly PlaytestFrame[]
+  /**
+   * What the run recorded in the Activity Logs — a log of its own, on the script's
+   * clock, so its times are the steps' and two runs of one script log the same lines. The Activity logs
+   * window shows it, and `scripts/playtest.mjs --activity` prints its export, so an agent sees what a
+   * flow logged before asking a playtester to export it.
+   */
+  activity: ActivityLog
   /** Set when the script left the screen (`q`, or Esc with nothing armed); the steps after that one
    *  were not run, because there is no screen left for them to reach. */
   ended: Readonly<{ by: "quit"; atStep: number; skipped: number }> | null
@@ -90,10 +99,18 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     ...(options.capability === undefined ? {} : { capability: options.capability }),
     ...(options.glyphPack === undefined ? {} : { glyphPack: options.glyphPack }),
   }
+  // A clock of the script's own: each step arrives `afterMs` after the one before, or a second after it
+  // when the script does not say — long enough that every untimed key is a tap that starts over, so taps
+  // only speed up, and a key only reads as held, where a script times its steps (`Right~250*3`). The
+  // run's Activity Logs read it too, so a line's time is its step's.
+  let clock = 0
+  const activity = createActivityLog(() => clock)
   const context: BuildContext = {
     ...(options.context ?? starterContext()),
     settings,
     exportDestination: "Not copied anywhere: this is a scripted playtest.",
+    activity,
+    activityExportDestination: "Not copied anywhere: this is a scripted playtest.",
     ...(options.experiments === undefined ? {} : { experiments: options.experiments }),
   }
   const terminal = { columns: options.columns ?? 80, rows: options.rows ?? 24 }
@@ -113,6 +130,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
       leftBy = "quit"
     },
     startPulse,
+    activity,
     nextRound,
   })
   build.setKeyReleases(options.keyReleases ?? options.steps.some((step) => step.kind === "key" && step.phase !== undefined))
@@ -140,10 +158,6 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   const frames: PlaytestFrame[] = [{ index: 0, label: "start", bytes: "", state: build.state, frame: compose(), moveKind: null }]
   let ended: BuildPlaytest["ended"] = null
 
-  // A clock of the script's own: each step arrives `afterMs` after the one before, or a second after it
-  // when the script does not say — long enough that every untimed key is a tap that starts over, so taps
-  // only speed up, and a key only reads as held, where a script times its steps (`Right~250*3`).
-  let clock = 0
   for (const [position, step] of options.steps.entries()) {
     clock += step.afterMs ?? UNTIMED_GAP_MS
     const moveBefore = build.lastMove
@@ -158,5 +172,5 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     }
   }
 
-  return { context: build.round, layout, frames, ended }
+  return { context: build.round, layout, frames, ended, activity }
 }

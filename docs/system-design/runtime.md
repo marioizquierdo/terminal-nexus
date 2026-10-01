@@ -1,6 +1,6 @@
 # Terminal Nexus — runtime and tools
 
-_The terminal library and runtime choices, the terminal lifecycle, the delivery ladder, the engine tool and modding seams, and scaling; every unmarked statement is GUIDANCE._
+_The terminal library and runtime choices, the terminal lifecycle, the delivery ladder, logs, the engine tool and modding seams, and scaling; every unmarked statement is GUIDANCE._
 
 ## 1. Runtime and terminal direction
 
@@ -62,10 +62,32 @@ code or test holds it).
 (`bun scripts/build-web.mjs`), and it must run the terminal's own screen loops (the menu, the Build
 Phase, Pulse playback) handed a stand-in terminal: it converts frames to pixels, taps and keys to
 terminal bytes, and settings to browser storage, and decides nothing about what the game shows or
-does. A terminal at 80 × 24 stays the acceptance target; the page never is one. What a host would have
-to provide to run the game elsewhere is in [`portability.md`](portability.md).
+does. A terminal at 80 × 24 stays the acceptance target; the page never is one. Tools **around** the
+screen are the page's to add because they serve the feedback loop (see [`ui-patterns.md`](ui-patterns.md)):
+text boxes holding the settings and Activity Logs exports, and demo buttons that start the Build Phase from
+a key script with given settings. The game's own screen and behaviour stay the terminal's. What a host
+would have to provide to run the game elsewhere is in [`portability.md`](portability.md).
 
-## 4. Tools and modding
+## 4. Logs
+
+A log is a record of what happened, for the people and agents who read it afterwards — never an input.
+One structured shape serves every log (`src/log/`). RULE — `tests/log.test.ts`.
+
+- **An event is declared before it is logged**: its name, its default level (error, warn, info, debug,
+  trace), a sentence on what it means, and each property's type and meaning. An entry is a sequence
+  number, a timestamp, a level, the event and its plain JSON properties (string, number, boolean,
+  null), kept in memory with the oldest dropped past a limit. A logger takes its clock as an argument,
+  and logging never throws.
+- **The kernel and the match layer never log, and nothing the rules decide reads a log.** RULE —
+  `tests/architecture.test.ts`. The kernel has no clock; its record is its ordered events
+  ([`pulse.md`](pulse.md)), from which `grid`'s battle report is derived afterwards, at the same levels.
+- **The Activity Logs** record what a player did and what the game answered — commands, refusals,
+  placements, settings, the Pulse's start and result, errors — from the shells and the Build Phase's
+  session, never from inside a reducer. The Build Phase's state reads them only to show them in the
+  Activity logs window. Which events exist is GUIDANCE: an agent adds one for the interaction a pull
+  request asks about and removes it once answered ([`ui-patterns.md`](ui-patterns.md), Feedback loops).
+
+## 5. Tools and modding
 
 First-party development uses explicit definitions and fast tools: maps as inspectable ASCII arrays
 plus metadata; armies, units, structures, upgrades, themes and glyphs as validated TypeScript; effects

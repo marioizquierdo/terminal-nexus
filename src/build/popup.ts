@@ -1,9 +1,10 @@
 // The Build Phase's popups — one shape for all of them: the Nexus powers, the Battle Round
-// confirmation, the game menu (Settings, Controls, Restart, Quit), Settings with its Experiments, the
-// export, a message, and the Controls and hotkeys page. Extracted when there were three real uses
-// (AGENTS.md: "extract a framework only after two real uses reveal the boundary"); Settings, the
-// fourth, added the one row the first three had no use for: a setting whose value Left and Right
-// change. The message is the shape with nothing to choose: a title and text.
+// confirmation, the game menu (Settings, Controls, Activity logs, Restart, Quit), Settings with its
+// Experiments, the export, a message, the Controls and hotkeys page, and the Activity logs window.
+// Extracted when there were three real uses (AGENTS.md: "extract a framework only after two real uses
+// reveal the boundary"); Settings, the fourth, added the one row the first three had no use for: a
+// setting whose value Left and Right change. The message is the shape with nothing to choose: a title
+// and text.
 //
 // A popup is **data**: a title and a list of rows, some of them options that name the command a click
 // on them sends, and at most one run of rows that scrolls. `popupSpec` derives it from the state;
@@ -15,12 +16,27 @@
 // while a popup is open — and is its click target, so a popup's own border carries only its title and,
 // beside a list that overflows, its scroll bar.
 
+import { wrapWords } from "../view/draw.ts"
 import type { Section } from "./all-settings.ts"
 import { SECTIONS, SHOWN_SETTINGS, setting, shownSetting } from "./all-settings.ts"
 import type { BuildLayout } from "./layout.ts"
 import { START_KEY } from "./layout.ts"
 import { CONTROLS_TITLE, controlsPage } from "./help.ts"
-import { CONTROLS_DESCRIPTION, GAME_MENU_ROWS, RESTART_DESCRIPTION, SETTINGS_ROWS, sectionOfRow } from "./settings.ts"
+import { ACTIVITY_DESCRIPTION, CONTROLS_DESCRIPTION, GAME_MENU_ROWS, RESTART_DESCRIPTION, SETTINGS_ROWS, sectionOfRow } from "./settings.ts"
+import { ACTIVITY_FILTERS } from "../log/activity.ts"
+import {
+  ACTIVITY_EMPTY,
+  ACTIVITY_EXPORT_ROW,
+  ACTIVITY_FILTER_ROW,
+  ACTIVITY_FIRST_ENTRY_ROW,
+  ACTIVITY_NOTE_LINES,
+  activityDetail,
+  activityFilter,
+  activityLine,
+  exportNote,
+  isDetail,
+  shownEntries,
+} from "./activity.ts"
 import type { BuildContext, BuildState } from "./state.ts"
 import { exportText, nexusPowers } from "./state.ts"
 import type { BuildCommand, PopupMessage } from "./types.ts"
@@ -30,8 +46,18 @@ export type PopupRow =
   | Readonly<{ kind: "heading"; text: string }>
   /** A line of text. `code` marks a line of the settings export: drawn as it is, except that a
    *  `# comment` at its end is left off when the whole line does not fit; `highlighted` is the
-   *  export's own highlight, which Up/Down move to scroll it. */
-  | Readonly<{ kind: "text"; text: string; muted?: boolean; strong?: boolean; code?: boolean; highlighted?: boolean }>
+   *  export's own highlight, which Up/Down move to scroll it. `select`, when given, is what a click on
+   *  the line sends — an Activity logs entry's, which highlights it so its detail shows (on a phone a
+   *  tap is the way to read a line the list cuts short). */
+  | Readonly<{
+      kind: "text"
+      text: string
+      muted?: boolean
+      strong?: boolean
+      code?: boolean
+      highlighted?: boolean
+      select?: BuildCommand
+    }>
   /** A choice: its hotkey and label, what clicking it sends, and whether the keyboard is on it. An
    *  option with a description takes a second row for it, and either row is its click target. */
   | Readonly<{
@@ -76,15 +102,24 @@ export type PopupRow =
  * one place to be: the right border beside it. `from` and `to` (exclusive) index `rows`; `highlight`
  * is the row the keyboard is on, which is always kept in view; `select` is the command that highlights
  * the scrolling row at `index` (0 is `rows[from]`) — what a click on the scroll bar sends.
+ *
+ * `fill` makes the list take all the room the pane has, blank below its last row when it is short, so
+ * the popup's height — and every row above the list — stays put however long the list is: the Activity
+ * logs window, whose list changes length with its filter, and whose Filter row a mouse player clicks
+ * again and again (the interface rule: don't move things under the player).
  */
 export type PopupScroll = Readonly<{
   from: number
   to: number
   highlight: number
   select: (index: number) => BuildCommand
+  fill?: boolean
 }>
 
-export type PopupSpec = Readonly<{ title: string; rows: readonly PopupRow[]; scroll?: PopupScroll }>
+/** A popup as data. `valueWidth` widens its setting rows' `< value >` box past the usual twelve columns
+ *  (`VALUE_WIDTH`), for values longer than a number and its unit — the Activity logs window's filter
+ *  names. */
+export type PopupSpec = Readonly<{ title: string; rows: readonly PopupRow[]; scroll?: PopupScroll; valueWidth?: number }>
 
 /** How many lines the Settings popup keeps under its list, below a line across the popup, for what
  *  the highlighted row is for. Every question fits in this many at the narrowest popup (a test holds
@@ -164,7 +199,7 @@ function settingsSpec(state: BuildState): PopupSpec {
   }
 }
 
-/** The game menu: Settings, Controls and hotkeys, Restart, Quit. Every row is an option, and the highlight is `GAME_MENU_ROWS`'s
+/** The game menu: Settings, Controls and hotkeys, Activity logs, Restart, Quit. Every row is an option, and the highlight is `GAME_MENU_ROWS`'s
  *  index. No row goes back to the game: Esc, `x`, the top bar's `close [esc]` and a click outside
  *  do, as for every popup. */
 function menuSpec(state: BuildState): PopupSpec {
@@ -188,6 +223,14 @@ function menuSpec(state: BuildState): PopupSpec {
         command: { kind: "open-controls" },
         highlighted: on("controls"),
         description: CONTROLS_DESCRIPTION,
+      },
+      {
+        kind: "option",
+        hotkey: "a",
+        label: "Activity logs",
+        command: { kind: "open-activity-logs" },
+        highlighted: on("activity"),
+        description: ACTIVITY_DESCRIPTION,
       },
       {
         kind: "option",
@@ -266,6 +309,81 @@ function controlsSpec(state: BuildState): PopupSpec {
 }
 
 /**
+ * The Activity logs window, in the one popup shape: its position beside the title, as Settings has; a Filter row whose
+ * value Left and Right step through `ACTIVITY_FILTERS`; `[e] Export logs`; below a line, the one
+ * scrolling list — the entries the filter shows, newest first, a line each, cut at the popup's edge,
+ * detail quieter and warnings and errors bold; and below another line what the highlighted row is for:
+ * the filter's question, what the export would hold, or an entry's whole line and what its event means
+ * (from the schema), in a fixed number of lines so the popup keeps its height. The list is the entries
+ * frozen when the window opened (`src/build/activity.ts`).
+ */
+function activitySpec(context: BuildContext, state: BuildState): PopupSpec {
+  const filter = activityFilter(state)
+  const entries = shownEntries(state)
+  const highlight = state.popupHighlight
+  const select = (row: number): BuildCommand => ({ kind: "select-row", row })
+  const rows: PopupRow[] = [
+    {
+      kind: "setting",
+      label: "Filter",
+      value: filter.name,
+      highlighted: highlight === ACTIVITY_FILTER_ROW,
+      decrease: { kind: "activity-filter", step: -1 },
+      increase: { kind: "activity-filter", step: 1 },
+      select: select(ACTIVITY_FILTER_ROW),
+    },
+    {
+      kind: "option",
+      hotkey: "e",
+      label: "Export logs",
+      command: { kind: "export-activity" },
+      highlighted: highlight === ACTIVITY_EXPORT_ROW,
+    },
+    { kind: "rule" },
+  ]
+  const from = rows.length
+  if (entries.length === 0) rows.push({ kind: "text", text: ACTIVITY_EMPTY, muted: true })
+  entries.forEach((entry, index) => {
+    const row = ACTIVITY_FIRST_ENTRY_ROW + index
+    rows.push({
+      kind: "text",
+      text: activityLine(context, entry),
+      ...(isDetail(entry.level) ? { muted: true } : {}),
+      ...(entry.level === "error" || entry.level === "warn" ? { strong: true } : {}),
+      ...(row === highlight ? { highlighted: true } : {}),
+      select: select(row),
+    })
+  })
+  const to = rows.length
+  const entry = entries[highlight - ACTIVITY_FIRST_ENTRY_ROW]
+  const note =
+    highlight === ACTIVITY_FILTER_ROW
+      ? filter.question
+      : highlight === ACTIVITY_EXPORT_ROW
+        ? exportNote(entries.length)
+        : entry === undefined
+          ? ""
+          : activityDetail(entry)
+  rows.push({ kind: "rule" }, { kind: "note", text: note, lines: ACTIVITY_NOTE_LINES })
+  return {
+    title: `ACTIVITY LOGS (${highlight + 1}/${ACTIVITY_FIRST_ENTRY_ROW + entries.length})`,
+    rows,
+    scroll: {
+      from,
+      to,
+      // On the filter or the export the window shows the newest entries; in the list it follows the
+      // highlight. A click on the scroll bar highlights the entry it brings into view.
+      highlight: from + Math.max(0, highlight - ACTIVITY_FIRST_ENTRY_ROW),
+      select: (index) => select(ACTIVITY_FIRST_ENTRY_ROW + index),
+      // The list changes length with the filter; the Filter row above it must not move under the mouse.
+      fill: true,
+    },
+    // Room in the value box for the longest filter's name: an agent names a filter for its question.
+    valueWidth: Math.max(VALUE_WIDTH, ...ACTIVITY_FILTERS.map((option) => option.name.length + 4)),
+  }
+}
+
+/**
  * A message popup: a title and its text, wrapped to the popup's width in as many lines as it needs,
  * and nothing to choose. It holds the keyboard like any popup; Esc (or `x`, or a right click) and a
  * click outside it close it, and nothing else does.
@@ -340,6 +458,8 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
       return state.message === null ? null : messageSpec(state.message)
     case "controls":
       return controlsSpec(state)
+    case "activity-logs":
+      return activitySpec(context, state)
     default:
       return null
   }
@@ -375,28 +495,17 @@ export type PlacedPopup = Readonly<{
  *  the Grid pane it sits over, less a column for its shadow. */
 const POPUP_WIDTH = 52
 
-/** Splits text into lines of at most `limit` glyphs, breaking between words — never inside one, unless
- *  a single word is longer than the whole line. */
-export function wrapWords(value: string, limit: number): readonly string[] {
-  const lines: string[] = []
-  let current = ""
-  for (const word of value.split(" ").filter((part) => part !== "")) {
-    const grown = current === "" ? word : `${current} ${word}`
-    if (grown.length <= limit || current === "") current = grown
-    else {
-      lines.push(current)
-      current = word
-    }
-  }
-  if (current !== "") lines.push(current)
-  return lines
-}
+// Splitting text at words lives with the drawing helpers (`src/view/draw.ts`), where the title menu and
+// the Pulse read it without reaching the Build Phase; it is re-exported here for the popups' own callers.
+export { wrapWords } from "../view/draw.ts"
 
 /** The rows one spec row takes, as the text each of them draws (a note's wrapped lines). */
 function linesOf(entry: PopupRow, textLimit: number): readonly (string | undefined)[] {
   if (entry.kind === "option" && entry.description !== undefined) return [undefined, undefined]
   if (entry.kind === "note") {
-    const wrapped = wrapWords(entry.text, textLimit)
+    // A line break starts a new paragraph on a line of its own: an Activity logs entry's line, then
+    // what its event means.
+    const wrapped = entry.text.split("\n").flatMap((paragraph) => wrapWords(paragraph, textLimit))
     return Array.from({ length: entry.lines ?? Math.max(1, wrapped.length) }, (_, index) => wrapped[index] ?? "")
   }
   return [undefined]
@@ -448,8 +557,10 @@ export function placePopup(layout: BuildLayout, spec: PopupSpec): PlacedPopup {
     return position >= window.offset && position < window.offset + window.visible
   }
   const lines = spec.rows.reduce((count, row, index) => count + (shown(index) ? linesOf(row, textLimit).length : 0), 0)
+  // A list that fills the room is followed by blank lines up to it, so the popup keeps its height.
+  const fill = scroll?.fill === true ? Math.max(0, room - lines) : 0
   // Border, the rows, a blank row of padding, border.
-  const height = lines + 3
+  const height = lines + fill + 3
   const left = layout.gridBox.left + 1 + Math.floor((paneWidth - width - 1) / 2)
   const top = Math.max(layout.offset.row + 1, layout.gridBox.top + 1 + Math.floor((paneHeight - height - 1) / 2))
   const right = left + width - 1
@@ -465,6 +576,7 @@ export function placePopup(layout: BuildLayout, spec: PopupSpec): PlacedPopup {
       placed.push({ row, spec: entry, secondLine: line > 0, ...(text === undefined ? {} : { text }) })
       row += 1
     }
+    if (scroll !== undefined && index === scroll.to - 1) row += fill
   }
   const first = section[0]
   const last = section[section.length - 1]
@@ -512,6 +624,7 @@ export function popupHitAt(placed: PlacedPopup, column: number, row: number): Po
   if (column < placed.textColumn || column >= placed.textColumn + placed.textLimit) return { kind: "none" }
   const hit = placed.rows.find((candidate) => candidate.row === row)
   if (hit !== undefined && hit.spec.kind === "option") return { kind: "command", command: hit.spec.command }
+  if (hit !== undefined && hit.spec.kind === "text" && hit.spec.select !== undefined) return { kind: "command", command: hit.spec.select }
   if (hit !== undefined && hit.spec.kind === "setting") {
     const columns = settingColumns(placed)
     if (column >= columns.valueFrom && column < columns.valueMiddle) return { kind: "command", command: hit.spec.decrease }
@@ -529,7 +642,8 @@ const VALUE_WIDTH = 12
  * end — as frame columns, the same for every setting row in a popup. Read by the composer to draw them
  * and by `popupHitAt` to hit-test them. The value box is split down the middle: the left half is the
  * decrease target and the right half the increase one, each six columns wide, so a finger on a phone
- * can hit it (the browser playtest page).
+ * can hit it (the browser playtest page). A popup may widen the box for longer values
+ * (`PopupSpec.valueWidth`), never so far that its rows' names lose their first eight columns.
  */
 export function settingColumns(placed: PlacedPopup): Readonly<{
   labelLimit: number
@@ -537,12 +651,13 @@ export function settingColumns(placed: PlacedPopup): Readonly<{
   valueMiddle: number
   valueTo: number
 }> {
+  const width = Math.max(VALUE_WIDTH, Math.min(placed.spec.valueWidth ?? VALUE_WIDTH, placed.textLimit - 8))
   const valueTo = placed.textColumn + placed.textLimit - 1
-  const valueFrom = valueTo - VALUE_WIDTH + 1
+  const valueFrom = valueTo - width + 1
   return {
     labelLimit: valueFrom - 1 - placed.textColumn,
     valueFrom,
-    valueMiddle: valueFrom + VALUE_WIDTH / 2,
+    valueMiddle: valueFrom + Math.floor(width / 2),
     valueTo,
   }
 }

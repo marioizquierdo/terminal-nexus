@@ -103,8 +103,9 @@ Phase screen without a terminal and keeps what the screen showed after every key
 in `.playtest/<name>.txt`, PNGs on request (`--png final`, `--png all`), an animated GIF of the whole
 sequence (`--gif`). Keys go through the real keyboard and mouse adapters as the bytes a terminal
 sends, one at a time, and every frame comes from the composer the live screen uses, so there is no
-capture race. `--settings "<text>"` starts from a pasted export; `--size`, `--capability`, `--theme`
-and `--glyphs` set the terminal. The key names (`Down`, `S-Left`, `Name*N`, `Name~MS`, `wait~MS`,
+capture race. `--settings "<text>"` starts from a pasted export; `--activity [filter]` prints what the
+run recorded in the Activity Logs, as the game's window would export it; `--size`, `--capability`,
+`--theme` and `--glyphs` set the terminal. The key names (`Down`, `S-Left`, `Name*N`, `Name~MS`, `wait~MS`,
 `click:X,Y`, `Right/release`) are at the top of `src/playtest/keys.ts`.
 
 ```bash
@@ -132,13 +133,21 @@ key bar for the keys a phone lacks. It is a development tool, never a platform: 
 anything the page reaches imports a Node-only module, and a terminal at 80 × 24 stays the acceptance
 target. It cannot show raw keyboard mode, terminal cleanup, signals, a real terminal's own key
 encodings, the OpenTUI backend or frame timing. Published as a private claude.ai page on a pull
-request only when a change must be played to be judged.
+request only when a change must be played to be judged. Beside the screen it has a text box for each
+export (the settings, the Activity Logs), and `bun scripts/build-web.mjs --demos <file>` adds a button
+per demo, each starting the Build Phase from a key script with given settings and saying what to try
+(`scripts/build-web.mjs` describes the file; a bad key script fails the build; keep a pull request's
+file in `scripts/demos/` until its question is answered).
 
 **The log is the feedback loop for the kernel.** `grid --headless` writes fixed-column lines to one
 stream, `[tick] LEVEL kind subject [-> object] detail...`, at `ERROR`, `WARN` (default), `INFO`,
 `DEBUG` or `TRACE`, closed by a `report` line with the outcome, losses and hashes. It grows by adding
 kinds, never by reshaping columns. When a test needs structure rather than a story, assert on
-`--events` JSONL instead. `node scripts/lib/key-echo.mjs` prints exactly what each key sends in the
+`--events` JSONL instead. The Build Phase and the menus have their own record, the **Activity Logs**:
+one structured logger (`src/log/`) whose events are declared in `src/log/activity.ts` with a default
+level and typed, described properties, and which the game menu's `[a] Activity logs` lists newest
+first, filters and exports (the clipboard, and `activity-export.txt` beside the settings export).
+`node scripts/lib/key-echo.mjs` prints exactly what each key sends in the
 terminal it runs in; `node scripts/probe-modified-keys.mjs` surveys Shift+Arrow and friends. Measure a
 terminal before trusting a remembered escape sequence.
 
@@ -213,17 +222,22 @@ turn it around within hours. The exact procedure is the `feedback-round` skill; 
    answers behind an Experiment defaulting to the recommended one and ask him in the pull request, in
    plain words, to flip it: "press `d`, set Battle Round flash to 300 ms, and tell me which you
    prefer." A new behaviour whose worth is in doubt ships with an on/off Experiment.
-4. **His export is the answer.** Export settings (`e` in Settings) copies every setting and
+4. **Ask what happened with an Activity Logs filter.** When the question is not a feeling but an
+   interaction ("what did the taps do when it felt slow?"), declare an event where it happens and a
+   filter for it at the top of `ACTIVITY_FILTERS` in `src/log/activity.ts`, check with
+   `playtest.mjs --activity` that a flow logs it, and ask him to play, open Esc then `a`, export and paste
+   it. Remove both once answered, as an Experiment is.
+5. **His export is the answer.** Export settings (`e` in Settings) copies every setting and
    Experiment as `name = value` text, changed Experiments first; he pastes it into the pull request.
    Reproduce exactly what he saw with `--settings "<text>"` on the game, the playtest script or
    `#settings=` on the browser page. Then settle each Experiment it answers: his value becomes the
    default, its tier becomes *tuned* with who chose it and when, and the Experiment is deleted. A few
    stay longer (a number that depends on the player's keyboard, placeholder content) or graduate into
    real Settings.
-5. **Size the Demo to the change.** A code block or nothing when nothing shows on screen; screenshots
+6. **Size the Demo to the change.** A code block or nothing when nothing shows on screen; screenshots
    for a look; a GIF for movement or timing; a playable page only when it must be played. The
    `pr-description` skill has the shape, phone-readable, leading with what the player will see.
-6. **Rewrite the pull request against `main`** after every round, the whole change, not the last
+7. **Rewrite the pull request against `main`** after every round, the whole change, not the last
    round; then wait lightly, and do not start the next step.
 
 What four rounds taught is in `docs/history/lessons-learned.md`.
@@ -277,7 +291,8 @@ Mario rather than for the next agent — says **what the thing is**, not where i
 - Good: "the Nexus offers the player a small choice of upgrades each round; nobody has designed what
   those are yet."
 
-He does not have section numbers or question ids memorised and should not have to. A sentence he
+He does not have section numbers, question ids or feedback item numbers memorised and should not
+have to; those index things for the next agent, and a reply that says "item 87" has failed. A sentence he
 has to look up before he can judge it has failed. Name the rule, decision or idea in plain English;
 if the source matters, put it in parentheses after the idea. Define a project word (milestone step,
 Experiment, Recall) the first time it appears in anything he reads, or use an ordinary word. Say what

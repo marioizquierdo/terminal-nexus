@@ -18,6 +18,7 @@ node scripts/playtest.mjs --keys "n 1 Tab S-Left*5" --png final    # one PNG
 node scripts/playtest.mjs --keys "Down Down Space*4" --gif --name hatchery-run
 node scripts/playtest.mjs --file flow.keys --size 104x32 --capability monochrome --png all
 node scripts/playtest.mjs --settings "popupPulseMs=3000 incoming=hidden" --keys "1 Enter"  # start from an export
+node scripts/playtest.mjs --keys "n 1 1 Enter" --activity Interactions   # what the run recorded
 node scripts/playtest.mjs --help
 ```
 
@@ -107,6 +108,11 @@ Space pauses, `[` and `]` change the speed, `.` and `,` step, `r` watches it aga
 opens the Experiments; `Esc` opens the game menu and its Restart is the way back to a fresh Build
 Phase. `scripts/capture-build-phase-screenshots.mjs` has `pulseGif` (an ending frame by frame, in real time)
 and shows each ending as a still.
+
+**What a run recorded**: `--activity [filter]` prints the Activity Logs export the game's window would
+make (Everything when no filter is named) and saves `<name>-activity.txt`, with times on the script's own
+clock — the quickest check that an event you added for a demo fires, and with what. In the live game,
+`Esc a` opens the window, `Right` steps the filter, `e` exports.
 
 **Reproducing what the owner played**: he exports his settings (Settings, `e`) and pastes the text
 into the pull request; `--settings "<that text>"` starts the script from exactly those settings and

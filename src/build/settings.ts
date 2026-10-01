@@ -47,16 +47,21 @@ export function adjustSetting(settings: Settings, field: PlayerField, step: -1 |
 /**
  * The game menu's rows, in order (the owner: "When pressing [esc] or explicitly opening the
  * main menu, there should be an option for '[s] Settings' along with '[q] Quit'"), `[c] Controls and
- * hotkeys` right after Settings, `[r] Restart` — starting the Build Phase over with every setting
- * kept — and Quit. **No `[esc] Back to the game` row** (the owner: "the general esc on the top right
- * is contextual and already says 'close'"): Esc, `x`, the top bar's `close [esc]` and a click outside close it, as they
- * close every popup. `popupHighlight` indexes this list while the game menu is open.
+ * hotkeys` right after Settings, `[a] Activity logs` after it, `[r] Restart` — starting the Build Phase
+ * over with every setting kept — and Quit. **No `[esc] Back to the game` row** (the owner: "the general
+ * esc on the top right is contextual and already says 'close'"): Esc, `x`, the top bar's `close [esc]`
+ * and a click outside close it, as they close every popup. `popupHighlight` indexes this list while the
+ * game menu is open.
  */
-export const GAME_MENU_ROWS = ["settings", "controls", "restart", "quit"] as const
+export const GAME_MENU_ROWS = ["settings", "controls", "activity", "restart", "quit"] as const
 export type GameMenuRow = (typeof GAME_MENU_ROWS)[number]
 
 /** What the game menu's `[c] Controls and hotkeys` row says under its name. */
 export const CONTROLS_DESCRIPTION = "Keys and mouse"
+
+/** What the game menu's `[a] Activity logs` row says under its name: what the window is for, in a
+ *  playtester's words. */
+export const ACTIVITY_DESCRIPTION = "What happened, to export for feedback"
 
 /** What the game menu's `[r] Restart` row says under its name. */
 export const RESTART_DESCRIPTION = "Start over; the plan is lost."

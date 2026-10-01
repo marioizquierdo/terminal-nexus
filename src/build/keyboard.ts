@@ -137,6 +137,10 @@ function popupOwnKey(key: string, popup: Popup): BuildCommand | null {
     case "controls":
       // `c` and `?` close what they opened, and so do Enter and Space.
       return key === "c" || key === HELP_KEY || PLACE_KEYS.has(key) ? close : null
+    case "activity-logs":
+      // `a` closes what `a` opened. Enter and Space are the rows': Right on the filter,
+      // the export on its row, nothing on an entry.
+      return key === "a" ? close : null
     default:
       return null
   }

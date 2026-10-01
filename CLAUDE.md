@@ -12,6 +12,7 @@ Follow the imported repository instructions. What is specific to a Claude sessio
   `pr-description` for every pull request body.
 - When a choice is Mario's to feel, put both answers behind an Experiment (Settings → Experiments in
   the Build Phase, `d` jumps there; `src/build/all-settings.ts`), ask him in the pull request to flip
-  it and paste the settings export, and reproduce what he saw with `--settings "<that text>"`.
+  it and paste the settings export, and reproduce what he saw with `--settings "<that text>"`. When the
+  question is what happened, add an Activity Logs event and filter instead (`src/log/activity.ts`).
 - Write anything Mario reads in plain English: the idea or the decision, never the document section
   it lives in.

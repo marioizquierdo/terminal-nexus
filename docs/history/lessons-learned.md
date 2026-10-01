@@ -134,6 +134,44 @@ with no versioning ceremony left. What it taught:
    why (a hashed version string, player-visible strings, a game concept that shares a retired word);
    those became the pull request's known issues, not surprises.
 
+## The feedback loop itself (2026-10-01)
+
+The end of the menu spike was the smoothest stretch yet: Mario played on a laptop and a phone, sent notes,
+and each round was built, shown and back in front of him within hours. What made the loop work, rather
+than any one feature:
+
+1. **The settings became the channel, so they got a structure.** Experiments began as a debug popup. Now
+   every setting is declared once with its tier (the player's own, an Experiment for Mario, or a tuned
+   constant), so an agent asking a question, Mario answering it, and the answer becoming a constant are
+   each a one-word edit (`src/build/all-settings.ts`). When a way of talking to the owner works, give it
+   a real place in the code.
+2. **An export is a message, and old messages must still read.** A renamed setting maps to its new name
+   and a settled one is skipped quietly, so a paste from last week still shows what he saw.
+3. **Recorded timing made feel reproducible.** The playtest notation learned timing (`Right~250`), so
+   "the third quick tap should speed up" became a script, a test and a GIF.
+4. **Rounds grow opportunistic fixes; name them.** A round always turns up small refactors and bugs
+   beside what was asked. The pull request's **Additional changes** section says so openly instead of
+   burying them.
+5. **Check "merged" against the remote before acting on it.** Mario said a pull request was merged;
+   `main` did not contain it. Checking before resetting the branch kept the follow-up on the right pull
+   request.
+6. **A log answers what a setting cannot.** "Which feels right?" is an Experiment; "what happened when it
+   felt wrong?" needs a record. The Activity Logs declare each event in a schema and export through the
+   game menu, so a playtester pastes the evidence instead of describing it.
+7. **A proposal is cheap; write it before building it.** The deep dive on a feedback pipeline took an hour
+   and Mario cut it to something far simpler the next morning; nothing built was thrown away
+   (`docs/history/reports/2026-10-01-feedback-pipeline-parked.md`).
+8. **The numbers that index his words are for agents.** "I don't understand references like F87, they are
+   not very useful to me": replies, pull requests and documents he reads name the request in words.
+9. **Review the branch with an agent that only reads, before opening the pull request.** It found the
+   Activity logs list was a cut-off rather than a copy (a full log dropped rows from under the reader),
+   held keys filling the log, and a demo with broken keys failing silently, all fixed before anyone saw
+   them.
+10. **A documentation reorganisation can land while a pull request is open.** Merge it, take the new
+    documents wholesale, then re-apply your additions in their new homes and new words; and grep your own
+    new code comments for the old citation style (feedback numbers, section numbers, dates), which the
+    reorganisation had just removed everywhere else.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

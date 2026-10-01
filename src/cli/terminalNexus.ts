@@ -17,6 +17,8 @@ import { parseArgs, parseInteger } from "./args.ts"
 import { runMenu } from "./menu.ts"
 import { parseKeyScript } from "../playtest/keys.ts"
 import { runBuildPhase } from "./build-phase.ts"
+import type { Exporter } from "./build-phase.ts"
+import type { ExportKind } from "../build/types.ts"
 import { DEFAULT_SETTINGS, createSettingsStore, defaultSettingsPath } from "../settings/index.ts"
 import type { Settings } from "../settings/index.ts"
 import { importSettings } from "../build/settings-export.ts"
@@ -28,7 +30,7 @@ const USAGE = `terminal-nexus — the Terminal Nexus game
   terminal-nexus [--capability monochrome|color16|color256|truecolor]
                   [--theme dark|light] [--glyphs ascii|unicode] [--reduced-motion]
                   [--backend auto|ansi|opentui]
-      launches the top-level menu: Campaign, Challenge, Settings, Exit
+      launches the top-level menu: Campaign, Challenge, Settings, About, Exit
 
   terminal-nexus --build-phase [the same presentation flags]
       opens the Build Phase on the starter map and plays the first mission from it: a Grid
@@ -41,7 +43,8 @@ const USAGE = `terminal-nexus — the Terminal Nexus game
       (${TUNING.scrollMargin} unless given; "${TUNING.scrollMargin}" and "${TUNING.scrollMargin}%" are the same). Esc opens the game menu: Settings,
       in sections - the display settings (saved, like the title menu's) and Experiments, the
       choices still being tried, live, never saved; d jumps straight to the first of them.
-      "Export settings" copies them all as text.
+      "Export settings" copies them all as text. The game menu's Activity logs shows what
+      happened, through a filter; "Export logs" copies it and saves activity-export.txt.
       --settings "<text>" starts with an exported text's settings and experiments, for this
       run only: paste the whole export, or just pairs like "incoming=hidden nextRound=auto".
       --keys "<key script>" opens it already in the state those keys reach, in the scripted
@@ -105,12 +108,16 @@ export async function main(argv: readonly string[]): Promise<number> {
     })
   }
 
+  // The About screen names the build, so a playtester can say which one they played.
+  const commit = currentCommit()
   return runMenu({
     settings,
     settingsStore,
     backend: args.options.get("backend") ?? "auto",
     stdout: process.stdout,
     stdin: process.stdin,
+    ...(commit === undefined ? {} : { buildId: commit }),
+    hostName: "terminal",
   })
 }
 
@@ -132,24 +139,27 @@ function currentCommit(): string | undefined {
   }
 }
 
+/** The Activity Logs' export file, beside the settings' export. */
+export const ACTIVITY_EXPORT_FILE = "activity-export.txt"
+
 /**
  * The terminal's export: the text to the clipboard through OSC 52 — the escape sequence iTerm2 and
  * most modern terminals accept for "put this on the clipboard" (iTerm2 asks for it to be allowed:
  * Settings > General > Selection > "Applications in terminal may access clipboard") — and to a file,
- * which always works.
+ * which always works. Each export has its own file: the settings' at `path`, the Activity Logs' beside
+ * it (`activity-export.txt`), so exporting one never overwrites the other.
  */
-export function terminalExporter(
-  stdout: TerminalOutput,
-  path: string,
-): Readonly<{ destination: string; export: (text: string) => Promise<void> }> {
+export function terminalExporter(stdout: TerminalOutput, path: string): Exporter & Readonly<{ export: (text: string, kind: ExportKind) => Promise<void> }> {
   const home = homedir()
-  const shown = path.startsWith(home) ? `~${path.slice(home.length)}` : path
+  const shown = (file: string): string => (file.startsWith(home) ? `~${file.slice(home.length)}` : file)
+  const files: Readonly<Record<ExportKind, string>> = { settings: path, activity: join(dirname(path), ACTIVITY_EXPORT_FILE) }
+  const destination = (kind: ExportKind): string => `Copied to the clipboard if your terminal allows it, and saved to ${shown(files[kind])}.`
   return {
-    destination: `Copied to the clipboard if your terminal allows it, and saved to ${shown}.`,
-    async export(text: string): Promise<void> {
+    destination: { settings: destination("settings"), activity: destination("activity") },
+    async export(text: string, kind: ExportKind): Promise<void> {
       stdout.write(osc52(text))
-      await mkdir(dirname(path), { recursive: true })
-      await writeFile(path, text, "utf8")
+      await mkdir(dirname(files[kind]), { recursive: true })
+      await writeFile(files[kind], text, "utf8")
     },
   }
 }

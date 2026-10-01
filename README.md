@@ -37,7 +37,7 @@ Two programs exist today.
 from a seed, with a levelled report and an ASCII view. It is not the game. It is the tool that builds
 and replays it.
 
-**`terminal-nexus`** is the game's own executable. It opens on a menu (Campaign, Challenge, Settings,
+**`terminal-nexus`** is the game's own executable. It opens on a menu (Campaign, Challenge, Settings, About,
 Exit) that works by hotkey, by arrows and Enter, or by mouse. Campaign and Challenge are honest
 placeholders. The playable part is the **Build Phase**, started with `--build-phase`:
 
@@ -123,7 +123,7 @@ tick 90 instead of playing from the start, in watch, headless and verify alike.
 ### The game
 
 ```bash
-npm run terminal-nexus              # the menu: Campaign, Challenge, Settings, Exit
+npm run terminal-nexus              # the menu: Campaign, Challenge, Settings, About, Exit
 npm run terminal-nexus -- --build-phase   # the Build Phase and the Nexus Pulse
 ```
 

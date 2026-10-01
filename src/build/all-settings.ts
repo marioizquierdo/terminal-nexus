@@ -12,6 +12,15 @@
 //     is accepted (the Experiments rule in AGENTS.md);
 //   - `tuned` — a constant in code, not shown: the owner's settled value, with who chose it and when.
 //
+// **The experiment tier is how an agent asks the owner a question during a demo** (the feedback loop is
+// described in `docs/system-design/ui-patterns.md`). Unsure whether a flash should last 220 ms or
+// 300, or whether a new behaviour should exist at all? Add an `experiment` defaulting to the
+// recommended answer, with a question he can read in Settings ("How long each flash lasts…"), and ask in
+// the pull request: "press `d`, set Battle Round flash to 300 ms, tell me which you prefer, and paste
+// the export". His export comes back as `name = value` lines; `--settings "<text>"` replays what he
+// had; his value becomes the default and the tier becomes `tuned`. The Activity Logs
+// (`src/log/activity.ts`) are the same idea for "what happened?".
+//
 // and, when Settings shows it, its **section** — the titled group it is listed under — its label, the
 // plain question it answers (shown under the list while the row is highlighted), the values Left and
 // Right walk, its default, and when a change is seen (`applies`, "now" unless it says "restart").
