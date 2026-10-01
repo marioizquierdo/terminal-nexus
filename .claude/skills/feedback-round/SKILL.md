@@ -30,6 +30,11 @@ once done, one plain paragraph of what now happens. Nothing may be dropped silen
 `milestones/milestone-05-build-phase.md` (or the current milestone) with a definition of done as
 checkboxes, and run `./scripts/check-repository.sh`.
 
+**The numbers are for agents, never for Mario** (owner, 2026-10-01: "I don't understand references like
+F87, they are not very useful to me"). They let a code comment or a tracker point back at his words. In
+anything he reads — a chat reply, a pull request, a document written for him — name the request in a few
+words instead ("your notes on the Activity logs") and, if the source matters, link the log.
+
 ## 2. Split the work by files, not by feature
 
 Group items that touch the same code into **one** agent; put items on different files in parallel.

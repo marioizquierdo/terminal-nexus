@@ -167,7 +167,8 @@ instructions — give it its own short section after **Changes**, **Workflow and
 - [ ] Every image was opened and checked; URLs are pinned to commit SHAs.
 - [ ] The Demo is the cheapest layer that shows the change, and its steps were run exactly as written.
 - [ ] Each decision says how to flip it and asks for the export; an Activity Logs ask names its filter.
-- [ ] No section numbers, question ids or gate letters above the footer.
+- [ ] No section numbers, question ids or gate letters above the footer, and no feedback item numbers
+      (F87) anywhere: name the request in words and link its feedback log.
 - [ ] 150-400 words above the footer.
 - [ ] The attribution lines appear exactly once, at the end.
 

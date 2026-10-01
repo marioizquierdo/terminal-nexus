@@ -556,7 +556,8 @@ written for Mario rather than for the next agent — says **what the thing is**,
 - Good: "the Nexus offers the player a small choice of upgrades each round — nobody has designed what
   those are yet."
 
-Mario does not have the section numbers memorised and should not have to. A sentence he has to look up
+Mario does not have the section numbers memorised and should not have to — nor the feedback logs' item
+numbers (F87) or question ids (Q57): those index things for the next agent. A sentence he has to look up
 before he can judge it is a sentence that has failed. Name the actual rule, decision, or idea in plain
 English; if the source genuinely matters, put it in parentheses after the idea, never instead of it.
 
