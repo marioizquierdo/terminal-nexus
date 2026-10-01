@@ -170,7 +170,7 @@ numbers are identities, never an order: read the build-order column.
 playtest, pictures), opens a pull request and stops. A step is done when its pull request is merged
 and Mario has played it; ticking the box and adding one line to `docs/history/README.md` is the whole
 bookkeeping. The next step waits for his word; "time remains" is never a reason to start it. A
-milestone is complete when its steps are, and its file moves to `docs/milestones/completed/`.
+milestone is complete when its steps are, and its file moves to `docs/history/milestones/`.
 Promoting the next milestone is Mario's call, recorded in the index.
 
 What belongs to no step goes in `docs/milestones/next-steps.md`: what waits on Mario, small carry-over,

@@ -1,6 +1,6 @@
 # The Build Phase menu spike — report
 
-Copied from `specs/templates/gate-report.md` (the old gate-report template, since retired). The feedback it
+Copied from `.github/pull_request_template.md` (the old gate-report template, since retired). The feedback it
 answers is [`docs/history/feedback/2026-09-30-menu-spike.md`](../feedback/2026-09-30-menu-spike.md);
 the definition of done is in [`docs/milestones/milestone-06-pulse-phase.md`](../../milestones/milestone-06-pulse-phase.md)
 under "The menu spike". Sections 1-10 are round 1, left as they were written; **the owner's second

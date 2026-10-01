@@ -30,7 +30,7 @@ reports), and launch the current mission from it?
   one Pulse, not a remembered log. The discovery rule is an open question (below) and is settled before
   this panel is built.
 - **Mission reports.** The existing headless report already produces a per-mission outcome (ticks,
-  losses, victory reason, hashes; see `docs/milestones/completed/milestone-01-grid-battles.md`). Reuse
+  losses, victory reason, hashes; see `docs/history/milestones/milestone-01-grid-battles.md`). Reuse
   it as the saved mission report this screen shows. That is cheaper than a second summary format and
   keeps the report module's job intact: derive everything from the event stream and the final state.
 - **Launch.** Selecting the current mission hands off into Milestone 5's Build Phase for that

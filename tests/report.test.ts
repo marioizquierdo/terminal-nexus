@@ -1,4 +1,4 @@
-// The report — its line grammar and summary as the first milestone printed them (docs/milestones/completed/milestone-01-grid-battles.md).
+// The report — its line grammar and summary as the first milestone printed them (docs/history/milestones/milestone-01-grid-battles.md).
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -18,7 +18,7 @@ import {
 import { TERRAIN } from "../src/grid/types.ts"
 import { reportInputOf, resolveScenario, scenarioFiles } from "./helpers.ts"
 
-/** The exact lines printed in docs/milestones/completed/milestone-01-grid-battles.md. */
+/** The exact lines printed in docs/history/milestones/milestone-01-grid-battles.md. */
 const SPEC_LINES: ReadonlyArray<readonly [Parameters<typeof formatLine>[0], string]> = [
   [
     { tick: 0, level: "info", kind: "spawn", subject: "A:trooper#1", detail: "at (2,1)" },

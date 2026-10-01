@@ -116,7 +116,7 @@ view answers "is this legible," not "is this correct."
 ## Writing a map
 
 Every rule gets a named, checked-in `.map.json` file — that is the regression suite and the
-documentation at once (`AGENTS.md`, `docs/milestones/completed/milestone-01-grid-battles.md` 3.5). A map is plain JSON, the same
+documentation at once (`AGENTS.md`, `docs/history/milestones/milestone-01-grid-battles.md` 3.5). A map is plain JSON, the same
 shape a campaign level and a map-editor-authored map will eventually share:
 
 ```json
@@ -195,7 +195,7 @@ this tool's own entry points. `scenarios/*.map.json` — the fixtures themselves
   for visual judgment, a narrower and different workflow from this one.
 - [`../../../AGENTS.md`](../../../AGENTS.md) — the operating contract this skill is a companion to.
 - [`docs/system-design/runtime.md`](../../../docs/system-design/runtime.md) — the design of the tool, and
-  [`docs/milestones/completed/milestone-01-grid-battles.md`](../../../docs/milestones/completed/milestone-01-grid-battles.md)
+  [`docs/history/milestones/milestone-01-grid-battles.md`](../../../docs/history/milestones/milestone-01-grid-battles.md)
   — the milestone that built it.
 - [`docs/system-design/replay-format.md`](../../../docs/system-design/replay-format.md) — the designed-but-unbuilt
   `.replay.json` format this tool will eventually read and write, one layer above a single map.

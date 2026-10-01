@@ -110,7 +110,7 @@ at 80 columns and at 128.
 
 ### Q13 — Where do workers flee, and what counts as annihilation, on a Grid with no Nexus?
 
-**Status:** OPEN — step 1A proceeds under the recommendation, which is already written into [`docs/milestones/completed/milestone-01-grid-battles.md`](completed/milestone-01-grid-battles.md).
+**Status:** OPEN — step 1A proceeds under the recommendation, which is already written into [`docs/history/milestones/milestone-01-grid-battles.md`](../history/milestones/milestone-01-grid-battles.md).
 
 Step 1A's flee rule sends a threatened worker "away from it toward the friendly Nexus", but the
 mirror skirmish — the scenario the whole milestone is named after — places no structures at all. The same
@@ -338,7 +338,7 @@ milestone:
   running** — reads as an early, reduced form of a future battle editor (backlog territory: the old
   Milestone 3's "a text/CLI-accessible battle editor... build-radius preview, connectivity, outpost,
   defense, producer, cost, undo, validation" is folded into
-  [`docs/milestones/completed/milestone-05-build-phase.md`](completed/milestone-05-build-phase.md) only to the
+  [`docs/history/milestones/milestone-05-build-phase.md`](../history/milestones/milestone-05-build-phase.md) only to the
   narrow extent PERIMETER's own Build Phase needs it — a full standalone editor is still unbuilt), but
   the owner's framing is lighter and different in purpose: a fast unit-matchup sandbox for *exploring
   the kernel*, not the competitive Build Phase with cost, validation, and a hidden simultaneous-reveal
@@ -755,7 +755,7 @@ objective layered above it. Still a RULE-adjacent change the day it lands; still
 **Step 6A (2026-09-29) can now show the plain draw, on placeholder content.** A Pulse that runs to its
 tick limit with both sides untouched ends on the Nexus Pulse screen as **TIME'S UP — "The time ran
 out before either side won."**, neutral in tone, with how many of the player's units came home
-([`docs/screenshots/pulse-result-timeup.png`](../screenshots/pulse-result-timeup.png);
+([`docs/screenshots/pulse-result-timeup.png`](https://raw.githubusercontent.com/marioizquierdo/terminal-nexus/e085b5a/docs/screenshots/pulse-result-timeup.png);
 the spike's "Raid: none" Experiment reaches it). That is option A's cheapest possible check for the *screen*, but not for the *question*: whether a defensive mission's player reads it as success
 depends on PERIMETER's own briefing and debrief text around it, which arrives with 6B's fixture.
 Q36 stays open for 6B to close; nothing in 6A depends on the answer.
@@ -777,7 +777,7 @@ Q70 below: the kernel's *annihilation* rule, not its time-out, is what bends a d
 ### Q38 — Does PERIMETER's own map need real scrolling, or does Milestone 5 prove scrolling on different content?
 
 **Status:** OPEN — blocks nothing before Milestone 2 locks the map's final dimensions; the
-recommendation is already assumed by [`docs/milestones/completed/milestone-02-campaign-design.md`](completed/milestone-02-campaign-design.md).
+recommendation is already assumed by [`docs/history/milestones/milestone-02-campaign-design.md`](../history/milestones/milestone-02-campaign-design.md).
 
 A real tension, found on review rather than during Milestone 2 or 5's own drafting:
 the belief ramp in [`../campaigns.md`](../game-design/campaigns.md) describes PERIMETER's own teaching goal as

@@ -130,7 +130,7 @@ and leaving the same word, "top-level menu," is on screen before any key is sent
 existing shots regenerated against current code, all of which now show Challenge's dimmed label
 wherever the top-level menu appears in them.
 
-**Docs**: `README.md`, `DEVELOPMENT.md`, and `docs/milestones/completed/milestone-03-game-menu.md` updated together
+**Docs**: `README.md`, `DEVELOPMENT.md`, and `docs/history/milestones/milestone-03-game-menu.md` updated together
 (AGENTS.md Section 5); the milestone's own Active gate field now reads "none," with every Definition
 of Done item checked, since this is the last gate it names.
 
@@ -261,7 +261,7 @@ assertion had quietly become true for the wrong reason was caught and split into
 rather than left as a passing coincidence. Explicit exclusions (real Campaign/Challenge content, a
 generic disabled-input mechanism, save/progression, sound) are named, not silently missing. No new
 open question needed registering; the one candidate fork is recorded in Section 6 as a reversible
-assumption. This is the last gate `docs/milestones/completed/milestone-03-game-menu.md` names — every Definition of
+assumption. This is the last gate `docs/history/milestones/milestone-03-game-menu.md` names — every Definition of
 Done item is now checked, and the milestone itself awaits Mario's review and acceptance rather than
 further building.
 
@@ -269,7 +269,7 @@ further building.
 
 | Proposed rule | Would live in | Earned by |
 | --- | --- | --- |
-| None | — | This gate builds Campaign and Challenge's handoffs exactly as `docs/milestones/completed/milestone-03-game-menu.md` Section 2 already describes them, and reads `engine.md` 9.7's existing RULE more carefully rather than proposing to change it; nothing here contradicts or extends any RULE, so no amendment is proposed. |
+| None | — | This gate builds Campaign and Challenge's handoffs exactly as `docs/history/milestones/milestone-03-game-menu.md` Section 2 already describes them, and reads `engine.md` 9.7's existing RULE more carefully rather than proposing to change it; nothing here contradicts or extends any RULE, so no amendment is proposed. |
 
 Questions raised: none. Section 6 explains why the one candidate fork (whether Challenge's activation
 should keep showing a notice or become a silent no-op) is recorded as a reversible assumption rather
