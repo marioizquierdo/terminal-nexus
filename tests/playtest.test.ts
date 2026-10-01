@@ -9,7 +9,7 @@ import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { ESC } from "./build-helpers.ts"
-import { DEFENCE_KEYS, PROBE_PULSE } from "./pulse-helpers.ts"
+import { DEFENCE_KEYS } from "./pulse-helpers.ts"
 
 
 test("key names map to the bytes a real terminal sends", () => {
@@ -89,12 +89,12 @@ test("wait is a step where nothing is pressed and time passes: a second by defau
 test("a scripted playtest plays a Nexus Pulse on the script's own clock and shows every phase of its ending", () => {
   // A Nexus power, two Turrets and a Hatchery, the commit and its confirmation; then the script lets it play.
   const plan = `${DEFENCE_KEYS} s s`
-  const run = runBuildPlaytest({ steps: parseKeyScript(`${plan} wait~1000*20`), experiments: PROBE_PULSE })
+  const run = runBuildPlaytest({ steps: parseKeyScript(`${plan} wait~1000*20`) })
   const texts = run.frames.map((frame) => frameToText(frame.frame))
   const started = texts.findIndex((text) => text.includes("nexus pulse"))
   assert.ok(started > 0, "the script never reached the Pulse")
   // The frame right after the second `s` is the Pulse's own first moment, already looking at the Nexus.
-  assert.match(texts[started]!, /^\| NEXUS PULSE 1 +0:15 /m)
+  assert.match(texts[started]!, /^\| NEXUS PULSE 1 +0:09 /m)
   // Centred on the Nexus's own tile (said by the position readout until feedback F59 took it out).
   const first = run.frames[started]!.state
   assert.deepEqual(first.cursor, { x: 18, y: 10 })

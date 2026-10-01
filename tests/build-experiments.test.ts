@@ -88,7 +88,7 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   assert.match(text, /KEYBOARD NAVIGATION - experiments/)
   // In order, section by section (feedback F85): keyboard navigation — the hold window and key releases
   // from the third round, and the tap, hold and jump numbers back for the navigation polish round — the
-  // popup pulse (every popup's since F83) and the Battle Round flash, and the placeholder Pulse's raid and crew.
+  // popup pulse (every popup's since F83) and the Battle Round flash, and the mission's next round and incoming wave.
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.field),
     [
@@ -105,13 +105,13 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
       "popupPulseMs",
       "popupFlashMs",
       "popupFlashPeak",
-      "raid",
-      "crew",
+      "nextRound",
+      "incoming",
     ],
   )
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.section),
-    [...Array.from({ length: 10 }, () => "keyboard"), "effects", "effects", "effects", "pulse", "pulse"],
+    [...Array.from({ length: 10 }, () => "keyboard"), "effects", "effects", "effects", "mission", "mission"],
   )
   // The bottom line says what the keys do there (feedback F59), and the highlighted row's question is
   // shown. Opened by `d` from the game, Esc closes it.
@@ -206,7 +206,7 @@ test("a number stops at its ends and says so; a choice comes round", () => {
   assert.equal(stepExperiment(between, "holdWindowMs", -1).flags.holdWindowMs, second)
   assert.equal(stepExperiment(between, "holdWindowMs", 1).flags.holdWindowMs, third)
   // A choice comes round, forward and back.
-  for (const field of ["raid", "crew"] as const) {
+  for (const field of ["nextRound", "incoming"] as const) {
     const values = experimentSpec(field).values
     let around = flags
     for (let step = 0; step < values.length; step += 1) around = stepExperiment(around, field, 1).flags
@@ -229,10 +229,10 @@ test("the restart keeps every flag and starts the plan over, on the menu at Expl
   keys(side, "n", "1", "1", RIGHT, ENTER) // pick a power, plan a Barracks
   assert.equal(side.build.state.planned.length, 1)
   keys(side, "d")
-  goToExperiment(side, "crew")
+  goToExperiment(side, "nextRound")
   keys(side, RIGHT)
-  const crew = stepExperiment(defaultExperiments(), "crew", 1).flags.crew
-  assert.equal(side.build.state.experiments.crew, crew)
+  const crew = stepExperiment(defaultExperiments(), "nextRound", 1).flags.nextRound
+  assert.equal(side.build.state.experiments.nextRound, crew)
   // A flag that applies at once needs no restart message; the game menu's [r] is the restart.
   keys(side, "q")
   assert.equal(side.build.state.popup, "game-menu")
@@ -244,7 +244,7 @@ test("the restart keeps every flag and starts the plan over, on the menu at Expl
   assert.equal(state.planned.length, 0)
   assert.equal(state.nexusPick, null)
   assert.deepEqual(state.cursor, OPEN_GROUND)
-  assert.equal(state.experiments.crew, crew)
+  assert.equal(state.experiments.nextRound, crew)
   // The restart answers on the bottom line; the next key that says nothing brings back the hint for the
   // highlighted row (feedback F59).
   assert.match(screenText(side), /Build Phase restarted with these settings\./)

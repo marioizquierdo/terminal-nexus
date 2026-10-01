@@ -9,7 +9,7 @@
 import type { Camera, Viewport } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
-import { cellForTile, pulseControlRows } from "../build/layout.ts"
+import { cellForTile, nextRoundRow, pulseControlRows } from "../build/layout.ts"
 import { wrapWords } from "./draw.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
@@ -208,7 +208,7 @@ export function pulseStatus(pulse: PulseFrame): StatusMessage {
     case "walking":
       return status(`${held}Recall - the survivors are heading home.`)
     case "home":
-      return status(`${pulse.result.headline} - ${pulse.result.reason} ${cameHome(pulse.home)}`, pulse.result.tone)
+      return status(pulse.result.line ?? `${pulse.result.headline} - ${pulse.result.reason} ${cameHome(pulse.home)}`, pulse.result.tone)
     default:
       return status(`${held}Nexus Pulse - ${pulse.forces.A.units} of yours against ${pulse.forces.B.units} of the raid.`)
   }
@@ -305,6 +305,7 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
         { bold: true },
       )
       for (const reason of wrapWords(pulse.result.reason, limit - 1)) line(reason, "chrome.value")
+      for (const words of wrapWords(pulse.result.mission ?? "", limit - 1)) line(words, "chrome.label")
       break
     default: {
       const lit = timerLit(pulse.times, pulse.timeMs, pulse.reducedMotion)
@@ -328,14 +329,25 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
   if (pulse.phase === "home") {
     line("RECALL", "chrome.label")
     line(cameHome(pulse.home), "chrome.value")
-    gap()
-    for (const hint of wrapWords("For a new Build Phase: Esc, then Restart.", limit - 1)) line(hint, "chrome.muted")
+    // A Pulse with no mission goes nowhere: the game menu's Restart is the way back.
+    if (pulse.result.goOn === undefined) {
+      gap()
+      for (const hint of wrapWords("For a new Build Phase: Esc, then Restart.", limit - 1)) line(hint, "chrome.muted")
+    }
   } else {
     line("RECENT", "chrome.label")
     for (const entry of recentLines(pulse)) line(entry.text, entry.role)
   }
 
   // The controls, where the mouse can reach them: the hotkey in its own colour, then what it does.
+  // Once the result stands, the row that goes on — to the next round, or the mission again — where Pause
+  // was: Enter, Space, `n` or a click.
+  const goOn = pulse.phase === "home" ? pulse.result.goOn : undefined
+  if (goOn !== undefined) {
+    const row = nextRoundRow(layout)
+    text(cells, band, column, row, "[enter]", "chrome.hotkey", { bold: true, limit })
+    text(cells, band, column + 8, row, goOn, "chrome.value", { limit: limit - 8 })
+  }
   for (const control of pulseControlRows(layout)) {
     if (control.control === "toggle" && pulse.phase === "home") continue
     const label = control.control === "toggle" ? (pulse.paused ? "Resume" : "Pause") : "Watch again"

@@ -76,7 +76,7 @@ export type SideOptions = Readonly<{
   cursor?: Coord
   terminal?: Readonly<{ columns: number; rows: number }>
 }> &
-  Pick<BuildSessionOptions, "onQuit" | "onExport" | "onSettingsChange" | "startPulse" | "activity">
+  Pick<BuildSessionOptions, "onQuit" | "onExport" | "onSettingsChange" | "startPulse" | "nextRound" | "activity">
 
 /** An Activity Logs of a test's own (feedback F90-F91), on `now` — a clock standing still at 0 unless
  *  the test passes one — so nothing a test logs reaches the game's global log, or another test's. */
@@ -187,11 +187,12 @@ export function goToGameMenuRow(side: Side, row: GameMenuRow): void {
  *  Nexus Pulse included while one plays — with `extra` for what the live loop adds at an instant (a
  *  flash, a flight, a reveal) or overrides. */
 export function compose(side: Side, extra: Partial<BuildCompositionInput> = {}, capability: CapabilityMode = "monochrome"): ReadonlyCellFrame {
-  const { build, context, layout } = side
+  const { build, layout } = side
   const pulse = build.pulseFrame(layout)
   return composeBuildFrame(
     {
-      context,
+      // The session's own round: after a Pulse the mission moves on to a new context (gate 6B).
+      context: build.round,
       state: build.state,
       layout,
       glyphPack: build.state.settings.glyphPack,

@@ -8,7 +8,7 @@ import type { ContentRegistry } from "../content/index.ts"
 import { stepListIndex } from "../menu/list-keys.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
-import type { PulseSetup } from "../match/types.ts"
+import type { MatchState } from "../state/types.ts"
 import type { StatusMessage } from "../status.ts"
 import { NO_STATUS, status } from "../status.ts"
 import type { Camera, Margin, Viewport } from "./camera.ts"
@@ -53,7 +53,9 @@ import type {
   Ack,
   BuildCommand,
   ConstructItem,
+  FieldEntity,
   Focus,
+  IncomingEntity,
   MapEdgeStyle,
   MenuEntry,
   NexusPowerOption,
@@ -104,11 +106,23 @@ export type BuildContext = Readonly<{
   /** The commit this build is, when the adapter knows it: the first line of an export names it. */
   buildId?: string
   /**
-   * What a Nexus Pulse starts with besides the plan, as a function of the Experiments (gate 6A: the
-   * "Raid" and "Your units" flags pick which placeholder Pulse). Absent: committing only freezes the
-   * plan — every context the tests build by hand.
+   * Which round of a mission this Build Phase plans, and how many the mission has (gate 6B): the Battle
+   * Round screen's number and the top bar's "round 2 of 3". Absent: round 1 of a Build Phase with no
+   * mission — every context the tests build by hand.
    */
-  pulse?: (experiments: Experiments) => PulseSetup
+  round?: Readonly<{ number: number; of: number }>
+  /**
+   * The resolved state the last round left, after Recall — what the next Pulse starts from, handed back
+   * to the shell untouched (the reducer never reads it). `null` or absent for a first round.
+   */
+  carried?: MatchState | null
+  /** What else is on the map: survivors of both sides, and a scripted side's structures (gate 6B). */
+  field?: readonly FieldEntity[]
+  /** What the next round's triggers will bring, and where (gate 6B; drawn while the Incoming wave
+   *  Experiment shows it). */
+  incoming?: readonly IncomingEntity[]
+  /** The bottom line's first answer when this Build Phase opens — how the last round ended. */
+  openingStatus?: StatusMessage
   /**
    * What the Battle Round confirmation announces for round *n*, keyed by its number (owner, 2026-09-29,
    * feedback F49: "campaign missions may inject pulse-n text here"). A round with no entry says
@@ -243,8 +257,8 @@ export type BuildState = Readonly<{
   /** The Build Phase is done: the plan is frozen and every state-changing command is refused from here
    *  on. With a Pulse to start (`BuildSession`'s `startPulse`) the Nexus Pulse plays from this moment. */
   committed: boolean
-  /** Which Pulse of the mission this Build Phase is planning — "Battle Round 1". It is 1 until the loop
-   *  into a next Build Phase exists (Milestone 6's second gate), which is what will count it up. */
+  /** Which Pulse of the mission this Build Phase is planning — "Battle Round 1" — from the context's
+   *  round (gate 6B's loop counts it up), 1 without one. */
   pulseNumber: number
   /**
    * the Experiments (gate 5G; every setting on the experiment tier, `src/build/all-settings.ts`). State
@@ -354,12 +368,12 @@ export function createBuildState(
     popupUnder: [],
     message: null,
     planned: [],
-    status: NO_STATUS,
+    status: context.openingStatus ?? NO_STATUS,
     nextOrdinal: 1,
     nexusPick: null,
     bonusAllotment: 0,
     committed: false,
-    pulseNumber: 1,
+    pulseNumber: context.round?.number ?? 1,
     experiments,
     settings,
     startCursor: cursor,
@@ -548,6 +562,11 @@ function claimedTiles(
   }
   for (const structure of context.standing) record(structure.contentId, structure.anchor)
   for (const placement of planned) record(placement.contentId, placement.anchor)
+  // A scripted side's structure blocks a placement like the player's own; a unit steps aside for one
+  // when the Pulse starts, so it claims nothing here (gate 6B).
+  for (const entity of context.field ?? []) {
+    if (context.registry.get(entity.contentId).layer === "obstacles") record(entity.contentId, entity.anchor)
+  }
   return claimed
 }
 

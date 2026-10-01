@@ -2,7 +2,9 @@
 // and their effects), the ghost of the building being placed, the cursor, and a refused try's flash —
 // all drawn through the camera and clipped to the view.
 
-import { tilesOf } from "../grid/coords.ts"
+import { inBounds, tilesOf } from "../grid/coords.ts"
+import { setting } from "../build/all-settings.ts"
+import type { PlayerId } from "../state/types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { VisibleRange } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
@@ -97,6 +99,46 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
 
   for (const structure of context.standing) drawStructure(structure.contentId, structure.anchor, undefined)
   for (const placement of state.planned) drawStructure(placement.contentId, placement.anchor, animating.get(placement.ordinal))
+
+  // What else is on the map after a round (gate 6B): survivors of both sides where Recall left them, and a
+  // scripted side's structures, each in its side's colour. Then, see-through and dim, what the next round
+  // brings — dim so it reads as "not here yet" at every colour depth, monochrome included.
+  // A unit steps aside for a building when the Pulse starts — a survivor or an arrival alike — so neither
+  // is drawn over one: a tile a building holds, standing, planned or the raid's, shows the building.
+  const built = new Set<string>()
+  const hold = (contentId: string, anchor: Coord): void => {
+    for (const tile of tilesOf(anchor, context.registry.get(contentId).footprint)) built.add(`${tile.x},${tile.y}`)
+  }
+  for (const structure of context.standing) hold(structure.contentId, structure.anchor)
+  for (const placement of state.planned) hold(placement.contentId, placement.anchor)
+  for (const entity of context.field ?? []) {
+    if (context.registry.get(entity.contentId).layer === "obstacles") hold(entity.contentId, entity.anchor)
+  }
+  const drawEntity = (entity: Readonly<{ contentId: string; anchor: Coord; player: PlayerId }>, incoming: boolean): void => {
+    const definition = context.registry.get(entity.contentId)
+    const band = definition.layer === "obstacles" ? BANDS.structures : definition.layer === "air" ? BANDS.air : BANDS.units
+    for (const offset of definition.footprint) {
+      const tile = { x: entity.anchor.x + offset.x, y: entity.anchor.y + offset.y }
+      if (!inBounds(context.grid, tile) || !inView(range, tile)) continue
+      if (definition.layer !== "obstacles" && built.has(`${tile.x},${tile.y}`)) continue
+      const cell = cellForTile(layout, state.camera, tile)
+      const style = incoming
+        ? { fgRole: playerRole(entity.player), dim: true, fade: INCOMING_FADE }
+        : { fgRole: playerRole(entity.player), ...(definition.layer === "obstacles" ? { bold: true } : {}) }
+      cells.push({ band, x: cell.x, y: cell.y, cell: { glyph: entityGlyph(entity.contentId, entity.player, offset), style } })
+      for (let extra = 1; extra < layout.tileWidth; extra += 1) put(cells, band, cell.x + extra, cell.y, " ", playerRole(entity.player))
+    }
+  }
+  for (const entity of context.field ?? []) drawEntity(entity, false)
+  if (showsIncoming(state)) for (const entity of context.incoming ?? []) drawEntity(entity, true)
+}
+
+/** How far toward the background an incoming unit is drawn, where colour allows (256 colours and up). */
+const INCOMING_FADE = 0.45
+
+/** Whether the next round's arrivals are drawn: the Incoming wave Experiment (gate 6B). */
+export function showsIncoming(state: BuildCompositionInput["state"]): boolean {
+  return setting(state, "incoming") === "shown"
 }
 
 /**

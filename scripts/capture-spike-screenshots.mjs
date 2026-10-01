@@ -72,7 +72,7 @@ const PICK_FIRST_POWER = "n 1"
 
 /** `present`: what the live screen adds between keys (gate 5H) — a refused-placement flash, say —
  *  composed onto the last frame, since a key script alone never shows a moment in time.
- *  `experiments`: Experiments to open with instead of the defaults (gate 6A's raid and crew sizes).
+ *  `experiments`: Experiments to open with instead of the defaults.
  *  A `wait~MS` step in `keys` lets a Nexus Pulse on screen run that long on the script's own clock.
  *  `capability` and `theme` are the player's settings in the playtest as well as the picture's, so a
  *  screen that shows them (Settings) says what the picture is. */
@@ -636,74 +636,76 @@ scripted(
 
 popupGif("build-battle-round-opening", { keys: `${PICK_FIRST_POWER} s`, expect: "Battle Round 1", glyphPack: "unicode" })
 
-// Gate 6A: the Nexus Pulse on the Build Phase's own screen. Accepting the question no longer stops at
-// "committed" - it starts the Pulse - so the committed panel gate 5D drew (`build-nexus-committed.png`,
-// left in place as that gate's evidence) is only what a build with no Pulse to start still shows.
-// The plan: the War Chest, two Turrets across the muster point and a Hatchery behind them.
-const PULSE_PLAN = "n 2 3 click:22,9 click:22,9 3 click:22,12 click:22,12 2 click:20,14 click:20,14 s s"
-// The same commit with nothing built: the War Chest picked (a pick cannot be skipped), then [s] twice.
-const NOTHING_BUILT = "n 2 s s"
-// The placeholder Pulse these pictures were first made against: the probe raid, against units of your
-// own. The game defaults to a heavy raid and none of yours since the owner's settings export of
-// 2026-09-30, so every Pulse shot asks for the probe explicitly and shows what it always showed.
-const PROBE = { raid: "probe", crew: "some" }
+// Gate 6A's Nexus Pulse shots (`pulse-start`, `pulse-fight`, `pulse-last-seconds`, `pulse-nexus-hit`,
+// `pulse-result-*`, `pulse-experiments`, `pulse-ending.gif`) were taken against the placeholder Pulse and
+// its Raid and Your units Experiments, which gate 6B retired for PERIMETER's waves: they stay in
+// `evidence/screenshots/` as that gate's evidence, as `build-nexus-committed.png` stayed for gate 5D, and
+// are no longer regenerated. Gate 6B's own shots follow, on PERIMETER.
+
+// A round, keys only: the Reserve Fund (30 more credits), buildings by digit and two clicks on their
+// tile, then [s] and [s] to start. The strong plan holds PERIMETER; nothing built loses it in round 3.
+const ROUND_1_STRONG = "n 1 3 click:24,8 click:24,8 3 click:22,7 click:22,7 2 click:21,13 click:21,13 s s"
+const ROUND_2_STRONG = "n 1 3 click:27,8 click:27,8 s s"
+const ROUND_3_STRONG = "n 1 3 click:20,8 click:20,8 s s"
+const NOTHING_BUILT = "n 1 s s"
+// Long enough for any round to reach its result (a round is at most 30 seconds, and the ending about 2).
+const TO_RESULT = "wait~20000 wait~20000"
+const STRONG_TO_ROUND_2 = `${ROUND_1_STRONG} ${TO_RESULT} Enter`
+const STRONG_TO_ROUND_3 = `${STRONG_TO_ROUND_2} ${ROUND_2_STRONG} ${TO_RESULT} Enter`
 
 scripted(
-  "pulse-start",
-  "The second [s] starts the Pulse on this screen: the view goes to your Nexus, the title has a timer",
-  { keys: PULSE_PLAN, expect: "NEXUS PULSE 1", experiments: PROBE },
+  "mission-round-1",
+  "PERIMETER, round 1 of 3: the raid at the ridge and your squads beside the Nexus are drawn see-through - they arrive when the round starts",
+  { keys: "n 1", expect: "round 1 of 3" },
 )
 
 scripted(
-  "pulse-fight",
-  "Seven seconds in: the raid meets the Turrets. Score on the left, the last five events under it",
-  { keys: `${PULSE_PLAN} wait~7000`, expect: "0:08", experiments: PROBE },
+  "mission-incoming-card",
+  "Explore Map over an incoming runner of the raid: what it is, when it arrives, and what it means to do",
+  { keys: "n 1 e click:41,0", expect: "Probe the line at the" },
 )
 
 scripted(
-  "pulse-last-seconds",
-  "The last three seconds: the timer flashes, a light sweeps the map's border like a lighthouse",
-  { keys: `${PULSE_PLAN} wait~12400`, expect: "The Pulse is about to end.", experiments: PROBE },
+  "mission-round-1-result",
+  "Round 1's result: the fight's own headline, then where the mission stands, and [enter] Next round where Pause was",
+  { keys: `${ROUND_1_STRONG} ${TO_RESULT}`, expect: "Next round" },
 )
 
 scripted(
-  "pulse-nexus-hit",
-  "Your Nexus is hit for the first time: the border goes a faint red for a fifth of a second",
-  { keys: `${NOTHING_BUILT} wait~11600`, expect: "NEXUS PULSE 1", experiments: { raid: "probe", crew: "none" } },
+  "mission-round-2",
+  "Build Phase 2: the Turrets and the Hatchery stand, the survivors are home, the credits not spent carry over, and the second wave waits at the ridge",
+  { keys: STRONG_TO_ROUND_2, expect: "round 2 of 3" },
 )
 
 scripted(
-  "pulse-result-victory",
-  "A Pulse won: VICTORY and why, the survivors walked home by Recall, and how to go on",
-  { keys: `${PULSE_PLAN} wait~19000`, expect: "VICTORY", experiments: PROBE },
+  "mission-battle-round-2",
+  "Round 2's Battle Round screen, in the mission's own words",
+  { keys: `${STRONG_TO_ROUND_2} n 1 s`, expect: "Battle Round 2" },
 )
 
 scripted(
-  "pulse-result-defeat",
-  "Nothing built, five units against seven: DEFEAT, said as plainly as a win",
-  { keys: `${NOTHING_BUILT} wait~40000`, expect: "DEFEAT", experiments: PROBE },
+  "mission-complete",
+  "Round 3 held: MISSION COMPLETE, the perimeter held - and [enter] Play again",
+  { keys: `${STRONG_TO_ROUND_3} ${ROUND_3_STRONG} ${TO_RESULT}`, expect: "MISSION COMPLETE" },
 )
 
 scripted(
-  "pulse-result-timeup",
-  "No raid (an Experiment): the Pulse runs out its 30 seconds and says TIME'S UP",
-  { keys: `${NOTHING_BUILT} wait~40000`, expect: "TIME'S UP", experiments: { raid: "none", crew: "some" } },
+  "mission-failed",
+  "Nothing built: the Nexus falls in round 3 - MISSION FAILED, and why",
+  { keys: `${NOTHING_BUILT} ${TO_RESULT} Enter ${NOTHING_BUILT} ${TO_RESULT} Enter ${NOTHING_BUILT} ${TO_RESULT}`, expect: "MISSION FAILED" },
 )
 
 scripted(
-  "pulse-experiments",
-  "d opens the Experiments mid-Pulse at the placeholder Pulse's own: the raid and your units",
-  { keys: `${PULSE_PLAN} wait~3000 d`, expect: "Your units", experiments: PROBE },
+  "mission-experiments",
+  "d over a Pulse opens Settings at the mission's two Experiments: Next round and Incoming wave",
+  { keys: `${ROUND_1_STRONG} wait~3000 d`, expect: "Next round" },
 )
 
-pulseGif("pulse-ending", {
-  // The last moments of the Pulse above, in real time: the timer flashing and the light turning while
-  // the fight goes on, the shooting stopping, the survivors walking home, the result.
-  plan: PULSE_PLAN,
-  fromMs: 10500,
-  toMs: 19000,
-  expect: "VICTORY",
-  experiments: PROBE,
+scriptedGif("mission-next-round", {
+  // A round's result, then Enter: the next round's Build Phase, on what the last one left.
+  keys: `${ROUND_1_STRONG} ${TO_RESULT} Enter`,
+  expect: "round 2 of 3",
+  delayMs: 700,
 })
 
 // Settings (owner, 2026-09-28): the game menu's [s] — the player's own settings first, then the
@@ -711,7 +713,7 @@ pulseGif("pulse-ending", {
 
 scripted(
   "build-settings",
-  "Settings from the game menu: sections with a blank line before each - Display (the player's own, saved), then Keyboard navigation, Effects and the placeholder Pulse (Experiments, not saved) - and Export settings apart at the end. The title says where the highlight is in the list, the right border is the list's scroll bar, and what the highlighted row is for is written under a line below it",
+  "Settings from the game menu: sections with a blank line before each - Display (the player's own, saved), then Keyboard navigation, Effects and the mission (Experiments, not saved) - and Export settings apart at the end. The title says where the highlight is in the list, the right border is the list's scroll bar, and what the highlighted row is for is written under a line below it",
   { keys: "Esc s", expect: "DISPLAY - saved" },
 )
 
@@ -728,7 +730,7 @@ scripted(
 )
 
 // Settings is in sections (feedback F85): Display (saved), Keyboard navigation (the hold window first,
-// where [d] opens), Effects (the popup pulse and the Battle Round flash), the placeholder Pulse, then
+// where [d] opens), Effects (the popup pulse and the Battle Round flash), the mission, then
 // Export settings apart at the end. Headings and blank lines are never rows.
 
 scripted(

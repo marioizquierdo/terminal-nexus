@@ -47,3 +47,34 @@ export function buildTimeline(
     eventsHash: hashEvents(events),
   }
 }
+
+/**
+ * A timeline from a Pulse already resolved elsewhere — a mission's, by the trigger runner, which steps
+ * the same kernel and keeps the same states and events (`src/match/mission.ts`). Hashed the same way, so a
+ * mission's Pulse and a scenario's are compared by the same two numbers.
+ */
+export function timelineOf(
+  scenario: Pick<ScenarioDefinition, "id" | "name">,
+  states: readonly MatchState[],
+  events: readonly DomainEvent[],
+  pulseTicks: number,
+  seed: number,
+  registry: ContentRegistry,
+): PulseTimeline {
+  const first = states[0]
+  const last = states[states.length - 1]
+  if (first === undefined || last === undefined) throw new Error("a timeline needs at least its opening state")
+  return {
+    scenarioId: scenario.id,
+    scenarioName: scenario.name,
+    seed,
+    pulseTicks,
+    ticksPerSecond: first.ticksPerSecond,
+    grid: first.grid,
+    registry,
+    states,
+    events,
+    stateHash: hashState(last),
+    eventsHash: hashEvents(events),
+  }
+}

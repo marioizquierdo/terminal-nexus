@@ -183,7 +183,11 @@ export function drawTopBarAndBottomLine(cells: BandCell[], input: BuildCompositi
   // The top bar: the game's title and where the player is (engine.md 9.2), across the whole width.
   const limit = layout.headerLimit
   text(cells, band, left, headerRow, "TERMINAL NEXUS", "chrome.title", { bold: true, limit })
-  const subtitle = input.pulse === undefined ? "build phase" : pulseSubtitle(input.pulse)
+  // A mission's round, when there is one: its goal is about rounds, so the header counts them
+  // (campaigns.md Section 4.3: a Pulse counter "only when the goal is itself about Pulses").
+  const round = context.round
+  const phase = round === undefined ? "build phase" : `build phase - round ${round.number} of ${round.of}`
+  const subtitle = input.pulse === undefined ? phase : pulseSubtitle(input.pulse)
   text(cells, band, left + 15, headerRow, subtitle, "chrome.muted", { limit: limit - 15 })
   // What Esc does right now, right-aligned (feedback F37): "menu [esc]", "back [esc]", "close [esc]" —
   // the name quiet, the key in the hotkey colour after it, findable without competing with the game's

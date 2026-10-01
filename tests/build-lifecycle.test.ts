@@ -21,7 +21,7 @@ import { AnsiBackend } from "../src/view/backends/ansi.ts"
 import { KEYBOARD_POP, KEYBOARD_PUSH, KEYBOARD_QUERY } from "../src/view/key-events.ts"
 import type { Settings } from "../src/settings/index.ts"
 import { ESC } from "./build-helpers.ts"
-import { DEFENCE_KEYS, PROBE_PULSE } from "./pulse-helpers.ts"
+import { DEFENCE_KEYS } from "./pulse-helpers.ts"
 
 
 /** The title row's clock, whatever styling sits between the words and the time. */
@@ -267,8 +267,8 @@ test("--keys that cannot be delivered stops there and says why when the screen c
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
-/** A plan that wins against the probe (`PROBE_PULSE`, which each run below asks for — the game defaults
- *  to a heavy raid): a Nexus power, two Turrets and a Hatchery, the commit and its yes. */
+/** A plan that wins PERIMETER's first round: a Nexus power, two Turrets and a Hatchery, the commit and its
+ *  yes. */
 const WINNING_PLAN = `${DEFENCE_KEYS} s s`
 
 test("the live loop plays a Nexus Pulse on its own clock: timer, last seconds, result, then idle — and starts over on Restart", async () => {
@@ -286,20 +286,20 @@ test("the live loop plays a Nexus Pulse on its own clock: timer, last seconds, r
     },
     now: () => t,
     startKeys: parseKeyScript(WINNING_PLAN),
-    experiments: PROBE_PULSE,
   })
   await sleep(80)
   // Opened already in the Pulse the start keys committed, at its very beginning — however many seconds of
   // script clock the keys took, the live clock started the Pulse at zero.
-  assert.equal(timerAt(stdout.lastWrite), "0:15", "the Pulse did not open at zero")
+  assert.equal(timerAt(stdout.lastWrite), "0:09", "the Pulse did not open at zero")
   assert.match(stdout.lastWrite, /nexus pulse/)
 
-  t += 6_000
+  t += 3_000
   await sleep(80)
-  assert.equal(timerAt(stdout.lastWrite), "0:09", "the Pulse did not follow the screen's clock")
+  assert.equal(timerAt(stdout.lastWrite), "0:06", "the Pulse did not follow the screen's clock")
 
-  // The last seconds, in the run-up to the stop (the Pulse ends near 14.6 s and the warning is three seconds).
-  t += 6_000
+  // The last seconds, in the run-up to the stop (PERIMETER's first round ends near 8.3 s and the warning
+  // is three seconds).
+  t += 4_000
   await sleep(80)
   assert.match(stdout.lastWrite, /about to end/, "no warning before the fight stopped")
 
@@ -340,12 +340,11 @@ test("a Nexus Pulse holds still behind the resize gate and resumes from the same
     exit: () => {},
     now: () => t,
     startKeys: parseKeyScript(WINNING_PLAN),
-    experiments: PROBE_PULSE,
   })
   await sleep(60)
   t += 3_000
   await sleep(60)
-  assert.equal(timerAt(stdout.lastWrite), "0:12")
+  assert.equal(timerAt(stdout.lastWrite), "0:06")
 
   stdout.columns = 60
   stdout.emit("resize")
@@ -356,7 +355,7 @@ test("a Nexus Pulse holds still behind the resize gate and resumes from the same
   stdout.columns = 80
   stdout.emit("resize")
   await sleep(60)
-  assert.equal(timerAt(stdout.lastWrite), "0:12", "the Pulse ran on behind the gate")
+  assert.equal(timerAt(stdout.lastWrite), "0:06", "the Pulse ran on behind the gate")
   stdin.emit("data", Buffer.from([3]))
   await sleep(30)
 })

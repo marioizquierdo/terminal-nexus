@@ -16,7 +16,6 @@ import {
   SPIKE_STANDING,
   SPIKE_START_CURSOR,
   spikeGrid,
-  spikePulse,
 } from "../build/catalog.ts"
 import { isGated } from "../build/camera.ts"
 import { buildLayout } from "../build/layout.ts"
@@ -33,7 +32,7 @@ import { chunkText } from "../view/backends/ports.ts"
 import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
-import { startPulse } from "./pulse-run.ts"
+import { SPIKE_MISSION, nextRound, startPulse } from "./pulse-run.ts"
 import type { PlaytestStep } from "../playtest/keys.ts"
 import { UNTIMED_GAP_MS, deliverStep } from "../playtest/deliver.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
@@ -109,8 +108,9 @@ export type SpikeOptions = Readonly<{
   hostName?: HostName
 }>
 
+/** Round 1 of the mission the screen plays (PERIMETER, gate 6B), on the placeholder map. */
 export function spikeContext(scrollMargin?: number, extra: Partial<BuildContext> = {}): BuildContext {
-  return {
+  return SPIKE_MISSION.firstRound({
     grid: spikeGrid(),
     registry: FIXTURE_REGISTRY,
     catalog: SPIKE_CATALOG,
@@ -118,10 +118,9 @@ export function spikeContext(scrollMargin?: number, extra: Partial<BuildContext>
     allotment: SPIKE_ALLOTMENT,
     nexusDraft: SPIKE_NEXUS_DRAFT,
     edgeStyle: SPIKE_EDGE_STYLE,
-    pulse: spikePulse,
     ...(scrollMargin === undefined ? {} : { scrollMargin }),
     ...extra,
-  }
+  })
 }
 
 export async function runSpike(options: SpikeOptions): Promise<number> {
@@ -234,6 +233,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     onExport: exportText,
     startPulse,
     activity: log,
+    nextRound,
   })
 
   // Start in a state: the script's own clock, a second between untimed steps as in a scripted
@@ -306,7 +306,8 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
         ? gateFrame(size.columns, size.rows, SPIKE_MINIMUM)
         : composeBuildFrame(
             {
-              context,
+              // This round's: what stands on the map changes from round to round (gate 6B).
+              context: build.round,
               state: build.state,
               layout,
               glyphPack: settings.glyphPack,

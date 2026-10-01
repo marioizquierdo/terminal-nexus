@@ -212,26 +212,32 @@ as a historical record, and nothing in it is open work.
 The current milestone is **[`milestones/milestone-06-pulse-phase.md`](milestones/milestone-06-pulse-phase.md)
 — the Nexus Pulse Phase** (promoted 2026-09-29): can a player start the Pulse from a completed Build
 Phase, watch the unmodified kernel resolve it, see a legible ending with Recall, and land in the next
-Build Phase? Its active gate is **6A — Start, end, Recall**: Start Nexus Pulse as an explicit action from
-the Build Phase's Start button, the end condition, the stop / finish-in-flight / Recall sequence, and a
-result a viewer can read unprompted. **Gate 6A is built and reported (PASS), awaiting Mario's playtest**
-(2026-09-29, `evidence/gate-6a-report.md`; reworked twice from his feedback the same day):
-**`[s] Start Pulse`**, the menu's last row — reached by Up and Down like every other, since a menu can
-always be walked with Up, Down and Enter alone — opens a "Battle Round 1" screen announcing the round,
-and Enter, Space or `[s] Start` starts the Pulse on the Build Phase's own screen — the unmodified kernel
-resolves the committed plan plus a placeholder crew and raid — with a countdown timer in the title, a
-score, a feed of events, pause / speed / step / watch-again, and an ending of the timer flashing and a
-light sweeping the map's border like a lighthouse in the last three seconds, a cease fire, the survivors
-walking home and a plain result (won, lost, drawn or timed out, and why). **Red is kept for the player's
-own Nexus being hurt** — its first hit, very low health, a lost Pulse — faint and brief. Recall, which
-the rules described and no code ran, is built for the first time in `src/match/`, beside the kernel;
-the kernel is untouched. The ending's timings, the red's switch, and the raid's and the crew's size are
-Experiments (`d`); the interface rules are `docs/ui-patterns.md` (the side panel, and the Nexus Pulse on screen). **Do not start 6B** (the loop back into
-the next Build Phase and the trigger runner) or 6C (automatic production) without Mario's word. **Mario
-asked on 2026-09-28 to keep going without waiting to look at each gate first**: he tests several merged
-changes together, then plays, exports his Experiments, and pastes them into the pull request.
+Build Phase? **Gate 6A — Start, end, Recall — is accepted** (2026-09-30, `evidence/gate-6a-report.md`):
+**`[s] Start Pulse`**, the menu's last row, opens a "Battle Round 1" screen, and Enter, Space or `[s]
+Start` starts the Pulse on the Build Phase's own screen — the unmodified kernel resolves the committed
+plan — with a countdown timer in the title, a score, a feed of events, pause / speed / step /
+watch-again, and an ending of the timer flashing and a light sweeping the map's border in the last
+three seconds, a cease fire, the survivors walking home and a plain result. **Red is kept for the
+player's own Nexus being hurt**, faint and brief. Recall is built in `src/match/`, beside the kernel;
+the kernel is untouched. **Its active gate is now 6B — the loop and the trigger runner's simulation
+band**: after Recall, the next Build Phase, until the mission's triggers end it; `spawn`, `order`,
+`commitPlan`, `win` and `lose` as validated data; PERIMETER's three waves as the fixture in place of the
+placeholder Pulse and its Raid and Your units Experiments; Q36 resolved or deferred with a reason.
+**Gate 6B is built and reported (PASS), awaiting Mario's playtest** (2026-09-30,
+`evidence/gate-6b-report.md`): the screen plays PERIMETER — three rounds, the raid in three waves — and
+after a round's result `[enter] Next round` opens the next Build Phase on what the last one left, with the
+next wave shown on the map, see-through, its intention on the Explore Map card. A mission is data
+(`src/mission/`), validated when loaded; the trigger runner (`src/match/mission.ts`) resolves each round
+on the unmodified kernel. Q36 is resolved with no rule change; Q69 (an order primitive: every unit still
+engages the nearest enemy) and Q70 (a defender's wiped-out units end a round early) wait on him; the
+Campaign's opponent is thought through in `docs/scripted-opponent.md`. Next round and Incoming wave are
+Experiments (`d`). **Do not start 6C** (automatic production) without Mario's word. **Mario asked on 2026-09-28 to keep
+going without waiting to look at each gate first**: he tests several merged changes together, then
+plays, exports his Experiments, and pastes them into the pull request. He added, with 6A's acceptance,
+a direction for later: the Campaign should eventually define a Pulse's whole opening state so the
+player can explore the map and see what is coming, with incoming units able to show their intention.
 
-**The menu spike is built and reported, awaiting Mario's playtest** (2026-09-30,
+**The menu spike is built, played and merged** (2026-09-30,
 `evidence/menu-spike-report.md`; feedback
 [`docs/feedback/2026-09-30-menu-spike.md`](docs/feedback/2026-09-30-menu-spike.md), F52-F60, on a pull
 request of its own): the reorganisation of the Build Phase menu that 6A's round 3 left for a spike
@@ -255,15 +261,15 @@ for a small follow-up, on the same pull request (2026-09-30,
 [`docs/feedback/2026-09-30-menu-spike-followup.md`](docs/feedback/2026-09-30-menu-spike-followup.md),
 F82-F86, canon 2.30): every popup breathes and the Battle Round screen opens with a double flash; a card
 is a title, a subtitle, a description and its numbers; Settings is in titled sections, and every setting
-is declared once with its tier — player, experiment or tuned (`src/build/all-settings.ts`). It does not
-start 6B; the prompt that does is in `docs/next-steps.md`.
+is declared once with its tier — player, experiment or tuned (`src/build/all-settings.ts`). Mario
+played and merged it with gate 6A (pull request 49, 2026-09-30).
 
 **Feedback loops** (2026-10-01,
 [`docs/feedback/2026-10-01-feedback-loops.md`](docs/feedback/2026-10-01-feedback-loops.md), F87-F96,
 canon 2.31, on a pull request of its own): the loop is written into the design (`docs/ui-patterns.md`
 section 15); the **Activity Logs** — one structured logger whose events are declared in a schema
 (`src/log/`), and a game-menu window that filters and exports them; demo buttons on the playtest page;
-and an **About** screen on the title menu. It does not start 6B either.
+and an **About** screen on the title menu. It is not gate work.
 
 So the authorised work for a new session is, in order:
 
@@ -272,9 +278,9 @@ So the authorised work for a new session is, in order:
    outstanding or that everything still is; **a pasted settings export is feedback**: start the game
    with it (`--settings`), and settle each Experiment it answers — adopt the value as the default,
    delete the Experiment, record the answer; a pasted Activity Logs export is evidence of what happened;
-2. **the current milestone's active gate** — gate 6A has nothing left to build until he has played
-   it (Q66 is answered; his key-release probe still says whether his iTerm2 reports releases); the next gate waits for his word, and when it comes it
-   is the next gate in the build order
+2. **the current milestone's active gate** — gate 6B has nothing left to build until he has played it
+   (his key-release probe still says whether his iTerm2 reports releases); the gate after it waits for
+   his word, and when it comes it is the next gate in the build order
    [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
    order — read that table's build-order column, and take one gate per session unless the owner's own
    prompt asks for more.

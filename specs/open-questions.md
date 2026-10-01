@@ -777,9 +777,9 @@ not build C's authoring surface before a mission actually uses it.
 
 ### Q36 — Does a defensive mission need a victory condition the kernel does not have?
 
-**Status:** OPEN — blocks nothing before Milestone 6, but it is a **RULE-level** question
-([`engine.md`](engine.md) Section 5's victory condition is RULE), so it needs deciding before that
-milestone's gate closes rather than during it.
+**Status:** OPEN — **resolved in practice by gate 6B, without a kernel change** (below); it moves to
+Answered when Mario accepts the gate. It was a **RULE-level** question ([`engine.md`](engine.md)
+Section 5's victory condition is RULE), and the answer changes no RULE.
 
 PERIMETER's objective, in its own briefing: "Hold the perimeter. Keep the workers alive." The kernel's
 current victory check (`engine.md` Section 4.3) is: enemy Grid Nexus destroyed, one side annihilated,
@@ -820,6 +820,20 @@ the spike's "Raid: none" Experiment reaches it). That is option A's cheapest pos
 for the *screen*, but not for the *question*: whether a defensive mission's player reads it as success
 depends on PERIMETER's own briefing and debrief text around it, which arrives with 6B's fixture.
 Q36 stays open for 6B to close; nothing in 6A depends on the answer.
+
+**Gate 6B (2026-09-30) resolved it — option A, then B as a trigger, with no kernel change.** The kernel's
+victory check is untouched (`git diff` over `src/pulse` is empty): a Pulse that runs out of time is still
+the kernel's neutral draw. PERIMETER's goal is read one level up, by the trigger runner, from the
+mission's own data — `{ id: "hold", when: { event: "pulse.end", pulse: 3 }, do: [{ win: true }] }` — with
+a `lose` on the player's Nexus destroyed listed before it, so a fallen Nexus in the last round is a loss,
+not a hold. On screen, a round the mission goes on from keeps the fight's own words (a time-out still
+reads TIME'S UP, and under it "Round 1 of 3 is over. The Nexus stands."), and the last round's result is
+the mission's verdict in the mission's words — **MISSION COMPLETE — The perimeter held.** — with the
+fight's TIME'S UP under it, never instead of it (`evidence/screenshots/mission-complete.png`). So the
+plain draw did not read as success on its own, and needed no new victory branch to: the mission says
+what the draw means. **Recommendation: accept this answer**; a kernel "defender wins on time-out" flag is
+not needed for PERIMETER, and Skirmish and Challenge keep the plain rule. What the build found instead is
+Q70 below: the kernel's *annihilation* rule, not its time-out, is what bends a defence mission.
 
 ### Q38 — Does PERIMETER's own map need real scrolling, or does Milestone 5 prove scrolling on different content?
 
@@ -1122,6 +1136,50 @@ for one thing on one screen.
 **Recommendation: B**, decided together with the menu reorganisation the owner has announced (F51),
 because the menu row is one of the places the word lives and he will be rewriting the menu anyway.
 Until then A stands, and the popup's title and body are data (`popupSpec`), so B is a change of words.
+
+### Q69 — Does the kernel need an order primitive, so a scripted group can hold, withdraw or head for a place?
+
+**Status:** OPEN — blocks nothing in gate 6B; registered 2026-09-30.
+
+campaigns.md Section 2.1 gives the trigger runner an `order` action — a group "advances, holds, or
+withdraws toward a region" — and the owner asked, at gate 6A's acceptance, for incoming units to show
+their intention. **The kernel has one movement rule: every unit engages the nearest enemy.** It has no
+field for an order and no phase that reads one. So gate 6B builds `order` with one verb, `advance`, which
+means exactly what the kernel already does; the region it names is the stated destination, shown to the
+player as intention, not a path the kernel steers by. `hold` and `withdraw` are refused when a mission is
+loaded, with this question's number in the message.
+
+| Option | Cost |
+| --- | --- |
+| A. **Keep `advance` only**; intentions stay words the mission writes | Free; but a raid can never feint, wait at the ridge, or pull back, and "Break through at the ridge" is a promise the kernel keeps only because the nearest enemy happens to be that way |
+| B. **An order field on an entity and a goal in the intents phase** — a group holds (never moves, still fires), withdraws (moves away from the region), or heads for a region before it engages | A kernel change: a new `EntityState` field (a schema bump), a rule in the intents phase with its own named scenario, the determinism suite — the same bar as every rule since Milestone 1. It is also the seam the Campaign's opponent AI needs (`docs/scripted-opponent.md`) |
+| C. **Orders as scripted content swaps** (a "holding" variant of a unit with a static behaviour) | No kernel change, but a unit's identity would change under it, and every unit needs variants: content bloat to avoid a rule |
+
+**Recommendation: B, as its own small gate after 6B**, scoped to `hold` and "head for a region, then
+engage", because that is what a readable intention needs and what the Campaign's scripted opponent will
+be made of. Not built here: it is a kernel change, and this gate's frame forbids one.
+
+### Q70 — Should a side whose Grid Nexus still stands lose a Pulse because its units died?
+
+**Status:** OPEN — blocks nothing; registered 2026-09-30 from PERIMETER's fixture in gate 6B.
+
+The kernel ends a Pulse the moment one side's mobile units are all dead (annihilation), even when that
+side's Grid Nexus stands. In a defence mission this reads oddly: when the player's squads fall in round 2,
+the round simply stops, with the raid at the gate — and the flank that was due seven seconds in never
+comes. The raid's survivors then stand where they stopped and carry into round 3 (which is at least
+consistent: the player can see them in the Build Phase). In an earlier tuning of the waves, a strong
+defence's round 3 ended the moment its last swarmer died, the Nexus untouched, and the mission counted it
+held.
+
+| Option | Cost |
+| --- | --- |
+| A. **Keep the rule** — annihilation ends a Pulse whatever stands | No change; a defence round can end before its waves have all come, and "the raid's schedule" is shorter than written |
+| B. **A side with a standing Grid Nexus is never annihilated** — its Pulse goes on until the Nexus falls or the time runs out | A RULE change (`engine.md` 4.3, victory), a named scenario, and the full determinism bar; it also changes Skirmish, where it is arguably right too: "Destroying the enemy Grid Nexus wins" |
+| C. **A mission flag** — the runner tells the kernel the defender fields no mobile units, so only its Nexus can lose | No kernel file changes, but it misstates the roster to the kernel to get a different rule — the kind of hidden rule the project refuses |
+
+**Recommendation: B**, decided on evidence: play PERIMETER as it is first (the Next round Experiment and
+the waves as built), and if a round ending with the raid at the gate reads wrong to the owner, B is the
+honest fix. Until then A stands and the gate report says what it does.
 
 ## 5. Answered
 

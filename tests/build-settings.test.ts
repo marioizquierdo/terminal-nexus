@@ -211,7 +211,7 @@ test("[e] shows the export in a popup, hands the same text to the adapter, and E
   assert.match(text, new RegExp(`holdWindowMs = ${hold} `))
   // Up/Down walk the text; the window follows it to the last line.
   for (let line = 0; line < 40; line += 1) keys(side, DOWN)
-  assert.match(screen(side), new RegExp(`crew = ${defaultExperiments().crew} `))
+  assert.match(screen(side), new RegExp(`incoming = ${defaultExperiments().incoming} `))
   keys(side, ESC)
   assert.equal(side.build.state.popup, "settings")
   assert.equal(side.build.state.popupHighlight, SETTINGS_EXPORT_ROW)
@@ -231,10 +231,10 @@ test("[e] shows the export in a popup, hands the same text to the adapter, and E
 })
 
 test("the export lists changed experiments first with their defaults, then the settings, then the rest", () => {
-  // Three Experiments a step from this build's defaults, each written as `raid = probe  # Raid, default
-  // heavy`: the value as the code reads it, the default as the popup shows it.
+  // Three Experiments a step from this build's defaults, each written as `incoming = hidden  # Incoming
+  // wave, default shown`: the value as the code reads it, the default as the popup shows it.
   const defaults = defaultExperiments()
-  const moved = ["crew", "raid", "holdWindowMs"] as const
+  const moved = ["nextRound", "incoming", "holdWindowMs"] as const
   const experiments = moved.reduce((flags, field) => stepExperiment(flags, field, 1).flags, defaults)
   const snapshot: SettingsSnapshot = { settings: { ...DEFAULT_SETTINGS, theme: "light" }, experiments }
   const text = formatSettingsExport(snapshot, "592f3cb")
@@ -287,11 +287,11 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
   const result = parseSettingsExport(
     [
       "some chatter from a pull request comment",
-      "raid=probe, holdWindowMs=500ms; battleRoundPulseMs=1200ms",
+      "incoming=hidden, holdWindowMs=500ms; battleRoundPulseMs=1200ms",
       "retiredFlag = 3  # a flag an older build had",
       "battleRoundPulseMs = 99999  # out of range: keeps what it had",
       "focusArrowMs=250 cardRevealMs=400  # settled in the third round: skipped without a word",
-      "crew = sideways",
+      "nextRound = sideways",
       "startFocus = map  # as the popup shows it",
       "colours=256 background=light glyphs=unicode reducedMotion=yes",
       "smartCursor = off",
@@ -300,14 +300,14 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
     base,
   )
   const { experiments, settings } = result.snapshot
-  assert.equal(experiments.raid, "probe")
+  assert.equal(experiments.incoming, "hidden")
   assert.equal(experiments.holdWindowMs, 500)
   assert.equal(experiments.popupPulseMs, 1200)
-  assert.equal(experiments.crew, defaultExperiments().crew)
+  assert.equal(experiments.nextRound, defaultExperiments().nextRound)
   assert.deepEqual(settings, { capability: "color256", theme: "light", glyphPack: "unicode", reducedMotion: true })
   // "Opens on" and "Smart cursor" were settled and deleted (feedback F30, F31) before the list of
   // settled names existed: an older export's lines for them are reported like any retired name.
-  assert.deepEqual(result.ignored, ["retiredFlag=3", "battleRoundPulseMs=99999", "crew=sideways", "startFocus=map", "smartCursor=off"])
+  assert.deepEqual(result.ignored, ["retiredFlag=3", "battleRoundPulseMs=99999", "nextRound=sideways", "startFocus=map", "smartCursor=off"])
   // The names the owner has settled are known: skipped quietly, never reported.
   assert.deepEqual(result.settled, ["focusArrowMs", "cardRevealMs", "placeLight", "scrollMargin"])
   // The popup's own words read back too, and a settled name from an older export is skipped without a word.
@@ -328,8 +328,8 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
 test("a number is digits first: a bare unit is a bad value, skipped and reported, never zero", () => {
   const base: SettingsSnapshot = { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() }
   // `Number("")` is 0, which once turned the focus arrow and the card reveal off.
-  const result = parseSettingsExport("battleRoundPulseMs=ms holdWindowMs=% holdWindowMs=-350 raid=probe", base)
-  assert.deepEqual(result.snapshot.experiments, { ...defaultExperiments(), raid: "probe" })
+  const result = parseSettingsExport("battleRoundPulseMs=ms holdWindowMs=% holdWindowMs=-350 incoming=hidden", base)
+  assert.deepEqual(result.snapshot.experiments, { ...defaultExperiments(), incoming: "hidden" })
   assert.deepEqual(result.ignored, ["battleRoundPulseMs=ms", "holdWindowMs=%", "holdWindowMs=-350"])
   // With digits in front, a unit still reads.
   assert.equal(parseSettingsExport("battleRoundPulseMs=1200ms", base).snapshot.experiments.popupPulseMs, 1200)
@@ -399,15 +399,15 @@ const OWNER_EXPORT_2026_09_30_THIRD = [
   "raid = heavy  # Raid",
 ].join("\n")
 
-test("the owner's third export is this build: the focus arrow and card reveal are tuned values, the Pulse his defaults", () => {
+test("the owner's third export is this build: the focus arrow and card reveal are tuned values, the placeholder Pulse retired", () => {
   const base: SettingsSnapshot = { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() }
   const result = parseSettingsExport(OWNER_EXPORT_2026_09_30_THIRD, base)
   assert.deepEqual(result.ignored, [])
-  assert.deepEqual(result.settled, ["focusArrowMs", "cardRevealMs"])
+  // The raid and the crew were his placeholder Pulse's; PERIMETER's waves are the mission's data now (gate
+  // 6B), so an export that names them reads without a complaint, and they change nothing.
+  assert.deepEqual(result.settled, ["focusArrowMs", "cardRevealMs", "crew", "raid"])
   assert.equal(TUNING.focusArrowMs, 250)
   assert.equal(TUNING.cardRevealMs, 400)
-  assert.equal(defaultExperiments().raid, "heavy")
-  assert.equal(defaultExperiments().crew, "some")
   // The hold window is the one value that differs on purpose: his words that day asked to try 200 with
   // the tap-counting ramp ("I would try holdWindowMs = 200ms"); his export still had 250 from the old one.
   assert.equal(result.snapshot.experiments.holdWindowMs, 250)
@@ -421,14 +421,15 @@ test("the owner's export of 2026-09-30 is this build: its settled numbers are th
   assert.deepEqual(result.ignored, [])
   // His jump distance reads as an Experiment again: it came back for the navigation polish round
   // (feedback F85), at his value.
-  assert.deepEqual(result.applied, ["holdWindowMs", "jumpStep", "raid", "crew", "theme", "capability", "glyphPack", "reducedMotion"])
+  assert.deepEqual(result.applied, ["holdWindowMs", "jumpStep", "theme", "capability", "glyphPack", "reducedMotion"])
   // The rest were settled: the twenty-eight of that export — less the jump distance, above — and the
   // focus arrow he settled again later that day, each skipped quietly; each number of the twenty-eight is
   // this build's value, read not copied, whichever tier it stands on now — except the held-key ramp's
   // three (`holdStep`, `fastStep`, `rampMs`), which his third round the same day retired along with the
   // rule they tuned (F79: taps counted, a hold on a cadence), still skipped quietly. (The settled names
   // are derived from the list, so they also hold tuned numbers his export never named.)
-  assert.equal(result.settled.length, 28)
+  // (Plus the placeholder Pulse's raid and crew, retired by gate 6B's mission.)
+  assert.equal(result.settled.length, 30)
   assert.ok(result.settled.every((name) => SETTLED_EXPERIMENTS.has(name)))
   // Not settled by that export: the hold window, an Experiment then and now (his third round retuned it),
   // and the two he settled again later that day.
@@ -452,23 +453,23 @@ test("the owner's export of 2026-09-30 is this build: its settled numbers are th
 test("--settings on the command line: settings over what is saved, and every experiment from the text", () => {
   const saved: Settings = { ...DEFAULT_SETTINGS, capability: "truecolor" }
   assert.deepEqual(importSettings(undefined, saved), { settings: saved, experiments: defaultExperiments(), ignored: [] })
-  const imported = importSettings("theme=light raid=probe", saved)
+  const imported = importSettings("theme=light incoming=hidden", saved)
   assert.deepEqual(imported.settings, { ...saved, theme: "light" })
-  assert.deepEqual(imported.experiments, { ...defaultExperiments(), raid: "probe" })
+  assert.deepEqual(imported.experiments, { ...defaultExperiments(), incoming: "hidden" })
 })
 
 test("a Build Phase opened with imported experiments has them, and the playtest script's runner takes both halves", () => {
-  const side = session({ ...spikeContext(), experiments: { raid: "probe", holdWindowMs: 500 } })
-  assert.equal(side.build.state.experiments.raid, "probe")
+  const side = session({ ...spikeContext(), experiments: { incoming: "hidden", holdWindowMs: 500 } })
+  assert.equal(side.build.state.experiments.incoming, "hidden")
   assert.equal(side.build.state.experiments.holdWindowMs, 500)
   const run = runBuildPlaytest({
     steps: parseKeyScript("d"),
     settings: { ...DEFAULT_SETTINGS, glyphPack: "unicode" },
-    experiments: { crew: "some" },
+    experiments: { nextRound: "auto" },
   })
   const last = run.frames[run.frames.length - 1]
   assert.ok(last !== undefined)
-  assert.equal(last.state.experiments.crew, "some")
+  assert.equal(last.state.experiments.nextRound, "auto")
   assert.equal(last.state.settings.glyphPack, "unicode")
   assert.match(frameToText(last.frame), /│/u)
 })
@@ -477,10 +478,10 @@ test("a Build Phase opened with imported experiments has them, and the playtest 
 
 test("the settings flow by keys, by clicks, and from a driver script is the same state, frame and export", () => {
   // Open the game menu, open Settings, set the background to light, go to the experiments and turn the
-  // raid to the probe, then export.
+  // incoming wave to hidden, then export.
   const byKeyboard = session()
   keys(byKeyboard, ESC, "s", RIGHT, ESC, ESC, "d")
-  goToExperiment(byKeyboard, "raid")
+  goToExperiment(byKeyboard, "incoming")
   keys(byKeyboard, RIGHT, "e")
 
   const byMouse = session()
@@ -489,8 +490,8 @@ test("the settings flow by keys, by clicks, and from a driver script is the same
   const background = placed(byMouse).rows.find((entry) => entry.spec.kind === "setting" && entry.spec.label === "Background")
   assert.ok(background !== undefined)
   clickCell(byMouse, settingColumns(placed(byMouse)).valueTo, background.row)
-  // By mouse, the raid's row is reached with the wheel; its value box is the click.
-  const raidLabel = experimentSpec("raid").label
+  // By mouse, the incoming wave's row is reached with the wheel; its value box is the click.
+  const raidLabel = experimentSpec("incoming").label
   while (!placed(byMouse).rows.some((entry) => entry.spec.kind === "setting" && entry.spec.label === raidLabel)) {
     clickCell(byMouse, placed(byMouse).box.left + 2, placed(byMouse).box.top + 2, MOUSE_WHEEL_DOWN)
   }
@@ -509,19 +510,19 @@ test("the settings flow by keys, by clicks, and from a driver script is the same
     { kind: "open-game-menu" },
     { kind: "open-settings", section: "settings" },
     { kind: "setting-adjust", field: "theme", step: 1 },
-    { kind: "experiment-adjust", field: "raid", step: 1 },
+    { kind: "experiment-adjust", field: "incoming", step: 1 },
     { kind: "export-settings" },
   ]
   const byDriver = session()
   byDriver.build.run(script)
 
-  const raidNow = stepExperiment(defaultExperiments(), "raid", 1).flags.raid
+  const raidNow = stepExperiment(defaultExperiments(), "incoming", 1).flags.incoming
   for (const side of [byKeyboard, byMouse, byDriver]) {
     assert.equal(side.build.state.popup, "export")
     assert.equal(side.build.state.settings.theme, "light")
-    assert.equal(side.build.state.experiments.raid, raidNow)
+    assert.equal(side.build.state.experiments.incoming, raidNow)
     assert.equal(side.exports.length, 1)
-    assert.match(side.exports[0] as string, new RegExp(`raid = ${raidNow} `))
+    assert.match(side.exports[0] as string, new RegExp(`incoming = ${raidNow} `))
   }
   assert.equal(byMouse.exports[0], byKeyboard.exports[0])
   assert.equal(byDriver.exports[0], byKeyboard.exports[0])

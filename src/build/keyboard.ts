@@ -76,6 +76,8 @@ export type KeyboardContext = Readonly<{
   popupSpec?: PopupSpec | null
   /** A Nexus Pulse is on screen (gate 6A): its playback keys are the screen's, ahead of the Grid's. */
   pulse?: boolean
+  /** The Pulse on screen has ended and its result stands (gate 6B): Enter, Space and `n` go on. */
+  pulseOver?: boolean
   /**
    * How many tiles a cursor key moves, when the input path knows when keys arrive: its motion rules
    * (`src/build/motion.ts` — taps counted, a hold on the game's own cadence, the fast move's jump), which
@@ -225,6 +227,8 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   // Explore Map, and `r` watches it again. Everything else — the arrows that look around the map, Esc,
   // `q`, `d` — is still the screen's.
   if (context.pulse === true) {
+    // Once the result stands, Enter, Space and `n` go on — to the next round, or the mission again.
+    if (context.pulseOver === true && (PLACE_KEYS.has(key) || key === "n")) return { kind: "next-round" }
     const control = PULSE_KEYS[key]
     if (control !== undefined) return { kind: "pulse", control }
   }

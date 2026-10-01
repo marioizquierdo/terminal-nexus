@@ -8,11 +8,9 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { buildLayout } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
-import { SPIKE_PULSE_SEED, SPIKE_PULSE_TICKS, SPIKE_START_CURSOR, spikePulse } from "../src/build/catalog.ts"
-import { startPulse } from "../src/cli/pulse-run.ts"
+import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
 import { spikeContext } from "../src/cli/spike.ts"
 import { inBounds, tilesOf } from "../src/grid/coords.ts"
-import { openingState } from "../src/match/index.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
 import { hashState } from "../src/state/serialize.ts"
 import type { EntityState } from "../src/state/types.ts"
@@ -21,7 +19,7 @@ import { outcomeOf } from "../src/view/pulse-live.ts"
 import type { ResolvedPulse } from "../src/view/pulse-live.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { createView } from "../src/view/snapshot.ts"
-import { BARRACKS, DEFENCE, HATCHERY, MINIMUM, TURRET, play } from "./pulse-helpers.ts"
+import { BARRACKS, DEFENCE, MINIMUM, play, testMission } from "./pulse-helpers.ts"
 import type { Scenario, Spot } from "./pulse-helpers.ts"
 
 const headlineOf = (pulse: ResolvedPulse): string => resultOf(outcomeOf(pulse.timeline)).headline
@@ -34,9 +32,9 @@ test("every ending the kernel has is reachable from the spike's own data", () =>
     ["nothing built", {}, "DEFEAT", "B", "annihilation"],
     ["one Turret", { plan: [DEFENCE[0] as Spot] }, "DRAW", null, "annihilation"],
     ["two Turrets and a Hatchery", { plan: DEFENCE }, "VICTORY", "A", "annihilation"],
-    ["nobody comes", { raid: 1 }, "TIME'S UP", null, "tick-limit"],
-    ["no units of your own", { crew: 1 }, "DEFEAT", "B", "nexus-destroyed"],
-    ["a heavy raid, nothing built", { raid: 2 }, "DEFEAT", "B", "annihilation"],
+    ["nobody comes", { raid: "none" }, "TIME'S UP", null, "tick-limit"],
+    ["no units of your own", { crew: "none" }, "DEFEAT", "B", "nexus-destroyed"],
+    ["a heavy raid, nothing built", { raid: "heavy" }, "DEFEAT", "B", "annihilation"],
   ]
   for (const [name, scenario, headline, winner, reason] of table) {
     const { pulse } = play(scenario)
@@ -62,8 +60,8 @@ test("the same plan is the same Pulse: hashes stable across runs, and identical 
   const direct = resolvePulse({
     initialState: opening,
     registry: FIXTURE_REGISTRY,
-    pulseTicks: SPIKE_PULSE_TICKS,
-    seed: SPIKE_PULSE_SEED,
+    pulseTicks: testMission().pulseTicks,
+    seed: testMission().seed,
   })
   assert.equal(direct.stateHash, first.timeline.stateHash)
   assert.equal(direct.eventsHash, first.timeline.eventsHash)
@@ -90,7 +88,7 @@ test("what the player built is what the Pulse resolves: a different plan is a di
 })
 
 test("the timeline runs to the outcome and no further; Recall hands the next Build Phase a clean, legal state", () => {
-  for (const scenario of [{}, { plan: DEFENCE }, { raid: 1 }] as const) {
+  for (const scenario of [{}, { plan: DEFENCE }, { raid: "none" }] as const) {
     const { timeline, recall } = play(scenario).pulse
     const last = timeline.states[timeline.states.length - 1] as NonNullable<(typeof timeline.states)[number]>
     assert.ok(last.outcome !== null, "the timeline stopped without an outcome")
@@ -124,11 +122,10 @@ test("a building committed on top of the muster points does not stop the Pulse: 
   assert.equal(opening.entities.filter((entity) => entity.player === "A" && entity.contentId.startsWith("unit.")).length, 5)
 })
 
-test("a context with no Pulse starts none: committing only freezes the plan, as before gate 6A", () => {
-  const context = { ...spikeContext() }
-  delete (context as { pulse?: unknown }).pulse
+test("a session with no Pulse to start starts none: committing only freezes the plan, as before gate 6A", () => {
+  const context = spikeContext()
   const layout = buildLayout(MINIMUM, context.grid)
-  const build = new BuildSession({ context, cursor: SPIKE_START_CURSOR, viewport: layout.viewport, startPulse })
+  const build = new BuildSession({ context, cursor: SPIKE_START_CURSOR, viewport: layout.viewport })
   build.run([{ kind: "pick-nexus", index: 0 }, { kind: "open-battle-round" }, { kind: "start-pulse" }])
   assert.equal(build.state.committed, true)
   assert.equal(build.pulse, null)
@@ -149,24 +146,12 @@ test("how it is watched cannot change what happened: effects, the cosmetic seed 
   assert.equal(timeline.stateHash, hashState(timeline.states[timeline.states.length - 1] as never))
 })
 
-test("the raid and the crew are the Experiments' to size, and the spike's Pulse is data", () => {
-  const some = spikePulse({ raid: "probe", crew: "some" })
-  assert.equal(some.seed, SPIKE_PULSE_SEED)
-  assert.equal(some.pulseTicks, SPIKE_PULSE_TICKS)
-  assert.deepEqual(some.forces.map((force) => force.player), ["A", "B"])
-  assert.deepEqual(spikePulse({ raid: "none", crew: "some" }).forces.map((force) => force.player), ["A"])
-  assert.deepEqual(spikePulse({ raid: "probe", crew: "none" }).forces.map((force) => force.player), ["B"])
-  assert.ok(
-    spikePulse({ raid: "heavy", crew: "some" }).forces[1]!.units.length > some.forces[1]!.units.length,
-    "a heavy raid is not bigger than the probe",
-  )
-  // The opening state a setup builds is the one `startPulse` resolves from.
-  const context = spikeContext()
-  const opening = openingState({
-    grid: context.grid,
-    registry: context.registry,
-    structures: context.standing,
-    setup: some,
-  })
-  assert.equal(opening.entities.length, context.standing.length + 5 + 7)
+test("gate 6A's placeholder Pulse, written as a mission, is the very Pulse 6A played", () => {
+  // Gate 6A's report pinned the winning plan's hashes under Node and Bun; the test mission is that
+  // placeholder's forces, muster points, seed and length as data (tests/pulse-helpers.ts), resolved by the
+  // trigger runner rather than handed to the kernel directly — and nothing moved.
+  const { timeline } = play({ plan: DEFENCE }).pulse
+  assert.ok(timeline.stateHash.startsWith("9b03136f"), `state hash ${timeline.stateHash}`)
+  assert.ok(timeline.eventsHash.startsWith("93638c7e"), `events hash ${timeline.eventsHash}`)
+  assert.equal(timeline.states.length - 1, 175)
 })
