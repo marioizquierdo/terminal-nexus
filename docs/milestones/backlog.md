@@ -4,19 +4,16 @@
 
 ### Why this document exists
 
-Until canon 2.8, `specs/milestone-2-deterministic-pulse.md` described the next horizontal pass after
-the Pulse Playground: finish routing, add the economy, add production, add visibility, lock the
+An earlier plan described the next horizontal pass after the Pulse Playground: finish routing, add the economy, add production, add visibility, lock the
 replay format — the whole kernel, completed in one wide sweep, before anything narrower was built on
 top of it.
 
 Mario redirected the roadmap instead: **campaign-first, one level at a time.** Each level is a small
 vertical slice — a Build Phase, a Pulse, a story wrapper, one map — and a level pulls in only the
 piece of this backlog it actually needs, when it needs it, rather than waiting for all of it to land
-first. That single-milestone "Level 1: Perimeter" contract was itself formalized at canon 2.9 into
-[`docs/milestones/`](README.md)'s ten-milestone sequence, at Mario's own request, once it became
-clear the first level needed most of the game's unbuilt systems at once; this document is where the
-original horizontal contract still lives, verbatim, so none of that design work is lost and a future
-level can still cite it directly.
+first. That became [`docs/milestones/`](README.md)'s milestone sequence once it was clear the first
+level needed most of the game's unbuilt systems at once; this document is where the original
+horizontal plan still lives, so none of that design work is lost and a future level can cite it.
 
 **Nothing here is deleted, and nothing here is more authorized than it was.** This is still GUIDANCE
 and locked-contract material exactly as it was under the old Milestone 2 — the only thing that changed
@@ -28,8 +25,8 @@ level's own contract cites it, and not before.
 - **Routing.** Real pathfinding around obstacles: weighted terrain, routes to a legal attack position
   rather than to an occupied tile, temporary danger cost for fleeing workers, deterministic
   tie-breaking, and bounded recalculation when a contested destination changes. The spike's greedy
-  step will strand units on rock; this is where that stops being acceptable. **Sharper since the
-  owner's Gate 1B viewing** (four-way movement): under Manhattan distance every legal step changes
+  step will strand units on rock; this is where that stops being acceptable. **Sharper since four-way
+  movement** (Mario's own choice after watching the first battles): under Manhattan distance every legal step changes
   distance by exactly ±1, so an actor whose approach is exactly on-axis with its goal and meets an
   obstacle has no fallback direction at all — not a stall to route around, a hard dead end.
   `docs/milestones/open-questions.md` Q15 has the measurement; whichever level first needs real routing is where
@@ -110,7 +107,7 @@ starting; each wants an answer before a level's contract that touches it is call
 | **Q15** — what should a mover with no route do? | Greedy routing with a sidestep leaves an actor pacing between two tiles forever. The report detects it from net progress; the kernel does not | Pathfinding makes it moot, or makes it a deliberate choice. A level authored to avoid the on-axis dead end (map layout, not a kernel fix) may ship without either — see `docs/milestones/completed/milestone-02-campaign-design.md` Section 4.3's own note on this for PERIMETER specifically |
 | **Q13** — where do workers flee, and what counts as annihilation? | Workers move at `1/1` and every fixture attacker at `3/4` or slower, so a fleeing worker on open ground is **never caught**. The mirror never reaches annihilation and always runs its full tick count | Real routing gives fleeing a danger cost, and an economy gives workers somewhere to be. Both change the shape of this question |
 
-**Q17 dropped off this table, resolved, since it was written**: the Gate 1B session that shipped
+**Q17 dropped off this table, resolved, since it was written**: the step that shipped
 four-way movement and Manhattan distance (Q15's own fix) removed Q17's degenerate tie as a side
 effect — a rank-deployed army no longer puts every enemy at the same distance under Manhattan the way
 it did under Chebyshev. Verified against `citizen-mirror-skirmish.ts`, not assumed. See
@@ -144,7 +141,7 @@ options, costs, and a recommendation each. The list below is the longer horizon:
 genuinely fine to leave unanswered until the project reaches them.
 
 - exact Citizen and Ravel commanders and Commander Armies;
-- **whether a Commander Army is well modeled as a deck of cards at all**, versus a composite of separate systems (units, structures, a Commander, faction rules, Nexus powers) that only share a legality check — retracted as a claim at canon 2.16, deliberately left for building and playing to settle;
+- **whether a Commander Army is well modeled as a deck of cards at all**, versus a composite of separate systems (units, structures, a Commander, faction rules, Nexus powers) that only share a legality check — retracted as a claim, deliberately left for building and playing to settle;
 - **whether Specials earn a third Build Phase decision channel at all**, beside placement and the Nexus draft — the newest and least-evidenced part of the composition (`commander-armies.md` Section 2.1), left the same way: Milestone 5 builds the slot, Milestone 6 plays the first whole loop, and only then is it defended or retired;
 - drafting modes and player-defined Commanders — kept possible by the pool shape of `commander-armies.md` Section 2.1, designed only when a milestone wants them;
 - the army-breadth caps (army structures/tech tree depth, Nexus powers, Specials) and the size of the hand each Build Phase deals;
@@ -162,10 +159,8 @@ genuinely fine to leave unanswered until the project reaches them.
 - whether the first browser path is hosted terminal parity or browser-native graphics;
 - when a Rust or Go boundary becomes worth its complexity.
 
-(12 logical ticks per second and the movement-credit rules, formerly on this list pending "Milestone
-2," were confirmed and promoted to RULE by Milestone 1 itself — `engine.md` Section 4.1/4.2, canon
-2.6 in Section 6 above — and removed here rather than left pointing at a milestone number that now
-means something unrelated.)
+(12 logical ticks per second and the movement-credit rules were once on this list; Milestone 1
+confirmed them and they are RULEs in [`pulse.md`](../system-design/pulse.md).)
 
 ## Deferred systems
 

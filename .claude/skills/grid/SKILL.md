@@ -194,8 +194,8 @@ this tool's own entry points. `scenarios/*.map.json` — the fixtures themselves
 - [`grid-screenshots`](../grid-screenshots/SKILL.md) — capturing PNG screenshots of the ASCII view
   for visual judgment, a narrower and different workflow from this one.
 - [`../../../AGENTS.md`](../../../AGENTS.md) — the operating contract this skill is a companion to.
-- [`docs/system-design/grid-engine.md`](../../../docs/system-design/grid-engine.md) Section 11, and
+- [`docs/system-design/runtime.md`](../../../docs/system-design/runtime.md) — the design of the tool, and
   [`docs/milestones/completed/milestone-01-grid-battles.md`](../../../docs/milestones/completed/milestone-01-grid-battles.md)
-  Section 3 — the canon this tool implements.
+  — the milestone that built it.
 - [`docs/system-design/replay-format.md`](../../../docs/system-design/replay-format.md) — the designed-but-unbuilt
   `.replay.json` format this tool will eventually read and write, one layer above a single map.
