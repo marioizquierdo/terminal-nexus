@@ -1,10 +1,5 @@
 # Owner playtest feedback — Build Phase after gate 5F
 
-**Document role:** Owner feedback log, one item per row, each with what happened to it
-**Status:** OPEN — every item must end up built, scheduled into a gate, or contested with a reason
-**Updated:** 2026-09-27
-**License:** Apache-2.0
-
 Mario played the merged gate 5F build (`./bin/terminal-nexus.ts --spike`) and sent this on
 2026-09-27. Each item below is his point in short, followed by what was done with it. A later
 orchestrator session goes through every item still marked **Scheduled** or **Open** in order; nothing

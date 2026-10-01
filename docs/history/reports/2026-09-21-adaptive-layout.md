@@ -1,11 +1,5 @@
 # Gate report — Milestone 5, Gate 5C: scrolling and the adaptive layout
 
-**Document role:** Gate evidence report for Gate 5C
-**Status:** BUILT — Section 8 concludes PASS; four questions only the owner can answer (Sections 1 and 5) are outstanding, the last two added by a second round acting on his own live feedback
-**Canon version:** 2.18
-**Updated:** 2026-09-21
-**License:** Apache-2.0
-
 ---
 
 ## 1. Frame — written before coding

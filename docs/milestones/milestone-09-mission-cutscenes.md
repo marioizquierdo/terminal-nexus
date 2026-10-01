@@ -1,10 +1,7 @@
 # Milestone 9 — Mission Cutscenes
 
-**Document role:** Milestone tracker — declare and play cutscenes for mission intros and events
-**Status:** GATED
+**Status:** PLANNED
 **Depends on:** Milestone 6 (events fire during the Pulse), Milestone 4 (the campaign menu is a plausible home for artifact entries)
-**Updated:** 2026-09-09
-**License:** Technical mechanism is Apache-2.0; the cutscene content itself is CC BY-SA 4.0
 
 > **This is the real thing, not the placeholder an earlier draft of this roadmap proposed.** The
 > milestone-2-deterministic-pulse.md contract this sequence replaced (see

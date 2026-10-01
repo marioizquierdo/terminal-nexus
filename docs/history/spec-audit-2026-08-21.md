@@ -3,8 +3,6 @@
 **Audited:** every document under `specs/` and `concept/`, plus `AGENTS.md`, `DEVELOPMENT.md`, and
 `scripts/check-repository.sh`.
 **Date:** 2026-08-21
-**Status:** findings applied at canon 2.5. This file is the record of *why*, and of what was
-deliberately not done.
 
 ## What this audit asked
 

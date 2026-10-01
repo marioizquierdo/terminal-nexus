@@ -1,11 +1,5 @@
 # Gate report — Milestone 5, Gate 5J: the owner's third round
 
-**Document role:** Gate evidence report for Gate 5J
-**Status:** COMPLETE — PASS, awaiting the owner's playtest
-**Canon version:** 2.25
-**Updated:** 2026-09-28
-**License:** Apache-2.0
-
 ---
 
 ## 1. Frame — written before coding

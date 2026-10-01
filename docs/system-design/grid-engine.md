@@ -1,11 +1,5 @@
 # Terminal Nexus — engine design
 
-**Document role:** How the engine is meant to be shaped, and which parts of that are settled
-**Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.30
-**Updated:** 2026-09-30
-**License:** Apache-2.0
-
 ## 0. How to read this document
 
 This is a **design document, not a rulebook.** Most of it is a recommendation written before the

@@ -1,10 +1,7 @@
 # Milestone 7 — Worker Economy
 
-**Document role:** Milestone tracker — build workers, gather resources during the Pulse
-**Status:** GATED
+**Status:** PLANNED
 **Depends on:** Milestone 6 (the Pulse loop workers actually act inside)
-**Updated:** 2026-09-09
-**License:** Apache-2.0
 
 > **Pulled forward from backlog, on purpose.** `docs/milestones/backlog.md` deferred a full
 > economy until some level actually needed one; this is that level. Scope stays narrow: enough worker

@@ -1,12 +1,9 @@
 # Milestone 3 — Game Menu
 
-**Document role:** Milestone tracker — accepted, kept as historical reference for the game's own entry point, as distinct from `grid`'s
 **Status:** COMPLETE
-**Active gate:** none — all three gates (3A, 3B, 3C) are built, evidenced, and accepted by the owner
+**Current step:** none — all three gates (3A, 3B, 3C) are built, evidenced, and accepted by the owner
 2026-09-21; see below
 **Depends on:** Milestone 2 (campaign design decided — accepted 2026-09-12)
-**Updated:** 2026-09-21
-**License:** Apache-2.0
 
 > **Start simple, with the minimum.** Mario's own words. This is the first time anything under the
 > name `terminal-nexus` actually launches — [`docs/system-design/grid-engine.md`](../../system-design/grid-engine.md) Section 11

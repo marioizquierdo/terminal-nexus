@@ -1,11 +1,5 @@
 # Terminal Nexus — concept
 
-**Document role:** One-page product definition
-**Status:** Canonical
-**Canon version:** 2.30
-**Updated:** 2026-09-12
-**License:** CC BY-SA 4.0 for creative direction; Apache-2.0 for technical product requirements
-
 ## The game in one sentence
 
 **Terminal Nexus is a fast, terminal-native strategy game in which players build compact bases during hidden, simultaneous planning, then watch persistent armies resolve those decisions through vivid deterministic ASCII battles called Nexus Pulses.**

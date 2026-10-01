@@ -1,11 +1,8 @@
 # Milestone 2 — Design and Orientation
 
-**Document role:** Milestone tracker — accepted, kept as historical reference for the single-player-mode vocabulary and PERIMETER decisions it fixed
 **Status:** COMPLETE
-**Active gate:** none — gate 2D closed 2026-09-12; see below
+**Current step:** none — gate 2D closed 2026-09-12; see below
 **Depends on:** Milestone 1 (accepted)
-**Updated:** 2026-09-12
-**License:** Apache-2.0; the mission decisions below touch CC BY-SA 4.0 narrative material already written in `campaigns.md`
 
 > **Design work, not code.** This milestone's own artifact is a decision, written down precisely
 > enough that docs/milestones 3 through 10 can build against it without re-deriving it — the same

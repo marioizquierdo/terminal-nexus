@@ -1,11 +1,5 @@
 # Gate report — Milestone 5, Gate 5F: layout and keyboard focus
 
-**Document role:** Gate evidence report for Gate 5F
-**Status:** COMPLETE — PASS, awaiting the owner's look
-**Canon version:** 2.19
-**Updated:** 2026-09-26
-**License:** Apache-2.0
-
 ---
 
 ## 1. Frame — written before coding

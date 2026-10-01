@@ -1,10 +1,5 @@
 # Terminal Nexus — next steps and carry-over
 
-**Document role:** The queue: what waits on Mario, what comes next, and the small work that has piled up beside the docs/milestones
-**Status:** WORKING — keep it short; delete an item when it is done, and move a decision into `docs/milestones/open-questions.md` when it becomes one
-**Updated:** 2026-09-30 (gate 6B built: the loop and PERIMETER's waves; earlier: gate 6A accepted and gate 6B active; earlier: the menu spike's follow-up, F82-F86, and the 6B prompt; earlier: its third round, feedback F77-F81 and his third export, on the same pull request; earlier: its second round and a general review, the menu spike, Milestone 5 accepted and gate 6A)
-**License:** Apache-2.0
-
 Milestones say what the game must become (`docs/milestones/`); this says what is waiting *right now*, and
 the cleanup that does not belong to any gate.
 

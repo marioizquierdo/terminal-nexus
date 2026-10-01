@@ -9,7 +9,7 @@ status as the Citizen and Ravel fixtures beside it. `commander-armies.md` still 
 for Milestone 4; nothing here is authorized as canon and nothing here should be read as one.
 
 Format follows `commander-armies.md` Section 1's own audit ("what they proved is worth carrying
-forward") rather than `.github/pull_request_template.md` — this isn't a gate, so that template's shape
+forward") rather than `specs/templates/gate-report.md` (the old gate-report template, since retired) — this isn't a gate, so that template's shape
 doesn't fit.
 
 ## Fourteen designs, in order

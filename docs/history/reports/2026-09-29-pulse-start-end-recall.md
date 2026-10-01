@@ -1,11 +1,5 @@
 # Gate report — Milestone 6, Gate 6A: Start, end, Recall
 
-**Document role:** Gate evidence report for Gate 6A
-**Status:** PASS — built, evidenced, and **accepted by Mario on 2026-09-30** (he played it with the menu spike and merged pull request 49). Reworked once from his first look at the pull request: Section 11 is that round, and where it disagrees with Sections 3-6 (the alarm), it wins
-**Canon version:** 2.26
-**Updated:** 2026-09-29
-**License:** Apache-2.0
-
 ---
 
 ## 1. Frame — written before coding

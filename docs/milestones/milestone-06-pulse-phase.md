@@ -1,14 +1,11 @@
 # Milestone 6 — Nexus Pulse Phase
 
-**Document role:** Milestone tracker — the explicit Build→Pulse handoff, victory/defeat, and Recall
 **Status:** CURRENT
-**Active gate:** 6B — The loop and the trigger runner's simulation band: back into the next Build Phase after Recall, until the mission's triggers end it.
+**Current step:** 6B — The loop and the trigger runner's simulation band: back into the next Build Phase after Recall, until the mission's triggers end it.
 **Gate 6A is accepted** (2026-09-30): Mario played gate 6A and the menu spike with its follow-up (pull
 request 49), merged them, and gave his word that 6A is accepted and 6B is the Active gate. **Gate 6B is built and reported (PASS),
 awaiting Mario's playtest** (2026-09-30, `docs/history/reports/2026-09-30-round-loop-and-missions.md`). 6C waits for his word.
 **Depends on:** Milestone 5 (Build Phase produces what this Pulse resolves — accepted 2026-09-29)
-**Updated:** 2026-09-30
-**License:** Apache-2.0
 
 > **Promoted to CURRENT, 2026-09-29**, when Mario accepted Milestone 5 and gave his word to start this
 > one. What exists to build on: the Build Phase commits a plan behind one yes/no question (`p`), and the

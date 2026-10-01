@@ -1,11 +1,5 @@
 # Gate report — Milestone 5, Gate 5K: the owner's fourth round
 
-**Document role:** Gate evidence report for Gate 5K
-**Status:** COMPLETE — PASS, awaiting the owner's playtest
-**Canon version:** 2.26
-**Updated:** 2026-09-29
-**License:** Apache-2.0
-
 ---
 
 ## 1. Frame — written before coding

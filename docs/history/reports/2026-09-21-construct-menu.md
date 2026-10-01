@@ -1,11 +1,5 @@
 # Gate report — Milestone 5, Gate 5B: the construct menu and legality
 
-**Document role:** Gate evidence report for Gate 5B
-**Status:** ACCEPTED, 2026-09-21 — Section 8 concludes PASS; Mario merged it and accepted the gate, with a larger manual test deferred. Section 9's four proposals are applied at canon 2.18
-**Canon version:** 2.17
-**Updated:** 2026-09-21
-**License:** Apache-2.0
-
 ---
 
 ## 1. Frame — written before coding

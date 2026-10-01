@@ -1,11 +1,5 @@
 # Browser playtest page, and two round-2 decisions — report
 
-**Document role:** Evidence report for owner-directed work between gates 5F and 5G
-**Status:** PASS — awaiting Mario's play on a real phone
-**Canon version:** 2.20
-**Updated:** 2026-09-27
-**License:** Apache-2.0
-
 ## 1. Frame — written before coding
 
 - **Question.** Mario agreed to three things on 2026-09-27: (a) the Nexus Powers popup closes itself

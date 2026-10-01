@@ -1,11 +1,5 @@
 # Terminal Nexus — ASCII effects and particles
 
-**Document role:** The effect system: contract, starter vocabulary, and the craft rules behind it
-**Status:** Canonical direction; the vocabulary is proven or discarded by Milestone 1 Gate 1B
-**Canon version:** 2.30
-**Updated:** 2026-09-30
-**License:** Apache-2.0 for the contract and schemas; CC BY-SA 4.0 for the authored vocabulary
-
 ## 0. Why this document exists
 
 A one-cell actor has almost no information in it. A `m` is a letter. What makes it read as a soldier

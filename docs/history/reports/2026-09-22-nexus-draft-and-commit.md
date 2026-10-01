@@ -1,11 +1,5 @@
 # Gate report — Milestone 5, Gate 5D: the Nexus draft slot and commit
 
-**Document role:** Gate evidence report for Gate 5D
-**Status:** COMPLETE — PASS
-**Canon version:** 2.18
-**Updated:** 2026-09-22
-**License:** Apache-2.0
-
 ---
 
 ## 1. Frame — written before coding

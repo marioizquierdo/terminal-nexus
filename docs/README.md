@@ -1,11 +1,5 @@
 # Terminal Nexus specifications
 
-**Document role:** Canon index and reading order
-**Status:** Canonical
-**Canon version:** 2.30
-**Updated:** 2026-09-12
-**License:** Apache-2.0
-
 The project canon is this document set, not one monolithic file. Each document has one job, and the
 milestone marked **CURRENT** controls implementation scope.
 

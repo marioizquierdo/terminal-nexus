@@ -1,10 +1,5 @@
 # Terminal Nexus — lessons learned
 
-**Document role:** What working this way taught us, dated, for the next session and for Mario
-**Status:** WORKING — add a dated section after each stretch of work; move a lesson into the canon or a skill once it has proved itself twice
-**Updated:** 2026-09-30 (the menu spike's second round and a general review; earlier the Build Phase rounds, gates 5G-5K)
-**License:** Apache-2.0
-
 Four rounds of Mario's playtest feedback on the Build Phase, each one built, merged and put back in
 front of him within hours. Nothing here is a rule; the procedure is the
 [`feedback-round`](../../.claude/skills/feedback-round/SKILL.md) skill, and where a lesson became a rule

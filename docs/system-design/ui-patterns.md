@@ -1,10 +1,5 @@
 # Terminal Nexus — interface patterns
 
-**Document role:** The working guide to how every interactive screen looks and behaves
-**Status:** WORKING — built on the Build Phase; not canon until the owner accepts it and it is promoted into `docs/system-design/grid-engine.md` Section 9
-**Updated:** 2026-09-30 (gate 6B: the loop into the next round, what else is on the map, the incoming wave; earlier: rewritten by pattern rather than by history, F74; the screen as the menu spike's second round leaves it, F61-F76)
-**License:** Apache-2.0
-
 ## How to use this document
 
 For any agent or person about to build or change a screen, a menu, a popup, an effect or a key. Read

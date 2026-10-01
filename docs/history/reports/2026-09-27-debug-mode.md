@@ -1,11 +1,5 @@
 # Gate report — Milestone 5, Gate 5G: Debug Mode
 
-**Document role:** Gate evidence report for Gate 5G
-**Status:** COMPLETE — PASS, awaiting the owner's look
-**Canon version:** 2.22
-**Updated:** 2026-09-27
-**License:** Apache-2.0
-
 ---
 
 ## 1. Frame — written before coding

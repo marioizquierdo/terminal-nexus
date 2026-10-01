@@ -1,10 +1,7 @@
 # Milestone 8 — Commander
 
-**Document role:** Milestone tracker — the first real Commander (Edda Vasse) and a small Nexus upgrade draft
-**Status:** GATED
+**Status:** PLANNED
 **Depends on:** Milestone 5 (Build Phase is where the upgrade pick lives), Milestone 6 (Pulse is where the Commander acts)
-**Updated:** 2026-09-09
-**License:** Creative identity is CC BY-SA 4.0 (already true of `commander-armies.md`); mechanism is Apache-2.0
 
 > **This widens Level 1's scope on purpose, and it needs saying plainly.** Every earlier framing of
 > Level 1 in this repository (`docs/milestones/completed/milestone-01-grid-battles.md`'s own acceptance note,

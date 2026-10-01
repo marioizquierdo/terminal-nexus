@@ -1,11 +1,5 @@
 # Gate report — Milestone 5, Gate 5A: the scrolling-and-placement spike
 
-**Document role:** Gate evidence report for Gate 5A
-**Status:** ACCEPTED 2026-09-21 — Section 8 concludes PASS, Mario answered both questions in Section 5, and Section 9's canon changes are applied at canon 2.17
-**Canon version:** 2.17
-**Updated:** 2026-09-21
-**License:** Apache-2.0
-
 ---
 
 ## 1. Frame — written before coding

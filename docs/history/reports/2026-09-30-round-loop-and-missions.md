@@ -1,11 +1,5 @@
 # Gate report — Milestone 6, Gate 6B: The loop and the trigger runner
 
-**Document role:** Gate evidence report for Gate 6B
-**Status:** PASS — built and evidenced; awaiting Mario's playtest (acceptance is his)
-**Canon version:** 2.30
-**Updated:** 2026-09-30
-**License:** Apache-2.0
-
 ---
 
 ## 1. Frame — written before coding

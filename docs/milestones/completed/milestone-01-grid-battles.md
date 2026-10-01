@@ -1,10 +1,7 @@
 # Milestone 1 — Grid Battles
 
-**Document role:** Milestone tracker — accepted, kept as historical reference and foundation
 **Status:** COMPLETE
-**Active gate:** none — both gates accepted; see below
-**Updated:** 2026-08-26
-**License:** Apache-2.0; authored creative treatments are CC BY-SA 4.0
+**Current step:** none — both gates accepted; see below
 
 > **Renamed and relocated, canon 2.9.** This is the document formerly called
 > `specs/milestone-1-spike-battle.md`, "Milestone 1 — the Pulse Playground" — moved into

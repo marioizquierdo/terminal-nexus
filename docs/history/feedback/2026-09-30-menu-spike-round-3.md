@@ -1,10 +1,5 @@
 # The menu spike — the owner's third round (2026-09-30)
 
-**Document role:** The owner's feedback on the menu spike's second round and the general review, item by item, with what became of each
-**Status:** WORKING — every item is Built, Scheduled, Open or Contested
-**Updated:** 2026-09-30
-**License:** Apache-2.0
-
 Mario played the second round (pull request 49) and sent this on 2026-09-30, with a settings export. It
 continues [`2026-09-30-menu-spike-round-2.md`](2026-09-30-menu-spike-round-2.md)'s numbering and is built
 on the same branch and pull request. Status values: **Built**, **Scheduled**, **Open**, **Contested**.

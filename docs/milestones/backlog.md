@@ -1,13 +1,5 @@
 # Backlog — completing the Pulse
 
-**Document role:** Preserved systems backlog: the horizontal "finish the kernel" contract Milestone 2
-used to be, before the roadmap went campaign-first
-**Status:** Backlog — not a queued milestone; pulled in level by level, as an actual level's own
-content demands it
-**Canon version:** 2.30
-**Updated:** 2026-09-10
-**License:** Apache-2.0
-
 ## Why this document exists
 
 Until canon 2.8, `specs/milestone-2-deterministic-pulse.md` described the next horizontal pass after

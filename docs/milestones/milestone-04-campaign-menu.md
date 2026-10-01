@@ -1,10 +1,7 @@
 # Milestone 4 — Campaign Menu
 
-**Document role:** Milestone tracker — start or load a campaign; show progress, army, and enemy intel
-**Status:** GATED
+**Status:** PLANNED
 **Depends on:** Milestone 3 (game menu hands off here)
-**Updated:** 2026-09-09
-**License:** Apache-2.0; narrative labels shown on screen inherit `campaigns.md`'s CC BY-SA 4.0
 
 > **Mostly infrastructure for now, and that is expected.** Level 1 is the *first* mission — there is
 > no prior unlock, no prior enemy sighting, nothing this screen can show yet except a baseline. The

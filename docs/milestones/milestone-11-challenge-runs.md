@@ -1,10 +1,7 @@
 # Milestone 11 — Challenge Mode: Runs
 
-**Document role:** Milestone tracker — a seeded run of battles with a run draft between them, playable end to end
-**Status:** GATED
+**Status:** PLANNED
 **Depends on:** Milestone 5 (Build Phase), Milestone 6 (the Pulse loop and a result), Milestone 8 (a Commander exists and the Nexus draft deals from an army's pool); Milestone 3's mode select hands off here
-**Updated:** 2026-09-09
-**License:** Apache-2.0
 
 > **The replayable mode, and the one that needs no writing.** Mario, canon 2.11: "implementing
 > 'runs', where each battle ends on a new draft upgrade or removals that further polish the build

@@ -1,10 +1,5 @@
 # Owner feedback — the menu spike, round 2
 
-**Document role:** Owner feedback log, one item per row, each with what happened to it
-**Status:** OPEN — logged 2026-09-30, being built on the menu spike's pull request
-**Updated:** 2026-09-30
-**License:** Apache-2.0
-
 Mario played the menu spike (pull request 49) and sent this on 2026-09-30, with a settings export.
 It continues [`2026-09-30-menu-spike.md`](2026-09-30-menu-spike.md)'s numbering and is built on the
 same branch and pull request. Status values: **Built**, **Scheduled**, **Open**, **Contested**.

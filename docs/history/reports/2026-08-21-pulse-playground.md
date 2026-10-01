@@ -1,11 +1,5 @@
 # Gate report — Milestone 1A, the Pulse Playground
 
-**Document role:** Gate evidence report for Gate 1A
-**Status:** Complete, revised after the owner's first viewing, awaiting acceptance
-**Canon version:** 2.6
-**Updated:** 2026-08-21
-**License:** Apache-2.0
-
 ---
 
 ## 1. Frame — written before coding

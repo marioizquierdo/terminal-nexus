@@ -1,10 +1,5 @@
 # The menu spike — the owner's notes at the merge (2026-09-30)
 
-**Document role:** The owner's notes at the end of the menu spike, item by item, with what became of each
-**Status:** WORKING — every item is Built, Scheduled, Open or Contested
-**Updated:** 2026-09-30
-**License:** Apache-2.0
-
 Mario played the menu spike (pull request 49, rounds 1-3) and sent these notes the same day "for a
 smaller follow-up PR" — then found he had not merged it yet, and asked for them on the same pull
 request, described in an "Additional changes" section. They continue [`2026-09-30-menu-spike-round-3.md`](2026-09-30-menu-spike-round-3.md)'s

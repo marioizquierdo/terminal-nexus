@@ -1,11 +1,5 @@
 # Terminal Nexus — Commander Armies
 
-**Document role:** Playable faction packages: Commanders, units, structures, upgrades, and Nexus powers
-**Status:** Canonical identity direction; rosters intentionally undefined
-**Canon version:** 2.30
-**Updated:** 2026-09-30
-**License:** Creative identity is CC BY-SA 4.0; mechanical definitions and schemas are Apache-2.0
-
 ## 1. Purpose
 
 A **Commander Army** is the playable content package that defines every choice available to one player during a battle. The faction supplies the broad doctrine, economy, visual language, and most common content. The chosen Commander supplies a starting package, smaller asymmetries, Nexus powers, upgrade emphasis, and a few roster changes.

@@ -1,11 +1,5 @@
 # Terminal Nexus — campaigns
 
-**Document role:** Single-player structure, mission definitions, progression, cutscenes, and initial narrative direction
-**Status:** Canonical direction; PERIMETER (Mission 1) is in active implementation across `docs/milestones/`
-**Canon version:** 2.30
-**Updated:** 2026-09-12
-**License:** Narrative material is CC BY-SA 4.0; technical schemas are Apache-2.0
-
 ## 1. Development boundary
 
 **Amended, canon 2.8, formalized at 2.9.** This section used to say campaigns must wait until battle

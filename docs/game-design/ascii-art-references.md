@@ -1,11 +1,5 @@
 # Terminal Nexus — ASCII art references
 
-**Document role:** Non-authoritative research: where to learn terminal art, and what to take from each
-**Status:** Reference. [`terminal-nexus-lore.md`](lore.md) Section 9 remains the authority
-**Canon version:** 2.30
-**Updated:** 2026-09-10
-**License:** Apache-2.0 for the analysis; linked works belong to their authors
-
 Terminal Nexus is betting that a `@` can carry a commander and a row of `#` can feel engineered.
 That bet has been won before, repeatedly, by people who wrote down how they did it. This file
 collects those sources and — more usefully — says what each one is *for*.

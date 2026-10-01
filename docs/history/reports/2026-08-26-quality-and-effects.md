@@ -1,11 +1,5 @@
 # Gate report — Milestone 1B, quality and effects
 
-**Document role:** Gate evidence report for Gate 1B
-**Status:** CLOSED — accepted 2026-08-26 (Section 24). Sections 1-23 are preserved exactly as written while the gate was still open
-**Canon version:** 2.8
-**Updated:** 2026-08-26
-**License:** Apache-2.0
-
 ---
 
 ## 1. Frame — written before coding

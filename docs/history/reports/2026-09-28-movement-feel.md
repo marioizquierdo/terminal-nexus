@@ -1,11 +1,5 @@
 # Gate report — Milestone 5, Gate 5H: movement feel
 
-**Document role:** Gate evidence report for Gate 5H
-**Status:** COMPLETE — PASS, awaiting the owner's look
-**Canon version:** 2.23
-**Updated:** 2026-09-28
-**License:** Apache-2.0
-
 ---
 
 ## 1. Frame — written before coding

@@ -1,13 +1,5 @@
 # Terminal Nexus — the replay format
 
-**Document role:** Design for `.replay.json`, the persisted game log — schema, log levels, and how
-`grid` reads and writes it
-**Status:** GUIDANCE throughout. Nothing here is built. Written to give Milestone 2 a concrete
-starting design rather than a blank page, and because the owner asked for it directly this session
-**Canon version:** 2.30
-**Updated:** 2026-09-10
-**License:** Apache-2.0
-
 ## 0. What this is, and what it is not
 
 This is a schema and a set of design decisions for a file format that does not exist yet. No code in

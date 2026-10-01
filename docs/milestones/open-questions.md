@@ -1,11 +1,5 @@
 # Terminal Nexus — open questions register
 
-**Document role:** Durable queue of decisions that block or shape work, with owner answers
-**Status:** Canonical process document; individual answers become canon elsewhere
-**Canon version:** 2.30
-**Updated:** 2026-09-27
-**License:** Apache-2.0
-
 ## 1. Why this file exists
 
 An agent working alone will reach a fork the canon does not answer. Without somewhere to put the

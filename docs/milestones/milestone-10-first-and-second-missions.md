@@ -1,10 +1,7 @@
 # Milestone 10 — First and Second Missions
 
-**Document role:** Milestone tracker — polish PERIMETER, author and build RIGHT OF SALVAGE
-**Status:** GATED
+**Status:** PLANNED
 **Depends on:** Milestones 2 through 9 (every mechanism this milestone exercises for real)
-**Updated:** 2026-09-09
-**License:** Technical work is Apache-2.0; new mission material is CC BY-SA 4.0
 
 > **This is where docs/milestones 4 and 9's "mostly empty for now" finally fills in.** The campaign menu's
 > progress/army/enemy-intel panels and the cutscene mechanism were both built and accepted against a

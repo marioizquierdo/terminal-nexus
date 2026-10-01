@@ -1,11 +1,5 @@
 # Terminal Nexus — project governance
 
-**Document role:** Canon authority, evidence process, execution ledger, and durable decisions
-**Status:** Canonical
-**Canon version:** 2.30
-**Updated:** 2026-09-30
-**License:** Apache-2.0
-
 ## 1. Canon is a document set
 
 Terminal Nexus has no single monolithic specification. The canonical set and its reading order are indexed in [`README.md`](../README.md).

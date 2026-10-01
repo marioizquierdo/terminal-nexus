@@ -1,10 +1,5 @@
 # Terminal Nexus — portability notes
 
-**Document role:** Where the game can run, what a host must provide, and the refactors that would make it cheaper
-**Status:** WORKING — ideas and measurements, not canon. The rule that holds today (the browser page is a development tool, never a platform) is `docs/system-design/grid-engine.md` 10.2
-**Updated:** 2026-09-29
-**License:** Apache-2.0
-
 The Build Phase now runs in three places — a real terminal, the browser playtest page, and a scripted
 playtest with no display at all — from the same screen code. That is a sign the seams are in roughly
 the right places. Mario's observation (2026-09-29): a keyboard-and-click game with a grid of cells could

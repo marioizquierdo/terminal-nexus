@@ -1,11 +1,5 @@
 # Terminal Nexus — concept art
 
-**Document role:** Early visual exploration and historical reference. Not canon, not decisions
-**Status:** Reference
-**Canon version:** 2.30
-**Updated:** 2026-09-10
-**License:** Mixed — see "Licensing" below
-
 ## What this is
 
 Two different kinds of material, both kept for reference rather than authority:

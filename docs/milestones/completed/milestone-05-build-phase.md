@@ -1,12 +1,9 @@
 # Milestone 5 — Build Phase
 
-**Document role:** Milestone tracker — accepted, kept as historical reference for the mission's own Build Phase: placement, upgrade pick, scrolling
 **Status:** COMPLETE
-**Active gate:** none — every gate (5A-5K) is built, evidenced and accepted by the owner 2026-09-29; see below
+**Current step:** none — every gate (5A-5K) is built, evidenced and accepted by the owner 2026-09-29; see below
 **Depends on:** Milestone 3 (the game menu that launches it — accepted 2026-09-21), Milestone 2 (the
 mission's own budget/units decided — accepted 2026-09-12)
-**Updated:** 2026-09-29
-**License:** Apache-2.0
 
 > **ACCEPTED, 2026-09-29.** Mario played and merged the Build Phase work — gates 5D-5K, which he tested
 > together — and the polish pull request after it, and said Milestone 5 is accepted. The Build Phase is done:

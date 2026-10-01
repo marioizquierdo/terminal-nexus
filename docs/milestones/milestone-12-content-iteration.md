@@ -1,10 +1,7 @@
 # Milestone 12 — Content and Balance Iteration
 
-**Document role:** Milestone tracker — the repeating pass that adds cards with rarity and tier, authors the real rosters, and tunes both modes on playtests
-**Status:** GATED
+**Status:** PLANNED
 **Depends on:** Milestone 11 (a run to play new content in) and Milestone 10 (missions to teach it in); this milestone repeats rather than closes once
-**Updated:** 2026-09-12
-**License:** Mechanical definitions Apache-2.0; creative identity of any roster CC BY-SA 4.0
 
 > **Content comes after the experience, on purpose.** Mario, canon 2.11: "Once we create some
 > vocabulary and structure for the single player modes, we should jump right away into building the

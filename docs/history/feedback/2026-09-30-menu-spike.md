@@ -1,10 +1,5 @@
 # Owner feedback — the Build Phase menu spike
 
-**Document role:** Owner feedback log, one item per row, each with what happened to it
-**Status:** BUILT — F52-F60 are built on the menu spike's own pull request, awaiting Mario's playtest
-**Updated:** 2026-09-30
-**License:** Apache-2.0
-
 Mario started the menu reorganisation that round 3 left for a spike of its own (F51, in
 [`2026-09-29-pr48-round-3.md`](2026-09-29-pr48-round-3.md)) on 2026-09-30, after pull request 48 was
 merged. It continues that log's numbering and is built on a dedicated pull request. Status values:

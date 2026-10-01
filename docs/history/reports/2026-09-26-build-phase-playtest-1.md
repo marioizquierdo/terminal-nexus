@@ -1,11 +1,5 @@
 # Gate report — Milestone 5, Gate 5E: the owner's playtest, the small and local half
 
-**Document role:** Gate evidence report for Gate 5E
-**Status:** COMPLETE — PASS, awaiting the owner's look
-**Canon version:** 2.19
-**Updated:** 2026-09-26
-**License:** Apache-2.0
-
 ---
 
 ## 1. Frame — written before coding

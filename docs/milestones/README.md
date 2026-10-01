@@ -1,10 +1,5 @@
 # Terminal Nexus docs/milestones
 
-**Document role:** Milestone index — the sequence, current status, and how this folder differs from `specs/`
-**Status:** Canonical index (not a versioned canon document — see below)
-**Updated:** 2026-09-29
-**License:** Apache-2.0
-
 ## Why docs/milestones live here, not in `specs/`
 
 Through canon 2.8, milestone contracts lived in `specs/milestone-N-*.md`, versioned in lockstep with
@@ -67,13 +62,13 @@ needed the quality.
 | [3 — Game Menu](completed/milestone-03-game-menu.md) | COMPLETE | done | Can a player launch `terminal-nexus` into a menu with displayed hotkeys, mouse parity, and a driver, and pick a mode? |
 | [5 — Build Phase](completed/milestone-05-build-phase.md) | COMPLETE | done | Can a player place buildings, pick a Nexus upgrade, and scroll a real map during Build Phase — by keyboard, mouse, and driver? |
 | [6 — Nexus Pulse Phase](milestone-06-pulse-phase.md) | CURRENT | 4 | Can a player start the Pulse, watch it resolve, see a legible ending with Recall, and land in the next Build Phase? |
-| [8 — Commander](milestone-08-commander.md) | GATED | 5 | Can Commander Vasse and a Nexus draft dealt from an army's pool exist without becoming a full Commander Army? |
-| [11 — Challenge Mode: Runs](milestone-11-challenge-runs.md) | GATED | 6 | Can a player play a seeded run of battles with a run draft between them, and does the same seed give the same run? |
-| [4 — Campaign Menu](milestone-04-campaign-menu.md) | GATED | 7 | Can a player start or load a campaign and see progress, army, and enemy intel? |
-| [7 — Worker Economy](milestone-07-worker-economy.md) | GATED | 8 | Can workers be built and gather resources deterministically during the Pulse? |
-| [9 — Mission Cutscenes](milestone-09-mission-cutscenes.md) | GATED | 9 | Can a mission declare and play its own briefing, exchanges, barks, and debrief? |
-| [10 — First and Second Missions](milestone-10-first-and-second-missions.md) | GATED | 10 | Do PERIMETER (polished) and RIGHT OF SALVAGE (new) together read as a real campaign opening? |
-| [12 — Content and Balance Iteration](milestone-12-content-iteration.md) | GATED | 11, repeating | Does each new card make a run more interesting and let a mission teach it — measured, not asserted? |
+| [8 — Commander](milestone-08-commander.md) | PLANNED | 5 | Can Commander Vasse and a Nexus draft dealt from an army's pool exist without becoming a full Commander Army? |
+| [11 — Challenge Mode: Runs](milestone-11-challenge-runs.md) | PLANNED | 6 | Can a player play a seeded run of battles with a run draft between them, and does the same seed give the same run? |
+| [4 — Campaign Menu](milestone-04-campaign-menu.md) | PLANNED | 7 | Can a player start or load a campaign and see progress, army, and enemy intel? |
+| [7 — Worker Economy](milestone-07-worker-economy.md) | PLANNED | 8 | Can workers be built and gather resources deterministically during the Pulse? |
+| [9 — Mission Cutscenes](milestone-09-mission-cutscenes.md) | PLANNED | 9 | Can a mission declare and play its own briefing, exchanges, barks, and debrief? |
+| [10 — First and Second Missions](milestone-10-first-and-second-missions.md) | PLANNED | 10 | Do PERIMETER (polished) and RIGHT OF SALVAGE (new) together read as a real campaign opening? |
+| [12 — Content and Balance Iteration](milestone-12-content-iteration.md) | PLANNED | 11, repeating | Does each new card make a run more interesting and let a mission teach it — measured, not asserted? |
 
 Only the row marked **CURRENT** is implementation authority; every `GATED` row is planning context; it
 gains authority when its own dependencies (named in its own file) are met and it is looked at and

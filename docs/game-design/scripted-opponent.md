@@ -1,10 +1,5 @@
 # Terminal Nexus — the Campaign's opponent: waves, intentions, and what the player can see coming
 
-**Document role:** Working design notes, started at gate 6B at the owner's request — how a mission defines what each round brings, how an incoming group shows what it means to do, and where the Campaign's opponent AI grows from
-**Status:** WORKING — thinking, not a decision; nothing here is canon until a gate builds it and the owner accepts it. Decisions that are genuinely his are registered as questions (Q69, Q70)
-**Updated:** 2026-09-30
-**License:** Apache-2.0
-
 ## 1. What the owner asked for
 
 At gate 6A's acceptance (2026-09-30), Mario wrote: *"right now, the pulse is not well developed, it will
