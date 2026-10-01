@@ -48,7 +48,7 @@ const CLEAR = `${ESC}[2J`
 /** The floor the resize gate is measured against: 80 x 24 is the floor and the acceptance target. */
 export const STARTER_MINIMUM = { width: 80, height: 24 } as const
 
-export type SpikeOptions = Readonly<{
+export type BuildPhaseOptions = Readonly<{
   settings: Settings
   /** A backend name, or a backend itself (the browser playtest page's canvas). */
   backend: string | NamedBackend
@@ -101,7 +101,7 @@ export function starterContext(scrollMargin?: number, extra: Partial<BuildContex
   })
 }
 
-export async function runBuildPhase(options: SpikeOptions): Promise<number> {
+export async function runBuildPhase(options: BuildPhaseOptions): Promise<number> {
   const { stdout, stdin } = options
 
   if (!stdout.isTTY || !stdin.isTTY) {
