@@ -101,8 +101,8 @@ settings export.
 ## Open decisions this milestone waited on
 
 - Should a side whose Grid Nexus still stands lose a Pulse because its units all died? Mario answered no on
-  2026-10-01: only the Nexus falling, or a mission's own condition, loses. Building it is waiting in the
-  next steps. (Q70)
+  2026-10-01: only the Nexus falling, or a mission's own condition, loses. Built the same day, ahead of the
+  Commander. (Q70)
 - Does the kernel need an order primitive, so a scripted group can hold, withdraw or head for a place?
   Today `advance` is the only verb. Still open; nothing is blocked. (Q69)
 

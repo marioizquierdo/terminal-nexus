@@ -1,0 +1,64 @@
+{
+  "id": "nexus-stands",
+  "name": "A standing Nexus is never wiped out",
+  "notes": "Mario's rule, 2026-10-01: a side loses only when its Grid Nexus falls. The lone trooper falls in the first seconds; side A still has its Nexus, so the Pulse goes on until the two raiders bring it down. Before the rule the Pulse ended the moment the trooper died, with the Nexus untouched.",
+  "grid": {
+    "preset": "small-wide"
+  },
+  "seed": 40980,
+  "pulseTicks": 720,
+  "terrain": [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 3,
+        "y": 5
+      },
+      "rows": [
+        "n   t"
+      ],
+      "legend": {
+        "n": {
+          "content": "structure.citizen.nexus"
+        },
+        "t": {
+          "content": "unit.citizen.trooper"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 17,
+        "y": 4
+      },
+      "rows": [
+        "r",
+        " ",
+        "r"
+      ],
+      "legend": {
+        "r": {
+          "content": "unit.ravel.raider"
+        }
+      }
+    }
+  }
+}

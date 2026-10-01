@@ -141,7 +141,7 @@ export const ACTIVITY_EVENTS = {
       trained: { type: "number", description: "How many troopers they trained." },
       first: { type: "number", description: "The second of the round the first one was trained at.", optional: true },
       home: { type: "number", description: "How many of those trained came home alive at the end." },
-      ended: { type: "number", description: "The second the round's fighting stopped: a round ends early once one side's units are all dead." },
+      ended: { type: "number", description: "The second the round's fighting stopped: a round ends early once the raid's units are all dead, or the Nexus falls." },
     },
   },
   export: {

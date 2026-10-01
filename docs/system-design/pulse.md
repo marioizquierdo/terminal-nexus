@@ -184,8 +184,8 @@ watches) and it is still a Pulse: seeded, deterministic, replayed the same way.
 **The kernel's victory condition never learns about a mission's goal.** A mission's objective is
 resolved one level up, by the scenario and trigger layer, which fires an ordinary `win`/`lose` action
 when its own condition holds (see [`campaigns.md`](../game-design/campaigns.md)). What follows — Grid
-Nexus destroyed, one side annihilated, tick limit reached — is the unchanged fallback a battle with
-no declared objective lands on: every Skirmish match, and every Challenge battle (RULE —
+Nexus destroyed, a side with no Nexus standing annihilated, tick limit reached — is the fallback a
+battle with no declared objective lands on: every Skirmish match, and every Challenge battle (RULE —
 `src/pulse/victory.ts`).
 
 Both players see the resolved Grid: terrain, deposits, neutral zones, known actors, health,
@@ -206,11 +206,13 @@ producer carried into the next Pulse starts on the recipe that Pulse runs (RULE 
 `tests/scenario.test.ts`). Any attacker in a legal attack position may damage it. Defences and
 terrain make practical outer layers; there is no hidden exposure meter.
 
-**A side whose Grid Nexus stands is never wiped out** (RULE — settled by Mario on 2026-10-01; no code
-holds it yet). Its Pulse goes on until the Nexus falls or the time runs out, and a mission may add a
-losing condition of its own; a side with no Nexus, a raid, is still beaten by losing every unit. Until it
-is built the kernel ends a Pulse the moment a side's units are all dead, Nexus or not, which is why a
-defence round can stop with the raid at the gate.
+**A side whose Grid Nexus stands is never wiped out** (RULE — Mario, 2026-10-01; `src/pulse/victory.ts`,
+`scenarios/nexus-stands.map.json`, `tests/scenario.test.ts`). Its Pulse goes on until the Nexus falls or
+the time runs out, and a mission may add a losing condition of its own; a side with no Nexus, a raid, is
+still beaten by losing every unit. So a defence round no longer stops with the raid at the gate when the
+player's units fall: the raid comes on to the Nexus, and the round ends when it falls or the time is up.
+Before this, every side was wiped out by losing its last unit, and a defence round could end with the
+Nexus untouched and count as held.
 
 ### 2.1 Commander
 

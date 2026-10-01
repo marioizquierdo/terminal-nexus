@@ -4,7 +4,7 @@ Mario played PERIMETER as three rounds (step 6B), merged the Barracks that train
 message. It continues [`2026-10-01-feedback-loops.md`](2026-10-01-feedback-loops.md)'s numbering. He asked
 for nothing to be built now ("we can address those at the right time") and for the next milestone to start,
 so the items below are logged, placed where their work will be done, and the pull request that logs them is
-the next milestone's first step. Status values: **Built**, **Scheduled**, **Open**, **Contested**.
+the next milestone's first step. One was built after all, because the Commander made it urgent (F102). Status values: **Built**, **Scheduled**, **Open**, **Contested**.
 
 ### F97 — The loop across rounds
 
@@ -62,12 +62,14 @@ and a health total, and a feed line for every shot and death; the entry asks whi
 > and the player should only lose when the nexus is destroyed or if there's a specific losing condition on
 > the campaign level.
 
-**Scheduled.** This answers the open question about a side whose Grid Nexus stands losing because its units
+**Built.** This answers the open question about a side whose Grid Nexus stands losing because its units
 died: no. A side whose Nexus stands is never wiped out; its Pulse goes on until the Nexus falls or time runs
-out, and a mission may add a losing condition of its own. The decision is in
-`docs/history/answered-questions.md` and in the Pulse page's victory rule (`docs/system-design/pulse.md`),
-marked settled and not yet built: the kernel still ends a Pulse when a side's units are all dead. Building it
-is a small step of its own, waiting in `docs/milestones/next-steps.md`.
+out, and a mission may add a losing condition of its own. It was to wait for its own step, but Vasse made it
+urgent: with her in the squads, the old rule let a plan that built nothing win PERIMETER, because her line
+fell in the last round and the round stopped with the Nexus untouched. So it is built first, in its own
+commit of the Commander's pull request (`src/pulse/victory.ts`, the map `nexus-stands`), and the Pulse
+page's victory rule says so. On the starter map a lost round now always means the Nexus fell; a force
+wiped out with the Nexus standing plays on to the time.
 
 ### F103 — On to the next milestone
 

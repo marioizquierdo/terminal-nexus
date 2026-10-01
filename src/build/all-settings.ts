@@ -389,10 +389,10 @@ export const ALL_SETTINGS = {
     default: "shown",
   },
   /** How often a Barracks trains a trooper during a round (step 6C). A round runs thirty seconds at
-   *  most and ends sooner when one side's units are all dead, so the pace decides how many a round
-   *  really trains and how much of the fight they see. First guess: every 10 seconds — three in a full
-   *  round, and a plan that builds nothing still loses PERIMETER's last round, as step 6B tuned it
-   *  (docs/history/reports/2026-10-01-barracks-trains.md has the outcomes at every pace). */
+   *  most and ends sooner when the raid's units are all dead or the Nexus falls, so the pace decides
+   *  how many a round really trains and how much of the fight they see. First guess: every 10 seconds
+   *  — three in a full round, and a plan that builds nothing still loses PERIMETER's last round, as
+   *  step 6B tuned it (docs/history/reports/2026-10-01-barracks-trains.md has the outcomes at every pace). */
   trainEvery: {
     tier: "experiment",
     section: "mission",

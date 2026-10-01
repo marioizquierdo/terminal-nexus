@@ -33,11 +33,6 @@ Small, none blocking.
 
 - PERIMETER is played on the Build Phase's starter map, with regions named for its landmarks; its own map is Q38's.
 - Every unit engages the nearest enemy: `order` has one verb, `advance` (Q69).
-- **Decided, not built: a side whose Nexus stands is never wiped out** (Mario, 2026-10-01: "the player should
-  only lose when the nexus is destroyed or if there's a specific losing condition on the campaign level"). Today
-  a round still ends when the player's units are all dead with the Nexus standing. Building it is a small step
-  of its own: the victory rule in `src/pulse/victory.ts` with a named scenario, the mission runner's widening of
-  the roster retired with it, and PERIMETER's hashes updated on purpose.
 - A new Nexus power is dealt every round (the placeholder draft adds 30 or 2000 credits) on top of the
   credits carried over. Real Nexus powers are Milestone 8's.
 - The incoming wave is a forecast placed against the map without the plan; a building on an arrival's
@@ -50,8 +45,7 @@ Small, none blocking.
 - A recipe costs nothing and nothing competes, so the seeded contention process is not built; it comes with
   cost and supply in the worker economy.
 - Only a mission's listed buildings train: a barracks in a `grid` scenario still trains nothing.
-- A trooper trained after a round opens counts toward "your force was wiped out" only if it was standing when a
-  later raid group arrived; this goes away with the decided rule above.
+
 
 **From the Build Phase and the menu spike** ([report](../history/reports/2026-09-30-menu-spike.md)):
 
