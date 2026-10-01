@@ -229,9 +229,24 @@ function whoIs(id: string): Readonly<{ player: PlayerId | null; name: string }> 
   return { player: side === "A" || side === "B" ? side : null, name }
 }
 
+/** The Commanders' names, by the short name their ids carry (`A:vasse#7` is "Vasse"), for each registry. */
+const COMMANDER_NAMES = new WeakMap<ContentRegistry, ReadonlyMap<string, string>>()
+
+/** A unit's name in the feed: its short name, or a Commander's own. */
+function feedName(pulse: PulseFrame, id: string): string {
+  let names = COMMANDER_NAMES.get(pulse.registry)
+  if (names === undefined) {
+    const { registry } = pulse
+    names = new Map(registry.ids().filter((contentId) => registry.get(contentId).commander === true).map((contentId) => [registry.get(contentId).short, commanderName(contentId)]))
+    COMMANDER_NAMES.set(registry, names)
+  }
+  const { name } = whoIs(id)
+  return names.get(name) ?? name
+}
+
 /**
  * One line of the feed in plain words — "3.5s trooper > raider", "3.8s raider dies", "10.0s trooper
- * trained" — drawn in the colour of
+ * trained", "18.3s Vasse falls" — drawn in the colour of
  * the side it is about, or `null` for an event the feed does not carry. Short enough for the panel at the
  * floor without cutting a word: the units' own names say whose they are (a trooper is yours, a raider is
  * the raid's) and the colour says it again where colour reaches.
@@ -240,10 +255,8 @@ function feedLine(pulse: PulseFrame, event: DomainEvent): Readonly<{ text: strin
   const at = `${secondsOf(pulse, event.tick)}s`
   const sideRole = (player: PlayerId | null): StyleRole => (player === null ? "chrome.value" : playerRole(player))
   switch (event.kind) {
-    case "attack.launched": {
-      const by = whoIs(event.attacker)
-      return { text: `${at} ${by.name} > ${whoIs(event.target).name}`, role: sideRole(by.player) }
-    }
+    case "attack.launched":
+      return { text: `${at} ${feedName(pulse, event.attacker)} > ${feedName(pulse, event.target)}`, role: sideRole(whoIs(event.attacker).player) }
     // A Commander falls rather than dies, by name: her absence is news the result spells out.
     case "entity.died":
       return pulse.registry.get(event.contentId).commander === true

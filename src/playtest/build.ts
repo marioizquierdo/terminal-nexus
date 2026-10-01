@@ -14,6 +14,7 @@ import { buildLayout } from "../build/layout.ts"
 import { BuildSession } from "../view/build-session.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
 import { nextRound, startPulse } from "../cli/pulse-run.ts"
+import type { MissionPlay } from "../cli/pulse-run.ts"
 import { starterContext } from "../cli/starter.ts"
 import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
@@ -42,6 +43,9 @@ export type BuildPlaytestOptions = Readonly<{
   /** Experiments to open with instead of this build's defaults — an imported export's. */
   experiments?: Partial<Experiments>
   context?: BuildContext
+  /** The mission the rounds are played on, when it is not the screen's own (PERIMETER): another mission's
+   *  or a test map's `startPulse` and `nextRound` (`missionPlay`), with `context` its first round. */
+  play?: Pick<MissionPlay, "startPulse" | "nextRound">
   cursor?: Coord
   /**
    * Play a terminal that reports key presses, repeats and releases (the kitty keyboard protocol, which
@@ -129,9 +133,9 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     onQuit: () => {
       leftBy = "quit"
     },
-    startPulse,
+    startPulse: options.play?.startPulse ?? startPulse,
     activity,
-    nextRound,
+    nextRound: options.play?.nextRound ?? nextRound,
   })
   build.setKeyReleases(options.keyReleases ?? options.steps.some((step) => step.kind === "key" && step.phase !== undefined))
 

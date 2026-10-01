@@ -109,7 +109,8 @@ test("she falls: the feed says so, the result says the round she is out for, and
   side.build.advance(0)
   side.build.advance(Math.ceil(((death.tick + 1) * 1000) / 12))
   assert.match(panelText(side), /\d+\.\ds Vasse falls/)
-  assert.doesNotMatch(panelText(side), /vasse dies/)
+  // Her name everywhere in the feed, never the id's lower-case one.
+  assert.doesNotMatch(panelText(side), /\bvasse\b/)
 
   toResult(side)
   assert.match(panelText(side), /Vasse fell: out for round 2, back for round 3\./)
