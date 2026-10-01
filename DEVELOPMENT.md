@@ -759,3 +759,62 @@ Probed on Linux x64, 2026-08-20. Indicative only — re-measure before citing.
 
 Code and technical work use Apache-2.0. Lore and creative work use CC BY-SA 4.0. See `README.md`,
 `NOTICE`, and `CONTRIBUTING.md` before importing third-party code, art, fiction, fonts, or assets.
+
+## Moved from the governance document (to be rewritten)
+
+## 2. Bounded agent autonomy
+
+Within the active gate, an agent may independently:
+
+- choose reversible module boundaries, names, local data shapes, and test organization;
+- add diagnostics, fixtures, comparison modes, and small evidence tools;
+- compare alternatives when experimentation is cheaper than debate;
+- simplify or discard code created only to answer the gate question;
+- report that the favored hypothesis failed.
+
+An agent must not independently:
+
+- promote a hypothesis into canon without accepted evidence;
+- absorb a later milestone because the architecture makes it convenient;
+- create a generic framework before two concrete uses reveal its contract;
+- treat automated tests as proof of an experiential claim;
+- hide a blocker by changing a pinned runtime, fixture, target, or requirement;
+- add secrets, services, public endpoints, or external writes without authority.
+
+When the design is underdetermined, prefer a fixture, parameter, toggle, or brief comparison that makes the decision observable. Ask the owner only when alternatives materially change the product promise, experiment, or irreversible architecture.
+
+When you do have to ask, ask in [`open-questions.md`](docs/milestones/open-questions.md) rather than in a pull-request comment, and follow its protocol: state the options, state their costs, **give a recommendation**, then keep working on everything the answer does not touch. A session that stops entirely because one fork is unresolved has usually stopped too early.
+
+## 3. The evidence loop
+
+Every milestone gate follows:
+
+> **Question → smallest artifact → automated evidence → human observation → decision → canon update**
+
+Code existing is not completion. Each gate closes with a concise report containing:
+
+- canon version, milestone, and gate;
+- hypothesis and explicit exclusions;
+- exact runtime, dependencies, platform, and commands;
+- artifact and scenarios exercised;
+- automated results, measurements, snapshots, hashes, or fixtures;
+- human observations separated from interpretation;
+- failures, surprises, and discarded approaches worth preserving;
+- decision: **PASS**, **REVISE**, **STOP**, or **BLOCKED**;
+- canonical rules earned and next authorized action.
+
+Preserve aesthetic comparisons as screenshots or recordings with presentation order. Preserve simulation claims as complete inputs, seeds, content locks, and hashes.
+
+## 4. Canon update protocol
+
+After an accepted decision:
+
+1. update the execution ledger;
+2. add one concise progress-history entry;
+3. promote only evidence-backed conclusions into relevant documents;
+4. update locked and open decisions;
+5. revise the next milestone only after owner acceptance;
+6. increment the canon version for semantic changes;
+7. update cross-document links and run repository validation.
+
+Keep procedural logs out of the canon. Lore and product intent must not be rewritten to rationalize incidental implementation shortcuts.

@@ -1,6 +1,8 @@
-# Backlog — completing the Pulse
+# Backlog — work no milestone owns yet
 
-## Why this document exists
+## Completing the Pulse kernel
+
+### Why this document exists
 
 Until canon 2.8, `specs/milestone-2-deterministic-pulse.md` described the next horizontal pass after
 the Pulse Playground: finish routing, add the economy, add production, add visibility, lock the
@@ -21,7 +23,7 @@ and locked-contract material exactly as it was under the old Milestone 2 — the
 is that no single gate owns "build all of this" any more. Treat a section below as live the day some
 level's own contract cites it, and not before.
 
-## What the spike deferred, and no single gate now owns outright
+### What the spike deferred, and no single gate now owns outright
 
 - **Routing.** Real pathfinding around obstacles: weighted terrain, routes to a legal attack position
   rather than to an occupied tile, temporary danger cost for fleeing workers, deterministic
@@ -65,7 +67,7 @@ level's own contract cites it, and not before.
   versions, and a `verify` path that re-simulates recorded inputs. [`replay-format.md`](../system-design/replay-format.md)
   is the starting design.
 
-## Contracts locked by Milestone 1
+### Contracts locked by Milestone 1
 
 These were promoted rather than invented: each one is a thing the Playground built, ran and asserted,
 and each is now RULE in the document that owns it. **Do not re-litigate them; build on them.** The
@@ -84,7 +86,7 @@ restated here only because it lived in this document before the pivot, and nothi
 | **Death is a queue, and it can cascade** | Where content detonates on death, the blast damages friend and foe and anything reduced to zero joins the queue. Bounded because an entity can only die once, so the cascade settles inside its own tick | [`engine.md`](../system-design/grid-engine.md) 4.3; `tests/ravel.test.ts` |
 | **Collision masks** | Lazy views over one incrementally maintained occupancy index, with an overlay so arbitration sees tiles claimed earlier in the same tick. Never a materialised boolean grid | [`engine.md`](../system-design/grid-engine.md) 3.4.1 |
 
-### The one contract Milestone 1 did **not** lock
+#### The one contract Milestone 1 did **not** lock
 
 **Replay input, authority, and verification.** `grid` hashes final state and the ordered event
 stream, and `grid --verify` re-resolves a scenario and compares — which proves the kernel is
@@ -97,7 +99,7 @@ its record. [`replay-format.md`](../system-design/replay-format.md) is a first c
 ahead of any level needing it rather than from nothing — GUIDANCE, not a locked contract, meant to be
 a starting point whichever level first needs it accepts, amends, or replaces.
 
-## What Milestone 1 left unresolved here
+### What Milestone 1 left unresolved here
 
 Three registered questions land squarely in this backlog's scope. None blocks any level from
 starting; each wants an answer before a level's contract that touches it is called locked.
@@ -120,7 +122,7 @@ have exactly one thing moving.** Three fixtures appeared to fail before anyone n
 movers each rounding an obstacle drag each other's targets around, so the fixture was measuring an
 orbit rather than a route.
 
-## Evidence a future pull-in should still produce
+### Evidence a future pull-in should still produce
 
 Replaying a complete recorded input produces identical final-state and ordered-event hashes —
 [`replay-format.md`](../system-design/replay-format.md) Section 4 is where the soundness of that claim is worked
@@ -134,3 +136,49 @@ Soak runs over many maps and seeds terminate, stay within a time budget, and nev
 contested corridor.
 
 Answers to Q5 and Q7 in [`open-questions.md`](open-questions.md), earned rather than assumed.
+
+## Decisions fine to leave open for now
+
+Decisions that **block or shape current work** live in [`open-questions.md`](open-questions.md), with
+options, costs, and a recommendation each. The list below is the longer horizon: things that are
+genuinely fine to leave unanswered until the project reaches them.
+
+- exact Citizen and Ravel commanders and Commander Armies;
+- **whether a Commander Army is well modeled as a deck of cards at all**, versus a composite of separate systems (units, structures, a Commander, faction rules, Nexus powers) that only share a legality check — retracted as a claim at canon 2.16, deliberately left for building and playing to settle;
+- **whether Specials earn a third Build Phase decision channel at all**, beside placement and the Nexus draft — the newest and least-evidenced part of the composition (`commander-armies.md` Section 2.1), left the same way: Milestone 5 builds the slot, Milestone 6 plays the first whole loop, and only then is it defended or retired;
+- drafting modes and player-defined Commanders — kept possible by the pool shape of `commander-armies.md` Section 2.1, designed only when a milestone wants them;
+- the army-breadth caps (army structures/tech tree depth, Nexus powers, Specials) and the size of the hand each Build Phase deals;
+- the run's exact numbers (battles, acts, offer size, tier schedule), difficulty ladders, daily seeds, and leaderboards — `game-modes.md` Section 6, retuned by Milestone 11 on runs actually played;
+- radius metric, same-plan chaining, and hidden reveal conflicts;
+- equal-tick mutual Nexus destruction;
+- exact Nexus draft timing and research stacking;
+- scoring and long-term skirmish progression;
+- campaign cast, sequence, and ending;
+- final title availability and trademark clearance;
+- sound direction;
+- commercial/open-source/community release model;
+- multiplayer format;
+- whether an LLM role proves worthwhile;
+- whether the first browser path is hosted terminal parity or browser-native graphics;
+- when a Rust or Go boundary becomes worth its complexity.
+
+(12 logical ticks per second and the movement-credit rules, formerly on this list pending "Milestone
+2," were confirmed and promoted to RULE by Milestone 1 itself — `engine.md` Section 4.1/4.2, canon
+2.6 in Section 6 above — and removed here rather than left pointing at a milestone number that now
+means something unrelated.)
+
+## Deferred systems
+
+### Local campaign opponents
+
+Single-player opponents begin as deterministic local policies receiving the same bounded planning view and legal action vocabulary as a human. Scripted tutorials, weighted heuristics, and limited rollouts may share that interface. A campaign policy may cheat only when the mission communicates the exception.
+
+### Multiplayer and model-driven AI
+
+Hidden simultaneous plans and deterministic resolution fit asynchronous or live multiplayer, but networking waits for exact replays, content locks, plan validation, reveal rules, and a balanced two-faction match.
+
+An LLM may later return a constrained legal plan, provide dialogue, answer contextual help, or add campaign texture. It does not mutate rules or become a dependency of the core game.
+
+### Sound
+
+**TBD — dedicated research and design pass required.** Stable semantic presentation cues should leave a clean future subscription point for movement, attacks, destruction, restoration, and Nexus states. No sound dependency belongs in Milestone 1.
