@@ -71,6 +71,7 @@ _The dated record of the project, oldest first; never required reading. The pull
 | 2026-10-01 | Fresh-eyes follow-ups: an honest reading path, the questions register triaged to 26 with an index, one vocabulary for Pulse, round, mission and wave, one-way imports with `src/terminal/`, five relic scripts gone, 120 screenshots replaced by a fifteen-picture visual record | [#58](https://github.com/marioizquierdo/terminal-nexus/pull/58) |
 | 2026-10-01 | Milestone 6 step 6C built: the Barracks trains troopers during a Pulse, survivors come home to it, and round 2 opens with them beside it | [#59](https://github.com/marioizquierdo/terminal-nexus/pull/59), [report](reports/2026-10-01-barracks-trains.md) |
 | 2026-10-01 | Milestone 6, the Nexus Pulse Phase, accepted by Mario after he played PERIMETER across three rounds ("Multi pulse was great!"); his answer that only the Nexus falling loses a round recorded; Milestone 8, the Commander, became current | [milestone 6](milestones/milestone-06-pulse-phase.md), [feedback](feedback/2026-10-01-multi-pulse.md) |
+| 2026-10-01 | Milestone 8 step 8A built: Commander Vasse, a persistent `@` who falls, sits a round out and is restored beside the Nexus; built first, the rule that only the Nexus falling loses a round | [#60](https://github.com/marioizquierdo/terminal-nexus/pull/60), [report](reports/2026-10-01-commander-vasse.md) |
 
 ## Where the detail is
 
