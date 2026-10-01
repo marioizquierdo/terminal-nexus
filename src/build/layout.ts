@@ -23,12 +23,12 @@ export type BuildLayout = Readonly<{
   /** The whole frame, which is the whole terminal: a frame the size of the screen overwrites
    *  everything on it, so growing the window never leaves a stale strip behind. */
   frame: Readonly<{ width: number; height: number }>
-  /** Border, panel and Grid pane together — 1 + 29 + 49 + 1 at 80 columns (engine.md 3.1's
-   *  1 + 30 + 48 + 1, with the shared west side's column given to the Grid), the panel on the left
-   *  since gate 5F. */
+  /** Border, panel and Grid pane together — 1 + 29 + 49 + 1 at 80 columns (the floor's
+   *  1 + 30 + 48 + 1 in docs/system-design/grid.md, with the shared west side's column given to the
+   *  Grid), the panel on the left. */
   composition: Readonly<{ width: number; height: number }>
   /** Where that composition sits inside the frame. Terminal space beyond the maximum viewport is
-   *  spent on centring — engine.md 3.3, "never on more Grid". */
+   *  spent on centring, "never on more Grid" (docs/system-design/grid.md). */
   offset: Readonly<{ column: number; row: number }>
   viewport: Viewport
   tileWidth: TileWidth
@@ -38,19 +38,19 @@ export type BuildLayout = Readonly<{
    * The four lines that close the Grid pane into a rectangle of its own, as frame rows and columns:
    * a rule directly above the Grid and one directly below it (each running the whole width, so the
    * top bar and the bottom bar read as bars), the divider on its left and the frame's own border on
-   * its right. These are the sides that carry engine.md 3.3's "there is more Grid this way" signal,
+   * its right. These are the sides that carry the "there is more Grid this way" signal of docs/system-design/grid.md,
    * because they are where the Grid actually stops.
    */
   gridBox: Readonly<{ top: number; bottom: number; left: number; right: number }>
   /**
    * Frame row of the full-width rule over the bottom bar. The same row as `gridBox.bottom` whenever
-   * the Grid fills the pane; below it when the Grid is shorter than the panel needs (gate 5F), and
+   * the Grid fills the pane; below it when the Grid is shorter than the panel needs, and
    * then the Grid's own bottom edge is a line across the Grid pane alone, so its rectangle is still
    * closed directly under its last row.
    */
   paneBottom: number
   /** Frame column of the vertical rule between the side panel and the Grid pane. It runs only between
-   *  the two rules, so the top bar and the bottom bar each run the whole width (engine.md 9.2). */
+   *  the two rules, so the top bar and the bottom bar each run the whole width (docs/system-design/presentation.md). */
   dividerColumn: number
   /** Frame column the side panel's own text starts at — one blank column in from the frame's left
    *  border — and how many glyphs fit on one of its rows, which end against the divider. */
@@ -59,29 +59,28 @@ export type BuildLayout = Readonly<{
   /** How many glyphs fit on the top bar's one line, which runs the whole width. */
   headerLimit: number
   /** Where the top bar's Esc label ends, right-aligned — "menu [esc]", "back [esc]" or "close [esc]",
-   *  saying what Esc does right now (feedback F37): drawn there, and its click target, which sends
-   *  exactly what Esc sends. `escLabelEnd` gives the columns a given label covers. It replaced gate 5G's
-   *  `[d] debug`, then 5J's fixed `[esc] menu`. */
+   *  saying what Esc does right now: drawn there, and its click target, which sends
+   *  exactly what Esc sends. `escLabelEnd` gives the columns a given label covers. It replaced a fixed
+   *  `[esc] menu` label. */
   escLabelEnd: Readonly<{ row: number; to: number }>
   /** How many glyphs fit on the bottom bar's line, which runs the full width beneath both panes. */
   footerLimit: number
   /** Frame row of the bottom bar's one line — the first row below the Grid's own bottom rule: the
-   *  contextual line, the last command's answer or a hint for where the keyboard is (feedback F59,
-   *  `src/build/help.ts`). Three lines until then: a position readout, the key help, the status line. */
+   *  contextual line, the last command's answer or a hint for where the keyboard is
+   *  (`src/build/help.ts`). It once took three lines: a position readout, the key help, the status line. */
   footerRow: number
   /** Frame row the panel's first line is drawn on — the first row under the rule that closes the
    *  Grid's top, so the panel and the Grid start together. */
   panelRow: number
   /** Frame row of the panel's last usable line: the Start Pulse row is pinned there (`startRow`), and
    *  the Nexus Pulse panel's last control row. (Named for the key help that used to overflow into the
-   *  panel's bottom lines; the panel carries no help text since feedback F58. Renaming it is a pure
-   *  rename for a change of its own.) */
+   *  panel's bottom lines; the panel carries no help text now. Renaming it is a pure rename for a
+   *  change of its own.) */
   panelLastRow: number
 }>
 
 /**
- * The panel's own rows, counted from its first (owner, 2026-09-30, feedback F71 and F72, after F56 and
- * F57): Explore Map on row 0 and Nexus straight under it on row 1 ("Do not leave a space between
+ * The panel's own rows, counted from its first: Explore Map on row 0 and Nexus straight under it on row 1 ("Do not leave a space between
  * Explore and Nexus items"); row 2 is the **credits line** — blank on the left, and on the right, in
  * the column the costs are in, the map's own resource symbol and what there is to spend, `◆ 130` ("they
  * should be on the empty line right before the build/construction list ... the same as the symbol used
@@ -95,18 +94,18 @@ const CONSTRUCT_FIRST_ROW = 3
 
 /**
  * A **card** — the panel that replaces the menu while something has the map's attention: Explore Map,
- * or a building being placed (feedback F32, F58). Its header is the row that opened it, drawn active on
+ * or a building being placed. Its header is the row that opened it, drawn active on
  * the panel's first line (row 0, Explore Map's own); a separator runs across the panel on row 1; the
- * card itself starts on row 2. With the credits off the top line (F71) nothing sits above the header.
- * The row moves up to become the header when the card opens (F68, `src/view/build.ts`), and the focus
- * arrow leaves from where the row was on the menu (F63), not from the header.
+ * card itself starts on row 2. With the credits off the top line nothing sits above the header.
+ * The row moves up to become the header when the card opens (`src/view/build.ts`), and the focus
+ * arrow leaves from where the row was on the menu, not from the header.
  */
 export const CARD_HEADER_ROW = EXPLORE_ROW
 export const CARD_SEPARATOR_ROW = CARD_HEADER_ROW + 1
 export const CARD_FIRST_ROW = CARD_HEADER_ROW + 2
 
 /**
- * The Nexus Pulse panel's clickable rows (gate 6A): the playback controls with their hotkeys, pinned to
+ * The Nexus Pulse panel's clickable rows: the playback controls with their hotkeys, pinned to
  * the bottom of the panel, where the Build Phase's Start Pulse row sits. The composer draws them and
  * the mouse adapter hit-tests them from this one place, as it does every other row. `[` and `]` (speed)
  * and `.` and `,` (step) are keys only: the panel has room for two rows and these are the two a player
@@ -122,7 +121,7 @@ export function pulseControlRows(layout: BuildLayout): readonly PulseControlRow[
 }
 
 /** The row a round's result offers to go on from — `[enter] Next round`, or `[enter] Play again` once the
- *  mission is over (gate 6B) — where the Pause row was, which the result no longer needs. */
+ *  mission is over — where the Pause row was, which the result no longer needs. */
 export function nextRoundRow(layout: BuildLayout): number {
   return layout.panelLastRow - 1
 }
@@ -140,8 +139,7 @@ export function pulseControlAt(layout: BuildLayout, column: number, row: number)
 }
 
 /**
- * The Start Pulse entry (owner, 2026-09-29, feedback F41, then F47: "a regular menu item, at the
- * bottom"): the menu's last row, drawn and hit-tested like every other. It is pinned to the panel's
+ * The Start Pulse entry (the owner: "a regular menu item, at the bottom"): the menu's last row, drawn and hit-tested like every other. It is pinned to the panel's
  * bottom line rather than placed after the last building, so it does not move as the menu above it
  * grows, and the rest of the menu ends on the row above it. `s` is its hotkey.
  */
@@ -161,7 +159,7 @@ export function menuFloor(layout: BuildLayout): number {
 export const ESC_KEY = "[esc]"
 
 /**
- * What Esc does right now, as the top bar's right end says it (owner, 2026-09-29, feedback F37: "The
+ * What Esc does right now, as the top bar's right end says it (the owner: "The
  * '[esc] menu' at the top right should be dynamic"): **close** while a popup is open, **back** while
  * the map has the keyboard — placing, Explore Map, or plain navigation — and **menu** on the menu (and
  * on a committed Build Phase), where Esc opens the game menu. The label comes first and the key after
@@ -186,7 +184,7 @@ export function escLabelAt(layout: BuildLayout, label: string, column: number, r
 /**
  * One building's row of the menu, computed once and read by both the composer and the mouse adapter:
  * its frame row and its index in the catalog. The buildings are one list, in catalog order, one row
- * each (feedback F56 — the COMMON, ARMY and SPECIAL headings, and the "none available" lines, went with
+ * each (the COMMON, ARMY and SPECIAL headings, and the "none available" lines, went with
  * the groups). A row that would fall below `menuFloor` — on a panel too short for the whole list — is
  * left out, so it is neither drawn nor a click target: a click can never land on a row nobody sees.
  */
@@ -245,8 +243,8 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLay
   const viewport = fitViewport(terminal, grid, tileWidth)
   // The pane between the two full-width rules is as tall as the viewport — but never shorter than
   // the minimum viewport's 16 rows while the terminal has them, because the side panel is designed at
-  // that height and, since the top bar runs the whole width (gate 5F), has no rows beside it to
-  // borrow. A Grid smaller than the minimum viewport is still never gated (engine.md 3.3); it just
+  // that height and, since the top bar runs the whole width, has no rows beside it to
+  // borrow. A Grid smaller than the minimum viewport is still never gated (docs/system-design/grid.md); it just
   // sits in the top of a pane taller than itself, closed by its own bottom edge.
   const paneHeight = Math.max(viewport.height, Math.min(MIN_VIEWPORT.height, availableTiles(terminal, 1).height))
   const composition = {
@@ -258,12 +256,12 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLay
     column: Math.floor((frame.width - composition.width) / 2),
     row: Math.floor((frame.height - composition.height) / 2),
   }
-  // The side panel on the left (gate 5F; engine.md 9.2): the frame's left border, the panel's 28
+  // The side panel on the left (docs/system-design/presentation.md): the frame's left border, the panel's 28
   // columns, then the divider — which is also the Grid rectangle's west side — the Grid, and the
-  // frame's right border. From 2026-09-27 (F17) the Grid's west side was a column of its own beside
+  // frame's right border. The Grid's west side was once a column of its own beside
   // the divider, because the solid "the map ends here" bar sat against the menu text and read as a
   // heavy menu border; the quieter edge colour and the map's own edge styles fixed that, and the
-  // owner chose the shared column after trying both (2026-09-29, F25), so the Grid has it back.
+  // owner chose the shared column after trying both, so the Grid has it back.
   const dividerColumn = offset.column + PANEL_COLUMNS
   const gridLeft = dividerColumn
   const origin = { column: gridLeft + 1, row: offset.row + 1 + HEADER_ROWS }

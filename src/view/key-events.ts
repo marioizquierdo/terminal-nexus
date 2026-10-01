@@ -1,7 +1,7 @@
 // Key presses, repeats and releases, where the terminal reports them — the kitty keyboard protocol
-// (owner, 2026-09-30, third round: "We should enable/disable reading key-press in the settings, so I
-// can test how it feels when the system provides it vs when it does not"; the design is Q66's
-// progressive enhancement, `docs/milestones/next-steps.md`).
+// (Mario, asking for a setting: "We should enable/disable reading key-press in the settings, so I
+// can test how it feels when the system provides it vs when it does not"; the design is
+// progressive enhancement, noted in `docs/milestones/next-steps.md`).
 //
 // A classic terminal sends bytes only when a key goes down, and repeats them while it is held, so a
 // hold can only be guessed from the gaps (`src/build/motion.ts`). A terminal that speaks the kitty
@@ -12,7 +12,7 @@
 //   - **the conversation**: ask whether the protocol is there (`CSI ? u`, then Device Attributes
 //     `CSI c`, which every terminal answers — so an answer to the second with none to the first means
 //     "no"), push flags 1 + 2 (disambiguate, report event types) when it is, and pop them again on the
-//     way out — **on every exit path**, through the one disposer (`src/cli/spike.ts`): a terminal left
+//     way out — **on every exit path**, through the one disposer (`src/cli/build-phase.ts`): a terminal left
 //     in this mode sends `CSI 99;5u` for Ctrl+C to the shell. `KeyboardProtocol` keeps that state;
 //   - **the decoder**: a key in the protocol's forms (`CSI 1;1:2 C` a repeat of Right, `CSI 27 u` Esc,
 //     `CSI 99;5 u` Ctrl+C) becomes the bytes the game's adapters already read (`CSI C`, ESC, 0x03) plus

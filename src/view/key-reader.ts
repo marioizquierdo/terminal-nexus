@@ -1,4 +1,4 @@
-// Terminal input split into keys, with a short timeout for a lone Esc (gate 5H).
+// Terminal input split into keys, with a short timeout for a lone Esc.
 //
 // `keysFromChunk` splits one read. What it cannot know is whether an ESC at the very end of a read is
 // the Esc key or the first byte of a sequence still on its way — Option+Left over a slow SSH link, a

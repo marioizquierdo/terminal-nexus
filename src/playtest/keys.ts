@@ -3,7 +3,7 @@
 // the main menu or a `grid` battle as well as the Build Phase.
 //
 // The bytes matter more than the names. A playtest is only worth anything if it goes through the
-// real keyboard and mouse adapters the way a terminal would reach them (engine.md 9.7's driver rule),
+// real keyboard and mouse adapters the way a terminal would reach them (the driver rule in `input.md`),
 // so every name below maps to the sequence a real terminal emits, and a mouse click becomes the same
 // SGR report `parseMouseEvent` reads from a live terminal.
 //

@@ -1,9 +1,8 @@
-// `terminal-nexus`'s menu screens — milestone-03-game-menu.md. Gate 3A built the top-level menu and
-// the three input adapters; Gate 3B added Settings as a real second screen, reusing that same
-// reusable list shape rather than inventing anything new for it. Gate 3C gives Campaign its own
-// placeholder screen (the same reuse again) now that Milestone 4 isn't built yet, and dims Challenge
-// in place on the top-level menu instead, since Milestone 11 isn't either; Settings and Exit are
-// unchanged.
+// `terminal-nexus`'s menu screens: the top-level menu and the three input adapters, plus Settings as
+// a real second screen that reuses the same list shape rather than inventing anything new. Campaign
+// has its own placeholder screen (the same reuse again) because the campaign menu isn't built yet,
+// and Challenge is dimmed in place on the top-level menu because the run screen isn't either;
+// Settings and Exit are real.
 //
 // The event loop here is deliberately unlike `watch.ts`'s: a menu has no ticks and nothing animates,
 // so there is no per-frame timer — a redraw happens only in response to input or a resize.
@@ -23,28 +22,26 @@ import type { Host } from "./lifecycle.ts"
 import { nextCapability, nextGlyphPack, nextTheme, toggleReducedMotion } from "../settings/types.ts"
 import type { Settings, SettingsStore } from "../settings/index.ts"
 
-/** Canon 2.11 named these four; Q43 withdrew a fifth ("choose your Commander") upfront screen. */
+/** Four rows; a fifth, choosing a Commander upfront, was considered and rejected: a new player starts the first mission directly. */
 export const TOP_LEVEL_ITEMS: readonly MenuItem[] = [
   { id: "campaign", hotkey: "1", label: "Campaign" },
-  // Dimmed and already saying why (Gate 3C) - Milestone 11 hasn't landed, and "disabled with the
-  // reason shown" (milestone-03-game-menu.md Section 2) means the reason belongs in the label a
-  // player sees before ever pressing anything, not only after.
+  // Dimmed and already saying why: the run screen hasn't landed, and a disabled item shows its
+  // reason in the label a player sees before ever pressing anything, not only after.
   { id: "challenge", hotkey: "2", label: "Challenge (Milestone 11)", disabled: true },
   { id: "settings", hotkey: "3", label: "Settings" },
   { id: "exit", hotkey: "4", label: "Exit" },
 ]
 
-/** Campaign's own placeholder screen (Gate 3C) has exactly one row - there is nothing to configure
+/** Campaign's own placeholder screen has exactly one row - there is nothing to configure
  *  yet, only somewhere honest to land instead of a notice on the screen the player just left. */
 const CAMPAIGN_ITEMS: readonly MenuItem[] = [{ id: "back", hotkey: "1", label: "Back" }]
 
 const CAMPAIGN_PLACEHOLDER = "Campaign is not built yet - Milestone 4 adds the campaign menu."
 
 /**
- * "Stub honestly rather than half-build" (milestone-03-game-menu.md Section 3) — an option not built
- * yet says plainly what it is waiting on, rather than silently doing nothing. Settings no longer
- * needs one (Gate 3B built it for real); Campaign no longer does either (Gate 3C gave it its own
- * screen, above) — only Challenge still shows one, on top of its label already saying why.
+ * Stub honestly rather than half-build: an option not built yet says plainly what it is waiting
+ * on, rather than silently doing nothing. Settings and Campaign have real screens and need no
+ * notice (Campaign's is the placeholder above) — only Challenge still shows one, on top of its label already saying why.
  */
 const STUB_NOTICES: Readonly<Record<string, string>> = {
   challenge: "Challenge is not built yet - Milestone 11 adds the run screen.",
@@ -117,7 +114,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
   const { stdout, stdin } = options
 
   // Non-TTY: there is no interactive menu to show without a terminal, and nothing to wait for.
-  // engine.md 10.1: one readable line, no escape sequences.
+  // One readable line, no escape sequences (the `runtime.md` rule for a non-interactive run).
   if (!stdout.isTTY || !stdin.isTTY) {
     stdout.write("terminal-nexus needs an interactive terminal for its menu.\n")
     return 0
@@ -222,8 +219,8 @@ export async function runMenu(options: MenuOptions): Promise<number> {
         return
       }
       // Only Challenge reaches here now — a dimmed, disabled row that already says why in its own
-      // label (Gate 3C), still activatable per engine.md 9.7, still showing the fuller notice it
-      // always has since Gate 3A.
+      // label, still activatable (`input.md`: a displayed hotkey always works), still showing the
+      // fuller notice.
       notice = STUB_NOTICES[item.id] ?? null
       render()
     },
@@ -249,7 +246,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
       settings = withNextValue(settings, item.id)
       settingsMenu.setItems(settingsItems(settings))
       // Takes effect on the very next frame, without stopping and restarting the backend — the
-      // point of Gate 3B's own `setPresentation` addition (src/view/frame.ts, src/view/backends/).
+      // point of `setPresentation` (src/view/frame.ts, src/view/backends/).
       backend.setPresentation?.(settings.capability, settings.theme)
       pendingSave = pendingSave.then(() =>
         options.settingsStore.save(settings).catch((error: unknown) => {
@@ -291,8 +288,8 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     stdout.off("resize", onResize)
   })
   session.onSignal(leave)
-  // The mouse-reporting half of engine.md 10.1's disposer: "once the mouse adapter exists, it
-  // switches terminal mouse reporting off on the same paths" as raw mode and the alternate screen.
+  // The mouse-reporting half of the disposer (`runtime.md`): mouse reporting is switched
+  // off on the same exit paths as raw mode and the alternate screen.
   session.onDispose(() => {
     stdout.write(MOUSE_REPORTING_OFF)
   })

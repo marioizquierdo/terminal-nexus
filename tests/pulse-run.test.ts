@@ -1,15 +1,16 @@
-// Starting a Nexus Pulse from a committed Build Phase — gate 6A, the shell's half: the plan becomes the
+// Starting a Nexus Pulse from a committed Build Phase, the shell's half: the plan becomes the
 // kernel's opening state, the *unmodified* kernel resolves it, and Recall is worked out from where it
 // ended. What these check is the connection — that every ending the kernel has is reachable from the
-// spike's own data, that the same plan is the same Pulse on every run, and that nothing about how it is
-// watched can change it — because the kernel's own rules are Milestone 1's suite, not this gate's.
+// starter map's own data, that the same plan is the same Pulse on every run, and that nothing about how it is
+// watched can change it — because the kernel's own rules have their own suite (rules.test.ts and
+// determinism.test.ts), not this one.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { buildLayout } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
-import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
-import { spikeContext } from "../src/cli/spike.ts"
+import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
+import { starterContext } from "../src/cli/build-phase.ts"
 import { inBounds, tilesOf } from "../src/grid/coords.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
 import { hashState } from "../src/state/serialize.ts"
@@ -24,8 +25,8 @@ import type { Scenario, Spot } from "./pulse-helpers.ts"
 
 const headlineOf = (pulse: ResolvedPulse): string => resultOf(outcomeOf(pulse.timeline)).headline
 
-test("every ending the kernel has is reachable from the spike's own data", () => {
-  // The milestone's question is whether the ending reads "regardless of whether they won, lost, or
+test("every ending the kernel has is reachable from the starter map's own data", () => {
+  // The question is whether the ending reads "regardless of whether they won, lost, or
   // reached the mission's own tick limit". Nothing can be judged that cannot be reached.
   const table: readonly (readonly [string, Scenario, string, string | null, string])[] = [
     // name, scenario, headline, winner, reason
@@ -122,10 +123,10 @@ test("a building committed on top of the muster points does not stop the Pulse: 
   assert.equal(opening.entities.filter((entity) => entity.player === "A" && entity.contentId.startsWith("unit.")).length, 5)
 })
 
-test("a session with no Pulse to start starts none: committing only freezes the plan, as before gate 6A", () => {
-  const context = spikeContext()
+test("a session with no Pulse to start starts none: committing only freezes the plan, as it did before a Pulse could start", () => {
+  const context = starterContext()
   const layout = buildLayout(MINIMUM, context.grid)
-  const build = new BuildSession({ context, cursor: SPIKE_START_CURSOR, viewport: layout.viewport })
+  const build = new BuildSession({ context, cursor: STARTER_START_CURSOR, viewport: layout.viewport })
   build.run([{ kind: "pick-nexus", index: 0 }, { kind: "open-battle-round" }, { kind: "start-pulse" }])
   assert.equal(build.state.committed, true)
   assert.equal(build.pulse, null)
@@ -146,8 +147,8 @@ test("how it is watched cannot change what happened: effects, the cosmetic seed 
   assert.equal(timeline.stateHash, hashState(timeline.states[timeline.states.length - 1] as never))
 })
 
-test("gate 6A's placeholder Pulse, written as a mission, is the very Pulse 6A played", () => {
-  // Gate 6A's report pinned the winning plan's hashes under Node and Bun; the test mission is that
+test("the first placeholder Pulse, written as a mission, is the very Pulse it was before missions", () => {
+  // The first Pulse's report pinned the winning plan's hashes under Node and Bun; the test mission is that
   // placeholder's forces, muster points, seed and length as data (tests/pulse-helpers.ts), resolved by the
   // trigger runner rather than handed to the kernel directly — and nothing moved.
   const { timeline } = play({ plan: DEFENCE }).pulse

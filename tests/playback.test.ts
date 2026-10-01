@@ -1,4 +1,4 @@
-// Playback controls and the resize gate — engine.md 9.6 (RULE) and milestone 3.8.
+// Playback controls and the resize gate (docs/system-design/presentation.md and runtime.md).
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -109,7 +109,7 @@ test("too few rows gates just as too few columns does", () => {
   assert.equal(clock.gated, false)
 })
 
-test("the key map covers every control the milestone lists", () => {
+test("the key map covers every playback control", () => {
   assert.equal(controlForKey("q"), "quit")
   assert.equal(controlForKey(String.fromCharCode(3)), "quit")
   assert.equal(controlForKey(" "), "toggle")
@@ -135,10 +135,10 @@ test("a chunk of input is several keys, and an escape sequence is one", () => {
 })
 
 test("more than one escape sequence in a single chunk still splits into separate keys", () => {
-  // Real-terminal evidence from Milestone 3 gate 3A (a menu screen, the first consumer to bind an
+  // Found on a real terminal with the first menu screen (the first consumer to bind an
   // escape sequence to anything): two quick arrow-down presses arrive as one six-byte chunk. The
   // original version of this function treated any ESC-prefixed chunk as one key in full — correct
-  // only because nothing before this gate bound an escape sequence to a command — which silently
+  // only because nothing before the menu bound an escape sequence to a command — which silently
   // dropped the second press.
   const escape = String.fromCharCode(27)
   assert.deepEqual(keysFromChunk(`${escape}[B${escape}[B`), [`${escape}[B`, `${escape}[B`])

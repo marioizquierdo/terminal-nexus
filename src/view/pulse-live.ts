@@ -1,4 +1,4 @@
-// The Nexus Pulse as the live screen plays it (gate 6A) — the one place a resolved Pulse meets a clock.
+// The Nexus Pulse as the live screen plays it — the one place a resolved Pulse meets a clock.
 //
 // The kernel resolved the whole Pulse before the first frame (`src/cli/pulse-run.ts`); what is left is
 // **when to show what**, and that is presentation: a playback clock the player can pause, slow, step and
@@ -9,7 +9,7 @@
 //
 // Two things reach back into the Build Phase's state, both as ordinary named commands (`due`): the view
 // is centred on the player's Grid Nexus when the Pulse starts and again when its ending begins. Nothing
-// here can change what the Pulse did — presentation never can (engine.md Section 1).
+// here can change what the Pulse did — presentation never can (`docs/system-design/grid-engine.md`).
 
 import type { BuildCommand } from "../build/types.ts"
 import type { TileWidth } from "../build/camera.ts"
@@ -35,7 +35,7 @@ export type ResolvedPulse = Readonly<{
   /** The tile the player's Grid Nexus stands on, where the view looks at the start and the end; `null`
    *  for a map with none. */
   nexus: Coord | null
-  /** How the mission stands after this Pulse (gate 6B): which round it was, and whether the mission goes
+  /** How the mission stands after this Pulse: which round it was, and whether the mission goes
    *  on or a trigger ended it. Absent for a Pulse with no mission. */
   mission?: MissionRound
 }>
@@ -83,7 +83,7 @@ export class PulsePresenter {
   private fired = new Set<"start" | "end" | "next">()
 
   /** How long after the result appears the next round begins on its own, or `null`: it waits for the
-   *  player (the Next round Experiment, gate 6B). */
+   *  player (the Next round Experiment). */
   private readonly autoNextMs: number | null
 
   constructor(
@@ -145,7 +145,7 @@ export class PulsePresenter {
   /**
    * What the Pulse asks of the screen now: to centre on the player's Nexus when it starts, and again when
    * its last seconds begin (or the stop, when there is no warning) — "the camera is centred at the nexus",
-   * so the next Build Phase starts where the base is (owner, 2026-09-30). Each once per run.
+   * so the next Build Phase starts where the base is. Each once per run.
    */
   due(): BuildCommand[] {
     const commands: BuildCommand[] = []

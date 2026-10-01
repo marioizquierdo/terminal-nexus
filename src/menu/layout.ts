@@ -1,6 +1,6 @@
 // Where a menu item lives on screen — the one function the composer (drawing) and the mouse adapter
 // (hit-testing) both call, so a click can never target a row the frame did not actually draw there.
-// engine.md 9.7: "mouse geometry lives only in the mouse adapter" — this is the shared geometry that
+// Mouse geometry lives only in the mouse adapter (`input.md`) — this is the shared geometry that
 // adapter owns; the composer calls it to know what to draw, never the other way around.
 
 import type { MenuItem } from "./types.ts"
@@ -14,7 +14,7 @@ export type MenuLayout = Readonly<{
   rowStep: number
 }>
 
-/** `[1] Campaign` — the one format a hotkey is ever shown in (engine.md 9.7). */
+/** `[1] Campaign` — the one format a hotkey is ever shown in (`input.md`). */
 export function menuItemLabel(item: MenuItem): string {
   return `[${item.hotkey}] ${item.label}`
 }

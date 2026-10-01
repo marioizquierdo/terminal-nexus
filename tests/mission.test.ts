@@ -1,10 +1,10 @@
-// A mission as data and the trigger runner that plays it (gate 6B): load-time validation, the simulation
+// A mission as data and the trigger runner that plays it: load-time validation, the simulation
 // band on the unmodified kernel, the state carried from one Pulse to the next, and how a mission ends.
 // The screen's half — the loop into the next Build Phase — is tests/mission-loop.test.ts.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { SPIKE_STANDING, spikeGrid } from "../src/build/catalog.ts"
+import { STARTER_STANDING, starterGrid } from "../src/build/catalog.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import { tilesOf } from "../src/grid/coords.ts"
@@ -16,7 +16,7 @@ import { resolvePulse } from "../src/pulse/index.ts"
 import { hashState } from "../src/state/serialize.ts"
 import type { MatchState } from "../src/state/types.ts"
 
-const grid = spikeGrid()
+const grid = starterGrid()
 const registry = FIXTURE_REGISTRY
 const TURRET = "structure.bench.beamturret"
 const HATCHERY = "structure.bench.hatchery"
@@ -41,7 +41,7 @@ function playMission(mission: MissionDefinition, plans: readonly (readonly Place
   const pulses: MissionPulse[] = []
   let carried: MatchState | null = null
   for (let pulse = 1; pulse <= mission.pulses; pulse += 1) {
-    const structures = [...(pulse === 1 ? SPIKE_STANDING : []), ...(plans[pulse - 1] ?? [])]
+    const structures = [...(pulse === 1 ? STARTER_STANDING : []), ...(plans[pulse - 1] ?? [])]
     const run = resolveMissionPulse({ mission, grid, registry, pulse, carried, structures })
     pulses.push(run)
     if (run.verdict.kind !== "continue") break
@@ -70,7 +70,7 @@ const withTriggers = (triggers: readonly TriggerDefinition[], extra: Partial<Mis
 
 test("PERIMETER validates against the map it is played on", () => {
   assert.equal(validateMission(PERIMETER, grid, registry), PERIMETER)
-  assert.equal(PERIMETER.pulses, 3, "three Pulses, the raid in three waves (milestone 2, 4.4)")
+  assert.equal(PERIMETER.pulses, 3, "three Pulses, the raid in three waves")
 })
 
 test("validation refuses every broken shape by name, and reports them all at once", () => {

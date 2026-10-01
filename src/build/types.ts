@@ -1,4 +1,4 @@
-// The Build Phase command vocabulary — engine.md 9.7's RULE that everything a player can do is a
+// The Build Phase command vocabulary — the RULE in docs/system-design/input.md that everything a player can do is a
 // named command whose effect never depends on which adapter produced it.
 //
 // Keyboard, mouse and driver all produce exactly these, and nothing downstream knows a key code or a
@@ -10,9 +10,9 @@ import type { PlaybackControl } from "../view/playback.ts"
 import type { ShownName } from "./all-settings.ts"
 
 /**
- * One building on the Build Phase menu, in catalog order (no group headings since the owner's feedback
- * F56). `hotkey` addresses the row's position in the **whole menu**: engine.md 9.7's first convention
- * is that digits always address the list and never mean anything else, so should the menu grow groups
+ * One building on the Build Phase menu, in catalog order (it has no group headings). `hotkey` addresses
+ * the row's position in the **whole menu**: the first convention in docs/system-design/input.md is
+ * that digits always address the list and never mean anything else, so should the menu grow groups
  * again — a faction's common structures and one Commander's own — one digit sequence runs through them.
  */
 export type ConstructItem = Readonly<{
@@ -22,34 +22,33 @@ export type ConstructItem = Readonly<{
   /** What it costs out of the Build Phase's starting allotment. */
   cost: number
   // What it is *for* is not here: a building's card words — title, subtitle, description — are written
-  // with the content (`src/content/cards.ts`, feedback F84) and read through `cardText` (`card.ts`).
+  // with the content (`src/content/cards.ts`) and read through `cardText` (`card.ts`).
 }>
 
 export type BuildCommand =
   /**
    * Arrows, and the fast move: one command, a different distance. **How far is the input path's
-   * decision, never the reducer's** (gate 5H): how far a held arrow goes comes from key timing the
+   * decision, never the reducer's**: how far a held arrow goes comes from key timing the
    * reducer never sees, and arrives here as an ordinary distance. The fast move (Shift, Option,
    * PageUp/Home and the like, a jump) is just a longer one: it carried a `fast` mark so the reducer could
-   * re-centre the view on it, until the owner turned "Shift centres" off (2026-09-30).
+   * re-centre the view on it, until the owner turned "Shift centres" off.
    */
   | Readonly<{ kind: "move-cursor"; dx: number; dy: number }>
   /**
    * A click on a Grid tile. What it does is the reducer's to decide, from what is on screen — so the
-   * driver reproduces a click exactly (engine.md 9.7):
+   * driver reproduces a click exactly (docs/system-design/input.md):
    *
    * - with a popup open, it closes the popup and moves focus and the cursor there — nothing more;
    * - otherwise it moves focus to the Grid and the cursor to the tile; with a structure armed and the
-   *   cursor *already* on that tile, it places (a second click on the same tile — Q52, compared by
+   *   cursor *already* on that tile, it places (a second click on the same tile, compared by
    *   tile, never by screen position). With nothing armed it only moves the cursor: in Explore Map
    *   the panel follows it; from the menu it arrives in plain navigation, the menu still drawn, so a
-   *   mouse player who clicked around the map can still click a building on it (feedback F22).
+   *   mouse player who clicked around the map can still click a building on it.
    */
   | Readonly<{ kind: "click-tile"; x: number; y: number }>
   /**
    * A click on menu entry *n* (an index into `menuEntries`). **A click activates what it lands on**
-   * (owner, 2026-09-28, feedback F22 — reversing the 2026-09-27 rule that a first click only
-   * highlighted): a construct row arms at once and hands the mouse to the Grid with the ghost at the
+   * (a first click does not merely highlight): a construct row arms at once and hands the mouse to the Grid with the ghost at the
    * cursor, or the nearest spot that takes it; the Nexus entry opens its popup; Explore Map opens the
    * map; Start Pulse opens its confirmation. All four are the menu's, so finishing them comes back to
    * the menu. Only the keyboard has a "highlighted, not yet chosen" state. Two exceptions, both about
@@ -61,15 +60,15 @@ export type BuildCommand =
   | Readonly<{ kind: "click-menu"; entry: number }>
   /** Arm item *n* of the construct menu — its digit, from anywhere. Moves focus to the Grid; the cursor
    *  stays where it is when the building can go there, and otherwise moves to the nearest spot that
-   *  can take it (feedback F30). A placement or Esc goes back to whichever half had the keyboard.
-   *  **While a building is armed the menu stays on it** (owner, 2026-09-30, feedback F69, F70): its own
+   *  can take it. A placement or Esc goes back to whichever half had the keyboard.
+   *  **While a building is armed the menu stays on it**: its own
    *  digit cancels it, exactly as Esc does, and another building's digit is refused until it is placed
    *  or cancelled. */
   | Readonly<{ kind: "arm"; index: number }>
   /** Place the armed structure at the cursor — Enter or Space on the Grid while something is armed. */
   | Readonly<{ kind: "place" }>
   /** Enter or Space on the Grid in plain navigation: Explore Map, the side panel showing what is under
-   *  the cursor, begun on the map — so Esc comes back to the map (feedback F30). Nothing, when Explore
+   *  the cursor, begun on the map — so Esc comes back to the map. Nothing, when Explore
    *  Map is already open. */
   | Readonly<{ kind: "open-explore" }>
   /** Remove the planned, uncommitted placement under the cursor — Backspace or Delete. Refused on the
@@ -84,7 +83,7 @@ export type BuildCommand =
   | Readonly<{ kind: "cancel" }>
   /**
    * `x` and a right click: every step `cancel` takes **but the last** — on the menu, with nothing open,
-   * it does nothing at all (owner, 2026-09-30, feedback F62: "Menu should only open with 'esc', but not
+   * it does nothing at all (the owner: "Menu should only open with 'esc', but not
    * with 'x' ... I like to type x-x-x and I'd like that always gets back to the regular state with the
    * focus on the menu"). So `x x x` from anywhere lands on the menu and stays, and a stray right click
    * never opens a menu. Its own command rather than a flag on `cancel`, so a driver says which it means
@@ -95,23 +94,23 @@ export type BuildCommand =
    *  leaving means. */
   | Readonly<{ kind: "quit" }>
   /** `q` anywhere but the game menu: open the game menu — Settings, Restart and Quit — rather than
-   *  quit outright and lose a plan (owner, 2026-09-28). */
+   *  quit outright and lose a plan. */
   | Readonly<{ kind: "open-game-menu" }>
   /** Pick Nexus power *n* — a digit or a click while the Nexus popup is open. */
   | Readonly<{ kind: "pick-nexus"; index: number }>
   /** `s` (or `p`), or the menu's last row, `[s] Start Pulse` — open the Battle Round confirmation.
    *  Refused while a Nexus power is still waiting to be picked — the one thing that pick refuses — and
-   *  while a building is armed (feedback F69). */
+   *  while a building is armed. */
   | Readonly<{ kind: "open-battle-round" }>
   /** `[s] Start` — the confirmation's one row, by Enter, Space, `s` or a click: the Nexus Pulse starts.
-   *  Going back is the cancel every popup has (owner, 2026-09-29, feedback F50). */
+   *  Going back is the cancel every popup has. */
   | Readonly<{ kind: "start-pulse" }>
-  /** Tab: move keyboard focus. To the Grid it arrives in plain navigation (feedback F30); to the menu
+  /** Tab: move keyboard focus. To the Grid it arrives in plain navigation; to the menu
    *  it disarms (a building is armed only while the Grid has focus). */
   | Readonly<{ kind: "focus"; target: Focus }>
   /**
    * Up/Down on the menu or inside a popup's list: move its highlight `delta` rows (negative is up),
-   * **stopping at either end** — no list comes round (owner, 2026-09-30, feedback F75: "should not
+   * **stopping at either end** — no list comes round (the owner: "should not
    * rotate ... if I keep down pressed, it should quickly move to the bottom and stay there"). A tap is
    * one row; how far a held arrow goes is the input path's decision, the map cursor's own ramp
    * (`src/build/motion.ts`), and arrives here as an ordinary distance. `jump` is the fast move — Shift,
@@ -122,17 +121,17 @@ export type BuildCommand =
   /** Enter/Space on the menu or inside a popup's list: do what the highlighted entry is for. */
   | Readonly<{ kind: "activate" }>
   /** Left or Right on the menu, where they have nothing to do: the highlighted row flickers "refused"
-   *  to say the key arrived, and the keyboard stays on the menu (owner, 2026-09-30, feedback F55). */
+   *  to say the key arrived, and the keyboard stays on the menu. */
   | Readonly<{ kind: "refuse-row" }>
   /** `n`, or activating the Nexus entry: open the Nexus popup. */
   | Readonly<{ kind: "open-nexus-powers" }>
   /** `e`: Explore Map, a toggle — focus to the Grid with nothing armed, the side panel showing what is
-   *  under the cursor as it moves (feedback F23); with it open, back one level exactly as Esc (F32).
-   *  Opening it puts the cursor on clear ground by the arming rule for one tile (F66); refused while a
-   *  building is armed (F69). */
+   *  under the cursor as it moves; with it open, back one level exactly as Esc.
+   *  Opening it puts the cursor on clear ground by the arming rule for one tile; refused while a
+   *  building is armed. */
   | Readonly<{ kind: "explore" }>
   /**
-   * The Settings popup: every setting Settings shows, in sections (owner, 2026-09-28; F85). `[s]` in the
+   * The Settings popup: every setting Settings shows, in sections. `[s]` in the
    * game menu opens it at its first row; `d` opens it at its first Experiment.
    */
   | Readonly<{ kind: "open-settings"; section: "settings" | "experiments" }>
@@ -152,7 +151,7 @@ export type BuildCommand =
    * rows, the export's lines, the Controls page's key lines.
    */
   | Readonly<{ kind: "select-row"; row: number }>
-  /** `r` in the game menu, or its `[r] Restart` row (feedback F34 moved it there from Settings): start
+  /** `r` in the game menu, or its `[r] Restart` row (it lives in the game menu, not Settings): start
    *  the Build Phase over, keeping every setting and experiment — how one that applies only after a
    *  restart takes effect. */
   | Readonly<{ kind: "restart" }>
@@ -163,7 +162,7 @@ export type BuildCommand =
    */
   | Readonly<{ kind: "export-settings" }>
   /**
-   * The Controls and hotkeys page (owner, 2026-09-30, feedback F60: "an option for 'Controls and
+   * The Controls and hotkeys page (the owner: "an option for 'Controls and
    * hotkeys' that opens a section that explains how to use the keyboard, hotkeys and mouse clicks"):
    * `c` or its row in the game menu, which Esc then goes back to, or `?` from the game, which Esc
    * closes. Opens over nothing but the game menu.
@@ -171,14 +170,14 @@ export type BuildCommand =
   | Readonly<{ kind: "open-controls" }>
   /**
    * A Nexus Pulse playback control — Space, `[`, `]`, `.`, `,` and `r` while a Pulse is on screen, or a
-   * click on the panel's control rows (gate 6A): the same vocabulary `grid watch` has, one keymap across
+   * click on the panel's control rows: the same vocabulary `grid watch` has, one keymap across
    * both. The reducer has nothing to change for it — the Pulse's clock is the presenter's, never the
    * state's — so it passes through like `quit`, and the session hands it to the Pulse it belongs to.
    */
   | Readonly<{ kind: "pulse"; control: PlaybackControl }>
   /**
    * Centre the view on a tile and put the cursor there. Sent by the Pulse when it starts and when its
-   * ending begins ("the camera is centred at the nexus", milestone 6 Section 2.2): a state change like
+   * ending begins ("the camera is centred at the nexus"): a state change like
    * any other move, so what the player does next — scrolling, looking around — starts from where the
    * story left the view, and the view's slide is the presentation's to draw.
    */
@@ -188,7 +187,7 @@ export type BuildCommand =
   | Readonly<{ kind: "pulse-failed"; reason: string }>
   /**
    * Once a round's result stands: the next round's Build Phase, or — the mission over — the mission again
-   * from round 1 (gate 6B). Enter, Space, `n` or a click on the result's row; or the Pulse itself a moment
+   * from round 1. Enter, Space, `n` or a click on the result's row; or the Pulse itself a moment
    * after the result, when the Next round Experiment says so. Like `pulse`, the reducer never sees it: the
    * session swaps in the next round's context, which the shell works out (`src/cli/pulse-run.ts`).
    */
@@ -197,17 +196,17 @@ export type BuildCommand =
 /**
  * How the sides of the Grid rectangle that have reached the map's own edge are drawn — **the map's
  * own style**, named in its definition (`BuildContext.edgeStyle`; the solid bar when it names none).
- * The owner chose this over one style for every map after trying both (2026-09-29, feedback F25:
+ * The owner chose this over one style for every map after trying both (the owner:
  * "using map-specific borders looks a lot better... allowing the map to define different styles will
  * be awesome"). Every style keeps the rectangle's rule — the same weight on all four sides and the
  * same meaning in every glyph pack — and is a name, not glyphs: `src/view/edge.ts` draws them.
  *
- * - `solid`: an inverse-video cell — the wall canon 2.21 chose, and what a map that names none gets;
+ * - `solid`: an inverse-video cell — the wall the design chose, and what a map that names none gets;
  * - `half`: a half block on the map's side of the cell (quadrants at the corners);
  * - `heavy`: a heavy box line, joined to the frame's light lines with mixed-weight junctions;
  * - `double`: a double box line;
  * - `shade`: a light shade, a dotted band;
- * - `fence`: a dashed heavy line with posts (the PERIMETER stand-in's, `SPIKE_EDGE_STYLE`).
+ * - `fence`: a dashed heavy line with posts (the PERIMETER stand-in's, `STARTER_EDGE_STYLE`).
  */
 export type MapEdgeStyle = "solid" | "half" | "heavy" | "double" | "shade" | "fence"
 
@@ -218,9 +217,7 @@ export const MAP_EDGE_STYLES: readonly MapEdgeStyle[] = ["solid", "half", "heavy
 export type Focus = "menu" | "grid"
 
 /**
- * One entry of the side panel's menu, in the order Up/Down walk it: Explore Map (first, owner
- * 2026-09-28), Nexus, the construct rows in hotkey order, and Start Pulse last (owner, 2026-09-29,
- * feedback F47). The menu highlight is an index into this list (`menuEntries` in `state.ts`), so every
+ * One entry of the side panel's menu, in the order Up/Down walk it: Explore Map first, Nexus, the construct rows in hotkey order, and Start Pulse last. The menu highlight is an index into this list (`menuEntries` in `state.ts`), so every
  * construct row keeps its digit.
  */
 export type MenuEntry =
@@ -232,11 +229,11 @@ export type MenuEntry =
 /** The popups this screen has — one popup shape for all of them (`src/build/popup.ts`): the Nexus
  *  powers, the Battle Round confirmation, the game menu (Settings, Controls, Restart, Quit), Settings,
  *  the export, a message — `BuildState.message`, a title and text with nothing to choose — and the
- *  Controls and hotkeys page (feedback F60). */
+ *  Controls and hotkeys page. */
 export type Popup = "nexus-powers" | "battle-round" | "game-menu" | "settings" | "export" | "message" | "controls"
 
 /**
- * A message popup's words (feedback F34, owner 2026-09-29: "This popup does not have an action, it's
+ * A message popup's words (the owner: "This popup does not have an action, it's
  * just a warning message ... clicking outside or pressing esc should close it"). Any warning the screen
  * needs to give once, and out of the way of the bottom line, is one of these.
  */
@@ -244,21 +241,21 @@ export type PopupMessage = Readonly<{ title: string; text: string }>
 
 /**
  * What the last command wants acknowledged on screen — a brief "pressed" flash on the row it
- * activated, or a flicker on the row that had nothing to do (owner, 2026-09-27). The reducer records
+ * activated, or a flicker on the row that had nothing to do. The reducer records
  * it with a sequence number and no clock; the live loop shows it for a few frames from the moment it
  * first sees a new `seq`, so timing stays in the adapter and the reducer stays pure.
  */
 export type Ack = Readonly<{ seq: number; kind: "pressed" | "refused"; entry: number }>
 
 /** A structure the player has planned but not committed. Nothing here ever reaches the kernel: a
- *  plan is a plan on a screen, and gate 5D is what turns one into a commit. */
+ *  plan is a plan on a screen, and committing it is what turns it into one. */
 export type PlannedPlacement = Readonly<{
   ordinal: number
   contentId: string
   anchor: Coord
 }>
 
-/** Something already standing on the Grid when the screen opens. The spike has two, so there is
+/** Something already standing on the Grid when the screen opens. The starter map has two, so there is
  *  something to build next to and something a placement can illegally overlap. */
 export type StandingStructure = Readonly<{
   contentId: string
@@ -266,7 +263,7 @@ export type StandingStructure = Readonly<{
 }>
 
 /**
- * Something on the map the player did not build and does not own a plan for (gate 6B): a unit of
+ * Something on the map the player did not build and does not own a plan for: a unit of
  * either side that survived the last round, or a scripted side's structure. Drawn in its side's colour,
  * read by Explore Map's card; a structure blocks a placement, a unit steps aside for one when the Pulse
  * starts (`src/match/opening.ts`).
@@ -279,7 +276,7 @@ export type FieldEntity = Readonly<{
 }>
 
 /**
- * A unit the next round's triggers will bring (gate 6B, the owner's "see what is coming"): where it will
+ * A unit the next round's triggers will bring (the owner's "see what is coming"): where it will
  * arrive, when, and the line of intention its group carries. Drawn see-through while the Incoming wave
  * Experiment shows it; nothing about it is state — the Pulse decides where it actually lands.
  */
@@ -293,10 +290,10 @@ export type IncomingEntity = Readonly<{
 }>
 
 /**
- * One option in the Nexus draft. **Placeholder content, not Milestone 8's real draft** — a Nexus
+ * One option in the Nexus draft. **Placeholder content, not the real draft** — a Nexus
  * power there is "a name and one plain line of description" applying one of six effect kinds
- * (`commander-armies.md` Section 4.5); these two are plain numbers instead, on purpose, so nothing
- * here reads as an attempt at real design. What this gate builds is the *mechanism* — offer a
+ * (docs/game-design/commander-armies.md); these two are plain numbers instead, on purpose, so nothing
+ * here reads as an attempt at real design. What is built here is the *mechanism* — offer a
  * choice, accept a pick, apply its effect — against whatever option happens to be in the slot.
  */
 export type NexusPowerOption = Readonly<{

@@ -1,4 +1,4 @@
-// Movement credit, arbitration, and combat — milestone-1-spike-battle.md 3.9, "Rules".
+// Movement credit, arbitration, and combat — the Pulse rules in docs/system-design/pulse.md.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -16,7 +16,7 @@ import {
 import { loadScenario } from "../src/scenario/index.ts"
 import { loadScenarioFile, resolveAllScenarios, resolveScenario } from "./helpers.ts"
 
-/** The cadence table of engine.md 4.1, reproduced exactly at every rate it lists. */
+/** The cadence table of docs/system-design/pulse.md (logical time), reproduced exactly at every rate it lists. */
 const CADENCE: ReadonlyArray<readonly [MovementRate, number]> = [
   [{ numerator: 1, denominator: 2 }, 24],
   [{ numerator: 2, denominator: 3 }, 18],

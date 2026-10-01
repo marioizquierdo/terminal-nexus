@@ -12,7 +12,7 @@ function cadence(numerator: number, denominator: number): number {
 }
 
 test("no Ravel moves on a Citizen cadence", () => {
-  // "Off the beat" is a rule shape, so it is a test rather than a note: `commander-armies.md` 4.1
+  // "Off the beat" is a rule shape, so it is a test rather than a note: docs/game-design/commander-armies.md
   // asks for rates deliberately off the common cadence, and a fixture that quietly drifted onto one
   // would look like the same army in different letters.
   const citizen = new Set(
@@ -107,7 +107,7 @@ test("a Grid Nexus is a flag on the definition, not a content id the kernel know
   assert.equal(ravel.nexus, true)
   assert.equal(FIXTURE_REGISTRY.get("structure.ravel.den").nexus, undefined)
 
-  // Destroying either one ends a Pulse; Gate 1A only ever proved it for the Citizen id.
+  // Destroying either one ends a Pulse; the first fixtures only ever proved it for the Citizen id.
   const resolved = await resolveScenario("structure-destruction.map.json")
   assert.equal(resolved.run.finalState.outcome?.reason, "nexus-destroyed")
 })

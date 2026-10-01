@@ -1,4 +1,4 @@
-// The effect system — ascii-effects.md Section 6, which is explicit that effects are tested
+// The effect system — docs/system-design/effects.md ("What the tests hold"), which is explicit that effects are tested
 // without a terminal: "Do not test effects by watching them — watch them to judge them, test them
 // to keep them."
 
@@ -104,7 +104,7 @@ function sampleInstances(): EffectInstance[] {
       ...common,
     },
     {
-      // The toolkit's generic particles — gate 5I's placement sparks, drawn by src/view/build.ts
+      // The toolkit's generic particles — the placement sparks, drawn by src/view/build.ts
       // rather than derived from Pulse events, held to the same contract all the same. Once keyed by
       // a player action's identity, once by its start time, as a Pulse effect would be.
       recipe: "fx.sparks.burst",
@@ -121,7 +121,7 @@ function sampleInstances(): EffectInstance[] {
       ...common,
     },
     {
-      // The toolkit's generic shading — gate 5I's placement light, and its rainbow.
+      // The toolkit's generic shading — the placement light, and its rainbow.
       recipe: "fx.light.flash",
       band: "highlights",
       durationMs: 400,
@@ -139,11 +139,11 @@ function sampleInstances(): EffectInstance[] {
 }
 
 test("the starter vocabulary is authored, all of it", () => {
-  // The ten of ascii-effects.md Section 5, plus fx.blast.detonation, which the Ravel volatile
+  // The ten of the starter vocabulary in docs/system-design/effects.md, plus fx.blast.detonation, which the Ravel volatile
   // munitions rule earned — the list is GUIDANCE and predates the rule — and the presentation
   // toolkit's two generic recipes, fx.sparks.burst (particles) and fx.light.flash (shading), which
-  // gate 5I's placement sparks and light became.
-  const canon = [
+  // the placement sparks and light became.
+  const starterVocabulary = [
     "fx.move.trail",
     "fx.melee.wind",
     "fx.melee.clash",
@@ -155,14 +155,14 @@ test("the starter vocabulary is authored, all of it", () => {
     "fx.structure.collapse",
     "fx.nexus.critical",
   ]
-  for (const id of canon) {
+  for (const id of starterVocabulary) {
     assert.ok(EFFECT_RECIPES[id] !== undefined, `${id} is not authored`)
   }
   assert.ok(EFFECT_RECIPES["fx.blast.detonation"] !== undefined)
   // The toolkit's generic particles and shading — the first effects that are not a Pulse cue.
   assert.ok(EFFECT_RECIPES["fx.sparks.burst"] !== undefined)
   assert.ok(EFFECT_RECIPES["fx.light.flash"] !== undefined)
-  assert.equal(EFFECT_IDS.length, canon.length + 3)
+  assert.equal(EFFECT_IDS.length, starterVocabulary.length + 3)
 })
 
 test("f(t) is a pure function of absolute time, in any order and after any skipping", () => {
@@ -249,7 +249,7 @@ test("every glyph an effect emits is one cell wide, and every role is a declared
 })
 
 test("all three forms exist and all three emit at the impact beat", () => {
-  // ascii-effects.md Section 4: full, reduced motion and monochrome, authored together. An effect
+  // docs/system-design/effects.md ("Every effect owes three forms"): full, reduced motion and monochrome, authored together. An effect
   // that goes silent in one of them is not finished.
   for (const instance of sampleInstances()) {
     const recipe = EFFECT_RECIPES[instance.recipe]
@@ -294,7 +294,7 @@ test("the damage flash is an attribute, never a glyph replacement", () => {
 })
 
 test("a real damage flash, through the real compositor: solo is bold, stacked escalates to inverse", () => {
-  // Closes a real gap found this round: mergeEffectCells' own stacking tests below exercise the
+  // Closes a real gap: mergeEffectCells' own stacking tests below exercise the
   // compositor's arithmetic with hand-built cells, never this recipe's actual output - which is
   // exactly how damageFlash setting both bold and inverse unconditionally (already weight 3, already
   // at resolveLighting's own ceiling from one flash alone) went undetected. See recipes.ts's own
@@ -332,7 +332,7 @@ test("a real damage flash, through the real compositor: solo is bold, stacked es
   assert.equal(stacked.inverse, true, "two real simultaneous flashes on one tile should escalate to inverse")
 })
 
-test("the damage flash actually fades across its own window now - Q25's amendment, not a flat pulse", () => {
+test("the damage flash actually fades across its own window now, not a flat pulse", () => {
   const recipe = EFFECT_RECIPES["fx.damage.flash"]
   assert.ok(recipe !== undefined)
   const tile = { x: 4, y: 9 }
@@ -635,7 +635,7 @@ test("a same-tick ranged kill holds its death and blast until the tracer lands, 
   // turn so it doesn't really affect the gameplay." The kernel resolves a ranged kill in the tick
   // the shot is launched - attack.launched, damage.applied, entity.died and any entity.detonated it
   // triggers all carry the same tick - but the impact burst already waits for the flight window
-  // (engine.md 4.3) to end before it plays. The death collapse and any resulting blast did not, so a
+  // (docs/system-design/pulse.md, events) to end before it plays. The death collapse and any resulting blast did not, so a
   // unit could visibly explode before its own tracer arrived. citizens-versus-ravels reproduces this
   // exactly: tick 169, A:marksman#5's shot (flightWindowTicks 2) kills B:runner#6, whose volatile
   // munitions then catch A:trooper#8.
@@ -689,9 +689,9 @@ test("a same-tick ranged kill holds its death and blast until the tracer lands, 
 })
 
 
-test("a death reads visibly heavier than a hit, ascii-effects.md 5's own requirement for this pair", () => {
+test("a death reads visibly heavier than a hit, the effects page's own requirement for this pair", () => {
   // "fx.death.collapse... Must be visibly heavier than fx.impact.burst - dying and being hit are the
-  // two events players confuse most" (ascii-effects.md Section 5). Owner playtest, 2026-08-22: "show
+  // two events players confuse most" (docs/system-design/effects.md, starter vocabulary). Owner playtest, 2026-08-22: "show
   // bigger explosions when the units die vs when they take damage" - the same requirement, seen on a
   // real fight rather than read off a table, and not previously asserted by anything automated.
   const origin = { x: 10, y: 6 }
@@ -818,7 +818,7 @@ test("content with DEATH_ART plays its own frames across the collapse, not the g
 })
 
 test("reduced motion holds a death frame's final pose, not a mid-collapse one", () => {
-  // ascii-effects.md 4: reduced motion keeps impact and settle, drops drift - the frame sequence is
+  // The three-forms rule: reduced motion keeps impact and settle, drops drift - the frame sequence is
   // exactly the drift here, so it should hold on the last frame rather than animate through them.
   const deathRecipe = EFFECT_RECIPES["fx.death.collapse"]
   assert.ok(deathRecipe !== undefined)
@@ -961,7 +961,7 @@ test("a big body's death moves through a shockwave, then flying debris, before i
 })
 
 test("reduced motion drops a big body's shockwave and flight, but keeps its debris landed", () => {
-  // ascii-effects.md 4: reduced motion keeps impact and settle, drops travel and drift - the
+  // The three-forms rule: reduced motion keeps impact and settle, drops travel and drift - the
   // shockwave and the flying-debris beats are exactly that, so both should vanish, and every piece
   // should already read as landed, unmoving, for the whole window.
   const deathRecipe = EFFECT_RECIPES["fx.death.collapse"]
@@ -1082,7 +1082,7 @@ test("blastDetonation's ring reach follows the ease-out curve: fast early growth
 
 test("blastDetonation spawns radius-scaled sub-explosions inside its own reach (sub-effects, cheap path)", () => {
   // Owner, 2026-08-24: "the explosions should also spawn smaller sub-explosions... the effects module
-  // should support sub-effects." Built the cheap way ascii-effects.md Section 7 asks for first: no new
+  // should support sub-effects." Built the cheap way docs/system-design/effects.md ("Adding an effect to the vocabulary") asks for first: no new
   // effect id, no child instance, a secondary burst computed inside this recipe's own closed-form hash
   // - the same shape bigDeathScatter's landing "pop" already uses.
   const blast = EFFECT_RECIPES["fx.blast.detonation"]
@@ -1135,7 +1135,7 @@ test("blastDetonation spawns radius-scaled sub-explosions inside its own reach (
 
 test("blastDetonation drops sub-explosions under reduced motion, same as the main ring's own expansion", () => {
   // Sub-bursts are travel and decorative movement - exactly what reduced motion drops
-  // (ascii-effects.md 4) - and the held full-radius ring already carries this beat's causality.
+  // (the three-forms rule) - and the held full-radius ring already carries this beat's causality.
   const blast = EFFECT_RECIPES["fx.blast.detonation"]
   assert.ok(blast !== undefined)
   const origin = { x: 20, y: 20 }

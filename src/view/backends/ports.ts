@@ -1,4 +1,4 @@
-// The terminal as the screen loops actually use it — written down, not invented (engine.md 10.2).
+// The terminal as the screen loops actually use it — written down, not invented (`docs/system-design/runtime.md`).
 //
 // `terminal-nexus`'s menu, its Build Phase, and `grid watch` each need a handful of things from a
 // terminal: its size, a way to write bytes, word when it resizes, and the bytes a player types. Node's

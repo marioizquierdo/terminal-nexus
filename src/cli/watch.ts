@@ -2,7 +2,7 @@
 //
 // Presentation samples **absolute presentation time**, so pausing, stepping, changing speed, or
 // dropping frames changes nothing about what a given moment looks like. The resize gate freezes
-// that clock and resuming continues from the same instant (engine.md 9.6).
+// that clock and resuming continues from the same instant (see `runtime.md`).
 //
 // Every path out — `q`, SIGINT, SIGTERM, a setup failure, a caught render failure — goes through
 // one idempotent disposer. The end of the Pulse is deliberately not one of those paths (owner

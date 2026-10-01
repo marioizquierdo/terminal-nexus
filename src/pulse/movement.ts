@@ -1,4 +1,4 @@
-// Movement credit and step choice — engine.md 4.2 and 4.3.
+// Movement credit and step choice (pulse.md).
 
 import type { ContentDef, MovementRate } from "../content/types.ts"
 import { DIRECTIONS, directionOf, gridDistance, step } from "../grid/coords.ts"
@@ -12,7 +12,7 @@ export function stepCost(rate: MovementRate): number {
 
 /**
  * Credit is capped at one step's cost: an actor that could not move cannot bank a sprint
- * (engine.md 4.2). A blocked step keeps its credit, which is simply what *not* subtracting means.
+ * (pulse.md). A blocked step keeps its credit, which is simply what *not* subtracting means.
  */
 export function accrueCredit(credit: number, rate: MovementRate): number {
   return Math.min(credit + rate.numerator, stepCost(rate))
@@ -45,7 +45,7 @@ export type StepOptions = Readonly<{
 
 /**
  * Greedy step with a deterministic sidestep, over the mover's own collision mask
- * (milestone-1-spike-battle.md 3.7). Candidates are ranked by the distance they achieve, then by
+ * (the first routing). Candidates are ranked by the distance they achieve, then by
  * how far they turn from the direction the actor wanted, then by a fixed compass order — so two
  * equally good steps always resolve the same way on every machine.
  *
@@ -56,8 +56,8 @@ export type StepOptions = Readonly<{
  * time until it clears. An actor whose approach is exactly on-axis (same row or column as the goal)
  * has exactly one improving direction, and if that is blocked there is no fallback at all: it holds
  * and the tick reports it blocked, for as long as the obstacle stands. This is a known, accepted gap
- * in the Gate 1A routing floor — docs/milestones/open-questions.md Q15 — and real pathfinding is Milestone 2's
- * job to close, not this greedy step's.
+ * in the first routing, and real pathfinding, not this greedy stepping, is what would close it. What a
+ * mover with no route should do (circle or stop) is still an open question (Q15).
  */
 export function rankedSteps(
   anchor: Coord,

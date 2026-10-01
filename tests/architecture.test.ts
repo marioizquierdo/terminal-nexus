@@ -1,4 +1,4 @@
-// The three worlds, asserted rather than trusted — engine.md 1, milestone 3.2.
+// The three worlds, asserted rather than trusted (docs/system-design/grid-engine.md, the three worlds).
 //
 // "`src/pulse` must not import `src/view`. Assert it in a test rather than trusting it." The same
 // goes for the report: a report that can read kernel internals can narrate a story the events do
@@ -69,7 +69,7 @@ function assertNoDependencyOn(from: string, forbidden: readonly string[]): void 
 }
 
 test("src/pulse never reaches the view, the report, the shell, or the match layer", () => {
-  // The match layer (gate 6A: the opening state and Recall) sits beside the tick kernel and is never
+  // The match layer (the opening state and Recall) sits beside the tick kernel and is never
   // called from inside it, so no Pulse's hashes can depend on it.
   assertNoDependencyOn("pulse", ["view", "report", "cli", "match"])
 })
@@ -80,13 +80,13 @@ test("src/match never reaches the view, the report, the shell, or the Build Phas
 })
 
 test("src/mission is data: it never reaches the kernel's tick, the rules layer, the view, the shell or the Build Phase", () => {
-  // Gate 6B: a mission is typed literals and the checks on them. The Build Phase and the view may read its
+  // A mission is typed literals and the checks on them. The Build Phase and the view may read its
   // shapes, so it must not bring the kernel along with it; the runner that steps the kernel is src/match's.
   assertNoDependencyOn("mission", ["pulse", "match", "view", "report", "cli", "build"])
 })
 
 test("the simulation never reaches a glyph", () => {
-  // engine.md 9.6, RULE: "The simulation knows semantic ids such as `unit.worker` and
+  // docs/system-design/presentation.md, RULE: "The simulation knows semantic ids such as `unit.worker` and
   // `structure.nexus`. **It never knows a glyph.**" src/content/art.ts sits *inside* a folder the
   // kernel reads all the time, so the rule holds only as long as nothing on the kernel's side of
   // that folder imports it — which is exactly the kind of thing that lasts until someone wants a
@@ -148,7 +148,7 @@ test("the deterministic modules name no clock, no Math.random, and no terminal",
 })
 
 test("the Build Phase reducer and its Experiments name no clock and never reach the kernel's tick", () => {
-  // Gate 5G: the Experiments' timing flags are read by the live loop (src/cli/spike.ts), never here —
+  // The Experiments' timing flags are read by the live loop (src/cli/build-phase.ts), never here —
   // the reducer stores a number and nothing more, so it stays a pure function a driver can replay.
   assertNoDependencyOn("build", ["pulse", "cli"])
   const forbidden = [/\bDate\s*\.\s*now\b/, /\bnew\s+Date\b/, /\bperformance\s*\.\s*now\b/, /\bset(Timeout|Interval)\b/]
@@ -161,7 +161,7 @@ test("the Build Phase reducer and its Experiments name no clock and never reach 
 })
 
 test("the Build Phase's animation and key timing, and the Nexus Pulse's ending, take the time as a number, and name no clock", () => {
-  // Gate 5H: the screen's clock is read in one place, the live loop (src/cli/spike.ts), and handed to
+  // The screen's clock is read in one place, the live loop (src/cli/build-phase.ts), and handed to
   // these as a number — which is what lets a test drive the ease, the flashes, the held-key ramp and the
   // Esc timeout without waiting.
   const forbidden = [/\bDate\s*\.\s*now\b/, /\bnew\s+Date\b/, /\bperformance\s*\.\s*now\b/, /\bset(Timeout|Interval)\b/]

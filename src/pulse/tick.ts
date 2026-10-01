@@ -1,7 +1,7 @@
 // THE PULSE — how state changes. A pure function stepping state forward in fixed logical ticks,
-// with no clock, no terminal, no frames, and no colour (engine.md 1).
+// with no clock, no terminal, no frames, and no colour (grid-engine.md).
 //
-// The nine phases below are engine.md 4.3, in order, including the two economy phases that exist
+// The nine phases below are the ones pulse.md describes, in order, including the two economy phases that exist
 // and deliberately do nothing: the slot matters, the content does not. Every phase reads the state
 // settled at the end of the previous phase, so iteration order over entities can never decide an
 // outcome — it only ever decides the order events are emitted in.
@@ -33,8 +33,8 @@ export { DEATH_SETTLE_TICKS } from "./death.ts"
 // ---------------------------------------------------------------------------
 
 function economyAndProduction(_context: TickContext): void {
-  // Deliberately empty for Gate 1A (milestone-1-spike-battle.md 3.7). Scheduled resource yield and
-  // producer recipes belong to Milestone 2; the phase exists here so that the tick order it will
+  // Deliberately empty until the economy is built: scheduled resource yield and producer recipes
+  // belong to the worker-economy milestone. The phase exists here so that the tick order it will
   // land in is already proven and already ordered relative to perception.
 }
 
@@ -80,7 +80,7 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
     nextOrdinal: state.nextOrdinal,
   }
 
-  // 1.5. Spawning — unit-design-architecture spike, no engine.md phase number of its own yet.
+  // 1.5. Spawning — from the unit-architecture spike; not one of the nine phases pulse.md names.
   // Ahead of perception so anything created this tick is a full participant in every phase after it:
   // perceived, able to move or fire, and counted for victory, exactly as if it had stood since tick 0.
   spawning(context)

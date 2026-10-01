@@ -1,4 +1,4 @@
-// The map's edge (feedback F25, settled by the owner's playtest of 2026-09-29): the sides of the Grid
+// The map's edge (settled by the owner's playtest of 2026-09-29): the sides of the Grid
 // rectangle where the map ends are drawn in **the map's own style** — the solid bar when the map names
 // none — in the quieter edge colour, and the menu's divider **is** the Grid's west side. What is
 // checked is the rule every style a map may name keeps — **the same weight on all four sides**, in
@@ -12,10 +12,10 @@ import { EXPLORE_ROW, buildLayout, cellForTile, menuEntryAt, tileAtCell } from "
 import type { BuildLayout } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildContext, BuildState } from "../src/build/state.ts"
-import { SPIKE_EDGE_STYLE } from "../src/build/catalog.ts"
+import { STARTER_EDGE_STYLE } from "../src/build/catalog.ts"
 import { MAP_EDGE_STYLES } from "../src/build/types.ts"
 import type { MapEdgeStyle } from "../src/build/types.ts"
-import { spikeContext } from "../src/cli/spike.ts"
+import { starterContext } from "../src/cli/build-phase.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
@@ -34,9 +34,9 @@ function wholeMap(width = 48, height = 16): GridTerrain {
   return { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") }
 }
 
-/** The spike's context on another Grid, naming `edgeStyle` as its own — or none, when `null`. */
-function contextFor(grid: GridTerrain, edgeStyle: MapEdgeStyle | null = SPIKE_EDGE_STYLE): BuildContext {
-  const { edgeStyle: _spike, ...rest } = { ...spikeContext(), grid, standing: [] }
+/** The starter map's context on another Grid, naming `edgeStyle` as its own — or none, when `null`. */
+function contextFor(grid: GridTerrain, edgeStyle: MapEdgeStyle | null = STARTER_EDGE_STYLE): BuildContext {
+  const { edgeStyle: _starterEdge, ...rest } = { ...starterContext(), grid, standing: [] }
   return edgeStyle === null ? rest : { ...rest, edgeStyle }
 }
 
@@ -112,7 +112,7 @@ test("every style a map may name draws the same weight on all four sides, in bot
           assert.ok([...glyphs(all.north), ...glyphs(all.south)].every((g) => g === "+" || g === "-"), `${label}: north/south`)
           assert.ok([...glyphs(all.west), ...glyphs(all.east)].every((g) => g === "+" || g === "|"), `${label}: west/east`)
         } else {
-          // ASCII has no thinner equal-weight glyph: the solid bar, the same both ways (Q56).
+          // ASCII has no thinner equal-weight glyph: the solid bar, the same both ways.
           for (const side of Object.values(all)) assert.deepEqual([...glyphs(side)], [" "], label)
           assert.ok(inverse, `${label}: the ASCII fallback is the solid bar`)
         }
@@ -145,7 +145,7 @@ test("a map shorter and narrower than the pane closes its rectangle in its edge 
 
 test("the edge style changes only the sides where the map ends: in the middle of the map the frame is the same for every style", () => {
   const middle = { x: 48, y: 20 }
-  const grid = spikeContext().grid
+  const grid = starterContext().grid
   for (const pack of PACKS) {
     const plain = screen(contextFor(grid, null), pack, middle).frame
     for (const style of MAP_EDGE_STYLES) {
@@ -156,8 +156,8 @@ test("the edge style changes only the sides where the map ends: in the middle of
 })
 
 test("the map's own edge is the style the map names, and the solid bar for a map that names none", () => {
-  assert.equal(SPIKE_EDGE_STYLE, "fence")
-  assert.equal(spikeContext().edgeStyle, SPIKE_EDGE_STYLE, "the spike map names its own")
+  assert.equal(STARTER_EDGE_STYLE, "fence")
+  assert.equal(starterContext().edgeStyle, STARTER_EDGE_STYLE, "the starter map names its own")
   const own = screen(contextFor(wholeMap()), "unicode")
   assert.equal(cellAt(own.frame, own.layout.gridBox.left + 3, own.layout.gridBox.top).glyph, "┅")
   const none = screen(contextFor(wholeMap(), null), "unicode")
@@ -186,7 +186,7 @@ test("a quiet edge is a role of its own, resolved in both themes at every colour
 
 test("the ASCII fence's posts are fixed to the map, not the screen: they scroll with it", () => {
   // Hard against the north edge, then further east: the posts stay on the map's own columns.
-  const context = spikeContext()
+  const context = starterContext()
   const at = (cursorX: number): Screen => screen(context, "ascii", { x: cursorX, y: 0 })
   const postsAt = (s: Screen): number[] => {
     const columns: number[] = []
@@ -204,7 +204,7 @@ test("the ASCII fence's posts are fixed to the map, not the screen: they scroll 
 })
 
 test("the shared west side: the divider is the Grid's west side, the Grid gets its column, and drawing and hit-testing agree", () => {
-  const context = spikeContext()
+  const context = starterContext()
   const layout = buildLayout(MINIMUM, context.grid)
   assert.equal(layout.gridBox.left, layout.dividerColumn, "the divider is the Grid's west side")
   assert.equal(layout.origin.column, layout.dividerColumn + 1, "the Grid starts right beside it")
@@ -270,7 +270,7 @@ test("a scripted playtest draws every tile where the layout says, and a click on
 })
 
 test("a light side on the shared divider is the divider drawn soft; the map's edge there is the map's edge style", () => {
-  const grid = spikeContext().grid
+  const grid = starterContext().grid
   const middle = screen(contextFor(grid), "ascii", { x: 48, y: 20 })
   const row = middle.layout.origin.row + 4
   assert.equal(cellAt(middle.frame, middle.layout.dividerColumn, row).glyph, chromeGlyph("ascii", "softVertical"))

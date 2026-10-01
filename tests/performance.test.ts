@@ -1,4 +1,4 @@
-// Frame budget — milestone-1-spike-battle.md 3.9: "30 fps sustained over 60 seconds, p95 recorded".
+// Frame budget — the first milestone's requirement: "30 fps sustained over 60 seconds, p95 recorded".
 //
 // The measurement is the point, not the threshold: the numbers land in docs/history/reports/2026-08-21-pulse-playground.md, and the
 // assertion is only that the budget is not blown.
@@ -94,7 +94,7 @@ test("thirty frames a second for sixty seconds stays inside the budget", async (
 })
 
 test("the worst case stays inside the budget too: two armies, 48x16, every effect on", async () => {
-  // ascii-effects.md craft rule 1 applies to the frame budget as much as to the art: measure the
+  // The first craft rule of docs/system-design/effects.md applies to the frame budget as much as to the art: measure the
   // busiest frame, not the calm one.
   const scenario = await loadScenarioFile("citizens-versus-ravels.map.json")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })

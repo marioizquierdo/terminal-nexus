@@ -1,4 +1,4 @@
-// The view — milestone-1-spike-battle.md 3.9, "The view".
+// The view — docs/system-design/presentation.md.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -111,7 +111,7 @@ test("at a tick boundary every entity stands on the tile the kernel put it on", 
           // "something letter-shaped": the old character class had to be widened by hand every time
           // a unit was drawn with a new symbol, and a class wide enough to cover `[b]`, `/_\` and
           // `<*=*>` stops excluding much of anything. The corruption law guarantees no effect can
-          // overwrite it (engine.md 9.4), so this is exact.
+          // overwrite it (docs/system-design/presentation.md, the cell frame), so this is exact.
           assert.equal(
             cell.glyph,
             entityGlyph(contentId, player, offset),
@@ -148,7 +148,7 @@ test("monochrome renders every scenario, and no cell depends on colour to exist"
 })
 
 test("frameToAnsi resolves CellStyle.fade only at color256/truecolor, never at color16/monochrome", () => {
-  // Q25's transparency amendment (engine.md 9.1, canon 2.8), tested at the actual ANSI-conversion
+  // The transparency scalar (docs/system-design/presentation.md, the cell frame), tested at the actual ANSI-conversion
   // boundary rather than only at sgrFor directly (roles.test.ts) - a hand-built one-cell frame, the
   // same way this file's other frame-shaped tests do, so this exercises frame.ts's own sgrOf reading
   // `style.fade` and forwarding it, not just roles.ts's function in isolation.

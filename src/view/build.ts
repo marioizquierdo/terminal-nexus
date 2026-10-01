@@ -1,10 +1,10 @@
-// The Build Phase frame — engine.md 9.2's composition, on the same band compositor, style roles and
+// The Build Phase frame — `docs/system-design/presentation.md`'s composition, on the same band compositor, style roles and
 // glyph packs as the Pulse view and the menu, so monochrome and the colour tiers come free.
 //
 // The Grid pane is a **window onto a Grid larger than itself**: every tile is drawn at
-// `tile - camera` and clipped to the viewport, and the signal engine.md 3.3 requires in place of a
+// `tile - camera` and clipped to the viewport, and the signal `docs/system-design/grid.md` requires in place of a
 // minimap — the weight of the lines around the Grid pane — comes from the same camera the cursor moved
-// (the only signal: no position readout, feedback F59).
+// (the only signal: no position readout).
 //
 // This file puts the frame together; each part the design names is drawn in a file of its own: the
 // frame and the two bars (`build-frame.ts`), the Grid pane (`build-grid.ts`), the menu and its rows
@@ -52,7 +52,7 @@ export type BuildCompositionInput = Readonly<{
   ack?: RowAck
   /**
    * The camera the Grid is drawn through, while the live loop is sliding the view toward the state's
-   * own camera (gate 5H). Presentation only: absent, the state's camera is drawn — every still frame,
+   * own camera. Presentation only: absent, the state's camera is drawn — every still frame,
    * every test, every scripted playtest.
    */
   camera?: Camera
@@ -64,28 +64,28 @@ export type BuildCompositionInput = Readonly<{
    */
   cursor?: Coord
   /** A **refused try** (`BuildState.refusedTry`): the footprint flashes where a placement was just tried
-   *  and refused, while the live loop shows it (gate 5H; for the tuned `refusedCursorMs`). Presentation
+   *  and refused, while the live loop shows it (for the tuned `refusedCursorMs`). Presentation
    *  only. */
   refusedTry?: boolean
   /**
-   * A **hand-off's flight** (owner, 2026-09-30, feedback F54): a menu row has just handed the keyboard
-   * to the map, and something flies from where the row is on the menu to the cursor (F63) — the focus
-   * arrow from a building's row, the see-through cursor from Explore Map's (F64). `progress` runs 0 to
+   * A **hand-off's flight** (Mario's idea): a menu row has just handed the keyboard
+   * to the map, and something flies from where the row is on the menu to the cursor — the focus
+   * arrow from a building's row, the see-through cursor from Explore Map's. `progress` runs 0 to
    * 1, linear in time; the view eases it. The live loop supplies it (the "Focus arrow" Experiment times
    * both); absent — every still frame — nothing flies.
    */
   handoffFlight?: Readonly<{ progress: number }>
-  /** The cursor is in the "on" half of its blink, after the flight lands (F54; the tuned
+  /** The cursor is in the "on" half of its blink, after the flight lands (the tuned
    *  `cursorBlinks`): drawn in a menu row's pressed look. Absent — every still frame — the plain cursor. */
   cursorBlink?: boolean
   /**
-   * The menu turning into a card (owner, 2026-09-30, feedback F68; the "Card reveal" Experiment): the
+   * The menu turning into a card (the "Card reveal" Experiment): the
    * live loop's clock on it, from the frame the panel first became a card. Absent — every still frame —
    * the finished card, exactly as it stands.
    */
   cardReveal?: CardReveal
   /**
-   * The open popup's border moving (owner, 2026-09-30, feedback F80 and F83): the live loop's clock on it,
+   * The open popup's border moving (the "Popup pulse" Experiment): the live loop's clock on it,
    * from the frame the popup first showed, with the opening it plays first (the Battle Round screen's
    * double flash) and the length of the breath after it. The live loop supplies it for every popup while
    * motion is not reduced and the colour depth can show it; absent — every still frame — the border is at
@@ -93,13 +93,13 @@ export type BuildCompositionInput = Readonly<{
    */
   popupBorder?: PopupBorder
   /**
-   * Planned placements still animating, by ordinal, with how long ago each was placed (gate 5I). The
+   * Planned placements still animating, by ordinal, with how long ago each was placed. The
    * live loop supplies it; a still frame names whatever instant it wants to draw. Absent — every
    * test, every scripted playtest — each building is drawn finished. A clock whose ordinal is no
    * longer planned (undone, removed) draws nothing: the plan decides what stands, the clock only how.
    */
   placing?: readonly PlacementClock[]
-  /** Buildings that just left the plan, with how long ago each went (feedback F33): their sparks. The
+  /** Buildings that just left the plan, with how long ago each went: their sparks. The
    *  live loop supplies it; absent — every still frame — nothing is drawn for a removal. */
   removing?: readonly RemovalClock[]
   /** The numbers the live loop timed `placing` and `removing` by, so their tracks are drawn as the loop
@@ -108,7 +108,7 @@ export type BuildCompositionInput = Readonly<{
   /** The player's reduced-motion setting: a placement then shows its finished building at once. */
   reducedMotion?: boolean
   /**
-   * A Nexus Pulse is on screen (gate 6A): what it is showing at this instant, worked out by the presenter
+   * A Nexus Pulse is on screen: what it is showing at this instant, worked out by the presenter
    * (`pulse-live.ts`). Present, the Grid shows the fight and the panel the forces and the ending, in this
    * same frame and under the same popups; absent — every Build Phase frame, and every test that never
    * starts a Pulse — the frame is the Build Phase's, exactly as it always was.

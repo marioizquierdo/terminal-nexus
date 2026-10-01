@@ -1,8 +1,8 @@
 import type { Coord, Direction, Footprint, GridTerrain } from "./types.ts"
 
 /**
- * The four directions a mover may step in, in a fixed order — engine.md 3.6, revised after
- * Milestone 1 playtesting. Diagonal movement was the single biggest legibility problem the owner's
+ * The four directions a mover may step in, in a fixed order (grid.md), revised after
+ * the first playtests. Diagonal movement was the single biggest legibility problem Mario's
  * first watch found: a unit that can cut corners is a unit whose next tile a viewer cannot predict.
  * Restricting movement to the compass points makes every step readable as "up", "down", "left", or
  * "right" — nothing else changes about the kernel's shape.
@@ -40,8 +40,8 @@ export function directionOf(from: Coord, to: Coord, fallback: Direction = "s"): 
 }
 
 /**
- * The grid distance movement and targeting both use — engine.md 3.6, revised after Milestone 1
- * playtesting. Manhattan distance (`|dx| + |dy|`) is the natural partner of four-way movement: it
+ * The grid distance movement and targeting both use (grid.md), revised after the first
+ * playtests. Manhattan distance (`|dx| + |dy|`) is the natural partner of four-way movement: it
  * is exactly the number of cardinal steps between two tiles, so "in range" and "reachable in that
  * many steps" mean the same thing again. Presentation is exempt — a tracer or a trail may still draw
  * a diagonal line, because that is a cosmetic choice about a path, not a claim about one.
@@ -93,7 +93,7 @@ export function tilesOf(anchor: Coord, footprint: Footprint): Coord[] {
 
 /**
  * Range measures to the **nearest occupied tile** of the target's footprint,
- * from the nearest occupied tile of the source's — engine.md 3.5.
+ * from the nearest occupied tile of the source's (grid.md).
  */
 export function footprintDistance(
   anchorA: Coord,
@@ -115,7 +115,7 @@ export function footprintDistance(
 
 /**
  * The tile of a footprint nearest `from` — the point a mover should actually walk toward, not the
- * anchor. A pre-existing gap between "how range is measured" (nearest tile, engine.md 3.5) and "how
+ * anchor. A pre-existing gap between "how range is measured" (nearest tile, grid.md) and "how
  * a step is ranked" (the raw anchor) surfaced once movement stopped having diagonals to paper over
  * it: a mover parked beside a multi-tile target's near face could rank every sidestep toward the
  * target's *other* rows as "further from the anchor" and refuse to take it, even though that
@@ -144,7 +144,7 @@ export function nearestFootprintTile(from: Coord, anchor: Coord, footprint: Foot
  * Shared rather than re-derived: `view/effects/recipes.ts`'s death choreography needs a body's own
  * perimeter to draw a shockwave from, and `pulse/spawn.ts` needs the same shape to search for a free
  * tile next to a spawner — two real uses, in two different worlds either side of the state/Pulse
- * boundary, of the same geometry (unit-design-architecture spike; engine.md 0's own rule: extract a
+ * boundary, of the same geometry (from the unit-architecture spike; grid-engine.md's own rule: extract a
  * shared contract once a second real use reveals the seam, not before).
  */
 export function footprintRing(width: number, height: number, outset: number): Coord[] {

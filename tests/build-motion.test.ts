@@ -1,5 +1,5 @@
-// Gate 5H: movement feel, reworked after the owner's 2026-09-28 playtest, settled by his settings export
-// of 2026-09-30, and reworked again by his third round the same day (F79: taps speed up by counting, a
+// Movement feel, reworked after the owner's 2026-09-28 playtest, settled by his settings export
+// of 2026-09-30, and reworked again by his third round the same day (taps speed up by counting, a
 // hold runs at the game's own cadence, and key events are read where the terminal reports them; the
 // numbers are tuned values, `src/build/tuning.ts`, and only the hold window and key releases are
 // Experiments). Taps, holds and the Shift jump, the cursor glide, the share-of-view scroll
@@ -23,7 +23,7 @@ import { encodeKeyEvent } from "../src/view/key-events.ts"
 import type { KeyPhase } from "../src/view/key-events.ts"
 import { MOUSE_LEFT, formatMouseEvent } from "../src/build/mouse.ts"
 import type { BuildContext } from "../src/build/state.ts"
-import { runSpike, spikeContext } from "../src/cli/spike.ts"
+import { runBuildPhase, starterContext } from "../src/cli/build-phase.ts"
 import type { Coord } from "../src/grid/types.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
@@ -53,7 +53,7 @@ import {
 import type { Side } from "./build-helpers.ts"
 
 /** A Build Phase with the Nexus power picked and the keyboard on the map, in plain navigation. */
-function exploring(context: BuildContext = spikeContext(), cursor: Coord = OPEN_GROUND, terminal = MINIMUM): Side {
+function exploring(context: BuildContext = starterContext(), cursor: Coord = OPEN_GROUND, terminal = MINIMUM): Side {
   const side = buildSide({ context, cursor, terminal })
   side.build.dispatch({ kind: "pick-nexus", index: 0 })
   side.build.dispatch({ kind: "focus", target: "grid" })
@@ -111,12 +111,12 @@ const JUMP_EAST = { dx: 1, dy: 0, jump: true }
 const tap = (tiles: number): string => `tap ${tiles}`
 const hold = (tiles: number): string => `hold ${tiles}`
 
-// --- Taps and holds (the owner's third round, F79) --------------------------------------------------
+// --- Taps and holds (the owner's third round) --------------------------------------------------
 
 test("the motion rules run on each number as it is now: the navigation Experiments, and the tuned rest", () => {
   // Every number is its setting's value, whichever tier it stands on — at this build's defaults here.
   for (const [name, value] of Object.entries(TUNED)) assert.equal(value, defaultValue(name as SettingName), `${name} is not its setting's value`)
-  // The navigation polish round's Experiments (feedback F85) and the third round's two; the rest tuned.
+  // The navigation polish round's Experiments and the third round's two; the rest tuned.
   const movement = [...Object.keys(TUNED), "keyReleases", "cursorGlideMs"]
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.field).filter((field) => movement.includes(field)),
@@ -136,7 +136,7 @@ test("the motion rules run on each number as it is now: the navigation Experimen
 test("a navigation number changed in Settings changes the very next key", () => {
   const start = { x: 0, y: 13 }
   // The jump distance, one step up: a Shift jump goes that far, with a clock and without one (a driver).
-  const jump = exploring(spikeContext(), start)
+  const jump = exploring(starterContext(), start)
   jump.build.dispatch({ kind: "setting-adjust", field: "jumpStep", step: 1 })
   const far = jump.build.state.experiments.jumpStep
   assert.notEqual(far, TUNED.jumpStep)
@@ -146,19 +146,19 @@ test("a navigation number changed in Settings changes the very next key", () => 
   assert.equal(jump.build.state.cursor.x, start.x + 2 * far)
   // Taps to speed up, one step down: the second quick tap already doubles the speed — 1, 2.
   const quick = TUNED.fastTapMs - 50
-  const eager = exploring(spikeContext(), start)
+  const eager = exploring(starterContext(), start)
   eager.build.dispatch({ kind: "setting-adjust", field: "tapsToSpeedUp", step: -1 })
   assert.equal(eager.build.state.experiments.tapsToSpeedUp, 2)
   timed(eager, taps(0, 2, quick).map((at) => [RIGHT, at] as const))
   assert.equal(eager.build.state.cursor.x, start.x + 1 + 2)
   // The fastest tap at one tile: however quick the taps, they never speed up.
-  const steady = exploring(spikeContext(), start)
+  const steady = exploring(starterContext(), start)
   for (let step = 0; step < 4; step += 1) steady.build.dispatch({ kind: "setting-adjust", field: "tapTopStep", step: -1 })
   assert.equal(steady.build.state.experiments.tapTopStep, 1)
   timed(steady, taps(0, 6, quick).map((at) => [RIGHT, at] as const))
   assert.equal(steady.build.state.cursor.x, start.x + 6)
   // The hold pace and the tap run window reach the rules as the session reads them.
-  const paced = exploring(spikeContext(), start)
+  const paced = exploring(starterContext(), start)
   paced.build.dispatch({ kind: "setting-adjust", field: "holdMoveMs", step: 1 })
   paced.build.dispatch({ kind: "setting-adjust", field: "doubleTapMs", step: -1 })
   const live = moveTuning(paced.build.state)
@@ -203,7 +203,7 @@ test("at 2 a run keeps its speed on double taps; three more taps, the last quick
   const steady = moves(EAST, presses([...start, ...taps(double + quick + double, 6, double)]))
   assert.deepEqual(steady, [tap(1), tap(1), tap(2), tap(2), tap(2), tap(2), tap(2), tap(2), tap(2)])
   // Through the session, the same taps land on the sum of their steps.
-  const side = exploring(spikeContext(), { x: 0, y: 13 })
+  const side = exploring(starterContext(), { x: 0, y: 13 })
   timed(side, [...start, ...taps(double + 2 * quick, 6, quick)].map((at) => [RIGHT, at] as const))
   assert.equal(side.build.state.cursor.x, 1 + 1 + 2 + 2 + 2 + 4 * 4)
 })
@@ -216,7 +216,7 @@ test("a slower gap, another arrow, or any other key starts the run over at one",
   assert.deepEqual(moves(EAST, presses([next + TUNED.doubleTapMs + 1]), TUNED, at2), [tap(1)], "a slow gap kept the speed")
   assert.deepEqual(moves(WEST, presses([next + quick]), TUNED, at2), [tap(1)], "another arrow kept the speed")
   // Tab and back between two quick taps: one tile.
-  const side = exploring(spikeContext(), { x: 0, y: 13 })
+  const side = exploring(starterContext(), { x: 0, y: 13 })
   timed(side, taps(0, 3, quick).map((at) => [RIGHT, at] as const))
   const x = side.build.state.cursor.x
   timed(side, [[TAB, next + 50], [TAB, next + 100], [RIGHT, next + 150]])
@@ -341,10 +341,10 @@ function parityIntent(key: string): Readonly<{ timed: (readonly [string, number]
 }
 
 test("the same intent as timed presses and as press, repeat and release events lands on the same tile, and the same row", () => {
-  // The design's parity rule (Q66): only how a repeat is told from a tap differs, never where the cursor goes.
+  // The design's parity rule: only how a repeat is told from a tap differs, never where the cursor goes.
   const intent = parityIntent(RIGHT)
-  const byTiming = exploring(spikeContext(), { x: 0, y: 13 })
-  const byEvents = exploring(spikeContext(), { x: 0, y: 13 })
+  const byTiming = exploring(starterContext(), { x: 0, y: 13 })
+  const byEvents = exploring(starterContext(), { x: 0, y: 13 })
   byEvents.build.setKeyReleases(true)
   const positions = (side: Side, sequence: readonly (readonly [string, number])[]): number[] =>
     sequence.map(([key, at]) => {
@@ -391,7 +391,7 @@ test("a release sends nothing, and a letter's release is not a second press; Ctr
 })
 
 test("Shift+Arrow jumps; held, it jumps again at most once per jump repeat, and a fresh press always jumps", () => {
-  const side = exploring(spikeContext(), { x: 0, y: 13 })
+  const side = exploring(starterContext(), { x: 0, y: 13 })
   timed(side, [[SHIFT_RIGHT, 0]])
   assert.equal(side.build.state.cursor.x, TUNED.jumpStep)
   assert.deepEqual(side.build.lastMove, { kind: "jump", tiles: TUNED.jumpStep })
@@ -407,7 +407,7 @@ test("Shift+Arrow jumps; held, it jumps again at most once per jump repeat, and 
   })
   assert.ok(jumps.length > 1 && jumps.length < times.length, "the repeat limit dropped nothing, or everything")
   assert.deepEqual(got.filter((step) => step !== "jump 0"), jumps.map(() => `jump ${TUNED.jumpStep}`))
-  const heldSide = exploring(spikeContext(), { x: 0, y: 13 })
+  const heldSide = exploring(starterContext(), { x: 0, y: 13 })
   timed(heldSide, times.map((at) => [SHIFT_RIGHT, at] as const))
   assert.equal(heldSide.build.state.cursor.x, jumps.length * TUNED.jumpStep)
   // With key events, repeats are limited the same way, and two quick presses are two jumps.
@@ -421,12 +421,12 @@ test("without a clock every arrow is a tap and every Shift+Arrow one jump: drive
   const side = exploring()
   for (let step = 0; step < 10; step += 1) side.build.handleData(RIGHT, side.layout)
   assert.equal(side.build.state.cursor.x, OPEN_GROUND.x + 10)
-  const jumps = exploring(spikeContext(), { x: 0, y: 13 })
+  const jumps = exploring(starterContext(), { x: 0, y: 13 })
   for (let step = 0; step < 3; step += 1) jumps.build.handleData(SHIFT_RIGHT, jumps.layout)
   assert.equal(jumps.build.state.cursor.x, 3 * TUNED.jumpStep)
   // A playtest's untimed steps are a second apart: taps that start over.
   const untimed = runBuildPlaytest({ steps: parseKeyScript("e Right*10") })
-  // Where Explore Map put the cursor: clear ground beside the Nexus (feedback F66).
+  // Where Explore Map put the cursor: clear ground beside the Nexus.
   const start = untimed.frames[1]?.state.cursor.x ?? 0
   assert.equal(untimed.frames.at(-1)?.state.cursor.x, start + 10)
   assert.deepEqual(untimed.frames.slice(2).map((frame) => frame.moveKind), Array.from({ length: 10 }, () => "tap 1"))
@@ -453,7 +453,7 @@ test("the margin is a share of the view's own width and height, never so wide th
   assert.equal(shareOfSpan(90, 16), 7, "a margin past the middle is capped")
   // The camera follows at the tuned margin: walking east, it first moves with the cursor that far from
   // the view's east edge.
-  const side = exploring(spikeContext(), { x: 0, y: 0 })
+  const side = exploring(starterContext(), { x: 0, y: 0 })
   const margin = marginForView(TUNING.scrollMargin, side.layout.viewport).x
   while (side.build.state.camera.x === 0) side.build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
   assert.equal(side.layout.viewport.width - 1 - (side.build.state.cursor.x - side.build.state.camera.x), margin)
@@ -461,9 +461,9 @@ test("the margin is a share of the view's own width and height, never so wide th
 
 // --- Clicks and the view ---------------------------------------------------------------------------
 
-test("exploring, a click near an edge scrolls further the nearer the edge it lands (feedback F6)", () => {
+test("exploring, a click near an edge scrolls further the nearer the edge it lands", () => {
   const moveFor = (column: number): number => {
-    const side = exploring(spikeContext(), { x: 40, y: 20 })
+    const side = exploring(starterContext(), { x: 40, y: 20 })
     const camera = side.build.state.camera
     clickTile(side, { x: camera.x + column, y: camera.y + 8 })
     return side.build.state.camera.x - camera.x
@@ -476,20 +476,20 @@ test("exploring, a click near an edge scrolls further the nearer the edge it lan
   assert.ok(nearEdge > fiveIn && fiveIn > 0, `near ${nearEdge}, five in ${fiveIn}`)
   assert.equal(moveFor(24), 0)
   // The very edge brings the clicked tile to the middle of the view.
-  const side = exploring(spikeContext(), { x: 40, y: 20 })
+  const side = exploring(starterContext(), { x: 40, y: 20 })
   const camera = side.build.state.camera
   const tile = { x: camera.x + width - 1, y: camera.y + 8 }
   clickTile(side, tile)
   assert.equal(tile.x - side.build.state.camera.x, Math.floor((width - 1) / 2))
   // Pure: west and north work the same way, and the zone is a share of the view.
   const view = { width: 48, height: 16 }
-  const grid = spikeContext().grid
+  const grid = starterContext().grid
   assert.ok(edgeClickCamera({ x: 30, y: 10 }, { x: 30, y: 10 }, view, grid, 33).x < 30)
   assert.ok(edgeClickCamera({ x: 30, y: 10 }, { x: 40, y: 10 }, view, grid, 33).y < 10)
 })
 
-test("armed, a click scrolls like an exploring one, and a quick double click places where the first pointed (F22)", () => {
-  const side = exploring(spikeContext(), { x: 40, y: 20 })
+test("armed, a click scrolls like an exploring one, and a quick double click places where the first pointed", () => {
+  const side = exploring(starterContext(), { x: 40, y: 20 })
   side.build.handleData("1", side.layout)
   const camera = side.build.state.camera
   const tile = { x: camera.x + 46, y: camera.y + 8 }
@@ -503,7 +503,7 @@ test("armed, a click scrolls like an exploring one, and a quick double click pla
   side.build.handleData(click, side.layout, { now: 1200 })
   assert.equal(side.build.state.planned.length, 1, "the double click did not place")
   // Where Enter would have placed it after the first click alone.
-  const reference = exploring(spikeContext(), { x: 40, y: 20 })
+  const reference = exploring(starterContext(), { x: 40, y: 20 })
   reference.build.handleData("1", reference.layout)
   reference.build.handleData(click, reference.layout, { now: 1000 })
   reference.build.dispatch({ kind: "place" })
@@ -514,7 +514,7 @@ test("a double click on the ghost's own tile places once and leaves the keyboard
   // Armed from the menu by a click on its row; the ghost sits at the cursor, so the first half of a
   // double click on it places by the second-click rule. The second half has nothing left to do: it must
   // not take the keyboard to the map, nor lapse the placement's answer.
-  const side = exploring(spikeContext(), { x: 40, y: 20 })
+  const side = exploring(starterContext(), { x: 40, y: 20 })
   side.build.dispatch({ kind: "focus", target: "menu" })
   const row = menuEntryRow(side.layout, side.context.catalog, { kind: "construct", index: 0 }) as number
   side.build.handleData(formatMouseEvent(MOUSE_LEFT, side.layout.panelColumn + 1, row + 1), side.layout, { now: 1000 })
@@ -531,8 +531,8 @@ test("a double click on the ghost's own tile places once and leaves the keyboard
   assert.equal(side.build.state.focus, "grid")
 })
 
-test("a slow second click on a scrolled spot is a fresh first click, not a place on the wrong tile (F22)", () => {
-  const side = exploring(spikeContext(), { x: 40, y: 20 })
+test("a slow second click on a scrolled spot is a fresh first click, not a place on the wrong tile", () => {
+  const side = exploring(starterContext(), { x: 40, y: 20 })
   side.build.handleData("1", side.layout)
   const camera = side.build.state.camera
   const tile = { x: camera.x + 46, y: camera.y + 8 }
@@ -546,7 +546,7 @@ test("a slow second click on a scrolled spot is a fresh first click, not a place
 
 test("the fast move drags the view at the margin like any other move; it does not re-centre", () => {
   // The owner turned "Shift centres" off in his settings export (2026-09-30), and the Experiment went.
-  const side = exploring(spikeContext(), { x: 40, y: 20 })
+  const side = exploring(starterContext(), { x: 40, y: 20 })
   side.build.handleData(SHIFT_RIGHT, side.layout)
   // Only dragged along: the cursor sits on the margin's inner edge, the tuned margin from the view's east
   // side.
@@ -555,7 +555,7 @@ test("the fast move drags the view at the margin like any other move; it does no
 })
 
 test("a click during a slide lands on the tile drawn under the pointer, not the one the view is heading to", () => {
-  const side = exploring(spikeContext(), { x: 40, y: 20 })
+  const side = exploring(starterContext(), { x: 40, y: 20 })
   const drawn = side.build.state.camera
   side.build.handleData(SHIFT_RIGHT, side.layout) // the view heads east; say it has not moved yet
   assert.notDeepEqual(side.build.state.camera, drawn)
@@ -567,7 +567,7 @@ test("a click during a slide lands on the tile drawn under the pointer, not the 
 // --- The sliding view, the gliding cursor and the frame timer ----------------------------------------------------------
 
 test("the view slides to a new camera over the ease time, whole tiles at a time, and then stops", () => {
-  const side = exploring(spikeContext(), { x: 40, y: 20 })
+  const side = exploring(starterContext(), { x: 40, y: 20 })
   const animation = new BuildAnimation({ ...TUNING, cursorGlideMs: 0 }) // the camera alone
   const start = side.build.state.camera
   assert.deepEqual(animation.frame(side.build.state, 0), { camera: start, cursor: side.build.state.cursor, busyUntil: null })
@@ -584,7 +584,7 @@ test("the view slides to a new camera over the ease time, whole tiles at a time,
   assert.deepEqual(end.camera, target)
   assert.equal(end.busyUntil, null, "still busy after the slide ended")
   // A slide and a glide of no time: a jump, and nothing to animate.
-  const jump = exploring(spikeContext(), { x: 40, y: 20 })
+  const jump = exploring(starterContext(), { x: 40, y: 20 })
   const still = new BuildAnimation({ ...TUNING, easeMs: 0, cursorGlideMs: 0 })
   still.frame(jump.build.state, 0)
   jump.build.handleData(SHIFT_RIGHT, jump.layout)
@@ -596,7 +596,7 @@ test("the view slides to a new camera over the ease time, whole tiles at a time,
 })
 
 test("every camera move slides, the plain arrow at the margin included — only a resize snaps", () => {
-  const side = exploring(spikeContext(), { x: 0, y: 20 })
+  const side = exploring(starterContext(), { x: 0, y: 20 })
   const animation = new BuildAnimation()
   animation.frame(side.build.state, 0)
   const start = side.build.state.camera
@@ -620,7 +620,7 @@ test("every camera move slides, the plain arrow at the margin included — only 
 
 test("the cursor glides to its new tile over the glide time; the state is already there", () => {
   // Shift jump toward the Grid's west edge, where the camera has nowhere to go: the cursor alone.
-  const side = exploring(spikeContext(), { x: 20, y: 20 })
+  const side = exploring(starterContext(), { x: 20, y: 20 })
   const animation = new BuildAnimation()
   const from = side.build.state.cursor
   const camera = side.build.state.camera
@@ -650,7 +650,7 @@ test("the cursor glides to its new tile over the glide time; the state is alread
 })
 
 test("when the camera moves, the cursor rides along with the slide and never leaves the view", () => {
-  const side = exploring(spikeContext(), { x: 40, y: 20 })
+  const side = exploring(starterContext(), { x: 40, y: 20 })
   const animation = new BuildAnimation()
   animation.frame(side.build.state, 0)
   side.build.handleData(SHIFT_RIGHT, side.layout) // the cursor drags the view: it slides under a gliding cursor
@@ -664,7 +664,7 @@ test("when the camera moves, the cursor rides along with the slide and never lea
 })
 
 test("reduced motion snaps the view and the cursor alike", () => {
-  const side = exploring(spikeContext(), { x: 40, y: 20 })
+  const side = exploring(starterContext(), { x: 40, y: 20 })
   const animation = new BuildAnimation()
   const reduced = { reducedMotion: true }
   animation.frame(side.build.state, 0, reduced)
@@ -678,7 +678,7 @@ test("reduced motion snaps the view and the cursor alike", () => {
 })
 
 test("a gliding cursor is drawn where it is, and the armed preview travels with it", () => {
-  const side = exploring(spikeContext(), { x: 20, y: 20 })
+  const side = exploring(starterContext(), { x: 20, y: 20 })
   side.build.handleData("1", side.layout)
   const { context, layout } = side
   const state = side.build.state
@@ -794,7 +794,7 @@ const wait = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(
 test("the live screen redraws on a timer while the view slides, and not at all once it is still", async () => {
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()
-  const session = runSpike({
+  const session = runBuildPhase({
     settings: { ...DEFAULT_SETTINGS, capability: "monochrome" },
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
@@ -803,7 +803,7 @@ test("the live screen redraws on a timer while the view slides, and not at all o
   })
   await wait(40)
   // Explore Map begun on the map (Tab, then `e`): the row's flash and the card's reveal, and no focus
-  // arrow or cursor blink, which only a menu row handing the keyboard to the map plays (feedback F54).
+  // arrow or cursor blink, which only a menu row handing the keyboard to the map plays.
   stdin.emit("data", Buffer.from(TAB))
   stdin.emit("data", Buffer.from("e"))
   await wait(Math.max(TUNING.pressedFlashMs, TUNING.cardRevealMs) + 100) // both have come and gone

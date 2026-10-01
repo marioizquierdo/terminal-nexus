@@ -1,5 +1,5 @@
 // Shading — the presentation toolkit's glyphless family: colour and attribute changes over characters
-// already on the screen, never a character of its own (owner, 2026-09-28: "shader-inspired coloring").
+// already on the screen, never a character of its own (Mario asked for "shader-inspired coloring").
 // Because every cell here is glyphless, the compositor lets it onto an occupied tile: it is the one
 // kind of effect cell that may touch a building's or a unit's own characters, and it can only recolour
 // them, never replace them (the corruption law).
@@ -13,7 +13,7 @@ import { paramNumber, paramString, progressOf } from "./types.ts"
 import { RAINBOW_ROLES } from "../roles.ts"
 
 /** How long each hue of the rainbow holds on one tile before the next — above the ~60 ms under which
- *  a beat did not happen (ascii-effects.md Section 2). */
+ *  a beat did not happen (`effects.md`). */
 export const RAINBOW_STEP_MS = 60
 
 /** Blends to a hundredth: finer than any tier can show, and it keeps a frame's cells comparable. */

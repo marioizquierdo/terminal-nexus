@@ -95,7 +95,7 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
 
 - **Every action is a named command**; keyboard, mouse and a script are adapters onto one vocabulary
   ([`input.md`](input.md)), and tests drive the real adapters with raw keys and clicks. A hotkey that is
-  not displayed does not exist. (RULE — `tests/build-spike.test.ts`, `tests/menu-adapters.test.ts`)
+  not displayed does not exist. (RULE — `tests/build-phase.test.ts`, `tests/menu-adapters.test.ts`)
 - **A click activates what it lands on**, from any focus: a building's row arms it, `[n] Nexus` opens its
   popup, `[e] Explore Map` opens it. What a row click starts comes back to the menu.
   (RULE — `tests/build-focus.test.ts`)
@@ -427,7 +427,7 @@ uses it rather than a new blend.
   same tile places** (by tile, never screen cell), and **a quick double click places where its first
   click pointed**, even if the view moved (`BuildSession`). A click near an edge scrolls further the
   nearer the edge, armed or not, so clicking with the ghost keeps scrolling.
-  (RULE — `tests/build-focus.test.ts`, `tests/build-motion.test.ts`, `tests/build-spike.test.ts`)
+  (RULE — `tests/build-focus.test.ts`, `tests/build-motion.test.ts`, `tests/build-phase.test.ts`)
 - **Placing**: a planned building is drawn at full strength; undo and remove keep the plan revisable
   until the Pulse. A refused try flashes the footprint in the danger colour as the bottom line says why.
   (RULE for the flash — `tests/build-motion.test.ts`)

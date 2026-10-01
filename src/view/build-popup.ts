@@ -15,14 +15,14 @@ import { HIGHLIGHT_BAR, drawHighlightBar, rowParts } from "./build-menu.ts"
 
 // --- The popup border's effect ------------------------------------------------------------------------
 //
-// Every popup's border is alive (owner, 2026-09-30, feedback F83: "This subtle version works well for all
+// Every popup's border is alive (Mario: "This subtle version works well for all
 // popups because it is very unobtrusive"), in two parts:
 //
 //   - an optional **opening**, played once from the moment the popup opened, which overrides the rest
 //     while it plays — today only the Battle Round screen's **double flash** ("an initial double flash
 //     pulse, with more contrast range, that works as a highlight"). Which popup has which is the table
 //     `POPUP_OPENINGS`, never a test in the drawing;
-//   - the **breath**, the steady part (F80): slowly a little lighter and a little darker for as long as
+//   - the **breath**, the steady part: slowly a little lighter and a little darker for as long as
 //     the popup stays open, starting at rest the moment the opening ends — and the flash ends at rest, so
 //     the handover has no jump.
 //
@@ -69,7 +69,7 @@ export function breathStyle(breath: PopupBreath | undefined): Pick<CellStyle, "t
 }
 
 /**
- * The **double flash** a popup can open with (F83): `count` quick pulses of the border toward the title's
+ * The **double flash** a popup can open with: `count` quick pulses of the border toward the title's
  * colour, each `flashMs` long — struck up to `peak` (0 to 1; 1 is the title's colour itself) and fading
  * back to rest — with `gapMs` at rest between two. Far past the breath's depth on purpose, so it reads as
  * a highlight; short and only twice, so it never reads as an alarm. A first guess, meant to become an
@@ -83,7 +83,7 @@ export const POPUP_FLASH: PopupFlash = { count: 2, flashMs: 220, gapMs: 90, peak
 export type PopupOpening = "double-flash"
 
 /**
- * Which popup opens with what (F83) — data, so a new popup or a new opening is a line here. A popup not
+ * Which popup opens with what — data, so a new popup or a new opening is a line here. A popup not
  * named opens straight into the breath.
  */
 export const POPUP_OPENINGS: Readonly<Partial<Record<Popup, PopupOpening>>> = { "battle-round": "double-flash" }
@@ -144,12 +144,12 @@ export function popupBorderStyle(border: PopupBorder | undefined): Pick<CellStyl
  * A popup — the Nexus powers, the start-the-Pulse question, the game menu, Settings, the export, a
  * message — drawn from its spec (`src/build/popup.ts`), over everything on the Grid. A solid border
  * with the title in it, and a one-cell shadow that blanks what is behind it, so it cannot be missed
- * (owner, 2026-09-27: he clicked Nexus, did not notice the popup, and thought the mouse had stopped
- * working). No `[esc]` in the border since feedback F37: the top bar's "close [esc]" says it. Beside a
- * list that overflows, the right border is its scroll bar (F36). Given the border's clock
- * (`popupBorder`), the border plays its opening, if it has one, then breathes (F80, F83).
+ * (Mario once clicked Nexus, did not notice the popup, and thought the mouse had stopped
+ * working). There is no `[esc]` in the border: the top bar's "close [esc]" says it. Beside a
+ * list that overflows, the right border is its scroll bar. Given the border's clock
+ * (`popupBorder`), the border plays its opening, if it has one, then breathes.
  *
- * Drawn last in the chrome band: bands are fixed (engine.md 9.4, RULE), and within one band a later
+ * Drawn last in the chrome band: bands are fixed (a rule in `docs/system-design/presentation.md`), and within one band a later
  * write replaces an earlier one, so a popup needs no band of its own to sit on top.
  */
 export function drawPopup(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
@@ -165,7 +165,7 @@ export function drawPopup(cells: BandCell[], input: BuildCompositionInput, pack:
   for (let x = box.left + 1; x <= box.right + 1; x += 1) put(cells, band, x, box.bottom + 1, shade, "chrome.frame", { dim: true })
 
   // The border's own style: inverse, so the frame role is its fill — and, while the border moves, that
-  // fill flashed or breathed lighter or darker (F80, F83). The shadow and the title stay as they are.
+  // fill flashed or breathed lighter or darker. The shadow and the title stay as they are.
   const border: CellStyle = { fgRole: "chrome.frame", inverse: true, ...popupBorderStyle(input.popupBorder) }
   const borderCell = (x: number, y: number, glyph: string, extra: Pick<CellStyle, "bold"> = {}): void => {
     cells.push({ band, x, y, cell: { glyph, style: { ...border, ...extra } } })
@@ -185,7 +185,7 @@ export function drawPopup(cells: BandCell[], input: BuildCompositionInput, pack:
   })
   // The scroll bar, in the right border beside the list: an up symbol, then the track — the plain border
   // itself — with a textured thumb where the part in view sits, then a down symbol, all inverse, so they
-  // read as the border (feedback F78: "keep the same background as the regular border, but add different
+  // read as the border (Mario: "keep the same background as the regular border, but add different
   // texture for the bar"; a track in the shadow's texture read as more shadow). The thumb's texture is
   // its own, never the shadow's.
   const bar = placed.scrollBar

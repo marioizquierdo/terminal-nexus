@@ -1,9 +1,9 @@
-// Screenshots of the Build Phase — Milestone 5.
+// Screenshots of the Build Phase and the Nexus Pulse that ends it.
 //
-//   node scripts/capture-spike-screenshots.mjs
-//   node scripts/capture-spike-screenshots.mjs --only spike-minimum
-//   node scripts/capture-spike-screenshots.mjs --out .playtest/shots   # somewhere other than docs/screenshots/
-//   node scripts/capture-spike-screenshots.mjs --force                  # re-render even unchanged ones
+//   node scripts/capture-build-phase-screenshots.mjs
+//   node scripts/capture-build-phase-screenshots.mjs --only spike-minimum
+//   node scripts/capture-build-phase-screenshots.mjs --out .playtest/shots   # somewhere other than docs/screenshots/
+//   node scripts/capture-build-phase-screenshots.mjs --force                  # re-render even unchanged ones
 //
 // Two ways in, on purpose.
 //
@@ -70,7 +70,7 @@ const PICK_FIRST_POWER = "n 1"
 
 // --- In-process shots ----------------------------------------------------------------------------
 
-/** `present`: what the live screen adds between keys (gate 5H) — a refused-placement flash, say —
+/** `present`: what the live screen adds between keys — a refused-placement flash, say —
  *  composed onto the last frame, since a key script alone never shows a moment in time.
  *  `experiments`: Experiments to open with instead of the defaults.
  *  A `wait~MS` step in `keys` lets a Nexus Pulse on screen run that long on the script's own clock.
@@ -128,7 +128,7 @@ function scriptedGif(name, { keys, expect, cols = 80, rows = 24, capability = "t
 }
 
 /**
- * The Nexus Pulse's ending as the live screen draws it (gate 6A): `plan` commits a build and starts
+ * The Nexus Pulse's ending as the live screen draws it: `plan` commits a build and starts
  * the Pulse, then the GIF is the screen every `stepMs` from `fromMs` to `toMs` on the Pulse's own
  * clock, shown for as long as it lasted — the timer's flashing and the light round the border, the
  * cease-fire, the walk home and the result, in real time. A Pulse's screen is a pure function of that clock, so a script that waits
@@ -177,7 +177,7 @@ function settledAnimation(state, options = {}) {
 }
 
 /**
- * The view sliding and the cursor gliding (gate 5H, and the owner's 2026-09-28 playtest), frame by
+ * The view sliding and the cursor gliding (from Mario's 2026-09-28 playtest), frame by
  * frame as the live screen draws them: `before` sets the scene, `move` is one more key, and the GIF
  * is every frame `BuildAnimation` gives between the two cameras and cursors
  * at the live loop's own frame interval — the same function, fed a clock that steps instead of waits.
@@ -201,7 +201,7 @@ function slideGif(name, { before, move, cols = 80, rows = 24, capability = "true
 }
 
 /**
- * A building going up (gate 5I), frame by frame as the live screen draws it: `before` sets the scene
+ * A building going up, frame by frame as the live screen draws it: `before` sets the scene
  * (by keys), `place` is the key that places, and the GIF is every `stepMs`
  * of what `BuildAnimation` gives from that moment until nothing is moving — the same function the live
  * loop calls, fed a clock that steps instead of waits. Each frame is shown for `showMs`, so a GIF can
@@ -245,7 +245,7 @@ function placementGif(
 }
 
 /**
- * A menu row handing the keyboard to the map (the menu spike, feedback F54, F63, F64, F68): the screen
+ * A menu row handing the keyboard to the map (the menu-to-map handoff): the screen
  * before `hand`, then every `stepMs` after it until nothing moves — the row's pressed flash, the menu
  * turning into a card, the focus arrow flying from the row's place on the menu to the cursor (a
  * see-through cursor from Explore Map's), and the cursor's blinks when it lands — each shown for
@@ -293,7 +293,7 @@ function handoffGif(name, { before, hand, expect, cols = 80, rows = 24, capabili
 }
 
 /**
- * A popup opening (feedback F80, F83): `keys` ends with the key that opens it, and the GIF is what
+ * A popup opening: `keys` ends with the key that opens it, and the GIF is what
  * `BuildAnimation` gives from that moment — its opening, if the popup has one (the Battle Round screen's
  * double flash, every `flashStepMs`), then one whole breath of its border (the "Popup pulse"
  * Experiment's length, every `stepMs`), in real time and looping.
@@ -370,11 +370,11 @@ function placementSheet(name, { before, place, expect, timesMs, capability = "tr
   )
 }
 
-// Gate 5I: placement juice. Each placement is armed from the menu — the cursor opens on the Grid
+// Placement juice. Each placement is armed from the menu — the cursor opens on the Grid
 // Nexus, where nothing fits, so arming moves it to the nearest spot with a free tile around it, a
-// free column to its right (gate 5K) — and placed with Space.
+// free column to its right — and placed with Space.
 
-// The owner's numbers (his settings export, 2026-09-30): 300 ms of frames, then 400 ms of light and sparks.
+// Mario's numbers (his settings export, 2026-09-30): 300 ms of frames, then 400 ms of light and sparks.
 const SHEET_TIMES = [0, 100, 200, 300, 450, 600, 700]
 
 placementSheet("build-place-sheet-barracks", {
@@ -479,7 +479,7 @@ placementGif("build-place-reduced-motion", {
 })
 
 scriptedGif("build-hatchery-run", {
-  // The owner's own flow from the opening screen: highlight the Hatchery, arm it from the menu (the
+  // Mario's own flow from the opening screen: highlight the Hatchery, arm it from the menu (the
   // cursor, on the Grid Nexus, moves to the nearest good spot), place it, arm it again (the cursor, now
   // on the first, moves a free tile away from it), place it again — no arrow key on the Grid at all.
   keys: "Down*3 Space*4",
@@ -512,7 +512,7 @@ scripted(
 
 scripted(
   "build-menu-run",
-  "The owner's own flow: Space arms, Space places and returns the keyboard to the menu, again and again. Each Barracks is armed where the last one left the cursor, and moves a few tiles to the right, a free column away - three in a row",
+  "Mario's own flow: Space arms, Space places and returns the keyboard to the menu, again and again. Each Barracks is armed where the last one left the cursor, and moves a few tiles to the right, a free column away - three in a row",
   { keys: `${PICK_FIRST_POWER} Down Space*6`, expect: "* 10" },
 )
 
@@ -614,7 +614,7 @@ handoffGif("build-focus-arrow", {
 
 handoffGif("build-focus-arrow-far", {
   // The cursor far from the menu (moved on the map, then the keyboard back on the menu with Tab):
-  // Explore Map sends a see-through copy of the cursor across most of the map to reach it (F64).
+  // Explore Map sends a see-through copy of the cursor across most of the map to reach it.
   // Unicode glyphs.
   before: `${PICK_FIRST_POWER} Tab S-Right*2 Down*5 Tab`,
   hand: "e",
@@ -636,11 +636,11 @@ scripted(
 
 popupGif("build-battle-round-opening", { keys: `${PICK_FIRST_POWER} s`, expect: "Battle Round 1", glyphPack: "unicode" })
 
-// Gate 6A's Nexus Pulse shots (`pulse-start`, `pulse-fight`, `pulse-last-seconds`, `pulse-nexus-hit`,
+// The early Nexus Pulse shots (`pulse-start`, `pulse-fight`, `pulse-last-seconds`, `pulse-nexus-hit`,
 // `pulse-result-*`, `pulse-experiments`, `pulse-ending.gif`) were taken against the placeholder Pulse and
-// its Raid and Your units Experiments, which gate 6B retired for PERIMETER's waves: they stay in
-// `docs/screenshots/` as that gate's evidence, as `build-nexus-committed.png` stayed for gate 5D, and
-// are no longer regenerated. Gate 6B's own shots follow, on PERIMETER.
+// its Raid and Your units Experiments, which PERIMETER's waves later replaced: they stay in
+// `docs/screenshots/` as a record of that first Pulse, as `build-nexus-committed.png` stayed from
+// the first committed-build screen, and are no longer regenerated. The shots that follow are on PERIMETER.
 
 // A round, keys only: the Reserve Fund (30 more credits), buildings by digit and two clicks on their
 // tile, then [s] and [s] to start. The strong plan holds PERIMETER; nothing built loses it in round 3.
@@ -708,7 +708,7 @@ scriptedGif("mission-next-round", {
   delayMs: 700,
 })
 
-// Settings (owner, 2026-09-28): the game menu's [s] — the player's own settings first, then the
+// Settings (Mario, 2026-09-28): the game menu's [s] — the player's own settings first, then the
 // Experiments, which [d] opens straight at.
 
 scripted(
@@ -729,7 +729,7 @@ scripted(
   { keys: "d", expect: "KEYBOARD NAVIGATION - experiments" },
 )
 
-// Settings is in sections (feedback F85): Display (saved), Keyboard navigation (the hold window first,
+// Settings is in sections: Display (saved), Keyboard navigation (the hold window first,
 // where [d] opens), Effects (the popup pulse and the Battle Round flash), the mission, then
 // Export settings apart at the end. Headings and blank lines are never rows.
 
@@ -746,14 +746,14 @@ scripted(
 )
 
 scriptedGif("build-arm-at-cursor", {
-  // The owner's own flow (feedback F30): on the map, find a spot and press 1 — the Barracks is armed
+  // Mario's own flow: on the map, find a spot and press 1 — the Barracks is armed
   // right there; Enter places it and the keyboard stays on the map; 1 again, with the cursor on the new
   // one, moves it a few tiles right, a free column away; Enter; Esc goes from the map to the menu.
   keys: `${PICK_FIRST_POWER} Tab Right*8 Down*6 1 Enter 1 Enter Esc`,
   expect: "[enter] to place one",
 })
 
-// Gate 5H: movement feel.
+// Movement feel.
 
 const SETTINGS_AT_END = `SETTINGS (${SETTINGS_ROWS.length}/${SETTINGS_ROWS.length})`
 
@@ -772,7 +772,7 @@ scripted(
 scriptedGif("build-held-arrow", {
   // A tap, the terminal's repeat delay (150 ms here, inside the 200 ms hold window), then auto-repeats
   // 30 ms apart: a held key moves at the game's own pace, one tile every 60 ms, so every other repeat
-  // moves nothing (the owner's third round, F79). Then Left, straight after: a hold of its own. Shift+Down:
+  // moves nothing (Mario's third playtest round). Then Left, straight after: a hold of its own. Shift+Down:
   // a jump of ten. (Explore Map, from the menu, first moves the cursor to clear ground by the Nexus.)
   keys: "e Right Right~150 Right~30*14 Left~30 Left~30*3 S-Down",
   expect: "27,20",
@@ -780,7 +780,7 @@ scriptedGif("build-held-arrow", {
 })
 
 scriptedGif("build-tap-count", {
-  // Taps speed up only by counting (F79): two slow taps, one tile each; a third within 300 ms moves two;
+  // Taps speed up only by counting: two slow taps, one tile each; a third within 300 ms moves two;
   // taps within 400 ms keep it; three more, the last quick, move four. A pause starts over at one.
   keys: "e Right~500 Right~350 Right~250 Right~350 Right~250 Right~250 Right~250 Right~900",
   expect: "Explore Map",
@@ -789,7 +789,7 @@ scriptedGif("build-tap-count", {
 
 scriptedGif("build-explore-edge-click", {
   // Exploring, a click near an edge scrolls the view, further the nearer the edge: two columns in, a
-  // long way; eight columns in, a little; in the middle, not at all (feedback F6).
+  // long way; eight columns in, a little; in the middle, not at all.
   keys: `${PICK_FIRST_POWER} e click@76,10 click@70,10 click@55,10`,
   expect: "[e] Explore Map",
   delayMs: 1200,
@@ -823,7 +823,7 @@ function live(name, caption, { cols = 80, rows = 24, args = "--capability trueco
     String(cols),
     "-y",
     String(rows),
-    `./bin/terminal-nexus.ts --spike ${args}`,
+    `./bin/terminal-nexus.ts --build-phase ${args}`,
   ])
   waitFor(
     repoRoot,
@@ -853,7 +853,7 @@ function live(name, caption, { cols = 80, rows = 24, args = "--capability trueco
 
 const key = (name) => sendKey(repoRoot, SESSION, name)
 const literal = (bytes) => sendKeys(repoRoot, SESSION, bytes)
-/** In tmux, `n` then `1` — the pick closes the popup (Q60), so no Esc: see `KEY_PAUSE_SECONDS`. */
+/** In tmux, `n` then `1` — the pick closes the popup, so no Esc: see `KEY_PAUSE_SECONDS`. */
 const pickFirstPower = () => {
   literal("n")
   literal("1")
@@ -872,14 +872,14 @@ live(
     drive: () => {
       pickFirstPower()
       key("Tab")
-      // A ten-tile jump since the owner's settings export of 2026-09-30 (five until 5H, then eight, then
+      // A ten-tile jump since Mario's settings export of 2026-09-30 (it was five, then eight, then
       // twelve): two east and one south, from 18,10 on the Grid Nexus, still leave more Grid on every
       // side. tmux's pause between keys is longer than the jump repeat limit, so no jump is dropped.
       key("S-Right")
       key("NPage")
       key("S-Right")
     },
-    // The position readout is gone (feedback F59); every key above is sent before this wait, and the
+    // The position readout is gone; every key above is sent before this wait, and the
     // capture then waits for a still pane, so plain navigation's hint is enough.
     waitForText: "Arrows move the cursor",
   },
@@ -887,7 +887,7 @@ live(
 
 live(
   "spike-mouse-place",
-  "Two real SGR mouse clicks placing a structure - the first arms the preview at the tile, the second confirms it (Q52): the bytes a terminal actually sends, not a description of one",
+  "Two real SGR mouse clicks placing a structure - the first arms the preview at the tile, the second confirms it: the bytes a terminal actually sends, not a description of one",
   {
     drive: () => {
       pickFirstPower()
@@ -897,7 +897,7 @@ live(
       // `formatMouseEvent` would. The first click only moves the cursor there; the second, on the
       // same tile, is what actually places it. Chosen well inside the scroll margin: a first click
       // near the Grid pane's edge scrolls the map under the pointer, and a second click in the same
-      // place is then a first click on the tile beside it (Q52's own finding).
+      // place is then a first click on the tile beside it.
       literal(`${ESC}[<0;61;14M`)
       literal(`${ESC}[<0;61;14M`)
     },

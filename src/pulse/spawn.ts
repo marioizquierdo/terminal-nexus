@@ -1,6 +1,6 @@
 // New entities, created mid-Pulse rather than only at scenario load — the spawner and golem rule
-// shapes (unit-design-architecture spike, not an engine.md phase: the canonical nine phases
-// (engine.md 4.3) are unchanged; this runs as an explicit "1.5" ahead of them, in tick.ts, so anything
+// shapes (from the unit-architecture spike). It is not one of the Pulse's nine phases, which are
+// unchanged (pulse.md); it runs as an explicit "1.5" ahead of them, in tick.ts, so anything
 // created this tick is a full participant in every phase after it — perceived, able to move or fire,
 // and counted for victory — exactly as if it had stood since tick 0).
 //
@@ -10,8 +10,9 @@
 // rather than writing "find a free adjacent tile and build an Actor" twice.
 //
 // This is a **combat ability**, not production: no cost, no resource, nothing the empty
-// `economyAndProduction` phase (tick.ts) would recognise as its own — `docs/milestones/open-questions.md` Q26
-// registers the scope line this still has to answer before a real roster could rely on it.
+// `economyAndProduction` phase (tick.ts) would recognise as its own. Whether a unit that spawns units counts as a combat ability or as
+// production is still an open question for Mario (Q26 in docs/milestones/open-questions.md), to be
+// answered before a real roster relies on it.
 
 import { footprintExtent, footprintRing } from "../grid/coords.ts"
 import { maskFrom } from "../grid/occupancy.ts"

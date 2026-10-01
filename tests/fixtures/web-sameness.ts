@@ -4,13 +4,13 @@
 // with no Node features at all, and the two answers must be identical.
 
 import { buildTimeline } from "../../src/cli/timeline.ts"
-import { spikeContext } from "../../src/cli/spike.ts"
+import { starterContext } from "../../src/cli/build-phase.ts"
 import { TOP_LEVEL_ITEMS } from "../../src/cli/menu.ts"
 import { FIXTURE_REGISTRY } from "../../src/content/index.ts"
 import { loadScenario } from "../../src/scenario/load.ts"
 import type { ScenarioDefinition } from "../../src/scenario/types.ts"
 import { BuildSession } from "../../src/build/session.ts"
-import { SPIKE_START_CURSOR } from "../../src/build/catalog.ts"
+import { STARTER_START_CURSOR } from "../../src/build/catalog.ts"
 import { buildLayout } from "../../src/build/layout.ts"
 import { MenuSession } from "../../src/menu/session.ts"
 import { keyBytes } from "../../src/playtest/keys.ts"
@@ -44,9 +44,9 @@ export function sameness(scenario: ScenarioDefinition): Sameness {
     pulseFrames.push(print(view.composeAt(time, "truecolor", 1, { paused: false, speed: 1 })))
   }
 
-  const context = spikeContext()
+  const context = starterContext()
   const layout = buildLayout({ columns: 80, rows: 24 }, context.grid)
-  const build = new BuildSession({ context, cursor: SPIKE_START_CURSOR, viewport: layout.viewport })
+  const build = new BuildSession({ context, cursor: STARTER_START_CURSOR, viewport: layout.viewport })
   const buildFrames = [print(composeBuildFrame({ context, state: build.state, layout }, "truecolor"))]
   for (const name of BUILD_SCRIPT) {
     build.handleData(keyBytes(name), layout)

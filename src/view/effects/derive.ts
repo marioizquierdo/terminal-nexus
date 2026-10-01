@@ -3,7 +3,7 @@
 // Effects subscribe to **semantic cues** — the ordered event stream — and take their coordinates
 // from the state the kernel settled. That split is deliberate: an event says *what happened and to
 // whom*, and presentation is entitled to know where everything stood, but a recipe must never have
-// to reverse-engineer a mechanic out of a cell (engine.md Section 7).
+// to reverse-engineer a mechanic out of a cell (see `docs/system-design/presentation.md`).
 //
 // Nothing here can change an outcome. It runs after the Pulse is resolved, it reads, and it emits
 // instances; deleting this file would leave the fight identical and the screen bare.
@@ -16,7 +16,7 @@ import type { MatchState } from "../../state/types.ts"
 import { deathExtraTicks } from "./recipes.ts"
 import type { EffectFamily, EffectInstance } from "./types.ts"
 
-/** Beat timings from ascii-effects.md Section 2. Anything under about 60 ms did not happen. */
+/** Beat timings from `effects.md`. Anything under about 60 ms did not happen. */
 const TRAIL_MS = 120
 const MELEE_WIND_MS = 100
 const MELEE_CLASH_MS = 140
@@ -57,7 +57,7 @@ function familyFor(contentId: string): EffectFamily {
  * shared by every consumer that has to hold something until a ranged hit visibly lands, not just
  * the effect system. The kernel resolves a ranged kill in the same tick it launches the shot -
  * `attack.launched`, `damage.applied`, `entity.died` and any `entity.detonated` it triggers all
- * carry the identical `tick` (engine.md 4.3's flight window is presentation metadata; no rule reads
+ * carry the identical `tick` (the attack event's flight window, described in `pulse.md`, is presentation metadata; no rule reads
  * it) - so without this, a unit's death collapse (and the unit's own glyph disappearing) fired the
  * instant the shot left the barrel, ticks before its own tracer visibly arrived. The owner
  * playtest's own words for the fix that already exists on `damage.applied` apply everywhere else
@@ -108,7 +108,7 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
   }
 
   // A ranged hit lands when its tracer does: the renderer holds the impact, the flash and the
-  // visible health change until the end of the flight window (engine.md 4.3).
+  // visible health change until the end of the flight window (`pulse.md`).
   const flightByTarget = buildFlightHoldTicks(source.events)
   const heldMsFor = (tick: number, ordinal: number): number =>
     flightHoldTicks(flightByTarget, tick, ordinal) * tickMs
@@ -137,7 +137,7 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
         const attacker = anchorAt(event.tick, event.attackerOrdinal)
         const target = anchorAt(event.tick, event.targetOrdinal)
         if (attacker === undefined || target === undefined) break
-        // No travel cue authored for a heal yet (unit-design-architecture spike) - most designs need
+        // No travel cue authored for a heal yet - most designs need
         // content only, not new effects, and the healed ally still gets a cue below, from its own
         // `heal.applied`. A beam recipe is a fine later addition once a second healer wants one.
         if (event.attackKind === "heal") break

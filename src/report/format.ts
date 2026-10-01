@@ -1,4 +1,4 @@
-// The line grammar — milestone-1-spike-battle.md 3.3.
+// The line grammar.
 //
 //   [tick] LEVEL kind subject [-> object] detail...
 //

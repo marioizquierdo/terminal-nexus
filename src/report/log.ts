@@ -1,4 +1,4 @@
-// The levelled log — milestone-1-spike-battle.md 3.3.
+// The levelled log.
 //
 // Everything below is derived from the ordered event stream and the final state. Nothing here
 // imports the kernel, and a test asserts that: a report that can reach into kernel internals can
@@ -341,7 +341,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
   }
 
   // One WARN line, always last: the same outcome/losses/hashes `formatSummary` prints, folded into
-  // the levelled log so a single stream carries the whole story (milestone-1-spike-battle.md 3.3).
+  // the levelled log so a single stream carries the whole story.
   emit({
     tick: input.finalState.tick,
     level: "WARN",

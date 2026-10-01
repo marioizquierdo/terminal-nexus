@@ -1,4 +1,4 @@
-// The menu frame itself — engine.md 9.6/9.7: every hotkey is displayed, every glyph is one column,
+// The menu frame itself — docs/system-design/presentation.md and input.md: every hotkey is displayed, every glyph is one column,
 // monochrome emits no colour code, and the same information survives every capability tier.
 
 import { test } from "node:test"
@@ -78,7 +78,7 @@ test("a notice, when set, is on screen; when null, nothing is printed in its pla
 test("a disabled item renders dimmed when not highlighted, and exactly like any other when it is", () => {
   const items: readonly MenuItem[] = [
     { id: "a", hotkey: "1", label: "Alpha" },
-    { id: "b", hotkey: "2", label: "Bravo (Milestone 11)", disabled: true },
+    { id: "b", hotkey: "2", label: "Bravo (not built yet)", disabled: true },
   ]
 
   // Neither item highlighted at once, so highlight `1` (the disabled one) here to see item 0 - the

@@ -1,5 +1,5 @@
 // Compositing effect cells that land on the same tile — the part of "a real ASCII rendering
-// pipeline" ascii-effects.md's own compositor section leaves as "the topmost defined cell replaces
+// pipeline" that `effects.md`'s compositor section leaves as "the topmost defined cell replaces
 // the lower complete cell" (frame.ts, composeBands). That rule is right for the Grid's own layers
 // (a live entity's glyph must never be a blend of two things), but two *effects* overlapping the
 // same tile in the same instant is common in a real fight — several simultaneous damage flashes on
@@ -12,7 +12,7 @@
 // stack, depending of the symbol... even if this is a long hand-made table)."
 //
 // Both rules below are pure functions of the cells submitted *this frame* — no history, no counter
-// that survives between frames. That is not a stylistic choice; it is ascii-effects.md rule 1 (`f(t)`
+// that survives between frames. That is not a stylistic choice; it is the first rule in `effects.md` (`f(t)`
 // must not depend on `f(t-1)`) applied one level up, to the compositor rather than to a single
 // recipe. "Stacking reads brighter and holds longer" still happens, but only as the observable
 // consequence of several independently-decaying signals happening to overlap in time — exactly the
@@ -56,7 +56,7 @@ export type EffectCellSource = Readonly<{ band: EffectBand; cell: PositionedCell
 /**
  * A glyphless cell's rendered weight — the ordinal "how bright" scale a lighting stack climbs by
  * simple addition, since `CellStyle` (frame.ts) has no numeric intensity field of its own and
- * ascii-effects.md 7 already rules out building one (no ECS, no new little sub-system — reuse what
+ * `effects.md` already rules out building one (no ECS, no new little sub-system — reuse what
  * a terminal already renders: dim, plain, bold, inverse). `fx.damage.flash` alone is weight 2
  * (plain-bold); two flashes landing on one tile the same frame already reads brighter (weight 4,
  * clamped below to inverse) without either flash's own recipe knowing the other exists.
@@ -71,7 +71,7 @@ function lightWeight(cell: PositionedCell): number {
 
 /**
  * The continuous half of the same stacking idea, alongside `lightWeight` rather than replacing it —
- * Q25's transparency amendment (engine.md 9.1, canon 2.8). Sums *brightness* (`1 - fade`, so an
+ * The fade scalar (`CellStyle.fade`) made continuous. Sums *brightness* (`1 - fade`, so an
  * unfaded cell contributes its full share and a cell already faded to the background contributes
  * none) and converts the clamped sum back to a fade, rather than averaging: a group of one reduces
  * to exactly that cell's own fade — no discontinuity at `resolveLighting`'s passthrough branch above
@@ -118,7 +118,7 @@ function resolveLighting(group: readonly EffectCellSource[]): EffectCellSource {
 
 /**
  * Two glyphs that read as one denser mark when they land on the same tile the same frame — a
- * deliberately short, hand-authored table (ascii-effects.md 7 forbids generating this from
+ * deliberately short, hand-authored table (`effects.md` forbids generating this from
  * parameters), extended by hand as more collisions turn out to be worth a case of their own. Keyed
  * by the pair sorted, so authorship order never matters. Every value is one printable ASCII
  * character, checked by `tests/effects.test.ts` alongside every other glyph this system emits.
@@ -163,7 +163,7 @@ function resolveParticles(group: readonly EffectCellSource[]): EffectCellSource 
  * Collapses every effect cell landing on the same tile and band this frame into one. A group of one
  * — by far the common case, most tiles most ticks — passes straight through unchanged. A glyphless
  * group (every recipe that touches a unit's own cell uses the `highlights` band for exactly this,
- * ascii-effects.md 1.1) stacks by intensity; a glyph-bearing group merges through the table above or
+ * `effects.md`) stacks by intensity; a glyph-bearing group merges through the table above or
  * falls back to the later cell winning. The two kinds cannot mix within one group in practice —
  * `highlights` carries only glyphless cells today — so which path a group takes is decided once, by
  * its first cell, rather than re-checked per member.

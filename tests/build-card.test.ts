@@ -13,7 +13,7 @@ import assert from "node:assert/strict"
 import { defaultExperiments } from "../src/build/experiments.ts"
 import { hint } from "../src/build/help.ts"
 import { currentCard } from "../src/build/card.ts"
-import { SPIKE_CATALOG } from "../src/build/catalog.ts"
+import { STARTER_CATALOG } from "../src/build/catalog.ts"
 import { CARD_FIRST_ROW, CARD_HEADER_ROW, CARD_SEPARATOR_ROW, EXPLORE_ROW, NEXUS_ROW, menuEntryRow, menuFloor, startRow } from "../src/build/layout.ts"
 import { MOUSE_LEFT, buildMouseCommand, formatMouseEvent, parseMouseEvent } from "../src/build/mouse.ts"
 import { cardEntry, cardShowing, entryOfConstruct, remaining } from "../src/build/state.ts"
@@ -99,13 +99,13 @@ test("a building's card: its glyphs, its title and subtitle, its description, it
     const lines = panelLines(side, compose(side))
     const card = lines.slice(CARD_FIRST_ROW).join("\n")
     assert.match(lines[CARD_FIRST_ROW] as string, /^\[b\] +Barracks/)
-    // The subtitle sits where "to build" was (feedback F84: "use that subtitle space for the subtitle").
+    // The subtitle sits where "to build" was (owner: "use that subtitle space for the subtitle").
     assert.match(lines[CARD_FIRST_ROW + 1] as string, /^\|_\| +Trains troopers +$/)
     assert.match(card, /Where your troopers come/)
     assert.match(card, /^COST +40$/m)
     assert.match(card, /^HEALTH +120$/m)
     assert.match(card, /^SIZE +3x2$/m)
-    // Cost first, as the owner listed them (feedback F58: "cost, health, size, attack").
+    // Cost first, as the owner listed them ("cost, health, size, attack").
     assert.ok(card.indexOf("COST") < card.indexOf("HEALTH"))
     // The card is the whole panel: no menu row, no Start Pulse, no help text.
     assert.doesNotMatch(card, /\[\d\]|\[n\]|Start Pulse|\[e\]/)
@@ -155,7 +155,7 @@ function moveTo(side: Side, tile: Readonly<{ x: number; y: number }>): void {
 /** Every card the Build Phase can show: each building being placed, and Explore Map over open ground,
  *  rock, a deposit, the Grid Nexus, a standing building and a planned one. */
 const EVERY_CARD: readonly (readonly [string, (side: Side) => void])[] = [
-  ...SPIKE_CATALOG.map((item) => [`placing the ${item.label}`, (side: Side) => keys(side, item.hotkey)] as const),
+  ...STARTER_CATALOG.map((item) => [`placing the ${item.label}`, (side: Side) => keys(side, item.hotkey)] as const),
   ...(
     [
       ["open ground", { x: 21, y: 13 }],
@@ -175,7 +175,7 @@ const EVERY_CARD: readonly (readonly [string, (side: Side) => void])[] = [
 ]
 
 test("every card is a title, a subtitle, a description and its numbers — and says nothing about planned, standing or to build", () => {
-  // Feedback F84: "no need to show the 'planned' or 'to build' state. That is obvious from the rest of
+  // The owner: "no need to show the 'planned' or 'to build' state. That is obvious from the rest of
   // the UI ... So the cards have title, subtitle, description, stats."
   const kinds = new Set<string>()
   for (const [name, open] of EVERY_CARD) {
@@ -190,7 +190,7 @@ test("every card is a title, a subtitle, a description and its numbers — and s
     assert.doesNotMatch(text, /\b(planned|standing|to build)\b/i, `${name}: the card still says where the building stands`)
   }
   // Every kind of thing Explore Map can land on in the Build Phase has a card of its own.
-  for (const kind of ["terrain.plain", "terrain.rock", "terrain.deposit", "structure.citizen.nexus", ...SPIKE_CATALOG.map((item) => item.contentId)]) {
+  for (const kind of ["terrain.plain", "terrain.rock", "terrain.deposit", "structure.citizen.nexus", ...STARTER_CATALOG.map((item) => item.contentId)]) {
     assert.ok(kinds.has(kind), `no card was drawn for ${kind}`)
   }
 })

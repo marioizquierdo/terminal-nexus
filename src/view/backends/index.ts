@@ -17,7 +17,7 @@ export type NamedBackend = TerminalBackend & Readonly<{ name: string }>
 
 /**
  * `auto` prefers OpenTUI and falls back to direct ANSI when it is not installed or fails to load —
- * the fallback the milestone requires to stay a half-day's work, kept working rather than assumed.
+ * the fallback the design requires to stay a half-day's work, kept working rather than assumed.
  * A backend object passes straight through: that is how the browser playtest page hands a screen
  * loop its canvas instead of a terminal backend, without the loop knowing the difference.
  */

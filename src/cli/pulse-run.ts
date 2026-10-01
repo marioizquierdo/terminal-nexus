@@ -1,4 +1,4 @@
-// A mission played on the Build Phase's screen (gates 6A and 6B) — the application shell's part of the
+// A mission played on the Build Phase's screen — the application shell's part of the
 // connection, and the only place the Build Phase, the mission, the rules layer, the kernel and the view
 // meet.
 //
@@ -150,8 +150,8 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
   }
 }
 
-/** The mission the Build Phase's screen plays (gate 6B): PERIMETER's three waves, on the placeholder map. */
-export const SPIKE_MISSION: MissionPlay = missionPlay(PERIMETER)
+/** The mission the Build Phase's screen plays: PERIMETER's three waves, on the placeholder map. */
+export const STARTER_MISSION: MissionPlay = missionPlay(PERIMETER)
 
 /** The screen's two connections to it, as `BuildSession` takes them. */
-export const { startPulse, nextRound } = SPIKE_MISSION
+export const { startPulse, nextRound } = STARTER_MISSION

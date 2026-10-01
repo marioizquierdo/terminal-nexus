@@ -1,4 +1,4 @@
-// Ordered semantic events — engine.md 7.
+// Ordered semantic events (pulse.md).
 //
 // Events carry **meaning, not appearance**, and they carry enough context that a renderer or a
 // report never has to read mutable state to explain what it is drawing: the score behind a target
@@ -113,7 +113,7 @@ export type DomainEvent =
         distance: number
         /**
          * Presentation metadata, part of the event and its hash, read by **no rule**
-         * (engine.md 4.3). Damage is authoritative at this tick whatever the window says.
+         * (pulse.md). Damage is authoritative at this tick whatever the window says.
          */
         flightWindowTicks: number
       }>)

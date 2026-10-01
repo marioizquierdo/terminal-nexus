@@ -1,5 +1,5 @@
-// The mouse adapter — engine.md 9.7: "a terminal reports the mouse only after the program asks (SGR
-// extended mode, 1006, over 1000/1002)," and "mouse geometry lives only in the mouse adapter." This
+// The mouse adapter (`input.md`): a terminal reports the mouse only after the program asks (SGR
+// extended mode, 1006, over 1000/1002), and mouse geometry lives only in the mouse adapter. This
 // is the one place a terminal cell becomes a menu item; nothing downstream ever learns a coordinate.
 
 import { menuIndexAt } from "./layout.ts"
@@ -9,11 +9,11 @@ import type { MenuCommand } from "./types.ts"
 
 const ESC = String.fromCharCode(27)
 
-/** Enables click reporting (1000) with SGR extended coordinates (1006) — the combination engine.md
- *  9.7 requires over the byte-limited legacy modes. Written once, at session start. */
+/** Enables click reporting (1000) with SGR extended coordinates (1006) — the combination `input.md`
+ *  requires over the byte-limited legacy modes. Written once, at session start. */
 export const MOUSE_REPORTING_ON = `${ESC}[?1000h${ESC}[?1006h`
-/** The exact reverse, in the opposite order — the disposer's own job (engine.md 10.1: "once the
- *  mouse adapter exists, it switches terminal mouse reporting off on the same paths" as raw mode). */
+/** The exact reverse, in the opposite order — the disposer's own job (`runtime.md`: mouse
+ *  reporting is switched off on the same exit paths as raw mode). */
 export const MOUSE_REPORTING_OFF = `${ESC}[?1006l${ESC}[?1000l`
 
 /**
@@ -26,8 +26,7 @@ const SGR_MOUSE = /^\u001b\[<(\d+);(\d+);(\d+)([Mm])$/
 export type MouseClick = Readonly<{ column: number; row: number }>
 
 /**
- * Recognises a plain left-button press and nothing else: start simple, with the minimum this gate
- * asks for. A release, a modifier, a drag, or the scroll wheel (buttons 64/65) all return `null` —
+ * Recognises a plain left-button press and nothing else: start simple, with the minimum a menu needs. A release, a modifier, a drag, or the scroll wheel (buttons 64/65) all return `null` —
  * none of them are menu gestures, and a flat top-level menu has no camera to scroll or place to
  * right-click "back" out of.
  */
@@ -53,7 +52,7 @@ export function formatMouseClick(column: number, row: number): string {
   return `${ESC}[<0;${column};${row}M`
 }
 
-/** A click at a menu row activates it — "identical effect" to that row's hotkey, per engine.md 9.7. */
+/** A click at a menu row activates it — the identical effect to that row's hotkey (`input.md`). */
 export function mouseCommand(
   click: MouseClick,
   items: readonly MenuItem[],

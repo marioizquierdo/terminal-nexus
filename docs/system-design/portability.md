@@ -16,7 +16,7 @@ adapters (keyboard.ts, mouse.ts,       raw bytes -> named commands              
   session.ts, src/menu/*)
 view (src/view/build.ts, compose.ts)   state + time -> a grid of styled cells    portable
 backend (ansi / opentui / canvas)      a grid of cells -> a surface              one per surface
-screen loop (src/cli/spike.ts, ...)    the only clock; input -> command -> draw  terminal-shaped ports
+screen loop (src/cli/build-phase.ts, ...)    the only clock; input -> command -> draw  terminal-shaped ports
 host (src/cli/terminalNexus.ts,        stdin/stdout, settings file, clipboard    per host
   src/web/host.ts)
 ```
@@ -25,7 +25,7 @@ host (src/cli/terminalNexus.ts,        stdin/stdout, settings file, clipboard   
   Cells carry style *roles*, never colours, so any surface that can draw a character on a coloured
   square can show the game. The terminal, a `<canvas>` and a PNG renderer already do, and the canvas
   is tested against the terminal's own characters and colour table.
-- **The browser page runs the terminal's own loops unmodified** (`runMenu`, `runSpike`, `watchPulse`)
+- **The browser page runs the terminal's own loops unmodified** (`runMenu`, `runBuildPhase`, `watchPulse`)
   and hands them a stand-in terminal; it converts only frames, key names, taps, settings storage and
   the export. RULE — `tests/web.test.ts`. That is why it needed almost no game code, and it is also the
   part that looks most like a workaround (see below).
@@ -81,12 +81,12 @@ Ordered by payoff over cost. None is urgent; each is a candidate for a small ste
    not. The terminal's kitty keyboard protocol and the page's key events already do this for the two
    hosts that can (`src/view/key-events.ts`, `tests/key-events.test.ts`); the generalisation is the
    highest payoff.
-2. **A host interface for the live loop.** `runSpike` takes `stdout`- and `stdin`-shaped objects
+2. **A host interface for the live loop.** `runBuildPhase` takes `stdout`- and `stdin`-shaped objects
    (`TerminalOutput` / `TerminalInput`, `src/view/backends/ports.ts`) and the browser fakes a TTY to
    satisfy them. A named `ScreenHost` — `present(frame)`, `onInput(cb)`, `size()`, `now()`,
    `requestFrame(cb)`, `storage`, `clipboard` — would let a native or embedded host implement the ports
    directly, and let `requestFrame` be `requestAnimationFrame` on the web instead of `setTimeout`.
-3. **`src/cli/spike.ts` does five jobs**: the live loop and the clock, settings saving, the export,
+3. **`src/cli/build-phase.ts` does five jobs**: the live loop and the clock, settings saving, the export,
    `--keys`, and layout switching on resize. The loop is portable; the rest is the terminal host.
    Splitting it into a `screenLoop` and a thin terminal wrapper is the cheap first step of (2).
 4. **Layout knows cells, not pixels.** Hit targets are counted in cells (the setting's value box is 6

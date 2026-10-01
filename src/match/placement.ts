@@ -11,7 +11,7 @@ import type { Coord, Footprint } from "../grid/types.ts"
 
 /**
  * Offsets at exactly Manhattan distance `radius` from `(0,0)`, in reading order (north to south, west
- * to east). Manhattan because that is the distance the kernel measures everything in (engine.md 3.6),
+ * to east). Manhattan because that is the distance the kernel measures everything in (grid.md),
  * so "nearest" here means what it means to a unit walking there.
  */
 function diamond(radius: number): Coord[] {

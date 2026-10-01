@@ -1,4 +1,4 @@
-// How the Build Phase documents itself (owner, 2026-09-30, feedback F59-F60): **one line at the bottom
+// How the Build Phase documents itself (the owner asked for it): **one line at the bottom
 // of the screen**, and **a Controls and hotkeys page** in the game menu. Both are written here, as data
 // a person can read top to bottom, so a new situation or a new key is one line added in one place.
 //
@@ -158,8 +158,8 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
       : `Start Pulse: lock in your plan and fight battle round ${state.pulseNumber}. [enter] to begin.`,
 
   // --- The map ---
-  // Its own key cancels it, as Esc does (feedback F70); another building waits until it is placed or
-  // cancelled, which the refusal itself says when it is tried (F69).
+  // Its own key cancels it, as Esc does; another building waits until it is placed or
+  // cancelled, which the refusal itself says when it is tried.
   placing: (context, state) => {
     const item = state.armed === null ? undefined : context.catalog[state.armed]
     const cancelKeys = item === undefined ? "[esc]" : `[${item.hotkey}] or [esc]`
@@ -169,7 +169,7 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
   "explore-planned": (context, state) =>
     `Planned ${plannedLabel(context, state)}: [bksp] removes it, [u] undoes the last. [esc] goes back.`,
   // Opened from the map, Explore Map leaves the cursor where it is — it only looks for clear ground on
-  // the hand-off from the menu (F66) — so Enter reads what is here.
+  // the hand-off from the menu — so Enter reads what is here.
   map: () => "Arrows move the cursor, [enter] explores here, a number arms a building.",
 }
 
@@ -182,9 +182,9 @@ export function hint(context: BuildContext, state: BuildState): StatusMessage {
 /**
  * The last command's own answer — `state.status` — and, when it said nothing while the armed ghost sits
  * on a tile Enter would refuse, that refusal, naming the tile: quietly while the player is only
- * looking, and in the reducer's own red once they actually try (engine.md 9.2), which is an answer of
- * its own. **A command's answer comes first** (feedback F59), so a key refused while a building is
- * armed says why ("Place the Barracks or cancel it first", F69) even with the ghost on rock; the
+ * looking, and in the reducer's own red once they actually try (see docs/system-design/presentation.md), which is an answer of
+ * its own. **A command's answer comes first**, so a key refused while a building is
+ * armed says why ("Place the Barracks or cancel it first") even with the ghost on rock; the
  * ghost's refusal comes back at the next command that says nothing, since an answer lapses then. While
  * arming's ghost shows (`noSpotFound`), what arming said about why the cursor moved stands instead.
  */
@@ -194,7 +194,7 @@ export function commandAnswer(state: BuildState, preview: ArmedPreview | null): 
 }
 
 /**
- * **The bottom bar's one line** (feedback F59): the last command's answer while it has one, otherwise
+ * **The bottom bar's one line**: the last command's answer while it has one, otherwise
  * the hint for where the keyboard is. An answer lapses at the next command that says nothing
  * (`applyBuildCommand`), so the hint comes back on its own. A Nexus Pulse on screen says its own line
  * instead (`pulseStatus`), unless a popup over it holds the keyboard.

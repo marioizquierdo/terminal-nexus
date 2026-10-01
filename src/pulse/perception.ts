@@ -1,4 +1,4 @@
-// 3. Perception — engine.md 4.3. Who each actor sees, and who it decides to fight or flee.
+// 3. Perception (phase order in pulse.md). Who each actor sees, and who it decides to fight or flee.
 
 import { directionOf } from "../grid/coords.ts"
 import type { Actor, TickContext } from "./shared.ts"
@@ -8,7 +8,7 @@ export function hostilesOf(context: TickContext, actor: Actor): Actor[] {
   return context.actors.filter((other) => other.player !== actor.player && !other.pendingDead)
 }
 
-/** Wounded allies, self excluded — the `"support"` behavior's candidate pool (unit-design-architecture
+/** Wounded allies, self excluded — the `"support"` behavior's candidate pool (the unit-architecture
  * spike): a healer's whole targeting axis is the opposite of every other behavior's, so it bypasses
  * `hostilesOf` entirely rather than filtering it. */
 export function woundedAlliesOf(context: TickContext, actor: Actor): Actor[] {
@@ -25,8 +25,8 @@ export function woundedAlliesOf(context: TickContext, actor: Actor): Actor[] {
  * `hostiles`, narrowed by `targetLayers` (hard: never a viable target outside it) and then, if
  * nothing in the narrowed set sits on a `targetPreference` layer, left alone — if something does,
  * narrowed further to just those. Shared by every non-flee, non-support behavior so an `attack` and a
- * contact `detonation.triggerRange` alike resolve against whatever this decided (unit-design-
- * architecture spike: the ground-air asymmetry and siege-giant rule shapes).
+ * contact `detonation.triggerRange` alike resolve against whatever this decided (the unit-architecture
+ * spike's ground-air asymmetry and siege-giant rule shapes).
  */
 function eligibleHostiles(actor: Actor, hostiles: readonly Actor[]): readonly Actor[] {
   const { targetLayers, targetPreference } = actor.definition
@@ -39,9 +39,9 @@ function eligibleHostiles(actor: Actor, hostiles: readonly Actor[]): readonly Ac
 
 /**
  * The whole scoring function is "nearest enemy by Manhattan distance across every hostile layer,
- * ties broken by entity id" (milestone-1-spike-battle.md 3.7; the metric was Chebyshev/eight-way at
- * gate authoring time and moved to Manhattan/four-way after Milestone 1 playtesting — grid/coords.ts,
- * `gridDistance`). Resisting the urge to improve the scoring function itself is part of the gate.
+ * ties broken by entity id". The metric was Chebyshev (eight-way) when this was first written and moved
+ * to Manhattan (four-way) after the first playtests (grid/coords.ts, `gridDistance`). The scoring
+ * function itself is kept this plain on purpose: a smarter one would be a design change, not a fix.
  */
 export function selectTarget(
   context: TickContext,
@@ -105,7 +105,7 @@ export function perception(context: TickContext): void {
     if (changed) actor.focusStreak = 0
     setTarget(context, actor, selection.target.ordinal)
     // Facing is derived from the current target when stationary, and from the last step when
-    // moving. Nothing in the rules reads it (Q9).
+    // moving. Nothing in the rules reads it; whether facing should ever affect a rule is still an open question (Q9).
     actor.facing = directionOf(actor.anchor, selection.target.anchor, actor.facing)
     if (changed) {
       context.events.push({
@@ -122,7 +122,7 @@ export function perception(context: TickContext): void {
   }
 }
 
-/** "when a hostile attacker is within range + 2" — milestone-1-spike-battle.md 3.7. */
+/** "when a hostile attacker is within range + 2": a unit flees a threat that can already reach it or nearly can. */
 export function fleeTrigger(threat: Actor): number {
   return (threat.definition.attack?.range ?? 0) + 2
 }

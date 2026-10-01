@@ -1,41 +1,42 @@
-// What the live Build Phase screen draws *between* commands — everything on it that depends on time
-// (gate 5H). The reducer has no clock and never will; this is where the screen's clock is read, as a
+// What the live Build Phase screen draws *between* commands — everything on it that depends on time.
+// The reducer has no clock and never will; this is where the screen's clock is read, as a
 // number the caller passes in, so every animation here is a pure function of the state and the time
 // and a test can drive it without waiting:
 //
-//   - **the view slides** (engine.md 3.3's "camera moves eased over a few frames"): whenever the
+//   - **the view slides** (`docs/system-design/grid.md` asks for
+//     "camera moves eased over a few frames"): whenever the
 //     state's camera changes — a click, an arrow at the margin, a Shift jump, arming that moved the
 //     cursor, anything — the drawn camera eases from wherever it was drawn toward it over `easeMs`
 //     milliseconds, whole tiles at a time, fast at first and settling at the end. Only a resize snaps
 //     (`snap`);
-//   - **the cursor glides** (owner, 2026-09-28: "interpolations are easy and powerful"): whenever the
+//   - **the cursor glides** (Mario: "interpolations are easy and powerful"): whenever the
 //     state's cursor changes, the drawn cursor eases from the tile it was drawn on to the new one over
 //     `cursorGlideMs`, so a Shift jump or a far click reads as motion rather than a teleport. The glide
 //     is of the cursor's place **in the view** (its tile less the camera's), added to the drawn camera:
 //     when only the camera moves — the cursor dragging it at the margin — the cursor rides along with
 //     the slide, and a gliding cursor can never be drawn outside the view it is gliding across. The
 //     armed preview and the refused flash move with it;
-//   - **a menu row flashes** "pressed" or flickers "refused" (gate 5F), for `pressedFlashMs` or
+//   - **a menu row flashes** "pressed" or flickers "refused", for `pressedFlashMs` or
 //     `refusedFlashMs`;
-//   - **the cursor flashes** where a placement was just tried and refused (gate 5H), for
+//   - **the cursor flashes** where a placement was just tried and refused, for
 //     `refusedCursorMs`;
-//   - **a building goes up** (gate 5I): each planned placement plays its frames, light and sparks
+//   - **a building goes up**: each planned placement plays its frames, light and sparks
 //     for `placeFramesMs` and `placeGlowMs`, timed from the frame that first drew it;
-//   - **a building comes down** (feedback F33): one that leaves the plan — undone, or removed with
+//   - **a building comes down**: one that leaves the plan — undone, or removed with
 //     Backspace/Delete — throws the same sparks where it stood, timed from the first frame without it;
-//   - **a hand-off flies, and the cursor blinks** (feedback F54): when a menu row hands the keyboard
+//   - **a hand-off flies, and the cursor blinks**: when a menu row hands the keyboard
 //     to the map (`BuildState.handoff`), the focus arrow — or, from Explore Map's row, the see-through
-//     cursor (F64) — flies from the row to the cursor for the "Focus arrow" Experiment's milliseconds,
+//     cursor — flies from the row to the cursor for the "Focus arrow" Experiment's milliseconds,
 //     and when it lands the cursor blinks `cursorBlinks` times in the pressed flash's look and at its
 //     speed. Keys work throughout; it all stops the moment the keyboard leaves the map, a popup opens or
 //     the plan is committed. One flight, two travellers: which one flies is the view's to draw;
-//   - **the menu turns into a card** (feedback F68): whenever the panel goes from the menu to a card —
+//   - **the menu turns into a card**: whenever the panel goes from the menu to a card —
 //     Explore Map opened, a building armed from the menu or with a digit on the map — or from one card
 //     to another armed building, the view plays the "Card reveal" Experiment's transition (the other
 //     rows fade, the chosen row slides up to the header, the card types in). The reducer never hears
 //     of it: this loop watches the state turn into a card the way it watches the plan grow. Closing a
 //     card is instant;
-//   - **a popup's border moves** (feedback F80, F83): timed from the frame that first showed the popup
+//   - **a popup's border moves**: timed from the frame that first showed the popup
 //     — any popup, and again whenever another replaces it — its border plays the popup's **opening**
 //     if it has one (`POPUP_OPENINGS`: the Battle Round screen's double flash, `popupFlash`), drawn
 //     every frame, and then **breathes**, slowly a little lighter and a little darker, one breath every
@@ -55,7 +56,7 @@
 //
 // Under reduced motion both snap: the view jumps and the cursor jumps.
 //
-// Presentation only (engine.md Section 1: "presentation may interpolate... without changing
+// Presentation only (`docs/system-design/grid-engine.md`: "presentation may interpolate... without changing
 // simulation"): state, commands and a scripted playtest all use the state's own camera and cursor —
 // the state is already where things are going. The one place the drawn camera reaches input is the
 // mouse, so a click lands on the tile drawn under the pointer while the view is still sliding. The
@@ -131,7 +132,7 @@ export const openingFlash = (state: BuildState): PopupFlash => ({
 })
 
 /**
- * What the open popup's border plays in this frame (feedback F80, F83) — its opening, from
+ * What the open popup's border plays in this frame — its opening, from
  * `POPUP_OPENINGS` and timed by `flash`, and the length of one breath — with `null` for a part this frame
  * does not show; `null` altogether when the border is still: no popup, reduced motion, or neither part
  * showing. The breath's length is the "Popup pulse" Experiment's, for every popup; at 0 it stops.
@@ -167,7 +168,7 @@ export function cardRevealAt(
 }
 
 /**
- * When a menu row hands the keyboard to the map (feedback F54): its flight — the focus arrow, or the
+ * When a menu row hands the keyboard to the map: its flight — the focus arrow, or the
  * see-through cursor — lasts `flightMs`, then the cursor blinks `blinks` times — each blink "on" for
  * `pulseMs` (the pressed flash's own duration, so it has the menu's speed), with an "off" gap of
  * `pulseMs` between two — and everything is over at `endMs`, counted from the hand-off. Under reduced
@@ -221,7 +222,7 @@ const cameraAtTime = (tween: Tween<Camera>, now: number): Camera => tileAt(tween
 
 const offsetOf = (tile: Coord, camera: Camera): Point => ({ x: tile.x - camera.x, y: tile.y - camera.y })
 
-/** The tuned values the live loop times things by — and the popup opening's flash (F83), the view's own
+/** The tuned values the live loop times things by — and the popup opening's flash, the view's own
  *  first guess (`POPUP_FLASH`) set by the "Battle Round flash" and "Flash strength" Experiments (`openingFlash`), unless a test hands in another. */
 export type LiveTuning = Pick<
   Tuning,
@@ -244,23 +245,23 @@ export class BuildAnimation {
   private readonly tuning: LiveTuning
   /** The part of them a placement's track is timed by, handed to the view with the tracks it times. */
   private readonly placementTuning: PlacementTuning
-  /** The flash a popup that opens with one plays (F83). */
+  /** The flash a popup that opens with one plays. */
   private readonly popupFlash: PopupFlash | null
   private ease: Tween<Camera> | null = null
   /** The cursor's place in the view — its tile less the camera's — on its way somewhere. */
   private glide: Tween<Point> | null = null
   private seenAck: Readonly<{ seq: number; at: number }> | null = null
   private seenRefusal: Readonly<{ seq: number; at: number }> | null = null
-  /** The last hand-off seen (F54), when it was first seen, and whether it has been cut short — the
+  /** The last hand-off seen, when it was first seen, and whether it has been cut short — the
    *  keyboard left the map, a popup opened, the plan was committed — after which it never resumes. */
   private seenHandoff: Readonly<{ seq: number; at: number; stopped: boolean }> | null = null
   /** The menu entry whose card the panel showed at the last frame (`cardEntry`, `null` for the menu),
-   *  when it turned into it, and whether the menu was there before it (F68). `at` is `null` for a card
+   *  when it turned into it, and whether the menu was there before it. `at` is `null` for a card
    *  already showing when the screen first drew, which never plays a reveal — like a placement already
    *  planned then. */
   private seenCard: Readonly<{ entry: number | null; at: number | null; fromMenu: boolean }> | null = null
   /** The popup open at the last frame and the first frame that showed it — what its border's opening and
-   *  breath are timed from (F80, F83) — or `null` with none open, so a popup opened again, or another
+   *  breath are timed from — or `null` with none open, so a popup opened again, or another
    *  replacing it, starts again from its opening. Watched, not recorded: the reducer never hears of it. */
   private seenPopup: Readonly<{ popup: NonNullable<BuildState["popup"]>; at: number }> | null = null
   /**
@@ -272,7 +273,7 @@ export class BuildAnimation {
    * a new track.
    */
   private tracks = new Map<number, Readonly<{ key: string; placement: PlacedStructure; playedAt: number | null }>>()
-  /** Buildings that left the plan while the screen was showing them, and when (feedback F33): kept
+  /** Buildings that left the plan while the screen was showing them, and when: kept
    *  until their sparks settle. Presentation's own memory — the plan never hears of it. */
   private removals: Readonly<{ placement: PlacedStructure; removedAt: number }>[] = []
   /** False until the first frame: whatever is already planned then was not placed just now. */
@@ -433,7 +434,7 @@ export class BuildAnimation {
       }
     }
 
-    // The menu turning into a card (F68). Watched, not recorded: the card's entry changes the frame the
+    // The menu turning into a card. Watched, not recorded: the card's entry changes the frame the
     // state first shows a new card, and the reveal plays from that frame. Closing a card is instant.
     const entry = cardEntry(state)
     if (this.seenCard === null) this.seenCard = { entry, at: null, fromMenu: entry === null }
@@ -448,7 +449,7 @@ export class BuildAnimation {
       }
     }
 
-    // The open popup's border (F80, F83): timed from the first frame that showed the popup. Its opening
+    // The open popup's border: timed from the first frame that showed the popup. Its opening
     // is drawn every frame until it ends; the breath after it never settles, so it asks for a frame only
     // every `BREATH_FRAME_MS` — and only when nothing faster is moving, whose own ends keep the timer at
     // every frame until they pass.

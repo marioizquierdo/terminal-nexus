@@ -1,6 +1,6 @@
 // PRESENTATION — what it looks like. It consumes state and events, samples them at an arbitrary
 // presentation time, and composes cells. It may interpolate, skip, pause, accelerate and lie about
-// timing freely, because none of it can change an outcome (engine.md 1).
+// timing freely, because none of it can change an outcome (`docs/system-design/grid-engine.md`).
 //
 // `snapshotAt` is pure: same arguments, same frame. It never reads a clock, so a frame at time t is
 // identical whether every earlier frame rendered or most were skipped.
@@ -63,7 +63,7 @@ const STEP_LANDS_AT = 0.5
  * Everything the view draws at one presentation instant, before it is laid onto a screen: which tick's
  * state, where each entity is drawn between ticks, the ranged kills still waiting for their tracers, what
  * every effect is painting, and the feed up to that tick. `composeAt` puts it in the old Pulse frame; the
- * Build Phase's own frame puts it on the Grid through the camera (gate 6A). Pure, like the rest of the view.
+ * Build Phase's own frame puts it on the Grid through the camera. Pure, like the rest of the view.
  */
 export type PulseSample = Readonly<{
   tick: number
@@ -87,7 +87,7 @@ export type PulseView = Readonly<{
   /** Each side's health at tick zero, structures excluded — what a force bar is measured against. */
   openingHealth: ReadonlyMap<PlayerId, number>
   /** When the last effect finishes: everything still "in flight" at the end of the fight has landed by
-   *  then — the Pulse's ending waits for it before Recall plays (milestone 6, Section 2). At least the
+   *  then — the Pulse's ending waits for it before Recall plays. At least the
    *  last tick's own time. */
   effectsEndMs: number
   /** The drawable data at a presentation time. `reducedMotion` overrides the view's own — a player who

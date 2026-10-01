@@ -1,9 +1,9 @@
-// Recall — engine.md Section 5: "At Pulse end survivors regroup near home producers. Orphans are
+// Recall — the end-of-Pulse rule in pulse.md: "At Pulse end survivors regroup near home producers. Orphans are
 // adopted by the nearest compatible producer or regroup near the Grid Nexus. Production cooldowns
 // reset to a full interval."
 //
-// It was written down at canon 2.0 and answered as "already runs" (Q29), but nothing implemented it
-// until gate 6A: `MatchState` has no link from a unit to the producer that made it, so there was
+// It was written into the design early and answered as "already runs", but nothing implemented it
+// until the Pulse start/end/Recall pull request (docs/history/reports/2026-09-29-pulse-start-end-recall.md): `MatchState` has no link from a unit to the producer that made it, so there was
 // nothing for a regroup to read. It is built here as a pure function of the state a Pulse ended in,
 // **beside the kernel's tick and never inside it** — `stepTick` does not call it, so no Pulse's
 // hashes move — and it is what both the walk home on screen (the moves) and the next Build Phase

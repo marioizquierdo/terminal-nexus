@@ -1,4 +1,4 @@
-// 9. Objectives and victory — engine.md 4.3.
+// 9. Objectives and victory (phase order in pulse.md).
 
 import type { Outcome, PlayerId } from "../state/types.ts"
 import { PLAYERS } from "../state/types.ts"
@@ -24,7 +24,7 @@ export function victory(context: TickContext): Outcome | null {
     return { winner: loser === "A" ? "B" : "A", reason: "nexus-destroyed", tick: context.tick }
   }
 
-  // "Annihilated" means every entity on `workers`, `units`, and `air` is dead — workers count (Q13).
+  // "Annihilated" means every entity on `workers`, `units`, and `air` is dead. Workers count: a side with only workers left has lost its army.
   const annihilated = PLAYERS.filter(
     (player) => context.pulse.roster[player].hasMobile && !mobileAlive[player],
   )

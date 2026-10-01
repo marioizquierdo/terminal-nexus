@@ -10,7 +10,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
-import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
+import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { defaultExperiments } from "../src/build/experiments.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import { CARD_HEADER_ROW, EXPLORE_ROW, buildLayout, cellForTile, menuEntryRow, tileAtCell } from "../src/build/layout.ts"
@@ -18,7 +18,7 @@ import type { BuildContext } from "../src/build/state.ts"
 import { EXPLORE_ENTRY, ONE_TILE, armingSpot, entryOfConstruct, structureAtTile } from "../src/build/state.ts"
 import type { MenuEntry } from "../src/build/types.ts"
 import { TUNING } from "../src/build/tuning.ts"
-import { runSpike, spikeContext } from "../src/cli/spike.ts"
+import { runBuildPhase, starterContext } from "../src/cli/build-phase.ts"
 import type { TerrainId } from "../src/grid/types.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import type { BuildCompositionInput } from "../src/view/build.ts"
@@ -54,8 +54,8 @@ const TIMING: HandoffTiming = {
 }
 /** The Turret: one tile, so arming it keeps the cursor where each test puts it. */
 const TURRET = "3"
-const turretRow = (layout: BuildLayout): number => menuEntryRow(layout, spikeContext().catalog, { kind: "construct", index: 2 }) as number
-/** The owner's opacity for the see-through cursor's head: "about 80% 'transparency'" (feedback F64). */
+const turretRow = (layout: BuildLayout): number => menuEntryRow(layout, starterContext().catalog, { kind: "construct", index: 2 }) as number
+/** The owner's opacity for the see-through cursor's head: "about 80% 'transparency'". */
 const HEAD_ALPHA = 0.8
 
 /** What a frame with the flight `progress` of the way has that the same frame without it does not. */
@@ -207,10 +207,10 @@ test("under reduced motion, or with the flight off, the blink plays at once; Tab
 // --- Where the cursor lands ---------------------------------------------------------------------------
 
 test("Explore Map opened from the menu moves the cursor off the Grid Nexus onto clear ground, by the arming rule for one tile, and keeps it in view", () => {
-  const context = spikeContext()
-  const expected = armingSpot(context, [], ONE_TILE, SPIKE_START_CURSOR)
+  const context = starterContext()
+  const expected = armingSpot(context, [], ONE_TILE, STARTER_START_CURSOR)
   assert.equal(expected.found, true)
-  assert.notDeepEqual(expected.tile, SPIKE_START_CURSOR)
+  assert.notDeepEqual(expected.tile, STARTER_START_CURSOR)
   // Clear ground: nothing on the tile, and nothing on the ring around it.
   for (let dy = -1; dy <= 1; dy += 1) {
     for (let dx = -1; dx <= 1; dx += 1) {
@@ -225,7 +225,7 @@ test("Explore Map opened from the menu moves the cursor off the Grid Nexus onto 
     ["a click on its row", (side: Side) => clickPanelRow(side, panelRow(side, EXPLORE_ROW))],
     ["the driver", (side: Side) => side.build.dispatch({ kind: "explore" })],
   ] as const) {
-    const side = buildSide({ context, cursor: SPIKE_START_CURSOR })
+    const side = buildSide({ context, cursor: STARTER_START_CURSOR })
     open(side)
     assert.equal(side.build.state.exploreMap, true, name)
     assert.deepEqual(side.build.state.cursor, expected.tile, `${name} left the cursor on the Nexus`)
@@ -245,11 +245,11 @@ test("Explore Map from the menu leaves a cursor that is already on clear ground 
 
 test("Explore Map opened from the map leaves the cursor where it is — Enter reads what is under it", () => {
   for (const open of [[TAB, ENTER], [TAB, SPACE], [TAB, "e"]]) {
-    const side = buildSide({ cursor: SPIKE_START_CURSOR })
+    const side = buildSide({ cursor: STARTER_START_CURSOR })
     keys(side, ...open)
     assert.equal(side.build.state.exploreMap, true)
     assert.equal(side.build.state.returnTo, "grid")
-    assert.deepEqual(side.build.state.cursor, SPIKE_START_CURSOR, `${JSON.stringify(open)} moved the cursor off the Nexus`)
+    assert.deepEqual(side.build.state.cursor, STARTER_START_CURSOR, `${JSON.stringify(open)} moved the cursor off the Nexus`)
     assert.match(screenText(side), /Nexus/)
   }
 })
@@ -260,7 +260,7 @@ function corridor(width: number, turrets: readonly number[]): BuildContext {
   const tiles = new Array<TerrainId>(width * height).fill("terrain.rock")
   for (let x = 0; x < width; x += 1) tiles[width + x] = "terrain.plain"
   const standing = turrets.map((x) => ({ contentId: "structure.bench.beamturret", anchor: { x, y: 1 } }))
-  return { ...spikeContext(), grid: { width, height, tiles }, standing }
+  return { ...starterContext(), grid: { width, height, tiles }, standing }
 }
 
 test("where no free tile in reach has clear ground around it, Explore Map from the menu takes the nearest free tile", () => {
@@ -279,7 +279,7 @@ test("with no free tile in reach, Explore Map leaves the cursor where it is", ()
   const width = 40
   const height = 30
   const rock: BuildContext = {
-    ...spikeContext(),
+    ...starterContext(),
     grid: { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.rock") },
     standing: [],
   }
@@ -556,7 +556,7 @@ test("the live screen draws the arrow on its own clock, then the plain divider o
   let t = 0
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()
-  const session = runSpike({
+  const session = runBuildPhase({
     settings: { ...DEFAULT_SETTINGS, capability: "monochrome", glyphPack: "ascii" },
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
@@ -565,7 +565,7 @@ test("the live screen draws the arrow on its own clock, then the plain divider o
     now: () => t,
   })
   await wait(40)
-  const layout = buildLayout(MINIMUM, spikeContext().grid)
+  const layout = buildLayout(MINIMUM, starterContext().grid)
   const start = { x: layout.dividerColumn, y: turretRow(layout) }
   const divider = rowsOf(stdout.lastWrite)[start.y]?.[start.x]
   stdin.emit("data", Buffer.from(TURRET))

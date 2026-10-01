@@ -1,6 +1,6 @@
 // Every setting in one list, each on a tier — player (shown and saved), experiment (shown for the
 // owner's playtests, never saved, exported) or tuned (a constant in code) — and Settings in titled
-// sections with a blank line between them (owner, 2026-09-30, feedback F85: "make more groups, and leave
+// sections with a blank line between them (owner, 2026-09-30: "make more groups, and leave
 // an extra space between sections ... Refactor the code to account for the hierarchy of settings").
 // The Experiments' own behaviour is `tests/build-experiments.test.ts`; the player's half, the game menu
 // and the export are `tests/build-settings.test.ts`.

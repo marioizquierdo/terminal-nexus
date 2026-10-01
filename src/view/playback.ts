@@ -1,6 +1,6 @@
 // Playback state for the ASCII view: the clock, the controls, and the resize gate.
 //
-// It is separated from `watch` for one reason: engine.md 9.6 makes "below minimum size, playback
+// It is separated from `watch` for one reason: `docs/system-design/presentation.md` makes "below minimum size, playback
 // pauses behind a resize gate and resumes from the same presentation time" a RULE, and a rule that
 // only exists inside a live terminal loop cannot be tested. Everything here is a pure function of
 // the elapsed time handed to it, so a test can drive a whole session without a TTY.
@@ -141,8 +141,7 @@ function endOfEscapeSequence(chunk: string, start: number): number {
   // Only the Meta keys something binds stay one key: `ESC b`, `ESC f` and `ESC DEL`, Option+Left,
   // Option+Right and Option+Backspace as a Mac sends them. Any other printable character after an ESC
   // is far likelier to be Esc and then that key, sent close together by a script or a fast hand — Esc
-  // then `1` read as an unbound Meta-1 swallowed both (gate 5F's report, Section 7; split since gate
-  // 5H).
+  // then `1` read as an unbound Meta-1 swallowed both (a real-terminal playtest found it).
   if (next === 0x62 /* b */ || next === 0x66 /* f */ || next === 0x7f /* DEL */) return start + 2
   return Math.min(start + 1, chunk.length)
 }
@@ -182,9 +181,9 @@ export function incompleteEscapeAt(chunk: string): number {
  * a click) and each must come back as its own key. A menu screen's own real-terminal evidence is
  * what found this: two arrow-down presses sent close enough together arrived as one six-byte chunk,
  * and the original version of this function — which treated any ESC-prefixed chunk as one key in
- * full, correct only because Gate 1A bound no escape sequence to anything — silently dropped the
+ * full, correct only because no escape sequence was bound to anything yet — silently dropped the
  * second press's worth of movement, undetected by any fake-stdin unit test because nothing before
- * Milestone 3 ever fed this function two real sequences in one call.
+ * the menu screens ever fed this function two real sequences in one call.
  */
 export function keysFromChunk(chunk: string): string[] {
   const keys: string[] = []

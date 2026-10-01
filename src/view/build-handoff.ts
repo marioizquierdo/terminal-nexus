@@ -47,7 +47,7 @@ function arrowGlyphs(pack: GlyphPack, dx: number, dy: number): Readonly<{ head: 
 }
 
 /**
- * Where a hand-off's flight leaves from (owner, 2026-09-30, feedback F63: "start from the actual
+ * Where a hand-off's flight leaves from (Mario: "start from the actual
  * location of the menu item, not from the top. The item moves to the top because that works as a
  * title"): the cell just right of the right end of the row the handed-off entry has **on the menu** —
  * the divider's cell on that row — whatever the panel shows now. A row the menu has no room for (a
@@ -84,7 +84,7 @@ function handoffFlight(input: BuildCompositionInput): Flight | null {
 
 /**
  * The hand-off crossing from the menu to the map: the focus arrow from a building's row, the see-through
- * cursor from Explore Map's (F64) — one flight, two travellers.
+ * cursor from Explore Map's — one flight, two travellers.
  */
 export function drawHandoff(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, preview: ArmedPreview | null): void {
   const flight = handoffFlight(input)
@@ -94,9 +94,9 @@ export function drawHandoff(cells: BandCell[], input: BuildCompositionInput, pac
 }
 
 /**
- * The **focus arrow** (owner, 2026-09-30, feedback F54: "an animation that sends an arrow from the menu
+ * The **focus arrow** (Mario: "an animation that sends an arrow from the menu
  * item to the cursor ... fast and use interpolation"): a building's row's hand-off. It leaves from the
- * cell just right of the building's row on the menu (`flightStart`, F63) and flies in a straight line
+ * cell just right of the building's row on the menu (`flightStart`) and flies in a straight line
  * toward the cursor; its head points the way it flies and a short trail follows it, the older cells dim.
  * It stops one cell short of the cursor's tile, which stays whole for the blink that follows.
  *
@@ -158,7 +158,7 @@ function stepGlyph(pack: GlyphPack, dx: number, dy: number): string {
 
 /**
  * The see-through cursor's copies, head first: how far behind the head each is, in tile steps along the
- * flight, and how opaque (F64: "a cursor that is the same as the blank cursor, with about 80%
+ * flight, and how opaque (Mario: "a cursor that is the same as the blank cursor, with about 80%
  * 'transparency'"). The head is at 0.8; two fainter copies trail it one and two steps behind, so a fast
  * flight reads as a short smear that settles into the cursor.
  */
@@ -172,7 +172,7 @@ export const SEE_THROUGH_TRAIL: readonly Readonly<{ back: number; alpha: number 
 const SEE_THROUGH_ROLE: StyleRole = CURSOR_ROLE
 
 /**
- * **Explore Map's hand-off** (owner, 2026-09-30, feedback F64-F65: "exploring is just moving the focus to
+ * **Explore Map's hand-off** (Mario: "exploring is just moving the focus to
  * the map. Use a cursor that is the same as the blank cursor, with about 80% 'transparency'"): instead of
  * the focus arrow, a copy of the map cursor — one tile wide — travels from Explore Map's row on the menu
  * to the cursor, on the arrow's own flight, with a short, fainter trail (`SEE_THROUGH_TRAIL`). Every cell

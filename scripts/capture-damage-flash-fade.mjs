@@ -1,6 +1,6 @@
-// Evidence for Q25's transparency amendment (engine.md 9.1, canon 2.8), shipped — this supersedes
+// A picture of the transparency amendment to the effect pipeline (docs/system-design/presentation.md), shipped — this supersedes
 // scripts/prototype-fade-resolver.mjs, which drove a throwaway local resolver to show what the
-// amendment would buy before asking for it. Every cell below comes from the real, checked-in
+// amendment would buy before it was built. Every cell below comes from the real, checked-in
 // pipeline: EFFECT_RECIPES["fx.damage.flash"] (src/view/effects/recipes.ts), the real
 // mergeEffectCells (src/view/effects/composite.ts), and the real sgrFor with its fade parameter
 // (src/view/roles.ts). Nothing here is a resolver of its own.

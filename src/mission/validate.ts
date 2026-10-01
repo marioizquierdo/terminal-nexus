@@ -1,4 +1,4 @@
-// Load-time validation of a mission — the reason a mission is data (Q39): every reference, every range
+// Load-time validation of a mission — the reason a mission is data and not code: every reference, every range
 // and whether the mission can end at all are checked before a single tick runs, and every problem is
 // reported at once, by name, so an author fixes a mission in one pass rather than one crash at a time.
 //

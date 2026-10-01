@@ -1,7 +1,7 @@
-// Gate 5D: the Nexus draft slot and commit; gate 5F: the draft as a popup the player opens. "A dealt
-// Nexus power may not be skipped" (commander-armies.md Section 4.5) — so the commit is refused until
-// one is picked, and since gate 5F *only* the commit: an optional popup must not nag like a forced
-// screen. Committing asks once — engine.md 9.7: "the one action that must not fire by accident."
+// The Nexus draft slot and commit, and the draft as a popup the player opens. "A dealt
+// Nexus power may not be skipped" (docs/game-design/commander-armies.md, the Nexus power) — so the commit is
+// refused until one is picked, and *only* the commit: an optional popup must not nag like a forced
+// screen. Committing asks once — docs/system-design/input.md: "the one action that must not fire by accident."
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -12,7 +12,7 @@ import { MOUSE_LEFT, MOUSE_RIGHT, formatMouseEvent } from "../src/build/mouse.ts
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { startPulse } from "../src/cli/pulse-run.ts"
-import { spikeContext } from "../src/cli/spike.ts"
+import { starterContext } from "../src/cli/build-phase.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { ESC, buildSide, placed } from "./build-helpers.ts"
@@ -25,9 +25,9 @@ function session(): BuildSide {
 }
 
 test("a waiting Nexus power refuses the commit, and nothing else", () => {
-  // Gate 5D refused every edit until the pick was made, which was right for a forced full screen.
+  // The draft once refused every edit until the pick was made, which was right for a forced full screen.
   // With a popup the player opens when they choose, the invariant is kept where it has to hold — the
-  // Build Phase cannot end without a pick — and nowhere else (engine.md 9.7, canon 2.19).
+  // Build Phase cannot end without a pick — and nowhere else (docs/system-design/input.md, the Nexus power pick).
   const { build } = session()
   build.dispatch({ kind: "arm", index: 0 })
   assert.equal(build.state.armed, 0, "arming was refused while a pick was waiting")
@@ -77,7 +77,7 @@ test("the popup holds the keyboard until a pick or Esc: arrows work its list, an
   // "2" is the popup's own second option — digits address the popup's list while it is open.
   assert.equal(build.state.nexusPick, 1)
   assert.equal(build.state.planned.length, 0)
-  // The pick closes the popup (owner, 2026-09-27 — Q60), and leaves what was behind it as it was.
+  // The pick closes the popup (owner, 2026-09-27), and leaves what was behind it as it was.
   assert.equal(build.state.popup, null, "picking left the popup open")
   assert.equal(build.state.focus, "grid", "Tab moved focus from behind the popup")
   assert.equal(build.state.armed, 0, "the pick disarmed what was armed behind the popup")
@@ -92,7 +92,7 @@ test("the popup holds the keyboard until a pick or Esc: arrows work its list, an
 })
 
 test("the popup picks by Up/Down and Enter too, closes, and lists the pick as active when reopened", () => {
-  const context = spikeContext()
+  const context = starterContext()
   const { build, layout } = session()
   build.handleData("n", layout)
   build.handleData(`${ESC}[B`, layout)
@@ -112,7 +112,7 @@ test("the popup picks by Up/Down and Enter too, closes, and lists the pick as ac
 })
 
 test("an open popup draws no placement ghost behind it, and refuses edits sent by a driver", () => {
-  const context = spikeContext()
+  const context = starterContext()
   const { build, layout } = session()
   build.dispatch({ kind: "arm", index: 2 })
   build.dispatch({ kind: "open-nexus-powers" })
@@ -127,11 +127,11 @@ test("an open popup draws no placement ghost behind it, and refuses edits sent b
 
 test("picking applies its own effect exactly once, and cannot be changed afterward", () => {
   const { build, layout } = session()
-  const context = spikeContext()
+  const context = starterContext()
   build.dispatch({ kind: "pick-nexus", index: 1 }) // War Chest, +2000
   assert.equal(build.state.nexusPick, 1)
   assert.equal(build.state.bonusAllotment, context.nexusDraft[1]!.bonusAllotment)
-  // The owner's number (2026-09-28, feedback F24): enough to place buildings freely in a playtest.
+  // The owner's number (2026-09-28): enough to place buildings freely in a playtest.
   assert.equal(build.state.bonusAllotment, 2000)
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
   assert.match(text, /\| {22}\* 2100[|+]/, "the panel's credits line, whole, with the War Chest")
@@ -146,9 +146,9 @@ test("picking applies its own effect exactly once, and cannot be changed afterwa
 
 test("the budget on screen counts the picked power's share in what is left", () => {
   // Reserve Fund adds 30 to a 100-point allotment. The panel once read "130 of 100" — more left than
-  // there ever was; since feedback F57 it shows no maximum at all, only what is left — since F71 with
+  // there ever was; it now shows no maximum at all, only what is left, with
   // the map's resource symbol: `* 130`.
-  const context = spikeContext()
+  const context = starterContext()
   const { build, layout } = session()
   build.dispatch({ kind: "pick-nexus", index: 0 })
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
@@ -163,7 +163,7 @@ test("an out-of-range pick is ignored, not a crash and not a partial pick", () =
   assert.deepEqual(build.state, before)
 })
 
-test("once picked, the construct menu and every other command work exactly as before this gate", () => {
+test("once picked, the construct menu and every other command work exactly as they did before the draft existed", () => {
   const { build } = session()
   build.dispatch({ kind: "pick-nexus", index: 0 })
   build.dispatch({ kind: "arm", index: 0 })
@@ -265,13 +265,13 @@ test("starting the Pulse outside the Battle Round screen — a stray y — chang
 test("keyboard: a digit picks from the Nexus popup while it is open, and arms the construct menu otherwise", () => {
   const side = session()
   side.build.dispatch({ kind: "open-nexus-powers" })
-  const popupContext = { itemCount: 3, armed: false, popup: "nexus-powers" as const, popupSpec: popupSpec(spikeContext(), side.build.state) }
+  const popupContext = { itemCount: 3, armed: false, popup: "nexus-powers" as const, popupSpec: popupSpec(starterContext(), side.build.state) }
   assert.deepEqual(buildKeyboardCommand("1", popupContext), { kind: "pick-nexus", index: 0 })
   assert.deepEqual(buildKeyboardCommand("2", popupContext), { kind: "pick-nexus", index: 1 })
   assert.equal(buildKeyboardCommand("3", popupContext), null, "a third popup digit picks nothing")
   side.build.dispatch({ kind: "pick-nexus", index: 0 })
   side.build.dispatch({ kind: "open-nexus-powers" })
-  assert.equal(buildKeyboardCommand("1", { ...popupContext, popupSpec: popupSpec(spikeContext(), side.build.state) }), null)
+  assert.equal(buildKeyboardCommand("1", { ...popupContext, popupSpec: popupSpec(starterContext(), side.build.state) }), null)
 
   const builtContext = { itemCount: 3, armed: false }
   assert.deepEqual(buildKeyboardCommand("1", builtContext), { kind: "arm", index: 0 })
@@ -287,7 +287,7 @@ test("keyboard: n opens the Nexus popup, and means nothing on the Battle Round c
 
   const confirming = { itemCount: 3, armed: false, popup: "battle-round" as const }
   assert.deepEqual(buildKeyboardCommand("y", confirming), { kind: "start-pulse" })
-  // Only [s] Start is a row there (feedback F50): `n` is not "keep building", Esc is the way back.
+  // Only [s] Start is a row there: `n` is not "keep building", Esc is the way back.
   assert.equal(buildKeyboardCommand("n", confirming), null)
   assert.deepEqual(buildKeyboardCommand("\u001b", confirming), { kind: "cancel" })
   // The question is modal: the arrows do not reach the Grid behind it.
@@ -397,7 +397,7 @@ function clickTileBytes(
 }
 
 test("the same pick-build-commit script produces an identical state by hotkeys, by clicks, and from a driver script", () => {
-  // An armed click scrolls inside the view's edge zones (F22) and an arrow scrolls at the margin: the
+  // An armed click scrolls inside the view's edge zones and an arrow scrolls at the margin: the
   // parity here is the plan and the camera, so every tile clicked is clear of both, and neither scrolls.
   const byKeyboard = session()
   byKeyboard.build.handleData("n", byKeyboard.layout) // open the Nexus Powers
@@ -408,7 +408,7 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   byKeyboard.build.handleData("\r", byKeyboard.layout)
   // Placing handed the keyboard back to the menu, where the arming came from. The cursor is on the
   // new Barracks, so arming another moves it to the nearest spot with a free tile around it — a free
-  // column to its right, 34,13 (feedback F30) — and Enter places it there.
+  // column to its right, 34,13 — and Enter places it there.
   byKeyboard.build.handleData("1", byKeyboard.layout)
   assert.deepEqual(byKeyboard.build.state.cursor, { x: 34, y: 13 })
   byKeyboard.build.handleData("\r", byKeyboard.layout)
@@ -421,7 +421,7 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   byMouse.build.handleData(clickPopupBytes(byMouse, (c) => c.kind === "pick-nexus" && c.index === 0), byMouse.layout)
   // Digits are the hotkey path both players share; the rest is clicks.
   byMouse.build.handleData("1", byMouse.layout)
-  // A click only arms the preview at a tile; a second click on that same tile places it (Q52).
+  // A click only arms the preview at a tile; a second click on that same tile places it.
   // Recomputed fresh each time, since the camera can move between clicks.
   const clickTile = (tile: { x: number; y: number }): void => {
     byMouse.build.handleData(clickTileBytes(byMouse.layout, byMouse.build, tile), byMouse.layout)
@@ -450,7 +450,7 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
 
   assert.equal(byKeyboard.build.state.committed, true, "the test did not actually reach committed")
   assert.equal(byKeyboard.build.state.planned.length, 2)
-  // The one difference is the point of feedback F22: a placement by the mouse leaves the menu with no
+  // The one difference is deliberate: a placement by the mouse leaves the menu with no
   // "highlighted, not yet chosen" bar, one by the keyboard leaves it showing for the next key. The
   // committed screen draws no menu, so the frames still match.
   assert.equal(byMouse.build.state.highlightHidden, true)
@@ -458,11 +458,11 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   assert.deepEqual({ ...byMouse.build.state, highlightHidden: false }, byKeyboard.build.state)
   assert.deepEqual(byDriver.build.state, byKeyboard.build.state)
   const frame = (side: BuildSide): string =>
-    frameToText(composeBuildFrame({ context: spikeContext(), state: side.build.state, layout: side.layout }, "monochrome"))
+    frameToText(composeBuildFrame({ context: starterContext(), state: side.build.state, layout: side.layout }, "monochrome"))
   assert.equal(frame(byMouse), frame(byKeyboard))
   assert.equal(frame(byDriver), frame(byKeyboard))
 
-  // Gate 6A: the commit starts a Nexus Pulse, and whichever adapter started it, it is the same Pulse —
+  // The commit starts a Nexus Pulse, and whichever adapter started it, it is the same Pulse —
   // the kernel's own two hashes, the ending's Recall, and what each of them shows at the same instant.
   const pulseOf = (side: BuildSide) => {
     assert.ok(side.build.pulse !== null, "the commit did not start a Pulse")

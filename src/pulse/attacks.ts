@@ -1,7 +1,8 @@
-// 7. Attacks — engine.md 4.3. Damage is computed per speed tier and applied simultaneously within
-// it, so no entity survives merely by being iterated first.
+// 7. Attacks (the Pulse's phase order is in pulse.md). Damage is computed per speed tier and applied
+// simultaneously within it, so no entity survives merely by being iterated first.
 //
-// Four additions from the unit-design-architecture spike, all resolved inside this same phase and
+// Four additions from the unit-architecture spike (docs/history/reports/2026-09-10-unit-architecture-spike.md),
+// all resolved inside this same phase and
 // bucketed by the same speed tiers as everything else here, because each is still "this actor acts,
 // this tier, in initiative order" even though none of the four is a plain single-target hit: `windup`
 // (a one-time hold before a first shot), `splash`/`heal` (what a landed hit does besides single-target
@@ -173,7 +174,7 @@ export function attacks(context: TickContext): void {
 
     // Heals last: applied after this tier's damage settles, so a target that is both hit and healed
     // in the same tier reflects "took the hit, then got mended" rather than the other order - a
-    // documented choice (unit-design-architecture spike), not a free simplification, since the two
+    // documented choice of the unit-architecture spike, not a free simplification, since the two
     // orders can disagree once either clamp (0 floor, maxHp ceiling) is actually reached.
     const healTargets = [...heals.keys()].sort((a, b) => a - b)
     for (const ordinal of healTargets) {
@@ -207,7 +208,7 @@ export function attacks(context: TickContext): void {
 /**
  * `ceil(distance / tilesPerTick)`, minimum 1 for any real speed, 0 for an attack with no travel
  * speed at all (melee, or a ranged attack that never declared one). Presentation metadata on the
- * `attack.launched` event — engine.md 4.3 — read by no rule; `tests/rules.test.ts` proves changing
+ * `attack.launched` event (see pulse.md), read by no rule; `tests/rules.test.ts` proves changing
  * it moves no state.
  */
 export function flightWindowTicks(distance: number, tilesPerTick: number | undefined): number {

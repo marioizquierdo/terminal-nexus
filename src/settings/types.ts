@@ -1,4 +1,4 @@
-// What a player can change from the Settings screen (milestone-03-game-menu.md, Gate 3B) — the same
+// What a player can change from the Settings screen — the same
 // four things `grid` already takes as command-line flags, exposed as a menu instead. No stdin, no
 // file access, no menu/view import here: this is the value shape and how each one cycles, nothing
 // about how it's shown or saved.

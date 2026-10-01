@@ -1,4 +1,4 @@
-// One canonical serialization, used for every hash the project compares — engine.md 4.4.
+// One canonical serialization, used for every hash the project compares (pulse.md).
 //
 // Keys are emitted in sorted order at every depth, so two structurally equal values always produce
 // the same bytes regardless of the order their properties happened to be assigned in. Every number

@@ -1,5 +1,5 @@
-// The Build Phase spike's frame, at both ends of the supported terminal size range. What is being
-// checked is what engine.md 3.3 requires *in place of a minimap* — the weight of the Grid pane's sides
+// The Build Phase's frame, at both ends of the supported terminal size range. What is being
+// checked is what docs/system-design/grid.md requires *in place of a minimap* — the weight of the Grid pane's sides
 // where there is more Grid — plus the placement preview, which is the only thing on screen that says
 // whether Enter will work before it is pressed, and the bottom bar's one contextual line.
 
@@ -8,9 +8,9 @@ import assert from "node:assert/strict"
 import { buildLayout, cellForTile, constructLines, startRow } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildSessionOptions } from "../src/build/session.ts"
-import { SPIKE_ALLOTMENT, SPIKE_CATALOG } from "../src/build/catalog.ts"
+import { STARTER_ALLOTMENT, STARTER_CATALOG } from "../src/build/catalog.ts"
 import { armedPreview, remaining } from "../src/build/state.ts"
-import { spikeContext } from "../src/cli/spike.ts"
+import { starterContext } from "../src/cli/build-phase.ts"
 import { bottomLine, hint } from "../src/build/help.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText, offendingGlyph } from "../src/view/frame.ts"
@@ -20,9 +20,9 @@ import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import { MAXIMUM, MINIMUM, WIDE } from "./build-helpers.ts"
 
 /**
- * Every test here is about rendering — not about the Nexus draft gate 5D adds in front of
- * everything else. Every `BuildSession` starts past that gate already, on the first placeholder
- * option, so the screens under test look exactly as they did before this gate existed.
+ * Every test here is about rendering — not about the Nexus draft that stands in front of
+ * everything else. Every `BuildSession` starts past that draft already, on the first placeholder
+ * option, so the screens under test look exactly as they did before the draft existed.
  */
 /** A picked power that adds nothing to the budget, so every test that is not about the Nexus
  *  draft itself sees exactly the allotment its own numbers already assume. */
@@ -35,17 +35,17 @@ const NEUTRAL_NEXUS_DRAFT = [
 function readyBuildSession(options: BuildSessionOptions): BuildSession {
   const build = new BuildSession(options)
   build.dispatch({ kind: "pick-nexus", index: 0 })
-  // Keyboard focus starts on the menu since gate 5F; every test here that presses an arrow means the
+  // Keyboard focus starts on the menu; every test here that presses an arrow means the
   // Grid's cursor, the way every one of them was written before focus existed. The focus model's own
   // tests are in `tests/build-focus.test.ts`.
   build.dispatch({ kind: "focus", target: "grid" })
   return build
 }
 
-/** `spikeContext()`, with the neutral draft baked in from the start so every place that builds a
+/** `starterContext()`, with the neutral draft baked in from the start so every place that builds a
  *  session from it and every place that renders from it agree on what was picked. */
-function neutralContext(): ReturnType<typeof spikeContext> {
-  return { ...spikeContext(), nexusDraft: NEUTRAL_NEXUS_DRAFT }
+function neutralContext(): ReturnType<typeof starterContext> {
+  return { ...starterContext(), nexusDraft: NEUTRAL_NEXUS_DRAFT }
 }
 
 
@@ -67,7 +67,7 @@ test("the frame is exactly the terminal's size, at the minimum and at the maximu
   assert.equal(screenAt(MAXIMUM).frame.width, 104)
   assert.equal(screenAt(MAXIMUM).frame.height, 32)
   // 1 border + 48 tiles + 1 border + 30 panel = 80, and the same arithmetic at two columns per tile
-  // is 128 — engine.md 3.1's "the two compositions fall out of one number" — is where the floor and
+  // is 128 — the Grid page's "the two compositions fall out of one number" — is where the floor and
   // the switch to wide tiles still are. Since the menu's divider became the Grid's west side
   // (2026-09-29) the panel takes 29 of those columns: 49 tiles at 80, and at 128 the 48 wide tiles
   // fill 127 of them, centred.
@@ -121,7 +121,7 @@ test("the Grid pane is a closed rectangle: a line directly above, below, and bes
       assert.ok(!blank(gridBox.right, y), `${glyphPack}: a gap in the right side at row ${y}`)
     }
     // The rules meet the frame and the divider in a real junction, not a line running past them. The
-    // divider starts at the top rule rather than crossing it (gate 5F: the top bar runs the whole
+    // divider starts at the top rule rather than crossing it (the top bar runs the whole
     // width), so its top end is a tee, not a crossing.
     // Here the view touches the map's west edge, so the west side and its corners are the map's edge,
     // in its own style and the quiet edge colour; the east corners, where no heavy side meets, are
@@ -134,7 +134,7 @@ test("the Grid pane is a closed rectangle: a line directly above, below, and bes
   }
 })
 
-test("engine-3.3-markers: a Grid side goes soft where there is more Grid, and heavy where there is not", () => {
+test("the Grid's sides: a side goes soft where there is more Grid, and heavy where there is not", () => {
   // Hard against the Grid's north-west corner: nothing north of here, nothing west of here.
   const corner = screenAt(MINIMUM, (build) => {
     build.run([{ kind: "move-cursor", dx: -999, dy: -999 }])
@@ -183,9 +183,9 @@ test("engine-3.3-markers: a Grid side goes soft where there is more Grid, and he
   assert.equal(isSoftEdge(middle.frame, midColumn, middle.layout.offset.row), false, "the outer top border")
 })
 
-test("engine-3.3-readout: the bottom bar is one contextual line, and the largest view shows more Grid than the floor's", () => {
-  // The owner, 2026-09-30 (feedback F59): "The 'view x y' position is not needed." The weight of the
-  // Grid rectangle's sides is the signal that there is more Grid (the markers tests above and below),
+test("the bottom bar: it is one contextual line, and the largest view shows more Grid than the floor's", () => {
+  // The owner, 2026-09-30: "The 'view x y' position is not needed." The weight of the
+  // Grid rectangle's sides is the signal that there is more Grid (the Grid's-sides tests above and below),
   // and the bottom bar's one row says what can be done.
   for (const terminal of [MINIMUM, MAXIMUM]) {
     const opening = screenAt(terminal)
@@ -205,7 +205,7 @@ test("the Grid drawn is the Grid under the camera, not the Grid's north-west cor
   const { layout, build, context } = scrolled
   // A south-east rock block, three-quarters of the way across a Grid whose north-west corner is the
   // only part that was ever on screen before. It should be drawn exactly where the camera puts it —
-  // which is the whole claim this gate makes about scrolling.
+  // which is the whole claim made here about scrolling.
   const tile = { x: 66, y: 31 }
   assert.equal(context.grid.tiles[tile.y * context.grid.width + tile.x], "terrain.rock")
   const cell = cellForTile(layout, build.state.camera, tile)
@@ -270,7 +270,7 @@ test("right after a placement the tile reads as built, and the status line says 
   assert.notEqual(cellAt(justPlaced.frame, cell.x, cell.y).glyph, "x", "no illegal block over the built structure")
   // Owner, 2026-09-27: "hatch placed (resources: 30) - [u] undo" — what is left, and the way back.
   assert.match(justPlaced.text, /Barracks placed \(resources: 60\) - \[u\] undo/, "the footer reports the success")
-  // Armed by its digit on the map, so the keyboard stays on the map, where the arming began (F30).
+  // Armed by its digit on the map, so the keyboard stays on the map, where the arming began.
   assert.equal(justPlaced.build.state.focus, "grid", "and the keyboard is back where the arming began")
   assert.equal(justPlaced.build.state.armed, null)
 })
@@ -324,7 +324,7 @@ test("every glyph on the frame is one cell wide, at both sizes and in both packs
 })
 
 test("the panel says nothing about an item until one is selected", () => {
-  // "Simple and direct" (Mario, accepting gate 5A) taken literally: a panel that is always full is
+  // "Simple and direct" (Mario, accepting the first build screen) taken literally: a panel that is always full is
   // a panel nobody reads, so the item's effect line appears only while something is armed.
   const idle = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" }))
   assert.doesNotMatch(idle.text, /Spawns swarmers/)
@@ -399,7 +399,7 @@ test("looking at an illegal tile reads quietly, trying to build there reads in r
 test("while the commit question is open, the status line asks it, whatever the ghost would say", () => {
   // A refusal is about what Enter would do right now; with the confirmation open, Enter does
   // nothing to the Grid, so the ghost and its refusal both step aside for the question.
-  // Since the owner's feedback F69 the question does not open over an armed building at all: `s` is
+  // The question does not open over an armed building at all: `s` is
   // refused, and the bottom line says so rather than what the ghost on rock would say — a command's
   // answer comes first. Cancelled, the question opens.
   const armed = screenAt(MINIMUM, (build, layout) => {
@@ -426,7 +426,7 @@ test("the budget on screen is the budget the reducer is enforcing", () => {
 
   // The Grid arrives in Explore Map, whose panel covers the menu; the budget is the menu's.
   build.dispatch({ kind: "focus", target: "menu" })
-  assert.match(show(), new RegExp(`\\* ${SPIKE_ALLOTMENT}[|+]`))
+  assert.match(show(), new RegExp(`\\* ${STARTER_ALLOTMENT}[|+]`))
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
   assert.match(show(), new RegExp(`\\* ${remaining(context, build.state)}[|+]`))
@@ -437,7 +437,7 @@ test("the budget on screen is the budget the reducer is enforcing", () => {
   build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
   // Back on the menu: move the highlight to the cheap turret, leaving the barracks row unselected.
   build.run([{ kind: "highlight", delta: 1 }, { kind: "highlight", delta: 1 }])
-  assert.ok(remaining(context, build.state) < SPIKE_CATALOG[0]!.cost, "not actually unaffordable")
+  assert.ok(remaining(context, build.state) < STARTER_CATALOG[0]!.cost, "not actually unaffordable")
   const frame = composeBuildFrame({ context, state: build.state, layout }, "monochrome")
   const barracksLine = constructLines(layout, context.catalog).find((line) => line.index === 0)
   assert.ok(barracksLine !== undefined)
@@ -494,7 +494,7 @@ test("the bottom line never names a key the keyboard adapter does not bind", () 
 
 test("no header or footer line is cut off at the 80-column floor", () => {
   // 80x24 is the acceptance target, and the Grid pane is only 49 columns of it. Every line
-  // below has been truncated mid-word at some point in this gate's own history and only a
+  // below has been truncated mid-word at some point and only a
   // screenshot showed it, so each one is now asserted whole at the narrowest size that must work.
   const { text } = screenAt(MINIMUM)
   assert.match(text, /TERMINAL NEXUS build phase/)
@@ -503,7 +503,7 @@ test("no header or footer line is cut off at the 80-column floor", () => {
   const exploreLine = bottomLine(exploring.context, exploring.build.state, null).text
   assert.ok(exploring.text.split("\n")[exploring.layout.footerRow]?.includes(exploreLine), `"${exploreLine}" is cut`)
   const explore = exploring.text
-  // Against the divider, which here is the map's own west edge (the spike map's fence: a rail or a post).
+  // Against the divider, which here is the map's own west edge (the starter map's fence: a rail or a post).
   assert.match(explore, /\[e\] Explore Map {11}>[|+]/, "the Explore Map row, whole")
   const menu = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" })).text
   assert.match(menu, /\| {23}\* 100[|+]/, "the panel's credits line, whole")
@@ -520,7 +520,7 @@ test("a row that costs more than is left cannot be armed: it flickers and says w
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
-  assert.ok(remaining(context, build.state) < SPIKE_CATALOG[0]!.cost, "not actually unaffordable")
+  assert.ok(remaining(context, build.state) < STARTER_CATALOG[0]!.cost, "not actually unaffordable")
   const before = build.state.ack?.seq ?? 0
   build.handleData("1", layout)
   assert.equal(build.state.armed, null)
@@ -538,7 +538,7 @@ test("a row that costs more than is left cannot be armed: it flickers and says w
 test("on a Grid short enough to shrink the panel, the detail block is dropped rather than drawn over the footer", () => {
   // `isGated` deliberately never gates a Grid that fits the screen entirely ("a small tutorial Grid
   // is never gated"), so the viewport — and with it the panel's height — can be much shorter than
-  // the spike's. A detail block that just keeps writing downward overwrites the pinned bindings,
+  // the starter map's. A detail block that just keeps writing downward overwrites the pinned bindings,
   // then the footer's position readout, then the controls line. Found by review, not by use: no
   // Grid this small is wired up today, and nothing in the layout prevented it.
   const small: GridTerrain = {
@@ -553,7 +553,7 @@ test("on a Grid short enough to shrink the panel, the detail block is dropped ra
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
 
   // The furniture that must survive, whole: the bottom bar's one line, narrower here, keeps whole
-  // words (it held a position readout and the key help until feedback F59).
+  // words (it once held a position readout and the key help).
   const full = bottomLine(context, build.state, armedPreview(context, build.state)).text
   const shown = (text.split("\n")[layout.footerRow] as string).replace(/^\s*\|\s*|\s*\|\s*$/g, "")
   assert.ok(shown.length > 0 && full.startsWith(shown), `"${shown}" is not the start of "${full}"`)
@@ -599,7 +599,7 @@ test("on a small Grid the panel's rows are drawn whole, however few fit: the Nex
   }
 })
 
-test("engine-3.3-markers: the soft border runs the whole Grid-pane segment, at both tile widths", () => {
+test("the Grid's sides: the soft border runs the whole Grid-pane segment, at both tile widths", () => {
   // A signal that only reaches some of a wide border is a signal a player can miss. The whole
   // segment beside the Grid pane goes soft together, at one column per tile and at two.
   const wholeSegmentIsSoft = (terminal: { columns: number; rows: number }): void => {
@@ -620,7 +620,7 @@ test("engine-3.3-markers: the soft border runs the whole Grid-pane segment, at b
 test("no line is drawn over another, at every terminal size in the supported range", () => {
   // The range is 48x16 to 72x24 tiles, and the screenshots only ever catch the sizes somebody
   // thought to capture. Every size in between is swept here instead: the frame stays the terminal's
-  // own size, the bottom bar keeps its one line (three until feedback F59), and the panel never
+  // own size, the bottom bar keeps its one line (it was once three), and the panel never
   // reaches it.
   for (let columns = 80; columns <= 106; columns += 1) {
     for (let rows = 24; rows <= 32; rows += 1) {
@@ -646,8 +646,8 @@ test("no line is drawn over another, at every terminal size in the supported ran
   }
 })
 
-test("engine-3.3-markers: the side border is soft on every row, not a broken column of carets", () => {
-  // The west border is the rule between the side panel and the Grid (gate 5F). A signal on only
+test("the Grid's sides: the side border is soft on every row, not a broken column of carets", () => {
+  // The west border is the rule between the side panel and the Grid. A signal on only
   // some rows there reads as a caret pointing at whichever panel row it lands beside — `> [1]
   // Barracks` looks selected. Soft the whole way down is what makes it read as a border instead.
   // Far enough in that all four sides have more Grid beyond them.
@@ -688,11 +688,11 @@ test("the cursor shows only while the Grid has the keyboard", () => {
   assert.equal(cellAt(onGrid.frame, gridCell.x, gridCell.y).style.inverse, true)
 })
 
-test("engine-3.3-markers: a map that names no edge style ends in a solid bar, on all four sides alike", () => {
+test("the Grid's sides: a map that names no edge style ends in a solid bar, on all four sides alike", () => {
   // Owner, 2026-09-27: the heavy edge must read the same horizontally and vertically — "the rectangle
   // needs to be a rectangle". A solid (reverse-video) bar is the same weight in both directions, in
   // every glyph pack, and needs no colour. Since 2026-09-29 a map may name its own edge style (the
-  // spike map's fence; every style is checked in `tests/build-edge.test.ts`); the solid bar is what a
+  // starter map's fence; every style is checked in `tests/build-edge.test.ts`); the solid bar is what a
   // map that names none gets.
   const { edgeStyle: _fence, ...unnamed } = neutralContext()
   const cornerLayout = buildLayout(MINIMUM, unnamed.grid)
@@ -742,7 +742,7 @@ test("the commit confirmation is a screen over the Grid: Battle Round 1, what it
     build.dispatch({ kind: "open-battle-round" })
   })
   assert.match(built.text, /Battle Round 1/)
-  // PERIMETER's own words for its first round (gate 6B), one sentence to a line.
+  // PERIMETER's own words for its first round, one sentence to a line.
   for (const order of ["A hostile force is inbound from the ridge.", "Hold the perimeter."]) assert.match(built.text, new RegExp(order.replace(".", "\\.")))
   assert.match(built.text, /\[s\] Start\b/)
   assert.doesNotMatch(built.text, /Keep building|\?\s*\|/, "one row, and no question")
@@ -764,7 +764,7 @@ test("the committed screen names the pick and the count, and the footer carries 
   assert.match(built.text, /1 structure planned/)
   assert.match(built.text, /\[esc\] menu/)
   // The committed screen a session draws when nothing starts a Pulse (no presenter here): the plan is
-  // frozen and the status line says so — it no longer promises a Pulse "would begin here" (gate 6A).
+  // frozen and the status line says so — it no longer promises a Pulse "would begin here".
   assert.match(built.text, /Build committed - 1 planned\./)
   assert.doesNotMatch(built.text, /would begin here/)
 })
