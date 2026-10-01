@@ -2,7 +2,7 @@
 
 **Document role:** How the engine is meant to be shaped, and which parts of that are settled
 **Status:** Canonical direction; implementation is gated by milestone documents
-**Canon version:** 2.30
+**Canon version:** 2.31
 **Updated:** 2026-09-30
 **License:** Apache-2.0
 
@@ -796,6 +796,23 @@ needs to know something, the event carries it or the projection exposes it.
 `PlayerView` contains only visible, legal information for one player and never exposes an unrevealed
 plan.
 
+### 7.1 Logs — RULE for where a log is written and read; GUIDANCE for which events exist
+
+A log is a record of what happened, for the people and agents who read it afterwards — never an input.
+One structured shape serves every log (`src/log/`). An event is **declared before it is logged**: its
+name, its default level (error, warn, info, debug, trace), what it means, and each property's type and
+meaning. An entry is a sequence number, a timestamp, a level, the event and its plain JSON properties.
+A logger takes its clock as an argument and keeps a bounded memory (owner, 2026-10-01).
+
+**The kernel and the match layer never log, and nothing the rules decide reads a log.** The kernel has
+no clock; its record is its ordered events (above), from which `grid`'s battle report is derived
+afterwards, at the same levels. The **Activity Logs** record what a player did and what the game
+answered — commands, refusals, placements, settings, the Pulse's start and result, errors. They are
+written from the shells and the Build Phase's session, never from inside a reducer. The Build Phase's
+state reads them only to show them, in its Activity logs window. Which events exist is GUIDANCE: an agent
+adds one for the interaction a pull request asks about, and removes it once answered
+(`docs/ui-patterns.md` 15.2).
+
 ---
 
 ## 8. Content interfaces — GUIDANCE
@@ -1563,6 +1580,11 @@ run the terminal's own screen loops — the menu, the Build Phase, Pulse playbac
 terminal: it converts frames to pixels, taps and keys to terminal bytes, and settings to browser
 storage, and decides nothing about what the game shows or does. A terminal at 80 × 24 stays the
 acceptance target; the page never is one.
+
+Tools **around** the screen are the page's to add, because they serve the feedback loop
+(`docs/ui-patterns.md` section 15): text boxes that hold the settings and Activity Logs exports, and
+demo buttons that start the Build Phase from a key script with given settings (owner, 2026-10-01). The
+game's own screen and behaviour stay the terminal's.
 
 ---
 

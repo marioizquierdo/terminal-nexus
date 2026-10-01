@@ -143,6 +143,9 @@ hours. What made the loop itself work, rather than any one feature:
    as well as in the chat, so a new session, or Mario on another machine, finds it without scrollback.
 8. **Say what a device cannot test.** The phone's key bar only taps; holds need a laptop. Each
    pull request says which checks need which device, so a phone review is not mistaken for a full one.
+9. **A proposal is cheap; write it before building it.** The deep dive on a feedback pipeline took an
+   hour, and Mario cut it to something far simpler the next morning — nothing built was thrown away.
+   For a large idea, write the plan, the risks and a milestone first, and expect the owner to trim it.
 
 ## Habits to keep
 

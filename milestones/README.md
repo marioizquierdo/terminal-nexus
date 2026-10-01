@@ -2,7 +2,7 @@
 
 **Document role:** Milestone index — the sequence, current status, and how this folder differs from `specs/`
 **Status:** Canonical index (not a versioned canon document — see below)
-**Updated:** 2026-09-30
+**Updated:** 2026-09-29
 **License:** Apache-2.0
 
 ## Why milestones live here, not in `specs/`
@@ -74,13 +74,6 @@ needed the quality.
 | [9 — Mission Cutscenes](milestone-09-mission-cutscenes.md) | GATED | 9 | Can a mission declare and play its own briefing, exchanges, barks, and debrief? |
 | [10 — First and Second Missions](milestone-10-first-and-second-missions.md) | GATED | 10 | Do PERIMETER (polished) and RIGHT OF SALVAGE (new) together read as a real campaign opening? |
 | [12 — Content and Balance Iteration](milestone-12-content-iteration.md) | GATED | 11, repeating | Does each new card make a run more interesting and let a mission teach it — measured, not asserted? |
-| [13 — Feedback Loop](milestone-13-feedback-loop.md) | GATED | proposed, not placed | Can a player point at something in the game, say what they think, and have it arrive — replayable — where the people and agents who act on it will see it? |
-
-**Milestone 13 is a proposal (2026-09-30)**, written at Mario's request after the menu spike: notes made
-inside the game that carry everything needed to replay them, sent to a pull request, an issue or a
-file, and an agent that sorts them against the canon. It has no place in the build order until he gives
-it one; the recommendation is its first three gates right after Milestone 6
-([`../docs/feedback-pipeline.md`](../docs/feedback-pipeline.md) has the reasoning).
 
 Only the row marked **CURRENT** is implementation authority; every `GATED` row is planning context; it
 gains authority when its own dependencies (named in its own file) are met and it is looked at and

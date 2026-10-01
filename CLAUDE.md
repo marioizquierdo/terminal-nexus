@@ -19,12 +19,13 @@ On Claude Code on the web:
   `docs/ui-patterns.md`: its goals (section 0) and its checklist for a new screen first, then the
   patterns you touch. When two rules disagree the goals decide, and when your change adds, bends or
   retires a pattern, update that document in the same pull request;
-- when a choice is Mario's to feel — a timing, a look, whether a feature should exist — put both
-  answers behind an **Experiment** (Settings → Experiments in the Build Phase, `d` jumps there;
-  `src/build/experiments.ts`), ask him in the pull request to flip it and to paste the **settings export**
-  as a comment, and start the game with `--settings "<that text>"` to see what he saw; he asked for
-  exactly this (AGENTS.md Section 5). Remove an Experiment once its question is answered, normally
-  before the pull request is accepted;
+- close the loop by playing (AGENTS.md Section 5; `docs/ui-patterns.md` section 15): when a choice is
+  Mario's to feel — a timing, a look, whether a feature should exist — put it behind an **Experiment**
+  (Settings, `d` jumps there; `src/build/all-settings.ts`), and when you need to know what happened, an
+  **Activity Logs** event and filter (`src/log/activity.ts`, exported from the game menu). Ask him in the
+  pull request to play and paste the export as a comment, and replay it with `--settings "<that text>"`;
+  he asked for exactly this. Remove an Experiment once its question is answered, normally before the
+  pull request is accepted;
 - size a pull request's **Demo** to the change — a code block, screenshots, a GIF, or a playable page
   only when it must be played (the `pr-description` skill);
 - stop with evidence for Mario rather than continuing to the next gate;

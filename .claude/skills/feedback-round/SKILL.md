@@ -1,6 +1,6 @@
 ---
 name: feedback-round
-description: Run one round of owner (Mario) feedback end to end — log his words item by item, turn it into a gate, split the work across parallel agents in worktrees, merge and reconcile it, write the canon text and gate report, regenerate evidence, republish the playable page, and rewrite the pull request. Use whenever Mario sends playtest feedback or a pasted settings export, or when a change is big enough to split across several agents. Read it before spawning your first worktree agent.
+description: Run one round of owner (Mario) feedback end to end — log his words item by item, turn it into a gate, split the work across parallel agents in worktrees, merge and reconcile it, write the canon text and gate report, regenerate evidence, republish the playable page, and rewrite the pull request. Use whenever Mario sends playtest feedback, a pasted settings export or an Activity Logs export, or when a change is big enough to split across several agents. Read it before spawning your first worktree agent.
 ---
 
 # A feedback round, start to finish
@@ -15,8 +15,12 @@ Mario writes long, generous, specific feedback, and the second reading finds wha
 Look for: an item that contradicts a canon rule (say so, and reverse it by his words, not yours); an
 item that *sounds* built but only half is (round 3's "keep scrolling while armed" — the agent built
 "a click activates" and missed the scrolling half); a **pasted settings export** (that is answers, not
-description — see `AGENTS.md` Section 2, item 1); and an ambiguity to register rather than guess ("press
-`b`" — a letter, or the building's digit?).
+description — see `AGENTS.md` Section 2, item 1); a **pasted Activity Logs export** (evidence of what
+happened: its header names the build and the filter, each line is one event, oldest first — replay the
+moment with his settings and the keys it implies, and read it against the event's description in
+`src/log/activity.ts`); and an ambiguity to register rather than guess ("press `b`" — a letter, or the
+building's digit?). Screenshots and voice notes arrive as ordinary text and pictures: log them the same
+way.
 
 ## 1. Log it before building it
 

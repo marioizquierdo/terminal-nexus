@@ -137,6 +137,23 @@ Milestone 1's and did not change. 6B and 6C wait for the owner's word.
 > - [x] a prompt to start the next gate in a new session (F86);
 > - [x] tests, canon, pictures and the pull request.
 
+> **Feedback loops — the owner's direction, 2026-10-01**
+> ([`../docs/feedback/2026-10-01-feedback-loops.md`](../docs/feedback/2026-10-01-feedback-loops.md),
+> F87-F96, on a pull request of its own; tooling and a title-menu screen, not gate work — it does not
+> start 6B). Definition of done:
+>
+> - [ ] the proposed feedback pipeline parked, Milestone 13 withdrawn (F87);
+> - [ ] the feedback loop written into the design, the settings named as the agent's way to ask, and the
+>       workflow skills told how to use both (F88, F89);
+> - [ ] the Activity Logs: one structured logger whose events are declared in a schema, shared levels
+>       with `grid`'s battle report (F90);
+> - [ ] an Activity logs window in the game menu — newest first, a filter, an export — and the game
+>       logging into it (F91);
+> - [ ] the playtest page holding both exports, with demo buttons for a pull request's demos (F92);
+> - [ ] an About screen on the title menu (F93); somewhere public for updates researched (F94);
+> - [ ] a quality pass and an audit of how an agent finds the feedback loop from `AGENTS.md` (F96);
+> - [ ] tests, canon, pictures, the playable page and the pull request.
+
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
 > how the Pulse resolves — that stays the deterministic kernel, unmodified. What is new is the
 > player-facing moment around it: the explicit trigger, knowing when it is over, and what the screen

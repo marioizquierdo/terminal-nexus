@@ -1,6 +1,6 @@
 # Terminal Nexus agent instructions
 
-**Canon version:** 2.30
+**Canon version:** 2.31
 
 These instructions apply to every coding agent and human-assisted coding session in this repository.
 
@@ -258,13 +258,20 @@ is a title, a subtitle, a description and its numbers; Settings is in titled sec
 is declared once with its tier — player, experiment or tuned (`src/build/all-settings.ts`). It does not
 start 6B; the prompt that does is in `docs/next-steps.md`.
 
+**Feedback loops** (2026-10-01,
+[`docs/feedback/2026-10-01-feedback-loops.md`](docs/feedback/2026-10-01-feedback-loops.md), F87-F96,
+canon 2.31, on a pull request of its own): the loop is written into the design (`docs/ui-patterns.md`
+section 15); the **Activity Logs** — one structured logger whose events are declared in a schema
+(`src/log/`), and a game-menu window that filters and exports them; demo buttons on the playtest page;
+and an **About** screen on the title menu. It does not start 6B either.
+
 So the authorised work for a new session is, in order:
 
 1. **whatever the owner's most recent feedback asks for**, if any exists since
    `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
    outstanding or that everything still is; **a pasted settings export is feedback**: start the game
    with it (`--settings`), and settle each Experiment it answers — adopt the value as the default,
-   delete the Experiment, record the answer;
+   delete the Experiment, record the answer; a pasted Activity Logs export is evidence of what happened;
 2. **the current milestone's active gate** — gate 6A has nothing left to build until he has played
    it (Q66 is answered; his key-release probe still says whether his iTerm2 reports releases); the next gate waits for his word, and when it comes it
    is the next gate in the build order
@@ -476,6 +483,10 @@ deleted, and the renderer must be replaceable without one simulation test changi
   under-specifies so players and their agents can extend it. What the project has to prove is that
   ANSI characters are exciting and legible — when a session must choose between enriching the story
   and making the Grid clearer, **the Grid wins**.
+- **Logs are one structured shape** (`src/log/`): an event is declared — name, default level, meaning,
+  typed properties — before anything logs it; a logger takes its clock as an argument and keeps a bounded
+  memory. **The kernel and the match layer never log**, and nothing the rules decide reads a log; `grid`'s
+  battle report shares the same levels.
 - Prefer direct code for the current proof. Extract a framework only after two real uses reveal the
   boundary.
 
@@ -502,30 +513,26 @@ deleted, and the renderer must be replaceable without one simulation test changi
   artifacts, or pushing directly to `main`.
 - Update `README.md`, `DEVELOPMENT.md`, the dev container, CI, and agent instructions together when
   canonical development commands change.
-- **Ask Mario to feel a choice through an Experiment** (owner direction, 2026-09-26 and 2026-09-28:
-  "The agent should feel free to add experimental flags anytime they need particular feedback from
-  me, so I can try with and without them, adjust speed settings, etc until it feels right").
-  **Settings** (Esc on the menu, then `s`, in the Build Phase) lists every shown setting in titled
-  sections — the player's own saved settings under Display, and the **Experiments**, live-editable and
-  never saved, under Keyboard navigation, Effects and the placeholder Pulse; `d` jumps to the first
-  Experiment. **Every setting is declared once, with its tier, in `src/build/all-settings.ts`**:
-  *player* (shown and saved), *experiment* (shown for Mario's playtests, exported), or *tuned* (a
-  constant in code) — plus its section, label, question, values and default; moving one between tiers
-  or sections is a one-word edit (F85). When a session has a fork the owner
-  should feel rather than read about — a timing, a look, a movement rule, or whether a new feature
-  should exist at all — add an Experiment defaulting to the recommended answer and **ask him in plain
-  words to flip it**: "press `d`, set Battle Round flash to 300 ms, and tell me which you prefer." Then
-  **ask him to paste the export into the pull request**: Settings' **Export settings** (`e`) copies
-  every setting and experiment as `name = value` text, changed experiments first; reproduce what he
-  had with `--settings "<pasted text>"` (`terminal-nexus --spike` or `scripts/playtest.mjs`) or
-  `#settings=` on the browser page. A new behaviour whose worth is in doubt ships with an on/off
-  Experiment, so he can switch it off without a rebuild. This is Section 6's "make it observable" in
-  its preferred form, ahead of a command-line flag or a registered question. Every Experiment names
-  the question it serves and is **normally deleted before its pull request is accepted**: his value
-  becomes its default and its tier becomes *tuned*, with who chose it and when (canon 2.28, F76; one list since F85); a
-  few stay longer — a number that depends on the player's keyboard, placeholder data — or graduate
-  into real Settings. Settings is only in the Build Phase today; a screen without
-  it falls back to a command-line flag.
+- **Close the loop by playing: a pull request is a question Mario — or a friend he shares the page
+  with — answers by playing it** (owner, 2026-09-26, 2026-09-28 and 2026-10-01; the design is
+  [`docs/ui-patterns.md`](docs/ui-patterns.md) section 15). Feedback comes back the ordinary way, as words,
+  screenshots and voice; the build carries the tools that make it precise, sized to your question:
+  - **an Experiment** for a choice to feel — a timing, a look, a movement rule, whether a new behaviour
+    should exist ("The agent should feel free to add experimental flags anytime they need particular
+    feedback from me"). Declare it once on the *experiment* tier of `src/build/all-settings.ts` (beside
+    *player*, shown and saved, and *tuned*, a constant), defaulting to your recommendation, and ask in
+    plain words: "press `d`, set Battle Round flash to 300 ms, tell me which you prefer, and paste the
+    export". `--settings "<pasted text>"` (`--spike`, `scripts/playtest.mjs`) or `#settings=` replays
+    what he had. His value becomes the default and the tier *tuned*, with who chose it and when,
+    normally before the pull request is accepted — this is Section 6's "make it observable" in its
+    preferred form;
+  - **an Activity Logs event and filter** for *what happened* — declared in `src/log/activity.ts`,
+    exported from the game menu's **Activity logs** (Esc, `a`), pasted back the same way, removed once
+    answered;
+  - **the claude.ai playtest page** when it must be played: both exports land in text boxes under the
+    screen, and demo buttons open the game where the question is.
+  Settings and the Activity logs window are in the Build Phase only today; elsewhere a command-line flag
+  is the fallback.
 - **Size the pull request's Demo to the change** (owner, 2026-09-28: "we have to be a little more
   smart about how many tokens we spend building a playable demo"): a code block or nothing for a
   change that does not show on screen, screenshots for one that changes how things look, a GIF for
@@ -572,7 +579,7 @@ This will happen. It is expected, and there is a procedure — see
    *look* at both answers beats a paragraph arguing for one. This is the preferred move and it is
    cheap far more often than it looks. In the Build Phase the form is an **Experiment** in Settings,
    which he flips with `d` and reports back by pasting the export — and the pull request asks him to
-   (Section 5).
+   (Section 5); for "what happened?", an Activity Logs filter.
 3. **Register it** if it is genuinely the owner's call: add a `Q<n>` row with the question, why it
    blocks, the options, their costs, and **a recommendation**. The validator rejects an `OPEN`
    question with no recommendation, because a question without one just moves the work to Mario.

@@ -2,7 +2,7 @@
 
 **Document role:** The working guide to how every interactive screen looks and behaves
 **Status:** WORKING — built on the Build Phase; not canon until the owner accepts it and it is promoted into `specs/engine.md` Section 9
-**Updated:** 2026-09-30 (rewritten by pattern rather than by history, F74; the screen as the menu spike's second round leaves it, F61-F76)
+**Updated:** 2026-10-01 (feedback loops as one section, the Activity logs window, F87-F96; rewritten by pattern rather than by history, F74)
 **License:** Apache-2.0
 
 ## How to use this document
@@ -14,8 +14,8 @@ For any agent or person about to build or change a screen, a menu, a popup, an e
 - **A change that breaks a rule or adds a pattern updates this document in the same pull request**, and
   says why. A new pattern gets a name here — a *hand-off*, a *card reveal*, a *see-through style* — so
   the next screen reuses it; use the names in code comments and pull requests too.
-- **Numbers live in the code, not here**: the table of tuned values and the Experiments list
-  (`src/build/experiments.ts`). This document says what a number is for.
+- **Numbers live in the code, not here**: every setting, Experiment and tuned value is declared once in
+  `src/build/all-settings.ts`. This document says what a number is for.
 - The canon's interface rules are `specs/engine.md` 3.3, 9.2 and 9.7 and `specs/ascii-effects.md` 1.2;
   where they speak, they win. `scripts/playtest.mjs` (the `playtest` skill) presses the keys for you.
 
@@ -29,7 +29,8 @@ For any agent or person about to build or change a screen, a menu, a popup, an e
 - [ ] Lists stop at their ends; taps and holds move them as they move the map cursor; Shift, PageUp/PageDown and Home/End jump to the ends.
 - [ ] Motion explains a change, then the screen is still.
 - [ ] It works under reduced motion, in monochrome, in ASCII, and at 80 × 24.
-- [ ] Anything the owner should feel rather than read about is an Experiment.
+- [ ] Anything the owner should feel rather than read about is an Experiment; an interaction you want
+      reports on logs an event (section 15).
 
 ## 0. The goals
 
@@ -56,8 +57,9 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
    one key, so speed is never required — on the map and in every list alike.
 9. **The world may style its own frame.** A map names its own edge ("even in ascii mode"); the chrome
    stays legible in monochrome and ASCII first.
-10. **Give him something to feel, not something to judge.** A fork ships as an Experiment he can flip,
-    and his exported settings are the answer.
+10. **Give him something to feel, not something to judge — and a way to say what happened.** A fork
+    ships as an Experiment he can flip; an interaction in doubt records what it did; his exports are the
+    answer, and every build can be played from a link (section 15).
 11. **Degrade gracefully, enhance progressively.** A bare terminal — ASCII, monochrome, no mouse, no
     key-up — works; Unicode, truecolour, a pointer and key releases make it better, never required.
 12. **Keep what the player made safe.** Leaving asks, a stray key never loses a plan, undo exists.
@@ -435,7 +437,26 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 - **Nothing the player does changes what the Pulse did**: it was resolved before the first frame, so
   Watch again only restarts the clock; centring on the Nexus is the same named command a key sends.
 
-## 15. Experiments and tuned values
+## 15. Feedback loops
+
+**The game is built to be judged by playing it.** Every pull request ends with a build the owner — and,
+later, friends he shares a link with — can play on a laptop or a phone, and the game carries the tools
+for the answer to come back precise: what to feel, what happened, which build. Feedback itself travels
+the ordinary way — words, screenshots and voice in the pull request or the session (owner, 2026-10-01).
+Three tools, all sized per pull request by the agent asking:
+
+- **Experiments** ask *which feels right?* — a setting he flips (15.1), returned by the settings export.
+- **Activity Logs** answer *what happened?* — events the game records, filtered and exported from the
+  game menu (15.2).
+- **The claude.ai playtest page** is where both meet: the build is a link, both exports land in text
+  boxes under the screen, and a demo link opens the game exactly where the question is (15.3).
+
+The determinism underneath — a seeded kernel, a Build Phase with no clock, every input a named command,
+the build stamped on every export — is what makes a pasted export reproducible with `--settings` and
+`--keys`. Keep it that way.
+
+### 15.1 Experiments and tuned values
+
 
 - **Every setting is declared once, with its tier** (F85, `src/build/all-settings.ts`): **player** —
   shown in Settings and saved; **experiment** — shown for the owner's playtests, never saved, written
@@ -458,6 +479,31 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
   exports.
 - **Never copy a tuned number into prose**; point at the setting.
 
+### 15.2 Activity Logs
+
+- **One structured logger** (`src/log/`): every event is declared before it is logged — its name, its
+  default level (error, warn, info, debug), a sentence on what it means, and each property's type and
+  meaning — so the schema in `src/log/activity.ts` is the documentation, and `activity.log(event, props)`
+  accepts only what it declares. Entries are kept in memory, the oldest dropped past a limit.
+- **The Activity logs window** — the game menu's `[a]` — lists them newest first under a filter, shows
+  the highlighted one in full, and exports what the filter shows (oldest first) to paste into a pull
+  request. It is deliberately plain.
+- **An agent asking about an interaction** adds the event where it happens (never in the kernel), and a
+  filter for its question at the top of `ACTIVITY_FILTERS` (the window opens on the first), then asks in
+  the pull request: "play it, open Esc → Activity logs, export, paste it here". Remove both once
+  answered, as an Experiment is removed.
+
+### 15.3 The playtest page
+
+- **The build is a link**: the browser playtest page published as a private claude.ai page, the same
+  screen loops as the terminal (`specs/engine.md` 10.2). Tools *around* the screen are fair game there;
+  the game's own screen never changes for it.
+- **Exports land beside the screen**: the settings and the activity logs each fill a text box with a Copy
+  button, so a phone can paste them.
+- **Demo links open the game where the question is**: `#keys=` and `#settings=` in the address, and the
+  page's own buttons for the pull request's demos (`scripts/build-web.mjs --demos`). Each demo names what
+  to try.
+
 ## 16. Words
 
 - **Plain words on screen**, no internal ids; each Nexus named for its faction ("Citizen Nexus").
@@ -471,6 +517,9 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 ## Where the rules came from
 
 The owner's words, item by item, with what was done about each, newest first:
+[`2026-10-01-feedback-loops`](feedback/2026-10-01-feedback-loops.md) (F87-F96),
+[`2026-09-30-menu-spike-followup`](feedback/2026-09-30-menu-spike-followup.md) (F82-F86),
+[`2026-09-30-menu-spike-round-3`](feedback/2026-09-30-menu-spike-round-3.md) (F77-F81),
 [`2026-09-30-menu-spike-round-2`](feedback/2026-09-30-menu-spike-round-2.md) (F61-F76),
 [`2026-09-30-menu-spike`](feedback/2026-09-30-menu-spike.md) (F52-F60),
 [`2026-09-29-pr48-round-3`](feedback/2026-09-29-pr48-round-3.md) (F47-F51),
