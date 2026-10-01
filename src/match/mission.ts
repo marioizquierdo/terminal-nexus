@@ -16,7 +16,7 @@
 //
 // campaigns.md imagines scripted actions running "inside the kernel, as scripted intents"; the kernel has
 // no door for intents yet (engine.md Section 8's narrow hook is unbuilt), so between ticks is the nearest
-// place that needs no kernel change — a finding, recorded in evidence/gate-6b-report.md Section 7.
+// place that needs no kernel change — a finding, recorded in docs/history/reports/2026-09-30-round-loop-and-missions.md Section 7.
 //
 // One consequence is deliberate and visible: **the kernel's victory rule still ends a Pulse the moment a
 // side is wiped out**, so a reinforcement scheduled after that tick never comes. The victory check reads

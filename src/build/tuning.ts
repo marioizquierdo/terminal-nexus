@@ -1,4 +1,4 @@
-// **Tuned values** — the settings on the tuned tier, as a table (docs/ui-patterns.md, "Experiments and
+// **Tuned values** — the settings on the tuned tier, as a table (docs/system-design/ui-patterns.md, "Experiments and
 // tuned values"). They are declared with every other setting in `src/build/all-settings.ts`, each with
 // who chose it and when; this file is the table pure code with no state to hand reads — the view's
 // timings, the reducer's arming rules — and the names an old settings export may still use.

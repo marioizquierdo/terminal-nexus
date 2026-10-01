@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url"
 import { CHROMIUM } from "./lib/terminal-capture.mjs"
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
-const outputPath = join(repoRoot, "evidence", "screenshots", "sub-explosions-illustration.png")
+const outputPath = join(repoRoot, "docs", "screenshots", "sub-explosions-illustration.png")
 
 const { EFFECT_RECIPES, easeOut } = await import("../src/view/effects/recipes.ts")
 const blast = EFFECT_RECIPES["fx.blast.detonation"]

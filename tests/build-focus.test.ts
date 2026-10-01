@@ -1,4 +1,4 @@
-// Focus and modes (docs/ui-patterns.md, "The screen and the keyboard"): the menu on the left of the map,
+// Focus and modes (docs/system-design/ui-patterns.md, "The screen and the keyboard"): the menu on the left of the map,
 // one place with the keyboard — the menu's highlight bar or the map cursor — the map's three modes
 // (placing, Explore Map, plain navigation), clicks that activate what they land on, where arming puts
 // the cursor, and finishing going back to where it began. Driven through raw bytes into the real

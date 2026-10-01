@@ -1,0 +1,181 @@
+# Terminal Nexus specifications
+
+The project canon is this document set, not one monolithic file. Each document has one job, and the
+milestone marked **CURRENT** controls implementation scope.
+
+Run `./scripts/check-repository.sh` first — it prints the canon version and the active gate, and it
+enforces the invariants below rather than trusting anyone to remember them.
+
+## Start here
+
+**There is code now, and Milestone 1 is accepted.** Milestone 1 built the Pulse Playground: a
+deterministic kernel, a scenario format, a levelled report, and an ASCII view you can watch. It runs
+as `grid` (`./bin/grid.ts`) — the engine, editor, and replay tool; a separate `terminal-nexus`
+executable, not built yet, is what will launch the actual game. `DEVELOPMENT.md` has the commands,
+and `docs/history/reports/2026-08-21-pulse-playground.md` and `docs/history/reports/2026-08-26-quality-and-effects.md` are what the two gates found — including
+the places where the canon turned out to be wrong.
+
+**The roadmap went campaign-first at canon 2.8, and the docs/milestones moved out at 2.9.** Rather than
+complete the Pulse kernel horizontally (routing, economy, production, visibility, replay format, all
+at once), the project now builds its campaign one level at a time. Building the first level turned
+out to need most of the game's still-unbuilt systems at once — a menu, a campaign screen, a real
+Build Phase, the Pulse's own player-facing moment, an economy, a Commander, cutscenes — so it is not
+one milestone, it is a sequence of ten, tracked in their own **[`docs/milestones/`](milestones)**
+folder rather than versioned here: they are notes for upcoming work, task trackers during work, and
+historical reference after, which is a different job than a document that only changes at a named
+canon version. The horizontal contract this replaced is preserved, unbuilt, in
+[`backlog-pulse-completion.md`](milestones/backlog.md).
+
+**Canon 2.10 recorded the owner's design notes on three things the campaign docs/milestones build
+against**: the input model ([`engine.md`](system-design/grid-engine.md) Section 9.7 — one command vocabulary behind
+keyboard, mouse, and an agent driver, with displayed hotkeys), a Commander Army as a bounded subset
+of its faction's pools ([`commander-armies.md`](game-design/commander-armies.md) Section 2.1 — the "deck" framing
+itself is retracted at canon 2.16, kept only as an idea), and missions as multi-Pulse trigger lists
+([`campaigns.md`](game-design/campaigns.md) Section 2.1). Milestones 3, 5, 6, 8, and 9 cite them; Q39 (declarative
+triggers versus a scripting API) is the one fork left for Mario.
+
+**Canon 2.11 named the single-player modes and put the experience before the content.** Mario
+re-scoped Milestone 2 to design and orientation: [`game-modes.md`](game-design/game-modes.md) is the vocabulary
+— **Campaign** as the first-time player experience and the world's canon, **Challenge** as seeded
+runs with a draft between battles — and [`docs/milestones/README.md`](milestones/README.md) now
+carries a build order (UX core first, then the two mode shells, then depth, then content) with small
+gates in every milestone, plus Milestones 11 (runs) and 12 (content iteration).
+
+**Canon 2.12–2.14 gave the first Nexus and the first Commanders a face.** Each Nexus is named for the
+faction that holds it, and the **Citizen Nexus** is an administrator rather than a weapon
+([`terminal-nexus-lore.md`](game-design/lore.md) Sections 3.1–3.2). A Commander is that Nexus's
+signature, bound by one of six affinities, and a Nexus power is a name plus a plain line of
+description over a small union of effect kinds in code
+([`commander-armies.md`](game-design/commander-armies.md) Sections 2.2 and 4.5). The game opens with **three
+Commanders** — two Citizens who play almost alike and one Ravel who does not (Section 4.6) — but
+shows a new player none of them upfront: Vasse's mission 1 is the whole first-time experience, and
+completing it unlocks the other two as campaign rows, each its own opening reusing PERIMETER's
+literal map with roles swapped ([`campaigns.md`](game-design/campaigns.md) Section 4.3, Q43 and Q47). Missions
+carry a bounded `ObjectiveDefinition` (Section 2.2) rather than a fixed length, resolved above the
+kernel's own unchanged victory check. Q45 and Q46 are answered, Milestone 2 is accepted, and a
+Commander Army's full composition — Nexus and faction, Commander, starting units and structures,
+blueprints and the tech tree, upgrades, Nexus powers, and Specials — is written down at canon 2.16
+([`commander-armies.md`](game-design/commander-armies.md) Section 2.1). Milestone 3 (Game Menu) is built and
+accepted; **Milestone 5 (Build Phase) is open at gate 5B**, its scrolling-and-placement spike having
+been accepted at canon 2.17 along with the three input findings it measured.
+
+For a new coding session, read:
+
+1. [`terminal-nexus-concept.md`](game-design/concept.md) — the one-page game definition.
+2. [`docs/milestones/README.md`](milestones/README.md) — the milestone sequence and its **CURRENT**
+   entry. Only that entry's own **Active gate** is authorized.
+3. [`open-questions.md`](milestones/open-questions.md) Section 4 — what is undecided, and what you may decide
+   alone.
+4. [`project-governance.md`](game-design/decisions.md) — authority, evidence loop, execution ledger, and
+   locked decisions.
+5. Only the sections of the supporting canon named by the active gate.
+6. Existing source, tests, and evidence before changing code.
+
+For game design or fiction, open the relevant document below rather than feeding an agent the whole
+repository.
+
+## How much authority does a statement have?
+
+Not every sentence in this canon carries the same weight, and treating them as if they did is how a
+sketch becomes an accidental requirement. Every section of [`engine.md`](system-design/grid-engine.md) — and, where it
+matters, of the other documents — declares one of:
+
+| Marker | Means | What you may do |
+| --- | --- | --- |
+| **RULE** | Committed. Something already depends on it | Follow it. Changing it needs owner acceptance and a canon bump |
+| **GUIDANCE** | A recommendation, not yet earned by working code | Follow it by default. Depart when the work shows better, and record why |
+
+Most of the design canon is **GUIDANCE**. It exists so that a session facing a fork has something
+better than a coin flip — not so that a session builds an interface nobody has needed yet.
+
+**Descriptive completeness is not authorization.** A shape described here is not a shape you may build
+today; the milestone marked CURRENT decides that.
+
+## Canon map
+
+**Product and world**
+
+- [`terminal-nexus-concept.md`](game-design/concept.md) — audience, match, promise,
+  differentiators, current scope.
+- [`terminal-nexus-lore.md`](game-design/lore.md) — universe, Prime Nexuses, Nexus Symbols,
+  Ancients, Originals, factions, ASCII semiotics, voice, story seeds.
+
+**Systems**
+
+- [`engine.md`](system-design/grid-engine.md) — the three worlds (state, Pulse, presentation), the Grid and its layers,
+  logical time, determinism, events, content sketches, rendering, and runtime direction. Start at its
+  Section 0.
+- [`ascii-effects.md`](system-design/effects.md) — the particle and effect system: the pure-function contract,
+  the starter vocabulary, and the craft rules behind it.
+- [`replay-format.md`](system-design/replay-format.md) — the `.replay.json` design: schema, log levels, and
+  soundness. Nothing here is built; it is a starting design for whichever level first needs it.
+- [`commander-armies.md`](game-design/commander-armies.md) — playable packages of Commander, units, structures,
+  upgrades, and Nexus powers. Rosters intentionally undefined.
+- [`game-modes.md`](game-design/game-modes.md) — the single-player modes and their shared vocabulary: Campaign
+  (first-time experience, canon), Challenge (seeded runs with a draft between battles), the run's
+  starting shape, content rules for both fronts, and the reference games each claim rests on.
+- [`campaigns.md`](game-design/campaigns.md) — mission and campaign structure, teaching, Citizen opening,
+  cutscenes, opponent policies, authoring tools. PERIMETER (Mission 1) is in active implementation
+  across [`docs/milestones/`](milestones)'s sequence.
+- [`backlog-pulse-completion.md`](milestones/backlog.md) — the horizontal "finish the kernel"
+  contract this roadmap replaced: routing, economy, production, visibility, replay hardening.
+  Preserved verbatim, pulled in level by level rather than built as one pass.
+
+**Process**
+
+- [`project-governance.md`](game-design/decisions.md) — canon maintenance, bounded autonomy, evidence
+  process, execution ledger, locked decisions, tests, deferred systems.
+- [`open-questions.md`](milestones/open-questions.md) — the durable queue of decisions waiting on Mario, each
+  with a recommendation.
+- [`templates/gate-report.md`](../.github/pull_request_template.md) — the fill-in template that closes a gate.
+
+**Reference (non-authoritative)**
+
+- [`ascii-art-references.md`](game-design/ascii-art-references.md) — where to learn terminal art and what to take
+  from each source.
+- [`docs/game-design/concept-art/README.md`](game-design/concept-art/README.md) — concept art index and the canon deltas each piece
+  implies.
+
+## Milestones
+
+Milestones are tracked in **[`docs/milestones/`](milestones)**, not here — see that folder's own
+`README.md` for the full ten-milestone sequence, its current entry, and why docs/milestones get a lighter,
+unversioned header instead of this document's own canon-version lockstep. The only thing repeated
+here is the shape: Milestone 1 (Grid Battles) is **COMPLETE** and accepted; the campaign's first level
+is being built as docs/milestones 2 through 10, one focused, checkable slice at a time, rather than as a
+single "Level 1" contract or a horizontal "finish the kernel" pass (preserved, unbuilt, in
+[`backlog-pulse-completion.md`](milestones/backlog.md)).
+
+Packaging, standalone binaries, SSH, and browser delivery are **deferred entirely**. They answer no
+question the game currently has, and they were previously blocking the questions it does have.
+
+Only the milestone marked **CURRENT** in [`docs/milestones/README.md`](milestones/README.md) is
+implementation authority, and only through its own **Active gate**. Future docs/milestones are planning
+context and must be looked at and promoted, not built merely because time remains.
+
+## Rules this index enforces
+
+The repository validator checks these mechanically, so they are worth knowing:
+
+- every document under `specs/` and `concept/` declares the same canon version as this file, and so
+  does `AGENTS.md`, which restates canon invariants as a summary and would otherwise drift silently;
+- every document carries **Document role**, **Status**, **Canon version**, **Updated**, and
+  **License** — `docs/milestones/*.md` files carry the same four fields minus **Canon version**, since
+  they are trackers, not versioned canon (`docs/milestones/README.md` explains why);
+- exactly one file in `docs/milestones/` is `CURRENT`, it declares an **Active gate**, and
+  `docs/milestones/README.md`'s own table agrees with it;
+- every `Q<n>` referenced anywhere under `specs/`, `concept/`, or `docs/milestones/` is defined in
+  [`open-questions.md`](milestones/open-questions.md), and every `OPEN` question carries a recommendation;
+- retired terminology stays retired. A line that must quote it — the concept-art index does — is
+  marked exempt.
+
+## Updating canon
+
+After an accepted gate, update the narrowest authoritative document, the execution ledger, the
+progress history, and the next milestone. Increment the shared canon version for semantic changes;
+the validator will tell you which documents you forgot.
+
+Do not duplicate a rule across files unless one location is explicitly a short summary linking to its
+authority. Lore facts belong in the lore document; implementation contracts belong in the engine;
+playable options belong in Commander Armies; mission content belongs in campaigns; undecided things
+belong in the open-questions register rather than in a hedge inside a specification.

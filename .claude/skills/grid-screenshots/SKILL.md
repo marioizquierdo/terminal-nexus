@@ -41,7 +41,7 @@ node scripts/capture-screenshots.mjs                      # every shot in the li
 node scripts/capture-screenshots.mjs --only mirror-melee  # one of them
 ```
 
-Output lands in `evidence/screenshots/`. The pipeline is tmux (a real PTY, so the ANSI backend takes
+Output lands in `docs/screenshots/`. The pipeline is tmux (a real PTY, so the ANSI backend takes
 the same path a person gets) → `capture-pane -e` (keeps the escape sequences, so colour survives) →
 HTML → headless Chromium at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 
@@ -90,7 +90,7 @@ Use `-l` on `send-keys`: without it tmux reads `,` and `[` as key names.
 
 ## What to look at, and in what order
 
-1. **The worst frame first** (`ascii-effects.md` craft rule 1). Late Pulse, both armies engaged,
+1. **The worst frame first** (`docs/system-design/effects.md` craft rule 1). Late Pulse, both armies engaged,
    several effects overlapping — `ravel-cascade` at the tick the chain runs. If that reads, the calm
    frames will. Designing the calm frame first guarantees a beautiful opening and an unreadable
    climax.

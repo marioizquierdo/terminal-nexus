@@ -29,9 +29,9 @@ authorizes) automatically. Just say what you want done; the agent orients itself
 fills and its early decisions blur; a fresh one re-orients from `AGENTS.md` and starts clean. Write the
 prompt so it (1) says what the owner has accepted or promoted, in his voice, so the session records it
 rather than assuming it; (2) names the milestone file, the one gate to take, and what not to start;
-(3) lists what to read (`docs/next-steps.md`, `docs/ui-patterns.md`, the relevant skills); and (4) says
+(3) lists what to read (`docs/milestones/next-steps.md`, `docs/system-design/ui-patterns.md`, the relevant skills); and (4) says
 how to finish (a gate report, and a pull request written with the `pr-description` skill). The prompt
-for the next milestone lives in [`next-steps.md`](next-steps.md); replace it when it is used.
+for the next milestone lives in [`next-steps.md`](milestones/next-steps.md); replace it when it is used.
 
 If you want a session to do exactly what an unattended session should do by default — pick up
 outstanding owner feedback and nothing else — a short prompt like this is enough:
@@ -44,7 +44,7 @@ Read CLAUDE.md and follow AGENTS.md. Orient yourself, tell me what's outstanding
 
 Measured on 2026-08-20: the task container provides **Bun 1.3.11** and **Node 22.22.2**; Deno is not
 installed. Milestone 1 dropped its Deno probe partly for this reason — see
-`milestones/milestone-01-grid-battles.md` Section 3.2. The pinned toolchain versions a session actually
+`docs/milestones/completed/milestone-01-grid-battles.md` Section 3.2. The pinned toolchain versions a session actually
 runs against are recorded fresh in each gate's evidence report, not here — re-check rather than
 assume this measurement still holds.
 

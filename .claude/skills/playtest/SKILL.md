@@ -22,7 +22,7 @@ node scripts/playtest.mjs --help
 ```
 
 Output lands in `.playtest/` (git-ignored): `<name>.txt` always holds every step's screen as text.
-Only for an image going into a pull request, add `--out evidence/screenshots` (keep each GIF under
+Only for an image going into a pull request, add `--out docs/screenshots` (keep each GIF under
 about 1 MB; six keys at 80x24 is about 200 KB).
 
 ## Key names
@@ -132,7 +132,7 @@ contentId, anchor, elapsedMs }]` yourself, or step
    expect. The per-step summary prints focus and the bottom line for each key.
 2. Then pictures: `--png final` or `--gif`. **Read the image before using it** — the text being right
    does not mean the picture is.
-3. For a pull request: re-run with `--out evidence/screenshots --name <descriptive-name>`, commit the
+3. For a pull request: re-run with `--out docs/screenshots --name <descriptive-name>`, commit the
    file, and embed it by its raw URL pinned to the pushed commit (the `pr-description` skill says how).
 4. A before/after pair: run the same script on `origin/main` (a worktree or `git stash`) and on the
    branch, with different `--name`s.

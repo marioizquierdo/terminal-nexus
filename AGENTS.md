@@ -6,7 +6,7 @@ These instructions apply to every coding agent and human-assisted coding session
 
 Section 4 below summarises invariants that are stated authoritatively in `specs/`. It is a summary,
 and when it disagrees with the canon the canon wins — the validator checks that the version above
-matches `specs/README.md`, so a canon bump that forgot this file fails the build.
+matches `docs/README.md`, so a canon bump that forgot this file fails the build.
 
 Terminal Nexus is a specification-driven project. The specifications are not decoration around the
 code — they remain the project's authority even now that Milestone 1's code exists: the canon
@@ -37,19 +37,19 @@ and often enough (Section 5; `DEVELOPMENT.md` has the details).
 
 Read in this order:
 
-1. [`specs/terminal-nexus-concept.md`](specs/terminal-nexus-concept.md);
-2. [`specs/README.md`](specs/README.md) and the milestone marked **CURRENT**, through its
+1. [`docs/game-design/concept.md`](docs/game-design/concept.md);
+2. [`docs/README.md`](docs/README.md) and the milestone marked **CURRENT**, through its
    **Active gate**;
-3. [`specs/open-questions.md`](specs/open-questions.md) Section 4 — what is undecided and why;
-4. [`specs/project-governance.md`](specs/project-governance.md), especially the execution ledger and
+3. [`docs/milestones/open-questions.md`](docs/milestones/open-questions.md) Section 4 — what is undecided and why;
+4. [`docs/game-design/decisions.md`](docs/game-design/decisions.md), especially the execution ledger and
    bounded autonomy;
 5. only the supporting canon sections named by the current gate;
 6. for interface work — a screen, a menu, a popup, an effect, a key —
-   [`docs/ui-patterns.md`](docs/ui-patterns.md): its goals and its checklist for a new screen, then
+   [`docs/system-design/ui-patterns.md`](docs/system-design/ui-patterns.md): its goals and its checklist for a new screen, then
    the patterns the change touches;
 7. existing source, tests, evidence, and recent changes.
 
-The canon controls product truth. The current gate controls implementation. Future milestones are
+The canon controls product truth. The current gate controls implementation. Future docs/milestones are
 context, not authorization.
 
 Before changing code, state:
@@ -59,7 +59,7 @@ Before changing code, state:
 - required automated and human evidence;
 - exclusions and stop conditions.
 
-Write them into a copy of [`specs/templates/gate-report.md`](specs/templates/gate-report.md) rather
+Write them into a copy of [`.github/pull_request_template.md`](.github/pull_request_template.md) rather
 than only into the chat. If they are not clear from the repository, that itself is the finding — say
 so before building something to fill the gap.
 
@@ -67,20 +67,20 @@ so before building something to fill the gap.
 
 **Milestone 1 is accepted.** Both gates — 1A, the Pulse Playground, and 1B, quality and effects — are
 implemented, evidenced, merged, and formally accepted by the owner (2026-08-26,
-`specs/project-governance.md` Section 5). Nothing about Milestone 1 itself is open work for a new
-session; [`milestones/milestone-01-grid-battles.md`](milestones/milestone-01-grid-battles.md) says so
+`docs/game-design/decisions.md` Section 5). Nothing about Milestone 1 itself is open work for a new
+session; [`docs/milestones/completed/milestone-01-grid-battles.md`](docs/milestones/completed/milestone-01-grid-battles.md) says so
 at its own top.
 
 **The roadmap went campaign-first, per the owner's own direction, at the same time** — and building
 the campaign's first level turned out to need most of the game's still-unbuilt systems at once, so it
-is a sequence of ten focused milestones, not one. They are tracked in
-**[`milestones/`](milestones/)**, their own folder, separate from versioned `specs/` since a milestone
+is a sequence of ten focused docs/milestones, not one. They are tracked in
+**[`docs/milestones/`](docs/milestones)**, their own folder, separate from versioned `specs/` since a milestone
 is a tracker checked off during work, not a document that only changes at a named canon version — read
-[`milestones/README.md`](milestones/README.md) first for the full sequence and why it looks this way.
+[`docs/milestones/README.md`](docs/milestones/README.md) first for the full sequence and why it looks this way.
 
-**Milestone 2 is accepted.** [`milestones/milestone-02-campaign-design.md`](milestones/milestone-02-campaign-design.md)
+**Milestone 2 is accepted.** [`docs/milestones/completed/milestone-02-campaign-design.md`](docs/milestones/completed/milestone-02-campaign-design.md)
 — Design and Orientation (re-scoped at canon 2.11) fixed the vocabulary of the single-player modes
-([`specs/game-modes.md`](specs/game-modes.md) — Campaign and Challenge), the build order, the few
+([`docs/game-design/game-modes.md`](docs/game-design/game-modes.md) — Campaign and Challenge), the build order, the few
 PERIMETER decisions the UX build needs, and — at canon 2.12–2.16 — the Citizen Nexus's character, the
 three starting Commanders (Vasse, Averno, Dob Hunter, with no upfront choice screen), what a Nexus
 power does, the two openings sharing one map, a bounded objective taxonomy replacing fixed Pulse
@@ -151,15 +151,15 @@ registered (Q60: does the popup close itself after a pick?).
 playtest of 5F became three plain modes (menu, placing, exploring), one cancel (Esc, `x`, right click)
 ending in an exit question, clicks that focus before they activate, one popup shape, an information
 panel, and a solid map edge. **Two documents now carry the interface's rules and the feedback's
-state: [`docs/ui-patterns.md`](docs/ui-patterns.md) — follow it on every new screen — and
-[`docs/feedback/2026-09-27-build-phase-playtest.md`](docs/feedback/2026-09-27-build-phase-playtest.md),
+state: [`docs/system-design/ui-patterns.md`](docs/system-design/ui-patterns.md) — follow it on every new screen — and
+[`docs/history/feedback/2026-09-27-build-phase-playtest.md`](docs/history/feedback/2026-09-27-build-phase-playtest.md),
 where every owner item is built, scheduled or contested; an orchestrator session works through what is
 still open there before gate 5G.**
 
 **After round 2 (2026-09-27, canon 2.20)**, Mario agreed three things and they are built: the Nexus
 Powers popup closes on the pick (Q60); the map's west edge is its own column beside a plain menu
 divider (feedback F17); and the browser playtest page exists, as a development tool whose rule is in
-`specs/engine.md` 10.2 and Section 4 below. The Pulse playback's `q` now also finishes the playback
+`docs/system-design/grid-engine.md` 10.2 and Section 4 below. The Pulse playback's `q` now also finishes the playback
 (F16), which Milestone 6's Pulse-to-Build-Phase handover needed.
 
 **Milestone 5 gate 5G is built and reported (PASS), awaiting Mario's look** (2026-09-27): `d` or
@@ -180,7 +180,7 @@ presentation, all four numbers in Debug Mode, off under reduced motion.
 
 **Milestone 5 gate 5J is built and reported (PASS), awaiting Mario's playtest** (2026-09-28): his
 third round of feedback, from playing the 5G-5I demo page
-([`docs/feedback/2026-09-28-pr46-playtest.md`](docs/feedback/2026-09-28-pr46-playtest.md), F18-F27).
+([`docs/history/feedback/2026-09-28-pr46-playtest.md`](docs/history/feedback/2026-09-28-pr46-playtest.md), F18-F27).
 Debug Mode became **Settings** — Esc or `q` opens a game menu with Settings and Quit, the player's own
 settings are saved, and **Experiments** sit at the bottom (`d` jumps there) with an **export** to paste
 into a pull request and `--settings` to read it back. One press moves 1 tile, a held arrow 2 then 4,
@@ -192,7 +192,7 @@ were reworked by it rather than superseded, and all of them await his playtest t
 
 **Milestone 5 gate 5K is built and reported (PASS), awaiting Mario's playtest** (2026-09-29): his
 fourth round and his settings export
-([`docs/feedback/2026-09-29-pr46-round-4.md`](docs/feedback/2026-09-29-pr46-round-4.md), F28-F40).
+([`docs/history/feedback/2026-09-29-pr46-round-4.md`](docs/history/feedback/2026-09-29-pr46-round-4.md), F28-F40).
 Arming puts a building where the cursor is (or the nearest good spot, a free column to the right);
 placing or Esc goes back to where it began — the map in plain navigation, or the menu; the Build Phase
 opens on the menu at Explore Map; every menu row has one active style (`>`), Explore Map included, its
@@ -206,13 +206,13 @@ in a state. Q66 — reading key releases where the terminal reports them — wai
 **Milestone 5 is accepted** (2026-09-29). Mario played and merged the Build Phase work (gates 5D-5K,
 tested together) and the polish pull request after it, and gave his word that Milestone 5 is accepted
 and Milestone 6 is promoted. Every "awaiting Mario" line about gates 5C-5K above is resolved by that;
-[`milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md) is COMPLETE and kept
+[`docs/milestones/completed/milestone-05-build-phase.md`](docs/milestones/completed/milestone-05-build-phase.md) is COMPLETE and kept
 as a historical record, and nothing in it is open work.
 
-The current milestone is **[`milestones/milestone-06-pulse-phase.md`](milestones/milestone-06-pulse-phase.md)
+The current milestone is **[`docs/milestones/milestone-06-pulse-phase.md`](docs/milestones/milestone-06-pulse-phase.md)
 — the Nexus Pulse Phase** (promoted 2026-09-29): can a player start the Pulse from a completed Build
 Phase, watch the unmodified kernel resolve it, see a legible ending with Recall, and land in the next
-Build Phase? **Gate 6A — Start, end, Recall — is accepted** (2026-09-30, `evidence/gate-6a-report.md`):
+Build Phase? **Gate 6A — Start, end, Recall — is accepted** (2026-09-30, `docs/history/reports/2026-09-29-pulse-start-end-recall.md`):
 **`[s] Start Pulse`**, the menu's last row, opens a "Battle Round 1" screen, and Enter, Space or `[s]
 Start` starts the Pulse on the Build Phase's own screen — the unmodified kernel resolves the committed
 plan — with a countdown timer in the title, a score, a feed of events, pause / speed / step /
@@ -224,13 +224,13 @@ band**: after Recall, the next Build Phase, until the mission's triggers end it;
 `commitPlan`, `win` and `lose` as validated data; PERIMETER's three waves as the fixture in place of the
 placeholder Pulse and its Raid and Your units Experiments; Q36 resolved or deferred with a reason.
 **Gate 6B is built and reported (PASS), awaiting Mario's playtest** (2026-09-30,
-`evidence/gate-6b-report.md`): the screen plays PERIMETER — three rounds, the raid in three waves — and
+`docs/history/reports/2026-09-30-round-loop-and-missions.md`): the screen plays PERIMETER — three rounds, the raid in three waves — and
 after a round's result `[enter] Next round` opens the next Build Phase on what the last one left, with the
 next wave shown on the map, see-through, its intention on the Explore Map card. A mission is data
 (`src/mission/`), validated when loaded; the trigger runner (`src/match/mission.ts`) resolves each round
 on the unmodified kernel. Q36 is resolved with no rule change; Q69 (an order primitive: every unit still
 engages the nearest enemy) and Q70 (a defender's wiped-out units end a round early) wait on him; the
-Campaign's opponent is thought through in `docs/scripted-opponent.md`. Next round and Incoming wave are
+Campaign's opponent is thought through in `docs/game-design/scripted-opponent.md`. Next round and Incoming wave are
 Experiments (`d`). **Do not start 6C** (automatic production) without Mario's word. **Mario asked on 2026-09-28 to keep
 going without waiting to look at each gate first**: he tests several merged changes together, then
 plays, exports his Experiments, and pastes them into the pull request. He added, with 6A's acceptance,
@@ -238,27 +238,27 @@ a direction for later: the Campaign should eventually define a Pulse's whole ope
 player can explore the map and see what is coming, with incoming units able to show their intention.
 
 **The menu spike is built, played and merged** (2026-09-30,
-`evidence/menu-spike-report.md`; feedback
-[`docs/feedback/2026-09-30-menu-spike.md`](docs/feedback/2026-09-30-menu-spike.md), F52-F60, on a pull
+`docs/history/reports/2026-09-30-menu-spike.md`; feedback
+[`docs/history/feedback/2026-09-30-menu-spike.md`](docs/history/feedback/2026-09-30-menu-spike.md), F52-F60, on a pull
 request of its own): the reorganisation of the Build Phase menu that 6A's round 3 left for a spike
 (F51). Every row either opens a popup or gives the map something to do, and an active row reads
 `[x] Name  >>`; a focus arrow flies from the row to the cursor, which blinks when it lands (both
 Experiments); Left and Right stay on the menu; the menu is one list with `$ 100` on its top line; a
 building being placed shows its card in the panel; the bottom bar is one line of contextual help; and
 the game menu has a Controls and hotkeys page. **Round 2** (2026-09-30,
-[`docs/feedback/2026-09-30-menu-spike-round-2.md`](docs/feedback/2026-09-30-menu-spike-round-2.md),
+[`docs/history/feedback/2026-09-30-menu-spike-round-2.md`](docs/history/feedback/2026-09-30-menu-spike-round-2.md),
 F61-F76, with his settings export) polished it: the credits line with the map's resource symbol, the
 active row as `[1] Barracks  >`, a subtler refused flicker, a card reveal, the arrow from the row's own
 place and a see-through cursor for Explore Map, a building that holds the menu until placed or
-cancelled, `x` that never opens the game menu, lists that stop at their ends, `docs/ui-patterns.md`
+cancelled, `x` that never opens the game menu, lists that stop at their ends, `docs/system-design/ui-patterns.md`
 rewritten, and his settled Experiments moved into `src/build/tuning.ts`. **Round 3** (2026-09-30,
-[`docs/feedback/2026-09-30-menu-spike-round-3.md`](docs/feedback/2026-09-30-menu-spike-round-3.md),
+[`docs/history/feedback/2026-09-30-menu-spike-round-3.md`](docs/history/feedback/2026-09-30-menu-spike-round-3.md),
 F77-F81, with his third export) reworked navigation — taps speed up only by counting, a held key keeps
 the game's own pace, and key presses, repeats and releases are read where the terminal reports them
 (the Key releases Experiment; Q66 answered) — gave the popup scroll bar a textured thumb, and made the
 Battle Round screen breathe; a dedicated navigation session is queued. **Mario sent notes at its end**
 for a small follow-up, on the same pull request (2026-09-30,
-[`docs/feedback/2026-09-30-menu-spike-followup.md`](docs/feedback/2026-09-30-menu-spike-followup.md),
+[`docs/history/feedback/2026-09-30-menu-spike-followup.md`](docs/history/feedback/2026-09-30-menu-spike-followup.md),
 F82-F86, canon 2.30): every popup breathes and the Battle Round screen opens with a double flash; a card
 is a title, a subtitle, a description and its numbers; Settings is in titled sections, and every setting
 is declared once with its tier — player, experiment or tuned (`src/build/all-settings.ts`). Mario
@@ -267,14 +267,14 @@ played and merged it with gate 6A (pull request 49, 2026-09-30).
 So the authorised work for a new session is, in order:
 
 1. **whatever the owner's most recent feedback asks for**, if any exists since
-   `specs/project-governance.md`'s ledger last entry — check before assuming either that nothing is
+   `docs/game-design/decisions.md`'s ledger last entry — check before assuming either that nothing is
    outstanding or that everything still is; **a pasted settings export is feedback**: start the game
    with it (`--settings`), and settle each Experiment it answers — adopt the value as the default,
    delete the Experiment, record the answer;
 2. **the current milestone's active gate** — gate 6B has nothing left to build until he has played it
    (his key-release probe still says whether his iTerm2 reports releases); the gate after it waits for
    his word, and when it comes it is the next gate in the build order
-   [`milestones/README.md`](milestones/README.md) carries. Milestone numbers are identities, not an
+   [`docs/milestones/README.md`](docs/milestones/README.md) carries. Milestone numbers are identities, not an
    order — read that table's build-order column, and take one gate per session unless the owner's own
    prompt asks for more.
 
@@ -299,7 +299,7 @@ outcome, not a shortfall.
 ## 3. How much authority does a statement have?
 
 Most of the design canon is a recommendation written before the thing existed. Every section of
-[`specs/engine.md`](specs/engine.md) declares which kind it is:
+[`docs/system-design/grid-engine.md`](docs/system-design/grid-engine.md) declares which kind it is:
 
 - **RULE** — committed; something already depends on it. Changing it needs Mario and a canon bump.
 - **GUIDANCE** — a recommendation, not yet earned by working code. Follow it by default; depart when
@@ -358,7 +358,7 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - Effects are pure functions of absolute presentation time. `f(t)` never depends on `f(t-1)`.
   Presentation has **four families** — animations (an entity's own frames), particles, shading
   (glyphless colour) and tweens (interpolation) — and an animation's completion is **scheduled data,
-  never a callback** (`specs/ascii-effects.md` 1.2).
+  never a callback** (`docs/system-design/effects.md` 1.2).
 - Gameplay randomness is one seeded PRNG — **PCG32**, with published vectors. Cosmetic randomness is
   a **hash of an effect instance's identity, never a stream**: a stream's answers depend on how many
   times it has been asked, which is exactly what effect purity forbids.
@@ -370,7 +370,7 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - Content is TypeScript-first and mostly declarative.
 - The playable content boundary is a Commander Army: a faction and Grid Nexus, a Commander, starting
   units and structures, blueprints and the tech tree that unlocks them, upgrades, Nexus powers, and
-  Specials — canon 2.16's parts list (`specs/commander-armies.md` Section 2.1). **A faction is a
+  Specials — canon 2.16's parts list (`docs/game-design/commander-armies.md` Section 2.1). **A faction is a
   wide pool; a Commander Army fields a few of them.** The match only ever sees an army. **Whether an
   army is well modeled as a "deck of cards" is explicitly retracted, not even GUIDANCE** — a Commander
   Army is several different systems, and which shape actually fits is for building and playing to
@@ -475,7 +475,7 @@ deleted, and the renderer must be replaceable without one simulation test changi
   Campaign first, but never blocks Challenge.
 - Prime Nexuses remain at home and replicate Grid Nexuses; avoid stale teleportation language.
 - Player-facing phases are **Build Phase** and **Nexus Pulse**; use those names consistently.
-- **Lore is a platform, not a plot** (`specs/terminal-nexus-lore.md` Section 10.6). This is a terminal
+- **Lore is a platform, not a plot** (`docs/game-design/lore.md` Section 10.6). This is a terminal
   game with icons: complexity grows through units and powers, never through story; every named
   character must earn its place by teaching a mechanic; budgets are ceilings (a briefing is a
   paragraph, a bark is 3–8 words); there is **one timeline**; and the setting deliberately
@@ -491,7 +491,7 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - **Prefer the missing connection over the missing polish.** A gate that is honest, connected, and
   ugly is worth more than one that is beautiful and dead-ends — playing the whole thing is what says
   which part deserved the polish, and it usually is not the part you expected.
-- **Build every interface from [`docs/ui-patterns.md`](docs/ui-patterns.md).** Before changing a
+- **Build every interface from [`docs/system-design/ui-patterns.md`](docs/system-design/ui-patterns.md).** Before changing a
   screen, a menu, a popup, an effect or a key, read its goals (section 0) and its checklist for a new
   screen, then the patterns the change touches; when two rules disagree, the goals decide. A change
   that adds, bends or retires a pattern updates that document in the same pull request, and a new
@@ -541,10 +541,10 @@ deleted, and the renderer must be replaceable without one simulation test changi
 - **When the owner sends feedback**, follow the `feedback-round` skill (log his words, turn them into a
   gate, split the work across agents by files, merge, write the canon, regenerate the evidence,
   rewrite the pull request). What the last four rounds taught is in
-  [`docs/lessons-learned.md`](docs/lessons-learned.md); the goals behind his feedback, which decide
-  when two rules disagree, are `docs/ui-patterns.md` section 0; how the game could run on other
-  hosts is [`docs/portability.md`](docs/portability.md); and what is waiting — including the prompt to
-  start the next milestone — is [`docs/next-steps.md`](docs/next-steps.md).
+  [`docs/history/lessons-learned.md`](docs/history/lessons-learned.md); the goals behind his feedback, which decide
+  when two rules disagree, are `docs/system-design/ui-patterns.md` section 0; how the game could run on other
+  hosts is [`docs/system-design/portability.md`](docs/system-design/portability.md); and what is waiting — including the prompt to
+  start the next milestone — is [`docs/milestones/next-steps.md`](docs/milestones/next-steps.md).
 
 ### Write for a person, not for the filing system
 
@@ -570,7 +570,7 @@ Mario reads, or use ordinary words instead.
 ## 6. When the canon does not answer you
 
 This will happen. It is expected, and there is a procedure — see
-[`specs/open-questions.md`](specs/open-questions.md) Section 2.
+[`docs/milestones/open-questions.md`](docs/milestones/open-questions.md) Section 2.
 
 1. **Decide it yourself** if it is reversible: module boundaries, names, local data shapes, test
    organization, diagnostics. Governance Section 2 already grants this. Do not ask.
@@ -641,7 +641,7 @@ wrong.
 
 After an accepted gate:
 
-1. update the [`specs/project-governance.md`](specs/project-governance.md) ledger and history;
+1. update the [`docs/game-design/decisions.md`](docs/game-design/decisions.md) ledger and history;
 2. promote only evidence-backed conclusions into the focused authority document;
 3. move answered questions into the register's Answered section and cite the ID in the commit;
 4. update locked and open decisions;

@@ -26,7 +26,7 @@ export class ScenarioError extends Error {}
  * at load time instead of degrading silently, tick after tick. The largest current preset
  * (extra-large-extra-wide, 72x24 = 1728 tiles) has roughly 5x headroom under it; raise it
  * deliberately, with evidence, when a scenario actually needs to be bigger — see
- * specs/engine.md 11 ("Scaling toward hundreds or thousands of units").
+ * docs/system-design/grid-engine.md 11 ("Scaling toward hundreds or thousands of units").
  */
 export const MAX_DECLARED_GRID_TILES = 10_000
 

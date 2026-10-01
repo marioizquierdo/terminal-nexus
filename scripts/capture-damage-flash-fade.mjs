@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url"
 import { ansiToHtml, CHROMIUM } from "./lib/terminal-capture.mjs"
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
-const outputPath = join(repoRoot, "evidence", "screenshots", "damage-flash-fade.png")
+const outputPath = join(repoRoot, "docs", "screenshots", "damage-flash-fade.png")
 
 const { sgrFor } = await import("../src/view/roles.ts")
 const { EFFECT_RECIPES } = await import("../src/view/effects/recipes.ts")

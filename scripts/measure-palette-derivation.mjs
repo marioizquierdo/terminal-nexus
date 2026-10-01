@@ -3,7 +3,7 @@
 //
 //   node scripts/measure-palette-derivation.mjs [--theme dark|light]
 //
-// Q25 (specs/open-questions.md) asked whether `rgb` should become the single source of truth and the
+// Q25 (docs/milestones/open-questions.md) asked whether `rgb` should become the single source of truth and the
 // other two tiers a nearest-match computation. This is the measurement that answered it, checked in
 // rather than quoted, so the next session can re-run it instead of trusting a number in a document.
 // It reads the real palette through `rgbFor` and `sgrFor`, so it cannot drift from the table it is

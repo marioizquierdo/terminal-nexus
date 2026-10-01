@@ -2,7 +2,7 @@
 //
 //   node scripts/capture-spike-screenshots.mjs
 //   node scripts/capture-spike-screenshots.mjs --only spike-minimum
-//   node scripts/capture-spike-screenshots.mjs --out .playtest/shots   # somewhere other than evidence/
+//   node scripts/capture-spike-screenshots.mjs --out .playtest/shots   # somewhere other than docs/screenshots/
 //   node scripts/capture-spike-screenshots.mjs --force                  # re-render even unchanged ones
 //
 // Two ways in, on purpose.
@@ -55,7 +55,7 @@ import {
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
 const argument = (flag) => (process.argv.includes(flag) ? process.argv[process.argv.indexOf(flag) + 1] : null)
-const outputDirectory = resolve(repoRoot, argument("--out") ?? join("evidence", "screenshots"))
+const outputDirectory = resolve(repoRoot, argument("--out") ?? join("docs", "screenshots"))
 const scratch = join(repoRoot, ".capture-tmp")
 const SESSION = "terminal-nexus-spike-capture"
 const only = argument("--only")
@@ -639,7 +639,7 @@ popupGif("build-battle-round-opening", { keys: `${PICK_FIRST_POWER} s`, expect: 
 // Gate 6A's Nexus Pulse shots (`pulse-start`, `pulse-fight`, `pulse-last-seconds`, `pulse-nexus-hit`,
 // `pulse-result-*`, `pulse-experiments`, `pulse-ending.gif`) were taken against the placeholder Pulse and
 // its Raid and Your units Experiments, which gate 6B retired for PERIMETER's waves: they stay in
-// `evidence/screenshots/` as that gate's evidence, as `build-nexus-committed.png` stayed for gate 5D, and
+// `docs/screenshots/` as that gate's evidence, as `build-nexus-committed.png` stayed for gate 5D, and
 // are no longer regenerated. Gate 6B's own shots follow, on PERIMETER.
 
 // A round, keys only: the Reserve Fund (30 more credits), buildings by digit and two clicks on their

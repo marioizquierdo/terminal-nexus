@@ -300,7 +300,7 @@ const impactBurst: EffectRecipe = (instance, context) => {
  * `effects` so the corruption law cannot let a Glitch effect swallow it.
  *
  * `bold` only, deliberately not `inverse` too. Found during this round's colour-pipeline pass
- * (Q25/transparency prototype, specs/open-questions.md): this recipe originally set both, which
+ * (Q25/transparency prototype, docs/milestones/open-questions.md): this recipe originally set both, which
  * `composite.ts`'s own `lightWeight` (1 base + 1 bold + 1 inverse) puts at weight 3 - already at
  * `resolveLighting`'s `inverse >= 3` ceiling from a *single* flash, before any stacking. That made
  * the compositor's whole stacking mechanism dead code for the one recipe it exists for: a solo hit

@@ -175,7 +175,7 @@ test("the stuck warning fires for an actor that cannot make progress", async () 
 })
 
 test("the same gap that stalls a 3x1 hauler hard-stops a 3x3 colossus, not just circles it", async () => {
-  // specs/open-questions.md Q15's failure shape confirmed at a genuinely large footprint, not only
+  // docs/milestones/open-questions.md Q15's failure shape confirmed at a genuinely large footprint, not only
   // the narrowest multi-tile case: a mover three tiles wide reaches the same conclusion a mover one
   // tile wide does (a two-tile gap fits neither), but a body this size has nowhere left to slide once
   // it is flush against the gap, so it hard-stops rather than pacing between two tiles the way the

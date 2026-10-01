@@ -1,7 +1,7 @@
 // Loading a `.map.json` file from disk — the JSON-serialized form of a `ScenarioDefinition`
 // (./types.ts). Same shape, different container: a checked-in test scenario, a campaign level, and
 // a map-editor-authored map are all going to be one of these files eventually
-// (specs/replay-format.md's `ReplaySetup.map` is the same idea one layer up, for a whole replay).
+// (docs/system-design/replay-format.md's `ReplaySetup.map` is the same idea one layer up, for a whole replay).
 //
 // JSON gives up the `.ts` scenario's ability to carry an inline `//` comment next to a tricky row,
 // but nothing in `ScenarioDefinition` is a function or otherwise unrepresentable in JSON, so the

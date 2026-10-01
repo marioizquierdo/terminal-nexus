@@ -1,6 +1,6 @@
 // Frame budget — milestone-1-spike-battle.md 3.9: "30 fps sustained over 60 seconds, p95 recorded".
 //
-// The measurement is the point, not the threshold: the numbers land in evidence/report.md, and the
+// The measurement is the point, not the threshold: the numbers land in docs/history/reports/2026-08-21-pulse-playground.md, and the
 // assertion is only that the budget is not blown.
 
 import { test } from "node:test"

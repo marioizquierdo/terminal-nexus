@@ -467,7 +467,7 @@ export function defaultsOn<T extends Tier>(tier: T): { readonly [K in NamesOn<T>
 /**
  * A setting Settings shows: written as its tier, section, label, question, values and when a change is
  * seen, and two things that follow from its values: whether stepping past either end comes round to the
- * other — a choice comes round, a number stops at its ends (docs/ui-patterns.md, "a setting row") — and
+ * other — a choice comes round, a number stops at its ends (docs/system-design/ui-patterns.md, "a setting row") — and
  * how a value reads.
  */
 export type ShownSetting<N extends ShownName = ShownName> = Readonly<{

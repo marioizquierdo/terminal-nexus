@@ -1,5 +1,5 @@
 // One real screenshot of `terminal-nexus`'s top-level menu — Milestone 3 gate 3A evidence. Not a
-// blocking human check for this gate (see evidence/gate-3a-report.md Section 1), but the project's
+// blocking human check for this gate (see docs/history/reports/2026-09-13-menu.md Section 1), but the project's
 // own habit is a screenshot for every gate, and the pipeline already exists for `grid`
 // (capture-screenshots.mjs): tmux (a real PTY, so the ANSI backend takes the same path a person
 // gets) -> capture-pane -e -> HTML -> headless Chromium.
@@ -22,7 +22,7 @@ import {
 } from "./lib/terminal-capture.mjs"
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
-const outputDirectory = join(repoRoot, "evidence", "screenshots")
+const outputDirectory = join(repoRoot, "docs", "screenshots")
 const scratch = join(repoRoot, ".capture-tmp")
 const SESSION = "terminal-nexus-capture"
 const COLS = 80

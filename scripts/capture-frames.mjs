@@ -2,7 +2,7 @@
 //
 //   node scripts/capture-frames.mjs citizen-mirror-skirmish 0 112 160 240
 //
-// Frames are written to evidence/frames/<scenario>-t<tick>.txt at one column per tile, which is the
+// Frames are written to docs/history/reports/pulse-playground-fixtures/frames/<scenario>-t<tick>.txt at one column per tile, which is the
 // 80 x 24 acceptance composition. Monochrome only, and deliberately: the text form of a frame holds
 // its glyphs, and those are identical in every capability mode — that is what "no cell depends on
 // colour to exist" means. This is an evidence tool, not part of the game.
@@ -35,7 +35,7 @@ const timeline = buildTimeline(
 const view = createView(timeline)
 
 const ticks = tickArgs.length > 0 ? tickArgs.map(Number) : [0, Math.floor(view.lastTick / 2), view.lastTick]
-const outputDirectory = join(repoRoot, "evidence", "frames")
+const outputDirectory = join(repoRoot, "docs", "history", "reports", "pulse-playground-fixtures", "frames")
 mkdirSync(outputDirectory, { recursive: true })
 
 for (const tick of ticks) {

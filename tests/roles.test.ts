@@ -172,7 +172,7 @@ test("the 16-colour tier stays hand-authored: chrome.muted keeps its fix, not ne
 
 test("player.a and player.b clear a real mutual-contrast floor in the light theme now (Q21)", () => {
   // The same WCAG relative-luminance contrast ratio Q21's own measurement used
-  // (specs/open-questions.md), computed independently here rather than imported, so this test would
+  // (docs/milestones/open-questions.md), computed independently here rather than imported, so this test would
   // actually fail if the retune regressed.
   const srgbToLinear = (u: number): number => (u / 255 <= 0.04045 ? u / 255 / 12.92 : ((u / 255 + 0.055) / 1.055) ** 2.4)
   const relLuminance = (rgb: readonly [number, number, number]): number =>

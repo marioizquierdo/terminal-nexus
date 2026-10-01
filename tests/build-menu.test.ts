@@ -1,4 +1,4 @@
-// The Build Phase menu (docs/ui-patterns.md, "Menu rows" and "The Build Phase menu"): one list —
+// The Build Phase menu (docs/system-design/ui-patterns.md, "Menu rows" and "The Build Phase menu"): one list —
 // Explore Map, Nexus, the credits line with the map's resource symbol, every building with its cost,
 // Start Pulse on the last line — drawn where the mouse finds it; a row's two states, highlighted and
 // active, and its two brief acknowledgements, pressed and refused; Left and Right that only flicker; and

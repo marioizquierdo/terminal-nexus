@@ -127,7 +127,7 @@ export type ContentDef = Readonly<{
    * own player on a free adjacent tile, holding off whenever `maxAlive` of that content id already
    * live for that player. The spawner rule shape (unit-design-architecture spike) — a combat ability
    * a living unit performs, not an economy: no cost, no resource, nothing Milestone 2's production
-   * phase would recognise as its own. See `Q26` in `specs/open-questions.md` for the scope line this
+   * phase would recognise as its own. See `Q26` in `docs/milestones/open-questions.md` for the scope line this
    * still has to answer before a real roster could use it.
    */
   spawn?: Readonly<{ contentId: string; intervalTicks: number; maxAlive: number }>
