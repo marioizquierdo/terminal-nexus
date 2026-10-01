@@ -1,9 +1,9 @@
 {
   "name": "terminal-nexus",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Terminal Nexus — the Grid tool, and the game's own menu (Milestone 3, Gate 3A)",
+  "description": "Terminal Nexus — an ASCII strategy game for the terminal",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=22.18.0"

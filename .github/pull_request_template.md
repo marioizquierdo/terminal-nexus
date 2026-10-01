@@ -29,9 +29,8 @@
 
 <details><summary>Project bookkeeping</summary>
 
-- Gate and decision: <!-- e.g. 5F — PASS / REVISE / STOP / BLOCKED, or "not a gate" -->
-- Report: <!-- e.g. docs/history/reports/2026-09-26-layout-and-focus.md, or none -->
-- Canon changes: None
+- Milestone step: <!-- e.g. Milestone 6, step 6B, or 'not a milestone step' -->
+- Design documents changed: <!-- which, or none -->
 - Questions: <!-- opened / answered, or none -->
 
 </details>
