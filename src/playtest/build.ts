@@ -125,7 +125,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     const pulse = build.pulseFrame(layout)
     return composeBuildFrame(
       {
-        // This round's: what stands on the map changes from round to round (gate 6B).
+        // This round's: what stands on the map changes from round to round.
         context: build.round,
         state: build.state,
         layout,

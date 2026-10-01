@@ -1,9 +1,8 @@
 // The keys that move a cursor — the Build Phase's map cursor, and a list's highlight — in every byte
-// spelling a terminal sends, in one table, and the one rule every list follows with them (owner,
-// 2026-09-30, feedback F75: "The navigation with up/down arrows in the menus should not rotate ... if I
-// keep down pressed, it should quickly move to the bottom and stay there ... Pressing shift + up should
-// bring the cursor all the way to the top (or pgup, etc), this is the same convention as moving in the
-// map"). Shared by the title screen's menu and every list in the Build Phase — its menu, the Nexus
+// spelling a terminal sends, in one table, and the one rule every list follows with them: Up and
+// Down stop at the ends instead of wrapping around, so holding Down quickly reaches the bottom and
+// stays there, and Shift+Up (or PageUp, and so on) goes all the way to the top, the same convention as
+// moving on the map. Shared by the title screen's menu and every list in the Build Phase — its menu, the Nexus
 // powers, the game menu, Settings, the export and the Controls page — and by the map cursor, so they
 // cannot drift apart.
 //
@@ -55,8 +54,7 @@ const CURSOR_KEY_BYTES: Readonly<Record<string, NamedKey>> = {
   // Option+Arrow the way macOS terminals send it by default, which is not xterm's `CSI 1;3` form (that
   // one is parsed below, since any modifier counts): Option+Left/Right arrive as the readline
   // word-movement keys `ESC b`/`ESC f`, and a terminal set to treat Option as Meta prefixes the ordinary
-  // arrow with a second ESC. "Move word by word" is what Option means on a Mac (owner, 2026-09-26: "we
-  // should also allow option"). Bound from the terminals' documented defaults, not yet measured on the
+  // arrow with a second ESC. "Move word by word" is what Option means on a Mac, so Option is allowed too. Bound from the terminals' documented defaults, not yet measured on the
   // owner's own iTerm2 profile: `node scripts/lib/key-echo.mjs` in that terminal is how to check.
   // `keysFromChunk` keeps each of these whole; before it did, Option+Left split into a bare Escape.
   [`${ESC}b`]: { name: "left", modified: MODIFIED },

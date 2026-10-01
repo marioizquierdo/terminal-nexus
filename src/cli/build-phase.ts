@@ -45,8 +45,7 @@ const ESC = "\u001b"
  *  on screen. The menu never needed this because its frame is a fixed 80 x 24. */
 const CLEAR = `${ESC}[2J`
 
-/** The floor the resize gate is measured against — engine.md 3.3's own "80 x 24 remains the floor
- *  and the acceptance target". */
+/** The floor the resize gate is measured against: 80 x 24 is the floor and the acceptance target. */
 export const STARTER_MINIMUM = { width: 80, height: 24 } as const
 
 export type SpikeOptions = Readonly<{
@@ -58,8 +57,8 @@ export type SpikeOptions = Readonly<{
   /** Interrupts, exit and error reporting; a terminal program's `process` unless given. */
   host?: Host
   exit?: (code: number) => void
-  /** `--scroll-margin`, so the margin can be felt against another number: a percentage of the view
-   *  since gate 5H. Omitted means the owner's tuned margin (`TUNING.scrollMargin`). */
+  /** `--scroll-margin`, so the margin can be felt against another number: a percentage of the view.
+   *  Omitted means the owner's tuned margin (`TUNING.scrollMargin`). */
   scrollMargin?: number
   /** The screen's clock, in milliseconds. `Date.now` unless a test injects one. */
   now?: () => number
@@ -87,7 +86,7 @@ export type SpikeOptions = Readonly<{
   exporter?: Readonly<{ destination: string; export: (text: string) => Promise<void> | void }>
 }>
 
-/** Round 1 of the mission the screen plays (PERIMETER, gate 6B), on the placeholder map. */
+/** Round 1 of the mission the screen plays (PERIMETER), on the placeholder map. */
 export function starterContext(scrollMargin?: number, extra: Partial<BuildContext> = {}): BuildContext {
   return STARTER_MISSION.firstRound({
     grid: starterGrid(),
@@ -159,7 +158,7 @@ export async function runBuildPhase(options: SpikeOptions): Promise<number> {
   let sideEffectError: unknown = null
   const saveSettings = (settings: Settings): void => {
     // A new colour depth or background is drawn on the very next frame, without restarting the
-    // backend (`setPresentation`, gate 3B).
+    // backend (`setPresentation`).
     backend.setPresentation?.(settings.capability, settings.theme)
     const store = options.settingsStore
     if (store === undefined) return
@@ -214,11 +213,11 @@ export async function runBuildPhase(options: SpikeOptions): Promise<number> {
     }
   }
 
-  // **The screen's clock lives here, never in the reducer** (gate 5H). Everything that moves between
+  // **The screen's clock lives here, never in the reducer**. Everything that moves between
   // commands — the view sliding to a new position, the cursor gliding to a new tile, a menu row's
-  // flash, the cursor's flash on a refused placement, a building going up (gate 5I), the focus arrow
-  // and the cursor's blink (feedback F54), the menu turning into a card (F68), a popup's
-  // border flashing and breathing (F80, F83) — is
+  // flash, the cursor's flash on a refused placement, a building going up, the focus arrow
+  // and the cursor's blink, the menu turning into a card, a popup's
+  // border flashing and breathing — is
   // `BuildAnimation`'s pure function of the state and the time read here, and the frame timer below
   // runs only while one of them is still moving; an idle screen draws once per input, as it always
   // has. The same clock times how far a cursor key moves — taps counted, holds on the game's cadence —
@@ -266,7 +265,7 @@ export async function runBuildPhase(options: SpikeOptions): Promise<number> {
         ? gateFrame(size.columns, size.rows, STARTER_MINIMUM)
         : composeBuildFrame(
             {
-              // This round's: what stands on the map changes from round to round (gate 6B).
+              // This round's: what stands on the map changes from round to round.
               context: build.round,
               state: build.state,
               layout,
@@ -301,7 +300,7 @@ export async function runBuildPhase(options: SpikeOptions): Promise<number> {
     const wasGated = gated
     gated = isGated(size, context.grid)
     // A Nexus Pulse holds still while the terminal is too small to draw it, and resumes from the same
-    // instant (engine.md 9.6). No frame timer runs behind the gate, so nothing would tell the Pulse the
+    // instant (see `runtime.md`). No frame timer runs behind the gate, so nothing would tell the Pulse the
     // time had passed: the moment the gate closes or opens, the clock is moved on without the Pulse.
     if (wasGated || gated) build.advance(clock(), true)
     if (!gated) {
@@ -312,9 +311,9 @@ export async function runBuildPhase(options: SpikeOptions): Promise<number> {
     render()
   }
 
-  // **Key releases, where the terminal reports them** (the Key releases Experiment; the owner's third
-  // round, 2026-09-30, F79). On `auto` the screen asks the terminal whether it speaks the kitty keyboard
-  // protocol and, if it answers, pushes the flags that make it mark every key as a press, a repeat or a
+  // **Key releases, where the terminal reports them** (the Key releases Experiment). On `auto` the screen
+  // asks the terminal whether it speaks the kitty keyboard protocol and, if it answers, pushes the
+  // flags that make it mark every key as a press, a repeat or a
   // release — so a tap is known to be a tap and a hold a hold (`src/build/motion.ts`). On `off`, or with
   // no answer, nothing is pushed and timing decides, as before. Changed in Settings, it applies at once.
   // **The flags are popped on every way out**, through the one disposer below — a terminal left in this

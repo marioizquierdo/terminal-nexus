@@ -1,4 +1,4 @@
-// The Grid tool's CLI — milestone-1-spike-battle.md 3.4. `grid` is the engine, editor, and replay
+// The Grid tool's CLI. `grid` is the engine, editor, and replay
 // tool; it is not the game itself, which a future `terminal-nexus` executable launches.
 //
 //   grid <map>                                    # watch — the ASCII view (the default)
@@ -153,7 +153,7 @@ async function commandHeadless(path: string, args: ParsedArgs): Promise<number> 
     for (const line of lines) process.stdout.write(`${line}\n`)
   }
 
-  // Any ERROR fails the run (milestone-1-spike-battle.md 3.3). Checked against the full log, not
+  // Any ERROR fails the run. Checked against the full log, not
   // the --turn-filtered view, but ERROR lines survive that filter unconditionally anyway.
   return lines.some((line) => line.includes(" ERROR ")) ? 1 : 0
 }

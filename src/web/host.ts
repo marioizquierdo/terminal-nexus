@@ -1,6 +1,6 @@
 // The browser playtest page's host — the one file in the project that touches the DOM.
 //
-// A development tool, never a supported platform (engine.md 10.2): iTerm2 at 80 x 24 stays the
+// A development tool, never a supported platform (`runtime.md`): iTerm2 at 80 x 24 stays the
 // acceptance target. The rule that keeps it honest is that the browser gets **no game loop of its
 // own**. It runs the terminal's three screen loops, unmodified — `runMenu`, `runBuildPhase` (the Build
 // Phase) and `watchPulse` — and hands them a stand-in terminal. The only things converted here are:

@@ -1,5 +1,5 @@
 // Reading and writing the settings file — a small local file, separate from any future save or
-// campaign-progress format (milestone-03-game-menu.md, Gate 3B). Deliberately not a step towards
+// campaign-progress format. Deliberately not a step towards
 // that later save system: it remembers four display choices, nothing about a player's progress.
 
 import { mkdir, readFile, writeFile } from "node:fs/promises"

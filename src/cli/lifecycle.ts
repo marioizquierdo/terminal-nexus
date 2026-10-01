@@ -1,8 +1,8 @@
-// The shared idempotent disposer — engine.md 10.1's RULE that every exit path (a quit key, an
+// The shared idempotent disposer — the `runtime.md` RULE that every exit path (a quit key, an
 // interrupt byte, SIGINT, SIGTERM, a setup failure, a caught render failure) restores the terminal
 // exactly once, regardless of which one triggered it, and that calling it twice is harmless.
 //
-// Extracted out of `watch.ts` for Milestone 3 gate 3A rather than reinvented for the menu: `grid
+// Extracted out of `watch.ts` rather than reinvented for the menu: `grid
 // watch` and `terminal-nexus`'s menu both build their session lifecycle on this one implementation.
 // "There must not be a second one" only holds if both callers actually go through it.
 

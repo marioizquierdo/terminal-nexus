@@ -1,8 +1,8 @@
-// The `terminal-nexus` executable's own CLI — milestone-03-game-menu.md: the game's actual entry
+// The `terminal-nexus` executable's own CLI: the game's actual entry
 // point, as distinct from `grid`'s. No subcommand and no map file: `terminal-nexus` launches straight
 // to the top-level menu.
 //
-// Gate 3B added a real Settings screen, so what a session starts with is now layered: a saved choice
+// The Settings screen makes what a session starts with layered: a saved choice
 // (from a previous run's Settings screen) beats `grid`'s own first-run colour-depth guess, and an
 // explicit command-line flag beats either — the same override order `grid` itself already uses for
 // most of its own flags, just with a saved file added underneath.
