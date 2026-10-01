@@ -4,10 +4,10 @@
 // (capture-screenshots.mjs): tmux (a real PTY, so the ANSI backend takes the same path a person
 // gets) -> capture-pane -e -> HTML -> headless Chromium.
 //
-//   node scripts/capture-menu-screenshot.mjs
+//   node scripts/capture-menu-screenshot.mjs [--out some/folder]   # default .playtest/screenshots/ (ignored by git)
 
-import { rmSync } from "node:fs"
-import { dirname, join } from "node:path"
+import { mkdirSync, rmSync } from "node:fs"
+import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import {
   ESC,
@@ -22,7 +22,9 @@ import {
 } from "./lib/terminal-capture.mjs"
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
-const outputDirectory = join(repoRoot, "docs", "screenshots")
+const outIndex = process.argv.indexOf("--out")
+const outputDirectory = resolve(repoRoot, outIndex === -1 ? join(".playtest", "screenshots") : process.argv[outIndex + 1])
+mkdirSync(outputDirectory, { recursive: true })
 const scratch = join(repoRoot, ".capture-tmp")
 const SESSION = "terminal-nexus-capture"
 const COLS = 80
@@ -112,7 +114,7 @@ shoot(
   {
     // The exact bytes a left click at column 8, row 11 (1-based terminal coordinates) sends —
     // MENU_LAYOUT's column 4 / row 10 (0-based) for item index 2, Settings — formatted the same way
-    // src/menu/mouse.ts's own formatMouseClick would.
+    // src/title-menu/mouse.ts's own formatMouseClick would.
     drive: () => sendKeys(repoRoot, SESSION, `${ESC}[<0;8;11M`),
   },
 )
@@ -153,6 +155,12 @@ shoot(
   },
 )
 
+// About: who made the game, where its code lives, how to contribute.
+shoot("about-screen", "About, reached by its own hotkey - the designer, the repository, how to contribute", {
+  drive: () => sendKeys(repoRoot, SESSION, "4"),
+  waitForText: "Contributions",
+})
+
 // Campaign's own placeholder screen.
 shoot("campaign-screen", "Campaign, reached by its own hotkey - a real screen, not a notice pinned to the menu behind it", {
   drive: () => sendKeys(repoRoot, SESSION, "1"),
@@ -176,4 +184,4 @@ shoot(
 )
 
 rmSync(scratch, { recursive: true, force: true })
-console.log(`wrote ${join(outputDirectory, "menu-top-level.png")} and ten more`)
+console.log(`wrote ${join(outputDirectory, "menu-top-level.png")} and the rest`)

@@ -57,7 +57,7 @@ done
 # ---------------------------------------------------------------------------
 #
 # A milestone directly in docs/milestones/ is CURRENT (exactly one) or still ahead of us (PLANNED,
-# or paused as REVISE / BLOCKED / STOPPED). A finished one lives in docs/milestones/completed/ and
+# or paused as REVISE / BLOCKED / STOPPED). A finished one lives in docs/history/milestones/ and
 # says COMPLETE, so "what are we doing now" is always one file.
 
 current_milestones=()
@@ -72,8 +72,8 @@ done < <(find docs/milestones -maxdepth 1 -type f -name 'milestone-*.md' -print 
 
 while IFS= read -r doc; do
   status="$(sed -n 's/^\*\*Status:\*\* \(.*\)$/\1/p' "$doc" | head -1)"
-  [[ "$status" == "COMPLETE" ]] || fail "$doc is in docs/milestones/completed/ but declares status '$status'; expected COMPLETE"
-done < <(find docs/milestones/completed -maxdepth 1 -type f -name 'milestone-*.md' -print 2>/dev/null | sort)
+  [[ "$status" == "COMPLETE" ]] || fail "$doc is in docs/history/milestones/ but declares status '$status'; expected COMPLETE"
+done < <(find docs/history/milestones -maxdepth 1 -type f -name 'milestone-*.md' -print 2>/dev/null | sort)
 
 current_step=""
 current_basename=""
@@ -162,7 +162,7 @@ grep -Fq '@AGENTS.md' CLAUDE.md || fail "CLAUDE.md must import AGENTS.md"
 # <!-- stale-ok --> and it is exempt. Everything under docs/history/ (including the verbatim
 # original specification) is a record of the past and is skipped
 # wholesale, as is this script, which has to spell the words out. Completed milestones
-# (docs/milestones/completed/) are records too and keep the words they were written with.
+# (docs/history/milestones/) are records too and keep the words they were written with.
 
 retired_terms=(
   '\bveils?\b'
@@ -178,15 +178,23 @@ retired_terms=(
   'gate report'
   '(^|[^/A-Za-z0-9_.-])specs/'
   '(^|[^/A-Za-z0-9_.-])evidence/'
+  # Documents that were renamed or dissolved: a citation of one is a dead pointer.
+  '(^|[^-])engine\.md'
+  'ascii-effects\.md'
+  'terminal-nexus-lore\.md'
+  'terminal-nexus-concept\.md'
+  'backlog-pulse-completion'
+  'project-governance\.md'
+  'milestones/completed/'
 )
 
 # Scan for one pattern; extra arguments go to grep (e.g. -i). Prints the surviving hits.
 scan_term() {
   local term="$1"
   shift
-  grep -RInE "$@" "$term" --include='*.md' --include='*.sh' \
+  grep -RInE "$@" "$term" --include='*.md' --include='*.sh' --include='*.ts' --include='*.mjs' \
     --exclude-dir='.git' --exclude-dir='node_modules' --exclude-dir='worktrees' --exclude-dir='history' \
-    --exclude-dir='completed' . 2>/dev/null \
+    --exclude-dir='.playtest' --exclude-dir='dist' . 2>/dev/null \
     | grep -v 'stale-ok' \
     | grep -v '^\./scripts/check-repository\.sh:' || true
 }

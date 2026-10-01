@@ -154,7 +154,7 @@ background to be legible — the same thing `capture-screenshots.mjs` already do
 light-theme shots). Three new PNGs — `settings-screen`, `settings-light-theme`,
 `settings-back-to-top` — alongside the five from Gate 3A, regenerated against current code.
 
-**Docs**: `README.md`, `DEVELOPMENT.md`, and `docs/milestones/completed/milestone-03-game-menu.md` updated together
+**Docs**: `README.md`, `DEVELOPMENT.md`, and `docs/history/milestones/milestone-03-game-menu.md` updated together
 (AGENTS.md Section 5); the milestone file's Active gate moved to 3C.
 
 ## 4. Automated results
@@ -412,7 +412,7 @@ as reversible assumptions.
 
 | Proposed rule | Would live in | Earned by |
 | --- | --- | --- |
-| None | — | This gate implements Settings exactly as `docs/milestones/completed/milestone-03-game-menu.md` Section 2 already describes it; nothing here contradicts or extends any RULE, so no amendment is proposed. |
+| None | — | This gate implements Settings exactly as `docs/history/milestones/milestone-03-game-menu.md` Section 2 already describes it; nothing here contradicts or extends any RULE, so no amendment is proposed. |
 
 Questions raised: none. Section 6 explains why the settings file's location/format and the
 flag-versus-saved-choice precedence are recorded as reversible assumptions rather than registered as
@@ -424,5 +424,5 @@ are cheap to revisit if evidence later says otherwise.
 Gate 3C (Mode select and honest handoffs: Campaign hands off to Milestone 4 or an explicit
 placeholder, Challenge hands off to Milestone 11 or is disabled with the reason shown) — after Mario
 has looked at `docs/screenshots/settings-*.png` and this report, per
-`docs/milestones/completed/milestone-03-game-menu.md` Section 1.1's own build order. Gate 3C is also the last gate
+`docs/history/milestones/milestone-03-game-menu.md` Section 1.1's own build order. Gate 3C is also the last gate
 this milestone names; nothing beyond it is authorized by this report.

@@ -15,17 +15,46 @@
 
 import { execFileSync } from "node:child_process"
 import { createHash } from "node:crypto"
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import pngjs from "pngjs"
 import { DIM_ALPHA } from "../../src/view/backends/canvas.ts"
 import { xterm256Rgb } from "../../src/view/roles.ts"
 
-export const CHROMIUM = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
+/**
+ * Where the headless Chromium is: `CHROMIUM_PATH` if set, else the newest `chromium-<revision>/chrome-linux/chrome`
+ * under `PLAYWRIGHT_BROWSERS_PATH` or `/opt/pw-browsers`. Every script that renders a page calls this one
+ * function; it throws, naming both ways to say where Chromium is, when it finds none.
+ */
+export function chromiumPath() {
+  const fromEnvironment = process.env.CHROMIUM_PATH
+  if (fromEnvironment) {
+    if (existsSync(fromEnvironment)) return fromEnvironment
+    throw new Error(`CHROMIUM_PATH is set to ${fromEnvironment}, which does not exist`)
+  }
+  const root = process.env.PLAYWRIGHT_BROWSERS_PATH || "/opt/pw-browsers"
+  let found = []
+  try {
+    found = readdirSync(root)
+      .map((name) => ({ name, revision: /^chromium-(\d+)$/.exec(name)?.[1] }))
+      .filter((entry) => entry.revision !== undefined)
+      .sort((a, b) => Number(b.revision) - Number(a.revision))
+      .map((entry) => join(root, entry.name, "chrome-linux", "chrome"))
+      .filter((candidate) => existsSync(candidate))
+  } catch {
+    // an unreadable or missing folder is the same as an empty one: the error below says where we looked
+  }
+  if (found.length > 0) return found[0]
+  throw new Error(
+    `no Chromium found: set CHROMIUM_PATH to a chrome executable, or put one at ` +
+      `${join(root, "chromium-<revision>", "chrome-linux", "chrome")} ` +
+      `(the folder is $PLAYWRIGHT_BROWSERS_PATH, default /opt/pw-browsers; \`npx playwright install chromium\` makes one)`,
+  )
+}
 export const ESC = String.fromCharCode(27)
 
 /** xterm's usual renderings of the 16 ANSI colours, by SGR foreground code (30-37, then the bright
- *  90-97) — the one copy of this table (`scripts/measure-palette-derivation.mjs` reads it too). */
+ *  90-97) — the one copy of this table. */
 export const PALETTE = {
   30: "#000000", 31: "#cd0000", 32: "#00cd00", 33: "#cdcd00",
   34: "#0000ee", 35: "#cd00cd", 36: "#00cdcd", 37: "#e5e5e5",
@@ -161,7 +190,7 @@ export function stepToTick(repoRoot, session, tick) {
  * whose footer no longer changes. `stepToTick` cannot confirm arrival there, because the one signal
  * it reads (the footer's tick readout) is exactly the thing that stops moving; this steps to
  * `lastResolvedTick` with it (still verified), then sends the remaining ticks directly. That is safe
- * without a read-back because `Playback.apply`'s "step-tick" case (src/view/playback.ts) advances
+ * without a read-back because `Playback.apply`'s "step-tick" case (src/terminal/playback.ts) advances
  * presentation time by exactly one tick's worth per keypress, unconditionally, gate aside - counting
  * presses is exact, not a guess.
  */
@@ -406,7 +435,7 @@ export function renderPngIfChanged({
 
   const shotPath = join(scratchDir, `${Math.random().toString(36).slice(2)}.png`)
   execFileSync(
-    CHROMIUM,
+    chromiumPath(),
     [
       "--headless",
       "--no-sandbox",

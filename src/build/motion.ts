@@ -29,7 +29,7 @@
 // `moveTuning` reads each as it is now, so a change in Settings changes the next key.
 //
 // **How a repeat is told from a tap.** Where the terminal reports key events (the kitty keyboard
-// protocol, `src/view/key-events.ts`, behind the Key releases Experiment), it says so: a press is a
+// protocol, `src/terminal/key-events.ts`, behind the Key releases Experiment), it says so: a press is a
 // tap, a repeat is a hold's, and a release ends the hold at once. Where it does not — a classic
 // terminal, or the Experiment off — a press of the same arrow within the **hold window** (the
 // `holdWindowMs` Experiment) of the one before is taken for a held key's repeat, and anything slower
@@ -41,8 +41,8 @@
 // `src/build` to that). The session keeps one of these beside the reducer, never inside it — the
 // reducer only ever sees an ordinary `move-cursor` or `highlight` of the size chosen here.
 
-import type { CursorKey } from "../menu/list-keys.ts"
-import type { KeyPhase } from "../view/key-events.ts"
+import type { CursorKey } from "../terminal/list-keys.ts"
+import type { KeyPhase } from "../terminal/key-events.ts"
 import { DEFAULT_SETTINGS } from "../settings/types.ts"
 import type { SettingSource } from "./all-settings.ts"
 import { setting } from "./all-settings.ts"

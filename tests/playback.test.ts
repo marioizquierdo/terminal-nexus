@@ -2,7 +2,8 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { Playback, compositionSize, controlForKey, keysFromChunk } from "../src/view/index.ts"
+import { Playback, controlForKey, keysFromChunk } from "../src/terminal/playback.ts"
+import { compositionSize } from "../src/view/index.ts"
 
 const TICK_MS = 1000 / 12
 const FRAME_MS = 1000 / 30

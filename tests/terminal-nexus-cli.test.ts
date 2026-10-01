@@ -1,4 +1,4 @@
-// `terminal-nexus` as a real subprocess — mirrors tests/cli.test.ts's approach for `grid`.
+// `terminal-nexus` as a real subprocess — mirrors tests/grid-cli.test.ts's approach for `grid`.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"

@@ -6,7 +6,7 @@
 // campaigns.md (`{ pulse: 1, tick: 0 }`, `{ event: "pulse.end", pulse: 3 }`, `{ spawn: {...} }`)
 // so that sketch and this file read alike. **A mission never contains a function**
 // (missions are declarative triggers, not a scripting API; whether that stays true is an open question,
-// Q39): the vocabulary grows here, in code, one typed kind at a time, and a mission is only ever these
+// Q39, answered: declarative triggers): the vocabulary grows here, in code, one typed kind at a time, and a mission is only ever these
 // literals — which is what lets `validate.ts` check every
 // reference before anything runs, and a replay re-derive every action from the mission, the seed and the
 // plans.
@@ -97,7 +97,7 @@ export type TriggerDefinition = Readonly<{
 /**
  * One mission: who stands where when it opens, what it brings each Pulse, and how it ends. Deliberately
  * the part of campaigns.md's `MissionDefinition` PERIMETER needs — no armies, unlocks or objectives list yet;
- * the map and the construct menu are still the Build Phase's placeholder ones, named by the adapter.
+ * the map and the construct menu are still the Build Phase's starter ones, named by the adapter.
  */
 export type MissionDefinition = Readonly<{
   id: string

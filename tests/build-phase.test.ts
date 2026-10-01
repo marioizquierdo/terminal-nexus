@@ -23,14 +23,14 @@ import {
   formatMouseEvent,
   parseMouseEvent,
 } from "../src/build/mouse.ts"
-import { BuildSession } from "../src/build/session.ts"
-import type { BuildSessionOptions } from "../src/build/session.ts"
+import { BuildSession } from "../src/view/build-session.ts"
+import type { BuildSessionOptions } from "../src/view/build-session.ts"
 import { anchorForCursor, applyBuildCommand, armedPreview, createBuildState, entryOfConstruct, legalityAt, remaining, spent } from "../src/build/state.ts"
 import { popupSpec } from "../src/build/popup.ts"
 import { cardText } from "../src/build/card.ts"
 import { bottomLine } from "../src/build/help.ts"
 import type { BuildCommand } from "../src/build/types.ts"
-import { starterContext } from "../src/cli/build-phase.ts"
+import { starterContext } from "../src/cli/starter.ts"
 import { fitViewport, marginForView } from "../src/build/camera.ts"
 import { DOWN, ENTER, ESC, LEFT, MAXIMUM, MINIMUM, PAGE_DOWN, PAGE_UP, RIGHT, SHIFT_LEFT, SHIFT_RIGHT, UP, screenText } from "./build-helpers.ts"
 

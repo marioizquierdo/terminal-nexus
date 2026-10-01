@@ -103,7 +103,7 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
   (RULE — `tests/build-focus.test.ts`)
 - **A click can only choose what it could see**: while a card covers the menu, a click on the panel goes
   back and chooses nothing. **A click outside a popup** closes it and moves focus there, nothing more; over a card it only closes
-  the popup, and the card and its building come back. (RULE — `tests/build-card.test.ts`, `tests/build-placing.test.ts`)
+  the popup, and the card and its building come back. (RULE — `tests/build-card.test.ts`, `tests/build-holds-menu.test.ts`)
 - **Whole rows are targets**, as wide as the highlight bar, and **drawing and hit-testing read one
   geometry** (`buildLayout` in `src/build/layout.ts`, the placed popup in `src/build/popup.ts`).
   (RULE — `tests/build-menu.test.ts`, `tests/build-edge.test.ts`, `tests/build-popups.test.ts`)
@@ -125,14 +125,14 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   (RULE — `tests/build-cancel.test.ts`, `tests/pulse-screen.test.ts`)
 - **The key that opened something closes it**: `e`, `n`, `d`, and a building's own digit while it is
   being placed. (On the Battle Round screen `s` confirms instead: starting takes two deliberate presses.)
-  (RULE — `tests/build-placing.test.ts`, `tests/build-card.test.ts`, `tests/build-start.test.ts`)
+  (RULE — `tests/build-holds-menu.test.ts`, `tests/build-card.test.ts`, `tests/build-start.test.ts`)
 - **No popup carries its own way back** — no `[esc] Back` row, no `[esc]` in its border. **The top bar's
   right end says what Esc does now**: `menu [esc]` on the menu and while a Pulse plays, `back [esc]` on
   the map, `close [esc]` over a popup — the action quiet, the key in the hotkey colour. A click on it is
   exactly Esc (`escLabel` in `src/build/layout.ts`). (RULE — `tests/build-popups.test.ts`, `tests/build-cancel.test.ts`)
 - **The game menu** is `[s] Settings`, `[c] Controls and hotkeys`, `[a] Activity logs`, `[r] Restart` (the
   plan lost, settings and Experiments kept) and `[q] Quit`. **Leaving always asks**; Ctrl+C is the one immediate way out.
-  (RULE — `tests/build-settings.test.ts`, `tests/build-popups.test.ts`, `tests/build-lifecycle.test.ts`)
+  (RULE — `tests/build-settings.test.ts`, `tests/build-popups.test.ts`, `tests/lifecycle-build-phase.test.ts`)
 
 ## 4. Menu rows
 
@@ -179,7 +179,7 @@ title screen's menu.
 - **A first tap is one row; taps and holds move a list exactly as they move the map cursor** (see *The
   map*): quick taps speed up by counting, a held arrow keeps the game's pace, clamped at the ends. The
   title screen's menu stops and jumps but does not count or keep a pace: its loop reads no clock. One
-  key classifier serves every list (`src/menu/list-keys.ts`).
+  key classifier serves every list (`src/terminal/list-keys.ts`).
   (RULE — `tests/build-lists.test.ts`, `tests/menu-list.test.ts`)
 - **Shift+Up/Down, PageUp/PageDown and Home/End go to the first or last row.**
   (RULE — `tests/build-lists.test.ts`)
@@ -235,7 +235,7 @@ game menu, Settings, Controls) still open over it and hand it back, still armed,
 never moves the menu's highlight. So the menu is never workable with a ghost on the map, and never loses
 track of what is armed (`refuseWhileArmed` in `src/build/state.ts`). Explore Map holds nothing: a digit
 while exploring arms from the map, and `n` opens the Nexus powers.
-(RULE — `tests/build-placing.test.ts`)
+(RULE — `tests/build-holds-menu.test.ts`)
 
 ## 7. Hand-offs to the map
 
@@ -320,7 +320,7 @@ uses it rather than a new blend.
 - **Unmissable**: a solid border in the map edge's weight, the title in it, a one-cell shadow (`:` or
   `░`), centred over the map, drawn last in the chrome band. (RULE — `tests/build-popups.test.ts`)
 - **It holds the keyboard and the mouse** until it closes; keys it does not use do nothing. **Nothing
-  opens a popup but the player.** (RULE — `tests/build-popups.test.ts`, `tests/build-placing.test.ts`)
+  opens a popup but the player.** (RULE — `tests/build-popups.test.ts`, `tests/build-holds-menu.test.ts`)
 - **A choice closes its popup**: a Nexus pick returns the player to where they were; the bottom line
   and the menu say what it did. (RULE — `tests/build-nexus.test.ts`)
 - **A popup that belongs to a menu row keeps that row active behind it** (Nexus, Battle Round); one that
@@ -335,7 +335,7 @@ uses it rather than a new blend.
   moves, never the title, text or shadow. (RULE — `tests/build-breath.test.ts`)
 - **A popup can have an opening** that plays once from the moment it opens, then gives way to the breath.
   Which popup has which is a table in the view (`POPUP_OPENINGS`), not code in the drawing. Today only the
-  Battle Round screen has one, a **double flash**: two quick pulses well past the breath's range (the
+  Battle Round screen has one, a **double flash**: two quick flashes well past the breath's range (the
   "Battle Round flash" and "Flash strength" Experiments), then the breath from rest. Everything is still
   under reduced motion and in monochrome; at 16 colours the flash shows as two steps and the breath does
   not; the Popup pulse at 0 stops the breath only. (RULE — `tests/build-breath.test.ts`)
@@ -352,8 +352,7 @@ uses it rather than a new blend.
   the track — the plain border itself — with a textured **thumb** where the part in view sits (its
   length the share in view), then a down symbol: `^ # v` or `▲ ╬ ▼`, inverse like the border. The
   thumb's texture is its own, never the shadow's: a track in the shadow's texture read as more shadow
-  (the owner, third round: "keep the same background as the regular border, but add different texture
-  for the bar"). A click on its upper half scrolls up, on its lower half down (`PlacedPopup.scrollBar`).
+  (the bar keeps the regular border's background and differs in texture). A click on its upper half scrolls up, on its lower half down (`PlacedPopup.scrollBar`).
   (RULE — `tests/build-popups.test.ts`)
 - **A long list shows where the highlight is beside its title**: `SETTINGS (6/28)`.
   (RULE — `tests/build-popups.test.ts`)
@@ -418,7 +417,7 @@ uses it rather than a new blend.
 - **Looking reads quietly, trying loudly**: a ghost on a tile it cannot use shows a grey block of `x` and
   a plain-toned reason; once the player tries, the same words turn red and bold until the answer lapses.
   **A command's own answer comes first**, a refusal included; the ghost's reason is what the line says
-  when the last command said nothing. (RULE — `tests/build-help.test.ts`, `tests/build-placing.test.ts`)
+  when the last command said nothing. (RULE — `tests/build-help.test.ts`, `tests/build-holds-menu.test.ts`)
 - **During a Pulse** it says what the Pulse is doing, unless a popup holds the keyboard. **It fits 80
   columns**; a narrower bar drops whole words, never half of one. (RULE — `tests/build-help.test.ts`)
 
@@ -436,8 +435,8 @@ uses it rather than a new blend.
   its own last row. (RULE — `tests/build-focus.test.ts`, `tests/build-edge.test.ts`)
 - **Moving the cursor: taps are counted, a hold has a pace.** A tap is one tile. Taps of one arrow close
   together are a run that keeps its speed, and the third one since the speed changed, if quick, doubles
-  it (1, 1, 2, then 2, 2, 4), so speed is asked for, never fallen into (the owner, third round: "the
-  cursor starts jumping ahead, so I have to stop and come back"). A held arrow moves at the game's own
+  it (1, 1, 2, then 2, 2, 4), so speed is asked for, never fallen into (a cursor that starts jumping
+  ahead makes the player stop and come back). A held arrow moves at the game's own
   steady pace, whatever the keyboard's repeat rate, one tile a move and two after a while. A hold ends a
   run of taps, so adjusting after a hold is precise. **Shift is a jump, not a speed**, repeating no
   faster than the eye can see it land; Option+Arrow, PageUp/PageDown and Home/End are the same jump,
@@ -447,8 +446,8 @@ uses it rather than a new blend.
   events (the kitty keyboard protocol, the Key releases Experiment), the game knows a tap from a repeat
   and when a key is let go; where it cannot, a press within the hold window counts as holding. Asking
   for more from a host is always undone on the way out, through the one disposer. The input path decides
-  (`src/build/motion.ts`, `src/view/key-events.ts`); the reducer sees ordinary moves.
-  (RULE — `tests/key-events.test.ts`, `tests/build-motion.test.ts`, `tests/build-lifecycle.test.ts`)
+  (`src/build/motion.ts`, `src/terminal/key-events.ts`); the reducer sees ordinary moves.
+  (RULE — `tests/key-events.test.ts`, `tests/build-motion.test.ts`, `tests/lifecycle-build-phase.test.ts`)
 - **Clicks**: a click moves focus and the cursor to the tile, the ghost with it. **A second click on the
   same tile places** (by tile, never screen cell), and **a quick double click places where its first
   click pointed**, even if the view moved (`BuildSession`). A click near an edge scrolls further the
@@ -491,7 +490,7 @@ uses it rather than a new blend.
   picture. A removal throws the same sparks. Reduced motion shows the finished building at once, unlit,
   with a still mark for the sparks. (RULE — `tests/build-placement.test.ts`)
 - **A reserved colour means one thing.** Red is kept for the player's own Nexus being hurt — first hit,
-  very low health, a lost Pulse — as a faint, brief tint of the border, always said again in words, and
+  very low health, a lost round — as a faint, brief tint of the border, always said again in words, and
   absent under reduced motion. A new warning goes to the timer or the light, never to more red.
   (RULE — `tests/pulse-screen.test.ts`, `tests/ending.test.ts`)
 
@@ -525,7 +524,7 @@ uses it rather than a new blend.
   the row is `[enter] Play again`. Restart, from the game menu, is the mission from round 1.
   (RULE — `tests/mission-loop.test.ts`)
 - **A mission's round is counted in the top bar** — `build phase - round 2 of 3` — because PERIMETER's goal
-  is about rounds (a Pulse counter shows only when the goal is about Pulses), and the Battle Round screen
+  is about rounds (a round counter shows only when the goal is about rounds), and the Battle Round screen
   is that round's number, in the mission's words for it.
   (RULE — `tests/mission-loop.test.ts`, `tests/build-start.test.ts`)
 
@@ -612,7 +611,9 @@ the build stamped on every export — is what makes a pasted export reproducible
   building hand-off's traveller is the *focus arrow*; Explore Map's is the *see-through cursor*.
 - **Battle Round or Pulse is still open** (Q68): the start screen says Battle Round; the menu row and the
   running screen say Pulse until it is settled. A mission's cycles are **rounds** to the player — "round 2
-  of 3", "Next round" — which agrees with Battle Round either way.
+  of 3", "Next round" — which agrees with Battle Round either way. The words are defined in
+  [`grid-engine.md`](grid-engine.md); the "Popup pulse" Experiment is a breath of light on a popup's
+  border and has nothing to do with the Nexus Pulse.
 
 ## Where the rules came from
 

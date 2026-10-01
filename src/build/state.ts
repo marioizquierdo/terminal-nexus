@@ -1,16 +1,16 @@
 // The Build Phase's pure reducer: a command in, the next state out. No terminal, no frame, no
-// clock — the same separation `src/menu/list.ts` draws for the menu, so every claim about scrolling
+// clock — the same separation `src/title-menu/list.ts` draws for the menu, so every claim about scrolling
 // and placement is checkable without a TTY.
 
 import type { LogEntry } from "../log/logger.ts"
 import { footprintCentre, footprintExtent, inBounds, tilesOf } from "../grid/coords.ts"
 import type { ContentRegistry } from "../content/index.ts"
-import { stepListIndex } from "../menu/list-keys.ts"
+import { stepListIndex } from "../terminal/list-keys.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
 import type { MatchState } from "../state/types.ts"
-import type { StatusMessage } from "../status.ts"
-import { NO_STATUS, status } from "../status.ts"
+import type { StatusMessage } from "./status.ts"
+import { NO_STATUS, status } from "./status.ts"
 import type { Camera, Margin, Viewport } from "./camera.ts"
 import { centreOn, clampToGrid, edgeClickCamera, followCursor, marginForView } from "./camera.ts"
 import type { ShownName } from "./all-settings.ts"
@@ -1345,7 +1345,7 @@ function warnIfRestartNeeded(before: BuildState, next: BuildState): BuildState {
 /**
  * One command, applied. `quit` passes through untouched — leaving the screen is not a Build Phase
  * concern, and the session that owns the disposer decides what it means, exactly as
- * `src/menu/list.ts` already does for the menu.
+ * `src/title-menu/list.ts` already does for the menu.
  */
 export function applyBuildCommand(
   context: BuildContext,

@@ -42,7 +42,7 @@ Which gives twelve presets:
 | `extra-large` | 24 × 24 | 48 × 24 | 72 × 24 |
 
 **RULE — `src/scenario/presets.ts`, `tests/scenario.test.ts`: the default preset is `medium-extra-wide`
-(48 × 16)** and the one every early fixture uses. It is locked because both compositions are derived
+(48 × 16)** and the one every early scenario uses. It is locked because both compositions are derived
 from it: at one column per tile it needs 48 + 2 border + 30 sidebar = **exactly 80 columns**, and at two
 columns per tile **exactly 128**. Change 48 × 16 and the 80- and 128-column layouts stop falling out
 of one number (the compositions are in [`presentation.md`](presentation.md)).
@@ -55,7 +55,7 @@ bottom, then one line of contextual help). **The floor measures against 8 rows**
 `tests/build-camera.test.ts`): the resize gate uses the old 8-row budget, so 16 + 8 = **24 rows** and
 80 × 24 stays a literal floor, and the two rows the one-line footer saves go to the Grid: 18 rows of
 Grid at 80 × 24. Whether 80 × 24 is a hard minimum, and how many rows belong to the frame, is still
-an open question (Q12). It is the same arrangement as the side panel's shared divider column below.
+settled (Q12, answered). It is the same arrangement as the side panel's shared divider column below.
 `grid watch`'s own view, not built on the Build Phase's frame, uses 8 rows, split 3 and 3.
 
 ## 3. Orientation is a rendering choice — RULE
@@ -75,6 +75,10 @@ A Grid may be larger than the screen. The **viewport** is the window onto it, me
 | --- | --- | --- |
 | **Minimum viewport** | 48 × 16 | The default preset. Below this the game is not playable, and the renderer shows a resize gate |
 | **Maximum viewport** | 72 × 24 | The largest Grid preset. Nobody sees more of the Grid than this, however large their monitor |
+
+The clamp is a range, not a size: a terminal shows however many tiles fit between the two ends. An
+80 × 24 terminal shows 49 × 18 tiles, one point inside the range (the floor guarantees at least
+48 × 16, and the shared divider column and the one-line footer give it a little more).
 
 The maximum exists for **fairness and for bounded arithmetic**. A player on a huge display must not
 be able to see meaningfully more of the Grid than a player on a laptop, and every layout, cursor and
@@ -101,11 +105,13 @@ Which gives these terminal sizes:
 | | Tile width 1 | Tile width 2 |
 | --- | --- | --- |
 | Minimum viewport (48 × 16) | **80 × 24** | 128 × 24 |
-| Maximum viewport (72 × 24) | 104 × 30 | 176 × 30 |
+| Maximum viewport (72 × 24) | 103 × 30 | 175 × 30 |
 
-The minimum row is the resize gate's, which measures against the 8-row budget, so it is the floor at
-both tile widths. The maximum row is where the Build Phase's actual 6-row chrome first shows 24 rows
-of Grid.
+The minimum row is the resize gate's, which measures against the floor's 30-column panel and 8-row
+budget, so it is the floor at both tile widths. The maximum row is where the Build Phase's actual
+29-column panel and 6-row chrome first show 72 × 24 tiles: 72 + 2 + 29 = 103 columns and 24 + 6 = 30
+rows at one column per tile. The shots and the camera test use 104 × 30, one column past it. Any
+terminal larger than that buys margin, never more Grid.
 
 **80 × 24 is the floor and the acceptance target.** Everything must work there.
 
@@ -121,7 +127,7 @@ There is no minimap.**
   view's width for the sides and of its height for the top and bottom, **30%** (GUIDANCE, a tuned value
   in `src/build/tuning.ts`; `--scroll-margin <percent>` sets it), rounded, and capped so an axis's two
   margins never meet (`tests/build-motion.test.ts`). That a margin exists, and that the cursor drives
-  it, is the rule; the number is not. The exact speed tiers and timings are still tuned by feel (Q54).
+  it, is the rule; the number is not. The exact speed tiers and timings were settled by tap counting and a hold pace (Q54, answered).
 - **The margin is a follow rule, not an invariant** (RULE — `tests/build-camera.test.ts`). It says
   where the camera must be relative to the cursor *when it can be*. At the Grid's own edge the camera
   has nowhere left to go, so the cursor legitimately reaches the edge of the screen, which is correct
@@ -143,7 +149,7 @@ There is no minimap.**
   `src/view/edge.ts`). A side with **more Grid to scroll to** is the frame's own line drawn dim (`-`,
   `|`); a side that has **reached the Grid's own edge** is drawn in **the map's own edge style**, named
   in the map's definition (a solid bar, an inverse-video cell, for a map that names none; a dashed fence
-  for PERIMETER's stand-in map), in the quieter edge colour (`chrome.edge`), the same weight along the
+  for the starter map), in the quieter edge colour (`chrome.edge`), the same weight along the
   top and bottom as down the sides, in every glyph pack and in monochrome, with no colour needed to
   read it. A corner takes the edge wherever an edge side runs into it; a patterned edge is fixed to the
   map and scrolls with it. When the whole Grid fits, every side and all four corners are the edge at
@@ -311,7 +317,7 @@ interface Placement {
   (RULE — `tests/grid.test.ts`). A large structure is easier to reach because it is large, which is
   the intuitive answer.
 - **Facing is presentation-only for now** (RULE for now; whether it should ever affect rules is an open
-  question, Q9). It is derived from the last movement step, or from the current target when
+  question, Q9, answered as no). It is derived from the last movement step, or from the current target when
   stationary. Nothing in the rules reads it. It exists in state because a renderer that has to guess
   facing produces jitter, and because arcs may want it later. It is the one deliberate exception to
   "state carries nothing only presentation reads" (see [`grid-engine.md`](grid-engine.md)).

@@ -2,7 +2,7 @@
 // arrives as a terminal cell, is converted to a tile through the layout, and leaves as a command
 // naming a tile or a menu row. Nothing downstream learns a cell coordinate.
 //
-// SGR parsing is `src/menu/mouse.ts`'s, reused rather than rewritten. What this adds is the two
+// SGR parsing is `src/title-menu/mouse.ts`'s, reused rather than rewritten. What this adds is the two
 // gestures a flat menu has no use for: the wheel, and the right button.
 
 import type { BuildLayout } from "./layout.ts"

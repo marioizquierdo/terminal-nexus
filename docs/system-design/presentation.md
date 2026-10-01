@@ -112,10 +112,10 @@ holds the frame, composition and bands those patterns draw into.
 The two phases need different amounts of screen, and pretending otherwise wastes the Grid.
 
 **Both phases share the same frame**: a **top bar**, the **Grid pane** closed into its own rectangle (see
-[`grid.md`](grid.md)), a 30-column **side panel**, and a **bottom bar** (RULE —
+[`grid.md`](grid.md)), a **side panel** 30 columns wide counting the divider it shares with the Grid, and a **bottom bar** (RULE —
 `tests/build-focus.test.ts`, `tests/build-view.test.ts`). The top bar and the bottom bar run the whole
 width: at the 80-column floor the Grid pane is 49 columns, and the bottom bar's line is longer than that.
-The top bar carries the game's title and where the player is (the phase today; the mission and Pulse
+The top bar carries the game's title and where the player is (the phase today; the mission and the round
 number once there are some), the bottom bar is **one line of contextual help**, and the side panel
 carries actions and their status. Both phases support the cursor, selection, inspection and scrolling: a
 player watching a Pulse can hover a unit to read its state in real time, and can scroll the Grid, exactly
@@ -132,7 +132,7 @@ What differs between the phases is what the side panel holds:
 | | Side panel carries |
 | --- | --- |
 | **Build Phase** | what is left to spend on its credits line, then `[e] Explore Map` and `[n] Nexus` (see [`input.md`](input.md)), the buildings with each row's cost, and `[s] Start Pulse` on its last line — or, while Explore Map is open or a building is being placed, a card in the menu's place (below) |
-| **Nexus Pulse** | Pulse number, both Nexus states, force totals, playback controls, and — when something is selected — that entity's live state |
+| **Nexus Pulse** | round number, both Nexus states, force totals, playback controls, and — when something is selected — that entity's live state |
 
 **A refused placement is answered on the status line, and names its tile** (RULE —
 `tests/build-view.test.ts`, `tests/build-help.test.ts`). The panel carries no refusal of its own; the
@@ -162,7 +162,7 @@ say there is more map (see [`grid.md`](grid.md)), and every key is on the Contro
 
 A message on that line is a small typed value, not a string: its text, a **tone** (`neutral`,
 `success`, `warning`, `danger`, and `hint`, which reads quieter than any answer), and optionally **the
-tile it is about** (`src/status.ts`). A tone resolves onto existing style roles in exactly one place
+tile it is about** (`src/build/status.ts`). A tone resolves onto existing style roles in exactly one place
 (`src/view/status.ts`) and never names a colour itself, so monochrome gets the same message by weight
 alone. An effect (a flash, a fade) is a later field on the same value, not a second mechanism.
 
@@ -210,11 +210,11 @@ card. Start Pulse hides with the rest of the menu.
 
 **The header's own hotkey cancels**: `e` closes Explore Map and a building's digit cancels it, as `x`, Esc
 or a click anywhere on the panel do, back to where the card was opened from (RULE —
-`tests/build-card.test.ts`, `tests/build-placing.test.ts`). **A building being placed holds the menu**:
+`tests/build-card.test.ts`, `tests/build-holds-menu.test.ts`). **A building being placed holds the menu**:
 until it is placed or cancelled, another building's digit, `e` and `s` are refused (the header flickers
 and the bottom line names the way on), while popups that belong to no row choice (the Nexus powers, the
 game menu, Controls, Settings) open over it and give it back, and never move the menu's highlight (RULE
-— `tests/build-placing.test.ts`). Explore Map holds nothing: a digit while exploring arms from the map.
+— `tests/build-holds-menu.test.ts`). Explore Map holds nothing: a digit while exploring arms from the map.
 Arming and opening Explore Map put nothing on the bottom line but its hint. Tab and a click on the map
 arrive in plain navigation instead, the menu left beside the map, so the next click can arm from it. A
 larger ASCII-art card waits for content that has one, and live numbers wait for the Nexus Pulse view.

@@ -137,7 +137,7 @@ A rare connected individual can be sent with a Grid replica and restored by the 
 
 Symbols are often geniuses, leaders, dangerous mystics, or people whose presence changes a civilization's doctrine. Not every great leader is a Symbol, and not every Symbol is wise or worthy. Most playable Commanders are deeply involved in the Activation, but a faction may rally around a skeptical, unwilling, or politically inconvenient Symbol.
 
-**RULE:** in battle, a Commander is a persistent frontline `@`. If killed, they remain absent for one complete Build Phase and Nexus Pulse before the Prime can replicate them again. Their death is costly but is not the victory condition. Powers may exploit death, absence, restoration, proximity to the battle Nexus, or the connection between replicas.
+**RULE:** in battle, a Commander is a persistent frontline `@`. If killed, they remain absent for one complete round (a Build Phase and its Nexus Pulse) before the Prime can replicate them again. Their death is costly but is not the victory condition. Powers may exploit death, absence, restoration, proximity to the battle Nexus, or the connection between replicas.
 
 No one can prove that restoration returns the original consciousness. It may restore the same person, reconstruct a pattern, continue a distributed mind, or produce an entity whose belief in continuity is part of the protocol.
 

@@ -18,6 +18,8 @@ npm run typecheck   # tsc --noEmit, then the browser page's one DOM file against
 npm test            # Node's runner over tests/*.test.ts
 npm run test:bun    # the same suite under Bun, one file at a time
 npm run check       # ./scripts/check-repository.sh — the repository validator
+npm run test:all    # typecheck, then both runtimes: what to run before every push
+npm run verify-maps # every checked-in map resolves to the same hashes twenty times (CI runs this)
 
 # grid — the engine, editor and replay tool. <map> is a .map.json path, suffix optional.
 ./bin/grid.ts scenarios/citizen-mirror-skirmish                       # watch (the default)
@@ -81,7 +83,7 @@ Things that bite:
 - **Timing tests flake under load.** With agents building in parallel the frame-budget tests have
   failed once and passed alone. Re-run the file alone and measure before and after; never loosen a
   test to make a busy machine pass.
-- **A red assertion in the live-loop test looks like a hang.** `tests/build-lifecycle.test.ts` leaves
+- **A red assertion in the live-loop test looks like a hang.** `tests/lifecycle-build-phase.test.ts` leaves
   the terminal loop running when an assertion throws, so Node never exits. Run it alone with
   `node --test --test-timeout=30000`.
 - **Silent parsers.** An unknown command-line option is treated as a flag. Register every
@@ -114,14 +116,20 @@ node scripts/playtest.mjs --keys "Down Down Space*4" --gif --png final --name ha
 node scripts/playtest.mjs --keys "n 2 s s wait~1000*20"                    # a Pulse, twenty seconds in
 ```
 
-Output goes to `.playtest/`, which git ignores. Pass `--out docs/screenshots` only for an image a pull
-request will show, and keep a GIF under about 1 MB (`--scale 1` quarters it).
+Output goes to `.playtest/`, which git ignores, and so does every capture script's. **Pictures are not
+stored in the tree.** A pull request's pictures are committed on its branch under `docs/pr-pictures/`
+in one commit, the description links them by that commit's SHA
+(`https://raw.githubusercontent.com/marioizquierdo/terminal-nexus/<sha>/docs/pr-pictures/<name>.png`),
+and the branch's last commit removes the folder; the repository squash-merges, so `main` never carries
+them and the pull request keeps them forever. Keep a GIF under about 300 KB (`--scale 1` quarters it)
+and a PNG under 200 KB. A picture worth keeping for the record goes in `docs/history/screenshots/`
+with a dated name and a row in its README, one or two per era.
 
 **Screenshots of the real terminal** (`node scripts/capture-screenshots.mjs`, the `grid-screenshots`
 skill) drive `grid` inside a tmux pseudo-terminal, so the ANSI backend takes the path a person gets,
 pause at an exact tick and render the pane to a PNG through the Chromium already present for
 Playwright. `scripts/capture-build-phase-screenshots.mjs` covers the Build Phase at the sizes that matter
-(80 × 24, 104 × 32, 128 × 24, and 79 × 24 for the resize gate); most of its shots are composed
+(80 × 24, 104 × 30, 128 × 24, and 79 × 24 for the resize gate); most of its shots are composed
 in-process through the scripted playtest, a few stay on tmux because the terminal path is what they
 prove. An unchanged shot is not rewritten: every image records a hash of the page it came from, so a
 regeneration touches only the pictures a change shows up in. Set an Experiment by name with
@@ -162,7 +170,9 @@ and is small enough to be played and judged as a whole. Its file holds:
   plain words;
 - its status (`PLANNED`, `CURRENT`, `COMPLETE`) and, while current, its **current step**.
 
-`docs/milestones/README.md` is the sequence, the build order and the reason for it. Only one
+A step is in one of three states, written under its heading: **not started**, **built** (merged;
+waiting for Mario to play it), or **done** (he has played it and said so). `docs/milestones/README.md`
+is the sequence, the build order and the reason for it. Only one
 milestone is current, and the validator holds the index and the file to the same answer. Milestone
 numbers are identities, never an order: read the build-order column.
 
@@ -170,7 +180,7 @@ numbers are identities, never an order: read the build-order column.
 playtest, pictures), opens a pull request and stops. A step is done when its pull request is merged
 and Mario has played it; ticking the box and adding one line to `docs/history/README.md` is the whole
 bookkeeping. The next step waits for his word; "time remains" is never a reason to start it. A
-milestone is complete when its steps are, and its file moves to `docs/milestones/completed/`.
+milestone is complete when its steps are, and its file moves to `docs/history/milestones/`.
 Promoting the next milestone is Mario's call, recorded in the index.
 
 What belongs to no step goes in `docs/milestones/next-steps.md`: what waits on Mario, small carry-over,
@@ -205,15 +215,13 @@ The unit-architecture spike and the menu spike in `docs/history/reports/` are th
 ## 6. The feedback loop
 
 Mario plays merged builds, several at a time, and sends long, specific feedback, sometimes with a
-pasted **settings export**. This is the most valuable input the project gets; the loop is built to
-turn it around within hours. The exact procedure is the `feedback-round` skill; the shape:
+pasted **settings export** or an **Activity Logs export**. This is the most valuable input the project
+gets; the loop is built to turn it around within hours. The exact procedure is the `feedback-round`
+skill; the ideas behind it:
 
-1. **Log his words first**, item by item, in `docs/history/feedback/<date>-<round>.md`: a numbered
-   item per point, his words in a blockquote, then its status (Built, Scheduled, Open, Contested) and,
-   once done, a plain paragraph of what now happens. Nothing is dropped silently. Read the message
-   twice; the second reading finds the half an agent would otherwise miss.
-2. **Turn it into steps** on the current milestone, split across agents by files (not by feature),
-   each agent in its own worktree from a pinned commit, each owning files the others do not touch.
+1. **Log his words first**, item by item, in `docs/history/feedback/<date>-<round>.md`, each with
+   its status and, once done, a plain paragraph of what now happens. Nothing is dropped silently.
+2. **Turn it into steps** on the current milestone, split across agents by files, not by feature.
 3. **Ask him to feel a choice through an Experiment.** Settings (Esc on the menu, then `s`) lists the
    player's own saved settings and, below them under `d`, the **Experiments**: live-editable, never
    saved, each naming the question it serves. Every setting is declared once with its tier in
@@ -228,17 +236,15 @@ turn it around within hours. The exact procedure is the `feedback-round` skill; 
    `playtest.mjs --activity` that a flow logs it, and ask him to play, open Esc then `a`, export and paste
    it. Remove both once answered, as an Experiment is.
 5. **His export is the answer.** Export settings (`e` in Settings) copies every setting and
-   Experiment as `name = value` text, changed Experiments first; he pastes it into the pull request.
-   Reproduce exactly what he saw with `--settings "<text>"` on the game, the playtest script or
-   `#settings=` on the browser page. Then settle each Experiment it answers: his value becomes the
-   default, its tier becomes *tuned* with who chose it and when, and the Experiment is deleted. A few
-   stay longer (a number that depends on the player's keyboard, placeholder content) or graduate into
-   real Settings.
-6. **Size the Demo to the change.** A code block or nothing when nothing shows on screen; screenshots
-   for a look; a GIF for movement or timing; a playable page only when it must be played. The
-   `pr-description` skill has the shape, phone-readable, leading with what the player will see.
-7. **Rewrite the pull request against `main`** after every round, the whole change, not the last
-   round; then wait lightly, and do not start the next step.
+   Experiment as `name = value` text; reproduce what he saw with `--settings "<text>"` on the game,
+   the playtest script or `#settings=` on the browser page. Then settle each Experiment it answers:
+   his value becomes the default, its tier becomes *tuned* with who chose it and when, and the
+   Experiment is deleted. A few stay longer (a number that depends on the player's keyboard, a stand-in
+   value) or graduate into real Settings.
+6. **Size the Demo to the change** (the `pr-description` skill): a code block or nothing when nothing
+   shows on screen, screenshots for a look, a GIF for motion, a playable page only when it must be
+   played. Rewrite the pull request against `main` after every round, then wait; do not start the
+   next step.
 
 What four rounds taught is in `docs/history/lessons-learned.md`.
 
@@ -278,8 +284,9 @@ document that now owns it.
 the interface patterns, a test name and a feedback log, and the stale copy is always the one you did
 not think of. One home per fact; everything else links.
 
-**Retired words.** "Canon", "gate", "evidence" and the old folder paths are retired outside `docs/history/`; the validator rejects them. <!-- stale-ok -->
-Say "the design documents", "milestone step", "screenshots", "in scope".
+**Retired words.** "Canon", "gate", "evidence", the old folder paths and the old document names (engine, ascii-effects, the governance document) are retired outside `docs/history/`; the validator rejects them in documents, skills, source, tests and scripts alike. <!-- stale-ok -->
+Say "the design documents", "milestone step", "screenshots", "in scope", and cite a design page by its
+current name. History keeps the words it was written with.
 
 ## 8. Writing for Mario
 

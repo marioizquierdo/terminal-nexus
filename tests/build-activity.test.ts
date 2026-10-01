@@ -21,7 +21,8 @@ import { ACTIVITY_DESCRIPTION, GAME_MENU_ROWS } from "../src/build/settings.ts"
 import type { BuildState } from "../src/build/state.ts"
 import type { BuildCommand, ExportKind } from "../src/build/types.ts"
 import { startPulse } from "../src/cli/pulse-run.ts"
-import { runBuildPhase, starterContext } from "../src/cli/build-phase.ts"
+import { runBuildPhase } from "../src/cli/build-phase.ts"
+import { starterContext } from "../src/cli/starter.ts"
 import { ACTIVITY_EVENTS, ACTIVITY_FILTERS, createLogger, entryProblems, formatActivityExport, parseLogLine } from "../src/log/index.ts"
 import type { LogEntry } from "../src/log/index.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
@@ -576,7 +577,7 @@ test("a session given no log of its own records into the game's global one", asy
   const { activity } = await import("../src/log/activity.ts")
   const side = buildSide({ context: starterContext() })
   // buildSide gives every test session a log of its own; a bare session uses the global.
-  const { BuildSession } = await import("../src/build/session.ts")
+  const { BuildSession } = await import("../src/view/build-session.ts")
   const bare = new BuildSession({ context: starterContext(), cursor: STARTER_START_CURSOR, viewport: side.layout.viewport })
   const before = activity.lastSeq
   bare.dispatch({ kind: "focus", target: "grid" } satisfies BuildCommand)

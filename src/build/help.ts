@@ -18,8 +18,8 @@
 // The words for keys are the screen's own: `[enter]`, `[esc]`, `[e]` in brackets, as the menu rows and
 // the top bar write them; arrows, up/down and left/right as plain words, since they are directions.
 
-import type { StatusMessage } from "../status.ts"
-import { status } from "../status.ts"
+import type { StatusMessage } from "./status.ts"
+import { status } from "./status.ts"
 import { cardText } from "./card.ts"
 import type { ArmedPreview, BuildContext, BuildState } from "./state.ts"
 import {

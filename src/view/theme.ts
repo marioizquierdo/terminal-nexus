@@ -7,27 +7,12 @@
 import { artFor } from "../content/art.ts"
 import type { Coord, TerrainId } from "../grid/types.ts"
 import type { PlayerId } from "../state/types.ts"
+import type { GlyphPack } from "../terminal/display.ts"
 import type { StyleRole } from "./roles.ts"
 
-/**
- * Glyph packs — the design allows an optional Unicode pack alongside the ASCII
- * baseline. The pack changes the **field and the frame**, never the actors: units are letters
- * because case carries ownership and the shape families carry faction (`presentation.md`,
- * the lore document), and that system is not improved by prettier symbols.
- *
- * ASCII stays the default and the acceptance target. Everything here is one cell wide.
- */
-export type GlyphPack = "ascii" | "unicode"
-
-export const GLYPH_PACKS: readonly GlyphPack[] = ["ascii", "unicode"]
-
-export function parseGlyphPack(value: string): GlyphPack {
-  const found = GLYPH_PACKS.find((pack) => pack === value)
-  if (found === undefined) {
-    throw new Error(`unknown glyph pack "${value}"; expected one of ${GLYPH_PACKS.join(", ")}`)
-  }
-  return found
-}
+// The glyph-pack names live below the view (`src/terminal/display.ts`); re-exported here.
+export type { GlyphPack } from "../terminal/display.ts"
+export { GLYPH_PACKS, parseGlyphPack } from "../terminal/display.ts"
 
 const TERRAIN_GLYPHS: Readonly<
   Record<GlyphPack, Readonly<Record<TerrainId, { glyph: string; role: StyleRole }>>>

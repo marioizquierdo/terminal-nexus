@@ -64,7 +64,4 @@ jobs:
         run: bun scripts/build-web.mjs
 
       - name: Verify every map resolves identically
-        run: |
-          for map in scenarios/*.map.json; do
-            ./bin/grid.ts "$map" --verify --runs 20
-          done
+        run: npm run verify-maps

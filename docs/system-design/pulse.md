@@ -36,8 +36,8 @@ absolute time and must not quietly start depending on a frame:tick alignment.
 Moving the tick rate is a migration of every duration in every definition and scenario, not a
 constant to edit. The alternative, authoring durations as rational seconds, buys rate-independence
 at the cost of arithmetic at every use site; it was considered and rejected as the worse trade. The
-rate stays cheap to change only while little content exists, and from Milestone 12, when the real
-content arrives, it is expensive.
+rate stays cheap to change only while little content exists, and once real rosters are authored it
+is expensive.
 
 ### 1.2 Movement credit — RULE — `tests/rules.test.ts`
 
@@ -101,7 +101,7 @@ arbitration's progress measure simple.
 
 **Death can be contagious, and step 8 is a queue rather than a pass** (RULE —
 `tests/ravel.test.ts`). Where content detonates on death — Ravel volatile munitions are the first
-such rule, and they are fixture content on the bench — the blast damages everything inside its
+such rule, and they sit in the bench rosters — the blast damages everything inside its
 radius, friend and foe, and anything reduced to zero joins the queue. **The chain is bounded because
 an entity can only die once**, so the queue drains after at most one round per entity and the whole
 cascade settles inside the tick that started it. Order is entity order throughout.
@@ -175,8 +175,9 @@ A match alternates (RULE — `tests/pulse-run.test.ts`, `tests/mission.test.ts`)
   state;
 - **Nexus Pulse** — simultaneous reveal, then a fixed number of deterministic ticks.
 
-It alternates **as many times as the match needs** — a campaign mission is a sequence of these
-cycles, not one Pulse, and a mission's triggers decide how many and what happens between them (see
+One Build Phase and the Pulse that follows it is a **round**, the unit the player counts. A match
+runs **as many rounds as it needs** — a campaign mission is a sequence of rounds, not one, and a
+mission's triggers decide how many and what happens between them (see
 [`campaigns.md`](../game-design/campaigns.md)). A Pulse may be scripted (no player plan; the player
 watches) and it is still a Pulse: seeded, deterministic, replayed the same way.
 
@@ -207,8 +208,8 @@ terrain make practical outer layers; there is no hidden exposure meter.
 
 A persistent frontline unit, normally `@` — fictionally a Nexus Symbol — on the `units` layer. It may
 take Nexus-specific upgrades and competes for investment with army, economy, research, and
-fortification. **On death it is absent for the rest of that Pulse and one full Build Phase and Pulse,
-after which the Prime Nexus may replicate it again** (RULE). **Commander death is not the victory
+fortification. **On death it is absent for the rest of that round's Pulse and for one full round
+after it, then the Prime Nexus may replicate it again** (RULE — settled; no code holds it yet). **Commander death is not the victory
 condition** (RULE — `src/pulse/victory.ts`, which reads only the Grid Nexus flag and annihilation).
 
 ### 2.2 Structures
@@ -227,7 +228,7 @@ Nexuses do not teleport** (RULE).
 
 ### 2.3 Automatic production
 
-**Production is fixed recipes run by buildings, never direct unit purchases** (RULE). No shop, no
+**Production is fixed recipes run by buildings, never direct unit purchases** (RULE — settled; no code holds it yet). No shop, no
 queue. A producer attempts a fixed recipe on a recurring interval. When simultaneous attempts cannot
 all be paid or supplied, every feasible attempt enters one seeded contention process: one is chosen,
 paid, and spawned; feasibility is recomputed; repeat until nothing legal remains.
@@ -268,7 +269,8 @@ population cap, not a second currency. Nexus energy is a state readout, not some
 spends.
 
 `ResourceCost` stays a keyed record (see [`content.md`](content.md)) so a later microgame can earn a
-second resource without a schema change — but nothing through Milestone 12 may assume one exists.
+second resource without a schema change — but nothing before real rosters are authored may assume one
+exists.
 
 **Workers** pick the closest available job by deterministic path distance: building slots, deposits,
 salvage, and later faction-specific labour. They produce in place rather than carrying bundles home,

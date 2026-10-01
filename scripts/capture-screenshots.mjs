@@ -2,6 +2,7 @@
 //
 //   node scripts/capture-screenshots.mjs
 //   node scripts/capture-screenshots.mjs --only mirror-open
+//   node scripts/capture-screenshots.mjs --out some/folder      # default .playtest/screenshots/ (ignored by git)
 //
 // Why this exists: `snapshotAt` gives a frame as text, which is what tests assert on, but it says
 // nothing about how the composition *looks* — spacing, density, where the eye goes, whether colour
@@ -13,8 +14,8 @@
 // capture-engagement.mjs — this file is just the list of shots and how each one is driven to its
 // tick.
 
-import { rmSync } from "node:fs"
-import { dirname, join } from "node:path"
+import { mkdirSync, rmSync } from "node:fs"
+import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import {
   ansiToHtml,
@@ -30,7 +31,9 @@ import {
 } from "./lib/terminal-capture.mjs"
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
-const outputDirectory = join(repoRoot, "docs", "screenshots")
+const outIndex = process.argv.indexOf("--out")
+const outputDirectory = resolve(repoRoot, outIndex === -1 ? join(".playtest", "screenshots") : process.argv[outIndex + 1])
+mkdirSync(outputDirectory, { recursive: true })
 const scratch = join(repoRoot, ".capture-tmp")
 const SESSION = "nexus-capture"
 

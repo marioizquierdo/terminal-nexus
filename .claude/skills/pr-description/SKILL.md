@@ -16,7 +16,7 @@ when a change needs more than a page — link it from the footer and do not repe
 
 ## The loop it starts
 
-A pull request is a question asked by playing (the feedback loop in `docs/system-design/ui-patterns.md`).
+A pull request is a question asked by playing (the feedback loop, [`DEVELOPMENT.md`](../../../DEVELOPMENT.md) section 6).
 The **Demo** lets him — or friends he shares the page with — play it; **Decisions** asks him to feel an
 Experiment and paste the settings export; when you need to know *what happened*, it asks for an
 **Activity Logs** export too. His answers come back as two blocks of text you can replay. Plan both
@@ -78,8 +78,9 @@ nothing to host. When there is a playable page, give it two sub-headings:
 Without a playable page, the numbered steps go straight under **Demo** with the MacOS commands.
 
 **Decisions** — each open choice: the question in plain words, the default this PR picked, and how to
-flip it. In the Build Phase that is almost always an **Experiment** (the bottom of the Settings popup:
-Esc, then `s`), so give the exact keys: "press `d` to jump to the Experiments, go down to Armed click
+flip it. In the Build Phase that is almost always an **Experiment** (below the player's own settings
+in the Settings popup: from the menu Esc opens the game menu and `s` is Settings; from the map Esc
+first goes back to the menu, so it is Esc, Esc, then `s`), so give the exact keys: "press `d` to jump to the Experiments, go down to Armed click
 scrolls, press Right to flip it, and tell me which feels better." Mario asked to be asked this way.
 End the section with the export line, so his answer comes back as data rather than a description:
 "When it feels right, press `e` in Settings (**Export settings**) — it is copied to your clipboard and
@@ -127,28 +128,35 @@ back after creating it, and if a second footer appeared, set the body again with
 
 ## Pictures that display on a phone
 
-The repository is public, so an image committed on the branch displays inline from its raw URL:
+The repository is public, so an image committed on the branch displays inline from its raw URL. The
+branch carries its pictures only until merge; the repository squash-merges, so `main` never has them.
+
+1. Make one or two pictures with the `playtest` skill into the folder:
+   `node scripts/playtest.mjs --keys "..." --png final --out docs/pr-pictures --name <name>`
+   (a GIF under about 1 MB; a before picture is the same script run in a worktree of `origin/main`
+   with another `--name`). **Open every image with the Read tool before linking it**: an image
+   captured one key early is worse than none.
+2. Commit the folder in one commit of its own and push; take its SHA with `git rev-parse HEAD`.
+3. Link by that SHA, never by the branch name (the branch moves):
 
 ```markdown
-![After: the Hatchery placed](https://raw.githubusercontent.com/marioizquierdo/terminal-nexus/<commit-sha>/docs/screenshots/<name>.png)
+![After: the Hatchery placed](https://raw.githubusercontent.com/marioizquierdo/terminal-nexus/<sha>/docs/pr-pictures/<name>.png)
 ```
 
-- **After** images: pin to the pushed head commit (`git rev-parse HEAD` after pushing), never to the
-  branch name — the branch moves and old descriptions would silently show new pictures.
-- **Before** images: pin to `origin/main`'s commit, and only if the file exists there
-  (`git cat-file -e origin/main:docs/screenshots/<name>.png`).
-- **Look at every image yourself before linking it** (open the PNG with the Read tool). An image
-  captured one key early is worse than none.
-- Make them with the `playtest` skill (`node scripts/playtest.mjs ... --png final` or `--gif`, with
-  `--out docs/screenshots`); keep a GIF under about 1 MB.
+4. The branch's last commit removes the folder (`git rm -r docs/pr-pictures`) before merge. The
+   links keep working, because the commit that added the pictures stays reachable from the pull
+   request. Changed pictures mean a new pictures commit and new links, never an edit in place.
+
+A picture worth keeping for the record (one or two per era, not per pull request) is added to
+`docs/history/screenshots/` with a dated name and a row in its README instead.
 
 ## Pushing more commits to an open PR
 
 Rewrite the description to describe the PR as it now stands **against `main`** — everything a merge
 would bring, not the last round of work on the branch (owner, 2026-09-29: "describe what changed from
 main, which has a larger umbrella vs the last iteration"). A long-lived PR gathers several rounds;
-its description is still one "before → after" from main. Re-pin the screenshot URLs to the new head
-commit. No "Update:" sections, no changelog of the PR's own history.
+its description is still one "before → after" from main. If the pictures changed, add a new pictures
+commit and re-link to its SHA. No "Update:" sections, no changelog of the PR's own history.
 
 When a revision adds work beside the main change — a follow-up from his notes, a refactor, small
 fixes — list it under **Additional changes** rather than stretching **Changes**.
@@ -163,7 +171,8 @@ instructions — give it its own short section after **Changes**, **Workflow and
 ## Before submitting
 
 - [ ] The title says what the player (or developer) can now see or do, under 70 characters.
-- [ ] Every image was opened and checked; URLs are pinned to commit SHAs.
+- [ ] Every image was opened and checked; URLs are pinned to the pictures commit's SHA, and the
+      last commit removes `docs/pr-pictures/`.
 - [ ] The Demo is the cheapest layer that shows the change, and its steps were run exactly as written.
 - [ ] No section numbers, question ids, feedback item numbers or step numbers above the footer.
 - [ ] Each decision says how to flip it and asks for the export; an Activity Logs ask names its filter.
@@ -175,7 +184,7 @@ instructions — give it its own short section after **Changes**, **Workflow and
 Bad:
 
 > Q57 built to its recommendation: focus after a placement returns to wherever the arming came from
-> (engine.md 9.7); lockReason split into editLock and commitLock.
+> (grid-engine.md 9.7); lockReason split into editLock and commitLock.
 
 Good:
 

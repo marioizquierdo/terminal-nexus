@@ -14,8 +14,10 @@
 // script actually reached. Only the Build Phase screen (`terminal-nexus --build-phase`) is wired up so far;
 // `src/playtest/build.ts` is the shape another screen would copy.
 //
-// Output goes to `.playtest/` (ignored by git) unless `--out` says otherwise. Point `--out` at
-// `docs/screenshots` only for an image that is going into a pull request.
+// Output goes to `.playtest/` (ignored by git) unless `--out` says otherwise. A picture for a pull
+// request is committed on the branch under `docs/pr-pictures/` (`--out docs/pr-pictures`), and the
+// folder is removed by the branch's last commit; a picture for the permanent record goes to
+// `docs/history/screenshots/` with a dated name.
 
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { dirname, join, relative, resolve } from "node:path"
@@ -37,7 +39,7 @@ const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <pat
 
   --keys "<script>"    keys to press, e.g. "Down Down Space*4" (names: src/playtest/keys.ts)
   --file <path>        the same, from a file; # starts a comment
-  --size 80x24         terminal size (default 80x24; 104x32 is the largest view, 128x24 wide tiles)
+  --size 80x24         terminal size (default 80x24; 104x30 is the largest view, 128x24 wide tiles)
   --capability <mode>  truecolor (default), color256, color16, monochrome
   --theme <theme>      dark (default) or light
   --glyphs <pack>      ascii (default) or unicode

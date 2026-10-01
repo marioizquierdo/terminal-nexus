@@ -17,11 +17,12 @@ import test from "node:test"
 import { runInNewContext } from "node:vm"
 
 import { EventEmitter } from "node:events"
-import { runBuildPhase, starterContext } from "../src/cli/build-phase.ts"
+import { runBuildPhase } from "../src/cli/build-phase.ts"
+import { starterContext } from "../src/cli/starter.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
-import { KEYBOARD_POP, KEYBOARD_PUSH, KEYBOARD_QUERY, encodeKeyEvent } from "../src/view/key-events.ts"
+import { KEYBOARD_POP, KEYBOARD_PUSH, KEYBOARD_QUERY, encodeKeyEvent } from "../src/terminal/key-events.ts"
 import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
-import { BuildSession } from "../src/build/session.ts"
+import { BuildSession } from "../src/view/build-session.ts"
 import { buildLayout } from "../src/build/layout.ts"
 import { keyBytes } from "../src/playtest/keys.ts"
 import { DIM_ALPHA, paintOps } from "../src/view/backends/canvas.ts"
@@ -29,11 +30,11 @@ import { chunkText } from "../src/view/backends/ports.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { frameToText } from "../src/view/frame.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
-import { keysFromChunk } from "../src/view/playback.ts"
+import { keysFromChunk } from "../src/terminal/playback.ts"
 import { BACKGROUND_RGB, rgbFor } from "../src/view/roles.ts"
 import { KEY_BAR, StandInKeyboard, bytesForKeyPress, keyNameFor, mouseBytes, withShift } from "../src/web/keys.ts"
 import { RUNTIME_IS_BUN, loadScenarioFile } from "./helpers.ts"
-import { sameness } from "./fixtures/web-sameness.ts"
+import { sameness } from "./web-helpers.ts"
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), "..")
 
@@ -78,7 +79,7 @@ test("the page reaches no Node module and no package, only the game's own files"
     assert.ok(names.includes(loop), `the page does not run ${loop}`)
   }
   // And none of the files that exist only for a terminal or a disk.
-  for (const terminalOnly of ["src/settings/store.ts", "src/view/backends/opentui.ts", "src/cli/terminalNexus.ts"]) {
+  for (const terminalOnly of ["src/settings/store.ts", "src/view/backends/opentui.ts", "src/cli/terminal-nexus.ts"]) {
     assert.ok(!names.includes(terminalOnly), `the page reaches ${terminalOnly}`)
   }
 })
@@ -92,8 +93,8 @@ if (RUNTIME_IS_BUN) {
     const { bundleForBrowser } = (await import(helper)) as {
       bundleForBrowser: (entry: string, options?: object) => Promise<{ code: string; files: string[] }>
     }
-    const { code, files } = await bundleForBrowser("tests/fixtures/web-sameness.ts", { minify: false })
-    assert.ok(files.includes("src/cli/build-phase.ts") || files.includes("src/build/session.ts"))
+    const { code, files } = await bundleForBrowser("tests/web-helpers.ts", { minify: false })
+    assert.ok(files.includes("src/cli/build-phase.ts") || files.includes("src/view/build-session.ts"))
     const scenario = await loadScenarioFile("grand-battle.map.json")
 
     // A browser's globals, and nothing of Node's: no process, Buffer, require or module.

@@ -12,7 +12,7 @@ import assert from "node:assert/strict"
 import { popupSpec, placePopup } from "../src/build/popup.ts"
 import type { BuildState } from "../src/build/state.ts"
 import type { Popup } from "../src/build/types.ts"
-import { starterContext } from "../src/cli/build-phase.ts"
+import { starterContext } from "../src/cli/starter.ts"
 import type { PopupBorder, PopupBreath } from "../src/view/build.ts"
 import {
   BREATH_DEPTH,

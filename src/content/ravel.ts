@@ -1,6 +1,6 @@
 // Ravel fixture content — disposable, tuned for contrast, not for balance.
 //
-// The same status as the Citizen fixture: bench content, **not a Commander Army and not the designed
+// The same status as the Citizen fixture: a bench roster, **not a Commander Army and not the designed
 // roster**. commander-armies.md forbids production stats until the content-iteration milestone
 // selects the Citizens-versus-Ravels microgame, and saying these are throwaway is what keeps them
 // throwaway.

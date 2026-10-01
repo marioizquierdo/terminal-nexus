@@ -1,13 +1,13 @@
 // PERIMETER — Mission 1 — as the trigger list the runner plays: three Pulses, the raid arriving in three
 // waves, and the hold (campaigns.md sketches it).
 //
-// **Played on the Build Phase's placeholder map**, not PERIMETER's own: whether that map needs
+// **Played on the Build Phase's starter map**, not PERIMETER's own: whether that map needs
 // real scrolling is still an open question (Q38), and it exists only as a sketch. The regions below
 // are named for this map's landmarks — the gap in the northern ridge, the open flats to the east — and a real map would carry its
 // own. The units are the disposable fixture rosters from the first battles (Citizen troopers and
 // marksmen, "two squads"; Ravel runners and raiders): the campaign design decided on no new content.
 //
-// **The wave sizes are a first tuning, not balance**: chosen against this map and the placeholder
+// **The wave sizes are a first tuning, not balance**: chosen against this map and the starter
 // construct menu so that the first Pulse is a probe the starting squads can meet, the second needs
 // something built, and the third needs most of what the mission's credits buy
 // (docs/history/reports/2026-09-30-round-loop-and-missions.md has the outcomes measured against scripted plans).

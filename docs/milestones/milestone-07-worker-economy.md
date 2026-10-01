@@ -18,7 +18,7 @@ content, for the first time?
 
 - **Worker production.** `unit.citizen.worker` becomes something the player can add from the construct
   menu Milestone 5 built. The construct-menu list in
-  `docs/milestones/completed/milestone-02-campaign-design.md` is amended to include it.
+  `docs/history/milestones/milestone-02-campaign-design.md` is amended to include it.
 - **Job assignment.** Workers pick the closest available job by deterministic path distance (the
   worker rules in [`docs/system-design/grid-engine.md`](../system-design/grid-engine.md), still
   unbuilt). For PERIMETER the only job is harvesting the mission's own deposit tiles.

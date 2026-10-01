@@ -7,10 +7,10 @@
 // is trivially true of a screen with no presentation time to lose: showing `gateFrame` below the
 // minimum size and the menu frame otherwise is the whole of it.
 
-import type { TextSection } from "../menu/about.ts"
-import type { MenuLayout } from "../menu/layout.ts"
-import { menuItemRow } from "../menu/layout.ts"
-import type { MenuListState } from "../menu/list.ts"
+import type { TextSection } from "../title-menu/about.ts"
+import type { MenuLayout } from "../title-menu/layout.ts"
+import { menuItemRow } from "../title-menu/layout.ts"
+import type { MenuListState } from "../title-menu/list.ts"
 import { wrapWords } from "./draw.ts"
 import type { BandCell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
@@ -39,7 +39,7 @@ export type MenuCompositionInput = Readonly<{
   /** Whether this screen has somewhere to go back to — adds "esc back" to the footer's controls
    *  line. Advertising a control that does nothing would be the opposite of honest. */
   showBack?: boolean
-  /** Words drawn under the rows — the About screen's (`src/menu/about.ts`): each section's heading, then its text wrapped at words, a blank row
+  /** Words drawn under the rows — the About screen's (`src/title-menu/about.ts`): each section's heading, then its text wrapped at words, a blank row
    *  between sections. */
   body?: readonly TextSection[]
 }>
@@ -78,7 +78,7 @@ const BODY_MEASURE = 66
  * Draws `sections` from `firstRow` down, at the rows' own column: a heading in the title style, text in
  * the value style (a quiet section dimmed), every entry wrapped at words to `BODY_MEASURE`. Text that
  * would not fit is cut off with a blank row left above the controls line, never drawn over it; the
- * About screen is held to fitting whole at 80 x 24 by `tests/menu-about-screen.test.ts`.
+ * About screen is held to fitting whole at 80 x 24 by `tests/title-menu-about-screen.test.ts`.
  */
 function drawBody(
   cells: BandCell[],

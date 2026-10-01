@@ -14,11 +14,11 @@
 //   node scripts/capture-engagement.mjs --scenario grand-battle --lead-ticks 2 --frames 12
 //   node scripts/capture-engagement.mjs --scenario ravel-cascade --around-tick 48 --frames 20
 //
-// Output lands in docs/screenshots/engagement-<scenario>/frame-NN.png, oldest first, plus an
-// index.md naming the presentation-ms each one landed on.
+// Output lands in .playtest/screenshots/engagement-<scenario>/frame-NN.png (git ignores it; --out <dir>
+// replaces .playtest/screenshots), oldest first, plus an index.md naming the presentation-ms each one landed on.
 
 import { mkdirSync, rmSync, writeFileSync } from "node:fs"
-import { dirname, join } from "node:path"
+import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import {
   ansiToHtml,
@@ -45,7 +45,7 @@ function arg(name, fallback) {
 const scenario = arg("scenario", null)
 if (scenario === null) {
   console.error("usage: capture-engagement.mjs --scenario <name> [--around-tick N] [--frames N] " +
-    "[--lead-ticks N] [--capability c] [--glyphs g] [--tile-width n]")
+    "[--lead-ticks N] [--capability c] [--glyphs g] [--tile-width n] [--out dir]")
   process.exit(1)
 }
 const framesWanted = Number(arg("frames", "10"))
@@ -56,7 +56,7 @@ const tileWidth = arg("tile-width", "1")
 const cols = Number(arg("cols", "80"))
 const rows = Number(arg("rows", "24"))
 
-const outputDirectory = join(repoRoot, "docs", "screenshots", `engagement-${scenario}`)
+const outputDirectory = join(resolve(repoRoot, arg("out", join(".playtest", "screenshots"))), `engagement-${scenario}`)
 const scratch = join(repoRoot, ".capture-tmp")
 
 /**

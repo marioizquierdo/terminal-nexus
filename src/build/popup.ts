@@ -16,7 +16,7 @@
 // while a popup is open — and is its click target, so a popup's own border carries only its title and,
 // beside a list that overflows, its scroll bar.
 
-import { wrapWords } from "../view/draw.ts"
+import { wrapWords } from "../terminal/wrap-words.ts"
 import type { Section } from "./all-settings.ts"
 import { SECTIONS, SHOWN_SETTINGS, setting, shownSetting } from "./all-settings.ts"
 import type { BuildLayout } from "./layout.ts"
@@ -497,7 +497,7 @@ const POPUP_WIDTH = 52
 
 // Splitting text at words lives with the drawing helpers (`src/view/draw.ts`), where the title menu and
 // the Pulse read it without reaching the Build Phase; it is re-exported here for the popups' own callers.
-export { wrapWords } from "../view/draw.ts"
+export { wrapWords } from "../terminal/wrap-words.ts"
 
 /** The rows one spec row takes, as the text each of them draws (a note's wrapped lines). */
 function linesOf(entry: PopupRow, textLimit: number): readonly (string | undefined)[] {

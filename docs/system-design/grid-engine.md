@@ -12,7 +12,7 @@ Every statement is one of three kinds:
 
 | Marker | Means | What you may do |
 | --- | --- | --- |
-| **RULE** | Built and depended on. The code implements it and a named test or module holds it, named beside the marker | Follow it. Changing it is a design change: the sentence, the code and the test change together in one pull request, and the description says so for Mario |
+| **RULE** | Built and depended on. The code implements it and a named test or module holds it, named beside the marker, or the line says that none does yet, which means the decision is settled but unbuilt: "(RULE — settled; no code holds it yet)" | Follow it. Changing it is a design change: the sentence, the code and the test change together in one pull request, and the description says so for Mario |
 | **GUIDANCE** | The recommended default. **Anything unmarked is GUIDANCE** | Follow it by default. Depart when the work shows better, and say why in the pull request |
 | **IDEA** | A sketch kept so it is not lost. Nothing depends on it | Read it for context. Build it only when a milestone step asks for it |
 
@@ -137,7 +137,7 @@ ports, and the suite runs on Node and on Bun). The runtime direction is in
 ## 3. The invariants
 
 The architectural commitments every session needs, one line each, with the part that holds the detail.
-Each is a RULE; the test or module that holds it is beside it. The three worlds above and the layers
+Each is a RULE; the test or module that holds it is beside it, or the line says that no code holds it yet. The three worlds above and the layers
 are not repeated here.
 
 | Invariant | Held by | Detail |
@@ -150,19 +150,19 @@ are not repeated here.
 | The Grid has five layers; layers define render order only, and collision is a mask composed from a chosen set of layers | `tests/grid.test.ts` | [`grid.md`](grid.md) |
 | Every entity has an anchor, a footprint and a facing; units as well as structures may span tiles, a mover tests its whole footprint, range measures to the nearest occupied tile | `tests/grid.test.ts` | [`grid.md`](grid.md) |
 | The viewport is clamped between 48 × 16 and 72 × 24 tiles, the cursor drives scrolling, there is no minimap, and 80 × 24 is the floor and the acceptance target | `tests/build-camera.test.ts` | [`grid.md`](grid.md) |
-| Orientation is a rendering choice; portrait and landscape change no coordinate | holder not found | [`grid.md`](grid.md) |
+| Orientation is a rendering choice; portrait and landscape change no coordinate | (RULE — settled; no code holds it yet) | [`grid.md`](grid.md) |
 | Speed tier is initiative and lower acts first, for movement claims and attacks alike; it is not a movement rate | `tests/rules.test.ts` | [`pulse.md`](pulse.md) |
 | A Grid Nexus is a flag on a content definition, never a content id the kernel recognises | `src/content/types.ts` | [`grid.md`](grid.md), [`content.md`](content.md) |
 | Composition produces an engine-owned cell frame; cells carry style roles, never literal colours; monochrome seven-bit ASCII is the floor | `tests/roles.test.ts`, `tests/view.test.ts` | [`presentation.md`](presentation.md) |
 | Tile width is adaptive presentation: one column per tile at 80 columns, two at 128 or wider, the same tiles and information | `tests/build-camera.test.ts` | [`presentation.md`](presentation.md) |
 | Effects are pure functions of absolute presentation time; presentation has four families (animations, particles, shading, tweens) and an animation's completion is scheduled data, never a callback | `tests/effects.test.ts`, `tests/animation.test.ts`, `tests/tween.test.ts` | [`effects.md`](effects.md) |
 | The corruption law: effects live in the `effects` band or above and never remove the only carrier of a semantic cue; the compositor drops any effect cell that would replace an entity's glyph | `tests/effects.test.ts` | [`effects.md`](effects.md) |
-| Faction identity lives in the glyph family and the effect language; ownership keeps the colour, so a mirror match stays legible and monochrome stays whole | holder not found | [`presentation.md`](presentation.md) |
+| Faction identity lives in the glyph family and the effect language; ownership keeps the colour, so a mirror match stays legible and monochrome stays whole | (RULE — settled; no code holds it yet) | [`presentation.md`](presentation.md) |
 | Every interactive action is a named command; keyboard, mouse and driver are three adapters onto one vocabulary; every menu item shows its hotkey and a click activates what it lands on | `tests/menu-adapters.test.ts`, `tests/build-focus.test.ts` | [`input.md`](input.md) |
 | The Build Phase screen follows one set of interface patterns: focus, cancel, lists, popups, cards, hand-offs, the one-line bottom bar, the Grid pane's edge | the tests named in that document | [`ui-patterns.md`](ui-patterns.md) |
 | The browser playtest page is a development tool, never a platform: it runs the terminal's own screen loops and converts only frames, input bytes and settings storage | `tests/web.test.ts` | [`runtime.md`](runtime.md) |
 | Logs are one structured shape: an event is declared before it is logged, a logger takes its clock as an argument and keeps a bounded memory, the kernel and the match layer never log, and nothing the rules decide reads a log | `tests/log.test.ts`, `tests/architecture.test.ts` | [`runtime.md`](runtime.md) |
-| A mission is a sequence of Build Phase and Nexus Pulse cycles driven by triggers; simulation actions run inside the kernel as validated intents, presentation actions never touch state, and a scripted Pulse is still a Pulse | `tests/mission.test.ts`, `tests/mission-loop.test.ts` | [`campaigns.md`](../game-design/campaigns.md) |
+| A mission is a sequence of rounds, each a Build Phase and the Nexus Pulse after it, driven by triggers; simulation actions run inside the kernel as validated intents, presentation actions never touch state, and a scripted Pulse is still a Pulse | `tests/mission.test.ts`, `tests/mission-loop.test.ts` | [`campaigns.md`](../game-design/campaigns.md) |
 
 Design commitments the game documents own, GUIDANCE until built and played:
 
@@ -186,12 +186,14 @@ Design commitments the game documents own, GUIDANCE until built and played:
 - **Grid** — the rectangular integer playfield a match is fought on.
 - **Grid Nexus**, **Prime Nexus** — the Nexus replica that sits on the Grid, and the one that stays home and replicates it.
 - **Build Phase** — the hidden, simultaneous, untimed phase where each player builds their plan.
-- **Nexus Pulse** — the fixed-tick, deterministic battle that resolves both plans in ASCII.
-- **Battle Round** — what the player sees as one cycle of a mission, and the start-of-battle screen's name; whether the player-facing name is Battle Round or Pulse is still open (Q68).
-- **mission** — a sequence of Build Phase and Nexus Pulse cycles driven by triggers, with goals rather than a fixed length.
-- **round** — one such cycle as the player counts it: "round 2 of 3".
-- **wave** — a group of units a mission trigger brings onto the Grid at a chosen Pulse and tick.
+- **Nexus Pulse** — the fixed-tick, deterministic battle that resolves both plans in ASCII: the resolution the kernel runs.
+- **round** — one Build Phase and the Nexus Pulse that follows it, which is the unit the player counts: "round 2 of 3". The screen that opens a round is titled "Battle Round N"; whether the player should ever read the word "Pulse" (the menu row that starts one says `[s] Start Pulse` today) is still open (Q68). In code the round's number is `pulseNumber`; the identifier is not renamed.
+- **mission** — a sequence of rounds driven by triggers, with goals rather than a fixed length.
+- **wave** — a group of units a mission trigger brings onto the Grid during a round, at a chosen tick.
+- **Popup pulse** — an Experiment, unrelated to the above: a slow breath of light on a popup's border.
 - **Recall** — what happens when a Pulse ends: surviving units walk home, so the next round starts from what the last one left.
+- **starter map** — the Build Phase's one disposable map and the small catalog of buildings it offers; it exists to be played and replaced, and is not a mission.
+- **bench rosters** — the Citizen, Ravel and Proving Grounds fixtures the tests and the engine tool use; they are not Commander Armies. "Placeholder" is kept for a stand-in number or piece of text, never for content.
 - **Commander Army** — the playable package for one player: faction, Commander, starting units and structures, blueprints, upgrades, Nexus powers and Specials.
 - **Nexus power** — a named effect with one plain line of description, dealt to the player during a Build Phase.
 - **Experiment** — a design choice put behind a switch in Settings, so Mario can feel both answers and send back the settings export.

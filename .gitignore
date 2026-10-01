@@ -1,21 +1,14 @@
 # Dependencies and build output
 node_modules/
 dist/
-# Anchored to the repository root on purpose. Unanchored, `build/` also matches any directory of
-# that name anywhere in the tree — which silently swallowed the whole of `src/build/`, the Build
-# Phase module, the first time one existed (Milestone 5 gate 5A). The rule means "build output at
-# the root", and now says so.
+# Anchored on purpose: an unanchored `build/` would also ignore src/build/, the Build Phase module.
 /build/
-coverage/
-.cache/
-tmp/
 
 # Runtime and environment
 .env
 .env.*
 !.env.example
 *.log
-*.pid
 
 # Editors and operating systems
 .DS_Store
@@ -25,14 +18,9 @@ tmp/
 *.swp
 *~
 
-# Terminal Nexus evidence artifacts that should remain local unless selected
-evidence/local/
-captures/local/
-
-# Claude Code background-agent worktrees - ephemeral isolated checkouts, never committed
+# Claude Code background-agent worktrees: ephemeral isolated checkouts, never committed
 .claude/worktrees/
 
-
-# Scripted playtest output (scripts/playtest.mjs) and screenshot scratch space
+# Scripted playtest and screenshot output (scripts/playtest.mjs, the capture scripts)
 .playtest/
 .capture-tmp/

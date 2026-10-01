@@ -10,7 +10,14 @@
 // `resolveCell`, at the bottom, is where a cell's roles become what a renderer draws — for the ANSI
 // writer, the browser page's canvas and OpenTUI alike, so the three cannot disagree about a cell.
 
+import type { CapabilityMode, Theme } from "../terminal/display.ts"
+import { DEFAULT_THEME, THEMES } from "../terminal/display.ts"
 import type { Cell } from "./frame.ts"
+
+// The capability, theme and glyph-pack vocabulary lives below the view (`src/terminal/display.ts`);
+// the view re-exports it so a consumer of the roles still finds it here.
+export type { CapabilityMode, Theme } from "../terminal/display.ts"
+export { CAPABILITY_MODES, DEFAULT_THEME, THEMES, parseCapability, parseTheme } from "../terminal/display.ts"
 
 export const STYLE_ROLES = [
   "chrome.frame",
@@ -70,47 +77,6 @@ export const RAINBOW_ROLES: readonly StyleRole[] = [
   "fx.hue.magenta",
 ]
 
-export type CapabilityMode = "monochrome" | "color16" | "color256" | "truecolor"
-
-export const CAPABILITY_MODES: readonly CapabilityMode[] = [
-  "monochrome",
-  "color16",
-  "color256",
-  "truecolor",
-]
-
-export function parseCapability(value: string): CapabilityMode {
-  const found = CAPABILITY_MODES.find((mode) => mode === value)
-  if (found === undefined) {
-    throw new Error(`unknown capability "${value}"; expected one of ${CAPABILITY_MODES.join(", ")}`)
-  }
-  return found
-}
-
-/**
- * Which background the palette assumes — an open question in the design, answered minimally
- * (owner playtest: on a light terminal background, the dark theme's chrome text was nearly
- * invisible). Two fixed themes rather than a background probe: querying a terminal's actual
- * background colour (OSC 11) is unreliable across emulators and is real complexity for a first version
- * that was asked to start simple. `dark` is the default — it is the palette the lore and every screenshot so
- * far were designed against — and `light` is one explicit flag away. The door stays open for a real
- * themes/modding system later without anything here needing to change shape, only to grow more
- * entries.
- */
-export type Theme = "dark" | "light"
-
-export const THEMES: readonly Theme[] = ["dark", "light"]
-
-export const DEFAULT_THEME: Theme = "dark"
-
-export function parseTheme(value: string): Theme {
-  const found = THEMES.find((theme) => theme === value)
-  if (found === undefined) {
-    throw new Error(`unknown theme "${value}"; expected one of ${THEMES.join(", ")}`)
-  }
-  return found
-}
-
 /** The frame's own background, for a renderer that paints one explicitly (OpenTUI, the canvas) rather
  * than leaving the terminal's ambient background to show through (direct ANSI). */
 export const BACKGROUND_RGB: Readonly<Record<Theme, Rgb>> = {
@@ -136,8 +102,8 @@ type Swatch = Readonly<{
  * is the reference: the one the lore and every screenshot so far were designed against, and the one
  * to extend first when a role needs a stronger identity.
  *
- * **Why 256 derives and 16 does not** (measured, not guessed — `node
- * scripts/measure-palette-derivation.mjs`, dated 2026-08-24): nearest-match by squared RGB distance
+ * **Why 256 derives and 16 does not** (measured on 2026-08-24 by a script since deleted; the
+ * quality-and-effects report under docs/history/reports keeps the numbers): nearest-match by squared RGB distance
  * against the real xterm-256 cube reproduces the hand-authored 256 table cleanly — most roles land on
  * the same entry or within a dozen RGB units of it. The same search against the sixteen ANSI colours
  * does not: it sends `chrome.muted` back to ANSI 90, the exact "bright black" value an owner playtest
@@ -269,7 +235,7 @@ const XTERM_CUBE_STEPS: readonly number[] = [0, 95, 135, 175, 215, 255]
 /**
  * What xterm shows for a 256-colour index above the 16 system colours (whose look is each terminal's
  * own): a 6x6x6 colour cube (indices 16-231), then a 24-step greyscale ramp (232-255). Exported for the
- * evidence scripts, which read the ANSI writer's indices back into pixels with it
+ * capture scripts, which read the ANSI writer's indices back into pixels with it
  * (`scripts/lib/terminal-capture.mjs`).
  */
 export function xterm256Rgb(index: number): Rgb {

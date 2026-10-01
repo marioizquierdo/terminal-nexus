@@ -27,14 +27,20 @@ Every document is on one of three shelves, and the path says which:
 3. Read the current milestone in [`docs/milestones/`](docs/milestones/README.md) through its current
    step, and [`docs/milestones/next-steps.md`](docs/milestones/next-steps.md) for what is waiting on
    Mario, the owner, and what rode along.
-4. Skim the titles in [`docs/milestones/open-questions.md`](docs/milestones/open-questions.md) so you
-   do not quietly decide something that is his to decide.
+4. Skim the index table at the top of [`docs/milestones/open-questions.md`](docs/milestones/open-questions.md)
+   so you do not quietly decide something that is his to decide.
 5. For the system you are about to touch, read its page in `docs/system-design/`; for a screen, a
    menu, a popup, an effect or a key, [`docs/system-design/ui-patterns.md`](docs/system-design/ui-patterns.md)
    first, its goals and its checklist for a new screen.
 
+**When no step is open** — the current one is built and waiting for Mario's playtest, or the next
+waits for his word — the work is whatever his latest feedback or the "Waiting on Mario" list asks for.
+If that is empty too, say so and stop; never start the next step to fill the time.
+
 [`DEVELOPMENT.md`](DEVELOPMENT.md) is the practices manual: the toolchain, the tests, how to see a
-change, how milestones and spikes work, the feedback loop with Mario, how a design change lands.
+change, how milestones and spikes work, the feedback loop with Mario, how a design change lands. The
+project's own words (Nexus Pulse, round, mission, wave, Recall, Experiment, starter map, bench roster)
+are defined once, in the engine overview's [vocabulary](docs/system-design/grid-engine.md).
 
 ## How we work
 
@@ -49,15 +55,12 @@ change, how milestones and spikes work, the feedback loop with Mario, how a desi
   every screen; a test that passes is not proof that a screen reads well.
 - **A design change is one pull request**: the sentence in the design document, the code and the
   test change together, and the description says so in plain words.
-- **A fork you cannot settle becomes an Experiment or a question.** A choice Mario should feel (a
-  timing, a look, whether a feature should exist) goes behind an Experiment he can flip in Settings;
-  a choice he must decide goes in the open-questions register with a recommendation. Then keep
-  working on everything the answer does not touch. When the question is *what happened* rather than
-  *which feels right*, declare an Activity Logs event and a filter for it (`src/log/activity.ts`);
-  he exports it from the game menu and pastes it in the pull request. Both are removed once answered.
-- **Write for a person.** Everything Mario reads — pull requests, commit messages, chat — says what
-  the thing is, not where it is filed. No section numbers, question ids or feedback item numbers, no
-  project shorthand without a definition.
+- **A fork you cannot settle becomes an Experiment, an Activity Logs filter, or a question**: a
+  choice he should feel goes behind an Experiment, a question of what happened behind a log filter, a
+  decision only he can make into the register with a recommendation; then keep working on everything
+  the answer does not touch (the manual's "The feedback loop" and "Changing the design").
+- **Write for a person.** Everything Mario reads says what the thing is, not where it is filed: no
+  section numbers, question ids or feedback item numbers (the manual's "Writing for Mario").
 - **End with a pull request** written with the `pr-description` skill, sized to the change: a code
   block when nothing shows on screen, screenshots for a look, a GIF for motion, a playable page only
   when it must be played.
@@ -84,7 +87,7 @@ IDEA (a sketch). The ones every session needs:
   acceptance target.
 - **Lore is a platform, not a plot.** When clearer ASCII and richer story compete, the Grid wins.
 - Do not build what no milestone step asks for: a second resource, routing, visibility, the replay
-  format, multiplayer, sound, packaging, a mod loader, any level beyond PERIMETER and RIGHT OF SALVAGE,
+  format, multiplayer, sound, packaging, a mod loader, any mission beyond PERIMETER and RIGHT OF SALVAGE,
   or a full Commander Army.
 
 ## Where things are
@@ -93,8 +96,10 @@ IDEA (a sketch). The ones every session needs:
 | --- | --- |
 | `src/pulse/`, `src/state/`, `src/grid/`, `src/events/`, `src/rng/` | The deterministic kernel. |
 | `src/content/`, `src/scenario/`, `scenarios/` | Content definitions, the map format and the checked-in maps. |
+| `src/report/`, `src/events/` | The levelled log and the report a run ends with; the events the kernel emits. |
 | `src/match/`, `src/mission/` | The rules layer between the Build Phase and the kernel: openings, Recall, missions and their trigger runner. |
-| `src/build/`, `src/menu/`, `src/settings/` | The Build Phase reducer and adapters, the menu list shape, saved settings; `src/build/all-settings.ts` declares every setting and Experiment once. |
+| `src/build/`, `src/title-menu/`, `src/settings/` | The Build Phase reducer and adapters, the title screen's list reducer and adapters, saved settings; `src/build/all-settings.ts` declares every setting and Experiment once. |
+| `src/terminal/` | What every screen shares with the terminal: key events and reading, playback control, the list key table, the capability, theme and glyph-pack choices. Imports nothing from the view. |
 | `src/log/` | The structured logger and the Activity Logs' declared events and filters. |
 | `src/view/`, `src/cli/`, `src/web/`, `src/playtest/` | Composition, backends, the screen loops, the browser page, the scripted playtest. |
 | `bin/grid.ts`, `bin/terminal-nexus.ts` | The engine tool and the game's entry point. |
