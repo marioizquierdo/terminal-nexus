@@ -6,6 +6,7 @@
 //   node scripts/playtest.mjs --keys "n 1 n Tab S-Left*3 Enter" --png final
 //   node scripts/playtest.mjs --file my-flow.keys --gif --name hatchery-run
 //   node scripts/playtest.mjs --keys "1 click:24,13 click:24,13" --print all
+//   node scripts/playtest.mjs --keys "n 1 1 Enter" --activity Interactions   # what it logged
 //
 // The keys go through the real keyboard and mouse adapters as the exact bytes a terminal sends, one
 // key at a time (`src/playtest/keys.ts` has the names). The frames come from the same composer the
@@ -24,6 +25,7 @@ import { parseKeyScript } from "../src/playtest/keys.ts"
 import { importSettings } from "../src/build/settings-export.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
+import { ACTIVITY_FILTERS, formatActivityExport } from "../src/log/activity.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { parseCapability, parseTheme } from "../src/view/roles.ts"
 import { parseGlyphPack } from "../src/view/theme.ts"
@@ -52,9 +54,22 @@ const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <pat
   --scale <n>          pixel scale, default 2 (sharp on a phone; 1 makes files about a third the size)
   --caption <text>     text in front of each image's step caption
   --force              render images even if an identical one is already there
+  --activity [filter]  after the run, print what it recorded in the Activity Logs as the game's
+                       Activity logs window exports it, through one of its filters, Everything
+                       when none is named: ${ACTIVITY_FILTERS.map((filter) => filter.name).join(", ")}.
+                       Also saved as <name>-activity.txt
 `
 
+// `--activity` may stand alone, meaning every event: give it the Everything filter's name, so the parser
+// (which wants a value for it) reads the rest of the line as it was written.
+const argv = process.argv.slice(2)
+const activityFlag = argv.indexOf("--activity")
+if (activityFlag >= 0 && (argv[activityFlag + 1] === undefined || argv[activityFlag + 1].startsWith("--"))) {
+  argv.splice(activityFlag + 1, 0, "Everything")
+}
+
 const { values } = parseArgs({
+  args: argv,
   options: {
     keys: { type: "string" },
     file: { type: "string" },
@@ -73,9 +88,19 @@ const { values } = parseArgs({
     scale: { type: "string" },
     caption: { type: "string" },
     force: { type: "boolean", default: false },
+    activity: { type: "string" },
     help: { type: "boolean", short: "h", default: false },
   },
 })
+
+// The Activity Logs filter to print through, found before the run so a mistyped name costs nothing.
+const activityFilter =
+  values.activity === undefined
+    ? null
+    : ACTIVITY_FILTERS.find((filter) => filter.name.toLowerCase() === values.activity.toLowerCase())
+if (activityFilter === undefined) {
+  throw new Error(`--activity: no filter named "${values.activity}"; the filters are ${ACTIVITY_FILTERS.map((filter) => filter.name).join(", ")}`)
+}
 
 if (values.help || (values.keys === undefined && values.file === undefined)) {
   process.stdout.write(USAGE)
@@ -138,6 +163,21 @@ if (run.ended !== null) {
   )
 }
 process.stdout.write(`\ntext of every step: ${relative(repoRoot, textPath)}\n`)
+
+// What the run recorded, exported as a playtester's Activity logs window would export it (feedback F91):
+// the agent's check that a flow logs what a pull request will ask someone to export.
+if (activityFilter !== null) {
+  const exported = formatActivityExport({
+    entries: run.activity.entries(),
+    filter: activityFilter,
+    startedAt: run.activity.startedAt,
+    dropped: run.activity.dropped,
+    build: "scripted playtest",
+  })
+  const activityPath = join(outDir, `${values.name}-activity.txt`)
+  writeFileSync(activityPath, exported, "utf8")
+  process.stdout.write(`\n${exported}\nactivity logs: ${relative(repoRoot, activityPath)}\n`)
+}
 
 // --- Pictures ------------------------------------------------------------------------------------
 

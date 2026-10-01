@@ -39,6 +39,10 @@ import { UNTIMED_GAP_MS, deliverStep } from "../playtest/deliver.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
 import type { Experiments } from "../build/experiments.ts"
 import { TUNING } from "../build/tuning.ts"
+import type { ExportKind } from "../build/types.ts"
+import type { ActivityLog } from "../log/activity.ts"
+import { activity as globalActivity } from "../log/activity.ts"
+import type { CapabilityMode } from "../view/roles.ts"
 
 const ESC = "\u001b"
 /** Written before a frame whose size just changed: the backend draws from the cursor home position
@@ -49,6 +53,31 @@ const CLEAR = `${ESC}[2J`
 /** The floor the resize gate is measured against — engine.md 3.3's own "80 x 24 remains the floor
  *  and the acceptance target". */
 export const SPIKE_MINIMUM = { width: 80, height: 24 } as const
+
+/**
+ * What an export does besides showing its text, told which export it is (`ExportKind`): the terminal
+ * copies it to the clipboard and writes a file of its own beside the settings; the playtest page copies
+ * it and shows it in the text box under the screen that is its own. `destination` is the sentence each
+ * export's popup or message says about where its text went. Side effects stay here, in the adapter,
+ * never in the reducer.
+ */
+export type Exporter = Readonly<{
+  destination: Readonly<Record<ExportKind, string>>
+  export: (text: string, kind: ExportKind) => Promise<void> | void
+}>
+
+/** Where a screen runs, as `session.start` says it: a terminal, or the browser playtest page. */
+export type HostName = "terminal" | "web"
+
+/** A colour depth as the Activity Logs write it (`session.start`'s `colours`). */
+const COLOURS: Readonly<Record<CapabilityMode, string>> = {
+  truecolor: "truecolor",
+  color256: "256",
+  color16: "16",
+  monochrome: "mono",
+}
+
+const messageOf = (error: unknown): string => (error instanceof Error ? error.message : String(error))
 
 export type SpikeOptions = Readonly<{
   settings: Settings
@@ -80,12 +109,16 @@ export type SpikeOptions = Readonly<{
    * stops the script there, and the reason is reported when the screen closes.
    */
   startKeys?: readonly PlaytestStep[]
+  /** What an export does besides showing its text — the settings' and the Activity Logs' (`Exporter`). */
+  exporter?: Exporter
   /**
-   * What an export does besides showing its text: the terminal copies it to the clipboard and writes
-   * a file, the playtest page copies it and shows it under the screen. `destination` is the sentence
-   * the export popup says about it. Side effects stay here, in the adapter, never in the reducer.
+   * The Activity Logs this screen records into and its Activity logs window shows (owner, 2026-10-01,
+   * feedback F90-F91): the game's global `activity` unless a test passes its own. The browser page
+   * shares the global across its screens, so a playtester's export holds the whole visit.
    */
-  exporter?: Readonly<{ destination: string; export: (text: string) => Promise<void> | void }>
+  activity?: ActivityLog
+  /** Where the screen runs, as `session.start` records it: `terminal` unless the playtest page says `web`. */
+  hostName?: HostName
 }>
 
 export function spikeContext(scrollMargin?: number, extra: Partial<BuildContext> = {}): BuildContext {
@@ -111,15 +144,30 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     return 0
   }
 
+  const log = options.activity ?? globalActivity
   const context = spikeContext(options.scrollMargin, {
     settings: options.settings,
+    // The Activity logs window shows the log this screen records into (feedback F91).
+    activity: log,
     ...(options.experiments === undefined ? {} : { experiments: options.experiments }),
     ...(options.buildId === undefined ? {} : { buildId: options.buildId }),
-    ...(options.exporter === undefined ? {} : { exportDestination: options.exporter.destination }),
+    ...(options.exporter === undefined
+      ? {}
+      : { exportDestination: options.exporter.destination.settings, activityExportDestination: options.exporter.destination.activity }),
   })
   const terminalSize = (): { columns: number; rows: number } => ({
     columns: stdout.columns ?? SPIKE_MINIMUM.width,
     rows: stdout.rows ?? SPIKE_MINIMUM.height,
+  })
+  // The first line of a playtest's story: which screen, from which build, where, and at what size.
+  let loggedSize = terminalSize()
+  log.log("session.start", {
+    screen: "build",
+    ...(options.buildId === undefined ? {} : { build: options.buildId }),
+    host: options.hostName ?? "terminal",
+    columns: loggedSize.columns,
+    rows: loggedSize.rows,
+    colours: COLOURS[options.settings.capability],
   })
 
   let layout = buildLayout(terminalSize(), context.grid)
@@ -167,22 +215,24 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     pendingSave = pendingSave.then(() =>
       store.save(settings).catch((error: unknown) => {
         sideEffectError = error
+        log.log("session.error", { where: "save", message: messageOf(error) })
       }),
     )
   }
-  const exportSettings = (text: string): void => {
+  const exportText = (text: string, kind: ExportKind): void => {
     const exporter = options.exporter
     if (exporter === undefined) return
     // Started at once, inside the key press or tap that asked for it — a browser allows a clipboard
     // write only then — and awaited by the disposer like a save.
     let started: Promise<void>
     try {
-      started = Promise.resolve(exporter.export(text))
+      started = Promise.resolve(exporter.export(text, kind))
     } catch (error) {
       started = Promise.reject(error)
     }
     const done = started.catch((error: unknown) => {
       sideEffectError = error
+      log.log("session.error", { where: "export", message: messageOf(error) })
     })
     pendingSave = pendingSave.then(() => done)
   }
@@ -193,8 +243,9 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     viewport: layout.viewport,
     onQuit: leave,
     onSettingsChange: saveSettings,
-    onExport: exportSettings,
+    onExport: exportText,
     startPulse,
+    activity: log,
   })
 
   // Start in a state: the script's own clock, a second between untimed steps as in a scripted
@@ -207,7 +258,8 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
       try {
         deliverStep(build, layout, step, clock)
       } catch (error) {
-        startKeysError = error instanceof Error ? error.message : String(error)
+        startKeysError = messageOf(error)
+        log.log("session.error", { where: "start-keys", message: startKeysError })
         break
       }
       if (leaving) break
@@ -291,12 +343,17 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
       backend.present(frame)
     } catch (error) {
       failure = error
+      log.log("session.error", { where: "render", message: messageOf(error) })
       leave()
     }
   }
 
   function onResize(): void {
     const size = terminalSize()
+    if (size.columns !== loggedSize.columns || size.rows !== loggedSize.rows) {
+      loggedSize = size
+      log.log("session.resize", { columns: size.columns, rows: size.rows })
+    }
     const wasGated = gated
     gated = isGated(size, context.grid)
     // A Nexus Pulse holds still while the terminal is too small to draw it, and resumes from the same

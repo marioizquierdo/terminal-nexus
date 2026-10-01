@@ -56,10 +56,10 @@
   #typing { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
   #status { margin: 0; min-height: 1.45em; color: var(--warn); font: 12px "IBM Plex Mono", ui-monospace, Menlo, monospace; }
   .hint { margin: 0; color: var(--muted); font-size: 12px; max-width: 70ch; }
-  #settings-box { flex: none; font-size: 12px; color: var(--muted); }
-  #settings-box[open] { display: flex; flex-direction: column; gap: 6px; }
-  #settings-box summary { cursor: pointer; }
-  #settings-text {
+  #settings-box, #activity-box { flex: none; font-size: 12px; color: var(--muted); }
+  #settings-box[open], #activity-box[open] { display: flex; flex-direction: column; gap: 6px; }
+  #settings-box summary, #activity-box summary { cursor: pointer; }
+  #settings-text, #activity-text {
     box-sizing: border-box;
     width: 100%;
     max-width: 80ch;
@@ -110,6 +110,14 @@
   <div class="row">
     <button type="button" id="settings-copy">Copy</button>
     <button type="button" id="settings-apply">Start the Build Phase with these</button>
+  </div>
+</details>
+<details id="activity-box">
+  <summary>Activity logs: export</summary>
+  <p class="hint">"Export logs" in the game's Activity logs (Esc, then a) puts what the chosen filter shows here and on the clipboard: paste it into the pull request.</p>
+  <textarea id="activity-text" rows="8" spellcheck="false" autocapitalize="off" aria-label="Activity logs" readonly></textarea>
+  <div class="row">
+    <button type="button" id="activity-copy">Copy</button>
   </div>
 </details>
 <p class="hint">This is the game's own code: the same menu, Build Phase and Pulse playback the terminal runs, painted cell by cell. Tap a tile or a menu row to click it; tap the same tile twice to place. Shift makes the next arrow a fast move. "abc" opens the phone's keyboard for letters. A development tool; the terminal is still the real game.</p>

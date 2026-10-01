@@ -48,17 +48,22 @@ export function adjustSetting(settings: Settings, field: PlayerField, step: -1 |
 /**
  * The game menu's rows, in order (owner, 2026-09-28: "When pressing [esc] or explicitly opening the
  * main menu, there should be an option for '[s] Settings' along with '[q] Quit'"), `[c] Controls and
- * hotkeys` right after Settings (feedback F60), `[r] Restart` — starting the Build Phase over with
- * every setting kept, moved here from Settings (feedback F34) — and Quit. **No `[esc] Back to the
- * game` row** (owner, 2026-09-30, feedback F73: "the general esc on the top right is contextual and
- * already says 'close'"): Esc, `x`, the top bar's `close [esc]` and a click outside close it, as they
- * close every popup. `popupHighlight` indexes this list while the game menu is open.
+ * hotkeys` right after Settings (feedback F60), `[a] Activity logs` after it (owner, 2026-10-01,
+ * feedback F91: "The menu should have a new option for 'activity logs'"), `[r] Restart` — starting the
+ * Build Phase over with every setting kept, moved here from Settings (feedback F34) — and Quit. **No
+ * `[esc] Back to the game` row** (owner, 2026-09-30, feedback F73: "the general esc on the top right is
+ * contextual and already says 'close'"): Esc, `x`, the top bar's `close [esc]` and a click outside close
+ * it, as they close every popup. `popupHighlight` indexes this list while the game menu is open.
  */
-export const GAME_MENU_ROWS = ["settings", "controls", "restart", "quit"] as const
+export const GAME_MENU_ROWS = ["settings", "controls", "activity", "restart", "quit"] as const
 export type GameMenuRow = (typeof GAME_MENU_ROWS)[number]
 
 /** What the game menu's `[c] Controls and hotkeys` row says under its name. */
 export const CONTROLS_DESCRIPTION = "Keys and mouse"
+
+/** What the game menu's `[a] Activity logs` row says under its name: what the window is for, in a
+ *  playtester's words (F91: "go to the activity logs on the menu, and export the relevant logs"). */
+export const ACTIVITY_DESCRIPTION = "What happened, to export for feedback"
 
 /** What the game menu's `[r] Restart` row says under its name. */
 export const RESTART_DESCRIPTION = "Start over; the plan is lost."

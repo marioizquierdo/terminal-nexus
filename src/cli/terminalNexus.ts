@@ -17,6 +17,8 @@ import { parseArgs, parseInteger } from "./args.ts"
 import { runMenu } from "./menu.ts"
 import { parseKeyScript } from "../playtest/keys.ts"
 import { runSpike } from "./spike.ts"
+import type { Exporter } from "./spike.ts"
+import type { ExportKind } from "../build/types.ts"
 import { DEFAULT_SETTINGS, createSettingsStore, defaultSettingsPath } from "../settings/index.ts"
 import type { Settings } from "../settings/index.ts"
 import { importSettings } from "../build/settings-export.ts"
@@ -131,24 +133,27 @@ function currentCommit(): string | undefined {
   }
 }
 
+/** The Activity Logs' export file (owner, 2026-10-01, feedback F91), beside the settings' export. */
+export const ACTIVITY_EXPORT_FILE = "activity-export.txt"
+
 /**
  * The terminal's export: the text to the clipboard through OSC 52 — the escape sequence iTerm2 and
  * most modern terminals accept for "put this on the clipboard" (iTerm2 asks for it to be allowed:
  * Settings > General > Selection > "Applications in terminal may access clipboard") — and to a file,
- * which always works.
+ * which always works. Each export has its own file: the settings' at `path`, the Activity Logs' beside
+ * it (`activity-export.txt`), so exporting one never overwrites the other.
  */
-export function terminalExporter(
-  stdout: TerminalOutput,
-  path: string,
-): Readonly<{ destination: string; export: (text: string) => Promise<void> }> {
+export function terminalExporter(stdout: TerminalOutput, path: string): Exporter & Readonly<{ export: (text: string, kind: ExportKind) => Promise<void> }> {
   const home = homedir()
-  const shown = path.startsWith(home) ? `~${path.slice(home.length)}` : path
+  const shown = (file: string): string => (file.startsWith(home) ? `~${file.slice(home.length)}` : file)
+  const files: Readonly<Record<ExportKind, string>> = { settings: path, activity: join(dirname(path), ACTIVITY_EXPORT_FILE) }
+  const destination = (kind: ExportKind): string => `Copied to the clipboard if your terminal allows it, and saved to ${shown(files[kind])}.`
   return {
-    destination: `Copied to the clipboard if your terminal allows it, and saved to ${shown}.`,
-    async export(text: string): Promise<void> {
+    destination: { settings: destination("settings"), activity: destination("activity") },
+    async export(text: string, kind: ExportKind): Promise<void> {
       stdout.write(osc52(text))
-      await mkdir(dirname(path), { recursive: true })
-      await writeFile(path, text, "utf8")
+      await mkdir(dirname(files[kind]), { recursive: true })
+      await writeFile(files[kind], text, "utf8")
     },
   }
 }

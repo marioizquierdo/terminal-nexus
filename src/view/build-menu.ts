@@ -134,8 +134,8 @@ export function menuRowActive(context: BuildContext, state: BuildState, entry: n
  * Which menu row each popup belongs to, or `null` for one that belongs to none — said once, so every
  * new popup has to choose. A popup that belongs to a row keeps that row active behind it (the Nexus
  * powers, the Battle Round screen); one that belongs to none (the game menu, Settings, the export, the
- * Controls page, a message) leaves the menu unlit while it has the keyboard, so its own highlight (or
- * none) is the only one on screen.
+ * Controls page, the Activity logs window, a message) leaves the menu unlit while it has the keyboard,
+ * so its own highlight (or none) is the only one on screen.
  */
 const POPUP_ROW: Readonly<Record<Popup, "nexus" | "start" | null>> = {
   "nexus-powers": "nexus",
@@ -144,6 +144,7 @@ const POPUP_ROW: Readonly<Record<Popup, "nexus" | "start" | null>> = {
   settings: null,
   export: null,
   controls: null,
+  "activity-logs": null,
   message: null,
 }
 

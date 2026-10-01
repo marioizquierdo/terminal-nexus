@@ -22,6 +22,9 @@ import { composeBuildFrame } from "../src/view/build.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 import type { CapabilityMode } from "../src/view/roles.ts"
+import type { ActivityLog } from "../src/log/activity.ts"
+import { ACTIVITY_CAPACITY, ACTIVITY_EVENTS } from "../src/log/activity.ts"
+import { createLogger } from "../src/log/logger.ts"
 
 // --- Keys, as a terminal sends them ----------------------------------------------------------------
 
@@ -67,20 +70,28 @@ export const OPEN_GROUND: Coord = { x: 18, y: 13 }
 
 export type Side = Readonly<{ build: BuildSession; layout: BuildLayout; context: BuildContext }>
 
-export type BuildSide = Side & Readonly<{ quits: () => number }>
+export type BuildSide = Side & Readonly<{ quits: () => number; activity: ActivityLog }>
 
 export type SideOptions = Readonly<{
   context?: BuildContext
   cursor?: Coord
   terminal?: Readonly<{ columns: number; rows: number }>
 }> &
-  Pick<BuildSessionOptions, "onQuit" | "onExport" | "onSettingsChange" | "startPulse">
+  Pick<BuildSessionOptions, "onQuit" | "onExport" | "onSettingsChange" | "startPulse" | "activity">
+
+/** An Activity Logs of a test's own (feedback F90-F91), on `now` — a clock standing still at 0 unless
+ *  the test passes one — so nothing a test logs reaches the game's global log, or another test's. */
+export function activityLog(now: () => number = () => 0): ActivityLog {
+  return createLogger({ name: "activity", events: ACTIVITY_EVENTS, capacity: ACTIVITY_CAPACITY, now })
+}
 
 /** A Build Phase session laid out for `terminal` (the 80 x 24 floor), on the spike map unless told
  *  otherwise, with the keyboard on the menu as the real screen opens. `quits()` counts the times it
- *  asked to leave. */
+ *  asked to leave. It records into an Activity Logs of its own (`activity`), which its Activity logs
+ *  window shows, as the live screen's shows the log it records into. */
 export function buildSide(options: SideOptions = {}): BuildSide {
-  const { context = spikeContext(), cursor = OPEN_GROUND, terminal = MINIMUM, onQuit, ...rest } = options
+  const { context: given = spikeContext(), cursor = OPEN_GROUND, terminal = MINIMUM, onQuit, activity = activityLog(), ...rest } = options
+  const context: BuildContext = given.activity === undefined ? { ...given, activity } : given
   const layout = buildLayout(terminal, context.grid)
   let quits = 0
   const build = new BuildSession({
@@ -88,12 +99,13 @@ export function buildSide(options: SideOptions = {}): BuildSide {
     context,
     cursor,
     viewport: layout.viewport,
+    activity,
     onQuit: () => {
       quits += 1
       onQuit?.()
     },
   })
-  return { build, layout, context, quits: () => quits }
+  return { build, layout, context, quits: () => quits, activity }
 }
 
 // --- Driving it ------------------------------------------------------------------------------------

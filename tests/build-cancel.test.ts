@@ -206,6 +206,7 @@ test("x closes every popup as Esc does, back to the one it was opened from", () 
     [[ESC], null],
     [[ESC, "s"], "game-menu"],
     [[ESC, "c"], "game-menu"],
+    [[ESC, "a"], "game-menu"],
     [["d", "e"], "settings"],
     [["?"], null],
   ] as const) {
@@ -218,7 +219,7 @@ test("x closes every popup as Esc does, back to the one it was opened from", () 
   }
 })
 
-test("no popup has a row that only goes back: the game menu's rows are its four actions, and the export and Controls have nothing to press", () => {
+test("no popup has a row that only goes back: the game menu's rows are its five actions, and the export and Controls have nothing to press", () => {
   const optionsOf = (begin: readonly string[]) => {
     const side = buildSide()
     keys(side, ...begin)
@@ -226,7 +227,8 @@ test("no popup has a row that only goes back: the game menu's rows are its four 
     assert.ok(spec !== null, `${JSON.stringify(begin)} opened nothing`)
     return spec.rows.flatMap((row) => (row.kind === "option" ? [row] : []))
   }
-  assert.deepEqual(optionsOf([ESC]).map((option) => option.hotkey), ["s", "c", "r", "q"])
+  // Activity logs (feedback F91) joined Settings, Controls, Restart and Quit.
+  assert.deepEqual(optionsOf([ESC]).map((option) => option.hotkey), ["s", "c", "a", "r", "q"])
   for (const begin of [["d", "e"], ["?"]]) assert.deepEqual(optionsOf(begin), [], JSON.stringify(begin))
   // The export is its text, to its last row.
   const exported = buildSide()
@@ -234,7 +236,7 @@ test("no popup has a row that only goes back: the game menu's rows are its four 
   const spec = popupSpec(exported.context, exported.build.state)
   assert.equal(spec?.scroll?.to, spec?.rows.length, "the text is not the export's last rows")
   // Every option of every popup does something; going back is Esc's, x's and the top bar's.
-  for (const begin of [["n"], [ESC], [ESC, "s"], ["n", "1", "s"]]) {
+  for (const begin of [["n"], [ESC], [ESC, "s"], ["n", "1", "s"], [ESC, "a"]]) {
     for (const option of optionsOf(begin)) {
       assert.ok(!["cancel", "back"].includes(option.command.kind), `${JSON.stringify(begin)}: [${option.hotkey}] only goes back`)
     }

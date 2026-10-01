@@ -53,7 +53,7 @@ function battleRound(experiments: Readonly<{ popupPulseMs?: number }> = {}): Sid
 }
 
 /** Every popup there is, and the state that shows it — a message needs its words. */
-const EVERY_POPUP: readonly Popup[] = ["nexus-powers", "battle-round", "game-menu", "settings", "export", "message", "controls"]
+const EVERY_POPUP: readonly Popup[] = ["nexus-powers", "battle-round", "game-menu", "settings", "export", "message", "controls", "activity-logs"]
 const showing = (state: BuildState, popup: Popup): BuildState => ({
   ...state,
   popup,

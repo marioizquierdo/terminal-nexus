@@ -9,8 +9,10 @@
 //   keys    -> terminal bytes `src/web/keys.ts`, through the scripted playtest's own key names
 //   taps    -> SGR mouse reports, the same bytes a terminal sends for a click
 //   settings -> browser storage instead of ~/.terminal-nexus/settings.json
-//   export   -> the clipboard and a text box under the screen, instead of OSC 52 and a file
+//   export   -> the clipboard and a text box under the screen, instead of OSC 52 and a file — the
+//               settings' in one box, the Activity Logs' in another (feedback F91)
 //   import   -> `#settings=<text>` in the page's address, or that same text box
+//   errors   -> the page's own uncaught errors, into the Activity Logs (`session.error`, where "page")
 //
 // Built into one self-contained HTML file by `scripts/build-web.mjs`.
 
@@ -32,6 +34,7 @@ import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, MOUSE_WHEEL_DOWN, MOUSE_WHEEL_UP } from "../build/mouse.ts"
 import { keyBytes, parseKeyScript } from "../playtest/keys.ts"
 import { KEY_BAR, StandInKeyboard, mouseBytes, withShift } from "./keys.ts"
+import { activity } from "../log/activity.ts"
 import grandBattle from "../../scenarios/grand-battle.map.json" with { type: "json" }
 import citizensVersusRavels from "../../scenarios/citizens-versus-ravels.map.json" with { type: "json" }
 
@@ -131,6 +134,8 @@ const status = element<HTMLElement>("status")
 const sizeSelect = element<HTMLSelectElement>("size")
 const settingsBox = element<HTMLDetailsElement>("settings-box")
 const settingsText = element<HTMLTextAreaElement>("settings-text")
+const activityBox = element<HTMLDetailsElement>("activity-box")
+const activityText = element<HTMLTextAreaElement>("activity-text")
 
 element("build").textContent = `${__TN_BUILD__.commit} · ${__TN_BUILD__.branch}`
 
@@ -230,15 +235,24 @@ async function start(next: Mode): Promise<void> {
       buildId: __TN_BUILD__.commit,
       experiments,
       ...(startKeys === null ? {} : { startKeys }),
+      hostName: "web",
       exporter: {
-        destination: "Copied to the clipboard, and shown in the settings text box under the screen.",
-        export: (text) => {
-          settingsText.value = text
-          settingsBox.open = true
+        destination: {
+          settings: "Copied to the clipboard, and shown in the settings text box under the screen.",
+          activity: "Copied to the clipboard, and shown in the activity logs box under the screen.",
+        },
+        export: (text, kind) => {
+          // Each export into its own box (feedback F91), opened so it is seen.
+          const activityExport = kind === "activity"
+          const area = activityExport ? activityText : settingsText
+          const box = activityExport ? activityBox : settingsBox
+          const name = activityExport ? "activity logs" : "settings text"
+          area.value = text
+          box.open = true
           // Inside the key press or tap that asked for it, so the browser allows the write; a refusal
           // leaves the text box, which is why it is filled first.
           return navigator.clipboard?.writeText(text).catch(() => {
-            status.textContent = "The clipboard refused the export: copy it from the settings text box."
+            status.textContent = `The clipboard refused the export: copy it from the ${name} box.`
           })
         },
       },
@@ -377,6 +391,21 @@ element("settings-copy").addEventListener("click", () => {
   void navigator.clipboard?.writeText(settingsText.value).catch(() => {
     settingsText.select()
   })
+})
+element("activity-copy").addEventListener("click", () => {
+  void navigator.clipboard?.writeText(activityText.value).catch(() => {
+    activityText.select()
+  })
+})
+
+// The page's own failures, into the Activity Logs a playtester exports (feedback F91): what broke in
+// their browser reaches the pull request with what they did before it.
+window.addEventListener("error", (event) => {
+  activity.log("session.error", { where: "page", message: event.message || String(event.error) })
+})
+window.addEventListener("unhandledrejection", (event) => {
+  const reason: unknown = event.reason
+  activity.log("session.error", { where: "page", message: reason instanceof Error ? reason.message : String(reason) })
 })
 element("settings-apply").addEventListener("click", () => {
   imported = settingsText.value

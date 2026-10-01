@@ -53,6 +53,7 @@ export type HintSituation =
   | "export"
   | "message"
   | "controls"
+  | "activity-logs"
   | "committed"
   | "menu-mouse"
   | "menu-explore"
@@ -72,6 +73,7 @@ export function hintSituation(context: BuildContext, state: BuildState): HintSit
     case "export":
     case "message":
     case "controls":
+    case "activity-logs":
     case "game-menu":
       return state.popup
     default:
@@ -132,6 +134,7 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
   export: (_context, state) => `Paste this into the pull request. Up/down scroll. ${escBack(state)}`,
   message: () => "Read it, then [esc] or a click outside closes it.",
   controls: (_context, state) => `Every key and click, by where you are. Up/down scroll. ${escBack(state)}`,
+  "activity-logs": (_context, state) => `Left/right change the filter, [e] exports, up/down read. ${escBack(state)}`,
 
   // --- A committed plan with no Pulse on screen (a Pulse says its own line) ---
   committed: () => "The plan is locked in. [esc] opens the menu.",

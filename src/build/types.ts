@@ -170,6 +170,25 @@ export type BuildCommand =
    */
   | Readonly<{ kind: "open-controls" }>
   /**
+   * The Activity logs window (owner, 2026-10-01, feedback F91: "The menu should have a new option for
+   * 'activity logs' that opens a scrolling window with logs in reverse chronological order"): `a` or its
+   * row in the game menu, which Esc then goes back to. Opening it freezes the list at the newest entry
+   * (`BuildState.activityUpTo`), so what it shows holds still while it is read.
+   */
+  | Readonly<{ kind: "open-activity-logs" }>
+  /**
+   * One step of the Activity logs window's filter (feedback F91: "simple filtering mechanism"): Left
+   * (`-1`) or Right (`+1`) on its Filter row, or a click on the left or right half of its value. A
+   * filter is a choice, so it comes round at both ends, as every choice in Settings does.
+   */
+  | Readonly<{ kind: "activity-filter"; step: -1 | 1 }>
+  /**
+   * `e` in the Activity logs window, or its `[e] Export logs` row: export what the filter shows. The
+   * reducer counts the export (`BuildState.activityExports`) and says so in a message popup; copying the
+   * text out is the session's side effect, as the settings export's is (`BuildSession`'s `onExport`).
+   */
+  | Readonly<{ kind: "export-activity" }>
+  /**
    * A Nexus Pulse playback control — Space, `[`, `]`, `.`, `,` and `r` while a Pulse is on screen, or a
    * click on the panel's control rows (gate 6A): the same vocabulary `grid watch` has, one keymap across
    * both. The reducer has nothing to change for it — the Pulse's clock is the presenter's, never the
@@ -223,10 +242,26 @@ export type MenuEntry =
   | Readonly<{ kind: "start" }>
 
 /** The popups this screen has — one popup shape for all of them (`src/build/popup.ts`): the Nexus
- *  powers, the Battle Round confirmation, the game menu (Settings, Controls, Restart, Quit), Settings,
- *  the export, a message — `BuildState.message`, a title and text with nothing to choose — and the
- *  Controls and hotkeys page (feedback F60). */
-export type Popup = "nexus-powers" | "battle-round" | "game-menu" | "settings" | "export" | "message" | "controls"
+ *  powers, the Battle Round confirmation, the game menu (Settings, Controls, Activity logs, Restart,
+ *  Quit), Settings, the export, a message — `BuildState.message`, a title and text with nothing to
+ *  choose — the Controls and hotkeys page (feedback F60), and the Activity logs window (F91). */
+export type Popup =
+  | "nexus-powers"
+  | "battle-round"
+  | "game-menu"
+  | "settings"
+  | "export"
+  | "message"
+  | "controls"
+  | "activity-logs"
+
+/**
+ * Which export a text is, so the shell that copies it out knows where it goes: the settings and
+ * Experiments (owner, 2026-09-28), or the Activity Logs (owner, 2026-10-01, feedback F91: "export them
+ * through the menu"). The terminal writes each to its own file beside the settings; the browser page
+ * puts each in its own text box under the screen.
+ */
+export type ExportKind = "settings" | "activity"
 
 /**
  * A message popup's words (feedback F34, owner 2026-09-29: "This popup does not have an action, it's

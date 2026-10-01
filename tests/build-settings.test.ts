@@ -575,7 +575,7 @@ test("the live screen saves a changed setting through the store and hands an exp
         saves.push(settings)
       },
     },
-    exporter: { destination: "Sent to the test.", export: (text) => void exported.push(text) },
+    exporter: { destination: { settings: "Sent to the test.", activity: "Logs sent to the test." }, export: (text) => void exported.push(text) },
   })
   await new Promise((resolve) => setTimeout(resolve, 30))
   for (const key of ["q", "s", RIGHT, "e"]) stdin.emit("data", Buffer.from(key))
@@ -595,10 +595,17 @@ test("the terminal's export: OSC 52 to the clipboard and a file beside the setti
   const path = join(folder, "nested", "settings-export.txt")
   const stdout = new FakeStdout()
   const exporter = terminalExporter(stdout as unknown as NodeJS.WriteStream, path)
-  assert.match(exporter.destination, /clipboard if your terminal allows it, and saved to .*settings-export\.txt\./)
-  await exporter.export("theme = light\n")
+  assert.match(exporter.destination.settings, /clipboard if your terminal allows it, and saved to .*settings-export\.txt\./)
+  await exporter.export("theme = light\n", "settings")
   assert.equal(readFileSync(path, "utf8"), "theme = light\n")
   assert.ok(stdout.written.includes(osc52("theme = light\n")))
+  // The Activity Logs' export (feedback F91) goes to the clipboard too, and to a file of its own beside
+  // the settings', which it never overwrites.
+  assert.match(exporter.destination.activity, /clipboard if your terminal allows it, and saved to .*activity-export\.txt\./)
+  await exporter.export("Terminal Nexus activity logs\n", "activity")
+  assert.equal(readFileSync(join(folder, "nested", "activity-export.txt"), "utf8"), "Terminal Nexus activity logs\n")
+  assert.equal(readFileSync(path, "utf8"), "theme = light\n")
+  assert.ok(stdout.written.includes(osc52("Terminal Nexus activity logs\n")))
 })
 
 test("a fresh Build Phase exports no changed experiment", () => {
