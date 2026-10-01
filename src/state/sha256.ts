@@ -1,6 +1,6 @@
 // SHA-256 in plain JavaScript (FIPS 180-4), so the state and event fingerprints are computed by the
 // same code on Node, on Bun, and in a browser — no `node:crypto`, and nothing a runtime can supply
-// differently. The browser playtest page is what needed it (engine.md 10.2): it runs the real
+// differently. The browser playtest page is what needed it (runtime.md): it runs the real
 // simulation, and its fingerprints must be the terminal's, byte for byte.
 //
 // Checked against `node:crypto` in `tests/sha256.test.ts`, on the published test vectors and on real

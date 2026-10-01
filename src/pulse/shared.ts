@@ -1,6 +1,6 @@
 // Per-tick types and small helpers shared by more than one phase of the Pulse. Phase-specific types
 // (Intent, Grant) live next to the phase that creates them; only what more than one file needs is
-// here — engine.md 4.3 is the phase order these types and helpers serve.
+// here. pulse.md has the phase order these types and helpers serve.
 
 import type { ContentDef } from "../content/types.ts"
 import type { CollisionMask } from "../grid/occupancy.ts"
@@ -54,7 +54,7 @@ export type TickContext = {
    */
   nextOrdinal: number
   /**
-   * Reverse index from a target's ordinal to the actors currently aiming at it — engine.md 11.1.
+   * Reverse index from a target's ordinal to the actors currently aiming at it (grid-engine.md, on scaling).
    * Maintained by `setTarget` at every targetOrdinal write site (all in perception.ts) so death
    * resolution can find who was watching a dying entity without scanning every actor. Values are
    * Actor references rather than ordinals: an actor that already died earlier in the same
@@ -70,7 +70,7 @@ export type TickContext = {
  * `targetOrdinal = ...` writes and death resolution's reverse-index read have to agree. Reassigning
  * the same value is a harmless no-op remove-then-add, not a special case: correctness never depends
  * on insertion order, because a target's observer set is sorted by ordinal wherever it is read
- * (engine.md 11.1) — the same order the old scan of `context.actors` always produced.
+ * (grid-engine.md, on scaling) — the same order the old scan of `context.actors` always produced.
  */
 export function setTarget(context: TickContext, actor: Actor, targetOrdinal: number | null): void {
   if (actor.targetOrdinal !== null) {
@@ -94,7 +94,7 @@ export function blockReasonFor(blocker: "edge" | "terrain" | "settling" | number
   return "edge"
 }
 
-/** Attacks and movement claims both read this. Lower acts first — engine.md 4.3. */
+/** Attacks and movement claims both read this. Lower acts first (pulse.md). */
 export function speedTier(actor: Actor): number {
   return actor.definition.speedTier
 }
@@ -113,7 +113,7 @@ export function resolveTarget(context: TickContext, actor: Actor): Actor | null 
 }
 
 /**
- * The distance between two actors, to the nearest occupied tile of each footprint — engine.md 3.5.
+ * The distance between two actors, to the nearest occupied tile of each footprint (grid.md).
  * Perception, intents, attacks, and detonation all measure this same way; wrapping the two anchors
  * and two footprints here (rather than every call site reaching into both actors' `definition`
  * itself) is what keeps a future actor-to-actor measurement — a healer's range to an ally, a splash
@@ -209,8 +209,8 @@ export function actorsWithin(
  * Damage everyone within `radius` of an area, friend and foe alike — the one mechanism behind both
  * `detonation` (death.ts, centred on the dying entity's own anchor and footprint) and `attack.splash`
  * (attacks.ts, centred on the resolved target's anchor and footprint, the same "nearest occupied tile"
- * courtesy engine.md 3.5 already extends to range checks): an area-damage rule shape triggered at two
- * different moments is still one rule shape, not two (unit-design-architecture spike). Returns who was
+ * courtesy grid.md already extends to range checks): an area-damage rule shape triggered at two
+ * different moments is still one rule shape, not two (a lesson of the unit-architecture spike). Returns who was
  * caught. `attack.splash` has no pre-existing event order to preserve, so it can use this all-in-one
  * form; `detonate()` cannot, and uses `actorsWithin` directly instead — see the comment there.
  */
@@ -231,7 +231,7 @@ export function areaDamage(
 /**
  * The heal-side mirror of `applyDamage`: clamped at `maxHp` rather than zero, and a heal never kills,
  * so there is no "pendingDead" branch to mirror. A separate event kind (`heal.applied`, not a negative
- * `damage.applied`) because events carry meaning, not just a number's sign (engine.md 7) - a healer's
+ * `damage.applied`) because events carry meaning, not just a number's sign (pulse.md) - a healer's
  * pulse and an incoming hit are not the same fact just because both move `hp`.
  */
 export function applyHeal(context: TickContext, target: Actor, source: Actor, amount: number): void {

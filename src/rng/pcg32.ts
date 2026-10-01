@@ -1,4 +1,4 @@
-// The one named PRNG for the seeded gameplay stream — engine.md 4.4.
+// The one named PRNG for the seeded gameplay stream (pulse.md).
 //
 // Algorithm: PCG32, the `pcg_setseq_64_xsh_rr_32` variant (64-bit LCG state, 32-bit XSH-RR output).
 // Transcribed from the reference implementation in `imneme/pcg-c`, `include/pcg_variants.h`,
@@ -105,9 +105,9 @@ export class Pcg32 {
 }
 
 /**
- * Streams are separated by the `initseq` parameter, which is what PCG provides them for.
- * Gameplay and cosmetic randomness are different streams of different seeds and never touch
- * (engine.md 1, law 3).
+ * Streams are separated by the `initseq` parameter, which is what PCG provides them for. Only
+ * gameplay draws from a stream; cosmetic randomness is a hash of an effect instance's identity,
+ * never a stream, so presentation can never consume a gameplay draw (grid-engine.md).
  */
 export const STREAM_GAMEPLAY = 0n
 export const STREAM_COSMETIC = 1n

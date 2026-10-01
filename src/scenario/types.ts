@@ -65,7 +65,7 @@ export type ScenarioDefinition = Readonly<{
   notes?: string
   grid: GridSpec
   seed: number
-  /** Fixed number of logical ticks — engine.md 4.1, 12 ticks per simulation second. */
+  /** Fixed number of logical ticks (pulse.md), 12 ticks per simulation second. */
   pulseTicks: number
   /** One character per tile, rows listed **north to south** so the file reads the way it draws. */
   terrain: readonly string[]
@@ -78,8 +78,7 @@ export type ScenarioDefinition = Readonly<{
 }>
 
 /**
- * Typed, and does no work — so a scenario file is safe to import from a test
- * (milestone-1-spike-battle.md 3.5).
+ * Typed, and does no work — so a scenario file is safe to import from a test.
  */
 export function defineScenario(definition: ScenarioDefinition): ScenarioDefinition {
   return definition

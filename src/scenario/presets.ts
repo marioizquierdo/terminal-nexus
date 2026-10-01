@@ -1,4 +1,4 @@
-// Grid size presets — engine.md 3.1. The matrix is GUIDANCE; the default preset is RULE.
+// Grid size presets (grid.md). The matrix is GUIDANCE; the default preset is RULE.
 
 export type GridShape = "squared" | "wide" | "extra-wide"
 export type GridSize = "small" | "medium" | "large" | "extra-large"

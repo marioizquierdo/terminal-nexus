@@ -1,4 +1,4 @@
-// 4. Intents — engine.md 4.3. What each actor wants to do this tick, before arbitration decides who
+// 4. Intents (phase order in pulse.md). What each actor wants to do this tick, before arbitration decides who
 // actually gets it.
 
 import { directionOf, nearestFootprintTile, step } from "../grid/coords.ts"

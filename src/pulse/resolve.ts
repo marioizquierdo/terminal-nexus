@@ -1,4 +1,4 @@
-// Resolving a whole Pulse — engine.md 4.4.
+// Resolving a whole Pulse (pulse.md).
 //
 // The kernel has no real-time loop: it may resolve 240 ticks in a microsecond or over an hour, and
 // nothing downstream may care which. Verification re-runs these inputs and compares the two hashes.
@@ -13,7 +13,7 @@ import type { PulseContext } from "./context.ts"
 import { createContext } from "./context.ts"
 import { stepTick } from "./tick.ts"
 
-/** Bumped whenever a rule changes an outcome. Recorded with every run, per engine.md 4.4. */
+/** Bumped whenever a rule changes an outcome. Recorded with every run (pulse.md). */
 export const ENGINE_VERSION = "0.1.0-gate1a"
 
 export type PulseRun = Readonly<{
@@ -30,7 +30,7 @@ export type PulseRun = Readonly<{
   eventsHash: string
 }>
 
-/** Content ids and their definitions, hashed — the "content lock" of the engine.md 4.4 game log. */
+/** Content ids and their definitions, hashed — the "content lock" of the game log (pulse.md). */
 export function contentLockOf(registry: ContentRegistry): string {
   return hashOf(registry.ids().map((id) => registry.get(id)))
 }

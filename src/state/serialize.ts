@@ -13,7 +13,7 @@ export function hashState(state: MatchState): string {
 }
 
 /**
- * `parse(serialize(state))` must hash identically — one of the Section 3.9 determinism checks.
+ * `parse(serialize(state))` must hash identically — one of the determinism checks (testing.md).
  * The parse is defensive rather than trusting: a state read back from disk is untrusted input.
  */
 export function parseState(text: string): MatchState {

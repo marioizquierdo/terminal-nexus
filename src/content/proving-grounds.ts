@@ -1,18 +1,18 @@
 // The Proving Grounds — a third fixture roster, disposable bench content exactly like the Citizen and
-// Ravel fixtures beside it (milestone-1-spike-battle.md 3.6, commander-armies.md Section 1): **not a
-// Commander Army, not canon, not faction lore**. commander-armies.md still reserves real rosters for
-// Milestone 12; a design here that does not pan out is discarded from this file, never reverted out of
-// citizen.ts or ravel.ts, both of which carry tuned relationships other tests depend on.
+// Ravel fixtures beside it (see commander-armies.md): **not a
+// Commander Army, not the designed roster, not faction lore**. commander-armies.md still reserves real
+// rosters for the content-iteration milestone; a design here that does not pan out is discarded from this file,
+// never reverted out of citizen.ts or ravel.ts, both of which carry tuned relationships other tests depend on.
 //
 // This roster exists for a different reason than the other two: not to characterise a faction, but to
 // stress-test whether `ContentDef` plus the existing kernel rules can absorb a batch of genuinely
-// different unit *mechanics* — an architecture spike Mario asked for directly, not gate work. Every
+// different unit *mechanics* — the unit-architecture spike, which Mario asked for directly. Every
 // content id below is namespaced `*.bench.*` rather than `*.citizen.*`/`*.ravel.*` for exactly that
 // reason: no faction owns any of this.
 //
 // Per-design provenance (what each one needed from the kernel, if anything) is in
-// `docs/history/reports/2026-09-10-unit-architecture-spike.md`. The short version: most of this roster is `ContentDef` data
-// and nothing else. Five designs needed one new, small, reusable kernel capability each — a hard
+// `docs/history/reports/2026-09-10-unit-architecture-spike.md`. The short version: most of this
+// roster is `ContentDef` data and nothing else. Five designs needed one new, small, reusable kernel capability each — a hard
 // targeting restriction (`targetLayers`), a soft targeting bias (`targetPreference`), a one-time
 // windup before a first shot, an AOE attack (`splash`, the same `{radius,damage}` shape `detonation`
 // already used), an ally-seeking heal behavior, and a combat-only spawn primitive (periodic and
@@ -56,7 +56,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
   // --- The ground-air asymmetry (`sky-ground-asymmetry.map.json`) -------------------------------
   {
     // "Ground units cannot reach air" is not automatic - the layer model deliberately lets a ground
-    // and an air entity share a tile (Q8), and nothing in `attacks()` ever checked layer compatibility
+    // and an air entity share a tile, and nothing in `attacks()` ever checked layer compatibility
     // before this spike. `targetLayers` closes exactly that gap, opt-in per unit rather than a new
     // default, so every existing Citizen/Ravel hash is untouched.
     id: "unit.bench.grunt",
@@ -91,7 +91,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
   {
     // "Goes to the nearest enemy and starts shooting and following" is already exactly what `behavior:
     // "advance"` plus an `attack` does for *any* content - the air layer and its own mask
-    // (`collidesWith: ["air"]`, ignoring terrain) were proven in Gate 1B already. Nothing about being
+    // (`collidesWith: ["air"]`, ignoring terrain) were already proven by the Ravel battles. Nothing about being
     // a flyer needed new kernel work; only the *ground's* inability to reach it did.
     id: "unit.bench.skyraider",
     short: "skyraider",
@@ -183,9 +183,9 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     detonation: { radius: 2, damage: 14 },
   },
   {
-    // The control case commander-armies.md Section 7 already predicted: "nothing about this needs a
+    // The control case commander-armies.md already predicted: "nothing about this needs a
     // new engine capability, only content shaped to use two rules that already exist" - a straight
-    // 4x1 footprint (multi-tile is RULE, engine.md 3.5) and `behavior: "static"` (an armed structure
+    // 4x1 footprint (multi-tile is a RULE, grid.md) and `behavior: "static"` (an armed structure
     // never chased anything before this spike either, and did not need to start). Placed already
     // standing, it blocks a whole corridor and fights back at anything that reaches it, but never
     // advances - `bench-siege-composition.map.json` places it as the line the rushers above have to
@@ -207,7 +207,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     // "Moves, then anchors with a delay, then shoots with explosive AOE" needed two small, reusable
     // additions: `windupTicks` (a one-time hold before the first shot after arriving, spent only while
     // genuinely holding position - see `EntityState.windup`) and `splash` (the `detonation` shape
-    // reused as an attack's own AOE instead of a death's). Two tiles wide on purpose: engine.md 3.5's
+    // reused as an attack's own AOE instead of a death's). Two tiles wide on purpose: grid.md's
     // "range measures to the nearest occupied tile" already makes a body this size easier to hit just
     // by existing, before the windup adds a second, deliberate downside on top.
     id: "unit.bench.siegecrawler",
@@ -260,7 +260,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     // and `AttackKind: "heal"` plus `applyHeal` (shared.ts) is `applyDamage`'s mirror: clamped at
     // `maxHp` instead of zero, reported as its own `heal.applied` event rather than a negative
     // `damage.applied`, because a heal is a different *meaning*, not just a different sign
-    // (engine.md 7). Flying on purpose - Clash of Clans' own Healer is a flyer - so its own scenario
+    // (pulse.md). Flying on purpose - Clash of Clans' own Healer is a flyer - so its own scenario
     // doubles as an integration check: the medic answers whether ally-targeting composes cleanly with
     // the ground-air asymmetry built for the skyraider, not just whether it works in isolation.
     id: "unit.bench.medic",
@@ -283,7 +283,8 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     // `spawning()` phase is scoped deliberately narrow - no cost, no resource, nothing the empty
     // `economyAndProduction` phase would recognise as its own - specifically so it reads as a combat
     // ability (a Clash Royale Graveyard, a StarCraft Broodmother) rather than the production system
-    // Milestone 2 still owns. `docs/milestones/open-questions.md` Q26 registers exactly that boundary for Mario.
+    // the worker-economy milestone will own. Whether that boundary holds is an open question for Mario
+    // (Q26 in docs/milestones/open-questions.md).
     id: "structure.bench.hatchery",
     short: "hatch",
     layer: "obstacles",

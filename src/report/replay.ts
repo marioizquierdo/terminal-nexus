@@ -1,7 +1,7 @@
 // Reconstruct entity state from the event stream alone.
 //
 // This is what makes `src/report` honest. The report derives everything it prints from the events
-// and the final state, never from kernel internals (milestone-1-spike-battle.md 3.2) — and the
+// and the final state, never from kernel internals — and the
 // cheapest way to *prove* that is to rebuild the cast from the events and check the result against
 // the state the kernel actually finished with. A report that can do that cannot be narrating a
 // story the events do not contain.

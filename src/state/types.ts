@@ -1,5 +1,5 @@
 // STATE — what is true. Plain serializable data that knows nothing about time passing and nothing
-// about drawing (engine.md 1). Only the Pulse mutates it.
+// about drawing (grid-engine.md). Only the Pulse mutates it.
 
 import type { Coord, Direction, GridTerrain, VacatedEntry } from "../grid/types.ts"
 import type { RngState } from "../rng/pcg32.ts"
@@ -16,15 +16,16 @@ export type EntityState = Readonly<{
   player: PlayerId
   contentId: string
   hp: number
-  /** The entity's coordinate and centre of authority — engine.md 3.5. */
+  /** The entity's coordinate and centre of authority (grid.md). */
   anchor: Coord
   /**
    * Presentation-only, and the single deliberate exception to "state carries nothing only
-   * presentation reads" (engine.md 1, Q9). Derived from the last step, or from the current target
+   * presentation reads" (grid-engine.md). Whether facing should ever affect
+   * a rule is an open question (Q9). Derived from the last step, or from the current target
    * when stationary. No rule reads it.
    */
   facing: Direction
-  /** Integer movement credit — engine.md 4.2. Capped at one step's cost. */
+  /** Integer movement credit (pulse.md). Capped at one step's cost. */
   moveCredit: number
   /** Ticks remaining before this entity may attack again. */
   cooldown: number
@@ -63,7 +64,7 @@ export type MatchState = Readonly<{
   schemaVersion: number
   /** Ticks elapsed. A resolved Pulse leaves this at the tick the run ended on. */
   tick: number
-  /** Replay metadata that cannot change inside a ruleset version — engine.md 4.4. */
+  /** Replay metadata that cannot change inside a ruleset version (pulse.md). */
   ticksPerSecond: number
   grid: GridTerrain
   /** Ordered by `ordinal`. Dead entities are removed; the event stream carries their story. */
@@ -82,7 +83,7 @@ export type MatchState = Readonly<{
 
 /**
  * Bumped to 2: `MatchState` gained `vacatedTiles` for the post-death settle rule. Bumped to 3:
- * `EntityState` gained `windup`, `spawnCooldown`, and `focusStreak` for the unit-design-architecture
+ * `EntityState` gained `windup`, `spawnCooldown`, and `focusStreak` for the unit-architecture
  * spike's siege-crawler, spawner, and focus-turret rule shapes.
  */
 export const SCHEMA_VERSION = 3

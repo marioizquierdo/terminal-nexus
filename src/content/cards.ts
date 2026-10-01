@@ -1,4 +1,4 @@
-// What each thing on the Grid says about itself on a card (owner, 2026-09-30, feedback F84: "the cards
+// What each thing on the Grid says about itself on a card (Mario, 2026-09-30: "the cards
 // have title, subtitle, description, stats"): its name, one short line on what it is for, and two or
 // three plain sentences with a little more detail. Keyed by the same ids as the content definitions and
 // the terrain — like the art table beside it (`art.ts`), a table the kernel never reads, so the words a
@@ -41,7 +41,7 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
     description: "The heart of everything you build. If it falls, the Pulse is lost: put your defences in front of it.",
   },
 
-  // --- On the map between rounds (gate 6B): survivors of both sides, the raid's camp, what is coming ---
+  // --- On the map between rounds: survivors of both sides, the raid's camp, what is coming ---
   "unit.citizen.trooper": {
     title: "Trooper",
     subtitle: "Your foot soldier",

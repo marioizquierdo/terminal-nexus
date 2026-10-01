@@ -1,13 +1,13 @@
 // Ravel fixture content — disposable, tuned for contrast, not for balance.
 //
-// The same status as the Citizen fixture in milestone-1-spike-battle.md 3.6: **not a Commander
-// Army, not canon**. `commander-armies.md` Section 1 forbids production stats before Milestone 12
+// The same status as the Citizen fixture: bench content, **not a Commander Army and not the designed
+// roster**. commander-armies.md forbids production stats until the content-iteration milestone
 // selects the Citizens-versus-Ravels microgame, and saying these are throwaway is what keeps them
 // throwaway.
 //
-// What they are for is contrast. `terminal-nexus-lore.md` Section 8.6 sets the test: a player who
+// What they are for is contrast. lore.md sets the test: a player who
 // has never read a word of lore should be able to state the faction's philosophy from play alone.
-// Three of the four Ravel rule shapes in `commander-armies.md` 4.1 are expressible with what the
+// Three of the four Ravel rule shapes in commander-armies.md are expressible with what the
 // kernel already has, and the fourth is one new rule:
 //
 //   Off the beat        every rate is deliberately off the Citizen cadence, so nothing in the two
@@ -58,7 +58,7 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     detonation: { radius: 1, damage: 4 },
   },
   {
-    // The three-tile raider the canon draws as `>x<`. It beats a trooper one to one, cannot turn a
+    // The three-tile raider the design draws as `>x<`. It beats a trooper one to one, cannot turn a
     // corner to save its life, and takes its killer's neighbours with it.
     id: "unit.ravel.raider",
     short: "raider",

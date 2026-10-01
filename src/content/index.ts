@@ -32,9 +32,9 @@ export function createRegistry(definitions: readonly ContentDef[]): ContentRegis
 }
 
 /**
- * The fixture registry. Gate 1A held Citizens alone, so that nothing which happened could be blamed
- * on balance; Gate 1B adds Ravels, so that something which happens can be blamed on *contrast*.
- * The Proving Grounds roster (unit-design-architecture spike) adds a third, faction-neutral set for a
+ * The fixture registry. The first battles held Citizens alone, so that nothing which happened could be
+ * blamed on balance; the Ravels were added so that something which happens can be blamed on *contrast*.
+ * The Proving Grounds roster (from the unit-architecture spike) adds a third, faction-neutral set for a
  * different reason again: not contrast, but coverage — a batch of deliberately varied unit mechanics
  * to stress the content/kernel boundary. All three are disposable bench content, not Commander Armies.
  */

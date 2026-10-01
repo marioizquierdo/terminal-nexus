@@ -1,4 +1,4 @@
-// 8. Death resolution — engine.md 4.3. Deaths, destruction, salvage — and detonations, which can
+// 8. Death resolution (phase order in pulse.md). Deaths, destruction, salvage — and detonations, which can
 // cause more of all three.
 
 import type { Actor, TickContext } from "./shared.ts"
@@ -115,7 +115,7 @@ function resolveDeaths(context: TickContext, dying: readonly Actor[]): void {
     // is still in hand — so the event names the entity rather than a bare ordinal, and the loss is
     // reported on the tick it actually happened.
     //
-    // Observers come from the reverse index (engine.md 11.1) rather than a scan of every actor:
+    // Observers come from the reverse index (grid-engine.md, on scaling) rather than a scan of every actor:
     // perception maintains `targetObservers` at every targetOrdinal write, so this is O(observers
     // of this one entity) instead of O(N) — the saving a chain detonation with several simultaneous
     // deaths actually collects. Sorted by ordinal because that is the order the old scan of
