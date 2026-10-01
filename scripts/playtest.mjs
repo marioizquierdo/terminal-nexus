@@ -114,7 +114,7 @@ const heading = (frame) =>
     ? `--- step 0: the screen as it opens`
     : `--- step ${frame.index}: ${frame.label}  ${JSON.stringify(frame.bytes)}`
 // What the bottom line reads after the step — the last key's answer, or the hint for where the keyboard
-// is (feedback F59), or the Pulse's own line: read off the frame itself, so it is what a player sees.
+// is, or the Pulse's own line: read off the frame itself, so it is what a player sees.
 const statusOf = (frame) => {
   const line = frameToText(frame.frame).split("\n")[run.layout.footerRow] ?? ""
   return line.replace(/^\s*\|\s?/u, "").replace(/\s*\|\s*$/u, "").trim() || "(bottom line empty)"

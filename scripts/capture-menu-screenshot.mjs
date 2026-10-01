@@ -1,6 +1,6 @@
-// One real screenshot of `terminal-nexus`'s top-level menu — Milestone 3 gate 3A evidence. Not a
-// blocking human check for this gate (see docs/history/reports/2026-09-13-menu.md Section 1), but the project's
-// own habit is a screenshot for every gate, and the pipeline already exists for `grid`
+// One real screenshot of `terminal-nexus`'s top-level menu, first made for the menu's first report
+// (docs/history/reports/2026-09-13-menu.md). Not a blocking human check, but the project's
+// own habit is a screenshot for every screen, and the pipeline already exists for `grid`
 // (capture-screenshots.mjs): tmux (a real PTY, so the ANSI backend takes the same path a person
 // gets) -> capture-pane -e -> HTML -> headless Chromium.
 //
@@ -74,7 +74,7 @@ function shoot(
   killSession(repoRoot, SESSION)
 }
 
-shoot("menu-top-level", "terminal-nexus's top-level menu, Gate 3A - Campaign highlighted at launch")
+shoot("menu-top-level", "terminal-nexus's top-level menu - Campaign highlighted at launch")
 
 shoot(
   "menu-monochrome",
@@ -102,7 +102,7 @@ shoot(
 
 shoot(
   "menu-challenge-dimmed",
-  "Gate 3C - Challenge already says why it's dimmed before it's even pressed; highlighting it is still plain inverse video",
+  "Challenge already says why it's dimmed before it's even pressed; highlighting it is still plain inverse video",
   { drive: () => sendKey(repoRoot, SESSION, "Down") },
 )
 
@@ -117,7 +117,7 @@ shoot(
   },
 )
 
-// Gate 3B — the Settings screen.
+// The Settings screen.
 shoot("settings-screen", "Settings, reached by its own hotkey - four choices and a way back", {
   drive: () => sendKeys(repoRoot, SESSION, "3"),
   waitForText: "Colour depth: truecolor",
@@ -153,7 +153,7 @@ shoot(
   },
 )
 
-// Gate 3C — Campaign's own placeholder screen.
+// Campaign's own placeholder screen.
 shoot("campaign-screen", "Campaign, reached by its own hotkey - a real screen, not a notice pinned to the menu behind it", {
   drive: () => sendKeys(repoRoot, SESSION, "1"),
   waitForText: "Campaign is not built yet",

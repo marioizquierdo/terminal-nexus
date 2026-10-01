@@ -3,7 +3,7 @@
 //
 //   node scripts/measure-palette-derivation.mjs [--theme dark|light]
 //
-// Q25 (docs/milestones/open-questions.md) asked whether `rgb` should become the single source of truth and the
+// The question was whether `rgb` should become the single source of truth and the
 // other two tiers a nearest-match computation. This is the measurement that answered it, checked in
 // rather than quoted, so the next session can re-run it instead of trusting a number in a document.
 // It reads the real palette through `rgbFor` and `sgrFor`, so it cannot drift from the table it is
@@ -16,7 +16,7 @@
 // so nearest-match of any muted design colour is genuinely grey. OKLab does not rescue it, which
 // `--oklab` will show.
 //
-// **Applied the same day, option A** (`roles.ts`): the 256-colour tier is now genuinely derived in
+// **Applied the same day** (`roles.ts`): the 256-colour tier is now genuinely derived in
 // production — `PALETTE` no longer hand-authors an `indexed` field at all, and `sgrFor`'s `color256`
 // case reads a `DERIVED_256` table computed from `rgb` at module load. One consequence for reading
 // this script's own output *now*: the "hand" value the `authored()` helper below reads back out of
@@ -30,8 +30,8 @@
 import { STYLE_ROLES, rgbFor, sgrFor, xterm256Rgb as xterm256 } from "../src/view/roles.ts"
 import { PALETTE } from "./lib/terminal-capture.mjs"
 
-/** xterm's usual renderings of the 16 ANSI colours, by SGR code, as RGB — read off the evidence
- *  pictures' own table rather than typed again. */
+/** xterm's usual renderings of the 16 ANSI colours, by SGR code, as RGB — read off the screenshots'
+ *  own table rather than typed again. */
 const XTERM16 = Object.fromEntries(
   Object.entries(PALETTE).map(([code, hex]) => [code, [1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16))]),
 )

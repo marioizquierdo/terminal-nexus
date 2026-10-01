@@ -1,4 +1,4 @@
-// Does this terminal tell us when a key is let go? (owner, 2026-09-29: "Do we rely on the OS keyboard
+// Does this terminal tell us when a key is let go? (Mario, 2026-09-29: "Do we rely on the OS keyboard
 // settings, or can we handle our key-press fate ourselves on the terminal? I really hope we can
 // reliably manage key-press vs key-hold on all platforms".)
 //

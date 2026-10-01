@@ -1,7 +1,7 @@
 // Capture a run of consecutive sub-tick frames around one engagement, so the interpolation and
 // effect animation between ticks can actually be looked at rather than guessed at from two whole
 // ticks apart. This is expensive to look at — many PNGs, each needing a careful glance — so it is a
-// deliberate, on-request tool, not part of any default evidence pass.
+// deliberate, on-request tool, not part of any default screenshot run.
 //
 // The method the owner asked for:
 //   1. run the simulation headless to get the event log, no rendering;
