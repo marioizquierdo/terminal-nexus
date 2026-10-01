@@ -3,71 +3,91 @@
 **Status:** PLANNED
 **Depends on:** Milestone 5 (Build Phase), Milestone 6 (the Pulse loop and a result), Milestone 8 (a Commander exists and the Nexus draft deals from an army's pool); Milestone 3's mode select hands off here
 
-> **The replayable mode, and the one that needs no writing.** Mario, canon 2.11: "implementing
-> 'runs', where each battle ends on a new draft upgrade or removals that further polish the build
-> for the next battle. This could have huge replayability value." A run exercises the Commander Army
-> composition model ([`docs/game-design/commander-armies.md`](../game-design/commander-armies.md) Section 2.1 —
-> the "deck" framing itself is retracted at canon 2.16, but the army's structures, upgrades, Nexus
-> powers, and Specials are all still real pools a run draft can touch) harder than any mission,
-> needs no authored text, and is where the game's long-term value lives. It is built as soon as the
-> match UX can carry it, before the Campaign's own second mission, for exactly those reasons.
-> [`docs/game-design/game-modes.md`](../game-design/game-modes.md) Section 3.2 is the design this builds against;
-> its numbers are starting values this milestone retunes.
+This is the replayable mode, and the one that needs no writing. Mario's brief: "implementing 'runs',
+where each battle ends on a new draft upgrade or removals that further polish the build for the next
+battle. This could have huge replayability value." A run exercises the Commander Army composition
+model ([`docs/game-design/commander-armies.md`](../game-design/commander-armies.md)) harder than any
+mission. The structures, upgrades, Nexus powers and Specials are all real pools a run draft can touch,
+though the old "deck" framing is retracted. A run needs no authored text, and it is where the game's
+long-term value lives. It is built as soon as the match experience can carry it, before the Campaign's
+second mission. [`docs/game-design/game-modes.md`](../game-design/game-modes.md) is the design this
+builds against; its numbers are starting values this milestone retunes.
 
-## 1. Question
+## Question
 
-Can a player start a seeded run from the game menu, play a short series of battles against
-escalating Commander Armies, change their army between battles through a run draft — add a card,
-remove one, or upgrade one — and finish, win or lose, with a summary they can learn from, such that
-**the same seed produces the same run every time**?
+Can a player start a seeded run from the game menu, play a short series of battles against escalating
+Commander Armies, change their army between battles through a run draft (add a card, remove one, or
+upgrade one), and finish, win or lose, with a summary they can learn from, such that **the same seed
+produces the same run every time**?
 
-## 2. Gates — small, in order, each closable on its own
+## Steps
 
-- **11A — Run skeleton.** A `RunDefinition` (`seed`, the Commander chosen at run start from Challenge's
-  own unlocked roster per Q46 — basic packages available from the outset, more unlocked by playing
-  Challenge itself — acts, the battle list generated from the seed);
-  three battles on existing fixture maps against the Ravel fixture army under a static or simple
-  heuristic policy; a plain "next battle" screen between them; a run summary at the end. The driver
-  ([`docs/system-design/grid-engine.md`](../system-design/grid-engine.md) 9.7) plays it end to end. Seed determinism asserted:
-  same seed and same driver script, same battles, same outcomes, same summary.
-- **11B — The run draft.** The between-battle screen offers **add one of three**, **remove one**, or
-  **upgrade one** (structure levels 1–3, `engine.md` 5.2). The dealer implements `game-modes.md`
-  Sections 3.2 and 4: rarity weights, the tier schedule against the battle index, the pity offset,
-  role variety before rarity. Every card on the bench carries its `rarity`/`tier`/`role` tags. A test
-  deals many hands from a fixed seed and checks the distribution against the declared weights.
-- **11C — Escalation and bosses.** Opponents strengthen by act; each act ends in a named Commander's
-  army (Milestone 8's Commander mechanic, a second time). The "commons can win at base difficulty"
-  rule of `game-modes.md` Section 4 is checked by a driver-played run that only ever picks commons —
-  pass, or the finding is recorded and the tuning changed.
-- **11D — Run shell UX.** The run map (acts and battles ahead), the summary (army, seed, every draft
-  taken, the losing battle's report), seed entry when starting a run; every item by hotkey, click,
-  and driver; adaptive across the viewport range like every other screen.
+Small, in order, each finishable on its own.
 
-## 3. Explicitly not this milestone
+### Step 11A — Run skeleton
 
-Daily seeds, leaderboards, an ascension-style difficulty ladder, any online feature; meta-progression
-beyond unlocks into the pool (Q41); veterans carrying over between battles (Q40 — if a toggle is
-cheap, make it observable, but do not design around it); Campaign text or missions; multiplayer;
-authoring the real rosters (Milestone 12 — this milestone runs on bench content and says so in its
-report).
+- [ ] A `RunDefinition` holds the `seed`, the Commander chosen at run start from Challenge's own
+      unlocked roster (basic packages from the outset, more unlocked by playing Challenge itself; Q46),
+      the acts, and the battle list generated from the seed.
+- [ ] Three battles on existing fixture maps against the Ravel fixture army, under a static or simple
+      heuristic policy.
+- [ ] A plain "next battle" screen between battles, and a run summary at the end.
+- [ ] The driver plays the run end to end.
+- [ ] Seed determinism is asserted: the same seed and driver script give the same battles, outcomes and
+      summary.
 
-## 4. Acceptance
+### Step 11B — The run draft
 
-Automated: 11A's seed determinism across runs and both runtimes; 11B's dealer distribution within
-tolerance; 11C's commons-only run recorded either way; every run screen at all four capability tiers
-and monochrome; the driver plays a whole run with no terminal.
+- [ ] The between-battle screen offers add one of three, remove one, or upgrade one (structure levels
+      1 to 3).
+- [ ] The dealer follows the game-modes design: rarity weights, the tier schedule against the battle
+      index, the pity offset, and role variety before rarity.
+- [ ] Every card on the bench carries its `rarity`, `tier` and `role` tags.
+- [ ] A test deals many hands from a fixed seed and checks the distribution against the declared
+      weights.
 
-Human, and this is the real gate: Mario plays a run, can say afterwards why he won or lost from the
+### Step 11C — Escalation and bosses
+
+- [ ] Opponents strengthen by act, and each act ends in a named Commander's army (Milestone 8's
+      Commander mechanic, used a second time).
+- [ ] The rule that commons can win at base difficulty is checked by a driver-played run that only ever
+      picks commons. Either it passes, or the finding is recorded and the tuning changed.
+
+### Step 11D — Run shell
+
+- [ ] The run map (acts and battles ahead).
+- [ ] The summary: army, seed, every draft taken, and the losing battle's report.
+- [ ] Seed entry when starting a run.
+- [ ] Every item works by hotkey, click and driver, and adapts across the viewport range like every
+      other screen.
+
+## Out of scope
+
+- Daily seeds, leaderboards, an ascension-style difficulty ladder, and any online feature.
+- Progression beyond unlocks into the pool (Q41).
+- Veterans carrying over between battles (Q40). If a toggle is cheap, make it observable, but do not
+  design around it.
+- Campaign text or missions.
+- Multiplayer.
+- Authoring the real rosters (Milestone 12). This milestone runs on bench content and says so.
+
+## How it is judged
+
+Automated: step 11A's seed determinism across runs and both runtimes; step 11B's dealer distribution
+within tolerance; step 11C's commons-only run recorded either way; every run screen at all four
+capability tiers and monochrome; the driver plays a whole run with no terminal.
+
+Human, and this is the real test: Mario plays a run, can say afterwards why he won or lost from the
 summary alone, and wants to start another. The second half of that sentence is the mode's entire
 reason to exist.
 
-## 5. Definition of done
+## Done when
 
-- [ ] 11A through 11D closed, each with its own short evidence note in one gate report;
-- [ ] `game-modes.md` Section 3.2's table updated with the numbers the run was actually tuned to,
-      and why they moved;
-- [ ] Q40 and Q41 either answered by Mario or explicitly proceeded-under-recommendation in the
-      report;
-- [ ] the report states plainly that the run played on bench content, so nobody mistakes it for
-      balance evidence about a roster that does not exist yet;
+- [ ] Steps 11A through 11D are built and tested.
+- [ ] The tuning table in the game-modes design shows the numbers the run was actually tuned to, and
+      why they moved.
+- [ ] Q40 and Q41 are either answered by Mario or proceeded under their recommendation, and the pull
+      request says which.
+- [ ] The pull request states plainly that the run played on bench content, so nobody mistakes it for
+      a judgement of balance for a roster that does not exist yet.
 - [ ] `./scripts/check-repository.sh` passes.

@@ -3,85 +3,87 @@
 **Status:** PLANNED
 **Depends on:** Milestones 2 through 9 (every mechanism this milestone exercises for real)
 
-> **This is where docs/milestones 4 and 9's "mostly empty for now" finally fills in.** The campaign menu's
-> progress/army/enemy-intel panels and the cutscene mechanism were both built and accepted against a
-> first mission with nothing yet to show. A second mission is the actual test of whether either was
-> built the right shape — not a nice-to-have, the intended second use
-> (`../AGENTS.md` Section 4: "extract a framework only after two real uses reveal the boundary").
+This is where Milestones 4 and 9, both built against a first mission with nothing yet to show, fill in.
+The campaign menu's progress, army and enemy-intel panels and the cutscene mechanism are tested here
+against a second mission. That is their intended second use: extract a framework only after two real
+uses reveal where its boundary is.
 
-## 1. Question
+## Question
 
-Do PERIMETER, polished, and RIGHT OF SALVAGE, newly authored on the infrastructure docs/milestones 3-9
-built, together read as the opening of a real campaign — unlocks that mean something, enemy intel
-that has something in it, a story that continues rather than repeats?
+Do PERIMETER, polished, and RIGHT OF SALVAGE, newly authored on the infrastructure Milestones 3 to 9
+built, together read as the opening of a real campaign: unlocks that mean something, enemy intel with
+something in it, and a story that continues rather than repeats?
 
-## 2. What gets built
+## What it builds
 
-**PERIMETER polish.** Whatever docs/milestones 3 through 9 individually left rough gets fixed here, once
-the whole loop can be played start to finish and judged as one thing rather than nine separate gates.
+**PERIMETER polish.** Whatever Milestones 3 through 9 each left rough is fixed here, once the whole
+loop can be played start to finish and judged as one thing.
 
-**RIGHT OF SALVAGE, authored for real.** Unlike PERIMETER, this mission's text does not exist yet —
-[`docs/game-design/campaigns.md`](../game-design/campaigns.md) Section 4.1 has only the belief-ramp's one-row
-summary ("The Nexus is a tool we are learning" → "First itch: the tool knows things nobody entered" →
-teaches "Salvage economy and contested wrecks" → the interface "Names Speaker Corvane before any
-contact. Vasse: 'Who filed that?'"). Writing the full briefing, pre-battle exchange, barks, debrief,
-and artifact entry — `campaigns.md` Section 4.2's own PERIMETER write-up is the template for shape and
-weight — is real creative work this milestone owns, not a mechanism to build against existing text.
+**RIGHT OF SALVAGE, authored for real.** Unlike PERIMETER, this mission's text does not exist yet.
+[`docs/game-design/campaigns.md`](../game-design/campaigns.md) has only the belief ramp's one-row
+summary: "The Nexus is a tool we are learning", then "First itch: the tool knows things nobody
+entered", teaching "Salvage economy and contested wrecks", with the interface naming Speaker Corvane
+before any contact and Vasse asking "Who filed that?". The full briefing, pre-battle exchange, barks,
+debrief and artifact entry are real creative work this milestone owns. PERIMETER's own write-up in
+the same document is the template for shape and weight.
 
-**The salvage economy, pulled forward from backlog.** [`docs/system-design/grid-engine.md`](../system-design/grid-engine.md)
-Section 6 already describes it: destruction returns half a structure's value to its owner and drops
-the other half as salvage on the Grid; workers from either side can drain it; building over remaining
-salvage destroys it. `docs/milestones/backlog.md` held this as unowned; RIGHT OF SALVAGE is
-what needs it, so it lands here rather than staying deferred.
+**The salvage economy, pulled forward from the backlog.** The engine design already describes it:
+destroying a structure returns half its value to its owner and drops the other half as salvage on the
+Grid, workers from either side can drain it, and building over remaining salvage destroys it.
+[`backlog.md`](backlog.md) held this as unowned. RIGHT OF SALVAGE needs it, so it lands here.
 
-**Unlocks and intel, exercised for real.** PERIMETER's completion should populate the unlock record
-(`docs/milestones/open-questions.md` Q31) with something RIGHT OF SALVAGE's own campaign-menu screen
-(Milestone 4) actually displays — and by the second mission, enemy intel (Q35) has real Ravel content
-in it from the first. If either screen reads wrong once there is something to show, that is this
-milestone's finding to act on, not a defect to carry forward.
+**Unlocks and intel, exercised for real.** Completing PERIMETER should fill the unlock record (Q31)
+with something that RIGHT OF SALVAGE's campaign-menu screen (Milestone 4) actually shows. By the second
+mission, enemy intel (Q35) has real Ravel content from the first. If either screen reads wrong once
+there is something to show, that is this milestone's finding to act on, not a defect to carry forward.
 
-### 2.1 Gates
+## Steps
 
-- **10A — PERIMETER, polished.** The whole loop played start to finish and judged as one thing;
-  rough edges from docs/milestones 3-9 fixed here.
-- **10B — RIGHT OF SALVAGE, written.** Briefing, exchange, barks, debrief, artifact entry, inside the
-  lore budgets — reviewed before anything is built against it.
-- **10C — RIGHT OF SALVAGE, built.** The salvage economy from backlog, the mission's map and trigger
-  list, unlocks and intel exercised for real on the campaign menu.
+### Step 10A — PERIMETER, polished
 
-This is the Campaign's proof; Milestone 11 is the Challenge's. Since canon 2.11 the Campaign is the
-first-time player experience and the world's canon ([`docs/game-design/game-modes.md`](../game-design/game-modes.md)
-Section 3.1), so the bar here is "a new player comes out able to play a run, and the world feels
-real" — not length.
+- [ ] The whole loop is played start to finish and judged as one thing.
+- [ ] Rough edges left by Milestones 3 to 9 are fixed.
 
-## 3. Explicitly not this milestone
+### Step 10B — RIGHT OF SALVAGE, written
 
-Missions 3 through 6 of the belief ramp (RESTORATION, PRECOMMITTED, TWELVE OF TWELVE, ANNEX ZERO);
-any faction beyond Citizens and Ravels; a real save/progression system beyond the flat unlock record;
-multiplayer.
+- [ ] Briefing, exchange, barks, debrief and artifact entry are written inside the lore budgets.
+- [ ] The text is reviewed before anything is built against it.
 
-## 4. Acceptance
+### Step 10C — RIGHT OF SALVAGE, built
 
-Automated: RIGHT OF SALVAGE gets the same determinism bar as every other mission and kernel change —
-named scenarios, hash-stable across runs and runtimes, diffed against the state before this milestone
-the same way every prior kernel-adjacent change in this project has been.
+- [ ] The salvage economy from the backlog.
+- [ ] The mission's map and trigger list.
+- [ ] Unlocks and intel exercised for real on the campaign menu.
 
-Human, and this is the real gate — mirroring the old Milestone 4 and 5 pass-evidence this replaces
-(`docs/milestones/backlog.md` and this document's own history hold the originals): a fresh
-player finishes PERIMETER, sees a real, correct unlock and a mission report on the campaign menu,
-plays RIGHT OF SALVAGE, understands why Speaker Corvane being named before contact unsettles Vasse,
-and can summarize one answered question and one larger mystery across the two missions together —
-[`docs/game-design/campaigns.md`](../game-design/campaigns.md) Section 3's own per-mission teaching contract, now
+This is the Campaign's proof; Milestone 11 is the Challenge's. The Campaign is the first-time player
+experience and the world's home (see [`docs/game-design/game-modes.md`](../game-design/game-modes.md)),
+so the bar here is "a new player comes out able to play a run, and the world feels real", not length.
+
+## Out of scope
+
+- Missions 3 through 6 of the belief ramp (RESTORATION, PRECOMMITTED, TWELVE OF TWELVE, ANNEX ZERO).
+- Any faction beyond Citizens and Ravels.
+- A real save and progression system beyond the flat unlock record.
+- Multiplayer.
+
+## How it is judged
+
+Automated: RIGHT OF SALVAGE gets the same determinism bar as every other mission and kernel change.
+Named scenarios hash the same across runs and runtimes, and are diffed against the state before this
+milestone.
+
+Human, and this is the real test: a fresh player finishes PERIMETER, sees a correct unlock and a
+mission report on the campaign menu, plays RIGHT OF SALVAGE, understands why Speaker Corvane being
+named before contact unsettles Vasse, and can summarize one answered question and one larger mystery
+across the two missions together. That is the per-mission teaching contract in the campaign design,
 checked against two missions instead of asserted about one.
 
-## 5. Definition of done
+## Done when
 
-- [ ] PERIMETER plays start to finish without a rough edge introduced by an earlier milestone's narrow
-      scope;
-- [ ] RIGHT OF SALVAGE's full text is written and reviewed;
-- [ ] the salvage economy works correctly on RIGHT OF SALVAGE's own map;
-- [ ] the campaign menu's progress/army/enemy-intel panels show real, correct content after
-      PERIMETER's completion;
-- [ ] a gate report exists, ending in **PASS / REVISE / STOP / BLOCKED**;
-- [ ] `./scripts/check-repository.sh` passes;
+- [ ] PERIMETER plays start to finish without a rough edge left by an earlier milestone's narrow scope.
+- [ ] RIGHT OF SALVAGE's full text is written and reviewed.
+- [ ] The salvage economy works on RIGHT OF SALVAGE's own map.
+- [ ] The campaign menu's progress, army and enemy-intel panels show real, correct content after
+      PERIMETER's completion.
 - [ ] Mario has played or watched both missions back to back.
+- [ ] `./scripts/check-repository.sh` passes.
