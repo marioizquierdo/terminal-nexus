@@ -26,7 +26,7 @@ The terminal is not a novelty wrapper. Fixed cells, symbols, ANSI color, keyboar
 1. **Build Phase.** Both players study the same resolved Grid and secretly commit construction, production state, and one Nexus upgrade choice. Planning is hidden, simultaneous, turn-based and untimed.
 2. **Nexus Pulse.** Plans reveal simultaneously. New buildings activate, workers choose jobs, producers spawn fixed recipes when resources and supply allow, and armies move and fight automatically for a fixed number of deterministic logical ticks. How fast the Pulse plays on screen is presentation only and is independent of that logical time.
 
-After a Pulse, surviving units regroup near their home producers. Casualties and destroyed buildings remain consequential. The next Build Phase begins from the new public state. The match ends when one Grid Nexus is destroyed.
+After a Pulse, surviving units regroup near their home producers. Casualties and destroyed buildings remain consequential. The next Build Phase begins from the new public state. The match ends when one Grid Nexus is destroyed. One Build Phase and the Pulse that follows it make a **round**, the unit the player counts.
 
 The player does not micromanage units during a Pulse. Their agency comes from base geometry, expansion, resource capacity, supply, production mix, defenses, research drafts, commander development, and prediction of the opponent's hidden plan.
 

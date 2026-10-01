@@ -46,7 +46,7 @@ designed before the kernel needed them.
 type ReplayFile = Readonly<{
   /** This document's own schema, independent of MatchState's schemaVersion (see "The format's own version"). */
   replayFormatVersion: number
-  /** "grid-playground": one implicit build phase, one pulse. "match": the real thing. */
+  /** "grid-playground": one implicit build phase, one Pulse. "match": the real thing. */
   replayType: "grid-playground" | "match"
   /** == ENGINE_VERSION at record time (src/pulse/resolve.ts). */
   gridEngineVersion: string
@@ -59,7 +59,7 @@ type ReplayFile = Readonly<{
   setup: ReplaySetup
   /** Build and Pulse phases, strictly alternating, in play order. */
   phases: readonly ReplayPhase[]
-  /** Mirrors the last resolved pulse's MatchState.outcome. null means still in progress (see "A partial file is a valid file"). */
+  /** Mirrors the last resolved Pulse's MatchState.outcome. null means still in progress (see "A partial file is a valid file"). */
   outcome: Outcome | null
 }>
 ```
@@ -108,7 +108,7 @@ type ReplayPhase =
       seed: number
       ticksPerSecond: number
       pulseTicks: number
-      initialState: MatchState               // this pulse's starting state, always present
+      initialState: MatchState               // this Pulse's starting state, always present
       finalState: MatchState                 // always present, at every level
       events: readonly (DomainEvent | EngagementDetected)[]   // filtered by logLevel
       /** TRACE only. Full per-tick snapshots, for exact scrubbing without re-simulating:
@@ -121,13 +121,14 @@ type ReplayPhase =
 
 A "grid-playground" replay has exactly one `build` phase (the scenario's static placements, standing in
 for a real Build Phase) followed by exactly one `pulse` phase. A "match" replay is the general case:
-`build`, `pulse`, `build`, `pulse`, … until the last pulse's `finalState.outcome` is non-null.
+`build`, `pulse`, `build`, `pulse`, … until the last Pulse's `finalState.outcome` is non-null. Each
+`build` and `pulse` pair is one round, and `pulseNumber` counts rounds.
 
 ## Log levels: a second axis
 
 The engine tool already has five log levels for its **live headless report**: a human or an agent
 watching one run scroll by right now. A stored file asks a different question wearing the same five
-names: how much of a pulse's story is worth **paying to store**, permanently, in a file that might hold
+names: how much of a Pulse's story is worth **paying to store**, permanently, in a file that might hold
 a whole match. Reusing the live report's table unchanged would be wrong: its `INFO` already includes
 "every attack that landed", which is exactly the volume a stored file should not carry by default.
 
@@ -135,7 +136,7 @@ So: same five names, same cumulative-threshold mechanism (`src/report/levels.ts`
 `includesLevel`, `LOG_LEVELS`, reused wholesale), **different contents**, defined for what gets
 *persisted* rather than what gets *printed*:
 
-| Level | A pulse entry's `events` array includes |
+| Level | A Pulse entry's `events` array includes |
 | --- | --- |
 | `ERROR` | Invariant violations. Always included regardless of configured level: an unsound run is never silently downgraded out of the file |
 | `WARN` | **Engagement detection** (below), plus the anomalies the live report already calls `WARN`: an actor stuck for many ticks, arbitration hitting its pass bound, a target that vanished. Both are "noteworthy without full mechanical detail", so they share the level |
@@ -191,14 +192,14 @@ Three properties do the actual work; everything else in this document is shape.
 
 ### Hashes are computed over the full stream, never the filtered one
 
-**This is the one rule in this document that must hold regardless of every other detail.** A pulse's
+**This is the one rule in this document that must hold regardless of every other detail.** A Pulse's
 `stateHash` and `eventsHash` are always the hash of the complete, unfiltered event stream
 `resolvePulse` produces, computed before the configured `logLevel` throws anything away for storage.
 The persisted `events` array is a *view*, chosen for size; the hash is the *signature*, and it does not
 change with the view.
 
 Get this wrong, and hash the array that actually got written, and two replay files of the identical
-pulse at different log levels get different `eventsHash` values, which breaks every comparison the
+Pulse at different log levels get different `eventsHash` values, which breaks every comparison the
 format exists to make possible: `grid --verify` against a saved file, one file against another, a
 `TRACE` capture against a `WARN` capture of the same seed. The divergence between log levels lives
 entirely in `events`' contents, never in `stateHash`/`eventsHash`.
@@ -211,7 +212,7 @@ stored one.
 
 ### Raising a level is always sound; lowering one is destructive
 
-Because of the above, "save this pulse back at a higher log level" has a precise, safe meaning:
+Because of the above, "save this Pulse back at a higher log level" has a precise, safe meaning:
 re-resolve it from its own recorded `seed` + `initialState` + `contentLock` (refusing if the installed
 `gridEngineVersion` no longer matches the recorded one), take the freshly computed full stream, filter
 it to the new level, and overwrite `events` (and `ticksRecorded`, if now `TRACE`). `stateHash` and
@@ -246,7 +247,7 @@ format may assume the last entry in `phases` is a finished game.
 
 `grid x.map.json --headless --events file.jsonl` already exists and already emits one `DomainEvent` per
 line, canonically serialized (`src/events/serialize.ts`, held by `tests/determinism.test.ts` and
-`tests/cli.test.ts`). A pulse phase's `events` array should serialize each entry through that exact same
+`tests/cli.test.ts`). A `pulse` phase's `events` array should serialize each entry through that exact same
 per-event encoding, so `hashEvents` agrees whether the events came from a `.replay.json` phase or a
 standalone JSONL export of the identical run. The wrapper around phases and setup is necessarily a
 single JSON document, since the file has real nested structure, but nothing about that requires a
@@ -269,13 +270,13 @@ Not built. The shape the tool could grow into:
   This is packaging, not new machinery: `resolvePulse` and the existing JSONL event encoding already do
   the work; this only adds the setup and provenance wrapper. A flag, not a subcommand: `grid`'s first
   argument is always the map or replay to load, never a verb.
-- **`grid <file> --headless --replay-pulse N [--log-level LEVEL]`**: re-resolves pulse `N` (default: the
+- **`grid <file> --headless --replay-pulse N [--log-level LEVEL]`**: re-resolves Pulse `N` (default: the
   last one) as described under "Raising a level" and writes the richer result back in place, after the
   version-skew check.
 - **`grid <file>`** (the default action, watch): a replay's `setup.map` is already a full map (embedded
   or by id), so watching a saved replay should need no new rendering: the same viewer that plays a
   `.map.json` map today plays a `.replay.json`'s setup the same way, then steps through its recorded
-  pulse the same way `grid` already steps through a live resolution.
+  Pulse the same way `grid` already steps through a live resolution.
 
 ## Naming: "grid-playground" replays, and recording the engine version now
 

@@ -6,14 +6,12 @@ _Licence: structure and schemas Apache-2.0; names and fiction CC BY-SA 4.0._
 
 ## 1. Why the two modes are designed together
 
-Mario, redirecting the early work: "we should keep this milestone as strictly design and orientation,
-but not strictly trying to define how campaigns work... An idea I had recently that may be even
-better than the intended story-driven campaigns, is implementing 'runs', where each battle ends on a
-new draft upgrade or removals that further polish the build for the next battle... This doesn't
-replace the basic campaigns, that work as cool tutorials and world-building, but it helps remove
-pressure for what the campaign should offer or what the duration should be. It helps it define more
-as 'first-time player experience'. I believe we should be thinking about 'campaign' (tutorial) and
-'challenge' (run) modes simultaneously."
+The Campaign alone would have to carry everything: teach the game, tell the world, and fill a long
+stretch of play. A second mode, **runs** — where each battle ends on a new draft upgrade or a removal
+that polishes the build for the next battle — takes that pressure off. The Campaign stays the cool
+tutorial and world-building it was meant to be, a first-time player experience with no obligation about
+duration, and Challenge (the runs) carries replay value. The two are meant to be thought about
+simultaneously: *campaign (tutorial) and challenge (run).*
 
 **RULE: there are two single-player modes, Campaign and Challenge, and they are designed together**
 (`src/cli/menu.ts` makes them the top-level menu's first two rows; `tests/menu-session.test.ts`
@@ -34,7 +32,7 @@ the Pulse, the Build Phase screen, the renderer — knows which mode it is servi
 
 | Term | Means |
 | --- | --- |
-| **Match** | One Grid, one or more Build Phase / Nexus Pulse cycles, one result. The unit of play; 5–12 minutes ([`concept.md`](concept.md)). Nothing above a match is visible to the kernel |
+| **Match** | One Grid, one or more rounds (each a Build Phase and the Nexus Pulse that follows), one result. The unit of play; 5–12 minutes ([`concept.md`](concept.md)). Nothing above a match is visible to the kernel |
 | **Battle** | A match played inside a mode. "Battle" is the player-facing word; "match" is the engine's |
 | **Mission** | A battle with authored triggers, text, and a teaching goal — the Campaign's unit ([`campaigns.md`](campaigns.md)) |
 | **Run** | An ordered series of battles in which the army changes between them — the Challenge mode's unit. One attempt, start to finish, win or lose |
@@ -53,10 +51,9 @@ offered; a tier-3 common is an ordinary late card. Collapsing them into one "qua
 mistake this vocabulary exists to prevent, because both modes need both axes — a Campaign mission
 unlocks by tier, a run deals by rarity.
 
-**"The army is a deck" is parked, not decided.** Mario asked to lose this claim
-entirely, "not even as guidance, but just as an idea": "I have the feeling that the army is more than
-just a deck. The Commander army is composed of a bunch of different things." [`commander-armies.md`](commander-armies.md)
-has the full retraction. "Card," "rarity," "tier," and "draft" stay in this vocabulary as
+**"The army is a deck" is parked, not decided.** The claim is withdrawn entirely, not even
+kept as guidance, only as an idea: the army is more than a deck and is composed of a bunch of different
+things. [`commander-armies.md`](commander-armies.md) has the full retraction. "Card," "rarity," "tier," and "draft" stay in this vocabulary as
 working words for a real mechanism — an offer, weighted and gated, that a player accepts or declines
 — not as an assertion that the whole army composition is a deck of cards. One concrete consequence:
 **Nexus powers specifically are almost always strictly advantageous, not diluting**, so
@@ -143,13 +140,13 @@ autobattlers (see the references below), taken at the size Terminal Nexus's 5–
 
 One match against a local policy, with every legal Commander Army exposed without campaign completion
 ([`campaigns.md`](campaigns.md)). Cheap the moment a run exists — it is a run of length one — and
-useful long before then as the fixture every UX milestone actually plays. Not designed further here.
+useful long before then as the mode every interface change can be played in. Not designed further here.
 
 ### 3.4 Multiplayer — later, and more intuitive once the rest exists — IDEA
 
 Hidden simultaneous plans and deterministic resolution already fit asynchronous and live play
-(a match takes two committed plans from anywhere). Mario: "Multi-player seems more
-intuitive and I believe we can come out with it later." Nothing here is designed; multiplayer comes later, on the same match, and the seam it needs already exists in the kernel.
+(a match takes two committed plans from anywhere). Multiplayer is more intuitive once the rest
+exists, so it comes later. Nothing here is designed; multiplayer comes later, on the same match, and the seam it needs already exists in the kernel.
 
 ## 4. Designing content for both fronts
 

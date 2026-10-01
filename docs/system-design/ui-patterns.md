@@ -335,7 +335,7 @@ uses it rather than a new blend.
   moves, never the title, text or shadow. (RULE — `tests/build-breath.test.ts`)
 - **A popup can have an opening** that plays once from the moment it opens, then gives way to the breath.
   Which popup has which is a table in the view (`POPUP_OPENINGS`), not code in the drawing. Today only the
-  Battle Round screen has one, a **double flash**: two quick pulses well past the breath's range (the
+  Battle Round screen has one, a **double flash**: two quick flashes well past the breath's range (the
   "Battle Round flash" and "Flash strength" Experiments), then the breath from rest. Everything is still
   under reduced motion and in monochrome; at 16 colours the flash shows as two steps and the breath does
   not; the Popup pulse at 0 stops the breath only. (RULE — `tests/build-breath.test.ts`)
@@ -352,8 +352,7 @@ uses it rather than a new blend.
   the track — the plain border itself — with a textured **thumb** where the part in view sits (its
   length the share in view), then a down symbol: `^ # v` or `▲ ╬ ▼`, inverse like the border. The
   thumb's texture is its own, never the shadow's: a track in the shadow's texture read as more shadow
-  (the owner, third round: "keep the same background as the regular border, but add different texture
-  for the bar"). A click on its upper half scrolls up, on its lower half down (`PlacedPopup.scrollBar`).
+  (the bar keeps the regular border's background and differs in texture). A click on its upper half scrolls up, on its lower half down (`PlacedPopup.scrollBar`).
   (RULE — `tests/build-popups.test.ts`)
 - **A long list shows where the highlight is beside its title**: `SETTINGS (6/28)`.
   (RULE — `tests/build-popups.test.ts`)
@@ -436,8 +435,8 @@ uses it rather than a new blend.
   its own last row. (RULE — `tests/build-focus.test.ts`, `tests/build-edge.test.ts`)
 - **Moving the cursor: taps are counted, a hold has a pace.** A tap is one tile. Taps of one arrow close
   together are a run that keeps its speed, and the third one since the speed changed, if quick, doubles
-  it (1, 1, 2, then 2, 2, 4), so speed is asked for, never fallen into (the owner, third round: "the
-  cursor starts jumping ahead, so I have to stop and come back"). A held arrow moves at the game's own
+  it (1, 1, 2, then 2, 2, 4), so speed is asked for, never fallen into (a cursor that starts jumping
+  ahead makes the player stop and come back). A held arrow moves at the game's own
   steady pace, whatever the keyboard's repeat rate, one tile a move and two after a while. A hold ends a
   run of taps, so adjusting after a hold is precise. **Shift is a jump, not a speed**, repeating no
   faster than the eye can see it land; Option+Arrow, PageUp/PageDown and Home/End are the same jump,
@@ -491,7 +490,7 @@ uses it rather than a new blend.
   picture. A removal throws the same sparks. Reduced motion shows the finished building at once, unlit,
   with a still mark for the sparks. (RULE — `tests/build-placement.test.ts`)
 - **A reserved colour means one thing.** Red is kept for the player's own Nexus being hurt — first hit,
-  very low health, a lost Pulse — as a faint, brief tint of the border, always said again in words, and
+  very low health, a lost round — as a faint, brief tint of the border, always said again in words, and
   absent under reduced motion. A new warning goes to the timer or the light, never to more red.
   (RULE — `tests/pulse-screen.test.ts`, `tests/ending.test.ts`)
 
@@ -525,7 +524,7 @@ uses it rather than a new blend.
   the row is `[enter] Play again`. Restart, from the game menu, is the mission from round 1.
   (RULE — `tests/mission-loop.test.ts`)
 - **A mission's round is counted in the top bar** — `build phase - round 2 of 3` — because PERIMETER's goal
-  is about rounds (a Pulse counter shows only when the goal is about Pulses), and the Battle Round screen
+  is about rounds (a round counter shows only when the goal is about rounds), and the Battle Round screen
   is that round's number, in the mission's words for it.
   (RULE — `tests/mission-loop.test.ts`, `tests/build-start.test.ts`)
 
@@ -612,7 +611,9 @@ the build stamped on every export — is what makes a pasted export reproducible
   building hand-off's traveller is the *focus arrow*; Explore Map's is the *see-through cursor*.
 - **Battle Round or Pulse is still open** (Q68): the start screen says Battle Round; the menu row and the
   running screen say Pulse until it is settled. A mission's cycles are **rounds** to the player — "round 2
-  of 3", "Next round" — which agrees with Battle Round either way.
+  of 3", "Next round" — which agrees with Battle Round either way. The words are defined in
+  [`grid-engine.md`](grid-engine.md); the "Popup pulse" Experiment is a breath of light on a popup's
+  border and has nothing to do with the Nexus Pulse.
 
 ## Where the rules came from
 

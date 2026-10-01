@@ -42,7 +42,7 @@ Which gives twelve presets:
 | `extra-large` | 24 × 24 | 48 × 24 | 72 × 24 |
 
 **RULE — `src/scenario/presets.ts`, `tests/scenario.test.ts`: the default preset is `medium-extra-wide`
-(48 × 16)** and the one every early fixture uses. It is locked because both compositions are derived
+(48 × 16)** and the one every early scenario uses. It is locked because both compositions are derived
 from it: at one column per tile it needs 48 + 2 border + 30 sidebar = **exactly 80 columns**, and at two
 columns per tile **exactly 128**. Change 48 × 16 and the 80- and 128-column layouts stop falling out
 of one number (the compositions are in [`presentation.md`](presentation.md)).
@@ -76,6 +76,10 @@ A Grid may be larger than the screen. The **viewport** is the window onto it, me
 | **Minimum viewport** | 48 × 16 | The default preset. Below this the game is not playable, and the renderer shows a resize gate |
 | **Maximum viewport** | 72 × 24 | The largest Grid preset. Nobody sees more of the Grid than this, however large their monitor |
 
+The clamp is a range, not a size: a terminal shows however many tiles fit between the two ends. An
+80 × 24 terminal shows 49 × 18 tiles, one point inside the range (the floor guarantees at least
+48 × 16, and the shared divider column and the one-line footer give it a little more).
+
 The maximum exists for **fairness and for bounded arithmetic**. A player on a huge display must not
 be able to see meaningfully more of the Grid than a player on a laptop, and every layout, cursor and
 scroll calculation gets a fixed upper bound to reason about. Terminal space beyond the maximum is
@@ -101,11 +105,13 @@ Which gives these terminal sizes:
 | | Tile width 1 | Tile width 2 |
 | --- | --- | --- |
 | Minimum viewport (48 × 16) | **80 × 24** | 128 × 24 |
-| Maximum viewport (72 × 24) | 104 × 30 | 176 × 30 |
+| Maximum viewport (72 × 24) | 103 × 30 | 175 × 30 |
 
-The minimum row is the resize gate's, which measures against the 8-row budget, so it is the floor at
-both tile widths. The maximum row is where the Build Phase's actual 6-row chrome first shows 24 rows
-of Grid.
+The minimum row is the resize gate's, which measures against the floor's 30-column panel and 8-row
+budget, so it is the floor at both tile widths. The maximum row is where the Build Phase's actual
+29-column panel and 6-row chrome first show 72 × 24 tiles: 72 + 2 + 29 = 103 columns and 24 + 6 = 30
+rows at one column per tile. The shots and the camera test use 104 × 30, one column past it. Any
+terminal larger than that buys margin, never more Grid.
 
 **80 × 24 is the floor and the acceptance target.** Everything must work there.
 
@@ -143,7 +149,7 @@ There is no minimap.**
   `src/view/edge.ts`). A side with **more Grid to scroll to** is the frame's own line drawn dim (`-`,
   `|`); a side that has **reached the Grid's own edge** is drawn in **the map's own edge style**, named
   in the map's definition (a solid bar, an inverse-video cell, for a map that names none; a dashed fence
-  for PERIMETER's stand-in map), in the quieter edge colour (`chrome.edge`), the same weight along the
+  for the starter map), in the quieter edge colour (`chrome.edge`), the same weight along the
   top and bottom as down the sides, in every glyph pack and in monochrome, with no colour needed to
   read it. A corner takes the edge wherever an edge side runs into it; a patterned edge is fixed to the
   map and scrolls with it. When the whole Grid fits, every side and all four corners are the edge at
