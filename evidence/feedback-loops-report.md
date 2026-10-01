@@ -72,7 +72,7 @@ bun scripts/build-web.mjs --demos evidence/demos/feedback-loops.json   # the pla
 | Check | Result | Evidence |
 | --- | --- | --- |
 | Type check (Node and web) | clean | `npm run typecheck` |
-| Node tests | 838 / 838 | `npm test` |
+| Node tests | 859 / 859 (after merging gate 6B from `main`) | `npm test` |
 | Bun tests | all files pass | `npm run test:bun` |
 | Repository checks, Markdown links | pass | `./scripts/check-repository.sh`, `node scripts/check-markdown-links.mjs` |
 | Every entry a scripted run logs matches the schema | pass | `tests/build-activity.test.ts`, `tests/menu-about-screen.test.ts` |
@@ -106,6 +106,13 @@ of the reducer — read only to freeze and count the window's list — kept the 
 - **The `hidden` attribute does nothing on an element whose class sets `display: flex`**; the demo row
   needed its own `[hidden]` rule.
 - **The proposed feedback pipeline was parked** after an hour's design: cheap to write, cheap to drop.
+- **A read-only review found the frozen list was a cut-off, not a copy**: once the log's memory was full,
+  every key pressed in the window dropped its oldest rows. Now a copy, with a full-log test. It also found
+  held keys logging repeats that moved nothing, a detail note that lost the event's meaning on a long
+  entry, a demo with broken keys failing silently, and the whole list reformatted every frame — all
+  fixed before the pull request.
+- **Gate 6B merged into `main` while this was built**; a test comparing whole round contexts had to leave
+  the Activity Logs out, since they rightly differ by which key moved on.
 
 ## 8. Decision
 
