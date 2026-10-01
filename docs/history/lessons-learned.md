@@ -201,6 +201,10 @@ than any one feature:
 3. **A test that samples a Pulse in steps can step over a short phase.** One-second steps happened to land in
    the half-second cease fire until round 1's length moved. Sample at a fraction of the shortest phase you
    assert on.
+4. **Measure again before the pull request repeats a claim.** The report's outcome table shortened two rows to
+   "held", and a fixture's comment carried the milestone's hope (PERIMETER does not force her death) as a
+   fact. Measured again for the description, she falls in the last round of every plan at every health. A
+   hope from the plan is not a result until a run says so.
 
 ## Habits to keep
 
