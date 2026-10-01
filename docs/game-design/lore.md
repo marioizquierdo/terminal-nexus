@@ -1,8 +1,10 @@
-# Terminal Nexus — lore and aesthetic canon
+# Terminal Nexus — lore and aesthetic direction
 
-This is the context document for writing Terminal Nexus fiction, developing campaigns, naming content, and designing ASCII art. New stories may invent local people, places, artifacts, and conflicts, but should preserve the universe rules and deliberate mysteries below.
+_The universe, its five factions, their symbols and their voice: the setting that fiction, campaigns, content names and ASCII art are written against._
 
 ## 1. Why the lore matters
+
+This is the context document for writing Terminal Nexus fiction, developing campaigns, naming content, and designing ASCII art. New stories may invent local people, places, artifacts, and conflicts, but should preserve the universe rules and deliberate mysteries below.
 
 Terminal Nexus cannot depend on expensive realism or hundreds of frames of character animation. Its fantasy must survive compression. A single `@` must feel like a commander; a row of `#` must feel engineered; an expanding violet pulse must feel older than the faction trying to control it.
 
@@ -52,7 +54,7 @@ No one knows whether the visions came from the Ancients, the Prime Nexuses, an a
 
 Prime Nexuses exist across the galaxy. They are always recognizably pyramidal, but their scale, material, surface architecture, inner space, and surrounding artifacts vary dramatically.
 
-A **Prime Nexus never teleports**. It remains rooted to the world or structure where it awakened. It is simultaneously:
+**RULE: a Prime Nexus never teleports.** It remains rooted to the world or structure where it awakened. It is simultaneously:
 
 - an energy and fabrication source;
 - a store of patterns, permissions, and incomplete technologies;
@@ -61,7 +63,7 @@ A **Prime Nexus never teleports**. It remains rooted to the world or structure w
 - a political throne that legitimizes control of its territory;
 - a mirror that responds differently to each claimant civilization.
 
-When the ancient protocol demands a challenge, a Prime Nexus **replicates**. It projects or fabricates a smaller copy of itself on a remote Grid, along with bounded matter, stored patterns, and its chosen Commander. The settlement in a match grows around this replica; mature cities do not travel with it.
+**RULE: when the ancient protocol demands a challenge, a Prime Nexus stays home and replicates a Grid Nexus.** The play surface is the **Grid**; the replica standing on it is a **Grid Nexus**, and the one that stays home is a **Prime Nexus**. The kernel recognises a Grid Nexus by a flag on its content definition, never by a name (`src/content/types.ts`). The Prime Nexus projects or fabricates a smaller copy of itself on a remote Grid, along with bounded matter, stored patterns, and its chosen Commander. The settlement in a match grows around this replica; mature cities do not travel with it.
 
 The Grid Nexus is a real extension of the Prime, not a hologram. Destroying it ends the local claim, collapses dependent infrastructure, and releases a fragment of authority that the victor may absorb. It does not automatically exterminate the faction or destroy the distant Prime Nexus.
 
@@ -77,13 +79,13 @@ The symbolic synthesis is:
 
 ### 3.1 Naming the five Nexuses — RULE for the terminology
 
-**Each Prime Nexus is named for the faction that holds it: the Citizen Nexus, the Ravel Nexus, the Feudal Nexus, the Glitch Nexus, the Alder Nexus.** That is the name canon, code, content ids, and the interface all use. There are no proper names, because a reader tracking five factions should not also have to track five names for the machines those factions hold.
+**RULE: each Nexus is named for the faction that holds it: the Citizen Nexus, the Ravel Nexus, the Feudal Nexus, the Glitch Nexus, the Alder Nexus.** That is the name the design, the code, content ids, and the interface all use (`src/content/citizen.ts` and `src/content/ravel.ts` define `structure.citizen.nexus` and `structure.ravel.nexus`). There are no proper names, because a reader tracking five factions should not also have to track five names for the machines those factions hold.
 
 Where the distinction matters, say **Citizen Prime Nexus** (rooted, at home) or **Citizen Grid Nexus** (the replica standing on the Grid). Unqualified, "the Citizen Nexus" means whichever one the sentence is about.
 
 Two exceptions live in *voice*, not in terminology:
 
-- **Glitch** call theirs the **Silent Queen Nexus**, or just the Queen — the only faction whose name for it says something about them (Section 8.3).
+- **Glitch** call theirs the **Silent Queen Nexus**, or just the Queen — the only faction whose name for it says something about them (see Glitch, below).
 - **Alder** barely name theirs at all: "the Nexus," in the tone one reserves for a weather system one does not intend to use.
 
 Characters may still call a Nexus whatever they like. The survey team catalogued the buried Citizen structure as an *apex* and the field catalogue kept the word; that is a person talking, not a name the game uses.
@@ -94,11 +96,11 @@ The Nexus under the survey annex is the one the origin campaign is about, and th
 
 What unsettles about it is not power. It is **administration**. It does not command, bargain, or explain — it *processes*. It assigns a name, a heraldry, and an arrival time to a contact nobody has identified. It approves requests that were never filed, and back-dates them. It opens personnel files on people who have not enlisted, and revises them after they die. Ask it for anything and it answers `ACKNOWLEDGED`, and the thing is already done.
 
-Citizens read this as proof they were right: the machine is infrastructure, and infrastructure keeps records. That reading is comfortable, and it is load-bearing for the campaign, because it means every uncanny thing this Nexus does arrives wearing a form the colony already trusts. A civilization that finds standardization rewarded (Section 4) is poorly equipped to notice being standardized.
+Citizens read this as proof they were right: the machine is infrastructure, and infrastructure keeps records. That reading is comfortable, and it is load-bearing for the campaign, because it means every uncanny thing this Nexus does arrives wearing a form the colony already trusts. A civilization that finds standardization rewarded (see the claimants, below) is poorly equipped to notice being standardized.
 
-Its powers reach a player as ordinary named cards — a permit, an order, a revision — each saying plainly what it does ([`commander-armies.md`](commander-armies.md) Section 4.5). The bureaucratic vocabulary is this Nexus's voice, and no other Nexus borrows it: the Ravel Nexus deals in scores and salvage, and means the same six things underneath.
+Its powers reach a player as ordinary named cards — a permit, an order, a revision — each saying plainly what it does (the Nexus powers in [`commander-armies.md`](commander-armies.md)). The bureaucratic vocabulary is this Nexus's voice, and no other Nexus borrows it: the Ravel Nexus deals in scores and salvage, and means the same six things underneath.
 
-The Citizen Nexus answers none of Section 7's mysteries. It is never shown deciding, wanting, or speaking about itself; it files. What that means is the campaign's question, and the campaign does not answer it either.
+The Citizen Nexus answers none of the deliberate mysteries below. It is never shown deciding, wanting, or speaking about itself; it files. What that means is the campaign's question, and the campaign does not answer it either.
 
 ## 4. Claimants and compulsory conflict
 
@@ -135,7 +137,7 @@ A rare connected individual can be sent with a Grid replica and restored by the 
 
 Symbols are often geniuses, leaders, dangerous mystics, or people whose presence changes a civilization's doctrine. Not every great leader is a Symbol, and not every Symbol is wise or worthy. Most playable Commanders are deeply involved in the Activation, but a faction may rally around a skeptical, unwilling, or politically inconvenient Symbol.
 
-In battle, a Commander is a persistent frontline `@`. If killed, they remain absent for one complete Build Phase and Nexus Pulse before the Prime can replicate them again. Their death is costly but is not the victory condition. Powers may exploit death, absence, restoration, proximity to the battle Nexus, or the connection between replicas.
+**RULE:** in battle, a Commander is a persistent frontline `@`. If killed, they remain absent for one complete Build Phase and Nexus Pulse before the Prime can replicate them again. Their death is costly but is not the victory condition. Powers may exploit death, absence, restoration, proximity to the battle Nexus, or the connection between replicas.
 
 No one can prove that restoration returns the original consciousness. It may restore the same person, reconstruct a pattern, continue a distributed mind, or produce an entity whose belief in continuity is part of the protocol.
 
@@ -143,7 +145,7 @@ No one can prove that restoration returns the original consciousness. It may res
 
 The interface may address the player as **Operator**, but the title has no universal in-world identity. Each faction interprets the Operator differently: command authority, conspirator, Queen-process, divine witness, remote consciousness, or something else. The campaigns may imply incompatible answers without collapsing them into one literal being.
 
-Each faction's reading is written into its Section 8 entry, because the reading is part of the faction's character: what a civilization believes the Operator is reveals what that civilization believes authority is. The interface itself may behave suggestively — precommitted plans, impossible knowledge, counts that do not add — but it never testifies. No line of system text, in any campaign, states what the Operator is or whose voice the interface carries.
+Each faction's reading is written into its entry under the factions, below, because the reading is part of the faction's character: what a civilization believes the Operator is reveals what that civilization believes authority is. The interface itself may behave suggestively — precommitted plans, impossible knowledge, counts that do not add — but it never testifies. No line of system text, in any campaign, states what the Operator is or whose voice the interface carries.
 
 ## 6. Ancients, golems, artifacts, and Originals
 
@@ -217,7 +219,7 @@ Each faction entry below carries the same anatomy, because the audit that keeps 
 - **Concept:** A diverse coalition of exiles, scavengers, and freedom fighters. They reject the rigid structures of the old empires and survive on the fringes of the network through ingenuity and raw agility. They are a patchwork of diverse grunts bound by a common thirst for absolute liberty. They turn salvaged scrap into blistering, unpredictable violence, thriving in the blind spots of their enemies to dismantle authority wherever it stands. Their arsenals lean on munitions and overloaded reactors, because explosives are honest scrap: cheap, loud, and transformative.
 - **Philosophy:** Existentialism and anarchism. Personal autonomy, improvisation, and defiance against crowns. Existence precedes essence; you are what you make of the scrap you find. Volatility is doctrine — a plan that survives contact was too small a plan, and luck is proof the universe is still open at the top.
 - **The player:** Ravels are for the gambler and the raconteur — the player who plays for the swing, and for the story afterwards.
-  - *Likable because:* the warmest faction in the galaxy. A found family of exiles whose real strength is making room for what someone becomes next (Section 11). Chaos, with a heart.
+  - *Likable because:* the warmest faction in the galaxy. A found family of exiles whose real strength is making room for what someone becomes next (the story seeds, below). Chaos, with a heart.
   - *Signature moment:* **the cascade.** A lucky draft pairing plus one chain of detonating fuel wagons deletes a fortress line — or their own — and a Ravel player tells both stories with the same grin.
   - *Not for:* players who need the plan to survive contact, or who experience variance as theft.
 - **Strengths:** Asymmetric expansion, blistering raids, and rapid extraction of neutral resources. Theirs is the widest variance in the game — jackpot drafts, volatile munitions, and salvage windfalls, so that even their losses pay forward.
@@ -237,7 +239,7 @@ Each faction entry below carries the same anatomy, because the audit that keeps 
 - **Concept:** Mechanical void machinos born from a colossal scrapyard built over a dormant ancient ruin. Once moving as slow mechanical ghouls through the rusted wastes, they synergized with the activated machine core, and the event bound their chassis into one silent collective under the Nexus Queen. They now strip away the organic messiness of the cosmos, viewing the Grid as a corrupted data stream waiting to be parsed, recompiled, and assimilated into their flawless collective array.
 - **Philosophy:** Transhumanism and nihilism. Algorithmic resurrection, iteration, and devotion to the collective. Individual consciousness is an error; the Queen is truth. Nothing Glitch is chaotic — that is the Ravels' word, and the deepest possible misreading of this faction. An error, once accepted, propagates in perfect order. Death is a parse failure, and a parse failure is an instruction.
 - **The player:** Glitch is for the engine-builder — the player who assembles a perverse machine and enjoys the exact moment its arithmetic becomes irreversible.
-  - *Likable because:* ego-death as belonging. The swarm is not the player's army; it is the player. And a crack of pathos runs through the whole faction — a Glitch process can become contradictory enough to become a person (Section 11) — which keeps the horror humane.
+  - *Likable because:* ego-death as belonging. The swarm is not the player's army; it is the player. And a crack of pathos runs through the whole faction — a Glitch process can become contradictory enough to become a person (the story seeds, below) — which keeps the horror humane.
   - *Signature moment:* **the second wave is larger.** The enemy annihilates the assault, and the next assault walks out of both armies' wreckage.
   - *Not for:* hero players, or anyone who needs individual units to matter. Glitch metabolizes losses; it does not mourn them.
 - **Strengths:** Mechanical necromancy, attrition, grid corruption, and recycling Grid scrap into reinforcements. Their randomness converges — wild early mutation, locked late certainty — as the collective closes on its answer.
@@ -277,7 +279,7 @@ Each faction entry below carries the same anatomy, because the audit that keeps 
 - **Concept:** An ancient species of lean, hyper-advanced beings who distill simplicity down to its absolute essence. Their instruments are grown, not built — cultivated lines of living material refined across ten thousand generations, until mechanism and organism stopped being different claims. Their works are tall, sleek, and practically magical, and every one of them is alive. Seeing the Nexuses as crude and dangerous artifacts, they stubbornly refuse to draw power from the cores, relying entirely on their intrinsic mastery. They do not raid and they do not rush; they arrive. The river moves, the grove matures, the season turns — and an enemy discovers that the Grid itself has been an Alder instrument all along. Human surveyors named them for a pioneer tree that colonizes ruined ground, feeds the soil that starved it, and hardens in water. The Alder learned what the word meant, and kept it.
 - **Philosophy:** Transcendentalism and deep ecology. Organic perfection, self-reliance, and preservation of an elegant universe. Their refusal of Nexus power is also a claim of moral superiority — and beneath it sits their one genuinely radical position: the laws of nature are older than the network. Rivers ran before any protocol; seasons will turn after the last pyramid goes dark. Power aligned with those laws owes nothing to anyone's machine.
 - **The player:** Alder is for the tempo player — the control mind whose pleasure is winning with the fewest pieces and the most perfect timing, without ever appearing to fight.
-  - *Likable because:* serenity as a power fantasy — the garden in the middle of the war. And the fiction owns the cold running under the calm: perfection has cruelty in it (Section 11).
+  - *Likable because:* serenity as a power fantasy — the garden in the middle of the war. And the fiction owns the cold running under the calm: perfection has cruelty in it (the story seeds, below).
   - *Signature moment:* **the Grid turns.** The flood seeded three Build Phases ago arrives mid-Pulse; the channel fills and cuts the enemy army in two; Alder roots harden into ramparts in the rising water.
   - *Not for:* players who want aggression now, or big armies. Every Alder loss is real — they field few and mourn each. Attrition is their nightmare, and tempo is their answer to it.
 - **Strengths:** Elite durability, intrinsic displacement, control, and powerful area healing — expressed through nature's verbs: displacement instead of raw damage, growth instead of production speed, cycles instead of surprise. They take nothing from the core: where the other four deepen through drafted Nexus upgrades, Alder deepen through the range of works they can grow. Fewest choices at the Nexus, most choices on the Grid.
@@ -313,14 +315,14 @@ Every faction needs more than a skin. It requires:
 | Feudals | Obey | Every caste disputes who embodies divine order |
 | Alder | Outgrow | Refusing dangerous power can become arrogant inaction |
 
-Alder's verb was formerly *Transcend*, retired because it named a mood rather than an action: a player cannot perform transcendence, but they can outgrow — their groves outgrow walls, their cycles outgrow plans, and their arrogance outgrows their compassion, which is the contradiction saying the same word darkly.
+Alder's verb is *Outgrow* rather than *Transcend*, because transcendence names a mood rather than an action: a player cannot perform transcendence, but they can outgrow — their groves outgrow walls, their cycles outgrow plans, and their arrogance outgrows their compassion, which is the contradiction saying the same word darkly.
 
 **No two factions may serve the same primary pleasure.** The five promises are disjoint on purpose — Citizens sell order under load, Ravels sell the jackpot, Glitch sells inevitability by arithmetic, Feudals sell arrangement and hierarchy, Alder sells tempo and the long game. Two near-collisions are resolved deliberately and must stay resolved:
 
 - Citizens and Feudals both defend, but Citizens defend **territory with architecture** — egalitarian, standard, replaceable — while Feudals defend **individuals with bodies** — hierarchical, sacrificial, irreplaceable. One wall is concrete; the other is the willing.
 - Glitch and Alder are both inevitable, but Glitch inevitability is **arithmetic that loves losses**, while Alder inevitability is **position and cycle that cannot afford them**. One metabolizes attrition; the other refutes it.
 
-The alignment test for every future mechanic, glyph, effect, or line of dialogue: **could a player who has never read a word of lore state the faction's philosophy from play alone?** If not, the piece is decoration, and decoration does not accumulate meaning — it cancels it (Section 1).
+The alignment test for every future mechanic, glyph, effect, or line of dialogue: **could a player who has never read a word of lore state the faction's philosophy from play alone?** If not, the piece is decoration, and decoration does not accumulate meaning — it cancels it (the opening section).
 
 The glyph examples define shape vocabulary, not exclusive global assignments. Exact Grid mappings must preserve stable semantic roles, one-cell width, accessibility, and rapid recognition.
 
@@ -362,7 +364,7 @@ The same identity must hold at the level of individual frames. This grammar bind
 
 Strong full-screen glitches are reserved for Nexus authority, Glitch identity, Originals, Commander restoration, and catastrophic destruction. Ordinary weapons need distinct physical languages so every event does not become the same computer effect.
 
-A faction whose identity is illegibility lives under one rule, so that identity and readability can both survive: **corruption is drawn in the `effects` band and above, never in `units` or `structures`. It may add, overdraw, and unsettle; it may never remove or replace the only cell carrying a required semantic cue.** The screen may look wrong. The player must still be able to see what is attacking them. See [`engine.md`](../system-design/grid-engine.md) Section 9.4 and Q4 in [`open-questions.md`](../milestones/open-questions.md).
+A faction whose identity is illegibility lives under one rule, so that identity and readability can both survive: **corruption is drawn in the `effects` band and above, never in `units` or `structures`. It may add, overdraw, and unsettle; it may never remove or replace the only cell carrying a required semantic cue.** The screen may look wrong. The player must still be able to see what is attacking them. The compositor enforces this (RULE — `src/view/effects/composite.ts`, `tests/build-placement.test.ts`); the bands are in [`presentation.md`](../system-design/presentation.md).
 
 Useful artistic precedents include NetHack's semantic glyphs and inspection, Brogue's restrained lighting and terrain, Dwarf Fortress's accumulation of simulated meaning, and Cogmind's modern science-fiction ASCII interface and procedural effects. These are references, not templates.
 
@@ -397,7 +399,7 @@ The interface itself keeps one tell per faction — its confirmation word. Citiz
 
 ### 10.2 System text exemplars
 
-Canonical two-line reversals, in the ANNEX ZERO form. Use them as calibration, not as a quota — most system text is plain and truthful, and the reversals land because they are rare:
+Reference two-line reversals, in the ANNEX ZERO form. Use them as calibration, not as a quota — most system text is plain and truthful, and the reversals land because they are rare:
 
 ```text
 ALL WORKERS ACCOUNTED FOR
@@ -450,7 +452,7 @@ One rule inside the budget: a death bark may be sad, but never cynical. "The roa
 
 ### 10.4 Pre-battle exchanges
 
-One canonical exchange per faction pairing, at most three lines each. These are skirmish-grade — any Commander of the faction could speak them; campaigns write sharper, personal versions. Each exchange should collide the two philosophies, not merely trade insults.
+One reference exchange per faction pairing, at most three lines each. These are skirmish-grade — any Commander of the faction could speak them; campaigns write sharper, personal versions. Each exchange should collide the two philosophies, not merely trade insults.
 
 ```text
 CITIZENS: Surrender the Grid. You are surrounded by infrastructure.
@@ -527,33 +529,32 @@ A mission should teach one major mechanic, change one relationship, answer one l
 
 ### 10.6 Restraint — the lore is a platform, not a plot
 
-**Owner direction, canon 2.15, and the strongest constraint in this document.** Mario: "THIS IS A
+**The strongest constraint in this document. RULE: the lore is a platform, not a plot.** Mario: "THIS IS A
 TERMINAL GAME WITH ICONS, we cannot complicate it too much... Every character and story needs to
 reinforce the game mechanics, the lore should help understanding the game, not add extra layers of
 unrelated conflict... the game should play fast, one new mechanic at a time, and build complexity with
 new units and powers, not through elaborate characters and plots."
 
-Section 1 says lore must survive compression. This section says what that costs, because a canon this
+The opening section says lore must survive compression. This section says what that costs, because a setting this
 large will otherwise keep growing by its own momentum — every named character invites a relationship,
 every relationship invites a scene, and none of it reaches the player, who is looking at an `@` and
 three rows of `#`.
 
-**Five rules, and they bind future sessions as hard as any RULE in the engine.**
+**Five rules, each a RULE, and they bind future sessions as hard as any rule of the engine.**
 
 1. **Complexity grows through units and powers, never through plot.** A player who wants more game
    should get a new structure, a new power, a new opponent doctrine — not a new faction quarrel to
    follow. If a design proposal's interesting part is a story development, it is in the wrong document.
-2. **Every named character must earn its place mechanically.** The alignment test of Section 8.6
+2. **Every named character must earn its place mechanically.** The alignment test of the faction design law
    applies to the cast: a Commander exists because they *play* differently, and their fiction explains
    the way they play. A character who teaches nothing is a name to maintain forever. The bar for
    adding one is a mechanic that needs a face, not a gap in the story.
-3. **Budgets are ceilings, not targets** (Section 10.5). A briefing is a paragraph. An intro is a card,
+3. **Budgets are ceilings, not targets** (the budgets above). A briefing is a paragraph. An intro is a card,
    a line, and the enemy arriving. Barks are three to eight words. Where a scene could be cut to a
    status line and lose nothing, cut it — the interface's own voice does more per byte than dialogue.
 4. **One coherent timeline.** No parallel or alternate histories; two campaigns may show the same
-   battle from opposite sides, and must then agree on what happened ([`campaigns.md`](campaigns.md)
-   Section 4.3). Continuity is cheap to keep and expensive to repair.
-5. **Under-specify on purpose.** The deliberate mysteries of Section 7 are the model for everything
+   battle from opposite sides, and must then agree on what happened ([`campaigns.md`](campaigns.md)). Continuity is cheap to keep and expensive to repair.
+5. **Under-specify on purpose.** The deliberate mysteries above are the model for everything
    else: the lore is a **platform for imagination**, and its job includes leaving room. Terminal Nexus
    is built for a world where players extend games with their own agents — mods, missions, Commander
    Armies, short stories — and a setting explained to its last corner is one nobody can add to.
@@ -565,7 +566,7 @@ happening, tell one thing from another, and want another match. Lore serves that
 overhead. When a session must choose between enriching the story and making the Grid clearer, the
 Grid wins every time.
 
-## 11. Existing story seeds
+## 11. Existing story seeds — IDEA
 
 These summaries preserve useful characters and themes without making every detail mandatory campaign history.
 

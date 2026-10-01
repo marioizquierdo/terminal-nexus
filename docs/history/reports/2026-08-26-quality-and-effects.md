@@ -1222,7 +1222,7 @@ between an automated PASS and the owner's own separate sign-off, is exactly what
 ### Final decision
 
 > **ACCEPTED.** Gate 1B, and Gate 1A alongside it, are both closed. Milestone 1 is complete
-> ([`docs/game-design/decisions.md`](../../game-design/decisions.md) Section 5). No further round is
+> ([`docs/game-design/decisions.md`](../README.md) Section 5). No further round is
 > expected against this report; a new finding against shipped Milestone 1 content is a fresh issue
 > against whichever gate now owns that code, not a reopening of this one.
 

@@ -78,14 +78,14 @@ Experiments: the hold window (`d Left` shortens it to 150 ms), key releases (aut
 window, quick tap, taps to speed up, fastest tap, hold pace, when a hold goes faster and how far, and the
 jump distance; the popup pulse (`d Down*10 Right` lengthens a breath to 3000 ms; `--settings
 "popupPulseMs=0"` stills it; the old name `battleRoundPulseMs` still reads); and the mission's Next round
-(key / auto) and Incoming wave (shown / hidden). Old exports' `raid` and `crew` read back quietly: gate 6B
-retired them for PERIMETER's waves. Every setting — its tier (player, experiment or tuned), section, label, question, values
+(key / auto) and Incoming wave (shown / hidden). Old exports' `raid` and `crew` read back quietly; PERIMETER's
+waves replaced them. Every setting — its tier (player, experiment or tuned), section, label, question, values
 and default — is declared in `src/build/all-settings.ts`; the tuned ones are not shown. Closing Settings
 with a changed Experiment that only applies after a restart shows a **RESTART NEEDED** message (Esc
 closes it, back on the game menu's Restart; `r` then restarts). The map's edge is not an Experiment: it is the map's own style (the spike
 map's fence; `--glyphs unicode` shows the Unicode forms), and the menu's divider is its west side.
 
-**A Nexus Pulse** (gate 6A): `s` asks (the menu's last row, `[s] Start Pulse`, which Up then Enter also
+**A Nexus Pulse**: `s` asks (the menu's last row, `[s] Start Pulse`, which Up then Enter also
 reaches; `p` is an unlisted alias) and opens the Battle Round 1 screen, a second `s`
 (or `Enter` or `Space`) starts it on the same screen, and from then on each step's frame is the Pulse
 at the script's own clock — the frame after the second `s` is 0.0 s (the title's timer at its full
@@ -95,8 +95,8 @@ Turrets across the muster point, a Hatchery behind them — round 1 won); `n 2 s
 built, which the starting squads still win in round 1. Its ending is the last three seconds (about 5.3 s
 in for that first plan: the title's timer flashes and a light sweeps the map's border), a cease fire, the
 survivors walking home
-and a result; red on the border is only the player's own Nexus being hurt. **The screen plays PERIMETER**
-(gate 6B): three rounds, so a result offers `[enter] Next round` — `Enter`, `Space`, `n` or a click — and
+and a result; red on the border is only the player's own Nexus being hurt. **The screen plays PERIMETER**:
+three rounds, so a result offers `[enter] Next round` — `Enter`, `Space`, `n` or a click — and
 the next Build Phase opens on what survived, with the credits not spent; the third round's result is
 MISSION COMPLETE or MISSION FAILED and `Enter` plays again. A whole mission by keys:
 `n 1 3 click:24,8 click:24,8 3 click:22,7 click:22,7 2 click:21,13 click:21,13 s s wait~20000 wait~20000
