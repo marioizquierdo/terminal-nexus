@@ -41,6 +41,15 @@ import citizensVersusRavels from "../../scenarios/citizens-versus-ravels.map.jso
 /** Stamped in by the build: which commit this page is, so a screenshot from a phone says so. */
 declare const __TN_BUILD__: Readonly<{ commit: string; branch: string; builtAt: string }>
 
+/**
+ * This pull request's demos, stamped in by the build (`bun scripts/build-web.mjs --demos <file>`): each a
+ * button that starts the Build Phase from a key script with given settings, and says what to try — how a
+ * playable page opens the game exactly where its question is (owner, 2026-10-01, feedback F92). Empty
+ * without `--demos`.
+ */
+type Demo = Readonly<{ label: string; try: string; keys?: string; settings?: string }>
+declare const __TN_DEMOS__: readonly Demo[]
+
 type Mode = "menu" | "build" | "pulse-grand" | "pulse-mirror"
 
 const PULSES: Readonly<Record<"pulse-grand" | "pulse-mirror", ScenarioDefinition>> = {
@@ -167,6 +176,9 @@ function importFromAddress(): void {
  * the scripted playtest's key names (`#keys=n%201%201%20Enter` picks a power and places a Barracks):
  * how a demo link opens already where it should, as `--keys` does in a terminal.
  */
+/** The demo a button just started, until the Build Phase it starts has read its keys. */
+let demo: Demo | null = null
+
 function keysFromAddress(): string | null {
   const match = /(?:^#|&)keys=([^&]*)/u.exec(window.location.hash)
   if (match === null) return null
@@ -208,7 +220,9 @@ async function start(next: Mode): Promise<void> {
   // The settings text reaches the Build Phase only; the menu opens on what is saved.
   const importing = importSettings(next === "build" ? (imported ?? undefined) : undefined, saved)
   if (importing.ignored.length > 0) status.textContent = `Settings text: ignored ${importing.ignored.join(", ")}`
-  const startScript = next === "build" ? keysFromAddress() : null
+  const chosen = next === "build" ? demo : null
+  demo = null
+  const startScript = next === "build" ? (chosen?.keys ?? keysFromAddress()) : null
   let startKeys: PlaytestStep[] | null = null
   if (startScript !== null) {
     try {
@@ -218,6 +232,7 @@ async function start(next: Mode): Promise<void> {
     }
   }
   const { settings, experiments } = importing
+  if (chosen !== null) status.textContent = `Try: ${chosen.try}`
   backend = new CanvasBackend({
     canvas,
     capability: settings.capability,
@@ -415,6 +430,23 @@ window.addEventListener("hashchange", () => {
   importFromAddress()
   if (imported !== null) void start("build")
 })
+
+// The pull request's demos, one button each; the row stays hidden without any.
+const demos = element<HTMLElement>("demos")
+for (const entry of typeof __TN_DEMOS__ === "undefined" ? [] : __TN_DEMOS__) {
+  const button = document.createElement("button")
+  button.type = "button"
+  button.textContent = entry.label
+  button.title = entry.try
+  button.addEventListener("click", () => {
+    demo = entry
+    imported = entry.settings ?? null
+    settingsText.value = imported ?? ""
+    void start("build")
+  })
+  demos.append(button)
+  demos.hidden = false
+}
 
 importFromAddress()
 void start("build")

@@ -40,9 +40,8 @@ import type { Settings, SettingsStore } from "../settings/types.ts"
 import type { Experiments } from "../build/experiments.ts"
 import { TUNING } from "../build/tuning.ts"
 import type { ExportKind } from "../build/types.ts"
-import type { ActivityLog } from "../log/activity.ts"
+import type { ActivityLog, HostName } from "../log/activity.ts"
 import { activity as globalActivity } from "../log/activity.ts"
-import type { CapabilityMode } from "../view/roles.ts"
 
 const ESC = "\u001b"
 /** Written before a frame whose size just changed: the backend draws from the cursor home position
@@ -65,17 +64,6 @@ export type Exporter = Readonly<{
   destination: Readonly<Record<ExportKind, string>>
   export: (text: string, kind: ExportKind) => Promise<void> | void
 }>
-
-/** Where a screen runs, as `session.start` says it: a terminal, or the browser playtest page. */
-export type HostName = "terminal" | "web"
-
-/** A colour depth as the Activity Logs write it (`session.start`'s `colours`). */
-const COLOURS: Readonly<Record<CapabilityMode, string>> = {
-  truecolor: "truecolor",
-  color256: "256",
-  color16: "16",
-  monochrome: "mono",
-}
 
 const messageOf = (error: unknown): string => (error instanceof Error ? error.message : String(error))
 
@@ -167,7 +155,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     host: options.hostName ?? "terminal",
     columns: loggedSize.columns,
     rows: loggedSize.rows,
-    colours: COLOURS[options.settings.capability],
+    colours: options.settings.capability,
   })
 
   let layout = buildLayout(terminalSize(), context.grid)

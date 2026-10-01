@@ -18,7 +18,7 @@ import { MenuSession } from "../menu/session.ts"
 import type { MenuItem } from "../menu/types.ts"
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../menu/mouse.ts"
 import { activity } from "../log/activity.ts"
-import type { ActivityLog } from "../log/activity.ts"
+import type { ActivityLog, HostName } from "../log/activity.ts"
 import { composeMenuFrame, MENU_LAYOUT, MENU_SIZE } from "../view/menu.ts"
 import { gateFrame, keysFromChunk } from "../view/index.ts"
 import { AnsiBackend } from "../view/backends/ansi.ts"
@@ -29,7 +29,6 @@ import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
 import { nextCapability, nextGlyphPack, nextTheme, toggleReducedMotion } from "../settings/types.ts"
-import type { CapabilityMode } from "../view/roles.ts"
 import type { Settings, SettingsStore } from "../settings/index.ts"
 
 /** Canon 2.11 named four; Q43 withdrew a fifth ("choose your Commander") upfront screen. About joined
@@ -117,7 +116,7 @@ export type MenuOptions = Readonly<{
    *  stamp — shown on the About screen and recorded at `session.start`. Absent: not known. */
   buildId?: string
   /** Where this runs, for the Activity Logs: `web` from the browser playtest page, else `terminal`. */
-  hostName?: "terminal" | "web"
+  hostName?: HostName
   /** The Activity Logs this session records into: the program's own unless a test passes another. */
   activity?: ActivityLog
 }>
@@ -133,13 +132,6 @@ const SCREEN_INFO: Readonly<Record<Screen, Readonly<{ subtitle: string; showBack
   about: { subtitle: "about", showBack: true },
 }
 
-/** A colour depth in the words `session.start`'s schema uses for it (`src/log/activity.ts`). */
-const COLOURS: Readonly<Record<CapabilityMode, string>> = {
-  truecolor: "truecolor",
-  color256: "256",
-  color16: "16",
-  monochrome: "mono",
-}
 
 export async function runMenu(options: MenuOptions): Promise<number> {
   const { stdout, stdin } = options
@@ -366,7 +358,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     host: options.hostName ?? "terminal",
     columns: stdout.columns ?? null,
     rows: stdout.rows ?? null,
-    colours: COLOURS[settings.capability],
+    colours: settings.capability,
   })
 
   try {

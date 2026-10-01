@@ -259,7 +259,7 @@ test("the title menu logs one session.start and a schema-valid menu.select for e
   }
   const starts = entries.filter((entry) => entry.event === "session.start")
   assert.equal(starts.length, 1, "the title menu did not log exactly one session.start")
-  assert.deepEqual(starts[0]?.props, { screen: "menu", build: "abc1234", host: "web", columns: 80, rows: 24, colours: "16" })
+  assert.deepEqual(starts[0]?.props, { screen: "menu", build: "abc1234", host: "web", columns: 80, rows: 24, colours: "color16" })
   assert.deepEqual(picks(entries), [
     ["top", "about"],
     ["about", "back"],
