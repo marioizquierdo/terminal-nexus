@@ -67,7 +67,35 @@ There is no separate pan mode: the cursor drives the camera. So a drag on the ma
 free camera. **IDEA:** press-and-drag moves the cursor under the finger, and the view follows at the
 margin, a touch version of exactly what the arrow keys do. Not built.
 
-## 4. Where the code is more terminal-shaped than it needs to be
+## 4. What a host can report about keys
+
+How the game reads taps, holds and releases is in [`input.md`](input.md) (section 7). The principle is
+that **the plain path always works and a host that offers more makes it better**, so what a host can
+report decides only which tier of that design runs, never what the player can do.
+
+| Host | What it reports | How the game finds out |
+| --- | --- | --- |
+| A terminal with the kitty keyboard protocol | presses, repeats and releases | sends the protocol query (`CSI ? u`) followed by Device Attributes (`CSI c`, which every terminal answers): an answer to the second and not the first means no protocol. If it answers, the game pushes flags 1 + 2 (`CSI > 3 u`: disambiguate, report event types) and pops them on every exit path through the one disposer. `scripts/probe-key-release.mjs` does the query and prints every event |
+| Any other terminal | presses only, as bytes | the answer to the Device Attributes query alone; the timing tier applies |
+| The browser page | `keydown` and `keyup`, always | nothing to detect; the page plays such a terminal |
+| Windows Terminal | releases through win32-input-mode | IDEA, not read today; the timing fallback works meanwhile |
+| A gamepad or touch-hold | buttons, the stick, `pointerdown` and `pointerup` | IDEA: needs the `InputEvent` below, because neither has a byte form |
+
+- **Leaving a terminal in the protocol's mode is the failure to avoid**, so the pop runs on every way out
+  (quit, Ctrl+C in both forms, Esc then quit, SIGINT, SIGTERM, a render or setup failure; RULE,
+  `tests/build-lifecycle.test.ts`, `tests/key-events.test.ts`).
+- **What the protocol costs elsewhere.** Keys arrive as `CSI ... u`, so the decoder learns a second form
+  (`src/view/key-events.ts`), and a lone Esc stops needing its wait, which also ends the Esc-versus-Option
+  ambiguity. `tmux`, `screen` and SSH hops may not pass the protocol through: measure, do not assume.
+- **The seam is the real work.** The reducer still gets `move-cursor` commands and only the input path
+  changes; a test feeds the same intent as timed presses and as press/release events and asserts the same
+  positions (RULE, `tests/build-motion.test.ts`). The generalisation is the `InputEvent` in the next
+  section.
+- **Gamepad (IDEA).** An adapter from buttons and the stick onto the same commands. A stick's analogue
+  deflection is a natural speed; the d-pad uses the game's own repeat cadence, as a held key-bar arrow
+  can on a phone.
+
+## 5. Where the code is more terminal-shaped than it needs to be
 
 Ordered by payoff over cost. None is urgent; each is a candidate for a small step of its own.
 
@@ -101,7 +129,7 @@ Ordered by payoff over cost. None is urgent; each is a candidate for a small ste
    the page's address, so a new option cannot reach one and not the other (`--keys` was once silently
    dropped).
 
-## 5. Platform ideas — IDEA
+## 6. Platform ideas — IDEA
 
 Nothing here is built, and nothing depends on it.
 
@@ -116,7 +144,7 @@ Nothing here is built, and nothing depends on it.
 | Chat-bot turns (Discord and the like) | render a frame to PNG; commands from messages | the Build Phase is turn-shaped (plan, then Pulse), so asynchronous play fits |
 | A native graphical renderer | a `TerminalBackend` that draws sprites | already an adapter by design |
 
-## 6. What not to do
+## 7. What not to do
 
 - Do not give the browser page a game loop of its own; it is a way to *see* the terminal's loops.
   RULE — `tests/web.test.ts`.

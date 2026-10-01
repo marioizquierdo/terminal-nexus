@@ -1,37 +1,20 @@
 # Working with `grid`
 
-`grid` is not the game — it is the tool the game gets built and tested with: a `.map.json` map file
+`grid` is not the game: it is the tool the game gets built and tested with, a `.map.json` map file
 plus a CLI that places entities on a Grid, resolves a deterministic Pulse from a seed, and reports
-what happened (`engine.md` Section 11). It grew out of Milestone 1's Pulse Playground and kept
-growing; treat it as permanent infrastructure, not a spike. If a change touches a rule, a map is how
-you prove it, and a map is how the next session proves it again.
+what happened (design: [`docs/system-design/runtime.md`](../../../docs/system-design/runtime.md)). It
+grew out of the first milestone's Pulse Playground and is permanent infrastructure. If a change
+touches a rule, a map is how you prove it, and how the next session proves it again.
 
-## No subcommand — the map is the first argument
+## Running it
 
-```text
-grid <map>                                  [--seed 0xABCD] [--ticks 120] [--turn 90]
-                                             [--speed 1] [--tile-width 1|2]
-                                             [--capability monochrome|color16|color256|truecolor]
-                                             [--theme dark|light] [--glyphs ascii|unicode]
-                                             [--no-effects] [--reduced-motion] [--cosmetic-seed 0x1234]
-                                             [--backend auto|ansi|opentui] [--save-log <file>]
-    the ASCII view (the default action) — watches the map resolve live
-
-grid <map> --headless [--seed] [--ticks] [--turn 90] [--log-level info]
-                       [--events events.jsonl] [--json] [--save-log <file>]
-    resolves without a terminal and prints the levelled log
-
-grid <map> --verify [--runs 10] [--seed] [--ticks] [--turn 90]
-    re-resolves 10 times by default and fails if any run's hashes disagree — also headless
-```
-
-`<map>` is a path to a `.map.json` file; the suffix is optional (`grid scenarios/melee-kill` and
-`grid scenarios/melee-kill.map.json` are the same file). There is no `run`/`watch`/`verify`
-subcommand any more — the default action is `watch`, and `--headless`/`--verify` switch it.
-
-`./bin/grid.ts <map> ...` runs it directly; `npm run grid -- <map> ...` works too. `npm run maps`
-lists the checked-in fixtures (21 today, in `scenarios/*.map.json`). A bare `grid` with no map is
-reserved for the map editor — not built yet, so today it's a usage error.
+The map is the first argument; the suffix is optional. There is no subcommand: the default action is
+watch, `--headless` resolves without a terminal and prints the levelled log, `--verify` re-resolves
+(10 runs by default, `--runs N`) and fails if any run's hashes disagree. The full command line and
+the options both programs share are in [`DEVELOPMENT.md`](../../../DEVELOPMENT.md) section 1.
+`./bin/grid.ts <map> ...` and `npm run grid -- <map> ...` are the same. `npm run maps` runs every
+checked-in fixture (`ls scenarios/*.map.json | wc -l` counts them). A bare `grid` with no map is
+reserved for the map editor and is a usage error today.
 
 ## Reading the report
 
@@ -108,7 +91,7 @@ The fast loop is text before pixels — a headless run costs nothing and answers
 3. Compare `--json` output (or `--events`) across two runs or two versions of a change when "did the
    outcome actually change" needs a precise answer rather than a read of the log.
 4. `grid <map> --verify` after any kernel change — determinism is the one property nothing else in
-   the gate can substitute for.
+   the test suite can substitute for.
 
 Only watch it (`grid <map>`, the default action) once the headless report already makes sense — the
 view answers "is this legible," not "is this correct."
@@ -116,7 +99,7 @@ view answers "is this legible," not "is this correct."
 ## Writing a map
 
 Every rule gets a named, checked-in `.map.json` file — that is the regression suite and the
-documentation at once (`AGENTS.md`, `docs/history/milestones/milestone-01-grid-battles.md` 3.5). A map is plain JSON, the same
+documentation at once (`AGENTS.md`: every rule has a named scenario). A map is plain JSON, the same
 shape a campaign level and a map-editor-authored map will eventually share:
 
 ```json
@@ -173,18 +156,15 @@ file; nothing checked in uses it that way today, so `.map.json` files are writte
 
 ## Testing
 
-`npm test` runs everything under Node; `npm run test:bun` runs the same files under Bun, one file at
-a time. **Bun enforces a 5000ms default per-test timeout Node's runner does not** — any test whose
-cost scales with the map count needs an explicit `{ timeout }` third argument, or it silently
-approaches that ceiling as maps are added. `DEVELOPMENT.md` has the full pattern and both times it
-has already bitten this project; run `./scripts/run-tests.sh bun` (not just `npm test`) after adding
-a map file, not only after touching the kernel.
+After adding a map file run `./scripts/run-tests.sh bun`, not only `npm test`: Bun enforces a 5000 ms
+per-test timeout that Node does not, and a test that loops over every map needs an explicit
+`{ timeout }` ([`DEVELOPMENT.md`](../../../DEVELOPMENT.md) section 2).
 
 ## Where things live
 
 `src/pulse` — the kernel (imports nothing presentation- or clock-related; `tests/architecture.test.ts`
-enforces the import graph). `src/content` — unit/structure definitions, currently the disposable
-Citizen and Ravel bench fixtures. `src/scenario` — the map format and loader (`load.ts` validates the
+enforces the import graph). `src/content` — unit/structure definitions, the Citizen and Ravel fixture
+rosters and the Proving Grounds bench roster (`proving-grounds.ts`), all disposable. `src/scenario` — the map format and loader (`load.ts` validates the
 shape once parsed; `loadMapFile.ts` reads and parses a `.map.json` path, suffix optional). `src/report`
 — the levelled log and summary. `src/view` — the ASCII compositor and terminal backends. `src/cli` —
 this tool's own entry points. `scenarios/*.map.json` — the fixtures themselves.
@@ -196,6 +176,6 @@ this tool's own entry points. `scenarios/*.map.json` — the fixtures themselves
 - [`../../../AGENTS.md`](../../../AGENTS.md) — the operating contract this skill is a companion to.
 - [`docs/system-design/runtime.md`](../../../docs/system-design/runtime.md) — the design of the tool, and
   [`docs/history/milestones/milestone-01-grid-battles.md`](../../../docs/history/milestones/milestone-01-grid-battles.md)
-  — the milestone that built it.
+  — the first milestone, which built it.
 - [`docs/system-design/replay-format.md`](../../../docs/system-design/replay-format.md) — the designed-but-unbuilt
   `.replay.json` format this tool will eventually read and write, one layer above a single map.

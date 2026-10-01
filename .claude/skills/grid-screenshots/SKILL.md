@@ -5,8 +5,9 @@ description: Run `grid` (the Terminal Nexus engine/editor/replay tool) on a real
 
 # Screenshotting `grid`
 
-The tests assert what a frame *contains*. They say nothing about how it **looks** — spacing,
-density, where the eye goes, whether colour helps or clutters. This is how you look at it.
+The tests assert what a frame *contains*; this is how you look at how it **looks**. What the
+pipeline is and why (tmux, a real PTY, Chromium as the renderer) is in
+[`DEVELOPMENT.md`](../../../DEVELOPMENT.md) section 3.
 
 **For the Build Phase screen, use the `playtest` skill first** (`scripts/playtest.mjs`): it presses
 keys without a terminal and renders frames composed in-process, so a picture can never be captured one
@@ -39,24 +40,19 @@ look at — take few, and make each one answer a question.
 ```bash
 node scripts/capture-screenshots.mjs                      # every shot in the list
 node scripts/capture-screenshots.mjs --only mirror-melee  # one of them
+node scripts/capture-screenshots.mjs --force              # re-render even unchanged shots
 ```
 
-Output lands in `docs/screenshots/`. The pipeline is tmux (a real PTY, so the ANSI backend takes
-the same path a person gets) → `capture-pane -e` (keeps the escape sequences, so colour survives) →
-HTML → headless Chromium at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
-
-**Race-free on purpose.** Send keys with `sendKey`/`sendKeys` from `scripts/lib/terminal-capture.mjs`
-(one tmux call per key, then a short pause — an Esc and the next key in one read become one Option+key)
-and photograph with `settledPane` after `waitFor` has seen the text the shot is about: it waits until
-two captures 200 ms apart agree. Text appearing proves the app got at least that far, not that it
-stopped there.
-
-**Unchanged shots are not rewritten.** Each image carries a hash of the page it came from, so a
-regeneration only rewrites images whose content changed; `--force` re-renders all of them.
+Output lands in `.playtest/screenshots/` (git-ignored; `--out <folder>` changes it). Chromium is the
+one `scripts/lib/terminal-capture.mjs` locates (`CHROMIUM_PATH`, else the newest Playwright
+Chromium). Send keys with `sendKey`/`sendKeys` from that file (one tmux call per key, then a short
+pause, because an Esc and the next key in one read become one Option+key) and photograph with
+`settledPane` after `waitFor` has seen the text the shot is about.
 
 Add a frame worth looking at by editing the `shots` array at the top of the script. Each entry takes
 `name`, `caption`, `scenario`, `tick`, `cols`, `rows`, and optionally `capability`, `glyphs`,
-`tileWidth`, `effects`, `reducedMotion`, `expectGate`.
+`tileWidth`, `effects`, `reducedMotion`, and `expectGate` (true for a shot of a terminal too small
+for the composition, where playback freezes behind the too-small notice).
 
 **The tick is exact.** The script pauses the session and steps to the tick you asked for, so a
 screenshot lands where you meant rather than wherever the wall clock reached. Find the tick worth
@@ -90,7 +86,7 @@ Use `-l` on `send-keys`: without it tmux reads `,` and `[` as key names.
 
 ## What to look at, and in what order
 
-1. **The worst frame first** (`docs/system-design/effects.md` craft rule 1). Late Pulse, both armies engaged,
+1. **The worst frame first** ([`effects.md`](../../../docs/system-design/effects.md) craft rule 1). Late Pulse, both armies engaged,
    several effects overlapping — `ravel-cascade` at the tick the chain runs. If that reads, the calm
    frames will. Designing the calm frame first guarantees a beautiful opening and an unreadable
    climax.

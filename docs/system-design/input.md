@@ -253,3 +253,59 @@ terminals that could not be tested are in
   holds by construction: every placement disarms and returns focus to the menu (the menu orchestrates,
   above), so no ghost is left on the Grid to recheck the tile, and the status line reports the success —
   `Barracks placed (resources: 60) - [u] undo`.
+
+## 7. Taps, holds and releases
+
+How a press of an arrow becomes a move. The reducer never sees any of this: it receives ordinary
+`move-cursor` and `highlight` commands of the size chosen here (`src/build/motion.ts`), on the map cursor
+and in every Build Phase list alike. **Principle: the plain path always works; a host that offers more
+makes it better.**
+
+**Three tiers, each a fallback for the one above — RULE for the floor and the parity**
+(`tests/build-motion.test.ts`); the numbers are GUIDANCE, each an Experiment in Settings' Keyboard
+navigation section or a tuned constant (`src/build/all-settings.ts`).
+
+- **Tier 1, the floor.** Every move is also one key: a tap moves one tile and the fast move (Shift or
+  Option with an arrow, PageUp/PageDown, Home/End) jumps `jumpStep` tiles, **10 by default** (the choices
+  run 5 to 20); held, it jumps again at most every 100 ms. The mouse wheel moves the cursor **5 tiles**
+  (`WHEEL_TILES`, `src/build/mouse.ts`; whether it should follow the jump is Q63). No hold is ever
+  required.
+- **Tier 2, timing (every terminal).** A tap and a hold are different things. **Taps speed up by
+  counting**: taps of one arrow each within 400 ms (`doubleTapMs`) of the one before are a run that keeps
+  its speed, and every third tap since the speed last changed (`tapsToSpeedUp`), if it came within 300 ms
+  of the one before (`fastTapMs`), doubles it, so 1, 1, 2, then 2, 2, 4, and 4 is the top (`tapTopStep`).
+  A slower gap, another arrow or any other key starts over at 1. **A hold runs at the game's own
+  cadence**, whatever the keyboard's repeat rate: at most one move every 60 ms (`holdMoveMs`; on average
+  exactly that when the keyboard repeats faster), 1 tile a move, then 2 once the key has repeated for
+  600 ms (`holdLongMs`, `holdLongStep`). A hold breaks a run of taps, so the tap after it is one tile.
+  Without key events a press of the same arrow within the **hold window** (`holdWindowMs`, 200 ms) of the
+  one before is a repeat; anything slower is a tap. The window must stay above the keyboard's own repeat
+  delay, which is why it is live to retune.
+- **Tier 3, releases (a host that reports them).** The terminal's keyboard protocol (section 6) and the
+  page's `keydown` and `keyup` say which presses are taps, which are a hold's repeats and when it ends:
+  a quick tap is never taken for a hold and a release stops the cursor at once. Only how a repeat is
+  *recognised* changes, never where the cursor goes: the same intent as timed presses and as
+  press/repeat/release events lands on the same positions (RULE, `tests/build-motion.test.ts`). Scripts
+  and the playtest send `Right/repeat` and `Right/release`; the playtest summary prints each move (`tap 2`,
+  `hold 0`). The Key releases Experiment (`auto` | `off`) lets the owner compare. How a host is detected,
+  and what each host can offer, is in [`portability.md`](portability.md).
+
+**IDEA: a learned hold window.** Replace the fixed 200 ms with one measured from the first held run: keep
+the median gap between repeats and set the window to about twice it, so a slow repeat delay stops turning
+a hold's first repeat into a tap; the Experiment stays as an override, and "nothing for the window" counts
+as the release. Not built; the number is the owner's own guess ("I would try 200").
+
+**What is not done**, for the session that polishes navigation:
+
+- The hold cadence is a first guess, and its numbers could be Experiments for that session; no export has come back for it yet.
+- With key events a hold still waits for the operating system's first repeat before it moves on the
+  cadence. A timer of the game's own in the live loop could start it sooner and stop at the release, with
+  a safety stop for a release that never comes.
+- Without the protocol a lone Esc still waits a moment (`escTimeoutMs`, 50 ms); Windows Terminal's
+  win32-input-mode is not read; the title screen's menu has no timing at all (it stops at its ends and
+  jumps); the browser page's hidden typing field sends no releases.
+- A terminal that answers the keyboard query after a very quick quit would print its answer into the
+  shell. Not seen, not guarded.
+- Unmeasured on the owner's machine: `node scripts/probe-key-release.mjs` in his iTerm2 says whether it
+  answers the query and whether held keys report `repeat` then `release`; his keyboard's repeat delay and
+  interval (the `+N ms` column while holding) set what the hold window should be.
