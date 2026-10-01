@@ -37,18 +37,18 @@ function lineGlyph(pack: GlyphPack, { n, s, e, w }: Joins): string {
 /**
  * The frame: an outer border, a rule under the top bar and another over the bottom bar (both the
  * whole width), and the divider between the side panel and the Grid pane, which runs only between
- * those two rules so both bars run the whole width (gate 5F; engine.md 9.2). Together they close the
+ * those two rules so both bars run the whole width (`docs/system-design/presentation.md`). Together they close the
  * Grid pane into **a rectangle of its own** — the owner's 2026-09-26 playtest could not tell where the
  * Grid ended, because two blank header rows sat between its top edge and the nearest line, and the
  * footer sat against its bottom edge with no line at all.
  *
- * engine.md 3.3's required "there is more Grid" signal is drawn as the weight of that rectangle's
+ * The "there is more Grid" signal `docs/system-design/grid.md` requires is drawn as the weight of that rectangle's
  * four sides, not overlaid on them: a side with more Grid to scroll to is the frame's own line drawn
  * dim, and a side that has actually reached the Grid's own edge is drawn in **the map's own style**
- * (feedback F25) — a **solid bar** when the map names none: an inverse-video cell, a wall rather than
- * merely a border, the same weight in every glyph pack and in monochrome (Q56) — in the quieter edge
+ * — a **solid bar** when the map names none: an inverse-video cell, a wall rather than
+ * merely a border, the same weight in every glyph pack and in monochrome — in the quieter edge
  * colour, each style the same weight on all four sides (`src/view/edge.ts` draws them). The menu's
- * divider **is** the Grid's west side (F25), one shared column, plain beside the menu's rules and a
+ * divider **is** the Grid's west side, one shared column, plain beside the menu's rules and a
  * light or map-edge side beside the Grid's rows.
  * Everything else — the outer border, the rules where they cross the side panel — never scrolls and
  * is drawn plain.
@@ -85,7 +85,7 @@ export function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack
   verticalLine(right, top, bottom)
   horizontalLine(box.top, left, right)
   horizontalLine(layout.paneBottom, left, right)
-  // A Grid shorter than the pane still closes directly under its last row (engine.md 3.3), across
+  // A Grid shorter than the pane still closes directly under its last row (`grid.md`), across
   // the Grid pane alone — the panel beside it runs on down to the bottom bar.
   if (box.bottom < layout.paneBottom) horizontalLine(box.bottom, box.left, box.right)
   // The divider runs only between the two rules, so the top bar and the bottom bar each run the
@@ -96,7 +96,7 @@ export function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack
   const markers = edgeMarkers(state.camera, state.viewport, context.grid)
   const heavy = { north: !markers.north, south: !markers.south, west: !markers.west, east: !markers.east }
   // The rectangle the four sides run along. Its west side is the menu's divider (`box.left` is
-  // `layout.dividerColumn`; the owner's choice, F25).
+  // `layout.dividerColumn`; Mario's choice).
   const rect = { left: box.left, right: box.right, top: box.top, bottom: box.bottom }
 
   // Whether the line from a cell to its neighbour runs along a side that has reached the map's own
@@ -130,7 +130,7 @@ export function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack
     const horizontalEdge = arms.e === 2 || arms.w === 2
     const verticalEdge = arms.n === 2 || arms.s === 2
     // A side that has reached the map's own edge is drawn in the map-edge style, on all four sides
-    // alike (owner, 2026-09-27: "the rectangle needs to be a rectangle"); a corner takes it when either
+    // alike (Mario: "the rectangle needs to be a rectangle"); a corner takes it when either
     // side meeting there does, so a heavy side runs unbroken to its end.
     if (horizontalEdge || verticalEdge) {
       // A corner is a corner by where it is, even where only one of its sides is an edge: a half
@@ -169,7 +169,7 @@ export function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack
 
 /**
  * The top bar — the game's title, where the player is, and what Esc does — and the bottom bar's one
- * line (feedback F59): **the contextual line**, the last command's answer while it has one and
+ * line: **the contextual line**, the last command's answer while it has one and
  * otherwise a hint for where the keyboard is (`bottomLine`, `src/build/help.ts`), or, while a Nexus
  * Pulse plays with no popup over it, what the Pulse is doing. Every key is on the Controls and hotkeys
  * page, not here.
@@ -180,16 +180,16 @@ export function drawTopBarAndBottomLine(cells: BandCell[], input: BuildCompositi
   const left = layout.offset.column + 2
   const headerRow = layout.offset.row + 1
 
-  // The top bar: the game's title and where the player is (engine.md 9.2), across the whole width.
+  // The top bar: the game's title and where the player is (`presentation.md`), across the whole width.
   const limit = layout.headerLimit
   text(cells, band, left, headerRow, "TERMINAL NEXUS", "chrome.title", { bold: true, limit })
   // A mission's round, when there is one: its goal is about rounds, so the header counts them
-  // (campaigns.md Section 4.3: a Pulse counter "only when the goal is itself about Pulses").
+  // (`docs/game-design/campaigns.md`: a Pulse counter "only when the goal is itself about Pulses").
   const round = context.round
   const phase = round === undefined ? "build phase" : `build phase - round ${round.number} of ${round.of}`
   const subtitle = input.pulse === undefined ? phase : pulseSubtitle(input.pulse)
   text(cells, band, left + 15, headerRow, subtitle, "chrome.muted", { limit: limit - 15 })
-  // What Esc does right now, right-aligned (feedback F37): "menu [esc]", "back [esc]", "close [esc]" —
+  // What Esc does right now, right-aligned: "menu [esc]", "back [esc]", "close [esc]" —
   // the name quiet, the key in the hotkey colour after it, findable without competing with the game's
   // own title. The same text is the click target that sends Esc.
   const escText = escLabel(state)

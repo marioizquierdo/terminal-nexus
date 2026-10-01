@@ -1,12 +1,13 @@
-// The composition — engine.md 3.1, 3.3, 9.2, 9.3, and Q12's 8-row chrome budget.
+// The composition (`docs/system-design/grid.md` and `presentation.md`), within an 8-row chrome budget.
 //
 //   80 columns = 1 border + 48 grid columns + 1 border + 30 side panel, at one column per tile.
 //  128 columns = the same arithmetic at two columns per tile.
 //   24 rows    = 1 border + 3 header + 16 grid rows + 3 footer + 1 border.
 //
 // The Grid pane is always the 48 x 16 minimum viewport. A Grid smaller than that is centred inside
-// it and never gated (engine.md 3.3, fitting step 4), and the leftover is spent on centring — never
-// on more Grid. Gate 1A Grids fit entirely, so there is no scrolling, no cursor, and no selection.
+// it and never gated (`grid.md`), and the leftover is spent on centring — never
+// on more Grid. The Grids this screen draws fit entirely, so there is no scrolling, no cursor, and no
+// selection.
 
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
@@ -25,7 +26,7 @@ import type { GlyphPack } from "./theme.ts"
 
 export type TileWidth = 1 | 2
 
-/** The minimum viewport, in tiles — RULE (engine.md 3.3). */
+/** The minimum viewport, in tiles — RULE (`grid.md`). */
 export const VIEWPORT_TILES = { width: 48, height: 16 } as const
 export const PANEL_COLUMNS = 30
 export const HEADER_ROWS = 3
@@ -222,7 +223,7 @@ export function composeFrame(
   // already that edge, so this draws nothing.
   drawGridEdge(cells, input.grid, origin, tileWidth, pack)
 
-  // Bands 3, 7, 8 and 9 — effects. They may paint here and nowhere else (ascii-effects.md 1.1),
+  // Bands 3, 7, 8 and 9 — effects. They may paint here and nowhere else (`effects.md`),
   // they are clipped to the Grid, and they can never move a glyph the simulation put down.
   //
   // Collected first, rather than pushed straight into `cells`, so that two effect cells landing on
@@ -291,7 +292,7 @@ function drawChrome(
   put(cells, band, 0, size.height - 1, chromeGlyph(pack, "bottomLeft"), "chrome.frame")
   put(cells, band, size.width - 1, size.height - 1, chromeGlyph(pack, "bottomRight"), "chrome.frame")
 
-  // Header — three rows, of the eight-row chrome budget (Q12: 2 border, 3 header, 3 footer).
+  // Header — three rows, of the eight-row chrome budget (2 border, 3 header, 3 footer).
   text(cells, band, 2, 1, "TERMINAL NEXUS", "chrome.title", { bold: true, limit: paneLimit })
   text(cells, band, 18, 1, "the grid tool", "chrome.muted", {
     dim: true,
@@ -300,7 +301,7 @@ function drawChrome(
   text(cells, band, 2, 2, input.scenarioName, "chrome.value", { limit: paneLimit })
   text(cells, band, 2, 3, `seed ${hexSeed(input.seed)}`, "chrome.label", { limit: paneLimit })
 
-  // Footer — the position readout engine.md 3.3 requires, the controls, and the status line.
+  // Footer — the position readout `grid.md` requires, the controls, and the status line.
   const footerTop = size.height - 1 - FOOTER_ROWS
   text(
     cells,
@@ -321,7 +322,7 @@ function drawChrome(
   text(cells, band, 2, footerTop + 2, status, "chrome.value", { limit: paneLimit })
 
   // Side panel — 30 columns. During a Pulse it carries the pulse state, both sides' force totals,
-  // and the feed that makes "who shot whom" readable before Gate 1B's effects exist.
+  // and the feed that makes "who shot whom" readable without effects.
   text(cells, band, panelX, 1, "NEXUS PULSE", "chrome.title", { bold: true, limit: panelLimit })
   text(cells, band, panelX, 2, input.scenarioId, "chrome.muted", { dim: true, limit: panelLimit })
   text(
@@ -471,7 +472,7 @@ export const FEED_KINDS: readonly DomainEvent["kind"][] = [
 ]
 
 /**
- * The resize gate — engine.md 9.6 makes it a RULE, and a terminal is a thing people drag. Below the
+ * The resize gate — `presentation.md` makes it a RULE, and a terminal is a thing people drag. Below the
  * composition size the view shows this and freezes presentation time; resizing back resumes from
  * the same presentation time.
  */

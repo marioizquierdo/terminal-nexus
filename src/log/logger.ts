@@ -1,5 +1,5 @@
-// A structured logger — the one shape every log in the project shares (owner, 2026-10-01: "it is best
-// that all logging system is coherent and standard").
+// A structured logger — the one shape every log in the project shares, so all logging stays coherent
+// and standard.
 //
 // **Events are declared before they are logged.** A logger is built over a schema: each event's name,
 // its default level, a sentence on what it means, and its properties — each with a type and a sentence

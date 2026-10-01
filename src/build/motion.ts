@@ -1,5 +1,5 @@
 // How far one cursor key moves the cursor — or a list's highlight — decided from when and how the key
-// arrives. Rewritten for the owner's third round on the menu spike (2026-09-30, feedback F79): "I often
+// arrives. Built from the owner's report: "I often
 // try to move to a position a few tiles away and then the cursor starts jumping ahead ... Instead of
 // accelerating on fast taps based only on time, try based on number of taps within two different time
 // windows: a double-tap (400ms) and a fast-double-tap (300ms) ... The keyboard press events should be
@@ -19,13 +19,13 @@
 //     repeats move the cursor at most once every `holdMoveMs` (on average exactly that often, when the
 //     keyboard repeats faster), `holdFirstStep` tiles a move at first and `holdLongStep` once the key has
 //     been repeating for `holdLongMs`. A hold breaks a run of taps: the tap after it is one tile, so
-//     "keep-pressing, releasing, and tapping to adjust" (the owner, Q66) stays precise.
+//     "keep-pressing, releasing, and tapping to adjust" (the owner) stays precise.
 //   - **The fast move** (Shift, Option, PageUp/PageDown, Home/End) is not a speed at all but a **jump**
 //     of `jumpStep` tiles. Held, it jumps again at most once every `jumpRepeatMs`, so each jump is seen
 //     to land.
 //
 // Every one of those numbers is a setting (`src/build/all-settings.ts`) — most of them Experiments in
-// Settings' Keyboard navigation section since the owner's F85, the rest tuned constants — and
+// Settings' Keyboard navigation section, the rest tuned constants — and
 // `moveTuning` reads each as it is now, so a change in Settings changes the next key.
 //
 // **How a repeat is told from a tap.** Where the terminal reports key events (the kitty keyboard

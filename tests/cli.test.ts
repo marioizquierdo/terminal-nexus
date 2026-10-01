@@ -184,9 +184,9 @@ test("no map given is a usage error, not a crash", () => {
 if (bunAvailable()) {
   // Two subprocess spawns per scenario (Node and Bun each), so this is the single most expensive
   // test in the suite and the one whose cost scales most directly with scenario count - the exact
-  // class of test DEVELOPMENT.md warns about. It first crossed Bun's 5000ms default per-test timeout
-  // when the unit-design-architecture spike's eleven new scenarios landed; the fix is the same one
-  // documented there, an explicit timeout third argument, not a smaller scenario count.
+  // class of test that outgrows Bun's 5000ms default per-test timeout. It first crossed it when the
+  // unit-design-architecture spike's eleven new scenarios landed; the fix is an explicit timeout
+  // third argument, not a smaller scenario count.
   test(
     "--headless --json produces identical hashes under Bun and under Node",
     { timeout: 120_000 },

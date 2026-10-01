@@ -1,6 +1,5 @@
-// The Build Phase's Settings popup (owner, 2026-09-28: "Let's solidify this as Settings"; in sections
-// since feedback F85, 2026-09-30: "make more groups, and leave an extra space between sections"): every
-// setting the list shows (`src/build/all-settings.ts`) — the player's own, saved the same way as the
+// The Build Phase's Settings popup (the owner: "Let's solidify this as Settings"; in sections, "make
+// more groups, and leave an extra space between sections"): every setting the list shows (`src/build/all-settings.ts`) — the player's own, saved the same way as the
 // title menu's Settings screen, and the Experiments, which are for playtesting and never saved — under
 // titled sections with a blank line between them, then "Export settings". One row shape (a value Left
 // and Right change), and one way out of it for the owner's feedback: the export (`settings-export.ts`).
@@ -9,7 +8,7 @@
 // on, in the order the popup draws them and Up/Down walk them, as it is an index into every other
 // popup's list. Section titles and the blank lines between sections are drawn by the popup
 // (`src/build/popup.ts`) and are never rows here, so Up and Down step over them and the title's count
-// counts only these. Starting over is not a Settings row: it is the game menu's `[r] Restart` (F34), and
+// counts only these. Starting over is not a Settings row: it is the game menu's `[r] Restart`, and
 // a setting that only takes effect then is announced by a message popup when Settings closes
 // (`pendingRestart`, `restartMessage`).
 
@@ -46,14 +45,13 @@ export function adjustSetting(settings: Settings, field: PlayerField, step: -1 |
 // --- The game menu ----------------------------------------------------------------------------------
 
 /**
- * The game menu's rows, in order (owner, 2026-09-28: "When pressing [esc] or explicitly opening the
+ * The game menu's rows, in order (the owner: "When pressing [esc] or explicitly opening the
  * main menu, there should be an option for '[s] Settings' along with '[q] Quit'"), `[c] Controls and
- * hotkeys` right after Settings (feedback F60), `[a] Activity logs` after it (owner, 2026-10-01,
- * feedback F91: "The menu should have a new option for 'activity logs'"), `[r] Restart` — starting the
- * Build Phase over with every setting kept, moved here from Settings (feedback F34) — and Quit. **No
- * `[esc] Back to the game` row** (owner, 2026-09-30, feedback F73: "the general esc on the top right is
- * contextual and already says 'close'"): Esc, `x`, the top bar's `close [esc]` and a click outside close
- * it, as they close every popup. `popupHighlight` indexes this list while the game menu is open.
+ * hotkeys` right after Settings, `[a] Activity logs` after it, `[r] Restart` — starting the Build Phase
+ * over with every setting kept — and Quit. **No `[esc] Back to the game` row** (the owner: "the general
+ * esc on the top right is contextual and already says 'close'"): Esc, `x`, the top bar's `close [esc]`
+ * and a click outside close it, as they close every popup. `popupHighlight` indexes this list while the
+ * game menu is open.
  */
 export const GAME_MENU_ROWS = ["settings", "controls", "activity", "restart", "quit"] as const
 export type GameMenuRow = (typeof GAME_MENU_ROWS)[number]
@@ -62,7 +60,7 @@ export type GameMenuRow = (typeof GAME_MENU_ROWS)[number]
 export const CONTROLS_DESCRIPTION = "Keys and mouse"
 
 /** What the game menu's `[a] Activity logs` row says under its name: what the window is for, in a
- *  playtester's words (F91: "go to the activity logs on the menu, and export the relevant logs"). */
+ *  playtester's words. */
 export const ACTIVITY_DESCRIPTION = "What happened, to export for feedback"
 
 /** What the game menu's `[r] Restart` row says under its name. */
@@ -89,7 +87,7 @@ export function pendingRestart(
     .map((spec) => spec.label)
 }
 
-/** The message popup that says so (owner, 2026-09-29, feedback F34: "it's just a warning message ...
+/** The message popup that says so (the owner: "it's just a warning message ...
  *  The user may decide to keep playing and restart later"). */
 export function restartMessage(labels: readonly string[]): PopupMessage {
   return {
@@ -105,7 +103,7 @@ export function restartMessage(labels: readonly string[]): PopupMessage {
 export type SettingsRow = Readonly<{ kind: "setting"; field: ShownName }> | Readonly<{ kind: "export" }>
 
 /** Settings' rows, in the order the popup draws them and Up/Down walk them: every shown setting, section
- *  by section, and "Export settings" last (feedback F35). `popupHighlight` indexes this list. */
+ *  by section, and "Export settings" last. `popupHighlight` indexes this list. */
 export const SETTINGS_ROWS: readonly SettingsRow[] = [
   ...SHOWN_SETTINGS.map((spec): SettingsRow => ({ kind: "setting", field: spec.field })),
   { kind: "export" },

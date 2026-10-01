@@ -1,4 +1,4 @@
-// The About screen (owner, 2026-10-01, feedback F93): who made the game, where its code lives, how to
+// The About screen: who made the game, where its code lives, how to
 // contribute, and which build this is. Driven through `runMenu` itself, with raw key bytes and raw
 // clicks on a fake terminal, and read back from the very frames the loop presented (a backend that
 // records them) — so what is asserted is the screen a player gets, not a hand-built composition.

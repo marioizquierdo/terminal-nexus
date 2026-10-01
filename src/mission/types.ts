@@ -1,12 +1,13 @@
-// A mission as data — campaigns.md Section 2.1: "a sequence of Build Phase / Nexus Pulse cycles driven
+// A mission as data — campaigns.md: "a sequence of Build Phase / Nexus Pulse cycles driven
 // by triggers", a trigger being "a condition, and the actions taken when it holds".
 //
-// Gate 6B builds the **simulation band** at the size PERIMETER needs — `spawn`, `order`, `commitPlan`,
+// This file is the **simulation band**, built at the size PERIMETER needs — `spawn`, `order`, `commitPlan`,
 // `win`, `lose` — and the three conditions its trigger list uses. The shapes follow the sketch in
-// campaigns.md Section 2.1 (`{ pulse: 1, tick: 0 }`, `{ event: "pulse.end", pulse: 3 }`, `{ spawn: {...} }`)
-// so that sketch and this file read alike. **A mission never contains a function** (Q39's
-// recommendation, which this proceeds under): the vocabulary grows here, in code, one typed kind at a
-// time, and a mission is only ever these literals — which is what lets `validate.ts` check every
+// campaigns.md (`{ pulse: 1, tick: 0 }`, `{ event: "pulse.end", pulse: 3 }`, `{ spawn: {...} }`)
+// so that sketch and this file read alike. **A mission never contains a function**
+// (missions are declarative triggers, not a scripting API; whether that stays true is an open question,
+// Q39): the vocabulary grows here, in code, one typed kind at a time, and a mission is only ever these
+// literals — which is what lets `validate.ts` check every
 // reference before anything runs, and a replay re-derive every action from the mission, the seed and the
 // plans.
 //
@@ -45,7 +46,8 @@ export type TriggerCondition =
  * What a group does once it is on the Grid. **Only `advance` exists, and today it means what the kernel's
  * one movement rule does — engage the nearest enemy**: the kernel has no order primitive, so the region it
  * names is the stated destination, shown to the player as intention, not a path the kernel steers by
- * (evidence/gate-6b-report.md Section 7; Q69). `hold` and `withdraw` wait for that primitive.
+ * (docs/history/reports/2026-09-30-round-loop-and-missions.md). `hold` and `withdraw` wait for that
+ * primitive, which is an open question for Mario (Q69).
  */
 export type Order = Readonly<{ advance: string }>
 
@@ -94,7 +96,7 @@ export type TriggerDefinition = Readonly<{
 
 /**
  * One mission: who stands where when it opens, what it brings each Pulse, and how it ends. Deliberately
- * the part of campaigns.md's `MissionDefinition` gate 6B needs — no armies, unlocks or objectives list yet;
+ * the part of campaigns.md's `MissionDefinition` PERIMETER needs — no armies, unlocks or objectives list yet;
  * the map and the construct menu are still the Build Phase's placeholder ones, named by the adapter.
  */
 export type MissionDefinition = Readonly<{
@@ -108,7 +110,7 @@ export type MissionDefinition = Readonly<{
   seed: number
   regions: readonly Region[]
   triggers: readonly TriggerDefinition[]
-  /** What the Battle Round screen announces for round *n* (feedback F49's seam). */
+  /** What the Battle Round screen announces for round *n*: the seam where a briefing line for each round goes. */
   roundText?: Readonly<Record<number, string>>
   /** One line the last result says when the mission is won or lost — presentation data, never read by
    *  the runner. */

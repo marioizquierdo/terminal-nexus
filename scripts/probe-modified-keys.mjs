@@ -1,7 +1,7 @@
-// The Shift+Arrow survey — Milestone 5 gate 5A, and the one assumption in `engine.md` 9.7's keymap
+// The Shift+Arrow survey — the one assumption in the input keymap (docs/system-design/input.md)
 // that a terminal can silently break. The input model binds Shift+Arrow to a five-tile cursor jump
 // and says, in the same breath, that modified arrows "are swallowed or remapped on some terminal and
-// multiplexer configurations" and that the spike must check rather than assume.
+// multiplexer configurations" and that it must be checked rather than assumed.
 //
 //   node scripts/probe-modified-keys.mjs
 //

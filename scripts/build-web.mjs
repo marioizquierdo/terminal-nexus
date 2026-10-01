@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 // Builds the browser playtest page: one self-contained HTML file with the game's own menu, Build
-// Phase and Pulse playback in it, painted onto a canvas (engine.md 10.2 — a development tool; the
+// Phase and Pulse playback in it, painted onto a canvas (docs/system-design/runtime.md — a development tool; the
 // terminal stays the real game). The commit it was built from is printed at the top of the page.
 //
 //   bun scripts/build-web.mjs                    # dist/terminal-nexus-playtest.html
@@ -10,8 +10,8 @@
 // A demos file is a list of `{ "label", "try", "keys"?, "settings"? }`: a button's name, what to try
 // once it starts (shown under the screen), and the key script and settings text the Build Phase starts
 // from — the same as `--keys` and `--settings` in a terminal. It is how a pull request's playable page
-// opens the game exactly where its question is (docs/ui-patterns.md 15.3); `evidence/demos/` keeps each
-// pull request's file, as an example for the next.
+// opens the game exactly where its question is. A pull request's file lives in `scripts/demos/` while
+// its page is current, as an example for the next; delete it once the question is answered.
 //
 // The file opens straight from disk, or is published as a private claude.ai page for a phone.
 

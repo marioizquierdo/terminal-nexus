@@ -1,6 +1,6 @@
 // The Activity Logs — what the player did, what the game answered, and what went wrong, recorded so a
 // playtester can open **Activity logs** in the game menu, pick a filter and export what it shows into a
-// pull request comment (owner, 2026-10-01). It is the second half of the feedback loop the Experiments
+// pull request comment. It is the second half of the feedback loop the Experiments
 // started (`src/build/all-settings.ts`): an Experiment asks "which feels right?"; a log answers "what
 // happened when it felt wrong?".
 //

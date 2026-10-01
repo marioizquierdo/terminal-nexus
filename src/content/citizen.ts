@@ -1,8 +1,8 @@
-// Fixture content for Gate 1A — disposable, tuned for legibility, not balance.
+// Fixture content for the first battles — disposable, tuned for legibility, not balance.
 //
-// milestone-1-spike-battle.md 3.6 is the authority for every number here. These are explicitly
-// **not** a Commander Army and not canon: commander-armies.md forbids production rosters before
-// Milestone 12, and saying they are throwaway is what keeps them throwaway.
+// Every number here is tuned for legibility. This is bench content, **not** a Commander Army and
+// not the designed roster: commander-armies.md forbids production rosters until the content-iteration
+// milestone, and saying they are throwaway is what keeps them throwaway.
 //
 // The relationship the numbers are meant to make visible without a spreadsheet:
 // one trooper beats one marksman and finishes at about a quarter health; two marksmen kill the

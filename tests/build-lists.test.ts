@@ -1,4 +1,4 @@
-// Moving in lists (docs/ui-patterns.md, "Moving in lists"): every list in the Build Phase — its menu, the
+// Moving in lists (docs/system-design/ui-patterns.md, "Moving in lists"): every list in the Build Phase — its menu, the
 // Nexus powers, the game menu, Settings, the export, the Controls page — stops at its first and last
 // row without a flicker; Shift+Up/Down, PageUp/PageDown and Home/End go to either end; a tap is one row,
 // and taps and holds move a list by the map cursor's own rules and numbers (taps counted, a hold on the
@@ -124,7 +124,7 @@ const moving = (key: string): (readonly [string, number])[] => [
 ]
 
 test("Up or Down in a list moves exactly as the map cursor does — taps counted, a hold on the cadence — and a tap is one row", () => {
-  // The owner (feedback F75): "Use the same timings." (F79: "The same is happening with the menu now.")
+  // The owner: "Use the same timings." and "The same is happening with the menu now."
   // The same presses at the same times move a list as many rows as they move the map cursor tiles, as long
   // as neither reaches an end.
   const tiles = (key: string): number => {

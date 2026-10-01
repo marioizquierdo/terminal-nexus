@@ -39,7 +39,7 @@ export const HIGHLIGHT_BAR: Bar = { role: "chrome.title", bold: false, underline
 /**
  * The **pressed** look, a menu row's acknowledgement the moment it is activated: the bar in the hotkey's
  * colour, bold and underlined — stronger than the highlight at every tier, monochrome included. The
- * cursor's blink borrows it (feedback F54: "the same exact effect as the one we use when selecting menu
+ * cursor's blink borrows it (Mario: "the same exact effect as the one we use when selecting menu
  * items").
  */
 export const PRESSED_LOOK: Bar = { role: "chrome.hotkey", bold: true, underline: true }
@@ -64,7 +64,7 @@ type RowPart = (x: number, value: string, role: StyleRole, extra?: DrawExtra) =>
 /**
  * How the parts of `row` are drawn on `bar` (drawn first, by `drawHighlightBar`): every part in the
  * bar's role, reversed, with the bar's weight added to its own, so the row reads as one bar rather
- * than a teal block, a white block and a grey one side by side (gate 5F). With no bar, each part is
+ * than a teal block, a white block and a grey one side by side. With no bar, each part is
  * drawn as itself.
  */
 export function rowParts(cells: BandCell[], row: number, bar: Bar | null): RowPart {
@@ -100,7 +100,7 @@ type MenuRowSpec = Readonly<{
   highlighted: boolean
   /**
    * The acknowledgement playing on the row, if any. **Pressed**: a brief, stronger bar the moment a row
-   * is activated. **Refused** (owner, 2026-09-30, feedback F61: "it should probably just grey out the
+   * is activated. **Refused** (Mario: "it should probably just grey out the
    * text and not change the background"): for its few frames the row's words turn grey and nothing
    * else changes — the highlight stays the highlight, a plain row stays plain — so it reads as "nothing
    * here" rather than as a press.
@@ -110,13 +110,13 @@ type MenuRowSpec = Readonly<{
 }>
 
 /** What an active row shows at its right end in place of its value: an arrow pointing at the map, where
- *  the row's action is under way (owner, 2026-09-30, feedback F67: "change the 'active in grid' arrow to
- *  just one '>'"). It keeps its own hotkey (F70), so the key that chose it is the key that ends it. */
+ *  the row's action is under way (Mario: "change the 'active in grid' arrow to
+ *  just one '>'"). It keeps its own hotkey, so the key that chose it is the key that ends it. */
 export const ACTIVE_VALUE = ">"
 
 /**
  * Whether menu entry `entry`'s action is under way right now — **the one test for the "active" style**
- * every menu row shares (owner, 2026-09-29, feedback F32): a building while it is armed, `[e] Explore
+ * every menu row shares: a building while it is armed, `[e] Explore
  * Map` while Explore Map is open, `[n] Nexus` while its popup is, `[s] Start Pulse` while its
  * confirmation is. A menu row has two states and no more: *highlighted* by the keyboard (the bar, only
  * while the menu has the keyboard) and *active*.
@@ -149,7 +149,7 @@ const POPUP_ROW: Readonly<Record<Popup, "nexus" | "start" | null>> = {
 }
 
 /**
- * How a refused row's words are drawn, by tier (F61) — the only thing the flicker changes. On a plain
+ * How a refused row's words are drawn, by tier — the only thing the flicker changes. On a plain
  * row: the grey muted role, dim, which greys them at every tier (monochrome and 16 colours, where the
  * muted grey is the value's own, by the dim alone). On the highlight bar: still the bar — inverse, in
  * the bar's role — with the words' colour, which inverse video takes from the background role, made
@@ -166,7 +166,7 @@ function refusedWords(bar: boolean, capability: CapabilityMode): CellStyle {
 
 /**
  * One entry of the side panel's menu. `[1] Barracks  >` says *active* — its action under way — and
- * the bar says *where the keyboard is, not yet chosen* (owner, 2026-09-27 to 2026-09-30). Every row is
+ * the bar says *where the keyboard is, not yet chosen*. Every row is
  * drawn here, the menu's and a card's header alike, so a change to either style reaches every row that
  * has it.
  */
@@ -178,8 +178,8 @@ export function drawMenuRow(cells: BandCell[], layout: BuildLayout, row: number,
   if (bar !== null) drawHighlightBar(cells, column, row, limit, bar)
   const part = rowParts(cells, row, bar)
   const words = cells.length
-  // Active is not the keyboard's bar (feedback F22, F32): the bar says "the keyboard is here, not
-  // chosen yet", and an active row is chosen. It reads `[1] Barracks  >` (feedback F67, F70): its own
+  // Active is not the keyboard's bar: the bar says "the keyboard is here, not
+  // chosen yet", and an active row is chosen. It reads `[1] Barracks  >`: its own
   // hotkey — which ends it — the whole row in the hotkey's colour and bold, and one `>` at its right
   // end pointing at the map where it is under way; no underline. Legible in monochrome by the `>` and
   // the bold. A pressed acknowledgement on it still wins, drawn as the bar.
@@ -209,17 +209,16 @@ export function drawMenuRow(cells: BandCell[], layout: BuildLayout, row: number,
 
 /**
  * Whether the row for menu entry `entry` is highlighted right now, and which acknowledgement is playing
- * on it. **The highlight means one thing: the keyboard is on this row and has not chosen it yet**
- * (feedback F22). So it is drawn only while the menu has focus, and not after the mouse worked the menu
+ * on it. **The highlight means one thing: the keyboard is on this row and has not chosen it yet**. So it is drawn only while the menu has focus, and not after the mouse worked the menu
  * (`highlightHidden` — a click chooses, it does not highlight); an active row is never highlighted — the
- * Nexus row behind its own popup included (F32). A pressed acknowledgement is drawn as a stronger bar on
+ * Nexus row behind its own popup included. A pressed acknowledgement is drawn as a stronger bar on
  * any row; a refused one greys the row's words over whatever it is.
  */
 function rowState(input: BuildCompositionInput, entry: number, active: boolean): Readonly<{ highlighted: boolean; ack: RowAck["kind"] | null }> {
   const { state } = input
   const own = input.ack !== undefined && input.ack.entry === entry ? input.ack.kind : null
   // The row a card reveal from the menu carries up to the header is drawn active throughout, never
-  // pressed: turning active and sliding up is its acknowledgement (owner, 2026-09-30, feedback F68: "the
+  // pressed: turning active and sliding up is its acknowledgement (Mario: "the
   // currently selected menu item that changed to the active state, then quickly interpolates (moves) the
   // item to the top"). The pressed flash outlasts the reveal's fade and slide, and would cover both.
   const carried = input.cardReveal?.fromMenu === true && cardEntry(state) === entry
@@ -277,11 +276,11 @@ export function menuRowSpec(input: BuildCompositionInput, entry: number): MenuRo
 }
 
 /**
- * The **credits line** (owner, 2026-09-30, feedback F71: "they should be on the empty line right before
+ * The **credits line** (Mario: "they should be on the empty line right before
  * the build/construction list ... the same as the symbol used on the map to represent resources"): the
  * map's own resource-deposit glyph (`*` in ASCII, `◆` in Unicode, from the same table the map draws it
  * from, in the deposit's colour) and what there is to spend, right-aligned in the column the costs are
- * in — `◆ 130` — on the blank line above the first building. No label and no maximum (F57). On the menu
+ * in — `◆ 130` — on the blank line above the first building. No label and no maximum. On the menu
  * alone: a card has none, so a card's top line is the row that opened it.
  */
 function drawCredits(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
@@ -295,7 +294,7 @@ function drawCredits(cells: BandCell[], input: BuildCompositionInput, pack: Glyp
 }
 
 /**
- * The side panel as the menu (owner, 2026-09-30, feedback F56-F58, F71-F72): `[e] Explore Map`,
+ * The side panel as the menu (shaped over several playtests): `[e] Explore Map`,
  * `[n] Nexus` under it, the credits line, the buildings one to a row in catalog order, and
  * `[s] Start Pulse` on its last line. No headings, no help text: what a row does, and why a placement
  * is refused, are the bottom line's to say, and there is no radius preview, because

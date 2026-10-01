@@ -1,7 +1,7 @@
 // Capture a run of consecutive sub-tick frames around one engagement, so the interpolation and
 // effect animation between ticks can actually be looked at rather than guessed at from two whole
 // ticks apart. This is expensive to look at — many PNGs, each needing a careful glance — so it is a
-// deliberate, on-request tool, not part of any default evidence pass.
+// deliberate, on-request tool, not part of any default screenshot run.
 //
 // The method the owner asked for:
 //   1. run the simulation headless to get the event log, no rendering;
@@ -14,7 +14,7 @@
 //   node scripts/capture-engagement.mjs --scenario grand-battle --lead-ticks 2 --frames 12
 //   node scripts/capture-engagement.mjs --scenario ravel-cascade --around-tick 48 --frames 20
 //
-// Output lands in evidence/screenshots/engagement-<scenario>/frame-NN.png, oldest first, plus an
+// Output lands in docs/screenshots/engagement-<scenario>/frame-NN.png, oldest first, plus an
 // index.md naming the presentation-ms each one landed on.
 
 import { mkdirSync, rmSync, writeFileSync } from "node:fs"
@@ -56,7 +56,7 @@ const tileWidth = arg("tile-width", "1")
 const cols = Number(arg("cols", "80"))
 const rows = Number(arg("rows", "24"))
 
-const outputDirectory = join(repoRoot, "evidence", "screenshots", `engagement-${scenario}`)
+const outputDirectory = join(repoRoot, "docs", "screenshots", `engagement-${scenario}`)
 const scratch = join(repoRoot, ".capture-tmp")
 
 /**

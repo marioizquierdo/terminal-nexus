@@ -1,6 +1,6 @@
 // The scenario loader. **Validation lives here, not in a later linter** — dimension mismatch,
 // unknown legend key, overlapping footprint, and unknown content id all fail loudly, naming the
-// offending line and column (milestone-1-spike-battle.md 3.5).
+// offending line and column.
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { FIXTURE_REGISTRY, freshEntityFields } from "../content/index.ts"
@@ -21,12 +21,12 @@ export class ScenarioError extends Error {}
  * A scenario declares its own grid size — there is no autoscroll, streaming, or chunked geography
  * yet, so an unbounded custom grid isn't a slow map, it's an unbounded per-tick allocation:
  * `OccupancyIndex` sizes four `Int32Array`s to `width * height` and rebuilds them every tick
- * (grid/occupancy.ts). This cap is a declared-mode convention, not a canon promise about what the
+ * (grid/occupancy.ts). This cap is a declared-mode convention, not a promise about what the
  * engine can render or path across — it exists so a mistyped or exploratory scenario fails loudly
  * at load time instead of degrading silently, tick after tick. The largest current preset
  * (extra-large-extra-wide, 72x24 = 1728 tiles) has roughly 5x headroom under it; raise it
- * deliberately, with evidence, when a scenario actually needs to be bigger — see
- * specs/engine.md 11 ("Scaling toward hundreds or thousands of units").
+ * deliberately, with measurements, when a scenario actually needs to be bigger — see
+ * docs/system-design/grid-engine.md ("Scaling toward hundreds or thousands of units").
  */
 export const MAX_DECLARED_GRID_TILES = 10_000
 
@@ -194,7 +194,7 @@ export function loadScenario(
       // that entity's mask with `terrain: "impassable"` (src/pulse/shared.ts), so a unit placed on
       // rock is entombed from tick zero: it cannot leave the tile, and every tick after that it
       // reports itself blocked. Nothing downstream errors, which is why four units in
-      // `citizen-mirror-skirmish` sat inside the eastern rock for the whole of Gate 1A without
+      // `citizen-mirror-skirmish` sat inside the eastern rock for the whole of the first battles without
       // anyone noticing. Air ignores terrain, exactly as its mask does.
       if (definition.layer !== "air") {
         const terrainId = tiles[tile.y * width + tile.x]

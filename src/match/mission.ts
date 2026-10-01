@@ -1,4 +1,4 @@
-// The trigger runner's simulation band (gate 6B) — campaigns.md Section 2.1: a mission's triggers decide
+// The trigger runner's simulation band — campaigns.md: a mission's triggers decide
 // what each Pulse brings and when the mission is over.
 //
 // **It drives the kernel and never changes it.** A Pulse of a mission is resolved here the way
@@ -15,8 +15,8 @@
 //   them exactly as it learns of a spawner's children. They act from the next tick.
 //
 // campaigns.md imagines scripted actions running "inside the kernel, as scripted intents"; the kernel has
-// no door for intents yet (engine.md Section 8's narrow hook is unbuilt), so between ticks is the nearest
-// place that needs no kernel change — a finding, recorded in evidence/gate-6b-report.md Section 7.
+// no door for intents yet (the narrow hook content.md describes is unbuilt), so between ticks is the nearest
+// place that needs no kernel change — a finding recorded in docs/history/reports/2026-09-30-round-loop-and-missions.md.
 //
 // One consequence is deliberate and visible: **the kernel's victory rule still ends a Pulse the moment a
 // side is wiped out**, so a reinforcement scheduled after that tick never comes. The victory check reads
@@ -24,7 +24,7 @@
 // roster for the rest of the Pulse, so a side that only arrives later can still be wiped out, and win.
 //
 // After the Pulse, the triggers waiting for its end are read in list order and the first `win` or `lose`
-// decides the mission — the kernel's own outcome is never overridden, only read (Q36: a mission's goal is
+// decides the mission — the kernel's own outcome is never overridden, only read (a mission's goal is
 // resolved here, one level above the victory check, which stays the fallback for a battle with no
 // mission). Deterministic like the kernel: no clock, no unseeded randomness, nothing drawn.
 

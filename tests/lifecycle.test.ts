@@ -1,4 +1,4 @@
-// Terminal lifecycle — engine.md 10.1 and milestone-1-spike-battle.md 3.8.
+// Terminal lifecycle (docs/system-design/runtime.md, "Terminal lifecycle").
 //
 // "A renderer that leaves the terminal in raw mode is a reason to reject it." These tests drive the
 // backend against fake streams, because the lifecycle cases matter more than the frame rate does.
@@ -53,8 +53,7 @@ function fakes(): { stdout: FakeStdout; stdin: FakeStdin } {
   return { stdout: new FakeStdout(), stdin: new FakeStdin() }
 }
 
-// The shared disposer itself (src/cli/lifecycle.ts) — extracted out of `watch.ts` for Milestone 3
-// gate 3A so `grid watch` and `terminal-nexus`'s menu build on one implementation, not two.
+// The shared disposer itself (src/cli/lifecycle.ts) — extracted out of `watch.ts` so `grid watch` and `terminal-nexus`'s menu build on one implementation, not two.
 
 test("createTerminalSession runs every dispose step exactly once, in order, no matter how many times dispose() is called", async () => {
   const order: string[] = []

@@ -1,7 +1,7 @@
 // One step of a key script into a Build Phase session, through the real adapters: a key as the bytes
 // a terminal sends, a click as the SGR press and release it reports, at the cell where the named tile
 // is drawn right now. Shared by the scripted playtest (`./build.ts`) and the live screen's "start in
-// this state" (`--keys`, `src/cli/spike.ts`), so a state reached by a script is the state a player
+// this state" (`--keys`, `src/cli/build-phase.ts`), so a state reached by a script is the state a player
 // reaches by the same keys.
 
 import type { BuildLayout } from "../build/layout.ts"

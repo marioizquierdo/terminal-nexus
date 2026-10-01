@@ -1,5 +1,5 @@
-// The terminal boundary — engine.md 9.1. An engine-owned structured cell frame, and an excellent
-// snapshot surface. No backend object ever appears inside a frame.
+// The terminal boundary (`docs/system-design/presentation.md`). An engine-owned structured cell frame, and an
+// excellent snapshot surface. No backend object ever appears inside a frame.
 
 import type { CapabilityMode, SeeThrough, RoleTint, StyleRole, Theme } from "./roles.ts"
 import { DEFAULT_THEME, resolveCell } from "./roles.ts"
@@ -15,16 +15,16 @@ export type CellStyle = Readonly<{
   inverse?: boolean
   /**
    * A continuous decay/stacking scalar for `fgRole`, `0` (the role's own colour) to `1` (the theme's
-   * background) — Q25's transparency half, engine.md 9.1's RULE amendment, canon 2.8. Resolved only
+   * background) — the transparency half of the style model. Resolved only
    * at `color256` and `truecolor` (`roles.ts`'s `sgrFor`); has no representable effect at `color16` or
    * `monochrome`, which stay exactly as bold/dim/inverse already describe them. Set by
    * `fx.damage.flash`, and in chrome by the card reveal and a popup's breathing border —
-   * ascii-effects.md craft rule 7's departures are narrow and deliberate, not a general fade-out
-   * license for glyph-bearing effects.
+   * the craft rule in `effects.md` against fading glyphs has narrow, deliberate exceptions, not a
+   * general fade-out license for glyph-bearing effects.
    */
   fade?: number
   /**
-   * `fgRole` pulled part of the way toward another role (gate 5I): light on a placed building's
+   * `fgRole` pulled part of the way toward another role: light on a placed building's
    * characters, and its rainbow. A role and a number, never a colour — `roles.ts`'s `RoleTint` says
    * how each tier resolves it (a real blend at 256 colours and truecolor, a step onto the other role's
    * hue at 16, nothing in monochrome). Set only by shading — a glyphless effect cell's `tint`
@@ -32,7 +32,7 @@ export type CellStyle = Readonly<{
    */
   tint?: RoleTint
   /**
-   * A see-through cursor over the cell (feedback F64-F65) — `roles.ts`'s `SeeThrough` says how it
+   * A see-through cursor over the cell — `roles.ts`'s `SeeThrough` says how it
    * mixes, and `seeThroughColours` (which `resolveCell` calls for every renderer) how each tier resolves it. Presentation's
    * own, like `tint`: set by a glyphless write, so the glyph beneath always survives (the corruption
    * law). A later glyphless write that carries its own `seeThrough` replaces this one; the two are not
@@ -55,7 +55,7 @@ export interface TerminalBackend {
   stop(): Promise<void>
   /**
    * Changes which colour depth and background future `present()` calls resolve roles against,
-   * without re-entering the alternate screen or touching raw mode — Gate 3B's Settings screen needs
+   * without re-entering the alternate screen or touching raw mode — the Settings screen needs
    * a colour change to redraw instantly, not flash the terminal by stopping and restarting the whole
    * backend. Optional: a backend whose session never changes these (`grid watch`'s fixed-for-the-
    * session use) may simply not implement it.
@@ -67,12 +67,12 @@ export const BLANK: Cell = { glyph: " ", style: {} }
 
 /**
  * A band write with no glyph: keep whatever glyph is already there and apply this style over it.
- * `fx.damage.flash` is the reason it exists — ascii-effects.md 5 allows exactly one effect to touch
+ * `fx.damage.flash` is the reason it exists — `effects.md` allows exactly one effect to touch
  * a unit's own cell, and only as an attribute, never as a glyph replacement.
  */
 export type BandCellStyleOnly = Readonly<{ band: number; x: number; y: number; style: CellStyle }>
 
-/** Bands, not free z-indexes — engine.md 9.4. The Grid layers map onto them directly. */
+/** Bands, not free z-indexes (`presentation.md`). The Grid layers map onto them directly. */
 export const BANDS = {
   terrain: 1,
   territory: 2,
@@ -166,7 +166,7 @@ export function frameToAnsi(
 
 /**
  * Glyphs the optional Unicode pack is allowed to use. ASCII-safe is the baseline and no glyph
- * outside it is ever *required* (engine.md 9.6); the pack may map the same semantic roles to these,
+ * outside it is ever *required* (`presentation.md`); the pack may map the same semantic roles to these,
  * and to nothing else, so a stray wide or combining character cannot reach a frame unnoticed.
  */
 const PACK_GLYPHS = new Set([
@@ -193,13 +193,13 @@ const PACK_GLYPHS = new Set([
 
 /**
  * The Box Drawing and Block Elements blocks (U+2500-U+259F), whole: one-cell, never combining, and
- * what the map-edge styles are made of (feedback F25) — a heavy or double line meets the frame's light
+ * what the map-edge styles are made of — a heavy or double line meets the frame's light
  * rules in mixed-weight junctions (`src/view/edge.ts`), and listing each of those here by hand would be
  * a second copy of that table to keep in step.
  */
 const BOX_AND_BLOCKS = { from: 0x2500, to: 0x259f } as const
 
-/** Every gameplay glyph occupies exactly one cell — engine.md 9.6. Asserted, not assumed. */
+/** Every gameplay glyph occupies exactly one cell (`presentation.md`). Asserted, not assumed. */
 export function offendingGlyph(frame: ReadonlyCellFrame): string | null {
   for (const cell of frame.cells) {
     if ([...cell.glyph].length !== 1) return cell.glyph

@@ -1,5 +1,5 @@
 // Particles — the presentation toolkit's glyph-bearing family: short-lived characters thrown around
-// something, never onto it (owner, 2026-09-28: "particle-inspired effects"). A particle cell that lands
+// something, never onto it (Mario asked for "particle-inspired effects"). A particle cell that lands
 // on an occupied tile is dropped by the compositor (the corruption law), so a recipe here never has to
 // remember where the buildings are — though a good one aims away from them anyway.
 //

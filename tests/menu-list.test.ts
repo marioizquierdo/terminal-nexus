@@ -20,7 +20,7 @@ test("createMenuList starts highlighted on the first item", () => {
 })
 
 test("moveHighlight stops at both ends of the list, and a jump goes all the way to one", () => {
-  // It wrapped until the owner's 2026-09-30 feedback F75: "should not rotate ... if I keep down pressed,
+  // It wrapped until the owner's 2026-09-30 playtest: "should not rotate ... if I keep down pressed,
   // it should quickly move to the bottom and stay there".
   const state = createMenuList(ITEMS)
   assert.equal(moveHighlight(state, 1), 1)

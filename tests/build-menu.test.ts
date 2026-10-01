@@ -1,4 +1,4 @@
-// The Build Phase menu (docs/ui-patterns.md, "Menu rows" and "The Build Phase menu"): one list —
+// The Build Phase menu (docs/system-design/ui-patterns.md, "Menu rows" and "The Build Phase menu"): one list —
 // Explore Map, Nexus, the credits line with the map's resource symbol, every building with its cost,
 // Start Pulse on the last line — drawn where the mouse finds it; a row's two states, highlighted and
 // active, and its two brief acknowledgements, pressed and refused; Left and Right that only flicker; and
@@ -7,7 +7,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { SPIKE_CATALOG } from "../src/build/catalog.ts"
+import { STARTER_CATALOG } from "../src/build/catalog.ts"
 import {
   CARD_HEADER_ROW,
   CREDITS_ROW,
@@ -22,7 +22,7 @@ import {
 } from "../src/build/layout.ts"
 import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct, menuEntries, remaining, startEntry } from "../src/build/state.ts"
 import type { ConstructItem } from "../src/build/types.ts"
-import { spikeContext } from "../src/cli/spike.ts"
+import { starterContext } from "../src/cli/build-phase.ts"
 import type { RowAck } from "../src/view/build.ts"
 import type { Cell } from "../src/view/frame.ts"
 import { cellAt } from "../src/view/frame.ts"
@@ -49,7 +49,7 @@ import {
 } from "./build-helpers.ts"
 import type { Side } from "./build-helpers.ts"
 
-const barracksRow = (side: Side): number => menuEntryRow(side.layout, SPIKE_CATALOG, { kind: "construct", index: 0 }) as number
+const barracksRow = (side: Side): number => menuEntryRow(side.layout, STARTER_CATALOG, { kind: "construct", index: 0 }) as number
 
 // --- The list and the credits line ---------------------------------------------------------------------
 
@@ -60,12 +60,12 @@ test("the menu reads Explore Map, Nexus, the credits line, every building with i
       const { layout } = side
       const frame = compose(side, { glyphPack: pack }, "truecolor")
       const line = (row: number): string => panelLine(side, frame, row)
-      // Explore Map and Nexus on the first two lines, with no blank line between them (feedback F72).
+      // Explore Map and Nexus on the first two lines, with no blank line between them.
       assert.deepEqual([EXPLORE_ROW, NEXUS_ROW, CREDITS_ROW], [0, 1, 2])
       assert.match(line(panelRow(side, EXPLORE_ROW)), /^\[e\] Explore Map +$/)
       assert.match(line(panelRow(side, NEXUS_ROW)), /^\[n\] Nexus \(1\) +$/)
       // The credits: the map's own deposit glyph and what is left to spend, right-aligned where the costs
-      // end, the symbol in the deposit's colour and the amount in the title's (F71).
+      // end, the symbol in the deposit's colour and the amount in the title's.
       const deposit = terrainGlyph("terrain.deposit", pack)
       assert.equal(deposit.glyph, pack === "ascii" ? "*" : "◆")
       assert.equal(line(panelRow(side, CREDITS_ROW)), `${deposit.glyph} ${remaining(side.context, side.build.state)}`.padStart(layout.panelLimit))
@@ -76,8 +76,8 @@ test("the menu reads Explore Map, Nexus, the credits line, every building with i
       assert.equal(amount.style.fgRole, "chrome.title")
       assert.equal(amount.style.bold, true)
       // The buildings from the line after the credits, one row apart, each cost ending where the credits do.
-      const lines = constructLines(layout, SPIKE_CATALOG)
-      SPIKE_CATALOG.forEach((item, index) => {
+      const lines = constructLines(layout, STARTER_CATALOG)
+      STARTER_CATALOG.forEach((item, index) => {
         assert.equal(lines[index]?.row, panelRow(side, CREDITS_ROW) + 1 + index, "the buildings are not one row apart under the credits")
         assert.equal(line(lines[index]?.row as number), `[${item.hotkey}] ${item.label}`.padEnd(layout.panelLimit - String(item.cost).length) + String(item.cost))
       })
@@ -96,7 +96,7 @@ test("the credits line counts down as the plan grows, and leaves with the menu o
   const credits = (): string => panelLine(side, compose(side), panelRow(side, CREDITS_ROW)).trim()
   assert.equal(credits(), `* ${side.context.allotment}`)
   keys(side, "1", ENTER) // a Barracks, back on the menu
-  assert.equal(remaining(side.context, side.build.state), side.context.allotment - (SPIKE_CATALOG[0] as ConstructItem).cost)
+  assert.equal(remaining(side.context, side.build.state), side.context.allotment - (STARTER_CATALOG[0] as ConstructItem).cost)
   assert.equal(credits(), `* ${remaining(side.context, side.build.state)}`)
   keys(side, "n", "1", "s", "s")
   assert.equal(side.build.state.committed, true)
@@ -121,14 +121,14 @@ test("the map draws its deposits with the very glyph the credits line uses", () 
 
 test("a building row the panel is too short for is neither drawn nor a click target", () => {
   // Three more buildings than the floor's panel holds between Nexus and Start Pulse.
-  const floor = buildLayout(MINIMUM, spikeContext().grid)
+  const floor = buildLayout(MINIMUM, starterContext().grid)
   const room = menuFloor(floor) - (floor.panelRow + CREDITS_ROW + 1) + 1
   const long: ConstructItem[] = Array.from({ length: room + 3 }, (_, index) => ({
-    ...(SPIKE_CATALOG[index % SPIKE_CATALOG.length] as ConstructItem),
+    ...(STARTER_CATALOG[index % STARTER_CATALOG.length] as ConstructItem),
     label: `Row ${index + 1}`,
     hotkey: String((index + 1) % 10),
   }))
-  const side = buildSide({ context: { ...spikeContext(), catalog: long } })
+  const side = buildSide({ context: { ...starterContext(), catalog: long } })
   const { layout } = side
   const lines = constructLines(layout, long)
   assert.ok(lines.length < long.length, "the floor's panel holds every row: the test needs a longer list")
@@ -149,19 +149,19 @@ test("every menu row is drawn where the mouse finds it and where the keyboard's 
   const base = buildSide()
   const { layout } = base
   menuEntries(base.context).forEach((target, entry) => {
-    const row = menuEntryRow(layout, SPIKE_CATALOG, target) as number
-    assert.equal(menuEntryAt(layout, SPIKE_CATALOG, layout.panelColumn + 2, row), entry, `the mouse does not find entry ${entry} on its row`)
+    const row = menuEntryRow(layout, STARTER_CATALOG, target) as number
+    assert.equal(menuEntryAt(layout, STARTER_CATALOG, layout.panelColumn + 2, row), entry, `the mouse does not find entry ${entry} on its row`)
     const side = buildSide()
     for (let step = 0; step < entry; step += 1) keys(side, DOWN)
     assert.equal(cellAt(compose(side), layout.panelColumn + layout.panelLimit - 1, row).style.inverse, true, `the bar for entry ${entry} is not on its row`)
   })
-  assert.equal(menuEntryAt(layout, SPIKE_CATALOG, layout.panelColumn + 2, panelRow(base, CREDITS_ROW)), null)
+  assert.equal(menuEntryAt(layout, STARTER_CATALOG, layout.panelColumn + 2, panelRow(base, CREDITS_ROW)), null)
 })
 
 // --- Highlighted and active ------------------------------------------------------------------------------
 
 test("an active row keeps its own hotkey and ends in one >, all in the hotkey colour and bold, never underlined or barred — one look for every row, at every colour depth", () => {
-  // `[1] Barracks  >` (owner, 2026-09-30, feedback F67, F70). A building and Explore Map head their
+  // `[1] Barracks  >` (owner, 2026-09-30). A building and Explore Map head their
   // card; Nexus and Start Pulse stay on the menu behind their popup.
   const cases: readonly [string, readonly string[], (side: Side) => number, RegExp][] = [
     ["a building by its digit", ["1"], (side) => panelRow(side, CARD_HEADER_ROW), /^\[1\] Barracks +>$/],
@@ -199,7 +199,7 @@ test("a popup that belongs to no row — the game menu, Settings, the Controls p
     keys(side, ...open)
     assert.notEqual(side.build.state.popup, null, `${JSON.stringify(open)} opened nothing`)
     for (const target of menuEntries(side.context)) {
-      const row = menuEntryRow(side.layout, SPIKE_CATALOG, target) as number
+      const row = menuEntryRow(side.layout, STARTER_CATALOG, target) as number
       const style = cellAt(compose(side), side.layout.dividerColumn - 2, row).style
       assert.notEqual(style.inverse, true, `${side.build.state.popup}: the menu's bar is lit on row ${row}`)
     }
@@ -227,7 +227,7 @@ test("a menu row's looks: highlighted is the bar; pressed, a stronger bar in the
       pressed.every((cell) => cell.style.inverse === true && cell.style.fgRole === "chrome.hotkey" && cell.style.bold === true && cell.style.underline === true),
       `${capability}: the pressed bar is not the stronger one`,
     )
-    // Refused (feedback F61): the same words, the bar exactly the bar on every cell, nothing loud added.
+    // Refused: the same words, the bar exactly the bar on every cell, nothing loud added.
     const refused = cellsOf({ kind: "refused", entry: EXPLORE_ENTRY })
     assert.deepEqual(refused.map((cell) => cell.glyph), highlighted.map((cell) => cell.glyph), "the flicker changed the row's words")
     refused.forEach((cell, index) => {
@@ -324,7 +324,7 @@ test("a placement begun on the menu comes back with the building's row flashing 
   assert.equal(byKey.build.state.focus, "menu")
   assert.deepEqual(byKey.build.state.ack, { seq: armedSeq + 1, kind: "pressed", entry: entryOfConstruct(1) })
   // The flash plays on the row the player comes back to.
-  const row = menuEntryRow(byKey.layout, SPIKE_CATALOG, { kind: "construct", index: 1 }) as number
+  const row = menuEntryRow(byKey.layout, STARTER_CATALOG, { kind: "construct", index: 1 }) as number
   const flash = { kind: "pressed", entry: entryOfConstruct(1) } as const
   assert.equal(cellAt(compose(byKey, { ack: flash }), byKey.layout.dividerColumn - 1, row).style.underline, true)
 

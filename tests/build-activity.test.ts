@@ -1,6 +1,4 @@
-// The Activity logs window and the game logging into it (owner, 2026-10-01, feedback F90-F91): "a new
-// option for 'activity logs' that opens a scrolling window with logs in reverse chronological order ...
-// simple filtering mechanism and an export button." The window is a popup in the one shape, reached from
+// The Activity logs window and the game logging into it. The window is a popup in the one shape, reached from
 // the game menu; the list is frozen when it opens; the export goes through the session to the shell; and
 // the session records what happens, schema-valid, without ever changing what the reducer does. Driven
 // through raw bytes into the real adapters where an adapter is what is claimed.
@@ -17,13 +15,13 @@ import {
   activityExportText,
   shownEntries,
 } from "../src/build/activity.ts"
-import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
+import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { settingColumns, wrapWords } from "../src/build/popup.ts"
 import { ACTIVITY_DESCRIPTION, GAME_MENU_ROWS } from "../src/build/settings.ts"
 import type { BuildState } from "../src/build/state.ts"
 import type { BuildCommand, ExportKind } from "../src/build/types.ts"
 import { startPulse } from "../src/cli/pulse-run.ts"
-import { runSpike, spikeContext } from "../src/cli/spike.ts"
+import { runBuildPhase, starterContext } from "../src/cli/build-phase.ts"
 import { ACTIVITY_EVENTS, ACTIVITY_FILTERS, createLogger, entryProblems, formatActivityExport, parseLogLine } from "../src/log/index.ts"
 import type { LogEntry } from "../src/log/index.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
@@ -379,7 +377,7 @@ test("export hands the shell the filter's frozen entries, oldest first, and says
 })
 
 test("the export's message names where the text went, when the shell says", () => {
-  const side = buildSide({ context: { ...spikeContext(), activityExportDestination: "Copied to the clipboard." } })
+  const side = buildSide({ context: { ...starterContext(), activityExportDestination: "Copied to the clipboard." } })
   keys(side, ESC, "a", "e")
   assert.match(side.build.state.message?.text ?? "", /Copied to the clipboard\.$/)
   // Outside the window, the command does nothing: a driver cannot export what nobody saw.
@@ -452,7 +450,7 @@ test("placing a building records a schema-valid build.placed with its building, 
 test("a refusal records why, and its tile; every command records the bottom line's answer when it gave one", () => {
   const side = session()
   keys(side, TAB, "1")
-  side.build.dispatch({ kind: "look-at", x: SPIKE_START_CURSOR.x, y: SPIKE_START_CURSOR.y }) // onto the Grid Nexus
+  side.build.dispatch({ kind: "look-at", x: STARTER_START_CURSOR.x, y: STARTER_START_CURSOR.y }) // onto the Grid Nexus
   keys(side, ENTER)
   const refused = side.activity.entries().filter((entry) => entry.event === "build.refused")
   assert.equal(refused.length, 1)
@@ -576,10 +574,10 @@ test("what the reducer does never depends on what was logged", () => {
 
 test("a session given no log of its own records into the game's global one", async () => {
   const { activity } = await import("../src/log/activity.ts")
-  const side = buildSide({ context: spikeContext() })
+  const side = buildSide({ context: starterContext() })
   // buildSide gives every test session a log of its own; a bare session uses the global.
   const { BuildSession } = await import("../src/build/session.ts")
-  const bare = new BuildSession({ context: spikeContext(), cursor: SPIKE_START_CURSOR, viewport: side.layout.viewport })
+  const bare = new BuildSession({ context: starterContext(), cursor: STARTER_START_CURSOR, viewport: side.layout.viewport })
   const before = activity.lastSeq
   bare.dispatch({ kind: "focus", target: "grid" } satisfies BuildCommand)
   assert.equal(activity.lastSeq, before + 1)
@@ -631,7 +629,7 @@ test("the live screen records where it started, and hands an Activity Logs expor
   const stdin = new FakeStdin()
   const log = activityLog()
   const exported: Exported[] = []
-  const running = runSpike({
+  const running = runBuildPhase({
     settings: { ...DEFAULT_SETTINGS, capability: "monochrome" },
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,

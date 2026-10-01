@@ -1,16 +1,14 @@
-// The Activity logs window, as the Build Phase sees it (owner, 2026-10-01, feedback F91: "The menu should
-// have a new option for 'activity logs' that opens a scrolling window with logs in reverse chronological
-// order. This screen will be ugly, but it should have simple filtering mechanism and an export button").
-// The log itself lives outside the reducer (`src/log/activity.ts`): the session and the shells record into
+// The Activity logs window, as the Build Phase sees it: a plain scrolling list of what was recorded,
+// newest first, with a filter and an export. The log itself lives outside the reducer (`src/log/activity.ts`): the session and the shells record into
 // it; nothing here ever writes to one.
 //
 // **The reducer reads the log for this window only**, through a read-only source in its context
 // (`BuildContext.activity`), and for two things: when the window opens it keeps a copy of the entries
 // (`BuildState.activityFrozen`), so the list holds still while it is read — every key pressed in the
 // window is logged too, and would otherwise push the rows down under the player, or, once the log is full,
-// drop its oldest rows from under them ("don't move things under the player"); and it counts the list's
-// rows, so Up and Down stop at its ends. What a filter shows is
-// the frozen entries, newest first; an export is the same entries, oldest first, so it reads as a story.
+// drop its oldest rows from under them (the interface rule: don't move things under the player); and it
+// counts the list's rows, so Up and Down stop at its ends. What a filter shows is the frozen entries,
+// newest first; an export is the same entries, oldest first, so it reads as a story.
 //
 // **For an agent preparing a demo**: the events and the filters are data in `src/log/activity.ts` — add
 // your event and your filter there (the window opens on the first filter); nothing in this file changes.

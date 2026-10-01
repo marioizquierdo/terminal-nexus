@@ -116,7 +116,7 @@ view answers "is this legible," not "is this correct."
 ## Writing a map
 
 Every rule gets a named, checked-in `.map.json` file — that is the regression suite and the
-documentation at once (`AGENTS.md`, `milestones/milestone-01-grid-battles.md` 3.5). A map is plain JSON, the same
+documentation at once (`AGENTS.md`, `docs/milestones/completed/milestone-01-grid-battles.md` 3.5). A map is plain JSON, the same
 shape a campaign level and a map-editor-authored map will eventually share:
 
 ```json
@@ -194,8 +194,8 @@ this tool's own entry points. `scenarios/*.map.json` — the fixtures themselves
 - [`grid-screenshots`](../grid-screenshots/SKILL.md) — capturing PNG screenshots of the ASCII view
   for visual judgment, a narrower and different workflow from this one.
 - [`../../../AGENTS.md`](../../../AGENTS.md) — the operating contract this skill is a companion to.
-- [`../../../specs/engine.md`](../../../specs/engine.md) Section 11, and
-  [`../../../milestones/milestone-01-grid-battles.md`](../../../milestones/milestone-01-grid-battles.md)
-  Section 3 — the canon this tool implements.
-- [`../../../specs/replay-format.md`](../../../specs/replay-format.md) — the designed-but-unbuilt
+- [`docs/system-design/runtime.md`](../../../docs/system-design/runtime.md) — the design of the tool, and
+  [`docs/milestones/completed/milestone-01-grid-battles.md`](../../../docs/milestones/completed/milestone-01-grid-battles.md)
+  — the milestone that built it.
+- [`docs/system-design/replay-format.md`](../../../docs/system-design/replay-format.md) — the designed-but-unbuilt
   `.replay.json` format this tool will eventually read and write, one layer above a single map.

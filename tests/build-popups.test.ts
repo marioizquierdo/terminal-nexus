@@ -1,4 +1,4 @@
-// Popups (docs/ui-patterns.md, "Popups"): one shape with a shadow; Settings' rows, its position beside
+// Popups (docs/system-design/ui-patterns.md, "Popups"): one shape with a shadow; Settings' rows, its position beside
 // the title, Export as the list's last row and what the highlighted row is for under a line; a message
 // popup for "a restart is needed" and the game menu's Restart; a scroll bar in a popup's right border;
 // and the top bar's right end saying what Esc does, in place of every popup's own `[esc]`. Driven through raw bytes into the
@@ -26,7 +26,7 @@ import type { RestartFieldSpec } from "../src/build/settings.ts"
 import type { BuildContext, BuildState } from "../src/build/state.ts"
 import { applyBuildCommand, createBuildState } from "../src/build/state.ts"
 import type { BuildCommand } from "../src/build/types.ts"
-import { spikeContext } from "../src/cli/spike.ts"
+import { starterContext } from "../src/cli/build-phase.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 import { chromeGlyph } from "../src/view/theme.ts"
@@ -230,7 +230,7 @@ function withMessage(context: BuildContext, under: "game-menu" | null): BuildSta
 }
 
 test("a message popup: a title and its text, nothing to choose, closed by Esc or a click outside and nothing else", () => {
-  const context = spikeContext()
+  const context = starterContext()
   const layout = buildLayout(MINIMUM, context.grid)
   const state = withMessage(context, null)
   // Its shape: a title, and text wrapped in as many lines as it needs — no option anywhere.
@@ -243,8 +243,8 @@ test("a message popup: a title and its text, nothing to choose, closed by Esc or
   const drawn = frameToText(composeBuildFrame({ context, state, layout }, "monochrome"))
   assert.match(drawn, /Read it, then \[esc\] or a click outside closes it\./, "the bottom line names the ways to close it")
 
-  // The keyboard: Esc and x close it (x as `back`, which is Esc's walk back in a popup — feedback
-  // F62); nothing else reaches it or anything under it.
+  // The keyboard: Esc and x close it (x as `back`, which is Esc's walk back in a popup);
+  // nothing else reaches it or anything under it.
   const keyboard = { itemCount: 3, armed: false, focus: "menu" as const, popup: "message" as const }
   assert.deepEqual(buildKeyboardCommand(ESC, keyboard), { kind: "cancel" })
   assert.deepEqual(buildKeyboardCommand("x", keyboard), { kind: "back" })
@@ -330,7 +330,7 @@ test("the game menu's Restart: r, Enter on its row, and a click on it start the 
 test("a list that overflows has a scroll bar in the popup's right border, drawn from the placed shape, in every glyph pack", () => {
   // Settings and the Controls page at every size: each overflows or fits whole, and only one that
   // overflows has a bar. The Controls page always overflows, so there is always a bar to check.
-  // The track is the plain border and the thumb carries its own texture (feedback F78: "keep the same
+  // The track is the plain border and the thumb carries its own texture ("keep the same
   // background as the regular border, but add different texture for the bar") — never the shadow's.
   let bars = 0
   let thumbs = 0
@@ -548,7 +548,7 @@ test("no popup carries [esc] in its border, and its corner is no click target", 
     assert.deepEqual(side.build.state, before, `${JSON.stringify(steps)}: a click on the popup's corner did something`)
   }
   // The message popup too.
-  const context = spikeContext()
+  const context = starterContext()
   const layout = buildLayout(MINIMUM, context.grid)
   const state = withMessage(context, null)
   const popup = placePopup(layout, popupSpec(context, state) as PopupSpec)

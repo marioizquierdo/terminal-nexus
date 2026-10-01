@@ -7,7 +7,7 @@
 // nothing about how the composition *looks* — spacing, density, where the eye goes, whether colour
 // helps or clutters. This drives the real binary inside a real pseudo-terminal (tmux), captures
 // what the terminal actually holds, and renders it to a PNG through the browser already installed
-// in this environment. It is an evidence and design tool, not part of the game.
+// in this environment. It is a design tool, not part of the game.
 //
 // The capture pipeline itself lives in scripts/lib/terminal-capture.mjs, shared with
 // capture-engagement.mjs — this file is just the list of shots and how each one is driven to its
@@ -30,7 +30,7 @@ import {
 } from "./lib/terminal-capture.mjs"
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
-const outputDirectory = join(repoRoot, "evidence", "screenshots")
+const outputDirectory = join(repoRoot, "docs", "screenshots")
 const scratch = join(repoRoot, ".capture-tmp")
 const SESSION = "nexus-capture"
 
@@ -219,10 +219,9 @@ const shots = [
     glyphs: "unicode",
   },
   {
-    // Q25 (specs/open-questions.md), option A: the 256-colour tier is now derived from rgb rather
-    // than a fourth hand-authored column. Same real fight frame as "ravels-clash" above, at the
-    // 256-colour tier specifically, captured once per formula (see the gate report for how the
-    // "hand-authored" half was produced) so the owner can judge whether derived reads worse before
+    // The 256-colour tier is derived from rgb rather than a fourth hand-authored column. Same real
+    // fight frame as "ravels-clash" above, at the 256-colour tier specifically, captured once per formula (the "hand-authored" half came from the
+    // table as it stood before the change) so the owner can judge whether derived reads worse before
     // anything else is built on it.
     name: "palette-derivation-256",
     caption: "Tick 178, 256-colour tier - derived from rgb vs. the former hand-authored table",
@@ -235,7 +234,7 @@ const shots = [
   },
   {
     name: "ravels-clash-no-effects",
-    caption: "The same instant with effects off - the comparison the gate is judged on",
+    caption: "The same instant with effects off - the comparison the change is judged on",
     scenario: "citizens-versus-ravels",
     tick: 178,
     cols: 80,
@@ -293,8 +292,8 @@ const shots = [
     // Two ticks later (166.7ms into its 380ms window, progress 0.4386) the eased and un-eased curves
     // disagree about the ring: round(0.4386*2*1.35)=1 under the old linear formula,
     // round(easeOut(0.4386)*2*1.35)=2 under the new one - one tick before the two curves converge
-    // again at reach 2. Captured twice at the identical tick, once per formula (see the gate report
-    // for how the "before" half was produced) rather than only described.
+    // again at reach 2. Captured twice at the identical tick, once per formula (the "before" half came from
+    // the code as it stood before the change) rather than only described.
     name: "easing-blast-ring",
     caption: "Tick 206 - two ticks into B:wagon#20's radius-2 blast, ease-out vs. the old linear ramp",
     scenario: "citizens-versus-ravels",
@@ -318,7 +317,7 @@ const shots = [
     glyphs: "unicode",
   },
 
-  // --- Proving Grounds: the unit-design-architecture spike --------------------------------------
+  // --- Proving Grounds: the unit-design architecture experiment --------------------------------------
   {
     // targetLayers, the ground-air asymmetry rule shape: the grunt (bottom-left) never acquires a
     // target at all - it cannot reach the skyraider - while the flak trooper (top-left) trades fire

@@ -1,4 +1,4 @@
-// A scripted playtest of the Build Phase: the `--spike` screen, driven by a key script through the
+// A scripted playtest of the Build Phase: the `--build-phase` screen, driven by a key script through the
 // real adapters, with every step's frame kept. No terminal, no clock, no capture race — the frames are
 // composed in-process by the very function the live screen presents (`composeBuildFrame`), so step N's
 // frame is exactly what a player would see after pressing step N's key.
@@ -7,14 +7,14 @@
 // Another screen (the main menu, a `grid` battle) would get a sibling of this file with the same
 // shape: take steps, return frames.
 
-import { SPIKE_START_CURSOR } from "../build/catalog.ts"
+import { STARTER_START_CURSOR } from "../build/catalog.ts"
 import { isGated } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import { buildLayout } from "../build/layout.ts"
 import { BuildSession } from "../build/session.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
 import { nextRound, startPulse } from "../cli/pulse-run.ts"
-import { spikeContext } from "../cli/spike.ts"
+import { starterContext } from "../cli/build-phase.ts"
 import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import type { ReadonlyCellFrame } from "../view/frame.ts"
@@ -72,7 +72,7 @@ export type BuildPlaytest = Readonly<{
   layout: BuildLayout
   frames: readonly PlaytestFrame[]
   /**
-   * What the run recorded in the Activity Logs (feedback F90-F91) — a log of its own, on the script's
+   * What the run recorded in the Activity Logs — a log of its own, on the script's
    * clock, so its times are the steps' and two runs of one script log the same lines. The Activity logs
    * window shows it, and `scripts/playtest.mjs --activity` prints its export, so an agent sees what a
    * flow logged before asking a playtester to export it.
@@ -106,7 +106,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   let clock = 0
   const activity = createActivityLog(() => clock)
   const context: BuildContext = {
-    ...(options.context ?? spikeContext()),
+    ...(options.context ?? starterContext()),
     settings,
     exportDestination: "Not copied anywhere: this is a scripted playtest.",
     activity,
@@ -124,7 +124,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   let leftBy: "quit" | null = null
   const build = new BuildSession({
     context,
-    cursor: options.cursor ?? SPIKE_START_CURSOR,
+    cursor: options.cursor ?? STARTER_START_CURSOR,
     viewport: layout.viewport,
     onQuit: () => {
       leftBy = "quit"
@@ -143,7 +143,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     const pulse = build.pulseFrame(layout)
     return composeBuildFrame(
       {
-        // This round's: what stands on the map changes from round to round (gate 6B).
+        // This round's: what stands on the map changes from round to round.
         context: build.round,
         state: build.state,
         layout,

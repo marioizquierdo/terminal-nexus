@@ -1,4 +1,4 @@
-// How the Build Phase documents itself since the owner's menu spike (2026-09-30, feedback F59-F60): one
+// How the Build Phase documents itself since the owner's menu playtest (2026-09-30): one
 // row at the bottom of the screen — the last command's answer, and otherwise a hint for where the
 // keyboard is — and a Controls and hotkeys page in the game menu. Driven through the real session (raw
 // keys and clicks into the adapters) where an adapter is what is being claimed, and through commands
@@ -6,7 +6,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
+import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { isGated } from "../src/build/camera.ts"
 import { CONTROLS_KEYS_WIDTH, CONTROLS_TITLE, HINTS, bottomLine, controlsLineCount, controlsPage, hint, hintSituation } from "../src/build/help.ts"
 import type { HintSituation } from "../src/build/help.ts"
@@ -59,7 +59,7 @@ function silence(side: Side): void {
 // --- One row ---------------------------------------------------------------------------------------
 
 test("the bottom bar is one row, and 80 x 24 shows 49 x 18 tiles of Grid; the floor stays 80 x 24", () => {
-  // The owner (2026-09-30, feedback F59): "The bottom of the UI currently uses 3 rows. We have to reduce
+  // The owner (2026-09-30): "The bottom of the UI currently uses 3 rows. We have to reduce
   // that to 1 row." The rule under the Grid and one line; the two rows saved go to the Grid.
   const side = buildSide()
   const { layout } = side
@@ -112,7 +112,7 @@ test("the answers players rely on still show right after their command, and laps
 test("a refused placement is said in red with its tile, then — lapsed — quietly, while the ghost still sits there", () => {
   const side = buildSide()
   keys(side, TAB, "1") // on the map: the Barracks armed where the cursor is
-  side.build.dispatch({ kind: "look-at", x: SPIKE_START_CURSOR.x, y: SPIKE_START_CURSOR.y }) // onto the Grid Nexus
+  side.build.dispatch({ kind: "look-at", x: STARTER_START_CURSOR.x, y: STARTER_START_CURSOR.y }) // onto the Grid Nexus
   keys(side, ENTER)
   const tried = line(side)
   assert.match(tried.text, /^Cannot build here: the nexus is here at \d+,\d+\.$/)
@@ -205,7 +205,7 @@ test("a hint for every situation the hint list names, each one line that fits th
 // --- The Controls and hotkeys page -------------------------------------------------------------------
 
 test("the game menu lists [c] Controls and hotkeys right after Settings", () => {
-  // Activity logs (feedback F91) sits between Controls and Restart.
+  // Activity logs sits between Controls and Restart.
   assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "activity", "restart", "quit"])
   const side = buildSide()
   keys(side, ESC)

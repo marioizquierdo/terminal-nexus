@@ -1,7 +1,7 @@
 // Animations — frame sequences drawn on an entity's own cells, and the track that decides which
 // frame a building or a unit shows at any instant.
 //
-// One of the four families of the presentation toolkit (owner, 2026-09-28: "particles, shaders and
+// One of the four families of the presentation toolkit (Mario: "particles, shaders and
 // animations ... please pick the right name for them"):
 //
 //   - **Animations** (this file): an entity's own glyphs replaced, for a while, by a short run of
@@ -50,7 +50,7 @@
 // else. A projectile's impact, a unit that crumbles after its death pose — all of it is one more
 // follow-up, never a function called when a frame happens to be drawn.
 //
-// Only `play` is used live today (a building going up, gate 5I). The other three exist so that the
+// Only `play` is used live today (a building going up). The other three exist so that the
 // next use — a unit's attack interrupting its walk, a fast-forwarded Pulse — is a request, not a new
 // system.
 //

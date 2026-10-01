@@ -1,5 +1,5 @@
 // Shared scaffolding for the Build Phase tests — not a test file itself: the runners only pick up
-// `*.test.ts`. A Build Phase on the spike map, driven the way a player drives it: raw key bytes and
+// `*.test.ts`. A Build Phase on the starter map, driven the way a player drives it: raw key bytes and
 // mouse reports into the real adapters (`BuildSession.handleData`), and the frame the screen would draw
 // read back as cells or text. `tests/pulse-helpers.ts` builds a Nexus Pulse on top of it.
 
@@ -15,7 +15,7 @@ import { BuildSession } from "../src/build/session.ts"
 import type { GameMenuRow } from "../src/build/settings.ts"
 import { GAME_MENU_ROWS, settingRow } from "../src/build/settings.ts"
 import type { BuildContext } from "../src/build/state.ts"
-import { spikeContext } from "../src/cli/spike.ts"
+import { starterContext } from "../src/cli/build-phase.ts"
 import type { Coord } from "../src/grid/types.ts"
 import type { BuildCompositionInput } from "../src/view/build.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
@@ -61,9 +61,9 @@ export const ROOMY = { columns: 120, rows: 40 }
 
 /**
  * Open ground three tiles south of the Grid Nexus, where each building fits as it is armed. The real
- * screen opens on the Grid Nexus (`SPIKE_START_CURSOR`), where arming moves the cursor to the nearest
+ * screen opens on the Grid Nexus (`STARTER_START_CURSOR`), where arming moves the cursor to the nearest
  * good spot; a test that is not about that rule starts here, so a building armed stays where the cursor
- * is and the test can say where it goes. A test about the opening passes `cursor: SPIKE_START_CURSOR`.
+ * is and the test can say where it goes. A test about the opening passes `cursor: STARTER_START_CURSOR`.
  */
 export const OPEN_GROUND: Coord = { x: 18, y: 13 }
 
@@ -78,18 +78,18 @@ export type SideOptions = Readonly<{
 }> &
   Pick<BuildSessionOptions, "onQuit" | "onExport" | "onSettingsChange" | "startPulse" | "nextRound" | "activity">
 
-/** An Activity Logs of a test's own (feedback F90-F91), on `now` — a clock standing still at 0 unless
+/** An Activity Logs of a test's own, on `now` — a clock standing still at 0 unless
  *  the test passes one — so nothing a test logs reaches the game's global log, or another test's. */
 export function activityLog(now: () => number = () => 0): ActivityLog {
   return createActivityLog(now)
 }
 
-/** A Build Phase session laid out for `terminal` (the 80 x 24 floor), on the spike map unless told
+/** A Build Phase session laid out for `terminal` (the 80 x 24 floor), on the starter map unless told
  *  otherwise, with the keyboard on the menu as the real screen opens. `quits()` counts the times it
  *  asked to leave. It records into an Activity Logs of its own (`activity`), which its Activity logs
  *  window shows, as the live screen's shows the log it records into. */
 export function buildSide(options: SideOptions = {}): BuildSide {
-  const { context: given = spikeContext(), cursor = OPEN_GROUND, terminal = MINIMUM, onQuit, activity = activityLog(), ...rest } = options
+  const { context: given = starterContext(), cursor = OPEN_GROUND, terminal = MINIMUM, onQuit, activity = activityLog(), ...rest } = options
   const context: BuildContext = given.activity === undefined ? { ...given, activity } : given
   const layout = buildLayout(terminal, context.grid)
   let quits = 0
@@ -191,7 +191,7 @@ export function compose(side: Side, extra: Partial<BuildCompositionInput> = {}, 
   const pulse = build.pulseFrame(layout)
   return composeBuildFrame(
     {
-      // The session's own round: after a Pulse the mission moves on to a new context (gate 6B).
+      // The session's own round: after a Pulse the mission moves on to a new context.
       context: build.round,
       state: build.state,
       layout,

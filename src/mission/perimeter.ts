@@ -1,20 +1,20 @@
-// PERIMETER — Mission 1 — as the trigger list gate 6B runs: three Pulses, the raid arriving in three
-// waves, and the hold (milestone-02-campaign-design.md Section 4.4, campaigns.md Section 2.1's sketch).
+// PERIMETER — Mission 1 — as the trigger list the runner plays: three Pulses, the raid arriving in three
+// waves, and the hold (campaigns.md sketches it).
 //
-// **Played on the Build Phase's placeholder map**, not PERIMETER's own: that map is still an open
-// question (Q38) and a sketch (milestone-02 Section 4.3). The regions below are named for this map's
-// landmarks — the gap in the northern ridge, the open flats to the east — and a real map would carry its
-// own. The units are the disposable fixture rosters Milestone 1 shipped (Citizen troopers and
-// marksmen, "two squads"; Ravel runners and raiders), as Milestone 2 decided: no new content.
+// **Played on the Build Phase's placeholder map**, not PERIMETER's own: whether that map needs
+// real scrolling is still an open question (Q38), and it exists only as a sketch. The regions below
+// are named for this map's landmarks — the gap in the northern ridge, the open flats to the east — and a real map would carry its
+// own. The units are the disposable fixture rosters from the first battles (Citizen troopers and
+// marksmen, "two squads"; Ravel runners and raiders): the campaign design decided on no new content.
 //
 // **The wave sizes are a first tuning, not balance**: chosen against this map and the placeholder
 // construct menu so that the first Pulse is a probe the starting squads can meet, the second needs
 // something built, and the third needs most of what the mission's credits buy
-// (evidence/gate-6b-report.md Section 4 has the outcomes measured against scripted plans).
+// (docs/history/reports/2026-09-30-round-loop-and-missions.md has the outcomes measured against scripted plans).
 //
 // The round texts are placeholder writing in PERIMETER's register ("plain, military, correct"), inside
-// the lore budget; the briefing and debrief in campaigns.md Section 4.2 stay canon and are Milestone 9's
-// to show.
+// the lore budget; the briefing and debrief written in campaigns.md are the designed ones, and the mission-cutscenes
+// milestone is where they are shown.
 
 import type { MissionDefinition } from "./types.ts"
 
@@ -166,6 +166,6 @@ export const PERIMETER: MissionDefinition = {
     2: "They are back, and there are more. Watch the east.",
     3: "This is the push. Hold until their schedule ends.",
   },
-  // The debrief's own first sentence (campaigns.md Section 4.2) for the hold.
+  // The debrief's own first sentence (campaigns.md) for the hold.
   endText: { won: "The perimeter held.", lost: "The Nexus fell." },
 }

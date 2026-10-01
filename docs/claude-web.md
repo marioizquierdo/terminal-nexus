@@ -15,23 +15,22 @@ Claude Code on the web works in an isolated remote environment, creates a task b
    and the OpenTUI backend need it.
 
 Keep the environment setup, `DEVELOPMENT.md`, the dev container, and CI updated together whenever a
-canonical development command changes (`AGENTS.md` Section 5).
+canonical development command changes.
 
 ## Starting a session
 
-There is no fixed kickoff prompt to paste anymore — that was a Gate 1A bootstrap for a repository
-with no code yet, and the repository now has code, tests, and a working tool. `CLAUDE.md` imports
+There is no fixed kickoff prompt to paste anymore. That was a bootstrap for a repository with no
+code yet, and the repository now has code, tests, and a working tool. `CLAUDE.md` imports
 `AGENTS.md`, which gives a fresh session its own orientation instructions (run
-`./scripts/check-repository.sh`, read the specs in order, find the current gate and what it
-authorizes) automatically. Just say what you want done; the agent orients itself.
+`./scripts/check-repository.sh`, read the document index, find the current milestone and its step) automatically. Just say what you want done; the agent orients itself.
 
-**One fresh session per gate, started with a prompt that names the gate.** A long session's context
+**One fresh session per milestone step, started with a prompt that names the step.** A long session's context
 fills and its early decisions blur; a fresh one re-orients from `AGENTS.md` and starts clean. Write the
 prompt so it (1) says what the owner has accepted or promoted, in his voice, so the session records it
-rather than assuming it; (2) names the milestone file, the one gate to take, and what not to start;
-(3) lists what to read (`docs/next-steps.md`, `docs/ui-patterns.md`, the relevant skills); and (4) says
-how to finish (a gate report, and a pull request written with the `pr-description` skill). The prompt
-for the next milestone lives in [`next-steps.md`](next-steps.md); replace it when it is used.
+rather than assuming it; (2) names the milestone file, the one step to take, and what not to start;
+(3) lists what to read (`docs/milestones/next-steps.md`, `docs/system-design/ui-patterns.md`, the relevant skills); and (4) says
+how to finish (a pull request written with the `pr-description` skill). The prompt
+for the next milestone lives in [`next-steps.md`](milestones/next-steps.md); replace it when it is used.
 
 If you want a session to do exactly what an unattended session should do by default — pick up
 outstanding owner feedback and nothing else — a short prompt like this is enough:
@@ -43,9 +42,8 @@ Read CLAUDE.md and follow AGENTS.md. Orient yourself, tell me what's outstanding
 ## Environment notes
 
 Measured on 2026-08-20: the task container provides **Bun 1.3.11** and **Node 22.22.2**; Deno is not
-installed. Milestone 1 dropped its Deno probe partly for this reason — see
-`milestones/milestone-01-grid-battles.md` Section 3.2. The pinned toolchain versions a session actually
-runs against are recorded fresh in each gate's evidence report, not here — re-check rather than
+installed. Milestone 1 dropped its Deno probe partly for this reason. The
+toolchain versions a session actually runs against are in `DEVELOPMENT.md`; re-check rather than
 assume this measurement still holds.
 
 ## Optional GitHub `@claude` automation

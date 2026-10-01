@@ -1,7 +1,7 @@
 // What each piece of content looks like, drawn as rows.
 //
 // **This lives next to the content definitions and nowhere near the kernel, on purpose.**
-// `engine.md` 9.6 is a RULE: "The simulation knows semantic ids such as `unit.worker` and
+// presentation.md has a RULE: "The simulation knows semantic ids such as `unit.worker` and
 // `structure.nexus`. **It never knows a glyph.**" So the art is not a field on `ContentDef` — the
 // kernel reads those — it is a separate table keyed by the same ids, imported only by the view.
 // `tests/architecture.test.ts` asserts `src/pulse` can never reach this file, which is a stronger
@@ -23,7 +23,7 @@ export type UnitArt = readonly string[]
 /**
  * Citizens are rounded, contained, engineered — a bracketed chassis holding something. Ravels are
  * angular and forward-leaning, arrowheads pointing the way the energy went
- * (`terminal-nexus-lore.md` Section 8.2). Both vocabularies scale: the Citizen bracket that makes a
+ * (see lore.md on how each faction draws). Both vocabularies scale: the Citizen bracket that makes a
  * hauler `(h)` is the same one that makes a Nexus `[=]`, and the Ravel arrowhead that makes a raider
  * `>x<` is the same one under its Nexus.
  */
@@ -83,8 +83,8 @@ export const CONTENT_ART: Readonly<Record<string, UnitArt>> = {
   // --- Proving Grounds -------------------------------------------------------------------------
   // A third, neutral vocabulary — no faction owns this roster (content/proving-grounds.ts), so its
   // art borrows neither the Citizen bracket nor the Ravel arrowhead: plain, mnemonic single glyphs
-  // that lean on what each design *does* rather than on any lore, per the owner's own ask this
-  // session ("the visual should match the units mechanic").
+  // that lean on what each design *does* rather than on any lore, per Mario's own ask
+  // ("the visual should match the units mechanic").
   /** Thin as a barrel: the whole design is reach, not presence. */
   "unit.bench.sniper": ["i"],
   /** A plain foot soldier - deliberately unremarkable, since its whole point is what it *cannot*
@@ -107,7 +107,7 @@ export const CONTENT_ART: Readonly<Record<string, UnitArt>> = {
   /**
    * Four tiles of unbroken barrier - solid the same way a Citizen alignment run would be, drawn with
    * plain rule rather than a bracket vocabulary, since nothing here claims Citizen identity. The
-   * commander-armies.md Section 7 wall-segment idea, given a body: a slow, high-integrity unit whose
+   * wall-segment idea from commander-armies.md, given a body: a slow, high-integrity unit whose
    * *footprint* is the wall.
    */
   "unit.bench.wallsegment": ["===="],
@@ -157,7 +157,7 @@ export function artExtent(art: UnitArt): { width: number; height: number } {
  * falls back to the generic debris fill for that one tile rather than painting a hole.
  *
  * Read only by `fx.death.collapse` (`src/view/effects/recipes.ts`), never by the kernel: the same
- * boundary `CONTENT_ART` already draws, for the same reason (engine.md 9.6 — the simulation never
+ * boundary `CONTENT_ART` already draws, for the same reason (presentation.md — the simulation never
  * knows a glyph, and a death frame is exactly that, played over time).
  */
 export const DEATH_ART: Readonly<Record<string, readonly UnitArt[]>> = {
@@ -194,7 +194,7 @@ export const DEATH_ART: Readonly<Record<string, readonly UnitArt[]>> = {
    *  frame, so the ring debris (fx.death.collapse's own scaling) finishes what the ship started. */
   "unit.ravel.corsair": [["<*"], [" ,"]],
   /**
-   * DEATH_ART is presentation-only content (engine.md 9.6) and does not care which roster authored
+   * DEATH_ART is presentation-only content (presentation.md) and does not care which roster authored
    * the footprint it is animating - the same three-beat crack/sag/settle shape the Citizen and Ravel
    * giants use, proven here against a unit neither roster owns.
    */
@@ -211,8 +211,8 @@ export function deathFramesFor(contentId: string): readonly UnitArt[] | undefine
 }
 
 /**
- * A short, ordered sequence a structure plays as it is placed in the Build Phase (gate 5I, the owner's
- * own words, feedback F9: "every building should define an array of frames played when it is placed").
+ * A short, ordered sequence a structure plays as it is placed in the Build Phase. Mario's own words
+ * for the idea: "every building should define an array of frames played when it is placed".
  * The finished building is `CONTENT_ART` and is not repeated here: these are the frames *before* it,
  * foundation first. Each frame is a `UnitArt` the size of the footprint — `tests/content.test.ts`
  * holds it to that, as it does `DEATH_ART` — and a space means "nothing standing here yet", so the
@@ -220,7 +220,7 @@ export function deathFramesFor(contentId: string): readonly UnitArt[] | undefine
  *
  * Optional and purely additive: a structure with no entry gets a generic run derived from its own
  * finished art (`src/view/placement.ts`), so no content ever waits on an artist. Read only by the
- * Build Phase view, never by the kernel (engine.md 9.6: the simulation never knows a glyph).
+ * Build Phase view, never by the kernel (presentation.md: the simulation never knows a glyph).
  *
  * Case is applied later, as for every other piece of art: author in lower case.
  */

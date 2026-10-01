@@ -1,8 +1,8 @@
-// Placement juice (gate 5I, feedback F9): what a building looks like in the moments after the player
+// Placement juice: what a building looks like in the moments after the player
 // places it — a short run of frames as it goes up, a light on its characters as it finishes, and a
 // burst of sparks around it.
 //
-// Since the presentation toolkit was formalised (owner, 2026-09-28) this file only *says what a
+// Since the presentation toolkit was formalised this file only *says what a
 // placement is* in the toolkit's terms; the toolkit draws it:
 //
 //   - an **Animation** (`animation.ts`): the structure's placement frames, played once on the
@@ -47,7 +47,7 @@ import { entityGlyph } from "./theme.ts"
 export type PlacementClock = Readonly<{ ordinal: number; elapsedMs: number }>
 
 /** A building that just left the plan (undone or removed), still throwing its sparks: which one, where
- *  it stood, and how long ago it went (feedback F33). */
+ *  it stood, and how long ago it went. */
 export type RemovalClock = PlacedStructure & Readonly<{ elapsedMs: number }>
 
 export type PlacementTiming = Readonly<{
@@ -141,8 +141,7 @@ export function placementFollowUps(placement: PlacedStructure, footprint: Footpr
 }
 
 /**
- * The burst of sparks around a footprint, `glowMs` long — a placement's, and a removal's (feedback
- * F33) — or `null` when there are none to throw. `key` is the identity its scatter hashes, with the
+ * The burst of sparks around a footprint, `glowMs` long — a placement's, and a removal's — or `null` when there are none to throw. `key` is the identity its scatter hashes, with the
  * placement's ordinal: a placement and the removal of the same building throw different sparks.
  */
 function sparksFollowUp(placement: PlacedStructure, footprint: Footprint, glowMs: number, key: string, tuning: PlacementTuning): FollowUp | null {
@@ -170,7 +169,7 @@ function sparksFollowUp(placement: PlacedStructure, footprint: Footprint, glowMs
 }
 
 /**
- * **A planned building removed** — by undo, or Backspace/Delete (owner, 2026-09-29, feedback F33:
+ * **A planned building removed** — by undo, or Backspace/Delete (Mario:
  * "Canceling a placed building should also have spark effect"): no frames, the building is gone at
  * once, and the same burst of sparks a placement throws flies off where it stood, for the same glow and
  * as many sparks. Reduced motion keeps the burst's own still form, as a placement's does. Like a

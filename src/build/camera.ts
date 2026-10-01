@@ -1,4 +1,4 @@
-// The viewport and the camera — engine.md 3.3's scrolling rule.
+// The viewport and the camera — the scrolling rule in docs/system-design/grid.md.
 //
 // Pure arithmetic over tiles: a camera is a position in tiles, a viewport is a size in tiles, and
 // what either looks like is `src/view`'s problem. That split is what lets the whole scrolling rule
@@ -6,21 +6,20 @@
 
 import type { Coord, GridTerrain } from "../grid/types.ts"
 
-/** RULE (engine.md 3.3): below this the game is not playable and the renderer shows a resize gate. */
+/** RULE (docs/system-design/grid.md): below this the game is not playable and the renderer shows a resize gate. */
 export const MIN_VIEWPORT = { width: 48, height: 16 } as const
 /** RULE: nobody sees more Grid than this, however large their monitor. Fairness, and bounded
  *  arithmetic for every layout, cursor and scroll calculation downstream. */
 export const MAX_VIEWPORT = { width: 72, height: 24 } as const
 /**
- * The side panel's share of the terminal floor: engine.md 3.1's own 80-column arithmetic
+ * The side panel's share of the terminal floor: the 80-column arithmetic in docs/system-design/grid.md
  * (1 + 30 + 48 + 1), which the resize gate and the choice of tile width still measure against — so
  * 80 × 24 stays the floor and 128 columns stays where tiles go two columns wide.
  */
 export const FLOOR_PANEL_COLUMNS = 30
 /**
  * The columns the side panel actually takes: the panel and its divider, which **is** the Grid's west
- * side (the owner's choice of 2026-09-29, feedback F25, replacing a column of its own beside the
- * divider, F17). The column that sharing saves goes to the Grid: 49 tiles at 80 × 24, not 48.
+ * side, rather than a column of its own beside the divider (the owner's choice). The column that sharing saves goes to the Grid: 49 tiles at 80 × 24, not 48.
  */
 export const PANEL_COLUMNS = FLOOR_PANEL_COLUMNS - 1
 /** The top bar's one line, and the rule directly above the Grid that closes its rectangle. */
@@ -28,20 +27,21 @@ export const HEADER_ROWS = 2
 /**
  * The rule directly below the Grid, then the bottom bar's **one** line: the contextual line — what the
  * last key did when it said something, and otherwise what can be done where the keyboard is
- * (`src/build/help.ts`). The owner's call (2026-09-30, feedback F59: "The bottom of the UI currently
- * uses 3 rows. We have to reduce that to 1 row"): the position readout and the key help went, and the
- * two rows they took went to the Grid. It was four rows from canon 2.19, which moved one here from the
- * header, whose two blank rows had left the Grid's own top edge three rows short of any line.
+ * (`src/build/help.ts`). The owner's call: "The bottom of the UI currently uses 3 rows. We have to
+ * reduce that to 1 row". The position readout and the key help went, and the two rows they took went
+ * to the Grid. (The bottom bar was once four rows, after a row moved here from the header, whose two
+ * blank rows had left the Grid's own top edge three rows short of any line.)
  */
 export const FOOTER_ROWS = 2
-/** Left border + right border. 1 + 48 + 1 + 30 = exactly 80 (engine.md 3.1): the floor's arithmetic;
+/** Left border + right border. 1 + 48 + 1 + 30 = exactly 80: the floor's arithmetic;
  *  since the shared west side the Grid gets one more of those columns (`PANEL_COLUMNS`). */
 export const BORDER_COLUMNS = 2
-/** Top border + header + footer + bottom border: 6 rows since the bottom bar became one line (feedback
- *  F59) — 18 rows of Grid at 80 × 24, where the 8-row budget of engine.md 3.1 (Q12) left 16. */
+/** Top border + header + footer + bottom border: 6 rows now that the bottom bar is one line — 18 rows
+ *  of Grid at 80 × 24, where the 8-row budget of the floor (`FLOOR_CHROME_ROWS`) would leave 16. */
 export const CHROME_ROWS = BORDER_COLUMNS + HEADER_ROWS + FOOTER_ROWS
 /**
- * The vertical chrome the terminal floor is measured against: engine.md 3.1's 8-row budget, which the
+ * The vertical chrome the terminal floor is measured against: the 8-row budget in
+ * docs/system-design/grid.md, which the
  * resize gate still uses, so 80 × 24 stays the floor and the acceptance target — the same move
  * `FLOOR_PANEL_COLUMNS` makes for the column the shared west side saved. The two rows the one-line
  * bottom bar saves go to the Grid, never to a smaller floor.
@@ -55,8 +55,8 @@ export type Camera = Readonly<{ x: number; y: number }>
 export type TerminalSize = Readonly<{ columns: number; rows: number }>
 
 /**
- * How many tiles a terminal of this size has room for, once chrome is taken out. Step 1 of engine.md
- * 3.3's own fitting order, and deliberately allowed to come back negative-ish small: the caller
+ * How many tiles a terminal of this size has room for, once chrome is taken out. The first step of
+ * the fitting order in docs/system-design/grid.md, and deliberately allowed to come back negative-ish small: the caller
  * decides whether that means "gate" (below the minimum) or "centre the leftover" (above the maximum).
  */
 export function availableTiles(
@@ -73,7 +73,8 @@ export function availableTiles(
 
 /**
  * Step 2: two columns per tile if the terminal can show the viewport that way, otherwise one. This
- * and engine.md 9.3's "one column at 80, two at 128 or wider" agree by construction — 128 is exactly
+ * and the tile-width rule in docs/system-design/presentation.md ("one column at 80, two at 128 or
+ * wider") agree by construction — 128 is exactly
  * the width at which two columns per tile still leaves room for the 48-tile minimum viewport.
  */
 export function tileWidthFor(terminal: TerminalSize, grid: GridTerrain): TileWidth {
@@ -110,7 +111,7 @@ export function fitViewport(
   }
 }
 
-/** The camera is clamped so the viewport never leaves the Grid — engine.md 3.3's first bullet. */
+/** The camera is clamped so the viewport never leaves the Grid — the first bullet of the scrolling rule in docs/system-design/grid.md. */
 export function clampCamera(camera: Camera, viewport: Viewport, grid: GridTerrain): Camera {
   return {
     x: Math.min(Math.max(0, camera.x), Math.max(0, grid.width - viewport.width)),
@@ -131,13 +132,13 @@ function followAxis(camera: number, cursor: number, span: number, margin: number
   return Math.min(Math.max(camera, earliest), latest)
 }
 
-/** The scroll margin in tiles along each axis — a share of the view's width and height since gate 5H
+/** The scroll margin in tiles along each axis — a share of the view's width and height
  *  (`marginForView`). RULE that a margin exists; GUIDANCE on its size, which `--scroll-margin` can
  *  override. */
 export type Margin = Readonly<{ x: number; y: number }>
 
 /**
- * **The whole scrolling interaction** — engine.md 3.3: "The cursor drives it. Move the cursor within
+ * **The whole scrolling interaction** (docs/system-design/grid.md): "The cursor drives it. Move the cursor within
  * a scroll margin ... of a viewport edge and the camera follows. That is the whole interaction — no
  * separate pan mode, no modifier keys, no second cursor." (The margin was 3 tiles when that was
  * written; it is a share of the view now.)
@@ -157,8 +158,8 @@ export function followCursor(camera: Camera, cursor: Coord, viewport: Viewport, 
 }
 
 /**
- * A share of a view's span as a whole number of tiles — the scroll margin since gate 5H ("it needs to
- * be dependent on the screen size, I feel like about 20% of the height or width", owner, 2026-09-26).
+ * A share of a view's span as a whole number of tiles — the scroll margin ("it needs to be dependent
+ * on the screen size, I feel like about 20% of the height or width", the owner).
  * Rounded to the nearest tile, and never so large that the two margins of one axis meet: a margin
  * past the middle would leave the cursor nowhere to be without the camera moving, and the camera
  * would twitch on every step.
@@ -180,10 +181,10 @@ function centredAxis(tile: number, span: number): number {
 }
 
 /**
- * **Recentring** (engine.md 3.3, gate 5H): the camera moved so `tile` sits in the middle of the view,
+ * **Recentring**: the camera moved so `tile` sits in the middle of the view,
  * clamped to the Grid like every other camera — how a Nexus Pulse looks at the player's Nexus. (The
  * fast move re-centred along the axis it moved, and an exploring click could re-centre too, until the
- * owner settled both Experiments the other way, 2026-09-30.)
+ * owner settled both Experiments the other way.)
  */
 export function centreOn(tile: Coord, viewport: Viewport, grid: GridTerrain): Camera {
   return clampCamera({ x: centredAxis(tile.x, viewport.width), y: centredAxis(tile.y, viewport.height) }, viewport, grid)
@@ -194,7 +195,7 @@ export function centreOn(tile: Coord, viewport: Viewport, grid: GridTerrain): Ca
  * column or row). Inside a zone `zone` tiles deep at either end, the tile is carried toward the
  * middle by the share of the zone the click was into: at the very edge all the way to the middle, at
  * the zone's inner boundary not at all, and in proportion between — so a click two rows from the
- * edge scrolls much further than a click five rows in (owner, feedback F6).
+ * edge scrolls much further than a click five rows in (the owner's request).
  */
 function edgeAxis(camera: number, tile: number, span: number, zone: number): number {
   if (zone <= 0) return camera
@@ -215,7 +216,7 @@ function edgeAxis(camera: number, tile: number, span: number, zone: number): num
   return camera
 }
 
-/** Where a click on the map inside an edge zone moves the camera (feedback F6), a building armed or
+/** Where a click on the map inside an edge zone moves the camera, a building armed or
  *  not: see `edgeAxis`. The zone is a percentage of the view along each axis. Clamped to the Grid. */
 export function edgeClickCamera(
   camera: Camera,
@@ -244,7 +245,7 @@ export type VisibleRange = Readonly<{
 
 /** The inclusive tile range on screen: what the Grid pane draws, and — with the Grid's own size — which
  *  of its sides have more Grid beyond them (`edgeMarkers`). A position readout in the footer named it
- *  until the owner took the readout out (2026-09-30, feedback F59); the sides' weight is the signal. */
+ *  until the owner took the readout out; the sides' weight is the signal. */
 export function visibleRange(camera: Camera, viewport: Viewport): VisibleRange {
   return {
     firstX: camera.x,
@@ -262,7 +263,7 @@ export type EdgeMarkers = Readonly<{
 }>
 
 /**
- * Which sides have more Grid beyond them — engine.md 3.3's required "there is more Grid" signal, drawn
+ * Which sides have more Grid beyond them — the required "there is more Grid" signal of docs/system-design/grid.md, drawn
  * on the frame border. A Grid that fits entirely inside the viewport gets none of them, which is
  * exactly what that rule asks for: "Small Grids that fit entirely inside the viewport never scroll
  * and show no edge markers."

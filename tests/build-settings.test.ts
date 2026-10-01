@@ -21,7 +21,7 @@ import { exportText } from "../src/build/state.ts"
 import { SETTLED_EXPERIMENTS, TUNING } from "../src/build/tuning.ts"
 import { defaultValue, isSettingName } from "../src/build/all-settings.ts"
 import type { BuildCommand } from "../src/build/types.ts"
-import { runSpike, spikeContext } from "../src/cli/spike.ts"
+import { runBuildPhase, starterContext } from "../src/cli/build-phase.ts"
 import { osc52, terminalExporter } from "../src/cli/terminalNexus.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
@@ -52,7 +52,7 @@ import type { BuildSide } from "./build-helpers.ts"
 type SettingsSide = BuildSide & Readonly<{ exports: string[]; saved: Settings[] }>
 
 /** A Build Phase that keeps what it hands the live loop: every export and every setting to save. */
-function session(context: BuildContext = spikeContext()): SettingsSide {
+function session(context: BuildContext = starterContext()): SettingsSide {
   const exports: string[] = []
   const saved: Settings[] = []
   const side = buildSide({ context, onExport: (text) => exports.push(text), onSettingsChange: (settings) => saved.push(settings) })
@@ -77,7 +77,7 @@ test("Esc on the menu, q anywhere, and the top bar's menu [esc] all open the gam
     assert.match(text, /\[c\] Controls and hotkeys/)
     assert.match(text, /\[r\] Restart/)
     assert.match(text, /\[q\] Quit/)
-    // The bottom line says how to work it (feedback F59), where the key help listed its keys.
+    // The bottom line says how to work it, where the key help listed its keys.
     assert.match(text, /Up\/down and \[enter\] choose, or press a row's key\. \[esc\] back to the game\./)
   }
   const clicked = session()
@@ -192,7 +192,7 @@ test("every player setting's value box is a click target, the same as Left and R
 // --- The export -------------------------------------------------------------------------------------
 
 test("[e] shows the export in a popup, hands the same text to the adapter, and Esc goes back one popup at a time", () => {
-  const context: BuildContext = { ...spikeContext(), buildId: "abc1234", exportDestination: "Copied to the clipboard." }
+  const context: BuildContext = { ...starterContext(), buildId: "abc1234", exportDestination: "Copied to the clipboard." }
   const side = session(context)
   keys(side, "d")
   goToExperiment(side, "holdWindowMs")
@@ -305,7 +305,7 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
   assert.equal(experiments.popupPulseMs, 1200)
   assert.equal(experiments.nextRound, defaultExperiments().nextRound)
   assert.deepEqual(settings, { capability: "color256", theme: "light", glyphPack: "unicode", reducedMotion: true })
-  // "Opens on" and "Smart cursor" were settled and deleted (feedback F30, F31) before the list of
+  // "Opens on" and "Smart cursor" were settled and deleted before the list of
   // settled names existed: an older export's lines for them are reported like any retired name.
   assert.deepEqual(result.ignored, ["retiredFlag=3", "battleRoundPulseMs=99999", "nextRound=sideways", "startFocus=map", "smartCursor=off"])
   // The names the owner has settled are known: skipped quietly, never reported.
@@ -315,7 +315,7 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
   assert.equal(shown.snapshot.experiments.popupPulseMs, 0)
   assert.deepEqual(shown.ignored, [])
   assert.deepEqual(shown.settled, ["cursorBlinks"])
-  // `battleRoundPulseMs` above is the old name of the popup pulse (feedback F83): it reads as the new
+  // `battleRoundPulseMs` above is the old name of the popup pulse: it reads as the new
   // one, which reads too, and is reported by its name now.
   const renamed = parseSettingsExport("battleRoundPulseMs=3000", base)
   assert.deepEqual(renamed.applied, ["popupPulseMs"])
@@ -335,7 +335,7 @@ test("a number is digits first: a bare unit is a bad value, skipped and reported
   assert.equal(parseSettingsExport("battleRoundPulseMs=1200ms", base).snapshot.experiments.popupPulseMs, 1200)
 })
 
-/** The owner's settings export of 2026-09-30, word for word (feedback F76): "Many of those settings can
+/** The owner's settings export of 2026-09-30, word for word: "Many of those settings can
  *  be cleaned now, I feel good about them." */
 const OWNER_EXPORT_2026_09_30 = [
   "Terminal Nexus settings",
@@ -403,8 +403,8 @@ test("the owner's third export is this build: the focus arrow and card reveal ar
   const base: SettingsSnapshot = { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() }
   const result = parseSettingsExport(OWNER_EXPORT_2026_09_30_THIRD, base)
   assert.deepEqual(result.ignored, [])
-  // The raid and the crew were his placeholder Pulse's; PERIMETER's waves are the mission's data now (gate
-  // 6B), so an export that names them reads without a complaint, and they change nothing.
+  // The raid and the crew were his placeholder Pulse's; PERIMETER's waves are the mission's data now,
+  // so an export that names them reads without a complaint, and they change nothing.
   assert.deepEqual(result.settled, ["focusArrowMs", "cardRevealMs", "crew", "raid"])
   assert.equal(TUNING.focusArrowMs, 250)
   assert.equal(TUNING.cardRevealMs, 400)
@@ -419,16 +419,16 @@ test("the owner's export of 2026-09-30 is this build: its settled numbers are th
   const result = parseSettingsExport(OWNER_EXPORT_2026_09_30, base)
   // Every line is known: nothing is reported as a name the game does not know.
   assert.deepEqual(result.ignored, [])
-  // His jump distance reads as an Experiment again: it came back for the navigation polish round
-  // (feedback F85), at his value.
+  // His jump distance reads as an Experiment again: it came back for the navigation polish round,
+  // at his value.
   assert.deepEqual(result.applied, ["holdWindowMs", "jumpStep", "theme", "capability", "glyphPack", "reducedMotion"])
   // The rest were settled: the twenty-eight of that export — less the jump distance, above — and the
   // focus arrow he settled again later that day, each skipped quietly; each number of the twenty-eight is
   // this build's value, read not copied, whichever tier it stands on now — except the held-key ramp's
   // three (`holdStep`, `fastStep`, `rampMs`), which his third round the same day retired along with the
-  // rule they tuned (F79: taps counted, a hold on a cadence), still skipped quietly. (The settled names
+  // rule they tuned (taps counted, a hold on a cadence), still skipped quietly. (The settled names
   // are derived from the list, so they also hold tuned numbers his export never named.)
-  // (Plus the placeholder Pulse's raid and crew, retired by gate 6B's mission.)
+  // (Plus the placeholder Pulse's raid and crew, retired when missions arrived.)
   assert.equal(result.settled.length, 30)
   assert.ok(result.settled.every((name) => SETTLED_EXPERIMENTS.has(name)))
   // Not settled by that export: the hold window, an Experiment then and now (his third round retuned it),
@@ -459,7 +459,7 @@ test("--settings on the command line: settings over what is saved, and every exp
 })
 
 test("a Build Phase opened with imported experiments has them, and the playtest script's runner takes both halves", () => {
-  const side = session({ ...spikeContext(), experiments: { incoming: "hidden", holdWindowMs: 500 } })
+  const side = session({ ...starterContext(), experiments: { incoming: "hidden", holdWindowMs: 500 } })
   assert.equal(side.build.state.experiments.incoming, "hidden")
   assert.equal(side.build.state.experiments.holdWindowMs, 500)
   const run = runBuildPlaytest({
@@ -563,7 +563,7 @@ test("the live screen saves a changed setting through the store and hands an exp
   const stdin = new FakeStdin()
   const saves: Settings[] = []
   const exported: string[] = []
-  const running = runSpike({
+  const running = runBuildPhase({
     settings: { ...DEFAULT_SETTINGS, capability: "monochrome" },
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
@@ -600,7 +600,7 @@ test("the terminal's export: OSC 52 to the clipboard and a file beside the setti
   await exporter.export("theme = light\n", "settings")
   assert.equal(readFileSync(path, "utf8"), "theme = light\n")
   assert.ok(stdout.written.includes(osc52("theme = light\n")))
-  // The Activity Logs' export (feedback F91) goes to the clipboard too, and to a file of its own beside
+  // The Activity Logs' export goes to the clipboard too, and to a file of its own beside
   // the settings', which it never overwrites.
   assert.match(exporter.destination.activity, /clipboard if your terminal allows it, and saved to .*activity-export\.txt\./)
   await exporter.export("Terminal Nexus activity logs\n", "activity")

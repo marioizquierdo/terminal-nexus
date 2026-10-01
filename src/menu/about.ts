@@ -1,6 +1,5 @@
-// The About screen's words — owner, 2026-10-01, feedback F93: "Include a new section on the game's main
-// menu: About. That should list me as the author of the game ... Then point at the Github repository ...
-// and include a section for contributions."
+// The About screen's words: who designed and developed the game, where its code lives, and how to
+// contribute.
 //
 // Data only: what the screen says, in reading order, in sections. How it looks — styles, where it sits,
 // wrapping a paragraph at words to the screen's width — is the composer's (`src/view/menu.ts`), so the
@@ -32,9 +31,8 @@ export const ABOUT_SECTIONS: readonly TextSection[] = [
     text: [
       "Designed and developed by: Mario Izquierdo",
       REPOSITORY_URL,
-      // The community page goes here, as one more line, once there is one (owner, 2026-10-01, feedback
-      // F94: "eventually we should add the main community page link on the About section"; where updates
-      // are posted is still being researched). Until then the player sees nothing in its place:
+      // The community page goes here, as one more line, once there is one (the owner wants
+      // the main community page linked from About; where updates are posted is still being decided). Until then the player sees nothing in its place:
       // `Community: <link>`,
     ],
   },

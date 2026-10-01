@@ -1,5 +1,5 @@
-// The Nexus Pulse's ending — gate 6A, the owner's sketch (milestone 6, Section 2.2) and his answer to its
-// first build (feedback F43-F45). Every moment of it is a pure function of presentation time, so the tests
+// The Nexus Pulse's ending — the owner's sketch of it and his answer to its
+// first build. Every moment of it is a pure function of presentation time, so the tests
 // are arithmetic: the moments, their order at every timing they could be given, the timer and its flash,
 // the light that sweeps the border, the red that means the Nexus is hurt, the walk home, and the words of
 // the result.
@@ -208,7 +208,7 @@ test("the strain on a Nexus is read from the Pulse: its first hit, when it was n
   // A defence that holds may never let the raid touch the Nexus at all; whatever happened, the order holds.
   const held = nexusStrain(play({ plan: DEFENCE }).pulse.timeline)
   if (held.lowMs !== null) assert.ok(held.hitMs !== null && held.hitMs <= held.lowMs)
-  // The other side's Nexus is not the player's: side B has none in the spike.
+  // The other side's Nexus is not the player's: side B has none on the starter map.
   assert.deepEqual(nexusStrain(lost, "B"), { hitMs: null, lowMs: null, fallMs: null })
 })
 

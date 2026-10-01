@@ -1,8 +1,8 @@
 // The match layer's data — what a Nexus Pulse starts from and what is true after Recall.
 //
-// `src/match/` is the rules layer *around* the tick kernel (engine.md Section 2's "scenario runtime"):
+// `src/match/` is the rules layer *around* the tick kernel (the "scenario runtime" of grid-engine.md):
 // it builds the state a Pulse starts from out of what the Build Phase committed, and it does what
-// engine.md Section 5 says happens when a Pulse ends. It sits beside `src/pulse` and never inside its
+// pulse.md says happens when a Pulse ends. It sits beside `src/pulse` and never inside its
 // tick — nothing here is called by `stepTick`, so no existing hash can move — and it is deterministic
 // the way the kernel is: no clock, no unseeded randomness, no terminal, nothing from the view.
 
@@ -11,7 +11,7 @@ import type { MatchState, PlayerId } from "../state/types.ts"
 
 /** A structure standing on the Grid when the Pulse starts: the player's own standing buildings and the
  *  ones the Build Phase committed, which "reveal together and become operational" at Pulse start
- *  (engine.md Section 5), and a scripted side's own plan (a mission's `commitPlan`, gate 6B). */
+ *  (pulse.md), and a scripted side's own plan (a mission's `commitPlan`). */
 export type StructurePlacement = Readonly<{
   contentId: string
   /** Whose it is; the player's own, side A, when absent. */
@@ -35,12 +35,12 @@ export type Force = Readonly<{
 
 /**
  * What a Pulse needs besides the plan: who is on the Grid and how long it may last. **Placeholder
- * content while Milestone 6 is at gate 6A** — the spike's starting force and raid, in the same
- * standing as its placeholder Nexus powers. The trigger runner (6B) is what will replace the static
- * raid with PERIMETER's waves.
+ * content** — the Build Phase's starting force and raid, in the same standing as its placeholder
+ * Nexus powers. In a mission the trigger runner (`mission.ts`) supplies PERIMETER's waves instead of
+ * the static raid.
  */
 export type PulseSetup = Readonly<{
-  /** The gameplay seed: one PCG32 stream, the kernel's only randomness (engine.md 4.4). */
+  /** The gameplay seed: one PCG32 stream, the kernel's only randomness (pulse.md). */
   seed: number
   /** The Pulse's length in ticks — the tick limit its end condition falls back on. */
   pulseTicks: number

@@ -18,7 +18,7 @@
      Raw image URLs pinned to a commit SHA. With a playable page, two sub-headings:
      ### On Claude Web Artifact — the page link, then 3-6 numbered steps with exact keys, each ending in
      what should happen (a demo button can start a step where it needs to be);
-     ### On MacOS — copy-paste commands for a terminal. -->
+     ### On MacOS — copy-paste commands for a terminal, e.g. `git pull && ./bin/terminal-nexus.ts --build-phase`. -->
 
 ## Decisions
 
@@ -40,9 +40,8 @@
 
 <details><summary>Project bookkeeping</summary>
 
-- Gate and decision: <!-- e.g. 5F — PASS / REVISE / STOP / BLOCKED, or "not a gate" -->
-- Report: <!-- e.g. evidence/gate-5f-report.md, or none -->
-- Canon changes: None
-- Questions: <!-- opened / answered, in a few words, or none -->
+- Milestone step: <!-- e.g. Milestone 6, step 6B, or 'not a milestone step' -->
+- Design documents changed: <!-- which, or none -->
+- Questions: <!-- opened / answered, or none -->
 
 </details>

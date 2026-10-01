@@ -1,4 +1,4 @@
-// The run summary — milestone-1-spike-battle.md 3.3. `formatSummary`/`summaryJson` are the
+// The run summary. `formatSummary`/`summaryJson` are the
 // machine-facing shapes (`--json`); `reportLineDetail` packs the same facts into one line's worth of
 // text for `buildLog`'s trailing WARN `report` line, so a headless run's single output stream still
 // closes with the outcome, the losses, and the hashes without needing a second stream to carry them.

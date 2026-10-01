@@ -1,4 +1,4 @@
-// The Nexus Pulse on the Build Phase's own screen (gate 6A) — the fight drawn through the same
+// The Nexus Pulse on the Build Phase's own screen — the fight drawn through the same
 // cursor-driven camera, in the same frame, under the same popups. The map is 96 x 40; the old Pulse view
 // (`compose.ts`) draws a fixed 48 x 16 pane with its own chrome, and so could not have shown it.
 //
@@ -145,7 +145,7 @@ function borderOf(box: BuildLayout["gridBox"]): readonly Coord[] {
 }
 
 /**
- * The light on the map's border (owner, 2026-09-29): in the last seconds a soft white light sweeps round
+ * The light on the map's border (Mario asked for it): in the last seconds a soft white light sweeps round
  * the frame like a lighthouse calling, and, a moment at a time, the border goes a faint red when the
  * player's Nexus is hurt (and then only red — the news of a hurt Nexus comes first). Both are a colour
  * pulled a little toward another — a style-only write, so the map's own edge and the frame's junctions
@@ -175,7 +175,7 @@ export function drawFrameLight(cells: BandCell[], layout: BuildLayout, pulse: Pu
 }
 
 // ---------------------------------------------------------------------------------------------
-// The panel, the top bar and the bottom line (the Pulse's keys are on the Controls page, feedback F60)
+// The panel, the top bar and the bottom line (the Pulse's keys are on the Controls page)
 // ---------------------------------------------------------------------------------------------
 
 /** The top bar's second word: where the player is. */

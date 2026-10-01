@@ -1,128 +1,49 @@
 # Developing Terminal Nexus
 
-Terminal Nexus is a specification-driven pre-production project. The first implementation will be a
-bounded terminal renderer experiment, not a vertical slice of the whole game.
+The practices manual: how to run, test and see the game, how work is planned and tried, how Mario's
+feedback flows back in, and how a design change lands. Each section says what the practice is and why
+it is shaped that way; the exact runnable procedures are the skills under `.claude/skills/`, linked
+from the practice they serve. Nothing here is history; the dated record is `docs/history/`.
 
-## Start a coding session
+## 1. Toolchain and commands
 
-1. Run `./scripts/check-repository.sh`. It prints the canon version and the active gate.
-2. Read `AGENTS.md`.
-3. Read `specs/terminal-nexus-concept.md`.
-4. Open `specs/README.md` and follow its current-gate reading order.
-5. Skim `specs/open-questions.md` Section 4 so you know what is undecided before you decide it.
-6. Inspect existing code, tests, and evidence before proposing changes.
-7. Copy `specs/templates/gate-report.md` and fill in its first section: question, artifact, evidence,
-   exclusions, stop conditions.
-
-The current implementation contract is whichever file `milestones/README.md` marks **CURRENT**, through
-its own **Active gate**. Milestone 1 (Grid Battles) is complete and accepted; the campaign's first
-level is being built across the milestones after it. `./scripts/check-repository.sh` prints the
-current gate, so it is faster than reading for it.
-
-## Current commands
-
-### Repository validation
+Node 22.18 or newer, or Bun 1.3 or newer, run the TypeScript sources directly. **There is no build
+step**, so relative imports carry explicit `.ts` extensions and the code stays inside erasable-syntax
+TypeScript (no enums, no parameter properties). `tsconfig.json` is for type checking and editors.
 
 ```bash
-./scripts/check-repository.sh
-```
+npm install         # only type checking and the OpenTUI backend need it; the kernel has no dependency
 
-This is the project's only automated feedback loop until a runtime is selected. It checks
-invariants, not literals — canon version and current gate are derived from the documents, so
-correct canon work never breaks it. What it enforces:
-
-- required files exist;
-- every document under `specs/` and `concept/` declares the same canon version as `specs/README.md`,
-  and so does `AGENTS.md`;
-- every such document carries `Document role`, `Status`, `Canon version`, `Updated`, `License` —
-  **except a document named in `check-repository.sh`'s `historical_archives` list**, a frozen record
-  nothing may depend on. It still owes its links, but not the metadata header or the canon version,
-  and it is exempt from the terminology scan below, because an archive edited to use today's words
-  stops being a record of what was actually said;
-- exactly one milestone is `CURRENT`, declares an `Active gate`, and matches the governance ledger;
-- every `Q<n>` referenced anywhere is defined in `specs/open-questions.md`, and every `OPEN` question
-  carries a recommendation;
-- retired terminology stays retired — mark a line `<!-- stale-ok -->` to quote it deliberately;
-- `.devcontainer/devcontainer.json` parses, local Markdown links resolve, code fences balance, and
-  the working tree has no whitespace errors.
-
-Add a check here whenever you find yourself remembering a rule instead of relying on one.
-
-### Play it in a browser (a phone, during review)
-
-```bash
-bun scripts/build-web.mjs                      # dist/terminal-nexus-playtest.html, about 135 KB
-bun scripts/build-web.mjs --out some/page.html
-```
-
-One self-contained HTML file with the real menu, Build Phase and two Pulse replays, painted on a
-canvas, with an on-screen key bar for the keys a phone keyboard lacks and taps as mouse clicks. It
-opens straight from disk; for a phone, a session publishes it as a private claude.ai page for the pull
-request, with the commit printed at the top of the page. It is **a development tool, not a platform**
-(`specs/engine.md` 10.2): the browser runs the terminal's own three screen loops through a stand-in
-terminal (`src/view/backends/ports.ts`), and adds only a canvas backend
-(`src/view/backends/canvas.ts`), key and tap translation (`src/web/keys.ts`, through the scripted
-playtest's own key names) and browser-stored settings (`src/web/host.ts`, the one file that touches the
-DOM). A **settings text box** under the screen is the page's end of the export: "Export settings" in the
-game's Settings fills it and copies it to the clipboard, and pasting an export into it ("Start the
-Build Phase with these") — or opening the page with `#settings=<text>` in its address — starts the
-Build Phase with those settings and experiments. An **activity logs box** beside it receives the game's
-Activity logs export. `bun scripts/build-web.mjs --demos <file>` adds a button per demo above the screen
-— a label, what to try, a key script and settings text (`scripts/build-web.mjs` describes the file) — so
-a pull request's page opens the Build Phase where its question is. The build needs Bun and **fails if anything the page reaches imports a Node-only module**;
-`tests/web.test.ts` holds the page to the terminal's characters, colours and keys, and (in the Bun pass)
-runs the bundle in a sandbox with no Node features and requires the same fingerprints Node computes.
-
-What it cannot show: raw keyboard mode, terminal cleanup, signals, real terminals' own key encodings
-(iTerm2's Option key), the OpenTUI backend, or frame timing. Those stay terminal-only, and a terminal
-at 80 x 24 stays the acceptance target.
-
-### Install, build, test, run
-
-Gate 1A selected the toolchain. There is **no build step**: Node 22.18+ and Bun 1.3+ both execute
-the TypeScript sources directly, so relative imports carry explicit `.ts` extensions and the code
-stays inside erasable-syntax TypeScript (no enums, no parameter properties). `tsconfig.json` is for
-type checking and editors only.
-
-```bash
-# install (type checking and the OpenTUI backend; the kernel itself has no runtime dependency)
-npm install
-
-# there is no build step
-
-# test
+npm run typecheck   # tsc --noEmit, then the browser page's one DOM file against tsconfig.web.json
 npm test            # Node's runner over tests/*.test.ts
 npm run test:bun    # the same suite under Bun, one file at a time
-npm run typecheck   # tsc --noEmit, then the browser page's one DOM file against tsconfig.web.json
+npm run check       # ./scripts/check-repository.sh — the repository validator
 
-# run — <map> is a .map.json path, suffix optional; no subcommand, watch is the default action
-./bin/grid.ts scenarios/citizen-mirror-skirmish                              # watch (the default)
+# grid — the engine, editor and replay tool. <map> is a .map.json path, suffix optional.
+./bin/grid.ts scenarios/citizen-mirror-skirmish                       # watch (the default)
 ./bin/grid.ts scenarios/citizens-versus-ravels --glyphs unicode --capability truecolor
-./bin/grid.ts scenarios/ravel-cascade --capability monochrome --reduced-motion
-./bin/grid.ts scenarios/citizens-versus-ravels --no-effects
-./bin/grid.ts scenarios/citizen-mirror-skirmish --headless --log-level debug --ticks 120
+./bin/grid.ts scenarios/citizen-mirror-skirmish --headless --log-level info --ticks 120
 ./bin/grid.ts scenarios/citizen-mirror-skirmish --headless --events events.jsonl --json
-./bin/grid.ts scenarios/citizen-mirror-skirmish --verify                    # 10 runs by default
-./bin/grid.ts scenarios/citizen-mirror-skirmish --verify --runs 20
-./bin/grid.ts scenarios/citizen-mirror-skirmish --headless --turn 90        # jump straight to tick 90
+./bin/grid.ts scenarios/citizen-mirror-skirmish --verify --runs 20   # same hashes every run?
+./bin/grid.ts scenarios/citizen-mirror-skirmish --headless --turn 90 # jump straight to tick 90
+npm run maps                                                          # every checked-in map
 
-# the same commands under Bun
-bun bin/grid.ts scenarios/citizen-mirror-skirmish --headless
+# terminal-nexus — the game. No map; straight to the menu.
+./bin/terminal-nexus.ts
+./bin/terminal-nexus.ts --build-phase                                       # the Build Phase (a temporary flag; --spike still works)
+./bin/terminal-nexus.ts --build-phase --settings "$(pbpaste)"               # start from a pasted settings export
+./bin/terminal-nexus.ts --build-phase --keys "n 1 1 Enter"                  # open already in a state
 
-# run terminal-nexus — the game's own entry point, distinct from grid: no map, straight to the menu
-./bin/terminal-nexus.ts                                                     # top-level menu
-./bin/terminal-nexus.ts --capability truecolor --theme dark --backend auto
-
-# the Build Phase scrolling-and-placement spike (Milestone 5, gate 5A)
-./bin/terminal-nexus.ts --spike
-./bin/terminal-nexus.ts --spike --scroll-margin 30 --capability monochrome   # margin: % of the view
-./bin/terminal-nexus.ts --spike --settings "$(pbpaste)"   # start from an exported settings text
-./bin/terminal-nexus.ts --spike --settings "popupPulseMs=3000 incoming=hidden"
-./bin/terminal-nexus.ts --spike --keys "n 1 1 Enter"         # open already in a state: a power picked, a Barracks placed
-./bin/terminal-nexus.ts --spike --keys "n 2 s s"             # open already in a Nexus Pulse, with nothing built (gate 6A)
+bun scripts/build-web.mjs                                             # the browser playtest page
 ```
 
-Pinned by Gate 1A, measured 2026-08-21:
+`watch` options on either program: `--capability monochrome|color16|color256|truecolor`,
+`--theme dark|light`, `--glyphs ascii|unicode`, `--tile-width 1|2` (2 needs 128 columns),
+`--no-effects`, `--reduced-motion`, `--speed`, `--seed`, `--cosmetic-seed`, `--backend auto|ansi|opentui`,
+`--save-log <file>`. ASCII and monochrome are the floor; everything above them is fidelity, never
+information. `--capability` defaults to the best tier the terminal advertises; `--theme` to `dark`.
+
+Pinned versions, re-checked rather than remembered:
 
 | | Version | Note |
 | --- | --- | --- |
@@ -130,645 +51,273 @@ Pinned by Gate 1A, measured 2026-08-21:
 | Bun | 1.3.11 | Same sources, same hashes |
 | `typescript` | 7.0.2 | Type checking only |
 | `@types/node` | 22.20.1 | Type checking only |
-| `@opentui/core` | 0.5.6 | Terminal backend. **Native core loads under Bun, not under Node** |
-| `gifenc` | 1.0.3 | Dev only: GIFs of a scripted playtest (MIT, no dependencies; checked 2026-09-27) |
-| `pngjs` | 7.0.0 | Dev only: reads Chromium's PNGs for those GIFs and for "is this shot unchanged?" (MIT, no dependencies) |
+| `@opentui/core` | 0.5.6 | Terminal backend. Its native core loads under Bun, not under Node |
+| `gifenc` | 1.0.3 | Dev only: GIFs of a scripted playtest |
+| `pngjs` | 7.0.0 | Dev only: reads Chromium's PNGs for GIFs and "is this shot unchanged?" |
 
-`watch` options: `--capability monochrome|color16|color256|truecolor`, `--theme dark|light`,
-`--glyphs ascii|unicode`, `--tile-width 1|2`, `--no-effects`, `--reduced-motion`,
-`--cosmetic-seed`, `--speed`, `--backend`. ASCII and monochrome are the defaults and the
-acceptance floor; everything above them is fidelity, never information. `--capability` defaults
-to the best tier `COLORTERM`/`TERM` advertise rather than always `color16` (owner playtest: a
-terminal that can do more was still getting the tier most exposed to a terminal theme's own,
-inconsistently defined colours). `--theme` defaults to `dark` — the palette the lore and every
-screenshot are designed against — and `light` is one flag away for a light terminal background.
+The `grid` skill (`.claude/skills/grid/SKILL.md`) has the full command line, the report grammar and
+how to author a map.
 
-**`terminal-nexus`** (Milestone 3, all three gates built) launches straight to a top-level menu —
-Campaign, Challenge, Settings, About, Exit — on the same `TerminalBackend`/cell-frame stack `grid` uses, not
-a second presentation system. `src/menu/` holds the reusable menu-list shape, the keyboard and mouse
-adapters, and the driver; `src/view/menu.ts` composes the frame; `src/cli/lifecycle.ts` is the one
-idempotent disposer both `grid watch` and this menu build their lifecycle on. Every menu item shows
-its hotkey (`[1] Campaign`) and is reachable three equivalent ways — the hotkey, arrows and Enter, or
-a mouse click on its row (opt-in SGR mouse reporting, switched off by the disposer on every exit
-path). Settings, About and Exit are real (About: who made the game, where its code lives, how to
-contribute, and which build is running); Campaign and Challenge are honest about not being built yet, each
-in its own way (below). `terminal-nexus` flags: `--capability`, `--theme`, `--glyphs`,
-`--reduced-motion`, `--backend`.
+## 2. Testing
 
-**The Build Phase** (`--spike`, Milestone 5) is the first screen in the project that
-shows a **window onto a Grid larger than itself**: a 96 x 40 map in a viewport that is 49 x 18 tiles
-at 80 x 24 and 72 x 24 at 104 x 30. The screen is a full-width top bar, the **menu on the left**, the
-Grid in **a rectangle of its own** beside it, and a full-width bottom bar of **one line**: the last
-key's answer, or else a hint for where the keyboard is (`src/build/help.ts`; the menu spike, feedback
-F59). Every key and click is on the **Controls and hotkeys** page — the game menu's `[c]`, or `?`
-from anywhere. Each side of the Grid's
-rectangle is a dim line where there is more map that way and **the map's own edge** where the map
-ends — a style the map names for itself (this map's is a fence), the solid bar for a map that names
-none — in a quieter colour than the frame; the menu's divider is the map's west side (the owner's
-picks from his 2026-09-29 playtest). There is no minimap: the sides' weight says there is more map.
+Run both runtimes before every push. Node's runner takes the whole glob at once and isolates each
+file; `bun test` runs one file at a time through `scripts/run-tests.sh`, because its `node:test` shim
+rejects a test registered while another file is running and lacks `t.skip()`. Cross-runtime agreement
+is the only cheap test of the serialization and iteration assumptions many runs on one runtime never
+catch.
 
-**The menu runs the screen** (the owner's round-2 direction; `docs/ui-patterns.md` has the rules).
-The keyboard starts on the menu, on its first entry, and the map cursor on the Grid Nexus: Up/Down
-and Enter/Space work the menu, stopping at its first and last rows (Left and Right only grey the row's
-words for a moment). Tab moves the keyboard to the map in **plain navigation** — nothing armed, the
-menu still drawn beside it; the arrows move the cursor, and the map scrolls once the cursor comes
-within 30% of the view of an edge. `[e] Explore Map` (or Enter in plain navigation) turns its row
-active — `[e] Explore Map  >` — and swaps the rest of the menu for a card that describes whatever is
-under the cursor as it moves; opened from the menu, it first moves the cursor to clear ground near
-where it was and sends a see-through copy of the cursor from the row to it. `e` again, `x`, Esc or a
-click on the panel goes back. The menu is one list: Explore Map, Nexus, a line with what is left to
-spend on its right (`◆ 130`, the map's resource symbol — `* 130` in ASCII), the buildings with their
-costs, and `[s] Start Pulse` on its last line. `[n] Nexus` opens the Nexus Powers popup (a pick closes
-it). Arming a building (its digit, Enter on its row, or a click on it) keeps the cursor where it is
-when the building fits there, and otherwise moves it to the nearest spot within reach that leaves a
-free tile around it, and the panel becomes that building's card under `[1] Barracks  >`; begun on the
-menu, a **focus arrow** flies from that row's own place to the cursor, which blinks twice when it
-lands, and the card is revealed over about 400 ms (both lengths are the owner's tuned values). Enter or Space places it, and **the keyboard goes back to where the arming came
-from, disarmed** — the map, in plain navigation, for a digit pressed on the map; the menu for anything
-started on the menu. **A building being placed holds the keyboard**: its own digit, `x` or Esc cancels
-it, another building's digit is refused with a line saying so, and `p` waits. A row whose action is
-under way — a building armed, Explore Map open, the Nexus popup open — is drawn **active**:
-`[1] Barracks  >`, in the hotkey's colour; a placement back on the menu flashes its row once. **A mouse
-click activates what it lands on**: a click on a building's row arms it at once, its ghost at the
-cursor; on the map a **second click on the same tile** places (Q52); a click on the map from the menu
-keeps the menu beside it, so the next click can arm from it. Only the keyboard shows a "highlighted,
-not yet chosen" bar. Esc, `x` and a right click go back one level — popup, then placing or Explore Map
-to where it was started, then the map to the menu — and **only Esc**, on the menu, opens the **game
-menu**: `[s] Settings`, `[c] Controls and hotkeys`, `[a] Activity logs`, `[r] Restart`, `[q] Quit`; Esc closes it again, and
-`x` or a right click on the menu does nothing, so pressing `x` a few times always lands on the menu.
-`q` opens the game menu too, and only Ctrl+C quits at once. No popup has an `[esc] Back` row — the top
-bar's right end always says what Esc does right now — `menu [esc]`, `back [esc]` or `close [esc]` — and
-a click on it is Esc. Every row shows its cost, a row that no longer fits is dimmed, and **why a
-placement would be refused is the bottom line's job** — "rock in the way at 8,5", "costs 40, 20 left"
-(affordability first) — quietly while the grey `x` preview sits on the tile, in red once a placement is
-tried. `[u]` undoes and Backspace (on the map) removes the one under the cursor, both refunding (and
-throwing the placement's sparks where it stood), which keeps a plan revisable until `p` starts the
-Pulse.
+What the suite proves, by area, is in [`docs/system-design/testing.md`](docs/system-design/testing.md):
+determinism (identical hashes across runs and runtimes, one call equals tick by tick, the kernel
+imports no renderer and calls no clock), the Grid's occupancy and collision masks, every rule with a
+named scenario, structured-cell snapshots across backends, the terminal lifecycle through one
+disposer, and the browser page held to the terminal's characters, colours and keys.
 
-**Taps are counted, a hold has a pace, and Shift jumps** (gate 5H, reworked after the owner's playtests
-of 2026-09-28 and, for the counting, his third round on the menu spike, 2026-09-30): a tap moves one
-tile; taps of one arrow each within 400 ms of the one before keep their speed, and the third since the
-speed last changed doubles it if it came within 300 ms of the one before — 1, 1, 2, then 2, 2, 4; a
-longer gap, another arrow or any other key starts over at one. A held arrow moves at the game's own
-pace, at most one move every 60 ms whatever the keyboard's repeat rate, one tile a move and two after
-600 ms. Shift+Arrow is not a speed but a **jump of ten tiles**; held, it jumps again at most every 100
-ms, so each jump is seen to land. Where the terminal reports key events (the kitty keyboard protocol,
-the Key releases Experiment — `src/view/key-events.ts`), it says which presses are repeats and when a
-key is let go, and the screen switches the protocol off again on every way out; elsewhere a press within
-the hold window (200 ms) of the one before counts as a repeat (`src/build/motion.ts`). The reducer only
-ever sees a move of the size chosen. **Every list moves the same way** — the Build Phase menu, the
-Nexus powers, the game menu, Settings, the Controls page: one row a tap, taps counted and holds at the
-same pace, stopping at the ends, and Shift+Up/Down, PageUp/PageDown or Home/End go straight to the first or last row
-(`src/menu/list-keys.ts`). **Everything that moves is interpolated** (`src/view/tween.ts`): the view
-**slides** to wherever it scrolled, by any means, and the cursor **glides** to its new tile, over a few
-frames — the screen's frame timer runs only while something moves (`src/view/build-live.ts`), and
-reduced motion snaps both. A jump does not re-centre the view; it scrolls like any other move. **A
-click near an edge scrolls further the nearer the edge**, armed or not. A placement tried and refused
-flashes its footprint. A lone Esc at the end of a read waits 50 ms for the rest of a key sequence
-before it counts as Esc — so anything sending keys programmatically leaves a pause after an Esc. **These
-numbers are the owner's own, picked in Experiments and now settled** in one table of tuned values,
-each saying who chose it and when (`src/build/tuning.ts`); only a few are still Experiments (`d`,
-below).
+Things that bite:
 
-**Settings, Experiments and the export** (owner, 2026-09-28). The game menu's `[s] Settings` is one
-scrolling popup: first the player's own settings — background, colour depth, symbols, reduced motion —
-changed live with Left/Right and saved to the same `~/.terminal-nexus/settings.json` the title menu's
-Settings writes; then, apart at the bottom, **Experiments**: the few questions still being felt, each
-naming the question it serves, never saved (`src/build/experiments.ts` is the list; `src/build/settings.ts`
-the popup's rows). Today there are five — the focus arrow's length and the card reveal's (both looks
-still being judged), the hold window (it depends on each keyboard's repeat delay), and the mission's
-Next round and Incoming wave (gate 6B); every value the owner settled is in `src/build/tuning.ts` instead. `d` opens
-Settings straight at the Experiments. The title says where the highlight is in the list
-(`SETTINGS (5/10)`), a scroll bar in the popup's right border shows and scrolls the rest
-(click its upper or lower half, or use the wheel), and what the highlighted row is for is written under
-a line below the list. The game menu's `[r] Restart` starts the Build Phase over keeping everything; a
-changed setting that only applies after a restart is announced in a message popup when Settings
-closes. `[e] Export settings`, the list's last row, shows every setting and experiment as `name = value` text — changed
-experiments first, each with the default it replaced, the commit on the first line
-(`src/build/settings-export.ts`) — and in a terminal also copies it to the clipboard with OSC 52 (in
-iTerm2 allow "Applications in terminal may access clipboard") and writes
-`~/.terminal-nexus/settings-export.txt`. **`--settings "<text>"`** reads an export back — the whole
-text or just some pairs, unknown names and bad values skipped one at a time — for `--spike` and for
-`scripts/playtest.mjs`, so an agent can reproduce exactly what the owner played. **`--keys "<key script>"`** opens the Build Phase already in the state those keys reach —
-the scripted playtest's key names, through the same adapters a player's keys go through — and `#keys=`
-does the same on the browser page (`#keys=n%201%201%20Enter`); with `--settings` a demo opens exactly
-where and how it should.
+- **Bun has a 5000 ms per-test timeout; Node does not.** A test whose cost scales with the fixture
+  count (`for (const name of scenarioFiles())`) creeps up on it silently. Give it an explicit
+  `{ timeout: 120_000 }` (third-argument form; identical under Node). Run the Bun suite once before
+  adding a scenario file.
+- **Timing tests flake under load.** With agents building in parallel the frame-budget tests have
+  failed once and passed alone. Re-run the file alone and measure before and after; never loosen a
+  test to make a busy machine pass.
+- **A red assertion in the live-loop test looks like a hang.** `tests/build-lifecycle.test.ts` leaves
+  the terminal loop running when an assertion throws, so Node never exits. Run it alone with
+  `node --test --test-timeout=30000`.
+- **Silent parsers.** An unknown command-line option is treated as a flag. Register every
+  value-taking option in `src/cli/args.ts` and test that it arrives.
 
-**Activity Logs** (owner, 2026-10-01). `src/log/` is one structured logger: every event is declared in a
-schema before it is logged (`src/log/activity.ts`: name, default level, meaning, typed properties), and
-`activity.log(event, props)` keeps entries in memory, the oldest dropped past a limit. The Build Phase,
-the title menu and the shells log into the global `activity` logger — commands, refusals, placements,
-popups, settings, the Pulse's start and result, errors. The game menu's `[a] Activity logs` lists them
-newest first under a filter; `[e] Export logs` copies what the filter shows (OSC 52) and writes
-`~/.terminal-nexus/activity-export.txt`. `node scripts/playtest.mjs … --activity [filter]` prints what a
-scripted run recorded.
+The validator, `./scripts/check-repository.sh`, is the cheapest reviewer and runs in CI. It checks
+the required files, that exactly one milestone is current and names its step, that every question
+id cited resolves and every open question has a recommendation, that only RULE, GUIDANCE and IDEA
+exist as markers, that retired words stay retired outside `docs/history/`, and that links resolve,
+fences balance and the tree has no whitespace errors. Add a check whenever you catch yourself
+remembering a rule instead of relying on one.
 
-**A placed building goes up** (gate 5I): it plays a few frames of its own (authored beside its art in
-`src/content/art.ts`'s `PLACEMENT_ART`, with a generic fallback for anything not drawn yet), then
-stands finished with a brief light on its characters and a few sparks around it — all of it timed by
-the live loop and drawn by `src/view/placement.ts` as a pure function of the time since the
-placement, and none of it in the plan. Its four numbers — the build animation's length, the
-lighting, the particles and the glow time — are tuned values (`src/build/tuning.ts`; the lighting still
-knows a rainbow); reduced motion shows the finished building at once. Scripted playtests draw buildings finished; `scripts/capture-spike-screenshots.mjs`'s
-`placementGif` and `placementSheet` step the animation with a fake clock.
+## 3. Seeing a change
 
-It is built from **the presentation toolkit's four families**, each a pure function of absolute
-presentation time and each usable by anything on the Grid: **Animations** (`src/view/animation.ts` —
-frames plus a little metadata, played on a per-entity track of timestamped requests: `play` with a
-replace/queue/ignore policy, `cancel`, `accelerate`, `finish`, and follow-ups scheduled as data when
-an animation completes), **Particles** (`src/view/effects/particles.ts`, `fx.sparks.burst`, and most of
-the Pulse vocabulary), **Shading** (`src/view/effects/shading.ts`, `fx.light.flash`, glyphless tints
-and lights) and **Tweens** (`src/view/tween.ts`). A placement is one `play` of its frames with the
-light and the sparks as its follow-ups; `tests/animation.test.ts` holds the track to its contract.
+A passing test says nothing about spacing, density or where the eye goes. Look.
 
-Shift+Arrow is the fast move, and so are PageUp/PageDown and Home/End, because several terminals
-deliver no shifted arrows at all — `node scripts/probe-modified-keys.mjs` prints the survey, and
-`evidence/gate-5a-report.md` has the table. So does Option+Arrow as macOS terminals send it (`ESC b`,
-`ESC f`, or `ESC` before an arrow), bound from their documented defaults; **`node
-scripts/lib/key-echo.mjs` prints exactly what each key sends in the terminal it runs in** (press `q`
-to leave), which is how to check a terminal nobody has measured yet. Every binding is on the
-**Controls and hotkeys** page; the bottom bar names only what matters where the keyboard is.
-`--scroll-margin <percent>` starts the scroll margin at another share of the view than 30%. Nothing it
-plans reaches the simulation, and the plan is not saved.
-
-The Build Phase deals a **Nexus power draft** (gate 5D): two placeholder powers — a plain bump to the
-starting allotment, not real Milestone-8 content — one of which must be picked before the Pulse can
-start, because a dealt Nexus power may not be skipped. `[n] Nexus` opens the pick as a popup over the
-Grid, and a pick closes it; a waiting pick refuses only the start of the Pulse. `[s] Start Pulse` — the menu's last row, reached by Up and Down like every other — opens, once,
-the **Battle Round 1** screen: what the round announces ("Activate Nexus. Collect Resources. Spawn
-Units.", or a mission's own text) and one row, `[s] Start`, to end the Build Phase and start the Nexus
-Pulse (`s`, or its unlisted alias `p`, or a click, opens the screen from anywhere). Enter, Space or
-`s` again starts it, and Esc goes back (`y` still accepts too, unlisted); accepting locks everything else — arming, placing, undo, and removal are all refused
-once committed, each naming which of the three gates (drafting, confirming, or already committed) is
-holding it. Whichever of the draft, the confirmation, or the construct menu the panel is currently
-showing is the one a digit or a click addresses, so a hotkey and a click always land on the same
-command, whichever adapter sent it.
-
-**Accepting starts the Nexus Pulse** (gate 6A), **one round of a mission** (gate 6B). The screen plays
-PERIMETER (`src/mission/perimeter.ts`): three rounds, the raid arriving in three waves, won by holding
-the Nexus to the end of round 3. The committed plan, whatever survived the last round and the round's
-arrivals become the kernel's opening state (`src/match/opening.ts`), the trigger runner
-(`src/match/mission.ts`) resolves the whole Pulse once on the unmodified kernel — applying a later wave
-between ticks — and reads the mission's verdict (`src/cli/pulse-run.ts`, well under 100 ms), and Recall — the end-of-Pulse regroup `engine.md` Section 5
-describes, built for the first time here in `src/match/recall.ts` as a pure function beside the
-kernel, never inside its tick — is worked out from where it ended. The Pulse then plays on the Build
-Phase's own screen (`src/view/pulse-scene.ts`, `pulse-live.ts`): the panel keeps score and lists the
-last events, the arrows look around, Space pauses, `[` and `]` change the speed, `.` and `,` step, `r`
-watches it again. The Pulse's title carries a countdown to the last shot; the ending is the timer
-flashing and a light sweeping round the map's border in the last three seconds, a cease fire, the
-survivors walking home and a result (`src/view/ending.ts`, every moment a function of presentation
-time). Red is kept for the player's own Nexus being hurt — its first hit, very low health, a lost
-Pulse — faint and brief. Its five timings and switches — the final warning, the red alerts, the
-walk-back's delay and length, centring on the Nexus — are tuned values (`src/build/tuning.ts`). The Build Phase's reducer knows none
-of it except two commands — `look-at`, which the Pulse sends to centre the view, and `pulse-failed`,
-which takes the commit back if the kernel cannot start from the plan. A context that carries no
-`startPulse` still just freezes the plan, as before. Restart, from the game menu, is the way back to
-a fresh Build Phase until the loop into the next one is built (gate 6B).
-
-Its own code: `src/build/` holds the camera arithmetic, the pure reducer, the three adapters and the
-driver; `src/view/build.ts` composes the frame from its parts (`build-frame`, `build-grid`, `build-menu`,
-`build-card`, `build-handoff`, `build-popup`); `src/cli/spike.ts` runs it on the same backend and the
-same idempotent disposer as the menu. `src/view/draw.ts` is where the `put`/`text` band-writing
-helpers moved once a third screen wanted them. `src/match/` (gate 6A) is the rules layer between the
-Build Phase and the kernel — a plan into the kernel's opening state, and Recall — and the view and the
-Build Phase may not import it or the kernel (`tests/architecture.test.ts` says so; the application
-shell, `src/cli/pulse-run.ts`, hands the Build Phase what it needs).
-
-Campaign and Challenge (Gate 3C) hand off to Milestones 4 and 11, neither of which is built yet, so
-each says so — differently, matching what the milestone's own text asks for. Campaign's hotkey opens
-a real second screen (`src/cli/menu.ts`'s `campaignMenu`, the exact same session/list/view machinery
-Settings already uses) with a plain message and a Back row. Challenge stays on the top-level menu but
-renders dimmed — `MenuItem` gained an optional `disabled` flag that `src/view/menu.ts` reads to draw a
-row in the muted style instead of its usual colours — and its own label already names the milestone
-that builds it (`"Challenge (Milestone 11)"`), rather than making a player press it to find out.
-Activating a dimmed row is unchanged from any other item — engine.md 9.7 is a RULE that a displayed
-hotkey activates the item it belongs to, so `disabled` only ever changes how a row is drawn, never
-whether pressing it does something.
-
-Settings (`src/settings/`, Gate 3B) is a second menu screen reached from the top level by its own
-hotkey, built from the exact same list shape and the exact same three adapters rather than a second
-kind of screen invented for it: four rows — colour depth, background, symbols, reduced motion — each
-cycling to their own next value in place, plus a row that goes back (its own hotkey, or Esc). A change
-shows up on the very next frame with no restart of the terminal: `TerminalBackend` gained an optional
-`setPresentation(capability, theme)`, implemented by both `AnsiBackend` and `OpenTuiBackend`, so the
-same running backend can be told to draw differently instead of being torn down and rebuilt. Every
-change is written straight to `~/.terminal-nexus/settings.json` — a small file of its own that `grid`
-never reads, and deliberately not a step toward any future save/progression format — and read back on
-the next launch; an explicit command-line flag still overrides it for that one run without changing
-what is saved.
-
-`bun test` drives one file at a time (`./scripts/run-tests.sh bun`): its `node:test` shim rejects a
-test registered while another file's tests are still running, and it does not implement `t.skip()`.
-Node's runner isolates each file and takes the whole glob at once.
-
-**Bun enforces a 5000ms default per-test timeout that Node's runner does not.** Any test whose cost
-scales with the fixture count — `for (const name of scenarioFiles())`, N runs each — silently
-approaches that ceiling as scenarios are added and eventually times out under Bun with no equivalent
-warning under Node. This has happened twice already (`tests/cli.test.ts`'s `verify --runs 20`,
-`tests/determinism.test.ts`'s twenty-runs-of-every-scenario check). The fix each time was the same:
-give the test an explicit `{ timeout: 120_000 }` (`test(name, { timeout }, fn)`, third-argument form,
-works identically under Node). **Before adding a new scenario file, run `./scripts/run-tests.sh bun`
-once** — not just `npm test` — since this class of failure is Bun-only and easy to miss.
-
-### Scripted playtests and demos
+**The scripted playtest** (`node scripts/playtest.mjs`, the `playtest` skill) presses keys on the Build
+Phase screen without a terminal and keeps what the screen showed after every key: text for every step
+in `.playtest/<name>.txt`, PNGs on request (`--png final`, `--png all`), an animated GIF of the whole
+sequence (`--gif`). Keys go through the real keyboard and mouse adapters as the bytes a terminal
+sends, one at a time, and every frame comes from the composer the live screen uses, so there is no
+capture race. `--settings "<text>"` starts from a pasted export; `--activity [filter]` prints what the
+run recorded in the Activity Logs, as the game's window would export it; `--size`, `--capability`,
+`--theme` and `--glyphs` set the terminal. The key names (`Down`, `S-Left`, `Name*N`, `Name~MS`, `wait~MS`,
+`click:X,Y`, `Right/release`) are at the top of `src/playtest/keys.ts`.
 
 ```bash
-node scripts/playtest.mjs --keys "Down Down Space*4"                  # every step's status, then the final screen
-node scripts/playtest.mjs --keys "n 1 Tab S-Left*3 Enter" --print all
+node scripts/playtest.mjs --keys "Down Down Space*4"                       # every step's status, then the final screen
 node scripts/playtest.mjs --keys "Down Down Space*4" --gif --png final --name hatchery-run
-node scripts/playtest.mjs --file flow.keys --size 104x32 --capability monochrome --png all
+node scripts/playtest.mjs --keys "n 2 s s wait~1000*20"                    # a Pulse, twenty seconds in
 ```
 
-Presses keys on the Build Phase screen (`--spike`) without a terminal and keeps what the screen
-showed after every key: the text of every step in `.playtest/<name>.txt`, and on request PNGs
-(`--png final`, `--png all`, `--png 0,3,6`) and an animated GIF of the whole sequence (`--gif`).
-Output goes to `.playtest/`, which git ignores; pass `--out evidence/screenshots` only for an image
-that is going into a pull request. `--help` lists everything, including `--size`, `--capability`,
-`--theme`, `--glyphs`, `--delay` and `--hold` — and `--settings "<text>"`, which starts the script from
-an exported settings text, the way to reproduce what the owner pasted into a pull request.
-
-Use it to see a change working, to check a flow a person described, and to make the pictures a pull
-request shows. The keys go through the real keyboard and mouse adapters as the exact bytes a terminal
-sends, one key at a time, and each frame comes from the same composer the live screen uses — so there
-is no capture race, and no Esc glued to the next key by accident. Key names: `Up Down Left Right`,
-`S-` (Shift) and `M-` (Option) arrows, `Tab S-Tab Esc Enter Space Bksp Del PgUp PgDn Home End`, any
-single character, `Name*N` to repeat, `Name~MS` for a key arriving MS milliseconds after the one
-before (untimed keys are a second apart, so each is a press of its own; `Right Right~150 Right~30*12`
-is a held arrow's auto-repeat, which the held-key ramp reads — the per-step summary prints the kind
-of move: tap, hold, fast or jump), `wait` or `wait~MS` for no key at all while time passes (a second
-by default) — how a script watches a Nexus Pulse: `n 2 s s wait~1000*20` starts one with nothing built
-and shows it twenty seconds in, second by second; `Enter` on the result opens the next round,
-`click:X,Y` for a Grid tile and `click@COL,ROW` for a screen
-cell (`rclick`, `wheelup`, `wheeldown` likewise), `#` for a comment in a file. The full table is at
-the top of `src/playtest/keys.ts`. A script that leaves the screen (`q`, or Esc with nothing armed)
-stops there and says so.
-
-Only the Build Phase is wired up. Another screen gets a sibling of `src/playtest/build.ts` — take
-steps, return frames — and the command line, the key names and the image code carry over unchanged.
-
-Images come from the same pipeline as the real-terminal screenshots below (`frameToAnsi` → HTML →
-headless Chromium), plus `pngjs` and `gifenc` for the GIF: one shared palette, and every frame after
-the first stores only the pixels that changed, so a six-key GIF at 80 x 24 is about 200 KB at the
-default `--scale 2`. Chromium's bundled ffmpeg (`/opt/pw-browsers/ffmpeg-1011`) was checked and cannot
-help: it reads only MJPEG and writes only VP8 WebM, and a WebM does not play inline in a pull request.
-
-### Screenshots of the real terminal
-
-```bash
-node scripts/capture-screenshots.mjs              # all of them
-node scripts/capture-screenshots.mjs --only mirror-melee
-```
-
-It drives `grid` (watch, the default action) inside a tmux pseudo-terminal — a real PTY, so the ANSI backend takes
-the same path a person gets — pauses it, steps to an exact tick, captures the pane with its escape
-sequences, and renders it to a PNG in `evidence/screenshots/` through the Chromium already present
-for Playwright. Use it when a change touches the composition: a frame's *text* is what the tests
-assert on, and it says nothing about spacing, density, or where the eye goes.
-
-`node scripts/capture-spike-screenshots.mjs` covers the Build Phase, at each of the terminal sizes
-that actually mean something: 80 x 24 (the floor and the minimum viewport), 104 x 32 (the maximum
-viewport), 128 x 24 (two columns per tile), and 79 x 24 (one column below the floor, so the resize
-gate). `--only <name>` captures a single shot; `--out <dir>` writes somewhere other than
-`evidence/screenshots/`. **Most of its shots are composed in-process**, through the scripted playtest
-above, because a shot about layout or a flow must not be able to come out one key early — one did,
-with a popup still open, because the text it waited for was drawn before the key that closed it. Each
-names text its frame must contain and fails if it does not. **A few stay on tmux on purpose**, because
-the terminal path is what they prove: startup, the resize gate, real Shift+Arrow and PageDown bytes,
-real SGR mouse clicks, and `--capability monochrome` end to end.
-
-The tmux path is made race-free in `scripts/lib/terminal-capture.mjs`: every key is its own tmux call
-followed by a short pause (an Esc and the next key in one read are one Option+key to the input
-splitter), and after the expected text appears the shot waits until two captures 200 ms apart agree
-(`settledPane`) before rendering. `capture-menu-screenshot.mjs` uses the same two helpers.
-
-**An unchanged shot is not rewritten.** Every image the shared pipeline renders records a hash of
-the page it was rendered from; when a regeneration would produce the same page, the file is left
-alone. An older image without the hash is compared pixel by pixel and also left alone when it
-matches. So regenerating every screenshot after a change touches only the images the change actually
-shows up in, instead of adding a fresh copy of each to the repository's history. `--force` (or
-`TN_CAPTURE_FORCE=1`) re-renders everything — for when Chromium or the font changed rather than the
-game.
-
-`node scripts/probe-modified-keys.mjs` is not a screenshot but belongs to the same family: it prints
-what every terminal description installed on the machine claims it sends for Shift+Arrow, PageUp and
-Home, then drives a real pseudo-terminal and prints what actually arrived. Run it before trusting any
-remembered escape sequence.
-
-`node scripts/capture-menu-screenshot.mjs` does the same for `terminal-nexus`'s menu, sharing the
-same `scripts/lib/terminal-capture.mjs` pipeline: launch, arrow keys by real tmux key name, a hotkey
-digit, and — driving the mouse adapter with the literal bytes a terminal actually sends, not a
-description of one — a raw SGR mouse click at the row's own rendered cell. Its shots also cover the
-Settings screen (entering it, cycling a row, and coming back — cycling does more work than a plain
-navigation redraw, since it writes the settings file too, so that shot waits for the new text to
-actually appear rather than capturing on a fixed delay) and Campaign's placeholder screen the same
-way, plus one of Challenge dimmed and highlighted on the top-level menu itself.
-
-Requires `tmux` and the browser at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`. Editing the
-`shots` array at the top of the script is how you add a frame worth looking at.
-
-### The log is the feedback loop
-
-`grid --headless` writes fixed-column lines to one stream (stdout), which is what lets an agent
-assert on behaviour without parsing prose:
-
-```text
-[tick] LEVEL kind subject [-> object] detail...
-```
-
-Levels are `ERROR`, `WARN` (default), `INFO`, `DEBUG`, `TRACE`. `INFO` is the story — spawns, first
-engagements, every attack that landed, deaths, structures destroyed, victory; `WARN` is anomalies
-plus a closing `report` line carrying the outcome, losses, and hashes, so a bare `--headless` run
-still ends with the answer even at the default level. It grows by adding kinds, never by reshaping
-columns. `--save-log <file>` writes the same lines to a file, in any action (`watch` included). When
-a test needs structure rather than a story, assert on `--events` JSONL instead.
-
-## Environment options
-
-### Local checkout
-
-Use any editor and terminal capable of running the pinned toolchain once selected. The repository
-validator currently requires Bash, Node.js, and standard POSIX tools (`grep`, `sed`, `awk`, `find`).
-
-### GitHub Codespaces
-
-The repository includes a dev-container configuration supplying an editor, shell, Node environment,
-and GitHub CLI. The Node image does not pre-decide the Terminal Nexus runtime.
-
-### Claude Code on the web
-
-Claude runs in an isolated task environment and should work on a branch, verify its changes, and
-return a pull request. See `docs/claude-web.md`.
-
-Measured in that environment on 2026-08-20: **Bun 1.3.11 and Node 22.22.2 are present; Deno is not.**
-A Deno probe therefore costs an install step in every session, which is why Milestone 1 dropped it.
-
-## Change discipline
-
-- One pull request should answer one bounded question.
-- Keep measured facts separate from design judgments.
-- Preserve exact versions, commands, platforms, fixtures, snapshots, and seeds.
-- Do not continue into a later gate without owner acceptance.
-- Do not update canon to claim an experiential success that Mario or a fresh viewer has not observed.
-- Never commit secrets or personal information.
-
-## Evidence reports
-
-Copy `specs/templates/gate-report.md` into the spike's `evidence/report.md` and fill it in **while you
-work**. A report reconstructed at the end is how a gate quietly turns into a summary of whatever got
-built.
-
-Reports and large evidence belong beside the implementation spike, not inside the durable canon.
-
-## Canon changes
-
-The canon is split by responsibility under `specs/`. Change the narrowest authoritative document and
-follow the protocol in `specs/project-governance.md`. Increment the shared canon version for semantic
-changes — the validator names the documents you forgot.
-
-Undecided things go in `specs/open-questions.md` with a recommendation, not into a hedge inside a
-specification.
-
-## Change log
-
-Human-readable history of the development setup. Product and canon history lives in
-`specs/project-governance.md` Section 6.
-
-### 2026-08-21 — Milestone 1 built: the Pulse Playground (canon 2.6)
-
-The repository has code. Node 22.18+ and Bun 1.3+ run the TypeScript sources with **no build step**,
-so relative imports carry explicit `.ts` extensions and the code stays inside erasable-syntax
-TypeScript — no enums, no parameter properties. `tsconfig.json` is for type checking and editors.
-
-New commands:
-
-```bash
-npm run play           # watch Citizens versus Ravels, colour, Unicode, effects on
-npm run play:cascade   # the Ravel fuel-dump chain, at half speed
-npm run play:plain     # the same fight with effects off
-npm run play:mono      # monochrome, the acceptance floor
-npm run scenarios      # list all seventeen
-
-npm test               # 122 tests under Node's runner
-npm run test:bun       # the same files under Bun, one at a time
-npm run typecheck      # tsc --noEmit
-
-./bin/playground.ts run|watch|verify <scenario>
-node scripts/capture-screenshots.mjs      # drives a real PTY and renders PNGs
-node scripts/capture-frames.mjs <id> ...  # plain-text frames
-```
-
-Things worth knowing before touching this:
-
-- **`bun test` is driven one file at a time** by `scripts/run-tests.sh`. Its `node:test` shim rejects
-  a test registered while another file's tests are still running, and it does not implement
-  `t.skip()`, so runtime-specific tests are registered conditionally instead.
-- **`src/pulse` may not import `src/view`, and `src/report` may not import `src/pulse`.**
-  `tests/architecture.test.ts` walks the transitive import graph and fails the build on either.
-- **The kernel touches no clock and no `Math.random`** — asserted both statically and by trapping
-  them during a resolve.
-- **Screenshots need tmux and Chromium**, both present in the web container. See the
-  `grid-screenshots` skill (renamed from `playground-screenshots` since this entry was written).
-- `@opentui/core` is pinned at 0.5.6 and its **native core only loads under Bun**; the direct-ANSI
-  backend carries Node and passes the whole lifecycle suite.
-
-### 2026-08-21 — execution-readiness audit (canon 2.5)
-
-The canon read as a contract an isolated session has to execute, rather than as a design document.
-Full findings, including the ones deliberately *not* acted on, are in
-`docs/spec-audit-2026-08-21.md`.
-
-**Tooling**
-
-- The validator now checks `AGENTS.md`'s canon version against `specs/README.md`. `AGENTS.md`
-  Section 4 restates ~20 canon invariants as a summary; it carried no version, so a canon bump could
-  leave it stale with nothing to notice. It now has one, and forgetting it fails the build.
-- The fix that suggested itself and was **not** taken: teaching the validator to verify `engine.md`
-  section *numbers* in cross-references. Numbers move on every restructure. The cheaper convention is
-  to cite a section by name as well — `engine.md §9.4 "Bands"` — so that a grep survives renumbering.
-  Worth doing when the next renumbering happens, not before.
-
-### 2026-08-20 — viewport and playground pass (canon 2.3)
-
-Corrections from Mario after the 2.2 pass, plus the shape of the first spike.
-
-**Viewport, screen sizes, and scrolling — now formalised**
-
-- The viewport is measured in tiles and clamped to **48 x 16 minimum, 72 x 24 maximum**. The minimum
-  is the floor below which the renderer gates; the maximum exists so a huge display cannot show
-  meaningfully more Grid than a laptop, and so every layout calculation has a bound. Space beyond the
-  maximum goes to centring and a larger inspection panel, never to more Grid.
-- Terminal sizes fall out: **80 x 24** for the minimum viewport at one column per tile, 104 x 30 for
-  the maximum; 128 x 24 and 176 x 30 at two columns. 80 x 24 stays the acceptance target.
-- **Scrolling is cursor-driven.** Move the cursor within 3 tiles of a viewport edge and the camera
-  follows. No pan mode, no modifiers, no second cursor, and no minimap. The UI must show there is more
-  Grid: the weight of the frame's sides says so (a footer position readout was also required until
-  the owner's menu spike, canon 2.27).
-- Small and medium presets fit the minimum viewport entirely, so tutorials and opening missions can
-  introduce the game without a player ever learning to scroll.
-
-**Layers were wrong, and are now right**
-
-The 2.2 pass made "collisions resolve within a layer, never across" a hard rule. That is not what
-layers are for. Corrected:
-
-- **Layers define render order. That is the only hard rule.** Beyond that they organise assets.
-- **Collision is a query**, not a layer property: a `CollisionMask` is composed from a chosen set of
-  layers plus a predicate. A ground unit's movement mask includes `obstacles` and `units` but not
-  `workers`, which is *why* a worker and a soldier can share a tile — and why a unit is still blocked
-  by a building on a different layer. Both fall out of one mechanism instead of two rules.
-- Different questions compose different masks: movement, placement, and targeting each want their own.
-
-**Units can be large**
-
-Settled directly (Q3): units as well as structures may span multiple tiles, and it matters
-strategically. A Ravel raider drawn `>x<` is one unit occupying three tiles. A mover tests its **whole
-footprint** against its mask; damage and destruction apply to the entity, not the tile. The Gate 1A
-fixture now includes a 3 x 1 hauler specifically to break a collision system written for one-tile
-actors while that is still cheap to find out.
-
-**Authority markers reduced to two**
-
-**RULE** and **GUIDANCE**. `UNPROVEN` folded into GUIDANCE — sections that describe something not yet
-designed say so in their own words, which was doing the work anyway.
-
-**Milestone 1 is the Pulse Playground**
-
-Reshaped again, and better. The headless run and the ASCII view are built **together**, not as
-separate gates: the headless run is how an agent iterates, the view is how Mario tells whether any of
-it is good, and each catches what the other hides. Gate 1A uses a small Grid that fits the viewport,
-so selection and scrolling are out of scope entirely. Gate 1B adds render tiers and effects.
-
-The Playground is **foundation, not spike residue** — it is the bench every future unit gets tested
-on, so the code quality bar is higher than "spike."
-
-**The report is the feedback loop**
-
-The Playground's most important feature for autonomous work: a **levelled log on stderr** (default
-`INFO`) in fixed, greppable columns, and a **summary on stdout** with the outcome and hashes.
-`playground run x.ts > report.txt 2> run.log` splits them. `INFO` carries the story — spawns,
-engagements, attacks that landed, deaths, destruction, victory — so an agent can assert on behaviour
-without parsing prose, and a designer can read what happened. `DEBUG` carries per-tick decisions,
-`TRACE` carries everything.
-
-**Concept folder simplified**
-
-The delta tables added in 2.2 were over-engineering an early sketch. Reduced to what is worth keeping
-from each piece, plus a note that the real visual concept comes from the Playground.
-
-### 2026-08-20 — design-authority pass (canon 2.2)
-
-A second pass after Mario clarified the shape of the engine and refocused the first spike.
-
-**Terminology**
-
-- The play surface is now **the Grid**, everywhere. The replica standing on it is a **Grid Nexus**;
-  the one that stays home is a **Prime Nexus**. The retired word is rejected by the validator.
-
-**The Grid became a real model rather than a number**
-
-- Size and shape presets: `small`/`medium`/`large`/`extra-large` against
-  `squared`/`wide`/`extra-wide`, twelve in all. `medium-extra-wide` (48 x 16) is the default, and the
-  arithmetic is not a coincidence — at one column per tile it is exactly 80 columns with a sidebar,
-  and at two columns exactly 128.
-- **Orientation is a rendering choice.** Portrait and landscape change no coordinate and no rule.
-- **Five layers** — terrain, obstacles, workers, units, air — with one occupancy law: collisions
-  resolve *within* a layer, never across. That single rule is what makes a worker and a soldier
-  sharing a tile a legal transient state rather than an edge case to arbitrate, and it maps straight
-  onto the render bands.
-- **Anchor, footprint, and facing** on every entity. Multi-tile is first-class from day one, because
-  a footprint loop written now costs nothing and retrofitted later costs a week. Range measures to
-  the nearest occupied tile. Facing is presentation-only for now (Q9).
-
-**Authority markers**
-
-Every section of `engine.md` now declares **LAW**, **GUIDANCE**, or **UNPROVEN**, with a legend in
-`specs/README.md`. Most of the design canon is GUIDANCE — a recommendation written before the thing
-existed, so a session facing a fork has better than a coin flip. The rule that makes it work:
-*descriptive completeness is not authorization.*
-
-**Milestone 1 refocused onto the Pulse**
-
-The old plan proved a renderer first and simulated later. That is backwards for this game: an
-authored reel can tell you whether a hand-tuned sequence looks good, but not whether *emergent
-simulated combat* is legible — which is the actual product risk. The milestone is now three gates,
-each producing something runnable:
-
-- **1A — headless Pulse.** Grid, layers, scenario files, deterministic tick loop, a mirror Citizen
-  skirmish. No terminal at all. `pulse run` prints a hash.
-- **1B — watch the Pulse.** Cell frame, bands, composition, playback, lifecycle. Renders a kernel
-  already known to be correct. The backend is *chosen* (OpenTUI, on the measurements) rather than
-  competed for in a gate of its own.
-- **1C — make it hit.** The effect vocabulary, evaluated by fresh viewers with effects on and off.
-
-**Packaging, standalone binaries, SSH, PTY, and browser delivery are deferred out of the milestone
-entirely.** They answer no question the game currently has.
-
-**New: `specs/ascii-effects.md`**
-
-The particle system, formalised: the pure `EffectRecipe` contract (absolute time in, sparse cells
-out, `f(t)` never depending on `f(t-1)`), the beat structure, the craft rules, and a ten-effect
-starter vocabulary. Every effect owes three forms — full, reduced-motion, monochrome — authored
-together, never in a later accessibility pass. Gate 1C is the spike that proves or discards it.
-
-**Tooling**
-
-- The retired-terminology guard now covers the Grid rename.
-- `specs/ascii-effects.md` is a required file.
-
-
-### 2026-08-20 — canon audit and autonomy pass (canon 2.1)
-
-An audit of the canon against itself, against the concept art, and against current upstream sources.
-
-**Specification changes**
-
-- **Milestone 1 was split.** Gate 1A previously required two backends, two runtimes, standalone
-  executables, an SSH smoke test, and a browser-terminal demonstration before Gate 1B could begin —
-  while `engine.md` Section 11.2 simultaneously called remote and browser surfaces "not Milestone 1
-  product commitments." Gate 1A is now cell frame and lifecycle only. Packaging and remote delivery
-  moved to **Gate 1C**, which is authorized independently and does not block the battle reel.
-- **`specs/open-questions.md` added** — the durable register for decisions that need Mario. Seeded
-  with seven questions found during the audit. The register is what lets a session get blocked on one
-  fork without stalling on all of them.
-- **`specs/templates/gate-report.md` added** — the fill-in template that closes a gate.
-- **`specs/ascii-art-references.md` added** — researched sources for producing terminal art, with what
-  each one is actually good for.
-- **`concept/README.md` added** — index of the concept folder: the early art, the real screenshots
-  that replaced it, and the archived original specification.
-- **`engine.md` Section 11 corrected against measurement** (see below). Sections 6.1, 6.4, 10.2, and
-  10.4 now point at the questions they leave open instead of reading as settled.
-- **Corruption law added** to `engine.md` Section 10.4 and `terminal-nexus-lore.md` Section 9,
-  resolving the collision between Glitch's identity and the legibility contract.
-
-**Measured findings that changed the specification**
-
-Probed on Linux x64, 2026-08-20. Indicative only — re-measure before citing.
-
-- `@opentui/core@0.5.4` (MIT) publishes an explicit `node` export and **imports cleanly on Node 22**.
-  The premise that OpenTUI meant Bun was false; library and runtime are independent choices.
-- Its native core ships as **8 prebuilt per-platform packages** in `optionalDependencies`. No Zig
-  toolchain is needed to consume it — the "install Zig" note applies to building the monorepo.
-- **318 published versions, 141 semver releases** since 2025-08-13, roughly 12 per month. The pre-1.0
-  churn risk is real and quantified. The repository has also moved from `sst/` to `anomalyco/`.
-- `bun build --compile` produced a **140 MB standalone binary that ran from a clean working
-  directory**, so the FFI-plus-standalone-binary risk is largely retired; size is the remaining cost.
-  Startup measured ~390-580 ms compiled, ~290 ms via `bun run`.
-- `@opentui/core/testing` exports `ManualClock`, `TestRecorder`, and mock keyboard and mouse input —
-  a deterministic, TTY-free snapshot harness already exists, which is most of Gate 1A's automated
-  acceptance.
-- `OptimizedBuffer.setCell(x, y, char, fg, bg, attributes)` maps directly onto `ReadonlyCellFrame`,
-  and `CliRenderer` accepts arbitrary streams, which is what makes Gate 1C possible later.
-
-**Tooling changes**
-
-- `scripts/check-repository.sh` rewritten. It previously grepped for the literals
-  `**Canon version:** 2.0` and `**Status:** CURRENT — Gate 1A only`, which meant that doing correct
-  canon work *broke the build*. Both are now derived from the documents. It also reports all failures
-  at once instead of exiting on the first, and prints the canon version and active gate on success.
-- The retired-terminology guard now covers the whole repository and understands a `<!-- stale-ok -->`
-  exemption, so the concept index can quote what the art actually says.
-
-## Licensing
-
-Code and technical work use Apache-2.0. Lore and creative work use CC BY-SA 4.0. See `README.md`,
-`NOTICE`, and `CONTRIBUTING.md` before importing third-party code, art, fiction, fonts, or assets.
+Output goes to `.playtest/`, which git ignores. Pass `--out docs/screenshots` only for an image a pull
+request will show, and keep a GIF under about 1 MB (`--scale 1` quarters it).
+
+**Screenshots of the real terminal** (`node scripts/capture-screenshots.mjs`, the `grid-screenshots`
+skill) drive `grid` inside a tmux pseudo-terminal, so the ANSI backend takes the path a person gets,
+pause at an exact tick and render the pane to a PNG through the Chromium already present for
+Playwright. `scripts/capture-build-phase-screenshots.mjs` covers the Build Phase at the sizes that matter
+(80 × 24, 104 × 32, 128 × 24, and 79 × 24 for the resize gate); most of its shots are composed
+in-process through the scripted playtest, a few stay on tmux because the terminal path is what they
+prove. An unchanged shot is not rewritten: every image records a hash of the page it came from, so a
+regeneration touches only the pictures a change shows up in. Set an Experiment by name with
+`--settings`, never by counting rows.
+
+**The browser playtest page** (`bun scripts/build-web.mjs`, one self-contained HTML file) runs the
+real menu, Build Phase and Pulse through a stand-in terminal, painted on a canvas, with an on-screen
+key bar for the keys a phone lacks. It is a development tool, never a platform: the build fails if
+anything the page reaches imports a Node-only module, and a terminal at 80 × 24 stays the acceptance
+target. It cannot show raw keyboard mode, terminal cleanup, signals, a real terminal's own key
+encodings, the OpenTUI backend or frame timing. Published as a private claude.ai page on a pull
+request only when a change must be played to be judged. Beside the screen it has a text box for each
+export (the settings, the Activity Logs), and `bun scripts/build-web.mjs --demos <file>` adds a button
+per demo, each starting the Build Phase from a key script with given settings and saying what to try
+(`scripts/build-web.mjs` describes the file; a bad key script fails the build; keep a pull request's
+file in `scripts/demos/` until its question is answered).
+
+**The log is the feedback loop for the kernel.** `grid --headless` writes fixed-column lines to one
+stream, `[tick] LEVEL kind subject [-> object] detail...`, at `ERROR`, `WARN` (default), `INFO`,
+`DEBUG` or `TRACE`, closed by a `report` line with the outcome, losses and hashes. It grows by adding
+kinds, never by reshaping columns. When a test needs structure rather than a story, assert on
+`--events` JSONL instead. The Build Phase and the menus have their own record, the **Activity Logs**:
+one structured logger (`src/log/`) whose events are declared in `src/log/activity.ts` with a default
+level and typed, described properties, and which the game menu's `[a] Activity logs` lists newest
+first, filters and exports (the clipboard, and `activity-export.txt` beside the settings export).
+`node scripts/lib/key-echo.mjs` prints exactly what each key sends in the
+terminal it runs in; `node scripts/probe-modified-keys.mjs` surveys Shift+Arrow and friends. Measure a
+terminal before trusting a remembered escape sequence.
+
+## 4. Planning: milestones and steps
+
+Work is planned in **milestones**, tracked in `docs/milestones/`. A milestone answers one question
+about the game ("can a player start the Pulse, watch it resolve, and land in the next Build Phase?")
+and is small enough to be played and judged as a whole. Its file holds:
+
+- the question, and what it depends on (named milestones, accepted);
+- its **steps**: a checkbox list, each one pull request's worth, each with a definition of done in
+  plain words;
+- its status (`PLANNED`, `CURRENT`, `COMPLETE`) and, while current, its **current step**.
+
+`docs/milestones/README.md` is the sequence, the build order and the reason for it. Only one
+milestone is current, and the validator holds the index and the file to the same answer. Milestone
+numbers are identities, never an order: read the build-order column.
+
+**A session takes one step.** It starts from the current step, builds it, proves it (tests, a
+playtest, pictures), opens a pull request and stops. A step is done when its pull request is merged
+and Mario has played it; ticking the box and adding one line to `docs/history/README.md` is the whole
+bookkeeping. The next step waits for his word; "time remains" is never a reason to start it. A
+milestone is complete when its steps are, and its file moves to `docs/milestones/completed/`.
+Promoting the next milestone is Mario's call, recorded in the index.
+
+What belongs to no step goes in `docs/milestones/next-steps.md`: what waits on Mario, small carry-over,
+the cleanup queue. Delete an item when it is done. Work no milestone owns yet is
+`docs/milestones/backlog.md`.
+
+The milestone sequence builds the first level of the campaign one system at a time, the match
+experience before the content, because a played loop early is worth more than any one part being
+good. Prefer the honest, connected, ugly step over the beautiful one that dead-ends; playing the whole
+thing is what says which part deserved the polish.
+
+## 5. Spikes
+
+A **spike** is a small, throwaway build that answers one question reading cannot: does this
+architecture absorb fourteen new unit designs, is the menu clearer when every row does something on
+the map, can the page run in a browser at all. Use one when the design documents disagree, when a
+recommendation was written before the thing existed, or when the cheapest way to settle an argument
+is to build both sides.
+
+- Keep it to the smallest thing that answers the question, on its own branch, with the question
+  written at the top of the pull request.
+- Its code is disposable by default. Promote what survives into the real place with its tests;
+  delete the rest rather than leaving a second way of doing things.
+- Its findings are the deliverable. The pull request description carries them; when they need more
+  than a page (a measurement series, a design the next milestone builds on), write a report in
+  `docs/history/reports/` named by date and subject and link it. Put surprises and discarded
+  approaches first; that is the part the next reader wants.
+- If it changes the design, change the design document in the same pull request (§7).
+
+The unit-architecture spike and the menu spike in `docs/history/reports/` are the pattern.
+
+## 6. The feedback loop
+
+Mario plays merged builds, several at a time, and sends long, specific feedback, sometimes with a
+pasted **settings export**. This is the most valuable input the project gets; the loop is built to
+turn it around within hours. The exact procedure is the `feedback-round` skill; the shape:
+
+1. **Log his words first**, item by item, in `docs/history/feedback/<date>-<round>.md`: a numbered
+   item per point, his words in a blockquote, then its status (Built, Scheduled, Open, Contested) and,
+   once done, a plain paragraph of what now happens. Nothing is dropped silently. Read the message
+   twice; the second reading finds the half an agent would otherwise miss.
+2. **Turn it into steps** on the current milestone, split across agents by files (not by feature),
+   each agent in its own worktree from a pinned commit, each owning files the others do not touch.
+3. **Ask him to feel a choice through an Experiment.** Settings (Esc on the menu, then `s`) lists the
+   player's own saved settings and, below them under `d`, the **Experiments**: live-editable, never
+   saved, each naming the question it serves. Every setting is declared once with its tier in
+   `src/build/all-settings.ts`: *player* (shown and saved), *experiment* (shown for his playtests,
+   exported) or *tuned* (a constant). When a choice is his to feel rather than read about, ship both
+   answers behind an Experiment defaulting to the recommended one and ask him in the pull request, in
+   plain words, to flip it: "press `d`, set Battle Round flash to 300 ms, and tell me which you
+   prefer." A new behaviour whose worth is in doubt ships with an on/off Experiment.
+4. **Ask what happened with an Activity Logs filter.** When the question is not a feeling but an
+   interaction ("what did the taps do when it felt slow?"), declare an event where it happens and a
+   filter for it at the top of `ACTIVITY_FILTERS` in `src/log/activity.ts`, check with
+   `playtest.mjs --activity` that a flow logs it, and ask him to play, open Esc then `a`, export and paste
+   it. Remove both once answered, as an Experiment is.
+5. **His export is the answer.** Export settings (`e` in Settings) copies every setting and
+   Experiment as `name = value` text, changed Experiments first; he pastes it into the pull request.
+   Reproduce exactly what he saw with `--settings "<text>"` on the game, the playtest script or
+   `#settings=` on the browser page. Then settle each Experiment it answers: his value becomes the
+   default, its tier becomes *tuned* with who chose it and when, and the Experiment is deleted. A few
+   stay longer (a number that depends on the player's keyboard, placeholder content) or graduate into
+   real Settings.
+6. **Size the Demo to the change.** A code block or nothing when nothing shows on screen; screenshots
+   for a look; a GIF for movement or timing; a playable page only when it must be played. The
+   `pr-description` skill has the shape, phone-readable, leading with what the player will see.
+7. **Rewrite the pull request against `main`** after every round, the whole change, not the last
+   round; then wait lightly, and do not start the next step.
+
+What four rounds taught is in `docs/history/lessons-learned.md`.
+
+## 7. Changing the design
+
+The design documents (`docs/game-design/`, `docs/system-design/`) describe the current design.
+Every statement is **RULE** (built and depended on; the code implements it and a named test holds it),
+**GUIDANCE** (the recommended default; anything unmarked) or **IDEA** (a sketch nothing depends on).
+
+- **Follow a RULE.** Changing one is a design change: the pull request changes the sentence, the code
+  and the test together, says so in plain words for Mario, and names what the change costs.
+- **Depart from GUIDANCE when the work shows better**, and say why in the pull request.
+- **Build an IDEA only when a milestone step asks for it.**
+- A document describes; it does not schedule. That something is described is never a reason to
+  build it.
+
+**What a session decides alone**: reversible module boundaries, names, local data shapes, test
+organisation, diagnostics, fixtures, comparison modes, simplifying or discarding code built only to
+answer a step's question, and reporting that the favoured answer failed.
+
+**What a session never does alone**: promote a hypothesis into a RULE without it being built and
+played; absorb a later milestone because the architecture makes it convenient; build a generic
+framework before two concrete uses reveal its contract; treat a passing test as proof of how
+something feels; hide a blocker by changing a pinned runtime, fixture or target; add a secret, a
+service or an external write.
+
+**When the design does not answer you**, in this order: decide it yourself if it is reversible; make
+it observable (an Experiment, a toggle, a side-by-side fixture) so Mario can look at both answers;
+register it in `docs/milestones/open-questions.md` if it is genuinely his call, with the question in a
+sentence, why it blocks, the options, their costs and **a recommendation** (the validator rejects an
+open question without one); then keep working on everything the answer does not touch. Stop entirely
+only when proceeding under any assumption would waste the work. Question ids are permanent and never
+reused; an answered question moves to `docs/history/answered-questions.md` with the decision and the
+document that now owns it.
+
+**When a rule is reversed, grep the old sentence.** The same fact tends to live in a design document,
+the interface patterns, a test name and a feedback log, and the stale copy is always the one you did
+not think of. One home per fact; everything else links.
+
+**Retired words.** "Canon", "gate", "evidence" and the old folder paths are retired outside `docs/history/`; the validator rejects them. <!-- stale-ok -->
+Say "the design documents", "milestone step", "screenshots", "in scope".
+
+## 8. Writing for Mario
+
+Everything a person reads — pull requests, commit messages, chat replies, any document written for
+Mario rather than for the next agent — says **what the thing is**, not where it is filed.
+
+- Bad: "per the engine document's section on match structure, proceeding under the recommendation
+  for the open question about Nexus drafts."
+- Good: "the Nexus offers the player a small choice of upgrades each round; nobody has designed what
+  those are yet."
+
+He does not have section numbers, question ids or feedback item numbers memorised and should not
+have to; those index things for the next agent, and a reply that says "item 87" has failed. A sentence he
+has to look up before he can judge it has failed. Name the rule, decision or idea in plain English;
+if the source matters, put it in parentheses after the idea. Define a project word (milestone step,
+Experiment, Recall) the first time it appears in anything he reads, or use an ordinary word. Say what
+no person has tried yet and what is known to be broken. Internal shorthand is fine where the audience
+is the next agent: a note in a design document for the next session, a code comment.
+
+Interface work has its own rulebook: read [`docs/system-design/ui-patterns.md`](docs/system-design/ui-patterns.md),
+its goals and its checklist for a new screen, before changing a screen, a menu, a popup, an effect or
+a key; when two rules disagree, the goals decide; a change that adds, bends or retires a pattern
+updates that document in the same pull request and names the pattern so the next screen reuses it.
+
+## 9. Environments
+
+- **Local checkout.** Any editor and terminal with the pinned toolchain. The validator needs Bash,
+  Node and standard POSIX tools.
+- **GitHub Codespaces.** `.devcontainer/devcontainer.json` supplies an editor, a shell, Node and the
+  GitHub CLI.
+- **Claude Code on the web.** An isolated task environment that works on a branch, verifies, and
+  returns a pull request; [`docs/claude-web.md`](docs/claude-web.md) has the setup. Measured there:
+  Bun and Node are present, Deno is not.
+
+Update `README.md`, this file, the dev container, CI and the agent instructions together whenever a
+development command changes.
+
+## 10. Licensing
+
+Code and technical work are Apache-2.0; lore and creative work are CC BY-SA 4.0. See `README.md`,
+`NOTICE` and `CONTRIBUTING.md` before importing third-party code, art, fiction, fonts or assets.

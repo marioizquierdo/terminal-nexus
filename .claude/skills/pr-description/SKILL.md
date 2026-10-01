@@ -1,6 +1,6 @@
 ---
 name: pr-description
-description: Write or update a pull request description for Terminal Nexus. Use whenever opening a PR, pushing commits to an open PR, or rewriting a PR body. Produces a phone-readable description that leads with what the player will see, a Demo section sized to the change (a code block, screenshots, a GIF, or a playable page — the cheapest one that shows it), the decisions waiting on Mario as Experiments to flip and Activity Logs to export, and keeps gate and canon bookkeeping in a collapsed footer.
+description: Write or update a pull request description for Terminal Nexus. Use whenever opening a PR, pushing commits to an open PR, or rewriting a PR body. Produces a phone-readable description that leads with what the player will see, a Demo section sized to the change (a code block, screenshots, a GIF, or a playable page — the cheapest one that shows it), the decisions waiting on Mario as Experiments to flip and Activity Logs to export, and keeps the project bookkeeping in a collapsed footer.
 ---
 
 # Writing a pull request description
@@ -11,24 +11,24 @@ Mario, on whatever device he has — often his iPhone (the GitHub app or mobile 
 laptop or another machine. He merges without reading the diff, then plays the build. The description is his only briefing: in under a minute he must learn **what
 changed on screen, how to try it, and what he needs to decide**.
 
-It is not the gate report. The gate report is the record for the next agent; link it from the
-footer and do not repeat it.
+The pull request description is the report; a long-form report goes in `docs/history/reports/` only
+when a change needs more than a page — link it from the footer and do not repeat it.
 
 ## The loop it starts
 
-A pull request is a question asked by playing (`docs/ui-patterns.md` section 15). The **Demo** lets him
-— or friends he shares the page with — play it; **Decisions** asks him to feel an Experiment and paste
-the settings export; when you need to know *what happened*, it asks for an **Activity Logs** export
-too. His answers come back as two blocks of text you can replay. Plan both before you build, so the
-build carries the Experiment, the event and the filter it needs.
+A pull request is a question asked by playing (the feedback loop in `docs/system-design/ui-patterns.md`).
+The **Demo** lets him — or friends he shares the page with — play it; **Decisions** asks him to feel an
+Experiment and paste the settings export; when you need to know *what happened*, it asks for an
+**Activity Logs** export too. His answers come back as two blocks of text you can replay. Plan both
+before you build, so the build carries the Experiment, the event and the filter it needs.
 
 ## Rules
 
 - **Lead with behaviour.** "Tab now moves between the menu and the map", not "focus is reducer
   state". Internal refactors get at most one bullet.
-- **Plain English.** No section numbers, no question ids like Q57, no "per canon", no RULE or
-  GUIDANCE, no gate letters in the body. Game words are fine (Grid, Build Phase, Nexus Pulse, Nexus
-  power); process words (gate, canon, ledger, milestone) belong only in the footer.
+- **Plain English.** No section numbers, no question ids like Q57, no feedback item numbers like F87,
+  no RULE or GUIDANCE, no step numbers in the body. Game words are fine (Grid, Build Phase, Nexus Pulse, Nexus power); process
+  words (milestone, step) belong only in the footer.
 - **No "Mario said X".** At most "(from your playtest)" after the change it prompted.
 - **Short.** 150-400 words above the footer. Bullets of one or two lines. No table wider than two
   columns — it will not fit a phone.
@@ -37,7 +37,7 @@ build carries the Experiment, the event and the filter it needs.
 
 ## Title
 
-The player-visible change, under 70 characters. A trailing "(gate 5F)" is allowed. For tooling, the
+The player-visible change, under 70 characters. A trailing "(step 6B)" is fine. For tooling, the
 thing a person can now do: "Scripted playtests that make GIFs without a terminal".
 
 ## Body, in this order
@@ -84,7 +84,7 @@ scrolls, press Right to flip it, and tell me which feels better." Mario asked to
 End the section with the export line, so his answer comes back as data rather than a description:
 "When it feels right, press `e` in Settings (**Export settings**) — it is copied to your clipboard and
 saved to `~/.terminal-nexus/settings-export.txt` — and paste it as a comment here." An agent that
-reads an exported block back starts the game with it (`./bin/terminal-nexus.ts --spike --settings
+reads an exported block back starts the game with it (`./bin/terminal-nexus.ts --build-phase --settings
 "<text>"`, or `node scripts/playtest.mjs --settings "<text>"`, or `#settings=<url-encoded text>` on
 the browser page) to see what he saw.
 
@@ -112,10 +112,9 @@ Then the collapsed footer:
 ```markdown
 <details><summary>Project bookkeeping</summary>
 
-- Gate: 5F — PASS (or: not a gate)
-- Report: `evidence/gate-5f-report.md`
-- Canon changes: None (or what changed, and the new version)
-- Questions: opened Q60; answered Q57
+- Milestone step: 6B (or: not a milestone step)
+- Design documents changed: none (or which, and what changed in a few words)
+- Questions: opened Q60; answered Q57 (or none)
 
 </details>
 ```
@@ -131,17 +130,17 @@ back after creating it, and if a second footer appeared, set the body again with
 The repository is public, so an image committed on the branch displays inline from its raw URL:
 
 ```markdown
-![After: the Hatchery placed](https://raw.githubusercontent.com/marioizquierdo/terminal-nexus/<commit-sha>/evidence/screenshots/<name>.png)
+![After: the Hatchery placed](https://raw.githubusercontent.com/marioizquierdo/terminal-nexus/<commit-sha>/docs/screenshots/<name>.png)
 ```
 
 - **After** images: pin to the pushed head commit (`git rev-parse HEAD` after pushing), never to the
   branch name — the branch moves and old descriptions would silently show new pictures.
 - **Before** images: pin to `origin/main`'s commit, and only if the file exists there
-  (`git cat-file -e origin/main:evidence/screenshots/<name>.png`).
+  (`git cat-file -e origin/main:docs/screenshots/<name>.png`).
 - **Look at every image yourself before linking it** (open the PNG with the Read tool). An image
   captured one key early is worse than none.
 - Make them with the `playtest` skill (`node scripts/playtest.mjs ... --png final` or `--gif`, with
-  `--out evidence/screenshots`); keep a GIF under about 1 MB.
+  `--out docs/screenshots`); keep a GIF under about 1 MB.
 
 ## Pushing more commits to an open PR
 
@@ -166,9 +165,8 @@ instructions — give it its own short section after **Changes**, **Workflow and
 - [ ] The title says what the player (or developer) can now see or do, under 70 characters.
 - [ ] Every image was opened and checked; URLs are pinned to commit SHAs.
 - [ ] The Demo is the cheapest layer that shows the change, and its steps were run exactly as written.
+- [ ] No section numbers, question ids, feedback item numbers or step numbers above the footer.
 - [ ] Each decision says how to flip it and asks for the export; an Activity Logs ask names its filter.
-- [ ] No section numbers, question ids or gate letters above the footer, and no feedback item numbers
-      (F87) anywhere: name the request in words and link its feedback log.
 - [ ] 150-400 words above the footer.
 - [ ] The attribution lines appear exactly once, at the end.
 

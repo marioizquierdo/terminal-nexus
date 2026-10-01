@@ -1,4 +1,4 @@
-// The canvas backend: the browser playtest page's screen (engine.md 10.2 — a development tool, not a
+// The canvas backend: the browser playtest page's screen (`docs/system-design/runtime.md` — a development tool, not a
 // supported platform; iTerm2 at 80 x 24 stays the acceptance target).
 //
 // It is a third `TerminalBackend`, beside direct ANSI and OpenTUI, and like them it only presents a

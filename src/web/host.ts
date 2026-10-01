@@ -1,8 +1,8 @@
 // The browser playtest page's host — the one file in the project that touches the DOM.
 //
-// A development tool, never a supported platform (engine.md 10.2): iTerm2 at 80 x 24 stays the
+// A development tool, never a supported platform (`runtime.md`): iTerm2 at 80 x 24 stays the
 // acceptance target. The rule that keeps it honest is that the browser gets **no game loop of its
-// own**. It runs the terminal's three screen loops, unmodified — `runMenu`, `runSpike` (the Build
+// own**. It runs the terminal's three screen loops, unmodified — `runMenu`, `runBuildPhase` (the Build
 // Phase) and `watchPulse` — and hands them a stand-in terminal. The only things converted here are:
 //
 //   frames  -> pixels         `CanvasBackend` (src/view/backends/canvas.ts)
@@ -10,7 +10,7 @@
 //   taps    -> SGR mouse reports, the same bytes a terminal sends for a click
 //   settings -> browser storage instead of ~/.terminal-nexus/settings.json
 //   export   -> the clipboard and a text box under the screen, instead of OSC 52 and a file — the
-//               settings' in one box, the Activity Logs' in another (feedback F91)
+//               settings' in one box, the Activity Logs' in another
 //   import   -> `#settings=<text>` in the page's address, or that same text box
 //   errors   -> the page's own uncaught errors, into the Activity Logs (`session.error`, where "page")
 //
@@ -18,7 +18,7 @@
 
 import { runMenu } from "../cli/menu.ts"
 import type { PlaytestStep } from "../playtest/keys.ts"
-import { runSpike } from "../cli/spike.ts"
+import { runBuildPhase } from "../cli/build-phase.ts"
 import { watchPulse } from "../cli/watch.ts"
 import { buildTimeline } from "../cli/timeline.ts"
 import type { Host } from "../cli/lifecycle.ts"
@@ -44,7 +44,7 @@ declare const __TN_BUILD__: Readonly<{ commit: string; branch: string; builtAt: 
 /**
  * This pull request's demos, stamped in by the build (`bun scripts/build-web.mjs --demos <file>`): each a
  * button that starts the Build Phase from a key script with given settings, and says what to try — how a
- * playable page opens the game exactly where its question is (owner, 2026-10-01, feedback F92). Empty
+ * playable page opens the game exactly where its question is. Empty
  * without `--demos`.
  */
 type Demo = Readonly<{ label: string; try: string; keys?: string; settings?: string }>
@@ -244,7 +244,7 @@ async function start(next: Mode): Promise<void> {
   const common = { backend, stdout: terminal, stdin: keyboard, host } as const
   if (next === "menu") running = runMenu({ ...common, settings, settingsStore, buildId: __TN_BUILD__.commit, hostName: "web" })
   else if (next === "build") {
-    running = runSpike({
+    running = runBuildPhase({
       ...common,
       settings,
       settingsStore,
@@ -258,7 +258,7 @@ async function start(next: Mode): Promise<void> {
           activity: "Copied to the clipboard, and shown in the activity logs box under the screen.",
         },
         export: (text, kind) => {
-          // Each export into its own box (feedback F91), opened so it is seen.
+          // Each export into its own box, opened so it is seen.
           const activityExport = kind === "activity"
           const area = activityExport ? activityText : settingsText
           const box = activityExport ? activityBox : settingsBox
@@ -414,7 +414,7 @@ element("activity-copy").addEventListener("click", () => {
   })
 })
 
-// The page's own failures, into the Activity Logs a playtester exports (feedback F91): what broke in
+// The page's own failures, into the Activity Logs a playtester exports: what broke in
 // their browser reaches the pull request with what they did before it.
 window.addEventListener("error", (event) => {
   activity.log("session.error", { where: "page", message: event.message || String(event.error) })

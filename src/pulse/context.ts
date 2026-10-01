@@ -16,7 +16,7 @@ export type PulseContext = Readonly<{
 
 /**
  * Victory needs to know what each side started with, so that a scenario placing no Nexus is not
- * instantly won and a side that never had a worker is not instantly annihilated (Q13).
+ * instantly won and a side that never had a worker is not instantly annihilated. Workers count: a side with only workers left has lost its army.
  */
 export function createContext(
   initialState: MatchState,

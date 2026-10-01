@@ -1,5 +1,5 @@
-// The match layer — gate 6A. The opening state a Pulse starts from, and Recall, the rule at the other
-// end of it (engine.md Section 5). Both are deterministic rules-layer code beside the kernel, so the
+// The match layer. The opening state a Pulse starts from, and Recall, the rule at the other
+// end of it (docs/system-design/pulse.md, Recall). Both are deterministic rules-layer code beside the kernel, so the
 // tests are the kernel's kind: exact states, exact hashes, no screen.
 
 import { test } from "node:test"

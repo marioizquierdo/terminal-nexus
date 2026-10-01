@@ -1,4 +1,4 @@
-// The Grid, its layers, and collision masks — milestone-1-spike-battle.md 3.9, "Grid and collision".
+// The Grid, its layers, and collision masks — docs/system-design/grid.md, "Layers and collision masks".
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -88,7 +88,7 @@ test("a ground unit is blocked by a structure on a different layer", () => {
   assert.equal(mask.blocked({ x: 2, y: 1 }), false)
 })
 
-test("an air entity can share a tile with a ground entity (Q8)", () => {
+test("an air entity can share a tile with a ground entity", () => {
   // The layer exists from day one and stays empty of content; the rule is proven without a unit
   // nobody asked for being added to the fixture.
   const skiff: ContentDef = {

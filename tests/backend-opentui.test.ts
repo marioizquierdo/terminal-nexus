@@ -1,4 +1,4 @@
-// Cross-backend snapshot identity — engine.md 9.1, milestone-1-spike-battle.md 3.8.
+// Cross-backend snapshot identity (docs/system-design/presentation.md, the cell frame).
 //
 // The frame is engine-owned, so two backends drawing the same frame must produce the same
 // characters. Which of the two assertions below runs depends on the runtime, and both are real:
@@ -50,14 +50,14 @@ if (RUNTIME_IS_BUN) {
 } else {
   test("OpenTUI's native core does not load here, and the ANSI backend covers this runtime", async () => {
     // Measured 2026-08-21 with @opentui/core 0.5.6 on Node 22.22.2. The package imports cleanly —
-    // which is what the milestone's standing evidence measured — but building a renderer throws.
-    // This assertion is here so that the day it starts working, the gate report stops being true
+    // which is what the first measurement found — but building a renderer throws.
+    // This assertion is here so that the day it starts working, the pulse-playground report stops being true
     // and a test says so.
     const harness = await import("@opentui/core/testing")
     await assert.rejects(
       async () => harness.createTestRenderer({ width: 80, height: 24 }),
       /native FFI is not available|not available for this runtime/i,
-      "OpenTUI now builds a renderer on Node; evidence/report.md Section 4 needs re-measuring",
+      "OpenTUI now builds a renderer on Node; docs/history/reports/2026-08-21-pulse-playground.md needs re-measuring",
     )
   })
 }

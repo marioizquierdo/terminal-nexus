@@ -1,13 +1,13 @@
 import type { Coord, EntityLayer, Footprint } from "../grid/types.ts"
 
-/** A rational tiles-per-second rate. Never a float — engine.md 4.1, 4.2. */
+/** A rational tiles-per-second rate. Never a float (pulse.md). */
 export type MovementRate = Readonly<{ numerator: number; denominator: number }>
 
 export type AttackKind = "melee" | "ranged" | "heal"
 
 /**
  * Area damage centred on a point, hitting friend and foe alike — the same `{radius, damage}` shape
- * `ContentDef.detonation` already uses. Pulled out under its own name (unit-design-architecture spike)
+ * `ContentDef.detonation` already uses. Pulled out under its own name (during the unit-architecture spike)
  * once a second use needed it: an attack's `splash` and a death's `detonation` are the same mechanism
  * at two different trigger moments, not two mechanisms that happen to share a shape.
  */
@@ -26,14 +26,14 @@ export type AttackDef = Readonly<{
   cooldownTicks: number
   /**
    * Presentation metadata only. The flight window on a ranged attack event is
-   * `ceil(distance / projectileTilesPerTick)` ticks, and **no rule reads it** — engine.md 4.3.
+   * `ceil(distance / projectileTilesPerTick)` ticks, and **no rule reads it** (pulse.md).
    */
   projectileTilesPerTick?: number
   /**
    * Ticks this actor must hold a target in range, off cooldown, before its *first* shot at it may
    * fire — spent only while genuinely holding position to fire, never while marching. One-time: once
    * spent it never rearms, so a unit that already opened fire keeps firing at its normal cadence even
-   * if it loses and reacquires a target. The siege-crawler rule shape (unit-design-architecture spike):
+   * if it loses and reacquires a target. The siege-crawler rule shape (from the unit-architecture spike):
    * "moves, then anchors, with a delay, then shoots" needed a one-time hold that plain `cooldownTicks`
    * (which recurs every shot) cannot express on its own.
    */
@@ -60,18 +60,18 @@ export type AttackDef = Readonly<{
 export type Behavior = "advance" | "flee" | "static" | "support"
 
 /**
- * Volatile munitions — the Ravel rule shape from `commander-armies.md` Section 4.1: many Ravel
+ * Volatile munitions — the Ravel rule shape from commander-armies.md: many Ravel
  * things detonate when they die, theirs and what they kill, and chains are legal and bounded.
  *
  * It is a **fixture rule on the bench**, not authored Commander Army content: it exists
- * because a Ravel army without it fails the alignment test in `terminal-nexus-lore.md` Section 8.6,
+ * because a Ravel army without it fails the alignment test in lore.md,
  * where a themed reskin of a generic ability fails and a rule that *is* the characterisation passes.
- * Milestone 12 confirms or discards it when it selects the real microgame.
+ * The content-iteration milestone confirms or discards it when it selects the real microgame.
  */
 export type Detonation = AreaDamage & {
   /**
    * If set, this entity detonates the instant an eligible enemy (per `targetLayers`) is within this
-   * range, instead of only on death — the contact/suicide-bomber rule shape (unit-design-architecture
+   * range, instead of only on death — the contact/suicide-bomber rule shape (from the unit-architecture
    * spike). Absent (default) preserves every existing detonation as death-only.
    */
   triggerRange?: number
@@ -86,12 +86,12 @@ export type ContentDef = Readonly<{
   maxHp: number
   movementRate?: MovementRate
   /**
-   * Initiative. **Lower acts first**, for movement claims and for attacks alike (engine.md 4.3).
+   * Initiative. **Lower acts first**, for movement claims and for attacks alike (pulse.md).
    * It is not a movement rate; that is `movementRate`.
    */
   speedTier: number
   attack?: AttackDef
-  /** The layers this entity collides with — engine.md 3.4.1. Terrain impassability is separate. */
+  /** The layers this entity collides with (grid.md). Terrain impassability is separate. */
   collidesWith: readonly EntityLayer[]
   behavior: Behavior
   /** Dropped as a ground item on death. Nothing consumes it yet; there is no economy. */
@@ -100,7 +100,7 @@ export type ContentDef = Readonly<{
   detonation?: Detonation
   /**
    * This entity is the player's Grid Nexus, and losing it loses the Pulse. A flag rather than a
-   * content id: Gate 1A hardcoded `structure.citizen.nexus`, which stopped being true the moment a
+   * content id: the first battles hardcoded `structure.citizen.nexus`, which stopped being true the moment a
    * second faction existed.
    */
   nexus?: boolean
@@ -109,9 +109,9 @@ export type ContentDef = Readonly<{
    * a normal `attack` and for a contact `detonation.triggerRange` alike, since both are resolved from
    * whatever perception already decided. Undefined means every layer, which preserves every existing
    * definition's behaviour and every hash exactly. This is a *targeting* mask, never a *collision*
-   * one — engine.md 3.4.1's point that collision and targeting are separate questions applies here
+   * one — grid.md's point that collision and targeting are separate questions applies here
    * too: touching this never touches `collidesWith`, and vice versa. The ground-air asymmetry rule
-   * shape (unit-design-architecture spike): a ground melee unit that should never be able to touch a
+   * shape (from the unit-architecture spike): a ground melee unit that should never be able to touch a
    * flyer sets this to exclude `"air"`; nothing else about it changes.
    */
   targetLayers?: readonly EntityLayer[]
@@ -125,10 +125,11 @@ export type ContentDef = Readonly<{
   /**
    * While alive, every `intervalTicks` this entity attempts to create one more `contentId` for its
    * own player on a free adjacent tile, holding off whenever `maxAlive` of that content id already
-   * live for that player. The spawner rule shape (unit-design-architecture spike) — a combat ability
-   * a living unit performs, not an economy: no cost, no resource, nothing Milestone 2's production
-   * phase would recognise as its own. See `Q26` in `specs/open-questions.md` for the scope line this
-   * still has to answer before a real roster could use it.
+   * live for that player. The spawner rule shape (from the unit-architecture spike) — a combat ability
+   * a living unit performs, not an economy: no cost, no resource, nothing the worker-economy
+   * milestone's production phase would recognise as its own. Whether that scope line holds is an open
+   * question for Mario (Q26 in docs/milestones/open-questions.md), to be answered before a real roster
+   * uses it.
    */
   spawn?: Readonly<{ contentId: string; intervalTicks: number; maxAlive: number }>
   /**

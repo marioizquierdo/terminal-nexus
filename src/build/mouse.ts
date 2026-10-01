@@ -1,4 +1,4 @@
-// The Build Phase's mouse adapter. Per engine.md 9.7, mouse geometry lives only here: a click
+// The Build Phase's mouse adapter. Per docs/system-design/input.md, mouse geometry lives only here: a click
 // arrives as a terminal cell, is converted to a tile through the layout, and leaves as a command
 // naming a tile or a menu row. Nothing downstream learns a cell coordinate.
 //
@@ -20,10 +20,10 @@ export type MouseUiState = Readonly<{
   popup?: PlacedPopup
   card?: number | null
   escLabel?: string
-  /** A Nexus Pulse is on screen (gate 6A): its panel's control rows are click targets, and nothing else
+  /** A Nexus Pulse is on screen: its panel's control rows are click targets, and nothing else
    *  on the panel is. */
   pulse?: boolean
-  /** The Pulse on screen has ended and its result stands: its "go on" row answers a click (gate 6B). */
+  /** The Pulse on screen has ended and its result stands: its "go on" row answers a click. */
   pulseOver?: boolean
 }>
 
@@ -61,19 +61,21 @@ export const MOUSE_RIGHT = 2
 export const MOUSE_WHEEL_UP = 64
 export const MOUSE_WHEEL_DOWN = 65
 
-/** How far one notch of the wheel moves the map cursor, in tiles. GUIDANCE (engine.md 9.7's bindings
- *  table), not RULE. The keyboard's fast move jumped this far too until gate 5H; it jumps the tuned
- *  `TUNING.jumpStep` now, and the wheel alone keeps five. */
+/** How far one notch of the wheel moves the map cursor, in tiles. GUIDANCE (the bindings table in
+ *  docs/system-design/input.md), not RULE. The keyboard's fast move used to jump this far too; it jumps
+ *  the tuned `TUNING.jumpStep` now, and the wheel alone keeps five. */
 export const WHEEL_TILES = 5
 
 /**
- * **The wheel moves the cursor, not a second camera.** Engine.md 9.7's table says "Mouse: wheel —
- * scroll the camera; the mouse's Shift+Arrow", while 3.3 says the camera is driven by the cursor and
+ * **The wheel moves the cursor, not a second camera.** The bindings table in
+ * docs/system-design/input.md says "Mouse: wheel — scroll the camera; the mouse's Shift+Arrow", while
+ * the scrolling rule in docs/system-design/grid.md says the camera is driven by the cursor and
  * there is "no separate pan mode, no modifier keys, no second cursor". Taken literally together, the
  * only reading that keeps both true is the one the table's own gloss already points at: the wheel is
  * the mouse's fast move, so it moves the *cursor* `WHEEL_TILES` and the camera follows it, as it
  * follows every cursor move. A wheel that moved the camera on its own would be the separate pan mode
- * 3.3 forbids, and would leave the cursor stranded off screen. Inside a popup it walks the list.
+ * the scrolling rule forbids, and would leave the cursor stranded off screen. Inside a popup it walks
+ * the list.
  */
 export function buildMouseCommand(
   event: MouseEvent,
@@ -85,14 +87,14 @@ export function buildMouseCommand(
   if (!event.press) return null
   // "Mouse: right click — Esc. The RTS convention for cancel." It walks back as `x` does: one level,
   // whatever is open — and on the menu it does nothing, since a stray right click should never open a
-  // menu (owner, 2026-09-30, feedback F62, where `x` stopped opening the game menu). The top bar's
+  // menu (as `x` no longer opens the game menu). The top bar's
   // `menu [esc]` is Esc itself, and opens it.
   if (event.button === MOUSE_RIGHT) return { kind: "back" }
 
   // What the click lands on underneath any popup — a menu row or a tile — named as the reducer's own
   // click commands, which decide what a click means from what is on screen.
   const underneath = (): BuildCommand | null => {
-    // A card — Explore Map's, or the building being placed (feedback F58) — covers the menu below its
+    // A card — Explore Map's, or the building being placed — covers the menu below its
     // header row, so the whole panel is one target: a click on the card's own row, its header. Sent as
     // the menu click it is, so a driver's `click-menu` while a card shows means exactly the same.
     if (ui.card !== undefined && ui.card !== null && inPanel(layout, event.column, event.row)) {
@@ -107,16 +109,16 @@ export function buildMouseCommand(
   }
 
   // The top bar's Esc label — "menu [esc]", "back [esc]", "close [esc]" — is Esc itself, whatever is
-  // open (feedback F37): one level back, exactly as the key goes, never the click-outside that closes
+  // open: one level back, exactly as the key goes, never the click-outside that closes
   // every popup at once.
   const escText = ui.escLabel ?? `${ui.popup === undefined ? "menu" : "close"} ${ESC_KEY}`
   if (event.button === MOUSE_LEFT && escLabelAt(layout, escText, event.column, event.row)) return { kind: "cancel" }
 
   // An open popup holds the mouse. Inside it, a click is one of its options or its scroll bar; outside
-  // it, the click closes it and brings focus to wherever it landed, and does nothing more (owner,
-  // 2026-09-27 — he clicked Nexus, missed the popup in the middle, and thought the mouse was broken).
+  // it, the click closes it and brings focus to wherever it landed, and does nothing more (a click that missed the popup
+  // once looked like a broken mouse).
   if (ui.popup !== undefined) {
-    // The wheel walks a popup's list, which scrolls Settings' and the export's (gate 5H) — Up and
+    // The wheel walks a popup's list, which scrolls Settings' and the export's — Up and
     // Down's own job.
     if (event.button === MOUSE_WHEEL_UP) return { kind: "highlight", delta: -1 }
     if (event.button === MOUSE_WHEEL_DOWN) return { kind: "highlight", delta: 1 }

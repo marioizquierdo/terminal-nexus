@@ -1,5 +1,5 @@
 // The settings file itself — no menu, no stdin, no terminal involved. A corrupt or missing file must
-// never stop the game from starting (milestone-03-game-menu.md, Gate 3B).
+// never stop the game from starting (docs/system-design/input.md, Settings and Experiments).
 
 import { test } from "node:test"
 import assert from "node:assert/strict"

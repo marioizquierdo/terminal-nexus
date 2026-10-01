@@ -1,4 +1,4 @@
-// The state a Nexus Pulse starts from — engine.md Section 5: "At Pulse start plans reveal together and
+// The state a Nexus Pulse starts from — the start-of-Pulse rule in pulse.md: "At Pulse start plans reveal together and
 // valid construction becomes operational." The Build Phase's plan is a list of placements on a screen;
 // this is where it becomes entities the kernel can resolve.
 //
@@ -9,7 +9,7 @@
 // stores a placement) rather than by a centre tile in a character grid, and units mustered around a
 // point on whatever free tiles the plan left them.
 //
-// **A later Pulse of a mission starts from what the last one left** (gate 6B): the state after Recall is
+// **A later Pulse of a mission starts from what the last one left**: the state after Recall is
 // `carried` in, and everything in it keeps its ordinal, id, health and place — a survivor is the same
 // unit it was — while the new plan's structures and whatever arrives at tick 0 are added after it, with
 // ordinals from where the last Pulse stopped (in Grid reading order among themselves). A building the

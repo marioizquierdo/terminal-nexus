@@ -1,7 +1,7 @@
 // The Grid: coordinates, layers, footprints, and placement.
 //
-// Canon: engine.md 3.4 (layers are render order), 3.4.1 (collision is a composed mask),
-// 3.5 (coordinates, anchor, footprint, facing), 3.6 (Manhattan distance, four-way movement).
+// The design is in grid.md: layers are render order, collision is a composed mask, coordinates have an
+// anchor, a footprint and a facing, and distance is Manhattan with four-way movement.
 //
 // Coordinate convention, used by every module without exception:
 //   (0,0) is the north-west tile, x grows east, y grows south, "n" points toward y - 1.
@@ -27,7 +27,7 @@ export type TerrainKind = Readonly<{
   id: TerrainId
   /** A ground mover can never enter an impassable tile. */
   impassable: boolean
-  /** Immutable terrain cannot be attacked (engine.md 3.6). */
+  /** Immutable terrain cannot be attacked (grid.md). */
   destructible: boolean
 }>
 
@@ -57,8 +57,8 @@ export type Placement = Readonly<{
 }>
 
 /**
- * A tile still cooling after a death — engine.md 4.3's settle rule, earned by Milestone 1
- * playtesting. Lives here rather than in `occupancy.ts` because it is data the state hashes, not
+ * A tile still cooling after a death — the settle rule of pulse.md, earned by the first
+ * playtests. Lives here rather than in `occupancy.ts` because it is data the state hashes, not
  * mechanism.
  */
 export type VacatedEntry = Readonly<{ layer: EntityLayer; x: number; y: number; until: number }>

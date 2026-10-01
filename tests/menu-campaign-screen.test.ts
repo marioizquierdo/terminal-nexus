@@ -1,10 +1,10 @@
-// Campaign's placeholder screen — Gate 3C. Milestone 4 doesn't exist yet, so pressing Campaign no
-// longer pins a notice to the top-level menu (Gate 3A's own shape): it leaves for a real second
-// screen, built out of the exact same list/session/view machinery Gate 3B's Settings screen already
+// Campaign's placeholder screen. The campaign isn't built yet, so pressing Campaign no
+// longer pins a notice to the top-level menu: it leaves for a real second
+// screen, built out of the exact same list/session/view machinery the Settings screen already
 // proved. What's new here is smaller than Settings was — one row, Back — so what's worth proving is
 // narrower too: the screen is genuinely reached and left, Esc works exactly like Settings' own Esc
 // does, and a hotkey crossing into this *third* screen in the same stdin chunk as a second keystroke
-// still routes that second keystroke correctly (Gate 3B's own cross-screen fix, now exercised on a
+// still routes that second keystroke correctly (the cross-screen fix made for Settings, now exercised on a
 // screen it was never written against).
 
 import { test } from "node:test"
@@ -117,7 +117,7 @@ test("Esc also returns to the top-level menu — the same redundant path Setting
 })
 
 test("a hotkey crossing into Campaign and a second key right behind it, in one chunk, both land correctly", async () => {
-  // The exact shape Gate 3B's own cross-screen fix was built for, now driven at a *third* screen:
+  // The exact shape the cross-screen fix made for Settings was built for, now driven at a *third* screen:
   // "1" enters Campaign, "1" again is Campaign's own Back - one Buffer, one "data" event.
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()

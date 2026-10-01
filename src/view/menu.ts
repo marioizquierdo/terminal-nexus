@@ -1,9 +1,9 @@
-// The top-level menu screen — milestone-03-game-menu.md: "a menu is a frame like any other." Reuses
+// The top-level menu screen — "a menu is a frame like any other." Reuses
 // the same band compositor, style roles, and glyph packs `compose.ts` draws a Pulse with, so
 // capability tiers, themes, and monochrome come free rather than needing a second accessibility pass.
 //
 // Unlike a Pulse, a menu has no ticks and nothing animates, so there is no `Playback` clock here —
-// the resize-gate RULE (engine.md 9.6) still applies, but "resumes from the same presentation time"
+// the resize-gate RULE (`docs/system-design/presentation.md`) still applies, but "resumes from the same presentation time"
 // is trivially true of a screen with no presentation time to lose: showing `gateFrame` below the
 // minimum size and the menu frame otherwise is the whole of it.
 
@@ -19,7 +19,7 @@ import type { CapabilityMode, StyleRole } from "./roles.ts"
 import { chromeGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 
-/** The 80x24 RULE floor (engine.md 3.3, Q12) — the same footprint `compose.ts`'s Grid screen uses
+/** The 80x24 RULE floor (`docs/system-design/grid.md`) — the same footprint `compose.ts`'s Grid screen uses
  *  at `tileWidth` 1, so the terminal never resizes when the game moves from the menu into a match. */
 export const MENU_SIZE = { width: 80, height: 24 } as const
 
@@ -29,8 +29,8 @@ export const MENU_LAYOUT: MenuLayout = { column: 4, row: 6, rowStep: 2 }
 
 export type MenuCompositionInput = Readonly<{
   state: MenuListState
-  /** A plain, honest placeholder for an option this gate stubs rather than builds — `null` shows
-   *  nothing, per milestone-03-game-menu.md's "stub honestly rather than half-build." */
+  /** A plain, honest placeholder for an option this screen stubs rather than builds — `null` shows
+   *  nothing: stub honestly rather than half-build. */
   notice: string | null
   glyphPack?: GlyphPack
   /** Printed after "TERMINAL NEXUS" in the header — which screen this is. Defaults to the top-level
@@ -39,8 +39,7 @@ export type MenuCompositionInput = Readonly<{
   /** Whether this screen has somewhere to go back to — adds "esc back" to the footer's controls
    *  line. Advertising a control that does nothing would be the opposite of honest. */
   showBack?: boolean
-  /** Words drawn under the rows — the About screen's (owner, 2026-10-01, feedback F93;
-   *  `src/menu/about.ts`): each section's heading, then its text wrapped at words, a blank row
+  /** Words drawn under the rows — the About screen's (`src/menu/about.ts`): each section's heading, then its text wrapped at words, a blank row
    *  between sections. */
   body?: readonly TextSection[]
 }>
@@ -65,7 +64,7 @@ function drawBorder(cells: BandCell[], size: { width: number; height: number }, 
   put(cells, band, size.width - 1, size.height - 1, chromeGlyph(pack, "bottomRight"), "chrome.frame")
 }
 
-/** Row engine.md 3.3's tagline lives on — the concept doc's own emotional loop, quoted rather than
+/** The row the tagline lives on (`grid.md`) — the concept doc's own emotional loop, quoted rather than
  *  invented, since a stub screen still owes the player something true about the game. */
 const TAGLINE = "Build. Commit. Pulse. Understand. Adapt."
 
@@ -130,8 +129,8 @@ export function composeMenuFrame(
     const hotkeyPart = `[${item.hotkey}]`
     const labelPart = ` ${item.label}`
     if (highlighted) {
-      // Inverse video carries "selected" at every capability tier, including monochrome — engine.md
-      // 9.6: colour never carries meaning alone. The hotkey/label split stops mattering once the
+      // Inverse video carries "selected" at every capability tier, including monochrome — `presentation.md`:
+      // colour never carries meaning alone. The hotkey/label split stops mattering once the
       // whole row is one inverted block.
       text(cells, band, MENU_LAYOUT.column, row, hotkeyPart + labelPart, "chrome.title", {
         bold: true,
@@ -140,8 +139,8 @@ export function composeMenuFrame(
       return
     }
     if (item.disabled === true) {
-      // Dimmed rather than the normal hotkey/label colours (Gate 3C) — the row is still real (its
-      // hotkey still activates it, per engine.md 9.7's RULE), it just has nothing further to do once
+      // Dimmed rather than the normal hotkey/label colours — the row is still real (its
+      // hotkey still activates it, per the hotkey rule in `docs/system-design/input.md`), it just has nothing further to do once
       // activated, and looks that way before it's even pressed. Highlighting it still inverts the
       // whole block below, same as any other item — inverse video is what "selected" means, and that
       // stays true regardless of whether the selected item is this one.

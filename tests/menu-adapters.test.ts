@@ -1,6 +1,6 @@
-// The keyboard adapter, the mouse adapter, and the sharp edge of Gate 3A's acceptance: keyboard,
+// The keyboard adapter, the mouse adapter, and the sharp edge of the menu's acceptance: keyboard,
 // mouse, and the driver must all reach the identical named command from raw input, not merely agree
-// once something has already decoded it. engine.md 9.7: "asserting at the command layer proves
+// once something has already decoded it. docs/system-design/input.md: "asserting at the command layer proves
 // nothing" — every path below starts from a raw byte or a raw SGR sequence, never a hand-built
 // `MenuCommand`, and the mouse coordinates are derived from the same `menuItemRow`/`menuItemLabel`
 // functions the real composer draws with, not hand-picked numbers that could quietly stop matching

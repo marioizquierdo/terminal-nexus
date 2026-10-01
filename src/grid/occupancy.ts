@@ -1,8 +1,8 @@
-// Occupancy and collision masks — engine.md 3.4.1.
+// Occupancy and collision masks (grid.md).
 //
-// DESIGN DECISION (recorded in evidence/report.md, Section 3):
+// DESIGN DECISION (recorded in docs/history/reports/2026-08-21-pulse-playground.md):
 //
-// engine.md 3.4.1 deliberately leaves mask caching to the spike, because arbitration mutates
+// grid.md deliberately leaves mask caching to the implementation, because arbitration mutates
 // claimed tiles part-way through a tick, so a mask materialised once per tick is stale exactly
 // when it matters. This implementation resolves that by never materialising one:
 //
@@ -15,7 +15,7 @@
 //     query made later in the same phase sees tiles claimed earlier in it. There is no window in
 //     which a mask can answer from stale data, because there is no copy to go stale.
 //
-// The cost is one indexed lookup per layer per query instead of one per query. At Gate 1A sizes
+// The cost is one indexed lookup per layer per query instead of one per query. At the first battles' sizes
 // (24 x 12 tiles, ~14 actors) that is not measurable, and it removes a whole class of bug.
 
 import { inBounds, tileIndex, tilesOf } from "./coords.ts"
@@ -159,13 +159,13 @@ export class VacatedOverlay {
 }
 
 export type MaskSpec = Readonly<{
-  /** Layers whose occupants block. A unit definition declares these — engine.md 3.4.1. */
+  /** Layers whose occupants block. A unit definition declares these (grid.md). */
   layers: readonly EntityLayer[]
   /** Whether impassable terrain blocks. Air movement, for example, does not care. */
   terrain: "impassable" | "ignore"
   /** Ordinals that never block — a mover must not block itself. */
   ignore?: readonly number[]
-  /** Optional extra predicate on the occupant, per the engine.md 3.4.1 signature. */
+  /** Optional extra predicate on the occupant, per the signature grid.md describes. */
   predicate?: OccupantLookup
   /** Claims granted earlier in this arbitration phase. */
   overlay?: ClaimOverlay
@@ -213,7 +213,7 @@ export class CollisionMask {
     return null
   }
 
-  /** A whole footprint is legal only if every tile it would cover is clear — engine.md 3.5. */
+  /** A whole footprint is legal only if every tile it would cover is clear (grid.md). */
   footprintBlockerAt(
     anchor: Coord,
     footprint: Footprint,

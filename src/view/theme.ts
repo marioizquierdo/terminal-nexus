@@ -1,4 +1,4 @@
-// Semantic ids to glyphs. **The simulation never knows a glyph** (engine.md 9.6) — this is the only
+// Semantic ids to glyphs. **The simulation never knows a glyph** (`docs/system-design/presentation.md`) — this is the only
 // place the mapping exists, and a renderer never reverse-engineers a glyph back into a mechanic.
 //
 // Ownership is carried by letter case, never by colour: player A is lower case, player B is upper.
@@ -10,10 +10,10 @@ import type { PlayerId } from "../state/types.ts"
 import type { StyleRole } from "./roles.ts"
 
 /**
- * Glyph packs — milestone-1-spike-battle.md 4.2 allows an optional Unicode pack alongside the ASCII
+ * Glyph packs — the design allows an optional Unicode pack alongside the ASCII
  * baseline. The pack changes the **field and the frame**, never the actors: units are letters
- * because case carries ownership and the shape families carry faction (engine.md 9.6,
- * terminal-nexus-lore.md 8), and that system is not improved by prettier symbols.
+ * because case carries ownership and the shape families carry faction (`presentation.md`,
+ * the lore document), and that system is not improved by prettier symbols.
  *
  * ASCII stays the default and the acceptance target. Everything here is one cell wide.
  */
@@ -66,19 +66,19 @@ export const CHROME_GLYPHS = {
     edgeCorner: "+",
     // A side of the Build Phase's Grid pane with more Grid beyond it: the frame's own line, drawn dim
     // by the caller — one unbroken rectangle, never the ground lattice's `.`, whose dotted edge read as
-    // "arbitrary" (gate 5C). A side where the map ends is the map's own edge style (`edge.ts`).
+    // "arbitrary". A side where the map ends is the map's own edge style (`edge.ts`).
     softHorizontal: "-",
     softVertical: "|",
     // A popup's shadow, drawn dim: a blank cell vanished against the dark theme's near-black ground
-    // (feedback F17), so the shadow is a shade, which reads on either theme and in monochrome.
+    //, so the shadow is a shade, which reads on either theme and in monochrome.
     shadow: ":",
-    // A popup's scroll bar, in its right border (feedback F36): the two ends, and the thumb — the part
-    // of the list in view — textured on the plain border that is its track (F78). Drawn inverse, as the
+    // A popup's scroll bar, in its right border: the two ends, and the thumb — the part
+    // of the list in view — textured on the plain border that is its track. Drawn inverse, as the
     // border is. Never the shadow's glyph: a track in the shadow's texture read as more shadow.
     scrollUp: "^",
     scrollDown: "v",
     scrollThumb: "#",
-    // The focus arrow (feedback F54): its head, pointing the way it flies, and the trail behind it,
+    // The focus arrow: its head, pointing the way it flies, and the trail behind it,
     // along the line it flies — level, upright, falling to the right (`\`) or rising to it (`/`).
     arrowRight: ">",
     arrowLeft: "<",

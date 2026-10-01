@@ -1,5 +1,5 @@
 // The menu's dispatch core — state plus the one function a live terminal's stdin handler and a test
-// or agent driver both call. engine.md 9.7's RULE names three adapters; this file is where keyboard
+// or agent driver both call. The `input.md` RULE names three adapters; this file is where keyboard
 // and mouse actually become the same commands, and it is also, itself, the driver: "the driver
 // injects raw key and mouse events into the real adapters" is true because `handleData` *is* the
 // real adapter dispatch, not a parallel copy of it built for tests.
@@ -24,7 +24,7 @@ export type MenuSessionOptions = Readonly<{
    *  business, not this class's — the same separation `list.ts`'s reducer already draws. */
   onQuit: () => void
   /** Called on a `back` command (Esc). Defaults to doing nothing, which is exactly right for a
-   *  screen with nowhere to go back to — engine.md 9.7: "never quits the game by itself." */
+   *  screen with nowhere to go back to: Esc never quits the game by itself (`input.md`). */
   onBack?: () => void
 }>
 
@@ -57,7 +57,7 @@ export class MenuSession {
   }
 
   /**
-   * The driver's direct-command path — "a scripted list of commands" (engine.md 9.7). Applies one
+   * The driver's direct-command path — a scripted list of commands (`input.md`). Applies one
    * command exactly as if the keyboard or mouse adapter had produced it.
    */
   dispatch(command: MenuCommand): void {
@@ -94,7 +94,7 @@ export class MenuSession {
   }
 
   /**
-   * The driver's raw-bytes path — "a scripted list of... raw key and mouse events" (engine.md 9.7) —
+   * The driver's raw-bytes path — a scripted list of raw key and mouse events (`input.md`) —
    * and what a live terminal's `stdin.on("data", ...)` handler calls too, for the common case of one
    * screen handling its own whole chunk. `keysFromChunk` is the same split `grid watch` already uses
    * (`src/view/playback.ts`).

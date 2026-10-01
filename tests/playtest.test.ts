@@ -95,7 +95,7 @@ test("a scripted playtest plays a Nexus Pulse on the script's own clock and show
   assert.ok(started > 0, "the script never reached the Pulse")
   // The frame right after the second `s` is the Pulse's own first moment, already looking at the Nexus.
   assert.match(texts[started]!, /^\| NEXUS PULSE 1 +0:09 /m)
-  // Centred on the Nexus's own tile (said by the position readout until feedback F59 took it out).
+  // Centred on the Nexus's own tile (the position readout that once said so is gone).
   const first = run.frames[started]!.state
   assert.deepEqual(first.cursor, { x: 18, y: 10 })
   assert.equal(first.camera.y, first.cursor.y - Math.floor((first.viewport.height - 1) / 2))

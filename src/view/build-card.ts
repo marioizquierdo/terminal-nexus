@@ -25,7 +25,7 @@ import { rightAlign, drawMenuRow, menuRowSpec, drawPanel } from "./build-menu.ts
 export const cardHeaderRow = (layout: BuildLayout): number => layout.panelRow + CARD_HEADER_ROW
 
 /**
- * The menu turning into a card (owner, 2026-09-30, feedback F68), as the live loop times it: `elapsedMs`
+ * The menu turning into a card (Mario's idea), as the live loop times it: `elapsedMs`
  * into a reveal `lengthMs` long (the "Card reveal" Experiment's length); `fromMenu` says the menu was on
  * the panel before (its rows fade and the chosen row slides up), rather than another card (which gives
  * way at once, and only the card's own beat plays). Absent — every still frame — the finished card.
@@ -36,7 +36,7 @@ export type CardReveal = Readonly<{ elapsedMs: number; lengthMs: number; fromMen
 const revealProgress = (reveal: CardReveal): number => (reveal.lengthMs <= 0 ? 1 : reveal.elapsedMs / reveal.lengthMs)
 
 /**
- * The card reveal's three beats, as shares of its length (F68: "all the menu disappears except for the
+ * The card reveal's three beats, as shares of its length (Mario: "all the menu disappears except for the
  * currently selected menu item that changed to the active state, then quickly interpolates (moves) the
  * item to the top, and then the detail card appears"): the other rows fade out; the chosen row, drawn
  * active, slides from its place on the menu to the header line; then the separator and the card fade in,
@@ -90,7 +90,7 @@ function fadeFrom(cells: BandCell[], from: number, hidden: number, capability: C
 
 /**
  * The side panel while a card shows: finished, or — while the live loop says the card is being
- * revealed (F68) — partway through its three beats (`CARD_BEATS`). Presentation only: the state is the
+ * revealed — partway through its three beats (`CARD_BEATS`). Presentation only: the state is the
  * card's all along, and a still frame draws the finished card.
  */
 export function drawCard(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, capability: CapabilityMode): void {
@@ -153,13 +153,13 @@ export function drawCard(cells: BandCell[], input: BuildCompositionInput, pack: 
 }
 
 /**
- * A **card** in place of the menu (owner, 2026-09-27 to 2026-09-30, feedback F23, F32, F58, F70, F71):
+ * A **card** in place of the menu (shaped over several playtests):
  * the row that opened it as its header on the panel's first line, drawn active — `[e] Explore Map  >`,
  * or `[1] Barracks  >` while a building is being placed, its own hotkey, which ends it — its flashes
  * playing there; a separator across the panel (`-` in ASCII, `─` in Unicode); and under it the card
  * itself (`currentCard`) — in Explore Map whatever is under the cursor, following it as it moves; while
  * placing, the building about to be placed ("This will create visual consistency for anything that
- * gains focus on the map"). No credits (F71) and no Start Pulse: both belong to the menu. A click
+ * gains focus on the map"). No credits and no Start Pulse: both belong to the menu. A click
  * anywhere on the panel goes back, as Esc does.
  */
 function drawCardPanel(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, look: CardLook): void {
@@ -177,7 +177,7 @@ function drawCardPanel(cells: BandCell[], input: BuildCompositionInput, pack: Gl
 }
 
 /**
- * One card, drawn one way (feedback F84: "title, subtitle, description, stats"): its icon — a building's
+ * One card, drawn one way (Mario: "title, subtitle, description, stats"): its icon — a building's
  * own glyphs, or a bare tile's — with its title beside it and its subtitle under the title, wrapped
  * there should it ever be wider than the room beside the icon; then its description, wrapped between
  * words and never cut; then its numbers as label/value rows, as many as the panel has room for. The
@@ -188,7 +188,7 @@ function drawCardPanel(cells: BandCell[], input: BuildCompositionInput, pack: Gl
  * Build Phase, exploring during a Pulse (live health, say). The owner left those for later polish
  * rounds; a later round passes that setting here and changes only this function, never the card's data.
  *
- * While the card is being revealed (F68) its words are typed in reading order — title, subtitle,
+ * While the card is being revealed its words are typed in reading order — title, subtitle,
  * description — its numbers and a tile's icon fade in, and a building's icon plays the building's
  * placement frames, the very frames a building going up on the map plays (`placementSchedule`,
  * `placementLook`), squeezed into the card's beat.
@@ -259,7 +259,7 @@ function drawCardIcon(
     return { width: 1, height: 1 }
   }
   const { contentId } = icon
-  // Whose it is: the player's own, or the raid's — a unit on the map after a round (gate 6B).
+  // Whose it is: the player's own, or the raid's — a unit on the map after a round.
   const player = icon.player ?? "A"
   const definition = input.context.registry.get(contentId)
   const art = CONTENT_ART[contentId] ?? [definition.short.charAt(0)]

@@ -1,7 +1,7 @@
 // The scenario format and its loader, and one assertion per named rule fixture.
 //
 // "Every rule is a scenario file — checked in, named, runnable. That is the regression suite and
-// the documentation at the same time" (milestone-1-spike-battle.md 3.9).
+// the documentation at the same time" (docs/system-design/testing.md).
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -42,7 +42,7 @@ test("the default preset is 48 x 16, which the 80-column composition is derived 
   assert.deepEqual(presetDimensions(DEFAULT_PRESET), { width: 48, height: 16 })
 })
 
-test("the preset matrix matches engine.md 3.1", () => {
+test("the preset matrix matches the Grid page's table", () => {
   assert.deepEqual(presetDimensions("small-wide"), { width: 24, height: 12 })
   assert.deepEqual(presetDimensions("medium-extra-wide"), { width: 48, height: 16 })
   assert.deepEqual(presetDimensions("extra-large-extra-wide"), { width: 72, height: 24 })
@@ -266,7 +266,7 @@ test("at least ten named scenario files exist, plus the mirror skirmish", () => 
   assert.ok(files.includes("citizen-mirror-skirmish.map.json"))
   assert.ok(
     files.length >= 11,
-    `only ${files.length} scenarios exist; the gate asks for ten plus the mirror`,
+    `only ${files.length} scenarios exist; the first milestone asks for ten plus the mirror`,
   )
 })
 
@@ -301,7 +301,7 @@ test("ranged-kill: the fixture's own arithmetic, after two 2026-08-22 speed pass
   // now having lost one marksman and wounded the other, rather than losing nobody. Left as a
   // disclosed side effect of the speed changes rather than re-tuned back, same reasoning as the
   // first pass: fixing it would mean touching combat numbers nobody asked to change, and this is
-  // exactly the kind of retune milestone 3.6 says fixture content is for.
+  // exactly the kind of retune the first milestone says fixture content is for.
   const resolved = await resolveScenario("ranged-kill.map.json")
   const shots = resolved.run.events.filter(
     (event) => event.kind === "attack.launched" && event.attackKind === "ranged",
@@ -330,7 +330,7 @@ test("ranged-kill: the fixture's own arithmetic, after two 2026-08-22 speed pass
 })
 
 test("trooper-versus-marksman: melee wins the charge, at a measured cost", async () => {
-  // milestone 3.6 predicts the trooper "eats three shots, arriving at 22 of 40 health, then kills
+  // The first milestone predicted the trooper "eats three shots, arriving at 22 of 40 health, then kills
   // the marksman" - still exact after the 2026-08-22 speed pass (owner playtest: "units still move
   // too slow"), because the faster trooper closes the marksman's cooldown-24 firing window in fewer
   // ticks: the marksman gets zero more shots in after the trooper arrives, not one, so the trooper
@@ -399,7 +399,7 @@ test("annihilation-victory: the Pulse ends only once every mobile entity is dead
   assert.equal(resolved.run.finalState.outcome?.reason, "annihilation")
   const dead = resolved.run.events.filter((event) => event.kind === "entity.died")
   assert.equal(dead.filter((event) => event.player === "B").length, 2)
-  // The worker was one of the two: workers count (Q13).
+  // The worker was one of the two: workers count.
   assert.ok(dead.some((event) => event.contentId === "unit.citizen.worker"))
 })
 

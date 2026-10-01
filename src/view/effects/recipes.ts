@@ -1,6 +1,6 @@
-// The effect vocabulary — ascii-effects.md Section 5, plus one the Ravel rule earned.
+// The effect vocabulary — `docs/system-design/effects.md`, plus one the Ravel rule earned.
 //
-// Every recipe here is a pure function of absolute time, and every one owes three forms (Section 4):
+// Every recipe here is a pure function of absolute time, and every one owes three forms:
 // full, reduced motion, and monochrome, authored together rather than in a later accessibility pass.
 // The reduced form keeps anticipation, impact and settle and drops travel, drift and scatter —
 // **causality must survive it**. The monochrome form usually needs a different glyph, not a
@@ -299,9 +299,8 @@ const impactBurst: EffectRecipe = (instance, context) => {
  * glyph at all and the compositor keeps whatever was underneath. In `highlights` rather than
  * `effects` so the corruption law cannot let a Glitch effect swallow it.
  *
- * `bold` only, deliberately not `inverse` too. Found during this round's colour-pipeline pass
- * (Q25/transparency prototype, specs/open-questions.md): this recipe originally set both, which
- * `composite.ts`'s own `lightWeight` (1 base + 1 bold + 1 inverse) puts at weight 3 - already at
+ * `bold` only, deliberately not `inverse` too. Found while building the transparency (fade)
+ * pipeline: this recipe originally set both, which `composite.ts`'s own `lightWeight` (1 base + 1 bold + 1 inverse) puts at weight 3 - already at
  * `resolveLighting`'s `inverse >= 3` ceiling from a *single* flash, before any stacking. That made
  * the compositor's whole stacking mechanism dead code for the one recipe it exists for: a solo hit
  * and ten simultaneous hits on the same tile rendered pixel-identical, silently, because nothing had
@@ -313,14 +312,14 @@ const impactBurst: EffectRecipe = (instance, context) => {
  * `inverse`, for real.
  */
 const damageFlash: EffectRecipe = (instance, context) => {
-  // Q25's transparency amendment (engine.md 9.1, canon 2.8), applied narrowly and only here: the
+  // The fade scalar, scoped to the damage flash alone: the
   // flash now actually decays across its own short window instead of being a flat pulse for the
   // whole of FLASH_MS - "then dim slowly," the owner's own words for what stacking should do,
   // finally also true of a single flash's own lifetime. `bold` stays unconditional and unchanged
   // above this comment's own fix, for 16-colour/monochrome, which have no fade tier to fall back to.
   //
   // Reduced motion holds the pre-fade shape exactly: a two-frame blip has no anticipation/travel/
-  // settle sub-phases for ascii-effects.md 4 to keep or drop, so the fade axis simply does not
+  // settle sub-phases for `effects.md`'s reduced-motion rule to keep or drop, so the fade axis simply does not
   // engage, and this branch is provably identical to the recipe's whole behaviour before fade
   // existed.
   if (context.reducedMotion) {
@@ -372,7 +371,7 @@ export function deathExtraTicks(width: number, height: number): number {
  * either because this content has no death frames, or because this tile is blank (a space) in the
  * frame selected. `progress` alone decides which frame plays: pure function of time, same as every
  * other recipe. Reduced motion holds the final frame - the wreck, not the collapse - matching
- * ascii-effects.md 4's "keeps... settle, drops... drift": the sequence is the drift here.
+ * `effects.md`'s reduced-motion rule "keeps... settle, drops... drift": the sequence is the drift here.
  */
 function deathFrameGlyphAt(
   frames: readonly UnitArt[],
@@ -395,8 +394,8 @@ function deathFrameGlyphAt(
  * is the cheapest shape that reads as deceleration, and it is shared by every expansion-from-a-centre
  * site below — the blast ring, the big-death shockwave, and the flying debris (drag decelerates real
  * debris too) — rather than reinvented per recipe. A second curve shape earns its own helper the same
- * way this one did, once something actually needs a different rate of decay, not before (AGENTS.md
- * Section 4: prefer direct code, extract only after a second real use reveals the boundary).
+ * way this one did, once something actually needs a different rate of decay, not before (`effects.md`:
+ * prefer direct code, extract only after a second real use reveals the boundary).
  *
  * Deliberately NOT applied to `rangedTracer`: a projectile travels at constant speed, and easing it
  * would read as a bullet slowing down in flight. Deliberately NOT applied to `structureCollapse`'s
@@ -427,7 +426,7 @@ function bigDeathPieceCount(outset: number): number {
  * ring `deathCollapse` draws for everything smaller: a shockwave racing out to the ring's own
  * radius, then a handful of hand-placed pieces, each launched on its own delay and flown along a
  * straight, hand-computed line - the same closed-form interpolation `tileLine`/`rangedTracer`
- * already use, not a physics integrator (ascii-effects.md 7) - to a landing tile *beyond* `outset`,
+ * already use, not a physics integrator (`effects.md` rules one out) - to a landing tile *beyond* `outset`,
  * a bright "pop" where it lands, then a dim settle. Owner playtest, 2026-08-23: "an explosion that
  * goes from the middle towards the radius, then smaller explosions, and pieces being broken around,
  * ending up in multiple debris." Every draw is seeded from `hash` (the instance's own identity plus
@@ -489,7 +488,7 @@ function bigDeathScatter(
     }
 
     if (context.reducedMotion) {
-      // Travel and the launch delay are exactly what reduced motion drops (ascii-effects.md 4): the
+      // Travel and the launch delay are exactly what reduced motion drops (`effects.md`): the
       // piece shows already landed, dim, for the window's whole length. Causality survives - a body
       // this size is gone and its debris is on the ground - which is the only thing this beat owes.
       cells.push({ tile: landing, glyph, role: "fx.debris", dim: true })
@@ -580,7 +579,7 @@ const deathCollapse: EffectRecipe = (instance, context) => {
   if (context.reducedMotion || progress >= 0.45) return cells
 
   // The expansion: a ring around the footprint, only while the collapse is loudest.
-  // ascii-effects.md 5's own words for this recipe are "must be visibly heavier than
+  // `effects.md`'s own words for this recipe are "must be visibly heavier than
   // fx.impact.burst, the two events players confuse most" (owner playtest, 2026-08-22: "show bigger
   // explosions when the units die vs when they take damage"); scaled further by footprint size
   // (owner playtest, 2026-08-23, above). A ring past its 1x1 minimum is thinned - craft rule 5,
@@ -658,8 +657,8 @@ const SUB_BURST_RADIUS = 1
 
 /**
  * The owner's own words, 2026-08-24: "the explosions should also spawn smaller sub-explosions, or in
- * other words, the effects module should support sub-effects." The cheap path first, per the gate
- * instructions and ascii-effects.md Section 7's own departure bar: a secondary burst drawn inside this
+ * other words, the effects module should support sub-effects." The cheap path first, and
+ * `effects.md`'s own departure bar: a secondary burst drawn inside this
  * recipe's own closed-form, hash-seeded function - the same shape `bigDeathScatter`'s landing "pop"
  * already uses, not a new effect id, not a runtime-registered child instance. Each sub-burst is a
  * smaller, offset, delayed copy of the main ring's own eased expansion - same formula, same glyph
@@ -728,7 +727,7 @@ const blastDetonation: EffectRecipe = (instance, context) => {
 
   if (context.reducedMotion) {
     // No expansion: the full radius, drawn once and held, so the reach is still legible. Sub-bursts
-    // are travel and decorative movement - exactly what reduced motion drops (ascii-effects.md 4) -
+    // are travel and decorative movement - exactly what reduced motion drops (`effects.md`) -
     // and the held full ring already carries the causality this beat owes.
     for (const tile of ringTiles(instance.origin, radius)) {
       cells.push({ tile, glyph: "*", role: "fx.blast", dim: true })
@@ -808,7 +807,7 @@ export const EFFECT_RECIPES: Readonly<Record<string, EffectRecipe>> = {
   "fx.structure.collapse": structureCollapse,
   "fx.blast.detonation": blastDetonation,
   "fx.nexus.critical": nexusCritical,
-  // The toolkit's generic recipes, usable by anything with a footprint (gate 5I made them for a
+  // The toolkit's generic recipes, usable by anything with a footprint (made for a
   // building going up; `particles.ts` and `shading.ts` say what each one takes).
   ...PARTICLE_RECIPES,
   ...SHADING_RECIPES,

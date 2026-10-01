@@ -1,5 +1,5 @@
 // The map's own edge — the sides of the Grid rectangle that have reached the end of the map — in each
-// style a map may name (feedback F25; the owner's choice of 2026-09-29: "using map-specific borders
+// style a map may name (Mario's choice: "using map-specific borders
 // looks a lot better! Even in ascii mode, the rugged border style applied to the UI border when
 // reaching the map edge is an awesome UI touch").
 //
@@ -8,10 +8,10 @@
 // out from which way each line runs and how heavy it is, so a heavy side meets the frame's light rules
 // in a real mixed-weight junction rather than a line running past them. Every style means the same
 // thing in both glyph packs: where the ASCII pack has no glyph for a style it falls back to the solid
-// bar (an inverse-video cell), which is the same weight in both directions (Q56).
+// bar (an inverse-video cell), which is the same weight in both directions.
 //
-// Colour is a role, never a colour (engine.md 9.1): the edge is always `chrome.edge`, a quieter role
-// of its own between the frame and the ground in each theme (F25: "the border color should probably
+// Colour is a role, never a colour (`docs/system-design/presentation.md`): the edge is always `chrome.edge`, a quieter role
+// of its own between the frame and the ground in each theme (Mario: "the border color should probably
 // be less accentuated" — the owner kept it after trying the frame's own colour and a dimmed one).
 
 import type { MapEdgeStyle } from "../build/types.ts"
@@ -120,7 +120,7 @@ export function edgeCell(
 
   if (style === "solid") return solid
   if (pack === "ascii") {
-    // ASCII has no half block, no heavier line of equal weight both ways (Q56), and no double
+    // ASCII has no half block, no heavier line of equal weight both ways, and no double
     // vertical: those styles are the solid bar there. A shade and a fence have honest ASCII forms.
     if (style === "shade") return glyph(":")
     if (style === "fence") {

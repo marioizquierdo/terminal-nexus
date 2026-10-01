@@ -1,12 +1,11 @@
-// A card, as data (owner, 2026-09-30, feedback F84: "the cards have title, subtitle, description,
-// stats"): what the side panel shows in place of the menu while something has the map's attention —
+// A card, as data (the owner: "the cards have title, subtitle, description, stats"): what the side panel shows in place of the menu while something has the map's attention —
 // the building being placed, or in Explore Map whatever is under the cursor. Built here, in one place,
 // from the content's own words (`src/content/cards.ts`) and numbers (the content definition, the
 // catalog); drawn by one function (`src/view/build-card.ts`), which is where a later round would make it
 // look different while placing, exploring in the Build Phase, or exploring during a Pulse.
 //
 // No status line: whether a building is planned, standing or about to be placed "is obvious from the
-// rest of the UI" (F84), so a card says only what the thing is.
+// rest of the UI", so a card says only what the thing is.
 
 import { footprintExtent, tilesOf } from "../grid/coords.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
@@ -77,7 +76,7 @@ function fightStats(context: Pick<BuildContext, "registry">, contentId: string, 
   return stats
 }
 
-/** Something on the map after a round (gate 6B) — a survivor of either side, or the raid's structure: its
+/** Something on the map after a round — a survivor of either side, or the raid's structure: its
  *  words, whose it is, and its health as it stands now. */
 export function fieldCard(context: Pick<BuildContext, "registry">, entity: FieldEntity): Card {
   return {
@@ -87,7 +86,7 @@ export function fieldCard(context: Pick<BuildContext, "registry">, entity: Field
   }
 }
 
-/** A unit the next round will bring (gate 6B, "see what is coming"): what it is, when it arrives, and —
+/** A unit the next round will bring ("see what is coming"): what it is, when it arrives, and —
  *  where its group has one — what it means to do, in place of its description. */
 export function incomingCard(context: Pick<BuildContext, "registry">, entity: IncomingEntity): Card {
   const text = cardText(context, entity.contentId)
@@ -101,7 +100,7 @@ export function incomingCard(context: Pick<BuildContext, "registry">, entity: In
   }
 }
 
-/** A building's card — the same whether it is being placed, planned or standing (F58, F84): its words,
+/** A building's card — the same whether it is being placed, planned or standing: its words,
  *  then its cost where the menu sells it, its health and size, and its attack where it has one. */
 export function entityCard(context: Pick<BuildContext, "registry" | "catalog">, contentId: string): Card {
   const definition = context.registry.get(contentId)

@@ -1,4 +1,4 @@
-// 5 and 6. Arbitration and settle — engine.md 4.3. Who wins a contested tile, and applying the
+// 5 and 6. Arbitration and settle (phase order in pulse.md). Who wins a contested tile, and applying the
 // grants that survive it.
 
 import { ClaimOverlay } from "../grid/occupancy.ts"
@@ -14,7 +14,7 @@ type Grant = { actor: Actor; to: Coord; direction: Direction }
 
 /**
  * Contested claims resolve by speed tier — lower outranks higher — with any remaining tie broken by
- * one draw from the seeded stream (engine.md 4.3). Entity ordinals order iteration and event
+ * one draw from the seeded stream (pulse.md). Entity ordinals order iteration and event
  * emission, never outcomes.
  *
  * Termination: every pass grants at least one claim per conflict group, so the number of unresolved

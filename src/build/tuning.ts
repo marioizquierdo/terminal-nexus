@@ -1,4 +1,4 @@
-// **Tuned values** — the settings on the tuned tier, as a table (docs/ui-patterns.md, "Experiments and
+// **Tuned values** — the settings on the tuned tier, as a table (docs/system-design/ui-patterns.md, "Experiments and
 // tuned values"). They are declared with every other setting in `src/build/all-settings.ts`, each with
 // who chose it and when; this file is the table pure code with no state to hand reads — the view's
 // timings, the reducer's arming rules — and the names an old settings export may still use.
@@ -10,18 +10,18 @@
 // (`setting(state, name)`).
 //
 // The settled *choices* are not in the list, because they are no longer choices: the code simply does
-// them. Settled at the same time (the owner's settings export, 2026-09-30):
+// them. Settled at the same time, from the owner's settings export:
 //
-//   - an exploring click near an edge scrolls further the nearer the edge it lands (feedback F6), in an
+//   - an exploring click near an edge scrolls further the nearer the edge it lands, in an
 //     edge zone `clickZone` deep — "centres every click" and "margin only" are gone;
-//   - a click with a building armed scrolls the view as an exploring click does (the owner's 2026-09-28
-//     playtest, F22), and a quick double click places where its first click pointed;
+//   - a click with a building armed scrolls the view as an exploring click does,
+//     and a quick double click places where its first click pointed;
 //   - a fast move (Shift, Option, PageUp/PageDown, Home/End) drags the view at the margin like any other
 //     move and no longer re-centres it;
-//   - a building as it finishes is lit by a flash that settles and throws a few sparks (gate 5I, F9) —
+//   - a building as it finishes is lit by a flash that settles and throws a few sparks —
 //     the rainbow and "many" stay as the effect recipes' own palettes, but nothing in the game picks them;
 //   - when a Nexus Pulse's last seconds begin, the view slides to centre on the player's Nexus; and the
-//     map's border flashes a faint red when that Nexus is hurt (gate 6A, F45).
+//     map's border flashes a faint red when that Nexus is hurt.
 //
 // Pure data: nothing here reads a clock, a file or a flag, so the reducer, the input path and the view
 // may all read it.
@@ -49,12 +49,12 @@ const SETTLED_CHOICES = [
 
 /** Tuned values since retired, because the rule they tuned is gone: the held-key ramp's hold step,
  *  fast step and ramp time (2 tiles a repeat, then 4), replaced by counting taps and a hold cadence (the
- *  owner's third round, 2026-09-30, feedback F79). An old export still names them (they were
+ *  owner reported the old ramp felt wrong). An old export still names them (they were
  *  Experiments once). */
 const RETIRED_TUNING = ["holdStep", "fastStep", "rampMs"] as const
 
 /** Experiments retired because what they chose became a mission's data: the placeholder Pulse's Raid and
- *  Your units, replaced by PERIMETER's waves and starting squads (gate 6B, `src/mission/perimeter.ts`). */
+ *  Your units, replaced by PERIMETER's waves and starting squads (`src/mission/perimeter.ts`). */
 const RETIRED_EXPERIMENTS = ["raid", "crew"] as const
 
 /**
@@ -74,8 +74,8 @@ export const SETTLED_EXPERIMENTS: ReadonlySet<string> = new Set<string>([
 
 /**
  * Settings that changed their name, by the name an old export uses: read as the setting they are now,
- * on whatever tier it stands. The Battle Round screen's pulse became every popup's at the menu spike's
- * merge (feedback F84).
+ * on whatever tier it stands. The Battle Round screen's pulse became every popup's when the menus
+ * were merged.
  */
 export const RENAMED_SETTINGS: Readonly<Record<string, SettingName>> = {
   battleRoundPulseMs: "popupPulseMs",

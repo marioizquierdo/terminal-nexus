@@ -51,7 +51,7 @@ const TRANSLITERATE: Readonly<Record<string, string>> = {
 }
 
 /**
- * ASCII-safe is the baseline (engine.md 9.6): every cell is one column wide and printable. Authored
+ * ASCII-safe is the baseline (`docs/system-design/presentation.md`): every cell is one column wide and printable. Authored
  * text may hold typographic characters, so it is transliterated here rather than trusted, and
  * anything left over becomes a question mark — an em dash must not break the width-one invariant.
  */

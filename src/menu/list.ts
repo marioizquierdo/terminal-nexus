@@ -17,8 +17,8 @@ export function createMenuList(items: readonly MenuItem[]): MenuListState {
 }
 
 /**
- * The next highlighted index after moving by `delta`, **stopping at either end** (owner, 2026-09-30,
- * feedback F75: menus "should not rotate", the same rule as every list in the Build Phase) — or, with
+ * The next highlighted index after moving by `delta`, **stopping at either end** (menus
+ * do not wrap around, the same rule as every list in the Build Phase) — or, with
  * `jump` (Shift+Up/Down, PageUp/PageDown, Home/End), the first row for a negative `delta` and the last
  * for a positive one. A one-item list never leaves its only item; an empty one answers 0.
  */

@@ -1,4 +1,4 @@
-// Back and cancel (docs/ui-patterns.md, "Back, cancel and close"): Esc and `x` go back one level at a
+// Back and cancel (docs/system-design/ui-patterns.md, "Back, cancel and close"): Esc and `x` go back one level at a
 // time — a popup to the one it was opened from, placing or Explore Map to where it began, the map to the
 // menu — and there `x` and a right click stop, while Esc opens the game menu. Two commands carry it:
 // `cancel` (Esc, the top bar's label) and `back` (`x`, a right click). Driven through raw bytes into the
@@ -27,7 +27,7 @@ import {
 } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
 
-/** On the menu with nothing open — the "regular state" `x x x` must always reach (feedback F62). */
+/** On the menu with nothing open — the "regular state" `x x x` must always reach. */
 function onMenu(state: BuildState): boolean {
   return state.focus === "menu" && state.popup === null && state.armed === null && !state.exploreMap
 }
@@ -227,7 +227,7 @@ test("no popup has a row that only goes back: the game menu's rows are its five 
     assert.ok(spec !== null, `${JSON.stringify(begin)} opened nothing`)
     return spec.rows.flatMap((row) => (row.kind === "option" ? [row] : []))
   }
-  // Activity logs (feedback F91) joined Settings, Controls, Restart and Quit.
+  // Activity logs joined Settings, Controls, Restart and Quit.
   assert.deepEqual(optionsOf([ESC]).map((option) => option.hotkey), ["s", "c", "a", "r", "q"])
   for (const begin of [["d", "e"], ["?"]]) assert.deepEqual(optionsOf(begin), [], JSON.stringify(begin))
   // The export is its text, to its last row.

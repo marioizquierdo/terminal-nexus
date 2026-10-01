@@ -1,4 +1,4 @@
-// The report — milestone-1-spike-battle.md 3.3 and 3.9.
+// The report — its line grammar and summary as the first milestone printed them (docs/milestones/completed/milestone-01-grid-battles.md).
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -18,7 +18,7 @@ import {
 import { TERRAIN } from "../src/grid/types.ts"
 import { reportInputOf, resolveScenario, scenarioFiles } from "./helpers.ts"
 
-/** The exact lines printed in milestone-1-spike-battle.md 3.3. */
+/** The exact lines printed in docs/milestones/completed/milestone-01-grid-battles.md. */
 const SPEC_LINES: ReadonlyArray<readonly [Parameters<typeof formatLine>[0], string]> = [
   [
     { tick: 0, level: "info", kind: "spawn", subject: "A:trooper#1", detail: "at (2,1)" },
@@ -68,7 +68,7 @@ const SPEC_LINES: ReadonlyArray<readonly [Parameters<typeof formatLine>[0], stri
   ],
 ]
 
-test("the line grammar reproduces the milestone's own sample lines", () => {
+test("the line grammar reproduces the documented sample lines", () => {
   for (const [line, expected] of SPEC_LINES) {
     assert.equal(formatLine(line), expected)
   }
@@ -148,7 +148,7 @@ test("the report can rebuild the whole cast from the events alone", async () => 
   }
 })
 
-test("the summary reports what the milestone's example reports", async () => {
+test("the summary reports what the documented example reports", async () => {
   const resolved = await resolveScenario("melee-kill.map.json")
   const summary = summarize(reportInputOf(resolved))
   const text = formatSummary(summary)
@@ -175,7 +175,7 @@ test("the stuck warning fires for an actor that cannot make progress", async () 
 })
 
 test("the same gap that stalls a 3x1 hauler hard-stops a 3x3 colossus, not just circles it", async () => {
-  // specs/open-questions.md Q15's failure shape confirmed at a genuinely large footprint, not only
+  // The failure shape recorded for the 3x1 hauler, confirmed at a genuinely large footprint, not only
   // the narrowest multi-tile case: a mover three tiles wide reaches the same conclusion a mover one
   // tile wide does (a two-tile gap fits neither), but a body this size has nowhere left to slide once
   // it is flush against the gap, so it hard-stops rather than pacing between two tiles the way the

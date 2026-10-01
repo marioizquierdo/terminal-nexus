@@ -1,4 +1,4 @@
-// The structured logger and the Activity Logs' schema (owner, 2026-10-01): typed events declared
+// The structured logger and the Activity Logs' schema: typed events declared
 // before they are logged, a bounded memory that drops the oldest, one text line per entry that reads
 // back, filters as data.
 

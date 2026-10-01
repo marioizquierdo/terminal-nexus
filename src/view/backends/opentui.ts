@@ -1,7 +1,7 @@
-// The OpenTUI backend — milestone-1-spike-battle.md 3.8 adopts the imperative core behind the
+// The OpenTUI backend — the design adopts the imperative core behind the
 // `TerminalBackend` interface, with direct ANSI as the fallback.
 //
-// MEASURED, 2026-08-21, `@opentui/core@0.5.6` (see evidence/report.md Section 4):
+// MEASURED, 2026-08-21, `@opentui/core@0.5.6` (see docs/history/reports/2026-08-21-pulse-playground.md):
 //
 //   * exact cell control works: a frame written cell by cell through `OptimizedBuffer.setCell`
 //     comes back out of the test harness character for character;

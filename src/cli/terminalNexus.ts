@@ -1,8 +1,8 @@
-// The `terminal-nexus` executable's own CLI — milestone-03-game-menu.md: the game's actual entry
+// The `terminal-nexus` executable's own CLI: the game's actual entry
 // point, as distinct from `grid`'s. No subcommand and no map file: `terminal-nexus` launches straight
 // to the top-level menu.
 //
-// Gate 3B added a real Settings screen, so what a session starts with is now layered: a saved choice
+// The Settings screen makes what a session starts with layered: a saved choice
 // (from a previous run's Settings screen) beats `grid`'s own first-run colour-depth guess, and an
 // explicit command-line flag beats either — the same override order `grid` itself already uses for
 // most of its own flags, just with a saved file added underneath.
@@ -16,8 +16,8 @@ import { detectCapability } from "./index.ts"
 import { parseArgs, parseInteger } from "./args.ts"
 import { runMenu } from "./menu.ts"
 import { parseKeyScript } from "../playtest/keys.ts"
-import { runSpike } from "./spike.ts"
-import type { Exporter } from "./spike.ts"
+import { runBuildPhase } from "./build-phase.ts"
+import type { Exporter } from "./build-phase.ts"
 import type { ExportKind } from "../build/types.ts"
 import { DEFAULT_SETTINGS, createSettingsStore, defaultSettingsPath } from "../settings/index.ts"
 import type { Settings } from "../settings/index.ts"
@@ -32,11 +32,12 @@ const USAGE = `terminal-nexus — the Terminal Nexus game
                   [--backend auto|ansi|opentui]
       launches the top-level menu: Campaign, Challenge, Settings, About, Exit
 
-  terminal-nexus --spike [the same presentation flags]
-      opens the Build Phase scrolling-and-placement spike (Milestone 5, gate 5A): a Grid
-      larger than the screen, a cursor that scrolls it, and three structures to place, by
-      keyboard, by mouse, or from a script. It answers a question rather than shipping a
-      screen - nothing it plans reaches the simulation, and the plan is not saved.
+  terminal-nexus --build-phase [the same presentation flags]
+      opens the Build Phase on the starter map and plays the first mission from it: a Grid
+      larger than the screen, a cursor that scrolls it, buildings to place by keyboard, by
+      mouse or from a script, a Nexus power to pick, then the Nexus Pulse. (--spike is an
+      alias for one release; both flags are temporary stand-ins for flags that mean
+      something, such as a scenario to load or a screen to open.)
       --scroll-margin <percent> changes how close to the edge of the view the cursor gets
       before the map starts scrolling, as a share of the view's width and height
       (${TUNING.scrollMargin} unless given; "${TUNING.scrollMargin}" and "${TUNING.scrollMargin}%" are the same). Esc opens the game menu: Settings,
@@ -83,11 +84,15 @@ export async function main(argv: readonly string[]): Promise<number> {
     reducedMotion: args.flags.has("reduced-motion") ? true : imported.settings.reducedMotion,
   }
 
-  if (args.flags.has("spike")) {
+  // `--build-phase` opens the Build Phase directly. `--spike` is its old name, kept as an alias for
+  // one release so pasted commands keep working. Both are temporary: they name a screen rather than
+  // an intent, and should give way to flags that mean something (a scenario to load, a screen to
+  // open, a state to start in) once the Campaign menu leads here on its own.
+  if (args.flags.has("build-phase") || args.flags.has("spike")) {
     const margin = args.options.get("scroll-margin")
     const buildId = currentCommit()
     const startKeys = args.options.get("keys")
-    return runSpike({
+    return runBuildPhase({
       settings,
       settingsStore,
       backend: args.options.get("backend") ?? "auto",
@@ -103,7 +108,7 @@ export async function main(argv: readonly string[]): Promise<number> {
     })
   }
 
-  // The About screen names the build, so a playtester can say which one they played (feedback F93).
+  // The About screen names the build, so a playtester can say which one they played.
   const commit = currentCommit()
   return runMenu({
     settings,
@@ -134,7 +139,7 @@ function currentCommit(): string | undefined {
   }
 }
 
-/** The Activity Logs' export file (owner, 2026-10-01, feedback F91), beside the settings' export. */
+/** The Activity Logs' export file, beside the settings' export. */
 export const ACTIVITY_EXPORT_FILE = "activity-export.txt"
 
 /**

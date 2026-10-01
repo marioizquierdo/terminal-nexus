@@ -1,19 +1,18 @@
-// The menu list shape — engine.md 9.7: "every menu item displays its hotkey before its label... a
-// hotkey that is not displayed does not exist." One small, reusable shape rather than a screen-
-// specific one, per milestone-03-game-menu.md Section 2: a menu is data a list widget renders, not a
-// bespoke thing built per screen.
+// The menu list shape (`input.md`): every menu item displays its hotkey before its label, and a
+// hotkey that is not displayed does not exist. One small, reusable shape rather than a screen-
+// specific one: a menu is data a list widget renders, not a bespoke thing built per screen.
 
 /**
- * One selectable row. `hotkey` is stable across screens, sessions, and terminal sizes — engine.md
- * 9.7's own reason: muscle memory transfers. `id` is what application code switches on; `hotkey` and
+ * One selectable row. `hotkey` is stable across screens, sessions, and terminal sizes, so
+ * muscle memory transfers (`input.md`). `id` is what application code switches on; `hotkey` and
  * `label` are what the player sees, and only ever those two things: `[${hotkey}] ${label}`.
  *
  * `disabled` is a rendering hint only — dimmed instead of the normal hotkey/label colours when not
- * highlighted (milestone-03-game-menu.md Gate 3C). It changes nothing about the command vocabulary:
- * the item still has a real, displayed hotkey, and engine.md 9.7 is a RULE that a displayed hotkey
+ * highlighted. It changes nothing about the command vocabulary:
+ * the item still has a real, displayed hotkey, and it is a RULE (`input.md`) that a displayed hotkey
  * activates the item it belongs to, so `disabled` never suppresses that. A row using it just has
- * nothing further to do once activated (the milestone's own "disabled with the reason shown" is the
- * label's job, not a new kind of command).
+ * nothing further to do once activated (a disabled item shows its reason in its label; that is not a
+ * new kind of command).
  */
 export type MenuItem = Readonly<{
   id: string
@@ -23,15 +22,15 @@ export type MenuItem = Readonly<{
 }>
 
 /**
- * The one command vocabulary a menu screen understands — engine.md 9.7's RULE. Keyboard, mouse, and
+ * The one command vocabulary a menu screen understands — the `input.md` RULE. Keyboard, mouse, and
  * the driver are three producers of this same type; nothing downstream ever learns which adapter
  * produced a given command.
  *
  *   - `highlight`  — move the highlight to this item, without activating it (arrow keys).
  *   - `activate`   — run this item now (a hotkey, a mouse click, or Enter on the highlighted item).
  *   - `back`       — leave the current screen for whatever it was reached from (Esc). A screen with
- *     nowhere to go back to (the top-level menu) simply does nothing with it — engine.md 9.7: "Esc
- *     backs out of it... never quits the game by itself."
+ *     nowhere to go back to (the top-level menu) simply does nothing with it: Esc backs out of a screen and
+ *     never quits the game by itself (`input.md`).
  *   - `quit`       — leave the application (`q`, an interrupt byte, SIGINT, SIGTERM).
  */
 export type MenuCommand =

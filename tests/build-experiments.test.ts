@@ -1,4 +1,4 @@
-// The Experiments (docs/ui-patterns.md, "Experiments and tuned values"): live-editable flags for the
+// The Experiments (docs/system-design/ui-patterns.md, "Experiments and tuned values"): live-editable flags for the
 // owner's playtests, the section at the bottom of Settings (`tests/build-settings.test.ts` has the
 // player's half, the game menu and the export). Driven through raw bytes into the real adapters where an
 // adapter is what is being claimed, and through commands where the reducer is; and one flow three ways
@@ -7,7 +7,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { SPIKE_CATALOG } from "../src/build/catalog.ts"
+import { STARTER_CATALOG } from "../src/build/catalog.ts"
 import { EXPERIMENT_FIELDS, defaultExperiments, experimentSpec, formatExperimentValue, stepExperiment } from "../src/build/experiments.ts"
 import type { ExperimentField } from "../src/build/experiments.ts"
 import { menuEntryRow } from "../src/build/layout.ts"
@@ -86,9 +86,9 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   const text = screenText(side)
   assert.match(text, /SETTINGS/)
   assert.match(text, /KEYBOARD NAVIGATION - experiments/)
-  // In order, section by section (feedback F85): keyboard navigation — the hold window and key releases
+  // In order, group by group: keyboard navigation — the hold window and key releases
   // from the third round, and the tap, hold and jump numbers back for the navigation polish round — the
-  // popup pulse (every popup's since F83) and the Battle Round flash, and the mission's next round and incoming wave.
+  // popup pulse (every popup's) and the Battle Round flash, and the mission's next round and incoming wave.
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.field),
     [
@@ -113,7 +113,7 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
     EXPERIMENT_FIELDS.map((spec) => spec.section),
     [...Array.from({ length: 10 }, () => "keyboard"), "effects", "effects", "effects", "mission", "mission"],
   )
-  // The bottom line says what the keys do there (feedback F59), and the highlighted row's question is
+  // The bottom line says what the keys do there, and the highlighted row's question is
   // shown. Opened by `d` from the game, Esc closes it.
   assert.match(text, /Left\/right change a value, \[e\] exports them all\. \[esc\] closes\./)
   assert.ok(text.includes("Arrow presses closer than this"), "the hold window's question is not shown")
@@ -134,7 +134,7 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
     keys(side, DOWN)
   }
   for (const spec of EXPERIMENT_FIELDS) assert.ok(seen.has(spec.label), `${spec.label} is never listed with its value`)
-  // Settled by the owner on 2026-09-29 (feedback F30, F31) and 2026-09-30 (F76), and deleted.
+  // Settled by the owner on 2026-09-29 and 2026-09-30, and deleted.
   for (const gone of ["Smart cursor", "Opens on", "Cursor blink", "Build animation", "Scroll margin", "Shift jump"]) {
     assert.ok(!EXPERIMENT_FIELDS.some((spec) => spec.label === gone), `${gone} is still an Experiment`)
   }
@@ -246,7 +246,7 @@ test("the restart keeps every flag and starts the plan over, on the menu at Expl
   assert.deepEqual(state.cursor, OPEN_GROUND)
   assert.equal(state.experiments.nextRound, crew)
   // The restart answers on the bottom line; the next key that says nothing brings back the hint for the
-  // highlighted row (feedback F59).
+  // highlighted row.
   assert.match(screenText(side), /Build Phase restarted with these settings\./)
   keys(side, DOWN, UP)
   assert.match(screenText(side), /Explore Map: look around and read what is on each tile\./)
@@ -300,16 +300,16 @@ test("setting an Experiment by keys, by clicks, and from a driver script is the 
   clickEscLabel(byMouse)
   assert.equal(byMouse.build.state.popup, "game-menu")
   clickPopupOption(byMouse, "r")
-  // The keyboard is on the menu after the restart: a click on the row arms it at once (feedback
-  // F22); a click on the tile the cursor already sits on places (Q52), back on the menu. The first key
+  // The keyboard is on the menu after the restart: a click on the row arms it at once;
+  // a click on the tile the cursor already sits on places, back on the menu. The first key
   // after the mouse only shows the menu's highlight again, which the keyboard's own placement left
   // showing.
-  clickPanelRow(byMouse, menuEntryRow(byMouse.layout, SPIKE_CATALOG, { kind: "construct", index: 0 }) as number)
+  clickPanelRow(byMouse, menuEntryRow(byMouse.layout, STARTER_CATALOG, { kind: "construct", index: 0 }) as number)
   clickTile(byMouse, byMouse.build.state.cursor)
   assert.equal(byMouse.build.state.highlightHidden, true)
   // The placement's answer is the same by either door...
   assert.deepEqual(byMouse.build.state.status, byKeyboard.build.state.status)
-  // ...and lapses at the next key that says nothing (feedback F59) — the key that only shows the
+  // ...and lapses at the next key that says nothing — the key that only shows the
   // highlight again here, so the keyboard and the driver below each walk Up and back Down to match.
   keys(byMouse, DOWN, UP, DOWN)
   keys(byKeyboard, UP, DOWN)

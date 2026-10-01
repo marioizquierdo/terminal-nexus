@@ -1,7 +1,7 @@
-// The direct-ANSI backend: the fallback the milestone requires to stay a half-day\'s work
-// (milestone-1-spike-battle.md 3.8), and the one that always exists.
+// The direct-ANSI backend: the fallback the design requires to stay a half-day's work,
+// and the one that always exists.
 //
-// Terminal lifecycle is a RULE (engine.md 10.1). Everything that can end a session — `q`, SIGINT,
+// Terminal lifecycle is a RULE (`docs/system-design/runtime.md`). Everything that can end a session — `q`, SIGINT,
 // SIGTERM, a setup failure, a caught render failure — runs through **one idempotent disposer**.
 // Calling it twice is harmless. A renderer that leaves the terminal in raw mode is a reason to
 // reject it, so the restore path is the part written first.

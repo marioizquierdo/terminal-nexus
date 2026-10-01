@@ -1,8 +1,7 @@
-// **Every setting, in one list** (owner, 2026-09-30, feedback F85: "Refactor the code to account for the
-// hierarchy of settings, some are experimental (for me), some are in-game user-facing settings, and some
-// are constants in code only. We may promote settings to be user-facing, change sections, move them into
-// constants (so we can still refer and update them), and at some point cleanup and solidify the
-// constants and move them closer to their code module").
+// **Every setting, in one list.** The owner's brief: "some are experimental (for me), some are in-game
+// user-facing settings, and some are constants in code only. We may promote settings to be user-facing,
+// change sections, move them into constants (so we can still refer and update them), and at some point
+// cleanup and solidify the constants and move them closer to their code module".
 //
 // Each setting names its **tier** — the rung it stands on:
 //
@@ -10,11 +9,11 @@
 //     (`src/settings/types.ts`);
 //   - `experiment` — for the owner's playtests: shown in Settings, never saved, written into the export
 //     he pastes into a pull request (`settings-export.ts`), and normally settled before its pull request
-//     is accepted (AGENTS.md Section 5);
+//     is accepted (the Experiments rule in AGENTS.md);
 //   - `tuned` — a constant in code, not shown: the owner's settled value, with who chose it and when.
 //
-// **The experiment tier is how an agent asks the owner a question during a demo** (feedback F89;
-// `docs/ui-patterns.md` section 15, the feedback loop). Unsure whether a flash should last 220 ms or
+// **The experiment tier is how an agent asks the owner a question during a demo** (the feedback loop is
+// described in `docs/system-design/ui-patterns.md`). Unsure whether a flash should last 220 ms or
 // 300, or whether a new behaviour should exist at all? Add an `experiment` defaulting to the
 // recommended answer, with a question he can read in Settings ("How long each flash lasts…"), and ask in
 // the pull request: "press `d`, set Battle Round flash to 300 ms, tell me which you prefer, and paste
@@ -129,15 +128,14 @@ export const ALL_SETTINGS = {
   },
 
   // --- Keyboard navigation -------------------------------------------------------------------------
-  // Taps speed up by counting and a hold runs at the game's own cadence (the owner's third round,
-  // 2026-09-30, feedback F79; the rules are `src/build/motion.ts`). Back as Experiments for the
-  // navigation polish round (F85: "add a few more settings back, preparing for the upcoming round of
-  // polish for keyboard navigation"), each at the value it was tuned to.
+  // Taps speed up by counting and a hold runs at the game's own cadence (the rules are
+  // `src/build/motion.ts`). They are Experiments again so keyboard navigation can be tuned by feel, each
+  // at the value it was tuned to.
 
   /** Where the terminal does not say which key events are repeats: a press of the same arrow at most
    *  this long after the one before is a held key's repeat, and anything slower a tap. It depends on each
    *  keyboard's own repeat delay, so it stays live to retune on another machine; 200 is the owner's
-   *  (2026-09-30, third round: "I would try holdWindowMs = 200ms"). */
+   *  ("I would try holdWindowMs = 200ms"). */
   holdWindowMs: {
     tier: "experiment",
     section: "keyboard",
@@ -147,8 +145,8 @@ export const ALL_SETTINGS = {
     default: 200,
   },
   /** Whether to read key presses, repeats and releases where the terminal reports them (the kitty
-   *  keyboard protocol), or guess a hold from timing — the owner's comparison of the two (2026-09-30,
-   *  third round). Applied at once: the live loop asks for them, or stops, as it changes. */
+   *  keyboard protocol), or guess a hold from timing — the owner's comparison of the two. Applied at once:
+   *  the live loop asks for them, or stops, as it changes. */
   keyReleases: {
     tier: "experiment",
     section: "keyboard",
@@ -157,10 +155,10 @@ export const ALL_SETTINGS = {
     values: ["auto", "off"],
     default: "auto",
   },
-  /** How far a tap of an arrow moves, and every run of taps starts from; the owner's 2026-09-28 playtest. */
+  /** How far a tap of an arrow moves, and every run of taps starts from; the owner's playtest. */
   tapStep: { tier: "tuned", unit: "tiles", default: 1 },
   /** Taps of one arrow at most this far apart are a run, which keeps its speed; a longer gap starts over
-   *  at one. First guess, 2026-09-30, from the owner's third round — his own number, "a double-tap (400ms)". */
+   *  at one. First guess, from the owner's playtest notes — his own number, "a double-tap (400ms)". */
   doubleTapMs: {
     tier: "experiment",
     section: "keyboard",
@@ -170,7 +168,7 @@ export const ALL_SETTINGS = {
     default: 400,
   },
   /** A tap at most this soon after the one before is a quick one, which may double the run's speed. First
-   *  guess, 2026-09-30, from the owner's third round — his own number, "a fast-double-tap (300ms)". */
+   *  guess, from the owner's playtest notes — his own number, "a fast-double-tap (300ms)". */
   fastTapMs: {
     tier: "experiment",
     section: "keyboard",
@@ -180,7 +178,7 @@ export const ALL_SETTINGS = {
     default: 300,
   },
   /** Every this many taps since the speed last changed, the last one quick, doubles it. First guess,
-   *  2026-09-30, from the owner's third round — his own "tap 3 times at least before activating speed". */
+   *  from the owner's playtest notes — his own "tap 3 times at least before activating speed". */
   tapsToSpeedUp: {
     tier: "experiment",
     section: "keyboard",
@@ -190,7 +188,7 @@ export const ALL_SETTINGS = {
     unit: "taps",
     default: 3,
   },
-  /** The fastest a run of taps goes. First guess, 2026-09-30, from the owner's third round — his
+  /** The fastest a run of taps goes. First guess, from the owner's playtest notes — his
    *  "4-tiles speed (fast)". */
   tapTopStep: {
     tier: "experiment",
@@ -203,7 +201,7 @@ export const ALL_SETTINGS = {
   },
   /** A held arrow moves the cursor at most once this often, whatever the keyboard's repeat rate — about
    *  16 moves a second, close enough to the cursor's glide that the drawn cursor keeps up. First guess,
-   *  2026-09-30, from the owner's third round ("limit the scroll speed"). */
+   *  from the owner's playtest notes ("limit the scroll speed"). */
   holdMoveMs: {
     tier: "experiment",
     section: "keyboard",
@@ -212,11 +210,11 @@ export const ALL_SETTINGS = {
     values: [30, 40, 50, 60, 80, 100, 120],
     default: 60,
   },
-  /** How far each of a held arrow's moves goes at first. First guess, 2026-09-30, from the owner's third
-   *  round (the retired `holdStep` moved 2 at every repeat, the owner's 2026-09-28 playtest). */
+  /** How far each of a held arrow's moves goes at first. First guess, from the owner's playtest
+   *  notes (the retired `holdStep` moved 2 at every repeat). */
   holdFirstStep: { tier: "tuned", unit: "tiles", default: 1 },
   /** How long an arrow repeats before its moves go `holdLongStep` — about ten tiles at the first step,
-   *  more than "a position a few tiles away". First guess, 2026-09-30, from the owner's third round. */
+   *  more than "a position a few tiles away". First guess, from the owner's playtest notes. */
   holdLongMs: {
     tier: "experiment",
     section: "keyboard",
@@ -226,7 +224,7 @@ export const ALL_SETTINGS = {
     default: 600,
   },
   /** How far each of a held arrow's moves goes once it has been repeating for `holdLongMs`. First guess,
-   *  2026-09-30, from the owner's third round. */
+   *  from the owner's playtest notes. */
   holdLongStep: {
     tier: "experiment",
     section: "keyboard",
@@ -237,7 +235,7 @@ export const ALL_SETTINGS = {
     default: 2,
   },
   /** How far the fast move jumps — Shift or Option with an arrow, PageUp/PageDown, Home/End; the owner's
-   *  settings export, 2026-09-30 (12 before). */
+   *  settings export (12 before). */
   jumpStep: {
     tier: "experiment",
     section: "keyboard",
@@ -248,54 +246,53 @@ export const ALL_SETTINGS = {
     default: 10,
   },
   /** A held fast move jumps again at most this often, so each jump is seen to land; the owner's settings
-   *  export, 2026-09-30. */
+   *  export. */
   jumpRepeatMs: { tier: "tuned", default: 100 },
   /** How long a lone Esc at the end of a read waits for the rest of a key sequence before it counts as
-   *  Esc; the owner's settings export, 2026-09-30. */
+   *  Esc; the owner's settings export. */
   escTimeoutMs: { tier: "tuned", default: 50 },
 
   // --- Moving the cursor and the view --------------------------------------------------------------
 
   /** How near the view's edge the cursor gets before the map scrolls, as a share of the view's width
-   *  (sides) and height (top and bottom); the owner's settings export, 2026-09-30 (25% before;
+   *  (sides) and height (top and bottom); the owner's settings export (25% before;
    *  `--scroll-margin` overrides it for one run). */
   scrollMargin: { tier: "tuned", unit: "percent", default: 30 },
   /** How deep each edge zone is where an exploring or armed click scrolls the view, as a share of the
-   *  view; the owner's settings export, 2026-09-30. */
+   *  view; the owner's settings export. */
   clickZone: { tier: "tuned", unit: "percent", default: 25 },
   /** Two left clicks on one screen cell at most this far apart, with a building armed, place it where
-   *  the first pointed; first guess (gate 5J), kept by the owner, 2026-09-30. */
+   *  the first pointed; a first guess the owner kept. */
   doubleClickMs: { tier: "tuned", default: 400 },
-  /** How long the drawn view slides to a new camera position; the owner's settings export, 2026-09-30. */
+  /** How long the drawn view slides to a new camera position; the owner's settings export. */
   easeMs: { tier: "tuned", default: 100 },
-  /** How long the drawn cursor glides to its new tile; the owner's settings export, 2026-09-30. */
+  /** How long the drawn cursor glides to its new tile; the owner's settings export. */
   cursorGlideMs: { tier: "tuned", default: 100 },
 
   // --- Where arming puts a building ----------------------------------------------------------------
 
   /** How far arming looks for a spot when the building cannot go where the cursor is, in tiles from the
-   *  cursor along each axis; the owner's "if there's no empty space in 12 tiles around, it should stay"
-   *  (feedback F30, 2026-09-29). */
+   *  cursor along each axis; the owner's "if there's no empty space in 12 tiles around, it should stay". */
   armSearchTiles: { tier: "tuned", unit: "tiles", default: 12 },
   /** What one tile up or down costs against one tile sideways when arming ranks the spots it found, so a
    *  run of the same building grows into a row; for the owner's "in most cases this should move the
-   *  cursor only a few tiles to the right" (feedback F30, 2026-09-29). */
+   *  cursor only a few tiles to the right". */
   armVerticalCost: { tier: "tuned", unit: "tiles", default: 2 },
 
   // --- Hand-offs and cards -------------------------------------------------------------------------
 
   /** How long the focus arrow (a building) or the see-through cursor (Explore Map) takes to fly from a
-   *  menu row to the map cursor; the owner's settings export, 2026-09-30, third round (180 before). */
+   *  menu row to the map cursor; the owner's settings export (180 before). */
   focusArrowMs: { tier: "tuned", default: 250 },
   /** How long the menu takes to turn into a card: the other rows fade, the chosen row slides up, the card
-   *  types in; the owner's settings export, 2026-09-30, third round (150 before). */
+   *  types in; the owner's settings export (150 before). */
   cardRevealMs: { tier: "tuned", default: 400 },
 
   // --- Effects --------------------------------------------------------------------------------------
 
   /** How long one breath of a popup's border takes, lighter then darker; 0 is a still border. Began as
-   *  the Battle Round screen's alone (2026-09-30, third round: "a pulse effect on the border"; a first
-   *  guess of two seconds), and became every popup's at the menu spike's merge (feedback F84). An old
+   *  the Battle Round screen's alone ("a pulse effect on the border"; a first
+   *  guess of two seconds), and became every popup's when the menus were merged. An old
    *  export's `battleRoundPulseMs` reads as this (`RENAMED_SETTINGS`, `src/build/tuning.ts`). */
   popupPulseMs: {
     tier: "experiment",
@@ -306,8 +303,8 @@ export const ALL_SETTINGS = {
     default: 2000,
   },
   /** How long each of the Battle Round screen's two opening flashes lasts; 0 is no flash. A first
-   *  guess (2026-09-30, the owner's notes at the merge, F83: "an initial double flash pulse, with more
-   *  contrast range, that works as a highlight"). */
+   *  guess from the owner's note: "an initial double flash pulse, with more contrast range, that works as
+   *  a highlight". */
   popupFlashMs: {
     tier: "experiment",
     section: "effects",
@@ -317,7 +314,7 @@ export const ALL_SETTINGS = {
     default: 220,
   },
   /** How far each opening flash goes toward the title's colour, where the breath goes 40%. A first guess
-   *  (F83: "with more contrast range"). */
+   *  (the owner asked for "more contrast range"). */
   popupFlashPeak: {
     tier: "experiment",
     section: "effects",
@@ -330,49 +327,44 @@ export const ALL_SETTINGS = {
 
   // --- Acknowledgements ----------------------------------------------------------------------------
 
-  /** How long a menu row flashes when it is chosen, and each "on" of the cursor's blink; gate 5F's
-   *  number, kept by the owner, 2026-09-30. */
+  /** How long a menu row flashes when it is chosen, and each "on" of the cursor's blink; a first
+   *  guess the owner kept. */
   pressedFlashMs: { tier: "tuned", default: 90 },
-  /** How long a row flickers when a key reaches it but does nothing; the owner's settings export,
-   *  2026-09-30. */
+  /** How long a row flickers when a key reaches it but does nothing; the owner's settings export. */
   refusedFlashMs: { tier: "tuned", default: 90 },
   /** How long the building under the cursor flashes when a placement there is refused; the owner's
-   *  settings export, 2026-09-29, kept 2026-09-30. */
+   *  settings export. */
   refusedCursorMs: { tier: "tuned", default: 150 },
   /** How many times the cursor blinks when the focus arrow lands; the owner's "blink twice in quick
-   *  succession" (feedback F54), kept 2026-09-30. */
+   *  succession". */
   cursorBlinks: { tier: "tuned", unit: "taps", default: 2 },
 
   // --- A building going up -------------------------------------------------------------------------
 
-  /** How long a new building takes to rise through its placement frames; the owner's settings export,
-   *  2026-09-29, kept 2026-09-30. */
+  /** How long a new building takes to rise through its placement frames; the owner's settings export. */
   placeFramesMs: { tier: "tuned", default: 300 },
   /** How long the light and the sparks take to settle once the building is finished; the owner's
-   *  settings export, 2026-09-30 (250 before). */
+   *  settings export (250 before). */
   placeGlowMs: { tier: "tuned", default: 400 },
-  /** How many sparks a finished (or removed) building throws — "few"; first guess (gate 5I), kept by the
-   *  owner, 2026-09-30. */
+  /** How many sparks a finished (or removed) building throws — "few"; a first guess the owner kept. */
   placeSparks: { tier: "tuned", unit: "taps", default: 6 },
 
   // --- The end of a Nexus Pulse --------------------------------------------------------------------
 
   /** How long before the fight is seen to stop its timer flashes and a light sweeps the border; the
-   *  owner's "the last 3 seconds" (feedback F43, 2026-09-29). */
+   *  owner's "the last 3 seconds". */
   endWarnMs: { tier: "tuned", default: 3000 },
-  /** How long after the fight stops the survivors wait before walking home; the owner's settings export,
-   *  2026-09-30. */
+  /** How long after the fight stops the survivors wait before walking home; the owner's settings export. */
   endWalkPauseMs: { tier: "tuned", default: 500 },
-  /** How long the walk home takes; the result shows when it ends; the owner's settings export,
-   *  2026-09-30. */
+  /** How long the walk home takes; the result shows when it ends; the owner's settings export. */
   endWalkMs: { tier: "tuned", default: 1000 },
 
-  // --- The mission's loop (gate 6B) ------------------------------------------------------------------
+  // --- The mission's loop ------------------------------------------------------------------
   // Settings opens at the first of them while a Pulse is on screen (`d`). The placeholder Pulse's Raid
   // and Your units went with it: PERIMETER's waves are the mission's data now (`src/mission/perimeter.ts`).
 
   /** What starts the next Build Phase once a round's result is on screen: the player (Enter, Space, `n`
-   *  or a click on its row), or the game itself a moment later — the owner's 2026-09-17 sketch had the
+   *  or a click on its row), or the game itself a moment later — the owner's early sketch had the
    *  Build Phase begin on its own ("no need to wait for units to be back"). First guess: the key, so the
    *  result is read before it goes. */
   nextRound: {
@@ -384,11 +376,11 @@ export const ALL_SETTINGS = {
     default: "key",
   },
   /** How long a round's result stays before the next Build Phase begins on its own, when Next round is
-   *  auto; first guess (gate 6B). */
+   *  auto; a first guess. */
   autoNextRoundMs: { tier: "tuned", default: 3000 },
   /** Whether the Build Phase shows the next round's arrivals on the map, see-through, with their line of
-   *  intention on the Explore Map card (the owner's direction at gate 6A's acceptance, 2026-09-30: "so
-   *  the user can Explore map and see what is coming"). First guess: shown. */
+   *  intention on the Explore Map card (the owner: "so the user can Explore map and see what is
+   *  coming"). First guess: shown. */
   incoming: {
     tier: "experiment",
     section: "mission",
@@ -476,7 +468,7 @@ export function defaultsOn<T extends Tier>(tier: T): { readonly [K in NamesOn<T>
 /**
  * A setting Settings shows: written as its tier, section, label, question, values and when a change is
  * seen, and two things that follow from its values: whether stepping past either end comes round to the
- * other — a choice comes round, a number stops at its ends (docs/ui-patterns.md, "a setting row") — and
+ * other — a choice comes round, a number stops at its ends (docs/system-design/ui-patterns.md, "a setting row") — and
  * how a value reads.
  */
 export type ShownSetting<N extends ShownName = ShownName> = Readonly<{

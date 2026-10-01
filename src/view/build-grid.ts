@@ -69,9 +69,9 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
       const tile = { x: anchor.x + offset.x, y: anchor.y + offset.y }
       if (!inView(range, tile)) continue
       const cell = cellForTile(layout, state.camera, tile)
-      // Drawn at full strength, planned or standing (owner, 2026-09-27: "it will look better if
+      // Drawn at full strength, planned or standing (Mario: "it will look better if
       // they are fully built"). A plan stays revisable — undo, remove — until the Pulse starts. While
-      // a placement is still going up (gate 5I) it is drawn as its track's frame at that instant; the
+      // a placement is still going up it is drawn as its track's frame at that instant; the
       // light on it is shading, drawn with the other effects (`drawEffects`).
       const look =
         animation === undefined
@@ -100,7 +100,7 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
   for (const structure of context.standing) drawStructure(structure.contentId, structure.anchor, undefined)
   for (const placement of state.planned) drawStructure(placement.contentId, placement.anchor, animating.get(placement.ordinal))
 
-  // What else is on the map after a round (gate 6B): survivors of both sides where Recall left them, and a
+  // What else is on the map after a round: survivors of both sides where Recall left them, and a
   // scripted side's structures, each in its side's colour. Then, see-through and dim, what the next round
   // brings — dim so it reads as "not here yet" at every colour depth, monochrome included.
   // A unit steps aside for a building when the Pulse starts — a survivor or an arrival alike — so neither
@@ -136,15 +136,15 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
 /** How far toward the background an incoming unit is drawn, where colour allows (256 colours and up). */
 const INCOMING_FADE = 0.45
 
-/** Whether the next round's arrivals are drawn: the Incoming wave Experiment (gate 6B). */
+/** Whether the next round's arrivals are drawn: the Incoming wave Experiment. */
 export function showsIncoming(state: BuildCompositionInput["state"]): boolean {
   return setting(state, "incoming") === "shown"
 }
 
 /**
- * The effects of every placement still animating (gate 5I) — its track's follow-ups: the light
- * (shading, `highlights`) and the sparks (particles, `effects`) — and of every building just removed
- * (feedback F33), whose track is its sparks alone. The corruption law is enforced here as
+ * The effects of every placement still animating — its track's follow-ups: the light
+ * (shading, `highlights`) and the sparks (particles, `effects`) — and of every building just removed,
+ * whose track is its sparks alone. The corruption law is enforced here as
  * the Pulse compositor enforces it, through the same helper (`paintEffectCells`): a glyphless cell
  * only restyles whatever is beneath it, and a particle that would land on any building's tile —
  * standing, planned, or still going up — is dropped, so an effect never replaces the glyph that says a
@@ -190,15 +190,15 @@ export function drawEffects(
 
 /**
  * The armed structure's footprint under the cursor — its ghost — and whether it would be refused there.
- * Drawn in the highlights band, so it is presentation and can never change occupancy (engine.md 9.4).
+ * Drawn in the highlights band, so it is presentation and can never change occupancy (`docs/system-design/presentation.md`).
  * Shape carries the answer, not colour: a legal preview is the structure's own glyphs, an illegal one
  * is a block of `x`. Both read identically in monochrome, which is the point.
  *
- * The illegal block is grey, not red (owner, 2026-09-26: "the red color seems a bit too intense, we
+ * The illegal block is grey, not red (Mario: "the red color seems a bit too intense, we
  * should try grey instead"). Red is kept for the moment a placement is actually *attempted* and
  * refused — the bottom line's job, not the ghost's — so looking and trying read differently.
  *
- * One exception (feedback F30): when arming found no spot within reach (`BuildState.noSpotFound`), the
+ * One exception: when arming found no spot within reach (`BuildState.noSpotFound`), the
  * building is drawn as itself — in the same grey, since it would still be refused — rather than as a
  * block of `x`, until the player moves or tries to place.
  */
@@ -253,7 +253,7 @@ export const CURSOR_ROLE: StyleRole = HIGHLIGHT_BAR.role
  * structure does not need it: planned or standing, it is drawn bold at full strength, so inverse video
  * alone marks it, in the building's own colour.
  *
- * When a hand-off's flight lands the cursor **blinks** (feedback F54: "the same exact effect as the one we
+ * When a hand-off's flight lands the cursor **blinks** (Mario: "the same exact effect as the one we
  * use when selecting menu items"): in its "on" phases it is drawn in a menu row's pressed look — the
  * hotkey's colour, inverse, bold, underlined — and between them as usual. The live loop times it
  * (`cursorBlink`); every still frame draws the plain cursor.
@@ -261,9 +261,9 @@ export const CURSOR_ROLE: StyleRole = HIGHLIGHT_BAR.role
 export function drawCursor(cells: BandCell[], input: BuildCompositionInput): void {
   const { context, state, layout } = input
   // The cursor is the Grid's own focus mark: drawn only while the Grid has the keyboard, so the
-  // screen never shows two "you are here"s at once (owner, 2026-09-27).
+  // screen never shows two "you are here"s at once.
   // A committed plan hides the cursor, except while a Pulse is on screen: there it is how the player looks
-  // around the map, the arrows moving it and the view following (gate 6A).
+  // around the map, the arrows moving it and the view following.
   if (state.focus !== "grid" || state.popup !== null || (state.committed && input.pulse === undefined)) return
   const range = visibleRange(state.camera, state.viewport)
   // Where the cursor is drawn: mid-glide, a tile on its way (and what stands there decides its style).
@@ -288,7 +288,7 @@ export function drawCursor(cells: BandCell[], input: BuildCompositionInput): voi
 
 /**
  * A **refused try**: a placement was just tried and refused, and the whole footprint under the cursor
- * flashes solid in the bottom line's own "danger" colour for a moment (gate 5H), so the eye that was on
+ * flashes solid in the bottom line's own "danger" colour for a moment, so the eye that was on
  * the map learns it did not build without reading the bottom line. A style-only write, like the cursor,
  * so the `x` block and whatever it covers keep their glyphs; inverse video carries it in monochrome.
  */

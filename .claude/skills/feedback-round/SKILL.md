@@ -1,39 +1,39 @@
 ---
 name: feedback-round
-description: Run one round of owner (Mario) feedback end to end — log his words item by item, turn it into a gate, split the work across parallel agents in worktrees, merge and reconcile it, write the canon text and gate report, regenerate evidence, republish the playable page, and rewrite the pull request. Use whenever Mario sends playtest feedback, a pasted settings export or an Activity Logs export, or when a change is big enough to split across several agents. Read it before spawning your first worktree agent.
+description: Run one round of owner (Mario) feedback end to end — log his words item by item, add the round as a step on the current milestone, split the work across parallel agents in worktrees, merge and reconcile it, update the design documents, regenerate the screenshots, republish the playable page, and rewrite the pull request. Use whenever Mario sends playtest feedback, a pasted settings export or an Activity Logs export, or when a change is big enough to split across several agents. Read it before spawning your first worktree agent.
 ---
 
 # A feedback round, start to finish
 
-Four rounds ran this way on the Build Phase (gates 5G-5K, September 2026) and it works. What follows is
-the procedure and the traps, in the order you meet them. The story of how each trap was found is in
-[`../../../docs/lessons-learned.md`](../../../docs/lessons-learned.md).
+This is the exact procedure and its traps, in the order you meet them. What the practice is and why
+it works is the feedback loop in [`DEVELOPMENT.md`](../../../DEVELOPMENT.md); how each trap was found
+is in [`docs/history/lessons-learned.md`](../../../docs/history/lessons-learned.md).
 
 ## 0. Read what he sent, twice
 
-Mario writes long, generous, specific feedback, and the second reading finds what the first skipped.
-Look for: an item that contradicts a canon rule (say so, and reverse it by his words, not yours); an
-item that *sounds* built but only half is (round 3's "keep scrolling while armed" — the agent built
-"a click activates" and missed the scrolling half); a **pasted settings export** (that is answers, not
-description — see `AGENTS.md` Section 2, item 1); a **pasted Activity Logs export** (evidence of what
-happened: its header names the build and the filter, each line is one event, oldest first — replay the
-moment with his settings and the keys it implies, and read it against the event's description in
+The second reading finds what the first skipped. Look for: an item that contradicts a rule in the
+design documents (say so, and reverse it by his words, not yours); an item that *sounds* built but
+only half is (round 3's "keep scrolling while armed" — the agent built "a click activates" and missed
+the scrolling half); a **pasted settings export** (that is answers, not description — start the game
+with it, as the feedback loop in `DEVELOPMENT.md` says); a **pasted Activity Logs export** (evidence of
+what happened: its header names the build and the filter, each line is one event, oldest first — replay
+the moment with his settings and the keys it implies, and read it against the event's description in
 `src/log/activity.ts`); and an ambiguity to register rather than guess ("press `b`" — a letter, or the
 building's digit?). Screenshots and voice notes arrive as ordinary text and pictures: log them the same
 way.
 
 ## 1. Log it before building it
 
-`docs/feedback/<date>-<round>.md`, one `### F<n>` per point, numbered on from the last log. His words
-in a blockquote, verbatim; under it a status — **Built**, **Scheduled**, **Open**, **Contested** — and,
-once done, one plain paragraph of what now happens. Nothing may be dropped silently. Add the gate to
-`milestones/milestone-05-build-phase.md` (or the current milestone) with a definition of done as
+`docs/history/feedback/<date>-<round>.md`, one `### F<n>` per point, numbered on from the last log. His
+words in a blockquote, verbatim; under it a status — **Built**, **Scheduled**, **Open**, **Contested** —
+and, once done, one plain paragraph of what now happens. Nothing may be dropped silently. Add the
+round as a step on the current milestone (`docs/milestones/`), with its definition of done as
 checkboxes, and run `./scripts/check-repository.sh`.
 
-**The numbers are for agents, never for Mario** (owner, 2026-10-01: "I don't understand references like
-F87, they are not very useful to me"). They let a code comment or a tracker point back at his words. In
-anything he reads — a chat reply, a pull request, a document written for him — name the request in a few
-words instead ("your notes on the Activity logs") and, if the source matters, link the log.
+**The numbers are for agents, never for Mario** ("I don't understand references like F87, they are not
+very useful to me"). They let a code comment or a tracker point back at his words. In anything he reads
+— a chat reply, a pull request, a document written for him — name the request in a few words instead
+("your notes on the Activity logs") and, if the source matters, link the log.
 
 ## 2. Split the work by files, not by feature
 
@@ -42,17 +42,18 @@ Round 4 was three agents: placement and focus (reducer, menu rows), Settings and
 top bar), and the export adoption (defaults and deletions). Tell each agent, in its prompt:
 
 - `git reset --hard <sha>` **first** — a worktree may start from `main`, not your branch. Pin the SHA.
-- Read `AGENTS.md`, `CLAUDE.md`, `docs/ui-patterns.md` and the feedback items, whose quoted words are
+- Read `AGENTS.md`, `CLAUDE.md`, `docs/system-design/ui-patterns.md` and the feedback items, whose quoted words are
   the spec.
 - **Which files are its own and which belong to the other agents.** Ask for new Experiments as a block
   of their own at the end of `EXPERIMENT_FIELDS`, and never to reorder or reformat existing entries.
-- **Do not edit `specs/`, `milestones/`, `AGENTS.md`, `evidence/` and do not bump the canon.** It returns
-  *proposed canon text*, plain English, ready to paste. You apply it (one voice, one version bump).
+- **Do not edit `docs/game-design/`, `docs/system-design/`, `docs/milestones/`, `docs/history/`,
+  `AGENTS.md` or `docs/screenshots/`.** It returns *proposed design-document text*, plain English,
+  ready to paste. You apply it (one voice).
 - Commit on the worktree branch with the attribution lines; do not push.
 - Definition of finished: `npm run typecheck`, `npm test`, `npm run test:bun`,
   `./scripts/check-repository.sh`, and the changed flows looked at with the `playtest` skill.
 - Report: SHAs, what changed and every decision in plain words, tests whose *meaning* (not just
-  numbers) changed, proposed canon text, and what is left or surprising.
+  numbers) changed, proposed design-document text, and what is left or surprising.
 
 ## 3. Merge in order, verify, and send conflicts home
 
@@ -63,19 +64,24 @@ sides. It knows both intents; you do not. After every merge: typecheck, the full
 the flow yourself with `node scripts/playtest.mjs` — a merge that passes tests can still be wrong.
 Clean each worktree (`git worktree remove --force`, `git branch -D`) as its agent finishes.
 
-## 4. Write the canon and the report
+## 4. Update the documents
 
-Apply the agents' proposed text to `specs/engine.md` (and `ascii-effects.md`, `open-questions.md`),
-`AGENTS.md`, `docs/ui-patterns.md`. Then, in one pass: bump the canon version everywhere (the validator
-names what you missed), add the governance ledger row, move answered questions to the Answered table,
-register new ones with a recommendation, tick the gate's checklist, and fill a gate report from
-`specs/templates/gate-report.md`. **When a rule is reversed, grep the old sentence** (`grep -rn "never
-scrolls"`) — the same fact lives in five documents and the stale copy is always the one you did not
-think of.
+Apply the agents' proposed text to the design documents (`docs/system-design/grid-engine.md`,
+`effects.md`, `ui-patterns.md`) and to `docs/milestones/open-questions.md`. In one pass:
 
-## 5. Evidence, page, pull request
+- Move answered questions from `open-questions.md` to `docs/history/answered-questions.md`, and
+  register new ones with a recommendation.
+- Tick the step's checkboxes in its milestone file.
+- Add one line to the timeline in `docs/history/README.md`.
+- Write the pull request description with the `pr-description` skill.
 
-- `node scripts/capture-spike-screenshots.mjs` regenerates the pictures (it edits `evidence/`); open
+Nothing else is needed: there is no version to bump and no separate report. **When a rule is reversed, grep the old sentence**
+(`grep -rn "never scrolls"`) — the same fact lives in several documents and the stale copy is always
+the one you did not think of.
+
+## 5. Pictures, page, pull request
+
+- `node scripts/capture-build-phase-screenshots.mjs` regenerates the pictures (it edits `docs/screenshots/`); open
   the new ones and look at them before linking any. Prefer `--settings` over key counts to set an
   Experiment in a capture flow — every added or removed Experiment shifts a "Down*6".
 - `bun scripts/build-web.mjs`, copy `dist/terminal-nexus-playtest.html` to your scratchpad, and
@@ -88,8 +94,8 @@ think of.
 
 ## 6. Then wait, lightly
 
-Subscribe to the pull request, set an hourly `send_later` check-in, and **do not start the next gate**.
-Stop the check-in when it merges, delete the trigger, and reset the branch:
+Subscribe to the pull request, set an hourly `send_later` check-in, and **do not start the next
+step**. Stop the check-in when it merges, delete the trigger, and reset the branch:
 `git checkout -B <branch> origin/main`.
 
 ## Traps worth naming
@@ -102,12 +108,12 @@ Stop the check-in when it merges, delete the trigger, and reset the branch:
   value-taking option (`src/cli/args.ts`) and test that it arrives.
 - **A default that suits one input device can fail on another.** A 150 ms hold window is right for a
   fast OS key repeat and turns a slow one's first repeat into a tap. Say which device a number was
-  tuned on (`docs/next-steps.md`, Q66).
-- **Two agents will each write the helper neither owns.** Both agents of the Activity Logs round needed a
-  colour-depth name for the logs and each wrote the same table in its own file. When agents share a need
-  in a folder neither owns, write the helper yourself before splitting, or name in the prompts which
+  tuned on (`docs/milestones/next-steps.md`, Q66).
+- **Two agents will each write the helper neither owns.** Both agents of the Activity Logs round needed
+  a colour-depth name for the logs and each wrote the same table in its own file. When agents share a
+  need in a folder neither owns, write the helper yourself before splitting, or name in the prompts which
   agent writes it.
 - **Tell an agent where its scratch output goes** (a `tmp/` in its worktree, never `/`), or it may write
   captures into the filesystem root.
-- **Agents cannot run a script that writes `evidence/`** if they were told not to touch it — leave
+- **Agents cannot run a script that writes `docs/screenshots/`** if they were told not to touch it — leave
   the regeneration to yourself and name which captions changed.
