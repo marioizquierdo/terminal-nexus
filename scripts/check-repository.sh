@@ -160,12 +160,9 @@ grep -Fq '@AGENTS.md' CLAUDE.md || fail "CLAUDE.md must import AGENTS.md"
 #
 # A line may quote retired terminology deliberately. Mark such a line with the comment
 # <!-- stale-ok --> and it is exempt. Everything under docs/history/ (including the verbatim
-# original specification) and the reorganization plan are records of the past and are skipped
+# original specification) is a record of the past and is skipped
 # wholesale, as is this script, which has to spell the words out. Completed milestones
 # (docs/milestones/completed/) are records too and keep the words they were written with.
-#
-# While docs/reorganization-plan.md exists the documents are being rewritten pass by pass, so a hit
-# is reported as a warning rather than a failure; deleting the plan (its last pass) arms this check.
 
 retired_terms=(
   '\bveils?\b'
@@ -191,20 +188,13 @@ scan_term() {
     --exclude-dir='.git' --exclude-dir='node_modules' --exclude-dir='worktrees' --exclude-dir='history' \
     --exclude-dir='completed' . 2>/dev/null \
     | grep -v 'stale-ok' \
-    | grep -v '^\./scripts/check-repository\.sh:' \
-    | grep -v '^\./docs/reorganization-plan\.md:' || true
+    | grep -v '^\./scripts/check-repository\.sh:' || true
 }
-
-if [[ -f docs/reorganization-plan.md ]]; then
-  report_retired() { echo "WARN (reorganization in progress): $*" >&2; }
-else
-  report_retired() { fail "$@"; }
-fi
 
 for term in "${retired_terms[@]}"; do
   hits="$(scan_term "$term" -i)"
   if [[ -n "$hits" ]]; then
-    report_retired "retired terminology matching '$term': $(wc -l <<< "$hits") line(s)"
+    fail "retired terminology matching '$term': $(wc -l <<< "$hits") line(s)"
     printf '%s\n' "$hits" >&2
   fi
 done
@@ -212,7 +202,7 @@ done
 # GATED is matched case-sensitively: the lower-case word is ordinary English.
 hits="$(scan_term '\bGATED\b')"
 if [[ -n "$hits" ]]; then
-  report_retired "retired terminology matching 'GATED': $(wc -l <<< "$hits") line(s)"
+  fail "retired terminology matching 'GATED': $(wc -l <<< "$hits") line(s)"
   printf '%s\n' "$hits" >&2
 fi
 

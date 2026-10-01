@@ -110,6 +110,30 @@ it says where.
    touch the Experiments list, the one file every round's agents had collided in; the two merges met no
    conflict at all.
 
+## The documentation reorganisation (2026-10-01)
+
+Six pull requests in one day turned five folders and 25,000 lines of mixed documents into three shelves,
+with no versioning ceremony left. What it taught:
+
+1. **Plan the structure first, in a file Mario can edit, with the open choices listed and a
+   recommendation each.** He answered six choices in one message; nothing was moved before that.
+2. **Move text and change what it says in different pull requests.** The move pass was reviewed as "did
+   anything get lost"; the rewrite passes as "is this true now". Mixing them would have hidden both.
+3. **Snapshot every link before a move, recompute after.** A script recorded each Markdown link's
+   absolute target, then rewrote 694 references in 113 files; the link checker proved it. Hand-fixing
+   would have missed the relative links inside moved folders.
+4. **Make the validator warn before it fails.** Retiring the old words everywhere took four passes;
+   the check reported hits as warnings while the plan file existed and became a failure the day the
+   plan was deleted. Nobody had to remember the rule, and no pass was red.
+5. **Do the cross-cutting rename alone, then fan out.** The `--spike` rename touched every area; done
+   first by one hand, six agents then cleaned comments on disjoint files with no conflicts.
+6. **Give each agent a file list, a grep that must come back empty, and the tests for its area only.**
+   Running the whole suite from six agents at once would have flaked the timing tests; the
+   orchestrator ran it once at the end.
+7. **An agent's "left on purpose" list is the review.** Each report named what it did not change and
+   why (a hashed version string, player-visible strings, a game concept that shares a retired word);
+   those became the pull request's known issues, not surprises.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".
