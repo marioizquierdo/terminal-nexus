@@ -1,4 +1,4 @@
-// A mission as data and the trigger runner that plays it (gate 6B): load-time validation, the simulation
+// A mission as data and the trigger runner that plays it: load-time validation, the simulation
 // band on the unmodified kernel, the state carried from one Pulse to the next, and how a mission ends.
 // The screen's half — the loop into the next Build Phase — is tests/mission-loop.test.ts.
 
@@ -70,7 +70,7 @@ const withTriggers = (triggers: readonly TriggerDefinition[], extra: Partial<Mis
 
 test("PERIMETER validates against the map it is played on", () => {
   assert.equal(validateMission(PERIMETER, grid, registry), PERIMETER)
-  assert.equal(PERIMETER.pulses, 3, "three Pulses, the raid in three waves (milestone 2, 4.4)")
+  assert.equal(PERIMETER.pulses, 3, "three Pulses, the raid in three waves")
 })
 
 test("validation refuses every broken shape by name, and reports them all at once", () => {

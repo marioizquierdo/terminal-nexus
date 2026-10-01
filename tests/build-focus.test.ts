@@ -73,7 +73,7 @@ test("the side panel is on the left of the Grid at every size in the supported r
     assert.equal(layout.origin.column, layout.gridBox.left + 1)
     assert.equal(layout.gridBox.right, layout.offset.column + layout.composition.width - 1)
     assert.equal(layout.panelRow, layout.origin.row)
-    // engine.md 3.1's floor arithmetic, 1 + 30 + 48 + 1 = 80, with the shared west side's column
+    // The Grid page's floor arithmetic, 1 + 30 + 48 + 1 = 80, with the shared west side's column
     // given to the Grid: 1 + 29 + 49 + 1 at 80 columns.
     assert.equal(layout.composition.width, 31 + layout.viewport.width * layout.tileWidth)
   }
@@ -119,7 +119,7 @@ test("the Build Phase opens on the menu, on its first entry, Explore Map, with n
   assert.equal(side.build.state.focus, "menu")
   assert.equal(side.build.state.menuHighlight, EXPLORE_ENTRY)
   assert.ok(barOn(side, panelRow(side, EXPLORE_ROW)))
-  // The bottom line opens on what the highlighted row is for (feedback F59).
+  // The bottom line opens on what the highlighted row is for.
   assert.equal(bottomLineText(side), "Explore Map: look around and read what is on each tile. [enter] opens it.")
   assert.ok(!cursorDrawn(side), "a cursor is drawn with the menu focused")
 })
@@ -179,7 +179,7 @@ test("a digit arms its row from either focus, where the cursor is when it fits t
 })
 
 test("Backspace on the menu flickers the row and removes nothing under the hidden map cursor", () => {
-  // It removes what is under the map cursor, which the menu hides (feedback F17): a flicker says the
+  // It removes what is under the map cursor, which the menu hides: a flicker says the
   // key arrived, like Left does.
   const side = buildSide()
   keys(side, "1", ENTER) // a Barracks, armed from the menu and placed at the cursor; back on the menu
@@ -196,7 +196,7 @@ test("Backspace on the menu flickers the row and removes nothing under the hidde
   assert.deepEqual(side.build.state.ack, { seq: seq + 1, kind: "refused", entry: side.build.state.menuHighlight })
 })
 
-// --- Clicks (feedback F22: a click activates what it lands on) ------------------------------------
+// --- Clicks (a click activates what it lands on) ------------------------------------
 
 test("a click on a building's row arms it at once, whatever had focus, and its ghost is at the cursor", () => {
   // From the map a click opened: the menu is still drawn, and the ghost goes where the player was
@@ -345,7 +345,7 @@ test("a run of the same building lays each one a free tile from the last, never 
   }
 })
 
-// --- Where arming puts the cursor (feedback F30) ------------------------------------------------------
+// --- Where arming puts the cursor ------------------------------------------------------
 
 test("arming puts the preview where the cursor is whenever the building fits there", () => {
   const context = starterContext()
@@ -501,7 +501,7 @@ test("the cursor opens on the Grid Nexus, and the first building armed finds the
   assert.equal(nexusTile({ ...context, standing: [] }), null)
 })
 
-// --- Where the keyboard goes back to (feedback F30) ------------------------------------------------------
+// --- Where the keyboard goes back to ------------------------------------------------------
 
 test("a building armed on the map goes back to the map after a placement: plain navigation, the menu beside it", () => {
   const side = buildSide()
@@ -511,7 +511,7 @@ test("a building armed on the map goes back to the map after a placement: plain 
   assert.equal(side.build.state.armed, null)
   assert.equal(side.build.state.exploreMap, false)
   assert.deepEqual(side.build.state.cursor, OPEN_GROUND, "the cursor left the building just placed")
-  // The placement's answer, then — at the next key that says nothing — the map's hint (feedback F59).
+  // The placement's answer, then — at the next key that says nothing — the map's hint.
   assert.equal(bottomLineText(side), "Barracks placed (resources: 60) - [u] undo")
   assert.match(screenText(side), /\[1\] Barracks/)
   keys(side, RIGHT)
@@ -582,7 +582,7 @@ test("the focus flow by keyboard bytes and the same commands from a driver are t
     if (byMouse.build.state.armed === null) clickPanelRow(byMouse, row)
     const offset = anchorForCursor({ x: 0, y: 0 }, footprintOf(placement.contentId))
     const centre = { x: placement.anchor.x - offset.x, y: placement.anchor.y - offset.y }
-    // A click on the tile the cursor already sits on is the confirming click (Q52).
+    // A click on the tile the cursor already sits on is the confirming click.
     if (byMouse.build.state.cursor.x !== centre.x || byMouse.build.state.cursor.y !== centre.y) clickTile(byMouse, centre)
     clickTile(byMouse, centre)
   }
@@ -592,7 +592,7 @@ test("the focus flow by keyboard bytes and the same commands from a driver are t
   assert.equal(byMouse.build.state.committed, true)
 })
 
-test("clicks as a terminal sends them and the driver's click commands are the same state and frame (feedback F22, F23)", () => {
+test("clicks as a terminal sends them and the driver's click commands are the same state and frame", () => {
   const byMouse = buildSide()
   clickTile(byMouse, { x: 30, y: 14 }) // the map, the menu still drawn
   clickPanelRow(byMouse, barracksRow(byMouse)) // armed at once

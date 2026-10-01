@@ -243,8 +243,8 @@ test("a message popup: a title and its text, nothing to choose, closed by Esc or
   const drawn = frameToText(composeBuildFrame({ context, state, layout }, "monochrome"))
   assert.match(drawn, /Read it, then \[esc\] or a click outside closes it\./, "the bottom line names the ways to close it")
 
-  // The keyboard: Esc and x close it (x as `back`, which is Esc's walk back in a popup — feedback
-  // F62); nothing else reaches it or anything under it.
+  // The keyboard: Esc and x close it (x as `back`, which is Esc's walk back in a popup);
+  // nothing else reaches it or anything under it.
   const keyboard = { itemCount: 3, armed: false, focus: "menu" as const, popup: "message" as const }
   assert.deepEqual(buildKeyboardCommand(ESC, keyboard), { kind: "cancel" })
   assert.deepEqual(buildKeyboardCommand("x", keyboard), { kind: "back" })
@@ -330,7 +330,7 @@ test("the game menu's Restart: r, Enter on its row, and a click on it start the 
 test("a list that overflows has a scroll bar in the popup's right border, drawn from the placed shape, in every glyph pack", () => {
   // Settings and the Controls page at every size: each overflows or fits whole, and only one that
   // overflows has a bar. The Controls page always overflows, so there is always a bar to check.
-  // The track is the plain border and the thumb carries its own texture (feedback F78: "keep the same
+  // The track is the plain border and the thumb carries its own texture ("keep the same
   // background as the regular border, but add different texture for the bar") — never the shadow's.
   let bars = 0
   let thumbs = 0

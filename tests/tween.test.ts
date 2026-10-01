@@ -1,7 +1,7 @@
 // The interpolation toolkit (`src/view/tween.ts`): pure functions of time, retargeting from where a
 // tween is drawn, whole tiles for a point. The camera's slide and the cursor's glide are built on it
 // and tested through the screen (`build-motion.test.ts`); this pins the module's own contract, since
-// animations and effects lean on it too (ascii-effects.md 1.2).
+// animations and effects lean on it too (docs/system-design/effects.md).
 
 import { test } from "node:test"
 import assert from "node:assert/strict"

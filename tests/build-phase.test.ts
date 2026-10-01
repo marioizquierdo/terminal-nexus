@@ -1,5 +1,5 @@
-// Gate 5A's sharp edge: the same Build Phase plan, entered by raw keystrokes, by raw mouse bytes,
-// and from a command script, must be the same plan and the same screen. engine.md 9.7 is a RULE
+// The sharp edge of the three adapters: the same Build Phase plan, entered by raw keystrokes, by raw mouse bytes,
+// and from a command script, must be the same plan and the same screen. docs/system-design/input.md has a RULE
 // that "a command's effect never depends on which adapter produced it", and the only way to prove
 // that is to start each path from bytes a terminal actually sends — never from a hand-built command,
 // which would assert that the thing downstream of the mapping works while leaving the mapping, the
@@ -35,11 +35,11 @@ import { fitViewport, marginForView } from "../src/build/camera.ts"
 import { DOWN, ENTER, ESC, LEFT, MAXIMUM, MINIMUM, PAGE_DOWN, PAGE_UP, RIGHT, SHIFT_LEFT, SHIFT_RIGHT, UP, screenText } from "./build-helpers.ts"
 
 /**
- * Every test here is about placement, scrolling, or the adapters — not about the Nexus draft gate
- * 5D adds in front of all of it. Rather than repeat "pick a placeholder power" at every call site,
- * every `BuildSession` in this file starts past that gate already, on the first option, the same
+ * Every test here is about placement, scrolling, or the adapters — not about the Nexus draft that
+ * stands in front of all of it. Rather than repeat "pick a placeholder power" at every call site,
+ * every `BuildSession` in this file starts past that draft already, on the first option, the same
  * way a real player would be past it within one keypress. The handful of tests that check the
- * drafting gate itself construct a session with `new BuildSession` directly instead.
+ * draft itself construct a session with `new BuildSession` directly instead.
  */
 /** A picked power that adds nothing to the budget, so every test that is not about the Nexus
  *  draft itself sees exactly the allotment its own numbers already assume. */
@@ -50,7 +50,7 @@ const NEUTRAL_NEXUS_DRAFT = [
 function readyBuildSession(options: BuildSessionOptions): BuildSession {
   const build = new BuildSession(options)
   build.dispatch({ kind: "pick-nexus", index: 0 })
-  // Keyboard focus starts on the menu since gate 5F; every test here that presses an arrow means the
+  // Keyboard focus starts on the menu; every test here that presses an arrow means the
   // Grid's cursor, the way every one of them was written before focus existed. The focus model's own
   // tests are in `tests/build-focus.test.ts`.
   build.dispatch({ kind: "focus", target: "grid" })
@@ -72,7 +72,7 @@ function session(
   return { build, layout, context }
 }
 
-/** A cursor move to `tile`, from wherever the cursor is now — arming may have moved it (feedback F30),
+/** A cursor move to `tile`, from wherever the cursor is now — arming may have moved it,
  *  so a test that means a tile says the tile rather than a distance from a spot it cannot predict. */
 function moveTo(build: BuildSession, tile: { x: number; y: number }): void {
   build.dispatch({ kind: "move-cursor", dx: tile.x - build.state.cursor.x, dy: tile.y - build.state.cursor.y })
@@ -107,9 +107,9 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   // Two barracks, side by side, at tiles that are on screen from the start: 1 arms it where the cursor
   // is, the cursor walks to 30,14, Enter places (and leaves the keyboard on the map, where the arming
   // began); 1 arms it again, which moves the cursor off the new one to the nearest spot with a free
-  // tile around it — a free column to its right, 34,14 (feedback F30) — and one more Enter places the
+  // tile around it — a free column to its right, 34,14 — and one more Enter places the
   // second there.
-  // An armed click scrolls the view inside its edge zones (F22) and an arrow scrolls at the margin; the
+  // An armed click scrolls the view inside its edge zones and an arrow scrolls at the margin; the
   // parity asserted here is the whole state, camera included, so the tiles are ones where the two
   // come to the same view.
   const byKeyboard = session()
@@ -127,7 +127,7 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   // hold that); the rest is clicks.
   byMouse.build.handleData("1", byMouse.layout)
   // A click only arms the preview at a tile; a second click on that same tile is what places it
-  // (Q52) — so each of the two placements below is two clicks, not one. Recomputed fresh each time
+  // — so each of the two placements below is two clicks, not one. Recomputed fresh each time
   // (not the same bytes reused) because the camera itself can move between clicks: the second click's
   // bytes must name the same *tile* the first one did, which is what a real second click landing on
   // the same on-screen row would also do once the display has caught up.
@@ -168,8 +168,8 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
 })
 
 test("after a placement the keyboard goes back to where the arming came from, disarmed (owner, 2026-09-29)", () => {
-  // Q57 answered "always back to the menu" (2026-09-27), replacing gate 5A's "stays armed after
-  // placing"; feedback F30 refined it: armed on the map, the keyboard stays on the map in plain
+  // The owner answered "always back to the menu" (2026-09-27), replacing the first build's "stays armed after
+  // placing", and refined it: armed on the map, the keyboard stays on the map in plain
   // navigation; armed from the menu, it goes back to the menu.
   for (const start of ["grid", "menu"] as const) {
     const { build, layout } = session()
@@ -290,7 +290,7 @@ test("keyboard: Esc is cancel and x is back in every focus, and q opens the game
 })
 
 test("keyboard: a letter this screen does not bind means nothing at all", () => {
-  // `t` was the click-mode toggle until Q50 was answered. A retired binding that quietly still does
+  // `t` was the click-mode toggle until it was retired. A retired binding that quietly still does
   // something is worse than one that never existed, so it is asserted dead rather than forgotten.
   const context = { itemCount: 3, armed: true }
   for (const key of ["t", "h", "j", "k", "l"]) {
@@ -309,7 +309,7 @@ test("mouse: the wheel moves the cursor five tiles and drags the camera with it"
   assert.equal(build.state.cursor.y, startY)
 })
 
-test("mouse: a click on a menu row arms it at once (feedback F22), and a right click goes back, disarming", () => {
+test("mouse: a click on a menu row arms it at once, and a right click goes back, disarming", () => {
   const { build, layout } = session()
   // The session starts in plain navigation, with the menu drawn beside the map: one click arms.
   build.handleData(clickRowBytes(layout, 1), layout)
@@ -341,7 +341,7 @@ test("parseMouseEvent: a release is not a press, and the bytes round-trip", () =
   assert.equal(parseMouseEvent("not a mouse report"), null)
 })
 
-test("a click on a tile only arms the preview there - a second click on the same tile places it (Q52)", () => {
+test("a click on a tile only arms the preview there - a second click on the same tile places it", () => {
   const byClick = session()
   byClick.build.handleData("1", byClick.layout)
   // Recomputed fresh for each click, not the same bytes reused: the camera itself can move between
@@ -362,7 +362,7 @@ test("a click on a tile only arms the preview there - a second click on the same
   byKeyboard.build.handleData(ENTER, byKeyboard.layout)
   // The same plan, cursor and everything else. Only the camera may differ — a click scrolls the view
   // by its edge zones, the keyboard's move by the scroll margin — and a placement by the mouse leaves
-  // no highlight bar on the menu (feedback F22).
+  // no highlight bar on the menu.
   assert.deepEqual(
     { ...byClick.build.state, camera: null, highlightHidden: false },
     { ...byKeyboard.build.state, camera: null },
@@ -372,11 +372,11 @@ test("a click on a tile only arms the preview there - a second click on the same
 })
 
 test("a click that scrolled the camera is a fresh first click, not a mis-place on the wrong tile", () => {
-  // Q50's own finding, deliberately re-tested rather than assumed fixed: a first click within the
+  // A finding deliberately re-tested rather than assumed fixed: a first click within the
   // scroll margin can slide the Grid under the pointer, so replaying the same *screen position*
   // resolves to a different *tile* the second time. Comparing tile identity (what the mouse adapter
   // already resolves screen cells to) rather than screen position is what keeps this safe. An armed
-  // click scrolls like any other since the owner's F22 (an Experiment until he kept it, 2026-09-30).
+  // click scrolls like any other since the owner asked for it (an Experiment until he kept it, 2026-09-30).
   // Without key timing (a driver script) there is no double click either.
   const { build, layout } = session()
   build.handleData("1", layout)
@@ -486,7 +486,7 @@ test("every construct row names content that exists, costs something, and says w
   for (const item of STARTER_CATALOG) {
     assert.ok(context.registry.has(item.contentId), `${item.contentId} is not real content`)
     assert.ok(item.cost > 0, `${item.label} costs nothing`)
-    // What it does is its card's words, written with the content (feedback F84); whether they fit the
+    // What it does is its card's words, written with the content; whether they fit the
     // panel is tests/build-card.test.ts's, which draws every card at 80 x 24.
     const words = cardText(context, item.contentId)
     assert.equal(words.title, item.label, `${item.label}'s card calls it something else`)
@@ -577,7 +577,7 @@ test("affordability is reported before a tile problem, because it is true wherev
 })
 
 test("the buildings' digits run straight through the one list, with no mode to tell them apart", () => {
-  // engine.md 9.7's first convention: "digits always address the list; they never mean anything
+  // The first convention of docs/system-design/input.md: "digits always address the list; they never mean anything
   // else". Groups each counting from 1 would need a focus concept to disambiguate, which is the thing
   // that convention exists to forbid — so a hotkey addresses the whole menu.
   const hotkeys = STARTER_CATALOG.map((item) => item.hotkey)
@@ -588,7 +588,7 @@ test("the buildings' digits run straight through the one list, with no mode to t
   assert.equal(build.state.armed, 2, "the third digit armed the third row of the whole menu")
 })
 
-test("the buildings are one list in catalog order, one row each, with no group headings (feedback F56)", () => {
+test("the buildings are one list in catalog order, one row each, with no group headings", () => {
   const context = starterContext()
   const layout = buildLayout(MINIMUM, context.grid)
   const lines = constructLines(layout, context.catalog)
@@ -626,7 +626,7 @@ test("scrolling: the whole Grid is reachable, at the smallest terminal and the l
 })
 
 test("the scroll margin is a share of the view: the tuned one, or another from --scroll-margin", () => {
-  // Gate 5H made it a share of the view's width and height; the owner settled the share (a tuned value),
+  // It is a share of the view's width and height; the owner settled the share (a tuned value),
   // and `--scroll-margin` sets another for one run. 49 tiles wide at 80 columns: 5% is 2 tiles, 10% is 5,
   // 20% is 10, 25% is 12, 30% is 15. No --scroll-margin: the tuned value.
   const tuned = marginForView(TUNING.scrollMargin, buildLayout(MINIMUM, starterContext().grid).viewport).x
@@ -689,7 +689,7 @@ test("Esc walks back to the game menu; only its q quits, and neither touches the
 })
 
 test("two keys arriving in one chunk are two keys, not one", () => {
-  // The bug Gate 3A found on a real terminal and no fake-stdin test had ever produced: the OS
+  // A bug found on a real terminal with the first menu screen, and no fake-stdin test had ever produced: the OS
   // delivers two quick presses in a single read. Both arrows must move the cursor.
   const { build, layout } = session()
   const start = { ...build.state.cursor }
@@ -703,7 +703,7 @@ test("a refusal's message clears once the cursor leaves the tile it was about", 
   // The panel already recomputes its own "why" live from the current cursor position; the footer's
   // one-line echo of the same refusal must not go on saying so once that stops being true, or the
   // two disagree with each other on screen. A tiny hand-built grid with a single rock tile, rather
-  // than the spike's own terrain, so the test does not have to reason about which other tiles a
+  // than the starter map's own terrain, so the test does not have to reason about which other tiles a
   // move happens to land on.
   const width = 10
   const height = 10
@@ -721,8 +721,8 @@ test("a refusal's message clears once the cursor leaves the tile it was about", 
   const build = readyBuildSession({ context, cursor: { x: 4, y: 5 }, viewport: { width: 10, height: 10 } })
 
   // Turret: a 1x1 footprint, so the cursor's own tile is the whole placement and there is no
-  // footprint-centring arithmetic to account for. Armed beside the rock (arming never lands on one,
-  // feedback F30), then moved onto it.
+  // footprint-centring arithmetic to account for. Armed beside the rock (arming never lands on one),
+  // then moved onto it.
   build.dispatch({ kind: "arm", index: 2 })
   build.dispatch({ kind: "move-cursor", dx: 1, dy: 0 })
   build.dispatch({ kind: "place" })
@@ -732,7 +732,7 @@ test("a refusal's message clears once the cursor leaves the tile it was about", 
   assert.doesNotMatch(build.state.status.text, /Cannot build here/)
 
   // A message about the last action, rather than about a tile, is the answer of that action: since
-  // the bottom bar became one contextual line (owner, 2026-09-30, feedback F59) it lapses at the next
+  // the bottom bar became one contextual line (owner, 2026-09-30) it lapses at the next
   // command that says nothing — a cursor move included — and the hint takes its place.
   build.dispatch({ kind: "place" })
   assert.match(build.state.status.text, /Turret placed/)
@@ -744,7 +744,7 @@ test("a move clamped back to the same tile keeps the refusal on screen, read qui
   // Pressing further into the Grid's own edge does not move the cursor at all — clampToGrid leaves
   // it exactly where it was. That is not "the cursor left the tile the refusal was about", so the
   // bottom line still says why Enter is refused there. But the move is a command that said nothing, so
-  // the attempt's own red answer lapses (feedback F59): the same sentence reads as looking, not trying.
+  // the attempt's own red answer lapses: the same sentence reads as looking, not trying.
   const width = 10
   const height = 10
   const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.plain")

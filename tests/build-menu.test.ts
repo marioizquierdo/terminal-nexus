@@ -60,12 +60,12 @@ test("the menu reads Explore Map, Nexus, the credits line, every building with i
       const { layout } = side
       const frame = compose(side, { glyphPack: pack }, "truecolor")
       const line = (row: number): string => panelLine(side, frame, row)
-      // Explore Map and Nexus on the first two lines, with no blank line between them (feedback F72).
+      // Explore Map and Nexus on the first two lines, with no blank line between them.
       assert.deepEqual([EXPLORE_ROW, NEXUS_ROW, CREDITS_ROW], [0, 1, 2])
       assert.match(line(panelRow(side, EXPLORE_ROW)), /^\[e\] Explore Map +$/)
       assert.match(line(panelRow(side, NEXUS_ROW)), /^\[n\] Nexus \(1\) +$/)
       // The credits: the map's own deposit glyph and what is left to spend, right-aligned where the costs
-      // end, the symbol in the deposit's colour and the amount in the title's (F71).
+      // end, the symbol in the deposit's colour and the amount in the title's.
       const deposit = terrainGlyph("terrain.deposit", pack)
       assert.equal(deposit.glyph, pack === "ascii" ? "*" : "◆")
       assert.equal(line(panelRow(side, CREDITS_ROW)), `${deposit.glyph} ${remaining(side.context, side.build.state)}`.padStart(layout.panelLimit))
@@ -161,7 +161,7 @@ test("every menu row is drawn where the mouse finds it and where the keyboard's 
 // --- Highlighted and active ------------------------------------------------------------------------------
 
 test("an active row keeps its own hotkey and ends in one >, all in the hotkey colour and bold, never underlined or barred — one look for every row, at every colour depth", () => {
-  // `[1] Barracks  >` (owner, 2026-09-30, feedback F67, F70). A building and Explore Map head their
+  // `[1] Barracks  >` (owner, 2026-09-30). A building and Explore Map head their
   // card; Nexus and Start Pulse stay on the menu behind their popup.
   const cases: readonly [string, readonly string[], (side: Side) => number, RegExp][] = [
     ["a building by its digit", ["1"], (side) => panelRow(side, CARD_HEADER_ROW), /^\[1\] Barracks +>$/],
@@ -227,7 +227,7 @@ test("a menu row's looks: highlighted is the bar; pressed, a stronger bar in the
       pressed.every((cell) => cell.style.inverse === true && cell.style.fgRole === "chrome.hotkey" && cell.style.bold === true && cell.style.underline === true),
       `${capability}: the pressed bar is not the stronger one`,
     )
-    // Refused (feedback F61): the same words, the bar exactly the bar on every cell, nothing loud added.
+    // Refused: the same words, the bar exactly the bar on every cell, nothing loud added.
     const refused = cellsOf({ kind: "refused", entry: EXPLORE_ENTRY })
     assert.deepEqual(refused.map((cell) => cell.glyph), highlighted.map((cell) => cell.glyph), "the flicker changed the row's words")
     refused.forEach((cell, index) => {

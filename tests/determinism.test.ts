@@ -1,4 +1,4 @@
-// The point of the gate — milestone-1-spike-battle.md 3.9, "Determinism".
+// The point of the Pulse: determinism (docs/system-design/pulse.md, "Determinism and replay").
 
 import { test } from "node:test"
 import assert from "node:assert/strict"

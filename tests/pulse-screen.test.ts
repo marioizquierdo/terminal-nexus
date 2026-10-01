@@ -1,4 +1,4 @@
-// The Nexus Pulse on the Build Phase's screen — gate 6A. What a player sees and can do once the plan is
+// The Nexus Pulse on the Build Phase's screen. What a player sees and can do once the plan is
 // committed: the screen it becomes, the ending's words at each moment of it, the playback keys and the
 // panel rows a click reaches, where the view looks, and the way back to a fresh Build Phase. Driven through
 // the real session (the keyboard and mouse adapters, the reducer and the presenter), with the screen's clock
@@ -71,7 +71,7 @@ test("answering yes turns the screen into the Nexus Pulse, with the keyboard on 
   assert.match(text, /RAID {2}7 \[#+\]/)
   assert.match(text, /\[space\] Pause/)
   assert.match(text, /\[r\] Watch again/)
-  // The bottom bar's one line is the Pulse's own (feedback F59); its keys are on the Controls page.
+  // The bottom bar's one line is the Pulse's own; its keys are on the Controls page.
   assert.match(text, /\| Nexus Pulse - 5 of yours against 7 of the raid\. +\|/)
   assert.match(text, /menu \[esc\]/)
   // The Build Phase's menu is gone: nothing left to build, nothing to pick, no credits.
@@ -136,7 +136,7 @@ test("the ending says what is happening in words at every moment: the last secon
   assert.match(home, /^\| VICTORY /m)
   assert.match(home, /The raid was wiped out\./)
   assert.match(home, /\d+ of yours came home\./)
-  // Where the mission stands, and the way on (gate 6B): the round is over, the Nexus stands, and the row
+  // Where the mission stands, and the way on: the round is over, the Nexus stands, and the row
   // where Pause was goes to the next round.
   assert.match(home, /Round 1 of 2 is over\. The/)
   assert.match(home, /Round 1 of 2 over - victory\. Enter: Build Phase 2\./)
@@ -463,7 +463,7 @@ test("the panel's rows are clickable: Pause and Resume, Watch again — and noth
 })
 
 test("once the result stands there is nothing to pause: Space and a click on the row where Pause was go on instead", () => {
-  // The row where Pause was is the result's way on (gate 6B): Space presses it, as Enter does.
+  // The row where Pause was is the result's way on: Space presses it, as Enter does.
   const spaced = victorious()
   atHome(spaced)
   assert.equal(spaced.build.pulse!.paused, false)
@@ -496,7 +496,7 @@ test("the top bar's Esc label and Esc open the game menu over a Pulse too; x and
   click(played, 40, 12, MOUSE_RIGHT)
   assert.equal(played.build.state.popup, null)
   // ...and with nothing open it does nothing, nor does x — only Esc (and q, and the label) open the menu
-  // (owner, 2026-09-30, feedback F62: a right click was one of the ways in until then).
+  // (owner, 2026-09-30: a right click was one of the ways in until then).
   click(played, 40, 12, MOUSE_RIGHT)
   played.build.handleData("x", played.layout)
   assert.equal(played.build.state.popup, null)

@@ -55,7 +55,7 @@ const TIMING: HandoffTiming = {
 /** The Turret: one tile, so arming it keeps the cursor where each test puts it. */
 const TURRET = "3"
 const turretRow = (layout: BuildLayout): number => menuEntryRow(layout, starterContext().catalog, { kind: "construct", index: 2 }) as number
-/** The owner's opacity for the see-through cursor's head: "about 80% 'transparency'" (feedback F64). */
+/** The owner's opacity for the see-through cursor's head: "about 80% 'transparency'". */
 const HEAD_ALPHA = 0.8
 
 /** What a frame with the flight `progress` of the way has that the same frame without it does not. */

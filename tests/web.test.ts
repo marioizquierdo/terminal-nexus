@@ -1,4 +1,4 @@
-// The browser playtest page (engine.md 10.2): a development tool that must run the terminal's own
+// The browser playtest page (docs/system-design/runtime.md, the delivery ladder): a development tool that must run the terminal's own
 // code, never a copy of it. These are the tests that stop it drifting:
 //
 //   1. nothing Node-only is reachable from the page — checked on the import graph (both runtimes)

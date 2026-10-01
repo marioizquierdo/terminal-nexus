@@ -1,5 +1,5 @@
 // Shared scaffolding for the Build Phase tests — not a test file itself: the runners only pick up
-// `*.test.ts`. A Build Phase on the spike map, driven the way a player drives it: raw key bytes and
+// `*.test.ts`. A Build Phase on the starter map, driven the way a player drives it: raw key bytes and
 // mouse reports into the real adapters (`BuildSession.handleData`), and the frame the screen would draw
 // read back as cells or text. `tests/pulse-helpers.ts` builds a Nexus Pulse on top of it.
 
@@ -76,7 +76,7 @@ export type SideOptions = Readonly<{
 }> &
   Pick<BuildSessionOptions, "onQuit" | "onExport" | "onSettingsChange" | "startPulse" | "nextRound">
 
-/** A Build Phase session laid out for `terminal` (the 80 x 24 floor), on the spike map unless told
+/** A Build Phase session laid out for `terminal` (the 80 x 24 floor), on the starter map unless told
  *  otherwise, with the keyboard on the menu as the real screen opens. `quits()` counts the times it
  *  asked to leave. */
 export function buildSide(options: SideOptions = {}): BuildSide {
@@ -180,7 +180,7 @@ export function compose(side: Side, extra: Partial<BuildCompositionInput> = {}, 
   const pulse = build.pulseFrame(layout)
   return composeBuildFrame(
     {
-      // The session's own round: after a Pulse the mission moves on to a new context (gate 6B).
+      // The session's own round: after a Pulse the mission moves on to a new context.
       context: build.round,
       state: build.state,
       layout,

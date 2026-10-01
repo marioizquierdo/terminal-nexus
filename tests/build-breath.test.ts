@@ -1,6 +1,6 @@
-// Every popup's border is alive (owner, 2026-09-30): it **breathes** (feedback F80: "just relaxing turning
-// a bit lighter and darker to create dynamism"; F83: "This subtle version works well for all popups
-// because it is very unobtrusive"), and the Battle Round screen first **opens with a double flash** (F83:
+// Every popup's border is alive (owner, 2026-09-30): it **breathes** ("just relaxing turning
+// a bit lighter and darker to create dynamism"; "This subtle version works well for all popups
+// because it is very unobtrusive"), and the Battle Round screen first **opens with a double flash**:
 // "an initial double flash pulse, with more contrast range, that works as a highlight, then it stays on
 // the default pulse animation"). An opening, from a table, then the breath: presentation alone, a pure
 // function of the time since the popup opened, drawn at rest in every still frame, still under reduced

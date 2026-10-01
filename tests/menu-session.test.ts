@@ -1,4 +1,4 @@
-// `runMenu`'s lifecycle — engine.md 10.1: one idempotent disposer, reached from `q`, an interrupt
+// `runMenu`'s lifecycle — docs/system-design/runtime.md, "Terminal lifecycle": one idempotent disposer, reached from `q`, an interrupt
 // byte, SIGINT, SIGTERM, the menu's own Exit item, and a caught render failure alike, and it leaves
 // mouse reporting off (alongside raw mode and the alternate screen) on every one of those paths.
 // Follows the exact fake-stdin pattern `tests/lifecycle.test.ts` uses for `grid watch`.

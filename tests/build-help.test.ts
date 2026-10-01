@@ -1,4 +1,4 @@
-// How the Build Phase documents itself since the owner's menu spike (2026-09-30, feedback F59-F60): one
+// How the Build Phase documents itself since the owner's menu playtest (2026-09-30): one
 // row at the bottom of the screen — the last command's answer, and otherwise a hint for where the
 // keyboard is — and a Controls and hotkeys page in the game menu. Driven through the real session (raw
 // keys and clicks into the adapters) where an adapter is what is being claimed, and through commands
@@ -59,7 +59,7 @@ function silence(side: Side): void {
 // --- One row ---------------------------------------------------------------------------------------
 
 test("the bottom bar is one row, and 80 x 24 shows 49 x 18 tiles of Grid; the floor stays 80 x 24", () => {
-  // The owner (2026-09-30, feedback F59): "The bottom of the UI currently uses 3 rows. We have to reduce
+  // The owner (2026-09-30): "The bottom of the UI currently uses 3 rows. We have to reduce
   // that to 1 row." The rule under the Grid and one line; the two rows saved go to the Grid.
   const side = buildSide()
   const { layout } = side

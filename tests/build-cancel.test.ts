@@ -27,7 +27,7 @@ import {
 } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
 
-/** On the menu with nothing open — the "regular state" `x x x` must always reach (feedback F62). */
+/** On the menu with nothing open — the "regular state" `x x x` must always reach. */
 function onMenu(state: BuildState): boolean {
   return state.focus === "menu" && state.popup === null && state.armed === null && !state.exploreMap
 }

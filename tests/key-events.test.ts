@@ -1,6 +1,6 @@
 // Key presses, repeats and releases, where the terminal reports them — the kitty keyboard protocol's
 // decoder, encoder and conversation (`src/view/key-events.ts`; the owner's third round, 2026-09-30,
-// F79; Q66's design). What matters most: a classic terminal's bytes come through unchanged, the
+// and the design that followed). What matters most: a classic terminal's bytes come through unchanged, the
 // protocol's forms become the keys the adapters already read, and the flags are only ever popped when
 // they were pushed.
 

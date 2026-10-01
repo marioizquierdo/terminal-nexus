@@ -104,7 +104,7 @@ test("every piece of content is drawn, and every glyph is one printable ASCII ce
 })
 
 test("art is authored lower case, so ownership is free to flip it", () => {
-  // Case carries ownership (engine.md 9.6), and it can only do that if the author has not already
+  // Case carries ownership (docs/system-design/presentation.md, the cell frame), and it can only do that if the author has not already
   // spent it: a body drawn with a capital in it would read as player B's whoever owns it.
   for (const [contentId, art] of Object.entries(CONTENT_ART)) {
     for (const row of art) {

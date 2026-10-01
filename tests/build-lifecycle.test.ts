@@ -1,4 +1,4 @@
-// `runBuildPhase`'s lifecycle — engine.md 10.1's RULE, applied to the Build Phase screen. The same fake
+// `runBuildPhase`'s lifecycle — the terminal lifecycle RULE (docs/system-design/runtime.md), applied to the Build Phase screen. The same fake
 // stdin/stdout pattern `tests/menu-session.test.ts` and `tests/lifecycle.test.ts` already use, and
 // the same non-negotiables: one idempotent disposer reached from `q`, an interrupt byte, Esc with
 // nothing armed, SIGINT and SIGTERM alike; raw mode, the alternate screen and mouse reporting all
@@ -121,7 +121,7 @@ test("q then q, an interrupt byte, and Esc then q all reach the one disposer", a
 })
 
 test("a lone q or Esc only asks — it never leaves the screen by itself", async () => {
-  // engine.md 9.7: Esc "never quits the game by itself"; since the exit question, neither does q —
+  // docs/system-design/input.md: Esc "never quits the game by itself"; since the exit question, neither does q —
   // both open the game menu (Settings, Quit) now.
   for (const key of ["q", ESC]) {
     const { stdout, exits } = await starterSession((input) => {
@@ -142,7 +142,7 @@ test("Esc with something armed disarms instead of leaving", async () => {
 })
 
 test("a lone Esc waits a moment for the rest of a key: Esc then [A in the next read is one Up arrow", async () => {
-  // Gate 5H: an arrow split across two reads (a slow link) used to arrive as Esc and then two stray
+  // An arrow split across two reads (a slow link) used to arrive as Esc and then two stray
   // characters. Within the timeout the two reads are joined and are the one key they always were.
   const { stdout, exits } = await starterSession((input) => {
     input.emit("data", Buffer.from("e")) // explore, so the arrow moves the map cursor
@@ -150,8 +150,7 @@ test("a lone Esc waits a moment for the rest of a key: Esc then [A in the next r
     input.emit("data", Buffer.from("[A"))
   }, AFTER_ESC_TIMEOUT_MS + TUNING.cardRevealMs) // and the card's reveal, typed out
   assert.deepEqual(exits, [])
-  // Explore Map put the cursor on clear ground, a free column right of the Nexus (21,10 — feedback
-  // F66), and the arrow moved it up one tile: the Explore Map card names the tile. Read from everything
+  // Explore Map put the cursor on clear ground, a free column right of the Nexus (21,10), and the arrow moved it up one tile: the Explore Map card names the tile. Read from everything
   // written, since the hand-off to the map may still be redrawing only the cells it changes.
   assert.match(stdout.written, /Open ground/, "the cursor is not on open ground")
   assert.match(stdout.written, /21,9/, "the split arrow did not move the cursor up one tile")
@@ -196,7 +195,7 @@ test("below the floor the screen gates, and resizing back above it restores the 
 })
 
 /** The top border's run of dashes at 80 columns (a 49-tile viewport) and at 104 (the maximum, 72).
- *  The footer's position readout said the viewport until feedback F59 took the readout out. */
+ *  The footer's position readout once said the viewport; the readout is gone. */
 const BORDER_AT_80 = `+${"-".repeat(78)}+`
 const BORDER_AT_104 = `+${"-".repeat(101)}+`
 
@@ -215,7 +214,7 @@ test("a bigger terminal shows a bigger viewport, and the frame is cleared when i
 })
 
 test("--keys opens the Build Phase already in the state those keys reach, then hands over the keyboard", async () => {
-  // Owner, 2026-09-29 (feedback F28/F40): demos and reports should start in a particular state. The
+  // Owner, 2026-09-29: demos and reports should start in a particular state. The
   // keys go through the same adapters as a player's, before the first frame.
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()
@@ -262,7 +261,7 @@ test("--keys that cannot be delivered stops there and says why when the screen c
 })
 
 // ---------------------------------------------------------------------------------------------
-// Gate 6A: the Nexus Pulse in the live loop
+// The Nexus Pulse in the live loop
 // ---------------------------------------------------------------------------------------------
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
@@ -361,7 +360,7 @@ test("a Nexus Pulse holds still behind the resize gate and resumes from the same
 })
 
 // ---------------------------------------------------------------------------------------------
-// Key releases, where the terminal reports them (the owner's third round, F79; Q66)
+// Key releases, where the terminal reports them (the owner's third round of movement feedback)
 // ---------------------------------------------------------------------------------------------
 
 /** A terminal that answers the keyboard question the way one speaking the kitty protocol does (its

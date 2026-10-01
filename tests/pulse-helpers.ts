@@ -51,7 +51,7 @@ export type Scenario = Readonly<{
 
 const many = (unit: string, count: number): Readonly<{ unit: string; count: number }> => ({ unit, count })
 
-/** The raids gate 6A's placeholder Pulse offered, which these tests were written against. */
+/** The raids the first placeholder Pulse offered, which these tests were written against. */
 const RAIDS: Readonly<Record<RaidSize, readonly Readonly<{ unit: string; count: number }>[]>> = {
   none: [],
   probe: [many("unit.ravel.runner", 4), many("unit.ravel.raider", 3)],
@@ -59,9 +59,9 @@ const RAIDS: Readonly<Record<RaidSize, readonly Readonly<{ unit: string; count: 
 }
 
 /**
- * Gate 6A's placeholder Pulse as a mission (gate 6B): the player's two squads beside the Nexus, a raid at
+ * The first placeholder Pulse as a mission: the player's two squads beside the Nexus, a raid at
  * the far edge of a view opened on the base, the same seed and length — so a first round is the very
- * Pulse 6A played, forces in the same order, and every ending the tests reach is still reachable. Its
+ * Pulse it was before missions, forces in the same order, and every ending the tests reach is still reachable. Its
  * rounds after the first bring nothing new; the last one's end wins, unless the Nexus fell.
  */
 export function testMission(scenario: Scenario = {}): MissionDefinition {
@@ -99,7 +99,7 @@ export type Played = Readonly<{
   mission: MissionPlay
 }>
 
-/** A session on the spike map, opening on the Grid Nexus as the game does, playing the test mission for a
+/** A session on the starter map, opening on the Grid Nexus as the game does, playing the test mission for a
  *  scenario (the probe, by default) with the shell's own `startPulse` and `nextRound`. */
 export function newSession(
   size: Readonly<{ columns: number; rows: number }> = MINIMUM,

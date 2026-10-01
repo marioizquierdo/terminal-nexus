@@ -1,5 +1,5 @@
-// Gate 5H: movement feel, reworked after the owner's 2026-09-28 playtest, settled by his settings export
-// of 2026-09-30, and reworked again by his third round the same day (F79: taps speed up by counting, a
+// Movement feel, reworked after the owner's 2026-09-28 playtest, settled by his settings export
+// of 2026-09-30, and reworked again by his third round the same day (taps speed up by counting, a
 // hold runs at the game's own cadence, and key events are read where the terminal reports them; the
 // numbers are tuned values, `src/build/tuning.ts`, and only the hold window and key releases are
 // Experiments). Taps, holds and the Shift jump, the cursor glide, the share-of-view scroll
@@ -111,12 +111,12 @@ const JUMP_EAST = { dx: 1, dy: 0, jump: true }
 const tap = (tiles: number): string => `tap ${tiles}`
 const hold = (tiles: number): string => `hold ${tiles}`
 
-// --- Taps and holds (the owner's third round, F79) --------------------------------------------------
+// --- Taps and holds (the owner's third round) --------------------------------------------------
 
 test("the motion rules run on each number as it is now: the navigation Experiments, and the tuned rest", () => {
   // Every number is its setting's value, whichever tier it stands on — at this build's defaults here.
   for (const [name, value] of Object.entries(TUNED)) assert.equal(value, defaultValue(name as SettingName), `${name} is not its setting's value`)
-  // The navigation polish round's Experiments (feedback F85) and the third round's two; the rest tuned.
+  // The navigation polish round's Experiments and the third round's two; the rest tuned.
   const movement = [...Object.keys(TUNED), "keyReleases", "cursorGlideMs"]
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.field).filter((field) => movement.includes(field)),
@@ -341,7 +341,7 @@ function parityIntent(key: string): Readonly<{ timed: (readonly [string, number]
 }
 
 test("the same intent as timed presses and as press, repeat and release events lands on the same tile, and the same row", () => {
-  // The design's parity rule (Q66): only how a repeat is told from a tap differs, never where the cursor goes.
+  // The design's parity rule: only how a repeat is told from a tap differs, never where the cursor goes.
   const intent = parityIntent(RIGHT)
   const byTiming = exploring(starterContext(), { x: 0, y: 13 })
   const byEvents = exploring(starterContext(), { x: 0, y: 13 })
@@ -426,7 +426,7 @@ test("without a clock every arrow is a tap and every Shift+Arrow one jump: drive
   assert.equal(jumps.build.state.cursor.x, 3 * TUNED.jumpStep)
   // A playtest's untimed steps are a second apart: taps that start over.
   const untimed = runBuildPlaytest({ steps: parseKeyScript("e Right*10") })
-  // Where Explore Map put the cursor: clear ground beside the Nexus (feedback F66).
+  // Where Explore Map put the cursor: clear ground beside the Nexus.
   const start = untimed.frames[1]?.state.cursor.x ?? 0
   assert.equal(untimed.frames.at(-1)?.state.cursor.x, start + 10)
   assert.deepEqual(untimed.frames.slice(2).map((frame) => frame.moveKind), Array.from({ length: 10 }, () => "tap 1"))
@@ -461,7 +461,7 @@ test("the margin is a share of the view's own width and height, never so wide th
 
 // --- Clicks and the view ---------------------------------------------------------------------------
 
-test("exploring, a click near an edge scrolls further the nearer the edge it lands (feedback F6)", () => {
+test("exploring, a click near an edge scrolls further the nearer the edge it lands", () => {
   const moveFor = (column: number): number => {
     const side = exploring(starterContext(), { x: 40, y: 20 })
     const camera = side.build.state.camera
@@ -488,7 +488,7 @@ test("exploring, a click near an edge scrolls further the nearer the edge it lan
   assert.ok(edgeClickCamera({ x: 30, y: 10 }, { x: 40, y: 10 }, view, grid, 33).y < 10)
 })
 
-test("armed, a click scrolls like an exploring one, and a quick double click places where the first pointed (F22)", () => {
+test("armed, a click scrolls like an exploring one, and a quick double click places where the first pointed", () => {
   const side = exploring(starterContext(), { x: 40, y: 20 })
   side.build.handleData("1", side.layout)
   const camera = side.build.state.camera
@@ -531,7 +531,7 @@ test("a double click on the ghost's own tile places once and leaves the keyboard
   assert.equal(side.build.state.focus, "grid")
 })
 
-test("a slow second click on a scrolled spot is a fresh first click, not a place on the wrong tile (F22)", () => {
+test("a slow second click on a scrolled spot is a fresh first click, not a place on the wrong tile", () => {
   const side = exploring(starterContext(), { x: 40, y: 20 })
   side.build.handleData("1", side.layout)
   const camera = side.build.state.camera
@@ -803,7 +803,7 @@ test("the live screen redraws on a timer while the view slides, and not at all o
   })
   await wait(40)
   // Explore Map begun on the map (Tab, then `e`): the row's flash and the card's reveal, and no focus
-  // arrow or cursor blink, which only a menu row handing the keyboard to the map plays (feedback F54).
+  // arrow or cursor blink, which only a menu row handing the keyboard to the map plays.
   stdin.emit("data", Buffer.from(TAB))
   stdin.emit("data", Buffer.from("e"))
   await wait(Math.max(TUNING.pressedFlashMs, TUNING.cardRevealMs) + 100) // both have come and gone

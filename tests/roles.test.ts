@@ -1,4 +1,4 @@
-// Style roles, render tiers, and themes — engine.md 9.1 and 9.6, and the owner's dark/light finding.
+// Style roles, render tiers, and themes — docs/system-design/presentation.md, and the owner's dark/light finding.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -108,7 +108,7 @@ test("parseCapability still rejects an unknown tier", () => {
   assert.throws(() => parseCapability("hd"), /unknown capability/)
 })
 
-test("the 256-colour tier is derived from rgb, not a fourth hand-authored value (Q25 option A)", () => {
+test("the 256-colour tier is derived from rgb, not a fourth hand-authored value", () => {
   // Pinned against node scripts/measure-palette-derivation.mjs's own output, 2026-08-24: these are
   // the *derived* indices, and for chrome.frame and player.b (dark) they differ from what used to be
   // hand-authored (240 and 84) - proof the switch actually took effect, not just that some number
@@ -170,9 +170,9 @@ test("the 16-colour tier stays hand-authored: chrome.muted keeps its fix, not ne
   }
 })
 
-test("player.a and player.b clear a real mutual-contrast floor in the light theme now (Q21)", () => {
-  // The same WCAG relative-luminance contrast ratio Q21's own measurement used
-  // (docs/milestones/open-questions.md), computed independently here rather than imported, so this test would
+test("player.a and player.b clear a real mutual-contrast floor in the light theme now", () => {
+  // The same WCAG relative-luminance contrast ratio the original measurement of
+  // that floor used, computed independently here rather than imported, so this test would
   // actually fail if the retune regressed.
   const srgbToLinear = (u: number): number => (u / 255 <= 0.04045 ? u / 255 / 12.92 : ((u / 255 + 0.055) / 1.055) ** 2.4)
   const relLuminance = (rgb: readonly [number, number, number]): number =>
@@ -194,7 +194,7 @@ test("player.a and player.b clear a real mutual-contrast floor in the light them
   assert.deepEqual(rgbFor("player.b", "truecolor", "dark"), [104, 226, 132])
 })
 
-test("sgrFor's fade resolves only at color256 and truecolor - Q25's transparency scalar", () => {
+test("sgrFor's fade resolves only at color256 and truecolor - the transparency scalar", () => {
   const role = "fx.flash"
   const theme = "dark"
   // color16 and monochrome: identical whether fade is 0, partway, or fully faded - no representable

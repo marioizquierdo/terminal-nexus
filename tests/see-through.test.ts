@@ -1,4 +1,4 @@
-// The see-through cursor — feedback F64 and F65 (docs/history/feedback/2026-09-30-menu-spike-round-2.md).
+// The see-through cursor, as the owner asked for it after his menu playtest of 2026-09-30.
 //
 // A cell's `seeThrough` is a role and an alpha, never a colour: the cursor drawn in that role at that
 // opacity over whatever the cell shows. The owner defined the mix himself — "if the background is
@@ -396,7 +396,7 @@ test("the ANSI writer, the canvas and OpenTUI resolve one mixed cell to the same
   }
 })
 
-test("the three renderers draw a cell's own colours alike: the refused row's grey words under the bar (F61)", async () => {
+test("the three renderers draw a cell's own colours alike: the refused row's grey words under the bar", async () => {
   // `refusedWords` in src/view/build.ts: a refused key greys the highlighted row's words by giving the
   // inverse bar a background role — chrome.muted (chrome.edge at 16 colours; in monochrome, dim).
   // OpenTUI once drew these exactly as the plain bar, dropping the background role.

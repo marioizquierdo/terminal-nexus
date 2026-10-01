@@ -1,5 +1,5 @@
-// The `[s] Start Pulse` row and the Battle Round screen it opens (gate 6A rounds 2 and 3, owner feedback
-// F41-F42 and F47-F50): the menu's last row, reached by Up/Down and pressed by Enter like every other
+// The `[s] Start Pulse` row and the Battle Round screen it opens (as the owner shaped them over his playtests):
+// the menu's last row, reached by Up/Down and pressed by Enter like every other
 // row, by `s` and by a click as shortcuts; and a confirmation whose title is "Battle Round 1", whose body
 // announces it, and whose one row, `[s] Start`, is what Enter, Space and `s` press. Driven through the
 // real session with the shell's `startPulse`, so "starts the Pulse" means a Pulse on screen.
@@ -42,7 +42,7 @@ test("Start Pulse is the menu's last entry, one plain row on the panel's bottom 
   assert.doesNotMatch(rows[startRow(layout) - 1]!.slice(layout.panelColumn, layout.panelColumn + layout.panelLimit), /[+-]{3}/, "a box's top edge")
 })
 
-test("Down reaches Start Pulse, and Enter, Enter starts the Pulse — no hotkey and no mouse needed (feedback F48)", () => {
+test("Down reaches Start Pulse, and Enter, Enter starts the Pulse — no hotkey and no mouse needed", () => {
   const session = ready()
   const last = menuEntries(session.context).length - 1
   // Only Down and Enter are pressed: the highlight walks the whole menu and arrives on its last entry.
@@ -59,7 +59,7 @@ test("Down reaches Start Pulse, and Enter, Enter starts the Pulse — no hotkey 
   assert.ok(session.build.pulse !== null)
 })
 
-test("the rule: every entry of the menu is reached by Down and done by Enter alone (docs/system-design/ui-patterns.md section 4)", () => {
+test("the rule: every entry of the menu is reached by Down and done by Enter alone (docs/system-design/ui-patterns.md, Back, cancel and close)", () => {
   const entries = menuEntries(ready().context)
   entries.forEach((entry, index) => {
     const session = ready()
@@ -244,7 +244,7 @@ test("s is still Settings inside the game menu, and pressing Start during a Puls
 
 test("at the floor the menu and Start Pulse fit with no help text between them, and the armed building's card has room", () => {
   // The key help that overflowed into the panel used to stack directly above Start Pulse; the panel
-  // carries no help text since feedback F58.
+  // carries no help text now.
   const session = ready()
   session.build.dispatch({ kind: "focus", target: "menu" })
   const { layout } = session

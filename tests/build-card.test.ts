@@ -99,13 +99,13 @@ test("a building's card: its glyphs, its title and subtitle, its description, it
     const lines = panelLines(side, compose(side))
     const card = lines.slice(CARD_FIRST_ROW).join("\n")
     assert.match(lines[CARD_FIRST_ROW] as string, /^\[b\] +Barracks/)
-    // The subtitle sits where "to build" was (feedback F84: "use that subtitle space for the subtitle").
+    // The subtitle sits where "to build" was (owner: "use that subtitle space for the subtitle").
     assert.match(lines[CARD_FIRST_ROW + 1] as string, /^\|_\| +Trains troopers +$/)
     assert.match(card, /Where your troopers come/)
     assert.match(card, /^COST +40$/m)
     assert.match(card, /^HEALTH +120$/m)
     assert.match(card, /^SIZE +3x2$/m)
-    // Cost first, as the owner listed them (feedback F58: "cost, health, size, attack").
+    // Cost first, as the owner listed them ("cost, health, size, attack").
     assert.ok(card.indexOf("COST") < card.indexOf("HEALTH"))
     // The card is the whole panel: no menu row, no Start Pulse, no help text.
     assert.doesNotMatch(card, /\[\d\]|\[n\]|Start Pulse|\[e\]/)
@@ -175,7 +175,7 @@ const EVERY_CARD: readonly (readonly [string, (side: Side) => void])[] = [
 ]
 
 test("every card is a title, a subtitle, a description and its numbers — and says nothing about planned, standing or to build", () => {
-  // Feedback F84: "no need to show the 'planned' or 'to build' state. That is obvious from the rest of
+  // The owner: "no need to show the 'planned' or 'to build' state. That is obvious from the rest of
   // the UI ... So the cards have title, subtitle, description, stats."
   const kinds = new Set<string>()
   for (const [name, open] of EVERY_CARD) {

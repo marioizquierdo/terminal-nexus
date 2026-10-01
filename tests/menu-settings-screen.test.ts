@@ -1,7 +1,7 @@
-// The Settings screen — Gate 3B. Reuses gate 3A's exact fake-stdin pattern and its equivalence-test
+// The Settings screen. Reuses the top-level menu's exact fake-stdin pattern and its equivalence-test
 // shape: a raw hotkey, raw arrow-then-Enter, and a raw mouse click at the row's own rendered position
 // must all cycle the identical row to the identical next value, not merely agree once something has
-// already decoded it (engine.md 9.7). Also covers what is genuinely new here: a second screen reached
+// already decoded it (docs/system-design/input.md). Also covers what is genuinely new here: a second screen reached
 // through the first, going back two ways, a change taking effect on the very next frame, and a value
 // actually surviving a stop-and-restart.
 
@@ -81,7 +81,7 @@ const SETTINGS_HOTKEY: string = required(
 
 /**
  * Runs a session, enters the Settings screen, drives it with raw bytes, and returns the last frame
- * drawn — the same "read the frame back" contract engine.md 9.7 asks of the driver. A fresh session
+ * drawn — the same "read the frame back" contract docs/system-design/input.md asks of the driver. A fresh session
  * per call, so cycling behaviour is never polluted by an earlier call's state.
  */
 async function settingsFrameAfter(
@@ -188,7 +188,7 @@ test(
     // A hotkey that enters Settings, immediately followed by a hotkey that should cycle a Settings
     // row, delivered as ONE chunk — the same shape a fast typist or a script driving the game could
     // produce, and the exact case that silently misrouted the second key to the screen the player
-    // had already left before this gate's own fix.
+    // had already left, before the fix.
     const stdout = new FakeStdout()
     const stdin = new FakeStdin()
     const session = runMenu({
@@ -287,7 +287,7 @@ test("a colour-depth change is visible on the very next frame, without restartin
 test("two changes picked in quick succession save in order, one write at a time", async () => {
   // A store whose first save hangs until the test explicitly releases it — reproducing, on demand
   // and every time, the exact ordering a real filesystem never promises: two writes started close
-  // together can finish in either order. Before this gate's own fix, each setting change fired an
+  // together can finish in either order. Before the fix, each setting change fired an
   // independent, unchained write, so the first (now-stale) write landing *after* the second could
   // silently revert the player's last choice back to their first one. `saveCalls` records what each
   // write was actually asked to save, in the order `save()` itself was invoked.

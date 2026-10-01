@@ -1,4 +1,4 @@
-// The loop (gate 6B): after a round's result, the next round's Build Phase — on what Recall left, with the
+// The loop: after a round's result, the next round's Build Phase — on what Recall left, with the
 // credits not spent and the next wave shown as incoming — until the mission's triggers end it. Played on
 // the game's own mission, PERIMETER, through the real session and the shell's `startPulse` and
 // `nextRound`, by keyboard, mouse and driver alike.

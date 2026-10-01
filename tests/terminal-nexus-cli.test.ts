@@ -18,7 +18,7 @@ function runTerminalNexus(args: readonly string[]): { status: number; stdout: st
   return { status: result.status ?? -1, stdout: result.stdout, stderr: result.stderr }
 }
 
-test("launching without a TTY prints one readable line and no escape sequences (engine.md 10.1)", () => {
+test("launching without a TTY prints one readable line and no escape sequences (docs/system-design/runtime.md, Terminal lifecycle)", () => {
   const result = runTerminalNexus([])
   assert.equal(result.status, 0)
   assert.equal(result.stderr, "")
