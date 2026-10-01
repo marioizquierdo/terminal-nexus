@@ -1,10 +1,16 @@
 # Terminal Nexus — ASCII art references
 
+_A reading list for terminal art: the sources worth studying, what each one is for, the tools for drawing, and practices distilled for this project._
+
+_Licence: the analysis is Apache-2.0; the works it links belong to their authors._
+
+## What this is
+
 Terminal Nexus is betting that a `@` can carry a commander and a row of `#` can feel engineered.
 That bet has been won before, repeatedly, by people who wrote down how they did it. This file
 collects those sources and — more usefully — says what each one is *for*.
 
-Nothing here is a rule. When this document and lore Section 9 disagree, lore wins.
+This is reading, not a rule. When it disagrees with the ASCII and visual language in [`lore.md`](lore.md), the lore wins.
 
 ## 1. The one lesson that outranks the rest
 
@@ -46,7 +52,7 @@ the same effect family read as the same *kind* of thing at different intensities
 needs exactly this for upgrade tiers and for Nexus integrity states — a level-3 defence should look
 like a level-1 defence that grew up, not like a different game.
 
-**Similar weapons must look similar, different weapons must not.** Lore Section 9 already says
+**Similar weapons must look similar, different weapons must not.** The ASCII and visual language in [`lore.md`](lore.md) already says
 "ordinary weapons need distinct physical languages so every event does not become the same computer
 effect." Cogmind's blog is the worked example of enforcing that across a large weapon set, and of
 how much bookkeeping it takes.
@@ -61,11 +67,11 @@ how much bookkeeping it takes.
 | [chafa](https://hpjansson.org/chafa/) | Cross-platform CLI | Image to ANSI conversion, with genuinely good 16-colour mapping. Useful for turning a reference sketch into a starting grid |
 
 For Terminal Nexus specifically, the workflow that matters is **draw in a real editor, export as
-data, import as a typed definition.** Lore Section 9's "rhyme at four resolutions" rule only holds if
+data, import as a typed definition.** The lore's "rhyme at four resolutions" rule (see [`lore.md`](lore.md)) only holds if
 the one-cell glyph and the inspection portrait live in the same repository and can be diffed. Hand-
 editing portraits inside TypeScript string literals will not survive the second faction.
 
-The recommendation is to defer picking one until Gate 1B actually needs a portrait, then pick the
+The recommendation is to defer picking one until a portrait is actually needed, then pick the
 one whose export format is easiest to parse — that is the only criterion that matters to us.
 
 ## 4. Where the craft lives
@@ -76,7 +82,7 @@ composition that exists, and it is worth an afternoon before committing to a vis
 
 Two caveats before mining it. Most of it is CP437 with a 16-colour CGA palette, built for an
 80-column canvas and no motion — beautiful, but a still-image tradition. And Terminal Nexus has
-committed to seven-bit ASCII as its baseline (lore Section 9, engine Section 9.6), which rules out
+committed to seven-bit ASCII as its baseline (the ASCII and visual language in [`lore.md`](lore.md), and [`presentation.md`](../system-design/presentation.md)), which rules out
 the block-drawing characters that carry most scene art. Take the **composition** — silhouette,
 negative space, how a few marks imply mass — and leave the charset.
 
@@ -102,7 +108,7 @@ For prior art on how far a TUI can be pushed without leaving text:
   currently-good-looking terminal applications, whatever language you end up in;
 - [Charm](https://charm.sh/) — Bubble Tea, Lip Gloss, and the Wish SSH server; the state of the art
   in *feel*, and the reference point if hosted SSH ever becomes decision-critical;
-- [OpenTUI](https://github.com/anomalyco/opentui) — the current Gate 1A candidate.
+- [OpenTUI](https://github.com/anomalyco/opentui) — the library behind the first terminal backend (see [`runtime.md`](../system-design/runtime.md)).
 
 The general observation from the 2026 TUI resurgence is that every ecosystem has converged on one
 toolkit — Ratatui in Rust, Bubble Tea in Go, Textual in Python, Ink in Node — and that terminal
@@ -112,7 +118,7 @@ that a cell is a game rule and a widget is not.
 
 ## 6. The classics, and what each is actually good for
 
-Lore Section 9 names four precedents. Concretely:
+The ASCII and visual language in the lore names four precedents. Concretely:
 
 - **NetHack** — semantic glyph assignment and inspection. The model for "the simulation knows
   `unit.worker`, never `w`". Also the model for how much a player will happily learn.
@@ -123,22 +129,22 @@ Lore Section 9 names four precedents. Concretely:
   Terminal Nexus's persistence rules (survivors, salvage, ruins) are worth their complexity. Its
   Steam tileset release is also the standing proof that an optional readable mode does not betray an
   ASCII game.
-- **Cogmind** — everything in Section 2.
+- **Cogmind** — everything in the Cogmind section above.
 
 ## 7. Concrete practices for this project
 
 Distilled into things a session can actually do:
 
 1. **Author the worst frame first.** Late Pulse, both armies engaged, three effects overlapping. If
-   that reads, the calm frames will. [`ascii-effects.md`](../system-design/effects.md) carries this and the rest
+   that reads, the calm frames will. [`effects.md`](../system-design/effects.md) carries this and the rest
    of the craft rules as the effect system's own contract.
 2. **Test in monochrome before colour.** Not after. Colour added to a legible monochrome frame is an
    enhancement; colour holding an illegible frame together is a defect that ships.
-3. **Fresh eyes are the only real test.** Lore Section 9 already mandates this. It is the acceptance
-   criterion of Gates 1B and 1C for a reason — the author of a glyph cannot see it any more.
+3. **Fresh eyes are the only real test.** The lore already mandates this, and it is an acceptance
+   criterion of the effects and the first portraits for a reason — the author of a glyph cannot see it any more.
 4. **Motion is a drawing tool, not decoration.** Anticipation, trail, recoil, debris, settle. A
    one-cell actor gets its weight almost entirely from the four frames around it. This is also the
-   cheapest answer to Q3 in [`open-questions.md`](../milestones/open-questions.md).
+   cheapest way to make a one-cell actor feel like it has weight.
 5. **Negative space is material.** The most common failure in game ASCII is filling the grid.
    Terminal Nexus has a 48 x 16 Grid and needs some of it to be empty for the rest to read.
 6. **Every effect needs a reduced-motion form that keeps the causality.** Decide it when authoring
