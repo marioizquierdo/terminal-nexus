@@ -28,18 +28,38 @@ Terminal Nexus is a next-gen ASCII auto-battler linux shell strategy game. Choos
 
 ## Project Status
 
-Pre-production. The first playable artifact is **`grid`**, the engine, editor, and replay tool
-Milestone 1's Pulse Playground grew into: units on a small Grid resolving a deterministic battle
-from a seed, with a levelled report and a minimal ASCII view. `grid` is not the game; it is the tool
-that builds and replays it.
+Terminal Nexus is at version 0.1 until its first public release. The design documents under
+[docs/](docs/README.md) describe the current design, and a merged pull request is the change.
 
-**`terminal-nexus`** is the game's own executable (Milestone 3, all three gates built): it launches
-straight to a top-level menu — Campaign, Challenge, Settings, Exit — every item reachable by its
-displayed hotkey, by arrows and Enter, or by a mouse click, all three proven equivalent. Settings is
-real: colour depth, background, symbols, and reduced motion each cycle in place and persist across a
-relaunch. There is still no Build Phase, no economy, and no campaign content yet: Campaign opens its
-own honest placeholder screen, and Challenge shows dimmed on the menu with its own reason right in
-its label, until Milestones 4 and 11 build their real destinations.
+Two programs exist today.
+
+**`grid`** is the engine, editor and replay tool: units on a Grid resolving a deterministic battle
+from a seed, with a levelled report and an ASCII view. It is not the game. It is the tool that builds
+and replays it.
+
+**`terminal-nexus`** is the game's own executable. It opens on a menu (Campaign, Challenge, Settings,
+Exit) that works by hotkey, by arrows and Enter, or by mouse. Campaign and Challenge are honest
+placeholders. The playable part is the **Build Phase**, started with `--spike` (a temporary name):
+
+- A map bigger than the screen, in a closed rectangle whose sides show where there is more map. The
+  cursor scrolls the view, and the view slides.
+- A menu on the left that runs the screen: Explore Map, the Nexus powers, a budget, a list of
+  buildings with their costs, and Start Pulse. A card replaces the menu while you explore a tile or
+  place a building. Keyboard, mouse and a scripted driver all send the same commands.
+- Buildings are placed at the cursor with a short build animation and sparks. A refused placement
+  says why and names its tile on the bottom line.
+- A Nexus power pick that may not be skipped, then **Start Pulse**.
+- **Settings** (Esc, then `s`) holds the player's own saved settings and, below them, **Experiments**:
+  open design questions you can flip while playing. Export settings copies them as text to paste into
+  a pull request, and `--settings` reads them back.
+
+Start Pulse runs the **Nexus Pulse**: the unmodified rules kernel resolves the plan you built. You
+watch it with a countdown, a score and a feed of events, and you can pause, change speed, step and
+watch again. The first mission, **PERIMETER**, is three rounds with a raid arriving in three waves.
+After each round there is a result, and Next round opens the next Build Phase on what survived.
+
+Not built yet: an economy, Commander powers, Campaign content, Challenge runs and sound. The
+[milestones](docs/milestones/README.md) say what comes next.
 
 ## Local Development
 
@@ -83,7 +103,7 @@ A few more worth watching, in this order:
 npm run grid -- scenarios/ravel-cascade --glyphs unicode --capability truecolor --speed 0.5
 npm run grid -- scenarios/citizens-versus-ravels --no-effects --glyphs unicode --capability truecolor
 npm run grid -- scenarios/citizens-versus-ravels --capability monochrome   # can you still follow it?
-npm run grid -- scenarios/citizen-mirror-skirmish                          # the Gate 1A baseline
+npm run grid -- scenarios/citizen-mirror-skirmish                          # the baseline mirror match
 ```
 
 `npm run maps` lists every checked-in map. `watch` takes the same options on any of them:
@@ -97,22 +117,19 @@ npm run grid -- <map> \
 ```
 
 **If the screen says `TERMINAL TOO SMALL`,** it needs 80 x 24 and your window is smaller — resize and
-it resumes from the same instant. That is the resize gate, not a crash. `--turn 90` seeks straight to
+it resumes from the same instant. That is the resize screen, not a crash. `--turn 90` seeks straight to
 tick 90 instead of playing from the start, in watch, headless and verify alike.
 
-### The game's own menu
+### The game
 
 ```bash
-npm run terminal-nexus
+npm run terminal-nexus              # the menu: Campaign, Challenge, Settings, Exit
+npm run terminal-nexus -- --spike   # the Build Phase and the Nexus Pulse
 ```
 
-Launches straight to the top-level menu — Campaign, Challenge, Settings, Exit — on the same terminal
-stack as `grid`. Every item shows its hotkey (`[1] Campaign`) and works three equivalent ways: press
-the hotkey, arrow to it and press Enter, or click its row. Settings is a real second screen: colour
-depth, background, symbols, and reduced motion each cycle to their next value on the spot, take effect
-immediately, and are remembered on the next launch. Campaign opens its own placeholder screen saying
-plainly that it's not built yet; Challenge shows dimmed, right on the menu, its own label already
-naming the milestone that builds it — neither is silently broken, and Exit actually quits, cleanly.
+Every menu row shows its hotkey (`[1] Campaign`) and works three ways: press the hotkey, arrow to it
+and press Enter, or click it. Inside the Build Phase, press `?` for every key. Esc opens the game
+menu, and `d` jumps to the Experiments.
 
 ### Read what happened
 
@@ -151,9 +168,9 @@ Repository-level validation:
 ./scripts/check-repository.sh
 ```
 
-It reports the canon version and the active gate, and enforces the canon's structural invariants.
+It prints the current milestone and its step, and checks the repository's structure and links.
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for the workflow and evidence requirements.
+See [DEVELOPMENT.md](DEVELOPMENT.md) for the toolchain, testing and how work is planned.
 
 ## Development environments
 
@@ -166,25 +183,31 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the workflow and evidence requirements.
 
 ```text
 .
-├── src/                   The kernel and tools: pulse (deterministic engine), content, scenario,
-│                          state, events, grid, report, view, cli, rng, menu (the menu-list shape,
-│                          input adapters, and driver terminal-nexus's menu is built on), settings
-│                          (the small persisted-choices file its Settings screen reads and writes)
-├── scenarios/             Checked-in .map.json fixtures — one file per rule under test
-├── bin/                   grid.ts (the engine/editor/replay tool) and terminal-nexus.ts (the game's
-│                          own entry point, launching straight to the top-level menu)
+├── docs/                  The design, the plan and the history, in five folders
+│   ├── README.md              Index of every document
+│   ├── game-design/           What the game is: concept, lore, modes, Commander Armies, campaigns
+│   ├── system-design/         How it is built: the engine, the Pulse, effects, UI patterns, testing
+│   ├── milestones/            What is next: milestones, open questions, backlog
+│   ├── history/               What happened: timeline, reports, Mario's feedback
+│   ├── screenshots/           Pictures of the current build
+│   └── claude-web.md          Setting up Claude Code on the web
+├── src/                   The game and its tools: pulse (the rules kernel), match, mission, content,
+│                          scenario, state, events, grid, report, view, build (the Build Phase),
+│                          menu, cli, settings, web (the browser playtest page)
 ├── tests/                 The test suite; Node's runner and Bun both run it
-├── specs/                 Focused canon and milestone contracts
-├── evidence/              Gate reports and screenshots — what was measured, not just claimed
-├── concept/               Concept art, real screenshots, and the archived original spec
-├── docs/                  Human setup and workflow notes
+├── scenarios/             Checked-in .map.json fixtures, one file per rule under test
 ├── scripts/               Repository validation and development tooling
+├── bin/                   grid.ts and terminal-nexus.ts, the two entry points
 ├── .claude/               Skills for coding agents working in this repository
 ├── .devcontainer/         Codespaces configuration
-├── .github/               CI and contribution configuration
-├── AGENTS.md              Shared coding-agent contract
-├── CLAUDE.md              Claude-specific entry point
-└── DEVELOPMENT.md         Human development workflow
+├── .github/               CI, code owners and the pull request template
+├── AGENTS.md              Entry point for any coding agent
+├── CLAUDE.md              Claude-specific notes; imports AGENTS.md
+├── CONTRIBUTING.md        For human contributors, and the contribution licences
+├── DEVELOPMENT.md         How we work: toolchain, tests, milestones, feedback
+├── README.md              This file
+├── LICENSE, LICENSE-CREATIVE, NOTICE
+└── package.json, tsconfig*.json
 ```
 
 ## Licensing
@@ -202,4 +225,4 @@ See [NOTICE](NOTICE) and [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## Contributing
 
-Terminal Nexus begins with evidence-driven docs/milestones, not a general feature backlog. Read [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md), the [specification index](docs/README.md), and the current gate before proposing implementation.
+Read [CONTRIBUTING.md](CONTRIBUTING.md), then [AGENTS.md](AGENTS.md) and the [document index](docs/README.md), before proposing a change.
