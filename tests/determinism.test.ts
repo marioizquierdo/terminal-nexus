@@ -22,13 +22,13 @@ const RUNS = 20
 test("twenty runs of every scenario produce identical hashes and identical INFO logs", { timeout: 120_000 }, async () => {
   for (const name of scenarioFiles()) {
     const first = await resolveScenario(name)
-    const firstLog = buildLog(reportInputOf(first), "INFO").join("\n")
+    const firstLog = buildLog(reportInputOf(first), "info").join("\n")
     for (let run = 1; run < RUNS; run += 1) {
       const again = await resolveScenario(name)
       assert.equal(again.run.stateHash, first.run.stateHash, `${name}: state hash drifted`)
       assert.equal(again.run.eventsHash, first.run.eventsHash, `${name}: event hash drifted`)
       assert.equal(
-        buildLog(reportInputOf(again), "INFO").join("\n"),
+        buildLog(reportInputOf(again), "info").join("\n"),
         firstLog,
         `${name}: INFO log drifted`,
       )
@@ -86,7 +86,7 @@ test("the kernel calls no clock and no Math.random", async () => {
 
 test("changing only the cosmetic seed changes nothing about state, events, or the log", async () => {
   const baseline = await resolveScenario("citizen-mirror-skirmish.map.json")
-  const baselineLog = buildLog(reportInputOf(baseline), "DEBUG").join("\n")
+  const baselineLog = buildLog(reportInputOf(baseline), "debug").join("\n")
 
   // The cosmetic stream is a separate object with its own seed. Drawing from it heavily must not
   // touch the gameplay stream, so a Pulse resolved alongside it is unchanged.
@@ -96,7 +96,7 @@ test("changing only the cosmetic seed changes nothing about state, events, or th
   const again = await resolveScenario("citizen-mirror-skirmish.map.json")
   assert.equal(again.run.stateHash, baseline.run.stateHash)
   assert.equal(again.run.eventsHash, baseline.run.eventsHash)
-  assert.equal(buildLog(reportInputOf(again), "DEBUG").join("\n"), baselineLog)
+  assert.equal(buildLog(reportInputOf(again), "debug").join("\n"), baselineLog)
 })
 
 test("parse(serialize(state)) hashes identically", async () => {

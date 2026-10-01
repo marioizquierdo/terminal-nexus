@@ -38,7 +38,7 @@ export type LogLine = Readonly<{
 
 export function formatLine(line: LogLine): string {
   const tick = `[${String(line.tick).padStart(4, "0")}] `
-  const level = `${line.level.padEnd(5, " ")} `
+  const level = `${line.level.toUpperCase().padEnd(5, " ")} `
   const kind = `${line.kind.padEnd(8, " ")} `
   const subject = `${line.subject.padEnd(SUBJECT_WIDTH, " ")} `
   const object =

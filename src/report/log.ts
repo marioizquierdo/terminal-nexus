@@ -69,7 +69,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
           where.set(event.ordinal, event.at)
           emit({
             tick,
-            level: "INFO",
+            level: "info",
             kind: "spawn",
             subject: event.entity,
             detail: `at ${formatCoordinate(event.at)}`,
@@ -81,7 +81,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
           engaged.add(event.ordinal)
           emit({
             tick,
-            level: first ? "INFO" : "DEBUG",
+            level: first ? "info" : "debug",
             kind: first ? "engage" : "target",
             subject: event.entity,
             object: event.target,
@@ -95,7 +95,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
           // died this tick is just the fight working, and does not deserve a WARN every time.
           emit({
             tick,
-            level: deathsThisTick.has(event.targetOrdinal) ? "DEBUG" : "WARN",
+            level: deathsThisTick.has(event.targetOrdinal) ? "debug" : "warn",
             kind: "lost",
             subject: event.entity,
             object: event.target,
@@ -108,7 +108,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
         case "behavior.flee":
           emit({
             tick,
-            level: "DEBUG",
+            level: "debug",
             kind: "flee",
             subject: event.entity,
             object: event.threat,
@@ -119,7 +119,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
         case "move.intended":
           emit({
             tick,
-            level: "DEBUG",
+            level: "debug",
             kind: "intent",
             subject: event.entity,
             detail:
@@ -131,7 +131,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
         case "move.contested":
           emit({
             tick,
-            level: "DEBUG",
+            level: "debug",
             kind: "claim",
             subject: event.winner,
             detail:
@@ -151,7 +151,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
               const standing = where.get(event.ordinal)
               emit({
                 tick,
-                level: "WARN",
+                level: "warn",
                 kind: "stuck",
                 subject: event.entity,
                 detail:
@@ -163,7 +163,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
           }
           emit({
             tick,
-            level: "DEBUG",
+            level: "debug",
             kind: "blocked",
             subject: event.entity,
             detail:
@@ -189,7 +189,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
             } else if (tick - track.since >= STUCK_TICKS && track.tiles.length >= 3) {
               emit({
                 tick,
-                level: "WARN",
+                level: "warn",
                 kind: "stuck",
                 subject: event.entity,
                 detail:
@@ -201,7 +201,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
           }
           emit({
             tick,
-            level: "DEBUG",
+            level: "debug",
             kind: "move",
             subject: event.entity,
             detail:
@@ -231,7 +231,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
           const amountLabel = event.attackKind === "heal" ? "heal" : "dmg"
           emit({
             tick,
-            level: "INFO",
+            level: "info",
             kind: "attack",
             subject: event.attacker,
             object: event.target,
@@ -245,7 +245,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
         case "damage.applied":
           emit({
             tick,
-            level: "DEBUG",
+            level: "debug",
             kind: "damage",
             subject: event.entity,
             object: event.source,
@@ -256,7 +256,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
         case "heal.applied":
           emit({
             tick,
-            level: "DEBUG",
+            level: "debug",
             kind: "heal",
             subject: event.entity,
             object: event.source,
@@ -267,7 +267,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
         case "entity.died":
           emit({
             tick,
-            level: "INFO",
+            level: "info",
             kind: "death",
             subject: event.entity,
             detail:
@@ -278,7 +278,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
         case "structure.destroyed":
           emit({
             tick,
-            level: "INFO",
+            level: "info",
             kind: "destroy",
             subject: event.entity,
             detail:
@@ -289,7 +289,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
         case "entity.detonated":
           emit({
             tick,
-            level: "INFO",
+            level: "info",
             kind: "blast",
             subject: event.entity,
             detail:
@@ -301,7 +301,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
         case "salvage.dropped":
           emit({
             tick,
-            level: "DEBUG",
+            level: "debug",
             kind: "salvage",
             subject: event.source,
             detail: `at ${formatCoordinate(event.at)}  amount ${event.amount}`,
@@ -311,7 +311,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
         case "arbitration.bounded":
           emit({
             tick,
-            level: "WARN",
+            level: "warn",
             kind: "arbiter",
             subject: event.unresolved[0] ?? "-",
             detail:
@@ -323,7 +323,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
         case "pulse.ended":
           emit({
             tick,
-            level: "INFO",
+            level: "info",
             kind: "victory",
             subject: event.winner ?? "draw",
             detail: `reason: ${event.reason}`,
@@ -335,7 +335,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
       }
     })
 
-    if (includesLevel(level, "TRACE")) {
+    if (includesLevel(level, "trace")) {
       for (const line of traceLines(input, tick)) lines.push(line)
     }
   }
@@ -344,7 +344,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
   // the levelled log so a single stream carries the whole story (milestone-1-spike-battle.md 3.3).
   emit({
     tick: input.finalState.tick,
-    level: "WARN",
+    level: "warn",
     kind: "report",
     subject: input.scenarioId,
     detail: reportLineDetail(summarize(input)),
@@ -368,7 +368,7 @@ function traceLines(input: ReportInput, tick: number): string[] {
     lines.push(
       formatLine({
         tick,
-        level: "TRACE",
+        level: "trace",
         kind: "state",
         subject: entity.id,
         detail:
