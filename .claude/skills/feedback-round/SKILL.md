@@ -98,5 +98,11 @@ Stop the check-in when it merges, delete the trigger, and reset the branch:
 - **A default that suits one input device can fail on another.** A 150 ms hold window is right for a
   fast OS key repeat and turns a slow one's first repeat into a tap. Say which device a number was
   tuned on (`docs/next-steps.md`, Q66).
+- **Two agents will each write the helper neither owns.** Both agents of the Activity Logs round needed a
+  colour-depth name for the logs and each wrote the same table in its own file. When agents share a need
+  in a folder neither owns, write the helper yourself before splitting, or name in the prompts which
+  agent writes it.
+- **Tell an agent where its scratch output goes** (a `tmp/` in its worktree, never `/`), or it may write
+  captures into the filesystem root.
 - **Agents cannot run a script that writes `evidence/`** if they were told not to touch it — leave
   the regeneration to yourself and name which captions changed.
