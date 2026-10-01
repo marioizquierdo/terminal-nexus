@@ -35,7 +35,7 @@ const timeline = buildTimeline(
 const view = createView(timeline)
 
 const ticks = tickArgs.length > 0 ? tickArgs.map(Number) : [0, Math.floor(view.lastTick / 2), view.lastTick]
-const outputDirectory = join(repoRoot, "evidence", "frames")
+const outputDirectory = join(repoRoot, "docs", "history", "reports", "pulse-playground-fixtures", "frames")
 mkdirSync(outputDirectory, { recursive: true })
 
 for (const tick of ticks) {

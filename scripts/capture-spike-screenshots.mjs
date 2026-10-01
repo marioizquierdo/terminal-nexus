@@ -2,7 +2,7 @@
 //
 //   node scripts/capture-spike-screenshots.mjs
 //   node scripts/capture-spike-screenshots.mjs --only spike-minimum
-//   node scripts/capture-spike-screenshots.mjs --out .playtest/shots   # somewhere other than evidence/
+//   node scripts/capture-spike-screenshots.mjs --out .playtest/shots   # somewhere other than docs/screenshots/
 //   node scripts/capture-spike-screenshots.mjs --force                  # re-render even unchanged ones
 //
 // Two ways in, on purpose.
@@ -55,7 +55,7 @@ import {
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
 const argument = (flag) => (process.argv.includes(flag) ? process.argv[process.argv.indexOf(flag) + 1] : null)
-const outputDirectory = resolve(repoRoot, argument("--out") ?? join("evidence", "screenshots"))
+const outputDirectory = resolve(repoRoot, argument("--out") ?? join("docs", "screenshots"))
 const scratch = join(repoRoot, ".capture-tmp")
 const SESSION = "terminal-nexus-spike-capture"
 const only = argument("--only")

@@ -30,7 +30,7 @@ import {
 } from "./lib/terminal-capture.mjs"
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
-const outputDirectory = join(repoRoot, "evidence", "screenshots")
+const outputDirectory = join(repoRoot, "docs", "screenshots")
 const scratch = join(repoRoot, ".capture-tmp")
 const SESSION = "nexus-capture"
 

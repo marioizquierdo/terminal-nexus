@@ -56,7 +56,7 @@ const tileWidth = arg("tile-width", "1")
 const cols = Number(arg("cols", "80"))
 const rows = Number(arg("rows", "24"))
 
-const outputDirectory = join(repoRoot, "evidence", "screenshots", `engagement-${scenario}`)
+const outputDirectory = join(repoRoot, "docs", "screenshots", `engagement-${scenario}`)
 const scratch = join(repoRoot, ".capture-tmp")
 
 /**

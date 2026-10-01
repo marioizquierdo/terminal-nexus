@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url"
 import { CHROMIUM } from "./lib/terminal-capture.mjs"
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
-const outputPath = join(repoRoot, "evidence", "screenshots", "palette-reference.png")
+const outputPath = join(repoRoot, "docs", "screenshots", "palette-reference.png")
 
 const { STYLE_ROLES, THEMES, rgbFor, sgrFor } = await import("../src/view/roles.ts")
 
