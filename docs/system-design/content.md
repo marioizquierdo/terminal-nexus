@@ -1,11 +1,25 @@
 # Terminal Nexus — content interfaces
 
-_How units, structures, factions and armies are described to the engine. Split from the engine design; every unmarked statement is GUIDANCE._
+_How units, structures, factions and armies are described to the engine: declarative TypeScript definitions, composable capabilities, and the seams left open for modding._
 
-## 8. Content interfaces — GUIDANCE
+## 1. Content interfaces
 
-These are sketches. Names and shapes will change the first time real content touches them, and that
-is expected. **Do not build these interfaces before content needs them.**
+**Content is TypeScript-first and declarative** (RULE — `src/content/types.ts`). A unit, structure or
+attack is a data record the kernel reads (`ContentDef` and its attack, detonation and spawn shapes),
+registered by id in a content registry (`src/content/index.ts`); behaviour comes from capabilities
+and bounded rule shapes on the record, never from code written per unit.
+
+**A Grid Nexus is a flag on a content definition**, never a content id the kernel recognises (RULE —
+`tests/ravel.test.ts`, `src/pulse/victory.ts`); see
+[`pulse.md`](pulse.md).
+
+**Modding is a set of seams, not a feature**: keep the places a mod would plug in (definitions are
+data, the registry is built from a list, the kernel takes the registry as an argument) but build no
+loader and no stable SDK (RULE — `AGENTS.md`, which forbids building a mod loader).
+
+The interfaces below are sketches. Names and shapes will change the first time real content touches
+them, and that is expected; the shape built today is `ContentDef` in `src/content/types.ts`.
+**Do not build these interfaces before content needs them.**
 
 ```ts
 type ContentId = string
@@ -67,14 +81,11 @@ Upgrades, Nexus powers, Commanders, and Commander Armies follow the same pattern
 [`commander-armies.md`](../game-design/commander-armies.md). A **Commander Army** is the playable content boundary:
 the complete set of choices legally available to one player in one match — a Nexus and faction, a
 Commander, starting units and structures, blueprints and a tech tree, upgrades, Nexus powers, and
-Specials, bounded against its faction's pools
-([`commander-armies.md`](../game-design/commander-armies.md) Section 2.1). The match, the Pulse, and every renderer
-see an army; none of them ever sees a faction.
+Specials, bounded against its faction's pools (same document). The match, the Pulse, and every
+renderer see an army; none of them ever sees a faction.
 
 Prefer composable capabilities — health, movement, attack, production, storage, supply, worker slots,
 radius, restoration, regroup anchor — over inheritance. Exceptional behaviour may register narrow
 hooks that receive read-only context and return intents for the kernel to validate. A hook API
 protects engine integrity; it is **not** a security sandbox, and installed TypeScript is arbitrary
-local code.
-
----
+local code. No hook API is built (**IDEA**).
