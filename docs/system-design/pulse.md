@@ -67,9 +67,9 @@ Every phase reads the state **settled at the end of the previous phase**, so tha
 over entities can never decide an outcome:
 
 1. **Tick open.** Advance the tick counter. Nothing else.
-2. **Economy and production.** Scheduled resource yield; producers attempt recipes. The slot exists
-   in `src/pulse/tick.ts` and is empty until the economy is built; a mid-Pulse combat spawn (a
-   spawner, a unit that splits on death) runs just ahead of it.
+2. **Economy and production.** Scheduled resource yield; producers attempt recipes. Only the
+   recipes exist so far (`src/pulse/production.ts`, below); the yield waits for the worker economy. A
+   mid-Pulse combat spawn (a spawner, a unit that splits on death) runs just ahead of it.
 3. **Perception.** Each actor scores and selects a target. Deterministic scoring, ties broken by
    entity id.
 4. **Intents.** Each actor with movement credit declares one destination tile.
@@ -196,9 +196,11 @@ At Pulse start plans reveal together and valid construction becomes operational.
 producers attempt recipes, actors move and fight automatically. Playback controls cannot change the
 result (RULE — `tests/pulse-run.test.ts`).
 
-At Pulse end survivors regroup near home producers. Orphans are adopted by the nearest compatible
-producer or regroup near the Grid Nexus. Production cooldowns reset to a full interval (RULE —
-`src/match/recall.ts`, `tests/match.test.ts`).
+At Pulse end survivors regroup near home producers — the nearest of their side's buildings that trains
+or spawns their kind. Orphans are adopted by the nearest compatible producer or regroup near the Grid
+Nexus. Production cooldowns reset to a full interval, and a producer's count for the Pulse to zero; a
+producer carried into the next Pulse starts on the recipe that Pulse runs (RULE — `src/match/recall.ts`,
+`src/match/opening.ts`, `tests/match.test.ts`, `tests/production.test.ts`).
 
 **Destroying the enemy Grid Nexus wins** (RULE — `src/pulse/victory.ts`,
 `tests/scenario.test.ts`). Any attacker in a legal attack position may damage it. Defences and
@@ -228,10 +230,27 @@ Nexuses do not teleport** (RULE).
 
 ### 2.3 Automatic production
 
-**Production is fixed recipes run by buildings, never direct unit purchases** (RULE — settled; no code holds it yet). No shop, no
-queue. A producer attempts a fixed recipe on a recurring interval. When simultaneous attempts cannot
-all be paid or supplied, every feasible attempt enters one seeded contention process: one is chosen,
-paid, and spawned; feasibility is recomputed; repeat until nothing legal remains.
+**Production is fixed recipes run by buildings, never direct unit purchases** (RULE —
+`src/pulse/production.ts`, `tests/production.test.ts`). No shop, no queue. A producer attempts a fixed
+recipe on a recurring interval. When simultaneous attempts cannot all be paid or supplied, every
+feasible attempt enters one seeded contention process: one is chosen, paid, and spawned; feasibility is
+recomputed; repeat until nothing legal remains.
+
+What is built is the smallest slice of that: **a building with a recipe trains its unit on its own,
+the first one full interval into the Pulse and every interval after, up to a cap a Pulse**, setting
+each down on the first free tile touching it (the same search a spawner uses). A building whose every
+neighbouring tile is taken does not lose its turn: it trains on the first tick there is room. A recipe
+costs nothing yet, because a Pulse has no resource, so no two attempts can compete and the contention
+process has nothing to decide; it is not built, and arrives with cost and supply in the worker economy.
+A unit a building trained says so on its `entity.spawned` event (`trainedBy`), which is how the Pulse's
+feed and the Activity Logs tell it from an arrival.
+
+**No content trains by default** (RULE — `withProduction`, `src/content/index.ts`). A mission names the
+buildings that train and what (`trains`, PERIMETER's Barracks trains troopers), and the Pulse runs on
+content with those recipes added (`src/match/training.ts`); a map that merely has a barracks on it
+resolves exactly as it always did. A producer's two timers are on its state only while it has a recipe,
+so a state without one serializes byte for byte as before. How often and how many a Pulse are
+Experiments while they are tuned (**Barracks trains**, **Troopers a round**).
 
 Players shape composition by building, protecting, upgrading, pausing, or losing producers.
 

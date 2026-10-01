@@ -8,6 +8,10 @@ it is done.*
 - **Play step 6B**: PERIMETER, three rounds, Enter between them. Press `d` during a round: **Next round**
   (the result waits for Enter, or the next Build Phase begins on its own) and **Incoming wave** (shown or
   hidden), under THE MISSION. Then paste the export.
+- **Play the Barracks that trains**: PERIMETER round 1 into round 2; watch for "trooper trained" in the
+  feed and the trooper by the Barracks when round 2 opens. Press `d` during a round: **Barracks trains**
+  (how often) and **Troopers a round** (how many), under THE MISSION. Then paste the settings export, and the
+  Activity logs export with the **Barracks** filter (Esc, `a`, Left once, `e`).
 - **Play the Activity logs** (pull request 51): on the playtest page open the "Activity logs" demo, press
   Esc then `a`, change the filter, press `e`, and paste the export into the pull request. Also look at the
   About screen (Menu, then `4`).
@@ -38,9 +42,16 @@ Small, none blocking.
   credits carried over. Real Nexus powers are Milestone 8's.
 - The incoming wave is a forecast placed against the map without the plan; a building on an arrival's
   tile moves it when the round starts.
-- The Barracks trains nothing yet (its card says "Trains troopers") until 6C.
 - The walk home is a straight glide over whole tiles, with no routing. Watch again replays a Pulse
   already resolved; it must never resolve a new one.
+
+**From step 6C** ([the Barracks report](../history/reports/2026-10-01-barracks-trains.md) has the outcomes):
+
+- A recipe costs nothing and nothing competes, so the seeded contention process is not built; it comes with
+  cost and supply in the worker economy.
+- Only a mission's listed buildings train: a barracks in a `grid` scenario still trains nothing.
+- A trooper trained after a round opens counts toward "your force was wiped out" only if it was standing when a
+  later raid group arrived; the open question on a side with a standing Nexus losing now says so.
 
 **From the Build Phase and the menu spike** ([report](../history/reports/2026-09-30-menu-spike.md)):
 

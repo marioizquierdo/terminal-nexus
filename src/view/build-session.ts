@@ -277,6 +277,8 @@ export class BuildSession {
     try {
       const result = resultOf(outcomeOf(presenter.resolved.timeline))
       this.log.log("pulse.end", { result: RESULT_WORDS[result.headline] ?? result.headline.toLowerCase(), reason: result.reason })
+      const trained = trainedIn(presenter.resolved)
+      if (trained.buildings > 0) this.log.log("pulse.trained", { round: this.buildState.pulseNumber, ...trained })
     } catch {
       // Never let a log line stop a Pulse.
     }
@@ -536,4 +538,28 @@ const RESULT_WORDS: Readonly<Record<string, string>> = {
 function directionOf(key: CursorKey): string {
   if (key.dy !== 0) return key.dy < 0 ? "up" : "down"
   return key.dx < 0 ? "left" : "right"
+}
+
+/** What the player's buildings trained in a resolved Pulse, read from its events and its states as the
+ *  `pulse.trained` entry records it: how many buildings could train, how many troopers they did, the
+ *  second the first came, how many of them Recall brought home, and the second the fighting stopped. */
+function trainedIn(resolved: ResolvedPulse): Readonly<{ buildings: number; trained: number; first?: number; home: number; ended: number }> {
+  const { timeline } = resolved
+  const opening = timeline.states[0]
+  const final = timeline.states[timeline.states.length - 1]
+  const buildings = (opening?.entities ?? []).filter(
+    (entity) => entity.player === "A" && timeline.registry.get(entity.contentId).production !== undefined,
+  ).length
+  const trained = timeline.events.filter((event) => event.kind === "entity.spawned" && event.trainedBy !== undefined && event.player === "A")
+  const ordinals = new Set(trained.map((event) => (event.kind === "entity.spawned" ? event.ordinal : -1)))
+  const home = resolved.recall.moves.filter((move) => ordinals.has(move.ordinal)).length
+  const seconds = (tick: number): number => Math.round(tick / timeline.ticksPerSecond)
+  const first = trained[0]
+  return {
+    buildings,
+    trained: trained.length,
+    ...(first === undefined ? {} : { first: seconds(first.tick) }),
+    home,
+    ended: seconds(final?.tick ?? 0),
+  }
 }

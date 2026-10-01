@@ -172,6 +172,21 @@ than any one feature:
     new code comments for the old citation style (feedback numbers, section numbers, dates), which the
     reorganisation had just removed everywhere else.
 
+## The Barracks that trains (2026-10-01)
+
+1. **Opt a rule in, and absent means absent.** A recipe on the shared Barracks would have moved the hash
+   of every map with a barracks on it. Giving the recipe through the mission, and keeping a producer's
+   timers off every state that has no producer (the canonical form skips an absent key), left every
+   existing hash and the state's schema version where they were. A field that is `0` on everything is
+   not the same as a field that is not there.
+2. **Measure the mission before choosing a default.** A first guess of a trooper every eight seconds let
+   a plan that builds nothing win PERIMETER, through a timing edge in the annihilation rule rather than
+   through defence. A table of every pace the Experiments offer (in the step's report) took a minute and
+   picked a default that keeps the waves' tuning.
+3. **"Add your filter at the top" is a convention the tests do not share.** Eleven Activity logs tests walk
+   the filters by position; a new first filter broke them all. The question's filter went last instead,
+   one Left from where the window opens.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

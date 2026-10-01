@@ -139,6 +139,29 @@ export type ContentDef = Readonly<{
    * running through the spawn primitive instead of the blast one.
    */
   splitOnDeath?: Readonly<{ contentId: string; count: number }>
+  /**
+   * Automatic production (pulse.md): a building that trains `output` on its own, `quantity` at a time,
+   * every `intervalTicks` of a Pulse, at most `perPulse` times a Pulse. No content carries one by
+   * default: a battle opts a building in (`withProduction` in `./index.ts`), so a map that merely has a
+   * barracks on it resolves exactly as it did before buildings trained anything.
+   */
+  production?: ProductionRecipe
+}>
+
+/**
+ * The smallest recipe the Pulse runs (step 6C): free, unsupplied, and alone — there is no resource in a
+ * Pulse yet, so nothing can make two attempts compete, and the seeded contention process pulse.md
+ * describes has nothing to decide. Cost, supply and a spawn rule arrive with the worker economy.
+ */
+export type ProductionRecipe = Readonly<{
+  /** The content id it trains: a unit, never a structure. */
+  output: string
+  /** How many each time it trains. */
+  quantity: number
+  /** Ticks between two trainings; the first comes one full interval into the Pulse. */
+  intervalTicks: number
+  /** How many times it trains in one Pulse, at most. */
+  perPulse: number
 }>
 
 /**
@@ -156,6 +179,8 @@ export function freshEntityFields(definition: ContentDef): Readonly<{
   windup: number
   spawnCooldown: number
   focusStreak: number
+  productionCooldown?: number
+  produced?: number
 }> {
   return {
     moveCredit: 0,
@@ -164,7 +189,18 @@ export function freshEntityFields(definition: ContentDef): Readonly<{
     windup: definition.attack?.windupTicks ?? 0,
     spawnCooldown: definition.spawn?.intervalTicks ?? 0,
     focusStreak: 0,
+    ...productionFields(definition),
   }
+}
+
+/**
+ * A producer's two timers as a Pulse starts: a full interval to its first training, and nothing trained
+ * yet. Empty for anything without a recipe, so the fields never appear on it and a state that holds no
+ * producer hashes exactly as it did before production existed (`state/canonical.ts` skips an absent key).
+ */
+export function productionFields(definition: ContentDef): Readonly<{ productionCooldown?: number; produced?: number }> {
+  if (definition.production === undefined) return {}
+  return { productionCooldown: definition.production.intervalTicks, produced: 0 }
 }
 
 export function rectFootprint(width: number, height: number): Footprint {

@@ -1,8 +1,9 @@
 // THE PULSE — how state changes. A pure function stepping state forward in fixed logical ticks,
 // with no clock, no terminal, no frames, and no colour (grid-engine.md).
 //
-// The nine phases below are the ones pulse.md describes, in order, including the two economy phases that exist
-// and deliberately do nothing: the slot matters, the content does not. Every phase reads the state
+// The nine phases below are the ones pulse.md describes, in order. The economy-and-production phase
+// holds only production so far (a building training its recipe, `production.ts`); a resource yield
+// waits for the worker economy. Every phase reads the state
 // settled at the end of the previous phase, so iteration order over entities can never decide an
 // outcome — it only ever decides the order events are emitted in.
 //
@@ -20,6 +21,7 @@ import { attacks } from "./attacks.ts"
 import { resolution } from "./death.ts"
 import { intents } from "./intents.ts"
 import { perception } from "./perception.ts"
+import { production } from "./production.ts"
 import type { Actor, TickContext } from "./shared.ts"
 import { spawning } from "./spawn.ts"
 import { victory } from "./victory.ts"
@@ -32,10 +34,10 @@ export { DEATH_SETTLE_TICKS } from "./death.ts"
 // 2. Economy and production
 // ---------------------------------------------------------------------------
 
-function economyAndProduction(_context: TickContext): void {
-  // Deliberately empty until the economy is built: scheduled resource yield and producer recipes
-  // belong to the worker-economy milestone. The phase exists here so that the tick order it will
-  // land in is already proven and already ordered relative to perception.
+function economyAndProduction(context: TickContext): void {
+  // No resource yields yet: that is the worker-economy milestone's. Producers train their recipes
+  // (step 6C), ahead of perception, so a unit trained this tick perceives, moves and fights in it.
+  production(context)
 }
 
 // ---------------------------------------------------------------------------
@@ -116,6 +118,9 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
       windup: actor.windup,
       spawnCooldown: actor.spawnCooldown,
       focusStreak: actor.focusStreak,
+      // Only a producer has these; leaving them off everything else keeps every other state's bytes.
+      ...(actor.productionCooldown === undefined ? {} : { productionCooldown: actor.productionCooldown }),
+      ...(actor.produced === undefined ? {} : { produced: actor.produced }),
     }))
     .sort((a, b) => a.ordinal - b.ordinal)
 

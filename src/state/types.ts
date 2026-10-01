@@ -42,6 +42,14 @@ export type EntityState = Readonly<{
   /** Consecutive successful hits against the *current* target only — `attack.focusRamp`'s memory,
    * reset the instant perception reassigns a new target (including losing one). */
   focusStreak: number
+  /**
+   * Ticks remaining until a producer's recipe next trains (`ContentDef.production`), and how many times
+   * it has trained this Pulse. Present only on a producer — absent, not zero, on everything else, so a
+   * state with no producer in it serializes and hashes byte for byte as it did before production
+   * existed, which is also why adding them did not bump `SCHEMA_VERSION`.
+   */
+  productionCooldown?: number
+  produced?: number
 }>
 
 export type GroundItem = Readonly<{

@@ -101,7 +101,7 @@ test("a building's card: its glyphs, its title and subtitle, its description, it
     assert.match(lines[CARD_FIRST_ROW] as string, /^\[b\] +Barracks/)
     // The subtitle sits where "to build" was (owner: "use that subtitle space for the subtitle").
     assert.match(lines[CARD_FIRST_ROW + 1] as string, /^\|_\| +Trains troopers +$/)
-    assert.match(card, /Where your troopers come/)
+    assert.match(card, /Trains a trooper every few/)
     assert.match(card, /^COST +40$/m)
     assert.match(card, /^HEALTH +120$/m)
     assert.match(card, /^SIZE +3x2$/m)
@@ -112,6 +112,20 @@ test("a building's card: its glyphs, its title and subtitle, its description, it
     assert.equal(panelLine(side, compose(side), startRow(side.layout)).trim(), "")
     assert.doesNotMatch(card, /undo|remove|bksp/)
   }
+})
+
+test("the Barracks's card says how often it trains, at the pace the Experiments set now", () => {
+  const side = buildSide()
+  keys(side, DOWN, DOWN, ENTER)
+  const card = () => panelLines(side, compose(side)).join("\n")
+  assert.match(card(), /^TRAINS +1 per 10s, 3 a round$/m)
+  side.build.dispatch({ kind: "experiment-adjust", field: "trainEvery", step: -1 })
+  side.build.dispatch({ kind: "experiment-adjust", field: "trainPerRound", step: 1 })
+  assert.match(card(), /^TRAINS +1 per 8s, 4 a round$/m)
+  // Nothing else trains: the Turret's card has no such line.
+  const turret = buildSide()
+  keys(turret, "3")
+  assert.doesNotMatch(panelLines(turret, compose(turret)).join("\n"), /TRAINS/)
 })
 
 test("a turret's card shows its attack", () => {

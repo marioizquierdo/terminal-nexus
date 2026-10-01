@@ -17,7 +17,7 @@
 // rule a muster point already follows: the plan is the player's, and a unit steps aside for it.
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
-import { freshEntityFields } from "../content/index.ts"
+import { freshEntityFields, productionFields } from "../content/index.ts"
 import { inBounds, tileIndex, tilesOf } from "../grid/coords.ts"
 import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
@@ -186,7 +186,12 @@ export function opening(input: OpeningInput): Opening {
   })
   const kept: EntityState[] = placed
     .filter((entry) => entry.carried !== undefined)
-    .map((entry) => ({ ...(entry.carried as EntityState), anchor: entry.anchor }))
+    // A carried producer starts the Pulse on the recipe this Pulse runs: Recall already set it to a full
+    // interval, and this keeps it so when the recipe itself changed between rounds (an Experiment did).
+    .map((entry) => {
+      const { productionCooldown: _cooldown, produced: _produced, ...entity } = entry.carried as EntityState
+      return { ...entity, anchor: entry.anchor, ...productionFields(entry.definition) }
+    })
   const entities = [...kept, ...born].sort((a, b) => a.ordinal - b.ordinal)
 
   const state: MatchState = {

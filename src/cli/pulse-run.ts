@@ -20,11 +20,13 @@ import type { BuildContext, BuildState } from "../build/state.ts"
 import { nexusTile, remaining } from "../build/state.ts"
 import type { FieldEntity, IncomingEntity, StandingStructure } from "../build/types.ts"
 import type { ContentRegistry } from "../content/index.ts"
-import { laterArrivals, missionOpening, recall, resolveMissionPulse } from "../match/index.ts"
-import type { Arrival, MissionPulseInput } from "../match/index.ts"
+import { laterArrivals, missionOpening, recall, resolveMissionPulse, trainingRegistry } from "../match/index.ts"
+import type { Arrival, MissionPulseInput, TrainingPace } from "../match/index.ts"
 import type { MissionDefinition } from "../mission/index.ts"
 import { PERIMETER, validateMission } from "../mission/index.ts"
 import type { MatchState } from "../state/types.ts"
+import { TICKS_PER_SECOND } from "../scenario/load.ts"
+import { setting } from "../build/all-settings.ts"
 import { status } from "../build/status.ts"
 import { resultOf } from "../view/ending.ts"
 import type { ResolvedPulse } from "../view/pulse-live.ts"
@@ -75,6 +77,13 @@ function mapOf(registry: ContentRegistry, carried: MatchState): Readonly<{ stand
   return { standing, field }
 }
 
+/** How often the mission's buildings train, and how many a round: the two Experiments, in the kernel's
+ *  ticks. Read when a Pulse starts, so a change in Settings is felt from the next round. */
+const paceOf = (state: BuildState): TrainingPace => ({
+  intervalTicks: setting(state, "trainEvery") * TICKS_PER_SECOND,
+  perPulse: setting(state, "trainPerRound"),
+})
+
 export function missionPlay(mission: MissionDefinition): MissionPlay {
   const inputFor = (context: BuildContext, pulse: number, structures: MissionPulseInput["structures"]): MissionPulseInput => ({
     mission,
@@ -108,17 +117,21 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
         field: [],
         // The mission's own words for its rounds, or none — so every round says the default.
         roundText: mission.roundText ?? {},
+        ...(mission.trains === undefined ? {} : { trains: mission.trains }),
       }
       return { ...context, incoming: forecast(context, 1) }
     },
 
     startPulse(context, state) {
       const pulse = context.round?.number ?? 1
-      const run = resolveMissionPulse(inputFor(context, pulse, newStructures(context, state)))
-      const timeline = timelineOf({ id: mission.id, name: mission.name }, run.states, run.events, mission.pulseTicks, mission.seed, context.registry)
+      // The Pulse runs on the content with the mission's buildings training at the Experiments' pace; the
+      // Build Phase's own registry never carries a recipe, so nothing it draws or refuses depends on one.
+      const registry = trainingRegistry(mission, context.registry, paceOf(state))
+      const run = resolveMissionPulse({ ...inputFor(context, pulse, newStructures(context, state)), registry })
+      const timeline = timelineOf({ id: mission.id, name: mission.name }, run.states, run.events, mission.pulseTicks, mission.seed, registry)
       return {
         timeline,
-        recall: recall(run.final, context.registry),
+        recall: recall(run.final, registry),
         nexus: nexusTile(context),
         mission: {
           verdict: run.verdict,

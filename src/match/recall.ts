@@ -12,8 +12,8 @@
 // The rule, in the terms the state can express today:
 //
 // - a **survivor** is anything alive on `workers`, `units` or `air`; structures stay where they are;
-// - its **home** is the nearest structure of its own side that makes units like it (a producer whose
-//   `spawn` is its own content id — the one producer shape content has; recipes arrive with 6C), else
+// - its **home** is the nearest structure of its own side that makes units like it (a building whose
+//   production recipe trains its content id, or whose `spawn` makes it), else
 //   the side's Grid Nexus (the "orphan" rule), else nothing: a side with neither has nowhere to go and
 //   its survivors stay where they stand;
 // - it is set down on the free tile nearest that building, on the side it is nearest to, under its own
@@ -87,7 +87,10 @@ export function recall(state: MatchState, registry: ContentRegistry): RecallResu
     const definition = definitionOf(survivor)
     const mates = structures.filter((structure) => structure.player === survivor.player)
     const producers: Home[] = mates
-      .filter((structure) => definitionOf(structure).spawn?.contentId === survivor.contentId)
+      .filter((structure) => {
+        const producer = definitionOf(structure)
+        return producer.production?.output === survivor.contentId || producer.spawn?.contentId === survivor.contentId
+      })
       .map((entity) => ({ entity, definition: definitionOf(entity), kind: "producer" as const }))
     const nexuses: Home[] = mates
       .filter((structure) => definitionOf(structure).nexus === true)

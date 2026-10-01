@@ -9,10 +9,10 @@
 // way, through `spawnOneNear`. A second real use is exactly what pulled that primitive out on its own
 // rather than writing "find a free adjacent tile and build an Actor" twice.
 //
-// This is a **combat ability**, not production: no cost, no resource, nothing the empty
-// `economyAndProduction` phase (tick.ts) would recognise as its own. Whether a unit that spawns units counts as a combat ability or as
-// production is still an open question for Mario (Q26 in docs/milestones/open-questions.md), to be
-// answered before a real roster relies on it.
+// This is a **combat ability**, not production: a building's recipe is `production.ts`, which runs in
+// the production phase and borrows `spawnOneNear` to set its units down. Whether a unit that spawns
+// units counts as a combat ability or as production is still an open question for Mario (Q26 in
+// docs/milestones/open-questions.md), to be answered before a real roster relies on it.
 
 import { footprintExtent, footprintRing } from "../grid/coords.ts"
 import { maskFrom } from "../grid/occupancy.ts"
@@ -28,7 +28,12 @@ import type { Actor, TickContext } from "./shared.ts"
  * boxed-in spawner simply tries again next interval (`spawning()`) or does not split further
  * (`spawnOnDeath()`), rather than searching further afield or erroring.
  */
-function spawnOneNear(context: TickContext, origin: Actor, contentId: string): Actor | null {
+export function spawnOneNear(
+  context: TickContext,
+  origin: Actor,
+  contentId: string,
+  trainedBy?: string,
+): Actor | null {
   const registry = context.pulse.registry
   if (!registry.has(contentId)) return null
   const childDef = registry.get(contentId)
@@ -73,6 +78,7 @@ function spawnOneNear(context: TickContext, origin: Actor, contentId: string): A
       contentId: childDef.id,
       at: anchor,
       hp: childDef.maxHp,
+      ...(trainedBy === undefined ? {} : { trainedBy }),
     })
     return actor
   }

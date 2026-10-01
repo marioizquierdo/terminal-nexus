@@ -103,6 +103,25 @@ test("Enter, Space, n, a click on the row and the driver's command all open the 
   }
 })
 
+test("the Barracks trains during the round: round 2 opens with its troopers at home beside it, and the log says so", () => {
+  const side = perimeter()
+  startRound(side, DEFENCE)
+  const trained = side.build.pulse!.resolved.timeline.events.filter((event) => event.kind === "entity.spawned" && event.trainedBy !== undefined)
+  assert.ok(trained.length > 0, "the Barracks trained nothing in round 1")
+  toResult(side)
+  const entry = side.activity.entries().find((logged) => logged.event === "pulse.trained")
+  assert.ok(entry !== undefined, "the round's training was not logged")
+  assert.equal(entry.props["round"], 1)
+  assert.equal(entry.props["trained"], trained.length)
+  keys(side, ENTER)
+  // The trained troopers that lived are on round 2's map, home at the Barracks the map stands.
+  const barracks = STARTER_STANDING.find((structure) => structure.contentId === "structure.citizen.barracks")
+  assert.ok(barracks !== undefined)
+  const troopers = (side.build.round.field ?? []).filter((entity) => entity.player === "A" && entity.contentId === "unit.citizen.trooper")
+  const nearBarracks = troopers.filter((entity) => Math.abs(entity.anchor.x - (barracks.anchor.x + 1)) <= 4 && Math.abs(entity.anchor.y - barracks.anchor.y) <= 4)
+  assert.ok(nearBarracks.length > 0, `no trooper came home to the Barracks: ${JSON.stringify(troopers)}`)
+})
+
 test("nothing moves on before the result stands: a key must never skip the ending", () => {
   const side = perimeter()
   startRound(side)

@@ -88,7 +88,8 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   assert.match(text, /KEYBOARD NAVIGATION - experiments/)
   // In order, group by group: keyboard navigation — the hold window and key releases
   // from the third round, and the tap, hold and jump numbers back for the navigation polish round — the
-  // popup pulse (every popup's) and the Battle Round flash, and the mission's next round and incoming wave.
+  // popup pulse (every popup's) and the Battle Round flash, and the mission's next round, incoming wave
+  // and the Barracks's pace.
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.field),
     [
@@ -107,11 +108,13 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
       "popupFlashPeak",
       "nextRound",
       "incoming",
+      "trainEvery",
+      "trainPerRound",
     ],
   )
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.section),
-    [...Array.from({ length: 10 }, () => "keyboard"), "effects", "effects", "effects", "mission", "mission"],
+    [...Array.from({ length: 10 }, () => "keyboard"), "effects", "effects", "effects", "mission", "mission", "mission", "mission"],
   )
   // The bottom line says what the keys do there, and the highlighted row's question is
   // shown. Opened by `d` from the game, Esc closes it.

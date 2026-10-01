@@ -9,6 +9,7 @@
 
 import { footprintExtent, tilesOf } from "../grid/coords.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
+import type { SettingSource } from "./all-settings.ts"
 import { setting } from "./all-settings.ts"
 import type { FieldEntity, IncomingEntity } from "./types.ts"
 import type { Coord, TerrainId } from "../grid/types.ts"
@@ -52,10 +53,10 @@ export function cardText(context: Pick<BuildContext, "registry">, id: string): C
 export function currentCard(context: BuildContext, state: BuildState): Card | null {
   if (state.armed !== null) {
     const item = context.catalog[state.armed]
-    return item === undefined ? null : entityCard(context, item.contentId)
+    return item === undefined ? null : entityCard(context, item.contentId, state)
   }
   const structure = structureAtTile(context, state.planned, state.cursor)
-  if (structure !== null) return entityCard(context, structure.contentId)
+  if (structure !== null) return entityCard(context, structure.contentId, state)
   const field = (context.field ?? []).find((entity) => covers(context, entity, state.cursor))
   if (field !== undefined) return fieldCard(context, field)
   const incoming = setting(state, "incoming") === "shown" ? (context.incoming ?? []).find((entity) => covers(context, entity, state.cursor)) : undefined
@@ -100,9 +101,21 @@ export function incomingCard(context: Pick<BuildContext, "registry">, entity: In
   }
 }
 
+/** How often a building the mission trains with trains, at the pace the Experiments set now — what a
+ *  Barracks's card says — or `null` for a building that trains nothing. */
+export function trainsStat(context: Pick<BuildContext, "trains">, contentId: string, state: SettingSource): CardStat | null {
+  if (!(context.trains ?? []).some((entry) => entry.structure === contentId)) return null
+  return { label: "TRAINS", value: `1 per ${setting(state, "trainEvery")}s, ${setting(state, "trainPerRound")} a round` }
+}
+
 /** A building's card — the same whether it is being placed, planned or standing: its words,
- *  then its cost where the menu sells it, its health and size, and its attack where it has one. */
-export function entityCard(context: Pick<BuildContext, "registry" | "catalog">, contentId: string): Card {
+ *  then its cost where the menu sells it, its health and size, its attack where it has one, and what it
+ *  trains where the mission has it train. */
+export function entityCard(
+  context: Pick<BuildContext, "registry" | "catalog" | "trains">,
+  contentId: string,
+  state?: SettingSource,
+): Card {
   const definition = context.registry.get(contentId)
   const item = context.catalog.find((candidate) => candidate.contentId === contentId)
   const size = footprintExtent(definition.footprint)
@@ -112,6 +125,8 @@ export function entityCard(context: Pick<BuildContext, "registry" | "catalog">, 
   if (definition.attack !== undefined) {
     stats.push({ label: "ATTACK", value: `${definition.attack.damage} at range ${definition.attack.range}` })
   }
+  const trains = state === undefined ? null : trainsStat(context, contentId, state)
+  if (trains !== null) stats.push(trains)
   return { icon: { kind: "entity", contentId }, ...cardText(context, contentId), stats }
 }
 

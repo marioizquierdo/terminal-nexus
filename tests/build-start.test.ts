@@ -254,6 +254,6 @@ test("at the floor the menu and Start Pulse fit with no help text between them, 
   assert.equal(panel(menu, startRow(layout) - 1), "")
   session.build.handleData("1", session.layout) // arm the Barracks: its card replaces the menu
   const card = screenText(session).split("\n")
-  assert.match(card.join("\n"), /Big and tough\./, "the card has no room for what the building does")
+  assert.match(card.join("\n"), /home to it after\./, "the card has no room for what the building does")
   assert.equal(panel(card, startRow(layout)), "", "Start Pulse is the menu's, and hides with it")
 })

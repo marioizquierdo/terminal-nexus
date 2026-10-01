@@ -110,6 +110,10 @@ export type MissionDefinition = Readonly<{
   seed: number
   regions: readonly Region[]
   triggers: readonly TriggerDefinition[]
+  /** The player's buildings that train during a Pulse, and what each trains (step 6C): the mission's
+   *  opt-in to automatic production. How often and how many is the match's to say
+   *  (`trainingRegistry`, `src/match/training.ts`); a building not listed trains nothing. */
+  trains?: readonly Readonly<{ structure: string; unit: string }>[]
   /** What the Battle Round screen announces for round *n*: the seam where a briefing line for each round goes. */
   roundText?: Readonly<Record<number, string>>
   /** One line the last result says when the mission is won or lost — presentation data, never read by
