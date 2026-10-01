@@ -2,7 +2,7 @@
 
 **Document role:** The queue: what waits on Mario, what comes next, and the small work that has piled up beside the milestones
 **Status:** WORKING — keep it short; delete an item when it is done, and move a decision into `specs/open-questions.md` when it becomes one
-**Updated:** 2026-09-30 (the menu spike's follow-up, F82-F86, and the 6B prompt; earlier: its third round, feedback F77-F81 and his third export, on the same pull request; earlier: its second round and a general review, the menu spike, Milestone 5 accepted and gate 6A)
+**Updated:** 2026-09-30 (gate 6B built: the loop and PERIMETER's waves; earlier: gate 6A accepted and gate 6B active; earlier: the menu spike's follow-up, F82-F86, and the 6B prompt; earlier: its third round, feedback F77-F81 and his third export, on the same pull request; earlier: its second round and a general review, the menu spike, Milestone 5 accepted and gate 6A)
 **License:** Apache-2.0
 
 Milestones say what the game must become (`milestones/`); this says what is waiting *right now*, and
@@ -10,75 +10,53 @@ the cleanup that does not belong to any gate.
 
 ## 1. Waiting on Mario
 
-- **Gate 6A's ending, in words.** His 2026-09-30 export settled its timings (the walk home waits
-  500 ms and takes a second, a heavy raid, no units of his own), and they are the defaults now; what
-  he has not said is whether the flashing timer and the light round the border read as anticipation
-  rather than an alarm, whether the red is rare and faint enough, and whether the result is clear
-  without being told.
+- **Play gate 6B**: PERIMETER, three rounds, Enter between them. Press `d` during a round: **Next round**
+  (key / auto — whether the result waits for Enter or the next Build Phase begins on its own) and
+  **Incoming wave** (shown / hidden — whether the Build Phase shows the next wave, see-through, with its
+  intention), under THE MISSION. Then paste the export.
+- **Q70**: when his squads fall in round 2, the round stops with the raid at the gate. Does that read
+  right, or should a side whose Nexus stands only lose when it falls?
+- **Q69**: an order primitive (hold, head for a place) as its own gate — the smallest kernel change that
+  makes an intention something the kernel keeps. `docs/scripted-opponent.md` has the thinking he asked for.
+- **Gate 6A's ending, in words** (accepted 2026-09-30, but not yet described): whether the flashing timer
+  and the light round the border read as anticipation rather than an alarm, whether the red is rare and
+  faint enough, and whether the result is clear without being told.
 - **Run the key-release probe in iTerm2.** `node scripts/probe-key-release.mjs`, hold an arrow, let it
   go, tap it, `q`. If the lines say `release`, the Key releases Experiment's `auto` reads them there;
   if they say `legacy`, `auto` and `off` feel the same in iTerm2 (section 4).
 - **One question:** was "press `b`" an example of a key or a request for letter hotkeys? (Q67.)
 - **One more:** should the player ever read the word "Pulse"? The start screen says Battle Round; the menu
-  row and the running screen still say Pulse (Q68). The menu spike did not change the words, since he
-  did not ask; his list of actions said "Start next battle round".
-- **Play the menu spike's follow-up** (the same pull request; feedback F82-F86): the Battle Round screen
-  opening with a double flash and every popup breathing; a card as title, subtitle, description and
-  numbers; Settings in sections. Press `d`: **Battle Round flash** (220 ms; off turns it off) and **Flash
-  strength** (80%) under Effects, beside **Popup pulse** (2000 ms); the navigation numbers are under
-  Keyboard navigation for the dedicated navigation session (section 4).
+  row and the running screen still say Pulse (Q68).
+- **The menu spike's follow-up's Experiments** (Battle Round flash, Flash strength, Popup pulse, and the
+  keyboard navigation numbers) came back without an export; they stay until he sends one.
 
-## 2. The next gate: 6B — the loop back into the next Build Phase
+## 2. The current gate: 6B — the loop back into the next Build Phase
 
 Milestone 6 (`milestones/milestone-06-pulse-phase.md`) has three gates: **6A** start, end, Recall
-(built, awaiting his playtest); **6B** the loop back into the next Build Phase, and the trigger
-runner's simulation band; **6C** minimal automatic production. **6B waits for his word** — he has
-tested several merged gates together before, so it is likely to come with the 6A export. Take one gate
-per session.
-
-**A prompt to start 6B in a fresh session** (the owner asked for one at the menu spike's merge, F86;
-edit the first paragraph if anything changed):
-
-```text
-Read CLAUDE.md and follow AGENTS.md.
-
-I have played gate 6A (Start Pulse, the Battle Round screen, the Pulse, its ending and Recall) and the
-menu spike with its follow-up (pull request 49), and merged them. Treat this message as my word that gate 6A is accepted
-and that gate 6B is the Active gate. Record that first, as its own commit (the governance ledger, the
-Milestone 6 tracker, AGENTS.md Section 2, docs/next-steps.md). If I paste a settings export, settle
-each Experiment it answers before anything else.
-
-Then orient: run ./scripts/check-repository.sh; read milestones/milestone-06-pulse-phase.md,
-docs/next-steps.md, docs/ui-patterns.md (sections 0, 14 and 15) and evidence/gate-6a-report.md
-(its sections 7 and 9 are the carry-over).
-
-Take gate 6B only — the loop: after Recall, the next Build Phase, until the mission's triggers end it;
-the trigger runner's simulation band (spawn, order, commitPlan, win, lose) as validated data;
-PERIMETER's three waves as the fixture, replacing the placeholder Pulse and its Raid and Your units
-Experiments; Q36 resolved or deferred with a reason. The kernel is Milestone 1's; a change to it is a
-finding, not an assumption. Anything I should feel goes behind an Experiment in Settings. End with a
-gate report and a pull request written with the pr-description skill. Do not start 6C.
-```
+(accepted 2026-09-30); **6B** the loop back into the next Build Phase, and the trigger runner's
+simulation band — **the Active gate, built and reported (PASS), awaiting his playtest**
+(`evidence/gate-6b-report.md`); **6C** minimal automatic production, which waits for his word. Take one
+gate per session.
 
 ## 3. Carry-over (small, none blocking)
 
-**From gate 6A** (the Nexus Pulse on screen; `evidence/gate-6a-report.md` sections 7 and 9 have the reasons):
+**From gate 6B** (the loop; `evidence/gate-6b-report.md` sections 6 and 7 have the reasons):
 
-- **The spike's Pulse is placeholder data.** Five units of yours at one muster point, a raid of seven
-  at the far edge, a 30-second limit, one seed (`spikePulse` in `src/build/catalog.ts`); the Raid and
-  Your units Experiments size them. PERIMETER's real map, units and waves are 6B's, and those two
-  Experiments are deleted then.
-- **The Barracks trains nothing yet** — its own blurb says "trains troopers each Pulse", and the kernel
-  has no production until 6C.
-- **Only the player's survivors walk home.** Recall regroups every survivor by the rule in
-  `engine.md` Section 5, but the raid has no producer and no Nexus in the spike, so its survivors stay
-  where they stood — visible in a lost Pulse. What a raid's leftovers do between Pulses is a 6B
-  question once there are several.
-- **The walk home is a straight glide** over whole tiles, with no routing; it may cross rock, which a
-  two-second flourish can afford.
-- **No live numbers on the map cursor during a Pulse** (Explore Map's card is the Build Phase's), and
-  the enemy's opening force is visible in the Build Phase — hiding it (player projection) is later work.
-- **Watch again** replays a Pulse that was already resolved; it cannot, and must not, resolve a new one.
+- **PERIMETER is played on the Build Phase's placeholder map**, with regions named for its landmarks
+  (the ridge's gap, the east flats). PERIMETER's own map is Q38's.
+- **Every unit engages the nearest enemy** — `order` has one verb, `advance`, and an intention is a
+  sentence the mission writes (Q69).
+- **A round ends when the player's units are all dead**, even with the Nexus standing and a later
+  arrival still due (Q70).
+- **A new Nexus power is dealt every round** (the placeholder draft adds 30 or 2000 credits), on top of
+  the credits carried over. Real Nexus powers are Milestone 8's.
+- **The incoming wave is a forecast** placed against the map without the plan; a building on an
+  arrival's tile moves it when the round starts.
+- **The Barracks trains nothing yet** — its card says "Trains troopers" — until 6C.
+- **The walk home is a straight glide** over whole tiles, with no routing (from 6A).
+- **Watch again** replays a Pulse already resolved; it cannot, and must not, resolve a new one (from 6A).
+- **Gate 6A's canon proposals** (Recall as built, the Start Pulse screen) wait with 6B's for the next canon
+  bump (the 6B report's section 9).
 
 **From the Build Phase:**
 

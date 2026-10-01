@@ -74,7 +74,7 @@ export type SideOptions = Readonly<{
   cursor?: Coord
   terminal?: Readonly<{ columns: number; rows: number }>
 }> &
-  Pick<BuildSessionOptions, "onQuit" | "onExport" | "onSettingsChange" | "startPulse">
+  Pick<BuildSessionOptions, "onQuit" | "onExport" | "onSettingsChange" | "startPulse" | "nextRound">
 
 /** A Build Phase session laid out for `terminal` (the 80 x 24 floor), on the spike map unless told
  *  otherwise, with the keyboard on the menu as the real screen opens. `quits()` counts the times it
@@ -176,11 +176,12 @@ export function goToGameMenuRow(side: Side, row: GameMenuRow): void {
  *  Nexus Pulse included while one plays — with `extra` for what the live loop adds at an instant (a
  *  flash, a flight, a reveal) or overrides. */
 export function compose(side: Side, extra: Partial<BuildCompositionInput> = {}, capability: CapabilityMode = "monochrome"): ReadonlyCellFrame {
-  const { build, context, layout } = side
+  const { build, layout } = side
   const pulse = build.pulseFrame(layout)
   return composeBuildFrame(
     {
-      context,
+      // The session's own round: after a Pulse the mission moves on to a new context (gate 6B).
+      context: build.round,
       state: build.state,
       layout,
       glyphPack: build.state.settings.glyphPack,

@@ -136,11 +136,13 @@ test("the ending says what is happening in words at every moment: the last secon
   assert.match(home, /^\| VICTORY /m)
   assert.match(home, /The raid was wiped out\./)
   assert.match(home, /\d+ of yours came home\./)
-  assert.match(home, /VICTORY - The raid was wiped out\. \d+ of yours came home\./)
-  // What comes next is said once, in words, and the pause row is gone: there is nothing left to pause.
-  assert.match(home, /For a new Build Phase:/)
-  assert.match(home, /Esc, then Restart\./)
+  // Where the mission stands, and the way on (gate 6B): the round is over, the Nexus stands, and the row
+  // where Pause was goes to the next round.
+  assert.match(home, /Round 1 of 2 is over\. The/)
+  assert.match(home, /Round 1 of 2 over - victory\. Enter: Build Phase 2\./)
+  assert.match(home, /\[enter\] Next round/)
   assert.doesNotMatch(home, /\[space\] Pause/)
+  assert.doesNotMatch(home, /Esc, then Restart/)
   assert.match(home, /\[r\] Watch again/)
 })
 
@@ -167,19 +169,23 @@ test("a lost Pulse and a timed-out one say so plainly, and a draw is a draw", ()
   assert.match(screenText(lost), /None of yours came home\./)
   assert.doesNotMatch(screenText(lost), /\b0 of yours came home/)
 
-  const nexusFell = play({ crew: 1 })
+  // A Nexus that falls ends the mission: the mission's verdict leads, and the fight's reason stays under it.
+  const nexusFell = play({ crew: "none" })
   atHome(nexusFell)
-  assert.match(screenText(nexusFell), /^\| DEFEAT /m)
-  assert.match(screenText(nexusFell), /Your Nexus was destroyed\./)
+  assert.match(screenText(nexusFell), /^\| MISSION FAILED /m)
+  assert.match(screenText(nexusFell), /The Nexus fell\./)
+  assert.match(screenText(nexusFell), /defeat\. Your/)
+  assert.match(screenText(nexusFell), /\[enter\] Play again/)
 
-  const timedOut = play({ raid: 1 })
+  const timedOut = play({ raid: "none" })
   at(timedOut, 0)
   // A scheduled ending reads like a sudden one: it too gets its last seconds, ahead of the stop.
   at(timedOut, times(timedOut).warnMs! + 40)
   assert.match(screenText(timedOut), /The Pulse is about to end\./)
   at(timedOut, times(timedOut).homeMs + 100)
   assert.match(screenText(timedOut), /^\| TIME'S UP /m)
-  assert.match(screenText(timedOut), /The time ran out before either side won\./)
+  assert.match(screenText(timedOut), /The time ran out before/)
+  assert.match(screenText(timedOut), /either side won\./)
 
   const draw = play({ plan: [DEFENCE[0]!] })
   atHome(draw)
@@ -189,16 +195,16 @@ test("a lost Pulse and a timed-out one say so plainly, and a draw is a draw", ()
 test("at 80x24 the result's words are never cut off, whichever way the Pulse ended", () => {
   // The status line is one row, 76 characters wide; the panel's text is 27 columns and its prose keeps the
   // last one clear, so nothing touches the divider. A result that ran off the edge would be one nobody could read.
-  const scenarios = [{}, { plan: DEFENCE }, { raid: 1 }, { crew: 1 }, { raid: 2 }, { plan: [DEFENCE[0]!] }] as const
+  const scenarios = [{}, { plan: DEFENCE }, { raid: "none" }, { crew: "none" }, { raid: "heavy" }, { plan: [DEFENCE[0]!] }] as const
   for (const scenario of scenarios) {
     const played = play(scenario)
     atHome(played)
     const lines = screenText(played).split("\n")
     const name = JSON.stringify(scenario)
-    const statusRows = lines.filter((line) => /^\| (VICTORY|DEFEAT|DRAW|TIME'S UP) - /.test(line))
+    const statusRows = lines.filter((line) => /^\| (Round \d of \d over|MISSION (COMPLETE|FAILED)) - /.test(line))
     assert.equal(statusRows.length, 1, `${name}: the status line is missing`)
-    assert.match(statusRows[0]!, /came home\. +\|$/, `${name}: the status line is cut off: ${statusRows[0]}`)
-    const first = lines.findIndex((line) => /^\| (VICTORY|DEFEAT|DRAW|TIME'S UP) +[|+]/.test(line))
+    assert.match(statusRows[0]!, /(Build Phase \d|fell|held)\. +\|$/, `${name}: the status line is cut off: ${statusRows[0]}`)
+    const first = lines.findIndex((line) => /^\| (VICTORY|DEFEAT|DRAW|TIME'S UP|MISSION COMPLETE|MISSION FAILED) +[|+]/.test(line))
     const last = lines.findIndex((line) => line.includes("[r] Watch again"))
     assert.ok(first >= 0 && last > first, `${name}: the result panel is not on screen`)
     for (const row of lines.slice(first, last + 1)) {
@@ -347,7 +353,7 @@ test("red is for the player's Nexus being hurt: faint, brief, and never under re
     }
     return levels
   }
-  const fell = redLevels(play({ crew: 1 }))
+  const fell = redLevels(play({ crew: "none" }))
   assert.equal(fell[0], 0, "the border was red before anything was hit")
   assert.ok(Math.max(...fell) > 0, "a Nexus that fell never flashed red")
   assert.ok(Math.max(...fell) <= 0.6, `the red reached ${Math.max(...fell)}: it should stay a faint tint`)
@@ -360,7 +366,7 @@ test("red is for the player's Nexus being hurt: faint, brief, and never under re
 
   // Under reduced motion it is gone, every flash of it being said again in words. (It was an Experiment
   // that could switch it off until the owner kept it, 2026-09-30.)
-  const still = redLevels(play({ crew: 1 }), (played) => played.build.dispatch({ kind: "setting-adjust", field: "reducedMotion", step: 1 }))
+  const still = redLevels(play({ crew: "none" }), (played) => played.build.dispatch({ kind: "setting-adjust", field: "reducedMotion", step: 1 }))
   assert.equal(Math.max(...still), 0, "red under reduced motion")
 })
 
@@ -456,18 +462,27 @@ test("the panel's rows are clickable: Pause and Resume, Watch again — and noth
   assert.equal(pulse.paused, false)
 })
 
-test("once the result stands there is nothing to pause: Space and a click on the row where Pause was do nothing", () => {
-  const played = victorious()
-  const pulse = played.build.pulse!
-  atHome(played)
-  assert.equal(pulse.paused, false)
-  played.build.handleData(" ", played.layout)
-  assert.equal(pulse.paused, false, "Space paused a Pulse whose result was standing")
-  const [pause, again] = pulseControlRows(played.layout)
-  click(played, played.layout.panelColumn + 3, pause!.row)
-  assert.equal(pulse.paused, false, "a click on the blank Pause row paused it")
-  // Watch again still works from there, and the Pause row is back with the Pulse.
-  click(played, played.layout.panelColumn + 3, again!.row)
+test("once the result stands there is nothing to pause: Space and a click on the row where Pause was go on instead", () => {
+  // The row where Pause was is the result's way on (gate 6B): Space presses it, as Enter does.
+  const spaced = victorious()
+  atHome(spaced)
+  assert.equal(spaced.build.pulse!.paused, false)
+  spaced.build.handleData(" ", spaced.layout)
+  assert.equal(spaced.build.pulse, null, "Space did not go on to the next round")
+  assert.equal(spaced.build.state.pulseNumber, 2)
+
+  const clicked = victorious()
+  atHome(clicked)
+  const [pause] = pulseControlRows(clicked.layout)
+  click(clicked, clicked.layout.panelColumn + 3, pause!.row)
+  assert.equal(clicked.build.pulse, null, "a click on the row where Pause was did not go on")
+
+  // Watch again still works from there.
+  const again = victorious()
+  const pulse = again.build.pulse!
+  atHome(again)
+  const [, watch] = pulseControlRows(again.layout)
+  click(again, again.layout.panelColumn + 3, watch!.row)
   assert.equal(pulse.timeMs, 0)
 })
 
@@ -527,7 +542,7 @@ test("Watch again replays from the top and frames the view again", () => {
   assert.deepEqual(played.build.state.cursor, nexusTile(played.context), "the view was not framed again")
 })
 
-test("the last three seconds warn, and `d` over a Pulse opens Settings at the placeholder Pulse's raid", () => {
+test("the last three seconds warn, and `d` over a Pulse opens Settings at the mission's Experiments", () => {
   const played = victorious()
   const moments = times(played)
   at(played, moments.stopMs - 1500)
@@ -537,8 +552,8 @@ test("the last three seconds warn, and `d` over a Pulse opens Settings at the pl
 
   played.build.handleData("d", played.layout)
   assert.equal(played.build.state.popup, "settings")
-  assert.equal(played.build.state.popupHighlight, settingRow("raid"), "d did not open at the placeholder Pulse's Experiments")
-  assert.match(screenText(played), /Raid\s+<\s+probe\s+>/)
+  assert.equal(played.build.state.popupHighlight, settingRow("nextRound"), "d did not open at the mission's Experiments")
+  assert.match(screenText(played), /Next round\s+<\s+key\s+>/)
   // Before a Pulse it is still the first Experiment.
   const before = newSession()
   before.build.handleData("d", before.layout)
@@ -571,15 +586,16 @@ test("time holds while the terminal is too small to draw it, and the clock start
 })
 
 test("starting over from the game menu is a fresh Build Phase with the Experiments kept; committing again plays a new Pulse", () => {
-  const played = play({ plan: DEFENCE, raid: 1 })
-  assert.equal(played.build.state.experiments.raid, "none")
+  const played = play({ plan: DEFENCE, raid: "none" })
+  played.build.dispatch({ kind: "experiment-adjust", field: "incoming", step: 1 })
+  assert.equal(played.build.state.experiments.incoming, "hidden")
   const first = played.build.pulse
   played.build.handleData(ESC, played.layout)
   played.build.handleData("r", played.layout)
   assert.equal(played.build.state.committed, false)
   assert.equal(played.build.pulse, null, "the Pulse outlived the Build Phase it came from")
   assert.deepEqual(played.build.state.planned, [])
-  assert.equal(played.build.state.experiments.raid, "none", "restarting lost an Experiment")
+  assert.equal(played.build.state.experiments.incoming, "hidden", "restarting lost an Experiment")
   assert.match(screenText(played), /\[1\] Barracks/, "the Build Phase's menu is not back")
   prepare(played.build)
   played.build.run([{ kind: "open-battle-round" }, { kind: "start-pulse" }])

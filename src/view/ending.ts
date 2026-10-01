@@ -254,12 +254,60 @@ export function walkPositions(
   return positions
 }
 
-/** How a Pulse ended, in words a viewer can read without being told: the headline, why, and how it reads. */
+/** How a Pulse ended, in words a viewer can read without being told: the headline, why, and how it reads —
+ *  and, in a mission (gate 6B), where the mission stands and what the result's row goes on to. */
 export type PulseResult = Readonly<{
   headline: string
   reason: string
   tone: StatusTone
+  /** The mission's line under the reason: which round this was and that the Nexus stands, or, once the
+   *  mission is over, what the last round was. */
+  mission?: string
+  /** What the row at the foot of the result does: "Next round", or "Play again" once the mission is
+   *  over. Absent for a Pulse with no mission, which goes nowhere. */
+  goOn?: string
+  /** The one line under the map once the result stands. */
+  line?: string
 }>
+
+/** A mission's round, as the result reads it — `pulse-live.ts`'s `MissionRound`, restated here so this
+ *  file stays below the presenter. */
+type Round = Readonly<{
+  verdict: Readonly<{ kind: "continue" | "won" | "lost" }>
+  round: number
+  of: number
+  endText?: Readonly<{ won: string; lost: string }>
+}>
+
+/**
+ * The result in a mission (gate 6B). A round the mission goes on from keeps the kernel's own headline —
+ * the fight was won, lost or ran out of time, and that is true — and says under it which round this was
+ * and that the Nexus stands. A mission a trigger ended says so instead, in the mission's own words: the
+ * hold's "The perimeter held." is not a draw, whatever the kernel's tick limit calls the last Pulse
+ * (Q36: the mission's goal is read one level above the victory check, which never changes).
+ */
+export function missionResultOf(fight: PulseResult, round: Round | undefined): PulseResult {
+  if (round === undefined) return fight
+  // What the fight itself was, kept under a mission's verdict: the verdict says the mission, this says why.
+  const last = `Round ${round.round} of ${round.of}: ${fight.headline.toLowerCase()}. ${fight.reason}`
+  switch (round.verdict.kind) {
+    case "won": {
+      const reason = round.endText?.won ?? "The mission's goal is met."
+      return { headline: "MISSION COMPLETE", reason, tone: "success", mission: last, goOn: "Play again", line: `MISSION COMPLETE - ${reason}` }
+    }
+    case "lost": {
+      const reason = round.endText?.lost ?? "The mission is lost."
+      return { headline: "MISSION FAILED", reason, tone: "danger", mission: last, goOn: "Play again", line: `MISSION FAILED - ${reason}` }
+    }
+    default:
+      return {
+        ...fight,
+        mission: `Round ${round.round} of ${round.of} is over. The Nexus stands.`,
+        goOn: "Next round",
+        line: `Round ${round.round} of ${round.of} over - ${fight.headline.toLowerCase()}. Enter: Build Phase ${round.round + 1}.`,
+      }
+  }
+}
 
 /**
  * The result for the player, side A. The kernel's own three endings (engine.md 4.3) — a Nexus destroyed,

@@ -239,7 +239,7 @@ function drawCardBody(
   fadeFrom(cells, numbers, look.hidden, look.capability)
 }
 
-/** A card's icon at `top`: a building's own glyphs as player A draws them — or, while the card is
+/** A card's icon at `top`: a thing's own glyphs as its side draws them — or, while the card is
  *  revealed, its placement frames — or a bare tile's glyph, fading in. Returns the room it took. */
 function drawCardIcon(
   cells: BandCell[],
@@ -259,10 +259,13 @@ function drawCardIcon(
     return { width: 1, height: 1 }
   }
   const { contentId } = icon
+  // Whose it is: the player's own, or the raid's — a unit on the map after a round (gate 6B).
+  const player = icon.player ?? "A"
   const definition = input.context.registry.get(contentId)
   const art = CONTENT_ART[contentId] ?? [definition.short.charAt(0)]
+  // Only a building rises through placement frames as its card opens; a unit's icon is simply itself.
   const rising =
-    look.icon === null
+    look.icon === null || definition.layer !== "obstacles"
       ? null
       : placementSchedule(
           { ordinal: 0, contentId, anchor: { x: 0, y: 0 } },
@@ -277,7 +280,7 @@ function drawCardIcon(
         if (frame.glyph !== null) put(cells, band, column + offset, top + index, frame.glyph, playerRole("A"), frame.bold ? { bold: true } : {})
         return
       }
-      put(cells, band, column + offset, top + index, entityGlyph(contentId, "A", { x: offset, y: index }), playerRole("A"), { bold: true })
+      put(cells, band, column + offset, top + index, entityGlyph(contentId, player, { x: offset, y: index }), playerRole(player), { bold: true })
     })
   })
   return { width: Math.max(...art.map((line) => line.length)), height: art.length }

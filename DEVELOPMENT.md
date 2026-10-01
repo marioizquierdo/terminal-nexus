@@ -114,7 +114,7 @@ bun bin/grid.ts scenarios/citizen-mirror-skirmish --headless
 ./bin/terminal-nexus.ts --spike
 ./bin/terminal-nexus.ts --spike --scroll-margin 30 --capability monochrome   # margin: % of the view
 ./bin/terminal-nexus.ts --spike --settings "$(pbpaste)"   # start from an exported settings text
-./bin/terminal-nexus.ts --spike --settings "popupPulseMs=3000 raid=probe"
+./bin/terminal-nexus.ts --spike --settings "popupPulseMs=3000 incoming=hidden"
 ./bin/terminal-nexus.ts --spike --keys "n 1 1 Enter"         # open already in a state: a power picked, a Barracks placed
 ./bin/terminal-nexus.ts --spike --keys "n 2 s s"             # open already in a Nexus Pulse, with nothing built (gate 6A)
 ```
@@ -232,8 +232,8 @@ changed live with Left/Right and saved to the same `~/.terminal-nexus/settings.j
 Settings writes; then, apart at the bottom, **Experiments**: the few questions still being felt, each
 naming the question it serves, never saved (`src/build/experiments.ts` is the list; `src/build/settings.ts`
 the popup's rows). Today there are five — the focus arrow's length and the card reveal's (both looks
-still being judged), the hold window (it depends on each keyboard's repeat delay), and the placeholder
-Pulse's raid and crew; every value the owner settled is in `src/build/tuning.ts` instead. `d` opens
+still being judged), the hold window (it depends on each keyboard's repeat delay), and the mission's
+Next round and Incoming wave (gate 6B); every value the owner settled is in `src/build/tuning.ts` instead. `d` opens
 Settings straight at the Experiments. The title says where the highlight is in the list
 (`SETTINGS (5/10)`), a scroll bar in the popup's right border shows and scrolls the rest
 (click its upper or lower half, or use the wheel), and what the highlighted row is for is written under
@@ -291,11 +291,12 @@ holding it. Whichever of the draft, the confirmation, or the construct menu the 
 showing is the one a digit or a click addresses, so a hotkey and a click always land on the same
 command, whichever adapter sent it.
 
-**Accepting starts the Nexus Pulse** (gate 6A). The committed plan plus a placeholder crew and raid
-(`spikePulse` in `src/build/catalog.ts`; the two sizes are the Raid and Your units Experiments, a
-heavy raid and no units of your own by default) become
-the kernel's opening state (`src/match/opening.ts`), the unmodified kernel resolves the whole Pulse once
-(`src/cli/pulse-run.ts`, about 60 ms), and Recall — the end-of-Pulse regroup `engine.md` Section 5
+**Accepting starts the Nexus Pulse** (gate 6A), **one round of a mission** (gate 6B). The screen plays
+PERIMETER (`src/mission/perimeter.ts`): three rounds, the raid arriving in three waves, won by holding
+the Nexus to the end of round 3. The committed plan, whatever survived the last round and the round's
+arrivals become the kernel's opening state (`src/match/opening.ts`), the trigger runner
+(`src/match/mission.ts`) resolves the whole Pulse once on the unmodified kernel — applying a later wave
+between ticks — and reads the mission's verdict (`src/cli/pulse-run.ts`, well under 100 ms), and Recall — the end-of-Pulse regroup `engine.md` Section 5
 describes, built for the first time here in `src/match/recall.ts` as a pure function beside the
 kernel, never inside its tick — is worked out from where it ended. The Pulse then plays on the Build
 Phase's own screen (`src/view/pulse-scene.ts`, `pulse-live.ts`): the panel keeps score and lists the
@@ -383,8 +384,7 @@ before (untimed keys are a second apart, so each is a press of its own; `Right R
 is a held arrow's auto-repeat, which the held-key ramp reads — the per-step summary prints the kind
 of move: tap, hold, fast or jump), `wait` or `wait~MS` for no key at all while time passes (a second
 by default) — how a script watches a Nexus Pulse: `n 2 s s wait~1000*20` starts one with nothing built
-and shows it twenty seconds in, second by second, and `--settings "raid=none"` or `"crew=none"` reach
-the endings the default raid does not,
+and shows it twenty seconds in, second by second; `Enter` on the result opens the next round,
 `click:X,Y` for a Grid tile and `click@COL,ROW` for a screen
 cell (`rclick`, `wheelup`, `wheeldown` likewise), `#` for a comment in a file. The full table is at
 the top of `src/playtest/keys.ts`. A script that leaves the screen (`q`, or Esc with nothing armed)

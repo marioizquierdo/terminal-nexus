@@ -2,11 +2,10 @@
 
 **Document role:** Milestone tracker — the explicit Build→Pulse handoff, victory/defeat, and Recall
 **Status:** CURRENT
-**Active gate:** 6A — Start, end, Recall: connect the Build Phase's commit to the Pulse playback.
-**Built and reported (PASS), awaiting Mario's playtest** (2026-09-29, `../evidence/gate-6a-report.md`).
-"Start Nexus Pulse" is an explicit action from the Build Phase's `[s] Start Pulse` row, then the end condition, the
-stop / finish-in-flight / Recall sequence, and a result a viewer can read unprompted. The kernel is
-Milestone 1's and did not change. 6B and 6C wait for the owner's word.
+**Active gate:** 6B — The loop and the trigger runner's simulation band: back into the next Build Phase after Recall, until the mission's triggers end it.
+**Gate 6A is accepted** (2026-09-30): Mario played gate 6A and the menu spike with its follow-up (pull
+request 49), merged them, and gave his word that 6A is accepted and 6B is the Active gate. **Gate 6B is built and reported (PASS),
+awaiting Mario's playtest** (2026-09-30, `../evidence/gate-6b-report.md`). 6C waits for his word.
 **Depends on:** Milestone 5 (Build Phase produces what this Pulse resolves — accepted 2026-09-29)
 **Updated:** 2026-09-30
 **License:** Apache-2.0
@@ -136,6 +135,39 @@ Milestone 1's and did not change. 6B and 6C wait for the owner's word.
 >       setting, an Experiment, or a tuned constant in code — so moving one is a one-word change (F85);
 > - [x] a prompt to start the next gate in a new session (F86);
 > - [x] tests, canon, pictures and the pull request.
+
+> **Gate 6A accepted, 2026-09-30.** Mario played Start Pulse, the Battle Round screen, the Pulse, its
+> ending and Recall, together with the menu spike and its follow-up, merged pull request 49, and wrote:
+> "Treat this message as my word that gate 6A is accepted and that gate 6B is the Active gate." No
+> settings export came with it, so no Experiment was settled by it. **Gate 6B is now the Active gate**:
+> the loop back into the next Build Phase after Recall, the trigger runner's simulation band (`spawn`,
+> `order`, `commitPlan`, `win`, `lose`) as validated data, PERIMETER's three waves as the fixture in
+> place of the placeholder Pulse and its Raid and Your units Experiments, and Q36 resolved or deferred
+> with a reason. He added a direction for later, recorded so it is not lost: the Campaign should
+> eventually define the whole opening state of a Pulse, so the player can explore the map and see what
+> is coming, and incoming units should be able to show their intention — the start of how the Campaign's
+> scripted opponent is designed.
+
+> **Gate 6B is built, 2026-09-30** (`../evidence/gate-6b-report.md`, PASS; awaiting Mario's playtest).
+> The screen plays PERIMETER: three rounds, the raid in three waves, won by holding the Nexus to the end
+> of round 3. After a round's result, `[enter] Next round` opens the next Build Phase on what the last one
+> left — the buildings standing, the survivors home, the credits not spent — with the next wave shown
+> on the map, see-through, and its intention on the Explore Map card. A mission is data (`src/mission/`),
+> checked when it is loaded; the trigger runner (`src/match/mission.ts`) resolves each round on the
+> unmodified kernel and reproduces gate 6A's Pulse hash for hash. Q36 is resolved with no rule change;
+> Q69 (an order primitive) and Q70 (a defender's wiped-out units ending a round) are registered.
+> Definition of done:
+>
+> - [x] after Recall, the next Build Phase, until the mission's triggers end it; Restart and Play again
+>       go back to round 1; keyboard, mouse and driver open the identical next round;
+> - [x] the simulation band — `spawn`, `order` (`advance` only, Q69), `commitPlan`, `win`, `lose` — as data
+>       validated at load time, every problem named;
+> - [x] PERIMETER's three waves as the fixture, a later arrival in rounds 2 and 3, the raid's own camp in
+>       round 3; the placeholder Pulse and its Raid and Your units Experiments deleted;
+> - [x] Q36 resolved (a mission's goal read above the kernel's unchanged victory check);
+> - [x] the Campaign's scripted opponent thought through, at the owner's request (`../docs/scripted-opponent.md`);
+> - [x] Experiments for what he should feel: Next round (key / auto) and Incoming wave (shown / hidden);
+> - [x] tests, pictures, `docs/ui-patterns.md`, the gate report and a pull request.
 
 > **The kernel underneath this is already built and accepted (Milestone 1).** Nothing here changes
 > how the Pulse resolves — that stays the deterministic kernel, unmodified. What is new is the
@@ -276,13 +308,14 @@ that units visibly came home — not just that the screen stopped moving.
 
 ## 6. Definition of done
 
-- [ ] "Start Nexus Pulse" is a real, explicit action from the Build Phase screen, and a completed
+- [x] "Start Nexus Pulse" is a real, explicit action from the Build Phase screen, and a completed
       Pulse hands back into the next Build Phase until the mission's triggers end it (6A built the
-      action and the ending; the hand-back is 6B);
-- [ ] PERIMETER's trigger list (`campaigns.md` Section 2.1's sketch) runs its simulation band —
+      action and the ending; 6B the hand-back);
+- [x] PERIMETER's trigger list (`campaigns.md` Section 2.1's sketch) runs its simulation band —
       waves spawn and advance at their tick, `win` fires on the final `pulse.end` — hash-stable
-      across runs and runtimes like any other kernel input;
-- [ ] Q36 is resolved (built, or explicitly deferred with a reason) before this gate closes;
+      across runs and runtimes like any other kernel input (6B; "advance" is the kernel's own rule, Q69);
+- [x] Q36 is resolved (built, or explicitly deferred with a reason) before this gate closes (6B: no rule
+      change — the mission's `win` on round 3's end, above the kernel's unchanged time-out draw);
 - [x] the Pulse-end sequence — stop, finish in-flight effects, Recall — is legible at every capability
       tier and in monochrome (6A: a test plays it at all four depths; the timer's flash is reversed video,
       and each phase is also named in words);

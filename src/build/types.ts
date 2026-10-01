@@ -186,6 +186,13 @@ export type BuildCommand =
   /** The shell could not start the Pulse the player just committed: the commit is undone, so they can fix
    *  the plan, and the reason is said on the bottom line. */
   | Readonly<{ kind: "pulse-failed"; reason: string }>
+  /**
+   * Once a round's result stands: the next round's Build Phase, or — the mission over — the mission again
+   * from round 1 (gate 6B). Enter, Space, `n` or a click on the result's row; or the Pulse itself a moment
+   * after the result, when the Next round Experiment says so. Like `pulse`, the reducer never sees it: the
+   * session swaps in the next round's context, which the shell works out (`src/cli/pulse-run.ts`).
+   */
+  | Readonly<{ kind: "next-round" }>
 
 /**
  * How the sides of the Grid rectangle that have reached the map's own edge are drawn — **the map's
@@ -256,6 +263,33 @@ export type PlannedPlacement = Readonly<{
 export type StandingStructure = Readonly<{
   contentId: string
   anchor: Coord
+}>
+
+/**
+ * Something on the map the player did not build and does not own a plan for (gate 6B): a unit of
+ * either side that survived the last round, or a scripted side's structure. Drawn in its side's colour,
+ * read by Explore Map's card; a structure blocks a placement, a unit steps aside for one when the Pulse
+ * starts (`src/match/opening.ts`).
+ */
+export type FieldEntity = Readonly<{
+  contentId: string
+  anchor: Coord
+  player: "A" | "B"
+  hp: number
+}>
+
+/**
+ * A unit the next round's triggers will bring (gate 6B, the owner's "see what is coming"): where it will
+ * arrive, when, and the line of intention its group carries. Drawn see-through while the Incoming wave
+ * Experiment shows it; nothing about it is state — the Pulse decides where it actually lands.
+ */
+export type IncomingEntity = Readonly<{
+  contentId: string
+  anchor: Coord
+  player: "A" | "B"
+  /** The tick of the round it arrives at: 0 is when the round starts. */
+  tick: number
+  intent: string | null
 }>
 
 /**

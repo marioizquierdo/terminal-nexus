@@ -24,7 +24,8 @@ import { KeyMotion, moveTuning, pressTiles } from "./motion.ts"
 import type { MouseEvent } from "./mouse.ts"
 import { buildMouseCommand, parseMouseEvent } from "./mouse.ts"
 import type { BuildContext, BuildState } from "./state.ts"
-import { applyBuildCommand, cardEntry, createBuildState, exportText, withViewport } from "./state.ts"
+import { applyBuildCommand, cardEntry, createBuildState, exportText, nexusTile, withViewport } from "./state.ts"
+import { setting } from "./all-settings.ts"
 import { TUNING } from "./tuning.ts"
 import type { BuildCommand } from "./types.ts"
 import type { Coord } from "../grid/types.ts"
@@ -51,6 +52,12 @@ export type BuildSessionOptions = Readonly<{
    * and nothing more.
    */
   startPulse?: (context: BuildContext, state: BuildState) => ResolvedPulse | null
+  /**
+   * The Build Phase that follows a round the mission goes on from (gate 6B): the map Recall left, the
+   * credits not spent, the next round's arrivals — or `null` when the mission is over. Injected for the
+   * same reason as `startPulse`. Absent: a round's result is where the screen stops.
+   */
+  nextRound?: (context: BuildContext, state: BuildState, resolved: ResolvedPulse) => BuildContext | null
 }>
 
 /**
@@ -65,7 +72,10 @@ export type KeyTiming = Readonly<{ now?: number; camera?: Camera }>
 
 export class BuildSession {
   private buildState: BuildState
-  private readonly context: BuildContext
+  /** This round's context — replaced when the mission moves on to its next round. */
+  private context: BuildContext
+  /** Round 1's, which Restart and "Play again" go back to. */
+  private readonly firstContext: BuildContext
   private readonly onQuit: () => void
   private readonly onExport: (text: string) => void
   private readonly onSettingsChange: (settings: Settings) => void
@@ -83,6 +93,7 @@ export class BuildSession {
    *  rule, is swallowed rather than read as a fresh click on the map. */
   private lastPlacingClick: Readonly<{ column: number; row: number; at: number }> | null = null
   private readonly startPulse: (context: BuildContext, state: BuildState) => ResolvedPulse | null
+  private readonly nextRound: (context: BuildContext, state: BuildState, resolved: ResolvedPulse) => BuildContext | null
   /** The Nexus Pulse on screen, from the moment the plan is committed until the Build Phase starts over. */
   private presenter: PulsePresenter | null = null
   /** The screen's clock at the last thing the session heard of it, so a Pulse begun by a key press is at
@@ -91,15 +102,22 @@ export class BuildSession {
 
   constructor(options: BuildSessionOptions) {
     this.context = options.context
+    this.firstContext = options.context
     this.buildState = createBuildState(options.context, options.cursor, options.viewport)
     this.onQuit = options.onQuit ?? ((): void => {})
     this.onExport = options.onExport ?? ((): void => {})
     this.onSettingsChange = options.onSettingsChange ?? ((): void => {})
     this.startPulse = options.startPulse ?? ((): null => null)
+    this.nextRound = options.nextRound ?? ((): null => null)
   }
 
   get state(): BuildState {
     return this.buildState
+  }
+
+  /** This round's context: what stands on the map, the credits, the round's number (gate 6B). */
+  get round(): BuildContext {
+    return this.context
   }
 
   /** The Nexus Pulse on screen, or `null` — before the plan is committed, and after a restart. */
@@ -145,6 +163,13 @@ export class BuildSession {
       if (!(over && command.control === "toggle")) this.presenter?.apply(command.control)
       return
     }
+    if (command.kind === "next-round") {
+      this.moveOn()
+      return
+    }
+    // Restart is the mission's, from round 1: the reducer starts a Build Phase over on the context it is
+    // given, so it is given the first round's.
+    if (command.kind === "restart") this.context = this.firstContext
     const before = this.buildState
     this.buildState = applyBuildCommand(this.context, before, command)
     // Side effects the reducer only records, handed to the adapter that owns them.
@@ -155,6 +180,26 @@ export class BuildSession {
     // The plan was just committed: the Nexus Pulse starts. Or the Build Phase started over: it is gone.
     if (!before.committed && this.buildState.committed) this.beginPulse()
     else if (before.committed && !this.buildState.committed) this.presenter = null
+  }
+
+  /**
+   * The result stands, and the player (or the Pulse, on its own) goes on: to the next round's Build Phase
+   * if the mission goes on, or to the mission again from round 1 if it is over. A fresh Build Phase either
+   * way — the settings, the Experiments and the view carried over, the cursor on the Grid Nexus — and the
+   * Pulse is gone. Before the result stands it is nothing: a key must never skip the ending.
+   */
+  private moveOn(): void {
+    const presenter = this.presenter
+    if (presenter === null || presenter.phase() !== "home") return
+    const next = this.nextRound(this.context, this.buildState, presenter.resolved)
+    if (next === null && presenter.resolved.mission === undefined) return
+    const before = this.buildState
+    this.context = next ?? this.firstContext
+    const cursor = nexusTile(this.context) ?? before.startCursor
+    const fresh = createBuildState(this.context, cursor, before.viewport, before.experiments, before.settings)
+    // The sequences keep counting up, so the live loop never mistakes a new one for one it has shown.
+    this.buildState = { ...fresh, ack: before.ack, refusedTry: before.refusedTry, handoff: before.handoff }
+    this.presenter = null
   }
 
   /** Resolve the committed plan and put its Pulse on screen. A Pulse that cannot start — a plan that
@@ -168,7 +213,9 @@ export class BuildSession {
       return
     }
     if (resolved === null) return
-    this.presenter = new PulsePresenter(resolved)
+    this.presenter = new PulsePresenter(resolved, undefined, {
+      autoNextMs: setting(this.buildState, "nextRound") === "auto" ? TUNING.autoNextRoundMs : null,
+    })
     // Started by a key that arrived at a known time: the Pulse is at zero from that moment.
     if (this.now !== undefined) this.presenter.advance(this.now)
   }
@@ -266,6 +313,7 @@ export class BuildSession {
       popup: state.popup,
       popupSpec: popupSpec(this.context, state),
       pulse: this.presenter !== null,
+      pulseOver: this.presenter?.phase() === "home",
       // Without a clock every key is a press on its own — a tap, or the fast move's jump as far as the
       // setting says now.
       ...(now === undefined
@@ -290,6 +338,7 @@ export class BuildSession {
       card: cardEntry(state),
       escLabel: escLabel(state),
       pulse: this.presenter !== null,
+      pulseOver: this.presenter?.phase() === "home",
     })
   }
 

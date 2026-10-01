@@ -8,7 +8,10 @@
 // No status line: whether a building is planned, standing or about to be placed "is obvious from the
 // rest of the UI" (F84), so a card says only what the thing is.
 
-import { footprintExtent } from "../grid/coords.ts"
+import { footprintExtent, tilesOf } from "../grid/coords.ts"
+import { TICKS_PER_SECOND } from "../scenario/load.ts"
+import { setting } from "./all-settings.ts"
+import type { FieldEntity, IncomingEntity } from "./types.ts"
 import type { Coord, TerrainId } from "../grid/types.ts"
 import { CARD_TEXT } from "../content/cards.ts"
 import type { CardText } from "../content/cards.ts"
@@ -16,7 +19,9 @@ import type { BuildContext, BuildState } from "./state.ts"
 import { structureAtTile } from "./state.ts"
 
 /** What a card's icon is: a thing's own glyphs, or a bare tile's. The view resolves either to glyphs. */
-export type CardIcon = Readonly<{ kind: "entity"; contentId: string }> | Readonly<{ kind: "terrain"; terrainId: TerrainId }>
+export type CardIcon =
+  | Readonly<{ kind: "entity"; contentId: string; player?: "A" | "B" }>
+  | Readonly<{ kind: "terrain"; terrainId: TerrainId }>
 
 /** One of a card's numbers, as a label/value row. */
 export type CardStat = Readonly<{ label: string; value: string }>
@@ -51,7 +56,49 @@ export function currentCard(context: BuildContext, state: BuildState): Card | nu
     return item === undefined ? null : entityCard(context, item.contentId)
   }
   const structure = structureAtTile(context, state.planned, state.cursor)
-  return structure === null ? groundCard(context, state.cursor) : entityCard(context, structure.contentId)
+  if (structure !== null) return entityCard(context, structure.contentId)
+  const field = (context.field ?? []).find((entity) => covers(context, entity, state.cursor))
+  if (field !== undefined) return fieldCard(context, field)
+  const incoming = setting(state, "incoming") === "shown" ? (context.incoming ?? []).find((entity) => covers(context, entity, state.cursor)) : undefined
+  if (incoming !== undefined) return incomingCard(context, incoming)
+  return groundCard(context, state.cursor)
+}
+
+const covers = (context: Pick<BuildContext, "registry">, entity: Readonly<{ contentId: string; anchor: Coord }>, tile: Coord): boolean =>
+  tilesOf(entity.anchor, context.registry.get(entity.contentId).footprint).some((t) => t.x === tile.x && t.y === tile.y)
+
+/** A thing's health and attack, the numbers a unit's card shows. */
+function fightStats(context: Pick<BuildContext, "registry">, contentId: string, hp?: number): CardStat[] {
+  const definition = context.registry.get(contentId)
+  const stats: CardStat[] = [{ label: "HEALTH", value: hp === undefined ? String(definition.maxHp) : `${hp}/${definition.maxHp}` }]
+  if (definition.attack !== undefined) {
+    stats.push({ label: "ATTACK", value: `${definition.attack.damage} at range ${definition.attack.range}` })
+  }
+  return stats
+}
+
+/** Something on the map after a round (gate 6B) — a survivor of either side, or the raid's structure: its
+ *  words, whose it is, and its health as it stands now. */
+export function fieldCard(context: Pick<BuildContext, "registry">, entity: FieldEntity): Card {
+  return {
+    icon: { kind: "entity", contentId: entity.contentId, player: entity.player },
+    ...cardText(context, entity.contentId),
+    stats: [{ label: "SIDE", value: entity.player === "A" ? "yours" : "the raid" }, ...fightStats(context, entity.contentId, entity.hp)],
+  }
+}
+
+/** A unit the next round will bring (gate 6B, "see what is coming"): what it is, when it arrives, and —
+ *  where its group has one — what it means to do, in place of its description. */
+export function incomingCard(context: Pick<BuildContext, "registry">, entity: IncomingEntity): Card {
+  const text = cardText(context, entity.contentId)
+  const seconds = Math.round(entity.tick / TICKS_PER_SECOND)
+  return {
+    icon: { kind: "entity", contentId: entity.contentId, player: entity.player },
+    title: text.title,
+    subtitle: entity.player === "A" ? "Yours, next round" : "Incoming",
+    description: entity.intent ?? text.description,
+    stats: [{ label: "ARRIVES", value: seconds === 0 ? "as the round starts" : `${seconds}s in` }, ...fightStats(context, entity.contentId)],
+  }
 }
 
 /** A building's card — the same whether it is being placed, planned or standing (F58, F84): its words,

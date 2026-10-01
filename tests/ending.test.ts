@@ -198,7 +198,7 @@ test("red means one thing: the player's Nexus is hurt — its first hit, very lo
 
 test("the strain on a Nexus is read from the Pulse: its first hit, when it was nearly gone, when it fell", () => {
   // No units of your own: the raid goes for the Nexus, and it falls (a kernel ending) — so all three happen.
-  const lost = play({ crew: 1 }).pulse.timeline
+  const lost = play({ crew: "none" }).pulse.timeline
   const strain = nexusStrain(lost)
   assert.ok(strain.hitMs !== null && strain.lowMs !== null && strain.fallMs !== null, JSON.stringify(strain))
   assert.ok(strain.hitMs <= strain.lowMs && strain.lowMs <= strain.fallMs, "a Nexus fell before it was hurt")
@@ -282,8 +282,8 @@ test("the result says what happened in words: won, lost, drawn or timed out — 
   assert.equal(resultOf(outcome("B", "annihilation"), "B").headline, "VICTORY")
 })
 
-test("the placeholder Pulse's Experiments need no restart, and each names the question it serves", () => {
-  for (const field of ["raid", "crew"] as const satisfies readonly (keyof Experiments)[]) {
+test("the mission's Experiments need no restart, and each names the question it serves", () => {
+  for (const field of ["nextRound", "incoming"] as const satisfies readonly (keyof Experiments)[]) {
     const spec = EXPERIMENT_FIELDS.find((candidate) => candidate.field === field)
     assert.ok(spec !== undefined, `${field} is not an Experiment`)
     assert.equal(spec.applies, "now")

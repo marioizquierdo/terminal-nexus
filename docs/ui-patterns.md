@@ -2,7 +2,7 @@
 
 **Document role:** The working guide to how every interactive screen looks and behaves
 **Status:** WORKING — built on the Build Phase; not canon until the owner accepts it and it is promoted into `specs/engine.md` Section 9
-**Updated:** 2026-09-30 (rewritten by pattern rather than by history, F74; the screen as the menu spike's second round leaves it, F61-F76)
+**Updated:** 2026-09-30 (gate 6B: the loop into the next round, what else is on the map, the incoming wave; earlier: rewritten by pattern rather than by history, F74; the screen as the menu spike's second round leaves it, F61-F76)
 **License:** Apache-2.0
 
 ## How to use this document
@@ -333,7 +333,7 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 - **Settings**: the game menu's `[s]`, or `d` straight to the first Experiment. One scrolling list in
   **titled sections with a blank line before each** (F85) — Display (the player's own: background, colour
   depth, symbols, reduced motion — applied at once and saved), Keyboard navigation, Effects, the
-  placeholder Pulse — and then, apart, **Export settings** (`e` from anywhere in it). A heading names the
+  mission — and then, apart, **Export settings** (`e` from anywhere in it). A heading names the
   section and what its rows are ("saved", "experiments", or "saved and experiments"); headings and blank
   lines scroll with the list and are never rows, so Up and Down step over them and the title's count
   counts only rows the keyboard can be on. A new setting goes in the section a player would look for it
@@ -395,6 +395,19 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
   nearer the edge, armed or not, so clicking with the ghost keeps scrolling.
 - **Placing**: a planned building is drawn at full strength; undo and remove keep the plan revisable
   until the Pulse. A refused try flashes the footprint in the danger colour as the bottom line says why.
+- **What else is on the map** (gate 6B): after a round, every survivor stands where Recall put it — the
+  player's own and the raid's — and the raid's own structures stand where its plan put them, each in its
+  side's colour. A structure of the raid's refuses a placement like the player's own; a unit does not,
+  because **a unit steps aside for a building when the Pulse starts**, so a unit is never drawn over a
+  planned building either. Explore Map's card reads any of them: its words, whose it is, its health now.
+- ***The incoming wave*** (a named pattern, gate 6B: the owner's "explore the map and see what is
+  coming"): what the next round's triggers bring is drawn where it will arrive, **see-through** — dim, and
+  faded where colour allows — so it reads as "not here yet" at every colour depth, monochrome included,
+  and yields to buildings like any unit. Its card says "Incoming", when it arrives ("as the round
+  starts", or seconds in), and **its intention** — one plain line the mission writes for the group — in
+  place of a description. A forecast: it is placed against the map without the plan, and a building
+  planned where an arrival would stand moves it when the Pulse starts. The Incoming wave Experiment hides
+  it.
 
 ## 13. Effects
 
@@ -434,6 +447,20 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
   steady, and puts everyone home at once.
 - **Nothing the player does changes what the Pulse did**: it was resolved before the first frame, so
   Watch again only restarts the clock; centring on the Nexus is the same named command a key sends.
+- ***The loop*** (gate 6B): in a mission, the result says the fight first — `VICTORY`, `DEFEAT`, `DRAW` or
+  `TIME'S UP`, and why — then where the mission stands ("Round 1 of 3 is over. The Nexus stands."), and
+  the row where Pause was becomes **`[enter] Next round`**: Enter, Space, `n` or a click open the next
+  round's Build Phase on what the last one left — the player's buildings standing, the survivors home,
+  the credits not spent, a new Nexus power dealt, the cursor on the Nexus, and the bottom line saying how
+  the last round went. **Nothing moves on before the result stands**: a key must never skip the ending.
+  (The Next round Experiment can begin it on its own a moment after the result instead — the owner's
+  2026-09-17 sketch.) When a trigger ends the mission, **the mission's verdict leads** — `MISSION
+  COMPLETE` or `MISSION FAILED`, in the mission's own words ("The perimeter held.") — with the last
+  round's fight and its reason under it, and the row is `[enter] Play again`. Restart, from the game
+  menu, is the mission from round 1.
+- **A mission's round is counted in the top bar** — `build phase - round 2 of 3` — because PERIMETER's goal
+  is about rounds (a Pulse counter shows only when the goal is about Pulses), and the Battle Round screen
+  is that round's number, in the mission's words for it.
 
 ## 15. Experiments and tuned values
 
@@ -454,7 +481,7 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
   round wants to feel it again — as keyboard navigation's numbers did for the navigation polish round.
   Some stay on purpose: a number that depends on the player's keyboard (the hold window), a comparison he
   asked to make (key releases), a look still being felt (the popup pulse and the Battle Round flash), or
-  placeholder data (the Pulse's raid and crew). A renamed setting keeps its old name readable in old
+  a feature whose worth is in doubt (the mission's Next round and Incoming wave). A renamed setting keeps its old name readable in old
   exports.
 - **Never copy a tuned number into prose**; point at the setting.
 
@@ -466,7 +493,8 @@ Any future see-through element — a travelling highlight, a ghost — uses it r
 - **Names**: the menu's acknowledgement is *pressed* in code (`ack`, `PRESSED_LOOK`) and a *blink* on screen; the
   building hand-off's traveller is the *focus arrow*; Explore Map's is the *see-through cursor*.
 - **Battle Round or Pulse is still open** (Q68): the start screen says Battle Round; the menu row and the
-  running screen say Pulse until it is settled.
+  running screen say Pulse until it is settled. A mission's cycles are **rounds** to the player — "round 2
+  of 3", "Next round" — which agrees with Battle Round either way.
 
 ## Where the rules came from
 

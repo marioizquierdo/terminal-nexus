@@ -742,7 +742,8 @@ test("the commit confirmation is a screen over the Grid: Battle Round 1, what it
     build.dispatch({ kind: "open-battle-round" })
   })
   assert.match(built.text, /Battle Round 1/)
-  for (const order of ["Activate Nexus.", "Collect Resources.", "Spawn Units."]) assert.match(built.text, new RegExp(order.replace(".", "\\.")))
+  // PERIMETER's own words for its first round (gate 6B), one sentence to a line.
+  for (const order of ["A hostile force is inbound from the ridge.", "Hold the perimeter."]) assert.match(built.text, new RegExp(order.replace(".", "\\.")))
   assert.match(built.text, /\[s\] Start\b/)
   assert.doesNotMatch(built.text, /Keep building|\?\s*\|/, "one row, and no question")
   assert.match(built.text, /close \[esc\]/)

@@ -42,7 +42,7 @@ const USAGE = `terminal-nexus — the Terminal Nexus game
       choices still being tried, live, never saved; d jumps straight to the first of them.
       "Export settings" copies them all as text.
       --settings "<text>" starts with an exported text's settings and experiments, for this
-      run only: paste the whole export, or just pairs like "raid=probe crew=some".
+      run only: paste the whole export, or just pairs like "incoming=hidden nextRound=auto".
       --keys "<key script>" opens it already in the state those keys reach, in the scripted
       playtest's key names: --keys "n 1 1 Enter" picks the first power and places a Barracks.
       For demos and for reproducing a report; the keyboard is yours after the last key.
