@@ -1,6 +1,6 @@
 ---
 name: feedback-round
-description: Run one round of owner (Mario) feedback end to end — log his words item by item, turn it into a gate, split the work across parallel agents in worktrees, merge and reconcile it, write the canon text and gate report, regenerate evidence, republish the playable page, and rewrite the pull request. Use whenever Mario sends playtest feedback or a pasted settings export, or when a change is big enough to split across several agents. Read it before spawning your first worktree agent.
+description: Run one round of owner (Mario) feedback end to end — log his words item by item, turn it into a gate, split the work across parallel agents in worktrees, merge and reconcile it, update the design documents, regenerate evidence, republish the playable page, and rewrite the pull request. Use whenever Mario sends playtest feedback or a pasted settings export, or when a change is big enough to split across several agents. Read it before spawning your first worktree agent.
 ---
 
 # A feedback round, start to finish
@@ -37,8 +37,8 @@ top bar), and the export adoption (defaults and deletions). Tell each agent, in 
   the spec.
 - **Which files are its own and which belong to the other agents.** Ask for new Experiments as a block
   of their own at the end of `EXPERIMENT_FIELDS`, and never to reorder or reformat existing entries.
-- **Do not edit `specs/`, `docs/milestones/`, `AGENTS.md`, `evidence/` and do not bump the canon.** It returns
-  *proposed canon text*, plain English, ready to paste. You apply it (one voice, one version bump).
+- **Do not edit `docs/game-design/`, `docs/system-design/`, `docs/milestones/`, `AGENTS.md`, `docs/screenshots/` and do not bump the canon.** It returns
+  *proposed canon text*, plain English, ready to paste. You apply it (one voice).
 - Commit on the worktree branch with the attribution lines; do not push.
 - Definition of finished: `npm run typecheck`, `npm test`, `npm run test:bun`,
   `./scripts/check-repository.sh`, and the changed flows looked at with the `playtest` skill.
@@ -56,17 +56,15 @@ Clean each worktree (`git worktree remove --force`, `git branch -D`) as its agen
 
 ## 4. Write the canon and the report
 
-Apply the agents' proposed text to `docs/system-design/grid-engine.md` (and `ascii-effects.md`, `open-questions.md`),
-`AGENTS.md`, `docs/system-design/ui-patterns.md`. Then, in one pass: bump the canon version everywhere (the validator
-names what you missed), add the governance ledger row, move answered questions to the Answered table,
-register new ones with a recommendation, tick the gate's checklist, and fill a gate report from
-`.github/pull_request_template.md`. **When a rule is reversed, grep the old sentence** (`grep -rn "never
+Apply the agents' proposed text to `docs/system-design/grid-engine.md` (and `effects.md`, `docs/milestones/open-questions.md`),
+`AGENTS.md`, `docs/system-design/ui-patterns.md`. Then, in one pass: move answered questions to the Answered table,
+register new ones with a recommendation, tick the gate's checklist, and write the pull request description with the pr-description skill. **When a rule is reversed, grep the old sentence** (`grep -rn "never
 scrolls"`) — the same fact lives in five documents and the stale copy is always the one you did not
 think of.
 
 ## 5. Evidence, page, pull request
 
-- `node scripts/capture-spike-screenshots.mjs` regenerates the pictures (it edits `evidence/`); open
+- `node scripts/capture-spike-screenshots.mjs` regenerates the pictures (it edits `docs/screenshots/`); open
   the new ones and look at them before linking any. Prefer `--settings` over key counts to set an
   Experiment in a capture flow — every added or removed Experiment shifts a "Down*6".
 - `bun scripts/build-web.mjs`, copy `dist/terminal-nexus-playtest.html` to your scratchpad, and
@@ -94,5 +92,5 @@ Stop the check-in when it merges, delete the trigger, and reset the branch:
 - **A default that suits one input device can fail on another.** A 150 ms hold window is right for a
   fast OS key repeat and turns a slow one's first repeat into a tap. Say which device a number was
   tuned on (`docs/milestones/next-steps.md`, Q66).
-- **Agents cannot run a script that writes `evidence/`** if they were told not to touch it — leave
+- **Agents cannot run a script that writes `docs/screenshots/`** if they were told not to touch it — leave
   the regeneration to yourself and name which captions changed.

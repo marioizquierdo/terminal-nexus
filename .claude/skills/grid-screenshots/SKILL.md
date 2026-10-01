@@ -90,7 +90,7 @@ Use `-l` on `send-keys`: without it tmux reads `,` and `[` as key names.
 
 ## What to look at, and in what order
 
-1. **The worst frame first** (`ascii-effects.md` craft rule 1). Late Pulse, both armies engaged,
+1. **The worst frame first** (`docs/system-design/effects.md` craft rule 1). Late Pulse, both armies engaged,
    several effects overlapping — `ravel-cascade` at the tick the chain runs. If that reads, the calm
    frames will. Designing the calm frame first guarantees a beautiful opening and an unreadable
    climax.
