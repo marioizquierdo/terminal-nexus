@@ -1,62 +1,36 @@
-# Terminal Nexus — open questions register
+# Terminal Nexus — open questions
 
-## 1. Why this file exists
+The register of decisions waiting on Mario. Each question has its options, what each costs, and a
+recommendation; a question without a recommendation is unfinished. Ids are permanent: never renumbered,
+never reused. When Mario answers, the question moves to [answered-questions.md](../history/answered-questions.md)
+and the decision goes into the design document that owns it.
 
-An agent working alone will reach a fork the canon does not answer. Without somewhere to put the
-question, one of three bad things happens: the session stalls, the agent guesses and the guess
-silently becomes canon, or the question is asked in a pull-request comment and is lost.
+- `OPEN` — waiting on Mario.
+- `OBSERVABLE` — deferred on purpose; an Experiment or a later step will show both answers.
+- `ANSWERED` — decided; recorded in [answered-questions.md](../history/answered-questions.md).
+- `DROPPED` — no longer relevant; the entry stays and says why.
 
-This register is the queue. It survives sessions, it is diffable, and it separates *what Mario must
-decide* from *what an agent may decide alone*.
+Decide it yourself if it is reversible, make it observable with an Experiment if you can, register it here only
+when it is genuinely his call, state the assumption you proceed under, then keep working
+([`DEVELOPMENT.md`](../../DEVELOPMENT.md), "Changing the design").
 
-## 2. Protocol
-
-When an agent hits an underdetermined fork:
-
-1. Check whether the fork is genuinely the owner's. Reversible module boundaries, names, local data
-   shapes, and test organization are **not** — decide those and move on
-   ([`project-governance.md`](../game-design/decisions.md) Section 2).
-2. Prefer making the fork **observable** rather than asking. A parameter, toggle, fixture, or side
-   by side comparison that lets Mario look at both answers is worth more than a paragraph of
-   speculation, and costs less than a stalled session. In the Build Phase the toggle is an
-   **Experiment** (Settings, `d` jumps there); the row names it, the pull request asks him to try it,
-   and his pasted settings export is the answer.
-3. If it is still a real decision, add a row to Section 4 with: the question, why it blocks, the
-   options, the cost of each, and **a recommendation**. A question without a recommendation is an
-   unfinished question.
-4. State the assumption you are proceeding under, then **keep working on everything the answer does
-   not touch**. Only stop entirely when proceeding under any assumption would waste the work.
-5. When Mario answers, move the row to [answered-questions.md](../history/answered-questions.md), promote the decision into the narrowest
-   authoritative document, and cite the question ID in the commit.
-
-Question IDs are permanent. Never renumber, never reuse.
-
-## 3. Status values
-
-| Status | Meaning |
-| --- | --- |
-| `OPEN` | Waiting on Mario |
-| `OBSERVABLE` | Deferred on purpose; an authorized gate will produce evidence for it |
-| `ANSWERED` | Decided; recorded in [answered-questions.md](../history/answered-questions.md) and promoted into canon |
-| `DROPPED` | No longer relevant; keep the row and say why |
-
-## 4. Open
+## Open
 
 ### Q5 — What is the default construction radius?
 
 **Status:** OPEN — trivial to answer; blocks nothing before Milestone 3.
 
-[`engine.md`](../system-design/grid-engine.md) Section 6 says two tiles. The builder concept art shows `RADIUS +4`. One
+[`engine.md`](../system-design/grid-engine.md) says two tiles. The builder concept art shows `RADIUS +4`. One
 of the two is stale. The distance metric is separately unlocked and belongs to Milestone 3.
 
-**Recommendation:** keep two as the default in canon and treat `+4` as an outpost value, which is
+**Recommendation:** keep two as the default in the design documents and treat `+4` as an outpost value, which is
 what the art is actually showing — it is drawn on an Outpost.
 
 ### Q7 — Do workers carry, or produce in place?
 
 **Status:** OPEN — blocks nothing before Milestone 12.
 
-[`engine.md`](../system-design/grid-engine.md) Section 6 says workers do not carry bundles home and produce continuously
+[`engine.md`](../system-design/grid-engine.md) says workers do not carry bundles home and produce continuously
 at a job, then says they return toward the Nexus when storage fills and resume "immediately" when
 capacity opens. Returning-when-full is carry-shaped behaviour inside a no-carry model, and
 "immediately" ignores travel time.
@@ -70,7 +44,7 @@ contradiction. Decide with the Milestone 12 microgame.
 
 **Status:** OPEN — blocks nothing; answer before content authoring starts.
 
-[`engine.md`](../system-design/grid-engine.md) Section 3.4 gives the Grid an `air` layer, because a five-layer occupancy
+[`engine.md`](../system-design/grid-engine.md) gives the Grid an `air` layer, because a five-layer occupancy
 model costs nothing more than a four-layer one and retrofitting a layer later is expensive. No air
 unit is authored, and none of the five factions currently has one in its identity.
 
@@ -83,7 +57,7 @@ unit is authored, and none of the five factions currently has one in its identit
 **Recommendation: A.** Build the layer, leave it empty, and add one test that asserts an air entity
 can share a tile with a ground entity — so the rule is proven without the content existing.
 
-**Evidence from Milestone 1:** done exactly that. `tests/grid.test.ts` builds an air definition
+**What Milestone 1 showed:** done exactly that. `tests/grid.test.ts` builds an air definition
 inside the test file, asserts it shares a tile with a ground unit in both directions, and no air
 content was authored. The layer costs nothing and works.
 
@@ -91,21 +65,20 @@ content was authored. The layer costs nothing and works.
 
 **Status:** OPEN — Milestone 1 proceeds under the recommendation; confirm before Milestone 3.
 
-[`engine.md`](../system-design/grid-engine.md) Section 3.5 puts `facing` in every placement. It is currently read by nothing
+[`engine.md`](../system-design/grid-engine.md) puts `facing` in every placement. It is currently read by nothing
 in the rules — it exists so the renderer does not have to guess a direction and produce jitter.
 
 | Option | Cost |
 | --- | --- |
 | A. **Presentation only.** Derived from the last step, or from the current target when stationary | Free. Facing stays a rendering hint and can never surprise a player with a rule they cannot see |
-| B. Facing gates attacks: firing arcs, rear damage bonuses, turn cost | Real tactical depth, and a good fit for Feudal caste formations. Costs a turn-cost rule inside the movement credit, and makes every attack outcome depend on something one cell cannot display well |
+| B. Facing limits attacks: firing arcs, rear damage bonuses, turn cost | Real tactical depth, and a good fit for Feudal caste formations. Costs a turn-cost rule inside the movement credit, and makes every attack outcome depend on something one cell cannot display well |
 
 **Recommendation: A for now.** B is a genuinely interesting mechanic, but it is a Milestone 3 or 4
 conversation, and adopting it early would mean every unit's readable state includes an orientation
 that a single character struggles to show. Keep facing in state, keep it out of the rules, and
 revisit when there is a faction that wants it.
 
-**Evidence from Milestone 1, and it sharpens the question:** facing was maintained all the way
-through both gates — derived from the last step, or from the current target when stationary — and
+**What Milestone 1 showed, and it sharpens the question:** facing was maintained all the way through both of its steps — derived from the last step, or from the current target when stationary — and
 **nothing read it.** Not the rules, which was the point; but not the renderer either. The compositor
 draws letters, which have no orientation, and the effect system takes its direction from the move
 and attack events rather than from state. So facing is currently a field that is hashed into every
@@ -114,40 +87,33 @@ justification the question was resting on: it is in state so a renderer need not
 renderer has needed it yet. A third option now exists — **drop it until something asks** — and it
 would make every state hash slightly smaller and one field less load-bearing.
 
-### Q12 — What is the vertical chrome budget, and is 80 × 24 a literal floor?
+### Q12 — How many terminal rows go to the frame around the Grid, and is 80 × 24 a hard minimum?
 
-**Status:** OPEN — Gate 1A proceeds under the recommendation, which is already written into
-[`engine.md`](../system-design/grid-engine.md) Sections 3.1 and 3.3.
+**Status:** OPEN — step 1A proceeds under the recommendation, which is already written into the layout rules in [`engine.md`](../system-design/grid-engine.md).
 
-The canon stated two incompatible arithmetics. Section 3.1 derived the composition as
-16 + 2 border + header + footer = **20 rows**, implying a 4-row chrome budget; Section 3.3's table
-gave the maximum viewport as 104 × **28**, which also implies 4 rows — while the same table's minimum
-row, **80 × 24**, implies 8. The two rows of one table disagreed with each other, so no reading made
-the canon consistent. Meanwhile "80 × 24 is the floor and the acceptance target" is repeated as RULE
-in Section 3.3, Section 9.3, `project-governance.md` Section 7, and `AGENTS.md`.
+The design documents stated two incompatible arithmetics. One derived the composition as 16 + 2 border + header + footer = **20 rows**, implying a 4-row chrome budget; the viewport table gave the maximum viewport as 104 × **28**, which also implies 4 rows — while the same table's minimum
+row, **80 × 24**, implies 8. The two rows of one table disagreed with each other, so no reading made the design consistent. Meanwhile "80 × 24 is the floor and the acceptance target" is repeated as RULE in several design documents and in `AGENTS.md`.
 
 | Option | Cost |
 | --- | --- |
-| A. **8-row chrome budget** — 2 border, 3 header, 3 footer; minimum composition 80 × 24, maximum 104 × 32 | Keeps every "80 × 24" statement literally true, and gives the footer room for the position readout and edge-marker legend that Section 3.3 already requires. Costs 4 rows of the maximum composition |
+| A. **8-row chrome budget** — 2 border, 3 header, 3 footer; minimum composition 80 × 24, maximum 104 × 32 | Keeps every "80 × 24" statement literally true, and gives the footer room for the position readout and edge-marker legend that the engine document already requires. Costs 4 rows of the maximum composition |
 | B. **4-row budget** — 2 border, 1 header, 1 footer; minimum composition 80 × 20, maximum 104 × 28 | Most Grid per terminal. Requires rewording the floor in four places, and squeezes the required footer content into one row |
 
 **Recommendation: A**, and it is applied. The floor is the number every other document already
 repeats, a 24-row terminal is the historic standard the product targets anyway, and the footer has
-real work to do. If Gate 1A finds three header rows wasteful, moving rows between header and footer
-inside the 8 is free and needs no canon change — only the total is fixed here.
+real work to do. If step 1A finds three header rows wasteful, moving rows between header and footer
+inside the 8 is free and needs no design change — only the total is fixed here.
 
-**Evidence from Milestone 1:** the 8-row budget was built and all eight rows are in use. The header
-carries the title strip, the scenario name and the seed; the footer carries the position readout the
-canon requires, the controls, and a status line. Nothing was wasted and nothing had to be squeezed,
+**What Milestone 1 showed:** the 8-row budget was built and all eight rows are in use. The header
+carries the title strip, the scenario name and the seed; the footer carries the position readout the design requires, the controls, and a status line. Nothing was wasted and nothing had to be squeezed,
 at 80 columns and at 128.
 
 ### Q13 — Where do workers flee, and what counts as annihilation, on a Grid with no Nexus?
 
-**Status:** OPEN — Gate 1A proceeds under the recommendation, which is already written into
-[`docs/milestones/completed/milestone-01-grid-battles.md`](completed/milestone-01-grid-battles.md) Section 3.7.
+**Status:** OPEN — step 1A proceeds under the recommendation, which is already written into [`docs/milestones/completed/milestone-01-grid-battles.md`](completed/milestone-01-grid-battles.md).
 
-The Gate 1A flee rule sends a threatened worker "away from it toward the friendly Nexus", but the
-mirror skirmish — the scenario the whole gate is named after — places no structures at all. The same
+Step 1A's flee rule sends a threatened worker "away from it toward the friendly Nexus", but the
+mirror skirmish — the scenario the whole milestone is named after — places no structures at all. The same
 section's victory list includes "one side annihilated", and with a flee rule in play workers can
 outlive every fighter, so whether they count decides the outcome and the ending of every Nexus-less
 fixture. Neither half was stated.
@@ -156,27 +122,25 @@ fixture. Neither half was stated.
 | --- | --- |
 | A. No friendly Nexus → flee directly away from the nearest threat. Annihilation = every entity on `workers`, `units`, and `air` is dead | Literal, simple, and matches the summary example. Risks a worker-hunt anticlimax after the fighting is decided — bounded in the mirror by the marksman's range of 5 |
 | B. Annihilation = no entity that can attack remains; a side reduced to workers loses | Ends the run at the interesting moment. Makes "annihilation" slightly a lie, and changes the outcome of every fixture containing workers |
-| C. Require every scenario to place a Grid Nexus | Removes the ambiguity entirely. Taxes the ten single-rule fixtures that Section 3.9 wants to stay cheap and obvious |
+| C. Require every scenario to place a Grid Nexus | Removes the ambiguity entirely. Taxes the ten single-rule fixtures that the milestone wants to stay cheap and obvious |
 
-**Recommendation: A** for Gate 1A — simplest, honest, and consistent with the documented summary. B
-is the better *game* answer and is a cheap change later; take it if Gate 1B viewing shows mirror
-endings visibly dragging, with someone having actually watched one. C trades a real cost for a
+**Recommendation: A** for step 1A — simplest, honest, and consistent with the documented summary. B
+is the better *game* answer and is a cheap change later; take it if watching step 1B shows mirror endings visibly dragging, with someone having actually watched one. C trades a real cost for a
 problem A already solves.
 
-**Evidence from Milestone 1, and it is stronger than the row predicted.** A Citizen worker moves at
+**What Milestone 1 showed, and it is stronger than the row predicted.** A Citizen worker moves at
 `1/1` and every attacker in either fixture moves at `3/4` or slower, so a fleeing worker on open
 ground is **never caught at all** — not "a worker-hunt anticlimax", an unreachable one. The mirror
 skirmish therefore never reaches annihilation and always runs its full 240 ticks, with the last
 eighty of them empty. `worker-flight.ts` only ends because the Grid has an east wall to corner the
 worker against. Option B would end those fixtures at the interesting moment. Whether the dragging is
-*visible* still wants someone to watch it, which is the one thing this evidence cannot supply.
+*visible* still wants someone to watch it, which is the one thing this measurement cannot supply.
 
 ### Q14 — Should the movement tie-break be mirror-fair, or is a fixed compass order enough?
 
-**Status:** OPEN — Gate 1A proceeds under the recommendation; nothing before Milestone 2 depends on
-the answer.
+**Status:** OPEN — step 1A proceeds under the recommendation; nothing before Milestone 2 depends on the answer.
 
-Gate 1A routes with a greedy step plus a deterministic sidestep. When two steps close the same
+Step 1A routes with a greedy step plus a deterministic sidestep. When two steps close the same
 distance, the tie breaks on turn cost and then on a fixed compass order (`n, ne, e, se, s, sw, w,
 nw`). That makes both sides prefer *their own left*, so in the mirror skirmish player A's formation
 drifts north while player B's drifts south, and the two squads meet at an angle rather than head on.
@@ -192,14 +156,14 @@ screen as two formations sliding past each other.
 | B. Break equal-distance ties with a draw from the seeded gameplay stream | Removes the directional artifact and stays deterministic. Spends draws every tick on something no player will ever perceive as a choice, and makes movement replay depend on stream position far more heavily |
 | C. Derive the preference from the target vector, so the tie leans toward the target's secondary axis | Keeps determinism and removes the mirror artifact without spending draws. Costs a rule that is harder to explain than "the compass order", and it is still arbitrary when the target is exactly on an axis |
 
-**Recommendation: A for Gate 1A, and decide it in Milestone 2**, which owns routing. The drift is
+**Recommendation: A for step 1A, and decide it in Milestone 2**, which owns routing. The drift is
 documented, it is symmetric between the two sides, and replacing greedy routing wholesale is likely
-to make this question moot. If Gate 1B viewing shows the formations sliding past each other reads as
+to make this question moot. If watching step 1B shows the formations sliding past each other reads as
 broken rather than as manoeuvre, take C.
 
 ### Q15 — What should a mover with no route do: circle, or stop?
 
-**Status:** OPEN — Gate 1A proceeds under the recommendation; blocks nothing before Milestone 2.
+**Status:** OPEN — step 1A proceeds under the recommendation; blocks nothing before Milestone 2.
 
 Greedy routing with a sidestep has no memory, so an actor whose goal is unreachable does not stop —
 it steps back and forth between two equally good tiles forever. The `hauler-two-tile-gap` fixture
@@ -228,7 +192,7 @@ line.
 | B. Kernel-side no-progress detection that parks the actor until its goal or the obstacle changes | Cheap, and it makes the failure legible: a stopped unit reads as stuck rather than as idle. Still doesn't get the unit where it was going — it only stops pretending to try |
 | C. Do nothing now; real pathfinding in Milestone 2 makes it moot | Free. Bets that Milestone 2 arrives before anyone watches a unit stall on-axis, which — given this session's own scenario needed redesigning to avoid it — is not a safe bet |
 
-**Recommendation: A for Gate 1A, then treat this as Milestone 2's opening case**, not a stopgap
+**Recommendation: A for step 1A, then treat this as Milestone 2's opening case**, not a stopgap
 detail. Milestone 2's routing work should be scoped to actually solve the on-axis dead end (a real
 search, or at minimum a goal offset that avoids exact axis alignment), not just report it more
 politely — B alone would ship a unit that visibly gives up, which is not better than one that visibly
@@ -275,36 +239,34 @@ wider body:
   transient occupant instead of a wall — one that becomes just as permanent if that occupant holds
   position, which a unit stopping to fight naturally does. No code change: fixing this without real
   pathfinding would mean picking arbitration winners per contested tile rather than per bridged group,
-  which is the same routing-priority redesign this entry already defers to Milestone 2, not a bug fix
-  available under this gate.
+  which is the same routing-priority redesign this entry already defers to Milestone 2, not a bug fix available under step 1A.
 
-Nothing here moves the recommendation: still A for Gate 1A, still Milestone 2's opening case, now with
-the large-unit case confirmed rather than only inferred from the 3x1 evidence above.
+Nothing here moves the recommendation: still A for step 1A, still Milestone 2's opening case, now with the large-unit case confirmed rather than only inferred from the 3x1 case above.
 
 ### Q16 — When the Grid is smaller than the viewport, where does the leftover space go?
 
-**Status:** OPEN — Gate 1A proceeds under the recommendation; the answer changes only presentation.
+**Status:** OPEN — step 1A proceeds under the recommendation; the answer changes only presentation.
 
-[`engine.md`](../system-design/grid-engine.md) Section 3.3 says terminal space beyond the *maximum* viewport is spent on
+[`engine.md`](../system-design/grid-engine.md) says terminal space beyond the *maximum* viewport is spent on
 centring and on a larger inspection panel, never on more Grid. It does not say what happens below
-the *minimum*: a `small-wide` Grid is 24 × 12 inside a 48 × 16 pane, so Gate 1A centres it and
+the *minimum*: a `small-wide` Grid is 24 × 12 inside a 48 × 16 pane, so step 1A centres it and
 leaves twelve blank columns on each side. Screenshots of the real terminal are in
 `docs/screenshots/`; at 80 columns roughly a third of the frame is empty.
 
 | Option | Cost |
 | --- | --- |
-| A. **Centre the Grid in the full 48 × 16 pane.** What Gate 1A ships | Free, and the frame is identical whatever scenario is loaded, which keeps snapshots and muscle memory stable. Looks empty on a tutorial-sized Grid |
+| A. **Centre the Grid in the full 48 × 16 pane.** What step 1A ships | Free, and the frame is identical whatever scenario is loaded, which keeps snapshots and muscle memory stable. Looks empty on a tutorial-sized Grid |
 | B. Shrink the pane to the Grid and give the recovered columns to the side panel | Uses the whole frame. The panel changes width with the map, so every panel layout has to work at two or three widths, and the composition stops falling out of one number |
 | C. Shrink the whole frame to the Grid and centre the frame in the terminal | Tightest picture. The frame is no longer 80 × 24, which is the acceptance target repeated as RULE in four documents |
 
-**Recommendation: A for Gate 1A**, and decide it when the Build Phase gives the side panel real
+**Recommendation: A for step 1A**, and decide it when the Build Phase gives the side panel real
 content to hold — a construct menu and a placement-legality panel will want the width far more than
 a Pulse feed does. C should be refused: the floor is a RULE and a moving frame size is worse than a
 quiet margin.
 
 ### Q18 — In a same-faction mirror match, should colour follow ownership or the faction?
 
-**Status:** OPEN — Gate 1B proceeds under the recommendation; the answer only touches presentation.
+**Status:** OPEN — step 1B proceeds under the recommendation; the answer only touches presentation.
 
 `engine.md`'s stated RULE is "faction identity lives in the glyph family and the effect language;
 ownership keeps the colour, so a mirror match stays legible and monochrome stays whole"
@@ -325,7 +287,7 @@ as slightly wrong to look at, which is the itch behind "their secondary colour."
 | Option | Cost |
 | --- | --- |
 | A. **Keep ownership-primary colour as the RULE states.** Glyph family already carries faction identity, so a mirror match still reads as "same faction" from the letters alone | Free — no code changes. One side of a same-faction mirror wears a colour that belongs to the other faction, which this session's screenshot shows plainly once you go looking for it |
-| B. **Faction-primary colour, ownership as a secondary shade** — each faction keeps one signature hue; player A gets it at full saturation, player B gets a darkened/lightened variant of the *same* hue. Citizen-vs-Ravel keeps today's high-contrast look (the shades of two different hues are already far apart); a mirror match now reads as "same faction, two shades" rather than "two unrelated factions" | Every role that currently reads `player.a`/`player.b` needs to become a function of (faction, player) instead of player alone — `playerRole()`'s signature, every call site, and the `StyleRole` vocabulary itself (`player.a`/`player.b` become something like `player.citizen.a`/`player.citizen.b`/`player.ravel.a`/`player.ravel.b`, or a role plus a shade multiplier). Changes the RULE in `engine.md`, needs a canon bump, and needs re-proving that monochrome (which currently separates the sides on colour alone dropping to nothing, relying on case) still stays legible without any hue at all |
+| B. **Faction-primary colour, ownership as a secondary shade** — each faction keeps one signature hue; player A gets it at full saturation, player B gets a darkened/lightened variant of the *same* hue. Citizen-vs-Ravel keeps today's high-contrast look (the shades of two different hues are already far apart); a mirror match now reads as "same faction, two shades" rather than "two unrelated factions" | Every role that currently reads `player.a`/`player.b` needs to become a function of (faction, player) instead of player alone — `playerRole()`'s signature, every call site, and the `StyleRole` vocabulary itself (`player.a`/`player.b` become something like `player.citizen.a`/`player.citizen.b`/`player.ravel.a`/`player.ravel.b`, or a role plus a shade multiplier). Changes the RULE in `engine.md` (a design change in its own pull request), and needs re-proving that monochrome (which currently separates the sides on colour alone dropping to nothing, relying on case) still stays legible without any hue at all |
 | C. **Skins**: let a player choose a faction's colour identity per match, banked as a third axis alongside the theme (dark/light) this session added. The owner's own long-term want, and the natural home for "players will love to choose their faction skin" | A real feature, not a palette tweak — persistence, a selection UI (even a CLI flag needs a place to keep the choice across a Pulse), and a data model for what a skin actually overrides. Squarely Milestone 2+ scope; nothing here needs it to work today |
 
 **Recommendation: A for now, B when a mirror match is common enough on the schedule to be worth the
@@ -337,9 +299,9 @@ already forces every `playerRole()` call site to be found). C is not a "fix" at 
 as the owner's long-term direction and let a themes-focused milestone pick it up deliberately, not
 as a rider on a mirror-colour question.
 
-### Q19 — Where does sandbox placement, rewind/fast-forward, and a feedback replay engine live?
+### Q19 — Where should a sandbox placement mode, rewind and fast-forward, and a feedback replay engine live?
 
-**Status:** OPEN — not needed for Gate 1B or any milestone in the current campaign-first sequence
+**Status:** OPEN — not needed for step 1B or any milestone in the current campaign-first sequence
 (`docs/milestones/README.md`); the owner asked for it to be kept in mind and registered, explicitly not
 built now.
 
@@ -403,7 +365,7 @@ after.
 registered now because the tradeoffs are cheap to write down before any fixture or hash depends on
 the answer, exactly the situation Q17 was found in after the fact.
 
-A code-quality and scalability review this session (`engine.md` Section 11.1 has the assessment)
+A code-quality and scalability review this session (`engine.md` has the assessment)
 found perception — `hostilesOf` + `selectTarget`, `src/pulse/tick.ts` — is the one hot path that is
 O(N²) every tick, unconditionally: every attack-capable actor scans every hostile actor, every tick,
 with no cap. At Milestone 1's scale (dozens of actors) this is invisible; at "hundreds or thousands
@@ -437,8 +399,8 @@ not manufactured to serve this cap.
 **Status:** OPEN — presentation only; blocks nothing.
 
 Owner playtest, 2026-08-22, after otherwise positive feedback: "Perhaps we have to work on the
-colors to ensure more contrast." Both gate reports (`docs/history/reports/2026-08-21-pulse-playground.md`, `docs/history/reports/2026-08-26-quality-and-effects.md`)
-say the same thing about colour: the human half of the gate — someone actually watching — never
+colors to ensure more contrast." Both reports (`docs/history/reports/2026-08-21-pulse-playground.md`, `docs/history/reports/2026-08-26-quality-and-effects.md`)
+say the same thing about colour: the human half of the check — someone actually watching — never
 happened before now, so this is new information, not confirmation of something already checked. Two
 earlier contrast bugs did already get fixed from an owner playtest this same session cycle
 (`chrome.muted` compounding with the `dim` SGR attribute, and `player.a`/`player.b`'s ANSI-16 codes
@@ -487,14 +449,12 @@ light background structurally rewards darkening a foreground role (gains contras
 background and the other role at once) far more than lightening one (which immediately spends contrast
 against the background to gain it against the other role), which is why `player.b` moved much further
 than `player.a`; recorded in `roles.ts`'s own PALETTE comment so the asymmetry doesn't read as an
-oversight later. Dark theme's pair is untouched, exactly as recommended. Evidence, sent directly to the
-owner rather than only described: `docs/screenshots/mirror-light-theme-before-q21.png` and
+oversight later. Dark theme's pair is untouched, exactly as recommended. Screenshots, sent directly to the owner rather than only described: `docs/screenshots/mirror-light-theme-before-q21.png` and
 `-after-q21.png`, the same real mirror-skirmish frame at `--theme light`, and
 `docs/screenshots/palette-reference.png` (regenerated) showing every role at every tier side by
 side. `tests/roles.test.ts` pins the new mutual-contrast floor (`>= 3.0`) and that dark stayed
 untouched, computing WCAG contrast independently rather than importing a shared helper, so the test
-would actually fail if the retune regressed. **Still OPEN**: this is the recommendation applied and
-evidenced, not the owner's acceptance of it — move to Answered once he has actually looked at the
+would actually fail if the retune regressed. **Still OPEN**: this is the recommendation applied and shown in screenshots, not the owner's acceptance of it — move to Answered once he has actually looked at the
 screenshots.
 
 ### Q22 — Should movement carry deterministic, terrain-based jitter?
@@ -513,8 +473,7 @@ tile, tick for tick, which is what makes a formation of ten troopers currently r
 moving rather than ten individuals.
 
 The engine already draws a hard line the jitter idea sits right on top of: **the two random streams —
-seeded gameplay, free cosmetic — never touch** (`AGENTS.md` Section 4; `engine.md`'s PCG32/hash-of-
-identity split; `ascii-effects.md` Section 1's whole reason cosmetic randomness is a *hash*, never a
+seeded gameplay, free cosmetic — never touch** (`AGENTS.md`; `engine.md`'s PCG32/hash-of-identity split; `ascii-effects.md`'s whole reason cosmetic randomness is a *hash*, never a
 *stream*). "Pseudo-random but deterministic so we can replay" is exactly the cosmetic-hash shape
 `fx.*` recipes already use (`instanceHash`, `src/view/effects/recipes.ts`) — a hash of the actor's own
 identity plus its tile, salted, sampled at presentation time. The open question is not *whether* it
@@ -524,7 +483,7 @@ presentation line the jitter itself lives on**:
 | Option | Cost |
 | --- | --- |
 | A. **Pure presentation: interpolation only.** The simulation still moves an actor from tile to tile on its exact tick; a hash of `(ordinal, from, to)` perturbs only *how* `Playback`'s interpolation draws the in-between frames (a slightly bowed path, a few ms of lead/lag on the arrival beat) without moving the tick the kernel resolved. Never touches `stateHash` or `eventsHash` | The cheap, safe answer — same shape as `fx.move.trail` already interpolating between tiles today. Ceiling on how much variety it can show: two troopers still arrive at their tile on the *same tick*, only the path between looks less uniform |
-| B. **Presentation offset with a state-side hook: a per-actor cosmetic "phase"** — assigned once at spawn from a hash of the actor's identity, shifting *when in its own cadence window* it visibly commits to a step, without changing the tick arithmetic `movement.ts` uses for arbitration. More convincing desync than A, since two troopers now visibly step at different moments, not just travel differently between fixed steps | Real new surface: a per-entity value that has to be threaded from spawn through to the view without ever being read by a rule (the same discipline `facing` already gets — presentation-only, fenced out of the hash). Needs its own small test proving it never perturbs `stateHash`/`eventsHash`, the same proof `ascii-effects.md` Section 6 already requires of every recipe |
+| B. **Presentation offset with a state-side hook: a per-actor cosmetic "phase"** — assigned once at spawn from a hash of the actor's identity, shifting *when in its own cadence window* it visibly commits to a step, without changing the tick arithmetic `movement.ts` uses for arbitration. More convincing desync than A, since two troopers now visibly step at different moments, not just travel differently between fixed steps | Real new surface: a per-entity value that has to be threaded from spawn through to the view without ever being read by a rule (the same discipline `facing` already gets — presentation-only, fenced out of the hash). Needs its own small test proving it never perturbs `stateHash`/`eventsHash`, the same proof `ascii-effects.md` already requires of every recipe |
 | C. **Terrain-keyed rather than actor-keyed**, so the jitter is a property of the tile a mover is crossing (a rocky tile jitters more than plain ground) rather than of the mover itself — closer to the owner's literal phrase "based on terrain" | Most literal reading of the ask, but conflates two different visual causes (an individual's gait varying, versus ground that is hard to cross) into one mechanism; A or B already deliver "an army looks like individuals, not one shape" without needing terrain to carry a new presentation property it does not have today |
 
 **Recommendation: A first**, as a small, self-contained addition to `Playback`'s existing
@@ -538,8 +497,7 @@ rule, not a presentation jitter — and is a different, bigger question than thi
 
 ### Q23 — How does an army reach its first engagement faster, beyond raw movement speed?
 
-**Status:** OPEN — backlog scope (multi-Pulse regrouping via outposts); nothing here is authorized to
-build now, registered so the ask is not lost until a level's own mission structure needs it.
+**Status:** OPEN — backlog scope (multi-Pulse regrouping via outposts); nothing here is meant to be built now, registered so the ask is not lost until a level's own mission structure needs it.
 
 Owner playtest, 2026-08-22, immediately after asking for faster movement (already shipped, this
 session's speed pass): "we should probably think about how to reach the initial conflict faster. Maybe
@@ -566,10 +524,9 @@ later* Pulses of a match, where geography has already been fought over once).
 **Recommendation: C**, same shape as Q19. This is a real idea worth keeping, but it presupposes
 structures, production, and multiple Pulses in a single match, none of which exist yet; the right
 place to design it is alongside Milestone 2's routing work and Milestone 3's Build Phase, not as a
-speculative addition to a milestone still officially unauthorized.
+speculative addition to a milestone that has not been scheduled.
 
-**Closer than it was, canon 2.10:** missions are now multi-Pulse by owner direction
-([`campaigns.md`](../game-design/campaigns.md) Section 2.1), and Milestone 2 proposes PERIMETER itself as three
+**Closer than it was:** missions are now multi-Pulse by owner direction ([`campaigns.md`](../game-design/campaigns.md)), and Milestone 2 proposes PERIMETER itself as three
 Pulses — so "regroup between Pulses" stops being hypothetical the moment that mission plays. The
 outpost idea itself is still unowned; the precondition this row was waiting on is no longer missing.
 
@@ -584,7 +541,7 @@ sideways... If the tiles were landscape that would be better... however the vert
 taller does not make sense for perspective. Let's explore the vertical-rectangle issue later, for now
 just take note." Recorded verbatim rather than acted on, per that instruction.
 
-This is not a new observation about the underlying cause — `engine.md` Section 9.3 already names it
+This is not a new observation about the underlying cause — `engine.md` already names it
 as a RULE-level fact and a RULE-level mitigation: "a terminal cell is about twice as tall as it is
 wide... a radius that is square in tiles looks like a wide rectangle," and the fix already shipped is
 adaptive tile width — one terminal column per Grid tile at 80 columns (the acceptance target, and
@@ -601,41 +558,39 @@ The owner's own three ideas, each with a real cost:
 
 | Option | Cost |
 | --- | --- |
-| A. **Leave it — the two-column mode is the existing answer.** `--tile-width 2` already exists and already reads closer to square; the fix is "use the wide mode," which the acceptance-target default cannot do without abandoning 80 columns | Free. Does not help anyone watching at the 80-column acceptance target, which `engine.md` 9.3 fixes as *the* target, not a fallback — so the actual complaint (default mode reads distorted) stays exactly as it was |
+| A. **Leave it — the two-column mode is the existing answer.** `--tile-width 2` already exists and already reads closer to square; the fix is "use the wide mode," which the acceptance-target default cannot do without abandoning 80 columns | Free. Does not help anyone watching at the 80-column acceptance target, which `engine.md` fixes as *the* target, not a fallback — so the actual complaint (default mode reads distorted) stays exactly as it was |
 | B. **Landscape tiles** (the owner's own suggestion) — draw each Grid tile as two or more terminal columns even at the "narrow" composition, trading Grid width shown for squareness | Owner's own stated objection applies here too: fixes the shape/timing distortion, but is presentation choosing to show less Grid rather than more, at exactly the acceptance-target size `engine.md` treats as fixed |
 | C. **Compensate movement's presentation timing directionally** — since the distortion here is specifically about *pacing* (vertical reads fast, horizontal reads slow) rather than shape, interpolate a vertical step over more presentation-time than a horizontal one of the same tile-distance, so both *look* like they take the same real time even though the kernel's tick cost is identical either way | Presentation-only in principle (no state or hash impact — same shape as Q22's interpolation-only option), but it is compensating for a display artifact by lying more, in a specific and asymmetric direction, which needs someone actually watching it to judge whether it reads as "fixed" or as "the diagonal ones now look weird instead" |
 | D. **Change the acceptance target itself** — the owner's own "vertical lines taller does not make sense for perspective" caveat already argues against the literal landscape-tile idea; a more square terminal composition (more rows, fewer columns, or a different floor than 80×24) is the harder version of the same question | The owner flagged this as the one he does *not* currently want pursued ("does not make sense for perspective") — named for completeness, not recommended |
 
 **Recommendation: none, per the owner's own instruction to set this aside.** If this returns, C is
 the narrowest starting point — it treats the newly-noticed problem (motion *pacing* reads uneven) as
-distinct from the older, already-answered one (a static shape looks stretched), rather than reopening
-`engine.md` 9.3's tile-width RULE to solve a timing complaint a wider tile does not by itself fix.
+distinct from the older, already-answered one (a static shape looks stretched), rather than reopening `engine.md`'s tile-width RULE to solve a timing complaint a wider tile does not by itself fix.
 
-### Q26 — Is a combat-only spawn primitive actually outside "production," or does it need sign-off before real content uses it?
+### Q26 — Is a unit that spawns other units a combat ability rather than "production", or does Mario need to sign off before real content uses it?
 
 **Status:** OPEN — blocks nothing today (the spawn primitive lives only in disposable bench content,
 `src/content/proving-grounds.ts`); matters the day any real roster wants a unit that creates other
 units.
 
-AGENTS.md Section 2 is explicit: "Do not build economy, production, supply, visibility, the Build
-Phase... unless an accepted gate result authorizes it." The unit-design-architecture spike
+AGENTS.md is explicit: "Do not build what no milestone step asks for", and the list that follows names a second resource and visibility among others. The unit-design-architecture spike
 (`docs/history/reports/2026-09-10-unit-architecture-spike.md`) built `ContentDef.spawn` and `pulse/spawn.ts` anyway, at
 Mario's own direct request for "spawner, large unit that creates smaller units" as one of seven named
 designs — reasoning that a unit periodically creating a small combat minion (a Clash Royale Graveyard,
 a StarCraft Broodmother) is a *combat ability* a living unit performs, not the economy Milestone 2
 owns: no cost, no resource, nothing the empty `economyAndProduction` phase (`tick.ts`) would recognise
 as its own. That reasoning was never put to Mario directly; it was the assumption the session proceeded
-under, per Section 6's own procedure.
+under, under the protocol at the top of this file.
 
 | Option | Cost |
 | --- | --- |
 | A. **Confirm the framing**: a spawn ability with no cost and no resource is combat, not production, and stays legal content for any future roster, Milestone 2 or not | Keeps the capability available immediately. Risks being wrong about where Mario actually draws the line — "creates more units" might read as production-adjacent regardless of cost, especially once a real roster's spawn interacts with supply (a population cap Milestone 2 will introduce) |
-| B. **Treat it as Milestone-2-gated**: the capability stays in the kernel (it is additive and already tested), but no Commander Army may use `spawn`/`splitOnDeath` until Milestone 2 is accepted | Conservative, and cheap to enforce (a review-time check, not a technical one) — but means the finding "this composes with a real roster" has to wait even after Milestone 2 lands, for no clearer reason than caution |
+| B. **Hold it back until Milestone 2**: the capability stays in the kernel (it is additive and already tested), but no Commander Army may use `spawn`/`splitOnDeath` until Milestone 2 is accepted | Conservative, and cheap to enforce (a review-time check, not a technical one) — but means the finding "this composes with a real roster" has to wait even after Milestone 2 lands, for no clearer reason than caution |
 | C. **Drop the capability from anything but the bench**: keep the finding recorded, delete `spawn.ts` before any real content exists | Loses working, tested code for a hypothetical concern; nothing about the spike suggested the capability itself was wrong, only that its scope was never explicitly confirmed |
 
 **Recommendation: A**, with the framing stated explicitly rather than assumed: a spawn ability with
 no cost or resource is a combat rule shape, evaluated the same way volatile munitions was — by whether
-it makes a faction's philosophy legible without a word of lore (`terminal-nexus-lore.md` 8.6), not by
+it makes a faction's philosophy legible without a word of lore (`terminal-nexus-lore.md`), not by
 whether it creates entities. Revisit if a real Commander Army's spawn design turns out to need a cost,
 at which point it stops being this capability and starts being Milestone 2's.
 
@@ -697,8 +652,7 @@ whose opening force is entirely non-mobile.
 **Status:** OPEN — blocks nothing before Milestone 4 needs to write one; the recommendation is already
 assumed by [`docs/milestones/milestone-04-campaign-menu.md`](milestone-04-campaign-menu.md).
 
-Mario: "after each level, we unlock new units and powers." `campaigns.md` Section 2's own
-`MissionDefinition` sketch has an `unlocks: readonly string[]` field already — architectural
+Mario: "after each level, we unlock new units and powers." `campaigns.md`'s own `MissionDefinition` sketch has an `unlocks: readonly string[]` field already — architectural
 direction, not a frozen API — but nothing says what a session actually writes down when Level 1 grants
 one, and Milestone 2/3's real save/replay format (`replay-format.md`, `backlog-pulse-completion.md`)
 does not exist yet.
@@ -712,9 +666,9 @@ does not exist yet.
 contract can read at authoring time; a real save system is a `replay-format.md`-adjacent problem for
 whichever level first needs a unlock state that outlives one authoring session, not this one.
 
-**Widened at canon 2.13, and A is now the floor rather than the answer.** The Campaign opens with a
+**Widened since, and A is now the floor rather than the answer.** The Campaign opens with a
 choice of Commander and a player may keep several campaigns in progress
-([`campaigns.md`](../game-design/campaigns.md) Section 4.3), so progress is **per save slot, each slot naming its
+([`campaigns.md`](../game-design/campaigns.md)), so progress is **per save slot, each slot naming its
 Commander** — and bonus goals unlock content for Challenge mode, which means the record outlives a
 single campaign. A flat checked-in list still serves the first playable mission; it does not serve
 that shape, and Milestone 4 is where the difference gets designed rather than discovered.
@@ -726,21 +680,18 @@ that shape, and Milestone 4 is where the difference gets designed rather than di
 
 Mario's own milestone list puts a real Commander in Level 1: "focus on the first Citizen commander.
 Develop the initial draft of Nexus upgrades." Every earlier framing in this repository deferred both —
-`commander-armies.md` Section 1 ("Do not invent production-ready stats before Milestone 12 selects the
-minimum Citizens-versus-Ravels microgame"), `AGENTS.md` Section 2's standing ban, and `campaigns.md`
-Section 4.1's own belief ramp, which spends the Commander death/absence/restoration beat narratively
+`commander-armies.md` ("Do not invent production-ready stats before Milestone 12 selects the
+minimum Citizens-versus-Ravels microgame"), `AGENTS.md`'s standing ban, and `campaigns.md`'s own belief ramp, which spends the Commander death/absence/restoration beat narratively
 at **Mission 3** (RESTORATION), not Mission 1. This is a real scope question, not a formality: getting
-it wrong in either direction is expensive. Building the full roster early locks balance nobody has
-evidence for; refusing to build any Commander mechanic leaves Milestone 8 with nothing to do.
+it wrong in either direction is expensive. Building the full roster early locks balance nobody has played; refusing to build any Commander mechanic leaves Milestone 8 with nothing to do.
 
 | Option | Cost |
 | --- | --- |
-| A. **Build the Commander *mechanic* and one named Commander (Vasse) scoped to PERIMETER; keep the upgrade draft to one or two real options; do not treat this as roster selection** | Gives Milestone 8 real, testable work — the death/absence/restoration cadence `engine.md` 5.1 specifies and nothing has ever built — without locking any of the things `commander-armies.md` reserves (full unit list, costs, supply, the complete upgrade pool, balance hypotheses). The risk is a later reader mistaking "Vasse exists" for "the Citizens Commander Army is decided," which is why Milestone 8's own definition of done requires its gate report to say otherwise explicitly |
+| A. **Build the Commander *mechanic* and one named Commander (Vasse) scoped to PERIMETER; keep the upgrade draft to one or two real options; do not treat this as roster selection** | Gives Milestone 8 real, testable work — the death/absence/restoration cadence `engine.md` specifies and nothing has ever built — without locking any of the things `commander-armies.md` reserves (full unit list, costs, supply, the complete upgrade pool, balance hypotheses). The risk is a later reader mistaking "Vasse exists" for "the Citizens Commander Army is decided," which is why Milestone 8's own definition of done requires its report to say otherwise explicitly |
 | B. **Defer the Commander entirely to Mission 3**, per the belief ramp's own placement, and let Milestone 8 build only the Nexus upgrade draft | Faithful to the existing narrative plan, and genuinely cheaper. But it leaves PERIMETER without the character its own already-written briefing centres on ("Commander Vasse holds the ground with what walked out of the annex"), and Mario asked for the Commander in Level 1 directly |
-| C. **Author the full Citizens Commander Army now**, since a Commander needs an army around it anyway | Directly contradicts `commander-armies.md` Section 1 and `AGENTS.md` Section 2, and locks balance on a roster nobody has played. Named for completeness only |
+| C. **Author the full Citizens Commander Army now**, since a Commander needs an army around it anyway | Directly contradicts `commander-armies.md` and `AGENTS.md`, and locks balance on a roster nobody has played. Named for completeness only |
 
-**Recommendation: A.** The line that makes it safe is the one `commander-armies.md` Section 1 already
-draws: a Commander Army is "the complete set of choices legally available to one player in one match"
+**Recommendation: A.** The line that makes it safe is the one `commander-armies.md` already draws: a Commander Army is "the complete set of choices legally available to one player in one match"
 — starting package, every legal unit and structure, the full upgrade pool, faction rules, balance
 hypotheses. One named Commander's mechanic plus a two-option draft, with every other choice in
 PERIMETER still coming from the disposable fixture roster, is not that. **Separately: PERIMETER's own
@@ -753,8 +704,8 @@ RESTORATION's narrative beat two missions early — that costs nothing and keeps
 is already assumed by [`docs/milestones/milestone-04-campaign-menu.md`](milestone-04-campaign-menu.md).
 
 Mario's campaign-menu description asks for "enemy intel (discovered enemy units, buildings, nexus
-powers, enemy generals, and mission reports)." Nothing in canon currently specifies a persistent,
-cross-mission record of what the player has seen. `PlayerView` ([`engine.md`](../system-design/grid-engine.md) Section 7) is
+powers, enemy generals, and mission reports)." Nothing in the design currently specifies a persistent,
+cross-mission record of what the player has seen. `PlayerView` ([`engine.md`](../system-design/grid-engine.md)) is
 a **live, per-Pulse visibility filter** — it decides what a player may be shown *this instant*, and
 remembers nothing between missions. So "discovered" needs a definition before the panel can be built.
 
@@ -771,12 +722,10 @@ not build C's authoring surface before a mission actually uses it.
 
 ### Q36 — Does a defensive mission need a victory condition the kernel does not have?
 
-**Status:** OPEN — **resolved in practice by gate 6B, without a kernel change** (below); it moves to
-Answered when Mario accepts the gate. It was a **RULE-level** question ([`engine.md`](../system-design/grid-engine.md)
-Section 5's victory condition is RULE), and the answer changes no RULE.
+**Status:** OPEN — **resolved in practice by step 6B, without a kernel change** (below); it moves to Answered when Mario accepts the step. It was a **RULE-level** question (the victory condition in [`engine.md`](../system-design/grid-engine.md) is RULE), and the answer changes no RULE.
 
 PERIMETER's objective, in its own briefing: "Hold the perimeter. Keep the workers alive." The kernel's
-current victory check (`engine.md` Section 4.3) is: enemy Grid Nexus destroyed, one side annihilated,
+current victory check (`engine.md`) is: enemy Grid Nexus destroyed, one side annihilated,
 or the tick count runs out — and **the tick-limit branch is a neutral draw**, not a win for either
 side. A mission whose whole objective is surviving a raid plausibly wants "still standing when the
 scripted schedule ends" to read as a *win*.
@@ -784,38 +733,34 @@ scripted schedule ends" to read as a *win*.
 | Option | Cost |
 | --- | --- |
 | A. **Check first whether it already reads correctly.** Play PERIMETER's own fixture to its tick limit and see whether "the Pulse ended, you were not destroyed" reads as success without a rule change — the mission's own debrief text ("The perimeter held") may carry it entirely | Free, and might make the whole question moot. Costs one playtest before any code |
-| B. **Extend the tick-limit branch to accept a mission-supplied objective override** — a small explicit flag ("defender wins on time-out") the scenario or mission definition sets, rather than a bespoke condition per mission | The real fix if A shows one is needed. It is a RULE change, so it needs owner sign-off, a canon bump, a named scenario, and the same kernel-change discipline every prior rule change here has followed |
+| B. **Extend the tick-limit branch to accept a mission-supplied objective override** — a small explicit flag ("defender wins on time-out") the scenario or mission definition sets, rather than a bespoke condition per mission | The real fix if A shows one is needed. It is a RULE change, so it needs owner sign-off, a design change in its own pull request, a named scenario, and the same kernel-change discipline every prior rule change here has followed |
 | C. **Author around it**: give the raid a Nexus or a finite force so the existing annihilation/Nexus-destroyed conditions decide the mission | Needs no rule change at all, but bends the mission's fiction — the raid withdrawing "in good order and worse temper" (PERIMETER's own debrief) is not the same story as wiping it out |
 
-**Recommendation: A first, then B if A shows a real problem.** Do not build B on speculation — the
-cheapest possible evidence (playing the fixture once) decides whether it is needed, and B's cost is
-mostly the canon ceremony a RULE change requires, not the code.
+**Recommendation: A first, then B if A shows a real problem.** Do not build B on speculation — the cheapest possible check (playing the fixture once) decides whether it is needed, and B's cost is mostly the ceremony a RULE change requires, not the code.
 
-**Narrowed at canon 2.13 by Q44's answer.** Missions now declare goals — "survive N Pulses,"
+**Narrowed by Q44's answer.** Missions now declare goals — "survive N Pulses,"
 "capture X by Pulse N," "destroy the enemy Grid Nexus" — which is the general form this row's Option B
-was reaching for ([`campaigns.md`](../game-design/campaigns.md) Section 4.3). What is left of Q36 is only the kernel
-half: does `engine.md` Section 4.3's victory check accept a mission-supplied objective, or does the
+was reaching for ([`campaigns.md`](../game-design/campaigns.md)). What is left of Q36 is only the kernel
+half: does `engine.md`'s victory check accept a mission-supplied objective, or does the
 scenario layer resolve goals above it and hand the kernel an ordinary outcome? The second costs no
 RULE change and is worth trying first.
 
-**B has a natural home since canon 2.10.** The trigger model in [`campaigns.md`](../game-design/campaigns.md)
-Section 2.1 carries `win` and `lose` as simulation actions — "the Nexus still stands when Pulse 3
+**B has a natural home.** The trigger model in [`campaigns.md`](../game-design/campaigns.md) carries `win` and `lose` as simulation actions — "the Nexus still stands when Pulse 3
 ends" is a trigger (`when: { event: "pulse.end", pulse: 3 }`, `do: [{ win: true }]`), not a bespoke
 flag on the kernel's own victory check. If A shows the plain tick-limit draw does not read as
 success, B is that trigger action rather than a new victory branch, and the kernel's RULE-level
 condition (Nexus destroyed, annihilation, tick limit) stays exactly as it is, with a mission's
 objective layered above it. Still a RULE-adjacent change the day it lands; still Mario's call.
 
-**Gate 6A (2026-09-29) can now show the plain draw, on placeholder content.** A Pulse that runs to its
+**Step 6A (2026-09-29) can now show the plain draw, on placeholder content.** A Pulse that runs to its
 tick limit with both sides untouched ends on the Nexus Pulse screen as **TIME'S UP — "The time ran
 out before either side won."**, neutral in tone, with how many of the player's units came home
 ([`docs/screenshots/pulse-result-timeup.png`](../screenshots/pulse-result-timeup.png);
-the spike's "Raid: none" Experiment reaches it). That is option A's cheapest possible evidence
-for the *screen*, but not for the *question*: whether a defensive mission's player reads it as success
+the spike's "Raid: none" Experiment reaches it). That is option A's cheapest possible check for the *screen*, but not for the *question*: whether a defensive mission's player reads it as success
 depends on PERIMETER's own briefing and debrief text around it, which arrives with 6B's fixture.
 Q36 stays open for 6B to close; nothing in 6A depends on the answer.
 
-**Gate 6B (2026-09-30) resolved it — option A, then B as a trigger, with no kernel change.** The kernel's
+**Step 6B (2026-09-30) resolved it — option A, then B as a trigger, with no kernel change.** The kernel's
 victory check is untouched (`git diff` over `src/pulse` is empty): a Pulse that runs out of time is still
 the kernel's neutral draw. PERIMETER's goal is read one level up, by the trigger runner, from the
 mission's own data — `{ id: "hold", when: { event: "pulse.end", pulse: 3 }, do: [{ win: true }] }` — with
@@ -832,12 +777,10 @@ Q70 below: the kernel's *annihilation* rule, not its time-out, is what bends a d
 ### Q38 — Does PERIMETER's own map need real scrolling, or does Milestone 5 prove scrolling on different content?
 
 **Status:** OPEN — blocks nothing before Milestone 2 locks the map's final dimensions; the
-recommendation is already assumed by
-[`docs/milestones/completed/milestone-02-campaign-design.md`](completed/milestone-02-campaign-design.md)
-Section 4.3.
+recommendation is already assumed by [`docs/milestones/completed/milestone-02-campaign-design.md`](completed/milestone-02-campaign-design.md).
 
 A real tension, found on review rather than during Milestone 2 or 5's own drafting:
-[`../campaigns.md`](../game-design/campaigns.md) Section 4.1's belief ramp describes PERIMETER's own teaching goal as
+the belief ramp in [`../campaigns.md`](../game-design/campaigns.md) describes PERIMETER's own teaching goal as
 "Build Phase / Nexus Pulse loop on **a small Grid that never scrolls**" — written as GUIDANCE before
 the campaign-first pivot, and never revisited since. Milestone 5's own charter says real map scrolling
 "is built here, for real, against a Grid sized to actually need it," with Milestone 2 only softening
@@ -848,29 +791,27 @@ viewport size in the clamped range") would need a separate, purpose-built test f
 
 | Option | Cost |
 | --- | --- |
-| A. **Let PERIMETER's map grow just large enough to want a little scrolling.** The belief-ramp row's "never scrolls" was a reasonable assumption before this milestone sequence existed to build scrolling at all, not a locked narrative requirement — nothing about "hold the perimeter, keep the workers alive" depends on the Grid staying small | Free, keeps Milestone 5's acceptance evidence real rather than synthetic, and is a small, low-stakes amendment to one row of GUIDANCE that has not been built against yet |
+| A. **Let PERIMETER's map grow just large enough to want a little scrolling.** The belief-ramp row's "never scrolls" was a reasonable assumption before this milestone sequence existed to build scrolling at all, not a locked narrative requirement — nothing about "hold the perimeter, keep the workers alive" depends on the Grid staying small | Free, keeps Milestone 5's acceptance check real rather than synthetic, and is a small, low-stakes amendment to one row of GUIDANCE that has not been built against yet |
 | B. **Build and test scrolling against a dedicated fixture, separate from PERIMETER**, and keep PERIMETER's own map exactly as small as the belief ramp describes | Preserves the belief ramp's original intent literally, but means Milestone 5 ships a capability PERIMETER itself never uses — a real risk that the *first* real use (Q25's own standard for justifying a capability at all) is a synthetic fixture, not the mission that was supposed to need it |
-| C. **Defer real scrolling to whichever later mission's map is actually large** (RIGHT OF SALVAGE, Milestone 10, or later), and let Milestone 5 ship only the adaptive-panel and placement work for a Grid that still fits whole | Keeps PERIMETER's belief-ramp framing exactly as written, but leaves Milestone 5's own charter overstated — its intro currently states scrolling as this milestone's own deliverable, which would need rewriting, and defers real evidence for a RULE-adjacent viewport contract that has waited since Gate 1A already |
+| C. **Defer real scrolling to whichever later mission's map is actually large** (RIGHT OF SALVAGE, Milestone 10, or later), and let Milestone 5 ship only the adaptive-panel and placement work for a Grid that still fits whole | Keeps PERIMETER's belief-ramp framing exactly as written, but leaves Milestone 5's own charter overstated — its intro currently states scrolling as this milestone's own deliverable, which would need rewriting, and defers real proof of a RULE-adjacent viewport contract that has waited since step 1A already |
 
 **Recommendation: A.** Milestone 2 should size PERIMETER's map to genuinely need a little scrolling
 rather than treat "never scrolls" as fixed — it costs nothing the mission's own fiction depends on,
-and it means Milestone 5's acceptance evidence is about the mission that motivated building the
-capability, not a fixture invented to exercise it. Milestone 2's own Section 4.3 should record the
-final map's size specifically with this in mind.
+and it means Milestone 5's acceptance check is about the mission that motivated building the
+capability, not a fixture invented to exercise it. Milestone 2 should record the final map's size specifically with this in mind.
 
-**Sharpened by canon 2.10:** Mario's own input notes name scrolling as "the part that needs more
+**Sharpened since:** Mario's own input notes name scrolling as "the part that needs more
 attention" and give it a spike (Q37, now answered), so a PERIMETER map that never scrolls would leave
 that spike proving the game's most-scrutinised interaction on a fixture the campaign never plays.
 Option A is now the stronger recommendation, not merely the cheaper one.
 
-### Q39 — Is the mission-scripting surface declarative triggers, or a scripting API?
+### Q39 — Should missions be scripted with declarative triggers or with a scripting API?
 
 **Status:** OPEN — blocks nothing before Milestone 6 builds PERIMETER's raid and Milestone 9 its
-intro; both proceed under the recommendation. Mario raised it directly with the design notes that
-became canon 2.10: "we should decide if this is better than providing a scripting API/DSL to just
+intro; both proceed under the recommendation. Mario raised it directly with the design notes he added to the campaign design: "we should decide if this is better than providing a scripting API/DSL to just
 write some JS code on top of it, which may be easier."
 
-[`campaigns.md`](../game-design/campaigns.md) Section 2.1 records the *shape* Mario asked for — StarCraft-editor
+[`campaigns.md`](../game-design/campaigns.md) records the *shape* Mario asked for — StarCraft-editor
 style triggers, a condition and a list of actions, over a mission of many Pulses — and the split that
 makes it safe: simulation actions run inside the kernel as validated intents, presentation actions
 never touch state. What it does not settle is the **authored surface**: whether a mission author
@@ -879,8 +820,8 @@ writes typed data, or code.
 | Option | Cost |
 | --- | --- |
 | A. **Declarative triggers** — a mission is TypeScript object literals of typed conditions and actions; the vocabulary grows in engine code, each new kind with a named scenario, and a mission never contains a function | Every shape a mission wants that the vocabulary lacks is an engine change, not a mission edit — slower on the first mission, and authors learn a vocabulary rather than a language. TypeScript literals already give autocomplete and type errors, so most of what a "DSL" promises ergonomically is there for free |
-| B. **A scripting API** — a mission is a TypeScript module exporting functions called at mission events, handed an API object (`spawn`, `order`, `say`, …) | Easiest first mission, and the ceiling is the language. But arbitrary code can read a clock, call `Math.random`, close over mutable state, and run in an order nothing pins down — determinism becomes author discipline instead of structure, the exact thing [`engine.md`](../system-design/grid-engine.md) Section 1 exists to make structural. Nothing can be validated statically (dangling references, unreachable objectives, a `win` nobody can trigger); a preview tool cannot "jump to a trigger" it cannot see; a replay must ship the script; and a user-authored campaign is arbitrary local code with no sandbox (`engine.md` Section 8 says so of hooks in as many words) |
-| C. **A with the narrow-hook door** — declarative by default; where a mission's shape is genuinely too odd for the vocabulary, it registers a typed hook that receives read-only context and returns intents the kernel validates, exactly the mechanism `engine.md` Section 8 already sketches for exceptional content; a hook used by two missions becomes a vocabulary entry | Everything A costs, plus one more thing to review carefully — a hook is code, and the review-time rule "intents out, never mutation" is what keeps it honest |
+| B. **A scripting API** — a mission is a TypeScript module exporting functions called at mission events, handed an API object (`spawn`, `order`, `say`, …) | Easiest first mission, and the ceiling is the language. But arbitrary code can read a clock, call `Math.random`, close over mutable state, and run in an order nothing pins down — determinism becomes author discipline instead of structure, the exact thing [`engine.md`](../system-design/grid-engine.md) exists to make structural. Nothing can be validated statically (dangling references, unreachable objectives, a `win` nobody can trigger); a preview tool cannot "jump to a trigger" it cannot see; a replay must ship the script; and a user-authored campaign is arbitrary local code with no sandbox (`engine.md` says so of hooks in as many words) |
+| C. **A with the narrow-hook door** — declarative by default; where a mission's shape is genuinely too odd for the vocabulary, it registers a typed hook that receives read-only context and returns intents the kernel validates, exactly the mechanism `engine.md` already sketches for exceptional content; a hook used by two missions becomes a vocabulary entry | Everything A costs, plus one more thing to review carefully — a hook is code, and the review-time rule "intents out, never mutation" is what keeps it honest |
 
 **Recommendation: C, which is A in practice.** The reasons are the project's own invariants, not
 taste: only the Pulse mutates state, and data cannot mutate anything; a trigger list can be validated,
@@ -889,14 +830,12 @@ Commander Armies" — Mario's stated reason for wanting this at all — is only 
 strangers if a mission is data. "Easier" is true for the first mission and false by the third, when
 three missions' worth of ad-hoc script have to agree about what a wave is. **What would reopen this:**
 if by Milestone 10 RIGHT OF SALVAGE needs more than a handful of new vocabulary kinds, or a hook that
-cannot be expressed as intents, the vocabulary is failing at its job and B deserves a real look with
-that evidence in hand.
+cannot be expressed as intents, the vocabulary is failing at its job and B deserves a real look with that experience in hand.
 
 ### Q40 — Within a run, what persists from one battle to the next?
 
-**Status:** OPEN — blocks nothing before Milestone 11's gate 11A; it proceeds under the
-recommendation. Registered at canon 2.11 with the Challenge mode itself
-([`game-modes.md`](../game-design/game-modes.md) Section 3.2).
+**Status:** OPEN — blocks nothing before Milestone 11's step 11A; it proceeds under the
+recommendation. Registered with the Challenge mode itself ([`game-modes.md`](../game-design/game-modes.md)).
 
 A run is a series of battles with the army changing between them. The army composition — its
 structures and Nexus power pool — obviously persists; that is what the run draft edits. What is not obvious is
@@ -916,7 +855,7 @@ argues for, and it should be tried rather than assumed either way. C waits for a
 
 ### Q49 — Should the Build Phase show the player what the Pulse is about to bring?
 
-**Status:** OPEN — blocks nothing before Milestone 5's own Build Phase gate, which is where it would
+**Status:** OPEN — blocks nothing before Milestone 5's own Build Phase step, which is where it would
 be built. Registered because it competes directly with Q30's decision to keep that screen small, and
 because it is a claim about every mission the game will ever ship, not about one screen.
 
@@ -927,7 +866,7 @@ telegraphed, turn order is inspectable, and the developers' stated goal was that
 like your own fault"
 ([Subset Games](https://subsetgames.com/itb.html);
 [postmortem](https://www.gamedeveloper.com/game-platforms/road-to-the-igf-subset-games-i-into-the-breach-i-);
-the GDC talk is already cited in [`game-modes.md`](../game-design/game-modes.md) Section 6).
+the GDC talk is already cited in [`game-modes.md`](../game-design/game-modes.md)).
 
 Terminal Nexus currently has nothing equivalent. A mission's scripted arrivals are authored data
 (Q32, answered — a tick-gated trigger list in the map file), so showing them costs no simulation
@@ -958,7 +897,7 @@ on screen is the fastest way to see that a mission's trigger list is wrong.
 
 **Status:** OPEN — blocks nothing now; only the Citizen faction has any content to colour yet.
 
-Mario, reviewing gate 5C: "at some point, we should also think about a balanced color palette for
+Mario, reviewing step 5C: "at some point, we should also think about a balanced color palette for
 accent colours, that will give visual identity to the game, and have variations for each faction."
 Right now `src/view/roles.ts` has one dark theme and one light theme, and `player.a`/`player.b` carry
 *ownership* (case, in the glyph family) rather than faction identity — engine.md is explicit that
@@ -968,19 +907,19 @@ any structures or units drawn on screen to judge a palette against.
 
 | Option | Cost |
 | --- | --- |
-| A. **Design the palette now**, against the Citizen faction alone, and extend it faction-by-faction as each one is built | Gets the colour system in place early, but a palette designed against a sample size of one faction is a guess about what needs to visually differ from what — exactly the "framework before two real uses reveal the boundary" governance Section 2 warns against |
-| B. **Wait until a second faction has content on screen**, then design the palette against both at once, so the *differences* it needs to carry are things that actually exist | Nothing to design against until then, but the wait is short — Milestone 8 is Commander Vasse specifically, and canon 2.16 already names four more factions (Ravel, Feudal, Glitch, Alder) that will eventually need this |
+| A. **Design the palette now**, against the Citizen faction alone, and extend it faction-by-faction as each one is built | Gets the colour system in place early, but a palette designed against a sample size of one faction is a guess about what needs to visually differ from what — exactly the "framework before two real uses reveal the boundary" the project's own governance warns against |
+| B. **Wait until a second faction has content on screen**, then design the palette against both at once, so the *differences* it needs to carry are things that actually exist | Nothing to design against until then, but the wait is short — Milestone 8 is Commander Vasse specifically, and the design documents already name four more factions (Ravel, Feudal, Glitch, Alder) that will eventually need this |
 
 **Recommendation: B.** A palette's whole job is to make faction A read differently from faction B at
 a glance; there is no faction B yet to check that against, monochrome or otherwise. Revisit this the
 moment a second faction's structures or units are drawn — Milestone 8 at the latest.
 
-### Q53 — Now that Tab is the menu/Grid focus toggle, does the game still want a "jump to my next structure" binding, and on what key?
+### Q53 — With Tab now switching focus between the menu and the Grid, does the game still want a "jump to my next structure" key, and which one?
 
 **Status:** OPEN — blocks nothing before whichever session builds the focus-toggle mode; a real trade,
 not a blocker to design around.
 
-`engine.md` 9.7's bindings table previously recommended Tab / Shift+Tab as "jump the cursor to the
+`engine.md`'s bindings table previously recommended Tab / Shift+Tab as "jump the cursor to the
 player's next / previous own structure" — GUIDANCE, never actually implemented (no code binds Tab
 today). The owner's 2026-09-26 feedback asks for Tab to toggle keyboard focus between the side menu
 and the Grid instead, as part of a fuller keyboard-only play style (highlight a menu entry, Enter/Space
@@ -997,9 +936,9 @@ leave two GUIDANCE recommendations for the same key.
 feature — and revisit structure-jump as a small addition once its own keymap exists, rather than
 solve for a key nothing currently claims.
 
-### Q54 — Exact cursor-movement speed tiers, thresholds, and timings
+### Q54 — What speed tiers, thresholds and timings should cursor movement have?
 
-**Status:** OBSERVABLE — **built at gate 5H (option A), simplified at gate 5J at the owner's word**
+**Status:** OBSERVABLE — **built at step 5H (option A), simplified at step 5J at the owner's word**
 (2026-09-28: "the progressive acceleration is working really well … we don't need to implement slow
 speed"). One press moves 1; a held or quickly tapped arrow 2 at once, then 4 after 300 ms; Shift is a
 12-tile jump, not a speed; the slow step and slow-after-a-turn are deleted. Every number is an
@@ -1023,7 +962,7 @@ this way (Q37's own precedent).
 simplify first and re-ask; make every number a parameter the way the margin already is, so this
 session's guesses are replaceable by his own feel without another round trip.
 
-### Q59 — A `[m] Map` popup that shows the whole Grid at once
+### Q59 — Should an `[m] Map` popup show the whole Grid at once?
 
 **Status:** OPEN — keep in mind, not needed for Milestone 5; registered at the owner's request, the
 same shape Q19 was.
@@ -1032,42 +971,42 @@ The owner, reviewing the retired scrollbar experiment (2026-09-26): "Perhaps we 
 Map' hotkey that opens a popup in the middle with the whole map. Take note of this, we may develop it
 later on another session spike, because everything needs a special representation for the minimap,
 but it seems it would be really useful for checking large maps, navigation, and checking for status
-during large pulses." `engine.md` 3.3 still says there is no minimap; a popup the player opens is a
+during large pulses." `engine.md` still says there is no minimap; a popup the player opens is a
 different thing from a minimap always on screen, but it shares the hard part — drawing a Grid larger
 than the maximum viewport in a fraction of the cells, which the game has deliberately never needed.
 
 | Option | Cost |
 | --- | --- |
-| A. **A spike of its own**, once gate 5F's overlay exists and some map is bigger than the maximum viewport (72 × 24) | Waits for a real need; the spike's question is the downsampled representation, which nothing else answers |
+| A. **A spike of its own**, once step 5F's overlay exists and some map is bigger than the maximum viewport (72 × 24) | Waits for a real need; the spike's question is the downsampled representation, which nothing else answers |
 | B. Build it inside Milestone 5 | No mission map needs it yet; the representation question would be answered against the spike's own test Grid, not a real one |
 
-**Recommendation: A.** `m` is reserved for it (`engine.md` 9.7) so nothing else takes the key. The
+**Recommendation: A.** `m` is reserved for it (`engine.md`) so nothing else takes the key. The
 natural moment is the first mission map that does not fit the maximum viewport, or the first Pulse
 large enough that watching it needs an overview — whichever comes first.
 
 ### Q62 — What does a click on the map do to the view with nothing armed?
 
-**Status:** OBSERVABLE — a Debug Mode flag ("Explore click"), registered by gate 5H.
+**Status:** OBSERVABLE — a Debug Mode flag ("Explore click"), registered by step 5H.
 
 The owner asked for clicks near the edge to scroll further the nearer they are, with bigger zones
-(feedback F6), and `engine.md` 3.3's older guidance said an unarmed click recentres the view. The two
+(in his playtest feedback), and `engine.md`'s older guidance said an unarmed click recentres the view. The two
 read differently for a click in the middle of the map, which is usually an inspect.
 
 | Option | Cost |
 | --- | --- |
 | A. **Proportional edge zones** (built, default): a click inside a zone a third of the view deep carries the tile toward the middle in proportion to its depth | Contains recentring at the very edge; a middle click leaves the view alone |
 | B. Always centre on the clicked tile | The view jumps on every inspect click |
-| C. The margin only, as gates 5A-5G did | What F6 found too weak |
+| C. The margin only, as steps 5A-5G did | What his feedback found too weak |
 
 **Recommendation: A.** Try it: press `d`, set "Explore click" to centres, click near an edge and in
 the middle, and compare.
 
 ### Q63 — Should the mouse wheel move the fast step (8 tiles) rather than 5?
 
-**Status:** OPEN — blocks nothing; registered by gate 5H when Shift's step went from 5 to 8.
+**Status:** OPEN — blocks nothing; registered by step 5H when Shift's step went from 5 to 8.
 
-The wheel has moved the cursor five tiles since gate 5A, the same as Shift+Arrow did. Shift is now a
-12-tile jump (gate 5J).
+The wheel has moved the cursor five tiles since step 5A, the same as Shift+Arrow did. Shift is now a
+12-tile jump (step 5J).
 Trackpads send wheel events in bursts, so a larger step may overshoot.
 
 | Option | Cost |
@@ -1079,7 +1018,7 @@ Trackpads send wheel events in bursts, so a larger step may overshoot.
 
 ### Q64 — On the light theme, what should a placed building's "light" look like?
 
-**Status:** OPEN — blocks nothing; registered by gate 5I.
+**Status:** OPEN — blocks nothing; registered by step 5I.
 
 The light pulls a building's colour toward the theme's strongest ink. On the dark theme that is a
 bright flash; on the light theme it is the darkest ink, so the building darkens as it finishes, like
@@ -1099,7 +1038,7 @@ building, and say whether it should glow instead.
 barracks", read as the building's own key; the ambiguity is recorded so it is not lost).
 
 Buildings are picked by the digit of their menu row (`[1] Barracks`), one digit sequence for the whole
-menu so no hotkey moves when content arrives (`engine.md` 9.7, RULE). Letters are already spoken for:
+menu so no hotkey moves when content arrives (`engine.md`, RULE). Letters are already spoken for:
 `e`, `n`, `p`, `q`, `u`, `x`, `s`, `r`, `d`. The owner's example used a letter.
 
 | Option | Cost |
@@ -1113,32 +1052,31 @@ digit contract stays a rule. Ask him once whether `b` was an example of a key or
 
 ### Q68 — What does the player call a Nexus Pulse?
 
-**Status:** OPEN — blocks nothing; registered 2026-09-29 (the owner's round-3 feedback on gate 6A, F49).
+**Status:** OPEN — blocks nothing; registered 2026-09-29 (the owner's round-3 feedback on step 6A).
 
 The confirmation is titled "Battle Round 1", because the owner felt "we may keep the term 'pulse' to
-ourselves and instead call this 'battle round'". He also wrote the menu row as "[s] Start Pulse". Canon
-still says the player-facing phases are **Build Phase** and **Nexus Pulse** (`AGENTS.md` Section 4), so as
+ourselves and instead call this 'battle round'". He also wrote the menu row as "[s] Start Pulse". The design documents still say the player-facing phases are **Build Phase** and **Nexus Pulse** (`AGENTS.md`), so as
 built the popup says Battle Round and the menu row and the running screen's title say Pulse — two names
 for one thing on one screen.
 
 | Option | Cost |
 | --- | --- |
 | A. **As built** — Pulse everywhere but the popup | Two names for one thing; the player learns both |
-| B. **Battle Round everywhere the player reads** (`[s] Start Battle Round`, a `BATTLE ROUND 1` panel title, the Nexus popup's "needed before the battle round"); "Pulse" stays the code, canon and lore name | A canon edit (the phase names above) and a sweep of the interface's words; the lore document's Nexus Pulse becomes the in-world name only |
+| B. **Battle Round everywhere the player reads** (`[s] Start Battle Round`, a `BATTLE ROUND 1` panel title, the Nexus popup's "needed before the battle round"); "Pulse" stays the code, design and lore name | A design change (the phase names above) and a sweep of the interface's words; the lore document's Nexus Pulse becomes the in-world name only |
 | C. Both, with a job each: **Battle Round n** is the round of a mission; **Nexus Pulse** is the thing the Nexus does inside it | Two names on purpose, so a player must be taught which is which |
 
-**Recommendation: B**, decided together with the menu reorganisation the owner has announced (F51),
+**Recommendation: B**, decided together with the menu reorganisation the owner has announced,
 because the menu row is one of the places the word lives and he will be rewriting the menu anyway.
 Until then A stands, and the popup's title and body are data (`popupSpec`), so B is a change of words.
 
-### Q69 — Does the kernel need an order primitive, so a scripted group can hold, withdraw or head for a place?
+### Q69 — Should units be able to hold, withdraw or head for a place, so a scripted group can follow an order?
 
-**Status:** OPEN — blocks nothing in gate 6B; registered 2026-09-30.
+**Status:** OPEN — blocks nothing in step 6B; registered 2026-09-30.
 
-campaigns.md Section 2.1 gives the trigger runner an `order` action — a group "advances, holds, or
-withdraws toward a region" — and the owner asked, at gate 6A's acceptance, for incoming units to show
+campaigns.md gives the trigger runner an `order` action — a group "advances, holds, or
+withdraws toward a region" — and the owner asked, at step 6A's acceptance, for incoming units to show
 their intention. **The kernel has one movement rule: every unit engages the nearest enemy.** It has no
-field for an order and no phase that reads one. So gate 6B builds `order` with one verb, `advance`, which
+field for an order and no phase that reads one. So step 6B builds `order` with one verb, `advance`, which
 means exactly what the kernel already does; the region it names is the stated destination, shown to the
 player as intention, not a path the kernel steers by. `hold` and `withdraw` are refused when a mission is
 loaded, with this question's number in the message.
@@ -1149,13 +1087,13 @@ loaded, with this question's number in the message.
 | B. **An order field on an entity and a goal in the intents phase** — a group holds (never moves, still fires), withdraws (moves away from the region), or heads for a region before it engages | A kernel change: a new `EntityState` field (a schema bump), a rule in the intents phase with its own named scenario, the determinism suite — the same bar as every rule since Milestone 1. It is also the seam the Campaign's opponent AI needs (`docs/game-design/scripted-opponent.md`) |
 | C. **Orders as scripted content swaps** (a "holding" variant of a unit with a static behaviour) | No kernel change, but a unit's identity would change under it, and every unit needs variants: content bloat to avoid a rule |
 
-**Recommendation: B, as its own small gate after 6B**, scoped to `hold` and "head for a region, then
+**Recommendation: B, as its own small step after 6B**, scoped to `hold` and "head for a region, then
 engage", because that is what a readable intention needs and what the Campaign's scripted opponent will
-be made of. Not built here: it is a kernel change, and this gate's frame forbids one.
+be made of. Not built here: it is a kernel change, and this step's scope forbids one.
 
 ### Q70 — Should a side whose Grid Nexus still stands lose a Pulse because its units died?
 
-**Status:** OPEN — blocks nothing; registered 2026-09-30 from PERIMETER's fixture in gate 6B.
+**Status:** OPEN — blocks nothing; registered 2026-09-30 from PERIMETER's fixture in step 6B.
 
 The kernel ends a Pulse the moment one side's mobile units are all dead (annihilation), even when that
 side's Grid Nexus stands. In a defence mission this reads oddly: when the player's squads fall in round 2,
@@ -1168,9 +1106,9 @@ held.
 | Option | Cost |
 | --- | --- |
 | A. **Keep the rule** — annihilation ends a Pulse whatever stands | No change; a defence round can end before its waves have all come, and "the raid's schedule" is shorter than written |
-| B. **A side with a standing Grid Nexus is never annihilated** — its Pulse goes on until the Nexus falls or the time runs out | A RULE change (`engine.md` 4.3, victory), a named scenario, and the full determinism bar; it also changes Skirmish, where it is arguably right too: "Destroying the enemy Grid Nexus wins" |
+| B. **A side with a standing Grid Nexus is never annihilated** — its Pulse goes on until the Nexus falls or the time runs out | A RULE change (`engine.md`, victory), a named scenario, and the full determinism bar; it also changes Skirmish, where it is arguably right too: "Destroying the enemy Grid Nexus wins" |
 | C. **A mission flag** — the runner tells the kernel the defender fields no mobile units, so only its Nexus can lose | No kernel file changes, but it misstates the roster to the kernel to get a different rule — the kind of hidden rule the project refuses |
 
-**Recommendation: B**, decided on evidence: play PERIMETER as it is first (the Next round Experiment and
+**Recommendation: B**, decided by playing it: play PERIMETER as it is first (the Next round Experiment and
 the waves as built), and if a round ending with the raid at the gate reads wrong to the owner, B is the
-honest fix. Until then A stands and the gate report says what it does.
+honest fix. Until then A stands and the pull request says what it does.
