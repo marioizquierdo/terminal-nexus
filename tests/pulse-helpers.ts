@@ -3,13 +3,13 @@
 // scaffolding (`tests/build-helpers.ts`).
 
 import { strict as assert } from "node:assert"
-import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
+import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import type { BuildSession } from "../src/build/session.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { missionPlay } from "../src/cli/pulse-run.ts"
 import type { MissionPlay } from "../src/cli/pulse-run.ts"
-import { spikeContext } from "../src/cli/spike.ts"
+import { starterContext } from "../src/cli/build-phase.ts"
 import type { MissionDefinition, SimulationAction } from "../src/mission/index.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
 import type { ResolvedPulse } from "../src/view/pulse-live.ts"
@@ -108,8 +108,8 @@ export function newSession(
 ): Omit<Played, "pulse"> {
   const mission = missionPlay(testMission(scenario))
   const { build, context, layout } = buildSide({
-    context: mission.firstRound(spikeContext()),
-    cursor: SPIKE_START_CURSOR,
+    context: mission.firstRound(starterContext()),
+    cursor: STARTER_START_CURSOR,
     terminal: size,
     startPulse: mission.startPulse,
     nextRound: mission.nextRound,

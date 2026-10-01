@@ -7,7 +7,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { SPIKE_CATALOG } from "../src/build/catalog.ts"
+import { STARTER_CATALOG } from "../src/build/catalog.ts"
 import { EXPERIMENT_FIELDS, defaultExperiments, experimentSpec, formatExperimentValue, stepExperiment } from "../src/build/experiments.ts"
 import type { ExperimentField } from "../src/build/experiments.ts"
 import { menuEntryRow } from "../src/build/layout.ts"
@@ -304,7 +304,7 @@ test("setting an Experiment by keys, by clicks, and from a driver script is the 
   // F22); a click on the tile the cursor already sits on places (Q52), back on the menu. The first key
   // after the mouse only shows the menu's highlight again, which the keyboard's own placement left
   // showing.
-  clickPanelRow(byMouse, menuEntryRow(byMouse.layout, SPIKE_CATALOG, { kind: "construct", index: 0 }) as number)
+  clickPanelRow(byMouse, menuEntryRow(byMouse.layout, STARTER_CATALOG, { kind: "construct", index: 0 }) as number)
   clickTile(byMouse, byMouse.build.state.cursor)
   assert.equal(byMouse.build.state.highlightHidden, true)
   // The placement's answer is the same by either door...

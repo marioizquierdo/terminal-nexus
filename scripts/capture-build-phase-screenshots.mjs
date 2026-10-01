@@ -1,9 +1,9 @@
 // Screenshots of the Build Phase — Milestone 5.
 //
-//   node scripts/capture-spike-screenshots.mjs
-//   node scripts/capture-spike-screenshots.mjs --only spike-minimum
-//   node scripts/capture-spike-screenshots.mjs --out .playtest/shots   # somewhere other than docs/screenshots/
-//   node scripts/capture-spike-screenshots.mjs --force                  # re-render even unchanged ones
+//   node scripts/capture-build-phase-screenshots.mjs
+//   node scripts/capture-build-phase-screenshots.mjs --only spike-minimum
+//   node scripts/capture-build-phase-screenshots.mjs --out .playtest/shots   # somewhere other than docs/screenshots/
+//   node scripts/capture-build-phase-screenshots.mjs --force                  # re-render even unchanged ones
 //
 // Two ways in, on purpose.
 //
@@ -823,7 +823,7 @@ function live(name, caption, { cols = 80, rows = 24, args = "--capability trueco
     String(cols),
     "-y",
     String(rows),
-    `./bin/terminal-nexus.ts --spike ${args}`,
+    `./bin/terminal-nexus.ts --build-phase ${args}`,
   ])
   waitFor(
     repoRoot,

@@ -12,7 +12,7 @@ import assert from "node:assert/strict"
 import { popupSpec, placePopup } from "../src/build/popup.ts"
 import type { BuildState } from "../src/build/state.ts"
 import type { Popup } from "../src/build/types.ts"
-import { spikeContext } from "../src/cli/spike.ts"
+import { starterContext } from "../src/cli/build-phase.ts"
 import type { PopupBorder, PopupBreath } from "../src/view/build.ts"
 import {
   BREATH_DEPTH,
@@ -46,7 +46,7 @@ const OPENING = flashLengthMs(POPUP_FLASH)
 
 /** A Build Phase with a Nexus power picked and the Battle Round screen open, as `n 1 s` leaves it. */
 function battleRound(experiments: Readonly<{ popupPulseMs?: number }> = {}): Side {
-  const side = buildSide({ context: { ...spikeContext(), experiments } })
+  const side = buildSide({ context: { ...starterContext(), experiments } })
   keys(side, "n", "1", "s")
   assert.equal(side.build.state.popup, "battle-round")
   return side

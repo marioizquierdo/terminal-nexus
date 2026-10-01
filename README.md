@@ -39,7 +39,7 @@ and replays it.
 
 **`terminal-nexus`** is the game's own executable. It opens on a menu (Campaign, Challenge, Settings,
 Exit) that works by hotkey, by arrows and Enter, or by mouse. Campaign and Challenge are honest
-placeholders. The playable part is the **Build Phase**, started with `--spike` (a temporary name):
+placeholders. The playable part is the **Build Phase**, started with `--build-phase`:
 
 - A map bigger than the screen, in a closed rectangle whose sides show where there is more map. The
   cursor scrolls the view, and the view slides.
@@ -124,7 +124,7 @@ tick 90 instead of playing from the start, in watch, headless and verify alike.
 
 ```bash
 npm run terminal-nexus              # the menu: Campaign, Challenge, Settings, Exit
-npm run terminal-nexus -- --spike   # the Build Phase and the Nexus Pulse
+npm run terminal-nexus -- --build-phase   # the Build Phase and the Nexus Pulse
 ```
 
 Every menu row shows its hotkey (`[1] Campaign`) and works three ways: press the hotkey, arrow to it

@@ -1,4 +1,4 @@
-// `runSpike`'s lifecycle — engine.md 10.1's RULE, applied to the Build Phase screen. The same fake
+// `runBuildPhase`'s lifecycle — engine.md 10.1's RULE, applied to the Build Phase screen. The same fake
 // stdin/stdout pattern `tests/menu-session.test.ts` and `tests/lifecycle.test.ts` already use, and
 // the same non-negotiables: one idempotent disposer reached from `q`, an interrupt byte, Esc with
 // nothing armed, SIGINT and SIGTERM alike; raw mode, the alternate screen and mouse reporting all
@@ -13,7 +13,7 @@ import { EventEmitter } from "node:events"
 import { defaultExperiments } from "../src/build/experiments.ts"
 import { TUNING } from "../src/build/tuning.ts"
 import { PROCESS_HOST } from "../src/cli/lifecycle.ts"
-import { runSpike } from "../src/cli/spike.ts"
+import { runBuildPhase } from "../src/cli/build-phase.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../src/menu/mouse.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
@@ -68,7 +68,7 @@ class FakeStdin extends EventEmitter {
  *  after it. */
 const AFTER_ESC_TIMEOUT_MS = TUNING.escTimeoutMs + 100
 
-async function spikeSession(
+async function starterSession(
   end: (stdin: FakeStdin, stdout: FakeStdout) => void,
   settleMs = 30,
 ): Promise<{ stdout: FakeStdout; stdin: FakeStdin; exits: number[] }> {
@@ -76,7 +76,7 @@ async function spikeSession(
   const stdin = new FakeStdin()
   const exits: number[] = []
 
-  const session = runSpike({
+  const session = runBuildPhase({
     settings: TEST_SETTINGS,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
@@ -94,7 +94,7 @@ async function spikeSession(
 }
 
 test("launching enters the alternate screen, raw mode, and turns mouse reporting on", async () => {
-  const { stdout, stdin } = await spikeSession(() => {})
+  const { stdout, stdin } = await starterSession(() => {})
   assert.ok(stdout.written.includes(`${ESC}[?1049h`), "never entered the alternate screen")
   assert.ok(stdout.written.includes(`${ESC}[?25l`), "never hid the cursor")
   assert.equal(stdin.raw, true, "never entered raw mode")
@@ -110,7 +110,7 @@ test("q then q, an interrupt byte, and Esc then q all reach the one disposer", a
     ["an interrupt byte", [Buffer.from([3])]],
     ["esc q", [Buffer.from(ESC), Buffer.from("q")]],
   ] as const) {
-    const { stdout, stdin, exits } = await spikeSession((input) => {
+    const { stdout, stdin, exits } = await starterSession((input) => {
       for (const read of reads) input.emit("data", read)
     })
     assert.deepEqual(exits, [0], `${name} did not end the session`)
@@ -124,7 +124,7 @@ test("a lone q or Esc only asks — it never leaves the screen by itself", async
   // engine.md 9.7: Esc "never quits the game by itself"; since the exit question, neither does q —
   // both open the game menu (Settings, Quit) now.
   for (const key of ["q", ESC]) {
-    const { stdout, exits } = await spikeSession((input) => {
+    const { stdout, exits } = await starterSession((input) => {
       input.emit("data", Buffer.from(key))
     }, AFTER_ESC_TIMEOUT_MS)
     assert.deepEqual(exits, [], `${JSON.stringify(key)} left without asking`)
@@ -133,7 +133,7 @@ test("a lone q or Esc only asks — it never leaves the screen by itself", async
 })
 
 test("Esc with something armed disarms instead of leaving", async () => {
-  const { stdout, exits } = await spikeSession((input) => {
+  const { stdout, exits } = await starterSession((input) => {
     input.emit("data", Buffer.from("1"))
     input.emit("data", Buffer.from(ESC))
   }, AFTER_ESC_TIMEOUT_MS)
@@ -144,7 +144,7 @@ test("Esc with something armed disarms instead of leaving", async () => {
 test("a lone Esc waits a moment for the rest of a key: Esc then [A in the next read is one Up arrow", async () => {
   // Gate 5H: an arrow split across two reads (a slow link) used to arrive as Esc and then two stray
   // characters. Within the timeout the two reads are joined and are the one key they always were.
-  const { stdout, exits } = await spikeSession((input) => {
+  const { stdout, exits } = await starterSession((input) => {
     input.emit("data", Buffer.from("e")) // explore, so the arrow moves the map cursor
     input.emit("data", Buffer.from(ESC))
     input.emit("data", Buffer.from("[A"))
@@ -158,7 +158,7 @@ test("a lone Esc waits a moment for the rest of a key: Esc then [A in the next r
 })
 
 test("a right click never leaves the screen", async () => {
-  const { exits } = await spikeSession((input) => {
+  const { exits } = await starterSession((input) => {
     input.emit("data", Buffer.from(`${ESC}[<2;10;10M`))
   })
   assert.deepEqual(exits, [], "a right click ended the session")
@@ -166,7 +166,7 @@ test("a right click never leaves the screen", async () => {
 
 test("SIGINT and SIGTERM reach the same disposer", async () => {
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
-    const { stdout, stdin, exits } = await spikeSession(() => {
+    const { stdout, stdin, exits } = await starterSession(() => {
       process.emit(signal)
     })
     assert.deepEqual(exits, [0], `${signal} did not end the session`)
@@ -176,7 +176,7 @@ test("SIGINT and SIGTERM reach the same disposer", async () => {
 })
 
 test("below the floor the screen gates, and resizing back above it restores the Grid", async () => {
-  const { stdout } = await spikeSession((input, output) => {
+  const { stdout } = await starterSession((input, output) => {
     output.columns = 79
     output.emit("resize")
     assert.ok(output.lastWrite.includes("TERMINAL TOO SMALL"), "79 columns did not gate")
@@ -201,7 +201,7 @@ const BORDER_AT_80 = `+${"-".repeat(78)}+`
 const BORDER_AT_104 = `+${"-".repeat(101)}+`
 
 test("a bigger terminal shows a bigger viewport, and the frame is cleared when its size changes", async () => {
-  const { stdout } = await spikeSession((_input, output) => {
+  const { stdout } = await starterSession((_input, output) => {
     assert.ok(output.lastWrite.includes(BORDER_AT_80), "did not start at the 80-column viewport")
     output.columns = 104
     output.rows = 32
@@ -220,7 +220,7 @@ test("--keys opens the Build Phase already in the state those keys reach, then h
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()
   const exits: number[] = []
-  const session = runSpike({
+  const session = runBuildPhase({
     settings: TEST_SETTINGS,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
@@ -245,7 +245,7 @@ test("--keys that cannot be delivered stops there and says why when the screen c
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()
   const reported: string[] = []
-  const session = runSpike({
+  const session = runBuildPhase({
     settings: TEST_SETTINGS,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
@@ -276,7 +276,7 @@ test("the live loop plays a Nexus Pulse on its own clock: timer, last seconds, r
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()
   const exits: number[] = []
-  void runSpike({
+  void runBuildPhase({
     settings: TEST_SETTINGS,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
@@ -332,7 +332,7 @@ test("a Nexus Pulse holds still behind the resize gate and resumes from the same
   let t = 5_000
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()
-  void runSpike({
+  void runBuildPhase({
     settings: TEST_SETTINGS,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
@@ -402,7 +402,7 @@ async function keyboardRun(answers: Answers, options: { keyReleases?: "auto" | "
     stdin: stdin as unknown as NodeJS.ReadStream,
     capability: "monochrome",
   })
-  const session = runSpike({
+  const session = runBuildPhase({
     settings: TEST_SETTINGS,
     backend: {
       name: "flaky",

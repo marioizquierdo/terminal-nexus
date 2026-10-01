@@ -26,7 +26,7 @@ import type { RestartFieldSpec } from "../src/build/settings.ts"
 import type { BuildContext, BuildState } from "../src/build/state.ts"
 import { applyBuildCommand, createBuildState } from "../src/build/state.ts"
 import type { BuildCommand } from "../src/build/types.ts"
-import { spikeContext } from "../src/cli/spike.ts"
+import { starterContext } from "../src/cli/build-phase.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 import { chromeGlyph } from "../src/view/theme.ts"
@@ -230,7 +230,7 @@ function withMessage(context: BuildContext, under: "game-menu" | null): BuildSta
 }
 
 test("a message popup: a title and its text, nothing to choose, closed by Esc or a click outside and nothing else", () => {
-  const context = spikeContext()
+  const context = starterContext()
   const layout = buildLayout(MINIMUM, context.grid)
   const state = withMessage(context, null)
   // Its shape: a title, and text wrapped in as many lines as it needs — no option anywhere.
@@ -548,7 +548,7 @@ test("no popup carries [esc] in its border, and its corner is no click target", 
     assert.deepEqual(side.build.state, before, `${JSON.stringify(steps)}: a click on the popup's corner did something`)
   }
   // The message popup too.
-  const context = spikeContext()
+  const context = starterContext()
   const layout = buildLayout(MINIMUM, context.grid)
   const state = withMessage(context, null)
   const popup = placePopup(layout, popupSpec(context, state) as PopupSpec)

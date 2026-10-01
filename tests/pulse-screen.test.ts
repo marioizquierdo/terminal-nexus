@@ -6,14 +6,14 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
+import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { centreOn } from "../src/build/camera.ts"
 import { FIRST_EXPERIMENT_ROW, settingRow } from "../src/build/settings.ts"
 import { escLabelSpan, escLabel, pulseControlRows } from "../src/build/layout.ts"
 import { MOUSE_RIGHT } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/build/session.ts"
 import { nexusTile } from "../src/build/state.ts"
-import { spikeContext } from "../src/cli/spike.ts"
+import { starterContext } from "../src/cli/build-phase.ts"
 import { buildLayout } from "../src/build/layout.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import { frameToAnsi, frameToText } from "../src/view/frame.ts"
@@ -603,11 +603,11 @@ test("starting over from the game menu is a fresh Build Phase with the Experimen
 })
 
 test("a Pulse the kernel cannot start from undoes the commit and says why, rather than leaving a dead screen", () => {
-  const context = spikeContext()
+  const context = starterContext()
   const layout = buildLayout(MINIMUM, context.grid)
   const build = new BuildSession({
     context,
-    cursor: SPIKE_START_CURSOR,
+    cursor: STARTER_START_CURSOR,
     viewport: layout.viewport,
     startPulse: () => {
       throw new Error("no room for the units")
@@ -624,9 +624,9 @@ test("a Pulse the kernel cannot start from undoes the commit and says why, rathe
 })
 
 test("a session with nothing to start a Pulse still freezes the plan and draws the committed screen", () => {
-  const context = spikeContext()
+  const context = starterContext()
   const layout = buildLayout(MINIMUM, context.grid)
-  const build = new BuildSession({ context, cursor: SPIKE_START_CURSOR, viewport: layout.viewport })
+  const build = new BuildSession({ context, cursor: STARTER_START_CURSOR, viewport: layout.viewport })
   build.run([{ kind: "pick-nexus", index: 0 }, { kind: "open-battle-round" }, { kind: "start-pulse" }])
   assert.equal(build.state.committed, true)
   assert.equal(build.pulse, null)

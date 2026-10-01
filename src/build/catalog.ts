@@ -14,13 +14,13 @@ import type { ConstructItem, MapEdgeStyle, NexusPowerOption, StandingStructure }
  * merely larger than the minimum viewport would stop scrolling the moment somebody opened a big
  * terminal, and the whole question this gate asks is what scrolling feels like.
  */
-export const SPIKE_GRID_SIZE = { width: 96, height: 40 } as const
+export const STARTER_GRID_SIZE = { width: 96, height: 40 } as const
 
 /** Where the cursor opens: on the Grid Nexus, its centre tile (owner, 2026-09-29, feedback F30: "on
  *  top of the nexus by default"), so the first thing a player sees is their own base, everything else
  *  is somewhere to scroll to, and the first building armed lands on the nearest good spot beside it.
- *  `nexusTile(spikeContext())` says the same; a test holds the two together. */
-export const SPIKE_START_CURSOR = { x: 18, y: 10 } as const
+ *  `nexusTile(starterContext())` says the same; a test holds the two together. */
+export const STARTER_START_CURSOR = { x: 18, y: 10 } as const
 
 type Rect = Readonly<{ x: number; y: number; width: number; height: number }>
 
@@ -65,8 +65,8 @@ const DEPOSITS: readonly Readonly<{ x: number; y: number }>[] = [
  * simulation input and the determinism suite replays every one of them twenty times. This Grid never
  * reaches the kernel. Deterministic all the same — no randomness, no clock, the same tiles each run.
  */
-export function spikeGrid(): GridTerrain {
-  const { width, height } = SPIKE_GRID_SIZE
+export function starterGrid(): GridTerrain {
+  const { width, height } = STARTER_GRID_SIZE
   const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.plain")
   const set = (x: number, y: number, id: TerrainId): void => {
     if (x < 0 || y < 0 || x >= width || y >= height) return
@@ -104,11 +104,11 @@ export function spikeGrid(): GridTerrain {
  * is "plain, military, correct". Drawn wherever the Grid reaches the map's edge. A proof of the hook,
  * not map design: a real map would carry this in its own definition, beside its tiles.
  */
-export const SPIKE_EDGE_STYLE: MapEdgeStyle = "fence"
+export const STARTER_EDGE_STYLE: MapEdgeStyle = "fence"
 
 /** Already standing when the screen opens: something to build next to, and something a careless
  *  placement can overlap and be refused for. */
-export const SPIKE_STANDING: readonly StandingStructure[] = [
+export const STARTER_STANDING: readonly StandingStructure[] = [
   { contentId: "structure.citizen.nexus", anchor: { x: 17, y: 10 } },
   { contentId: "structure.citizen.barracks", anchor: { x: 25, y: 10 } },
 ]
@@ -127,7 +127,7 @@ export const SPIKE_STANDING: readonly StandingStructure[] = [
  * entirely from the Citizen common tier, and the Nexus draft holds the army-specific choice
  * (milestone-02-campaign-design.md Section 4.2).
  */
-export const SPIKE_CATALOG: readonly ConstructItem[] = [
+export const STARTER_CATALOG: readonly ConstructItem[] = [
   {
     hotkey: "1",
     contentId: "structure.citizen.barracks",
@@ -153,14 +153,14 @@ export const SPIKE_CATALOG: readonly ConstructItem[] = [
  * past this, so the menu is a choice. How a resource is *earned* is Milestone 7's; this is an
  * opening allotment and nothing more.
  */
-export const SPIKE_ALLOTMENT = 100
+export const STARTER_ALLOTMENT = 100
 
 /**
  * The Nexus draft this gate proves the mechanism against. Two placeholder options, not a real
  * choice: each is a plain number, so the difference a pick makes is checkable without needing
  * Milestone 8's actual Commander Vasse content to exist first.
  */
-export const SPIKE_NEXUS_DRAFT: readonly NexusPowerOption[] = [
+export const STARTER_NEXUS_DRAFT: readonly NexusPowerOption[] = [
   // Each description fits the 28 glyphs a panel row has at the 80-column floor — the longer
   // "starting allotment" wording was cut off mid-word there.
   {

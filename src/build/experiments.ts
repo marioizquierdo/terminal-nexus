@@ -15,7 +15,7 @@
 // - keyboard navigation — the hold window, key releases, and the tap, hold and jump numbers — decides
 //   how big a move the input path sends (`src/build/motion.ts`), and the reducer only ever sees an
 //   ordinary `move-cursor` of the size it chose. Key releases also tells the live loop whether to ask
-//   the terminal for key events at all (`src/cli/spike.ts`), switched on and off as it changes;
+//   the terminal for key events at all (`src/cli/build-phase.ts`), switched on and off as it changes;
 // - the popup pulse (`popupPulseMs`) is presentation alone: the view breathes a popup's border;
 // - the mission's two (gate 6B): `nextRound` — whether a round's result waits for the player or the next
 //   Build Phase begins on its own (read by the Pulse's presenter, `src/view/pulse-live.ts`) — and

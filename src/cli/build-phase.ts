@@ -1,4 +1,4 @@
-// `terminal-nexus --spike` — the Build Phase's live terminal loop.
+// `terminal-nexus --build-phase` — the Build Phase's live terminal loop.
 //
 // Built on the same pieces as `src/cli/menu.ts`: the shared idempotent disposer (`lifecycle.ts`),
 // the same backend selection, the same opt-in SGR mouse reporting switched off on every exit path.
@@ -9,13 +9,13 @@ import { FIXTURE_REGISTRY } from "../content/index.ts"
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../menu/mouse.ts"
 import { BuildSession } from "../build/session.ts"
 import {
-  SPIKE_ALLOTMENT,
-  SPIKE_CATALOG,
-  SPIKE_EDGE_STYLE,
-  SPIKE_NEXUS_DRAFT,
-  SPIKE_STANDING,
-  SPIKE_START_CURSOR,
-  spikeGrid,
+  STARTER_ALLOTMENT,
+  STARTER_CATALOG,
+  STARTER_EDGE_STYLE,
+  STARTER_NEXUS_DRAFT,
+  STARTER_STANDING,
+  STARTER_START_CURSOR,
+  starterGrid,
 } from "../build/catalog.ts"
 import { isGated } from "../build/camera.ts"
 import { buildLayout } from "../build/layout.ts"
@@ -32,7 +32,7 @@ import { chunkText } from "../view/backends/ports.ts"
 import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
-import { SPIKE_MISSION, nextRound, startPulse } from "./pulse-run.ts"
+import { STARTER_MISSION, nextRound, startPulse } from "./pulse-run.ts"
 import type { PlaytestStep } from "../playtest/keys.ts"
 import { UNTIMED_GAP_MS, deliverStep } from "../playtest/deliver.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
@@ -47,7 +47,7 @@ const CLEAR = `${ESC}[2J`
 
 /** The floor the resize gate is measured against — engine.md 3.3's own "80 x 24 remains the floor
  *  and the acceptance target". */
-export const SPIKE_MINIMUM = { width: 80, height: 24 } as const
+export const STARTER_MINIMUM = { width: 80, height: 24 } as const
 
 export type SpikeOptions = Readonly<{
   settings: Settings
@@ -88,37 +88,37 @@ export type SpikeOptions = Readonly<{
 }>
 
 /** Round 1 of the mission the screen plays (PERIMETER, gate 6B), on the placeholder map. */
-export function spikeContext(scrollMargin?: number, extra: Partial<BuildContext> = {}): BuildContext {
-  return SPIKE_MISSION.firstRound({
-    grid: spikeGrid(),
+export function starterContext(scrollMargin?: number, extra: Partial<BuildContext> = {}): BuildContext {
+  return STARTER_MISSION.firstRound({
+    grid: starterGrid(),
     registry: FIXTURE_REGISTRY,
-    catalog: SPIKE_CATALOG,
-    standing: SPIKE_STANDING,
-    allotment: SPIKE_ALLOTMENT,
-    nexusDraft: SPIKE_NEXUS_DRAFT,
-    edgeStyle: SPIKE_EDGE_STYLE,
+    catalog: STARTER_CATALOG,
+    standing: STARTER_STANDING,
+    allotment: STARTER_ALLOTMENT,
+    nexusDraft: STARTER_NEXUS_DRAFT,
+    edgeStyle: STARTER_EDGE_STYLE,
     ...(scrollMargin === undefined ? {} : { scrollMargin }),
     ...extra,
   })
 }
 
-export async function runSpike(options: SpikeOptions): Promise<number> {
+export async function runBuildPhase(options: SpikeOptions): Promise<number> {
   const { stdout, stdin } = options
 
   if (!stdout.isTTY || !stdin.isTTY) {
-    stdout.write("terminal-nexus --spike needs an interactive terminal.\n")
+    stdout.write("terminal-nexus --build-phase needs an interactive terminal.\n")
     return 0
   }
 
-  const context = spikeContext(options.scrollMargin, {
+  const context = starterContext(options.scrollMargin, {
     settings: options.settings,
     ...(options.experiments === undefined ? {} : { experiments: options.experiments }),
     ...(options.buildId === undefined ? {} : { buildId: options.buildId }),
     ...(options.exporter === undefined ? {} : { exportDestination: options.exporter.destination }),
   })
   const terminalSize = (): { columns: number; rows: number } => ({
-    columns: stdout.columns ?? SPIKE_MINIMUM.width,
-    rows: stdout.rows ?? SPIKE_MINIMUM.height,
+    columns: stdout.columns ?? STARTER_MINIMUM.width,
+    rows: stdout.rows ?? STARTER_MINIMUM.height,
   })
 
   let layout = buildLayout(terminalSize(), context.grid)
@@ -188,7 +188,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
 
   const build = new BuildSession({
     context,
-    cursor: SPIKE_START_CURSOR,
+    cursor: STARTER_START_CURSOR,
     viewport: layout.viewport,
     onQuit: leave,
     onSettingsChange: saveSettings,
@@ -263,7 +263,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     const pulse = gated ? undefined : build.pulseFrame(layout)
     const frame =
       gated || live === null
-        ? gateFrame(size.columns, size.rows, SPIKE_MINIMUM)
+        ? gateFrame(size.columns, size.rows, STARTER_MINIMUM)
         : composeBuildFrame(
             {
               // This round's: what stands on the map changes from round to round (gate 6B).
@@ -417,7 +417,7 @@ export async function runSpike(options: SpikeOptions): Promise<number> {
     host.reportError(`terminal-nexus: could not save settings or the export: ${String(sideEffectError)}\n`)
   }
   if (failure !== null) {
-    host.reportError(`terminal-nexus --spike failed: ${String(failure)}\n`)
+    host.reportError(`terminal-nexus --build-phase failed: ${String(failure)}\n`)
     return 1
   }
   return 0

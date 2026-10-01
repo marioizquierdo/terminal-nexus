@@ -10,7 +10,7 @@
 // The keys go through the real keyboard and mouse adapters as the exact bytes a terminal sends, one
 // key at a time (`src/playtest/keys.ts` has the names). The frames come from the same composer the
 // live screen presents, in-process, so there is no capture race: every picture is of the state the
-// script actually reached. Only the Build Phase screen (`terminal-nexus --spike`) is wired up so far;
+// script actually reached. Only the Build Phase screen (`terminal-nexus --build-phase`) is wired up so far;
 // `src/playtest/build.ts` is the shape another screen would copy.
 //
 // Output goes to `.playtest/` (ignored by git) unless `--out` says otherwise. Point `--out` at

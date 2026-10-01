@@ -207,7 +207,7 @@ export type BuildCommand =
  * - `heavy`: a heavy box line, joined to the frame's light lines with mixed-weight junctions;
  * - `double`: a double box line;
  * - `shade`: a light shade, a dotted band;
- * - `fence`: a dashed heavy line with posts (the PERIMETER stand-in's, `SPIKE_EDGE_STYLE`).
+ * - `fence`: a dashed heavy line with posts (the PERIMETER stand-in's, `STARTER_EDGE_STYLE`).
  */
 export type MapEdgeStyle = "solid" | "half" | "heavy" | "double" | "shade" | "fence"
 

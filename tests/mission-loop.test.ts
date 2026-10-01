@@ -5,7 +5,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { SPIKE_START_CURSOR, SPIKE_STANDING } from "../src/build/catalog.ts"
+import { STARTER_START_CURSOR, STARTER_STANDING } from "../src/build/catalog.ts"
 import { nextRoundRow } from "../src/build/layout.ts"
 import { remaining } from "../src/build/state.ts"
 import type { BuildCommand } from "../src/build/types.ts"
@@ -18,7 +18,7 @@ const ENTER = "\r"
 
 /** PERIMETER's first Build Phase, as the game opens it. */
 function perimeter(): BuildSide {
-  return buildSide({ cursor: SPIKE_START_CURSOR, startPulse, nextRound })
+  return buildSide({ cursor: STARTER_START_CURSOR, startPulse, nextRound })
 }
 
 /** A round planned and started: the Reserve Fund picked, the buildings placed, the Battle Round started. */
@@ -126,7 +126,7 @@ test("the whole mission, round by round, to its end; Play again and Restart both
   assert.match(end, /\[enter\] Play again/)
   keys(side, ENTER)
   assert.equal(side.build.state.pulseNumber, 1)
-  assert.deepEqual(side.build.round.standing, SPIKE_STANDING)
+  assert.deepEqual(side.build.round.standing, STARTER_STANDING)
   assert.equal(side.build.round.carried, null)
 
   // Restart from the game menu in round 2 goes back to round 1 too.

@@ -85,7 +85,7 @@ export type BuildContext = Readonly<{
    */
   edgeStyle?: MapEdgeStyle
   /** The player's settings the screen opens with — saved ones, or a command line's. The Settings
-   *  popup changes them in `BuildState.settings`; saving is the live loop's (`src/cli/spike.ts`). */
+   *  popup changes them in `BuildState.settings`; saving is the live loop's (`src/cli/build-phase.ts`). */
   settings?: Settings
   /** Experiments to open with instead of this build's defaults — an imported export
    *  (`settings-export.ts`), so an agent can start from exactly what the owner had. */

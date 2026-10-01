@@ -30,9 +30,9 @@ npm run maps                                                          # every ch
 
 # terminal-nexus — the game. No map; straight to the menu.
 ./bin/terminal-nexus.ts
-./bin/terminal-nexus.ts --spike                                       # the Build Phase (a temporary flag name)
-./bin/terminal-nexus.ts --spike --settings "$(pbpaste)"               # start from a pasted settings export
-./bin/terminal-nexus.ts --spike --keys "n 1 1 Enter"                  # open already in a state
+./bin/terminal-nexus.ts --build-phase                                       # the Build Phase (a temporary flag; --spike still works)
+./bin/terminal-nexus.ts --build-phase --settings "$(pbpaste)"               # start from a pasted settings export
+./bin/terminal-nexus.ts --build-phase --keys "n 1 1 Enter"                  # open already in a state
 
 bun scripts/build-web.mjs                                             # the browser playtest page
 ```
@@ -119,7 +119,7 @@ request will show, and keep a GIF under about 1 MB (`--scale 1` quarters it).
 **Screenshots of the real terminal** (`node scripts/capture-screenshots.mjs`, the `grid-screenshots`
 skill) drive `grid` inside a tmux pseudo-terminal, so the ANSI backend takes the path a person gets,
 pause at an exact tick and render the pane to a PNG through the Chromium already present for
-Playwright. `scripts/capture-spike-screenshots.mjs` covers the Build Phase at the sizes that matter
+Playwright. `scripts/capture-build-phase-screenshots.mjs` covers the Build Phase at the sizes that matter
 (80 × 24, 104 × 32, 128 × 24, and 79 × 24 for the resize gate); most of its shots are composed
 in-process through the scripted playtest, a few stay on tmux because the terminal path is what they
 prove. An unchanged shot is not rewritten: every image records a hash of the page it came from, so a

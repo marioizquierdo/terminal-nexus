@@ -148,7 +148,7 @@ test("the deterministic modules name no clock, no Math.random, and no terminal",
 })
 
 test("the Build Phase reducer and its Experiments name no clock and never reach the kernel's tick", () => {
-  // Gate 5G: the Experiments' timing flags are read by the live loop (src/cli/spike.ts), never here —
+  // Gate 5G: the Experiments' timing flags are read by the live loop (src/cli/build-phase.ts), never here —
   // the reducer stores a number and nothing more, so it stays a pure function a driver can replay.
   assertNoDependencyOn("build", ["pulse", "cli"])
   const forbidden = [/\bDate\s*\.\s*now\b/, /\bnew\s+Date\b/, /\bperformance\s*\.\s*now\b/, /\bset(Timeout|Interval)\b/]
@@ -161,7 +161,7 @@ test("the Build Phase reducer and its Experiments name no clock and never reach 
 })
 
 test("the Build Phase's animation and key timing, and the Nexus Pulse's ending, take the time as a number, and name no clock", () => {
-  // Gate 5H: the screen's clock is read in one place, the live loop (src/cli/spike.ts), and handed to
+  // Gate 5H: the screen's clock is read in one place, the live loop (src/cli/build-phase.ts), and handed to
   // these as a number — which is what lets a test drive the ease, the flashes, the held-key ramp and the
   // Esc timeout without waiting.
   const forbidden = [/\bDate\s*\.\s*now\b/, /\bnew\s+Date\b/, /\bperformance\s*\.\s*now\b/, /\bset(Timeout|Interval)\b/]

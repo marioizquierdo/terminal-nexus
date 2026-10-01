@@ -17,10 +17,10 @@ import test from "node:test"
 import { runInNewContext } from "node:vm"
 
 import { EventEmitter } from "node:events"
-import { runSpike, spikeContext } from "../src/cli/spike.ts"
+import { runBuildPhase, starterContext } from "../src/cli/build-phase.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import { KEYBOARD_POP, KEYBOARD_PUSH, KEYBOARD_QUERY, encodeKeyEvent } from "../src/view/key-events.ts"
-import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
+import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { BuildSession } from "../src/build/session.ts"
 import { buildLayout } from "../src/build/layout.ts"
 import { keyBytes } from "../src/playtest/keys.ts"
@@ -74,7 +74,7 @@ test("the page reaches no Node module and no package, only the game's own files"
   assert.deepEqual(external, [], "the page imports something that is not the game's own code")
   const names = [...files].map((file) => relative(ROOT, file))
   // The three screen loops themselves — not copies of them.
-  for (const loop of ["src/cli/menu.ts", "src/cli/spike.ts", "src/cli/watch.ts"]) {
+  for (const loop of ["src/cli/menu.ts", "src/cli/build-phase.ts", "src/cli/watch.ts"]) {
     assert.ok(names.includes(loop), `the page does not run ${loop}`)
   }
   // And none of the files that exist only for a terminal or a disk.
@@ -93,7 +93,7 @@ if (RUNTIME_IS_BUN) {
       bundleForBrowser: (entry: string, options?: object) => Promise<{ code: string; files: string[] }>
     }
     const { code, files } = await bundleForBrowser("tests/fixtures/web-sameness.ts", { minify: false })
-    assert.ok(files.includes("src/cli/spike.ts") || files.includes("src/build/session.ts"))
+    assert.ok(files.includes("src/cli/build-phase.ts") || files.includes("src/build/session.ts"))
     const scenario = await loadScenarioFile("grand-battle.map.json")
 
     // A browser's globals, and nothing of Node's: no process, Buffer, require or module.
@@ -115,9 +115,9 @@ if (RUNTIME_IS_BUN) {
 // --- 3. The same characters and colours as the terminal -------------------------------------------
 
 function buildFrame(script: readonly string[]): ReadonlyCellFrame {
-  const context = spikeContext()
+  const context = starterContext()
   const layout = buildLayout({ columns: 80, rows: 24 }, context.grid)
-  const build = new BuildSession({ context, cursor: SPIKE_START_CURSOR, viewport: layout.viewport })
+  const build = new BuildSession({ context, cursor: STARTER_START_CURSOR, viewport: layout.viewport })
   for (const name of script) build.handleData(keyBytes(name), layout)
   return composeBuildFrame({ context, state: build.state, layout }, "truecolor")
 }
@@ -268,7 +268,7 @@ test("the page plays a terminal that reports key events: it answers, keeps the f
     },
   })
   const keyboard = Object.assign(input, { isTTY: true })
-  const running = runSpike({
+  const running = runBuildPhase({
     settings: { ...DEFAULT_SETTINGS, capability: "monochrome" },
     backend: { name: "page", start: async () => {}, present: () => {}, stop: async () => {} },
     stdout: output,

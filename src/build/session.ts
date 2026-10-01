@@ -4,7 +4,7 @@
 // into the real adapters" true. `src/menu/session.ts` is the same shape for the menu.
 //
 // No stdin, no ANSI, no backend, no `src/view` import: composing the frame is `src/view/build.ts`'s
-// job and wiring it to a terminal is `src/cli/spike.ts`'s.
+// job and wiring it to a terminal is `src/cli/build-phase.ts`'s.
 
 import { decodeKeyEvent } from "../view/key-events.ts"
 import type { KeyPhase } from "../view/key-events.ts"

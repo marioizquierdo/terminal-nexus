@@ -21,7 +21,7 @@ import { exportText } from "../src/build/state.ts"
 import { SETTLED_EXPERIMENTS, TUNING } from "../src/build/tuning.ts"
 import { defaultValue, isSettingName } from "../src/build/all-settings.ts"
 import type { BuildCommand } from "../src/build/types.ts"
-import { runSpike, spikeContext } from "../src/cli/spike.ts"
+import { runBuildPhase, starterContext } from "../src/cli/build-phase.ts"
 import { osc52, terminalExporter } from "../src/cli/terminalNexus.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
@@ -52,7 +52,7 @@ import type { BuildSide } from "./build-helpers.ts"
 type SettingsSide = BuildSide & Readonly<{ exports: string[]; saved: Settings[] }>
 
 /** A Build Phase that keeps what it hands the live loop: every export and every setting to save. */
-function session(context: BuildContext = spikeContext()): SettingsSide {
+function session(context: BuildContext = starterContext()): SettingsSide {
   const exports: string[] = []
   const saved: Settings[] = []
   const side = buildSide({ context, onExport: (text) => exports.push(text), onSettingsChange: (settings) => saved.push(settings) })
@@ -192,7 +192,7 @@ test("every player setting's value box is a click target, the same as Left and R
 // --- The export -------------------------------------------------------------------------------------
 
 test("[e] shows the export in a popup, hands the same text to the adapter, and Esc goes back one popup at a time", () => {
-  const context: BuildContext = { ...spikeContext(), buildId: "abc1234", exportDestination: "Copied to the clipboard." }
+  const context: BuildContext = { ...starterContext(), buildId: "abc1234", exportDestination: "Copied to the clipboard." }
   const side = session(context)
   keys(side, "d")
   goToExperiment(side, "holdWindowMs")
@@ -459,7 +459,7 @@ test("--settings on the command line: settings over what is saved, and every exp
 })
 
 test("a Build Phase opened with imported experiments has them, and the playtest script's runner takes both halves", () => {
-  const side = session({ ...spikeContext(), experiments: { incoming: "hidden", holdWindowMs: 500 } })
+  const side = session({ ...starterContext(), experiments: { incoming: "hidden", holdWindowMs: 500 } })
   assert.equal(side.build.state.experiments.incoming, "hidden")
   assert.equal(side.build.state.experiments.holdWindowMs, 500)
   const run = runBuildPlaytest({
@@ -563,7 +563,7 @@ test("the live screen saves a changed setting through the store and hands an exp
   const stdin = new FakeStdin()
   const saves: Settings[] = []
   const exported: string[] = []
-  const running = runSpike({
+  const running = runBuildPhase({
     settings: { ...DEFAULT_SETTINGS, capability: "monochrome" },
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,

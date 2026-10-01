@@ -8,8 +8,8 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { buildLayout } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
-import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
-import { spikeContext } from "../src/cli/spike.ts"
+import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
+import { starterContext } from "../src/cli/build-phase.ts"
 import { inBounds, tilesOf } from "../src/grid/coords.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
 import { hashState } from "../src/state/serialize.ts"
@@ -123,9 +123,9 @@ test("a building committed on top of the muster points does not stop the Pulse: 
 })
 
 test("a session with no Pulse to start starts none: committing only freezes the plan, as before gate 6A", () => {
-  const context = spikeContext()
+  const context = starterContext()
   const layout = buildLayout(MINIMUM, context.grid)
-  const build = new BuildSession({ context, cursor: SPIKE_START_CURSOR, viewport: layout.viewport })
+  const build = new BuildSession({ context, cursor: STARTER_START_CURSOR, viewport: layout.viewport })
   build.run([{ kind: "pick-nexus", index: 0 }, { kind: "open-battle-round" }, { kind: "start-pulse" }])
   assert.equal(build.state.committed, true)
   assert.equal(build.pulse, null)

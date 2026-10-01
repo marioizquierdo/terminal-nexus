@@ -6,7 +6,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { SPIKE_START_CURSOR } from "../src/build/catalog.ts"
+import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { isGated } from "../src/build/camera.ts"
 import { CONTROLS_KEYS_WIDTH, CONTROLS_TITLE, HINTS, bottomLine, controlsLineCount, controlsPage, hint, hintSituation } from "../src/build/help.ts"
 import type { HintSituation } from "../src/build/help.ts"
@@ -112,7 +112,7 @@ test("the answers players rely on still show right after their command, and laps
 test("a refused placement is said in red with its tile, then — lapsed — quietly, while the ghost still sits there", () => {
   const side = buildSide()
   keys(side, TAB, "1") // on the map: the Barracks armed where the cursor is
-  side.build.dispatch({ kind: "look-at", x: SPIKE_START_CURSOR.x, y: SPIKE_START_CURSOR.y }) // onto the Grid Nexus
+  side.build.dispatch({ kind: "look-at", x: STARTER_START_CURSOR.x, y: STARTER_START_CURSOR.y }) // onto the Grid Nexus
   keys(side, ENTER)
   const tried = line(side)
   assert.match(tried.text, /^Cannot build here: the nexus is here at \d+,\d+\.$/)

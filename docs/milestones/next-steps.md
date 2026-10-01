@@ -71,7 +71,7 @@ Small, none blocking.
 
 **From the menu spike's second round** ([the menu spike report](../history/reports/2026-09-30-menu-spike.md) has the reasons):
 
-- **Three same-state tests click tiles chosen outside the click's edge zones** (build-spike,
+- **Three same-state tests click tiles chosen outside the click's edge zones** (build-phase,
   build-nexus, build-experiments): if the owner changes the click edge zone, those tiles need moving.
 - **The committed plan's fallback panel still prints `[esc] menu`**, key first, beside the top bar's
   own `menu [esc]`; it only shows when no Pulse can start. Removing the line is one edit.

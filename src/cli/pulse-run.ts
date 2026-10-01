@@ -151,7 +151,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
 }
 
 /** The mission the Build Phase's screen plays (gate 6B): PERIMETER's three waves, on the placeholder map. */
-export const SPIKE_MISSION: MissionPlay = missionPlay(PERIMETER)
+export const STARTER_MISSION: MissionPlay = missionPlay(PERIMETER)
 
 /** The screen's two connections to it, as `BuildSession` takes them. */
-export const { startPulse, nextRound } = SPIKE_MISSION
+export const { startPulse, nextRound } = STARTER_MISSION

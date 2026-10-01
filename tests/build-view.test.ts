@@ -8,9 +8,9 @@ import assert from "node:assert/strict"
 import { buildLayout, cellForTile, constructLines, startRow } from "../src/build/layout.ts"
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildSessionOptions } from "../src/build/session.ts"
-import { SPIKE_ALLOTMENT, SPIKE_CATALOG } from "../src/build/catalog.ts"
+import { STARTER_ALLOTMENT, STARTER_CATALOG } from "../src/build/catalog.ts"
 import { armedPreview, remaining } from "../src/build/state.ts"
-import { spikeContext } from "../src/cli/spike.ts"
+import { starterContext } from "../src/cli/build-phase.ts"
 import { bottomLine, hint } from "../src/build/help.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText, offendingGlyph } from "../src/view/frame.ts"
@@ -42,10 +42,10 @@ function readyBuildSession(options: BuildSessionOptions): BuildSession {
   return build
 }
 
-/** `spikeContext()`, with the neutral draft baked in from the start so every place that builds a
+/** `starterContext()`, with the neutral draft baked in from the start so every place that builds a
  *  session from it and every place that renders from it agree on what was picked. */
-function neutralContext(): ReturnType<typeof spikeContext> {
-  return { ...spikeContext(), nexusDraft: NEUTRAL_NEXUS_DRAFT }
+function neutralContext(): ReturnType<typeof starterContext> {
+  return { ...starterContext(), nexusDraft: NEUTRAL_NEXUS_DRAFT }
 }
 
 
@@ -426,7 +426,7 @@ test("the budget on screen is the budget the reducer is enforcing", () => {
 
   // The Grid arrives in Explore Map, whose panel covers the menu; the budget is the menu's.
   build.dispatch({ kind: "focus", target: "menu" })
-  assert.match(show(), new RegExp(`\\* ${SPIKE_ALLOTMENT}[|+]`))
+  assert.match(show(), new RegExp(`\\* ${STARTER_ALLOTMENT}[|+]`))
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
   assert.match(show(), new RegExp(`\\* ${remaining(context, build.state)}[|+]`))
@@ -437,7 +437,7 @@ test("the budget on screen is the budget the reducer is enforcing", () => {
   build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
   // Back on the menu: move the highlight to the cheap turret, leaving the barracks row unselected.
   build.run([{ kind: "highlight", delta: 1 }, { kind: "highlight", delta: 1 }])
-  assert.ok(remaining(context, build.state) < SPIKE_CATALOG[0]!.cost, "not actually unaffordable")
+  assert.ok(remaining(context, build.state) < STARTER_CATALOG[0]!.cost, "not actually unaffordable")
   const frame = composeBuildFrame({ context, state: build.state, layout }, "monochrome")
   const barracksLine = constructLines(layout, context.catalog).find((line) => line.index === 0)
   assert.ok(barracksLine !== undefined)
@@ -520,7 +520,7 @@ test("a row that costs more than is left cannot be armed: it flickers and says w
   build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
-  assert.ok(remaining(context, build.state) < SPIKE_CATALOG[0]!.cost, "not actually unaffordable")
+  assert.ok(remaining(context, build.state) < STARTER_CATALOG[0]!.cost, "not actually unaffordable")
   const before = build.state.ack?.seq ?? 0
   build.handleData("1", layout)
   assert.equal(build.state.armed, null)

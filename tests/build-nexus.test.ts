@@ -12,7 +12,7 @@ import { MOUSE_LEFT, MOUSE_RIGHT, formatMouseEvent } from "../src/build/mouse.ts
 import { BuildSession } from "../src/build/session.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { startPulse } from "../src/cli/pulse-run.ts"
-import { spikeContext } from "../src/cli/spike.ts"
+import { starterContext } from "../src/cli/build-phase.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { ESC, buildSide, placed } from "./build-helpers.ts"
@@ -92,7 +92,7 @@ test("the popup holds the keyboard until a pick or Esc: arrows work its list, an
 })
 
 test("the popup picks by Up/Down and Enter too, closes, and lists the pick as active when reopened", () => {
-  const context = spikeContext()
+  const context = starterContext()
   const { build, layout } = session()
   build.handleData("n", layout)
   build.handleData(`${ESC}[B`, layout)
@@ -112,7 +112,7 @@ test("the popup picks by Up/Down and Enter too, closes, and lists the pick as ac
 })
 
 test("an open popup draws no placement ghost behind it, and refuses edits sent by a driver", () => {
-  const context = spikeContext()
+  const context = starterContext()
   const { build, layout } = session()
   build.dispatch({ kind: "arm", index: 2 })
   build.dispatch({ kind: "open-nexus-powers" })
@@ -127,7 +127,7 @@ test("an open popup draws no placement ghost behind it, and refuses edits sent b
 
 test("picking applies its own effect exactly once, and cannot be changed afterward", () => {
   const { build, layout } = session()
-  const context = spikeContext()
+  const context = starterContext()
   build.dispatch({ kind: "pick-nexus", index: 1 }) // War Chest, +2000
   assert.equal(build.state.nexusPick, 1)
   assert.equal(build.state.bonusAllotment, context.nexusDraft[1]!.bonusAllotment)
@@ -148,7 +148,7 @@ test("the budget on screen counts the picked power's share in what is left", () 
   // Reserve Fund adds 30 to a 100-point allotment. The panel once read "130 of 100" — more left than
   // there ever was; since feedback F57 it shows no maximum at all, only what is left — since F71 with
   // the map's resource symbol: `* 130`.
-  const context = spikeContext()
+  const context = starterContext()
   const { build, layout } = session()
   build.dispatch({ kind: "pick-nexus", index: 0 })
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
@@ -265,13 +265,13 @@ test("starting the Pulse outside the Battle Round screen — a stray y — chang
 test("keyboard: a digit picks from the Nexus popup while it is open, and arms the construct menu otherwise", () => {
   const side = session()
   side.build.dispatch({ kind: "open-nexus-powers" })
-  const popupContext = { itemCount: 3, armed: false, popup: "nexus-powers" as const, popupSpec: popupSpec(spikeContext(), side.build.state) }
+  const popupContext = { itemCount: 3, armed: false, popup: "nexus-powers" as const, popupSpec: popupSpec(starterContext(), side.build.state) }
   assert.deepEqual(buildKeyboardCommand("1", popupContext), { kind: "pick-nexus", index: 0 })
   assert.deepEqual(buildKeyboardCommand("2", popupContext), { kind: "pick-nexus", index: 1 })
   assert.equal(buildKeyboardCommand("3", popupContext), null, "a third popup digit picks nothing")
   side.build.dispatch({ kind: "pick-nexus", index: 0 })
   side.build.dispatch({ kind: "open-nexus-powers" })
-  assert.equal(buildKeyboardCommand("1", { ...popupContext, popupSpec: popupSpec(spikeContext(), side.build.state) }), null)
+  assert.equal(buildKeyboardCommand("1", { ...popupContext, popupSpec: popupSpec(starterContext(), side.build.state) }), null)
 
   const builtContext = { itemCount: 3, armed: false }
   assert.deepEqual(buildKeyboardCommand("1", builtContext), { kind: "arm", index: 0 })
@@ -458,7 +458,7 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   assert.deepEqual({ ...byMouse.build.state, highlightHidden: false }, byKeyboard.build.state)
   assert.deepEqual(byDriver.build.state, byKeyboard.build.state)
   const frame = (side: BuildSide): string =>
-    frameToText(composeBuildFrame({ context: spikeContext(), state: side.build.state, layout: side.layout }, "monochrome"))
+    frameToText(composeBuildFrame({ context: starterContext(), state: side.build.state, layout: side.layout }, "monochrome"))
   assert.equal(frame(byMouse), frame(byKeyboard))
   assert.equal(frame(byDriver), frame(byKeyboard))
 

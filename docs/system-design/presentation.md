@@ -138,7 +138,7 @@ What differs between the phases is what the side panel holds:
 `tests/build-view.test.ts`, `tests/build-help.test.ts`). The panel carries no refusal of its own; the
 low bar keeps all cursor status feedback. A refusal names its reason, and the tile when the reason is a
 tile, so the player can fix it rather than guess. **Affordability is reported before any tile problem**
-(RULE — `tests/build-spike.test.ts`): telling somebody a rock is in the way when they cannot afford the
+(RULE — `tests/build-phase.test.ts`): telling somebody a rock is in the way when they cannot afford the
 building sends them to fix the wrong thing. **Looking and trying read differently**: while the armed
 preview merely sits on a tile Enter would refuse, the status line says why in its ordinary tone and the
 preview is a grey block of `x`; once the player actually tries (Enter, Space, or a confirming click) the

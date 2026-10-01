@@ -43,7 +43,7 @@ it is off screen), `click@COL,ROW` clicks a 0-based screen cell; `rclick`, `whee
 the same targets. `#` starts a comment in a `--file`. The table with bytes is at the top of
 `src/playtest/keys.ts`. An unknown name is an error, never a guess.
 
-Useful openings on the `--spike` screen: the menu is one list — `[e] Explore Map`, `[n] Nexus`, a
+Useful openings on the `--build-phase` screen: the menu is one list — `[e] Explore Map`, `[n] Nexus`, a
 line with what is left to spend on its right (`* 100` in ASCII, `◆ 100` in Unicode — the map's
 resource symbol), the buildings, `[s] Start Pulse` on the last line — and the one bottom line says the
 last key's answer or a hint for where the keyboard is. Focus starts on the menu's first row, Explore
@@ -62,7 +62,7 @@ refused with a line saying so. A digit pressed on the map comes back to the map 
 switches focus, arriving on the map in plain navigation; Left and Right on the menu only grey the
 row's words for a moment. A script's frames are still frames: the focus arrow, the see-through cursor
 Explore Map sends, the cursor blink and the card reveal are live-loop timing, drawn by `handoffGif` in
-`scripts/capture-spike-screenshots.mjs`. A click on a building's row arms it at once
+`scripts/capture-build-phase-screenshots.mjs`. A click on a building's row arms it at once
 (`click@3,7` is the Hatchery at 80x24), and a second click on the same tile places. `x` and a right
 click go back one level and do nothing on the menu, so `x x x` always lands there; only `Esc` on the
 menu (or `q` anywhere) opens the game menu: `s` Settings, `c` Controls and hotkeys (`?` opens it from
@@ -105,14 +105,14 @@ wait~20000 wait~20000` holds it; `n 1 s s wait~20000 wait~20000 Enter` three tim
 The ending's timings are tuned values (`src/build/tuning.ts`). During a Pulse
 Space pauses, `[` and `]` change the speed, `.` and `,` step, `r` watches it again, and `d` still
 opens the Experiments; `Esc` opens the game menu and its Restart is the way back to a fresh Build
-Phase. `scripts/capture-spike-screenshots.mjs` has `pulseGif` (an ending frame by frame, in real time)
+Phase. `scripts/capture-build-phase-screenshots.mjs` has `pulseGif` (an ending frame by frame, in real time)
 and shows each ending as a still.
 
 **Reproducing what the owner played**: he exports his settings (Settings, `e`) and pastes the text
 into the pull request; `--settings "<that text>"` starts the script from exactly those settings and
 experiments (the whole export, or just pairs: `--settings "popupPulseMs=3000 incoming=hidden"`; a name that is
 no longer an Experiment is skipped with a note). The
-same key script can open the **live game** in a state: `./bin/terminal-nexus.ts --spike --keys "n 1 1
+same key script can open the **live game** in a state: `./bin/terminal-nexus.ts --build-phase --keys "n 1 1
 Enter"` (and `#keys=` in the browser page's address) plays those keys through the real adapters
 before the player gets the keyboard — for a demo link, or to hand Mario the exact state a report is
 about.
@@ -124,7 +124,7 @@ a `wait` moves its clock). For those, compose a frame with
 `camera` / `refusedTry` / `ack` / `placing: [{ ordinal, elapsedMs }]` / `removing: [{ ordinal,
 contentId, anchor, elapsedMs }]` yourself, or step
 `BuildAnimation` (`src/view/build-live.ts`) with a fake clock: `slideGif`, `placementGif` and
-`placementSheet` in `scripts/capture-spike-screenshots.mjs` do exactly that.
+`placementSheet` in `scripts/capture-build-phase-screenshots.mjs` do exactly that.
 
 ## Workflow
 
@@ -141,7 +141,7 @@ contentId, anchor, elapsedMs }]` yourself, or step
 
 - `tests/playtest.test.ts` is the pattern for asserting a flow in the test suite: `parseKeyScript` +
   `runBuildPlaytest`, then assert on `frames[n].state` and `frameToText(frames[n].frame)`.
-- `scripts/capture-spike-screenshots.mjs` composes most Build Phase evidence shots this way
+- `scripts/capture-build-phase-screenshots.mjs` composes most Build Phase evidence shots this way
   (`scripted(...)`, `scriptedGif(...)`), keeping only the shots that prove the terminal path itself on
   tmux. Add a flow shot there as a key script plus the text its frame must contain.
 - Images whose content did not change are not rewritten (a hash rides inside each PNG/GIF);

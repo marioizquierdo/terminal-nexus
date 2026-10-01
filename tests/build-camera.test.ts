@@ -20,10 +20,10 @@ import {
   visibleRange,
 } from "../src/build/camera.ts"
 import type { Camera, Viewport } from "../src/build/camera.ts"
-import { spikeGrid } from "../src/build/catalog.ts"
+import { starterGrid } from "../src/build/catalog.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
 
-const GRID = spikeGrid()
+const GRID = starterGrid()
 /** The canon's first margin, three tiles each way: a fixture for the follow rule, which the game now
  *  feeds a share of the view (`marginForView`). */
 const SCROLL_MARGIN = 3

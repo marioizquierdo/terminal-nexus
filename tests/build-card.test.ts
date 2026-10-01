@@ -13,7 +13,7 @@ import assert from "node:assert/strict"
 import { defaultExperiments } from "../src/build/experiments.ts"
 import { hint } from "../src/build/help.ts"
 import { currentCard } from "../src/build/card.ts"
-import { SPIKE_CATALOG } from "../src/build/catalog.ts"
+import { STARTER_CATALOG } from "../src/build/catalog.ts"
 import { CARD_FIRST_ROW, CARD_HEADER_ROW, CARD_SEPARATOR_ROW, EXPLORE_ROW, NEXUS_ROW, menuEntryRow, menuFloor, startRow } from "../src/build/layout.ts"
 import { MOUSE_LEFT, buildMouseCommand, formatMouseEvent, parseMouseEvent } from "../src/build/mouse.ts"
 import { cardEntry, cardShowing, entryOfConstruct, remaining } from "../src/build/state.ts"
@@ -155,7 +155,7 @@ function moveTo(side: Side, tile: Readonly<{ x: number; y: number }>): void {
 /** Every card the Build Phase can show: each building being placed, and Explore Map over open ground,
  *  rock, a deposit, the Grid Nexus, a standing building and a planned one. */
 const EVERY_CARD: readonly (readonly [string, (side: Side) => void])[] = [
-  ...SPIKE_CATALOG.map((item) => [`placing the ${item.label}`, (side: Side) => keys(side, item.hotkey)] as const),
+  ...STARTER_CATALOG.map((item) => [`placing the ${item.label}`, (side: Side) => keys(side, item.hotkey)] as const),
   ...(
     [
       ["open ground", { x: 21, y: 13 }],
@@ -190,7 +190,7 @@ test("every card is a title, a subtitle, a description and its numbers — and s
     assert.doesNotMatch(text, /\b(planned|standing|to build)\b/i, `${name}: the card still says where the building stands`)
   }
   // Every kind of thing Explore Map can land on in the Build Phase has a card of its own.
-  for (const kind of ["terrain.plain", "terrain.rock", "terrain.deposit", "structure.citizen.nexus", ...SPIKE_CATALOG.map((item) => item.contentId)]) {
+  for (const kind of ["terrain.plain", "terrain.rock", "terrain.deposit", "structure.citizen.nexus", ...STARTER_CATALOG.map((item) => item.contentId)]) {
     assert.ok(kinds.has(kind), `no card was drawn for ${kind}`)
   }
 })

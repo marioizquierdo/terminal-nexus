@@ -16,7 +16,7 @@ import { detectCapability } from "./index.ts"
 import { parseArgs, parseInteger } from "./args.ts"
 import { runMenu } from "./menu.ts"
 import { parseKeyScript } from "../playtest/keys.ts"
-import { runSpike } from "./spike.ts"
+import { runBuildPhase } from "./build-phase.ts"
 import { DEFAULT_SETTINGS, createSettingsStore, defaultSettingsPath } from "../settings/index.ts"
 import type { Settings } from "../settings/index.ts"
 import { importSettings } from "../build/settings-export.ts"
@@ -30,11 +30,12 @@ const USAGE = `terminal-nexus — the Terminal Nexus game
                   [--backend auto|ansi|opentui]
       launches the top-level menu: Campaign, Challenge, Settings, Exit
 
-  terminal-nexus --spike [the same presentation flags]
-      opens the Build Phase scrolling-and-placement spike (Milestone 5, gate 5A): a Grid
-      larger than the screen, a cursor that scrolls it, and three structures to place, by
-      keyboard, by mouse, or from a script. It answers a question rather than shipping a
-      screen - nothing it plans reaches the simulation, and the plan is not saved.
+  terminal-nexus --build-phase [the same presentation flags]
+      opens the Build Phase on the starter map and plays the first mission from it: a Grid
+      larger than the screen, a cursor that scrolls it, buildings to place by keyboard, by
+      mouse or from a script, a Nexus power to pick, then the Nexus Pulse. (--spike is an
+      alias for one release; both flags are temporary stand-ins for flags that mean
+      something, such as a scenario to load or a screen to open.)
       --scroll-margin <percent> changes how close to the edge of the view the cursor gets
       before the map starts scrolling, as a share of the view's width and height
       (${TUNING.scrollMargin} unless given; "${TUNING.scrollMargin}" and "${TUNING.scrollMargin}%" are the same). Esc opens the game menu: Settings,
@@ -80,11 +81,15 @@ export async function main(argv: readonly string[]): Promise<number> {
     reducedMotion: args.flags.has("reduced-motion") ? true : imported.settings.reducedMotion,
   }
 
-  if (args.flags.has("spike")) {
+  // `--build-phase` opens the Build Phase directly. `--spike` is its old name, kept as an alias for
+  // one release so pasted commands keep working. Both are temporary: they name a screen rather than
+  // an intent, and should give way to flags that mean something (a scenario to load, a screen to
+  // open, a state to start in) once the Campaign menu leads here on its own.
+  if (args.flags.has("build-phase") || args.flags.has("spike")) {
     const margin = args.options.get("scroll-margin")
     const buildId = currentCommit()
     const startKeys = args.options.get("keys")
-    return runSpike({
+    return runBuildPhase({
       settings,
       settingsStore,
       backend: args.options.get("backend") ?? "auto",

@@ -72,7 +72,7 @@ the one you did not think of.
 
 ## 5. Pictures, page, pull request
 
-- `node scripts/capture-spike-screenshots.mjs` regenerates the pictures (it edits `docs/screenshots/`); open
+- `node scripts/capture-build-phase-screenshots.mjs` regenerates the pictures (it edits `docs/screenshots/`); open
   the new ones and look at them before linking any. Prefer `--settings` over key counts to set an
   Experiment in a capture flow — every added or removed Experiment shifts a "Down*6".
 - `bun scripts/build-web.mjs`, copy `dist/terminal-nexus-playtest.html` to your scratchpad, and
