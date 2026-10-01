@@ -1,9 +1,9 @@
-// The style role vocabulary and the render tiers that resolve it — engine.md 9.1 and 9.6.
+// The style role vocabulary and the render tiers that resolve it (`docs/system-design/presentation.md`).
 //
 // A role is never a colour. `fgRole: "player.a"` is what a cell carries; which colour that becomes
 // is the capability mode's business, and that is what makes monochrome a setting rather than a
 // rewrite. Every tier shows the same Pulse with the same information: **monochrome is the floor,
-// not the degraded mode** (milestone-1-spike-battle.md 4.2), and the higher tiers buy fidelity, not
+// not the degraded mode** (the design fixes this), and the higher tiers buy fidelity, not
 // facts. Colour never carries ownership, target, danger, or health alone — sides are told apart by
 // letter case, factions by glyph family, terrain by shape, salvage by its own character.
 //
@@ -18,12 +18,12 @@ export const STYLE_ROLES = [
   "chrome.label",
   "chrome.value",
   "chrome.muted",
-  // The bracketed hotkey on a menu row — engine.md 9.7: "the bracketed key is the carrier that
+  // The bracketed hotkey on a menu row — `docs/system-design/input.md`: "the bracketed key is the carrier that
   // survives monochrome; a style role (chrome.hotkey) colours it where colour exists, and colour
-  // never carries it alone." Named by canon before this gate, not invented here.
+  // never carries it alone." (A role name the design fixed before the renderer existed.)
   "chrome.hotkey",
-  // The map's edge, drawn quietly (feedback F25: "the border color should probably be less
-  // accentuated"; the owner kept it over the frame's own colour, 2026-09-29). A grey between the
+  // The map's edge, drawn quietly (Mario: "the border color should probably be less
+  // accentuated"; he kept it over the frame's own colour). A grey between the
   // frame's and the ground's, so the edge still reads as a wall while the menu and the bars stay the
   // loudest lines on screen.
   "chrome.edge",
@@ -35,14 +35,14 @@ export const STYLE_ROLES = [
   "item.salvage",
   "notice.gate",
   // Effect roles. Kinetic and blast are the two weapon languages: Citizens fire rounds, Ravels set
-  // things off, and craft rule 2 in ascii-effects.md says those must not share a look.
+  // things off, and a craft rule in `effects.md` says those must not share a look.
   "fx.trail",
   "fx.kinetic",
   "fx.blast",
   "fx.debris",
   "fx.critical",
   "fx.flash",
-  // The rainbow (gate 5I, feedback F9: "colour interpolation (a rainbow, lighting on the characters)").
+  // The rainbow (Mario: "colour interpolation (a rainbow, lighting on the characters)").
   // Six hues the theme owns like any other role, so a rainbow is a walk through roles rather than a
   // list of colours in a view module — and at 16 colours each one is a real ANSI hue, so the walk
   // still reads as a rainbow there. Used by the shading and particle recipes' rainbow palettes
@@ -60,7 +60,7 @@ export type StyleRole = (typeof STYLE_ROLES)[number]
 /** A colour as red, green and blue, 0 to 255 — only ever what a role resolves to, never what a cell carries. */
 export type Rgb = readonly [number, number, number]
 
-/** The rainbow, in order round the wheel — what a "rainbow" light walks through (gate 5I). */
+/** The rainbow, in order round the wheel — what a "rainbow" light walks through. */
 export const RAINBOW_ROLES: readonly StyleRole[] = [
   "fx.hue.red",
   "fx.hue.yellow",
@@ -88,11 +88,11 @@ export function parseCapability(value: string): CapabilityMode {
 }
 
 /**
- * Which background the palette assumes — engine.md 9.1's open question, answered minimally
+ * Which background the palette assumes — an open question in the design, answered minimally
  * (owner playtest: on a light terminal background, the dark theme's chrome text was nearly
  * invisible). Two fixed themes rather than a background probe: querying a terminal's actual
- * background colour (OSC 11) is unreliable across emulators and is real complexity for a Gate that
- * asked to start simple. `dark` is the default — it is the palette the lore and every screenshot so
+ * background colour (OSC 11) is unreliable across emulators and is real complexity for a first version
+ * that was asked to start simple. `dark` is the default — it is the palette the lore and every screenshot so
  * far were designed against — and `light` is one explicit flag away. The door stays open for a real
  * themes/modding system later without anything here needing to change shape, only to grow more
  * entries.
@@ -129,9 +129,9 @@ type Swatch = Readonly<{
 
 /**
  * One table per theme, two tiers hand-authored each — `ansi` and `rgb`. The 256-colour tier is no
- * longer a third hand-authored column: it is *derived* from `rgb` (`nearestIndexed`, below), Q25's
- * option A (`docs/milestones/open-questions.md`). `rgb` is where the factions' own palettes get to show up —
- * Citizen rust and gunmetal against Ravel neon and acid, from `terminal-nexus-lore.md` Section 8 —
+ * longer a third hand-authored column: it is *derived* from `rgb` (`nearestIndexed`, below), so a palette
+ * change is made once. `rgb` is where the factions' own palettes get to show up —
+ * Citizen rust and gunmetal against Ravel neon and acid, from the lore document —
  * while the 16-colour tier keeps the two sides as far apart as eight colours allow. This `dark` table
  * is the reference: the one the lore and every screenshot so far were designed against, and the one
  * to extend first when a role needs a stronger identity.
@@ -142,8 +142,8 @@ type Swatch = Readonly<{
  * the same entry or within a dozen RGB units of it. The same search against the sixteen ANSI colours
  * does not: it sends `chrome.muted` back to ANSI 90, the exact "bright black" value an owner playtest
  * already had removed (see the two-fixes comment below, still true and still why `chrome.muted` sits
- * on 37 rather than 90), and it collapses `player.a` and `player.b` onto the *same* grey — Q21's
- * contrast complaint made maximally worse, at the one tier with the least room to fix it. A
+ * on 37 rather than 90), and it collapses `player.a` and `player.b` onto the *same* grey — the
+ * two-sides contrast complaint made maximally worse, at the one tier with the least room to fix it. A
  * perceptual metric (OKLab) does not rescue it, because the cause is structural rather than a bad
  * formula: the sixteen ANSI colours have no desaturated entries, only eight hues, eight brights, and
  * greys, so nearest-match of any deliberately muted design colour lands on grey — grey genuinely
@@ -167,7 +167,7 @@ type Swatch = Readonly<{
  *     orange Citizens are everywhere else, and 93 is bright yellow, not Ravel green. Corrected to 33
  *     (the closest base-16 approximation of an amber/rust) and 92 (bright green).
  *
- * A third fix, 2026-08-24 (Q21, `docs/milestones/open-questions.md`): `player.a`/`player.b`'s **light-theme**
+ * A third fix, 2026-08-24 (the two-sides contrast question): `player.a`/`player.b`'s **light-theme**
  * `rgb` retuned by lightness only — hue and saturation unchanged, rust stays rust, green stays green.
  * Measured WCAG contrast against each other was 1.08:1 (dark theme's 2.08:1 is a smaller gap, left
  * alone per the recommendation): both sides clear the 3:1 floor against the background individually,
@@ -203,7 +203,7 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Swatch>>> = {
     "terrain.rock": { ansi: 37, rgb: [128, 132, 138] },
     "terrain.deposit": { ansi: 33, rgb: [198, 160, 40] },
     // Citizen rust orange against Ravel bioluminescent cyan-green: the two Energy palettes the lore
-    // gives the factions that Milestone 12 will pair.
+    // gives the factions, which later content work will pair.
     "player.a": { ansi: 33, rgb: [201, 118, 68] },
     "player.b": { ansi: 92, rgb: [104, 226, 132] },
     "item.salvage": { ansi: 32, rgb: [124, 158, 118] },
@@ -240,7 +240,7 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Swatch>>> = {
     "terrain.plain": { ansi: 90, rgb: [196, 192, 184] },
     "terrain.rock": { ansi: 30, rgb: [70, 66, 60] },
     "terrain.deposit": { ansi: 33, rgb: [168, 124, 24] },
-    // Q21, 2026-08-24: lightness-only retune (hue and saturation unchanged) so the two sides clear a
+    // Lightness-only retune (hue and saturation unchanged) so the two sides clear a
     // real mutual-contrast floor rather than only each individually clearing it against the
     // background - see the PALETTE doc comment above for the measurement and why the two roles moved
     // by such different amounts.
@@ -285,8 +285,8 @@ export function xterm256Rgb(index: number): Rgb {
 }
 
 /**
- * The 256-colour index whose xterm rendering is nearest an RGB value, by squared distance — Q25's
- * "process the colour, then a final pass turns it into the tier," for real. Searches only the cube
+ * The 256-colour index whose xterm rendering is nearest an RGB value, by squared distance — the
+ * "process the colour, then a final pass turns it into the tier" step. Searches only the cube
  * and greyscale range (16-255): the sixteen system colours are the hand-authored `ansi` tier's own
  * job, not this one's. Cheap enough to call once per role per theme at module load (18 x 2 x 240
  * candidates) rather than needing its own cache beyond `DERIVED_256` below.
@@ -309,8 +309,7 @@ function nearestIndexed(rgb: Rgb): number {
 }
 
 /**
- * The 256-colour tier, derived once from each role's own `rgb` rather than hand-authored (Q25,
- * option A). Computed at module load and read as a plain lookup at render time — the same cost a
+ * The 256-colour tier, derived once from each role's own `rgb` rather than hand-authored. Computed at module load and read as a plain lookup at render time — the same cost a
  * hand-authored field used to be, and the reason this is precomputed rather than called from
  * `sgrFor` directly on every cell of every frame.
  */
@@ -327,8 +326,8 @@ const DERIVED_256: Readonly<Record<Theme, Record<StyleRole, number>>> = (() => {
 })()
 
 /**
- * A foreground role pulled part of the way toward another role — gate 5I's style-role operation for
- * light on a placed building's characters (feedback F9). `amount` is `0` (the cell's own role) to `1`
+ * A foreground role pulled part of the way toward another role — the style-role operation for
+ * light on a placed building's characters. `amount` is `0` (the cell's own role) to `1`
  * (entirely `role`). Like `fade`, the cell still carries only roles and a number, never a colour: the
  * theme decides what either role looks like, and the tier decides how much of a blend it can show.
  *
@@ -344,7 +343,7 @@ const DERIVED_256: Readonly<Record<Theme, Record<StyleRole, number>>> = (() => {
 export type RoleTint = Readonly<{ role: StyleRole; amount: number }>
 
 /**
- * A see-through cursor laid over a cell (the menu spike's round 2, feedback F64-F65): `role`'s colour at
+ * A see-through cursor laid over a cell (the Explore Map and hand-off cursor): `role`'s colour at
  * `alpha` (0 to 1) over whatever is drawn there. The cell's background becomes `alpha` of the role's
  * colour and `1 - alpha` of what was there — itself 80% the cell's own background and 20% its glyph's
  * colour, the glyph being taken to cover about a fifth of the cell — and the glyph, which stays, is
@@ -384,7 +383,7 @@ function nearestIndexedCached(rgb: Rgb): number {
 
 /**
  * The truecolor RGB of a role after its tint and fade — the one place both blends meet, and the only
- * place a fade scalar touches a colour (Q25's recommended shape): the tinted colour taken `fade` of the
+ * place a fade scalar touches a colour (the recommended shape): the tinted colour taken `fade` of the
  * way toward the theme's background. `mixRgb` clamps the amount, so a caller that hands in more than 1
  * still lands on the background rather than past it.
  */
@@ -404,7 +403,7 @@ function tintStepsAt16(tint: RoleTint | undefined): boolean {
  * so that a monochrome frame provably contains no colour code. `theme` defaults to `DEFAULT_THEME`
  * so every existing caller that has not been taught about themes yet keeps today's look exactly.
  *
- * `fade` (default `0`, meaning none) is Q25's transparency scalar — see `CellStyle.fade`'s doc
+ * `fade` (default `0`, meaning none) is the transparency scalar — see `CellStyle.fade`'s doc
  * comment in `frame.ts` for the full contract. It resolves only at `color256` (a fresh nearest-index
  * search against the faded rgb, rather than the precomputed `DERIVED_256` table) and `truecolor` (a
  * direct blend); `color16` and `monochrome` ignore it entirely; those two tiers have nothing between
@@ -478,7 +477,7 @@ export function rgbFor(
 
 /**
  * How much of a cell its glyph is taken to cover when a see-through style mixes what lies beneath it — the
- * owner's "assuming that the icon is about 20% of the surface" (feedback F65).
+ * owner's "assuming that the icon is about 20% of the surface".
  */
 export const GLYPH_COVER = 0.2
 
@@ -489,7 +488,7 @@ export const GLYPH_COVER = 0.2
 export const SEE_THROUGH_STEP = 0.5
 
 /**
- * The owner's mix (feedback F65), as plain arithmetic on three colours and the cursor's own glyph
+ * The owner's mix, as plain arithmetic on three colours and the cursor's own glyph
  * colour. "If the background is black, the icon on the background is yellow, and the cursor is white,
  * then the cursor at 80% ... would be 80% white, and the other 20% split between black (80%) and
  * yellow (20%)":
@@ -532,7 +531,7 @@ export type SeeThroughColours = Readonly<{
 }>
 
 /**
- * The see-through cursor (`SeeThrough`, feedback F64-F65) resolved at a tier, or `null` where it
+ * The see-through cursor (`SeeThrough`) resolved at a tier, or `null` where it
  * changes nothing — no see-through style, an alpha of 0, or a low alpha at a tier with no blend. The one
  * place a see-through style becomes colour; `resolveCell` calls it for every renderer.
  *

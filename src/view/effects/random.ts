@@ -1,7 +1,7 @@
 // Cosmetic randomness for effects.
 //
 // This is a **hash, not a stream**, and the difference is the whole point. An effect must satisfy
-// `f(t)` never depending on `f(t-1)` (ascii-effects.md rule 1), so it cannot draw from a generator
+// `f(t)` never depending on `f(t-1)` (the first rule in `effects.md`), so it cannot draw from a generator
 // whose answers depend on how many times it has been asked: two frames rendered in a different
 // order, or one frame skipped, would produce different scatter. Hashing the instance's own identity
 // plus a salt gives every effect stable randomness that is identical at any time, in any order, on

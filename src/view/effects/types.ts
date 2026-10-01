@@ -1,4 +1,4 @@
-// The effect contract — ascii-effects.md Section 1, transcribed rather than reinterpreted.
+// The effect contract — `docs/system-design/effects.md`, transcribed rather than reinterpreted.
 //
 // Two of the presentation toolkit's four families speak through it (the others are Animations,
 // `../animation.ts`, and Tweens, `../tween.ts`): **Particles**, glyph-bearing cells thrown around
@@ -13,7 +13,7 @@
 import type { Coord } from "../../grid/types.ts"
 import type { CapabilityMode, RoleTint, StyleRole } from "../roles.ts"
 
-/** Effects may paint here and nowhere else — ascii-effects.md 1.1. */
+/** Effects may paint here and nowhere else (`effects.md`). */
 export type EffectBand = "ground-items" | "projectiles" | "effects" | "highlights"
 
 export const EFFECT_BANDS: readonly EffectBand[] = [
@@ -32,10 +32,10 @@ export type PositionedCell = Readonly<{
   dim?: boolean
   inverse?: boolean
   /**
-   * Q25's transparency scalar, threaded from here through to `CellStyle.fade` (`frame.ts`, which
+   * The transparency scalar, threaded from here through to `CellStyle.fade` (`frame.ts`, which
    * carries the full doc comment): `0` is the role's own colour, `1` is the theme's background.
-   * Never set outside `fx.damage.flash` — ascii-effects.md craft rule 7's departure is narrow, not
-   * a general licence for glyph-bearing recipes to fade out.
+   * Never set outside `fx.damage.flash` — the craft rule in `effects.md` against fading glyphs has
+   * one narrow exception, not a general licence for glyph-bearing recipes to fade out.
    */
   fade?: number
   /**
@@ -57,8 +57,8 @@ export type EffectContext = Readonly<{
 
 /**
  * The visual family an effect speaks in. Faction identity lives here rather than in a duplicated
- * set of recipes: `terminal-nexus-lore.md` Section 8.6 asks each faction for one recognizable
- * motion and effect language, and ascii-effects.md craft rule 2 says different weapons need
+ * set of recipes: the lore document asks each faction for one recognizable
+ * motion and effect language, and `effects.md` says different weapons need
  * different physical languages — so a Citizen round and a Ravel charge share a recipe and disagree
  * about glyphs, bias, and how much of the screen they are entitled to.
  */

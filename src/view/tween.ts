@@ -1,8 +1,8 @@
-// Interpolation (owner, 2026-09-28: "interpolations are easy and powerful" — the thing every major
+// Interpolation (Mario: "interpolations are easy and powerful" — the thing every major
 // game engine formalises). A **tween** is a value moving from one number, or one point, to another
 // over a window of presentation time, along an easing curve.
 //
-// Like every effect (AGENTS.md Section 4), a tween is a **pure function of absolute time**: it is a
+// Like every effect (see `docs/system-design/effects.md`), a tween is a **pure function of absolute time**: it is a
 // record of where it started, where it is going, when and for how long, and `tweenAt(tween, now)`
 // answers where it is without remembering anything about the frame before. Retargeting mid-flight
 // (`retarget`) starts a new tween from wherever the old one is drawn at that instant, so a second
@@ -20,7 +20,7 @@ export const EASINGS = {
   /** Constant speed — a projectile, a sweep. */
   linear: (progress: number): number => clamp01(progress),
   /** Fast at first and settling at the end: a slide that starts where the player's eye already is.
-   *  The camera's curve since gate 5H. */
+   *  The camera's curve. */
   easeOut: (progress: number): number => 1 - (1 - clamp01(progress)) ** 3,
   /** A gentler deceleration — the effects library's expansions (blast rings, debris). */
   easeOutQuad: (progress: number): number => 1 - (1 - clamp01(progress)) ** 2,

@@ -1,4 +1,4 @@
-// How a Nexus Pulse ends on screen — the owner's sketch (milestone-06-pulse-phase.md Section 2.2), built
+// How a Nexus Pulse ends on screen — Mario's sketch (`docs/milestones/milestone-06-pulse-phase.md`), built
 // to be watched and retuned, and every moment of it a pure function of presentation time:
 //
 //   the fight is shown as it happened ............................ "fighting"
@@ -13,15 +13,15 @@
 // **The kernel decided the ending long before any of this plays**: the timeline is resolved whole before
 // the first frame, so presentation knows when the last tick is and can count down to it. That is what
 // makes it pacing — "just an idea for UX, to create anticipation and not just stop the pulse right
-// away" (owner, 2026-09-17) — and why it means the same for a Nexus that fell, a force wiped out, and the
+// away" (Mario) — and why it means the same for a Nexus that fell, a force wiped out, and the
 // clock running out: it is a flourish on an ending that already happened.
 //
-// **What is loud, and what is not** (owner, 2026-09-29): the only thing that flashes is the timer in the
+// **What is loud, and what is not** (Mario's direction): the only thing that flashes is the timer in the
 // Pulse's title, in its last seconds, like a racing game's clock; the light that sweeps the map's border is
 // a lighthouse calling, not an alarm; and **red is kept for the player's Nexus being hurt** — its first
 // hit, its health very low, a lost Pulse — brief and faint.
 //
-// **Recall's state change is instant** (engine.md Section 5), and belongs to `src/match/recall.ts`. What
+// **Recall's state change is instant** (`docs/system-design/pulse.md`), and belongs to `src/match/recall.ts`. What
 // is drawn here is the walk home on top of it: presentation only, from where the fight left each survivor
 // to the tile Recall gave it. Nothing in this file can change a state, an event or a hash.
 
@@ -255,7 +255,7 @@ export function walkPositions(
 }
 
 /** How a Pulse ended, in words a viewer can read without being told: the headline, why, and how it reads —
- *  and, in a mission (gate 6B), where the mission stands and what the result's row goes on to. */
+ *  and, in a mission, where the mission stands and what the result's row goes on to. */
 export type PulseResult = Readonly<{
   headline: string
   reason: string
@@ -280,11 +280,11 @@ type Round = Readonly<{
 }>
 
 /**
- * The result in a mission (gate 6B). A round the mission goes on from keeps the kernel's own headline —
+ * The result in a mission. A round the mission goes on from keeps the kernel's own headline —
  * the fight was won, lost or ran out of time, and that is true — and says under it which round this was
  * and that the Nexus stands. A mission a trigger ended says so instead, in the mission's own words: the
  * hold's "The perimeter held." is not a draw, whatever the kernel's tick limit calls the last Pulse
- * (Q36: the mission's goal is read one level above the victory check, which never changes).
+ * (the mission's goal is read one level above the victory check, which never changes).
  */
 export function missionResultOf(fight: PulseResult, round: Round | undefined): PulseResult {
   if (round === undefined) return fight
@@ -310,10 +310,10 @@ export function missionResultOf(fight: PulseResult, round: Round | undefined): P
 }
 
 /**
- * The result for the player, side A. The kernel's own three endings (engine.md 4.3) — a Nexus destroyed,
+ * The result for the player, side A. The kernel's own three endings (`pulse.md`) — a Nexus destroyed,
  * a force wiped out, the tick limit — and both sides' luck at once. A time-out is a draw here, as the
  * kernel has it: whether "still standing when the raid's schedule ends" should read as a win is a
- * mission's question (Q36), not this view's.
+ * mission's question, not this view's.
  */
 export function resultOf(outcome: Outcome, player: PlayerId = "A"): PulseResult {
   if (outcome.winner === null) {

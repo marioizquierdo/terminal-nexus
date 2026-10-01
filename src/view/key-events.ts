@@ -1,7 +1,7 @@
 // Key presses, repeats and releases, where the terminal reports them — the kitty keyboard protocol
-// (owner, 2026-09-30, third round: "We should enable/disable reading key-press in the settings, so I
-// can test how it feels when the system provides it vs when it does not"; the design is Q66's
-// progressive enhancement, `docs/milestones/next-steps.md`).
+// (Mario, asking for a setting: "We should enable/disable reading key-press in the settings, so I
+// can test how it feels when the system provides it vs when it does not"; the design is
+// progressive enhancement, noted in `docs/milestones/next-steps.md`).
 //
 // A classic terminal sends bytes only when a key goes down, and repeats them while it is held, so a
 // hold can only be guessed from the gaps (`src/build/motion.ts`). A terminal that speaks the kitty
