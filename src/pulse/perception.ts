@@ -105,7 +105,7 @@ export function perception(context: TickContext): void {
     if (changed) actor.focusStreak = 0
     setTarget(context, actor, selection.target.ordinal)
     // Facing is derived from the current target when stationary, and from the last step when
-    // moving. Nothing in the rules reads it; whether facing should ever affect a rule is still an open question (Q9).
+    // moving. Nothing in the rules reads it; facing is presentation-only, a settled decision (Q9, answered).
     actor.facing = directionOf(actor.anchor, selection.target.anchor, actor.facing)
     if (changed) {
       context.events.push({

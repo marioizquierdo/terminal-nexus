@@ -13,7 +13,7 @@ seed or event fixture; every balance claim should identify a reproducible cohort
 RULE — `tests/determinism.test.ts`, `tests/architecture.test.ts`, `tests/rng.test.ts`.
 
 - The same scenario, seed and tick count produce identical final-state and event hashes across twenty
-  runs of every checked-in scenario, and the same INFO log. `tests/cli.test.ts` repeats the check across
+  runs of every checked-in scenario, and the same INFO log. `tests/grid-cli.test.ts` repeats the check across
   runtimes, which one machine and one runtime can never do alone.
 - Resolving in one call equals resolving tick by tick. A different gameplay seed can change the fight,
   and the same one never does. State and the event stream round-trip through their canonical
@@ -65,7 +65,7 @@ mixed cell to the same colours, and turning effects off changes only the picture
 
 ### The terminal lifecycle through one disposer
 
-RULE — `tests/lifecycle.test.ts`, `tests/build-lifecycle.test.ts`, `tests/menu-session.test.ts`. Each
+RULE — `tests/lifecycle-backend.test.ts`, `tests/lifecycle-build-phase.test.ts`, `tests/lifecycle-title-menu.test.ts`. Each
 runs a real screen loop against fake streams, because the lifecycle cases matter more than the frame
 rate. `q`, an interrupt byte, `SIGINT`, `SIGTERM`, a setup failure and a caught render failure all reach
 the same idempotent disposer exactly once; raw mode, the alternate screen, mouse reporting and the key

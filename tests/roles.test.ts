@@ -109,7 +109,7 @@ test("parseCapability still rejects an unknown tier", () => {
 })
 
 test("the 256-colour tier is derived from rgb, not a fourth hand-authored value", () => {
-  // Pinned against node scripts/measure-palette-derivation.mjs's own output, 2026-08-24: these are
+  // Pinned against a measurement taken on 2026-08-24 (the script is since deleted; the report in docs/history/reports keeps the numbers): these are
   // the *derived* indices, and for chrome.frame and player.b (dark) they differ from what used to be
   // hand-authored (240 and 84) - proof the switch actually took effect, not just that some number
   // came back. chrome.frame's own rgb moved again 2026-09-26 (the same low-contrast-border fix
@@ -159,7 +159,7 @@ test("the 256-colour tier is derived from rgb, not a fourth hand-authored value"
 })
 
 test("the 16-colour tier stays hand-authored: chrome.muted keeps its fix, not nearest-match's regression", () => {
-  // scripts/measure-palette-derivation.mjs's own finding: nearest-match derivation would send
+  // the 2026-08-24 measurement's finding: nearest-match derivation would send
   // chrome.muted back to ANSI 90 ("bright black"), the exact value an owner playtest already had
   // removed because it compounds with the `dim` attribute every chrome.muted cell also carries. The
   // 16-colour tier deliberately does NOT derive (see roles.ts's PALETTE comment), so this must still

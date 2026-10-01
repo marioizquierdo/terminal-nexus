@@ -102,8 +102,8 @@ type Swatch = Readonly<{
  * is the reference: the one the lore and every screenshot so far were designed against, and the one
  * to extend first when a role needs a stronger identity.
  *
- * **Why 256 derives and 16 does not** (measured, not guessed — `node
- * scripts/measure-palette-derivation.mjs`, dated 2026-08-24): nearest-match by squared RGB distance
+ * **Why 256 derives and 16 does not** (measured on 2026-08-24 by a script since deleted; the
+ * quality-and-effects report under docs/history/reports keeps the numbers): nearest-match by squared RGB distance
  * against the real xterm-256 cube reproduces the hand-authored 256 table cleanly — most roles land on
  * the same entry or within a dozen RGB units of it. The same search against the sixteen ANSI colours
  * does not: it sends `chrome.muted` back to ANSI 90, the exact "bright black" value an owner playtest

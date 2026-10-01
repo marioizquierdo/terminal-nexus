@@ -13,11 +13,11 @@ long as map navigation works well*. This page says what that takes.
 kernel (src/pulse, src/state)          the rules; no terminal, no clock          portable
 reducer (src/build/state.ts)           state + commands -> state; no clock       portable
 adapters (keyboard.ts, mouse.ts,       raw bytes -> named commands               terminal-shaped input
-  session.ts, src/menu/*)
+  session.ts, src/title-menu/*)
 view (src/view/build.ts, compose.ts)   state + time -> a grid of styled cells    portable
 backend (ansi / opentui / canvas)      a grid of cells -> a surface              one per surface
 screen loop (src/cli/build-phase.ts, ...)    the only clock; input -> command -> draw  terminal-shaped ports
-host (src/cli/terminalNexus.ts,        stdin/stdout, settings file, clipboard    per host
+host (src/cli/terminal-nexus.ts,        stdin/stdout, settings file, clipboard    per host
   src/web/host.ts)
 ```
 
@@ -83,9 +83,9 @@ report decides only which tier of that design runs, never what the player can do
 
 - **Leaving a terminal in the protocol's mode is the failure to avoid**, so the pop runs on every way out
   (quit, Ctrl+C in both forms, Esc then quit, SIGINT, SIGTERM, a render or setup failure; RULE,
-  `tests/build-lifecycle.test.ts`, `tests/key-events.test.ts`).
+  `tests/lifecycle-build-phase.test.ts`, `tests/key-events.test.ts`).
 - **What the protocol costs elsewhere.** Keys arrive as `CSI ... u`, so the decoder learns a second form
-  (`src/view/key-events.ts`), and a lone Esc stops needing its wait, which also ends the Esc-versus-Option
+  (`src/terminal/key-events.ts`), and a lone Esc stops needing its wait, which also ends the Esc-versus-Option
   ambiguity. `tmux`, `screen` and SSH hops may not pass the protocol through: measure, do not assume.
 - **The seam is the real work.** The reducer still gets `move-cursor` commands and only the input path
   changes; a test feeds the same intent as timed presses and as press/release events and asserts the same
@@ -107,7 +107,7 @@ Ordered by payoff over cost. None is urgent; each is a candidate for a small ste
    terminal byte decoder as *one producer* and the browser's `keydown`/`keyup` as another, would let
    the movement ramp use real releases where a host reports them and fall back to timing where it does
    not. The terminal's kitty keyboard protocol and the page's key events already do this for the two
-   hosts that can (`src/view/key-events.ts`, `tests/key-events.test.ts`); the generalisation is the
+   hosts that can (`src/terminal/key-events.ts`, `tests/key-events.test.ts`); the generalisation is the
    highest payoff.
 2. **A host interface for the live loop.** `runBuildPhase` takes `stdout`- and `stdin`-shaped objects
    (`TerminalOutput` / `TerminalInput`, `src/view/backends/ports.ts`) and the browser fakes a TTY to

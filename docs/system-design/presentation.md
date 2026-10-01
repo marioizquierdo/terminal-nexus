@@ -162,7 +162,7 @@ say there is more map (see [`grid.md`](grid.md)), and every key is on the Contro
 
 A message on that line is a small typed value, not a string: its text, a **tone** (`neutral`,
 `success`, `warning`, `danger`, and `hint`, which reads quieter than any answer), and optionally **the
-tile it is about** (`src/status.ts`). A tone resolves onto existing style roles in exactly one place
+tile it is about** (`src/build/status.ts`). A tone resolves onto existing style roles in exactly one place
 (`src/view/status.ts`) and never names a colour itself, so monochrome gets the same message by weight
 alone. An effect (a flash, a fade) is a later field on the same value, not a second mechanism.
 
@@ -210,11 +210,11 @@ card. Start Pulse hides with the rest of the menu.
 
 **The header's own hotkey cancels**: `e` closes Explore Map and a building's digit cancels it, as `x`, Esc
 or a click anywhere on the panel do, back to where the card was opened from (RULE —
-`tests/build-card.test.ts`, `tests/build-placing.test.ts`). **A building being placed holds the menu**:
+`tests/build-card.test.ts`, `tests/build-holds-menu.test.ts`). **A building being placed holds the menu**:
 until it is placed or cancelled, another building's digit, `e` and `s` are refused (the header flickers
 and the bottom line names the way on), while popups that belong to no row choice (the Nexus powers, the
 game menu, Controls, Settings) open over it and give it back, and never move the menu's highlight (RULE
-— `tests/build-placing.test.ts`). Explore Map holds nothing: a digit while exploring arms from the map.
+— `tests/build-holds-menu.test.ts`). Explore Map holds nothing: a digit while exploring arms from the map.
 Arming and opening Explore Map put nothing on the bottom line but its hint. Tab and a click on the map
 arrive in plain navigation instead, the menu left beside the map, so the next click can arm from it. A
 larger ASCII-art card waits for content that has one, and live numbers wait for the Nexus Pulse view.

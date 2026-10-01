@@ -190,7 +190,7 @@ export function stepToTick(repoRoot, session, tick) {
  * whose footer no longer changes. `stepToTick` cannot confirm arrival there, because the one signal
  * it reads (the footer's tick readout) is exactly the thing that stops moving; this steps to
  * `lastResolvedTick` with it (still verified), then sends the remaining ticks directly. That is safe
- * without a read-back because `Playback.apply`'s "step-tick" case (src/view/playback.ts) advances
+ * without a read-back because `Playback.apply`'s "step-tick" case (src/terminal/playback.ts) advances
  * presentation time by exactly one tick's worth per keypress, unconditionally, gate aside - counting
  * presses is exact, not a guess.
  */

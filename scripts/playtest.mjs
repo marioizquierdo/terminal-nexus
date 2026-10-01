@@ -39,7 +39,7 @@ const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <pat
 
   --keys "<script>"    keys to press, e.g. "Down Down Space*4" (names: src/playtest/keys.ts)
   --file <path>        the same, from a file; # starts a comment
-  --size 80x24         terminal size (default 80x24; 104x32 is the largest view, 128x24 wide tiles)
+  --size 80x24         terminal size (default 80x24; 104x30 is the largest view, 128x24 wide tiles)
   --capability <mode>  truecolor (default), color256, color16, monochrome
   --theme <theme>      dark (default) or light
   --glyphs <pack>      ascii (default) or unicode

@@ -163,7 +163,7 @@ mind... but not needed for now." Three things are bundled:
   schema for it — still GUIDANCE, still unbuilt.
 - **Rewind and fast-forward at named granularities** is presentation on top of that format. The one
   consequence now: it should keep every tick's state cheaply addressable (or cheaply re-derivable) so
-  scrubbing is cheap later. `src/view/playback.ts` already addresses presentation time arbitrarily; scrubbing
+  scrubbing is cheap later. `src/terminal/playback.ts` already addresses presentation time arbitrarily; scrubbing
   backward and by named tick counts is the new part.
 - **Sandbox placement** is an early, reduced battle editor, but lighter in purpose than the competitive Build
   Phase: a fast unit-matchup tool for exploring the kernel, with no cost, supply or hidden plan.

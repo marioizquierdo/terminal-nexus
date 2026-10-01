@@ -191,8 +191,8 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the toolchain, testing and how work is 
 │   ├── history/               What happened: timeline, reports, feedback, the visual record
 │   └── claude-web.md          Setting up Claude Code on the web
 ├── src/                   The game and its tools: pulse (the rules kernel), match, mission, content,
-│                          scenario, state, events, grid, report, view, build (the Build Phase),
-│                          menu, cli, settings, web (the browser playtest page)
+│                          scenario, state, events, grid, report, log, terminal, view, build (the Build
+│                          Phase), title-menu, cli, settings, web (the browser playtest page)
 ├── tests/                 The test suite; Node's runner and Bun both run it
 ├── scenarios/             Checked-in .map.json fixtures, one file per rule under test
 ├── scripts/               Repository validation and development tooling (its README lists them)

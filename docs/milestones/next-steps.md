@@ -12,7 +12,7 @@ it is done.*
   Esc then `a`, change the filter, press `e`, and paste the export into the pull request. Also look at the
   About screen (Menu, then `4`).
 - **Turn on GitHub Discussions** (repository Settings → General → Features) with an Announcements
-  category; the About screen then links to it (`src/menu/about.ts` has the slot). Why this and not
+  category; the About screen then links to it (`src/title-menu/about.ts` has the slot). Why this and not
   Discord: [the parked feedback pipeline](../history/reports/2026-10-01-feedback-pipeline-parked.md).
 - **Run the key-release probe in iTerm2**: `node scripts/probe-key-release.mjs`, hold an arrow, let it go,
   tap it, `q`. Lines saying `release` mean the Key releases Experiment's `auto` works there; `legacy`
@@ -21,7 +21,7 @@ it is done.*
   units die (Q70), an order primitive as its own step (Q69; the thinking is in
   [`scripted-opponent.md`](../game-design/scripted-opponent.md)), letter hotkeys for buildings (Q67), whether
   the player ever reads "Pulse" (Q68), and the exploring click, the wheel step and the light theme's light
-  (Q62, Q63, Q64).
+  (Q63; Q62 and Q64 are answered).
 - **The menu spike's Experiments** (Battle Round flash, Flash strength, Popup pulse, the keyboard
   navigation numbers) came back without an export; they stay until he sends one.
 

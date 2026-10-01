@@ -21,7 +21,7 @@ this becoming "author the Citizens Commander Army" ahead of Milestone 12?
 - **The Commander mechanic.** A persistent `@`-class unit on the `units` layer that competes for
   investment like any other build choice. When it dies it is absent for the rest of that Pulse and for
   one full Build Phase and Pulse, after which the Prime Nexus may replicate it again. Commander death
-  is not the victory condition: PERIMETER's victory and defeat (Milestone 6, Q36) never depend on Vasse.
+  is not the victory condition: PERIMETER's victory and defeat (settled while building the mission runner) never depend on Vasse.
 - **Vasse, named.** Her doctrine in [`docs/game-design/commander-armies.md`](../game-design/commander-armies.md),
   "fortify, verify, then advance", becomes her behaviour profile and stat shape, scoped to what
   PERIMETER needs and not a full roster entry. Her full card, with candidate powers and what she

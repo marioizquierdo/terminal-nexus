@@ -1,3 +1,7 @@
+---
+name: grid
+description: Working with grid, the engine, editor and replay tool (bin/grid.ts): the report grammar, the log levels, the map format and how to author a scenario that exercises one rule. Use when running or reading a battle, adding a map, or debugging a kernel rule.
+---
 # Working with `grid`
 
 `grid` is not the game: it is the tool the game gets built and tested with, a `.map.json` map file
@@ -165,7 +169,7 @@ per-test timeout that Node does not, and a test that loops over every map needs 
 `src/pulse` — the kernel (imports nothing presentation- or clock-related; `tests/architecture.test.ts`
 enforces the import graph). `src/content` — unit/structure definitions, the Citizen and Ravel fixture
 rosters and the Proving Grounds bench roster (`proving-grounds.ts`), all disposable. `src/scenario` — the map format and loader (`load.ts` validates the
-shape once parsed; `loadMapFile.ts` reads and parses a `.map.json` path, suffix optional). `src/report`
+shape once parsed; `load-map-file.ts` reads and parses a `.map.json` path, suffix optional). `src/report`
 — the levelled log and summary. `src/view` — the ASCII compositor and terminal backends. `src/cli` —
 this tool's own entry points. `scenarios/*.map.json` — the fixtures themselves.
 

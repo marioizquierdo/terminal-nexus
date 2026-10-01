@@ -8,7 +8,7 @@ Terminal Nexus is TypeScript-first. That does not require any one runtime or ter
 the architecture.
 
 **The terminal library and the JavaScript runtime are independent choices; neither implies the
-other.** RULE — `tests/lifecycle.test.ts` ("an explicit backend choice resolves", "auto falls back to
+other.** RULE — `tests/lifecycle-backend.test.ts` ("an explicit backend choice resolves", "auto falls back to
 direct ANSI where OpenTUI's native core cannot load"), `tests/backend-opentui.test.ts` (the same frame
 through both backends, whichever runtime is running), `scripts/run-tests.sh` (the whole suite on Node
 and on Bun). Choose the library on cell-frame behaviour and the runtime on packaging and availability,
@@ -31,8 +31,8 @@ it. Versions are pinned in `package.json` and the toolchain is described in `DEV
 
 ## 2. Terminal lifecycle — RULE
 
-RULE — `src/cli/lifecycle.ts`, `tests/lifecycle.test.ts`, `tests/build-lifecycle.test.ts`,
-`tests/menu-session.test.ts`.
+RULE — `src/cli/lifecycle.ts`, `tests/lifecycle-backend.test.ts`, `tests/lifecycle-build-phase.test.ts`,
+`tests/lifecycle-title-menu.test.ts`.
 
 One alternate screen, **one idempotent disposer**. It restores cursor, input mode, handlers and screen
 after normal exit, `q`, `SIGINT`, `SIGTERM`, setup failure and caught render failure. It also switches
@@ -102,7 +102,7 @@ executable is what launches the game built on it. What "replay tool" means concr
 writing a persisted, levelled game log rather than only resolving a map fresh each time — is designed,
 not built, in [`replay-format.md`](replay-format.md).
 
-RULE — `tests/cli.test.ts`. There is no subcommand: `grid <map>` takes a path to a `.map.json` file
+RULE — `tests/grid-cli.test.ts`. There is no subcommand: `grid <map>` takes a path to a `.map.json` file
 (the suffix is optional) and defaults to `watch`, the ASCII view; `--headless` resolves without a
 terminal and `--verify` re-resolves 10 times and fails on any hash disagreement. One output stream, not
 two: a headless run's **levelled log** (default `WARN`) carries the story in fixed, greppable columns,

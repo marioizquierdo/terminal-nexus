@@ -21,7 +21,7 @@ export type EntityState = Readonly<{
   /**
    * Presentation-only, and the single deliberate exception to "state carries nothing only
    * presentation reads" (grid-engine.md). Whether facing should ever affect
-   * a rule is an open question (Q9). Derived from the last step, or from the current target
+   * a rule was settled as no (Q9, answered). Derived from the last step, or from the current target
    * when stationary. No rule reads it.
    */
   facing: Direction

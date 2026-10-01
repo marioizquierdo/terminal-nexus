@@ -55,7 +55,7 @@ bottom, then one line of contextual help). **The floor measures against 8 rows**
 `tests/build-camera.test.ts`): the resize gate uses the old 8-row budget, so 16 + 8 = **24 rows** and
 80 × 24 stays a literal floor, and the two rows the one-line footer saves go to the Grid: 18 rows of
 Grid at 80 × 24. Whether 80 × 24 is a hard minimum, and how many rows belong to the frame, is still
-an open question (Q12). It is the same arrangement as the side panel's shared divider column below.
+settled (Q12, answered). It is the same arrangement as the side panel's shared divider column below.
 `grid watch`'s own view, not built on the Build Phase's frame, uses 8 rows, split 3 and 3.
 
 ## 3. Orientation is a rendering choice — RULE
@@ -127,7 +127,7 @@ There is no minimap.**
   view's width for the sides and of its height for the top and bottom, **30%** (GUIDANCE, a tuned value
   in `src/build/tuning.ts`; `--scroll-margin <percent>` sets it), rounded, and capped so an axis's two
   margins never meet (`tests/build-motion.test.ts`). That a margin exists, and that the cursor drives
-  it, is the rule; the number is not. The exact speed tiers and timings are still tuned by feel (Q54).
+  it, is the rule; the number is not. The exact speed tiers and timings were settled by tap counting and a hold pace (Q54, answered).
 - **The margin is a follow rule, not an invariant** (RULE — `tests/build-camera.test.ts`). It says
   where the camera must be relative to the cursor *when it can be*. At the Grid's own edge the camera
   has nowhere left to go, so the cursor legitimately reaches the edge of the screen, which is correct
@@ -317,7 +317,7 @@ interface Placement {
   (RULE — `tests/grid.test.ts`). A large structure is easier to reach because it is large, which is
   the intuitive answer.
 - **Facing is presentation-only for now** (RULE for now; whether it should ever affect rules is an open
-  question, Q9). It is derived from the last movement step, or from the current target when
+  question, Q9, answered as no). It is derived from the last movement step, or from the current target when
   stationary. Nothing in the rules reads it. It exists in state because a renderer that has to guess
   facing produces jitter, and because arcs may want it later. It is the one deliberate exception to
   "state carries nothing only presentation reads" (see [`grid-engine.md`](grid-engine.md)).

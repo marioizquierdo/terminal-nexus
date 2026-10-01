@@ -247,7 +247,7 @@ format may assume the last entry in `phases` is a finished game.
 
 `grid x.map.json --headless --events file.jsonl` already exists and already emits one `DomainEvent` per
 line, canonically serialized (`src/events/serialize.ts`, held by `tests/determinism.test.ts` and
-`tests/cli.test.ts`). A `pulse` phase's `events` array should serialize each entry through that exact same
+`tests/grid-cli.test.ts`). A `pulse` phase's `events` array should serialize each entry through that exact same
 per-event encoding, so `hashEvents` agrees whether the events came from a `.replay.json` phase or a
 standalone JSONL export of the identical run. The wrapper around phases and setup is necessarily a
 single JSON document, since the file has real nested structure, but nothing about that requires a

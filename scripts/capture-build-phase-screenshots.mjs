@@ -25,7 +25,7 @@
 // this after a change touches only the pictures that change actually shows.
 //
 // Each shot names its own terminal size, because the size *is* the subject: 80x24 is the minimum
-// viewport and the acceptance floor, 104x32 the maximum, 128x24 the two-columns-per-tile
+// viewport and the acceptance floor, 104x30 the maximum, 128x24 the two-columns-per-tile
 // composition, and 79x24 the resize gate one column below the floor.
 
 import { mkdirSync, rmSync } from "node:fs"
@@ -524,7 +524,7 @@ scripted(
 
 scripted(
   "build-nexus-popup-picked",
-  "104x32, reopened after a pick (the pick itself closes it): nothing waiting, the pick listed as active with what it does, and the credits above the buildings already counting it",
+  "104x30, reopened after a pick (the pick itself closes it): nothing waiting, the pick listed as active with what it does, and the credits above the buildings already counting it",
   { keys: "n 2 n", expect: "Nothing waiting", cols: 104, rows: 32 },
 )
 
@@ -731,7 +731,7 @@ scripted(
 // Export settings apart at the end. Headings and blank lines are never rows.
 
 scripted(
-  "build-debug-104x32",
+  "build-debug-104x30",
   "Right twice on Hold window, the first Experiment: 200 ms becomes 350 ms, and the bottom line says so",
   { keys: "d Right Right", cols: 104, rows: 32, expect: "Hold window: 350 ms" },
 )

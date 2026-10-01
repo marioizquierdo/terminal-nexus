@@ -114,7 +114,7 @@ shoot(
   {
     // The exact bytes a left click at column 8, row 11 (1-based terminal coordinates) sends —
     // MENU_LAYOUT's column 4 / row 10 (0-based) for item index 2, Settings — formatted the same way
-    // src/menu/mouse.ts's own formatMouseClick would.
+    // src/title-menu/mouse.ts's own formatMouseClick would.
     drive: () => sendKeys(repoRoot, SESSION, `${ESC}[<0;8;11M`),
   },
 )

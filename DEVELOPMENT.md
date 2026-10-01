@@ -83,7 +83,7 @@ Things that bite:
 - **Timing tests flake under load.** With agents building in parallel the frame-budget tests have
   failed once and passed alone. Re-run the file alone and measure before and after; never loosen a
   test to make a busy machine pass.
-- **A red assertion in the live-loop test looks like a hang.** `tests/build-lifecycle.test.ts` leaves
+- **A red assertion in the live-loop test looks like a hang.** `tests/lifecycle-build-phase.test.ts` leaves
   the terminal loop running when an assertion throws, so Node never exits. Run it alone with
   `node --test --test-timeout=30000`.
 - **Silent parsers.** An unknown command-line option is treated as a flag. Register every
@@ -129,7 +129,7 @@ with a dated name and a row in its README, one or two per era.
 skill) drive `grid` inside a tmux pseudo-terminal, so the ANSI backend takes the path a person gets,
 pause at an exact tick and render the pane to a PNG through the Chromium already present for
 Playwright. `scripts/capture-build-phase-screenshots.mjs` covers the Build Phase at the sizes that matter
-(80 × 24, 104 × 32, 128 × 24, and 79 × 24 for the resize gate); most of its shots are composed
+(80 × 24, 104 × 30, 128 × 24, and 79 × 24 for the resize gate); most of its shots are composed
 in-process through the scripted playtest, a few stay on tmux because the terminal path is what they
 prove. An unchanged shot is not rewritten: every image records a hash of the page it came from, so a
 regeneration touches only the pictures a change shows up in. Set an Experiment by name with

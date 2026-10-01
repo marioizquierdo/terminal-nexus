@@ -16,7 +16,7 @@ node scripts/playtest.mjs --keys "Down Down Space*4"                 # status pe
 node scripts/playtest.mjs --keys "Down Down Space*4" --print all     # every step's full screen
 node scripts/playtest.mjs --keys "n 1 Tab S-Left*5" --png final    # one PNG
 node scripts/playtest.mjs --keys "Down Down Space*4" --gif --name hatchery-run
-node scripts/playtest.mjs --file flow.keys --size 104x32 --capability monochrome --png all
+node scripts/playtest.mjs --file flow.keys --size 104x30 --capability monochrome --png all
 node scripts/playtest.mjs --settings "popupPulseMs=3000 incoming=hidden" --keys "1 Enter"  # start from an export
 node scripts/playtest.mjs --keys "n 1 1 Enter" --activity Interactions   # what the run recorded
 node scripts/playtest.mjs --help

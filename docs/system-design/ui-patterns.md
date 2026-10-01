@@ -103,7 +103,7 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
   (RULE — `tests/build-focus.test.ts`)
 - **A click can only choose what it could see**: while a card covers the menu, a click on the panel goes
   back and chooses nothing. **A click outside a popup** closes it and moves focus there, nothing more; over a card it only closes
-  the popup, and the card and its building come back. (RULE — `tests/build-card.test.ts`, `tests/build-placing.test.ts`)
+  the popup, and the card and its building come back. (RULE — `tests/build-card.test.ts`, `tests/build-holds-menu.test.ts`)
 - **Whole rows are targets**, as wide as the highlight bar, and **drawing and hit-testing read one
   geometry** (`buildLayout` in `src/build/layout.ts`, the placed popup in `src/build/popup.ts`).
   (RULE — `tests/build-menu.test.ts`, `tests/build-edge.test.ts`, `tests/build-popups.test.ts`)
@@ -125,14 +125,14 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   (RULE — `tests/build-cancel.test.ts`, `tests/pulse-screen.test.ts`)
 - **The key that opened something closes it**: `e`, `n`, `d`, and a building's own digit while it is
   being placed. (On the Battle Round screen `s` confirms instead: starting takes two deliberate presses.)
-  (RULE — `tests/build-placing.test.ts`, `tests/build-card.test.ts`, `tests/build-start.test.ts`)
+  (RULE — `tests/build-holds-menu.test.ts`, `tests/build-card.test.ts`, `tests/build-start.test.ts`)
 - **No popup carries its own way back** — no `[esc] Back` row, no `[esc]` in its border. **The top bar's
   right end says what Esc does now**: `menu [esc]` on the menu and while a Pulse plays, `back [esc]` on
   the map, `close [esc]` over a popup — the action quiet, the key in the hotkey colour. A click on it is
   exactly Esc (`escLabel` in `src/build/layout.ts`). (RULE — `tests/build-popups.test.ts`, `tests/build-cancel.test.ts`)
 - **The game menu** is `[s] Settings`, `[c] Controls and hotkeys`, `[a] Activity logs`, `[r] Restart` (the
   plan lost, settings and Experiments kept) and `[q] Quit`. **Leaving always asks**; Ctrl+C is the one immediate way out.
-  (RULE — `tests/build-settings.test.ts`, `tests/build-popups.test.ts`, `tests/build-lifecycle.test.ts`)
+  (RULE — `tests/build-settings.test.ts`, `tests/build-popups.test.ts`, `tests/lifecycle-build-phase.test.ts`)
 
 ## 4. Menu rows
 
@@ -179,7 +179,7 @@ title screen's menu.
 - **A first tap is one row; taps and holds move a list exactly as they move the map cursor** (see *The
   map*): quick taps speed up by counting, a held arrow keeps the game's pace, clamped at the ends. The
   title screen's menu stops and jumps but does not count or keep a pace: its loop reads no clock. One
-  key classifier serves every list (`src/menu/list-keys.ts`).
+  key classifier serves every list (`src/terminal/list-keys.ts`).
   (RULE — `tests/build-lists.test.ts`, `tests/menu-list.test.ts`)
 - **Shift+Up/Down, PageUp/PageDown and Home/End go to the first or last row.**
   (RULE — `tests/build-lists.test.ts`)
@@ -235,7 +235,7 @@ game menu, Settings, Controls) still open over it and hand it back, still armed,
 never moves the menu's highlight. So the menu is never workable with a ghost on the map, and never loses
 track of what is armed (`refuseWhileArmed` in `src/build/state.ts`). Explore Map holds nothing: a digit
 while exploring arms from the map, and `n` opens the Nexus powers.
-(RULE — `tests/build-placing.test.ts`)
+(RULE — `tests/build-holds-menu.test.ts`)
 
 ## 7. Hand-offs to the map
 
@@ -320,7 +320,7 @@ uses it rather than a new blend.
 - **Unmissable**: a solid border in the map edge's weight, the title in it, a one-cell shadow (`:` or
   `░`), centred over the map, drawn last in the chrome band. (RULE — `tests/build-popups.test.ts`)
 - **It holds the keyboard and the mouse** until it closes; keys it does not use do nothing. **Nothing
-  opens a popup but the player.** (RULE — `tests/build-popups.test.ts`, `tests/build-placing.test.ts`)
+  opens a popup but the player.** (RULE — `tests/build-popups.test.ts`, `tests/build-holds-menu.test.ts`)
 - **A choice closes its popup**: a Nexus pick returns the player to where they were; the bottom line
   and the menu say what it did. (RULE — `tests/build-nexus.test.ts`)
 - **A popup that belongs to a menu row keeps that row active behind it** (Nexus, Battle Round); one that
@@ -417,7 +417,7 @@ uses it rather than a new blend.
 - **Looking reads quietly, trying loudly**: a ghost on a tile it cannot use shows a grey block of `x` and
   a plain-toned reason; once the player tries, the same words turn red and bold until the answer lapses.
   **A command's own answer comes first**, a refusal included; the ghost's reason is what the line says
-  when the last command said nothing. (RULE — `tests/build-help.test.ts`, `tests/build-placing.test.ts`)
+  when the last command said nothing. (RULE — `tests/build-help.test.ts`, `tests/build-holds-menu.test.ts`)
 - **During a Pulse** it says what the Pulse is doing, unless a popup holds the keyboard. **It fits 80
   columns**; a narrower bar drops whole words, never half of one. (RULE — `tests/build-help.test.ts`)
 
@@ -446,8 +446,8 @@ uses it rather than a new blend.
   events (the kitty keyboard protocol, the Key releases Experiment), the game knows a tap from a repeat
   and when a key is let go; where it cannot, a press within the hold window counts as holding. Asking
   for more from a host is always undone on the way out, through the one disposer. The input path decides
-  (`src/build/motion.ts`, `src/view/key-events.ts`); the reducer sees ordinary moves.
-  (RULE — `tests/key-events.test.ts`, `tests/build-motion.test.ts`, `tests/build-lifecycle.test.ts`)
+  (`src/build/motion.ts`, `src/terminal/key-events.ts`); the reducer sees ordinary moves.
+  (RULE — `tests/key-events.test.ts`, `tests/build-motion.test.ts`, `tests/lifecycle-build-phase.test.ts`)
 - **Clicks**: a click moves focus and the cursor to the tile, the ghost with it. **A second click on the
   same tile places** (by tile, never screen cell), and **a quick double click places where its first
   click pointed**, even if the view moved (`BuildSession`). A click near an edge scrolls further the

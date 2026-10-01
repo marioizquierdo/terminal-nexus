@@ -98,7 +98,8 @@ IDEA (a sketch). The ones every session needs:
 | `src/content/`, `src/scenario/`, `scenarios/` | Content definitions, the map format and the checked-in maps. |
 | `src/report/`, `src/events/` | The levelled log and the report a run ends with; the events the kernel emits. |
 | `src/match/`, `src/mission/` | The rules layer between the Build Phase and the kernel: openings, Recall, missions and their trigger runner. |
-| `src/build/`, `src/menu/`, `src/settings/` | The Build Phase reducer and adapters, the menu list shape, saved settings; `src/build/all-settings.ts` declares every setting and Experiment once. |
+| `src/build/`, `src/title-menu/`, `src/settings/` | The Build Phase reducer and adapters, the title screen's list reducer and adapters, saved settings; `src/build/all-settings.ts` declares every setting and Experiment once. |
+| `src/terminal/` | What every screen shares with the terminal: key events and reading, playback control, the list key table, the capability, theme and glyph-pack choices. Imports nothing from the view. |
 | `src/log/` | The structured logger and the Activity Logs' declared events and filters. |
 | `src/view/`, `src/cli/`, `src/web/`, `src/playtest/` | Composition, backends, the screen loops, the browser page, the scripted playtest. |
 | `bin/grid.ts`, `bin/terminal-nexus.ts` | The engine tool and the game's entry point. |
