@@ -5,8 +5,8 @@ for, and the passes that get it there. Mario settled the open choices on 2026-10
 the checklist for the work and is deleted by the last pass.
 
 **Status:** in progress. Pass 1 (the move) merged in pull request 52; pass 2 (the entry points) in 53.
-Pass 3 (the planning shelf, the timeline, the skills) in 54. Pass 4 (the design documents) is the next pull
-request. Passes 5 and 6 remain.
+Pass 3 (the planning shelf, the timeline, the skills) in 54. Pass 4 (the design documents) in 55. Pass 5 (the
+code) is the next pull request. Pass 6 (delete this file, arm the validator) remains.
 
 ---
 
