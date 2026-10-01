@@ -459,6 +459,8 @@ export function feedLine(event: DomainEvent): string {
       return `${String(event.tick).padStart(3)} ${shortId(event.entity)} destroyed`
     case "pulse.ended":
       return `${String(event.tick).padStart(3)} ${event.winner ?? "draw"} ${event.reason}`
+    case "entity.spawned":
+      return event.trainedBy === undefined ? "" : `${String(event.tick).padStart(3)} ${shortId(event.entity)} trained`
     default:
       return ""
   }

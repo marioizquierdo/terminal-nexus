@@ -583,3 +583,10 @@ untouched, and the mission counted it held.
 **Recommendation: B**, decided by playing it: play PERIMETER as it is first (the Next round Experiment and the
 waves as built), and if a round ending with the raid at the gate reads wrong to the owner, B is the honest fix.
 Until then A stands and the pull request says what it does.
+
+The Barracks that trains makes the rule's edges sharper. A round can now begin with none of the player's units
+alive and still field some, trained during it. The kernel counts a side as having fielded units from the round's
+opening, and the mission runner widens that each time a raid group arrives; so whether a trooper trained after
+the opening ends the round by dying depends on whether it happened to be standing when a later group arrived. In
+PERIMETER at a trooper every eight seconds, a plan that builds nothing wins round 3 this way. Option B removes
+the timing as well.

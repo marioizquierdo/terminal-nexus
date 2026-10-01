@@ -62,9 +62,9 @@ export const SECTIONS: readonly Readonly<{ section: Section; title: string }>[] 
 /** When a change is seen: at once, or only once the Build Phase starts over. */
 export type Applies = "now" | "restart"
 
-/** What a number counts, for how its row reads: milliseconds (0 reads "off"), tiles, taps, or a share
- *  of the view. */
-export type Unit = "ms" | "tiles" | "taps" | "percent"
+/** What a number counts, for how its row reads: milliseconds (0 reads "off"), seconds, tiles, taps, a
+ *  plain count, or a share of the view. */
+export type Unit = "ms" | "seconds" | "tiles" | "taps" | "count" | "percent"
 
 type Value = number | string | boolean
 
@@ -388,6 +388,31 @@ export const ALL_SETTINGS = {
     values: INCOMING,
     default: "shown",
   },
+  /** How often a Barracks trains a trooper during a round (step 6C). A round runs thirty seconds at
+   *  most and ends sooner when one side's units are all dead, so the pace decides how many a round
+   *  really trains and how much of the fight they see. First guess: every 10 seconds — three in a full
+   *  round, and a plan that builds nothing still loses PERIMETER's last round, as step 6B tuned it
+   *  (docs/history/reports/2026-10-01-barracks-trains.md has the outcomes at every pace). */
+  trainEvery: {
+    tier: "experiment",
+    section: "mission",
+    label: "Barracks trains",
+    question: "How often each Barracks trains a trooper during a round: one every this many seconds, the first that far in.",
+    values: [4, 6, 8, 10, 15],
+    unit: "seconds",
+    default: 10,
+  },
+  /** How many troopers one Barracks trains in a round, at most (step 6C): how fast the player's side
+   *  grows from round to round. First guess: 3, one squad's worth. */
+  trainPerRound: {
+    tier: "experiment",
+    section: "mission",
+    label: "Troopers a round",
+    question: "The most troopers each Barracks trains in one round. Survivors come home and fight again next round.",
+    values: [1, 2, 3, 4, 6],
+    unit: "count",
+    default: 3,
+  },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 
 // --- Names, values and tiers, as types --------------------------------------------------------------
@@ -488,8 +513,12 @@ function formatNumber(value: number, unit: Unit): string {
       return value === 0 ? "off" : `${value} ms`
     case "tiles":
       return value === 1 ? "1 tile" : `${value} tiles`
+    case "seconds":
+      return `${value} s`
     case "taps":
       return `${value} taps`
+    case "count":
+      return String(value)
     case "percent":
       return `${value}%`
   }

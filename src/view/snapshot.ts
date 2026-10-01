@@ -116,8 +116,10 @@ export function createView(
     if (bucket === undefined) movesByTick.set(event.tick, [event])
     else bucket.push(event)
   }
-  const feed = timeline.events.filter((event) =>
-    (FEED_KINDS as readonly string[]).includes(event.kind),
+  // A unit a building trained is news; any other arrival is not (the map shows it).
+  const feed = timeline.events.filter(
+    (event) =>
+      (FEED_KINDS as readonly string[]).includes(event.kind) || (event.kind === "entity.spawned" && event.trainedBy !== undefined),
   )
   const instances = presentation.effects
     ? deriveEffects({

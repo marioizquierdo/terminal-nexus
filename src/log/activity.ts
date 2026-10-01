@@ -132,6 +132,18 @@ export const ACTIVITY_EVENTS = {
       reason: { type: "string", description: "Why, as the result line says it." },
     },
   },
+  "pulse.trained": {
+    defaultLevel: "info",
+    description: "What the Barracks trained in the Nexus Pulse just ended, and what came of them (step 6C).",
+    props: {
+      round: { type: "number", description: "Which Battle Round." },
+      buildings: { type: "number", description: "How many of the player's buildings trained this round." },
+      trained: { type: "number", description: "How many troopers they trained." },
+      first: { type: "number", description: "The second of the round the first one was trained at.", optional: true },
+      home: { type: "number", description: "How many of those trained came home alive at the end." },
+      ended: { type: "number", description: "The second the round's fighting stopped: a round ends early once one side's units are all dead." },
+    },
+  },
   export: {
     defaultLevel: "info",
     description: "The player exported settings or activity logs.",
@@ -184,6 +196,14 @@ export const ACTIVITY_FILTERS: readonly LogFilter[] = [
   },
   { name: "Problems", question: "Only errors and warnings.", level: "warn" },
   { name: "Everything", question: "Every event recorded, down to each command and each key's move.", level: "debug" },
+  // Step 6C's question, last rather than first: the window's tests walk the first three by position, and
+  // Left from the first filter reaches this one in a single key. Remove it once the pace is settled.
+  {
+    name: "Barracks",
+    question: "What each round's Barracks trained, how many came home, and when the fighting stopped.",
+    level: "info",
+    events: ["pulse.start", "pulse.trained", "pulse.end", "setting.change"],
+  },
 ]
 
 /** The entries a filter shows, newest first, up to and including sequence number `upTo`. */

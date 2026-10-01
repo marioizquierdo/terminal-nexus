@@ -229,7 +229,8 @@ function whoIs(id: string): Readonly<{ player: PlayerId | null; name: string }> 
 }
 
 /**
- * One line of the feed in plain words — "3.5s trooper > raider", "3.8s raider dies" — drawn in the colour of
+ * One line of the feed in plain words — "3.5s trooper > raider", "3.8s raider dies", "10.0s trooper
+ * trained" — drawn in the colour of
  * the side it is about, or `null` for an event the feed does not carry. Short enough for the panel at the
  * floor without cutting a word: the units' own names say whose they are (a trooper is yours, a raider is
  * the raid's) and the colour says it again where colour reaches.
@@ -244,6 +245,9 @@ function feedLine(pulse: PulseFrame, event: DomainEvent): Readonly<{ text: strin
     }
     case "entity.died":
       return { text: `${at} ${whoIs(event.entity).name} dies`, role: sideRole(event.player) }
+    // Only what a building trained: an arrival or a spawner's brood is not news the feed has room for.
+    case "entity.spawned":
+      return event.trainedBy === undefined ? null : { text: `${at} ${whoIs(event.entity).name} trained`, role: sideRole(event.player) }
     case "structure.destroyed":
       return { text: `${at} ${whoIs(event.entity).name} falls`, role: sideRole(whoIs(event.entity).player) }
     case "pulse.ended":

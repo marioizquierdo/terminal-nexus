@@ -30,6 +30,9 @@ export const PERIMETER: MissionDefinition = {
   pulseTicks: 360,
   // "PULS", the placeholder Pulse's seed, so the first round's randomness is the one 6A was tuned on.
   seed: 0x50554c53,
+  // The Barracks trains troopers, round after round: what makes a second round show something the
+  // first did not. How often, and how many a round, are the Experiments' (`src/build/all-settings.ts`).
+  trains: [{ structure: "structure.citizen.barracks", unit: "unit.citizen.trooper" }],
   regions: [
     // Beside the Nexus, toward where the raid comes from: where the starting squads stand.
     { id: "muster", x: 21, y: 9, width: 3, height: 3 },

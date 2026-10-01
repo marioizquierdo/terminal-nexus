@@ -79,6 +79,12 @@ interface ProductionRecipe {
 }
 ```
 
+The recipe the Pulse runs today (`ProductionRecipe` in `src/content/types.ts`) is the free part of this
+one: `output`, `quantity`, `intervalTicks`, and a `perPulse` cap that stands in for the supply a
+recipe will one day need. `cost` and `spawnRule` arrive with the worker economy. No content definition
+carries a recipe; a mission opts a building in (see "Automatic production" in
+[`pulse.md`](pulse.md)).
+
 Upgrades, Nexus powers, Commanders, and Commander Armies follow the same pattern and are described in
 [`commander-armies.md`](../game-design/commander-armies.md). A **Commander Army** is the playable content boundary:
 the complete set of choices legally available to one player in one match — a Nexus and faction, a

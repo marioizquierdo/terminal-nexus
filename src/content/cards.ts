@@ -21,7 +21,7 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
   "structure.citizen.barracks": {
     title: "Barracks",
     subtitle: "Trains troopers",
-    description: "Where your troopers come from: the foot soldiers who hold the line in a Pulse. Big and tough.",
+    description: "Trains a trooper every few seconds of a Pulse. They join the fight, and come home to it after.",
   },
   "structure.bench.hatchery": {
     title: "Hatchery",
@@ -45,7 +45,7 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
   "unit.citizen.trooper": {
     title: "Trooper",
     subtitle: "Your foot soldier",
-    description: "Fights at close range and holds the line. One of the squads you start the mission with.",
+    description: "Fights at close range and holds the line. You start with a squad; a Barracks trains more.",
   },
   "unit.citizen.marksman": {
     title: "Marksman",

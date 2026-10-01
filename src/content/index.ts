@@ -3,7 +3,7 @@ export { CITIZEN_CONTENT } from "./citizen.ts"
 export { RAVEL_CONTENT } from "./ravel.ts"
 export { PROVING_GROUND_CONTENT } from "./proving-grounds.ts"
 
-import type { ContentDef } from "./types.ts"
+import type { ContentDef, ProductionRecipe } from "./types.ts"
 import { CITIZEN_CONTENT } from "./citizen.ts"
 import { RAVEL_CONTENT } from "./ravel.ts"
 import { PROVING_GROUND_CONTENT } from "./proving-grounds.ts"
@@ -43,3 +43,30 @@ export const FIXTURE_REGISTRY: ContentRegistry = createRegistry([
   ...RAVEL_CONTENT,
   ...PROVING_GROUND_CONTENT,
 ])
+
+/**
+ * `registry`, with each named building given a production recipe — how a battle opts its buildings into
+ * training (step 6C's Barracks, in PERIMETER). The shared content carries none, so every other map that
+ * has the same building on it resolves exactly as it did. Throws for an unknown id, or one that is not a
+ * structure, or a recipe whose output is a structure or unknown.
+ */
+export function withProduction(
+  registry: ContentRegistry,
+  recipes: Readonly<Record<string, ProductionRecipe>>,
+): ContentRegistry {
+  const definitions = registry.ids().map((id) => {
+    const definition = registry.get(id)
+    const recipe = recipes[id]
+    return recipe === undefined ? definition : { ...definition, production: recipe }
+  })
+  for (const [id, recipe] of Object.entries(recipes)) {
+    if (!registry.has(id)) throw new Error(`production: unknown building "${id}"`)
+    if (registry.get(id).layer !== "obstacles") throw new Error(`production: "${id}" is not a building`)
+    if (!registry.has(recipe.output)) throw new Error(`production: "${id}" trains the unknown "${recipe.output}"`)
+    if (registry.get(recipe.output).layer === "obstacles") throw new Error(`production: "${id}" trains "${recipe.output}", a building`)
+    for (const [field, value] of [["quantity", recipe.quantity], ["intervalTicks", recipe.intervalTicks], ["perPulse", recipe.perPulse]] as const) {
+      if (!Number.isInteger(value) || value <= 0) throw new Error(`production: "${id}" ${field} must be a positive integer, received ${value}`)
+    }
+  }
+  return createRegistry(definitions)
+}

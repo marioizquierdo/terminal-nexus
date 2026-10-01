@@ -1,11 +1,11 @@
 # Milestone 6 — Nexus Pulse Phase
 
 **Status:** CURRENT
-**Current step:** 6B — The loop and the mission's trigger runner: back into the next Build Phase after Recall, until the mission's triggers end it.
+**Current step:** 6C — Minimal automatic production: the fixture Barracks trains its recipe on an interval during the Pulse.
 **Depends on:** Milestone 5 (complete).
 
-_Nothing is open for an agent right now: step 6B is built and waits for Mario's playtest, step 6C
-waits for his word. Until then the work is his latest feedback, or nothing._
+_Nothing is open for an agent right now: steps 6B and 6C are built and wait for Mario's playtest. Until
+then the work is his latest feedback, or nothing._
 
 ## The question
 
@@ -77,11 +77,12 @@ Built; waiting for Mario's playtest (pull request 50).
 
 ### Step 6C — Minimal automatic production
 
-Waits for Mario's word.
+Built; waiting for Mario's playtest.
 
-- [ ] The fixture Barracks trains its recipe on an interval during the Pulse, at the smallest size that
-      makes a second round show something new. Pulled from [`backlog.md`](backlog.md). Until then the
-      Barracks card says "Trains troopers" and trains nothing.
+- [x] The fixture Barracks trains its recipe on an interval during the Pulse, at the smallest size that
+      makes a second round show something new. Pulled from [`backlog.md`](backlog.md). It trains a
+      trooper on an interval up to a cap a round, both Experiments; a Barracks the player places trains
+      too, trained survivors come home to it, and round 2 opens with them beside it.
 
 ## Not in this milestone
 

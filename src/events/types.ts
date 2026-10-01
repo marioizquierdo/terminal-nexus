@@ -25,6 +25,8 @@ export type DomainEvent =
         contentId: string
         at: Coord
         hp: number
+        /** The building that trained it, when a production recipe did (`ContentDef.production`). */
+        trainedBy?: string
       }>)
   | (Base &
       Readonly<{

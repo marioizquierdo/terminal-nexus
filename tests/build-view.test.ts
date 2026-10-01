@@ -572,7 +572,7 @@ test("a panel with room for the card's words still draws them", () => {
     build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }])
   })
   assert.match(roomy.text, /Trains troopers/)
-  assert.match(roomy.text, /Big and tough\./, "the description is cut short")
+  assert.match(roomy.text, /home to it after\./, "the description is cut short")
 })
 
 test("on a small Grid the panel's rows are drawn whole, however few fit: the Nexus entry, the buildings it has room for, and Start Pulse", () => {
