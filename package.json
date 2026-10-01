@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Terminal Nexus — an ASCII strategy game for the terminal",
+  "description": "Terminal Nexus \u2014 an ASCII strategy game for the terminal",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=22.18.0"
@@ -15,7 +15,9 @@
     "test:bun": "./scripts/run-tests.sh bun",
     "grid": "node bin/grid.ts",
     "terminal-nexus": "node bin/terminal-nexus.ts",
-    "maps": "ls scenarios/*.map.json"
+    "maps": "ls scenarios/*.map.json",
+    "test:all": "npm run typecheck && npm test && npm run test:bun",
+    "verify-maps": "for map in scenarios/*.map.json; do ./bin/grid.ts \"$map\" --verify --runs 20 || exit 1; done"
   },
   "devDependencies": {
     "@types/node": "22.20.1",

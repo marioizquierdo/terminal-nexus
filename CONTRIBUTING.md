@@ -4,11 +4,8 @@ Terminal Nexus is at version 0.1 and uses small experiments to earn its architec
 
 ## Before proposing a change
 
-1. Read `AGENTS.md`.
-2. Read `docs/README.md`, the index of every document.
-3. Read the current milestone in `docs/milestones/`, down to its current step.
-4. Skim `docs/milestones/open-questions.md` so you do not silently decide something that is waiting on Mario.
-5. Confirm the change is in scope for the current step.
+Read `AGENTS.md`; it says what to read next, what the current milestone step is, and what a change
+must come with. Confirm the change is in scope for the current step.
 
 Open an issue or discussion before work that changes what the game is, widens the current step, adds a service or secret, introduces a compatibility promise, or modifies licensing.
 

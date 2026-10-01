@@ -4,6 +4,9 @@
 **Current step:** 6B — The loop and the mission's trigger runner: back into the next Build Phase after Recall, until the mission's triggers end it.
 **Depends on:** Milestone 5 (complete).
 
+_Nothing is open for an agent right now: step 6B is built and waits for Mario's playtest, step 6C
+waits for his word. Until then the work is his latest feedback, or nothing._
+
 ## The question
 
 Can a player start the Nexus Pulse from a finished Build Phase, watch the unmodified kernel resolve it,

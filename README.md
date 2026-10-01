@@ -188,15 +188,14 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the toolchain, testing and how work is 
 │   ├── game-design/           What the game is: concept, lore, modes, Commander Armies, campaigns
 │   ├── system-design/         How it is built: the engine, the Pulse, effects, UI patterns, testing
 │   ├── milestones/            What is next: milestones, open questions, backlog
-│   ├── history/               What happened: timeline, reports, Mario's feedback
-│   ├── screenshots/           Pictures of the current build
+│   ├── history/               What happened: timeline, reports, feedback, the visual record
 │   └── claude-web.md          Setting up Claude Code on the web
 ├── src/                   The game and its tools: pulse (the rules kernel), match, mission, content,
 │                          scenario, state, events, grid, report, view, build (the Build Phase),
 │                          menu, cli, settings, web (the browser playtest page)
 ├── tests/                 The test suite; Node's runner and Bun both run it
 ├── scenarios/             Checked-in .map.json fixtures, one file per rule under test
-├── scripts/               Repository validation and development tooling
+├── scripts/               Repository validation and development tooling (its README lists them)
 ├── bin/                   grid.ts and terminal-nexus.ts, the two entry points
 ├── .claude/               Skills for coding agents working in this repository
 ├── .devcontainer/         Codespaces configuration
