@@ -1,8 +1,8 @@
 // Screenshots of the Build Phase and the Nexus Pulse that ends it.
 //
 //   node scripts/capture-build-phase-screenshots.mjs
-//   node scripts/capture-build-phase-screenshots.mjs --only spike-minimum
-//   node scripts/capture-build-phase-screenshots.mjs --out .playtest/shots   # somewhere other than docs/screenshots/
+//   node scripts/capture-build-phase-screenshots.mjs --only build-idle
+//   node scripts/capture-build-phase-screenshots.mjs --out .playtest/shots   # somewhere other than .playtest/screenshots/
 //   node scripts/capture-build-phase-screenshots.mjs --force                  # re-render even unchanged ones
 //
 // Two ways in, on purpose.
@@ -55,9 +55,9 @@ import {
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
 const argument = (flag) => (process.argv.includes(flag) ? process.argv[process.argv.indexOf(flag) + 1] : null)
-const outputDirectory = resolve(repoRoot, argument("--out") ?? join("docs", "screenshots"))
+const outputDirectory = resolve(repoRoot, argument("--out") ?? join(".playtest", "screenshots"))
 const scratch = join(repoRoot, ".capture-tmp")
-const SESSION = "terminal-nexus-spike-capture"
+const SESSION = "terminal-nexus-capture"
 const only = argument("--only")
 
 mkdirSync(outputDirectory, { recursive: true })
@@ -636,11 +636,8 @@ scripted(
 
 popupGif("build-battle-round-opening", { keys: `${PICK_FIRST_POWER} s`, expect: "Battle Round 1", glyphPack: "unicode" })
 
-// The early Nexus Pulse shots (`pulse-start`, `pulse-fight`, `pulse-last-seconds`, `pulse-nexus-hit`,
-// `pulse-result-*`, `pulse-experiments`, `pulse-ending.gif`) were taken against the placeholder Pulse and
-// its Raid and Your units Experiments, which PERIMETER's waves later replaced: they stay in
-// `docs/screenshots/` as a record of that first Pulse, as `build-nexus-committed.png` stayed from
-// the first committed-build screen, and are no longer regenerated. The shots that follow are on PERIMETER.
+// The early Nexus Pulse shots (`pulse-start`, `pulse-fight` and the rest) were taken against a placeholder Pulse that
+// PERIMETER's waves replaced; they are no longer made. The shots that follow are on PERIMETER.
 
 // A round, keys only: the Reserve Fund (30 more credits), buildings by digit and two clicks on their
 // tile, then [s] and [s] to start. The strong plan holds PERIMETER; nothing built loses it in round 3.
