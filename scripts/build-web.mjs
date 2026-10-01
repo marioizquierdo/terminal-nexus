@@ -5,6 +5,12 @@
 //
 //   bun scripts/build-web.mjs                    # dist/terminal-nexus-playtest.html
 //   bun scripts/build-web.mjs --out some/file.html
+//   bun scripts/build-web.mjs --demos demos.json # with buttons that start this pull request's demos
+//
+// A demos file is a list of `{ "label", "try", "keys"?, "settings"? }`: a button's name, what to try
+// once it starts (shown under the screen), and the key script and settings text the Build Phase starts
+// from — the same as `--keys` and `--settings` in a terminal. It is how a pull request's playable page
+// opens the game exactly where its question is (docs/ui-patterns.md 15.3).
 //
 // The file opens straight from disk, or is published as a private claude.ai page for a phone.
 
@@ -33,8 +39,22 @@ const build = {
 }
 const target = argument("--out") ?? join(repoRoot, "dist", "terminal-nexus-playtest.html")
 
+const demosPath = argument("--demos")
+const demos = demosPath === null ? [] : JSON.parse(readFileSync(demosPath, "utf8"))
+if (!Array.isArray(demos)) throw new Error(`${demosPath}: expected a list of demos`)
+for (const [index, demo] of demos.entries()) {
+  const fields = Object.keys(demo ?? {})
+  const unknown = fields.filter((field) => !["label", "try", "keys", "settings"].includes(field))
+  if (typeof demo?.label !== "string" || typeof demo?.try !== "string" || unknown.length > 0) {
+    throw new Error(`${demosPath}: demo ${index + 1} needs a "label" and a "try", and may have "keys" and "settings"${unknown.length > 0 ? `; unknown: ${unknown.join(", ")}` : ""}`)
+  }
+  for (const field of ["keys", "settings"]) {
+    if (demo[field] !== undefined && typeof demo[field] !== "string") throw new Error(`${demosPath}: demo ${index + 1}'s "${field}" must be text`)
+  }
+}
+
 const { code, files } = await bundleForBrowser("src/web/host.ts", {
-  define: { __TN_BUILD__: JSON.stringify(build) },
+  define: { __TN_BUILD__: JSON.stringify(build), __TN_DEMOS__: JSON.stringify(demos) },
 })
 const page = readFileSync(join(repoRoot, "src", "web", "page.html"), "utf8")
 // A function replacement, so `$&` and friends inside the minified script stay literal.
@@ -43,5 +63,5 @@ mkdirSync(dirname(target), { recursive: true })
 writeFileSync(target, html)
 console.log(
   `wrote ${relative(process.cwd(), target)}: ${(html.length / 1024).toFixed(0)} KB, ` +
-    `${files.length} source files, commit ${build.commit}`,
+    `${files.length} source files, commit ${build.commit}${demos.length > 0 ? `, ${demos.length} demos` : ""}`,
 )
