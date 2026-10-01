@@ -22,8 +22,9 @@ export const COMMANDER_CONTENT: readonly ContentDef[] = [
     footprint: rectFootprint(1, 1),
     // Twice a trooper: she came out of PERIMETER's first two rounds in every plan measured, and a plan
     // that builds nothing still loses the mission (at 150 she holds the last round off long enough to win
-    // it on time). While it is tuned, the Pulse reads the Experiment "Vasse's health" instead
-    // (`commanderRegistry`, `src/match/commander.ts`).
+    // it on time). She falls in the last round in every plan at every health up to 150: advancing like
+    // every unit, no health keeps her alive there and still lets that plan lose. While it is tuned, the
+    // Pulse reads the Experiment "Vasse's health" instead (`commanderRegistry`, `src/match/commander.ts`).
     maxHp: 80,
     // The squads' own pace (a trooper's 10/3), so she walks with the line she leads rather than ahead of
     // it or behind; and an off-beat cadence is the Ravels' rule, not hers.

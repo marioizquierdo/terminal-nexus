@@ -375,6 +375,12 @@ mechanic plus a two-option draft, with every other choice still from the disposa
 that. **Separately: PERIMETER's own design should not force Vasse's death**, so the mechanism is testable
 without spending RESTORATION's beat two missions early.
 
+**Since the Commander step (2026-10-01):** it does, late. She falls in PERIMETER's last round in every plan
+measured, at every health her Experiment offers, so the mission ends with "Vasse fell." though it never shows
+her absence or her return. No health keeps her alive there and still lets a plan that builds nothing lose;
+holding her back needs an order she can keep (Q69). The figures are in the
+[Commander report](../history/reports/2026-10-01-commander-vasse.md).
+
 ### Q35 — What counts as "discovered" enemy intel, and when is it recorded?
 
 **Status:** OPEN — parked until Milestone 4 builds the enemy-intel panel; the recommendation is already assumed by [`milestone-04-campaign-menu.md`](milestone-04-campaign-menu.md).

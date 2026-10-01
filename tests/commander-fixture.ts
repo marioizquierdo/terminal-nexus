@@ -1,8 +1,8 @@
 // The Commander's named scenario — not a test file itself: the runners only pick up `*.test.ts`. A
 // three-round mission on the starter map built to spend the whole cadence pulse.md gives a Commander:
 // Vasse falls in round 1, sits round 2 out, and the Nexus restores her for round 3. It is a fixture, not a
-// mission of the game: PERIMETER is built not to force her death (the Commander milestone), so the rule
-// is proven here and only shown there.
+// mission of the game: in PERIMETER she cannot fall before round 2, so her return would come in a round 4
+// that does not exist, and the rule is proven here and only shown there.
 
 import type { MissionDefinition } from "../src/mission/index.ts"
 

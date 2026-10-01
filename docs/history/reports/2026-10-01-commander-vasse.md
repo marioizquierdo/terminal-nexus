@@ -57,7 +57,12 @@
 4. **She cannot fall in PERIMETER's first round.** The probe dies before it reaches her at any health, even 1,
    so the earliest she falls is round 2, and her return would be in a round 4 that does not exist. PERIMETER
    shows her fall and her absence; only the test map shows her return.
-5. **A test that watched a Pulse in one-second steps stepped over the half-second cease fire** once round 1's
+5. **She falls in PERIMETER's last round in every plan, at every health the Experiment offers.** The
+   milestone hoped PERIMETER would not force her death, keeping that moment for the third mission. While she
+   advances like every unit, the last wave reaches her whatever is built, so the mission always ends with
+   "Vasse fell." No health keeps her alive there and still lets a plan that builds nothing lose; holding her
+   back needs an order she can keep (Q69).
+6. **A test that watched a Pulse in one-second steps stepped over the half-second cease fire** once round 1's
    length moved. It now watches in quarter seconds.
 
 ## 4. Outcomes measured
@@ -73,8 +78,11 @@ round 1 and nothing else.
 | 40 | falls in round 2; lost | falls in round 3; held | falls in round 3; held | falls in round 3; held |
 | 60 | falls in round 3; lost | falls in round 3; held | falls in round 3; held | falls in round 3; held |
 | **80** | **falls in round 3; lost** | **falls in round 3; held** | **falls in round 3; held** | **falls in round 3; held** |
-| 100 | falls in round 3; lost (the Nexus falls one tick before the end) | held | held | held |
-| 150 | falls in round 3; **held on time** | held | held | held |
+| 100 | falls in round 3; lost (the Nexus falls one tick before the end) | falls in round 3; held | falls in round 3; held | falls in round 3; held |
+| 150 | falls in round 3; **held on time** | falls in round 3; held | falls in round 3; held | falls in round 3; held |
+
+- Beyond the Experiment's range: from 120 up, a plan that builds nothing holds the last round on time; Vasse
+  first lives through round 3 at 200, and only in "a Turret a round".
 
 - The rule alone, without Vasse: nothing built loses in round 3 (the Nexus falls 16 seconds in); every other plan
   is held. Before the rule it lost the same way, but round 2 ended the moment the squads fell.
@@ -93,9 +101,12 @@ and health. What the state could not say was that she had fallen and when, and t
 loop now carries.
 
 The first guess of 80 health is the value where PERIMETER keeps the shape step 6B gave it, measured rather than
-chosen: she comes out of the first two rounds in every plan, and a plan that builds nothing still loses. Whether a
-Commander should be that safe is Mario's to feel; the Experiment runs from 20, where she falls in round 2 whatever
-is built, to 150, where she wins the last round on time by herself.
+chosen: she comes out of the first two rounds in every plan, and a plan that builds nothing still loses. It does
+not keep her alive to the end: at every health offered she falls in the last round of every plan, which the
+milestone hoped PERIMETER would not do, and no health fixes that without letting a plan that builds nothing win.
+The fix is her doctrine's hold, not her health. How much she can take is still Mario's to feel; the Experiment
+runs from 20, where she falls in round 2 whatever is built, to 150, where a plan that builds nothing holds the
+last round on time.
 
 **What is left:** her powers and the Nexus draft (step 8B, which should first settle how much of what is coming
 the screen gives away for free, Q71); her doctrine's behaviour (Q69); and whether building her answers the
