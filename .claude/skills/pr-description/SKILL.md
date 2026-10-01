@@ -1,6 +1,6 @@
 ---
 name: pr-description
-description: Write or update a pull request description for Terminal Nexus. Use whenever opening a PR, pushing commits to an open PR, or rewriting a PR body. Produces a phone-readable description that leads with what the player will see, a Demo section sized to the change (a code block, screenshots, a GIF, or a playable page — the cheapest one that shows it), the decisions waiting on Mario as Experiments to flip, and keeps gate and canon bookkeeping in a collapsed footer.
+description: Write or update a pull request description for Terminal Nexus. Use whenever opening a PR, pushing commits to an open PR, or rewriting a PR body. Produces a phone-readable description that leads with what the player will see, a Demo section sized to the change (a code block, screenshots, a GIF, or a playable page — the cheapest one that shows it), the decisions waiting on Mario as Experiments to flip, and keeps the project bookkeeping in a collapsed footer.
 ---
 
 # Writing a pull request description
@@ -18,9 +18,9 @@ when a change needs more than a page — link it from the footer and do not repe
 
 - **Lead with behaviour.** "Tab now moves between the menu and the map", not "focus is reducer
   state". Internal refactors get at most one bullet.
-- **Plain English.** No section numbers, no question ids like Q57, no "per canon", no RULE or
-  GUIDANCE, no gate letters in the body. Game words are fine (Grid, Build Phase, Nexus Pulse, Nexus
-  power); process words (gate, canon, ledger, milestone) belong only in the footer.
+- **Plain English.** No section numbers, no question ids like Q57, no RULE or GUIDANCE, no step
+  numbers in the body. Game words are fine (Grid, Build Phase, Nexus Pulse, Nexus power); process
+  words (milestone, step) belong only in the footer.
 - **No "Mario said X".** At most "(from your playtest)" after the change it prompted.
 - **Short.** 150-400 words above the footer. Bullets of one or two lines. No table wider than two
   columns — it will not fit a phone.
@@ -29,7 +29,7 @@ when a change needs more than a page — link it from the footer and do not repe
 
 ## Title
 
-The player-visible change, under 70 characters. A trailing "(gate 5F)" is allowed. For tooling, the
+The player-visible change, under 70 characters. A trailing "(step 6B)" is fine. For tooling, the
 thing a person can now do: "Scripted playtests that make GIFs without a terminal".
 
 ## Body, in this order
@@ -94,10 +94,9 @@ Then the collapsed footer:
 ```markdown
 <details><summary>Project bookkeeping</summary>
 
-- Gate: 5F — PASS (or: not a gate)
-- Report: `docs/history/reports/2026-09-26-layout-and-focus.md`
-- Canon changes: None (or what changed, and the new version)
-- Questions: opened Q60; answered Q57
+- Milestone step: 6B (or: not a milestone step)
+- Design documents changed: none (or which, and what changed in a few words)
+- Questions: opened Q60; answered Q57 (or none)
 
 </details>
 ```
@@ -148,7 +147,7 @@ instructions — give it its own short section after **Changes**, **Workflow and
 - [ ] The title says what the player (or developer) can now see or do, under 70 characters.
 - [ ] Every image was opened and checked; URLs are pinned to commit SHAs.
 - [ ] The Demo is the cheapest layer that shows the change, and its steps were run exactly as written.
-- [ ] No section numbers, question ids or gate letters above the footer.
+- [ ] No section numbers, question ids or step numbers above the footer.
 - [ ] 150-400 words above the footer.
 - [ ] The attribution lines appear exactly once, at the end.
 
