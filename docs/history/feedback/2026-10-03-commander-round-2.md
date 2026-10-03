@@ -22,14 +22,15 @@ known issue that she falls in PERIMETER's last round stays recorded, not fixed.
 > idea is that players should be able to pick Vasse on the other game modes. Here in the campaign we are
 > developing (unlocking) the deck, so a campaign level should be able to override the actual deck.
 
-**Scheduled** (this round). Vasse gets a deck of her own, defined once with the content: her Commander, the
-credits she starts with, what she can build and her Nexus power pool. Any mode that lets a player pick her
-reads it whole. A mission names the deck it plays and may override any part of it: the Campaign develops the
-deck mission by mission, so each level says what of it is unlocked. This answers the open question about
-building Vasse early without authoring the whole Citizens army: the deck is built now, at the size of what
-exists (the bench buildings and the placeholder Nexus powers), and a real roster still waits. It reverses the
-design's line that no Commander Army is built before the microgame milestone, by his words: what stays
-deferred is roster breadth and balance, not the deck's shape.
+**Built.** Vasse has a deck of her own (`src/content/armies.ts`), defined once beside the content: her
+Commander, the credits a Build Phase starts with, what she can build and her Nexus power pool. Any mode that
+lets a player pick her reads it whole. A mission names the deck it plays and overrides any part of it (an id
+unlocks the deck's own entry, a whole entry is the level's own), and the Build Phase offers exactly the
+result; validation refuses an unknown deck or an override that names what the deck does not hold. PERIMETER
+names her deck and lists what mission 1 unlocks of it, which today is all of it: the three bench buildings
+and the two placeholder powers. This answers the open question about building Vasse early: the deck's shape
+is built now, and the Citizens' roster, its balance and her four designed powers still wait. It reverses the
+design's line that no Commander Army is built before the microgame milestone, by his words.
 
 ### F106 — Vasse visible, prominent, and introduced
 
@@ -38,38 +39,47 @@ deferred is roster breadth and balance, not the deck's shape.
 >
 > In any case, just make aure vasse is visible, prominent, and don't worry that much about level balance yet.
 
-**Scheduled** (this round). Played as a player before this round, she was a faint `@` in the same dim colour
-as the squads arriving with her, easy to miss. She gets a look of her own, bold at full strength wherever she
-is drawn, and a highlight when she shows up: as PERIMETER opens, and again the round she is restored.
+**Built.** Vasse is drawn bold at full strength wherever she stands, never dim or washed: arriving with her
+squads in round 1 (who carry the arrivals' wash around her), beside the Nexus after Recall, and while a Pulse
+plays. As PERIMETER opens, the dialog's first line is hers and the camera is on her, a soft light breathing in
+a ring around her (her cell inverted in monochrome); the round she is restored opens on one line, "Vasse is
+back beside the Nexus.", with the same light.
 
 ### F107 — Intros: a dialog at the bottom
 
 > We should start thinking about how to implement intros, perhaps a new tyle of popup at the bottom that
 > shows dialogs.
 
-**Scheduled** (this round). A first version of the campaign design's `say`: a dialog box at the bottom of the
-screen, a speaker and a line, advanced by Enter or a click and skipped by Esc, the camera on whoever is
-talking. A mission writes its lines as data, beside its triggers. PERIMETER opens with its pre-battle
-exchange, the lines already written in the campaign design. Portrait cards, barks and scripted Pulses come
-later.
+**Built.** The dialog: a popup docked at the bottom of the map, the speaker's name as its title in their
+side's colour (with their glyph when they are on the map), one line at a time. Enter, Space or a click reads
+on, Esc, `x` or a right click skips the rest, and each line moves the camera to what it is about. A mission
+writes its lines as data (`say`, at a round's `build.start`), checked when it loads; PERIMETER opens with
+Vasse's bark and its pre-battle exchange with Corvane, the lines the campaign design already had. The game,
+the browser page and the playtest play it; key scripts start with `Esc` to skip it. Portrait cards, barks,
+timeouts and scripted Pulses come later.
 
 ### F108 — The enemy visible without a Nexus power
 
 > The enemy units should be visible without nexus powers, reading the enemy intent is very important for basic
 > ui/ux interaction.
 
-**Scheduled** (this round). This answers the open question about how much of what is coming a player sees
-without spending a pick: everything about the coming raid is free (where, how many, of what, when, and what
-it means to do). The Incoming wave Experiment, which could hide the raid, is settled as shown and removed. A
-Nexus power that reveals must show something beyond this, which is the Nexus draft step's to design.
+**Built.** The coming raid is always drawn, with no Nexus power and no Experiment: the Incoming wave
+Experiment is settled as shown and removed. Arriving units are washed in their side's colour where colours
+blend and drawn at full strength otherwise, so they are never faint; "not here yet" is said in words. The
+open question is answered and moved to the answered register; a reveal power now has to show what this free
+view cannot.
 
 ### F109 — Intent that makes you plan
 
 > If you try to play a round pretending to be a player, you should feel that the enemy intent makes you think
 > about strategy, where to place the buildings, how to use your credits, how to protect the target, etc.
 
-**Scheduled** (this round). Played as a player before this round, the raid was a faint group at the top of
-the map with nothing saying what it would do unless explored tile by tile. The Build Phase is to show, without
-looking for it, what each group will go for first, along which way, and how many are coming when. The
-prediction is the kernel's own, run on the plan as it stands, so placing a building changes it. The round is
-then played as a player, and the pull request says what it made one think about.
+**Built.** In the Build Phase each coming group has a trail to what it goes for first, and that target is
+marked; the side panel's free rows say, under when it comes, how many, of what, from where, and what it goes
+for ("goes for your Barracks"). The first target is the kernel's own choice on the Pulse's first tick, worked
+out on the plan as it stands, so placing a Turret on a trail makes it the target at once. Played as a player:
+round 1's trail said the probe comes west along the ridge and round its end to the Barracks, so a Turret where
+it rounds the end became bait; in round 2 one Turret on the flank's row pulled both groups; in round 3 ringing
+the Turret both groups converged on held the mission with Vasse alive. It made the player think about bait,
+keeping the Barracks and Vasse out of first contact, and spending where trails meet. What it does not show: where
+the fight goes after first contact, since the raid retargets as it advances.

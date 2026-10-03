@@ -206,6 +206,20 @@ than any one feature:
    fact. Measured again for the description, she falls in the last round of every plan at every health. A
    hope from the plan is not a result until a run says so.
 
+## The Commander's second round (2026-10-03)
+
+1. **A trail must be the way the kernel walks, not a straight line.** The first trail ran straight from the
+   ridge to the Barracks, across rock the raid walks round; units step greedily toward their target and can
+   stand pressed against a ridge face. The trail is now the kernel's own steps, from the unit whose walk
+   arrives, and shows the raid pressing on the ridge when none gets through.
+2. **A screen that opens something by itself changes every test that starts there.** PERIMETER's intro would
+   have taken the first keys of every round-1 test and key script. The session decides whether scenes play
+   (on in the game, the browser page and the playtest; off for a session a test builds, unless asked), so the
+   tests kept their meaning and only the documented key scripts gained an `Esc`.
+3. **Parallel workers collide in the files they share, not the ones they own.** The session's options, the
+   composition's input and the round loop each took additions from both sides; naming in each prompt which
+   hunks the other worker would add kept every conflict a keep-both, resolved in minutes.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

@@ -125,8 +125,8 @@ export type BuildContext = Readonly<{
   /** The Commanders sitting this round out, and when each is back — handed on to the next round by the
    *  shell, and read by the Battle Round screen to say so. Absent: nobody is missing. */
   absent?: readonly CommanderAbsence[]
-  /** What the next round's triggers will bring, and where (drawn while the Incoming wave
-   *  Experiment shows it). */
+  /** What the next round's triggers will bring, and where: always drawn, see-through, where it arrives
+   *  (the incoming wave). */
   incoming?: readonly IncomingEntity[]
   /** The bottom line's first answer when this Build Phase opens — how the last round ended. */
   openingStatus?: StatusMessage

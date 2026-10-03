@@ -48,7 +48,8 @@ const USAGE = `terminal-nexus — the Terminal Nexus game
       --settings "<text>" starts with an exported text's settings and experiments, for this
       run only: paste the whole export, or just pairs like "nextRound=auto trainEvery=6".
       --keys "<key script>" opens it already in the state those keys reach, in the scripted
-      playtest's key names: --keys "n 1 1 Enter" picks the first power and places a Barracks.
+      playtest's key names: --keys "Esc n 1 1 Enter" skips the intro, picks the first power and
+      places a Barracks.
       For demos and for reproducing a report; the keyboard is yours after the last key.
 
 A first launch guesses colour depth the way \`grid\` does; every launch after that remembers whatever

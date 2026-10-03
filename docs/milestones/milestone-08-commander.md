@@ -7,6 +7,9 @@
 Made current by Mario on 2026-10-01, after he played the loop across rounds: "Get ready and start working on
 the next milestone stage!"
 
+_Nothing is open for an agent right now: step 8A's second round is built and waits for Mario's playtest. Until
+then the work is his latest feedback, or nothing._
+
 This milestone widens Level 1's scope on purpose. Earlier plans deferred the Commander mechanic to
 Mission 3 (RESTORATION) and said not to author a Commander Army before Milestone 12. The plan now puts
 a real Commander in Level 1. What does and does not change because of that is spelled out under
@@ -55,23 +58,24 @@ Built; waiting for Mario's playtest.
 ### Step 8A, round 2 — Her deck, her entrance, and the raid's intent
 
 Mario's notes on the Commander's pull request ([his words](../history/feedback/2026-10-03-commander-round-2.md)):
-the milestone is the Commander's concept, not PERIMETER's balance or her health. Built on the same pull request.
+the milestone is the Commander's concept, not PERIMETER's balance or her health. Built on the same pull request;
+waiting for Mario's playtest.
 
-- [ ] Vasse's deck is defined once, with the content: her Commander, the credits she starts with, what she can
+- [x] Vasse's deck is defined once, with the content: her Commander, the credits she starts with, what she can
       build and her Nexus power pool. Any mode that lets a player pick her reads it whole.
-- [ ] A mission names the deck it plays and may override any part of it, since the Campaign develops the deck
+- [x] A mission names the deck it plays and may override any part of it, since the Campaign develops the deck
       level by level. PERIMETER names Vasse's and says what it unlocks; the Build Phase is built from the
       result; validation refuses a deck or an override that names what does not exist.
-- [ ] Vasse is drawn bold at full strength wherever she stands, arriving included, in the Build Phase and in
+- [x] Vasse is drawn bold at full strength wherever she stands, arriving included, in the Build Phase and in
       the Pulse.
-- [ ] A dialog box at the bottom of the screen: a speaker and a line, Enter or a click for the next, Esc to
+- [x] A dialog box at the bottom of the screen: a speaker and a line, Enter or a click for the next, Esc to
       skip, the camera on whoever is talking. A mission writes its lines as data; PERIMETER opens with its
       pre-battle exchange.
-- [ ] She has an intro highlight when she shows up: as PERIMETER opens, and the round she is restored.
-- [ ] The raid is always shown (the Incoming wave Experiment settled and removed), and the Build Phase shows,
+- [x] She has an intro highlight when she shows up: as PERIMETER opens, and the round she is restored.
+- [x] The raid is always shown (the Incoming wave Experiment settled and removed), and the Build Phase shows,
       without looking for it, what each group goes for first, along which way, how many and when. The
       prediction is the kernel's own, run on the plan as it stands.
-- [ ] Played as a player at 80 × 24; the pull request says what the raid's intent made the player plan.
+- [x] Played as a player at 80 × 24; the pull request says what the raid's intent made the player plan.
 
 ### Step 8B — The Nexus draft, dealt from a pool
 

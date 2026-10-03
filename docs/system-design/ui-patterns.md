@@ -103,7 +103,8 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
   (RULE — `tests/build-focus.test.ts`)
 - **A click can only choose what it could see**: while a card covers the menu, a click on the panel goes
   back and chooses nothing. **A click outside a popup** closes it and moves focus there, nothing more; over a card it only closes
-  the popup, and the card and its building come back. (RULE — `tests/build-card.test.ts`, `tests/build-holds-menu.test.ts`)
+  the popup, and the card and its building come back. The dialog is the exception (section 10.4): it is
+  read rather than chosen from, so a click anywhere reads on and a stray click never skips the story. (RULE — `tests/build-card.test.ts`, `tests/build-holds-menu.test.ts`)
 - **Whole rows are targets**, as wide as the highlight bar, and **drawing and hit-testing read one
   geometry** (`buildLayout` in `src/build/layout.ts`, the placed popup in `src/build/popup.ts`).
   (RULE — `tests/build-menu.test.ts`, `tests/build-edge.test.ts`, `tests/build-popups.test.ts`)
@@ -201,6 +202,13 @@ title screen's menu.
   (`src/build/state.ts`). (RULE for the room — `tests/build-menu.test.ts`)
 - **No help text in the panel**: what a row does is the bottom line's to say.
   (RULE — `tests/build-start.test.ts`)
+- ***The raid in the panel*** (a named pattern: the owner's "reading the enemy intent is very important
+  for basic ui/ux interaction"): the free rows between the buildings and Start Pulse say what the coming
+  round brings, under when it comes (`AS THE ROUND STARTS`, `7 SECONDS IN`): each group's count and where
+  from (a compass point from the Nexus), its kinds, and what it goes for first (`goes for your
+  Barracks`). They are information, not rows: nothing to highlight or click. Short of room they drop the
+  kinds, then whole groups (`+2 more`), and a count is never split from its kind. Drawn with the menu,
+  so it fades when a card covers it. (RULE — `tests/raid-view.test.ts`)
 - **The action that ends the phase is the last row** (`startRow`), dim and refused with its reason until
   the Nexus power is picked; it opens the Battle Round screen. (RULE — `tests/build-start.test.ts`)
 
@@ -320,7 +328,8 @@ uses it rather than a new blend.
 - **Unmissable**: a solid border in the map edge's weight, the title in it, a one-cell shadow (`:` or
   `░`), centred over the map, drawn last in the chrome band. (RULE — `tests/build-popups.test.ts`)
 - **It holds the keyboard and the mouse** until it closes; keys it does not use do nothing. **Nothing
-  opens a popup but the player.** (RULE — `tests/build-popups.test.ts`, `tests/build-holds-menu.test.ts`)
+  opens a popup but the player**, except the dialog, which a round with a scene opens itself (section
+  10.4). (RULE — `tests/build-popups.test.ts`, `tests/build-holds-menu.test.ts`, `tests/dialog.test.ts`)
 - **A choice closes its popup**: a Nexus pick returns the player to where they were; the bottom line
   and the menu say what it did. (RULE — `tests/build-nexus.test.ts`)
 - **A popup that belongs to a menu row keeps that row active behind it** (Nexus, Battle Round); one that
@@ -402,6 +411,30 @@ uses it rather than a new blend.
   `activity-export.txt`; on the playtest page, its own box), and a message says how many went where.
   (RULE — `tests/build-activity.test.ts`)
 
+### 10.4 The dialog
+
+***The dialog*** (a named pattern: the owner's "perhaps a new type of popup at the bottom that shows
+dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE — `tests/dialog.test.ts`)
+
+- **The popup shape, docked at the bottom of the map** rather than centred, so the menu stays readable
+  beside it and the map above it shows what the line is about. It keeps one height for every line of a
+  scene (3 to 5 rows). The speaker is its title, inverse in their side's colour, with their glyph when
+  they stand on the map (`@ VASSE`); the game's own voice has no title.
+- **Opened by the round**: a round whose context carries a scene (`BuildContext.scene`: the mission's
+  lines, then a Commander's return) opens on it, the one popup the player does not open. Whether a session
+  plays scenes is the session's to say: the game, the browser page and the playtest do; a test that builds
+  a session directly does not, unless it asks.
+- **Read, not chosen from**: Enter, Space or a click anywhere shows the next line; Esc, `x`, a right
+  click or `close [esc]` skip the rest; other keys wait, and `q` opens the game menu over it and comes
+  back to the same line. The bottom line names its keys: `Line 1 of 4. [enter] next line, [esc] skips
+  the rest.`
+- **The camera on whoever is talking**: each line slides the view to its focus (a unit, a group or a
+  region), with the Pulse's own look-at, and lights it (`fx.focus.light`, section 13); the map cursor is
+  hidden and the menu unlit while it is open. After the last line, the round is exactly as it opened:
+  the cursor where the round put it, the bottom line the round's own.
+- **Recorded**: every line shown and every skip is an Activity Logs event (the **Intro** filter), so a
+  playtest export says whether the intro was read.
+
 ## 11. The bottom line
 
 - **One line: what just happened or why not — and when nothing did, what can be done here.** The last
@@ -462,14 +495,25 @@ uses it rather than a new blend.
   because **a unit steps aside for a building when the Pulse starts**, so a unit is never drawn over a
   planned building either. Explore Map's card reads any of them: its words, whose it is, its health now.
   (RULE — `tests/mission-loop.test.ts`)
-- ***The incoming wave*** (a named pattern: the owner's "explore the map and see what is
-  coming"): what the next round's triggers bring is drawn where it will arrive, **see-through** — dim, and
-  faded where colour allows — so it reads as "not here yet" at every colour depth, monochrome included,
-  and yields to buildings like any unit. Its card says "Incoming", when it arrives ("as the round
-  starts", or seconds in), and **its intention** — one plain line the mission writes for the group — in
-  place of a description. A forecast: it is placed against the map without the plan, and a building
-  planned where an arrival would stand moves it when the Pulse starts. The Incoming wave Experiment hides
-  it. (RULE — `tests/mission-loop.test.ts`)
+- ***The incoming wave*** (a named pattern: the owner's "explore the map and see what is coming", and
+  "the enemy units should be visible without nexus powers"): what the next round's triggers bring is
+  **always** drawn where it will arrive, in the see-through style at a low alpha in its side's colour: a
+  wash under near-full glyphs where colours blend, full strength at 16 colours and in monochrome, so it
+  is never faint. "Not here yet" is said in words — the panel's heading and the card's "Incoming", when it
+  arrives ("as the round starts", or seconds in), and **its intention**, one plain line the mission writes
+  for the group, in place of a description. A Commander arriving is bold and never washed. It yields to
+  buildings like any unit, and the cursor sets its wash aside. A forecast: it is placed against the map
+  without the plan, and a building planned where an arrival would stand moves it when the Pulse starts.
+  (RULE — `tests/mission-loop.test.ts`, `tests/raid-view.test.ts`)
+- ***The raid's intent*** (a named pattern): in the Build Phase, never during a Pulse, each coming group
+  has a **trail** to what it goes for first, and **that target is marked**. The target is the kernel's own
+  choice on the Pulse's first tick, worked out on the plan as it stands (`src/match/intent.ts`), so
+  placing, undoing or removing a building changes it at once: a building nearer the raid becomes what it
+  goes for. The trail is the kernel's own steps, round a ridge, or pressing on it when nothing gets
+  through. Its marks go every other tile on open ground only, in the glyph pack's arrowheads and strokes,
+  dim and faded, never over a glyph; the target is underlined under a wash of the raid's colour, never
+  red. Later groups are foreseen against the round's opening. (RULE — `tests/raid-view.test.ts`,
+  `tests/intent.test.ts`)
 
 ## 13. Effects
 
@@ -486,6 +530,10 @@ uses it rather than a new blend.
   drop the travel) and monochrome ([`effects.md`](effects.md)). (RULE — `tests/effects.test.ts`)
 - **Light is a role pulled toward another role** (`CellStyle.tint`): a blend at 256 colours and up, a
   step at 16, nothing in monochrome, where a change of weight carries it. (RULE — `tests/effects.test.ts`, `tests/roles.test.ts`)
+- **The intro highlight** (`fx.focus.light`): while a dialog line looks at something, a soft light rings
+  it on the ground around it, never on it, breathing at the Popup pulse's pace; steady under reduced
+  motion, and in monochrome and at 16 colours the focus's own cells invert instead.
+  (RULE — `tests/dialog.test.ts`)
 - **A placement is felt, then settles**: a few frames going up, a moment lit with sparks, then the still
   picture. A removal throws the same sparks. Reduced motion shows the finished building at once, unlit,
   with a still mark for the sparks. (RULE — `tests/build-placement.test.ts`)
@@ -530,7 +578,11 @@ uses it rather than a new blend.
   out for). The next Build Phase's bottom line says it in place of "the Nexus stands" (`Round 1: victory.
   Vasse is out this round, back for round 3.`), and so does the Battle Round screen, under the round's own
   words (`Vasse is out this round.`). The round she comes back, the bottom line says `Vasse is back beside
-  the Nexus.` and she stands there on the map. (RULE — `tests/commander-screen.test.ts`)
+  the Nexus.` and she stands there on the map, and the round opens on the dialog saying it, looking at
+  her. Wherever she stands she is drawn **bold at full strength**, arriving included and while a Pulse
+  plays, so she is never mistaken for the squad around her; a mission introduces her through the dialog,
+  her ring lit (PERIMETER's round 1). (RULE — `tests/commander-screen.test.ts`, `tests/dialog.test.ts`,
+  `tests/raid-view.test.ts`)
 - **A mission's round is counted in the top bar** — `build phase - round 2 of 3` — because PERIMETER's goal
   is about rounds (a round counter shows only when the goal is about rounds), and the Battle Round screen
   is that round's number, in the mission's words for it.
@@ -574,7 +626,8 @@ the build stamped on every export — is what makes a pasted export reproducible
   round wants to feel it again — as keyboard navigation's numbers did for the navigation polish round.
   Some stay on purpose: a number that depends on the player's keyboard (the hold window), a comparison he
   asked to make (key releases), a look still being felt (the popup pulse and the Battle Round flash), or
-  a feature whose worth is in doubt (the mission's Next round and Incoming wave). A renamed setting keeps its old name readable in old
+  a feature whose worth is in doubt (the mission's Next round). The Incoming wave was settled as shown by
+  his words rather than an export ("the enemy units should be visible without nexus powers"). A renamed setting keeps its old name readable in old
   exports. (RULE for the old names — `tests/build-all-settings.test.ts`)
 - **Never copy a tuned number into prose**; point at the setting.
 

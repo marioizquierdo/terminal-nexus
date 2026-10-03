@@ -12,13 +12,13 @@ after every key with the same composer the live screen uses. No terminal, no tim
 ## Commands
 
 ```bash
-node scripts/playtest.mjs --keys "Down Down Space*4"                 # status per step + final screen
-node scripts/playtest.mjs --keys "Down Down Space*4" --print all     # every step's full screen
-node scripts/playtest.mjs --keys "n 1 Tab S-Left*5" --png final    # one PNG
-node scripts/playtest.mjs --keys "Down Down Space*4" --gif --name hatchery-run
+node scripts/playtest.mjs --keys "Esc Down Down Space*4"             # status per step + final screen
+node scripts/playtest.mjs --keys "Esc Down Down Space*4" --print all # every step's full screen
+node scripts/playtest.mjs --keys "Esc n 1 Tab S-Left*5" --png final  # one PNG
+node scripts/playtest.mjs --keys "Esc Down Down Space*4" --gif --name hatchery-run
 node scripts/playtest.mjs --file flow.keys --size 104x30 --capability monochrome --png all
-node scripts/playtest.mjs --settings "popupPulseMs=3000 nextRound=auto" --keys "1 Enter"  # start from an export
-node scripts/playtest.mjs --keys "n 1 1 Enter" --activity Interactions   # what the run recorded
+node scripts/playtest.mjs --settings "popupPulseMs=3000 nextRound=auto" --keys "Esc 1 Enter"  # start from an export
+node scripts/playtest.mjs --keys "Esc n 1 1 Enter" --activity Interactions   # what the run recorded
 node scripts/playtest.mjs --help
 ```
 
@@ -49,7 +49,9 @@ the same targets. `#` starts a comment in a `--file`. The table with bytes is at
 
 Each reaches a state on the `--build-phase` screen; what the screens are and every key on them is in
 [`docs/system-design/ui-patterns.md`](../../../docs/system-design/ui-patterns.md) and
-[`docs/system-design/input.md`](../../../docs/system-design/input.md).
+[`docs/system-design/input.md`](../../../docs/system-design/input.md). **PERIMETER opens on its intro**, the
+dialog at the bottom, which holds the keyboard: every opening below starts after `Esc`, which skips it
+(`Enter` reads the next line; `--keys "Enter Enter Enter" --png all` shows each line).
 
 - `n 1`: pick the first Nexus power; the popup closes and the highlight stays on the Nexus row.
 - `n 1 Down Down Space`: arm the Hatchery from the menu; the panel becomes its card.
@@ -65,7 +67,7 @@ Each reaches a state on the `--build-phase` screen; what the screens are and eve
 - `--activity [filter]`: print what the run recorded in the Activity Logs (Everything when no filter
   is named; `Interactions`, `Problems`) and save `<name>-activity.txt`, with times on the script's own
   clock. The quickest check that an event you added fires, and with what.
-- `./bin/terminal-nexus.ts --build-phase --keys "n 1 1 Enter"`: the same key script opens the live
+- `./bin/terminal-nexus.ts --build-phase --keys "Esc n 1 1 Enter"`: the same key script opens the live
   game in a state (`#keys=` on the browser page's address), for a demo link or to hand Mario the exact
   state a report is about.
 

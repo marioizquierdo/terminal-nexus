@@ -5,11 +5,12 @@ it is done.*
 
 ## Waiting on Mario
 
-- **Play the Commander**: PERIMETER, round 1. Vasse is the `@` among the squads; put the Explore cursor on
-  her for her card. Press `d` during a round: **Vasse's health**, under THE MISSION. At 20 she falls in round
-  2 and round 3 opens without her (the feed, the result, the bottom line and the Battle Round screen say so).
-  Her return cannot happen inside PERIMETER's three rounds; the pull request's pictures show it from the
-  Commander's own test map. Then paste the settings export.
+- **Play the Commander's second round** (his notes on pull request 60): PERIMETER opens on its intro, the
+  dialog at the bottom, Vasse's line first with the camera on her and her ring lit, then the exchange with
+  Corvane; Enter reads on, Esc skips. Then the raid's intent: the panel says how many are coming, when, from
+  where and what each group goes for first, and a trail on the map shows the way. Place a Turret where a
+  trail runs and watch the raid's target move to it. Vasse's deck is what the Build Phase offers; nothing
+  about it is new to see. Her fall and absence are still there to watch (`d`, **Vasse's health**, at 20).
 - **Play the Activity logs** (pull request 51): on the playtest page open the "Activity logs" demo, press
   Esc then `a`, change the filter, press `e`, and paste the export into the pull request. Also look at the
   About screen (Menu, then `4`).
@@ -56,6 +57,19 @@ Small, none blocking.
   own ("Your Commander"); from round 2 on it is hers.
 - With her in the squads, a round 1 with Turrets built ends near 9.8 seconds, before the Barracks's first
   trooper at the default pace; with nothing built it ends near 11 seconds and the Barracks trains one.
+
+**From step 8A's second round** ([Mario's notes](../history/feedback/2026-10-03-commander-round-2.md)):
+
+- The raid's intent is its first target only: after first contact the raid retargets, nearest enemy each
+  tick, and where the fight then goes is not shown. A group arriving seconds in is foreseen against the
+  round's opening.
+- At 16 colours and in monochrome an arriving unit is drawn at full strength (the wash shows only where
+  colours blend), so arriving and present enemies look alike there; the panel's heading and the card's
+  "Incoming" say which. At 256 colours the washes come out grey, and washed orange turns pinkish.
+- PERIMETER unlocks all of Vasse's deck today, so its override changes nothing on screen; the difference
+  shows when her deck holds her real powers (the Nexus draft step).
+- PERIMETER opens on its intro, so a key script for the game, the playtest or the browser page starts with
+  `Esc` (the documented examples do).
 
 **From step 6C** ([the Barracks report](../history/reports/2026-10-01-barracks-trains.md) has the outcomes):
 

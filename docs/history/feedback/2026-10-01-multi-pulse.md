@@ -32,14 +32,10 @@ that polishes it (First and Second Missions). The priority is written into the m
 > I would like, for example, that the enemies would have a spawner where the player can check how many
 > enemies are coming. Or directly see them on the map with intentions.
 
-**Open.** Half of this is there: the Build Phase draws the next round's raid on the map, see-through, and its
-Explore Map card says what the group means to do (the Incoming wave Experiment, shown by default). What is
-missing is a count in one place, and seeing it without going to look: in round 1 the raid stands at the
-ridge, off the screen the round opens on. It also pulls against a line in the design: knowing what is coming
-is meant to be something a player spends a Nexus power on ("Early Warning" on Vasse's card), not something the
-screen gives away. Which of the two wins decides one of PERIMETER's two powers, so it is a question for the
-Nexus draft step, registered with a recommendation (`docs/milestones/open-questions.md`, how much of what is
-coming a player sees for free). The display itself is in the backlog's Pulse screen entry.
+**Built** (2026-10-03, on the Commander's second round, F108 and F109 in
+[`2026-10-03-commander-round-2.md`](2026-10-03-commander-round-2.md)). Mario answered the question this raised:
+the enemy is visible without a Nexus power. The Build Phase always draws the coming raid, the side panel says
+how many are coming, of what, when and from where, and each group's trail shows what it goes for first.
 
 ### F100 — Look at units during a Pulse
 

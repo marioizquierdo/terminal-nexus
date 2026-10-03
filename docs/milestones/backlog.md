@@ -95,10 +95,9 @@ puts before any level's balance:
 - **Fewer numbers.** "The pulse doesn't need to track that many stats": today the panel shows, for each side,
   a count of units, a health bar and a health total, and a feed line for every shot and death. Keep what a
   player reads in a fight; drop the rest.
-- **How many are coming.** "A spawner where the player can check how many enemies are coming. Or directly see
-  them on the map with intentions": a count for each arriving group, in one place, seen without exploring the
-  map (round 1's raid stands at the ridge, off the view the round opens on). How much of this is free rather
-  than a Nexus power is an open question (Q71) to settle first.
+
+His third note, how many enemies are coming, is built: the Build Phase shows the coming raid, its count and
+what each group goes for first (the Commander's second round).
 
 ## Decisions fine to leave open for now
 
