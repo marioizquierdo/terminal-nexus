@@ -562,6 +562,7 @@ test("the live screen draws the arrow on its own clock, then the plain divider o
   const stdin = new FakeStdin()
   const session = runBuildPhase({
     settings: { ...DEFAULT_SETTINGS, capability: "monochrome", glyphPack: "ascii" },
+    scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,

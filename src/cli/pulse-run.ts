@@ -18,10 +18,13 @@
 //   absence and set down beside the Nexus again when her round out is over (`src/match/commander.ts`).
 
 import type { BuildContext, BuildState } from "../build/state.ts"
-import { nexusTile, remaining } from "../build/state.ts"
-import type { CommanderAbsence, FieldEntity, IncomingEntity, StandingStructure } from "../build/types.ts"
+import { nexusTile, remaining, withoutScene } from "../build/state.ts"
+import type { CommanderAbsence, DialogFocus, DialogLine, FieldEntity, IncomingEntity, StandingStructure } from "../build/types.ts"
 import type { ContentRegistry } from "../content/index.ts"
-import { commanderName } from "../content/cards.ts"
+import { CARD_TEXT, commanderName } from "../content/cards.ts"
+import { tilesOf } from "../grid/coords.ts"
+import type { Coord } from "../grid/types.ts"
+import type { PlayerId } from "../state/types.ts"
 import {
   commanderRegistry,
   fallen,
@@ -36,8 +39,8 @@ import type { Arrival, MissionPulseInput, Restoration, TrainingPace } from "../m
 import { foreseeIntents } from "../match/index.ts"
 import type { GroupIntent } from "../match/index.ts"
 import type { RaidForecast, RaidGroup } from "../build/types.ts"
-import type { MissionDefinition } from "../mission/index.ts"
-import { PERIMETER, validateMission } from "../mission/index.ts"
+import type { MissionDefinition, SceneLine } from "../mission/index.ts"
+import { PERIMETER, regionCentre, regionOf, sceneOf, validateMission } from "../mission/index.ts"
 import type { MatchState } from "../state/types.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
 import { setting } from "../build/all-settings.ts"
@@ -127,6 +130,108 @@ function commanderNews(restored: readonly Restoration[], absent: readonly Comman
   return out.returnsInRound > round && out.returnsInRound <= of ? `${name} is out this round, back for round ${out.returnsInRound}.` : `${name} is out this round.`
 }
 
+// --- A round's scene: the dialog's lines, resolved on the round's own map ---------------------------
+
+/** The round's arrivals as the forecast sets them down, with the group each came in — what a line can look
+ *  at among what is coming (the incoming wave drops the groups; a line needs them). */
+function arrivalsFor(mission: MissionDefinition, context: BuildContext, pulse: number): Arrival[] {
+  const structures = context.carried == null ? context.standing.map((s) => ({ contentId: s.contentId, anchor: s.anchor })) : []
+  const input: MissionPulseInput = { mission, grid: context.grid, registry: context.registry, pulse, carried: context.carried ?? null, structures }
+  const opening = missionOpening(input)
+  return [...opening.arrivals, ...laterArrivals(input, opening.state)]
+}
+
+/** The tile in the middle of some tiles' bounding box — where the camera looks at a group. */
+function middleOf(tiles: readonly Coord[]): Coord {
+  const xs = tiles.map((tile) => tile.x)
+  const ys = tiles.map((tile) => tile.y)
+  return { x: Math.floor((Math.min(...xs) + Math.max(...xs)) / 2), y: Math.floor((Math.min(...ys) + Math.max(...ys)) / 2) }
+}
+
+/** A unit of this round's map: a survivor standing on the field, or else one of the round's arrivals. */
+function unitOnMap(context: BuildContext, arrivals: readonly Arrival[], contentId: string): Readonly<{ anchor: Coord; player: PlayerId }> | undefined {
+  return (context.field ?? []).find((entity) => entity.contentId === contentId) ?? arrivals.find((arrival) => arrival.contentId === contentId)
+}
+
+/** Where a line looks on this round's map — the tile the camera centres on and the focus's own tiles — or
+ *  `null` when what it names is not on the map this round (a unit that fell, a group not yet come). */
+function focusOn(mission: MissionDefinition, context: BuildContext, arrivals: readonly Arrival[], focus: SceneLine["focus"]): DialogFocus | null {
+  if (focus === undefined) return null
+  const footprint = (contentId: string, anchor: Coord): Coord[] => tilesOf(anchor, context.registry.get(contentId).footprint)
+  if ("region" in focus) {
+    const region = regionOf(mission, focus.region)
+    if (region === undefined) return null
+    const own = Array.from({ length: region.width * region.height }, (_, index) => ({
+      x: region.x + (index % region.width),
+      y: region.y + Math.floor(index / region.width),
+    }))
+    return { tile: regionCentre(region), own }
+  }
+  if ("group" in focus) {
+    const own = arrivals.filter((arrival) => arrival.group === focus.group).flatMap((arrival) => footprint(arrival.contentId, arrival.anchor))
+    return own.length === 0 ? null : { tile: middleOf(own), own }
+  }
+  const unit = unitOnMap(context, arrivals, focus.unit)
+  return unit === undefined ? null : { tile: unit.anchor, own: footprint(focus.unit, unit.anchor) }
+}
+
+/** The side of the spawn that brings a unit, for a speaker the mission gives no side. */
+function spawnSide(mission: MissionDefinition, contentId: string): PlayerId | null {
+  for (const trigger of mission.triggers) {
+    for (const action of trigger.do) {
+      if ("spawn" in action && action.spawn.units.some((entry) => entry.unit === contentId)) return action.spawn.side
+    }
+  }
+  return null
+}
+
+/**
+ * A mission's `say` as the dialog shows it on this round's map: a speaker given as a unit is named as its
+ * card names it, speaks for its side, and has its glyph beside its name when it stands on the map (or is
+ * arriving this round); a named speaker is as the mission writes it. What the line looks at is resolved
+ * here, once, so the dialog only reads tiles.
+ */
+function dialogLine(mission: MissionDefinition, context: BuildContext, arrivals: readonly Arrival[], say: SceneLine): DialogLine {
+  const unit = context.registry.has(say.speaker) ? say.speaker : null
+  const standing = unit === null ? undefined : unitOnMap(context, arrivals, unit)
+  const side = say.side ?? standing?.player ?? (unit === null ? null : spawnSide(mission, unit))
+  return {
+    speaker: unit === null ? say.speaker : (CARD_TEXT[unit]?.title ?? context.registry.get(unit).short),
+    side,
+    unit: standing === undefined ? null : unit,
+    text: say.text,
+    focus: focusOn(mission, context, arrivals, say.focus),
+  }
+}
+
+/**
+ * **A round's scene**, the lines the dialog shows as its Build Phase opens: the round a Commander is
+ * restored, first the game's own line saying so — the bottom line's words, with no speaker, looking at
+ * her: her highlight when she shows up again — and then the mission's own lines for the round
+ * (`sceneOf`), in trigger order.
+ */
+function roundScene(mission: MissionDefinition, context: BuildContext, round: number, restored: readonly Restoration[]): DialogLine[] {
+  const back: DialogLine[] = restored
+    .filter((restoration) => restoration.player === "A")
+    .map((restoration) => ({
+      speaker: null,
+      side: null,
+      unit: null,
+      text: commanderNews([restoration], [], round, mission.pulses) ?? "",
+      focus: { tile: restoration.anchor, own: tilesOf(restoration.anchor, context.registry.get(restoration.contentId).footprint) },
+    }))
+  const lines = sceneOf(mission, round)
+  if (lines.length === 0) return back
+  const arrivals = arrivalsFor(mission, context, round)
+  return [...back, ...lines.map((say) => dialogLine(mission, context, arrivals, say))]
+}
+
+/** The round's context with its own scene — none carried over from the round before it. */
+function withRoundScene(context: BuildContext, scene: readonly DialogLine[]): BuildContext {
+  const bare = withoutScene(context)
+  return scene.length === 0 ? bare : { ...bare, scene }
+}
+
 export function missionPlay(mission: MissionDefinition): MissionPlay {
   const inputFor = (context: BuildContext, pulse: number, structures: MissionPulseInput["structures"]): MissionPulseInput => ({
     mission,
@@ -173,7 +278,8 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
         roundText: mission.roundText ?? {},
         ...(mission.trains === undefined ? {} : { trains: mission.trains }),
       }
-      return { ...context, incoming: forecast(context, 1) }
+      // The round opens on its scene, when the mission has one for it: PERIMETER's intro.
+      return withRoundScene({ ...context, incoming: forecast(context, 1) }, roundScene(mission, context, 1, []))
     },
 
     startPulse(context, state) {
@@ -221,7 +327,8 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
         allotment: remaining(context, state),
         openingStatus: status(news === null ? `${last} Build Phase ${number} - the Nexus stands.` : `${last} ${news}`, "hint"),
       }
-      return { ...next, incoming: forecast(next, number) }
+      // Its own scene, never the last round's: a Commander back, then the mission's lines for the round.
+      return withRoundScene({ ...next, incoming: forecast(next, number) }, roundScene(mission, next, number, back.restored))
     },
   }
 }

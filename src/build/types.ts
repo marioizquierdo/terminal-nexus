@@ -209,6 +209,12 @@ export type BuildCommand =
    * session swaps in the next round's context, which the shell works out (`src/cli/pulse-run.ts`).
    */
   | Readonly<{ kind: "next-round" }>
+  /**
+   * **The dialog**: the next line of the round's scene — Enter, Space, or a click anywhere while the dialog
+   * is open — or, after its last line, the dialog closes and the Build Phase is exactly as the round opened
+   * it. Esc, `x` and a right click skip the rest instead (`cancel` and `back`, as every popup closes).
+   */
+  | Readonly<{ kind: "dialog-next" }>
 
 /**
  * How the sides of the Grid rectangle that have reached the map's own edge are drawn — **the map's
@@ -246,7 +252,9 @@ export type MenuEntry =
 /** The popups this screen has — one popup shape for all of them (`src/build/popup.ts`): the Nexus
  *  powers, the Battle Round confirmation, the game menu (Settings, Controls, Activity logs, Restart,
  *  Quit), Settings, the export, a message — `BuildState.message`, a title and text with nothing to
- *  choose — the Controls and hotkeys page, and the Activity logs window. */
+ *  choose — the Controls and hotkeys page, the Activity logs window, and **the dialog**: a round's scene,
+ *  a line at a time, docked at the bottom of the map — the one popup the player does not open
+ *  (`BuildState.dialog`). */
 export type Popup =
   | "nexus-powers"
   | "battle-round"
@@ -256,6 +264,29 @@ export type Popup =
   | "message"
   | "controls"
   | "activity-logs"
+  | "dialog"
+
+/**
+ * Where a line of dialog looks, on this round's map: the tile the camera centres on, and the focus's own
+ * tiles — a unit's one, each of a group's units', a region's — which the intro highlight lights around
+ * (`src/view/build-dialog.ts`). Worked out by the shell when the round opens (`src/cli/pulse-run.ts`).
+ */
+export type DialogFocus = Readonly<{ tile: Coord; own: readonly Coord[] }>
+
+/**
+ * One line of a round's scene as the dialog shows it (`BuildContext.scene`): who says it — their name, or
+ * `null` for the game's own voice, which has none — the side they speak for (their name's colour, `null`
+ * for none), the unit they are when they stand on this round's map (their glyph beside their name), the
+ * words, and where the camera looks while it is shown. Plain data: the mission's `say`, resolved on the
+ * round's own map.
+ */
+export type DialogLine = Readonly<{
+  speaker: string | null
+  side: "A" | "B" | null
+  unit: string | null
+  text: string
+  focus: DialogFocus | null
+}>
 
 /**
  * Which export a text is, so the shell that copies it out knows where it goes: the settings and

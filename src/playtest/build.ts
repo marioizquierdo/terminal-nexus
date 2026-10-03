@@ -55,6 +55,9 @@ export type BuildPlaytestOptions = Readonly<{
    * (`Right/repeat`), and off otherwise — a classic terminal.
    */
   keyReleases?: boolean
+  /** Whether a round that opens with a scene plays it in the dialog first, as the game does — on unless
+   *  said otherwise, so a script starts where a player starts: PERIMETER's intro (`Esc` skips it). */
+  scenes?: boolean
 }>
 
 export type PlaytestFrame = Readonly<{
@@ -139,6 +142,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     nextRound: options.play?.nextRound ?? nextRound,
     // Another mission's raid is its own to foresee: PERIMETER's is not drawn over it.
     ...(options.play === undefined ? { foresee } : options.play.foresee === undefined ? {} : { foresee: options.play.foresee }),
+    scenes: options.scenes ?? true,
   })
   build.setKeyReleases(options.keyReleases ?? options.steps.some((step) => step.kind === "key" && step.phase !== undefined))
 

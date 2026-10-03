@@ -11,7 +11,7 @@
 // required cue alone.
 
 import type { Coord } from "../../grid/types.ts"
-import type { CapabilityMode, RoleTint, StyleRole } from "../roles.ts"
+import type { CapabilityMode, RoleTint, SeeThrough, StyleRole } from "../roles.ts"
 
 /** Effects may paint here and nowhere else (`effects.md`). */
 export type EffectBand = "ground-items" | "projectiles" | "effects" | "highlights"
@@ -44,6 +44,11 @@ export type PositionedCell = Readonly<{
    * recolours characters already drawn and never brings one of its own.
    */
   tint?: RoleTint
+  /**
+   * A light laid over the cell's ground without hiding what stands there — a see-through style
+   * (`CellStyle.seeThrough`): the intro highlight's ring (`fx.focus.light`). Only on a glyphless cell.
+   */
+  seeThrough?: SeeThrough
 }>
 
 export type EffectContext = Readonly<{

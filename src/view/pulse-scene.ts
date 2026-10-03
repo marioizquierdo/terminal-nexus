@@ -22,7 +22,7 @@ import type { StatusMessage } from "../build/status.ts"
 import { status } from "../build/status.ts"
 import type { EndingPhase, EndingTimes, PulseResult } from "./ending.ts"
 import { BEAM_BOLD, beamFrame, beamLight, formatTimer, timerLit, timerSeconds } from "./ending.ts"
-import { forceBar } from "./compose.ts"
+import { drawnBold, forceBar } from "./compose.ts"
 import { inView } from "./build-grid.ts"
 import { paintEffectCells } from "./effects/composite.ts"
 import type { EffectCellSource } from "./effects/composite.ts"
@@ -85,7 +85,7 @@ export function drawPulseEntities(cells: BandCell[], view: SceneView, pulse: Pul
       occupied.add(tileIndex(view.grid, tile))
       const cell = cellForTile(view.layout, view.camera, tile)
       put(cells, band, cell.x, cell.y, entityGlyph(entity.contentId, entity.player, offset), playerRole(entity.player), {
-        bold: definition.layer === "obstacles",
+        bold: drawnBold(definition),
       })
       for (let extra = 1; extra < view.layout.tileWidth; extra += 1) {
         put(cells, band, cell.x + extra, cell.y, " ", playerRole(entity.player))

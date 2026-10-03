@@ -54,6 +54,7 @@ export type HintSituation =
   | "message"
   | "controls"
   | "activity-logs"
+  | "dialog"
   | "committed"
   | "menu-mouse"
   | "menu-explore"
@@ -75,6 +76,7 @@ export function hintSituation(context: BuildContext, state: BuildState): HintSit
     case "controls":
     case "activity-logs":
     case "game-menu":
+    case "dialog":
       return state.popup
     default:
       break
@@ -135,6 +137,13 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
   message: () => "Read it, then [esc] or a click outside closes it.",
   controls: (_context, state) => `Every key and click, by where you are. Up/down scroll. ${escBack(state)}`,
   "activity-logs": (_context, state) => `Left/right change the filter, [e] exports, up/down read. ${escBack(state)}`,
+  // The dialog's two keys, and how far through the scene it is.
+  dialog: (context, state) => {
+    const of = context.scene?.length ?? 0
+    const line = (state.dialog?.line ?? 0) + 1
+    if (of <= 1) return "[enter] or [esc] closes it."
+    return line < of ? `Line ${line} of ${of}. [enter] next line, [esc] skips the rest.` : `Line ${line} of ${of}. [enter] or [esc] closes it.`
+  },
 
   // --- A committed plan with no Pulse on screen (a Pulse says its own line) ---
   committed: () => "The plan is locked in. [esc] opens the menu.",
@@ -203,6 +212,9 @@ export function commandAnswer(state: BuildState, preview: ArmedPreview | null): 
  * instead (`pulseStatus`), unless a popup over it holds the keyboard.
  */
 export function bottomLine(context: BuildContext, state: BuildState, preview: ArmedPreview | null): StatusMessage {
+  // The dialog names its two keys while it is open; the answer the round opened with waits under it, and is
+  // the line again once the scene is over.
+  if (state.popup === "dialog") return hint(context, state)
   const answer = commandAnswer(state, preview)
   return answer.text === "" ? hint(context, state) : answer
 }
@@ -285,6 +297,15 @@ export function controlsPage(jumpStep: number = defaultValue("jumpStep")): reado
         { keys: "a row's key", text: "press that row" },
         { keys: "left/right", text: "change a setting" },
         { keys: "esc/x", text: "go back, or close" },
+      ],
+    },
+    {
+      // The dialog at the bottom of the map, as a round opens with a scene.
+      heading: "THE DIALOG",
+      lines: [
+        { keys: "enter/space", text: "the next line" },
+        { keys: "click", text: "the next line, anywhere" },
+        { keys: "esc/x", text: "skip the rest" },
       ],
     },
     {

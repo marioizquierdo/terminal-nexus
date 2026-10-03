@@ -125,7 +125,9 @@ export function buildMouseCommand(
     if (event.button !== MOUSE_LEFT) return null
     const hit = popupHitAt(ui.popup, event.column, event.row)
     if (hit.kind === "command") return hit.command
-    if (hit.kind === "outside") return underneath() ?? { kind: "cancel" }
+    // The dialog reads on wherever the click lands, so a stray one never skips the scene; any other popup
+    // closes, and the click moves focus to where it landed.
+    if (hit.kind === "outside") return ui.popup.spec.click ?? underneath() ?? { kind: "cancel" }
     return null
   }
 

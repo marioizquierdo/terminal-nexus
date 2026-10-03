@@ -78,6 +78,7 @@ async function starterSession(
 
   const session = runBuildPhase({
     settings: TEST_SETTINGS,
+    scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
@@ -221,6 +222,7 @@ test("--keys opens the Build Phase already in the state those keys reach, then h
   const exits: number[] = []
   const session = runBuildPhase({
     settings: TEST_SETTINGS,
+    scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
@@ -246,6 +248,7 @@ test("--keys that cannot be delivered stops there and says why when the screen c
   const reported: string[] = []
   const session = runBuildPhase({
     settings: TEST_SETTINGS,
+    scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
@@ -277,6 +280,7 @@ test("the live loop plays a Nexus Pulse on its own clock: timer, last seconds, r
   const exits: number[] = []
   void runBuildPhase({
     settings: TEST_SETTINGS,
+    scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
@@ -333,6 +337,7 @@ test("a Nexus Pulse holds still behind the resize gate and resumes from the same
   const stdin = new FakeStdin()
   void runBuildPhase({
     settings: TEST_SETTINGS,
+    scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
@@ -403,6 +408,7 @@ async function keyboardRun(answers: Answers, options: { keyReleases?: "auto" | "
   })
   const session = runBuildPhase({
     settings: TEST_SETTINGS,
+    scenes: false,
     backend: {
       name: "flaky",
       start: async () => {

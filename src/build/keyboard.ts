@@ -169,6 +169,9 @@ function popupCommand(key: string, popup: Popup, context: KeyboardContext): Buil
   // A message has nothing to choose: only the cancel above closes it ("clicking outside
   // or pressing esc should close it").
   if (popup === "message") return null
+  // The dialog reads on with Enter or Space, and Esc and `x` above skip the rest. `q` opens the game menu
+  // over it, as from anywhere; every other key waits for the scene to be over.
+  if (popup === "dialog") return PLACE_KEYS.has(key) ? { kind: "dialog-next" } : key === "q" ? { kind: "open-game-menu" } : null
   const own = popupOwnKey(key, popup)
   if (own !== null) return own
   const spec = context.popupSpec ?? null

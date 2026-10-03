@@ -1,13 +1,18 @@
 [
   {
+    "label": "Intro",
+    "try": "Round 1 as a player opens it: Vasse and Corvane's four lines in the box at the bottom, the camera on whoever is talked about and a light breathing around them. Enter or a click reads on; Esc skips the rest.",
+    "keys": ""
+  },
+  {
     "label": "Vasse",
     "try": "Round 1. The @ beside the Nexus, among the squads, is Commander Vasse; her card is open. Press Esc, then s s to play the round and watch her fight from just behind the line.",
-    "keys": "n 1 e click:22,10"
+    "keys": "Esc n 1 e click:22,10"
   },
   {
     "label": "Vasse falls",
     "try": "Round 2, with Vasse's health turned down to 20 and nothing built. About 18 seconds in the feed says she falls; the result says she is out for round 3. Press Enter: round 3 opens without her, and its Battle Round screen says so. Press d to change her health.",
-    "keys": "n 1 s s wait~1000*20 Enter n 1 s s",
+    "keys": "Esc n 1 s s wait~1000*20 Enter n 1 s s",
     "settings": "commanderHealth=20"
   }
 ]

@@ -96,6 +96,9 @@ export type BuildPhaseOptions = Readonly<{
   activity?: ActivityLog
   /** Where the screen runs, as `session.start` records it: `terminal` unless the playtest page says `web`. */
   hostName?: HostName
+  /** Whether a round that opens with a scene plays it in the dialog first — PERIMETER's intro, a
+   *  Commander's return. On unless a test turns it off to start on the menu. */
+  scenes?: boolean
 }>
 
 export async function runBuildPhase(options: BuildPhaseOptions): Promise<number> {
@@ -210,6 +213,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     activity: log,
     nextRound,
     foresee,
+    scenes: options.scenes ?? true,
   })
 
   // Start in a state: the script's own clock, a second between untimed steps as in a scripted

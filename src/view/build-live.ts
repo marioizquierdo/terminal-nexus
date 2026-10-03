@@ -45,7 +45,11 @@
 //     rather than every frame (`frameMs`), and it stops the frame the last popup closes. Reduced motion
 //     and monochrome keep the border still; 16 colours, whose tint is a step rather than a blend, shows
 //     the flash (two steps onto the title's colour) but not the breath; the Experiment at 0 stops only
-//     the breath.
+//     the breath;
+//   - **the intro highlight breathes**: while the dialog shows a line of the round's scene, the ring of
+//     light around what the line looks at breathes from the frame that first showed that line, at the
+//     border's own "Popup pulse" pace and on its slow frames (`src/view/build-dialog.ts`). Reduced
+//     motion, 16 colours, monochrome and the Experiment at 0 hold it still.
 //
 // The numbers in backticks are the owner's tuned values (`src/build/tuning.ts`), which a `BuildAnimation`
 // is handed when it is made (a test hands it others).
@@ -98,6 +102,7 @@ export type LivePresentation = Pick<
   | "cursorBlink"
   | "cardReveal"
   | "popupBorder"
+  | "dialogLight"
 >
 
 /** Everything time-dependent the frame at one instant shows — always a camera and a cursor, the state's
@@ -264,6 +269,10 @@ export class BuildAnimation {
    *  breath are timed from — or `null` with none open, so a popup opened again, or another
    *  replacing it, starts again from its opening. Watched, not recorded: the reducer never hears of it. */
   private seenPopup: Readonly<{ popup: NonNullable<BuildState["popup"]>; at: number }> | null = null
+  /** The dialog's line on screen at the last frame and the first frame that showed it — what the intro
+   *  highlight breathes from — or `null` with no line showing, so the next line, or the next round's
+   *  scene, starts its light afresh. Watched, not recorded, like the popup's border. */
+  private seenLine: Readonly<{ line: number; at: number }> | null = null
   /**
    * Each planned ordinal's animation track (`animation.ts`), by the one thing about it that varies:
    * when its `play` was requested — the first frame that drew it — or `null` for what was already
@@ -469,6 +478,16 @@ export class BuildAnimation {
         breathing = true
       }
     }
+    // The intro highlight: timed from the first frame that showed the dialog's line. It breathes for as
+    // long as the line is shown, so like the border's breath it asks for a frame only every
+    // `BREATH_FRAME_MS`; under reduced motion, at a depth that cannot blend a light, or with the breath at
+    // 0, it holds still and asks for none.
+    let dialogLight: Readonly<{ elapsedMs: number }> | undefined
+    if (state.popup === "dialog" && state.dialog !== null) {
+      if (this.seenLine?.line !== state.dialog.line) this.seenLine = { line: state.dialog.line, at: now }
+      dialogLight = { elapsedMs: now - this.seenLine.at }
+      if (options.reducedMotion !== true && breathShows(options.capability) && state.experiments.popupPulseMs > 0) breathing = true
+    } else this.seenLine = null
     const breathOnly = breathing && ends.length === 0
 
     return {
@@ -483,6 +502,7 @@ export class BuildAnimation {
       ...(cursorBlink ? { cursorBlink } : {}),
       ...(cardReveal === undefined ? {} : { cardReveal }),
       ...(popupBorder === undefined ? {} : { popupBorder }),
+      ...(dialogLight === undefined ? {} : { dialogLight }),
       busyUntil: breathOnly ? now + BREATH_FRAME_MS : ends.length === 0 ? null : Math.max(...ends),
       ...(breathOnly ? { frameMs: BREATH_FRAME_MS } : {}),
     }

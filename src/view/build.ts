@@ -34,6 +34,7 @@ import { drawCard } from "./build-card.ts"
 import { drawHandoff } from "./build-handoff.ts"
 import type { PopupBorder } from "./build-popup.ts"
 import { drawPopup } from "./build-popup.ts"
+import { drawDialog } from "./build-dialog.ts"
 
 // What tests and scripts import from here, wherever it now lives.
 export { ACTIVE_VALUE } from "./build-menu.ts"
@@ -107,6 +108,12 @@ export type BuildCompositionInput = Readonly<{
   placementTuning?: PlacementTuning
   /** The player's reduced-motion setting: a placement then shows its finished building at once. */
   reducedMotion?: boolean
+  /**
+   * **The intro highlight's clock**: how long ago the dialog's line on screen first appeared, so its ring
+   * of light breathes from that moment (`src/view/build-dialog.ts`). The live loop supplies it; absent —
+   * every still frame — the ring is drawn as the line appears, lit.
+   */
+  dialogLight?: Readonly<{ elapsedMs: number }>
   /**
    * A Nexus Pulse is on screen: what it is showing at this instant, worked out by the presenter
    * (`pulse-live.ts`). Present, the Grid shows the fight and the panel the forces and the ending, in this
@@ -195,6 +202,8 @@ export function composeBuildFrame(
   // The hand-off crosses from the panel into the map, so it is drawn over both — and under any popup.
   drawHandoff(cells, input, pack, preview)
   drawPopup(cells, input, pack)
+  // The dialog's speaker on its border, and its light on the map.
+  drawDialog(cells, input, capability)
 
   return composeBands(input.layout.frame.width, input.layout.frame.height, cells)
 }

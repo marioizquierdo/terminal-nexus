@@ -135,6 +135,21 @@ function sampleInstances(): EffectInstance[] {
       params: { width: 3, height: 2, palette: "rainbow" },
       ...common,
     },
+    {
+      // The intro highlight, around a unit and around a region: it lasts as long as its line is shown.
+      recipe: "fx.focus.light",
+      band: "highlights",
+      durationMs: 4000,
+      params: { periodMs: 2000 },
+      ...common,
+    },
+    {
+      recipe: "fx.focus.light",
+      band: "highlights",
+      durationMs: 4000,
+      params: { width: 3, height: 2, periodMs: 2000 },
+      ...common,
+    },
   ]
 }
 
@@ -162,7 +177,9 @@ test("the starter vocabulary is authored, all of it", () => {
   // The toolkit's generic particles and shading — the first effects that are not a Pulse cue.
   assert.ok(EFFECT_RECIPES["fx.sparks.burst"] !== undefined)
   assert.ok(EFFECT_RECIPES["fx.light.flash"] !== undefined)
-  assert.equal(EFFECT_IDS.length, starterVocabulary.length + 3)
+  // And the intro highlight: shading, the light around what a line of dialog looks at.
+  assert.ok(EFFECT_RECIPES["fx.focus.light"] !== undefined)
+  assert.equal(EFFECT_IDS.length, starterVocabulary.length + 4)
 })
 
 test("f(t) is a pure function of absolute time, in any order and after any skipping", () => {

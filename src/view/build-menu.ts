@@ -147,6 +147,7 @@ const POPUP_ROW: Readonly<Record<Popup, "nexus" | "start" | null>> = {
   controls: null,
   "activity-logs": null,
   message: null,
+  dialog: null,
 }
 
 /**
