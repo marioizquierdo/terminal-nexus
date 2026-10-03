@@ -14,6 +14,7 @@
 // Pure data: nothing here imports the kernel, so the Build Phase may read a mission's shape without ever
 // reaching `src/pulse` (tests/architecture.test.ts).
 
+import type { DeckOverride } from "../content/armies.ts"
 import type { Coord } from "../grid/types.ts"
 import type { PlayerId } from "../state/types.ts"
 
@@ -96,12 +97,19 @@ export type TriggerDefinition = Readonly<{
 
 /**
  * One mission: who stands where when it opens, what it brings each Pulse, and how it ends. Deliberately
- * the part of campaigns.md's `MissionDefinition` PERIMETER needs — no armies, unlocks or objectives list yet;
- * the map and the construct menu are still the Build Phase's starter ones, named by the adapter.
+ * the part of campaigns.md's `MissionDefinition` PERIMETER needs — the player's deck, but no opponent deck,
+ * unlock record or objectives list yet; the map is still the Build Phase's starter one, named by the adapter.
  */
 export type MissionDefinition = Readonly<{
   id: string
   name: string
+  /**
+   * The deck the player plays: a Commander's deck by id (`src/content/armies.ts`), and what this mission makes
+   * of it. The Campaign develops a deck level by level, so a level names what of it is unlocked — or overrides
+   * any part outright — and the Build Phase is built from the result (`deckOf`). Checked with the rest of the
+   * mission: an unknown deck, or an override that names what the deck does not hold, is refused.
+   */
+  player?: Readonly<{ army: string; override?: DeckOverride }>
   /** How many Pulses the mission plans for. The last one's end must decide the mission. */
   pulses: number
   /** Every Pulse's length in ticks: the kernel's tick limit. */

@@ -1,11 +1,13 @@
-// The Build Phase's placeholder content: a Grid big enough that scrolling is unavoidable, two
-// structures already standing on it, and three things to build.
+// The Build Phase's starter map — a Grid big enough that scrolling is unavoidable, two structures already
+// standing on it — and how a deck becomes what the Build Phase offers: its construct menu and its Nexus draft.
 //
-// **None of this is Commander Army authoring** — `AGENTS.md` rules out building a full Commander Army
-// before its milestone. The three rows differ in footprint (3x2, 2x2, 1x1) so that placement
-// exercises three anchor calculations, three legality shapes and three ways to straddle a rock, and
-// they are drawn from the existing fixture rosters rather than invented.
+// What can be built and drafted is not chosen here: it is the player's deck (`src/content/armies.ts`), as the
+// mission plays it. The starter constants below are Vasse's whole deck, which is also what PERIMETER unlocks
+// today.
 
+import { CARD_TEXT } from "../content/cards.ts"
+import type { CommanderArmy } from "../content/armies.ts"
+import { VASSE_ARMY } from "../content/armies.ts"
 import type { GridTerrain, TerrainId } from "../grid/types.ts"
 import type { ConstructItem, MapEdgeStyle, NexusPowerOption, StandingStructure } from "./types.ts"
 
@@ -114,67 +116,36 @@ export const STARTER_STANDING: readonly StandingStructure[] = [
 ]
 
 /**
- * What the Build Phase can spend its allotment on. Three footprints, three costs; what each one is
- * for — the title, subtitle and description its card shows, and the bottom line's hint quotes — is
- * written with the content, in `src/content/cards.ts`, since a building says the same
- * about itself wherever a card shows it.
- *
- * The costs are round numbers chosen so the allotment buys a few things and not everything — a
- * budget that affords the whole menu is not a budget. They are not balance; real costs wait for the
- * content-iteration milestone.
- *
- * Nothing here is army-specific, which is PERIMETER's answer rather than an omission: its menu draws
- * entirely from the Citizen common tier, and the Nexus draft holds the army-specific choice
- * (see the campaign design in docs/game-design/campaigns.md).
+ * A deck's construct menu: its blueprints in the deck's order, each row's digit its place in that order (a
+ * building added to a deck goes after the ones already there, so no hotkey moves). A row's label is the
+ * building's card title, so a building says the same about itself wherever it is named
+ * (`src/content/cards.ts`).
  */
-export const STARTER_CATALOG: readonly ConstructItem[] = [
-  {
-    hotkey: "1",
-    contentId: "structure.citizen.barracks",
-    label: "Barracks",
-    cost: 40,
-  },
-  {
-    hotkey: "2",
-    contentId: "structure.bench.hatchery",
-    label: "Hatchery",
-    cost: 30,
-  },
-  {
-    hotkey: "3",
-    contentId: "structure.bench.beamturret",
-    label: "Turret",
-    cost: 15,
-  },
-]
+export function constructMenu(deck: CommanderArmy): ConstructItem[] {
+  return deck.blueprints.map((blueprint, index) => ({
+    hotkey: String(index + 1),
+    contentId: blueprint.structure,
+    label: CARD_TEXT[blueprint.structure]?.title ?? blueprint.structure,
+    cost: blueprint.cost,
+  }))
+}
 
-/**
- * What the player has to spend. The whole catalog costs 85 and a second barracks takes the total
- * past this, so the menu is a choice. How a resource is *earned* is the worker-economy milestone's; this is an
- * opening allotment and nothing more.
- */
-export const STARTER_ALLOTMENT = 100
+/** A deck's Nexus power pool as the Build Phase deals it: every power, in the deck's order, by digit. */
+export function nexusDraftOf(deck: CommanderArmy): NexusPowerOption[] {
+  return deck.nexusPowers.map((power, index) => ({
+    hotkey: String(index + 1),
+    name: power.name,
+    description: power.description,
+    bonusAllotment: power.bonusAllotment,
+  }))
+}
 
-/**
- * The Nexus draft that proves the mechanism. Two placeholder options, not a real
- * choice: each is a plain number, so the difference a pick makes is checkable without needing
- * the Commander milestone's actual Commander Vasse content to exist first.
- */
-export const STARTER_NEXUS_DRAFT: readonly NexusPowerOption[] = [
-  // Each description fits the 28 glyphs a panel row has at the 80-column floor — the longer
-  // "starting allotment" wording was cut off mid-word there.
-  {
-    hotkey: "1",
-    name: "Reserve Fund",
-    description: "Adds 30 resource to spend.",
-    bonusAllotment: 30,
-  },
-  {
-    hotkey: "2",
-    name: "War Chest",
-    // 2000, not a balanced number (the owner's choice): enough to place buildings freely
-    // while playtesting placement. Placeholder content, like the whole draft.
-    description: "Adds 2000 resource to spend.",
-    bonusAllotment: 2000,
-  },
-]
+/** What the Build Phase can spend its credits on: Vasse's buildings. */
+export const STARTER_CATALOG: readonly ConstructItem[] = constructMenu(VASSE_ARMY)
+
+/** What the player has to spend: Vasse's opening credits. How a resource is *earned* is the worker-economy
+ *  milestone's; this is an opening allotment and nothing more. */
+export const STARTER_ALLOTMENT = VASSE_ARMY.allotment
+
+/** The Nexus draft: Vasse's pool, the two placeholder powers. */
+export const STARTER_NEXUS_DRAFT: readonly NexusPowerOption[] = nexusDraftOf(VASSE_ARMY)

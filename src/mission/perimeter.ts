@@ -25,6 +25,16 @@ const SLINGER = "unit.ravel.slinger"
 export const PERIMETER: MissionDefinition = {
   id: "mission.citizen.perimeter",
   name: "Perimeter",
+  // Vasse's deck, and what mission 1 has unlocked of it: every building and both placeholder Nexus powers it
+  // holds today. Named one by one rather than left to the deck, so that when her deck grows (her real Nexus
+  // powers are the next step) this level keeps what it teaches.
+  player: {
+    army: "army.citizen.vasse",
+    override: {
+      blueprints: ["structure.citizen.barracks", "structure.bench.hatchery", "structure.bench.beamturret"],
+      nexusPowers: ["power.citizen.reserve-fund", "power.citizen.war-chest"],
+    },
+  },
   pulses: 3,
   // Thirty seconds a Pulse, as the placeholder Pulse was: time enough for a wave to cross the map.
   pulseTicks: 360,
