@@ -566,10 +566,10 @@ test("drawn on the map: a ring around the line's focus as drawn, the focus's own
   const later = compose(side, { dialogLight: { elapsedMs: 1000 } }, "truecolor")
   assert.equal(cellAt(full, beside.x, beside.y).style.seeThrough?.alpha, FOCUS_LIGHT.peak)
   assert.equal(cellAt(later, beside.x, beside.y).style.seeThrough?.alpha, FOCUS_LIGHT.rest)
-  // Monochrome: her cell inverted, nothing around her.
+  // Monochrome: her cell inverted, no light around her (an arriving trooper beside her keeps its own look).
   const mono = compose(side, {}, "monochrome")
   assert.equal(cellAt(mono, own.x, own.y).style.inverse, true)
-  assert.equal(cellAt(mono, beside.x, beside.y).style.seeThrough, undefined)
+  assert.notEqual(cellAt(mono, beside.x, beside.y).style.seeThrough?.role, "fx.flash")
   // The highlight never changes a glyph: every depth draws the same characters.
   const glyphs = new Set(CAPABILITY_MODES.map((capability: CapabilityMode) => frameToText(compose(side, {}, capability))))
   assert.equal(glyphs.size, 1)
@@ -577,7 +577,7 @@ test("drawn on the map: a ring around the line's focus as drawn, the focus's own
   keys(side, ESC)
   const after = compose(side, {}, "truecolor")
   for (let y = 0; y < after.height; y += 1) {
-    for (let x = 0; x < after.width; x += 1) assert.equal(cellAt(after, x, y).style.seeThrough, undefined, `light left at ${x},${y}`)
+    for (let x = 0; x < after.width; x += 1) assert.notEqual(cellAt(after, x, y).style.seeThrough?.role, "fx.flash", `light left at ${x},${y}`)
   }
 })
 

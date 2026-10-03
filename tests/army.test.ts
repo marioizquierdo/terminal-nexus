@@ -154,9 +154,10 @@ test("the Commander a mission brings for the player is her deck's", () => {
   // A second Commander, only for this test: the player's deck is Vasse's, so bringing anyone else is refused.
   const other = { ...FIXTURE_REGISTRY.get(VASSE_ARMY.commander), id: "unit.test.other-commander" }
   const registry = createRegistry([...FIXTURE_REGISTRY.ids().map((id) => FIXTURE_REGISTRY.get(id)), other])
+  // Without the intro, whose lines name Vasse and would be refused for that alone.
   const mission: MissionDefinition = {
     ...PERIMETER,
-    triggers: PERIMETER.triggers.map((trigger) =>
+    triggers: PERIMETER.triggers.filter((trigger) => trigger.id !== "intro").map((trigger) =>
       trigger.id !== "squads"
         ? trigger
         : {
