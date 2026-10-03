@@ -652,8 +652,8 @@ const STRONG_TO_ROUND_3 = `${STRONG_TO_ROUND_2} ${ROUND_2_STRONG} ${TO_RESULT} E
 
 scripted(
   "mission-round-1",
-  "PERIMETER, round 1 of 3: the raid at the ridge and your squads beside the Nexus are drawn see-through - they arrive when the round starts",
-  { keys: "n 1", expect: "round 1 of 3" },
+  "PERIMETER, round 1 of 3: the raid at the ridge, a trail round it to the Barracks it goes for first, and the panel saying how many, of what, from where and when",
+  { keys: "n 1", expect: "goes for your Barracks" },
 )
 
 scripted(

@@ -309,8 +309,8 @@ export type FieldEntity = Readonly<{
 
 /**
  * A unit the next round's triggers will bring (the owner's "see what is coming"): where it will
- * arrive, when, and the line of intention its group carries. Drawn see-through while the Incoming wave
- * Experiment shows it; nothing about it is state — the Pulse decides where it actually lands.
+ * arrive, when, and the line of intention its group carries. Always drawn, see-through; nothing about it
+ * is state — the Pulse decides where it actually lands.
  */
 export type IncomingEntity = Readonly<{
   contentId: string
