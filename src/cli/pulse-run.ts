@@ -132,8 +132,8 @@ function commanderNews(restored: readonly Restoration[], absent: readonly Comman
 
 // --- A round's scene: the dialog's lines, resolved on the round's own map ---------------------------
 
-/** The round's arrivals as the forecast sets them down, with the group each came in — what a line can look
- *  at among what is coming (the incoming wave drops the groups; a line needs them). */
+/** The round's arrivals set down against its opening without a plan, with the group each came in: the
+ *  forecast the Build Phase draws (`incomingOf` drops the groups) and what a dialog line can look at. */
 function arrivalsFor(mission: MissionDefinition, context: BuildContext, pulse: number): Arrival[] {
   const structures = context.carried == null ? context.standing.map((s) => ({ contentId: s.contentId, anchor: s.anchor })) : []
   const input: MissionPulseInput = { mission, grid: context.grid, registry: context.registry, pulse, carried: context.carried ?? null, structures }
@@ -244,12 +244,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
 
   /** What the round's triggers bring, set down against the round's opening without a plan — a forecast:
    *  a building planned where an arrival would stand moves it, when the Pulse starts. */
-  const forecast = (context: BuildContext, pulse: number): IncomingEntity[] => {
-    const structures = context.carried == null ? context.standing.map((s) => ({ contentId: s.contentId, anchor: s.anchor })) : []
-    const input = inputFor(context, pulse, structures)
-    const opening = missionOpening(input)
-    return incomingOf([...opening.arrivals, ...laterArrivals(input, opening.state)])
-  }
+  const forecast = (context: BuildContext, pulse: number): IncomingEntity[] => incomingOf(arrivalsFor(mission, context, pulse))
 
   const round = (number: number) => ({ number, of: mission.pulses })
 
