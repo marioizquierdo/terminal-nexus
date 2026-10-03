@@ -232,11 +232,14 @@ test("PERIMETER is won by holding and lost when the Nexus falls; a round the pla
 
   // A single trooper for squads: it falls in round 1, the Nexus stands, and the round runs to its time
   // rather than stopping there (Mario, 2026-10-01: only the Nexus falling loses) — and the mission goes on.
+  // Without the intro, too: its lines are Vasse's, and she is not in this squad.
   const thin: MissionDefinition = {
     ...PERIMETER,
-    triggers: PERIMETER.triggers.map((trigger) =>
-      trigger.id !== "squads" ? trigger : { ...trigger, do: [{ spawn: { side: "A", units: [{ unit: "unit.citizen.trooper", count: 1 }], at: "muster" } }] },
-    ),
+    triggers: PERIMETER.triggers
+      .filter((trigger) => trigger.id !== "intro")
+      .map((trigger) =>
+        trigger.id !== "squads" ? trigger : { ...trigger, do: [{ spawn: { side: "A", units: [{ unit: "unit.citizen.trooper", count: 1 }], at: "muster" } }] },
+      ),
   }
   validateMission(thin, grid, registry)
   const [round1] = playMission(thin, NOTHING)

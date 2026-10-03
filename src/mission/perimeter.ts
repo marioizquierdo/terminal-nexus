@@ -96,6 +96,20 @@ export const PERIMETER: MissionDefinition = {
       ],
     },
     {
+      // The intro, as round 1's Build Phase opens: Vasse's own bark, then the pre-battle exchange — every
+      // line already written in campaigns.md (mission one, in full), none new. The camera goes where each
+      // line looks: at her, at the raid on the ridge, and at the Nexus for Corvane's last. Corvane is not on
+      // the Grid; the raid speaks for them.
+      id: "intro",
+      when: { event: "build.start", pulse: 1 },
+      do: [
+        { say: { speaker: "unit.citizen.vasse", text: "By the book. The new book.", focus: { unit: "unit.citizen.vasse" } } },
+        { say: { speaker: "Corvane", side: "B", text: "Nice fence, roadmakers. We brought wire cutters.", focus: { group: "probe" } } },
+        { say: { speaker: "unit.citizen.vasse", text: "It is not our fence I would worry about.", focus: { unit: "unit.citizen.vasse" } } },
+        { say: { speaker: "Corvane", side: "B", text: "...Why is your pyramid looking at me?", focus: { region: "nexus" } } },
+      ],
+    },
+    {
       id: "wave-2",
       when: { pulse: 2, tick: 0 },
       do: [

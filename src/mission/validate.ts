@@ -13,11 +13,12 @@ import type { Coord, GridTerrain } from "../grid/types.ts"
 import type {
   MissionDefinition,
   Region,
-  SimulationAction,
+  TriggerAction,
   TriggerCondition,
   TriggerDefinition,
 } from "./types.ts"
 import { MissionError } from "./types.ts"
+import { checkSay, isBuildStart } from "./scene.ts"
 
 /** The centre tile of a region — where its arrivals gather around. */
 export function regionCentre(region: Region): Coord {
@@ -40,7 +41,8 @@ function whenOf(condition: TriggerCondition): "moment" | "end" {
 }
 
 /** What an action is, as the error messages name it. */
-export function actionName(action: SimulationAction): string {
+export function actionName(action: TriggerAction): string {
+  if ("say" in action) return "say"
   if ("spawn" in action) return "spawn"
   if ("order" in action) return "order"
   if ("commitPlan" in action) return "commitPlan"
@@ -141,13 +143,22 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
       if (when.side !== "A" && when.side !== "B") say(`${where} names the unknown side "${String(when.side)}"`)
       return
     }
+    if (when.event === "build.start") {
+      if (!isPositiveInteger(when.pulse) || when.pulse > mission.pulses) {
+        say(`${where} waits for the Build Phase of round ${when.pulse}, but the mission has rounds 1 to ${mission.pulses}`)
+      }
+      return
+    }
     say(`${where} has a condition this vocabulary does not know: ${JSON.stringify(when)}`)
   }
 
   // Each side's Commander, once spawned.
   const commanders = new Set<string>()
-  const checkAction = (trigger: TriggerDefinition, action: SimulationAction, index: number): void => {
+  const checkAction = (trigger: TriggerDefinition, action: TriggerAction, index: number): void => {
     const where = `trigger "${trigger.id}", action ${index + 1} (${actionName(action)})`
+    // The presentation band: a line of dialog (`scene.ts`). Nothing but it runs when a Build Phase opens.
+    if ("say" in action) return checkSay(mission, registry, trigger, action, where, say)
+    if (isBuildStart(trigger.when)) return say(`${where} cannot run when a Build Phase opens: only a line of dialog (say) can`)
     const at = whenOf(trigger.when)
     const moment = isMoment(trigger.when) ? trigger.when : null
 

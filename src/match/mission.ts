@@ -24,6 +24,10 @@
 // reads what each side has fielded (its roster) from the opening state; an arrival between ticks widens that
 // roster for the rest of the Pulse, so a side that only arrives later can still be wiped out, and win.
 //
+// **The presentation band is never read here** — a line of dialog (`say`) and the Build Phase opening it
+// runs at (`build.start`) are the screen's (`src/mission/scene.ts`) — so a mission's lines cannot change
+// what its Pulses resolve: the same plans give the same states with or without them.
+//
 // After the Pulse, the triggers waiting for its end are read in list order and the first `win` or `lose`
 // decides the mission — the kernel's own outcome is never overridden, only read (a mission's goal is
 // resolved here, one level above the victory check, which stays the fallback for a battle with no
@@ -271,7 +275,8 @@ function verdictAt(
   let verdict: MissionVerdict = { kind: "continue" }
   for (const trigger of mission.triggers) {
     const { when } = trigger
-    if (isMoment(when)) continue
+    // A Build Phase opening is the presentation band's (`src/mission/scene.ts`): never a Pulse's end.
+    if (isMoment(when) || when.event === "build.start") continue
     const holds =
       when.event === "pulse.end"
         ? when.pulse === undefined || when.pulse === pulse
